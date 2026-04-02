@@ -14,7 +14,170 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      product_fields: {
+        Row: {
+          created_at: string
+          field_name: string
+          field_order: number
+          id: string
+          product_id: string
+        }
+        Insert: {
+          created_at?: string
+          field_name: string
+          field_order?: number
+          id?: string
+          product_id: string
+        }
+        Update: {
+          created_at?: string
+          field_name?: string
+          field_order?: number
+          id?: string
+          product_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_fields_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      products: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          image_url: string | null
+          price: number
+          stock: number
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          price?: number
+          stock?: number
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          price?: number
+          stock?: number
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      token_claims: {
+        Row: {
+          browser: string | null
+          claimed_at: string
+          device_info: string | null
+          id: string
+          token_id: string
+        }
+        Insert: {
+          browser?: string | null
+          claimed_at?: string
+          device_info?: string | null
+          id?: string
+          token_id: string
+        }
+        Update: {
+          browser?: string | null
+          claimed_at?: string
+          device_info?: string | null
+          id?: string
+          token_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "token_claims_token_id_fkey"
+            columns: ["token_id"]
+            isOneToOne: false
+            referencedRelation: "tokens"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      token_fields: {
+        Row: {
+          created_at: string
+          field_name: string
+          field_value: string
+          id: string
+          token_id: string
+        }
+        Insert: {
+          created_at?: string
+          field_name: string
+          field_value?: string
+          id?: string
+          token_id: string
+        }
+        Update: {
+          created_at?: string
+          field_name?: string
+          field_value?: string
+          id?: string
+          token_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "token_fields_token_id_fkey"
+            columns: ["token_id"]
+            isOneToOne: false
+            referencedRelation: "tokens"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tokens: {
+        Row: {
+          claimed_at: string | null
+          created_at: string
+          id: string
+          is_claimed: boolean
+          product_id: string
+          token_code: string
+        }
+        Insert: {
+          claimed_at?: string | null
+          created_at?: string
+          id?: string
+          is_claimed?: boolean
+          product_id: string
+          token_code: string
+        }
+        Update: {
+          claimed_at?: string | null
+          created_at?: string
+          id?: string
+          is_claimed?: boolean
+          product_id?: string
+          token_code?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tokens_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
