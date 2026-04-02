@@ -3,10 +3,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ShoppingBag, KeyRound, Clock, Smartphone, Home, Package, Ticket, Sparkles, Star, Zap } from "lucide-react";
+import { ShoppingBag, KeyRound, Clock, Smartphone, Home, Package, Ticket, Sparkles, Star, Zap, Download, MessageCircle, Copy, CheckCircle2, Shield, Crown } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import jsPDF from "jspdf";
+import storeQris from "@/assets/store-qris.jpg";
 
-type Tab = "beranda" | "produk" | "token" | "history";
+type Tab = "beranda" | "produk" | "voucher" | "history";
 
 interface Product {
   id: string;
@@ -46,6 +48,7 @@ const Index = () => {
   const [claimResult, setClaimResult] = useState<ClaimResult | null>(null);
   const [claiming, setClaiming] = useState(false);
   const [history, setHistory] = useState<ClaimHistory[]>([]);
+  const [copiedField, setCopiedField] = useState<string | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -71,7 +74,7 @@ const Index = () => {
   }
 
   async function handleClaim() {
-    const code = tokenInput.trim();
+    const code = tokenInput.trim().toUpperCase();
     if (!code) return;
     setClaiming(true);
     setClaimResult(null);
@@ -84,13 +87,13 @@ const Index = () => {
         .maybeSingle();
 
       if (tErr || !token) {
-        toast({ title: "Token tidak ditemukan", variant: "destructive" });
+        toast({ title: "Kode voucher tidak ditemukan", variant: "destructive" });
         setClaiming(false);
         return;
       }
 
       if (token.is_claimed) {
-        toast({ title: "Token sudah pernah diklaim", description: "Token ini hanya berlaku 1 kali.", variant: "destructive" });
+        toast({ title: "Voucher sudah pernah diklaim", description: "Kode ini hanya berlaku 1 kali.", variant: "destructive" });
         setClaiming(false);
         return;
       }
@@ -123,30 +126,116 @@ const Index = () => {
       };
       saveHistory([newEntry, ...history]);
 
-      toast({ title: "Token berhasil diklaim!" });
+      toast({ title: "Voucher berhasil diklaim! 🎉" });
     } catch {
       toast({ title: "Terjadi kesalahan", variant: "destructive" });
     }
     setClaiming(false);
   }
 
-  function copyText(text: string) {
+  function copyText(text: string, id?: string) {
     navigator.clipboard.writeText(text);
-    toast({ title: "Disalin!", description: text.slice(0, 40) });
+    setCopiedField(id || text);
+    setTimeout(() => setCopiedField(null), 2000);
+    toast({ title: "Berhasil disalin!" });
+  }
+
+  function downloadHistoryPDF() {
+    if (history.length === 0) return;
+    const doc = new jsPDF();
+    const pageW = doc.internal.pageSize.getWidth();
+
+    // Header
+    doc.setFillColor(99, 102, 241);
+    doc.rect(0, 0, pageW, 40, "F");
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(20);
+    doc.setFont("helvetica", "bold");
+    doc.text("Agung Adi Store", pageW / 2, 18, { align: "center" });
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "normal");
+    doc.text("Riwayat Klaim Voucher", pageW / 2, 28, { align: "center" });
+    doc.text(`Dicetak: ${new Date().toLocaleString("id-ID")}`, pageW / 2, 34, { align: "center" });
+
+    let y = 50;
+    doc.setTextColor(0, 0, 0);
+
+    history.forEach((h, idx) => {
+      if (y > 260) {
+        doc.addPage();
+        y = 20;
+      }
+
+      // Card background
+      doc.setFillColor(248, 249, 250);
+      doc.roundedRect(14, y - 4, pageW - 28, 42 + h.fields.length * 8, 3, 3, "F");
+      doc.setDrawColor(99, 102, 241);
+      doc.setLineWidth(0.3);
+      doc.roundedRect(14, y - 4, pageW - 28, 42 + h.fields.length * 8, 3, 3, "S");
+
+      doc.setFontSize(12);
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(99, 102, 241);
+      doc.text(`#${idx + 1} ${h.product_title}`, 20, y + 4);
+
+      doc.setFontSize(9);
+      doc.setFont("helvetica", "normal");
+      doc.setTextColor(100, 100, 100);
+      doc.text(`Kode: ${h.token_code}`, 20, y + 12);
+      doc.text(`Waktu: ${new Date(h.claimed_at).toLocaleString("id-ID")}`, 20, y + 18);
+      doc.text(`Browser: ${h.browser || "-"}`, 20, y + 24);
+      doc.text(`Perangkat: ${(h.device_info || "-").slice(0, 70)}`, 20, y + 30);
+
+      if (h.fields.length > 0) {
+        let fy = y + 36;
+        doc.setTextColor(30, 30, 30);
+        h.fields.forEach((f) => {
+          doc.setFont("helvetica", "bold");
+          doc.text(`${f.field_name}: `, 20, fy);
+          doc.setFont("helvetica", "normal");
+          doc.text(f.field_value, 20 + doc.getTextWidth(`${f.field_name}: `), fy);
+          fy += 8;
+        });
+      }
+
+      y += 50 + h.fields.length * 8;
+    });
+
+    // Footer
+    const lastPage = doc.getNumberOfPages();
+    for (let i = 1; i <= lastPage; i++) {
+      doc.setPage(i);
+      doc.setFontSize(8);
+      doc.setTextColor(150, 150, 150);
+      doc.text("Agung Adi Store — WA: 085769302532", pageW / 2, doc.internal.pageSize.getHeight() - 10, { align: "center" });
+    }
+
+    doc.save("riwayat-klaim-agung-adi-store.pdf");
+    toast({ title: "PDF berhasil didownload! 📄" });
   }
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col">
       {/* Header */}
-      <header className="sticky top-0 z-50 bg-gradient-to-r from-primary to-primary/80 text-primary-foreground px-4 py-4 shadow-xl">
+      <header className="sticky top-0 z-50 bg-gradient-to-r from-primary via-primary/90 to-primary/80 text-primary-foreground px-4 py-3 shadow-xl">
         <div className="flex items-center gap-3 max-w-lg mx-auto">
-          <div className="w-10 h-10 rounded-xl bg-primary-foreground/20 backdrop-blur-sm flex items-center justify-center">
-            <Zap className="w-5 h-5" />
+          <img
+            src={storeQris}
+            alt="Agung Adi Store"
+            className="w-11 h-11 rounded-xl object-cover border-2 border-primary-foreground/30 shadow-md"
+          />
+          <div className="flex-1">
+            <h1 className="text-lg font-extrabold tracking-tight">Agung Adi Store</h1>
+            <p className="text-[10px] opacity-80 leading-tight">Toko Akun Digital Murah & Terpercaya</p>
           </div>
-          <div>
-            <h1 className="text-lg font-bold tracking-tight">Agung Adi Store</h1>
-            <p className="text-[10px] opacity-80">Toko Akun Digital Terpercaya</p>
-          </div>
+          <a
+            href={`https://wa.me/62${WA_NUMBER.replace(/^0/, "")}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="w-9 h-9 rounded-xl bg-primary-foreground/20 backdrop-blur-sm flex items-center justify-center hover:bg-primary-foreground/30 transition-colors"
+          >
+            <MessageCircle className="w-5 h-5" />
+          </a>
         </div>
       </header>
 
@@ -155,20 +244,35 @@ const Index = () => {
         {tab === "beranda" && (
           <div className="space-y-5">
             {/* Hero */}
-            <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary/10 via-accent/5 to-primary/5 p-6 text-center">
-              <div className="absolute top-2 right-3 opacity-20">
-                <Sparkles className="w-16 h-16 text-primary" />
+            <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary/15 via-accent/10 to-primary/5 p-5">
+              <div className="absolute -top-4 -right-4 opacity-10">
+                <Crown className="w-24 h-24 text-primary" />
               </div>
-              <div className="relative z-10">
-                <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-accent flex items-center justify-center mx-auto mb-3 shadow-lg">
-                  <Star className="w-8 h-8 text-primary-foreground" />
-                </div>
-                <h2 className="text-xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-                  Selamat Datang!
+              <div className="relative z-10 text-center">
+                <img
+                  src={storeQris}
+                  alt="Agung Adi Store"
+                  className="w-20 h-20 rounded-2xl object-cover mx-auto mb-3 shadow-lg border-2 border-primary/20"
+                />
+                <h2 className="text-xl font-extrabold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+                  Agung Adi Store
                 </h2>
-                <p className="text-muted-foreground text-sm mt-1.5 leading-relaxed">
-                  Beli akun digital premium dengan harga terbaik. Gunakan token untuk klaim akun kamu.
+                <p className="text-xs text-muted-foreground mt-1 font-medium">Murah • Terpercaya • Fast Response</p>
+                <p className="text-muted-foreground text-sm mt-2 leading-relaxed">
+                  Beli akun digital premium dengan harga terbaik. Gunakan kode voucher untuk klaim akun kamu.
                 </p>
+                <div className="mt-3 flex items-center justify-center gap-2">
+                  <a
+                    href={`https://wa.me/62${WA_NUMBER.replace(/^0/, "")}?text=${encodeURIComponent("Halo, saya mau order di Agung Adi Store")}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <Button size="sm" className="bg-gradient-to-r from-accent to-accent/80 text-accent-foreground shadow-md gap-1.5">
+                      <MessageCircle className="w-4 h-4" />
+                      Hubungi WA
+                    </Button>
+                  </a>
+                </div>
               </div>
             </div>
 
@@ -179,7 +283,7 @@ const Index = () => {
                   <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center mx-auto mb-2">
                     <Package className="w-5 h-5 text-primary" />
                   </div>
-                  <p className="text-2xl font-bold text-primary">{products.length}</p>
+                  <p className="text-2xl font-extrabold text-primary">{products.length}</p>
                   <p className="text-xs text-muted-foreground font-medium">Produk Tersedia</p>
                 </CardContent>
               </Card>
@@ -188,21 +292,21 @@ const Index = () => {
                   <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center mx-auto mb-2">
                     <Clock className="w-5 h-5 text-accent" />
                   </div>
-                  <p className="text-2xl font-bold text-accent">{history.length}</p>
-                  <p className="text-xs text-muted-foreground font-medium">Token Diklaim</p>
+                  <p className="text-2xl font-extrabold text-accent">{history.length}</p>
+                  <p className="text-xs text-muted-foreground font-medium">Voucher Diklaim</p>
                 </CardContent>
               </Card>
             </div>
 
-            {/* Quick Links */}
-            <Card className="border-dashed border-2 border-primary/20 hover:border-primary/40 transition-colors cursor-pointer" onClick={() => setTab("token")}>
+            {/* Quick Link - Voucher */}
+            <Card className="border-dashed border-2 border-primary/20 hover:border-primary/40 transition-all cursor-pointer hover:shadow-lg hover:-translate-y-0.5 duration-200" onClick={() => setTab("voucher")}>
               <CardContent className="p-4 flex items-center gap-3">
-                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center shadow-md">
-                  <KeyRound className="w-6 h-6 text-primary-foreground" />
+                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-md">
+                  <Ticket className="w-6 h-6 text-primary-foreground" />
                 </div>
                 <div className="flex-1">
-                  <h3 className="font-bold text-sm">Punya Token?</h3>
-                  <p className="text-xs text-muted-foreground">Klaim akun kamu sekarang →</p>
+                  <h3 className="font-bold text-sm">Punya Kode Voucher?</h3>
+                  <p className="text-xs text-muted-foreground">Klaim akun premium kamu sekarang →</p>
                 </div>
               </CardContent>
             </Card>
@@ -211,36 +315,52 @@ const Index = () => {
 
         {tab === "produk" && (
           <div className="space-y-4">
-            <h2 className="text-lg font-bold flex items-center gap-2">
-              <Package className="w-5 h-5 text-primary" /> Daftar Produk
-            </h2>
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-extrabold flex items-center gap-2">
+                <Package className="w-5 h-5 text-primary" /> Daftar Produk
+              </h2>
+              <span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded-full font-medium">{products.length} item</span>
+            </div>
             {products.length === 0 && (
-              <div className="text-center py-10 text-muted-foreground">
-                <Package className="w-12 h-12 mx-auto mb-2 opacity-30" />
-                <p className="text-sm">Belum ada produk.</p>
+              <div className="text-center py-16 text-muted-foreground">
+                <Package className="w-16 h-16 mx-auto mb-3 opacity-20" />
+                <p className="text-sm font-medium">Belum ada produk.</p>
+                <p className="text-xs mt-1">Hubungi admin untuk info produk terbaru.</p>
               </div>
             )}
             {products.map((p) => (
-              <Card key={p.id} className="overflow-hidden hover:shadow-lg transition-shadow duration-200">
+              <Card key={p.id} className="overflow-hidden hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 border-border/50">
                 {p.image_url && (
-                  <img src={p.image_url} alt={p.title} className="w-full h-40 object-cover" />
+                  <div className="relative">
+                    <img src={p.image_url} alt={p.title} className="w-full h-44 object-cover" />
+                    <div className="absolute top-2 right-2">
+                      <span className="text-xs font-bold bg-primary text-primary-foreground px-2.5 py-1 rounded-full shadow-md">
+                        {formatPrice(p.price)}
+                      </span>
+                    </div>
+                  </div>
                 )}
                 <CardContent className="p-4 space-y-3">
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <h3 className="font-bold">{p.title}</h3>
-                      {p.description && <p className="text-xs text-muted-foreground mt-0.5">{p.description}</p>}
-                    </div>
-                    <span className="text-sm font-bold text-primary whitespace-nowrap bg-primary/10 px-2 py-1 rounded-lg">{formatPrice(p.price)}</span>
+                  <div>
+                    <h3 className="font-bold text-base">{p.title}</h3>
+                    {p.description && <p className="text-xs text-muted-foreground mt-1">{p.description}</p>}
+                    {!p.image_url && (
+                      <span className="text-sm font-extrabold text-primary">{formatPrice(p.price)}</span>
+                    )}
                   </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded-md">Stok: {p.stock}</span>
-                    <Button size="sm" className="bg-gradient-to-r from-accent to-accent/80 hover:from-accent/90 hover:to-accent/70 text-accent-foreground shadow-md" asChild>
+                  <div className="flex items-center justify-between pt-1">
+                    <div className="flex items-center gap-2">
+                      <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${p.stock > 0 ? 'bg-accent/10 text-accent' : 'bg-destructive/10 text-destructive'}`}>
+                        {p.stock > 0 ? `✓ Stok: ${p.stock}` : '✗ Habis'}
+                      </span>
+                    </div>
+                    <Button size="sm" className="bg-gradient-to-r from-accent to-accent/80 hover:from-accent/90 text-accent-foreground shadow-md gap-1.5 rounded-full" asChild>
                       <a
                         href={`https://wa.me/62${WA_NUMBER.replace(/^0/, "")}?text=${encodeURIComponent(`Halo, saya mau beli: ${p.title} (${formatPrice(p.price)})`)}`}
                         target="_blank"
                         rel="noopener noreferrer"
                       >
+                        <MessageCircle className="w-3.5 h-3.5" />
                         Beli via WA
                       </a>
                     </Button>
@@ -251,63 +371,91 @@ const Index = () => {
           </div>
         )}
 
-        {tab === "token" && (
+        {tab === "voucher" && (
           <div className="space-y-4">
-            <h2 className="text-lg font-bold flex items-center gap-2">
-              <KeyRound className="w-5 h-5 text-primary" /> Klaim Token
+            <h2 className="text-lg font-extrabold flex items-center gap-2">
+              <Ticket className="w-5 h-5 text-primary" /> Klaim Voucher
             </h2>
-            <Card className="border-2 border-primary/20 shadow-lg">
+            <Card className="border-2 border-primary/20 shadow-lg overflow-hidden">
+              <div className="bg-gradient-to-r from-primary/10 to-accent/10 p-1" />
               <CardContent className="p-5 space-y-4">
                 <div className="text-center">
-                  <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center mx-auto mb-3 shadow-lg">
-                    <Ticket className="w-7 h-7 text-primary-foreground" />
+                  <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-accent flex items-center justify-center mx-auto mb-3 shadow-lg">
+                    <Ticket className="w-8 h-8 text-primary-foreground" />
                   </div>
-                  <p className="text-sm text-muted-foreground">Masukkan kode token yang sudah kamu beli</p>
+                  <p className="text-sm font-medium">Masukkan Kode Voucher</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">Contoh: JXPIBAIF86H686UU</p>
                 </div>
-                <div className="flex gap-2">
+                <div className="space-y-3">
                   <Input
-                    placeholder="TKN-XXXX-XXXX"
+                    placeholder="MASUKKAN KODE VOUCHER"
                     value={tokenInput}
-                    onChange={(e) => setTokenInput(e.target.value)}
-                    className="font-mono text-center text-base tracking-wider"
+                    onChange={(e) => setTokenInput(e.target.value.toUpperCase())}
+                    className="font-mono text-center text-base tracking-[0.2em] uppercase border-2 border-primary/20 focus:border-primary h-12"
                   />
-                  <Button onClick={handleClaim} disabled={claiming || !tokenInput.trim()} className="px-6 bg-gradient-to-r from-primary to-primary/80">
-                    {claiming ? "..." : "Klaim"}
+                  <Button onClick={handleClaim} disabled={claiming || !tokenInput.trim()} className="w-full h-11 bg-gradient-to-r from-primary to-primary/80 shadow-lg font-bold text-base gap-2">
+                    {claiming ? (
+                      <span className="animate-pulse">Memproses...</span>
+                    ) : (
+                      <>
+                        <CheckCircle2 className="w-5 h-5" />
+                        Klaim Sekarang
+                      </>
+                    )}
                   </Button>
                 </div>
               </CardContent>
             </Card>
 
             {claimResult && (
-              <Card className="border-2 border-accent/40 bg-gradient-to-br from-accent/5 to-transparent shadow-lg">
+              <Card className="border-2 border-accent/40 shadow-xl overflow-hidden">
+                <div className="bg-gradient-to-r from-accent to-accent/70 p-3 text-accent-foreground flex items-center gap-2">
+                  <CheckCircle2 className="w-5 h-5" />
+                  <span className="font-bold text-sm">Voucher Berhasil Diklaim!</span>
+                </div>
                 <CardContent className="p-4 space-y-3">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-accent to-accent/70 flex items-center justify-center shadow-md">
-                      <Ticket className="w-5 h-5 text-accent-foreground" />
+                      <Crown className="w-5 h-5 text-accent-foreground" />
                     </div>
                     <div>
                       <h3 className="font-bold">{claimResult.product.title}</h3>
                       <p className="text-xs text-muted-foreground">{formatPrice(claimResult.product.price)}</p>
                     </div>
                   </div>
-                  {claimResult.product.description && (
-                    <p className="text-xs text-muted-foreground">{claimResult.product.description}</p>
-                  )}
-                  <div className="bg-background rounded-xl p-3 space-y-2 border border-border">
-                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Detail Akun</p>
-                    {claimResult.fields.map((f, i) => (
-                      <div key={i} className="flex items-center justify-between py-2 border-b border-border last:border-0">
-                        <span className="text-xs text-muted-foreground">{f.field_name}</span>
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm font-mono font-medium">{f.field_value}</span>
-                          <button onClick={() => copyText(f.field_value)} className="text-primary text-xs font-semibold hover:underline bg-primary/10 px-2 py-0.5 rounded-md">
-                            Salin
-                          </button>
+                  <div className="bg-muted/50 rounded-xl p-3 space-y-2 border border-border">
+                    <p className="text-xs font-bold text-primary uppercase tracking-wider flex items-center gap-1">
+                      <Shield className="w-3 h-3" /> Detail Akun
+                    </p>
+                    {claimResult.fields.map((f, i) => {
+                      const fieldId = `claim-${i}`;
+                      return (
+                        <div key={i} className="flex items-center justify-between py-2 border-b border-border/50 last:border-0">
+                          <span className="text-xs text-muted-foreground">{f.field_name}</span>
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-sm font-mono font-bold">{f.field_value}</span>
+                            <button
+                              onClick={() => copyText(f.field_value, fieldId)}
+                              className={`text-xs font-bold px-2 py-0.5 rounded-md transition-all ${
+                                copiedField === fieldId
+                                  ? 'bg-accent/20 text-accent'
+                                  : 'bg-primary/10 text-primary hover:bg-primary/20'
+                              }`}
+                            >
+                              {copiedField === fieldId ? (
+                                <span className="flex items-center gap-0.5"><CheckCircle2 className="w-3 h-3" /> OK</span>
+                              ) : (
+                                <span className="flex items-center gap-0.5"><Copy className="w-3 h-3" /> Salin</span>
+                              )}
+                            </button>
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
-                  <p className="text-xs text-destructive font-medium bg-destructive/10 p-2 rounded-lg text-center">⚠ Token berlaku 1 kali klaim</p>
+                  <p className="text-xs text-destructive font-medium bg-destructive/10 p-2.5 rounded-lg text-center">
+                    ⚠ Kode voucher hanya berlaku 1 kali klaim
+                  </p>
                 </CardContent>
               </Card>
             )}
@@ -316,43 +464,83 @@ const Index = () => {
 
         {tab === "history" && (
           <div className="space-y-4">
-            <h2 className="text-lg font-bold flex items-center gap-2">
-              <Clock className="w-5 h-5 text-primary" /> Riwayat Klaim
-            </h2>
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-extrabold flex items-center gap-2">
+                <Clock className="w-5 h-5 text-primary" /> Riwayat Klaim
+              </h2>
+              {history.length > 0 && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={downloadHistoryPDF}
+                  className="gap-1.5 rounded-full border-primary/30 text-primary hover:bg-primary/10"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  PDF
+                </Button>
+              )}
+            </div>
+
             {history.length === 0 && (
-              <div className="text-center py-10 text-muted-foreground">
-                <Clock className="w-12 h-12 mx-auto mb-2 opacity-30" />
-                <p className="text-sm">Belum ada riwayat klaim.</p>
+              <div className="text-center py-16 text-muted-foreground">
+                <Clock className="w-16 h-16 mx-auto mb-3 opacity-20" />
+                <p className="text-sm font-medium">Belum ada riwayat klaim.</p>
+                <p className="text-xs mt-1">Klaim kode voucher pertamamu!</p>
+                <Button size="sm" variant="outline" className="mt-4 gap-1.5" onClick={() => setTab("voucher")}>
+                  <Ticket className="w-4 h-4" />
+                  Klaim Voucher
+                </Button>
               </div>
             )}
-            {history.map((h) => (
-              <Card key={h.id} className="hover:shadow-md transition-shadow">
-                <CardContent className="p-4 space-y-2">
-                  <div className="flex items-center justify-between">
-                    <h3 className="font-bold text-sm">{h.product_title}</h3>
-                    <span className="text-xs font-mono text-muted-foreground bg-muted px-2 py-0.5 rounded-md">{h.token_code}</span>
-                  </div>
-                  <div className="text-xs text-muted-foreground space-y-1">
-                    <div className="flex items-center gap-1.5">
-                      <Clock className="w-3 h-3" />
-                      <span>{new Date(h.claimed_at).toLocaleString("id-ID")}</span>
+
+            {history.map((h, idx) => (
+              <Card key={h.id} className="overflow-hidden hover:shadow-lg transition-all duration-200 border-border/50">
+                <div className="bg-gradient-to-r from-primary/10 to-accent/10 px-4 py-2 flex items-center justify-between">
+                  <span className="text-xs font-bold text-primary">#{idx + 1}</span>
+                  <span className="text-[10px] font-mono text-muted-foreground bg-background/80 px-2 py-0.5 rounded-full">{h.token_code}</span>
+                </div>
+                <CardContent className="p-4 space-y-2.5">
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center shadow-sm">
+                      <Crown className="w-4 h-4 text-primary-foreground" />
                     </div>
-                    <div className="flex items-center gap-1.5">
-                      <Smartphone className="w-3 h-3" />
-                      <span>{h.browser} — {h.device_info?.slice(0, 50)}...</span>
+                    <div>
+                      <h3 className="font-bold text-sm">{h.product_title}</h3>
+                      <p className="text-[10px] text-muted-foreground">{new Date(h.claimed_at).toLocaleString("id-ID")}</p>
                     </div>
                   </div>
+
+                  <div className="flex items-center gap-3 text-xs text-muted-foreground bg-muted/50 rounded-lg p-2">
+                    <Smartphone className="w-3.5 h-3.5 shrink-0" />
+                    <span className="truncate">{h.browser} — {h.device_info?.slice(0, 40)}...</span>
+                  </div>
+
                   {h.fields.length > 0 && (
-                    <div className="bg-muted/50 rounded-xl p-2.5 space-y-1.5 border border-border/50">
-                      {h.fields.map((f, i) => (
-                        <div key={i} className="flex justify-between text-xs">
-                          <span className="text-muted-foreground">{f.field_name}</span>
-                          <div className="flex gap-1.5">
-                            <span className="font-mono font-medium">{f.field_value}</span>
-                            <button onClick={() => copyText(f.field_value)} className="text-primary font-semibold hover:underline">Salin</button>
+                    <div className="bg-background border border-border rounded-xl p-3 space-y-2">
+                      <p className="text-[10px] font-bold text-primary uppercase tracking-wider flex items-center gap-1">
+                        <Shield className="w-3 h-3" /> Detail Akun
+                      </p>
+                      {h.fields.map((f, i) => {
+                        const fid = `h-${h.id}-${i}`;
+                        return (
+                          <div key={i} className="flex items-center justify-between py-1.5 border-b border-border/30 last:border-0">
+                            <span className="text-xs text-muted-foreground">{f.field_name}</span>
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-xs font-mono font-bold">{f.field_value}</span>
+                              <button
+                                onClick={() => copyText(f.field_value, fid)}
+                                className={`text-[10px] font-bold px-1.5 py-0.5 rounded transition-all ${
+                                  copiedField === fid
+                                    ? 'bg-accent/20 text-accent'
+                                    : 'bg-primary/10 text-primary hover:bg-primary/20'
+                                }`}
+                              >
+                                {copiedField === fid ? '✓' : 'Salin'}
+                              </button>
+                            </div>
                           </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   )}
                 </CardContent>
@@ -363,12 +551,12 @@ const Index = () => {
       </main>
 
       {/* Bottom Nav */}
-      <nav className="fixed bottom-0 left-0 right-0 bg-card/95 backdrop-blur-md border-t border-border z-50 shadow-[0_-4px_20px_rgba(0,0,0,0.05)]">
+      <nav className="fixed bottom-0 left-0 right-0 bg-card/95 backdrop-blur-md border-t border-border z-50 shadow-[0_-4px_20px_rgba(0,0,0,0.08)]">
         <div className="flex max-w-lg mx-auto">
           {([
             { key: "beranda", icon: Home, label: "Beranda" },
             { key: "produk", icon: Package, label: "Produk" },
-            { key: "token", icon: KeyRound, label: "Token" },
+            { key: "voucher", icon: Ticket, label: "Voucher" },
             { key: "history", icon: Clock, label: "Riwayat" },
           ] as const).map(({ key, icon: Icon, label }) => (
             <button
