@@ -1178,6 +1178,84 @@ const Index = () => {
             )}
           </div>
         )}
+
+        {tab === "saldo" && (
+          <div className="space-y-4">
+            <h2 className="text-lg font-extrabold flex items-center gap-2"><Wallet className="w-5 h-5 text-primary" /> Saldo</h2>
+
+            {!userBalance ? (
+              <Card className="border-2 border-primary/20">
+                <CardContent className="p-5 space-y-4">
+                  <div className="text-center">
+                    <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-accent flex items-center justify-center mx-auto mb-3 shadow-lg">
+                      <Wallet className="w-8 h-8 text-primary-foreground" />
+                    </div>
+                    <h3 className="font-bold text-lg">Buat Akun Saldo</h3>
+                    <p className="text-xs text-muted-foreground mt-1">Daftar untuk menggunakan fitur saldo</p>
+                  </div>
+                  <div className="space-y-3">
+                    <Input placeholder="Username" value={setupUsername} onChange={e => setSetupUsername(e.target.value)} />
+                    <Input placeholder="No HP" value={setupPhone} onChange={e => setSetupPhone(e.target.value)} />
+                    <Button className="w-full bg-gradient-to-r from-primary to-primary/80 font-bold" onClick={createUserBalance}>
+                      Buat Akun
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ) : (
+              <>
+                {/* Balance Card */}
+                <Card className="border-2 border-primary/20 bg-gradient-to-br from-primary/5 to-accent/5 overflow-hidden">
+                  <CardContent className="p-5">
+                    <div className="flex items-center justify-between mb-3">
+                      <div>
+                        <p className="text-xs text-muted-foreground font-medium">Hai, {userBalance.username}</p>
+                        <p className="text-3xl font-extrabold text-primary">{formatPrice(userBalance.balance)}</p>
+                      </div>
+                      <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-lg">
+                        <Wallet className="w-7 h-7 text-primary-foreground" />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <a href={`${SOCIAL_LINKS.whatsapp}?text=${encodeURIComponent(`Halo admin, saya mau deposit saldo.\n\nUsername: ${userBalance.username}\nNo HP: ${userBalance.phone}\nVisitor ID: ${visitorId}`)}`}
+                        target="_blank" rel="noopener noreferrer">
+                        <Button size="sm" className="w-full bg-gradient-to-r from-accent to-accent/80 text-accent-foreground gap-1.5">
+                          <MessageCircle className="w-4 h-4" /> Deposit WA
+                        </Button>
+                      </a>
+                      <Button size="sm" variant="outline" className="gap-1.5" onClick={() => setTab("tiket")}>
+                        <Send className="w-4 h-4" /> Deposit Chat
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Transaction History */}
+                <h3 className="font-bold text-sm flex items-center gap-1.5"><History className="w-4 h-4" /> Riwayat Transaksi</h3>
+                {balanceTransactions.length === 0 && (
+                  <p className="text-center text-sm text-muted-foreground py-8">Belum ada transaksi</p>
+                )}
+                {balanceTransactions.map(tx => (
+                  <Card key={tx.id}>
+                    <CardContent className="p-3 flex items-center gap-3">
+                      <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${tx.type === "topup" ? "bg-accent/10" : "bg-destructive/10"}`}>
+                        {tx.type === "topup" ? <ArrowUpCircle className="w-5 h-5 text-accent" /> : <ArrowDownCircle className="w-5 h-5 text-destructive" />}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-bold text-sm">{tx.type === "topup" ? "Deposit" : "Pembelian"}</p>
+                        <p className="text-[10px] text-muted-foreground truncate">{tx.description || "-"}</p>
+                        <p className="text-[10px] text-muted-foreground">{new Date(tx.created_at).toLocaleString("id-ID")}</p>
+                      </div>
+                      <span className={`font-bold text-sm ${tx.type === "topup" ? "text-accent" : "text-destructive"}`}>
+                        {tx.type === "topup" ? "+" : "-"}{formatPrice(tx.amount)}
+                      </span>
+                    </CardContent>
+                  </Card>
+                ))}
+              </>
+            )}
+          </div>
+        )}
       </main>
 
       {/* Product Detail Modal */}
