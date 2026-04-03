@@ -225,6 +225,66 @@ const Index = () => {
     if (data) setLikedIds(new Set(data.map((d: any) => d.product_id)));
   }
 
+  async function fetchUserBalance() {
+    const { data } = await supabase.from("user_balances").select("*").eq("visitor_id", visitorId).maybeSingle();
+    if (data) setUserBalance(data as unknown as UserBalance);
+    const { data: txns } = await supabase.from("balance_transactions").select("*").eq("visitor_id", visitorId).order("created_at", { ascending: false });
+    if (txns) setBalanceTransactions(txns as unknown as BalanceTransaction[]);
+  }
+
+  async function createUserBalance() {
+    if (!setupUsername.trim() || !setupPhone.trim()) {
+      toast({ title: "Isi username dan no HP", variant: "destructive" }); return;
+    }
+    const { data, error } = await supabase.from("user_balances").insert({
+      visitor_id: visitorId, username: setupUsername.trim(), phone: setupPhone.trim(),
+    }).select().single();
+    if (error) { toast({ title: "Gagal membuat akun", variant: "destructive" }); return; }
+    setUserBalance(data as unknown as UserBalance);
+    setSetupUsername(""); setSetupPhone("");
+    toast({ title: "Akun saldo berhasil dibuat! 🎉" });
+  }
+
+  async function buyWithSaldo(product: Product) {
+    if (!userBalance || userBalance.balance < product.price) {
+      toast({ title: "Saldo tidak cukup", variant: "destructive" }); return;
+    }
+    // Find available unclaimed token for this product
+    const { data: availableToken } = await supabase.from("tokens").select("*")
+      .eq("product_id", product.id).eq("is_claimed", false).limit(1).maybeSingle();
+    if (!availableToken) {
+      toast({ title: "Stok token habis untuk produk ini", variant: "destructive" }); return;
+    }
+    // Claim the token
+    const now = new Date().toISOString();
+    await supabase.from("tokens").update({ is_claimed: true, claimed_at: now }).eq("id", availableToken.id);
+    const deviceResult = await collectDeviceInfo();
+    await supabase.from("token_claims").insert({ token_id: availableToken.id, device_info: deviceResult.raw, browser: deviceResult.browser });
+    // Deduct balance (via transaction record - admin updates actual balance)
+    await supabase.from("balance_transactions").insert({
+      visitor_id: visitorId, type: "purchase", amount: product.price,
+      description: `Beli ${product.title}`, product_id: product.id, token_id: availableToken.id,
+    });
+    // Get token fields
+    const { data: tokenFields } = await supabase.from("token_fields").select("field_name, field_value").eq("token_id", availableToken.id);
+    // Save to history
+    const prodImgs = getProductImages(product.id);
+    const newHistory: ClaimHistory = {
+      id: availableToken.id, token_code: availableToken.token_code,
+      product_title: product.title, product_price: product.price,
+      product_image: prodImgs[0] || product.image_url || undefined,
+      claimed_at: now, device_info: deviceResult.raw, browser: deviceResult.browser,
+      fields: tokenFields || [],
+    };
+    saveHistory([newHistory, ...history]);
+    // Update local balance
+    setUserBalance(prev => prev ? { ...prev, balance: prev.balance - product.price } : null);
+    fetchUserBalance();
+    setShowBuySaldo(false); setBuyProduct(null); setSelectedProduct(null);
+    toast({ title: `Pembelian berhasil! Voucher: ${availableToken.token_code}` });
+    setTab("history");
+  }
+
   async function toggleLike(productId: string, e?: React.MouseEvent) {
     e?.stopPropagation();
     if (likedIds.has(productId)) {
