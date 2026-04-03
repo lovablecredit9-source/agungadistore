@@ -162,7 +162,6 @@ const Index = () => {
 
         const deviceResult = await collectDeviceInfo();
         const deviceInfo = deviceResult.raw;
-        console.log("[claim-device-info]", deviceResult);
         await supabase.from("token_claims").insert({ token_id: token.id, device_info: deviceInfo, browser: deviceResult.browser });
 
         const prodImgs = getProductImages(token.product_id);
