@@ -101,7 +101,15 @@ interface ProductChatMessage {
   created_at: string;
 }
 
-type AdminTab = "products" | "tokens" | "claims" | "tickets" | "chats";
+interface UserBalance {
+  id: string;
+  visitor_id: string;
+  username: string;
+  phone: string;
+  balance: number;
+}
+
+type AdminTab = "products" | "tokens" | "claims" | "tickets" | "chats" | "saldo";
 type ClaimDateFilter = "all" | "today" | "yesterday" | "lastmonth" | "custom";
 
 const AdminDashboard = () => {
