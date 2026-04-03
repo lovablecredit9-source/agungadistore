@@ -1289,17 +1289,28 @@ const Index = () => {
                   </span>
                 </div>
 
-                {/* Two buttons: Chat + WhatsApp */}
-                <div className="grid grid-cols-2 gap-2">
-                  <Button className="h-11 bg-gradient-to-r from-primary to-primary/80 font-bold gap-2 rounded-xl"
+                {/* Three buttons: Chat + Beli Saldo + WhatsApp */}
+                <div className="grid grid-cols-3 gap-2">
+                  <Button className="h-11 bg-gradient-to-r from-primary to-primary/80 font-bold gap-1 rounded-xl text-xs"
                     onClick={() => openProductChat(selectedProduct)}>
-                    <MessageCircle className="w-5 h-5" /> Chat
+                    <MessageCircle className="w-4 h-4" /> Chat
                   </Button>
-                  <Button className="h-11 bg-gradient-to-r from-accent to-accent/80 text-accent-foreground font-bold gap-2 rounded-xl"
+                  <Button className="h-11 bg-gradient-to-r from-purple-500 to-purple-600 text-white font-bold gap-1 rounded-xl text-xs"
+                    disabled={!userBalance || userBalance.balance < selectedProduct.price || selectedProduct.stock <= 0}
+                    onClick={() => { setBuyProduct(selectedProduct); setShowBuySaldo(true); }}>
+                    <Wallet className="w-4 h-4" /> Saldo
+                  </Button>
+                  <Button className="h-11 bg-gradient-to-r from-accent to-accent/80 text-accent-foreground font-bold gap-1 rounded-xl text-xs"
                     onClick={() => setShowWaForm(true)}>
-                    <ShoppingBag className="w-5 h-5" /> Beli WA
+                    <ShoppingBag className="w-4 h-4" /> Beli WA
                   </Button>
                 </div>
+                {userBalance && userBalance.balance < selectedProduct.price && (
+                  <p className="text-[10px] text-destructive text-center">Saldo tidak cukup. <button className="underline text-primary" onClick={() => { setSelectedProduct(null); setTab("saldo"); }}>Deposit saldo →</button></p>
+                )}
+                {!userBalance && (
+                  <p className="text-[10px] text-muted-foreground text-center">Buat akun saldo untuk beli pakai saldo. <button className="underline text-primary" onClick={() => { setSelectedProduct(null); setTab("saldo"); }}>Daftar →</button></p>
+                )}
 
                 <div className="border-t border-border pt-4 space-y-2">
                   <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Hubungi Kami</p>
