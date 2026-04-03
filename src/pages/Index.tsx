@@ -1460,6 +1460,31 @@ const Index = () => {
         </div>
       )}
 
+      {/* Buy with Saldo Confirmation Modal */}
+      {showBuySaldo && buyProduct && (
+        <div className="fixed inset-0 z-[80] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => { setShowBuySaldo(false); setBuyProduct(null); }}>
+          <div className="bg-card w-full max-w-sm rounded-2xl p-5 space-y-4 animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between">
+              <h3 className="font-extrabold text-lg">Konfirmasi Pembelian</h3>
+              <button onClick={() => { setShowBuySaldo(false); setBuyProduct(null); }} className="w-8 h-8 rounded-full bg-muted flex items-center justify-center"><X className="w-4 h-4" /></button>
+            </div>
+            <div className="bg-primary/5 border border-primary/20 rounded-lg p-3 space-y-1">
+              <p className="font-bold text-sm">{buyProduct.title}</p>
+              <p className="text-primary font-extrabold text-lg">{formatPrice(buyProduct.price)}</p>
+            </div>
+            <div className="bg-muted/50 rounded-lg p-3 space-y-1 text-sm">
+              <div className="flex justify-between"><span className="text-muted-foreground">Saldo saat ini</span><span className="font-bold">{formatPrice(userBalance?.balance || 0)}</span></div>
+              <div className="flex justify-between"><span className="text-muted-foreground">Harga produk</span><span className="font-bold text-destructive">-{formatPrice(buyProduct.price)}</span></div>
+              <div className="border-t border-border pt-1 flex justify-between"><span className="text-muted-foreground">Sisa saldo</span><span className="font-bold text-primary">{formatPrice((userBalance?.balance || 0) - buyProduct.price)}</span></div>
+            </div>
+            <p className="text-xs text-muted-foreground text-center">Token akun akan otomatis diberikan dari stok yang tersedia</p>
+            <Button className="w-full h-11 bg-gradient-to-r from-purple-500 to-purple-600 text-white font-bold gap-2" onClick={() => buyWithSaldo(buyProduct)}>
+              <Wallet className="w-5 h-5" /> Beli Sekarang
+            </Button>
+          </div>
+        </div>
+      )}
+
       {/* Bottom Nav */}
       <nav className="fixed bottom-0 left-0 right-0 bg-card/95 backdrop-blur-md border-t border-border z-50 shadow-[0_-4px_20px_rgba(0,0,0,0.08)]">
         <div className="flex max-w-lg mx-auto">
@@ -1467,6 +1492,7 @@ const Index = () => {
             { key: "beranda" as Tab, icon: Home, label: "Beranda" },
             { key: "produk" as Tab, icon: Package, label: "Produk" },
             { key: "voucher" as Tab, icon: Ticket, label: "Voucher" },
+            { key: "saldo" as Tab, icon: Wallet, label: "Saldo" },
             { key: "likes" as Tab, icon: Heart, label: "Suka" },
             { key: "history" as Tab, icon: Clock, label: "Riwayat" },
             { key: "tiket" as Tab, icon: AlertCircle, label: "Tiket" },
