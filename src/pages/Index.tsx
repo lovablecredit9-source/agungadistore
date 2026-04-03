@@ -14,7 +14,7 @@ import { useToast } from "@/hooks/use-toast";
 import jsPDF from "jspdf";
 import storeQris from "@/assets/store-qris.jpg";
 import { STORE_NAME, WA_NUMBER, SOCIAL_LINKS, YOUTUBE_NAME } from "@/lib/social-links";
-import { getDeviceSummary, parseDeviceInfo } from "@/lib/device-info";
+import { getDeviceSummary, collectDeviceInfo } from "@/lib/device-info";
 
 type Tab = "beranda" | "produk" | "voucher" | "history";
 
@@ -160,9 +160,9 @@ const Index = () => {
         const now = new Date().toISOString();
         await supabase.from("tokens").update({ is_claimed: true, claimed_at: now }).eq("id", token.id);
 
-        const deviceInfo = navigator.userAgent;
-        const { browser } = parseDeviceInfo(deviceInfo);
-        await supabase.from("token_claims").insert({ token_id: token.id, device_info: deviceInfo, browser });
+        const deviceResult = await collectDeviceInfo();
+        const deviceInfo = deviceResult.raw;
+        await supabase.from("token_claims").insert({ token_id: token.id, device_info: deviceInfo, browser: deviceResult.browser });
 
         const prodImgs = getProductImages(token.product_id);
 
@@ -175,7 +175,7 @@ const Index = () => {
           product_image: prodImgs[0] || product!.image_url || undefined,
           claimed_at: now,
           device_info: deviceInfo,
-          browser,
+          browser: deviceResult.browser,
           fields: fields || [],
         });
       } catch { toast({ title: `Error klaim ${code}`, variant: "destructive" }); }
