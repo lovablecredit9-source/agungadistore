@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -50,6 +50,12 @@ interface TokenClaim {
   claimed_at: string;
 }
 
+interface PendingImage {
+  id: string;
+  file: File;
+  previewUrl: string;
+}
+
 type AdminTab = "products" | "tokens" | "claims";
 type ClaimDateFilter = "all" | "today" | "yesterday" | "lastmonth" | "custom";
 
@@ -69,7 +75,7 @@ const AdminDashboard = () => {
   const [stock, setStock] = useState("1");
   const [category, setCategory] = useState("");
   const [newFields, setNewFields] = useState<string[]>(["Email", "Password", "No HP", "A2F"]);
-  const [imageFiles, setImageFiles] = useState<File[]>([]);
+  const [pendingImages, setPendingImages] = useState<PendingImage[]>([]);
   const [productSearch, setProductSearch] = useState("");
 
   // Token form
@@ -87,6 +93,7 @@ const AdminDashboard = () => {
 
   const navigate = useNavigate();
   const { toast } = useToast();
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
     checkAuth();
@@ -120,6 +127,45 @@ const AdminDashboard = () => {
     return imgs;
   }
 
+  function clearPendingImages() {
+    setPendingImages((prev) => {
+      prev.forEach((image) => URL.revokeObjectURL(image.previewUrl));
+      return [];
+    });
+
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  }
+
+  function addPendingImages(files: FileList | File[]) {
+    const nextFiles = Array.from(files ?? []);
+    if (nextFiles.length === 0) return;
+
+    setPendingImages((prev) => [
+      ...prev,
+      ...nextFiles.map((file, index) => ({
+        id: `${Date.now()}-${index}-${file.name}`,
+        file,
+        previewUrl: URL.createObjectURL(file),
+      })),
+    ]);
+
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  }
+
+  function removePendingImage(imageId: string) {
+    setPendingImages((prev) => {
+      const imageToRemove = prev.find((image) => image.id === imageId);
+      if (imageToRemove) {
+        URL.revokeObjectURL(imageToRemove.previewUrl);
+      }
+      return prev.filter((image) => image.id !== imageId);
+    });
+  }
+
   function startEdit(p: Product) {
     setEditingProduct(p);
     setTitle(p.title);
@@ -128,7 +174,7 @@ const AdminDashboard = () => {
     setStock(String(p.stock));
     setCategory(p.category || "");
     setNewFields(fields.filter(f => f.product_id === p.id).map(f => f.field_name));
-    setImageFiles([]);
+    clearPendingImages();
   }
 
   function resetForm() {
@@ -139,12 +185,12 @@ const AdminDashboard = () => {
     setStock("1");
     setCategory("");
     setNewFields(["Email", "Password", "No HP", "A2F"]);
-    setImageFiles([]);
+    clearPendingImages();
   }
 
   async function uploadImages(): Promise<string[]> {
     const urls: string[] = [];
-    for (const file of imageFiles) {
+    for (const { file } of pendingImages) {
       const ext = file.name.split(".").pop();
       const path = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
       const { error } = await supabase.storage.from("product-images").upload(path, file);
@@ -397,27 +443,32 @@ const AdminDashboard = () => {
                   </div>
                   <div>
                     <label className="text-xs text-muted-foreground flex items-center gap-1 mb-1"><Image className="w-3 h-3" /> Foto Produk (bisa banyak)</label>
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      className="hidden"
+                      onChange={(e) => {
+                        if (e.target.files) addPendingImages(e.target.files);
+                      }}
+                    />
                     <div className="flex gap-2 items-center">
-                      <label className="cursor-pointer flex items-center gap-1 px-3 py-2 border border-dashed border-primary/40 rounded-md text-xs text-primary hover:bg-primary/5 transition">
-                        <Plus className="w-4 h-4" /> Tambah Foto
-                        <input type="file" accept="image/*" multiple className="hidden" onChange={e => {
-                          const files = e.target.files;
-                          if (files) setImageFiles(prev => [...prev, ...Array.from(files)]);
-                          e.target.value = '';
-                        }} />
-                      </label>
-                      {imageFiles.length > 0 && (
-                        <p className="text-xs text-muted-foreground">{imageFiles.length} foto baru dipilih</p>
+                      <Button type="button" variant="outline" size="sm" onClick={() => fileInputRef.current?.click()}>
+                        <Plus className="w-4 h-4 mr-1" /> Tambah Foto
+                      </Button>
+                      {pendingImages.length > 0 && (
+                        <p className="text-xs text-muted-foreground">{pendingImages.length} foto baru dipilih</p>
                       )}
                     </div>
-                    {imageFiles.length > 0 && (
+                    {pendingImages.length > 0 && (
                       <div className="flex gap-2 mt-2 flex-wrap">
-                        {imageFiles.map((file, i) => (
-                          <div key={`new-${i}`} className="relative">
-                            <img src={URL.createObjectURL(file)} className="w-16 h-16 rounded object-cover border-2 border-primary/30" alt="" />
+                        {pendingImages.map((image) => (
+                          <div key={image.id} className="relative">
+                            <img src={image.previewUrl} className="w-16 h-16 rounded object-cover border border-border" alt="Preview foto produk" />
                             <button
                               type="button"
-                              onClick={() => setImageFiles(prev => prev.filter((_, j) => j !== i))}
+                              onClick={() => removePendingImage(image.id)}
                               className="absolute -top-1 -right-1 w-5 h-5 bg-destructive text-destructive-foreground rounded-full flex items-center justify-center"
                             >
                               <X className="w-3 h-3" />
