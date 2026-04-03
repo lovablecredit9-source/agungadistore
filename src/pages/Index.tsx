@@ -9,7 +9,7 @@ import {
   ShoppingBag, KeyRound, Clock, Smartphone, Home, Package, Ticket,
   Download, MessageCircle, Copy, CheckCircle2, Shield, Crown,
   HelpCircle, X, ExternalLink, Search, ChevronLeft, ChevronRight, FileText,
-  Heart, Send, ImagePlus, AlertCircle, History
+  Heart, Send, ImagePlus, AlertCircle, History, Wallet, ArrowUpCircle, ArrowDownCircle
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import jsPDF from "jspdf";
