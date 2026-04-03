@@ -14,7 +14,7 @@ import { useToast } from "@/hooks/use-toast";
 import jsPDF from "jspdf";
 import storeQris from "@/assets/store-qris.jpg";
 import { STORE_NAME, WA_NUMBER, SOCIAL_LINKS, YOUTUBE_NAME } from "@/lib/social-links";
-import { getDeviceSummary, parseDeviceInfo } from "@/lib/device-info";
+import { getDeviceSummary, collectDeviceInfo } from "@/lib/device-info";
 
 type Tab = "beranda" | "produk" | "voucher" | "history";
 
