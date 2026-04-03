@@ -4,10 +4,11 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   ShoppingBag, KeyRound, Clock, Smartphone, Home, Package, Ticket,
   Download, MessageCircle, Copy, CheckCircle2, Shield, Crown,
-  HelpCircle, X, ExternalLink
+  HelpCircle, X, ExternalLink, Search, ChevronLeft, ChevronRight, FileText
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import jsPDF from "jspdf";
@@ -27,6 +28,13 @@ interface Product {
   category: string | null;
 }
 
+interface ProductImage {
+  id: string;
+  product_id: string;
+  image_url: string;
+  image_order: number;
+}
+
 interface ClaimResult {
   token: { id: string; token_code: string; claimed_at: string | null };
   product: Product;
@@ -38,6 +46,7 @@ interface ClaimHistory {
   token_code: string;
   product_title: string;
   product_price: number;
+  product_image?: string;
   claimed_at: string;
   device_info: string | null;
   browser: string | null;
@@ -48,9 +57,36 @@ function formatPrice(price: number) {
   return new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", minimumFractionDigits: 0 }).format(price);
 }
 
+// Image carousel component
+function ImageCarousel({ images, className = "w-full h-44" }: { images: string[]; className?: string }) {
+  const [current, setCurrent] = useState(0);
+  if (images.length === 0) return null;
+  if (images.length === 1) return <img src={images[0]} alt="" className={`${className} object-cover`} />;
+
+  return (
+    <div className="relative">
+      <img src={images[current]} alt="" className={`${className} object-cover`} />
+      <button onClick={e => { e.stopPropagation(); setCurrent(c => (c - 1 + images.length) % images.length); }}
+        className="absolute left-1 top-1/2 -translate-y-1/2 w-7 h-7 bg-black/50 text-white rounded-full flex items-center justify-center">
+        <ChevronLeft className="w-4 h-4" />
+      </button>
+      <button onClick={e => { e.stopPropagation(); setCurrent(c => (c + 1) % images.length); }}
+        className="absolute right-1 top-1/2 -translate-y-1/2 w-7 h-7 bg-black/50 text-white rounded-full flex items-center justify-center">
+        <ChevronRight className="w-4 h-4" />
+      </button>
+      <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1">
+        {images.map((_, i) => (
+          <div key={i} className={`w-1.5 h-1.5 rounded-full ${i === current ? "bg-white" : "bg-white/50"}`} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
 const Index = () => {
   const [tab, setTab] = useState<Tab>("beranda");
   const [products, setProducts] = useState<Product[]>([]);
+  const [productImages, setProductImages] = useState<ProductImage[]>([]);
   const [tokenInput, setTokenInput] = useState("");
   const [claimResults, setClaimResults] = useState<ClaimResult[]>([]);
   const [claiming, setClaiming] = useState(false);
@@ -60,6 +96,10 @@ const Index = () => {
   const [showHelp, setShowHelp] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState("Semua");
   const [sortOrder, setSortOrder] = useState<"newest" | "oldest">("newest");
+  const [productSearch, setProductSearch] = useState("");
+  const [selectedHistoryIds, setSelectedHistoryIds] = useState<Set<string>>(new Set());
+  const [historyPage, setHistoryPage] = useState(1);
+  const HISTORY_PER_PAGE = 5;
   const { toast } = useToast();
 
   useEffect(() => {
@@ -68,8 +108,19 @@ const Index = () => {
   }, []);
 
   async function fetchProducts() {
-    const { data } = await supabase.from("products").select("*").order("created_at", { ascending: false });
-    if (data) setProducts(data as Product[]);
+    const [pRes, piRes] = await Promise.all([
+      supabase.from("products").select("*").order("created_at", { ascending: false }),
+      supabase.from("product_images").select("*").order("image_order"),
+    ]);
+    if (pRes.data) setProducts(pRes.data as Product[]);
+    if (piRes.data) setProductImages(piRes.data as ProductImage[]);
+  }
+
+  function getProductImages(productId: string): string[] {
+    const imgs = productImages.filter(i => i.product_id === productId).map(i => i.image_url);
+    const product = products.find(p => p.id === productId);
+    if (imgs.length === 0 && product?.image_url) return [product.image_url];
+    return imgs;
   }
 
   function loadHistory() {
@@ -84,12 +135,8 @@ const Index = () => {
     localStorage.setItem("token_history", JSON.stringify(h));
   }
 
-  // Parse multiple codes by | or newline
   function parseCodes(input: string): string[] {
-    return input
-      .split(/[|\n]/)
-      .map(c => c.trim().toUpperCase())
-      .filter(Boolean);
+    return input.split(/[|\n]/).map(c => c.trim().toUpperCase()).filter(Boolean);
   }
 
   async function handleClaim() {
@@ -103,17 +150,9 @@ const Index = () => {
 
     for (const code of codes) {
       try {
-        const { data: token } = await supabase
-          .from("tokens").select("*").eq("token_code", code).maybeSingle();
-
-        if (!token) {
-          toast({ title: `Kode ${code} tidak ditemukan`, variant: "destructive" });
-          continue;
-        }
-        if (token.is_claimed) {
-          toast({ title: `Kode ${code} sudah diklaim`, variant: "destructive" });
-          continue;
-        }
+        const { data: token } = await supabase.from("tokens").select("*").eq("token_code", code).maybeSingle();
+        if (!token) { toast({ title: `Kode ${code} tidak ditemukan`, variant: "destructive" }); continue; }
+        if (token.is_claimed) { toast({ title: `Kode ${code} sudah diklaim`, variant: "destructive" }); continue; }
 
         const { data: product } = await supabase.from("products").select("*").eq("id", token.product_id).single();
         const { data: fields } = await supabase.from("token_fields").select("field_name, field_value").eq("token_id", token.id);
@@ -125,26 +164,21 @@ const Index = () => {
         const { browser } = parseDeviceInfo(deviceInfo);
         await supabase.from("token_claims").insert({ token_id: token.id, device_info: deviceInfo, browser });
 
-        const result: ClaimResult = {
-          token: { ...token, claimed_at: now },
-          product: product as Product,
-          fields: fields || [],
-        };
-        results.push(result);
+        const prodImgs = getProductImages(token.product_id);
 
+        results.push({ token: { ...token, claimed_at: now }, product: product as Product, fields: fields || [] });
         newHistories.push({
           id: token.id,
           token_code: code,
           product_title: product!.title,
           product_price: product!.price,
+          product_image: prodImgs[0] || product!.image_url || undefined,
           claimed_at: now,
           device_info: deviceInfo,
           browser,
           fields: fields || [],
         });
-      } catch {
-        toast({ title: `Error klaim ${code}`, variant: "destructive" });
-      }
+      } catch { toast({ title: `Error klaim ${code}`, variant: "destructive" }); }
     }
 
     if (results.length > 0) {
@@ -157,45 +191,70 @@ const Index = () => {
 
   function copyText(text: string, id?: string) {
     if (!navigator.clipboard) {
-      // Fallback
       const ta = document.createElement("textarea");
-      ta.value = text;
-      ta.style.position = "fixed";
-      ta.style.opacity = "0";
-      document.body.appendChild(ta);
-      ta.select();
-      document.execCommand("copy");
-      document.body.removeChild(ta);
-    } else {
-      navigator.clipboard.writeText(text);
-    }
+      ta.value = text; ta.style.position = "fixed"; ta.style.opacity = "0";
+      document.body.appendChild(ta); ta.select(); document.execCommand("copy"); document.body.removeChild(ta);
+    } else { navigator.clipboard.writeText(text); }
     setCopiedField(id || text);
     setTimeout(() => setCopiedField(null), 2000);
     toast({ title: "Berhasil disalin!" });
   }
 
-  function downloadHistoryPDF() {
-    if (history.length === 0) return;
+  function getSelectedHistory(): ClaimHistory[] {
+    if (selectedHistoryIds.size === 0) return history;
+    return history.filter(h => selectedHistoryIds.has(h.id));
+  }
+
+  function toggleHistorySelect(id: string) {
+    const s = new Set(selectedHistoryIds);
+    if (s.has(id)) s.delete(id); else s.add(id);
+    setSelectedHistoryIds(s);
+  }
+
+  function toggleSelectAll() {
+    if (selectedHistoryIds.size === history.length) {
+      setSelectedHistoryIds(new Set());
+    } else {
+      setSelectedHistoryIds(new Set(history.map(h => h.id)));
+    }
+  }
+
+  async function downloadHistoryPDF() {
+    const items = getSelectedHistory();
+    if (items.length === 0) return;
     const doc = new jsPDF();
     const pageW = doc.internal.pageSize.getWidth();
     const pageH = doc.internal.pageSize.getHeight();
 
+    // Try to add logo
+    try {
+      const img = new window.Image();
+      img.crossOrigin = "anonymous";
+      await new Promise<void>((resolve) => {
+        img.onload = () => {
+          doc.addImage(img, "JPEG", pageW / 2 - 10, 5, 20, 20);
+          resolve();
+        };
+        img.onerror = () => resolve();
+        img.src = storeQris;
+      });
+    } catch {}
+
     // Header
     doc.setFillColor(99, 102, 241);
-    doc.rect(0, 0, pageW, 40, "F");
+    doc.rect(0, 28, pageW, 18, "F");
     doc.setTextColor(255, 255, 255);
-    doc.setFontSize(20);
+    doc.setFontSize(16);
     doc.setFont("helvetica", "bold");
-    doc.text(STORE_NAME, pageW / 2, 18, { align: "center" });
-    doc.setFontSize(10);
+    doc.text(STORE_NAME, pageW / 2, 38, { align: "center" });
+    doc.setFontSize(9);
     doc.setFont("helvetica", "normal");
-    doc.text("Riwayat Klaim Voucher", pageW / 2, 28, { align: "center" });
-    doc.text(`Dicetak: ${new Date().toLocaleString("id-ID")}`, pageW / 2, 34, { align: "center" });
+    doc.text(`Riwayat Klaim Voucher — ${new Date().toLocaleString("id-ID")}`, pageW / 2, 43, { align: "center" });
 
-    let y = 50;
+    let y = 54;
     doc.setTextColor(0, 0, 0);
 
-    history.forEach((h, idx) => {
+    items.forEach((h, idx) => {
       const blockH = 50 + h.fields.length * 8;
       if (y + blockH > pageH - 30) { doc.addPage(); y = 20; }
 
@@ -216,7 +275,6 @@ const Index = () => {
       doc.text(`Kode: ${h.token_code}`, 20, y + 12);
       doc.text(`Waktu: ${new Date(h.claimed_at).toLocaleString("id-ID")}`, 20, y + 18);
       doc.text(`Harga: ${formatPrice(h.product_price || 0)}`, 20, y + 24);
-
       const deviceSummary = h.device_info ? getDeviceSummary(h.device_info) : "-";
       doc.text(`Perangkat: ${deviceSummary}`, 20, y + 30);
 
@@ -231,17 +289,15 @@ const Index = () => {
           fy += 8;
         });
       }
-
       y += blockH + 8;
     });
 
-    // Disclaimer
     const lastPage = doc.getNumberOfPages();
     for (let i = 1; i <= lastPage; i++) {
       doc.setPage(i);
       doc.setFontSize(7);
       doc.setTextColor(150, 150, 150);
-      doc.text("Harap simpan bukti ini. Jika ada masalah hubungi admin. Jika ada kesalahan pembeli, admin tidak bertanggung jawab.", pageW / 2, pageH - 15, { align: "center" });
+      doc.text("Harap simpan bukti ini. Jika ada masalah hubungi admin.", pageW / 2, pageH - 15, { align: "center" });
       doc.text(`${STORE_NAME} — WA: ${WA_NUMBER}`, pageW / 2, pageH - 10, { align: "center" });
     }
 
@@ -249,17 +305,47 @@ const Index = () => {
     toast({ title: "PDF berhasil didownload! 📄" });
   }
 
+  function downloadHistoryTXT() {
+    const items = getSelectedHistory();
+    if (items.length === 0) return;
+
+    let txt = `${STORE_NAME} - Riwayat Klaim Voucher\n`;
+    txt += `Dicetak: ${new Date().toLocaleString("id-ID")}\n`;
+    txt += "=".repeat(50) + "\n\n";
+
+    items.forEach((h, idx) => {
+      txt += `#${idx + 1} ${h.product_title}\n`;
+      txt += `Kode: ${h.token_code}\n`;
+      txt += `Waktu: ${new Date(h.claimed_at).toLocaleString("id-ID")}\n`;
+      txt += `Harga: ${formatPrice(h.product_price || 0)}\n`;
+      const deviceSummary = h.device_info ? getDeviceSummary(h.device_info) : "-";
+      txt += `Perangkat: ${deviceSummary}\n`;
+      h.fields.forEach(f => { txt += `${f.field_name}: ${f.field_value}\n`; });
+      txt += "-".repeat(40) + "\n\n";
+    });
+
+    txt += `\n${STORE_NAME} — WA: ${WA_NUMBER}\n`;
+    txt += "Harap simpan bukti ini. Jika ada masalah hubungi admin.\n";
+
+    const blob = new Blob([txt], { type: "text/plain" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = "riwayat-klaim-agung-adi-store.txt"; a.click();
+    URL.revokeObjectURL(url);
+    toast({ title: "TXT berhasil didownload! 📝" });
+  }
+
   const categories = ["Semua", ...Array.from(new Set(products.map(p => p.category || "Lainnya").filter(Boolean)))];
   const filteredProducts = products
     .filter(p => selectedCategory === "Semua" || (p.category || "Lainnya") === selectedCategory)
-    .sort((a, b) => sortOrder === "newest"
-      ? 0 // already ordered by desc
-      : -0 // reverse not needed since we re-sort below
-    );
-
+    .filter(p => p.title.toLowerCase().includes(productSearch.toLowerCase()) || (p.description || "").toLowerCase().includes(productSearch.toLowerCase()));
   const sortedProducts = sortOrder === "oldest" ? [...filteredProducts].reverse() : filteredProducts;
 
   const totalClaimPrice = claimResults.reduce((sum, r) => sum + r.product.price, 0);
+
+  // History pagination
+  const totalHistoryPages = Math.ceil(history.length / HISTORY_PER_PAGE);
+  const paginatedHistory = history.slice((historyPage - 1) * HISTORY_PER_PAGE, historyPage * HISTORY_PER_PAGE);
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col">
@@ -281,32 +367,22 @@ const Index = () => {
       <main className="flex-1 max-w-lg mx-auto w-full px-4 py-4 pb-24">
         {tab === "beranda" && (
           <div className="space-y-5">
-            {/* Hero */}
             <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary/15 via-accent/10 to-primary/5 p-5">
-              <div className="absolute -top-4 -right-4 opacity-10">
-                <Crown className="w-24 h-24 text-primary" />
-              </div>
+              <div className="absolute -top-4 -right-4 opacity-10"><Crown className="w-24 h-24 text-primary" /></div>
               <div className="relative z-10 text-center">
                 <img src={storeQris} alt={STORE_NAME} className="w-20 h-20 rounded-2xl object-cover mx-auto mb-3 shadow-lg border-2 border-primary/20" />
                 <h2 className="text-xl font-extrabold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">{STORE_NAME}</h2>
                 <p className="text-xs text-muted-foreground mt-1 font-medium">Terpercaya • Aman • Murah</p>
-                <p className="text-muted-foreground text-sm mt-2 leading-relaxed">
-                  Beli akun digital premium dengan harga terbaik. Gunakan kode voucher untuk klaim akun kamu.
-                </p>
+                <p className="text-muted-foreground text-sm mt-2 leading-relaxed">Beli akun digital premium dengan harga terbaik.</p>
                 <div className="mt-3 flex items-center justify-center gap-2 flex-wrap">
                   <a href={`${SOCIAL_LINKS.whatsapp}?text=${encodeURIComponent("Halo, saya mau order di Agung Adi Store")}`} target="_blank" rel="noopener noreferrer">
-                    <Button size="sm" className="bg-gradient-to-r from-accent to-accent/80 text-accent-foreground shadow-md gap-1.5">
-                      <MessageCircle className="w-4 h-4" /> Hubungi WA
-                    </Button>
+                    <Button size="sm" className="bg-gradient-to-r from-accent to-accent/80 text-accent-foreground shadow-md gap-1.5"><MessageCircle className="w-4 h-4" /> Hubungi WA</Button>
                   </a>
-                  <Button size="sm" variant="outline" className="gap-1.5" onClick={() => setTab("voucher")}>
-                    <Ticket className="w-4 h-4" /> Klaim Voucher
-                  </Button>
+                  <Button size="sm" variant="outline" className="gap-1.5" onClick={() => setTab("voucher")}><Ticket className="w-4 h-4" /> Klaim Voucher</Button>
                 </div>
               </div>
             </div>
 
-            {/* Stats */}
             <div className="grid grid-cols-2 gap-3">
               <Card className="cursor-pointer hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 border-primary/10 bg-gradient-to-br from-primary/5 to-transparent" onClick={() => setTab("produk")}>
                 <CardContent className="p-4 text-center">
@@ -324,12 +400,9 @@ const Index = () => {
               </Card>
             </div>
 
-            {/* Quick actions */}
             <Card className="border-dashed border-2 border-primary/20 hover:border-primary/40 transition-all cursor-pointer hover:shadow-lg hover:-translate-y-0.5 duration-200" onClick={() => setTab("voucher")}>
               <CardContent className="p-4 flex items-center gap-3">
-                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-md">
-                  <Ticket className="w-6 h-6 text-primary-foreground" />
-                </div>
+                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-md"><Ticket className="w-6 h-6 text-primary-foreground" /></div>
                 <div className="flex-1">
                   <h3 className="font-bold text-sm">Punya Kode Voucher?</h3>
                   <p className="text-xs text-muted-foreground">Klaim akun premium kamu sekarang →</p>
@@ -337,7 +410,6 @@ const Index = () => {
               </CardContent>
             </Card>
 
-            {/* Social Media */}
             <Card>
               <CardContent className="p-4">
                 <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3">Ikuti Kami</p>
@@ -351,8 +423,7 @@ const Index = () => {
                   ].map((s) => (
                     <a key={s.label} href={s.href} target="_blank" rel="noopener noreferrer"
                       className={`bg-gradient-to-r ${s.color} text-white text-xs font-medium px-3 py-2 rounded-lg flex items-center gap-1.5 hover:opacity-90 transition-opacity`}>
-                      <ExternalLink className="w-3 h-3 shrink-0" />
-                      <span className="truncate">{s.label}</span>
+                      <ExternalLink className="w-3 h-3 shrink-0" /><span className="truncate">{s.label}</span>
                     </a>
                   ))}
                 </div>
@@ -366,6 +437,12 @@ const Index = () => {
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-extrabold flex items-center gap-2"><Package className="w-5 h-5 text-primary" /> Daftar Produk</h2>
               <span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded-full font-medium">{sortedProducts.length} item</span>
+            </div>
+
+            {/* Search */}
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input placeholder="Cari produk..." value={productSearch} onChange={e => setProductSearch(e.target.value)} className="pl-9" />
             </div>
 
             {/* Category filter + sort */}
@@ -389,33 +466,36 @@ const Index = () => {
               </div>
             )}
 
-            {sortedProducts.map((p) => (
-              <Card key={p.id} className="overflow-hidden hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 border-border/50 cursor-pointer" onClick={() => setSelectedProduct(p)}>
-                {p.image_url && (
-                  <div className="relative">
-                    <img src={p.image_url} alt={p.title} className="w-full h-44 object-cover" />
-                    <div className="absolute top-2 right-2">
-                      <span className="text-xs font-bold bg-primary text-primary-foreground px-2.5 py-1 rounded-full shadow-md">{formatPrice(p.price)}</span>
-                    </div>
-                    {p.category && (
-                      <div className="absolute top-2 left-2">
-                        <span className="text-[10px] font-medium bg-background/90 backdrop-blur-sm px-2 py-0.5 rounded-full">{p.category}</span>
+            {sortedProducts.map((p) => {
+              const imgs = getProductImages(p.id);
+              return (
+                <Card key={p.id} className="overflow-hidden hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 border-border/50 cursor-pointer" onClick={() => setSelectedProduct(p)}>
+                  {imgs.length > 0 && (
+                    <div className="relative">
+                      <ImageCarousel images={imgs} />
+                      <div className="absolute top-2 right-2">
+                        <span className="text-xs font-bold bg-primary text-primary-foreground px-2.5 py-1 rounded-full shadow-md">{formatPrice(p.price)}</span>
                       </div>
-                    )}
-                  </div>
-                )}
-                <CardContent className="p-4 space-y-2">
-                  <h3 className="font-bold text-base">{p.title}</h3>
-                  {p.description && <p className="text-xs text-muted-foreground line-clamp-2">{p.description}</p>}
-                  <div className="flex items-center justify-between">
-                    {!p.image_url && <span className="text-sm font-extrabold text-primary">{formatPrice(p.price)}</span>}
-                    <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${p.stock > 0 ? 'bg-accent/10 text-accent' : 'bg-destructive/10 text-destructive'}`}>
-                      {p.stock > 0 ? `✓ Stok: ${p.stock}` : '✗ Habis'}
-                    </span>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+                      {p.category && (
+                        <div className="absolute top-2 left-2">
+                          <span className="text-[10px] font-medium bg-background/90 backdrop-blur-sm px-2 py-0.5 rounded-full">{p.category}</span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                  <CardContent className="p-4 space-y-2">
+                    <h3 className="font-bold text-base">{p.title}</h3>
+                    {p.description && <p className="text-xs text-muted-foreground line-clamp-2">{p.description}</p>}
+                    <div className="flex items-center justify-between">
+                      {imgs.length === 0 && <span className="text-sm font-extrabold text-primary">{formatPrice(p.price)}</span>}
+                      <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${p.stock > 0 ? 'bg-accent/10 text-accent' : 'bg-destructive/10 text-destructive'}`}>
+                        {p.stock > 0 ? `✓ Stok: ${p.stock}` : '✗ Habis'}
+                      </span>
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
           </div>
         )}
 
@@ -431,19 +511,11 @@ const Index = () => {
                   </div>
                   <p className="text-sm font-medium">Masukkan Kode Voucher</p>
                   <p className="text-xs text-muted-foreground mt-0.5">Pisahkan dengan <span className="font-mono font-bold text-primary">|</span> atau Enter untuk banyak kode</p>
-                  <p className="text-[10px] text-muted-foreground mt-1">Contoh: JXPIBAIF86H686UU | KJ8HG86JG679AB</p>
                 </div>
                 <div className="space-y-3">
-                  <Textarea
-                    placeholder="KODE1 | KODE2 | KODE3"
-                    value={tokenInput}
-                    onChange={(e) => setTokenInput(e.target.value.toUpperCase())}
-                    className="font-mono text-center text-sm tracking-wider uppercase border-2 border-primary/20 focus:border-primary min-h-[60px]"
-                    rows={2}
-                  />
-                  <p className="text-xs text-muted-foreground text-center">
-                    {parseCodes(tokenInput).length > 0 && `${parseCodes(tokenInput).length} kode terdeteksi`}
-                  </p>
+                  <Textarea placeholder="KODE1 | KODE2 | KODE3" value={tokenInput} onChange={(e) => setTokenInput(e.target.value.toUpperCase())}
+                    className="font-mono text-center text-sm tracking-wider uppercase border-2 border-primary/20 focus:border-primary min-h-[60px]" rows={2} />
+                  <p className="text-xs text-muted-foreground text-center">{parseCodes(tokenInput).length > 0 && `${parseCodes(tokenInput).length} kode terdeteksi`}</p>
                   <Button onClick={handleClaim} disabled={claiming || !tokenInput.trim()} className="w-full h-11 bg-gradient-to-r from-primary to-primary/80 shadow-lg font-bold text-base gap-2">
                     {claiming ? <span className="animate-pulse">Memproses...</span> : <><CheckCircle2 className="w-5 h-5" /> Klaim Sekarang</>}
                   </Button>
@@ -451,10 +523,8 @@ const Index = () => {
               </CardContent>
             </Card>
 
-            {/* Claim Results */}
             {claimResults.length > 0 && (
               <div className="space-y-3">
-                {/* Total */}
                 <Card className="bg-gradient-to-r from-accent/10 to-primary/10 border-accent/30">
                   <CardContent className="p-4 text-center">
                     <p className="text-xs text-muted-foreground font-medium">Total Harga</p>
@@ -466,8 +536,7 @@ const Index = () => {
                 {claimResults.map((result, ri) => (
                   <Card key={ri} className="border-2 border-accent/40 shadow-xl overflow-hidden">
                     <div className="bg-gradient-to-r from-accent to-accent/70 p-3 text-accent-foreground flex items-center gap-2">
-                      <CheckCircle2 className="w-5 h-5" />
-                      <span className="font-bold text-sm">Voucher Berhasil Diklaim!</span>
+                      <CheckCircle2 className="w-5 h-5" /><span className="font-bold text-sm">Voucher Berhasil Diklaim!</span>
                     </div>
                     <CardContent className="p-4 space-y-3">
                       <div className="flex items-center gap-3">
@@ -510,12 +579,27 @@ const Index = () => {
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-extrabold flex items-center gap-2"><Clock className="w-5 h-5 text-primary" /> Riwayat Klaim</h2>
-              {history.length > 0 && (
-                <Button size="sm" variant="outline" onClick={downloadHistoryPDF} className="gap-1.5 rounded-full border-primary/30 text-primary hover:bg-primary/10">
-                  <Download className="w-3.5 h-3.5" /> PDF
-                </Button>
-              )}
             </div>
+
+            {history.length > 0 && (
+              <>
+                {/* Select all + download buttons */}
+                <div className="flex items-center justify-between">
+                  <label className="flex items-center gap-2 text-xs cursor-pointer">
+                    <Checkbox checked={selectedHistoryIds.size === history.length} onCheckedChange={toggleSelectAll} />
+                    <span className="text-muted-foreground">Pilih Semua ({selectedHistoryIds.size}/{history.length})</span>
+                  </label>
+                  <div className="flex gap-2">
+                    <Button size="sm" variant="outline" onClick={downloadHistoryPDF} className="gap-1 rounded-full border-primary/30 text-primary hover:bg-primary/10 text-xs">
+                      <Download className="w-3 h-3" /> PDF
+                    </Button>
+                    <Button size="sm" variant="outline" onClick={downloadHistoryTXT} className="gap-1 rounded-full border-accent/30 text-accent hover:bg-accent/10 text-xs">
+                      <FileText className="w-3 h-3" /> TXT
+                    </Button>
+                  </div>
+                </div>
+              </>
+            )}
 
             {history.length === 0 && (
               <div className="text-center py-16 text-muted-foreground">
@@ -525,19 +609,27 @@ const Index = () => {
               </div>
             )}
 
-            {history.map((h, idx) => {
+            {paginatedHistory.map((h, idx) => {
               const deviceSummary = h.device_info ? getDeviceSummary(h.device_info) : "Tidak diketahui";
+              const globalIdx = (historyPage - 1) * HISTORY_PER_PAGE + idx;
               return (
-                <Card key={`${h.id}-${idx}`} className="overflow-hidden hover:shadow-lg transition-all duration-200 border-border/50">
+                <Card key={`${h.id}-${globalIdx}`} className="overflow-hidden hover:shadow-lg transition-all duration-200 border-border/50">
                   <div className="bg-gradient-to-r from-primary/10 to-accent/10 px-4 py-2 flex items-center justify-between">
-                    <span className="text-xs font-bold text-primary">#{idx + 1}</span>
+                    <div className="flex items-center gap-2">
+                      <Checkbox checked={selectedHistoryIds.has(h.id)} onCheckedChange={() => toggleHistorySelect(h.id)} />
+                      <span className="text-xs font-bold text-primary">#{globalIdx + 1}</span>
+                    </div>
                     <span className="text-[10px] font-mono text-muted-foreground bg-background/80 px-2 py-0.5 rounded-full">{h.token_code}</span>
                   </div>
                   <CardContent className="p-4 space-y-2.5">
                     <div className="flex items-center gap-3">
-                      <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center shadow-sm">
-                        <Crown className="w-4 h-4 text-primary-foreground" />
-                      </div>
+                      {h.product_image ? (
+                        <img src={h.product_image} className="w-9 h-9 rounded-xl object-cover" alt="" />
+                      ) : (
+                        <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center shadow-sm">
+                          <Crown className="w-4 h-4 text-primary-foreground" />
+                        </div>
+                      )}
                       <div>
                         <h3 className="font-bold text-sm">{h.product_title}</h3>
                         <p className="text-[10px] text-muted-foreground">{new Date(h.claimed_at).toLocaleString("id-ID")}</p>
@@ -573,57 +665,71 @@ const Index = () => {
                 </Card>
               );
             })}
+
+            {/* Pagination */}
+            {totalHistoryPages > 1 && (
+              <div className="flex items-center justify-center gap-3">
+                <Button variant="outline" size="icon" disabled={historyPage <= 1} onClick={() => setHistoryPage(p => p - 1)}>
+                  <ChevronLeft className="w-4 h-4" />
+                </Button>
+                <span className="text-sm text-muted-foreground">{historyPage} / {totalHistoryPages}</span>
+                <Button variant="outline" size="icon" disabled={historyPage >= totalHistoryPages} onClick={() => setHistoryPage(p => p + 1)}>
+                  <ChevronRight className="w-4 h-4" />
+                </Button>
+              </div>
+            )}
           </div>
         )}
       </main>
 
       {/* Product Detail Modal */}
-      {selectedProduct && (
-        <div className="fixed inset-0 z-[60] bg-black/60 backdrop-blur-sm flex items-end justify-center" onClick={() => setSelectedProduct(null)}>
-          <div className="bg-card w-full max-w-lg rounded-t-3xl max-h-[85vh] overflow-y-auto animate-in slide-in-from-bottom duration-300" onClick={e => e.stopPropagation()}>
-            {selectedProduct.image_url && <img src={selectedProduct.image_url} alt={selectedProduct.title} className="w-full h-56 object-cover" />}
-            <div className="p-5 space-y-4">
-              <div className="flex items-start justify-between">
-                <div>
-                  <h2 className="text-xl font-extrabold">{selectedProduct.title}</h2>
-                  {selectedProduct.category && <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">{selectedProduct.category}</span>}
+      {selectedProduct && (() => {
+        const imgs = getProductImages(selectedProduct.id);
+        return (
+          <div className="fixed inset-0 z-[60] bg-black/60 backdrop-blur-sm flex items-end justify-center" onClick={() => setSelectedProduct(null)}>
+            <div className="bg-card w-full max-w-lg rounded-t-3xl max-h-[85vh] overflow-y-auto animate-in slide-in-from-bottom duration-300" onClick={e => e.stopPropagation()}>
+              {imgs.length > 0 && <ImageCarousel images={imgs} className="w-full h-56" />}
+              <div className="p-5 space-y-4">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <h2 className="text-xl font-extrabold">{selectedProduct.title}</h2>
+                    {selectedProduct.category && <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">{selectedProduct.category}</span>}
+                  </div>
+                  <button onClick={() => setSelectedProduct(null)} className="w-8 h-8 rounded-full bg-muted flex items-center justify-center"><X className="w-4 h-4" /></button>
                 </div>
-                <button onClick={() => setSelectedProduct(null)} className="w-8 h-8 rounded-full bg-muted flex items-center justify-center"><X className="w-4 h-4" /></button>
-              </div>
-              <p className="text-2xl font-extrabold text-primary">{formatPrice(selectedProduct.price)}</p>
-              {selectedProduct.description && <p className="text-sm text-muted-foreground leading-relaxed">{selectedProduct.description}</p>}
-              <div className="flex items-center gap-2">
-                <span className={`text-xs px-3 py-1.5 rounded-full font-medium ${selectedProduct.stock > 0 ? 'bg-accent/10 text-accent' : 'bg-destructive/10 text-destructive'}`}>
-                  {selectedProduct.stock > 0 ? `✓ Stok: ${selectedProduct.stock}` : '✗ Habis'}
-                </span>
-              </div>
-              <Button className="w-full h-12 bg-gradient-to-r from-accent to-accent/80 text-accent-foreground shadow-lg font-bold text-base gap-2 rounded-xl" asChild>
-                <a href={`${SOCIAL_LINKS.whatsapp}?text=${encodeURIComponent(`Halo, saya mau beli: ${selectedProduct.title} (${formatPrice(selectedProduct.price)})`)}`} target="_blank" rel="noopener noreferrer">
-                  <MessageCircle className="w-5 h-5" /> Beli via WhatsApp
-                </a>
-              </Button>
-
-              {/* Socmed info */}
-              <div className="border-t border-border pt-4 space-y-2">
-                <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Hubungi Kami</p>
-                <div className="space-y-1.5">
-                  {[
-                    { label: `WA: ${WA_NUMBER}`, href: SOCIAL_LINKS.whatsapp },
-                    { label: `YouTube: ${YOUTUBE_NAME}`, href: SOCIAL_LINKS.youtube },
-                    { label: "Twitter: @agungadi981", href: SOCIAL_LINKS.twitter },
-                    { label: "Instagram: @agungadi57", href: SOCIAL_LINKS.instagram },
-                    { label: "TikTok: @pphitampro9", href: SOCIAL_LINKS.tiktok },
-                  ].map(s => (
-                    <a key={s.label} href={s.href} target="_blank" rel="noopener noreferrer" className="text-xs text-primary hover:underline flex items-center gap-1.5">
-                      <ExternalLink className="w-3 h-3" /> {s.label}
-                    </a>
-                  ))}
+                <p className="text-2xl font-extrabold text-primary">{formatPrice(selectedProduct.price)}</p>
+                {selectedProduct.description && <p className="text-sm text-muted-foreground leading-relaxed">{selectedProduct.description}</p>}
+                <div className="flex items-center gap-2">
+                  <span className={`text-xs px-3 py-1.5 rounded-full font-medium ${selectedProduct.stock > 0 ? 'bg-accent/10 text-accent' : 'bg-destructive/10 text-destructive'}`}>
+                    {selectedProduct.stock > 0 ? `✓ Stok: ${selectedProduct.stock}` : '✗ Habis'}
+                  </span>
+                </div>
+                <Button className="w-full h-12 bg-gradient-to-r from-accent to-accent/80 text-accent-foreground shadow-lg font-bold text-base gap-2 rounded-xl" asChild>
+                  <a href={`${SOCIAL_LINKS.whatsapp}?text=${encodeURIComponent(`Halo, saya mau beli: ${selectedProduct.title} (${formatPrice(selectedProduct.price)})`)}`} target="_blank" rel="noopener noreferrer">
+                    <MessageCircle className="w-5 h-5" /> Beli via WhatsApp
+                  </a>
+                </Button>
+                <div className="border-t border-border pt-4 space-y-2">
+                  <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Hubungi Kami</p>
+                  <div className="space-y-1.5">
+                    {[
+                      { label: `WA: ${WA_NUMBER}`, href: SOCIAL_LINKS.whatsapp },
+                      { label: `YouTube: ${YOUTUBE_NAME}`, href: SOCIAL_LINKS.youtube },
+                      { label: "Twitter: @agungadi981", href: SOCIAL_LINKS.twitter },
+                      { label: "Instagram: @agungadi57", href: SOCIAL_LINKS.instagram },
+                      { label: "TikTok: @pphitampro9", href: SOCIAL_LINKS.tiktok },
+                    ].map(s => (
+                      <a key={s.label} href={s.href} target="_blank" rel="noopener noreferrer" className="text-xs text-primary hover:underline flex items-center gap-1.5">
+                        <ExternalLink className="w-3 h-3" /> {s.label}
+                      </a>
+                    ))}
+                  </div>
                 </div>
               </div>
             </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* Help Center Modal */}
       {showHelp && (
@@ -635,21 +741,8 @@ const Index = () => {
             </div>
             <div className="space-y-3 text-sm text-muted-foreground">
               <p><strong>Cara order:</strong> Pilih produk → Chat WA → Bayar → Dapat kode voucher → Klaim di tab Voucher</p>
-              <p><strong>Cara klaim:</strong> Masukkan kode voucher (bisa banyak sekaligus pakai | pemisah), klik Klaim.</p>
-              <p><strong>Masalah?</strong> Hubungi admin lewat WA atau sosial media di bawah.</p>
-            </div>
-            <div className="space-y-2">
-              {[
-                { label: `WhatsApp: ${WA_NUMBER}`, href: SOCIAL_LINKS.whatsapp },
-                { label: `YouTube: ${YOUTUBE_NAME}`, href: SOCIAL_LINKS.youtube },
-                { label: "Twitter: @agungadi981", href: SOCIAL_LINKS.twitter },
-                { label: "Instagram: @agungadi57", href: SOCIAL_LINKS.instagram },
-                { label: "TikTok: @pphitampro9", href: SOCIAL_LINKS.tiktok },
-              ].map(s => (
-                <a key={s.label} href={s.href} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-xs text-primary hover:underline">
-                  <ExternalLink className="w-3 h-3" /> {s.label}
-                </a>
-              ))}
+              <p><strong>Cara klaim:</strong> Masukkan kode voucher, klik Klaim.</p>
+              <p><strong>Masalah?</strong> Hubungi admin lewat WA.</p>
             </div>
           </div>
         </div>

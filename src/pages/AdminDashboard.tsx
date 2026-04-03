@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Trash2, LogOut, Package, Ticket, Copy, Image, Edit2, X, Smartphone, Clock } from "lucide-react";
+import { Plus, Trash2, LogOut, Package, Ticket, Copy, Image, Edit2, X, Smartphone, Clock, ChevronLeft, ChevronRight, Search } from "lucide-react";
 import { generateVoucherCode } from "@/lib/voucher-code";
 import { getDeviceSummary } from "@/lib/device-info";
 
@@ -18,6 +18,13 @@ interface Product {
   stock: number;
   image_url: string | null;
   category: string | null;
+}
+
+interface ProductImage {
+  id: string;
+  product_id: string;
+  image_url: string;
+  image_order: number;
 }
 
 interface ProductField {
@@ -44,10 +51,12 @@ interface TokenClaim {
 }
 
 type AdminTab = "products" | "tokens" | "claims";
+type ClaimDateFilter = "all" | "today" | "yesterday" | "lastmonth" | "custom";
 
 const AdminDashboard = () => {
   const [tab, setTab] = useState<AdminTab>("products");
   const [products, setProducts] = useState<Product[]>([]);
+  const [productImages, setProductImages] = useState<ProductImage[]>([]);
   const [fields, setFields] = useState<ProductField[]>([]);
   const [tokens, setTokens] = useState<Token[]>([]);
   const [claims, setClaims] = useState<TokenClaim[]>([]);
@@ -60,15 +69,21 @@ const AdminDashboard = () => {
   const [stock, setStock] = useState("1");
   const [category, setCategory] = useState("");
   const [newFields, setNewFields] = useState<string[]>(["Email", "Password", "No HP", "A2F"]);
-  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imageFiles, setImageFiles] = useState<File[]>([]);
+  const [productSearch, setProductSearch] = useState("");
 
   // Token form
   const [selProduct, setSelProduct] = useState("");
   const [tokenFieldValues, setTokenFieldValues] = useState<Record<string, string>>({});
   const [tokenCount, setTokenCount] = useState("1");
 
-  // Sort
+  // Claims
   const [claimSort, setClaimSort] = useState<"newest" | "oldest">("newest");
+  const [claimDateFilter, setClaimDateFilter] = useState<ClaimDateFilter>("all");
+  const [customDateFrom, setCustomDateFrom] = useState("");
+  const [customDateTo, setCustomDateTo] = useState("");
+  const [claimPage, setClaimPage] = useState(1);
+  const CLAIMS_PER_PAGE = 5;
 
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -84,16 +99,25 @@ const AdminDashboard = () => {
   }
 
   async function fetchAll() {
-    const [pRes, fRes, tRes, cRes] = await Promise.all([
+    const [pRes, piRes, fRes, tRes, cRes] = await Promise.all([
       supabase.from("products").select("*").order("created_at", { ascending: false }),
+      supabase.from("product_images").select("*").order("image_order"),
       supabase.from("product_fields").select("*").order("field_order"),
       supabase.from("tokens").select("*").order("created_at", { ascending: false }),
       supabase.from("token_claims").select("*").order("claimed_at", { ascending: false }),
     ]);
     if (pRes.data) setProducts(pRes.data as Product[]);
+    if (piRes.data) setProductImages(piRes.data as ProductImage[]);
     if (fRes.data) setFields(fRes.data);
     if (tRes.data) setTokens(tRes.data);
     if (cRes.data) setClaims(cRes.data);
+  }
+
+  function getProductImages(productId: string): string[] {
+    const imgs = productImages.filter(i => i.product_id === productId).map(i => i.image_url);
+    const product = products.find(p => p.id === productId);
+    if (imgs.length === 0 && product?.image_url) return [product.image_url];
+    return imgs;
   }
 
   function startEdit(p: Product) {
@@ -104,7 +128,7 @@ const AdminDashboard = () => {
     setStock(String(p.stock));
     setCategory(p.category || "");
     setNewFields(fields.filter(f => f.product_id === p.id).map(f => f.field_name));
-    setImageFile(null);
+    setImageFiles([]);
   }
 
   function resetForm() {
@@ -115,27 +139,28 @@ const AdminDashboard = () => {
     setStock("1");
     setCategory("");
     setNewFields(["Email", "Password", "No HP", "A2F"]);
-    setImageFile(null);
+    setImageFiles([]);
   }
 
-  async function uploadImage(): Promise<string | null> {
-    if (!imageFile) return null;
-    const ext = imageFile.name.split(".").pop();
-    const path = `${Date.now()}.${ext}`;
-    const { error } = await supabase.storage.from("product-images").upload(path, imageFile);
-    if (!error) {
-      const { data: urlData } = supabase.storage.from("product-images").getPublicUrl(path);
-      return urlData.publicUrl;
+  async function uploadImages(): Promise<string[]> {
+    const urls: string[] = [];
+    for (const file of imageFiles) {
+      const ext = file.name.split(".").pop();
+      const path = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+      const { error } = await supabase.storage.from("product-images").upload(path, file);
+      if (!error) {
+        const { data: urlData } = supabase.storage.from("product-images").getPublicUrl(path);
+        urls.push(urlData.publicUrl);
+      }
     }
-    return null;
+    return urls;
   }
 
   async function handleSaveProduct(e: React.FormEvent) {
     e.preventDefault();
-    const image_url = await uploadImage();
+    const uploadedUrls = await uploadImages();
 
     if (editingProduct) {
-      // Update existing
       const updateData: Record<string, unknown> = {
         title,
         description: desc || null,
@@ -143,11 +168,23 @@ const AdminDashboard = () => {
         stock: parseInt(stock) || 0,
         category: category || null,
       };
-      if (image_url) updateData.image_url = image_url;
+      if (uploadedUrls.length > 0) updateData.image_url = uploadedUrls[0];
 
       await supabase.from("products").update(updateData).eq("id", editingProduct.id);
 
-      // Update fields: delete old, insert new
+      // Add new images to product_images table
+      if (uploadedUrls.length > 0) {
+        const existingImgs = productImages.filter(i => i.product_id === editingProduct.id);
+        const startOrder = existingImgs.length;
+        const imgInserts = uploadedUrls.map((url, i) => ({
+          product_id: editingProduct.id,
+          image_url: url,
+          image_order: startOrder + i,
+        }));
+        await supabase.from("product_images").insert(imgInserts);
+      }
+
+      // Update fields
       await supabase.from("product_fields").delete().eq("product_id", editingProduct.id);
       const fieldInserts = newFields.filter(Boolean).map((name, i) => ({
         product_id: editingProduct.id,
@@ -158,19 +195,28 @@ const AdminDashboard = () => {
 
       toast({ title: "Produk diperbarui!" });
     } else {
-      // Create new
       const { data: product, error } = await supabase.from("products").insert({
         title,
         description: desc || null,
         price: parseInt(price) || 0,
         stock: parseInt(stock) || 0,
-        image_url,
+        image_url: uploadedUrls[0] || null,
         category: category || null,
       }).select().single();
 
       if (error || !product) {
         toast({ title: "Gagal menambah produk", variant: "destructive" });
         return;
+      }
+
+      // Save images to product_images table
+      if (uploadedUrls.length > 0) {
+        const imgInserts = uploadedUrls.map((url, i) => ({
+          product_id: product.id,
+          image_url: url,
+          image_order: i,
+        }));
+        await supabase.from("product_images").insert(imgInserts);
       }
 
       const fieldInserts = newFields.filter(Boolean).map((name, i) => ({
@@ -188,8 +234,15 @@ const AdminDashboard = () => {
   }
 
   async function handleDeleteProduct(id: string) {
+    await supabase.from("product_images").delete().eq("product_id", id);
     await supabase.from("products").delete().eq("id", id);
     toast({ title: "Produk dihapus" });
+    fetchAll();
+  }
+
+  async function handleDeleteProductImage(imgId: string) {
+    await supabase.from("product_images").delete().eq("id", imgId);
+    toast({ title: "Foto dihapus" });
     fetchAll();
   }
 
@@ -233,6 +286,12 @@ const AdminDashboard = () => {
     fetchAll();
   }
 
+  async function handleDeleteClaim(id: string) {
+    await supabase.from("token_claims").delete().eq("id", id);
+    toast({ title: "Klaim dihapus" });
+    fetchAll();
+  }
+
   async function handleLogout() {
     await supabase.auth.signOut();
     navigate("/admin/login");
@@ -245,11 +304,54 @@ const AdminDashboard = () => {
 
   const selectedProductFields = fields.filter(f => f.product_id === selProduct);
 
-  const sortedClaims = [...claims].sort((a, b) =>
-    claimSort === "newest"
-      ? new Date(b.claimed_at).getTime() - new Date(a.claimed_at).getTime()
-      : new Date(a.claimed_at).getTime() - new Date(b.claimed_at).getTime()
+  // Filter products by search
+  const filteredProducts = products.filter(p =>
+    p.title.toLowerCase().includes(productSearch.toLowerCase()) ||
+    (p.category || "").toLowerCase().includes(productSearch.toLowerCase())
   );
+
+  // Filter claims by date
+  function getFilteredClaims() {
+    let filtered = [...claims];
+    const now = new Date();
+
+    if (claimDateFilter === "today") {
+      const start = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      filtered = filtered.filter(c => new Date(c.claimed_at) >= start);
+    } else if (claimDateFilter === "yesterday") {
+      const start = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1);
+      const end = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      filtered = filtered.filter(c => {
+        const d = new Date(c.claimed_at);
+        return d >= start && d < end;
+      });
+    } else if (claimDateFilter === "lastmonth") {
+      const start = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+      const end = new Date(now.getFullYear(), now.getMonth(), 1);
+      filtered = filtered.filter(c => {
+        const d = new Date(c.claimed_at);
+        return d >= start && d < end;
+      });
+    } else if (claimDateFilter === "custom" && customDateFrom && customDateTo) {
+      const start = new Date(customDateFrom);
+      const end = new Date(customDateTo);
+      end.setDate(end.getDate() + 1);
+      filtered = filtered.filter(c => {
+        const d = new Date(c.claimed_at);
+        return d >= start && d < end;
+      });
+    }
+
+    return filtered.sort((a, b) =>
+      claimSort === "newest"
+        ? new Date(b.claimed_at).getTime() - new Date(a.claimed_at).getTime()
+        : new Date(a.claimed_at).getTime() - new Date(b.claimed_at).getTime()
+    );
+  }
+
+  const filteredClaims = getFilteredClaims();
+  const totalClaimPages = Math.ceil(filteredClaims.length / CLAIMS_PER_PAGE);
+  const paginatedClaims = filteredClaims.slice((claimPage - 1) * CLAIMS_PER_PAGE, claimPage * CLAIMS_PER_PAGE);
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -294,10 +396,31 @@ const AdminDashboard = () => {
                     <Input placeholder="Stok" type="number" value={stock} onChange={e => setStock(e.target.value)} />
                   </div>
                   <div>
-                    <label className="text-xs text-muted-foreground flex items-center gap-1 mb-1"><Image className="w-3 h-3" /> Foto Produk</label>
-                    <Input type="file" accept="image/*" onChange={e => setImageFile(e.target.files?.[0] || null)} />
-                    {editingProduct?.image_url && !imageFile && (
-                      <img src={editingProduct.image_url} className="w-16 h-16 rounded mt-2 object-cover" alt="" />
+                    <label className="text-xs text-muted-foreground flex items-center gap-1 mb-1"><Image className="w-3 h-3" /> Foto Produk (bisa banyak)</label>
+                    <Input type="file" accept="image/*" multiple onChange={e => {
+                      const files = e.target.files;
+                      if (files) setImageFiles(Array.from(files));
+                    }} />
+                    {imageFiles.length > 0 && (
+                      <p className="text-xs text-muted-foreground mt-1">{imageFiles.length} foto dipilih</p>
+                    )}
+                    {/* Show existing images when editing */}
+                    {editingProduct && (
+                      <div className="flex gap-2 mt-2 flex-wrap">
+                        {getProductImages(editingProduct.id).map((url, i) => {
+                          const imgRecord = productImages.find(pi => pi.image_url === url);
+                          return (
+                            <div key={i} className="relative">
+                              <img src={url} className="w-16 h-16 rounded object-cover" alt="" />
+                              {imgRecord && (
+                                <button type="button" onClick={() => handleDeleteProductImage(imgRecord.id)} className="absolute -top-1 -right-1 w-5 h-5 bg-destructive text-destructive-foreground rounded-full flex items-center justify-center">
+                                  <X className="w-3 h-3" />
+                                </button>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
                     )}
                   </div>
                   <div className="space-y-2">
@@ -315,26 +438,36 @@ const AdminDashboard = () => {
               </CardContent>
             </Card>
 
+            {/* Search */}
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input placeholder="Cari produk..." value={productSearch} onChange={e => setProductSearch(e.target.value)} className="pl-9" />
+            </div>
+
             <div className="space-y-3">
-              <h3 className="font-bold text-sm">Daftar Produk ({products.length})</h3>
-              {products.map(p => (
-                <Card key={p.id}>
-                  <CardContent className="p-3 flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      {p.image_url && <img src={p.image_url} className="w-10 h-10 rounded object-cover" alt="" />}
-                      <div>
-                        <p className="font-semibold text-sm">{p.title}</p>
-                        <p className="text-xs text-muted-foreground">Rp {p.price.toLocaleString()} • Stok: {p.stock}</p>
-                        {p.category && <p className="text-[10px] text-primary bg-primary/10 px-1.5 py-0.5 rounded-full inline-block">{p.category}</p>}
+              <h3 className="font-bold text-sm">Daftar Produk ({filteredProducts.length})</h3>
+              {filteredProducts.map(p => {
+                const imgs = getProductImages(p.id);
+                return (
+                  <Card key={p.id}>
+                    <CardContent className="p-3 flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        {imgs.length > 0 && <img src={imgs[0]} className="w-10 h-10 rounded object-cover" alt="" />}
+                        <div>
+                          <p className="font-semibold text-sm">{p.title}</p>
+                          <p className="text-xs text-muted-foreground">Rp {p.price.toLocaleString()} • Stok: {p.stock}</p>
+                          {p.category && <p className="text-[10px] text-primary bg-primary/10 px-1.5 py-0.5 rounded-full inline-block">{p.category}</p>}
+                          {imgs.length > 1 && <p className="text-[10px] text-muted-foreground">{imgs.length} foto</p>}
+                        </div>
                       </div>
-                    </div>
-                    <div className="flex gap-1">
-                      <Button variant="ghost" size="icon" onClick={() => startEdit(p)}><Edit2 className="w-4 h-4 text-primary" /></Button>
-                      <Button variant="ghost" size="icon" onClick={() => handleDeleteProduct(p.id)}><Trash2 className="w-4 h-4 text-destructive" /></Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+                      <div className="flex gap-1">
+                        <Button variant="ghost" size="icon" onClick={() => startEdit(p)}><Edit2 className="w-4 h-4 text-primary" /></Button>
+                        <Button variant="ghost" size="icon" onClick={() => handleDeleteProduct(p.id)}><Trash2 className="w-4 h-4 text-destructive" /></Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
             </div>
           </>
         )}
@@ -398,27 +531,57 @@ const AdminDashboard = () => {
         {tab === "claims" && (
           <>
             <div className="flex items-center justify-between">
-              <h3 className="font-bold text-sm">Riwayat Klaim ({claims.length})</h3>
+              <h3 className="font-bold text-sm">Riwayat Klaim ({filteredClaims.length})</h3>
               <div className="flex gap-2">
                 <button onClick={() => setClaimSort("newest")} className={`text-xs px-3 py-1 rounded-full ${claimSort === "newest" ? "bg-primary/10 text-primary font-bold" : "text-muted-foreground"}`}>Terbaru</button>
                 <button onClick={() => setClaimSort("oldest")} className={`text-xs px-3 py-1 rounded-full ${claimSort === "oldest" ? "bg-primary/10 text-primary font-bold" : "text-muted-foreground"}`}>Terlama</button>
               </div>
             </div>
+
+            {/* Date filter */}
+            <div className="flex gap-1.5 flex-wrap">
+              {([
+                { key: "all" as ClaimDateFilter, label: "Semua" },
+                { key: "today" as ClaimDateFilter, label: "Hari Ini" },
+                { key: "yesterday" as ClaimDateFilter, label: "Kemarin" },
+                { key: "lastmonth" as ClaimDateFilter, label: "Bulan Lalu" },
+                { key: "custom" as ClaimDateFilter, label: "Custom" },
+              ]).map(({ key, label }) => (
+                <button key={key} onClick={() => { setClaimDateFilter(key); setClaimPage(1); }}
+                  className={`text-xs px-3 py-1.5 rounded-full transition-all ${claimDateFilter === key ? "bg-primary text-primary-foreground font-bold" : "bg-muted text-muted-foreground"}`}>
+                  {label}
+                </button>
+              ))}
+            </div>
+            {claimDateFilter === "custom" && (
+              <div className="grid grid-cols-2 gap-2">
+                <Input type="date" value={customDateFrom} onChange={e => { setCustomDateFrom(e.target.value); setClaimPage(1); }} />
+                <Input type="date" value={customDateTo} onChange={e => { setCustomDateTo(e.target.value); setClaimPage(1); }} />
+              </div>
+            )}
+
             <div className="space-y-3">
-              {sortedClaims.map(c => {
+              {paginatedClaims.map(c => {
                 const token = tokens.find(t => t.id === c.token_id);
                 const prod = token ? products.find(p => p.id === token.product_id) : null;
                 const deviceSummary = c.device_info ? getDeviceSummary(c.device_info) : "Tidak diketahui";
+                const prodImgs = prod ? getProductImages(prod.id) : [];
 
                 return (
                   <Card key={c.id}>
                     <CardContent className="p-3 space-y-2">
                       <div className="flex items-center justify-between">
-                        <div>
-                          <p className="font-semibold text-sm">{prod?.title || "?"}</p>
-                          <p className="font-mono text-xs text-muted-foreground">{token?.token_code || "?"}</p>
+                        <div className="flex items-center gap-2">
+                          {prodImgs.length > 0 && <img src={prodImgs[0]} className="w-8 h-8 rounded object-cover" alt="" />}
+                          <div>
+                            <p className="font-semibold text-sm">{prod?.title || "?"}</p>
+                            <p className="font-mono text-xs text-muted-foreground">{token?.token_code || "?"}</p>
+                          </div>
                         </div>
-                        <span className="text-[10px] text-muted-foreground">{new Date(c.claimed_at).toLocaleString("id-ID")}</span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-[10px] text-muted-foreground">{new Date(c.claimed_at).toLocaleString("id-ID")}</span>
+                          <button onClick={() => handleDeleteClaim(c.id)}><Trash2 className="w-4 h-4 text-destructive/60 hover:text-destructive" /></button>
+                        </div>
                       </div>
                       <div className="flex items-center gap-2 text-xs text-muted-foreground bg-muted/50 rounded-lg p-2">
                         <Smartphone className="w-3.5 h-3.5 shrink-0" />
@@ -428,8 +591,21 @@ const AdminDashboard = () => {
                   </Card>
                 );
               })}
-              {sortedClaims.length === 0 && <p className="text-center text-sm text-muted-foreground py-8">Belum ada riwayat klaim</p>}
+              {paginatedClaims.length === 0 && <p className="text-center text-sm text-muted-foreground py-8">Tidak ada riwayat klaim</p>}
             </div>
+
+            {/* Pagination */}
+            {totalClaimPages > 1 && (
+              <div className="flex items-center justify-center gap-3">
+                <Button variant="outline" size="icon" disabled={claimPage <= 1} onClick={() => setClaimPage(p => p - 1)}>
+                  <ChevronLeft className="w-4 h-4" />
+                </Button>
+                <span className="text-sm text-muted-foreground">{claimPage} / {totalClaimPages}</span>
+                <Button variant="outline" size="icon" disabled={claimPage >= totalClaimPages} onClick={() => setClaimPage(p => p + 1)}>
+                  <ChevronRight className="w-4 h-4" />
+                </Button>
+              </div>
+            )}
           </>
         )}
       </main>
