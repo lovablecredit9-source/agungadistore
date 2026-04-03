@@ -1,84 +1,21 @@
-// Collect device info using modern API + fallback
-export async function collectDeviceInfo(): Promise<{
-  device: string;
-  os: string;
-  browser: string;
-  raw: string;
-}> {
-  const ua = navigator.userAgent;
+type StoredDeviceInfo = {
+  type?: string;
+  source?: "ua-data" | "reduced-ua" | "ua";
+  device?: string;
+  os?: string;
+  browser?: string;
+  ua?: string;
+  model?: string;
+  platform?: string;
+  platformVersion?: string;
+  brands?: Array<{ brand?: string; version?: string }>;
+  mobile?: boolean;
+};
 
-  // Try modern API first (Chrome/Edge 90+)
-  if ("userAgentData" in navigator && (navigator as any).userAgentData) {
-    try {
-      const uaData = (navigator as any).userAgentData;
-      const hints = await uaData.getHighEntropyValues([
-        "model",
-        "platform",
-        "platformVersion",
-        "fullVersionList",
-      ]);
-
-      const platform = hints.platform || uaData.platform || "Unknown";
-      const platformVersion = hints.platformVersion || "";
-      const model = hints.model || "";
-
-      // OS
-      let os = platform;
-      if (platformVersion) {
-        if (platform === "Android") {
-          os = `Android ${platformVersion}`;
-        } else if (platform === "Windows") {
-          // Windows NT version mapping
-          const major = parseInt(platformVersion.split(".")[0], 10);
-          if (major >= 13) os = "Windows 11";
-          else os = "Windows 10";
-        } else if (platform === "macOS" || platform === "Chrome OS") {
-          os = `${platform} ${platformVersion}`;
-        } else {
-          os = `${platform} ${platformVersion}`;
-        }
-      }
-
-      // Device name
-      let device = "Unknown";
-      if (uaData.mobile) {
-        device = model && model.length > 1 ? model : "Smartphone";
-      } else {
-        device = "Desktop/Laptop";
-      }
-
-      // Browser from fullVersionList
-      let browser = "Unknown";
-      const versionList: { brand: string; version: string }[] =
-        hints.fullVersionList || uaData.brands || [];
-      // Filter out "Not" brands (Chromium uses fake brands like "Not_A Brand")
-      const realBrands = versionList.filter(
-        (b: { brand: string }) => !b.brand.startsWith("Not") && b.brand !== "Chromium"
-      );
-      if (realBrands.length > 0) {
-        const b = realBrands[0];
-        browser = `${b.brand} ${b.version.split(".")[0]}`;
-      } else {
-        browser = parseBrowserFromUA(ua);
-      }
-
-      return {
-        device,
-        os,
-        browser,
-        raw: JSON.stringify({ model, platform, platformVersion, brands: realBrands, ua }),
-      };
-    } catch {
-      // Fall through to legacy parsing
-    }
-  }
-
-  // Fallback: parse user agent string
-  const parsed = parseDeviceInfoFromUA(ua);
-  return { ...parsed, raw: ua };
+function isReducedAndroidUA(ua: string): boolean {
+  return /Android 10; K/.test(ua);
 }
 
-// Parse browser name from UA string
 function parseBrowserFromUA(ua: string): string {
   if (/Edg\//.test(ua)) return "Edge";
   if (/OPR\/|Opera/.test(ua)) return "Opera";
@@ -89,18 +26,50 @@ function parseBrowserFromUA(ua: string): string {
   return "Unknown";
 }
 
-// Legacy UA string parser
-export function parseDeviceInfoFromUA(ua: string): { device: string; os: string; browser: string } {
+function pickBrowserBrand(brands: Array<{ brand?: string; version?: string }> = []): string {
+  const realBrand = brands.find((item) => {
+    const brand = item.brand || "";
+    return brand && !brand.startsWith("Not") && brand !== "Chromium";
+  });
+
+  return realBrand?.brand || "";
+}
+
+function formatOS(platform: string, platformVersion: string): string {
+  if (!platform) return "Unknown";
+
+  if (platform === "Android") {
+    return platformVersion ? `Android ${platformVersion}` : "Android";
+  }
+
+  if (platform === "Windows") {
+    const major = Number.parseInt(platformVersion.split(".")[0] || "0", 10);
+    if (major >= 13) return "Windows 11";
+    if (major > 0) return "Windows 10";
+    return "Windows";
+  }
+
+  if (platform === "iOS") {
+    return platformVersion ? `iOS ${platformVersion}` : "iOS";
+  }
+
+  if (platform === "macOS") {
+    return platformVersion ? `macOS ${platformVersion}` : "macOS";
+  }
+
+  return platformVersion ? `${platform} ${platformVersion}` : platform;
+}
+
+function parseDeviceInfoFromUA(ua: string): { device: string; os: string; browser: string } {
   let device = "Unknown";
   let os = "Unknown";
 
-  // OS
   if (/Android (\d+(\.\d+)?)/.test(ua)) {
-    const ver = ua.match(/Android (\d+(\.\d+)?)/)?.[1] || "";
-    os = `Android ${ver}`;
+    const version = ua.match(/Android (\d+(\.\d+)?)/)?.[1] || "";
+    os = version ? `Android ${version}` : "Android";
   } else if (/iPhone|iPad/.test(ua)) {
-    const ver = ua.match(/OS (\d+[_\d]*)/)?.[1]?.replace(/_/g, ".") || "";
-    os = `iOS ${ver}`;
+    const version = ua.match(/OS (\d+[_\d]*)/)?.[1]?.replace(/_/g, ".") || "";
+    os = version ? `iOS ${version}` : "iOS";
   } else if (/Windows NT/.test(ua)) {
     os = "Windows";
   } else if (/Mac OS X/.test(ua)) {
@@ -109,68 +78,138 @@ export function parseDeviceInfoFromUA(ua: string): { device: string; os: string;
     os = "Linux";
   }
 
-  // Device
   if (/iPhone/.test(ua)) {
     device = "iPhone";
   } else if (/iPad/.test(ua)) {
     device = "iPad";
+  } else if (/Tablet/.test(ua)) {
+    device = "Tablet";
   } else if (/Mobile|Android/.test(ua)) {
-    device = "Smartphone";
     const model = ua.match(/;\s*([^;)]+)\s*Build/)?.[1]?.trim();
-    if (model && model.length > 2 && !/^[A-Z]$/.test(model) && !/^Linux/.test(model)) {
+    if (model && model.length > 1 && model !== "K" && !/^Linux/i.test(model)) {
       device = model;
+    } else {
+      device = "Smartphone";
     }
   } else {
     device = "Desktop/Laptop";
   }
 
-  const browser = parseBrowserFromUA(ua);
-  return { device, os, browser };
+  return { device, os, browser: parseBrowserFromUA(ua) };
 }
 
-// Parse stored device info (could be JSON from modern API or raw UA string)
+function serializeStoredInfo(data: StoredDeviceInfo): string {
+  return JSON.stringify({ type: "device-info-v2", ...data });
+}
+
+export async function collectDeviceInfo(): Promise<{
+  device: string;
+  os: string;
+  browser: string;
+  raw: string;
+}> {
+  const ua = navigator.userAgent || "";
+  const uaData = (navigator as Navigator & {
+    userAgentData?: {
+      mobile?: boolean;
+      brands?: Array<{ brand?: string; version?: string }>;
+      platform?: string;
+      getHighEntropyValues?: (hints: string[]) => Promise<Record<string, unknown>>;
+    };
+  }).userAgentData;
+
+  if (uaData?.getHighEntropyValues) {
+    try {
+      const hints = await uaData.getHighEntropyValues([
+        "model",
+        "platform",
+        "platformVersion",
+        "fullVersionList",
+      ]);
+
+      const model = typeof hints.model === "string" ? hints.model.trim() : "";
+      const platform = typeof hints.platform === "string" ? hints.platform : uaData.platform || "Unknown";
+      const platformVersion = typeof hints.platformVersion === "string" ? hints.platformVersion : "";
+      const fullVersionList = Array.isArray(hints.fullVersionList)
+        ? (hints.fullVersionList as Array<{ brand?: string; version?: string }>)
+        : uaData.brands || [];
+
+      const browser = pickBrowserBrand(fullVersionList) || parseBrowserFromUA(ua);
+      const os = formatOS(platform, platformVersion);
+      const device = uaData.mobile ? (model || "Smartphone") : "Desktop/Laptop";
+
+      return {
+        device,
+        os,
+        browser,
+        raw: serializeStoredInfo({
+          source: "ua-data",
+          device,
+          os,
+          browser,
+          ua,
+          model,
+          platform,
+          platformVersion,
+          brands: fullVersionList,
+          mobile: Boolean(uaData.mobile),
+        }),
+      };
+    } catch {
+      // fallback below
+    }
+  }
+
+  const parsed = parseDeviceInfoFromUA(ua);
+  const reduced = isReducedAndroidUA(ua);
+
+  return {
+    device: reduced ? "Model HP tidak tersedia" : parsed.device,
+    os: reduced ? "Android (disamarkan browser)" : parsed.os,
+    browser: parsed.browser,
+    raw: serializeStoredInfo({
+      source: reduced ? "reduced-ua" : "ua",
+      device: reduced ? "Model HP tidak tersedia" : parsed.device,
+      os: reduced ? "Android (disamarkan browser)" : parsed.os,
+      browser: parsed.browser,
+      ua,
+    }),
+  };
+}
+
 export function parseDeviceInfo(stored: string): { device: string; os: string; browser: string } {
-  // Try JSON format first (from modern API)
   try {
-    const data = JSON.parse(stored);
-    if (data.model !== undefined && data.platform !== undefined) {
-      // It's our modern format
-      const platform = data.platform || "Unknown";
-      const platformVersion = data.platformVersion || "";
+    const parsed = JSON.parse(stored) as StoredDeviceInfo;
 
-      let os = platform;
-      if (platformVersion) {
-        if (platform === "Android") os = `Android ${platformVersion}`;
-        else if (platform === "Windows") {
-          const major = parseInt(platformVersion.split(".")[0], 10);
-          os = major >= 13 ? "Windows 11" : "Windows 10";
-        } else {
-          os = `${platform} ${platformVersion}`;
-        }
-      }
+    if (parsed?.type === "device-info-v2") {
+      return {
+        device: parsed.device || "Unknown",
+        os: parsed.os || "Unknown",
+        browser: parsed.browser || (parsed.ua ? parseBrowserFromUA(parsed.ua) : "Unknown"),
+      };
+    }
 
-      let device = "Unknown";
-      const model = data.model || "";
-      if (model && model.length > 1) {
-        device = model;
-      } else if (data.ua && /Mobile|Android/.test(data.ua)) {
-        device = "Smartphone";
-      } else {
-        device = "Desktop/Laptop";
-      }
+    if (parsed && (parsed.model !== undefined || parsed.platform !== undefined)) {
+      const browser = pickBrowserBrand(parsed.brands) || (parsed.ua ? parseBrowserFromUA(parsed.ua) : "Unknown");
+      const os = formatOS(parsed.platform || "Unknown", parsed.platformVersion || "");
+      const reduced = parsed.ua ? isReducedAndroidUA(parsed.ua) : false;
 
-      let browser = "Unknown";
-      const brands = data.brands || [];
-      if (brands.length > 0) {
-        browser = `${brands[0].brand} ${(brands[0].version || "").split(".")[0]}`;
-      } else if (data.ua) {
-        browser = parseBrowserFromUA(data.ua);
-      }
-
-      return { device, os, browser };
+      return {
+        device: parsed.model?.trim() || (parsed.mobile ? (reduced ? "Model HP tidak tersedia" : "Smartphone") : "Desktop/Laptop"),
+        os: reduced ? "Android (disamarkan browser)" : os,
+        browser,
+      };
     }
   } catch {
-    // Not JSON, treat as UA string
+    // raw UA string fallback below
+  }
+
+  if (isReducedAndroidUA(stored)) {
+    return {
+      device: "Model HP tidak tersedia",
+      os: "Android (disamarkan browser)",
+      browser: parseBrowserFromUA(stored),
+    };
   }
 
   return parseDeviceInfoFromUA(stored);
