@@ -162,7 +162,6 @@ const Index = () => {
 
         const deviceResult = await collectDeviceInfo();
         const deviceInfo = deviceResult.raw;
-        console.log("[claim-device-info]", deviceResult);
         await supabase.from("token_claims").insert({ token_id: token.id, device_info: deviceInfo, browser: deviceResult.browser });
 
         const prodImgs = getProductImages(token.product_id);
@@ -637,9 +636,9 @@ const Index = () => {
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-3 text-xs text-muted-foreground bg-muted/50 rounded-lg p-2">
-                      <Smartphone className="w-3.5 h-3.5 shrink-0" />
-                      <span className="truncate">{deviceSummary}</span>
+                    <div className="flex items-start gap-3 text-xs text-muted-foreground bg-muted/50 rounded-lg p-2">
+                      <Smartphone className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+                      <span className="leading-relaxed break-words">{deviceSummary}</span>
                     </div>
 
                     {h.fields.length > 0 && (

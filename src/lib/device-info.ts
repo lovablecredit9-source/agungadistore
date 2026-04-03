@@ -12,6 +12,9 @@ type StoredDeviceInfo = {
   mobile?: boolean;
 };
 
+const REDUCED_ANDROID_DEVICE = "HP Android";
+const REDUCED_ANDROID_OS = "Android";
+
 function isReducedAndroidUA(ua: string): boolean {
   return /Android 10; K/.test(ua);
 }
@@ -136,14 +139,17 @@ export async function collectDeviceInfo(): Promise<{
 
       const browser = pickBrowserBrand(fullVersionList) || parseBrowserFromUA(ua);
       const os = formatOS(platform, platformVersion);
-      const device = uaData.mobile ? (model || "Smartphone") : "Desktop/Laptop";
+      const isAndroidMobile = Boolean(uaData.mobile) && platform === "Android";
+      const device = uaData.mobile
+        ? model || (isAndroidMobile ? REDUCED_ANDROID_DEVICE : "Smartphone")
+        : "Desktop/Laptop";
 
       return {
         device,
         os,
         browser,
         raw: serializeStoredInfo({
-          source: "ua-data",
+          source: model ? "ua-data" : isAndroidMobile ? "reduced-ua" : "ua-data",
           device,
           os,
           browser,
@@ -164,13 +170,13 @@ export async function collectDeviceInfo(): Promise<{
   const reduced = isReducedAndroidUA(ua);
 
   return {
-    device: reduced ? "Model HP tidak tersedia" : parsed.device,
-    os: reduced ? "Android (disamarkan browser)" : parsed.os,
+    device: reduced ? REDUCED_ANDROID_DEVICE : parsed.device,
+    os: reduced ? REDUCED_ANDROID_OS : parsed.os,
     browser: parsed.browser,
     raw: serializeStoredInfo({
       source: reduced ? "reduced-ua" : "ua",
-      device: reduced ? "Model HP tidak tersedia" : parsed.device,
-      os: reduced ? "Android (disamarkan browser)" : parsed.os,
+      device: reduced ? REDUCED_ANDROID_DEVICE : parsed.device,
+      os: reduced ? REDUCED_ANDROID_OS : parsed.os,
       browser: parsed.browser,
       ua,
     }),
@@ -182,21 +188,24 @@ export function parseDeviceInfo(stored: string): { device: string; os: string; b
     const parsed = JSON.parse(stored) as StoredDeviceInfo;
 
     if (parsed?.type === "device-info-v2") {
+      const reduced = parsed.source === "reduced-ua" || (parsed.ua ? isReducedAndroidUA(parsed.ua) : false);
       return {
-        device: parsed.device || "Unknown",
-        os: parsed.os || "Unknown",
+        device: reduced ? REDUCED_ANDROID_DEVICE : parsed.device || "Unknown",
+        os: reduced ? REDUCED_ANDROID_OS : parsed.os || "Unknown",
         browser: parsed.browser || (parsed.ua ? parseBrowserFromUA(parsed.ua) : "Unknown"),
       };
     }
 
     if (parsed && (parsed.model !== undefined || parsed.platform !== undefined)) {
       const browser = pickBrowserBrand(parsed.brands) || (parsed.ua ? parseBrowserFromUA(parsed.ua) : "Unknown");
-      const os = formatOS(parsed.platform || "Unknown", parsed.platformVersion || "");
       const reduced = parsed.ua ? isReducedAndroidUA(parsed.ua) : false;
+      const os = reduced ? REDUCED_ANDROID_OS : formatOS(parsed.platform || "Unknown", parsed.platformVersion || "");
 
       return {
-        device: parsed.model?.trim() || (parsed.mobile ? (reduced ? "Model HP tidak tersedia" : "Smartphone") : "Desktop/Laptop"),
-        os: reduced ? "Android (disamarkan browser)" : os,
+        device: reduced
+          ? REDUCED_ANDROID_DEVICE
+          : parsed.model?.trim() || (parsed.mobile ? "Smartphone" : "Desktop/Laptop"),
+        os,
         browser,
       };
     }
@@ -206,8 +215,8 @@ export function parseDeviceInfo(stored: string): { device: string; os: string; b
 
   if (isReducedAndroidUA(stored)) {
     return {
-      device: "Model HP tidak tersedia",
-      os: "Android (disamarkan browser)",
+      device: REDUCED_ANDROID_DEVICE,
+      os: REDUCED_ANDROID_OS,
       browser: parseBrowserFromUA(stored),
     };
   }
