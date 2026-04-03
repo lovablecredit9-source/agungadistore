@@ -160,9 +160,9 @@ const Index = () => {
         const now = new Date().toISOString();
         await supabase.from("tokens").update({ is_claimed: true, claimed_at: now }).eq("id", token.id);
 
-        const deviceInfo = navigator.userAgent;
-        const { browser } = parseDeviceInfo(deviceInfo);
-        await supabase.from("token_claims").insert({ token_id: token.id, device_info: deviceInfo, browser });
+        const deviceResult = await collectDeviceInfo();
+        const deviceInfo = deviceResult.raw;
+        await supabase.from("token_claims").insert({ token_id: token.id, device_info: deviceInfo, browser: deviceResult.browser });
 
         const prodImgs = getProductImages(token.product_id);
 
