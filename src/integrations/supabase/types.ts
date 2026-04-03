@@ -14,6 +14,105 @@ export type Database = {
   }
   public: {
     Tables: {
+      liked_products: {
+        Row: {
+          created_at: string
+          id: string
+          product_id: string
+          visitor_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          product_id: string
+          visitor_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          product_id?: string
+          visitor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "liked_products_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      product_chat_messages: {
+        Row: {
+          chat_id: string
+          created_at: string
+          id: string
+          image_url: string | null
+          message: string | null
+          sender_type: string
+        }
+        Insert: {
+          chat_id: string
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          message?: string | null
+          sender_type?: string
+        }
+        Update: {
+          chat_id?: string
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          message?: string | null
+          sender_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_chat_messages_chat_id_fkey"
+            columns: ["chat_id"]
+            isOneToOne: false
+            referencedRelation: "product_chats"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      product_chats: {
+        Row: {
+          created_at: string
+          id: string
+          product_id: string
+          status: string
+          visitor_id: string
+          visitor_name: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          product_id: string
+          status?: string
+          visitor_id: string
+          visitor_name?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          product_id?: string
+          status?: string
+          visitor_id?: string
+          visitor_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_chats_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       product_fields: {
         Row: {
           created_at: string
@@ -83,6 +182,7 @@ export type Database = {
           category: string | null
           created_at: string
           description: string | null
+          has_warranty: boolean
           id: string
           image_url: string | null
           price: number
@@ -94,6 +194,7 @@ export type Database = {
           category?: string | null
           created_at?: string
           description?: string | null
+          has_warranty?: boolean
           id?: string
           image_url?: string | null
           price?: number
@@ -105,6 +206,7 @@ export type Database = {
           category?: string | null
           created_at?: string
           description?: string | null
+          has_warranty?: boolean
           id?: string
           image_url?: string | null
           price?: number
@@ -113,6 +215,74 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      support_tickets: {
+        Row: {
+          created_at: string
+          description: string
+          id: string
+          name: string
+          phone: string
+          status: string
+          ticket_number: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description: string
+          id?: string
+          name: string
+          phone: string
+          status?: string
+          ticket_number?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          id?: string
+          name?: string
+          phone?: string
+          status?: string
+          ticket_number?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      ticket_messages: {
+        Row: {
+          created_at: string
+          id: string
+          image_url: string | null
+          message: string | null
+          sender_type: string
+          ticket_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          message?: string | null
+          sender_type?: string
+          ticket_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          message?: string | null
+          sender_type?: string
+          ticket_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ticket_messages_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "support_tickets"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       token_claims: {
         Row: {
