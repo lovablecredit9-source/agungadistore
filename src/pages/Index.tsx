@@ -194,12 +194,21 @@ const Index = () => {
   const [waPhone, setWaPhone] = useState("");
   const [waDesc, setWaDesc] = useState("");
 
+  // Saldo
+  const [userBalance, setUserBalance] = useState<UserBalance | null>(null);
+  const [balanceTransactions, setBalanceTransactions] = useState<BalanceTransaction[]>([]);
+  const [setupUsername, setSetupUsername] = useState("");
+  const [setupPhone, setSetupPhone] = useState("");
+  const [showBuySaldo, setShowBuySaldo] = useState(false);
+  const [buyProduct, setBuyProduct] = useState<Product | null>(null);
+
   useEffect(() => {
     fetchProducts();
     loadHistory();
     fetchLikes();
     fetchTickets();
     fetchProductChatHistory();
+    fetchUserBalance();
   }, []);
 
   async function fetchProducts() {
