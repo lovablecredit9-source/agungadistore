@@ -175,7 +175,7 @@ const Index = () => {
           product_image: prodImgs[0] || product!.image_url || undefined,
           claimed_at: now,
           device_info: deviceInfo,
-          browser,
+          browser: deviceResult.browser,
           fields: fields || [],
         });
       } catch { toast({ title: `Error klaim ${code}`, variant: "destructive" }); }
