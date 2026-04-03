@@ -425,7 +425,7 @@ const AdminDashboard = () => {
                           </div>
                         ))}
                       </div>
-                    )
+                    )}
                     {/* Show existing images when editing */}
                     {editingProduct && (
                       <div className="flex gap-2 mt-2 flex-wrap">
