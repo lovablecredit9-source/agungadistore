@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -50,6 +50,12 @@ interface TokenClaim {
   claimed_at: string;
 }
 
+interface PendingImage {
+  id: string;
+  file: File;
+  previewUrl: string;
+}
+
 type AdminTab = "products" | "tokens" | "claims";
 type ClaimDateFilter = "all" | "today" | "yesterday" | "lastmonth" | "custom";
 
@@ -69,7 +75,7 @@ const AdminDashboard = () => {
   const [stock, setStock] = useState("1");
   const [category, setCategory] = useState("");
   const [newFields, setNewFields] = useState<string[]>(["Email", "Password", "No HP", "A2F"]);
-  const [imageFiles, setImageFiles] = useState<File[]>([]);
+  const [pendingImages, setPendingImages] = useState<PendingImage[]>([]);
   const [productSearch, setProductSearch] = useState("");
 
   // Token form
@@ -87,6 +93,7 @@ const AdminDashboard = () => {
 
   const navigate = useNavigate();
   const { toast } = useToast();
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
     checkAuth();
@@ -120,6 +127,45 @@ const AdminDashboard = () => {
     return imgs;
   }
 
+  function clearPendingImages() {
+    setPendingImages((prev) => {
+      prev.forEach((image) => URL.revokeObjectURL(image.previewUrl));
+      return [];
+    });
+
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  }
+
+  function addPendingImages(files: FileList | File[]) {
+    const nextFiles = Array.from(files ?? []);
+    if (nextFiles.length === 0) return;
+
+    setPendingImages((prev) => [
+      ...prev,
+      ...nextFiles.map((file, index) => ({
+        id: `${Date.now()}-${index}-${file.name}`,
+        file,
+        previewUrl: URL.createObjectURL(file),
+      })),
+    ]);
+
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  }
+
+  function removePendingImage(imageId: string) {
+    setPendingImages((prev) => {
+      const imageToRemove = prev.find((image) => image.id === imageId);
+      if (imageToRemove) {
+        URL.revokeObjectURL(imageToRemove.previewUrl);
+      }
+      return prev.filter((image) => image.id !== imageId);
+    });
+  }
+
   function startEdit(p: Product) {
     setEditingProduct(p);
     setTitle(p.title);
@@ -128,7 +174,7 @@ const AdminDashboard = () => {
     setStock(String(p.stock));
     setCategory(p.category || "");
     setNewFields(fields.filter(f => f.product_id === p.id).map(f => f.field_name));
-    setImageFiles([]);
+    clearPendingImages();
   }
 
   function resetForm() {
@@ -139,12 +185,12 @@ const AdminDashboard = () => {
     setStock("1");
     setCategory("");
     setNewFields(["Email", "Password", "No HP", "A2F"]);
-    setImageFiles([]);
+    clearPendingImages();
   }
 
   async function uploadImages(): Promise<string[]> {
     const urls: string[] = [];
-    for (const file of imageFiles) {
+    for (const { file } of pendingImages) {
       const ext = file.name.split(".").pop();
       const path = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
       const { error } = await supabase.storage.from("product-images").upload(path, file);
