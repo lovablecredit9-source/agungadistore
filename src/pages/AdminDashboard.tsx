@@ -412,11 +412,22 @@ const AdminDashboard = () => {
                           return (
                             <div key={i} className="relative">
                               <img src={url} className="w-16 h-16 rounded object-cover" alt="" />
-                              {imgRecord && (
-                                <button type="button" onClick={() => handleDeleteProductImage(imgRecord.id)} className="absolute -top-1 -right-1 w-5 h-5 bg-destructive text-destructive-foreground rounded-full flex items-center justify-center">
-                                  <X className="w-3 h-3" />
-                                </button>
-                              )}
+                              <button
+                                type="button"
+                                onClick={async () => {
+                                  if (imgRecord) {
+                                    await handleDeleteProductImage(imgRecord.id);
+                                  } else {
+                                    // Image stored in product.image_url only
+                                    await supabase.from("products").update({ image_url: null }).eq("id", editingProduct.id);
+                                    toast({ title: "Foto dihapus" });
+                                    fetchAll();
+                                  }
+                                }}
+                                className="absolute -top-1 -right-1 w-5 h-5 bg-destructive text-destructive-foreground rounded-full flex items-center justify-center"
+                              >
+                                <X className="w-3 h-3" />
+                              </button>
                             </div>
                           );
                         })}
