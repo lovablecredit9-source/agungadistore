@@ -21,7 +21,26 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 
-type Tab = "beranda" | "produk" | "voucher" | "history" | "likes" | "tiket";
+type Tab = "beranda" | "produk" | "voucher" | "history" | "likes" | "tiket" | "saldo";
+
+interface UserBalance {
+  id: string;
+  visitor_id: string;
+  username: string;
+  phone: string;
+  balance: number;
+}
+
+interface BalanceTransaction {
+  id: string;
+  visitor_id: string;
+  type: string;
+  amount: number;
+  description: string | null;
+  product_id: string | null;
+  token_id: string | null;
+  created_at: string;
+}
 
 interface Product {
   id: string;
