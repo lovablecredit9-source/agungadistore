@@ -12,9 +12,6 @@ type StoredDeviceInfo = {
   mobile?: boolean;
 };
 
-const REDUCED_ANDROID_DEVICE = "HP Android";
-const REDUCED_ANDROID_OS = "Android";
-
 function isReducedAndroidUA(ua: string): boolean {
   return /Android 10; K/.test(ua);
 }
@@ -34,32 +31,53 @@ function pickBrowserBrand(brands: Array<{ brand?: string; version?: string }> = 
     const brand = item.brand || "";
     return brand && !brand.startsWith("Not") && brand !== "Chromium";
   });
-
   return realBrand?.brand || "";
+}
+
+function detectBrandFromModel(model: string): string {
+  const m = model.toUpperCase();
+  if (m.startsWith("SM-") || m.startsWith("SAMSUNG")) return "Samsung";
+  if (m.startsWith("REDMI") || m.startsWith("MI ") || m.startsWith("POCO") || m.startsWith("M2") || m.startsWith("220")) return "Xiaomi";
+  if (m.startsWith("RMX") || m.startsWith("CPH") || m.startsWith("OPPO")) return "OPPO";
+  if (m.startsWith("V") && /^V\d{4}/.test(m)) return "Vivo";
+  if (m.startsWith("VIVO")) return "Vivo";
+  if (m.startsWith("ASUS") || m.startsWith("ZS") || m.startsWith("ZE") || m.startsWith("ZB")) return "ASUS";
+  if (m.startsWith("RN") || m.startsWith("REALME") || m.startsWith("RMP")) return "Realme";
+  if (m.startsWith("INFINIX") || m.startsWith("X6")) return "Infinix";
+  if (m.startsWith("TECNO")) return "Tecno";
+  if (m.startsWith("HUAWEI") || m.startsWith("VOG") || m.startsWith("ELE") || m.startsWith("MAR")) return "Huawei";
+  if (m.startsWith("LM-") || m.startsWith("LG")) return "LG";
+  if (m.startsWith("PIXEL")) return "Google";
+  if (m.startsWith("MOTO") || m.startsWith("XT")) return "Motorola";
+  if (m.startsWith("NOKIA")) return "Nokia";
+  if (m.startsWith("A") && /^A\d{3}/.test(m)) return "Samsung"; // e.g. A155F pattern
+  return "";
+}
+
+function formatDeviceWithBrand(model: string): string {
+  if (!model) return "";
+  const brand = detectBrandFromModel(model);
+  if (brand) {
+    // Don't duplicate brand if model already contains it
+    if (model.toUpperCase().startsWith(brand.toUpperCase())) return model;
+    return `${brand} ${model}`;
+  }
+  return model;
 }
 
 function formatOS(platform: string, platformVersion: string): string {
   if (!platform) return "Unknown";
-
   if (platform === "Android") {
     return platformVersion ? `Android ${platformVersion}` : "Android";
   }
-
   if (platform === "Windows") {
     const major = Number.parseInt(platformVersion.split(".")[0] || "0", 10);
     if (major >= 13) return "Windows 11";
     if (major > 0) return "Windows 10";
     return "Windows";
   }
-
-  if (platform === "iOS") {
-    return platformVersion ? `iOS ${platformVersion}` : "iOS";
-  }
-
-  if (platform === "macOS") {
-    return platformVersion ? `macOS ${platformVersion}` : "macOS";
-  }
-
+  if (platform === "iOS") return platformVersion ? `iOS ${platformVersion}` : "iOS";
+  if (platform === "macOS") return platformVersion ? `macOS ${platformVersion}` : "macOS";
   return platformVersion ? `${platform} ${platformVersion}` : platform;
 }
 
@@ -90,9 +108,9 @@ function parseDeviceInfoFromUA(ua: string): { device: string; os: string; browse
   } else if (/Mobile|Android/.test(ua)) {
     const model = ua.match(/;\s*([^;)]+)\s*Build/)?.[1]?.trim();
     if (model && model.length > 1 && model !== "K" && !/^Linux/i.test(model)) {
-      device = model;
+      device = formatDeviceWithBrand(model);
     } else {
-      device = "Smartphone";
+      device = "HP Android";
     }
   } else {
     device = "Desktop/Laptop";
@@ -130,7 +148,7 @@ export async function collectDeviceInfo(): Promise<{
         "fullVersionList",
       ]);
 
-      const model = typeof hints.model === "string" ? hints.model.trim() : "";
+      const rawModel = typeof hints.model === "string" ? hints.model.trim() : "";
       const platform = typeof hints.platform === "string" ? hints.platform : uaData.platform || "Unknown";
       const platformVersion = typeof hints.platformVersion === "string" ? hints.platformVersion : "";
       const fullVersionList = Array.isArray(hints.fullVersionList)
@@ -139,22 +157,37 @@ export async function collectDeviceInfo(): Promise<{
 
       const browser = pickBrowserBrand(fullVersionList) || parseBrowserFromUA(ua);
       const os = formatOS(platform, platformVersion);
-      const isAndroidMobile = Boolean(uaData.mobile) && platform === "Android";
-      const device = uaData.mobile
-        ? model || (isAndroidMobile ? REDUCED_ANDROID_DEVICE : "Smartphone")
-        : "Desktop/Laptop";
+
+      let device: string;
+      if (uaData.mobile) {
+        if (rawModel) {
+          device = formatDeviceWithBrand(rawModel);
+        } else {
+          // Try to extract from UA as last resort
+          const uaModel = ua.match(/;\s*([^;)]+)\s*Build/)?.[1]?.trim();
+          if (uaModel && uaModel !== "K" && uaModel.length > 1 && !/^Linux/i.test(uaModel)) {
+            device = formatDeviceWithBrand(uaModel);
+          } else {
+            device = "HP Android";
+          }
+        }
+      } else {
+        device = "Desktop/Laptop";
+      }
+
+      const source = rawModel ? "ua-data" : "reduced-ua";
 
       return {
         device,
         os,
         browser,
         raw: serializeStoredInfo({
-          source: model ? "ua-data" : isAndroidMobile ? "reduced-ua" : "ua-data",
+          source,
           device,
           os,
           browser,
           ua,
-          model,
+          model: rawModel,
           platform,
           platformVersion,
           brands: fullVersionList,
@@ -167,16 +200,15 @@ export async function collectDeviceInfo(): Promise<{
   }
 
   const parsed = parseDeviceInfoFromUA(ua);
-  const reduced = isReducedAndroidUA(ua);
 
   return {
-    device: reduced ? REDUCED_ANDROID_DEVICE : parsed.device,
-    os: reduced ? REDUCED_ANDROID_OS : parsed.os,
+    device: parsed.device,
+    os: parsed.os,
     browser: parsed.browser,
     raw: serializeStoredInfo({
-      source: reduced ? "reduced-ua" : "ua",
-      device: reduced ? REDUCED_ANDROID_DEVICE : parsed.device,
-      os: reduced ? REDUCED_ANDROID_OS : parsed.os,
+      source: isReducedAndroidUA(ua) ? "reduced-ua" : "ua",
+      device: parsed.device,
+      os: parsed.os,
       browser: parsed.browser,
       ua,
     }),
@@ -188,37 +220,28 @@ export function parseDeviceInfo(stored: string): { device: string; os: string; b
     const parsed = JSON.parse(stored) as StoredDeviceInfo;
 
     if (parsed?.type === "device-info-v2") {
-      const reduced = parsed.source === "reduced-ua" || (parsed.ua ? isReducedAndroidUA(parsed.ua) : false);
       return {
-        device: reduced ? REDUCED_ANDROID_DEVICE : parsed.device || "Unknown",
-        os: reduced ? REDUCED_ANDROID_OS : parsed.os || "Unknown",
+        device: parsed.device || "Unknown",
+        os: parsed.os || "Unknown",
         browser: parsed.browser || (parsed.ua ? parseBrowserFromUA(parsed.ua) : "Unknown"),
       };
     }
 
     if (parsed && (parsed.model !== undefined || parsed.platform !== undefined)) {
       const browser = pickBrowserBrand(parsed.brands) || (parsed.ua ? parseBrowserFromUA(parsed.ua) : "Unknown");
-      const reduced = parsed.ua ? isReducedAndroidUA(parsed.ua) : false;
-      const os = reduced ? REDUCED_ANDROID_OS : formatOS(parsed.platform || "Unknown", parsed.platformVersion || "");
-
-      return {
-        device: reduced
-          ? REDUCED_ANDROID_DEVICE
-          : parsed.model?.trim() || (parsed.mobile ? "Smartphone" : "Desktop/Laptop"),
-        os,
-        browser,
-      };
+      const os = formatOS(parsed.platform || "Unknown", parsed.platformVersion || "");
+      let device: string;
+      if (parsed.model?.trim()) {
+        device = formatDeviceWithBrand(parsed.model.trim());
+      } else if (parsed.mobile) {
+        device = "HP Android";
+      } else {
+        device = "Desktop/Laptop";
+      }
+      return { device, os, browser };
     }
   } catch {
     // raw UA string fallback below
-  }
-
-  if (isReducedAndroidUA(stored)) {
-    return {
-      device: REDUCED_ANDROID_DEVICE,
-      os: REDUCED_ANDROID_OS,
-      browser: parseBrowserFromUA(stored),
-    };
   }
 
   return parseDeviceInfoFromUA(stored);
