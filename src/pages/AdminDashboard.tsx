@@ -667,9 +667,9 @@ const AdminDashboard = () => {
                           <button onClick={() => handleDeleteClaim(c.id)}><Trash2 className="w-4 h-4 text-destructive/60 hover:text-destructive" /></button>
                         </div>
                       </div>
-                      <div className="flex items-center gap-2 text-xs text-muted-foreground bg-muted/50 rounded-lg p-2">
-                        <Smartphone className="w-3.5 h-3.5 shrink-0" />
-                        <span>{deviceSummary}</span>
+                      <div className="flex items-start gap-2 text-xs text-muted-foreground bg-muted/50 rounded-lg p-2">
+                        <Smartphone className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+                        <span className="leading-relaxed break-words">{deviceSummary}</span>
                       </div>
                     </CardContent>
                   </Card>
