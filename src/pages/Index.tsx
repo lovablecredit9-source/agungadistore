@@ -377,6 +377,7 @@ const Index = () => {
       saveHistory([...newHistories, ...history]);
       setTokenInput("");
       toast({ title: `${results.length} voucher berhasil diklaim! 🎉` });
+      results.forEach(r => createNotification("Voucher Diklaim ✅", `${r.product.title} berhasil diklaim.`, "claim", r.token.id));
     }
 
     setClaiming(false);
