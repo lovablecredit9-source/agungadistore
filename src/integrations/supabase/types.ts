@@ -130,6 +130,7 @@ export type Database = {
           created_at: string
           id: string
           image_url: string | null
+          is_read: boolean
           message: string | null
           sender_type: string
         }
@@ -138,6 +139,7 @@ export type Database = {
           created_at?: string
           id?: string
           image_url?: string | null
+          is_read?: boolean
           message?: string | null
           sender_type?: string
         }
@@ -146,6 +148,7 @@ export type Database = {
           created_at?: string
           id?: string
           image_url?: string | null
+          is_read?: boolean
           message?: string | null
           sender_type?: string
         }
@@ -335,6 +338,7 @@ export type Database = {
           created_at: string
           id: string
           image_url: string | null
+          is_read: boolean
           message: string | null
           sender_type: string
           ticket_id: string
@@ -343,6 +347,7 @@ export type Database = {
           created_at?: string
           id?: string
           image_url?: string | null
+          is_read?: boolean
           message?: string | null
           sender_type?: string
           ticket_id: string
@@ -351,6 +356,7 @@ export type Database = {
           created_at?: string
           id?: string
           image_url?: string | null
+          is_read?: boolean
           message?: string | null
           sender_type?: string
           ticket_id?: string

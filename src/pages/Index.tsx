@@ -10,7 +10,7 @@ import {
   Download, MessageCircle, Copy, CheckCircle2, Shield, Crown,
   HelpCircle, X, ExternalLink, Search, ChevronLeft, ChevronRight, FileText,
   Heart, Send, ImagePlus, AlertCircle, History, Wallet, ArrowUpCircle, ArrowDownCircle,
-  Bell
+  Bell, Check, CheckCheck, Globe
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import jsPDF from "jspdf";
@@ -21,6 +21,7 @@ import { getVisitorId } from "@/lib/visitor-id";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
+import { useLang, t, type Lang } from "@/lib/i18n";
 
 type Tab = "beranda" | "produk" | "voucher" | "history" | "likes" | "tiket" | "saldo";
 
@@ -103,6 +104,7 @@ interface TicketMessage {
   message: string | null;
   image_url: string | null;
   created_at: string;
+  is_read: boolean;
 }
 
 interface ProductChat {
@@ -121,6 +123,21 @@ interface ProductChatMessage {
   message: string | null;
   image_url: string | null;
   created_at: string;
+  is_read: boolean;
+}
+
+// WhatsApp-style checkmark component
+function MessageStatus({ isRead, isUserMsg }: { isRead: boolean; isUserMsg: boolean }) {
+  if (!isUserMsg) return null;
+  return (
+    <span className="inline-flex items-center ml-1">
+      {isRead ? (
+        <CheckCheck className="w-3.5 h-3.5 text-blue-400" />
+      ) : (
+        <CheckCheck className="w-3.5 h-3.5 text-primary-foreground/50" />
+      )}
+    </span>
+  );
 }
 
 function formatPrice(price: number) {
@@ -153,6 +170,7 @@ function ImageCarousel({ images, className = "w-full h-44" }: { images: string[]
 }
 
 const Index = () => {
+  const [lang, setLang] = useLang();
   const [tab, setTab] = useState<Tab>("beranda");
   const [products, setProducts] = useState<Product[]>([]);
   const [productImages, setProductImages] = useState<ProductImage[]>([]);
@@ -627,6 +645,10 @@ const Index = () => {
           setTicketMessages(prev => [...prev, payload.new as unknown as TicketMessage]);
           setTimeout(() => ticketChatRef.current?.scrollTo(0, ticketChatRef.current.scrollHeight), 100);
         })
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "ticket_messages", filter: `ticket_id=eq.${activeTicket.id}` },
+        (payload) => {
+          setTicketMessages(prev => prev.map(m => m.id === (payload.new as any).id ? { ...m, is_read: (payload.new as any).is_read } : m));
+        })
       .subscribe();
     return () => { supabase.removeChannel(channel); };
   }, [activeTicket?.id]);
@@ -710,6 +732,10 @@ const Index = () => {
           setProductChatMessages(prev => [...prev, payload.new as unknown as ProductChatMessage]);
           setTimeout(() => productChatRef.current?.scrollTo(0, productChatRef.current.scrollHeight), 100);
         })
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "product_chat_messages", filter: `chat_id=eq.${productChat.id}` },
+        (payload) => {
+          setProductChatMessages(prev => prev.map(m => m.id === (payload.new as any).id ? { ...m, is_read: (payload.new as any).is_read } : m));
+        })
       .subscribe();
     return () => { supabase.removeChannel(channel); };
   }, [productChat?.id]);
@@ -746,9 +772,12 @@ const Index = () => {
           <img src={storeQris} alt={STORE_NAME} className="w-11 h-11 rounded-xl object-cover border-2 border-primary-foreground/30 shadow-md" />
           <div className="flex-1">
             <h1 className="text-lg font-extrabold tracking-tight">{STORE_NAME}</h1>
-            <p className="text-[10px] opacity-80 leading-tight">Terpercaya • Aman • Murah</p>
+            <p className="text-[10px] opacity-80 leading-tight">{t("header.tagline", lang)}</p>
           </div>
           <div className="flex items-center gap-2">
+            <button onClick={() => setLang(lang === "id" ? "en" : "id")} className="w-9 h-9 rounded-xl bg-primary-foreground/20 backdrop-blur-sm flex items-center justify-center hover:bg-primary-foreground/30 transition-colors" title={t("general.language", lang)}>
+              <span className="text-[10px] font-bold">{lang === "id" ? "EN" : "ID"}</span>
+            </button>
             <button onClick={() => setShowNotifPanel(!showNotifPanel)} className="relative w-9 h-9 rounded-xl bg-primary-foreground/20 backdrop-blur-sm flex items-center justify-center hover:bg-primary-foreground/30 transition-colors">
               <Bell className="w-5 h-5" />
               {unreadCount > 0 && (
@@ -771,13 +800,13 @@ const Index = () => {
               <div className="relative z-10 text-center">
                 <img src={storeQris} alt={STORE_NAME} className="w-20 h-20 rounded-2xl object-cover mx-auto mb-3 shadow-lg border-2 border-primary/20" />
                 <h2 className="text-xl font-extrabold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">{STORE_NAME}</h2>
-                <p className="text-xs text-muted-foreground mt-1 font-medium">Terpercaya • Aman • Murah</p>
-                <p className="text-muted-foreground text-sm mt-2 leading-relaxed">Beli akun digital premium dengan harga terbaik.</p>
+                <p className="text-xs text-muted-foreground mt-1 font-medium">{t("header.tagline", lang)}</p>
+                <p className="text-muted-foreground text-sm mt-2 leading-relaxed">{t("home.buy_premium", lang)}</p>
                 <div className="mt-3 flex items-center justify-center gap-2 flex-wrap">
                   <a href={`${SOCIAL_LINKS.whatsapp}?text=${encodeURIComponent("Halo, saya mau order di Agung Adi Store")}`} target="_blank" rel="noopener noreferrer">
-                    <Button size="sm" className="bg-gradient-to-r from-accent to-accent/80 text-accent-foreground shadow-md gap-1.5"><MessageCircle className="w-4 h-4" /> Hubungi WA</Button>
+                    <Button size="sm" className="bg-gradient-to-r from-accent to-accent/80 text-accent-foreground shadow-md gap-1.5"><MessageCircle className="w-4 h-4" /> {t("home.contact_wa", lang)}</Button>
                   </a>
-                  <Button size="sm" variant="outline" className="gap-1.5" onClick={() => setTab("voucher")}><Ticket className="w-4 h-4" /> Klaim Voucher</Button>
+                  <Button size="sm" variant="outline" className="gap-1.5" onClick={() => setTab("voucher")}><Ticket className="w-4 h-4" /> {t("home.claim_voucher", lang)}</Button>
                 </div>
               </div>
             </div>
@@ -787,14 +816,14 @@ const Index = () => {
                 <CardContent className="p-4 text-center">
                   <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center mx-auto mb-2"><Package className="w-5 h-5 text-primary" /></div>
                   <p className="text-2xl font-extrabold text-primary">{products.length}</p>
-                  <p className="text-xs text-muted-foreground font-medium">Produk Tersedia</p>
+                  <p className="text-xs text-muted-foreground font-medium">{t("home.products_available", lang)}</p>
                 </CardContent>
               </Card>
               <Card className="cursor-pointer hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 border-accent/10 bg-gradient-to-br from-accent/5 to-transparent" onClick={() => setTab("history")}>
                 <CardContent className="p-4 text-center">
                   <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center mx-auto mb-2"><Clock className="w-5 h-5 text-accent" /></div>
                   <p className="text-2xl font-extrabold text-accent">{history.length}</p>
-                  <p className="text-xs text-muted-foreground font-medium">Voucher Diklaim</p>
+                  <p className="text-xs text-muted-foreground font-medium">{t("home.vouchers_claimed", lang)}</p>
                 </CardContent>
               </Card>
             </div>
@@ -803,8 +832,8 @@ const Index = () => {
               <CardContent className="p-4 flex items-center gap-3">
                 <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-md"><Ticket className="w-6 h-6 text-primary-foreground" /></div>
                 <div className="flex-1">
-                  <h3 className="font-bold text-sm">Punya Kode Voucher?</h3>
-                  <p className="text-xs text-muted-foreground">Klaim akun premium kamu sekarang →</p>
+                  <h3 className="font-bold text-sm">{t("home.have_voucher", lang)}</h3>
+                  <p className="text-xs text-muted-foreground">{t("home.claim_now", lang)}</p>
                 </div>
               </CardContent>
             </Card>
@@ -814,15 +843,15 @@ const Index = () => {
               <CardContent className="p-4 flex items-center gap-3">
                 <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-destructive to-destructive/70 flex items-center justify-center shadow-md"><AlertCircle className="w-6 h-6 text-destructive-foreground" /></div>
                 <div className="flex-1">
-                  <h3 className="font-bold text-sm">Ada Masalah?</h3>
-                  <p className="text-xs text-muted-foreground">Ajukan tiket keluhan →</p>
+                  <h3 className="font-bold text-sm">{t("home.have_issue", lang)}</h3>
+                  <p className="text-xs text-muted-foreground">{t("home.submit_ticket", lang)}</p>
                 </div>
               </CardContent>
             </Card>
 
             <Card>
               <CardContent className="p-4">
-                <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3">Ikuti Kami</p>
+                <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3">{t("home.follow_us", lang)}</p>
                 <div className="grid grid-cols-2 gap-2">
                   {[
                     { label: `WA: ${WA_NUMBER}`, href: SOCIAL_LINKS.whatsapp, color: "from-green-500 to-green-600" },
@@ -845,14 +874,14 @@ const Index = () => {
         {tab === "produk" && (
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <h2 className="text-lg font-extrabold flex items-center gap-2"><Package className="w-5 h-5 text-primary" /> Daftar Produk</h2>
-              <span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded-full font-medium">{sortedProducts.length} item</span>
+              <h2 className="text-lg font-extrabold flex items-center gap-2"><Package className="w-5 h-5 text-primary" /> {t("products.title", lang)}</h2>
+              <span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded-full font-medium">{sortedProducts.length} {t("products.items", lang)}</span>
             </div>
 
             {/* Search */}
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input placeholder="Cari produk..." value={productSearch} onChange={e => setProductSearch(e.target.value)} className="pl-9" />
+              <Input placeholder={t("products.search", lang)} value={productSearch} onChange={e => setProductSearch(e.target.value)} className="pl-9" />
             </div>
 
             {/* Dropdown filters */}
@@ -938,7 +967,7 @@ const Index = () => {
 
         {tab === "voucher" && (
           <div className="space-y-4">
-            <h2 className="text-lg font-extrabold flex items-center gap-2"><Ticket className="w-5 h-5 text-primary" /> Klaim Voucher</h2>
+            <h2 className="text-lg font-extrabold flex items-center gap-2"><Ticket className="w-5 h-5 text-primary" /> {t("voucher.title", lang)}</h2>
             <Card className="border-2 border-primary/20 shadow-lg overflow-hidden">
               <div className="bg-gradient-to-r from-primary/10 to-accent/10 p-1" />
               <CardContent className="p-5 space-y-4">
@@ -1015,7 +1044,7 @@ const Index = () => {
         {tab === "history" && (
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <h2 className="text-lg font-extrabold flex items-center gap-2"><Clock className="w-5 h-5 text-primary" /> Riwayat Klaim</h2>
+              <h2 className="text-lg font-extrabold flex items-center gap-2"><Clock className="w-5 h-5 text-primary" /> {t("history.title", lang)}</h2>
             </div>
 
             {history.length > 0 && (
@@ -1110,7 +1139,7 @@ const Index = () => {
 
         {tab === "likes" && (
           <div className="space-y-4">
-            <h2 className="text-lg font-extrabold flex items-center gap-2"><Heart className="w-5 h-5 text-destructive" /> Produk Disukai</h2>
+            <h2 className="text-lg font-extrabold flex items-center gap-2"><Heart className="w-5 h-5 text-destructive" /> {t("likes.title", lang)}</h2>
             {likedProducts.length === 0 && (
               <div className="text-center py-16 text-muted-foreground">
                 <Heart className="w-16 h-16 mx-auto mb-3 opacity-20" />
@@ -1149,7 +1178,7 @@ const Index = () => {
             {ticketView === "list" && (
               <>
                 <div className="flex items-center justify-between">
-                  <h2 className="text-lg font-extrabold flex items-center gap-2"><AlertCircle className="w-5 h-5 text-destructive" /> Tiket Keluhan</h2>
+                  <h2 className="text-lg font-extrabold flex items-center gap-2"><AlertCircle className="w-5 h-5 text-destructive" /> {t("ticket.title", lang)}</h2>
                   <Button size="sm" onClick={() => setTicketView("create")} className="gap-1"><Send className="w-3 h-3" /> Buat Tiket</Button>
                 </div>
 
@@ -1219,8 +1248,9 @@ const Index = () => {
                         {m.sender_type === "admin" && <p className="text-[10px] font-bold text-primary mb-0.5">{STORE_NAME}</p>}
                         {m.message && <p className="text-sm whitespace-pre-wrap">{m.message}</p>}
                         {m.image_url && <img src={m.image_url} className="max-w-full rounded-lg mt-1" alt="" />}
-                        <p className={`text-[9px] mt-1 ${m.sender_type === "user" ? "text-primary-foreground/60" : "text-muted-foreground"}`}>
+                        <p className={`text-[9px] mt-1 flex items-center gap-0.5 ${m.sender_type === "user" ? "text-primary-foreground/60 justify-end" : "text-muted-foreground"}`}>
                           {new Date(m.created_at).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })}
+                          <MessageStatus isRead={m.is_read} isUserMsg={m.sender_type === "user"} />
                         </p>
                       </div>
                     </div>
@@ -1233,14 +1263,14 @@ const Index = () => {
                       <ImagePlus className="w-4 h-4 text-muted-foreground" />
                       <input type="file" accept="image/*" className="hidden" onChange={e => { if (e.target.files?.[0]) sendTicketImage(e.target.files[0]); e.target.value = ""; }} />
                     </label>
-                    <Input placeholder="Tulis pesan..." value={ticketMsg} onChange={e => setTicketMsg(e.target.value)}
+                    <Input placeholder={t("chat.write_message", lang)} value={ticketMsg} onChange={e => setTicketMsg(e.target.value)}
                       onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendTicketMessage(); } }} className="flex-1" />
                     <Button size="icon" onClick={sendTicketMessage} disabled={!ticketMsg.trim()}><Send className="w-4 h-4" /></Button>
                   </div>
                 ) : (
                   <div className="text-center text-sm text-muted-foreground bg-muted/50 p-3 rounded-lg">
-                    Tiket ini sudah ditutup oleh admin.
-                    <Button size="sm" variant="outline" className="mt-2 gap-1" onClick={() => setTicketView("create")}><Send className="w-3 h-3" /> Buat Tiket Baru</Button>
+                    {t("chat.ticket_closed", lang)}
+                    <Button size="sm" variant="outline" className="mt-2 gap-1" onClick={() => setTicketView("create")}><Send className="w-3 h-3" /> {t("ticket.create", lang)}</Button>
                   </div>
                 )}
               </>
@@ -1250,7 +1280,7 @@ const Index = () => {
 
         {tab === "saldo" && (
           <div className="space-y-4">
-            <h2 className="text-lg font-extrabold flex items-center gap-2"><Wallet className="w-5 h-5 text-primary" /> Saldo</h2>
+            <h2 className="text-lg font-extrabold flex items-center gap-2"><Wallet className="w-5 h-5 text-primary" /> {t("balance.title", lang)}</h2>
 
             {!userBalance ? (
               <Card className="border-2 border-primary/20">
@@ -1437,7 +1467,7 @@ const Index = () => {
               <img src={storeQris} className="w-9 h-9 rounded-full object-cover" alt="" />
               <div className="flex-1">
                 <p className="font-bold text-sm">{STORE_NAME}</p>
-                <p className="text-[10px] text-muted-foreground">Biasa membalas dalam 5-10 menit</p>
+                <p className="text-[10px] text-muted-foreground">{t("chat.reply_time", lang)}</p>
               </div>
               <button onClick={() => { setShowChatHistory(true); setShowProductChat(false); }}>
                 <History className="w-5 h-5 text-muted-foreground" />
@@ -1452,8 +1482,9 @@ const Index = () => {
                     {m.sender_type === "admin" && <p className="text-[10px] font-bold text-primary mb-0.5">{STORE_NAME}</p>}
                     {m.message && <p className="text-sm whitespace-pre-wrap">{m.message}</p>}
                     {m.image_url && <img src={m.image_url} className="max-w-full rounded-lg mt-1" alt="" />}
-                    <p className={`text-[9px] mt-1 ${m.sender_type === "user" ? "text-primary-foreground/60" : "text-muted-foreground"}`}>
+                    <p className={`text-[9px] mt-1 flex items-center gap-0.5 ${m.sender_type === "user" ? "text-primary-foreground/60 justify-end" : "text-muted-foreground"}`}>
                       {new Date(m.created_at).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })}
+                      <MessageStatus isRead={m.is_read} isUserMsg={m.sender_type === "user"} />
                     </p>
                   </div>
                 </div>
@@ -1466,7 +1497,7 @@ const Index = () => {
                 <ImagePlus className="w-4 h-4 text-muted-foreground" />
                 <input type="file" accept="image/*" className="hidden" onChange={e => { if (e.target.files?.[0]) sendProductChatImage(e.target.files[0]); e.target.value = ""; }} />
               </label>
-              <Input placeholder="Tulis pesan..." value={productChatMsg} onChange={e => setProductChatMsg(e.target.value)}
+              <Input placeholder={t("chat.write_message", lang)} value={productChatMsg} onChange={e => setProductChatMsg(e.target.value)}
                 onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendProductChatMessage(); } }} className="flex-1" />
               <Button size="icon" onClick={sendProductChatMessage} disabled={!productChatMsg.trim()}><Send className="w-4 h-4" /></Button>
             </div>
@@ -1518,8 +1549,8 @@ const Index = () => {
           <div className="bg-card w-full max-w-sm max-h-[85vh] rounded-2xl overflow-hidden animate-in zoom-in-95 duration-200 flex flex-col" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between p-5 pb-3 shrink-0">
               <div>
-                <h3 className="font-extrabold text-lg">Pusat Bantuan</h3>
-                <p className="text-[11px] text-muted-foreground">Web v1.0 — {STORE_NAME}</p>
+                <h3 className="font-extrabold text-lg">{t("help.title", lang)}</h3>
+                <p className="text-[11px] text-muted-foreground">Web v2.0 — April 2026 — {STORE_NAME}</p>
               </div>
               <button onClick={() => setShowHelp(false)} className="w-8 h-8 rounded-full bg-muted flex items-center justify-center"><X className="w-4 h-4" /></button>
             </div>
@@ -1609,7 +1640,7 @@ const Index = () => {
               {/* Versi */}
               <div className="text-center pt-2 pb-1 border-t border-border">
                 <p className="text-xs text-muted-foreground font-medium">{STORE_NAME}</p>
-                <p className="text-[11px] text-muted-foreground/70">Web Version 1.0 • © 2024-2025</p>
+                <p className="text-[11px] text-muted-foreground/70">{t("version.footer", lang)}</p>
               </div>
             </div>
           </div>
@@ -1696,15 +1727,15 @@ const Index = () => {
         <div className="fixed inset-0 z-[90] bg-black/60 backdrop-blur-sm flex items-start justify-center pt-16 p-4" onClick={() => setShowNotifPanel(false)}>
           <div className="bg-card w-full max-w-sm rounded-2xl shadow-2xl animate-in slide-in-from-top-5 duration-200 max-h-[70vh] flex flex-col" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between p-4 border-b border-border">
-              <h3 className="font-extrabold text-base flex items-center gap-2"><Bell className="w-4 h-4 text-primary" /> Notifikasi</h3>
+              <h3 className="font-extrabold text-base flex items-center gap-2"><Bell className="w-4 h-4 text-primary" /> {t("notif.title", lang)}</h3>
               <div className="flex items-center gap-2">
-                {unreadCount > 0 && <button onClick={markAllRead} className="text-[10px] text-primary font-bold hover:underline">Tandai semua dibaca</button>}
+                {unreadCount > 0 && <button onClick={markAllRead} className="text-[10px] text-primary font-bold hover:underline">{t("notif.mark_all_read", lang)}</button>}
                 <button onClick={() => setShowNotifPanel(false)} className="w-7 h-7 rounded-full bg-muted flex items-center justify-center"><X className="w-4 h-4" /></button>
               </div>
             </div>
             <div className="flex-1 overflow-y-auto p-2 space-y-1">
               {notifications.length === 0 ? (
-                <p className="text-center text-sm text-muted-foreground py-8">Belum ada notifikasi</p>
+                <p className="text-center text-sm text-muted-foreground py-8">{t("notif.no_notif", lang)}</p>
               ) : notifications.map(n => (
                 <button key={n.id} onClick={() => { markNotifRead(n.id); }} className={`w-full text-left p-3 rounded-xl transition-colors ${n.is_read ? "bg-transparent hover:bg-muted/50" : "bg-primary/5 hover:bg-primary/10"}`}>
                   <div className="flex items-start gap-2">
@@ -1726,13 +1757,13 @@ const Index = () => {
       <nav className="fixed bottom-0 left-0 right-0 bg-card/95 backdrop-blur-md border-t border-border z-50 shadow-[0_-4px_20px_rgba(0,0,0,0.08)]">
         <div className="flex max-w-lg mx-auto">
           {([
-            { key: "beranda" as Tab, icon: Home, label: "Beranda" },
-            { key: "produk" as Tab, icon: Package, label: "Produk" },
-            { key: "voucher" as Tab, icon: Ticket, label: "Voucher" },
-            { key: "saldo" as Tab, icon: Wallet, label: "Saldo" },
-            { key: "likes" as Tab, icon: Heart, label: "Suka" },
-            { key: "history" as Tab, icon: Clock, label: "Riwayat" },
-            { key: "tiket" as Tab, icon: AlertCircle, label: "Tiket" },
+            { key: "beranda" as Tab, icon: Home, label: t("nav.home", lang) },
+            { key: "produk" as Tab, icon: Package, label: t("nav.products", lang) },
+            { key: "voucher" as Tab, icon: Ticket, label: t("nav.voucher", lang) },
+            { key: "saldo" as Tab, icon: Wallet, label: t("nav.balance", lang) },
+            { key: "likes" as Tab, icon: Heart, label: t("nav.likes", lang) },
+            { key: "history" as Tab, icon: Clock, label: t("nav.history", lang) },
+            { key: "tiket" as Tab, icon: AlertCircle, label: t("nav.ticket", lang) },
           ]).map(({ key, icon: Icon, label }) => (
             <button key={key} onClick={() => setTab(key)}
               className={`flex-1 flex flex-col items-center py-2 text-[10px] transition-all duration-200 ${tab === key ? "text-primary font-bold" : "text-muted-foreground hover:text-foreground"}`}>
