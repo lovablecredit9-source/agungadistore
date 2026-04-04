@@ -175,6 +175,7 @@ const AdminDashboard = () => {
     fetchAll();
     fetchTickets();
     fetchChats();
+    fetchUserBalances();
   }, []);
 
   async function checkAuth() {
