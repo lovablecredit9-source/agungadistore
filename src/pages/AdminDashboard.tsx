@@ -208,6 +208,29 @@ const AdminDashboard = () => {
     if (data) setAllChats(data as unknown as ProductChat[]);
   }
 
+  async function fetchUserBalances() {
+    const { data } = await supabase.from("user_balances").select("*").order("created_at", { ascending: false });
+    if (data) setUserBalances(data as unknown as UserBalance[]);
+  }
+
+  async function addTopup() {
+    if (!topupVisitorId || !topupAmount) { toast({ title: "Pilih user dan isi jumlah", variant: "destructive" }); return; }
+    const amount = parseInt(topupAmount) || 0;
+    if (amount <= 0) { toast({ title: "Jumlah harus lebih dari 0", variant: "destructive" }); return; }
+    const user = userBalances.find(u => u.visitor_id === topupVisitorId);
+    if (!user) { toast({ title: "User tidak ditemukan", variant: "destructive" }); return; }
+
+    // Update balance
+    await supabase.from("user_balances").update({ balance: user.balance + amount }).eq("id", user.id);
+    // Record transaction
+    await supabase.from("balance_transactions").insert({
+      visitor_id: topupVisitorId, type: "topup", amount, description: topupDesc.trim() || `Topup saldo oleh admin`,
+    });
+    toast({ title: `Saldo ${user.username} ditambah ${new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", minimumFractionDigits: 0 }).format(amount)}` });
+    setTopupAmount(""); setTopupDesc("");
+    fetchUserBalances();
+  }
+
   function getProductImages(productId: string): string[] {
     const imgs = productImages.filter(i => i.product_id === productId).map(i => i.image_url);
     const product = products.find(p => p.id === productId);
