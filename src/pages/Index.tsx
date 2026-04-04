@@ -78,6 +78,13 @@ interface ClaimHistory {
   fields: { field_name: string; field_value: string }[];
 }
 
+interface PurchasedVoucher {
+  token: { id: string; token_code: string };
+  product: Product;
+  fields: { field_name: string; field_value: string }[];
+  balance_remaining: number;
+}
+
 interface SupportTicket {
   id: string;
   ticket_number: number;
@@ -201,6 +208,7 @@ const Index = () => {
   const [setupPhone, setSetupPhone] = useState("");
   const [showBuySaldo, setShowBuySaldo] = useState(false);
   const [buyProduct, setBuyProduct] = useState<Product | null>(null);
+  const [purchaseSuccess, setPurchaseSuccess] = useState<PurchasedVoucher | null>(null);
 
   useEffect(() => {
     fetchProducts();
@@ -249,40 +257,73 @@ const Index = () => {
     if (!userBalance || userBalance.balance < product.price) {
       toast({ title: "Saldo tidak cukup", variant: "destructive" }); return;
     }
-    // Find available unclaimed token for this product
-    const { data: availableToken } = await supabase.from("tokens").select("*")
-      .eq("product_id", product.id).eq("is_claimed", false).limit(1).maybeSingle();
-    if (!availableToken) {
-      toast({ title: "Stok token habis untuk produk ini", variant: "destructive" }); return;
-    }
-    // Claim the token
-    const now = new Date().toISOString();
-    await supabase.from("tokens").update({ is_claimed: true, claimed_at: now }).eq("id", availableToken.id);
-    const deviceResult = await collectDeviceInfo();
-    await supabase.from("token_claims").insert({ token_id: availableToken.id, device_info: deviceResult.raw, browser: deviceResult.browser });
-    // Deduct balance (via transaction record - admin updates actual balance)
-    await supabase.from("balance_transactions").insert({
-      visitor_id: visitorId, type: "purchase", amount: product.price,
-      description: `Beli ${product.title}`, product_id: product.id, token_id: availableToken.id,
+    const { data, error } = await supabase.functions.invoke("purchase-with-balance", {
+      body: { visitorId, productId: product.id },
     });
-    // Get token fields
-    const { data: tokenFields } = await supabase.from("token_fields").select("field_name, field_value").eq("token_id", availableToken.id);
-    // Save to history
-    const prodImgs = getProductImages(product.id);
-    const newHistory: ClaimHistory = {
-      id: availableToken.id, token_code: availableToken.token_code,
-      product_title: product.title, product_price: product.price,
-      product_image: prodImgs[0] || product.image_url || undefined,
-      claimed_at: now, device_info: deviceResult.raw, browser: deviceResult.browser,
-      fields: tokenFields || [],
-    };
-    saveHistory([newHistory, ...history]);
-    // Update local balance
-    setUserBalance(prev => prev ? { ...prev, balance: prev.balance - product.price } : null);
+
+    if (error || data?.error) {
+      toast({ title: data?.error || "Pembelian gagal diproses", variant: "destructive" }); return;
+    }
+
+    const purchaseData = data as PurchasedVoucher;
+    setUserBalance(prev => prev ? { ...prev, balance: purchaseData.balance_remaining } : prev);
+    setShowBuySaldo(false);
+    setBuyProduct(null);
+    setSelectedProduct(null);
+    setPurchaseSuccess(purchaseData);
     fetchUserBalance();
-    setShowBuySaldo(false); setBuyProduct(null); setSelectedProduct(null);
-    toast({ title: `Pembelian berhasil! Voucher: ${availableToken.token_code}` });
-    setTab("history");
+  }
+
+  async function claimVoucherCodes(codes: string[]) {
+    if (codes.length === 0) return;
+
+    setClaiming(true);
+    setClaimResults([]);
+
+    const deviceResult = await collectDeviceInfo();
+    const { data, error } = await supabase.functions.invoke("claim-voucher", {
+      body: {
+        codes,
+        visitorId,
+        deviceInfo: deviceResult.raw,
+        browser: deviceResult.browser,
+      },
+    });
+
+    if (error || data?.error) {
+      setClaiming(false);
+      toast({ title: data?.error || "Gagal klaim voucher", variant: "destructive" });
+      return;
+    }
+
+    const results = (data?.results || []) as ClaimResult[];
+    const errors = (data?.errors || []) as string[];
+
+    errors.forEach((message) => toast({ title: message, variant: "destructive" }));
+
+    if (results.length > 0) {
+      const newHistories = results.map((result) => {
+        const prodImgs = getProductImages(result.product.id);
+        return {
+          id: result.token.id,
+          token_code: result.token.token_code,
+          product_title: result.product.title,
+          product_price: result.product.price,
+          product_image: prodImgs[0] || result.product.image_url || undefined,
+          claimed_at: result.token.claimed_at || new Date().toISOString(),
+          device_info: deviceResult.raw,
+          browser: deviceResult.browser,
+          fields: result.fields || [],
+        };
+      });
+
+      setClaimResults(results);
+      saveHistory([...newHistories, ...history]);
+      setTokenInput("");
+      toast({ title: `${results.length} voucher berhasil diklaim! 🎉` });
+    }
+
+    setClaiming(false);
   }
 
   async function toggleLike(productId: string, e?: React.MouseEvent) {
@@ -335,52 +376,14 @@ const Index = () => {
 
   async function handleClaim() {
     const codes = parseCodes(tokenInput);
-    if (codes.length === 0) return;
-    setClaiming(true);
-    setClaimResults([]);
+    await claimVoucherCodes(codes);
+  }
 
-    const results: ClaimResult[] = [];
-    const newHistories: ClaimHistory[] = [];
-
-    for (const code of codes) {
-      try {
-        const { data: token } = await supabase.from("tokens").select("*").eq("token_code", code).maybeSingle();
-        if (!token) { toast({ title: `Kode ${code} tidak ditemukan`, variant: "destructive" }); continue; }
-        if (token.is_claimed) { toast({ title: `Kode ${code} sudah diklaim`, variant: "destructive" }); continue; }
-
-        const { data: product } = await supabase.from("products").select("*").eq("id", token.product_id).single();
-        const { data: fields } = await supabase.from("token_fields").select("field_name, field_value").eq("token_id", token.id);
-
-        const now = new Date().toISOString();
-        await supabase.from("tokens").update({ is_claimed: true, claimed_at: now }).eq("id", token.id);
-
-        const deviceResult = await collectDeviceInfo();
-        const deviceInfo = deviceResult.raw;
-        await supabase.from("token_claims").insert({ token_id: token.id, device_info: deviceInfo, browser: deviceResult.browser });
-
-        const prodImgs = getProductImages(token.product_id);
-
-        results.push({ token: { ...token, claimed_at: now }, product: product as unknown as Product, fields: fields || [] });
-        newHistories.push({
-          id: token.id,
-          token_code: code,
-          product_title: product!.title,
-          product_price: product!.price,
-          product_image: prodImgs[0] || product!.image_url || undefined,
-          claimed_at: now,
-          device_info: deviceInfo,
-          browser: deviceResult.browser,
-          fields: fields || [],
-        });
-      } catch { toast({ title: `Error klaim ${code}`, variant: "destructive" }); }
-    }
-
-    if (results.length > 0) {
-      setClaimResults(results);
-      saveHistory([...newHistories, ...history]);
-      toast({ title: `${results.length} voucher berhasil diklaim! 🎉` });
-    }
-    setClaiming(false);
+  function openClaimFromPurchase(code: string) {
+    setPurchaseSuccess(null);
+    setTokenInput(code);
+    setTab("voucher");
+    toast({ title: "Kode voucher sudah dimasukkan, lanjut klik Klaim Sekarang" });
   }
 
   function copyText(text: string, id?: string) {
@@ -1295,7 +1298,7 @@ const Index = () => {
                     onClick={() => openProductChat(selectedProduct)}>
                     <MessageCircle className="w-4 h-4" /> Chat
                   </Button>
-                  <Button className="h-11 bg-gradient-to-r from-purple-500 to-purple-600 text-white font-bold gap-1 rounded-xl text-xs"
+                  <Button className="h-11 bg-gradient-to-r from-primary to-accent text-primary-foreground font-bold gap-1 rounded-xl text-xs"
                     disabled={!userBalance || userBalance.balance < selectedProduct.price || selectedProduct.stock <= 0}
                     onClick={() => { setBuyProduct(selectedProduct); setShowBuySaldo(true); }}>
                     <Wallet className="w-4 h-4" /> Saldo
@@ -1478,9 +1481,59 @@ const Index = () => {
               <div className="border-t border-border pt-1 flex justify-between"><span className="text-muted-foreground">Sisa saldo</span><span className="font-bold text-primary">{formatPrice((userBalance?.balance || 0) - buyProduct.price)}</span></div>
             </div>
             <p className="text-xs text-muted-foreground text-center">Token akun akan otomatis diberikan dari stok yang tersedia</p>
-            <Button className="w-full h-11 bg-gradient-to-r from-purple-500 to-purple-600 text-white font-bold gap-2" onClick={() => buyWithSaldo(buyProduct)}>
+            <Button className="w-full h-11 bg-gradient-to-r from-primary to-accent text-primary-foreground font-bold gap-2" onClick={() => buyWithSaldo(buyProduct)}>
               <Wallet className="w-5 h-5" /> Beli Sekarang
             </Button>
+          </div>
+        </div>
+      )}
+
+      {/* Purchase Success Modal */}
+      {purchaseSuccess && (
+        <div className="fixed inset-0 z-[85] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setPurchaseSuccess(null)}>
+          <div className="bg-card w-full max-w-sm rounded-2xl overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
+            <div className="bg-gradient-to-r from-accent to-primary px-5 py-4 text-primary-foreground">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-[0.2em] opacity-90">Pembelian Berhasil</p>
+                  <h3 className="mt-1 text-lg font-extrabold">Voucher siap diklaim</h3>
+                </div>
+                <button onClick={() => setPurchaseSuccess(null)} className="w-8 h-8 rounded-full bg-primary-foreground/15 flex items-center justify-center">
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+
+            <div className="p-5 space-y-4">
+              <div className="rounded-2xl border border-primary/20 bg-primary/5 p-4 text-center space-y-2">
+                <p className="text-sm font-bold">{purchaseSuccess.product.title}</p>
+                <p className="text-[11px] text-muted-foreground">Berikut adalah data voucher Anda, silakan klaim voucher atau salin kodenya.</p>
+                <div className="rounded-xl bg-background border border-border px-3 py-3">
+                  <p className="text-[10px] uppercase tracking-[0.24em] text-muted-foreground">Kode Voucher</p>
+                  <p className="mt-1 font-mono text-lg font-extrabold tracking-[0.2em] text-primary break-all">{purchaseSuccess.token.token_code}</p>
+                </div>
+              </div>
+
+              <div className="rounded-xl bg-muted/60 p-3 text-sm space-y-2">
+                <div className="flex items-center justify-between gap-3">
+                  <span className="text-muted-foreground">Harga</span>
+                  <span className="font-bold">{formatPrice(purchaseSuccess.product.price)}</span>
+                </div>
+                <div className="flex items-center justify-between gap-3">
+                  <span className="text-muted-foreground">Sisa saldo</span>
+                  <span className="font-bold text-primary">{formatPrice(purchaseSuccess.balance_remaining)}</span>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                <Button variant="outline" className="gap-2" onClick={() => copyText(purchaseSuccess.token.token_code, "purchase-voucher-code")}>
+                  <Copy className="w-4 h-4" /> Salin Voucher
+                </Button>
+                <Button className="gap-2 bg-gradient-to-r from-primary to-accent text-primary-foreground" onClick={() => openClaimFromPurchase(purchaseSuccess.token.token_code)}>
+                  <Ticket className="w-4 h-4" /> Klaim Voucher
+                </Button>
+              </div>
+            </div>
           </div>
         </div>
       )}
