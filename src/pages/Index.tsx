@@ -796,9 +796,9 @@ const Index = () => {
                 <p className="text-muted-foreground text-sm mt-2 leading-relaxed">{t("home.buy_premium", lang)}</p>
                 <div className="mt-3 flex items-center justify-center gap-2 flex-wrap">
                   <a href={`${SOCIAL_LINKS.whatsapp}?text=${encodeURIComponent("Halo, saya mau order di Agung Adi Store")}`} target="_blank" rel="noopener noreferrer">
-                    <Button size="sm" className="bg-gradient-to-r from-accent to-accent/80 text-accent-foreground shadow-md gap-1.5"><MessageCircle className="w-4 h-4" /> Hubungi WA</Button>
+                    <Button size="sm" className="bg-gradient-to-r from-accent to-accent/80 text-accent-foreground shadow-md gap-1.5"><MessageCircle className="w-4 h-4" /> {t("home.contact_wa", lang)}</Button>
                   </a>
-                  <Button size="sm" variant="outline" className="gap-1.5" onClick={() => setTab("voucher")}><Ticket className="w-4 h-4" /> Klaim Voucher</Button>
+                  <Button size="sm" variant="outline" className="gap-1.5" onClick={() => setTab("voucher")}><Ticket className="w-4 h-4" /> {t("home.claim_voucher", lang)}</Button>
                 </div>
               </div>
             </div>
