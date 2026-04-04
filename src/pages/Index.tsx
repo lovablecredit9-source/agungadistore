@@ -645,6 +645,10 @@ const Index = () => {
           setTicketMessages(prev => [...prev, payload.new as unknown as TicketMessage]);
           setTimeout(() => ticketChatRef.current?.scrollTo(0, ticketChatRef.current.scrollHeight), 100);
         })
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "ticket_messages", filter: `ticket_id=eq.${activeTicket.id}` },
+        (payload) => {
+          setTicketMessages(prev => prev.map(m => m.id === (payload.new as any).id ? { ...m, is_read: (payload.new as any).is_read } : m));
+        })
       .subscribe();
     return () => { supabase.removeChannel(channel); };
   }, [activeTicket?.id]);
