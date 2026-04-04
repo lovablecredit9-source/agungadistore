@@ -1467,7 +1467,7 @@ const Index = () => {
               <img src={storeQris} className="w-9 h-9 rounded-full object-cover" alt="" />
               <div className="flex-1">
                 <p className="font-bold text-sm">{STORE_NAME}</p>
-                <p className="text-[10px] text-muted-foreground">Biasa membalas dalam 5-10 menit</p>
+                <p className="text-[10px] text-muted-foreground">{t("chat.reply_time", lang)}</p>
               </div>
               <button onClick={() => { setShowChatHistory(true); setShowProductChat(false); }}>
                 <History className="w-5 h-5 text-muted-foreground" />
