@@ -158,6 +158,12 @@ const AdminDashboard = () => {
   const [activeChat, setActiveChat] = useState<ProductChat | null>(null);
   const [chatMessages, setChatMessages] = useState<ProductChatMessage[]>([]);
   const [chatMsg, setChatMsg] = useState("");
+  // User Balances
+  const [userBalances, setUserBalances] = useState<UserBalance[]>([]);
+  const [topupVisitorId, setTopupVisitorId] = useState("");
+  const [topupAmount, setTopupAmount] = useState("");
+  const [topupDesc, setTopupDesc] = useState("");
+
   const chatRef = useRef<HTMLDivElement>(null);
 
   const navigate = useNavigate();
