@@ -166,6 +166,11 @@ const AdminDashboard = () => {
   const [topupAmount, setTopupAmount] = useState("");
   const [topupDesc, setTopupDesc] = useState("");
 
+  // Notifications
+  const [notifTarget, setNotifTarget] = useState("all");
+  const [notifTitle, setNotifTitle] = useState("");
+  const [notifMessage, setNotifMessage] = useState("");
+
   const chatRef = useRef<HTMLDivElement>(null);
 
   const navigate = useNavigate();
