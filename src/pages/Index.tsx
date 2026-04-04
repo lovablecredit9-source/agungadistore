@@ -843,7 +843,7 @@ const Index = () => {
 
             <Card>
               <CardContent className="p-4">
-                <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3">Ikuti Kami</p>
+                <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3">{t("home.follow_us", lang)}</p>
                 <div className="grid grid-cols-2 gap-2">
                   {[
                     { label: `WA: ${WA_NUMBER}`, href: SOCIAL_LINKS.whatsapp, color: "from-green-500 to-green-600" },
