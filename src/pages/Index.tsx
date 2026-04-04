@@ -1044,7 +1044,7 @@ const Index = () => {
         {tab === "history" && (
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <h2 className="text-lg font-extrabold flex items-center gap-2"><Clock className="w-5 h-5 text-primary" /> Riwayat Klaim</h2>
+              <h2 className="text-lg font-extrabold flex items-center gap-2"><Clock className="w-5 h-5 text-primary" /> {t("history.title", lang)}</h2>
             </div>
 
             {history.length > 0 && (
