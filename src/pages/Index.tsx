@@ -170,6 +170,7 @@ function ImageCarousel({ images, className = "w-full h-44" }: { images: string[]
 }
 
 const Index = () => {
+  const [lang, setLang] = useLang();
   const [tab, setTab] = useState<Tab>("beranda");
   const [products, setProducts] = useState<Product[]>([]);
   const [productImages, setProductImages] = useState<ProductImage[]>([]);
