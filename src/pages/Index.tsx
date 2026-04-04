@@ -1497,7 +1497,7 @@ const Index = () => {
                 <ImagePlus className="w-4 h-4 text-muted-foreground" />
                 <input type="file" accept="image/*" className="hidden" onChange={e => { if (e.target.files?.[0]) sendProductChatImage(e.target.files[0]); e.target.value = ""; }} />
               </label>
-              <Input placeholder="Tulis pesan..." value={productChatMsg} onChange={e => setProductChatMsg(e.target.value)}
+              <Input placeholder={t("chat.write_message", lang)} value={productChatMsg} onChange={e => setProductChatMsg(e.target.value)}
                 onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendProductChatMessage(); } }} className="flex-1" />
               <Button size="icon" onClick={sendProductChatMessage} disabled={!productChatMsg.trim()}><Send className="w-4 h-4" /></Button>
             </div>
