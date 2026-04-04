@@ -329,6 +329,7 @@ const Index = () => {
     setPurchaseSuccess(purchaseData);
     fetchUserBalance();
     createNotification("Pembelian Berhasil 🛒", `Kamu berhasil membeli ${product.title}. Kode voucher: ${purchaseData.token.token_code}`, "purchase", product.id);
+  }
 
   async function claimVoucherCodes(codes: string[]) {
     if (codes.length === 0) return;
