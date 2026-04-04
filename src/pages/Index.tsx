@@ -9,7 +9,8 @@ import {
   ShoppingBag, KeyRound, Clock, Smartphone, Home, Package, Ticket,
   Download, MessageCircle, Copy, CheckCircle2, Shield, Crown,
   HelpCircle, X, ExternalLink, Search, ChevronLeft, ChevronRight, FileText,
-  Heart, Send, ImagePlus, AlertCircle, History, Wallet, ArrowUpCircle, ArrowDownCircle
+  Heart, Send, ImagePlus, AlertCircle, History, Wallet, ArrowUpCircle, ArrowDownCircle,
+  Bell
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import jsPDF from "jspdf";
@@ -210,6 +211,44 @@ const Index = () => {
   const [buyProduct, setBuyProduct] = useState<Product | null>(null);
   const [purchaseSuccess, setPurchaseSuccess] = useState<PurchasedVoucher | null>(null);
 
+  // Notifications
+  interface Notification {
+    id: string;
+    visitor_id: string;
+    title: string;
+    message: string | null;
+    type: string;
+    is_read: boolean;
+    created_at: string;
+    related_id: string | null;
+  }
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [showNotifPanel, setShowNotifPanel] = useState(false);
+  const unreadCount = notifications.filter(n => !n.is_read).length;
+
+  async function fetchNotifications() {
+    const { data } = await supabase.from("notifications").select("*").eq("visitor_id", visitorId).order("created_at", { ascending: false }).limit(50);
+    if (data) setNotifications(data as unknown as Notification[]);
+  }
+
+  async function markNotifRead(id: string) {
+    await supabase.from("notifications").update({ is_read: true } as any).eq("id", id);
+    setNotifications(prev => prev.map(n => n.id === id ? { ...n, is_read: true } : n));
+  }
+
+  async function markAllRead() {
+    const unreadIds = notifications.filter(n => !n.is_read).map(n => n.id);
+    if (unreadIds.length === 0) return;
+    await supabase.from("notifications").update({ is_read: true } as any).in("id", unreadIds);
+    setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
+  }
+
+  async function createNotification(title: string, message: string, type: string, relatedId?: string) {
+    await supabase.from("notifications").insert({
+      visitor_id: visitorId, title, message, type, related_id: relatedId || null,
+    } as any);
+  }
+
   useEffect(() => {
     fetchProducts();
     loadHistory();
@@ -217,7 +256,24 @@ const Index = () => {
     fetchTickets();
     fetchProductChatHistory();
     fetchUserBalance();
+    fetchNotifications();
   }, []);
+
+  // Realtime notifications
+  useEffect(() => {
+    const ch = supabase.channel("user-notifications")
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "notifications", filter: `visitor_id=eq.${visitorId}` },
+        (payload) => {
+          const notif = payload.new as unknown as Notification;
+          setNotifications(prev => [notif, ...prev]);
+          // Show toast if not in chat view
+          if (ticketView !== "chat" && !showProductChat) {
+            toast({ title: notif.title, description: notif.message || undefined });
+          }
+        })
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, [ticketView, showProductChat]);
 
   async function fetchProducts() {
     const [pRes, piRes] = await Promise.all([
@@ -272,6 +328,7 @@ const Index = () => {
     setSelectedProduct(null);
     setPurchaseSuccess(purchaseData);
     fetchUserBalance();
+    createNotification("Pembelian Berhasil 🛒", `Kamu berhasil membeli ${product.title}. Kode voucher: ${purchaseData.token.token_code}`, "purchase", product.id);
   }
 
   async function claimVoucherCodes(codes: string[]) {
@@ -321,6 +378,7 @@ const Index = () => {
       saveHistory([...newHistories, ...history]);
       setTokenInput("");
       toast({ title: `${results.length} voucher berhasil diklaim! 🎉` });
+      results.forEach(r => createNotification("Voucher Diklaim ✅", `${r.product.title} berhasil diklaim.`, "claim", r.token.id));
     }
 
     setClaiming(false);
@@ -690,9 +748,17 @@ const Index = () => {
             <h1 className="text-lg font-extrabold tracking-tight">{STORE_NAME}</h1>
             <p className="text-[10px] opacity-80 leading-tight">Terpercaya • Aman • Murah</p>
           </div>
-          <a href={`${SOCIAL_LINKS.whatsapp}?text=${encodeURIComponent("Halo, saya mau tanya di Agung Adi Store")}`} target="_blank" rel="noopener noreferrer" className="w-9 h-9 rounded-xl bg-primary-foreground/20 backdrop-blur-sm flex items-center justify-center hover:bg-primary-foreground/30 transition-colors">
-            <MessageCircle className="w-5 h-5" />
-          </a>
+          <div className="flex items-center gap-2">
+            <button onClick={() => setShowNotifPanel(!showNotifPanel)} className="relative w-9 h-9 rounded-xl bg-primary-foreground/20 backdrop-blur-sm flex items-center justify-center hover:bg-primary-foreground/30 transition-colors">
+              <Bell className="w-5 h-5" />
+              {unreadCount > 0 && (
+                <span className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground text-[9px] font-bold min-w-[18px] h-[18px] rounded-full flex items-center justify-center px-1">{unreadCount > 99 ? "99+" : unreadCount}</span>
+              )}
+            </button>
+            <a href={`${SOCIAL_LINKS.whatsapp}?text=${encodeURIComponent("Halo, saya mau tanya di Agung Adi Store")}`} target="_blank" rel="noopener noreferrer" className="w-9 h-9 rounded-xl bg-primary-foreground/20 backdrop-blur-sm flex items-center justify-center hover:bg-primary-foreground/30 transition-colors">
+              <MessageCircle className="w-5 h-5" />
+            </a>
+          </div>
         </div>
       </header>
 
@@ -1620,6 +1686,37 @@ const Index = () => {
                   <Ticket className="w-4 h-4" /> Klaim Voucher
                 </Button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Notification Panel */}
+      {showNotifPanel && (
+        <div className="fixed inset-0 z-[90] bg-black/60 backdrop-blur-sm flex items-start justify-center pt-16 p-4" onClick={() => setShowNotifPanel(false)}>
+          <div className="bg-card w-full max-w-sm rounded-2xl shadow-2xl animate-in slide-in-from-top-5 duration-200 max-h-[70vh] flex flex-col" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between p-4 border-b border-border">
+              <h3 className="font-extrabold text-base flex items-center gap-2"><Bell className="w-4 h-4 text-primary" /> Notifikasi</h3>
+              <div className="flex items-center gap-2">
+                {unreadCount > 0 && <button onClick={markAllRead} className="text-[10px] text-primary font-bold hover:underline">Tandai semua dibaca</button>}
+                <button onClick={() => setShowNotifPanel(false)} className="w-7 h-7 rounded-full bg-muted flex items-center justify-center"><X className="w-4 h-4" /></button>
+              </div>
+            </div>
+            <div className="flex-1 overflow-y-auto p-2 space-y-1">
+              {notifications.length === 0 ? (
+                <p className="text-center text-sm text-muted-foreground py-8">Belum ada notifikasi</p>
+              ) : notifications.map(n => (
+                <button key={n.id} onClick={() => { markNotifRead(n.id); }} className={`w-full text-left p-3 rounded-xl transition-colors ${n.is_read ? "bg-transparent hover:bg-muted/50" : "bg-primary/5 hover:bg-primary/10"}`}>
+                  <div className="flex items-start gap-2">
+                    <div className={`mt-1 w-2 h-2 rounded-full shrink-0 ${n.is_read ? "bg-muted-foreground/30" : "bg-primary"}`} />
+                    <div className="flex-1 min-w-0">
+                      <p className={`text-sm font-bold truncate ${n.is_read ? "text-muted-foreground" : "text-foreground"}`}>{n.title}</p>
+                      {n.message && <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{n.message}</p>}
+                      <p className="text-[10px] text-muted-foreground/60 mt-1">{new Date(n.created_at).toLocaleString("id-ID")}</p>
+                    </div>
+                  </div>
+                </button>
+              ))}
             </div>
           </div>
         </div>

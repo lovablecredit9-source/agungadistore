@@ -10,7 +10,8 @@ import { useToast } from "@/hooks/use-toast";
 import {
   Plus, Trash2, LogOut, Package, Ticket, Copy, Image, Edit2, X,
   Smartphone, Clock, ChevronLeft, ChevronRight, Search, Send,
-  MessageCircle, AlertCircle, ImagePlus, Shield, Wallet, Users, ArrowUpCircle
+  MessageCircle, AlertCircle, ImagePlus, Shield, Wallet, Users, ArrowUpCircle,
+  Bell
 } from "lucide-react";
 import { generateVoucherCode } from "@/lib/voucher-code";
 import { getDeviceSummary } from "@/lib/device-info";
@@ -110,7 +111,7 @@ interface UserBalance {
   created_at: string;
 }
 
-type AdminTab = "products" | "tokens" | "claims" | "tickets" | "chats" | "saldo";
+type AdminTab = "products" | "tokens" | "claims" | "tickets" | "chats" | "saldo" | "notif";
 type ClaimDateFilter = "all" | "today" | "yesterday" | "lastmonth" | "custom";
 
 const AdminDashboard = () => {
@@ -164,6 +165,11 @@ const AdminDashboard = () => {
   const [topupVisitorId, setTopupVisitorId] = useState("");
   const [topupAmount, setTopupAmount] = useState("");
   const [topupDesc, setTopupDesc] = useState("");
+
+  // Notifications
+  const [notifTarget, setNotifTarget] = useState("all");
+  const [notifTitle, setNotifTitle] = useState("");
+  const [notifMessage, setNotifMessage] = useState("");
 
   const chatRef = useRef<HTMLDivElement>(null);
 
@@ -228,6 +234,10 @@ const AdminDashboard = () => {
       visitor_id: topupVisitorId, type: "topup", amount, description: topupDesc.trim() || `Topup saldo oleh admin`,
     });
     toast({ title: `Saldo ${user.username} ditambah ${new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", minimumFractionDigits: 0 }).format(amount)}` });
+    // Notify user
+    await supabase.from("notifications").insert({
+      visitor_id: topupVisitorId, title: "Saldo Ditambahkan 💰", message: `Saldo kamu bertambah ${new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", minimumFractionDigits: 0 }).format(amount)}`, type: "topup",
+    } as any);
     setTopupAmount(""); setTopupDesc("");
     fetchUserBalances();
   }
@@ -436,11 +446,19 @@ const AdminDashboard = () => {
     setTimeout(() => ticketChatRef.current?.scrollTo(0, ticketChatRef.current.scrollHeight), 100);
   }
 
-  async function sendTicketMessage() {
+   async function sendTicketMessage() {
     if (!ticketMsg.trim() || !activeTicket) return;
     await supabase.from("ticket_messages").insert({
       ticket_id: activeTicket.id, sender_type: "admin", message: ticketMsg.trim(),
     });
+    // Notify visitor via stored ticket IDs — use ticket's phone as identifier
+    // We need visitor_id from the ticket — search user_balances by phone
+    const matchingUser = userBalances.find(u => u.phone === activeTicket.phone);
+    if (matchingUser) {
+      await supabase.from("notifications").insert({
+        visitor_id: matchingUser.visitor_id, title: "Balasan Admin 💬", message: `Admin membalas tiket #${activeTicket.ticket_number}`, type: "ticket_reply", related_id: activeTicket.id,
+      } as any);
+    }
     setTicketMsg("");
   }
 
@@ -498,6 +516,10 @@ const AdminDashboard = () => {
     await supabase.from("product_chat_messages").insert({
       chat_id: activeChat.id, sender_type: "admin", message: chatMsg.trim(),
     });
+    // Notify the visitor
+    await supabase.from("notifications").insert({
+      visitor_id: activeChat.visitor_id, title: "Balasan Chat 💬", message: `Admin membalas chat produk Anda`, type: "chat_reply", related_id: activeChat.id,
+    } as any);
     setChatMsg("");
   }
 
@@ -532,6 +554,27 @@ const AdminDashboard = () => {
       .subscribe();
     return () => { supabase.removeChannel(ch); };
   }, []);
+
+  async function sendBroadcastNotification() {
+    if (!notifTitle.trim()) { toast({ title: "Isi judul notifikasi", variant: "destructive" }); return; }
+    if (notifTarget === "all") {
+      // Send to all registered users
+      const inserts = userBalances.map(u => ({
+        visitor_id: u.visitor_id, title: notifTitle.trim(), message: notifMessage.trim() || null, type: "broadcast",
+      }));
+      if (inserts.length === 0) { toast({ title: "Tidak ada user terdaftar", variant: "destructive" }); return; }
+      const { error } = await supabase.from("notifications").insert(inserts as any);
+      if (error) { toast({ title: "Gagal kirim notifikasi", variant: "destructive" }); return; }
+      toast({ title: `Notifikasi terkirim ke ${inserts.length} user! 📢` });
+    } else {
+      const { error } = await supabase.from("notifications").insert({
+        visitor_id: notifTarget, title: notifTitle.trim(), message: notifMessage.trim() || null, type: "broadcast",
+      } as any);
+      if (error) { toast({ title: "Gagal kirim notifikasi", variant: "destructive" }); return; }
+      toast({ title: "Notifikasi terkirim! 📢" });
+    }
+    setNotifTitle(""); setNotifMessage("");
+  }
 
   const selectedProductFields = fields.filter(f => f.product_id === selProduct);
 
@@ -589,6 +632,7 @@ const AdminDashboard = () => {
           { key: "saldo" as AdminTab, icon: Wallet, label: "Saldo" },
           { key: "tickets" as AdminTab, icon: AlertCircle, label: "Tiket" },
           { key: "chats" as AdminTab, icon: MessageCircle, label: "Chat" },
+          { key: "notif" as AdminTab, icon: Bell, label: "Notif" },
         ]).map(({ key, icon: Icon, label }) => (
           <button key={key} onClick={() => setTab(key)} className={`flex-1 py-3 text-xs font-medium text-center border-b-2 transition-colors whitespace-nowrap px-2 ${tab === key ? "border-primary text-primary" : "border-transparent text-muted-foreground"}`}>
             <Icon className="w-4 h-4 inline mr-1" /> {label}
@@ -1042,6 +1086,33 @@ const AdminDashboard = () => {
                 </CardContent>
               </Card>
             ))}
+          </>
+        )}
+
+        {tab === "notif" && (
+          <>
+            <Card>
+              <CardHeader><CardTitle className="text-base flex items-center gap-2"><Bell className="w-5 h-5 text-primary" /> Kirim Notifikasi</CardTitle></CardHeader>
+              <CardContent className="space-y-3">
+                <select className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" value={notifTarget} onChange={e => setNotifTarget(e.target.value)}>
+                  <option value="all">📢 Semua User ({userBalances.length})</option>
+                  {userBalances.map(u => (
+                    <option key={u.id} value={u.visitor_id}>{u.username} ({u.phone})</option>
+                  ))}
+                </select>
+                <Input placeholder="Judul notifikasi *" value={notifTitle} onChange={e => setNotifTitle(e.target.value)} />
+                <Textarea placeholder="Pesan (opsional)" value={notifMessage} onChange={e => setNotifMessage(e.target.value)} rows={3} />
+                <Button className="w-full gap-2" onClick={sendBroadcastNotification} disabled={!notifTitle.trim()}>
+                  <Bell className="w-4 h-4" /> Kirim Notifikasi
+                </Button>
+              </CardContent>
+            </Card>
+            <div className="rounded-xl bg-muted/50 border border-border p-3 text-xs text-muted-foreground space-y-1">
+              <p className="font-bold text-foreground">ℹ️ Info Notifikasi</p>
+              <p>• Notifikasi otomatis dikirim saat: admin balas chat/tiket</p>
+              <p>• Notifikasi otomatis dikirim saat: user beli via saldo atau klaim voucher</p>
+              <p>• Gunakan form di atas untuk kirim notifikasi manual/broadcast</p>
+            </div>
           </>
         )}
       </main>
