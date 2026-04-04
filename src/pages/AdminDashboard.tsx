@@ -585,6 +585,7 @@ const AdminDashboard = () => {
           { key: "products" as AdminTab, icon: Package, label: "Produk" },
           { key: "tokens" as AdminTab, icon: Ticket, label: "Token" },
           { key: "claims" as AdminTab, icon: Clock, label: "Klaim" },
+          { key: "saldo" as AdminTab, icon: Wallet, label: "Saldo" },
           { key: "tickets" as AdminTab, icon: AlertCircle, label: "Tiket" },
           { key: "chats" as AdminTab, icon: MessageCircle, label: "Chat" },
         ]).map(({ key, icon: Icon, label }) => (
