@@ -234,6 +234,10 @@ const AdminDashboard = () => {
       visitor_id: topupVisitorId, type: "topup", amount, description: topupDesc.trim() || `Topup saldo oleh admin`,
     });
     toast({ title: `Saldo ${user.username} ditambah ${new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", minimumFractionDigits: 0 }).format(amount)}` });
+    // Notify user
+    await supabase.from("notifications").insert({
+      visitor_id: topupVisitorId, title: "Saldo Ditambahkan 💰", message: `Saldo kamu bertambah ${new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", minimumFractionDigits: 0 }).format(amount)}`, type: "topup",
+    } as any);
     setTopupAmount(""); setTopupDesc("");
     fetchUserBalances();
   }
