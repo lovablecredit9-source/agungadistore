@@ -442,11 +442,19 @@ const AdminDashboard = () => {
     setTimeout(() => ticketChatRef.current?.scrollTo(0, ticketChatRef.current.scrollHeight), 100);
   }
 
-  async function sendTicketMessage() {
+   async function sendTicketMessage() {
     if (!ticketMsg.trim() || !activeTicket) return;
     await supabase.from("ticket_messages").insert({
       ticket_id: activeTicket.id, sender_type: "admin", message: ticketMsg.trim(),
     });
+    // Notify visitor via stored ticket IDs — use ticket's phone as identifier
+    // We need visitor_id from the ticket — search user_balances by phone
+    const matchingUser = userBalances.find(u => u.phone === activeTicket.phone);
+    if (matchingUser) {
+      await supabase.from("notifications").insert({
+        visitor_id: matchingUser.visitor_id, title: "Balasan Admin 💬", message: `Admin membalas tiket #${activeTicket.ticket_number}`, type: "ticket_reply", related_id: activeTicket.id,
+      } as any);
+    }
     setTicketMsg("");
   }
 
