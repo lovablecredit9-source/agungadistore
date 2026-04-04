@@ -764,9 +764,12 @@ const Index = () => {
           <img src={storeQris} alt={STORE_NAME} className="w-11 h-11 rounded-xl object-cover border-2 border-primary-foreground/30 shadow-md" />
           <div className="flex-1">
             <h1 className="text-lg font-extrabold tracking-tight">{STORE_NAME}</h1>
-            <p className="text-[10px] opacity-80 leading-tight">Terpercaya • Aman • Murah</p>
+            <p className="text-[10px] opacity-80 leading-tight">{t("header.tagline", lang)}</p>
           </div>
           <div className="flex items-center gap-2">
+            <button onClick={() => setLang(lang === "id" ? "en" : "id")} className="w-9 h-9 rounded-xl bg-primary-foreground/20 backdrop-blur-sm flex items-center justify-center hover:bg-primary-foreground/30 transition-colors" title={t("general.language", lang)}>
+              <span className="text-[10px] font-bold">{lang === "id" ? "EN" : "ID"}</span>
+            </button>
             <button onClick={() => setShowNotifPanel(!showNotifPanel)} className="relative w-9 h-9 rounded-xl bg-primary-foreground/20 backdrop-blur-sm flex items-center justify-center hover:bg-primary-foreground/30 transition-colors">
               <Bell className="w-5 h-5" />
               {unreadCount > 0 && (
