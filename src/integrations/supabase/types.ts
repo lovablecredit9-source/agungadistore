@@ -14,6 +14,54 @@ export type Database = {
   }
   public: {
     Tables: {
+      balance_transactions: {
+        Row: {
+          amount: number
+          created_at: string
+          description: string | null
+          id: string
+          product_id: string | null
+          token_id: string | null
+          type: string
+          visitor_id: string
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          description?: string | null
+          id?: string
+          product_id?: string | null
+          token_id?: string | null
+          type?: string
+          visitor_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          description?: string | null
+          id?: string
+          product_id?: string | null
+          token_id?: string | null
+          type?: string
+          visitor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "balance_transactions_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "balance_transactions_token_id_fkey"
+            columns: ["token_id"]
+            isOneToOne: false
+            referencedRelation: "tokens"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       liked_products: {
         Row: {
           created_at: string
@@ -382,6 +430,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      user_balances: {
+        Row: {
+          balance: number
+          created_at: string
+          id: string
+          phone: string
+          updated_at: string
+          username: string
+          visitor_id: string
+        }
+        Insert: {
+          balance?: number
+          created_at?: string
+          id?: string
+          phone?: string
+          updated_at?: string
+          username: string
+          visitor_id: string
+        }
+        Update: {
+          balance?: number
+          created_at?: string
+          id?: string
+          phone?: string
+          updated_at?: string
+          username?: string
+          visitor_id?: string
+        }
+        Relationships: []
       }
     }
     Views: {

@@ -9,7 +9,7 @@ import {
   ShoppingBag, KeyRound, Clock, Smartphone, Home, Package, Ticket,
   Download, MessageCircle, Copy, CheckCircle2, Shield, Crown,
   HelpCircle, X, ExternalLink, Search, ChevronLeft, ChevronRight, FileText,
-  Heart, Send, ImagePlus, AlertCircle, History
+  Heart, Send, ImagePlus, AlertCircle, History, Wallet, ArrowUpCircle, ArrowDownCircle
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import jsPDF from "jspdf";
@@ -21,7 +21,26 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 
-type Tab = "beranda" | "produk" | "voucher" | "history" | "likes" | "tiket";
+type Tab = "beranda" | "produk" | "voucher" | "history" | "likes" | "tiket" | "saldo";
+
+interface UserBalance {
+  id: string;
+  visitor_id: string;
+  username: string;
+  phone: string;
+  balance: number;
+}
+
+interface BalanceTransaction {
+  id: string;
+  visitor_id: string;
+  type: string;
+  amount: number;
+  description: string | null;
+  product_id: string | null;
+  token_id: string | null;
+  created_at: string;
+}
 
 interface Product {
   id: string;
@@ -175,12 +194,21 @@ const Index = () => {
   const [waPhone, setWaPhone] = useState("");
   const [waDesc, setWaDesc] = useState("");
 
+  // Saldo
+  const [userBalance, setUserBalance] = useState<UserBalance | null>(null);
+  const [balanceTransactions, setBalanceTransactions] = useState<BalanceTransaction[]>([]);
+  const [setupUsername, setSetupUsername] = useState("");
+  const [setupPhone, setSetupPhone] = useState("");
+  const [showBuySaldo, setShowBuySaldo] = useState(false);
+  const [buyProduct, setBuyProduct] = useState<Product | null>(null);
+
   useEffect(() => {
     fetchProducts();
     loadHistory();
     fetchLikes();
     fetchTickets();
     fetchProductChatHistory();
+    fetchUserBalance();
   }, []);
 
   async function fetchProducts() {
@@ -195,6 +223,66 @@ const Index = () => {
   async function fetchLikes() {
     const { data } = await supabase.from("liked_products").select("product_id").eq("visitor_id", visitorId);
     if (data) setLikedIds(new Set(data.map((d: any) => d.product_id)));
+  }
+
+  async function fetchUserBalance() {
+    const { data } = await supabase.from("user_balances").select("*").eq("visitor_id", visitorId).maybeSingle();
+    if (data) setUserBalance(data as unknown as UserBalance);
+    const { data: txns } = await supabase.from("balance_transactions").select("*").eq("visitor_id", visitorId).order("created_at", { ascending: false });
+    if (txns) setBalanceTransactions(txns as unknown as BalanceTransaction[]);
+  }
+
+  async function createUserBalance() {
+    if (!setupUsername.trim() || !setupPhone.trim()) {
+      toast({ title: "Isi username dan no HP", variant: "destructive" }); return;
+    }
+    const { data, error } = await supabase.from("user_balances").insert({
+      visitor_id: visitorId, username: setupUsername.trim(), phone: setupPhone.trim(),
+    }).select().single();
+    if (error) { toast({ title: "Gagal membuat akun", variant: "destructive" }); return; }
+    setUserBalance(data as unknown as UserBalance);
+    setSetupUsername(""); setSetupPhone("");
+    toast({ title: "Akun saldo berhasil dibuat! 🎉" });
+  }
+
+  async function buyWithSaldo(product: Product) {
+    if (!userBalance || userBalance.balance < product.price) {
+      toast({ title: "Saldo tidak cukup", variant: "destructive" }); return;
+    }
+    // Find available unclaimed token for this product
+    const { data: availableToken } = await supabase.from("tokens").select("*")
+      .eq("product_id", product.id).eq("is_claimed", false).limit(1).maybeSingle();
+    if (!availableToken) {
+      toast({ title: "Stok token habis untuk produk ini", variant: "destructive" }); return;
+    }
+    // Claim the token
+    const now = new Date().toISOString();
+    await supabase.from("tokens").update({ is_claimed: true, claimed_at: now }).eq("id", availableToken.id);
+    const deviceResult = await collectDeviceInfo();
+    await supabase.from("token_claims").insert({ token_id: availableToken.id, device_info: deviceResult.raw, browser: deviceResult.browser });
+    // Deduct balance (via transaction record - admin updates actual balance)
+    await supabase.from("balance_transactions").insert({
+      visitor_id: visitorId, type: "purchase", amount: product.price,
+      description: `Beli ${product.title}`, product_id: product.id, token_id: availableToken.id,
+    });
+    // Get token fields
+    const { data: tokenFields } = await supabase.from("token_fields").select("field_name, field_value").eq("token_id", availableToken.id);
+    // Save to history
+    const prodImgs = getProductImages(product.id);
+    const newHistory: ClaimHistory = {
+      id: availableToken.id, token_code: availableToken.token_code,
+      product_title: product.title, product_price: product.price,
+      product_image: prodImgs[0] || product.image_url || undefined,
+      claimed_at: now, device_info: deviceResult.raw, browser: deviceResult.browser,
+      fields: tokenFields || [],
+    };
+    saveHistory([newHistory, ...history]);
+    // Update local balance
+    setUserBalance(prev => prev ? { ...prev, balance: prev.balance - product.price } : null);
+    fetchUserBalance();
+    setShowBuySaldo(false); setBuyProduct(null); setSelectedProduct(null);
+    toast({ title: `Pembelian berhasil! Voucher: ${availableToken.token_code}` });
+    setTab("history");
   }
 
   async function toggleLike(productId: string, e?: React.MouseEvent) {
@@ -1090,6 +1178,84 @@ const Index = () => {
             )}
           </div>
         )}
+
+        {tab === "saldo" && (
+          <div className="space-y-4">
+            <h2 className="text-lg font-extrabold flex items-center gap-2"><Wallet className="w-5 h-5 text-primary" /> Saldo</h2>
+
+            {!userBalance ? (
+              <Card className="border-2 border-primary/20">
+                <CardContent className="p-5 space-y-4">
+                  <div className="text-center">
+                    <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-accent flex items-center justify-center mx-auto mb-3 shadow-lg">
+                      <Wallet className="w-8 h-8 text-primary-foreground" />
+                    </div>
+                    <h3 className="font-bold text-lg">Buat Akun Saldo</h3>
+                    <p className="text-xs text-muted-foreground mt-1">Daftar untuk menggunakan fitur saldo</p>
+                  </div>
+                  <div className="space-y-3">
+                    <Input placeholder="Username" value={setupUsername} onChange={e => setSetupUsername(e.target.value)} />
+                    <Input placeholder="No HP" value={setupPhone} onChange={e => setSetupPhone(e.target.value)} />
+                    <Button className="w-full bg-gradient-to-r from-primary to-primary/80 font-bold" onClick={createUserBalance}>
+                      Buat Akun
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ) : (
+              <>
+                {/* Balance Card */}
+                <Card className="border-2 border-primary/20 bg-gradient-to-br from-primary/5 to-accent/5 overflow-hidden">
+                  <CardContent className="p-5">
+                    <div className="flex items-center justify-between mb-3">
+                      <div>
+                        <p className="text-xs text-muted-foreground font-medium">Hai, {userBalance.username}</p>
+                        <p className="text-3xl font-extrabold text-primary">{formatPrice(userBalance.balance)}</p>
+                      </div>
+                      <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-lg">
+                        <Wallet className="w-7 h-7 text-primary-foreground" />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <a href={`${SOCIAL_LINKS.whatsapp}?text=${encodeURIComponent(`Halo admin, saya mau deposit saldo.\n\nUsername: ${userBalance.username}\nNo HP: ${userBalance.phone}\nVisitor ID: ${visitorId}`)}`}
+                        target="_blank" rel="noopener noreferrer">
+                        <Button size="sm" className="w-full bg-gradient-to-r from-accent to-accent/80 text-accent-foreground gap-1.5">
+                          <MessageCircle className="w-4 h-4" /> Deposit WA
+                        </Button>
+                      </a>
+                      <Button size="sm" variant="outline" className="gap-1.5" onClick={() => setTab("tiket")}>
+                        <Send className="w-4 h-4" /> Deposit Chat
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Transaction History */}
+                <h3 className="font-bold text-sm flex items-center gap-1.5"><History className="w-4 h-4" /> Riwayat Transaksi</h3>
+                {balanceTransactions.length === 0 && (
+                  <p className="text-center text-sm text-muted-foreground py-8">Belum ada transaksi</p>
+                )}
+                {balanceTransactions.map(tx => (
+                  <Card key={tx.id}>
+                    <CardContent className="p-3 flex items-center gap-3">
+                      <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${tx.type === "topup" ? "bg-accent/10" : "bg-destructive/10"}`}>
+                        {tx.type === "topup" ? <ArrowUpCircle className="w-5 h-5 text-accent" /> : <ArrowDownCircle className="w-5 h-5 text-destructive" />}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-bold text-sm">{tx.type === "topup" ? "Deposit" : "Pembelian"}</p>
+                        <p className="text-[10px] text-muted-foreground truncate">{tx.description || "-"}</p>
+                        <p className="text-[10px] text-muted-foreground">{new Date(tx.created_at).toLocaleString("id-ID")}</p>
+                      </div>
+                      <span className={`font-bold text-sm ${tx.type === "topup" ? "text-accent" : "text-destructive"}`}>
+                        {tx.type === "topup" ? "+" : "-"}{formatPrice(tx.amount)}
+                      </span>
+                    </CardContent>
+                  </Card>
+                ))}
+              </>
+            )}
+          </div>
+        )}
       </main>
 
       {/* Product Detail Modal */}
@@ -1123,17 +1289,28 @@ const Index = () => {
                   </span>
                 </div>
 
-                {/* Two buttons: Chat + WhatsApp */}
-                <div className="grid grid-cols-2 gap-2">
-                  <Button className="h-11 bg-gradient-to-r from-primary to-primary/80 font-bold gap-2 rounded-xl"
+                {/* Three buttons: Chat + Beli Saldo + WhatsApp */}
+                <div className="grid grid-cols-3 gap-2">
+                  <Button className="h-11 bg-gradient-to-r from-primary to-primary/80 font-bold gap-1 rounded-xl text-xs"
                     onClick={() => openProductChat(selectedProduct)}>
-                    <MessageCircle className="w-5 h-5" /> Chat
+                    <MessageCircle className="w-4 h-4" /> Chat
                   </Button>
-                  <Button className="h-11 bg-gradient-to-r from-accent to-accent/80 text-accent-foreground font-bold gap-2 rounded-xl"
+                  <Button className="h-11 bg-gradient-to-r from-purple-500 to-purple-600 text-white font-bold gap-1 rounded-xl text-xs"
+                    disabled={!userBalance || userBalance.balance < selectedProduct.price || selectedProduct.stock <= 0}
+                    onClick={() => { setBuyProduct(selectedProduct); setShowBuySaldo(true); }}>
+                    <Wallet className="w-4 h-4" /> Saldo
+                  </Button>
+                  <Button className="h-11 bg-gradient-to-r from-accent to-accent/80 text-accent-foreground font-bold gap-1 rounded-xl text-xs"
                     onClick={() => setShowWaForm(true)}>
-                    <ShoppingBag className="w-5 h-5" /> Beli WA
+                    <ShoppingBag className="w-4 h-4" /> Beli WA
                   </Button>
                 </div>
+                {userBalance && userBalance.balance < selectedProduct.price && (
+                  <p className="text-[10px] text-destructive text-center">Saldo tidak cukup. <button className="underline text-primary" onClick={() => { setSelectedProduct(null); setTab("saldo"); }}>Deposit saldo →</button></p>
+                )}
+                {!userBalance && (
+                  <p className="text-[10px] text-muted-foreground text-center">Buat akun saldo untuk beli pakai saldo. <button className="underline text-primary" onClick={() => { setSelectedProduct(null); setTab("saldo"); }}>Daftar →</button></p>
+                )}
 
                 <div className="border-t border-border pt-4 space-y-2">
                   <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Hubungi Kami</p>
@@ -1283,6 +1460,31 @@ const Index = () => {
         </div>
       )}
 
+      {/* Buy with Saldo Confirmation Modal */}
+      {showBuySaldo && buyProduct && (
+        <div className="fixed inset-0 z-[80] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => { setShowBuySaldo(false); setBuyProduct(null); }}>
+          <div className="bg-card w-full max-w-sm rounded-2xl p-5 space-y-4 animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between">
+              <h3 className="font-extrabold text-lg">Konfirmasi Pembelian</h3>
+              <button onClick={() => { setShowBuySaldo(false); setBuyProduct(null); }} className="w-8 h-8 rounded-full bg-muted flex items-center justify-center"><X className="w-4 h-4" /></button>
+            </div>
+            <div className="bg-primary/5 border border-primary/20 rounded-lg p-3 space-y-1">
+              <p className="font-bold text-sm">{buyProduct.title}</p>
+              <p className="text-primary font-extrabold text-lg">{formatPrice(buyProduct.price)}</p>
+            </div>
+            <div className="bg-muted/50 rounded-lg p-3 space-y-1 text-sm">
+              <div className="flex justify-between"><span className="text-muted-foreground">Saldo saat ini</span><span className="font-bold">{formatPrice(userBalance?.balance || 0)}</span></div>
+              <div className="flex justify-between"><span className="text-muted-foreground">Harga produk</span><span className="font-bold text-destructive">-{formatPrice(buyProduct.price)}</span></div>
+              <div className="border-t border-border pt-1 flex justify-between"><span className="text-muted-foreground">Sisa saldo</span><span className="font-bold text-primary">{formatPrice((userBalance?.balance || 0) - buyProduct.price)}</span></div>
+            </div>
+            <p className="text-xs text-muted-foreground text-center">Token akun akan otomatis diberikan dari stok yang tersedia</p>
+            <Button className="w-full h-11 bg-gradient-to-r from-purple-500 to-purple-600 text-white font-bold gap-2" onClick={() => buyWithSaldo(buyProduct)}>
+              <Wallet className="w-5 h-5" /> Beli Sekarang
+            </Button>
+          </div>
+        </div>
+      )}
+
       {/* Bottom Nav */}
       <nav className="fixed bottom-0 left-0 right-0 bg-card/95 backdrop-blur-md border-t border-border z-50 shadow-[0_-4px_20px_rgba(0,0,0,0.08)]">
         <div className="flex max-w-lg mx-auto">
@@ -1290,6 +1492,7 @@ const Index = () => {
             { key: "beranda" as Tab, icon: Home, label: "Beranda" },
             { key: "produk" as Tab, icon: Package, label: "Produk" },
             { key: "voucher" as Tab, icon: Ticket, label: "Voucher" },
+            { key: "saldo" as Tab, icon: Wallet, label: "Saldo" },
             { key: "likes" as Tab, icon: Heart, label: "Suka" },
             { key: "history" as Tab, icon: Clock, label: "Riwayat" },
             { key: "tiket" as Tab, icon: AlertCircle, label: "Tiket" },

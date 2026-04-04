@@ -10,7 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import {
   Plus, Trash2, LogOut, Package, Ticket, Copy, Image, Edit2, X,
   Smartphone, Clock, ChevronLeft, ChevronRight, Search, Send,
-  MessageCircle, AlertCircle, ImagePlus, Shield
+  MessageCircle, AlertCircle, ImagePlus, Shield, Wallet, Users, ArrowUpCircle
 } from "lucide-react";
 import { generateVoucherCode } from "@/lib/voucher-code";
 import { getDeviceSummary } from "@/lib/device-info";
@@ -101,7 +101,16 @@ interface ProductChatMessage {
   created_at: string;
 }
 
-type AdminTab = "products" | "tokens" | "claims" | "tickets" | "chats";
+interface UserBalance {
+  id: string;
+  visitor_id: string;
+  username: string;
+  phone: string;
+  balance: number;
+  created_at: string;
+}
+
+type AdminTab = "products" | "tokens" | "claims" | "tickets" | "chats" | "saldo";
 type ClaimDateFilter = "all" | "today" | "yesterday" | "lastmonth" | "custom";
 
 const AdminDashboard = () => {
@@ -150,6 +159,12 @@ const AdminDashboard = () => {
   const [activeChat, setActiveChat] = useState<ProductChat | null>(null);
   const [chatMessages, setChatMessages] = useState<ProductChatMessage[]>([]);
   const [chatMsg, setChatMsg] = useState("");
+  // User Balances
+  const [userBalances, setUserBalances] = useState<UserBalance[]>([]);
+  const [topupVisitorId, setTopupVisitorId] = useState("");
+  const [topupAmount, setTopupAmount] = useState("");
+  const [topupDesc, setTopupDesc] = useState("");
+
   const chatRef = useRef<HTMLDivElement>(null);
 
   const navigate = useNavigate();
@@ -161,6 +176,7 @@ const AdminDashboard = () => {
     fetchAll();
     fetchTickets();
     fetchChats();
+    fetchUserBalances();
   }, []);
 
   async function checkAuth() {
@@ -191,6 +207,29 @@ const AdminDashboard = () => {
   async function fetchChats() {
     const { data } = await supabase.from("product_chats").select("*").order("created_at", { ascending: false });
     if (data) setAllChats(data as unknown as ProductChat[]);
+  }
+
+  async function fetchUserBalances() {
+    const { data } = await supabase.from("user_balances").select("*").order("created_at", { ascending: false });
+    if (data) setUserBalances(data as unknown as UserBalance[]);
+  }
+
+  async function addTopup() {
+    if (!topupVisitorId || !topupAmount) { toast({ title: "Pilih user dan isi jumlah", variant: "destructive" }); return; }
+    const amount = parseInt(topupAmount) || 0;
+    if (amount <= 0) { toast({ title: "Jumlah harus lebih dari 0", variant: "destructive" }); return; }
+    const user = userBalances.find(u => u.visitor_id === topupVisitorId);
+    if (!user) { toast({ title: "User tidak ditemukan", variant: "destructive" }); return; }
+
+    // Update balance
+    await supabase.from("user_balances").update({ balance: user.balance + amount }).eq("id", user.id);
+    // Record transaction
+    await supabase.from("balance_transactions").insert({
+      visitor_id: topupVisitorId, type: "topup", amount, description: topupDesc.trim() || `Topup saldo oleh admin`,
+    });
+    toast({ title: `Saldo ${user.username} ditambah ${new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", minimumFractionDigits: 0 }).format(amount)}` });
+    setTopupAmount(""); setTopupDesc("");
+    fetchUserBalances();
   }
 
   function getProductImages(productId: string): string[] {
@@ -547,6 +586,7 @@ const AdminDashboard = () => {
           { key: "products" as AdminTab, icon: Package, label: "Produk" },
           { key: "tokens" as AdminTab, icon: Ticket, label: "Token" },
           { key: "claims" as AdminTab, icon: Clock, label: "Klaim" },
+          { key: "saldo" as AdminTab, icon: Wallet, label: "Saldo" },
           { key: "tickets" as AdminTab, icon: AlertCircle, label: "Tiket" },
           { key: "chats" as AdminTab, icon: MessageCircle, label: "Chat" },
         ]).map(({ key, icon: Icon, label }) => (
@@ -965,6 +1005,43 @@ const AdminDashboard = () => {
                 </div>
               </>
             )}
+          </>
+        )}
+
+        {tab === "saldo" && (
+          <>
+            <Card>
+              <CardHeader><CardTitle className="text-base flex items-center gap-2"><ArrowUpCircle className="w-5 h-5 text-accent" /> Tambah Saldo</CardTitle></CardHeader>
+              <CardContent className="space-y-3">
+                <select className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" value={topupVisitorId} onChange={e => setTopupVisitorId(e.target.value)} required>
+                  <option value="">Pilih User</option>
+                  {userBalances.map(u => (
+                    <option key={u.id} value={u.visitor_id}>{u.username} ({u.phone}) - Saldo: Rp {u.balance.toLocaleString()}</option>
+                  ))}
+                </select>
+                <Input type="number" placeholder="Jumlah (Rp)" value={topupAmount} onChange={e => setTopupAmount(e.target.value)} />
+                <Input placeholder="Keterangan (opsional)" value={topupDesc} onChange={e => setTopupDesc(e.target.value)} />
+                <Button className="w-full" onClick={addTopup} disabled={!topupVisitorId || !topupAmount}><ArrowUpCircle className="w-4 h-4 mr-1" /> Tambah Saldo</Button>
+              </CardContent>
+            </Card>
+
+            <h3 className="font-bold text-sm flex items-center gap-2"><Users className="w-4 h-4" /> Daftar User ({userBalances.length})</h3>
+            {userBalances.length === 0 && <p className="text-center text-sm text-muted-foreground py-8">Belum ada user terdaftar</p>}
+            {userBalances.map(u => (
+              <Card key={u.id}>
+                <CardContent className="p-3 flex items-center justify-between">
+                  <div>
+                    <p className="font-bold text-sm">{u.username}</p>
+                    <p className="text-xs text-muted-foreground">HP: {u.phone}</p>
+                    <p className="text-[10px] text-muted-foreground font-mono">ID: {u.visitor_id.slice(0, 12)}...</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-extrabold text-primary text-lg">Rp {u.balance.toLocaleString()}</p>
+                    <p className="text-[10px] text-muted-foreground">{new Date(u.created_at || "").toLocaleDateString("id-ID")}</p>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
           </>
         )}
       </main>
