@@ -1269,8 +1269,8 @@ const Index = () => {
                   </div>
                 ) : (
                   <div className="text-center text-sm text-muted-foreground bg-muted/50 p-3 rounded-lg">
-                    Tiket ini sudah ditutup oleh admin.
-                    <Button size="sm" variant="outline" className="mt-2 gap-1" onClick={() => setTicketView("create")}><Send className="w-3 h-3" /> Buat Tiket Baru</Button>
+                    {t("chat.ticket_closed", lang)}
+                    <Button size="sm" variant="outline" className="mt-2 gap-1" onClick={() => setTicketView("create")}><Send className="w-3 h-3" /> {t("ticket.create", lang)}</Button>
                   </div>
                 )}
               </>
