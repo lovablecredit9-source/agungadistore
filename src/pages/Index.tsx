@@ -1747,13 +1747,13 @@ const Index = () => {
       <nav className="fixed bottom-0 left-0 right-0 bg-card/95 backdrop-blur-md border-t border-border z-50 shadow-[0_-4px_20px_rgba(0,0,0,0.08)]">
         <div className="flex max-w-lg mx-auto">
           {([
-            { key: "beranda" as Tab, icon: Home, label: "Beranda" },
-            { key: "produk" as Tab, icon: Package, label: "Produk" },
-            { key: "voucher" as Tab, icon: Ticket, label: "Voucher" },
-            { key: "saldo" as Tab, icon: Wallet, label: "Saldo" },
-            { key: "likes" as Tab, icon: Heart, label: "Suka" },
-            { key: "history" as Tab, icon: Clock, label: "Riwayat" },
-            { key: "tiket" as Tab, icon: AlertCircle, label: "Tiket" },
+            { key: "beranda" as Tab, icon: Home, label: t("nav.home", lang) },
+            { key: "produk" as Tab, icon: Package, label: t("nav.products", lang) },
+            { key: "voucher" as Tab, icon: Ticket, label: t("nav.voucher", lang) },
+            { key: "saldo" as Tab, icon: Wallet, label: t("nav.balance", lang) },
+            { key: "likes" as Tab, icon: Heart, label: t("nav.likes", lang) },
+            { key: "history" as Tab, icon: Clock, label: t("nav.history", lang) },
+            { key: "tiket" as Tab, icon: AlertCircle, label: t("nav.ticket", lang) },
           ]).map(({ key, icon: Icon, label }) => (
             <button key={key} onClick={() => setTab(key)}
               className={`flex-1 flex flex-col items-center py-2 text-[10px] transition-all duration-200 ${tab === key ? "text-primary font-bold" : "text-muted-foreground hover:text-foreground"}`}>
