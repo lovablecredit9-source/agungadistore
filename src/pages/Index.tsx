@@ -1139,7 +1139,7 @@ const Index = () => {
 
         {tab === "likes" && (
           <div className="space-y-4">
-            <h2 className="text-lg font-extrabold flex items-center gap-2"><Heart className="w-5 h-5 text-destructive" /> Produk Disukai</h2>
+            <h2 className="text-lg font-extrabold flex items-center gap-2"><Heart className="w-5 h-5 text-destructive" /> {t("likes.title", lang)}</h2>
             {likedProducts.length === 0 && (
               <div className="text-center py-16 text-muted-foreground">
                 <Heart className="w-16 h-16 mx-auto mb-3 opacity-20" />
