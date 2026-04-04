@@ -104,6 +104,7 @@ interface TicketMessage {
   message: string | null;
   image_url: string | null;
   created_at: string;
+  is_read: boolean;
 }
 
 interface ProductChat {
@@ -122,6 +123,21 @@ interface ProductChatMessage {
   message: string | null;
   image_url: string | null;
   created_at: string;
+  is_read: boolean;
+}
+
+// WhatsApp-style checkmark component
+function MessageStatus({ isRead, isUserMsg }: { isRead: boolean; isUserMsg: boolean }) {
+  if (!isUserMsg) return null;
+  return (
+    <span className="inline-flex items-center ml-1">
+      {isRead ? (
+        <CheckCheck className="w-3.5 h-3.5 text-blue-400" />
+      ) : (
+        <CheckCheck className="w-3.5 h-3.5 text-primary-foreground/50" />
+      )}
+    </span>
+  );
 }
 
 function formatPrice(price: number) {
