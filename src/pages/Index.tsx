@@ -211,6 +211,44 @@ const Index = () => {
   const [buyProduct, setBuyProduct] = useState<Product | null>(null);
   const [purchaseSuccess, setPurchaseSuccess] = useState<PurchasedVoucher | null>(null);
 
+  // Notifications
+  interface Notification {
+    id: string;
+    visitor_id: string;
+    title: string;
+    message: string | null;
+    type: string;
+    is_read: boolean;
+    created_at: string;
+    related_id: string | null;
+  }
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [showNotifPanel, setShowNotifPanel] = useState(false);
+  const unreadCount = notifications.filter(n => !n.is_read).length;
+
+  async function fetchNotifications() {
+    const { data } = await supabase.from("notifications").select("*").eq("visitor_id", visitorId).order("created_at", { ascending: false }).limit(50);
+    if (data) setNotifications(data as unknown as Notification[]);
+  }
+
+  async function markNotifRead(id: string) {
+    await supabase.from("notifications").update({ is_read: true } as any).eq("id", id);
+    setNotifications(prev => prev.map(n => n.id === id ? { ...n, is_read: true } : n));
+  }
+
+  async function markAllRead() {
+    const unreadIds = notifications.filter(n => !n.is_read).map(n => n.id);
+    if (unreadIds.length === 0) return;
+    await supabase.from("notifications").update({ is_read: true } as any).in("id", unreadIds);
+    setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
+  }
+
+  async function createNotification(title: string, message: string, type: string, relatedId?: string) {
+    await supabase.from("notifications").insert({
+      visitor_id: visitorId, title, message, type, related_id: relatedId || null,
+    } as any);
+  }
+
   useEffect(() => {
     fetchProducts();
     loadHistory();
@@ -218,7 +256,24 @@ const Index = () => {
     fetchTickets();
     fetchProductChatHistory();
     fetchUserBalance();
+    fetchNotifications();
   }, []);
+
+  // Realtime notifications
+  useEffect(() => {
+    const ch = supabase.channel("user-notifications")
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "notifications", filter: `visitor_id=eq.${visitorId}` },
+        (payload) => {
+          const notif = payload.new as unknown as Notification;
+          setNotifications(prev => [notif, ...prev]);
+          // Show toast if not in chat view
+          if (ticketView !== "chat" && !showProductChat) {
+            toast({ title: notif.title, description: notif.message || undefined });
+          }
+        })
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, [ticketView, showProductChat]);
 
   async function fetchProducts() {
     const [pRes, piRes] = await Promise.all([
