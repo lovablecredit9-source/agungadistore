@@ -1449,15 +1449,102 @@ const Index = () => {
       {/* Help Center Modal */}
       {showHelp && (
         <div className="fixed inset-0 z-[60] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setShowHelp(false)}>
-          <div className="bg-card w-full max-w-sm rounded-2xl p-5 space-y-4 animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between">
-              <h3 className="font-extrabold text-lg">Pusat Bantuan</h3>
+          <div className="bg-card w-full max-w-sm max-h-[85vh] rounded-2xl overflow-hidden animate-in zoom-in-95 duration-200 flex flex-col" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between p-5 pb-3 shrink-0">
+              <div>
+                <h3 className="font-extrabold text-lg">Pusat Bantuan</h3>
+                <p className="text-[11px] text-muted-foreground">Web v1.0 — {STORE_NAME}</p>
+              </div>
               <button onClick={() => setShowHelp(false)} className="w-8 h-8 rounded-full bg-muted flex items-center justify-center"><X className="w-4 h-4" /></button>
             </div>
-            <div className="space-y-3 text-sm text-muted-foreground">
-              <p><strong>Cara order:</strong> Pilih produk → Chat WA → Bayar → Dapat kode voucher → Klaim di tab Voucher</p>
-              <p><strong>Cara klaim:</strong> Masukkan kode voucher, klik Klaim.</p>
-              <p><strong>Masalah?</strong> Hubungi admin lewat WA atau buat tiket keluhan.</p>
+            <div className="overflow-y-auto px-5 pb-5 space-y-4 text-sm text-muted-foreground">
+
+              {/* Cara Order */}
+              <div className="rounded-xl bg-primary/5 border border-primary/20 p-3 space-y-1.5">
+                <p className="font-bold text-foreground text-xs uppercase tracking-wider">🛒 Cara Order Produk</p>
+                <ol className="list-decimal list-inside space-y-0.5 text-[13px]">
+                  <li>Buka tab <strong>Produk</strong>, pilih produk yang diinginkan</li>
+                  <li>Klik <strong>Beli via WhatsApp</strong> atau <strong>Beli dengan Saldo</strong></li>
+                  <li>Jika via WA: lakukan pembayaran sesuai instruksi admin</li>
+                  <li>Admin akan mengirimkan kode voucher</li>
+                  <li>Klaim voucher di tab <strong>Voucher</strong></li>
+                </ol>
+              </div>
+
+              {/* Cara Klaim Voucher */}
+              <div className="rounded-xl bg-accent/10 border border-accent/20 p-3 space-y-1.5">
+                <p className="font-bold text-foreground text-xs uppercase tracking-wider">🎫 Cara Klaim Voucher</p>
+                <ol className="list-decimal list-inside space-y-0.5 text-[13px]">
+                  <li>Buka tab <strong>Voucher</strong></li>
+                  <li>Masukkan kode voucher yang diberikan admin</li>
+                  <li>Klik tombol <strong>Klaim</strong></li>
+                  <li>Data akun/informasi produk akan ditampilkan</li>
+                </ol>
+              </div>
+
+              {/* Fitur Saldo */}
+              <div className="rounded-xl bg-muted/60 border border-border p-3 space-y-1.5">
+                <p className="font-bold text-foreground text-xs uppercase tracking-wider">💰 Fitur Saldo</p>
+                <ul className="list-disc list-inside space-y-0.5 text-[13px]">
+                  <li>Daftar akun saldo di tab <strong>Saldo</strong></li>
+                  <li>Isi saldo melalui deposit (hubungi admin)</li>
+                  <li>Beli produk langsung dengan saldo tanpa chat WA</li>
+                  <li>Voucher otomatis diberikan setelah pembelian berhasil</li>
+                  <li>Cek riwayat transaksi di tab <strong>Riwayat</strong></li>
+                </ul>
+              </div>
+
+              {/* Fitur Like */}
+              <div className="rounded-xl bg-muted/60 border border-border p-3 space-y-1.5">
+                <p className="font-bold text-foreground text-xs uppercase tracking-wider">❤️ Fitur Suka / Like</p>
+                <ul className="list-disc list-inside space-y-0.5 text-[13px]">
+                  <li>Tekan ikon hati di produk untuk menyimpannya</li>
+                  <li>Lihat semua produk favorit di tab <strong>Suka</strong></li>
+                </ul>
+              </div>
+
+              {/* Tiket & Chat */}
+              <div className="rounded-xl bg-muted/60 border border-border p-3 space-y-1.5">
+                <p className="font-bold text-foreground text-xs uppercase tracking-wider">🎧 Dukungan & Bantuan</p>
+                <ul className="list-disc list-inside space-y-0.5 text-[13px]">
+                  <li><strong>Ajukan Keluhan:</strong> buat tiket keluhan di tab Tiket</li>
+                  <li><strong>Chat Admin:</strong> tanya langsung soal produk via chat</li>
+                  <li>Admin biasanya membalas dalam 5-10 menit</li>
+                  <li>Bisa kirim foto/gambar dalam chat</li>
+                </ul>
+              </div>
+
+              {/* Kontak */}
+              <div className="rounded-xl bg-muted/60 border border-border p-3 space-y-1.5">
+                <p className="font-bold text-foreground text-xs uppercase tracking-wider">📞 Kontak Admin</p>
+                <ul className="list-disc list-inside space-y-0.5 text-[13px]">
+                  <li>WhatsApp: <strong>{WA_NUMBER}</strong></li>
+                  <li>Instagram: <strong>@agungadi57</strong></li>
+                  <li>TikTok: <strong>@pphitampro9</strong></li>
+                  <li>YouTube: <strong>{YOUTUBE_NAME}</strong></li>
+                </ul>
+              </div>
+
+              {/* Kebijakan Privasi */}
+              <div className="rounded-xl bg-muted/60 border border-border p-3 space-y-1.5">
+                <p className="font-bold text-foreground text-xs uppercase tracking-wider">🔒 Kebijakan Privasi</p>
+                <div className="space-y-1.5 text-[13px]">
+                  <p>{STORE_NAME} menghormati privasi pengguna. Berikut ketentuan kami:</p>
+                  <ul className="list-disc list-inside space-y-0.5">
+                    <li><strong>Data yang dikumpulkan:</strong> ID perangkat (visitor ID) untuk identifikasi saldo, riwayat transaksi, dan chat. Kami tidak mengumpulkan data pribadi seperti email atau password.</li>
+                    <li><strong>Penggunaan data:</strong> Data digunakan hanya untuk memproses transaksi, mengelola saldo, dan menyediakan layanan dukungan.</li>
+                    <li><strong>Keamanan:</strong> Data disimpan secara aman di server terenkripsi. Kami tidak membagikan data kepada pihak ketiga.</li>
+                    <li><strong>Hak pengguna:</strong> Anda dapat menghubungi admin untuk meminta penghapusan data Anda kapan saja.</li>
+                    <li><strong>Perubahan kebijakan:</strong> Kebijakan ini dapat diperbarui sewaktu-waktu. Perubahan akan diumumkan melalui aplikasi.</li>
+                  </ul>
+                </div>
+              </div>
+
+              {/* Versi */}
+              <div className="text-center pt-2 pb-1 border-t border-border">
+                <p className="text-xs text-muted-foreground font-medium">{STORE_NAME}</p>
+                <p className="text-[11px] text-muted-foreground/70">Web Version 1.0 • © 2024-2025</p>
+              </div>
             </div>
           </div>
         </div>
