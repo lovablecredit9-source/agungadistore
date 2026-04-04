@@ -1727,7 +1727,7 @@ const Index = () => {
             </div>
             <div className="flex-1 overflow-y-auto p-2 space-y-1">
               {notifications.length === 0 ? (
-                <p className="text-center text-sm text-muted-foreground py-8">Belum ada notifikasi</p>
+                <p className="text-center text-sm text-muted-foreground py-8">{t("notif.no_notif", lang)}</p>
               ) : notifications.map(n => (
                 <button key={n.id} onClick={() => { markNotifRead(n.id); }} className={`w-full text-left p-3 rounded-xl transition-colors ${n.is_read ? "bg-transparent hover:bg-muted/50" : "bg-primary/5 hover:bg-primary/10"}`}>
                   <div className="flex items-start gap-2">
