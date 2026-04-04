@@ -512,6 +512,10 @@ const AdminDashboard = () => {
     await supabase.from("product_chat_messages").insert({
       chat_id: activeChat.id, sender_type: "admin", message: chatMsg.trim(),
     });
+    // Notify the visitor
+    await supabase.from("notifications").insert({
+      visitor_id: activeChat.visitor_id, title: "Balasan Chat 💬", message: `Admin membalas chat produk Anda`, type: "chat_reply", related_id: activeChat.id,
+    } as any);
     setChatMsg("");
   }
 
