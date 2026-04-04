@@ -1280,7 +1280,7 @@ const Index = () => {
 
         {tab === "saldo" && (
           <div className="space-y-4">
-            <h2 className="text-lg font-extrabold flex items-center gap-2"><Wallet className="w-5 h-5 text-primary" /> Saldo</h2>
+            <h2 className="text-lg font-extrabold flex items-center gap-2"><Wallet className="w-5 h-5 text-primary" /> {t("balance.title", lang)}</h2>
 
             {!userBalance ? (
               <Card className="border-2 border-primary/20">
