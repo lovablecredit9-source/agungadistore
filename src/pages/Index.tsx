@@ -815,7 +815,7 @@ const Index = () => {
                 <CardContent className="p-4 text-center">
                   <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center mx-auto mb-2"><Clock className="w-5 h-5 text-accent" /></div>
                   <p className="text-2xl font-extrabold text-accent">{history.length}</p>
-                  <p className="text-xs text-muted-foreground font-medium">Voucher Diklaim</p>
+                  <p className="text-xs text-muted-foreground font-medium">{t("home.vouchers_claimed", lang)}</p>
                 </CardContent>
               </Card>
             </div>
