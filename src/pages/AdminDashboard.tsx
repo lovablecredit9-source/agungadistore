@@ -107,6 +107,7 @@ interface UserBalance {
   username: string;
   phone: string;
   balance: number;
+  created_at: string;
 }
 
 type AdminTab = "products" | "tokens" | "claims" | "tickets" | "chats" | "saldo";
