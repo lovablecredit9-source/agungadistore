@@ -835,8 +835,8 @@ const Index = () => {
               <CardContent className="p-4 flex items-center gap-3">
                 <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-destructive to-destructive/70 flex items-center justify-center shadow-md"><AlertCircle className="w-6 h-6 text-destructive-foreground" /></div>
                 <div className="flex-1">
-                  <h3 className="font-bold text-sm">Ada Masalah?</h3>
-                  <p className="text-xs text-muted-foreground">Ajukan tiket keluhan →</p>
+                  <h3 className="font-bold text-sm">{t("home.have_issue", lang)}</h3>
+                  <p className="text-xs text-muted-foreground">{t("home.submit_ticket", lang)}</p>
                 </div>
               </CardContent>
             </Card>
