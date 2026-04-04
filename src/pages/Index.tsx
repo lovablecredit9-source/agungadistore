@@ -1263,7 +1263,7 @@ const Index = () => {
                       <ImagePlus className="w-4 h-4 text-muted-foreground" />
                       <input type="file" accept="image/*" className="hidden" onChange={e => { if (e.target.files?.[0]) sendTicketImage(e.target.files[0]); e.target.value = ""; }} />
                     </label>
-                    <Input placeholder="Tulis pesan..." value={ticketMsg} onChange={e => setTicketMsg(e.target.value)}
+                    <Input placeholder={t("chat.write_message", lang)} value={ticketMsg} onChange={e => setTicketMsg(e.target.value)}
                       onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendTicketMessage(); } }} className="flex-1" />
                     <Button size="icon" onClick={sendTicketMessage} disabled={!ticketMsg.trim()}><Send className="w-4 h-4" /></Button>
                   </div>
