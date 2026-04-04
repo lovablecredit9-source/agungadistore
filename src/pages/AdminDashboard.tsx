@@ -1006,6 +1006,43 @@ const AdminDashboard = () => {
             )}
           </>
         )}
+
+        {tab === "saldo" && (
+          <>
+            <Card>
+              <CardHeader><CardTitle className="text-base flex items-center gap-2"><ArrowUpCircle className="w-5 h-5 text-accent" /> Tambah Saldo</CardTitle></CardHeader>
+              <CardContent className="space-y-3">
+                <select className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" value={topupVisitorId} onChange={e => setTopupVisitorId(e.target.value)} required>
+                  <option value="">Pilih User</option>
+                  {userBalances.map(u => (
+                    <option key={u.id} value={u.visitor_id}>{u.username} ({u.phone}) - Saldo: Rp {u.balance.toLocaleString()}</option>
+                  ))}
+                </select>
+                <Input type="number" placeholder="Jumlah (Rp)" value={topupAmount} onChange={e => setTopupAmount(e.target.value)} />
+                <Input placeholder="Keterangan (opsional)" value={topupDesc} onChange={e => setTopupDesc(e.target.value)} />
+                <Button className="w-full" onClick={addTopup} disabled={!topupVisitorId || !topupAmount}><ArrowUpCircle className="w-4 h-4 mr-1" /> Tambah Saldo</Button>
+              </CardContent>
+            </Card>
+
+            <h3 className="font-bold text-sm flex items-center gap-2"><Users className="w-4 h-4" /> Daftar User ({userBalances.length})</h3>
+            {userBalances.length === 0 && <p className="text-center text-sm text-muted-foreground py-8">Belum ada user terdaftar</p>}
+            {userBalances.map(u => (
+              <Card key={u.id}>
+                <CardContent className="p-3 flex items-center justify-between">
+                  <div>
+                    <p className="font-bold text-sm">{u.username}</p>
+                    <p className="text-xs text-muted-foreground">HP: {u.phone}</p>
+                    <p className="text-[10px] text-muted-foreground font-mono">ID: {u.visitor_id.slice(0, 12)}...</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-extrabold text-primary text-lg">Rp {u.balance.toLocaleString()}</p>
+                    <p className="text-[10px] text-muted-foreground">{new Date(u.created_at || "").toLocaleDateString("id-ID")}</p>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </>
+        )}
       </main>
     </div>
   );
