@@ -514,7 +514,14 @@ const AdminDashboard = () => {
   // === PRODUCT CHAT FUNCTIONS ===
   async function loadChatMessages(chatId: string) {
     const { data } = await supabase.from("product_chat_messages").select("*").eq("chat_id", chatId).order("created_at");
-    if (data) setChatMessages(data as unknown as ProductChatMessage[]);
+    if (data) {
+      setChatMessages(data as unknown as ProductChatMessage[]);
+      // Mark user messages as read
+      const unreadIds = data.filter((m: any) => m.sender_type === "user" && !m.is_read).map((m: any) => m.id);
+      if (unreadIds.length > 0) {
+        await supabase.from("product_chat_messages").update({ is_read: true } as any).in("id", unreadIds);
+      }
+    }
     setTimeout(() => chatRef.current?.scrollTo(0, chatRef.current.scrollHeight), 100);
   }
 
