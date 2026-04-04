@@ -1084,6 +1084,33 @@ const AdminDashboard = () => {
             ))}
           </>
         )}
+
+        {tab === "notif" && (
+          <>
+            <Card>
+              <CardHeader><CardTitle className="text-base flex items-center gap-2"><Bell className="w-5 h-5 text-primary" /> Kirim Notifikasi</CardTitle></CardHeader>
+              <CardContent className="space-y-3">
+                <select className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" value={notifTarget} onChange={e => setNotifTarget(e.target.value)}>
+                  <option value="all">📢 Semua User ({userBalances.length})</option>
+                  {userBalances.map(u => (
+                    <option key={u.id} value={u.visitor_id}>{u.username} ({u.phone})</option>
+                  ))}
+                </select>
+                <Input placeholder="Judul notifikasi *" value={notifTitle} onChange={e => setNotifTitle(e.target.value)} />
+                <Textarea placeholder="Pesan (opsional)" value={notifMessage} onChange={e => setNotifMessage(e.target.value)} rows={3} />
+                <Button className="w-full gap-2" onClick={sendBroadcastNotification} disabled={!notifTitle.trim()}>
+                  <Bell className="w-4 h-4" /> Kirim Notifikasi
+                </Button>
+              </CardContent>
+            </Card>
+            <div className="rounded-xl bg-muted/50 border border-border p-3 text-xs text-muted-foreground space-y-1">
+              <p className="font-bold text-foreground">ℹ️ Info Notifikasi</p>
+              <p>• Notifikasi otomatis dikirim saat: admin balas chat/tiket</p>
+              <p>• Notifikasi otomatis dikirim saat: user beli via saldo atau klaim voucher</p>
+              <p>• Gunakan form di atas untuk kirim notifikasi manual/broadcast</p>
+            </div>
+          </>
+        )}
       </main>
     </div>
   );
