@@ -793,7 +793,7 @@ const Index = () => {
                 <img src={storeQris} alt={STORE_NAME} className="w-20 h-20 rounded-2xl object-cover mx-auto mb-3 shadow-lg border-2 border-primary/20" />
                 <h2 className="text-xl font-extrabold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">{STORE_NAME}</h2>
                 <p className="text-xs text-muted-foreground mt-1 font-medium">{t("header.tagline", lang)}</p>
-                <p className="text-muted-foreground text-sm mt-2 leading-relaxed">Beli akun digital premium dengan harga terbaik.</p>
+                <p className="text-muted-foreground text-sm mt-2 leading-relaxed">{t("home.buy_premium", lang)}</p>
                 <div className="mt-3 flex items-center justify-center gap-2 flex-wrap">
                   <a href={`${SOCIAL_LINKS.whatsapp}?text=${encodeURIComponent("Halo, saya mau order di Agung Adi Store")}`} target="_blank" rel="noopener noreferrer">
                     <Button size="sm" className="bg-gradient-to-r from-accent to-accent/80 text-accent-foreground shadow-md gap-1.5"><MessageCircle className="w-4 h-4" /> Hubungi WA</Button>
