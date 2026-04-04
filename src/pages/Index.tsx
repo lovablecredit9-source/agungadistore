@@ -1240,8 +1240,9 @@ const Index = () => {
                         {m.sender_type === "admin" && <p className="text-[10px] font-bold text-primary mb-0.5">{STORE_NAME}</p>}
                         {m.message && <p className="text-sm whitespace-pre-wrap">{m.message}</p>}
                         {m.image_url && <img src={m.image_url} className="max-w-full rounded-lg mt-1" alt="" />}
-                        <p className={`text-[9px] mt-1 ${m.sender_type === "user" ? "text-primary-foreground/60" : "text-muted-foreground"}`}>
+                        <p className={`text-[9px] mt-1 flex items-center gap-0.5 ${m.sender_type === "user" ? "text-primary-foreground/60 justify-end" : "text-muted-foreground"}`}>
                           {new Date(m.created_at).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })}
+                          <MessageStatus isRead={m.is_read} isUserMsg={m.sender_type === "user"} />
                         </p>
                       </div>
                     </div>
