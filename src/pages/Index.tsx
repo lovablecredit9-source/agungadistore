@@ -1178,7 +1178,7 @@ const Index = () => {
             {ticketView === "list" && (
               <>
                 <div className="flex items-center justify-between">
-                  <h2 className="text-lg font-extrabold flex items-center gap-2"><AlertCircle className="w-5 h-5 text-destructive" /> Tiket Keluhan</h2>
+                  <h2 className="text-lg font-extrabold flex items-center gap-2"><AlertCircle className="w-5 h-5 text-destructive" /> {t("ticket.title", lang)}</h2>
                   <Button size="sm" onClick={() => setTicketView("create")} className="gap-1"><Send className="w-3 h-3" /> Buat Tiket</Button>
                 </div>
 
