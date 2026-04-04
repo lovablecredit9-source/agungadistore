@@ -808,7 +808,7 @@ const Index = () => {
                 <CardContent className="p-4 text-center">
                   <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center mx-auto mb-2"><Package className="w-5 h-5 text-primary" /></div>
                   <p className="text-2xl font-extrabold text-primary">{products.length}</p>
-                  <p className="text-xs text-muted-foreground font-medium">Produk Tersedia</p>
+                  <p className="text-xs text-muted-foreground font-medium">{t("home.products_available", lang)}</p>
                 </CardContent>
               </Card>
               <Card className="cursor-pointer hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 border-accent/10 bg-gradient-to-br from-accent/5 to-transparent" onClick={() => setTab("history")}>
