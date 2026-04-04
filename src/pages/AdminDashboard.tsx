@@ -551,6 +551,27 @@ const AdminDashboard = () => {
     return () => { supabase.removeChannel(ch); };
   }, []);
 
+  async function sendBroadcastNotification() {
+    if (!notifTitle.trim()) { toast({ title: "Isi judul notifikasi", variant: "destructive" }); return; }
+    if (notifTarget === "all") {
+      // Send to all registered users
+      const inserts = userBalances.map(u => ({
+        visitor_id: u.visitor_id, title: notifTitle.trim(), message: notifMessage.trim() || null, type: "broadcast",
+      }));
+      if (inserts.length === 0) { toast({ title: "Tidak ada user terdaftar", variant: "destructive" }); return; }
+      const { error } = await supabase.from("notifications").insert(inserts as any);
+      if (error) { toast({ title: "Gagal kirim notifikasi", variant: "destructive" }); return; }
+      toast({ title: `Notifikasi terkirim ke ${inserts.length} user! 📢` });
+    } else {
+      const { error } = await supabase.from("notifications").insert({
+        visitor_id: notifTarget, title: notifTitle.trim(), message: notifMessage.trim() || null, type: "broadcast",
+      } as any);
+      if (error) { toast({ title: "Gagal kirim notifikasi", variant: "destructive" }); return; }
+      toast({ title: "Notifikasi terkirim! 📢" });
+    }
+    setNotifTitle(""); setNotifMessage("");
+  }
+
   const selectedProductFields = fields.filter(f => f.product_id === selProduct);
 
   const filteredProducts = products.filter(p =>
