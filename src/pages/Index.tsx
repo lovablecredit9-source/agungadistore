@@ -1632,7 +1632,7 @@ const Index = () => {
               {/* Versi */}
               <div className="text-center pt-2 pb-1 border-t border-border">
                 <p className="text-xs text-muted-foreground font-medium">{STORE_NAME}</p>
-                <p className="text-[11px] text-muted-foreground/70">Web Version 1.0 • © 2024-2025</p>
+                <p className="text-[11px] text-muted-foreground/70">{t("version.footer", lang)}</p>
               </div>
             </div>
           </div>
