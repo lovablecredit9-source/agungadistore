@@ -732,6 +732,10 @@ const Index = () => {
           setProductChatMessages(prev => [...prev, payload.new as unknown as ProductChatMessage]);
           setTimeout(() => productChatRef.current?.scrollTo(0, productChatRef.current.scrollHeight), 100);
         })
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "product_chat_messages", filter: `chat_id=eq.${productChat.id}` },
+        (payload) => {
+          setProductChatMessages(prev => prev.map(m => m.id === (payload.new as any).id ? { ...m, is_read: (payload.new as any).is_read } : m));
+        })
       .subscribe();
     return () => { supabase.removeChannel(channel); };
   }, [productChat?.id]);
