@@ -442,7 +442,14 @@ const AdminDashboard = () => {
   // === TICKET FUNCTIONS ===
   async function loadTicketMessages(ticketId: string) {
     const { data } = await supabase.from("ticket_messages").select("*").eq("ticket_id", ticketId).order("created_at");
-    if (data) setTicketMessages(data as unknown as TicketMessage[]);
+    if (data) {
+      setTicketMessages(data as unknown as TicketMessage[]);
+      // Mark user messages as read
+      const unreadIds = data.filter((m: any) => m.sender_type === "user" && !m.is_read).map((m: any) => m.id);
+      if (unreadIds.length > 0) {
+        await supabase.from("ticket_messages").update({ is_read: true } as any).in("id", unreadIds);
+      }
+    }
     setTimeout(() => ticketChatRef.current?.scrollTo(0, ticketChatRef.current.scrollHeight), 100);
   }
 
