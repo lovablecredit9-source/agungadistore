@@ -1541,8 +1541,8 @@ const Index = () => {
           <div className="bg-card w-full max-w-sm max-h-[85vh] rounded-2xl overflow-hidden animate-in zoom-in-95 duration-200 flex flex-col" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between p-5 pb-3 shrink-0">
               <div>
-                <h3 className="font-extrabold text-lg">Pusat Bantuan</h3>
-                <p className="text-[11px] text-muted-foreground">Web v1.0 — {STORE_NAME}</p>
+                <h3 className="font-extrabold text-lg">{t("help.title", lang)}</h3>
+                <p className="text-[11px] text-muted-foreground">Web v2.0 — April 2026 — {STORE_NAME}</p>
               </div>
               <button onClick={() => setShowHelp(false)} className="w-8 h-8 rounded-full bg-muted flex items-center justify-center"><X className="w-4 h-4" /></button>
             </div>
