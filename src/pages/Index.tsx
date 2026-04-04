@@ -967,7 +967,7 @@ const Index = () => {
 
         {tab === "voucher" && (
           <div className="space-y-4">
-            <h2 className="text-lg font-extrabold flex items-center gap-2"><Ticket className="w-5 h-5 text-primary" /> Klaim Voucher</h2>
+            <h2 className="text-lg font-extrabold flex items-center gap-2"><Ticket className="w-5 h-5 text-primary" /> {t("voucher.title", lang)}</h2>
             <Card className="border-2 border-primary/20 shadow-lg overflow-hidden">
               <div className="bg-gradient-to-r from-primary/10 to-accent/10 p-1" />
               <CardContent className="p-5 space-y-4">
