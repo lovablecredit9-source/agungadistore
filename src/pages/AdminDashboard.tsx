@@ -1215,6 +1215,74 @@ const AdminDashboard = () => {
             </div>
           </>
         )}
+
+        {tab === "deposit" && (
+          <>
+            <h3 className="font-bold text-sm flex items-center gap-2"><ArrowUpCircle className="w-4 h-4 text-accent" /> Deposit Masuk ({allDeposits.length})</h3>
+            <Input placeholder="Cari ID Transaksi..." value={depositSearchTrx} onChange={e => setDepositSearchTrx(e.target.value)} className="text-sm" />
+            {allDeposits
+              .filter(d => depositSearchTrx ? d.trx_id.toLowerCase().includes(depositSearchTrx.toLowerCase()) : true)
+              .map(dep => {
+              const user = userBalances.find(u => u.visitor_id === dep.visitor_id);
+              return (
+                <Card key={dep.id} className={dep.status === "pending" ? "border-2 border-primary/30" : ""}>
+                  <CardContent className="p-4 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${dep.status === "approved" ? "bg-accent/10 text-accent" : dep.status === "rejected" ? "bg-destructive/10 text-destructive" : "bg-primary/10 text-primary"}`}>
+                        {dep.status === "approved" ? "✅ Disetujui" : dep.status === "rejected" ? "❌ Ditolak" : "⏳ Menunggu"}
+                      </span>
+                      <span className="text-[10px] text-muted-foreground">{new Date(dep.created_at).toLocaleString("id-ID")}</span>
+                    </div>
+                    <div className="text-xs space-y-0.5">
+                      <p><strong>Username:</strong> {dep.username}</p>
+                      <p><strong>Nominal:</strong> <span className="text-primary font-extrabold text-sm">{new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", minimumFractionDigits: 0 }).format(dep.amount)}</span></p>
+                      <p><strong>Metode:</strong> {dep.payment_method.toUpperCase()}</p>
+                      <p><strong>ID Transaksi:</strong> <span className="font-mono text-primary">{dep.trx_id}</span></p>
+                      <p className="text-[10px] text-muted-foreground font-mono">Visitor: {dep.visitor_id.slice(0, 12)}...</p>
+                    </div>
+                    {dep.status === "pending" && (
+                      <div className="flex gap-2 pt-1">
+                        <Button size="sm" className="flex-1 bg-accent text-accent-foreground gap-1" onClick={() => approveDeposit(dep)}>
+                          <Check className="w-3 h-3" /> Approve
+                        </Button>
+                        <Button size="sm" variant="destructive" className="flex-1 gap-1" onClick={() => rejectDeposit(dep)}>
+                          <X className="w-3 h-3" /> Reject
+                        </Button>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              );
+            })}
+            {allDeposits.length === 0 && <p className="text-center text-sm text-muted-foreground py-8">Belum ada deposit</p>}
+          </>
+        )}
+
+        {tab === "settings" && (
+          <>
+            <Card>
+              <CardHeader><CardTitle className="text-base flex items-center gap-2"><Edit2 className="w-5 h-5 text-primary" /> Pengaturan Pembayaran</CardTitle></CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-muted-foreground">URL Gambar QRIS</label>
+                  <Input placeholder="https://example.com/qris.jpg" value={settingQris} onChange={e => setSettingQris(e.target.value)} />
+                  {settingQris && <img src={settingQris} alt="QRIS Preview" className="max-w-full max-h-40 rounded-lg border border-border" />}
+                </div>
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-muted-foreground">Nama E-Wallet</label>
+                  <Input placeholder="DANA / OVO / GoPay" value={settingEwalletName} onChange={e => setSettingEwalletName(e.target.value)} />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-muted-foreground">Nomor E-Wallet</label>
+                  <Input placeholder="08123456789" value={settingEwalletNumber} onChange={e => setSettingEwalletNumber(e.target.value)} />
+                </div>
+                <Button className="w-full gap-2" onClick={saveAllSettings}>
+                  <Check className="w-4 h-4" /> Simpan Pengaturan
+                </Button>
+              </CardContent>
+            </Card>
+          </>
+        )}
       </main>
     </div>
   );
