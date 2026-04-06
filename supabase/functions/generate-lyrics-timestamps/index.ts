@@ -167,6 +167,68 @@ Rules:
   return extractLrc(content);
 }
 
+async function alignLyricsWithAudioReference({
+  LOVABLE_API_KEY,
+  lyricsText,
+  base64Audio,
+  format,
+  durationInfo,
+  songInfo,
+}: {
+  LOVABLE_API_KEY: string;
+  lyricsText: string;
+  base64Audio: string;
+  format: string;
+  durationInfo: string;
+  songInfo: string;
+}) {
+  const cleanedLyrics = sanitizeLyricsText(lyricsText);
+
+  const data = await callLovableAi(
+    LOVABLE_API_KEY,
+    {
+      model: "google/gemini-2.5-flash",
+      messages: [
+        {
+          role: "system",
+          content: `You are a lyrics timing aligner.
+
+Rules:
+- Output ONLY the LRC formatted lyrics, nothing else
+- Format each line as [mm:ss.xx]lyrics text
+- Use the provided lyrics text EXACTLY as written, preserving the same words, line order, punctuation, and line breaks
+- Do not rewrite, paraphrase, translate, censor, merge, split, complete, or remove lyric lines
+- Every non-empty provided lyric line must appear exactly once in the result
+- Timestamp each line at the moment its first sung word starts in the audio
+- Keep timestamps strictly increasing
+- If there is intro or outro music, reflect it naturally in the timestamps
+- ${durationInfo}`,
+        },
+        {
+          role: "user",
+          content: [
+            {
+              type: "text",
+              text: `Align these exact lyrics to the vocals in this audio${songInfo ? ` for \"${songInfo}\"` : ""}. Return LRC only and keep each lyric line exactly as provided:\n\n${cleanedLyrics}`,
+            },
+            {
+              type: "input_audio",
+              input_audio: {
+                data: base64Audio,
+                format,
+              },
+            },
+          ],
+        },
+      ],
+    },
+    "AI audio alignment error",
+  );
+
+  const content = data.choices?.[0]?.message?.content || "";
+  return extractLrc(content);
+}
+
 async function generateTimedLyricsFromText({
   LOVABLE_API_KEY,
   lyricsText,
@@ -227,6 +289,20 @@ function parseLrc(content: string): ParsedLrcLine[] {
         },
       ];
     });
+}
+
+function linesExactlyMatchLyrics(lyricsText: string, lrcText: string) {
+  const original = sanitizeLyricsText(lyricsText)
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean);
+  const candidate = sanitizeLyricsText(lrcText)
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean);
+
+  if (original.length !== candidate.length) return false;
+  return original.every((line, index) => line === candidate[index]);
 }
 
 function normalizeText(text: string) {
@@ -440,10 +516,25 @@ export async function handleRequest(req: Request) {
     if (file_url) {
       try {
         const { base64Audio, format } = await downloadAudioAsBase64(file_url);
+        const directAlignedLrc = await alignLyricsWithAudioReference({
+          LOVABLE_API_KEY,
+          lyricsText: cleanedLyricsText,
+          base64Audio,
+          format,
+          durationInfo,
+          songInfo,
+        });
+
+        if (directAlignedLrc && linesExactlyMatchLyrics(cleanedLyricsText, directAlignedLrc)) {
+          return jsonResponse({ lrc: directAlignedLrc });
+        }
+
         const transcriptLrc = await transcribeAudioToLrc({ LOVABLE_API_KEY, base64Audio, format, durationInfo, songInfo });
         const alignedLrc = alignLyricsToTranscript(cleanedLyricsText, transcriptLrc);
 
-        if (alignedLrc) return jsonResponse({ lrc: alignedLrc });
+        if (alignedLrc && linesExactlyMatchLyrics(cleanedLyricsText, alignedLrc)) {
+          return jsonResponse({ lrc: alignedLrc });
+        }
       } catch (error) {
         console.error("Audio-assisted timestamp alignment failed, falling back to text timing:", error);
       }
