@@ -706,13 +706,12 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay }: PlaylistTabProps) => {
 
       {/* ===== FULLSCREEN PLAYER ===== */}
       {showFullPlayer && currentSong && (
-        <div className="fixed inset-0 z-[100] flex flex-col overflow-hidden"
-          style={{
-            background: currentSong.cover_url
-              ? `linear-gradient(180deg, hsl(var(--primary) / 0.9) 0%, hsl(var(--background)) 100%)`
-              : `linear-gradient(180deg, hsl(var(--primary) / 0.7) 0%, hsl(var(--background)) 100%)`
-          }}
-        >
+        <div className="fixed inset-0 z-[100] flex flex-col overflow-hidden bg-background">
+          {/* Background gradient overlay */}
+          <div className="absolute inset-0 pointer-events-none" style={{
+            background: `linear-gradient(180deg, hsl(var(--primary)) 0%, hsl(var(--background)) 60%)`
+          }} />
+          <div className="relative z-10 flex flex-col h-full">
           {/* Header */}
           <div className="flex items-center justify-between px-4 pt-4 pb-2 shrink-0">
             <button onClick={() => setShowFullPlayer(false)} className="p-2 rounded-full hover:bg-white/10 transition-colors">
