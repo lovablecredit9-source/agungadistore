@@ -22,7 +22,7 @@ function extractLrc(content: string) {
   return content
     .split("\n")
     .map((line) => line.trimEnd())
-    .filter((line) => /^\[(\d{1,2}):(\d{2}(?:\.\d+)?)\]/.test(line))
+    .filter((line) => /^(\[(\d{1,2}):(\d{2}(?:\.\d+)?)\])/.test(line))
     .join("\n");
 }
 
@@ -30,7 +30,7 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const { lyrics_text, song_duration, song_title, song_artist, file_url } = await req.json();
+    const { lyrics_text, song_duration, song_title, song_artist, file_url, mode } = await req.json();
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
@@ -38,8 +38,16 @@ serve(async (req) => {
     const durationInfo = song_duration ? `The song duration is approximately ${song_duration} seconds.` : "";
     const songInfo = [song_title, song_artist].filter(Boolean).join(" by ");
     const hasLyrics = typeof lyrics_text === "string" && lyrics_text.trim().length > 0;
+    const shouldTranscribeFromAudio = mode === "audio_transcribe" || (!hasLyrics && !!file_url);
 
-    if (hasLyrics) {
+    if (!shouldTranscribeFromAudio) {
+      if (!hasLyrics) {
+        return new Response(JSON.stringify({ error: "Lirik belum ada untuk dibuat timestamp." }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
       const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
         method: "POST",
         headers: {
@@ -61,7 +69,8 @@ Rules:
 - Keep the original lyrics text exactly as provided
 - Each line should have a unique timestamp
 - Start timestamps slightly after 00:00 to account for intro
-- Do not rewrite, paraphrase, translate, summarize, or censor the lyrics
+- Do not rewrite, paraphrase, translate, summarize, censor, or remove any lyric lines
+- Keep blank lyric lines out of the result
 - ${durationInfo}`,
             },
             {
@@ -101,7 +110,7 @@ Rules:
     }
 
     if (!file_url) {
-      return new Response(JSON.stringify({ error: "File audio wajib ada jika lirik belum diisi." }), {
+      return new Response(JSON.stringify({ error: "File audio wajib ada untuk generate lirik dari lagu." }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -116,9 +125,6 @@ Rules:
     let format = "mp3";
     const lowerUrl = String(file_url).toLowerCase();
     if (lowerUrl.includes(".wav")) format = "wav";
-    else if (lowerUrl.includes(".m4a")) format = "wav";
-    else if (lowerUrl.includes(".ogg")) format = "wav";
-    else if (lowerUrl.includes(".flac")) format = "wav";
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",

@@ -312,27 +312,53 @@ const AdminMusicTab = () => {
     setSavingLyrics(false);
   }
 
-  async function generateTimestampsAI() {
+  async function generateLyricsFromAudio() {
     if (!lyricsSong) return;
     setGeneratingLyrics(true);
     try {
       const { data, error } = await supabase.functions.invoke("generate-lyrics-timestamps", {
         body: {
-          lyrics_text: lyricsText.trim() || undefined,
           song_duration: lyricsSong.duration || 180,
           song_title: lyricsSong.title,
           song_artist: lyricsSong.artist,
           file_url: lyricsSong.file_url,
+          mode: "audio_transcribe",
         },
       });
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
       if (data?.lrc) {
         setLyricsText(data.lrc);
-        toast({ title: lyricsText.trim() ? "Timestamp AI berhasil di-generate! ✨" : "Lirik AI berhasil di-generate! ✨" });
+        toast({ title: "Lirik dari audio berhasil di-generate! ✨" });
       }
     } catch (err: any) {
-      toast({ title: "Gagal generate", description: err.message, variant: "destructive" });
+      toast({ title: "Gagal generate dari audio", description: err.message, variant: "destructive" });
+    }
+    setGeneratingLyrics(false);
+  }
+
+  async function generateTimestampsAI() {
+    if (!lyricsSong || !lyricsText.trim()) return;
+    setGeneratingLyrics(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("generate-lyrics-timestamps", {
+        body: {
+          lyrics_text: lyricsText.trim(),
+          song_duration: lyricsSong.duration || 180,
+          song_title: lyricsSong.title,
+          song_artist: lyricsSong.artist,
+          file_url: lyricsSong.file_url,
+          mode: "timestamp_existing",
+        },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      if (data?.lrc) {
+        setLyricsText(data.lrc);
+        toast({ title: "Timestamp AI berhasil di-generate! ✨" });
+      }
+    } catch (err: any) {
+      toast({ title: "Gagal generate timestamp", description: err.message, variant: "destructive" });
     }
     setGeneratingLyrics(false);
   }
