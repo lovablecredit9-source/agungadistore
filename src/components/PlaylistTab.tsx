@@ -512,12 +512,19 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer }: Playl
     setUpgrading(true);
     try {
       const visitorId = await getVisitorIdSafe();
-      const { data, error } = await supabase.functions.invoke("upgrade-storage", { body: { visitor_id: visitorId, tier_name: plan.name, price: plan.pricePerMonth } });
+      const finalPrice = Math.max(0, plan.pricePerMonth - upgradeDiscountAmount);
+      const { data, error } = await supabase.functions.invoke("upgrade-storage", { body: { visitor_id: visitorId, tier_name: plan.name, price: finalPrice } });
       if (error) throw error;
       if (data?.error) { toast({ title: "Gagal upgrade", description: data.error, variant: "destructive" }); setUpgrading(false); return; }
+      // Increment music discount voucher used_count if used
+      if (upgradeDiscountAmount > 0 && upgradeDiscountCode.trim()) {
+        const { data: vd } = await supabase.from("music_discount_vouchers").select("id, used_count").eq("code", upgradeDiscountCode.trim().toUpperCase()).maybeSingle();
+        if (vd) await supabase.from("music_discount_vouchers").update({ used_count: (vd.used_count || 0) + 1 } as any).eq("id", vd.id);
+      }
       const newSub = saveSub(plan);
       setActiveSubs(getActiveSubscriptions()); setMaxBytes(getTotalMaxBytes()); setUpgradeOpen(false);
-      toast({ title: "Upgrade berhasil! 🎉", description: `+${formatStorageSize(plan.addBytes)} aktif sampai ${formatDate(newSub.expiresAt)}` });
+      setUpgradeDiscountCode(""); setUpgradeDiscountAmount(0);
+      toast({ title: "Upgrade berhasil! 🎉", description: `+${formatStorageSize(plan.addBytes)} aktif sampai ${formatDate(newSub.expiresAt)}${upgradeDiscountAmount > 0 ? ` (diskon Rp${upgradeDiscountAmount.toLocaleString()})` : ""}` });
     } catch (err: any) { toast({ title: "Gagal upgrade", description: err?.message, variant: "destructive" }); }
     setUpgrading(false);
   }
