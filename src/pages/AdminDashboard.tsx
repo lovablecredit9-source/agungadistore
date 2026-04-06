@@ -261,6 +261,78 @@ const AdminDashboard = () => {
     if (data) setDiscountVouchers(data as unknown as DiscountVoucher[]);
   }
 
+  async function fetchMusicVouchers() {
+    const [{ data: sv }, { data: dv }] = await Promise.all([
+      supabase.from("music_storage_vouchers").select("*").order("created_at", { ascending: false }),
+      supabase.from("music_discount_vouchers").select("*").order("created_at", { ascending: false }),
+    ]);
+    if (sv) setMusicStorageVouchers(sv as unknown as MusicStorageVoucher[]);
+    if (dv) setMusicDiscountVouchers(dv as unknown as MusicDiscountVoucher[]);
+  }
+
+  function formatStorageMb(mb: number): string {
+    if (mb >= 1024 * 1024) return `${(mb / (1024 * 1024)).toFixed(0)} TB`;
+    if (mb >= 1024) return `${(mb / 1024).toFixed(0)} GB`;
+    return `${mb} MB`;
+  }
+
+  async function createMusicStorageVoucher() {
+    const storageMb = parseInt(msvStorageMb) || 0;
+    if (storageMb <= 0) { toast({ title: "Isi jumlah MB", variant: "destructive" }); return; }
+    const code = generateVoucherCode();
+    let expiresAt: string | null = null;
+    if (msvExpiryDate) {
+      const time = msvExpiryTime || "23:59:59";
+      expiresAt = new Date(`${msvExpiryDate}T${time}`).toISOString();
+    }
+    const { error } = await supabase.from("music_storage_vouchers").insert({
+      code, storage_mb: storageMb, max_uses: parseInt(msvMaxUses) || 1, expires_at: expiresAt,
+    } as any);
+    if (error) { toast({ title: "Gagal buat voucher", variant: "destructive" }); return; }
+    toast({ title: `Voucher ${formatStorageMb(storageMb)} berhasil dibuat! 🎵`, description: `Kode: ${code}` });
+    setMsvStorageMb(""); setMsvMaxUses("1"); setMsvExpiryDate(""); setMsvExpiryTime("");
+    fetchMusicVouchers();
+  }
+
+  async function deleteMusicStorageVoucher(id: string) {
+    await supabase.from("music_storage_vouchers").delete().eq("id", id);
+    toast({ title: "Voucher dihapus" }); fetchMusicVouchers();
+  }
+
+  async function toggleMusicStorageVoucher(v: MusicStorageVoucher) {
+    await supabase.from("music_storage_vouchers").update({ is_active: !v.is_active } as any).eq("id", v.id);
+    toast({ title: v.is_active ? "Voucher dinonaktifkan" : "Voucher diaktifkan" }); fetchMusicVouchers();
+  }
+
+  async function createMusicDiscountVoucher() {
+    if (!mdvCode.trim() || !mdvAmount) { toast({ title: "Isi kode dan nominal", variant: "destructive" }); return; }
+    const amount = parseInt(mdvAmount) || 0;
+    if (amount <= 0) { toast({ title: "Nominal harus lebih dari 0", variant: "destructive" }); return; }
+    let expiresAt: string | null = null;
+    if (mdvExpiryDate) {
+      const time = mdvExpiryTime || "23:59:59";
+      expiresAt = new Date(`${mdvExpiryDate}T${time}`).toISOString();
+    }
+    const { error } = await supabase.from("music_discount_vouchers").insert({
+      code: mdvCode.trim().toUpperCase(), discount_amount: amount,
+      max_uses: parseInt(mdvMaxUses) || 10, expires_at: expiresAt,
+    } as any);
+    if (error) { toast({ title: "Gagal buat voucher (kode mungkin sudah ada)", variant: "destructive" }); return; }
+    toast({ title: `Voucher diskon musik Rp${amount.toLocaleString()} berhasil dibuat! 🎵` });
+    setMdvCode(""); setMdvAmount(""); setMdvMaxUses("10"); setMdvExpiryDate(""); setMdvExpiryTime("");
+    fetchMusicVouchers();
+  }
+
+  async function deleteMusicDiscountVoucher(id: string) {
+    await supabase.from("music_discount_vouchers").delete().eq("id", id);
+    toast({ title: "Voucher dihapus" }); fetchMusicVouchers();
+  }
+
+  async function toggleMusicDiscountVoucher(v: MusicDiscountVoucher) {
+    await supabase.from("music_discount_vouchers").update({ is_active: !v.is_active } as any).eq("id", v.id);
+    toast({ title: v.is_active ? "Voucher dinonaktifkan" : "Voucher diaktifkan" }); fetchMusicVouchers();
+  }
+
   async function createDiscountVoucher() {
     if (!dvCode.trim() || !dvAmount) { toast({ title: "Isi kode dan nominal", variant: "destructive" }); return; }
     const amount = parseInt(dvAmount) || 0;
