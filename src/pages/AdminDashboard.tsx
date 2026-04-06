@@ -202,6 +202,22 @@ const AdminDashboard = () => {
 
   const chatRef = useRef<HTMLDivElement>(null);
 
+  // Discount Vouchers
+  interface DiscountVoucher {
+    id: string; code: string; discount_amount: number; max_uses: number;
+    used_count: number; is_active: boolean; expires_at: string | null; created_at: string;
+  }
+  const [discountVouchers, setDiscountVouchers] = useState<DiscountVoucher[]>([]);
+  const [dvCode, setDvCode] = useState("");
+  const [dvAmount, setDvAmount] = useState("");
+  const [dvMaxUses, setDvMaxUses] = useState("10");
+  const [dvExpiry, setDvExpiry] = useState("");
+  const [dvSendTarget, setDvSendTarget] = useState("all");
+
+  // PIN Reset
+  const [pinResetTarget, setPinResetTarget] = useState("");
+  const [generatedResetToken, setGeneratedResetToken] = useState("");
+
   const navigate = useNavigate();
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement | null>(null);
