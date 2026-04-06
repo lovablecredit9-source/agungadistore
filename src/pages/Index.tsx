@@ -271,7 +271,14 @@ const Index = () => {
   const [savingProfile, setSavingProfile] = useState(false);
   const [showBuySaldo, setShowBuySaldo] = useState(false);
   const [buyProduct, setBuyProduct] = useState<Product | null>(null);
+  const [buyQuantity, setBuyQuantity] = useState(1);
   const [purchaseSuccess, setPurchaseSuccess] = useState<PurchasedVoucher | null>(null);
+
+  // Cart
+  const [cart, setCart] = useState<CartItem[]>([]);
+  const [showCart, setShowCart] = useState(false);
+  const cartTotal = cart.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
+  const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
 
   // Deposit
   interface Deposit {
