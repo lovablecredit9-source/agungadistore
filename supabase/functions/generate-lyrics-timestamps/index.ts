@@ -12,20 +12,20 @@ serve(async (req) => {
   try {
     const { lyrics_text, song_duration, song_title, song_artist } = await req.json();
 
-    if (!lyrics_text || typeof lyrics_text !== "string" || lyrics_text.trim().length === 0) {
-      return new Response(JSON.stringify({ error: "lyrics_text is required" }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
 
     const durationInfo = song_duration ? `The song duration is approximately ${song_duration} seconds.` : "";
     const songInfo = [song_title, song_artist].filter(Boolean).join(" by ");
 
-    const systemPrompt = `You are a lyrics timestamp generator. Given plain lyrics text, generate timestamps in LRC format.
+    const hasLyrics = lyrics_text && typeof lyrics_text === "string" && lyrics_text.trim().length > 0;
+
+    let systemPrompt: string;
+    let userPrompt: string;
+
+    if (hasLyrics) {
+      // Mode 1: Add timestamps to existing lyrics
+      systemPrompt = `You are a lyrics timestamp generator. Given plain lyrics text, generate timestamps in LRC format.
 
 Rules:
 - Output ONLY the LRC formatted lyrics, nothing else
@@ -37,9 +37,32 @@ Rules:
 - Start timestamps slightly after 00:00 to account for intro
 - ${durationInfo}`;
 
-    const userPrompt = `Generate LRC timestamps for this song${songInfo ? ` "${songInfo}"` : ""}:
+      userPrompt = `Generate LRC timestamps for this song${songInfo ? ` "${songInfo}"` : ""}:\n\n${lyrics_text}`;
+    } else {
+      // Mode 2: Generate lyrics from scratch using song title & artist
+      if (!song_title) {
+        return new Response(JSON.stringify({ error: "song_title is required when no lyrics_text is provided" }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
 
-${lyrics_text}`;
+      systemPrompt = `You are a song lyrics generator. Given a song title and artist, generate the complete lyrics of the song with LRC timestamps.
+
+Rules:
+- Output ONLY the LRC formatted lyrics, nothing else
+- Format each line as [mm:ss.xx]lyrics text
+- Try to recall the actual lyrics of the song if it's a known song
+- If you don't know the exact lyrics, generate plausible lyrics that match the style of the artist
+- Distribute timestamps evenly across the song duration
+- Account for intro/outro instrumental sections
+- Each line should have a unique timestamp
+- Start timestamps slightly after 00:00 to account for intro
+- ${durationInfo}
+- Include verse labels like [Verse 1], [Chorus], [Bridge] etc as separate lines if appropriate`;
+
+      userPrompt = `Generate complete LRC lyrics for the song "${songInfo || song_title}".${durationInfo ? ` ${durationInfo}` : ""}`;
+    }
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
