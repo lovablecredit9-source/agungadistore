@@ -276,11 +276,12 @@ const PlaylistTab = () => {
     const visitorId = await getVisitorIdSafe();
 
     if (navigator.onLine) {
-      const [songsRes, adminPlRes, userPlRes, piRes] = await Promise.all([
+      const [songsRes, adminPlRes, userPlRes, piRes, lyricsRes] = await Promise.all([
         supabase.from("playlist_songs").select("*").order("created_at", { ascending: false }),
         supabase.from("playlists").select("*").eq("playlist_type", "admin").order("created_at", { ascending: false }),
         supabase.from("playlists").select("*").eq("playlist_type", "user").eq("visitor_id", visitorId).order("created_at", { ascending: false }),
         supabase.from("playlist_items").select("*"),
+        supabase.from("song_lyrics").select("*").order("time_seconds", { ascending: true }),
       ]);
       const songList = (songsRes.data as Song[]) || [];
       setSongs(songList);
