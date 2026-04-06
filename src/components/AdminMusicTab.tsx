@@ -284,6 +284,46 @@ const AdminMusicTab = () => {
   }
 
   async function saveLyrics() {
+  async function generateTimestampsAI() {
+    if (!lyricsSong || !lyricsText.trim()) return;
+    setGeneratingLyrics(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("generate-lyrics-timestamps", {
+        body: {
+          lyrics_text: lyricsText,
+          song_duration: lyricsSong.duration || 180,
+          song_title: lyricsSong.title,
+          song_artist: lyricsSong.artist,
+        },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      if (data?.lrc) {
+        setLyricsText(data.lrc);
+        toast({ title: "Timestamp AI berhasil di-generate! ✨" });
+      }
+    } catch (err: any) {
+      toast({ title: "Gagal generate", description: err.message, variant: "destructive" });
+    }
+    setGeneratingLyrics(false);
+  }
+
+  function handleLrcUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const text = ev.target?.result as string;
+      if (text) {
+        setLyricsText(text.trim());
+        toast({ title: "File LRC berhasil dimuat! 📄" });
+      }
+    };
+    reader.readAsText(file);
+    if (lrcFileRef.current) lrcFileRef.current.value = "";
+  }
+
+  async function saveLyricsOriginal() {
     if (!lyricsSong) return;
     setSavingLyrics(true);
     try {
