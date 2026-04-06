@@ -82,10 +82,16 @@ interface ClaimHistory {
 }
 
 interface PurchasedVoucher {
-  token: { id: string; token_code: string };
+  tokens: { id: string; token_code: string; fields: { field_name: string; field_value: string }[] }[];
   product: Product;
-  fields: { field_name: string; field_value: string }[];
+  quantity: number;
+  total_price: number;
   balance_remaining: number;
+}
+
+interface CartItem {
+  product: Product;
+  quantity: number;
 }
 
 interface SupportTicket {
