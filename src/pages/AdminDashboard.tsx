@@ -878,6 +878,7 @@ const AdminDashboard = () => {
           { key: "chats" as AdminTab, icon: MessageCircle, label: "Chat" },
           { key: "notif" as AdminTab, icon: Bell, label: "Notif" },
           { key: "settings" as AdminTab, icon: Edit2, label: "Setting" },
+          { key: "musik" as AdminTab, icon: Music, label: "Musik" },
         ]).map(({ key, icon: Icon, label }) => (
           <button key={key} onClick={() => setTab(key)} className={`flex-1 py-3 text-xs font-medium text-center border-b-2 transition-colors whitespace-nowrap px-2 ${tab === key ? "border-primary text-primary" : "border-transparent text-muted-foreground"}`}>
             <Icon className="w-4 h-4 inline mr-1" /> {label}
