@@ -312,27 +312,53 @@ const AdminMusicTab = () => {
     setSavingLyrics(false);
   }
 
-  async function generateTimestampsAI() {
+  async function generateLyricsFromAudio() {
     if (!lyricsSong) return;
     setGeneratingLyrics(true);
     try {
       const { data, error } = await supabase.functions.invoke("generate-lyrics-timestamps", {
         body: {
-          lyrics_text: lyricsText.trim() || undefined,
           song_duration: lyricsSong.duration || 180,
           song_title: lyricsSong.title,
           song_artist: lyricsSong.artist,
           file_url: lyricsSong.file_url,
+          mode: "audio_transcribe",
         },
       });
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
       if (data?.lrc) {
         setLyricsText(data.lrc);
-        toast({ title: lyricsText.trim() ? "Timestamp AI berhasil di-generate! ✨" : "Lirik AI berhasil di-generate! ✨" });
+        toast({ title: "Lirik dari audio berhasil di-generate! ✨" });
       }
     } catch (err: any) {
-      toast({ title: "Gagal generate", description: err.message, variant: "destructive" });
+      toast({ title: "Gagal generate dari audio", description: err.message, variant: "destructive" });
+    }
+    setGeneratingLyrics(false);
+  }
+
+  async function generateTimestampsAI() {
+    if (!lyricsSong || !lyricsText.trim()) return;
+    setGeneratingLyrics(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("generate-lyrics-timestamps", {
+        body: {
+          lyrics_text: lyricsText.trim(),
+          song_duration: lyricsSong.duration || 180,
+          song_title: lyricsSong.title,
+          song_artist: lyricsSong.artist,
+          file_url: lyricsSong.file_url,
+          mode: "timestamp_existing",
+        },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      if (data?.lrc) {
+        setLyricsText(data.lrc);
+        toast({ title: "Timestamp AI berhasil di-generate! ✨" });
+      }
+    } catch (err: any) {
+      toast({ title: "Gagal generate timestamp", description: err.message, variant: "destructive" });
     }
     setGeneratingLyrics(false);
   }
@@ -573,17 +599,26 @@ const AdminMusicTab = () => {
             <DialogTitle className="text-sm flex items-center gap-2"><Type className="w-4 h-4" /> Lirik — {lyricsSong?.title}</DialogTitle>
           </DialogHeader>
           <div className="space-y-2">
-            <p className="text-[11px] text-muted-foreground">Klik "Generate AI" untuk auto-generate lirik, atau paste lirik lalu generate timestamp, atau upload file LRC.</p>
+            <p className="text-[11px] text-muted-foreground">Ambil lirik langsung dari file audio, atau paste lirik untuk membuat timestamp, atau upload file LRC.</p>
             <div className="flex gap-2">
               <Button
                 size="sm"
                 variant="outline"
                 className="gap-1.5 text-xs flex-1"
                 disabled={generatingLyrics}
-                onClick={generateTimestampsAI}
+                onClick={generateLyricsFromAudio}
               >
                 {generatingLyrics ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Wand2 className="w-3.5 h-3.5" />}
-                {generatingLyrics ? "Generating..." : lyricsText.trim() ? "Generate Timestamp AI" : "Generate Lirik AI"}
+                {generatingLyrics ? "Generating..." : "Generate dari Audio"}
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                className="gap-1.5 text-xs"
+                disabled={generatingLyrics || !lyricsText.trim()}
+                onClick={generateTimestampsAI}
+              >
+                <Wand2 className="w-3.5 h-3.5" /> Timestamp AI
               </Button>
               <Button
                 size="sm"
