@@ -36,6 +36,7 @@ interface StorageTier {
 
 const STORAGE_TIERS: StorageTier[] = [
   { name: "Free", maxBytes: 2 * 1024 * 1024 * 1024, pricePerMonth: 0 },
+  { name: "Pro 10GB", maxBytes: 10 * 1024 * 1024 * 1024, pricePerMonth: 10000 },
   { name: "Pro 100GB", maxBytes: 100 * 1024 * 1024 * 1024, pricePerMonth: 100000 },
 ];
 
@@ -209,6 +210,7 @@ const PlaylistTab = () => {
   const [tier, setTier] = useState<StorageTier>(getCurrentTier());
   const [upgradeOpen, setUpgradeOpen] = useState(false);
   const [upgrading, setUpgrading] = useState(false);
+  const [selectedUpgradeTier, setSelectedUpgradeTier] = useState(1);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const { toast } = useToast();
   const isOnline = useOnlineStatus();
@@ -399,7 +401,7 @@ const PlaylistTab = () => {
 
   // Upgrade storage tier
   async function handleUpgrade() {
-    const targetTier = STORAGE_TIERS[1];
+    const targetTier = STORAGE_TIERS[selectedUpgradeTier];
     setUpgrading(true);
     try {
       const { getVisitorId } = await import("@/lib/visitor-id");
@@ -420,7 +422,7 @@ const PlaylistTab = () => {
         return;
       }
 
-      setCurrentTierIndex(1);
+      setCurrentTierIndex(selectedUpgradeTier);
       setTier(targetTier);
       setUpgradeOpen(false);
       toast({ title: "Upgrade berhasil! 🎉", description: `Sekarang kamu punya ${formatStorageSize(targetTier.maxBytes)} penyimpanan offline` });
@@ -539,12 +541,23 @@ const PlaylistTab = () => {
             </div>
           </div>
 
-          {isFreeeTier && (
+          {tier.pricePerMonth === 0 && (
             <Button
               variant="outline"
               size="sm"
               className="w-full gap-2 text-xs border-primary/30 hover:bg-primary/10"
               onClick={() => setUpgradeOpen(true)}
+            >
+              <Zap className="w-3.5 h-3.5 text-primary" />
+              Upgrade Penyimpanan
+            </Button>
+          )}
+          {tier.pricePerMonth > 0 && tier.pricePerMonth < 100000 && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="w-full gap-2 text-xs border-primary/30 hover:bg-primary/10"
+              onClick={() => { setSelectedUpgradeTier(2); setUpgradeOpen(true); }}
             >
               <Zap className="w-3.5 h-3.5 text-primary" />
               Upgrade ke 100GB — {formatCurrency(100000)}/bulan
@@ -700,30 +713,42 @@ const PlaylistTab = () => {
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-3">
-            {/* Current */}
+            {/* Current tier */}
             <div className="rounded-xl border border-border p-3 bg-muted/30">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-bold">Free</p>
-                  <p className="text-xs text-muted-foreground">Kuota: 2 GB</p>
+                  <p className="text-sm font-bold">{tier.name}</p>
+                  <p className="text-xs text-muted-foreground">Kuota: {formatStorageSize(tier.maxBytes)}</p>
                 </div>
                 <span className="text-xs bg-muted px-2 py-0.5 rounded-full">Saat ini</span>
               </div>
             </div>
-            {/* Target */}
-            <div className="rounded-xl border-2 border-primary p-3 bg-primary/5">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-bold flex items-center gap-1">
-                    <Crown className="w-4 h-4 text-primary" /> Pro 100GB
-                  </p>
-                  <p className="text-xs text-muted-foreground">Kuota: 100 GB</p>
+
+            {/* Available upgrades */}
+            {STORAGE_TIERS.filter((t, idx) => idx > 0 && t.maxBytes > tier.maxBytes).map((t, idx) => {
+              const tierIdx = STORAGE_TIERS.indexOf(t);
+              const isSelected = selectedUpgradeTier === tierIdx;
+              return (
+                <div
+                  key={t.name}
+                  onClick={() => setSelectedUpgradeTier(tierIdx)}
+                  className={`rounded-xl border-2 p-3 cursor-pointer transition-all ${isSelected ? "border-primary bg-primary/5" : "border-border hover:border-primary/40"}`}
+                >
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-bold flex items-center gap-1">
+                        <Crown className="w-4 h-4 text-primary" /> {t.name}
+                      </p>
+                      <p className="text-xs text-muted-foreground">Kuota: {formatStorageSize(t.maxBytes)}</p>
+                    </div>
+                    <span className="text-sm font-extrabold text-primary">{formatCurrency(t.pricePerMonth)}/bln</span>
+                  </div>
                 </div>
-                <span className="text-sm font-extrabold text-primary">{formatCurrency(10000)}/bln</span>
-              </div>
-            </div>
+              );
+            })}
+
             <p className="text-[11px] text-muted-foreground">
-              Saldo kamu akan dipotong {formatCurrency(10000)} untuk 1 bulan penyimpanan Pro.
+              Saldo kamu akan dipotong {formatCurrency(STORAGE_TIERS[selectedUpgradeTier]?.pricePerMonth || 0)} untuk 1 bulan penyimpanan.
             </p>
           </div>
           <DialogFooter>
