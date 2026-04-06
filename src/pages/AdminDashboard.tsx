@@ -253,6 +253,7 @@ const AdminDashboard = () => {
     fetchDeposits();
     fetchAdminSettings();
     fetchDiscountVouchers();
+    fetchMusicVouchers();
   }, []);
 
   async function fetchDiscountVouchers() {
