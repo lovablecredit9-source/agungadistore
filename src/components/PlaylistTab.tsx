@@ -28,6 +28,7 @@ interface Song {
   cover_url: string | null;
   duration: number;
   file_size: number;
+  release_date: string | null;
   created_at: string;
 }
 
@@ -106,6 +107,20 @@ function formatCurrency(amount: number) {
 
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" });
+}
+
+function formatSongDate(dateString: string) {
+  if (!dateString) return "";
+  if (dateString.includes("T")) {
+    return new Date(dateString).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" });
+  }
+
+  const [year, month, day] = dateString.split("-").map(Number);
+  return new Date(year, (month || 1) - 1, day || 1).toLocaleDateString("id-ID", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
 }
 
 // --- Subscription helpers ---
@@ -250,7 +265,6 @@ const PlaylistTab = () => {
 
   // Lyrics state
   const [allLyrics, setAllLyrics] = useState<LyricLine[]>([]);
-  const [showLyrics, setShowLyrics] = useState(false);
   const [termsOpen, setTermsOpen] = useState(false);
   const lyricsContainerRef = useRef<HTMLDivElement>(null);
 
@@ -332,10 +346,10 @@ const PlaylistTab = () => {
 
   // Auto-scroll lyrics
   useEffect(() => {
-    if (activeLyricIndex < 0 || !lyricsContainerRef.current || !showLyrics) return;
+    if (activeLyricIndex < 0 || !lyricsContainerRef.current) return;
     const el = lyricsContainerRef.current.querySelector(`[data-lyric-index="${activeLyricIndex}"]`);
     if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
-  }, [activeLyricIndex, showLyrics]);
+  }, [activeLyricIndex]);
 
   const playSong = useCallback(async (index: number) => {
     if (audioRef.current) audioRef.current.pause();
@@ -496,6 +510,11 @@ const PlaylistTab = () => {
   const isAtLimit = storagePercent > 95;
   const cachedCount = cachedIds.size;
   const hasSubs = activeSubs.length > 0;
+  const currentSongDateLabel = currentSong?.release_date
+    ? `Dirilis ${formatSongDate(currentSong.release_date)}`
+    : currentSong?.created_at
+      ? `Diunggah ${formatDate(currentSong.created_at)}`
+      : null;
 
   if (loading) {
     return (
@@ -544,6 +563,9 @@ const PlaylistTab = () => {
               <div className="flex-1 min-w-0" onClick={() => playSong(i)}>
                 <p className="font-bold text-sm truncate">{song.title}</p>
                 <p className="text-[11px] text-muted-foreground truncate">{song.artist}{song.file_size > 0 ? ` • ${formatSize(song.file_size)}` : ""}{isCached && <span className="text-accent font-semibold"> • Offline</span>}</p>
+                <p className="text-[10px] text-muted-foreground truncate">
+                  {song.release_date ? `Dirilis ${formatSongDate(song.release_date)}` : `Diunggah ${formatDate(song.created_at)}`}
+                </p>
               </div>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -622,6 +644,11 @@ const PlaylistTab = () => {
               <div className="flex-1 min-w-0">
                 <p className="font-bold text-sm truncate">{currentSong.title}</p>
                 <p className="text-xs text-muted-foreground truncate">{currentSong.artist}{cachedIds.has(currentSong.id) && <span className="ml-1 text-accent">• Offline</span>}</p>
+                {currentSongDateLabel && (
+                  <p className="mt-1 flex items-center gap-1 text-[11px] text-muted-foreground">
+                    <Clock className="w-3.5 h-3.5" /> {currentSongDateLabel}
+                  </p>
+                )}
               </div>
             </div>
             <div className="space-y-1">
@@ -641,40 +668,44 @@ const PlaylistTab = () => {
               <button onClick={toggleMute} className="text-muted-foreground hover:text-foreground">{muted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}</button>
               <Slider value={[muted ? 0 : volume]} max={1} step={0.01} onValueChange={changeVolume} className="flex-1 cursor-pointer" />
             </div>
-            {/* Lyrics toggle */}
-            {currentSongLyrics.length > 0 && (
-              <button onClick={() => setShowLyrics(!showLyrics)} className="w-full flex items-center justify-center gap-1.5 text-[11px] font-semibold text-primary hover:underline pt-1">
-                <Type className="w-3.5 h-3.5" />
-                {showLyrics ? "Sembunyikan Lirik" : "Tampilkan Lirik"}
-                {showLyrics ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
-              </button>
-            )}
+            <div className="flex items-center justify-center gap-1.5 pt-1 text-[11px] font-semibold text-primary">
+              <Type className="w-3.5 h-3.5" />
+              {currentSongLyrics.length > 0 ? "Lirik sinkron aktif saat lagu diputar" : "Lirik untuk lagu ini belum tersedia"}
+            </div>
           </CardContent>
         </Card>
       )}
 
       {/* Lyrics Display */}
-      {currentSong && showLyrics && currentSongLyrics.length > 0 && (
+      {currentSong && (
         <Card className="border-primary/20 overflow-hidden">
           <CardContent className="p-4 space-y-1">
             <p className="text-[11px] font-bold text-muted-foreground flex items-center gap-1.5 mb-2"><Type className="w-3.5 h-3.5" /> Lirik — {currentSong.title}</p>
-            <div ref={lyricsContainerRef} className="max-h-48 overflow-y-auto space-y-0.5 scroll-smooth">
-              {currentSongLyrics.map((line, i) => {
-                const isActive = activeLyricIndex === i;
-                return (
-                  <p
-                    key={line.id}
-                    data-lyric-index={i}
-                    className={`text-xs py-0.5 px-2 rounded transition-all duration-300 ${isActive ? "text-primary font-bold bg-primary/10 scale-[1.02]" : "text-muted-foreground"}`}
-                  >
-                    {line.text || "♪"}
-                  </p>
-                );
-              })}
-            </div>
-            <p className="text-[10px] text-muted-foreground text-center pt-2 flex items-center justify-center gap-1">
-              <Copyright className="w-3 h-3" /> {currentSong.artist} — Hak cipta dilindungi
-            </p>
+            {currentSongLyrics.length > 0 ? (
+              <>
+                <div ref={lyricsContainerRef} className="max-h-48 overflow-y-auto space-y-0.5 scroll-smooth">
+                  {currentSongLyrics.map((line, i) => {
+                    const isActive = activeLyricIndex === i;
+                    return (
+                      <p
+                        key={line.id}
+                        data-lyric-index={i}
+                        className={`text-xs py-0.5 px-2 rounded transition-all duration-300 ${isActive ? "text-primary font-bold bg-primary/10 scale-[1.02]" : "text-muted-foreground"}`}
+                      >
+                        {line.text || "♪"}
+                      </p>
+                    );
+                  })}
+                </div>
+                <p className="text-[10px] text-muted-foreground text-center pt-2 flex items-center justify-center gap-1">
+                  <Copyright className="w-3 h-3" /> {currentSong.artist} — Hak cipta dilindungi
+                </p>
+              </>
+            ) : (
+              <div className="rounded-lg border border-dashed border-border bg-muted/30 px-3 py-4 text-center text-xs text-muted-foreground">
+                Lirik belum ditambahkan untuk lagu ini.
+              </div>
+            )}
           </CardContent>
         </Card>
       )}
