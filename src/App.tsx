@@ -4,6 +4,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/lib/theme";
+import AutoTranslate from "@/components/AutoTranslate";
 import Index from "./pages/Index.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import AdminLogin from "./pages/AdminLogin.tsx";
@@ -18,6 +19,7 @@ const App = () => (
       <TooltipProvider>
         <Toaster />
         <Sonner />
+        <AutoTranslate />
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<Index />} />
