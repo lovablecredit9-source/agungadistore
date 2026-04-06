@@ -607,25 +607,25 @@ const Index = () => {
 
   async function confirmPinAndBuy() {
     if (!pendingPurchase) return;
-    const { data } = await supabase.functions.invoke("manage-pin", {
+    const { data, error } = await supabase.functions.invoke("manage-pin", {
       body: { action: "verify", visitorId, pin: pinVerifyInput },
     });
-    if (!data?.valid) {
+    if (error || data?.error || !data?.valid) {
       toast({ title: "PIN salah", variant: "destructive" }); return;
     }
     setShowPinVerify(false);
-    buyWithSaldo(pendingPurchase.product, pendingPurchase.quantity, pendingPurchase.discountCode);
+    buyWithSaldo(pendingPurchase.product, pendingPurchase.quantity, pendingPurchase.discountCode, pinVerifyInput);
     setPendingPurchase(null);
     setPinVerifyInput("");
   }
 
-  async function buyWithSaldo(product: Product, quantity = 1, voucherCode = "") {
+  async function buyWithSaldo(product: Product, quantity = 1, voucherCode = "", pin?: string) {
     const totalPrice = product.price * quantity;
     if (!userBalance || userBalance.balance < totalPrice) {
       toast({ title: "Saldo tidak cukup", variant: "destructive" }); return;
     }
     const { data, error } = await supabase.functions.invoke("purchase-with-balance", {
-      body: { visitorId, productId: product.id, quantity, discountCode: voucherCode || undefined, pin: undefined },
+      body: { visitorId, productId: product.id, quantity, discountCode: voucherCode || undefined, pin },
     });
 
     if (error || data?.error) {
@@ -1644,10 +1644,20 @@ const Index = () => {
                           <Lock className="w-4 h-4 text-primary" /> Buat PIN Keamanan
                         </Button>
                       ) : (
-                        <div className="flex items-center gap-2 bg-accent/10 rounded-lg p-2 text-xs text-accent">
-                          <Lock className="w-4 h-4" />
-                          <span className="font-bold">PIN aktif</span>
-                          <span className="text-muted-foreground">— Pembelian dilindungi PIN</span>
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-2 bg-accent/10 rounded-lg p-2 text-xs text-accent">
+                            <Lock className="w-4 h-4" />
+                            <span className="font-bold">PIN aktif</span>
+                            <span className="text-muted-foreground">— Pembelian dilindungi PIN</span>
+                          </div>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="w-full gap-1.5 text-xs font-bold text-primary"
+                            onClick={() => setShowForgotPin(true)}
+                          >
+                            <KeyRound className="w-4 h-4" /> Lupa PIN / Reset PIN
+                          </Button>
                         </div>
                       )}
                     </div>
@@ -2209,6 +2219,20 @@ const Index = () => {
               <button onClick={() => setShowDepositModal(false)} className="w-8 h-8 rounded-full bg-muted flex items-center justify-center"><X className="w-4 h-4" /></button>
             </div>
 
+            {hasPin && (
+              <Button
+                type="button"
+                variant="ghost"
+                className="w-full justify-start gap-2 px-0 text-sm font-bold text-primary"
+                onClick={() => {
+                  setShowDepositModal(false);
+                  setShowForgotPin(true);
+                }}
+              >
+                <KeyRound className="w-4 h-4" /> Lupa PIN? Reset dari sini
+              </Button>
+            )}
+
             {depositStep === "method" ? (
               <div className="space-y-3">
                 <p className="text-sm text-muted-foreground">{t("deposit.select_method", lang)}</p>
@@ -2391,7 +2415,7 @@ const Index = () => {
             <Button className="w-full h-11 bg-gradient-to-r from-primary to-accent text-primary-foreground font-bold gap-2" onClick={confirmPinAndBuy} disabled={pinVerifyInput.length < 4}>
               <Lock className="w-4 h-4" /> Konfirmasi
             </Button>
-            <button onClick={() => { setShowPinVerify(false); setPendingPurchase(null); setShowForgotPin(true); }} className="w-full text-center text-xs text-primary hover:underline">
+            <button onClick={() => { setShowPinVerify(false); setShowForgotPin(true); }} className="w-full text-center text-xs text-primary hover:underline">
               Lupa PIN?
             </button>
           </div>
@@ -2417,8 +2441,9 @@ const Index = () => {
             <a href={`${SOCIAL_LINKS.whatsapp}?text=${encodeURIComponent(`Halo admin, saya mau reset PIN.\nUsername: ${userBalance?.username || "-"}\nVisitor ID: ${visitorId}`)}`} target="_blank" rel="noopener noreferrer">
               <Button variant="outline" className="w-full gap-2 mb-2"><MessageCircle className="w-4 h-4" /> Hubungi Admin via WA</Button>
             </a>
-            <Input placeholder="Token reset dari admin" value={resetToken} onChange={e => setResetToken(e.target.value.toUpperCase())} className="font-mono" />
-            <Input type="password" inputMode="numeric" maxLength={6} placeholder="PIN baru (4-6 digit)" value={newPinInput} onChange={e => setNewPinInput(e.target.value.replace(/\D/g, ""))} />
+            <Input placeholder="Token reset dari admin" value={resetToken} onChange={e => setResetToken(e.target.value.toUpperCase())} className="font-mono uppercase" autoFocus />
+            <Input type="password" inputMode="numeric" pattern="[0-9]*" maxLength={6} placeholder="PIN baru (4-6 digit)" value={newPinInput} onChange={e => setNewPinInput(e.target.value.replace(/\D/g, ""))}
+              onKeyDown={e => { if (e.key === "Enter") resetPinWithToken(); }} />
             <Button className="w-full gap-2" onClick={resetPinWithToken} disabled={!resetToken || newPinInput.length < 4}>
               <Lock className="w-4 h-4" /> Reset PIN
             </Button>
