@@ -310,9 +310,69 @@ function normalizeText(text: string) {
     .toLowerCase()
     .normalize("NFKD")
     .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-z0-9\s]/g, " ")
+    .replace(/[^\p{L}\p{N}\s]/gu, " ")
     .replace(/\s+/g, " ")
     .trim();
+}
+
+function tokenizeNormalizedText(text: string) {
+  return text.split(" ").filter(Boolean);
+}
+
+function countLeadingTokenMatches(leftTokens: string[], rightTokens: string[]) {
+  let count = 0;
+  const max = Math.min(leftTokens.length, rightTokens.length);
+
+  while (count < max && leftTokens[count] === rightTokens[count]) {
+    count += 1;
+  }
+
+  return count;
+}
+
+function containsWholePhrase(text: string, phrase: string) {
+  return text === phrase || text.startsWith(`${phrase} `) || text.endsWith(` ${phrase}`) || text.includes(` ${phrase} `);
+}
+
+function scoreLyricAgainstTranscriptWindow({
+  lyric,
+  candidate,
+  distance,
+  windowSize,
+}: {
+  lyric: string;
+  candidate: string;
+  distance: number;
+  windowSize: number;
+}) {
+  if (!lyric || !candidate) return 0;
+
+  const lyricTokens = tokenizeNormalizedText(lyric);
+  const candidateTokens = tokenizeNormalizedText(candidate);
+  if (!lyricTokens.length || !candidateTokens.length) return 0;
+
+  const sharedLeadingTokens = countLeadingTokenMatches(lyricTokens, candidateTokens);
+  const lyricCoverage = sharedLeadingTokens / lyricTokens.length;
+  const candidateCoverage = sharedLeadingTokens / candidateTokens.length;
+  let score = similarityScore(lyric, candidate);
+
+  if (sharedLeadingTokens === lyricTokens.length && candidateTokens.length > lyricTokens.length) {
+    score += 0.65;
+  } else if (sharedLeadingTokens === candidateTokens.length && lyricTokens.length > candidateTokens.length) {
+    score += 0.22;
+  } else {
+    score += lyricCoverage * 0.18;
+    score += candidateCoverage * 0.08;
+  }
+
+  if (containsWholePhrase(candidate, lyric) && sharedLeadingTokens < lyricTokens.length && lyricTokens.length >= 3) {
+    score += 0.12;
+  }
+
+  score -= Math.min(distance * (lyricTokens.length <= 2 ? 0.12 : 0.08), 0.48);
+  score -= Math.max(windowSize - 1, 0) * 0.03;
+
+  return score;
 }
 
 function levenshteinDistance(a: string, b: string) {
@@ -443,15 +503,23 @@ export function alignLyricsToTranscript(lyricsText: string, transcriptLrc: strin
     if (!lyric) continue;
 
     let bestMatch = { score: 0, start: -1, end: -1, timeSeconds: 0 };
+    const lyricTokenCount = tokenizeNormalizedText(lyric).length;
 
+    transcriptSearch:
     for (let transcriptIndex = searchStart; transcriptIndex < transcriptLines.length; transcriptIndex += 1) {
       let combined = "";
 
       for (let endIndex = transcriptIndex; endIndex < Math.min(transcriptIndex + 3, transcriptLines.length); endIndex += 1) {
         combined = `${combined} ${transcriptLines[endIndex].text}`.trim();
-        const score = similarityScore(lyric, normalizeText(combined)) - Math.min((transcriptIndex - searchStart) * 0.01, 0.15);
+        const normalizedCombined = normalizeText(combined);
+        const score = scoreLyricAgainstTranscriptWindow({
+          lyric,
+          candidate: normalizedCombined,
+          distance: transcriptIndex - searchStart,
+          windowSize: endIndex - transcriptIndex + 1,
+        });
 
-        if (score > bestMatch.score) {
+        if (score > bestMatch.score || (Math.abs(score - bestMatch.score) <= 0.02 && bestMatch.start >= 0 && transcriptIndex < bestMatch.start)) {
           bestMatch = {
             score,
             start: transcriptIndex,
@@ -459,15 +527,22 @@ export function alignLyricsToTranscript(lyricsText: string, transcriptLrc: strin
             timeSeconds: transcriptLines[transcriptIndex].timeSeconds,
           };
         }
+
+        const leadingTokens = countLeadingTokenMatches(tokenizeNormalizedText(lyric), tokenizeNormalizedText(normalizedCombined));
+        const isStrongSequentialAnchor = leadingTokens === lyricTokenCount && lyricTokenCount >= 2 && transcriptIndex === searchStart;
+
+        if (isStrongSequentialAnchor && score >= 0.9) {
+          break transcriptSearch;
+        }
       }
 
-      if (bestMatch.score > 0.94) break;
+      if (bestMatch.score > 1.1 && transcriptIndex === searchStart) break;
     }
 
-    const threshold = lyric.split(" ").length <= 2 ? 0.38 : 0.45;
+    const threshold = lyricTokenCount <= 2 ? 0.58 : 0.48;
     if (bestMatch.start >= 0 && bestMatch.score >= threshold) {
       assignedTimes[lyricIndex] = bestMatch.timeSeconds;
-      searchStart = Math.min(bestMatch.end + 1, transcriptLines.length - 1);
+      searchStart = bestMatch.end + 1;
     }
   }
 
@@ -516,6 +591,13 @@ export async function handleRequest(req: Request) {
     if (file_url) {
       try {
         const { base64Audio, format } = await downloadAudioAsBase64(file_url);
+        const transcriptLrc = await transcribeAudioToLrc({ LOVABLE_API_KEY, base64Audio, format, durationInfo, songInfo });
+        const alignedLrc = alignLyricsToTranscript(cleanedLyricsText, transcriptLrc);
+
+        if (alignedLrc && linesExactlyMatchLyrics(cleanedLyricsText, alignedLrc)) {
+          return jsonResponse({ lrc: alignedLrc });
+        }
+
         const directAlignedLrc = await alignLyricsWithAudioReference({
           LOVABLE_API_KEY,
           lyricsText: cleanedLyricsText,
@@ -527,13 +609,6 @@ export async function handleRequest(req: Request) {
 
         if (directAlignedLrc && linesExactlyMatchLyrics(cleanedLyricsText, directAlignedLrc)) {
           return jsonResponse({ lrc: directAlignedLrc });
-        }
-
-        const transcriptLrc = await transcribeAudioToLrc({ LOVABLE_API_KEY, base64Audio, format, durationInfo, songInfo });
-        const alignedLrc = alignLyricsToTranscript(cleanedLyricsText, transcriptLrc);
-
-        if (alignedLrc && linesExactlyMatchLyrics(cleanedLyricsText, alignedLrc)) {
-          return jsonResponse({ lrc: alignedLrc });
         }
       } catch (error) {
         console.error("Audio-assisted timestamp alignment failed, falling back to text timing:", error);
