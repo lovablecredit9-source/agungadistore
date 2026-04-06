@@ -26,6 +26,7 @@ import {
 import { useLang, t, type Lang } from "@/lib/i18n";
 import { z } from "zod";
 import PlaylistTab, { type PlaybackState } from "@/components/PlaylistTab";
+import InstallPrompt from "@/components/InstallPrompt";
 
 type Tab = "beranda" | "produk" | "voucher" | "history" | "likes" | "tiket" | "saldo" | "playlist";
 
@@ -1079,6 +1080,7 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col">
+      <InstallPrompt />
       {/* Header */}
       <header className="sticky top-0 z-50 bg-gradient-to-r from-primary via-primary/90 to-primary/80 text-primary-foreground px-4 py-3 shadow-xl">
         <div className="flex items-center gap-3 max-w-lg mx-auto">

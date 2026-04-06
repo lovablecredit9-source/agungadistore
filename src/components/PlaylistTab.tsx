@@ -1144,14 +1144,37 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer }: Playl
           </DialogHeader>
           <div className="space-y-4 text-xs text-muted-foreground">
             <div>
-              <p className="font-bold text-foreground text-sm mb-1">📋 Syarat & Ketentuan</p>
+              <p className="font-bold text-foreground text-sm mb-1">📋 Syarat & Ketentuan Umum</p>
               <ul className="list-disc pl-4 space-y-1">
                 <li>Layanan playlist musik disediakan untuk penggunaan pribadi dan non-komersial.</li>
                 <li>Pengguna dapat membuat playlist pribadi yang hanya dapat diakses oleh pengguna itu sendiri.</li>
                 <li>Playlist publik dikelola oleh admin dan dapat dinikmati semua pengguna.</li>
                 <li>Penyimpanan offline tunduk pada batas kuota yang berlaku (Free 2GB, atau sesuai paket aktif).</li>
-                <li>Admin berhak menghapus, mengubah, atau menambahkan konten musik kapan saja.</li>
+                <li>Admin berhak menghapus, mengubah, atau menambahkan konten musik kapan saja tanpa pemberitahuan sebelumnya.</li>
                 <li>Dilarang mendistribusikan ulang, menjual, atau menggunakan musik untuk keperluan komersial.</li>
+                <li>Dilarang membagikan akun, link download, atau konten musik ke pihak lain.</li>
+                <li>Pengguna bertanggung jawab atas aktivitas yang dilakukan di akun/perangkat masing-masing.</li>
+              </ul>
+            </div>
+            <div>
+              <p className="font-bold text-foreground text-sm mb-1">🎵 Ketentuan Penggunaan Playlist</p>
+              <ul className="list-disc pl-4 space-y-1">
+                <li>Setiap pengguna dapat membuat maksimal playlist pribadi sesuai kuota yang tersedia.</li>
+                <li>Lagu yang tersedia di playlist dapat berubah sewaktu-waktu sesuai kebijakan admin.</li>
+                <li>Fitur download/offline hanya berlaku untuk streaming di dalam aplikasi, bukan untuk menyimpan file secara permanen di perangkat.</li>
+                <li>Kualitas audio streaming tergantung koneksi internet dan file yang tersedia.</li>
+                <li>Fitur lirik otomatis (AI) mungkin tidak 100% akurat dan hanya untuk referensi.</li>
+                <li>Pengguna dilarang merekam ulang, screen-record, atau meng-capture audio dari aplikasi.</li>
+              </ul>
+            </div>
+            <div>
+              <p className="font-bold text-foreground text-sm mb-1">💰 Ketentuan Paket Penyimpanan</p>
+              <ul className="list-disc pl-4 space-y-1">
+                <li>Paket penyimpanan (Pro 10GB, Pro 100GB) berlaku selama 30 hari sejak pembelian.</li>
+                <li>Paket tidak dapat di-refund setelah dibeli dan aktif.</li>
+                <li>Jika paket expired, data offline yang melebihi kuota gratis (2GB) akan dihapus otomatis.</li>
+                <li>Harga paket dapat berubah sewaktu-waktu tanpa pemberitahuan.</li>
+                <li>Pembelian paket menggunakan saldo akun dan tidak bisa dibatalkan.</li>
               </ul>
             </div>
             <div>
@@ -1162,6 +1185,7 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer }: Playl
                 <li>Riwayat pemutaran dan preferensi musik hanya tersimpan di perangkat Anda.</li>
                 <li>Data offline (lagu yang di-cache) disimpan di penyimpanan lokal browser Anda.</li>
                 <li>Kami tidak membagikan data penggunaan playlist kepada pihak ketiga.</li>
+                <li>Kami berhak mencatat statistik penggunaan secara anonim untuk peningkatan layanan.</li>
               </ul>
             </div>
             <div>
@@ -1171,7 +1195,20 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer }: Playl
                 <li>Penggunaan musik hanya untuk streaming dan pemutaran pribadi dalam aplikasi ini.</li>
                 <li>Lirik ditampilkan untuk tujuan referensi dan hiburan saja.</li>
                 <li>Jika Anda adalah pemegang hak cipta dan ingin konten dihapus, silakan hubungi admin.</li>
+                <li>Aplikasi ini tidak mengklaim kepemilikan atas konten musik yang ditampilkan.</li>
               </ul>
+            </div>
+            <div>
+              <p className="font-bold text-foreground text-sm mb-1">⚠️ Sanksi Pelanggaran</p>
+              <ul className="list-disc pl-4 space-y-1">
+                <li>Pelanggaran terhadap syarat & ketentuan dapat mengakibatkan pembatasan akses ke fitur playlist.</li>
+                <li>Distribusi ulang konten musik secara ilegal akan ditindak sesuai hukum yang berlaku.</li>
+                <li>Admin berhak memblokir akses pengguna yang melanggar ketentuan tanpa pemberitahuan.</li>
+              </ul>
+            </div>
+            <div className="pt-2 border-t border-border">
+              <p className="text-[10px] text-center text-muted-foreground">Dengan menggunakan fitur playlist, Anda dianggap telah membaca dan menyetujui seluruh syarat & ketentuan di atas.</p>
+              <p className="text-[10px] text-center text-muted-foreground mt-1">Terakhir diperbarui: April 2026</p>
             </div>
           </div>
           <DialogFooter>
