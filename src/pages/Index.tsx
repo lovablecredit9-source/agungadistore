@@ -1081,7 +1081,10 @@ const Index = () => {
             <h1 className="text-lg font-extrabold tracking-tight">{STORE_NAME}</h1>
             <p className="text-[10px] opacity-80 leading-tight">{t("header.tagline", lang)}</p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5">
+            <button onClick={toggleTheme} className="w-9 h-9 rounded-xl bg-primary-foreground/20 backdrop-blur-sm flex items-center justify-center hover:bg-primary-foreground/30 transition-colors" title={theme === "dark" ? "Mode Terang" : "Mode Gelap"}>
+              {theme === "dark" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+            </button>
             <button onClick={() => setLang(lang === "id" ? "en" : "id")} className="w-9 h-9 rounded-xl bg-primary-foreground/20 backdrop-blur-sm flex items-center justify-center hover:bg-primary-foreground/30 transition-colors" title={t("general.language", lang)}>
               <span className="text-[10px] font-bold">{lang === "id" ? "EN" : "ID"}</span>
             </button>
