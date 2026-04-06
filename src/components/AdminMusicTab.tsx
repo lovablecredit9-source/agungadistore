@@ -486,6 +486,64 @@ const AdminMusicTab = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Lyrics Tab */}
+      {activeTab === "lyrics" && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-base"><Type className="w-5 h-5" /> Kelola Lirik</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {loading ? (
+              <div className="text-center py-4"><Loader2 className="w-6 h-6 animate-spin mx-auto" /></div>
+            ) : songs.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-4">Upload lagu dulu.</p>
+            ) : (
+              songs.map(song => (
+                <div key={song.id} className="flex items-center gap-3 p-2 rounded-lg border border-border">
+                  <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0 overflow-hidden">
+                    {song.cover_url ? <img src={song.cover_url} className="w-full h-full object-cover" alt="" /> : <Music className="w-4 h-4 text-primary" />}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-bold truncate">{song.title}</p>
+                    <p className="text-[11px] text-muted-foreground">{song.artist}</p>
+                  </div>
+                  <Button size="sm" variant="outline" className="gap-1.5 text-xs shrink-0" onClick={() => openLyricsEditor(song)}>
+                    <Type className="w-3.5 h-3.5" /> Lirik
+                  </Button>
+                </div>
+              ))
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Lyrics Editor Dialog */}
+      <Dialog open={lyricsDialogOpen} onOpenChange={setLyricsDialogOpen}>
+        <DialogContent className="max-w-sm max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-sm flex items-center gap-2"><Type className="w-4 h-4" /> Lirik — {lyricsSong?.title}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-2">
+            <p className="text-[11px] text-muted-foreground">Format LRC: <code className="bg-muted px-1 rounded">[mm:ss.xx]teks lirik</code></p>
+            <p className="text-[10px] text-muted-foreground">Contoh:<br/><code className="bg-muted px-1 rounded">[00:05.00]Baris pertama lagu</code><br/><code className="bg-muted px-1 rounded">[00:12.50]Baris kedua lagu</code></p>
+            <Textarea
+              value={lyricsText}
+              onChange={e => setLyricsText(e.target.value)}
+              rows={12}
+              placeholder="[00:00.00]Masukkan lirik dengan timestamp..."
+              className="text-xs font-mono"
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setLyricsDialogOpen(false)}>Batal</Button>
+            <Button onClick={saveLyrics} disabled={savingLyrics} className="gap-2">
+              {savingLyrics ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+              Simpan Lirik
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 };
