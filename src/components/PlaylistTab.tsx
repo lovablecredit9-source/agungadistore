@@ -2,9 +2,10 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Music, Play, Pause, SkipBack, SkipForward, Download, Volume2, VolumeX, Repeat, Shuffle, Loader2 } from "lucide-react";
+import { Music, Play, Pause, SkipBack, SkipForward, Download, Volume2, VolumeX, Repeat, Shuffle, Loader2, Globe, HardDrive, ExternalLink } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Slider } from "@/components/ui/slider";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
 interface Song {
   id: string;
@@ -128,7 +129,7 @@ const PlaylistTab = () => {
     if (audioRef.current) audioRef.current.volume = muted ? volume : 0;
   }
 
-  async function downloadSong(song: Song) {
+  async function downloadToStorage(song: Song) {
     setDownloading(song.id);
     try {
       const response = await fetch(song.file_url);
@@ -141,11 +142,16 @@ const PlaylistTab = () => {
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
-      toast({ title: "Download dimulai", description: `${song.title} sedang diunduh...` });
+      toast({ title: "Download dimulai", description: `${song.title} disimpan ke penyimpanan` });
     } catch {
       toast({ title: "Gagal download", description: "Coba lagi nanti", variant: "destructive" });
     }
     setDownloading(null);
+  }
+
+  function openInWeb(song: Song) {
+    window.open(song.file_url, "_blank");
+    toast({ title: "Membuka di browser", description: song.title });
   }
 
   // Cleanup
@@ -253,9 +259,21 @@ const PlaylistTab = () => {
                 <p className="font-bold text-sm truncate">{song.title}</p>
                 <p className="text-[11px] text-muted-foreground truncate">{song.artist} • {song.file_size > 0 ? formatSize(song.file_size) : ""}</p>
               </div>
-              <Button size="sm" variant="ghost" className="shrink-0 h-8 w-8 p-0" onClick={(e) => { e.stopPropagation(); downloadSong(song); }} disabled={downloading === song.id}>
-                {downloading === song.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button size="sm" variant="ghost" className="shrink-0 h-8 w-8 p-0" onClick={(e) => e.stopPropagation()} disabled={downloading === song.id}>
+                    {downloading === song.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="min-w-[160px]">
+                  <DropdownMenuItem onClick={() => downloadToStorage(song)} className="gap-2 cursor-pointer">
+                    <HardDrive className="w-4 h-4" /> Simpan ke Perangkat
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => openInWeb(song)} className="gap-2 cursor-pointer">
+                    <Globe className="w-4 h-4" /> Buka di Browser
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </CardContent>
           </Card>
         ))}
