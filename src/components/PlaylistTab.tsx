@@ -905,6 +905,65 @@ const PlaylistTab = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Copyright & Terms Footer */}
+      <Card className="border-border/50 bg-muted/30">
+        <CardContent className="p-3 space-y-2">
+          <div className="flex items-center justify-center gap-1.5 text-[10px] text-muted-foreground">
+            <Copyright className="w-3 h-3" />
+            <span>Semua musik dilindungi hak cipta masing-masing artis.</span>
+          </div>
+          <div className="flex justify-center">
+            <Button variant="ghost" size="sm" className="h-6 text-[10px] text-muted-foreground hover:text-foreground gap-1" onClick={() => setTermsOpen(true)}>
+              <FileText className="w-3 h-3" /> Syarat & Ketentuan Playlist
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Terms & Privacy Dialog */}
+      <Dialog open={termsOpen} onOpenChange={setTermsOpen}>
+        <DialogContent className="max-w-sm max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-base"><FileText className="w-5 h-5 text-primary" /> Syarat & Ketentuan Playlist</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 text-xs text-muted-foreground">
+            <div>
+              <p className="font-bold text-foreground text-sm mb-1">📋 Syarat & Ketentuan</p>
+              <ul className="list-disc pl-4 space-y-1">
+                <li>Layanan playlist musik disediakan untuk penggunaan pribadi dan non-komersial.</li>
+                <li>Pengguna dapat membuat playlist pribadi yang hanya dapat diakses oleh pengguna itu sendiri.</li>
+                <li>Playlist publik dikelola oleh admin dan dapat dinikmati semua pengguna.</li>
+                <li>Penyimpanan offline tunduk pada batas kuota yang berlaku (Free 2GB, atau sesuai paket aktif).</li>
+                <li>Admin berhak menghapus, mengubah, atau menambahkan konten musik kapan saja.</li>
+                <li>Dilarang mendistribusikan ulang, menjual, atau menggunakan musik untuk keperluan komersial.</li>
+              </ul>
+            </div>
+            <div>
+              <p className="font-bold text-foreground text-sm mb-1">🔒 Kebijakan Privasi</p>
+              <ul className="list-disc pl-4 space-y-1">
+                <li>Data playlist pribadi disimpan menggunakan <code className="bg-muted px-1 rounded">visitor_id</code> unik per perangkat.</li>
+                <li>Kami tidak mengumpulkan informasi pribadi (nama, email, dll) untuk fitur playlist.</li>
+                <li>Riwayat pemutaran dan preferensi musik hanya tersimpan di perangkat Anda.</li>
+                <li>Data offline (lagu yang di-cache) disimpan di penyimpanan lokal browser Anda.</li>
+                <li>Kami tidak membagikan data penggunaan playlist kepada pihak ketiga.</li>
+              </ul>
+            </div>
+            <div>
+              <p className="font-bold text-foreground text-sm mb-1">©️ Hak Cipta Musik</p>
+              <ul className="list-disc pl-4 space-y-1">
+                <li>Semua lagu dan lirik yang tersedia dilindungi oleh hak cipta masing-masing artis dan pemegang hak.</li>
+                <li>Penggunaan musik hanya untuk streaming dan pemutaran pribadi dalam aplikasi ini.</li>
+                <li>Lirik ditampilkan untuk tujuan referensi dan hiburan saja.</li>
+                <li>Jika Anda adalah pemegang hak cipta dan ingin konten dihapus, silakan hubungi admin.</li>
+              </ul>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button onClick={() => setTermsOpen(false)} className="w-full">Tutup</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
