@@ -127,8 +127,37 @@ const AdminMusicTab = () => {
     fetchSongs();
   }
 
+  const storagePercent = Math.min((storageUsed / MAX_STORAGE_BYTES) * 100, 100);
+  const isNearLimit = storagePercent > 80;
+  const isAtLimit = storagePercent > 95;
+
   return (
     <>
+      {/* Storage Usage */}
+      <Card className={isAtLimit ? "border-destructive/50" : isNearLimit ? "border-yellow-500/50" : ""}>
+        <CardHeader className="pb-2">
+          <CardTitle className="flex items-center gap-2 text-base">
+            <HardDrive className="w-5 h-5" /> Penyimpanan Cloud
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-2">
+          <div className="flex justify-between text-sm">
+            <span className="text-muted-foreground">Terpakai</span>
+            <span className={`font-bold ${isAtLimit ? "text-destructive" : isNearLimit ? "text-yellow-600" : "text-foreground"}`}>
+              {formatStorageSize(storageUsed)} / 2 GB
+            </span>
+          </div>
+          <Progress value={storagePercent} className={`h-3 ${isAtLimit ? "[&>div]:bg-destructive" : isNearLimit ? "[&>div]:bg-yellow-500" : ""}`} />
+          <p className="text-[11px] text-muted-foreground">
+            {isAtLimit
+              ? "⚠️ Penyimpanan hampir penuh! Hapus beberapa file untuk upload lagi."
+              : isNearLimit
+              ? "⚠️ Penyimpanan hampir mencapai batas."
+              : `Sisa ${formatStorageSize(MAX_STORAGE_BYTES - storageUsed)} tersedia`}
+          </p>
+        </CardContent>
+      </Card>
+
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base">
