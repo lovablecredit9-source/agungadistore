@@ -388,7 +388,7 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer }: Playl
     const ids = await getCachedSongIds();
     setCachedIds(ids);
     setDownloadedStorage(await getCachedStorageUsed(list, ids));
-    setMaxBytes(getTotalMaxBytes());
+    setMaxBytes(getTotalMaxBytes(activeRedeemedMb));
     setActiveSubs(getActiveSubscriptions());
   }
 
