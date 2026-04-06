@@ -1421,6 +1421,99 @@ const AdminDashboard = () => {
           </>
         )}
 
+        {tab === "diskon" && (
+          <>
+            <Card>
+              <CardHeader><CardTitle className="text-base flex items-center gap-2"><Tag className="w-5 h-5 text-primary" /> Buat Voucher Diskon</CardTitle></CardHeader>
+              <CardContent className="space-y-3">
+                <Input placeholder="Kode voucher (misal: DISKON10K)" value={dvCode} onChange={e => setDvCode(e.target.value.toUpperCase())} className="font-mono" />
+                <Input type="number" placeholder="Nominal diskon (Rp)" value={dvAmount} onChange={e => setDvAmount(e.target.value)} />
+                <Input type="number" placeholder="Maks pemakaian" value={dvMaxUses} onChange={e => setDvMaxUses(e.target.value)} />
+                <div>
+                  <label className="text-xs text-muted-foreground">Expired (opsional)</label>
+                  <Input type="date" value={dvExpiry} onChange={e => setDvExpiry(e.target.value)} />
+                </div>
+                <Button className="w-full gap-2" onClick={createDiscountVoucher} disabled={!dvCode.trim() || !dvAmount}>
+                  <Tag className="w-4 h-4" /> Buat Voucher Diskon
+                </Button>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader><CardTitle className="text-base">Kirim Voucher ke User</CardTitle></CardHeader>
+              <CardContent className="space-y-3">
+                <select className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" value={dvSendTarget} onChange={e => setDvSendTarget(e.target.value)}>
+                  <option value="all">📢 Semua User ({userBalances.length})</option>
+                  {userBalances.map(u => <option key={u.id} value={u.visitor_id}>{u.username} ({u.phone})</option>)}
+                </select>
+                {discountVouchers.filter(v => v.is_active).map(v => (
+                  <div key={v.id} className="flex items-center justify-between bg-muted/50 rounded-lg p-2">
+                    <span className="font-mono text-xs font-bold">{v.code} (-Rp{v.discount_amount.toLocaleString()})</span>
+                    <Button size="sm" variant="outline" className="text-xs gap-1 h-7" onClick={() => sendDiscountVoucherNotif(v)}>
+                      <Bell className="w-3 h-3" /> Kirim
+                    </Button>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+            <h3 className="font-bold text-sm">Daftar Voucher Diskon ({discountVouchers.length})</h3>
+            {discountVouchers.map(v => (
+              <Card key={v.id} className={!v.is_active ? "opacity-60" : ""}>
+                <CardContent className="p-3 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="font-mono font-bold text-sm">{v.code}</p>
+                      <p className="text-xs text-primary font-bold">-Rp{v.discount_amount.toLocaleString()}</p>
+                    </div>
+                    <div className="flex gap-1">
+                      <Button size="sm" variant="outline" className="h-7 text-[10px]" onClick={() => toggleDiscountVoucher(v)}>{v.is_active ? "Nonaktif" : "Aktifkan"}</Button>
+                      <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => copyText(v.code)}><Copy className="w-3 h-3" /></Button>
+                      <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => deleteDiscountVoucher(v.id)}><Trash2 className="w-3 h-3 text-destructive" /></Button>
+                    </div>
+                  </div>
+                  <div className="text-[10px] text-muted-foreground flex gap-3">
+                    <span>Terpakai: {v.used_count}/{v.max_uses}</span>
+                    <span>{v.expires_at ? `Exp: ${new Date(v.expires_at).toLocaleDateString("id-ID")}` : "Tanpa batas"}</span>
+                    <span className={v.is_active ? "text-accent" : "text-destructive"}>{v.is_active ? "✓ Aktif" : "✗ Nonaktif"}</span>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+            {discountVouchers.length === 0 && <p className="text-center text-sm text-muted-foreground py-8">Belum ada voucher diskon</p>}
+          </>
+        )}
+
+        {tab === "pin" && (
+          <>
+            <Card>
+              <CardHeader><CardTitle className="text-base flex items-center gap-2"><Key className="w-5 h-5 text-primary" /> Buat Token Reset PIN</CardTitle></CardHeader>
+              <CardContent className="space-y-3">
+                <select className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" value={pinResetTarget} onChange={e => setPinResetTarget(e.target.value)}>
+                  <option value="">Pilih User</option>
+                  {userBalances.map(u => <option key={u.id} value={u.visitor_id}>{u.username} ({u.phone})</option>)}
+                </select>
+                <Button className="w-full gap-2" onClick={generatePinResetToken} disabled={!pinResetTarget}>
+                  <Key className="w-4 h-4" /> Generate Token Reset
+                </Button>
+                {generatedResetToken && (
+                  <div className="bg-accent/10 border border-accent/20 rounded-lg p-3 text-center space-y-2">
+                    <p className="text-xs text-muted-foreground">Token berhasil dibuat:</p>
+                    <p className="font-mono text-xl font-extrabold text-primary tracking-[0.2em]">{generatedResetToken}</p>
+                    <Button size="sm" variant="outline" className="gap-1" onClick={() => copyText(generatedResetToken)}><Copy className="w-3 h-3" /> Salin Token</Button>
+                    <p className="text-[10px] text-muted-foreground">Kirimkan token ini ke user. Berlaku 24 jam.</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+            <div className="rounded-xl bg-muted/50 border border-border p-3 text-xs text-muted-foreground space-y-1">
+              <p className="font-bold text-foreground">ℹ️ Info PIN</p>
+              <p>• User membuat PIN 4-6 digit di tab Saldo</p>
+              <p>• PIN diperlukan saat pembelian dengan saldo</p>
+              <p>• Jika user lupa PIN, buat token reset di sini</p>
+              <p>• Token reset berlaku 24 jam</p>
+            </div>
+          </>
+        )}
+
         {tab === "settings" && (
           <>
             <Card>
