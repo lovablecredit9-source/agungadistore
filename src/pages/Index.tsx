@@ -1948,12 +1948,12 @@ const Index = () => {
       {/* Purchase Success Modal */}
       {purchaseSuccess && (
         <div className="fixed inset-0 z-[85] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setPurchaseSuccess(null)}>
-          <div className="bg-card w-full max-w-sm rounded-2xl overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
-            <div className="bg-gradient-to-r from-accent to-primary px-5 py-4 text-primary-foreground">
+          <div className="bg-card w-full max-w-sm rounded-2xl overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200 max-h-[85vh] flex flex-col" onClick={e => e.stopPropagation()}>
+            <div className="bg-gradient-to-r from-accent to-primary px-5 py-4 text-primary-foreground shrink-0">
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <p className="text-xs font-bold uppercase tracking-[0.2em] opacity-90">Pembelian Berhasil</p>
-                  <h3 className="mt-1 text-lg font-extrabold">Voucher siap diklaim</h3>
+                  <h3 className="mt-1 text-lg font-extrabold">{purchaseSuccess.quantity}x Voucher siap diklaim</h3>
                 </div>
                 <button onClick={() => setPurchaseSuccess(null)} className="w-8 h-8 rounded-full bg-primary-foreground/15 flex items-center justify-center">
                   <X className="w-4 h-4" />
@@ -1961,34 +1961,33 @@ const Index = () => {
               </div>
             </div>
 
-            <div className="p-5 space-y-4">
-              <div className="rounded-2xl border border-primary/20 bg-primary/5 p-4 text-center space-y-2">
-                <p className="text-sm font-bold">{purchaseSuccess.product.title}</p>
-                <p className="text-[11px] text-muted-foreground">Berikut adalah data voucher Anda, silakan klaim voucher atau salin kodenya.</p>
-                <div className="rounded-xl bg-background border border-border px-3 py-3">
-                  <p className="text-[10px] uppercase tracking-[0.24em] text-muted-foreground">Kode Voucher</p>
-                  <p className="mt-1 font-mono text-lg font-extrabold tracking-[0.2em] text-primary break-all">{purchaseSuccess.token.token_code}</p>
+            <div className="p-5 space-y-4 overflow-y-auto">
+              <p className="text-sm font-bold text-center">{purchaseSuccess.product.title}</p>
+              <p className="text-[11px] text-muted-foreground text-center">Berikut {purchaseSuccess.tokens.length} voucher Anda, silakan klaim atau salin kodenya.</p>
+              {purchaseSuccess.tokens.map((tk, idx) => (
+                <div key={tk.id} className="rounded-xl border border-primary/20 bg-primary/5 p-3 space-y-2">
+                  <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold">Voucher {idx + 1}</p>
+                  <p className="font-mono text-base font-extrabold tracking-[0.15em] text-primary break-all text-center">{tk.token_code}</p>
+                  <div className="grid grid-cols-2 gap-1.5">
+                    <Button variant="outline" size="sm" className="gap-1 text-xs" onClick={() => copyText(tk.token_code, `voucher-${tk.id}`)}>
+                      <Copy className="w-3 h-3" /> Salin
+                    </Button>
+                    <Button size="sm" className="gap-1 text-xs bg-gradient-to-r from-primary to-accent text-primary-foreground" onClick={() => openClaimFromPurchase(tk.token_code)}>
+                      <Ticket className="w-3 h-3" /> Klaim
+                    </Button>
+                  </div>
                 </div>
-              </div>
+              ))}
 
               <div className="rounded-xl bg-muted/60 p-3 text-sm space-y-2">
                 <div className="flex items-center justify-between gap-3">
-                  <span className="text-muted-foreground">Harga</span>
-                  <span className="font-bold">{formatPrice(purchaseSuccess.product.price)}</span>
+                  <span className="text-muted-foreground">Total ({purchaseSuccess.quantity}x)</span>
+                  <span className="font-bold">{formatPrice(purchaseSuccess.total_price)}</span>
                 </div>
                 <div className="flex items-center justify-between gap-3">
                   <span className="text-muted-foreground">Sisa saldo</span>
                   <span className="font-bold text-primary">{formatPrice(purchaseSuccess.balance_remaining)}</span>
                 </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-2">
-                <Button variant="outline" className="gap-2" onClick={() => copyText(purchaseSuccess.token.token_code, "purchase-voucher-code")}>
-                  <Copy className="w-4 h-4" /> Salin Voucher
-                </Button>
-                <Button className="gap-2 bg-gradient-to-r from-primary to-accent text-primary-foreground" onClick={() => openClaimFromPurchase(purchaseSuccess.token.token_code)}>
-                  <Ticket className="w-4 h-4" /> Klaim Voucher
-                </Button>
               </div>
             </div>
           </div>
