@@ -36,7 +36,7 @@ interface StorageTier {
 
 const STORAGE_TIERS: StorageTier[] = [
   { name: "Free", maxBytes: 2 * 1024 * 1024 * 1024, pricePerMonth: 0 },
-  { name: "Pro 10GB", maxBytes: 10 * 1024 * 1024 * 1024, pricePerMonth: 10000 },
+  { name: "Pro 100GB", maxBytes: 100 * 1024 * 1024 * 1024, pricePerMonth: 100000 },
 ];
 
 const CACHE_NAME = "playlist-offline-v1";
@@ -402,40 +402,24 @@ const PlaylistTab = () => {
     const targetTier = STORAGE_TIERS[1];
     setUpgrading(true);
     try {
-      // Get visitor_id
       const { getVisitorId } = await import("@/lib/visitor-id");
       const visitorId = getVisitorId();
 
-      // Check balance
-      const { data: balData } = await supabase
-        .from("user_balances")
-        .select("balance")
-        .eq("visitor_id", visitorId)
-        .maybeSingle();
-
-      const currentBalance = balData?.balance || 0;
-      if (currentBalance < targetTier.pricePerMonth) {
-        toast({ title: "Saldo tidak cukup", description: `Butuh ${formatCurrency(targetTier.pricePerMonth)}, saldo kamu ${formatCurrency(currentBalance)}`, variant: "destructive" });
-        setUpgrading(false);
-        return;
-      }
-
-      // Deduct balance via edge function
-      const { error } = await supabase.functions.invoke("purchase-with-balance", {
+      const { data, error } = await supabase.functions.invoke("upgrade-storage", {
         body: {
           visitor_id: visitorId,
-          product_id: null,
-          quantity: 1,
-          total_price: targetTier.pricePerMonth,
-          pin: null,
-          skip_pin: true,
-          description: `Upgrade storage musik ke ${targetTier.name}`,
+          tier_name: targetTier.name,
+          price: targetTier.pricePerMonth,
         },
       });
 
       if (error) throw error;
+      if (data?.error) {
+        toast({ title: "Gagal upgrade", description: data.error, variant: "destructive" });
+        setUpgrading(false);
+        return;
+      }
 
-      // Save tier locally
       setCurrentTierIndex(1);
       setTier(targetTier);
       setUpgradeOpen(false);
@@ -563,7 +547,7 @@ const PlaylistTab = () => {
               onClick={() => setUpgradeOpen(true)}
             >
               <Zap className="w-3.5 h-3.5 text-primary" />
-              Upgrade ke 10GB — {formatCurrency(10000)}/bulan
+              Upgrade ke 100GB — {formatCurrency(100000)}/bulan
             </Button>
           )}
 
@@ -731,9 +715,9 @@ const PlaylistTab = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-bold flex items-center gap-1">
-                    <Crown className="w-4 h-4 text-primary" /> Pro 10GB
+                    <Crown className="w-4 h-4 text-primary" /> Pro 100GB
                   </p>
-                  <p className="text-xs text-muted-foreground">Kuota: 10 GB</p>
+                  <p className="text-xs text-muted-foreground">Kuota: 100 GB</p>
                 </div>
                 <span className="text-sm font-extrabold text-primary">{formatCurrency(10000)}/bln</span>
               </div>
