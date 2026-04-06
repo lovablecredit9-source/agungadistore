@@ -138,7 +138,8 @@ Rules:
 - If a line is unclear, omit it rather than guessing
 - Do not add section labels like [Verse], [Chorus], [Bridge], or [Outro]
 - Keep the original language used in the song
-- Match timestamps to the actual vocal timing in the audio
+ - Match timestamps to the actual vocal timing in the audio
+ - Place each timestamp on or just slightly before the first audible sung syllable, never after the vocal has already started
 - Keep timestamps strictly increasing
 - ${durationInfo}`,
         },
@@ -199,7 +200,8 @@ Rules:
 - Use the provided lyrics text EXACTLY as written, preserving the same words, line order, punctuation, and line breaks
 - Do not rewrite, paraphrase, translate, censor, merge, split, complete, or remove lyric lines
 - Every non-empty provided lyric line must appear exactly once in the result
-- Timestamp each line at the moment its first sung word starts in the audio
+ - Timestamp each line at the moment its first sung word starts in the audio
+ - If needed, place the timestamp just slightly before the first audible sung syllable so it never feels late
 - Keep timestamps strictly increasing
 - If there is intro or outro music, reflect it naturally in the timestamps
 - ${durationInfo}`,
@@ -486,6 +488,66 @@ function formatTimestamp(totalSeconds: number) {
   return `${String(minutes).padStart(2, "0")}:${seconds.toFixed(2).padStart(5, "0")}`;
 }
 
+function calculateOnsetLeadSeconds({
+  currentTime,
+  previousTime,
+  nextTime,
+  text,
+}: {
+  currentTime: number;
+  previousTime: number | null;
+  nextTime: number | null;
+  text: string;
+}) {
+  const tokenCount = tokenizeNormalizedText(normalizeText(text)).length;
+  let lead = tokenCount >= 6 ? 0.18 : tokenCount >= 3 ? 0.14 : 0.1;
+
+  const closestGap = [
+    previousTime !== null ? currentTime - previousTime : null,
+    nextTime !== null ? nextTime - currentTime : null,
+  ]
+    .filter((gap): gap is number => gap !== null && gap > 0.05)
+    .sort((left, right) => left - right)[0];
+
+  if (closestGap !== undefined) {
+    lead = Math.min(lead, Math.max(0.05, closestGap * 0.18));
+  }
+
+  return Math.min(Math.max(lead, 0.05), 0.18);
+}
+
+export function applyOnsetCompensationToLrc(lrcText: string) {
+  const parsedLines = parseLrc(lrcText);
+  if (!parsedLines.length) return lrcText;
+
+  const adjustedTimes: number[] = [];
+
+  for (let index = 0; index < parsedLines.length; index += 1) {
+    const currentLine = parsedLines[index];
+    const previousOriginalTime = index > 0 ? parsedLines[index - 1].timeSeconds : null;
+    const nextOriginalTime = index < parsedLines.length - 1 ? parsedLines[index + 1].timeSeconds : null;
+    const earliestAllowed = index > 0 ? adjustedTimes[index - 1] + 0.05 : 0;
+    const latestAllowed = nextOriginalTime !== null ? Math.max(earliestAllowed, nextOriginalTime - 0.05) : Number.POSITIVE_INFINITY;
+    const lead = calculateOnsetLeadSeconds({
+      currentTime: currentLine.timeSeconds,
+      previousTime: previousOriginalTime,
+      nextTime: nextOriginalTime,
+      text: currentLine.text,
+    });
+
+    const compensatedTime = Math.min(
+      Math.max(currentLine.timeSeconds - lead, earliestAllowed),
+      latestAllowed,
+    );
+
+    adjustedTimes.push(compensatedTime);
+  }
+
+  return parsedLines
+    .map((line, index) => `[${formatTimestamp(adjustedTimes[index])}]${line.text}`)
+    .join("\n");
+}
+
 export function alignLyricsToTranscript(lyricsText: string, transcriptLrc: string) {
   const lyricsLines = sanitizeLyricsText(lyricsText)
     .split("\n")
@@ -595,7 +657,7 @@ export async function handleRequest(req: Request) {
         const alignedLrc = alignLyricsToTranscript(cleanedLyricsText, transcriptLrc);
 
         if (alignedLrc && linesExactlyMatchLyrics(cleanedLyricsText, alignedLrc)) {
-          return jsonResponse({ lrc: alignedLrc });
+          return jsonResponse({ lrc: applyOnsetCompensationToLrc(alignedLrc) });
         }
 
         const directAlignedLrc = await alignLyricsWithAudioReference({
@@ -608,7 +670,7 @@ export async function handleRequest(req: Request) {
         });
 
         if (directAlignedLrc && linesExactlyMatchLyrics(cleanedLyricsText, directAlignedLrc)) {
-          return jsonResponse({ lrc: directAlignedLrc });
+          return jsonResponse({ lrc: applyOnsetCompensationToLrc(directAlignedLrc) });
         }
       } catch (error) {
         console.error("Audio-assisted timestamp alignment failed, falling back to text timing:", error);
