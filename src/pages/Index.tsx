@@ -2007,13 +2007,15 @@ const Index = () => {
 
       {/* Buy with Saldo Confirmation Modal */}
       {showBuySaldo && buyProduct && (() => {
-        const totalPrice = buyProduct.price * buyQuantity;
+        const basePrice = buyProduct.price * buyQuantity;
+        const discount = discountInfo ? Math.min(discountInfo.amount, basePrice) : 0;
+        const totalPrice = basePrice - discount;
         return (
-        <div className="fixed inset-0 z-[80] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => { setShowBuySaldo(false); setBuyProduct(null); setBuyQuantity(1); }}>
-          <div className="bg-card w-full max-w-sm rounded-2xl p-5 space-y-4 animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
+        <div className="fixed inset-0 z-[80] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => { setShowBuySaldo(false); setBuyProduct(null); setBuyQuantity(1); setDiscountCode(""); setDiscountInfo(null); }}>
+          <div className="bg-card w-full max-w-sm rounded-2xl p-5 space-y-4 animate-in zoom-in-95 duration-200 max-h-[85vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between">
               <h3 className="font-extrabold text-lg">Konfirmasi Pembelian</h3>
-              <button onClick={() => { setShowBuySaldo(false); setBuyProduct(null); setBuyQuantity(1); }} className="w-8 h-8 rounded-full bg-muted flex items-center justify-center"><X className="w-4 h-4" /></button>
+              <button onClick={() => { setShowBuySaldo(false); setBuyProduct(null); setBuyQuantity(1); setDiscountCode(""); setDiscountInfo(null); }} className="w-8 h-8 rounded-full bg-muted flex items-center justify-center"><X className="w-4 h-4" /></button>
             </div>
             <div className="bg-primary/5 border border-primary/20 rounded-lg p-3 space-y-1">
               <p className="font-bold text-sm">{buyProduct.title}</p>
@@ -2028,15 +2030,35 @@ const Index = () => {
                 <button onClick={() => setBuyQuantity(q => Math.min(q + 1, buyProduct.stock))} className="w-8 h-8 rounded-full bg-background border border-border flex items-center justify-center hover:bg-muted"><Plus className="w-4 h-4" /></button>
               </div>
             </div>
+            {/* Discount voucher input */}
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-muted-foreground flex items-center gap-1"><Tag className="w-3 h-3" /> Kode Voucher Diskon</label>
+              <div className="flex gap-2">
+                <Input placeholder="Masukkan kode diskon" value={discountCode} onChange={e => setDiscountCode(e.target.value.toUpperCase())} className="flex-1 font-mono text-sm" />
+                <Button size="sm" variant="outline" onClick={() => checkDiscountCode(discountCode)} disabled={checkingDiscount || !discountCode.trim()}>
+                  {checkingDiscount ? "..." : "Cek"}
+                </Button>
+              </div>
+              {discountInfo && (
+                <div className="bg-accent/10 border border-accent/20 rounded-lg p-2 text-xs text-accent flex items-center gap-1.5">
+                  <CheckCircle2 className="w-3.5 h-3.5" /> Diskon {formatPrice(discountInfo.amount)} berlaku!
+                </div>
+              )}
+            </div>
             <div className="bg-muted/50 rounded-lg p-3 space-y-1 text-sm">
               <div className="flex justify-between"><span className="text-muted-foreground">Saldo saat ini</span><span className="font-bold">{formatPrice(userBalance?.balance || 0)}</span></div>
-              <div className="flex justify-between"><span className="text-muted-foreground">Total ({buyQuantity}x)</span><span className="font-bold text-destructive">-{formatPrice(totalPrice)}</span></div>
-              <div className="border-t border-border pt-1 flex justify-between"><span className="text-muted-foreground">Sisa saldo</span><span className={`font-bold ${(userBalance?.balance || 0) >= totalPrice ? "text-primary" : "text-destructive"}`}>{formatPrice((userBalance?.balance || 0) - totalPrice)}</span></div>
+              <div className="flex justify-between"><span className="text-muted-foreground">Subtotal ({buyQuantity}x)</span><span className="font-bold">-{formatPrice(basePrice)}</span></div>
+              {discount > 0 && (
+                <div className="flex justify-between"><span className="text-accent">Diskon voucher</span><span className="font-bold text-accent">+{formatPrice(discount)}</span></div>
+              )}
+              <div className="flex justify-between border-t border-border pt-1"><span className="text-muted-foreground">Total bayar</span><span className="font-bold text-destructive">-{formatPrice(totalPrice)}</span></div>
+              <div className="flex justify-between"><span className="text-muted-foreground">Sisa saldo</span><span className={`font-bold ${(userBalance?.balance || 0) >= totalPrice ? "text-primary" : "text-destructive"}`}>{formatPrice((userBalance?.balance || 0) - totalPrice)}</span></div>
             </div>
+            {hasPin && <p className="text-xs text-muted-foreground text-center flex items-center justify-center gap-1"><Lock className="w-3 h-3" /> PIN akan diminta untuk konfirmasi</p>}
             <p className="text-xs text-muted-foreground text-center">{buyQuantity} token akun akan otomatis diberikan dari stok</p>
             <Button className="w-full h-11 bg-gradient-to-r from-primary to-accent text-primary-foreground font-bold gap-2"
               disabled={!userBalance || userBalance.balance < totalPrice}
-              onClick={() => buyWithSaldo(buyProduct, buyQuantity)}>
+              onClick={() => attemptBuy(buyProduct, buyQuantity)}>
               <Wallet className="w-5 h-5" /> Beli {buyQuantity}x — {formatPrice(totalPrice)}
             </Button>
           </div>
