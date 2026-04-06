@@ -3,7 +3,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Music, Plus, Trash2, Upload, Loader2 } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
+import { Music, Plus, Trash2, Upload, Loader2, HardDrive } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface Song {
@@ -22,6 +23,15 @@ function formatSize(bytes: number) {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
+const MAX_STORAGE_BYTES = 2 * 1024 * 1024 * 1024; // 2GB
+
+function formatStorageSize(bytes: number) {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`;
+}
+
 const AdminMusicTab = () => {
   const [songs, setSongs] = useState<Song[]>([]);
   const [loading, setLoading] = useState(true);
@@ -30,6 +40,7 @@ const AdminMusicTab = () => {
   const [artist, setArtist] = useState("");
   const [musicFile, setMusicFile] = useState<File | null>(null);
   const [coverFile, setCoverFile] = useState<File | null>(null);
+  const [storageUsed, setStorageUsed] = useState(0);
   const fileRef = useRef<HTMLInputElement>(null);
   const coverRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
@@ -39,7 +50,11 @@ const AdminMusicTab = () => {
   async function fetchSongs() {
     setLoading(true);
     const { data } = await supabase.from("playlist_songs").select("*").order("created_at", { ascending: false });
-    setSongs((data as Song[]) || []);
+    const songList = (data as Song[]) || [];
+    setSongs(songList);
+    // Calculate total storage from file sizes
+    const totalUsed = songList.reduce((sum, s) => sum + (s.file_size || 0), 0);
+    setStorageUsed(totalUsed);
     setLoading(false);
   }
 
@@ -112,8 +127,37 @@ const AdminMusicTab = () => {
     fetchSongs();
   }
 
+  const storagePercent = Math.min((storageUsed / MAX_STORAGE_BYTES) * 100, 100);
+  const isNearLimit = storagePercent > 80;
+  const isAtLimit = storagePercent > 95;
+
   return (
     <>
+      {/* Storage Usage */}
+      <Card className={isAtLimit ? "border-destructive/50" : isNearLimit ? "border-yellow-500/50" : ""}>
+        <CardHeader className="pb-2">
+          <CardTitle className="flex items-center gap-2 text-base">
+            <HardDrive className="w-5 h-5" /> Penyimpanan Cloud
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-2">
+          <div className="flex justify-between text-sm">
+            <span className="text-muted-foreground">Terpakai</span>
+            <span className={`font-bold ${isAtLimit ? "text-destructive" : isNearLimit ? "text-yellow-600" : "text-foreground"}`}>
+              {formatStorageSize(storageUsed)} / 2 GB
+            </span>
+          </div>
+          <Progress value={storagePercent} className={`h-3 ${isAtLimit ? "[&>div]:bg-destructive" : isNearLimit ? "[&>div]:bg-yellow-500" : ""}`} />
+          <p className="text-[11px] text-muted-foreground">
+            {isAtLimit
+              ? "⚠️ Penyimpanan hampir penuh! Hapus beberapa file untuk upload lagi."
+              : isNearLimit
+              ? "⚠️ Penyimpanan hampir mencapai batas."
+              : `Sisa ${formatStorageSize(MAX_STORAGE_BYTES - storageUsed)} tersedia`}
+          </p>
+        </CardContent>
+      </Card>
+
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base">
