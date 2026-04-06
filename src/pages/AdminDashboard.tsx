@@ -111,7 +111,7 @@ interface UserBalance {
   created_at: string;
 }
 
-type AdminTab = "products" | "tokens" | "claims" | "tickets" | "chats" | "saldo" | "notif";
+type AdminTab = "products" | "tokens" | "claims" | "tickets" | "chats" | "saldo" | "notif" | "deposit" | "settings";
 type ClaimDateFilter = "all" | "today" | "yesterday" | "lastmonth" | "custom";
 
 const AdminDashboard = () => {
