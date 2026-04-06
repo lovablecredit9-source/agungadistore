@@ -310,6 +310,8 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer }: Playl
   }, [activeRedeemedMb]);
 
   useEffect(() => { fetchSongs(); fetchRedeemedStorages(); }, []);
+  // Update maxBytes when activeRedeemedMb changes
+  useEffect(() => { setMaxBytes(getTotalMaxBytes(activeRedeemedMb)); }, [activeRedeemedMb]);
 
   async function fetchRedeemedStorages() {
     const visitorId = await getVisitorIdSafe();
