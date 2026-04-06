@@ -2011,8 +2011,23 @@ const Index = () => {
             </div>
             <div className="overflow-y-auto px-5 pb-5 space-y-4 text-sm text-muted-foreground">
 
-              {/* Cara Order */}
+              {/* Tentang Aplikasi */}
               <div className="rounded-xl bg-primary/5 border border-primary/20 p-3 space-y-1.5">
+                <p className="font-bold text-foreground text-xs uppercase tracking-wider">📱 Tentang Aplikasi</p>
+                <div className="space-y-1 text-[13px]">
+                  <p><strong>{STORE_NAME}</strong> adalah platform digital terpercaya untuk pembelian akun premium, voucher, dan produk digital lainnya.</p>
+                  <ul className="list-disc list-inside space-y-0.5">
+                    <li>Didirikan untuk memberikan kemudahan transaksi digital</li>
+                    <li>Mendukung <strong>{LANGUAGES.length}+ bahasa</strong> dari seluruh dunia</li>
+                    <li>Tersedia sebagai PWA (Progressive Web App) — bisa diinstal di HP</li>
+                    <li>Mode gelap, terang, dan emas untuk kenyamanan visual</li>
+                    <li>Tersedia offline untuk akses kapan saja</li>
+                  </ul>
+                </div>
+              </div>
+
+              {/* Cara Order */}
+              <div className="rounded-xl bg-accent/10 border border-accent/20 p-3 space-y-1.5">
                 <p className="font-bold text-foreground text-xs uppercase tracking-wider">🛒 Cara Order Produk</p>
                 <ol className="list-decimal list-inside space-y-0.5 text-[13px]">
                   <li>Buka tab <strong>Produk</strong>, pilih produk yang diinginkan</li>
@@ -2021,29 +2036,97 @@ const Index = () => {
                   <li>Admin akan mengirimkan kode voucher</li>
                   <li>Klaim voucher di tab <strong>Voucher</strong></li>
                 </ol>
+                <div className="mt-2 p-2 bg-muted/40 rounded-lg text-[12px]">
+                  <p className="font-semibold text-foreground">💡 Tips:</p>
+                  <ul className="list-disc list-inside space-y-0.5">
+                    <li>Beli banyak sekaligus dengan fitur <strong>keranjang</strong></li>
+                    <li>Gunakan <strong>voucher diskon</strong> untuk harga lebih hemat</li>
+                    <li>Chat admin jika butuh rekomendasi produk</li>
+                  </ul>
+                </div>
               </div>
 
               {/* Cara Klaim Voucher */}
-              <div className="rounded-xl bg-accent/10 border border-accent/20 p-3 space-y-1.5">
+              <div className="rounded-xl bg-muted/60 border border-border p-3 space-y-1.5">
                 <p className="font-bold text-foreground text-xs uppercase tracking-wider">🎫 Cara Klaim Voucher</p>
                 <ol className="list-decimal list-inside space-y-0.5 text-[13px]">
                   <li>Buka tab <strong>Voucher</strong></li>
                   <li>Masukkan kode voucher yang diberikan admin</li>
                   <li>Klik tombol <strong>Klaim</strong></li>
                   <li>Data akun/informasi produk akan ditampilkan</li>
+                  <li>Salin data atau <strong>download PDF</strong> sebagai bukti</li>
                 </ol>
+                <div className="mt-2 p-2 bg-muted/40 rounded-lg text-[12px]">
+                  <p className="font-semibold text-foreground">⚠️ Penting:</p>
+                  <ul className="list-disc list-inside space-y-0.5">
+                    <li>Kode voucher hanya bisa digunakan <strong>satu kali</strong></li>
+                    <li>Simpan data akun dengan aman setelah klaim</li>
+                    <li>Jangan bagikan kode voucher ke orang lain</li>
+                  </ul>
+                </div>
               </div>
 
               {/* Fitur Saldo */}
               <div className="rounded-xl bg-muted/60 border border-border p-3 space-y-1.5">
                 <p className="font-bold text-foreground text-xs uppercase tracking-wider">💰 Fitur Saldo</p>
                 <ul className="list-disc list-inside space-y-0.5 text-[13px]">
-                  <li>Daftar akun saldo di tab <strong>Saldo</strong></li>
-                  <li>Isi saldo melalui deposit (hubungi admin)</li>
-                  <li>Beli produk langsung dengan saldo tanpa chat WA</li>
+                  <li>Daftar akun saldo di tab <strong>Saldo</strong> (gratis)</li>
+                  <li>Isi saldo melalui <strong>deposit QRIS</strong> atau <strong>E-Wallet</strong></li>
+                  <li>Beli produk langsung tanpa chat WA</li>
                   <li>Voucher otomatis diberikan setelah pembelian berhasil</li>
-                  <li>Cek riwayat transaksi di tab <strong>Riwayat</strong></li>
+                  <li>Cek riwayat transaksi lengkap</li>
+                  <li>Keamanan akun dengan <strong>PIN 6 digit</strong></li>
                 </ul>
+                <div className="mt-2 p-2 bg-muted/40 rounded-lg text-[12px]">
+                  <p className="font-semibold text-foreground">🔐 Keamanan PIN:</p>
+                  <ul className="list-disc list-inside space-y-0.5">
+                    <li>PIN diperlukan untuk setiap transaksi pembelian</li>
+                    <li>Bisa diubah kapan saja melalui pengaturan saldo</li>
+                    <li>Lupa PIN? Hubungi admin untuk reset</li>
+                  </ul>
+                </div>
+              </div>
+
+              {/* Fitur Deposit */}
+              <div className="rounded-xl bg-muted/60 border border-border p-3 space-y-1.5">
+                <p className="font-bold text-foreground text-xs uppercase tracking-wider">💳 Cara Deposit Saldo</p>
+                <ol className="list-decimal list-inside space-y-0.5 text-[13px]">
+                  <li>Buka tab <strong>Saldo</strong>, klik tombol <strong>Deposit</strong></li>
+                  <li>Pilih metode: <strong>QRIS</strong> atau <strong>E-Wallet</strong></li>
+                  <li>Masukkan nominal deposit</li>
+                  <li>Lakukan pembayaran sesuai instruksi</li>
+                  <li>Masukkan <strong>ID Transaksi</strong> sebagai bukti</li>
+                  <li>Kirim konfirmasi ke admin via WhatsApp</li>
+                  <li>Admin akan memverifikasi dan saldo otomatis masuk</li>
+                </ol>
+                <div className="mt-2 p-2 bg-muted/40 rounded-lg text-[12px]">
+                  <p className="font-semibold text-foreground">⏱️ Waktu Proses:</p>
+                  <ul className="list-disc list-inside space-y-0.5">
+                    <li>QRIS: biasanya <strong>5-15 menit</strong></li>
+                    <li>E-Wallet: <strong>15-60 menit</strong></li>
+                    <li>Status deposit bisa dicek di riwayat deposit</li>
+                  </ul>
+                </div>
+              </div>
+
+              {/* Fitur Musik */}
+              <div className="rounded-xl bg-muted/60 border border-border p-3 space-y-1.5">
+                <p className="font-bold text-foreground text-xs uppercase tracking-wider">🎵 Fitur Musik</p>
+                <ul className="list-disc list-inside space-y-0.5 text-[13px]">
+                  <li>Dengarkan musik gratis dari koleksi admin</li>
+                  <li>Buat <strong>playlist pribadi</strong> sesuai selera</li>
+                  <li>Fitur <strong>lirik sinkron</strong> — lirik berjalan sesuai lagu</li>
+                  <li>Simpan musik untuk didengar <strong>offline</strong></li>
+                  <li>Upgrade penyimpanan dengan <strong>voucher musik</strong></li>
+                </ul>
+                <div className="mt-2 p-2 bg-muted/40 rounded-lg text-[12px]">
+                  <p className="font-semibold text-foreground">📦 Penyimpanan Musik:</p>
+                  <ul className="list-disc list-inside space-y-0.5">
+                    <li>Default: <strong>100 MB</strong> gratis</li>
+                    <li>Tambah kapasitas dengan <strong>voucher kapasitas</strong></li>
+                    <li>Kuota bersifat <strong>akumulatif</strong> — terus bertambah</li>
+                  </ul>
+                </div>
               </div>
 
               {/* Fitur Like */}
@@ -2052,6 +2135,7 @@ const Index = () => {
                 <ul className="list-disc list-inside space-y-0.5 text-[13px]">
                   <li>Tekan ikon hati di produk untuk menyimpannya</li>
                   <li>Lihat semua produk favorit di tab <strong>Suka</strong></li>
+                  <li>Akses cepat ke produk yang sering dibeli</li>
                 </ul>
               </div>
 
@@ -2059,11 +2143,111 @@ const Index = () => {
               <div className="rounded-xl bg-muted/60 border border-border p-3 space-y-1.5">
                 <p className="font-bold text-foreground text-xs uppercase tracking-wider">🎧 Dukungan & Bantuan</p>
                 <ul className="list-disc list-inside space-y-0.5 text-[13px]">
-                  <li><strong>Ajukan Keluhan:</strong> buat tiket keluhan di tab Tiket</li>
-                  <li><strong>Chat Admin:</strong> tanya langsung soal produk via chat</li>
-                  <li>Admin biasanya membalas dalam 5-10 menit</li>
-                  <li>Bisa kirim foto/gambar dalam chat</li>
+                  <li><strong>Tiket Keluhan:</strong> buat tiket di tab Tiket untuk masalah serius</li>
+                  <li><strong>Chat Produk:</strong> tanya langsung soal produk via chat</li>
+                  <li>Admin biasanya membalas dalam <strong>5-10 menit</strong></li>
+                  <li>Bisa kirim <strong>foto/gambar</strong> dalam chat</li>
+                  <li>Status tiket: <strong>Buka → Selesai → Ditutup</strong></li>
                 </ul>
+              </div>
+
+              {/* Notifikasi */}
+              <div className="rounded-xl bg-muted/60 border border-border p-3 space-y-1.5">
+                <p className="font-bold text-foreground text-xs uppercase tracking-wider">🔔 Sistem Notifikasi</p>
+                <ul className="list-disc list-inside space-y-0.5 text-[13px]">
+                  <li>Notifikasi real-time untuk setiap aktivitas akun</li>
+                  <li>Pemberitahuan saat <strong>deposit disetujui</strong></li>
+                  <li>Info saat ada <strong>balasan chat</strong> dari admin</li>
+                  <li>Update status <strong>tiket keluhan</strong></li>
+                  <li>Tandai semua dibaca dengan satu klik</li>
+                </ul>
+              </div>
+
+              {/* Multi-bahasa */}
+              <div className="rounded-xl bg-primary/5 border border-primary/20 p-3 space-y-1.5">
+                <p className="font-bold text-foreground text-xs uppercase tracking-wider">🌍 Multi-Bahasa</p>
+                <div className="space-y-1 text-[13px]">
+                  <p>Aplikasi mendukung <strong>{LANGUAGES.length}+ bahasa</strong> dari seluruh dunia:</p>
+                  <ul className="list-disc list-inside space-y-0.5">
+                    <li>🌏 <strong>Asia:</strong> Indonesia, Melayu, Jepang, Korea, China, Hindi, Thai, Vietnam, dll</li>
+                    <li>🌍 <strong>Eropa:</strong> Inggris, Prancis, Jerman, Spanyol, Italia, Rusia, dll</li>
+                    <li>🌎 <strong>Amerika:</strong> Portugis Brasil, Spanyol Meksiko, dll</li>
+                    <li>🌍 <strong>Afrika:</strong> Swahili, Amharik, Hausa, Zulu, dll</li>
+                    <li>🕌 <strong>Timur Tengah:</strong> Arab (16+ varian), Ibrani, Kurdi, dll</li>
+                    <li>🏝️ <strong>Oseania:</strong> Māori, Samoa, Tonga, dll</li>
+                  </ul>
+                  <p className="mt-1">Ubah bahasa melalui tombol <strong>bendera</strong> di header.</p>
+                </div>
+              </div>
+
+              {/* PWA & Offline */}
+              <div className="rounded-xl bg-muted/60 border border-border p-3 space-y-1.5">
+                <p className="font-bold text-foreground text-xs uppercase tracking-wider">📲 Install & Offline</p>
+                <ul className="list-disc list-inside space-y-0.5 text-[13px]">
+                  <li>Instal aplikasi ke homescreen HP tanpa app store</li>
+                  <li>Buka seperti aplikasi native dengan layar penuh</li>
+                  <li>Data tersimpan di cache untuk <strong>akses offline</strong></li>
+                  <li>Audio musik bisa dimainkan offline (jika sudah di-cache)</li>
+                  <li>Sinkronisasi otomatis saat koneksi kembali</li>
+                </ul>
+              </div>
+
+              {/* Tema & Tampilan */}
+              <div className="rounded-xl bg-muted/60 border border-border p-3 space-y-1.5">
+                <p className="font-bold text-foreground text-xs uppercase tracking-wider">🎨 Tema & Tampilan</p>
+                <ul className="list-disc list-inside space-y-0.5 text-[13px]">
+                  <li>☀️ <strong>Mode Terang</strong> — tampilan bersih dan cerah</li>
+                  <li>🌙 <strong>Mode Gelap</strong> — nyaman di malam hari</li>
+                  <li>👑 <strong>Mode Emas</strong> — tampilan premium eksklusif</li>
+                  <li>📱 <strong>Mode Perangkat</strong> — mengikuti pengaturan HP</li>
+                </ul>
+              </div>
+
+              {/* Keamanan */}
+              <div className="rounded-xl bg-muted/60 border border-border p-3 space-y-1.5">
+                <p className="font-bold text-foreground text-xs uppercase tracking-wider">🛡️ Keamanan Akun</p>
+                <ul className="list-disc list-inside space-y-0.5 text-[13px]">
+                  <li>Identifikasi unik menggunakan <strong>Visitor ID</strong></li>
+                  <li>Transaksi dilindungi dengan <strong>PIN 6 digit</strong></li>
+                  <li>Reset PIN tersedia melalui admin</li>
+                  <li>Tidak perlu email atau password — lebih simpel</li>
+                  <li>Data terenkripsi di server</li>
+                </ul>
+              </div>
+
+              {/* FAQ */}
+              <div className="rounded-xl bg-accent/10 border border-accent/20 p-3 space-y-2">
+                <p className="font-bold text-foreground text-xs uppercase tracking-wider">❓ FAQ (Pertanyaan Umum)</p>
+                <div className="space-y-2 text-[13px]">
+                  <div>
+                    <p className="font-semibold text-foreground">Q: Apakah aman bertransaksi di sini?</p>
+                    <p>A: Ya, semua transaksi dilindungi dengan PIN dan data terenkripsi.</p>
+                  </div>
+                  <div>
+                    <p className="font-semibold text-foreground">Q: Berapa lama proses deposit?</p>
+                    <p>A: QRIS 5-15 menit, E-Wallet 15-60 menit (jam kerja).</p>
+                  </div>
+                  <div>
+                    <p className="font-semibold text-foreground">Q: Bagaimana jika voucher tidak bisa diklaim?</p>
+                    <p>A: Pastikan kode benar dan belum diklaim sebelumnya. Hubungi admin jika masih bermasalah.</p>
+                  </div>
+                  <div>
+                    <p className="font-semibold text-foreground">Q: Bisa refund jika produk bermasalah?</p>
+                    <p>A: Ya, ajukan tiket keluhan dan admin akan memproses pengembalian.</p>
+                  </div>
+                  <div>
+                    <p className="font-semibold text-foreground">Q: Apakah bisa diakses di desktop?</p>
+                    <p>A: Ya, aplikasi responsif dan bisa diakses dari browser manapun.</p>
+                  </div>
+                  <div>
+                    <p className="font-semibold text-foreground">Q: Bagaimana cara mengganti bahasa?</p>
+                    <p>A: Klik ikon bendera di header, cari bahasa yang diinginkan.</p>
+                  </div>
+                  <div>
+                    <p className="font-semibold text-foreground">Q: Apa itu voucher musik?</p>
+                    <p>A: Kode khusus untuk menambah kapasitas penyimpanan musik atau mendapat diskon.</p>
+                  </div>
+                </div>
               </div>
 
               {/* Kontak */}
@@ -2075,6 +2259,14 @@ const Index = () => {
                   <li>TikTok: <strong>@pphitampro9</strong></li>
                   <li>YouTube: <strong>{YOUTUBE_NAME}</strong></li>
                 </ul>
+                <div className="mt-2 p-2 bg-muted/40 rounded-lg text-[12px]">
+                  <p className="font-semibold text-foreground">⏰ Jam Operasional:</p>
+                  <ul className="list-disc list-inside space-y-0.5">
+                    <li>Senin - Sabtu: <strong>08:00 - 22:00 WIB</strong></li>
+                    <li>Minggu: <strong>10:00 - 20:00 WIB</strong></li>
+                    <li>Di luar jam kerja: pesan akan dibalas keesokan harinya</li>
+                  </ul>
+                </div>
               </div>
 
               {/* Kebijakan Privasi */}
@@ -2086,8 +2278,42 @@ const Index = () => {
                     <li><strong>Data yang dikumpulkan:</strong> ID perangkat (visitor ID) untuk identifikasi saldo, riwayat transaksi, dan chat. Kami tidak mengumpulkan data pribadi seperti email atau password.</li>
                     <li><strong>Penggunaan data:</strong> Data digunakan hanya untuk memproses transaksi, mengelola saldo, dan menyediakan layanan dukungan.</li>
                     <li><strong>Keamanan:</strong> Data disimpan secara aman di server terenkripsi. Kami tidak membagikan data kepada pihak ketiga.</li>
+                    <li><strong>Cookie & Cache:</strong> Aplikasi menggunakan cache lokal untuk menyimpan preferensi bahasa, tema, dan data sementara.</li>
                     <li><strong>Hak pengguna:</strong> Anda dapat menghubungi admin untuk meminta penghapusan data Anda kapan saja.</li>
                     <li><strong>Perubahan kebijakan:</strong> Kebijakan ini dapat diperbarui sewaktu-waktu. Perubahan akan diumumkan melalui aplikasi.</li>
+                  </ul>
+                </div>
+              </div>
+
+              {/* Syarat & Ketentuan */}
+              <div className="rounded-xl bg-muted/60 border border-border p-3 space-y-1.5">
+                <p className="font-bold text-foreground text-xs uppercase tracking-wider">📋 Syarat & Ketentuan</p>
+                <ul className="list-disc list-inside space-y-0.5 text-[13px]">
+                  <li>Pengguna bertanggung jawab atas keamanan akun saldo masing-masing</li>
+                  <li>Produk yang sudah diklaim <strong>tidak dapat dikembalikan</strong> kecuali ada kesalahan dari admin</li>
+                  <li>Admin berhak memblokir akun yang melanggar ketentuan</li>
+                  <li>Harga produk dapat berubah sewaktu-waktu tanpa pemberitahuan</li>
+                  <li>Saldo yang sudah diisi <strong>tidak dapat ditarik kembali</strong> sebagai uang tunai</li>
+                  <li>Penggunaan layanan ini berarti Anda menyetujui semua ketentuan di atas</li>
+                </ul>
+              </div>
+
+              {/* Changelog */}
+              <div className="rounded-xl bg-primary/5 border border-primary/20 p-3 space-y-1.5">
+                <p className="font-bold text-foreground text-xs uppercase tracking-wider">📝 Changelog v2.0</p>
+                <div className="space-y-1 text-[13px]">
+                  <p className="font-semibold text-foreground text-xs">April 2026</p>
+                  <ul className="list-disc list-inside space-y-0.5">
+                    <li>✨ Dukungan {LANGUAGES.length}+ bahasa dengan bendera negara</li>
+                    <li>✨ Fitur musik: streaming, playlist, lirik sinkron</li>
+                    <li>✨ Voucher musik (kapasitas & diskon)</li>
+                    <li>✨ Sistem deposit QRIS & E-Wallet</li>
+                    <li>✨ Chat produk real-time dengan gambar</li>
+                    <li>✨ Sistem notifikasi lengkap</li>
+                    <li>✨ Tema emas premium</li>
+                    <li>✨ PWA + dukungan offline</li>
+                    <li>✨ Keranjang belanja multi-produk</li>
+                    <li>✨ Pusat Bantuan komprehensif</li>
                   </ul>
                 </div>
               </div>
