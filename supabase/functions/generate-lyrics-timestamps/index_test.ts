@@ -32,3 +32,31 @@ Deno.test("alignLyricsToTranscript keeps provided lyrics while borrowing audio t
   assertMatch(lines[2], /^\[00:41\.31\]Kau terluka lagi$/);
   assertMatch(lines[3], /^\[00:48\.33\]Dari cinta murni yang kau jalani$/);
 });
+
+Deno.test("alignLyricsToTranscript fills unmatched repeated lines progressively", () => {
+  const lyrics = [
+    "Aku ingin..",
+    "Kau merasa",
+    "Kamu mengerti aku mengerti kamu",
+    "Aku ingin",
+    "Kau pahami",
+    "Cintamu bukanlah dia",
+  ].join("\n");
+
+  const transcript = [
+    "[01:29.50]Aku ingin kau merasa",
+    "[01:36.80]Kamu mengerti aku mengerti kamu",
+    "[01:44.20]Aku ingin",
+    "[01:47.80]Kau pahami",
+    "[01:51.50]Cintamu bukanlah dia",
+  ].join("\n");
+
+  const result = alignLyricsToTranscript(lyrics, transcript).split("\n");
+
+  assertMatch(result[0], /^\[01:29\.50\]Aku ingin\.\.$/);
+  assertMatch(result[1], /^\[01:33\.15\]Kau merasa$/);
+  assertMatch(result[2], /^\[01:36\.80\]Kamu mengerti aku mengerti kamu$/);
+  assertMatch(result[3], /^\[01:44\.20\]Aku ingin$/);
+  assertMatch(result[4], /^\[01:47\.80\]Kau pahami$/);
+  assertMatch(result[5], /^\[01:51\.50\]Cintamu bukanlah dia$/);
+});
