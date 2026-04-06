@@ -229,10 +229,11 @@ export interface PlaybackState {
 interface PlaylistTabProps {
   onPlaybackChange?: (state: PlaybackState) => void;
   onTogglePlay?: React.MutableRefObject<(() => void) | null>;
+  onOpenFullPlayer?: React.MutableRefObject<(() => void) | null>;
 }
 
 // ===== COMPONENT =====
-const PlaylistTab = ({ onPlaybackChange, onTogglePlay }: PlaylistTabProps) => {
+const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer }: PlaylistTabProps) => {
   const [songs, setSongs] = useState<Song[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentIndex, setCurrentIndex] = useState<number>(-1);
