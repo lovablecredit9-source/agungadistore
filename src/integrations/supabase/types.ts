@@ -244,6 +244,45 @@ export type Database = {
         }
         Relationships: []
       }
+      playlist_items: {
+        Row: {
+          created_at: string
+          id: string
+          item_order: number
+          playlist_id: string
+          song_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          item_order?: number
+          playlist_id: string
+          song_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          item_order?: number
+          playlist_id?: string
+          song_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "playlist_items_playlist_id_fkey"
+            columns: ["playlist_id"]
+            isOneToOne: false
+            referencedRelation: "playlists"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "playlist_items_song_id_fkey"
+            columns: ["song_id"]
+            isOneToOne: false
+            referencedRelation: "playlist_songs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       playlist_songs: {
         Row: {
           artist: string
@@ -274,6 +313,33 @@ export type Database = {
           file_url?: string
           id?: string
           title?: string
+        }
+        Relationships: []
+      }
+      playlists: {
+        Row: {
+          cover_url: string | null
+          created_at: string
+          id: string
+          name: string
+          playlist_type: string
+          visitor_id: string | null
+        }
+        Insert: {
+          cover_url?: string | null
+          created_at?: string
+          id?: string
+          name: string
+          playlist_type?: string
+          visitor_id?: string | null
+        }
+        Update: {
+          cover_url?: string | null
+          created_at?: string
+          id?: string
+          name?: string
+          playlist_type?: string
+          visitor_id?: string | null
         }
         Relationships: []
       }
