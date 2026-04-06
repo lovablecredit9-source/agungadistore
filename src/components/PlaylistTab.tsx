@@ -28,56 +28,64 @@ interface Song {
   created_at: string;
 }
 
-interface StorageTier {
+interface StoragePlan {
   name: string;
-  maxBytes: number;
+  addBytes: number;
   pricePerMonth: number;
 }
 
-const STORAGE_TIERS: StorageTier[] = [
-  { name: "Free", maxBytes: 2 * 1024 * 1024 * 1024, pricePerMonth: 0 },
-  { name: "Pro 10GB", maxBytes: 10 * 1024 * 1024 * 1024, pricePerMonth: 10000 },
-  { name: "Pro 100GB", maxBytes: 100 * 1024 * 1024 * 1024, pricePerMonth: 100000 },
+interface ActiveSubscription {
+  name: string;
+  addBytes: number;
+  expiresAt: string; // ISO date
+}
+
+const FREE_BYTES = 2 * 1024 * 1024 * 1024; // 2GB free
+
+const PURCHASABLE_PLANS: StoragePlan[] = [
+  { name: "Pro 10GB", addBytes: 10 * 1024 * 1024 * 1024, pricePerMonth: 10000 },
+  { name: "Pro 100GB", addBytes: 100 * 1024 * 1024 * 1024, pricePerMonth: 100000 },
 ];
 
 const CACHE_NAME = "playlist-offline-v1";
 const META_CACHE_KEY = "/offline-music-meta";
-const TIER_STORAGE_KEY = "playlist-storage-tier";
+const SUBS_STORAGE_KEY = "playlist-storage-subs";
 
-function formatTime(sec: number) {
-  const m = Math.floor(sec / 60);
-  const s = Math.floor(sec % 60);
-  return `${m}:${s.toString().padStart(2, "0")}`;
-}
-
-function formatSize(bytes: number) {
-  if (!bytes) return "";
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-}
-
-function formatStorageSize(bytes: number) {
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-  if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-  return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`;
-}
-
-function formatCurrency(amount: number) {
-  return new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", minimumFractionDigits: 0 }).format(amount);
-}
-
-function getCurrentTier(): StorageTier {
+function getActiveSubscriptions(): ActiveSubscription[] {
   try {
-    const idx = parseInt(localStorage.getItem(TIER_STORAGE_KEY) || "0", 10);
-    return STORAGE_TIERS[idx] || STORAGE_TIERS[0];
+    const raw = localStorage.getItem(SUBS_STORAGE_KEY);
+    if (!raw) return [];
+    const subs: ActiveSubscription[] = JSON.parse(raw);
+    const now = new Date().toISOString();
+    // Filter out expired
+    return subs.filter(s => s.expiresAt > now);
   } catch {
-    return STORAGE_TIERS[0];
+    return [];
   }
 }
 
-function setCurrentTierIndex(idx: number) {
-  localStorage.setItem(TIER_STORAGE_KEY, String(idx));
+function saveSubscriptions(subs: ActiveSubscription[]) {
+  localStorage.setItem(SUBS_STORAGE_KEY, JSON.stringify(subs));
+}
+
+function addSubscription(plan: StoragePlan): ActiveSubscription {
+  const subs = getActiveSubscriptions();
+  const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(); // 30 days
+  const newSub: ActiveSubscription = { name: plan.name, addBytes: plan.addBytes, expiresAt };
+  subs.push(newSub);
+  saveSubscriptions(subs);
+  return newSub;
+}
+
+function getTotalMaxBytes(): number {
+  const subs = getActiveSubscriptions();
+  return FREE_BYTES + subs.reduce((sum, s) => sum + s.addBytes, 0);
+}
+
+function getHighestPlanLabel(subs: ActiveSubscription[]): string {
+  if (subs.length === 0) return "Free 2GB";
+  const total = FREE_BYTES + subs.reduce((sum, s) => sum + s.addBytes, 0);
+  return `${formatStorageSize(total)} aktif`;
 }
 
 // Cache helpers
