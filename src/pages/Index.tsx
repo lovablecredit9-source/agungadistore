@@ -11,7 +11,7 @@ import {
   HelpCircle, X, ExternalLink, Search, ChevronLeft, ChevronRight, FileText,
   Heart, Send, ImagePlus, AlertCircle, History, Wallet, ArrowUpCircle, ArrowDownCircle,
   Bell, Check, CheckCheck, Globe, Edit2, ShoppingCart, Plus, Minus, Trash2,
-  Moon, Sun, Lock, Tag
+  Moon, Sun, Lock, Tag, Music
 } from "lucide-react";
 import { useTheme } from "@/lib/theme";
 import { useToast } from "@/hooks/use-toast";
@@ -25,8 +25,9 @@ import {
 } from "@/components/ui/select";
 import { useLang, t, type Lang } from "@/lib/i18n";
 import { z } from "zod";
+import PlaylistTab from "@/components/PlaylistTab";
 
-type Tab = "beranda" | "produk" | "voucher" | "history" | "likes" | "tiket" | "saldo";
+type Tab = "beranda" | "produk" | "voucher" | "history" | "likes" | "tiket" | "saldo" | "playlist";
 
 interface UserBalance {
   id: string;
@@ -1732,6 +1733,8 @@ const Index = () => {
             )}
           </div>
         )}
+
+        {tab === "playlist" && <PlaylistTab />}
       </main>
 
       {/* Product Detail Modal */}
@@ -2306,6 +2309,7 @@ const Index = () => {
             { key: "likes" as Tab, icon: Heart, label: t("nav.likes", lang) },
             { key: "history" as Tab, icon: Clock, label: t("nav.history", lang) },
             { key: "tiket" as Tab, icon: AlertCircle, label: t("nav.ticket", lang) },
+            { key: "playlist" as Tab, icon: Music, label: t("nav.playlist", lang) },
           ]).map(({ key, icon: Icon, label }) => (
             <button key={key} onClick={() => setTab(key)}
               className={`flex-1 flex flex-col items-center py-2 text-[10px] transition-all duration-200 ${tab === key ? "text-primary font-bold" : "text-muted-foreground hover:text-foreground"}`}>

@@ -44,6 +44,7 @@ const translations = {
   "nav.likes": { id: "Suka", en: "Likes" },
   "nav.history": { id: "Riwayat", en: "History" },
   "nav.ticket": { id: "Tiket", en: "Ticket" },
+  "nav.playlist": { id: "Musik", en: "Music" },
 
   // Home page
   "home.buy_premium": { id: "Beli akun digital premium dengan harga terbaik.", en: "Buy premium digital accounts at the best prices." },
