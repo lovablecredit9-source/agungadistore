@@ -340,6 +340,16 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay }: PlaylistTabProps) => {
 
   const currentSong = currentIndex >= 0 ? displaySongs[currentIndex] : null;
 
+  // Report playback state to parent
+  useEffect(() => {
+    onPlaybackChange?.({ song: currentSong || null, isPlaying, currentTime, duration });
+  }, [currentSong, isPlaying, currentTime, duration]);
+
+  // Expose togglePlay to parent
+  useEffect(() => {
+    if (onTogglePlay) onTogglePlay.current = togglePlay;
+  });
+
   // Lyrics for current song
   const currentSongLyrics = useMemo(() => {
     if (!currentSong) return [];
