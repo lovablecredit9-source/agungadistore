@@ -10,7 +10,7 @@ import {
   Download, MessageCircle, Copy, CheckCircle2, Shield, Crown,
   HelpCircle, X, ExternalLink, Search, ChevronLeft, ChevronRight, FileText,
   Heart, Send, ImagePlus, AlertCircle, History, Wallet, ArrowUpCircle, ArrowDownCircle,
-  Bell, Check, CheckCheck, Globe, Edit2
+  Bell, Check, CheckCheck, Globe, Edit2, ShoppingCart, Plus, Minus, Trash2
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import jsPDF from "jspdf";
@@ -82,10 +82,16 @@ interface ClaimHistory {
 }
 
 interface PurchasedVoucher {
-  token: { id: string; token_code: string };
+  tokens: { id: string; token_code: string; fields: { field_name: string; field_value: string }[] }[];
   product: Product;
-  fields: { field_name: string; field_value: string }[];
+  quantity: number;
+  total_price: number;
   balance_remaining: number;
+}
+
+interface CartItem {
+  product: Product;
+  quantity: number;
 }
 
 interface SupportTicket {
@@ -265,7 +271,14 @@ const Index = () => {
   const [savingProfile, setSavingProfile] = useState(false);
   const [showBuySaldo, setShowBuySaldo] = useState(false);
   const [buyProduct, setBuyProduct] = useState<Product | null>(null);
+  const [buyQuantity, setBuyQuantity] = useState(1);
   const [purchaseSuccess, setPurchaseSuccess] = useState<PurchasedVoucher | null>(null);
+
+  // Cart
+  const [cart, setCart] = useState<CartItem[]>([]);
+  const [showCart, setShowCart] = useState(false);
+  const cartTotal = cart.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
+  const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
 
   // Deposit
   interface Deposit {
@@ -490,12 +503,36 @@ const Index = () => {
     fetchUserBalance();
   }
 
-  async function buyWithSaldo(product: Product) {
-    if (!userBalance || userBalance.balance < product.price) {
+  function addToCart(product: Product, qty = 1) {
+    setCart(prev => {
+      const existing = prev.find(item => item.product.id === product.id);
+      if (existing) {
+        return prev.map(item => item.product.id === product.id ? { ...item, quantity: Math.min(item.quantity + qty, product.stock) } : item);
+      }
+      return [...prev, { product, quantity: Math.min(qty, product.stock) }];
+    });
+    toast({ title: `${product.title} ditambahkan ke keranjang` });
+  }
+
+  function updateCartQty(productId: string, qty: number) {
+    if (qty <= 0) {
+      setCart(prev => prev.filter(item => item.product.id !== productId));
+    } else {
+      setCart(prev => prev.map(item => item.product.id === productId ? { ...item, quantity: Math.min(qty, item.product.stock) } : item));
+    }
+  }
+
+  function removeFromCart(productId: string) {
+    setCart(prev => prev.filter(item => item.product.id !== productId));
+  }
+
+  async function buyWithSaldo(product: Product, quantity = 1) {
+    const totalPrice = product.price * quantity;
+    if (!userBalance || userBalance.balance < totalPrice) {
       toast({ title: "Saldo tidak cukup", variant: "destructive" }); return;
     }
     const { data, error } = await supabase.functions.invoke("purchase-with-balance", {
-      body: { visitorId, productId: product.id },
+      body: { visitorId, productId: product.id, quantity },
     });
 
     if (error || data?.error) {
@@ -506,10 +543,13 @@ const Index = () => {
     setUserBalance(prev => prev ? { ...prev, balance: purchaseData.balance_remaining } : prev);
     setShowBuySaldo(false);
     setBuyProduct(null);
+    setBuyQuantity(1);
     setSelectedProduct(null);
+    removeFromCart(product.id);
     setPurchaseSuccess(purchaseData);
     fetchUserBalance();
-    createNotification("Pembelian Berhasil 🛒", `Kamu berhasil membeli ${product.title}. Kode voucher: ${purchaseData.token.token_code}`, "purchase", product.id);
+    const codes = purchaseData.tokens.map(t => t.token_code).join(", ");
+    createNotification("Pembelian Berhasil 🛒", `Kamu berhasil membeli ${quantity}x ${product.title}. Kode: ${codes}`, "purchase", product.id);
   }
 
   async function claimVoucherCodes(codes: string[]) {
@@ -1603,20 +1643,25 @@ const Index = () => {
                   </span>
                 </div>
 
-                {/* Three buttons: Chat + Beli Saldo + WhatsApp */}
-                <div className="grid grid-cols-3 gap-2">
+                {/* Four buttons: Cart + Chat + Beli Saldo + WhatsApp */}
+                <div className="grid grid-cols-4 gap-2">
+                  <Button className="h-11 bg-gradient-to-r from-secondary to-secondary/80 text-secondary-foreground font-bold gap-1 rounded-xl text-xs"
+                    disabled={selectedProduct.stock <= 0}
+                    onClick={() => { addToCart(selectedProduct); }}>
+                    <ShoppingCart className="w-4 h-4" /> Keranjang
+                  </Button>
                   <Button className="h-11 bg-gradient-to-r from-primary to-primary/80 font-bold gap-1 rounded-xl text-xs"
                     onClick={() => openProductChat(selectedProduct)}>
                     <MessageCircle className="w-4 h-4" /> Chat
                   </Button>
                   <Button className="h-11 bg-gradient-to-r from-primary to-accent text-primary-foreground font-bold gap-1 rounded-xl text-xs"
                     disabled={!userBalance || userBalance.balance < selectedProduct.price || selectedProduct.stock <= 0}
-                    onClick={() => { setBuyProduct(selectedProduct); setShowBuySaldo(true); }}>
+                    onClick={() => { setBuyProduct(selectedProduct); setBuyQuantity(1); setShowBuySaldo(true); }}>
                     <Wallet className="w-4 h-4" /> Saldo
                   </Button>
                   <Button className="h-11 bg-gradient-to-r from-accent to-accent/80 text-accent-foreground font-bold gap-1 rounded-xl text-xs"
                     onClick={() => setShowWaForm(true)}>
-                    <ShoppingBag className="w-4 h-4" /> Beli WA
+                    <ShoppingBag className="w-4 h-4" /> WA
                   </Button>
                 </div>
                 {userBalance && userBalance.balance < selectedProduct.price && (
@@ -1863,39 +1908,53 @@ const Index = () => {
       )}
 
       {/* Buy with Saldo Confirmation Modal */}
-      {showBuySaldo && buyProduct && (
-        <div className="fixed inset-0 z-[80] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => { setShowBuySaldo(false); setBuyProduct(null); }}>
+      {showBuySaldo && buyProduct && (() => {
+        const totalPrice = buyProduct.price * buyQuantity;
+        return (
+        <div className="fixed inset-0 z-[80] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => { setShowBuySaldo(false); setBuyProduct(null); setBuyQuantity(1); }}>
           <div className="bg-card w-full max-w-sm rounded-2xl p-5 space-y-4 animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between">
               <h3 className="font-extrabold text-lg">Konfirmasi Pembelian</h3>
-              <button onClick={() => { setShowBuySaldo(false); setBuyProduct(null); }} className="w-8 h-8 rounded-full bg-muted flex items-center justify-center"><X className="w-4 h-4" /></button>
+              <button onClick={() => { setShowBuySaldo(false); setBuyProduct(null); setBuyQuantity(1); }} className="w-8 h-8 rounded-full bg-muted flex items-center justify-center"><X className="w-4 h-4" /></button>
             </div>
             <div className="bg-primary/5 border border-primary/20 rounded-lg p-3 space-y-1">
               <p className="font-bold text-sm">{buyProduct.title}</p>
-              <p className="text-primary font-extrabold text-lg">{formatPrice(buyProduct.price)}</p>
+              <p className="text-primary font-extrabold text-lg">{formatPrice(buyProduct.price)} / pcs</p>
+            </div>
+            {/* Quantity selector */}
+            <div className="flex items-center justify-between bg-muted/50 rounded-lg p-3">
+              <span className="text-sm font-medium">Jumlah</span>
+              <div className="flex items-center gap-3">
+                <button onClick={() => setBuyQuantity(q => Math.max(1, q - 1))} className="w-8 h-8 rounded-full bg-background border border-border flex items-center justify-center hover:bg-muted"><Minus className="w-4 h-4" /></button>
+                <span className="font-extrabold text-lg w-8 text-center">{buyQuantity}</span>
+                <button onClick={() => setBuyQuantity(q => Math.min(q + 1, buyProduct.stock))} className="w-8 h-8 rounded-full bg-background border border-border flex items-center justify-center hover:bg-muted"><Plus className="w-4 h-4" /></button>
+              </div>
             </div>
             <div className="bg-muted/50 rounded-lg p-3 space-y-1 text-sm">
               <div className="flex justify-between"><span className="text-muted-foreground">Saldo saat ini</span><span className="font-bold">{formatPrice(userBalance?.balance || 0)}</span></div>
-              <div className="flex justify-between"><span className="text-muted-foreground">Harga produk</span><span className="font-bold text-destructive">-{formatPrice(buyProduct.price)}</span></div>
-              <div className="border-t border-border pt-1 flex justify-between"><span className="text-muted-foreground">Sisa saldo</span><span className="font-bold text-primary">{formatPrice((userBalance?.balance || 0) - buyProduct.price)}</span></div>
+              <div className="flex justify-between"><span className="text-muted-foreground">Total ({buyQuantity}x)</span><span className="font-bold text-destructive">-{formatPrice(totalPrice)}</span></div>
+              <div className="border-t border-border pt-1 flex justify-between"><span className="text-muted-foreground">Sisa saldo</span><span className={`font-bold ${(userBalance?.balance || 0) >= totalPrice ? "text-primary" : "text-destructive"}`}>{formatPrice((userBalance?.balance || 0) - totalPrice)}</span></div>
             </div>
-            <p className="text-xs text-muted-foreground text-center">Token akun akan otomatis diberikan dari stok yang tersedia</p>
-            <Button className="w-full h-11 bg-gradient-to-r from-primary to-accent text-primary-foreground font-bold gap-2" onClick={() => buyWithSaldo(buyProduct)}>
-              <Wallet className="w-5 h-5" /> Beli Sekarang
+            <p className="text-xs text-muted-foreground text-center">{buyQuantity} token akun akan otomatis diberikan dari stok</p>
+            <Button className="w-full h-11 bg-gradient-to-r from-primary to-accent text-primary-foreground font-bold gap-2"
+              disabled={!userBalance || userBalance.balance < totalPrice}
+              onClick={() => buyWithSaldo(buyProduct, buyQuantity)}>
+              <Wallet className="w-5 h-5" /> Beli {buyQuantity}x — {formatPrice(totalPrice)}
             </Button>
           </div>
         </div>
-      )}
+        );
+      })()}
 
       {/* Purchase Success Modal */}
       {purchaseSuccess && (
         <div className="fixed inset-0 z-[85] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setPurchaseSuccess(null)}>
-          <div className="bg-card w-full max-w-sm rounded-2xl overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
-            <div className="bg-gradient-to-r from-accent to-primary px-5 py-4 text-primary-foreground">
+          <div className="bg-card w-full max-w-sm rounded-2xl overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200 max-h-[85vh] flex flex-col" onClick={e => e.stopPropagation()}>
+            <div className="bg-gradient-to-r from-accent to-primary px-5 py-4 text-primary-foreground shrink-0">
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <p className="text-xs font-bold uppercase tracking-[0.2em] opacity-90">Pembelian Berhasil</p>
-                  <h3 className="mt-1 text-lg font-extrabold">Voucher siap diklaim</h3>
+                  <h3 className="mt-1 text-lg font-extrabold">{purchaseSuccess.quantity}x Voucher siap diklaim</h3>
                 </div>
                 <button onClick={() => setPurchaseSuccess(null)} className="w-8 h-8 rounded-full bg-primary-foreground/15 flex items-center justify-center">
                   <X className="w-4 h-4" />
@@ -1903,34 +1962,33 @@ const Index = () => {
               </div>
             </div>
 
-            <div className="p-5 space-y-4">
-              <div className="rounded-2xl border border-primary/20 bg-primary/5 p-4 text-center space-y-2">
-                <p className="text-sm font-bold">{purchaseSuccess.product.title}</p>
-                <p className="text-[11px] text-muted-foreground">Berikut adalah data voucher Anda, silakan klaim voucher atau salin kodenya.</p>
-                <div className="rounded-xl bg-background border border-border px-3 py-3">
-                  <p className="text-[10px] uppercase tracking-[0.24em] text-muted-foreground">Kode Voucher</p>
-                  <p className="mt-1 font-mono text-lg font-extrabold tracking-[0.2em] text-primary break-all">{purchaseSuccess.token.token_code}</p>
+            <div className="p-5 space-y-4 overflow-y-auto">
+              <p className="text-sm font-bold text-center">{purchaseSuccess.product.title}</p>
+              <p className="text-[11px] text-muted-foreground text-center">Berikut {purchaseSuccess.tokens.length} voucher Anda, silakan klaim atau salin kodenya.</p>
+              {purchaseSuccess.tokens.map((tk, idx) => (
+                <div key={tk.id} className="rounded-xl border border-primary/20 bg-primary/5 p-3 space-y-2">
+                  <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold">Voucher {idx + 1}</p>
+                  <p className="font-mono text-base font-extrabold tracking-[0.15em] text-primary break-all text-center">{tk.token_code}</p>
+                  <div className="grid grid-cols-2 gap-1.5">
+                    <Button variant="outline" size="sm" className="gap-1 text-xs" onClick={() => copyText(tk.token_code, `voucher-${tk.id}`)}>
+                      <Copy className="w-3 h-3" /> Salin
+                    </Button>
+                    <Button size="sm" className="gap-1 text-xs bg-gradient-to-r from-primary to-accent text-primary-foreground" onClick={() => openClaimFromPurchase(tk.token_code)}>
+                      <Ticket className="w-3 h-3" /> Klaim
+                    </Button>
+                  </div>
                 </div>
-              </div>
+              ))}
 
               <div className="rounded-xl bg-muted/60 p-3 text-sm space-y-2">
                 <div className="flex items-center justify-between gap-3">
-                  <span className="text-muted-foreground">Harga</span>
-                  <span className="font-bold">{formatPrice(purchaseSuccess.product.price)}</span>
+                  <span className="text-muted-foreground">Total ({purchaseSuccess.quantity}x)</span>
+                  <span className="font-bold">{formatPrice(purchaseSuccess.total_price)}</span>
                 </div>
                 <div className="flex items-center justify-between gap-3">
                   <span className="text-muted-foreground">Sisa saldo</span>
                   <span className="font-bold text-primary">{formatPrice(purchaseSuccess.balance_remaining)}</span>
                 </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-2">
-                <Button variant="outline" className="gap-2" onClick={() => copyText(purchaseSuccess.token.token_code, "purchase-voucher-code")}>
-                  <Copy className="w-4 h-4" /> Salin Voucher
-                </Button>
-                <Button className="gap-2 bg-gradient-to-r from-primary to-accent text-primary-foreground" onClick={() => openClaimFromPurchase(purchaseSuccess.token.token_code)}>
-                  <Ticket className="w-4 h-4" /> Klaim Voucher
-                </Button>
               </div>
             </div>
           </div>
@@ -2099,6 +2157,68 @@ const Index = () => {
           ))}
         </div>
       </nav>
+
+      {/* Floating Cart Button */}
+      {cartCount > 0 && (
+        <button onClick={() => setShowCart(true)} className="fixed bottom-20 right-[4.5rem] z-50 w-12 h-12 rounded-full bg-accent text-accent-foreground shadow-xl flex items-center justify-center hover:scale-110 transition-transform">
+          <ShoppingCart className="w-6 h-6" />
+          <span className="absolute -top-1 -right-1 w-5 h-5 bg-destructive text-destructive-foreground text-[10px] font-bold rounded-full flex items-center justify-center">{cartCount}</span>
+        </button>
+      )}
+
+      {/* Cart Modal */}
+      {showCart && (
+        <div className="fixed inset-0 z-[80] bg-black/60 backdrop-blur-sm flex items-end justify-center" onClick={() => setShowCart(false)}>
+          <div className="bg-card w-full max-w-lg rounded-t-3xl max-h-[85vh] overflow-y-auto animate-in slide-in-from-bottom duration-300" onClick={e => e.stopPropagation()}>
+            <div className="p-5 space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="font-extrabold text-lg flex items-center gap-2"><ShoppingCart className="w-5 h-5 text-primary" /> Keranjang ({cartCount})</h3>
+                <button onClick={() => setShowCart(false)} className="w-8 h-8 rounded-full bg-muted flex items-center justify-center"><X className="w-4 h-4" /></button>
+              </div>
+
+              {cart.length === 0 ? (
+                <p className="text-center text-sm text-muted-foreground py-8">Keranjang kosong</p>
+              ) : (
+                <>
+                  {cart.map(item => {
+                    const imgs = getProductImages(item.product.id);
+                    return (
+                      <Card key={item.product.id}>
+                        <CardContent className="p-3 flex items-center gap-3">
+                          {imgs.length > 0 && <img src={imgs[0]} className="w-14 h-14 rounded-xl object-cover" alt="" />}
+                          <div className="flex-1 min-w-0">
+                            <p className="font-bold text-sm truncate">{item.product.title}</p>
+                            <p className="text-primary font-extrabold text-sm">{formatPrice(item.product.price)}</p>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <button onClick={() => updateCartQty(item.product.id, item.quantity - 1)} className="w-7 h-7 rounded-full bg-muted flex items-center justify-center"><Minus className="w-3 h-3" /></button>
+                            <span className="font-bold text-sm w-5 text-center">{item.quantity}</span>
+                            <button onClick={() => updateCartQty(item.product.id, item.quantity + 1)} className="w-7 h-7 rounded-full bg-muted flex items-center justify-center"><Plus className="w-3 h-3" /></button>
+                            <button onClick={() => removeFromCart(item.product.id)} className="w-7 h-7 rounded-full bg-destructive/10 flex items-center justify-center"><Trash2 className="w-3 h-3 text-destructive" /></button>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
+                  <div className="bg-muted/50 rounded-lg p-3 space-y-1 text-sm">
+                    <div className="flex justify-between"><span className="text-muted-foreground">Total item</span><span className="font-bold">{cartCount} pcs</span></div>
+                    <div className="flex justify-between border-t border-border pt-1"><span className="font-bold">Total harga</span><span className="font-extrabold text-primary">{formatPrice(cartTotal)}</span></div>
+                    {userBalance && <div className="flex justify-between"><span className="text-muted-foreground">Saldo</span><span className={`font-bold ${userBalance.balance >= cartTotal ? "text-accent" : "text-destructive"}`}>{formatPrice(userBalance.balance)}</span></div>}
+                  </div>
+                  <p className="text-[10px] text-muted-foreground text-center">Pilih item untuk checkout langsung dengan saldo</p>
+                  {cart.map(item => (
+                    <Button key={item.product.id} className="w-full bg-gradient-to-r from-primary to-accent text-primary-foreground font-bold gap-2 text-xs"
+                      disabled={!userBalance || userBalance.balance < item.product.price * item.quantity || item.product.stock < item.quantity}
+                      onClick={() => { setBuyProduct(item.product); setBuyQuantity(item.quantity); setShowBuySaldo(true); setShowCart(false); }}>
+                      <Wallet className="w-4 h-4" /> Beli {item.quantity}x {item.product.title} — {formatPrice(item.product.price * item.quantity)}
+                    </Button>
+                  ))}
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Floating Help Button */}
       <button onClick={() => setShowHelp(true)} className="fixed bottom-20 right-4 z-50 w-12 h-12 rounded-full bg-primary text-primary-foreground shadow-xl flex items-center justify-center hover:scale-110 transition-transform">
