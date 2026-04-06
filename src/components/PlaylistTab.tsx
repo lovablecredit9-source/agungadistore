@@ -707,8 +707,8 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer }: Playl
         </Card>
       )}
 
-      {/* ===== FULLSCREEN PLAYER ===== */}
-      {showFullPlayer && currentSong && (
+      {/* ===== FULLSCREEN PLAYER (Portal to avoid hidden parent) ===== */}
+      {showFullPlayer && currentSong && createPortal(
         <div className="fixed inset-0 z-[100] flex flex-col overflow-hidden bg-background">
           {/* Background gradient overlay */}
           <div className="absolute inset-0 pointer-events-none" style={{
