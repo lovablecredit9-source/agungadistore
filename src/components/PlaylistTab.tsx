@@ -36,6 +36,7 @@ interface StorageTier {
 
 const STORAGE_TIERS: StorageTier[] = [
   { name: "Free", maxBytes: 2 * 1024 * 1024 * 1024, pricePerMonth: 0 },
+  { name: "Pro 10GB", maxBytes: 10 * 1024 * 1024 * 1024, pricePerMonth: 10000 },
   { name: "Pro 100GB", maxBytes: 100 * 1024 * 1024 * 1024, pricePerMonth: 100000 },
 ];
 
