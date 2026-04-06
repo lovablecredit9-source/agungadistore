@@ -1637,6 +1637,20 @@ const Index = () => {
                         <ArrowUpCircle className="w-4 h-4" /> {t("deposit.btn", lang)}
                       </Button>
                     </div>
+                    {/* PIN Management */}
+                    <div className="mt-2">
+                      {!hasPin ? (
+                        <Button size="sm" variant="outline" className="w-full gap-1.5 font-bold border-primary/30" onClick={() => setShowPinSetup(true)}>
+                          <Lock className="w-4 h-4 text-primary" /> Buat PIN Keamanan
+                        </Button>
+                      ) : (
+                        <div className="flex items-center gap-2 bg-accent/10 rounded-lg p-2 text-xs text-accent">
+                          <Lock className="w-4 h-4" />
+                          <span className="font-bold">PIN aktif</span>
+                          <span className="text-muted-foreground">— Pembelian dilindungi PIN</span>
+                        </div>
+                      )}
+                    </div>
                   </CardContent>
                 </Card>
 
