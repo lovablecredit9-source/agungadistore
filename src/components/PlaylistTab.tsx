@@ -1214,7 +1214,7 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer }: Playl
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setUpgradeOpen(false)}>Batal</Button>
-            <Button onClick={handleUpgrade} disabled={upgrading || !isOnline} className="gap-2">
+            <Button onClick={attemptUpgrade} disabled={upgrading || !isOnline} className="gap-2">
               {upgrading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Zap className="w-4 h-4" />}
               {upgrading ? "Memproses..." : "Beli Sekarang"}
             </Button>
