@@ -1733,6 +1733,8 @@ const Index = () => {
             )}
           </div>
         )}
+
+        {tab === "playlist" && <PlaylistTab />}
       </main>
 
       {/* Product Detail Modal */}
