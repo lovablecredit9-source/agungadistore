@@ -2,9 +2,10 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Music, Play, Pause, SkipBack, SkipForward, Download, Volume2, VolumeX, Repeat, Shuffle, Loader2 } from "lucide-react";
+import { Music, Play, Pause, SkipBack, SkipForward, Download, Volume2, VolumeX, Repeat, Shuffle, Loader2, Globe, HardDrive, ExternalLink } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Slider } from "@/components/ui/slider";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
 interface Song {
   id: string;
