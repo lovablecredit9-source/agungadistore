@@ -281,6 +281,13 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer }: Playl
   const [redeemCode, setRedeemCode] = useState("");
   const [redeeming, setRedeeming] = useState(false);
   const [redeemedStorages, setRedeemedStorages] = useState<{id: string; storage_mb: number; voucher_code: string; redeemed_at: string; expires_at: string | null}[]>([]);
+  // Compute active redeemed MB
+  const activeRedeemedMb = useMemo(() => {
+    const now = new Date();
+    return redeemedStorages
+      .filter(rs => !rs.expires_at || new Date(rs.expires_at) >= now)
+      .reduce((sum, rs) => sum + rs.storage_mb, 0);
+  }, [redeemedStorages]);
   // Discount code for upgrade
   const [upgradeDiscountCode, setUpgradeDiscountCode] = useState("");
   const [upgradeDiscountAmount, setUpgradeDiscountAmount] = useState(0);
