@@ -1907,29 +1907,43 @@ const Index = () => {
       )}
 
       {/* Buy with Saldo Confirmation Modal */}
-      {showBuySaldo && buyProduct && (
-        <div className="fixed inset-0 z-[80] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => { setShowBuySaldo(false); setBuyProduct(null); }}>
+      {showBuySaldo && buyProduct && (() => {
+        const totalPrice = buyProduct.price * buyQuantity;
+        return (
+        <div className="fixed inset-0 z-[80] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => { setShowBuySaldo(false); setBuyProduct(null); setBuyQuantity(1); }}>
           <div className="bg-card w-full max-w-sm rounded-2xl p-5 space-y-4 animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between">
               <h3 className="font-extrabold text-lg">Konfirmasi Pembelian</h3>
-              <button onClick={() => { setShowBuySaldo(false); setBuyProduct(null); }} className="w-8 h-8 rounded-full bg-muted flex items-center justify-center"><X className="w-4 h-4" /></button>
+              <button onClick={() => { setShowBuySaldo(false); setBuyProduct(null); setBuyQuantity(1); }} className="w-8 h-8 rounded-full bg-muted flex items-center justify-center"><X className="w-4 h-4" /></button>
             </div>
             <div className="bg-primary/5 border border-primary/20 rounded-lg p-3 space-y-1">
               <p className="font-bold text-sm">{buyProduct.title}</p>
-              <p className="text-primary font-extrabold text-lg">{formatPrice(buyProduct.price)}</p>
+              <p className="text-primary font-extrabold text-lg">{formatPrice(buyProduct.price)} / pcs</p>
+            </div>
+            {/* Quantity selector */}
+            <div className="flex items-center justify-between bg-muted/50 rounded-lg p-3">
+              <span className="text-sm font-medium">Jumlah</span>
+              <div className="flex items-center gap-3">
+                <button onClick={() => setBuyQuantity(q => Math.max(1, q - 1))} className="w-8 h-8 rounded-full bg-background border border-border flex items-center justify-center hover:bg-muted"><Minus className="w-4 h-4" /></button>
+                <span className="font-extrabold text-lg w-8 text-center">{buyQuantity}</span>
+                <button onClick={() => setBuyQuantity(q => Math.min(q + 1, buyProduct.stock))} className="w-8 h-8 rounded-full bg-background border border-border flex items-center justify-center hover:bg-muted"><Plus className="w-4 h-4" /></button>
+              </div>
             </div>
             <div className="bg-muted/50 rounded-lg p-3 space-y-1 text-sm">
               <div className="flex justify-between"><span className="text-muted-foreground">Saldo saat ini</span><span className="font-bold">{formatPrice(userBalance?.balance || 0)}</span></div>
-              <div className="flex justify-between"><span className="text-muted-foreground">Harga produk</span><span className="font-bold text-destructive">-{formatPrice(buyProduct.price)}</span></div>
-              <div className="border-t border-border pt-1 flex justify-between"><span className="text-muted-foreground">Sisa saldo</span><span className="font-bold text-primary">{formatPrice((userBalance?.balance || 0) - buyProduct.price)}</span></div>
+              <div className="flex justify-between"><span className="text-muted-foreground">Total ({buyQuantity}x)</span><span className="font-bold text-destructive">-{formatPrice(totalPrice)}</span></div>
+              <div className="border-t border-border pt-1 flex justify-between"><span className="text-muted-foreground">Sisa saldo</span><span className={`font-bold ${(userBalance?.balance || 0) >= totalPrice ? "text-primary" : "text-destructive"}`}>{formatPrice((userBalance?.balance || 0) - totalPrice)}</span></div>
             </div>
-            <p className="text-xs text-muted-foreground text-center">Token akun akan otomatis diberikan dari stok yang tersedia</p>
-            <Button className="w-full h-11 bg-gradient-to-r from-primary to-accent text-primary-foreground font-bold gap-2" onClick={() => buyWithSaldo(buyProduct)}>
-              <Wallet className="w-5 h-5" /> Beli Sekarang
+            <p className="text-xs text-muted-foreground text-center">{buyQuantity} token akun akan otomatis diberikan dari stok</p>
+            <Button className="w-full h-11 bg-gradient-to-r from-primary to-accent text-primary-foreground font-bold gap-2"
+              disabled={!userBalance || userBalance.balance < totalPrice}
+              onClick={() => buyWithSaldo(buyProduct, buyQuantity)}>
+              <Wallet className="w-5 h-5" /> Beli {buyQuantity}x — {formatPrice(totalPrice)}
             </Button>
           </div>
         </div>
-      )}
+        );
+      })()}
 
       {/* Purchase Success Modal */}
       {purchaseSuccess && (
