@@ -47,6 +47,14 @@ interface PlaylistItemRow {
   item_order: number;
 }
 
+interface LyricLine {
+  id: string;
+  song_id: string;
+  time_seconds: number;
+  text: string;
+  line_order: number;
+}
+
 // --- Storage plan system ---
 interface StoragePlan {
   name: string;
