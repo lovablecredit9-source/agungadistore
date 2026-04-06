@@ -288,6 +288,7 @@ const PlaylistTab = () => {
       setAdminPlaylists((adminPlRes.data as Playlist[]) || []);
       setUserPlaylists((userPlRes.data as Playlist[]) || []);
       setPlaylistItems((piRes.data as PlaylistItemRow[]) || []);
+      setAllLyrics((lyricsRes.data as LyricLine[]) || []);
       const ids = await getCachedSongIds();
       setCachedIds(ids);
       setDownloadedStorage(await getCachedStorageUsed(songList, ids));
