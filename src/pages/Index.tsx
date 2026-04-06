@@ -1420,10 +1420,6 @@ const Index = () => {
                     </CardContent>
                   </Card>
                 ))}
-                      </span>
-                    </CardContent>
-                  </Card>
-                ))}
               </>
             )}
           </div>
