@@ -3,9 +3,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Progress } from "@/components/ui/progress";
-import { Music, Plus, Trash2, Upload, Loader2, HardDrive } from "lucide-react";
+import { Music, Plus, Trash2, Upload, Loader2, ListMusic, Image as ImageIcon, Edit2, Check, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter
+} from "@/components/ui/dialog";
+import { Checkbox } from "@/components/ui/checkbox";
 
 interface Song {
   id: string;
@@ -18,43 +21,69 @@ interface Song {
   created_at: string;
 }
 
+interface Playlist {
+  id: string;
+  name: string;
+  cover_url: string | null;
+  playlist_type: string;
+  created_at: string;
+}
+
+interface PlaylistItem {
+  id: string;
+  playlist_id: string;
+  song_id: string;
+  item_order: number;
+}
+
 function formatSize(bytes: number) {
+  if (!bytes) return "";
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-const MAX_STORAGE_BYTES = 2 * 1024 * 1024 * 1024; // 2GB
-
-function formatStorageSize(bytes: number) {
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-  if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-  return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`;
-}
-
 const AdminMusicTab = () => {
   const [songs, setSongs] = useState<Song[]>([]);
+  const [playlists, setPlaylists] = useState<Playlist[]>([]);
+  const [playlistItems, setPlaylistItems] = useState<PlaylistItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [title, setTitle] = useState("");
   const [artist, setArtist] = useState("");
   const [musicFile, setMusicFile] = useState<File | null>(null);
   const [coverFile, setCoverFile] = useState<File | null>(null);
-  const [storageUsed, setStorageUsed] = useState(0);
   const fileRef = useRef<HTMLInputElement>(null);
   const coverRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
-  useEffect(() => { fetchSongs(); }, []);
+  // Playlist create/edit state
+  const [playlistDialogOpen, setPlaylistDialogOpen] = useState(false);
+  const [editingPlaylist, setEditingPlaylist] = useState<Playlist | null>(null);
+  const [plName, setPlName] = useState("");
+  const [plCoverFile, setPlCoverFile] = useState<File | null>(null);
+  const plCoverRef = useRef<HTMLInputElement>(null);
+  const [savingPlaylist, setSavingPlaylist] = useState(false);
 
-  async function fetchSongs() {
+  // Manage songs in playlist
+  const [manageSongsOpen, setManageSongsOpen] = useState(false);
+  const [managingPlaylist, setManagingPlaylist] = useState<Playlist | null>(null);
+  const [selectedSongIds, setSelectedSongIds] = useState<Set<string>>(new Set());
+  const [savingSongs, setSavingSongs] = useState(false);
+
+  const [activeTab, setActiveTab] = useState<"songs" | "playlists">("songs");
+
+  useEffect(() => { fetchAll(); }, []);
+
+  async function fetchAll() {
     setLoading(true);
-    const { data } = await supabase.from("playlist_songs").select("*").order("created_at", { ascending: false });
-    const songList = (data as Song[]) || [];
-    setSongs(songList);
-    // Calculate total storage from file sizes
-    const totalUsed = songList.reduce((sum, s) => sum + (s.file_size || 0), 0);
-    setStorageUsed(totalUsed);
+    const [songsRes, plRes, piRes] = await Promise.all([
+      supabase.from("playlist_songs").select("*").order("created_at", { ascending: false }),
+      supabase.from("playlists").select("*").eq("playlist_type", "admin").order("created_at", { ascending: false }),
+      supabase.from("playlist_items").select("*"),
+    ]);
+    setSongs((songsRes.data as Song[]) || []);
+    setPlaylists((plRes.data as Playlist[]) || []);
+    setPlaylistItems((piRes.data as PlaylistItem[]) || []);
     setLoading(false);
   }
 
@@ -94,13 +123,10 @@ const AdminMusicTab = () => {
       if (insertErr) throw insertErr;
 
       toast({ title: "Lagu berhasil diupload!" });
-      setTitle("");
-      setArtist("");
-      setMusicFile(null);
-      setCoverFile(null);
+      setTitle(""); setArtist(""); setMusicFile(null); setCoverFile(null);
       if (fileRef.current) fileRef.current.value = "";
       if (coverRef.current) coverRef.current.value = "";
-      fetchSongs();
+      fetchAll();
     } catch (err: any) {
       toast({ title: "Gagal upload", description: err.message, variant: "destructive" });
     }
@@ -109,7 +135,6 @@ const AdminMusicTab = () => {
 
   async function deleteSong(song: Song) {
     if (!confirm(`Hapus "${song.title}"?`)) return;
-    // Extract file name from URL
     try {
       const url = new URL(song.file_url);
       const path = url.pathname.split("/music-files/")[1];
@@ -124,95 +149,282 @@ const AdminMusicTab = () => {
     }
     await supabase.from("playlist_songs").delete().eq("id", song.id);
     toast({ title: "Lagu dihapus" });
-    fetchSongs();
+    fetchAll();
   }
 
-  const storagePercent = Math.min((storageUsed / MAX_STORAGE_BYTES) * 100, 100);
-  const isNearLimit = storagePercent > 80;
-  const isAtLimit = storagePercent > 95;
+  // --- Playlist CRUD ---
+  function openCreatePlaylist() {
+    setEditingPlaylist(null);
+    setPlName("");
+    setPlCoverFile(null);
+    setPlaylistDialogOpen(true);
+  }
+
+  function openEditPlaylist(pl: Playlist) {
+    setEditingPlaylist(pl);
+    setPlName(pl.name);
+    setPlCoverFile(null);
+    setPlaylistDialogOpen(true);
+  }
+
+  async function savePlaylist() {
+    if (!plName.trim()) {
+      toast({ title: "Isi nama playlist", variant: "destructive" });
+      return;
+    }
+    setSavingPlaylist(true);
+    try {
+      let coverUrl: string | null = editingPlaylist?.cover_url || null;
+      if (plCoverFile) {
+        const ext = plCoverFile.name.split(".").pop() || "jpg";
+        const coverName = `playlist-covers/${Date.now()}.${ext}`;
+        const { error: coverErr } = await supabase.storage.from("music-files").upload(coverName, plCoverFile);
+        if (!coverErr) {
+          const { data } = supabase.storage.from("music-files").getPublicUrl(coverName);
+          coverUrl = data.publicUrl;
+        }
+      }
+
+      if (editingPlaylist) {
+        await supabase.from("playlists").update({ name: plName.trim(), cover_url: coverUrl }).eq("id", editingPlaylist.id);
+        toast({ title: "Playlist diperbarui" });
+      } else {
+        await supabase.from("playlists").insert({ name: plName.trim(), cover_url: coverUrl, playlist_type: "admin" });
+        toast({ title: "Playlist dibuat!" });
+      }
+      setPlaylistDialogOpen(false);
+      fetchAll();
+    } catch (err: any) {
+      toast({ title: "Gagal simpan playlist", description: err.message, variant: "destructive" });
+    }
+    setSavingPlaylist(false);
+  }
+
+  async function deletePlaylist(pl: Playlist) {
+    if (!confirm(`Hapus playlist "${pl.name}"?`)) return;
+    await supabase.from("playlists").delete().eq("id", pl.id);
+    toast({ title: "Playlist dihapus" });
+    fetchAll();
+  }
+
+  function openManageSongs(pl: Playlist) {
+    setManagingPlaylist(pl);
+    const existingIds = playlistItems.filter(pi => pi.playlist_id === pl.id).map(pi => pi.song_id);
+    setSelectedSongIds(new Set(existingIds));
+    setManageSongsOpen(true);
+  }
+
+  function toggleSongInPlaylist(songId: string) {
+    setSelectedSongIds(prev => {
+      const next = new Set(prev);
+      if (next.has(songId)) next.delete(songId); else next.add(songId);
+      return next;
+    });
+  }
+
+  async function saveSongsInPlaylist() {
+    if (!managingPlaylist) return;
+    setSavingSongs(true);
+    try {
+      // Delete existing items for this playlist
+      await supabase.from("playlist_items").delete().eq("playlist_id", managingPlaylist.id);
+      // Insert selected ones
+      const items = Array.from(selectedSongIds).map((songId, i) => ({
+        playlist_id: managingPlaylist.id,
+        song_id: songId,
+        item_order: i,
+      }));
+      if (items.length > 0) {
+        const { error } = await supabase.from("playlist_items").insert(items);
+        if (error) throw error;
+      }
+      toast({ title: `${items.length} lagu disimpan ke playlist` });
+      setManageSongsOpen(false);
+      fetchAll();
+    } catch (err: any) {
+      toast({ title: "Gagal simpan", description: err.message, variant: "destructive" });
+    }
+    setSavingSongs(false);
+  }
+
+  function getSongCountForPlaylist(plId: string) {
+    return playlistItems.filter(pi => pi.playlist_id === plId).length;
+  }
 
   return (
     <>
-      {/* Storage Usage */}
-      <Card className={isAtLimit ? "border-destructive/50" : isNearLimit ? "border-yellow-500/50" : ""}>
-        <CardHeader className="pb-2">
-          <CardTitle className="flex items-center gap-2 text-base">
-            <HardDrive className="w-5 h-5" /> Penyimpanan Cloud
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-2">
-          <div className="flex justify-between text-sm">
-            <span className="text-muted-foreground">Terpakai</span>
-            <span className={`font-bold ${isAtLimit ? "text-destructive" : isNearLimit ? "text-yellow-600" : "text-foreground"}`}>
-              {formatStorageSize(storageUsed)} / 2 GB
-            </span>
-          </div>
-          <Progress value={storagePercent} className={`h-3 ${isAtLimit ? "[&>div]:bg-destructive" : isNearLimit ? "[&>div]:bg-yellow-500" : ""}`} />
-          <p className="text-[11px] text-muted-foreground">
-            {isAtLimit
-              ? "⚠️ Penyimpanan hampir penuh! Hapus beberapa file untuk upload lagi."
-              : isNearLimit
-              ? "⚠️ Penyimpanan hampir mencapai batas."
-              : `Sisa ${formatStorageSize(MAX_STORAGE_BYTES - storageUsed)} tersedia`}
-          </p>
-        </CardContent>
-      </Card>
+      {/* Tab Toggle */}
+      <div className="flex gap-2">
+        <Button variant={activeTab === "songs" ? "default" : "outline"} size="sm" className="flex-1 gap-2 text-xs" onClick={() => setActiveTab("songs")}>
+          <Music className="w-3.5 h-3.5" /> Lagu ({songs.length})
+        </Button>
+        <Button variant={activeTab === "playlists" ? "default" : "outline"} size="sm" className="flex-1 gap-2 text-xs" onClick={() => setActiveTab("playlists")}>
+          <ListMusic className="w-3.5 h-3.5" /> Playlist ({playlists.length})
+        </Button>
+      </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base">
-            <Upload className="w-5 h-5" /> Upload Lagu Baru
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <Input placeholder="Judul lagu *" value={title} onChange={e => setTitle(e.target.value)} />
-          <Input placeholder="Artis" value={artist} onChange={e => setArtist(e.target.value)} />
-          <div>
-            <label className="text-xs font-medium text-muted-foreground mb-1 block">File Musik (MP3, max 50MB)</label>
-            <input ref={fileRef} type="file" accept="audio/*" onChange={e => setMusicFile(e.target.files?.[0] || null)}
-              className="text-xs file:mr-2 file:px-3 file:py-1.5 file:rounded-md file:border-0 file:bg-primary/10 file:text-primary file:font-medium file:cursor-pointer" />
-          </div>
-          <div>
-            <label className="text-xs font-medium text-muted-foreground mb-1 block">Cover (opsional)</label>
-            <input ref={coverRef} type="file" accept="image/*" onChange={e => setCoverFile(e.target.files?.[0] || null)}
-              className="text-xs file:mr-2 file:px-3 file:py-1.5 file:rounded-md file:border-0 file:bg-primary/10 file:text-primary file:font-medium file:cursor-pointer" />
-          </div>
-          <Button className="w-full gap-2" onClick={uploadSong} disabled={uploading}>
-            {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
-            {uploading ? "Mengupload..." : "Upload Lagu"}
+      {activeTab === "songs" && (
+        <>
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-base">
+                <Upload className="w-5 h-5" /> Upload Lagu Baru
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <Input placeholder="Judul lagu *" value={title} onChange={e => setTitle(e.target.value)} />
+              <Input placeholder="Artis" value={artist} onChange={e => setArtist(e.target.value)} />
+              <div>
+                <label className="text-xs font-medium text-muted-foreground mb-1 block">File Musik (MP3)</label>
+                <input ref={fileRef} type="file" accept="audio/*" onChange={e => setMusicFile(e.target.files?.[0] || null)}
+                  className="text-xs file:mr-2 file:px-3 file:py-1.5 file:rounded-md file:border-0 file:bg-primary/10 file:text-primary file:font-medium file:cursor-pointer" />
+              </div>
+              <div>
+                <label className="text-xs font-medium text-muted-foreground mb-1 block">Thumbnail / Cover (opsional)</label>
+                <input ref={coverRef} type="file" accept="image/*" onChange={e => setCoverFile(e.target.files?.[0] || null)}
+                  className="text-xs file:mr-2 file:px-3 file:py-1.5 file:rounded-md file:border-0 file:bg-primary/10 file:text-primary file:font-medium file:cursor-pointer" />
+              </div>
+              <Button className="w-full gap-2" onClick={uploadSong} disabled={uploading}>
+                {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
+                {uploading ? "Mengupload..." : "Upload Lagu"}
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-base">
+                <Music className="w-5 h-5" /> Daftar Lagu ({songs.length})
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              {loading ? (
+                <div className="text-center py-4"><Loader2 className="w-6 h-6 animate-spin mx-auto" /></div>
+              ) : songs.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-4">Belum ada lagu.</p>
+              ) : (
+                songs.map(song => (
+                  <div key={song.id} className="flex items-center gap-3 p-2 rounded-lg border border-border">
+                    <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0 overflow-hidden">
+                      {song.cover_url ? <img src={song.cover_url} className="w-full h-full object-cover" alt="" /> : <Music className="w-4 h-4 text-primary" />}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-bold truncate">{song.title}</p>
+                      <p className="text-[11px] text-muted-foreground">{song.artist}{song.file_size ? ` • ${formatSize(song.file_size)}` : ""}</p>
+                    </div>
+                    <Button size="sm" variant="ghost" className="text-destructive h-8 w-8 p-0 shrink-0" onClick={() => deleteSong(song)}>
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
+                ))
+              )}
+            </CardContent>
+          </Card>
+        </>
+      )}
+
+      {activeTab === "playlists" && (
+        <>
+          <Button className="w-full gap-2" onClick={openCreatePlaylist}>
+            <Plus className="w-4 h-4" /> Buat Playlist Baru
           </Button>
-        </CardContent>
-      </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base">
-            <Music className="w-5 h-5" /> Daftar Lagu ({songs.length})
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-2">
           {loading ? (
             <div className="text-center py-4"><Loader2 className="w-6 h-6 animate-spin mx-auto" /></div>
-          ) : songs.length === 0 ? (
-            <p className="text-sm text-muted-foreground text-center py-4">Belum ada lagu.</p>
+          ) : playlists.length === 0 ? (
+            <p className="text-sm text-muted-foreground text-center py-4">Belum ada playlist.</p>
           ) : (
-            songs.map(song => (
-              <div key={song.id} className="flex items-center gap-3 p-2 rounded-lg border border-border">
-                <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0 overflow-hidden">
-                  {song.cover_url ? <img src={song.cover_url} className="w-full h-full object-cover" /> : <Music className="w-4 h-4 text-primary" />}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-bold truncate">{song.title}</p>
-                  <p className="text-[11px] text-muted-foreground">{song.artist} • {formatSize(song.file_size)}</p>
-                </div>
-                <Button size="sm" variant="ghost" className="text-destructive h-8 w-8 p-0 shrink-0" onClick={() => deleteSong(song)}>
-                  <Trash2 className="w-4 h-4" />
-                </Button>
-              </div>
-            ))
+            <div className="space-y-2">
+              {playlists.map(pl => (
+                <Card key={pl.id}>
+                  <CardContent className="p-3 flex items-center gap-3">
+                    <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center shrink-0 overflow-hidden">
+                      {pl.cover_url ? <img src={pl.cover_url} className="w-full h-full object-cover" alt="" /> : <ListMusic className="w-5 h-5 text-primary" />}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-bold truncate">{pl.name}</p>
+                      <p className="text-[11px] text-muted-foreground">{getSongCountForPlaylist(pl.id)} lagu</p>
+                    </div>
+                    <div className="flex gap-1 shrink-0">
+                      <Button size="sm" variant="ghost" className="h-8 w-8 p-0" onClick={() => openManageSongs(pl)} title="Kelola lagu">
+                        <Music className="w-4 h-4" />
+                      </Button>
+                      <Button size="sm" variant="ghost" className="h-8 w-8 p-0" onClick={() => openEditPlaylist(pl)} title="Edit">
+                        <Edit2 className="w-4 h-4" />
+                      </Button>
+                      <Button size="sm" variant="ghost" className="text-destructive h-8 w-8 p-0" onClick={() => deletePlaylist(pl)} title="Hapus">
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
           )}
-        </CardContent>
-      </Card>
+        </>
+      )}
+
+      {/* Create/Edit Playlist Dialog */}
+      <Dialog open={playlistDialogOpen} onOpenChange={setPlaylistDialogOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>{editingPlaylist ? "Edit Playlist" : "Buat Playlist Baru"}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <Input placeholder="Nama playlist *" value={plName} onChange={e => setPlName(e.target.value)} />
+            <div>
+              <label className="text-xs font-medium text-muted-foreground mb-1 block">Cover Playlist (opsional)</label>
+              <input ref={plCoverRef} type="file" accept="image/*" onChange={e => setPlCoverFile(e.target.files?.[0] || null)}
+                className="text-xs file:mr-2 file:px-3 file:py-1.5 file:rounded-md file:border-0 file:bg-primary/10 file:text-primary file:font-medium file:cursor-pointer" />
+            </div>
+            {editingPlaylist?.cover_url && !plCoverFile && (
+              <div className="flex items-center gap-2">
+                <img src={editingPlaylist.cover_url} className="w-10 h-10 rounded object-cover" alt="" />
+                <span className="text-xs text-muted-foreground">Cover saat ini</span>
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button onClick={savePlaylist} disabled={savingPlaylist} className="w-full gap-2">
+              {savingPlaylist ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+              {editingPlaylist ? "Simpan Perubahan" : "Buat Playlist"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Manage Songs in Playlist Dialog */}
+      <Dialog open={manageSongsOpen} onOpenChange={setManageSongsOpen}>
+        <DialogContent className="max-w-sm max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-sm">Kelola Lagu — {managingPlaylist?.name}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-1">
+            {songs.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-4">Upload lagu dulu.</p>
+            ) : (
+              songs.map(song => (
+                <label key={song.id} className="flex items-center gap-3 p-2 rounded-lg border border-border cursor-pointer hover:bg-muted/50">
+                  <Checkbox checked={selectedSongIds.has(song.id)} onCheckedChange={() => toggleSongInPlaylist(song.id)} />
+                  <div className="w-8 h-8 rounded bg-primary/10 flex items-center justify-center shrink-0 overflow-hidden">
+                    {song.cover_url ? <img src={song.cover_url} className="w-full h-full object-cover" alt="" /> : <Music className="w-3.5 h-3.5 text-primary" />}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-bold truncate">{song.title}</p>
+                    <p className="text-[10px] text-muted-foreground">{song.artist}</p>
+                  </div>
+                </label>
+              ))
+            )}
+          </div>
+          <DialogFooter>
+            <Button onClick={saveSongsInPlaylist} disabled={savingSongs} className="w-full gap-2">
+              {savingSongs ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+              Simpan ({selectedSongIds.size} lagu)
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 };
