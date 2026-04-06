@@ -283,6 +283,23 @@ const Index = () => {
   const cartTotal = cart.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
   const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
 
+  // PIN
+  const [hasPin, setHasPin] = useState(false);
+  const [showPinSetup, setShowPinSetup] = useState(false);
+  const [pinInput, setPinInput] = useState("");
+  const [pinConfirm, setPinConfirm] = useState("");
+  const [showPinVerify, setShowPinVerify] = useState(false);
+  const [pinVerifyInput, setPinVerifyInput] = useState("");
+  const [pendingPurchase, setPendingPurchase] = useState<{product: Product; quantity: number; discountCode: string} | null>(null);
+  const [showForgotPin, setShowForgotPin] = useState(false);
+  const [resetToken, setResetToken] = useState("");
+  const [newPinInput, setNewPinInput] = useState("");
+
+  // Discount voucher
+  const [discountCode, setDiscountCode] = useState("");
+  const [discountInfo, setDiscountInfo] = useState<{amount: number; code: string} | null>(null);
+  const [checkingDiscount, setCheckingDiscount] = useState(false);
+
   // Deposit
   interface Deposit {
     id: string; visitor_id: string; username: string; amount: number;
