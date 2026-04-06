@@ -892,7 +892,7 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer }: Playl
             )}
           </CardContent>
         </Card>
-      , document.body)}
+      )}
 
       {/* ===== ALL SONGS VIEW ===== */}
       {activeView === "playlist" && !viewingPlaylist && renderSongList(songs)}
