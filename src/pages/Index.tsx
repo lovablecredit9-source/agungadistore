@@ -545,6 +545,7 @@ const Index = () => {
     setBuyProduct(null);
     setBuyQuantity(1);
     setSelectedProduct(null);
+    removeFromCart(product.id);
     setPurchaseSuccess(purchaseData);
     fetchUserBalance();
     const codes = purchaseData.tokens.map(t => t.token_code).join(", ");
