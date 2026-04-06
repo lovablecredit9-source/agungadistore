@@ -713,30 +713,42 @@ const PlaylistTab = () => {
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-3">
-            {/* Current */}
+            {/* Current tier */}
             <div className="rounded-xl border border-border p-3 bg-muted/30">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-bold">Free</p>
-                  <p className="text-xs text-muted-foreground">Kuota: 2 GB</p>
+                  <p className="text-sm font-bold">{tier.name}</p>
+                  <p className="text-xs text-muted-foreground">Kuota: {formatStorageSize(tier.maxBytes)}</p>
                 </div>
                 <span className="text-xs bg-muted px-2 py-0.5 rounded-full">Saat ini</span>
               </div>
             </div>
-            {/* Target */}
-            <div className="rounded-xl border-2 border-primary p-3 bg-primary/5">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-bold flex items-center gap-1">
-                    <Crown className="w-4 h-4 text-primary" /> Pro 100GB
-                  </p>
-                  <p className="text-xs text-muted-foreground">Kuota: 100 GB</p>
+
+            {/* Available upgrades */}
+            {STORAGE_TIERS.filter((t, idx) => idx > 0 && t.maxBytes > tier.maxBytes).map((t, idx) => {
+              const tierIdx = STORAGE_TIERS.indexOf(t);
+              const isSelected = selectedUpgradeTier === tierIdx;
+              return (
+                <div
+                  key={t.name}
+                  onClick={() => setSelectedUpgradeTier(tierIdx)}
+                  className={`rounded-xl border-2 p-3 cursor-pointer transition-all ${isSelected ? "border-primary bg-primary/5" : "border-border hover:border-primary/40"}`}
+                >
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-bold flex items-center gap-1">
+                        <Crown className="w-4 h-4 text-primary" /> {t.name}
+                      </p>
+                      <p className="text-xs text-muted-foreground">Kuota: {formatStorageSize(t.maxBytes)}</p>
+                    </div>
+                    <span className="text-sm font-extrabold text-primary">{formatCurrency(t.pricePerMonth)}/bln</span>
+                  </div>
                 </div>
-                <span className="text-sm font-extrabold text-primary">{formatCurrency(10000)}/bln</span>
-              </div>
-            </div>
+              );
+            })}
+
             <p className="text-[11px] text-muted-foreground">
-              Saldo kamu akan dipotong {formatCurrency(10000)} untuk 1 bulan penyimpanan Pro.
+              Saldo kamu akan dipotong {formatCurrency(STORAGE_TIERS[selectedUpgradeTier]?.pricePerMonth || 0)} untuk 1 bulan penyimpanan.
             </p>
           </div>
           <DialogFooter>
