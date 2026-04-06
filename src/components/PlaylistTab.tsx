@@ -401,7 +401,7 @@ const PlaylistTab = () => {
 
   // Upgrade storage tier
   async function handleUpgrade() {
-    const targetTier = STORAGE_TIERS[1];
+    const targetTier = STORAGE_TIERS[selectedUpgradeTier];
     setUpgrading(true);
     try {
       const { getVisitorId } = await import("@/lib/visitor-id");
@@ -422,7 +422,7 @@ const PlaylistTab = () => {
         return;
       }
 
-      setCurrentTierIndex(1);
+      setCurrentTierIndex(selectedUpgradeTier);
       setTier(targetTier);
       setUpgradeOpen(false);
       toast({ title: "Upgrade berhasil! 🎉", description: `Sekarang kamu punya ${formatStorageSize(targetTier.maxBytes)} penyimpanan offline` });
