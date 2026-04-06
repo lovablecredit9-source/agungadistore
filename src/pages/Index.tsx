@@ -229,6 +229,20 @@ const Index = () => {
   const [buyProduct, setBuyProduct] = useState<Product | null>(null);
   const [purchaseSuccess, setPurchaseSuccess] = useState<PurchasedVoucher | null>(null);
 
+  // Deposit
+  interface Deposit {
+    id: string; visitor_id: string; username: string; amount: number;
+    payment_method: string; trx_id: string; status: string; created_at: string;
+  }
+  interface AdminSetting { id: string; setting_key: string; setting_value: string; }
+  const [deposits, setDeposits] = useState<Deposit[]>([]);
+  const [adminSettings, setAdminSettings] = useState<AdminSetting[]>([]);
+  const [showDepositModal, setShowDepositModal] = useState(false);
+  const [depositStep, setDepositStep] = useState<"method" | "form">("method");
+  const [depositMethod, setDepositMethod] = useState<"qris" | "ewallet">("qris");
+  const [depositAmount, setDepositAmount] = useState("");
+  const [depositTrxId, setDepositTrxId] = useState("");
+
   // Notifications
   interface Notification {
     id: string;
