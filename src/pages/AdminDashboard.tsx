@@ -180,8 +180,9 @@ const AdminDashboard = () => {
   const [allDeposits, setAllDeposits] = useState<Deposit[]>([]);
   const [adminSettings, setAdminSettings] = useState<AdminSetting[]>([]);
   const [settingQris, setSettingQris] = useState("");
-  const [settingEwalletName, setSettingEwalletName] = useState("");
-  const [settingEwalletNumber, setSettingEwalletNumber] = useState("");
+  const [ewallets, setEwallets] = useState<{name: string; number: string}[]>([]);
+  const [qrisUploading, setQrisUploading] = useState(false);
+  const qrisFileRef = useRef<HTMLInputElement | null>(null);
   const [depositSearchTrx, setDepositSearchTrx] = useState("");
 
   const chatRef = useRef<HTMLDivElement>(null);
