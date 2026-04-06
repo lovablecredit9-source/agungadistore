@@ -525,6 +525,29 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer }: Playl
     await refreshCacheInfo();
   }
 
+  function attemptUpgrade() {
+    const plan = PURCHASABLE_PLANS[selectedPlanIndex];
+    if (!plan) return;
+    if (hasPin) {
+      setUpgradePinInput("");
+      setShowPinDialog(true);
+    } else {
+      handleUpgrade();
+    }
+  }
+
+  async function confirmPinAndUpgrade() {
+    const visitorId = await getVisitorIdSafe();
+    const { data, error } = await supabase.functions.invoke("manage-pin", {
+      body: { action: "verify", visitorId, pin: upgradePinInput },
+    });
+    if (error || data?.error || !data?.valid) {
+      toast({ title: "PIN salah", variant: "destructive" }); return;
+    }
+    setShowPinDialog(false);
+    handleUpgrade();
+  }
+
   async function handleUpgrade() {
     const plan = PURCHASABLE_PLANS[selectedPlanIndex];
     if (!plan) return;
