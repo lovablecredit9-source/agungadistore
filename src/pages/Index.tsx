@@ -229,6 +229,20 @@ const Index = () => {
   const [buyProduct, setBuyProduct] = useState<Product | null>(null);
   const [purchaseSuccess, setPurchaseSuccess] = useState<PurchasedVoucher | null>(null);
 
+  // Deposit
+  interface Deposit {
+    id: string; visitor_id: string; username: string; amount: number;
+    payment_method: string; trx_id: string; status: string; created_at: string;
+  }
+  interface AdminSetting { id: string; setting_key: string; setting_value: string; }
+  const [deposits, setDeposits] = useState<Deposit[]>([]);
+  const [adminSettings, setAdminSettings] = useState<AdminSetting[]>([]);
+  const [showDepositModal, setShowDepositModal] = useState(false);
+  const [depositStep, setDepositStep] = useState<"method" | "form">("method");
+  const [depositMethod, setDepositMethod] = useState<"qris" | "ewallet">("qris");
+  const [depositAmount, setDepositAmount] = useState("");
+  const [depositTrxId, setDepositTrxId] = useState("");
+
   // Notifications
   interface Notification {
     id: string;
@@ -275,7 +289,45 @@ const Index = () => {
     fetchProductChatHistory();
     fetchUserBalance();
     fetchNotifications();
+    fetchDeposits();
+    fetchAdminSettings();
   }, []);
+
+  async function fetchDeposits() {
+    const { data } = await supabase.from("deposits").select("*").eq("visitor_id", visitorId).order("created_at", { ascending: false });
+    if (data) setDeposits(data as unknown as Deposit[]);
+  }
+
+  async function fetchAdminSettings() {
+    const { data } = await supabase.from("admin_settings").select("*");
+    if (data) setAdminSettings(data as unknown as AdminSetting[]);
+  }
+
+  function getSettingValue(key: string): string {
+    return adminSettings.find(s => s.setting_key === key)?.setting_value || "";
+  }
+
+  async function submitDeposit() {
+    const amount = parseInt(depositAmount) || 0;
+    if (amount <= 0 || !depositTrxId.trim() || !userBalance) {
+      toast({ title: lang === "id" ? "Isi nominal dan ID transaksi" : "Fill amount and transaction ID", variant: "destructive" }); return;
+    }
+    await supabase.from("deposits").insert({
+      visitor_id: visitorId,
+      username: userBalance.username,
+      amount,
+      payment_method: depositMethod,
+      trx_id: depositTrxId.trim(),
+    } as any);
+    // Send WhatsApp confirmation
+    const msg = lang === "id"
+      ? `Halo admin, saya sudah deposit saldo.\n\nUsername: ${userBalance.username}\nNominal: ${formatPrice(amount)}\nMetode: ${depositMethod === "qris" ? "QRIS" : "E-Wallet"}\nID Transaksi: ${depositTrxId.trim()}\nVisitor ID: ${visitorId}`
+      : `Hello admin, I have deposited balance.\n\nUsername: ${userBalance.username}\nAmount: ${formatPrice(amount)}\nMethod: ${depositMethod === "qris" ? "QRIS" : "E-Wallet"}\nTransaction ID: ${depositTrxId.trim()}\nVisitor ID: ${visitorId}`;
+    window.open(`${SOCIAL_LINKS.whatsapp}?text=${encodeURIComponent(msg)}`, "_blank");
+    toast({ title: lang === "id" ? "Deposit berhasil diajukan! ✅" : "Deposit submitted! ✅" });
+    setShowDepositModal(false); setDepositAmount(""); setDepositTrxId(""); setDepositStep("method");
+    fetchDeposits();
+  }
 
   // Realtime notifications
   useEffect(() => {
@@ -1315,24 +1367,41 @@ const Index = () => {
                         <Wallet className="w-7 h-7 text-primary-foreground" />
                       </div>
                     </div>
-                    <div className="grid grid-cols-2 gap-2">
-                      <a href={`${SOCIAL_LINKS.whatsapp}?text=${encodeURIComponent(`Halo admin, saya mau deposit saldo.\n\nUsername: ${userBalance.username}\nNo HP: ${userBalance.phone}\nVisitor ID: ${visitorId}`)}`}
-                        target="_blank" rel="noopener noreferrer">
-                        <Button size="sm" className="w-full bg-gradient-to-r from-accent to-accent/80 text-accent-foreground gap-1.5">
-                          <MessageCircle className="w-4 h-4" /> Deposit WA
-                        </Button>
-                      </a>
-                      <Button size="sm" variant="outline" className="gap-1.5" onClick={() => setTab("tiket")}>
-                        <Send className="w-4 h-4" /> Deposit Chat
-                      </Button>
-                    </div>
+                    <Button size="sm" className="w-full bg-gradient-to-r from-accent to-accent/80 text-accent-foreground gap-1.5 font-bold"
+                      onClick={() => { setShowDepositModal(true); setDepositStep("method"); }}>
+                      <ArrowUpCircle className="w-4 h-4" /> {t("deposit.btn", lang)}
+                    </Button>
                   </CardContent>
                 </Card>
 
+                {/* Deposit History */}
+                {deposits.length > 0 && (
+                  <>
+                    <h3 className="font-bold text-sm flex items-center gap-1.5"><History className="w-4 h-4" /> {t("deposit.history", lang)}</h3>
+                    {deposits.map(dep => (
+                      <Card key={dep.id}>
+                        <CardContent className="p-3 flex items-center gap-3">
+                          <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${dep.status === "approved" ? "bg-accent/10" : dep.status === "rejected" ? "bg-destructive/10" : "bg-muted"}`}>
+                            {dep.status === "approved" ? <CheckCircle2 className="w-5 h-5 text-accent" /> : dep.status === "rejected" ? <X className="w-5 h-5 text-destructive" /> : <Clock className="w-5 h-5 text-muted-foreground" />}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-bold text-sm">{formatPrice(dep.amount)}</p>
+                            <p className="text-[10px] text-muted-foreground">TRX: {dep.trx_id}</p>
+                            <p className="text-[10px] text-muted-foreground">{dep.payment_method.toUpperCase()} • {new Date(dep.created_at).toLocaleString("id-ID")}</p>
+                          </div>
+                          <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${dep.status === "approved" ? "bg-accent/10 text-accent" : dep.status === "rejected" ? "bg-destructive/10 text-destructive" : "bg-muted text-muted-foreground"}`}>
+                            {dep.status === "approved" ? t("deposit.approved", lang) : dep.status === "rejected" ? t("deposit.rejected", lang) : t("deposit.pending", lang)}
+                          </span>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </>
+                )}
+
                 {/* Transaction History */}
-                <h3 className="font-bold text-sm flex items-center gap-1.5"><History className="w-4 h-4" /> Riwayat Transaksi</h3>
+                <h3 className="font-bold text-sm flex items-center gap-1.5"><History className="w-4 h-4" /> {t("balance.transaction_history", lang)}</h3>
                 {balanceTransactions.length === 0 && (
-                  <p className="text-center text-sm text-muted-foreground py-8">Belum ada transaksi</p>
+                  <p className="text-center text-sm text-muted-foreground py-8">{t("balance.no_transactions", lang)}</p>
                 )}
                 {balanceTransactions.map(tx => (
                   <Card key={tx.id}>
@@ -1341,7 +1410,7 @@ const Index = () => {
                         {tx.type === "topup" ? <ArrowUpCircle className="w-5 h-5 text-accent" /> : <ArrowDownCircle className="w-5 h-5 text-destructive" />}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="font-bold text-sm">{tx.type === "topup" ? "Deposit" : "Pembelian"}</p>
+                        <p className="font-bold text-sm">{tx.type === "topup" ? t("balance.topup", lang) : t("balance.purchase", lang)}</p>
                         <p className="text-[10px] text-muted-foreground truncate">{tx.description || "-"}</p>
                         <p className="text-[10px] text-muted-foreground">{new Date(tx.created_at).toLocaleString("id-ID")}</p>
                       </div>
@@ -1753,7 +1822,71 @@ const Index = () => {
         </div>
       )}
 
-      {/* Bottom Nav */}
+      {/* Deposit Modal */}
+      {showDepositModal && userBalance && (
+        <div className="fixed inset-0 z-[80] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setShowDepositModal(false)}>
+          <div className="bg-card w-full max-w-sm rounded-2xl p-5 space-y-4 animate-in zoom-in-95 duration-200 max-h-[85vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between">
+              <h3 className="font-extrabold text-lg">{t("deposit.title", lang)}</h3>
+              <button onClick={() => setShowDepositModal(false)} className="w-8 h-8 rounded-full bg-muted flex items-center justify-center"><X className="w-4 h-4" /></button>
+            </div>
+
+            {depositStep === "method" ? (
+              <div className="space-y-3">
+                <p className="text-sm text-muted-foreground">{t("deposit.select_method", lang)}</p>
+                <button onClick={() => { setDepositMethod("qris"); setDepositStep("form"); }}
+                  className="w-full p-4 rounded-xl border-2 border-primary/20 hover:border-primary/50 transition-colors text-left flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center"><FileText className="w-5 h-5 text-primary" /></div>
+                  <div>
+                    <p className="font-bold text-sm">{t("deposit.qris", lang)}</p>
+                    <p className="text-[10px] text-muted-foreground">Scan QR Code</p>
+                  </div>
+                </button>
+                <button onClick={() => { setDepositMethod("ewallet"); setDepositStep("form"); }}
+                  className="w-full p-4 rounded-xl border-2 border-primary/20 hover:border-primary/50 transition-colors text-left flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center"><Wallet className="w-5 h-5 text-accent" /></div>
+                  <div>
+                    <p className="font-bold text-sm">{t("deposit.ewallet", lang)}</p>
+                    <p className="text-[10px] text-muted-foreground">{getSettingValue("ewallet_name") || "E-Wallet"}</p>
+                  </div>
+                </button>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <button onClick={() => setDepositStep("method")} className="text-xs text-primary flex items-center gap-1"><ChevronLeft className="w-3 h-3" /> {lang === "id" ? "Kembali" : "Back"}</button>
+
+                {/* Payment info */}
+                {depositMethod === "qris" ? (
+                  <div className="rounded-xl border border-primary/20 bg-primary/5 p-3 text-center space-y-2">
+                    <p className="text-xs font-bold text-primary">{t("deposit.scan_qris", lang)}</p>
+                    {getSettingValue("qris_url") ? (
+                      <img src={getSettingValue("qris_url")} alt="QRIS" className="max-w-full max-h-48 mx-auto rounded-lg" />
+                    ) : (
+                      <div className="bg-muted rounded-lg p-6 text-xs text-muted-foreground">{lang === "id" ? "QRIS belum dikonfigurasi admin" : "QRIS not configured by admin"}</div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="rounded-xl border border-accent/20 bg-accent/5 p-3 space-y-1">
+                    <p className="text-xs font-bold text-accent">{t("deposit.transfer_to", lang)}</p>
+                    <p className="font-bold text-sm">{getSettingValue("ewallet_name") || "-"}</p>
+                    <p className="font-mono text-lg font-extrabold text-foreground">{getSettingValue("ewallet_number") || "-"}</p>
+                  </div>
+                )}
+
+                <Input type="number" placeholder={t("deposit.amount", lang)} value={depositAmount} onChange={e => setDepositAmount(e.target.value)} />
+                <Input placeholder={t("deposit.trx_id_placeholder", lang)} value={depositTrxId} onChange={e => setDepositTrxId(e.target.value)} />
+
+                <Button className="w-full bg-gradient-to-r from-accent to-accent/80 text-accent-foreground font-bold gap-2"
+                  onClick={submitDeposit} disabled={!depositAmount || !depositTrxId.trim()}>
+                  <MessageCircle className="w-4 h-4" /> {t("deposit.send_wa", lang)}
+                </Button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+
       <nav className="fixed bottom-0 left-0 right-0 bg-card/95 backdrop-blur-md border-t border-border z-50 shadow-[0_-4px_20px_rgba(0,0,0,0.08)]">
         <div className="flex max-w-lg mx-auto">
           {([

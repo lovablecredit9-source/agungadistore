@@ -11,7 +11,7 @@ import {
   Plus, Trash2, LogOut, Package, Ticket, Copy, Image, Edit2, X,
   Smartphone, Clock, ChevronLeft, ChevronRight, Search, Send,
   MessageCircle, AlertCircle, ImagePlus, Shield, Wallet, Users, ArrowUpCircle,
-  Bell
+  Bell, Check
 } from "lucide-react";
 import { generateVoucherCode } from "@/lib/voucher-code";
 import { getDeviceSummary } from "@/lib/device-info";
@@ -111,7 +111,7 @@ interface UserBalance {
   created_at: string;
 }
 
-type AdminTab = "products" | "tokens" | "claims" | "tickets" | "chats" | "saldo" | "notif";
+type AdminTab = "products" | "tokens" | "claims" | "tickets" | "chats" | "saldo" | "notif" | "deposit" | "settings";
 type ClaimDateFilter = "all" | "today" | "yesterday" | "lastmonth" | "custom";
 
 const AdminDashboard = () => {
@@ -171,6 +171,19 @@ const AdminDashboard = () => {
   const [notifTitle, setNotifTitle] = useState("");
   const [notifMessage, setNotifMessage] = useState("");
 
+  // Deposits
+  interface Deposit {
+    id: string; visitor_id: string; username: string; amount: number;
+    payment_method: string; trx_id: string; status: string; created_at: string;
+  }
+  interface AdminSetting { id: string; setting_key: string; setting_value: string; }
+  const [allDeposits, setAllDeposits] = useState<Deposit[]>([]);
+  const [adminSettings, setAdminSettings] = useState<AdminSetting[]>([]);
+  const [settingQris, setSettingQris] = useState("");
+  const [settingEwalletName, setSettingEwalletName] = useState("");
+  const [settingEwalletNumber, setSettingEwalletNumber] = useState("");
+  const [depositSearchTrx, setDepositSearchTrx] = useState("");
+
   const chatRef = useRef<HTMLDivElement>(null);
 
   const navigate = useNavigate();
@@ -183,7 +196,75 @@ const AdminDashboard = () => {
     fetchTickets();
     fetchChats();
     fetchUserBalances();
+    fetchDeposits();
+    fetchAdminSettings();
   }, []);
+
+  async function fetchDeposits() {
+    const { data } = await supabase.from("deposits").select("*").order("created_at", { ascending: false });
+    if (data) setAllDeposits(data as unknown as Deposit[]);
+  }
+
+  async function fetchAdminSettings() {
+    const { data } = await supabase.from("admin_settings").select("*");
+    if (data) {
+      setAdminSettings(data as unknown as AdminSetting[]);
+      const q = (data as any[]).find(s => s.setting_key === "qris_url");
+      const en = (data as any[]).find(s => s.setting_key === "ewallet_name");
+      const enm = (data as any[]).find(s => s.setting_key === "ewallet_number");
+      if (q) setSettingQris(q.setting_value);
+      if (en) setSettingEwalletName(en.setting_value);
+      if (enm) setSettingEwalletNumber(enm.setting_value);
+    }
+  }
+
+  async function updateSetting(key: string, value: string) {
+    await supabase.from("admin_settings").update({ setting_value: value }).eq("setting_key", key);
+  }
+
+  async function saveAllSettings() {
+    await Promise.all([
+      updateSetting("qris_url", settingQris),
+      updateSetting("ewallet_name", settingEwalletName),
+      updateSetting("ewallet_number", settingEwalletNumber),
+    ]);
+    toast({ title: "Pengaturan tersimpan! ✅" });
+    fetchAdminSettings();
+  }
+
+  async function approveDeposit(dep: Deposit) {
+    const user = userBalances.find(u => u.visitor_id === dep.visitor_id);
+    if (!user) { toast({ title: "User tidak ditemukan", variant: "destructive" }); return; }
+    // Update deposit status
+    await supabase.from("deposits").update({ status: "approved" } as any).eq("id", dep.id);
+    // Add balance
+    await supabase.from("user_balances").update({ balance: user.balance + dep.amount }).eq("id", user.id);
+    // Record transaction
+    await supabase.from("balance_transactions").insert({
+      visitor_id: dep.visitor_id, type: "topup", amount: dep.amount,
+      description: `Deposit ${dep.payment_method.toUpperCase()} - TRX: ${dep.trx_id}`,
+    });
+    // Notify user
+    await supabase.from("notifications").insert({
+      visitor_id: dep.visitor_id, title: "Deposit Disetujui ✅",
+      message: `Deposit ${new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", minimumFractionDigits: 0 }).format(dep.amount)} berhasil diverifikasi. Saldo telah ditambahkan.`,
+      type: "deposit_approved",
+    } as any);
+    toast({ title: `Deposit ${new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", minimumFractionDigits: 0 }).format(dep.amount)} disetujui!` });
+    fetchDeposits();
+    fetchUserBalances();
+  }
+
+  async function rejectDeposit(dep: Deposit) {
+    await supabase.from("deposits").update({ status: "rejected" } as any).eq("id", dep.id);
+    await supabase.from("notifications").insert({
+      visitor_id: dep.visitor_id, title: "Deposit Ditolak ❌",
+      message: `Deposit ${new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", minimumFractionDigits: 0 }).format(dep.amount)} ditolak. Hubungi admin untuk info lebih lanjut.`,
+      type: "deposit_rejected",
+    } as any);
+    toast({ title: "Deposit ditolak" });
+    fetchDeposits();
+  }
 
   async function checkAuth() {
     const { data: { session } } = await supabase.auth.getSession();
@@ -644,9 +725,11 @@ const AdminDashboard = () => {
           { key: "tokens" as AdminTab, icon: Ticket, label: "Token" },
           { key: "claims" as AdminTab, icon: Clock, label: "Klaim" },
           { key: "saldo" as AdminTab, icon: Wallet, label: "Saldo" },
+          { key: "deposit" as AdminTab, icon: ArrowUpCircle, label: "Deposit" },
           { key: "tickets" as AdminTab, icon: AlertCircle, label: "Tiket" },
           { key: "chats" as AdminTab, icon: MessageCircle, label: "Chat" },
           { key: "notif" as AdminTab, icon: Bell, label: "Notif" },
+          { key: "settings" as AdminTab, icon: Edit2, label: "Setting" },
         ]).map(({ key, icon: Icon, label }) => (
           <button key={key} onClick={() => setTab(key)} className={`flex-1 py-3 text-xs font-medium text-center border-b-2 transition-colors whitespace-nowrap px-2 ${tab === key ? "border-primary text-primary" : "border-transparent text-muted-foreground"}`}>
             <Icon className="w-4 h-4 inline mr-1" /> {label}
@@ -655,6 +738,9 @@ const AdminDashboard = () => {
             )}
             {key === "chats" && allChats.filter(c => c.status === "open").length > 0 && (
               <span className="ml-1 bg-destructive text-destructive-foreground text-[9px] px-1.5 py-0.5 rounded-full">{allChats.filter(c => c.status === "open").length}</span>
+            )}
+            {key === "deposit" && allDeposits.filter(d => d.status === "pending").length > 0 && (
+              <span className="ml-1 bg-destructive text-destructive-foreground text-[9px] px-1.5 py-0.5 rounded-full">{allDeposits.filter(d => d.status === "pending").length}</span>
             )}
           </button>
         ))}
@@ -1127,6 +1213,74 @@ const AdminDashboard = () => {
               <p>• Notifikasi otomatis dikirim saat: user beli via saldo atau klaim voucher</p>
               <p>• Gunakan form di atas untuk kirim notifikasi manual/broadcast</p>
             </div>
+          </>
+        )}
+
+        {tab === "deposit" && (
+          <>
+            <h3 className="font-bold text-sm flex items-center gap-2"><ArrowUpCircle className="w-4 h-4 text-accent" /> Deposit Masuk ({allDeposits.length})</h3>
+            <Input placeholder="Cari ID Transaksi..." value={depositSearchTrx} onChange={e => setDepositSearchTrx(e.target.value)} className="text-sm" />
+            {allDeposits
+              .filter(d => depositSearchTrx ? d.trx_id.toLowerCase().includes(depositSearchTrx.toLowerCase()) : true)
+              .map(dep => {
+              const user = userBalances.find(u => u.visitor_id === dep.visitor_id);
+              return (
+                <Card key={dep.id} className={dep.status === "pending" ? "border-2 border-primary/30" : ""}>
+                  <CardContent className="p-4 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${dep.status === "approved" ? "bg-accent/10 text-accent" : dep.status === "rejected" ? "bg-destructive/10 text-destructive" : "bg-primary/10 text-primary"}`}>
+                        {dep.status === "approved" ? "✅ Disetujui" : dep.status === "rejected" ? "❌ Ditolak" : "⏳ Menunggu"}
+                      </span>
+                      <span className="text-[10px] text-muted-foreground">{new Date(dep.created_at).toLocaleString("id-ID")}</span>
+                    </div>
+                    <div className="text-xs space-y-0.5">
+                      <p><strong>Username:</strong> {dep.username}</p>
+                      <p><strong>Nominal:</strong> <span className="text-primary font-extrabold text-sm">{new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", minimumFractionDigits: 0 }).format(dep.amount)}</span></p>
+                      <p><strong>Metode:</strong> {dep.payment_method.toUpperCase()}</p>
+                      <p><strong>ID Transaksi:</strong> <span className="font-mono text-primary">{dep.trx_id}</span></p>
+                      <p className="text-[10px] text-muted-foreground font-mono">Visitor: {dep.visitor_id.slice(0, 12)}...</p>
+                    </div>
+                    {dep.status === "pending" && (
+                      <div className="flex gap-2 pt-1">
+                        <Button size="sm" className="flex-1 bg-accent text-accent-foreground gap-1" onClick={() => approveDeposit(dep)}>
+                          <Check className="w-3 h-3" /> Approve
+                        </Button>
+                        <Button size="sm" variant="destructive" className="flex-1 gap-1" onClick={() => rejectDeposit(dep)}>
+                          <X className="w-3 h-3" /> Reject
+                        </Button>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              );
+            })}
+            {allDeposits.length === 0 && <p className="text-center text-sm text-muted-foreground py-8">Belum ada deposit</p>}
+          </>
+        )}
+
+        {tab === "settings" && (
+          <>
+            <Card>
+              <CardHeader><CardTitle className="text-base flex items-center gap-2"><Edit2 className="w-5 h-5 text-primary" /> Pengaturan Pembayaran</CardTitle></CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-muted-foreground">URL Gambar QRIS</label>
+                  <Input placeholder="https://example.com/qris.jpg" value={settingQris} onChange={e => setSettingQris(e.target.value)} />
+                  {settingQris && <img src={settingQris} alt="QRIS Preview" className="max-w-full max-h-40 rounded-lg border border-border" />}
+                </div>
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-muted-foreground">Nama E-Wallet</label>
+                  <Input placeholder="DANA / OVO / GoPay" value={settingEwalletName} onChange={e => setSettingEwalletName(e.target.value)} />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-muted-foreground">Nomor E-Wallet</label>
+                  <Input placeholder="08123456789" value={settingEwalletNumber} onChange={e => setSettingEwalletNumber(e.target.value)} />
+                </div>
+                <Button className="w-full gap-2" onClick={saveAllSettings}>
+                  <Check className="w-4 h-4" /> Simpan Pengaturan
+                </Button>
+              </CardContent>
+            </Card>
           </>
         )}
       </main>

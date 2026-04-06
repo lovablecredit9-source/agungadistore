@@ -151,6 +151,24 @@ const translations = {
   // Version footer
   "version.footer": { id: "Web Version 2.0 • April 2026", en: "Web Version 2.0 • April 2026" },
 
+  // Deposit
+  "deposit.title": { id: "Deposit Saldo", en: "Deposit Balance" },
+  "deposit.select_method": { id: "Pilih Metode Pembayaran", en: "Select Payment Method" },
+  "deposit.amount": { id: "Nominal Deposit", en: "Deposit Amount" },
+  "deposit.trx_id": { id: "ID Transaksi", en: "Transaction ID" },
+  "deposit.trx_id_placeholder": { id: "Masukkan ID transaksi setelah transfer", en: "Enter transaction ID after transfer" },
+  "deposit.send_wa": { id: "Kirim Konfirmasi via WA", en: "Send Confirmation via WA" },
+  "deposit.history": { id: "Riwayat Deposit", en: "Deposit History" },
+  "deposit.no_history": { id: "Belum ada riwayat deposit.", en: "No deposit history." },
+  "deposit.pending": { id: "Menunggu", en: "Pending" },
+  "deposit.approved": { id: "Disetujui", en: "Approved" },
+  "deposit.rejected": { id: "Ditolak", en: "Rejected" },
+  "deposit.qris": { id: "QRIS", en: "QRIS" },
+  "deposit.ewallet": { id: "E-Wallet", en: "E-Wallet" },
+  "deposit.scan_qris": { id: "Scan QRIS di bawah ini", en: "Scan the QRIS below" },
+  "deposit.transfer_to": { id: "Transfer ke", en: "Transfer to" },
+  "deposit.btn": { id: "Deposit", en: "Deposit" },
+
   // General
   "general.close": { id: "Tutup", en: "Close" },
   "general.copy": { id: "Salin", en: "Copy" },

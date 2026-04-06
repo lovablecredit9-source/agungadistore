@@ -14,6 +14,30 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_settings: {
+        Row: {
+          created_at: string
+          id: string
+          setting_key: string
+          setting_value: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          setting_key: string
+          setting_value?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          setting_key?: string
+          setting_value?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       balance_transactions: {
         Row: {
           amount: number
@@ -61,6 +85,42 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      deposits: {
+        Row: {
+          amount: number
+          created_at: string
+          id: string
+          payment_method: string
+          status: string
+          trx_id: string
+          updated_at: string
+          username: string
+          visitor_id: string
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          id?: string
+          payment_method?: string
+          status?: string
+          trx_id?: string
+          updated_at?: string
+          username?: string
+          visitor_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          id?: string
+          payment_method?: string
+          status?: string
+          trx_id?: string
+          updated_at?: string
+          username?: string
+          visitor_id?: string
+        }
+        Relationships: []
       }
       liked_products: {
         Row: {
