@@ -1052,6 +1052,46 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer }: Playl
             </CardContent>
           </Card>
 
+          {/* Redeem Storage Voucher */}
+          <Card className="border-primary/20">
+            <CardContent className="p-4 space-y-3">
+              <p className="text-xs font-bold flex items-center gap-1.5"><Ticket className="w-4 h-4 text-primary" /> Klaim Voucher Penyimpanan</p>
+              <p className="text-[10px] text-muted-foreground">Masukkan kode voucher dari admin untuk mendapatkan tambahan penyimpanan gratis.</p>
+              <div className="flex gap-2">
+                <Input placeholder="Masukkan kode voucher" value={redeemCode} onChange={e => setRedeemCode(e.target.value.toUpperCase())} className="font-mono text-xs flex-1" />
+                <Button size="sm" onClick={redeemStorageVoucher} disabled={redeeming || !redeemCode.trim()} className="gap-1 shrink-0">
+                  {redeeming ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Ticket className="w-3.5 h-3.5" />}
+                  Klaim
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Redeemed Storage History */}
+          {redeemedStorages.length > 0 && (
+            <Card className="border-primary/20">
+              <CardContent className="p-4 space-y-2">
+                <p className="text-xs font-bold flex items-center gap-1.5"><HardDrive className="w-4 h-4 text-primary" /> Penyimpanan dari Voucher</p>
+                {redeemedStorages.map(rs => {
+                  const isExpired = rs.expires_at && new Date(rs.expires_at) < new Date();
+                  const storageMb = rs.storage_mb;
+                  const label = storageMb >= 1024 * 1024 ? `${(storageMb / (1024 * 1024)).toFixed(0)} TB` : storageMb >= 1024 ? `${(storageMb / 1024).toFixed(0)} GB` : `${storageMb} MB`;
+                  return (
+                    <div key={rs.id} className={`flex items-center justify-between text-[11px] rounded-lg px-3 py-2 border ${isExpired ? "bg-destructive/5 border-destructive/20 opacity-60" : "bg-primary/5 border-primary/10"}`}>
+                      <div>
+                        <span className="font-bold">+{label}</span>
+                        <span className="text-muted-foreground ml-1">• {rs.voucher_code}</span>
+                      </div>
+                      <div className="text-[10px]">
+                        {isExpired ? <span className="text-destructive font-bold">Expired</span> : rs.expires_at ? <span className="text-muted-foreground">{formatDate(rs.expires_at)}</span> : <span className="text-muted-foreground">Permanen</span>}
+                      </div>
+                    </div>
+                  );
+                })}
+              </CardContent>
+            </Card>
+          )}
+
           {activeSubs.length > 0 && (
             <Card className="border-primary/20">
               <CardContent className="p-4 space-y-2">
