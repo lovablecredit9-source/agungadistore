@@ -497,7 +497,7 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer }: Playl
   async function downloadToCache(song: Song) {
     if (!isOnline) { toast({ title: "Tidak bisa simpan offline", variant: "destructive" }); return; }
     if (cachedIds.has(song.id)) { toast({ title: "Sudah tersimpan offline ✅" }); return; }
-    const currentMax = getTotalMaxBytes();
+    const currentMax = getTotalMaxBytes(activeRedeemedMb);
     if (downloadedStorage + (song.file_size || 0) > currentMax) { toast({ title: "Penyimpanan penuh!", variant: "destructive" }); return; }
     setDownloading(song.id);
     try {
