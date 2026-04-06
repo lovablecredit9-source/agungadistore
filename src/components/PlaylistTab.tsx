@@ -259,9 +259,21 @@ const PlaylistTab = () => {
                 <p className="font-bold text-sm truncate">{song.title}</p>
                 <p className="text-[11px] text-muted-foreground truncate">{song.artist} • {song.file_size > 0 ? formatSize(song.file_size) : ""}</p>
               </div>
-              <Button size="sm" variant="ghost" className="shrink-0 h-8 w-8 p-0" onClick={(e) => { e.stopPropagation(); downloadSong(song); }} disabled={downloading === song.id}>
-                {downloading === song.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button size="sm" variant="ghost" className="shrink-0 h-8 w-8 p-0" onClick={(e) => e.stopPropagation()} disabled={downloading === song.id}>
+                    {downloading === song.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="min-w-[160px]">
+                  <DropdownMenuItem onClick={() => downloadToStorage(song)} className="gap-2 cursor-pointer">
+                    <HardDrive className="w-4 h-4" /> Simpan ke Perangkat
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => openInWeb(song)} className="gap-2 cursor-pointer">
+                    <Globe className="w-4 h-4" /> Buka di Browser
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </CardContent>
           </Card>
         ))}
