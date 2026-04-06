@@ -618,6 +618,40 @@ const PlaylistTab = () => {
               <button onClick={toggleMute} className="text-muted-foreground hover:text-foreground">{muted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}</button>
               <Slider value={[muted ? 0 : volume]} max={1} step={0.01} onValueChange={changeVolume} className="flex-1 cursor-pointer" />
             </div>
+            {/* Lyrics toggle */}
+            {currentSongLyrics.length > 0 && (
+              <button onClick={() => setShowLyrics(!showLyrics)} className="w-full flex items-center justify-center gap-1.5 text-[11px] font-semibold text-primary hover:underline pt-1">
+                <Type className="w-3.5 h-3.5" />
+                {showLyrics ? "Sembunyikan Lirik" : "Tampilkan Lirik"}
+                {showLyrics ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+              </button>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Lyrics Display */}
+      {currentSong && showLyrics && currentSongLyrics.length > 0 && (
+        <Card className="border-primary/20 overflow-hidden">
+          <CardContent className="p-4 space-y-1">
+            <p className="text-[11px] font-bold text-muted-foreground flex items-center gap-1.5 mb-2"><Type className="w-3.5 h-3.5" /> Lirik — {currentSong.title}</p>
+            <div ref={lyricsContainerRef} className="max-h-48 overflow-y-auto space-y-0.5 scroll-smooth">
+              {currentSongLyrics.map((line, i) => {
+                const isActive = activeLyricIndex === i;
+                return (
+                  <p
+                    key={line.id}
+                    data-lyric-index={i}
+                    className={`text-xs py-0.5 px-2 rounded transition-all duration-300 ${isActive ? "text-primary font-bold bg-primary/10 scale-[1.02]" : "text-muted-foreground"}`}
+                  >
+                    {line.text || "♪"}
+                  </p>
+                );
+              })}
+            </div>
+            <p className="text-[10px] text-muted-foreground text-center pt-2 flex items-center justify-center gap-1">
+              <Copyright className="w-3 h-3" /> {currentSong.artist} — Hak cipta dilindungi
+            </p>
           </CardContent>
         </Card>
       )}
