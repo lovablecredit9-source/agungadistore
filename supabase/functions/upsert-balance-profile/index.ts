@@ -8,8 +8,8 @@ const corsHeaders = {
 
 const requestSchema = z.object({
   visitorId: z.string().trim().min(1, "Visitor ID tidak ditemukan"),
-  username: z.string().trim().min(6, "Username minimal 6 karakter").max(30, "Username maksimal 30 karakter").regex(/^[A-Za-z0-9_]+$/, "Username hanya boleh huruf, angka, dan underscore"),
-  phone: z.string().trim().transform((value) => value.replace(/[\s-]/g, "")).refine((value) => /^(08\d+|\+628\d+)$/.test(value), "No HP harus diawali 08 atau +628").refine((value) => value.length >= 10 && value.length <= 16, "No HP tidak valid"),
+  username: z.string().trim().min(3, "Username minimal 3 karakter").max(30, "Username maksimal 30 karakter").regex(/^[A-Za-z0-9_]+$/, "Username hanya boleh huruf, angka, dan underscore"),
+  phone: z.string().trim().transform((value) => value.replace(/[\s-]/g, "")).refine((value) => /^(\+?\d{1,4}\s?\d+|08\d+)$/.test(value), "Format nomor HP tidak valid").refine((value) => value.replace(/\D/g, "").length >= 7 && value.replace(/\D/g, "").length <= 16, "No HP tidak valid (7-16 digit)"),
 });
 
 Deno.serve(async (request) => {
