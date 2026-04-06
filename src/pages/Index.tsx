@@ -1741,7 +1741,7 @@ const Index = () => {
 
         {/* PlaylistTab always mounted, hidden when not active */}
         <div className={tab === "playlist" ? "" : "hidden"}>
-          <PlaylistTab onPlaybackChange={setPlaybackState} onTogglePlay={togglePlayRef} />
+          <PlaylistTab onPlaybackChange={setPlaybackState} onTogglePlay={togglePlayRef} onOpenFullPlayer={openFullPlayerRef} />
         </div>
       </main>
 
