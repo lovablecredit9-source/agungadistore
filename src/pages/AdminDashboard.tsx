@@ -1561,6 +1561,8 @@ const AdminDashboard = () => {
             </Card>
           </>
         )}
+
+        {tab === "musik" && <AdminMusicTab />}
       </main>
     </div>
   );
