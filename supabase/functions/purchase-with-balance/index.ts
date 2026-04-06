@@ -179,11 +179,6 @@ Deno.serve(async (request) => {
 
     // Update discount voucher used_count
     if (discountVoucherId) {
-      await admin.rpc("increment_discount_used", { voucher_id: discountVoucherId }).catch(() => {
-        // Fallback: manual update
-        admin.from("discount_vouchers").update({ used_count: (await admin.from("discount_vouchers").select("used_count").eq("id", discountVoucherId).single()).data?.used_count + 1 || 1 }).eq("id", discountVoucherId);
-      });
-      // Simple fallback
       const { data: vData } = await admin.from("discount_vouchers").select("used_count").eq("id", discountVoucherId).single();
       if (vData) {
         await admin.from("discount_vouchers").update({ used_count: (vData.used_count || 0) + 1 }).eq("id", discountVoucherId);
