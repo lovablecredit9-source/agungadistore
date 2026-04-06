@@ -302,7 +302,40 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer }: Playl
     return () => clearInterval(interval);
   }, []);
 
-  useEffect(() => { fetchSongs(); }, []);
+  useEffect(() => { fetchSongs(); fetchRedeemedStorages(); }, []);
+
+  async function fetchRedeemedStorages() {
+    const visitorId = await getVisitorIdSafe();
+    const { data } = await supabase.from("user_music_storage").select("*").eq("visitor_id", visitorId).order("redeemed_at", { ascending: false });
+    if (data) setRedeemedStorages(data as any[]);
+  }
+
+  async function redeemStorageVoucher() {
+    if (!redeemCode.trim()) { toast({ title: "Masukkan kode voucher", variant: "destructive" }); return; }
+    setRedeeming(true);
+    try {
+      const visitorId = await getVisitorIdSafe();
+      const { data, error } = await supabase.functions.invoke("redeem-music-storage", {
+        body: { visitor_id: visitorId, code: redeemCode.trim() },
+      });
+      if (error) throw error;
+      if (data?.error) { toast({ title: "Gagal", description: data.error, variant: "destructive" }); setRedeeming(false); return; }
+      toast({ title: "Berhasil! 🎉", description: data.message });
+      setRedeemCode("");
+      fetchRedeemedStorages();
+    } catch (err: any) { toast({ title: "Gagal redeem", description: err?.message, variant: "destructive" }); }
+    setRedeeming(false);
+  }
+
+  async function applyMusicDiscount() {
+    if (!upgradeDiscountCode.trim()) { setUpgradeDiscountAmount(0); return; }
+    const { data } = await supabase.from("music_discount_vouchers").select("*").eq("code", upgradeDiscountCode.trim().toUpperCase()).eq("is_active", true).maybeSingle();
+    if (!data) { toast({ title: "Kode diskon tidak valid", variant: "destructive" }); setUpgradeDiscountAmount(0); return; }
+    if (data.expires_at && new Date(data.expires_at) < new Date()) { toast({ title: "Kode diskon sudah expired", variant: "destructive" }); setUpgradeDiscountAmount(0); return; }
+    if (data.used_count >= data.max_uses) { toast({ title: "Kode diskon sudah habis", variant: "destructive" }); setUpgradeDiscountAmount(0); return; }
+    setUpgradeDiscountAmount(data.discount_amount);
+    toast({ title: `Diskon Rp${data.discount_amount.toLocaleString()} diterapkan! 🏷️` });
+  }
 
   async function getVisitorIdSafe() {
     const { getVisitorId } = await import("@/lib/visitor-id");
