@@ -113,6 +113,18 @@ interface UserBalance {
 
 type AdminTab = "products" | "tokens" | "claims" | "tickets" | "chats" | "saldo" | "notif" | "deposit" | "settings";
 type ClaimDateFilter = "all" | "today" | "yesterday" | "lastmonth" | "custom";
+type DepositStatusFilter = "all" | "pending" | "approved" | "rejected";
+type DepositMethodFilter = "all" | "qris" | "ewallet";
+
+function isEwalletMethod(method: string) {
+  return method.trim().toLowerCase() !== "qris";
+}
+
+function getDepositStatusLabel(status: string) {
+  if (status === "approved") return "✅ Disetujui";
+  if (status === "rejected") return "❌ Ditolak";
+  return "⏳ Belum dikonfirmasi";
+}
 
 const AdminDashboard = () => {
   const [tab, setTab] = useState<AdminTab>("products");
@@ -184,6 +196,9 @@ const AdminDashboard = () => {
   const [qrisUploading, setQrisUploading] = useState(false);
   const qrisFileRef = useRef<HTMLInputElement | null>(null);
   const [depositSearchTrx, setDepositSearchTrx] = useState("");
+  const [depositStatusFilter, setDepositStatusFilter] = useState<DepositStatusFilter>("all");
+  const [depositMethodFilter, setDepositMethodFilter] = useState<DepositMethodFilter>("all");
+  const [depositSort, setDepositSort] = useState<"newest" | "oldest">("newest");
 
   const chatRef = useRef<HTMLDivElement>(null);
 
@@ -254,10 +269,18 @@ const AdminDashboard = () => {
   }
 
   async function approveDeposit(dep: Deposit) {
+    if (dep.status !== "pending") {
+      toast({ title: "Deposit ini sudah diproses", variant: "destructive" });
+      return;
+    }
     const user = userBalances.find(u => u.visitor_id === dep.visitor_id);
     if (!user) { toast({ title: "User tidak ditemukan", variant: "destructive" }); return; }
-    // Update deposit status
-    await supabase.from("deposits").update({ status: "approved" } as any).eq("id", dep.id);
+    const { data: updatedDeposit, error: depositError } = await supabase.from("deposits").update({ status: "approved" } as any).eq("id", dep.id).eq("status", "pending").select("id");
+    if (depositError || !updatedDeposit?.length) {
+      toast({ title: "Deposit sudah diproses atau gagal diupdate", variant: "destructive" });
+      fetchDeposits();
+      return;
+    }
     // Add balance
     await supabase.from("user_balances").update({ balance: user.balance + dep.amount }).eq("id", user.id);
     // Record transaction
@@ -277,7 +300,16 @@ const AdminDashboard = () => {
   }
 
   async function rejectDeposit(dep: Deposit) {
-    await supabase.from("deposits").update({ status: "rejected" } as any).eq("id", dep.id);
+    if (dep.status !== "pending") {
+      toast({ title: "Deposit ini sudah diproses", variant: "destructive" });
+      return;
+    }
+    const { data: updatedDeposit, error: depositError } = await supabase.from("deposits").update({ status: "rejected" } as any).eq("id", dep.id).eq("status", "pending").select("id");
+    if (depositError || !updatedDeposit?.length) {
+      toast({ title: "Deposit sudah diproses atau gagal diupdate", variant: "destructive" });
+      fetchDeposits();
+      return;
+    }
     await supabase.from("notifications").insert({
       visitor_id: dep.visitor_id, title: "Deposit Ditolak ❌",
       message: `Deposit ${new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", minimumFractionDigits: 0 }).format(dep.amount)} ditolak. Hubungi admin untuk info lebih lanjut.`,
@@ -730,6 +762,16 @@ const AdminDashboard = () => {
   const filteredClaims = getFilteredClaims();
   const totalClaimPages = Math.ceil(filteredClaims.length / CLAIMS_PER_PAGE);
   const paginatedClaims = filteredClaims.slice((claimPage - 1) * CLAIMS_PER_PAGE, claimPage * CLAIMS_PER_PAGE);
+  const filteredDeposits = [...allDeposits]
+    .filter((dep) => depositSearchTrx ? [dep.trx_id, dep.username, dep.payment_method].some((value) => value.toLowerCase().includes(depositSearchTrx.toLowerCase())) : true)
+    .filter((dep) => depositStatusFilter === "all" ? true : dep.status === depositStatusFilter)
+    .filter((dep) => {
+      if (depositMethodFilter === "all") return true;
+      return depositMethodFilter === "qris" ? dep.payment_method.trim().toLowerCase() === "qris" : isEwalletMethod(dep.payment_method);
+    })
+    .sort((a, b) => depositSort === "newest"
+      ? new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      : new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -1240,26 +1282,41 @@ const AdminDashboard = () => {
         {tab === "deposit" && (
           <>
             <h3 className="font-bold text-sm flex items-center gap-2"><ArrowUpCircle className="w-4 h-4 text-accent" /> Deposit Masuk ({allDeposits.length})</h3>
-            <Input placeholder="Cari ID Transaksi..." value={depositSearchTrx} onChange={e => setDepositSearchTrx(e.target.value)} className="text-sm" />
-            {allDeposits
-              .filter(d => depositSearchTrx ? d.trx_id.toLowerCase().includes(depositSearchTrx.toLowerCase()) : true)
-              .map(dep => {
+            <Input placeholder="Cari ID transaksi, username, atau metode..." value={depositSearchTrx} onChange={e => setDepositSearchTrx(e.target.value)} className="text-sm" />
+            <div className="grid grid-cols-3 gap-2">
+              <select className="rounded-md border border-input bg-background px-3 py-2 text-xs" value={depositMethodFilter} onChange={e => setDepositMethodFilter(e.target.value as DepositMethodFilter)}>
+                <option value="all">Semua Metode</option>
+                <option value="qris">QRIS</option>
+                <option value="ewallet">E-Wallet</option>
+              </select>
+              <select className="rounded-md border border-input bg-background px-3 py-2 text-xs" value={depositStatusFilter} onChange={e => setDepositStatusFilter(e.target.value as DepositStatusFilter)}>
+                <option value="all">Semua Status</option>
+                <option value="pending">Belum Konfirmasi</option>
+                <option value="approved">Disetujui</option>
+                <option value="rejected">Ditolak</option>
+              </select>
+              <select className="rounded-md border border-input bg-background px-3 py-2 text-xs" value={depositSort} onChange={e => setDepositSort(e.target.value as "newest" | "oldest")}>
+                <option value="newest">Terbaru</option>
+                <option value="oldest">Terlama</option>
+              </select>
+            </div>
+            {filteredDeposits.map(dep => {
               const user = userBalances.find(u => u.visitor_id === dep.visitor_id);
               return (
                 <Card key={dep.id} className={dep.status === "pending" ? "border-2 border-primary/30" : ""}>
                   <CardContent className="p-4 space-y-2">
                     <div className="flex items-center justify-between">
                       <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${dep.status === "approved" ? "bg-accent/10 text-accent" : dep.status === "rejected" ? "bg-destructive/10 text-destructive" : "bg-primary/10 text-primary"}`}>
-                        {dep.status === "approved" ? "✅ Disetujui" : dep.status === "rejected" ? "❌ Ditolak" : "⏳ Menunggu"}
+                        {getDepositStatusLabel(dep.status)}
                       </span>
                       <span className="text-[10px] text-muted-foreground">{new Date(dep.created_at).toLocaleString("id-ID")}</span>
                     </div>
                     <div className="text-xs space-y-0.5">
                       <p><strong>Username:</strong> {dep.username}</p>
+                      {user?.phone && <p><strong>No HP:</strong> {user.phone}</p>}
                       <p><strong>Nominal:</strong> <span className="text-primary font-extrabold text-sm">{new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", minimumFractionDigits: 0 }).format(dep.amount)}</span></p>
                       <p><strong>Metode:</strong> {dep.payment_method.toUpperCase()}</p>
                       <p><strong>ID Transaksi:</strong> <span className="font-mono text-primary">{dep.trx_id}</span></p>
-                      <p className="text-[10px] text-muted-foreground font-mono">Visitor: {dep.visitor_id.slice(0, 12)}...</p>
                     </div>
                     {dep.status === "pending" && (
                       <div className="flex gap-2 pt-1">
@@ -1275,7 +1332,7 @@ const AdminDashboard = () => {
                 </Card>
               );
             })}
-            {allDeposits.length === 0 && <p className="text-center text-sm text-muted-foreground py-8">Belum ada deposit</p>}
+            {filteredDeposits.length === 0 && <p className="text-center text-sm text-muted-foreground py-8">Belum ada deposit yang cocok</p>}
           </>
         )}
 

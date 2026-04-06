@@ -10,7 +10,7 @@ import {
   Download, MessageCircle, Copy, CheckCircle2, Shield, Crown,
   HelpCircle, X, ExternalLink, Search, ChevronLeft, ChevronRight, FileText,
   Heart, Send, ImagePlus, AlertCircle, History, Wallet, ArrowUpCircle, ArrowDownCircle,
-  Bell, Check, CheckCheck, Globe
+  Bell, Check, CheckCheck, Globe, Edit2
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import jsPDF from "jspdf";
@@ -22,6 +22,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { useLang, t, type Lang } from "@/lib/i18n";
+import { z } from "zod";
 
 type Tab = "beranda" | "produk" | "voucher" | "history" | "likes" | "tiket" | "saldo";
 
@@ -126,6 +127,13 @@ interface ProductChatMessage {
   is_read: boolean;
 }
 
+type DepositStatusFilter = "all" | "pending" | "approved" | "rejected";
+type DepositMethodFilter = "all" | "qris" | "ewallet";
+
+const usernameSchema = z.string().trim().min(6, "Username minimal 6 karakter").max(30, "Username maksimal 30 karakter").regex(/^[A-Za-z0-9_]+$/, "Username hanya boleh huruf, angka, dan underscore");
+
+const phoneSchema = z.string().trim().transform((value) => value.replace(/[\s-]/g, "")).refine((value) => /^(08\d+|\+628\d+)$/.test(value), "No HP harus diawali 08 atau +628").refine((value) => value.length >= 10 && value.length <= 16, "No HP tidak valid");
+
 // WhatsApp-style checkmark component
 function MessageStatus({ isRead, isUserMsg }: { isRead: boolean; isUserMsg: boolean }) {
   if (!isUserMsg) return null;
@@ -142,6 +150,32 @@ function MessageStatus({ isRead, isUserMsg }: { isRead: boolean; isUserMsg: bool
 
 function formatPrice(price: number) {
   return new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", minimumFractionDigits: 0 }).format(price);
+}
+
+function isEwalletMethod(method: string) {
+  return method.trim().toLowerCase() !== "qris";
+}
+
+function getDepositStatusLabel(status: string, lang: Lang) {
+  if (status === "approved") return t("deposit.approved", lang);
+  if (status === "rejected") return t("deposit.rejected", lang);
+  return lang === "id" ? "Belum dikonfirmasi admin" : "Waiting for admin confirmation";
+}
+
+function validateProfileInput(username: string, phone: string) {
+  const result = z.object({ username: usernameSchema, phone: phoneSchema }).safeParse({ username, phone });
+
+  if (!result.success) {
+    return {
+      success: false as const,
+      message: result.error.issues[0]?.message || "Data profil tidak valid",
+    };
+  }
+
+  return {
+    success: true as const,
+    data: result.data,
+  };
 }
 
 function ImageCarousel({ images, className = "w-full h-44" }: { images: string[]; className?: string }) {
@@ -225,6 +259,10 @@ const Index = () => {
   const [balanceTransactions, setBalanceTransactions] = useState<BalanceTransaction[]>([]);
   const [setupUsername, setSetupUsername] = useState("");
   const [setupPhone, setSetupPhone] = useState("");
+  const [showProfileModal, setShowProfileModal] = useState(false);
+  const [profileUsername, setProfileUsername] = useState("");
+  const [profilePhone, setProfilePhone] = useState("");
+  const [savingProfile, setSavingProfile] = useState(false);
   const [showBuySaldo, setShowBuySaldo] = useState(false);
   const [buyProduct, setBuyProduct] = useState<Product | null>(null);
   const [purchaseSuccess, setPurchaseSuccess] = useState<PurchasedVoucher | null>(null);
@@ -241,7 +279,10 @@ const Index = () => {
   const [depositStep, setDepositStep] = useState<"method" | "form">("method");
   const [depositMethod, setDepositMethod] = useState<string>("qris");
   const [depositAmount, setDepositAmount] = useState("");
-  const [depositTrxId, setDepositTrxId] = useState("");
+  const [depositHistoryStatusFilter, setDepositHistoryStatusFilter] = useState<DepositStatusFilter>("all");
+  const [depositHistoryMethodFilter, setDepositHistoryMethodFilter] = useState<DepositMethodFilter>("all");
+  const [depositHistorySort, setDepositHistorySort] = useState<"newest" | "oldest">("newest");
+  const [selectedDeposit, setSelectedDeposit] = useState<Deposit | null>(null);
 
   // Notifications
   interface Notification {
@@ -313,23 +354,34 @@ const Index = () => {
 
   async function submitDeposit() {
     const amount = parseInt(depositAmount) || 0;
-    if (amount <= 0 || !depositTrxId.trim() || !userBalance) {
-      toast({ title: lang === "id" ? "Isi nominal dan ID transaksi" : "Fill amount and transaction ID", variant: "destructive" }); return;
+    if (amount <= 0 || !userBalance) {
+      toast({ title: lang === "id" ? "Isi nominal deposit" : "Enter deposit amount", variant: "destructive" }); return;
     }
+
     const methodLabel = depositMethod === "qris" ? "QRIS" : depositMethod;
-    await supabase.from("deposits").insert({
-      visitor_id: visitorId,
-      username: userBalance.username,
-      amount,
-      payment_method: methodLabel,
-      trx_id: depositTrxId.trim(),
-    } as any);
+
+    const { data, error } = await supabase.functions.invoke("create-deposit", {
+      body: {
+        visitorId,
+        amount,
+        paymentMethod: methodLabel,
+      },
+    });
+
+    if (error || data?.error) {
+      toast({ title: data?.error || "Gagal membuat deposit", variant: "destructive" });
+      return;
+    }
+
+    const createdDeposit = data?.deposit as Deposit | undefined;
+    const trxId = createdDeposit?.trx_id || "-";
     const msg = lang === "id"
-      ? `Halo admin, saya sudah deposit saldo.\n\nUsername: ${userBalance.username}\nNominal: ${formatPrice(amount)}\nMetode: ${methodLabel}\nID Transaksi: ${depositTrxId.trim()}\nVisitor ID: ${visitorId}`
-      : `Hello admin, I have deposited balance.\n\nUsername: ${userBalance.username}\nAmount: ${formatPrice(amount)}\nMethod: ${methodLabel}\nTransaction ID: ${depositTrxId.trim()}\nVisitor ID: ${visitorId}`;
+      ? `Halo admin, saya mengajukan deposit saldo.\n\nUsername: ${userBalance.username}\nNominal: ${formatPrice(amount)}\nMetode: ${methodLabel}\nID Transaksi: ${trxId}`
+      : `Hello admin, I submitted a balance deposit.\n\nUsername: ${userBalance.username}\nAmount: ${formatPrice(amount)}\nMethod: ${methodLabel}\nTransaction ID: ${trxId}`;
     window.open(`${SOCIAL_LINKS.whatsapp}?text=${encodeURIComponent(msg)}`, "_blank");
-    toast({ title: lang === "id" ? "Deposit berhasil diajukan! ✅" : "Deposit submitted! ✅" });
-    setShowDepositModal(false); setDepositAmount(""); setDepositTrxId(""); setDepositStep("method");
+    toast({ title: lang === "id" ? `Deposit dibuat! ID: ${trxId}` : `Deposit created! ID: ${trxId}` });
+    setShowDepositModal(false); setDepositAmount(""); setDepositStep("method");
+    if (createdDeposit) setSelectedDeposit(createdDeposit);
     fetchDeposits();
   }
 
@@ -365,22 +417,77 @@ const Index = () => {
 
   async function fetchUserBalance() {
     const { data } = await supabase.from("user_balances").select("*").eq("visitor_id", visitorId).maybeSingle();
-    if (data) setUserBalance(data as unknown as UserBalance);
+    if (data) {
+      const user = data as unknown as UserBalance;
+      setUserBalance(user);
+      setProfileUsername(user.username);
+      setProfilePhone(user.phone);
+    }
     const { data: txns } = await supabase.from("balance_transactions").select("*").eq("visitor_id", visitorId).order("created_at", { ascending: false });
     if (txns) setBalanceTransactions(txns as unknown as BalanceTransaction[]);
   }
 
   async function createUserBalance() {
-    if (!setupUsername.trim() || !setupPhone.trim()) {
-      toast({ title: "Isi username dan no HP", variant: "destructive" }); return;
+    const validation = validateProfileInput(setupUsername, setupPhone);
+    if (!validation.success) {
+      toast({ title: validation.message, variant: "destructive" });
+      return;
     }
-    const { data, error } = await supabase.from("user_balances").insert({
-      visitor_id: visitorId, username: setupUsername.trim(), phone: setupPhone.trim(),
-    }).select().single();
-    if (error) { toast({ title: "Gagal membuat akun", variant: "destructive" }); return; }
-    setUserBalance(data as unknown as UserBalance);
+
+    setSavingProfile(true);
+
+    const { data, error } = await supabase.functions.invoke("upsert-balance-profile", {
+      body: {
+        visitorId,
+        username: validation.data.username,
+        phone: validation.data.phone,
+      },
+    });
+
+    setSavingProfile(false);
+
+    if (error || data?.error) { toast({ title: data?.error || "Gagal membuat akun", variant: "destructive" }); return; }
+
+    const user = data?.user as UserBalance;
+    setUserBalance(user);
+    setProfileUsername(user.username);
+    setProfilePhone(user.phone);
     setSetupUsername(""); setSetupPhone("");
     toast({ title: "Akun saldo berhasil dibuat! 🎉" });
+    fetchUserBalance();
+  }
+
+  async function updateUserBalanceProfile() {
+    const validation = validateProfileInput(profileUsername, profilePhone);
+    if (!validation.success) {
+      toast({ title: validation.message, variant: "destructive" });
+      return;
+    }
+
+    setSavingProfile(true);
+
+    const { data, error } = await supabase.functions.invoke("upsert-balance-profile", {
+      body: {
+        visitorId,
+        username: validation.data.username,
+        phone: validation.data.phone,
+      },
+    });
+
+    setSavingProfile(false);
+
+    if (error || data?.error) {
+      toast({ title: data?.error || "Gagal memperbarui profil", variant: "destructive" });
+      return;
+    }
+
+    const user = data?.user as UserBalance;
+    setUserBalance(user);
+    setProfileUsername(user.username);
+    setProfilePhone(user.phone);
+    setShowProfileModal(false);
+    toast({ title: "Profil berhasil diperbarui" });
+    fetchUserBalance();
   }
 
   async function buyWithSaldo(product: Product) {
@@ -809,6 +916,15 @@ const Index = () => {
   const paginatedHistory = history.slice((historyPage - 1) * HISTORY_PER_PAGE, historyPage * HISTORY_PER_PAGE);
 
   const likedProducts = products.filter(p => likedIds.has(p.id));
+  const filteredDeposits = [...deposits]
+    .filter((dep) => depositHistoryStatusFilter === "all" ? true : dep.status === depositHistoryStatusFilter)
+    .filter((dep) => {
+      if (depositHistoryMethodFilter === "all") return true;
+      return depositHistoryMethodFilter === "qris" ? dep.payment_method.trim().toLowerCase() === "qris" : isEwalletMethod(dep.payment_method);
+    })
+    .sort((a, b) => depositHistorySort === "newest"
+      ? new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      : new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
 
   // WhatsApp send
   function sendWhatsApp() {
@@ -1349,9 +1465,10 @@ const Index = () => {
                     <p className="text-xs text-muted-foreground mt-1">Daftar untuk menggunakan fitur saldo</p>
                   </div>
                   <div className="space-y-3">
-                    <Input placeholder="Username" value={setupUsername} onChange={e => setSetupUsername(e.target.value)} />
-                    <Input placeholder="No HP" value={setupPhone} onChange={e => setSetupPhone(e.target.value)} />
-                    <Button className="w-full bg-gradient-to-r from-primary to-primary/80 font-bold" onClick={createUserBalance}>
+                      <Input placeholder="Username minimal 6 karakter" value={setupUsername} onChange={e => setSetupUsername(e.target.value)} />
+                      <Input placeholder="No HP diawali 08 atau +628" value={setupPhone} onChange={e => setSetupPhone(e.target.value)} />
+                      <p className="text-[11px] text-muted-foreground">Username minimal 6 karakter. Nomor HP wajib diawali 08 atau +628.</p>
+                      <Button className="w-full bg-gradient-to-r from-primary to-primary/80 font-bold" onClick={createUserBalance} disabled={savingProfile}>
                       Buat Akun
                     </Button>
                   </div>
@@ -1365,16 +1482,23 @@ const Index = () => {
                     <div className="flex items-center justify-between mb-3">
                       <div>
                         <p className="text-xs text-muted-foreground font-medium">Hai, {userBalance.username}</p>
+                        <p className="text-[11px] text-muted-foreground">{userBalance.phone}</p>
                         <p className="text-3xl font-extrabold text-primary">{formatPrice(userBalance.balance)}</p>
                       </div>
                       <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-lg">
                         <Wallet className="w-7 h-7 text-primary-foreground" />
                       </div>
                     </div>
-                    <Button size="sm" className="w-full bg-gradient-to-r from-accent to-accent/80 text-accent-foreground gap-1.5 font-bold"
-                      onClick={() => { setShowDepositModal(true); setDepositStep("method"); }}>
-                      <ArrowUpCircle className="w-4 h-4" /> {t("deposit.btn", lang)}
-                    </Button>
+                    <div className="grid grid-cols-2 gap-2">
+                      <Button size="sm" variant="outline" className="gap-1.5 font-bold"
+                        onClick={() => { setProfileUsername(userBalance.username); setProfilePhone(userBalance.phone); setShowProfileModal(true); }}>
+                        <Edit2 className="w-4 h-4" /> Edit Profil
+                      </Button>
+                      <Button size="sm" className="bg-gradient-to-r from-accent to-accent/80 text-accent-foreground gap-1.5 font-bold"
+                        onClick={() => { setShowDepositModal(true); setDepositStep("method"); }}>
+                        <ArrowUpCircle className="w-4 h-4" /> {t("deposit.btn", lang)}
+                      </Button>
+                    </div>
                   </CardContent>
                 </Card>
 
@@ -1382,23 +1506,41 @@ const Index = () => {
                 {deposits.length > 0 && (
                   <>
                     <h3 className="font-bold text-sm flex items-center gap-1.5"><History className="w-4 h-4" /> {t("deposit.history", lang)}</h3>
-                    {deposits.map(dep => (
-                      <Card key={dep.id}>
+                    <div className="grid grid-cols-3 gap-2">
+                      <select className="rounded-md border border-input bg-background px-2 py-2 text-[11px]" value={depositHistoryMethodFilter} onChange={e => setDepositHistoryMethodFilter(e.target.value as DepositMethodFilter)}>
+                        <option value="all">Semua Metode</option>
+                        <option value="qris">QRIS</option>
+                        <option value="ewallet">E-Wallet</option>
+                      </select>
+                      <select className="rounded-md border border-input bg-background px-2 py-2 text-[11px]" value={depositHistoryStatusFilter} onChange={e => setDepositHistoryStatusFilter(e.target.value as DepositStatusFilter)}>
+                        <option value="all">Semua Status</option>
+                        <option value="pending">Belum Konfirmasi</option>
+                        <option value="approved">Disetujui</option>
+                        <option value="rejected">Ditolak</option>
+                      </select>
+                      <select className="rounded-md border border-input bg-background px-2 py-2 text-[11px]" value={depositHistorySort} onChange={e => setDepositHistorySort(e.target.value as "newest" | "oldest")}>
+                        <option value="newest">Terbaru</option>
+                        <option value="oldest">Terlama</option>
+                      </select>
+                    </div>
+                    {filteredDeposits.map(dep => (
+                      <Card key={dep.id} className="cursor-pointer transition-all hover:shadow-lg" onClick={() => setSelectedDeposit(dep)}>
                         <CardContent className="p-3 flex items-center gap-3">
                           <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${dep.status === "approved" ? "bg-accent/10" : dep.status === "rejected" ? "bg-destructive/10" : "bg-muted"}`}>
                             {dep.status === "approved" ? <CheckCircle2 className="w-5 h-5 text-accent" /> : dep.status === "rejected" ? <X className="w-5 h-5 text-destructive" /> : <Clock className="w-5 h-5 text-muted-foreground" />}
                           </div>
                           <div className="flex-1 min-w-0">
                             <p className="font-bold text-sm">{formatPrice(dep.amount)}</p>
-                            <p className="text-[10px] text-muted-foreground">TRX: {dep.trx_id}</p>
+                            <p className="text-[10px] text-muted-foreground font-mono">ID: {dep.trx_id}</p>
                             <p className="text-[10px] text-muted-foreground">{dep.payment_method.toUpperCase()} • {new Date(dep.created_at).toLocaleString("id-ID")}</p>
                           </div>
                           <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${dep.status === "approved" ? "bg-accent/10 text-accent" : dep.status === "rejected" ? "bg-destructive/10 text-destructive" : "bg-muted text-muted-foreground"}`}>
-                            {dep.status === "approved" ? t("deposit.approved", lang) : dep.status === "rejected" ? t("deposit.rejected", lang) : t("deposit.pending", lang)}
+                            {getDepositStatusLabel(dep.status, lang)}
                           </span>
                         </CardContent>
                       </Card>
                     ))}
+                    {filteredDeposits.length === 0 && <p className="text-center text-sm text-muted-foreground py-4">Tidak ada deposit sesuai filter.</p>}
                   </>
                 )}
 
@@ -1826,6 +1968,46 @@ const Index = () => {
         </div>
       )}
 
+      {selectedDeposit && (
+        <div className="fixed inset-0 z-[88] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setSelectedDeposit(null)}>
+          <div className="bg-card w-full max-w-sm rounded-2xl p-5 space-y-4 animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between">
+              <h3 className="font-extrabold text-lg">Detail Deposit</h3>
+              <button onClick={() => setSelectedDeposit(null)} className="w-8 h-8 rounded-full bg-muted flex items-center justify-center"><X className="w-4 h-4" /></button>
+            </div>
+            <div className="rounded-xl border border-border bg-muted/40 p-4 space-y-2 text-sm">
+              <div className="flex items-center justify-between gap-3"><span className="text-muted-foreground">ID Transaksi</span><span className="font-mono text-xs text-right break-all">{selectedDeposit.trx_id}</span></div>
+              <div className="flex items-center justify-between gap-3"><span className="text-muted-foreground">Nominal</span><span className="font-bold text-primary">{formatPrice(selectedDeposit.amount)}</span></div>
+              <div className="flex items-center justify-between gap-3"><span className="text-muted-foreground">Metode</span><span className="font-semibold">{selectedDeposit.payment_method}</span></div>
+              <div className="flex items-center justify-between gap-3"><span className="text-muted-foreground">Status</span><span className="font-semibold">{getDepositStatusLabel(selectedDeposit.status, lang)}</span></div>
+              <div className="flex items-center justify-between gap-3"><span className="text-muted-foreground">Dibuat</span><span className="text-right">{new Date(selectedDeposit.created_at).toLocaleString("id-ID")}</span></div>
+            </div>
+            <Button className="w-full gap-2" onClick={() => copyText(selectedDeposit.trx_id, "deposit-transaction-id")}>
+              <Copy className="w-4 h-4" /> Salin ID Transaksi
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {showProfileModal && userBalance && (
+        <div className="fixed inset-0 z-[89] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setShowProfileModal(false)}>
+          <div className="bg-card w-full max-w-sm rounded-2xl p-5 space-y-4 animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between">
+              <h3 className="font-extrabold text-lg">Edit Profil Saldo</h3>
+              <button onClick={() => setShowProfileModal(false)} className="w-8 h-8 rounded-full bg-muted flex items-center justify-center"><X className="w-4 h-4" /></button>
+            </div>
+            <div className="space-y-3">
+              <Input placeholder="Username minimal 6 karakter" value={profileUsername} onChange={e => setProfileUsername(e.target.value)} />
+              <Input placeholder="No HP diawali 08 atau +628" value={profilePhone} onChange={e => setProfilePhone(e.target.value)} />
+              <p className="text-[11px] text-muted-foreground">Username minimal 6 karakter, nomor HP harus diawali 08 atau +628.</p>
+              <Button className="w-full gap-2" onClick={updateUserBalanceProfile} disabled={savingProfile}>
+                <Check className="w-4 h-4" /> Simpan Perubahan
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Deposit Modal */}
       {showDepositModal && userBalance && (
         <div className="fixed inset-0 z-[80] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setShowDepositModal(false)}>
@@ -1882,12 +2064,14 @@ const Index = () => {
                   </div>
                 )}
 
+                <div className="rounded-xl border border-dashed border-border bg-muted/40 p-3 text-xs text-muted-foreground">
+                  ID transaksi akan dibuat otomatis setelah deposit diajukan.
+                </div>
                 <Input type="number" placeholder={t("deposit.amount", lang)} value={depositAmount} onChange={e => setDepositAmount(e.target.value)} />
-                <Input placeholder={t("deposit.trx_id_placeholder", lang)} value={depositTrxId} onChange={e => setDepositTrxId(e.target.value)} />
 
                 <Button className="w-full bg-gradient-to-r from-accent to-accent/80 text-accent-foreground font-bold gap-2"
-                  onClick={submitDeposit} disabled={!depositAmount || !depositTrxId.trim()}>
-                  <MessageCircle className="w-4 h-4" /> {t("deposit.send_wa", lang)}
+                  onClick={submitDeposit} disabled={!depositAmount}>
+                  <MessageCircle className="w-4 h-4" /> Buat Deposit & Kirim WA
                 </Button>
               </div>
             )}
