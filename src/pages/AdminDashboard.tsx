@@ -739,6 +739,9 @@ const AdminDashboard = () => {
             {key === "chats" && allChats.filter(c => c.status === "open").length > 0 && (
               <span className="ml-1 bg-destructive text-destructive-foreground text-[9px] px-1.5 py-0.5 rounded-full">{allChats.filter(c => c.status === "open").length}</span>
             )}
+            {key === "deposit" && allDeposits.filter(d => d.status === "pending").length > 0 && (
+              <span className="ml-1 bg-destructive text-destructive-foreground text-[9px] px-1.5 py-0.5 rounded-full">{allDeposits.filter(d => d.status === "pending").length}</span>
+            )}
           </button>
         ))}
       </div>
