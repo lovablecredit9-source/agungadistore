@@ -839,7 +839,7 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer }: Playl
           </div>
           </div>
         </div>
-      )}
+      , document.body)}
 
       {/* Lyrics Display */}
       {currentSong && (
