@@ -531,7 +531,7 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer }: Playl
         if (vd) await supabase.from("music_discount_vouchers").update({ used_count: (vd.used_count || 0) + 1 } as any).eq("id", vd.id);
       }
       const newSub = saveSub(plan);
-      setActiveSubs(getActiveSubscriptions()); setMaxBytes(getTotalMaxBytes()); setUpgradeOpen(false);
+      setActiveSubs(getActiveSubscriptions()); setMaxBytes(getTotalMaxBytes(activeRedeemedMb)); setUpgradeOpen(false);
       setUpgradeDiscountCode(""); setUpgradeDiscountAmount(0);
       toast({ title: "Upgrade berhasil! 🎉", description: `+${formatStorageSize(plan.addBytes)} aktif sampai ${formatDate(newSub.expiresAt)}${upgradeDiscountAmount > 0 ? ` (diskon Rp${upgradeDiscountAmount.toLocaleString()})` : ""}` });
     } catch (err: any) { toast({ title: "Gagal upgrade", description: err?.message, variant: "destructive" }); }
