@@ -10,8 +10,10 @@ import {
   Download, MessageCircle, Copy, CheckCircle2, Shield, Crown,
   HelpCircle, X, ExternalLink, Search, ChevronLeft, ChevronRight, FileText,
   Heart, Send, ImagePlus, AlertCircle, History, Wallet, ArrowUpCircle, ArrowDownCircle,
-  Bell, Check, CheckCheck, Globe, Edit2, ShoppingCart, Plus, Minus, Trash2
+  Bell, Check, CheckCheck, Globe, Edit2, ShoppingCart, Plus, Minus, Trash2,
+  Moon, Sun, Lock, Tag
 } from "lucide-react";
+import { useTheme } from "@/lib/theme";
 import { useToast } from "@/hooks/use-toast";
 import jsPDF from "jspdf";
 import storeQris from "@/assets/store-qris.jpg";
@@ -210,6 +212,7 @@ function ImageCarousel({ images, className = "w-full h-44" }: { images: string[]
 }
 
 const Index = () => {
+  const { theme, toggleTheme } = useTheme();
   const [lang, setLang] = useLang();
   const [tab, setTab] = useState<Tab>("beranda");
   const [products, setProducts] = useState<Product[]>([]);
@@ -280,6 +283,23 @@ const Index = () => {
   const cartTotal = cart.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
   const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
 
+  // PIN
+  const [hasPin, setHasPin] = useState(false);
+  const [showPinSetup, setShowPinSetup] = useState(false);
+  const [pinInput, setPinInput] = useState("");
+  const [pinConfirm, setPinConfirm] = useState("");
+  const [showPinVerify, setShowPinVerify] = useState(false);
+  const [pinVerifyInput, setPinVerifyInput] = useState("");
+  const [pendingPurchase, setPendingPurchase] = useState<{product: Product; quantity: number; discountCode: string} | null>(null);
+  const [showForgotPin, setShowForgotPin] = useState(false);
+  const [resetToken, setResetToken] = useState("");
+  const [newPinInput, setNewPinInput] = useState("");
+
+  // Discount voucher
+  const [discountCode, setDiscountCode] = useState("");
+  const [discountInfo, setDiscountInfo] = useState<{amount: number; code: string} | null>(null);
+  const [checkingDiscount, setCheckingDiscount] = useState(false);
+
   // Deposit
   interface Deposit {
     id: string; visitor_id: string; username: string; amount: number;
@@ -345,7 +365,54 @@ const Index = () => {
     fetchNotifications();
     fetchDeposits();
     fetchAdminSettings();
+    checkPinStatus();
   }, []);
+
+  async function checkPinStatus() {
+    const { data } = await supabase.functions.invoke("manage-pin", { body: { action: "check", visitorId } });
+    if (data) setHasPin(data.hasPin);
+  }
+
+  async function createPin() {
+    if (pinInput.length < 4 || pinInput.length > 6 || !/^\d+$/.test(pinInput)) {
+      toast({ title: "PIN harus 4-6 digit angka", variant: "destructive" }); return;
+    }
+    if (pinInput !== pinConfirm) {
+      toast({ title: "Konfirmasi PIN tidak cocok", variant: "destructive" }); return;
+    }
+    const { data, error } = await supabase.functions.invoke("manage-pin", { body: { action: "create", visitorId, pin: pinInput } });
+    if (error || data?.error) { toast({ title: data?.error || "Gagal membuat PIN", variant: "destructive" }); return; }
+    setHasPin(true);
+    setShowPinSetup(false);
+    setPinInput(""); setPinConfirm("");
+    toast({ title: "PIN berhasil dibuat! 🔒" });
+  }
+
+  async function resetPinWithToken() {
+    if (!resetToken || !newPinInput) {
+      toast({ title: "Isi token dan PIN baru", variant: "destructive" }); return;
+    }
+    const { data, error } = await supabase.functions.invoke("manage-pin", {
+      body: { action: "reset", visitorId, resetToken, newPin: newPinInput },
+    });
+    if (error || data?.error) { toast({ title: data?.error || "Gagal reset PIN", variant: "destructive" }); return; }
+    setShowForgotPin(false);
+    setResetToken(""); setNewPinInput("");
+    toast({ title: "PIN berhasil direset! 🔒" });
+  }
+
+  async function checkDiscountCode(code: string) {
+    if (!code.trim()) { setDiscountInfo(null); return; }
+    setCheckingDiscount(true);
+    const { data } = await supabase.from("discount_vouchers")
+      .select("*").eq("code", code.toUpperCase()).eq("is_active", true).maybeSingle();
+    if (data && (!data.expires_at || new Date(data.expires_at as string) > new Date()) && (data.used_count as number) < (data.max_uses as number)) {
+      setDiscountInfo({ amount: data.discount_amount as number, code: data.code as string });
+    } else {
+      setDiscountInfo(null);
+    }
+    setCheckingDiscount(false);
+  }
 
   async function fetchDeposits() {
     const { data } = await supabase.from("deposits").select("*").eq("visitor_id", visitorId).order("created_at", { ascending: false });
@@ -526,13 +593,39 @@ const Index = () => {
     setCart(prev => prev.filter(item => item.product.id !== productId));
   }
 
-  async function buyWithSaldo(product: Product, quantity = 1) {
+  function attemptBuy(product: Product, quantity = 1) {
+    const dc = discountCode.trim();
+    if (hasPin) {
+      setPendingPurchase({ product, quantity, discountCode: dc });
+      setPinVerifyInput("");
+      setShowPinVerify(true);
+      setShowBuySaldo(false);
+    } else {
+      buyWithSaldo(product, quantity, dc);
+    }
+  }
+
+  async function confirmPinAndBuy() {
+    if (!pendingPurchase) return;
+    const { data } = await supabase.functions.invoke("manage-pin", {
+      body: { action: "verify", visitorId, pin: pinVerifyInput },
+    });
+    if (!data?.valid) {
+      toast({ title: "PIN salah", variant: "destructive" }); return;
+    }
+    setShowPinVerify(false);
+    buyWithSaldo(pendingPurchase.product, pendingPurchase.quantity, pendingPurchase.discountCode);
+    setPendingPurchase(null);
+    setPinVerifyInput("");
+  }
+
+  async function buyWithSaldo(product: Product, quantity = 1, voucherCode = "") {
     const totalPrice = product.price * quantity;
     if (!userBalance || userBalance.balance < totalPrice) {
       toast({ title: "Saldo tidak cukup", variant: "destructive" }); return;
     }
     const { data, error } = await supabase.functions.invoke("purchase-with-balance", {
-      body: { visitorId, productId: product.id, quantity },
+      body: { visitorId, productId: product.id, quantity, discountCode: voucherCode || undefined, pin: undefined },
     });
 
     if (error || data?.error) {
@@ -546,6 +639,8 @@ const Index = () => {
     setBuyQuantity(1);
     setSelectedProduct(null);
     removeFromCart(product.id);
+    setDiscountCode("");
+    setDiscountInfo(null);
     setPurchaseSuccess(purchaseData);
     fetchUserBalance();
     const codes = purchaseData.tokens.map(t => t.token_code).join(", ");
@@ -986,7 +1081,10 @@ const Index = () => {
             <h1 className="text-lg font-extrabold tracking-tight">{STORE_NAME}</h1>
             <p className="text-[10px] opacity-80 leading-tight">{t("header.tagline", lang)}</p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5">
+            <button onClick={toggleTheme} className="w-9 h-9 rounded-xl bg-primary-foreground/20 backdrop-blur-sm flex items-center justify-center hover:bg-primary-foreground/30 transition-colors" title={theme === "dark" ? "Mode Terang" : "Mode Gelap"}>
+              {theme === "dark" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+            </button>
             <button onClick={() => setLang(lang === "id" ? "en" : "id")} className="w-9 h-9 rounded-xl bg-primary-foreground/20 backdrop-blur-sm flex items-center justify-center hover:bg-primary-foreground/30 transition-colors" title={t("general.language", lang)}>
               <span className="text-[10px] font-bold">{lang === "id" ? "EN" : "ID"}</span>
             </button>
@@ -1539,6 +1637,20 @@ const Index = () => {
                         <ArrowUpCircle className="w-4 h-4" /> {t("deposit.btn", lang)}
                       </Button>
                     </div>
+                    {/* PIN Management */}
+                    <div className="mt-2">
+                      {!hasPin ? (
+                        <Button size="sm" variant="outline" className="w-full gap-1.5 font-bold border-primary/30" onClick={() => setShowPinSetup(true)}>
+                          <Lock className="w-4 h-4 text-primary" /> Buat PIN Keamanan
+                        </Button>
+                      ) : (
+                        <div className="flex items-center gap-2 bg-accent/10 rounded-lg p-2 text-xs text-accent">
+                          <Lock className="w-4 h-4" />
+                          <span className="font-bold">PIN aktif</span>
+                          <span className="text-muted-foreground">— Pembelian dilindungi PIN</span>
+                        </div>
+                      )}
+                    </div>
                   </CardContent>
                 </Card>
 
@@ -1909,13 +2021,15 @@ const Index = () => {
 
       {/* Buy with Saldo Confirmation Modal */}
       {showBuySaldo && buyProduct && (() => {
-        const totalPrice = buyProduct.price * buyQuantity;
+        const basePrice = buyProduct.price * buyQuantity;
+        const discount = discountInfo ? Math.min(discountInfo.amount, basePrice) : 0;
+        const totalPrice = basePrice - discount;
         return (
-        <div className="fixed inset-0 z-[80] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => { setShowBuySaldo(false); setBuyProduct(null); setBuyQuantity(1); }}>
-          <div className="bg-card w-full max-w-sm rounded-2xl p-5 space-y-4 animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
+        <div className="fixed inset-0 z-[80] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => { setShowBuySaldo(false); setBuyProduct(null); setBuyQuantity(1); setDiscountCode(""); setDiscountInfo(null); }}>
+          <div className="bg-card w-full max-w-sm rounded-2xl p-5 space-y-4 animate-in zoom-in-95 duration-200 max-h-[85vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between">
               <h3 className="font-extrabold text-lg">Konfirmasi Pembelian</h3>
-              <button onClick={() => { setShowBuySaldo(false); setBuyProduct(null); setBuyQuantity(1); }} className="w-8 h-8 rounded-full bg-muted flex items-center justify-center"><X className="w-4 h-4" /></button>
+              <button onClick={() => { setShowBuySaldo(false); setBuyProduct(null); setBuyQuantity(1); setDiscountCode(""); setDiscountInfo(null); }} className="w-8 h-8 rounded-full bg-muted flex items-center justify-center"><X className="w-4 h-4" /></button>
             </div>
             <div className="bg-primary/5 border border-primary/20 rounded-lg p-3 space-y-1">
               <p className="font-bold text-sm">{buyProduct.title}</p>
@@ -1930,15 +2044,35 @@ const Index = () => {
                 <button onClick={() => setBuyQuantity(q => Math.min(q + 1, buyProduct.stock))} className="w-8 h-8 rounded-full bg-background border border-border flex items-center justify-center hover:bg-muted"><Plus className="w-4 h-4" /></button>
               </div>
             </div>
+            {/* Discount voucher input */}
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-muted-foreground flex items-center gap-1"><Tag className="w-3 h-3" /> Kode Voucher Diskon</label>
+              <div className="flex gap-2">
+                <Input placeholder="Masukkan kode diskon" value={discountCode} onChange={e => setDiscountCode(e.target.value.toUpperCase())} className="flex-1 font-mono text-sm" />
+                <Button size="sm" variant="outline" onClick={() => checkDiscountCode(discountCode)} disabled={checkingDiscount || !discountCode.trim()}>
+                  {checkingDiscount ? "..." : "Cek"}
+                </Button>
+              </div>
+              {discountInfo && (
+                <div className="bg-accent/10 border border-accent/20 rounded-lg p-2 text-xs text-accent flex items-center gap-1.5">
+                  <CheckCircle2 className="w-3.5 h-3.5" /> Diskon {formatPrice(discountInfo.amount)} berlaku!
+                </div>
+              )}
+            </div>
             <div className="bg-muted/50 rounded-lg p-3 space-y-1 text-sm">
               <div className="flex justify-between"><span className="text-muted-foreground">Saldo saat ini</span><span className="font-bold">{formatPrice(userBalance?.balance || 0)}</span></div>
-              <div className="flex justify-between"><span className="text-muted-foreground">Total ({buyQuantity}x)</span><span className="font-bold text-destructive">-{formatPrice(totalPrice)}</span></div>
-              <div className="border-t border-border pt-1 flex justify-between"><span className="text-muted-foreground">Sisa saldo</span><span className={`font-bold ${(userBalance?.balance || 0) >= totalPrice ? "text-primary" : "text-destructive"}`}>{formatPrice((userBalance?.balance || 0) - totalPrice)}</span></div>
+              <div className="flex justify-between"><span className="text-muted-foreground">Subtotal ({buyQuantity}x)</span><span className="font-bold">-{formatPrice(basePrice)}</span></div>
+              {discount > 0 && (
+                <div className="flex justify-between"><span className="text-accent">Diskon voucher</span><span className="font-bold text-accent">+{formatPrice(discount)}</span></div>
+              )}
+              <div className="flex justify-between border-t border-border pt-1"><span className="text-muted-foreground">Total bayar</span><span className="font-bold text-destructive">-{formatPrice(totalPrice)}</span></div>
+              <div className="flex justify-between"><span className="text-muted-foreground">Sisa saldo</span><span className={`font-bold ${(userBalance?.balance || 0) >= totalPrice ? "text-primary" : "text-destructive"}`}>{formatPrice((userBalance?.balance || 0) - totalPrice)}</span></div>
             </div>
+            {hasPin && <p className="text-xs text-muted-foreground text-center flex items-center justify-center gap-1"><Lock className="w-3 h-3" /> PIN akan diminta untuk konfirmasi</p>}
             <p className="text-xs text-muted-foreground text-center">{buyQuantity} token akun akan otomatis diberikan dari stok</p>
             <Button className="w-full h-11 bg-gradient-to-r from-primary to-accent text-primary-foreground font-bold gap-2"
               disabled={!userBalance || userBalance.balance < totalPrice}
-              onClick={() => buyWithSaldo(buyProduct, buyQuantity)}>
+              onClick={() => attemptBuy(buyProduct, buyQuantity)}>
               <Wallet className="w-5 h-5" /> Beli {buyQuantity}x — {formatPrice(totalPrice)}
             </Button>
           </div>
@@ -2224,6 +2358,73 @@ const Index = () => {
       <button onClick={() => setShowHelp(true)} className="fixed bottom-20 right-4 z-50 w-12 h-12 rounded-full bg-primary text-primary-foreground shadow-xl flex items-center justify-center hover:scale-110 transition-transform">
         <HelpCircle className="w-6 h-6" />
       </button>
+
+      {/* PIN Setup Modal */}
+      {showPinSetup && (
+        <div className="fixed inset-0 z-[92] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setShowPinSetup(false)}>
+          <div className="bg-card w-full max-w-sm rounded-2xl p-5 space-y-4 animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between">
+              <h3 className="font-extrabold text-lg flex items-center gap-2"><Lock className="w-5 h-5 text-primary" /> Buat PIN Keamanan</h3>
+              <button onClick={() => setShowPinSetup(false)} className="w-8 h-8 rounded-full bg-muted flex items-center justify-center"><X className="w-4 h-4" /></button>
+            </div>
+            <p className="text-xs text-muted-foreground">PIN akan diminta setiap kali melakukan pembelian dengan saldo. PIN harus 4-6 digit angka.</p>
+            <Input type="password" inputMode="numeric" maxLength={6} placeholder="Masukkan PIN (4-6 digit)" value={pinInput} onChange={e => setPinInput(e.target.value.replace(/\D/g, ""))} />
+            <Input type="password" inputMode="numeric" maxLength={6} placeholder="Konfirmasi PIN" value={pinConfirm} onChange={e => setPinConfirm(e.target.value.replace(/\D/g, ""))} />
+            <Button className="w-full gap-2" onClick={createPin} disabled={pinInput.length < 4}>
+              <Lock className="w-4 h-4" /> Buat PIN
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* PIN Verify Modal */}
+      {showPinVerify && (
+        <div className="fixed inset-0 z-[95] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => { setShowPinVerify(false); setPendingPurchase(null); }}>
+          <div className="bg-card w-full max-w-sm rounded-2xl p-5 space-y-4 animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between">
+              <h3 className="font-extrabold text-lg flex items-center gap-2"><Lock className="w-5 h-5 text-primary" /> Masukkan PIN</h3>
+              <button onClick={() => { setShowPinVerify(false); setPendingPurchase(null); }} className="w-8 h-8 rounded-full bg-muted flex items-center justify-center"><X className="w-4 h-4" /></button>
+            </div>
+            <p className="text-xs text-muted-foreground text-center">Masukkan PIN untuk konfirmasi pembelian</p>
+            <Input type="password" inputMode="numeric" maxLength={6} placeholder="PIN" value={pinVerifyInput} onChange={e => setPinVerifyInput(e.target.value.replace(/\D/g, ""))} className="text-center text-2xl tracking-[0.3em] font-bold"
+              onKeyDown={e => { if (e.key === "Enter") confirmPinAndBuy(); }} autoFocus />
+            <Button className="w-full h-11 bg-gradient-to-r from-primary to-accent text-primary-foreground font-bold gap-2" onClick={confirmPinAndBuy} disabled={pinVerifyInput.length < 4}>
+              <Lock className="w-4 h-4" /> Konfirmasi
+            </Button>
+            <button onClick={() => { setShowPinVerify(false); setPendingPurchase(null); setShowForgotPin(true); }} className="w-full text-center text-xs text-primary hover:underline">
+              Lupa PIN?
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Forgot PIN Modal */}
+      {showForgotPin && (
+        <div className="fixed inset-0 z-[95] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setShowForgotPin(false)}>
+          <div className="bg-card w-full max-w-sm rounded-2xl p-5 space-y-4 animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between">
+              <h3 className="font-extrabold text-lg">Reset PIN</h3>
+              <button onClick={() => setShowForgotPin(false)} className="w-8 h-8 rounded-full bg-muted flex items-center justify-center"><X className="w-4 h-4" /></button>
+            </div>
+            <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-3 text-xs text-destructive space-y-1">
+              <p className="font-bold">Cara reset PIN:</p>
+              <ol className="list-decimal list-inside space-y-0.5">
+                <li>Hubungi admin via WhatsApp</li>
+                <li>Admin akan memberikan token reset</li>
+                <li>Masukkan token dan PIN baru di bawah</li>
+              </ol>
+            </div>
+            <a href={`${SOCIAL_LINKS.whatsapp}?text=${encodeURIComponent(`Halo admin, saya mau reset PIN.\nUsername: ${userBalance?.username || "-"}\nVisitor ID: ${visitorId}`)}`} target="_blank" rel="noopener noreferrer">
+              <Button variant="outline" className="w-full gap-2 mb-2"><MessageCircle className="w-4 h-4" /> Hubungi Admin via WA</Button>
+            </a>
+            <Input placeholder="Token reset dari admin" value={resetToken} onChange={e => setResetToken(e.target.value.toUpperCase())} className="font-mono" />
+            <Input type="password" inputMode="numeric" maxLength={6} placeholder="PIN baru (4-6 digit)" value={newPinInput} onChange={e => setNewPinInput(e.target.value.replace(/\D/g, ""))} />
+            <Button className="w-full gap-2" onClick={resetPinWithToken} disabled={!resetToken || newPinInput.length < 4}>
+              <Lock className="w-4 h-4" /> Reset PIN
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

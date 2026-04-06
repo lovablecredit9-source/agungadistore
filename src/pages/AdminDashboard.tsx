@@ -11,7 +11,7 @@ import {
   Plus, Trash2, LogOut, Package, Ticket, Copy, Image, Edit2, X,
   Smartphone, Clock, ChevronLeft, ChevronRight, Search, Send,
   MessageCircle, AlertCircle, ImagePlus, Shield, Wallet, Users, ArrowUpCircle,
-  Bell, Check
+  Bell, Check, Tag, Lock, Key
 } from "lucide-react";
 import { generateVoucherCode } from "@/lib/voucher-code";
 import { getDeviceSummary } from "@/lib/device-info";
@@ -111,7 +111,7 @@ interface UserBalance {
   created_at: string;
 }
 
-type AdminTab = "products" | "tokens" | "claims" | "tickets" | "chats" | "saldo" | "notif" | "deposit" | "settings";
+type AdminTab = "products" | "tokens" | "claims" | "tickets" | "chats" | "saldo" | "notif" | "deposit" | "settings" | "diskon" | "pin";
 type ClaimDateFilter = "all" | "today" | "yesterday" | "lastmonth" | "custom";
 type DepositStatusFilter = "all" | "pending" | "approved" | "rejected";
 type DepositMethodFilter = "all" | "qris" | "ewallet";
@@ -202,6 +202,22 @@ const AdminDashboard = () => {
 
   const chatRef = useRef<HTMLDivElement>(null);
 
+  // Discount Vouchers
+  interface DiscountVoucher {
+    id: string; code: string; discount_amount: number; max_uses: number;
+    used_count: number; is_active: boolean; expires_at: string | null; created_at: string;
+  }
+  const [discountVouchers, setDiscountVouchers] = useState<DiscountVoucher[]>([]);
+  const [dvCode, setDvCode] = useState("");
+  const [dvAmount, setDvAmount] = useState("");
+  const [dvMaxUses, setDvMaxUses] = useState("10");
+  const [dvExpiry, setDvExpiry] = useState("");
+  const [dvSendTarget, setDvSendTarget] = useState("all");
+
+  // PIN Reset
+  const [pinResetTarget, setPinResetTarget] = useState("");
+  const [generatedResetToken, setGeneratedResetToken] = useState("");
+
   const navigate = useNavigate();
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -214,7 +230,74 @@ const AdminDashboard = () => {
     fetchUserBalances();
     fetchDeposits();
     fetchAdminSettings();
+    fetchDiscountVouchers();
   }, []);
+
+  async function fetchDiscountVouchers() {
+    const { data } = await supabase.from("discount_vouchers").select("*").order("created_at", { ascending: false });
+    if (data) setDiscountVouchers(data as unknown as DiscountVoucher[]);
+  }
+
+  async function createDiscountVoucher() {
+    if (!dvCode.trim() || !dvAmount) { toast({ title: "Isi kode dan nominal", variant: "destructive" }); return; }
+    const amount = parseInt(dvAmount) || 0;
+    if (amount <= 0) { toast({ title: "Nominal harus lebih dari 0", variant: "destructive" }); return; }
+    const { error } = await supabase.from("discount_vouchers").insert({
+      code: dvCode.trim().toUpperCase(),
+      discount_amount: amount,
+      max_uses: parseInt(dvMaxUses) || 10,
+      expires_at: dvExpiry ? new Date(dvExpiry).toISOString() : null,
+    } as any);
+    if (error) { toast({ title: "Gagal buat voucher (kode mungkin sudah ada)", variant: "destructive" }); return; }
+    toast({ title: `Voucher diskon ${dvCode.toUpperCase()} berhasil dibuat! 🏷️` });
+    setDvCode(""); setDvAmount(""); setDvMaxUses("10"); setDvExpiry("");
+    fetchDiscountVouchers();
+  }
+
+  async function toggleDiscountVoucher(v: DiscountVoucher) {
+    await supabase.from("discount_vouchers").update({ is_active: !v.is_active } as any).eq("id", v.id);
+    toast({ title: v.is_active ? "Voucher dinonaktifkan" : "Voucher diaktifkan" });
+    fetchDiscountVouchers();
+  }
+
+  async function deleteDiscountVoucher(id: string) {
+    await supabase.from("discount_vouchers").delete().eq("id", id);
+    toast({ title: "Voucher dihapus" });
+    fetchDiscountVouchers();
+  }
+
+  async function sendDiscountVoucherNotif(v: DiscountVoucher) {
+    const message = `🏷️ Kode diskon: ${v.code}\nDiskon: Rp${v.discount_amount.toLocaleString()}\n${v.expires_at ? `Berlaku sampai: ${new Date(v.expires_at).toLocaleDateString("id-ID")}` : "Tidak ada batas waktu"}\nMasukkan kode saat checkout!`;
+    if (dvSendTarget === "all") {
+      const inserts = userBalances.map(u => ({
+        visitor_id: u.visitor_id, title: "Voucher Diskon Baru! 🏷️", message, type: "discount_voucher",
+      }));
+      if (inserts.length === 0) { toast({ title: "Tidak ada user", variant: "destructive" }); return; }
+      await supabase.from("notifications").insert(inserts as any);
+      toast({ title: `Voucher dikirim ke ${inserts.length} user! 📢` });
+    } else {
+      await supabase.from("notifications").insert({
+        visitor_id: dvSendTarget, title: "Voucher Diskon Baru! 🏷️", message, type: "discount_voucher",
+      } as any);
+      toast({ title: "Voucher dikirim! 📢" });
+    }
+  }
+
+  async function generatePinResetToken() {
+    if (!pinResetTarget) { toast({ title: "Pilih user", variant: "destructive" }); return; }
+    const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+    const token = Array.from({ length: 8 }, () => chars[Math.floor(Math.random() * chars.length)]).join("");
+    const { error } = await supabase.from("pin_reset_tokens").insert({
+      visitor_id: pinResetTarget, token,
+    } as any);
+    if (error) { toast({ title: "Gagal buat token", variant: "destructive" }); return; }
+    setGeneratedResetToken(token);
+    // Notify user
+    await supabase.from("notifications").insert({
+      visitor_id: pinResetTarget, title: "Token Reset PIN 🔑", message: `Token reset PIN Anda: ${token}\nGunakan untuk membuat PIN baru.`, type: "pin_reset",
+    } as any);
+    toast({ title: `Token reset dibuat: ${token}` });
+  }
 
   async function fetchDeposits() {
     const { data } = await supabase.from("deposits").select("*").order("created_at", { ascending: false });
@@ -789,6 +872,8 @@ const AdminDashboard = () => {
           { key: "claims" as AdminTab, icon: Clock, label: "Klaim" },
           { key: "saldo" as AdminTab, icon: Wallet, label: "Saldo" },
           { key: "deposit" as AdminTab, icon: ArrowUpCircle, label: "Deposit" },
+          { key: "diskon" as AdminTab, icon: Tag, label: "Diskon" },
+          { key: "pin" as AdminTab, icon: Lock, label: "PIN" },
           { key: "tickets" as AdminTab, icon: AlertCircle, label: "Tiket" },
           { key: "chats" as AdminTab, icon: MessageCircle, label: "Chat" },
           { key: "notif" as AdminTab, icon: Bell, label: "Notif" },
@@ -1333,6 +1418,99 @@ const AdminDashboard = () => {
               );
             })}
             {filteredDeposits.length === 0 && <p className="text-center text-sm text-muted-foreground py-8">Belum ada deposit yang cocok</p>}
+          </>
+        )}
+
+        {tab === "diskon" && (
+          <>
+            <Card>
+              <CardHeader><CardTitle className="text-base flex items-center gap-2"><Tag className="w-5 h-5 text-primary" /> Buat Voucher Diskon</CardTitle></CardHeader>
+              <CardContent className="space-y-3">
+                <Input placeholder="Kode voucher (misal: DISKON10K)" value={dvCode} onChange={e => setDvCode(e.target.value.toUpperCase())} className="font-mono" />
+                <Input type="number" placeholder="Nominal diskon (Rp)" value={dvAmount} onChange={e => setDvAmount(e.target.value)} />
+                <Input type="number" placeholder="Maks pemakaian" value={dvMaxUses} onChange={e => setDvMaxUses(e.target.value)} />
+                <div>
+                  <label className="text-xs text-muted-foreground">Expired (opsional)</label>
+                  <Input type="date" value={dvExpiry} onChange={e => setDvExpiry(e.target.value)} />
+                </div>
+                <Button className="w-full gap-2" onClick={createDiscountVoucher} disabled={!dvCode.trim() || !dvAmount}>
+                  <Tag className="w-4 h-4" /> Buat Voucher Diskon
+                </Button>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader><CardTitle className="text-base">Kirim Voucher ke User</CardTitle></CardHeader>
+              <CardContent className="space-y-3">
+                <select className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" value={dvSendTarget} onChange={e => setDvSendTarget(e.target.value)}>
+                  <option value="all">📢 Semua User ({userBalances.length})</option>
+                  {userBalances.map(u => <option key={u.id} value={u.visitor_id}>{u.username} ({u.phone})</option>)}
+                </select>
+                {discountVouchers.filter(v => v.is_active).map(v => (
+                  <div key={v.id} className="flex items-center justify-between bg-muted/50 rounded-lg p-2">
+                    <span className="font-mono text-xs font-bold">{v.code} (-Rp{v.discount_amount.toLocaleString()})</span>
+                    <Button size="sm" variant="outline" className="text-xs gap-1 h-7" onClick={() => sendDiscountVoucherNotif(v)}>
+                      <Bell className="w-3 h-3" /> Kirim
+                    </Button>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+            <h3 className="font-bold text-sm">Daftar Voucher Diskon ({discountVouchers.length})</h3>
+            {discountVouchers.map(v => (
+              <Card key={v.id} className={!v.is_active ? "opacity-60" : ""}>
+                <CardContent className="p-3 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="font-mono font-bold text-sm">{v.code}</p>
+                      <p className="text-xs text-primary font-bold">-Rp{v.discount_amount.toLocaleString()}</p>
+                    </div>
+                    <div className="flex gap-1">
+                      <Button size="sm" variant="outline" className="h-7 text-[10px]" onClick={() => toggleDiscountVoucher(v)}>{v.is_active ? "Nonaktif" : "Aktifkan"}</Button>
+                      <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => copyText(v.code)}><Copy className="w-3 h-3" /></Button>
+                      <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => deleteDiscountVoucher(v.id)}><Trash2 className="w-3 h-3 text-destructive" /></Button>
+                    </div>
+                  </div>
+                  <div className="text-[10px] text-muted-foreground flex gap-3">
+                    <span>Terpakai: {v.used_count}/{v.max_uses}</span>
+                    <span>{v.expires_at ? `Exp: ${new Date(v.expires_at).toLocaleDateString("id-ID")}` : "Tanpa batas"}</span>
+                    <span className={v.is_active ? "text-accent" : "text-destructive"}>{v.is_active ? "✓ Aktif" : "✗ Nonaktif"}</span>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+            {discountVouchers.length === 0 && <p className="text-center text-sm text-muted-foreground py-8">Belum ada voucher diskon</p>}
+          </>
+        )}
+
+        {tab === "pin" && (
+          <>
+            <Card>
+              <CardHeader><CardTitle className="text-base flex items-center gap-2"><Key className="w-5 h-5 text-primary" /> Buat Token Reset PIN</CardTitle></CardHeader>
+              <CardContent className="space-y-3">
+                <select className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" value={pinResetTarget} onChange={e => setPinResetTarget(e.target.value)}>
+                  <option value="">Pilih User</option>
+                  {userBalances.map(u => <option key={u.id} value={u.visitor_id}>{u.username} ({u.phone})</option>)}
+                </select>
+                <Button className="w-full gap-2" onClick={generatePinResetToken} disabled={!pinResetTarget}>
+                  <Key className="w-4 h-4" /> Generate Token Reset
+                </Button>
+                {generatedResetToken && (
+                  <div className="bg-accent/10 border border-accent/20 rounded-lg p-3 text-center space-y-2">
+                    <p className="text-xs text-muted-foreground">Token berhasil dibuat:</p>
+                    <p className="font-mono text-xl font-extrabold text-primary tracking-[0.2em]">{generatedResetToken}</p>
+                    <Button size="sm" variant="outline" className="gap-1" onClick={() => copyText(generatedResetToken)}><Copy className="w-3 h-3" /> Salin Token</Button>
+                    <p className="text-[10px] text-muted-foreground">Kirimkan token ini ke user. Berlaku 24 jam.</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+            <div className="rounded-xl bg-muted/50 border border-border p-3 text-xs text-muted-foreground space-y-1">
+              <p className="font-bold text-foreground">ℹ️ Info PIN</p>
+              <p>• User membuat PIN 4-6 digit di tab Saldo</p>
+              <p>• PIN diperlukan saat pembelian dengan saldo</p>
+              <p>• Jika user lupa PIN, buat token reset di sini</p>
+              <p>• Token reset berlaku 24 jam</p>
+            </div>
           </>
         )}
 

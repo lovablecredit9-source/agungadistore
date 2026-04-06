@@ -122,6 +122,39 @@ export type Database = {
         }
         Relationships: []
       }
+      discount_vouchers: {
+        Row: {
+          code: string
+          created_at: string
+          discount_amount: number
+          expires_at: string | null
+          id: string
+          is_active: boolean
+          max_uses: number
+          used_count: number
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          discount_amount?: number
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          max_uses?: number
+          used_count?: number
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          discount_amount?: number
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          max_uses?: number
+          used_count?: number
+        }
+        Relationships: []
+      }
       liked_products: {
         Row: {
           created_at: string
@@ -180,6 +213,33 @@ export type Database = {
           related_id?: string | null
           title?: string
           type?: string
+          visitor_id?: string
+        }
+        Relationships: []
+      }
+      pin_reset_tokens: {
+        Row: {
+          created_at: string
+          expires_at: string
+          id: string
+          is_used: boolean
+          token: string
+          visitor_id: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at?: string
+          id?: string
+          is_used?: boolean
+          token: string
+          visitor_id: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string
+          id?: string
+          is_used?: boolean
+          token?: string
           visitor_id?: string
         }
         Relationships: []
@@ -556,6 +616,30 @@ export type Database = {
           phone?: string
           updated_at?: string
           username?: string
+          visitor_id?: string
+        }
+        Relationships: []
+      }
+      user_pins: {
+        Row: {
+          created_at: string
+          id: string
+          pin_hash: string
+          updated_at: string
+          visitor_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          pin_hash: string
+          updated_at?: string
+          visitor_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          pin_hash?: string
+          updated_at?: string
           visitor_id?: string
         }
         Relationships: []
