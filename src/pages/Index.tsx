@@ -593,13 +593,39 @@ const Index = () => {
     setCart(prev => prev.filter(item => item.product.id !== productId));
   }
 
-  async function buyWithSaldo(product: Product, quantity = 1) {
+  function attemptBuy(product: Product, quantity = 1) {
+    const dc = discountCode.trim();
+    if (hasPin) {
+      setPendingPurchase({ product, quantity, discountCode: dc });
+      setPinVerifyInput("");
+      setShowPinVerify(true);
+      setShowBuySaldo(false);
+    } else {
+      buyWithSaldo(product, quantity, dc);
+    }
+  }
+
+  async function confirmPinAndBuy() {
+    if (!pendingPurchase) return;
+    const { data } = await supabase.functions.invoke("manage-pin", {
+      body: { action: "verify", visitorId, pin: pinVerifyInput },
+    });
+    if (!data?.valid) {
+      toast({ title: "PIN salah", variant: "destructive" }); return;
+    }
+    setShowPinVerify(false);
+    buyWithSaldo(pendingPurchase.product, pendingPurchase.quantity, pendingPurchase.discountCode);
+    setPendingPurchase(null);
+    setPinVerifyInput("");
+  }
+
+  async function buyWithSaldo(product: Product, quantity = 1, voucherCode = "") {
     const totalPrice = product.price * quantity;
     if (!userBalance || userBalance.balance < totalPrice) {
       toast({ title: "Saldo tidak cukup", variant: "destructive" }); return;
     }
     const { data, error } = await supabase.functions.invoke("purchase-with-balance", {
-      body: { visitorId, productId: product.id, quantity },
+      body: { visitorId, productId: product.id, quantity, discountCode: voucherCode || undefined, pin: undefined },
     });
 
     if (error || data?.error) {
@@ -613,6 +639,8 @@ const Index = () => {
     setBuyQuantity(1);
     setSelectedProduct(null);
     removeFromCart(product.id);
+    setDiscountCode("");
+    setDiscountInfo(null);
     setPurchaseSuccess(purchaseData);
     fetchUserBalance();
     const codes = purchaseData.tokens.map(t => t.token_code).join(", ");
