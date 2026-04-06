@@ -248,6 +248,12 @@ const PlaylistTab = () => {
 
   const [activeView, setActiveView] = useState<"playlist" | "myplaylists" | "storage">("playlist");
 
+  // Lyrics state
+  const [allLyrics, setAllLyrics] = useState<LyricLine[]>([]);
+  const [showLyrics, setShowLyrics] = useState(false);
+  const [termsOpen, setTermsOpen] = useState(false);
+  const lyricsContainerRef = useRef<HTMLDivElement>(null);
+
   // Current playing song list (filtered by playlist or all)
   const displaySongs = viewingPlaylist
     ? songs.filter(s => playlistItems.some(pi => pi.playlist_id === viewingPlaylist.id && pi.song_id === s.id))
