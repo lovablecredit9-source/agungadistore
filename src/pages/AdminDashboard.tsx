@@ -219,6 +219,27 @@ const AdminDashboard = () => {
   const [pinResetTarget, setPinResetTarget] = useState("");
   const [generatedResetToken, setGeneratedResetToken] = useState("");
 
+  // Music Storage Vouchers
+  interface MusicStorageVoucher {
+    id: string; code: string; storage_mb: number; max_uses: number;
+    used_count: number; is_active: boolean; expires_at: string | null; created_at: string;
+  }
+  interface MusicDiscountVoucher {
+    id: string; code: string; discount_amount: number; max_uses: number;
+    used_count: number; is_active: boolean; expires_at: string | null; created_at: string;
+  }
+  const [musicStorageVouchers, setMusicStorageVouchers] = useState<MusicStorageVoucher[]>([]);
+  const [musicDiscountVouchers, setMusicDiscountVouchers] = useState<MusicDiscountVoucher[]>([]);
+  const [msvStorageMb, setMsvStorageMb] = useState("");
+  const [msvMaxUses, setMsvMaxUses] = useState("1");
+  const [msvExpiryDate, setMsvExpiryDate] = useState("");
+  const [msvExpiryTime, setMsvExpiryTime] = useState("");
+  const [mdvCode, setMdvCode] = useState("");
+  const [mdvAmount, setMdvAmount] = useState("");
+  const [mdvMaxUses, setMdvMaxUses] = useState("10");
+  const [mdvExpiryDate, setMdvExpiryDate] = useState("");
+  const [mdvExpiryTime, setMdvExpiryTime] = useState("");
+
   const navigate = useNavigate();
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement | null>(null);
