@@ -1,6 +1,6 @@
 import { assertEquals, assertMatch } from "https://deno.land/std@0.224.0/assert/mod.ts";
 
-import { alignLyricsToTranscript, sanitizeLyricsText } from "./index.ts";
+import { alignLyricsToTranscript, applyOnsetCompensationToLrc, sanitizeLyricsText } from "./index.ts";
 
 Deno.test("sanitizeLyricsText removes existing LRC timestamps", () => {
   const result = sanitizeLyricsText("[00:12.00]Dan terjadi lagi\n[00:15.50]Kisah lama yang terulang kembali");
@@ -59,4 +59,16 @@ Deno.test("alignLyricsToTranscript fills unmatched repeated lines progressively"
   assertMatch(result[3], /^\[01:44\.20\]Aku ingin$/);
   assertMatch(result[4], /^\[01:47\.80\]Kau pahami$/);
   assertMatch(result[5], /^\[01:51\.50\]Cintamu bukanlah dia$/);
+});
+
+Deno.test("applyOnsetCompensationToLrc nudges valid timestamps slightly earlier without reordering", () => {
+  const result = applyOnsetCompensationToLrc([
+    "[00:10.00]Dan terjadi lagi",
+    "[00:14.00]Kisah lama yang terulang kembali",
+    "[00:18.00]Kau terluka lagi",
+  ].join("\n")).split("\n");
+
+  assertMatch(result[0], /^\[00:09\.(8\d|9\d)\]Dan terjadi lagi$/);
+  assertMatch(result[1], /^\[00:13\.(8\d|9\d)\]Kisah lama yang terulang kembali$/);
+  assertMatch(result[2], /^\[00:17\.(8\d|9\d|9\d)\]Kau terluka lagi$/);
 });
