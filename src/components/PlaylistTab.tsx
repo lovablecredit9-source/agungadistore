@@ -5,13 +5,17 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import {
   Music, Play, Pause, SkipBack, SkipForward, Download, Volume2, VolumeX,
-  Repeat, Shuffle, Loader2, HardDrive, Globe, CheckCircle2, Trash2
+  Repeat, Shuffle, Loader2, HardDrive, Globe, CheckCircle2, Trash2,
+  WifiOff, Wifi, Crown, Zap
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Slider } from "@/components/ui/slider";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter
+} from "@/components/ui/dialog";
 
 interface Song {
   id: string;
@@ -24,8 +28,20 @@ interface Song {
   created_at: string;
 }
 
+interface StorageTier {
+  name: string;
+  maxBytes: number;
+  pricePerMonth: number;
+}
+
+const STORAGE_TIERS: StorageTier[] = [
+  { name: "Free", maxBytes: 2 * 1024 * 1024 * 1024, pricePerMonth: 0 },
+  { name: "Pro 10GB", maxBytes: 10 * 1024 * 1024 * 1024, pricePerMonth: 10000 },
+];
+
 const CACHE_NAME = "playlist-offline-v1";
-const MAX_DOWNLOAD_BYTES = 2 * 1024 * 1024 * 1024; // 2GB
+const META_CACHE_KEY = "/offline-music-meta";
+const TIER_STORAGE_KEY = "playlist-storage-tier";
 
 function formatTime(sec: number) {
   const m = Math.floor(sec / 60);
@@ -46,7 +62,24 @@ function formatStorageSize(bytes: number) {
   return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`;
 }
 
-// Cache helper functions
+function formatCurrency(amount: number) {
+  return new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", minimumFractionDigits: 0 }).format(amount);
+}
+
+function getCurrentTier(): StorageTier {
+  try {
+    const idx = parseInt(localStorage.getItem(TIER_STORAGE_KEY) || "0", 10);
+    return STORAGE_TIERS[idx] || STORAGE_TIERS[0];
+  } catch {
+    return STORAGE_TIERS[0];
+  }
+}
+
+function setCurrentTierIndex(idx: number) {
+  localStorage.setItem(TIER_STORAGE_KEY, String(idx));
+}
+
+// Cache helpers
 async function getCachedSongIds(): Promise<Set<string>> {
   try {
     const cache = await caches.open(CACHE_NAME);
@@ -79,6 +112,8 @@ async function cacheSong(song: Song): Promise<boolean> {
       },
     });
     await cache.put(cacheUrl, cacheResp);
+    // Also save metadata
+    await saveSongMeta(song);
     return true;
   } catch {
     return false;
@@ -89,6 +124,10 @@ async function removeCachedSong(songId: string): Promise<void> {
   try {
     const cache = await caches.open(CACHE_NAME);
     await cache.delete(`/offline-music?songId=${songId}`);
+    // Remove from meta
+    const metas = await loadSongMetas();
+    const filtered = metas.filter(m => m.id !== songId);
+    await saveAllSongMetas(filtered);
   } catch {}
 }
 
@@ -107,6 +146,52 @@ async function getCachedStorageUsed(songs: Song[], cachedIds: Set<string>): Prom
   return songs.filter(s => cachedIds.has(s.id)).reduce((sum, s) => sum + (s.file_size || 0), 0);
 }
 
+// Song metadata cache for offline song list
+async function saveSongMeta(song: Song): Promise<void> {
+  try {
+    const existing = await loadSongMetas();
+    const filtered = existing.filter(m => m.id !== song.id);
+    filtered.push(song);
+    await saveAllSongMetas(filtered);
+  } catch {}
+}
+
+async function saveAllSongMetas(songs: Song[]): Promise<void> {
+  try {
+    const cache = await caches.open(CACHE_NAME);
+    const resp = new Response(JSON.stringify(songs), {
+      headers: { "Content-Type": "application/json" },
+    });
+    await cache.put(META_CACHE_KEY, resp);
+  } catch {}
+}
+
+async function loadSongMetas(): Promise<Song[]> {
+  try {
+    const cache = await caches.open(CACHE_NAME);
+    const resp = await cache.match(META_CACHE_KEY);
+    if (!resp) return [];
+    return await resp.json();
+  } catch {
+    return [];
+  }
+}
+
+function useOnlineStatus() {
+  const [online, setOnline] = useState(navigator.onLine);
+  useEffect(() => {
+    const on = () => setOnline(true);
+    const off = () => setOnline(false);
+    window.addEventListener("online", on);
+    window.addEventListener("offline", off);
+    return () => {
+      window.removeEventListener("online", on);
+      window.removeEventListener("offline", off);
+    };
+  }, []);
+  return online;
+}
+
 const PlaylistTab = () => {
   const [songs, setSongs] = useState<Song[]>([]);
   const [loading, setLoading] = useState(true);
@@ -121,21 +206,38 @@ const PlaylistTab = () => {
   const [downloading, setDownloading] = useState<string | null>(null);
   const [cachedIds, setCachedIds] = useState<Set<string>>(new Set());
   const [downloadedStorage, setDownloadedStorage] = useState(0);
+  const [tier, setTier] = useState<StorageTier>(getCurrentTier());
+  const [upgradeOpen, setUpgradeOpen] = useState(false);
+  const [upgrading, setUpgrading] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const { toast } = useToast();
+  const isOnline = useOnlineStatus();
 
   useEffect(() => { fetchSongs(); }, []);
 
   async function fetchSongs() {
     setLoading(true);
-    const { data } = await supabase.from("playlist_songs").select("*").order("created_at", { ascending: false });
-    const songList = (data as Song[]) || [];
-    setSongs(songList);
-    // Load cached ids
-    const ids = await getCachedSongIds();
-    setCachedIds(ids);
-    const used = await getCachedStorageUsed(songList, ids);
-    setDownloadedStorage(used);
+    
+    if (navigator.onLine) {
+      const { data } = await supabase.from("playlist_songs").select("*").order("created_at", { ascending: false });
+      const songList = (data as Song[]) || [];
+      setSongs(songList);
+      const ids = await getCachedSongIds();
+      setCachedIds(ids);
+      const used = await getCachedStorageUsed(songList, ids);
+      setDownloadedStorage(used);
+    } else {
+      // Offline: load cached song metadata
+      const cachedMetas = await loadSongMetas();
+      const ids = await getCachedSongIds();
+      // Only show songs that are actually cached
+      const offlineSongs = cachedMetas.filter(s => ids.has(s.id));
+      setSongs(offlineSongs);
+      setCachedIds(ids);
+      const used = offlineSongs.reduce((sum, s) => sum + (s.file_size || 0), 0);
+      setDownloadedStorage(used);
+    }
+    
     setLoading(false);
   }
 
@@ -161,6 +263,9 @@ const PlaylistTab = () => {
     const cachedBlob = await getCachedBlob(song.id);
     if (cachedBlob) {
       audioUrl = URL.createObjectURL(cachedBlob);
+    } else if (!navigator.onLine) {
+      toast({ title: "Tidak tersedia offline", description: "Lagu ini belum disimpan offline", variant: "destructive" });
+      return;
     }
 
     const audio = new Audio(audioUrl);
@@ -233,6 +338,10 @@ const PlaylistTab = () => {
 
   // Download to device storage (file save)
   async function downloadToDevice(song: Song) {
+    if (!isOnline && !cachedIds.has(song.id)) {
+      toast({ title: "Tidak bisa download", description: "Kamu sedang offline. Simpan offline dulu saat online.", variant: "destructive" });
+      return;
+    }
     setDownloading(song.id);
     try {
       let blob: Blob | null = await getCachedBlob(song.id);
@@ -257,13 +366,17 @@ const PlaylistTab = () => {
 
   // Cache for offline playback
   async function downloadToCache(song: Song) {
+    if (!isOnline) {
+      toast({ title: "Tidak bisa simpan offline", description: "Kamu sedang offline. Hubungkan internet dulu.", variant: "destructive" });
+      return;
+    }
     if (cachedIds.has(song.id)) {
       toast({ title: "Sudah tersimpan offline ✅", description: song.title });
       return;
     }
     const newUsed = downloadedStorage + (song.file_size || 0);
-    if (newUsed > MAX_DOWNLOAD_BYTES) {
-      toast({ title: "Penyimpanan penuh!", description: "Hapus beberapa lagu offline untuk lanjut", variant: "destructive" });
+    if (newUsed > tier.maxBytes) {
+      toast({ title: "Penyimpanan penuh!", description: `Kuota ${formatStorageSize(tier.maxBytes)} habis. Upgrade atau hapus lagu offline.`, variant: "destructive" });
       return;
     }
     setDownloading(song.id);
@@ -284,6 +397,55 @@ const PlaylistTab = () => {
     await refreshCacheInfo();
   }
 
+  // Upgrade storage tier
+  async function handleUpgrade() {
+    const targetTier = STORAGE_TIERS[1];
+    setUpgrading(true);
+    try {
+      // Get visitor_id
+      const { getVisitorId } = await import("@/lib/visitor-id");
+      const visitorId = getVisitorId();
+
+      // Check balance
+      const { data: balData } = await supabase
+        .from("user_balances")
+        .select("balance")
+        .eq("visitor_id", visitorId)
+        .maybeSingle();
+
+      const currentBalance = balData?.balance || 0;
+      if (currentBalance < targetTier.pricePerMonth) {
+        toast({ title: "Saldo tidak cukup", description: `Butuh ${formatCurrency(targetTier.pricePerMonth)}, saldo kamu ${formatCurrency(currentBalance)}`, variant: "destructive" });
+        setUpgrading(false);
+        return;
+      }
+
+      // Deduct balance via edge function
+      const { error } = await supabase.functions.invoke("purchase-with-balance", {
+        body: {
+          visitor_id: visitorId,
+          product_id: null,
+          quantity: 1,
+          total_price: targetTier.pricePerMonth,
+          pin: null,
+          skip_pin: true,
+          description: `Upgrade storage musik ke ${targetTier.name}`,
+        },
+      });
+
+      if (error) throw error;
+
+      // Save tier locally
+      setCurrentTierIndex(1);
+      setTier(targetTier);
+      setUpgradeOpen(false);
+      toast({ title: "Upgrade berhasil! 🎉", description: `Sekarang kamu punya ${formatStorageSize(targetTier.maxBytes)} penyimpanan offline` });
+    } catch (err: any) {
+      toast({ title: "Gagal upgrade", description: err?.message || "Coba lagi nanti", variant: "destructive" });
+    }
+    setUpgrading(false);
+  }
+
   // Cleanup
   useEffect(() => {
     return () => {
@@ -291,10 +453,11 @@ const PlaylistTab = () => {
     };
   }, []);
 
-  const storagePercent = Math.min((downloadedStorage / MAX_DOWNLOAD_BYTES) * 100, 100);
+  const storagePercent = Math.min((downloadedStorage / tier.maxBytes) * 100, 100);
   const isNearLimit = storagePercent > 80;
   const isAtLimit = storagePercent > 95;
   const cachedCount = cachedIds.size;
+  const isFreeeTier = tier.pricePerMonth === 0;
 
   if (loading) {
     return (
@@ -305,7 +468,7 @@ const PlaylistTab = () => {
     );
   }
 
-  if (songs.length === 0) {
+  if (songs.length === 0 && isOnline) {
     return (
       <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
         <Music className="w-16 h-16 mx-auto mb-3 opacity-20" />
@@ -315,15 +478,54 @@ const PlaylistTab = () => {
     );
   }
 
+  if (songs.length === 0 && !isOnline) {
+    return (
+      <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
+        <WifiOff className="w-16 h-16 mx-auto mb-3 opacity-20" />
+        <p className="text-sm font-medium">Kamu sedang offline</p>
+        <p className="text-xs mt-1">Belum ada lagu yang disimpan offline.</p>
+        <p className="text-xs">Hubungkan internet & simpan lagu offline untuk diputar kapan saja.</p>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-4">
-      <h2 className="text-lg font-extrabold flex items-center gap-2">
-        <Music className="w-5 h-5 text-primary" /> Playlist Musik
-      </h2>
+      <div className="flex items-center justify-between">
+        <h2 className="text-lg font-extrabold flex items-center gap-2">
+          <Music className="w-5 h-5 text-primary" /> Playlist Musik
+        </h2>
+        {/* Online/Offline indicator */}
+        <div className={`flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full ${isOnline ? "bg-accent/20 text-accent" : "bg-destructive/20 text-destructive"}`}>
+          {isOnline ? <Wifi className="w-3 h-3" /> : <WifiOff className="w-3 h-3" />}
+          {isOnline ? "Online" : "Offline"}
+        </div>
+      </div>
+
+      {/* Offline notice */}
+      {!isOnline && (
+        <Card className="border-destructive/30 bg-destructive/5">
+          <CardContent className="p-3 flex items-center gap-2 text-xs text-destructive">
+            <WifiOff className="w-4 h-4 shrink-0" />
+            <span>Mode offline — hanya lagu yang sudah disimpan offline yang bisa diputar.</span>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Download Storage Card */}
       <Card className={`border-primary/20 ${isAtLimit ? "border-destructive/50" : isNearLimit ? "border-yellow-500/50" : ""}`}>
         <CardContent className="p-4 space-y-3">
+          <div className="flex items-center justify-between mb-1">
+            <div className="flex items-center gap-1.5">
+              <HardDrive className="w-4 h-4 text-primary" />
+              <span className="text-xs font-bold">Penyimpanan Offline</span>
+            </div>
+            <div className={`flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full ${isFreeeTier ? "bg-muted text-muted-foreground" : "bg-primary/10 text-primary"}`}>
+              {isFreeeTier ? <Globe className="w-3 h-3" /> : <Crown className="w-3 h-3" />}
+              {tier.name}
+            </div>
+          </div>
+
           <div className="grid grid-cols-3 gap-2">
             <div className="rounded-xl bg-background/70 p-2.5 border border-border/60 text-center">
               <p className="text-[10px] text-muted-foreground">Total</p>
@@ -344,16 +546,30 @@ const PlaylistTab = () => {
               </p>
             </div>
           </div>
+
           <div className="space-y-1">
             <Progress value={storagePercent} className={`h-2 ${isAtLimit ? "[&>div]:bg-destructive" : isNearLimit ? "[&>div]:bg-yellow-500" : ""}`} />
             <div className="flex justify-between text-[10px] text-muted-foreground">
               <span>{formatStorageSize(downloadedStorage)}</span>
-              <span>2 GB</span>
+              <span>{formatStorageSize(tier.maxBytes)}</span>
             </div>
           </div>
+
+          {isFreeeTier && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="w-full gap-2 text-xs border-primary/30 hover:bg-primary/10"
+              onClick={() => setUpgradeOpen(true)}
+            >
+              <Zap className="w-3.5 h-3.5 text-primary" />
+              Upgrade ke 10GB — {formatCurrency(10000)}/bulan
+            </Button>
+          )}
+
           <p className="text-[10px] text-muted-foreground">
             {isAtLimit
-              ? "⚠️ Penyimpanan download penuh! Hapus lagu offline."
+              ? "⚠️ Penyimpanan penuh! Hapus lagu offline atau upgrade."
               : `Simpan lagu ke offline agar bisa diputar tanpa internet.`}
           </p>
         </CardContent>
@@ -380,7 +596,6 @@ const PlaylistTab = () => {
               </div>
             </div>
 
-            {/* Progress */}
             <div className="space-y-1">
               <Slider value={[currentTime]} max={duration || 100} step={1} onValueChange={seek} className="cursor-pointer" />
               <div className="flex justify-between text-[10px] text-muted-foreground">
@@ -389,7 +604,6 @@ const PlaylistTab = () => {
               </div>
             </div>
 
-            {/* Controls */}
             <div className="flex items-center justify-center gap-2">
               <button onClick={() => setShuffle(!shuffle)} className={`p-2 rounded-full transition-colors ${shuffle ? "text-primary bg-primary/10" : "text-muted-foreground hover:text-foreground"}`}>
                 <Shuffle className="w-4 h-4" />
@@ -408,7 +622,6 @@ const PlaylistTab = () => {
               </button>
             </div>
 
-            {/* Volume */}
             <div className="flex items-center gap-2">
               <button onClick={toggleMute} className="text-muted-foreground hover:text-foreground">
                 {muted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
@@ -453,20 +666,35 @@ const PlaylistTab = () => {
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="min-w-[180px]">
-                    <DropdownMenuItem onClick={() => downloadToDevice(song)} className="gap-2 cursor-pointer">
+                    <DropdownMenuItem
+                      onClick={() => downloadToDevice(song)}
+                      className="gap-2 cursor-pointer"
+                      disabled={!isOnline && !isCached}
+                    >
                       <HardDrive className="w-4 h-4" /> Simpan ke HP
+                      {!isOnline && !isCached && <WifiOff className="w-3 h-3 ml-auto text-destructive" />}
                     </DropdownMenuItem>
                     {!isCached ? (
-                      <DropdownMenuItem onClick={() => downloadToCache(song)} className="gap-2 cursor-pointer">
+                      <DropdownMenuItem
+                        onClick={() => downloadToCache(song)}
+                        className="gap-2 cursor-pointer"
+                        disabled={!isOnline}
+                      >
                         <Download className="w-4 h-4" /> Simpan Offline
+                        {!isOnline && <WifiOff className="w-3 h-3 ml-auto text-destructive" />}
                       </DropdownMenuItem>
                     ) : (
                       <DropdownMenuItem onClick={() => removeFromCache(song)} className="gap-2 cursor-pointer text-destructive focus:text-destructive">
                         <Trash2 className="w-4 h-4" /> Hapus dari Offline
                       </DropdownMenuItem>
                     )}
-                    <DropdownMenuItem onClick={() => { window.open(song.file_url, "_blank"); }} className="gap-2 cursor-pointer">
+                    <DropdownMenuItem
+                      onClick={() => { window.open(song.file_url, "_blank"); }}
+                      className="gap-2 cursor-pointer"
+                      disabled={!isOnline}
+                    >
                       <Globe className="w-4 h-4" /> Buka di Browser
+                      {!isOnline && <WifiOff className="w-3 h-3 ml-auto text-destructive" />}
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
@@ -475,6 +703,54 @@ const PlaylistTab = () => {
           );
         })}
       </div>
+
+      {/* Upgrade Dialog */}
+      <Dialog open={upgradeOpen} onOpenChange={setUpgradeOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Crown className="w-5 h-5 text-primary" /> Upgrade Penyimpanan
+            </DialogTitle>
+            <DialogDescription>
+              Tingkatkan kuota penyimpanan offline musik kamu.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            {/* Current */}
+            <div className="rounded-xl border border-border p-3 bg-muted/30">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-bold">Free</p>
+                  <p className="text-xs text-muted-foreground">Kuota: 2 GB</p>
+                </div>
+                <span className="text-xs bg-muted px-2 py-0.5 rounded-full">Saat ini</span>
+              </div>
+            </div>
+            {/* Target */}
+            <div className="rounded-xl border-2 border-primary p-3 bg-primary/5">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-bold flex items-center gap-1">
+                    <Crown className="w-4 h-4 text-primary" /> Pro 10GB
+                  </p>
+                  <p className="text-xs text-muted-foreground">Kuota: 10 GB</p>
+                </div>
+                <span className="text-sm font-extrabold text-primary">{formatCurrency(10000)}/bln</span>
+              </div>
+            </div>
+            <p className="text-[11px] text-muted-foreground">
+              Saldo kamu akan dipotong {formatCurrency(10000)} untuk 1 bulan penyimpanan Pro.
+            </p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setUpgradeOpen(false)}>Batal</Button>
+            <Button onClick={handleUpgrade} disabled={upgrading || !isOnline} className="gap-2">
+              {upgrading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Zap className="w-4 h-4" />}
+              {upgrading ? "Memproses..." : "Upgrade Sekarang"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
