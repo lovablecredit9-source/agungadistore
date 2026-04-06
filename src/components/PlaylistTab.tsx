@@ -368,11 +368,14 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay }: PlaylistTabProps) => {
     return idx;
   }, [currentSongLyrics, currentTime]);
 
-  // Auto-scroll lyrics
+  // Auto-scroll lyrics (inline + fullscreen)
   useEffect(() => {
-    if (activeLyricIndex < 0 || !lyricsContainerRef.current) return;
-    const el = lyricsContainerRef.current.querySelector(`[data-lyric-index="${activeLyricIndex}"]`);
-    if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+    if (activeLyricIndex < 0) return;
+    [lyricsContainerRef.current, fullPlayerLyricsRef.current].forEach(container => {
+      if (!container) return;
+      const el = container.querySelector(`[data-lyric-index="${activeLyricIndex}"]`);
+      if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+    });
   }, [activeLyricIndex]);
 
   const playSong = useCallback(async (index: number) => {
