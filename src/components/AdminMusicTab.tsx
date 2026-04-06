@@ -284,6 +284,34 @@ const AdminMusicTab = () => {
   }
 
   async function saveLyrics() {
+    if (!lyricsSong) return;
+    setSavingLyrics(true);
+    try {
+      await supabase.from("song_lyrics").delete().eq("song_id", lyricsSong.id);
+      const lines = lyricsText.split("\n").filter(l => l.trim());
+      const parsed: { song_id: string; time_seconds: number; text: string; line_order: number }[] = [];
+      lines.forEach((line, i) => {
+        const match = line.match(/^\[(\d{1,2}):(\d{2}(?:\.\d+)?)\](.*)$/);
+        if (match) {
+          const mins = parseInt(match[1]);
+          const secs = parseFloat(match[2]);
+          parsed.push({ song_id: lyricsSong.id, time_seconds: mins * 60 + secs, text: match[3].trim(), line_order: i });
+        } else {
+          parsed.push({ song_id: lyricsSong.id, time_seconds: 0, text: line.trim(), line_order: i });
+        }
+      });
+      if (parsed.length > 0) {
+        const { error } = await supabase.from("song_lyrics").insert(parsed);
+        if (error) throw error;
+      }
+      toast({ title: `${parsed.length} baris lirik disimpan` });
+      setLyricsDialogOpen(false);
+    } catch (err: any) {
+      toast({ title: "Gagal simpan lirik", description: err.message, variant: "destructive" });
+    }
+    setSavingLyrics(false);
+  }
+
   async function generateTimestampsAI() {
     if (!lyricsSong || !lyricsText.trim()) return;
     setGeneratingLyrics(true);
@@ -321,38 +349,6 @@ const AdminMusicTab = () => {
     };
     reader.readAsText(file);
     if (lrcFileRef.current) lrcFileRef.current.value = "";
-  }
-
-  async function saveLyricsOriginal() {
-    if (!lyricsSong) return;
-    setSavingLyrics(true);
-    try {
-      // Delete existing
-      await supabase.from("song_lyrics").delete().eq("song_id", lyricsSong.id);
-      // Parse LRC format
-      const lines = lyricsText.split("\n").filter(l => l.trim());
-      const parsed: { song_id: string; time_seconds: number; text: string; line_order: number }[] = [];
-      lines.forEach((line, i) => {
-        const match = line.match(/^\[(\d{1,2}):(\d{2}(?:\.\d+)?)\](.*)$/);
-        if (match) {
-          const mins = parseInt(match[1]);
-          const secs = parseFloat(match[2]);
-          parsed.push({ song_id: lyricsSong.id, time_seconds: mins * 60 + secs, text: match[3].trim(), line_order: i });
-        } else {
-          // Plain text without timestamp - assign order-based time (0)
-          parsed.push({ song_id: lyricsSong.id, time_seconds: 0, text: line.trim(), line_order: i });
-        }
-      });
-      if (parsed.length > 0) {
-        const { error } = await supabase.from("song_lyrics").insert(parsed);
-        if (error) throw error;
-      }
-      toast({ title: `${parsed.length} baris lirik disimpan` });
-      setLyricsDialogOpen(false);
-    } catch (err: any) {
-      toast({ title: "Gagal simpan lirik", description: err.message, variant: "destructive" });
-    }
-    setSavingLyrics(false);
   }
 
   return (
