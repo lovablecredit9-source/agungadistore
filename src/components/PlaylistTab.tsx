@@ -314,6 +314,29 @@ const PlaylistTab = () => {
 
   const currentSong = currentIndex >= 0 ? displaySongs[currentIndex] : null;
 
+  // Lyrics for current song
+  const currentSongLyrics = useMemo(() => {
+    if (!currentSong) return [];
+    return allLyrics.filter(l => l.song_id === currentSong.id).sort((a, b) => a.time_seconds - b.time_seconds);
+  }, [currentSong, allLyrics]);
+
+  const activeLyricIndex = useMemo(() => {
+    if (!currentSongLyrics.length) return -1;
+    let idx = -1;
+    for (let i = 0; i < currentSongLyrics.length; i++) {
+      if (currentSongLyrics[i].time_seconds <= currentTime) idx = i;
+      else break;
+    }
+    return idx;
+  }, [currentSongLyrics, currentTime]);
+
+  // Auto-scroll lyrics
+  useEffect(() => {
+    if (activeLyricIndex < 0 || !lyricsContainerRef.current || !showLyrics) return;
+    const el = lyricsContainerRef.current.querySelector(`[data-lyric-index="${activeLyricIndex}"]`);
+    if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+  }, [activeLyricIndex, showLyrics]);
+
   const playSong = useCallback(async (index: number) => {
     if (audioRef.current) audioRef.current.pause();
     const songList = viewingPlaylist
