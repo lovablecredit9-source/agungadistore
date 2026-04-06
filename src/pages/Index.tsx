@@ -2157,6 +2157,68 @@ const Index = () => {
         </div>
       </nav>
 
+      {/* Floating Cart Button */}
+      {cartCount > 0 && (
+        <button onClick={() => setShowCart(true)} className="fixed bottom-20 right-[4.5rem] z-50 w-12 h-12 rounded-full bg-accent text-accent-foreground shadow-xl flex items-center justify-center hover:scale-110 transition-transform">
+          <ShoppingCart className="w-6 h-6" />
+          <span className="absolute -top-1 -right-1 w-5 h-5 bg-destructive text-destructive-foreground text-[10px] font-bold rounded-full flex items-center justify-center">{cartCount}</span>
+        </button>
+      )}
+
+      {/* Cart Modal */}
+      {showCart && (
+        <div className="fixed inset-0 z-[80] bg-black/60 backdrop-blur-sm flex items-end justify-center" onClick={() => setShowCart(false)}>
+          <div className="bg-card w-full max-w-lg rounded-t-3xl max-h-[85vh] overflow-y-auto animate-in slide-in-from-bottom duration-300" onClick={e => e.stopPropagation()}>
+            <div className="p-5 space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="font-extrabold text-lg flex items-center gap-2"><ShoppingCart className="w-5 h-5 text-primary" /> Keranjang ({cartCount})</h3>
+                <button onClick={() => setShowCart(false)} className="w-8 h-8 rounded-full bg-muted flex items-center justify-center"><X className="w-4 h-4" /></button>
+              </div>
+
+              {cart.length === 0 ? (
+                <p className="text-center text-sm text-muted-foreground py-8">Keranjang kosong</p>
+              ) : (
+                <>
+                  {cart.map(item => {
+                    const imgs = getProductImages(item.product.id);
+                    return (
+                      <Card key={item.product.id}>
+                        <CardContent className="p-3 flex items-center gap-3">
+                          {imgs.length > 0 && <img src={imgs[0]} className="w-14 h-14 rounded-xl object-cover" alt="" />}
+                          <div className="flex-1 min-w-0">
+                            <p className="font-bold text-sm truncate">{item.product.title}</p>
+                            <p className="text-primary font-extrabold text-sm">{formatPrice(item.product.price)}</p>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <button onClick={() => updateCartQty(item.product.id, item.quantity - 1)} className="w-7 h-7 rounded-full bg-muted flex items-center justify-center"><Minus className="w-3 h-3" /></button>
+                            <span className="font-bold text-sm w-5 text-center">{item.quantity}</span>
+                            <button onClick={() => updateCartQty(item.product.id, item.quantity + 1)} className="w-7 h-7 rounded-full bg-muted flex items-center justify-center"><Plus className="w-3 h-3" /></button>
+                            <button onClick={() => removeFromCart(item.product.id)} className="w-7 h-7 rounded-full bg-destructive/10 flex items-center justify-center"><Trash2 className="w-3 h-3 text-destructive" /></button>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
+                  <div className="bg-muted/50 rounded-lg p-3 space-y-1 text-sm">
+                    <div className="flex justify-between"><span className="text-muted-foreground">Total item</span><span className="font-bold">{cartCount} pcs</span></div>
+                    <div className="flex justify-between border-t border-border pt-1"><span className="font-bold">Total harga</span><span className="font-extrabold text-primary">{formatPrice(cartTotal)}</span></div>
+                    {userBalance && <div className="flex justify-between"><span className="text-muted-foreground">Saldo</span><span className={`font-bold ${userBalance.balance >= cartTotal ? "text-accent" : "text-destructive"}`}>{formatPrice(userBalance.balance)}</span></div>}
+                  </div>
+                  <p className="text-[10px] text-muted-foreground text-center">Pilih item untuk checkout langsung dengan saldo</p>
+                  {cart.map(item => (
+                    <Button key={item.product.id} className="w-full bg-gradient-to-r from-primary to-accent text-primary-foreground font-bold gap-2 text-xs"
+                      disabled={!userBalance || userBalance.balance < item.product.price * item.quantity || item.product.stock < item.quantity}
+                      onClick={() => { setBuyProduct(item.product); setBuyQuantity(item.quantity); setShowBuySaldo(true); setShowCart(false); }}>
+                      <Wallet className="w-4 h-4" /> Beli {item.quantity}x {item.product.title} — {formatPrice(item.product.price * item.quantity)}
+                    </Button>
+                  ))}
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Floating Help Button */}
       <button onClick={() => setShowHelp(true)} className="fixed bottom-20 right-4 z-50 w-12 h-12 rounded-full bg-primary text-primary-foreground shadow-xl flex items-center justify-center hover:scale-110 transition-transform">
         <HelpCircle className="w-6 h-6" />
