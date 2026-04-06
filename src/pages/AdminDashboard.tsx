@@ -1659,6 +1659,111 @@ const AdminDashboard = () => {
         )}
 
         {tab === "musik" && <AdminMusicTab />}
+
+        {tab === "vmusik" && (
+          <>
+            {/* Storage Vouchers */}
+            <Card>
+              <CardHeader><CardTitle className="text-base flex items-center gap-2"><HardDrive className="w-5 h-5 text-primary" /> Buat Voucher Penyimpanan Musik</CardTitle></CardHeader>
+              <CardContent className="space-y-3">
+                <div>
+                  <label className="text-xs text-muted-foreground">Jumlah Storage (MB)</label>
+                  <Input type="number" placeholder="Contoh: 1024 = 1GB, 10240 = 10GB" value={msvStorageMb} onChange={e => setMsvStorageMb(e.target.value)} />
+                  {msvStorageMb && parseInt(msvStorageMb) > 0 && (
+                    <p className="text-[10px] text-primary font-bold mt-1">= {formatStorageMb(parseInt(msvStorageMb))}</p>
+                  )}
+                </div>
+                <Input type="number" placeholder="Maks pemakaian" value={msvMaxUses} onChange={e => setMsvMaxUses(e.target.value)} />
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="text-xs text-muted-foreground">Tanggal expired</label>
+                    <Input type="date" value={msvExpiryDate} onChange={e => setMsvExpiryDate(e.target.value)} />
+                  </div>
+                  <div>
+                    <label className="text-xs text-muted-foreground">Jam expired</label>
+                    <Input type="time" step="1" value={msvExpiryTime} onChange={e => setMsvExpiryTime(e.target.value)} />
+                  </div>
+                </div>
+                <Button className="w-full gap-2" onClick={createMusicStorageVoucher} disabled={!msvStorageMb || parseInt(msvStorageMb) <= 0}>
+                  <HardDrive className="w-4 h-4" /> Buat Voucher (Kode Otomatis)
+                </Button>
+              </CardContent>
+            </Card>
+
+            <h3 className="font-bold text-sm">Voucher Penyimpanan ({musicStorageVouchers.length})</h3>
+            {musicStorageVouchers.map(v => (
+              <Card key={v.id} className={!v.is_active ? "opacity-60" : ""}>
+                <CardContent className="p-3 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="font-mono font-bold text-sm">{v.code}</p>
+                      <p className="text-xs text-primary font-bold">+{formatStorageMb(v.storage_mb)}</p>
+                    </div>
+                    <div className="flex gap-1">
+                      <Button size="sm" variant="outline" className="h-7 text-[10px]" onClick={() => toggleMusicStorageVoucher(v)}>{v.is_active ? "Nonaktif" : "Aktifkan"}</Button>
+                      <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => copyText(v.code)}><Copy className="w-3 h-3" /></Button>
+                      <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => deleteMusicStorageVoucher(v.id)}><Trash2 className="w-3 h-3 text-destructive" /></Button>
+                    </div>
+                  </div>
+                  <div className="text-[10px] text-muted-foreground flex flex-wrap gap-3">
+                    <span>Terpakai: {v.used_count}/{v.max_uses}</span>
+                    <span>{v.expires_at ? `Exp: ${new Date(v.expires_at).toLocaleString("id-ID")}` : "Tanpa batas"}</span>
+                    <span className={v.is_active ? "text-accent" : "text-destructive"}>{v.is_active ? "✓ Aktif" : "✗ Nonaktif"}</span>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+            {musicStorageVouchers.length === 0 && <p className="text-center text-sm text-muted-foreground py-4">Belum ada voucher penyimpanan</p>}
+
+            {/* Music Discount Vouchers */}
+            <Card className="mt-4">
+              <CardHeader><CardTitle className="text-base flex items-center gap-2"><Tag className="w-5 h-5 text-primary" /> Buat Voucher Diskon Musik</CardTitle></CardHeader>
+              <CardContent className="space-y-3">
+                <Input placeholder="Kode voucher (misal: MUSIKDISKON5K)" value={mdvCode} onChange={e => setMdvCode(e.target.value.toUpperCase())} className="font-mono" />
+                <Input type="number" placeholder="Nominal diskon (Rp)" value={mdvAmount} onChange={e => setMdvAmount(e.target.value)} />
+                <Input type="number" placeholder="Maks pemakaian" value={mdvMaxUses} onChange={e => setMdvMaxUses(e.target.value)} />
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="text-xs text-muted-foreground">Tanggal expired</label>
+                    <Input type="date" value={mdvExpiryDate} onChange={e => setMdvExpiryDate(e.target.value)} />
+                  </div>
+                  <div>
+                    <label className="text-xs text-muted-foreground">Jam expired</label>
+                    <Input type="time" step="1" value={mdvExpiryTime} onChange={e => setMdvExpiryTime(e.target.value)} />
+                  </div>
+                </div>
+                <Button className="w-full gap-2" onClick={createMusicDiscountVoucher} disabled={!mdvCode.trim() || !mdvAmount}>
+                  <Tag className="w-4 h-4" /> Buat Voucher Diskon Musik
+                </Button>
+              </CardContent>
+            </Card>
+
+            <h3 className="font-bold text-sm">Voucher Diskon Musik ({musicDiscountVouchers.length})</h3>
+            {musicDiscountVouchers.map(v => (
+              <Card key={v.id} className={!v.is_active ? "opacity-60" : ""}>
+                <CardContent className="p-3 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="font-mono font-bold text-sm">{v.code}</p>
+                      <p className="text-xs text-primary font-bold">-Rp{v.discount_amount.toLocaleString()}</p>
+                    </div>
+                    <div className="flex gap-1">
+                      <Button size="sm" variant="outline" className="h-7 text-[10px]" onClick={() => toggleMusicDiscountVoucher(v)}>{v.is_active ? "Nonaktif" : "Aktifkan"}</Button>
+                      <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => copyText(v.code)}><Copy className="w-3 h-3" /></Button>
+                      <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => deleteMusicDiscountVoucher(v.id)}><Trash2 className="w-3 h-3 text-destructive" /></Button>
+                    </div>
+                  </div>
+                  <div className="text-[10px] text-muted-foreground flex flex-wrap gap-3">
+                    <span>Terpakai: {v.used_count}/{v.max_uses}</span>
+                    <span>{v.expires_at ? `Exp: ${new Date(v.expires_at).toLocaleString("id-ID")}` : "Tanpa batas"}</span>
+                    <span className={v.is_active ? "text-accent" : "text-destructive"}>{v.is_active ? "✓ Aktif" : "✗ Nonaktif"}</span>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+            {musicDiscountVouchers.length === 0 && <p className="text-center text-sm text-muted-foreground py-4">Belum ada voucher diskon musik</p>}
+          </>
+        )}
       </main>
     </div>
   );
