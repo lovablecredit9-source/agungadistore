@@ -1367,24 +1367,41 @@ const Index = () => {
                         <Wallet className="w-7 h-7 text-primary-foreground" />
                       </div>
                     </div>
-                    <div className="grid grid-cols-2 gap-2">
-                      <a href={`${SOCIAL_LINKS.whatsapp}?text=${encodeURIComponent(`Halo admin, saya mau deposit saldo.\n\nUsername: ${userBalance.username}\nNo HP: ${userBalance.phone}\nVisitor ID: ${visitorId}`)}`}
-                        target="_blank" rel="noopener noreferrer">
-                        <Button size="sm" className="w-full bg-gradient-to-r from-accent to-accent/80 text-accent-foreground gap-1.5">
-                          <MessageCircle className="w-4 h-4" /> Deposit WA
-                        </Button>
-                      </a>
-                      <Button size="sm" variant="outline" className="gap-1.5" onClick={() => setTab("tiket")}>
-                        <Send className="w-4 h-4" /> Deposit Chat
-                      </Button>
-                    </div>
+                    <Button size="sm" className="w-full bg-gradient-to-r from-accent to-accent/80 text-accent-foreground gap-1.5 font-bold"
+                      onClick={() => { setShowDepositModal(true); setDepositStep("method"); }}>
+                      <ArrowUpCircle className="w-4 h-4" /> {t("deposit.btn", lang)}
+                    </Button>
                   </CardContent>
                 </Card>
 
+                {/* Deposit History */}
+                {deposits.length > 0 && (
+                  <>
+                    <h3 className="font-bold text-sm flex items-center gap-1.5"><History className="w-4 h-4" /> {t("deposit.history", lang)}</h3>
+                    {deposits.map(dep => (
+                      <Card key={dep.id}>
+                        <CardContent className="p-3 flex items-center gap-3">
+                          <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${dep.status === "approved" ? "bg-accent/10" : dep.status === "rejected" ? "bg-destructive/10" : "bg-muted"}`}>
+                            {dep.status === "approved" ? <CheckCircle2 className="w-5 h-5 text-accent" /> : dep.status === "rejected" ? <X className="w-5 h-5 text-destructive" /> : <Clock className="w-5 h-5 text-muted-foreground" />}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-bold text-sm">{formatPrice(dep.amount)}</p>
+                            <p className="text-[10px] text-muted-foreground">TRX: {dep.trx_id}</p>
+                            <p className="text-[10px] text-muted-foreground">{dep.payment_method.toUpperCase()} • {new Date(dep.created_at).toLocaleString("id-ID")}</p>
+                          </div>
+                          <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${dep.status === "approved" ? "bg-accent/10 text-accent" : dep.status === "rejected" ? "bg-destructive/10 text-destructive" : "bg-muted text-muted-foreground"}`}>
+                            {dep.status === "approved" ? t("deposit.approved", lang) : dep.status === "rejected" ? t("deposit.rejected", lang) : t("deposit.pending", lang)}
+                          </span>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </>
+                )}
+
                 {/* Transaction History */}
-                <h3 className="font-bold text-sm flex items-center gap-1.5"><History className="w-4 h-4" /> Riwayat Transaksi</h3>
+                <h3 className="font-bold text-sm flex items-center gap-1.5"><History className="w-4 h-4" /> {t("balance.transaction_history", lang)}</h3>
                 {balanceTransactions.length === 0 && (
-                  <p className="text-center text-sm text-muted-foreground py-8">Belum ada transaksi</p>
+                  <p className="text-center text-sm text-muted-foreground py-8">{t("balance.no_transactions", lang)}</p>
                 )}
                 {balanceTransactions.map(tx => (
                   <Card key={tx.id}>
@@ -1393,12 +1410,16 @@ const Index = () => {
                         {tx.type === "topup" ? <ArrowUpCircle className="w-5 h-5 text-accent" /> : <ArrowDownCircle className="w-5 h-5 text-destructive" />}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="font-bold text-sm">{tx.type === "topup" ? "Deposit" : "Pembelian"}</p>
+                        <p className="font-bold text-sm">{tx.type === "topup" ? t("balance.topup", lang) : t("balance.purchase", lang)}</p>
                         <p className="text-[10px] text-muted-foreground truncate">{tx.description || "-"}</p>
                         <p className="text-[10px] text-muted-foreground">{new Date(tx.created_at).toLocaleString("id-ID")}</p>
                       </div>
                       <span className={`font-bold text-sm ${tx.type === "topup" ? "text-accent" : "text-destructive"}`}>
                         {tx.type === "topup" ? "+" : "-"}{formatPrice(tx.amount)}
+                      </span>
+                    </CardContent>
+                  </Card>
+                ))}
                       </span>
                     </CardContent>
                   </Card>
