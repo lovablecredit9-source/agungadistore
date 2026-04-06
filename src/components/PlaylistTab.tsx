@@ -547,7 +547,7 @@ const PlaylistTab = () => {
               onClick={() => setUpgradeOpen(true)}
             >
               <Zap className="w-3.5 h-3.5 text-primary" />
-              Upgrade ke 10GB — {formatCurrency(10000)}/bulan
+              Upgrade ke 100GB — {formatCurrency(100000)}/bulan
             </Button>
           )}
 
