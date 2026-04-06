@@ -834,6 +834,7 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay }: PlaylistTabProps) => {
               </div>
             )}
           </div>
+          </div>
         </div>
       )}
 
