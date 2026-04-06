@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import { createPortal } from "react-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -706,8 +707,8 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer }: Playl
         </Card>
       )}
 
-      {/* ===== FULLSCREEN PLAYER ===== */}
-      {showFullPlayer && currentSong && (
+      {/* ===== FULLSCREEN PLAYER (Portal to avoid hidden parent) ===== */}
+      {showFullPlayer && currentSong && createPortal(
         <div className="fixed inset-0 z-[100] flex flex-col overflow-hidden bg-background">
           {/* Background gradient overlay */}
           <div className="absolute inset-0 pointer-events-none" style={{
@@ -838,7 +839,7 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer }: Playl
           </div>
           </div>
         </div>
-      )}
+      , document.body)}
 
       {/* Lyrics Display */}
       {currentSong && (
