@@ -10,7 +10,7 @@ import {
   Download, MessageCircle, Copy, CheckCircle2, Shield, Crown,
   HelpCircle, X, ExternalLink, Search, ChevronLeft, ChevronRight, FileText,
   Heart, Send, ImagePlus, AlertCircle, History, Wallet, ArrowUpCircle, ArrowDownCircle,
-  Bell, Check, CheckCheck, Globe, Edit2
+  Bell, Check, CheckCheck, Globe, Edit2, ShoppingCart, Plus, Minus, Trash2
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import jsPDF from "jspdf";
