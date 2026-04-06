@@ -541,12 +541,23 @@ const PlaylistTab = () => {
             </div>
           </div>
 
-          {isFreeeTier && (
+          {tier.pricePerMonth === 0 && (
             <Button
               variant="outline"
               size="sm"
               className="w-full gap-2 text-xs border-primary/30 hover:bg-primary/10"
               onClick={() => setUpgradeOpen(true)}
+            >
+              <Zap className="w-3.5 h-3.5 text-primary" />
+              Upgrade Penyimpanan
+            </Button>
+          )}
+          {tier.pricePerMonth > 0 && tier.pricePerMonth < 100000 && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="w-full gap-2 text-xs border-primary/30 hover:bg-primary/10"
+              onClick={() => { setSelectedUpgradeTier(2); setUpgradeOpen(true); }}
             >
               <Zap className="w-3.5 h-3.5 text-primary" />
               Upgrade ke 100GB — {formatCurrency(100000)}/bulan
