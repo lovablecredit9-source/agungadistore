@@ -501,6 +501,31 @@ const PlaylistTab = () => {
         </div>
       </div>
 
+      {/* Tab Buttons */}
+      <div className="flex gap-2">
+        <Button
+          variant={activeView === "playlist" ? "default" : "outline"}
+          size="sm"
+          className="flex-1 gap-2 text-xs"
+          onClick={() => setActiveView("playlist")}
+        >
+          <Music className="w-3.5 h-3.5" />
+          Daftar Lagu ({songs.length})
+        </Button>
+        <Button
+          variant={activeView === "storage" ? "default" : "outline"}
+          size="sm"
+          className="flex-1 gap-2 text-xs"
+          onClick={() => setActiveView("storage")}
+        >
+          <HardDrive className="w-3.5 h-3.5" />
+          Penyimpanan
+          {cachedCount > 0 && (
+            <span className="bg-accent/20 text-accent text-[10px] font-bold px-1.5 rounded-full">{cachedCount}</span>
+          )}
+        </Button>
+      </div>
+
       {!isOnline && (
         <Card className="border-destructive/30 bg-destructive/5">
           <CardContent className="p-3 flex items-center gap-2 text-xs text-destructive">
@@ -510,90 +535,7 @@ const PlaylistTab = () => {
         </Card>
       )}
 
-      {/* Storage Card */}
-      <Card className={`border-primary/20 ${isAtLimit ? "border-destructive/50" : isNearLimit ? "border-yellow-500/50" : ""}`}>
-        <CardContent className="p-4 space-y-3">
-          <div className="flex items-center justify-between mb-1">
-            <div className="flex items-center gap-1.5">
-              <HardDrive className="w-4 h-4 text-primary" />
-              <span className="text-xs font-bold">Penyimpanan Offline</span>
-            </div>
-            <div className={`flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full ${hasSubs ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"}`}>
-              {hasSubs ? <Crown className="w-3 h-3" /> : <Globe className="w-3 h-3" />}
-              {hasSubs ? `${formatStorageSize(maxBytes)}` : "Free 2GB"}
-            </div>
-          </div>
-
-          <div className="grid grid-cols-3 gap-2">
-            <div className="rounded-xl bg-background/70 p-2.5 border border-border/60 text-center">
-              <p className="text-[10px] text-muted-foreground">Total</p>
-              <p className="text-sm font-extrabold">{songs.length}</p>
-            </div>
-            <div className="rounded-xl bg-background/70 p-2.5 border border-border/60 text-center">
-              <p className="text-[10px] text-muted-foreground flex items-center justify-center gap-0.5">
-                <CheckCircle2 className="w-3 h-3 text-accent" /> Offline
-              </p>
-              <p className="text-sm font-extrabold text-accent">{cachedCount}</p>
-            </div>
-            <div className="rounded-xl bg-background/70 p-2.5 border border-border/60 text-center">
-              <p className="text-[10px] text-muted-foreground flex items-center justify-center gap-0.5">
-                <HardDrive className="w-3 h-3" /> Terpakai
-              </p>
-              <p className={`text-sm font-extrabold ${isAtLimit ? "text-destructive" : isNearLimit ? "text-yellow-600" : ""}`}>
-                {formatStorageSize(downloadedStorage)}
-              </p>
-            </div>
-          </div>
-
-          <div className="space-y-1">
-            <Progress value={storagePercent} className={`h-2 ${isAtLimit ? "[&>div]:bg-destructive" : isNearLimit ? "[&>div]:bg-yellow-500" : ""}`} />
-            <div className="flex justify-between text-[10px] text-muted-foreground">
-              <span>{formatStorageSize(downloadedStorage)}</span>
-              <span>{formatStorageSize(maxBytes)}</span>
-            </div>
-          </div>
-
-          {/* Active subscriptions list */}
-          {activeSubs.length > 0 && (
-            <div className="space-y-1.5">
-              <p className="text-[10px] font-semibold text-muted-foreground">Paket Aktif:</p>
-              {activeSubs.map((sub, i) => {
-                const daysLeft = Math.max(0, Math.ceil((new Date(sub.expiresAt).getTime() - Date.now()) / (1000 * 60 * 60 * 24)));
-                return (
-                  <div key={i} className="flex items-center justify-between text-[11px] rounded-lg bg-primary/5 px-2.5 py-1.5 border border-primary/10">
-                    <div className="flex items-center gap-1.5">
-                      <Crown className="w-3 h-3 text-primary" />
-                      <span className="font-bold">{sub.name}</span>
-                    </div>
-                    <div className="flex items-center gap-1 text-muted-foreground">
-                      <Clock className="w-3 h-3" />
-                      <span>{daysLeft} hari lagi</span>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-
-          <Button
-            variant="outline"
-            size="sm"
-            className="w-full gap-2 text-xs border-primary/30 hover:bg-primary/10"
-            onClick={() => setUpgradeOpen(true)}
-          >
-            <Zap className="w-3.5 h-3.5 text-primary" />
-            {hasSubs ? "Tambah / Upgrade Penyimpanan" : "Upgrade Penyimpanan"}
-          </Button>
-
-          <p className="text-[10px] text-muted-foreground">
-            {isAtLimit
-              ? "⚠️ Penyimpanan penuh! Hapus lagu offline atau upgrade."
-              : "Simpan lagu ke offline agar bisa diputar tanpa internet."}
-          </p>
-        </CardContent>
-      </Card>
-
-      {/* Now Playing */}
+      {/* Now Playing - always visible */}
       {currentSong && (
         <Card className="overflow-hidden border-primary/20 bg-gradient-to-br from-primary/5 to-accent/5">
           <CardContent className="p-4 space-y-3">
@@ -647,72 +589,203 @@ const PlaylistTab = () => {
         </Card>
       )}
 
-      {/* Song List */}
-      <div className="space-y-2">
-        {songs.map((song, i) => {
-          const isCached = cachedIds.has(song.id);
-          return (
-            <Card key={song.id} className={`overflow-hidden transition-all cursor-pointer hover:shadow-md ${currentIndex === i ? "border-primary/40 bg-primary/5" : ""}`}>
-              <CardContent className="p-3 flex items-center gap-3">
-                <button onClick={() => playSong(i)} className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0 hover:bg-primary/20 transition-colors relative overflow-hidden">
-                  {song.cover_url ? (
-                    <img src={song.cover_url} alt="" className="w-full h-full object-cover absolute inset-0" />
-                  ) : currentIndex === i && isPlaying ? (
-                    <Pause className="w-4 h-4 text-primary" />
-                  ) : (
-                    <Play className="w-4 h-4 text-primary ml-0.5" />
-                  )}
-                  {song.cover_url && (
-                    <div className="absolute inset-0 bg-black/30 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
-                      {currentIndex === i && isPlaying ? <Pause className="w-4 h-4 text-white" /> : <Play className="w-4 h-4 text-white ml-0.5" />}
-                    </div>
-                  )}
-                  {isCached && (
-                    <span className="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-accent flex items-center justify-center z-10">
-                      <CheckCircle2 className="w-2.5 h-2.5 text-accent-foreground" />
-                    </span>
-                  )}
-                </button>
-                <div className="flex-1 min-w-0" onClick={() => playSong(i)}>
-                  <p className="font-bold text-sm truncate">{song.title}</p>
-                  <p className="text-[11px] text-muted-foreground truncate">
-                    {song.artist}
-                    {song.file_size > 0 ? ` • ${formatSize(song.file_size)}` : ""}
-                    {isCached && <span className="text-accent font-semibold"> • Offline</span>}
-                  </p>
-                </div>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button size="sm" variant="ghost" className="shrink-0 h-8 w-8 p-0" onClick={(e) => e.stopPropagation()} disabled={downloading === song.id}>
-                      {downloading === song.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="min-w-[180px]">
-                    <DropdownMenuItem onClick={() => downloadToDevice(song)} className="gap-2 cursor-pointer" disabled={!isOnline && !isCached}>
-                      <HardDrive className="w-4 h-4" /> Simpan ke HP
-                      {!isOnline && !isCached && <WifiOff className="w-3 h-3 ml-auto text-destructive" />}
-                    </DropdownMenuItem>
-                    {!isCached ? (
-                      <DropdownMenuItem onClick={() => downloadToCache(song)} className="gap-2 cursor-pointer" disabled={!isOnline}>
-                        <Download className="w-4 h-4" /> Simpan Offline
+      {/* ===== PLAYLIST VIEW ===== */}
+      {activeView === "playlist" && (
+        <div className="space-y-2">
+          {songs.map((song, i) => {
+            const isCached = cachedIds.has(song.id);
+            return (
+              <Card key={song.id} className={`overflow-hidden transition-all cursor-pointer hover:shadow-md ${currentIndex === i ? "border-primary/40 bg-primary/5" : ""}`}>
+                <CardContent className="p-3 flex items-center gap-3">
+                  <button onClick={() => playSong(i)} className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0 hover:bg-primary/20 transition-colors relative overflow-hidden">
+                    {song.cover_url ? (
+                      <img src={song.cover_url} alt="" className="w-full h-full object-cover absolute inset-0" />
+                    ) : currentIndex === i && isPlaying ? (
+                      <Pause className="w-4 h-4 text-primary" />
+                    ) : (
+                      <Play className="w-4 h-4 text-primary ml-0.5" />
+                    )}
+                    {song.cover_url && (
+                      <div className="absolute inset-0 bg-black/30 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
+                        {currentIndex === i && isPlaying ? <Pause className="w-4 h-4 text-white" /> : <Play className="w-4 h-4 text-white ml-0.5" />}
+                      </div>
+                    )}
+                    {isCached && (
+                      <span className="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-accent flex items-center justify-center z-10">
+                        <CheckCircle2 className="w-2.5 h-2.5 text-accent-foreground" />
+                      </span>
+                    )}
+                  </button>
+                  <div className="flex-1 min-w-0" onClick={() => playSong(i)}>
+                    <p className="font-bold text-sm truncate">{song.title}</p>
+                    <p className="text-[11px] text-muted-foreground truncate">
+                      {song.artist}
+                      {song.file_size > 0 ? ` • ${formatSize(song.file_size)}` : ""}
+                      {isCached && <span className="text-accent font-semibold"> • Offline</span>}
+                    </p>
+                  </div>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button size="sm" variant="ghost" className="shrink-0 h-8 w-8 p-0" onClick={(e) => e.stopPropagation()} disabled={downloading === song.id}>
+                        {downloading === song.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="min-w-[180px]">
+                      <DropdownMenuItem onClick={() => downloadToDevice(song)} className="gap-2 cursor-pointer" disabled={!isOnline && !isCached}>
+                        <HardDrive className="w-4 h-4" /> Simpan ke HP
+                        {!isOnline && !isCached && <WifiOff className="w-3 h-3 ml-auto text-destructive" />}
+                      </DropdownMenuItem>
+                      {!isCached ? (
+                        <DropdownMenuItem onClick={() => downloadToCache(song)} className="gap-2 cursor-pointer" disabled={!isOnline}>
+                          <Download className="w-4 h-4" /> Simpan Offline
+                          {!isOnline && <WifiOff className="w-3 h-3 ml-auto text-destructive" />}
+                        </DropdownMenuItem>
+                      ) : (
+                        <DropdownMenuItem onClick={() => removeFromCache(song)} className="gap-2 cursor-pointer text-destructive focus:text-destructive">
+                          <Trash2 className="w-4 h-4" /> Hapus dari Offline
+                        </DropdownMenuItem>
+                      )}
+                      <DropdownMenuItem onClick={() => window.open(song.file_url, "_blank")} className="gap-2 cursor-pointer" disabled={!isOnline}>
+                        <Globe className="w-4 h-4" /> Buka di Browser
                         {!isOnline && <WifiOff className="w-3 h-3 ml-auto text-destructive" />}
                       </DropdownMenuItem>
-                    ) : (
-                      <DropdownMenuItem onClick={() => removeFromCache(song)} className="gap-2 cursor-pointer text-destructive focus:text-destructive">
-                        <Trash2 className="w-4 h-4" /> Hapus dari Offline
-                      </DropdownMenuItem>
-                    )}
-                    <DropdownMenuItem onClick={() => window.open(song.file_url, "_blank")} className="gap-2 cursor-pointer" disabled={!isOnline}>
-                      <Globe className="w-4 h-4" /> Buka di Browser
-                      {!isOnline && <WifiOff className="w-3 h-3 ml-auto text-destructive" />}
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+      )}
+
+      {/* ===== STORAGE VIEW ===== */}
+      {activeView === "storage" && (
+        <div className="space-y-4">
+          <Card className={`border-primary/20 ${isAtLimit ? "border-destructive/50" : isNearLimit ? "border-yellow-500/50" : ""}`}>
+            <CardContent className="p-4 space-y-3">
+              <div className="flex items-center justify-between mb-1">
+                <div className="flex items-center gap-1.5">
+                  <HardDrive className="w-4 h-4 text-primary" />
+                  <span className="text-xs font-bold">Penyimpanan Offline</span>
+                </div>
+                <div className={`flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full ${hasSubs ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"}`}>
+                  {hasSubs ? <Crown className="w-3 h-3" /> : <Globe className="w-3 h-3" />}
+                  {hasSubs ? `${formatStorageSize(maxBytes)}` : "Free 2GB"}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-2">
+                <div className="rounded-xl bg-background/70 p-2.5 border border-border/60 text-center">
+                  <p className="text-[10px] text-muted-foreground">Total</p>
+                  <p className="text-sm font-extrabold">{songs.length}</p>
+                </div>
+                <div className="rounded-xl bg-background/70 p-2.5 border border-border/60 text-center">
+                  <p className="text-[10px] text-muted-foreground flex items-center justify-center gap-0.5">
+                    <CheckCircle2 className="w-3 h-3 text-accent" /> Offline
+                  </p>
+                  <p className="text-sm font-extrabold text-accent">{cachedCount}</p>
+                </div>
+                <div className="rounded-xl bg-background/70 p-2.5 border border-border/60 text-center">
+                  <p className="text-[10px] text-muted-foreground flex items-center justify-center gap-0.5">
+                    <HardDrive className="w-3 h-3" /> Terpakai
+                  </p>
+                  <p className={`text-sm font-extrabold ${isAtLimit ? "text-destructive" : isNearLimit ? "text-yellow-600" : ""}`}>
+                    {formatStorageSize(downloadedStorage)}
+                  </p>
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <Progress value={storagePercent} className={`h-2 ${isAtLimit ? "[&>div]:bg-destructive" : isNearLimit ? "[&>div]:bg-yellow-500" : ""}`} />
+                <div className="flex justify-between text-[10px] text-muted-foreground">
+                  <span>{formatStorageSize(downloadedStorage)}</span>
+                  <span>{formatStorageSize(maxBytes)}</span>
+                </div>
+              </div>
+
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full gap-2 text-xs border-primary/30 hover:bg-primary/10"
+                onClick={() => setUpgradeOpen(true)}
+              >
+                <Zap className="w-3.5 h-3.5 text-primary" />
+                {hasSubs ? "Tambah / Upgrade Penyimpanan" : "Upgrade Penyimpanan"}
+              </Button>
+
+              <p className="text-[10px] text-muted-foreground">
+                {isAtLimit
+                  ? "⚠️ Penyimpanan penuh! Hapus lagu offline atau upgrade."
+                  : "Simpan lagu ke offline agar bisa diputar tanpa internet."}
+              </p>
+            </CardContent>
+          </Card>
+
+          {/* Active Subscriptions */}
+          {activeSubs.length > 0 && (
+            <Card className="border-primary/20">
+              <CardContent className="p-4 space-y-2">
+                <p className="text-xs font-bold flex items-center gap-1.5">
+                  <Crown className="w-4 h-4 text-primary" /> Paket Aktif
+                </p>
+                {activeSubs.map((sub, i) => {
+                  const daysLeft = Math.max(0, Math.ceil((new Date(sub.expiresAt).getTime() - Date.now()) / (1000 * 60 * 60 * 24)));
+                  return (
+                    <div key={i} className="flex items-center justify-between text-[11px] rounded-lg bg-primary/5 px-3 py-2 border border-primary/10">
+                      <div>
+                        <span className="font-bold">{sub.name}</span>
+                        <span className="text-muted-foreground ml-1">• beli {formatDate(sub.purchasedAt)}</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Clock className="w-3 h-3 text-muted-foreground" />
+                        <span className={`font-semibold ${daysLeft <= 3 ? "text-destructive" : "text-muted-foreground"}`}>
+                          {daysLeft}h lagi
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
               </CardContent>
             </Card>
-          );
-        })}
-      </div>
+          )}
+
+          {/* Offline Songs List */}
+          {cachedCount > 0 && (
+            <Card>
+              <CardContent className="p-4 space-y-2">
+                <p className="text-xs font-bold flex items-center gap-1.5">
+                  <CheckCircle2 className="w-4 h-4 text-accent" /> Lagu Tersimpan Offline ({cachedCount})
+                </p>
+                {songs.filter(s => cachedIds.has(s.id)).map((song) => (
+                  <div key={song.id} className="flex items-center justify-between text-[11px] rounded-lg bg-accent/5 px-3 py-2 border border-accent/10">
+                    <div className="flex items-center gap-2 min-w-0 flex-1">
+                      <div className="w-7 h-7 rounded bg-primary/10 flex items-center justify-center shrink-0 overflow-hidden">
+                        {song.cover_url ? (
+                          <img src={song.cover_url} alt="" className="w-full h-full object-cover" />
+                        ) : (
+                          <Music className="w-3.5 h-3.5 text-primary" />
+                        )}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="font-bold truncate">{song.title}</p>
+                        <p className="text-muted-foreground truncate">{song.artist} • {formatSize(song.file_size)}</p>
+                      </div>
+                    </div>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="shrink-0 h-7 w-7 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+                      onClick={() => removeFromCache(song)}
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </Button>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          )}
+        </div>
+      )}
 
       {/* Upgrade Dialog */}
       <Dialog open={upgradeOpen} onOpenChange={setUpgradeOpen}>
@@ -726,7 +799,6 @@ const PlaylistTab = () => {
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-3">
-            {/* Current storage */}
             <div className="rounded-xl border border-border p-3 bg-muted/30">
               <div className="flex items-center justify-between">
                 <div>
@@ -739,28 +811,6 @@ const PlaylistTab = () => {
               </div>
             </div>
 
-            {/* Active subs with expiry */}
-            {activeSubs.length > 0 && (
-              <div className="space-y-1.5">
-                <p className="text-[11px] font-semibold text-muted-foreground">Paket Aktif:</p>
-                {activeSubs.map((sub, i) => {
-                  const daysLeft = Math.max(0, Math.ceil((new Date(sub.expiresAt).getTime() - Date.now()) / (1000 * 60 * 60 * 24)));
-                  return (
-                    <div key={i} className="flex items-center justify-between text-[11px] rounded-lg bg-primary/5 px-3 py-2 border border-primary/10">
-                      <div>
-                        <span className="font-bold">{sub.name}</span>
-                        <span className="text-muted-foreground ml-1">• beli {formatDate(sub.purchasedAt)}</span>
-                      </div>
-                      <span className={`font-semibold ${daysLeft <= 3 ? "text-destructive" : "text-muted-foreground"}`}>
-                        {daysLeft}h lagi
-                      </span>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-
-            {/* Plan options */}
             <p className="text-[11px] font-semibold text-muted-foreground">Pilih Paket:</p>
             {PURCHASABLE_PLANS.map((plan, idx) => {
               const isSelected = selectedPlanIndex === idx;
