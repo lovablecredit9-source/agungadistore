@@ -175,7 +175,50 @@ const AdminMusicTab = () => {
     fetchAll();
   }
 
-  // --- Playlist CRUD ---
+  // --- Edit Song ---
+  function openEditSong(song: Song) {
+    setEditingSong(song);
+    setEditTitle(song.title);
+    setEditArtist(song.artist);
+    setEditReleaseDate(song.release_date || "");
+    setEditCoverFile(null);
+    setEditSongOpen(true);
+  }
+
+  async function saveEditSong() {
+    if (!editingSong || !editTitle.trim()) {
+      toast({ title: "Judul wajib diisi", variant: "destructive" });
+      return;
+    }
+    setSavingSong(true);
+    try {
+      let coverUrl: string | null = editingSong.cover_url;
+      if (editCoverFile) {
+        const ext = editCoverFile.name.split(".").pop() || "jpg";
+        const coverName = `covers/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+        const { error: coverErr } = await supabase.storage.from("music-files").upload(coverName, editCoverFile);
+        if (!coverErr) {
+          const { data } = supabase.storage.from("music-files").getPublicUrl(coverName);
+          coverUrl = data.publicUrl;
+        }
+      }
+      const { error } = await supabase.from("playlist_songs").update({
+        title: editTitle.trim(),
+        artist: editArtist.trim() || "Unknown",
+        release_date: editReleaseDate || null,
+        cover_url: coverUrl,
+      }).eq("id", editingSong.id);
+      if (error) throw error;
+      toast({ title: "Lagu berhasil diperbarui! ✏️" });
+      setEditSongOpen(false);
+      fetchAll();
+    } catch (err: any) {
+      toast({ title: "Gagal menyimpan", description: err.message, variant: "destructive" });
+    }
+    setSavingSong(false);
+  }
+
+
   function openCreatePlaylist() {
     setEditingPlaylist(null);
     setPlName("");
