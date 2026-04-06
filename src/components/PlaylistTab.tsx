@@ -305,9 +305,9 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer }: Playl
     : songs;
 
   useEffect(() => {
-    const interval = setInterval(() => { setActiveSubs(getActiveSubscriptions()); setMaxBytes(getTotalMaxBytes()); }, 60000);
+    const interval = setInterval(() => { setActiveSubs(getActiveSubscriptions()); setMaxBytes(getTotalMaxBytes(activeRedeemedMb)); }, 60000);
     return () => clearInterval(interval);
-  }, []);
+  }, [activeRedeemedMb]);
 
   useEffect(() => { fetchSongs(); fetchRedeemedStorages(); }, []);
 
