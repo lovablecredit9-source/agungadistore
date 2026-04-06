@@ -19,6 +19,7 @@ interface Song {
   cover_url: string | null;
   duration: number;
   file_size: number;
+  release_date: string | null;
   created_at: string;
 }
 
@@ -51,6 +52,7 @@ const AdminMusicTab = () => {
   const [uploading, setUploading] = useState(false);
   const [title, setTitle] = useState("");
   const [artist, setArtist] = useState("");
+  const [releaseDate, setReleaseDate] = useState("");
   const [musicFile, setMusicFile] = useState<File | null>(null);
   const [coverFile, setCoverFile] = useState<File | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -126,11 +128,12 @@ const AdminMusicTab = () => {
         file_url: fileUrl,
         cover_url: coverUrl,
         file_size: musicFile.size,
+        release_date: releaseDate || null,
       });
       if (insertErr) throw insertErr;
 
       toast({ title: "Lagu berhasil diupload!" });
-      setTitle(""); setArtist(""); setMusicFile(null); setCoverFile(null);
+      setTitle(""); setArtist(""); setReleaseDate(""); setMusicFile(null); setCoverFile(null);
       if (fileRef.current) fileRef.current.value = "";
       if (coverRef.current) coverRef.current.value = "";
       fetchAll();
@@ -336,6 +339,10 @@ const AdminMusicTab = () => {
               <Input placeholder="Judul lagu *" value={title} onChange={e => setTitle(e.target.value)} />
               <Input placeholder="Artis" value={artist} onChange={e => setArtist(e.target.value)} />
               <div>
+                <label className="text-xs font-medium text-muted-foreground mb-1 block">Tanggal rilis (opsional)</label>
+                <Input type="date" value={releaseDate} onChange={e => setReleaseDate(e.target.value)} />
+              </div>
+              <div>
                 <label className="text-xs font-medium text-muted-foreground mb-1 block">File Musik (MP3)</label>
                 <input ref={fileRef} type="file" accept="audio/*" onChange={e => setMusicFile(e.target.files?.[0] || null)}
                   className="text-xs file:mr-2 file:px-3 file:py-1.5 file:rounded-md file:border-0 file:bg-primary/10 file:text-primary file:font-medium file:cursor-pointer" />
@@ -371,7 +378,8 @@ const AdminMusicTab = () => {
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-bold truncate">{song.title}</p>
-                      <p className="text-[11px] text-muted-foreground">{song.artist}{song.file_size ? ` • ${formatSize(song.file_size)}` : ""}</p>
+                       <p className="text-[11px] text-muted-foreground">{song.artist}{song.file_size ? ` • ${formatSize(song.file_size)}` : ""}</p>
+                       <p className="text-[10px] text-muted-foreground">{song.release_date ? `Rilis ${song.release_date}` : `Upload ${new Date(song.created_at).toLocaleDateString("id-ID")}`}</p>
                     </div>
                     <Button size="sm" variant="ghost" className="text-destructive h-8 w-8 p-0 shrink-0" onClick={() => deleteSong(song)}>
                       <Trash2 className="w-4 h-4" />
