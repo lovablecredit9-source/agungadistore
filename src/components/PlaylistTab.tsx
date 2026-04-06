@@ -277,6 +277,14 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer }: Playl
 
   const [activeView, setActiveView] = useState<"playlist" | "myplaylists" | "storage">("playlist");
 
+  // Voucher redeem
+  const [redeemCode, setRedeemCode] = useState("");
+  const [redeeming, setRedeeming] = useState(false);
+  const [redeemedStorages, setRedeemedStorages] = useState<{id: string; storage_mb: number; voucher_code: string; redeemed_at: string; expires_at: string | null}[]>([]);
+  // Discount code for upgrade
+  const [upgradeDiscountCode, setUpgradeDiscountCode] = useState("");
+  const [upgradeDiscountAmount, setUpgradeDiscountAmount] = useState(0);
+
   // Lyrics state
   const [allLyrics, setAllLyrics] = useState<LyricLine[]>([]);
   const [termsOpen, setTermsOpen] = useState(false);
