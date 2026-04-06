@@ -196,7 +196,75 @@ const AdminDashboard = () => {
     fetchTickets();
     fetchChats();
     fetchUserBalances();
+    fetchDeposits();
+    fetchAdminSettings();
   }, []);
+
+  async function fetchDeposits() {
+    const { data } = await supabase.from("deposits").select("*").order("created_at", { ascending: false });
+    if (data) setAllDeposits(data as unknown as Deposit[]);
+  }
+
+  async function fetchAdminSettings() {
+    const { data } = await supabase.from("admin_settings").select("*");
+    if (data) {
+      setAdminSettings(data as unknown as AdminSetting[]);
+      const q = (data as any[]).find(s => s.setting_key === "qris_url");
+      const en = (data as any[]).find(s => s.setting_key === "ewallet_name");
+      const enm = (data as any[]).find(s => s.setting_key === "ewallet_number");
+      if (q) setSettingQris(q.setting_value);
+      if (en) setSettingEwalletName(en.setting_value);
+      if (enm) setSettingEwalletNumber(enm.setting_value);
+    }
+  }
+
+  async function updateSetting(key: string, value: string) {
+    await supabase.from("admin_settings").update({ setting_value: value }).eq("setting_key", key);
+  }
+
+  async function saveAllSettings() {
+    await Promise.all([
+      updateSetting("qris_url", settingQris),
+      updateSetting("ewallet_name", settingEwalletName),
+      updateSetting("ewallet_number", settingEwalletNumber),
+    ]);
+    toast({ title: "Pengaturan tersimpan! ✅" });
+    fetchAdminSettings();
+  }
+
+  async function approveDeposit(dep: Deposit) {
+    const user = userBalances.find(u => u.visitor_id === dep.visitor_id);
+    if (!user) { toast({ title: "User tidak ditemukan", variant: "destructive" }); return; }
+    // Update deposit status
+    await supabase.from("deposits").update({ status: "approved" } as any).eq("id", dep.id);
+    // Add balance
+    await supabase.from("user_balances").update({ balance: user.balance + dep.amount }).eq("id", user.id);
+    // Record transaction
+    await supabase.from("balance_transactions").insert({
+      visitor_id: dep.visitor_id, type: "topup", amount: dep.amount,
+      description: `Deposit ${dep.payment_method.toUpperCase()} - TRX: ${dep.trx_id}`,
+    });
+    // Notify user
+    await supabase.from("notifications").insert({
+      visitor_id: dep.visitor_id, title: "Deposit Disetujui ✅",
+      message: `Deposit ${new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", minimumFractionDigits: 0 }).format(dep.amount)} berhasil diverifikasi. Saldo telah ditambahkan.`,
+      type: "deposit_approved",
+    } as any);
+    toast({ title: `Deposit ${new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", minimumFractionDigits: 0 }).format(dep.amount)} disetujui!` });
+    fetchDeposits();
+    fetchUserBalances();
+  }
+
+  async function rejectDeposit(dep: Deposit) {
+    await supabase.from("deposits").update({ status: "rejected" } as any).eq("id", dep.id);
+    await supabase.from("notifications").insert({
+      visitor_id: dep.visitor_id, title: "Deposit Ditolak ❌",
+      message: `Deposit ${new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", minimumFractionDigits: 0 }).format(dep.amount)} ditolak. Hubungi admin untuk info lebih lanjut.`,
+      type: "deposit_rejected",
+    } as any);
+    toast({ title: "Deposit ditolak" });
+    fetchDeposits();
+  }
 
   async function checkAuth() {
     const { data: { session } } = await supabase.auth.getSession();
