@@ -313,9 +313,15 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer }: Playl
     return () => clearInterval(interval);
   }, [activeRedeemedMb]);
 
-  useEffect(() => { fetchSongs(); fetchRedeemedStorages(); }, []);
+  useEffect(() => { fetchSongs(); fetchRedeemedStorages(); checkPinExists(); }, []);
   // Update maxBytes when activeRedeemedMb changes
   useEffect(() => { setMaxBytes(getTotalMaxBytes(activeRedeemedMb)); }, [activeRedeemedMb]);
+
+  async function checkPinExists() {
+    const visitorId = await getVisitorIdSafe();
+    const { data } = await supabase.functions.invoke("manage-pin", { body: { action: "check", visitorId } });
+    if (data) setHasPin(data.hasPin);
+  }
 
   async function fetchRedeemedStorages() {
     const visitorId = await getVisitorIdSafe();
