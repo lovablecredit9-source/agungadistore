@@ -1284,19 +1284,40 @@ const AdminDashboard = () => {
             <Card>
               <CardHeader><CardTitle className="text-base flex items-center gap-2"><Edit2 className="w-5 h-5 text-primary" /> Pengaturan Pembayaran</CardTitle></CardHeader>
               <CardContent className="space-y-4">
+                {/* QRIS Upload */}
                 <div className="space-y-2">
-                  <label className="text-xs font-bold text-muted-foreground">URL Gambar QRIS</label>
-                  <Input placeholder="https://example.com/qris.jpg" value={settingQris} onChange={e => setSettingQris(e.target.value)} />
+                  <label className="text-xs font-bold text-muted-foreground">Foto QRIS</label>
+                  <input type="file" accept="image/*" ref={qrisFileRef} className="hidden" onChange={handleQrisUpload} />
+                  <Button variant="outline" className="w-full gap-2" onClick={() => qrisFileRef.current?.click()} disabled={qrisUploading}>
+                    <Image className="w-4 h-4" /> {qrisUploading ? "Uploading..." : "Upload Foto QRIS"}
+                  </Button>
                   {settingQris && <img src={settingQris} alt="QRIS Preview" className="max-w-full max-h-40 rounded-lg border border-border" />}
                 </div>
+
+                {/* Multiple E-Wallets */}
                 <div className="space-y-2">
-                  <label className="text-xs font-bold text-muted-foreground">Nama E-Wallet</label>
-                  <Input placeholder="DANA / OVO / GoPay" value={settingEwalletName} onChange={e => setSettingEwalletName(e.target.value)} />
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-bold text-muted-foreground">Daftar E-Wallet</label>
+                    <Button size="sm" variant="outline" className="h-7 text-xs gap-1" onClick={() => setEwallets([...ewallets, { name: "", number: "" }])}>
+                      <Plus className="w-3 h-3" /> Tambah
+                    </Button>
+                  </div>
+                  {ewallets.map((ew, idx) => (
+                    <div key={idx} className="flex gap-2 items-start">
+                      <div className="flex-1 space-y-1">
+                        <Input placeholder="Nama (DANA, OVO, GoPay...)" value={ew.name}
+                          onChange={e => { const arr = [...ewallets]; arr[idx] = { ...arr[idx], name: e.target.value }; setEwallets(arr); }} />
+                        <Input placeholder="Nomor rekening" value={ew.number}
+                          onChange={e => { const arr = [...ewallets]; arr[idx] = { ...arr[idx], number: e.target.value }; setEwallets(arr); }} />
+                      </div>
+                      <Button size="sm" variant="ghost" className="text-destructive h-8 w-8 p-0 mt-1" onClick={() => setEwallets(ewallets.filter((_, i) => i !== idx))}>
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  ))}
+                  {ewallets.length === 0 && <p className="text-xs text-muted-foreground">Belum ada e-wallet. Klik "Tambah" untuk menambahkan.</p>}
                 </div>
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-muted-foreground">Nomor E-Wallet</label>
-                  <Input placeholder="08123456789" value={settingEwalletNumber} onChange={e => setSettingEwalletNumber(e.target.value)} />
-                </div>
+
                 <Button className="w-full gap-2" onClick={saveAllSettings}>
                   <Check className="w-4 h-4" /> Simpan Pengaturan
                 </Button>
