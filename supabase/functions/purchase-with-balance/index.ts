@@ -8,6 +8,7 @@ const corsHeaders = {
 type PurchaseRequest = {
   visitorId?: string;
   productId?: string;
+  quantity?: number;
 };
 
 Deno.serve(async (request) => {
@@ -16,7 +17,8 @@ Deno.serve(async (request) => {
   }
 
   try {
-    const { visitorId, productId } = (await request.json()) as PurchaseRequest;
+    const { visitorId, productId, quantity: rawQty } = (await request.json()) as PurchaseRequest;
+    const quantity = Math.max(1, Math.min(rawQty || 1, 50));
 
     if (!visitorId || !productId) {
       return Response.json({ error: "Data pembelian tidak lengkap" }, { status: 400, headers: corsHeaders });
@@ -53,10 +55,13 @@ Deno.serve(async (request) => {
       return Response.json({ error: "Produk tidak ditemukan" }, { status: 404, headers: corsHeaders });
     }
 
-    if (balanceRow.balance < product.price) {
+    const totalPrice = product.price * quantity;
+
+    if (balanceRow.balance < totalPrice) {
       return Response.json({ error: "Saldo tidak cukup" }, { status: 400, headers: corsHeaders });
     }
 
+    // Get sold token IDs
     const { data: soldTransactions, error: soldTransactionsError } = await admin
       .from("balance_transactions")
       .select("token_id")
@@ -81,14 +86,16 @@ Deno.serve(async (request) => {
       return Response.json({ error: "Gagal mengambil voucher" }, { status: 500, headers: corsHeaders });
     }
 
-    const availableToken = (tokens ?? []).find((token) => !soldTokenIds.has(token.id));
+    const availableTokens = (tokens ?? []).filter((token) => !soldTokenIds.has(token.id));
 
-    if (!availableToken) {
-      return Response.json({ error: "Stok voucher habis untuk produk ini" }, { status: 400, headers: corsHeaders });
+    if (availableTokens.length < quantity) {
+      return Response.json({ error: `Stok voucher tidak cukup. Tersedia: ${availableTokens.length}` }, { status: 400, headers: corsHeaders });
     }
 
-    const nextBalance = balanceRow.balance - product.price;
+    const selectedTokens = availableTokens.slice(0, quantity);
+    const nextBalance = balanceRow.balance - totalPrice;
 
+    // Update balance
     const { error: balanceUpdateError } = await admin
       .from("user_balances")
       .update({ balance: nextBalance })
@@ -98,40 +105,45 @@ Deno.serve(async (request) => {
       return Response.json({ error: "Gagal memotong saldo" }, { status: 500, headers: corsHeaders });
     }
 
-    const { error: transactionError } = await admin.from("balance_transactions").insert({
+    // Insert all transactions
+    const transactionRows = selectedTokens.map((token) => ({
       visitor_id: visitorId,
       type: "purchase",
       amount: product.price,
       description: `Beli ${product.title}`,
       product_id: product.id,
-      token_id: availableToken.id,
-    });
+      token_id: token.id,
+    }));
+
+    const { error: transactionError } = await admin.from("balance_transactions").insert(transactionRows);
 
     if (transactionError) {
+      // Rollback balance
       await admin.from("user_balances").update({ balance: balanceRow.balance }).eq("id", balanceRow.id);
-
       return Response.json({ error: "Gagal mencatat pembelian" }, { status: 500, headers: corsHeaders });
     }
 
-    const { data: fields, error: fieldsError } = await admin
+    // Fetch fields for all tokens
+    const tokenIds = selectedTokens.map((t) => t.id);
+    const { data: allFields } = await admin
       .from("token_fields")
-      .select("field_name, field_value")
-      .eq("token_id", availableToken.id)
+      .select("token_id, field_name, field_value")
+      .in("token_id", tokenIds)
       .order("created_at", { ascending: true });
 
-    if (fieldsError) {
-      return Response.json({ error: "Pembelian berhasil, tetapi detail voucher gagal dimuat" }, { status: 500, headers: corsHeaders });
-    }
+    const tokenResults = selectedTokens.map((token) => ({
+      id: token.id,
+      token_code: token.token_code,
+      fields: (allFields ?? []).filter((f) => f.token_id === token.id).map((f) => ({ field_name: f.field_name, field_value: f.field_value })),
+    }));
 
     return Response.json(
       {
         success: true,
-        token: {
-          id: availableToken.id,
-          token_code: availableToken.token_code,
-        },
+        tokens: tokenResults,
         product,
-        fields: fields ?? [],
+        quantity,
+        total_price: totalPrice,
         balance_remaining: nextBalance,
       },
       { headers: corsHeaders },
