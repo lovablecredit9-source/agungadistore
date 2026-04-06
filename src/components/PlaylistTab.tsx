@@ -147,8 +147,8 @@ function saveSub(plan: StoragePlan): ActiveSubscription {
   return newSub;
 }
 
-function getTotalMaxBytes(): number {
-  return FREE_BYTES + getActiveSubscriptions().reduce((sum, s) => sum + s.addBytes, 0);
+function getTotalMaxBytes(redeemedMb: number = 0): number {
+  return FREE_BYTES + getActiveSubscriptions().reduce((sum, s) => sum + s.addBytes, 0) + (redeemedMb * 1024 * 1024);
 }
 
 // --- Cache helpers ---
