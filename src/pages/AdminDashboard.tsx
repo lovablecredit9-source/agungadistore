@@ -872,6 +872,8 @@ const AdminDashboard = () => {
           { key: "claims" as AdminTab, icon: Clock, label: "Klaim" },
           { key: "saldo" as AdminTab, icon: Wallet, label: "Saldo" },
           { key: "deposit" as AdminTab, icon: ArrowUpCircle, label: "Deposit" },
+          { key: "diskon" as AdminTab, icon: Tag, label: "Diskon" },
+          { key: "pin" as AdminTab, icon: Lock, label: "PIN" },
           { key: "tickets" as AdminTab, icon: AlertCircle, label: "Tiket" },
           { key: "chats" as AdminTab, icon: MessageCircle, label: "Chat" },
           { key: "notif" as AdminTab, icon: Bell, label: "Notif" },
