@@ -239,7 +239,7 @@ const Index = () => {
   const [adminSettings, setAdminSettings] = useState<AdminSetting[]>([]);
   const [showDepositModal, setShowDepositModal] = useState(false);
   const [depositStep, setDepositStep] = useState<"method" | "form">("method");
-  const [depositMethod, setDepositMethod] = useState<"qris" | "ewallet">("qris");
+  const [depositMethod, setDepositMethod] = useState<string>("qris");
   const [depositAmount, setDepositAmount] = useState("");
   const [depositTrxId, setDepositTrxId] = useState("");
 
@@ -307,22 +307,26 @@ const Index = () => {
     return adminSettings.find(s => s.setting_key === key)?.setting_value || "";
   }
 
+  function getEwallets(): {name: string; number: string}[] {
+    try { return JSON.parse(getSettingValue("ewallets") || "[]"); } catch { return []; }
+  }
+
   async function submitDeposit() {
     const amount = parseInt(depositAmount) || 0;
     if (amount <= 0 || !depositTrxId.trim() || !userBalance) {
       toast({ title: lang === "id" ? "Isi nominal dan ID transaksi" : "Fill amount and transaction ID", variant: "destructive" }); return;
     }
+    const methodLabel = depositMethod === "qris" ? "QRIS" : depositMethod;
     await supabase.from("deposits").insert({
       visitor_id: visitorId,
       username: userBalance.username,
       amount,
-      payment_method: depositMethod,
+      payment_method: methodLabel,
       trx_id: depositTrxId.trim(),
     } as any);
-    // Send WhatsApp confirmation
     const msg = lang === "id"
-      ? `Halo admin, saya sudah deposit saldo.\n\nUsername: ${userBalance.username}\nNominal: ${formatPrice(amount)}\nMetode: ${depositMethod === "qris" ? "QRIS" : "E-Wallet"}\nID Transaksi: ${depositTrxId.trim()}\nVisitor ID: ${visitorId}`
-      : `Hello admin, I have deposited balance.\n\nUsername: ${userBalance.username}\nAmount: ${formatPrice(amount)}\nMethod: ${depositMethod === "qris" ? "QRIS" : "E-Wallet"}\nTransaction ID: ${depositTrxId.trim()}\nVisitor ID: ${visitorId}`;
+      ? `Halo admin, saya sudah deposit saldo.\n\nUsername: ${userBalance.username}\nNominal: ${formatPrice(amount)}\nMetode: ${methodLabel}\nID Transaksi: ${depositTrxId.trim()}\nVisitor ID: ${visitorId}`
+      : `Hello admin, I have deposited balance.\n\nUsername: ${userBalance.username}\nAmount: ${formatPrice(amount)}\nMethod: ${methodLabel}\nTransaction ID: ${depositTrxId.trim()}\nVisitor ID: ${visitorId}`;
     window.open(`${SOCIAL_LINKS.whatsapp}?text=${encodeURIComponent(msg)}`, "_blank");
     toast({ title: lang === "id" ? "Deposit berhasil diajukan! ✅" : "Deposit submitted! ✅" });
     setShowDepositModal(false); setDepositAmount(""); setDepositTrxId(""); setDepositStep("method");
@@ -1842,14 +1846,19 @@ const Index = () => {
                     <p className="text-[10px] text-muted-foreground">Scan QR Code</p>
                   </div>
                 </button>
-                <button onClick={() => { setDepositMethod("ewallet"); setDepositStep("form"); }}
-                  className="w-full p-4 rounded-xl border-2 border-primary/20 hover:border-primary/50 transition-colors text-left flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center"><Wallet className="w-5 h-5 text-accent" /></div>
-                  <div>
-                    <p className="font-bold text-sm">{t("deposit.ewallet", lang)}</p>
-                    <p className="text-[10px] text-muted-foreground">{getSettingValue("ewallet_name") || "E-Wallet"}</p>
-                  </div>
-                </button>
+                {getEwallets().map((ew, idx) => (
+                  <button key={idx} onClick={() => { setDepositMethod(ew.name); setDepositStep("form"); }}
+                    className="w-full p-4 rounded-xl border-2 border-primary/20 hover:border-primary/50 transition-colors text-left flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center"><Wallet className="w-5 h-5 text-accent" /></div>
+                    <div>
+                      <p className="font-bold text-sm">{ew.name}</p>
+                      <p className="text-[10px] text-muted-foreground">{ew.number}</p>
+                    </div>
+                  </button>
+                ))}
+                {getEwallets().length === 0 && (
+                  <div className="text-xs text-muted-foreground text-center py-2">{lang === "id" ? "Belum ada e-wallet dikonfigurasi" : "No e-wallet configured"}</div>
+                )}
               </div>
             ) : (
               <div className="space-y-4">
@@ -1868,8 +1877,8 @@ const Index = () => {
                 ) : (
                   <div className="rounded-xl border border-accent/20 bg-accent/5 p-3 space-y-1">
                     <p className="text-xs font-bold text-accent">{t("deposit.transfer_to", lang)}</p>
-                    <p className="font-bold text-sm">{getSettingValue("ewallet_name") || "-"}</p>
-                    <p className="font-mono text-lg font-extrabold text-foreground">{getSettingValue("ewallet_number") || "-"}</p>
+                    <p className="font-bold text-sm">{depositMethod}</p>
+                    <p className="font-mono text-lg font-extrabold text-foreground">{getEwallets().find(ew => ew.name === depositMethod)?.number || "-"}</p>
                   </div>
                 )}
 

@@ -180,8 +180,9 @@ const AdminDashboard = () => {
   const [allDeposits, setAllDeposits] = useState<Deposit[]>([]);
   const [adminSettings, setAdminSettings] = useState<AdminSetting[]>([]);
   const [settingQris, setSettingQris] = useState("");
-  const [settingEwalletName, setSettingEwalletName] = useState("");
-  const [settingEwalletNumber, setSettingEwalletNumber] = useState("");
+  const [ewallets, setEwallets] = useState<{name: string; number: string}[]>([]);
+  const [qrisUploading, setQrisUploading] = useState(false);
+  const qrisFileRef = useRef<HTMLInputElement | null>(null);
   const [depositSearchTrx, setDepositSearchTrx] = useState("");
 
   const chatRef = useRef<HTMLDivElement>(null);
@@ -210,23 +211,43 @@ const AdminDashboard = () => {
     if (data) {
       setAdminSettings(data as unknown as AdminSetting[]);
       const q = (data as any[]).find(s => s.setting_key === "qris_url");
-      const en = (data as any[]).find(s => s.setting_key === "ewallet_name");
-      const enm = (data as any[]).find(s => s.setting_key === "ewallet_number");
       if (q) setSettingQris(q.setting_value);
-      if (en) setSettingEwalletName(en.setting_value);
-      if (enm) setSettingEwalletNumber(enm.setting_value);
+      const ew = (data as any[]).find(s => s.setting_key === "ewallets");
+      if (ew) {
+        try { setEwallets(JSON.parse(ew.setting_value)); } catch { setEwallets([]); }
+      }
     }
   }
 
   async function updateSetting(key: string, value: string) {
-    await supabase.from("admin_settings").update({ setting_value: value }).eq("setting_key", key);
+    const existing = adminSettings.find(s => s.setting_key === key);
+    if (existing) {
+      await supabase.from("admin_settings").update({ setting_value: value }).eq("setting_key", key);
+    } else {
+      await supabase.from("admin_settings").insert({ setting_key: key, setting_value: value } as any);
+    }
+  }
+
+  async function handleQrisUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setQrisUploading(true);
+    const fileName = `qris_${Date.now()}.${file.name.split('.').pop()}`;
+    const { error } = await supabase.storage.from("payment-images").upload(fileName, file, { upsert: true });
+    if (error) { toast({ title: "Upload gagal!", variant: "destructive" }); setQrisUploading(false); return; }
+    const { data: urlData } = supabase.storage.from("payment-images").getPublicUrl(fileName);
+    const url = urlData.publicUrl;
+    setSettingQris(url);
+    await updateSetting("qris_url", url);
+    toast({ title: "QRIS berhasil diupload! ✅" });
+    setQrisUploading(false);
+    fetchAdminSettings();
   }
 
   async function saveAllSettings() {
     await Promise.all([
       updateSetting("qris_url", settingQris),
-      updateSetting("ewallet_name", settingEwalletName),
-      updateSetting("ewallet_number", settingEwalletNumber),
+      updateSetting("ewallets", JSON.stringify(ewallets)),
     ]);
     toast({ title: "Pengaturan tersimpan! ✅" });
     fetchAdminSettings();
@@ -1263,19 +1284,40 @@ const AdminDashboard = () => {
             <Card>
               <CardHeader><CardTitle className="text-base flex items-center gap-2"><Edit2 className="w-5 h-5 text-primary" /> Pengaturan Pembayaran</CardTitle></CardHeader>
               <CardContent className="space-y-4">
+                {/* QRIS Upload */}
                 <div className="space-y-2">
-                  <label className="text-xs font-bold text-muted-foreground">URL Gambar QRIS</label>
-                  <Input placeholder="https://example.com/qris.jpg" value={settingQris} onChange={e => setSettingQris(e.target.value)} />
+                  <label className="text-xs font-bold text-muted-foreground">Foto QRIS</label>
+                  <input type="file" accept="image/*" ref={qrisFileRef} className="hidden" onChange={handleQrisUpload} />
+                  <Button variant="outline" className="w-full gap-2" onClick={() => qrisFileRef.current?.click()} disabled={qrisUploading}>
+                    <Image className="w-4 h-4" /> {qrisUploading ? "Uploading..." : "Upload Foto QRIS"}
+                  </Button>
                   {settingQris && <img src={settingQris} alt="QRIS Preview" className="max-w-full max-h-40 rounded-lg border border-border" />}
                 </div>
+
+                {/* Multiple E-Wallets */}
                 <div className="space-y-2">
-                  <label className="text-xs font-bold text-muted-foreground">Nama E-Wallet</label>
-                  <Input placeholder="DANA / OVO / GoPay" value={settingEwalletName} onChange={e => setSettingEwalletName(e.target.value)} />
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-bold text-muted-foreground">Daftar E-Wallet</label>
+                    <Button size="sm" variant="outline" className="h-7 text-xs gap-1" onClick={() => setEwallets([...ewallets, { name: "", number: "" }])}>
+                      <Plus className="w-3 h-3" /> Tambah
+                    </Button>
+                  </div>
+                  {ewallets.map((ew, idx) => (
+                    <div key={idx} className="flex gap-2 items-start">
+                      <div className="flex-1 space-y-1">
+                        <Input placeholder="Nama (DANA, OVO, GoPay...)" value={ew.name}
+                          onChange={e => { const arr = [...ewallets]; arr[idx] = { ...arr[idx], name: e.target.value }; setEwallets(arr); }} />
+                        <Input placeholder="Nomor rekening" value={ew.number}
+                          onChange={e => { const arr = [...ewallets]; arr[idx] = { ...arr[idx], number: e.target.value }; setEwallets(arr); }} />
+                      </div>
+                      <Button size="sm" variant="ghost" className="text-destructive h-8 w-8 p-0 mt-1" onClick={() => setEwallets(ewallets.filter((_, i) => i !== idx))}>
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  ))}
+                  {ewallets.length === 0 && <p className="text-xs text-muted-foreground">Belum ada e-wallet. Klik "Tambah" untuk menambahkan.</p>}
                 </div>
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-muted-foreground">Nomor E-Wallet</label>
-                  <Input placeholder="08123456789" value={settingEwalletNumber} onChange={e => setSettingEwalletNumber(e.target.value)} />
-                </div>
+
                 <Button className="w-full gap-2" onClick={saveAllSettings}>
                   <Check className="w-4 h-4" /> Simpan Pengaturan
                 </Button>
