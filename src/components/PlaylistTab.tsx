@@ -229,10 +229,11 @@ export interface PlaybackState {
 interface PlaylistTabProps {
   onPlaybackChange?: (state: PlaybackState) => void;
   onTogglePlay?: React.MutableRefObject<(() => void) | null>;
+  onOpenFullPlayer?: React.MutableRefObject<(() => void) | null>;
 }
 
 // ===== COMPONENT =====
-const PlaylistTab = ({ onPlaybackChange, onTogglePlay }: PlaylistTabProps) => {
+const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer }: PlaylistTabProps) => {
   const [songs, setSongs] = useState<Song[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentIndex, setCurrentIndex] = useState<number>(-1);
@@ -347,9 +348,10 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay }: PlaylistTabProps) => {
     onPlaybackChange?.({ song: currentSong || null, isPlaying, currentTime, duration });
   }, [currentSong, isPlaying, currentTime, duration]);
 
-  // Expose togglePlay to parent
+  // Expose togglePlay and openFullPlayer to parent
   useEffect(() => {
     if (onTogglePlay) onTogglePlay.current = togglePlay;
+    if (onOpenFullPlayer) onOpenFullPlayer.current = () => setShowFullPlayer(true);
   });
 
   // Lyrics for current song

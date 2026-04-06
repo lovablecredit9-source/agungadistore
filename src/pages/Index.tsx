@@ -236,6 +236,7 @@ const Index = () => {
   // Music playback persistence
   const [playbackState, setPlaybackState] = useState<PlaybackState>({ song: null, isPlaying: false, currentTime: 0, duration: 0 });
   const togglePlayRef = useRef<(() => void) | null>(null);
+  const openFullPlayerRef = useRef<(() => void) | null>(null);
 
   // Likes
   const [likedIds, setLikedIds] = useState<Set<string>>(new Set());
@@ -1740,7 +1741,7 @@ const Index = () => {
 
         {/* PlaylistTab always mounted, hidden when not active */}
         <div className={tab === "playlist" ? "" : "hidden"}>
-          <PlaylistTab onPlaybackChange={setPlaybackState} onTogglePlay={togglePlayRef} />
+          <PlaylistTab onPlaybackChange={setPlaybackState} onTogglePlay={togglePlayRef} onOpenFullPlayer={openFullPlayerRef} />
         </div>
       </main>
 
@@ -1748,7 +1749,7 @@ const Index = () => {
       {playbackState.song && tab !== "playlist" && (
         <div
           className="fixed bottom-[52px] left-0 right-0 z-50 bg-card/95 backdrop-blur-md border-t border-primary/20 shadow-lg cursor-pointer"
-          onClick={() => setTab("playlist")}
+          onClick={() => openFullPlayerRef.current?.()}
         >
           <div className="max-w-lg mx-auto flex items-center gap-3 px-3 py-2">
             <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0 overflow-hidden">
