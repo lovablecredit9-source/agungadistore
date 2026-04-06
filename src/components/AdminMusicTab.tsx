@@ -746,5 +746,7 @@ const AdminMusicTab = () => {
         </DialogContent>
       </Dialog>
     </>
+  );
+};
 
 export default AdminMusicTab;
