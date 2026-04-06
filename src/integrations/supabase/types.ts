@@ -244,6 +244,39 @@ export type Database = {
         }
         Relationships: []
       }
+      playlist_songs: {
+        Row: {
+          artist: string
+          cover_url: string | null
+          created_at: string
+          duration: number | null
+          file_size: number | null
+          file_url: string
+          id: string
+          title: string
+        }
+        Insert: {
+          artist?: string
+          cover_url?: string | null
+          created_at?: string
+          duration?: number | null
+          file_size?: number | null
+          file_url: string
+          id?: string
+          title: string
+        }
+        Update: {
+          artist?: string
+          cover_url?: string | null
+          created_at?: string
+          duration?: number | null
+          file_size?: number | null
+          file_url?: string
+          id?: string
+          title?: string
+        }
+        Relationships: []
+      }
       product_chat_messages: {
         Row: {
           chat_id: string
