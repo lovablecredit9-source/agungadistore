@@ -1642,20 +1642,25 @@ const Index = () => {
                   </span>
                 </div>
 
-                {/* Three buttons: Chat + Beli Saldo + WhatsApp */}
-                <div className="grid grid-cols-3 gap-2">
+                {/* Four buttons: Cart + Chat + Beli Saldo + WhatsApp */}
+                <div className="grid grid-cols-4 gap-2">
+                  <Button className="h-11 bg-gradient-to-r from-secondary to-secondary/80 text-secondary-foreground font-bold gap-1 rounded-xl text-xs"
+                    disabled={selectedProduct.stock <= 0}
+                    onClick={() => { addToCart(selectedProduct); }}>
+                    <ShoppingCart className="w-4 h-4" /> Keranjang
+                  </Button>
                   <Button className="h-11 bg-gradient-to-r from-primary to-primary/80 font-bold gap-1 rounded-xl text-xs"
                     onClick={() => openProductChat(selectedProduct)}>
                     <MessageCircle className="w-4 h-4" /> Chat
                   </Button>
                   <Button className="h-11 bg-gradient-to-r from-primary to-accent text-primary-foreground font-bold gap-1 rounded-xl text-xs"
                     disabled={!userBalance || userBalance.balance < selectedProduct.price || selectedProduct.stock <= 0}
-                    onClick={() => { setBuyProduct(selectedProduct); setShowBuySaldo(true); }}>
+                    onClick={() => { setBuyProduct(selectedProduct); setBuyQuantity(1); setShowBuySaldo(true); }}>
                     <Wallet className="w-4 h-4" /> Saldo
                   </Button>
                   <Button className="h-11 bg-gradient-to-r from-accent to-accent/80 text-accent-foreground font-bold gap-1 rounded-xl text-xs"
                     onClick={() => setShowWaForm(true)}>
-                    <ShoppingBag className="w-4 h-4" /> Beli WA
+                    <ShoppingBag className="w-4 h-4" /> WA
                   </Button>
                 </div>
                 {userBalance && userBalance.balance < selectedProduct.price && (
