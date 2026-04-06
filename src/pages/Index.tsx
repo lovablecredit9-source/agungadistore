@@ -289,7 +289,45 @@ const Index = () => {
     fetchProductChatHistory();
     fetchUserBalance();
     fetchNotifications();
+    fetchDeposits();
+    fetchAdminSettings();
   }, []);
+
+  async function fetchDeposits() {
+    const { data } = await supabase.from("deposits").select("*").eq("visitor_id", visitorId).order("created_at", { ascending: false });
+    if (data) setDeposits(data as unknown as Deposit[]);
+  }
+
+  async function fetchAdminSettings() {
+    const { data } = await supabase.from("admin_settings").select("*");
+    if (data) setAdminSettings(data as unknown as AdminSetting[]);
+  }
+
+  function getSettingValue(key: string): string {
+    return adminSettings.find(s => s.setting_key === key)?.setting_value || "";
+  }
+
+  async function submitDeposit() {
+    const amount = parseInt(depositAmount) || 0;
+    if (amount <= 0 || !depositTrxId.trim() || !userBalance) {
+      toast({ title: lang === "id" ? "Isi nominal dan ID transaksi" : "Fill amount and transaction ID", variant: "destructive" }); return;
+    }
+    await supabase.from("deposits").insert({
+      visitor_id: visitorId,
+      username: userBalance.username,
+      amount,
+      payment_method: depositMethod,
+      trx_id: depositTrxId.trim(),
+    } as any);
+    // Send WhatsApp confirmation
+    const msg = lang === "id"
+      ? `Halo admin, saya sudah deposit saldo.\n\nUsername: ${userBalance.username}\nNominal: ${formatPrice(amount)}\nMetode: ${depositMethod === "qris" ? "QRIS" : "E-Wallet"}\nID Transaksi: ${depositTrxId.trim()}\nVisitor ID: ${visitorId}`
+      : `Hello admin, I have deposited balance.\n\nUsername: ${userBalance.username}\nAmount: ${formatPrice(amount)}\nMethod: ${depositMethod === "qris" ? "QRIS" : "E-Wallet"}\nTransaction ID: ${depositTrxId.trim()}\nVisitor ID: ${visitorId}`;
+    window.open(`${SOCIAL_LINKS.whatsapp}?text=${encodeURIComponent(msg)}`, "_blank");
+    toast({ title: lang === "id" ? "Deposit berhasil diajukan! ✅" : "Deposit submitted! ✅" });
+    setShowDepositModal(false); setDepositAmount(""); setDepositTrxId(""); setDepositStep("method");
+    fetchDeposits();
+  }
 
   // Realtime notifications
   useEffect(() => {
