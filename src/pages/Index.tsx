@@ -239,7 +239,7 @@ const Index = () => {
   const [adminSettings, setAdminSettings] = useState<AdminSetting[]>([]);
   const [showDepositModal, setShowDepositModal] = useState(false);
   const [depositStep, setDepositStep] = useState<"method" | "form">("method");
-  const [depositMethod, setDepositMethod] = useState<"qris" | "ewallet">("qris");
+  const [depositMethod, setDepositMethod] = useState<string>("qris");
   const [depositAmount, setDepositAmount] = useState("");
   const [depositTrxId, setDepositTrxId] = useState("");
 
