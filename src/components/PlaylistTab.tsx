@@ -706,18 +706,37 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay }: PlaylistTabProps) => {
             {currentSongLyrics.length > 0 ? (
               <>
                 <div ref={lyricsContainerRef} className="max-h-48 overflow-y-auto space-y-0.5 scroll-smooth">
+                  {/* Intro indicator */}
+                  {isPlaying && currentSongLyrics.length > 0 && currentTime < currentSongLyrics[0].time_seconds && (
+                    <p className="text-xs py-0.5 px-2 rounded text-primary font-bold bg-primary/10 text-center animate-pulse">
+                      ♪♪♪
+                    </p>
+                  )}
                   {currentSongLyrics.map((line, i) => {
                     const isActive = activeLyricIndex === i;
+                    const isInstrumental = !line.text || line.text.trim() === "" || /^[♪♫🎵🎶\s]+$/.test(line.text.trim());
                     return (
                       <p
                         key={line.id}
                         data-lyric-index={i}
-                        className={`text-xs py-0.5 px-2 rounded transition-all duration-300 ${isActive ? "text-primary font-bold bg-primary/10 scale-[1.02]" : "text-muted-foreground"}`}
+                        className={`text-xs py-0.5 px-2 rounded transition-all duration-300 ${
+                          isActive
+                            ? isInstrumental
+                              ? "text-primary font-bold bg-primary/10 scale-[1.02] text-center animate-pulse"
+                              : "text-primary font-bold bg-primary/10 scale-[1.02]"
+                            : "text-muted-foreground"
+                        } ${isInstrumental ? "text-center italic" : ""}`}
                       >
-                        {line.text || "♪"}
+                        {isInstrumental ? "♪♪♪" : line.text}
                       </p>
                     );
                   })}
+                  {/* Outro indicator */}
+                  {isPlaying && activeLyricIndex === currentSongLyrics.length - 1 && currentTime > currentSongLyrics[currentSongLyrics.length - 1].time_seconds + 5 && (
+                    <p className="text-xs py-0.5 px-2 rounded text-primary/60 text-center animate-pulse italic">
+                      ♪♪♪
+                    </p>
+                  )}
                 </div>
                 <p className="text-[10px] text-muted-foreground text-center pt-2 flex items-center justify-center gap-1">
                   <Copyright className="w-3 h-3" /> {currentSong.artist} — Hak cipta dilindungi
