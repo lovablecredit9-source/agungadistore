@@ -2,10 +2,9 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Music, Play, Pause, SkipBack, SkipForward, Download, Volume2, VolumeX, Repeat, Shuffle, Loader2, Globe, HardDrive, ExternalLink } from "lucide-react";
+import { Music, Play, Pause, SkipBack, SkipForward, Download, Volume2, VolumeX, Repeat, Shuffle, Loader2, HardDrive } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Slider } from "@/components/ui/slider";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
 interface Song {
   id: string;
@@ -27,6 +26,13 @@ function formatTime(sec: number) {
 function formatSize(bytes: number) {
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+function formatStorageSize(bytes: number) {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`;
 }
 
 const PlaylistTab = () => {
@@ -56,6 +62,7 @@ const PlaylistTab = () => {
   }
 
   const currentSong = currentIndex >= 0 ? songs[currentIndex] : null;
+  const totalStorageUsed = songs.reduce((sum, song) => sum + (song.file_size || 0), 0);
 
   const playSong = useCallback((index: number) => {
     if (audioRef.current) {
@@ -149,11 +156,6 @@ const PlaylistTab = () => {
     setDownloading(null);
   }
 
-  function openInWeb(song: Song) {
-    window.open(song.file_url, "_blank");
-    toast({ title: "Membuka di browser", description: song.title });
-  }
-
   // Cleanup
   useEffect(() => {
     return () => {
@@ -185,6 +187,26 @@ const PlaylistTab = () => {
       <h2 className="text-lg font-extrabold flex items-center gap-2">
         <Music className="w-5 h-5 text-primary" /> Playlist Musik
       </h2>
+
+      <Card className="border-primary/20 bg-gradient-to-br from-primary/5 to-accent/5">
+        <CardContent className="p-4 space-y-3">
+          <div className="grid grid-cols-2 gap-3">
+            <div className="rounded-xl bg-background/70 p-3 border border-border/60">
+              <p className="text-[11px] text-muted-foreground">Jumlah lagu</p>
+              <p className="text-base font-extrabold">{songs.length}</p>
+            </div>
+            <div className="rounded-xl bg-background/70 p-3 border border-border/60">
+              <p className="text-[11px] text-muted-foreground flex items-center gap-1">
+                <HardDrive className="w-3.5 h-3.5" /> Penyimpanan
+              </p>
+              <p className="text-base font-extrabold">{formatStorageSize(totalStorageUsed)}</p>
+            </div>
+          </div>
+          <p className="text-[11px] text-muted-foreground">
+            Tekan tombol <span className="font-bold text-foreground">Simpan</span> di tiap lagu untuk download ke perangkat.
+          </p>
+        </CardContent>
+      </Card>
 
       {/* Now Playing */}
       {currentSong && (
@@ -259,21 +281,19 @@ const PlaylistTab = () => {
                 <p className="font-bold text-sm truncate">{song.title}</p>
                 <p className="text-[11px] text-muted-foreground truncate">{song.artist} • {song.file_size > 0 ? formatSize(song.file_size) : ""}</p>
               </div>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button size="sm" variant="ghost" className="shrink-0 h-8 w-8 p-0" onClick={(e) => e.stopPropagation()} disabled={downloading === song.id}>
-                    {downloading === song.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="min-w-[160px]">
-                  <DropdownMenuItem onClick={() => downloadToStorage(song)} className="gap-2 cursor-pointer">
-                    <HardDrive className="w-4 h-4" /> Simpan ke Perangkat
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => openInWeb(song)} className="gap-2 cursor-pointer">
-                    <Globe className="w-4 h-4" /> Buka di Browser
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              <Button
+                size="sm"
+                variant="outline"
+                className="shrink-0 gap-1.5 h-8 px-3"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  downloadToStorage(song);
+                }}
+                disabled={downloading === song.id}
+              >
+                {downloading === song.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+                <span className="text-xs font-semibold">Simpan</span>
+              </Button>
             </CardContent>
           </Card>
         ))}
