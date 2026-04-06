@@ -291,6 +291,10 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer }: Playl
   // Discount code for upgrade
   const [upgradeDiscountCode, setUpgradeDiscountCode] = useState("");
   const [upgradeDiscountAmount, setUpgradeDiscountAmount] = useState(0);
+  // PIN for upgrade
+  const [showPinDialog, setShowPinDialog] = useState(false);
+  const [upgradePinInput, setUpgradePinInput] = useState("");
+  const [hasPin, setHasPin] = useState(false);
 
   // Lyrics state
   const [allLyrics, setAllLyrics] = useState<LyricLine[]>([]);
