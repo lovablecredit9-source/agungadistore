@@ -1153,7 +1153,22 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer }: Playl
                 </div>
               </div>
             ))}
-            <p className="text-[11px] text-muted-foreground">💡 Saldo dipotong {formatCurrency(PURCHASABLE_PLANS[selectedPlanIndex]?.pricePerMonth || 0)}. Paket berlaku 30 hari.</p>
+            {/* Discount Code */}
+            <div className="space-y-1.5">
+              <p className="text-[11px] font-semibold text-muted-foreground flex items-center gap-1"><Tag className="w-3 h-3" /> Kode Diskon (opsional)</p>
+              <div className="flex gap-2">
+                <Input placeholder="Masukkan kode diskon" value={upgradeDiscountCode} onChange={e => { setUpgradeDiscountCode(e.target.value.toUpperCase()); setUpgradeDiscountAmount(0); }} className="font-mono text-xs flex-1" />
+                <Button size="sm" variant="outline" onClick={applyMusicDiscount} disabled={!upgradeDiscountCode.trim()} className="shrink-0 text-xs">Pakai</Button>
+              </div>
+              {upgradeDiscountAmount > 0 && (
+                <p className="text-[10px] text-primary font-bold">✅ Diskon Rp{upgradeDiscountAmount.toLocaleString()} diterapkan!</p>
+              )}
+            </div>
+            <p className="text-[11px] text-muted-foreground">
+              💡 Saldo dipotong {formatCurrency(Math.max(0, (PURCHASABLE_PLANS[selectedPlanIndex]?.pricePerMonth || 0) - upgradeDiscountAmount))}
+              {upgradeDiscountAmount > 0 && <span className="line-through ml-1 text-muted-foreground/50">{formatCurrency(PURCHASABLE_PLANS[selectedPlanIndex]?.pricePerMonth || 0)}</span>}
+              . Paket berlaku 30 hari.
+            </p>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setUpgradeOpen(false)}>Batal</Button>
