@@ -500,9 +500,14 @@ const AdminMusicTab = () => {
                        <p className="text-[11px] text-muted-foreground">{song.artist}{song.file_size ? ` • ${formatSize(song.file_size)}` : ""}</p>
                        <p className="text-[10px] text-muted-foreground">{song.release_date ? `Rilis ${song.release_date}` : `Upload ${new Date(song.created_at).toLocaleDateString("id-ID")}`}</p>
                     </div>
-                    <Button size="sm" variant="ghost" className="text-destructive h-8 w-8 p-0 shrink-0" onClick={() => deleteSong(song)}>
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
+                    <div className="flex gap-1 shrink-0">
+                      <Button size="sm" variant="ghost" className="h-8 w-8 p-0" onClick={() => openEditSong(song)} title="Edit">
+                        <Edit2 className="w-4 h-4" />
+                      </Button>
+                      <Button size="sm" variant="ghost" className="text-destructive h-8 w-8 p-0" onClick={() => deleteSong(song)}>
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
                   </div>
                 ))
               )}
