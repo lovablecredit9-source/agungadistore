@@ -662,7 +662,7 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay }: PlaylistTabProps) => {
 
       {/* Now Playing */}
       {currentSong && (
-        <Card className="overflow-hidden border-primary/20 bg-gradient-to-br from-primary/5 to-accent/5">
+        <Card className="overflow-hidden border-primary/20 bg-gradient-to-br from-primary/5 to-accent/5 cursor-pointer" onClick={() => setShowFullPlayer(true)}>
           <CardContent className="p-4 space-y-3">
             <div className="flex items-center gap-3">
               <div className="w-14 h-14 rounded-xl bg-primary/10 flex items-center justify-center overflow-hidden shrink-0">
@@ -677,12 +677,13 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay }: PlaylistTabProps) => {
                   </p>
                 )}
               </div>
+              <ChevronDown className="w-5 h-5 text-muted-foreground rotate-180 shrink-0" />
             </div>
-            <div className="space-y-1">
+            <div className="space-y-1" onClick={e => e.stopPropagation()}>
               <Slider value={[currentTime]} max={duration || 100} step={1} onValueChange={seek} className="cursor-pointer" />
               <div className="flex justify-between text-[10px] text-muted-foreground"><span>{formatTime(currentTime)}</span><span>{formatTime(duration)}</span></div>
             </div>
-            <div className="flex items-center justify-center gap-2">
+            <div className="flex items-center justify-center gap-2" onClick={e => e.stopPropagation()}>
               <button onClick={() => setShuffle(!shuffle)} className={`p-2 rounded-full transition-colors ${shuffle ? "text-primary bg-primary/10" : "text-muted-foreground hover:text-foreground"}`}><Shuffle className="w-4 h-4" /></button>
               <button onClick={playPrev} className="p-2 rounded-full text-foreground hover:bg-muted transition-colors"><SkipBack className="w-5 h-5" /></button>
               <button onClick={togglePlay} className="w-12 h-12 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-lg hover:scale-105 transition-transform">
@@ -691,16 +692,150 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay }: PlaylistTabProps) => {
               <button onClick={playNext} className="p-2 rounded-full text-foreground hover:bg-muted transition-colors"><SkipForward className="w-5 h-5" /></button>
               <button onClick={() => setRepeat(!repeat)} className={`p-2 rounded-full transition-colors ${repeat ? "text-primary bg-primary/10" : "text-muted-foreground hover:text-foreground"}`}><Repeat className="w-4 h-4" /></button>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2" onClick={e => e.stopPropagation()}>
               <button onClick={toggleMute} className="text-muted-foreground hover:text-foreground">{muted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}</button>
               <Slider value={[muted ? 0 : volume]} max={1} step={0.01} onValueChange={changeVolume} className="flex-1 cursor-pointer" />
             </div>
             <div className="flex items-center justify-center gap-1.5 pt-1 text-[11px] font-semibold text-primary">
               <Type className="w-3.5 h-3.5" />
-              {currentSongLyrics.length > 0 ? "Lirik sinkron aktif saat lagu diputar" : "Lirik untuk lagu ini belum tersedia"}
+              {currentSongLyrics.length > 0 ? "Ketuk untuk lihat lirik fullscreen" : "Lirik untuk lagu ini belum tersedia"}
             </div>
           </CardContent>
         </Card>
+      )}
+
+      {/* ===== FULLSCREEN PLAYER ===== */}
+      {showFullPlayer && currentSong && (
+        <div className="fixed inset-0 z-[100] flex flex-col overflow-hidden"
+          style={{
+            background: currentSong.cover_url
+              ? `linear-gradient(180deg, hsl(var(--primary) / 0.9) 0%, hsl(var(--background)) 100%)`
+              : `linear-gradient(180deg, hsl(var(--primary) / 0.7) 0%, hsl(var(--background)) 100%)`
+          }}
+        >
+          {/* Header */}
+          <div className="flex items-center justify-between px-4 pt-4 pb-2 shrink-0">
+            <button onClick={() => setShowFullPlayer(false)} className="p-2 rounded-full hover:bg-white/10 transition-colors">
+              <ChevronDown className="w-6 h-6 text-foreground" />
+            </button>
+            <div className="text-center flex-1 min-w-0">
+              <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Sedang Diputar</p>
+              <p className="text-xs font-bold text-foreground truncate">{viewingPlaylist?.name || "Semua Lagu"}</p>
+            </div>
+            <div className="w-10" />
+          </div>
+
+          {/* Scrollable content */}
+          <div className="flex-1 overflow-y-auto px-6 pb-4 flex flex-col items-center">
+            {/* Cover Art */}
+            <div className="w-full max-w-[280px] aspect-square rounded-2xl overflow-hidden shadow-2xl my-4 bg-muted/30 shrink-0">
+              {currentSong.cover_url ? (
+                <img src={currentSong.cover_url} alt={currentSong.title} className="w-full h-full object-cover" />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/20 to-accent/20">
+                  <Music className="w-20 h-20 text-primary/40" />
+                </div>
+              )}
+            </div>
+
+            {/* Song Info */}
+            <div className="w-full mt-2 mb-4">
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0 flex-1">
+                  <p className="text-lg font-extrabold truncate text-foreground">{currentSong.title}</p>
+                  <p className="text-sm text-muted-foreground truncate">{currentSong.artist}</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Progress */}
+            <div className="w-full space-y-1 mb-2">
+              <Slider value={[currentTime]} max={duration || 100} step={1} onValueChange={seek} className="cursor-pointer" />
+              <div className="flex justify-between text-[10px] text-muted-foreground">
+                <span>{formatTime(currentTime)}</span>
+                <span>{formatTime(duration)}</span>
+              </div>
+            </div>
+
+            {/* Controls */}
+            <div className="flex items-center justify-center gap-4 w-full mb-4">
+              <button onClick={() => setShuffle(!shuffle)} className={`p-2.5 rounded-full transition-colors ${shuffle ? "text-primary" : "text-muted-foreground hover:text-foreground"}`}>
+                <Shuffle className="w-5 h-5" />
+              </button>
+              <button onClick={playPrev} className="p-2.5 rounded-full text-foreground hover:bg-white/10 transition-colors">
+                <SkipBack className="w-7 h-7" />
+              </button>
+              <button onClick={togglePlay} className="w-16 h-16 rounded-full bg-foreground text-background flex items-center justify-center shadow-xl hover:scale-105 transition-transform">
+                {isPlaying ? <Pause className="w-7 h-7" /> : <Play className="w-7 h-7 ml-1" />}
+              </button>
+              <button onClick={playNext} className="p-2.5 rounded-full text-foreground hover:bg-white/10 transition-colors">
+                <SkipForward className="w-7 h-7" />
+              </button>
+              <button onClick={() => setRepeat(!repeat)} className={`p-2.5 rounded-full transition-colors ${repeat ? "text-primary" : "text-muted-foreground hover:text-foreground"}`}>
+                <Repeat className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Volume */}
+            <div className="flex items-center gap-3 w-full mb-4">
+              <button onClick={toggleMute} className="text-muted-foreground hover:text-foreground">
+                {muted ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
+              </button>
+              <Slider value={[muted ? 0 : volume]} max={1} step={0.01} onValueChange={changeVolume} className="flex-1 cursor-pointer" />
+            </div>
+
+            {/* Bottom actions */}
+            <div className="flex items-center justify-between w-full mb-4 px-2">
+              <button className={`p-2 rounded-full transition-colors ${currentSongLyrics.length > 0 ? "text-primary" : "text-muted-foreground"}`}>
+                <Sparkles className="w-5 h-5" />
+              </button>
+              <div className="flex items-center gap-4">
+                <button className="p-2 text-muted-foreground hover:text-foreground rounded-full transition-colors">
+                  <Share2 className="w-5 h-5" />
+                </button>
+                <button className="p-2 text-muted-foreground hover:text-foreground rounded-full transition-colors" onClick={() => setShowFullPlayer(false)}>
+                  <List className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+
+            {/* Lyrics Section in Fullscreen */}
+            {currentSongLyrics.length > 0 && (
+              <div className="w-full rounded-2xl bg-foreground/5 backdrop-blur-sm p-4 mb-4">
+                <p className="text-xs font-bold text-muted-foreground mb-3 flex items-center gap-1.5">
+                  <Type className="w-3.5 h-3.5" /> Lirik
+                </p>
+                <div ref={fullPlayerLyricsRef} className="max-h-60 overflow-y-auto space-y-1 scroll-smooth">
+                  {isPlaying && currentSongLyrics.length > 0 && currentTime < currentSongLyrics[0].time_seconds && (
+                    <p className="text-sm py-1 px-3 rounded-lg text-primary font-bold text-center animate-pulse">♪♪♪</p>
+                  )}
+                  {currentSongLyrics.map((line, i) => {
+                    const isActive = activeLyricIndex === i;
+                    const isInstrumental = !line.text || line.text.trim() === "" || /^[♪♫🎵🎶\s]+$/.test(line.text.trim());
+                    return (
+                      <p
+                        key={line.id}
+                        data-lyric-index={i}
+                        className={`text-sm py-1 px-3 rounded-lg transition-all duration-300 ${
+                          isActive
+                            ? isInstrumental
+                              ? "text-primary font-bold text-center animate-pulse text-base"
+                              : "text-primary font-extrabold text-base"
+                            : "text-muted-foreground/70"
+                        } ${isInstrumental ? "text-center italic" : ""}`}
+                      >
+                        {isInstrumental ? "♪♪♪" : line.text}
+                      </p>
+                    );
+                  })}
+                  {isPlaying && activeLyricIndex === currentSongLyrics.length - 1 && currentTime > currentSongLyrics[currentSongLyrics.length - 1].time_seconds + 5 && (
+                    <p className="text-sm py-1 px-3 rounded-lg text-primary/60 text-center animate-pulse italic">♪♪♪</p>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
       )}
 
       {/* Lyrics Display */}
