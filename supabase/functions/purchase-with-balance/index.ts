@@ -9,6 +9,8 @@ type PurchaseRequest = {
   visitorId?: string;
   productId?: string;
   quantity?: number;
+  discountCode?: string;
+  pin?: string;
 };
 
 Deno.serve(async (request) => {
@@ -17,7 +19,7 @@ Deno.serve(async (request) => {
   }
 
   try {
-    const { visitorId, productId, quantity: rawQty } = (await request.json()) as PurchaseRequest;
+    const { visitorId, productId, quantity: rawQty, discountCode, pin } = (await request.json()) as PurchaseRequest;
     const quantity = Math.max(1, Math.min(rawQty || 1, 50));
 
     if (!visitorId || !productId) {
@@ -34,6 +36,29 @@ Deno.serve(async (request) => {
     const admin = createClient(supabaseUrl, serviceRoleKey, {
       auth: { autoRefreshToken: false, persistSession: false },
     });
+
+    // Verify PIN
+    const { data: pinRow } = await admin
+      .from("user_pins")
+      .select("pin_hash")
+      .eq("visitor_id", visitorId)
+      .maybeSingle();
+
+    if (pinRow) {
+      if (!pin) {
+        return Response.json({ error: "PIN diperlukan untuk pembelian", needPin: true }, { status: 403, headers: corsHeaders });
+      }
+      // Simple hash comparison (SHA-256)
+      const encoder = new TextEncoder();
+      const data = encoder.encode(pin);
+      const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+      const hashArray = Array.from(new Uint8Array(hashBuffer));
+      const hashHex = hashArray.map(b => b.toString(16).padStart(2, "0")).join("");
+      
+      if (hashHex !== pinRow.pin_hash) {
+        return Response.json({ error: "PIN salah" }, { status: 403, headers: corsHeaders });
+      }
+    }
 
     const { data: balanceRow, error: balanceError } = await admin
       .from("user_balances")
@@ -55,7 +80,35 @@ Deno.serve(async (request) => {
       return Response.json({ error: "Produk tidak ditemukan" }, { status: 404, headers: corsHeaders });
     }
 
-    const totalPrice = product.price * quantity;
+    let totalPrice = product.price * quantity;
+    let discountAmount = 0;
+    let discountVoucherId: string | null = null;
+
+    // Apply discount code if provided
+    if (discountCode) {
+      const { data: voucher } = await admin
+        .from("discount_vouchers")
+        .select("*")
+        .eq("code", discountCode.toUpperCase())
+        .eq("is_active", true)
+        .maybeSingle();
+
+      if (!voucher) {
+        return Response.json({ error: "Kode voucher diskon tidak valid" }, { status: 400, headers: corsHeaders });
+      }
+
+      if (voucher.expires_at && new Date(voucher.expires_at) < new Date()) {
+        return Response.json({ error: "Voucher diskon sudah expired" }, { status: 400, headers: corsHeaders });
+      }
+
+      if (voucher.used_count >= voucher.max_uses) {
+        return Response.json({ error: "Voucher diskon sudah habis dipakai" }, { status: 400, headers: corsHeaders });
+      }
+
+      discountAmount = Math.min(voucher.discount_amount, totalPrice);
+      totalPrice -= discountAmount;
+      discountVoucherId = voucher.id;
+    }
 
     if (balanceRow.balance < totalPrice) {
       return Response.json({ error: "Saldo tidak cukup" }, { status: 400, headers: corsHeaders });
@@ -106,11 +159,12 @@ Deno.serve(async (request) => {
     }
 
     // Insert all transactions
-    const transactionRows = selectedTokens.map((token) => ({
+    const pricePerItem = Math.floor(totalPrice / quantity);
+    const transactionRows = selectedTokens.map((token, idx) => ({
       visitor_id: visitorId,
       type: "purchase",
-      amount: product.price,
-      description: `Beli ${product.title}`,
+      amount: idx === 0 ? totalPrice - pricePerItem * (quantity - 1) : pricePerItem,
+      description: `Beli ${product.title}${discountAmount > 0 ? ` (diskon Rp${discountAmount.toLocaleString()})` : ""}`,
       product_id: product.id,
       token_id: token.id,
     }));
@@ -121,6 +175,19 @@ Deno.serve(async (request) => {
       // Rollback balance
       await admin.from("user_balances").update({ balance: balanceRow.balance }).eq("id", balanceRow.id);
       return Response.json({ error: "Gagal mencatat pembelian" }, { status: 500, headers: corsHeaders });
+    }
+
+    // Update discount voucher used_count
+    if (discountVoucherId) {
+      await admin.rpc("increment_discount_used", { voucher_id: discountVoucherId }).catch(() => {
+        // Fallback: manual update
+        admin.from("discount_vouchers").update({ used_count: (await admin.from("discount_vouchers").select("used_count").eq("id", discountVoucherId).single()).data?.used_count + 1 || 1 }).eq("id", discountVoucherId);
+      });
+      // Simple fallback
+      const { data: vData } = await admin.from("discount_vouchers").select("used_count").eq("id", discountVoucherId).single();
+      if (vData) {
+        await admin.from("discount_vouchers").update({ used_count: (vData.used_count || 0) + 1 }).eq("id", discountVoucherId);
+      }
     }
 
     // Fetch fields for all tokens
@@ -144,6 +211,7 @@ Deno.serve(async (request) => {
         product,
         quantity,
         total_price: totalPrice,
+        discount_amount: discountAmount,
         balance_remaining: nextBalance,
       },
       { headers: corsHeaders },
