@@ -1222,7 +1222,40 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer }: Playl
         </DialogContent>
       </Dialog>
 
-      {/* User Playlist Create/Edit Dialog */}
+      {/* PIN Verification Dialog for Upgrade */}
+      <Dialog open={showPinDialog} onOpenChange={setShowPinDialog}>
+        <DialogContent className="max-w-xs">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2"><Lock className="w-5 h-5 text-primary" /> Verifikasi PIN</DialogTitle>
+            <DialogDescription>Masukkan PIN untuk konfirmasi pembelian penyimpanan.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="flex justify-center gap-2">
+              {[0,1,2,3,4,5].map(i => (
+                <div key={i} className={`w-8 h-10 rounded-lg border-2 flex items-center justify-center text-lg font-bold ${i < upgradePinInput.length ? "border-primary bg-primary/10" : "border-border"}`}>
+                  {i < upgradePinInput.length ? "•" : ""}
+                </div>
+              ))}
+            </div>
+            <div className="grid grid-cols-3 gap-2">
+              {[1,2,3,4,5,6,7,8,9].map(n => (
+                <Button key={n} variant="outline" className="h-12 text-lg font-bold" onClick={() => upgradePinInput.length < 6 && setUpgradePinInput(prev => prev + n)}>
+                  {n}
+                </Button>
+              ))}
+              <div />
+              <Button variant="outline" className="h-12 text-lg font-bold" onClick={() => upgradePinInput.length < 6 && setUpgradePinInput(prev => prev + "0")}>0</Button>
+              <Button variant="outline" className="h-12 text-lg font-bold" onClick={() => setUpgradePinInput(prev => prev.slice(0, -1))}>←</Button>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button onClick={confirmPinAndUpgrade} disabled={upgradePinInput.length < 4} className="w-full gap-2">
+              <Lock className="w-4 h-4" /> Konfirmasi
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <Dialog open={userPlDialogOpen} onOpenChange={setUserPlDialogOpen}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
