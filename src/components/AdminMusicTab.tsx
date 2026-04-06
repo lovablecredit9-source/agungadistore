@@ -313,12 +313,12 @@ const AdminMusicTab = () => {
   }
 
   async function generateTimestampsAI() {
-    if (!lyricsSong || !lyricsText.trim()) return;
+    if (!lyricsSong) return;
     setGeneratingLyrics(true);
     try {
       const { data, error } = await supabase.functions.invoke("generate-lyrics-timestamps", {
         body: {
-          lyrics_text: lyricsText,
+          lyrics_text: lyricsText.trim() || undefined,
           song_duration: lyricsSong.duration || 180,
           song_title: lyricsSong.title,
           song_artist: lyricsSong.artist,
@@ -328,7 +328,7 @@ const AdminMusicTab = () => {
       if (data?.error) throw new Error(data.error);
       if (data?.lrc) {
         setLyricsText(data.lrc);
-        toast({ title: "Timestamp AI berhasil di-generate! ✨" });
+        toast({ title: lyricsText.trim() ? "Timestamp AI berhasil di-generate! ✨" : "Lirik AI berhasil di-generate! ✨" });
       }
     } catch (err: any) {
       toast({ title: "Gagal generate", description: err.message, variant: "destructive" });
