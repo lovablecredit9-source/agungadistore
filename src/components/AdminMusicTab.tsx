@@ -322,6 +322,7 @@ const AdminMusicTab = () => {
           song_duration: lyricsSong.duration || 180,
           song_title: lyricsSong.title,
           song_artist: lyricsSong.artist,
+          file_url: lyricsSong.file_url,
         },
       });
       if (error) throw error;
