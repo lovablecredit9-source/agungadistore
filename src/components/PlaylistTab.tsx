@@ -129,7 +129,7 @@ const PlaylistTab = () => {
     if (audioRef.current) audioRef.current.volume = muted ? volume : 0;
   }
 
-  async function downloadSong(song: Song) {
+  async function downloadToStorage(song: Song) {
     setDownloading(song.id);
     try {
       const response = await fetch(song.file_url);
@@ -142,11 +142,16 @@ const PlaylistTab = () => {
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
-      toast({ title: "Download dimulai", description: `${song.title} sedang diunduh...` });
+      toast({ title: "Download dimulai", description: `${song.title} disimpan ke penyimpanan` });
     } catch {
       toast({ title: "Gagal download", description: "Coba lagi nanti", variant: "destructive" });
     }
     setDownloading(null);
+  }
+
+  function openInWeb(song: Song) {
+    window.open(song.file_url, "_blank");
+    toast({ title: "Membuka di browser", description: song.title });
   }
 
   // Cleanup
