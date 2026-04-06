@@ -210,6 +210,7 @@ const PlaylistTab = () => {
   const [tier, setTier] = useState<StorageTier>(getCurrentTier());
   const [upgradeOpen, setUpgradeOpen] = useState(false);
   const [upgrading, setUpgrading] = useState(false);
+  const [selectedUpgradeTier, setSelectedUpgradeTier] = useState(1);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const { toast } = useToast();
   const isOnline = useOnlineStatus();
