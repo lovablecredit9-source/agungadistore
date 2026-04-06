@@ -171,6 +171,19 @@ const AdminDashboard = () => {
   const [notifTitle, setNotifTitle] = useState("");
   const [notifMessage, setNotifMessage] = useState("");
 
+  // Deposits
+  interface Deposit {
+    id: string; visitor_id: string; username: string; amount: number;
+    payment_method: string; trx_id: string; status: string; created_at: string;
+  }
+  interface AdminSetting { id: string; setting_key: string; setting_value: string; }
+  const [allDeposits, setAllDeposits] = useState<Deposit[]>([]);
+  const [adminSettings, setAdminSettings] = useState<AdminSetting[]>([]);
+  const [settingQris, setSettingQris] = useState("");
+  const [settingEwalletName, setSettingEwalletName] = useState("");
+  const [settingEwalletNumber, setSettingEwalletNumber] = useState("");
+  const [depositSearchTrx, setDepositSearchTrx] = useState("");
+
   const chatRef = useRef<HTMLDivElement>(null);
 
   const navigate = useNavigate();
