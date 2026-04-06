@@ -25,6 +25,7 @@ import {
 } from "@/components/ui/select";
 import { useLang, t, type Lang } from "@/lib/i18n";
 import { z } from "zod";
+import PlaylistTab from "@/components/PlaylistTab";
 
 type Tab = "beranda" | "produk" | "voucher" | "history" | "likes" | "tiket" | "saldo" | "playlist";
 
