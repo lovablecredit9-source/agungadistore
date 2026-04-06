@@ -715,9 +715,9 @@ const PlaylistTab = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-bold flex items-center gap-1">
-                    <Crown className="w-4 h-4 text-primary" /> Pro 10GB
+                    <Crown className="w-4 h-4 text-primary" /> Pro 100GB
                   </p>
-                  <p className="text-xs text-muted-foreground">Kuota: 10 GB</p>
+                  <p className="text-xs text-muted-foreground">Kuota: 100 GB</p>
                 </div>
                 <span className="text-sm font-extrabold text-primary">{formatCurrency(10000)}/bln</span>
               </div>
