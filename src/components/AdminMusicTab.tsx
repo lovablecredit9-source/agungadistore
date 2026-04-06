@@ -313,12 +313,12 @@ const AdminMusicTab = () => {
   }
 
   async function generateTimestampsAI() {
-    if (!lyricsSong || !lyricsText.trim()) return;
+    if (!lyricsSong) return;
     setGeneratingLyrics(true);
     try {
       const { data, error } = await supabase.functions.invoke("generate-lyrics-timestamps", {
         body: {
-          lyrics_text: lyricsText,
+          lyrics_text: lyricsText.trim() || undefined,
           song_duration: lyricsSong.duration || 180,
           song_title: lyricsSong.title,
           song_artist: lyricsSong.artist,
@@ -328,7 +328,7 @@ const AdminMusicTab = () => {
       if (data?.error) throw new Error(data.error);
       if (data?.lrc) {
         setLyricsText(data.lrc);
-        toast({ title: "Timestamp AI berhasil di-generate! ✨" });
+        toast({ title: lyricsText.trim() ? "Timestamp AI berhasil di-generate! ✨" : "Lirik AI berhasil di-generate! ✨" });
       }
     } catch (err: any) {
       toast({ title: "Gagal generate", description: err.message, variant: "destructive" });
@@ -572,17 +572,17 @@ const AdminMusicTab = () => {
             <DialogTitle className="text-sm flex items-center gap-2"><Type className="w-4 h-4" /> Lirik — {lyricsSong?.title}</DialogTitle>
           </DialogHeader>
           <div className="space-y-2">
-            <p className="text-[11px] text-muted-foreground">Paste lirik biasa lalu klik "Generate AI" atau upload file LRC.</p>
+            <p className="text-[11px] text-muted-foreground">Klik "Generate AI" untuk auto-generate lirik, atau paste lirik lalu generate timestamp, atau upload file LRC.</p>
             <div className="flex gap-2">
               <Button
                 size="sm"
                 variant="outline"
                 className="gap-1.5 text-xs flex-1"
-                disabled={generatingLyrics || !lyricsText.trim()}
+                disabled={generatingLyrics}
                 onClick={generateTimestampsAI}
               >
                 {generatingLyrics ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Wand2 className="w-3.5 h-3.5" />}
-                {generatingLyrics ? "Generating..." : "Generate AI"}
+                {generatingLyrics ? "Generating..." : lyricsText.trim() ? "Generate Timestamp AI" : "Generate Lirik AI"}
               </Button>
               <Button
                 size="sm"
