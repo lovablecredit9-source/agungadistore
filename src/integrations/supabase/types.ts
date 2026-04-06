@@ -184,6 +184,72 @@ export type Database = {
           },
         ]
       }
+      music_discount_vouchers: {
+        Row: {
+          code: string
+          created_at: string
+          discount_amount: number
+          expires_at: string | null
+          id: string
+          is_active: boolean
+          max_uses: number
+          used_count: number
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          discount_amount?: number
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          max_uses?: number
+          used_count?: number
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          discount_amount?: number
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          max_uses?: number
+          used_count?: number
+        }
+        Relationships: []
+      }
+      music_storage_vouchers: {
+        Row: {
+          code: string
+          created_at: string
+          expires_at: string | null
+          id: string
+          is_active: boolean
+          max_uses: number
+          storage_mb: number
+          used_count: number
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          max_uses?: number
+          storage_mb?: number
+          used_count?: number
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          max_uses?: number
+          storage_mb?: number
+          used_count?: number
+        }
+        Relationships: []
+      }
       notifications: {
         Row: {
           created_at: string
@@ -754,6 +820,33 @@ export type Database = {
           updated_at?: string
           username?: string
           visitor_id?: string
+        }
+        Relationships: []
+      }
+      user_music_storage: {
+        Row: {
+          expires_at: string | null
+          id: string
+          redeemed_at: string
+          storage_mb: number
+          visitor_id: string
+          voucher_code: string
+        }
+        Insert: {
+          expires_at?: string | null
+          id?: string
+          redeemed_at?: string
+          storage_mb?: number
+          visitor_id: string
+          voucher_code: string
+        }
+        Update: {
+          expires_at?: string | null
+          id?: string
+          redeemed_at?: string
+          storage_mb?: number
+          visitor_id?: string
+          voucher_code?: string
         }
         Relationships: []
       }

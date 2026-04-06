@@ -11,7 +11,7 @@ import {
   Plus, Trash2, LogOut, Package, Ticket, Copy, Image, Edit2, X,
   Smartphone, Clock, ChevronLeft, ChevronRight, Search, Send,
   MessageCircle, AlertCircle, ImagePlus, Shield, Wallet, Users, ArrowUpCircle,
-  Bell, Check, Tag, Lock, Key, Music, Upload, Loader2
+  Bell, Check, Tag, Lock, Key, Music, Upload, Loader2, HardDrive
 } from "lucide-react";
 import { generateVoucherCode } from "@/lib/voucher-code";
 import { getDeviceSummary } from "@/lib/device-info";
@@ -112,7 +112,7 @@ interface UserBalance {
   created_at: string;
 }
 
-type AdminTab = "products" | "tokens" | "claims" | "tickets" | "chats" | "saldo" | "notif" | "deposit" | "settings" | "diskon" | "pin" | "musik";
+type AdminTab = "products" | "tokens" | "claims" | "tickets" | "chats" | "saldo" | "notif" | "deposit" | "settings" | "diskon" | "pin" | "musik" | "vmusik";
 type ClaimDateFilter = "all" | "today" | "yesterday" | "lastmonth" | "custom";
 type DepositStatusFilter = "all" | "pending" | "approved" | "rejected";
 type DepositMethodFilter = "all" | "qris" | "ewallet";
@@ -219,6 +219,27 @@ const AdminDashboard = () => {
   const [pinResetTarget, setPinResetTarget] = useState("");
   const [generatedResetToken, setGeneratedResetToken] = useState("");
 
+  // Music Storage Vouchers
+  interface MusicStorageVoucher {
+    id: string; code: string; storage_mb: number; max_uses: number;
+    used_count: number; is_active: boolean; expires_at: string | null; created_at: string;
+  }
+  interface MusicDiscountVoucher {
+    id: string; code: string; discount_amount: number; max_uses: number;
+    used_count: number; is_active: boolean; expires_at: string | null; created_at: string;
+  }
+  const [musicStorageVouchers, setMusicStorageVouchers] = useState<MusicStorageVoucher[]>([]);
+  const [musicDiscountVouchers, setMusicDiscountVouchers] = useState<MusicDiscountVoucher[]>([]);
+  const [msvStorageMb, setMsvStorageMb] = useState("");
+  const [msvMaxUses, setMsvMaxUses] = useState("1");
+  const [msvExpiryDate, setMsvExpiryDate] = useState("");
+  const [msvExpiryTime, setMsvExpiryTime] = useState("");
+  const [mdvCode, setMdvCode] = useState("");
+  const [mdvAmount, setMdvAmount] = useState("");
+  const [mdvMaxUses, setMdvMaxUses] = useState("10");
+  const [mdvExpiryDate, setMdvExpiryDate] = useState("");
+  const [mdvExpiryTime, setMdvExpiryTime] = useState("");
+
   const navigate = useNavigate();
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -232,11 +253,84 @@ const AdminDashboard = () => {
     fetchDeposits();
     fetchAdminSettings();
     fetchDiscountVouchers();
+    fetchMusicVouchers();
   }, []);
 
   async function fetchDiscountVouchers() {
     const { data } = await supabase.from("discount_vouchers").select("*").order("created_at", { ascending: false });
     if (data) setDiscountVouchers(data as unknown as DiscountVoucher[]);
+  }
+
+  async function fetchMusicVouchers() {
+    const [{ data: sv }, { data: dv }] = await Promise.all([
+      supabase.from("music_storage_vouchers").select("*").order("created_at", { ascending: false }),
+      supabase.from("music_discount_vouchers").select("*").order("created_at", { ascending: false }),
+    ]);
+    if (sv) setMusicStorageVouchers(sv as unknown as MusicStorageVoucher[]);
+    if (dv) setMusicDiscountVouchers(dv as unknown as MusicDiscountVoucher[]);
+  }
+
+  function formatStorageMb(mb: number): string {
+    if (mb >= 1024 * 1024) return `${(mb / (1024 * 1024)).toFixed(0)} TB`;
+    if (mb >= 1024) return `${(mb / 1024).toFixed(0)} GB`;
+    return `${mb} MB`;
+  }
+
+  async function createMusicStorageVoucher() {
+    const storageMb = parseInt(msvStorageMb) || 0;
+    if (storageMb <= 0) { toast({ title: "Isi jumlah MB", variant: "destructive" }); return; }
+    const code = generateVoucherCode();
+    let expiresAt: string | null = null;
+    if (msvExpiryDate) {
+      const time = msvExpiryTime || "23:59:59";
+      expiresAt = new Date(`${msvExpiryDate}T${time}`).toISOString();
+    }
+    const { error } = await supabase.from("music_storage_vouchers").insert({
+      code, storage_mb: storageMb, max_uses: parseInt(msvMaxUses) || 1, expires_at: expiresAt,
+    } as any);
+    if (error) { toast({ title: "Gagal buat voucher", variant: "destructive" }); return; }
+    toast({ title: `Voucher ${formatStorageMb(storageMb)} berhasil dibuat! 🎵`, description: `Kode: ${code}` });
+    setMsvStorageMb(""); setMsvMaxUses("1"); setMsvExpiryDate(""); setMsvExpiryTime("");
+    fetchMusicVouchers();
+  }
+
+  async function deleteMusicStorageVoucher(id: string) {
+    await supabase.from("music_storage_vouchers").delete().eq("id", id);
+    toast({ title: "Voucher dihapus" }); fetchMusicVouchers();
+  }
+
+  async function toggleMusicStorageVoucher(v: MusicStorageVoucher) {
+    await supabase.from("music_storage_vouchers").update({ is_active: !v.is_active } as any).eq("id", v.id);
+    toast({ title: v.is_active ? "Voucher dinonaktifkan" : "Voucher diaktifkan" }); fetchMusicVouchers();
+  }
+
+  async function createMusicDiscountVoucher() {
+    if (!mdvCode.trim() || !mdvAmount) { toast({ title: "Isi kode dan nominal", variant: "destructive" }); return; }
+    const amount = parseInt(mdvAmount) || 0;
+    if (amount <= 0) { toast({ title: "Nominal harus lebih dari 0", variant: "destructive" }); return; }
+    let expiresAt: string | null = null;
+    if (mdvExpiryDate) {
+      const time = mdvExpiryTime || "23:59:59";
+      expiresAt = new Date(`${mdvExpiryDate}T${time}`).toISOString();
+    }
+    const { error } = await supabase.from("music_discount_vouchers").insert({
+      code: mdvCode.trim().toUpperCase(), discount_amount: amount,
+      max_uses: parseInt(mdvMaxUses) || 10, expires_at: expiresAt,
+    } as any);
+    if (error) { toast({ title: "Gagal buat voucher (kode mungkin sudah ada)", variant: "destructive" }); return; }
+    toast({ title: `Voucher diskon musik Rp${amount.toLocaleString()} berhasil dibuat! 🎵` });
+    setMdvCode(""); setMdvAmount(""); setMdvMaxUses("10"); setMdvExpiryDate(""); setMdvExpiryTime("");
+    fetchMusicVouchers();
+  }
+
+  async function deleteMusicDiscountVoucher(id: string) {
+    await supabase.from("music_discount_vouchers").delete().eq("id", id);
+    toast({ title: "Voucher dihapus" }); fetchMusicVouchers();
+  }
+
+  async function toggleMusicDiscountVoucher(v: MusicDiscountVoucher) {
+    await supabase.from("music_discount_vouchers").update({ is_active: !v.is_active } as any).eq("id", v.id);
+    toast({ title: v.is_active ? "Voucher dinonaktifkan" : "Voucher diaktifkan" }); fetchMusicVouchers();
   }
 
   async function createDiscountVoucher() {
@@ -880,6 +974,7 @@ const AdminDashboard = () => {
           { key: "notif" as AdminTab, icon: Bell, label: "Notif" },
           { key: "settings" as AdminTab, icon: Edit2, label: "Setting" },
           { key: "musik" as AdminTab, icon: Music, label: "Musik" },
+          { key: "vmusik" as AdminTab, icon: HardDrive, label: "V.Musik" },
         ]).map(({ key, icon: Icon, label }) => (
           <button key={key} onClick={() => setTab(key)} className={`flex-1 py-3 text-xs font-medium text-center border-b-2 transition-colors whitespace-nowrap px-2 ${tab === key ? "border-primary text-primary" : "border-transparent text-muted-foreground"}`}>
             <Icon className="w-4 h-4 inline mr-1" /> {label}
@@ -1564,6 +1659,111 @@ const AdminDashboard = () => {
         )}
 
         {tab === "musik" && <AdminMusicTab />}
+
+        {tab === "vmusik" && (
+          <>
+            {/* Storage Vouchers */}
+            <Card>
+              <CardHeader><CardTitle className="text-base flex items-center gap-2"><HardDrive className="w-5 h-5 text-primary" /> Buat Voucher Penyimpanan Musik</CardTitle></CardHeader>
+              <CardContent className="space-y-3">
+                <div>
+                  <label className="text-xs text-muted-foreground">Jumlah Storage (MB)</label>
+                  <Input type="number" placeholder="Contoh: 1024 = 1GB, 10240 = 10GB" value={msvStorageMb} onChange={e => setMsvStorageMb(e.target.value)} />
+                  {msvStorageMb && parseInt(msvStorageMb) > 0 && (
+                    <p className="text-[10px] text-primary font-bold mt-1">= {formatStorageMb(parseInt(msvStorageMb))}</p>
+                  )}
+                </div>
+                <Input type="number" placeholder="Maks pemakaian" value={msvMaxUses} onChange={e => setMsvMaxUses(e.target.value)} />
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="text-xs text-muted-foreground">Tanggal expired</label>
+                    <Input type="date" value={msvExpiryDate} onChange={e => setMsvExpiryDate(e.target.value)} />
+                  </div>
+                  <div>
+                    <label className="text-xs text-muted-foreground">Jam expired</label>
+                    <Input type="time" step="1" value={msvExpiryTime} onChange={e => setMsvExpiryTime(e.target.value)} />
+                  </div>
+                </div>
+                <Button className="w-full gap-2" onClick={createMusicStorageVoucher} disabled={!msvStorageMb || parseInt(msvStorageMb) <= 0}>
+                  <HardDrive className="w-4 h-4" /> Buat Voucher (Kode Otomatis)
+                </Button>
+              </CardContent>
+            </Card>
+
+            <h3 className="font-bold text-sm">Voucher Penyimpanan ({musicStorageVouchers.length})</h3>
+            {musicStorageVouchers.map(v => (
+              <Card key={v.id} className={!v.is_active ? "opacity-60" : ""}>
+                <CardContent className="p-3 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="font-mono font-bold text-sm">{v.code}</p>
+                      <p className="text-xs text-primary font-bold">+{formatStorageMb(v.storage_mb)}</p>
+                    </div>
+                    <div className="flex gap-1">
+                      <Button size="sm" variant="outline" className="h-7 text-[10px]" onClick={() => toggleMusicStorageVoucher(v)}>{v.is_active ? "Nonaktif" : "Aktifkan"}</Button>
+                      <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => copyText(v.code)}><Copy className="w-3 h-3" /></Button>
+                      <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => deleteMusicStorageVoucher(v.id)}><Trash2 className="w-3 h-3 text-destructive" /></Button>
+                    </div>
+                  </div>
+                  <div className="text-[10px] text-muted-foreground flex flex-wrap gap-3">
+                    <span>Terpakai: {v.used_count}/{v.max_uses}</span>
+                    <span>{v.expires_at ? `Exp: ${new Date(v.expires_at).toLocaleString("id-ID")}` : "Tanpa batas"}</span>
+                    <span className={v.is_active ? "text-accent" : "text-destructive"}>{v.is_active ? "✓ Aktif" : "✗ Nonaktif"}</span>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+            {musicStorageVouchers.length === 0 && <p className="text-center text-sm text-muted-foreground py-4">Belum ada voucher penyimpanan</p>}
+
+            {/* Music Discount Vouchers */}
+            <Card className="mt-4">
+              <CardHeader><CardTitle className="text-base flex items-center gap-2"><Tag className="w-5 h-5 text-primary" /> Buat Voucher Diskon Musik</CardTitle></CardHeader>
+              <CardContent className="space-y-3">
+                <Input placeholder="Kode voucher (misal: MUSIKDISKON5K)" value={mdvCode} onChange={e => setMdvCode(e.target.value.toUpperCase())} className="font-mono" />
+                <Input type="number" placeholder="Nominal diskon (Rp)" value={mdvAmount} onChange={e => setMdvAmount(e.target.value)} />
+                <Input type="number" placeholder="Maks pemakaian" value={mdvMaxUses} onChange={e => setMdvMaxUses(e.target.value)} />
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="text-xs text-muted-foreground">Tanggal expired</label>
+                    <Input type="date" value={mdvExpiryDate} onChange={e => setMdvExpiryDate(e.target.value)} />
+                  </div>
+                  <div>
+                    <label className="text-xs text-muted-foreground">Jam expired</label>
+                    <Input type="time" step="1" value={mdvExpiryTime} onChange={e => setMdvExpiryTime(e.target.value)} />
+                  </div>
+                </div>
+                <Button className="w-full gap-2" onClick={createMusicDiscountVoucher} disabled={!mdvCode.trim() || !mdvAmount}>
+                  <Tag className="w-4 h-4" /> Buat Voucher Diskon Musik
+                </Button>
+              </CardContent>
+            </Card>
+
+            <h3 className="font-bold text-sm">Voucher Diskon Musik ({musicDiscountVouchers.length})</h3>
+            {musicDiscountVouchers.map(v => (
+              <Card key={v.id} className={!v.is_active ? "opacity-60" : ""}>
+                <CardContent className="p-3 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="font-mono font-bold text-sm">{v.code}</p>
+                      <p className="text-xs text-primary font-bold">-Rp{v.discount_amount.toLocaleString()}</p>
+                    </div>
+                    <div className="flex gap-1">
+                      <Button size="sm" variant="outline" className="h-7 text-[10px]" onClick={() => toggleMusicDiscountVoucher(v)}>{v.is_active ? "Nonaktif" : "Aktifkan"}</Button>
+                      <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => copyText(v.code)}><Copy className="w-3 h-3" /></Button>
+                      <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => deleteMusicDiscountVoucher(v.id)}><Trash2 className="w-3 h-3 text-destructive" /></Button>
+                    </div>
+                  </div>
+                  <div className="text-[10px] text-muted-foreground flex flex-wrap gap-3">
+                    <span>Terpakai: {v.used_count}/{v.max_uses}</span>
+                    <span>{v.expires_at ? `Exp: ${new Date(v.expires_at).toLocaleString("id-ID")}` : "Tanpa batas"}</span>
+                    <span className={v.is_active ? "text-accent" : "text-destructive"}>{v.is_active ? "✓ Aktif" : "✗ Nonaktif"}</span>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+            {musicDiscountVouchers.length === 0 && <p className="text-center text-sm text-muted-foreground py-4">Belum ada voucher diskon musik</p>}
+          </>
+        )}
       </main>
     </div>
   );

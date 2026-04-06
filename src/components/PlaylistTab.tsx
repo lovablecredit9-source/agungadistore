@@ -9,7 +9,7 @@ import {
   Music, Play, Pause, SkipBack, SkipForward, Download, Volume2, VolumeX,
   Repeat, Shuffle, Loader2, HardDrive, Globe, CheckCircle2, Trash2,
   WifiOff, Wifi, Crown, Zap, Clock, ListMusic, Plus, Edit2, Check, Lock,
-  FileText, Copyright, Type, ChevronDown, Share2, Timer, Sparkles, List
+  FileText, Copyright, Type, ChevronDown, Share2, Timer, Sparkles, List, Ticket, Tag
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Slider } from "@/components/ui/slider";
@@ -277,6 +277,14 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer }: Playl
 
   const [activeView, setActiveView] = useState<"playlist" | "myplaylists" | "storage">("playlist");
 
+  // Voucher redeem
+  const [redeemCode, setRedeemCode] = useState("");
+  const [redeeming, setRedeeming] = useState(false);
+  const [redeemedStorages, setRedeemedStorages] = useState<{id: string; storage_mb: number; voucher_code: string; redeemed_at: string; expires_at: string | null}[]>([]);
+  // Discount code for upgrade
+  const [upgradeDiscountCode, setUpgradeDiscountCode] = useState("");
+  const [upgradeDiscountAmount, setUpgradeDiscountAmount] = useState(0);
+
   // Lyrics state
   const [allLyrics, setAllLyrics] = useState<LyricLine[]>([]);
   const [termsOpen, setTermsOpen] = useState(false);
@@ -294,7 +302,40 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer }: Playl
     return () => clearInterval(interval);
   }, []);
 
-  useEffect(() => { fetchSongs(); }, []);
+  useEffect(() => { fetchSongs(); fetchRedeemedStorages(); }, []);
+
+  async function fetchRedeemedStorages() {
+    const visitorId = await getVisitorIdSafe();
+    const { data } = await supabase.from("user_music_storage").select("*").eq("visitor_id", visitorId).order("redeemed_at", { ascending: false });
+    if (data) setRedeemedStorages(data as any[]);
+  }
+
+  async function redeemStorageVoucher() {
+    if (!redeemCode.trim()) { toast({ title: "Masukkan kode voucher", variant: "destructive" }); return; }
+    setRedeeming(true);
+    try {
+      const visitorId = await getVisitorIdSafe();
+      const { data, error } = await supabase.functions.invoke("redeem-music-storage", {
+        body: { visitor_id: visitorId, code: redeemCode.trim() },
+      });
+      if (error) throw error;
+      if (data?.error) { toast({ title: "Gagal", description: data.error, variant: "destructive" }); setRedeeming(false); return; }
+      toast({ title: "Berhasil! 🎉", description: data.message });
+      setRedeemCode("");
+      fetchRedeemedStorages();
+    } catch (err: any) { toast({ title: "Gagal redeem", description: err?.message, variant: "destructive" }); }
+    setRedeeming(false);
+  }
+
+  async function applyMusicDiscount() {
+    if (!upgradeDiscountCode.trim()) { setUpgradeDiscountAmount(0); return; }
+    const { data } = await supabase.from("music_discount_vouchers").select("*").eq("code", upgradeDiscountCode.trim().toUpperCase()).eq("is_active", true).maybeSingle();
+    if (!data) { toast({ title: "Kode diskon tidak valid", variant: "destructive" }); setUpgradeDiscountAmount(0); return; }
+    if (data.expires_at && new Date(data.expires_at) < new Date()) { toast({ title: "Kode diskon sudah expired", variant: "destructive" }); setUpgradeDiscountAmount(0); return; }
+    if (data.used_count >= data.max_uses) { toast({ title: "Kode diskon sudah habis", variant: "destructive" }); setUpgradeDiscountAmount(0); return; }
+    setUpgradeDiscountAmount(data.discount_amount);
+    toast({ title: `Diskon Rp${data.discount_amount.toLocaleString()} diterapkan! 🏷️` });
+  }
 
   async function getVisitorIdSafe() {
     const { getVisitorId } = await import("@/lib/visitor-id");
@@ -471,12 +512,19 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer }: Playl
     setUpgrading(true);
     try {
       const visitorId = await getVisitorIdSafe();
-      const { data, error } = await supabase.functions.invoke("upgrade-storage", { body: { visitor_id: visitorId, tier_name: plan.name, price: plan.pricePerMonth } });
+      const finalPrice = Math.max(0, plan.pricePerMonth - upgradeDiscountAmount);
+      const { data, error } = await supabase.functions.invoke("upgrade-storage", { body: { visitor_id: visitorId, tier_name: plan.name, price: finalPrice } });
       if (error) throw error;
       if (data?.error) { toast({ title: "Gagal upgrade", description: data.error, variant: "destructive" }); setUpgrading(false); return; }
+      // Increment music discount voucher used_count if used
+      if (upgradeDiscountAmount > 0 && upgradeDiscountCode.trim()) {
+        const { data: vd } = await supabase.from("music_discount_vouchers").select("id, used_count").eq("code", upgradeDiscountCode.trim().toUpperCase()).maybeSingle();
+        if (vd) await supabase.from("music_discount_vouchers").update({ used_count: (vd.used_count || 0) + 1 } as any).eq("id", vd.id);
+      }
       const newSub = saveSub(plan);
       setActiveSubs(getActiveSubscriptions()); setMaxBytes(getTotalMaxBytes()); setUpgradeOpen(false);
-      toast({ title: "Upgrade berhasil! 🎉", description: `+${formatStorageSize(plan.addBytes)} aktif sampai ${formatDate(newSub.expiresAt)}` });
+      setUpgradeDiscountCode(""); setUpgradeDiscountAmount(0);
+      toast({ title: "Upgrade berhasil! 🎉", description: `+${formatStorageSize(plan.addBytes)} aktif sampai ${formatDate(newSub.expiresAt)}${upgradeDiscountAmount > 0 ? ` (diskon Rp${upgradeDiscountAmount.toLocaleString()})` : ""}` });
     } catch (err: any) { toast({ title: "Gagal upgrade", description: err?.message, variant: "destructive" }); }
     setUpgrading(false);
   }
@@ -1004,6 +1052,46 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer }: Playl
             </CardContent>
           </Card>
 
+          {/* Redeem Storage Voucher */}
+          <Card className="border-primary/20">
+            <CardContent className="p-4 space-y-3">
+              <p className="text-xs font-bold flex items-center gap-1.5"><Ticket className="w-4 h-4 text-primary" /> Klaim Voucher Penyimpanan</p>
+              <p className="text-[10px] text-muted-foreground">Masukkan kode voucher dari admin untuk mendapatkan tambahan penyimpanan gratis.</p>
+              <div className="flex gap-2">
+                <Input placeholder="Masukkan kode voucher" value={redeemCode} onChange={e => setRedeemCode(e.target.value.toUpperCase())} className="font-mono text-xs flex-1" />
+                <Button size="sm" onClick={redeemStorageVoucher} disabled={redeeming || !redeemCode.trim()} className="gap-1 shrink-0">
+                  {redeeming ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Ticket className="w-3.5 h-3.5" />}
+                  Klaim
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Redeemed Storage History */}
+          {redeemedStorages.length > 0 && (
+            <Card className="border-primary/20">
+              <CardContent className="p-4 space-y-2">
+                <p className="text-xs font-bold flex items-center gap-1.5"><HardDrive className="w-4 h-4 text-primary" /> Penyimpanan dari Voucher</p>
+                {redeemedStorages.map(rs => {
+                  const isExpired = rs.expires_at && new Date(rs.expires_at) < new Date();
+                  const storageMb = rs.storage_mb;
+                  const label = storageMb >= 1024 * 1024 ? `${(storageMb / (1024 * 1024)).toFixed(0)} TB` : storageMb >= 1024 ? `${(storageMb / 1024).toFixed(0)} GB` : `${storageMb} MB`;
+                  return (
+                    <div key={rs.id} className={`flex items-center justify-between text-[11px] rounded-lg px-3 py-2 border ${isExpired ? "bg-destructive/5 border-destructive/20 opacity-60" : "bg-primary/5 border-primary/10"}`}>
+                      <div>
+                        <span className="font-bold">+{label}</span>
+                        <span className="text-muted-foreground ml-1">• {rs.voucher_code}</span>
+                      </div>
+                      <div className="text-[10px]">
+                        {isExpired ? <span className="text-destructive font-bold">Expired</span> : rs.expires_at ? <span className="text-muted-foreground">{formatDate(rs.expires_at)}</span> : <span className="text-muted-foreground">Permanen</span>}
+                      </div>
+                    </div>
+                  );
+                })}
+              </CardContent>
+            </Card>
+          )}
+
           {activeSubs.length > 0 && (
             <Card className="border-primary/20">
               <CardContent className="p-4 space-y-2">
@@ -1065,7 +1153,22 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer }: Playl
                 </div>
               </div>
             ))}
-            <p className="text-[11px] text-muted-foreground">💡 Saldo dipotong {formatCurrency(PURCHASABLE_PLANS[selectedPlanIndex]?.pricePerMonth || 0)}. Paket berlaku 30 hari.</p>
+            {/* Discount Code */}
+            <div className="space-y-1.5">
+              <p className="text-[11px] font-semibold text-muted-foreground flex items-center gap-1"><Tag className="w-3 h-3" /> Kode Diskon (opsional)</p>
+              <div className="flex gap-2">
+                <Input placeholder="Masukkan kode diskon" value={upgradeDiscountCode} onChange={e => { setUpgradeDiscountCode(e.target.value.toUpperCase()); setUpgradeDiscountAmount(0); }} className="font-mono text-xs flex-1" />
+                <Button size="sm" variant="outline" onClick={applyMusicDiscount} disabled={!upgradeDiscountCode.trim()} className="shrink-0 text-xs">Pakai</Button>
+              </div>
+              {upgradeDiscountAmount > 0 && (
+                <p className="text-[10px] text-primary font-bold">✅ Diskon Rp{upgradeDiscountAmount.toLocaleString()} diterapkan!</p>
+              )}
+            </div>
+            <p className="text-[11px] text-muted-foreground">
+              💡 Saldo dipotong {formatCurrency(Math.max(0, (PURCHASABLE_PLANS[selectedPlanIndex]?.pricePerMonth || 0) - upgradeDiscountAmount))}
+              {upgradeDiscountAmount > 0 && <span className="line-through ml-1 text-muted-foreground/50">{formatCurrency(PURCHASABLE_PLANS[selectedPlanIndex]?.pricePerMonth || 0)}</span>}
+              . Paket berlaku 30 hari.
+            </p>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setUpgradeOpen(false)}>Batal</Button>
