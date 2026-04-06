@@ -11,7 +11,7 @@ import {
   Plus, Trash2, LogOut, Package, Ticket, Copy, Image, Edit2, X,
   Smartphone, Clock, ChevronLeft, ChevronRight, Search, Send,
   MessageCircle, AlertCircle, ImagePlus, Shield, Wallet, Users, ArrowUpCircle,
-  Bell, Check
+  Bell, Check, Tag, Lock, Key
 } from "lucide-react";
 import { generateVoucherCode } from "@/lib/voucher-code";
 import { getDeviceSummary } from "@/lib/device-info";
