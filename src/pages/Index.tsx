@@ -491,6 +491,14 @@ const Index = () => {
     return () => { supabase.removeChannel(ch); };
   }, [ticketView, showProductChat]);
 
+  // Realtime products
+  useEffect(() => {
+    const ch = supabase.channel("products-realtime")
+      .on("postgres_changes", { event: "*", schema: "public", table: "products" }, () => fetchProducts())
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, []);
+
   async function fetchProducts() {
     const [pRes, piRes] = await Promise.all([
       supabase.from("products").select("*").order("created_at", { ascending: false }),
