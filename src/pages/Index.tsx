@@ -1123,9 +1123,7 @@ const Index = () => {
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
-            <button onClick={() => setLang(lang === "id" ? "en" : "id")} className="w-9 h-9 rounded-xl bg-primary-foreground/20 backdrop-blur-sm flex items-center justify-center hover:bg-primary-foreground/30 transition-colors" title={t("general.language", lang)}>
-              <span className="text-[10px] font-bold">{lang === "id" ? "EN" : "ID"}</span>
-            </button>
+            <LanguageSelector currentLang={lang} onSelect={setLang} />
             <button onClick={() => setShowNotifPanel(!showNotifPanel)} className="relative w-9 h-9 rounded-xl bg-primary-foreground/20 backdrop-blur-sm flex items-center justify-center hover:bg-primary-foreground/30 transition-colors">
               <Bell className="w-5 h-5" />
               {unreadCount > 0 && (
