@@ -503,12 +503,36 @@ const Index = () => {
     fetchUserBalance();
   }
 
-  async function buyWithSaldo(product: Product) {
-    if (!userBalance || userBalance.balance < product.price) {
+  function addToCart(product: Product, qty = 1) {
+    setCart(prev => {
+      const existing = prev.find(item => item.product.id === product.id);
+      if (existing) {
+        return prev.map(item => item.product.id === product.id ? { ...item, quantity: Math.min(item.quantity + qty, product.stock) } : item);
+      }
+      return [...prev, { product, quantity: Math.min(qty, product.stock) }];
+    });
+    toast({ title: `${product.title} ditambahkan ke keranjang` });
+  }
+
+  function updateCartQty(productId: string, qty: number) {
+    if (qty <= 0) {
+      setCart(prev => prev.filter(item => item.product.id !== productId));
+    } else {
+      setCart(prev => prev.map(item => item.product.id === productId ? { ...item, quantity: Math.min(qty, item.product.stock) } : item));
+    }
+  }
+
+  function removeFromCart(productId: string) {
+    setCart(prev => prev.filter(item => item.product.id !== productId));
+  }
+
+  async function buyWithSaldo(product: Product, quantity = 1) {
+    const totalPrice = product.price * quantity;
+    if (!userBalance || userBalance.balance < totalPrice) {
       toast({ title: "Saldo tidak cukup", variant: "destructive" }); return;
     }
     const { data, error } = await supabase.functions.invoke("purchase-with-balance", {
-      body: { visitorId, productId: product.id },
+      body: { visitorId, productId: product.id, quantity },
     });
 
     if (error || data?.error) {
@@ -519,10 +543,12 @@ const Index = () => {
     setUserBalance(prev => prev ? { ...prev, balance: purchaseData.balance_remaining } : prev);
     setShowBuySaldo(false);
     setBuyProduct(null);
+    setBuyQuantity(1);
     setSelectedProduct(null);
     setPurchaseSuccess(purchaseData);
     fetchUserBalance();
-    createNotification("Pembelian Berhasil 🛒", `Kamu berhasil membeli ${product.title}. Kode voucher: ${purchaseData.token.token_code}`, "purchase", product.id);
+    const codes = purchaseData.tokens.map(t => t.token_code).join(", ");
+    createNotification("Pembelian Berhasil 🛒", `Kamu berhasil membeli ${quantity}x ${product.title}. Kode: ${codes}`, "purchase", product.id);
   }
 
   async function claimVoucherCodes(codes: string[]) {
