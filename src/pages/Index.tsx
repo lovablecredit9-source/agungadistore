@@ -365,7 +365,54 @@ const Index = () => {
     fetchNotifications();
     fetchDeposits();
     fetchAdminSettings();
+    checkPinStatus();
   }, []);
+
+  async function checkPinStatus() {
+    const { data } = await supabase.functions.invoke("manage-pin", { body: { action: "check", visitorId } });
+    if (data) setHasPin(data.hasPin);
+  }
+
+  async function createPin() {
+    if (pinInput.length < 4 || pinInput.length > 6 || !/^\d+$/.test(pinInput)) {
+      toast({ title: "PIN harus 4-6 digit angka", variant: "destructive" }); return;
+    }
+    if (pinInput !== pinConfirm) {
+      toast({ title: "Konfirmasi PIN tidak cocok", variant: "destructive" }); return;
+    }
+    const { data, error } = await supabase.functions.invoke("manage-pin", { body: { action: "create", visitorId, pin: pinInput } });
+    if (error || data?.error) { toast({ title: data?.error || "Gagal membuat PIN", variant: "destructive" }); return; }
+    setHasPin(true);
+    setShowPinSetup(false);
+    setPinInput(""); setPinConfirm("");
+    toast({ title: "PIN berhasil dibuat! 🔒" });
+  }
+
+  async function resetPinWithToken() {
+    if (!resetToken || !newPinInput) {
+      toast({ title: "Isi token dan PIN baru", variant: "destructive" }); return;
+    }
+    const { data, error } = await supabase.functions.invoke("manage-pin", {
+      body: { action: "reset", visitorId, resetToken, newPin: newPinInput },
+    });
+    if (error || data?.error) { toast({ title: data?.error || "Gagal reset PIN", variant: "destructive" }); return; }
+    setShowForgotPin(false);
+    setResetToken(""); setNewPinInput("");
+    toast({ title: "PIN berhasil direset! 🔒" });
+  }
+
+  async function checkDiscountCode(code: string) {
+    if (!code.trim()) { setDiscountInfo(null); return; }
+    setCheckingDiscount(true);
+    const { data } = await supabase.from("discount_vouchers")
+      .select("*").eq("code", code.toUpperCase()).eq("is_active", true).maybeSingle();
+    if (data && (!data.expires_at || new Date(data.expires_at as string) > new Date()) && (data.used_count as number) < (data.max_uses as number)) {
+      setDiscountInfo({ amount: data.discount_amount as number, code: data.code as string });
+    } else {
+      setDiscountInfo(null);
+    }
+    setCheckingDiscount(false);
+  }
 
   async function fetchDeposits() {
     const { data } = await supabase.from("deposits").select("*").eq("visitor_id", visitorId).order("created_at", { ascending: false });
