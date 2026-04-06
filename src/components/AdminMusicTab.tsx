@@ -711,8 +711,40 @@ const AdminMusicTab = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      {/* Edit Song Dialog */}
+      <Dialog open={editSongOpen} onOpenChange={setEditSongOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="text-sm flex items-center gap-2"><Edit2 className="w-4 h-4" /> Edit Lagu</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <Input placeholder="Judul lagu *" value={editTitle} onChange={e => setEditTitle(e.target.value)} />
+            <Input placeholder="Artis" value={editArtist} onChange={e => setEditArtist(e.target.value)} />
+            <div>
+              <label className="text-xs font-medium text-muted-foreground mb-1 block">Tanggal rilis (opsional)</label>
+              <Input type="date" value={editReleaseDate} onChange={e => setEditReleaseDate(e.target.value)} />
+            </div>
+            <div>
+              <label className="text-xs font-medium text-muted-foreground mb-1 block">Ganti Thumbnail (opsional)</label>
+              <input ref={editCoverRef} type="file" accept="image/*" onChange={e => setEditCoverFile(e.target.files?.[0] || null)}
+                className="text-xs file:mr-2 file:px-3 file:py-1.5 file:rounded-md file:border-0 file:bg-primary/10 file:text-primary file:font-medium file:cursor-pointer" />
+            </div>
+            {editingSong?.cover_url && !editCoverFile && (
+              <div className="flex items-center gap-2">
+                <img src={editingSong.cover_url} className="w-10 h-10 rounded object-cover" alt="" />
+                <span className="text-xs text-muted-foreground">Cover saat ini</span>
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" size="sm" onClick={() => setEditSongOpen(false)}>Batal</Button>
+            <Button onClick={saveEditSong} disabled={savingSong} className="gap-2">
+              {savingSong ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+              Simpan
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
-  );
-};
 
 export default AdminMusicTab;
