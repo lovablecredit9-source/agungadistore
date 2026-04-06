@@ -452,6 +452,8 @@ const PlaylistTab = () => {
 
   useEffect(() => { return () => { if (audioRef.current) audioRef.current.pause(); }; }, []);
 
+  const [activeView, setActiveView] = useState<"playlist" | "storage">("playlist");
+
   const storagePercent = Math.min((downloadedStorage / maxBytes) * 100, 100);
   const isNearLimit = storagePercent > 80;
   const isAtLimit = storagePercent > 95;
