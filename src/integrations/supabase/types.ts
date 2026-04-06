@@ -292,6 +292,7 @@ export type Database = {
           file_size: number | null
           file_url: string
           id: string
+          release_date: string | null
           title: string
         }
         Insert: {
@@ -302,6 +303,7 @@ export type Database = {
           file_size?: number | null
           file_url: string
           id?: string
+          release_date?: string | null
           title: string
         }
         Update: {
@@ -312,6 +314,7 @@ export type Database = {
           file_size?: number | null
           file_url?: string
           id?: string
+          release_date?: string | null
           title?: string
         }
         Relationships: []
