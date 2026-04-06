@@ -317,6 +317,16 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer }: Playl
   // Update maxBytes when activeRedeemedMb changes
   useEffect(() => { setMaxBytes(getTotalMaxBytes(activeRedeemedMb)); }, [activeRedeemedMb]);
 
+  // Realtime: auto-refresh when admin changes songs/playlists
+  useEffect(() => {
+    const ch = supabase.channel("music-realtime")
+      .on("postgres_changes", { event: "*", schema: "public", table: "playlist_songs" }, () => fetchSongs())
+      .on("postgres_changes", { event: "*", schema: "public", table: "playlists" }, () => fetchSongs())
+      .on("postgres_changes", { event: "*", schema: "public", table: "playlist_items" }, () => fetchSongs())
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, []);
+
   async function checkPinExists() {
     const visitorId = await getVisitorIdSafe();
     const { data } = await supabase.functions.invoke("manage-pin", { body: { action: "check", visitorId } });
