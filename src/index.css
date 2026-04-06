@@ -114,6 +114,7 @@
     --success: 150 60% 45%;
     --success-foreground: 0 0% 100%;
   }
+}
 
 @layer base {
   * {
