@@ -1822,7 +1822,71 @@ const Index = () => {
         </div>
       )}
 
-      {/* Bottom Nav */}
+      {/* Deposit Modal */}
+      {showDepositModal && userBalance && (
+        <div className="fixed inset-0 z-[80] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setShowDepositModal(false)}>
+          <div className="bg-card w-full max-w-sm rounded-2xl p-5 space-y-4 animate-in zoom-in-95 duration-200 max-h-[85vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between">
+              <h3 className="font-extrabold text-lg">{t("deposit.title", lang)}</h3>
+              <button onClick={() => setShowDepositModal(false)} className="w-8 h-8 rounded-full bg-muted flex items-center justify-center"><X className="w-4 h-4" /></button>
+            </div>
+
+            {depositStep === "method" ? (
+              <div className="space-y-3">
+                <p className="text-sm text-muted-foreground">{t("deposit.select_method", lang)}</p>
+                <button onClick={() => { setDepositMethod("qris"); setDepositStep("form"); }}
+                  className="w-full p-4 rounded-xl border-2 border-primary/20 hover:border-primary/50 transition-colors text-left flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center"><FileText className="w-5 h-5 text-primary" /></div>
+                  <div>
+                    <p className="font-bold text-sm">{t("deposit.qris", lang)}</p>
+                    <p className="text-[10px] text-muted-foreground">Scan QR Code</p>
+                  </div>
+                </button>
+                <button onClick={() => { setDepositMethod("ewallet"); setDepositStep("form"); }}
+                  className="w-full p-4 rounded-xl border-2 border-primary/20 hover:border-primary/50 transition-colors text-left flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center"><Wallet className="w-5 h-5 text-accent" /></div>
+                  <div>
+                    <p className="font-bold text-sm">{t("deposit.ewallet", lang)}</p>
+                    <p className="text-[10px] text-muted-foreground">{getSettingValue("ewallet_name") || "E-Wallet"}</p>
+                  </div>
+                </button>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <button onClick={() => setDepositStep("method")} className="text-xs text-primary flex items-center gap-1"><ChevronLeft className="w-3 h-3" /> {lang === "id" ? "Kembali" : "Back"}</button>
+
+                {/* Payment info */}
+                {depositMethod === "qris" ? (
+                  <div className="rounded-xl border border-primary/20 bg-primary/5 p-3 text-center space-y-2">
+                    <p className="text-xs font-bold text-primary">{t("deposit.scan_qris", lang)}</p>
+                    {getSettingValue("qris_url") ? (
+                      <img src={getSettingValue("qris_url")} alt="QRIS" className="max-w-full max-h-48 mx-auto rounded-lg" />
+                    ) : (
+                      <div className="bg-muted rounded-lg p-6 text-xs text-muted-foreground">{lang === "id" ? "QRIS belum dikonfigurasi admin" : "QRIS not configured by admin"}</div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="rounded-xl border border-accent/20 bg-accent/5 p-3 space-y-1">
+                    <p className="text-xs font-bold text-accent">{t("deposit.transfer_to", lang)}</p>
+                    <p className="font-bold text-sm">{getSettingValue("ewallet_name") || "-"}</p>
+                    <p className="font-mono text-lg font-extrabold text-foreground">{getSettingValue("ewallet_number") || "-"}</p>
+                  </div>
+                )}
+
+                <Input type="number" placeholder={t("deposit.amount", lang)} value={depositAmount} onChange={e => setDepositAmount(e.target.value)} />
+                <Input placeholder={t("deposit.trx_id_placeholder", lang)} value={depositTrxId} onChange={e => setDepositTrxId(e.target.value)} />
+
+                <Button className="w-full bg-gradient-to-r from-accent to-accent/80 text-accent-foreground font-bold gap-2"
+                  onClick={submitDeposit} disabled={!depositAmount || !depositTrxId.trim()}>
+                  <MessageCircle className="w-4 h-4" /> {t("deposit.send_wa", lang)}
+                </Button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+
       <nav className="fixed bottom-0 left-0 right-0 bg-card/95 backdrop-blur-md border-t border-border z-50 shadow-[0_-4px_20px_rgba(0,0,0,0.08)]">
         <div className="flex max-w-lg mx-auto">
           {([
