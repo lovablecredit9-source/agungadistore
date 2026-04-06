@@ -307,22 +307,26 @@ const Index = () => {
     return adminSettings.find(s => s.setting_key === key)?.setting_value || "";
   }
 
+  function getEwallets(): {name: string; number: string}[] {
+    try { return JSON.parse(getSettingValue("ewallets") || "[]"); } catch { return []; }
+  }
+
   async function submitDeposit() {
     const amount = parseInt(depositAmount) || 0;
     if (amount <= 0 || !depositTrxId.trim() || !userBalance) {
       toast({ title: lang === "id" ? "Isi nominal dan ID transaksi" : "Fill amount and transaction ID", variant: "destructive" }); return;
     }
+    const methodLabel = depositMethod === "qris" ? "QRIS" : depositMethod;
     await supabase.from("deposits").insert({
       visitor_id: visitorId,
       username: userBalance.username,
       amount,
-      payment_method: depositMethod,
+      payment_method: methodLabel,
       trx_id: depositTrxId.trim(),
     } as any);
-    // Send WhatsApp confirmation
     const msg = lang === "id"
-      ? `Halo admin, saya sudah deposit saldo.\n\nUsername: ${userBalance.username}\nNominal: ${formatPrice(amount)}\nMetode: ${depositMethod === "qris" ? "QRIS" : "E-Wallet"}\nID Transaksi: ${depositTrxId.trim()}\nVisitor ID: ${visitorId}`
-      : `Hello admin, I have deposited balance.\n\nUsername: ${userBalance.username}\nAmount: ${formatPrice(amount)}\nMethod: ${depositMethod === "qris" ? "QRIS" : "E-Wallet"}\nTransaction ID: ${depositTrxId.trim()}\nVisitor ID: ${visitorId}`;
+      ? `Halo admin, saya sudah deposit saldo.\n\nUsername: ${userBalance.username}\nNominal: ${formatPrice(amount)}\nMetode: ${methodLabel}\nID Transaksi: ${depositTrxId.trim()}\nVisitor ID: ${visitorId}`
+      : `Hello admin, I have deposited balance.\n\nUsername: ${userBalance.username}\nAmount: ${formatPrice(amount)}\nMethod: ${methodLabel}\nTransaction ID: ${depositTrxId.trim()}\nVisitor ID: ${visitorId}`;
     window.open(`${SOCIAL_LINKS.whatsapp}?text=${encodeURIComponent(msg)}`, "_blank");
     toast({ title: lang === "id" ? "Deposit berhasil diajukan! ✅" : "Deposit submitted! ✅" });
     setShowDepositModal(false); setDepositAmount(""); setDepositTrxId(""); setDepositStep("method");
