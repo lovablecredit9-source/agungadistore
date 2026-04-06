@@ -236,6 +236,7 @@ const Index = () => {
   // Music playback persistence
   const [playbackState, setPlaybackState] = useState<PlaybackState>({ song: null, isPlaying: false, currentTime: 0, duration: 0 });
   const togglePlayRef = useRef<(() => void) | null>(null);
+  const openFullPlayerRef = useRef<(() => void) | null>(null);
 
   // Likes
   const [likedIds, setLikedIds] = useState<Set<string>>(new Set());

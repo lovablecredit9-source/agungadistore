@@ -348,9 +348,10 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer }: Playl
     onPlaybackChange?.({ song: currentSong || null, isPlaying, currentTime, duration });
   }, [currentSong, isPlaying, currentTime, duration]);
 
-  // Expose togglePlay to parent
+  // Expose togglePlay and openFullPlayer to parent
   useEffect(() => {
     if (onTogglePlay) onTogglePlay.current = togglePlay;
+    if (onOpenFullPlayer) onOpenFullPlayer.current = () => setShowFullPlayer(true);
   });
 
   // Lyrics for current song
