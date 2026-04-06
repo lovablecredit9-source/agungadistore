@@ -50,6 +50,7 @@ export default function LanguageSelector({ currentLang, onSelect }: LanguageSele
     <>
       <button
         onClick={() => setOpen(true)}
+        data-no-auto-translate
         className="w-9 h-9 rounded-xl bg-primary-foreground/20 backdrop-blur-sm flex items-center justify-center hover:bg-primary-foreground/30 transition-colors gap-0.5"
         title={current?.name || "Language"}
       >
@@ -57,7 +58,7 @@ export default function LanguageSelector({ currentLang, onSelect }: LanguageSele
       </button>
 
       {open && (
-        <div className="fixed inset-0 z-[70] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+        <div data-no-auto-translate className="fixed inset-0 z-[70] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
           <div ref={panelRef} className="bg-card w-full max-w-sm max-h-[85vh] rounded-2xl overflow-hidden animate-in zoom-in-95 duration-200 flex flex-col">
             {/* Header */}
             <div className="flex items-center justify-between p-4 pb-2 shrink-0">

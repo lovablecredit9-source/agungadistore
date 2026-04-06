@@ -191,6 +191,9 @@ export function t(key: string, lang: Lang): string {
   // Try base language code (e.g., "ar-EG" -> "ar")
   const base = getBaseLanguageCode(lang);
   if (entry[base]) return entry[base];
+
+   // Fallback to English before Indonesian so unsupported languages still change
+   if (entry["en"]) return entry["en"];
   
   // Fallback to Indonesian
   return entry["id"] || key;
