@@ -3,12 +3,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Music, Plus, Trash2, Upload, Loader2, ListMusic, Image as ImageIcon, Edit2, Check, X } from "lucide-react";
+import { Music, Plus, Trash2, Upload, Loader2, ListMusic, Image as ImageIcon, Edit2, Check, X, Type } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter
 } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Textarea } from "@/components/ui/textarea";
 
 interface Song {
   id: string;
@@ -70,7 +71,13 @@ const AdminMusicTab = () => {
   const [selectedSongIds, setSelectedSongIds] = useState<Set<string>>(new Set());
   const [savingSongs, setSavingSongs] = useState(false);
 
-  const [activeTab, setActiveTab] = useState<"songs" | "playlists">("songs");
+  const [activeTab, setActiveTab] = useState<"songs" | "playlists" | "lyrics">("songs");
+
+  // Lyrics state
+  const [lyricsDialogOpen, setLyricsDialogOpen] = useState(false);
+  const [lyricsSong, setLyricsSong] = useState<Song | null>(null);
+  const [lyricsText, setLyricsText] = useState("");
+  const [savingLyrics, setSavingLyrics] = useState(false);
 
   useEffect(() => { fetchAll(); }, []);
 
@@ -251,15 +258,69 @@ const AdminMusicTab = () => {
     return playlistItems.filter(pi => pi.playlist_id === plId).length;
   }
 
+  // --- Lyrics ---
+  async function openLyricsEditor(song: Song) {
+    setLyricsSong(song);
+    setLyricsText("Memuat...");
+    setLyricsDialogOpen(true);
+    const { data } = await supabase.from("song_lyrics").select("*").eq("song_id", song.id).order("time_seconds", { ascending: true });
+    if (data && data.length > 0) {
+      // Convert to LRC-like format: [mm:ss.xx] text
+      const lines = data.map((l: any) => {
+        const mins = Math.floor(l.time_seconds / 60);
+        const secs = (l.time_seconds % 60).toFixed(2).padStart(5, "0");
+        return `[${String(mins).padStart(2, "0")}:${secs}]${l.text}`;
+      });
+      setLyricsText(lines.join("\n"));
+    } else {
+      setLyricsText("");
+    }
+  }
+
+  async function saveLyrics() {
+    if (!lyricsSong) return;
+    setSavingLyrics(true);
+    try {
+      // Delete existing
+      await supabase.from("song_lyrics").delete().eq("song_id", lyricsSong.id);
+      // Parse LRC format
+      const lines = lyricsText.split("\n").filter(l => l.trim());
+      const parsed: { song_id: string; time_seconds: number; text: string; line_order: number }[] = [];
+      lines.forEach((line, i) => {
+        const match = line.match(/^\[(\d{1,2}):(\d{2}(?:\.\d+)?)\](.*)$/);
+        if (match) {
+          const mins = parseInt(match[1]);
+          const secs = parseFloat(match[2]);
+          parsed.push({ song_id: lyricsSong.id, time_seconds: mins * 60 + secs, text: match[3].trim(), line_order: i });
+        } else {
+          // Plain text without timestamp - assign order-based time (0)
+          parsed.push({ song_id: lyricsSong.id, time_seconds: 0, text: line.trim(), line_order: i });
+        }
+      });
+      if (parsed.length > 0) {
+        const { error } = await supabase.from("song_lyrics").insert(parsed);
+        if (error) throw error;
+      }
+      toast({ title: `${parsed.length} baris lirik disimpan` });
+      setLyricsDialogOpen(false);
+    } catch (err: any) {
+      toast({ title: "Gagal simpan lirik", description: err.message, variant: "destructive" });
+    }
+    setSavingLyrics(false);
+  }
+
   return (
     <>
       {/* Tab Toggle */}
-      <div className="flex gap-2">
-        <Button variant={activeTab === "songs" ? "default" : "outline"} size="sm" className="flex-1 gap-2 text-xs" onClick={() => setActiveTab("songs")}>
+      <div className="flex gap-1.5">
+        <Button variant={activeTab === "songs" ? "default" : "outline"} size="sm" className="flex-1 gap-1.5 text-[11px] px-2" onClick={() => setActiveTab("songs")}>
           <Music className="w-3.5 h-3.5" /> Lagu ({songs.length})
         </Button>
-        <Button variant={activeTab === "playlists" ? "default" : "outline"} size="sm" className="flex-1 gap-2 text-xs" onClick={() => setActiveTab("playlists")}>
+        <Button variant={activeTab === "playlists" ? "default" : "outline"} size="sm" className="flex-1 gap-1.5 text-[11px] px-2" onClick={() => setActiveTab("playlists")}>
           <ListMusic className="w-3.5 h-3.5" /> Playlist ({playlists.length})
+        </Button>
+        <Button variant={activeTab === "lyrics" ? "default" : "outline"} size="sm" className="flex-1 gap-1.5 text-[11px] px-2" onClick={() => setActiveTab("lyrics")}>
+          <Type className="w-3.5 h-3.5" /> Lirik
         </Button>
       </div>
 
@@ -421,6 +482,64 @@ const AdminMusicTab = () => {
             <Button onClick={saveSongsInPlaylist} disabled={savingSongs} className="w-full gap-2">
               {savingSongs ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
               Simpan ({selectedSongIds.size} lagu)
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Lyrics Tab */}
+      {activeTab === "lyrics" && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-base"><Type className="w-5 h-5" /> Kelola Lirik</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {loading ? (
+              <div className="text-center py-4"><Loader2 className="w-6 h-6 animate-spin mx-auto" /></div>
+            ) : songs.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-4">Upload lagu dulu.</p>
+            ) : (
+              songs.map(song => (
+                <div key={song.id} className="flex items-center gap-3 p-2 rounded-lg border border-border">
+                  <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0 overflow-hidden">
+                    {song.cover_url ? <img src={song.cover_url} className="w-full h-full object-cover" alt="" /> : <Music className="w-4 h-4 text-primary" />}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-bold truncate">{song.title}</p>
+                    <p className="text-[11px] text-muted-foreground">{song.artist}</p>
+                  </div>
+                  <Button size="sm" variant="outline" className="gap-1.5 text-xs shrink-0" onClick={() => openLyricsEditor(song)}>
+                    <Type className="w-3.5 h-3.5" /> Lirik
+                  </Button>
+                </div>
+              ))
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Lyrics Editor Dialog */}
+      <Dialog open={lyricsDialogOpen} onOpenChange={setLyricsDialogOpen}>
+        <DialogContent className="max-w-sm max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-sm flex items-center gap-2"><Type className="w-4 h-4" /> Lirik — {lyricsSong?.title}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-2">
+            <p className="text-[11px] text-muted-foreground">Format LRC: <code className="bg-muted px-1 rounded">[mm:ss.xx]teks lirik</code></p>
+            <p className="text-[10px] text-muted-foreground">Contoh:<br/><code className="bg-muted px-1 rounded">[00:05.00]Baris pertama lagu</code><br/><code className="bg-muted px-1 rounded">[00:12.50]Baris kedua lagu</code></p>
+            <Textarea
+              value={lyricsText}
+              onChange={e => setLyricsText(e.target.value)}
+              rows={12}
+              placeholder="[00:00.00]Masukkan lirik dengan timestamp..."
+              className="text-xs font-mono"
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setLyricsDialogOpen(false)}>Batal</Button>
+            <Button onClick={saveLyrics} disabled={savingLyrics} className="gap-2">
+              {savingLyrics ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+              Simpan Lirik
             </Button>
           </DialogFooter>
         </DialogContent>

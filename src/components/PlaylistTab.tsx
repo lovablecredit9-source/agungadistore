@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -7,7 +7,8 @@ import { Progress } from "@/components/ui/progress";
 import {
   Music, Play, Pause, SkipBack, SkipForward, Download, Volume2, VolumeX,
   Repeat, Shuffle, Loader2, HardDrive, Globe, CheckCircle2, Trash2,
-  WifiOff, Wifi, Crown, Zap, Clock, ListMusic, Plus, Edit2, Check, Lock
+  WifiOff, Wifi, Crown, Zap, Clock, ListMusic, Plus, Edit2, Check, Lock,
+  FileText, Copyright, ChevronDown, ChevronUp, Type
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Slider } from "@/components/ui/slider";
@@ -44,6 +45,14 @@ interface PlaylistItemRow {
   playlist_id: string;
   song_id: string;
   item_order: number;
+}
+
+interface LyricLine {
+  id: string;
+  song_id: string;
+  time_seconds: number;
+  text: string;
+  line_order: number;
 }
 
 // --- Storage plan system ---
@@ -239,6 +248,12 @@ const PlaylistTab = () => {
 
   const [activeView, setActiveView] = useState<"playlist" | "myplaylists" | "storage">("playlist");
 
+  // Lyrics state
+  const [allLyrics, setAllLyrics] = useState<LyricLine[]>([]);
+  const [showLyrics, setShowLyrics] = useState(false);
+  const [termsOpen, setTermsOpen] = useState(false);
+  const lyricsContainerRef = useRef<HTMLDivElement>(null);
+
   // Current playing song list (filtered by playlist or all)
   const displaySongs = viewingPlaylist
     ? songs.filter(s => playlistItems.some(pi => pi.playlist_id === viewingPlaylist.id && pi.song_id === s.id))
@@ -261,17 +276,19 @@ const PlaylistTab = () => {
     const visitorId = await getVisitorIdSafe();
 
     if (navigator.onLine) {
-      const [songsRes, adminPlRes, userPlRes, piRes] = await Promise.all([
+      const [songsRes, adminPlRes, userPlRes, piRes, lyricsRes] = await Promise.all([
         supabase.from("playlist_songs").select("*").order("created_at", { ascending: false }),
         supabase.from("playlists").select("*").eq("playlist_type", "admin").order("created_at", { ascending: false }),
         supabase.from("playlists").select("*").eq("playlist_type", "user").eq("visitor_id", visitorId).order("created_at", { ascending: false }),
         supabase.from("playlist_items").select("*"),
+        supabase.from("song_lyrics").select("*").order("time_seconds", { ascending: true }),
       ]);
       const songList = (songsRes.data as Song[]) || [];
       setSongs(songList);
       setAdminPlaylists((adminPlRes.data as Playlist[]) || []);
       setUserPlaylists((userPlRes.data as Playlist[]) || []);
       setPlaylistItems((piRes.data as PlaylistItemRow[]) || []);
+      setAllLyrics((lyricsRes.data as LyricLine[]) || []);
       const ids = await getCachedSongIds();
       setCachedIds(ids);
       setDownloadedStorage(await getCachedStorageUsed(songList, ids));
@@ -296,6 +313,29 @@ const PlaylistTab = () => {
   }
 
   const currentSong = currentIndex >= 0 ? displaySongs[currentIndex] : null;
+
+  // Lyrics for current song
+  const currentSongLyrics = useMemo(() => {
+    if (!currentSong) return [];
+    return allLyrics.filter(l => l.song_id === currentSong.id).sort((a, b) => a.time_seconds - b.time_seconds);
+  }, [currentSong, allLyrics]);
+
+  const activeLyricIndex = useMemo(() => {
+    if (!currentSongLyrics.length) return -1;
+    let idx = -1;
+    for (let i = 0; i < currentSongLyrics.length; i++) {
+      if (currentSongLyrics[i].time_seconds <= currentTime) idx = i;
+      else break;
+    }
+    return idx;
+  }, [currentSongLyrics, currentTime]);
+
+  // Auto-scroll lyrics
+  useEffect(() => {
+    if (activeLyricIndex < 0 || !lyricsContainerRef.current || !showLyrics) return;
+    const el = lyricsContainerRef.current.querySelector(`[data-lyric-index="${activeLyricIndex}"]`);
+    if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+  }, [activeLyricIndex, showLyrics]);
 
   const playSong = useCallback(async (index: number) => {
     if (audioRef.current) audioRef.current.pause();
@@ -601,6 +641,40 @@ const PlaylistTab = () => {
               <button onClick={toggleMute} className="text-muted-foreground hover:text-foreground">{muted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}</button>
               <Slider value={[muted ? 0 : volume]} max={1} step={0.01} onValueChange={changeVolume} className="flex-1 cursor-pointer" />
             </div>
+            {/* Lyrics toggle */}
+            {currentSongLyrics.length > 0 && (
+              <button onClick={() => setShowLyrics(!showLyrics)} className="w-full flex items-center justify-center gap-1.5 text-[11px] font-semibold text-primary hover:underline pt-1">
+                <Type className="w-3.5 h-3.5" />
+                {showLyrics ? "Sembunyikan Lirik" : "Tampilkan Lirik"}
+                {showLyrics ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+              </button>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Lyrics Display */}
+      {currentSong && showLyrics && currentSongLyrics.length > 0 && (
+        <Card className="border-primary/20 overflow-hidden">
+          <CardContent className="p-4 space-y-1">
+            <p className="text-[11px] font-bold text-muted-foreground flex items-center gap-1.5 mb-2"><Type className="w-3.5 h-3.5" /> Lirik — {currentSong.title}</p>
+            <div ref={lyricsContainerRef} className="max-h-48 overflow-y-auto space-y-0.5 scroll-smooth">
+              {currentSongLyrics.map((line, i) => {
+                const isActive = activeLyricIndex === i;
+                return (
+                  <p
+                    key={line.id}
+                    data-lyric-index={i}
+                    className={`text-xs py-0.5 px-2 rounded transition-all duration-300 ${isActive ? "text-primary font-bold bg-primary/10 scale-[1.02]" : "text-muted-foreground"}`}
+                  >
+                    {line.text || "♪"}
+                  </p>
+                );
+              })}
+            </div>
+            <p className="text-[10px] text-muted-foreground text-center pt-2 flex items-center justify-center gap-1">
+              <Copyright className="w-3 h-3" /> {currentSong.artist} — Hak cipta dilindungi
+            </p>
           </CardContent>
         </Card>
       )}
@@ -828,6 +902,65 @@ const PlaylistTab = () => {
               {savingUserSongs ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
               Simpan ({selectedUserSongIds.size} lagu)
             </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Copyright & Terms Footer */}
+      <Card className="border-border/50 bg-muted/30">
+        <CardContent className="p-3 space-y-2">
+          <div className="flex items-center justify-center gap-1.5 text-[10px] text-muted-foreground">
+            <Copyright className="w-3 h-3" />
+            <span>Semua musik dilindungi hak cipta masing-masing artis.</span>
+          </div>
+          <div className="flex justify-center">
+            <Button variant="ghost" size="sm" className="h-6 text-[10px] text-muted-foreground hover:text-foreground gap-1" onClick={() => setTermsOpen(true)}>
+              <FileText className="w-3 h-3" /> Syarat & Ketentuan Playlist
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Terms & Privacy Dialog */}
+      <Dialog open={termsOpen} onOpenChange={setTermsOpen}>
+        <DialogContent className="max-w-sm max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-base"><FileText className="w-5 h-5 text-primary" /> Syarat & Ketentuan Playlist</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 text-xs text-muted-foreground">
+            <div>
+              <p className="font-bold text-foreground text-sm mb-1">📋 Syarat & Ketentuan</p>
+              <ul className="list-disc pl-4 space-y-1">
+                <li>Layanan playlist musik disediakan untuk penggunaan pribadi dan non-komersial.</li>
+                <li>Pengguna dapat membuat playlist pribadi yang hanya dapat diakses oleh pengguna itu sendiri.</li>
+                <li>Playlist publik dikelola oleh admin dan dapat dinikmati semua pengguna.</li>
+                <li>Penyimpanan offline tunduk pada batas kuota yang berlaku (Free 2GB, atau sesuai paket aktif).</li>
+                <li>Admin berhak menghapus, mengubah, atau menambahkan konten musik kapan saja.</li>
+                <li>Dilarang mendistribusikan ulang, menjual, atau menggunakan musik untuk keperluan komersial.</li>
+              </ul>
+            </div>
+            <div>
+              <p className="font-bold text-foreground text-sm mb-1">🔒 Kebijakan Privasi</p>
+              <ul className="list-disc pl-4 space-y-1">
+                <li>Data playlist pribadi disimpan menggunakan <code className="bg-muted px-1 rounded">visitor_id</code> unik per perangkat.</li>
+                <li>Kami tidak mengumpulkan informasi pribadi (nama, email, dll) untuk fitur playlist.</li>
+                <li>Riwayat pemutaran dan preferensi musik hanya tersimpan di perangkat Anda.</li>
+                <li>Data offline (lagu yang di-cache) disimpan di penyimpanan lokal browser Anda.</li>
+                <li>Kami tidak membagikan data penggunaan playlist kepada pihak ketiga.</li>
+              </ul>
+            </div>
+            <div>
+              <p className="font-bold text-foreground text-sm mb-1">©️ Hak Cipta Musik</p>
+              <ul className="list-disc pl-4 space-y-1">
+                <li>Semua lagu dan lirik yang tersedia dilindungi oleh hak cipta masing-masing artis dan pemegang hak.</li>
+                <li>Penggunaan musik hanya untuk streaming dan pemutaran pribadi dalam aplikasi ini.</li>
+                <li>Lirik ditampilkan untuk tujuan referensi dan hiburan saja.</li>
+                <li>Jika Anda adalah pemegang hak cipta dan ingin konten dihapus, silakan hubungi admin.</li>
+              </ul>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button onClick={() => setTermsOpen(false)} className="w-full">Tutup</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

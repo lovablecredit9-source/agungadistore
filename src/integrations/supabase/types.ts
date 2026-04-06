@@ -519,6 +519,41 @@ export type Database = {
         }
         Relationships: []
       }
+      song_lyrics: {
+        Row: {
+          created_at: string
+          id: string
+          line_order: number
+          song_id: string
+          text: string
+          time_seconds: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          line_order?: number
+          song_id: string
+          text?: string
+          time_seconds?: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          line_order?: number
+          song_id?: string
+          text?: string
+          time_seconds?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "song_lyrics_song_id_fkey"
+            columns: ["song_id"]
+            isOneToOne: false
+            referencedRelation: "playlist_songs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       support_tickets: {
         Row: {
           created_at: string
