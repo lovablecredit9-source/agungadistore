@@ -230,7 +230,74 @@ const AdminDashboard = () => {
     fetchUserBalances();
     fetchDeposits();
     fetchAdminSettings();
+    fetchDiscountVouchers();
   }, []);
+
+  async function fetchDiscountVouchers() {
+    const { data } = await supabase.from("discount_vouchers").select("*").order("created_at", { ascending: false });
+    if (data) setDiscountVouchers(data as unknown as DiscountVoucher[]);
+  }
+
+  async function createDiscountVoucher() {
+    if (!dvCode.trim() || !dvAmount) { toast({ title: "Isi kode dan nominal", variant: "destructive" }); return; }
+    const amount = parseInt(dvAmount) || 0;
+    if (amount <= 0) { toast({ title: "Nominal harus lebih dari 0", variant: "destructive" }); return; }
+    const { error } = await supabase.from("discount_vouchers").insert({
+      code: dvCode.trim().toUpperCase(),
+      discount_amount: amount,
+      max_uses: parseInt(dvMaxUses) || 10,
+      expires_at: dvExpiry ? new Date(dvExpiry).toISOString() : null,
+    } as any);
+    if (error) { toast({ title: "Gagal buat voucher (kode mungkin sudah ada)", variant: "destructive" }); return; }
+    toast({ title: `Voucher diskon ${dvCode.toUpperCase()} berhasil dibuat! 🏷️` });
+    setDvCode(""); setDvAmount(""); setDvMaxUses("10"); setDvExpiry("");
+    fetchDiscountVouchers();
+  }
+
+  async function toggleDiscountVoucher(v: DiscountVoucher) {
+    await supabase.from("discount_vouchers").update({ is_active: !v.is_active } as any).eq("id", v.id);
+    toast({ title: v.is_active ? "Voucher dinonaktifkan" : "Voucher diaktifkan" });
+    fetchDiscountVouchers();
+  }
+
+  async function deleteDiscountVoucher(id: string) {
+    await supabase.from("discount_vouchers").delete().eq("id", id);
+    toast({ title: "Voucher dihapus" });
+    fetchDiscountVouchers();
+  }
+
+  async function sendDiscountVoucherNotif(v: DiscountVoucher) {
+    const message = `🏷️ Kode diskon: ${v.code}\nDiskon: Rp${v.discount_amount.toLocaleString()}\n${v.expires_at ? `Berlaku sampai: ${new Date(v.expires_at).toLocaleDateString("id-ID")}` : "Tidak ada batas waktu"}\nMasukkan kode saat checkout!`;
+    if (dvSendTarget === "all") {
+      const inserts = userBalances.map(u => ({
+        visitor_id: u.visitor_id, title: "Voucher Diskon Baru! 🏷️", message, type: "discount_voucher",
+      }));
+      if (inserts.length === 0) { toast({ title: "Tidak ada user", variant: "destructive" }); return; }
+      await supabase.from("notifications").insert(inserts as any);
+      toast({ title: `Voucher dikirim ke ${inserts.length} user! 📢` });
+    } else {
+      await supabase.from("notifications").insert({
+        visitor_id: dvSendTarget, title: "Voucher Diskon Baru! 🏷️", message, type: "discount_voucher",
+      } as any);
+      toast({ title: "Voucher dikirim! 📢" });
+    }
+  }
+
+  async function generatePinResetToken() {
+    if (!pinResetTarget) { toast({ title: "Pilih user", variant: "destructive" }); return; }
+    const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+    const token = Array.from({ length: 8 }, () => chars[Math.floor(Math.random() * chars.length)]).join("");
+    const { error } = await supabase.from("pin_reset_tokens").insert({
+      visitor_id: pinResetTarget, token,
+    } as any);
+    if (error) { toast({ title: "Gagal buat token", variant: "destructive" }); return; }
+    setGeneratedResetToken(token);
+    // Notify user
+    await supabase.from("notifications").insert({
+      visitor_id: pinResetTarget, title: "Token Reset PIN 🔑", message: `Token reset PIN Anda: ${token}\nGunakan untuk membuat PIN baru.`, type: "pin_reset",
+    } as any);
+    toast({ title: `Token reset dibuat: ${token}` });
+  }
 
   async function fetchDeposits() {
     const { data } = await supabase.from("deposits").select("*").order("created_at", { ascending: false });
