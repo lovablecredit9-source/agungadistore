@@ -258,15 +258,69 @@ const AdminMusicTab = () => {
     return playlistItems.filter(pi => pi.playlist_id === plId).length;
   }
 
+  // --- Lyrics ---
+  async function openLyricsEditor(song: Song) {
+    setLyricsSong(song);
+    setLyricsText("Memuat...");
+    setLyricsDialogOpen(true);
+    const { data } = await supabase.from("song_lyrics").select("*").eq("song_id", song.id).order("time_seconds", { ascending: true });
+    if (data && data.length > 0) {
+      // Convert to LRC-like format: [mm:ss.xx] text
+      const lines = data.map((l: any) => {
+        const mins = Math.floor(l.time_seconds / 60);
+        const secs = (l.time_seconds % 60).toFixed(2).padStart(5, "0");
+        return `[${String(mins).padStart(2, "0")}:${secs}]${l.text}`;
+      });
+      setLyricsText(lines.join("\n"));
+    } else {
+      setLyricsText("");
+    }
+  }
+
+  async function saveLyrics() {
+    if (!lyricsSong) return;
+    setSavingLyrics(true);
+    try {
+      // Delete existing
+      await supabase.from("song_lyrics").delete().eq("song_id", lyricsSong.id);
+      // Parse LRC format
+      const lines = lyricsText.split("\n").filter(l => l.trim());
+      const parsed: { song_id: string; time_seconds: number; text: string; line_order: number }[] = [];
+      lines.forEach((line, i) => {
+        const match = line.match(/^\[(\d{1,2}):(\d{2}(?:\.\d+)?)\](.*)$/);
+        if (match) {
+          const mins = parseInt(match[1]);
+          const secs = parseFloat(match[2]);
+          parsed.push({ song_id: lyricsSong.id, time_seconds: mins * 60 + secs, text: match[3].trim(), line_order: i });
+        } else {
+          // Plain text without timestamp - assign order-based time (0)
+          parsed.push({ song_id: lyricsSong.id, time_seconds: 0, text: line.trim(), line_order: i });
+        }
+      });
+      if (parsed.length > 0) {
+        const { error } = await supabase.from("song_lyrics").insert(parsed);
+        if (error) throw error;
+      }
+      toast({ title: `${parsed.length} baris lirik disimpan` });
+      setLyricsDialogOpen(false);
+    } catch (err: any) {
+      toast({ title: "Gagal simpan lirik", description: err.message, variant: "destructive" });
+    }
+    setSavingLyrics(false);
+  }
+
   return (
     <>
       {/* Tab Toggle */}
-      <div className="flex gap-2">
-        <Button variant={activeTab === "songs" ? "default" : "outline"} size="sm" className="flex-1 gap-2 text-xs" onClick={() => setActiveTab("songs")}>
+      <div className="flex gap-1.5">
+        <Button variant={activeTab === "songs" ? "default" : "outline"} size="sm" className="flex-1 gap-1.5 text-[11px] px-2" onClick={() => setActiveTab("songs")}>
           <Music className="w-3.5 h-3.5" /> Lagu ({songs.length})
         </Button>
-        <Button variant={activeTab === "playlists" ? "default" : "outline"} size="sm" className="flex-1 gap-2 text-xs" onClick={() => setActiveTab("playlists")}>
+        <Button variant={activeTab === "playlists" ? "default" : "outline"} size="sm" className="flex-1 gap-1.5 text-[11px] px-2" onClick={() => setActiveTab("playlists")}>
           <ListMusic className="w-3.5 h-3.5" /> Playlist ({playlists.length})
+        </Button>
+        <Button variant={activeTab === "lyrics" ? "default" : "outline"} size="sm" className="flex-1 gap-1.5 text-[11px] px-2" onClick={() => setActiveTab("lyrics")}>
+          <Type className="w-3.5 h-3.5" /> Lirik
         </Button>
       </div>
 
