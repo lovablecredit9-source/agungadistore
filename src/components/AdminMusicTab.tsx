@@ -76,6 +76,16 @@ const AdminMusicTab = () => {
 
   const [activeTab, setActiveTab] = useState<"songs" | "playlists" | "lyrics">("songs");
 
+  // Edit song state
+  const [editSongOpen, setEditSongOpen] = useState(false);
+  const [editingSong, setEditingSong] = useState<Song | null>(null);
+  const [editTitle, setEditTitle] = useState("");
+  const [editArtist, setEditArtist] = useState("");
+  const [editReleaseDate, setEditReleaseDate] = useState("");
+  const [editCoverFile, setEditCoverFile] = useState<File | null>(null);
+  const editCoverRef = useRef<HTMLInputElement>(null);
+  const [savingSong, setSavingSong] = useState(false);
+
   // Lyrics state
   const [lyricsDialogOpen, setLyricsDialogOpen] = useState(false);
   const [lyricsSong, setLyricsSong] = useState<Song | null>(null);
