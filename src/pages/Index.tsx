@@ -1846,14 +1846,19 @@ const Index = () => {
                     <p className="text-[10px] text-muted-foreground">Scan QR Code</p>
                   </div>
                 </button>
-                <button onClick={() => { setDepositMethod("ewallet"); setDepositStep("form"); }}
-                  className="w-full p-4 rounded-xl border-2 border-primary/20 hover:border-primary/50 transition-colors text-left flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center"><Wallet className="w-5 h-5 text-accent" /></div>
-                  <div>
-                    <p className="font-bold text-sm">{t("deposit.ewallet", lang)}</p>
-                    <p className="text-[10px] text-muted-foreground">{getSettingValue("ewallet_name") || "E-Wallet"}</p>
-                  </div>
-                </button>
+                {getEwallets().map((ew, idx) => (
+                  <button key={idx} onClick={() => { setDepositMethod(ew.name); setDepositStep("form"); }}
+                    className="w-full p-4 rounded-xl border-2 border-primary/20 hover:border-primary/50 transition-colors text-left flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center"><Wallet className="w-5 h-5 text-accent" /></div>
+                    <div>
+                      <p className="font-bold text-sm">{ew.name}</p>
+                      <p className="text-[10px] text-muted-foreground">{ew.number}</p>
+                    </div>
+                  </button>
+                ))}
+                {getEwallets().length === 0 && (
+                  <div className="text-xs text-muted-foreground text-center py-2">{lang === "id" ? "Belum ada e-wallet dikonfigurasi" : "No e-wallet configured"}</div>
+                )}
               </div>
             ) : (
               <div className="space-y-4">
@@ -1872,8 +1877,8 @@ const Index = () => {
                 ) : (
                   <div className="rounded-xl border border-accent/20 bg-accent/5 p-3 space-y-1">
                     <p className="text-xs font-bold text-accent">{t("deposit.transfer_to", lang)}</p>
-                    <p className="font-bold text-sm">{getSettingValue("ewallet_name") || "-"}</p>
-                    <p className="font-mono text-lg font-extrabold text-foreground">{getSettingValue("ewallet_number") || "-"}</p>
+                    <p className="font-bold text-sm">{depositMethod}</p>
+                    <p className="font-mono text-lg font-extrabold text-foreground">{getEwallets().find(ew => ew.name === depositMethod)?.number || "-"}</p>
                   </div>
                 )}
 
