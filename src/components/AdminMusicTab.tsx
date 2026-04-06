@@ -71,7 +71,13 @@ const AdminMusicTab = () => {
   const [selectedSongIds, setSelectedSongIds] = useState<Set<string>>(new Set());
   const [savingSongs, setSavingSongs] = useState(false);
 
-  const [activeTab, setActiveTab] = useState<"songs" | "playlists">("songs");
+  const [activeTab, setActiveTab] = useState<"songs" | "playlists" | "lyrics">("songs");
+
+  // Lyrics state
+  const [lyricsDialogOpen, setLyricsDialogOpen] = useState(false);
+  const [lyricsSong, setLyricsSong] = useState<Song | null>(null);
+  const [lyricsText, setLyricsText] = useState("");
+  const [savingLyrics, setSavingLyrics] = useState(false);
 
   useEffect(() => { fetchAll(); }, []);
 
