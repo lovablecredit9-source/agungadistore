@@ -1,11 +1,12 @@
 import { useState, useEffect } from "react";
+import { getBaseLanguageCode } from "./languages";
 
-export type Lang = "id" | "en";
+export type Lang = string; // Now supports any language code
 
 const LANG_KEY = "app-language";
 
 export function getSavedLang(): Lang {
-  return (localStorage.getItem(LANG_KEY) as Lang) || "id";
+  return localStorage.getItem(LANG_KEY) || "id";
 }
 
 export function saveLang(lang: Lang) {
@@ -32,156 +33,165 @@ export function useLang(): [Lang, (l: Lang) => void] {
   return [lang, setGlobalLang];
 }
 
-const translations = {
+const translations: Record<string, Record<string, string>> = {
   // Header
-  "header.tagline": { id: "Terpercaya • Aman • Murah", en: "Trusted • Safe • Affordable" },
+  "header.tagline": { id: "Terpercaya • Aman • Murah", en: "Trusted • Safe • Affordable", es: "Confiable • Seguro • Barato", fr: "Fiable • Sûr • Abordable", de: "Vertrauenswürdig • Sicher • Günstig", ja: "信頼 • 安全 • お手頃", ko: "신뢰 • 안전 • 저렴", zh: "值得信赖 • 安全 • 实惠", ar: "موثوق • آمن • رخيص", hi: "विश्वसनीय • सुरक्षित • सस्ता", pt: "Confiável • Seguro • Barato", ru: "Надёжно • Безопасно • Доступно", th: "เชื่อถือได้ • ปลอดภัย • ราคาถูก", vi: "Đáng tin cậy • An toàn • Giá rẻ", tr: "Güvenilir • Güvenli • Uygun", nl: "Betrouwbaar • Veilig • Betaalbaar", it: "Affidabile • Sicuro • Economico", pl: "Zaufany • Bezpieczny • Tani", sv: "Pålitlig • Säker • Prisvärd", ms: "Dipercayai • Selamat • Murah" },
 
   // Bottom nav
-  "nav.home": { id: "Beranda", en: "Home" },
-  "nav.products": { id: "Produk", en: "Products" },
-  "nav.voucher": { id: "Voucher", en: "Voucher" },
-  "nav.balance": { id: "Saldo", en: "Balance" },
-  "nav.likes": { id: "Suka", en: "Likes" },
-  "nav.history": { id: "Riwayat", en: "History" },
-  "nav.ticket": { id: "Tiket", en: "Ticket" },
-  "nav.playlist": { id: "Musik", en: "Music" },
+  "nav.home": { id: "Beranda", en: "Home", es: "Inicio", fr: "Accueil", de: "Start", ja: "ホーム", ko: "홈", zh: "首页", ar: "الرئيسية", hi: "होम", pt: "Início", ru: "Главная", th: "หน้าแรก", vi: "Trang chủ", tr: "Ana Sayfa", ms: "Utama" },
+  "nav.products": { id: "Produk", en: "Products", es: "Productos", fr: "Produits", de: "Produkte", ja: "製品", ko: "제품", zh: "产品", ar: "المنتجات", hi: "उत्पाद", pt: "Produtos", ru: "Товары", th: "สินค้า", vi: "Sản phẩm", tr: "Ürünler", ms: "Produk" },
+  "nav.voucher": { id: "Voucher", en: "Voucher", es: "Cupón", fr: "Bon", de: "Gutschein", ja: "クーポン", ko: "쿠폰", zh: "优惠券", ar: "قسيمة", hi: "वाउचर", pt: "Cupom", ru: "Ваучер", th: "คูปอง", vi: "Phiếu giảm giá", tr: "Kupon", ms: "Baucar" },
+  "nav.balance": { id: "Saldo", en: "Balance", es: "Saldo", fr: "Solde", de: "Guthaben", ja: "残高", ko: "잔액", zh: "余额", ar: "الرصيد", hi: "शेष", pt: "Saldo", ru: "Баланс", th: "ยอดเงิน", vi: "Số dư", tr: "Bakiye", ms: "Baki" },
+  "nav.likes": { id: "Suka", en: "Likes", es: "Favoritos", fr: "Aimés", de: "Gefällt mir", ja: "お気に入り", ko: "좋아요", zh: "收藏", ar: "المفضلة", hi: "पसंद", pt: "Curtidas", ru: "Избранное", th: "ถูกใจ", vi: "Yêu thích", tr: "Beğeni", ms: "Suka" },
+  "nav.history": { id: "Riwayat", en: "History", es: "Historial", fr: "Historique", de: "Verlauf", ja: "履歴", ko: "기록", zh: "历史", ar: "السجل", hi: "इतिहास", pt: "Histórico", ru: "История", th: "ประวัติ", vi: "Lịch sử", tr: "Geçmiş", ms: "Sejarah" },
+  "nav.ticket": { id: "Tiket", en: "Ticket", es: "Ticket", fr: "Ticket", de: "Ticket", ja: "チケット", ko: "티켓", zh: "工单", ar: "تذكرة", hi: "टिकट", pt: "Ticket", ru: "Тикет", th: "ตั๋ว", vi: "Phiếu hỗ trợ", tr: "Bilet", ms: "Tiket" },
+  "nav.playlist": { id: "Musik", en: "Music", es: "Música", fr: "Musique", de: "Musik", ja: "音楽", ko: "음악", zh: "音乐", ar: "موسيقى", hi: "संगीत", pt: "Música", ru: "Музыка", th: "เพลง", vi: "Nhạc", tr: "Müzik", ms: "Muzik" },
 
   // Home page
-  "home.buy_premium": { id: "Beli akun digital premium dengan harga terbaik.", en: "Buy premium digital accounts at the best prices." },
-  "home.contact_wa": { id: "Hubungi WA", en: "Contact WA" },
-  "home.claim_voucher": { id: "Klaim Voucher", en: "Claim Voucher" },
-  "home.products_available": { id: "Produk Tersedia", en: "Products Available" },
-  "home.vouchers_claimed": { id: "Voucher Diklaim", en: "Vouchers Claimed" },
-  "home.have_voucher": { id: "Punya Kode Voucher?", en: "Have a Voucher Code?" },
-  "home.claim_now": { id: "Klaim akun premium kamu sekarang →", en: "Claim your premium account now →" },
-  "home.have_issue": { id: "Ada Masalah?", en: "Got an Issue?" },
-  "home.submit_ticket": { id: "Ajukan tiket keluhan →", en: "Submit a complaint ticket →" },
-  "home.follow_us": { id: "Ikuti Kami", en: "Follow Us" },
+  "home.buy_premium": { id: "Beli akun digital premium dengan harga terbaik.", en: "Buy premium digital accounts at the best prices.", es: "Compra cuentas digitales premium a los mejores precios.", fr: "Achetez des comptes numériques premium aux meilleurs prix.", de: "Kaufen Sie digitale Premium-Konten zu besten Preisen.", ja: "最高の価格でプレミアムデジタルアカウントを購入。", ko: "최고의 가격으로 프리미엄 디지털 계정을 구매하세요.", zh: "以最优价格购买高级数字账号。", ar: "اشترِ حسابات رقمية مميزة بأفضل الأسعار.", hi: "सर्वोत्तम कीमतों पर प्रीमियम डिजिटल खाते खरीदें।", pt: "Compre contas digitais premium pelos melhores preços.", ru: "Покупайте премиальные цифровые аккаунты по лучшим ценам.", th: "ซื้อบัญชีดิจิทัลพรีเมียมในราคาดีที่สุด", vi: "Mua tài khoản kỹ thuật số cao cấp với giá tốt nhất.", tr: "En iyi fiyatlarla premium dijital hesaplar satın alın.", ms: "Beli akaun digital premium pada harga terbaik." },
+  "home.contact_wa": { id: "Hubungi WA", en: "Contact WA", es: "Contactar WA", fr: "Contacter WA", de: "WA kontaktieren", ja: "WAに連絡", ko: "WA 연락", zh: "联系WA", ar: "تواصل واتساب", hi: "WA संपर्क", pt: "Contatar WA", ru: "Связаться WA", th: "ติดต่อ WA", vi: "Liên hệ WA", tr: "WA İletişim", ms: "Hubungi WA" },
+  "home.claim_voucher": { id: "Klaim Voucher", en: "Claim Voucher", es: "Canjear Cupón", fr: "Réclamer Bon", de: "Gutschein einlösen", ja: "クーポンを引き換え", ko: "쿠폰 사용", zh: "兑换优惠券", ar: "استخدام القسيمة", hi: "वाउचर दावा करें", pt: "Resgatar Cupom", ru: "Активировать ваучер", th: "รับคูปอง", vi: "Nhận phiếu", tr: "Kuponu Kullan", ms: "Tebus Baucar" },
+  "home.products_available": { id: "Produk Tersedia", en: "Products Available", es: "Productos Disponibles", fr: "Produits Disponibles", de: "Verfügbare Produkte", ja: "利用可能な製品", ko: "이용 가능한 제품", zh: "可用产品", ar: "المنتجات المتاحة", hi: "उपलब्ध उत्पाद", pt: "Produtos Disponíveis", ru: "Доступные товары", th: "สินค้าที่มี", vi: "Sản phẩm có sẵn", tr: "Mevcut Ürünler", ms: "Produk Tersedia" },
+  "home.vouchers_claimed": { id: "Voucher Diklaim", en: "Vouchers Claimed", es: "Cupones Canjeados", fr: "Bons Réclamés", de: "Eingelöste Gutscheine", ja: "引き換え済みクーポン", ko: "사용된 쿠폰", zh: "已兑换优惠券", ar: "القسائم المستخدمة", hi: "दावा किए गए वाउचर", pt: "Cupons Resgatados", ru: "Активированные ваучеры", th: "คูปองที่รับแล้ว", vi: "Phiếu đã nhận", tr: "Kullanılan Kuponlar", ms: "Baucar Ditebus" },
+  "home.have_voucher": { id: "Punya Kode Voucher?", en: "Have a Voucher Code?", es: "¿Tienes un código?", fr: "Avez-vous un code ?", de: "Haben Sie einen Code?", ja: "クーポンコードをお持ちですか？", ko: "쿠폰 코드가 있으신가요?", zh: "有优惠券代码吗？", ar: "هل لديك رمز قسيمة؟", hi: "वाउचर कोड है?", pt: "Tem um código?", ru: "Есть код ваучера?", th: "มีรหัสคูปองไหม?", vi: "Có mã phiếu không?", tr: "Kupon kodunuz var mı?", ms: "Ada kod baucar?" },
+  "home.claim_now": { id: "Klaim akun premium kamu sekarang →", en: "Claim your premium account now →", es: "Reclama tu cuenta premium ahora →", fr: "Réclamez votre compte premium →", de: "Lösen Sie Ihr Premium-Konto ein →", ja: "今すぐプレミアムアカウントを取得 →", ko: "지금 프리미엄 계정을 받으세요 →", zh: "立即领取您的高级账号 →", ar: "احصل على حسابك المميز الآن ←", hi: "अभी अपना प्रीमियम खाता प्राप्त करें →", pt: "Resgate sua conta premium agora →", ru: "Получите премиум-аккаунт сейчас →", th: "รับบัญชีพรีเมียมตอนนี้ →", vi: "Nhận tài khoản cao cấp ngay →", tr: "Premium hesabınızı şimdi alın →", ms: "Tebus akaun premium anda sekarang →" },
+  "home.have_issue": { id: "Ada Masalah?", en: "Got an Issue?", es: "¿Tienes un problema?", fr: "Un problème ?", de: "Ein Problem?", ja: "問題がありますか？", ko: "문제가 있나요?", zh: "有问题吗？", ar: "هل لديك مشكلة؟", hi: "कोई समस्या?", pt: "Algum problema?", ru: "Есть проблема?", th: "มีปัญหาไหม?", vi: "Có vấn đề gì không?", tr: "Sorun mu var?", ms: "Ada masalah?" },
+  "home.submit_ticket": { id: "Ajukan tiket keluhan →", en: "Submit a complaint ticket →", es: "Enviar un ticket →", fr: "Soumettre un ticket →", de: "Ticket einreichen →", ja: "苦情チケットを送信 →", ko: "불만 티켓 제출 →", zh: "提交投诉工单 →", ar: "أرسل تذكرة شكوى ←", hi: "शिकायत टिकट जमा करें →", pt: "Enviar um ticket →", ru: "Отправить обращение →", th: "ส่งตั๋วร้องเรียน →", vi: "Gửi phiếu hỗ trợ →", tr: "Şikâyet bileti gönderin →", ms: "Hantar tiket aduan →" },
+  "home.follow_us": { id: "Ikuti Kami", en: "Follow Us", es: "Síguenos", fr: "Suivez-nous", de: "Folgen Sie uns", ja: "フォローしてください", ko: "팔로우하세요", zh: "关注我们", ar: "تابعنا", hi: "हमें फॉलो करें", pt: "Siga-nos", ru: "Подписывайтесь", th: "ติดตามเรา", vi: "Theo dõi chúng tôi", tr: "Bizi takip edin", ms: "Ikuti Kami" },
 
   // Products
-  "products.title": { id: "Daftar Produk", en: "Product List" },
-  "products.search": { id: "Cari produk...", en: "Search products..." },
-  "products.items": { id: "item", en: "items" },
-  "products.newest": { id: "Terbaru", en: "Newest" },
-  "products.oldest": { id: "Terlama", en: "Oldest" },
-  "products.no_products": { id: "Belum ada produk.", en: "No products yet." },
-  "products.stock": { id: "Stok", en: "Stock" },
-  "products.warranty": { id: "Bergaransi", en: "Warranty" },
-  "products.buy_wa": { id: "Beli via WA", en: "Buy via WA" },
-  "products.buy_balance": { id: "Beli via Saldo", en: "Buy with Balance" },
-  "products.chat_product": { id: "Chat Produk", en: "Chat Product" },
-  "products.all": { id: "Semua", en: "All" },
-  "products.other": { id: "Lainnya", en: "Others" },
+  "products.title": { id: "Daftar Produk", en: "Product List", es: "Lista de Productos", fr: "Liste des Produits", de: "Produktliste", ja: "製品リスト", ko: "제품 목록", zh: "产品列表", ar: "قائمة المنتجات", hi: "उत्पाद सूची", pt: "Lista de Produtos", ru: "Список товаров", th: "รายการสินค้า", vi: "Danh sách sản phẩm", tr: "Ürün Listesi", ms: "Senarai Produk" },
+  "products.search": { id: "Cari produk...", en: "Search products...", es: "Buscar productos...", fr: "Rechercher...", de: "Produkte suchen...", ja: "製品を検索...", ko: "제품 검색...", zh: "搜索产品...", ar: "البحث عن منتجات...", hi: "उत्पाद खोजें...", pt: "Buscar produtos...", ru: "Поиск товаров...", th: "ค้นหาสินค้า...", vi: "Tìm sản phẩm...", tr: "Ürün ara...", ms: "Cari produk..." },
+  "products.items": { id: "item", en: "items", es: "artículos", fr: "articles", de: "Artikel", ja: "アイテム", ko: "개", zh: "个", ar: "عنصر", hi: "आइटम", pt: "itens", ru: "товаров", th: "รายการ", vi: "mục", tr: "ürün", ms: "item" },
+  "products.newest": { id: "Terbaru", en: "Newest", es: "Más reciente", fr: "Plus récent", de: "Neueste", ja: "最新", ko: "최신", zh: "最新", ar: "الأحدث", hi: "नवीनतम", pt: "Mais recente", ru: "Новейшие", th: "ใหม่สุด", vi: "Mới nhất", tr: "En yeni", ms: "Terbaru" },
+  "products.oldest": { id: "Terlama", en: "Oldest", es: "Más antiguo", fr: "Plus ancien", de: "Älteste", ja: "最古", ko: "오래된", zh: "最旧", ar: "الأقدم", hi: "पुराना", pt: "Mais antigo", ru: "Старейшие", th: "เก่าสุด", vi: "Cũ nhất", tr: "En eski", ms: "Terlama" },
+  "products.no_products": { id: "Belum ada produk.", en: "No products yet.", es: "Sin productos.", fr: "Aucun produit.", de: "Noch keine Produkte.", ja: "製品はまだありません。", ko: "아직 제품이 없습니다.", zh: "暂无产品。", ar: "لا توجد منتجات بعد.", hi: "अभी कोई उत्पाद नहीं।", pt: "Nenhum produto.", ru: "Пока нет товаров.", th: "ยังไม่มีสินค้า", vi: "Chưa có sản phẩm.", tr: "Henüz ürün yok.", ms: "Belum ada produk." },
+  "products.stock": { id: "Stok", en: "Stock", es: "Stock", fr: "Stock", de: "Bestand", ja: "在庫", ko: "재고", zh: "库存", ar: "المخزون", hi: "स्टॉक", pt: "Estoque", ru: "Склад", th: "สต็อก", vi: "Tồn kho", tr: "Stok", ms: "Stok" },
+  "products.warranty": { id: "Bergaransi", en: "Warranty", es: "Garantía", fr: "Garanti", de: "Garantie", ja: "保証付き", ko: "보증", zh: "有保障", ar: "ضمان", hi: "वारंटी", pt: "Garantia", ru: "Гарантия", th: "มีประกัน", vi: "Bảo hành", tr: "Garantili", ms: "Bergaransi" },
+  "products.buy_wa": { id: "Beli via WA", en: "Buy via WA", es: "Comprar vía WA", fr: "Acheter via WA", de: "Über WA kaufen", ja: "WAで購入", ko: "WA로 구매", zh: "通过WA购买", ar: "شراء عبر واتساب", hi: "WA से खरीदें", pt: "Comprar via WA", ru: "Купить через WA", th: "ซื้อผ่าน WA", vi: "Mua qua WA", tr: "WA ile satın al", ms: "Beli melalui WA" },
+  "products.buy_balance": { id: "Beli via Saldo", en: "Buy with Balance", es: "Comprar con Saldo", fr: "Acheter avec Solde", de: "Mit Guthaben kaufen", ja: "残高で購入", ko: "잔액으로 구매", zh: "用余额购买", ar: "شراء بالرصيد", hi: "बैलेंस से खरीदें", pt: "Comprar com Saldo", ru: "Купить за баланс", th: "ซื้อด้วยยอดเงิน", vi: "Mua bằng số dư", tr: "Bakiye ile satın al", ms: "Beli dengan Baki" },
+  "products.chat_product": { id: "Chat Produk", en: "Chat Product", es: "Chat Producto", fr: "Chat Produit", de: "Produkt-Chat", ja: "製品チャット", ko: "제품 채팅", zh: "产品聊天", ar: "محادثة المنتج", hi: "उत्पाद चैट", pt: "Chat do Produto", ru: "Чат о товаре", th: "แชทสินค้า", vi: "Chat sản phẩm", tr: "Ürün sohbeti", ms: "Chat Produk" },
+  "products.all": { id: "Semua", en: "All", es: "Todos", fr: "Tous", de: "Alle", ja: "すべて", ko: "전체", zh: "全部", ar: "الكل", hi: "सभी", pt: "Todos", ru: "Все", th: "ทั้งหมด", vi: "Tất cả", tr: "Tümü", ms: "Semua" },
+  "products.other": { id: "Lainnya", en: "Others", es: "Otros", fr: "Autres", de: "Andere", ja: "その他", ko: "기타", zh: "其他", ar: "أخرى", hi: "अन्य", pt: "Outros", ru: "Другие", th: "อื่นๆ", vi: "Khác", tr: "Diğer", ms: "Lain-lain" },
 
   // Voucher
-  "voucher.title": { id: "Klaim Voucher", en: "Claim Voucher" },
-  "voucher.enter_code": { id: "Masukkan kode voucher", en: "Enter voucher code" },
-  "voucher.claim": { id: "Klaim Sekarang", en: "Claim Now" },
-  "voucher.claiming": { id: "Mengklaim...", en: "Claiming..." },
-  "voucher.total_value": { id: "Total Nilai", en: "Total Value" },
-  "voucher.download_pdf": { id: "Download PDF", en: "Download PDF" },
+  "voucher.title": { id: "Klaim Voucher", en: "Claim Voucher", es: "Canjear Cupón", fr: "Réclamer Bon", de: "Gutschein einlösen", ja: "クーポン引き換え", ko: "쿠폰 사용", zh: "兑换优惠券", ar: "استخدام القسيمة", hi: "वाउचर दावा", pt: "Resgatar Cupom", ru: "Активация ваучера", th: "รับคูปอง", vi: "Nhận phiếu", tr: "Kupon Kullanımı", ms: "Tebus Baucar" },
+  "voucher.enter_code": { id: "Masukkan kode voucher", en: "Enter voucher code", es: "Ingrese el código", fr: "Entrez le code", de: "Code eingeben", ja: "コードを入力", ko: "코드 입력", zh: "输入代码", ar: "أدخل الرمز", hi: "कोड दर्ज करें", pt: "Insira o código", ru: "Введите код", th: "กรอกรหัส", vi: "Nhập mã", tr: "Kodu girin", ms: "Masukkan kod" },
+  "voucher.claim": { id: "Klaim Sekarang", en: "Claim Now", es: "Canjear Ahora", fr: "Réclamer", de: "Jetzt einlösen", ja: "今すぐ引き換え", ko: "지금 사용", zh: "立即兑换", ar: "استخدم الآن", hi: "अभी दावा करें", pt: "Resgatar Agora", ru: "Активировать", th: "รับเลย", vi: "Nhận ngay", tr: "Şimdi Kullan", ms: "Tebus Sekarang" },
+  "voucher.claiming": { id: "Mengklaim...", en: "Claiming...", es: "Canjeando...", fr: "Réclamation...", de: "Einlösen...", ja: "引き換え中...", ko: "사용 중...", zh: "兑换中...", ar: "جاري الاستخدام...", hi: "दावा हो रहा है...", pt: "Resgatando...", ru: "Активация...", th: "กำลังรับ...", vi: "Đang nhận...", tr: "Kullanılıyor...", ms: "Menebus..." },
+  "voucher.total_value": { id: "Total Nilai", en: "Total Value", es: "Valor Total", fr: "Valeur Totale", de: "Gesamtwert", ja: "合計金額", ko: "총 가치", zh: "总价值", ar: "القيمة الإجمالية", hi: "कुल मूल्य", pt: "Valor Total", ru: "Общая стоимость", th: "มูลค่ารวม", vi: "Tổng giá trị", tr: "Toplam Değer", ms: "Jumlah Nilai" },
+  "voucher.download_pdf": { id: "Download PDF", en: "Download PDF", es: "Descargar PDF", fr: "Télécharger PDF", de: "PDF herunterladen", ja: "PDFダウンロード", ko: "PDF 다운로드", zh: "下载PDF", ar: "تحميل PDF", hi: "PDF डाउनलोड", pt: "Baixar PDF", ru: "Скачать PDF", th: "ดาวน์โหลด PDF", vi: "Tải PDF", tr: "PDF İndir", ms: "Muat turun PDF" },
 
   // History
-  "history.title": { id: "Riwayat Klaim", en: "Claim History" },
-  "history.no_history": { id: "Belum ada riwayat klaim.", en: "No claim history yet." },
-  "history.delete_selected": { id: "Hapus Terpilih", en: "Delete Selected" },
-  "history.select_all": { id: "Pilih Semua", en: "Select All" },
+  "history.title": { id: "Riwayat Klaim", en: "Claim History", es: "Historial de Canjes", fr: "Historique", de: "Einlösungsverlauf", ja: "引き換え履歴", ko: "사용 기록", zh: "兑换历史", ar: "سجل الاستخدام", hi: "दावा इतिहास", pt: "Histórico de Resgates", ru: "История активаций", th: "ประวัติการรับ", vi: "Lịch sử nhận", tr: "Kullanım Geçmişi", ms: "Sejarah Tebutan" },
+  "history.no_history": { id: "Belum ada riwayat klaim.", en: "No claim history yet.", es: "Sin historial.", fr: "Aucun historique.", de: "Noch kein Verlauf.", ja: "履歴はまだありません。", ko: "기록이 없습니다.", zh: "暂无历史记录。", ar: "لا يوجد سجل بعد.", hi: "अभी कोई इतिहास नहीं।", pt: "Nenhum histórico.", ru: "Пока нет истории.", th: "ยังไม่มีประวัติ", vi: "Chưa có lịch sử.", tr: "Henüz geçmiş yok.", ms: "Belum ada sejarah." },
+  "history.delete_selected": { id: "Hapus Terpilih", en: "Delete Selected", es: "Eliminar Seleccionados", fr: "Supprimer Sélection", de: "Auswahl löschen", ja: "選択を削除", ko: "선택 삭제", zh: "删除选中", ar: "حذف المحدد", hi: "चयनित हटाएँ", pt: "Excluir Selecionados", ru: "Удалить выбранное", th: "ลบที่เลือก", vi: "Xóa đã chọn", tr: "Seçileni Sil", ms: "Padam Terpilih" },
+  "history.select_all": { id: "Pilih Semua", en: "Select All", es: "Seleccionar Todo", fr: "Tout Sélectionner", de: "Alle auswählen", ja: "すべて選択", ko: "전체 선택", zh: "全选", ar: "تحديد الكل", hi: "सभी चुनें", pt: "Selecionar Tudo", ru: "Выбрать все", th: "เลือกทั้งหมด", vi: "Chọn tất cả", tr: "Tümünü Seç", ms: "Pilih Semua" },
 
   // Likes
-  "likes.title": { id: "Produk Disukai", en: "Liked Products" },
-  "likes.no_likes": { id: "Belum ada produk yang disukai.", en: "No liked products yet." },
+  "likes.title": { id: "Produk Disukai", en: "Liked Products", es: "Productos Favoritos", fr: "Produits Aimés", de: "Favorisierte Produkte", ja: "お気に入り製品", ko: "좋아한 제품", zh: "收藏的产品", ar: "المنتجات المفضلة", hi: "पसंदीदा उत्पाद", pt: "Produtos Curtidos", ru: "Избранные товары", th: "สินค้าที่ถูกใจ", vi: "Sản phẩm yêu thích", tr: "Beğenilen Ürünler", ms: "Produk Disukai" },
+  "likes.no_likes": { id: "Belum ada produk yang disukai.", en: "No liked products yet.", es: "Sin favoritos.", fr: "Aucun produit aimé.", de: "Noch keine Favoriten.", ja: "お気に入りはまだありません。", ko: "좋아한 제품이 없습니다.", zh: "暂无收藏。", ar: "لا توجد منتجات مفضلة.", hi: "कोई पसंदीदा नहीं।", pt: "Nenhum produto curtido.", ru: "Нет избранных.", th: "ยังไม่มีสินค้าที่ถูกใจ", vi: "Chưa có sản phẩm yêu thích.", tr: "Henüz beğeni yok.", ms: "Belum ada produk disukai." },
 
   // Balance / Saldo
-  "balance.title": { id: "Saldo Saya", en: "My Balance" },
-  "balance.setup": { id: "Daftar Akun Saldo", en: "Register Balance Account" },
-  "balance.username": { id: "Username", en: "Username" },
-  "balance.phone": { id: "No. HP / WhatsApp", en: "Phone / WhatsApp" },
-  "balance.register": { id: "Daftar Sekarang", en: "Register Now" },
-  "balance.your_balance": { id: "Saldo Anda", en: "Your Balance" },
-  "balance.transaction_history": { id: "Riwayat Transaksi", en: "Transaction History" },
-  "balance.no_transactions": { id: "Belum ada transaksi.", en: "No transactions yet." },
-  "balance.topup": { id: "Top Up", en: "Top Up" },
-  "balance.purchase": { id: "Pembelian", en: "Purchase" },
+  "balance.title": { id: "Saldo Saya", en: "My Balance", es: "Mi Saldo", fr: "Mon Solde", de: "Mein Guthaben", ja: "マイ残高", ko: "내 잔액", zh: "我的余额", ar: "رصيدي", hi: "मेरा बैलेंस", pt: "Meu Saldo", ru: "Мой баланс", th: "ยอดเงินของฉัน", vi: "Số dư của tôi", tr: "Bakiyem", ms: "Baki Saya" },
+  "balance.setup": { id: "Daftar Akun Saldo", en: "Register Balance Account", es: "Registrar Cuenta", fr: "Créer un Compte", de: "Konto registrieren", ja: "残高アカウント登録", ko: "잔액 계정 등록", zh: "注册余额账户", ar: "تسجيل حساب الرصيد", hi: "बैलेंस खाता पंजीकरण", pt: "Registrar Conta", ru: "Регистрация счёта", th: "สมัครบัญชียอดเงิน", vi: "Đăng ký tài khoản", tr: "Bakiye Hesabı Aç", ms: "Daftar Akaun Baki" },
+  "balance.username": { id: "Username", en: "Username", es: "Usuario", fr: "Nom d'utilisateur", de: "Benutzername", ja: "ユーザー名", ko: "사용자명", zh: "用户名", ar: "اسم المستخدم", hi: "यूजरनेम", pt: "Nome de usuário", ru: "Имя пользователя", th: "ชื่อผู้ใช้", vi: "Tên người dùng", tr: "Kullanıcı adı", ms: "Nama pengguna" },
+  "balance.phone": { id: "No. HP / WhatsApp", en: "Phone / WhatsApp", es: "Teléfono / WhatsApp", fr: "Tél / WhatsApp", de: "Tel / WhatsApp", ja: "電話/WhatsApp", ko: "전화/WhatsApp", zh: "电话/WhatsApp", ar: "الهاتف / واتساب", hi: "फोन / WhatsApp", pt: "Telefone / WhatsApp", ru: "Телефон / WhatsApp", th: "โทร / WhatsApp", vi: "SĐT / WhatsApp", tr: "Telefon / WhatsApp", ms: "No HP / WhatsApp" },
+  "balance.register": { id: "Daftar Sekarang", en: "Register Now", es: "Registrarse Ahora", fr: "S'inscrire", de: "Jetzt registrieren", ja: "今すぐ登録", ko: "지금 등록", zh: "立即注册", ar: "سجل الآن", hi: "अभी पंजीकरण करें", pt: "Registrar Agora", ru: "Зарегистрироваться", th: "สมัครเลย", vi: "Đăng ký ngay", tr: "Şimdi Kayıt Ol", ms: "Daftar Sekarang" },
+  "balance.your_balance": { id: "Saldo Anda", en: "Your Balance", es: "Tu Saldo", fr: "Votre Solde", de: "Ihr Guthaben", ja: "あなたの残高", ko: "귀하의 잔액", zh: "您的余额", ar: "رصيدك", hi: "आपका बैलेंस", pt: "Seu Saldo", ru: "Ваш баланс", th: "ยอดเงินของคุณ", vi: "Số dư của bạn", tr: "Bakiyeniz", ms: "Baki Anda" },
+  "balance.transaction_history": { id: "Riwayat Transaksi", en: "Transaction History", es: "Historial de Transacciones", fr: "Historique des Transactions", de: "Transaktionsverlauf", ja: "取引履歴", ko: "거래 내역", zh: "交易记录", ar: "سجل المعاملات", hi: "लेनदेन इतिहास", pt: "Histórico de Transações", ru: "История транзакций", th: "ประวัติการทำรายการ", vi: "Lịch sử giao dịch", tr: "İşlem Geçmişi", ms: "Sejarah Transaksi" },
+  "balance.no_transactions": { id: "Belum ada transaksi.", en: "No transactions yet.", es: "Sin transacciones.", fr: "Aucune transaction.", de: "Noch keine Transaktionen.", ja: "取引はまだありません。", ko: "거래 내역이 없습니다.", zh: "暂无交易。", ar: "لا توجد معاملات بعد.", hi: "अभी कोई लेनदेन नहीं।", pt: "Nenhuma transação.", ru: "Нет транзакций.", th: "ยังไม่มีรายการ", vi: "Chưa có giao dịch.", tr: "Henüz işlem yok.", ms: "Belum ada transaksi." },
+  "balance.topup": { id: "Top Up", en: "Top Up", es: "Recargar", fr: "Recharger", de: "Aufladen", ja: "チャージ", ko: "충전", zh: "充值", ar: "شحن الرصيد", hi: "टॉप अप", pt: "Recarregar", ru: "Пополнение", th: "เติมเงิน", vi: "Nạp tiền", tr: "Yükleme", ms: "Tambah Nilai" },
+  "balance.purchase": { id: "Pembelian", en: "Purchase", es: "Compra", fr: "Achat", de: "Kauf", ja: "購入", ko: "구매", zh: "购买", ar: "شراء", hi: "खरीदारी", pt: "Compra", ru: "Покупка", th: "การซื้อ", vi: "Mua hàng", tr: "Satın Alma", ms: "Pembelian" },
 
   // Tickets
-  "ticket.title": { id: "Tiket Keluhan", en: "Support Tickets" },
-  "ticket.create": { id: "Buat Tiket Baru", en: "Create New Ticket" },
-  "ticket.name": { id: "Nama lengkap", en: "Full name" },
-  "ticket.phone": { id: "No. HP / WhatsApp", en: "Phone / WhatsApp" },
-  "ticket.description": { id: "Jelaskan masalah kamu", en: "Describe your issue" },
-  "ticket.submit": { id: "Kirim Tiket", en: "Submit Ticket" },
-  "ticket.no_tickets": { id: "Belum ada tiket.", en: "No tickets yet." },
-  "ticket.open": { id: "Buka", en: "Open" },
-  "ticket.closed": { id: "Ditutup", en: "Closed" },
-  "ticket.resolved": { id: "Selesai", en: "Resolved" },
+  "ticket.title": { id: "Tiket Keluhan", en: "Support Tickets", es: "Tickets de Soporte", fr: "Tickets de Support", de: "Support-Tickets", ja: "サポートチケット", ko: "지원 티켓", zh: "支持工单", ar: "تذاكر الدعم", hi: "सहायता टिकट", pt: "Tickets de Suporte", ru: "Тикеты поддержки", th: "ตั๋วสนับสนุน", vi: "Phiếu hỗ trợ", tr: "Destek Biletleri", ms: "Tiket Sokongan" },
+  "ticket.create": { id: "Buat Tiket Baru", en: "Create New Ticket", es: "Crear Nuevo Ticket", fr: "Créer un Ticket", de: "Neues Ticket", ja: "新しいチケット", ko: "새 티켓 만들기", zh: "创建新工单", ar: "إنشاء تذكرة جديدة", hi: "नया टिकट बनाएं", pt: "Criar Novo Ticket", ru: "Создать тикет", th: "สร้างตั๋วใหม่", vi: "Tạo phiếu mới", tr: "Yeni Bilet Oluştur", ms: "Buat Tiket Baru" },
+  "ticket.name": { id: "Nama lengkap", en: "Full name", es: "Nombre completo", fr: "Nom complet", de: "Vollständiger Name", ja: "フルネーム", ko: "전체 이름", zh: "全名", ar: "الاسم الكامل", hi: "पूरा नाम", pt: "Nome completo", ru: "Полное имя", th: "ชื่อเต็ม", vi: "Họ và tên", tr: "Tam ad", ms: "Nama penuh" },
+  "ticket.phone": { id: "No. HP / WhatsApp", en: "Phone / WhatsApp", es: "Teléfono / WhatsApp", fr: "Tél / WhatsApp", de: "Tel / WhatsApp", ja: "電話/WhatsApp", ko: "전화/WhatsApp", zh: "电话/WhatsApp", ar: "الهاتف / واتساب", hi: "फोन / WhatsApp", pt: "Telefone / WhatsApp", ru: "Телефон / WhatsApp", th: "โทร / WhatsApp", vi: "SĐT / WhatsApp", tr: "Telefon / WhatsApp", ms: "No HP / WhatsApp" },
+  "ticket.description": { id: "Jelaskan masalah kamu", en: "Describe your issue", es: "Describe tu problema", fr: "Décrivez votre problème", de: "Beschreiben Sie Ihr Problem", ja: "問題を説明してください", ko: "문제를 설명하세요", zh: "描述您的问题", ar: "صف مشكلتك", hi: "अपनी समस्या बताएं", pt: "Descreva seu problema", ru: "Опишите проблему", th: "อธิบายปัญหาของคุณ", vi: "Mô tả vấn đề", tr: "Sorununuzu açıklayın", ms: "Jelaskan masalah anda" },
+  "ticket.submit": { id: "Kirim Tiket", en: "Submit Ticket", es: "Enviar Ticket", fr: "Envoyer", de: "Absenden", ja: "送信", ko: "제출", zh: "提交", ar: "إرسال", hi: "जमा करें", pt: "Enviar", ru: "Отправить", th: "ส่ง", vi: "Gửi", tr: "Gönder", ms: "Hantar" },
+  "ticket.no_tickets": { id: "Belum ada tiket.", en: "No tickets yet.", es: "Sin tickets.", fr: "Aucun ticket.", de: "Noch keine Tickets.", ja: "チケットはまだありません。", ko: "티켓이 없습니다.", zh: "暂无工单。", ar: "لا توجد تذاكر.", hi: "कोई टिकट नहीं।", pt: "Nenhum ticket.", ru: "Нет тикетов.", th: "ยังไม่มีตั๋ว", vi: "Chưa có phiếu.", tr: "Henüz bilet yok.", ms: "Belum ada tiket." },
+  "ticket.open": { id: "Buka", en: "Open", es: "Abierto", fr: "Ouvert", de: "Offen", ja: "オープン", ko: "열림", zh: "打开", ar: "مفتوح", hi: "खुला", pt: "Aberto", ru: "Открыт", th: "เปิด", vi: "Mở", tr: "Açık", ms: "Buka" },
+  "ticket.closed": { id: "Ditutup", en: "Closed", es: "Cerrado", fr: "Fermé", de: "Geschlossen", ja: "クローズ", ko: "닫힘", zh: "已关闭", ar: "مغلق", hi: "बंद", pt: "Fechado", ru: "Закрыт", th: "ปิด", vi: "Đã đóng", tr: "Kapalı", ms: "Ditutup" },
+  "ticket.resolved": { id: "Selesai", en: "Resolved", es: "Resuelto", fr: "Résolu", de: "Gelöst", ja: "解決済み", ko: "해결됨", zh: "已解决", ar: "تم الحل", hi: "हल किया गया", pt: "Resolvido", ru: "Решён", th: "แก้ไขแล้ว", vi: "Đã giải quyết", tr: "Çözüldü", ms: "Selesai" },
 
   // Chat
-  "chat.write_message": { id: "Tulis pesan...", en: "Write a message..." },
-  "chat.history": { id: "Riwayat Chat", en: "Chat History" },
-  "chat.no_history": { id: "Belum ada riwayat chat.", en: "No chat history yet." },
-  "chat.reply_time": { id: "Biasa membalas dalam 5-10 menit", en: "Usually replies in 5-10 minutes" },
-  "chat.active": { id: "Aktif", en: "Active" },
-  "chat.closed": { id: "Ditutup", en: "Closed" },
-  "chat.ticket_closed": { id: "Tiket ini sudah ditutup.", en: "This ticket is closed." },
+  "chat.write_message": { id: "Tulis pesan...", en: "Write a message...", es: "Escribe un mensaje...", fr: "Écrire un message...", de: "Nachricht schreiben...", ja: "メッセージを入力...", ko: "메시지 입력...", zh: "写消息...", ar: "اكتب رسالة...", hi: "संदेश लिखें...", pt: "Escreva uma mensagem...", ru: "Напишите сообщение...", th: "พิมพ์ข้อความ...", vi: "Viết tin nhắn...", tr: "Mesaj yazın...", ms: "Tulis mesej..." },
+  "chat.history": { id: "Riwayat Chat", en: "Chat History", es: "Historial de Chat", fr: "Historique de Chat", de: "Chat-Verlauf", ja: "チャット履歴", ko: "채팅 기록", zh: "聊天记录", ar: "سجل المحادثات", hi: "चैट इतिहास", pt: "Histórico de Chat", ru: "История чата", th: "ประวัติแชท", vi: "Lịch sử chat", tr: "Sohbet Geçmişi", ms: "Sejarah Chat" },
+  "chat.no_history": { id: "Belum ada riwayat chat.", en: "No chat history yet.", es: "Sin historial de chat.", fr: "Aucun historique de chat.", de: "Noch kein Chat-Verlauf.", ja: "チャット履歴はまだありません。", ko: "채팅 기록이 없습니다.", zh: "暂无聊天记录。", ar: "لا يوجد سجل محادثات.", hi: "चैट इतिहास नहीं।", pt: "Nenhum histórico de chat.", ru: "Нет истории чата.", th: "ยังไม่มีประวัติแชท", vi: "Chưa có lịch sử chat.", tr: "Henüz sohbet yok.", ms: "Belum ada sejarah chat." },
+  "chat.reply_time": { id: "Biasa membalas dalam 5-10 menit", en: "Usually replies in 5-10 minutes", es: "Responde en 5-10 minutos", fr: "Répond en 5-10 minutes", de: "Antwortet in 5-10 Minuten", ja: "通常5-10分で返信", ko: "보통 5-10분 내 답변", zh: "通常5-10分钟回复", ar: "عادة يرد خلال 5-10 دقائق", hi: "आमतौर पर 5-10 मिनट में जवाब", pt: "Responde em 5-10 minutos", ru: "Обычно отвечает за 5-10 минут", th: "มักตอบใน 5-10 นาที", vi: "Thường trả lời trong 5-10 phút", tr: "Genellikle 5-10 dakikada yanıt verir", ms: "Biasa membalas dalam 5-10 minit" },
+  "chat.active": { id: "Aktif", en: "Active", es: "Activo", fr: "Actif", de: "Aktiv", ja: "アクティブ", ko: "활성", zh: "活跃", ar: "نشط", hi: "सक्रिय", pt: "Ativo", ru: "Активен", th: "ใช้งานอยู่", vi: "Đang hoạt động", tr: "Aktif", ms: "Aktif" },
+  "chat.closed": { id: "Ditutup", en: "Closed", es: "Cerrado", fr: "Fermé", de: "Geschlossen", ja: "クローズ", ko: "닫힘", zh: "已关闭", ar: "مغلق", hi: "बंद", pt: "Fechado", ru: "Закрыт", th: "ปิด", vi: "Đã đóng", tr: "Kapalı", ms: "Ditutup" },
+  "chat.ticket_closed": { id: "Tiket ini sudah ditutup.", en: "This ticket is closed.", es: "Este ticket está cerrado.", fr: "Ce ticket est fermé.", de: "Dieses Ticket ist geschlossen.", ja: "このチケットは終了しました。", ko: "이 티켓은 닫혔습니다.", zh: "此工单已关闭。", ar: "هذه التذكرة مغلقة.", hi: "यह टिकट बंद है।", pt: "Este ticket está fechado.", ru: "Этот тикет закрыт.", th: "ตั๋วนี้ปิดแล้ว", vi: "Phiếu này đã đóng.", tr: "Bu bilet kapalı.", ms: "Tiket ini sudah ditutup." },
 
   // Notifications
-  "notif.title": { id: "Notifikasi", en: "Notifications" },
-  "notif.mark_all_read": { id: "Tandai semua dibaca", en: "Mark all read" },
-  "notif.no_notif": { id: "Belum ada notifikasi", en: "No notifications yet" },
+  "notif.title": { id: "Notifikasi", en: "Notifications", es: "Notificaciones", fr: "Notifications", de: "Benachrichtigungen", ja: "通知", ko: "알림", zh: "通知", ar: "الإشعارات", hi: "सूचनाएं", pt: "Notificações", ru: "Уведомления", th: "การแจ้งเตือน", vi: "Thông báo", tr: "Bildirimler", ms: "Pemberitahuan" },
+  "notif.mark_all_read": { id: "Tandai semua dibaca", en: "Mark all read", es: "Marcar como leído", fr: "Tout marquer comme lu", de: "Alle als gelesen", ja: "すべて既読", ko: "모두 읽음", zh: "全部标为已读", ar: "تعليم الكل مقروء", hi: "सब पढ़ा हुआ", pt: "Marcar tudo como lido", ru: "Отметить все", th: "ทำเครื่องหมายอ่านแล้ว", vi: "Đánh dấu tất cả đã đọc", tr: "Tümünü okundu işaretle", ms: "Tanda semua dibaca" },
+  "notif.no_notif": { id: "Belum ada notifikasi", en: "No notifications yet", es: "Sin notificaciones", fr: "Aucune notification", de: "Keine Benachrichtigungen", ja: "通知はまだありません", ko: "알림이 없습니다", zh: "暂无通知", ar: "لا توجد إشعارات", hi: "कोई सूचना नहीं", pt: "Sem notificações", ru: "Нет уведомлений", th: "ยังไม่มีการแจ้งเตือน", vi: "Chưa có thông báo", tr: "Henüz bildirim yok", ms: "Belum ada pemberitahuan" },
 
   // Help center
-  "help.title": { id: "Pusat Bantuan", en: "Help Center" },
-  "help.version": { id: "Web v2.0 — April 2026", en: "Web v2.0 — April 2026" },
+  "help.title": { id: "Pusat Bantuan", en: "Help Center", es: "Centro de Ayuda", fr: "Centre d'aide", de: "Hilfezentrum", ja: "ヘルプセンター", ko: "도움말 센터", zh: "帮助中心", ar: "مركز المساعدة", hi: "सहायता केंद्र", pt: "Central de Ajuda", ru: "Центр помощи", th: "ศูนย์ช่วยเหลือ", vi: "Trung tâm trợ giúp", tr: "Yardım Merkezi", ms: "Pusat Bantuan" },
+  "help.version": { id: "Web v2.0 — April 2026", en: "Web v2.0 — April 2026", es: "Web v2.0 — Abril 2026", fr: "Web v2.0 — Avril 2026", de: "Web v2.0 — April 2026", ja: "Web v2.0 — 2026年4月", ko: "Web v2.0 — 2026년 4월", zh: "Web v2.0 — 2026年4月", ar: "Web v2.0 — أبريل 2026", hi: "Web v2.0 — अप्रैल 2026", pt: "Web v2.0 — Abril 2026", ru: "Web v2.0 — Апрель 2026", th: "Web v2.0 — เมษายน 2026", vi: "Web v2.0 — Tháng 4/2026", tr: "Web v2.0 — Nisan 2026", ms: "Web v2.0 — April 2026" },
 
   // Buy confirm
-  "buy.confirm_title": { id: "Konfirmasi Pembelian", en: "Confirm Purchase" },
-  "buy.confirm_msg": { id: "Apakah kamu yakin ingin membeli produk ini menggunakan saldo?", en: "Are you sure you want to buy this product using your balance?" },
-  "buy.cancel": { id: "Batal", en: "Cancel" },
-  "buy.confirm": { id: "Ya, Beli Sekarang", en: "Yes, Buy Now" },
-  "buy.success_title": { id: "Pembelian Berhasil! 🎉", en: "Purchase Successful! 🎉" },
-  "buy.remaining_balance": { id: "Sisa saldo", en: "Remaining balance" },
-  "buy.copy_voucher": { id: "Salin Voucher", en: "Copy Voucher" },
+  "buy.confirm_title": { id: "Konfirmasi Pembelian", en: "Confirm Purchase", es: "Confirmar Compra", fr: "Confirmer l'Achat", de: "Kauf bestätigen", ja: "購入確認", ko: "구매 확인", zh: "确认购买", ar: "تأكيد الشراء", hi: "खरीदारी की पुष्टि", pt: "Confirmar Compra", ru: "Подтвердить покупку", th: "ยืนยันการซื้อ", vi: "Xác nhận mua", tr: "Satın Almayı Onayla", ms: "Sahkan Pembelian" },
+  "buy.confirm_msg": { id: "Apakah kamu yakin ingin membeli produk ini menggunakan saldo?", en: "Are you sure you want to buy this product using your balance?", es: "¿Estás seguro de comprar con tu saldo?", fr: "Êtes-vous sûr de vouloir acheter avec votre solde?", de: "Möchten Sie wirklich mit Ihrem Guthaben kaufen?", ja: "残高を使用して購入しますか？", ko: "잔액으로 구매하시겠습니까?", zh: "确定使用余额购买此产品吗？", ar: "هل أنت متأكد من الشراء باستخدام رصيدك؟", hi: "क्या आप बैलेंस से खरीदना चाहते हैं?", pt: "Tem certeza que deseja comprar com seu saldo?", ru: "Вы уверены, что хотите купить за баланс?", th: "คุณแน่ใจว่าต้องการซื้อด้วยยอดเงินหรือไม่?", vi: "Bạn có chắc muốn mua bằng số dư?", tr: "Bakiyenizle satın almak istediğinizden emin misiniz?", ms: "Adakah anda pasti ingin membeli dengan baki anda?" },
+  "buy.cancel": { id: "Batal", en: "Cancel", es: "Cancelar", fr: "Annuler", de: "Abbrechen", ja: "キャンセル", ko: "취소", zh: "取消", ar: "إلغاء", hi: "रद्द करें", pt: "Cancelar", ru: "Отмена", th: "ยกเลิก", vi: "Hủy", tr: "İptal", ms: "Batal" },
+  "buy.confirm": { id: "Ya, Beli Sekarang", en: "Yes, Buy Now", es: "Sí, Comprar Ahora", fr: "Oui, Acheter", de: "Ja, Jetzt Kaufen", ja: "はい、今すぐ購入", ko: "네, 지금 구매", zh: "是的，立即购买", ar: "نعم، اشتري الآن", hi: "हाँ, अभी खरीदें", pt: "Sim, Comprar Agora", ru: "Да, купить", th: "ใช่ ซื้อเลย", vi: "Có, mua ngay", tr: "Evet, Şimdi Al", ms: "Ya, Beli Sekarang" },
+  "buy.success_title": { id: "Pembelian Berhasil! 🎉", en: "Purchase Successful! 🎉", es: "¡Compra Exitosa! 🎉", fr: "Achat Réussi! 🎉", de: "Kauf Erfolgreich! 🎉", ja: "購入成功！🎉", ko: "구매 성공! 🎉", zh: "购买成功！🎉", ar: "تمت عملية الشراء بنجاح! 🎉", hi: "खरीदारी सफल! 🎉", pt: "Compra Realizada! 🎉", ru: "Покупка успешна! 🎉", th: "ซื้อสำเร็จ! 🎉", vi: "Mua thành công! 🎉", tr: "Satın Alma Başarılı! 🎉", ms: "Pembelian Berjaya! 🎉" },
+  "buy.remaining_balance": { id: "Sisa saldo", en: "Remaining balance", es: "Saldo restante", fr: "Solde restant", de: "Restguthaben", ja: "残りの残高", ko: "남은 잔액", zh: "剩余余额", ar: "الرصيد المتبقي", hi: "शेष बैलेंस", pt: "Saldo restante", ru: "Остаток баланса", th: "ยอดเงินคงเหลือ", vi: "Số dư còn lại", tr: "Kalan bakiye", ms: "Baki berbaki" },
+  "buy.copy_voucher": { id: "Salin Voucher", en: "Copy Voucher", es: "Copiar Cupón", fr: "Copier Bon", de: "Gutschein kopieren", ja: "クーポンをコピー", ko: "쿠폰 복사", zh: "复制优惠券", ar: "نسخ القسيمة", hi: "वाउचर कॉपी करें", pt: "Copiar Cupom", ru: "Скопировать ваучер", th: "คัดลอกคูปอง", vi: "Sao chép phiếu", tr: "Kuponu Kopyala", ms: "Salin Baucar" },
 
   // WhatsApp form
-  "wa.title": { id: "Form Pembelian via WA", en: "WA Purchase Form" },
-  "wa.name": { id: "Nama lengkap", en: "Full name" },
-  "wa.phone": { id: "No. HP / WhatsApp", en: "Phone / WhatsApp" },
-  "wa.note": { id: "Keterangan (opsional)", en: "Notes (optional)" },
-  "wa.send": { id: "Kirim via WhatsApp", en: "Send via WhatsApp" },
+  "wa.title": { id: "Form Pembelian via WA", en: "WA Purchase Form", es: "Formulario de Compra WA", fr: "Formulaire d'Achat WA", de: "WA-Kaufformular", ja: "WA購入フォーム", ko: "WA 구매 양식", zh: "WA购买表单", ar: "نموذج شراء واتساب", hi: "WA खरीदारी फॉर्म", pt: "Formulário de Compra WA", ru: "Форма покупки WA", th: "แบบฟอร์มซื้อ WA", vi: "Mẫu mua hàng WA", tr: "WA Satın Alma Formu", ms: "Borang Pembelian WA" },
+  "wa.name": { id: "Nama lengkap", en: "Full name", es: "Nombre completo", fr: "Nom complet", de: "Vollständiger Name", ja: "フルネーム", ko: "전체 이름", zh: "全名", ar: "الاسم الكامل", hi: "पूरा नाम", pt: "Nome completo", ru: "Полное имя", th: "ชื่อเต็ม", vi: "Họ và tên", tr: "Tam ad", ms: "Nama penuh" },
+  "wa.phone": { id: "No. HP / WhatsApp", en: "Phone / WhatsApp", es: "Teléfono / WhatsApp", fr: "Tél / WhatsApp", de: "Tel / WhatsApp", ja: "電話/WhatsApp", ko: "전화/WhatsApp", zh: "电话/WhatsApp", ar: "الهاتف / واتساب", hi: "फोन / WhatsApp", pt: "Telefone / WhatsApp", ru: "Телефон / WhatsApp", th: "โทร / WhatsApp", vi: "SĐT / WhatsApp", tr: "Telefon / WhatsApp", ms: "No HP / WhatsApp" },
+  "wa.note": { id: "Keterangan (opsional)", en: "Notes (optional)", es: "Notas (opcional)", fr: "Notes (optionnel)", de: "Notizen (optional)", ja: "メモ（任意）", ko: "메모（선택）", zh: "备注（可选）", ar: "ملاحظات (اختياري)", hi: "टिप्पणी (वैकल्पिक)", pt: "Notas (opcional)", ru: "Примечание (необязательно)", th: "หมายเหตุ (ไม่บังคับ)", vi: "Ghi chú (tùy chọn)", tr: "Notlar (isteğe bağlı)", ms: "Catatan (pilihan)" },
+  "wa.send": { id: "Kirim via WhatsApp", en: "Send via WhatsApp", es: "Enviar por WhatsApp", fr: "Envoyer par WhatsApp", de: "Per WhatsApp senden", ja: "WhatsAppで送信", ko: "WhatsApp으로 보내기", zh: "通过WhatsApp发送", ar: "إرسال عبر واتساب", hi: "WhatsApp से भेजें", pt: "Enviar via WhatsApp", ru: "Отправить через WhatsApp", th: "ส่งผ่าน WhatsApp", vi: "Gửi qua WhatsApp", tr: "WhatsApp ile gönder", ms: "Hantar melalui WhatsApp" },
 
   // Version footer
-  "version.footer": { id: "Web Version 2.0 • April 2026", en: "Web Version 2.0 • April 2026" },
+  "version.footer": { id: "Web Version 2.0 • April 2026", en: "Web Version 2.0 • April 2026", es: "Web Versión 2.0 • Abril 2026", fr: "Web Version 2.0 • Avril 2026", de: "Web Version 2.0 • April 2026", ja: "Web Version 2.0 • 2026年4月", ko: "Web Version 2.0 • 2026년 4월", zh: "Web Version 2.0 • 2026年4月", ar: "Web Version 2.0 • أبريل 2026", hi: "Web Version 2.0 • अप्रैल 2026", pt: "Web Version 2.0 • Abril 2026", ru: "Web Version 2.0 • Апрель 2026", th: "Web Version 2.0 • เมษายน 2026", vi: "Web Version 2.0 • Tháng 4/2026", tr: "Web Version 2.0 • Nisan 2026", ms: "Web Version 2.0 • April 2026" },
 
   // Deposit
-  "deposit.title": { id: "Deposit Saldo", en: "Deposit Balance" },
-  "deposit.select_method": { id: "Pilih Metode Pembayaran", en: "Select Payment Method" },
-  "deposit.amount": { id: "Nominal Deposit", en: "Deposit Amount" },
-  "deposit.trx_id": { id: "ID Transaksi", en: "Transaction ID" },
-  "deposit.trx_id_placeholder": { id: "Masukkan ID transaksi setelah transfer", en: "Enter transaction ID after transfer" },
-  "deposit.send_wa": { id: "Kirim Konfirmasi via WA", en: "Send Confirmation via WA" },
-  "deposit.history": { id: "Riwayat Deposit", en: "Deposit History" },
-  "deposit.no_history": { id: "Belum ada riwayat deposit.", en: "No deposit history." },
-  "deposit.pending": { id: "Menunggu", en: "Pending" },
-  "deposit.approved": { id: "Disetujui", en: "Approved" },
-  "deposit.rejected": { id: "Ditolak", en: "Rejected" },
-  "deposit.qris": { id: "QRIS", en: "QRIS" },
-  "deposit.ewallet": { id: "E-Wallet", en: "E-Wallet" },
-  "deposit.scan_qris": { id: "Scan QRIS di bawah ini", en: "Scan the QRIS below" },
-  "deposit.transfer_to": { id: "Transfer ke", en: "Transfer to" },
-  "deposit.btn": { id: "Deposit", en: "Deposit" },
+  "deposit.title": { id: "Deposit Saldo", en: "Deposit Balance", es: "Depositar Saldo", fr: "Déposer", de: "Einzahlung", ja: "入金", ko: "입금", zh: "充值", ar: "إيداع الرصيد", hi: "जमा करें", pt: "Depositar", ru: "Пополнить", th: "ฝากเงิน", vi: "Nạp tiền", tr: "Bakiye Yükle", ms: "Deposit Baki" },
+  "deposit.select_method": { id: "Pilih Metode Pembayaran", en: "Select Payment Method", es: "Seleccionar Método de Pago", fr: "Choisir le Mode de Paiement", de: "Zahlungsmethode wählen", ja: "支払い方法を選択", ko: "결제 방법 선택", zh: "选择支付方式", ar: "اختر طريقة الدفع", hi: "भुगतान विधि चुनें", pt: "Selecionar Método de Pagamento", ru: "Выберите способ оплаты", th: "เลือกวิธีชำระเงิน", vi: "Chọn phương thức thanh toán", tr: "Ödeme Yöntemini Seçin", ms: "Pilih Kaedah Pembayaran" },
+  "deposit.amount": { id: "Nominal Deposit", en: "Deposit Amount", es: "Monto del Depósito", fr: "Montant du Dépôt", de: "Einzahlungsbetrag", ja: "入金額", ko: "입금 금액", zh: "充值金额", ar: "مبلغ الإيداع", hi: "जमा राशि", pt: "Valor do Depósito", ru: "Сумма пополнения", th: "จำนวนเงินฝาก", vi: "Số tiền nạp", tr: "Yükleme Tutarı", ms: "Jumlah Deposit" },
+  "deposit.trx_id": { id: "ID Transaksi", en: "Transaction ID", es: "ID de Transacción", fr: "ID de Transaction", de: "Transaktions-ID", ja: "取引ID", ko: "거래 ID", zh: "交易ID", ar: "معرف المعاملة", hi: "लेनदेन आईडी", pt: "ID da Transação", ru: "ID транзакции", th: "รหัสธุรกรรม", vi: "Mã giao dịch", tr: "İşlem Kimliği", ms: "ID Transaksi" },
+  "deposit.trx_id_placeholder": { id: "Masukkan ID transaksi setelah transfer", en: "Enter transaction ID after transfer", es: "Ingrese el ID después de la transferencia", fr: "Entrez l'ID après le transfert", de: "Geben Sie die ID nach der Überweisung ein", ja: "送金後に取引IDを入力", ko: "이체 후 거래 ID 입력", zh: "转账后输入交易ID", ar: "أدخل معرف المعاملة بعد التحويل", hi: "ट्रांसफर के बाद ID दर्ज करें", pt: "Insira o ID após a transferência", ru: "Введите ID после перевода", th: "กรอกรหัสธุรกรรมหลังโอน", vi: "Nhập mã giao dịch sau khi chuyển", tr: "Transfer sonrası işlem ID'sini girin", ms: "Masukkan ID transaksi selepas pindahan" },
+  "deposit.send_wa": { id: "Kirim Konfirmasi via WA", en: "Send Confirmation via WA", es: "Enviar Confirmación", fr: "Envoyer la Confirmation", de: "Bestätigung senden", ja: "確認をWAで送信", ko: "WA로 확인 보내기", zh: "通过WA发送确认", ar: "إرسال التأكيد", hi: "WA से पुष्टि भेजें", pt: "Enviar Confirmação", ru: "Отправить подтверждение", th: "ส่งการยืนยัน", vi: "Gửi xác nhận", tr: "Onay Gönder", ms: "Hantar Pengesahan" },
+  "deposit.history": { id: "Riwayat Deposit", en: "Deposit History", es: "Historial de Depósitos", fr: "Historique des Dépôts", de: "Einzahlungsverlauf", ja: "入金履歴", ko: "입금 내역", zh: "充值记录", ar: "سجل الإيداع", hi: "जमा इतिहास", pt: "Histórico de Depósitos", ru: "История пополнений", th: "ประวัติการฝาก", vi: "Lịch sử nạp", tr: "Yükleme Geçmişi", ms: "Sejarah Deposit" },
+  "deposit.no_history": { id: "Belum ada riwayat deposit.", en: "No deposit history.", es: "Sin historial de depósitos.", fr: "Aucun historique de dépôts.", de: "Kein Einzahlungsverlauf.", ja: "入金履歴はまだありません。", ko: "입금 내역이 없습니다.", zh: "暂无充值记录。", ar: "لا يوجد سجل إيداع.", hi: "जमा इतिहास नहीं।", pt: "Sem histórico de depósitos.", ru: "Нет истории пополнений.", th: "ยังไม่มีประวัติการฝาก", vi: "Chưa có lịch sử nạp.", tr: "Yükleme geçmişi yok.", ms: "Belum ada sejarah deposit." },
+  "deposit.pending": { id: "Menunggu", en: "Pending", es: "Pendiente", fr: "En attente", de: "Ausstehend", ja: "保留中", ko: "대기 중", zh: "待处理", ar: "قيد الانتظار", hi: "लंबित", pt: "Pendente", ru: "Ожидание", th: "รอดำเนินการ", vi: "Đang chờ", tr: "Bekliyor", ms: "Menunggu" },
+  "deposit.approved": { id: "Disetujui", en: "Approved", es: "Aprobado", fr: "Approuvé", de: "Genehmigt", ja: "承認済み", ko: "승인됨", zh: "已批准", ar: "تمت الموافقة", hi: "स्वीकृत", pt: "Aprovado", ru: "Одобрено", th: "อนุมัติ", vi: "Đã duyệt", tr: "Onaylandı", ms: "Diluluskan" },
+  "deposit.rejected": { id: "Ditolak", en: "Rejected", es: "Rechazado", fr: "Rejeté", de: "Abgelehnt", ja: "拒否", ko: "거부됨", zh: "已拒绝", ar: "مرفوض", hi: "अस्वीकृत", pt: "Rejeitado", ru: "Отклонено", th: "ถูกปฏิเสธ", vi: "Bị từ chối", tr: "Reddedildi", ms: "Ditolak" },
+  "deposit.qris": { id: "QRIS", en: "QRIS", es: "QRIS", fr: "QRIS", de: "QRIS", ja: "QRIS", ko: "QRIS", zh: "QRIS", ar: "QRIS", hi: "QRIS", pt: "QRIS", ru: "QRIS", th: "QRIS", vi: "QRIS", tr: "QRIS", ms: "QRIS" },
+  "deposit.ewallet": { id: "E-Wallet", en: "E-Wallet", es: "E-Wallet", fr: "E-Wallet", de: "E-Wallet", ja: "E-Wallet", ko: "E-Wallet", zh: "电子钱包", ar: "محفظة إلكترونية", hi: "ई-वॉलेट", pt: "E-Wallet", ru: "Электронный кошелёк", th: "E-Wallet", vi: "Ví điện tử", tr: "E-Cüzdan", ms: "E-Dompet" },
+  "deposit.scan_qris": { id: "Scan QRIS di bawah ini", en: "Scan the QRIS below", es: "Escanee el QRIS", fr: "Scannez le QRIS", de: "QRIS scannen", ja: "下のQRISをスキャン", ko: "아래 QRIS 스캔", zh: "扫描下方QRIS", ar: "امسح QRIS أدناه", hi: "नीचे QRIS स्कैन करें", pt: "Escaneie o QRIS", ru: "Сканируйте QRIS", th: "สแกน QRIS ด้านล่าง", vi: "Quét QRIS bên dưới", tr: "Aşağıdaki QRIS'i tarayın", ms: "Imbas QRIS di bawah" },
+  "deposit.transfer_to": { id: "Transfer ke", en: "Transfer to", es: "Transferir a", fr: "Transférer à", de: "Überweisen an", ja: "送金先", ko: "이체 대상", zh: "转账至", ar: "تحويل إلى", hi: "को ट्रांसफर करें", pt: "Transferir para", ru: "Перевести на", th: "โอนไปยัง", vi: "Chuyển đến", tr: "Transfer yap", ms: "Pindah ke" },
+  "deposit.btn": { id: "Deposit", en: "Deposit", es: "Depositar", fr: "Déposer", de: "Einzahlen", ja: "入金", ko: "입금", zh: "充值", ar: "إيداع", hi: "जमा", pt: "Depositar", ru: "Пополнить", th: "ฝาก", vi: "Nạp", tr: "Yükle", ms: "Deposit" },
 
   // General
-  "general.close": { id: "Tutup", en: "Close" },
-  "general.copy": { id: "Salin", en: "Copy" },
-  "general.copied": { id: "Tersalin!", en: "Copied!" },
-  "general.loading": { id: "Memuat...", en: "Loading..." },
-  "general.language": { id: "Bahasa", en: "Language" },
-} as const;
+  "general.close": { id: "Tutup", en: "Close", es: "Cerrar", fr: "Fermer", de: "Schließen", ja: "閉じる", ko: "닫기", zh: "关闭", ar: "إغلاق", hi: "बंद करें", pt: "Fechar", ru: "Закрыть", th: "ปิด", vi: "Đóng", tr: "Kapat", ms: "Tutup" },
+  "general.copy": { id: "Salin", en: "Copy", es: "Copiar", fr: "Copier", de: "Kopieren", ja: "コピー", ko: "복사", zh: "复制", ar: "نسخ", hi: "कॉपी", pt: "Copiar", ru: "Копировать", th: "คัดลอก", vi: "Sao chép", tr: "Kopyala", ms: "Salin" },
+  "general.copied": { id: "Tersalin!", en: "Copied!", es: "¡Copiado!", fr: "Copié!", de: "Kopiert!", ja: "コピーしました！", ko: "복사됨!", zh: "已复制！", ar: "تم النسخ!", hi: "कॉपी किया गया!", pt: "Copiado!", ru: "Скопировано!", th: "คัดลอกแล้ว!", vi: "Đã sao chép!", tr: "Kopyalandı!", ms: "Tersalin!" },
+  "general.loading": { id: "Memuat...", en: "Loading...", es: "Cargando...", fr: "Chargement...", de: "Laden...", ja: "読み込み中...", ko: "로딩 중...", zh: "加载中...", ar: "جاري التحميل...", hi: "लोड हो रहा है...", pt: "Carregando...", ru: "Загрузка...", th: "กำลังโหลด...", vi: "Đang tải...", tr: "Yükleniyor...", ms: "Memuatkan..." },
+  "general.language": { id: "Bahasa", en: "Language", es: "Idioma", fr: "Langue", de: "Sprache", ja: "言語", ko: "언어", zh: "语言", ar: "اللغة", hi: "भाषा", pt: "Idioma", ru: "Язык", th: "ภาษา", vi: "Ngôn ngữ", tr: "Dil", ms: "Bahasa" },
+};
 
-export type TranslationKey = keyof typeof translations;
+export type TranslationKey = string;
 
-export function t(key: TranslationKey, lang: Lang): string {
+export function t(key: string, lang: Lang): string {
   const entry = translations[key];
   if (!entry) return key;
-  return entry[lang] || entry["id"];
+  
+  // Try exact match first
+  if (entry[lang]) return entry[lang];
+  
+  // Try base language code (e.g., "ar-EG" -> "ar")
+  const base = getBaseLanguageCode(lang);
+  if (entry[base]) return entry[base];
+  
+  // Fallback to Indonesian
+  return entry["id"] || key;
 }
