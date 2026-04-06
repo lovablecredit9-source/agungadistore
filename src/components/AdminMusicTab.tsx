@@ -76,6 +76,16 @@ const AdminMusicTab = () => {
 
   const [activeTab, setActiveTab] = useState<"songs" | "playlists" | "lyrics">("songs");
 
+  // Edit song state
+  const [editSongOpen, setEditSongOpen] = useState(false);
+  const [editingSong, setEditingSong] = useState<Song | null>(null);
+  const [editTitle, setEditTitle] = useState("");
+  const [editArtist, setEditArtist] = useState("");
+  const [editReleaseDate, setEditReleaseDate] = useState("");
+  const [editCoverFile, setEditCoverFile] = useState<File | null>(null);
+  const editCoverRef = useRef<HTMLInputElement>(null);
+  const [savingSong, setSavingSong] = useState(false);
+
   // Lyrics state
   const [lyricsDialogOpen, setLyricsDialogOpen] = useState(false);
   const [lyricsSong, setLyricsSong] = useState<Song | null>(null);
@@ -165,7 +175,50 @@ const AdminMusicTab = () => {
     fetchAll();
   }
 
-  // --- Playlist CRUD ---
+  // --- Edit Song ---
+  function openEditSong(song: Song) {
+    setEditingSong(song);
+    setEditTitle(song.title);
+    setEditArtist(song.artist);
+    setEditReleaseDate(song.release_date || "");
+    setEditCoverFile(null);
+    setEditSongOpen(true);
+  }
+
+  async function saveEditSong() {
+    if (!editingSong || !editTitle.trim()) {
+      toast({ title: "Judul wajib diisi", variant: "destructive" });
+      return;
+    }
+    setSavingSong(true);
+    try {
+      let coverUrl: string | null = editingSong.cover_url;
+      if (editCoverFile) {
+        const ext = editCoverFile.name.split(".").pop() || "jpg";
+        const coverName = `covers/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+        const { error: coverErr } = await supabase.storage.from("music-files").upload(coverName, editCoverFile);
+        if (!coverErr) {
+          const { data } = supabase.storage.from("music-files").getPublicUrl(coverName);
+          coverUrl = data.publicUrl;
+        }
+      }
+      const { error } = await supabase.from("playlist_songs").update({
+        title: editTitle.trim(),
+        artist: editArtist.trim() || "Unknown",
+        release_date: editReleaseDate || null,
+        cover_url: coverUrl,
+      }).eq("id", editingSong.id);
+      if (error) throw error;
+      toast({ title: "Lagu berhasil diperbarui! ✏️" });
+      setEditSongOpen(false);
+      fetchAll();
+    } catch (err: any) {
+      toast({ title: "Gagal menyimpan", description: err.message, variant: "destructive" });
+    }
+    setSavingSong(false);
+  }
+
+
   function openCreatePlaylist() {
     setEditingPlaylist(null);
     setPlName("");
@@ -447,9 +500,14 @@ const AdminMusicTab = () => {
                        <p className="text-[11px] text-muted-foreground">{song.artist}{song.file_size ? ` • ${formatSize(song.file_size)}` : ""}</p>
                        <p className="text-[10px] text-muted-foreground">{song.release_date ? `Rilis ${song.release_date}` : `Upload ${new Date(song.created_at).toLocaleDateString("id-ID")}`}</p>
                     </div>
-                    <Button size="sm" variant="ghost" className="text-destructive h-8 w-8 p-0 shrink-0" onClick={() => deleteSong(song)}>
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
+                    <div className="flex gap-1 shrink-0">
+                      <Button size="sm" variant="ghost" className="h-8 w-8 p-0" onClick={() => openEditSong(song)} title="Edit">
+                        <Edit2 className="w-4 h-4" />
+                      </Button>
+                      <Button size="sm" variant="ghost" className="text-destructive h-8 w-8 p-0" onClick={() => deleteSong(song)}>
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
                   </div>
                 ))
               )}
@@ -649,6 +707,40 @@ const AdminMusicTab = () => {
             <Button onClick={saveLyrics} disabled={savingLyrics} className="gap-2">
               {savingLyrics ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
               Simpan Lirik
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      {/* Edit Song Dialog */}
+      <Dialog open={editSongOpen} onOpenChange={setEditSongOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="text-sm flex items-center gap-2"><Edit2 className="w-4 h-4" /> Edit Lagu</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <Input placeholder="Judul lagu *" value={editTitle} onChange={e => setEditTitle(e.target.value)} />
+            <Input placeholder="Artis" value={editArtist} onChange={e => setEditArtist(e.target.value)} />
+            <div>
+              <label className="text-xs font-medium text-muted-foreground mb-1 block">Tanggal rilis (opsional)</label>
+              <Input type="date" value={editReleaseDate} onChange={e => setEditReleaseDate(e.target.value)} />
+            </div>
+            <div>
+              <label className="text-xs font-medium text-muted-foreground mb-1 block">Ganti Thumbnail (opsional)</label>
+              <input ref={editCoverRef} type="file" accept="image/*" onChange={e => setEditCoverFile(e.target.files?.[0] || null)}
+                className="text-xs file:mr-2 file:px-3 file:py-1.5 file:rounded-md file:border-0 file:bg-primary/10 file:text-primary file:font-medium file:cursor-pointer" />
+            </div>
+            {editingSong?.cover_url && !editCoverFile && (
+              <div className="flex items-center gap-2">
+                <img src={editingSong.cover_url} className="w-10 h-10 rounded object-cover" alt="" />
+                <span className="text-xs text-muted-foreground">Cover saat ini</span>
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" size="sm" onClick={() => setEditSongOpen(false)}>Batal</Button>
+            <Button onClick={saveEditSong} disabled={savingSong} className="gap-2">
+              {savingSong ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+              Simpan
             </Button>
           </DialogFooter>
         </DialogContent>

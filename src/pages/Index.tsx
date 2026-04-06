@@ -25,7 +25,7 @@ import {
 } from "@/components/ui/select";
 import { useLang, t, type Lang } from "@/lib/i18n";
 import { z } from "zod";
-import PlaylistTab from "@/components/PlaylistTab";
+import PlaylistTab, { type PlaybackState } from "@/components/PlaylistTab";
 
 type Tab = "beranda" | "produk" | "voucher" | "history" | "likes" | "tiket" | "saldo" | "playlist";
 
@@ -232,6 +232,10 @@ const Index = () => {
   const [historyPage, setHistoryPage] = useState(1);
   const HISTORY_PER_PAGE = 5;
   const { toast } = useToast();
+
+  // Music playback persistence
+  const [playbackState, setPlaybackState] = useState<PlaybackState>({ song: null, isPlaying: false, currentTime: 0, duration: 0 });
+  const togglePlayRef = useRef<(() => void) | null>(null);
 
   // Likes
   const [likedIds, setLikedIds] = useState<Set<string>>(new Set());
@@ -1734,8 +1738,43 @@ const Index = () => {
           </div>
         )}
 
-        {tab === "playlist" && <PlaylistTab />}
+        {/* PlaylistTab always mounted, hidden when not active */}
+        <div className={tab === "playlist" ? "" : "hidden"}>
+          <PlaylistTab onPlaybackChange={setPlaybackState} onTogglePlay={togglePlayRef} />
+        </div>
       </main>
+
+      {/* Mini Player - shown when music is playing and not on playlist tab */}
+      {playbackState.song && tab !== "playlist" && (
+        <div
+          className="fixed bottom-[52px] left-0 right-0 z-50 bg-card/95 backdrop-blur-md border-t border-primary/20 shadow-lg cursor-pointer"
+          onClick={() => setTab("playlist")}
+        >
+          <div className="max-w-lg mx-auto flex items-center gap-3 px-3 py-2">
+            <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0 overflow-hidden">
+              {playbackState.song.cover_url ? (
+                <img src={playbackState.song.cover_url} alt="" className="w-full h-full object-cover" />
+              ) : (
+                <Music className="w-4 h-4 text-primary" />
+              )}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-bold truncate">{playbackState.song.title}</p>
+              <p className="text-[10px] text-muted-foreground truncate">{playbackState.song.artist}</p>
+            </div>
+            <button
+              onClick={(e) => { e.stopPropagation(); togglePlayRef.current?.(); }}
+              className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center shrink-0"
+            >
+              {playbackState.isPlaying ? (
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16" /><rect x="14" y="4" width="4" height="16" /></svg>
+              ) : (
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="5,3 19,12 5,21" /></svg>
+              )}
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Product Detail Modal */}
       {selectedProduct && (() => {
