@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -7,7 +7,8 @@ import { Progress } from "@/components/ui/progress";
 import {
   Music, Play, Pause, SkipBack, SkipForward, Download, Volume2, VolumeX,
   Repeat, Shuffle, Loader2, HardDrive, Globe, CheckCircle2, Trash2,
-  WifiOff, Wifi, Crown, Zap, Clock, ListMusic, Plus, Edit2, Check, Lock
+  WifiOff, Wifi, Crown, Zap, Clock, ListMusic, Plus, Edit2, Check, Lock,
+  FileText, Copyright, ChevronDown, ChevronUp, Type
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Slider } from "@/components/ui/slider";
