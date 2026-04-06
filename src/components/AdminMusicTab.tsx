@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Music, Plus, Trash2, Upload, Loader2, ListMusic, Image as ImageIcon, Edit2, Check, X, Type } from "lucide-react";
+import { Wand2, FileUp } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter
@@ -80,6 +81,8 @@ const AdminMusicTab = () => {
   const [lyricsSong, setLyricsSong] = useState<Song | null>(null);
   const [lyricsText, setLyricsText] = useState("");
   const [savingLyrics, setSavingLyrics] = useState(false);
+  const [generatingLyrics, setGeneratingLyrics] = useState(false);
+  const lrcFileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => { fetchAll(); }, []);
 
@@ -533,8 +536,34 @@ const AdminMusicTab = () => {
             <DialogTitle className="text-sm flex items-center gap-2"><Type className="w-4 h-4" /> Lirik — {lyricsSong?.title}</DialogTitle>
           </DialogHeader>
           <div className="space-y-2">
-            <p className="text-[11px] text-muted-foreground">Format LRC: <code className="bg-muted px-1 rounded">[mm:ss.xx]teks lirik</code></p>
-            <p className="text-[10px] text-muted-foreground">Contoh:<br/><code className="bg-muted px-1 rounded">[00:05.00]Baris pertama lagu</code><br/><code className="bg-muted px-1 rounded">[00:12.50]Baris kedua lagu</code></p>
+            <p className="text-[11px] text-muted-foreground">Paste lirik biasa lalu klik "Generate AI" atau upload file LRC.</p>
+            <div className="flex gap-2">
+              <Button
+                size="sm"
+                variant="outline"
+                className="gap-1.5 text-xs flex-1"
+                disabled={generatingLyrics || !lyricsText.trim()}
+                onClick={generateTimestampsAI}
+              >
+                {generatingLyrics ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Wand2 className="w-3.5 h-3.5" />}
+                {generatingLyrics ? "Generating..." : "Generate AI"}
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                className="gap-1.5 text-xs"
+                onClick={() => lrcFileRef.current?.click()}
+              >
+                <FileUp className="w-3.5 h-3.5" /> Upload LRC
+              </Button>
+              <input
+                ref={lrcFileRef}
+                type="file"
+                accept=".lrc,.txt"
+                className="hidden"
+                onChange={handleLrcUpload}
+              />
+            </div>
             <Textarea
               value={lyricsText}
               onChange={e => setLyricsText(e.target.value)}
@@ -544,7 +573,7 @@ const AdminMusicTab = () => {
             />
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setLyricsDialogOpen(false)}>Batal</Button>
+            <Button variant="outline" size="sm" onClick={() => setLyricsDialogOpen(false)}>Batal</Button>
             <Button onClick={saveLyrics} disabled={savingLyrics} className="gap-2">
               {savingLyrics ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
               Simpan Lirik
