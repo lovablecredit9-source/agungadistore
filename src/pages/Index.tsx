@@ -26,7 +26,7 @@ import {
 import { useLang, t, type Lang } from "@/lib/i18n";
 import { z } from "zod";
 
-type Tab = "beranda" | "produk" | "voucher" | "history" | "likes" | "tiket" | "saldo";
+type Tab = "beranda" | "produk" | "voucher" | "history" | "likes" | "tiket" | "saldo" | "playlist";
 
 interface UserBalance {
   id: string;
