@@ -211,23 +211,43 @@ const AdminDashboard = () => {
     if (data) {
       setAdminSettings(data as unknown as AdminSetting[]);
       const q = (data as any[]).find(s => s.setting_key === "qris_url");
-      const en = (data as any[]).find(s => s.setting_key === "ewallet_name");
-      const enm = (data as any[]).find(s => s.setting_key === "ewallet_number");
       if (q) setSettingQris(q.setting_value);
-      if (en) setSettingEwalletName(en.setting_value);
-      if (enm) setSettingEwalletNumber(enm.setting_value);
+      const ew = (data as any[]).find(s => s.setting_key === "ewallets");
+      if (ew) {
+        try { setEwallets(JSON.parse(ew.setting_value)); } catch { setEwallets([]); }
+      }
     }
   }
 
   async function updateSetting(key: string, value: string) {
-    await supabase.from("admin_settings").update({ setting_value: value }).eq("setting_key", key);
+    const existing = adminSettings.find(s => s.setting_key === key);
+    if (existing) {
+      await supabase.from("admin_settings").update({ setting_value: value }).eq("setting_key", key);
+    } else {
+      await supabase.from("admin_settings").insert({ setting_key: key, setting_value: value } as any);
+    }
+  }
+
+  async function handleQrisUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setQrisUploading(true);
+    const fileName = `qris_${Date.now()}.${file.name.split('.').pop()}`;
+    const { error } = await supabase.storage.from("payment-images").upload(fileName, file, { upsert: true });
+    if (error) { toast({ title: "Upload gagal!", variant: "destructive" }); setQrisUploading(false); return; }
+    const { data: urlData } = supabase.storage.from("payment-images").getPublicUrl(fileName);
+    const url = urlData.publicUrl;
+    setSettingQris(url);
+    await updateSetting("qris_url", url);
+    toast({ title: "QRIS berhasil diupload! ✅" });
+    setQrisUploading(false);
+    fetchAdminSettings();
   }
 
   async function saveAllSettings() {
     await Promise.all([
       updateSetting("qris_url", settingQris),
-      updateSetting("ewallet_name", settingEwalletName),
-      updateSetting("ewallet_number", settingEwalletNumber),
+      updateSetting("ewallets", JSON.stringify(ewallets)),
     ]);
     toast({ title: "Pengaturan tersimpan! ✅" });
     fetchAdminSettings();
