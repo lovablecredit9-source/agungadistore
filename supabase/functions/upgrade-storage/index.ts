@@ -13,7 +13,7 @@ Deno.serve(async (request) => {
   try {
     const { visitor_id, tier_name, price } = await request.json();
 
-    if (!visitor_id || !tier_name || !price || typeof price !== "number" || price <= 0) {
+    if (!visitor_id || !tier_name || typeof price !== "number" || price < 0) {
       return Response.json({ error: "Data tidak lengkap" }, { status: 400, headers: corsHeaders });
     }
 
