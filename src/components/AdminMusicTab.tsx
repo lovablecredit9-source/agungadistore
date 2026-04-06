@@ -615,6 +615,15 @@ const AdminMusicTab = () => {
                 size="sm"
                 variant="outline"
                 className="gap-1.5 text-xs"
+                disabled={generatingLyrics || !lyricsText.trim()}
+                onClick={generateTimestampsAI}
+              >
+                <Wand2 className="w-3.5 h-3.5" /> Timestamp AI
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                className="gap-1.5 text-xs"
                 onClick={() => lrcFileRef.current?.click()}
               >
                 <FileUp className="w-3.5 h-3.5" /> Upload LRC
