@@ -17,6 +17,7 @@ import { generateVoucherCode } from "@/lib/voucher-code";
 import { getDeviceSummary } from "@/lib/device-info";
 import { STORE_NAME } from "@/lib/social-links";
 import storeQris from "@/assets/store-qris.jpg";
+import AdminMusicTab from "@/components/AdminMusicTab";
 
 interface Product {
   id: string;
