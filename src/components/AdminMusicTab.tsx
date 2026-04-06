@@ -22,6 +22,15 @@ function formatSize(bytes: number) {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
+const MAX_STORAGE_BYTES = 2 * 1024 * 1024 * 1024; // 2GB
+
+function formatStorageSize(bytes: number) {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`;
+}
+
 const AdminMusicTab = () => {
   const [songs, setSongs] = useState<Song[]>([]);
   const [loading, setLoading] = useState(true);
@@ -30,6 +39,7 @@ const AdminMusicTab = () => {
   const [artist, setArtist] = useState("");
   const [musicFile, setMusicFile] = useState<File | null>(null);
   const [coverFile, setCoverFile] = useState<File | null>(null);
+  const [storageUsed, setStorageUsed] = useState(0);
   const fileRef = useRef<HTMLInputElement>(null);
   const coverRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
@@ -39,7 +49,11 @@ const AdminMusicTab = () => {
   async function fetchSongs() {
     setLoading(true);
     const { data } = await supabase.from("playlist_songs").select("*").order("created_at", { ascending: false });
-    setSongs((data as Song[]) || []);
+    const songList = (data as Song[]) || [];
+    setSongs(songList);
+    // Calculate total storage from file sizes
+    const totalUsed = songList.reduce((sum, s) => sum + (s.file_size || 0), 0);
+    setStorageUsed(totalUsed);
     setLoading(false);
   }
 
