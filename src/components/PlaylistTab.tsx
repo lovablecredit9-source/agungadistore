@@ -279,6 +279,8 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay }: PlaylistTabProps) => {
   const [allLyrics, setAllLyrics] = useState<LyricLine[]>([]);
   const [termsOpen, setTermsOpen] = useState(false);
   const lyricsContainerRef = useRef<HTMLDivElement>(null);
+  const fullPlayerLyricsRef = useRef<HTMLDivElement>(null);
+  const [showFullPlayer, setShowFullPlayer] = useState(false);
 
   // Current playing song list (filtered by playlist or all)
   const displaySongs = viewingPlaylist
