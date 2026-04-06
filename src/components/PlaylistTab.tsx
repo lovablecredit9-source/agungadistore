@@ -219,8 +219,20 @@ function useOnlineStatus() {
   return online;
 }
 
+export interface PlaybackState {
+  song: Song | null;
+  isPlaying: boolean;
+  currentTime: number;
+  duration: number;
+}
+
+interface PlaylistTabProps {
+  onPlaybackChange?: (state: PlaybackState) => void;
+  onTogglePlay?: React.MutableRefObject<(() => void) | null>;
+}
+
 // ===== COMPONENT =====
-const PlaylistTab = () => {
+const PlaylistTab = ({ onPlaybackChange, onTogglePlay }: PlaylistTabProps) => {
   const [songs, setSongs] = useState<Song[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentIndex, setCurrentIndex] = useState<number>(-1);
