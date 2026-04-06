@@ -23,6 +23,9 @@ import { getVisitorId } from "@/lib/visitor-id";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useLang, t, type Lang } from "@/lib/i18n";
 import { z } from "zod";
 import PlaylistTab, { type PlaybackState } from "@/components/PlaylistTab";
@@ -140,9 +143,9 @@ interface ProductChatMessage {
 type DepositStatusFilter = "all" | "pending" | "approved" | "rejected";
 type DepositMethodFilter = "all" | "qris" | "ewallet";
 
-const usernameSchema = z.string().trim().min(6, "Username minimal 6 karakter").max(30, "Username maksimal 30 karakter").regex(/^[A-Za-z0-9_]+$/, "Username hanya boleh huruf, angka, dan underscore");
+const usernameSchema = z.string().trim().min(3, "Username minimal 3 karakter").max(30, "Username maksimal 30 karakter").regex(/^[A-Za-z0-9_]+$/, "Username hanya boleh huruf, angka, dan underscore");
 
-const phoneSchema = z.string().trim().transform((value) => value.replace(/[\s-]/g, "")).refine((value) => /^(08\d+|\+628\d+)$/.test(value), "No HP harus diawali 08 atau +628").refine((value) => value.length >= 10 && value.length <= 16, "No HP tidak valid");
+const phoneSchema = z.string().trim().transform((value) => value.replace(/[\s-]/g, "")).refine((value) => /^(\+?\d{1,4}\s?\d+|08\d+)$/.test(value), "Format nomor HP tidak valid").refine((value) => value.replace(/\D/g, "").length >= 7 && value.replace(/\D/g, "").length <= 16, "No HP tidak valid (7-16 digit)");
 
 // WhatsApp-style checkmark component
 function MessageStatus({ isRead, isUserMsg }: { isRead: boolean; isUserMsg: boolean }) {
@@ -214,7 +217,7 @@ function ImageCarousel({ images, className = "w-full h-44" }: { images: string[]
 }
 
 const Index = () => {
-  const { theme, toggleTheme } = useTheme();
+  const { theme, setTheme, resolvedTheme } = useTheme();
   const [lang, setLang] = useLang();
   const [tab, setTab] = useState<Tab>("beranda");
   const [products, setProducts] = useState<Product[]>([]);
@@ -487,6 +490,14 @@ const Index = () => {
       .subscribe();
     return () => { supabase.removeChannel(ch); };
   }, [ticketView, showProductChat]);
+
+  // Realtime products
+  useEffect(() => {
+    const ch = supabase.channel("products-realtime")
+      .on("postgres_changes", { event: "*", schema: "public", table: "products" }, () => fetchProducts())
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, []);
 
   async function fetchProducts() {
     const [pRes, piRes] = await Promise.all([
@@ -1090,9 +1101,27 @@ const Index = () => {
             <p className="text-[10px] opacity-80 leading-tight">{t("header.tagline", lang)}</p>
           </div>
           <div className="flex items-center gap-1.5">
-            <button onClick={toggleTheme} className="w-9 h-9 rounded-xl bg-primary-foreground/20 backdrop-blur-sm flex items-center justify-center hover:bg-primary-foreground/30 transition-colors" title={theme === "dark" ? "Mode Terang" : "Mode Gelap"}>
-              {theme === "dark" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-            </button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="w-9 h-9 rounded-xl bg-primary-foreground/20 backdrop-blur-sm flex items-center justify-center hover:bg-primary-foreground/30 transition-colors" title="Tema">
+                  {resolvedTheme === "dark" ? <Moon className="w-4 h-4" /> : resolvedTheme === "gold" ? <Crown className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="min-w-[160px]">
+                <DropdownMenuItem onClick={() => setTheme("light")} className="gap-2 cursor-pointer">
+                  <Sun className="w-4 h-4" /> Terang {theme === "light" && "✓"}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setTheme("dark")} className="gap-2 cursor-pointer">
+                  <Moon className="w-4 h-4" /> Gelap {theme === "dark" && "✓"}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setTheme("gold")} className="gap-2 cursor-pointer">
+                  <Crown className="w-4 h-4" /> Emas {theme === "gold" && "✓"}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setTheme("system")} className="gap-2 cursor-pointer">
+                  <Smartphone className="w-4 h-4" /> Perangkat {theme === "system" && "✓"}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
             <button onClick={() => setLang(lang === "id" ? "en" : "id")} className="w-9 h-9 rounded-xl bg-primary-foreground/20 backdrop-blur-sm flex items-center justify-center hover:bg-primary-foreground/30 transition-colors" title={t("general.language", lang)}>
               <span className="text-[10px] font-bold">{lang === "id" ? "EN" : "ID"}</span>
             </button>

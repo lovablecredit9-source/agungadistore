@@ -13,7 +13,7 @@ Deno.serve(async (request) => {
   try {
     const { visitor_id, tier_name, price } = await request.json();
 
-    if (!visitor_id || !tier_name || !price || typeof price !== "number" || price <= 0) {
+    if (!visitor_id || !tier_name || typeof price !== "number" || price < 0) {
       return Response.json({ error: "Data tidak lengkap" }, { status: 400, headers: corsHeaders });
     }
 
@@ -48,32 +48,51 @@ Deno.serve(async (request) => {
       return Response.json({ error: "Akun saldo tidak ditemukan" }, { status: 404, headers: corsHeaders });
     }
 
-    if (balanceRow.balance < price) {
+    if (price > 0) {
+      if (balanceRow.balance < price) {
+        return Response.json(
+          { error: `Saldo tidak cukup. Butuh Rp${price.toLocaleString("id-ID")}, saldo Rp${balanceRow.balance.toLocaleString("id-ID")}` },
+          { status: 400, headers: corsHeaders }
+        );
+      }
+
+      const newBalance = balanceRow.balance - price;
+
+      // Deduct balance
+      const { error: updateError } = await admin
+        .from("user_balances")
+        .update({ balance: newBalance })
+        .eq("id", balanceRow.id);
+
+      if (updateError) {
+        return Response.json({ error: "Gagal memotong saldo" }, { status: 500, headers: corsHeaders });
+      }
+
+      // Record transaction
+      const { error: txError } = await admin.from("balance_transactions").insert({
+        visitor_id,
+        type: "purchase",
+        amount: price,
+        description: `Upgrade penyimpanan musik ke ${tier_name}`,
+      });
+
+      if (txError) {
+        // Rollback
+        await admin.from("user_balances").update({ balance: balanceRow.balance }).eq("id", balanceRow.id);
+        return Response.json({ error: "Gagal mencatat transaksi" }, { status: 500, headers: corsHeaders });
+      }
+
       return Response.json(
-        { error: `Saldo tidak cukup. Butuh Rp${price.toLocaleString("id-ID")}, saldo Rp${balanceRow.balance.toLocaleString("id-ID")}` },
-        { status: 400, headers: corsHeaders }
+        { success: true, balance_remaining: newBalance, tier_name },
+        { headers: corsHeaders }
       );
     }
 
-    const newBalance = balanceRow.balance - price;
-
-    // Deduct balance
-    const { error: updateError } = await admin
-      .from("user_balances")
-      .update({ balance: newBalance })
-      .eq("id", balanceRow.id);
-
-    if (updateError) {
-      return Response.json({ error: "Gagal memotong saldo" }, { status: 500, headers: corsHeaders });
-    }
-
-    // Record transaction
-    const { error: txError } = await admin.from("balance_transactions").insert({
-      visitor_id,
-      type: "purchase",
-      amount: price,
-      description: `Upgrade penyimpanan musik ke ${tier_name}`,
-    });
+    // Free upgrade (100% discount)
+    return Response.json(
+      { success: true, balance_remaining: balanceRow.balance, tier_name },
+      { headers: corsHeaders }
+    );
 
     if (txError) {
       // Rollback

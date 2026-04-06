@@ -81,7 +81,39 @@
     --success: 150 60% 45%;
     --success-foreground: 0 0% 100%;
   }
-}
+
+  .gold {
+    --background: 40 30% 10%;
+    --foreground: 40 20% 92%;
+
+    --card: 40 25% 14%;
+    --card-foreground: 40 20% 92%;
+
+    --popover: 40 25% 14%;
+    --popover-foreground: 40 20% 92%;
+
+    --primary: 42 80% 55%;
+    --primary-foreground: 40 30% 8%;
+
+    --secondary: 40 20% 18%;
+    --secondary-foreground: 40 15% 80%;
+
+    --muted: 40 15% 16%;
+    --muted-foreground: 40 10% 55%;
+
+    --accent: 42 70% 50%;
+    --accent-foreground: 40 30% 8%;
+
+    --destructive: 0 70% 50%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 40 15% 20%;
+    --input: 40 15% 20%;
+    --ring: 42 80% 55%;
+
+    --success: 150 60% 45%;
+    --success-foreground: 0 0% 100%;
+  }
 
 @layer base {
   * {

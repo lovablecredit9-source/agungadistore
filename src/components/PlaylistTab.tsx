@@ -147,8 +147,8 @@ function saveSub(plan: StoragePlan): ActiveSubscription {
   return newSub;
 }
 
-function getTotalMaxBytes(): number {
-  return FREE_BYTES + getActiveSubscriptions().reduce((sum, s) => sum + s.addBytes, 0);
+function getTotalMaxBytes(redeemedMb: number = 0): number {
+  return FREE_BYTES + getActiveSubscriptions().reduce((sum, s) => sum + s.addBytes, 0) + (redeemedMb * 1024 * 1024);
 }
 
 // --- Cache helpers ---
@@ -248,7 +248,7 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer }: Playl
   const [downloading, setDownloading] = useState<string | null>(null);
   const [cachedIds, setCachedIds] = useState<Set<string>>(new Set());
   const [downloadedStorage, setDownloadedStorage] = useState(0);
-  const [maxBytes, setMaxBytes] = useState(getTotalMaxBytes());
+  const [maxBytes, setMaxBytes] = useState(FREE_BYTES);
   const [activeSubs, setActiveSubs] = useState<ActiveSubscription[]>(getActiveSubscriptions());
   const [upgradeOpen, setUpgradeOpen] = useState(false);
   const [upgrading, setUpgrading] = useState(false);
@@ -281,9 +281,20 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer }: Playl
   const [redeemCode, setRedeemCode] = useState("");
   const [redeeming, setRedeeming] = useState(false);
   const [redeemedStorages, setRedeemedStorages] = useState<{id: string; storage_mb: number; voucher_code: string; redeemed_at: string; expires_at: string | null}[]>([]);
+  // Compute active redeemed MB
+  const activeRedeemedMb = useMemo(() => {
+    const now = new Date();
+    return redeemedStorages
+      .filter(rs => !rs.expires_at || new Date(rs.expires_at) >= now)
+      .reduce((sum, rs) => sum + rs.storage_mb, 0);
+  }, [redeemedStorages]);
   // Discount code for upgrade
   const [upgradeDiscountCode, setUpgradeDiscountCode] = useState("");
   const [upgradeDiscountAmount, setUpgradeDiscountAmount] = useState(0);
+  // PIN for upgrade
+  const [showPinDialog, setShowPinDialog] = useState(false);
+  const [upgradePinInput, setUpgradePinInput] = useState("");
+  const [hasPin, setHasPin] = useState(false);
 
   // Lyrics state
   const [allLyrics, setAllLyrics] = useState<LyricLine[]>([]);
@@ -298,11 +309,29 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer }: Playl
     : songs;
 
   useEffect(() => {
-    const interval = setInterval(() => { setActiveSubs(getActiveSubscriptions()); setMaxBytes(getTotalMaxBytes()); }, 60000);
+    const interval = setInterval(() => { setActiveSubs(getActiveSubscriptions()); setMaxBytes(getTotalMaxBytes(activeRedeemedMb)); }, 60000);
     return () => clearInterval(interval);
+  }, [activeRedeemedMb]);
+
+  useEffect(() => { fetchSongs(); fetchRedeemedStorages(); checkPinExists(); }, []);
+  // Update maxBytes when activeRedeemedMb changes
+  useEffect(() => { setMaxBytes(getTotalMaxBytes(activeRedeemedMb)); }, [activeRedeemedMb]);
+
+  // Realtime: auto-refresh when admin changes songs/playlists
+  useEffect(() => {
+    const ch = supabase.channel("music-realtime")
+      .on("postgres_changes", { event: "*", schema: "public", table: "playlist_songs" }, () => fetchSongs())
+      .on("postgres_changes", { event: "*", schema: "public", table: "playlists" }, () => fetchSongs())
+      .on("postgres_changes", { event: "*", schema: "public", table: "playlist_items" }, () => fetchSongs())
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
   }, []);
 
-  useEffect(() => { fetchSongs(); fetchRedeemedStorages(); }, []);
+  async function checkPinExists() {
+    const visitorId = await getVisitorIdSafe();
+    const { data } = await supabase.functions.invoke("manage-pin", { body: { action: "check", visitorId } });
+    if (data) setHasPin(data.hasPin);
+  }
 
   async function fetchRedeemedStorages() {
     const visitorId = await getVisitorIdSafe();
@@ -379,7 +408,7 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer }: Playl
     const ids = await getCachedSongIds();
     setCachedIds(ids);
     setDownloadedStorage(await getCachedStorageUsed(list, ids));
-    setMaxBytes(getTotalMaxBytes());
+    setMaxBytes(getTotalMaxBytes(activeRedeemedMb));
     setActiveSubs(getActiveSubscriptions());
   }
 
@@ -488,7 +517,7 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer }: Playl
   async function downloadToCache(song: Song) {
     if (!isOnline) { toast({ title: "Tidak bisa simpan offline", variant: "destructive" }); return; }
     if (cachedIds.has(song.id)) { toast({ title: "Sudah tersimpan offline ✅" }); return; }
-    const currentMax = getTotalMaxBytes();
+    const currentMax = getTotalMaxBytes(activeRedeemedMb);
     if (downloadedStorage + (song.file_size || 0) > currentMax) { toast({ title: "Penyimpanan penuh!", variant: "destructive" }); return; }
     setDownloading(song.id);
     try {
@@ -504,6 +533,29 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer }: Playl
     await removeCachedSong(song.id);
     toast({ title: "Dihapus dari offline" });
     await refreshCacheInfo();
+  }
+
+  function attemptUpgrade() {
+    const plan = PURCHASABLE_PLANS[selectedPlanIndex];
+    if (!plan) return;
+    if (hasPin) {
+      setUpgradePinInput("");
+      setShowPinDialog(true);
+    } else {
+      handleUpgrade();
+    }
+  }
+
+  async function confirmPinAndUpgrade() {
+    const visitorId = await getVisitorIdSafe();
+    const { data, error } = await supabase.functions.invoke("manage-pin", {
+      body: { action: "verify", visitorId, pin: upgradePinInput },
+    });
+    if (error || data?.error || !data?.valid) {
+      toast({ title: "PIN salah", variant: "destructive" }); return;
+    }
+    setShowPinDialog(false);
+    handleUpgrade();
   }
 
   async function handleUpgrade() {
@@ -522,7 +574,7 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer }: Playl
         if (vd) await supabase.from("music_discount_vouchers").update({ used_count: (vd.used_count || 0) + 1 } as any).eq("id", vd.id);
       }
       const newSub = saveSub(plan);
-      setActiveSubs(getActiveSubscriptions()); setMaxBytes(getTotalMaxBytes()); setUpgradeOpen(false);
+      setActiveSubs(getActiveSubscriptions()); setMaxBytes(getTotalMaxBytes(activeRedeemedMb)); setUpgradeOpen(false);
       setUpgradeDiscountCode(""); setUpgradeDiscountAmount(0);
       toast({ title: "Upgrade berhasil! 🎉", description: `+${formatStorageSize(plan.addBytes)} aktif sampai ${formatDate(newSub.expiresAt)}${upgradeDiscountAmount > 0 ? ` (diskon Rp${upgradeDiscountAmount.toLocaleString()})` : ""}` });
     } catch (err: any) { toast({ title: "Gagal upgrade", description: err?.message, variant: "destructive" }); }
@@ -1172,7 +1224,7 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer }: Playl
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setUpgradeOpen(false)}>Batal</Button>
-            <Button onClick={handleUpgrade} disabled={upgrading || !isOnline} className="gap-2">
+            <Button onClick={attemptUpgrade} disabled={upgrading || !isOnline} className="gap-2">
               {upgrading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Zap className="w-4 h-4" />}
               {upgrading ? "Memproses..." : "Beli Sekarang"}
             </Button>
@@ -1180,7 +1232,40 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer }: Playl
         </DialogContent>
       </Dialog>
 
-      {/* User Playlist Create/Edit Dialog */}
+      {/* PIN Verification Dialog for Upgrade */}
+      <Dialog open={showPinDialog} onOpenChange={setShowPinDialog}>
+        <DialogContent className="max-w-xs">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2"><Lock className="w-5 h-5 text-primary" /> Verifikasi PIN</DialogTitle>
+            <DialogDescription>Masukkan PIN untuk konfirmasi pembelian penyimpanan.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="flex justify-center gap-2">
+              {[0,1,2,3,4,5].map(i => (
+                <div key={i} className={`w-8 h-10 rounded-lg border-2 flex items-center justify-center text-lg font-bold ${i < upgradePinInput.length ? "border-primary bg-primary/10" : "border-border"}`}>
+                  {i < upgradePinInput.length ? "•" : ""}
+                </div>
+              ))}
+            </div>
+            <div className="grid grid-cols-3 gap-2">
+              {[1,2,3,4,5,6,7,8,9].map(n => (
+                <Button key={n} variant="outline" className="h-12 text-lg font-bold" onClick={() => upgradePinInput.length < 6 && setUpgradePinInput(prev => prev + n)}>
+                  {n}
+                </Button>
+              ))}
+              <div />
+              <Button variant="outline" className="h-12 text-lg font-bold" onClick={() => upgradePinInput.length < 6 && setUpgradePinInput(prev => prev + "0")}>0</Button>
+              <Button variant="outline" className="h-12 text-lg font-bold" onClick={() => setUpgradePinInput(prev => prev.slice(0, -1))}>←</Button>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button onClick={confirmPinAndUpgrade} disabled={upgradePinInput.length < 4} className="w-full gap-2">
+              <Lock className="w-4 h-4" /> Konfirmasi
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <Dialog open={userPlDialogOpen} onOpenChange={setUserPlDialogOpen}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
