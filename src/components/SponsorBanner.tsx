@@ -190,6 +190,28 @@ export default function SponsorBanner() {
             )}
           </div>
         )}
+        {/* Filter & Sort Bar */}
+        <div className="flex items-center gap-2 mb-2">
+          <Select value={filterCategory} onValueChange={v => { setFilterCategory(v); setCurrent(0); }}>
+            <SelectTrigger className="h-7 text-[11px] flex-1 min-w-0">
+              <Filter className="w-3 h-3 mr-1 shrink-0" />
+              <SelectValue placeholder="Kategori" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Semua Kategori</SelectItem>
+              {categories.map(c => (
+                <SelectItem key={c} value={c}>{c}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <button
+            onClick={() => setSortOrder(o => o === "newest" ? "oldest" : "newest")}
+            className="flex items-center gap-1 h-7 px-2 rounded-md border bg-background text-[11px] hover:bg-muted transition-colors shrink-0"
+          >
+            <ArrowUpDown className="w-3 h-3" />
+            {sortOrder === "newest" ? "Terbaru" : "Terlama"}
+          </button>
+        </div>
         {!sponsor && q && (
           <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">
             <Search className="w-8 h-8 mb-2 opacity-30" />
