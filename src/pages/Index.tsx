@@ -1161,6 +1161,9 @@ const Index = () => {
               </div>
             </div>
 
+            {/* Sponsor Banner */}
+            <SponsorBanner />
+
             <div className="grid grid-cols-2 gap-3">
               <Card className="cursor-pointer hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 border-primary/10 bg-gradient-to-br from-primary/5 to-transparent" onClick={() => setTab("produk")}>
                 <CardContent className="p-4 text-center">
