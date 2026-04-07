@@ -84,7 +84,42 @@ const MusicPublicTab = ({ onPlaySong }: MusicPublicTabProps) => {
   const [viewingProfile, setViewingProfile] = useState<MusicProfile | null>(null);
   const [viewProfileSongs, setViewProfileSongs] = useState<PublicSong[]>([]);
 
+  // Audio devices (bluetooth etc)
+  const [audioDevices, setAudioDevices] = useState<{ deviceId: string; label: string }[]>([]);
+
   const { toast } = useToast();
+
+  // Detect audio output devices
+  useEffect(() => {
+    const detectDevices = async () => {
+      try {
+        const allDevices = await navigator.mediaDevices.enumerateDevices();
+        const outputs = allDevices.filter(d => d.kind === "audiooutput").map(d => ({ deviceId: d.deviceId, label: d.label || "Perangkat Audio" }));
+        setAudioDevices(outputs);
+      } catch {}
+    };
+    detectDevices();
+    navigator.mediaDevices?.addEventListener("devicechange", detectDevices);
+    return () => navigator.mediaDevices?.removeEventListener("devicechange", detectDevices);
+  }, []);
+
+  const getDeviceIcon = (label: string) => {
+    const l = label.toLowerCase();
+    if (l.includes("bluetooth") || l.includes("bt") || l.includes("airpod") || l.includes("buds")) return <Bluetooth className="w-3.5 h-3.5 text-blue-500" />;
+    if (l.includes("headphone") || l.includes("headset")) return <Headphones className="w-3.5 h-3.5 text-primary" />;
+    if (l.includes("speaker") || l.includes("external")) return <Speaker className="w-3.5 h-3.5 text-primary" />;
+    return <Volume2 className="w-3.5 h-3.5 text-muted-foreground" />;
+  };
+
+  const handleShare = async (text: string, url?: string) => {
+    const shareData = { title: text, text, url: url || window.location.href };
+    if (navigator.share) {
+      try { await navigator.share(shareData); } catch {}
+    } else {
+      await navigator.clipboard.writeText(url || window.location.href);
+      toast({ title: "Link disalin!" });
+    }
+  };
 
   useEffect(() => {
     const init = async () => {
