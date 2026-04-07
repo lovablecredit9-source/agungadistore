@@ -777,6 +777,38 @@ export type Database = {
           },
         ]
       }
+      sponsor_images: {
+        Row: {
+          created_at: string
+          id: string
+          image_order: number
+          image_url: string
+          sponsor_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          image_order?: number
+          image_url: string
+          sponsor_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          image_order?: number
+          image_url?: string
+          sponsor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sponsor_images_sponsor_id_fkey"
+            columns: ["sponsor_id"]
+            isOneToOne: false
+            referencedRelation: "sponsors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sponsors: {
         Row: {
           created_at: string
@@ -785,15 +817,21 @@ export type Database = {
           duration_type: string
           duration_value: number
           expires_at: string | null
+          facebook: string | null
           id: string
           image_url: string | null
+          instagram: string | null
           is_active: boolean
           price: number
           seller_contact: string
           seller_name: string
           starts_at: string
+          threads: string | null
+          tiktok: string | null
           title: string
+          twitter: string | null
           updated_at: string
+          wa_number: string | null
         }
         Insert: {
           created_at?: string
@@ -802,15 +840,21 @@ export type Database = {
           duration_type?: string
           duration_value?: number
           expires_at?: string | null
+          facebook?: string | null
           id?: string
           image_url?: string | null
+          instagram?: string | null
           is_active?: boolean
           price?: number
           seller_contact?: string
           seller_name?: string
           starts_at?: string
+          threads?: string | null
+          tiktok?: string | null
           title: string
+          twitter?: string | null
           updated_at?: string
+          wa_number?: string | null
         }
         Update: {
           created_at?: string
@@ -819,15 +863,21 @@ export type Database = {
           duration_type?: string
           duration_value?: number
           expires_at?: string | null
+          facebook?: string | null
           id?: string
           image_url?: string | null
+          instagram?: string | null
           is_active?: boolean
           price?: number
           seller_contact?: string
           seller_name?: string
           starts_at?: string
+          threads?: string | null
+          tiktok?: string | null
           title?: string
+          twitter?: string | null
           updated_at?: string
+          wa_number?: string | null
         }
         Relationships: []
       }
