@@ -496,6 +496,40 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer }: Playl
       if (cachedBlob) URL.revokeObjectURL(audioUrl);
       if (repeat) { audio.currentTime = 0; audio.play(); } else { playNextFrom(index, songList); }
     });
+
+    // Media Session API - show song info in system media player
+    if ("mediaSession" in navigator) {
+      const artworkList: MediaImage[] = song.cover_url
+        ? [
+            { src: song.cover_url, sizes: "96x96", type: "image/jpeg" },
+            { src: song.cover_url, sizes: "128x128", type: "image/jpeg" },
+            { src: song.cover_url, sizes: "192x192", type: "image/jpeg" },
+            { src: song.cover_url, sizes: "256x256", type: "image/jpeg" },
+            { src: song.cover_url, sizes: "384x384", type: "image/jpeg" },
+            { src: song.cover_url, sizes: "512x512", type: "image/jpeg" },
+          ]
+        : [];
+      navigator.mediaSession.metadata = new MediaMetadata({
+        title: song.title,
+        artist: song.artist,
+        album: viewingPlaylist?.name || "Playlist",
+        artwork: artworkList,
+      });
+      navigator.mediaSession.setActionHandler("play", () => {
+        audioRef.current?.play(); setIsPlaying(true);
+      });
+      navigator.mediaSession.setActionHandler("pause", () => {
+        audioRef.current?.pause(); setIsPlaying(false);
+      });
+      navigator.mediaSession.setActionHandler("previoustrack", () => playPrev());
+      navigator.mediaSession.setActionHandler("nexttrack", () => playNext());
+      navigator.mediaSession.setActionHandler("seekto", (details) => {
+        if (details.seekTime != null && audioRef.current) {
+          audioRef.current.currentTime = details.seekTime;
+          setCurrentTime(details.seekTime);
+        }
+      });
+    }
   }, [songs, playlistItems, viewingPlaylist, volume, muted, repeat, shuffle]);
 
   function playNextFrom(fromIndex: number, songList: Song[]) {
