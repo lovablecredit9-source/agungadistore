@@ -32,8 +32,9 @@ import PlaylistTab, { type PlaybackState } from "@/components/PlaylistTab";
 import LanguageSelector from "@/components/LanguageSelector";
 import { LANGUAGES } from "@/lib/languages";
 import InstallPrompt from "@/components/InstallPrompt";
+import MusicPublicTab from "@/components/MusicPublicTab";
 
-type Tab = "beranda" | "produk" | "voucher" | "history" | "likes" | "tiket" | "saldo" | "playlist";
+type Tab = "beranda" | "produk" | "voucher" | "history" | "likes" | "tiket" | "saldo" | "playlist" | "publik";
 
 interface UserBalance {
   id: string;
@@ -1774,6 +1775,10 @@ const Index = () => {
         <div className={tab === "playlist" ? "" : "hidden"}>
           <PlaylistTab onPlaybackChange={setPlaybackState} onTogglePlay={togglePlayRef} onOpenFullPlayer={openFullPlayerRef} />
         </div>
+
+        {tab === "publik" && (
+          <MusicPublicTab />
+        )}
       </main>
 
       {/* Mini Player - shown when music is playing and not on playlist tab */}
@@ -2607,6 +2612,7 @@ const Index = () => {
             { key: "history" as Tab, icon: Clock, label: t("nav.history", lang) },
             { key: "tiket" as Tab, icon: AlertCircle, label: t("nav.ticket", lang) },
             { key: "playlist" as Tab, icon: Music, label: t("nav.playlist", lang) },
+            { key: "publik" as Tab, icon: Globe, label: "Publik" },
           ]).map(({ key, icon: Icon, label }) => (
             <button key={key} onClick={() => setTab(key)}
               className={`flex-1 flex flex-col items-center py-2 text-[10px] transition-all duration-200 ${tab === key ? "text-primary font-bold" : "text-muted-foreground hover:text-foreground"}`}>
