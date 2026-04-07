@@ -1017,6 +1017,34 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer }: Playl
         </Card>
       )}
 
+      {/* ===== REKOMENDASI UNTUKMU (Liked Songs) ===== */}
+      {activeView === "playlist" && !viewingPlaylist && likedSongIds.size > 0 && (
+        <div className="space-y-2">
+          <p className="text-xs font-bold text-muted-foreground flex items-center gap-1.5">
+            <Heart className="w-3.5 h-3.5 text-destructive" /> Rekomendasi Untukmu ({likedSongIds.size})
+          </p>
+          <div className="flex gap-2 overflow-x-auto pb-2 -mx-1 px-1">
+            {songs.filter(s => likedSongIds.has(s.id)).map((song, i) => (
+              <Card key={song.id} className="min-w-[140px] max-w-[140px] shrink-0 overflow-hidden cursor-pointer hover:shadow-md transition-all" onClick={() => {
+                const idx = songs.findIndex(s => s.id === song.id);
+                if (idx >= 0) playSong(idx);
+              }}>
+                <CardContent className="p-2 space-y-1.5">
+                  <div className="w-full aspect-square rounded-lg bg-primary/10 overflow-hidden relative">
+                    {song.cover_url ? <img src={song.cover_url} alt="" className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center"><Music className="w-8 h-8 text-primary/40" /></div>}
+                    <button onClick={(e) => toggleLikeSong(song.id, e)} className="absolute top-1 right-1 w-6 h-6 rounded-full bg-background/80 flex items-center justify-center">
+                      <Heart className="w-3.5 h-3.5 fill-destructive text-destructive" />
+                    </button>
+                  </div>
+                  <p className="text-xs font-bold truncate">{song.title}</p>
+                  <p className="text-[10px] text-muted-foreground truncate">{song.artist}</p>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* ===== ALL SONGS VIEW ===== */}
       {activeView === "playlist" && !viewingPlaylist && renderSongList(songs)}
 
