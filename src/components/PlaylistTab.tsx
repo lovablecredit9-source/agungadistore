@@ -20,6 +20,7 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter
 } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
+import DeviceInfoCard from "@/components/DeviceInfoCard";
 
 interface Song {
   id: string;
@@ -785,6 +786,9 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer }: Playl
           </CardContent>
         </Card>
       )}
+
+      {/* Device Info */}
+      <DeviceInfoCard />
 
       {/* Now Playing */}
       {currentSong && (
