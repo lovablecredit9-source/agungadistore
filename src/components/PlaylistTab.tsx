@@ -410,26 +410,51 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer }: Playl
     const visitorId = await getVisitorIdSafe();
     if (likedSongIds.has(songId)) {
       await supabase.from("liked_songs").delete().eq("song_id", songId).eq("visitor_id", visitorId);
-      setLikedSongIds(prev => { const n = new Set(prev); n.delete(songId); return n; });
+      setLikedSongIds(prev => {
+        const next = new Set(prev);
+        next.delete(songId);
+        setTimeout(() => {
+          const fallbackIds = buildFallbackRecommendationIds(songs, next);
+          setAiRecommendedIds(fallbackIds);
+          void fetchAiRecommendations();
+        }, 0);
+        return next;
+      });
     } else {
       await supabase.from("liked_songs").insert({ song_id: songId, visitor_id: visitorId });
-      setLikedSongIds(prev => new Set(prev).add(songId));
+      setLikedSongIds(prev => {
+        const next = new Set(prev).add(songId);
+        setTimeout(() => {
+          const fallbackIds = buildFallbackRecommendationIds(songs, next);
+          setAiRecommendedIds(fallbackIds);
+          void fetchAiRecommendations();
+        }, 0);
+        return next;
+      });
     }
   }
 
   async function fetchAiRecommendations() {
     setLoadingRecs(true);
+    const fallbackIds = buildFallbackRecommendationIds(songs, likedSongIds);
     try {
       const visitorId = await getVisitorIdSafe();
       const { data, error } = await supabase.functions.invoke("recommend-songs", {
         body: { visitor_id: visitorId },
       });
       if (error) throw error;
-      if (data?.recommended_ids) setAiRecommendedIds(data.recommended_ids);
+
+      const nextIds = Array.isArray(data?.recommended_ids)
+        ? data.recommended_ids.filter((id: unknown): id is string => typeof id === "string")
+        : [];
+
+      setAiRecommendedIds(nextIds.length > 0 ? nextIds : fallbackIds);
     } catch (err) {
       console.error("AI recommendation error:", err);
+      setAiRecommendedIds(fallbackIds);
+    } finally {
+      setLoadingRecs(false);
     }
-    setLoadingRecs(false);
   }
 
   async function fetchSongs() {
