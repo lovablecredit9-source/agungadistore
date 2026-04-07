@@ -881,24 +881,28 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer }: Playl
         </div>
       </div>
 
-      {/* Tab Buttons */}
+      {/* Tab Buttons - Row 1 */}
       <div className="flex gap-1.5">
-        <Button variant={activeView === "playlist" ? "default" : "outline"} size="sm" className="flex-1 gap-1.5 text-[11px] px-2" onClick={() => { setActiveView("playlist"); setViewingPlaylist(null); }}>
-          <Music className="w-3.5 h-3.5" /> Semua ({songs.length})
+        <Button variant={activeView === "playlist" ? "default" : "outline"} size="sm" className="flex-1 gap-1 text-[10px] px-1.5" onClick={() => { setActiveView("playlist"); setViewingPlaylist(null); }}>
+          <Music className="w-3 h-3" /> Semua
         </Button>
-        <Button variant={activeView === "liked" ? "default" : "outline"} size="sm" className="flex-1 gap-1.5 text-[11px] px-2" onClick={() => { setActiveView("liked"); setViewingPlaylist(null); }}>
-          <Heart className="w-3.5 h-3.5" /> Suka
-          {likedSongIds.size > 0 && <span className="bg-destructive/20 text-destructive text-[10px] font-bold px-1 rounded-full">{likedSongIds.size}</span>}
+        <Button variant={activeView === "liked" ? "default" : "outline"} size="sm" className="flex-1 gap-1 text-[10px] px-1.5" onClick={() => { setActiveView("liked"); setViewingPlaylist(null); }}>
+          <Heart className="w-3 h-3" /> Suka
         </Button>
-        <Button variant={activeView === "myplaylists" ? "default" : "outline"} size="sm" className="flex-1 gap-1.5 text-[11px] px-2" onClick={() => { setActiveView("myplaylists"); setViewingPlaylist(null); }}>
-          <ListMusic className="w-3.5 h-3.5" /> Playlist
+        <Button variant={activeView === "myplaylists" ? "default" : "outline"} size="sm" className="flex-1 gap-1 text-[10px] px-1.5" onClick={() => { setActiveView("myplaylists"); setViewingPlaylist(null); }}>
+          <ListMusic className="w-3 h-3" /> Playlist
         </Button>
-        <Button variant={activeView === "storage" ? "default" : "outline"} size="sm" className="flex-1 gap-1.5 text-[11px] px-2" onClick={() => setActiveView("storage")}>
-          <HardDrive className="w-3.5 h-3.5" /> Storage
-          {cachedCount > 0 && <span className="bg-accent/20 text-accent text-[10px] font-bold px-1 rounded-full">{cachedCount}</span>}
+        <Button variant={activeView === "storage" ? "default" : "outline"} size="sm" className="flex-1 gap-1 text-[10px] px-1.5" onClick={() => setActiveView("storage")}>
+          <HardDrive className="w-3 h-3" /> Storage
         </Button>
-        <Button variant={activeView === "public" ? "default" : "outline"} size="sm" className="flex-1 gap-1.5 text-[11px] px-2" onClick={() => setActiveView("public")}>
-          <Users className="w-3.5 h-3.5" /> Publik
+      </div>
+      {/* Tab Buttons - Row 2 */}
+      <div className="flex gap-1.5">
+        <Button variant={activeView === "public" ? "default" : "outline"} size="sm" className="flex-1 gap-1 text-[10px] px-1.5" onClick={() => setActiveView("public")}>
+          <Users className="w-3 h-3" /> Publik
+        </Button>
+        <Button variant={activeView === "artist" ? "default" : "outline"} size="sm" className="flex-1 gap-1 text-[10px] px-1.5" onClick={() => setActiveView("artist")}>
+          <Mic2 className="w-3 h-3" /> Artist
         </Button>
       </div>
 
