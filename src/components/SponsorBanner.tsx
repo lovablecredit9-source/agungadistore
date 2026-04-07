@@ -1,9 +1,12 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Megaphone, Clock, User, Phone, ChevronLeft, ChevronRight, X, Search } from "lucide-react";
+import { Megaphone, Clock, User, Phone, ChevronLeft, ChevronRight, X, Search, Filter, ArrowUpDown } from "lucide-react";
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
 
 interface SponsorImage {
   id: string;
@@ -34,7 +37,10 @@ interface Sponsor {
   tiktok: string;
   twitter: string;
   threads: string;
+  category: string;
 }
+
+type SortOrder = "newest" | "oldest";
 
 function timeRemaining(expiresAt: string | null): string {
   if (!expiresAt) return "Tanpa batas";
@@ -71,7 +77,13 @@ export default function SponsorBanner() {
   const [imgIdx, setImgIdx] = useState(0);
   const [search, setSearch] = useState("");
   const [showSearch, setShowSearch] = useState(false);
+  const [filterCategory, setFilterCategory] = useState("all");
+  const [sortOrder, setSortOrder] = useState<SortOrder>("newest");
 
+  const categories = useMemo(() => {
+    const cats = new Set(sponsors.map(s => s.category).filter(Boolean));
+    return Array.from(cats).sort();
+  }, [sponsors]);
   useEffect(() => {
     fetchSponsors();
     const interval = setInterval(fetchSponsors, 60000);
@@ -120,13 +132,21 @@ export default function SponsorBanner() {
   );
 
   const q = search.toLowerCase().trim();
-  const filtered = q
-    ? sponsors.filter(s =>
-        s.title.toLowerCase().includes(q) ||
-        s.seller_name.toLowerCase().includes(q) ||
-        String(s.sponsor_number).includes(q)
-      )
-    : sponsors;
+  const filtered = sponsors
+    .filter(s => {
+      if (filterCategory !== "all" && s.category !== filterCategory) return false;
+      if (q) {
+        return s.title.toLowerCase().includes(q) ||
+          s.seller_name.toLowerCase().includes(q) ||
+          String(s.sponsor_number).includes(q);
+      }
+      return true;
+    })
+    .sort((a, b) => {
+      const da = new Date(a.created_at).getTime();
+      const db = new Date(b.created_at).getTime();
+      return sortOrder === "newest" ? db - da : da - db;
+    });
 
   const sponsor = filtered.length > 0 ? filtered[current % filtered.length] : null;
 
@@ -170,6 +190,28 @@ export default function SponsorBanner() {
             )}
           </div>
         )}
+        {/* Filter & Sort Bar */}
+        <div className="flex items-center gap-2 mb-2">
+          <Select value={filterCategory} onValueChange={v => { setFilterCategory(v); setCurrent(0); }}>
+            <SelectTrigger className="h-7 text-[11px] flex-1 min-w-0">
+              <Filter className="w-3 h-3 mr-1 shrink-0" />
+              <SelectValue placeholder="Kategori" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Semua Kategori</SelectItem>
+              {categories.map(c => (
+                <SelectItem key={c} value={c}>{c}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <button
+            onClick={() => setSortOrder(o => o === "newest" ? "oldest" : "newest")}
+            className="flex items-center gap-1 h-7 px-2 rounded-md border bg-background text-[11px] hover:bg-muted transition-colors shrink-0"
+          >
+            <ArrowUpDown className="w-3 h-3" />
+            {sortOrder === "newest" ? "Terbaru" : "Terlama"}
+          </button>
+        </div>
         {!sponsor && q && (
           <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">
             <Search className="w-8 h-8 mb-2 opacity-30" />
