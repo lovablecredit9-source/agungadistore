@@ -31,6 +31,7 @@ interface Sponsor {
   is_active: boolean;
   custom_note: string | null;
   created_at: string;
+  sponsor_number: number;
   wa_number: string;
   instagram: string;
   facebook: string;
