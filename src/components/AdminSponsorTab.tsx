@@ -125,6 +125,7 @@ function SponsorForm({
       setDurationValue(String(editing.duration_value));
       setCustomNote(editing.custom_note || "");
       setCategory(editing.category || "");
+      setStock(String(editing.stock || 0));
       setWaNumber(editing.wa_number || "");
       setInstagram(editing.instagram || "");
       setFacebook(editing.facebook || "");
