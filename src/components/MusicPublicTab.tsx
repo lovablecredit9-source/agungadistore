@@ -487,9 +487,14 @@ const MusicPublicTab = ({ onPlaySong }: MusicPublicTabProps) => {
                     </div>
                   </div>
                 </div>
-                <Button variant="outline" size="sm" onClick={() => { setProfileUsername(myProfile.username); setProfileDesc(myProfile.description || ""); setShowProfileSetup(true); }}>
-                  Edit Profil
-                </Button>
+                <div className="flex gap-2">
+                  <Button variant="outline" size="sm" onClick={() => { setProfileUsername(myProfile.username); setProfileDesc(myProfile.description || ""); setShowProfileSetup(true); }}>
+                    Edit Profil
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={() => handleShare(`Profil musik @${myProfile.username}`, window.location.href)}>
+                    <Share2 className="w-3 h-3 mr-1" /> Share
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           ) : (
