@@ -278,7 +278,7 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer }: Playl
   const [selectedUserSongIds, setSelectedUserSongIds] = useState<Set<string>>(new Set());
   const [savingUserSongs, setSavingUserSongs] = useState(false);
 
-  const [activeView, setActiveView] = useState<"playlist" | "myplaylists" | "storage">("playlist");
+  const [activeView, setActiveView] = useState<"playlist" | "myplaylists" | "storage" | "liked">("playlist");
 
   // Voucher redeem
   const [redeemCode, setRedeemCode] = useState("");
