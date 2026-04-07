@@ -9,8 +9,9 @@ import {
   Music, Play, Pause, SkipBack, SkipForward, Download, Volume2, VolumeX,
   Repeat, Shuffle, Loader2, HardDrive, Globe, CheckCircle2, Trash2,
   WifiOff, Wifi, Crown, Zap, Clock, ListMusic, Plus, Edit2, Check, Lock, Heart,
-  FileText, Copyright, Type, ChevronDown, Share2, Timer, Sparkles, List, Ticket, Tag
+  FileText, Copyright, Type, ChevronDown, Share2, Timer, Sparkles, List, Ticket, Tag, Globe as GlobeIcon, Users
 } from "lucide-react";
+import MusicPublicTab from "@/components/MusicPublicTab";
 import { useToast } from "@/hooks/use-toast";
 import { Slider } from "@/components/ui/slider";
 import {
@@ -278,7 +279,7 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer }: Playl
   const [selectedUserSongIds, setSelectedUserSongIds] = useState<Set<string>>(new Set());
   const [savingUserSongs, setSavingUserSongs] = useState(false);
 
-  const [activeView, setActiveView] = useState<"playlist" | "myplaylists" | "storage" | "liked">("playlist");
+  const [activeView, setActiveView] = useState<"playlist" | "myplaylists" | "storage" | "liked" | "public">("playlist");
 
   // Voucher redeem
   const [redeemCode, setRedeemCode] = useState("");
@@ -893,6 +894,9 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer }: Playl
         <Button variant={activeView === "storage" ? "default" : "outline"} size="sm" className="flex-1 gap-1.5 text-[11px] px-2" onClick={() => setActiveView("storage")}>
           <HardDrive className="w-3.5 h-3.5" /> Storage
           {cachedCount > 0 && <span className="bg-accent/20 text-accent text-[10px] font-bold px-1 rounded-full">{cachedCount}</span>}
+        </Button>
+        <Button variant={activeView === "public" ? "default" : "outline"} size="sm" className="flex-1 gap-1.5 text-[11px] px-2" onClick={() => setActiveView("public")}>
+          <Users className="w-3.5 h-3.5" /> Publik
         </Button>
       </div>
 
@@ -1571,6 +1575,23 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer }: Playl
           </div>
         </CardContent>
       </Card>
+
+      {/* ===== PUBLIC MUSIC VIEW ===== */}
+      {activeView === "public" && (
+        <MusicPublicTab onPlaySong={(song) => {
+          const idx = songs.findIndex(s => s.id === song.id);
+          if (idx >= 0) { playSong(idx); }
+          else {
+            // Play directly for public songs not in admin playlist
+            const audio = audioRef.current;
+            if (audio) {
+              audio.src = song.file_url;
+              audio.play().catch(() => {});
+              setIsPlaying(true);
+            }
+          }
+        }} />
+      )}
 
       {/* Terms & Privacy Dialog */}
       <Dialog open={termsOpen} onOpenChange={setTermsOpen}>
