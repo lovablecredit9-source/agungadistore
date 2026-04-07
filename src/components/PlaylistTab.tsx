@@ -898,9 +898,6 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer }: Playl
       </div>
       {/* Tab Buttons - Row 2 */}
       <div className="flex gap-1.5">
-        <Button variant={activeView === "public" ? "default" : "outline"} size="sm" className="flex-1 gap-1 text-[10px] px-1.5" onClick={() => setActiveView("public")}>
-          <Users className="w-3 h-3" /> Publik
-        </Button>
         <Button variant={activeView === "artist" ? "default" : "outline"} size="sm" className="flex-1 gap-1 text-[10px] px-1.5" onClick={() => setActiveView("artist")}>
           <Mic2 className="w-3 h-3" /> Artist
         </Button>
@@ -1599,22 +1596,8 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer }: Playl
         </CardContent>
       </Card>
 
-      {/* ===== PUBLIC MUSIC VIEW ===== */}
-      {activeView === "public" && (
-        <MusicPublicTab onPlaySong={(song) => {
-          const idx = songs.findIndex(s => s.id === song.id);
-          if (idx >= 0) { playSong(idx); }
-          else {
-            // Play directly for public songs not in admin playlist
-            const audio = audioRef.current;
-            if (audio) {
-              audio.src = song.file_url;
-              audio.play().catch(() => {});
-              setIsPlaying(true);
-            }
-          }
-        }} />
-      )}
+
+
 
       {/* ===== ARTIST VIEW ===== */}
       {activeView === "artist" && (
