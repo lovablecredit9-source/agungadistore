@@ -184,6 +184,35 @@ export type Database = {
           },
         ]
       }
+      liked_songs: {
+        Row: {
+          created_at: string
+          id: string
+          song_id: string
+          visitor_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          song_id: string
+          visitor_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          song_id?: string
+          visitor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "liked_songs_song_id_fkey"
+            columns: ["song_id"]
+            isOneToOne: false
+            referencedRelation: "playlist_songs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       music_discount_vouchers: {
         Row: {
           code: string

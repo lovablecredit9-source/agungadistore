@@ -8,7 +8,7 @@ import { Progress } from "@/components/ui/progress";
 import {
   Music, Play, Pause, SkipBack, SkipForward, Download, Volume2, VolumeX,
   Repeat, Shuffle, Loader2, HardDrive, Globe, CheckCircle2, Trash2,
-  WifiOff, Wifi, Crown, Zap, Clock, ListMusic, Plus, Edit2, Check, Lock,
+  WifiOff, Wifi, Crown, Zap, Clock, ListMusic, Plus, Edit2, Check, Lock, Heart,
   FileText, Copyright, Type, ChevronDown, Share2, Timer, Sparkles, List, Ticket, Tag
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -243,6 +243,8 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer }: Playl
   const [duration, setDuration] = useState(0);
   const [volume, setVolume] = useState(1);
   const [muted, setMuted] = useState(false);
+  // Liked songs
+  const [likedSongIds, setLikedSongIds] = useState<Set<string>>(new Set());
   const [repeat, setRepeat] = useState(false);
   const [shuffle, setShuffle] = useState(false);
   const [downloading, setDownloading] = useState<string | null>(null);
@@ -313,7 +315,7 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer }: Playl
     return () => clearInterval(interval);
   }, [activeRedeemedMb]);
 
-  useEffect(() => { fetchSongs(); fetchRedeemedStorages(); checkPinExists(); }, []);
+  useEffect(() => { fetchSongs(); fetchRedeemedStorages(); checkPinExists(); fetchLikedSongs(); }, []);
   // Update maxBytes when activeRedeemedMb changes
   useEffect(() => { setMaxBytes(getTotalMaxBytes(activeRedeemedMb)); }, [activeRedeemedMb]);
 
@@ -369,6 +371,24 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer }: Playl
   async function getVisitorIdSafe() {
     const { getVisitorId } = await import("@/lib/visitor-id");
     return getVisitorId();
+  }
+
+  async function fetchLikedSongs() {
+    const visitorId = await getVisitorIdSafe();
+    const { data } = await supabase.from("liked_songs").select("song_id").eq("visitor_id", visitorId);
+    if (data) setLikedSongIds(new Set(data.map((d: any) => d.song_id)));
+  }
+
+  async function toggleLikeSong(songId: string, e?: React.MouseEvent) {
+    e?.stopPropagation();
+    const visitorId = await getVisitorIdSafe();
+    if (likedSongIds.has(songId)) {
+      await supabase.from("liked_songs").delete().eq("song_id", songId).eq("visitor_id", visitorId);
+      setLikedSongIds(prev => { const n = new Set(prev); n.delete(songId); return n; });
+    } else {
+      await supabase.from("liked_songs").insert({ song_id: songId, visitor_id: visitorId });
+      setLikedSongIds(prev => new Set(prev).add(songId));
+    }
   }
 
   async function fetchSongs() {
@@ -697,6 +717,9 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer }: Playl
                   {song.release_date ? `Dirilis ${formatSongDate(song.release_date)}` : `Diunggah ${formatDate(song.created_at)}`}
                 </p>
               </div>
+              <button onClick={(e) => toggleLikeSong(song.id, e)} className="shrink-0 p-1">
+                <Heart className={`w-4 h-4 transition-colors ${likedSongIds.has(song.id) ? "fill-destructive text-destructive" : "text-muted-foreground hover:text-destructive"}`} />
+              </button>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button size="sm" variant="ghost" className="shrink-0 h-8 w-8 p-0" onClick={(e) => e.stopPropagation()} disabled={downloading === song.id}>
@@ -992,6 +1015,34 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer }: Playl
             )}
           </CardContent>
         </Card>
+      )}
+
+      {/* ===== REKOMENDASI UNTUKMU (Liked Songs) ===== */}
+      {activeView === "playlist" && !viewingPlaylist && likedSongIds.size > 0 && (
+        <div className="space-y-2">
+          <p className="text-xs font-bold text-muted-foreground flex items-center gap-1.5">
+            <Heart className="w-3.5 h-3.5 text-destructive" /> Rekomendasi Untukmu ({likedSongIds.size})
+          </p>
+          <div className="flex gap-2 overflow-x-auto pb-2 -mx-1 px-1">
+            {songs.filter(s => likedSongIds.has(s.id)).map((song, i) => (
+              <Card key={song.id} className="min-w-[140px] max-w-[140px] shrink-0 overflow-hidden cursor-pointer hover:shadow-md transition-all" onClick={() => {
+                const idx = songs.findIndex(s => s.id === song.id);
+                if (idx >= 0) playSong(idx);
+              }}>
+                <CardContent className="p-2 space-y-1.5">
+                  <div className="w-full aspect-square rounded-lg bg-primary/10 overflow-hidden relative">
+                    {song.cover_url ? <img src={song.cover_url} alt="" className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center"><Music className="w-8 h-8 text-primary/40" /></div>}
+                    <button onClick={(e) => toggleLikeSong(song.id, e)} className="absolute top-1 right-1 w-6 h-6 rounded-full bg-background/80 flex items-center justify-center">
+                      <Heart className="w-3.5 h-3.5 fill-destructive text-destructive" />
+                    </button>
+                  </div>
+                  <p className="text-xs font-bold truncate">{song.title}</p>
+                  <p className="text-[10px] text-muted-foreground truncate">{song.artist}</p>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
       )}
 
       {/* ===== ALL SONGS VIEW ===== */}
