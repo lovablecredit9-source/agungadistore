@@ -11,7 +11,7 @@ import {
   HelpCircle, X, ExternalLink, Search, ChevronLeft, ChevronRight, FileText,
   Heart, Send, ImagePlus, AlertCircle, History, Wallet, ArrowUpCircle, ArrowDownCircle,
   Bell, Check, CheckCheck, Globe, Edit2, ShoppingCart, Plus, Minus, Trash2,
-  Moon, Sun, Lock, Tag, Music
+  Moon, Sun, Lock, Tag, Music, Megaphone
 } from "lucide-react";
 import { useTheme } from "@/lib/theme";
 import { useToast } from "@/hooks/use-toast";
@@ -35,7 +35,7 @@ import InstallPrompt from "@/components/InstallPrompt";
 import MusicPublicTab from "@/components/MusicPublicTab";
 import SponsorBanner from "@/components/SponsorBanner";
 
-type Tab = "beranda" | "produk" | "voucher" | "history" | "likes" | "tiket" | "saldo" | "playlist" | "publik";
+type Tab = "beranda" | "produk" | "voucher" | "history" | "likes" | "tiket" | "saldo" | "playlist" | "publik" | "sponsor";
 
 interface UserBalance {
   id: string;
@@ -1161,8 +1161,6 @@ const Index = () => {
               </div>
             </div>
 
-            {/* Sponsor Banner */}
-            <SponsorBanner />
 
             <div className="grid grid-cols-2 gap-3">
               <Card className="cursor-pointer hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 border-primary/10 bg-gradient-to-br from-primary/5 to-transparent" onClick={() => setTab("produk")}>
@@ -1783,6 +1781,10 @@ const Index = () => {
 
         {tab === "publik" && (
           <MusicPublicTab onPlaySong={(song) => playExternalRef.current?.(song)} />
+        )}
+
+        {tab === "sponsor" && (
+          <SponsorBanner />
         )}
       </main>
 
@@ -2618,6 +2620,7 @@ const Index = () => {
             { key: "tiket" as Tab, icon: AlertCircle, label: t("nav.ticket", lang) },
             { key: "playlist" as Tab, icon: Music, label: t("nav.playlist", lang) },
             { key: "publik" as Tab, icon: Globe, label: "Publik" },
+            { key: "sponsor" as Tab, icon: Megaphone, label: "Sponsor" },
           ]).map(({ key, icon: Icon, label }) => (
             <button key={key} onClick={() => setTab(key)}
               className={`flex-1 flex flex-col items-center py-2 text-[10px] transition-all duration-200 ${tab === key ? "text-primary font-bold" : "text-muted-foreground hover:text-foreground"}`}>
