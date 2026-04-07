@@ -34,6 +34,7 @@ interface Sponsor {
   custom_note: string | null;
   created_at: string;
   sponsor_number: number;
+  category: string;
   wa_number: string;
   instagram: string;
   facebook: string;
