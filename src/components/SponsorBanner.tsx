@@ -390,6 +390,11 @@ function SponsorDetailModal({ sponsor, images, onClose }: { sponsor: Sponsor; im
               <span className="font-medium">Sisa waktu:</span>
               <span>{timeRemaining(sponsor.expires_at)}</span>
             </div>
+            <div className="flex items-center gap-2">
+              <Megaphone className="w-4 h-4 text-primary" />
+              <span className="font-medium">Stok:</span>
+              <span className={sponsor.stock > 0 ? "text-foreground" : "text-destructive font-bold"}>{sponsor.stock > 0 ? sponsor.stock : "Habis"}</span>
+            </div>
           </div>
 
           {/* Social Media Buttons */}
