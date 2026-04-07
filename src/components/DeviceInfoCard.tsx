@@ -1,14 +1,17 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import {
-  Smartphone, Battery, Wifi, Signal, Navigation, Clock, Monitor, Zap, BatteryCharging, Timer
+  Smartphone, Battery, Wifi, Signal, Navigation, Clock, Monitor, 
+  BatteryCharging, Timer, MapPin, Globe, Cpu
 } from "lucide-react";
+import { collectDeviceInfo } from "@/lib/device-info";
 
 interface DeviceData {
   deviceType: string;
   os: string;
   osVersion: string;
   browser: string;
+  deviceModel: string;
   batteryLevel: number | null;
   batteryCharging: boolean | null;
   connectionType: string;
@@ -16,59 +19,24 @@ interface DeviceData {
   downlinkMbps: number | null;
   rttMs: number | null;
   screenSize: string;
-  platform: string;
   estimatedWatts: number | null;
   estimatedTimeToFull: string | null;
   chargingType: string;
+  ipAddress: string;
+  location: string;
+  isp: string;
 }
 
-function getOSInfo(): { os: string; version: string } {
-  const ua = navigator.userAgent;
-  if (/Android (\d+(\.\d+)*)/.test(ua)) {
-    const v = ua.match(/Android (\d+(\.\d+)*)/)?.[1] || "";
-    return { os: "Android", version: v };
-  }
-  if (/iPhone|iPad/.test(ua)) {
-    const v = ua.match(/OS (\d+[_\d]*)/)?.[1]?.replace(/_/g, ".") || "";
-    return { os: "iOS", version: v };
-  }
-  if (/Windows NT/.test(ua)) return { os: "Windows", version: "" };
-  if (/Mac OS X/.test(ua)) return { os: "macOS", version: "" };
-  if (/Linux/.test(ua)) return { os: "Linux", version: "" };
-  return { os: "Unknown", version: "" };
-}
-
-function getBrowser(): string {
-  const ua = navigator.userAgent;
-  if (/Edg\//.test(ua)) return "Edge";
-  if (/OPR\/|Opera/.test(ua)) return "Opera";
-  if (/SamsungBrowser/.test(ua)) return "Samsung Browser";
-  if (/Chrome\//.test(ua) && !/Edg/.test(ua)) return "Chrome";
-  if (/Firefox\//.test(ua)) return "Firefox";
-  if (/Safari\//.test(ua) && !/Chrome/.test(ua)) return "Safari";
-  return "Unknown";
-}
-
-function getDeviceType(): string {
-  const ua = navigator.userAgent;
-  if (/iPad/.test(ua)) return "Tablet";
-  if (/iPhone/.test(ua)) return "iPhone";
-  if (/Mobile|Android/.test(ua)) return "HP (Mobile)";
-  return "Desktop/Laptop";
-}
-
-function estimateChargingWatts(ratePerMinute: number, batteryCapacityWh: number): number {
-  // ratePerMinute = % per minute
-  // watts = (rate/100 * capacity) * 60
-  return Math.round((ratePerMinute / 100) * batteryCapacityWh * 60 * 10) / 10;
+function estimateChargingWatts(ratePerMinute: number, capacityWh: number): number {
+  return Math.round((ratePerMinute / 100) * capacityWh * 60 * 10) / 10;
 }
 
 function classifyCharging(watts: number): string {
   if (watts >= 60) return "SuperVOOC / SuperCharge";
   if (watts >= 30) return "Fast Charging";
   if (watts >= 15) return "Quick Charge";
-  if (watts >= 7) return "Normal Charging";
-  if (watts > 0) return "Slow Charging";
+  if (watts >= 7) return "Normal";
+  if (watts > 0) return "Slow";
   return "Tidak mengisi";
 }
 
@@ -83,7 +51,7 @@ function formatTimeToFull(currentLevel: number, ratePerMinute: number): string {
   return `~${h}j ${m}m`;
 }
 
-const BATTERY_CAPACITY_WH = 18; // ~5000mAh @ 3.7V, typical phone
+const BATTERY_CAPACITY_WH = 18;
 
 const DeviceInfoCard = () => {
   const [data, setData] = useState<DeviceData | null>(null);
@@ -93,8 +61,6 @@ const DeviceInfoCard = () => {
     const now = Date.now();
     const history = batteryHistoryRef.current;
     history.push({ time: now, level });
-
-    // Keep last 20 samples
     if (history.length > 20) history.shift();
 
     let estimatedWatts: number | null = null;
@@ -106,7 +72,6 @@ const DeviceInfoCard = () => {
       const newest = history[history.length - 1];
       const timeDiffMin = (newest.time - oldest.time) / 60000;
       const levelDiff = newest.level - oldest.level;
-
       if (timeDiffMin > 0.3 && levelDiff > 0) {
         const ratePerMin = levelDiff / timeDiffMin;
         estimatedWatts = estimateChargingWatts(ratePerMin, BATTERY_CAPACITY_WH);
@@ -117,18 +82,11 @@ const DeviceInfoCard = () => {
         estimatedTimeToFull = "Menghitung...";
       }
     }
-
-    if (!charging) {
-      batteryHistoryRef.current = [];
-    }
+    if (!charging) batteryHistoryRef.current = [];
 
     setData(prev => prev ? {
-      ...prev,
-      batteryLevel: Math.round(level),
-      batteryCharging: charging,
-      estimatedWatts,
-      estimatedTimeToFull,
-      chargingType,
+      ...prev, batteryLevel: Math.round(level), batteryCharging: charging,
+      estimatedWatts, estimatedTimeToFull, chargingType,
     } : prev);
   }, []);
 
@@ -138,32 +96,27 @@ const DeviceInfoCard = () => {
     let batteryPollId: ReturnType<typeof setInterval> | null = null;
 
     const collect = async () => {
-      const osInfo = getOSInfo();
       const nav = navigator as any;
+
+      // Device info from existing lib
+      const deviceInfo = await collectDeviceInfo();
 
       // Battery
       let batteryLevel: number | null = null;
       let batteryCharging: boolean | null = null;
-      let batt: any = null;
       try {
         if (nav.getBattery) {
-          batt = await nav.getBattery();
+          const batt = await nav.getBattery();
           batteryLevel = Math.round(batt.level * 100);
           batteryCharging = batt.charging;
-
           batteryHistoryRef.current = [{ time: Date.now(), level: batteryLevel! }];
-
-          const update = () => {
-            updateChargingEstimate(Math.round(batt.level * 100), batt.charging);
-          };
+          const update = () => updateChargingEstimate(Math.round(batt.level * 100), batt.charging);
           batt.addEventListener("levelchange", update);
           batt.addEventListener("chargingchange", update);
           batteryCleanup = () => {
             batt.removeEventListener("levelchange", update);
             batt.removeEventListener("chargingchange", update);
           };
-
-          // Poll battery every 30s for charging estimate
           batteryPollId = setInterval(() => {
             updateChargingEstimate(Math.round(batt.level * 100), batt.charging);
           }, 30000);
@@ -173,75 +126,69 @@ const DeviceInfoCard = () => {
       // Connection
       const conn = nav.connection || nav.mozConnection || nav.webkitConnection;
       const getConnData = () => {
-        if (!conn) return {
-          connectionType: "Tidak diketahui",
-          effectiveType: "",
-          downlinkMbps: null as number | null,
-          rttMs: null as number | null,
-        };
+        if (!conn) return { connectionType: "Tidak diketahui", effectiveType: "", downlinkMbps: null as number | null, rttMs: null as number | null };
         const ct = conn.type || "";
         let connectionType = "Tidak diketahui";
         if (ct === "wifi") connectionType = "WiFi";
         else if (ct === "cellular") connectionType = "Data Seluler";
         else if (ct === "ethernet") connectionType = "Ethernet";
         else if (ct === "none") connectionType = "Tidak ada koneksi";
-        else if (ct === "bluetooth") connectionType = "Bluetooth";
         else if (ct) connectionType = ct;
         return {
-          connectionType,
-          effectiveType: conn.effectiveType || "",
-          downlinkMbps: conn.downlink ?? null,
-          rttMs: conn.rtt ?? null,
+          connectionType, effectiveType: conn.effectiveType || "",
+          downlinkMbps: conn.downlink ?? null, rttMs: conn.rtt ?? null,
         };
       };
 
-      const screenSize = `${window.screen.width}x${window.screen.height}`;
-
-      let platform = osInfo.os;
-      let osVersion = osInfo.version;
+      // IP & Location via free API
+      let ipAddress = "Memuat...";
+      let location = "Memuat...";
+      let isp = "";
       try {
-        if (nav.userAgentData?.getHighEntropyValues) {
-          const hints = await nav.userAgentData.getHighEntropyValues([
-            "platform", "platformVersion", "model"
-          ]);
-          if (hints.platform) platform = hints.platform;
-          if (hints.platformVersion) osVersion = hints.platformVersion;
+        const res = await fetch("https://ipapi.co/json/", { signal: AbortSignal.timeout(5000) });
+        if (res.ok) {
+          const ip = await res.json();
+          ipAddress = ip.ip || "N/A";
+          location = [ip.city, ip.region, ip.country_name].filter(Boolean).join(", ") || "N/A";
+          isp = ip.org || "";
         }
-      } catch {}
+      } catch {
+        ipAddress = "Gagal memuat";
+        location = "Gagal memuat";
+      }
 
       const connData = getConnData();
+      const screenSize = `${window.screen.width}x${window.screen.height}`;
 
       setData({
-        deviceType: getDeviceType(),
-        os: platform,
-        osVersion,
-        browser: getBrowser(),
+        deviceType: deviceInfo.device,
+        os: deviceInfo.os,
+        osVersion: "",
+        browser: deviceInfo.browser,
+        deviceModel: deviceInfo.device,
         batteryLevel,
         batteryCharging,
         ...connData,
         screenSize,
-        platform,
         estimatedWatts: null,
         estimatedTimeToFull: batteryCharging ? "Menghitung..." : null,
         chargingType: batteryCharging ? "Menghitung..." : "Tidak mengisi",
+        ipAddress,
+        location,
+        isp,
       });
 
-      // Poll connection stats every 3 seconds for real-time updates
+      // Poll connection every 3s
       connectionPollId = setInterval(() => {
-        const updated = getConnData();
-        setData(prev => prev ? { ...prev, ...updated } : prev);
+        setData(prev => prev ? { ...prev, ...getConnData() } : prev);
       }, 3000);
 
-      // Listen connection changes too
-      const onConnChange = () => {
-        const updated = getConnData();
-        setData(prev => prev ? { ...prev, ...updated } : prev);
-      };
-      conn?.addEventListener?.("change", onConnChange);
+      conn?.addEventListener?.("change", () => {
+        setData(prev => prev ? { ...prev, ...getConnData() } : prev);
+      });
     };
 
     collect();
-
     return () => {
       batteryCleanup?.();
       if (connectionPollId) clearInterval(connectionPollId);
@@ -255,6 +202,16 @@ const DeviceInfoCard = () => {
     ? data.batteryLevel > 50 ? "text-green-500" : data.batteryLevel > 20 ? "text-yellow-500" : "text-red-500"
     : "text-muted-foreground";
 
+  const Row = ({ icon: Icon, label, value, className = "", iconClass = "text-muted-foreground", colSpan = false }: {
+    icon: any; label: string; value: string; className?: string; iconClass?: string; colSpan?: boolean;
+  }) => (
+    <div className={`flex items-center gap-1.5 ${colSpan ? "col-span-2" : ""}`}>
+      <Icon className={`w-3 h-3 flex-shrink-0 ${iconClass}`} />
+      <span className="text-muted-foreground whitespace-nowrap">{label}:</span>
+      <span className={`font-semibold truncate ${className}`}>{value}</span>
+    </div>
+  );
+
   return (
     <Card className="border-primary/20 bg-primary/5">
       <CardContent className="p-3 space-y-2">
@@ -263,101 +220,46 @@ const DeviceInfoCard = () => {
           Info Perangkat
         </div>
         <div className="grid grid-cols-2 gap-x-3 gap-y-1.5 text-[11px]">
-          {/* Device Type */}
-          <div className="flex items-center gap-1.5">
-            <Monitor className="w-3 h-3 text-muted-foreground" />
-            <span className="text-muted-foreground">Mode:</span>
-            <span className="font-semibold">{data.deviceType}</span>
-          </div>
-
-          {/* OS */}
-          <div className="flex items-center gap-1.5">
-            <Smartphone className="w-3 h-3 text-muted-foreground" />
-            <span className="text-muted-foreground">OS:</span>
-            <span className="font-semibold">
-              {data.os}{data.osVersion ? ` ${data.osVersion}` : ""}
-            </span>
-          </div>
-
-          {/* Browser */}
-          <div className="flex items-center gap-1.5">
-            <Navigation className="w-3 h-3 text-muted-foreground" />
-            <span className="text-muted-foreground">Browser:</span>
-            <span className="font-semibold">{data.browser}</span>
-          </div>
-
-          {/* RTT / Latency - live */}
-          <div className="flex items-center gap-1.5">
-            <Clock className="w-3 h-3 text-muted-foreground" />
-            <span className="text-muted-foreground">Latensi:</span>
-            <span className="font-semibold animate-pulse">
-              {data.rttMs !== null ? `${data.rttMs} ms` : "N/A"}
-            </span>
-          </div>
+          <Row icon={Cpu} label="Perangkat" value={data.deviceModel} colSpan />
+          <Row icon={Smartphone} label="OS" value={data.os} />
+          <Row icon={Navigation} label="Browser" value={data.browser} />
+          <Row icon={Monitor} label="Layar" value={data.screenSize} />
+          <Row icon={Clock} label="Latensi" value={data.rttMs !== null ? `${data.rttMs} ms` : "N/A"} className="animate-pulse" />
 
           {/* Battery */}
-          <div className="flex items-center gap-1.5">
-            <Battery className={`w-3 h-3 ${batteryColor}`} />
-            <span className="text-muted-foreground">Baterai:</span>
-            <span className={`font-semibold ${batteryColor}`}>
-              {data.batteryLevel !== null
-                ? `${data.batteryLevel}%${data.batteryCharging ? " ⚡" : ""}`
-                : "N/A"}
-            </span>
-          </div>
+          <Row icon={Battery} label="Baterai"
+            value={data.batteryLevel !== null ? `${data.batteryLevel}%${data.batteryCharging ? " ⚡" : ""}` : "N/A"}
+            className={batteryColor} iconClass={batteryColor} />
 
-          {/* Connection Type */}
-          <div className="flex items-center gap-1.5">
-            {data.connectionType === "WiFi"
-              ? <Wifi className="w-3 h-3 text-blue-500" />
-              : <Signal className="w-3 h-3 text-muted-foreground" />}
-            <span className="text-muted-foreground">Koneksi:</span>
-            <span className="font-semibold">
-              {data.connectionType}
-              {data.effectiveType ? ` (${data.effectiveType.toUpperCase()})` : ""}
-            </span>
-          </div>
+          {/* Connection */}
+          <Row
+            icon={data.connectionType === "WiFi" ? Wifi : Signal}
+            label="Koneksi"
+            value={`${data.connectionType}${data.effectiveType ? ` (${data.effectiveType.toUpperCase()})` : ""}`}
+            iconClass={data.connectionType === "WiFi" ? "text-blue-500" : "text-muted-foreground"}
+          />
 
-          {/* Speed - live */}
-          <div className="flex items-center gap-1.5">
-            <Signal className="w-3 h-3 text-muted-foreground" />
-            <span className="text-muted-foreground">Kecepatan:</span>
-            <span className="font-semibold animate-pulse">
-              {data.downlinkMbps !== null ? `${data.downlinkMbps} Mbps` : "N/A"}
-            </span>
-          </div>
+          <Row icon={Signal} label="Kecepatan" value={data.downlinkMbps !== null ? `${data.downlinkMbps} Mbps` : "N/A"} className="animate-pulse" />
 
-          {/* Screen */}
-          <div className="flex items-center gap-1.5">
-            <Monitor className="w-3 h-3 text-muted-foreground" />
-            <span className="text-muted-foreground">Layar:</span>
-            <span className="font-semibold">{data.screenSize}</span>
-          </div>
+          {/* Charging section */}
+          <div className="col-span-2 border-t border-primary/10 pt-1.5 mt-0.5" />
+          <Row icon={BatteryCharging} label="Pengisian"
+            value={`${data.chargingType}${data.estimatedWatts ? ` (~${data.estimatedWatts}W)` : ""}`}
+            iconClass={data.batteryCharging ? "text-green-500" : "text-muted-foreground"} colSpan />
 
-          {/* Charging Type */}
-          <div className="flex items-center gap-1.5 col-span-2 border-t border-primary/10 pt-1.5 mt-0.5">
-            <BatteryCharging className={`w-3 h-3 ${data.batteryCharging ? "text-green-500" : "text-muted-foreground"}`} />
-            <span className="text-muted-foreground">Pengisian:</span>
-            <span className="font-semibold">
-              {data.chargingType}
-              {data.estimatedWatts ? ` (~${data.estimatedWatts}W)` : ""}
-            </span>
-          </div>
-
-          {/* Time to full */}
           {data.batteryCharging && (
-            <div className="flex items-center gap-1.5 col-span-2">
-              <Timer className="w-3 h-3 text-green-500" />
-              <span className="text-muted-foreground">Penuh dalam:</span>
-              <span className="font-semibold text-green-600">
-                {data.estimatedTimeToFull || "—"}
-              </span>
-            </div>
+            <Row icon={Timer} label="Penuh dalam" value={data.estimatedTimeToFull || "—"}
+              iconClass="text-green-500" className="text-green-600" colSpan />
           )}
 
-          {/* SIM info disclaimer */}
+          {/* IP & Location section */}
+          <div className="col-span-2 border-t border-primary/10 pt-1.5 mt-0.5" />
+          <Row icon={Globe} label="IP" value={data.ipAddress} colSpan />
+          <Row icon={MapPin} label="Lokasi" value={data.location} colSpan />
+          {data.isp && <Row icon={Signal} label="ISP" value={data.isp} colSpan />}
+
           <div className="col-span-2 text-[10px] text-muted-foreground/60 italic border-t border-primary/10 pt-1 mt-0.5">
-            ℹ️ Info kartu SIM/operator tidak dapat diakses oleh browser (batasan keamanan)
+            ℹ️ Info kartu SIM/operator tidak tersedia di browser. ISP ditampilkan sebagai alternatif.
           </div>
         </div>
       </CardContent>
