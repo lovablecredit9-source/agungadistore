@@ -814,6 +814,10 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer }: Playl
         <Button variant={activeView === "playlist" ? "default" : "outline"} size="sm" className="flex-1 gap-1.5 text-[11px] px-2" onClick={() => { setActiveView("playlist"); setViewingPlaylist(null); }}>
           <Music className="w-3.5 h-3.5" /> Semua ({songs.length})
         </Button>
+        <Button variant={activeView === "liked" ? "default" : "outline"} size="sm" className="flex-1 gap-1.5 text-[11px] px-2" onClick={() => { setActiveView("liked"); setViewingPlaylist(null); }}>
+          <Heart className="w-3.5 h-3.5" /> Suka
+          {likedSongIds.size > 0 && <span className="bg-destructive/20 text-destructive text-[10px] font-bold px-1 rounded-full">{likedSongIds.size}</span>}
+        </Button>
         <Button variant={activeView === "myplaylists" ? "default" : "outline"} size="sm" className="flex-1 gap-1.5 text-[11px] px-2" onClick={() => { setActiveView("myplaylists"); setViewingPlaylist(null); }}>
           <ListMusic className="w-3.5 h-3.5" /> Playlist
         </Button>
