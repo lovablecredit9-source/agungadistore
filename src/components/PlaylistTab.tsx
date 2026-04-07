@@ -302,6 +302,9 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer }: Playl
   // Lyrics state
   const [allLyrics, setAllLyrics] = useState<LyricLine[]>([]);
   const [termsOpen, setTermsOpen] = useState(false);
+  // AI Recommendations
+  const [aiRecommendedIds, setAiRecommendedIds] = useState<string[]>([]);
+  const [loadingRecs, setLoadingRecs] = useState(false);
   const lyricsContainerRef = useRef<HTMLDivElement>(null);
   const fullPlayerLyricsRef = useRef<HTMLDivElement>(null);
   const [showFullPlayer, setShowFullPlayer] = useState(false);
