@@ -185,6 +185,7 @@ function SponsorForm({
       tiktok: tiktok.trim(),
       twitter: twitter.trim(),
       threads: threads.trim(),
+      stock: parseInt(stock) || 0,
     };
 
     let sponsorId = editing?.id;
