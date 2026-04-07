@@ -102,7 +102,7 @@ function SponsorForm({
   const [durationValue, setDurationValue] = useState("7");
   const [customNote, setCustomNote] = useState("");
   const [category, setCategory] = useState("");
-  const [uploading, setUploading] = useState(false);
+  const [stock, setStock] = useState("0");
   const [images, setImages] = useState<string[]>([]);
   const [waNumber, setWaNumber] = useState("");
   const [instagram, setInstagram] = useState("");
