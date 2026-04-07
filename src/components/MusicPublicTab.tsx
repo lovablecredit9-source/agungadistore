@@ -94,12 +94,19 @@ const MusicPublicTab = ({ onPlaySong }: MusicPublicTabProps) => {
 
   const { toast } = useToast();
 
-  // Detect audio output devices
+  // Detect audio output devices - need getUserMedia permission first to get labels
   useEffect(() => {
     const detectDevices = async () => {
       try {
+        // Request permission first so device labels are exposed
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+          stream.getTracks().forEach(t => t.stop());
+        } catch {}
         const allDevices = await navigator.mediaDevices.enumerateDevices();
-        const outputs = allDevices.filter(d => d.kind === "audiooutput").map(d => ({ deviceId: d.deviceId, label: d.label || "Perangkat Audio" }));
+        const outputs = allDevices
+          .filter(d => d.kind === "audiooutput")
+          .map(d => ({ deviceId: d.deviceId, label: d.label || "Perangkat Audio" }));
         setAudioDevices(outputs);
       } catch {}
     };
