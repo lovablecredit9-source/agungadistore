@@ -188,24 +188,21 @@ const MusicPublicTab = ({ onPlaySong }: MusicPublicTabProps) => {
       toast({ title: "Judul dan file lagu wajib diisi", variant: "destructive" });
       return;
     }
+    if (uploadFile.size > MAX_FILE_SIZE) {
+      toast({ title: `File terlalu besar! Maksimal ${MAX_FILE_SIZE / 1024 / 1024}MB`, variant: "destructive" });
+      return;
+    }
+    if (uploadCover && uploadCover.size > MAX_COVER_SIZE) {
+      toast({ title: `Cover terlalu besar! Maksimal ${MAX_COVER_SIZE / 1024 / 1024}MB`, variant: "destructive" });
+      return;
+    }
     setUploading(true);
+    setUploadProgress(0);
+    setUploadStep("Mempersiapkan...");
     try {
-      const ext = uploadFile.name.split(".").pop();
-      const filePath = `public/${visitorId}/${Date.now()}.${ext}`;
-      const { error: upErr } = await supabase.storage.from("music-files").upload(filePath, uploadFile);
-      if (upErr) throw upErr;
-      const { data: urlData } = supabase.storage.from("music-files").getPublicUrl(filePath);
-
-      let coverUrl = null;
-      if (uploadCover) {
-        const coverExt = uploadCover.name.split(".").pop();
-        const coverPath = `public/covers/${visitorId}/${Date.now()}.${coverExt}`;
-        await supabase.storage.from("music-files").upload(coverPath, uploadCover);
-        const { data: coverUrlData } = supabase.storage.from("music-files").getPublicUrl(coverPath);
-        coverUrl = coverUrlData.publicUrl;
-      }
-
-      // Get audio duration
+      // Step 1: Get audio duration (client-side, fast)
+      setUploadStep("Membaca metadata audio...");
+      setUploadProgress(5);
       let duration = 0;
       try {
         const audio = new Audio(URL.createObjectURL(uploadFile));
@@ -216,6 +213,37 @@ const MusicPublicTab = ({ onPlaySong }: MusicPublicTabProps) => {
         });
       } catch {}
 
+      // Step 2: Upload audio file
+      setUploadStep("Mengupload file audio...");
+      setUploadProgress(15);
+      const ext = uploadFile.name.split(".").pop();
+      const filePath = `public/${visitorId}/${Date.now()}.${ext}`;
+      const { error: upErr } = await supabase.storage.from("music-files").upload(filePath, uploadFile, {
+        cacheControl: "3600",
+        upsert: false,
+      });
+      if (upErr) throw new Error("Gagal upload audio: " + upErr.message);
+      setUploadProgress(70);
+      const { data: urlData } = supabase.storage.from("music-files").getPublicUrl(filePath);
+
+      // Step 3: Upload cover (optional)
+      let coverUrl = null;
+      if (uploadCover) {
+        setUploadStep("Mengupload cover...");
+        setUploadProgress(75);
+        const coverExt = uploadCover.name.split(".").pop();
+        const coverPath = `public/covers/${visitorId}/${Date.now()}.${coverExt}`;
+        const { error: coverErr } = await supabase.storage.from("music-files").upload(coverPath, uploadCover);
+        if (coverErr) console.error("Cover upload error:", coverErr);
+        else {
+          const { data: coverUrlData } = supabase.storage.from("music-files").getPublicUrl(coverPath);
+          coverUrl = coverUrlData.publicUrl;
+        }
+      }
+      setUploadProgress(85);
+
+      // Step 4: Save song record
+      setUploadStep("Menyimpan data lagu...");
       const { data: songData, error: songErr } = await supabase.from("public_songs").insert({
         visitor_id: visitorId,
         title: uploadTitle.trim(),
@@ -229,24 +257,30 @@ const MusicPublicTab = ({ onPlaySong }: MusicPublicTabProps) => {
         status: uploadVisibility === "private" ? "approved" : "pending",
       }).select().single();
 
-      if (songErr) throw songErr;
+      if (songErr) throw new Error("Gagal menyimpan data: " + songErr.message);
+      setUploadProgress(95);
 
-      // Trigger AI copyright check for public songs
+      // Step 5: Trigger AI copyright check (non-blocking)
       if (uploadVisibility === "public" && songData) {
+        setUploadStep("Memulai pengecekan AI...");
         supabase.functions.invoke("check-copyright", {
           body: { song_id: songData.id, title: uploadTitle.trim(), artist: uploadArtist.trim() || myProfile.username }
         }).catch(console.error);
       }
 
+      setUploadProgress(100);
+      setUploadStep("Selesai!");
       toast({ title: uploadVisibility === "public" ? "Lagu diupload! Menunggu persetujuan admin." : "Lagu pribadi diupload!" });
       setUploadTitle(""); setUploadArtist(""); setUploadDesc("");
       setUploadFile(null); setUploadCover(null);
       await loadData(visitorId);
       setSubTab("my-songs");
     } catch (e: any) {
-      toast({ title: "Gagal upload: " + (e.message || ""), variant: "destructive" });
+      toast({ title: e.message || "Gagal upload", variant: "destructive" });
     }
     setUploading(false);
+    setUploadProgress(0);
+    setUploadStep("");
   };
 
   const handleFollow = async (targetVid: string) => {
