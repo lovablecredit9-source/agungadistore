@@ -278,7 +278,7 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer }: Playl
   const [selectedUserSongIds, setSelectedUserSongIds] = useState<Set<string>>(new Set());
   const [savingUserSongs, setSavingUserSongs] = useState(false);
 
-  const [activeView, setActiveView] = useState<"playlist" | "myplaylists" | "storage">("playlist");
+  const [activeView, setActiveView] = useState<"playlist" | "myplaylists" | "storage" | "liked">("playlist");
 
   // Voucher redeem
   const [redeemCode, setRedeemCode] = useState("");
@@ -490,12 +490,57 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer }: Playl
     setCurrentIndex(index);
     setIsPlaying(true);
     setCurrentTime(0);
-    audio.addEventListener("timeupdate", () => setCurrentTime(audio.currentTime));
+    audio.addEventListener("timeupdate", () => {
+      setCurrentTime(audio.currentTime);
+      if ("mediaSession" in navigator && "setPositionState" in navigator.mediaSession) {
+        try {
+          navigator.mediaSession.setPositionState({
+            duration: audio.duration || 0,
+            playbackRate: audio.playbackRate,
+            position: audio.currentTime,
+          });
+        } catch {}
+      }
+    });
     audio.addEventListener("loadedmetadata", () => setDuration(audio.duration));
     audio.addEventListener("ended", () => {
       if (cachedBlob) URL.revokeObjectURL(audioUrl);
       if (repeat) { audio.currentTime = 0; audio.play(); } else { playNextFrom(index, songList); }
     });
+
+    // Media Session API - show song info in system media player
+    if ("mediaSession" in navigator) {
+      const artworkList: MediaImage[] = song.cover_url
+        ? [
+            { src: song.cover_url, sizes: "96x96", type: "image/jpeg" },
+            { src: song.cover_url, sizes: "128x128", type: "image/jpeg" },
+            { src: song.cover_url, sizes: "192x192", type: "image/jpeg" },
+            { src: song.cover_url, sizes: "256x256", type: "image/jpeg" },
+            { src: song.cover_url, sizes: "384x384", type: "image/jpeg" },
+            { src: song.cover_url, sizes: "512x512", type: "image/jpeg" },
+          ]
+        : [];
+      navigator.mediaSession.metadata = new MediaMetadata({
+        title: song.title,
+        artist: song.artist,
+        album: viewingPlaylist?.name || "Playlist",
+        artwork: artworkList,
+      });
+      navigator.mediaSession.setActionHandler("play", () => {
+        audioRef.current?.play(); setIsPlaying(true);
+      });
+      navigator.mediaSession.setActionHandler("pause", () => {
+        audioRef.current?.pause(); setIsPlaying(false);
+      });
+      navigator.mediaSession.setActionHandler("previoustrack", () => playPrev());
+      navigator.mediaSession.setActionHandler("nexttrack", () => playNext());
+      navigator.mediaSession.setActionHandler("seekto", (details) => {
+        if (details.seekTime != null && audioRef.current) {
+          audioRef.current.currentTime = details.seekTime;
+          setCurrentTime(details.seekTime);
+        }
+      });
+    }
   }, [songs, playlistItems, viewingPlaylist, volume, muted, repeat, shuffle]);
 
   function playNextFrom(fromIndex: number, songList: Song[]) {
@@ -768,6 +813,10 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer }: Playl
       <div className="flex gap-1.5">
         <Button variant={activeView === "playlist" ? "default" : "outline"} size="sm" className="flex-1 gap-1.5 text-[11px] px-2" onClick={() => { setActiveView("playlist"); setViewingPlaylist(null); }}>
           <Music className="w-3.5 h-3.5" /> Semua ({songs.length})
+        </Button>
+        <Button variant={activeView === "liked" ? "default" : "outline"} size="sm" className="flex-1 gap-1.5 text-[11px] px-2" onClick={() => { setActiveView("liked"); setViewingPlaylist(null); }}>
+          <Heart className="w-3.5 h-3.5" /> Suka
+          {likedSongIds.size > 0 && <span className="bg-destructive/20 text-destructive text-[10px] font-bold px-1 rounded-full">{likedSongIds.size}</span>}
         </Button>
         <Button variant={activeView === "myplaylists" ? "default" : "outline"} size="sm" className="flex-1 gap-1.5 text-[11px] px-2" onClick={() => { setActiveView("myplaylists"); setViewingPlaylist(null); }}>
           <ListMusic className="w-3.5 h-3.5" /> Playlist
@@ -1051,6 +1100,55 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer }: Playl
 
       {/* ===== ALL SONGS VIEW ===== */}
       {activeView === "playlist" && !viewingPlaylist && renderSongList(songs)}
+
+      {/* ===== LIKED SONGS HISTORY VIEW ===== */}
+      {activeView === "liked" && (
+        <div className="space-y-3">
+          <p className="text-xs font-bold text-muted-foreground flex items-center gap-1.5">
+            <Heart className="w-3.5 h-3.5 text-destructive" /> Lagu yang Disukai ({likedSongIds.size})
+          </p>
+          {likedSongIds.size === 0 ? (
+            <Card className="border-dashed">
+              <CardContent className="p-6 text-center">
+                <Heart className="w-10 h-10 text-muted-foreground/30 mx-auto mb-2" />
+                <p className="text-sm font-medium text-muted-foreground">Belum ada lagu yang disukai</p>
+                <p className="text-[11px] text-muted-foreground mt-1">Ketuk ❤️ pada lagu untuk menambahkan ke daftar suka</p>
+              </CardContent>
+            </Card>
+          ) : (
+            <>
+              <div className="space-y-2">
+                {songs.filter(s => likedSongIds.has(s.id)).map((song) => {
+                  const globalIdx = songs.findIndex(s => s.id === song.id);
+                  const isCached = cachedIds.has(song.id);
+                  return (
+                    <Card key={song.id} className={`overflow-hidden transition-all cursor-pointer hover:shadow-md ${currentSong?.id === song.id ? "border-primary/40 bg-primary/5" : ""}`}>
+                      <CardContent className="p-3 flex items-center gap-3">
+                        <button onClick={() => playSong(globalIdx)} className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0 hover:bg-primary/20 transition-colors relative overflow-hidden">
+                          {song.cover_url ? <img src={song.cover_url} alt="" className="w-full h-full object-cover absolute inset-0" /> : currentSong?.id === song.id && isPlaying ? <Pause className="w-4 h-4 text-primary" /> : <Play className="w-4 h-4 text-primary ml-0.5" />}
+                          {song.cover_url && (
+                            <div className="absolute inset-0 bg-black/30 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
+                              {currentSong?.id === song.id && isPlaying ? <Pause className="w-4 h-4 text-white" /> : <Play className="w-4 h-4 text-white ml-0.5" />}
+                            </div>
+                          )}
+                        </button>
+                        <div className="flex-1 min-w-0" onClick={() => playSong(globalIdx)}>
+                          <p className="font-bold text-sm truncate">{song.title}</p>
+                          <p className="text-[11px] text-muted-foreground truncate">{song.artist}</p>
+                        </div>
+                        <button onClick={(e) => toggleLikeSong(song.id, e)} className="shrink-0 p-1">
+                          <Heart className="w-4 h-4 fill-destructive text-destructive transition-colors" />
+                        </button>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
+              <p className="text-[10px] text-muted-foreground text-center">Ketuk ❤️ untuk menghapus dari daftar suka</p>
+            </>
+          )}
+        </div>
+      )}
 
       {/* ===== VIEWING A PLAYLIST ===== */}
       {viewingPlaylist && activeView !== "storage" && (
