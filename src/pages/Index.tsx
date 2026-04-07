@@ -32,6 +32,7 @@ import PlaylistTab, { type PlaybackState } from "@/components/PlaylistTab";
 import LanguageSelector from "@/components/LanguageSelector";
 import { LANGUAGES } from "@/lib/languages";
 import InstallPrompt from "@/components/InstallPrompt";
+import MusicPublicTab from "@/components/MusicPublicTab";
 
 type Tab = "beranda" | "produk" | "voucher" | "history" | "likes" | "tiket" | "saldo" | "playlist" | "publik";
 
