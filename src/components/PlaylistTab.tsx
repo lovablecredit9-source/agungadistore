@@ -342,6 +342,10 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer }: Playl
   }, [activeRedeemedMb]);
 
   useEffect(() => { fetchSongs(); fetchRedeemedStorages(); checkPinExists(); fetchLikedSongs(); }, []);
+  useEffect(() => {
+    if (songs.length === 0) return;
+    void fetchAiRecommendations();
+  }, [songs, likedSongIds]);
   // Update maxBytes when activeRedeemedMb changes
   useEffect(() => { setMaxBytes(getTotalMaxBytes(activeRedeemedMb)); }, [activeRedeemedMb]);
 
