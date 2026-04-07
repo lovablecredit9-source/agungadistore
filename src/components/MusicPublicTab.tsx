@@ -65,6 +65,8 @@ const MusicPublicTab = ({ onPlaySong }: MusicPublicTabProps) => {
 
   // Upload state
   const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [uploadStep, setUploadStep] = useState("");
   const [uploadTitle, setUploadTitle] = useState("");
   const [uploadArtist, setUploadArtist] = useState("");
   const [uploadDesc, setUploadDesc] = useState("");
@@ -73,6 +75,9 @@ const MusicPublicTab = ({ onPlaySong }: MusicPublicTabProps) => {
   const [uploadCover, setUploadCover] = useState<File | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const coverRef = useRef<HTMLInputElement>(null);
+
+  const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20MB
+  const MAX_COVER_SIZE = 5 * 1024 * 1024; // 5MB
 
   // Profile setup
   const [showProfileSetup, setShowProfileSetup] = useState(false);
