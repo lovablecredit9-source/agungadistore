@@ -145,6 +145,9 @@ export default function SponsorBanner() {
           {displayImage && (
             <div className="relative">
               <img src={displayImage} alt={sponsor.title} className="w-full h-36 object-cover" />
+              <div className="absolute top-2 left-2">
+                <Badge variant="secondary" className="text-[10px] font-mono font-bold shadow-md">#{sponsor.sponsor_number}</Badge>
+              </div>
               <div className="absolute top-2 right-2">
                 <Badge className="bg-primary/90 text-primary-foreground text-[10px] font-bold shadow-md">
                   <Clock className="w-3 h-3 mr-1" />{timeRemaining(sponsor.expires_at)}
