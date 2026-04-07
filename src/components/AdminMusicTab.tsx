@@ -98,7 +98,50 @@ const AdminMusicTab = () => {
     loadPendingSongs();
   };
 
-  // Edit song state
+  // Artist management
+  const [artistList, setArtistList] = useState<any[]>([]);
+  const [artistName, setArtistName] = useState("");
+  const [artistBio, setArtistBio] = useState("");
+  const [artistGenre, setArtistGenre] = useState("");
+  const [artistPhotoFile, setArtistPhotoFile] = useState<File | null>(null);
+  const artistPhotoRef = useRef<HTMLInputElement>(null);
+  const [savingArtist, setSavingArtist] = useState(false);
+  const [editingArtist, setEditingArtist] = useState<any>(null);
+
+  const loadArtists = async () => {
+    const { data } = await supabase.from("artists").select("*").order("name");
+    setArtistList(data || []);
+  };
+
+  const handleSaveArtist = async () => {
+    if (!artistName.trim()) { toast({ title: "Nama artis wajib", variant: "destructive" }); return; }
+    setSavingArtist(true);
+    let photoUrl = editingArtist?.photo_url || null;
+    if (artistPhotoFile) {
+      const ext = artistPhotoFile.name.split(".").pop();
+      const path = `artists/${Date.now()}.${ext}`;
+      await supabase.storage.from("music-files").upload(path, artistPhotoFile);
+      const { data } = supabase.storage.from("music-files").getPublicUrl(path);
+      photoUrl = data.publicUrl;
+    }
+    if (editingArtist) {
+      await supabase.from("artists").update({ name: artistName.trim(), bio: artistBio.trim(), genre: artistGenre.trim(), photo_url: photoUrl }).eq("id", editingArtist.id);
+    } else {
+      await supabase.from("artists").insert({ name: artistName.trim(), bio: artistBio.trim(), genre: artistGenre.trim(), photo_url: photoUrl });
+    }
+    toast({ title: editingArtist ? "Artis diperbarui!" : "Artis ditambahkan!" });
+    setArtistName(""); setArtistBio(""); setArtistGenre(""); setArtistPhotoFile(null); setEditingArtist(null);
+    loadArtists();
+    setSavingArtist(false);
+  };
+
+  const handleDeleteArtist = async (id: string) => {
+    await supabase.from("artists").delete().eq("id", id);
+    toast({ title: "Artis dihapus" });
+    loadArtists();
+  };
+
+
   const [editSongOpen, setEditSongOpen] = useState(false);
   const [editingSong, setEditingSong] = useState<Song | null>(null);
   const [editTitle, setEditTitle] = useState("");
