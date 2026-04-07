@@ -137,7 +137,7 @@ function SponsorForm({
     } else {
       setTitle(""); setDescription(""); setPrice(""); setSellerName("");
       setSellerContact(""); setDurationType("days"); setDurationValue("7");
-      setCustomNote(""); setCategory(""); setImages([]);
+      setCustomNote(""); setCategory(""); setImages([]); setStock("0");
       setWaNumber(""); setInstagram(""); setFacebook(""); setTiktok(""); setTwitter(""); setThreads("");
     }
   }, [editing]);
