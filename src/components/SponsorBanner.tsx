@@ -168,7 +168,7 @@ export default function SponsorBanner() {
             </div>
           )}
           <CardContent className="p-3 space-y-1.5">
-            <h4 className="font-extrabold text-sm leading-tight"><span className="text-muted-foreground font-mono text-[10px]">#{sponsor.sponsor_number}</span> {sponsor.title}</h4>
+            <h4 className="font-extrabold text-sm leading-tight">{sponsor.title}</h4>
             {sponsor.description && (
               <p className="text-xs text-muted-foreground line-clamp-2">{sponsor.description}</p>
             )}
