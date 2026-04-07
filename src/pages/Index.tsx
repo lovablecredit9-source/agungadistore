@@ -1782,6 +1782,10 @@ const Index = () => {
         {tab === "publik" && (
           <MusicPublicTab onPlaySong={(song) => playExternalRef.current?.(song)} />
         )}
+
+        {tab === "sponsor" && (
+          <SponsorBanner />
+        )}
       </main>
 
       {/* Mini Player - shown when music is playing and not on playlist tab */}
