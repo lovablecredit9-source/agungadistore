@@ -787,6 +787,9 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer }: Playl
         </Card>
       )}
 
+      {/* Device Info */}
+      <DeviceInfoCard />
+
       {/* Now Playing */}
       {currentSong && (
         <Card className="overflow-hidden border-primary/20 bg-gradient-to-br from-primary/5 to-accent/5 cursor-pointer" onClick={() => setShowFullPlayer(true)}>
