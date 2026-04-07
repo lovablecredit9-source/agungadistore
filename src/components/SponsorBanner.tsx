@@ -2,7 +2,15 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Megaphone, Clock, User, Phone, ChevronLeft, ChevronRight, X } from "lucide-react";
+
+interface SponsorImage {
+  id: string;
+  sponsor_id: string;
+  image_url: string;
+  image_order: number;
+}
 
 interface Sponsor {
   id: string;
@@ -19,6 +27,12 @@ interface Sponsor {
   is_active: boolean;
   custom_note: string | null;
   created_at: string;
+  wa_number: string;
+  instagram: string;
+  facebook: string;
+  tiktok: string;
+  twitter: string;
+  threads: string;
 }
 
 function timeRemaining(expiresAt: string | null): string {
@@ -39,10 +53,21 @@ function formatPrice(price: number) {
   return new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", minimumFractionDigits: 0 }).format(price);
 }
 
+const socialIcons: Record<string, { label: string; url: (v: string) => string; color: string }> = {
+  wa_number: { label: "WhatsApp", url: v => `https://wa.me/${v.replace(/[^0-9+]/g, "")}`, color: "bg-green-600 hover:bg-green-700" },
+  instagram: { label: "Instagram", url: v => `https://instagram.com/${v.replace("@", "")}`, color: "bg-pink-600 hover:bg-pink-700" },
+  facebook: { label: "Facebook", url: v => v.startsWith("http") ? v : `https://facebook.com/${v}`, color: "bg-blue-600 hover:bg-blue-700" },
+  tiktok: { label: "TikTok", url: v => `https://tiktok.com/@${v.replace("@", "")}`, color: "bg-gray-800 hover:bg-gray-900" },
+  twitter: { label: "X", url: v => `https://x.com/${v.replace("@", "")}`, color: "bg-gray-700 hover:bg-gray-800" },
+  threads: { label: "Threads", url: v => `https://threads.net/@${v.replace("@", "")}`, color: "bg-gray-600 hover:bg-gray-700" },
+};
+
 export default function SponsorBanner() {
   const [sponsors, setSponsors] = useState<Sponsor[]>([]);
+  const [sponsorImages, setSponsorImages] = useState<Record<string, SponsorImage[]>>({});
   const [current, setCurrent] = useState(0);
   const [selectedSponsor, setSelectedSponsor] = useState<Sponsor | null>(null);
+  const [imgIdx, setImgIdx] = useState(0);
 
   useEffect(() => {
     fetchSponsors();
@@ -50,7 +75,6 @@ export default function SponsorBanner() {
     return () => clearInterval(interval);
   }, []);
 
-  // Auto-slide
   useEffect(() => {
     if (sponsors.length <= 1) return;
     const timer = setInterval(() => setCurrent(c => (c + 1) % sponsors.length), 5000);
@@ -71,13 +95,37 @@ export default function SponsorBanner() {
       });
       setSponsors(active);
       setCurrent(0);
+
+      // Fetch images
+      const { data: imgData } = await supabase.from("sponsor_images").select("*").order("image_order", { ascending: true });
+      if (imgData) {
+        const map: Record<string, SponsorImage[]> = {};
+        (imgData as unknown as SponsorImage[]).forEach(img => {
+          if (!map[img.sponsor_id]) map[img.sponsor_id] = [];
+          map[img.sponsor_id].push(img);
+        });
+        setSponsorImages(map);
+      }
     }
   }
 
-  if (sponsors.length === 0) return null;
+  if (sponsors.length === 0) return (
+    <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
+      <Megaphone className="w-10 h-10 mb-2 opacity-30" />
+      <p className="text-sm">Belum ada sponsor aktif</p>
+    </div>
+  );
 
   const sponsor = sponsors[current];
   if (!sponsor) return null;
+
+  const currentImages = sponsorImages[sponsor.id] || [];
+  const displayImage = currentImages.length > 0 ? currentImages[0]?.image_url : sponsor.image_url;
+
+  const socialLinks = Object.entries(socialIcons).filter(([key]) => {
+    const val = (sponsor as any)[key];
+    return val && val.trim();
+  });
 
   return (
     <>
@@ -91,11 +139,11 @@ export default function SponsorBanner() {
         </div>
         <Card
           className="overflow-hidden border-primary/20 bg-gradient-to-br from-primary/5 via-accent/5 to-transparent cursor-pointer hover:shadow-lg transition-all"
-          onClick={() => setSelectedSponsor(sponsor)}
+          onClick={() => { setSelectedSponsor(sponsor); setImgIdx(0); }}
         >
-          {sponsor.image_url && (
+          {displayImage && (
             <div className="relative">
-              <img src={sponsor.image_url} alt={sponsor.title} className="w-full h-36 object-cover" />
+              <img src={displayImage} alt={sponsor.title} className="w-full h-36 object-cover" />
               <div className="absolute top-2 right-2">
                 <Badge className="bg-primary/90 text-primary-foreground text-[10px] font-bold shadow-md">
                   <Clock className="w-3 h-3 mr-1" />{timeRemaining(sponsor.expires_at)}
@@ -106,6 +154,11 @@ export default function SponsorBanner() {
                   <Badge className="bg-accent text-accent-foreground text-xs font-extrabold shadow-md">
                     {formatPrice(sponsor.price)}
                   </Badge>
+                </div>
+              )}
+              {currentImages.length > 1 && (
+                <div className="absolute bottom-2 right-2">
+                  <Badge variant="secondary" className="text-[10px]">{currentImages.length} foto</Badge>
                 </div>
               )}
             </div>
@@ -119,8 +172,14 @@ export default function SponsorBanner() {
               <span className="flex items-center gap-1"><User className="w-3 h-3" />{sponsor.seller_name}</span>
               <span className="flex items-center gap-1"><Phone className="w-3 h-3" />{sponsor.seller_contact}</span>
             </div>
-            {!sponsor.image_url && sponsor.price > 0 && (
-              <p className="text-sm font-extrabold text-primary">{formatPrice(sponsor.price)}</p>
+            {/* Social buttons preview */}
+            {socialLinks.length > 0 && (
+              <div className="flex flex-wrap gap-1 pt-1">
+                {socialLinks.slice(0, 3).map(([key, config]) => (
+                  <Badge key={key} variant="secondary" className="text-[9px] font-medium">{config.label}</Badge>
+                ))}
+                {socialLinks.length > 3 && <Badge variant="secondary" className="text-[9px]">+{socialLinks.length - 3}</Badge>}
+              </div>
             )}
           </CardContent>
         </Card>
@@ -136,52 +195,111 @@ export default function SponsorBanner() {
 
       {/* Sponsor Detail Modal */}
       {selectedSponsor && (
-        <div className="fixed inset-0 z-[90] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setSelectedSponsor(null)}>
-          <div className="bg-card w-full max-w-sm rounded-2xl overflow-hidden animate-in zoom-in-95 duration-200 max-h-[85vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
-            {selectedSponsor.image_url && (
-              <img src={selectedSponsor.image_url} alt={selectedSponsor.title} className="w-full h-48 object-cover" />
-            )}
-            <div className="p-5 space-y-3">
-              <div className="flex items-start justify-between">
-                <h3 className="font-extrabold text-lg flex-1">{selectedSponsor.title}</h3>
-                <button onClick={() => setSelectedSponsor(null)} className="w-8 h-8 rounded-full bg-muted flex items-center justify-center shrink-0 ml-2">
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
-              {selectedSponsor.price > 0 && (
-                <p className="text-xl font-extrabold text-primary">{formatPrice(selectedSponsor.price)}</p>
-              )}
-              {selectedSponsor.description && (
-                <p className="text-sm text-muted-foreground whitespace-pre-wrap">{selectedSponsor.description}</p>
-              )}
-              <div className="bg-muted/50 rounded-lg p-3 space-y-2 text-sm">
-                <div className="flex items-center gap-2">
-                  <User className="w-4 h-4 text-primary" />
-                  <span className="font-medium">Penjual:</span>
-                  <span>{selectedSponsor.seller_name}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Phone className="w-4 h-4 text-primary" />
-                  <span className="font-medium">Kontak:</span>
-                  <a href={`https://wa.me/${selectedSponsor.seller_contact.replace(/[^0-9+]/g, "")}`} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
-                    {selectedSponsor.seller_contact}
-                  </a>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Clock className="w-4 h-4 text-primary" />
-                  <span className="font-medium">Sisa waktu:</span>
-                  <span>{timeRemaining(selectedSponsor.expires_at)}</span>
-                </div>
-              </div>
-              {selectedSponsor.custom_note && (
-                <div className="bg-primary/5 border border-primary/10 rounded-lg p-3 text-xs text-muted-foreground">
-                  {selectedSponsor.custom_note}
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
+        <SponsorDetailModal
+          sponsor={selectedSponsor}
+          images={sponsorImages[selectedSponsor.id] || []}
+          onClose={() => setSelectedSponsor(null)}
+        />
       )}
     </>
+  );
+}
+
+function SponsorDetailModal({ sponsor, images, onClose }: { sponsor: Sponsor; images: SponsorImage[]; onClose: () => void }) {
+  const [imgIdx, setImgIdx] = useState(0);
+  const allImages = images.length > 0 ? images.map(i => i.image_url) : (sponsor.image_url ? [sponsor.image_url] : []);
+
+  const socialLinks = Object.entries(socialIcons).filter(([key]) => {
+    const val = (sponsor as any)[key];
+    return val && val.trim();
+  });
+
+  return (
+    <div className="fixed inset-0 z-[90] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" onClick={onClose}>
+      <div className="bg-card w-full max-w-sm rounded-2xl overflow-hidden animate-in zoom-in-95 duration-200 max-h-[85vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+        {/* Image gallery */}
+        {allImages.length > 0 && (
+          <div className="relative">
+            <img src={allImages[imgIdx]} alt={sponsor.title} className="w-full h-48 object-cover" />
+            {allImages.length > 1 && (
+              <>
+                <button onClick={() => setImgIdx(i => (i - 1 + allImages.length) % allImages.length)}
+                  className="absolute left-2 top-1/2 -translate-y-1/2 w-7 h-7 bg-black/50 text-white rounded-full flex items-center justify-center">
+                  <ChevronLeft className="w-4 h-4" />
+                </button>
+                <button onClick={() => setImgIdx(i => (i + 1) % allImages.length)}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 w-7 h-7 bg-black/50 text-white rounded-full flex items-center justify-center">
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+                <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1">
+                  {allImages.map((_, i) => (
+                    <span key={i} className={`w-1.5 h-1.5 rounded-full ${i === imgIdx ? "bg-white" : "bg-white/40"}`} />
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
+        )}
+        <div className="p-5 space-y-3">
+          <div className="flex items-start justify-between">
+            <h3 className="font-extrabold text-lg flex-1">{sponsor.title}</h3>
+            <button onClick={onClose} className="w-8 h-8 rounded-full bg-muted flex items-center justify-center shrink-0 ml-2">
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+          {sponsor.price > 0 && (
+            <p className="text-xl font-extrabold text-primary">{formatPrice(sponsor.price)}</p>
+          )}
+          {sponsor.description && (
+            <p className="text-sm text-muted-foreground whitespace-pre-wrap">{sponsor.description}</p>
+          )}
+          <div className="bg-muted/50 rounded-lg p-3 space-y-2 text-sm">
+            <div className="flex items-center gap-2">
+              <User className="w-4 h-4 text-primary" />
+              <span className="font-medium">Penjual:</span>
+              <span>{sponsor.seller_name}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Phone className="w-4 h-4 text-primary" />
+              <span className="font-medium">Kontak:</span>
+              <a href={`https://wa.me/${sponsor.seller_contact.replace(/[^0-9+]/g, "")}`} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+                {sponsor.seller_contact}
+              </a>
+            </div>
+            <div className="flex items-center gap-2">
+              <Clock className="w-4 h-4 text-primary" />
+              <span className="font-medium">Sisa waktu:</span>
+              <span>{timeRemaining(sponsor.expires_at)}</span>
+            </div>
+          </div>
+
+          {/* Social Media Buttons */}
+          {socialLinks.length > 0 && (
+            <div className="space-y-2">
+              <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Sosial Media</p>
+              <div className="grid grid-cols-2 gap-2">
+                {socialLinks.map(([key, config]) => (
+                  <a
+                    key={key}
+                    href={config.url((sponsor as any)[key])}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={`${config.color} text-white text-xs font-bold rounded-lg py-2 px-3 text-center transition-colors`}
+                  >
+                    {config.label}
+                  </a>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {sponsor.custom_note && (
+            <div className="bg-primary/5 border border-primary/10 rounded-lg p-3 text-xs text-muted-foreground">
+              {sponsor.custom_note}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
   );
 }
