@@ -38,6 +38,7 @@ interface Sponsor {
   twitter: string;
   threads: string;
   category: string;
+  stock: number;
 }
 
 type SortOrder = "newest" | "oldest";
@@ -79,6 +80,8 @@ export default function SponsorBanner() {
   const [showSearch, setShowSearch] = useState(false);
   const [filterCategory, setFilterCategory] = useState("all");
   const [sortOrder, setSortOrder] = useState<SortOrder>("newest");
+  const [minPrice, setMinPrice] = useState("");
+  const [maxPrice, setMaxPrice] = useState("");
 
   const categories = useMemo(() => {
     const cats = new Set(sponsors.map(s => s.category).filter(Boolean));
@@ -132,9 +135,13 @@ export default function SponsorBanner() {
   );
 
   const q = search.toLowerCase().trim();
+  const minP = parseInt(minPrice) || 0;
+  const maxP = parseInt(maxPrice) || 0;
   const filtered = sponsors
     .filter(s => {
       if (filterCategory !== "all" && s.category !== filterCategory) return false;
+      if (minP > 0 && s.price < minP) return false;
+      if (maxP > 0 && s.price > maxP) return false;
       if (q) {
         return s.title.toLowerCase().includes(q) ||
           s.seller_name.toLowerCase().includes(q) ||
@@ -194,6 +201,24 @@ export default function SponsorBanner() {
             <ArrowUpDown className="w-3 h-3" />
             {sortOrder === "newest" ? "Terbaru" : "Terlama"}
           </button>
+        </div>
+        {/* Price Range Filter */}
+        <div className="flex items-center gap-2 mb-2">
+          <input
+            type="number"
+            placeholder="Harga min"
+            value={minPrice}
+            onChange={e => { setMinPrice(e.target.value); setCurrent(0); }}
+            className="flex-1 h-7 px-2 text-[11px] rounded-md border bg-background focus:outline-none focus:ring-1 focus:ring-primary min-w-0"
+          />
+          <span className="text-[10px] text-muted-foreground">-</span>
+          <input
+            type="number"
+            placeholder="Harga max"
+            value={maxPrice}
+            onChange={e => { setMaxPrice(e.target.value); setCurrent(0); }}
+            className="flex-1 h-7 px-2 text-[11px] rounded-md border bg-background focus:outline-none focus:ring-1 focus:ring-primary min-w-0"
+          />
         </div>
         {showSearch && (
           <div className="relative mb-2">
@@ -256,6 +281,11 @@ export default function SponsorBanner() {
             <div className="flex items-center gap-3 text-[10px] text-muted-foreground">
               <span className="flex items-center gap-1"><User className="w-3 h-3" />{sponsor.seller_name}</span>
               <span className="flex items-center gap-1"><Phone className="w-3 h-3" />{sponsor.seller_contact}</span>
+            </div>
+            <div className="flex items-center gap-2 pt-0.5">
+              <Badge variant={sponsor.stock > 0 ? "secondary" : "destructive"} className="text-[10px] font-bold">
+                Stok: {sponsor.stock > 0 ? sponsor.stock : "Habis"}
+              </Badge>
             </div>
             {/* Social buttons preview */}
             {socialLinks.length > 0 && (
@@ -359,6 +389,11 @@ function SponsorDetailModal({ sponsor, images, onClose }: { sponsor: Sponsor; im
               <Clock className="w-4 h-4 text-primary" />
               <span className="font-medium">Sisa waktu:</span>
               <span>{timeRemaining(sponsor.expires_at)}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Megaphone className="w-4 h-4 text-primary" />
+              <span className="font-medium">Stok:</span>
+              <span className={sponsor.stock > 0 ? "text-foreground" : "text-destructive font-bold"}>{sponsor.stock > 0 ? sponsor.stock : "Habis"}</span>
             </div>
           </div>
 

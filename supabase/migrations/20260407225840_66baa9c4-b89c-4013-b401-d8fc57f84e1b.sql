@@ -1,0 +1,1 @@
+ALTER TABLE public.sponsors ADD COLUMN stock integer NOT NULL DEFAULT 0;

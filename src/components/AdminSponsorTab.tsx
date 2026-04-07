@@ -41,6 +41,7 @@ interface Sponsor {
   tiktok: string;
   twitter: string;
   threads: string;
+  stock: number;
 }
 
 interface ExtendReceipt {
@@ -101,6 +102,7 @@ function SponsorForm({
   const [durationValue, setDurationValue] = useState("7");
   const [customNote, setCustomNote] = useState("");
   const [category, setCategory] = useState("");
+  const [stock, setStock] = useState("0");
   const [uploading, setUploading] = useState(false);
   const [images, setImages] = useState<string[]>([]);
   const [waNumber, setWaNumber] = useState("");
@@ -123,6 +125,7 @@ function SponsorForm({
       setDurationValue(String(editing.duration_value));
       setCustomNote(editing.custom_note || "");
       setCategory(editing.category || "");
+      setStock(String(editing.stock || 0));
       setWaNumber(editing.wa_number || "");
       setInstagram(editing.instagram || "");
       setFacebook(editing.facebook || "");
@@ -134,7 +137,7 @@ function SponsorForm({
     } else {
       setTitle(""); setDescription(""); setPrice(""); setSellerName("");
       setSellerContact(""); setDurationType("days"); setDurationValue("7");
-      setCustomNote(""); setCategory(""); setImages([]);
+      setCustomNote(""); setCategory(""); setImages([]); setStock("0");
       setWaNumber(""); setInstagram(""); setFacebook(""); setTiktok(""); setTwitter(""); setThreads("");
     }
   }, [editing]);
@@ -182,6 +185,7 @@ function SponsorForm({
       tiktok: tiktok.trim(),
       twitter: twitter.trim(),
       threads: threads.trim(),
+      stock: parseInt(stock) || 0,
     };
 
     let sponsorId = editing?.id;
@@ -225,6 +229,7 @@ function SponsorForm({
         <Textarea placeholder="Deskripsi (opsional)" value={description} onChange={e => setDescription(e.target.value)} rows={2} />
         <Input type="number" placeholder="Harga (Rp)" value={price} onChange={e => setPrice(e.target.value)} />
         <Input placeholder="Kategori (cth: Makanan, Fashion, Elektronik) *" value={category} onChange={e => setCategory(e.target.value)} />
+        <Input type="number" placeholder="Stok" value={stock} onChange={e => setStock(e.target.value)} min="0" />
         <Input placeholder="Nama penjual *" value={sellerName} onChange={e => setSellerName(e.target.value)} />
         <Input placeholder="Kontak (WA/HP)" value={sellerContact} onChange={e => setSellerContact(e.target.value)} />
 
