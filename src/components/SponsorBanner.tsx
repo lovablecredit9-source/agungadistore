@@ -80,6 +80,8 @@ export default function SponsorBanner() {
   const [showSearch, setShowSearch] = useState(false);
   const [filterCategory, setFilterCategory] = useState("all");
   const [sortOrder, setSortOrder] = useState<SortOrder>("newest");
+  const [minPrice, setMinPrice] = useState("");
+  const [maxPrice, setMaxPrice] = useState("");
 
   const categories = useMemo(() => {
     const cats = new Set(sponsors.map(s => s.category).filter(Boolean));
