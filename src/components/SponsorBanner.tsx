@@ -226,7 +226,8 @@ export default function SponsorBanner() {
             )}
           </CardContent>
         </Card>
-        {sponsor && filtered.length > 1 && (
+        )}
+        {filtered.length > 1 && (
           <div className="flex justify-center gap-1 mt-2">
             {filtered.map((_, i) => (
               <button key={i} onClick={() => setCurrent(i)}
@@ -234,9 +235,7 @@ export default function SponsorBanner() {
             ))}
           </div>
         )}
-        {sponsor && <></>}
-        </div>
-        {/* close the sponsor && ( block */}
+      </div>
 
       {/* Sponsor Detail Modal */}
       {selectedSponsor && (
