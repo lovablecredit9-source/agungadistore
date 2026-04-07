@@ -1596,22 +1596,8 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer }: Playl
         </CardContent>
       </Card>
 
-      {/* ===== PUBLIC MUSIC VIEW ===== */}
-      {activeView === "public" && (
-        <MusicPublicTab onPlaySong={(song) => {
-          const idx = songs.findIndex(s => s.id === song.id);
-          if (idx >= 0) { playSong(idx); }
-          else {
-            // Play directly for public songs not in admin playlist
-            const audio = audioRef.current;
-            if (audio) {
-              audio.src = song.file_url;
-              audio.play().catch(() => {});
-              setIsPlaying(true);
-            }
-          }
-        }} />
-      )}
+
+
 
       {/* ===== ARTIST VIEW ===== */}
       {activeView === "artist" && (
