@@ -895,6 +895,9 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer }: Playl
           <HardDrive className="w-3.5 h-3.5" /> Storage
           {cachedCount > 0 && <span className="bg-accent/20 text-accent text-[10px] font-bold px-1 rounded-full">{cachedCount}</span>}
         </Button>
+        <Button variant={activeView === "public" ? "default" : "outline"} size="sm" className="flex-1 gap-1.5 text-[11px] px-2" onClick={() => setActiveView("public")}>
+          <Users className="w-3.5 h-3.5" /> Publik
+        </Button>
       </div>
 
       {!isOnline && (
