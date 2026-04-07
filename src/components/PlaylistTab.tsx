@@ -9,8 +9,9 @@ import {
   Music, Play, Pause, SkipBack, SkipForward, Download, Volume2, VolumeX,
   Repeat, Shuffle, Loader2, HardDrive, Globe, CheckCircle2, Trash2,
   WifiOff, Wifi, Crown, Zap, Clock, ListMusic, Plus, Edit2, Check, Lock, Heart,
-  FileText, Copyright, Type, ChevronDown, Share2, Timer, Sparkles, List, Ticket, Tag
+  FileText, Copyright, Type, ChevronDown, Share2, Timer, Sparkles, List, Ticket, Tag, Globe as GlobeIcon, Users
 } from "lucide-react";
+import MusicPublicTab from "@/components/MusicPublicTab";
 import { useToast } from "@/hooks/use-toast";
 import { Slider } from "@/components/ui/slider";
 import {
