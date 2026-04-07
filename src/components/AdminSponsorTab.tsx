@@ -41,6 +41,7 @@ interface Sponsor {
   tiktok: string;
   twitter: string;
   threads: string;
+  stock: number;
 }
 
 interface ExtendReceipt {
