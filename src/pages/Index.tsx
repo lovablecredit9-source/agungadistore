@@ -1778,7 +1778,7 @@ const Index = () => {
         </div>
 
         {tab === "publik" && (
-          <MusicPublicTab />
+          <MusicPublicTab onPlaySong={(song) => playExternalRef.current?.(song)} />
         )}
       </main>
 
