@@ -132,13 +132,21 @@ export default function SponsorBanner() {
   );
 
   const q = search.toLowerCase().trim();
-  const filtered = q
-    ? sponsors.filter(s =>
-        s.title.toLowerCase().includes(q) ||
-        s.seller_name.toLowerCase().includes(q) ||
-        String(s.sponsor_number).includes(q)
-      )
-    : sponsors;
+  const filtered = sponsors
+    .filter(s => {
+      if (filterCategory !== "all" && s.category !== filterCategory) return false;
+      if (q) {
+        return s.title.toLowerCase().includes(q) ||
+          s.seller_name.toLowerCase().includes(q) ||
+          String(s.sponsor_number).includes(q);
+      }
+      return true;
+    })
+    .sort((a, b) => {
+      const da = new Date(a.created_at).getTime();
+      const db = new Date(b.created_at).getTime();
+      return sortOrder === "newest" ? db - da : da - db;
+    });
 
   const sponsor = filtered.length > 0 ? filtered[current % filtered.length] : null;
 
