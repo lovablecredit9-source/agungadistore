@@ -877,6 +877,56 @@ const AdminMusicTab = () => {
           </CardContent>
         </Card>
       )}
+
+      {/* Artist Tab */}
+      {activeTab === "artists" && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-sm flex items-center gap-2"><User className="w-4 h-4" /> {editingArtist ? "Edit Artis" : "Tambah Artis"}</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <Input placeholder="Nama artis *" value={artistName} onChange={e => setArtistName(e.target.value)} />
+            <Input placeholder="Genre (Pop, Rock, dll)" value={artistGenre} onChange={e => setArtistGenre(e.target.value)} />
+            <Textarea placeholder="Bio artis..." value={artistBio} onChange={e => setArtistBio(e.target.value)} rows={2} />
+            <div>
+              <input ref={artistPhotoRef} type="file" accept="image/*" className="hidden" onChange={e => setArtistPhotoFile(e.target.files?.[0] || null)} />
+              <Button variant="outline" size="sm" onClick={() => artistPhotoRef.current?.click()} className="w-full gap-1">
+                <ImageIcon className="w-3.5 h-3.5" /> {artistPhotoFile ? artistPhotoFile.name : "Foto artis (opsional)"}
+              </Button>
+            </div>
+            <div className="flex gap-2">
+              <Button onClick={handleSaveArtist} disabled={savingArtist} className="flex-1">
+                {savingArtist ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : null}
+                {editingArtist ? "Perbarui" : "Tambah"}
+              </Button>
+              {editingArtist && <Button variant="outline" onClick={() => { setEditingArtist(null); setArtistName(""); setArtistBio(""); setArtistGenre(""); setArtistPhotoFile(null); }}>Batal</Button>}
+            </div>
+
+            <div className="border-t pt-3 space-y-2">
+              <h4 className="text-xs font-semibold text-muted-foreground">Daftar Artis ({artistList.length})</h4>
+              {artistList.map(a => (
+                <div key={a.id} className="flex items-center gap-3 p-2 rounded hover:bg-accent/50">
+                  {a.photo_url ? (
+                    <img src={a.photo_url} alt="" className="w-10 h-10 rounded-full object-cover" />
+                  ) : (
+                    <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center"><User className="w-4 h-4 text-primary" /></div>
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <div className="font-medium text-sm">{a.name}</div>
+                    {a.genre && <div className="text-xs text-muted-foreground">{a.genre}</div>}
+                  </div>
+                  <Button size="sm" variant="ghost" onClick={() => { setEditingArtist(a); setArtistName(a.name); setArtistBio(a.bio || ""); setArtistGenre(a.genre || ""); }}>
+                    <Edit2 className="w-3 h-3" />
+                  </Button>
+                  <Button size="sm" variant="ghost" onClick={() => handleDeleteArtist(a.id)}>
+                    <Trash2 className="w-3 h-3 text-destructive" />
+                  </Button>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </>
   );
 };
