@@ -135,9 +135,13 @@ export default function SponsorBanner() {
   );
 
   const q = search.toLowerCase().trim();
+  const minP = parseInt(minPrice) || 0;
+  const maxP = parseInt(maxPrice) || 0;
   const filtered = sponsors
     .filter(s => {
       if (filterCategory !== "all" && s.category !== filterCategory) return false;
+      if (minP > 0 && s.price < minP) return false;
+      if (maxP > 0 && s.price > maxP) return false;
       if (q) {
         return s.title.toLowerCase().includes(q) ||
           s.seller_name.toLowerCase().includes(q) ||
