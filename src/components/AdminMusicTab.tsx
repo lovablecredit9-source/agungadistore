@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Music, Plus, Trash2, Upload, Loader2, ListMusic, Image as ImageIcon, Edit2, Check, X, Type, Shield, CheckCircle2, XCircle, Clock, Eye } from "lucide-react";
+import { Music, Plus, Trash2, Upload, Loader2, ListMusic, Image as ImageIcon, Edit2, Check, X, Type, Shield, CheckCircle2, XCircle, Clock, Eye, User } from "lucide-react";
 import { Wand2, FileUp } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -74,7 +74,7 @@ const AdminMusicTab = () => {
   const [selectedSongIds, setSelectedSongIds] = useState<Set<string>>(new Set());
   const [savingSongs, setSavingSongs] = useState(false);
 
-  const [activeTab, setActiveTab] = useState<"songs" | "playlists" | "lyrics" | "review">("songs");
+  const [activeTab, setActiveTab] = useState<"songs" | "playlists" | "lyrics" | "review" | "artists">("songs");
 
   // Review public songs
   const [pendingSongs, setPendingSongs] = useState<any[]>([]);
@@ -98,7 +98,50 @@ const AdminMusicTab = () => {
     loadPendingSongs();
   };
 
-  // Edit song state
+  // Artist management
+  const [artistList, setArtistList] = useState<any[]>([]);
+  const [artistName, setArtistName] = useState("");
+  const [artistBio, setArtistBio] = useState("");
+  const [artistGenre, setArtistGenre] = useState("");
+  const [artistPhotoFile, setArtistPhotoFile] = useState<File | null>(null);
+  const artistPhotoRef = useRef<HTMLInputElement>(null);
+  const [savingArtist, setSavingArtist] = useState(false);
+  const [editingArtist, setEditingArtist] = useState<any>(null);
+
+  const loadArtists = async () => {
+    const { data } = await supabase.from("artists").select("*").order("name");
+    setArtistList(data || []);
+  };
+
+  const handleSaveArtist = async () => {
+    if (!artistName.trim()) { toast({ title: "Nama artis wajib", variant: "destructive" }); return; }
+    setSavingArtist(true);
+    let photoUrl = editingArtist?.photo_url || null;
+    if (artistPhotoFile) {
+      const ext = artistPhotoFile.name.split(".").pop();
+      const path = `artists/${Date.now()}.${ext}`;
+      await supabase.storage.from("music-files").upload(path, artistPhotoFile);
+      const { data } = supabase.storage.from("music-files").getPublicUrl(path);
+      photoUrl = data.publicUrl;
+    }
+    if (editingArtist) {
+      await supabase.from("artists").update({ name: artistName.trim(), bio: artistBio.trim(), genre: artistGenre.trim(), photo_url: photoUrl }).eq("id", editingArtist.id);
+    } else {
+      await supabase.from("artists").insert({ name: artistName.trim(), bio: artistBio.trim(), genre: artistGenre.trim(), photo_url: photoUrl });
+    }
+    toast({ title: editingArtist ? "Artis diperbarui!" : "Artis ditambahkan!" });
+    setArtistName(""); setArtistBio(""); setArtistGenre(""); setArtistPhotoFile(null); setEditingArtist(null);
+    loadArtists();
+    setSavingArtist(false);
+  };
+
+  const handleDeleteArtist = async (id: string) => {
+    await supabase.from("artists").delete().eq("id", id);
+    toast({ title: "Artis dihapus" });
+    loadArtists();
+  };
+
+
   const [editSongOpen, setEditSongOpen] = useState(false);
   const [editingSong, setEditingSong] = useState<Song | null>(null);
   const [editTitle, setEditTitle] = useState("");
@@ -470,6 +513,9 @@ const AdminMusicTab = () => {
           <Shield className="w-3.5 h-3.5" /> Review
           {pendingSongs.filter(s => s.status === "pending").length > 0 && <span className="bg-destructive/20 text-destructive text-[10px] font-bold px-1 rounded-full">{pendingSongs.filter(s => s.status === "pending").length}</span>}
         </Button>
+        <Button variant={activeTab === "artists" ? "default" : "outline"} size="sm" className="flex-1 gap-1.5 text-[11px] px-2" onClick={() => { setActiveTab("artists"); loadArtists(); }}>
+          <User className="w-3.5 h-3.5" /> Artist
+        </Button>
       </div>
 
       {activeTab === "songs" && (
@@ -828,6 +874,56 @@ const AdminMusicTab = () => {
                 );
               })
             )}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Artist Tab */}
+      {activeTab === "artists" && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-sm flex items-center gap-2"><User className="w-4 h-4" /> {editingArtist ? "Edit Artis" : "Tambah Artis"}</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <Input placeholder="Nama artis *" value={artistName} onChange={e => setArtistName(e.target.value)} />
+            <Input placeholder="Genre (Pop, Rock, dll)" value={artistGenre} onChange={e => setArtistGenre(e.target.value)} />
+            <Textarea placeholder="Bio artis..." value={artistBio} onChange={e => setArtistBio(e.target.value)} rows={2} />
+            <div>
+              <input ref={artistPhotoRef} type="file" accept="image/*" className="hidden" onChange={e => setArtistPhotoFile(e.target.files?.[0] || null)} />
+              <Button variant="outline" size="sm" onClick={() => artistPhotoRef.current?.click()} className="w-full gap-1">
+                <ImageIcon className="w-3.5 h-3.5" /> {artistPhotoFile ? artistPhotoFile.name : "Foto artis (opsional)"}
+              </Button>
+            </div>
+            <div className="flex gap-2">
+              <Button onClick={handleSaveArtist} disabled={savingArtist} className="flex-1">
+                {savingArtist ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : null}
+                {editingArtist ? "Perbarui" : "Tambah"}
+              </Button>
+              {editingArtist && <Button variant="outline" onClick={() => { setEditingArtist(null); setArtistName(""); setArtistBio(""); setArtistGenre(""); setArtistPhotoFile(null); }}>Batal</Button>}
+            </div>
+
+            <div className="border-t pt-3 space-y-2">
+              <h4 className="text-xs font-semibold text-muted-foreground">Daftar Artis ({artistList.length})</h4>
+              {artistList.map(a => (
+                <div key={a.id} className="flex items-center gap-3 p-2 rounded hover:bg-accent/50">
+                  {a.photo_url ? (
+                    <img src={a.photo_url} alt="" className="w-10 h-10 rounded-full object-cover" />
+                  ) : (
+                    <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center"><User className="w-4 h-4 text-primary" /></div>
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <div className="font-medium text-sm">{a.name}</div>
+                    {a.genre && <div className="text-xs text-muted-foreground">{a.genre}</div>}
+                  </div>
+                  <Button size="sm" variant="ghost" onClick={() => { setEditingArtist(a); setArtistName(a.name); setArtistBio(a.bio || ""); setArtistGenre(a.genre || ""); }}>
+                    <Edit2 className="w-3 h-3" />
+                  </Button>
+                  <Button size="sm" variant="ghost" onClick={() => handleDeleteArtist(a.id)}>
+                    <Trash2 className="w-3 h-3 text-destructive" />
+                  </Button>
+                </div>
+              ))}
+            </div>
           </CardContent>
         </Card>
       )}

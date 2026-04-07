@@ -9,9 +9,11 @@ import {
   Music, Play, Pause, SkipBack, SkipForward, Download, Volume2, VolumeX,
   Repeat, Shuffle, Loader2, HardDrive, Globe, CheckCircle2, Trash2,
   WifiOff, Wifi, Crown, Zap, Clock, ListMusic, Plus, Edit2, Check, Lock, Heart,
-  FileText, Copyright, Type, ChevronDown, Share2, Timer, Sparkles, List, Ticket, Tag, Globe as GlobeIcon, Users
+  FileText, Copyright, Type, ChevronDown, Share2, Timer, Sparkles, List, Ticket, Tag, Users, Mic2
 } from "lucide-react";
 import MusicPublicTab from "@/components/MusicPublicTab";
+import ArtistTab from "@/components/ArtistTab";
+import AudioDeviceDetector from "@/components/AudioDeviceDetector";
 import { useToast } from "@/hooks/use-toast";
 import { Slider } from "@/components/ui/slider";
 import {
@@ -279,7 +281,7 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer }: Playl
   const [selectedUserSongIds, setSelectedUserSongIds] = useState<Set<string>>(new Set());
   const [savingUserSongs, setSavingUserSongs] = useState(false);
 
-  const [activeView, setActiveView] = useState<"playlist" | "myplaylists" | "storage" | "liked" | "public">("playlist");
+  const [activeView, setActiveView] = useState<"playlist" | "myplaylists" | "storage" | "liked" | "public" | "artist">("playlist");
 
   // Voucher redeem
   const [redeemCode, setRedeemCode] = useState("");
@@ -879,24 +881,28 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer }: Playl
         </div>
       </div>
 
-      {/* Tab Buttons */}
+      {/* Tab Buttons - Row 1 */}
       <div className="flex gap-1.5">
-        <Button variant={activeView === "playlist" ? "default" : "outline"} size="sm" className="flex-1 gap-1.5 text-[11px] px-2" onClick={() => { setActiveView("playlist"); setViewingPlaylist(null); }}>
-          <Music className="w-3.5 h-3.5" /> Semua ({songs.length})
+        <Button variant={activeView === "playlist" ? "default" : "outline"} size="sm" className="flex-1 gap-1 text-[10px] px-1.5" onClick={() => { setActiveView("playlist"); setViewingPlaylist(null); }}>
+          <Music className="w-3 h-3" /> Semua
         </Button>
-        <Button variant={activeView === "liked" ? "default" : "outline"} size="sm" className="flex-1 gap-1.5 text-[11px] px-2" onClick={() => { setActiveView("liked"); setViewingPlaylist(null); }}>
-          <Heart className="w-3.5 h-3.5" /> Suka
-          {likedSongIds.size > 0 && <span className="bg-destructive/20 text-destructive text-[10px] font-bold px-1 rounded-full">{likedSongIds.size}</span>}
+        <Button variant={activeView === "liked" ? "default" : "outline"} size="sm" className="flex-1 gap-1 text-[10px] px-1.5" onClick={() => { setActiveView("liked"); setViewingPlaylist(null); }}>
+          <Heart className="w-3 h-3" /> Suka
         </Button>
-        <Button variant={activeView === "myplaylists" ? "default" : "outline"} size="sm" className="flex-1 gap-1.5 text-[11px] px-2" onClick={() => { setActiveView("myplaylists"); setViewingPlaylist(null); }}>
-          <ListMusic className="w-3.5 h-3.5" /> Playlist
+        <Button variant={activeView === "myplaylists" ? "default" : "outline"} size="sm" className="flex-1 gap-1 text-[10px] px-1.5" onClick={() => { setActiveView("myplaylists"); setViewingPlaylist(null); }}>
+          <ListMusic className="w-3 h-3" /> Playlist
         </Button>
-        <Button variant={activeView === "storage" ? "default" : "outline"} size="sm" className="flex-1 gap-1.5 text-[11px] px-2" onClick={() => setActiveView("storage")}>
-          <HardDrive className="w-3.5 h-3.5" /> Storage
-          {cachedCount > 0 && <span className="bg-accent/20 text-accent text-[10px] font-bold px-1 rounded-full">{cachedCount}</span>}
+        <Button variant={activeView === "storage" ? "default" : "outline"} size="sm" className="flex-1 gap-1 text-[10px] px-1.5" onClick={() => setActiveView("storage")}>
+          <HardDrive className="w-3 h-3" /> Storage
         </Button>
-        <Button variant={activeView === "public" ? "default" : "outline"} size="sm" className="flex-1 gap-1.5 text-[11px] px-2" onClick={() => setActiveView("public")}>
-          <Users className="w-3.5 h-3.5" /> Publik
+      </div>
+      {/* Tab Buttons - Row 2 */}
+      <div className="flex gap-1.5">
+        <Button variant={activeView === "public" ? "default" : "outline"} size="sm" className="flex-1 gap-1 text-[10px] px-1.5" onClick={() => setActiveView("public")}>
+          <Users className="w-3 h-3" /> Publik
+        </Button>
+        <Button variant={activeView === "artist" ? "default" : "outline"} size="sm" className="flex-1 gap-1 text-[10px] px-1.5" onClick={() => setActiveView("artist")}>
+          <Mic2 className="w-3 h-3" /> Artist
         </Button>
       </div>
 
@@ -947,6 +953,15 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer }: Playl
             <div className="flex items-center gap-2" onClick={e => e.stopPropagation()}>
               <button onClick={toggleMute} className="text-muted-foreground hover:text-foreground">{muted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}</button>
               <Slider value={[muted ? 0 : volume]} max={1} step={0.01} onValueChange={changeVolume} className="flex-1 cursor-pointer" />
+              <button onClick={async () => {
+                if (!currentSong) return;
+                const shareUrl = `${window.location.origin}/?song=${currentSong.id}`;
+                const shareData = { title: currentSong.title, text: `🎵 ${currentSong.title} - ${currentSong.artist}`, url: shareUrl };
+                try {
+                  if (navigator.share) { await navigator.share(shareData); }
+                  else { await navigator.clipboard.writeText(shareUrl); toast({ title: "Link disalin!" }); }
+                } catch {}
+              }} className="text-muted-foreground hover:text-foreground"><Share2 className="w-4 h-4" /></button>
             </div>
             <div className="flex items-center justify-center gap-1.5 pt-1 text-[11px] font-semibold text-primary">
               <Type className="w-3.5 h-3.5" />
@@ -1041,7 +1056,15 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer }: Playl
                 <Sparkles className="w-5 h-5" />
               </button>
               <div className="flex items-center gap-4">
-                <button className="p-2 text-muted-foreground hover:text-foreground rounded-full transition-colors">
+                <button className="p-2 text-muted-foreground hover:text-foreground rounded-full transition-colors" onClick={async () => {
+                  if (!currentSong) return;
+                  const shareUrl = `${window.location.origin}/?song=${currentSong.id}`;
+                  const shareData = { title: currentSong.title, text: `🎵 ${currentSong.title} - ${currentSong.artist}`, url: shareUrl };
+                  try {
+                    if (navigator.share) { await navigator.share(shareData); }
+                    else { await navigator.clipboard.writeText(shareUrl); toast({ title: "Link disalin!" }); }
+                  } catch {}
+                }}>
                   <Share2 className="w-5 h-5" />
                 </button>
                 <button className="p-2 text-muted-foreground hover:text-foreground rounded-full transition-colors" onClick={() => setShowFullPlayer(false)}>
@@ -1592,6 +1615,25 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer }: Playl
           }
         }} />
       )}
+
+      {/* ===== ARTIST VIEW ===== */}
+      {activeView === "artist" && (
+        <ArtistTab onPlaySong={(song) => {
+          const idx = songs.findIndex(s => s.id === song.id);
+          if (idx >= 0) { playSong(idx); }
+          else {
+            const audio = audioRef.current;
+            if (audio) {
+              audio.src = song.file_url;
+              audio.play().catch(() => {});
+              setIsPlaying(true);
+            }
+          }
+        }} />
+      )}
+
+      {/* Audio Device Detector */}
+      {activeView === "playlist" && <AudioDeviceDetector />}
 
       {/* Terms & Privacy Dialog */}
       <Dialog open={termsOpen} onOpenChange={setTermsOpen}>

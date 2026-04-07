@@ -38,6 +38,36 @@ export type Database = {
         }
         Relationships: []
       }
+      artists: {
+        Row: {
+          bio: string | null
+          created_at: string
+          genre: string | null
+          id: string
+          name: string
+          photo_url: string | null
+          updated_at: string
+        }
+        Insert: {
+          bio?: string | null
+          created_at?: string
+          genre?: string | null
+          id?: string
+          name: string
+          photo_url?: string | null
+          updated_at?: string
+        }
+        Update: {
+          bio?: string | null
+          created_at?: string
+          genre?: string | null
+          id?: string
+          name?: string
+          photo_url?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       balance_transactions: {
         Row: {
           amount: number
@@ -411,6 +441,7 @@ export type Database = {
       playlist_songs: {
         Row: {
           artist: string
+          artist_id: string | null
           cover_url: string | null
           created_at: string
           duration: number | null
@@ -422,6 +453,7 @@ export type Database = {
         }
         Insert: {
           artist?: string
+          artist_id?: string | null
           cover_url?: string | null
           created_at?: string
           duration?: number | null
@@ -433,6 +465,7 @@ export type Database = {
         }
         Update: {
           artist?: string
+          artist_id?: string | null
           cover_url?: string | null
           created_at?: string
           duration?: number | null
@@ -442,7 +475,15 @@ export type Database = {
           release_date?: string | null
           title?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "playlist_songs_artist_id_fkey"
+            columns: ["artist_id"]
+            isOneToOne: false
+            referencedRelation: "artists"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       playlists: {
         Row: {
