@@ -74,7 +74,7 @@ const AdminMusicTab = () => {
   const [selectedSongIds, setSelectedSongIds] = useState<Set<string>>(new Set());
   const [savingSongs, setSavingSongs] = useState(false);
 
-  const [activeTab, setActiveTab] = useState<"songs" | "playlists" | "lyrics" | "review">("songs");
+  const [activeTab, setActiveTab] = useState<"songs" | "playlists" | "lyrics" | "review" | "artists">("songs");
 
   // Review public songs
   const [pendingSongs, setPendingSongs] = useState<any[]>([]);
