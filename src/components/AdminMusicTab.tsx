@@ -771,6 +771,66 @@ const AdminMusicTab = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Review Tab */}
+      {activeTab === "review" && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-sm flex items-center gap-2"><Shield className="w-4 h-4" /> Review Lagu Publik</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {loadingReview ? (
+              <div className="flex justify-center py-4"><Loader2 className="animate-spin w-6 h-6" /></div>
+            ) : pendingSongs.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-4">Tidak ada lagu yang perlu direview</p>
+            ) : (
+              pendingSongs.map(song => {
+                let aiResult: any = null;
+                try { aiResult = JSON.parse(song.ai_check_result || "null"); } catch {}
+                return (
+                  <Card key={song.id} className="overflow-hidden">
+                    <CardContent className="p-3 space-y-2">
+                      <div className="flex items-center gap-3">
+                        {song.cover_url ? (
+                          <img src={song.cover_url} alt="" className="w-10 h-10 rounded object-cover" />
+                        ) : (
+                          <div className="w-10 h-10 rounded bg-primary/10 flex items-center justify-center"><Music className="w-4 h-4 text-primary" /></div>
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <div className="font-medium text-sm truncate">{song.title}</div>
+                          <div className="text-xs text-muted-foreground">{song.artist}</div>
+                          <div className="flex items-center gap-2 mt-1">
+                            {song.status === "pending" ? (
+                              <span className="inline-flex items-center gap-1 text-xs text-yellow-600"><Clock className="w-3 h-3" /> Menunggu</span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 text-xs text-red-500"><XCircle className="w-3 h-3" /> Ditolak</span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                      {aiResult && (
+                        <div className={`text-xs p-2 rounded ${aiResult.recommendation === "reject" ? "bg-destructive/10 text-destructive" : aiResult.recommendation === "review" ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-300" : "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300"}`}>
+                          <strong>AI:</strong> {aiResult.reason} (Kepercayaan: {aiResult.confidence})
+                        </div>
+                      )}
+                      {song.description && <p className="text-xs text-muted-foreground">{song.description}</p>}
+                      <Input placeholder="Catatan admin (opsional)..." value={reviewNote} onChange={e => setReviewNote(e.target.value)} className="text-xs" />
+                      <div className="flex gap-2">
+                        <Button size="sm" variant="default" className="flex-1 gap-1" onClick={() => handleReviewAction(song.id, "approved")}>
+                          <CheckCircle2 className="w-3.5 h-3.5" /> Setujui
+                        </Button>
+                        <Button size="sm" variant="destructive" className="flex-1 gap-1" onClick={() => handleReviewAction(song.id, "rejected")}>
+                          <XCircle className="w-3.5 h-3.5" /> Tolak
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })
+            )}
+          </CardContent>
+        </Card>
+      )}
     </>
   );
 };
