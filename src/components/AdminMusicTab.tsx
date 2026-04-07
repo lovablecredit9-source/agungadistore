@@ -74,7 +74,29 @@ const AdminMusicTab = () => {
   const [selectedSongIds, setSelectedSongIds] = useState<Set<string>>(new Set());
   const [savingSongs, setSavingSongs] = useState(false);
 
-  const [activeTab, setActiveTab] = useState<"songs" | "playlists" | "lyrics">("songs");
+  const [activeTab, setActiveTab] = useState<"songs" | "playlists" | "lyrics" | "review">("songs");
+
+  // Review public songs
+  const [pendingSongs, setPendingSongs] = useState<any[]>([]);
+  const [loadingReview, setLoadingReview] = useState(false);
+  const [reviewNote, setReviewNote] = useState("");
+
+  const loadPendingSongs = async () => {
+    setLoadingReview(true);
+    const { data } = await supabase.from("public_songs").select("*").in("status", ["pending", "rejected"]).order("created_at", { ascending: false });
+    setPendingSongs(data || []);
+    setLoadingReview(false);
+  };
+
+  const handleReviewAction = async (songId: string, action: "approved" | "rejected") => {
+    await supabase.from("public_songs").update({
+      status: action,
+      admin_note: reviewNote || (action === "approved" ? "Disetujui admin" : "Ditolak admin"),
+    }).eq("id", songId);
+    setReviewNote("");
+    toast({ title: action === "approved" ? "Lagu disetujui!" : "Lagu ditolak" });
+    loadPendingSongs();
+  };
 
   // Edit song state
   const [editSongOpen, setEditSongOpen] = useState(false);
