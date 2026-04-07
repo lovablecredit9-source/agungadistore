@@ -61,7 +61,9 @@ function formatPrice(price: number) {
 
 function calcExpiry(durationType: string, durationValue: number, startsAt: Date): Date {
   const d = new Date(startsAt);
-  if (durationType === "hours") d.setHours(d.getHours() + durationValue);
+  if (durationType === "seconds") d.setSeconds(d.getSeconds() + durationValue);
+  else if (durationType === "minutes") d.setMinutes(d.getMinutes() + durationValue);
+  else if (durationType === "hours") d.setHours(d.getHours() + durationValue);
   else if (durationType === "days") d.setDate(d.getDate() + durationValue);
   else if (durationType === "months") d.setMonth(d.getMonth() + durationValue);
   return d;
@@ -73,16 +75,19 @@ function timeRemainingStr(expiresAt: string | null): string {
   if (diff <= 0) return "Kedaluwarsa";
   const days = Math.floor(diff / (1000 * 60 * 60 * 24));
   const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-  if (days > 0) return `${days}h ${hours}j`;
   const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-  return hours > 0 ? `${hours}j ${mins}m` : `${mins}m`;
+  const secs = Math.floor((diff % (1000 * 60)) / 1000);
+  if (days > 0) return `${days}h ${hours}j ${mins}m`;
+  if (hours > 0) return `${hours}j ${mins}m ${secs}d`;
+  if (mins > 0) return `${mins}m ${secs}d`;
+  return `${secs}d`;
 }
 
 function formatDateTime(iso: string) {
   return new Date(iso).toLocaleString("id-ID", { dateStyle: "medium", timeStyle: "short" });
 }
 
-const durationLabels: Record<string, string> = { hours: "Jam", days: "Hari", months: "Bulan" };
+const durationLabels: Record<string, string> = { seconds: "Detik", minutes: "Menit", hours: "Jam", days: "Hari", months: "Bulan" };
 
 // --- Sponsor Form Component ---
 function SponsorForm({
@@ -251,6 +256,8 @@ function SponsorForm({
               <Select value={durationType} onValueChange={setDurationType}>
                 <SelectTrigger className="w-24"><SelectValue /></SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="seconds">Detik</SelectItem>
+                  <SelectItem value="minutes">Menit</SelectItem>
                   <SelectItem value="hours">Jam</SelectItem>
                   <SelectItem value="days">Hari</SelectItem>
                   <SelectItem value="months">Bulan</SelectItem>
@@ -363,6 +370,8 @@ function ExtendDialog({
               <Select value={extType} onValueChange={setExtType}>
                 <SelectTrigger className="w-24"><SelectValue /></SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="seconds">Detik</SelectItem>
+                  <SelectItem value="minutes">Menit</SelectItem>
                   <SelectItem value="hours">Jam</SelectItem>
                   <SelectItem value="days">Hari</SelectItem>
                   <SelectItem value="months">Bulan</SelectItem>

@@ -52,9 +52,11 @@ function timeRemaining(expiresAt: string | null): string {
   const days = Math.floor(diff / (1000 * 60 * 60 * 24));
   const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
   const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-  if (days > 0) return `${days}h ${hours}j lagi`;
-  if (hours > 0) return `${hours}j ${mins}m lagi`;
-  return `${mins}m lagi`;
+  const secs = Math.floor((diff % (1000 * 60)) / 1000);
+  if (days > 0) return `${days}h ${hours}j ${mins}m`;
+  if (hours > 0) return `${hours}j ${mins}m ${secs}d`;
+  if (mins > 0) return `${mins}m ${secs}d`;
+  return `${secs}d`;
 }
 
 function formatPrice(price: number) {
