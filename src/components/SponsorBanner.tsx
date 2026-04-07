@@ -37,7 +37,10 @@ interface Sponsor {
   tiktok: string;
   twitter: string;
   threads: string;
+  category: string;
 }
+
+type SortOrder = "newest" | "oldest";
 
 function timeRemaining(expiresAt: string | null): string {
   if (!expiresAt) return "Tanpa batas";
