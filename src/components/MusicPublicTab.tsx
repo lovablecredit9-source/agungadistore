@@ -8,7 +8,7 @@ import { Progress } from "@/components/ui/progress";
 import {
   Music, Upload, Loader2, Globe, Lock, User, Search, Heart,
   UserPlus, UserMinus, Play, Eye, CheckCircle2, Clock, XCircle,
-  ChevronLeft
+  ChevronLeft, Share2, Bluetooth, Volume2, Headphones, Speaker, Smartphone
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import {
