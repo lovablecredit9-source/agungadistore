@@ -373,6 +373,24 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer }: Playl
     return getVisitorId();
   }
 
+  async function fetchLikedSongs() {
+    const visitorId = await getVisitorIdSafe();
+    const { data } = await supabase.from("liked_songs").select("song_id").eq("visitor_id", visitorId);
+    if (data) setLikedSongIds(new Set(data.map((d: any) => d.song_id)));
+  }
+
+  async function toggleLikeSong(songId: string, e?: React.MouseEvent) {
+    e?.stopPropagation();
+    const visitorId = await getVisitorIdSafe();
+    if (likedSongIds.has(songId)) {
+      await supabase.from("liked_songs").delete().eq("song_id", songId).eq("visitor_id", visitorId);
+      setLikedSongIds(prev => { const n = new Set(prev); n.delete(songId); return n; });
+    } else {
+      await supabase.from("liked_songs").insert({ song_id: songId, visitor_id: visitorId });
+      setLikedSongIds(prev => new Set(prev).add(songId));
+    }
+  }
+
   async function fetchSongs() {
     setLoading(true);
     const visitorId = await getVisitorIdSafe();
