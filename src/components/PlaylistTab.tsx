@@ -302,12 +302,34 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer }: Playl
   // Lyrics state
   const [allLyrics, setAllLyrics] = useState<LyricLine[]>([]);
   const [termsOpen, setTermsOpen] = useState(false);
-  // AI Recommendations
   const [aiRecommendedIds, setAiRecommendedIds] = useState<string[]>([]);
   const [loadingRecs, setLoadingRecs] = useState(false);
   const lyricsContainerRef = useRef<HTMLDivElement>(null);
   const fullPlayerLyricsRef = useRef<HTMLDivElement>(null);
   const [showFullPlayer, setShowFullPlayer] = useState(false);
+
+  const buildFallbackRecommendationIds = useCallback((songList: Song[], likedIds: Set<string>) => {
+    const likedArtists = new Set(
+      songList
+        .filter(song => likedIds.has(song.id))
+        .map(song => song.artist.trim().toLowerCase())
+        .filter(Boolean)
+    );
+
+    const unseenSongs = songList.filter(song => !likedIds.has(song.id));
+    const artistMatched = unseenSongs.filter(song => likedArtists.has(song.artist.trim().toLowerCase()));
+    const remaining = unseenSongs.filter(song => !artistMatched.some(match => match.id === song.id));
+    const fallback = [...artistMatched, ...remaining];
+
+    return (fallback.length > 0 ? fallback : songList).slice(0, 6).map(song => song.id);
+  }, []);
+
+  const recommendedSongs = useMemo(
+    () => aiRecommendedIds
+      .map(id => songs.find(song => song.id === id))
+      .filter((song): song is Song => Boolean(song)),
+    [aiRecommendedIds, songs]
+  );
 
   // Current playing song list (filtered by playlist or all)
   const displaySongs = viewingPlaylist
@@ -319,7 +341,7 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer }: Playl
     return () => clearInterval(interval);
   }, [activeRedeemedMb]);
 
-  useEffect(() => { fetchSongs(); fetchRedeemedStorages(); checkPinExists(); fetchLikedSongs(); fetchAiRecommendations(); }, []);
+  useEffect(() => { fetchSongs(); fetchRedeemedStorages(); checkPinExists(); fetchLikedSongs(); }, []);
   // Update maxBytes when activeRedeemedMb changes
   useEffect(() => { setMaxBytes(getTotalMaxBytes(activeRedeemedMb)); }, [activeRedeemedMb]);
 
