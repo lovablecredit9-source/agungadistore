@@ -535,12 +535,17 @@ const MusicPublicTab = ({ onPlaySong }: MusicPublicTabProps) => {
                   </span>
                 </DialogDescription>
               </DialogHeader>
-              {viewingProfile.visitor_id !== visitorId && (
-                <Button size="sm" variant={isFollowing(viewingProfile.visitor_id) ? "secondary" : "default"}
-                  onClick={() => handleFollow(viewingProfile.visitor_id)}>
-                  {isFollowing(viewingProfile.visitor_id) ? <><UserMinus className="w-3 h-3 mr-1" /> Unfollow</> : <><UserPlus className="w-3 h-3 mr-1" /> Follow</>}
+              <div className="flex gap-2">
+                {viewingProfile.visitor_id !== visitorId && (
+                  <Button size="sm" variant={isFollowing(viewingProfile.visitor_id) ? "secondary" : "default"}
+                    onClick={() => handleFollow(viewingProfile.visitor_id)}>
+                    {isFollowing(viewingProfile.visitor_id) ? <><UserMinus className="w-3 h-3 mr-1" /> Unfollow</> : <><UserPlus className="w-3 h-3 mr-1" /> Follow</>}
+                  </Button>
+                )}
+                <Button size="sm" variant="outline" onClick={() => handleShare(`Profil musik @${viewingProfile.username}`, window.location.href)}>
+                  <Share2 className="w-3 h-3 mr-1" /> Share
                 </Button>
-              )}
+              </div>
               <div className="space-y-2">
                 <h4 className="text-sm font-semibold">Lagu ({viewProfileSongs.length})</h4>
                 {viewProfileSongs.map(song => (
