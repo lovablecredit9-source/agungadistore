@@ -226,15 +226,17 @@ export default function SponsorBanner() {
             )}
           </CardContent>
         </Card>
-        {sponsors.length > 1 && (
+        {sponsor && filtered.length > 1 && (
           <div className="flex justify-center gap-1 mt-2">
-            {sponsors.map((_, i) => (
+            {filtered.map((_, i) => (
               <button key={i} onClick={() => setCurrent(i)}
-                className={`w-1.5 h-1.5 rounded-full transition-all ${i === current ? "bg-primary w-4" : "bg-muted-foreground/30"}`} />
+                className={`w-1.5 h-1.5 rounded-full transition-all ${i === current % filtered.length ? "bg-primary w-4" : "bg-muted-foreground/30"}`} />
             ))}
           </div>
         )}
-      </div>
+        {sponsor && <></>}
+        </div>
+        {/* close the sponsor && ( block */}
 
       {/* Sponsor Detail Modal */}
       {selectedSponsor && (
