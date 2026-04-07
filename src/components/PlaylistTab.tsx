@@ -717,6 +717,9 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer }: Playl
                   {song.release_date ? `Dirilis ${formatSongDate(song.release_date)}` : `Diunggah ${formatDate(song.created_at)}`}
                 </p>
               </div>
+              <button onClick={(e) => toggleLikeSong(song.id, e)} className="shrink-0 p-1">
+                <Heart className={`w-4 h-4 transition-colors ${likedSongIds.has(song.id) ? "fill-destructive text-destructive" : "text-muted-foreground hover:text-destructive"}`} />
+              </button>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button size="sm" variant="ghost" className="shrink-0 h-8 w-8 p-0" onClick={(e) => e.stopPropagation()} disabled={downloading === song.id}>
