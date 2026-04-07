@@ -2616,6 +2616,7 @@ const Index = () => {
             { key: "tiket" as Tab, icon: AlertCircle, label: t("nav.ticket", lang) },
             { key: "playlist" as Tab, icon: Music, label: t("nav.playlist", lang) },
             { key: "publik" as Tab, icon: Globe, label: "Publik" },
+            { key: "sponsor" as Tab, icon: Megaphone, label: "Sponsor" },
           ]).map(({ key, icon: Icon, label }) => (
             <button key={key} onClick={() => setTab(key)}
               className={`flex-1 flex flex-col items-center py-2 text-[10px] transition-all duration-200 ${tab === key ? "text-primary font-bold" : "text-muted-foreground hover:text-foreground"}`}>
