@@ -235,6 +235,7 @@ interface PlaylistTabProps {
   onPlaybackChange?: (state: PlaybackState) => void;
   onTogglePlay?: React.MutableRefObject<(() => void) | null>;
   onOpenFullPlayer?: React.MutableRefObject<(() => void) | null>;
+  onPlayExternal?: React.MutableRefObject<((song: { id: string; title: string; artist: string; file_url: string; cover_url: string | null }) => void) | null>;
 }
 
 // ===== COMPONENT =====
