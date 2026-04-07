@@ -456,19 +456,40 @@ const MusicPublicTab = ({ onPlaySong }: MusicPublicTabProps) => {
             )}
 
             <div className="space-y-2">
-              <input ref={fileRef} type="file" accept="audio/*" className="hidden" onChange={e => setUploadFile(e.target.files?.[0] || null)} />
+              <input ref={fileRef} type="file" accept="audio/*" className="hidden" onChange={e => {
+                const f = e.target.files?.[0] || null;
+                if (f && f.size > MAX_FILE_SIZE) {
+                  toast({ title: `File terlalu besar! Maks ${MAX_FILE_SIZE / 1024 / 1024}MB`, variant: "destructive" });
+                  return;
+                }
+                setUploadFile(f);
+              }} />
               <Button variant="outline" size="sm" onClick={() => fileRef.current?.click()} className="w-full gap-1">
-                <Music className="w-3.5 h-3.5" /> {uploadFile ? uploadFile.name : "Pilih file audio *"}
+                <Music className="w-3.5 h-3.5" /> {uploadFile ? `${uploadFile.name} (${(uploadFile.size / 1024 / 1024).toFixed(1)}MB)` : "Pilih file audio * (maks 20MB)"}
               </Button>
-              <input ref={coverRef} type="file" accept="image/*" className="hidden" onChange={e => setUploadCover(e.target.files?.[0] || null)} />
+              <input ref={coverRef} type="file" accept="image/*" className="hidden" onChange={e => {
+                const f = e.target.files?.[0] || null;
+                if (f && f.size > MAX_COVER_SIZE) {
+                  toast({ title: `Cover terlalu besar! Maks ${MAX_COVER_SIZE / 1024 / 1024}MB`, variant: "destructive" });
+                  return;
+                }
+                setUploadCover(f);
+              }} />
               <Button variant="outline" size="sm" onClick={() => coverRef.current?.click()} className="w-full gap-1">
-                🖼️ {uploadCover ? uploadCover.name : "Cover (opsional)"}
+                🖼️ {uploadCover ? uploadCover.name : "Cover (opsional, maks 5MB)"}
               </Button>
             </div>
 
+            {uploading && (
+              <div className="space-y-2">
+                <Progress value={uploadProgress} className="h-2" />
+                <p className="text-xs text-muted-foreground text-center">{uploadStep} ({uploadProgress}%)</p>
+              </div>
+            )}
+
             <Button onClick={handleUpload} disabled={uploading} className="w-full">
               {uploading ? <Loader2 className="animate-spin w-4 h-4 mr-2" /> : <Upload className="w-4 h-4 mr-2" />}
-              Upload
+              {uploading ? uploadStep : "Upload"}
             </Button>
           </CardContent>
         </Card>
