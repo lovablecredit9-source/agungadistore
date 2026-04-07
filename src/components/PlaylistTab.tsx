@@ -1088,31 +1088,57 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer }: Playl
         </Card>
       )}
 
-      {/* ===== REKOMENDASI UNTUKMU (Liked Songs) ===== */}
-      {activeView === "playlist" && !viewingPlaylist && likedSongIds.size > 0 && (
+      {/* ===== REKOMENDASI UNTUKMU (AI-Powered) ===== */}
+      {activeView === "playlist" && !viewingPlaylist && (
         <div className="space-y-2">
-          <p className="text-xs font-bold text-muted-foreground flex items-center gap-1.5">
-            <Heart className="w-3.5 h-3.5 text-destructive" /> Rekomendasi Untukmu ({likedSongIds.size})
-          </p>
-          <div className="flex gap-2 overflow-x-auto pb-2 -mx-1 px-1">
-            {songs.filter(s => likedSongIds.has(s.id)).map((song, i) => (
-              <Card key={song.id} className="min-w-[140px] max-w-[140px] shrink-0 overflow-hidden cursor-pointer hover:shadow-md transition-all" onClick={() => {
-                const idx = songs.findIndex(s => s.id === song.id);
-                if (idx >= 0) playSong(idx);
-              }}>
-                <CardContent className="p-2 space-y-1.5">
-                  <div className="w-full aspect-square rounded-lg bg-primary/10 overflow-hidden relative">
-                    {song.cover_url ? <img src={song.cover_url} alt="" className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center"><Music className="w-8 h-8 text-primary/40" /></div>}
-                    <button onClick={(e) => toggleLikeSong(song.id, e)} className="absolute top-1 right-1 w-6 h-6 rounded-full bg-background/80 flex items-center justify-center">
-                      <Heart className="w-3.5 h-3.5 fill-destructive text-destructive" />
-                    </button>
-                  </div>
-                  <p className="text-xs font-bold truncate">{song.title}</p>
-                  <p className="text-[10px] text-muted-foreground truncate">{song.artist}</p>
-                </CardContent>
-              </Card>
-            ))}
+          <div className="flex items-center justify-between">
+            <p className="text-xs font-bold text-muted-foreground flex items-center gap-1.5">
+              <Sparkles className="w-3.5 h-3.5 text-primary" /> Rekomendasi Untukmu
+            </p>
+            <Button variant="ghost" size="sm" className="h-6 text-[10px] gap-1 text-primary" onClick={fetchAiRecommendations} disabled={loadingRecs}>
+              {loadingRecs ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
+              {loadingRecs ? "Memuat..." : "Refresh"}
+            </Button>
           </div>
+          {loadingRecs ? (
+            <div className="flex items-center justify-center py-6 text-muted-foreground">
+              <Loader2 className="w-5 h-5 animate-spin mr-2" />
+              <span className="text-xs">AI sedang memilih lagu untukmu...</span>
+            </div>
+          ) : aiRecommendedIds.length > 0 ? (
+            <div className="flex gap-2 overflow-x-auto pb-2 -mx-1 px-1">
+              {songs.filter(s => aiRecommendedIds.includes(s.id)).map((song) => (
+                <Card key={song.id} className="min-w-[140px] max-w-[140px] shrink-0 overflow-hidden cursor-pointer hover:shadow-md transition-all" onClick={() => {
+                  const idx = songs.findIndex(s => s.id === song.id);
+                  if (idx >= 0) playSong(idx);
+                }}>
+                  <CardContent className="p-2 space-y-1.5">
+                    <div className="w-full aspect-square rounded-lg bg-primary/10 overflow-hidden relative">
+                      {song.cover_url ? <img src={song.cover_url} alt="" className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center"><Music className="w-8 h-8 text-primary/40" /></div>}
+                      <div className="absolute top-1 left-1 w-5 h-5 rounded-full bg-primary/80 flex items-center justify-center">
+                        <Sparkles className="w-3 h-3 text-primary-foreground" />
+                      </div>
+                      <button onClick={(e) => toggleLikeSong(song.id, e)} className="absolute top-1 right-1 w-6 h-6 rounded-full bg-background/80 flex items-center justify-center">
+                        <Heart className={`w-3.5 h-3.5 transition-colors ${likedSongIds.has(song.id) ? "fill-destructive text-destructive" : "text-muted-foreground"}`} />
+                      </button>
+                    </div>
+                    <p className="text-xs font-bold truncate">{song.title}</p>
+                    <p className="text-[10px] text-muted-foreground truncate">{song.artist}</p>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <Card className="border-dashed">
+              <CardContent className="p-4 text-center">
+                <Sparkles className="w-8 h-8 text-muted-foreground/30 mx-auto mb-2" />
+                <p className="text-[11px] text-muted-foreground">Ketuk Refresh untuk mendapatkan rekomendasi AI</p>
+              </CardContent>
+            </Card>
+          )}
+          <p className="text-[10px] text-muted-foreground text-center flex items-center justify-center gap-1">
+            <Sparkles className="w-3 h-3" /> Dipilih khusus oleh AI berdasarkan selera musikmu
+          </p>
         </div>
       )}
 
