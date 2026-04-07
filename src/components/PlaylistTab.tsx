@@ -1607,6 +1607,25 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer }: Playl
         }} />
       )}
 
+      {/* ===== ARTIST VIEW ===== */}
+      {activeView === "artist" && (
+        <ArtistTab onPlaySong={(song) => {
+          const idx = songs.findIndex(s => s.id === song.id);
+          if (idx >= 0) { playSong(idx); }
+          else {
+            const audio = audioRef.current;
+            if (audio) {
+              audio.src = song.file_url;
+              audio.play().catch(() => {});
+              setIsPlaying(true);
+            }
+          }
+        }} />
+      )}
+
+      {/* Audio Device Detector */}
+      {activeView === "playlist" && <AudioDeviceDetector />}
+
       {/* Terms & Privacy Dialog */}
       <Dialog open={termsOpen} onOpenChange={setTermsOpen}>
         <DialogContent className="max-w-sm max-h-[80vh] overflow-y-auto">
