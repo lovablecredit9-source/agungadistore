@@ -175,6 +175,7 @@ function SponsorForm({
       starts_at: startsAt.toISOString(),
       expires_at: expiresAt.toISOString(),
       custom_note: customNote.trim() || null,
+      category: category.trim(),
       wa_number: waNumber.trim(),
       instagram: instagram.trim(),
       facebook: facebook.trim(),
