@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Music, Plus, Trash2, Upload, Loader2, ListMusic, Image as ImageIcon, Edit2, Check, X, Type } from "lucide-react";
+import { Music, Plus, Trash2, Upload, Loader2, ListMusic, Image as ImageIcon, Edit2, Check, X, Type, Shield, CheckCircle2, XCircle, Clock, Eye } from "lucide-react";
 import { Wand2, FileUp } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import {
