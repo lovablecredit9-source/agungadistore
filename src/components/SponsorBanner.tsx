@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Megaphone, Clock, User, Phone, ChevronLeft, ChevronRight, X } from "lucide-react";
+import { Megaphone, Clock, User, Phone, ChevronLeft, ChevronRight, X, Search } from "lucide-react";
 
 interface SponsorImage {
   id: string;
@@ -69,6 +69,8 @@ export default function SponsorBanner() {
   const [current, setCurrent] = useState(0);
   const [selectedSponsor, setSelectedSponsor] = useState<Sponsor | null>(null);
   const [imgIdx, setImgIdx] = useState(0);
+  const [search, setSearch] = useState("");
+  const [showSearch, setShowSearch] = useState(false);
 
   useEffect(() => {
     fetchSponsors();
@@ -117,16 +119,24 @@ export default function SponsorBanner() {
     </div>
   );
 
-  const sponsor = sponsors[current];
-  if (!sponsor) return null;
+  const q = search.toLowerCase().trim();
+  const filtered = q
+    ? sponsors.filter(s =>
+        s.title.toLowerCase().includes(q) ||
+        s.seller_name.toLowerCase().includes(q) ||
+        String(s.sponsor_number).includes(q)
+      )
+    : sponsors;
 
-  const currentImages = sponsorImages[sponsor.id] || [];
-  const displayImage = currentImages.length > 0 ? currentImages[0]?.image_url : sponsor.image_url;
+  const sponsor = filtered.length > 0 ? filtered[current % filtered.length] : null;
 
-  const socialLinks = Object.entries(socialIcons).filter(([key]) => {
+  const currentImages = sponsor ? (sponsorImages[sponsor.id] || []) : [];
+  const displayImage = currentImages.length > 0 ? currentImages[0]?.image_url : sponsor?.image_url;
+
+  const socialLinks = sponsor ? Object.entries(socialIcons).filter(([key]) => {
     const val = (sponsor as any)[key];
     return val && val.trim();
-  });
+  }) : [];
 
   return (
     <>
@@ -134,10 +144,39 @@ export default function SponsorBanner() {
         <div className="flex items-center gap-1.5 mb-2">
           <Megaphone className="w-4 h-4 text-primary" />
           <span className="text-xs font-bold text-primary uppercase tracking-wider">Sponsor</span>
-          {sponsors.length > 1 && (
-            <span className="text-[10px] text-muted-foreground ml-auto">{current + 1}/{sponsors.length}</span>
-          )}
+          <div className="ml-auto flex items-center gap-1">
+            <button onClick={() => setShowSearch(v => !v)} className="p-1 rounded-md hover:bg-muted transition-colors">
+              <Search className="w-3.5 h-3.5 text-muted-foreground" />
+            </button>
+            {filtered.length > 1 && (
+              <span className="text-[10px] text-muted-foreground">{(current % filtered.length) + 1}/{filtered.length}</span>
+            )}
+          </div>
         </div>
+        {showSearch && (
+          <div className="relative mb-2">
+            <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+            <input
+              type="text"
+              placeholder="Cari sponsor (nama, penjual, ID)..."
+              value={search}
+              onChange={e => { setSearch(e.target.value); setCurrent(0); }}
+              className="w-full pl-7 pr-7 py-1.5 text-xs rounded-lg border bg-background focus:outline-none focus:ring-1 focus:ring-primary"
+            />
+            {search && (
+              <button onClick={() => { setSearch(""); setCurrent(0); }} className="absolute right-2 top-1/2 -translate-y-1/2">
+                <X className="w-3.5 h-3.5 text-muted-foreground" />
+              </button>
+            )}
+          </div>
+        )}
+        {!sponsor && q && (
+          <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">
+            <Search className="w-8 h-8 mb-2 opacity-30" />
+            <p className="text-xs">Tidak ditemukan sponsor "{search}"</p>
+          </div>
+        )}
+        {sponsor && (
         <Card
           className="overflow-hidden border-primary/20 bg-gradient-to-br from-primary/5 via-accent/5 to-transparent cursor-pointer hover:shadow-lg transition-all"
           onClick={() => { setSelectedSponsor(sponsor); setImgIdx(0); }}
@@ -187,11 +226,12 @@ export default function SponsorBanner() {
             )}
           </CardContent>
         </Card>
-        {sponsors.length > 1 && (
+        )}
+        {filtered.length > 1 && (
           <div className="flex justify-center gap-1 mt-2">
-            {sponsors.map((_, i) => (
+            {filtered.map((_, i) => (
               <button key={i} onClick={() => setCurrent(i)}
-                className={`w-1.5 h-1.5 rounded-full transition-all ${i === current ? "bg-primary w-4" : "bg-muted-foreground/30"}`} />
+                className={`w-1.5 h-1.5 rounded-full transition-all ${i === current % filtered.length ? "bg-primary w-4" : "bg-muted-foreground/30"}`} />
             ))}
           </div>
         )}
