@@ -513,6 +513,9 @@ const AdminMusicTab = () => {
           <Shield className="w-3.5 h-3.5" /> Review
           {pendingSongs.filter(s => s.status === "pending").length > 0 && <span className="bg-destructive/20 text-destructive text-[10px] font-bold px-1 rounded-full">{pendingSongs.filter(s => s.status === "pending").length}</span>}
         </Button>
+        <Button variant={activeTab === "artists" ? "default" : "outline"} size="sm" className="flex-1 gap-1.5 text-[11px] px-2" onClick={() => { setActiveTab("artists"); loadArtists(); }}>
+          <User className="w-3.5 h-3.5" /> Artist
+        </Button>
       </div>
 
       {activeTab === "songs" && (
