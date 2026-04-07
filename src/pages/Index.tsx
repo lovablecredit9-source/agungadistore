@@ -35,7 +35,7 @@ import InstallPrompt from "@/components/InstallPrompt";
 import MusicPublicTab from "@/components/MusicPublicTab";
 import SponsorBanner from "@/components/SponsorBanner";
 
-type Tab = "beranda" | "produk" | "voucher" | "history" | "likes" | "tiket" | "saldo" | "playlist" | "publik";
+type Tab = "beranda" | "produk" | "voucher" | "history" | "likes" | "tiket" | "saldo" | "playlist" | "publik" | "sponsor";
 
 interface UserBalance {
   id: string;
