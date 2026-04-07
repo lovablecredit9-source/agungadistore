@@ -825,6 +825,7 @@ export type Database = {
           price: number
           seller_contact: string
           seller_name: string
+          sponsor_number: number
           starts_at: string
           threads: string | null
           tiktok: string | null
@@ -848,6 +849,7 @@ export type Database = {
           price?: number
           seller_contact?: string
           seller_name?: string
+          sponsor_number?: number
           starts_at?: string
           threads?: string | null
           tiktok?: string | null
@@ -871,6 +873,7 @@ export type Database = {
           price?: number
           seller_contact?: string
           seller_name?: string
+          sponsor_number?: number
           starts_at?: string
           threads?: string | null
           tiktok?: string | null
