@@ -623,7 +623,7 @@ const AdminDashboard = () => {
     const uploadedUrls = await uploadImages();
 
     if (editingProduct) {
-      const updateData: Record<string, unknown> = {
+      const updateData: { title: string; description: string | null; price: number; stock: number; category: string | null; has_warranty: boolean; image_url?: string } = {
         title, description: desc || null, price: parseInt(price) || 0,
         stock: parseInt(stock) || 0, category: category || null, has_warranty: hasWarranty,
       };
