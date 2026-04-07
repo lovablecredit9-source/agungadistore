@@ -953,6 +953,15 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer }: Playl
             <div className="flex items-center gap-2" onClick={e => e.stopPropagation()}>
               <button onClick={toggleMute} className="text-muted-foreground hover:text-foreground">{muted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}</button>
               <Slider value={[muted ? 0 : volume]} max={1} step={0.01} onValueChange={changeVolume} className="flex-1 cursor-pointer" />
+              <button onClick={async () => {
+                if (!currentSong) return;
+                const shareUrl = `${window.location.origin}/?song=${currentSong.id}`;
+                const shareData = { title: currentSong.title, text: `🎵 ${currentSong.title} - ${currentSong.artist}`, url: shareUrl };
+                try {
+                  if (navigator.share) { await navigator.share(shareData); }
+                  else { await navigator.clipboard.writeText(shareUrl); toast({ title: "Link disalin!" }); }
+                } catch {}
+              }} className="text-muted-foreground hover:text-foreground"><Share2 className="w-4 h-4" /></button>
             </div>
             <div className="flex items-center justify-center gap-1.5 pt-1 text-[11px] font-semibold text-primary">
               <Type className="w-3.5 h-3.5" />
