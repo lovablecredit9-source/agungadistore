@@ -281,6 +281,11 @@ export default function SponsorBanner() {
               <span className="flex items-center gap-1"><User className="w-3 h-3" />{sponsor.seller_name}</span>
               <span className="flex items-center gap-1"><Phone className="w-3 h-3" />{sponsor.seller_contact}</span>
             </div>
+            <div className="flex items-center gap-2 pt-0.5">
+              <Badge variant={sponsor.stock > 0 ? "secondary" : "destructive"} className="text-[10px] font-bold">
+                Stok: {sponsor.stock > 0 ? sponsor.stock : "Habis"}
+              </Badge>
+            </div>
             {/* Social buttons preview */}
             {socialLinks.length > 0 && (
               <div className="flex flex-wrap gap-1 pt-1">
