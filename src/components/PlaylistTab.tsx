@@ -239,7 +239,7 @@ interface PlaylistTabProps {
 }
 
 // ===== COMPONENT =====
-const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer }: PlaylistTabProps) => {
+const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer, onPlayExternal }: PlaylistTabProps) => {
   const [songs, setSongs] = useState<Song[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentIndex, setCurrentIndex] = useState<number>(-1);
