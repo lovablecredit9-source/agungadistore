@@ -87,7 +87,7 @@ function formatDateTime(iso: string) {
   return new Date(iso).toLocaleString("id-ID", { dateStyle: "medium", timeStyle: "short" });
 }
 
-const durationLabels: Record<string, string> = { hours: "Jam", days: "Hari", months: "Bulan" };
+const durationLabels: Record<string, string> = { seconds: "Detik", minutes: "Menit", hours: "Jam", days: "Hari", months: "Bulan" };
 
 // --- Sponsor Form Component ---
 function SponsorForm({
