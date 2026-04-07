@@ -69,6 +69,8 @@ export default function SponsorBanner() {
   const [current, setCurrent] = useState(0);
   const [selectedSponsor, setSelectedSponsor] = useState<Sponsor | null>(null);
   const [imgIdx, setImgIdx] = useState(0);
+  const [search, setSearch] = useState("");
+  const [showSearch, setShowSearch] = useState(false);
 
   useEffect(() => {
     fetchSponsors();
