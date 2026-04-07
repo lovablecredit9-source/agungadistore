@@ -395,6 +395,21 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer }: Playl
     }
   }
 
+  async function fetchAiRecommendations() {
+    setLoadingRecs(true);
+    try {
+      const visitorId = await getVisitorIdSafe();
+      const { data, error } = await supabase.functions.invoke("recommend-songs", {
+        body: { visitor_id: visitorId },
+      });
+      if (error) throw error;
+      if (data?.recommended_ids) setAiRecommendedIds(data.recommended_ids);
+    } catch (err) {
+      console.error("AI recommendation error:", err);
+    }
+    setLoadingRecs(false);
+  }
+
   async function fetchSongs() {
     setLoading(true);
     const visitorId = await getVisitorIdSafe();
