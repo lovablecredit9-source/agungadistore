@@ -243,6 +243,8 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer }: Playl
   const [duration, setDuration] = useState(0);
   const [volume, setVolume] = useState(1);
   const [muted, setMuted] = useState(false);
+  // Liked songs
+  const [likedSongIds, setLikedSongIds] = useState<Set<string>>(new Set());
   const [repeat, setRepeat] = useState(false);
   const [shuffle, setShuffle] = useState(false);
   const [downloading, setDownloading] = useState<string | null>(null);
