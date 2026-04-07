@@ -394,6 +394,7 @@ function ReceiptDialog({
 
   const receiptText = `📢 BUKTI PERPANJANGAN SPONSOR
 ━━━━━━━━━━━━━━━━━━━━
+🆔 ID: #${receipt.sponsor.sponsor_number}
 📌 Judul: ${receipt.sponsor.title}
 👤 Penjual: ${receipt.sponsor.seller_name}
 📞 Kontak: ${receipt.sponsor.seller_contact}
