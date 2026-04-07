@@ -18,6 +18,7 @@ import { getDeviceSummary } from "@/lib/device-info";
 import { STORE_NAME } from "@/lib/social-links";
 import storeQris from "@/assets/store-qris.jpg";
 import AdminMusicTab from "@/components/AdminMusicTab";
+import AdminSponsorTab from "@/components/AdminSponsorTab";
 
 interface Product {
   id: string;
