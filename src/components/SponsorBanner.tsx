@@ -173,24 +173,7 @@ export default function SponsorBanner() {
             )}
           </div>
         </div>
-        {showSearch && (
-          <div className="relative mb-2">
-            <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
-            <input
-              type="text"
-              placeholder="Cari sponsor (nama, penjual, ID)..."
-              value={search}
-              onChange={e => { setSearch(e.target.value); setCurrent(0); }}
-              className="w-full pl-7 pr-7 py-1.5 text-xs rounded-lg border bg-background focus:outline-none focus:ring-1 focus:ring-primary"
-            />
-            {search && (
-              <button onClick={() => { setSearch(""); setCurrent(0); }} className="absolute right-2 top-1/2 -translate-y-1/2">
-                <X className="w-3.5 h-3.5 text-muted-foreground" />
-              </button>
-            )}
-          </div>
-        )}
-        {/* Filter & Sort Bar */}
+        {/* Filter & Sort Bar - selalu tampil */}
         <div className="flex items-center gap-2 mb-2">
           <Select value={filterCategory} onValueChange={v => { setFilterCategory(v); setCurrent(0); }}>
             <SelectTrigger className="h-7 text-[11px] flex-1 min-w-0">
@@ -212,6 +195,23 @@ export default function SponsorBanner() {
             {sortOrder === "newest" ? "Terbaru" : "Terlama"}
           </button>
         </div>
+        {showSearch && (
+          <div className="relative mb-2">
+            <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+            <input
+              type="text"
+              placeholder="Cari sponsor (nama, penjual, ID)..."
+              value={search}
+              onChange={e => { setSearch(e.target.value); setCurrent(0); }}
+              className="w-full pl-7 pr-7 py-1.5 text-xs rounded-lg border bg-background focus:outline-none focus:ring-1 focus:ring-primary"
+            />
+            {search && (
+              <button onClick={() => { setSearch(""); setCurrent(0); }} className="absolute right-2 top-1/2 -translate-y-1/2">
+                <X className="w-3.5 h-3.5 text-muted-foreground" />
+              </button>
+            )}
+          </div>
+        )}
         {!sponsor && q && (
           <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">
             <Search className="w-8 h-8 mb-2 opacity-30" />
