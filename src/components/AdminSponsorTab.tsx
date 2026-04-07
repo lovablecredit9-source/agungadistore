@@ -462,6 +462,9 @@ export default function AdminSponsorTab() {
   const [editing, setEditing] = useState<Sponsor | null>(null);
   const [extendingSponsor, setExtendingSponsor] = useState<Sponsor | null>(null);
   const [receipt, setReceipt] = useState<ExtendReceipt | null>(null);
+  const [search, setSearch] = useState("");
+  const [filterCategory, setFilterCategory] = useState("all");
+  const [sortOrder, setSortOrder] = useState<"newest" | "oldest">("newest");
   const { toast } = useToast();
 
   useEffect(() => { fetchSponsors(); }, []);
@@ -494,6 +497,56 @@ export default function AdminSponsorTab() {
     fetchSponsors();
   }
 
+  // Get unique categories
+  const categories = Array.from(new Set(sponsors.map(s => s.category).filter(Boolean)));
+
+  // Filter & sort
+  const filtered = sponsors
+    .filter(s => {
+      const q = search.toLowerCase().trim();
+      if (q && !(
+        s.title.toLowerCase().includes(q) ||
+        s.seller_name.toLowerCase().includes(q) ||
+        String(s.sponsor_number).includes(q) ||
+        (s.category || "").toLowerCase().includes(q)
+      )) return false;
+      if (filterCategory !== "all" && s.category !== filterCategory) return false;
+      return true;
+    })
+    .sort((a, b) => {
+      const da = new Date(a.created_at).getTime();
+      const db = new Date(b.created_at).getTime();
+      return sortOrder === "newest" ? db - da : da - db;
+    });
+
+  function downloadPDF() {
+    const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
+    doc.setFontSize(16);
+    doc.text("Laporan Data Sponsor", 14, 15);
+    doc.setFontSize(9);
+    doc.text(`Tanggal: ${new Date().toLocaleString("id-ID")} | Total: ${filtered.length} sponsor`, 14, 22);
+
+    autoTable(doc, {
+      startY: 28,
+      head: [["#ID", "Judul", "Kategori", "Penjual", "Harga", "Durasi", "Sisa Waktu", "Status"]],
+      body: filtered.map(s => [
+        `#${s.sponsor_number}`,
+        s.title,
+        s.category || "-",
+        s.seller_name,
+        formatPrice(s.price),
+        `${s.duration_value} ${durationLabels[s.duration_type] || s.duration_type}`,
+        timeRemainingStr(s.expires_at),
+        s.is_active ? "Aktif" : "Nonaktif",
+      ]),
+      styles: { fontSize: 8 },
+      headStyles: { fillColor: [59, 130, 246] },
+    });
+
+    doc.save(`sponsor-report-${Date.now()}.pdf`);
+    toast({ title: "PDF berhasil diunduh! 📄" });
+  }
+
   return (
     <div className="space-y-4">
       <SponsorForm
@@ -503,8 +556,55 @@ export default function AdminSponsorTab() {
         sponsorImages={sponsorImages}
       />
 
-      <h3 className="font-bold text-sm">Semua Sponsor ({sponsors.length})</h3>
-      {sponsors.map(s => {
+      {/* Search, Filter, Sort, PDF */}
+      <Card>
+        <CardContent className="p-3 space-y-2">
+          <div className="flex items-center gap-2">
+            <div className="relative flex-1">
+              <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input
+                placeholder="Cari judul, penjual, ID..."
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+                className="pl-8 h-9 text-sm"
+              />
+              {search && (
+                <button onClick={() => setSearch("")} className="absolute right-2 top-1/2 -translate-y-1/2">
+                  <X className="w-3 h-3 text-muted-foreground" />
+                </button>
+              )}
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <Select value={filterCategory} onValueChange={setFilterCategory}>
+              <SelectTrigger className="flex-1 h-8 text-xs">
+                <SelectValue placeholder="Kategori" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Semua Kategori</SelectItem>
+                {categories.map(c => (
+                  <SelectItem key={c} value={c}>{c}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-8 text-xs gap-1"
+              onClick={() => setSortOrder(prev => prev === "newest" ? "oldest" : "newest")}
+            >
+              <ArrowUpDown className="w-3 h-3" />
+              {sortOrder === "newest" ? "Terbaru" : "Terlama"}
+            </Button>
+            <Button size="sm" variant="outline" className="h-8 text-xs gap-1" onClick={downloadPDF}>
+              <Download className="w-3 h-3" /> PDF
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      <h3 className="font-bold text-sm">Semua Sponsor ({filtered.length})</h3>
+      {filtered.map(s => {
         const imgs = sponsorImages[s.id] || [];
         return (
           <Card key={s.id} className={!s.is_active ? "opacity-60" : ""}>
@@ -521,6 +621,7 @@ export default function AdminSponsorTab() {
                   {imgs.length === 0 && s.image_url && <img src={s.image_url} alt="" className="w-full h-24 object-cover rounded-lg mb-2" />}
                   <p className="text-[10px] font-mono text-muted-foreground">#{s.sponsor_number}</p>
                   <p className="font-bold text-sm truncate">{s.title}</p>
+                  {s.category && <span className="inline-block text-[10px] bg-primary/10 text-primary px-2 py-0.5 rounded-full font-medium">{s.category}</span>}
                   {s.price > 0 && <p className="text-xs text-primary font-bold">{formatPrice(s.price)}</p>}
                   <p className="text-[10px] text-muted-foreground">Penjual: {s.seller_name} | {s.seller_contact}</p>
                   {(s.wa_number || s.instagram || s.tiktok) && (
@@ -555,7 +656,7 @@ export default function AdminSponsorTab() {
           </Card>
         );
       })}
-      {sponsors.length === 0 && <p className="text-center text-sm text-muted-foreground py-4">Belum ada sponsor</p>}
+      {filtered.length === 0 && <p className="text-center text-sm text-muted-foreground py-4">Tidak ada sponsor ditemukan</p>}
 
       <ExtendDialog
         sponsor={extendingSponsor}
