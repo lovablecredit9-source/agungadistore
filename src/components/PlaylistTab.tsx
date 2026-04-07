@@ -235,10 +235,11 @@ interface PlaylistTabProps {
   onPlaybackChange?: (state: PlaybackState) => void;
   onTogglePlay?: React.MutableRefObject<(() => void) | null>;
   onOpenFullPlayer?: React.MutableRefObject<(() => void) | null>;
+  onPlayExternal?: React.MutableRefObject<((song: { id: string; title: string; artist: string; file_url: string; cover_url: string | null }) => void) | null>;
 }
 
 // ===== COMPONENT =====
-const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer }: PlaylistTabProps) => {
+const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer, onPlayExternal }: PlaylistTabProps) => {
   const [songs, setSongs] = useState<Song[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentIndex, setCurrentIndex] = useState<number>(-1);
@@ -512,10 +513,40 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer }: Playl
     onPlaybackChange?.({ song: currentSong || null, isPlaying, currentTime, duration });
   }, [currentSong, isPlaying, currentTime, duration]);
 
-  // Expose togglePlay and openFullPlayer to parent
+  // Expose togglePlay, openFullPlayer, and playExternal to parent
   useEffect(() => {
     if (onTogglePlay) onTogglePlay.current = togglePlay;
     if (onOpenFullPlayer) onOpenFullPlayer.current = () => setShowFullPlayer(true);
+    if (onPlayExternal) onPlayExternal.current = (song) => {
+      // Play an external song (from publik tab) through the main audio system
+      if (audioRef.current) audioRef.current.pause();
+      const audio = new Audio(song.file_url);
+      audioRef.current = audio;
+      audio.volume = muted ? 0 : volume;
+      audio.play().catch(() => {});
+      setCurrentIndex(-1);
+      setIsPlaying(true);
+      setCurrentTime(0);
+      audio.addEventListener("timeupdate", () => {
+        setCurrentTime(audio.currentTime);
+        if ("mediaSession" in navigator && "setPositionState" in navigator.mediaSession) {
+          try { navigator.mediaSession.setPositionState({ duration: audio.duration || 0, playbackRate: audio.playbackRate, position: audio.currentTime }); } catch {}
+        }
+      });
+      audio.addEventListener("loadedmetadata", () => setDuration(audio.duration));
+      audio.addEventListener("ended", () => { setIsPlaying(false); });
+      // Media Session
+      if ("mediaSession" in navigator) {
+        const artworkList: MediaImage[] = song.cover_url
+          ? [{ src: song.cover_url, sizes: "192x192", type: "image/jpeg" }, { src: song.cover_url, sizes: "512x512", type: "image/jpeg" }]
+          : [];
+        navigator.mediaSession.metadata = new MediaMetadata({ title: song.title, artist: song.artist, album: "Publik", artwork: artworkList });
+        navigator.mediaSession.setActionHandler("play", () => { audioRef.current?.play(); setIsPlaying(true); });
+        navigator.mediaSession.setActionHandler("pause", () => { audioRef.current?.pause(); setIsPlaying(false); });
+      }
+      // Report to parent
+      onPlaybackChange?.({ song: { id: song.id, title: song.title, artist: song.artist, file_url: song.file_url, cover_url: song.cover_url, duration: 0, file_size: 0, created_at: '' } as Song, isPlaying: true, currentTime: 0, duration: 0 });
+    };
   });
 
   // Lyrics for current song

@@ -244,6 +244,7 @@ const Index = () => {
   const [playbackState, setPlaybackState] = useState<PlaybackState>({ song: null, isPlaying: false, currentTime: 0, duration: 0 });
   const togglePlayRef = useRef<(() => void) | null>(null);
   const openFullPlayerRef = useRef<(() => void) | null>(null);
+  const playExternalRef = useRef<((song: { id: string; title: string; artist: string; file_url: string; cover_url: string | null }) => void) | null>(null);
 
   // Likes
   const [likedIds, setLikedIds] = useState<Set<string>>(new Set());
@@ -1773,11 +1774,11 @@ const Index = () => {
 
         {/* PlaylistTab always mounted, hidden when not active */}
         <div className={tab === "playlist" ? "" : "hidden"}>
-          <PlaylistTab onPlaybackChange={setPlaybackState} onTogglePlay={togglePlayRef} onOpenFullPlayer={openFullPlayerRef} />
+          <PlaylistTab onPlaybackChange={setPlaybackState} onTogglePlay={togglePlayRef} onOpenFullPlayer={openFullPlayerRef} onPlayExternal={playExternalRef} />
         </div>
 
         {tab === "publik" && (
-          <MusicPublicTab />
+          <MusicPublicTab onPlaySong={(song) => playExternalRef.current?.(song)} />
         )}
       </main>
 

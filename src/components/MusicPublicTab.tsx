@@ -8,7 +8,7 @@ import { Progress } from "@/components/ui/progress";
 import {
   Music, Upload, Loader2, Globe, Lock, User, Search, Heart,
   UserPlus, UserMinus, Play, Eye, CheckCircle2, Clock, XCircle,
-  ChevronLeft
+  ChevronLeft, Share2, Bluetooth, Volume2, Headphones, Speaker, Smartphone
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -84,7 +84,42 @@ const MusicPublicTab = ({ onPlaySong }: MusicPublicTabProps) => {
   const [viewingProfile, setViewingProfile] = useState<MusicProfile | null>(null);
   const [viewProfileSongs, setViewProfileSongs] = useState<PublicSong[]>([]);
 
+  // Audio devices (bluetooth etc)
+  const [audioDevices, setAudioDevices] = useState<{ deviceId: string; label: string }[]>([]);
+
   const { toast } = useToast();
+
+  // Detect audio output devices
+  useEffect(() => {
+    const detectDevices = async () => {
+      try {
+        const allDevices = await navigator.mediaDevices.enumerateDevices();
+        const outputs = allDevices.filter(d => d.kind === "audiooutput").map(d => ({ deviceId: d.deviceId, label: d.label || "Perangkat Audio" }));
+        setAudioDevices(outputs);
+      } catch {}
+    };
+    detectDevices();
+    navigator.mediaDevices?.addEventListener("devicechange", detectDevices);
+    return () => navigator.mediaDevices?.removeEventListener("devicechange", detectDevices);
+  }, []);
+
+  const getDeviceIcon = (label: string) => {
+    const l = label.toLowerCase();
+    if (l.includes("bluetooth") || l.includes("bt") || l.includes("airpod") || l.includes("buds")) return <Bluetooth className="w-3.5 h-3.5 text-blue-500" />;
+    if (l.includes("headphone") || l.includes("headset")) return <Headphones className="w-3.5 h-3.5 text-primary" />;
+    if (l.includes("speaker") || l.includes("external")) return <Speaker className="w-3.5 h-3.5 text-primary" />;
+    return <Volume2 className="w-3.5 h-3.5 text-muted-foreground" />;
+  };
+
+  const handleShare = async (text: string, url?: string) => {
+    const shareData = { title: text, text, url: url || window.location.href };
+    if (navigator.share) {
+      try { await navigator.share(shareData); } catch {}
+    } else {
+      await navigator.clipboard.writeText(url || window.location.href);
+      toast({ title: "Link disalin!" });
+    }
+  };
 
   useEffect(() => {
     const init = async () => {
@@ -273,6 +308,16 @@ const MusicPublicTab = ({ onPlaySong }: MusicPublicTabProps) => {
       {/* Explore Tab */}
       {subTab === "explore" && (
         <div className="space-y-3">
+          {/* Audio Device Info */}
+          {audioDevices.length > 0 && (
+            <div className="flex items-center gap-2 text-xs text-muted-foreground bg-muted/50 rounded-lg px-3 py-2">
+              {getDeviceIcon(audioDevices.find(d => d.label.toLowerCase().includes("bluetooth") || d.label.toLowerCase().includes("bt"))?.label || audioDevices[0].label)}
+              <span className="truncate">
+                {audioDevices.find(d => d.label.toLowerCase().includes("bluetooth") || d.label.toLowerCase().includes("bt"))?.label || audioDevices[0].label}
+              </span>
+              {audioDevices.length > 1 && <span className="text-muted-foreground/60 ml-auto">+{audioDevices.length - 1}</span>}
+            </div>
+          )}
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input placeholder="Cari lagu atau user..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
@@ -329,11 +374,16 @@ const MusicPublicTab = ({ onPlaySong }: MusicPublicTabProps) => {
                           </button>
                         )}
                       </div>
-                      <Button size="icon" variant="ghost" onClick={() => onPlaySong?.({
-                        id: song.id, title: song.title, artist: song.artist, file_url: song.file_url, cover_url: song.cover_url
-                      })}>
-                        <Play className="w-4 h-4" />
-                      </Button>
+                      <div className="flex items-center gap-1">
+                        <Button size="icon" variant="ghost" className="w-8 h-8" onClick={() => handleShare(`${song.title} - ${song.artist}`, window.location.href)}>
+                          <Share2 className="w-3.5 h-3.5" />
+                        </Button>
+                        <Button size="icon" variant="ghost" className="w-8 h-8" onClick={() => onPlaySong?.({
+                          id: song.id, title: song.title, artist: song.artist, file_url: song.file_url, cover_url: song.cover_url
+                        })}>
+                          <Play className="w-4 h-4" />
+                        </Button>
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
@@ -437,9 +487,14 @@ const MusicPublicTab = ({ onPlaySong }: MusicPublicTabProps) => {
                     </div>
                   </div>
                 </div>
-                <Button variant="outline" size="sm" onClick={() => { setProfileUsername(myProfile.username); setProfileDesc(myProfile.description || ""); setShowProfileSetup(true); }}>
-                  Edit Profil
-                </Button>
+                <div className="flex gap-2">
+                  <Button variant="outline" size="sm" onClick={() => { setProfileUsername(myProfile.username); setProfileDesc(myProfile.description || ""); setShowProfileSetup(true); }}>
+                    Edit Profil
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={() => handleShare(`Profil musik @${myProfile.username}`, window.location.href)}>
+                    <Share2 className="w-3 h-3 mr-1" /> Share
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           ) : (
@@ -495,12 +550,17 @@ const MusicPublicTab = ({ onPlaySong }: MusicPublicTabProps) => {
                   </span>
                 </DialogDescription>
               </DialogHeader>
-              {viewingProfile.visitor_id !== visitorId && (
-                <Button size="sm" variant={isFollowing(viewingProfile.visitor_id) ? "secondary" : "default"}
-                  onClick={() => handleFollow(viewingProfile.visitor_id)}>
-                  {isFollowing(viewingProfile.visitor_id) ? <><UserMinus className="w-3 h-3 mr-1" /> Unfollow</> : <><UserPlus className="w-3 h-3 mr-1" /> Follow</>}
+              <div className="flex gap-2">
+                {viewingProfile.visitor_id !== visitorId && (
+                  <Button size="sm" variant={isFollowing(viewingProfile.visitor_id) ? "secondary" : "default"}
+                    onClick={() => handleFollow(viewingProfile.visitor_id)}>
+                    {isFollowing(viewingProfile.visitor_id) ? <><UserMinus className="w-3 h-3 mr-1" /> Unfollow</> : <><UserPlus className="w-3 h-3 mr-1" /> Follow</>}
+                  </Button>
+                )}
+                <Button size="sm" variant="outline" onClick={() => handleShare(`Profil musik @${viewingProfile.username}`, window.location.href)}>
+                  <Share2 className="w-3 h-3 mr-1" /> Share
                 </Button>
-              )}
+              </div>
               <div className="space-y-2">
                 <h4 className="text-sm font-semibold">Lagu ({viewProfileSongs.length})</h4>
                 {viewProfileSongs.map(song => (
