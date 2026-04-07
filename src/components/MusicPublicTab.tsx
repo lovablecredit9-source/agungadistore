@@ -65,6 +65,8 @@ const MusicPublicTab = ({ onPlaySong }: MusicPublicTabProps) => {
 
   // Upload state
   const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [uploadStep, setUploadStep] = useState("");
   const [uploadTitle, setUploadTitle] = useState("");
   const [uploadArtist, setUploadArtist] = useState("");
   const [uploadDesc, setUploadDesc] = useState("");
@@ -73,6 +75,9 @@ const MusicPublicTab = ({ onPlaySong }: MusicPublicTabProps) => {
   const [uploadCover, setUploadCover] = useState<File | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const coverRef = useRef<HTMLInputElement>(null);
+
+  const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20MB
+  const MAX_COVER_SIZE = 5 * 1024 * 1024; // 5MB
 
   // Profile setup
   const [showProfileSetup, setShowProfileSetup] = useState(false);
@@ -183,24 +188,21 @@ const MusicPublicTab = ({ onPlaySong }: MusicPublicTabProps) => {
       toast({ title: "Judul dan file lagu wajib diisi", variant: "destructive" });
       return;
     }
+    if (uploadFile.size > MAX_FILE_SIZE) {
+      toast({ title: `File terlalu besar! Maksimal ${MAX_FILE_SIZE / 1024 / 1024}MB`, variant: "destructive" });
+      return;
+    }
+    if (uploadCover && uploadCover.size > MAX_COVER_SIZE) {
+      toast({ title: `Cover terlalu besar! Maksimal ${MAX_COVER_SIZE / 1024 / 1024}MB`, variant: "destructive" });
+      return;
+    }
     setUploading(true);
+    setUploadProgress(0);
+    setUploadStep("Mempersiapkan...");
     try {
-      const ext = uploadFile.name.split(".").pop();
-      const filePath = `public/${visitorId}/${Date.now()}.${ext}`;
-      const { error: upErr } = await supabase.storage.from("music-files").upload(filePath, uploadFile);
-      if (upErr) throw upErr;
-      const { data: urlData } = supabase.storage.from("music-files").getPublicUrl(filePath);
-
-      let coverUrl = null;
-      if (uploadCover) {
-        const coverExt = uploadCover.name.split(".").pop();
-        const coverPath = `public/covers/${visitorId}/${Date.now()}.${coverExt}`;
-        await supabase.storage.from("music-files").upload(coverPath, uploadCover);
-        const { data: coverUrlData } = supabase.storage.from("music-files").getPublicUrl(coverPath);
-        coverUrl = coverUrlData.publicUrl;
-      }
-
-      // Get audio duration
+      // Step 1: Get audio duration (client-side, fast)
+      setUploadStep("Membaca metadata audio...");
+      setUploadProgress(5);
       let duration = 0;
       try {
         const audio = new Audio(URL.createObjectURL(uploadFile));
@@ -211,6 +213,37 @@ const MusicPublicTab = ({ onPlaySong }: MusicPublicTabProps) => {
         });
       } catch {}
 
+      // Step 2: Upload audio file
+      setUploadStep("Mengupload file audio...");
+      setUploadProgress(15);
+      const ext = uploadFile.name.split(".").pop();
+      const filePath = `public/${visitorId}/${Date.now()}.${ext}`;
+      const { error: upErr } = await supabase.storage.from("music-files").upload(filePath, uploadFile, {
+        cacheControl: "3600",
+        upsert: false,
+      });
+      if (upErr) throw new Error("Gagal upload audio: " + upErr.message);
+      setUploadProgress(70);
+      const { data: urlData } = supabase.storage.from("music-files").getPublicUrl(filePath);
+
+      // Step 3: Upload cover (optional)
+      let coverUrl = null;
+      if (uploadCover) {
+        setUploadStep("Mengupload cover...");
+        setUploadProgress(75);
+        const coverExt = uploadCover.name.split(".").pop();
+        const coverPath = `public/covers/${visitorId}/${Date.now()}.${coverExt}`;
+        const { error: coverErr } = await supabase.storage.from("music-files").upload(coverPath, uploadCover);
+        if (coverErr) console.error("Cover upload error:", coverErr);
+        else {
+          const { data: coverUrlData } = supabase.storage.from("music-files").getPublicUrl(coverPath);
+          coverUrl = coverUrlData.publicUrl;
+        }
+      }
+      setUploadProgress(85);
+
+      // Step 4: Save song record
+      setUploadStep("Menyimpan data lagu...");
       const { data: songData, error: songErr } = await supabase.from("public_songs").insert({
         visitor_id: visitorId,
         title: uploadTitle.trim(),
@@ -224,24 +257,30 @@ const MusicPublicTab = ({ onPlaySong }: MusicPublicTabProps) => {
         status: uploadVisibility === "private" ? "approved" : "pending",
       }).select().single();
 
-      if (songErr) throw songErr;
+      if (songErr) throw new Error("Gagal menyimpan data: " + songErr.message);
+      setUploadProgress(95);
 
-      // Trigger AI copyright check for public songs
+      // Step 5: Trigger AI copyright check (non-blocking)
       if (uploadVisibility === "public" && songData) {
+        setUploadStep("Memulai pengecekan AI...");
         supabase.functions.invoke("check-copyright", {
           body: { song_id: songData.id, title: uploadTitle.trim(), artist: uploadArtist.trim() || myProfile.username }
         }).catch(console.error);
       }
 
+      setUploadProgress(100);
+      setUploadStep("Selesai!");
       toast({ title: uploadVisibility === "public" ? "Lagu diupload! Menunggu persetujuan admin." : "Lagu pribadi diupload!" });
       setUploadTitle(""); setUploadArtist(""); setUploadDesc("");
       setUploadFile(null); setUploadCover(null);
       await loadData(visitorId);
       setSubTab("my-songs");
     } catch (e: any) {
-      toast({ title: "Gagal upload: " + (e.message || ""), variant: "destructive" });
+      toast({ title: e.message || "Gagal upload", variant: "destructive" });
     }
     setUploading(false);
+    setUploadProgress(0);
+    setUploadStep("");
   };
 
   const handleFollow = async (targetVid: string) => {
@@ -417,19 +456,40 @@ const MusicPublicTab = ({ onPlaySong }: MusicPublicTabProps) => {
             )}
 
             <div className="space-y-2">
-              <input ref={fileRef} type="file" accept="audio/*" className="hidden" onChange={e => setUploadFile(e.target.files?.[0] || null)} />
+              <input ref={fileRef} type="file" accept="audio/*" className="hidden" onChange={e => {
+                const f = e.target.files?.[0] || null;
+                if (f && f.size > MAX_FILE_SIZE) {
+                  toast({ title: `File terlalu besar! Maks ${MAX_FILE_SIZE / 1024 / 1024}MB`, variant: "destructive" });
+                  return;
+                }
+                setUploadFile(f);
+              }} />
               <Button variant="outline" size="sm" onClick={() => fileRef.current?.click()} className="w-full gap-1">
-                <Music className="w-3.5 h-3.5" /> {uploadFile ? uploadFile.name : "Pilih file audio *"}
+                <Music className="w-3.5 h-3.5" /> {uploadFile ? `${uploadFile.name} (${(uploadFile.size / 1024 / 1024).toFixed(1)}MB)` : "Pilih file audio * (maks 20MB)"}
               </Button>
-              <input ref={coverRef} type="file" accept="image/*" className="hidden" onChange={e => setUploadCover(e.target.files?.[0] || null)} />
+              <input ref={coverRef} type="file" accept="image/*" className="hidden" onChange={e => {
+                const f = e.target.files?.[0] || null;
+                if (f && f.size > MAX_COVER_SIZE) {
+                  toast({ title: `Cover terlalu besar! Maks ${MAX_COVER_SIZE / 1024 / 1024}MB`, variant: "destructive" });
+                  return;
+                }
+                setUploadCover(f);
+              }} />
               <Button variant="outline" size="sm" onClick={() => coverRef.current?.click()} className="w-full gap-1">
-                🖼️ {uploadCover ? uploadCover.name : "Cover (opsional)"}
+                🖼️ {uploadCover ? uploadCover.name : "Cover (opsional, maks 5MB)"}
               </Button>
             </div>
 
+            {uploading && (
+              <div className="space-y-2">
+                <Progress value={uploadProgress} className="h-2" />
+                <p className="text-xs text-muted-foreground text-center">{uploadStep} ({uploadProgress}%)</p>
+              </div>
+            )}
+
             <Button onClick={handleUpload} disabled={uploading} className="w-full">
               {uploading ? <Loader2 className="animate-spin w-4 h-4 mr-2" /> : <Upload className="w-4 h-4 mr-2" />}
-              Upload
+              {uploading ? uploadStep : "Upload"}
             </Button>
           </CardContent>
         </Card>
