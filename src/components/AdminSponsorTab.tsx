@@ -512,7 +512,8 @@ export default function AdminSponsorTab() {
                     </div>
                   )}
                   {imgs.length === 0 && s.image_url && <img src={s.image_url} alt="" className="w-full h-24 object-cover rounded-lg mb-2" />}
-                  <p className="font-bold text-sm truncate"><span className="text-muted-foreground font-mono text-[10px]">#{s.sponsor_number}</span> {s.title}</p>
+                  <p className="text-[10px] font-mono text-muted-foreground">#{s.sponsor_number}</p>
+                  <p className="font-bold text-sm truncate">{s.title}</p>
                   {s.price > 0 && <p className="text-xs text-primary font-bold">{formatPrice(s.price)}</p>}
                   <p className="text-[10px] text-muted-foreground">Penjual: {s.seller_name} | {s.seller_contact}</p>
                   {(s.wa_number || s.instagram || s.tiktok) && (

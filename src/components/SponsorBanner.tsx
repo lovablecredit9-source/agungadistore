@@ -145,6 +145,9 @@ export default function SponsorBanner() {
           {displayImage && (
             <div className="relative">
               <img src={displayImage} alt={sponsor.title} className="w-full h-36 object-cover" />
+              <div className="absolute top-2 left-2">
+                <Badge variant="secondary" className="text-[10px] font-mono font-bold shadow-md">#{sponsor.sponsor_number}</Badge>
+              </div>
               <div className="absolute top-2 right-2">
                 <Badge className="bg-primary/90 text-primary-foreground text-[10px] font-bold shadow-md">
                   <Clock className="w-3 h-3 mr-1" />{timeRemaining(sponsor.expires_at)}
@@ -165,7 +168,7 @@ export default function SponsorBanner() {
             </div>
           )}
           <CardContent className="p-3 space-y-1.5">
-            <h4 className="font-extrabold text-sm leading-tight"><span className="text-muted-foreground font-mono text-[10px]">#{sponsor.sponsor_number}</span> {sponsor.title}</h4>
+            <h4 className="font-extrabold text-sm leading-tight">{sponsor.title}</h4>
             {sponsor.description && (
               <p className="text-xs text-muted-foreground line-clamp-2">{sponsor.description}</p>
             )}
@@ -243,7 +246,10 @@ function SponsorDetailModal({ sponsor, images, onClose }: { sponsor: Sponsor; im
         )}
         <div className="p-5 space-y-3">
           <div className="flex items-start justify-between">
-            <h3 className="font-extrabold text-lg flex-1"><span className="text-muted-foreground font-mono text-xs">#{sponsor.sponsor_number}</span> {sponsor.title}</h3>
+            <div>
+              <p className="text-[10px] font-mono text-muted-foreground">#{sponsor.sponsor_number}</p>
+              <h3 className="font-extrabold text-lg">{sponsor.title}</h3>
+            </div>
             <button onClick={onClose} className="w-8 h-8 rounded-full bg-muted flex items-center justify-center shrink-0 ml-2">
               <X className="w-4 h-4" />
             </button>
