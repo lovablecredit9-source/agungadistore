@@ -77,7 +77,13 @@ export default function SponsorBanner() {
   const [imgIdx, setImgIdx] = useState(0);
   const [search, setSearch] = useState("");
   const [showSearch, setShowSearch] = useState(false);
+  const [filterCategory, setFilterCategory] = useState("all");
+  const [sortOrder, setSortOrder] = useState<SortOrder>("newest");
 
+  const categories = useMemo(() => {
+    const cats = new Set(sponsors.map(s => s.category).filter(Boolean));
+    return Array.from(cats).sort();
+  }, [sponsors]);
   useEffect(() => {
     fetchSponsors();
     const interval = setInterval(fetchSponsors, 60000);
