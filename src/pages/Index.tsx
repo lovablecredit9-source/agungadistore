@@ -33,6 +33,7 @@ import LanguageSelector from "@/components/LanguageSelector";
 import { LANGUAGES } from "@/lib/languages";
 import InstallPrompt from "@/components/InstallPrompt";
 import MusicPublicTab from "@/components/MusicPublicTab";
+import SponsorBanner from "@/components/SponsorBanner";
 
 type Tab = "beranda" | "produk" | "voucher" | "history" | "likes" | "tiket" | "saldo" | "playlist" | "publik";
 
@@ -1159,6 +1160,9 @@ const Index = () => {
                 </div>
               </div>
             </div>
+
+            {/* Sponsor Banner */}
+            <SponsorBanner />
 
             <div className="grid grid-cols-2 gap-3">
               <Card className="cursor-pointer hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 border-primary/10 bg-gradient-to-br from-primary/5 to-transparent" onClick={() => setTab("produk")}>

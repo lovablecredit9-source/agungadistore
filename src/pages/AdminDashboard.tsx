@@ -11,13 +11,14 @@ import {
   Plus, Trash2, LogOut, Package, Ticket, Copy, Image, Edit2, X,
   Smartphone, Clock, ChevronLeft, ChevronRight, Search, Send,
   MessageCircle, AlertCircle, ImagePlus, Shield, Wallet, Users, ArrowUpCircle,
-  Bell, Check, Tag, Lock, Key, Music, Upload, Loader2, HardDrive
+  Bell, Check, Tag, Lock, Key, Music, Upload, Loader2, HardDrive, Megaphone
 } from "lucide-react";
 import { generateVoucherCode } from "@/lib/voucher-code";
 import { getDeviceSummary } from "@/lib/device-info";
 import { STORE_NAME } from "@/lib/social-links";
 import storeQris from "@/assets/store-qris.jpg";
 import AdminMusicTab from "@/components/AdminMusicTab";
+import AdminSponsorTab from "@/components/AdminSponsorTab";
 
 interface Product {
   id: string;
@@ -112,7 +113,7 @@ interface UserBalance {
   created_at: string;
 }
 
-type AdminTab = "products" | "tokens" | "claims" | "tickets" | "chats" | "saldo" | "notif" | "deposit" | "settings" | "diskon" | "pin" | "musik" | "vmusik";
+type AdminTab = "products" | "tokens" | "claims" | "tickets" | "chats" | "saldo" | "notif" | "deposit" | "settings" | "diskon" | "pin" | "musik" | "vmusik" | "sponsor";
 type ClaimDateFilter = "all" | "today" | "yesterday" | "lastmonth" | "custom";
 type DepositStatusFilter = "all" | "pending" | "approved" | "rejected";
 type DepositMethodFilter = "all" | "qris" | "ewallet";
@@ -975,6 +976,7 @@ const AdminDashboard = () => {
           { key: "settings" as AdminTab, icon: Edit2, label: "Setting" },
           { key: "musik" as AdminTab, icon: Music, label: "Musik" },
           { key: "vmusik" as AdminTab, icon: HardDrive, label: "V.Musik" },
+          { key: "sponsor" as AdminTab, icon: Megaphone, label: "Sponsor" },
         ]).map(({ key, icon: Icon, label }) => (
           <button key={key} onClick={() => setTab(key)} className={`flex-1 py-3 text-xs font-medium text-center border-b-2 transition-colors whitespace-nowrap px-2 ${tab === key ? "border-primary text-primary" : "border-transparent text-muted-foreground"}`}>
             <Icon className="w-4 h-4 inline mr-1" /> {label}
@@ -1764,6 +1766,7 @@ const AdminDashboard = () => {
             {musicDiscountVouchers.length === 0 && <p className="text-center text-sm text-muted-foreground py-4">Belum ada voucher diskon musik</p>}
           </>
         )}
+        {tab === "sponsor" && <AdminSponsorTab />}
       </main>
     </div>
   );
