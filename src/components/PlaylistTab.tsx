@@ -302,6 +302,9 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer }: Playl
   // Lyrics state
   const [allLyrics, setAllLyrics] = useState<LyricLine[]>([]);
   const [termsOpen, setTermsOpen] = useState(false);
+  // AI Recommendations
+  const [aiRecommendedIds, setAiRecommendedIds] = useState<string[]>([]);
+  const [loadingRecs, setLoadingRecs] = useState(false);
   const lyricsContainerRef = useRef<HTMLDivElement>(null);
   const fullPlayerLyricsRef = useRef<HTMLDivElement>(null);
   const [showFullPlayer, setShowFullPlayer] = useState(false);
@@ -316,7 +319,7 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer }: Playl
     return () => clearInterval(interval);
   }, [activeRedeemedMb]);
 
-  useEffect(() => { fetchSongs(); fetchRedeemedStorages(); checkPinExists(); fetchLikedSongs(); }, []);
+  useEffect(() => { fetchSongs(); fetchRedeemedStorages(); checkPinExists(); fetchLikedSongs(); fetchAiRecommendations(); }, []);
   // Update maxBytes when activeRedeemedMb changes
   useEffect(() => { setMaxBytes(getTotalMaxBytes(activeRedeemedMb)); }, [activeRedeemedMb]);
 
@@ -390,6 +393,21 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer }: Playl
       await supabase.from("liked_songs").insert({ song_id: songId, visitor_id: visitorId });
       setLikedSongIds(prev => new Set(prev).add(songId));
     }
+  }
+
+  async function fetchAiRecommendations() {
+    setLoadingRecs(true);
+    try {
+      const visitorId = await getVisitorIdSafe();
+      const { data, error } = await supabase.functions.invoke("recommend-songs", {
+        body: { visitor_id: visitorId },
+      });
+      if (error) throw error;
+      if (data?.recommended_ids) setAiRecommendedIds(data.recommended_ids);
+    } catch (err) {
+      console.error("AI recommendation error:", err);
+    }
+    setLoadingRecs(false);
   }
 
   async function fetchSongs() {
@@ -1070,31 +1088,57 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer }: Playl
         </Card>
       )}
 
-      {/* ===== REKOMENDASI UNTUKMU (Liked Songs) ===== */}
-      {activeView === "playlist" && !viewingPlaylist && likedSongIds.size > 0 && (
+      {/* ===== REKOMENDASI UNTUKMU (AI-Powered) ===== */}
+      {activeView === "playlist" && !viewingPlaylist && (
         <div className="space-y-2">
-          <p className="text-xs font-bold text-muted-foreground flex items-center gap-1.5">
-            <Heart className="w-3.5 h-3.5 text-destructive" /> Rekomendasi Untukmu ({likedSongIds.size})
-          </p>
-          <div className="flex gap-2 overflow-x-auto pb-2 -mx-1 px-1">
-            {songs.filter(s => likedSongIds.has(s.id)).map((song, i) => (
-              <Card key={song.id} className="min-w-[140px] max-w-[140px] shrink-0 overflow-hidden cursor-pointer hover:shadow-md transition-all" onClick={() => {
-                const idx = songs.findIndex(s => s.id === song.id);
-                if (idx >= 0) playSong(idx);
-              }}>
-                <CardContent className="p-2 space-y-1.5">
-                  <div className="w-full aspect-square rounded-lg bg-primary/10 overflow-hidden relative">
-                    {song.cover_url ? <img src={song.cover_url} alt="" className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center"><Music className="w-8 h-8 text-primary/40" /></div>}
-                    <button onClick={(e) => toggleLikeSong(song.id, e)} className="absolute top-1 right-1 w-6 h-6 rounded-full bg-background/80 flex items-center justify-center">
-                      <Heart className="w-3.5 h-3.5 fill-destructive text-destructive" />
-                    </button>
-                  </div>
-                  <p className="text-xs font-bold truncate">{song.title}</p>
-                  <p className="text-[10px] text-muted-foreground truncate">{song.artist}</p>
-                </CardContent>
-              </Card>
-            ))}
+          <div className="flex items-center justify-between">
+            <p className="text-xs font-bold text-muted-foreground flex items-center gap-1.5">
+              <Sparkles className="w-3.5 h-3.5 text-primary" /> Rekomendasi Untukmu
+            </p>
+            <Button variant="ghost" size="sm" className="h-6 text-[10px] gap-1 text-primary" onClick={fetchAiRecommendations} disabled={loadingRecs}>
+              {loadingRecs ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
+              {loadingRecs ? "Memuat..." : "Refresh"}
+            </Button>
           </div>
+          {loadingRecs ? (
+            <div className="flex items-center justify-center py-6 text-muted-foreground">
+              <Loader2 className="w-5 h-5 animate-spin mr-2" />
+              <span className="text-xs">AI sedang memilih lagu untukmu...</span>
+            </div>
+          ) : aiRecommendedIds.length > 0 ? (
+            <div className="flex gap-2 overflow-x-auto pb-2 -mx-1 px-1">
+              {songs.filter(s => aiRecommendedIds.includes(s.id)).map((song) => (
+                <Card key={song.id} className="min-w-[140px] max-w-[140px] shrink-0 overflow-hidden cursor-pointer hover:shadow-md transition-all" onClick={() => {
+                  const idx = songs.findIndex(s => s.id === song.id);
+                  if (idx >= 0) playSong(idx);
+                }}>
+                  <CardContent className="p-2 space-y-1.5">
+                    <div className="w-full aspect-square rounded-lg bg-primary/10 overflow-hidden relative">
+                      {song.cover_url ? <img src={song.cover_url} alt="" className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center"><Music className="w-8 h-8 text-primary/40" /></div>}
+                      <div className="absolute top-1 left-1 w-5 h-5 rounded-full bg-primary/80 flex items-center justify-center">
+                        <Sparkles className="w-3 h-3 text-primary-foreground" />
+                      </div>
+                      <button onClick={(e) => toggleLikeSong(song.id, e)} className="absolute top-1 right-1 w-6 h-6 rounded-full bg-background/80 flex items-center justify-center">
+                        <Heart className={`w-3.5 h-3.5 transition-colors ${likedSongIds.has(song.id) ? "fill-destructive text-destructive" : "text-muted-foreground"}`} />
+                      </button>
+                    </div>
+                    <p className="text-xs font-bold truncate">{song.title}</p>
+                    <p className="text-[10px] text-muted-foreground truncate">{song.artist}</p>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <Card className="border-dashed">
+              <CardContent className="p-4 text-center">
+                <Sparkles className="w-8 h-8 text-muted-foreground/30 mx-auto mb-2" />
+                <p className="text-[11px] text-muted-foreground">Ketuk Refresh untuk mendapatkan rekomendasi AI</p>
+              </CardContent>
+            </Card>
+          )}
+          <p className="text-[10px] text-muted-foreground text-center flex items-center justify-center gap-1">
+            <Sparkles className="w-3 h-3" /> Dipilih khusus oleh AI berdasarkan selera musikmu
+          </p>
         </div>
       )}
 
@@ -1495,6 +1539,8 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer }: Playl
                 <li>Dilarang mendistribusikan ulang, menjual, atau menggunakan musik untuk keperluan komersial.</li>
                 <li>Dilarang membagikan akun, link download, atau konten musik ke pihak lain.</li>
                 <li>Pengguna bertanggung jawab atas aktivitas yang dilakukan di akun/perangkat masing-masing.</li>
+                <li>Layanan ini dapat diubah, ditangguhkan, atau dihentikan kapan saja tanpa pemberitahuan.</li>
+                <li>Pengguna wajib mematuhi semua hukum dan peraturan yang berlaku saat menggunakan layanan.</li>
               </ul>
             </div>
             <div>
@@ -1506,6 +1552,21 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer }: Playl
                 <li>Kualitas audio streaming tergantung koneksi internet dan file yang tersedia.</li>
                 <li>Fitur lirik otomatis (AI) mungkin tidak 100% akurat dan hanya untuk referensi.</li>
                 <li>Pengguna dilarang merekam ulang, screen-record, atau meng-capture audio dari aplikasi.</li>
+                <li>Playlist pribadi akan terhubung dengan perangkat melalui visitor ID unik dan tidak dapat dipindahkan ke perangkat lain.</li>
+                <li>Urutan lagu dalam playlist dapat diatur sesuai preferensi pengguna.</li>
+                <li>Fitur shuffle dan repeat tersedia untuk semua jenis playlist.</li>
+                <li>Pengguna dapat menyukai (like) lagu untuk menyimpannya di daftar favorit.</li>
+              </ul>
+            </div>
+            <div>
+              <p className="font-bold text-foreground text-sm mb-1">🤖 Ketentuan Fitur AI</p>
+              <ul className="list-disc pl-4 space-y-1">
+                <li>Fitur "Rekomendasi Untukmu" menggunakan teknologi AI untuk menyarankan lagu berdasarkan preferensi musik Anda.</li>
+                <li>Rekomendasi AI bersifat otomatis dan mungkin tidak selalu sesuai dengan selera pengguna.</li>
+                <li>Data preferensi musik (lagu yang disukai) digunakan secara anonim untuk menghasilkan rekomendasi.</li>
+                <li>Fitur lirik otomatis menggunakan AI dan mungkin mengandung ketidakakuratan.</li>
+                <li>AI tidak menyimpan data percakapan atau preferensi secara permanen di server eksternal.</li>
+                <li>Penggunaan fitur AI tunduk pada batasan penggunaan wajar (fair use).</li>
               </ul>
             </div>
             <div>
@@ -1516,6 +1577,20 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer }: Playl
                 <li>Jika paket expired, data offline yang melebihi kuota gratis (2GB) akan dihapus otomatis.</li>
                 <li>Harga paket dapat berubah sewaktu-waktu tanpa pemberitahuan.</li>
                 <li>Pembelian paket menggunakan saldo akun dan tidak bisa dibatalkan.</li>
+                <li>Voucher penyimpanan gratis yang diberikan admin memiliki masa berlaku sesuai ketentuan masing-masing.</li>
+                <li>Penggunaan kode diskon terbatas pada jumlah penggunaan maksimal yang ditentukan.</li>
+                <li>Satu kode diskon hanya dapat digunakan satu kali per transaksi.</li>
+              </ul>
+            </div>
+            <div>
+              <p className="font-bold text-foreground text-sm mb-1">📱 Ketentuan Penggunaan Offline</p>
+              <ul className="list-disc pl-4 space-y-1">
+                <li>Lagu yang disimpan offline hanya dapat diputar melalui aplikasi ini.</li>
+                <li>Data offline disimpan di cache browser dan dapat hilang jika cache dibersihkan.</li>
+                <li>Jumlah lagu yang dapat disimpan offline tergantung pada kuota penyimpanan yang tersedia.</li>
+                <li>Fitur offline tidak menjamin ketersediaan lagu jika konten dihapus oleh admin.</li>
+                <li>Mode offline memerlukan penyimpanan lokal yang cukup di perangkat pengguna.</li>
+                <li>Kecepatan download untuk penyimpanan offline tergantung pada koneksi internet pengguna.</li>
               </ul>
             </div>
             <div>
@@ -1527,6 +1602,9 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer }: Playl
                 <li>Data offline (lagu yang di-cache) disimpan di penyimpanan lokal browser Anda.</li>
                 <li>Kami tidak membagikan data penggunaan playlist kepada pihak ketiga.</li>
                 <li>Kami berhak mencatat statistik penggunaan secara anonim untuk peningkatan layanan.</li>
+                <li>Data lagu yang disukai (liked) disimpan di server untuk sinkronisasi lintas sesi.</li>
+                <li>Informasi perangkat yang ditampilkan di Device Info tidak disimpan atau dikirim ke server manapun.</li>
+                <li>Cookie dan local storage digunakan untuk menyimpan preferensi pengguna.</li>
               </ul>
             </div>
             <div>
@@ -1537,6 +1615,17 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer }: Playl
                 <li>Lirik ditampilkan untuk tujuan referensi dan hiburan saja.</li>
                 <li>Jika Anda adalah pemegang hak cipta dan ingin konten dihapus, silakan hubungi admin.</li>
                 <li>Aplikasi ini tidak mengklaim kepemilikan atas konten musik yang ditampilkan.</li>
+                <li>Cover art dan gambar album adalah milik pemegang hak cipta masing-masing.</li>
+                <li>Penggunaan ulang lirik untuk keperluan komersial tanpa izin adalah pelanggaran hak cipta.</li>
+              </ul>
+            </div>
+            <div>
+              <p className="font-bold text-foreground text-sm mb-1">🔔 Ketentuan Notifikasi & Media Session</p>
+              <ul className="list-disc pl-4 space-y-1">
+                <li>Aplikasi menggunakan Media Session API untuk menampilkan informasi lagu di notifikasi perangkat.</li>
+                <li>Kontrol media (play/pause/skip) dapat diakses melalui notifikasi sistem.</li>
+                <li>Cover art lagu akan ditampilkan di lock screen dan notification panel saat memutar musik.</li>
+                <li>Fitur ini memerlukan browser yang mendukung Media Session API.</li>
               </ul>
             </div>
             <div>
@@ -1545,6 +1634,16 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer }: Playl
                 <li>Pelanggaran terhadap syarat & ketentuan dapat mengakibatkan pembatasan akses ke fitur playlist.</li>
                 <li>Distribusi ulang konten musik secara ilegal akan ditindak sesuai hukum yang berlaku.</li>
                 <li>Admin berhak memblokir akses pengguna yang melanggar ketentuan tanpa pemberitahuan.</li>
+                <li>Penyalahgunaan fitur AI atau voucher dapat mengakibatkan penangguhan akun.</li>
+                <li>Percobaan manipulasi sistem penyimpanan atau kuota akan mengakibatkan pembatasan permanen.</li>
+              </ul>
+            </div>
+            <div>
+              <p className="font-bold text-foreground text-sm mb-1">📞 Kontak & Dukungan</p>
+              <ul className="list-disc pl-4 space-y-1">
+                <li>Untuk pertanyaan atau keluhan terkait layanan playlist, silakan hubungi admin melalui fitur Tiket Bantuan.</li>
+                <li>Permintaan penghapusan konten berhak cipta akan diproses dalam waktu 7 hari kerja.</li>
+                <li>Saran dan masukan untuk peningkatan layanan selalu diterima melalui fitur bantuan.</li>
               </ul>
             </div>
             <div className="pt-2 border-t border-border">
