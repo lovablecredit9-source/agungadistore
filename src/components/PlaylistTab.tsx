@@ -1539,6 +1539,8 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer }: Playl
                 <li>Dilarang mendistribusikan ulang, menjual, atau menggunakan musik untuk keperluan komersial.</li>
                 <li>Dilarang membagikan akun, link download, atau konten musik ke pihak lain.</li>
                 <li>Pengguna bertanggung jawab atas aktivitas yang dilakukan di akun/perangkat masing-masing.</li>
+                <li>Layanan ini dapat diubah, ditangguhkan, atau dihentikan kapan saja tanpa pemberitahuan.</li>
+                <li>Pengguna wajib mematuhi semua hukum dan peraturan yang berlaku saat menggunakan layanan.</li>
               </ul>
             </div>
             <div>
@@ -1550,6 +1552,21 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer }: Playl
                 <li>Kualitas audio streaming tergantung koneksi internet dan file yang tersedia.</li>
                 <li>Fitur lirik otomatis (AI) mungkin tidak 100% akurat dan hanya untuk referensi.</li>
                 <li>Pengguna dilarang merekam ulang, screen-record, atau meng-capture audio dari aplikasi.</li>
+                <li>Playlist pribadi akan terhubung dengan perangkat melalui visitor ID unik dan tidak dapat dipindahkan ke perangkat lain.</li>
+                <li>Urutan lagu dalam playlist dapat diatur sesuai preferensi pengguna.</li>
+                <li>Fitur shuffle dan repeat tersedia untuk semua jenis playlist.</li>
+                <li>Pengguna dapat menyukai (like) lagu untuk menyimpannya di daftar favorit.</li>
+              </ul>
+            </div>
+            <div>
+              <p className="font-bold text-foreground text-sm mb-1">🤖 Ketentuan Fitur AI</p>
+              <ul className="list-disc pl-4 space-y-1">
+                <li>Fitur "Rekomendasi Untukmu" menggunakan teknologi AI untuk menyarankan lagu berdasarkan preferensi musik Anda.</li>
+                <li>Rekomendasi AI bersifat otomatis dan mungkin tidak selalu sesuai dengan selera pengguna.</li>
+                <li>Data preferensi musik (lagu yang disukai) digunakan secara anonim untuk menghasilkan rekomendasi.</li>
+                <li>Fitur lirik otomatis menggunakan AI dan mungkin mengandung ketidakakuratan.</li>
+                <li>AI tidak menyimpan data percakapan atau preferensi secara permanen di server eksternal.</li>
+                <li>Penggunaan fitur AI tunduk pada batasan penggunaan wajar (fair use).</li>
               </ul>
             </div>
             <div>
@@ -1560,6 +1577,20 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer }: Playl
                 <li>Jika paket expired, data offline yang melebihi kuota gratis (2GB) akan dihapus otomatis.</li>
                 <li>Harga paket dapat berubah sewaktu-waktu tanpa pemberitahuan.</li>
                 <li>Pembelian paket menggunakan saldo akun dan tidak bisa dibatalkan.</li>
+                <li>Voucher penyimpanan gratis yang diberikan admin memiliki masa berlaku sesuai ketentuan masing-masing.</li>
+                <li>Penggunaan kode diskon terbatas pada jumlah penggunaan maksimal yang ditentukan.</li>
+                <li>Satu kode diskon hanya dapat digunakan satu kali per transaksi.</li>
+              </ul>
+            </div>
+            <div>
+              <p className="font-bold text-foreground text-sm mb-1">📱 Ketentuan Penggunaan Offline</p>
+              <ul className="list-disc pl-4 space-y-1">
+                <li>Lagu yang disimpan offline hanya dapat diputar melalui aplikasi ini.</li>
+                <li>Data offline disimpan di cache browser dan dapat hilang jika cache dibersihkan.</li>
+                <li>Jumlah lagu yang dapat disimpan offline tergantung pada kuota penyimpanan yang tersedia.</li>
+                <li>Fitur offline tidak menjamin ketersediaan lagu jika konten dihapus oleh admin.</li>
+                <li>Mode offline memerlukan penyimpanan lokal yang cukup di perangkat pengguna.</li>
+                <li>Kecepatan download untuk penyimpanan offline tergantung pada koneksi internet pengguna.</li>
               </ul>
             </div>
             <div>
@@ -1571,6 +1602,9 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer }: Playl
                 <li>Data offline (lagu yang di-cache) disimpan di penyimpanan lokal browser Anda.</li>
                 <li>Kami tidak membagikan data penggunaan playlist kepada pihak ketiga.</li>
                 <li>Kami berhak mencatat statistik penggunaan secara anonim untuk peningkatan layanan.</li>
+                <li>Data lagu yang disukai (liked) disimpan di server untuk sinkronisasi lintas sesi.</li>
+                <li>Informasi perangkat yang ditampilkan di Device Info tidak disimpan atau dikirim ke server manapun.</li>
+                <li>Cookie dan local storage digunakan untuk menyimpan preferensi pengguna.</li>
               </ul>
             </div>
             <div>
@@ -1581,6 +1615,17 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer }: Playl
                 <li>Lirik ditampilkan untuk tujuan referensi dan hiburan saja.</li>
                 <li>Jika Anda adalah pemegang hak cipta dan ingin konten dihapus, silakan hubungi admin.</li>
                 <li>Aplikasi ini tidak mengklaim kepemilikan atas konten musik yang ditampilkan.</li>
+                <li>Cover art dan gambar album adalah milik pemegang hak cipta masing-masing.</li>
+                <li>Penggunaan ulang lirik untuk keperluan komersial tanpa izin adalah pelanggaran hak cipta.</li>
+              </ul>
+            </div>
+            <div>
+              <p className="font-bold text-foreground text-sm mb-1">🔔 Ketentuan Notifikasi & Media Session</p>
+              <ul className="list-disc pl-4 space-y-1">
+                <li>Aplikasi menggunakan Media Session API untuk menampilkan informasi lagu di notifikasi perangkat.</li>
+                <li>Kontrol media (play/pause/skip) dapat diakses melalui notifikasi sistem.</li>
+                <li>Cover art lagu akan ditampilkan di lock screen dan notification panel saat memutar musik.</li>
+                <li>Fitur ini memerlukan browser yang mendukung Media Session API.</li>
               </ul>
             </div>
             <div>
@@ -1589,6 +1634,16 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer }: Playl
                 <li>Pelanggaran terhadap syarat & ketentuan dapat mengakibatkan pembatasan akses ke fitur playlist.</li>
                 <li>Distribusi ulang konten musik secara ilegal akan ditindak sesuai hukum yang berlaku.</li>
                 <li>Admin berhak memblokir akses pengguna yang melanggar ketentuan tanpa pemberitahuan.</li>
+                <li>Penyalahgunaan fitur AI atau voucher dapat mengakibatkan penangguhan akun.</li>
+                <li>Percobaan manipulasi sistem penyimpanan atau kuota akan mengakibatkan pembatasan permanen.</li>
+              </ul>
+            </div>
+            <div>
+              <p className="font-bold text-foreground text-sm mb-1">📞 Kontak & Dukungan</p>
+              <ul className="list-disc pl-4 space-y-1">
+                <li>Untuk pertanyaan atau keluhan terkait layanan playlist, silakan hubungi admin melalui fitur Tiket Bantuan.</li>
+                <li>Permintaan penghapusan konten berhak cipta akan diproses dalam waktu 7 hari kerja.</li>
+                <li>Saran dan masukan untuk peningkatan layanan selalu diterima melalui fitur bantuan.</li>
               </ul>
             </div>
             <div className="pt-2 border-t border-border">
