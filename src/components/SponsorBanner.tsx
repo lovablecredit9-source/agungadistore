@@ -38,6 +38,7 @@ interface Sponsor {
   twitter: string;
   threads: string;
   category: string;
+  stock: number;
 }
 
 type SortOrder = "newest" | "oldest";
