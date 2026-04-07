@@ -1101,6 +1101,55 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer }: Playl
       {/* ===== ALL SONGS VIEW ===== */}
       {activeView === "playlist" && !viewingPlaylist && renderSongList(songs)}
 
+      {/* ===== LIKED SONGS HISTORY VIEW ===== */}
+      {activeView === "liked" && (
+        <div className="space-y-3">
+          <p className="text-xs font-bold text-muted-foreground flex items-center gap-1.5">
+            <Heart className="w-3.5 h-3.5 text-destructive" /> Lagu yang Disukai ({likedSongIds.size})
+          </p>
+          {likedSongIds.size === 0 ? (
+            <Card className="border-dashed">
+              <CardContent className="p-6 text-center">
+                <Heart className="w-10 h-10 text-muted-foreground/30 mx-auto mb-2" />
+                <p className="text-sm font-medium text-muted-foreground">Belum ada lagu yang disukai</p>
+                <p className="text-[11px] text-muted-foreground mt-1">Ketuk ❤️ pada lagu untuk menambahkan ke daftar suka</p>
+              </CardContent>
+            </Card>
+          ) : (
+            <>
+              <div className="space-y-2">
+                {songs.filter(s => likedSongIds.has(s.id)).map((song) => {
+                  const globalIdx = songs.findIndex(s => s.id === song.id);
+                  const isCached = cachedIds.has(song.id);
+                  return (
+                    <Card key={song.id} className={`overflow-hidden transition-all cursor-pointer hover:shadow-md ${currentSong?.id === song.id ? "border-primary/40 bg-primary/5" : ""}`}>
+                      <CardContent className="p-3 flex items-center gap-3">
+                        <button onClick={() => playSong(globalIdx)} className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0 hover:bg-primary/20 transition-colors relative overflow-hidden">
+                          {song.cover_url ? <img src={song.cover_url} alt="" className="w-full h-full object-cover absolute inset-0" /> : currentSong?.id === song.id && isPlaying ? <Pause className="w-4 h-4 text-primary" /> : <Play className="w-4 h-4 text-primary ml-0.5" />}
+                          {song.cover_url && (
+                            <div className="absolute inset-0 bg-black/30 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
+                              {currentSong?.id === song.id && isPlaying ? <Pause className="w-4 h-4 text-white" /> : <Play className="w-4 h-4 text-white ml-0.5" />}
+                            </div>
+                          )}
+                        </button>
+                        <div className="flex-1 min-w-0" onClick={() => playSong(globalIdx)}>
+                          <p className="font-bold text-sm truncate">{song.title}</p>
+                          <p className="text-[11px] text-muted-foreground truncate">{song.artist}</p>
+                        </div>
+                        <button onClick={(e) => toggleLikeSong(song.id, e)} className="shrink-0 p-1">
+                          <Heart className="w-4 h-4 fill-destructive text-destructive transition-colors" />
+                        </button>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
+              <p className="text-[10px] text-muted-foreground text-center">Ketuk ❤️ untuk menghapus dari daftar suka</p>
+            </>
+          )}
+        </div>
+      )}
+
       {/* ===== VIEWING A PLAYLIST ===== */}
       {viewingPlaylist && activeView !== "storage" && (
         <div className="space-y-3">
