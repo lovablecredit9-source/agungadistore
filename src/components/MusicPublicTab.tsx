@@ -115,11 +115,28 @@ const MusicPublicTab = ({ onPlaySong }: MusicPublicTabProps) => {
     return () => navigator.mediaDevices?.removeEventListener("devicechange", detectDevices);
   }, []);
 
+  const isGenericAudioLabel = (label: string) => {
+    const normalized = label.trim().toLowerCase();
+    return !normalized || ["perangkat audio", "audio output", "default", "speaker", "communications"].includes(normalized);
+  };
+
+  const getPreferredAudioDevice = () => {
+    const bluetoothDevice = audioDevices.find(d => {
+      const label = d.label.toLowerCase();
+      return label.includes("bluetooth") || label.includes("bt") || label.includes("airpod") || label.includes("buds");
+    });
+    if (bluetoothDevice) return bluetoothDevice;
+
+    const namedDevice = audioDevices.find(d => !isGenericAudioLabel(d.label));
+    return namedDevice || audioDevices[0];
+  };
+
   const getDeviceIcon = (label: string) => {
     const l = label.toLowerCase();
-    if (l.includes("bluetooth") || l.includes("bt") || l.includes("airpod") || l.includes("buds")) return <Bluetooth className="w-3.5 h-3.5 text-blue-500" />;
+    if (l.includes("bluetooth") || l.includes("bt") || l.includes("airpod") || l.includes("buds")) return <Bluetooth className="w-3.5 h-3.5 text-primary" />;
     if (l.includes("headphone") || l.includes("headset")) return <Headphones className="w-3.5 h-3.5 text-primary" />;
     if (l.includes("speaker") || l.includes("external")) return <Speaker className="w-3.5 h-3.5 text-primary" />;
+    if (l.includes("phone") || l.includes("earpiece")) return <Smartphone className="w-3.5 h-3.5 text-muted-foreground" />;
     return <Volume2 className="w-3.5 h-3.5 text-muted-foreground" />;
   };
 
@@ -355,15 +372,16 @@ const MusicPublicTab = ({ onPlaySong }: MusicPublicTabProps) => {
       {subTab === "explore" && (
         <div className="space-y-3">
           {/* Audio Device Info */}
-          {audioDevices.length > 0 && (
-            <div className="flex items-center gap-2 text-xs text-muted-foreground bg-muted/50 rounded-lg px-3 py-2">
-              {getDeviceIcon(audioDevices.find(d => d.label.toLowerCase().includes("bluetooth") || d.label.toLowerCase().includes("bt"))?.label || audioDevices[0].label)}
-              <span className="truncate">
-                {audioDevices.find(d => d.label.toLowerCase().includes("bluetooth") || d.label.toLowerCase().includes("bt"))?.label || audioDevices[0].label}
-              </span>
-              {audioDevices.length > 1 && <span className="text-muted-foreground/60 ml-auto">+{audioDevices.length - 1}</span>}
-            </div>
-          )}
+          {audioDevices.length > 0 && (() => {
+            const preferredDevice = getPreferredAudioDevice();
+            return preferredDevice ? (
+              <div className="flex items-center gap-2 text-xs text-muted-foreground bg-muted/50 rounded-lg px-3 py-2">
+                {getDeviceIcon(preferredDevice.label)}
+                <span className="truncate">{preferredDevice.label}</span>
+                {audioDevices.length > 1 && <span className="text-muted-foreground/60 ml-auto">+{audioDevices.length - 1}</span>}
+              </div>
+            ) : null;
+          })()}
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input placeholder="Cari lagu atau user..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
