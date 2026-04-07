@@ -1573,6 +1573,9 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer }: Playl
         <DialogContent className="max-w-sm max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-base"><FileText className="w-5 h-5 text-primary" /> Syarat & Ketentuan Playlist</DialogTitle>
+            <DialogDescription>
+              Aturan penggunaan playlist, rekomendasi lagu, offline, privasi, dan hak cipta dalam aplikasi musik ini.
+            </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 text-xs text-muted-foreground">
             <div>
@@ -1585,112 +1588,107 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer }: Playl
                 <li>Admin berhak menghapus, mengubah, atau menambahkan konten musik kapan saja tanpa pemberitahuan sebelumnya.</li>
                 <li>Dilarang mendistribusikan ulang, menjual, atau menggunakan musik untuk keperluan komersial.</li>
                 <li>Dilarang membagikan akun, link download, atau konten musik ke pihak lain.</li>
-                <li>Pengguna bertanggung jawab atas aktivitas yang dilakukan di akun/perangkat masing-masing.</li>
-                <li>Layanan ini dapat diubah, ditangguhkan, atau dihentikan kapan saja tanpa pemberitahuan.</li>
-                <li>Pengguna wajib mematuhi semua hukum dan peraturan yang berlaku saat menggunakan layanan.</li>
+                <li>Pengguna bertanggung jawab atas aktivitas yang dilakukan di akun atau perangkat masing-masing.</li>
+                <li>Layanan dapat diperbarui, dihentikan sementara, atau diubah sesuai kebutuhan operasional.</li>
+                <li>Pengguna wajib menggunakan layanan secara wajar dan tidak merusak sistem.</li>
               </ul>
             </div>
             <div>
               <p className="font-bold text-foreground text-sm mb-1">🎵 Ketentuan Penggunaan Playlist</p>
               <ul className="list-disc pl-4 space-y-1">
-                <li>Setiap pengguna dapat membuat maksimal playlist pribadi sesuai kuota yang tersedia.</li>
-                <li>Lagu yang tersedia di playlist dapat berubah sewaktu-waktu sesuai kebijakan admin.</li>
-                <li>Fitur download/offline hanya berlaku untuk streaming di dalam aplikasi, bukan untuk menyimpan file secara permanen di perangkat.</li>
-                <li>Kualitas audio streaming tergantung koneksi internet dan file yang tersedia.</li>
-                <li>Fitur lirik otomatis (AI) mungkin tidak 100% akurat dan hanya untuk referensi.</li>
-                <li>Pengguna dilarang merekam ulang, screen-record, atau meng-capture audio dari aplikasi.</li>
-                <li>Playlist pribadi akan terhubung dengan perangkat melalui visitor ID unik dan tidak dapat dipindahkan ke perangkat lain.</li>
-                <li>Urutan lagu dalam playlist dapat diatur sesuai preferensi pengguna.</li>
-                <li>Fitur shuffle dan repeat tersedia untuk semua jenis playlist.</li>
-                <li>Pengguna dapat menyukai (like) lagu untuk menyimpannya di daftar favorit.</li>
+                <li>Playlist pribadi dibuat berdasarkan data perangkat yang sedang digunakan.</li>
+                <li>Lagu dalam playlist dapat berubah sewaktu-waktu mengikuti pembaruan katalog.</li>
+                <li>Pengguna dapat membuat, mengganti nama, menghapus, dan mengatur isi playlist pribadi.</li>
+                <li>Playlist publik hanya dapat diatur oleh admin.</li>
+                <li>Urutan lagu, repeat, shuffle, dan pemutaran ulang bergantung pada fitur yang tersedia di aplikasi.</li>
+                <li>Fitur download ke perangkat dan simpan offline dapat memiliki perilaku berbeda tergantung browser.</li>
+                <li>Lirik yang tampil tidak selalu tersedia untuk semua lagu.</li>
+                <li>Pengguna dilarang merekam ulang, mengekstrak, atau menyebarkan audio dari aplikasi.</li>
+                <li>Playlist pribadi tidak dijamin berpindah otomatis ke perangkat lain.</li>
+                <li>Like lagu hanya berfungsi sebagai sinyal preferensi dan riwayat favorit.</li>
               </ul>
             </div>
             <div>
-              <p className="font-bold text-foreground text-sm mb-1">🤖 Ketentuan Fitur AI</p>
+              <p className="font-bold text-foreground text-sm mb-1">🤖 Ketentuan Fitur Rekomendasi</p>
               <ul className="list-disc pl-4 space-y-1">
-                <li>Fitur "Rekomendasi Untukmu" menggunakan teknologi AI untuk menyarankan lagu berdasarkan preferensi musik Anda.</li>
-                <li>Rekomendasi AI bersifat otomatis dan mungkin tidak selalu sesuai dengan selera pengguna.</li>
-                <li>Data preferensi musik (lagu yang disukai) digunakan secara anonim untuk menghasilkan rekomendasi.</li>
-                <li>Fitur lirik otomatis menggunakan AI dan mungkin mengandung ketidakakuratan.</li>
-                <li>AI tidak menyimpan data percakapan atau preferensi secara permanen di server eksternal.</li>
-                <li>Penggunaan fitur AI tunduk pada batasan penggunaan wajar (fair use).</li>
+                <li>Fitur “Rekomendasi Untukmu” memilih lagu secara otomatis berdasarkan katalog dan sinyal preferensi pengguna.</li>
+                <li>Rekomendasi dapat menggunakan teknologi AI atau sistem fallback otomatis saat layanan AI tidak tersedia.</li>
+                <li>Hasil rekomendasi tidak menjamin kecocokan sempurna dengan selera setiap pengguna.</li>
+                <li>Daftar rekomendasi dapat berubah setelah pengguna menyukai atau menghapus suka dari lagu tertentu.</li>
+                <li>Admin tidak menjamin lagu yang direkomendasikan akan selalu tersedia permanen di katalog.</li>
+                <li>Rekomendasi tidak boleh dianggap sebagai saran profesional, kurasi editorial resmi, atau jaminan kualitas artistik.</li>
+                <li>Penggunaan berlebihan terhadap tombol refresh dapat dibatasi untuk menjaga performa layanan.</li>
               </ul>
             </div>
             <div>
               <p className="font-bold text-foreground text-sm mb-1">💰 Ketentuan Paket Penyimpanan</p>
               <ul className="list-disc pl-4 space-y-1">
-                <li>Paket penyimpanan (Pro 10GB, Pro 100GB) berlaku selama 30 hari sejak pembelian.</li>
-                <li>Paket tidak dapat di-refund setelah dibeli dan aktif.</li>
-                <li>Jika paket expired, data offline yang melebihi kuota gratis (2GB) akan dihapus otomatis.</li>
-                <li>Harga paket dapat berubah sewaktu-waktu tanpa pemberitahuan.</li>
-                <li>Pembelian paket menggunakan saldo akun dan tidak bisa dibatalkan.</li>
-                <li>Voucher penyimpanan gratis yang diberikan admin memiliki masa berlaku sesuai ketentuan masing-masing.</li>
-                <li>Penggunaan kode diskon terbatas pada jumlah penggunaan maksimal yang ditentukan.</li>
-                <li>Satu kode diskon hanya dapat digunakan satu kali per transaksi.</li>
+                <li>Paket penyimpanan berlaku sesuai durasi yang ditetapkan sejak pembelian aktif.</li>
+                <li>Paket yang sudah aktif tidak dapat dibatalkan atau dikembalikan dananya.</li>
+                <li>Jika masa aktif paket berakhir, akses offline dapat menyesuaikan dengan kuota gratis yang tersedia.</li>
+                <li>Harga, kapasitas, dan masa aktif paket dapat berubah sewaktu-waktu.</li>
+                <li>Pembelian paket menggunakan saldo yang tersedia pada akun atau identitas pengguna terkait.</li>
+                <li>Voucher gratis dan kode diskon tunduk pada batas waktu, batas penggunaan, dan syarat admin.</li>
+                <li>Kode promo yang tidak valid, kedaluwarsa, atau habis kuotanya akan ditolak otomatis.</li>
               </ul>
             </div>
             <div>
               <p className="font-bold text-foreground text-sm mb-1">📱 Ketentuan Penggunaan Offline</p>
               <ul className="list-disc pl-4 space-y-1">
-                <li>Lagu yang disimpan offline hanya dapat diputar melalui aplikasi ini.</li>
-                <li>Data offline disimpan di cache browser dan dapat hilang jika cache dibersihkan.</li>
-                <li>Jumlah lagu yang dapat disimpan offline tergantung pada kuota penyimpanan yang tersedia.</li>
-                <li>Fitur offline tidak menjamin ketersediaan lagu jika konten dihapus oleh admin.</li>
-                <li>Mode offline memerlukan penyimpanan lokal yang cukup di perangkat pengguna.</li>
-                <li>Kecepatan download untuk penyimpanan offline tergantung pada koneksi internet pengguna.</li>
+                <li>Lagu yang disimpan offline hanya dimaksudkan untuk pemutaran di dalam aplikasi ini.</li>
+                <li>Data offline disimpan pada cache browser dan dapat hilang jika cache dibersihkan atau aplikasi dihapus.</li>
+                <li>Ketersediaan offline dipengaruhi oleh ruang penyimpanan perangkat, kuota paket, dan dukungan browser.</li>
+                <li>Kecepatan download tergantung koneksi internet dan ukuran file musik.</li>
+                <li>Jika lagu dihapus dari katalog, versi offline mungkin tidak lagi tersedia atau dapat berhenti berfungsi.</li>
+                <li>Pengguna bertanggung jawab menjaga perangkat tetap memiliki ruang penyimpanan yang cukup.</li>
               </ul>
             </div>
             <div>
-              <p className="font-bold text-foreground text-sm mb-1">🔒 Kebijakan Privasi</p>
+              <p className="font-bold text-foreground text-sm mb-1">🔒 Privasi & Data Pengguna</p>
               <ul className="list-disc pl-4 space-y-1">
-                <li>Data playlist pribadi disimpan menggunakan <code className="bg-muted px-1 rounded">visitor_id</code> unik per perangkat.</li>
-                <li>Kami tidak mengumpulkan informasi pribadi (nama, email, dll) untuk fitur playlist.</li>
-                <li>Riwayat pemutaran dan preferensi musik hanya tersimpan di perangkat Anda.</li>
-                <li>Data offline (lagu yang di-cache) disimpan di penyimpanan lokal browser Anda.</li>
-                <li>Kami tidak membagikan data penggunaan playlist kepada pihak ketiga.</li>
-                <li>Kami berhak mencatat statistik penggunaan secara anonim untuk peningkatan layanan.</li>
-                <li>Data lagu yang disukai (liked) disimpan di server untuk sinkronisasi lintas sesi.</li>
-                <li>Informasi perangkat yang ditampilkan di Device Info tidak disimpan atau dikirim ke server manapun.</li>
-                <li>Cookie dan local storage digunakan untuk menyimpan preferensi pengguna.</li>
+                <li>Playlist pribadi dan data musik pengguna dapat dikaitkan dengan visitor ID unik pada perangkat.</li>
+                <li>Kami berupaya meminimalkan pengumpulan data pribadi untuk fitur playlist.</li>
+                <li>Riwayat suka lagu digunakan untuk meningkatkan pengalaman rekomendasi.</li>
+                <li>Data cache offline tersimpan lokal pada perangkat pengguna.</li>
+                <li>Statistik penggunaan dapat dicatat secara anonim untuk peningkatan kualitas layanan.</li>
+                <li>Informasi perangkat yang ditampilkan hanya bersifat informatif dan bisa berubah tergantung dukungan browser.</li>
+                <li>Pengguna bertanggung jawab atas keamanan perangkat yang digunakan untuk mengakses playlist.</li>
               </ul>
             </div>
             <div>
               <p className="font-bold text-foreground text-sm mb-1">©️ Hak Cipta Musik</p>
               <ul className="list-disc pl-4 space-y-1">
-                <li>Semua lagu dan lirik yang tersedia dilindungi oleh hak cipta masing-masing artis dan pemegang hak.</li>
-                <li>Penggunaan musik hanya untuk streaming dan pemutaran pribadi dalam aplikasi ini.</li>
-                <li>Lirik ditampilkan untuk tujuan referensi dan hiburan saja.</li>
-                <li>Jika Anda adalah pemegang hak cipta dan ingin konten dihapus, silakan hubungi admin.</li>
-                <li>Aplikasi ini tidak mengklaim kepemilikan atas konten musik yang ditampilkan.</li>
-                <li>Cover art dan gambar album adalah milik pemegang hak cipta masing-masing.</li>
-                <li>Penggunaan ulang lirik untuk keperluan komersial tanpa izin adalah pelanggaran hak cipta.</li>
+                <li>Semua lagu, lirik, cover art, dan metadata tetap menjadi milik pemegang hak masing-masing.</li>
+                <li>Penggunaan musik dibatasi untuk streaming atau pemutaran pribadi dalam aplikasi.</li>
+                <li>Lirik disediakan untuk referensi dan hiburan, bukan untuk distribusi ulang.</li>
+                <li>Jika Anda pemegang hak cipta dan ingin konten dihapus, silakan hubungi admin atau dukungan.</li>
+                <li>Aplikasi tidak mengklaim kepemilikan atas karya musik yang tersedia di katalog.</li>
               </ul>
             </div>
             <div>
-              <p className="font-bold text-foreground text-sm mb-1">🔔 Ketentuan Notifikasi & Media Session</p>
+              <p className="font-bold text-foreground text-sm mb-1">📶 Batasan Teknis Layanan</p>
               <ul className="list-disc pl-4 space-y-1">
-                <li>Aplikasi menggunakan Media Session API untuk menampilkan informasi lagu di notifikasi perangkat.</li>
-                <li>Kontrol media (play/pause/skip) dapat diakses melalui notifikasi sistem.</li>
-                <li>Cover art lagu akan ditampilkan di lock screen dan notification panel saat memutar musik.</li>
-                <li>Fitur ini memerlukan browser yang mendukung Media Session API.</li>
+                <li>Kualitas streaming bergantung pada koneksi internet, perangkat, browser, dan kondisi jaringan.</li>
+                <li>Beberapa fitur seperti notifikasi media, background play, atau info perangkat bisa berbeda di tiap browser.</li>
+                <li>Kami tidak menjamin seluruh fitur akan berjalan identik di semua perangkat.</li>
+                <li>Gangguan jaringan, maintenance, atau pembaruan sistem dapat memengaruhi pemutaran dan rekomendasi.</li>
               </ul>
             </div>
             <div>
-              <p className="font-bold text-foreground text-sm mb-1">⚠️ Sanksi Pelanggaran</p>
+              <p className="font-bold text-foreground text-sm mb-1">⚠️ Pelanggaran & Pembatasan</p>
               <ul className="list-disc pl-4 space-y-1">
-                <li>Pelanggaran terhadap syarat & ketentuan dapat mengakibatkan pembatasan akses ke fitur playlist.</li>
-                <li>Distribusi ulang konten musik secara ilegal akan ditindak sesuai hukum yang berlaku.</li>
-                <li>Admin berhak memblokir akses pengguna yang melanggar ketentuan tanpa pemberitahuan.</li>
-                <li>Penyalahgunaan fitur AI atau voucher dapat mengakibatkan penangguhan akun.</li>
-                <li>Percobaan manipulasi sistem penyimpanan atau kuota akan mengakibatkan pembatasan permanen.</li>
+                <li>Pelanggaran terhadap syarat ini dapat menyebabkan pembatasan sebagian atau seluruh akses fitur playlist.</li>
+                <li>Penyalahgunaan voucher, eksploitasi sistem, atau manipulasi kuota dapat dikenakan pemblokiran.</li>
+                <li>Distribusi ulang konten musik secara ilegal dapat ditindak sesuai aturan yang berlaku.</li>
+                <li>Admin berhak mengambil tindakan tanpa pemberitahuan sebelumnya pada pelanggaran berat.</li>
               </ul>
             </div>
             <div>
               <p className="font-bold text-foreground text-sm mb-1">📞 Kontak & Dukungan</p>
               <ul className="list-disc pl-4 space-y-1">
-                <li>Untuk pertanyaan atau keluhan terkait layanan playlist, silakan hubungi admin melalui fitur Tiket Bantuan.</li>
-                <li>Permintaan penghapusan konten berhak cipta akan diproses dalam waktu 7 hari kerja.</li>
-                <li>Saran dan masukan untuk peningkatan layanan selalu diterima melalui fitur bantuan.</li>
+                <li>Keluhan, pertanyaan, atau masukan dapat disampaikan melalui fitur bantuan yang tersedia di aplikasi.</li>
+                <li>Permintaan evaluasi konten atau pelaporan hak cipta akan diproses sesuai antrean dukungan.</li>
+                <li>Waktu respons dapat berbeda tergantung volume permintaan dan kompleksitas masalah.</li>
               </ul>
             </div>
             <div className="pt-2 border-t border-border">

@@ -1,103 +1,139 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { z } from "https://esm.sh/zod@3.23.8";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+const BodySchema = z.object({
+  visitor_id: z.string().min(1).max(255),
+});
+
+type SongRow = {
+  id: string;
+  title: string;
+  artist: string;
+  cover_url: string | null;
+  duration: number | null;
+  file_size: number | null;
+  release_date: string | null;
+  created_at: string;
+  file_url: string;
+};
+
+function shuffle<T>(items: T[]) {
+  return [...items].sort(() => Math.random() - 0.5);
+}
+
+function buildFallbackRecommendations(allSongs: SongRow[], likedIds: Set<string>) {
+  const unlikedSongs = allSongs.filter((song) => !likedIds.has(song.id));
+  const source = unlikedSongs.length > 0 ? unlikedSongs : allSongs;
+  return shuffle(source).slice(0, 6).map((song) => song.id);
+}
+
 serve(async (req) => {
-  if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+  if (req.method === "OPTIONS") {
+    return new Response("ok", { headers: corsHeaders });
+  }
 
   try {
-    const { visitor_id } = await req.json();
-    if (!visitor_id) throw new Error("visitor_id required");
-
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const sb = createClient(supabaseUrl, supabaseKey);
-
-    // Fetch all songs
-    const { data: allSongs } = await sb.from("playlist_songs").select("id, title, artist, cover_url, duration, file_size, release_date, created_at, file_url");
-    if (!allSongs || allSongs.length === 0) {
-      return new Response(JSON.stringify({ recommended_ids: [] }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    const parsed = BodySchema.safeParse(await req.json());
+    if (!parsed.success) {
+      return new Response(JSON.stringify({ error: parsed.error.flatten().fieldErrors }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
-    // Fetch user's liked songs
-    const { data: likedRows } = await sb.from("liked_songs").select("song_id").eq("visitor_id", visitor_id);
-    const likedIds = new Set((likedRows || []).map((r: any) => r.song_id));
+    const { visitor_id } = parsed.data;
+    const supabaseUrl = Deno.env.get("SUPABASE_URL");
+    const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 
-    // Build context for AI
-    const likedSongs = allSongs.filter((s: any) => likedIds.has(s.id));
-    const unlikedSongs = allSongs.filter((s: any) => !likedIds.has(s.id));
-
-    if (unlikedSongs.length === 0) {
-      // All songs are liked, just return random
-      const shuffled = allSongs.sort(() => Math.random() - 0.5).slice(0, 6);
-      return new Response(JSON.stringify({ recommended_ids: shuffled.map((s: any) => s.id) }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    if (!supabaseUrl || !serviceRoleKey) {
+      throw new Error("Backend credentials are missing");
     }
 
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) {
-      // Fallback: random recommendations
-      const shuffled = unlikedSongs.sort(() => Math.random() - 0.5).slice(0, 6);
-      return new Response(JSON.stringify({ recommended_ids: shuffled.map((s: any) => s.id) }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    const sb = createClient(supabaseUrl, serviceRoleKey);
+
+    const [{ data: allSongs, error: songsError }, { data: likedRows, error: likesError }] = await Promise.all([
+      sb.from("playlist_songs").select("id, title, artist, cover_url, duration, file_size, release_date, created_at, file_url").order("created_at", { ascending: false }),
+      sb.from("liked_songs").select("song_id").eq("visitor_id", visitor_id),
+    ]);
+
+    if (songsError) throw songsError;
+    if (likesError) throw likesError;
+
+    const songs = (allSongs || []) as SongRow[];
+    const likedIds = new Set((likedRows || []).map((row: { song_id: string }) => row.song_id));
+
+    if (songs.length === 0) {
+      return new Response(JSON.stringify({ recommended_ids: [] }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
-    const likedInfo = likedSongs.map((s: any) => `"${s.title}" by ${s.artist}`).join(", ");
-    const catalogInfo = unlikedSongs.map((s: any) => `ID:${s.id} - "${s.title}" by ${s.artist}`).join("\n");
+    const fallbackIds = buildFallbackRecommendations(songs, likedIds);
+    const lovableApiKey = Deno.env.get("LOVABLE_API_KEY");
+    if (!lovableApiKey) {
+      return new Response(JSON.stringify({ recommended_ids: fallbackIds, source: "fallback" }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
-    const prompt = likedSongs.length > 0
-      ? `User likes these songs: ${likedInfo}\n\nFrom this catalog of songs they haven't liked yet, recommend up to 6 songs they would most likely enjoy. Consider genre similarity, artist style, and mood.\n\nCatalog:\n${catalogInfo}\n\nReturn ONLY the IDs of recommended songs, separated by commas. Nothing else.`
-      : `From this music catalog, pick 6 diverse and popular-sounding songs to recommend to a new user:\n\n${catalogInfo}\n\nReturn ONLY the IDs of recommended songs, separated by commas. Nothing else.`;
+    const likedSongs = songs.filter((song) => likedIds.has(song.id));
+    const candidateSongs = songs.filter((song) => !likedIds.has(song.id));
+    const catalog = (candidateSongs.length > 0 ? candidateSongs : songs)
+      .map((song) => `ID=${song.id} | title=${song.title} | artist=${song.artist}`)
+      .join("\n");
 
-    const aiResp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    const userTaste = likedSongs.length > 0
+      ? likedSongs.map((song) => `- ${song.title} — ${song.artist}`).join("\n")
+      : "Belum ada lagu yang disukai. Pilih lagu yang cocok untuk pengguna baru dari katalog yang ada.";
+
+    const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
+        Authorization: `Bearer ${lovableApiKey}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-2.5-flash-lite",
+        model: "google/gemini-3-flash-preview",
         messages: [
-          { role: "system", content: "You are a music recommendation engine. Return only comma-separated song IDs. No explanation." },
-          { role: "user", content: prompt },
+          {
+            role: "system",
+            content: "Kamu adalah mesin rekomendasi musik. Pilih maksimal 6 lagu dari katalog. Balas HANYA daftar ID dipisahkan koma, tanpa penjelasan.",
+          },
+          {
+            role: "user",
+            content: `Preferensi pengguna:\n${userTaste}\n\nKatalog lagu:\n${catalog}`,
+          },
         ],
       }),
     });
 
-    if (!aiResp.ok) {
-      // Fallback on AI error
-      const shuffled = unlikedSongs.sort(() => Math.random() - 0.5).slice(0, 6);
-      return new Response(JSON.stringify({ recommended_ids: shuffled.map((s: any) => s.id) }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    if (!aiResponse.ok) {
+      const errorText = await aiResponse.text();
+      console.error("recommend-songs AI error:", aiResponse.status, errorText);
+      return new Response(JSON.stringify({ recommended_ids: fallbackIds, source: "fallback" }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
-    const aiData = await aiResp.json();
-    const content = aiData.choices?.[0]?.message?.content || "";
-    
-    // Extract UUIDs from response
-    const uuidPattern = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi;
-    const extractedIds = content.match(uuidPattern) || [];
-    
-    // Filter to only valid song IDs
-    const validSongIds = new Set(allSongs.map((s: any) => s.id));
-    let recommendedIds = extractedIds.filter((id: string) => validSongIds.has(id));
-    
-    // If AI didn't return enough, pad with random unliked songs
-    if (recommendedIds.length < 4) {
-      const remaining = unlikedSongs.filter((s: any) => !recommendedIds.includes(s.id)).sort(() => Math.random() - 0.5);
-      for (const s of remaining) {
-        if (recommendedIds.length >= 6) break;
-        recommendedIds.push(s.id);
-      }
-    }
+    const aiData = await aiResponse.json();
+    const content = aiData.choices?.[0]?.message?.content ?? "";
+    const validSongIds = new Set(songs.map((song) => song.id));
+    const extractedIds = Array.from(content.matchAll(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi)).map((match) => match[0]);
+    const uniqueIds = [...new Set(extractedIds)].filter((id) => validSongIds.has(id));
+    const recommendedIds = uniqueIds.length > 0 ? uniqueIds.slice(0, 6) : fallbackIds;
 
-    return new Response(JSON.stringify({ recommended_ids: recommendedIds.slice(0, 6) }), {
+    return new Response(JSON.stringify({ recommended_ids: recommendedIds, source: uniqueIds.length > 0 ? "ai" : "fallback" }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
-  } catch (e) {
-    console.error("recommend-songs error:", e);
-    return new Response(JSON.stringify({ error: e.message }), {
+  } catch (error) {
+    console.error("recommend-songs error:", error);
+    return new Response(JSON.stringify({ error: error instanceof Error ? error.message : "Unknown error" }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
