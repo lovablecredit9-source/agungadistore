@@ -5,9 +5,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { Megaphone, Trash2, Edit2, X, ImagePlus, Clock, Eye, EyeOff, TimerReset, Share2, Check } from "lucide-react";
+import { Megaphone, Trash2, Edit2, X, ImagePlus, Clock, Eye, EyeOff, TimerReset, Share2, Check, Search, Download, ArrowUpDown } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 
 interface SponsorImage {
   id: string;
