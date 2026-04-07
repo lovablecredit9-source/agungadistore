@@ -202,6 +202,23 @@ export default function SponsorBanner() {
             {sortOrder === "newest" ? "Terbaru" : "Terlama"}
           </button>
         </div>
+        {/* Price Range Filter */}
+        <div className="flex items-center gap-2 mb-2">
+          <input
+            type="number"
+            placeholder="Harga min"
+            value={minPrice}
+            onChange={e => { setMinPrice(e.target.value); setCurrent(0); }}
+            className="flex-1 h-7 px-2 text-[11px] rounded-md border bg-background focus:outline-none focus:ring-1 focus:ring-primary min-w-0"
+          />
+          <span className="text-[10px] text-muted-foreground">-</span>
+          <input
+            type="number"
+            placeholder="Harga max"
+            value={maxPrice}
+            onChange={e => { setMaxPrice(e.target.value); setCurrent(0); }}
+            className="flex-1 h-7 px-2 text-[11px] rounded-md border bg-background focus:outline-none focus:ring-1 focus:ring-primary min-w-0"
+          />
         {showSearch && (
           <div className="relative mb-2">
             <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
