@@ -1576,6 +1576,24 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer }: Playl
         </CardContent>
       </Card>
 
+      {/* ===== PUBLIC MUSIC VIEW ===== */}
+      {activeView === "public" && (
+        <MusicPublicTab onPlaySong={(song) => {
+          const idx = songs.findIndex(s => s.id === song.id);
+          if (idx >= 0) { playSong(idx); }
+          else {
+            // Play directly for public songs not in admin playlist
+            const audio = audioRef.current;
+            if (audio) {
+              audio.src = song.file_url;
+              audio.play().catch(() => {});
+              setCurrentSong({ ...song, duration: 0, file_size: 0, release_date: null, created_at: "" } as Song);
+              setIsPlaying(true);
+            }
+          }
+        }} />
+      )}
+
       {/* Terms & Privacy Dialog */}
       <Dialog open={termsOpen} onOpenChange={setTermsOpen}>
         <DialogContent className="max-w-sm max-h-[80vh] overflow-y-auto">
