@@ -811,6 +811,7 @@ export type Database = {
       }
       sponsors: {
         Row: {
+          category: string
           created_at: string
           custom_note: string | null
           description: string | null
@@ -835,6 +836,7 @@ export type Database = {
           wa_number: string | null
         }
         Insert: {
+          category?: string
           created_at?: string
           custom_note?: string | null
           description?: string | null
@@ -859,6 +861,7 @@ export type Database = {
           wa_number?: string | null
         }
         Update: {
+          category?: string
           created_at?: string
           custom_note?: string | null
           description?: string | null

@@ -1,0 +1,1 @@
+ALTER TABLE public.sponsors ADD COLUMN category text NOT NULL DEFAULT '';
