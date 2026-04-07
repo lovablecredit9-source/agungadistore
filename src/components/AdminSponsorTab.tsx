@@ -122,6 +122,7 @@ function SponsorForm({
       setDurationType(editing.duration_type);
       setDurationValue(String(editing.duration_value));
       setCustomNote(editing.custom_note || "");
+      setCategory(editing.category || "");
       setWaNumber(editing.wa_number || "");
       setInstagram(editing.instagram || "");
       setFacebook(editing.facebook || "");
@@ -133,7 +134,7 @@ function SponsorForm({
     } else {
       setTitle(""); setDescription(""); setPrice(""); setSellerName("");
       setSellerContact(""); setDurationType("days"); setDurationValue("7");
-      setCustomNote(""); setImages([]);
+      setCustomNote(""); setCategory(""); setImages([]);
       setWaNumber(""); setInstagram(""); setFacebook(""); setTiktok(""); setTwitter(""); setThreads("");
     }
   }, [editing]);
