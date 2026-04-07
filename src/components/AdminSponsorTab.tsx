@@ -75,9 +75,12 @@ function timeRemainingStr(expiresAt: string | null): string {
   if (diff <= 0) return "Kedaluwarsa";
   const days = Math.floor(diff / (1000 * 60 * 60 * 24));
   const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-  if (days > 0) return `${days}h ${hours}j`;
   const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-  return hours > 0 ? `${hours}j ${mins}m` : `${mins}m`;
+  const secs = Math.floor((diff % (1000 * 60)) / 1000);
+  if (days > 0) return `${days}h ${hours}j ${mins}m`;
+  if (hours > 0) return `${hours}j ${mins}m ${secs}d`;
+  if (mins > 0) return `${mins}m ${secs}d`;
+  return `${secs}d`;
 }
 
 function formatDateTime(iso: string) {
