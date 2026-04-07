@@ -246,7 +246,10 @@ function SponsorDetailModal({ sponsor, images, onClose }: { sponsor: Sponsor; im
         )}
         <div className="p-5 space-y-3">
           <div className="flex items-start justify-between">
-            <h3 className="font-extrabold text-lg flex-1"><span className="text-muted-foreground font-mono text-xs">#{sponsor.sponsor_number}</span> {sponsor.title}</h3>
+            <div>
+              <p className="text-[10px] font-mono text-muted-foreground">#{sponsor.sponsor_number}</p>
+              <h3 className="font-extrabold text-lg">{sponsor.title}</h3>
+            </div>
             <button onClick={onClose} className="w-8 h-8 rounded-full bg-muted flex items-center justify-center shrink-0 ml-2">
               <X className="w-4 h-4" />
             </button>
