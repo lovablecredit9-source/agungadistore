@@ -1587,7 +1587,6 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer }: Playl
             if (audio) {
               audio.src = song.file_url;
               audio.play().catch(() => {});
-              setCurrentSong({ ...song, duration: 0, file_size: 0, release_date: null, created_at: "" } as Song);
               setIsPlaying(true);
             }
           }
