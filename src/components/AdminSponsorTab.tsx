@@ -370,6 +370,8 @@ function ExtendDialog({
               <Select value={extType} onValueChange={setExtType}>
                 <SelectTrigger className="w-24"><SelectValue /></SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="seconds">Detik</SelectItem>
+                  <SelectItem value="minutes">Menit</SelectItem>
                   <SelectItem value="hours">Jam</SelectItem>
                   <SelectItem value="days">Hari</SelectItem>
                   <SelectItem value="months">Bulan</SelectItem>
