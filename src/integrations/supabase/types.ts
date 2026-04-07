@@ -246,6 +246,36 @@ export type Database = {
         }
         Relationships: []
       }
+      music_profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          description: string | null
+          id: string
+          updated_at: string
+          username: string
+          visitor_id: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          updated_at?: string
+          username: string
+          visitor_id: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          updated_at?: string
+          username?: string
+          visitor_id?: string
+        }
+        Relationships: []
+      }
       music_storage_vouchers: {
         Row: {
           code: string
@@ -617,6 +647,60 @@ export type Database = {
         }
         Relationships: []
       }
+      public_songs: {
+        Row: {
+          admin_note: string | null
+          ai_check_result: string | null
+          artist: string
+          cover_url: string | null
+          created_at: string
+          description: string | null
+          duration: number | null
+          file_size: number | null
+          file_url: string
+          id: string
+          status: string
+          title: string
+          updated_at: string
+          visibility: string
+          visitor_id: string
+        }
+        Insert: {
+          admin_note?: string | null
+          ai_check_result?: string | null
+          artist?: string
+          cover_url?: string | null
+          created_at?: string
+          description?: string | null
+          duration?: number | null
+          file_size?: number | null
+          file_url: string
+          id?: string
+          status?: string
+          title: string
+          updated_at?: string
+          visibility?: string
+          visitor_id: string
+        }
+        Update: {
+          admin_note?: string | null
+          ai_check_result?: string | null
+          artist?: string
+          cover_url?: string | null
+          created_at?: string
+          description?: string | null
+          duration?: number | null
+          file_size?: number | null
+          file_url?: string
+          id?: string
+          status?: string
+          title?: string
+          updated_at?: string
+          visibility?: string
+          visitor_id?: string
+        }
+        Relationships: []
+      }
       song_lyrics: {
         Row: {
           created_at: string
@@ -849,6 +933,27 @@ export type Database = {
           updated_at?: string
           username?: string
           visitor_id?: string
+        }
+        Relationships: []
+      }
+      user_follows: {
+        Row: {
+          created_at: string
+          follower_visitor_id: string
+          following_visitor_id: string
+          id: string
+        }
+        Insert: {
+          created_at?: string
+          follower_visitor_id: string
+          following_visitor_id: string
+          id?: string
+        }
+        Update: {
+          created_at?: string
+          follower_visitor_id?: string
+          following_visitor_id?: string
+          id?: string
         }
         Relationships: []
       }
