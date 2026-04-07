@@ -1047,7 +1047,15 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer }: Playl
                 <Sparkles className="w-5 h-5" />
               </button>
               <div className="flex items-center gap-4">
-                <button className="p-2 text-muted-foreground hover:text-foreground rounded-full transition-colors">
+                <button className="p-2 text-muted-foreground hover:text-foreground rounded-full transition-colors" onClick={async () => {
+                  if (!currentSong) return;
+                  const shareUrl = `${window.location.origin}/?song=${currentSong.id}`;
+                  const shareData = { title: currentSong.title, text: `🎵 ${currentSong.title} - ${currentSong.artist}`, url: shareUrl };
+                  try {
+                    if (navigator.share) { await navigator.share(shareData); }
+                    else { await navigator.clipboard.writeText(shareUrl); toast({ title: "Link disalin!" }); }
+                  } catch {}
+                }}>
                   <Share2 className="w-5 h-5" />
                 </button>
                 <button className="p-2 text-muted-foreground hover:text-foreground rounded-full transition-colors" onClick={() => setShowFullPlayer(false)}>
