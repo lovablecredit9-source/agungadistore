@@ -777,6 +777,60 @@ export type Database = {
           },
         ]
       }
+      sponsors: {
+        Row: {
+          created_at: string
+          custom_note: string | null
+          description: string | null
+          duration_type: string
+          duration_value: number
+          expires_at: string | null
+          id: string
+          image_url: string | null
+          is_active: boolean
+          price: number
+          seller_contact: string
+          seller_name: string
+          starts_at: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          custom_note?: string | null
+          description?: string | null
+          duration_type?: string
+          duration_value?: number
+          expires_at?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          price?: number
+          seller_contact?: string
+          seller_name?: string
+          starts_at?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          custom_note?: string | null
+          description?: string | null
+          duration_type?: string
+          duration_value?: number
+          expires_at?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          price?: number
+          seller_contact?: string
+          seller_name?: string
+          starts_at?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       support_tickets: {
         Row: {
           created_at: string
