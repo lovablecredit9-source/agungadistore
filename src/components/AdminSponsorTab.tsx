@@ -100,6 +100,7 @@ function SponsorForm({
   const [durationType, setDurationType] = useState("days");
   const [durationValue, setDurationValue] = useState("7");
   const [customNote, setCustomNote] = useState("");
+  const [category, setCategory] = useState("");
   const [uploading, setUploading] = useState(false);
   const [images, setImages] = useState<string[]>([]);
   const [waNumber, setWaNumber] = useState("");
