@@ -1766,6 +1766,7 @@ const AdminDashboard = () => {
             {musicDiscountVouchers.length === 0 && <p className="text-center text-sm text-muted-foreground py-4">Belum ada voucher diskon musik</p>}
           </>
         )}
+        {tab === "sponsor" && <AdminSponsorTab />}
       </main>
     </div>
   );
