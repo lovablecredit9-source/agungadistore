@@ -364,11 +364,16 @@ const MusicPublicTab = ({ onPlaySong }: MusicPublicTabProps) => {
                           </button>
                         )}
                       </div>
-                      <Button size="icon" variant="ghost" onClick={() => onPlaySong?.({
-                        id: song.id, title: song.title, artist: song.artist, file_url: song.file_url, cover_url: song.cover_url
-                      })}>
-                        <Play className="w-4 h-4" />
-                      </Button>
+                      <div className="flex items-center gap-1">
+                        <Button size="icon" variant="ghost" className="w-8 h-8" onClick={() => handleShare(`${song.title} - ${song.artist}`, window.location.href)}>
+                          <Share2 className="w-3.5 h-3.5" />
+                        </Button>
+                        <Button size="icon" variant="ghost" className="w-8 h-8" onClick={() => onPlaySong?.({
+                          id: song.id, title: song.title, artist: song.artist, file_url: song.file_url, cover_url: song.cover_url
+                        })}>
+                          <Play className="w-4 h-4" />
+                        </Button>
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
