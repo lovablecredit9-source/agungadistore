@@ -115,11 +115,28 @@ const MusicPublicTab = ({ onPlaySong }: MusicPublicTabProps) => {
     return () => navigator.mediaDevices?.removeEventListener("devicechange", detectDevices);
   }, []);
 
+  const isGenericAudioLabel = (label: string) => {
+    const normalized = label.trim().toLowerCase();
+    return !normalized || ["perangkat audio", "audio output", "default", "speaker", "communications"].includes(normalized);
+  };
+
+  const getPreferredAudioDevice = () => {
+    const bluetoothDevice = audioDevices.find(d => {
+      const label = d.label.toLowerCase();
+      return label.includes("bluetooth") || label.includes("bt") || label.includes("airpod") || label.includes("buds");
+    });
+    if (bluetoothDevice) return bluetoothDevice;
+
+    const namedDevice = audioDevices.find(d => !isGenericAudioLabel(d.label));
+    return namedDevice || audioDevices[0];
+  };
+
   const getDeviceIcon = (label: string) => {
     const l = label.toLowerCase();
-    if (l.includes("bluetooth") || l.includes("bt") || l.includes("airpod") || l.includes("buds")) return <Bluetooth className="w-3.5 h-3.5 text-blue-500" />;
+    if (l.includes("bluetooth") || l.includes("bt") || l.includes("airpod") || l.includes("buds")) return <Bluetooth className="w-3.5 h-3.5 text-primary" />;
     if (l.includes("headphone") || l.includes("headset")) return <Headphones className="w-3.5 h-3.5 text-primary" />;
     if (l.includes("speaker") || l.includes("external")) return <Speaker className="w-3.5 h-3.5 text-primary" />;
+    if (l.includes("phone") || l.includes("earpiece")) return <Smartphone className="w-3.5 h-3.5 text-muted-foreground" />;
     return <Volume2 className="w-3.5 h-3.5 text-muted-foreground" />;
   };
 
