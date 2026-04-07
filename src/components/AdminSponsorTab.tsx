@@ -61,7 +61,9 @@ function formatPrice(price: number) {
 
 function calcExpiry(durationType: string, durationValue: number, startsAt: Date): Date {
   const d = new Date(startsAt);
-  if (durationType === "hours") d.setHours(d.getHours() + durationValue);
+  if (durationType === "seconds") d.setSeconds(d.getSeconds() + durationValue);
+  else if (durationType === "minutes") d.setMinutes(d.getMinutes() + durationValue);
+  else if (durationType === "hours") d.setHours(d.getHours() + durationValue);
   else if (durationType === "days") d.setDate(d.getDate() + durationValue);
   else if (durationType === "months") d.setMonth(d.getMonth() + durationValue);
   return d;
