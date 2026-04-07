@@ -1135,7 +1135,7 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer }: Playl
         </Card>
       )}
 
-      {/* ===== REKOMENDASI UNTUKMU (AI-Powered) ===== */}
+      {/* ===== REKOMENDASI UNTUKMU ===== */}
       {activeView === "playlist" && !viewingPlaylist && (
         <div className="space-y-2">
           <div className="flex items-center justify-between">
@@ -1147,21 +1147,21 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer }: Playl
               {loadingRecs ? "Memuat..." : "Refresh"}
             </Button>
           </div>
-          {loadingRecs ? (
+          {loadingRecs && recommendedSongs.length === 0 ? (
             <div className="flex items-center justify-center py-6 text-muted-foreground">
               <Loader2 className="w-5 h-5 animate-spin mr-2" />
-              <span className="text-xs">AI sedang memilih lagu untukmu...</span>
+              <span className="text-xs">Sedang menyiapkan rekomendasi lagu...</span>
             </div>
-          ) : aiRecommendedIds.length > 0 ? (
+          ) : recommendedSongs.length > 0 ? (
             <div className="flex gap-2 overflow-x-auto pb-2 -mx-1 px-1">
-              {songs.filter(s => aiRecommendedIds.includes(s.id)).map((song) => (
+              {recommendedSongs.map((song) => (
                 <Card key={song.id} className="min-w-[140px] max-w-[140px] shrink-0 overflow-hidden cursor-pointer hover:shadow-md transition-all" onClick={() => {
                   const idx = songs.findIndex(s => s.id === song.id);
                   if (idx >= 0) playSong(idx);
                 }}>
                   <CardContent className="p-2 space-y-1.5">
                     <div className="w-full aspect-square rounded-lg bg-primary/10 overflow-hidden relative">
-                      {song.cover_url ? <img src={song.cover_url} alt="" className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center"><Music className="w-8 h-8 text-primary/40" /></div>}
+                      {song.cover_url ? <img src={song.cover_url} alt={song.title} className="w-full h-full object-cover" loading="lazy" /> : <div className="w-full h-full flex items-center justify-center"><Music className="w-8 h-8 text-primary/40" /></div>}
                       <div className="absolute top-1 left-1 w-5 h-5 rounded-full bg-primary/80 flex items-center justify-center">
                         <Sparkles className="w-3 h-3 text-primary-foreground" />
                       </div>
@@ -1179,12 +1179,12 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer }: Playl
             <Card className="border-dashed">
               <CardContent className="p-4 text-center">
                 <Sparkles className="w-8 h-8 text-muted-foreground/30 mx-auto mb-2" />
-                <p className="text-[11px] text-muted-foreground">Ketuk Refresh untuk mendapatkan rekomendasi AI</p>
+                <p className="text-[11px] text-muted-foreground">Belum ada rekomendasi, coba tekan Refresh.</p>
               </CardContent>
             </Card>
           )}
           <p className="text-[10px] text-muted-foreground text-center flex items-center justify-center gap-1">
-            <Sparkles className="w-3 h-3" /> Dipilih khusus oleh AI berdasarkan selera musikmu
+            <Sparkles className="w-3 h-3" /> Dipilih otomatis dari selera dan katalog lagu yang tersedia
           </p>
         </div>
       )}
