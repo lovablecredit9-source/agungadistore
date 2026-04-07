@@ -140,21 +140,39 @@ const DeviceInfoCard = () => {
         };
       };
 
-      // IP & Location via free API
+      // IP & Location via free API (try multiple providers)
       let ipAddress = "Memuat...";
       let location = "Memuat...";
       let isp = "";
       try {
-        const res = await fetch("https://ipapi.co/json/", { signal: AbortSignal.timeout(5000) });
+        // Primary: ip-api.com (no CORS issues, generous rate limit)
+        const res = await fetch("http://ip-api.com/json/?fields=query,city,regionName,country,isp", { signal: AbortSignal.timeout(5000) });
         if (res.ok) {
           const ip = await res.json();
-          ipAddress = ip.ip || "N/A";
-          location = [ip.city, ip.region, ip.country_name].filter(Boolean).join(", ") || "N/A";
-          isp = ip.org || "";
+          if (ip.status === "success" || ip.query) {
+            ipAddress = ip.query || "N/A";
+            location = [ip.city, ip.regionName, ip.country].filter(Boolean).join(", ") || "N/A";
+            isp = ip.isp || "";
+          } else {
+            throw new Error("primary failed");
+          }
+        } else {
+          throw new Error("primary failed");
         }
       } catch {
-        ipAddress = "Gagal memuat";
-        location = "Gagal memuat";
+        // Fallback: ipapi.co
+        try {
+          const res2 = await fetch("https://ipapi.co/json/", { signal: AbortSignal.timeout(5000) });
+          if (res2.ok) {
+            const ip2 = await res2.json();
+            ipAddress = ip2.ip || "N/A";
+            location = [ip2.city, ip2.region, ip2.country_name].filter(Boolean).join(", ") || "N/A";
+            isp = ip2.org || "";
+          }
+        } catch {
+          ipAddress = "Tidak tersedia";
+          location = "Tidak tersedia";
+        }
       }
 
       const connData = getConnData();
