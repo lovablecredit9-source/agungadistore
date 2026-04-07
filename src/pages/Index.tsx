@@ -1775,6 +1775,10 @@ const Index = () => {
         <div className={tab === "playlist" ? "" : "hidden"}>
           <PlaylistTab onPlaybackChange={setPlaybackState} onTogglePlay={togglePlayRef} onOpenFullPlayer={openFullPlayerRef} />
         </div>
+
+        {tab === "publik" && (
+          <MusicPublicTab />
+        )}
       </main>
 
       {/* Mini Player - shown when music is playing and not on playlist tab */}
