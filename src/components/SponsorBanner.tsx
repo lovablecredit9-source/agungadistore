@@ -371,7 +371,7 @@ function SponsorDetailModal({ sponsor, images, onClose, isLiked, onToggleLike }:
 
   // Increment view count
   useEffect(() => {
-    supabase.rpc("increment_sponsor_views" as any, { sponsor_id: sponsor.id }).then(() => {});
+    supabase.from("sponsors").update({ view_count: (sponsor.view_count || 0) + 1 } as any).eq("id", sponsor.id).then(() => {});
   }, [sponsor.id]);
 
   function handleShare() {
