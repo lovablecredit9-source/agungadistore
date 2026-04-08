@@ -75,7 +75,12 @@ const socialIcons: Record<string, { label: string; url: (v: string) => string; c
   threads: { label: "Threads", url: v => `https://threads.net/@${v.replace("@", "")}`, color: "bg-gray-600 hover:bg-gray-700" },
 };
 
-export default function SponsorBanner() {
+interface SponsorBannerProps {
+  likedSponsorIds?: Set<string>;
+  onToggleLikeSponsor?: (sponsorId: string, e?: React.MouseEvent) => void;
+}
+
+export default function SponsorBanner({ likedSponsorIds = new Set(), onToggleLikeSponsor }: SponsorBannerProps) {
   const [sponsors, setSponsors] = useState<Sponsor[]>([]);
   const [sponsorImages, setSponsorImages] = useState<Record<string, SponsorImage[]>>({});
   const [current, setCurrent] = useState(0);
