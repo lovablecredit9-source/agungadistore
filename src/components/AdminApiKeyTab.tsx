@@ -714,6 +714,9 @@ node bot.js
             <div className="flex items-center justify-between">
               <p className="font-bold text-sm truncate flex-1">{k.key_name}</p>
               <div className="flex gap-0.5 shrink-0">
+                <Button size="sm" variant="ghost" className="h-7 w-7 p-0" title="Download bot.js" onClick={() => downloadBotFile(k.api_key, k.key_name)}>
+                  <Download className="w-3.5 h-3.5 text-primary" />
+                </Button>
                 <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => toggleKey(k)}>
                   {k.is_active ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
                 </Button>
