@@ -1505,39 +1505,19 @@ const Index = () => {
         )}
 
         {tab === "likes" && (
-          <div className="space-y-4">
-            <h2 className="text-lg font-extrabold flex items-center gap-2"><Heart className="w-5 h-5 text-destructive" /> {t("likes.title", lang)}</h2>
-            {likedProducts.length === 0 && (
-              <div className="text-center py-16 text-muted-foreground">
-                <Heart className="w-16 h-16 mx-auto mb-3 opacity-20" />
-                <p className="text-sm font-medium">Belum ada produk yang disukai.</p>
-                <Button size="sm" variant="outline" className="mt-4 gap-1.5" onClick={() => setTab("produk")}><Package className="w-4 h-4" /> Lihat Produk</Button>
-              </div>
-            )}
-            {likedProducts.map(p => {
-              const imgs = getProductImages(p.id);
-              return (
-                <Card key={p.id} className="overflow-hidden hover:shadow-xl transition-all cursor-pointer" onClick={() => setSelectedProduct(p)}>
-                  <CardContent className="p-3 flex items-center gap-3">
-                    {imgs.length > 0 && <img src={imgs[0]} className="w-14 h-14 rounded-xl object-cover" alt="" />}
-                    <div className="flex-1 min-w-0">
-                      <h3 className="font-bold text-sm truncate">{p.title}</h3>
-                      <p className="text-xs text-primary font-bold">{formatPrice(p.price)}</p>
-                      <div className="flex gap-1 mt-0.5">
-                        {p.has_warranty && <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded-full"><Shield className="w-2.5 h-2.5 inline" /> Garansi</span>}
-                        <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${p.stock > 0 ? "bg-accent/10 text-accent" : "bg-destructive/10 text-destructive"}`}>
-                          {p.stock > 0 ? "Tersedia" : "Habis"}
-                        </span>
-                      </div>
-                    </div>
-                    <button onClick={(e) => toggleLike(p.id, e)}>
-                      <Heart className="w-5 h-5 fill-destructive text-destructive" />
-                    </button>
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </div>
+          <LikesTab
+            likedProducts={likedProducts}
+            likedSponsorIds={likedSponsorIds}
+            getProductImages={getProductImages}
+            formatPrice={formatPrice}
+            toggleLike={toggleLike}
+            toggleLikeSponsor={toggleLikeSponsor}
+            setSelectedProduct={setSelectedProduct}
+            setTab={setTab}
+            lang={lang}
+            likedIds={likedIds}
+          />
+        )}
         )}
 
         {tab === "tiket" && (
