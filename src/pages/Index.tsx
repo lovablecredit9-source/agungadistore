@@ -223,7 +223,8 @@ function ImageCarousel({ images, className = "w-full h-44" }: { images: string[]
 }
 
 const Index = () => {
-  const { theme, setTheme, resolvedTheme } = useTheme();
+  const { theme, setTheme, resolvedTheme, customBgUrl, setCustomBgUrl } = useTheme();
+  const customBgInputRef = useRef<HTMLInputElement>(null);
   const [lang, setLang] = useLang();
   const [tab, setTab] = useState<Tab>("beranda");
   const [products, setProducts] = useState<Product[]>([]);
