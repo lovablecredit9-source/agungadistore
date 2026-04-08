@@ -19,6 +19,7 @@ import { STORE_NAME } from "@/lib/social-links";
 import storeQris from "@/assets/store-qris.jpg";
 import AdminMusicTab from "@/components/AdminMusicTab";
 import AdminSponsorTab from "@/components/AdminSponsorTab";
+import AdminApiKeyTab from "@/components/AdminApiKeyTab";
 
 interface Product {
   id: string;
