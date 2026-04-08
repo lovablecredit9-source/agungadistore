@@ -337,6 +337,15 @@ const Index = () => {
   const [depositHistorySort, setDepositHistorySort] = useState<"newest" | "oldest">("newest");
   const [selectedDeposit, setSelectedDeposit] = useState<Deposit | null>(null);
 
+  // Home banner sponsors
+  interface HomeSponsor { id: string; title: string; image_url: string | null; price: number; seller_name: string; sponsor_number: number; }
+  const [homeSponsors, setHomeSponsors] = useState<HomeSponsor[]>([]);
+
+  async function fetchHomeSponsors() {
+    const { data } = await supabase.from("sponsors").select("id, title, image_url, price, seller_name, sponsor_number").eq("is_active", true).order("created_at", { ascending: false }).limit(10);
+    if (data) setHomeSponsors(data as unknown as HomeSponsor[]);
+  }
+
   // Notifications
   interface Notification {
     id: string;
