@@ -1385,6 +1385,19 @@ const Index = () => {
         {tab === "voucher" && (
           <div className="space-y-4">
             <h2 className="text-lg font-extrabold flex items-center gap-2"><Ticket className="w-5 h-5 text-primary" /> {t("voucher.title", lang)}</h2>
+            {/* Info: Harus beli dulu */}
+            <Card className="bg-gradient-to-r from-amber-500/10 to-orange-500/10 border-amber-500/30 shadow-md">
+              <CardContent className="p-3 flex items-start gap-3">
+                <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center shrink-0 mt-0.5 shadow">
+                  <ShoppingBag className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <p className="text-xs font-bold text-amber-700 dark:text-amber-400">Cara Mendapatkan Voucher</p>
+                  <p className="text-[11px] text-muted-foreground mt-0.5">Beli produk terlebih dahulu di tab <span className="font-bold text-primary cursor-pointer" onClick={() => setTab("produk")}>Produk</span> atau gunakan <span className="font-bold text-primary cursor-pointer" onClick={() => setTab("saldo")}>Saldo</span>, lalu kode voucher akan diberikan setelah pembayaran berhasil.</p>
+                </div>
+              </CardContent>
+            </Card>
+
             <Card className="border-2 border-primary/20 shadow-lg overflow-hidden">
               <div className="bg-gradient-to-r from-primary/10 to-accent/10 p-1" />
               <CardContent className="p-5 space-y-4">
