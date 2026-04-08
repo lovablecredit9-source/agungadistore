@@ -42,6 +42,9 @@ interface Sponsor {
   twitter: string;
   threads: string;
   stock: number;
+  has_warranty: boolean;
+  warranty_duration_value: number;
+  warranty_duration_type: string;
 }
 
 interface ExtendReceipt {
@@ -116,6 +119,9 @@ function SponsorForm({
   const [tiktok, setTiktok] = useState("");
   const [twitter, setTwitter] = useState("");
   const [threads, setThreads] = useState("");
+  const [hasWarranty, setHasWarranty] = useState(false);
+  const [warrantyDurationValue, setWarrantyDurationValue] = useState("0");
+  const [warrantyDurationType, setWarrantyDurationType] = useState("days");
   const fileRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
@@ -137,6 +143,9 @@ function SponsorForm({
       setTiktok(editing.tiktok || "");
       setTwitter(editing.twitter || "");
       setThreads(editing.threads || "");
+      setHasWarranty(editing.has_warranty || false);
+      setWarrantyDurationValue(String(editing.warranty_duration_value || 0));
+      setWarrantyDurationType(editing.warranty_duration_type || "days");
       const existing = existingImages[editing.id] || [];
       setImages(existing.map(i => i.image_url));
     } else {
@@ -144,6 +153,7 @@ function SponsorForm({
       setSellerContact(""); setDurationType("days"); setDurationValue("7");
       setCustomNote(""); setCategory(""); setImages([]); setStock("0");
       setWaNumber(""); setInstagram(""); setFacebook(""); setTiktok(""); setTwitter(""); setThreads("");
+      setHasWarranty(false); setWarrantyDurationValue("0"); setWarrantyDurationType("days");
     }
   }, [editing]);
 
@@ -191,6 +201,9 @@ function SponsorForm({
       twitter: twitter.trim(),
       threads: threads.trim(),
       stock: parseInt(stock) || 0,
+      has_warranty: hasWarranty,
+      warranty_duration_value: parseInt(warrantyDurationValue) || 0,
+      warranty_duration_type: warrantyDurationType,
     };
 
     let sponsorId = editing?.id;
@@ -243,6 +256,28 @@ function SponsorForm({
         <Input type="number" placeholder="Harga (Rp)" value={price} onChange={e => setPrice(e.target.value)} />
         <Input placeholder="Kategori (cth: Makanan, Fashion, Elektronik) *" value={category} onChange={e => setCategory(e.target.value)} />
         <Input type="number" placeholder="Stok" value={stock} onChange={e => setStock(e.target.value)} min="0" />
+
+        {/* Garansi */}
+        <div className="space-y-2 border rounded-lg p-3 bg-muted/30">
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input type="checkbox" checked={hasWarranty} onChange={e => setHasWarranty(e.target.checked)} className="rounded" />
+            <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Garansi Produk</span>
+          </label>
+          {hasWarranty && (
+            <div className="flex gap-2">
+              <Input type="number" min="1" placeholder="Durasi" value={warrantyDurationValue} onChange={e => setWarrantyDurationValue(e.target.value)} className="flex-1" />
+              <Select value={warrantyDurationType} onValueChange={setWarrantyDurationType}>
+                <SelectTrigger className="w-24"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="hours">Jam</SelectItem>
+                  <SelectItem value="days">Hari</SelectItem>
+                  <SelectItem value="months">Bulan</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+        </div>
+
         <Input placeholder="Nama penjual *" value={sellerName} onChange={e => setSellerName(e.target.value)} />
         <Input placeholder="Kontak (WA/HP)" value={sellerContact} onChange={e => setSellerContact(e.target.value)} />
 

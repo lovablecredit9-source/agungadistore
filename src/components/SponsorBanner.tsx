@@ -39,6 +39,9 @@ interface Sponsor {
   threads: string;
   category: string;
   stock: number;
+  has_warranty: boolean;
+  warranty_duration_value: number;
+  warranty_duration_type: string;
 }
 
 type SortOrder = "newest" | "oldest";
@@ -288,6 +291,11 @@ export default function SponsorBanner() {
               <Badge variant={sponsor.stock > 0 ? "secondary" : "destructive"} className="text-[10px] font-bold">
                 Stok: {sponsor.stock > 0 ? sponsor.stock : "Habis"}
               </Badge>
+              <Badge variant={sponsor.has_warranty ? "secondary" : "outline"} className="text-[10px] font-bold">
+                {sponsor.has_warranty
+                  ? `Garansi ${sponsor.warranty_duration_value} ${sponsor.warranty_duration_type === "hours" ? "Jam" : sponsor.warranty_duration_type === "days" ? "Hari" : "Bulan"}`
+                  : "Tanpa Garansi"}
+              </Badge>
             </div>
             {/* Social buttons preview */}
             {socialLinks.length > 0 && (
@@ -396,6 +404,15 @@ function SponsorDetailModal({ sponsor, images, onClose }: { sponsor: Sponsor; im
               <Megaphone className="w-4 h-4 text-primary" />
               <span className="font-medium">Stok:</span>
               <span className={sponsor.stock > 0 ? "text-foreground" : "text-destructive font-bold"}>{sponsor.stock > 0 ? sponsor.stock : "Habis"}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Megaphone className="w-4 h-4 text-primary" />
+              <span className="font-medium">Garansi:</span>
+              <span className={sponsor.has_warranty ? "text-foreground font-bold" : "text-muted-foreground"}>
+                {sponsor.has_warranty
+                  ? `${sponsor.warranty_duration_value} ${sponsor.warranty_duration_type === "hours" ? "Jam" : sponsor.warranty_duration_type === "days" ? "Hari" : "Bulan"}`
+                  : "Tidak ada"}
+              </span>
             </div>
           </div>
 
