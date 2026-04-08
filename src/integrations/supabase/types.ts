@@ -927,6 +927,7 @@ export type Database = {
           title: string
           twitter: string | null
           updated_at: string
+          view_count: number
           wa_number: string | null
           warranty_duration_type: string
           warranty_duration_value: number
@@ -956,6 +957,7 @@ export type Database = {
           title: string
           twitter?: string | null
           updated_at?: string
+          view_count?: number
           wa_number?: string | null
           warranty_duration_type?: string
           warranty_duration_value?: number
@@ -985,6 +987,7 @@ export type Database = {
           title?: string
           twitter?: string | null
           updated_at?: string
+          view_count?: number
           wa_number?: string | null
           warranty_duration_type?: string
           warranty_duration_value?: number
