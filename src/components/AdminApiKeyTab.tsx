@@ -88,6 +88,267 @@ export default function AdminApiKeyTab() {
     toast({ title: `${label} tersalin!` });
   }
 
+  function downloadBotFile(apiKey: string, keyName: string) {
+    const code = generateBotCode(apiKey);
+    const blob = new Blob([code], { type: "text/javascript" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `bot-wa-${keyName.toLowerCase().replace(/\s+/g, "-")}.js`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast({ title: "File bot.js berhasil didownload! 🤖" });
+  }
+
+  function generateBotCode(apiKey: string) {
+    return `// =============================================
+// 🤖 BOT WHATSAPP - Agung Adi Store
+// =============================================
+// Cara pakai:
+//   1. npm install whatsapp-web.js qrcode-terminal
+//   2. node bot.js
+//   3. Scan QR di WhatsApp > Linked Devices
+// =============================================
+
+const { Client, LocalAuth } = require("whatsapp-web.js");
+const qrcode = require("qrcode-terminal");
+
+// ✅ API Key sudah otomatis terisi!
+const API_KEY = "${apiKey}";
+const BASE = "${baseUrl}";
+
+const client = new Client({
+  authStrategy: new LocalAuth(),
+  puppeteer: {
+    headless: true,
+    args: ["--no-sandbox", "--disable-setuid-sandbox"],
+  },
+});
+
+client.on("qr", (qr) => {
+  console.log("\\n📱 Scan QR code di bawah dengan WhatsApp:");
+  qrcode.generate(qr, { small: true });
+});
+
+client.on("ready", () => {
+  console.log("\\n✅ Bot WhatsApp sudah siap!");
+  console.log("📋 Kirim !help di chat untuk lihat perintah\\n");
+});
+
+client.on("authenticated", () => console.log("🔐 Autentikasi berhasil!"));
+client.on("auth_failure", (msg) => console.error("❌ Autentikasi gagal:", msg));
+
+// ━━━ Helper API ━━━
+async function apiGet(endpoint) {
+  try {
+    const res = await fetch(BASE + "?endpoint=" + endpoint, {
+      headers: { "x-api-key": API_KEY },
+    });
+    const json = await res.json();
+    if (!json.success) throw new Error(json.error || "API Error");
+    return json.data;
+  } catch (err) {
+    console.error("API Error:", err.message);
+    return null;
+  }
+}
+
+async function apiPost(endpoint, body) {
+  try {
+    const res = await fetch(BASE + "?endpoint=" + endpoint, {
+      method: "POST",
+      headers: { "x-api-key": API_KEY, "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    return await res.json();
+  } catch (err) {
+    console.error("API Error:", err.message);
+    return null;
+  }
+}
+
+function rp(n) {
+  return "Rp " + Number(n).toLocaleString("id-ID");
+}
+
+// ━━━ Handler Pesan ━━━
+client.on("message", async (msg) => {
+  const text = msg.body.trim().toLowerCase();
+
+  // ── MENU ──
+  if (text === "!help" || text === "!menu") {
+    await msg.reply(\`🤖 *BOT AGUNG ADI STORE*
+━━━━━━━━━━━━━━━━━━━━━━
+📦 *!produk* — Lihat semua produk
+🔍 *!cari [kata]* — Cari produk
+📢 *!sponsor* — Lihat sponsor aktif
+💰 *!saldo* — Cek saldo semua user
+🎵 *!lagu* — Daftar lagu
+💳 *!deposit* — Riwayat deposit
+🎟️ *!token* — Daftar token
+🔔 *!notif [pesan]* — Kirim notifikasi
+📊 *!info* — Info & statistik
+ℹ️ *!help* — Menu ini
+━━━━━━━━━━━━━━━━━━━━━━
+_Bot otomatis Agung Adi Store_\`);
+    return;
+  }
+
+  // ── PRODUK ──
+  if (text === "!produk") {
+    const data = await apiGet("products");
+    if (!data || data.length === 0) { await msg.reply("📦 Belum ada produk."); return; }
+    let r = "📦 *DAFTAR PRODUK*\\n━━━━━━━━━━━━━━━━━━\\n\\n";
+    data.forEach((p, i) => {
+      r += \`*\${i + 1}. \${p.title}*\\n\`;
+      r += \`   💰 \${rp(p.price)}\\n\`;
+      r += \`   📦 Stok: \${p.stock}\\n\`;
+      if (p.category) r += \`   🏷️ \${p.category}\\n\`;
+      if (p.description) r += \`   📝 \${p.description.substring(0, 80)}\\n\`;
+      r += "\\n";
+    });
+    r += \`_Total: \${data.length} produk_\`;
+    await msg.reply(r);
+    return;
+  }
+
+  // ── CARI PRODUK ──
+  if (text.startsWith("!cari ")) {
+    const keyword = msg.body.trim().substring(6).toLowerCase();
+    const data = await apiGet("products");
+    if (!data) { await msg.reply("❌ Gagal mengambil data."); return; }
+    const hasil = data.filter(
+      (p) =>
+        p.title.toLowerCase().includes(keyword) ||
+        (p.category || "").toLowerCase().includes(keyword) ||
+        (p.description || "").toLowerCase().includes(keyword)
+    );
+    if (hasil.length === 0) {
+      await msg.reply(\`🔍 Tidak ditemukan produk "*\${keyword}*"\`);
+      return;
+    }
+    let r = \`🔍 *HASIL: "\${keyword}"*\\n━━━━━━━━━━━━━━━━━━\\n\\n\`;
+    hasil.forEach((p, i) => {
+      r += \`*\${i + 1}. \${p.title}*\\n   💰 \${rp(p.price)} | 📦 Stok: \${p.stock}\\n\\n\`;
+    });
+    r += \`_Ditemukan: \${hasil.length} produk_\`;
+    await msg.reply(r);
+    return;
+  }
+
+  // ── SPONSOR ──
+  if (text === "!sponsor") {
+    const data = await apiGet("sponsors");
+    if (!data || data.length === 0) { await msg.reply("📢 Belum ada sponsor."); return; }
+    let r = "📢 *DAFTAR SPONSOR*\\n━━━━━━━━━━━━━━━━━━\\n\\n";
+    data.forEach((s, i) => {
+      r += \`*\${i + 1}. \${s.title}* (#\${s.sponsor_number})\\n\`;
+      r += \`   👤 \${s.seller_name}\\n\`;
+      r += \`   💰 \${rp(s.price)} | 📦 Stok: \${s.stock}\\n\`;
+      if (s.wa_number) r += \`   📱 WA: \${s.wa_number}\\n\`;
+      r += \`   ⏰ \${s.is_active ? "✅ Aktif" : "❌ Nonaktif"}\\n\\n\`;
+    });
+    await msg.reply(r);
+    return;
+  }
+
+  // ── SALDO ──
+  if (text === "!saldo") {
+    const data = await apiGet("balances");
+    if (!data || data.length === 0) { await msg.reply("💰 Belum ada data saldo."); return; }
+    let r = "💰 *DAFTAR SALDO*\\n━━━━━━━━━━━━━━━━━━\\n\\n";
+    data.forEach((b, i) => {
+      r += \`\${i + 1}. *\${b.username}*: \${rp(b.balance)}\\n\`;
+    });
+    await msg.reply(r);
+    return;
+  }
+
+  // ── LAGU ──
+  if (text === "!lagu") {
+    const data = await apiGet("songs");
+    if (!data || data.length === 0) { await msg.reply("🎵 Belum ada lagu."); return; }
+    let r = "🎵 *DAFTAR LAGU*\\n━━━━━━━━━━━━━━━━━━\\n\\n";
+    data.forEach((s, i) => {
+      const dur = s.duration ? \`\${Math.floor(s.duration / 60)}:\${String(s.duration % 60).padStart(2, "0")}\` : "-";
+      r += \`\${i + 1}. *\${s.title}* — \${s.artist} (\${dur})\\n\`;
+    });
+    r += \`\\n_Total: \${data.length} lagu_\`;
+    await msg.reply(r);
+    return;
+  }
+
+  // ── DEPOSIT ──
+  if (text === "!deposit") {
+    const data = await apiGet("deposits");
+    if (!data || data.length === 0) { await msg.reply("💳 Belum ada deposit."); return; }
+    let r = "💳 *RIWAYAT DEPOSIT*\\n━━━━━━━━━━━━━━━━━━\\n\\n";
+    data.slice(0, 10).forEach((d, i) => {
+      const tgl = new Date(d.created_at).toLocaleString("id-ID");
+      r += \`\${i + 1}. *\${d.username}* — \${rp(d.amount)}\\n\`;
+      r += \`   📅 \${tgl}\\n\`;
+      r += \`   💳 \${d.payment_method.toUpperCase()} | \${d.status === "success" ? "✅" : "⏳"} \${d.status}\\n\\n\`;
+    });
+    await msg.reply(r);
+    return;
+  }
+
+  // ── TOKEN ──
+  if (text === "!token") {
+    const data = await apiGet("tokens");
+    if (!data || data.length === 0) { await msg.reply("🎟️ Belum ada token."); return; }
+    let r = "🎟️ *DAFTAR TOKEN*\\n━━━━━━━━━━━━━━━━━━\\n\\n";
+    data.slice(0, 15).forEach((t, i) => {
+      const produk = t.products ? t.products.title : "-";
+      r += \`\${i + 1}. \${t.token_code}\\n   📦 \${produk} | \${t.is_claimed ? "✅ Diklaim" : "⏳ Belum"}\\n\\n\`;
+    });
+    await msg.reply(r);
+    return;
+  }
+
+  // ── INFO / STATISTIK ──
+  if (text === "!info") {
+    const [produk, sponsor, saldo, lagu] = await Promise.all([
+      apiGet("products"),
+      apiGet("sponsors"),
+      apiGet("balances"),
+      apiGet("songs"),
+    ]);
+    let r = "📊 *STATISTIK TOKO*\\n━━━━━━━━━━━━━━━━━━\\n\\n";
+    r += \`📦 Produk: \${produk ? produk.length : 0}\\n\`;
+    r += \`📢 Sponsor: \${sponsor ? sponsor.length : 0}\\n\`;
+    r += \`👥 User: \${saldo ? saldo.length : 0}\\n\`;
+    r += \`🎵 Lagu: \${lagu ? lagu.length : 0}\\n\`;
+    if (saldo && saldo.length > 0) {
+      const totalSaldo = saldo.reduce((s, b) => s + Number(b.balance), 0);
+      r += \`\\n💰 Total saldo: \${rp(totalSaldo)}\\n\`;
+    }
+    r += \`\\n📅 \${new Date().toLocaleString("id-ID")}\`;
+    await msg.reply(r);
+    return;
+  }
+
+  // ── NOTIFIKASI ──
+  if (text.startsWith("!notif ")) {
+    const pesan = msg.body.trim().substring(7);
+    if (!pesan) { await msg.reply("❌ Tulis: !notif [isi pesan]"); return; }
+    const result = await apiPost("notifications", {
+      visitor_id: "wa-bot",
+      title: "Notifikasi Bot WA",
+      message: pesan,
+      type: "info",
+    });
+    await msg.reply(result && result.success ? "✅ Notifikasi terkirim!" : "❌ Gagal mengirim.");
+    return;
+  }
+});
+
+client.initialize();
+console.log("🚀 Memulai bot WhatsApp...");
+console.log("📱 Tunggu QR code muncul...\\n");
+`;
+  }
+
   const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID || "";
   const baseUrl = `https://${projectId}.supabase.co/functions/v1/public-api`;
 
@@ -453,6 +714,9 @@ node bot.js
             <div className="flex items-center justify-between">
               <p className="font-bold text-sm truncate flex-1">{k.key_name}</p>
               <div className="flex gap-0.5 shrink-0">
+                <Button size="sm" variant="ghost" className="h-7 w-7 p-0" title="Download bot.js" onClick={() => downloadBotFile(k.api_key, k.key_name)}>
+                  <Download className="w-3.5 h-3.5 text-primary" />
+                </Button>
                 <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => toggleKey(k)}>
                   {k.is_active ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
                 </Button>
