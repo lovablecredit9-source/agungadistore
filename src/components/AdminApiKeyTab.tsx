@@ -85,43 +85,139 @@ export default function AdminApiKeyTab() {
   const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID || "";
   const baseUrl = `https://${projectId}.supabase.co/functions/v1/public-api`;
 
-  const usageExample = `# Contoh penggunaan API
+  const usageExample = `# ==========================================
+# 📖 PANDUAN LENGKAP API - Agung Adi Store
+# ==========================================
+# Base URL: ${baseUrl}
+# Auth: Header "x-api-key: YOUR_API_KEY"
+# ==========================================
 
-# 1. Ambil semua produk
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# 1. AMBIL SEMUA PRODUK
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 curl -H "x-api-key: YOUR_API_KEY" \\
   "${baseUrl}?endpoint=products"
 
-# 2. Ambil semua sponsor
+# 2. AMBIL SEMUA SPONSOR/IKLAN
 curl -H "x-api-key: YOUR_API_KEY" \\
   "${baseUrl}?endpoint=sponsors"
 
-# 3. Ambil saldo user
+# 3. AMBIL SALDO USER
 curl -H "x-api-key: YOUR_API_KEY" \\
   "${baseUrl}?endpoint=balances"
 
-# 4. Ambil lagu
+# 4. AMBIL SEMUA LAGU
 curl -H "x-api-key: YOUR_API_KEY" \\
   "${baseUrl}?endpoint=songs"
 
-# 5. Ambil deposit
+# 5. AMBIL DEPOSIT
 curl -H "x-api-key: YOUR_API_KEY" \\
   "${baseUrl}?endpoint=deposits"
 
-# 6. Ambil token
+# 6. AMBIL TOKEN
 curl -H "x-api-key: YOUR_API_KEY" \\
   "${baseUrl}?endpoint=tokens"
 
-# 7. Kirim notifikasi
+# 7. KIRIM NOTIFIKASI (POST)
 curl -X POST -H "x-api-key: YOUR_API_KEY" \\
   -H "Content-Type: application/json" \\
-  -d '{"visitor_id":"xxx","title":"Halo","message":"Test"}' \\
+  -d '{"visitor_id":"xxx","title":"Halo","message":"Pesan test","type":"info"}' \\
   "${baseUrl}?endpoint=notifications"
 
-# 8. Ambil notifikasi
+# 8. AMBIL NOTIFIKASI (GET)
 curl -H "x-api-key: YOUR_API_KEY" \\
   "${baseUrl}?endpoint=notifications"
 
-# Node.js example:
+# Filter notifikasi per visitor:
+curl -H "x-api-key: YOUR_API_KEY" \\
+  "${baseUrl}?endpoint=notifications&visitor_id=xxx"
+
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# CONTOH BOT WHATSAPP (Node.js)
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# Install: npm install whatsapp-web.js qrcode-terminal
+
+const { Client } = require("whatsapp-web.js");
+const qrcode = require("qrcode-terminal");
+
+const API_KEY = "YOUR_API_KEY";
+const BASE = "${baseUrl}";
+
+const client = new Client();
+client.on("qr", qr => qrcode.generate(qr, { small: true }));
+client.on("ready", () => console.log("Bot WA siap!"));
+
+client.on("message", async msg => {
+  const text = msg.body.toLowerCase();
+
+  if (text === "!produk") {
+    const res = await fetch(BASE + "?endpoint=products", {
+      headers: { "x-api-key": API_KEY }
+    });
+    const { data } = await res.json();
+    let reply = "📦 *DAFTAR PRODUK*\\n━━━━━━━━━━━━━━━━━━\\n";
+    data.forEach((p, i) => {
+      reply += \`\${i+1}. *\${p.title}*\\n\`;
+      reply += \`   💰 Rp \${p.price.toLocaleString()}\\n\`;
+      reply += \`   📦 Stok: \${p.stock}\\n\\n\`;
+    });
+    msg.reply(reply);
+  }
+
+  if (text === "!sponsor") {
+    const res = await fetch(BASE + "?endpoint=sponsors", {
+      headers: { "x-api-key": API_KEY }
+    });
+    const { data } = await res.json();
+    let reply = "📢 *DAFTAR SPONSOR*\\n━━━━━━━━━━━━━━━━━━\\n";
+    data.forEach((s, i) => {
+      reply += \`\${i+1}. *\${s.title}*\\n\`;
+      reply += \`   👤 \${s.seller_name}\\n\`;
+      reply += \`   💰 Rp \${s.price.toLocaleString()}\\n\\n\`;
+    });
+    msg.reply(reply);
+  }
+
+  if (text === "!saldo") {
+    const res = await fetch(BASE + "?endpoint=balances", {
+      headers: { "x-api-key": API_KEY }
+    });
+    const { data } = await res.json();
+    let reply = "💰 *DAFTAR SALDO*\\n━━━━━━━━━━━━━━━━━━\\n";
+    data.forEach((b, i) => {
+      reply += \`\${i+1}. \${b.username}: Rp \${b.balance.toLocaleString()}\\n\`;
+    });
+    msg.reply(reply);
+  }
+});
+
+client.initialize();
+
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# CONTOH PYTHON
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+import requests
+
+API_KEY = "YOUR_API_KEY"
+BASE = "${baseUrl}"
+headers = {"x-api-key": API_KEY}
+
+# Ambil produk
+res = requests.get(f"{BASE}?endpoint=products", headers=headers)
+produk = res.json()["data"]
+for p in produk:
+    print(f"{p['title']} - Rp {p['price']:,}")
+
+# Kirim notifikasi
+requests.post(
+    f"{BASE}?endpoint=notifications",
+    headers={**headers, "Content-Type": "application/json"},
+    json={"visitor_id": "xxx", "title": "Halo", "message": "Test"}
+)
+
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# CONTOH FETCH (Browser / Node.js)
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 const res = await fetch("${baseUrl}?endpoint=products", {
   headers: { "x-api-key": "YOUR_API_KEY" }
 });
