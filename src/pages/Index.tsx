@@ -1518,7 +1518,6 @@ const Index = () => {
             likedIds={likedIds}
           />
         )}
-        )}
 
         {tab === "tiket" && (
           <div className="space-y-4">
