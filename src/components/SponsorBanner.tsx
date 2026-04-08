@@ -386,9 +386,16 @@ function SponsorDetailModal({ sponsor, images, onClose, isLiked, onToggleLike }:
               <p className="text-[10px] font-mono text-muted-foreground">#{sponsor.sponsor_number}</p>
               <h3 className="font-extrabold text-lg">{sponsor.title}</h3>
             </div>
-            <button onClick={onClose} className="w-8 h-8 rounded-full bg-muted flex items-center justify-center shrink-0 ml-2">
-              <X className="w-4 h-4" />
-            </button>
+            <div className="flex items-center gap-2 shrink-0 ml-2">
+              {onToggleLike && (
+                <button onClick={() => onToggleLike(sponsor.id)}>
+                  <Heart className={`w-6 h-6 ${isLiked ? "fill-destructive text-destructive" : "text-muted-foreground"}`} />
+                </button>
+              )}
+              <button onClick={onClose} className="w-8 h-8 rounded-full bg-muted flex items-center justify-center">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
           </div>
           {sponsor.price > 0 && (
             <p className="text-xl font-extrabold text-primary">{formatPrice(sponsor.price)}</p>
