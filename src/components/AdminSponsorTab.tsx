@@ -504,6 +504,8 @@ const actionLabels: Record<string, string> = {
   payment: "💰 Pembayaran",
 };
 
+const STORE_TITLE = "PRODUK KLAIM TRANSAKSI AGUNG ADI STORE";
+
 // --- Main Component ---
 export default function AdminSponsorTab() {
   const [sponsors, setSponsors] = useState<Sponsor[]>([]);
