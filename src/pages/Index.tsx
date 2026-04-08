@@ -1800,7 +1800,7 @@ const Index = () => {
         )}
 
         {tab === "sponsor" && (
-          <SponsorBanner />
+          <SponsorBanner likedSponsorIds={likedSponsorIds} onToggleLikeSponsor={toggleLikeSponsor} />
         )}
       </main>
 
