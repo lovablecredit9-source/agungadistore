@@ -384,6 +384,15 @@ const Index = () => {
     fetchDeposits();
     fetchAdminSettings();
     checkPinStatus();
+
+    // Deep link handling for sponsor share links
+    const params = new URLSearchParams(window.location.search);
+    const sponsorParam = params.get("sponsor");
+    if (sponsorParam) {
+      setTab("sponsor");
+      // Clean URL
+      window.history.replaceState({}, "", window.location.pathname);
+    }
   }, []);
 
   async function checkPinStatus() {
@@ -1163,41 +1172,7 @@ const Index = () => {
       <main className="flex-1 max-w-lg mx-auto w-full px-4 py-4 pb-24">
         {tab === "beranda" && (
           <div className="space-y-5">
-            <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary/15 via-accent/10 to-primary/5 p-5">
-              <div className="absolute -top-4 -right-4 opacity-10"><Crown className="w-24 h-24 text-primary" /></div>
-              <div className="relative z-10 text-center">
-                <img src={storeQris} alt={STORE_NAME} className="w-20 h-20 rounded-2xl object-cover mx-auto mb-3 shadow-lg border-2 border-primary/20" />
-                <h2 className="text-xl font-extrabold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">{STORE_NAME}</h2>
-                <p className="text-xs text-muted-foreground mt-1 font-medium">{t("header.tagline", lang)}</p>
-                <p className="text-muted-foreground text-sm mt-2 leading-relaxed">{t("home.buy_premium", lang)}</p>
-                <div className="mt-3 flex items-center justify-center gap-2 flex-wrap">
-                  <a href={`${SOCIAL_LINKS.whatsapp}?text=${encodeURIComponent("Halo, saya mau order di Agung Adi Store")}`} target="_blank" rel="noopener noreferrer">
-                    <Button size="sm" className="bg-gradient-to-r from-accent to-accent/80 text-accent-foreground shadow-md gap-1.5"><MessageCircle className="w-4 h-4" /> {t("home.contact_wa", lang)}</Button>
-                  </a>
-                  <Button size="sm" variant="outline" className="gap-1.5" onClick={() => setTab("voucher")}><Ticket className="w-4 h-4" /> {t("home.claim_voucher", lang)}</Button>
-                </div>
-              </div>
-            </div>
-
-
-            <div className="grid grid-cols-2 gap-3">
-              <Card className="cursor-pointer hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 border-primary/10 bg-gradient-to-br from-primary/5 to-transparent" onClick={() => setTab("produk")}>
-                <CardContent className="p-4 text-center">
-                  <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center mx-auto mb-2"><Package className="w-5 h-5 text-primary" /></div>
-                  <p className="text-2xl font-extrabold text-primary">{products.length}</p>
-                  <p className="text-xs text-muted-foreground font-medium">{t("home.products_available", lang)}</p>
-                </CardContent>
-              </Card>
-              <Card className="cursor-pointer hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 border-accent/10 bg-gradient-to-br from-accent/5 to-transparent" onClick={() => setTab("history")}>
-                <CardContent className="p-4 text-center">
-                  <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center mx-auto mb-2"><Clock className="w-5 h-5 text-accent" /></div>
-                  <p className="text-2xl font-extrabold text-accent">{history.length}</p>
-                  <p className="text-xs text-muted-foreground font-medium">{t("home.vouchers_claimed", lang)}</p>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Music Promo Banner */}
+            {/* Music Promo Banner - TOP */}
             <div className="relative overflow-hidden rounded-2xl shadow-xl cursor-pointer hover:shadow-2xl hover:-translate-y-0.5 transition-all duration-300" onClick={() => setTab("playlist")}>
               <img src={musicBanner} alt="Music" className="absolute inset-0 w-full h-full object-cover" />
               <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
@@ -1217,6 +1192,22 @@ const Index = () => {
                 <Button size="sm" className="bg-white/20 backdrop-blur-sm hover:bg-white/30 text-white border border-white/30 gap-1.5 mt-1">
                   <Music className="w-3.5 h-3.5" /> Dengarkan Sekarang
                 </Button>
+              </div>
+            </div>
+
+            <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary/15 via-accent/10 to-primary/5 p-5">
+              <div className="absolute -top-4 -right-4 opacity-10"><Crown className="w-24 h-24 text-primary" /></div>
+              <div className="relative z-10 text-center">
+                <img src={storeQris} alt={STORE_NAME} className="w-20 h-20 rounded-2xl object-cover mx-auto mb-3 shadow-lg border-2 border-primary/20" />
+                <h2 className="text-xl font-extrabold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">{STORE_NAME}</h2>
+                <p className="text-xs text-muted-foreground mt-1 font-medium">{t("header.tagline", lang)}</p>
+                <p className="text-muted-foreground text-sm mt-2 leading-relaxed">{t("home.buy_premium", lang)}</p>
+                <div className="mt-3 flex items-center justify-center gap-2 flex-wrap">
+                  <a href={`${SOCIAL_LINKS.whatsapp}?text=${encodeURIComponent("Halo, saya mau order di Agung Adi Store")}`} target="_blank" rel="noopener noreferrer">
+                    <Button size="sm" className="bg-gradient-to-r from-accent to-accent/80 text-accent-foreground shadow-md gap-1.5"><MessageCircle className="w-4 h-4" /> {t("home.contact_wa", lang)}</Button>
+                  </a>
+                  <Button size="sm" variant="outline" className="gap-1.5" onClick={() => setTab("voucher")}><Ticket className="w-4 h-4" /> {t("home.claim_voucher", lang)}</Button>
+                </div>
               </div>
             </div>
 

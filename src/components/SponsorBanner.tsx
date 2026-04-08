@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Megaphone, Clock, User, Phone, ChevronLeft, ChevronRight, X, Search, Filter, ArrowUpDown, Heart, Share2, ExternalLink } from "lucide-react";
+import { Megaphone, Clock, User, Phone, ChevronLeft, ChevronRight, X, Search, Filter, ArrowUpDown, Heart, Share2, ExternalLink, Eye, AlertTriangle, Shield } from "lucide-react";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
@@ -42,6 +42,7 @@ interface Sponsor {
   has_warranty: boolean;
   warranty_duration_value: number;
   warranty_duration_type: string;
+  view_count: number;
 }
 
 type SortOrder = "newest" | "oldest";
@@ -307,7 +308,7 @@ export default function SponsorBanner({ likedSponsorIds = new Set(), onToggleLik
             )}
             <div className="flex items-center gap-3 text-[10px] text-muted-foreground">
               <span className="flex items-center gap-1"><User className="w-3 h-3" />{sponsor.seller_name}</span>
-              <span className="flex items-center gap-1"><Phone className="w-3 h-3" />{sponsor.seller_contact}</span>
+              <span className="flex items-center gap-1"><Eye className="w-3 h-3" />{sponsor.view_count || 0}x dilihat</span>
             </div>
             <div className="flex items-center gap-2 pt-0.5">
               <Badge variant={sponsor.stock > 0 ? "secondary" : "destructive"} className="text-[10px] font-bold">
@@ -365,7 +366,13 @@ export default function SponsorBanner({ likedSponsorIds = new Set(), onToggleLik
 
 function SponsorDetailModal({ sponsor, images, onClose, isLiked, onToggleLike }: { sponsor: Sponsor; images: SponsorImage[]; onClose: () => void; isLiked?: boolean; onToggleLike?: (sponsorId: string, e?: React.MouseEvent) => void }) {
   const [imgIdx, setImgIdx] = useState(0);
+  const [showDisclaimer, setShowDisclaimer] = useState(true);
   const allImages = images.length > 0 ? images.map(i => i.image_url) : (sponsor.image_url ? [sponsor.image_url] : []);
+
+  // Increment view count
+  useEffect(() => {
+    supabase.from("sponsors").update({ view_count: (sponsor.view_count || 0) + 1 } as any).eq("id", sponsor.id).then(() => {});
+  }, [sponsor.id]);
 
   function handleShare() {
     const url = window.location.origin + `/?sponsor=${sponsor.sponsor_number}`;
@@ -493,6 +500,34 @@ function SponsorDetailModal({ sponsor, images, onClose, isLiked, onToggleLike }:
               {sponsor.custom_note}
             </div>
           )}
+
+          {/* View count */}
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <Eye className="w-4 h-4" />
+            <span>{sponsor.view_count || 0}x dilihat</span>
+          </div>
+
+          {/* Syarat & Ketentuan Sponsor */}
+          <div className="bg-destructive/5 border border-destructive/20 rounded-xl p-4 space-y-2">
+            <div className="flex items-center gap-2 text-destructive">
+              <AlertTriangle className="w-4 h-4 shrink-0" />
+              <p className="text-xs font-extrabold uppercase tracking-wider">Syarat & Ketentuan</p>
+            </div>
+            <ul className="text-[11px] text-muted-foreground space-y-1.5 list-disc list-inside leading-relaxed">
+              <li>Sebelum chat/beli, <span className="font-bold text-foreground">pikirkan lebih baik apakah penjual aman</span>.</li>
+              <li>Silahkan <span className="font-bold text-foreground">gunakan rekber (rekening bersama) via Admin</span> agar terhindar dari penipu.</li>
+              <li>Hubungi Admin WA <a href="https://wa.me/6285769302532" target="_blank" rel="noopener noreferrer" className="text-primary font-bold hover:underline">085769302532</a> atau buat <span className="font-bold text-primary">Tiket</span> jika ada masalah.</li>
+              <li>Jika ada masalah produk, <span className="font-bold text-destructive">jangan salahkan admin</span>. Ajak penjual rekber & cek produk kembali.</li>
+              <li>Akun yang sudah diambil penjual <span className="font-bold text-destructive">tidak bisa diklaim ulang</span>. Jika mau resmi, beli dari admin langsung.</li>
+              <li>Admin sponsor, <span className="font-bold text-foreground">pembeli dan penjual harus amanah</span>.</li>
+              <li>Apabila tidak menggunakan rekber admin, <span className="font-bold text-destructive">admin tidak bertanggung jawab</span>.</li>
+            </ul>
+            <a href="https://wa.me/6285769302532?text=Halo%20admin%2C%20saya%20mau%20rekber%20untuk%20sponsor" target="_blank" rel="noopener noreferrer">
+              <Button size="sm" className="w-full mt-2 bg-gradient-to-r from-accent to-accent/80 text-accent-foreground font-bold gap-2 text-xs">
+                <Shield className="w-3.5 h-3.5" /> Mohon Rekber Admin (WA)
+              </Button>
+            </a>
+          </div>
 
           {/* Share button */}
           <button

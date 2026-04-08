@@ -1,0 +1,1 @@
+ALTER TABLE public.sponsors ADD COLUMN IF NOT EXISTS view_count bigint NOT NULL DEFAULT 0;
