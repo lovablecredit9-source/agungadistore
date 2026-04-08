@@ -18,6 +18,8 @@ import { useToast } from "@/hooks/use-toast";
 import jsPDF from "jspdf";
 import storeQris from "@/assets/store-qris.jpg";
 import musicBanner from "@/assets/music-banner.jpg";
+import promoProductsImg from "@/assets/promo-products.jpg";
+import promoSponsorsImg from "@/assets/promo-sponsors.jpg";
 import { STORE_NAME, WA_NUMBER, SOCIAL_LINKS, YOUTUBE_NAME } from "@/lib/social-links";
 import { getDeviceSummary, collectDeviceInfo } from "@/lib/device-info";
 import { getVisitorId } from "@/lib/visitor-id";
@@ -1221,68 +1223,35 @@ const Index = () => {
       <main className="flex-1 max-w-lg mx-auto w-full px-4 py-4 pb-24">
         {tab === "beranda" && (
           <div className="space-y-5">
-            {/* Music Promo Banner - TOP */}
-            <div className="relative overflow-hidden rounded-2xl shadow-xl cursor-pointer hover:shadow-2xl hover:-translate-y-0.5 transition-all duration-300" onClick={() => setTab("playlist")}>
-              <img src={musicBanner} alt="Music" className="absolute inset-0 w-full h-full object-cover" />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
-              <div className="relative z-10 p-5 text-white space-y-2">
-                <div className="flex items-center gap-2">
-                  <div className="w-10 h-10 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center">
-                    <Music className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <p className="text-[10px] uppercase tracking-widest font-bold opacity-80">🎵 Lagu dari</p>
-                    <p className="text-sm font-extrabold leading-tight">{STORE_NAME}</p>
-                  </div>
-                </div>
-                <h3 className="text-lg font-extrabold leading-snug drop-shadow-lg">Dengarkan Musik Sambil Belanja!</h3>
-                <p className="text-xs opacity-90 leading-relaxed">Yuk nikmati sekarang — <span className="font-bold">tanpa iklan</span>, bisa <span className="font-bold">download</span>, streaming gratis langsung dari aplikasi.</p>
-                <p className="text-[11px] font-semibold opacity-75 italic">🛍️ Jangan lupa belanja juga ya!</p>
-                <Button size="sm" className="bg-white/20 backdrop-blur-sm hover:bg-white/30 text-white border border-white/30 gap-1.5 mt-1">
-                  <Music className="w-3.5 h-3.5" /> Dengarkan Sekarang
-                </Button>
-              </div>
-            </div>
-
-            {/* Product Banner Slider */}
-            {products.length > 0 && (
-              <HomeBannerSlider
-                label="Produk Terbaru"
-                icon="product"
-                items={products.slice(0, 8).map(p => ({
-                  id: p.id,
-                  title: p.title,
-                  image_url: p.image_url || (productImages.find(pi => pi.product_id === p.id)?.image_url ?? null),
-                  price: p.price,
-                  type: "product" as const,
-                  subtitle: p.category || undefined,
-                }))}
-                onItemClick={(item) => {
-                  const prod = products.find(p => p.id === item.id);
-                  if (prod) setSelectedProduct(prod);
-                }}
-                formatPrice={formatPrice}
-              />
-            )}
-
-            {/* Sponsor Banner Slider */}
-            {homeSponsors.length > 0 && (
-              <HomeBannerSlider
-                label="Sponsor Aktif"
-                icon="sponsor"
-                autoPlayMs={5000}
-                items={homeSponsors.map(s => ({
-                  id: s.id,
-                  title: s.title,
-                  image_url: s.image_url,
-                  price: s.price,
-                  type: "sponsor" as const,
-                  subtitle: s.seller_name,
-                }))}
-                onItemClick={() => setTab("sponsor")}
-                formatPrice={formatPrice}
-              />
-            )}
+            {/* Hero Promo Slider — Music / Produk / Sponsor */}
+            <HomeBannerSlider
+              banners={[
+                {
+                  id: "music",
+                  image: musicBanner,
+                  title: "Dengarkan Musik Sambil Belanja!",
+                  subtitle: `🎵 Lagu dari ${STORE_NAME}`,
+                  cta: "Dengarkan Sekarang",
+                  onClick: () => setTab("playlist"),
+                },
+                {
+                  id: "products",
+                  image: promoProductsImg,
+                  title: "Jelajahi Produk Premium Kami",
+                  subtitle: `🛍️ ${products.length} Produk Tersedia`,
+                  cta: "Lihat Produk",
+                  onClick: () => setTab("produk"),
+                },
+                {
+                  id: "sponsors",
+                  image: promoSponsorsImg,
+                  title: "Iklan & Sponsor Terpercaya",
+                  subtitle: `📢 ${homeSponsors.length} Sponsor Aktif`,
+                  cta: "Lihat Sponsor",
+                  onClick: () => setTab("sponsor"),
+                },
+              ]}
+            />
 
             <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary/15 via-accent/10 to-primary/5 p-5">
               <div className="absolute -top-4 -right-4 opacity-10"><Crown className="w-24 h-24 text-primary" /></div>
