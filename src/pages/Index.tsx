@@ -1196,6 +1196,29 @@ const Index = () => {
               </Card>
             </div>
 
+            {/* Music Promo Banner */}
+            <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-purple-600 via-indigo-600 to-blue-600 p-5 text-white shadow-xl cursor-pointer hover:shadow-2xl hover:-translate-y-0.5 transition-all duration-300" onClick={() => setTab("playlist")}>
+              <div className="absolute -top-6 -right-6 opacity-15"><Music className="w-28 h-28" /></div>
+              <div className="absolute -bottom-4 -left-4 opacity-10"><Music className="w-20 h-20" /></div>
+              <div className="relative z-10 space-y-2">
+                <div className="flex items-center gap-2">
+                  <div className="w-10 h-10 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center">
+                    <Music className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <p className="text-[10px] uppercase tracking-widest font-bold opacity-80">🎵 Lagu dari</p>
+                    <p className="text-sm font-extrabold leading-tight">{STORE_NAME}</p>
+                  </div>
+                </div>
+                <h3 className="text-lg font-extrabold leading-snug">Dengarkan Musik Sambil Belanja!</h3>
+                <p className="text-xs opacity-90 leading-relaxed">Yuk nikmati sekarang — <span className="font-bold">tanpa iklan</span>, bisa <span className="font-bold">download</span>, streaming gratis langsung dari aplikasi.</p>
+                <p className="text-[11px] font-semibold opacity-75 italic">🛍️ Jangan lupa belanja juga ya!</p>
+                <Button size="sm" className="bg-white/20 backdrop-blur-sm hover:bg-white/30 text-white border border-white/30 gap-1.5 mt-1">
+                  <Music className="w-3.5 h-3.5" /> Dengarkan Sekarang
+                </Button>
+              </div>
+            </div>
+
             <Card className="border-dashed border-2 border-primary/20 hover:border-primary/40 transition-all cursor-pointer hover:shadow-lg hover:-translate-y-0.5 duration-200" onClick={() => setTab("voucher")}>
               <CardContent className="p-4 flex items-center gap-3">
                 <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-md"><Ticket className="w-6 h-6 text-primary-foreground" /></div>
@@ -1203,6 +1226,32 @@ const Index = () => {
                   <h3 className="font-bold text-sm">{t("home.have_voucher", lang)}</h3>
                   <p className="text-xs text-muted-foreground">{t("home.claim_now", lang)}</p>
                 </div>
+              </CardContent>
+            </Card>
+
+            {/* Voucher Tutorial */}
+            <Card className="border border-primary/15 shadow-md overflow-hidden">
+              <div className="bg-gradient-to-r from-primary/10 to-accent/10 px-4 py-2.5 flex items-center gap-2">
+                <HelpCircle className="w-4 h-4 text-primary" />
+                <h3 className="text-sm font-bold">Cara Klaim Voucher</h3>
+              </div>
+              <CardContent className="p-4 space-y-3">
+                {[
+                  { step: "1", icon: <Ticket className="w-4 h-4 text-primary" />, title: "Masukkan Kode Voucher", desc: "Ketik atau tempel kode voucher yang kamu punya di tab Voucher." },
+                  { step: "2", icon: <KeyRound className="w-4 h-4 text-accent" />, title: "Klik Klaim", desc: "Tekan tombol Klaim untuk memproses kode voucher kamu." },
+                  { step: "3", icon: <CheckCircle2 className="w-4 h-4 text-green-500" />, title: "Dapat Akun!", desc: "Setelah berhasil, kamu langsung dapat akun dan detail produk." },
+                ].map((item) => (
+                  <div key={item.step} className="flex items-start gap-3">
+                    <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0 text-xs font-extrabold text-primary">{item.step}</div>
+                    <div>
+                      <p className="text-sm font-bold flex items-center gap-1.5">{item.icon} {item.title}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">{item.desc}</p>
+                    </div>
+                  </div>
+                ))}
+                <Button size="sm" variant="outline" className="w-full gap-1.5 mt-1" onClick={() => setTab("voucher")}>
+                  <Ticket className="w-4 h-4" /> Coba Klaim Sekarang
+                </Button>
               </CardContent>
             </Card>
 
