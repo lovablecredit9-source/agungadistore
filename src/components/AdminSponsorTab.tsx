@@ -203,6 +203,14 @@ function SponsorForm({
       const { data, error } = await supabase.from("sponsors").insert(payload as any).select("id").single();
       if (error || !data) { toast({ title: "Gagal membuat sponsor", variant: "destructive" }); return; }
       sponsorId = (data as any).id;
+      // Log history: created
+      await supabase.from("sponsor_history").insert({
+        sponsor_id: sponsorId,
+        action: "created",
+        details: `Sponsor "${title.trim()}" dibuat oleh ${sellerName.trim()}`,
+        new_expires_at: expiresAt.toISOString(),
+        amount: parseInt(price) || 0,
+      } as any);
       toast({ title: "Sponsor berhasil dibuat! 📢" });
     }
 
