@@ -384,6 +384,15 @@ const Index = () => {
     fetchDeposits();
     fetchAdminSettings();
     checkPinStatus();
+
+    // Deep link handling for sponsor share links
+    const params = new URLSearchParams(window.location.search);
+    const sponsorParam = params.get("sponsor");
+    if (sponsorParam) {
+      setTab("sponsor");
+      // Clean URL
+      window.history.replaceState({}, "", window.location.pathname);
+    }
   }, []);
 
   async function checkPinStatus() {
