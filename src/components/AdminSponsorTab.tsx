@@ -729,6 +729,42 @@ export default function AdminSponsorTab() {
         open={!!receipt}
         onClose={() => setReceipt(null)}
       />
+
+      <Dialog open={showHistory} onOpenChange={setShowHistory}>
+        <DialogContent className="max-w-sm max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-sm flex items-center gap-2">
+              <History className="w-4 h-4 text-primary" /> Riwayat Sponsor
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-2">
+            {history.length === 0 && <p className="text-center text-sm text-muted-foreground py-4">Belum ada riwayat</p>}
+            {history.map(h => {
+              const sp = sponsors.find(s => s.id === h.sponsor_id);
+              return (
+                <div key={h.id} className="bg-muted rounded-lg p-3 space-y-1">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold">{actionLabels[h.action] || h.action}</span>
+                    <span className="text-[10px] text-muted-foreground">{formatDateTime(h.created_at)}</span>
+                  </div>
+                  {sp && <p className="text-[10px] font-medium">#{sp.sponsor_number} — {sp.title}</p>}
+                  {!sp && <p className="text-[10px] text-muted-foreground">Sponsor ID: {h.sponsor_id.slice(0, 8)}...</p>}
+                  {h.details && <p className="text-[10px] text-muted-foreground">{h.details}</p>}
+                  {h.amount > 0 && <p className="text-[10px] text-primary font-bold">{formatPrice(h.amount)}</p>}
+                  {h.old_expires_at && h.new_expires_at && (
+                    <p className="text-[10px] text-muted-foreground">
+                      {formatDateTime(h.old_expires_at)} → {formatDateTime(h.new_expires_at)}
+                    </p>
+                  )}
+                  {!h.old_expires_at && h.new_expires_at && (
+                    <p className="text-[10px] text-muted-foreground">Berakhir: {formatDateTime(h.new_expires_at)}</p>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
