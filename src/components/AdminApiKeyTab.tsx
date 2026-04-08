@@ -758,6 +758,83 @@ node bot.js
         <p className="text-center text-xs text-muted-foreground py-6">Belum ada API Key. Buat satu untuk mulai.</p>
       )}
 
+      {/* Download Bot Script Section */}
+      <Card className="border-primary/40 bg-primary/5">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm flex items-center gap-2">
+            <Bot className="w-4 h-4 text-primary" /> Download Script Bot WA
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <p className="text-[11px] text-muted-foreground">
+            Pilih API Key atau masukkan manual. API Key akan otomatis tertanam di file bot.js yang didownload.
+          </p>
+
+          {/* Pilih dari API Key yang ada */}
+          {keys.length > 0 && (
+            <div className="space-y-1">
+              <label className="text-[11px] font-semibold">Pilih API Key:</label>
+              <Select value={downloadKeyId} onValueChange={(val) => {
+                setDownloadKeyId(val);
+                const found = keys.find(k => k.id === val);
+                if (found) setCustomApiKey(found.api_key);
+              }}>
+                <SelectTrigger className="h-8 text-xs">
+                  <SelectValue placeholder="-- Pilih API Key --" />
+                </SelectTrigger>
+                <SelectContent>
+                  {keys.filter(k => k.is_active).map(k => (
+                    <SelectItem key={k.id} value={k.id} className="text-xs">
+                      {k.key_name} — {k.api_key.substring(0, 10)}...
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
+          <div className="flex items-center gap-2">
+            <div className="h-px flex-1 bg-border" />
+            <span className="text-[10px] text-muted-foreground">atau masukkan manual</span>
+            <div className="h-px flex-1 bg-border" />
+          </div>
+
+          {/* Input manual API Key */}
+          <div className="space-y-1">
+            <label className="text-[11px] font-semibold">API Key Manual:</label>
+            <Input
+              placeholder="Paste API Key di sini..."
+              value={customApiKey}
+              onChange={e => { setCustomApiKey(e.target.value); setDownloadKeyId(""); }}
+              className="text-xs font-mono h-8"
+            />
+          </div>
+
+          {/* Preview */}
+          {customApiKey && (
+            <div className="bg-muted rounded p-2 space-y-1">
+              <p className="text-[10px] font-semibold text-muted-foreground">API Key yang akan masuk di file:</p>
+              <code className="text-[10px] font-mono text-primary break-all">{customApiKey}</code>
+            </div>
+          )}
+
+          <Button
+            size="sm"
+            className="w-full gap-2"
+            disabled={!customApiKey.trim()}
+            onClick={() => {
+              downloadBotFile(customApiKey.trim(), downloadKeyId ? keys.find(k => k.id === downloadKeyId)?.key_name || "custom" : "custom");
+            }}
+          >
+            <Download className="w-4 h-4" /> Download bot.js (API Key Tertanam)
+          </Button>
+
+          <p className="text-[10px] text-muted-foreground text-center">
+            File siap pakai — tinggal <code className="bg-muted px-1 rounded">node bot.js</code>
+          </p>
+        </CardContent>
+      </Card>
+
       {/* Dialog Panduan Lengkap */}
       <Dialog open={showUsage} onOpenChange={setShowUsage}>
         <DialogContent className="max-w-[95vw] sm:max-w-lg max-h-[85vh] overflow-y-auto p-4">
