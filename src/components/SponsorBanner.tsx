@@ -137,6 +137,16 @@ export default function SponsorBanner({ likedSponsorIds = new Set(), onToggleLik
     }
   }
 
+  function shareSponsor(s: Sponsor) {
+    const url = window.location.origin + `/?sponsor=${s.sponsor_number}`;
+    const text = `🔥 ${s.title}\n💰 ${s.price > 0 ? formatPrice(s.price) : "Gratis"}\n🏪 ${s.seller_name}\n\nLihat di:`;
+    if (navigator.share) {
+      navigator.share({ title: s.title, text, url }).catch(() => {});
+    } else {
+      navigator.clipboard.writeText(`${text} ${url}`);
+    }
+  }
+
   if (sponsors.length === 0) return (
     <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
       <Megaphone className="w-10 h-10 mb-2 opacity-30" />
