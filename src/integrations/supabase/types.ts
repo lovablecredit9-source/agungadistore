@@ -882,6 +882,7 @@ export type Database = {
           duration_value: number
           expires_at: string | null
           facebook: string | null
+          has_warranty: boolean
           id: string
           image_url: string | null
           instagram: string | null
@@ -898,6 +899,8 @@ export type Database = {
           twitter: string | null
           updated_at: string
           wa_number: string | null
+          warranty_duration_type: string
+          warranty_duration_value: number
         }
         Insert: {
           category?: string
@@ -908,6 +911,7 @@ export type Database = {
           duration_value?: number
           expires_at?: string | null
           facebook?: string | null
+          has_warranty?: boolean
           id?: string
           image_url?: string | null
           instagram?: string | null
@@ -924,6 +928,8 @@ export type Database = {
           twitter?: string | null
           updated_at?: string
           wa_number?: string | null
+          warranty_duration_type?: string
+          warranty_duration_value?: number
         }
         Update: {
           category?: string
@@ -934,6 +940,7 @@ export type Database = {
           duration_value?: number
           expires_at?: string | null
           facebook?: string | null
+          has_warranty?: boolean
           id?: string
           image_url?: string | null
           instagram?: string | null
@@ -950,6 +957,8 @@ export type Database = {
           twitter?: string | null
           updated_at?: string
           wa_number?: string | null
+          warranty_duration_type?: string
+          warranty_duration_value?: number
         }
         Relationships: []
       }
