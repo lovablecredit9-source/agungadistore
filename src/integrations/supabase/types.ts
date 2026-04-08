@@ -38,6 +38,36 @@ export type Database = {
         }
         Relationships: []
       }
+      api_keys: {
+        Row: {
+          api_key: string
+          created_at: string
+          id: string
+          is_active: boolean
+          key_name: string
+          last_used_at: string | null
+          permissions: string
+        }
+        Insert: {
+          api_key: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          key_name?: string
+          last_used_at?: string | null
+          permissions?: string
+        }
+        Update: {
+          api_key?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          key_name?: string
+          last_used_at?: string | null
+          permissions?: string
+        }
+        Relationships: []
+      }
       artists: {
         Row: {
           bio: string | null
@@ -776,6 +806,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      sponsor_history: {
+        Row: {
+          action: string
+          amount: number | null
+          created_at: string
+          details: string | null
+          id: string
+          new_expires_at: string | null
+          old_expires_at: string | null
+          sponsor_id: string
+        }
+        Insert: {
+          action?: string
+          amount?: number | null
+          created_at?: string
+          details?: string | null
+          id?: string
+          new_expires_at?: string | null
+          old_expires_at?: string | null
+          sponsor_id: string
+        }
+        Update: {
+          action?: string
+          amount?: number | null
+          created_at?: string
+          details?: string | null
+          id?: string
+          new_expires_at?: string | null
+          old_expires_at?: string | null
+          sponsor_id?: string
+        }
+        Relationships: []
       }
       sponsor_images: {
         Row: {
