@@ -391,6 +391,46 @@ function SponsorDetailModal({ sponsor, images, onClose, isLiked, onToggleLike }:
     return val && val.trim();
   });
 
+  // Rekber warning shown first before full detail
+  if (!acceptedTerms) {
+    return (
+      <div className="fixed inset-0 z-[90] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" onClick={onClose}>
+        <div className="bg-card w-full max-w-sm rounded-2xl overflow-hidden animate-in zoom-in-95 duration-200 max-h-[85vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+          <div className="p-6 space-y-4">
+            <div className="flex items-center justify-center">
+              <div className="w-16 h-16 rounded-full bg-destructive/10 flex items-center justify-center">
+                <AlertTriangle className="w-8 h-8 text-destructive" />
+              </div>
+            </div>
+            <h3 className="text-center font-extrabold text-lg">⚠️ Peringatan Sebelum Membeli</h3>
+            <div className="bg-destructive/5 border border-destructive/20 rounded-xl p-4 space-y-2">
+              <ul className="text-[11px] text-muted-foreground space-y-1.5 list-disc list-inside leading-relaxed">
+                <li>Sebelum chat/beli, <span className="font-bold text-foreground">pikirkan lebih baik apakah penjual aman</span>.</li>
+                <li>Silahkan <span className="font-bold text-foreground">gunakan rekber (rekening bersama) via Admin</span> agar terhindar dari penipu.</li>
+                <li>Hubungi Admin WA <a href="https://wa.me/6285769302532" target="_blank" rel="noopener noreferrer" className="text-primary font-bold hover:underline">085769302532</a> atau buat <span className="font-bold text-primary">Tiket</span> jika ada masalah.</li>
+                <li>Jika ada masalah produk, <span className="font-bold text-destructive">jangan salahkan admin</span>. Ajak penjual rekber & cek produk kembali.</li>
+                <li>Akun yang sudah diambil penjual <span className="font-bold text-destructive">tidak bisa diklaim ulang</span>. Jika mau resmi, beli dari admin langsung.</li>
+                <li>Admin sponsor, <span className="font-bold text-foreground">pembeli dan penjual harus amanah</span>.</li>
+                <li>Apabila tidak menggunakan rekber admin, <span className="font-bold text-destructive">admin tidak bertanggung jawab</span>.</li>
+              </ul>
+            </div>
+            <a href="https://wa.me/6285769302532?text=Halo%20admin%2C%20saya%20mau%20rekber%20untuk%20sponsor" target="_blank" rel="noopener noreferrer" className="block">
+              <Button size="sm" className="w-full bg-gradient-to-r from-green-600 to-green-700 text-white font-bold gap-2 text-xs">
+                <Shield className="w-3.5 h-3.5" /> Mohon Rekber Admin (WA)
+              </Button>
+            </a>
+            <Button onClick={() => setAcceptedTerms(true)} className="w-full font-bold gap-2">
+              <Eye className="w-4 h-4" /> Saya Mengerti, Lihat Produk Sponsor
+            </Button>
+            <Button variant="outline" onClick={onClose} className="w-full text-sm">
+              Batal
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="fixed inset-0 z-[90] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" onClick={onClose}>
       <div className="bg-card w-full max-w-sm rounded-2xl overflow-hidden animate-in zoom-in-95 duration-200 max-h-[85vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
@@ -509,27 +549,35 @@ function SponsorDetailModal({ sponsor, images, onClose, isLiked, onToggleLike }:
             <span>{sponsor.view_count || 0}x dilihat</span>
           </div>
 
-          {/* Syarat & Ketentuan Sponsor */}
-          <div className="bg-destructive/5 border border-destructive/20 rounded-xl p-4 space-y-2">
-            <div className="flex items-center gap-2 text-destructive">
-              <AlertTriangle className="w-4 h-4 shrink-0" />
-              <p className="text-xs font-extrabold uppercase tracking-wider">Syarat & Ketentuan</p>
+          {/* Syarat & Ketentuan Toggle Button */}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowTerms(v => !v)}
+            className="w-full gap-2 text-xs font-bold border-destructive/30 text-destructive hover:bg-destructive/5"
+          >
+            <AlertTriangle className="w-3.5 h-3.5" />
+            {showTerms ? "Tutup Syarat & Ketentuan" : "Lihat Syarat & Ketentuan"}
+          </Button>
+
+          {showTerms && (
+            <div className="bg-destructive/5 border border-destructive/20 rounded-xl p-4 space-y-2 animate-in slide-in-from-top-2 duration-200">
+              <ul className="text-[11px] text-muted-foreground space-y-1.5 list-disc list-inside leading-relaxed">
+                <li>Sebelum chat/beli, <span className="font-bold text-foreground">pikirkan lebih baik apakah penjual aman</span>.</li>
+                <li>Silahkan <span className="font-bold text-foreground">gunakan rekber (rekening bersama) via Admin</span> agar terhindar dari penipu.</li>
+                <li>Hubungi Admin WA <a href="https://wa.me/6285769302532" target="_blank" rel="noopener noreferrer" className="text-primary font-bold hover:underline">085769302532</a> atau buat <span className="font-bold text-primary">Tiket</span> jika ada masalah.</li>
+                <li>Jika ada masalah produk, <span className="font-bold text-destructive">jangan salahkan admin</span>. Ajak penjual rekber & cek produk kembali.</li>
+                <li>Akun yang sudah diambil penjual <span className="font-bold text-destructive">tidak bisa diklaim ulang</span>.</li>
+                <li>Admin sponsor, <span className="font-bold text-foreground">pembeli dan penjual harus amanah</span>.</li>
+                <li>Apabila tidak menggunakan rekber admin, <span className="font-bold text-destructive">admin tidak bertanggung jawab</span>.</li>
+              </ul>
+              <a href="https://wa.me/6285769302532?text=Halo%20admin%2C%20saya%20mau%20rekber%20untuk%20sponsor" target="_blank" rel="noopener noreferrer" className="block">
+                <Button size="sm" className="w-full mt-2 bg-gradient-to-r from-green-600 to-green-700 text-white font-bold gap-2 text-xs">
+                  <Shield className="w-3.5 h-3.5" /> Mohon Rekber Admin (WA)
+                </Button>
+              </a>
             </div>
-            <ul className="text-[11px] text-muted-foreground space-y-1.5 list-disc list-inside leading-relaxed">
-              <li>Sebelum chat/beli, <span className="font-bold text-foreground">pikirkan lebih baik apakah penjual aman</span>.</li>
-              <li>Silahkan <span className="font-bold text-foreground">gunakan rekber (rekening bersama) via Admin</span> agar terhindar dari penipu.</li>
-              <li>Hubungi Admin WA <a href="https://wa.me/6285769302532" target="_blank" rel="noopener noreferrer" className="text-primary font-bold hover:underline">085769302532</a> atau buat <span className="font-bold text-primary">Tiket</span> jika ada masalah.</li>
-              <li>Jika ada masalah produk, <span className="font-bold text-destructive">jangan salahkan admin</span>. Ajak penjual rekber & cek produk kembali.</li>
-              <li>Akun yang sudah diambil penjual <span className="font-bold text-destructive">tidak bisa diklaim ulang</span>. Jika mau resmi, beli dari admin langsung.</li>
-              <li>Admin sponsor, <span className="font-bold text-foreground">pembeli dan penjual harus amanah</span>.</li>
-              <li>Apabila tidak menggunakan rekber admin, <span className="font-bold text-destructive">admin tidak bertanggung jawab</span>.</li>
-            </ul>
-            <a href="https://wa.me/6285769302532?text=Halo%20admin%2C%20saya%20mau%20rekber%20untuk%20sponsor" target="_blank" rel="noopener noreferrer">
-              <Button size="sm" className="w-full mt-2 bg-gradient-to-r from-accent to-accent/80 text-accent-foreground font-bold gap-2 text-xs">
-                <Shield className="w-3.5 h-3.5" /> Mohon Rekber Admin (WA)
-              </Button>
-            </a>
-          </div>
+          )}
 
           {/* Share button */}
           <button
