@@ -256,6 +256,28 @@ function SponsorForm({
         <Input type="number" placeholder="Harga (Rp)" value={price} onChange={e => setPrice(e.target.value)} />
         <Input placeholder="Kategori (cth: Makanan, Fashion, Elektronik) *" value={category} onChange={e => setCategory(e.target.value)} />
         <Input type="number" placeholder="Stok" value={stock} onChange={e => setStock(e.target.value)} min="0" />
+
+        {/* Garansi */}
+        <div className="space-y-2 border rounded-lg p-3 bg-muted/30">
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input type="checkbox" checked={hasWarranty} onChange={e => setHasWarranty(e.target.checked)} className="rounded" />
+            <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Garansi Produk</span>
+          </label>
+          {hasWarranty && (
+            <div className="flex gap-2">
+              <Input type="number" min="1" placeholder="Durasi" value={warrantyDurationValue} onChange={e => setWarrantyDurationValue(e.target.value)} className="flex-1" />
+              <Select value={warrantyDurationType} onValueChange={setWarrantyDurationType}>
+                <SelectTrigger className="w-24"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="hours">Jam</SelectItem>
+                  <SelectItem value="days">Hari</SelectItem>
+                  <SelectItem value="months">Bulan</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+        </div>
+
         <Input placeholder="Nama penjual *" value={sellerName} onChange={e => setSellerName(e.target.value)} />
         <Input placeholder="Kontak (WA/HP)" value={sellerContact} onChange={e => setSellerContact(e.target.value)} />
 
