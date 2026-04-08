@@ -284,7 +284,14 @@ export default function SponsorBanner({ likedSponsorIds = new Set(), onToggleLik
             </div>
           )}
           <CardContent className="p-3 space-y-1.5">
-            <h4 className="font-extrabold text-sm leading-tight">{sponsor.title}</h4>
+            <div className="flex items-start justify-between">
+              <h4 className="font-extrabold text-sm leading-tight flex-1">{sponsor.title}</h4>
+              {onToggleLikeSponsor && (
+                <button onClick={(e) => { e.stopPropagation(); onToggleLikeSponsor(sponsor.id, e); }} className="ml-2 shrink-0">
+                  <Heart className={`w-5 h-5 ${likedSponsorIds.has(sponsor.id) ? "fill-destructive text-destructive" : "text-muted-foreground"}`} />
+                </button>
+              )}
+            </div>
             {sponsor.description && (
               <p className="text-xs text-muted-foreground line-clamp-2">{sponsor.description}</p>
             )}
