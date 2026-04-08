@@ -486,6 +486,24 @@ ${receipt.sponsor.price > 0 ? `💰 Harga: ${formatPrice(receipt.sponsor.price)}
   );
 }
 
+interface SponsorHistoryItem {
+  id: string;
+  sponsor_id: string;
+  action: string;
+  details: string | null;
+  old_expires_at: string | null;
+  new_expires_at: string | null;
+  amount: number;
+  created_at: string;
+}
+
+const actionLabels: Record<string, string> = {
+  created: "📢 Dibuat",
+  extended: "⏰ Diperpanjang",
+  expired: "❌ Kedaluwarsa",
+  payment: "💰 Pembayaran",
+};
+
 // --- Main Component ---
 export default function AdminSponsorTab() {
   const [sponsors, setSponsors] = useState<Sponsor[]>([]);
@@ -496,6 +514,8 @@ export default function AdminSponsorTab() {
   const [search, setSearch] = useState("");
   const [filterCategory, setFilterCategory] = useState("all");
   const [sortOrder, setSortOrder] = useState<"newest" | "oldest">("newest");
+  const [showHistory, setShowHistory] = useState(false);
+  const [history, setHistory] = useState<SponsorHistoryItem[]>([]);
   const { toast } = useToast();
 
   useEffect(() => { fetchSponsors(); }, []);
