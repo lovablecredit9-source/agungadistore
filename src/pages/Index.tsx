@@ -739,6 +739,17 @@ const Index = () => {
     }
   }
 
+  async function toggleLikeSponsor(sponsorId: string, e?: React.MouseEvent) {
+    e?.stopPropagation();
+    if (likedSponsorIds.has(sponsorId)) {
+      await supabase.from("liked_sponsors").delete().eq("sponsor_id", sponsorId).eq("visitor_id", visitorId);
+      setLikedSponsorIds(prev => { const n = new Set(prev); n.delete(sponsorId); return n; });
+    } else {
+      await supabase.from("liked_sponsors").insert({ sponsor_id: sponsorId, visitor_id: visitorId });
+      setLikedSponsorIds(prev => new Set(prev).add(sponsorId));
+    }
+  }
+
   async function fetchTickets() {
     const stored = localStorage.getItem("my_ticket_ids");
     if (!stored) return;
