@@ -17,6 +17,7 @@ import { useTheme } from "@/lib/theme";
 import { useToast } from "@/hooks/use-toast";
 import jsPDF from "jspdf";
 import storeQris from "@/assets/store-qris.jpg";
+import musicBanner from "@/assets/music-banner.jpg";
 import { STORE_NAME, WA_NUMBER, SOCIAL_LINKS, YOUTUBE_NAME } from "@/lib/social-links";
 import { getDeviceSummary, collectDeviceInfo } from "@/lib/device-info";
 import { getVisitorId } from "@/lib/visitor-id";
