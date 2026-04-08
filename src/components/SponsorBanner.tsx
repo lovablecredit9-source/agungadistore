@@ -415,6 +415,9 @@ function SponsorDetailModal({ sponsor, images, onClose, isLiked, onToggleLike }:
               <h3 className="font-extrabold text-lg">{sponsor.title}</h3>
             </div>
             <div className="flex items-center gap-2 shrink-0 ml-2">
+              <button onClick={handleShare} className="w-8 h-8 rounded-full bg-primary/10 hover:bg-primary/20 flex items-center justify-center transition-colors">
+                <Share2 className="w-4 h-4 text-primary" />
+              </button>
               {onToggleLike && (
                 <button onClick={() => onToggleLike(sponsor.id)}>
                   <Heart className={`w-6 h-6 ${isLiked ? "fill-destructive text-destructive" : "text-muted-foreground"}`} />
