@@ -296,6 +296,10 @@
     background-attachment: fixed;
     min-height: 100vh;
   }
+
+  .custom-bg body {
+    background-image: none !important;
+  }
 }
 
 @layer utilities {

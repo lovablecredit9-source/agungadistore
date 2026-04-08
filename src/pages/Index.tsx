@@ -36,6 +36,7 @@ import InstallPrompt from "@/components/InstallPrompt";
 import MusicPublicTab from "@/components/MusicPublicTab";
 import SponsorBanner from "@/components/SponsorBanner";
 import LikesTab from "@/components/LikesTab";
+import HomeBannerSlider from "@/components/HomeBannerSlider";
 
 type Tab = "beranda" | "produk" | "voucher" | "history" | "likes" | "tiket" | "saldo" | "playlist" | "publik" | "sponsor";
 
@@ -336,6 +337,15 @@ const Index = () => {
   const [depositHistorySort, setDepositHistorySort] = useState<"newest" | "oldest">("newest");
   const [selectedDeposit, setSelectedDeposit] = useState<Deposit | null>(null);
 
+  // Home banner sponsors
+  interface HomeSponsor { id: string; title: string; image_url: string | null; price: number; seller_name: string; sponsor_number: number; }
+  const [homeSponsors, setHomeSponsors] = useState<HomeSponsor[]>([]);
+
+  async function fetchHomeSponsors() {
+    const { data } = await supabase.from("sponsors").select("id, title, image_url, price, seller_name, sponsor_number").eq("is_active", true).order("created_at", { ascending: false }).limit(10);
+    if (data) setHomeSponsors(data as unknown as HomeSponsor[]);
+  }
+
   // Notifications
   interface Notification {
     id: string;
@@ -385,6 +395,7 @@ const Index = () => {
     fetchDeposits();
     fetchAdminSettings();
     checkPinStatus();
+    fetchHomeSponsors();
 
     // Deep link handling for sponsor share links
     const params = new URLSearchParams(window.location.search);
@@ -1232,6 +1243,46 @@ const Index = () => {
                 </Button>
               </div>
             </div>
+
+            {/* Product Banner Slider */}
+            {products.length > 0 && (
+              <HomeBannerSlider
+                label="Produk Terbaru"
+                icon="product"
+                items={products.slice(0, 8).map(p => ({
+                  id: p.id,
+                  title: p.title,
+                  image_url: p.image_url || (productImages.find(pi => pi.product_id === p.id)?.image_url ?? null),
+                  price: p.price,
+                  type: "product" as const,
+                  subtitle: p.category || undefined,
+                }))}
+                onItemClick={(item) => {
+                  const prod = products.find(p => p.id === item.id);
+                  if (prod) setSelectedProduct(prod);
+                }}
+                formatPrice={formatPrice}
+              />
+            )}
+
+            {/* Sponsor Banner Slider */}
+            {homeSponsors.length > 0 && (
+              <HomeBannerSlider
+                label="Sponsor Aktif"
+                icon="sponsor"
+                autoPlayMs={5000}
+                items={homeSponsors.map(s => ({
+                  id: s.id,
+                  title: s.title,
+                  image_url: s.image_url,
+                  price: s.price,
+                  type: "sponsor" as const,
+                  subtitle: s.seller_name,
+                }))}
+                onItemClick={() => setTab("sponsor")}
+                formatPrice={formatPrice}
+              />
+            )}
 
             <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary/15 via-accent/10 to-primary/5 p-5">
               <div className="absolute -top-4 -right-4 opacity-10"><Crown className="w-24 h-24 text-primary" /></div>
