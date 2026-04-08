@@ -367,6 +367,16 @@ function SponsorDetailModal({ sponsor, images, onClose, isLiked, onToggleLike }:
   const [imgIdx, setImgIdx] = useState(0);
   const allImages = images.length > 0 ? images.map(i => i.image_url) : (sponsor.image_url ? [sponsor.image_url] : []);
 
+  function handleShare() {
+    const url = window.location.origin + `/?sponsor=${sponsor.sponsor_number}`;
+    const text = `🔥 ${sponsor.title}\n💰 ${sponsor.price > 0 ? formatPrice(sponsor.price) : "Gratis"}\n🏪 ${sponsor.seller_name}\n\nLihat di:`;
+    if (navigator.share) {
+      navigator.share({ title: sponsor.title, text, url }).catch(() => {});
+    } else {
+      navigator.clipboard.writeText(`${text} ${url}`);
+    }
+  }
+
   const socialLinks = Object.entries(socialIcons).filter(([key]) => {
     const val = (sponsor as any)[key];
     return val && val.trim();
