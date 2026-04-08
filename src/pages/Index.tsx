@@ -1505,7 +1505,7 @@ const Index = () => {
         )}
 
         {tab === "likes" && (
-          <LikedSponsorsAndProducts
+          <LikesTab
             products={products}
             likedIds={likedIds}
             likedSponsorIds={likedSponsorIds}
@@ -1513,7 +1513,7 @@ const Index = () => {
             toggleLike={toggleLike}
             toggleLikeSponsor={toggleLikeSponsor}
             setSelectedProduct={setSelectedProduct}
-            setTab={setTab}
+            setTab={setTab as any}
             lang={lang}
           />
         )}
