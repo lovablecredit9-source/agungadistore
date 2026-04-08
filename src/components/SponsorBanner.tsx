@@ -337,6 +337,8 @@ export default function SponsorBanner({ likedSponsorIds = new Set(), onToggleLik
           sponsor={selectedSponsor}
           images={sponsorImages[selectedSponsor.id] || []}
           onClose={() => setSelectedSponsor(null)}
+          isLiked={likedSponsorIds.has(selectedSponsor.id)}
+          onToggleLike={onToggleLikeSponsor}
         />
       )}
     </>
