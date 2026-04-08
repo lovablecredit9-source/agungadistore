@@ -1237,9 +1237,9 @@ const Index = () => {
               </div>
               <CardContent className="p-4 space-y-3">
                 {[
-                  { step: "1", icon: <Ticket className="w-4 h-4 text-primary" />, title: "Masukkan Kode Voucher", desc: "Ketik atau tempel kode voucher yang kamu punya di tab Voucher." },
-                  { step: "2", icon: <KeyRound className="w-4 h-4 text-accent" />, title: "Klik Klaim", desc: "Tekan tombol Klaim untuk memproses kode voucher kamu." },
-                  { step: "3", icon: <CheckCircle2 className="w-4 h-4 text-green-500" />, title: "Dapat Akun!", desc: "Setelah berhasil, kamu langsung dapat akun dan detail produk." },
+                  { step: "1", icon: <ShoppingBag className="w-4 h-4 text-primary" />, title: "Beli Produk", desc: "Pilih dan beli produk di tab Produk menggunakan saldo." },
+                  { step: "2", icon: <Ticket className="w-4 h-4 text-accent" />, title: "Masukkan Kode Voucher", desc: "Setelah beli, masukkan kode voucher yang didapat di tab Voucher." },
+                  { step: "3", icon: <CheckCircle2 className="w-4 h-4 text-green-500" />, title: "Klaim & Dapat Akun!", desc: "Klik Klaim dan dapatkan detail akun produkmu." },
                 ].map((item) => (
                   <div key={item.step} className="flex items-start gap-3">
                     <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0 text-xs font-extrabold text-primary">{item.step}</div>
