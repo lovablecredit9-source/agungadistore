@@ -1244,6 +1244,46 @@ const Index = () => {
               </div>
             </div>
 
+            {/* Product Banner Slider */}
+            {products.length > 0 && (
+              <HomeBannerSlider
+                label="Produk Terbaru"
+                icon="product"
+                items={products.slice(0, 8).map(p => ({
+                  id: p.id,
+                  title: p.title,
+                  image_url: p.image_url || (productImages.find(pi => pi.product_id === p.id)?.image_url ?? null),
+                  price: p.price,
+                  type: "product" as const,
+                  subtitle: p.category || undefined,
+                }))}
+                onItemClick={(item) => {
+                  const prod = products.find(p => p.id === item.id);
+                  if (prod) setSelectedProduct(prod);
+                }}
+                formatPrice={formatPrice}
+              />
+            )}
+
+            {/* Sponsor Banner Slider */}
+            {homeSponsors.length > 0 && (
+              <HomeBannerSlider
+                label="Sponsor Aktif"
+                icon="sponsor"
+                autoPlayMs={5000}
+                items={homeSponsors.map(s => ({
+                  id: s.id,
+                  title: s.title,
+                  image_url: s.image_url,
+                  price: s.price,
+                  type: "sponsor" as const,
+                  subtitle: s.seller_name,
+                }))}
+                onItemClick={() => setTab("sponsor")}
+                formatPrice={formatPrice}
+              />
+            )}
+
             <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary/15 via-accent/10 to-primary/5 p-5">
               <div className="absolute -top-4 -right-4 opacity-10"><Crown className="w-24 h-24 text-primary" /></div>
               <div className="relative z-10 text-center">
