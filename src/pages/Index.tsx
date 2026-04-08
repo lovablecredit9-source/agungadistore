@@ -1237,9 +1237,9 @@ const Index = () => {
               </div>
               <CardContent className="p-4 space-y-3">
                 {[
-                  { step: "1", icon: <Ticket className="w-4 h-4 text-primary" />, title: "Masukkan Kode Voucher", desc: "Ketik atau tempel kode voucher yang kamu punya di tab Voucher." },
-                  { step: "2", icon: <KeyRound className="w-4 h-4 text-accent" />, title: "Klik Klaim", desc: "Tekan tombol Klaim untuk memproses kode voucher kamu." },
-                  { step: "3", icon: <CheckCircle2 className="w-4 h-4 text-green-500" />, title: "Dapat Akun!", desc: "Setelah berhasil, kamu langsung dapat akun dan detail produk." },
+                  { step: "1", icon: <ShoppingBag className="w-4 h-4 text-primary" />, title: "Beli Produk", desc: "Pilih dan beli produk di tab Produk menggunakan saldo." },
+                  { step: "2", icon: <Ticket className="w-4 h-4 text-accent" />, title: "Masukkan Kode Voucher", desc: "Setelah beli, masukkan kode voucher yang didapat di tab Voucher." },
+                  { step: "3", icon: <CheckCircle2 className="w-4 h-4 text-green-500" />, title: "Klaim & Dapat Akun!", desc: "Klik Klaim dan dapatkan detail akun produkmu." },
                 ].map((item) => (
                   <div key={item.step} className="flex items-start gap-3">
                     <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0 text-xs font-extrabold text-primary">{item.step}</div>
@@ -1385,6 +1385,19 @@ const Index = () => {
         {tab === "voucher" && (
           <div className="space-y-4">
             <h2 className="text-lg font-extrabold flex items-center gap-2"><Ticket className="w-5 h-5 text-primary" /> {t("voucher.title", lang)}</h2>
+            {/* Info: Harus beli dulu */}
+            <Card className="bg-gradient-to-r from-amber-500/10 to-orange-500/10 border-amber-500/30 shadow-md">
+              <CardContent className="p-3 flex items-start gap-3">
+                <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center shrink-0 mt-0.5 shadow">
+                  <ShoppingBag className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <p className="text-xs font-bold text-amber-700 dark:text-amber-400">Cara Mendapatkan Voucher</p>
+                  <p className="text-[11px] text-muted-foreground mt-0.5">Beli produk terlebih dahulu di tab <span className="font-bold text-primary cursor-pointer" onClick={() => setTab("produk")}>Produk</span> atau gunakan <span className="font-bold text-primary cursor-pointer" onClick={() => setTab("saldo")}>Saldo</span>, lalu kode voucher akan diberikan setelah pembayaran berhasil.</p>
+                </div>
+              </CardContent>
+            </Card>
+
             <Card className="border-2 border-primary/20 shadow-lg overflow-hidden">
               <div className="bg-gradient-to-r from-primary/10 to-accent/10 p-1" />
               <CardContent className="p-5 space-y-4">

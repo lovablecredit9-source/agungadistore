@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Megaphone, Clock, User, Phone, ChevronLeft, ChevronRight, X, Search, Filter, ArrowUpDown, Heart } from "lucide-react";
+import { Megaphone, Clock, User, Phone, ChevronLeft, ChevronRight, X, Search, Filter, ArrowUpDown, Heart, Share2, ExternalLink } from "lucide-react";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
@@ -134,6 +134,16 @@ export default function SponsorBanner({ likedSponsorIds = new Set(), onToggleLik
         });
         setSponsorImages(map);
       }
+    }
+  }
+
+  function shareSponsor(s: Sponsor) {
+    const url = window.location.origin + `/?sponsor=${s.sponsor_number}`;
+    const text = `🔥 ${s.title}\n💰 ${s.price > 0 ? formatPrice(s.price) : "Gratis"}\n🏪 ${s.seller_name}\n\nLihat di:`;
+    if (navigator.share) {
+      navigator.share({ title: s.title, text, url }).catch(() => {});
+    } else {
+      navigator.clipboard.writeText(`${text} ${url}`);
     }
   }
 
@@ -309,15 +319,23 @@ export default function SponsorBanner({ likedSponsorIds = new Set(), onToggleLik
                   : "Tanpa Garansi"}
               </Badge>
             </div>
-            {/* Social buttons preview */}
-            {socialLinks.length > 0 && (
-              <div className="flex flex-wrap gap-1 pt-1">
-                {socialLinks.slice(0, 3).map(([key, config]) => (
-                  <Badge key={key} variant="secondary" className="text-[9px] font-medium">{config.label}</Badge>
-                ))}
-                {socialLinks.length > 3 && <Badge variant="secondary" className="text-[9px]">+{socialLinks.length - 3}</Badge>}
-              </div>
-            )}
+            {/* Share + Social buttons preview */}
+            <div className="flex items-center gap-1.5 pt-1">
+              <button
+                onClick={(e) => { e.stopPropagation(); shareSponsor(sponsor); }}
+                className="flex items-center gap-1 text-[10px] font-bold text-primary bg-primary/10 hover:bg-primary/20 px-2 py-1 rounded-full transition-colors"
+              >
+                <Share2 className="w-3 h-3" /> Bagikan
+              </button>
+              {socialLinks.length > 0 && (
+                <div className="flex flex-wrap gap-1">
+                  {socialLinks.slice(0, 2).map(([key, config]) => (
+                    <Badge key={key} variant="secondary" className="text-[9px] font-medium">{config.label}</Badge>
+                  ))}
+                  {socialLinks.length > 2 && <Badge variant="secondary" className="text-[9px]">+{socialLinks.length - 2}</Badge>}
+                </div>
+              )}
+            </div>
           </CardContent>
         </Card>
         )}
@@ -348,6 +366,16 @@ export default function SponsorBanner({ likedSponsorIds = new Set(), onToggleLik
 function SponsorDetailModal({ sponsor, images, onClose, isLiked, onToggleLike }: { sponsor: Sponsor; images: SponsorImage[]; onClose: () => void; isLiked?: boolean; onToggleLike?: (sponsorId: string, e?: React.MouseEvent) => void }) {
   const [imgIdx, setImgIdx] = useState(0);
   const allImages = images.length > 0 ? images.map(i => i.image_url) : (sponsor.image_url ? [sponsor.image_url] : []);
+
+  function handleShare() {
+    const url = window.location.origin + `/?sponsor=${sponsor.sponsor_number}`;
+    const text = `🔥 ${sponsor.title}\n💰 ${sponsor.price > 0 ? formatPrice(sponsor.price) : "Gratis"}\n🏪 ${sponsor.seller_name}\n\nLihat di:`;
+    if (navigator.share) {
+      navigator.share({ title: sponsor.title, text, url }).catch(() => {});
+    } else {
+      navigator.clipboard.writeText(`${text} ${url}`);
+    }
+  }
 
   const socialLinks = Object.entries(socialIcons).filter(([key]) => {
     const val = (sponsor as any)[key];
@@ -387,6 +415,9 @@ function SponsorDetailModal({ sponsor, images, onClose, isLiked, onToggleLike }:
               <h3 className="font-extrabold text-lg">{sponsor.title}</h3>
             </div>
             <div className="flex items-center gap-2 shrink-0 ml-2">
+              <button onClick={handleShare} className="w-8 h-8 rounded-full bg-primary/10 hover:bg-primary/20 flex items-center justify-center transition-colors">
+                <Share2 className="w-4 h-4 text-primary" />
+              </button>
               {onToggleLike && (
                 <button onClick={() => onToggleLike(sponsor.id)}>
                   <Heart className={`w-6 h-6 ${isLiked ? "fill-destructive text-destructive" : "text-muted-foreground"}`} />
@@ -462,6 +493,14 @@ function SponsorDetailModal({ sponsor, images, onClose, isLiked, onToggleLike }:
               {sponsor.custom_note}
             </div>
           )}
+
+          {/* Share button */}
+          <button
+            onClick={handleShare}
+            className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-gradient-to-r from-primary/10 to-accent/10 border border-primary/20 text-sm font-bold text-primary hover:from-primary/20 hover:to-accent/20 transition-all"
+          >
+            <Share2 className="w-4 h-4" /> Bagikan Sponsor Ini
+          </button>
         </div>
       </div>
     </div>
