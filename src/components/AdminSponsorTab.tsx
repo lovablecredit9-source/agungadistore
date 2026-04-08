@@ -143,6 +143,9 @@ function SponsorForm({
       setTiktok(editing.tiktok || "");
       setTwitter(editing.twitter || "");
       setThreads(editing.threads || "");
+      setHasWarranty(editing.has_warranty || false);
+      setWarrantyDurationValue(String(editing.warranty_duration_value || 0));
+      setWarrantyDurationType(editing.warranty_duration_type || "days");
       const existing = existingImages[editing.id] || [];
       setImages(existing.map(i => i.image_url));
     } else {
