@@ -42,6 +42,7 @@ interface Sponsor {
   has_warranty: boolean;
   warranty_duration_value: number;
   warranty_duration_type: string;
+  view_count: number;
 }
 
 type SortOrder = "newest" | "oldest";
