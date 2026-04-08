@@ -301,22 +301,45 @@ console.log(data);`;
           </DialogHeader>
           <div className="space-y-2">
             <p className="text-xs text-muted-foreground">
-              Gunakan API Key di header <code className="bg-muted px-1 rounded">x-api-key</code> untuk mengakses data dari bot WA atau script lainnya.
+              Gunakan API Key di header <code className="bg-muted px-1 rounded">x-api-key</code> untuk mengakses data dari bot WA, script Python, atau aplikasi lainnya.
             </p>
             <p className="text-xs font-bold">Base URL:</p>
             <code className="text-[10px] bg-muted p-2 rounded block break-all font-mono">{baseUrl}</code>
-            <p className="text-xs font-bold">Endpoint tersedia:</p>
+            
+            <p className="text-xs font-bold">Cara Kerja:</p>
+            <ol className="text-xs space-y-1 list-decimal pl-4 text-muted-foreground">
+              <li>Buat API Key di atas, lalu salin</li>
+              <li>Pasang di header <code className="bg-muted px-1 rounded">x-api-key</code></li>
+              <li>Panggil endpoint yang diinginkan</li>
+              <li>Data dikembalikan dalam format JSON</li>
+            </ol>
+            
+            <p className="text-xs font-bold mt-2">Endpoint Tersedia (GET):</p>
             <ul className="text-xs space-y-1 list-disc pl-4">
-              <li><code>?endpoint=products</code> — Semua produk</li>
-              <li><code>?endpoint=sponsors</code> — Semua sponsor</li>
-              <li><code>?endpoint=balances</code> — Saldo user</li>
-              <li><code>?endpoint=songs</code> — Semua lagu</li>
-              <li><code>?endpoint=deposits</code> — Deposit</li>
-              <li><code>?endpoint=tokens</code> — Token</li>
-              <li><code>?endpoint=notifications</code> — Notifikasi (GET/POST)</li>
+              <li><code>?endpoint=products</code> — Semua produk (judul, harga, stok, gambar)</li>
+              <li><code>?endpoint=sponsors</code> — Semua sponsor/iklan aktif</li>
+              <li><code>?endpoint=balances</code> — Saldo semua user</li>
+              <li><code>?endpoint=songs</code> — Semua lagu di playlist</li>
+              <li><code>?endpoint=deposits</code> — Riwayat deposit</li>
+              <li><code>?endpoint=tokens</code> — Token & info produk</li>
+              <li><code>?endpoint=notifications</code> — Notifikasi (tambah <code>&visitor_id=xxx</code> untuk filter)</li>
             </ul>
-            <p className="text-xs font-bold mt-2">Contoh Script:</p>
-            <pre className="text-[9px] bg-muted p-2 rounded overflow-x-auto font-mono whitespace-pre-wrap leading-relaxed">
+            
+            <p className="text-xs font-bold mt-2">Endpoint (POST):</p>
+            <ul className="text-xs space-y-1 list-disc pl-4">
+              <li><code>?endpoint=notifications</code> — Kirim notifikasi
+                <br /><span className="text-muted-foreground">Body: <code>{`{"visitor_id":"xxx","title":"Judul","message":"Isi","type":"info"}`}</code></span>
+              </li>
+            </ul>
+            
+            <p className="text-xs font-bold mt-2">Response Format:</p>
+            <pre className="text-[9px] bg-muted p-2 rounded font-mono">{`{
+  "success": true,
+  "data": [ ... ]
+}`}</pre>
+
+            <p className="text-xs font-bold mt-2">💡 Contoh Penggunaan Bot WA & Script:</p>
+            <pre className="text-[9px] bg-muted p-2 rounded overflow-x-auto font-mono whitespace-pre-wrap leading-relaxed max-h-60 overflow-y-auto">
               {usageExample}
             </pre>
             <Button size="sm" variant="outline" className="w-full gap-2" onClick={() => {
