@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { Megaphone, Trash2, Edit2, X, ImagePlus, Clock, Eye, EyeOff, TimerReset, Share2, Check, Search, Download, ArrowUpDown } from "lucide-react";
+import { Megaphone, Trash2, Edit2, X, ImagePlus, Clock, Eye, EyeOff, TimerReset, Share2, Check, Search, Download, ArrowUpDown, History } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import jsPDF from "jspdf";
@@ -203,6 +203,14 @@ function SponsorForm({
       const { data, error } = await supabase.from("sponsors").insert(payload as any).select("id").single();
       if (error || !data) { toast({ title: "Gagal membuat sponsor", variant: "destructive" }); return; }
       sponsorId = (data as any).id;
+      // Log history: created
+      await supabase.from("sponsor_history").insert({
+        sponsor_id: sponsorId,
+        action: "created",
+        details: `Sponsor "${title.trim()}" dibuat oleh ${sellerName.trim()}`,
+        new_expires_at: expiresAt.toISOString(),
+        amount: parseInt(price) || 0,
+      } as any);
       toast({ title: "Sponsor berhasil dibuat! 📢" });
     }
 
@@ -327,6 +335,15 @@ function ExtendDialog({
       is_active: true,
     } as any).eq("id", sponsor.id);
     if (error) { toast({ title: "Gagal perpanjang", variant: "destructive" }); return; }
+    // Log history: extended
+    await supabase.from("sponsor_history").insert({
+      sponsor_id: sponsor.id,
+      action: "extended",
+      details: `Perpanjang +${ev} ${durationLabels[extType]}`,
+      old_expires_at: sponsor.expires_at,
+      new_expires_at: newExpiry.toISOString(),
+      amount: sponsor.price,
+    } as any);
     toast({ title: "Sponsor berhasil diperpanjang! ⏰" });
     onExtended({
       sponsor,
@@ -469,6 +486,24 @@ ${receipt.sponsor.price > 0 ? `💰 Harga: ${formatPrice(receipt.sponsor.price)}
   );
 }
 
+interface SponsorHistoryItem {
+  id: string;
+  sponsor_id: string;
+  action: string;
+  details: string | null;
+  old_expires_at: string | null;
+  new_expires_at: string | null;
+  amount: number;
+  created_at: string;
+}
+
+const actionLabels: Record<string, string> = {
+  created: "📢 Dibuat",
+  extended: "⏰ Diperpanjang",
+  expired: "❌ Kedaluwarsa",
+  payment: "💰 Pembayaran",
+};
+
 // --- Main Component ---
 export default function AdminSponsorTab() {
   const [sponsors, setSponsors] = useState<Sponsor[]>([]);
@@ -479,9 +514,16 @@ export default function AdminSponsorTab() {
   const [search, setSearch] = useState("");
   const [filterCategory, setFilterCategory] = useState("all");
   const [sortOrder, setSortOrder] = useState<"newest" | "oldest">("newest");
+  const [showHistory, setShowHistory] = useState(false);
+  const [history, setHistory] = useState<SponsorHistoryItem[]>([]);
   const { toast } = useToast();
 
   useEffect(() => { fetchSponsors(); }, []);
+
+  async function fetchHistory() {
+    const { data } = await supabase.from("sponsor_history").select("*").order("created_at", { ascending: false }).limit(100);
+    if (data) setHistory(data as unknown as SponsorHistoryItem[]);
+  }
 
   async function fetchSponsors() {
     const { data } = await supabase.from("sponsors").select("*").order("created_at", { ascending: false });
@@ -613,6 +655,9 @@ export default function AdminSponsorTab() {
             <Button size="sm" variant="outline" className="h-8 text-xs gap-1" onClick={downloadPDF}>
               <Download className="w-3 h-3" /> PDF
             </Button>
+            <Button size="sm" variant="outline" className="h-8 text-xs gap-1" onClick={() => { fetchHistory(); setShowHistory(true); }}>
+              <History className="w-3 h-3" /> Riwayat
+            </Button>
           </div>
         </CardContent>
       </Card>
@@ -684,6 +729,42 @@ export default function AdminSponsorTab() {
         open={!!receipt}
         onClose={() => setReceipt(null)}
       />
+
+      <Dialog open={showHistory} onOpenChange={setShowHistory}>
+        <DialogContent className="max-w-sm max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-sm flex items-center gap-2">
+              <History className="w-4 h-4 text-primary" /> Riwayat Sponsor
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-2">
+            {history.length === 0 && <p className="text-center text-sm text-muted-foreground py-4">Belum ada riwayat</p>}
+            {history.map(h => {
+              const sp = sponsors.find(s => s.id === h.sponsor_id);
+              return (
+                <div key={h.id} className="bg-muted rounded-lg p-3 space-y-1">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold">{actionLabels[h.action] || h.action}</span>
+                    <span className="text-[10px] text-muted-foreground">{formatDateTime(h.created_at)}</span>
+                  </div>
+                  {sp && <p className="text-[10px] font-medium">#{sp.sponsor_number} — {sp.title}</p>}
+                  {!sp && <p className="text-[10px] text-muted-foreground">Sponsor ID: {h.sponsor_id.slice(0, 8)}...</p>}
+                  {h.details && <p className="text-[10px] text-muted-foreground">{h.details}</p>}
+                  {h.amount > 0 && <p className="text-[10px] text-primary font-bold">{formatPrice(h.amount)}</p>}
+                  {h.old_expires_at && h.new_expires_at && (
+                    <p className="text-[10px] text-muted-foreground">
+                      {formatDateTime(h.old_expires_at)} → {formatDateTime(h.new_expires_at)}
+                    </p>
+                  )}
+                  {!h.old_expires_at && h.new_expires_at && (
+                    <p className="text-[10px] text-muted-foreground">Berakhir: {formatDateTime(h.new_expires_at)}</p>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
