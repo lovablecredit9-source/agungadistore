@@ -493,6 +493,14 @@ function SponsorDetailModal({ sponsor, images, onClose, isLiked, onToggleLike }:
               {sponsor.custom_note}
             </div>
           )}
+
+          {/* Share button */}
+          <button
+            onClick={handleShare}
+            className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-gradient-to-r from-primary/10 to-accent/10 border border-primary/20 text-sm font-bold text-primary hover:from-primary/20 hover:to-accent/20 transition-all"
+          >
+            <Share2 className="w-4 h-4" /> Bagikan Sponsor Ini
+          </button>
         </div>
       </div>
     </div>
