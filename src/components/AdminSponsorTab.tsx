@@ -201,6 +201,9 @@ function SponsorForm({
       twitter: twitter.trim(),
       threads: threads.trim(),
       stock: parseInt(stock) || 0,
+      has_warranty: hasWarranty,
+      warranty_duration_value: parseInt(warrantyDurationValue) || 0,
+      warranty_duration_type: warrantyDurationType,
     };
 
     let sponsorId = editing?.id;
