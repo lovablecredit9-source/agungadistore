@@ -11,7 +11,7 @@ import {
   HelpCircle, X, ExternalLink, Search, ChevronLeft, ChevronRight, FileText,
   Heart, Send, ImagePlus, AlertCircle, History, Wallet, ArrowUpCircle, ArrowDownCircle,
   Bell, Check, CheckCheck, Globe, Edit2, ShoppingCart, Plus, Minus, Trash2,
-  Moon, Sun, Lock, Tag, Music, Megaphone, Diamond, Image as ImageIcon
+  Moon, Sun, Lock, Tag, Music, Megaphone, Diamond, Image as ImageIcon, Gem, Sparkles, Palette
 } from "lucide-react";
 import { useTheme } from "@/lib/theme";
 import { useToast } from "@/hooks/use-toast";
@@ -1137,7 +1137,7 @@ const Index = () => {
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button className="w-9 h-9 rounded-xl bg-primary-foreground/20 backdrop-blur-sm flex items-center justify-center hover:bg-primary-foreground/30 transition-colors" title="Tema">
-                  {resolvedTheme === "dark" ? <Moon className="w-4 h-4" /> : resolvedTheme === "gold" ? <Crown className="w-4 h-4" /> : resolvedTheme === "diamond" ? <Diamond className="w-4 h-4" /> : resolvedTheme === "custom" ? <ImageIcon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
+                  {resolvedTheme === "dark" ? <Moon className="w-4 h-4" /> : resolvedTheme === "gold" ? <Crown className="w-4 h-4" /> : resolvedTheme === "diamond" ? <Diamond className="w-4 h-4" /> : resolvedTheme === "silver" ? <Gem className="w-4 h-4" /> : resolvedTheme === "platinum" ? <Sparkles className="w-4 h-4" /> : resolvedTheme === "purple" ? <Palette className="w-4 h-4" /> : resolvedTheme === "custom" ? <ImageIcon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="min-w-[160px]">
@@ -1153,8 +1153,18 @@ const Index = () => {
                 <DropdownMenuItem onClick={() => setTheme("diamond")} className="gap-2 cursor-pointer">
                   <Diamond className="w-4 h-4" /> Diamond {theme === "diamond" && "✓"}
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => {
-                  customBgInputRef.current?.click();
+                <DropdownMenuItem onClick={() => setTheme("silver")} className="gap-2 cursor-pointer">
+                  <Gem className="w-4 h-4" /> Silver {theme === "silver" && "✓"}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setTheme("platinum")} className="gap-2 cursor-pointer">
+                  <Sparkles className="w-4 h-4" /> Platinum {theme === "platinum" && "✓"}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setTheme("purple")} className="gap-2 cursor-pointer">
+                  <Palette className="w-4 h-4" /> Ungu {theme === "purple" && "✓"}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={(e) => {
+                  e.preventDefault();
+                  setTimeout(() => customBgInputRef.current?.click(), 150);
                 }} className="gap-2 cursor-pointer">
                   <ImageIcon className="w-4 h-4" /> Custom Foto {theme === "custom" && "✓"}
                 </DropdownMenuItem>

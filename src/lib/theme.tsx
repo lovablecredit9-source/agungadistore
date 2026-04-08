@@ -1,11 +1,11 @@
 import { createContext, useContext, useEffect, useState, useCallback, type ReactNode } from "react";
 
-export type Theme = "light" | "dark" | "gold" | "diamond" | "custom" | "system";
+export type Theme = "light" | "dark" | "gold" | "diamond" | "silver" | "platinum" | "purple" | "custom" | "system";
 
 interface ThemeContextType {
   theme: Theme;
   setTheme: (t: Theme) => void;
-  resolvedTheme: "light" | "dark" | "gold" | "diamond" | "custom";
+  resolvedTheme: "light" | "dark" | "gold" | "diamond" | "silver" | "platinum" | "purple" | "custom";
   customBgUrl: string;
   setCustomBgUrl: (url: string) => void;
 }
@@ -18,7 +18,7 @@ const ThemeContext = createContext<ThemeContextType>({
   setCustomBgUrl: () => {},
 });
 
-const VALID_THEMES: Theme[] = ["light", "dark", "gold", "diamond", "custom", "system"];
+const VALID_THEMES: Theme[] = ["light", "dark", "gold", "diamond", "silver", "platinum", "purple", "custom", "system"];
 
 function getSystemTheme(): "light" | "dark" {
   if (typeof window === "undefined") return "light";
@@ -35,15 +35,18 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     return localStorage.getItem("app_custom_bg") || "";
   });
 
-  const resolvedTheme: "light" | "dark" | "gold" | "diamond" | "custom" =
+  const resolvedTheme: "light" | "dark" | "gold" | "diamond" | "silver" | "platinum" | "purple" | "custom" =
     theme === "system" ? getSystemTheme() : theme;
 
   useEffect(() => {
     const root = document.documentElement;
-    root.classList.remove("dark", "gold", "diamond", "custom-bg");
+    root.classList.remove("dark", "gold", "diamond", "silver", "platinum", "purple", "custom-bg");
     if (resolvedTheme === "dark") root.classList.add("dark");
     else if (resolvedTheme === "gold") root.classList.add("gold");
     else if (resolvedTheme === "diamond") root.classList.add("diamond");
+    else if (resolvedTheme === "silver") root.classList.add("silver");
+    else if (resolvedTheme === "platinum") root.classList.add("platinum");
+    else if (resolvedTheme === "purple") root.classList.add("purple");
     else if (resolvedTheme === "custom") root.classList.add("custom-bg");
     localStorage.setItem("app_theme", theme);
   }, [theme, resolvedTheme]);
@@ -59,7 +62,6 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
       body.style.backgroundPosition = "center";
       body.style.backgroundAttachment = "fixed";
     } else {
-      // Reset to default CSS background
       body.style.backgroundImage = "";
       body.style.backgroundSize = "";
       body.style.backgroundPosition = "";

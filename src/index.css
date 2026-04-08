@@ -148,6 +148,105 @@
     --success-foreground: 0 0% 100%;
   }
 
+  .silver {
+    --background: 220 10% 12%;
+    --foreground: 220 10% 90%;
+
+    --card: 220 10% 16%;
+    --card-foreground: 220 10% 90%;
+
+    --popover: 220 10% 16%;
+    --popover-foreground: 220 10% 90%;
+
+    --primary: 220 15% 65%;
+    --primary-foreground: 220 10% 8%;
+
+    --secondary: 220 8% 20%;
+    --secondary-foreground: 220 8% 78%;
+
+    --muted: 220 8% 18%;
+    --muted-foreground: 220 6% 55%;
+
+    --accent: 220 20% 60%;
+    --accent-foreground: 220 10% 8%;
+
+    --destructive: 0 70% 50%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 220 8% 22%;
+    --input: 220 8% 22%;
+    --ring: 220 15% 65%;
+
+    --success: 150 50% 45%;
+    --success-foreground: 0 0% 100%;
+  }
+
+  .platinum {
+    --background: 240 5% 8%;
+    --foreground: 240 5% 92%;
+
+    --card: 240 5% 13%;
+    --card-foreground: 240 5% 92%;
+
+    --popover: 240 5% 13%;
+    --popover-foreground: 240 5% 92%;
+
+    --primary: 45 20% 72%;
+    --primary-foreground: 240 5% 6%;
+
+    --secondary: 240 4% 18%;
+    --secondary-foreground: 240 4% 80%;
+
+    --muted: 240 4% 16%;
+    --muted-foreground: 240 3% 55%;
+
+    --accent: 30 15% 65%;
+    --accent-foreground: 240 5% 6%;
+
+    --destructive: 0 70% 50%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 240 4% 20%;
+    --input: 240 4% 20%;
+    --ring: 45 20% 72%;
+
+    --success: 160 50% 45%;
+    --success-foreground: 0 0% 100%;
+  }
+
+  .purple {
+    --background: 270 30% 8%;
+    --foreground: 270 15% 92%;
+
+    --card: 270 25% 13%;
+    --card-foreground: 270 15% 92%;
+
+    --popover: 270 25% 13%;
+    --popover-foreground: 270 15% 92%;
+
+    --primary: 270 70% 60%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 270 20% 18%;
+    --secondary-foreground: 270 12% 80%;
+
+    --muted: 270 18% 15%;
+    --muted-foreground: 270 10% 55%;
+
+    --accent: 290 60% 55%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 70% 50%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 270 18% 20%;
+    --input: 270 18% 20%;
+    --ring: 270 70% 60%;
+
+    --success: 160 55% 45%;
+    --success-foreground: 0 0% 100%;
+  }
+
   .custom-bg {
     --background: 220 20% 97%;
     --foreground: 230 25% 12%;
