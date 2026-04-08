@@ -17,6 +17,7 @@ import { useTheme } from "@/lib/theme";
 import { useToast } from "@/hooks/use-toast";
 import jsPDF from "jspdf";
 import storeQris from "@/assets/store-qris.jpg";
+import musicBanner from "@/assets/music-banner.jpg";
 import { STORE_NAME, WA_NUMBER, SOCIAL_LINKS, YOUTUBE_NAME } from "@/lib/social-links";
 import { getDeviceSummary, collectDeviceInfo } from "@/lib/device-info";
 import { getVisitorId } from "@/lib/visitor-id";
@@ -1197,10 +1198,10 @@ const Index = () => {
             </div>
 
             {/* Music Promo Banner */}
-            <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-purple-600 via-indigo-600 to-blue-600 p-5 text-white shadow-xl cursor-pointer hover:shadow-2xl hover:-translate-y-0.5 transition-all duration-300" onClick={() => setTab("playlist")}>
-              <div className="absolute -top-6 -right-6 opacity-15"><Music className="w-28 h-28" /></div>
-              <div className="absolute -bottom-4 -left-4 opacity-10"><Music className="w-20 h-20" /></div>
-              <div className="relative z-10 space-y-2">
+            <div className="relative overflow-hidden rounded-2xl shadow-xl cursor-pointer hover:shadow-2xl hover:-translate-y-0.5 transition-all duration-300" onClick={() => setTab("playlist")}>
+              <img src={musicBanner} alt="Music" className="absolute inset-0 w-full h-full object-cover" />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
+              <div className="relative z-10 p-5 text-white space-y-2">
                 <div className="flex items-center gap-2">
                   <div className="w-10 h-10 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center">
                     <Music className="w-5 h-5" />
@@ -1210,7 +1211,7 @@ const Index = () => {
                     <p className="text-sm font-extrabold leading-tight">{STORE_NAME}</p>
                   </div>
                 </div>
-                <h3 className="text-lg font-extrabold leading-snug">Dengarkan Musik Sambil Belanja!</h3>
+                <h3 className="text-lg font-extrabold leading-snug drop-shadow-lg">Dengarkan Musik Sambil Belanja!</h3>
                 <p className="text-xs opacity-90 leading-relaxed">Yuk nikmati sekarang — <span className="font-bold">tanpa iklan</span>, bisa <span className="font-bold">download</span>, streaming gratis langsung dari aplikasi.</p>
                 <p className="text-[11px] font-semibold opacity-75 italic">🛍️ Jangan lupa belanja juga ya!</p>
                 <Button size="sm" className="bg-white/20 backdrop-blur-sm hover:bg-white/30 text-white border border-white/30 gap-1.5 mt-1">
