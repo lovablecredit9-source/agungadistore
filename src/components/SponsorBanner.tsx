@@ -410,11 +410,11 @@ function SponsorDetailModal({ sponsor, images, onClose, isLiked, onToggleLike }:
                 <li>Hubungi Admin WA <a href="https://wa.me/6285769302532" target="_blank" rel="noopener noreferrer" className="text-primary font-bold hover:underline">085769302532</a> atau buat <span className="font-bold text-primary">Tiket</span> jika ada masalah.</li>
                 <li>Jika ada masalah produk, <span className="font-bold text-destructive">jangan salahkan admin</span>. Ajak penjual rekber & cek produk kembali.</li>
                 <li>Akun yang sudah diambil penjual <span className="font-bold text-destructive">tidak bisa diklaim ulang</span>. Jika mau resmi, beli dari admin langsung.</li>
-                <li>Admin sponsor, <span className="font-bold text-foreground">pembeli dan penjual harus amanah</span>.</li>
+                <li><span className="font-bold text-foreground">Pembeli dan penjual harus amanah</span>.</li>
                 <li>Apabila tidak menggunakan rekber admin, <span className="font-bold text-destructive">admin tidak bertanggung jawab</span>.</li>
               </ul>
             </div>
-            <a href="https://wa.me/6285769302532?text=Halo%20admin%2C%20saya%20mau%20rekber%20untuk%20sponsor" target="_blank" rel="noopener noreferrer" className="block">
+            <a href={`https://wa.me/6285769302532?text=${encodeURIComponent(`Halo admin, saya mau rekber untuk produk sponsor:\n\n🔗 Link: ${window.location.origin}/?sponsor=${sponsor.sponsor_number}\n📦 Judul: ${sponsor.title}\n💰 Harga: ${formatPrice(sponsor.price)}\n📝 Deskripsi: ${sponsor.description || '-'}\n🏪 Penjual: ${sponsor.seller_name}\n📊 Stok: ${sponsor.stock} | Garansi: ${sponsor.has_warranty ? `${sponsor.warranty_duration_value} ${sponsor.warranty_duration_type === "hours" ? "Jam" : sponsor.warranty_duration_type === "days" ? "Hari" : "Bulan"}` : 'Tidak ada'}\n\nMohon bantu proses rekber. Terima kasih!`)}`} target="_blank" rel="noopener noreferrer" className="block">
               <Button size="sm" className="w-full bg-gradient-to-r from-green-600 to-green-700 text-white font-bold gap-2 text-xs">
                 <Shield className="w-3.5 h-3.5" /> Mohon Rekber Admin (WA)
               </Button>
