@@ -655,6 +655,9 @@ export default function AdminSponsorTab() {
             <Button size="sm" variant="outline" className="h-8 text-xs gap-1" onClick={downloadPDF}>
               <Download className="w-3 h-3" /> PDF
             </Button>
+            <Button size="sm" variant="outline" className="h-8 text-xs gap-1" onClick={() => { fetchHistory(); setShowHistory(true); }}>
+              <History className="w-3 h-3" /> Riwayat
+            </Button>
           </div>
         </CardContent>
       </Card>
