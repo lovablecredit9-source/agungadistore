@@ -518,6 +518,7 @@ export default function AdminSponsorTab() {
   const [sortOrder, setSortOrder] = useState<"newest" | "oldest">("newest");
   const [showHistory, setShowHistory] = useState(false);
   const [history, setHistory] = useState<SponsorHistoryItem[]>([]);
+  const [selectedHistory, setSelectedHistory] = useState<SponsorHistoryItem | null>(null);
   const { toast } = useToast();
 
   useEffect(() => { fetchSponsors(); }, []);
