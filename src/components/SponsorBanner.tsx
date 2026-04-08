@@ -309,15 +309,23 @@ export default function SponsorBanner({ likedSponsorIds = new Set(), onToggleLik
                   : "Tanpa Garansi"}
               </Badge>
             </div>
-            {/* Social buttons preview */}
-            {socialLinks.length > 0 && (
-              <div className="flex flex-wrap gap-1 pt-1">
-                {socialLinks.slice(0, 3).map(([key, config]) => (
-                  <Badge key={key} variant="secondary" className="text-[9px] font-medium">{config.label}</Badge>
-                ))}
-                {socialLinks.length > 3 && <Badge variant="secondary" className="text-[9px]">+{socialLinks.length - 3}</Badge>}
-              </div>
-            )}
+            {/* Share + Social buttons preview */}
+            <div className="flex items-center gap-1.5 pt-1">
+              <button
+                onClick={(e) => { e.stopPropagation(); shareSponsor(sponsor); }}
+                className="flex items-center gap-1 text-[10px] font-bold text-primary bg-primary/10 hover:bg-primary/20 px-2 py-1 rounded-full transition-colors"
+              >
+                <Share2 className="w-3 h-3" /> Bagikan
+              </button>
+              {socialLinks.length > 0 && (
+                <div className="flex flex-wrap gap-1">
+                  {socialLinks.slice(0, 2).map(([key, config]) => (
+                    <Badge key={key} variant="secondary" className="text-[9px] font-medium">{config.label}</Badge>
+                  ))}
+                  {socialLinks.length > 2 && <Badge variant="secondary" className="text-[9px]">+{socialLinks.length - 2}</Badge>}
+                </div>
+              )}
+            </div>
           </CardContent>
         </Card>
         )}
