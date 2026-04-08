@@ -345,7 +345,7 @@ export default function SponsorBanner({ likedSponsorIds = new Set(), onToggleLik
   );
 }
 
-function SponsorDetailModal({ sponsor, images, onClose }: { sponsor: Sponsor; images: SponsorImage[]; onClose: () => void }) {
+function SponsorDetailModal({ sponsor, images, onClose, isLiked, onToggleLike }: { sponsor: Sponsor; images: SponsorImage[]; onClose: () => void; isLiked?: boolean; onToggleLike?: (sponsorId: string, e?: React.MouseEvent) => void }) {
   const [imgIdx, setImgIdx] = useState(0);
   const allImages = images.length > 0 ? images.map(i => i.image_url) : (sponsor.image_url ? [sponsor.image_url] : []);
 
