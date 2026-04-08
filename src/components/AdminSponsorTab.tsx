@@ -520,6 +520,11 @@ export default function AdminSponsorTab() {
 
   useEffect(() => { fetchSponsors(); }, []);
 
+  async function fetchHistory() {
+    const { data } = await supabase.from("sponsor_history").select("*").order("created_at", { ascending: false }).limit(100);
+    if (data) setHistory(data as unknown as SponsorHistoryItem[]);
+  }
+
   async function fetchSponsors() {
     const { data } = await supabase.from("sponsors").select("*").order("created_at", { ascending: false });
     if (data) {
