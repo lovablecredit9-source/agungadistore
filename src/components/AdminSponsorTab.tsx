@@ -119,6 +119,9 @@ function SponsorForm({
   const [tiktok, setTiktok] = useState("");
   const [twitter, setTwitter] = useState("");
   const [threads, setThreads] = useState("");
+  const [hasWarranty, setHasWarranty] = useState(false);
+  const [warrantyDurationValue, setWarrantyDurationValue] = useState("0");
+  const [warrantyDurationType, setWarrantyDurationType] = useState("days");
   const fileRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
