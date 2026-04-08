@@ -153,6 +153,7 @@ function SponsorForm({
       setSellerContact(""); setDurationType("days"); setDurationValue("7");
       setCustomNote(""); setCategory(""); setImages([]); setStock("0");
       setWaNumber(""); setInstagram(""); setFacebook(""); setTiktok(""); setTwitter(""); setThreads("");
+      setHasWarranty(false); setWarrantyDurationValue("0"); setWarrantyDurationType("days");
     }
   }, [editing]);
 
