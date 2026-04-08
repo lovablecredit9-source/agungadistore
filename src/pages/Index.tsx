@@ -11,7 +11,7 @@ import {
   HelpCircle, X, ExternalLink, Search, ChevronLeft, ChevronRight, FileText,
   Heart, Send, ImagePlus, AlertCircle, History, Wallet, ArrowUpCircle, ArrowDownCircle,
   Bell, Check, CheckCheck, Globe, Edit2, ShoppingCart, Plus, Minus, Trash2,
-  Moon, Sun, Lock, Tag, Music, Megaphone
+  Moon, Sun, Lock, Tag, Music, Megaphone, Diamond, Image as ImageIcon
 } from "lucide-react";
 import { useTheme } from "@/lib/theme";
 import { useToast } from "@/hooks/use-toast";
@@ -223,7 +223,8 @@ function ImageCarousel({ images, className = "w-full h-44" }: { images: string[]
 }
 
 const Index = () => {
-  const { theme, setTheme, resolvedTheme } = useTheme();
+  const { theme, setTheme, resolvedTheme, customBgUrl, setCustomBgUrl } = useTheme();
+  const customBgInputRef = useRef<HTMLInputElement>(null);
   const [lang, setLang] = useLang();
   const [tab, setTab] = useState<Tab>("beranda");
   const [products, setProducts] = useState<Product[]>([]);
@@ -1136,7 +1137,7 @@ const Index = () => {
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button className="w-9 h-9 rounded-xl bg-primary-foreground/20 backdrop-blur-sm flex items-center justify-center hover:bg-primary-foreground/30 transition-colors" title="Tema">
-                  {resolvedTheme === "dark" ? <Moon className="w-4 h-4" /> : resolvedTheme === "gold" ? <Crown className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
+                  {resolvedTheme === "dark" ? <Moon className="w-4 h-4" /> : resolvedTheme === "gold" ? <Crown className="w-4 h-4" /> : resolvedTheme === "diamond" ? <Diamond className="w-4 h-4" /> : resolvedTheme === "custom" ? <ImageIcon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="min-w-[160px]">
@@ -1149,11 +1150,38 @@ const Index = () => {
                 <DropdownMenuItem onClick={() => setTheme("gold")} className="gap-2 cursor-pointer">
                   <Crown className="w-4 h-4" /> Emas {theme === "gold" && "✓"}
                 </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setTheme("diamond")} className="gap-2 cursor-pointer">
+                  <Diamond className="w-4 h-4" /> Diamond {theme === "diamond" && "✓"}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => {
+                  customBgInputRef.current?.click();
+                }} className="gap-2 cursor-pointer">
+                  <ImageIcon className="w-4 h-4" /> Custom Foto {theme === "custom" && "✓"}
+                </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setTheme("system")} className="gap-2 cursor-pointer">
                   <Smartphone className="w-4 h-4" /> Perangkat {theme === "system" && "✓"}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
+            <input
+              ref={customBgInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) {
+                  const reader = new FileReader();
+                  reader.onload = (ev) => {
+                    const url = ev.target?.result as string;
+                    setCustomBgUrl(url);
+                    setTheme("custom");
+                  };
+                  reader.readAsDataURL(file);
+                }
+                e.target.value = "";
+              }}
+            />
             <LanguageSelector currentLang={lang} onSelect={setLang} />
             <button onClick={() => setShowNotifPanel(!showNotifPanel)} className="relative w-9 h-9 rounded-xl bg-primary-foreground/20 backdrop-blur-sm flex items-center justify-center hover:bg-primary-foreground/30 transition-colors">
               <Bell className="w-5 h-5" />
