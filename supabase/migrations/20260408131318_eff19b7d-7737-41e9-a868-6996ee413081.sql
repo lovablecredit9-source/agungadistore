@@ -1,0 +1,1 @@
+CREATE POLICY "Anyone can increment sponsor views" ON public.sponsors FOR UPDATE TO public USING (true) WITH CHECK (true);
