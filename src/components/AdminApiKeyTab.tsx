@@ -4,8 +4,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { Key, Copy, Trash2, Check, Eye, EyeOff, Plus, Clock } from "lucide-react";
+import { Key, Copy, Trash2, Check, Eye, EyeOff, Plus, Clock, BookOpen, Download } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface ApiKey {
   id: string;
@@ -82,150 +83,341 @@ export default function AdminApiKeyTab() {
     return key.substring(0, 6) + "•".repeat(20) + key.substring(key.length - 4);
   }
 
+  function copyText(text: string, label: string) {
+    navigator.clipboard.writeText(text);
+    toast({ title: `${label} tersalin!` });
+  }
+
   const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID || "";
   const baseUrl = `https://${projectId}.supabase.co/functions/v1/public-api`;
 
-  const usageExample = `# ==========================================
-# 📖 PANDUAN LENGKAP API - Agung Adi Store
-# ==========================================
-# Base URL: ${baseUrl}
-# Auth: Header "x-api-key: YOUR_API_KEY"
-# ==========================================
+  const waFullBot = `// =============================================
+// 🤖 BOT WHATSAPP - Agung Adi Store (LENGKAP)
+// =============================================
+// File: bot.js
+// Jalankan: node bot.js
+// =============================================
 
-# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-# 1. AMBIL SEMUA PRODUK
-# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-curl -H "x-api-key: YOUR_API_KEY" \\
-  "${baseUrl}?endpoint=products"
-
-# 2. AMBIL SEMUA SPONSOR/IKLAN
-curl -H "x-api-key: YOUR_API_KEY" \\
-  "${baseUrl}?endpoint=sponsors"
-
-# 3. AMBIL SALDO USER
-curl -H "x-api-key: YOUR_API_KEY" \\
-  "${baseUrl}?endpoint=balances"
-
-# 4. AMBIL SEMUA LAGU
-curl -H "x-api-key: YOUR_API_KEY" \\
-  "${baseUrl}?endpoint=songs"
-
-# 5. AMBIL DEPOSIT
-curl -H "x-api-key: YOUR_API_KEY" \\
-  "${baseUrl}?endpoint=deposits"
-
-# 6. AMBIL TOKEN
-curl -H "x-api-key: YOUR_API_KEY" \\
-  "${baseUrl}?endpoint=tokens"
-
-# 7. KIRIM NOTIFIKASI (POST)
-curl -X POST -H "x-api-key: YOUR_API_KEY" \\
-  -H "Content-Type: application/json" \\
-  -d '{"visitor_id":"xxx","title":"Halo","message":"Pesan test","type":"info"}' \\
-  "${baseUrl}?endpoint=notifications"
-
-# 8. AMBIL NOTIFIKASI (GET)
-curl -H "x-api-key: YOUR_API_KEY" \\
-  "${baseUrl}?endpoint=notifications"
-
-# Filter notifikasi per visitor:
-curl -H "x-api-key: YOUR_API_KEY" \\
-  "${baseUrl}?endpoint=notifications&visitor_id=xxx"
-
-# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-# CONTOH BOT WHATSAPP (Node.js)
-# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-# Install: npm install whatsapp-web.js qrcode-terminal
-
-const { Client } = require("whatsapp-web.js");
+const { Client, LocalAuth } = require("whatsapp-web.js");
 const qrcode = require("qrcode-terminal");
 
-const API_KEY = "YOUR_API_KEY";
+// ⚠️ GANTI DENGAN API KEY KAMU!
+const API_KEY = "PASTE_API_KEY_DISINI";
 const BASE = "${baseUrl}";
 
-const client = new Client();
-client.on("qr", qr => qrcode.generate(qr, { small: true }));
-client.on("ready", () => console.log("Bot WA siap!"));
+// Inisialisasi client dengan sesi tersimpan
+const client = new Client({
+  authStrategy: new LocalAuth(),
+  puppeteer: {
+    headless: true,
+    args: ["--no-sandbox", "--disable-setuid-sandbox"],
+  },
+});
 
-client.on("message", async msg => {
-  const text = msg.body.toLowerCase();
+// Tampilkan QR untuk login
+client.on("qr", (qr) => {
+  console.log("📱 Scan QR code di bawah dengan WhatsApp:");
+  qrcode.generate(qr, { small: true });
+});
 
+client.on("ready", () => {
+  console.log("✅ Bot WhatsApp sudah siap!");
+  console.log("📋 Ketik !help di chat untuk lihat perintah");
+});
+
+client.on("authenticated", () => {
+  console.log("🔐 Autentikasi berhasil!");
+});
+
+client.on("auth_failure", (msg) => {
+  console.error("❌ Autentikasi gagal:", msg);
+});
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// Helper: panggil API
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+async function apiGet(endpoint) {
+  try {
+    const res = await fetch(BASE + "?endpoint=" + endpoint, {
+      headers: { "x-api-key": API_KEY },
+    });
+    const json = await res.json();
+    if (!json.success) throw new Error(json.error || "API Error");
+    return json.data;
+  } catch (err) {
+    console.error("API Error:", err.message);
+    return null;
+  }
+}
+
+async function apiPost(endpoint, body) {
+  try {
+    const res = await fetch(BASE + "?endpoint=" + endpoint, {
+      method: "POST",
+      headers: {
+        "x-api-key": API_KEY,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(body),
+    });
+    const json = await res.json();
+    return json;
+  } catch (err) {
+    console.error("API Error:", err.message);
+    return null;
+  }
+}
+
+// Format angka ke Rupiah
+function rp(n) {
+  return "Rp " + Number(n).toLocaleString("id-ID");
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// Handler pesan masuk
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+client.on("message", async (msg) => {
+  const text = msg.body.trim().toLowerCase();
+  const chat = await msg.getChat();
+
+  // ── MENU BANTUAN ──
+  if (text === "!help" || text === "!menu") {
+    const menu = \`🤖 *BOT AGUNG ADI STORE*
+━━━━━━━━━━━━━━━━━━━━━━
+📦 *!produk* — Lihat semua produk
+🔍 *!cari [kata]* — Cari produk
+📢 *!sponsor* — Lihat sponsor aktif
+💰 *!saldo* — Cek saldo semua user
+🎵 *!lagu* — Daftar lagu
+💳 *!deposit* — Riwayat deposit
+🎟️ *!token* — Daftar token
+🔔 *!notif [pesan]* — Kirim notifikasi
+ℹ️ *!help* — Tampilkan menu ini
+━━━━━━━━━━━━━━━━━━━━━━
+_Bot otomatis Agung Adi Store_\`;
+    await msg.reply(menu);
+    return;
+  }
+
+  // ── DAFTAR PRODUK ──
   if (text === "!produk") {
-    const res = await fetch(BASE + "?endpoint=products", {
-      headers: { "x-api-key": API_KEY }
-    });
-    const { data } = await res.json();
-    let reply = "📦 *DAFTAR PRODUK*\\n━━━━━━━━━━━━━━━━━━\\n";
+    const data = await apiGet("products");
+    if (!data || data.length === 0) {
+      await msg.reply("📦 Belum ada produk.");
+      return;
+    }
+    let reply = "📦 *DAFTAR PRODUK*\\n━━━━━━━━━━━━━━━━━━\\n\\n";
     data.forEach((p, i) => {
-      reply += \`\${i+1}. *\${p.title}*\\n\`;
-      reply += \`   💰 Rp \${p.price.toLocaleString()}\\n\`;
-      reply += \`   📦 Stok: \${p.stock}\\n\\n\`;
+      reply += \`*\${i + 1}. \${p.title}*\\n\`;
+      reply += \`   💰 \${rp(p.price)}\\n\`;
+      reply += \`   📦 Stok: \${p.stock}\\n\`;
+      if (p.category) reply += \`   🏷️ Kategori: \${p.category}\\n\`;
+      if (p.description) reply += \`   📝 \${p.description.substring(0, 80)}\\n\`;
+      reply += "\\n";
     });
-    msg.reply(reply);
+    reply += \`_Total: \${data.length} produk_\`;
+    await msg.reply(reply);
+    return;
   }
 
+  // ── CARI PRODUK ──
+  if (text.startsWith("!cari ")) {
+    const keyword = msg.body.trim().substring(6).toLowerCase();
+    const data = await apiGet("products");
+    if (!data) { await msg.reply("❌ Gagal mengambil data."); return; }
+    const hasil = data.filter(
+      (p) =>
+        p.title.toLowerCase().includes(keyword) ||
+        (p.category || "").toLowerCase().includes(keyword) ||
+        (p.description || "").toLowerCase().includes(keyword)
+    );
+    if (hasil.length === 0) {
+      await msg.reply(\`🔍 Tidak ditemukan produk dengan kata kunci "*\${keyword}*"\`);
+      return;
+    }
+    let reply = \`🔍 *HASIL PENCARIAN: "\${keyword}"*\\n━━━━━━━━━━━━━━━━━━\\n\\n\`;
+    hasil.forEach((p, i) => {
+      reply += \`*\${i + 1}. \${p.title}*\\n\`;
+      reply += \`   💰 \${rp(p.price)} | 📦 Stok: \${p.stock}\\n\\n\`;
+    });
+    reply += \`_Ditemukan: \${hasil.length} produk_\`;
+    await msg.reply(reply);
+    return;
+  }
+
+  // ── DAFTAR SPONSOR ──
   if (text === "!sponsor") {
-    const res = await fetch(BASE + "?endpoint=sponsors", {
-      headers: { "x-api-key": API_KEY }
-    });
-    const { data } = await res.json();
-    let reply = "📢 *DAFTAR SPONSOR*\\n━━━━━━━━━━━━━━━━━━\\n";
+    const data = await apiGet("sponsors");
+    if (!data || data.length === 0) {
+      await msg.reply("📢 Belum ada sponsor.");
+      return;
+    }
+    let reply = "📢 *DAFTAR SPONSOR*\\n━━━━━━━━━━━━━━━━━━\\n\\n";
     data.forEach((s, i) => {
-      reply += \`\${i+1}. *\${s.title}*\\n\`;
+      reply += \`*\${i + 1}. \${s.title}* (#\${s.sponsor_number})\\n\`;
       reply += \`   👤 \${s.seller_name}\\n\`;
-      reply += \`   💰 Rp \${s.price.toLocaleString()}\\n\\n\`;
+      reply += \`   💰 \${rp(s.price)}\\n\`;
+      reply += \`   📦 Stok: \${s.stock}\\n\`;
+      if (s.wa_number) reply += \`   📱 WA: \${s.wa_number}\\n\`;
+      reply += \`   ⏰ Status: \${s.is_active ? "✅ Aktif" : "❌ Nonaktif"}\\n\\n\`;
     });
-    msg.reply(reply);
+    await msg.reply(reply);
+    return;
   }
 
+  // ── CEK SALDO ──
   if (text === "!saldo") {
-    const res = await fetch(BASE + "?endpoint=balances", {
-      headers: { "x-api-key": API_KEY }
-    });
-    const { data } = await res.json();
-    let reply = "💰 *DAFTAR SALDO*\\n━━━━━━━━━━━━━━━━━━\\n";
+    const data = await apiGet("balances");
+    if (!data || data.length === 0) {
+      await msg.reply("💰 Belum ada data saldo.");
+      return;
+    }
+    let reply = "💰 *DAFTAR SALDO USER*\\n━━━━━━━━━━━━━━━━━━\\n\\n";
     data.forEach((b, i) => {
-      reply += \`\${i+1}. \${b.username}: Rp \${b.balance.toLocaleString()}\\n\`;
+      reply += \`\${i + 1}. *\${b.username}*: \${rp(b.balance)}\\n\`;
     });
-    msg.reply(reply);
+    await msg.reply(reply);
+    return;
+  }
+
+  // ── DAFTAR LAGU ──
+  if (text === "!lagu") {
+    const data = await apiGet("songs");
+    if (!data || data.length === 0) {
+      await msg.reply("🎵 Belum ada lagu.");
+      return;
+    }
+    let reply = "🎵 *DAFTAR LAGU*\\n━━━━━━━━━━━━━━━━━━\\n\\n";
+    data.forEach((s, i) => {
+      const durasi = s.duration ? \`\${Math.floor(s.duration / 60)}:\${String(s.duration % 60).padStart(2, "0")}\` : "-";
+      reply += \`\${i + 1}. *\${s.title}* — \${s.artist}\\n\`;
+      reply += \`   ⏱️ \${durasi}\\n\\n\`;
+    });
+    reply += \`_Total: \${data.length} lagu_\`;
+    await msg.reply(reply);
+    return;
+  }
+
+  // ── RIWAYAT DEPOSIT ──
+  if (text === "!deposit") {
+    const data = await apiGet("deposits");
+    if (!data || data.length === 0) {
+      await msg.reply("💳 Belum ada deposit.");
+      return;
+    }
+    let reply = "💳 *RIWAYAT DEPOSIT*\\n━━━━━━━━━━━━━━━━━━\\n\\n";
+    data.slice(0, 10).forEach((d, i) => {
+      const tgl = new Date(d.created_at).toLocaleString("id-ID");
+      reply += \`\${i + 1}. *\${d.username}* — \${rp(d.amount)}\\n\`;
+      reply += \`   📅 \${tgl}\\n\`;
+      reply += \`   💳 \${d.payment_method.toUpperCase()} | \${d.status === "success" ? "✅" : "⏳"} \${d.status}\\n\\n\`;
+    });
+    await msg.reply(reply);
+    return;
+  }
+
+  // ── DAFTAR TOKEN ──
+  if (text === "!token") {
+    const data = await apiGet("tokens");
+    if (!data || data.length === 0) {
+      await msg.reply("🎟️ Belum ada token.");
+      return;
+    }
+    let reply = "🎟️ *DAFTAR TOKEN*\\n━━━━━━━━━━━━━━━━━━\\n\\n";
+    data.slice(0, 15).forEach((t, i) => {
+      const produk = t.products ? t.products.title : "-";
+      reply += \`\${i + 1}. \${t.token_code}\\n\`;
+      reply += \`   📦 \${produk} | \${t.is_claimed ? "✅ Diklaim" : "⏳ Belum"}\\n\\n\`;
+    });
+    await msg.reply(reply);
+    return;
+  }
+
+  // ── KIRIM NOTIFIKASI ──
+  if (text.startsWith("!notif ")) {
+    const pesan = msg.body.trim().substring(7);
+    if (!pesan) { await msg.reply("❌ Tulis pesan: !notif [isi pesan]"); return; }
+    const result = await apiPost("notifications", {
+      visitor_id: "wa-bot",
+      title: "Notifikasi dari Bot WA",
+      message: pesan,
+      type: "info",
+    });
+    if (result && result.success) {
+      await msg.reply("✅ Notifikasi berhasil dikirim!");
+    } else {
+      await msg.reply("❌ Gagal mengirim notifikasi.");
+    }
+    return;
   }
 });
 
+// Jalankan bot
 client.initialize();
+console.log("🚀 Memulai bot WhatsApp...");
+console.log("📱 Tunggu QR code muncul...");`;
 
-# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-# CONTOH PYTHON
-# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-import requests
+  const setupSteps = `# =============================================
+# 🛠️ PANDUAN SETUP BOT WHATSAPP (Step by Step)
+# =============================================
 
-API_KEY = "YOUR_API_KEY"
-BASE = "${baseUrl}"
-headers = {"x-api-key": API_KEY}
+# LANGKAH 1: Install Node.js
+# Download dari: https://nodejs.org (pilih LTS)
+# Cek instalasi:
+node --version
+npm --version
 
-# Ambil produk
-res = requests.get(f"{BASE}?endpoint=products", headers=headers)
-produk = res.json()["data"]
-for p in produk:
-    print(f"{p['title']} - Rp {p['price']:,}")
+# LANGKAH 2: Buat folder project
+mkdir bot-wa-agungadi
+cd bot-wa-agungadi
 
-# Kirim notifikasi
-requests.post(
-    f"{BASE}?endpoint=notifications",
-    headers={**headers, "Content-Type": "application/json"},
-    json={"visitor_id": "xxx", "title": "Halo", "message": "Test"}
-)
+# LANGKAH 3: Inisialisasi project
+npm init -y
 
-# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-# CONTOH FETCH (Browser / Node.js)
-# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-const res = await fetch("${baseUrl}?endpoint=products", {
-  headers: { "x-api-key": "YOUR_API_KEY" }
-});
-const data = await res.json();
-console.log(data);`;
+# LANGKAH 4: Install dependencies
+npm install whatsapp-web.js qrcode-terminal
+
+# LANGKAH 5: Buat file bot.js
+# Salin kode dari tab "Kode Bot WA" di atas
+# Paste ke file bot.js
+
+# LANGKAH 6: Ganti API Key
+# Buka file bot.js
+# Cari baris: const API_KEY = "PASTE_API_KEY_DISINI";
+# Ganti dengan API Key yang sudah kamu buat
+
+# LANGKAH 7: Jalankan bot
+node bot.js
+
+# LANGKAH 8: Scan QR Code
+# QR code akan muncul di terminal
+# Buka WhatsApp > Menu > Linked Devices > Link a Device
+# Scan QR code yang muncul
+
+# LANGKAH 9: Test bot
+# Kirim pesan "!help" ke nomor WA yang terhubung
+# Bot akan membalas dengan daftar perintah
+
+# =============================================
+# ⚠️ CATATAN PENTING:
+# =============================================
+# - Jangan tutup terminal selama bot berjalan
+# - Untuk menjalankan di background, gunakan:
+#   npm install -g pm2
+#   pm2 start bot.js --name "wa-bot"
+#   pm2 save
+#   pm2 startup
+#
+# - Jika QR expired, hapus folder .wwebjs_auth
+#   lalu jalankan ulang: node bot.js
+#
+# - Pastikan internet stabil
+# - Jangan gunakan nomor WA utama untuk testing
+# =============================================`;
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
+      {/* Buat API Key */}
       <Card>
         <CardHeader className="pb-2">
           <CardTitle className="text-sm flex items-center gap-2">
@@ -241,114 +433,259 @@ console.log(data);`;
           />
           <div className="flex gap-2">
             <Button size="sm" className="flex-1 gap-2" onClick={createKey}>
-              <Plus className="w-4 h-4" /> Buat API Key
+              <Plus className="w-4 h-4" /> Buat Key
             </Button>
-            <Button size="sm" variant="outline" onClick={() => setShowUsage(true)}>
-              📖 Cara Pakai
+            <Button size="sm" variant="outline" className="gap-1" onClick={() => setShowUsage(true)}>
+              <BookOpen className="w-3.5 h-3.5" /> Panduan
             </Button>
           </div>
         </CardContent>
       </Card>
 
-      <h3 className="font-bold text-sm">API Keys ({keys.length})</h3>
+      {/* List API Keys */}
+      <div className="flex items-center justify-between">
+        <h3 className="font-bold text-sm">API Keys ({keys.length})</h3>
+      </div>
+
       {keys.map(k => (
-        <Card key={k.id} className={!k.is_active ? "opacity-60" : ""}>
-          <CardContent className="p-3 space-y-2">
-            <div className="flex items-start justify-between gap-2">
-              <div className="flex-1 min-w-0">
-                <p className="font-bold text-sm">{k.key_name}</p>
-                <div className="flex items-center gap-1 mt-1">
-                  <code className="text-[10px] bg-muted px-2 py-1 rounded font-mono break-all flex-1">
-                    {visibleKeys.has(k.id) ? k.api_key : maskKey(k.api_key)}
-                  </code>
-                  <Button size="sm" variant="ghost" className="h-6 w-6 p-0" onClick={() => toggleVisibility(k.id)}>
-                    {visibleKeys.has(k.id) ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
-                  </Button>
-                  <Button size="sm" variant="ghost" className="h-6 w-6 p-0" onClick={() => copyKey(k.api_key, k.id)}>
-                    {copiedId === k.id ? <Check className="w-3 h-3 text-accent" /> : <Copy className="w-3 h-3" />}
-                  </Button>
-                </div>
-              </div>
-              <div className="flex flex-col gap-1 shrink-0">
-                <Button size="sm" variant="outline" className="h-7 text-[10px]" onClick={() => toggleKey(k)}>
-                  {k.is_active ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
+        <Card key={k.id} className={!k.is_active ? "opacity-50" : ""}>
+          <CardContent className="p-3 space-y-1.5">
+            <div className="flex items-center justify-between">
+              <p className="font-bold text-sm truncate flex-1">{k.key_name}</p>
+              <div className="flex gap-0.5 shrink-0">
+                <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => toggleKey(k)}>
+                  {k.is_active ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
                 </Button>
-                <Button size="sm" variant="ghost" className="h-7 text-[10px]" onClick={() => deleteKey(k.id)}>
-                  <Trash2 className="w-3 h-3 text-destructive" />
+                <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => deleteKey(k.id)}>
+                  <Trash2 className="w-3.5 h-3.5 text-destructive" />
                 </Button>
               </div>
             </div>
-            <div className="text-[10px] text-muted-foreground flex flex-wrap gap-3">
-              <span>Dibuat: {new Date(k.created_at).toLocaleString("id-ID")}</span>
+            <div className="flex items-center gap-1">
+              <code className="text-[10px] bg-muted px-2 py-1 rounded font-mono break-all flex-1">
+                {visibleKeys.has(k.id) ? k.api_key : maskKey(k.api_key)}
+              </code>
+              <Button size="sm" variant="ghost" className="h-6 w-6 p-0 shrink-0" onClick={() => toggleVisibility(k.id)}>
+                {visibleKeys.has(k.id) ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
+              </Button>
+              <Button size="sm" variant="ghost" className="h-6 w-6 p-0 shrink-0" onClick={() => copyKey(k.api_key, k.id)}>
+                {copiedId === k.id ? <Check className="w-3 h-3 text-green-500" /> : <Copy className="w-3 h-3" />}
+              </Button>
+            </div>
+            <div className="text-[10px] text-muted-foreground flex flex-wrap gap-2">
+              <span>{new Date(k.created_at).toLocaleDateString("id-ID")}</span>
               {k.last_used_at && (
-                <span className="flex items-center gap-1">
-                  <Clock className="w-3 h-3" /> Terakhir: {new Date(k.last_used_at).toLocaleString("id-ID")}
+                <span className="flex items-center gap-0.5">
+                  <Clock className="w-2.5 h-2.5" />
+                  {new Date(k.last_used_at).toLocaleDateString("id-ID")}
                 </span>
               )}
-              <span className={k.is_active ? "text-accent" : "text-destructive"}>
-                {k.is_active ? "✓ Aktif" : "✗ Nonaktif"}
+              <span className={k.is_active ? "text-green-600" : "text-destructive"}>
+                {k.is_active ? "● Aktif" : "● Nonaktif"}
               </span>
             </div>
           </CardContent>
         </Card>
       ))}
-      {keys.length === 0 && <p className="text-center text-sm text-muted-foreground py-4">Belum ada API Key</p>}
+      {keys.length === 0 && (
+        <p className="text-center text-xs text-muted-foreground py-6">Belum ada API Key. Buat satu untuk mulai.</p>
+      )}
 
+      {/* Dialog Panduan Lengkap */}
       <Dialog open={showUsage} onOpenChange={setShowUsage}>
-        <DialogContent className="max-w-sm max-h-[80vh] overflow-y-auto">
+        <DialogContent className="max-w-[95vw] sm:max-w-lg max-h-[85vh] overflow-y-auto p-4">
           <DialogHeader>
-            <DialogTitle className="text-sm">📖 Cara Pakai API</DialogTitle>
+            <DialogTitle className="text-base flex items-center gap-2">
+              📖 Panduan API & Bot WhatsApp
+            </DialogTitle>
           </DialogHeader>
-          <div className="space-y-2">
-            <p className="text-xs text-muted-foreground">
-              Gunakan API Key di header <code className="bg-muted px-1 rounded">x-api-key</code> untuk mengakses data dari bot WA, script Python, atau aplikasi lainnya.
-            </p>
-            <p className="text-xs font-bold">Base URL:</p>
-            <code className="text-[10px] bg-muted p-2 rounded block break-all font-mono">{baseUrl}</code>
-            
-            <p className="text-xs font-bold">Cara Kerja:</p>
-            <ol className="text-xs space-y-1 list-decimal pl-4 text-muted-foreground">
-              <li>Buat API Key di atas, lalu salin</li>
-              <li>Pasang di header <code className="bg-muted px-1 rounded">x-api-key</code></li>
-              <li>Panggil endpoint yang diinginkan</li>
-              <li>Data dikembalikan dalam format JSON</li>
-            </ol>
-            
-            <p className="text-xs font-bold mt-2">Endpoint Tersedia (GET):</p>
-            <ul className="text-xs space-y-1 list-disc pl-4">
-              <li><code>?endpoint=products</code> — Semua produk (judul, harga, stok, gambar)</li>
-              <li><code>?endpoint=sponsors</code> — Semua sponsor/iklan aktif</li>
-              <li><code>?endpoint=balances</code> — Saldo semua user</li>
-              <li><code>?endpoint=songs</code> — Semua lagu di playlist</li>
-              <li><code>?endpoint=deposits</code> — Riwayat deposit</li>
-              <li><code>?endpoint=tokens</code> — Token & info produk</li>
-              <li><code>?endpoint=notifications</code> — Notifikasi (tambah <code>&visitor_id=xxx</code> untuk filter)</li>
-            </ul>
-            
-            <p className="text-xs font-bold mt-2">Endpoint (POST):</p>
-            <ul className="text-xs space-y-1 list-disc pl-4">
-              <li><code>?endpoint=notifications</code> — Kirim notifikasi
-                <br /><span className="text-muted-foreground">Body: <code>{`{"visitor_id":"xxx","title":"Judul","message":"Isi","type":"info"}`}</code></span>
-              </li>
-            </ul>
-            
-            <p className="text-xs font-bold mt-2">Response Format:</p>
-            <pre className="text-[9px] bg-muted p-2 rounded font-mono">{`{
+
+          <Tabs defaultValue="setup" className="w-full">
+            <TabsList className="w-full grid grid-cols-3 h-8">
+              <TabsTrigger value="setup" className="text-[11px]">🛠️ Setup</TabsTrigger>
+              <TabsTrigger value="botcode" className="text-[11px]">🤖 Kode Bot</TabsTrigger>
+              <TabsTrigger value="api" className="text-[11px]">📡 API Ref</TabsTrigger>
+            </TabsList>
+
+            {/* TAB: Setup Guide */}
+            <TabsContent value="setup" className="space-y-3 mt-3">
+              <Card className="border-primary/30 bg-primary/5">
+                <CardContent className="p-3 space-y-2">
+                  <p className="text-xs font-bold text-primary">🚀 Cara Setup Bot WA (5 Menit)</p>
+                  <div className="space-y-3">
+                    {[
+                      { step: "1", title: "Install Node.js", desc: "Download dari nodejs.org (pilih LTS), lalu install." },
+                      { step: "2", title: "Buat folder project", desc: "Buka terminal/CMD, ketik:" },
+                      { step: "3", title: "Install library", desc: "Di folder project, ketik:" },
+                      { step: "4", title: "Buat API Key", desc: "Buat API Key di halaman ini, lalu salin." },
+                      { step: "5", title: "Buat file bot.js", desc: 'Salin kode dari tab "🤖 Kode Bot", paste ke file bot.js' },
+                      { step: "6", title: "Paste API Key", desc: 'Di bot.js, ganti PASTE_API_KEY_DISINI dengan API Key kamu.' },
+                      { step: "7", title: "Jalankan bot", desc: "Di terminal, ketik: node bot.js" },
+                      { step: "8", title: "Scan QR", desc: "QR muncul di terminal → Scan di WhatsApp → Linked Devices" },
+                    ].map(s => (
+                      <div key={s.step} className="flex gap-2">
+                        <span className="bg-primary text-primary-foreground rounded-full w-5 h-5 flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5">
+                          {s.step}
+                        </span>
+                        <div>
+                          <p className="text-xs font-semibold">{s.title}</p>
+                          <p className="text-[11px] text-muted-foreground">{s.desc}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+
+              <p className="text-xs font-bold">📋 Command Terminal:</p>
+              <pre className="text-[10px] bg-muted p-2 rounded font-mono whitespace-pre-wrap leading-relaxed">
+{`mkdir bot-wa-agungadi
+cd bot-wa-agungadi
+npm init -y
+npm install whatsapp-web.js qrcode-terminal`}
+              </pre>
+              <Button size="sm" variant="outline" className="w-full gap-2 text-xs" onClick={() => copyText("mkdir bot-wa-agungadi && cd bot-wa-agungadi && npm init -y && npm install whatsapp-web.js qrcode-terminal", "Command")}>
+                <Copy className="w-3 h-3" /> Salin Command Install
+              </Button>
+
+              <Card className="border-yellow-500/30 bg-yellow-500/5">
+                <CardContent className="p-3">
+                  <p className="text-xs font-bold text-yellow-700">⚠️ Tips Penting:</p>
+                  <ul className="text-[11px] text-muted-foreground space-y-1 mt-1 list-disc pl-3">
+                    <li>Jangan tutup terminal saat bot jalan</li>
+                    <li>Untuk background: install <code className="bg-muted px-1 rounded">pm2</code> lalu <code className="bg-muted px-1 rounded">pm2 start bot.js</code></li>
+                    <li>QR expired? Hapus folder <code className="bg-muted px-1 rounded">.wwebjs_auth</code> lalu jalankan ulang</li>
+                    <li>Gunakan nomor WA cadangan untuk testing</li>
+                    <li>Pastikan koneksi internet stabil</li>
+                  </ul>
+                </CardContent>
+              </Card>
+
+              <Button size="sm" variant="outline" className="w-full gap-2 text-xs" onClick={() => copyText(setupSteps, "Panduan setup")}>
+                <Download className="w-3 h-3" /> Salin Seluruh Panduan Setup
+              </Button>
+            </TabsContent>
+
+            {/* TAB: Bot Code */}
+            <TabsContent value="botcode" className="space-y-3 mt-3">
+              <p className="text-xs text-muted-foreground">
+                Salin kode di bawah, paste ke file <code className="bg-muted px-1 rounded font-bold">bot.js</code>, ganti API Key, lalu jalankan <code className="bg-muted px-1 rounded">node bot.js</code>
+              </p>
+
+              <Card className="border-green-500/30 bg-green-500/5">
+                <CardContent className="p-2">
+                  <p className="text-[11px] font-bold text-green-700 mb-1">📋 Perintah yang tersedia di bot:</p>
+                  <div className="grid grid-cols-2 gap-1 text-[10px]">
+                    <span><code>!help</code> — Menu bantuan</span>
+                    <span><code>!produk</code> — Daftar produk</span>
+                    <span><code>!cari [kata]</code> — Cari produk</span>
+                    <span><code>!sponsor</code> — Daftar sponsor</span>
+                    <span><code>!saldo</code> — Saldo user</span>
+                    <span><code>!lagu</code> — Daftar lagu</span>
+                    <span><code>!deposit</code> — Riwayat deposit</span>
+                    <span><code>!token</code> — Daftar token</span>
+                    <span><code>!notif [isi]</code> — Kirim notif</span>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <pre className="text-[9px] bg-muted p-2 rounded overflow-x-auto font-mono whitespace-pre-wrap leading-relaxed max-h-[50vh] overflow-y-auto border">
+                {waFullBot}
+              </pre>
+
+              <Button size="sm" className="w-full gap-2" onClick={() => copyText(waFullBot, "Kode bot WA")}>
+                <Copy className="w-3 h-3" /> Salin Kode Bot (Siap Pakai)
+              </Button>
+            </TabsContent>
+
+            {/* TAB: API Reference */}
+            <TabsContent value="api" className="space-y-3 mt-3">
+              <div>
+                <p className="text-xs font-bold">Base URL:</p>
+                <div className="flex items-center gap-1 mt-1">
+                  <code className="text-[10px] bg-muted p-1.5 rounded block break-all font-mono flex-1">{baseUrl}</code>
+                  <Button size="sm" variant="ghost" className="h-7 w-7 p-0 shrink-0" onClick={() => copyText(baseUrl, "URL")}>
+                    <Copy className="w-3 h-3" />
+                  </Button>
+                </div>
+              </div>
+
+              <div>
+                <p className="text-xs font-bold">Header Wajib:</p>
+                <code className="text-[10px] bg-muted p-1.5 rounded block font-mono mt-1">x-api-key: YOUR_API_KEY</code>
+              </div>
+
+              <div>
+                <p className="text-xs font-bold mb-1">Endpoint GET:</p>
+                <div className="space-y-1">
+                  {[
+                    { ep: "products", desc: "Semua produk (judul, harga, stok, gambar, kategori)" },
+                    { ep: "sponsors", desc: "Sponsor/iklan aktif (penjual, harga, kontak)" },
+                    { ep: "balances", desc: "Saldo user (username, balance)" },
+                    { ep: "songs", desc: "Lagu di playlist (judul, artis, durasi)" },
+                    { ep: "deposits", desc: "Riwayat deposit (status, metode, jumlah)" },
+                    { ep: "tokens", desc: "Token & info produk terkait" },
+                    { ep: "notifications", desc: "Notifikasi (tambah &visitor_id=xxx)" },
+                  ].map(e => (
+                    <div key={e.ep} className="flex items-start gap-1.5 text-[11px]">
+                      <code className="bg-primary/10 text-primary px-1 rounded shrink-0 font-mono text-[10px]">{e.ep}</code>
+                      <span className="text-muted-foreground">{e.desc}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <p className="text-xs font-bold mb-1">Endpoint POST:</p>
+                <div className="text-[11px] space-y-1">
+                  <code className="bg-primary/10 text-primary px-1 rounded font-mono text-[10px]">notifications</code>
+                  <pre className="text-[9px] bg-muted p-2 rounded font-mono mt-1">{`{
+  "visitor_id": "xxx",
+  "title": "Judul",
+  "message": "Isi pesan",
+  "type": "info"
+}`}</pre>
+                </div>
+              </div>
+
+              <div>
+                <p className="text-xs font-bold mb-1">Response:</p>
+                <pre className="text-[9px] bg-muted p-2 rounded font-mono">{`{
   "success": true,
   "data": [ ... ]
 }`}</pre>
+              </div>
 
-            <p className="text-xs font-bold mt-2">💡 Contoh Penggunaan Bot WA & Script:</p>
-            <pre className="text-[9px] bg-muted p-2 rounded overflow-x-auto font-mono whitespace-pre-wrap leading-relaxed max-h-60 overflow-y-auto">
-              {usageExample}
-            </pre>
-            <Button size="sm" variant="outline" className="w-full gap-2" onClick={() => {
-              navigator.clipboard.writeText(usageExample);
-              toast({ title: "Contoh script tersalin!" });
-            }}>
-              <Copy className="w-3 h-3" /> Salin Contoh Script
-            </Button>
-          </div>
+              <div>
+                <p className="text-xs font-bold mb-1">Contoh cURL:</p>
+                <pre className="text-[9px] bg-muted p-2 rounded font-mono whitespace-pre-wrap">{`curl -H "x-api-key: YOUR_KEY" \\
+  "${baseUrl}?endpoint=products"`}</pre>
+                <Button size="sm" variant="ghost" className="h-6 text-[10px] mt-1" onClick={() => copyText(`curl -H "x-api-key: YOUR_KEY" "${baseUrl}?endpoint=products"`, "cURL")}>
+                  <Copy className="w-3 h-3 mr-1" /> Salin
+                </Button>
+              </div>
+
+              <div>
+                <p className="text-xs font-bold mb-1">Contoh Python:</p>
+                <pre className="text-[9px] bg-muted p-2 rounded font-mono whitespace-pre-wrap">{`import requests
+
+API_KEY = "YOUR_KEY"
+BASE = "${baseUrl}"
+headers = {"x-api-key": API_KEY}
+
+res = requests.get(
+  f"{BASE}?endpoint=products",
+  headers=headers
+)
+data = res.json()["data"]
+for p in data:
+    print(f"{p['title']} - Rp {p['price']:,}")`}</pre>
+                <Button size="sm" variant="ghost" className="h-6 text-[10px] mt-1" onClick={() => copyText(`import requests\n\nAPI_KEY = "YOUR_KEY"\nBASE = "${baseUrl}"\nheaders = {"x-api-key": API_KEY}\n\nres = requests.get(f"{BASE}?endpoint=products", headers=headers)\ndata = res.json()["data"]\nfor p in data:\n    print(f"{p['title']} - Rp {p['price']:,}")`, "Python")}>
+                  <Copy className="w-3 h-3 mr-1" /> Salin
+                </Button>
+              </div>
+            </TabsContent>
+          </Tabs>
         </DialogContent>
       </Dialog>
     </div>
