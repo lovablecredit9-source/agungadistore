@@ -39,6 +39,9 @@ interface Sponsor {
   threads: string;
   category: string;
   stock: number;
+  has_warranty: boolean;
+  warranty_duration_value: number;
+  warranty_duration_type: string;
 }
 
 type SortOrder = "newest" | "oldest";
