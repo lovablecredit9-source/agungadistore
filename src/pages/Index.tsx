@@ -395,6 +395,7 @@ const Index = () => {
     fetchDeposits();
     fetchAdminSettings();
     checkPinStatus();
+    fetchHomeSponsors();
 
     // Deep link handling for sponsor share links
     const params = new URLSearchParams(window.location.search);
