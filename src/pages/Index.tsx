@@ -2277,6 +2277,83 @@ const Index = () => {
                 </ul>
               </div>
 
+              {/* Sponsor / Iklan Produk */}
+              <div className="rounded-xl bg-muted/60 border border-border p-3 space-y-1.5">
+                <p className="font-bold text-foreground text-xs uppercase tracking-wider">🏪 Sponsor / Iklan Produk</p>
+                <div className="space-y-1 text-[13px]">
+                  <p><strong>Sponsor</strong> adalah fitur iklan produk dari penjual pihak ketiga yang ditampilkan di platform. Admin hanya menyediakan tempat iklan.</p>
+                  <ul className="list-disc list-inside space-y-0.5">
+                    <li><strong>Apa itu sponsor?</strong> Penjual membayar admin untuk mengiklankan produk mereka di platform selama durasi tertentu.</li>
+                    <li><strong>Cara membeli dengan aman:</strong> Selalu gunakan layanan <strong>Rekber (Rekening Bersama)</strong> via Admin WA untuk menghindari penipuan.</li>
+                    <li><strong>Cara menggunakan rekber:</strong> Klik tombol "Mohon Rekber Admin (WA)" pada halaman sponsor, pesan otomatis akan terkirim ke admin.</li>
+                    <li><strong>Cara melaporkan penjual bermasalah:</strong> Buat tiket di tab Tiket atau hubungi admin WA 085769302532 dengan bukti screenshot.</li>
+                    <li><strong>Produk admin vs produk sponsor:</strong> Produk admin dijual langsung dan dijamin. Produk sponsor dijual oleh pihak ketiga — admin tidak bertanggung jawab atas kualitas produk sponsor.</li>
+                  </ul>
+                </div>
+              </div>
+
+              {/* Cara Rekber */}
+              <div className="rounded-xl bg-muted/60 border border-border p-3 space-y-1.5">
+                <p className="font-bold text-foreground text-xs uppercase tracking-wider">🔄 Cara Rekber (Rekening Bersama)</p>
+                <div className="space-y-1 text-[13px]">
+                  <p><strong>Rekber</strong> adalah layanan perantara transaksi melalui admin untuk memastikan keamanan pembeli dan penjual.</p>
+                  <ol className="list-decimal list-inside space-y-0.5">
+                    <li><strong>Pembeli</strong> klik tombol "Mohon Rekber Admin (WA)" di halaman sponsor — detail produk otomatis terkirim.</li>
+                    <li><strong>Admin</strong> menghubungi penjual untuk konfirmasi ketersediaan produk.</li>
+                    <li><strong>Pembeli</strong> mengirimkan uang ke admin (bukan langsung ke penjual).</li>
+                    <li><strong>Penjual</strong> mengirimkan produk ke pembeli. Pembeli mengecek produk.</li>
+                    <li>Jika produk sesuai, <strong>admin meneruskan uang ke penjual</strong>. Jika tidak sesuai, uang dikembalikan ke pembeli.</li>
+                  </ol>
+                  <div className="mt-2 p-2 bg-muted/40 rounded-lg text-[12px]">
+                    <p className="font-semibold text-foreground">💡 Kapan harus pakai rekber?</p>
+                    <ul className="list-disc list-inside space-y-0.5">
+                      <li><strong>Selalu</strong> saat membeli produk sponsor dari penjual yang belum dikenal</li>
+                      <li>Saat transaksi bernilai besar</li>
+                      <li>Saat penjual baru atau belum punya reputasi</li>
+                    </ul>
+                    <p className="mt-1 font-semibold text-foreground">💰 Biaya rekber: <strong>Gratis</strong> (tidak dipungut biaya tambahan)</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Keamanan Transaksi Sponsor */}
+              <div className="rounded-xl bg-destructive/5 border border-destructive/20 p-3 space-y-1.5">
+                <p className="font-bold text-foreground text-xs uppercase tracking-wider">⚠️ Keamanan Transaksi Sponsor</p>
+                <div className="space-y-1 text-[13px]">
+                  <p className="font-semibold text-foreground">🛡️ Tips agar tidak tertipu:</p>
+                  <ul className="list-disc list-inside space-y-0.5">
+                    <li>Selalu gunakan <strong>rekber admin</strong> untuk setiap transaksi sponsor</li>
+                    <li>Cek <strong>deskripsi, stok, dan garansi</strong> produk sebelum membeli</li>
+                    <li>Simpan <strong>screenshot percakapan dan bukti transfer</strong></li>
+                    <li>Jangan transfer langsung ke penjual tanpa melalui rekber</li>
+                    <li>Waspada jika penjual menolak menggunakan rekber</li>
+                  </ul>
+                  <p className="mt-2 font-semibold text-foreground">✅ Ciri-ciri penjual terpercaya:</p>
+                  <ul className="list-disc list-inside space-y-0.5">
+                    <li>Bersedia menggunakan rekber admin</li>
+                    <li>Deskripsi produk jelas dan detail</li>
+                    <li>Memiliki garansi produk</li>
+                    <li>Responsif dan komunikatif</li>
+                    <li>Memiliki sosial media yang aktif</li>
+                  </ul>
+                  <p className="mt-2 font-semibold text-foreground">🚨 Jika tertipu, lakukan:</p>
+                  <ol className="list-decimal list-inside space-y-0.5">
+                    <li>Screenshot semua bukti (chat, transfer, produk)</li>
+                    <li>Buat <strong>tiket keluhan</strong> di tab Tiket</li>
+                    <li>Hubungi admin WA <strong>085769302532</strong></li>
+                    <li>Admin akan membantu investigasi dan tindakan</li>
+                  </ol>
+                  <div className="mt-2 p-2 bg-muted/40 rounded-lg text-[12px]">
+                    <p className="font-semibold text-foreground">⚖️ Hak Pembeli & Penjual:</p>
+                    <ul className="list-disc list-inside space-y-0.5">
+                      <li><strong>Pembeli:</strong> berhak mendapat produk sesuai deskripsi, refund jika produk tidak sesuai (via rekber)</li>
+                      <li><strong>Penjual:</strong> berhak mendapat pembayaran setelah produk dikonfirmasi pembeli</li>
+                      <li>Komplain dilayani <strong>maksimal 1x24 jam</strong> setelah transaksi</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+
               {/* FAQ */}
               <div className="rounded-xl bg-accent/10 border border-accent/20 p-3 space-y-2">
                 <p className="font-bold text-foreground text-xs uppercase tracking-wider">❓ FAQ (Pertanyaan Umum)</p>
@@ -2308,6 +2385,18 @@ const Index = () => {
                   <div>
                     <p className="font-semibold text-foreground">Q: Apa itu voucher musik?</p>
                     <p>A: Kode khusus untuk menambah kapasitas penyimpanan musik atau mendapat diskon.</p>
+                  </div>
+                  <div>
+                    <p className="font-semibold text-foreground">Q: Apa itu rekber?</p>
+                    <p>A: Rekber (Rekening Bersama) adalah layanan perantara transaksi melalui admin. Uang pembeli ditahan admin sampai produk diterima dan dikonfirmasi. Jika produk tidak sesuai, uang dikembalikan ke pembeli.</p>
+                  </div>
+                  <div>
+                    <p className="font-semibold text-foreground">Q: Apakah produk sponsor dijamin admin?</p>
+                    <p>A: Tidak. Admin hanya menyediakan platform iklan. Produk sponsor dijual oleh pihak ketiga. Gunakan rekber untuk keamanan transaksi.</p>
+                  </div>
+                  <div>
+                    <p className="font-semibold text-foreground">Q: Bagaimana jika penjual sponsor menipu?</p>
+                    <p>A: Segera buat tiket keluhan di tab Tiket dengan bukti screenshot. Hubungi admin WA 085769302532. Admin akan investigasi dan memblokir penjual jika terbukti menipu.</p>
                   </div>
                 </div>
               </div>
