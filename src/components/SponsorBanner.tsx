@@ -291,6 +291,11 @@ export default function SponsorBanner() {
               <Badge variant={sponsor.stock > 0 ? "secondary" : "destructive"} className="text-[10px] font-bold">
                 Stok: {sponsor.stock > 0 ? sponsor.stock : "Habis"}
               </Badge>
+              <Badge variant={sponsor.has_warranty ? "secondary" : "outline"} className="text-[10px] font-bold">
+                {sponsor.has_warranty
+                  ? `Garansi ${sponsor.warranty_duration_value} ${sponsor.warranty_duration_type === "hours" ? "Jam" : sponsor.warranty_duration_type === "days" ? "Hari" : "Bulan"}`
+                  : "Tanpa Garansi"}
+              </Badge>
             </div>
             {/* Social buttons preview */}
             {socialLinks.length > 0 && (
