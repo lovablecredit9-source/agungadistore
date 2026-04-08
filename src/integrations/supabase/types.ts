@@ -273,6 +273,35 @@ export type Database = {
           },
         ]
       }
+      liked_sponsors: {
+        Row: {
+          created_at: string
+          id: string
+          sponsor_id: string
+          visitor_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          sponsor_id: string
+          visitor_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          sponsor_id?: string
+          visitor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "liked_sponsors_sponsor_id_fkey"
+            columns: ["sponsor_id"]
+            isOneToOne: false
+            referencedRelation: "sponsors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       music_discount_vouchers: {
         Row: {
           code: string

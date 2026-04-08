@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Megaphone, Clock, User, Phone, ChevronLeft, ChevronRight, X, Search, Filter, ArrowUpDown } from "lucide-react";
+import { Megaphone, Clock, User, Phone, ChevronLeft, ChevronRight, X, Search, Filter, ArrowUpDown, Heart } from "lucide-react";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
@@ -75,7 +75,12 @@ const socialIcons: Record<string, { label: string; url: (v: string) => string; c
   threads: { label: "Threads", url: v => `https://threads.net/@${v.replace("@", "")}`, color: "bg-gray-600 hover:bg-gray-700" },
 };
 
-export default function SponsorBanner() {
+interface SponsorBannerProps {
+  likedSponsorIds?: Set<string>;
+  onToggleLikeSponsor?: (sponsorId: string, e?: React.MouseEvent) => void;
+}
+
+export default function SponsorBanner({ likedSponsorIds = new Set(), onToggleLikeSponsor }: SponsorBannerProps) {
   const [sponsors, setSponsors] = useState<Sponsor[]>([]);
   const [sponsorImages, setSponsorImages] = useState<Record<string, SponsorImage[]>>({});
   const [current, setCurrent] = useState(0);
@@ -279,7 +284,14 @@ export default function SponsorBanner() {
             </div>
           )}
           <CardContent className="p-3 space-y-1.5">
-            <h4 className="font-extrabold text-sm leading-tight">{sponsor.title}</h4>
+            <div className="flex items-start justify-between">
+              <h4 className="font-extrabold text-sm leading-tight flex-1">{sponsor.title}</h4>
+              {onToggleLikeSponsor && (
+                <button onClick={(e) => { e.stopPropagation(); onToggleLikeSponsor(sponsor.id, e); }} className="ml-2 shrink-0">
+                  <Heart className={`w-5 h-5 ${likedSponsorIds.has(sponsor.id) ? "fill-destructive text-destructive" : "text-muted-foreground"}`} />
+                </button>
+              )}
+            </div>
             {sponsor.description && (
               <p className="text-xs text-muted-foreground line-clamp-2">{sponsor.description}</p>
             )}
@@ -325,13 +337,15 @@ export default function SponsorBanner() {
           sponsor={selectedSponsor}
           images={sponsorImages[selectedSponsor.id] || []}
           onClose={() => setSelectedSponsor(null)}
+          isLiked={likedSponsorIds.has(selectedSponsor.id)}
+          onToggleLike={onToggleLikeSponsor}
         />
       )}
     </>
   );
 }
 
-function SponsorDetailModal({ sponsor, images, onClose }: { sponsor: Sponsor; images: SponsorImage[]; onClose: () => void }) {
+function SponsorDetailModal({ sponsor, images, onClose, isLiked, onToggleLike }: { sponsor: Sponsor; images: SponsorImage[]; onClose: () => void; isLiked?: boolean; onToggleLike?: (sponsorId: string, e?: React.MouseEvent) => void }) {
   const [imgIdx, setImgIdx] = useState(0);
   const allImages = images.length > 0 ? images.map(i => i.image_url) : (sponsor.image_url ? [sponsor.image_url] : []);
 
@@ -372,9 +386,16 @@ function SponsorDetailModal({ sponsor, images, onClose }: { sponsor: Sponsor; im
               <p className="text-[10px] font-mono text-muted-foreground">#{sponsor.sponsor_number}</p>
               <h3 className="font-extrabold text-lg">{sponsor.title}</h3>
             </div>
-            <button onClick={onClose} className="w-8 h-8 rounded-full bg-muted flex items-center justify-center shrink-0 ml-2">
-              <X className="w-4 h-4" />
-            </button>
+            <div className="flex items-center gap-2 shrink-0 ml-2">
+              {onToggleLike && (
+                <button onClick={() => onToggleLike(sponsor.id)}>
+                  <Heart className={`w-6 h-6 ${isLiked ? "fill-destructive text-destructive" : "text-muted-foreground"}`} />
+                </button>
+              )}
+              <button onClick={onClose} className="w-8 h-8 rounded-full bg-muted flex items-center justify-center">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
           </div>
           {sponsor.price > 0 && (
             <p className="text-xl font-extrabold text-primary">{formatPrice(sponsor.price)}</p>
