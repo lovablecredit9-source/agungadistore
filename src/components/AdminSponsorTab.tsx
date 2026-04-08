@@ -577,15 +577,38 @@ export default function AdminSponsorTab() {
       return sortOrder === "newest" ? db - da : da - db;
     });
 
+  function addPdfHeader(doc: jsPDF) {
+    // Logo circle
+    doc.setFillColor(99, 102, 241);
+    doc.circle(20, 15, 6, "F");
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(8);
+    doc.text("AAS", 20, 16, { align: "center" });
+    doc.setTextColor(0, 0, 0);
+
+    doc.setFontSize(14);
+    doc.text(STORE_TITLE, 30, 13);
+    doc.setFontSize(8);
+    doc.setTextColor(100, 100, 100);
+    doc.text("https://produkklaimtransaksiagungadistore.lovable.app", 30, 18);
+    doc.setTextColor(0, 0, 0);
+
+    doc.setDrawColor(99, 102, 241);
+    doc.setLineWidth(0.5);
+    doc.line(14, 23, doc.internal.pageSize.width - 14, 23);
+  }
+
   function downloadPDF() {
     const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
-    doc.setFontSize(16);
-    doc.text("Laporan Data Sponsor", 14, 15);
+    addPdfHeader(doc);
+
+    doc.setFontSize(12);
+    doc.text("Laporan Data Sponsor", 14, 30);
     doc.setFontSize(9);
-    doc.text(`Tanggal: ${new Date().toLocaleString("id-ID")} | Total: ${filtered.length} sponsor`, 14, 22);
+    doc.text(`Tanggal: ${new Date().toLocaleString("id-ID")} | Total: ${filtered.length} sponsor`, 14, 36);
 
     autoTable(doc, {
-      startY: 28,
+      startY: 40,
       head: [["#ID", "Judul", "Kategori", "Penjual", "Harga", "Durasi", "Sisa Waktu", "Status"]],
       body: filtered.map(s => [
         `#${s.sponsor_number}`,
@@ -598,11 +621,28 @@ export default function AdminSponsorTab() {
         s.is_active ? "Aktif" : "Nonaktif",
       ]),
       styles: { fontSize: 8 },
-      headStyles: { fillColor: [59, 130, 246] },
+      headStyles: { fillColor: [99, 102, 241] },
     });
+
+    // Footer
+    const pageCount = doc.getNumberOfPages();
+    for (let i = 1; i <= pageCount; i++) {
+      doc.setPage(i);
+      doc.setFontSize(7);
+      doc.setTextColor(150, 150, 150);
+      doc.text(`${STORE_TITLE} — Halaman ${i}/${pageCount}`, doc.internal.pageSize.width / 2, doc.internal.pageSize.height - 8, { align: "center" });
+    }
 
     doc.save(`sponsor-report-${Date.now()}.pdf`);
     toast({ title: "PDF berhasil diunduh! 📄" });
+  }
+
+  function copySponsorData() {
+    const text = filtered.map(s =>
+      `#${s.sponsor_number} | ${s.title} | ${s.category || "-"} | ${s.seller_name} | ${formatPrice(s.price)} | ${s.duration_value} ${durationLabels[s.duration_type]} | Sisa: ${timeRemainingStr(s.expires_at)} | ${s.is_active ? "Aktif" : "Nonaktif"}`
+    ).join("\n");
+    navigator.clipboard.writeText(`📢 DATA SPONSOR ${STORE_TITLE}\nTanggal: ${new Date().toLocaleString("id-ID")}\nTotal: ${filtered.length}\n━━━━━━━━━━━━━━━━━━━━\n${text}`);
+    toast({ title: "Data sponsor tersalin! 📋" });
   }
 
   return (
