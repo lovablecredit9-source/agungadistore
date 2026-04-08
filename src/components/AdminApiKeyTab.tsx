@@ -25,6 +25,8 @@ export default function AdminApiKeyTab() {
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [visibleKeys, setVisibleKeys] = useState<Set<string>>(new Set());
   const [showUsage, setShowUsage] = useState(false);
+  const [downloadKeyId, setDownloadKeyId] = useState<string>("");
+  const [customApiKey, setCustomApiKey] = useState("");
   const { toast } = useToast();
 
   useEffect(() => { fetchKeys(); }, []);
