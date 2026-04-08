@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { Megaphone, Trash2, Edit2, X, ImagePlus, Clock, Eye, EyeOff, TimerReset, Share2, Check, Search, Download, ArrowUpDown, History } from "lucide-react";
+import { Megaphone, Trash2, Edit2, X, ImagePlus, Clock, Eye, EyeOff, TimerReset, Share2, Check, Search, Download, ArrowUpDown, History, Copy } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import jsPDF from "jspdf";
@@ -504,6 +504,8 @@ const actionLabels: Record<string, string> = {
   payment: "💰 Pembayaran",
 };
 
+const STORE_TITLE = "PRODUK KLAIM TRANSAKSI AGUNG ADI STORE";
+
 // --- Main Component ---
 export default function AdminSponsorTab() {
   const [sponsors, setSponsors] = useState<Sponsor[]>([]);
@@ -516,6 +518,7 @@ export default function AdminSponsorTab() {
   const [sortOrder, setSortOrder] = useState<"newest" | "oldest">("newest");
   const [showHistory, setShowHistory] = useState(false);
   const [history, setHistory] = useState<SponsorHistoryItem[]>([]);
+  const [selectedHistory, setSelectedHistory] = useState<SponsorHistoryItem | null>(null);
   const { toast } = useToast();
 
   useEffect(() => { fetchSponsors(); }, []);
@@ -575,15 +578,38 @@ export default function AdminSponsorTab() {
       return sortOrder === "newest" ? db - da : da - db;
     });
 
+  function addPdfHeader(doc: jsPDF) {
+    // Logo circle
+    doc.setFillColor(99, 102, 241);
+    doc.circle(20, 15, 6, "F");
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(8);
+    doc.text("AAS", 20, 16, { align: "center" });
+    doc.setTextColor(0, 0, 0);
+
+    doc.setFontSize(14);
+    doc.text(STORE_TITLE, 30, 13);
+    doc.setFontSize(8);
+    doc.setTextColor(100, 100, 100);
+    doc.text("https://produkklaimtransaksiagungadistore.lovable.app", 30, 18);
+    doc.setTextColor(0, 0, 0);
+
+    doc.setDrawColor(99, 102, 241);
+    doc.setLineWidth(0.5);
+    doc.line(14, 23, doc.internal.pageSize.width - 14, 23);
+  }
+
   function downloadPDF() {
     const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
-    doc.setFontSize(16);
-    doc.text("Laporan Data Sponsor", 14, 15);
+    addPdfHeader(doc);
+
+    doc.setFontSize(12);
+    doc.text("Laporan Data Sponsor", 14, 30);
     doc.setFontSize(9);
-    doc.text(`Tanggal: ${new Date().toLocaleString("id-ID")} | Total: ${filtered.length} sponsor`, 14, 22);
+    doc.text(`Tanggal: ${new Date().toLocaleString("id-ID")} | Total: ${filtered.length} sponsor`, 14, 36);
 
     autoTable(doc, {
-      startY: 28,
+      startY: 40,
       head: [["#ID", "Judul", "Kategori", "Penjual", "Harga", "Durasi", "Sisa Waktu", "Status"]],
       body: filtered.map(s => [
         `#${s.sponsor_number}`,
@@ -596,11 +622,28 @@ export default function AdminSponsorTab() {
         s.is_active ? "Aktif" : "Nonaktif",
       ]),
       styles: { fontSize: 8 },
-      headStyles: { fillColor: [59, 130, 246] },
+      headStyles: { fillColor: [99, 102, 241] },
     });
+
+    // Footer
+    const pageCount = doc.getNumberOfPages();
+    for (let i = 1; i <= pageCount; i++) {
+      doc.setPage(i);
+      doc.setFontSize(7);
+      doc.setTextColor(150, 150, 150);
+      doc.text(`${STORE_TITLE} — Halaman ${i}/${pageCount}`, doc.internal.pageSize.width / 2, doc.internal.pageSize.height - 8, { align: "center" });
+    }
 
     doc.save(`sponsor-report-${Date.now()}.pdf`);
     toast({ title: "PDF berhasil diunduh! 📄" });
+  }
+
+  function copySponsorData() {
+    const text = filtered.map(s =>
+      `#${s.sponsor_number} | ${s.title} | ${s.category || "-"} | ${s.seller_name} | ${formatPrice(s.price)} | ${s.duration_value} ${durationLabels[s.duration_type]} | Sisa: ${timeRemainingStr(s.expires_at)} | ${s.is_active ? "Aktif" : "Nonaktif"}`
+    ).join("\n");
+    navigator.clipboard.writeText(`📢 DATA SPONSOR ${STORE_TITLE}\nTanggal: ${new Date().toLocaleString("id-ID")}\nTotal: ${filtered.length}\n━━━━━━━━━━━━━━━━━━━━\n${text}`);
+    toast({ title: "Data sponsor tersalin! 📋" });
   }
 
   return (
@@ -654,6 +697,9 @@ export default function AdminSponsorTab() {
             </Button>
             <Button size="sm" variant="outline" className="h-8 text-xs gap-1" onClick={downloadPDF}>
               <Download className="w-3 h-3" /> PDF
+            </Button>
+            <Button size="sm" variant="outline" className="h-8 text-xs gap-1" onClick={copySponsorData}>
+              <Copy className="w-3 h-3" /> Salin
             </Button>
             <Button size="sm" variant="outline" className="h-8 text-xs gap-1" onClick={() => { fetchHistory(); setShowHistory(true); }}>
               <History className="w-3 h-3" /> Riwayat
@@ -742,27 +788,96 @@ export default function AdminSponsorTab() {
             {history.map(h => {
               const sp = sponsors.find(s => s.id === h.sponsor_id);
               return (
-                <div key={h.id} className="bg-muted rounded-lg p-3 space-y-1">
+                <div
+                  key={h.id}
+                  className="bg-muted rounded-lg p-3 space-y-1 cursor-pointer hover:bg-muted/70 active:scale-[0.98] transition-all"
+                  onClick={() => setSelectedHistory(h)}
+                >
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-bold">{actionLabels[h.action] || h.action}</span>
                     <span className="text-[10px] text-muted-foreground">{formatDateTime(h.created_at)}</span>
                   </div>
                   {sp && <p className="text-[10px] font-medium">#{sp.sponsor_number} — {sp.title}</p>}
                   {!sp && <p className="text-[10px] text-muted-foreground">Sponsor ID: {h.sponsor_id.slice(0, 8)}...</p>}
-                  {h.details && <p className="text-[10px] text-muted-foreground">{h.details}</p>}
-                  {h.amount > 0 && <p className="text-[10px] text-primary font-bold">{formatPrice(h.amount)}</p>}
-                  {h.old_expires_at && h.new_expires_at && (
-                    <p className="text-[10px] text-muted-foreground">
-                      {formatDateTime(h.old_expires_at)} → {formatDateTime(h.new_expires_at)}
-                    </p>
-                  )}
-                  {!h.old_expires_at && h.new_expires_at && (
-                    <p className="text-[10px] text-muted-foreground">Berakhir: {formatDateTime(h.new_expires_at)}</p>
-                  )}
+                  {h.details && <p className="text-[10px] text-muted-foreground truncate">{h.details}</p>}
                 </div>
               );
             })}
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* History Detail Dialog */}
+      <Dialog open={!!selectedHistory} onOpenChange={v => !v && setSelectedHistory(null)}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="text-sm flex items-center gap-2">
+              📋 Detail Riwayat
+            </DialogTitle>
+          </DialogHeader>
+          {selectedHistory && (() => {
+            const sp = sponsors.find(s => s.id === selectedHistory.sponsor_id);
+            const detailText = `📋 DETAIL RIWAYAT SPONSOR
+━━━━━━━━━━━━━━━━━━━━
+📌 Aksi: ${actionLabels[selectedHistory.action] || selectedHistory.action}
+🕐 Waktu: ${formatDateTime(selectedHistory.created_at)}
+${sp ? `🆔 ID: #${sp.sponsor_number}\n📌 Sponsor: ${sp.title}\n👤 Penjual: ${sp.seller_name}` : `🆔 Sponsor ID: ${selectedHistory.sponsor_id.slice(0, 8)}...`}
+${selectedHistory.details ? `📝 Detail: ${selectedHistory.details}` : ""}
+${selectedHistory.amount > 0 ? `💰 Nominal: ${formatPrice(selectedHistory.amount)}` : ""}
+${selectedHistory.old_expires_at ? `📅 Sebelum: ${formatDateTime(selectedHistory.old_expires_at)}` : ""}
+${selectedHistory.new_expires_at ? `📅 Sesudah: ${formatDateTime(selectedHistory.new_expires_at)}` : ""}
+━━━━━━━━━━━━━━━━━━━━
+${STORE_TITLE}`;
+
+            return (
+              <div className="space-y-3">
+                <div className="bg-muted rounded-lg p-3 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold">{actionLabels[selectedHistory.action] || selectedHistory.action}</span>
+                    <span className="text-[10px] text-muted-foreground">{formatDateTime(selectedHistory.created_at)}</span>
+                  </div>
+                  {sp && (
+                    <div className="space-y-1">
+                      <p className="text-xs font-bold">#{sp.sponsor_number} — {sp.title}</p>
+                      <p className="text-[10px] text-muted-foreground">Penjual: {sp.seller_name}</p>
+                      {sp.category && <span className="inline-block text-[10px] bg-primary/10 text-primary px-2 py-0.5 rounded-full">{sp.category}</span>}
+                    </div>
+                  )}
+                  {!sp && <p className="text-[10px] text-muted-foreground">Sponsor ID: {selectedHistory.sponsor_id.slice(0, 8)}...</p>}
+                  {selectedHistory.details && <p className="text-xs text-muted-foreground">{selectedHistory.details}</p>}
+                  {selectedHistory.amount > 0 && <p className="text-xs text-primary font-bold">{formatPrice(selectedHistory.amount)}</p>}
+                  {selectedHistory.old_expires_at && selectedHistory.new_expires_at && (
+                    <div className="bg-primary/10 rounded p-2 space-y-1">
+                      <p className="text-[10px] font-bold text-primary">Perubahan Waktu:</p>
+                      <p className="text-[10px]">Sebelum: {formatDateTime(selectedHistory.old_expires_at)}</p>
+                      <p className="text-[10px]">Sesudah: {formatDateTime(selectedHistory.new_expires_at)}</p>
+                    </div>
+                  )}
+                  {!selectedHistory.old_expires_at && selectedHistory.new_expires_at && (
+                    <p className="text-[10px]">Berakhir: {formatDateTime(selectedHistory.new_expires_at)}</p>
+                  )}
+                </div>
+                <div className="flex gap-2">
+                  <Button size="sm" variant="outline" className="flex-1 gap-2" onClick={() => {
+                    navigator.clipboard.writeText(detailText);
+                    toast({ title: "Detail tersalin! 📋" });
+                  }}>
+                    <Copy className="w-3 h-3" /> Salin
+                  </Button>
+                  <Button size="sm" variant="outline" className="flex-1 gap-2" onClick={() => {
+                    if (navigator.share) {
+                      navigator.share({ title: "Detail Riwayat Sponsor", text: detailText });
+                    } else {
+                      navigator.clipboard.writeText(detailText);
+                      toast({ title: "Detail tersalin! 📋" });
+                    }
+                  }}>
+                    <Share2 className="w-3 h-3" /> Bagikan
+                  </Button>
+                </div>
+              </div>
+            );
+          })()}
         </DialogContent>
       </Dialog>
     </div>
