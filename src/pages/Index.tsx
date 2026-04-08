@@ -249,6 +249,7 @@ const Index = () => {
 
   // Likes
   const [likedIds, setLikedIds] = useState<Set<string>>(new Set());
+  const [likedSponsorIds, setLikedSponsorIds] = useState<Set<string>>(new Set());
   const visitorId = getVisitorId();
 
   // Tickets
