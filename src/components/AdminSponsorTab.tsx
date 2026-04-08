@@ -335,6 +335,15 @@ function ExtendDialog({
       is_active: true,
     } as any).eq("id", sponsor.id);
     if (error) { toast({ title: "Gagal perpanjang", variant: "destructive" }); return; }
+    // Log history: extended
+    await supabase.from("sponsor_history").insert({
+      sponsor_id: sponsor.id,
+      action: "extended",
+      details: `Perpanjang +${ev} ${durationLabels[extType]}`,
+      old_expires_at: sponsor.expires_at,
+      new_expires_at: newExpiry.toISOString(),
+      amount: sponsor.price,
+    } as any);
     toast({ title: "Sponsor berhasil diperpanjang! ⏰" });
     onExtended({
       sponsor,
