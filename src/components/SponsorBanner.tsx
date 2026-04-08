@@ -405,6 +405,15 @@ function SponsorDetailModal({ sponsor, images, onClose }: { sponsor: Sponsor; im
               <span className="font-medium">Stok:</span>
               <span className={sponsor.stock > 0 ? "text-foreground" : "text-destructive font-bold"}>{sponsor.stock > 0 ? sponsor.stock : "Habis"}</span>
             </div>
+            <div className="flex items-center gap-2">
+              <Megaphone className="w-4 h-4 text-primary" />
+              <span className="font-medium">Garansi:</span>
+              <span className={sponsor.has_warranty ? "text-foreground font-bold" : "text-muted-foreground"}>
+                {sponsor.has_warranty
+                  ? `${sponsor.warranty_duration_value} ${sponsor.warranty_duration_type === "hours" ? "Jam" : sponsor.warranty_duration_type === "days" ? "Hari" : "Bulan"}`
+                  : "Tidak ada"}
+              </span>
+            </div>
           </div>
 
           {/* Social Media Buttons */}
