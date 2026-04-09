@@ -80,7 +80,25 @@ Deno.serve(async (request) => {
       return Response.json({ error: "Produk tidak ditemukan" }, { status: 404, headers: corsHeaders });
     }
 
-    let totalPrice = product.price * quantity;
+    // Check wholesale pricing
+    const { data: wholesaleTiers } = await admin
+      .from("wholesale_prices")
+      .select("min_quantity, price_per_item")
+      .eq("entity_type", "product")
+      .eq("entity_id", productId)
+      .order("min_quantity", { ascending: false });
+
+    let unitPrice = product.price;
+    if (wholesaleTiers && wholesaleTiers.length > 0) {
+      for (const tier of wholesaleTiers) {
+        if (quantity >= tier.min_quantity) {
+          unitPrice = tier.price_per_item;
+          break;
+        }
+      }
+    }
+
+    let totalPrice = unitPrice * quantity;
     let discountAmount = 0;
     let discountVoucherId: string | null = null;
 
