@@ -43,6 +43,7 @@ import MusicPublicTab from "@/components/MusicPublicTab";
 import SponsorBanner from "@/components/SponsorBanner";
 import LikesTab from "@/components/LikesTab";
 import HomeBannerSlider from "@/components/HomeBannerSlider";
+import BalanceAuth from "@/components/BalanceAuth";
 
 type Tab = "beranda" | "produk" | "voucher" | "history" | "likes" | "tiket" | "saldo" | "playlist" | "publik" | "sponsor";
 
