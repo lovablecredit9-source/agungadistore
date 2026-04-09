@@ -1878,9 +1878,18 @@ const Index = () => {
                 <div ref={ticketChatRef} className="bg-muted/30 rounded-xl p-3 space-y-3 max-h-[50vh] overflow-y-auto">
                   {/* Ticket info card */}
                   <div className="bg-primary/5 border border-primary/20 rounded-lg p-3 text-xs space-y-1">
+                    {activeTicket.category && (
+                      <p><strong>Kategori:</strong> {TICKET_CATEGORIES.find(c => c.value === activeTicket.category)?.label || activeTicket.category}</p>
+                    )}
                     <p><strong>Nama:</strong> {activeTicket.name}</p>
                     <p><strong>HP:</strong> {activeTicket.phone}</p>
                     <p><strong>Masalah:</strong> {activeTicket.description}</p>
+                    {activeTicket.screenshot_url && (
+                      <div className="mt-2">
+                        <p className="font-bold mb-1">📸 Screenshot:</p>
+                        <img src={activeTicket.screenshot_url} alt="Screenshot bukti" className="max-w-full rounded-lg border" />
+                      </div>
+                    )}
                   </div>
 
                   {ticketMessages.map(m => (
