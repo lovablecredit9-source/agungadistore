@@ -76,7 +76,7 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser }: BalanceA
 
     setLoading(true);
     const visitorId = getVisitorId();
-    const deviceSummary = getDeviceSummary();
+    const deviceSummary = getDeviceSummary(navigator.userAgent);
 
     const { data, error } = await supabase.functions.invoke("balance-auth", {
       body: {
