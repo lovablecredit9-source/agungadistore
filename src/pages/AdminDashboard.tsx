@@ -537,19 +537,21 @@ const AdminDashboard = () => {
     if (!session) navigate("/admin/login");
   }
 
-  async function fetchAll() {
-    const [pRes, piRes, fRes, tRes, cRes] = await Promise.all([
+   async function fetchAll() {
+    const [pRes, piRes, fRes, tRes, cRes, wRes] = await Promise.all([
       supabase.from("products").select("*").order("created_at", { ascending: false }),
       supabase.from("product_images").select("*").order("image_order"),
       supabase.from("product_fields").select("*").order("field_order"),
       supabase.from("tokens").select("*").order("created_at", { ascending: false }),
       supabase.from("token_claims").select("*").order("claimed_at", { ascending: false }),
+      supabase.from("wholesale_prices").select("*").eq("entity_type", "product").order("min_quantity"),
     ]);
     if (pRes.data) setProducts(pRes.data as unknown as Product[]);
     if (piRes.data) setProductImages(piRes.data as ProductImage[]);
     if (fRes.data) setFields(fRes.data);
     if (tRes.data) setTokens(tRes.data);
     if (cRes.data) setClaims(cRes.data);
+    if (wRes.data) setAllWholesalePrices(wRes.data);
   }
 
   async function fetchTickets() {
