@@ -1882,7 +1882,22 @@ const Index = () => {
                   </CardContent>
                 </Card>
 
-                {/* Deposit History */}
+                {/* Auth: Logout, Switch Account, Login History */}
+                <BalanceAuth
+                  currentUser={userBalance}
+                  onLogin={(user) => {
+                    setUserBalance(user as any);
+                    setProfileUsername(user.username);
+                    setProfilePhone(user.phone);
+                    fetchUserBalance();
+                  }}
+                  onLogout={() => {
+                    setUserBalance(null);
+                    setBalanceTransactions([]);
+                  }}
+                />
+
+
                 {deposits.length > 0 && (
                   <>
                     <h3 className="font-bold text-sm flex items-center gap-1.5"><History className="w-4 h-4" /> {t("deposit.history", lang)}</h3>
