@@ -118,13 +118,16 @@ interface CartItem {
 }
 
 const TICKET_CATEGORIES = [
-  { value: "akun", label: "Akun" },
-  { value: "voucher", label: "Voucher" },
-  { value: "saldo", label: "Saldo" },
-  { value: "sponsor", label: "Sponsor" },
-  { value: "penipu", label: "Lapor Penipu" },
-  { value: "lagu", label: "Lagu Bermasalah" },
-  { value: "transaksi", label: "Transaksi" },
+  { value: "akun", label: "Akun / Login" },
+  { value: "voucher", label: "Voucher / Kode Redeem" },
+  { value: "saldo", label: "Saldo / Top Up / Deposit" },
+  { value: "sponsor", label: "Sponsor / Iklan Produk" },
+  { value: "penipu", label: "Lapor Penipu / Penipuan" },
+  { value: "lagu", label: "Lagu / Musik Bermasalah" },
+  { value: "transaksi", label: "Transaksi / Pembayaran" },
+  { value: "produk", label: "Produk / Token" },
+  { value: "bug", label: "Bug / Error Aplikasi" },
+  { value: "saran", label: "Saran / Masukan" },
   { value: "lainnya", label: "Lainnya" },
 ];
 
