@@ -20,6 +20,8 @@ import storeQris from "@/assets/store-qris.jpg";
 import musicBanner from "@/assets/music-banner.jpg";
 import promoProductsImg from "@/assets/promo-products.jpg";
 import promoSponsorsImg from "@/assets/promo-sponsors.jpg";
+import promoSaldoImg from "@/assets/promo-saldo.jpg";
+import promoPublikImg from "@/assets/promo-publik.jpg";
 import { STORE_NAME, WA_NUMBER, SOCIAL_LINKS, YOUTUBE_NAME } from "@/lib/social-links";
 import { getDeviceSummary, collectDeviceInfo } from "@/lib/device-info";
 import { getVisitorId } from "@/lib/visitor-id";
@@ -1249,6 +1251,22 @@ const Index = () => {
                   subtitle: `📢 ${homeSponsors.length} Sponsor Aktif`,
                   cta: "Lihat Sponsor",
                   onClick: () => setTab("sponsor"),
+                },
+                {
+                  id: "saldo",
+                  image: promoSaldoImg,
+                  title: "Daftar Akun & Isi Saldo",
+                  subtitle: "💰 Belanja Lebih Mudah",
+                  cta: "Daftar Sekarang",
+                  onClick: () => setTab("saldo"),
+                },
+                {
+                  id: "publik",
+                  image: promoPublikImg,
+                  title: "Upload Lagu Kamu Sendiri!",
+                  subtitle: "🎤 AI & Admin Cek Otomatis",
+                  cta: "Mulai Upload",
+                  onClick: () => setTab("publik"),
                 },
               ]}
             />
