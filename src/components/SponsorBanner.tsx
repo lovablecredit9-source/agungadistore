@@ -481,6 +481,20 @@ function SponsorDetailModal({ sponsor, images, onClose, isLiked, onToggleLike, w
           {sponsor.price > 0 && (
             <p className="text-xl font-extrabold text-primary">{formatPrice(sponsor.price)}</p>
           )}
+          {wholesaleTiers.length > 0 && (
+            <div className="bg-accent/10 border border-accent/20 rounded-lg p-3 space-y-1.5">
+              <p className="text-xs font-bold text-accent-foreground flex items-center gap-1">💰 Harga Grosir</p>
+              <div className="space-y-1">
+                {wholesaleTiers.map((tier: any, i: number) => (
+                  <div key={i} className="flex items-center justify-between text-xs">
+                    <span className="text-muted-foreground">Beli ≥ {tier.min_quantity} pcs</span>
+                    <span className="font-bold text-primary">{formatPrice(tier.price_per_item)}/pcs</span>
+                  </div>
+                ))}
+              </div>
+              <p className="text-[10px] text-muted-foreground">Harga normal: {formatPrice(sponsor.price)}/pcs</p>
+            </div>
+          )}
           {sponsor.description && (
             <p className="text-sm text-muted-foreground whitespace-pre-wrap">{sponsor.description}</p>
           )}
