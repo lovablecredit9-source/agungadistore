@@ -68,6 +68,12 @@ interface PendingImage {
   previewUrl: string;
 }
 
+interface WholesaleTier {
+  id?: string;
+  min_quantity: number;
+  price_per_item: number;
+}
+
 interface SupportTicket {
   id: string;
   ticket_number: number;
