@@ -2032,8 +2032,7 @@ const Index = () => {
                   }}
                 />
 
-            {/* Daily Streak */}
-            <DailyStreak />
+
 
                 {deposits.length > 0 && (
                   <>
