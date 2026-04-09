@@ -11,7 +11,7 @@ import {
   HelpCircle, X, ExternalLink, Search, ChevronLeft, ChevronRight, FileText,
   Heart, Send, ImagePlus, AlertCircle, History, Wallet, ArrowUpCircle, ArrowDownCircle,
   Bell, Check, CheckCheck, Globe, Edit2, ShoppingCart, Plus, Minus, Trash2,
-  Moon, Sun, Lock, Tag, Music, Megaphone, Diamond, Image as ImageIcon, Gem, Sparkles, Palette
+  Moon, Sun, Lock, Tag, Music, Megaphone, Diamond, Image as ImageIcon, Gem, Sparkles, Palette, CalendarDays
 } from "lucide-react";
 import { useTheme } from "@/lib/theme";
 import { useToast } from "@/hooks/use-toast";
@@ -1984,8 +1984,8 @@ const Index = () => {
                   <span className={`text-xs px-3 py-1.5 rounded-full font-medium ${selectedProduct.stock > 0 ? 'bg-accent/10 text-accent' : 'bg-destructive/10 text-destructive'}`}>
                     {selectedProduct.stock > 0 ? `✓ Stok: ${selectedProduct.stock}` : '✗ Habis'}
                   </span>
-                  <span className="text-xs px-3 py-1.5 rounded-full font-medium bg-muted text-muted-foreground">
-                    📅 {new Date(selectedProduct.created_at).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" })}
+                  <span className="text-xs px-3 py-1.5 rounded-full font-medium bg-muted text-muted-foreground flex items-center gap-1">
+                    <CalendarDays className="w-3.5 h-3.5" /> {new Date(selectedProduct.created_at).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" })}
                   </span>
                 </div>
 
