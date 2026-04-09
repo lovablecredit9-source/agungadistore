@@ -93,13 +93,20 @@ function formatDateTime(iso: string) {
 const durationLabels: Record<string, string> = { seconds: "Detik", minutes: "Menit", hours: "Jam", days: "Hari", months: "Bulan" };
 
 // --- Sponsor Form Component ---
+interface WholesaleTier {
+  id?: string;
+  min_quantity: number;
+  price_per_item: number;
+}
+
 function SponsorForm({
-  editing, onSave, onCancel, sponsorImages: existingImages
+  editing, onSave, onCancel, sponsorImages: existingImages, allWholesalePrices
 }: {
   editing: Sponsor | null;
   onSave: () => void;
   onCancel: () => void;
   sponsorImages: Record<string, SponsorImage[]>;
+  allWholesalePrices: any[];
 }) {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -122,6 +129,7 @@ function SponsorForm({
   const [hasWarranty, setHasWarranty] = useState(false);
   const [warrantyDurationValue, setWarrantyDurationValue] = useState("0");
   const [warrantyDurationType, setWarrantyDurationType] = useState("days");
+  const [wholesaleTiers, setWholesaleTiers] = useState<WholesaleTier[]>([]);
   const fileRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
