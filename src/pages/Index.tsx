@@ -608,13 +608,29 @@ const Index = () => {
     return () => { supabase.removeChannel(ch); };
   }, []);
 
+  const [wholesalePrices, setWholesalePrices] = useState<any[]>([]);
+
   async function fetchProducts() {
-    const [pRes, piRes] = await Promise.all([
+    const [pRes, piRes, wRes] = await Promise.all([
       supabase.from("products").select("*").order("created_at", { ascending: false }),
       supabase.from("product_images").select("*").order("image_order"),
+      supabase.from("wholesale_prices").select("*").eq("entity_type", "product").order("min_quantity"),
     ]);
     if (pRes.data) setProducts(pRes.data as unknown as Product[]);
     if (piRes.data) setProductImages(piRes.data as ProductImage[]);
+    if (wRes.data) setWholesalePrices(wRes.data);
+  }
+
+  function getWholesalePrice(productId: string, quantity: number, normalPrice: number): number {
+    const tiers = wholesalePrices.filter((w: any) => w.entity_id === productId).sort((a: any, b: any) => b.min_quantity - a.min_quantity);
+    for (const tier of tiers) {
+      if (quantity >= tier.min_quantity) return tier.price_per_item;
+    }
+    return normalPrice;
+  }
+
+  function getProductWholesaleTiers(productId: string) {
+    return wholesalePrices.filter((w: any) => w.entity_id === productId).sort((a: any, b: any) => a.min_quantity - b.min_quantity);
   }
 
   async function fetchLikes() {
