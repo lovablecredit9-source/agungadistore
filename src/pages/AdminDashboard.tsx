@@ -633,12 +633,15 @@ const AdminDashboard = () => {
     setHasWarranty(p.has_warranty || false);
     setNewFields(fields.filter(f => f.product_id === p.id).map(f => f.field_name));
     clearPendingImages();
+    const tiers = allWholesalePrices.filter((w: any) => w.entity_id === p.id).map((w: any) => ({ id: w.id, min_quantity: w.min_quantity, price_per_item: w.price_per_item }));
+    setWholesaleTiers(tiers.length > 0 ? tiers : []);
   }
 
   function resetForm() {
     setEditingProduct(null);
     setTitle(""); setDesc(""); setPrice(""); setStock("1"); setCategory(""); setHasWarranty(false);
     setNewFields(["Email", "Password", "No HP", "A2F"]); clearPendingImages();
+    setWholesaleTiers([]);
   }
 
   async function uploadImages(): Promise<string[]> {
