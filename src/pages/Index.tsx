@@ -2169,6 +2169,22 @@ const Index = () => {
                   </div>
                 </div>
                 <p className="text-2xl font-extrabold text-primary">{formatPrice(selectedProduct.price)}</p>
+                {/* Wholesale prices */}
+                {(() => {
+                  const tiers = getProductWholesaleTiers(selectedProduct.id);
+                  if (tiers.length === 0) return null;
+                  return (
+                    <div className="bg-accent/5 border border-accent/20 rounded-lg p-2.5 space-y-1">
+                      <p className="text-[10px] font-bold text-accent uppercase tracking-wider">💰 Harga Grosir</p>
+                      {tiers.map((t: any, i: number) => (
+                        <div key={i} className="flex justify-between text-xs">
+                          <span className="text-muted-foreground">Beli ≥{t.min_quantity} pcs</span>
+                          <span className="font-bold text-accent">{formatPrice(t.price_per_item)} /pcs</span>
+                        </div>
+                      ))}
+                    </div>
+                  );
+                })()}
                 {selectedProduct.description && <p className="text-sm text-muted-foreground leading-relaxed">{selectedProduct.description}</p>}
                 <div className="flex items-center gap-2 flex-wrap">
                   <span className={`text-xs px-3 py-1.5 rounded-full font-medium ${selectedProduct.stock > 0 ? 'bg-accent/10 text-accent' : 'bg-destructive/10 text-destructive'}`}>
