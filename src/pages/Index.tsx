@@ -22,6 +22,7 @@ import promoProductsImg from "@/assets/promo-products.jpg";
 import promoSponsorsImg from "@/assets/promo-sponsors.jpg";
 import promoSaldoImg from "@/assets/promo-saldo.jpg";
 import promoPublikImg from "@/assets/promo-publik.jpg";
+import promoTiketImg from "@/assets/promo-tiket.jpg";
 import { STORE_NAME, WA_NUMBER, SOCIAL_LINKS, YOUTUBE_NAME } from "@/lib/social-links";
 import { getDeviceSummary, collectDeviceInfo } from "@/lib/device-info";
 import { getVisitorId } from "@/lib/visitor-id";
