@@ -110,6 +110,7 @@ interface UserBalance {
   visitor_id: string;
   username: string;
   phone: string;
+  email?: string;
   balance: number;
   created_at: string;
 }
