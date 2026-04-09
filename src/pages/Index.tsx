@@ -125,6 +125,13 @@ const TICKET_CATEGORIES = [
   { value: "lagu", label: "Lagu / Musik Bermasalah" },
   { value: "transaksi", label: "Transaksi / Pembayaran" },
   { value: "produk", label: "Produk / Token" },
+  { value: "refund", label: "Refund / Pengembalian Dana" },
+  { value: "garansi", label: "Klaim Garansi" },
+  { value: "rekber", label: "Rekber / Escrow" },
+  { value: "chat", label: "Chat / Pesan Tidak Dibalas" },
+  { value: "pin", label: "PIN / Keamanan Akun" },
+  { value: "deposit", label: "Deposit Belum Masuk" },
+  { value: "playlist", label: "Playlist / Musik" },
   { value: "bug", label: "Bug / Error Aplikasi" },
   { value: "saran", label: "Saran / Masukan" },
   { value: "lainnya", label: "Lainnya" },
@@ -2465,20 +2472,125 @@ const Index = () => {
                   <li><strong>Chat Produk:</strong> tanya langsung soal produk via chat</li>
                   <li>Admin biasanya membalas dalam <strong>5-10 menit</strong></li>
                   <li>Bisa kirim <strong>foto/gambar</strong> dalam chat</li>
-                  <li>Status tiket: <strong>Buka → Selesai → Ditutup</strong></li>
+                  <li>Status tiket: <strong>Terbuka → Ditutup</strong></li>
+                  <li>Pilih <strong>kategori masalah</strong> saat buat tiket (Akun, Saldo, Sponsor, Penipu, dll)</li>
+                  <li>Lampirkan <strong>screenshot bukti</strong> agar admin lebih cepat memproses</li>
+                  <li>Tiket bisa dilihat kembali kapan saja di tab Tiket</li>
+                  <li>Setiap tiket punya <strong>nomor unik</strong> untuk pelacakan</li>
+                  <li>Notifikasi otomatis saat admin membalas tiket</li>
+                </ul>
+                <div className="mt-2 p-2 bg-muted/40 rounded-lg text-[12px]">
+                  <p className="font-semibold text-foreground">📝 Kategori Tiket yang Tersedia:</p>
+                  <ul className="list-disc list-inside space-y-0.5">
+                    <li><strong>Akun/Login</strong> — masalah login, visitor ID hilang</li>
+                    <li><strong>Voucher</strong> — kode tidak bisa diklaim, voucher expired</li>
+                    <li><strong>Saldo/Deposit</strong> — deposit belum masuk, saldo berkurang</li>
+                    <li><strong>Sponsor</strong> — produk sponsor bermasalah</li>
+                    <li><strong>Lapor Penipu</strong> — laporkan penjual/pembeli yang menipu</li>
+                    <li><strong>Lagu/Musik</strong> — lagu error, tidak bisa diputar</li>
+                    <li><strong>Refund</strong> — permintaan pengembalian dana</li>
+                    <li><strong>Garansi</strong> — klaim garansi produk</li>
+                    <li><strong>PIN/Keamanan</strong> — lupa PIN, akun dicurigai dibobol</li>
+                    <li><strong>Bug/Error</strong> — error tampilan atau fitur tidak berfungsi</li>
+                    <li><strong>Saran</strong> — ide atau masukan untuk pengembangan</li>
+                  </ul>
+                </div>
+              </div>
+
+              {/* Cara Buat Tiket */}
+              <div className="rounded-xl bg-accent/10 border border-accent/20 p-3 space-y-1.5">
+                <p className="font-bold text-foreground text-xs uppercase tracking-wider">📋 Cara Membuat Tiket</p>
+                <ol className="list-decimal list-inside space-y-0.5 text-[13px]">
+                  <li>Buka tab <strong>Tiket</strong> di navigasi bawah</li>
+                  <li>Klik tombol <strong>Buat Tiket</strong></li>
+                  <li>Pilih <strong>kategori masalah</strong> dari dropdown</li>
+                  <li>Isi <strong>nama lengkap</strong> dan <strong>nomor HP</strong></li>
+                  <li>Jelaskan masalah secara detail di kolom deskripsi</li>
+                  <li>Lampirkan <strong>screenshot bukti</strong> jika ada (sangat disarankan!)</li>
+                  <li>Klik <strong>Kirim Tiket</strong></li>
+                  <li>Anda akan langsung masuk ke <strong>ruang chat</strong> tiket</li>
+                  <li>Tunggu balasan admin — biasanya <strong>5-30 menit</strong></li>
+                </ol>
+                <div className="mt-2 p-2 bg-muted/40 rounded-lg text-[12px]">
+                  <p className="font-semibold text-foreground">💡 Tips Membuat Tiket Efektif:</p>
+                  <ul className="list-disc list-inside space-y-0.5">
+                    <li>Pilih kategori yang <strong>tepat</strong> agar admin langsung paham</li>
+                    <li>Sertakan <strong>detail spesifik</strong>: waktu kejadian, nama produk, nominal</li>
+                    <li>Lampirkan screenshot yang <strong>jelas dan lengkap</strong></li>
+                    <li>Jangan buat tiket duplikat — cukup satu tiket per masalah</li>
+                    <li>Respon balasan admin agar proses lebih cepat</li>
+                  </ul>
+                </div>
+              </div>
+
+              {/* Keranjang Belanja */}
+              <div className="rounded-xl bg-muted/60 border border-border p-3 space-y-1.5">
+                <p className="font-bold text-foreground text-xs uppercase tracking-wider">🛒 Keranjang Belanja</p>
+                <ul className="list-disc list-inside space-y-0.5 text-[13px]">
+                  <li>Tambah beberapa produk sekaligus ke keranjang</li>
+                  <li>Atur jumlah masing-masing produk</li>
+                  <li>Lihat <strong>total harga</strong> otomatis dihitung</li>
+                  <li>Checkout via <strong>WhatsApp</strong> atau <strong>Saldo</strong></li>
+                  <li>Gunakan <strong>voucher diskon</strong> untuk potongan harga</li>
+                  <li>Hapus item satu per satu atau kosongkan sekaligus</li>
                 </ul>
               </div>
 
-              {/* Notifikasi */}
+              {/* Upload Musik Publik */}
               <div className="rounded-xl bg-muted/60 border border-border p-3 space-y-1.5">
-                <p className="font-bold text-foreground text-xs uppercase tracking-wider">🔔 Sistem Notifikasi</p>
+                <p className="font-bold text-foreground text-xs uppercase tracking-wider">🎤 Musik Publik (Upload Lagu)</p>
                 <ul className="list-disc list-inside space-y-0.5 text-[13px]">
-                  <li>Notifikasi real-time untuk setiap aktivitas akun</li>
-                  <li>Pemberitahuan saat <strong>deposit disetujui</strong></li>
-                  <li>Info saat ada <strong>balasan chat</strong> dari admin</li>
-                  <li>Update status <strong>tiket keluhan</strong></li>
-                  <li>Tandai semua dibaca dengan satu klik</li>
+                  <li>Upload lagu karyamu sendiri agar bisa didengar semua orang</li>
+                  <li>Lagu akan melalui <strong>pemeriksaan AI copyright</strong> otomatis</li>
+                  <li>Status lagu: <strong>Pending → Approved / Rejected</strong></li>
+                  <li>Admin bisa memberikan catatan jika lagu ditolak</li>
+                  <li>Atur visibilitas: <strong>publik</strong> atau <strong>privat</strong></li>
+                  <li>Tambahkan cover, artis, dan deskripsi untuk tampilan menarik</li>
+                  <li>Kapasitas upload tergantung <strong>kuota penyimpanan</strong> Anda</li>
                 </ul>
+                <div className="mt-2 p-2 bg-muted/40 rounded-lg text-[12px]">
+                  <p className="font-semibold text-foreground">⚠️ Aturan Upload:</p>
+                  <ul className="list-disc list-inside space-y-0.5">
+                    <li>Hanya upload lagu yang Anda miliki haknya</li>
+                    <li>Dilarang upload konten SARA atau melanggar hukum</li>
+                    <li>Lagu yang melanggar copyright akan otomatis ditolak</li>
+                    <li>Admin berhak menghapus lagu yang melanggar ketentuan</li>
+                  </ul>
+                </div>
+              </div>
+
+              {/* Profil Musik */}
+              <div className="rounded-xl bg-muted/60 border border-border p-3 space-y-1.5">
+                <p className="font-bold text-foreground text-xs uppercase tracking-wider">👤 Profil Musik</p>
+                <ul className="list-disc list-inside space-y-0.5 text-[13px]">
+                  <li>Buat profil musik dengan <strong>username</strong> unik</li>
+                  <li>Upload <strong>foto profil</strong> (avatar)</li>
+                  <li>Tambahkan <strong>deskripsi/bio</strong> tentang diri Anda</li>
+                  <li>Profil tampil di lagu yang Anda upload</li>
+                  <li>Orang lain bisa <strong>follow</strong> profil Anda</li>
+                  <li>Lihat jumlah <strong>followers</strong> dan <strong>following</strong></li>
+                </ul>
+              </div>
+
+              {/* Info Perangkat */}
+              <div className="rounded-xl bg-muted/60 border border-border p-3 space-y-1.5">
+                <p className="font-bold text-foreground text-xs uppercase tracking-wider">📱 Info Perangkat & Visitor ID</p>
+                <ul className="list-disc list-inside space-y-0.5 text-[13px]">
+                  <li><strong>Visitor ID</strong> adalah identitas unik perangkat Anda</li>
+                  <li>Digunakan untuk menghubungkan saldo, riwayat, dan preferensi</li>
+                  <li>Setiap perangkat mendapat Visitor ID berbeda</li>
+                  <li>Jika mengganti HP/browser, Visitor ID akan berubah</li>
+                  <li>Hubungi admin untuk <strong>memindahkan saldo</strong> ke perangkat baru</li>
+                  <li>Jangan hapus data browser agar Visitor ID tidak hilang</li>
+                </ul>
+                <div className="mt-2 p-2 bg-muted/40 rounded-lg text-[12px]">
+                  <p className="font-semibold text-foreground">⚠️ Penting tentang Visitor ID:</p>
+                  <ul className="list-disc list-inside space-y-0.5">
+                    <li>Clear cache / data browser = Visitor ID <strong>hilang</strong></li>
+                    <li>Mode incognito = Visitor ID <strong>sementara</strong></li>
+                    <li>Gunakan browser biasa untuk menjaga Visitor ID tetap</li>
+                  </ul>
+                </div>
               </div>
 
               {/* Multi-bahasa */}
@@ -2610,6 +2722,19 @@ const Index = () => {
                 </div>
               </div>
 
+              {/* Notifikasi */}
+              <div className="rounded-xl bg-muted/60 border border-border p-3 space-y-1.5">
+                <p className="font-bold text-foreground text-xs uppercase tracking-wider">🔔 Sistem Notifikasi</p>
+                <ul className="list-disc list-inside space-y-0.5 text-[13px]">
+                  <li>Notifikasi real-time untuk setiap aktivitas akun</li>
+                  <li>Pemberitahuan saat <strong>deposit disetujui</strong></li>
+                  <li>Info saat ada <strong>balasan chat</strong> dari admin</li>
+                  <li>Update status <strong>tiket keluhan</strong></li>
+                  <li>Tandai semua dibaca dengan satu klik</li>
+                  <li>Ikon lonceng di header menunjukkan <strong>jumlah notifikasi belum dibaca</strong></li>
+                </ul>
+              </div>
+
               {/* FAQ */}
               <div className="rounded-xl bg-accent/10 border border-accent/20 p-3 space-y-2">
                 <p className="font-bold text-foreground text-xs uppercase tracking-wider">❓ FAQ (Pertanyaan Umum)</p>
@@ -2628,7 +2753,7 @@ const Index = () => {
                   </div>
                   <div>
                     <p className="font-semibold text-foreground">Q: Bisa refund jika produk bermasalah?</p>
-                    <p>A: Ya, ajukan tiket keluhan dan admin akan memproses pengembalian.</p>
+                    <p>A: Ya, ajukan tiket keluhan dengan kategori "Refund / Pengembalian Dana" dan admin akan memproses.</p>
                   </div>
                   <div>
                     <p className="font-semibold text-foreground">Q: Apakah bisa diakses di desktop?</p>
@@ -2652,7 +2777,39 @@ const Index = () => {
                   </div>
                   <div>
                     <p className="font-semibold text-foreground">Q: Bagaimana jika penjual sponsor menipu?</p>
-                    <p>A: Segera buat tiket keluhan di tab Tiket dengan bukti screenshot. Hubungi admin WA 085769302532. Admin akan investigasi dan memblokir penjual jika terbukti menipu.</p>
+                    <p>A: Segera buat tiket keluhan dengan kategori "Lapor Penipu" di tab Tiket. Lampirkan screenshot bukti. Admin akan investigasi dan memblokir penjual jika terbukti menipu.</p>
+                  </div>
+                  <div>
+                    <p className="font-semibold text-foreground">Q: Deposit saya belum masuk, bagaimana?</p>
+                    <p>A: Buat tiket dengan kategori "Deposit Belum Masuk" dan sertakan screenshot bukti transfer serta ID transaksi. Admin akan mengecek manual.</p>
+                  </div>
+                  <div>
+                    <p className="font-semibold text-foreground">Q: Visitor ID saya hilang, bagaimana?</p>
+                    <p>A: Hubungi admin WA dengan menyebutkan username saldo Anda. Admin dapat membantu memindahkan data ke Visitor ID baru.</p>
+                  </div>
+                  <div>
+                    <p className="font-semibold text-foreground">Q: Lagu saya ditolak, kenapa?</p>
+                    <p>A: Lagu diperiksa AI untuk hak cipta. Jika ditolak, lihat catatan admin di detail lagu. Upload ulang setelah memperbaiki masalah.</p>
+                  </div>
+                  <div>
+                    <p className="font-semibold text-foreground">Q: Bagaimana cara klaim garansi produk?</p>
+                    <p>A: Buat tiket dengan kategori "Klaim Garansi", sertakan kode voucher dan bukti pembelian. Garansi berlaku sesuai durasi yang tertulis di detail produk.</p>
+                  </div>
+                  <div>
+                    <p className="font-semibold text-foreground">Q: Berapa batas waktu komplain?</p>
+                    <p>A: Komplain dilayani maksimal 1x24 jam setelah transaksi. Pastikan segera lapor jika ada masalah.</p>
+                  </div>
+                  <div>
+                    <p className="font-semibold text-foreground">Q: Bisa upload screenshot di tiket?</p>
+                    <p>A: Ya! Saat membuat tiket, Anda bisa melampirkan screenshot sebagai bukti. Di dalam chat tiket juga bisa kirim gambar tambahan.</p>
+                  </div>
+                  <div>
+                    <p className="font-semibold text-foreground">Q: Saldo bisa dipindah ke akun lain?</p>
+                    <p>A: Tidak bisa secara langsung. Hubungi admin untuk bantuan transfer saldo antar akun.</p>
+                  </div>
+                  <div>
+                    <p className="font-semibold text-foreground">Q: Apakah ada biaya admin untuk transaksi?</p>
+                    <p>A: Tidak ada biaya tambahan. Harga yang tertera adalah harga final. Rekber juga gratis.</p>
                   </div>
                 </div>
               </div>
