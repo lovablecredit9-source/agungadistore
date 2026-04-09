@@ -59,6 +59,15 @@ Deno.serve(async (request) => {
       return Response.json({ valid: hash === pinRow.pin_hash }, { headers: corsHeaders });
     }
 
+    if (action === "invalidate_tokens") {
+      // Admin invalidates all existing tokens for a user before creating a new one
+      if (!visitorId) {
+        return Response.json({ error: "Visitor ID diperlukan" }, { status: 400, headers: corsHeaders });
+      }
+      await admin.from("pin_reset_tokens").update({ is_used: true }).eq("visitor_id", visitorId).eq("is_used", false);
+      return Response.json({ success: true, message: "Token lama dinonaktifkan" }, { headers: corsHeaders });
+    }
+
     if (action === "reset") {
       // Reset PIN using token
       if (!resetToken || !newPin) {
