@@ -309,7 +309,7 @@ export default function SponsorBanner({ likedSponsorIds = new Set(), onToggleLik
             <div className="flex items-center gap-3 text-[10px] text-muted-foreground flex-wrap">
               <span className="flex items-center gap-1"><User className="w-3 h-3" />{sponsor.seller_name}</span>
               <span className="flex items-center gap-1"><Eye className="w-3 h-3" />{sponsor.view_count || 0}x dilihat</span>
-              <span className="flex items-center gap-1">📅 {new Date(sponsor.created_at).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" })}</span>
+              <span className="flex items-center gap-1"><CalendarDays className="w-3 h-3" />{new Date(sponsor.created_at).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" })}</span>
             </div>
             <div className="flex items-center gap-2 pt-0.5">
               <Badge variant={sponsor.stock > 0 ? "secondary" : "destructive"} className="text-[10px] font-bold">
