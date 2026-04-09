@@ -117,13 +117,16 @@ interface CartItem {
 }
 
 const TICKET_CATEGORIES = [
-  { value: "akun", label: "Akun" },
-  { value: "voucher", label: "Voucher" },
-  { value: "saldo", label: "Saldo" },
-  { value: "sponsor", label: "Sponsor" },
-  { value: "penipu", label: "Lapor Penipu" },
-  { value: "lagu", label: "Lagu Bermasalah" },
-  { value: "transaksi", label: "Transaksi" },
+  { value: "akun", label: "Akun / Login" },
+  { value: "voucher", label: "Voucher / Kode Redeem" },
+  { value: "saldo", label: "Saldo / Top Up / Deposit" },
+  { value: "sponsor", label: "Sponsor / Iklan Produk" },
+  { value: "penipu", label: "Lapor Penipu / Penipuan" },
+  { value: "lagu", label: "Lagu / Musik Bermasalah" },
+  { value: "transaksi", label: "Transaksi / Pembayaran" },
+  { value: "produk", label: "Produk / Token" },
+  { value: "bug", label: "Bug / Error Aplikasi" },
+  { value: "saran", label: "Saran / Masukan" },
   { value: "lainnya", label: "Lainnya" },
 ];
 
@@ -1811,15 +1814,16 @@ const Index = () => {
                   <CardContent className="p-4 space-y-3">
                     <div>
                       <label className="text-xs font-semibold text-muted-foreground mb-1.5 block">Kategori Masalah</label>
-                      <select
-                        value={ticketCategory}
-                        onChange={e => setTicketCategory(e.target.value)}
-                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                      >
-                        {TICKET_CATEGORIES.map(cat => (
-                          <option key={cat.value} value={cat.value}>{cat.label}</option>
-                        ))}
-                      </select>
+                      <Select value={ticketCategory} onValueChange={setTicketCategory}>
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder="Pilih kategori..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {TICKET_CATEGORIES.map(cat => (
+                            <SelectItem key={cat.value} value={cat.value}>{cat.label}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
                     <Input placeholder="Nama Lengkap" value={ticketName} onChange={e => setTicketName(e.target.value)} />
                     <Input placeholder="No HP" value={ticketPhone} onChange={e => setTicketPhone(e.target.value)} />
