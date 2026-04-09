@@ -68,6 +68,12 @@ interface PendingImage {
   previewUrl: string;
 }
 
+interface WholesaleTier {
+  id?: string;
+  min_quantity: number;
+  price_per_item: number;
+}
+
 interface SupportTicket {
   id: string;
   ticket_number: number;
@@ -149,6 +155,8 @@ const AdminDashboard = () => {
   const [newFields, setNewFields] = useState<string[]>(["Email", "Password", "No HP", "A2F"]);
   const [pendingImages, setPendingImages] = useState<PendingImage[]>([]);
   const [productSearch, setProductSearch] = useState("");
+  const [wholesaleTiers, setWholesaleTiers] = useState<WholesaleTier[]>([]);
+  const [allWholesalePrices, setAllWholesalePrices] = useState<any[]>([]);
 
   // Token form
   const [selProduct, setSelProduct] = useState("");
@@ -529,19 +537,21 @@ const AdminDashboard = () => {
     if (!session) navigate("/admin/login");
   }
 
-  async function fetchAll() {
-    const [pRes, piRes, fRes, tRes, cRes] = await Promise.all([
+   async function fetchAll() {
+    const [pRes, piRes, fRes, tRes, cRes, wRes] = await Promise.all([
       supabase.from("products").select("*").order("created_at", { ascending: false }),
       supabase.from("product_images").select("*").order("image_order"),
       supabase.from("product_fields").select("*").order("field_order"),
       supabase.from("tokens").select("*").order("created_at", { ascending: false }),
       supabase.from("token_claims").select("*").order("claimed_at", { ascending: false }),
+      supabase.from("wholesale_prices").select("*").eq("entity_type", "product").order("min_quantity"),
     ]);
     if (pRes.data) setProducts(pRes.data as unknown as Product[]);
     if (piRes.data) setProductImages(piRes.data as ProductImage[]);
     if (fRes.data) setFields(fRes.data);
     if (tRes.data) setTokens(tRes.data);
     if (cRes.data) setClaims(cRes.data);
+    if (wRes.data) setAllWholesalePrices(wRes.data);
   }
 
   async function fetchTickets() {
@@ -623,12 +633,15 @@ const AdminDashboard = () => {
     setHasWarranty(p.has_warranty || false);
     setNewFields(fields.filter(f => f.product_id === p.id).map(f => f.field_name));
     clearPendingImages();
+    const tiers = allWholesalePrices.filter((w: any) => w.entity_id === p.id).map((w: any) => ({ id: w.id, min_quantity: w.min_quantity, price_per_item: w.price_per_item }));
+    setWholesaleTiers(tiers.length > 0 ? tiers : []);
   }
 
   function resetForm() {
     setEditingProduct(null);
     setTitle(""); setDesc(""); setPrice(""); setStock("1"); setCategory(""); setHasWarranty(false);
     setNewFields(["Email", "Password", "No HP", "A2F"]); clearPendingImages();
+    setWholesaleTiers([]);
   }
 
   async function uploadImages(): Promise<string[]> {
@@ -670,6 +683,15 @@ const AdminDashboard = () => {
         product_id: editingProduct.id, field_name: name, field_order: i,
       }));
       if (fieldInserts.length > 0) await supabase.from("product_fields").insert(fieldInserts);
+
+      // Save wholesale tiers
+      await supabase.from("wholesale_prices").delete().eq("entity_type", "product").eq("entity_id", editingProduct.id);
+      const validTiers = wholesaleTiers.filter(t => t.min_quantity >= 2 && t.price_per_item > 0);
+      if (validTiers.length > 0) {
+        await supabase.from("wholesale_prices").insert(validTiers.map(t => ({
+          entity_type: "product" as const, entity_id: editingProduct.id, min_quantity: t.min_quantity, price_per_item: t.price_per_item,
+        })));
+      }
       toast({ title: "Produk diperbarui!" });
     } else {
       const { data: product, error } = await supabase.from("products").insert({
@@ -690,12 +712,21 @@ const AdminDashboard = () => {
         product_id: product.id, field_name: name, field_order: i,
       }));
       if (fieldInserts.length > 0) await supabase.from("product_fields").insert(fieldInserts);
+
+      // Save wholesale tiers
+      const validTiers = wholesaleTiers.filter(t => t.min_quantity >= 2 && t.price_per_item > 0);
+      if (validTiers.length > 0) {
+        await supabase.from("wholesale_prices").insert(validTiers.map(t => ({
+          entity_type: "product" as const, entity_id: product.id, min_quantity: t.min_quantity, price_per_item: t.price_per_item,
+        })));
+      }
       toast({ title: "Produk ditambahkan!" });
     }
     resetForm(); fetchAll();
   }
 
   async function handleDeleteProduct(id: string) {
+    await supabase.from("wholesale_prices").delete().eq("entity_type", "product").eq("entity_id", id);
     await supabase.from("product_images").delete().eq("product_id", id);
     await supabase.from("products").delete().eq("id", id);
     toast({ title: "Produk dihapus" }); fetchAll();
@@ -1099,6 +1130,25 @@ const AdminDashboard = () => {
                       </div>
                     ))}
                     <Button type="button" variant="outline" size="sm" onClick={() => setNewFields([...newFields, ""])}><Plus className="w-3 h-3 mr-1" /> Tambah Field</Button>
+                  </div>
+                  {/* Wholesale / Harga Grosir */}
+                  <div className="space-y-2">
+                    <label className="text-xs font-semibold text-muted-foreground">💰 Harga Grosir (opsional)</label>
+                    <p className="text-[10px] text-muted-foreground">Atur harga per item lebih murah jika beli banyak</p>
+                    {wholesaleTiers.map((tier, i) => (
+                      <div key={i} className="flex gap-2 items-center">
+                        <div className="flex-1">
+                          <label className="text-[10px] text-muted-foreground">Min. Qty</label>
+                          <Input type="number" min={2} placeholder="Min qty" value={tier.min_quantity || ""} onChange={e => { const c = [...wholesaleTiers]; c[i] = { ...c[i], min_quantity: parseInt(e.target.value) || 2 }; setWholesaleTiers(c); }} />
+                        </div>
+                        <div className="flex-1">
+                          <label className="text-[10px] text-muted-foreground">Harga/pcs</label>
+                          <Input type="number" min={0} placeholder="Harga per item" value={tier.price_per_item || ""} onChange={e => { const c = [...wholesaleTiers]; c[i] = { ...c[i], price_per_item: parseInt(e.target.value) || 0 }; setWholesaleTiers(c); }} />
+                        </div>
+                        <Button type="button" variant="ghost" size="icon" className="mt-4" onClick={() => setWholesaleTiers(wholesaleTiers.filter((_, j) => j !== i))}><Trash2 className="w-4 h-4" /></Button>
+                      </div>
+                    ))}
+                    <Button type="button" variant="outline" size="sm" onClick={() => setWholesaleTiers([...wholesaleTiers, { min_quantity: 2, price_per_item: parseInt(price) || 0 }])}><Plus className="w-3 h-3 mr-1" /> Tambah Tier Grosir</Button>
                   </div>
                   <Button className="w-full">{editingProduct ? "Update Produk" : "Simpan Produk"}</Button>
                 </form>

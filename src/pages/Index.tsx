@@ -369,7 +369,7 @@ const Index = () => {
   // Cart
   const [cart, setCart] = useState<CartItem[]>([]);
   const [showCart, setShowCart] = useState(false);
-  const cartTotal = cart.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
+  const cartTotal = cart.reduce((sum, item) => sum + getWholesalePrice(item.product.id, item.quantity, item.product.price) * item.quantity, 0);
   const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
 
   // PIN
@@ -608,13 +608,29 @@ const Index = () => {
     return () => { supabase.removeChannel(ch); };
   }, []);
 
+  const [wholesalePrices, setWholesalePrices] = useState<any[]>([]);
+
   async function fetchProducts() {
-    const [pRes, piRes] = await Promise.all([
+    const [pRes, piRes, wRes] = await Promise.all([
       supabase.from("products").select("*").order("created_at", { ascending: false }),
       supabase.from("product_images").select("*").order("image_order"),
+      supabase.from("wholesale_prices").select("*").eq("entity_type", "product").order("min_quantity"),
     ]);
     if (pRes.data) setProducts(pRes.data as unknown as Product[]);
     if (piRes.data) setProductImages(piRes.data as ProductImage[]);
+    if (wRes.data) setWholesalePrices(wRes.data);
+  }
+
+  function getWholesalePrice(productId: string, quantity: number, normalPrice: number): number {
+    const tiers = wholesalePrices.filter((w: any) => w.entity_id === productId).sort((a: any, b: any) => b.min_quantity - a.min_quantity);
+    for (const tier of tiers) {
+      if (quantity >= tier.min_quantity) return tier.price_per_item;
+    }
+    return normalPrice;
+  }
+
+  function getProductWholesaleTiers(productId: string) {
+    return wholesalePrices.filter((w: any) => w.entity_id === productId).sort((a: any, b: any) => a.min_quantity - b.min_quantity);
   }
 
   async function fetchLikes() {
@@ -774,7 +790,8 @@ const Index = () => {
   }
 
   async function buyWithSaldo(product: Product, quantity = 1, voucherCode = "", pin?: string) {
-    const totalPrice = product.price * quantity;
+    const unitPrice = getWholesalePrice(product.id, quantity, product.price);
+    const totalPrice = unitPrice * quantity;
     if (!userBalance || userBalance.balance < totalPrice) {
       toast({ title: "Saldo tidak cukup", variant: "destructive" }); return;
     }
@@ -2153,6 +2170,22 @@ const Index = () => {
                   </div>
                 </div>
                 <p className="text-2xl font-extrabold text-primary">{formatPrice(selectedProduct.price)}</p>
+                {/* Wholesale prices */}
+                {(() => {
+                  const tiers = getProductWholesaleTiers(selectedProduct.id);
+                  if (tiers.length === 0) return null;
+                  return (
+                    <div className="bg-accent/5 border border-accent/20 rounded-lg p-2.5 space-y-1">
+                      <p className="text-[10px] font-bold text-accent uppercase tracking-wider">💰 Harga Grosir</p>
+                      {tiers.map((t: any, i: number) => (
+                        <div key={i} className="flex justify-between text-xs">
+                          <span className="text-muted-foreground">Beli ≥{t.min_quantity} pcs</span>
+                          <span className="font-bold text-accent">{formatPrice(t.price_per_item)} /pcs</span>
+                        </div>
+                      ))}
+                    </div>
+                  );
+                })()}
                 {selectedProduct.description && <p className="text-sm text-muted-foreground leading-relaxed">{selectedProduct.description}</p>}
                 <div className="flex items-center gap-2 flex-wrap">
                   <span className={`text-xs px-3 py-1.5 rounded-full font-medium ${selectedProduct.stock > 0 ? 'bg-accent/10 text-accent' : 'bg-destructive/10 text-destructive'}`}>
@@ -2894,7 +2927,9 @@ const Index = () => {
 
       {/* Buy with Saldo Confirmation Modal */}
       {showBuySaldo && buyProduct && (() => {
-        const basePrice = buyProduct.price * buyQuantity;
+        const wholesaleUnitPrice = getWholesalePrice(buyProduct.id, buyQuantity, buyProduct.price);
+        const isWholesale = wholesaleUnitPrice < buyProduct.price;
+        const basePrice = wholesaleUnitPrice * buyQuantity;
         const discount = discountInfo ? Math.min(discountInfo.amount, basePrice) : 0;
         const totalPrice = basePrice - discount;
         return (
@@ -2906,7 +2941,14 @@ const Index = () => {
             </div>
             <div className="bg-primary/5 border border-primary/20 rounded-lg p-3 space-y-1">
               <p className="font-bold text-sm">{buyProduct.title}</p>
-              <p className="text-primary font-extrabold text-lg">{formatPrice(buyProduct.price)} / pcs</p>
+              {isWholesale ? (
+                <div>
+                  <p className="text-muted-foreground text-xs line-through">{formatPrice(buyProduct.price)} / pcs</p>
+                  <p className="text-accent font-extrabold text-lg">{formatPrice(wholesaleUnitPrice)} / pcs <span className="text-xs font-medium bg-accent/10 px-1.5 py-0.5 rounded-full ml-1">Grosir</span></p>
+                </div>
+              ) : (
+                <p className="text-primary font-extrabold text-lg">{formatPrice(buyProduct.price)} / pcs</p>
+              )}
             </div>
             {/* Quantity selector */}
             <div className="flex items-center justify-between bg-muted/50 rounded-lg p-3">
@@ -3212,7 +3254,17 @@ const Index = () => {
                           {imgs.length > 0 && <img src={imgs[0]} className="w-14 h-14 rounded-xl object-cover" alt="" />}
                           <div className="flex-1 min-w-0">
                             <p className="font-bold text-sm truncate">{item.product.title}</p>
-                            <p className="text-primary font-extrabold text-sm">{formatPrice(item.product.price)}</p>
+                            {(() => {
+                              const wp = getWholesalePrice(item.product.id, item.quantity, item.product.price);
+                              return wp < item.product.price ? (
+                                <div>
+                                  <span className="text-muted-foreground text-xs line-through mr-1">{formatPrice(item.product.price)}</span>
+                                  <span className="text-accent font-extrabold text-sm">{formatPrice(wp)}</span>
+                                </div>
+                              ) : (
+                                <p className="text-primary font-extrabold text-sm">{formatPrice(item.product.price)}</p>
+                              );
+                            })()}
                           </div>
                           <div className="flex items-center gap-2">
                             <button onClick={() => updateCartQty(item.product.id, item.quantity - 1)} className="w-7 h-7 rounded-full bg-muted flex items-center justify-center"><Minus className="w-3 h-3" /></button>
@@ -3230,13 +3282,17 @@ const Index = () => {
                     {userBalance && <div className="flex justify-between"><span className="text-muted-foreground">Saldo</span><span className={`font-bold ${userBalance.balance >= cartTotal ? "text-accent" : "text-destructive"}`}>{formatPrice(userBalance.balance)}</span></div>}
                   </div>
                   <p className="text-[10px] text-muted-foreground text-center">Pilih item untuk checkout langsung dengan saldo</p>
-                  {cart.map(item => (
+                  {cart.map(item => {
+                    const wp = getWholesalePrice(item.product.id, item.quantity, item.product.price);
+                    const itemTotal = wp * item.quantity;
+                    return (
                     <Button key={item.product.id} className="w-full bg-gradient-to-r from-primary to-accent text-primary-foreground font-bold gap-2 text-xs"
-                      disabled={!userBalance || userBalance.balance < item.product.price * item.quantity || item.product.stock < item.quantity}
+                      disabled={!userBalance || userBalance.balance < itemTotal || item.product.stock < item.quantity}
                       onClick={() => { setBuyProduct(item.product); setBuyQuantity(item.quantity); setShowBuySaldo(true); setShowCart(false); }}>
-                      <Wallet className="w-4 h-4" /> Beli {item.quantity}x {item.product.title} — {formatPrice(item.product.price * item.quantity)}
+                      <Wallet className="w-4 h-4" /> Beli {item.quantity}x {item.product.title} — {formatPrice(itemTotal)}
                     </Button>
-                  ))}
+                    );
+                  })}
                 </>
               )}
             </div>

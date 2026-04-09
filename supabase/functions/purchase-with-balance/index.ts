@@ -80,7 +80,25 @@ Deno.serve(async (request) => {
       return Response.json({ error: "Produk tidak ditemukan" }, { status: 404, headers: corsHeaders });
     }
 
-    let totalPrice = product.price * quantity;
+    // Check wholesale pricing
+    const { data: wholesaleTiers } = await admin
+      .from("wholesale_prices")
+      .select("min_quantity, price_per_item")
+      .eq("entity_type", "product")
+      .eq("entity_id", productId)
+      .order("min_quantity", { ascending: false });
+
+    let unitPrice = product.price;
+    if (wholesaleTiers && wholesaleTiers.length > 0) {
+      for (const tier of wholesaleTiers) {
+        if (quantity >= tier.min_quantity) {
+          unitPrice = tier.price_per_item;
+          break;
+        }
+      }
+    }
+
+    let totalPrice = unitPrice * quantity;
     let discountAmount = 0;
     let discountVoucherId: string | null = null;
 
@@ -164,7 +182,7 @@ Deno.serve(async (request) => {
       visitor_id: visitorId,
       type: "purchase",
       amount: idx === 0 ? totalPrice - pricePerItem * (quantity - 1) : pricePerItem,
-      description: `Beli ${product.title}${discountAmount > 0 ? ` (diskon Rp${discountAmount.toLocaleString()})` : ""}`,
+      description: `Beli ${product.title}${unitPrice < product.price ? ` (grosir Rp${unitPrice.toLocaleString()}/pcs)` : ""}${discountAmount > 0 ? ` (diskon Rp${discountAmount.toLocaleString()})` : ""}`,
       product_id: product.id,
       token_id: token.id,
     }));
