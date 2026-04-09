@@ -1979,9 +1979,12 @@ const Index = () => {
                 </div>
                 <p className="text-2xl font-extrabold text-primary">{formatPrice(selectedProduct.price)}</p>
                 {selectedProduct.description && <p className="text-sm text-muted-foreground leading-relaxed">{selectedProduct.description}</p>}
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
                   <span className={`text-xs px-3 py-1.5 rounded-full font-medium ${selectedProduct.stock > 0 ? 'bg-accent/10 text-accent' : 'bg-destructive/10 text-destructive'}`}>
                     {selectedProduct.stock > 0 ? `✓ Stok: ${selectedProduct.stock}` : '✗ Habis'}
+                  </span>
+                  <span className="text-xs px-3 py-1.5 rounded-full font-medium bg-muted text-muted-foreground">
+                    📅 {new Date(selectedProduct.created_at).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" })}
                   </span>
                 </div>
 

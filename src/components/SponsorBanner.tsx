@@ -516,6 +516,11 @@ function SponsorDetailModal({ sponsor, images, onClose, isLiked, onToggleLike }:
                   : "Tidak ada"}
               </span>
             </div>
+            <div className="flex items-center gap-2">
+              <Clock className="w-4 h-4 text-primary" />
+              <span className="font-medium">Tanggal Rilis:</span>
+              <span>{new Date(sponsor.created_at).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" })}</span>
+            </div>
           </div>
 
           {/* Social Media Buttons */}
