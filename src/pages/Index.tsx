@@ -601,12 +601,35 @@ const Index = () => {
   }
 
   async function fetchUserBalance() {
-    const { data } = await supabase.from("user_balances").select("*").eq("visitor_id", visitorId).maybeSingle();
+    // Don't auto-restore session if user has logged out
+    const isLoggedIn = localStorage.getItem("balance_logged_in");
+    if (!isLoggedIn) {
+      setUserBalance(null);
+      setBalanceTransactions([]);
+      return;
+    }
+
+    const savedEmail = localStorage.getItem("balance_email");
+    let query = supabase.from("user_balances").select("*");
+    
+    // Prefer finding by saved email (more reliable across devices)
+    if (savedEmail) {
+      query = query.eq("email", savedEmail);
+    } else {
+      query = query.eq("visitor_id", visitorId);
+    }
+    
+    const { data } = await query.maybeSingle();
     if (data) {
       const user = data as unknown as UserBalance;
       setUserBalance(user);
       setProfileUsername(user.username);
       setProfilePhone(user.phone);
+    } else {
+      // Session invalid, clean up
+      localStorage.removeItem("balance_logged_in");
+      localStorage.removeItem("balance_email");
+      setUserBalance(null);
     }
     const { data: txns } = await supabase.from("balance_transactions").select("*").eq("visitor_id", visitorId).order("created_at", { ascending: false });
     if (txns) setBalanceTransactions(txns as unknown as BalanceTransaction[]);
