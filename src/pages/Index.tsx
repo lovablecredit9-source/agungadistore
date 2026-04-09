@@ -230,11 +230,32 @@ function ImageCarousel({ images, className = "w-full h-44" }: { images: string[]
   );
 }
 
+const TAB_PATHS: Record<string, Tab> = {
+  "/": "beranda",
+  "/produk": "produk",
+  "/voucher": "voucher",
+  "/saldo": "saldo",
+  "/likes": "likes",
+  "/history": "history",
+  "/tiket": "tiket",
+  "/playlist": "playlist",
+  "/publik": "publik",
+  "/sponsor": "sponsor",
+};
+const PATH_FROM_TAB: Record<Tab, string> = Object.fromEntries(
+  Object.entries(TAB_PATHS).map(([k, v]) => [v, k])
+) as Record<Tab, string>;
+
 const Index = () => {
+  const location = useLocation();
+  const navigate = useNavigate();
   const { theme, setTheme, resolvedTheme, customBgUrl, setCustomBgUrl } = useTheme();
   const customBgInputRef = useRef<HTMLInputElement>(null);
   const [lang, setLang] = useLang();
-  const [tab, setTab] = useState<Tab>("beranda");
+  const tab: Tab = TAB_PATHS[location.pathname] || "beranda";
+  const setTab = useCallback((t: Tab) => {
+    navigate(PATH_FROM_TAB[t] || "/", { replace: false });
+  }, [navigate]);
   const [products, setProducts] = useState<Product[]>([]);
   const [productImages, setProductImages] = useState<ProductImage[]>([]);
   const [tokenInput, setTokenInput] = useState("");
