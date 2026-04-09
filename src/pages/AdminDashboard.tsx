@@ -155,6 +155,8 @@ const AdminDashboard = () => {
   const [newFields, setNewFields] = useState<string[]>(["Email", "Password", "No HP", "A2F"]);
   const [pendingImages, setPendingImages] = useState<PendingImage[]>([]);
   const [productSearch, setProductSearch] = useState("");
+  const [wholesaleTiers, setWholesaleTiers] = useState<WholesaleTier[]>([]);
+  const [allWholesalePrices, setAllWholesalePrices] = useState<any[]>([]);
 
   // Token form
   const [selProduct, setSelProduct] = useState("");
