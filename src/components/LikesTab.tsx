@@ -15,6 +15,7 @@ interface Product {
   image_url: string | null;
   category: string | null;
   has_warranty: boolean;
+  created_at: string;
 }
 
 interface LikedSponsor {
