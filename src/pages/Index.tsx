@@ -42,6 +42,7 @@ import InstallPrompt from "@/components/InstallPrompt";
 import MusicPublicTab from "@/components/MusicPublicTab";
 import SponsorBanner from "@/components/SponsorBanner";
 import LikesTab from "@/components/LikesTab";
+import DailyStreak from "@/components/DailyStreak";
 import HomeBannerSlider from "@/components/HomeBannerSlider";
 import BalanceAuth from "@/components/BalanceAuth";
 
