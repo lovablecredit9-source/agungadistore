@@ -221,6 +221,10 @@ const AdminDashboard = () => {
   const [pinResetTarget, setPinResetTarget] = useState("");
   const [generatedResetToken, setGeneratedResetToken] = useState("");
 
+  // Password Reset
+  const [pwResetTarget, setPwResetTarget] = useState("");
+  const [generatedPwResetToken, setGeneratedPwResetToken] = useState("");
+
   // Music Storage Vouchers
   interface MusicStorageVoucher {
     id: string; code: string; storage_mb: number; max_uses: number;
