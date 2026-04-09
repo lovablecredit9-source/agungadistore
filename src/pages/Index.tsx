@@ -2926,7 +2926,9 @@ const Index = () => {
 
       {/* Buy with Saldo Confirmation Modal */}
       {showBuySaldo && buyProduct && (() => {
-        const basePrice = buyProduct.price * buyQuantity;
+        const wholesaleUnitPrice = getWholesalePrice(buyProduct.id, buyQuantity, buyProduct.price);
+        const isWholesale = wholesaleUnitPrice < buyProduct.price;
+        const basePrice = wholesaleUnitPrice * buyQuantity;
         const discount = discountInfo ? Math.min(discountInfo.amount, basePrice) : 0;
         const totalPrice = basePrice - discount;
         return (
@@ -2938,7 +2940,14 @@ const Index = () => {
             </div>
             <div className="bg-primary/5 border border-primary/20 rounded-lg p-3 space-y-1">
               <p className="font-bold text-sm">{buyProduct.title}</p>
-              <p className="text-primary font-extrabold text-lg">{formatPrice(buyProduct.price)} / pcs</p>
+              {isWholesale ? (
+                <div>
+                  <p className="text-muted-foreground text-xs line-through">{formatPrice(buyProduct.price)} / pcs</p>
+                  <p className="text-accent font-extrabold text-lg">{formatPrice(wholesaleUnitPrice)} / pcs <span className="text-xs font-medium bg-accent/10 px-1.5 py-0.5 rounded-full ml-1">Grosir</span></p>
+                </div>
+              ) : (
+                <p className="text-primary font-extrabold text-lg">{formatPrice(buyProduct.price)} / pcs</p>
+              )}
             </div>
             {/* Quantity selector */}
             <div className="flex items-center justify-between bg-muted/50 rounded-lg p-3">
