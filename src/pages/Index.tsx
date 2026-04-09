@@ -320,6 +320,9 @@ const Index = () => {
   const [ticketName, setTicketName] = useState("");
   const [ticketPhone, setTicketPhone] = useState("");
   const [ticketDesc, setTicketDesc] = useState("");
+  const [ticketCategory, setTicketCategory] = useState("lainnya");
+  const [ticketScreenshot, setTicketScreenshot] = useState<File | null>(null);
+  const [ticketScreenshotPreview, setTicketScreenshotPreview] = useState<string | null>(null);
   const [ticketMsg, setTicketMsg] = useState("");
   const ticketChatRef = useRef<HTMLDivElement>(null);
 
