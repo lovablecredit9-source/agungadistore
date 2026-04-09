@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { Megaphone, Trash2, Edit2, X, ImagePlus, Clock, Eye, EyeOff, TimerReset, Share2, Check, Search, Download, ArrowUpDown, History, Copy } from "lucide-react";
+import { Megaphone, Trash2, Edit2, X, ImagePlus, Clock, Eye, EyeOff, TimerReset, Share2, Check, Search, Download, ArrowUpDown, History, Copy, Plus } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import jsPDF from "jspdf";
@@ -349,6 +349,28 @@ function SponsorForm({
               ))}
             </div>
           )}
+        </div>
+
+        {/* Wholesale / Harga Grosir */}
+        <div className="space-y-2">
+          <label className="text-xs font-semibold text-muted-foreground">💰 Harga Grosir (opsional)</label>
+          <p className="text-[10px] text-muted-foreground">Atur harga per item lebih murah jika beli banyak</p>
+          {wholesaleTiers.map((tier, i) => (
+            <div key={i} className="flex gap-2 items-center">
+              <div className="flex-1">
+                <label className="text-[10px] text-muted-foreground">Min. Qty</label>
+                <Input type="number" min={2} placeholder="Min qty" value={tier.min_quantity || ""} onChange={e => { const c = [...wholesaleTiers]; c[i] = { ...c[i], min_quantity: parseInt(e.target.value) || 2 }; setWholesaleTiers(c); }} />
+              </div>
+              <div className="flex-1">
+                <label className="text-[10px] text-muted-foreground">Harga/pcs</label>
+                <Input type="number" min={0} placeholder="Harga per item" value={tier.price_per_item || ""} onChange={e => { const c = [...wholesaleTiers]; c[i] = { ...c[i], price_per_item: parseInt(e.target.value) || 0 }; setWholesaleTiers(c); }} />
+              </div>
+              <button onClick={() => setWholesaleTiers(prev => prev.filter((_, j) => j !== i))} className="mt-4 text-destructive"><Trash2 className="w-4 h-4" /></button>
+            </div>
+          ))}
+          <Button type="button" variant="outline" size="sm" onClick={() => setWholesaleTiers([...wholesaleTiers, { min_quantity: 2, price_per_item: 0 }])} className="gap-1">
+            <Plus className="w-3 h-3" /> Tambah Tier Grosir
+          </Button>
         </div>
 
         <Button className="w-full gap-2" onClick={saveSponsor} disabled={!title.trim() || !sellerName.trim()}>
