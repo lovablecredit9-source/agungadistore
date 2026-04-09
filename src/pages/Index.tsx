@@ -117,14 +117,14 @@ interface CartItem {
 }
 
 const TICKET_CATEGORIES = [
-  { value: "akun", label: "🔑 Akun", emoji: "🔑" },
-  { value: "voucher", label: "🎟️ Voucher", emoji: "🎟️" },
-  { value: "saldo", label: "💰 Saldo", emoji: "💰" },
-  { value: "sponsor", label: "🏪 Sponsor", emoji: "🏪" },
-  { value: "penipu", label: "🚨 Lapor Penipu", emoji: "🚨" },
-  { value: "lagu", label: "🎵 Lagu Bermasalah", emoji: "🎵" },
-  { value: "transaksi", label: "🧾 Transaksi", emoji: "🧾" },
-  { value: "lainnya", label: "📋 Lainnya", emoji: "📋" },
+  { value: "akun", label: "Akun" },
+  { value: "voucher", label: "Voucher" },
+  { value: "saldo", label: "Saldo" },
+  { value: "sponsor", label: "Sponsor" },
+  { value: "penipu", label: "Lapor Penipu" },
+  { value: "lagu", label: "Lagu Bermasalah" },
+  { value: "transaksi", label: "Transaksi" },
+  { value: "lainnya", label: "Lainnya" },
 ];
 
 interface SupportTicket {
