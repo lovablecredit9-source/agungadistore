@@ -1045,8 +1045,19 @@ const Index = () => {
     if (!ticketName.trim() || !ticketPhone.trim() || !ticketDesc.trim()) {
       toast({ title: "Semua field harus diisi", variant: "destructive" }); return;
     }
+    let screenshotUrl: string | null = null;
+    if (ticketScreenshot) {
+      const ext = ticketScreenshot.name.split(".").pop();
+      const path = `tickets/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+      const { error: upErr } = await supabase.storage.from("chat-images").upload(path, ticketScreenshot);
+      if (!upErr) {
+        const { data: urlData } = supabase.storage.from("chat-images").getPublicUrl(path);
+        screenshotUrl = urlData.publicUrl;
+      }
+    }
     const { data, error } = await supabase.from("support_tickets").insert({
       name: ticketName.trim(), phone: ticketPhone.trim(), description: ticketDesc.trim(),
+      category: ticketCategory, screenshot_url: screenshotUrl,
     }).select().single();
     if (error || !data) { toast({ title: "Gagal membuat tiket", variant: "destructive" }); return; }
 
@@ -1055,7 +1066,8 @@ const Index = () => {
     localStorage.setItem("my_ticket_ids", JSON.stringify(stored));
 
     toast({ title: `Tiket #${(data as any).ticket_number} dibuat!` });
-    setTicketName(""); setTicketPhone(""); setTicketDesc("");
+    setTicketName(""); setTicketPhone(""); setTicketDesc(""); setTicketCategory("lainnya");
+    setTicketScreenshot(null); setTicketScreenshotPreview(null);
     await fetchTickets();
     setActiveTicket(data as unknown as SupportTicket);
     setTicketView("chat");
