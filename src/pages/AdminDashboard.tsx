@@ -386,6 +386,10 @@ const AdminDashboard = () => {
 
   async function generatePinResetToken() {
     if (!pinResetTarget) { toast({ title: "Pilih user", variant: "destructive" }); return; }
+    // Invalidate old tokens first
+    await supabase.functions.invoke("manage-pin", {
+      body: { action: "invalidate_tokens", visitorId: pinResetTarget },
+    });
     const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
     const token = Array.from({ length: 8 }, () => chars[Math.floor(Math.random() * chars.length)]).join("");
     const { error } = await supabase.from("pin_reset_tokens").insert({
@@ -393,11 +397,27 @@ const AdminDashboard = () => {
     } as any);
     if (error) { toast({ title: "Gagal buat token", variant: "destructive" }); return; }
     setGeneratedResetToken(token);
-    // Notify user
     await supabase.from("notifications").insert({
       visitor_id: pinResetTarget, title: "Token Reset PIN 🔑", message: `Token reset PIN Anda: ${token}\nGunakan untuk membuat PIN baru.`, type: "pin_reset",
     } as any);
     toast({ title: `Token reset dibuat: ${token}` });
+  }
+
+  async function generatePwResetToken() {
+    if (!pwResetTarget) { toast({ title: "Pilih user", variant: "destructive" }); return; }
+    // Invalidate old password reset tokens
+    await supabase.from("password_reset_tokens").update({ is_used: true } as any).eq("visitor_id", pwResetTarget).eq("is_used", false);
+    const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+    const token = Array.from({ length: 8 }, () => chars[Math.floor(Math.random() * chars.length)]).join("");
+    const { error } = await supabase.from("password_reset_tokens").insert({
+      visitor_id: pwResetTarget, token,
+    } as any);
+    if (error) { toast({ title: "Gagal buat token", variant: "destructive" }); return; }
+    setGeneratedPwResetToken(token);
+    await supabase.from("notifications").insert({
+      visitor_id: pwResetTarget, title: "Token Reset Sandi 🔐", message: `Token reset sandi Anda: ${token}\nGunakan untuk membuat sandi baru.`, type: "password_reset",
+    } as any);
+    toast({ title: `Token reset sandi dibuat: ${token}` });
   }
 
   async function fetchDeposits() {
