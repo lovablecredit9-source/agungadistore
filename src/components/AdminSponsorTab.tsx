@@ -596,6 +596,7 @@ export default function AdminSponsorTab() {
   const [showHistory, setShowHistory] = useState(false);
   const [history, setHistory] = useState<SponsorHistoryItem[]>([]);
   const [selectedHistory, setSelectedHistory] = useState<SponsorHistoryItem | null>(null);
+  const [allWholesalePrices, setAllWholesalePrices] = useState<any[]>([]);
   const { toast } = useToast();
 
   useEffect(() => { fetchSponsors(); }, []);
@@ -606,19 +607,21 @@ export default function AdminSponsorTab() {
   }
 
   async function fetchSponsors() {
-    const { data } = await supabase.from("sponsors").select("*").order("created_at", { ascending: false });
-    if (data) {
-      setSponsors(data as unknown as Sponsor[]);
-      const { data: imgData } = await supabase.from("sponsor_images").select("*").order("image_order", { ascending: true });
-      if (imgData) {
-        const map: Record<string, SponsorImage[]> = {};
-        (imgData as unknown as SponsorImage[]).forEach(img => {
-          if (!map[img.sponsor_id]) map[img.sponsor_id] = [];
-          map[img.sponsor_id].push(img);
-        });
-        setSponsorImages(map);
-      }
+    const [sRes, imgRes, wRes] = await Promise.all([
+      supabase.from("sponsors").select("*").order("created_at", { ascending: false }),
+      supabase.from("sponsor_images").select("*").order("image_order", { ascending: true }),
+      supabase.from("wholesale_prices").select("*").eq("entity_type", "sponsor").order("min_quantity"),
+    ]);
+    if (sRes.data) setSponsors(sRes.data as unknown as Sponsor[]);
+    if (imgRes.data) {
+      const map: Record<string, SponsorImage[]> = {};
+      (imgRes.data as unknown as SponsorImage[]).forEach(img => {
+        if (!map[img.sponsor_id]) map[img.sponsor_id] = [];
+        map[img.sponsor_id].push(img);
+      });
+      setSponsorImages(map);
     }
+    if (wRes.data) setAllWholesalePrices(wRes.data);
   }
 
   async function toggleActive(s: Sponsor) {
