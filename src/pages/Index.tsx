@@ -116,6 +116,17 @@ interface CartItem {
   quantity: number;
 }
 
+const TICKET_CATEGORIES = [
+  { value: "akun", label: "🔑 Akun", emoji: "🔑" },
+  { value: "voucher", label: "🎟️ Voucher", emoji: "🎟️" },
+  { value: "saldo", label: "💰 Saldo", emoji: "💰" },
+  { value: "sponsor", label: "🏪 Sponsor", emoji: "🏪" },
+  { value: "penipu", label: "🚨 Lapor Penipu", emoji: "🚨" },
+  { value: "lagu", label: "🎵 Lagu Bermasalah", emoji: "🎵" },
+  { value: "transaksi", label: "🧾 Transaksi", emoji: "🧾" },
+  { value: "lainnya", label: "📋 Lainnya", emoji: "📋" },
+];
+
 interface SupportTicket {
   id: string;
   ticket_number: number;
@@ -124,6 +135,8 @@ interface SupportTicket {
   description: string;
   status: string;
   created_at: string;
+  category?: string;
+  screenshot_url?: string | null;
 }
 
 interface TicketMessage {
