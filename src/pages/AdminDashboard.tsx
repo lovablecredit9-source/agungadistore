@@ -683,6 +683,15 @@ const AdminDashboard = () => {
         product_id: editingProduct.id, field_name: name, field_order: i,
       }));
       if (fieldInserts.length > 0) await supabase.from("product_fields").insert(fieldInserts);
+
+      // Save wholesale tiers
+      await supabase.from("wholesale_prices").delete().eq("entity_type", "product").eq("entity_id", editingProduct.id);
+      const validTiers = wholesaleTiers.filter(t => t.min_quantity >= 2 && t.price_per_item > 0);
+      if (validTiers.length > 0) {
+        await supabase.from("wholesale_prices").insert(validTiers.map(t => ({
+          entity_type: "product" as const, entity_id: editingProduct.id, min_quantity: t.min_quantity, price_per_item: t.price_per_item,
+        })));
+      }
       toast({ title: "Produk diperbarui!" });
     } else {
       const { data: product, error } = await supabase.from("products").insert({
@@ -703,6 +712,14 @@ const AdminDashboard = () => {
         product_id: product.id, field_name: name, field_order: i,
       }));
       if (fieldInserts.length > 0) await supabase.from("product_fields").insert(fieldInserts);
+
+      // Save wholesale tiers
+      const validTiers = wholesaleTiers.filter(t => t.min_quantity >= 2 && t.price_per_item > 0);
+      if (validTiers.length > 0) {
+        await supabase.from("wholesale_prices").insert(validTiers.map(t => ({
+          entity_type: "product" as const, entity_id: product.id, min_quantity: t.min_quantity, price_per_item: t.price_per_item,
+        })));
+      }
       toast({ title: "Produk ditambahkan!" });
     }
     resetForm(); fetchAll();
