@@ -1252,6 +1252,22 @@ const Index = () => {
                   cta: "Lihat Sponsor",
                   onClick: () => setTab("sponsor"),
                 },
+                {
+                  id: "saldo",
+                  image: promoSaldoImg,
+                  title: "Daftar Akun & Isi Saldo",
+                  subtitle: "💰 Belanja Lebih Mudah",
+                  cta: "Daftar Sekarang",
+                  onClick: () => setTab("saldo"),
+                },
+                {
+                  id: "publik",
+                  image: promoPublikImg,
+                  title: "Upload Lagu Kamu Sendiri!",
+                  subtitle: "🎤 AI & Admin Cek Otomatis",
+                  cta: "Mulai Upload",
+                  onClick: () => setTab("publik"),
+                },
               ]}
             />
 
