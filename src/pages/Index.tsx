@@ -449,6 +449,17 @@ const Index = () => {
     }
   }, []);
 
+  // Auto-open product from URL ?id= param
+  useEffect(() => {
+    if (products.length === 0) return;
+    const params = new URLSearchParams(window.location.search);
+    const productId = params.get("id");
+    if (productId && tab === "produk") {
+      const found = products.find(p => p.id === productId);
+      if (found) setSelectedProduct(found);
+    }
+  }, [products, tab]);
+
   async function checkPinStatus() {
     const { data } = await supabase.functions.invoke("manage-pin", { body: { action: "check", visitorId } });
     if (data) setHasPin(data.hasPin);
