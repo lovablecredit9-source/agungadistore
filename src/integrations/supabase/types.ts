@@ -1343,6 +1343,33 @@ export type Database = {
         }
         Relationships: []
       }
+      wholesale_prices: {
+        Row: {
+          created_at: string
+          entity_id: string
+          entity_type: string
+          id: string
+          min_quantity: number
+          price_per_item: number
+        }
+        Insert: {
+          created_at?: string
+          entity_id: string
+          entity_type?: string
+          id?: string
+          min_quantity?: number
+          price_per_item?: number
+        }
+        Update: {
+          created_at?: string
+          entity_id?: string
+          entity_type?: string
+          id?: string
+          min_quantity?: number
+          price_per_item?: number
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
