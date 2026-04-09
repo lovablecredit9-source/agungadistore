@@ -116,6 +116,17 @@ interface CartItem {
   quantity: number;
 }
 
+const TICKET_CATEGORIES = [
+  { value: "akun", label: "🔑 Akun", emoji: "🔑" },
+  { value: "voucher", label: "🎟️ Voucher", emoji: "🎟️" },
+  { value: "saldo", label: "💰 Saldo", emoji: "💰" },
+  { value: "sponsor", label: "🏪 Sponsor", emoji: "🏪" },
+  { value: "penipu", label: "🚨 Lapor Penipu", emoji: "🚨" },
+  { value: "lagu", label: "🎵 Lagu Bermasalah", emoji: "🎵" },
+  { value: "transaksi", label: "🧾 Transaksi", emoji: "🧾" },
+  { value: "lainnya", label: "📋 Lainnya", emoji: "📋" },
+];
+
 interface SupportTicket {
   id: string;
   ticket_number: number;
@@ -124,6 +135,8 @@ interface SupportTicket {
   description: string;
   status: string;
   created_at: string;
+  category?: string;
+  screenshot_url?: string | null;
 }
 
 interface TicketMessage {
@@ -307,6 +320,9 @@ const Index = () => {
   const [ticketName, setTicketName] = useState("");
   const [ticketPhone, setTicketPhone] = useState("");
   const [ticketDesc, setTicketDesc] = useState("");
+  const [ticketCategory, setTicketCategory] = useState("lainnya");
+  const [ticketScreenshot, setTicketScreenshot] = useState<File | null>(null);
+  const [ticketScreenshotPreview, setTicketScreenshotPreview] = useState<string | null>(null);
   const [ticketMsg, setTicketMsg] = useState("");
   const ticketChatRef = useRef<HTMLDivElement>(null);
 
@@ -1029,8 +1045,19 @@ const Index = () => {
     if (!ticketName.trim() || !ticketPhone.trim() || !ticketDesc.trim()) {
       toast({ title: "Semua field harus diisi", variant: "destructive" }); return;
     }
+    let screenshotUrl: string | null = null;
+    if (ticketScreenshot) {
+      const ext = ticketScreenshot.name.split(".").pop();
+      const path = `tickets/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+      const { error: upErr } = await supabase.storage.from("chat-images").upload(path, ticketScreenshot);
+      if (!upErr) {
+        const { data: urlData } = supabase.storage.from("chat-images").getPublicUrl(path);
+        screenshotUrl = urlData.publicUrl;
+      }
+    }
     const { data, error } = await supabase.from("support_tickets").insert({
       name: ticketName.trim(), phone: ticketPhone.trim(), description: ticketDesc.trim(),
+      category: ticketCategory, screenshot_url: screenshotUrl,
     }).select().single();
     if (error || !data) { toast({ title: "Gagal membuat tiket", variant: "destructive" }); return; }
 
@@ -1039,7 +1066,8 @@ const Index = () => {
     localStorage.setItem("my_ticket_ids", JSON.stringify(stored));
 
     toast({ title: `Tiket #${(data as any).ticket_number} dibuat!` });
-    setTicketName(""); setTicketPhone(""); setTicketDesc("");
+    setTicketName(""); setTicketPhone(""); setTicketDesc(""); setTicketCategory("lainnya");
+    setTicketScreenshot(null); setTicketScreenshotPreview(null);
     await fetchTickets();
     setActiveTicket(data as unknown as SupportTicket);
     setTicketView("chat");
@@ -1750,7 +1778,9 @@ const Index = () => {
                   </div>
                 )}
 
-                {tickets.map(t => (
+                {tickets.map(t => {
+                  const catInfo = TICKET_CATEGORIES.find(c => c.value === (t as any).category) || TICKET_CATEGORIES[TICKET_CATEGORIES.length - 1];
+                  return (
                   <Card key={t.id} className="cursor-pointer hover:shadow-lg transition-all" onClick={() => { setActiveTicket(t); setTicketView("chat"); }}>
                     <CardContent className="p-4">
                       <div className="flex items-center justify-between mb-1">
@@ -1759,11 +1789,15 @@ const Index = () => {
                           {t.status === "open" ? "Terbuka" : "Ditutup"}
                         </span>
                       </div>
+                      <div className="flex items-center gap-1.5 mb-1">
+                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-primary/10 text-primary font-medium">{catInfo.label}</span>
+                      </div>
                       <p className="text-xs text-muted-foreground line-clamp-1">{t.description}</p>
                       <p className="text-[10px] text-muted-foreground mt-1">{new Date(t.created_at).toLocaleString("id-ID")}</p>
                     </CardContent>
                   </Card>
-                ))}
+                  );
+                })}
               </>
             )}
 
@@ -1775,9 +1809,56 @@ const Index = () => {
                 </div>
                 <Card>
                   <CardContent className="p-4 space-y-3">
+                    <div>
+                      <label className="text-xs font-semibold text-muted-foreground mb-1.5 block">Kategori Masalah</label>
+                      <div className="grid grid-cols-2 gap-2">
+                        {TICKET_CATEGORIES.map(cat => (
+                          <button
+                            key={cat.value}
+                            type="button"
+                            onClick={() => setTicketCategory(cat.value)}
+                            className={`text-left text-xs px-3 py-2 rounded-lg border transition-all ${
+                              ticketCategory === cat.value
+                                ? "border-primary bg-primary/10 text-primary font-bold"
+                                : "border-border bg-card hover:border-primary/40"
+                            }`}
+                          >
+                            {cat.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
                     <Input placeholder="Nama Lengkap" value={ticketName} onChange={e => setTicketName(e.target.value)} />
                     <Input placeholder="No HP" value={ticketPhone} onChange={e => setTicketPhone(e.target.value)} />
                     <Textarea placeholder="Jelaskan masalah kamu..." value={ticketDesc} onChange={e => setTicketDesc(e.target.value)} rows={4} />
+                    <div>
+                      <label className="text-xs font-semibold text-muted-foreground mb-1.5 block">📸 Screenshot Bukti (opsional)</label>
+                      {ticketScreenshotPreview ? (
+                        <div className="relative inline-block">
+                          <img src={ticketScreenshotPreview} alt="Preview" className="max-h-32 rounded-lg border" />
+                          <button
+                            type="button"
+                            onClick={() => { setTicketScreenshot(null); setTicketScreenshotPreview(null); }}
+                            className="absolute -top-2 -right-2 w-5 h-5 bg-destructive text-destructive-foreground rounded-full flex items-center justify-center text-xs"
+                          >×</button>
+                        </div>
+                      ) : (
+                        <label className="flex items-center gap-2 px-3 py-2.5 rounded-lg border border-dashed border-border cursor-pointer hover:border-primary/40 transition-colors">
+                          <ImagePlus className="w-4 h-4 text-muted-foreground" />
+                          <span className="text-xs text-muted-foreground">Pilih gambar...</span>
+                          <input type="file" accept="image/*" className="hidden" onChange={e => {
+                            const file = e.target.files?.[0];
+                            if (file) {
+                              setTicketScreenshot(file);
+                              const reader = new FileReader();
+                              reader.onload = ev => setTicketScreenshotPreview(ev.target?.result as string);
+                              reader.readAsDataURL(file);
+                            }
+                            e.target.value = "";
+                          }} />
+                        </label>
+                      )}
+                    </div>
                     <Button className="w-full" onClick={createTicket}><Send className="w-4 h-4 mr-2" /> Kirim Tiket</Button>
                   </CardContent>
                 </Card>
@@ -1797,9 +1878,18 @@ const Index = () => {
                 <div ref={ticketChatRef} className="bg-muted/30 rounded-xl p-3 space-y-3 max-h-[50vh] overflow-y-auto">
                   {/* Ticket info card */}
                   <div className="bg-primary/5 border border-primary/20 rounded-lg p-3 text-xs space-y-1">
+                    {activeTicket.category && (
+                      <p><strong>Kategori:</strong> {TICKET_CATEGORIES.find(c => c.value === activeTicket.category)?.label || activeTicket.category}</p>
+                    )}
                     <p><strong>Nama:</strong> {activeTicket.name}</p>
                     <p><strong>HP:</strong> {activeTicket.phone}</p>
                     <p><strong>Masalah:</strong> {activeTicket.description}</p>
+                    {activeTicket.screenshot_url && (
+                      <div className="mt-2">
+                        <p className="font-bold mb-1">📸 Screenshot:</p>
+                        <img src={activeTicket.screenshot_url} alt="Screenshot bukti" className="max-w-full rounded-lg border" />
+                      </div>
+                    )}
                   </div>
 
                   {ticketMessages.map(m => (
