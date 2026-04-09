@@ -1803,9 +1803,56 @@ const Index = () => {
                 </div>
                 <Card>
                   <CardContent className="p-4 space-y-3">
+                    <div>
+                      <label className="text-xs font-semibold text-muted-foreground mb-1.5 block">Kategori Masalah</label>
+                      <div className="grid grid-cols-2 gap-2">
+                        {TICKET_CATEGORIES.map(cat => (
+                          <button
+                            key={cat.value}
+                            type="button"
+                            onClick={() => setTicketCategory(cat.value)}
+                            className={`text-left text-xs px-3 py-2 rounded-lg border transition-all ${
+                              ticketCategory === cat.value
+                                ? "border-primary bg-primary/10 text-primary font-bold"
+                                : "border-border bg-card hover:border-primary/40"
+                            }`}
+                          >
+                            {cat.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
                     <Input placeholder="Nama Lengkap" value={ticketName} onChange={e => setTicketName(e.target.value)} />
                     <Input placeholder="No HP" value={ticketPhone} onChange={e => setTicketPhone(e.target.value)} />
                     <Textarea placeholder="Jelaskan masalah kamu..." value={ticketDesc} onChange={e => setTicketDesc(e.target.value)} rows={4} />
+                    <div>
+                      <label className="text-xs font-semibold text-muted-foreground mb-1.5 block">📸 Screenshot Bukti (opsional)</label>
+                      {ticketScreenshotPreview ? (
+                        <div className="relative inline-block">
+                          <img src={ticketScreenshotPreview} alt="Preview" className="max-h-32 rounded-lg border" />
+                          <button
+                            type="button"
+                            onClick={() => { setTicketScreenshot(null); setTicketScreenshotPreview(null); }}
+                            className="absolute -top-2 -right-2 w-5 h-5 bg-destructive text-destructive-foreground rounded-full flex items-center justify-center text-xs"
+                          >×</button>
+                        </div>
+                      ) : (
+                        <label className="flex items-center gap-2 px-3 py-2.5 rounded-lg border border-dashed border-border cursor-pointer hover:border-primary/40 transition-colors">
+                          <ImagePlus className="w-4 h-4 text-muted-foreground" />
+                          <span className="text-xs text-muted-foreground">Pilih gambar...</span>
+                          <input type="file" accept="image/*" className="hidden" onChange={e => {
+                            const file = e.target.files?.[0];
+                            if (file) {
+                              setTicketScreenshot(file);
+                              const reader = new FileReader();
+                              reader.onload = ev => setTicketScreenshotPreview(ev.target?.result as string);
+                              reader.readAsDataURL(file);
+                            }
+                            e.target.value = "";
+                          }} />
+                        </label>
+                      )}
+                    </div>
                     <Button className="w-full" onClick={createTicket}><Send className="w-4 h-4 mr-2" /> Kirim Tiket</Button>
                   </CardContent>
                 </Card>
