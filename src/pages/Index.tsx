@@ -790,7 +790,8 @@ const Index = () => {
   }
 
   async function buyWithSaldo(product: Product, quantity = 1, voucherCode = "", pin?: string) {
-    const totalPrice = product.price * quantity;
+    const unitPrice = getWholesalePrice(product.id, quantity, product.price);
+    const totalPrice = unitPrice * quantity;
     if (!userBalance || userBalance.balance < totalPrice) {
       toast({ title: "Saldo tidak cukup", variant: "destructive" }); return;
     }
