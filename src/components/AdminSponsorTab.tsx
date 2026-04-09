@@ -631,6 +631,7 @@ export default function AdminSponsorTab() {
   }
 
   async function deleteSponsor(id: string) {
+    await supabase.from("wholesale_prices").delete().eq("entity_type", "sponsor").eq("entity_id", id);
     await supabase.from("sponsors").delete().eq("id", id);
     toast({ title: "Sponsor dihapus" });
     fetchSponsors();
@@ -733,6 +734,7 @@ export default function AdminSponsorTab() {
         onSave={() => { setEditing(null); fetchSponsors(); }}
         onCancel={() => setEditing(null)}
         sponsorImages={sponsorImages}
+        allWholesalePrices={allWholesalePrices}
       />
 
       {/* Search, Filter, Sort, PDF */}
