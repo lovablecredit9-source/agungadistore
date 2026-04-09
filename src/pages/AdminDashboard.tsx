@@ -110,6 +110,7 @@ interface UserBalance {
   visitor_id: string;
   username: string;
   phone: string;
+  email?: string;
   balance: number;
   created_at: string;
 }
@@ -220,6 +221,10 @@ const AdminDashboard = () => {
   // PIN Reset
   const [pinResetTarget, setPinResetTarget] = useState("");
   const [generatedResetToken, setGeneratedResetToken] = useState("");
+
+  // Password Reset
+  const [pwResetTarget, setPwResetTarget] = useState("");
+  const [generatedPwResetToken, setGeneratedPwResetToken] = useState("");
 
   // Music Storage Vouchers
   interface MusicStorageVoucher {
@@ -382,6 +387,10 @@ const AdminDashboard = () => {
 
   async function generatePinResetToken() {
     if (!pinResetTarget) { toast({ title: "Pilih user", variant: "destructive" }); return; }
+    // Invalidate old tokens first
+    await supabase.functions.invoke("manage-pin", {
+      body: { action: "invalidate_tokens", visitorId: pinResetTarget },
+    });
     const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
     const token = Array.from({ length: 8 }, () => chars[Math.floor(Math.random() * chars.length)]).join("");
     const { error } = await supabase.from("pin_reset_tokens").insert({
@@ -389,11 +398,27 @@ const AdminDashboard = () => {
     } as any);
     if (error) { toast({ title: "Gagal buat token", variant: "destructive" }); return; }
     setGeneratedResetToken(token);
-    // Notify user
     await supabase.from("notifications").insert({
       visitor_id: pinResetTarget, title: "Token Reset PIN 🔑", message: `Token reset PIN Anda: ${token}\nGunakan untuk membuat PIN baru.`, type: "pin_reset",
     } as any);
     toast({ title: `Token reset dibuat: ${token}` });
+  }
+
+  async function generatePwResetToken() {
+    if (!pwResetTarget) { toast({ title: "Pilih user", variant: "destructive" }); return; }
+    // Invalidate old password reset tokens
+    await supabase.from("password_reset_tokens").update({ is_used: true } as any).eq("visitor_id", pwResetTarget).eq("is_used", false);
+    const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+    const token = Array.from({ length: 8 }, () => chars[Math.floor(Math.random() * chars.length)]).join("");
+    const { error } = await supabase.from("password_reset_tokens").insert({
+      visitor_id: pwResetTarget, token,
+    } as any);
+    if (error) { toast({ title: "Gagal buat token", variant: "destructive" }); return; }
+    setGeneratedPwResetToken(token);
+    await supabase.from("notifications").insert({
+      visitor_id: pwResetTarget, title: "Token Reset Sandi 🔐", message: `Token reset sandi Anda: ${token}\nGunakan untuk membuat sandi baru.`, type: "password_reset",
+    } as any);
+    toast({ title: `Token reset sandi dibuat: ${token}` });
   }
 
   async function fetchDeposits() {
@@ -1605,12 +1630,35 @@ const AdminDashboard = () => {
                 )}
               </CardContent>
             </Card>
+
+            <Card>
+              <CardHeader><CardTitle className="text-base flex items-center gap-2"><Lock className="w-5 h-5 text-primary" /> Buat Token Reset Sandi</CardTitle></CardHeader>
+              <CardContent className="space-y-3">
+                <select className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" value={pwResetTarget} onChange={e => setPwResetTarget(e.target.value)}>
+                  <option value="">Pilih User</option>
+                  {userBalances.map(u => <option key={u.id} value={u.visitor_id}>{u.username} ({u.email || u.phone})</option>)}
+                </select>
+                <Button className="w-full gap-2" onClick={generatePwResetToken} disabled={!pwResetTarget}>
+                  <Lock className="w-4 h-4" /> Generate Token Reset Sandi
+                </Button>
+                {generatedPwResetToken && (
+                  <div className="bg-accent/10 border border-accent/20 rounded-lg p-3 text-center space-y-2">
+                    <p className="text-xs text-muted-foreground">Token reset sandi berhasil dibuat:</p>
+                    <p className="font-mono text-xl font-extrabold text-primary tracking-[0.2em]">{generatedPwResetToken}</p>
+                    <Button size="sm" variant="outline" className="gap-1" onClick={() => copyText(generatedPwResetToken)}><Copy className="w-3 h-3" /> Salin Token</Button>
+                    <p className="text-[10px] text-muted-foreground">Kirimkan token ini ke user. Berlaku 24 jam.</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
             <div className="rounded-xl bg-muted/50 border border-border p-3 text-xs text-muted-foreground space-y-1">
-              <p className="font-bold text-foreground">ℹ️ Info PIN</p>
+              <p className="font-bold text-foreground">ℹ️ Info PIN & Sandi</p>
               <p>• User membuat PIN 4-6 digit di tab Saldo</p>
               <p>• PIN diperlukan saat pembelian dengan saldo</p>
-              <p>• Jika user lupa PIN, buat token reset di sini</p>
-              <p>• Token reset berlaku 24 jam</p>
+              <p>• Jika user lupa PIN atau sandi, buat token reset di sini</p>
+              <p>• Token reset berlaku 24 jam, sekali pakai</p>
+              <p>• Token lama otomatis dinonaktifkan saat buat baru</p>
             </div>
           </>
         )}

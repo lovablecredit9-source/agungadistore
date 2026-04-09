@@ -5,9 +5,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { getVisitorId } from "@/lib/visitor-id";
-import { getDeviceSummary, collectDeviceInfo } from "@/lib/device-info";
+import { getDeviceSummary } from "@/lib/device-info";
 import {
   Wallet, LogIn, UserPlus, LogOut, Smartphone, History, Eye, EyeOff, Mail, Lock, User, Phone,
+  Edit2, KeyRound, Save, X,
 } from "lucide-react";
 
 interface UserBalance {
@@ -40,10 +41,27 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser }: BalanceA
   const [password, setPassword] = useState("");
   const [username, setUsername] = useState("");
   const [phone, setPhone] = useState("");
+  const [loginId, setLoginId] = useState(""); // for login: email/username/phone
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [loginHistory, setLoginHistory] = useState<LoginHistoryEntry[]>([]);
   const [showHistory, setShowHistory] = useState(false);
+
+  // Edit profile states
+  const [showEditProfile, setShowEditProfile] = useState(false);
+  const [editSection, setEditSection] = useState<"profile" | "password" | "email" | null>(null);
+  const [editUsername, setEditUsername] = useState("");
+  const [editPhone, setEditPhone] = useState("");
+  const [editEmail, setEditEmail] = useState("");
+  const [oldPassword, setOldPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [resetToken, setResetToken] = useState("");
+  const [useResetToken, setUseResetToken] = useState(false);
+  const [emailPassword, setEmailPassword] = useState("");
+  const [editLoading, setEditLoading] = useState(false);
+  const [showNewPw, setShowNewPw] = useState(false);
+
   const { toast } = useToast();
 
   useEffect(() => {
@@ -51,6 +69,14 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser }: BalanceA
       fetchLoginHistory();
     }
   }, [currentUser, showHistory]);
+
+  useEffect(() => {
+    if (currentUser && showEditProfile) {
+      setEditUsername(currentUser.username);
+      setEditPhone(currentUser.phone);
+      setEditEmail(currentUser.email || "");
+    }
+  }, [currentUser, showEditProfile]);
 
   async function fetchLoginHistory() {
     if (!currentUser) return;
@@ -96,9 +122,8 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser }: BalanceA
       toast({ title: data?.error || "Gagal mendaftar", variant: "destructive" }); return;
     }
 
-    // Save login state
     localStorage.setItem("balance_logged_in", "true");
-    localStorage.setItem("balance_email", email.trim().toLowerCase());
+    localStorage.setItem("balance_email", (data.user.email || email.trim()).toLowerCase());
 
     onLogin(data.user);
     toast({ title: "Pendaftaran berhasil! 🎉" });
@@ -106,8 +131,8 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser }: BalanceA
   }
 
   async function handleLogin() {
-    if (!email.trim() || !password) {
-      toast({ title: "Email dan sandi wajib diisi", variant: "destructive" }); return;
+    if (!loginId.trim() || !password) {
+      toast({ title: "Email/Username/No HP dan sandi wajib diisi", variant: "destructive" }); return;
     }
 
     setLoading(true);
@@ -117,7 +142,7 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser }: BalanceA
     const { data, error } = await supabase.functions.invoke("balance-auth", {
       body: {
         action: "login",
-        email: email.trim(),
+        loginId: loginId.trim(),
         password,
         visitorId,
         deviceInfo: { device: deviceSummary, browser: navigator.userAgent.substring(0, 100) },
@@ -131,7 +156,7 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser }: BalanceA
     }
 
     localStorage.setItem("balance_logged_in", "true");
-    localStorage.setItem("balance_email", email.trim().toLowerCase());
+    localStorage.setItem("balance_email", (data.user.email || loginId.trim()).toLowerCase());
 
     onLogin(data.user);
     toast({ title: `Selamat datang, ${data.user.username}! 👋` });
@@ -155,13 +180,128 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser }: BalanceA
     setPassword("");
     setUsername("");
     setPhone("");
+    setLoginId("");
   }
 
-  // Show logged-in state with logout + history
+  function resetEditForm() {
+    setOldPassword("");
+    setNewPassword("");
+    setConfirmPassword("");
+    setResetToken("");
+    setUseResetToken(false);
+    setEmailPassword("");
+    setEditSection(null);
+    setShowNewPw(false);
+  }
+
+  async function handleUpdateProfile() {
+    if (!currentUser) return;
+    setEditLoading(true);
+    const { data, error } = await supabase.functions.invoke("balance-auth", {
+      body: {
+        action: "update_profile",
+        visitorId: currentUser.visitor_id,
+        username: editUsername,
+        phone: editPhone,
+      },
+    });
+    setEditLoading(false);
+    if (error || data?.error) {
+      toast({ title: data?.error || "Gagal update profil", variant: "destructive" }); return;
+    }
+    onLogin(data.user);
+    toast({ title: "Profil berhasil diperbarui ✅" });
+    setEditSection(null);
+  }
+
+  async function handleChangePassword() {
+    if (!currentUser) return;
+    if (useResetToken) {
+      if (!resetToken.trim()) {
+        toast({ title: "Masukkan token reset", variant: "destructive" }); return;
+      }
+      if (!newPassword || newPassword.length < 6) {
+        toast({ title: "Sandi baru minimal 6 karakter", variant: "destructive" }); return;
+      }
+      setEditLoading(true);
+      const { data, error } = await supabase.functions.invoke("balance-auth", {
+        body: {
+          action: "reset_password",
+          visitorId: currentUser.visitor_id,
+          resetToken: resetToken.trim(),
+          newPassword,
+        },
+      });
+      setEditLoading(false);
+      if (error || data?.error) {
+        toast({ title: data?.error || "Gagal reset sandi", variant: "destructive" }); return;
+      }
+      toast({ title: "Sandi berhasil direset ✅" });
+      resetEditForm();
+    } else {
+      if (!oldPassword) {
+        toast({ title: "Masukkan sandi lama", variant: "destructive" }); return;
+      }
+      if (!newPassword || newPassword.length < 6) {
+        toast({ title: "Sandi baru minimal 6 karakter", variant: "destructive" }); return;
+      }
+      if (newPassword !== confirmPassword) {
+        toast({ title: "Konfirmasi sandi tidak cocok", variant: "destructive" }); return;
+      }
+      setEditLoading(true);
+      const { data, error } = await supabase.functions.invoke("balance-auth", {
+        body: {
+          action: "change_password",
+          visitorId: currentUser.visitor_id,
+          oldPassword,
+          newPassword,
+        },
+      });
+      setEditLoading(false);
+      if (error || data?.error) {
+        toast({ title: data?.error || "Gagal ubah sandi", variant: "destructive" }); return;
+      }
+      toast({ title: "Sandi berhasil diubah ✅" });
+      resetEditForm();
+    }
+  }
+
+  async function handleChangeEmail() {
+    if (!currentUser) return;
+    if (!editEmail.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(editEmail.trim())) {
+      toast({ title: "Format email tidak valid", variant: "destructive" }); return;
+    }
+    if (!emailPassword) {
+      toast({ title: "Masukkan sandi untuk konfirmasi", variant: "destructive" }); return;
+    }
+    setEditLoading(true);
+    const { data, error } = await supabase.functions.invoke("balance-auth", {
+      body: {
+        action: "change_email",
+        visitorId: currentUser.visitor_id,
+        newEmail: editEmail.trim(),
+        password: emailPassword,
+      },
+    });
+    setEditLoading(false);
+    if (error || data?.error) {
+      toast({ title: data?.error || "Gagal ubah email", variant: "destructive" }); return;
+    }
+    // Update local user
+    onLogin({ ...currentUser, email: editEmail.trim().toLowerCase() });
+    localStorage.setItem("balance_email", editEmail.trim().toLowerCase());
+    toast({ title: "Email berhasil diubah ✅" });
+    resetEditForm();
+  }
+
+  // Show logged-in state
   if (currentUser) {
     return (
       <div className="space-y-2">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
+          <Button size="sm" variant="outline" className="gap-1.5 text-xs font-bold" onClick={() => { setShowEditProfile(!showEditProfile); resetEditForm(); }}>
+            <Edit2 className="w-3.5 h-3.5" /> Edit Profil
+          </Button>
           <Button size="sm" variant="outline" className="gap-1.5 text-xs font-bold" onClick={handleSwitchAccount}>
             <LogIn className="w-3.5 h-3.5" /> Login Lain
           </Button>
@@ -172,6 +312,109 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser }: BalanceA
             <Smartphone className="w-3.5 h-3.5" /> Riwayat
           </Button>
         </div>
+
+        {/* Edit Profile Panel */}
+        {showEditProfile && (
+          <Card className="border border-primary/20">
+            <CardContent className="p-3 space-y-3">
+              <h4 className="text-sm font-bold flex items-center gap-1.5">
+                <Edit2 className="w-4 h-4 text-primary" /> Edit Profil
+              </h4>
+
+              {/* Section Buttons */}
+              <div className="flex gap-1.5 flex-wrap">
+                <Button size="sm" variant={editSection === "profile" ? "default" : "outline"} className="text-xs gap-1" onClick={() => { setEditSection(editSection === "profile" ? null : "profile"); }}>
+                  <User className="w-3 h-3" /> Profil
+                </Button>
+                <Button size="sm" variant={editSection === "password" ? "default" : "outline"} className="text-xs gap-1" onClick={() => { setEditSection(editSection === "password" ? null : "password"); resetEditForm(); setEditSection("password"); }}>
+                  <Lock className="w-3 h-3" /> Sandi
+                </Button>
+                <Button size="sm" variant={editSection === "email" ? "default" : "outline"} className="text-xs gap-1" onClick={() => { setEditSection(editSection === "email" ? null : "email"); resetEditForm(); setEditSection("email"); }}>
+                  <Mail className="w-3 h-3" /> Email
+                </Button>
+              </div>
+
+              {/* Edit Username & Phone */}
+              {editSection === "profile" && (
+                <div className="space-y-2">
+                  <div className="relative">
+                    <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <Input className="pl-9 text-sm" placeholder="Username" value={editUsername} onChange={e => setEditUsername(e.target.value)} />
+                  </div>
+                  <div className="relative">
+                    <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <Input className="pl-9 text-sm" placeholder="No HP" value={editPhone} onChange={e => setEditPhone(e.target.value)} />
+                  </div>
+                  <Button size="sm" className="w-full gap-1.5" onClick={handleUpdateProfile} disabled={editLoading}>
+                    <Save className="w-3.5 h-3.5" /> {editLoading ? "Menyimpan..." : "Simpan Profil"}
+                  </Button>
+                </div>
+              )}
+
+              {/* Change Password */}
+              {editSection === "password" && (
+                <div className="space-y-2">
+                  <div className="flex gap-2">
+                    <Button size="sm" variant={!useResetToken ? "default" : "outline"} className="text-xs flex-1" onClick={() => setUseResetToken(false)}>
+                      Sandi Lama
+                    </Button>
+                    <Button size="sm" variant={useResetToken ? "default" : "outline"} className="text-xs flex-1 gap-1" onClick={() => setUseResetToken(true)}>
+                      <KeyRound className="w-3 h-3" /> Token Reset
+                    </Button>
+                  </div>
+
+                  {!useResetToken ? (
+                    <>
+                      <div className="relative">
+                        <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                        <Input className="pl-9 text-sm" type="password" placeholder="Sandi lama" value={oldPassword} onChange={e => setOldPassword(e.target.value)} />
+                      </div>
+                    </>
+                  ) : (
+                    <div className="relative">
+                      <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                      <Input className="pl-9 text-sm font-mono tracking-wider" placeholder="Token dari admin" value={resetToken} onChange={e => setResetToken(e.target.value.toUpperCase())} maxLength={8} />
+                    </div>
+                  )}
+
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <Input className="pl-9 pr-10 text-sm" type={showNewPw ? "text" : "password"} placeholder="Sandi baru (min. 6)" value={newPassword} onChange={e => setNewPassword(e.target.value)} />
+                    <button type="button" className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground" onClick={() => setShowNewPw(!showNewPw)}>
+                      {showNewPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
+
+                  {!useResetToken && (
+                    <Input className="text-sm" type="password" placeholder="Konfirmasi sandi baru" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} />
+                  )}
+
+                  <Button size="sm" className="w-full gap-1.5" onClick={handleChangePassword} disabled={editLoading}>
+                    <Lock className="w-3.5 h-3.5" /> {editLoading ? "Memproses..." : useResetToken ? "Reset Sandi" : "Ubah Sandi"}
+                  </Button>
+                </div>
+              )}
+
+              {/* Change Email */}
+              {editSection === "email" && (
+                <div className="space-y-2">
+                  <p className="text-[11px] text-muted-foreground">Email saat ini: <span className="font-medium text-foreground">{currentUser.email || "-"}</span></p>
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <Input className="pl-9 text-sm" type="email" placeholder="Email baru" value={editEmail} onChange={e => setEditEmail(e.target.value)} />
+                  </div>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <Input className="pl-9 text-sm" type="password" placeholder="Konfirmasi sandi" value={emailPassword} onChange={e => setEmailPassword(e.target.value)} />
+                  </div>
+                  <Button size="sm" className="w-full gap-1.5" onClick={handleChangeEmail} disabled={editLoading}>
+                    <Mail className="w-3.5 h-3.5" /> {editLoading ? "Memproses..." : "Ubah Email"}
+                  </Button>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
 
         {showHistory && (
           <Card className="border border-muted">
@@ -218,7 +461,7 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser }: BalanceA
             {mode === "register" ? "Daftar Akun Saldo" : "Login Akun Saldo"}
           </h3>
           <p className="text-xs text-muted-foreground mt-1">
-            {mode === "register" ? "Buat akun baru dengan email dan sandi" : "Masuk dengan email dan sandi"}
+            {mode === "register" ? "Buat akun baru dengan email dan sandi" : "Masuk dengan email, username, atau no HP"}
           </p>
         </div>
 
@@ -243,19 +486,30 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser }: BalanceA
                   onChange={(e) => setPhone(e.target.value)}
                 />
               </div>
+              <div className="relative">
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input
+                  className="pl-9"
+                  placeholder="Email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                />
+              </div>
             </>
           )}
 
-          <div className="relative">
-            <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input
-              className="pl-9"
-              placeholder="Email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-            />
-          </div>
+          {mode === "login" && (
+            <div className="relative">
+              <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input
+                className="pl-9"
+                placeholder="Email / Username / No HP"
+                value={loginId}
+                onChange={(e) => setLoginId(e.target.value)}
+              />
+            </div>
+          )}
 
           <div className="relative">
             <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />

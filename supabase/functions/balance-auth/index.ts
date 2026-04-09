@@ -5,7 +5,6 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-// Simple hash function using Web Crypto API
 async function hashPassword(password: string): Promise<string> {
   const encoder = new TextEncoder();
   const data = encoder.encode(password);
@@ -62,6 +61,17 @@ Deno.serve(async (request) => {
         return Response.json({ error: "Email sudah terdaftar. Silakan login." }, { status: 400, headers: corsHeaders });
       }
 
+      // Check if username already exists
+      const { data: existingUsername } = await admin
+        .from("user_balances")
+        .select("id")
+        .eq("username", username.trim())
+        .maybeSingle();
+
+      if (existingUsername) {
+        return Response.json({ error: "Username sudah dipakai. Pilih username lain." }, { status: 400, headers: corsHeaders });
+      }
+
       const passwordHash = await hashPassword(password);
       const visitorId = payload.visitorId || crypto.randomUUID();
 
@@ -81,7 +91,6 @@ Deno.serve(async (request) => {
         return Response.json({ error: "Gagal mendaftar: " + insertError.message }, { status: 500, headers: corsHeaders });
       }
 
-      // Record login history
       if (payload.deviceInfo) {
         await admin.from("balance_login_history").insert({
           user_balance_id: newUser.id,
@@ -95,25 +104,53 @@ Deno.serve(async (request) => {
       return Response.json({ success: true, user: newUser, action: "registered" }, { headers: corsHeaders });
     }
 
-    // === LOGIN ===
+    // === LOGIN (supports email, username, or phone) ===
     if (action === "login") {
-      const { email, password } = payload;
+      const { email, password, loginId } = payload;
+      const identifier = loginId || email; // support both old 'email' field and new 'loginId'
 
-      if (!email || !password) {
-        return Response.json({ error: "Email dan sandi wajib diisi" }, { status: 400, headers: corsHeaders });
+      if (!identifier || !password) {
+        return Response.json({ error: "Email/Username/No HP dan sandi wajib diisi" }, { status: 400, headers: corsHeaders });
       }
 
       const passwordHash = await hashPassword(password);
+      const trimmed = identifier.trim().toLowerCase();
 
-      const { data: user, error: findError } = await admin
+      // Try to find user by email, username, or phone
+      let user = null;
+
+      // Try email
+      const { data: byEmail } = await admin
         .from("user_balances")
         .select("id, visitor_id, username, phone, email, balance")
-        .eq("email", email.trim().toLowerCase())
+        .eq("email", trimmed)
         .eq("password_hash", passwordHash)
         .maybeSingle();
+      
+      if (byEmail) {
+        user = byEmail;
+      } else {
+        // Try username (case insensitive)
+        const { data: allUsers } = await admin
+          .from("user_balances")
+          .select("id, visitor_id, username, phone, email, balance, password_hash")
+          .eq("password_hash", passwordHash);
+        
+        if (allUsers) {
+          user = allUsers.find(u => 
+            u.username.toLowerCase() === trimmed || 
+            u.phone.replace(/[\s\-+]/g, "").endsWith(trimmed.replace(/[\s\-+]/g, ""))
+          );
+          if (user) {
+            // Remove password_hash from response
+            const { password_hash, ...safeUser } = user;
+            user = safeUser;
+          }
+        }
+      }
 
-      if (findError || !user) {
-        return Response.json({ error: "Email atau sandi salah" }, { status: 401, headers: corsHeaders });
+      if (!user) {
+        return Response.json({ error: "Email/Username/No HP atau sandi salah" }, { status: 401, headers: corsHeaders });
       }
 
       // Update visitor_id to current device if provided
@@ -126,7 +163,6 @@ Deno.serve(async (request) => {
         user.visitor_id = newVisitorId;
       }
 
-      // Record login history
       if (payload.deviceInfo) {
         await admin.from("balance_login_history").insert({
           user_balance_id: user.id,
@@ -138,6 +174,148 @@ Deno.serve(async (request) => {
       }
 
       return Response.json({ success: true, user, action: "logged_in" }, { headers: corsHeaders });
+    }
+
+    // === CHANGE PASSWORD (using old password) ===
+    if (action === "change_password") {
+      const { visitorId, oldPassword, newPassword } = payload;
+      if (!visitorId || !oldPassword || !newPassword) {
+        return Response.json({ error: "Data tidak lengkap" }, { status: 400, headers: corsHeaders });
+      }
+      if (newPassword.length < 6) {
+        return Response.json({ error: "Sandi baru minimal 6 karakter" }, { status: 400, headers: corsHeaders });
+      }
+
+      const oldHash = await hashPassword(oldPassword);
+      const { data: user } = await admin
+        .from("user_balances")
+        .select("id")
+        .eq("visitor_id", visitorId)
+        .eq("password_hash", oldHash)
+        .maybeSingle();
+
+      if (!user) {
+        return Response.json({ error: "Sandi lama salah" }, { status: 401, headers: corsHeaders });
+      }
+
+      const newHash = await hashPassword(newPassword);
+      await admin.from("user_balances").update({ password_hash: newHash }).eq("id", user.id);
+
+      return Response.json({ success: true, message: "Sandi berhasil diubah" }, { headers: corsHeaders });
+    }
+
+    // === RESET PASSWORD (using admin token) ===
+    if (action === "reset_password") {
+      const { visitorId, resetToken, newPassword } = payload;
+      if (!visitorId || !resetToken || !newPassword) {
+        return Response.json({ error: "Token dan sandi baru diperlukan" }, { status: 400, headers: corsHeaders });
+      }
+      if (newPassword.length < 6) {
+        return Response.json({ error: "Sandi baru minimal 6 karakter" }, { status: 400, headers: corsHeaders });
+      }
+
+      const { data: tokenRow } = await admin.from("password_reset_tokens")
+        .select("*")
+        .eq("token", resetToken.toUpperCase())
+        .eq("visitor_id", visitorId)
+        .eq("is_used", false)
+        .maybeSingle();
+
+      if (!tokenRow) {
+        return Response.json({ error: "Token reset tidak valid atau sudah dipakai" }, { status: 400, headers: corsHeaders });
+      }
+
+      if (new Date(tokenRow.expires_at) < new Date()) {
+        return Response.json({ error: "Token reset sudah expired" }, { status: 400, headers: corsHeaders });
+      }
+
+      const newHash = await hashPassword(newPassword);
+      await admin.from("user_balances").update({ password_hash: newHash }).eq("visitor_id", visitorId);
+      await admin.from("password_reset_tokens").update({ is_used: true }).eq("id", tokenRow.id);
+
+      return Response.json({ success: true, message: "Sandi berhasil direset" }, { headers: corsHeaders });
+    }
+
+    // === CHANGE EMAIL ===
+    if (action === "change_email") {
+      const { visitorId, newEmail, password } = payload;
+      if (!visitorId || !newEmail || !password) {
+        return Response.json({ error: "Data tidak lengkap" }, { status: 400, headers: corsHeaders });
+      }
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(newEmail.trim())) {
+        return Response.json({ error: "Format email tidak valid" }, { status: 400, headers: corsHeaders });
+      }
+
+      const passwordHash = await hashPassword(password);
+      const { data: user } = await admin
+        .from("user_balances")
+        .select("id")
+        .eq("visitor_id", visitorId)
+        .eq("password_hash", passwordHash)
+        .maybeSingle();
+
+      if (!user) {
+        return Response.json({ error: "Sandi salah" }, { status: 401, headers: corsHeaders });
+      }
+
+      // Check if new email is already used
+      const { data: existing } = await admin
+        .from("user_balances")
+        .select("id")
+        .eq("email", newEmail.trim().toLowerCase())
+        .neq("id", user.id)
+        .maybeSingle();
+
+      if (existing) {
+        return Response.json({ error: "Email sudah digunakan akun lain" }, { status: 400, headers: corsHeaders });
+      }
+
+      await admin.from("user_balances").update({ email: newEmail.trim().toLowerCase() }).eq("id", user.id);
+
+      return Response.json({ success: true, message: "Email berhasil diubah" }, { headers: corsHeaders });
+    }
+
+    // === UPDATE PROFILE (username, phone) ===
+    if (action === "update_profile") {
+      const { visitorId, username, phone } = payload;
+      if (!visitorId) {
+        return Response.json({ error: "ID tidak ditemukan" }, { status: 400, headers: corsHeaders });
+      }
+
+      const updates: Record<string, string> = {};
+      if (username && username.trim().length >= 3) {
+        // Check unique username
+        const { data: existingUsername } = await admin
+          .from("user_balances")
+          .select("id")
+          .eq("username", username.trim())
+          .neq("visitor_id", visitorId)
+          .maybeSingle();
+        if (existingUsername) {
+          return Response.json({ error: "Username sudah dipakai" }, { status: 400, headers: corsHeaders });
+        }
+        updates.username = username.trim();
+      }
+      if (phone && phone.trim().length >= 7) {
+        updates.phone = phone.trim();
+      }
+
+      if (Object.keys(updates).length === 0) {
+        return Response.json({ error: "Tidak ada perubahan" }, { status: 400, headers: corsHeaders });
+      }
+
+      const { data: updated, error: updateErr } = await admin
+        .from("user_balances")
+        .update(updates)
+        .eq("visitor_id", visitorId)
+        .select("id, visitor_id, username, phone, email, balance")
+        .single();
+
+      if (updateErr || !updated) {
+        return Response.json({ error: "Gagal memperbarui profil" }, { status: 500, headers: corsHeaders });
+      }
+
+      return Response.json({ success: true, user: updated, message: "Profil berhasil diperbarui" }, { headers: corsHeaders });
     }
 
     // === LOGIN HISTORY ===
