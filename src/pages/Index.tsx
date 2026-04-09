@@ -42,6 +42,7 @@ import InstallPrompt from "@/components/InstallPrompt";
 import MusicPublicTab from "@/components/MusicPublicTab";
 import SponsorBanner from "@/components/SponsorBanner";
 import LikesTab from "@/components/LikesTab";
+import DailyStreak from "@/components/DailyStreak";
 import HomeBannerSlider from "@/components/HomeBannerSlider";
 import BalanceAuth from "@/components/BalanceAuth";
 
@@ -1459,6 +1460,9 @@ const Index = () => {
               </CardContent>
             </Card>
 
+            {/* Daily Streak */}
+            <DailyStreak />
+
             {/* Tiket support shortcut */}
             <Card className="border-dashed border-2 border-destructive/20 hover:border-destructive/40 transition-all cursor-pointer hover:shadow-lg hover:-translate-y-0.5 duration-200" onClick={() => setTab("tiket")}>
               <CardContent className="p-4 flex items-center gap-3">
@@ -2030,6 +2034,7 @@ const Index = () => {
                     setBalanceTransactions([]);
                   }}
                 />
+
 
 
                 {deposits.length > 0 && (

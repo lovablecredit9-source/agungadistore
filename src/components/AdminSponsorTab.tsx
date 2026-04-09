@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { Megaphone, Trash2, Edit2, X, ImagePlus, Clock, Eye, EyeOff, TimerReset, Share2, Check, Search, Download, ArrowUpDown, History, Copy } from "lucide-react";
+import { Megaphone, Trash2, Edit2, X, ImagePlus, Clock, Eye, EyeOff, TimerReset, Share2, Check, Search, Download, ArrowUpDown, History, Copy, Plus } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import jsPDF from "jspdf";
@@ -93,13 +93,20 @@ function formatDateTime(iso: string) {
 const durationLabels: Record<string, string> = { seconds: "Detik", minutes: "Menit", hours: "Jam", days: "Hari", months: "Bulan" };
 
 // --- Sponsor Form Component ---
+interface WholesaleTier {
+  id?: string;
+  min_quantity: number;
+  price_per_item: number;
+}
+
 function SponsorForm({
-  editing, onSave, onCancel, sponsorImages: existingImages
+  editing, onSave, onCancel, sponsorImages: existingImages, allWholesalePrices
 }: {
   editing: Sponsor | null;
   onSave: () => void;
   onCancel: () => void;
   sponsorImages: Record<string, SponsorImage[]>;
+  allWholesalePrices: any[];
 }) {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -122,6 +129,7 @@ function SponsorForm({
   const [hasWarranty, setHasWarranty] = useState(false);
   const [warrantyDurationValue, setWarrantyDurationValue] = useState("0");
   const [warrantyDurationType, setWarrantyDurationType] = useState("days");
+  const [wholesaleTiers, setWholesaleTiers] = useState<WholesaleTier[]>([]);
   const fileRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
@@ -148,12 +156,15 @@ function SponsorForm({
       setWarrantyDurationType(editing.warranty_duration_type || "days");
       const existing = existingImages[editing.id] || [];
       setImages(existing.map(i => i.image_url));
+      const tiers = allWholesalePrices.filter((w: any) => w.entity_id === editing.id).map((w: any) => ({ id: w.id, min_quantity: w.min_quantity, price_per_item: w.price_per_item }));
+      setWholesaleTiers(tiers.length > 0 ? tiers : []);
     } else {
       setTitle(""); setDescription(""); setPrice(""); setSellerName("");
       setSellerContact(""); setDurationType("days"); setDurationValue("7");
       setCustomNote(""); setCategory(""); setImages([]); setStock("0");
       setWaNumber(""); setInstagram(""); setFacebook(""); setTiktok(""); setTwitter(""); setThreads("");
       setHasWarranty(false); setWarrantyDurationValue("0"); setWarrantyDurationType("days");
+      setWholesaleTiers([]);
     }
   }, [editing]);
 
@@ -236,6 +247,15 @@ function SponsorForm({
           image_order: i,
         }));
         await supabase.from("sponsor_images").insert(imgPayload as any);
+      }
+
+      // Save wholesale tiers
+      await supabase.from("wholesale_prices").delete().eq("entity_type", "sponsor").eq("entity_id", sponsorId);
+      const validTiers = wholesaleTiers.filter(t => t.min_quantity >= 2 && t.price_per_item > 0);
+      if (validTiers.length > 0) {
+        await supabase.from("wholesale_prices").insert(validTiers.map(t => ({
+          entity_type: "sponsor" as const, entity_id: sponsorId, min_quantity: t.min_quantity, price_per_item: t.price_per_item,
+        })));
       }
     }
 
@@ -329,6 +349,28 @@ function SponsorForm({
               ))}
             </div>
           )}
+        </div>
+
+        {/* Wholesale / Harga Grosir */}
+        <div className="space-y-2">
+          <label className="text-xs font-semibold text-muted-foreground">💰 Harga Grosir (opsional)</label>
+          <p className="text-[10px] text-muted-foreground">Atur harga per item lebih murah jika beli banyak</p>
+          {wholesaleTiers.map((tier, i) => (
+            <div key={i} className="flex gap-2 items-center">
+              <div className="flex-1">
+                <label className="text-[10px] text-muted-foreground">Min. Qty</label>
+                <Input type="number" min={2} placeholder="Min qty" value={tier.min_quantity || ""} onChange={e => { const c = [...wholesaleTiers]; c[i] = { ...c[i], min_quantity: parseInt(e.target.value) || 2 }; setWholesaleTiers(c); }} />
+              </div>
+              <div className="flex-1">
+                <label className="text-[10px] text-muted-foreground">Harga/pcs</label>
+                <Input type="number" min={0} placeholder="Harga per item" value={tier.price_per_item || ""} onChange={e => { const c = [...wholesaleTiers]; c[i] = { ...c[i], price_per_item: parseInt(e.target.value) || 0 }; setWholesaleTiers(c); }} />
+              </div>
+              <button onClick={() => setWholesaleTiers(prev => prev.filter((_, j) => j !== i))} className="mt-4 text-destructive"><Trash2 className="w-4 h-4" /></button>
+            </div>
+          ))}
+          <Button type="button" variant="outline" size="sm" onClick={() => setWholesaleTiers([...wholesaleTiers, { min_quantity: 2, price_per_item: 0 }])} className="gap-1">
+            <Plus className="w-3 h-3" /> Tambah Tier Grosir
+          </Button>
         </div>
 
         <Button className="w-full gap-2" onClick={saveSponsor} disabled={!title.trim() || !sellerName.trim()}>
@@ -554,6 +596,7 @@ export default function AdminSponsorTab() {
   const [showHistory, setShowHistory] = useState(false);
   const [history, setHistory] = useState<SponsorHistoryItem[]>([]);
   const [selectedHistory, setSelectedHistory] = useState<SponsorHistoryItem | null>(null);
+  const [allWholesalePrices, setAllWholesalePrices] = useState<any[]>([]);
   const { toast } = useToast();
 
   useEffect(() => { fetchSponsors(); }, []);
@@ -564,19 +607,21 @@ export default function AdminSponsorTab() {
   }
 
   async function fetchSponsors() {
-    const { data } = await supabase.from("sponsors").select("*").order("created_at", { ascending: false });
-    if (data) {
-      setSponsors(data as unknown as Sponsor[]);
-      const { data: imgData } = await supabase.from("sponsor_images").select("*").order("image_order", { ascending: true });
-      if (imgData) {
-        const map: Record<string, SponsorImage[]> = {};
-        (imgData as unknown as SponsorImage[]).forEach(img => {
-          if (!map[img.sponsor_id]) map[img.sponsor_id] = [];
-          map[img.sponsor_id].push(img);
-        });
-        setSponsorImages(map);
-      }
+    const [sRes, imgRes, wRes] = await Promise.all([
+      supabase.from("sponsors").select("*").order("created_at", { ascending: false }),
+      supabase.from("sponsor_images").select("*").order("image_order", { ascending: true }),
+      supabase.from("wholesale_prices").select("*").eq("entity_type", "sponsor").order("min_quantity"),
+    ]);
+    if (sRes.data) setSponsors(sRes.data as unknown as Sponsor[]);
+    if (imgRes.data) {
+      const map: Record<string, SponsorImage[]> = {};
+      (imgRes.data as unknown as SponsorImage[]).forEach(img => {
+        if (!map[img.sponsor_id]) map[img.sponsor_id] = [];
+        map[img.sponsor_id].push(img);
+      });
+      setSponsorImages(map);
     }
+    if (wRes.data) setAllWholesalePrices(wRes.data);
   }
 
   async function toggleActive(s: Sponsor) {
@@ -586,6 +631,7 @@ export default function AdminSponsorTab() {
   }
 
   async function deleteSponsor(id: string) {
+    await supabase.from("wholesale_prices").delete().eq("entity_type", "sponsor").eq("entity_id", id);
     await supabase.from("sponsors").delete().eq("id", id);
     toast({ title: "Sponsor dihapus" });
     fetchSponsors();
@@ -688,6 +734,7 @@ export default function AdminSponsorTab() {
         onSave={() => { setEditing(null); fetchSponsors(); }}
         onCancel={() => setEditing(null)}
         sponsorImages={sponsorImages}
+        allWholesalePrices={allWholesalePrices}
       />
 
       {/* Search, Filter, Sort, PDF */}

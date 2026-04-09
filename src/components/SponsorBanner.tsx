@@ -84,6 +84,7 @@ interface SponsorBannerProps {
 export default function SponsorBanner({ likedSponsorIds = new Set(), onToggleLikeSponsor }: SponsorBannerProps) {
   const [sponsors, setSponsors] = useState<Sponsor[]>([]);
   const [sponsorImages, setSponsorImages] = useState<Record<string, SponsorImage[]>>({});
+  const [wholesalePrices, setWholesalePrices] = useState<any[]>([]);
   const [current, setCurrent] = useState(0);
   const [selectedSponsor, setSelectedSponsor] = useState<Sponsor | null>(null);
   const [imgIdx, setImgIdx] = useState(0);
@@ -111,31 +112,29 @@ export default function SponsorBanner({ likedSponsorIds = new Set(), onToggleLik
   }, [sponsors.length]);
 
   async function fetchSponsors() {
-    const { data } = await supabase
-      .from("sponsors")
-      .select("*")
-      .eq("is_active", true)
-      .order("created_at", { ascending: false });
-    if (data) {
+    const [sRes, imgRes, wRes] = await Promise.all([
+      supabase.from("sponsors").select("*").eq("is_active", true).order("created_at", { ascending: false }),
+      supabase.from("sponsor_images").select("*").order("image_order", { ascending: true }),
+      supabase.from("wholesale_prices").select("*").eq("entity_type", "sponsor").order("min_quantity"),
+    ]);
+    if (sRes.data) {
       const now = new Date();
-      const active = (data as unknown as Sponsor[]).filter(s => {
+      const active = (sRes.data as unknown as Sponsor[]).filter(s => {
         if (!s.expires_at) return true;
         return new Date(s.expires_at) > now;
       });
       setSponsors(active);
       setCurrent(0);
-
-      // Fetch images
-      const { data: imgData } = await supabase.from("sponsor_images").select("*").order("image_order", { ascending: true });
-      if (imgData) {
-        const map: Record<string, SponsorImage[]> = {};
-        (imgData as unknown as SponsorImage[]).forEach(img => {
-          if (!map[img.sponsor_id]) map[img.sponsor_id] = [];
-          map[img.sponsor_id].push(img);
-        });
-        setSponsorImages(map);
-      }
     }
+    if (imgRes.data) {
+      const map: Record<string, SponsorImage[]> = {};
+      (imgRes.data as unknown as SponsorImage[]).forEach(img => {
+        if (!map[img.sponsor_id]) map[img.sponsor_id] = [];
+        map[img.sponsor_id].push(img);
+      });
+      setSponsorImages(map);
+    }
+    if (wRes.data) setWholesalePrices(wRes.data);
   }
 
   function shareSponsor(s: Sponsor) {
@@ -359,13 +358,14 @@ export default function SponsorBanner({ likedSponsorIds = new Set(), onToggleLik
           onClose={() => setSelectedSponsor(null)}
           isLiked={likedSponsorIds.has(selectedSponsor.id)}
           onToggleLike={onToggleLikeSponsor}
+          wholesaleTiers={wholesalePrices.filter((w: any) => w.entity_id === selectedSponsor.id).sort((a: any, b: any) => a.min_quantity - b.min_quantity)}
         />
       )}
     </>
   );
 }
 
-function SponsorDetailModal({ sponsor, images, onClose, isLiked, onToggleLike }: { sponsor: Sponsor; images: SponsorImage[]; onClose: () => void; isLiked?: boolean; onToggleLike?: (sponsorId: string, e?: React.MouseEvent) => void }) {
+function SponsorDetailModal({ sponsor, images, onClose, isLiked, onToggleLike, wholesaleTiers = [] }: { sponsor: Sponsor; images: SponsorImage[]; onClose: () => void; isLiked?: boolean; onToggleLike?: (sponsorId: string, e?: React.MouseEvent) => void; wholesaleTiers?: any[] }) {
   const [imgIdx, setImgIdx] = useState(0);
   const [showDisclaimer, setShowDisclaimer] = useState(true);
   const [showTerms, setShowTerms] = useState(false);
@@ -480,6 +480,20 @@ function SponsorDetailModal({ sponsor, images, onClose, isLiked, onToggleLike }:
           </div>
           {sponsor.price > 0 && (
             <p className="text-xl font-extrabold text-primary">{formatPrice(sponsor.price)}</p>
+          )}
+          {wholesaleTiers.length > 0 && (
+            <div className="bg-accent/10 border border-accent/20 rounded-lg p-3 space-y-1.5">
+              <p className="text-xs font-bold text-accent-foreground flex items-center gap-1">💰 Harga Grosir</p>
+              <div className="space-y-1">
+                {wholesaleTiers.map((tier: any, i: number) => (
+                  <div key={i} className="flex items-center justify-between text-xs">
+                    <span className="text-muted-foreground">Beli ≥ {tier.min_quantity} pcs</span>
+                    <span className="font-bold text-primary">{formatPrice(tier.price_per_item)}/pcs</span>
+                  </div>
+                ))}
+              </div>
+              <p className="text-[10px] text-muted-foreground">Harga normal: {formatPrice(sponsor.price)}/pcs</p>
+            </div>
           )}
           {sponsor.description && (
             <p className="text-sm text-muted-foreground whitespace-pre-wrap">{sponsor.description}</p>

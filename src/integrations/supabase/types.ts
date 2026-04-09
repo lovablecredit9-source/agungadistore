@@ -184,6 +184,39 @@ export type Database = {
           },
         ]
       }
+      daily_streaks: {
+        Row: {
+          created_at: string
+          current_streak: number
+          id: string
+          last_claim_date: string
+          longest_streak: number
+          total_claims: number
+          updated_at: string
+          visitor_id: string
+        }
+        Insert: {
+          created_at?: string
+          current_streak?: number
+          id?: string
+          last_claim_date?: string
+          longest_streak?: number
+          total_claims?: number
+          updated_at?: string
+          visitor_id: string
+        }
+        Update: {
+          created_at?: string
+          current_streak?: number
+          id?: string
+          last_claim_date?: string
+          longest_streak?: number
+          total_claims?: number
+          updated_at?: string
+          visitor_id?: string
+        }
+        Relationships: []
+      }
       deposits: {
         Row: {
           amount: number
