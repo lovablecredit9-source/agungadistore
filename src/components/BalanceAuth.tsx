@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { getVisitorId } from "@/lib/visitor-id";
-import { getDeviceSummary } from "@/lib/device-info";
+import { getDeviceSummary, collectDeviceInfo } from "@/lib/device-info";
 import {
   Wallet, LogIn, UserPlus, LogOut, Smartphone, History, Eye, EyeOff, Mail, Lock, User, Phone,
 } from "lucide-react";
