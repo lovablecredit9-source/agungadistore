@@ -1811,22 +1811,15 @@ const Index = () => {
                   <CardContent className="p-4 space-y-3">
                     <div>
                       <label className="text-xs font-semibold text-muted-foreground mb-1.5 block">Kategori Masalah</label>
-                      <div className="grid grid-cols-2 gap-2">
+                      <select
+                        value={ticketCategory}
+                        onChange={e => setTicketCategory(e.target.value)}
+                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                      >
                         {TICKET_CATEGORIES.map(cat => (
-                          <button
-                            key={cat.value}
-                            type="button"
-                            onClick={() => setTicketCategory(cat.value)}
-                            className={`text-left text-xs px-3 py-2 rounded-lg border transition-all ${
-                              ticketCategory === cat.value
-                                ? "border-primary bg-primary/10 text-primary font-bold"
-                                : "border-border bg-card hover:border-primary/40"
-                            }`}
-                          >
-                            {cat.label}
-                          </button>
+                          <option key={cat.value} value={cat.value}>{cat.label}</option>
                         ))}
-                      </div>
+                      </select>
                     </div>
                     <Input placeholder="Nama Lengkap" value={ticketName} onChange={e => setTicketName(e.target.value)} />
                     <Input placeholder="No HP" value={ticketPhone} onChange={e => setTicketPhone(e.target.value)} />
