@@ -1629,12 +1629,35 @@ const AdminDashboard = () => {
                 )}
               </CardContent>
             </Card>
+
+            <Card>
+              <CardHeader><CardTitle className="text-base flex items-center gap-2"><Lock className="w-5 h-5 text-primary" /> Buat Token Reset Sandi</CardTitle></CardHeader>
+              <CardContent className="space-y-3">
+                <select className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" value={pwResetTarget} onChange={e => setPwResetTarget(e.target.value)}>
+                  <option value="">Pilih User</option>
+                  {userBalances.map(u => <option key={u.id} value={u.visitor_id}>{u.username} ({u.email || u.phone})</option>)}
+                </select>
+                <Button className="w-full gap-2" onClick={generatePwResetToken} disabled={!pwResetTarget}>
+                  <Lock className="w-4 h-4" /> Generate Token Reset Sandi
+                </Button>
+                {generatedPwResetToken && (
+                  <div className="bg-accent/10 border border-accent/20 rounded-lg p-3 text-center space-y-2">
+                    <p className="text-xs text-muted-foreground">Token reset sandi berhasil dibuat:</p>
+                    <p className="font-mono text-xl font-extrabold text-primary tracking-[0.2em]">{generatedPwResetToken}</p>
+                    <Button size="sm" variant="outline" className="gap-1" onClick={() => copyText(generatedPwResetToken)}><Copy className="w-3 h-3" /> Salin Token</Button>
+                    <p className="text-[10px] text-muted-foreground">Kirimkan token ini ke user. Berlaku 24 jam.</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
             <div className="rounded-xl bg-muted/50 border border-border p-3 text-xs text-muted-foreground space-y-1">
-              <p className="font-bold text-foreground">ℹ️ Info PIN</p>
+              <p className="font-bold text-foreground">ℹ️ Info PIN & Sandi</p>
               <p>• User membuat PIN 4-6 digit di tab Saldo</p>
               <p>• PIN diperlukan saat pembelian dengan saldo</p>
-              <p>• Jika user lupa PIN, buat token reset di sini</p>
-              <p>• Token reset berlaku 24 jam</p>
+              <p>• Jika user lupa PIN atau sandi, buat token reset di sini</p>
+              <p>• Token reset berlaku 24 jam, sekali pakai</p>
+              <p>• Token lama otomatis dinonaktifkan saat buat baru</p>
             </div>
           </>
         )}
