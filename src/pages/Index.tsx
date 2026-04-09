@@ -264,6 +264,20 @@ const Index = () => {
   const [history, setHistory] = useState<ClaimHistory[]>([]);
   const [copiedField, setCopiedField] = useState<string | null>(null);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+
+  // Sync selectedProduct with URL ?id= param
+  const openProduct = useCallback((p: Product | null) => {
+    setSelectedProduct(p);
+    if (p) {
+      const url = new URL(window.location.href);
+      url.searchParams.set("id", p.id);
+      window.history.replaceState({}, "", url.toString());
+    } else {
+      const url = new URL(window.location.href);
+      url.searchParams.delete("id");
+      window.history.replaceState({}, "", url.toString());
+    }
+  }, []);
   const [showHelp, setShowHelp] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState("Semua");
   const [sortOrder, setSortOrder] = useState<"newest" | "oldest">("newest");
