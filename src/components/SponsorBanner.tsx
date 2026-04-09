@@ -358,6 +358,7 @@ export default function SponsorBanner({ likedSponsorIds = new Set(), onToggleLik
           onClose={() => setSelectedSponsor(null)}
           isLiked={likedSponsorIds.has(selectedSponsor.id)}
           onToggleLike={onToggleLikeSponsor}
+          wholesaleTiers={wholesalePrices.filter((w: any) => w.entity_id === selectedSponsor.id).sort((a: any, b: any) => a.min_quantity - b.min_quantity)}
         />
       )}
     </>
