@@ -43,6 +43,7 @@ import MusicPublicTab from "@/components/MusicPublicTab";
 import SponsorBanner from "@/components/SponsorBanner";
 import LikesTab from "@/components/LikesTab";
 import HomeBannerSlider from "@/components/HomeBannerSlider";
+import BalanceAuth from "@/components/BalanceAuth";
 
 type Tab = "beranda" | "produk" | "voucher" | "history" | "likes" | "tiket" | "saldo" | "playlist" | "publik" | "sponsor";
 
@@ -1819,25 +1820,16 @@ const Index = () => {
             <h2 className="text-lg font-extrabold flex items-center gap-2"><Wallet className="w-5 h-5 text-primary" /> {t("balance.title", lang)}</h2>
 
             {!userBalance ? (
-              <Card className="border-2 border-primary/20">
-                <CardContent className="p-5 space-y-4">
-                  <div className="text-center">
-                    <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-accent flex items-center justify-center mx-auto mb-3 shadow-lg">
-                      <Wallet className="w-8 h-8 text-primary-foreground" />
-                    </div>
-                    <h3 className="font-bold text-lg">Buat Akun Saldo</h3>
-                    <p className="text-xs text-muted-foreground mt-1">Daftar untuk menggunakan fitur saldo</p>
-                  </div>
-                  <div className="space-y-3">
-                      <Input placeholder="Username minimal 6 karakter" value={setupUsername} onChange={e => setSetupUsername(e.target.value)} />
-                      <Input placeholder="No HP diawali 08 atau +628" value={setupPhone} onChange={e => setSetupPhone(e.target.value)} />
-                      <p className="text-[11px] text-muted-foreground">Username minimal 6 karakter. Nomor HP wajib diawali 08 atau +628.</p>
-                      <Button className="w-full bg-gradient-to-r from-primary to-primary/80 font-bold" onClick={createUserBalance} disabled={savingProfile}>
-                      Buat Akun
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
+              <BalanceAuth
+                currentUser={null}
+                onLogin={(user) => {
+                  setUserBalance(user as any);
+                  setProfileUsername(user.username);
+                  setProfilePhone(user.phone);
+                  fetchUserBalance();
+                }}
+                onLogout={() => {}}
+              />
             ) : (
               <>
                 {/* Balance Card */}
@@ -1890,7 +1882,22 @@ const Index = () => {
                   </CardContent>
                 </Card>
 
-                {/* Deposit History */}
+                {/* Auth: Logout, Switch Account, Login History */}
+                <BalanceAuth
+                  currentUser={userBalance}
+                  onLogin={(user) => {
+                    setUserBalance(user as any);
+                    setProfileUsername(user.username);
+                    setProfilePhone(user.phone);
+                    fetchUserBalance();
+                  }}
+                  onLogout={() => {
+                    setUserBalance(null);
+                    setBalanceTransactions([]);
+                  }}
+                />
+
+
                 {deposits.length > 0 && (
                   <>
                     <h3 className="font-bold text-sm flex items-center gap-1.5"><History className="w-4 h-4" /> {t("deposit.history", lang)}</h3>

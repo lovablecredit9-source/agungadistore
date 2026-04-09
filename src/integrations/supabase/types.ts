@@ -98,6 +98,44 @@ export type Database = {
         }
         Relationships: []
       }
+      balance_login_history: {
+        Row: {
+          browser: string | null
+          device_info: string | null
+          id: string
+          ip_address: string | null
+          logged_in_at: string
+          user_balance_id: string
+          visitor_id: string
+        }
+        Insert: {
+          browser?: string | null
+          device_info?: string | null
+          id?: string
+          ip_address?: string | null
+          logged_in_at?: string
+          user_balance_id: string
+          visitor_id: string
+        }
+        Update: {
+          browser?: string | null
+          device_info?: string | null
+          id?: string
+          ip_address?: string | null
+          logged_in_at?: string
+          user_balance_id?: string
+          visitor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "balance_login_history_user_balance_id_fkey"
+            columns: ["user_balance_id"]
+            isOneToOne: false
+            referencedRelation: "user_balances"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       balance_transactions: {
         Row: {
           amount: number
@@ -1168,7 +1206,9 @@ export type Database = {
         Row: {
           balance: number
           created_at: string
+          email: string | null
           id: string
+          password_hash: string | null
           phone: string
           updated_at: string
           username: string
@@ -1177,7 +1217,9 @@ export type Database = {
         Insert: {
           balance?: number
           created_at?: string
+          email?: string | null
           id?: string
+          password_hash?: string | null
           phone?: string
           updated_at?: string
           username: string
@@ -1186,7 +1228,9 @@ export type Database = {
         Update: {
           balance?: number
           created_at?: string
+          email?: string | null
           id?: string
+          password_hash?: string | null
           phone?: string
           updated_at?: string
           username?: string
