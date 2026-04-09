@@ -248,6 +248,15 @@ function SponsorForm({
         }));
         await supabase.from("sponsor_images").insert(imgPayload as any);
       }
+
+      // Save wholesale tiers
+      await supabase.from("wholesale_prices").delete().eq("entity_type", "sponsor").eq("entity_id", sponsorId);
+      const validTiers = wholesaleTiers.filter(t => t.min_quantity >= 2 && t.price_per_item > 0);
+      if (validTiers.length > 0) {
+        await supabase.from("wholesale_prices").insert(validTiers.map(t => ({
+          entity_type: "sponsor" as const, entity_id: sponsorId, min_quantity: t.min_quantity, price_per_item: t.price_per_item,
+        })));
+      }
     }
 
     onSave();
