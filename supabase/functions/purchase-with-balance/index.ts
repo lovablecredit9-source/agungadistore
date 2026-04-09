@@ -182,7 +182,7 @@ Deno.serve(async (request) => {
       visitor_id: visitorId,
       type: "purchase",
       amount: idx === 0 ? totalPrice - pricePerItem * (quantity - 1) : pricePerItem,
-      description: `Beli ${product.title}${discountAmount > 0 ? ` (diskon Rp${discountAmount.toLocaleString()})` : ""}`,
+      description: `Beli ${product.title}${unitPrice < product.price ? ` (grosir Rp${unitPrice.toLocaleString()}/pcs)` : ""}${discountAmount > 0 ? ` (diskon Rp${discountAmount.toLocaleString()})` : ""}`,
       product_id: product.id,
       token_id: token.id,
     }));
