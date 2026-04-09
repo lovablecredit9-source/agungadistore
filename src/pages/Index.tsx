@@ -1269,6 +1269,14 @@ const Index = () => {
                   cta: "Mulai Upload",
                   onClick: () => setTab("publik"),
                 },
+                {
+                  id: "tiket",
+                  image: promoTiketImg,
+                  title: "Ada Masalah? Hubungi Kami!",
+                  subtitle: "🎫 Tiket & Chat Support",
+                  cta: "Buat Tiket",
+                  onClick: () => setTab("tiket"),
+                },
               ]}
             />
 
