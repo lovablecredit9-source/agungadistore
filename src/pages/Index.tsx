@@ -1778,7 +1778,9 @@ const Index = () => {
                   </div>
                 )}
 
-                {tickets.map(t => (
+                {tickets.map(t => {
+                  const catInfo = TICKET_CATEGORIES.find(c => c.value === (t as any).category) || TICKET_CATEGORIES[TICKET_CATEGORIES.length - 1];
+                  return (
                   <Card key={t.id} className="cursor-pointer hover:shadow-lg transition-all" onClick={() => { setActiveTicket(t); setTicketView("chat"); }}>
                     <CardContent className="p-4">
                       <div className="flex items-center justify-between mb-1">
@@ -1787,11 +1789,15 @@ const Index = () => {
                           {t.status === "open" ? "Terbuka" : "Ditutup"}
                         </span>
                       </div>
+                      <div className="flex items-center gap-1.5 mb-1">
+                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-primary/10 text-primary font-medium">{catInfo.label}</span>
+                      </div>
                       <p className="text-xs text-muted-foreground line-clamp-1">{t.description}</p>
                       <p className="text-[10px] text-muted-foreground mt-1">{new Date(t.created_at).toLocaleString("id-ID")}</p>
                     </CardContent>
                   </Card>
-                ))}
+                  );
+                })}
               </>
             )}
 
