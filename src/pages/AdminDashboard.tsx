@@ -726,6 +726,7 @@ const AdminDashboard = () => {
   }
 
   async function handleDeleteProduct(id: string) {
+    await supabase.from("wholesale_prices").delete().eq("entity_type", "product").eq("entity_id", id);
     await supabase.from("product_images").delete().eq("product_id", id);
     await supabase.from("products").delete().eq("id", id);
     toast({ title: "Produk dihapus" }); fetchAll();
