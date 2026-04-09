@@ -1440,9 +1440,9 @@ const Index = () => {
                       )}
                     </div>
                     {p.description && <p className="text-xs text-muted-foreground line-clamp-2">{p.description}</p>}
-                    <div className="flex items-center justify-between flex-wrap gap-1">
+                    <div className="flex items-center justify-between flex-wrap gap-1.5">
                       {imgs.length === 0 && <span className="text-sm font-extrabold text-primary">{formatPrice(p.price)}</span>}
-                      <div className="flex items-center gap-1.5">
+                      <div className="flex items-center gap-1.5 flex-wrap">
                         <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${p.stock > 0 ? 'bg-accent/10 text-accent' : 'bg-destructive/10 text-destructive'}`}>
                           {p.stock > 0 ? `✓ Stok: ${p.stock}` : '✗ Habis'}
                         </span>
@@ -1451,6 +1451,9 @@ const Index = () => {
                             <Shield className="w-3 h-3 inline mr-0.5" />Garansi
                           </span>
                         )}
+                        <span className="text-xs px-2 py-1 rounded-full font-medium bg-muted text-muted-foreground flex items-center gap-1">
+                          <CalendarDays className="w-3 h-3" /> {new Date(p.created_at).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" })}
+                        </span>
                       </div>
                     </div>
                   </CardContent>
