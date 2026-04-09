@@ -365,7 +365,7 @@ export default function SponsorBanner({ likedSponsorIds = new Set(), onToggleLik
   );
 }
 
-function SponsorDetailModal({ sponsor, images, onClose, isLiked, onToggleLike }: { sponsor: Sponsor; images: SponsorImage[]; onClose: () => void; isLiked?: boolean; onToggleLike?: (sponsorId: string, e?: React.MouseEvent) => void }) {
+function SponsorDetailModal({ sponsor, images, onClose, isLiked, onToggleLike, wholesaleTiers = [] }: { sponsor: Sponsor; images: SponsorImage[]; onClose: () => void; isLiked?: boolean; onToggleLike?: (sponsorId: string, e?: React.MouseEvent) => void; wholesaleTiers?: any[] }) {
   const [imgIdx, setImgIdx] = useState(0);
   const [showDisclaimer, setShowDisclaimer] = useState(true);
   const [showTerms, setShowTerms] = useState(false);
