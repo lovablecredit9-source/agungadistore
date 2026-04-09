@@ -156,12 +156,15 @@ function SponsorForm({
       setWarrantyDurationType(editing.warranty_duration_type || "days");
       const existing = existingImages[editing.id] || [];
       setImages(existing.map(i => i.image_url));
+      const tiers = allWholesalePrices.filter((w: any) => w.entity_id === editing.id).map((w: any) => ({ id: w.id, min_quantity: w.min_quantity, price_per_item: w.price_per_item }));
+      setWholesaleTiers(tiers.length > 0 ? tiers : []);
     } else {
       setTitle(""); setDescription(""); setPrice(""); setSellerName("");
       setSellerContact(""); setDurationType("days"); setDurationValue("7");
       setCustomNote(""); setCategory(""); setImages([]); setStock("0");
       setWaNumber(""); setInstagram(""); setFacebook(""); setTiktok(""); setTwitter(""); setThreads("");
       setHasWarranty(false); setWarrantyDurationValue("0"); setWarrantyDurationType("days");
+      setWholesaleTiers([]);
     }
   }, [editing]);
 
