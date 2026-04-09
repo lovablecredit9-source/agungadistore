@@ -84,6 +84,7 @@ interface SponsorBannerProps {
 export default function SponsorBanner({ likedSponsorIds = new Set(), onToggleLikeSponsor }: SponsorBannerProps) {
   const [sponsors, setSponsors] = useState<Sponsor[]>([]);
   const [sponsorImages, setSponsorImages] = useState<Record<string, SponsorImage[]>>({});
+  const [wholesalePrices, setWholesalePrices] = useState<any[]>([]);
   const [current, setCurrent] = useState(0);
   const [selectedSponsor, setSelectedSponsor] = useState<Sponsor | null>(null);
   const [imgIdx, setImgIdx] = useState(0);
@@ -111,31 +112,29 @@ export default function SponsorBanner({ likedSponsorIds = new Set(), onToggleLik
   }, [sponsors.length]);
 
   async function fetchSponsors() {
-    const { data } = await supabase
-      .from("sponsors")
-      .select("*")
-      .eq("is_active", true)
-      .order("created_at", { ascending: false });
-    if (data) {
+    const [sRes, imgRes, wRes] = await Promise.all([
+      supabase.from("sponsors").select("*").eq("is_active", true).order("created_at", { ascending: false }),
+      supabase.from("sponsor_images").select("*").order("image_order", { ascending: true }),
+      supabase.from("wholesale_prices").select("*").eq("entity_type", "sponsor").order("min_quantity"),
+    ]);
+    if (sRes.data) {
       const now = new Date();
-      const active = (data as unknown as Sponsor[]).filter(s => {
+      const active = (sRes.data as unknown as Sponsor[]).filter(s => {
         if (!s.expires_at) return true;
         return new Date(s.expires_at) > now;
       });
       setSponsors(active);
       setCurrent(0);
-
-      // Fetch images
-      const { data: imgData } = await supabase.from("sponsor_images").select("*").order("image_order", { ascending: true });
-      if (imgData) {
-        const map: Record<string, SponsorImage[]> = {};
-        (imgData as unknown as SponsorImage[]).forEach(img => {
-          if (!map[img.sponsor_id]) map[img.sponsor_id] = [];
-          map[img.sponsor_id].push(img);
-        });
-        setSponsorImages(map);
-      }
     }
+    if (imgRes.data) {
+      const map: Record<string, SponsorImage[]> = {};
+      (imgRes.data as unknown as SponsorImage[]).forEach(img => {
+        if (!map[img.sponsor_id]) map[img.sponsor_id] = [];
+        map[img.sponsor_id].push(img);
+      });
+      setSponsorImages(map);
+    }
+    if (wRes.data) setWholesalePrices(wRes.data);
   }
 
   function shareSponsor(s: Sponsor) {
