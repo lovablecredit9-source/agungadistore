@@ -264,6 +264,20 @@ const Index = () => {
   const [history, setHistory] = useState<ClaimHistory[]>([]);
   const [copiedField, setCopiedField] = useState<string | null>(null);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+
+  // Sync selectedProduct with URL ?id= param
+  const openProduct = useCallback((p: Product | null) => {
+    setSelectedProduct(p);
+    if (p) {
+      const url = new URL(window.location.href);
+      url.searchParams.set("id", p.id);
+      window.history.replaceState({}, "", url.toString());
+    } else {
+      const url = new URL(window.location.href);
+      url.searchParams.delete("id");
+      window.history.replaceState({}, "", url.toString());
+    }
+  }, []);
   const [showHelp, setShowHelp] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState("Semua");
   const [sortOrder, setSortOrder] = useState<"newest" | "oldest">("newest");
@@ -434,6 +448,17 @@ const Index = () => {
       window.history.replaceState({}, "", window.location.pathname);
     }
   }, []);
+
+  // Auto-open product from URL ?id= param
+  useEffect(() => {
+    if (products.length === 0) return;
+    const params = new URLSearchParams(window.location.search);
+    const productId = params.get("id");
+    if (productId && tab === "produk") {
+      const found = products.find(p => p.id === productId);
+      if (found) setSelectedProduct(found);
+    }
+  }, [products, tab]);
 
   async function checkPinStatus() {
     const { data } = await supabase.functions.invoke("manage-pin", { body: { action: "check", visitorId } });
@@ -716,7 +741,7 @@ const Index = () => {
     setShowBuySaldo(false);
     setBuyProduct(null);
     setBuyQuantity(1);
-    setSelectedProduct(null);
+    openProduct(null);
     removeFromCart(product.id);
     setDiscountCode("");
     setDiscountInfo(null);
@@ -1058,7 +1083,7 @@ const Index = () => {
   async function openProductChat(product: Product) {
     setProductChatProduct(product);
     setShowProductChat(true);
-    setSelectedProduct(null);
+    openProduct(null);
 
     // Check if existing chat for this product
     const { data: existing } = await supabase.from("product_chats")
@@ -1434,7 +1459,7 @@ const Index = () => {
             {sortedProducts.map((p) => {
               const imgs = getProductImages(p.id);
               return (
-                <Card key={p.id} className="overflow-hidden hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 border-border/50 cursor-pointer" onClick={() => setSelectedProduct(p)}>
+                <Card key={p.id} className="overflow-hidden hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 border-border/50 cursor-pointer" onClick={() => openProduct(p)}>
                   {imgs.length > 0 && (
                     <div className="relative">
                       <ImageCarousel images={imgs} />
@@ -1678,7 +1703,7 @@ const Index = () => {
             getProductImages={getProductImages}
             toggleLike={toggleLike}
             toggleLikeSponsor={toggleLikeSponsor}
-            setSelectedProduct={setSelectedProduct}
+            setSelectedProduct={openProduct}
             setTab={setTab as any}
             lang={lang}
           />
@@ -1984,7 +2009,7 @@ const Index = () => {
       {selectedProduct && (() => {
         const imgs = getProductImages(selectedProduct.id);
         return (
-          <div className="fixed inset-0 z-[60] bg-black/60 backdrop-blur-sm flex items-end justify-center" onClick={() => setSelectedProduct(null)}>
+          <div className="fixed inset-0 z-[60] bg-black/60 backdrop-blur-sm flex items-end justify-center" onClick={() => openProduct(null)}>
             <div className="bg-card w-full max-w-lg rounded-t-3xl max-h-[85vh] overflow-y-auto animate-in slide-in-from-bottom duration-300" onClick={e => e.stopPropagation()}>
               {imgs.length > 0 && <ImageCarousel images={imgs} className="w-full h-56" />}
               <div className="p-5 space-y-4">
@@ -2000,7 +2025,7 @@ const Index = () => {
                     <button onClick={() => toggleLike(selectedProduct.id)}>
                       <Heart className={`w-6 h-6 ${likedIds.has(selectedProduct.id) ? "fill-destructive text-destructive" : "text-muted-foreground"}`} />
                     </button>
-                    <button onClick={() => setSelectedProduct(null)} className="w-8 h-8 rounded-full bg-muted flex items-center justify-center"><X className="w-4 h-4" /></button>
+                    <button onClick={() => openProduct(null)} className="w-8 h-8 rounded-full bg-muted flex items-center justify-center"><X className="w-4 h-4" /></button>
                   </div>
                 </div>
                 <p className="text-2xl font-extrabold text-primary">{formatPrice(selectedProduct.price)}</p>
@@ -2036,10 +2061,10 @@ const Index = () => {
                   </Button>
                 </div>
                 {userBalance && userBalance.balance < selectedProduct.price && (
-                  <p className="text-[10px] text-destructive text-center">Saldo tidak cukup. <button className="underline text-primary" onClick={() => { setSelectedProduct(null); setTab("saldo"); }}>Deposit saldo →</button></p>
+                  <p className="text-[10px] text-destructive text-center">Saldo tidak cukup. <button className="underline text-primary" onClick={() => { openProduct(null); setTab("saldo"); }}>Deposit saldo →</button></p>
                 )}
                 {!userBalance && (
-                  <p className="text-[10px] text-muted-foreground text-center">Buat akun saldo untuk beli pakai saldo. <button className="underline text-primary" onClick={() => { setSelectedProduct(null); setTab("saldo"); }}>Daftar →</button></p>
+                  <p className="text-[10px] text-muted-foreground text-center">Buat akun saldo untuk beli pakai saldo. <button className="underline text-primary" onClick={() => { openProduct(null); setTab("saldo"); }}>Daftar →</button></p>
                 )}
 
                 <div className="border-t border-border pt-4 space-y-2">
