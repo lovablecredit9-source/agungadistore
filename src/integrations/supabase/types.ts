@@ -1061,31 +1061,37 @@ export type Database = {
       }
       support_tickets: {
         Row: {
+          category: string
           created_at: string
           description: string
           id: string
           name: string
           phone: string
+          screenshot_url: string | null
           status: string
           ticket_number: number
           updated_at: string
         }
         Insert: {
+          category?: string
           created_at?: string
           description: string
           id?: string
           name: string
           phone: string
+          screenshot_url?: string | null
           status?: string
           ticket_number?: number
           updated_at?: string
         }
         Update: {
+          category?: string
           created_at?: string
           description?: string
           id?: string
           name?: string
           phone?: string
+          screenshot_url?: string | null
           status?: string
           ticket_number?: number
           updated_at?: string
