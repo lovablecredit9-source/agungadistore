@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { motion } from "framer-motion";
-import { Key, Loader2, ShoppingCart, Infinity, Coins, Lock } from "lucide-react";
+import { Key, Loader2, ShoppingCart, Infinity, Coins, Lock, Tag, CheckCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface CreditPackage {
@@ -90,7 +90,40 @@ export function BuyCreditsDialog({ visitorId, onPurchased }: BuyCreditsDialogPro
   const [pin, setPin] = useState("");
   const [needPin, setNeedPin] = useState(false);
   const [selectedPkg, setSelectedPkg] = useState<string | null>(null);
+  const [voucherCode, setVoucherCode] = useState("");
+  const [voucherDiscount, setVoucherDiscount] = useState(0);
+  const [voucherValid, setVoucherValid] = useState(false);
+  const [checkingVoucher, setCheckingVoucher] = useState(false);
   const { toast } = useToast();
+
+  const resetVoucher = () => {
+    setVoucherCode("");
+    setVoucherDiscount(0);
+    setVoucherValid(false);
+  };
+
+  const checkVoucher = async () => {
+    if (!voucherCode.trim()) return;
+    setCheckingVoucher(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("purchase-game-credits", {
+        body: { action: "check_voucher", voucherCode: voucherCode.trim() },
+      });
+      if (error || data?.error) {
+        toast({ title: "Voucher tidak valid", description: data?.error || "Gagal memvalidasi voucher", variant: "destructive" });
+        setVoucherValid(false);
+        setVoucherDiscount(0);
+      } else {
+        setVoucherValid(true);
+        setVoucherDiscount(data.discount_amount || 0);
+        toast({ title: "Voucher valid!", description: `Diskon Rp${(data.discount_amount || 0).toLocaleString("id-ID")}` });
+      }
+    } catch {
+      toast({ title: "Error", description: "Gagal memeriksa voucher", variant: "destructive" });
+    } finally {
+      setCheckingVoucher(false);
+    }
+  };
 
   const handleBuy = async (pkgId: string, pinValue?: string) => {
     if (!visitorId) {
@@ -100,7 +133,13 @@ export function BuyCreditsDialog({ visitorId, onPurchased }: BuyCreditsDialogPro
     setBuying(pkgId);
     try {
       const { data, error } = await supabase.functions.invoke("purchase-game-credits", {
-        body: { action: "purchase", visitorId, packageId: pkgId, pin: pinValue || undefined },
+        body: {
+          action: "purchase",
+          visitorId,
+          packageId: pkgId,
+          pin: pinValue || undefined,
+          voucherCode: voucherValid ? voucherCode.trim() : undefined,
+        },
       });
       if (error) throw error;
       if (data?.needPin) {
@@ -114,10 +153,14 @@ export function BuyCreditsDialog({ visitorId, onPurchased }: BuyCreditsDialogPro
         setBuying(null);
         return;
       }
-      toast({ title: "Berhasil!", description: `${data.package.label} berhasil dibeli. Sisa saldo: Rp${data.balance_remaining.toLocaleString("id-ID")}` });
+      const discountInfo = data.discount_amount > 0
+        ? ` (Diskon Rp${data.discount_amount.toLocaleString("id-ID")})`
+        : "";
+      toast({ title: "Berhasil!", description: `${data.package.label} berhasil dibeli${discountInfo}. Sisa saldo: Rp${data.balance_remaining.toLocaleString("id-ID")}` });
       setNeedPin(false);
       setPin("");
       setSelectedPkg(null);
+      resetVoucher();
       onPurchased();
       setOpen(false);
     } catch {
@@ -127,8 +170,13 @@ export function BuyCreditsDialog({ visitorId, onPurchased }: BuyCreditsDialogPro
     }
   };
 
+  const getDiscountedPrice = (price: number) => {
+    if (!voucherValid || voucherDiscount <= 0) return price;
+    return Math.max(0, price - voucherDiscount);
+  };
+
   return (
-    <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) { setNeedPin(false); setPin(""); setSelectedPkg(null); } }}>
+    <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) { setNeedPin(false); setPin(""); setSelectedPkg(null); resetVoucher(); } }}>
       <DialogTrigger asChild>
         <Button variant="outline" size="sm" className="gap-1 text-xs">
           <ShoppingCart className="w-3 h-3" /> Beli Kredit
@@ -164,30 +212,72 @@ export function BuyCreditsDialog({ visitorId, onPurchased }: BuyCreditsDialogPro
             </Button>
           </div>
         ) : (
-          <div className="grid gap-2">
-            {PACKAGES.map(pkg => (
-              <motion.div key={pkg.id} whileTap={{ scale: 0.97 }}>
-                <Button
-                  variant="outline"
-                  className="w-full justify-between h-auto py-3"
-                  disabled={!!buying}
-                  onClick={() => handleBuy(pkg.id)}
-                >
-                  <div className="flex items-center gap-2">
-                    {pkg.id === "unlimited" ? (
-                      <Infinity className="w-4 h-4 text-purple-500" />
-                    ) : (
-                      <Key className="w-4 h-4 text-accent" />
-                    )}
-                    <span className="font-bold text-sm">{pkg.label}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs text-muted-foreground">Rp{pkg.price.toLocaleString("id-ID")}</span>
-                    {buying === pkg.id && <Loader2 className="w-3 h-3 animate-spin" />}
-                  </div>
-                </Button>
-              </motion.div>
-            ))}
+          <div className="space-y-3">
+            {/* Voucher input */}
+            <div className="flex gap-2">
+              <div className="relative flex-1">
+                <Tag className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  placeholder="Kode voucher diskon"
+                  value={voucherCode}
+                  onChange={e => { setVoucherCode(e.target.value.toUpperCase()); setVoucherValid(false); setVoucherDiscount(0); }}
+                  className="pl-8 text-xs h-9"
+                />
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-9 text-xs"
+                disabled={!voucherCode.trim() || checkingVoucher}
+                onClick={checkVoucher}
+              >
+                {checkingVoucher ? <Loader2 className="w-3 h-3 animate-spin" /> : "Cek"}
+              </Button>
+            </div>
+            {voucherValid && (
+              <div className="flex items-center gap-1 text-xs text-green-600 bg-green-500/10 rounded-lg px-2 py-1">
+                <CheckCircle className="w-3 h-3" />
+                <span className="font-bold">Diskon Rp{voucherDiscount.toLocaleString("id-ID")} aktif!</span>
+              </div>
+            )}
+
+            {/* Package list */}
+            <div className="grid gap-2">
+              {PACKAGES.map(pkg => {
+                const discountedPrice = getDiscountedPrice(pkg.price);
+                const hasDiscount = voucherValid && discountedPrice < pkg.price;
+                return (
+                  <motion.div key={pkg.id} whileTap={{ scale: 0.97 }}>
+                    <Button
+                      variant="outline"
+                      className="w-full justify-between h-auto py-3"
+                      disabled={!!buying}
+                      onClick={() => handleBuy(pkg.id)}
+                    >
+                      <div className="flex items-center gap-2">
+                        {pkg.id.startsWith("unlimited") ? (
+                          <Infinity className="w-4 h-4 text-purple-500" />
+                        ) : (
+                          <Key className="w-4 h-4 text-accent" />
+                        )}
+                        <span className="font-bold text-sm">{pkg.label}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {hasDiscount ? (
+                          <div className="text-right">
+                            <span className="text-[10px] text-muted-foreground line-through block">Rp{pkg.price.toLocaleString("id-ID")}</span>
+                            <span className="text-xs font-bold text-green-600">Rp{discountedPrice.toLocaleString("id-ID")}</span>
+                          </div>
+                        ) : (
+                          <span className="text-xs text-muted-foreground">Rp{pkg.price.toLocaleString("id-ID")}</span>
+                        )}
+                        {buying === pkg.id && <Loader2 className="w-3 h-3 animate-spin" />}
+                      </div>
+                    </Button>
+                  </motion.div>
+                );
+              })}
+            </div>
           </div>
         )}
       </DialogContent>
