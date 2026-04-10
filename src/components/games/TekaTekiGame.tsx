@@ -158,7 +158,7 @@ export default function TekaTekiGame() {
           </div>
         </div>
 
-        <GameCreditsBadge credits={credits} isUnlimited={isUnlimited} />
+        <GameCreditsBadge credits={credits} isUnlimited={isUnlimited} freeRemaining={freeRemaining} />
 
         <div className="flex items-center gap-2">
           <span className="text-sm font-semibold">Kesulitan:</span>
@@ -200,7 +200,7 @@ export default function TekaTekiGame() {
         )}
       </div>
 
-      <GameCreditsBadge credits={credits} isUnlimited={isUnlimited} />
+      <GameCreditsBadge credits={credits} isUnlimited={isUnlimited} freeRemaining={freeRemaining} />
 
       {loading ? (
         <div className="flex flex-col items-center gap-3 py-10">
@@ -285,7 +285,7 @@ export default function TekaTekiGame() {
                 <Timer className="w-8 h-8 text-orange-500 mx-auto" />
                 <p className="font-bold text-orange-600">Waktu Habis!</p>
                 <div className="flex gap-2 justify-center">
-                  <RevealAnswerButton credits={credits} isUnlimited={isUnlimited} onReveal={handleRevealAnswer} visitorId={activeVisitorId} useCredit={useCredit} />
+                  <RevealAnswerButton credits={credits} isUnlimited={isUnlimited} freeRemaining={freeRemaining} onReveal={handleRevealAnswer} visitorId={activeVisitorId} useCredit={useCredit} />
                   <Button onClick={fetchRiddle} variant="outline" size="sm" className="gap-1">
                     <RefreshCw className="w-4 h-4" /> Soal Baru
                   </Button>
@@ -314,7 +314,7 @@ export default function TekaTekiGame() {
           {/* Reveal answer button during game */}
           {gameActive && !answerRevealed && (
             <div className="flex justify-center">
-              <RevealAnswerButton credits={credits} isUnlimited={isUnlimited} onReveal={handleRevealAnswer} visitorId={activeVisitorId} useCredit={useCredit} />
+              <RevealAnswerButton credits={credits} isUnlimited={isUnlimited} freeRemaining={freeRemaining} onReveal={handleRevealAnswer} visitorId={activeVisitorId} useCredit={useCredit} />
             </div>
           )}
         </>
