@@ -398,7 +398,6 @@ export default function TebakGambarGame() {
                 useCredit={useCredit}
                 credits={credits}
                 isUnlimited={isUnlimited}
-                isUnlimited={isUnlimited}
               />
             )}
           </div>
