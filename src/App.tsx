@@ -33,6 +33,7 @@ const App = () => (
             <Route path="/publik" element={<Index />} />
             <Route path="/sponsor" element={<Index />} />
             <Route path="/streak" element={<Index />} />
+            <Route path="/admin-post" element={<Index />} />
             <Route path="/admin/login" element={<AdminLogin />} />
             <Route path="/admin/dashboard" element={<AdminDashboard />} />
             <Route path="/offline" element={<Offline />} />
