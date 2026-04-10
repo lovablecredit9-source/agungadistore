@@ -3,6 +3,14 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+const DIFFICULTY_CONFIG: Record<string, { minLetters: number; maxLetters: number; hintCount: number; prompt: string }> = {
+  mudah: { minLetters: 4, maxLetters: 6, hintCount: 8, prompt: "kata yang sangat umum dan mudah (4-6 huruf), berikan 8 petunjuk dari sulit ke mudah" },
+  sedang: { minLetters: 4, maxLetters: 7, hintCount: 6, prompt: "kata benda umum (4-7 huruf), berikan 6 petunjuk dari sulit ke mudah" },
+  sulit: { minLetters: 5, maxLetters: 8, hintCount: 5, prompt: "kata yang agak sulit (5-8 huruf), berikan 5 petunjuk dari sulit ke mudah" },
+  pro: { minLetters: 6, maxLetters: 10, hintCount: 4, prompt: "kata yang sulit dan jarang digunakan (6-10 huruf), berikan 4 petunjuk yang samar dari sulit ke mudah" },
+  sangat_pro: { minLetters: 7, maxLetters: 12, hintCount: 3, prompt: "kata yang sangat sulit, langka, atau teknis (7-12 huruf), berikan 3 petunjuk yang sangat samar" },
+};
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -14,10 +22,11 @@ Deno.serve(async (req) => {
       return Response.json({ error: "AI belum dikonfigurasi" }, { status: 500, headers: corsHeaders });
     }
 
-    const { action, guess, word, hints } = await req.json();
+    const { action, guess, word, difficulty } = await req.json();
 
     if (action === "new_word") {
-      // Generate a new word with hints
+      const diff = DIFFICULTY_CONFIG[difficulty || "sedang"] || DIFFICULTY_CONFIG.sedang;
+      
       const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
         method: "POST",
         headers: {
@@ -29,9 +38,9 @@ Deno.serve(async (req) => {
           messages: [
             {
               role: "system",
-              content: "Kamu adalah game master untuk permainan tebak kata bahasa Indonesia. Berikan sebuah kata dalam bahasa Indonesia (kata benda umum, 4-8 huruf) beserta 5 petunjuk dari yang paling sulit ke paling mudah. Jawab HANYA dalam format JSON tanpa markdown: {\"word\":\"KATA\",\"hints\":[\"petunjuk1\",\"petunjuk2\",\"petunjuk3\",\"petunjuk4\",\"petunjuk5\"]}"
+              content: `Kamu adalah game master untuk permainan tebak kata bahasa Indonesia. Berikan ${diff.prompt}. Jawab HANYA dalam format JSON tanpa markdown: {"word":"KATA","hints":["petunjuk1","petunjuk2",...]}`
             },
-            { role: "user", content: "Berikan satu kata baru untuk ditebak beserta 5 petunjuknya." }
+            { role: "user", content: `Berikan satu kata baru untuk ditebak beserta ${diff.hintCount} petunjuknya. Kata harus ${diff.minLetters}-${diff.maxLetters} huruf.` }
           ],
           tools: [
             {
@@ -46,7 +55,7 @@ Deno.serve(async (req) => {
                     hints: {
                       type: "array",
                       items: { type: "string" },
-                      description: "5 petunjuk dari sulit ke mudah"
+                      description: `${diff.hintCount} petunjuk dari sulit ke mudah`
                     }
                   },
                   required: ["word", "hints"],
@@ -81,7 +90,6 @@ Deno.serve(async (req) => {
         }, { headers: corsHeaders });
       }
 
-      // Fallback: try parsing content
       const content = data.choices?.[0]?.message?.content || "";
       const jsonMatch = content.match(/\{[\s\S]*\}/);
       if (jsonMatch) {
