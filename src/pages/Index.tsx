@@ -293,7 +293,6 @@ const Index = () => {
   const [history, setHistory] = useState<ClaimHistory[]>([]);
   const [copiedField, setCopiedField] = useState<string | null>(null);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
-  const [gameResetSignal, setGameResetSignal] = useState(0);
 
   // Sync selectedProduct with URL ?id= param
   const openProduct = useCallback((p: Product | null) => {
@@ -2227,9 +2226,9 @@ const Index = () => {
           <DailyStreak />
         )}
 
-        {tab === "game" && (
-          <GameTab resetSignal={gameResetSignal} />
-        )}
+        <div className={tab === "game" ? "" : "hidden"}>
+          <GameTab />
+        </div>
 
         {tab === "adminpost" && (
           <div className="space-y-4">
@@ -3396,13 +3395,7 @@ const Index = () => {
           ]).map(({ key, icon: Icon, label }) => (
             <button
               key={key}
-              onClick={() => {
-                if (key === "game" && tab === "game") {
-                  setGameResetSignal((prev) => prev + 1);
-                  return;
-                }
-                setTab(key);
-              }}
+              onClick={() => setTab(key)}
               className={`min-w-[52px] flex-shrink-0 flex flex-col items-center py-2 text-[10px] transition-all duration-200 ${tab === key ? "text-primary font-bold" : "text-muted-foreground hover:text-foreground"}`}>
               <div className={`p-1 rounded-xl transition-all duration-200 ${tab === key ? "bg-primary/10 scale-110" : ""}`}><Icon className="w-4 h-4" /></div>
               <span className="mt-0.5">{label}</span>
