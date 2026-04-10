@@ -1617,8 +1617,9 @@ const Index = () => {
                         <span className="text-xs font-bold bg-primary text-primary-foreground px-2.5 py-1 rounded-full shadow-md">{formatPrice(p.price)}</span>
                       </div>
                       <button onClick={(e) => toggleLike(p.id, e)}
-                        className="absolute top-2 left-2 w-8 h-8 rounded-full bg-background/80 backdrop-blur-sm flex items-center justify-center">
+                        className="absolute top-2 left-2 flex items-center gap-1 rounded-full bg-background/80 backdrop-blur-sm px-2 py-1">
                         <Heart className={`w-4 h-4 ${likedIds.has(p.id) ? "fill-destructive text-destructive" : "text-muted-foreground"}`} />
+                        {(productLikeCounts[p.id] || 0) > 0 && <span className="text-[10px] font-bold text-muted-foreground">{productLikeCounts[p.id]}</span>}
                       </button>
                       {p.category && (
                         <div className="absolute bottom-2 left-2">
