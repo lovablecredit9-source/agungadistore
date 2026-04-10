@@ -124,6 +124,7 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser }: BalanceA
 
     localStorage.setItem("balance_logged_in", "true");
     localStorage.setItem("balance_email", (data.user.email || email.trim()).toLowerCase());
+    localStorage.setItem("balance_visitor_id", data.user.visitor_id);
 
     onLogin(data.user);
     toast({ title: "Pendaftaran berhasil! 🎉" });
@@ -157,6 +158,7 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser }: BalanceA
 
     localStorage.setItem("balance_logged_in", "true");
     localStorage.setItem("balance_email", (data.user.email || loginId.trim()).toLowerCase());
+    localStorage.setItem("balance_visitor_id", data.user.visitor_id);
 
     onLogin(data.user);
     toast({ title: `Selamat datang, ${data.user.username}! 👋` });
@@ -166,6 +168,7 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser }: BalanceA
   function handleLogout() {
     localStorage.removeItem("balance_logged_in");
     localStorage.removeItem("balance_email");
+    localStorage.removeItem("balance_visitor_id");
     onLogout();
     toast({ title: "Berhasil logout dari akun saldo" });
   }
@@ -290,6 +293,7 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser }: BalanceA
     // Update local user
     onLogin({ ...currentUser, email: editEmail.trim().toLowerCase() });
     localStorage.setItem("balance_email", editEmail.trim().toLowerCase());
+    localStorage.setItem("balance_visitor_id", currentUser.visitor_id);
     toast({ title: "Email berhasil diubah ✅" });
     resetEditForm();
   }
