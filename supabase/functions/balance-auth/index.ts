@@ -49,62 +49,96 @@ Deno.serve(async (request) => {
         return Response.json({ error: "Sandi minimal 6 karakter" }, { status: 400, headers: corsHeaders });
       }
 
-      // Check if email already exists
-      const { data: existing } = await admin
-        .from("user_balances")
-        .select("id")
-        .eq("email", email.trim().toLowerCase())
-        .neq("email", "")
-        .maybeSingle();
-
-      if (existing) {
-        return Response.json({ error: "Email sudah terdaftar. Silakan login." }, { status: 400, headers: corsHeaders });
-      }
-
-      // Check if username already exists
-      const { data: existingUsername } = await admin
-        .from("user_balances")
-        .select("id")
-        .eq("username", username.trim())
-        .maybeSingle();
-
-      if (existingUsername) {
-        return Response.json({ error: "Username sudah dipakai. Pilih username lain." }, { status: 400, headers: corsHeaders });
-      }
-
+      const normalizedEmail = email.trim().toLowerCase();
+      const normalizedPhone = phone.trim();
+      const normalizedUsername = username.trim();
       const passwordHash = await hashPassword(password);
       const visitorId = payload.visitorId || crypto.randomUUID();
 
-      // Check if visitor_id already has an account
-      const { data: existingVisitor } = await admin
+      const { data: existingByVisitor } = await admin
         .from("user_balances")
-        .select("id")
+        .select("id, visitor_id, username, phone, email, balance, password_hash")
         .eq("visitor_id", visitorId)
         .maybeSingle();
 
-      if (existingVisitor) {
-        return Response.json({ error: "Perangkat ini sudah memiliki akun. Silakan login." }, { status: 400, headers: corsHeaders });
+      const { data: existingByEmail } = await admin
+        .from("user_balances")
+        .select("id, visitor_id, username, phone, email, balance, password_hash")
+        .eq("email", normalizedEmail)
+        .neq("email", "")
+        .maybeSingle();
+
+      const { data: existingUsername } = await admin
+        .from("user_balances")
+        .select("id")
+        .eq("username", normalizedUsername)
+        .maybeSingle();
+
+      if (existingUsername && existingUsername.id !== existingByVisitor?.id && existingUsername.id !== existingByEmail?.id) {
+        return Response.json({ error: "Username sudah dipakai. Pilih username lain." }, { status: 400, headers: corsHeaders });
       }
 
-      // Check if phone already exists
       const { data: existingPhone } = await admin
         .from("user_balances")
         .select("id")
-        .eq("phone", phone.trim())
+        .eq("phone", normalizedPhone)
         .neq("phone", "")
         .maybeSingle();
 
-      if (existingPhone) {
+      if (existingPhone && existingPhone.id !== existingByVisitor?.id && existingPhone.id !== existingByEmail?.id) {
         return Response.json({ error: "Nomor HP sudah terdaftar. Silakan login." }, { status: 400, headers: corsHeaders });
+      }
+
+      const upgradeTarget = existingByEmail ?? existingByVisitor;
+
+      if (upgradeTarget) {
+        const sameAccount = !existingByEmail || !existingByVisitor || existingByEmail.id === existingByVisitor.id;
+        if (!sameAccount) {
+          return Response.json({ error: "Perangkat ini sudah terhubung ke akun lain. Silakan login dengan akun yang sudah ada." }, { status: 400, headers: corsHeaders });
+        }
+
+        const alreadyRegistered = Boolean(upgradeTarget.email && upgradeTarget.password_hash);
+        if (alreadyRegistered) {
+          return Response.json({ error: "Email sudah terdaftar. Silakan login." }, { status: 400, headers: corsHeaders });
+        }
+
+        const { data: upgradedUser, error: upgradeError } = await admin
+          .from("user_balances")
+          .update({
+            visitor_id: visitorId,
+            username: normalizedUsername,
+            phone: normalizedPhone,
+            email: normalizedEmail,
+            password_hash: passwordHash,
+          })
+          .eq("id", upgradeTarget.id)
+          .select("id, visitor_id, username, phone, email, balance")
+          .single();
+
+        if (upgradeError || !upgradedUser) {
+          return Response.json({ error: "Gagal melengkapi akun: " + (upgradeError?.message || "unknown") }, { status: 500, headers: corsHeaders });
+        }
+
+        if (payload.deviceInfo) {
+          await admin.from("balance_login_history").insert({
+            user_balance_id: upgradedUser.id,
+            visitor_id: visitorId,
+            device_info: payload.deviceInfo?.device || null,
+            browser: payload.deviceInfo?.browser || null,
+            ip_address: payload.deviceInfo?.ip || null,
+          });
+        }
+
+        return Response.json({ success: true, user: upgradedUser, action: "registered" }, { headers: corsHeaders });
       }
 
       const { data: newUser, error: insertError } = await admin
         .from("user_balances")
         .insert({
           visitor_id: visitorId,
-          username: username.trim(),
-          phone: phone.trim(),
-          email: email.trim().toLowerCase(),
+          username: normalizedUsername,
+          phone: normalizedPhone,
+          email: normalizedEmail,
           password_hash: passwordHash,
         })
         .select("id, visitor_id, username, phone, email, balance")

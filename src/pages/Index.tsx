@@ -699,6 +699,7 @@ const Index = () => {
       // Session invalid, clean up
       localStorage.removeItem("balance_logged_in");
       localStorage.removeItem("balance_email");
+      localStorage.removeItem("balance_visitor_id");
       setUserBalance(null);
     }
     const { data: txns } = await supabase.from("balance_transactions").select("*").eq("visitor_id", visitorId).order("created_at", { ascending: false });
@@ -2065,6 +2066,7 @@ const Index = () => {
               <BalanceAuth
                 currentUser={null}
                 onLogin={(user) => {
+                  localStorage.setItem("balance_visitor_id", user.visitor_id);
                   setUserBalance(user as any);
                   setProfileUsername(user.username);
                   setProfilePhone(user.phone);
@@ -2128,12 +2130,14 @@ const Index = () => {
                 <BalanceAuth
                   currentUser={userBalance}
                   onLogin={(user) => {
+                    localStorage.setItem("balance_visitor_id", user.visitor_id);
                     setUserBalance(user as any);
                     setProfileUsername(user.username);
                     setProfilePhone(user.phone);
                     fetchUserBalance();
                   }}
                   onLogout={() => {
+                    localStorage.removeItem("balance_visitor_id");
                     setUserBalance(null);
                     setBalanceTransactions([]);
                   }}

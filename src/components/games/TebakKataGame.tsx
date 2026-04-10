@@ -19,9 +19,9 @@ import {
 const MAX_WRONG = Infinity; // No limit - keep same question until correct
 
 export default function TebakKataGame() {
-  const visitorId = getVisitorId();
   const balanceVisitorId = localStorage.getItem("balance_visitor_id");
-  const { credits, isUnlimited, fetchCredits, useCredit } = useGameCredits(balanceVisitorId);
+  const activeVisitorId = balanceVisitorId || getVisitorId();
+  const { credits, isUnlimited, fetchCredits, useCredit } = useGameCredits(activeVisitorId);
   const [word, setWord] = useState("");
   const [hints, setHints] = useState<string[]>([]);
   const [revealedHints, setRevealedHints] = useState(0);
@@ -341,7 +341,7 @@ export default function TebakKataGame() {
             {gameActive && !answerRevealed && (
               <RevealAnswerButton
                 onReveal={() => { setAnswerRevealed(true); }}
-                visitorId={balanceVisitorId}
+                visitorId={activeVisitorId}
                 useCredit={useCredit}
                 credits={credits}
                 isUnlimited={isUnlimited}
@@ -367,7 +367,7 @@ export default function TebakKataGame() {
           {/* Credits info */}
           <div className="flex items-center justify-between">
             <GameCreditsBadge credits={credits} isUnlimited={isUnlimited} />
-            <BuyCreditsDialog visitorId={balanceVisitorId} onPurchased={fetchCredits} />
+            <BuyCreditsDialog visitorId={activeVisitorId} onPurchased={fetchCredits} />
           </div>
 
           {/* Question info */}

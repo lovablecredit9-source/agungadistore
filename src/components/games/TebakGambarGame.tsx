@@ -31,7 +31,8 @@ const INITIAL_BLUR: Record<Difficulty, number> = {
 
 export default function TebakGambarGame() {
   const balanceVisitorId = localStorage.getItem("balance_visitor_id");
-  const { credits, isUnlimited, fetchCredits, useCredit } = useGameCredits(balanceVisitorId);
+  const activeVisitorId = balanceVisitorId || localStorage.getItem("visitor_id");
+  const { credits, isUnlimited, fetchCredits, useCredit } = useGameCredits(activeVisitorId);
   const [difficulty, setDifficulty] = useState<Difficulty | null>(null);
   const [imageData, setImageData] = useState("");
   const [answer, setAnswer] = useState("");
@@ -365,7 +366,7 @@ export default function TebakGambarGame() {
             {!answerRevealed && (
               <RevealAnswerButton
                 onReveal={() => setAnswerRevealed(true)}
-                visitorId={balanceVisitorId}
+                visitorId={activeVisitorId}
                 useCredit={useCredit}
                 credits={credits}
                 isUnlimited={isUnlimited}
@@ -387,7 +388,7 @@ export default function TebakGambarGame() {
       {/* Credits info */}
       <div className="flex items-center justify-between">
         <GameCreditsBadge credits={credits} isUnlimited={isUnlimited} />
-        <BuyCreditsDialog visitorId={balanceVisitorId} onPurchased={fetchCredits} />
+        <BuyCreditsDialog visitorId={activeVisitorId} onPurchased={fetchCredits} />
       </div>
 
       {/* Result wrong flash */}
