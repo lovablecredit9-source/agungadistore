@@ -1480,7 +1480,57 @@ const Index = () => {
               </div>
             </div>
 
-            <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary/15 via-accent/10 to-primary/5 p-5">
+            {/* Admin Posts */}
+            {adminPosts.length > 0 && (
+              <div className="space-y-3">
+                <h3 className="font-bold text-sm flex items-center gap-2">
+                  <FileText className="w-4 h-4 text-primary" /> Postingan Terbaru
+                </h3>
+                {adminPosts.slice(0, 5).map(post => (
+                  <Card key={post.id} className="overflow-hidden hover:shadow-lg transition-all">
+                    {post.image_url && (
+                      <img src={post.image_url} alt={post.title} className="w-full h-40 object-cover" />
+                    )}
+                    <CardContent className="p-4 space-y-2">
+                      <h4 className="font-bold text-sm">{post.title}</h4>
+                      {post.content && <p className="text-xs text-muted-foreground line-clamp-3">{post.content}</p>}
+                      {post.link_url && (
+                        <a href={post.link_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs text-primary font-medium hover:underline">
+                          <ExternalLink className="w-3 h-3" /> Buka Link
+                        </a>
+                      )}
+                      {/* Social media links */}
+                      {[
+                        { val: post.whatsapp, label: "WA", href: post.whatsapp?.startsWith("http") ? post.whatsapp : `https://wa.me/62${(post.whatsapp || "").replace(/^0/, "")}` },
+                        { val: post.instagram, label: "IG", href: post.instagram?.startsWith("http") ? post.instagram : `https://instagram.com/${post.instagram}` },
+                        { val: post.tiktok, label: "TikTok", href: post.tiktok?.startsWith("http") ? post.tiktok : `https://tiktok.com/@${post.tiktok}` },
+                        { val: post.youtube, label: "YT", href: post.youtube?.startsWith("http") ? post.youtube : `https://youtube.com/@${post.youtube}` },
+                        { val: post.twitter, label: "X", href: post.twitter?.startsWith("http") ? post.twitter : `https://twitter.com/${post.twitter}` },
+                        { val: post.facebook, label: "FB", href: post.facebook?.startsWith("http") ? post.facebook : `https://facebook.com/${post.facebook}` },
+                      ].filter(s => s.val).length > 0 && (
+                        <div className="flex flex-wrap gap-1.5">
+                          {[
+                            { val: post.whatsapp, label: "WA", href: post.whatsapp?.startsWith("http") ? post.whatsapp : `https://wa.me/62${(post.whatsapp || "").replace(/^0/, "")}` },
+                            { val: post.instagram, label: "IG", href: post.instagram?.startsWith("http") ? post.instagram : `https://instagram.com/${post.instagram}` },
+                            { val: post.tiktok, label: "TikTok", href: post.tiktok?.startsWith("http") ? post.tiktok : `https://tiktok.com/@${post.tiktok}` },
+                            { val: post.youtube, label: "YT", href: post.youtube?.startsWith("http") ? post.youtube : `https://youtube.com/@${post.youtube}` },
+                            { val: post.twitter, label: "X", href: post.twitter?.startsWith("http") ? post.twitter : `https://twitter.com/${post.twitter}` },
+                            { val: post.facebook, label: "FB", href: post.facebook?.startsWith("http") ? post.facebook : `https://facebook.com/${post.facebook}` },
+                          ].filter(s => s.val).map(s => (
+                            <a key={s.label} href={s.href} target="_blank" rel="noopener noreferrer"
+                              className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-primary/10 text-primary hover:bg-primary/20 transition-colors">
+                              {s.label}
+                            </a>
+                          ))}
+                        </div>
+                      )}
+                      <p className="text-[10px] text-muted-foreground">{new Date(post.created_at).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" })}</p>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+
               <div className="absolute -top-4 -right-4 opacity-10"><Crown className="w-24 h-24 text-primary" /></div>
               <div className="relative z-10 text-center">
                 <img src={storeQris} alt={STORE_NAME} className="w-20 h-20 rounded-2xl object-cover mx-auto mb-3 shadow-lg border-2 border-primary/20" />
