@@ -292,6 +292,7 @@ export default function DailyStreak() {
     setStreakPinInput("");
     setPendingPlanDays(null);
   }
+  const canClaim = !streak || !isToday(streak.last_claim_date);
   const streakBroken = streak && !isToday(streak.last_claim_date) && !isYesterday(streak.last_claim_date);
 
   async function claimStreak() {
