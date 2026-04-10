@@ -520,6 +520,18 @@ export default function DailyStreak() {
             {MILESTONES.map((m, i) => {
               const achieved = currentStreak >= m.days;
               const isNext = !achieved && (i === 0 || currentStreak >= MILESTONES[i - 1].days);
+              
+              // Fire color sets per tier
+              const fireColors = {
+                1: { outer: "#ff6b35", mid: "#ff9500", inner: "#ffdd57", glow: "rgba(255,149,0,0.3)" },
+                2: { outer: "#3b82f6", mid: "#60a5fa", inner: "#bfdbfe", glow: "rgba(59,130,246,0.3)" },
+                3: { outer: "#a855f7", mid: "#c084fc", inner: "#e9d5ff", glow: "rgba(168,85,247,0.3)" },
+                4: { outer: "#ef4444", mid: "#f87171", inner: "#fecaca", glow: "rgba(239,68,68,0.3)" },
+                5: { outer: "#f59e0b", mid: "#fbbf24", inner: "#fef3c7", glow: "rgba(245,158,11,0.3)" },
+              };
+              const fc = fireColors[m.tier as keyof typeof fireColors] || fireColors[1];
+              const grayColors = { outer: "#9ca3af", mid: "#d1d5db", inner: "#e5e7eb" };
+
               return (
                 <div key={m.days} className="flex items-center">
                   {/* Connector dash */}
@@ -535,105 +547,56 @@ export default function DailyStreak() {
                     transition={{ delay: 0.1 + i * 0.06 }}
                     className="flex flex-col items-center"
                   >
-                    <div className="relative w-10 h-12 flex items-center justify-center">
+                    <div className="relative flex items-center justify-center" style={{ width: 44, height: 52 }}>
                       {achieved ? (
-                        /* Egg/teardrop shaped fire like reference */
-                        <div className="relative w-9 h-11">
-                          {/* Outer teardrop shape */}
+                        <>
+                          {/* Glow circle behind */}
                           <motion.div
-                            className="absolute inset-0"
+                            className="absolute rounded-full"
                             style={{
-                              borderRadius: "50% 50% 50% 50% / 35% 35% 65% 65%",
-                              background: m.tier === 1
-                                ? "linear-gradient(to bottom, #ff6b00 0%, #ff9500 40%, #ffcc00 100%)"
-                                : m.tier === 2
-                                ? "linear-gradient(to bottom, #2563eb 0%, #3b82f6 40%, #93c5fd 100%)"
-                                : m.tier === 3
-                                ? "linear-gradient(to bottom, #7c3aed 0%, #a855f7 40%, #e879f9 100%)"
-                                : m.tier === 4
-                                ? "linear-gradient(to bottom, #dc2626 0%, #ef4444 40%, #fca5a5 100%)"
-                                : "linear-gradient(to bottom, #d97706 0%, #f59e0b 40%, #fde68a 100%)",
+                              width: 38, height: 38, bottom: 2,
+                              background: `radial-gradient(circle, ${fc.glow} 0%, transparent 70%)`,
                             }}
-                            animate={{
-                              scaleY: [1, 1.06, 0.97, 1.03, 1],
-                              scaleX: [1, 0.96, 1.04, 0.98, 1],
-                            }}
-                            transition={{ duration: 1.2, repeat: Infinity, ease: "easeInOut" }}
+                            animate={{ scale: [1, 1.15, 1], opacity: [0.6, 1, 0.6] }}
+                            transition={{ duration: 2, repeat: Infinity }}
                           />
-                          {/* Inner lighter teardrop */}
-                          <motion.div
-                            className="absolute"
-                            style={{
-                              top: "30%", left: "20%", right: "20%", bottom: "10%",
-                              borderRadius: "50% 50% 50% 50% / 35% 35% 65% 65%",
-                              background: m.tier === 1
-                                ? "radial-gradient(ellipse at 50% 70%, #ffee88 0%, #ffcc00 40%, transparent 75%)"
-                                : m.tier === 2
-                                ? "radial-gradient(ellipse at 50% 70%, #bfdbfe 0%, #60a5fa 40%, transparent 75%)"
-                                : m.tier === 3
-                                ? "radial-gradient(ellipse at 50% 70%, #f0abfc 0%, #c084fc 40%, transparent 75%)"
-                                : m.tier === 4
-                                ? "radial-gradient(ellipse at 50% 70%, #fecaca 0%, #f87171 40%, transparent 75%)"
-                                : "radial-gradient(ellipse at 50% 70%, #fef3c7 0%, #fbbf24 40%, transparent 75%)",
-                            }}
+                          {/* SVG Fire */}
+                          <motion.svg
+                            viewBox="0 0 40 48" width={36} height={44}
                             animate={{
-                              scaleY: [1, 1.1, 0.92, 1.05, 1],
-                              opacity: [0.9, 1, 0.8, 1, 0.9],
+                              scaleY: [1, 1.05, 0.97, 1.03, 1],
+                              scaleX: [1, 0.97, 1.03, 0.98, 1],
                             }}
-                            transition={{ duration: 0.9, repeat: Infinity, ease: "easeInOut", delay: 0.1 }}
-                          />
-                          {/* Top flame tip */}
-                          <motion.div
-                            className="absolute left-1/2 -translate-x-1/2"
-                            style={{
-                              top: "-8%", width: "35%", height: "30%",
-                              borderRadius: "50% 50% 50% 50% / 30% 30% 70% 70%",
-                              background: m.tier === 1
-                                ? "linear-gradient(to bottom, #ff4500, #ff6b00)"
-                                : m.tier === 2
-                                ? "linear-gradient(to bottom, #1d4ed8, #2563eb)"
-                                : m.tier === 3
-                                ? "linear-gradient(to bottom, #6d28d9, #7c3aed)"
-                                : m.tier === 4
-                                ? "linear-gradient(to bottom, #b91c1c, #dc2626)"
-                                : "linear-gradient(to bottom, #b45309, #d97706)",
-                            }}
-                            animate={{
-                              scaleX: [1, 0.8, 1.1, 0.9, 1],
-                              scaleY: [1, 1.3, 0.8, 1.15, 1],
-                              y: [0, -2, 1, -1, 0],
-                            }}
-                            transition={{ duration: 0.8, repeat: Infinity, ease: "easeInOut" }}
-                          />
-                        </div>
+                            transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
+                            style={{ filter: `drop-shadow(0 2px 6px ${fc.glow})` }}
+                          >
+                            {/* Outer flame */}
+                            <path
+                              d="M20 2 C20 2 8 16 8 28 C8 36 13 44 20 46 C27 44 32 36 32 28 C32 16 20 2 20 2Z"
+                              fill={fc.outer}
+                            />
+                            {/* Mid flame */}
+                            <path
+                              d="M20 10 C20 10 12 20 12 30 C12 36 15 42 20 44 C25 42 28 36 28 30 C28 20 20 10 20 10Z"
+                              fill={fc.mid}
+                            />
+                            {/* Inner flame / core */}
+                            <ellipse cx="20" cy="36" rx="5" ry="7" fill={fc.inner} />
+                          </motion.svg>
+                        </>
                       ) : (
-                        /* Gray inactive egg-shaped fire */
-                        <div className="relative w-9 h-11 opacity-40">
-                          <div
-                            className="absolute inset-0"
-                            style={{
-                              borderRadius: "50% 50% 50% 50% / 35% 35% 65% 65%",
-                              background: "linear-gradient(to bottom, #9ca3af 0%, #d1d5db 60%, #e5e7eb 100%)",
-                            }}
+                        /* Gray inactive fire */
+                        <svg viewBox="0 0 40 48" width={36} height={44} style={{ opacity: 0.35 }}>
+                          <path
+                            d="M20 2 C20 2 8 16 8 28 C8 36 13 44 20 46 C27 44 32 36 32 28 C32 16 20 2 20 2Z"
+                            fill={grayColors.outer}
                           />
-                          <div
-                            className="absolute"
-                            style={{
-                              top: "35%", left: "25%", right: "25%", bottom: "15%",
-                              borderRadius: "50%",
-                              background: "radial-gradient(ellipse at 50% 60%, #e5e7eb 0%, #d1d5db 60%, transparent 80%)",
-                            }}
+                          <path
+                            d="M20 10 C20 10 12 20 12 30 C12 36 15 42 20 44 C25 42 28 36 28 30 C28 20 20 10 20 10Z"
+                            fill={grayColors.mid}
                           />
-                          {/* Gray tip */}
-                          <div
-                            className="absolute left-1/2 -translate-x-1/2"
-                            style={{
-                              top: "-5%", width: "30%", height: "25%",
-                              borderRadius: "50% 50% 50% 50% / 30% 30% 70% 70%",
-                              background: "linear-gradient(to bottom, #9ca3af, #b0b5bc)",
-                            }}
-                          />
-                        </div>
+                          <ellipse cx="20" cy="36" rx="5" ry="7" fill={grayColors.inner} />
+                        </svg>
                       )}
                     </div>
                     <span className={`text-[10px] font-bold mt-0.5 ${
