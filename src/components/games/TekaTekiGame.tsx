@@ -154,9 +154,7 @@ export default function TekaTekiGame() {
     const ok = await useCredit();
     if (ok) {
       setAnswerRevealed(true);
-      if (timerRef.current) clearInterval(timerRef.current);
-      setGameActive(false);
-      setResult(null);
+      setGuess(answer);
       fetchCredits();
     }
   };
@@ -269,14 +267,10 @@ export default function TekaTekiGame() {
             <p className="text-xs text-muted-foreground text-center">Salah: {wrongCount}/{MAX_WRONG} — Sisa {MAX_WRONG - wrongCount} kesempatan!</p>
           )}
 
-          {/* Answer revealed */}
-          {answerRevealed && (
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="rounded-xl bg-blue-500/10 border border-blue-500/30 p-4 text-center space-y-2">
-              <p className="text-sm font-bold text-blue-600">Jawaban: <span className="uppercase">{answer}</span></p>
-              {explanation && <p className="text-xs text-muted-foreground">{explanation}</p>}
-              <Button onClick={fetchRiddle} className="gap-2 mt-2" size="sm">
-                <RefreshCw className="w-4 h-4" /> Soal Berikutnya
-              </Button>
+          {/* Answer revealed - still need to submit */}
+          {answerRevealed && gameActive && (
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="rounded-xl bg-blue-500/10 border border-blue-500/30 p-3 text-center">
+              <p className="text-xs text-muted-foreground">Jawaban sudah diisi otomatis, tekan tombol untuk submit!</p>
             </motion.div>
           )}
 
@@ -324,7 +318,7 @@ export default function TekaTekiGame() {
           </AnimatePresence>
 
           {/* Input */}
-          {gameActive && !answerRevealed && (
+          {gameActive && (
             <div className="flex gap-2">
               <Input
                 value={guess}
