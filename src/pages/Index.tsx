@@ -2116,6 +2116,10 @@ const Index = () => {
         {tab === "sponsor" && (
           <SponsorBanner likedSponsorIds={likedSponsorIds} onToggleLikeSponsor={toggleLikeSponsor} />
         )}
+
+        {tab === "streak" && (
+          <DailyStreak />
+        )}
       </main>
 
       {/* Mini Player - shown when music is playing and not on playlist tab */}
