@@ -4,9 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { motion } from "framer-motion";
-import { Key, Loader2, ShoppingCart, Infinity, Coins, Lock, Gift } from "lucide-react";
+import { Key, Loader2, ShoppingCart, Infinity, Coins, Lock } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { getDailyFreeReveals, useDailyFreeReveal, MAX_FREE_REVEALS } from "./gameStore";
 
 interface CreditPackage {
   id: string;
@@ -31,11 +30,6 @@ export function useGameCredits(visitorId: string | null) {
   const [isUnlimited, setIsUnlimited] = useState(false);
   const [unlimitedUntil, setUnlimitedUntil] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [freeRemaining, setFreeRemaining] = useState(getDailyFreeReveals().remaining);
-
-  const refreshFree = useCallback(() => {
-    setFreeRemaining(getDailyFreeReveals().remaining);
-  }, []);
 
   const fetchCredits = useCallback(async () => {
     if (!visitorId) return;
@@ -47,22 +41,11 @@ export function useGameCredits(visitorId: string | null) {
       setIsUnlimited(data.is_unlimited || false);
       setUnlimitedUntil(data.unlimited_until || null);
     }
-    refreshFree();
-  }, [visitorId, refreshFree]);
+  }, [visitorId]);
 
   useEffect(() => { fetchCredits(); }, [fetchCredits]);
 
   const useCredit = useCallback(async (): Promise<boolean> => {
-    // Try daily free first
-    if (freeRemaining > 0) {
-      const used = useDailyFreeReveal();
-      if (used) {
-        setFreeRemaining(getDailyFreeReveals().remaining);
-        return true;
-      }
-    }
-
-    // Fall back to paid credits
     if (!visitorId) return false;
     const { data, error } = await supabase.functions.invoke("purchase-game-credits", {
       body: { action: "use_credit", visitorId },
@@ -71,35 +54,25 @@ export function useGameCredits(visitorId: string | null) {
     setCredits(data.credits);
     setIsUnlimited(data.is_unlimited);
     return true;
-  }, [visitorId, freeRemaining]);
+  }, [visitorId]);
 
-  return { credits, isUnlimited, unlimitedUntil, loading, fetchCredits, useCredit, freeRemaining };
+  return { credits, isUnlimited, unlimitedUntil, loading, fetchCredits, useCredit };
 }
 
 interface GameCreditsBadgeProps {
   credits: number;
   isUnlimited: boolean;
-  freeRemaining?: number;
 }
 
-export function GameCreditsBadge({ credits, isUnlimited, freeRemaining }: GameCreditsBadgeProps) {
+export function GameCreditsBadge({ credits, isUnlimited }: GameCreditsBadgeProps) {
   return (
-    <div className="flex items-center gap-2 flex-wrap">
-      {/* Daily free badge */}
-      {(freeRemaining !== undefined && freeRemaining > 0) && (
-        <div className="flex items-center gap-1 text-xs bg-green-500/10 border border-green-500/30 rounded-lg px-2 py-1">
-          <Gift className="w-3 h-3 text-green-500" />
-          <span className="font-bold text-green-600">{freeRemaining}/{MAX_FREE_REVEALS} gratis hari ini</span>
-        </div>
+    <div className="flex items-center gap-1 text-xs bg-accent/20 border border-accent/30 rounded-lg px-2 py-1">
+      <Key className="w-3 h-3 text-accent" />
+      {isUnlimited ? (
+        <span className="font-bold text-accent flex items-center gap-0.5"><Infinity className="w-3 h-3" /> Unlimited</span>
+      ) : (
+        <span className="font-bold">{credits} kredit</span>
       )}
-      <div className="flex items-center gap-1 text-xs bg-accent/20 border border-accent/30 rounded-lg px-2 py-1">
-        <Key className="w-3 h-3 text-accent" />
-        {isUnlimited ? (
-          <span className="font-bold text-accent flex items-center gap-0.5"><Infinity className="w-3 h-3" /> Unlimited</span>
-        ) : (
-          <span className="font-bold">{credits} kredit</span>
-        )}
-      </div>
     </div>
   );
 }
@@ -165,7 +138,7 @@ export function BuyCreditsDialog({ visitorId, onPurchased }: BuyCreditsDialogPro
             <Coins className="w-5 h-5 text-primary" /> Beli Kredit Jawaban
           </DialogTitle>
         </DialogHeader>
-        <p className="text-xs text-muted-foreground">1 kredit = 1x lihat kunci jawaban game. Setiap hari dapat {MAX_FREE_REVEALS}x gratis!</p>
+        <p className="text-xs text-muted-foreground">1 kredit = 1x lihat kunci jawaban game</p>
 
         {needPin && selectedPkg ? (
           <div className="space-y-3">
@@ -226,26 +199,14 @@ interface RevealAnswerButtonProps {
   useCredit: () => Promise<boolean>;
   credits: number;
   isUnlimited: boolean;
-  freeRemaining?: number;
   disabled?: boolean;
 }
 
-export function RevealAnswerButton({ onReveal, visitorId, useCredit, credits, isUnlimited, freeRemaining = 0, disabled }: RevealAnswerButtonProps) {
+export function RevealAnswerButton({ onReveal, visitorId, useCredit, credits, isUnlimited, disabled }: RevealAnswerButtonProps) {
   const [revealing, setRevealing] = useState(false);
   const { toast } = useToast();
 
   const handleReveal = async () => {
-    // Free reveals don't need login
-    if (freeRemaining > 0) {
-      setRevealing(true);
-      const ok = await useCredit();
-      if (ok) {
-        onReveal();
-      }
-      setRevealing(false);
-      return;
-    }
-
     if (!visitorId) {
       toast({ title: "Login dulu", description: "Login ke akun saldo untuk menggunakan kredit jawaban", variant: "destructive" });
       return;
@@ -260,7 +221,7 @@ export function RevealAnswerButton({ onReveal, visitorId, useCredit, credits, is
     setRevealing(false);
   };
 
-  const canUse = freeRemaining > 0 || isUnlimited || credits > 0;
+  const canUse = isUnlimited || credits > 0;
 
   return (
     <Button
@@ -270,8 +231,8 @@ export function RevealAnswerButton({ onReveal, visitorId, useCredit, credits, is
       disabled={disabled || revealing || !canUse}
       onClick={handleReveal}
     >
-      {revealing ? <Loader2 className="w-3 h-3 animate-spin" /> : freeRemaining > 0 ? <Gift className="w-3 h-3" /> : <Key className="w-3 h-3" />}
-      {freeRemaining > 0 ? `Gratis (${freeRemaining})` : `Kunci Jawaban ${!isUnlimited ? `(${credits})` : ""}`}
+      {revealing ? <Loader2 className="w-3 h-3 animate-spin" /> : <Key className="w-3 h-3" />}
+      Kunci Jawaban {!isUnlimited && `(${credits})`}
     </Button>
   );
 }
