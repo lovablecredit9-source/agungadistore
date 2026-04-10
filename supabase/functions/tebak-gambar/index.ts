@@ -59,13 +59,14 @@ Deno.serve(async (req) => {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          model: "google/gemini-3.1-flash-image-preview",
+          model: "google/gemini-2.5-flash-image",
           messages: [
             {
               role: "user",
               content: `Generate an image of: ${randomObj}. Style: ${cat.style}. Do NOT include any text, labels, or words in the image.`
             }
           ],
+          modalities: ["image", "text"],
         }),
       });
 
@@ -83,22 +84,20 @@ Deno.serve(async (req) => {
 
       const data = await response.json();
       
-      // Extract image from response - check for inline_data in parts
       const message = data.choices?.[0]?.message;
       let imageBase64 = "";
-      let textContent = "";
 
-      if (message?.content) {
-        // Content could be string or array of parts
-        if (typeof message.content === "string") {
-          textContent = message.content;
-        } else if (Array.isArray(message.content)) {
-          for (const part of message.content) {
-            if (part.type === "image_url" && part.image_url?.url) {
-              imageBase64 = part.image_url.url;
-            } else if (part.type === "text") {
-              textContent = part.text || "";
-            }
+      // Check for images array (Lovable AI Gateway format)
+      if (message?.images && Array.isArray(message.images) && message.images.length > 0) {
+        imageBase64 = message.images[0]?.image_url?.url || "";
+      }
+      
+      // Fallback: check content parts
+      if (!imageBase64 && Array.isArray(message?.content)) {
+        for (const part of message.content) {
+          if (part.type === "image_url" && part.image_url?.url) {
+            imageBase64 = part.image_url.url;
+            break;
           }
         }
       }
