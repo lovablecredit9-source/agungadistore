@@ -64,6 +64,28 @@ export default function TekaTekiGame() {
   }, [gameActive, timeLeft > 0]);
 
   const fetchRiddle = useCallback(async () => {
+    // Check free plays or credits
+    if (questionNumber > 0) {
+      const fp = getDailyFreePlays();
+      if (fp.remaining > 0) {
+        useDailyFreePlay();
+        setFreePlays(getDailyFreePlays().remaining);
+      } else if (!isUnlimited && credits <= 0) {
+        toast({ title: "Kesempatan habis", description: `${MAX_FREE_PLAYS}x gratis harian sudah terpakai. Beli kredit untuk lanjut bermain!`, variant: "destructive" });
+        return;
+      } else if (!isUnlimited) {
+        const ok = await useCredit();
+        if (!ok) {
+          toast({ title: "Kredit habis", description: "Beli kredit untuk lanjut bermain", variant: "destructive" });
+          return;
+        }
+      }
+    } else {
+      // First question always uses a free play
+      useDailyFreePlay();
+      setFreePlays(getDailyFreePlays().remaining);
+    }
+
     setLoading(true);
     setResult(null);
     setGuess("");
@@ -90,7 +112,7 @@ export default function TekaTekiGame() {
     } finally {
       setLoading(false);
     }
-  }, [difficulty, diffConfig.timeSeconds, toast]);
+  }, [difficulty, diffConfig.timeSeconds, toast, questionNumber, isUnlimited, credits, useCredit]);
 
   const MAX_WRONG = 3;
 
@@ -160,7 +182,14 @@ export default function TekaTekiGame() {
           </div>
         </div>
 
-        <GameCreditsBadge credits={credits} isUnlimited={isUnlimited} freeRemaining={freeRemaining} />
+        {/* Free plays badge */}
+        <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex items-center gap-1 text-xs bg-green-500/10 border border-green-500/30 rounded-lg px-2 py-1">
+            <Gift className="w-3 h-3 text-green-500" />
+            <span className="font-bold text-green-600">{freePlays}/{MAX_FREE_PLAYS} gratis hari ini</span>
+          </div>
+          <GameCreditsBadge credits={credits} isUnlimited={isUnlimited} />
+        </div>
 
         <div className="flex items-center gap-2">
           <span className="text-sm font-semibold">Kesulitan:</span>
@@ -202,7 +231,13 @@ export default function TekaTekiGame() {
         )}
       </div>
 
-      <GameCreditsBadge credits={credits} isUnlimited={isUnlimited} freeRemaining={freeRemaining} />
+      <div className="flex items-center gap-2 flex-wrap">
+        <div className="flex items-center gap-1 text-xs bg-green-500/10 border border-green-500/30 rounded-lg px-2 py-1">
+          <Gift className="w-3 h-3 text-green-500" />
+          <span className="font-bold text-green-600">{freePlays}/{MAX_FREE_PLAYS} gratis</span>
+        </div>
+        <GameCreditsBadge credits={credits} isUnlimited={isUnlimited} />
+      </div>
 
       {loading ? (
         <div className="flex flex-col items-center gap-3 py-10">
@@ -287,7 +322,7 @@ export default function TekaTekiGame() {
                 <Timer className="w-8 h-8 text-orange-500 mx-auto" />
                 <p className="font-bold text-orange-600">Waktu Habis!</p>
                 <div className="flex gap-2 justify-center">
-                  <RevealAnswerButton credits={credits} isUnlimited={isUnlimited} freeRemaining={freeRemaining} onReveal={handleRevealAnswer} visitorId={activeVisitorId} useCredit={useCredit} />
+                  <RevealAnswerButton credits={credits} isUnlimited={isUnlimited} onReveal={handleRevealAnswer} visitorId={activeVisitorId} useCredit={useCredit} />
                   <Button onClick={fetchRiddle} variant="outline" size="sm" className="gap-1">
                     <RefreshCw className="w-4 h-4" /> Soal Baru
                   </Button>
@@ -316,7 +351,7 @@ export default function TekaTekiGame() {
           {/* Reveal answer button during game */}
           {gameActive && !answerRevealed && (
             <div className="flex justify-center">
-              <RevealAnswerButton credits={credits} isUnlimited={isUnlimited} freeRemaining={freeRemaining} onReveal={handleRevealAnswer} visitorId={activeVisitorId} useCredit={useCredit} />
+              <RevealAnswerButton credits={credits} isUnlimited={isUnlimited} onReveal={handleRevealAnswer} visitorId={activeVisitorId} useCredit={useCredit} />
             </div>
           )}
         </>
