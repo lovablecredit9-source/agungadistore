@@ -91,6 +91,11 @@ export default function GameTab() {
                 <div className="flex-1">
                   <h3 className="font-extrabold text-base">Tebak Kata AI</h3>
                   <p className="text-xs text-muted-foreground">AI beri petunjuk, kamu tebak kata!</p>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+
           <motion.div whileTap={{ scale: 0.97 }}>
             <Card className="cursor-pointer hover:border-primary/50 transition-colors" onClick={() => setMode("tebak_gambar")}>
               <CardContent className="p-5 flex items-center gap-4">
