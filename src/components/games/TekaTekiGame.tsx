@@ -182,12 +182,7 @@ export default function TekaTekiGame() {
           </div>
         </div>
 
-        {/* Free plays badge */}
         <div className="flex items-center gap-2 flex-wrap">
-          <div className="flex items-center gap-1 text-xs bg-green-500/10 border border-green-500/30 rounded-lg px-2 py-1">
-            <Gift className="w-3 h-3 text-green-500" />
-            <span className="font-bold text-green-600">{freePlays}/{MAX_FREE_PLAYS} gratis hari ini</span>
-          </div>
           <GameCreditsBadge credits={credits} isUnlimited={isUnlimited} />
           <BuyCreditsDialog visitorId={activeVisitorId} onPurchased={fetchCredits} />
         </div>
@@ -233,10 +228,6 @@ export default function TekaTekiGame() {
       </div>
 
       <div className="flex items-center gap-2 flex-wrap">
-        <div className="flex items-center gap-1 text-xs bg-green-500/10 border border-green-500/30 rounded-lg px-2 py-1">
-          <Gift className="w-3 h-3 text-green-500" />
-          <span className="font-bold text-green-600">{freePlays}/{MAX_FREE_PLAYS} gratis</span>
-        </div>
         <GameCreditsBadge credits={credits} isUnlimited={isUnlimited} />
       </div>
 
