@@ -261,6 +261,20 @@ export default function DailyStreak() {
     if (data) setActiveSub(data as any);
   }, [visitorId]);
 
+  function handlePlanClick(planDays: number) {
+    const plan = AUTO_CLAIM_PLANS.find(p => p.days === planDays);
+    if (!plan) return;
+    setShowConfirm({ days: plan.days, name: plan.name, price: plan.price });
+  }
+
+  function confirmPurchase() {
+    if (!showConfirm) return;
+    const days = showConfirm.days;
+    setShowConfirm(null);
+    setPendingPlanDays(days);
+    setShowPinForStreak(true);
+  }
+
   async function purchaseStreakPlan(planDays: number, pin?: string) {
     setBuyingPlan(planDays);
     try {
@@ -277,7 +291,7 @@ export default function DailyStreak() {
         toast({ title: "Gagal", description: data?.error || "Gagal membeli paket", variant: "destructive" });
         return;
       }
-      toast({ title: "Berhasil! 🎉", description: `Paket Auto-Klaim ${data.plan} aktif sampai ${new Date(data.expires_at).toLocaleDateString("id-ID")}` });
+      toast({ title: "Berhasil!", description: `Paket Auto-Klaim ${data.plan} aktif sampai ${new Date(data.expires_at).toLocaleDateString("id-ID")}` });
       fetchSubscription();
     } catch {
       toast({ title: "Error", description: "Koneksi gagal", variant: "destructive" });
