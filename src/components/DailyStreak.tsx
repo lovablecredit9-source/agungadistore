@@ -212,48 +212,6 @@ function FloatingSparkles({ count = 6, tier = 1 }: { count?: number; tier?: numb
   );
 }
 
-// Tier-specific fire with colors
-function TierFire({ tier, size = "md" }: { tier: number; size?: "sm" | "md" | "lg" | "xl" }) {
-  const colors = {
-    1: ["#ff4500", "#ff6b35", "#ffcc00"],
-    2: ["#3b82f6", "#6366f1", "#93c5fd"],
-    3: ["#a855f7", "#ec4899", "#f0abfc"],
-    4: ["#e11d48", "#dc2626", "#fca5a5"],
-    5: ["#f59e0b", "#eab308", "#fef08a"],
-  };
-  const c = colors[tier as keyof typeof colors] || colors[1];
-  const sizes = { sm: "w-6 h-8", md: "w-10 h-14", lg: "w-14 h-18", xl: "w-20 h-28" };
-
-  return (
-    <div className={`relative ${sizes[size]} flex items-end justify-center`}>
-      {[0, 1, 2].map(i => (
-        <motion.div
-          key={i}
-          className="absolute bottom-0 rounded-full"
-          style={{
-            width: `${70 - i * 12}%`,
-            height: `${85 - i * 12}%`,
-            background: `radial-gradient(ellipse at bottom, ${c[i]} 0%, ${c[i]}88 40%, transparent 70%)`,
-            filter: `blur(${i * 2}px)`,
-            left: "50%",
-            transform: "translateX(-50%)",
-          }}
-          animate={{
-            scaleY: [1, 1.3, 0.85, 1.15, 1],
-            scaleX: [1, 0.85, 1.15, 0.9, 1],
-            opacity: [0.85, 1, 0.65, 0.95, 0.85],
-          }}
-          transition={{
-            duration: 0.5 + i * 0.15,
-            repeat: Infinity,
-            ease: "easeInOut",
-            delay: i * 0.08,
-          }}
-        />
-      ))}
-    </div>
-  );
-}
 
 export default function DailyStreak() {
   const [streak, setStreak] = useState<StreakData | null>(null);
