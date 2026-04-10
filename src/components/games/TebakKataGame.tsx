@@ -16,7 +16,7 @@ import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-const MAX_WRONG = Number.MAX_SAFE_INTEGER; // effectively unlimited without crashing array lengths
+const MAX_WRONG = 3;
 
 export default function TebakKataGame() {
   const activeVisitorId = useMemo(() => {
@@ -116,7 +116,12 @@ export default function TebakKataGame() {
       if (revealedHints < hints.length) {
         setRevealedHints(r => r + 1);
       }
-      setTimeout(() => setResult(null), 1200);
+      if (newWrong >= MAX_WRONG) {
+        if (timerRef.current) clearInterval(timerRef.current);
+        setGameActive(false);
+      } else {
+        setTimeout(() => setResult(null), 1200);
+      }
     }
     setGuess("");
   };
@@ -197,7 +202,7 @@ export default function TebakKataGame() {
             <Brain className="w-8 h-8 text-white" />
           </div>
           <h3 className="font-extrabold text-lg">Tebak Kata AI</h3>
-          <p className="text-sm text-muted-foreground">AI beri petunjuk, kamu tebak kata! Tidak ada batas salah.</p>
+          <p className="text-sm text-muted-foreground">AI beri petunjuk, kamu tebak kata! Maksimal 3x salah.</p>
           <Button onClick={startNewGame} disabled={loading} className="gap-2">
             {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Zap className="w-4 h-4" />}
             Mulai Game
@@ -219,7 +224,9 @@ export default function TebakKataGame() {
                 </motion.span>
               </div>
               <div className="flex items-center gap-1">
-                <span className="text-[10px] text-muted-foreground">Salah: {wrongCount}x</span>
+                {[0, 1, 2].map(i => (
+                  <X key={i} className={`w-4 h-4 ${i < wrongCount ? "text-destructive" : "text-muted"}`} />
+                ))}
               </div>
             </div>
           )}
