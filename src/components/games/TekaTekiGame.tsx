@@ -2,7 +2,7 @@ import { useState, useCallback, useEffect, useRef, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { motion, AnimatePresence } from "framer-motion";
-import { RefreshCw, Loader2, Lightbulb, Check, X, Zap, Timer, Trophy, Star, HelpCircle, ChevronDown } from "lucide-react";
+import { RefreshCw, Loader2, Lightbulb, Check, X, Zap, Timer, Trophy, Star, HelpCircle, ChevronDown, Gift } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { getVisitorId } from "@/lib/visitor-id";
 import { useGameCredits, GameCreditsBadge, BuyCreditsDialog, RevealAnswerButton } from "./GameCredits";
@@ -11,6 +11,7 @@ import {
   loadGameData, addPoints, getPointsForQuestion,
   getLevelFromPoints, getNextLevelThreshold, getCurrentLevelThreshold,
   DIFFICULTIES, type Difficulty, type GameLevel,
+  getDailyFreePlays, useDailyFreePlay, MAX_FREE_PLAYS,
 } from "./gameStore";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
@@ -21,7 +22,8 @@ export default function TekaTekiGame() {
     if (typeof window === "undefined") return null;
     return localStorage.getItem("balance_visitor_id") || getVisitorId();
   }, []);
-  const { credits, isUnlimited, fetchCredits, useCredit, freeRemaining } = useGameCredits(activeVisitorId);
+  const { credits, isUnlimited, fetchCredits, useCredit } = useGameCredits(activeVisitorId);
+  const [freePlays, setFreePlays] = useState(getDailyFreePlays().remaining);
   const [riddle, setRiddle] = useState("");
   const [answer, setAnswer] = useState("");
   const [explanation, setExplanation] = useState("");
