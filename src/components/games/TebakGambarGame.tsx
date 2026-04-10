@@ -135,12 +135,6 @@ export default function TebakGambarGame() {
         setResult("wrong");
         // Reduce blur on wrong answer to give visual hint
         setBlurLevel(prev => Math.max(prev - 2, 0));
-        if (newWrong >= 3) {
-          setGameOver(true);
-          setTimerActive(false);
-          addPoints(0);
-          setPlayerData(loadGameData());
-        }
         setTimeout(() => setResult(null), 1200);
       }
     } catch (e: any) {
