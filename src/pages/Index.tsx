@@ -1632,8 +1632,9 @@ const Index = () => {
                     <div className="flex items-start justify-between">
                       <h3 className="font-bold text-base flex-1">{p.title}</h3>
                       {imgs.length === 0 && (
-                        <button onClick={(e) => toggleLike(p.id, e)}>
+                        <button onClick={(e) => toggleLike(p.id, e)} className="flex items-center gap-1">
                           <Heart className={`w-4 h-4 ${likedIds.has(p.id) ? "fill-destructive text-destructive" : "text-muted-foreground"}`} />
+                          {(productLikeCounts[p.id] || 0) > 0 && <span className="text-[10px] font-bold text-muted-foreground">{productLikeCounts[p.id]}</span>}
                         </button>
                       )}
                     </div>
