@@ -641,12 +641,29 @@ const Index = () => {
   }
 
   async function fetchLikes() {
-    const [{ data: prodData }, { data: sponsorData }] = await Promise.all([
+    const [{ data: prodData }, { data: sponsorData }, { data: prodCounts }, { data: sponsorCounts }] = await Promise.all([
       supabase.from("liked_products").select("product_id").eq("visitor_id", visitorId),
       supabase.from("liked_sponsors").select("sponsor_id").eq("visitor_id", visitorId),
+      supabase.from("liked_products").select("product_id"),
+      supabase.from("liked_sponsors").select("sponsor_id"),
     ]);
     if (prodData) setLikedIds(new Set(prodData.map((d: any) => d.product_id)));
     if (sponsorData) setLikedSponsorIds(new Set(sponsorData.map((d: any) => d.sponsor_id)));
+    if (prodCounts) {
+      const counts: Record<string, number> = {};
+      prodCounts.forEach((d: any) => { counts[d.product_id] = (counts[d.product_id] || 0) + 1; });
+      setProductLikeCounts(counts);
+    }
+    if (sponsorCounts) {
+      const counts: Record<string, number> = {};
+      sponsorCounts.forEach((d: any) => { counts[d.sponsor_id] = (counts[d.sponsor_id] || 0) + 1; });
+      setSponsorLikeCounts(counts);
+    }
+  }
+
+  async function fetchAdminPosts() {
+    const { data } = await supabase.from("admin_posts").select("*").eq("is_active", true).order("created_at", { ascending: false });
+    if (data) setAdminPosts(data);
   }
 
   async function fetchUserBalance() {
