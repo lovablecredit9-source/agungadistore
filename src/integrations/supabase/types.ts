@@ -1415,6 +1415,33 @@ export type Database = {
         }
         Relationships: []
       }
+      user_game_credits: {
+        Row: {
+          created_at: string
+          credits: number
+          id: string
+          unlimited_until: string | null
+          updated_at: string
+          visitor_id: string
+        }
+        Insert: {
+          created_at?: string
+          credits?: number
+          id?: string
+          unlimited_until?: string | null
+          updated_at?: string
+          visitor_id: string
+        }
+        Update: {
+          created_at?: string
+          credits?: number
+          id?: string
+          unlimited_until?: string | null
+          updated_at?: string
+          visitor_id?: string
+        }
+        Relationships: []
+      }
       user_music_storage: {
         Row: {
           expires_at: string | null
