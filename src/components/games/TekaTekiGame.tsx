@@ -11,7 +11,6 @@ import {
   loadGameData, addPoints, getPointsForQuestion,
   getLevelFromPoints, getNextLevelThreshold, getCurrentLevelThreshold,
   DIFFICULTIES, type Difficulty, type GameLevel,
-  getDailyFreePlays, useDailyFreePlay, MAX_FREE_PLAYS,
 } from "./gameStore";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,

@@ -12,7 +12,6 @@ import {
 import {
   addPoints, getPointsForQuestion, loadGameData, getLevelFromPoints,
   getNextLevelThreshold, getCurrentLevelThreshold, type GameLevel,
-  getDailyFreePlays, useDailyFreePlay, MAX_FREE_PLAYS,
 } from "./gameStore";
 import { useGameCredits, GameCreditsBadge, BuyCreditsDialog, RevealAnswerButton } from "./GameCredits";
 
