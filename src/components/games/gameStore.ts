@@ -80,9 +80,9 @@ export function saveSuitScore(s: SuitScore) {
   localStorage.setItem(SUIT_KEY, JSON.stringify(s));
 }
 
-// Daily free reveal system
-const FREE_REVEAL_KEY = "game_daily_free_reveals";
-const MAX_FREE_REVEALS = 3;
+// Daily free plays system - 3 free game plays per day across all games
+const FREE_PLAYS_KEY = "game_daily_free_plays";
+const MAX_FREE_PLAYS = 3;
 
 interface DailyFreeData {
   date: string; // YYYY-MM-DD
@@ -93,25 +93,25 @@ function getTodayStr(): string {
   return new Date().toISOString().slice(0, 10);
 }
 
-export function getDailyFreeReveals(): { used: number; remaining: number } {
+export function getDailyFreePlays(): { used: number; remaining: number } {
   try {
-    const raw = localStorage.getItem(FREE_REVEAL_KEY);
+    const raw = localStorage.getItem(FREE_PLAYS_KEY);
     if (raw) {
       const data: DailyFreeData = JSON.parse(raw);
       if (data.date === getTodayStr()) {
-        return { used: data.used, remaining: Math.max(0, MAX_FREE_REVEALS - data.used) };
+        return { used: data.used, remaining: Math.max(0, MAX_FREE_PLAYS - data.used) };
       }
     }
   } catch {}
-  return { used: 0, remaining: MAX_FREE_REVEALS };
+  return { used: 0, remaining: MAX_FREE_PLAYS };
 }
 
-export function useDailyFreeReveal(): boolean {
-  const { remaining } = getDailyFreeReveals();
+export function useDailyFreePlay(): boolean {
+  const { remaining } = getDailyFreePlays();
   if (remaining <= 0) return false;
   const today = getTodayStr();
   try {
-    const raw = localStorage.getItem(FREE_REVEAL_KEY);
+    const raw = localStorage.getItem(FREE_PLAYS_KEY);
     let data: DailyFreeData = { date: today, used: 0 };
     if (raw) {
       const parsed = JSON.parse(raw);
@@ -119,11 +119,11 @@ export function useDailyFreeReveal(): boolean {
       else data = { date: today, used: 0 };
     }
     data.used += 1;
-    localStorage.setItem(FREE_REVEAL_KEY, JSON.stringify(data));
+    localStorage.setItem(FREE_PLAYS_KEY, JSON.stringify(data));
     return true;
   } catch {
     return false;
   }
 }
 
-export { MAX_FREE_REVEALS };
+export { MAX_FREE_PLAYS };

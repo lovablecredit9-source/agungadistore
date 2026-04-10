@@ -2,7 +2,7 @@ import { useState, useCallback, useEffect, useRef, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { motion, AnimatePresence } from "framer-motion";
-import { RefreshCw, Loader2, Lightbulb, Check, X, Zap, Timer, Trophy, Star, Brain, ChevronDown } from "lucide-react";
+import { RefreshCw, Loader2, Lightbulb, Check, X, Zap, Timer, Trophy, Star, Brain, ChevronDown, Gift } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { getVisitorId } from "@/lib/visitor-id";
 import { useGameCredits, GameCreditsBadge, BuyCreditsDialog, RevealAnswerButton } from "./GameCredits";
@@ -11,6 +11,7 @@ import {
   loadGameData, addPoints, getPointsForQuestion,
   getLevelFromPoints, getNextLevelThreshold, getCurrentLevelThreshold,
   DIFFICULTIES, type Difficulty, type GameLevel,
+  getDailyFreePlays, useDailyFreePlay, MAX_FREE_PLAYS,
 } from "./gameStore";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
@@ -23,7 +24,8 @@ export default function TebakKataGame() {
     if (typeof window === "undefined") return null;
     return localStorage.getItem("balance_visitor_id") || getVisitorId();
   }, []);
-  const { credits, isUnlimited, fetchCredits, useCredit, freeRemaining } = useGameCredits(activeVisitorId);
+  const { credits, isUnlimited, fetchCredits, useCredit } = useGameCredits(activeVisitorId);
+  const [freePlays, setFreePlays] = useState(getDailyFreePlays().remaining);
   const [word, setWord] = useState("");
   const [hints, setHints] = useState<string[]>([]);
   const [revealedHints, setRevealedHints] = useState(0);
@@ -66,6 +68,27 @@ export default function TebakKataGame() {
   }
 
   const startNewGame = useCallback(async () => {
+    // Check free plays or credits
+    if (questionNumber > 0) {
+      const fp = getDailyFreePlays();
+      if (fp.remaining > 0) {
+        useDailyFreePlay();
+        setFreePlays(getDailyFreePlays().remaining);
+      } else if (!isUnlimited && credits <= 0) {
+        toast({ title: "Kesempatan habis", description: `${MAX_FREE_PLAYS}x gratis harian sudah terpakai. Beli kredit untuk lanjut bermain!`, variant: "destructive" });
+        return;
+      } else if (!isUnlimited) {
+        const ok = await useCredit();
+        if (!ok) {
+          toast({ title: "Kredit habis", description: "Beli kredit untuk lanjut bermain", variant: "destructive" });
+          return;
+        }
+      }
+    } else {
+      useDailyFreePlay();
+      setFreePlays(getDailyFreePlays().remaining);
+    }
+
     setLoading(true);
     setResult(null);
     setGuess("");
@@ -95,7 +118,7 @@ export default function TebakKataGame() {
     } finally {
       setLoading(false);
     }
-  }, [toast, difficulty, diffConfig]);
+  }, [toast, difficulty, diffConfig, questionNumber, isUnlimited, credits, useCredit]);
 
   const submitGuess = () => {
     if (!guess.trim() || !gameActive) return;
@@ -354,7 +377,6 @@ export default function TebakKataGame() {
                 useCredit={useCredit}
                 credits={credits}
                 isUnlimited={isUnlimited}
-                freeRemaining={freeRemaining}
               />
             )}
             <Button onClick={startNewGame} disabled={loading} className="flex-1 gap-1">
@@ -376,7 +398,13 @@ export default function TebakKataGame() {
 
           {/* Credits info */}
           <div className="flex items-center justify-between">
-            <GameCreditsBadge credits={credits} isUnlimited={isUnlimited} freeRemaining={freeRemaining} />
+            <div className="flex items-center gap-2 flex-wrap">
+              <div className="flex items-center gap-1 text-xs bg-green-500/10 border border-green-500/30 rounded-lg px-2 py-1">
+                <Gift className="w-3 h-3 text-green-500" />
+                <span className="font-bold text-green-600">{freePlays}/{MAX_FREE_PLAYS} gratis</span>
+              </div>
+              <GameCreditsBadge credits={credits} isUnlimited={isUnlimited} />
+            </div>
             <BuyCreditsDialog visitorId={activeVisitorId} onPurchased={fetchCredits} />
           </div>
 
