@@ -83,6 +83,7 @@ export default function TebakGambarGame() {
     setLetterCount(0);
     setBlurLevel(INITIAL_BLUR[difficulty]);
     setGameOver(false);
+    setAnswerRevealed(false);
 
     try {
       const { data, error: fnError } = await supabase.functions.invoke("tebak-gambar", {
@@ -367,9 +368,33 @@ export default function TebakGambarGame() {
               <Eye className="w-3.5 h-3.5" />
               Perjelas
             </Button>
+            {!answerRevealed && (
+              <RevealAnswerButton
+                onReveal={() => setAnswerRevealed(true)}
+                visitorId={balanceVisitorId}
+                useCredit={useCredit}
+                credits={credits}
+                isUnlimited={isUnlimited}
+              />
+            )}
           </div>
+          {answerRevealed && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
+              className="bg-accent/10 border border-accent/20 rounded-xl p-3 text-center"
+            >
+              <p className="text-xs text-muted-foreground">Kunci Jawaban:</p>
+              <p className="font-extrabold text-lg text-accent">{answer}</p>
+            </motion.div>
+          )}
         </div>
       )}
+
+      {/* Credits info */}
+      <div className="flex items-center justify-between">
+        <GameCreditsBadge credits={credits} isUnlimited={isUnlimited} />
+        <BuyCreditsDialog visitorId={balanceVisitorId} onPurchased={fetchCredits} />
+      </div>
 
       {/* Result wrong flash */}
       <AnimatePresence>
