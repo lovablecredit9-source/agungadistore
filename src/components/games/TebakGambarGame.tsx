@@ -74,6 +74,28 @@ export default function TebakGambarGame() {
 
   const fetchNewImage = useCallback(async () => {
     if (!difficulty) return;
+
+    // Check free plays or credits
+    if (questionNum > 0) {
+      const fp = getDailyFreePlays();
+      if (fp.remaining > 0) {
+        useDailyFreePlay();
+        setFreePlays(getDailyFreePlays().remaining);
+      } else if (!isUnlimited && credits <= 0) {
+        setError(`${MAX_FREE_PLAYS}x gratis harian sudah terpakai. Beli kredit untuk lanjut bermain!`);
+        return;
+      } else if (!isUnlimited) {
+        const ok = await useCredit();
+        if (!ok) {
+          setError("Kredit habis. Beli kredit untuk lanjut bermain.");
+          return;
+        }
+      }
+    } else {
+      useDailyFreePlay();
+      setFreePlays(getDailyFreePlays().remaining);
+    }
+
     setLoading(true);
     setError("");
     setResult(null);
@@ -109,7 +131,7 @@ export default function TebakGambarGame() {
     } finally {
       setLoading(false);
     }
-  }, [difficulty]);
+  }, [difficulty, questionNum, isUnlimited, credits, useCredit]);
 
   useEffect(() => {
     if (difficulty) fetchNewImage();
@@ -376,7 +398,7 @@ export default function TebakGambarGame() {
                 useCredit={useCredit}
                 credits={credits}
                 isUnlimited={isUnlimited}
-                freeRemaining={freeRemaining}
+                isUnlimited={isUnlimited}
               />
             )}
           </div>
@@ -394,7 +416,13 @@ export default function TebakGambarGame() {
 
       {/* Credits info */}
       <div className="flex items-center justify-between">
-        <GameCreditsBadge credits={credits} isUnlimited={isUnlimited} freeRemaining={freeRemaining} />
+        <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex items-center gap-1 text-xs bg-green-500/10 border border-green-500/30 rounded-lg px-2 py-1">
+            <Gift className="w-3 h-3 text-green-500" />
+            <span className="font-bold text-green-600">{freePlays}/{MAX_FREE_PLAYS} gratis</span>
+          </div>
+          <GameCreditsBadge credits={credits} isUnlimited={isUnlimited} />
+        </div>
         <BuyCreditsDialog visitorId={activeVisitorId} onPurchased={fetchCredits} />
       </div>
 
