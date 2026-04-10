@@ -535,73 +535,104 @@ export default function DailyStreak() {
                     transition={{ delay: 0.1 + i * 0.06 }}
                     className="flex flex-col items-center"
                   >
-                    <div className="relative w-10 h-12 flex items-end justify-center">
+                    <div className="relative w-10 h-12 flex items-center justify-center">
                       {achieved ? (
-                        /* Animated colored fire */
-                        <div className="relative w-full h-full flex items-end justify-center">
-                          {[0, 1, 2].map(j => {
-                            const tierColors: Record<number, string[]> = {
-                              1: ["#ff6b00", "#ff9500", "#ffcc00"],
-                              2: ["#3b82f6", "#60a5fa", "#93c5fd"],
-                              3: ["#a855f7", "#c084fc", "#e879f9"],
-                              4: ["#ef4444", "#f87171", "#fca5a5"],
-                              5: ["#f59e0b", "#fbbf24", "#fde68a"],
-                            };
-                            const c = tierColors[m.tier] || tierColors[1];
-                            return (
-                              <motion.div
-                                key={j}
-                                className="absolute bottom-0 rounded-[50%_50%_50%_50%/60%_60%_40%_40%]"
-                                style={{
-                                  width: j === 0 ? '65%' : j === 1 ? '45%' : '28%',
-                                  height: j === 0 ? '80%' : j === 1 ? '60%' : '40%',
-                                  background: `radial-gradient(ellipse at bottom, ${c[j]} 0%, ${c[j]}99 50%, transparent 100%)`,
-                                  filter: `blur(${j === 0 ? 0.5 : j}px)`,
-                                  zIndex: 3 - j,
-                                }}
-                                animate={{
-                                  scaleY: [1, 1.25, 0.9, 1.15, 1],
-                                  scaleX: [1, 0.9, 1.1, 0.95, 1],
-                                  opacity: [0.9, 1, 0.7, 0.95, 0.9],
-                                }}
-                                transition={{
-                                  duration: 0.7 + j * 0.2,
-                                  repeat: Infinity,
-                                  ease: "easeInOut",
-                                  delay: j * 0.1,
-                                }}
-                              />
-                            );
-                          })}
-                          {/* Glow */}
+                        /* Egg/teardrop shaped fire like reference */
+                        <div className="relative w-9 h-11">
+                          {/* Outer teardrop shape */}
                           <motion.div
-                            className="absolute bottom-0 left-1/2 -translate-x-1/2 w-8 h-4 rounded-full"
+                            className="absolute inset-0"
                             style={{
-                              background: m.tier === 1 ? "rgba(255,107,0,0.3)" : m.tier === 2 ? "rgba(59,130,246,0.3)" : m.tier === 3 ? "rgba(168,85,247,0.3)" : m.tier === 4 ? "rgba(239,68,68,0.3)" : "rgba(245,158,11,0.3)",
-                              filter: "blur(4px)",
+                              borderRadius: "50% 50% 50% 50% / 35% 35% 65% 65%",
+                              background: m.tier === 1
+                                ? "linear-gradient(to bottom, #ff6b00 0%, #ff9500 40%, #ffcc00 100%)"
+                                : m.tier === 2
+                                ? "linear-gradient(to bottom, #2563eb 0%, #3b82f6 40%, #93c5fd 100%)"
+                                : m.tier === 3
+                                ? "linear-gradient(to bottom, #7c3aed 0%, #a855f7 40%, #e879f9 100%)"
+                                : m.tier === 4
+                                ? "linear-gradient(to bottom, #dc2626 0%, #ef4444 40%, #fca5a5 100%)"
+                                : "linear-gradient(to bottom, #d97706 0%, #f59e0b 40%, #fde68a 100%)",
                             }}
-                            animate={{ opacity: [0.5, 1, 0.5], scale: [0.9, 1.1, 0.9] }}
-                            transition={{ duration: 1.5, repeat: Infinity }}
+                            animate={{
+                              scaleY: [1, 1.06, 0.97, 1.03, 1],
+                              scaleX: [1, 0.96, 1.04, 0.98, 1],
+                            }}
+                            transition={{ duration: 1.2, repeat: Infinity, ease: "easeInOut" }}
+                          />
+                          {/* Inner lighter teardrop */}
+                          <motion.div
+                            className="absolute"
+                            style={{
+                              top: "30%", left: "20%", right: "20%", bottom: "10%",
+                              borderRadius: "50% 50% 50% 50% / 35% 35% 65% 65%",
+                              background: m.tier === 1
+                                ? "radial-gradient(ellipse at 50% 70%, #ffee88 0%, #ffcc00 40%, transparent 75%)"
+                                : m.tier === 2
+                                ? "radial-gradient(ellipse at 50% 70%, #bfdbfe 0%, #60a5fa 40%, transparent 75%)"
+                                : m.tier === 3
+                                ? "radial-gradient(ellipse at 50% 70%, #f0abfc 0%, #c084fc 40%, transparent 75%)"
+                                : m.tier === 4
+                                ? "radial-gradient(ellipse at 50% 70%, #fecaca 0%, #f87171 40%, transparent 75%)"
+                                : "radial-gradient(ellipse at 50% 70%, #fef3c7 0%, #fbbf24 40%, transparent 75%)",
+                            }}
+                            animate={{
+                              scaleY: [1, 1.1, 0.92, 1.05, 1],
+                              opacity: [0.9, 1, 0.8, 1, 0.9],
+                            }}
+                            transition={{ duration: 0.9, repeat: Infinity, ease: "easeInOut", delay: 0.1 }}
+                          />
+                          {/* Top flame tip */}
+                          <motion.div
+                            className="absolute left-1/2 -translate-x-1/2"
+                            style={{
+                              top: "-8%", width: "35%", height: "30%",
+                              borderRadius: "50% 50% 50% 50% / 30% 30% 70% 70%",
+                              background: m.tier === 1
+                                ? "linear-gradient(to bottom, #ff4500, #ff6b00)"
+                                : m.tier === 2
+                                ? "linear-gradient(to bottom, #1d4ed8, #2563eb)"
+                                : m.tier === 3
+                                ? "linear-gradient(to bottom, #6d28d9, #7c3aed)"
+                                : m.tier === 4
+                                ? "linear-gradient(to bottom, #b91c1c, #dc2626)"
+                                : "linear-gradient(to bottom, #b45309, #d97706)",
+                            }}
+                            animate={{
+                              scaleX: [1, 0.8, 1.1, 0.9, 1],
+                              scaleY: [1, 1.3, 0.8, 1.15, 1],
+                              y: [0, -2, 1, -1, 0],
+                            }}
+                            transition={{ duration: 0.8, repeat: Infinity, ease: "easeInOut" }}
                           />
                         </div>
                       ) : (
-                        /* Gray inactive fire */
-                        <div className="relative w-full h-full flex items-end justify-center opacity-40">
-                          {[0, 1].map(j => (
-                            <div
-                              key={j}
-                              className="absolute bottom-0 rounded-[50%_50%_50%_50%/60%_60%_40%_40%]"
-                              style={{
-                                width: j === 0 ? '60%' : '35%',
-                                height: j === 0 ? '75%' : '50%',
-                                background: `radial-gradient(ellipse at bottom, #9ca3af ${j === 0 ? '0%' : '10%'}, #d1d5db 50%, transparent 100%)`,
-                                filter: `blur(${j}px)`,
-                                zIndex: 2 - j,
-                              }}
-                            />
-                          ))}
-                          {/* Gray droplet center */}
-                          <div className="absolute bottom-[25%] w-2 h-2.5 rounded-full bg-gray-300/60" style={{ zIndex: 3 }} />
+                        /* Gray inactive egg-shaped fire */
+                        <div className="relative w-9 h-11 opacity-40">
+                          <div
+                            className="absolute inset-0"
+                            style={{
+                              borderRadius: "50% 50% 50% 50% / 35% 35% 65% 65%",
+                              background: "linear-gradient(to bottom, #9ca3af 0%, #d1d5db 60%, #e5e7eb 100%)",
+                            }}
+                          />
+                          <div
+                            className="absolute"
+                            style={{
+                              top: "35%", left: "25%", right: "25%", bottom: "15%",
+                              borderRadius: "50%",
+                              background: "radial-gradient(ellipse at 50% 60%, #e5e7eb 0%, #d1d5db 60%, transparent 80%)",
+                            }}
+                          />
+                          {/* Gray tip */}
+                          <div
+                            className="absolute left-1/2 -translate-x-1/2"
+                            style={{
+                              top: "-5%", width: "30%", height: "25%",
+                              borderRadius: "50% 50% 50% 50% / 30% 30% 70% 70%",
+                              background: "linear-gradient(to bottom, #9ca3af, #b0b5bc)",
+                            }}
+                          />
                         </div>
                       )}
                     </div>
