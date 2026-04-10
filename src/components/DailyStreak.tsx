@@ -85,60 +85,37 @@ function useCountdown() {
   return timeLeft;
 }
 
-// CSS Fire Animation Component
-function FireEffect({ size = "md", intensity = 1 }: { size?: "sm" | "md" | "lg" | "xl"; intensity?: number }) {
-  const sizes = { sm: "w-8 h-10", md: "w-12 h-16", lg: "w-16 h-20", xl: "w-24 h-32" };
+// SVG Emoji-style Fire Component 🔥
+function EmojiFireSVG({ width = 36, height = 44, animated = true, gray = false }: { width?: number; height?: number; animated?: boolean; gray?: boolean }) {
+  const Wrapper = animated ? motion.svg : 'svg';
+  const animProps = animated ? {
+    animate: { scaleY: [1, 1.06, 0.96, 1.04, 1], scaleX: [1, 0.97, 1.04, 0.98, 1] },
+    transition: { duration: 1.8, repeat: Infinity, ease: "easeInOut" as const },
+  } : {};
+
+  if (gray) {
+    return (
+      <svg viewBox="0 0 36 36" width={width} height={height} style={{ opacity: 0.4 }}>
+        <path d="M17.56 1.56c-.28-.45-.88-.45-1.12 0C14.86 4.36 6 18.56 6 24c0 6.63 4.92 12 11 12h2c6.08 0 11-5.37 11-12 0-5.44-8.86-19.64-10.44-22.44z" fill="#9ca3af"/>
+        <path d="M18 8c-.2-.32-.64-.32-.82 0C16.08 10.08 10 19.6 10 24c0 4.42 3.36 8 7.5 8h1c4.14 0 7.5-3.58 7.5-8 0-4.4-6.08-13.92-7.18-16z" fill="#d1d5db"/>
+        <ellipse cx="18" cy="28" rx="4" ry="5" fill="#e5e7eb"/>
+      </svg>
+    );
+  }
+
   return (
-    <div className={`relative ${sizes[size]} flex items-end justify-center`}>
-      {Array.from({ length: Math.min(5, Math.ceil(intensity * 3)) }).map((_, i) => (
-        <motion.div
-          key={i}
-          className="absolute bottom-0 rounded-full"
-          style={{
-            width: `${60 - i * 8}%`,
-            height: `${80 - i * 10}%`,
-            background: i === 0
-              ? "radial-gradient(ellipse at bottom, #ff4500 0%, #ff6b35 40%, transparent 70%)"
-              : i === 1
-              ? "radial-gradient(ellipse at bottom, #ff8c00 0%, #ffa500 40%, transparent 70%)"
-              : "radial-gradient(ellipse at bottom, #ffcc00 0%, #ffd700 40%, transparent 70%)",
-            filter: `blur(${i * 1.5}px)`,
-            left: "50%",
-            transform: "translateX(-50%)",
-          }}
-          animate={{
-            scaleY: [1, 1.2 + i * 0.1, 0.9, 1.1, 1],
-            scaleX: [1, 0.9, 1.1, 0.95, 1],
-            opacity: [0.8, 1, 0.7, 0.9, 0.8],
-          }}
-          transition={{
-            duration: 0.6 + i * 0.2,
-            repeat: Infinity,
-            ease: "easeInOut",
-            delay: i * 0.1,
-          }}
-        />
-      ))}
-      {/* Particles */}
-      {intensity >= 2 && Array.from({ length: 4 }).map((_, i) => (
-        <motion.div
-          key={`p-${i}`}
-          className="absolute w-1 h-1 rounded-full bg-yellow-400"
-          style={{ bottom: "30%", left: `${30 + i * 12}%` }}
-          animate={{
-            y: [-5, -25 - i * 8],
-            x: [0, (i % 2 === 0 ? 8 : -8)],
-            opacity: [1, 0],
-            scale: [1, 0.3],
-          }}
-          transition={{
-            duration: 0.8 + i * 0.2,
-            repeat: Infinity,
-            delay: i * 0.3,
-          }}
-        />
-      ))}
-    </div>
+    <Wrapper viewBox="0 0 36 36" width={width} height={height} {...animProps}
+      style={{ filter: "drop-shadow(0 2px 4px rgba(255,100,0,0.3))" }}>
+      {/* Outer flame - deep orange/red */}
+      <path d="M17.56 1.56c-.28-.45-.88-.45-1.12 0C14.86 4.36 6 18.56 6 24c0 6.63 4.92 12 11 12h2c6.08 0 11-5.37 11-12 0-5.44-8.86-19.64-10.44-22.44z" fill="#F4900C"/>
+      {/* Left highlight */}
+      <path d="M18.5 3c-1 1.6-9.5 15.8-9.5 21 0 5.52 3.8 10 8.5 10.5C12.2 34 8 29.8 8 24.5 8 19 16.2 5.8 18.5 3z" fill="#FFAC33" opacity="0.7"/>
+      {/* Mid flame - orange */}
+      <path d="M18 8c-.2-.32-.64-.32-.82 0C16.08 10.08 10 19.6 10 24c0 4.42 3.36 8 7.5 8h1c4.14 0 7.5-3.58 7.5-8 0-4.4-6.08-13.92-7.18-16z" fill="#FFCC4D"/>
+      {/* Inner core - yellow/white */}
+      <ellipse cx="18" cy="28" rx="4" ry="5.5" fill="#FFEE93"/>
+      <ellipse cx="18" cy="29" rx="2.5" ry="3.5" fill="#FFF4C8" opacity="0.8"/>
+    </Wrapper>
   );
 }
 
@@ -235,48 +212,6 @@ function FloatingSparkles({ count = 6, tier = 1 }: { count?: number; tier?: numb
   );
 }
 
-// Tier-specific fire with colors
-function TierFire({ tier, size = "md" }: { tier: number; size?: "sm" | "md" | "lg" | "xl" }) {
-  const colors = {
-    1: ["#ff4500", "#ff6b35", "#ffcc00"],
-    2: ["#3b82f6", "#6366f1", "#93c5fd"],
-    3: ["#a855f7", "#ec4899", "#f0abfc"],
-    4: ["#e11d48", "#dc2626", "#fca5a5"],
-    5: ["#f59e0b", "#eab308", "#fef08a"],
-  };
-  const c = colors[tier as keyof typeof colors] || colors[1];
-  const sizes = { sm: "w-6 h-8", md: "w-10 h-14", lg: "w-14 h-18", xl: "w-20 h-28" };
-
-  return (
-    <div className={`relative ${sizes[size]} flex items-end justify-center`}>
-      {[0, 1, 2].map(i => (
-        <motion.div
-          key={i}
-          className="absolute bottom-0 rounded-full"
-          style={{
-            width: `${70 - i * 12}%`,
-            height: `${85 - i * 12}%`,
-            background: `radial-gradient(ellipse at bottom, ${c[i]} 0%, ${c[i]}88 40%, transparent 70%)`,
-            filter: `blur(${i * 2}px)`,
-            left: "50%",
-            transform: "translateX(-50%)",
-          }}
-          animate={{
-            scaleY: [1, 1.3, 0.85, 1.15, 1],
-            scaleX: [1, 0.85, 1.15, 0.9, 1],
-            opacity: [0.85, 1, 0.65, 0.95, 0.85],
-          }}
-          transition={{
-            duration: 0.5 + i * 0.15,
-            repeat: Infinity,
-            ease: "easeInOut",
-            delay: i * 0.08,
-          }}
-        />
-      ))}
-    </div>
-  );
-}
 
 export default function DailyStreak() {
   const [streak, setStreak] = useState<StreakData | null>(null);
@@ -375,7 +310,7 @@ export default function DailyStreak() {
               animate={justClaimed ? { scale: [1, 1.4, 1] } : {}}
               transition={{ duration: 0.5 }}
             >
-              <FireEffect size={currentStreak >= 60 ? "xl" : currentStreak >= 14 ? "lg" : "md"} intensity={fireIntensity} />
+              <EmojiFireSVG width={currentStreak >= 60 ? 56 : currentStreak >= 14 ? 48 : 40} height={currentStreak >= 60 ? 68 : currentStreak >= 14 ? 58 : 48} />
             </motion.div>
             <motion.p
               key={currentStreak}
@@ -407,7 +342,7 @@ export default function DailyStreak() {
                       : "bg-muted/50 text-muted-foreground"
                 }`}>
                   {d.isClaimed ? (
-                    <TierFire tier={currentTier} size="sm" />
+                    <Check className="w-4 h-4 text-white" />
                   ) : d.day}
                 </div>
               </motion.div>
@@ -461,9 +396,9 @@ export default function DailyStreak() {
               ) : !canClaim ? (
                 <><Check className="w-4 h-4" /> Sudah Diklaim Hari Ini</>
               ) : streakBroken ? (
-                <span className="flex items-center gap-2"><FireEffect size="sm" intensity={1} /> Mulai Streak Baru!</span>
+                <span className="flex items-center gap-2">🔥 Mulai Streak Baru!</span>
               ) : (
-                <span className="flex items-center gap-2"><FireEffect size="sm" intensity={fireIntensity} /> Klaim Hari Ini!</span>
+                <span className="flex items-center gap-2">🔥 Klaim Hari Ini!</span>
               )}
             </Button>
           </motion.div>
@@ -480,7 +415,7 @@ export default function DailyStreak() {
           {/* Stats */}
           <div className="grid grid-cols-3 gap-2 mt-4">
             {[
-              { icon: <FireEffect size="sm" intensity={1} />, val: currentStreak, label: "Streak" },
+              { icon: <EmojiFireSVG width={22} height={26} />, val: currentStreak, label: "Streak" },
               { icon: <Trophy className="w-5 h-5 text-yellow-500" />, val: longestStreak, label: "Terbaik" },
               { icon: <Star className="w-5 h-5 text-primary" />, val: totalClaims, label: "Total" },
             ].map((s, i) => (
@@ -520,83 +455,64 @@ export default function DailyStreak() {
             {MILESTONES.map((m, i) => {
               const achieved = currentStreak >= m.days;
               const isNext = !achieved && (i === 0 || currentStreak >= MILESTONES[i - 1].days);
-              
-              // Fire color sets per tier
-              const fireColors = {
-                1: { outer: "#ff6b35", mid: "#ff9500", inner: "#ffdd57", glow: "rgba(255,149,0,0.3)" },
-                2: { outer: "#3b82f6", mid: "#60a5fa", inner: "#bfdbfe", glow: "rgba(59,130,246,0.3)" },
-                3: { outer: "#a855f7", mid: "#c084fc", inner: "#e9d5ff", glow: "rgba(168,85,247,0.3)" },
-                4: { outer: "#ef4444", mid: "#f87171", inner: "#fecaca", glow: "rgba(239,68,68,0.3)" },
-                5: { outer: "#f59e0b", mid: "#fbbf24", inner: "#fef3c7", glow: "rgba(245,158,11,0.3)" },
+
+              // Tier-specific SVG colors
+              const tierSVGColors: Record<number, { outer: string; highlight: string; mid: string; inner: string; core: string; glow: string }> = {
+                1: { outer: "#F4900C", highlight: "#FFAC33", mid: "#FFCC4D", inner: "#FFEE93", core: "#FFF4C8", glow: "rgba(255,149,0,0.35)" },
+                2: { outer: "#3B82F6", highlight: "#60A5FA", mid: "#93C5FD", inner: "#BFDBFE", core: "#DBEAFE", glow: "rgba(59,130,246,0.35)" },
+                3: { outer: "#A855F7", highlight: "#C084FC", mid: "#D8B4FE", inner: "#E9D5FF", core: "#F3E8FF", glow: "rgba(168,85,247,0.35)" },
+                4: { outer: "#EF4444", highlight: "#F87171", mid: "#FCA5A5", inner: "#FECACA", core: "#FEE2E2", glow: "rgba(239,68,68,0.35)" },
+                5: { outer: "#F59E0B", highlight: "#FBBF24", mid: "#FDE68A", inner: "#FEF3C7", core: "#FFFBEB", glow: "rgba(245,158,11,0.35)" },
               };
-              const fc = fireColors[m.tier as keyof typeof fireColors] || fireColors[1];
-              const grayColors = { outer: "#9ca3af", mid: "#d1d5db", inner: "#e5e7eb" };
+              const tc = tierSVGColors[m.tier] || tierSVGColors[1];
 
               return (
                 <div key={m.days} className="flex items-center">
-                  {/* Connector dash */}
                   {i > 0 && (
                     <div className={`w-5 h-[3px] rounded-full mx-0.5 ${
                       achieved ? `bg-gradient-to-r ${getTierColor(m.tier)}` : "bg-muted-foreground/20"
                     }`} />
                   )}
-                  {/* Fire icon + label */}
                   <motion.div
                     initial={{ opacity: 0, scale: 0.5 }}
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ delay: 0.1 + i * 0.06 }}
                     className="flex flex-col items-center"
                   >
-                    <div className="relative flex items-center justify-center" style={{ width: 44, height: 52 }}>
+                    <div className="relative flex items-center justify-center" style={{ width: 44, height: 50 }}>
                       {achieved ? (
                         <>
-                          {/* Glow circle behind */}
                           <motion.div
                             className="absolute rounded-full"
-                            style={{
-                              width: 38, height: 38, bottom: 2,
-                              background: `radial-gradient(circle, ${fc.glow} 0%, transparent 70%)`,
-                            }}
-                            animate={{ scale: [1, 1.15, 1], opacity: [0.6, 1, 0.6] }}
+                            style={{ width: 36, height: 36, background: `radial-gradient(circle, ${tc.glow} 0%, transparent 70%)` }}
+                            animate={{ scale: [1, 1.2, 1], opacity: [0.5, 0.9, 0.5] }}
                             transition={{ duration: 2, repeat: Infinity }}
                           />
-                          {/* SVG Fire */}
                           <motion.svg
-                            viewBox="0 0 40 48" width={36} height={44}
-                            animate={{
-                              scaleY: [1, 1.05, 0.97, 1.03, 1],
-                              scaleX: [1, 0.97, 1.03, 0.98, 1],
-                            }}
-                            transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
-                            style={{ filter: `drop-shadow(0 2px 6px ${fc.glow})` }}
+                            viewBox="0 0 36 36" width={34} height={40}
+                            animate={{ scaleY: [1, 1.06, 0.96, 1.04, 1], scaleX: [1, 0.97, 1.04, 0.98, 1] }}
+                            transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut", delay: i * 0.15 }}
+                            style={{ filter: `drop-shadow(0 2px 5px ${tc.glow})` }}
                           >
-                            {/* Outer flame */}
-                            <path
-                              d="M20 2 C20 2 8 16 8 28 C8 36 13 44 20 46 C27 44 32 36 32 28 C32 16 20 2 20 2Z"
-                              fill={fc.outer}
-                            />
-                            {/* Mid flame */}
-                            <path
-                              d="M20 10 C20 10 12 20 12 30 C12 36 15 42 20 44 C25 42 28 36 28 30 C28 20 20 10 20 10Z"
-                              fill={fc.mid}
-                            />
-                            {/* Inner flame / core */}
-                            <ellipse cx="20" cy="36" rx="5" ry="7" fill={fc.inner} />
+                            <path d="M17.56 1.56c-.28-.45-.88-.45-1.12 0C14.86 4.36 6 18.56 6 24c0 6.63 4.92 12 11 12h2c6.08 0 11-5.37 11-12 0-5.44-8.86-19.64-10.44-22.44z" fill={tc.outer}/>
+                            <path d="M18.5 3c-1 1.6-9.5 15.8-9.5 21 0 5.52 3.8 10 8.5 10.5C12.2 34 8 29.8 8 24.5 8 19 16.2 5.8 18.5 3z" fill={tc.highlight} opacity="0.7"/>
+                            <path d="M18 8c-.2-.32-.64-.32-.82 0C16.08 10.08 10 19.6 10 24c0 4.42 3.36 8 7.5 8h1c4.14 0 7.5-3.58 7.5-8 0-4.4-6.08-13.92-7.18-16z" fill={tc.mid}/>
+                            <ellipse cx="18" cy="28" rx="4" ry="5.5" fill={tc.inner}/>
+                            <ellipse cx="18" cy="29" rx="2.5" ry="3.5" fill={tc.core} opacity="0.8"/>
                           </motion.svg>
+                          {/* Spark particles for achieved */}
+                          {[0, 1].map(j => (
+                            <motion.div
+                              key={j}
+                              className="absolute w-1 h-1 rounded-full"
+                              style={{ backgroundColor: tc.highlight, bottom: "40%", left: j === 0 ? "15%" : "75%" }}
+                              animate={{ y: [0, -14], opacity: [1, 0], scale: [1, 0.3] }}
+                              transition={{ duration: 1, repeat: Infinity, delay: j * 0.5 + i * 0.1 }}
+                            />
+                          ))}
                         </>
                       ) : (
-                        /* Gray inactive fire */
-                        <svg viewBox="0 0 40 48" width={36} height={44} style={{ opacity: 0.35 }}>
-                          <path
-                            d="M20 2 C20 2 8 16 8 28 C8 36 13 44 20 46 C27 44 32 36 32 28 C32 16 20 2 20 2Z"
-                            fill={grayColors.outer}
-                          />
-                          <path
-                            d="M20 10 C20 10 12 20 12 30 C12 36 15 42 20 44 C25 42 28 36 28 30 C28 20 20 10 20 10Z"
-                            fill={grayColors.mid}
-                          />
-                          <ellipse cx="20" cy="36" rx="5" ry="7" fill={grayColors.inner} />
-                        </svg>
+                        <EmojiFireSVG width={34} height={40} animated={false} gray />
                       )}
                     </div>
                     <span className={`text-[10px] font-bold mt-0.5 ${
@@ -679,7 +595,7 @@ export default function DailyStreak() {
                   </motion.div>
                   <div className="absolute -bottom-4 left-1/2 -translate-x-1/2">
                     <motion.div animate={{ scale: [1, 1.3, 1] }} transition={{ duration: 0.6, repeat: Infinity }}>
-                      <TierFire tier={showMilestone.tier} size="lg" />
+                      <EmojiFireSVG width={40} height={48} />
                     </motion.div>
                   </div>
                   <FloatingSparkles count={8} tier={showMilestone.tier} />
