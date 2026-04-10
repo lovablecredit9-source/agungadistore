@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { getVisitorId } from "@/lib/visitor-id";
 import { Button } from "@/components/ui/button";
 import { Check, Trophy, Star, Gift, Zap } from "lucide-react";
+import { Sparkles } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 interface StreakData {
@@ -15,15 +16,15 @@ interface StreakData {
 }
 
 const MILESTONES = [
-  { days: 3, label: "3 Hari", reward: "Pemula", tier: 1 },
-  { days: 7, label: "7 Hari", reward: "Rajin", tier: 1 },
-  { days: 14, label: "14 Hari", reward: "Konsisten", tier: 2 },
-  { days: 30, label: "30 Hari", reward: "Master", tier: 2 },
-  { days: 60, label: "60 Hari", reward: "Legend", tier: 3 },
-  { days: 100, label: "100 Hari", reward: "Diamond", tier: 3 },
-  { days: 120, label: "120 Hari", reward: "Mythic", tier: 4 },
-  { days: 150, label: "150 Hari", reward: "Supreme", tier: 4 },
-  { days: 365, label: "1 Tahun", reward: "Immortal", tier: 5 },
+  { days: 3, label: "3 Hari", reward: "Pemula", tier: 1, emoji: "🔥" },
+  { days: 7, label: "7 Hari", reward: "Rajin", tier: 1, emoji: "⚡" },
+  { days: 14, label: "14 Hari", reward: "Konsisten", tier: 2, emoji: "💎" },
+  { days: 30, label: "30 Hari", reward: "Master", tier: 2, emoji: "👑" },
+  { days: 60, label: "60 Hari", reward: "Legend", tier: 3, emoji: "🏆" },
+  { days: 100, label: "100 Hari", reward: "Diamond", tier: 3, emoji: "💠" },
+  { days: 120, label: "120 Hari", reward: "Mythic", tier: 4, emoji: "🐉" },
+  { days: 150, label: "150 Hari", reward: "Supreme", tier: 4, emoji: "⭐" },
+  { days: 365, label: "1 Tahun", reward: "Immortal", tier: 5, emoji: "🌟" },
 ];
 
 function getTierColor(tier: number) {
@@ -135,6 +136,99 @@ function FireEffect({ size = "md", intensity = 1 }: { size?: "sm" | "md" | "lg" 
             repeat: Infinity,
             delay: i * 0.3,
           }}
+        />
+      ))}
+    </div>
+  );
+}
+
+// Confetti particles for milestone popup
+function ConfettiEffect() {
+  const particles = Array.from({ length: 30 }).map((_, i) => ({
+    id: i,
+    x: Math.random() * 100,
+    delay: Math.random() * 0.8,
+    duration: 1.5 + Math.random() * 2,
+    size: 4 + Math.random() * 8,
+    color: ["#ff4500", "#ffd700", "#ff6b35", "#3b82f6", "#a855f7", "#ec4899", "#22c55e", "#06b6d4"][i % 8],
+    rotation: Math.random() * 360,
+  }));
+  return (
+    <div className="absolute inset-0 overflow-hidden pointer-events-none z-20">
+      {particles.map((p) => (
+        <motion.div
+          key={p.id}
+          className="absolute"
+          style={{
+            left: `${p.x}%`,
+            top: "-5%",
+            width: p.size,
+            height: p.size,
+            backgroundColor: p.color,
+            borderRadius: p.id % 3 === 0 ? "50%" : p.id % 3 === 1 ? "2px" : "0",
+            rotate: `${p.rotation}deg`,
+          }}
+          initial={{ y: 0, opacity: 1 }}
+          animate={{
+            y: [0, 500],
+            x: [0, (p.id % 2 === 0 ? 30 : -30) * Math.random()],
+            opacity: [1, 1, 0],
+            rotate: [p.rotation, p.rotation + 360 * (p.id % 2 === 0 ? 1 : -1)],
+          }}
+          transition={{
+            duration: p.duration,
+            delay: p.delay,
+            ease: "easeOut",
+          }}
+        />
+      ))}
+    </div>
+  );
+}
+
+// Shimmer overlay for achieved milestones
+function ShimmerEffect() {
+  return (
+    <motion.div
+      className="absolute inset-0 pointer-events-none overflow-hidden rounded-xl"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+    >
+      <motion.div
+        className="absolute inset-0"
+        style={{
+          background: "linear-gradient(105deg, transparent 40%, rgba(255,255,255,0.15) 45%, rgba(255,255,255,0.25) 50%, rgba(255,255,255,0.15) 55%, transparent 60%)",
+          backgroundSize: "200% 100%",
+        }}
+        animate={{ backgroundPosition: ["200% 0", "-200% 0"] }}
+        transition={{ duration: 3, repeat: Infinity, ease: "linear", repeatDelay: 2 }}
+      />
+    </motion.div>
+  );
+}
+
+// Floating sparkles around fire
+function FloatingSparkles({ count = 6, tier = 1 }: { count?: number; tier?: number }) {
+  const colors: Record<number, string> = { 1: "#ff6b35", 2: "#6366f1", 3: "#ec4899", 4: "#e11d48", 5: "#fbbf24" };
+  return (
+    <div className="absolute inset-0 pointer-events-none">
+      {Array.from({ length: count }).map((_, i) => (
+        <motion.div
+          key={i}
+          className="absolute w-1.5 h-1.5 rounded-full"
+          style={{
+            backgroundColor: colors[tier] || colors[1],
+            left: `${15 + Math.random() * 70}%`,
+            top: `${10 + Math.random() * 60}%`,
+            boxShadow: `0 0 6px ${colors[tier] || colors[1]}`,
+          }}
+          animate={{
+            y: [0, -15, 0],
+            x: [0, i % 2 === 0 ? 8 : -8, 0],
+            opacity: [0, 1, 0],
+            scale: [0, 1.2, 0],
+          }}
+          transition={{ duration: 2 + Math.random(), repeat: Infinity, delay: i * 0.5, ease: "easeInOut" }}
         />
       ))}
     </div>
@@ -414,6 +508,10 @@ export default function DailyStreak() {
       >
         <h4 className="text-sm font-bold flex items-center gap-2">
           <Gift className="w-4 h-4 text-primary" /> Milestone Streak
+          <motion.span
+            animate={{ rotate: [0, 15, -15, 0] }}
+            transition={{ duration: 2, repeat: Infinity, repeatDelay: 3 }}
+          >✨</motion.span>
         </h4>
         <div className="space-y-2">
           {MILESTONES.map((m, i) => {
@@ -425,6 +523,8 @@ export default function DailyStreak() {
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.1 + i * 0.05 }}
                 className={`flex items-center gap-3 rounded-xl p-3 transition-all ${
+                  achieved ? "relative overflow-hidden " : ""
+                }${
                   achieved
                     ? `bg-gradient-to-r ${getTierColor(m.tier)} bg-opacity-10 border border-current/10`
                     : "bg-muted/30 opacity-50"
@@ -434,23 +534,28 @@ export default function DailyStreak() {
                   borderColor: 'hsl(var(--border))',
                 } : undefined}
               >
+                {achieved && <ShimmerEffect />}
                 <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
                   achieved ? `bg-gradient-to-br ${getTierColor(m.tier)} shadow-lg ${getTierGlow(m.tier)}` : "bg-muted"
                 }`}>
                   {achieved ? (
-                    <TierFire tier={m.tier} size="sm" />
+                    <motion.span
+                      className="text-lg"
+                      animate={{ scale: [1, 1.2, 1] }}
+                      transition={{ duration: 2, repeat: Infinity, delay: i * 0.3 }}
+                    >{m.emoji}</motion.span>
                   ) : (
                     <span className="text-xs font-bold text-muted-foreground">{m.days}</span>
                   )}
                 </div>
-                <div className="flex-1 min-w-0">
+                <div className="flex-1 min-w-0 relative z-10">
                   <p className={`font-bold text-sm ${achieved ? "text-foreground" : "text-muted-foreground"}`}>{m.label}</p>
-                  <p className={`text-[10px] ${achieved ? "text-muted-foreground" : "text-muted-foreground/60"}`}>{m.reward}</p>
+                  <p className={`text-[10px] ${achieved ? "text-muted-foreground" : "text-muted-foreground/60"}`}>{m.emoji} {m.reward}</p>
                 </div>
                 {achieved && (
                   <motion.div
                     initial={{ scale: 0 }} animate={{ scale: 1 }}
-                    className={`w-6 h-6 rounded-full bg-gradient-to-br ${getTierColor(m.tier)} flex items-center justify-center`}
+                    className={`w-6 h-6 rounded-full bg-gradient-to-br ${getTierColor(m.tier)} flex items-center justify-center relative z-10`}
                   >
                     <Check className="w-3.5 h-3.5 text-white" />
                   </motion.div>
@@ -468,6 +573,7 @@ export default function DailyStreak() {
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             className="fixed inset-0 z-[100] bg-black/70 backdrop-blur-md flex items-center justify-center p-4"
           >
+            <ConfettiEffect />
             <motion.div
               initial={{ scale: 0.5, rotate: -10 }}
               animate={{ scale: 1, rotate: 0 }}
@@ -475,25 +581,46 @@ export default function DailyStreak() {
               transition={{ type: "spring", damping: 15 }}
               className="bg-card w-full max-w-xs rounded-2xl p-6 text-center space-y-4 relative overflow-hidden"
             >
-              {/* BG glow */}
-              <div className={`absolute inset-0 bg-gradient-to-br ${getTierColor(showMilestone.tier)} opacity-10`} />
+              <motion.div
+                className={`absolute inset-0 bg-gradient-to-br ${getTierColor(showMilestone.tier)}`}
+                animate={{ opacity: [0.05, 0.15, 0.05] }}
+                transition={{ duration: 2, repeat: Infinity }}
+              />
+              <ShimmerEffect />
               <div className="relative z-10 space-y-4">
-                <div className="flex justify-center">
+                <div className="flex justify-center relative">
                   <motion.div
-                    animate={{ scale: [1, 1.2, 1] }}
-                    transition={{ duration: 0.6, repeat: Infinity }}
+                    animate={{ scale: [1, 1.15, 1], rotate: [0, 5, -5, 0] }}
+                    transition={{ duration: 1.2, repeat: Infinity }}
                   >
-                    <TierFire tier={showMilestone.tier} size="xl" />
+                    <span className="text-6xl block">{showMilestone.emoji}</span>
                   </motion.div>
+                  <div className="absolute -bottom-4 left-1/2 -translate-x-1/2">
+                    <motion.div animate={{ scale: [1, 1.3, 1] }} transition={{ duration: 0.6, repeat: Infinity }}>
+                      <TierFire tier={showMilestone.tier} size="lg" />
+                    </motion.div>
+                  </div>
+                  <FloatingSparkles count={8} tier={showMilestone.tier} />
                 </div>
-                <h3 className="text-xl font-extrabold">Milestone Tercapai!</h3>
+                <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
+                  <motion.div animate={{ scale: [1, 1.05, 1] }} transition={{ duration: 1.5, repeat: Infinity }}>
+                    <Sparkles className="w-5 h-5 mx-auto mb-1 text-yellow-500" />
+                  </motion.div>
+                  <h3 className="text-xl font-extrabold">🎉 Milestone Tercapai!</h3>
+                </motion.div>
                 <p className="text-sm text-muted-foreground">
                   Kamu berhasil streak <span className="font-bold text-foreground">{showMilestone.label}</span>!
                 </p>
-                <div className={`bg-gradient-to-r ${getTierColor(showMilestone.tier)} rounded-xl p-3`}>
-                  <p className="text-xs font-bold text-white/80">Gelar Baru</p>
-                  <p className="text-lg font-extrabold text-white">{showMilestone.reward}</p>
-                </div>
+                <motion.div
+                  initial={{ scale: 0.8, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  transition={{ delay: 0.5, type: "spring" }}
+                  className={`bg-gradient-to-r ${getTierColor(showMilestone.tier)} rounded-xl p-4 relative overflow-hidden`}
+                >
+                  <ShimmerEffect />
+                  <p className="text-xs font-bold text-white/80 relative z-10">Gelar Baru</p>
+                  <p className="text-2xl font-extrabold text-white relative z-10">{showMilestone.emoji} {showMilestone.reward}</p>
+                </motion.div>
                 <Button
                   onClick={() => setShowMilestone(null)}
                   className={`w-full bg-gradient-to-r ${getTierColor(showMilestone.tier)} text-white font-bold`}
