@@ -14,6 +14,57 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_posts: {
+        Row: {
+          content: string | null
+          created_at: string
+          facebook: string | null
+          id: string
+          image_url: string | null
+          instagram: string | null
+          is_active: boolean
+          link_url: string | null
+          tiktok: string | null
+          title: string
+          twitter: string | null
+          updated_at: string
+          whatsapp: string | null
+          youtube: string | null
+        }
+        Insert: {
+          content?: string | null
+          created_at?: string
+          facebook?: string | null
+          id?: string
+          image_url?: string | null
+          instagram?: string | null
+          is_active?: boolean
+          link_url?: string | null
+          tiktok?: string | null
+          title: string
+          twitter?: string | null
+          updated_at?: string
+          whatsapp?: string | null
+          youtube?: string | null
+        }
+        Update: {
+          content?: string | null
+          created_at?: string
+          facebook?: string | null
+          id?: string
+          image_url?: string | null
+          instagram?: string | null
+          is_active?: boolean
+          link_url?: string | null
+          tiktok?: string | null
+          title?: string
+          twitter?: string | null
+          updated_at?: string
+          whatsapp?: string | null
+          youtube?: string | null
+        }
+        Relationships: []
+      }
       admin_settings: {
         Row: {
           created_at: string

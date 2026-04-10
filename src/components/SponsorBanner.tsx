@@ -79,9 +79,10 @@ const socialIcons: Record<string, { label: string; url: (v: string) => string; c
 interface SponsorBannerProps {
   likedSponsorIds?: Set<string>;
   onToggleLikeSponsor?: (sponsorId: string, e?: React.MouseEvent) => void;
+  sponsorLikeCounts?: Record<string, number>;
 }
 
-export default function SponsorBanner({ likedSponsorIds = new Set(), onToggleLikeSponsor }: SponsorBannerProps) {
+export default function SponsorBanner({ likedSponsorIds = new Set(), onToggleLikeSponsor, sponsorLikeCounts = {} }: SponsorBannerProps) {
   const [sponsors, setSponsors] = useState<Sponsor[]>([]);
   const [sponsorImages, setSponsorImages] = useState<Record<string, SponsorImage[]>>({});
   const [wholesalePrices, setWholesalePrices] = useState<any[]>([]);
@@ -297,8 +298,9 @@ export default function SponsorBanner({ likedSponsorIds = new Set(), onToggleLik
             <div className="flex items-start justify-between">
               <h4 className="font-extrabold text-sm leading-tight flex-1">{sponsor.title}</h4>
               {onToggleLikeSponsor && (
-                <button onClick={(e) => { e.stopPropagation(); onToggleLikeSponsor(sponsor.id, e); }} className="ml-2 shrink-0">
+                <button onClick={(e) => { e.stopPropagation(); onToggleLikeSponsor(sponsor.id, e); }} className="ml-2 shrink-0 flex items-center gap-1">
                   <Heart className={`w-5 h-5 ${likedSponsorIds.has(sponsor.id) ? "fill-destructive text-destructive" : "text-muted-foreground"}`} />
+                  {(sponsorLikeCounts[sponsor.id] || 0) > 0 && <span className="text-[10px] font-bold text-muted-foreground">{sponsorLikeCounts[sponsor.id]}</span>}
                 </button>
               )}
             </div>

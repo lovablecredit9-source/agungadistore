@@ -322,7 +322,12 @@ const Index = () => {
   // Likes
   const [likedIds, setLikedIds] = useState<Set<string>>(new Set());
   const [likedSponsorIds, setLikedSponsorIds] = useState<Set<string>>(new Set());
+  const [productLikeCounts, setProductLikeCounts] = useState<Record<string, number>>({});
+  const [sponsorLikeCounts, setSponsorLikeCounts] = useState<Record<string, number>>({});
   const visitorId = getVisitorId();
+
+  // Admin posts
+  const [adminPosts, setAdminPosts] = useState<any[]>([]);
 
   // Tickets
   const [tickets, setTickets] = useState<SupportTicket[]>([]);
@@ -459,6 +464,7 @@ const Index = () => {
     fetchProducts();
     loadHistory();
     fetchLikes();
+    fetchAdminPosts();
     fetchTickets();
     fetchProductChatHistory();
     fetchUserBalance();
@@ -636,12 +642,29 @@ const Index = () => {
   }
 
   async function fetchLikes() {
-    const [{ data: prodData }, { data: sponsorData }] = await Promise.all([
+    const [{ data: prodData }, { data: sponsorData }, { data: prodCounts }, { data: sponsorCounts }] = await Promise.all([
       supabase.from("liked_products").select("product_id").eq("visitor_id", visitorId),
       supabase.from("liked_sponsors").select("sponsor_id").eq("visitor_id", visitorId),
+      supabase.from("liked_products").select("product_id"),
+      supabase.from("liked_sponsors").select("sponsor_id"),
     ]);
     if (prodData) setLikedIds(new Set(prodData.map((d: any) => d.product_id)));
     if (sponsorData) setLikedSponsorIds(new Set(sponsorData.map((d: any) => d.sponsor_id)));
+    if (prodCounts) {
+      const counts: Record<string, number> = {};
+      prodCounts.forEach((d: any) => { counts[d.product_id] = (counts[d.product_id] || 0) + 1; });
+      setProductLikeCounts(counts);
+    }
+    if (sponsorCounts) {
+      const counts: Record<string, number> = {};
+      sponsorCounts.forEach((d: any) => { counts[d.sponsor_id] = (counts[d.sponsor_id] || 0) + 1; });
+      setSponsorLikeCounts(counts);
+    }
+  }
+
+  async function fetchAdminPosts() {
+    const { data } = await supabase.from("admin_posts").select("*").eq("is_active", true).order("created_at", { ascending: false });
+    if (data) setAdminPosts(data);
   }
 
   async function fetchUserBalance() {
@@ -878,9 +901,11 @@ const Index = () => {
     if (likedIds.has(productId)) {
       await supabase.from("liked_products").delete().eq("product_id", productId).eq("visitor_id", visitorId);
       setLikedIds(prev => { const n = new Set(prev); n.delete(productId); return n; });
+      setProductLikeCounts(prev => ({ ...prev, [productId]: Math.max(0, (prev[productId] || 1) - 1) }));
     } else {
       await supabase.from("liked_products").insert({ product_id: productId, visitor_id: visitorId });
       setLikedIds(prev => new Set(prev).add(productId));
+      setProductLikeCounts(prev => ({ ...prev, [productId]: (prev[productId] || 0) + 1 }));
     }
   }
 
@@ -889,9 +914,11 @@ const Index = () => {
     if (likedSponsorIds.has(sponsorId)) {
       await supabase.from("liked_sponsors").delete().eq("sponsor_id", sponsorId).eq("visitor_id", visitorId);
       setLikedSponsorIds(prev => { const n = new Set(prev); n.delete(sponsorId); return n; });
+      setSponsorLikeCounts(prev => ({ ...prev, [sponsorId]: Math.max(0, (prev[sponsorId] || 1) - 1) }));
     } else {
       await supabase.from("liked_sponsors").insert({ sponsor_id: sponsorId, visitor_id: visitorId });
       setLikedSponsorIds(prev => new Set(prev).add(sponsorId));
+      setSponsorLikeCounts(prev => ({ ...prev, [sponsorId]: (prev[sponsorId] || 0) + 1 }));
     }
   }
 
@@ -1453,6 +1480,57 @@ const Index = () => {
               </div>
             </div>
 
+            {/* Admin Posts */}
+            {adminPosts.length > 0 && (
+              <div className="space-y-3">
+                <h3 className="font-bold text-sm flex items-center gap-2">
+                  <FileText className="w-4 h-4 text-primary" /> Postingan Terbaru
+                </h3>
+                {adminPosts.slice(0, 5).map(post => (
+                  <Card key={post.id} className="overflow-hidden hover:shadow-lg transition-all">
+                    {post.image_url && (
+                      <img src={post.image_url} alt={post.title} className="w-full h-40 object-cover" />
+                    )}
+                    <CardContent className="p-4 space-y-2">
+                      <h4 className="font-bold text-sm">{post.title}</h4>
+                      {post.content && <p className="text-xs text-muted-foreground line-clamp-3">{post.content}</p>}
+                      {post.link_url && (
+                        <a href={post.link_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs text-primary font-medium hover:underline">
+                          <ExternalLink className="w-3 h-3" /> Buka Link
+                        </a>
+                      )}
+                      {/* Social media links */}
+                      {[
+                        { val: post.whatsapp, label: "WA", href: post.whatsapp?.startsWith("http") ? post.whatsapp : `https://wa.me/62${(post.whatsapp || "").replace(/^0/, "")}` },
+                        { val: post.instagram, label: "IG", href: post.instagram?.startsWith("http") ? post.instagram : `https://instagram.com/${post.instagram}` },
+                        { val: post.tiktok, label: "TikTok", href: post.tiktok?.startsWith("http") ? post.tiktok : `https://tiktok.com/@${post.tiktok}` },
+                        { val: post.youtube, label: "YT", href: post.youtube?.startsWith("http") ? post.youtube : `https://youtube.com/@${post.youtube}` },
+                        { val: post.twitter, label: "X", href: post.twitter?.startsWith("http") ? post.twitter : `https://twitter.com/${post.twitter}` },
+                        { val: post.facebook, label: "FB", href: post.facebook?.startsWith("http") ? post.facebook : `https://facebook.com/${post.facebook}` },
+                      ].filter(s => s.val).length > 0 && (
+                        <div className="flex flex-wrap gap-1.5">
+                          {[
+                            { val: post.whatsapp, label: "WA", href: post.whatsapp?.startsWith("http") ? post.whatsapp : `https://wa.me/62${(post.whatsapp || "").replace(/^0/, "")}` },
+                            { val: post.instagram, label: "IG", href: post.instagram?.startsWith("http") ? post.instagram : `https://instagram.com/${post.instagram}` },
+                            { val: post.tiktok, label: "TikTok", href: post.tiktok?.startsWith("http") ? post.tiktok : `https://tiktok.com/@${post.tiktok}` },
+                            { val: post.youtube, label: "YT", href: post.youtube?.startsWith("http") ? post.youtube : `https://youtube.com/@${post.youtube}` },
+                            { val: post.twitter, label: "X", href: post.twitter?.startsWith("http") ? post.twitter : `https://twitter.com/${post.twitter}` },
+                            { val: post.facebook, label: "FB", href: post.facebook?.startsWith("http") ? post.facebook : `https://facebook.com/${post.facebook}` },
+                          ].filter(s => s.val).map(s => (
+                            <a key={s.label} href={s.href} target="_blank" rel="noopener noreferrer"
+                              className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-primary/10 text-primary hover:bg-primary/20 transition-colors">
+                              {s.label}
+                            </a>
+                          ))}
+                        </div>
+                      )}
+                      <p className="text-[10px] text-muted-foreground">{new Date(post.created_at).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" })}</p>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+
             <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary/15 via-accent/10 to-primary/5 p-5">
               <div className="absolute -top-4 -right-4 opacity-10"><Crown className="w-24 h-24 text-primary" /></div>
               <div className="relative z-10 text-center">
@@ -1594,8 +1672,9 @@ const Index = () => {
                         <span className="text-xs font-bold bg-primary text-primary-foreground px-2.5 py-1 rounded-full shadow-md">{formatPrice(p.price)}</span>
                       </div>
                       <button onClick={(e) => toggleLike(p.id, e)}
-                        className="absolute top-2 left-2 w-8 h-8 rounded-full bg-background/80 backdrop-blur-sm flex items-center justify-center">
+                        className="absolute top-2 left-2 flex items-center gap-1 rounded-full bg-background/80 backdrop-blur-sm px-2 py-1">
                         <Heart className={`w-4 h-4 ${likedIds.has(p.id) ? "fill-destructive text-destructive" : "text-muted-foreground"}`} />
+                        {(productLikeCounts[p.id] || 0) > 0 && <span className="text-[10px] font-bold text-muted-foreground">{productLikeCounts[p.id]}</span>}
                       </button>
                       {p.category && (
                         <div className="absolute bottom-2 left-2">
@@ -1608,8 +1687,9 @@ const Index = () => {
                     <div className="flex items-start justify-between">
                       <h3 className="font-bold text-base flex-1">{p.title}</h3>
                       {imgs.length === 0 && (
-                        <button onClick={(e) => toggleLike(p.id, e)}>
+                        <button onClick={(e) => toggleLike(p.id, e)} className="flex items-center gap-1">
                           <Heart className={`w-4 h-4 ${likedIds.has(p.id) ? "fill-destructive text-destructive" : "text-muted-foreground"}`} />
+                          {(productLikeCounts[p.id] || 0) > 0 && <span className="text-[10px] font-bold text-muted-foreground">{productLikeCounts[p.id]}</span>}
                         </button>
                       )}
                     </div>
@@ -2159,7 +2239,7 @@ const Index = () => {
         )}
 
         {tab === "sponsor" && (
-          <SponsorBanner likedSponsorIds={likedSponsorIds} onToggleLikeSponsor={toggleLikeSponsor} />
+          <SponsorBanner likedSponsorIds={likedSponsorIds} onToggleLikeSponsor={toggleLikeSponsor} sponsorLikeCounts={sponsorLikeCounts} />
         )}
 
         {tab === "streak" && (
