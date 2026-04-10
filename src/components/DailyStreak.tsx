@@ -352,7 +352,7 @@ export default function DailyStreak() {
               animate={justClaimed ? { scale: [1, 1.4, 1] } : {}}
               transition={{ duration: 0.5 }}
             >
-              <FireEffect size={currentStreak >= 60 ? "xl" : currentStreak >= 14 ? "lg" : "md"} intensity={fireIntensity} />
+              <EmojiFireSVG width={currentStreak >= 60 ? 56 : currentStreak >= 14 ? 48 : 40} height={currentStreak >= 60 ? 68 : currentStreak >= 14 ? 58 : 48} />
             </motion.div>
             <motion.p
               key={currentStreak}
@@ -384,7 +384,7 @@ export default function DailyStreak() {
                       : "bg-muted/50 text-muted-foreground"
                 }`}>
                   {d.isClaimed ? (
-                    <TierFire tier={currentTier} size="sm" />
+                    <Check className="w-4 h-4 text-white" />
                   ) : d.day}
                 </div>
               </motion.div>
@@ -438,9 +438,9 @@ export default function DailyStreak() {
               ) : !canClaim ? (
                 <><Check className="w-4 h-4" /> Sudah Diklaim Hari Ini</>
               ) : streakBroken ? (
-                <span className="flex items-center gap-2"><FireEffect size="sm" intensity={1} /> Mulai Streak Baru!</span>
+                <span className="flex items-center gap-2">🔥 Mulai Streak Baru!</span>
               ) : (
-                <span className="flex items-center gap-2"><FireEffect size="sm" intensity={fireIntensity} /> Klaim Hari Ini!</span>
+                <span className="flex items-center gap-2">🔥 Klaim Hari Ini!</span>
               )}
             </Button>
           </motion.div>
@@ -457,7 +457,7 @@ export default function DailyStreak() {
           {/* Stats */}
           <div className="grid grid-cols-3 gap-2 mt-4">
             {[
-              { icon: <FireEffect size="sm" intensity={1} />, val: currentStreak, label: "Streak" },
+              { icon: <EmojiFireSVG width={22} height={26} />, val: currentStreak, label: "Streak" },
               { icon: <Trophy className="w-5 h-5 text-yellow-500" />, val: longestStreak, label: "Terbaik" },
               { icon: <Star className="w-5 h-5 text-primary" />, val: totalClaims, label: "Total" },
             ].map((s, i) => (
