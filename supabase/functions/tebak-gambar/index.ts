@@ -11,7 +11,7 @@ const CATEGORIES: Record<string, { objects: string[]; style: string }> = {
       "kursi", "meja", "jam", "topi", "kunci", "gitar", "piano", "lilin",
       "sendok", "garpu", "piring", "gelas", "buku", "pensil"
     ],
-    style: "simple cartoon illustration, clear and colorful, white background"
+    style: "clean colorful illustration of a single object, isolated on a plain light background"
   },
   sedang: {
     objects: [
@@ -20,16 +20,15 @@ const CATEGORIES: Record<string, { objects: string[]; style: string }> = {
       "kaktus", "jamur", "pelangi", "gunung berapi", "air terjun", "kompas",
       "globe", "biola", "terompet", "drum", "stetoskop", "magnet"
     ],
-    style: "detailed cartoon illustration, colorful, white background"
+    style: "detailed clear illustration of a single object, isolated on a plain light background"
   },
   sulit: {
     objects: [
-      "akordeon", "astrolabe", "katapel", "sundial", "gramofon", "periskop",
-      "sextant", "abakus", "caduceus", "pendulum", "prisma", "hieroglif",
-      "gargoyle", "pagoda", "obelisk", "amfiteater", "akuaduk", "koliseum",
-      "sphinx", "totem"
+      "akordeon", "katapel", "gramofon", "periskop", "abakus", "pendulum",
+      "prisma", "pagoda", "obelisk", "totem", "kompas", "teropong",
+      "jangkar", "mahkota", "timbangan", "ceret", "lentera", "lonceng"
     ],
-    style: "semi-realistic illustration, detailed, white background"
+    style: "sharp semi-realistic illustration of a single object, isolated on a plain light background"
   },
 };
 
@@ -51,24 +50,69 @@ Deno.serve(async (req) => {
       const cat = CATEGORIES[diff] || CATEGORIES.mudah;
       const randomObj = cat.objects[Math.floor(Math.random() * cat.objects.length)];
 
-      // Generate image using Gemini image model (high quality)
-      const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${LOVABLE_API_KEY}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          model: "google/gemini-3-pro-image-preview",
-          messages: [
-            {
-              role: "user",
-              content: `Create a high-quality, clear, detailed illustration of: "${randomObj}". Style: ${cat.style}. The object must be clearly recognizable and centered. Do NOT include any text, labels, letters, or words in the image. No watermarks.`
-            }
-          ],
-          modalities: ["image", "text"],
+      const imagePrompt = `Create one very clear image of a single object: "${randomObj}". Style: ${cat.style}. Requirements: object only, centered, large, fully visible, high contrast, easy to recognize for a guessing game, no scene clutter, no hands, no people, no extra objects, no text, no letters, no watermark.`;
+
+      const [response, hintResponse] = await Promise.all([
+        fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${LOVABLE_API_KEY}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            model: "google/gemini-3.1-flash-image-preview",
+            messages: [
+              {
+                role: "user",
+                content: imagePrompt,
+              },
+            ],
+            modalities: ["image", "text"],
+          }),
         }),
-      });
+        fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${LOVABLE_API_KEY}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            model: "google/gemini-3-flash-preview",
+            messages: [
+              {
+                role: "system",
+                content: "Kamu membantu game tebak gambar. Berikan petunjuk singkat untuk objek yang diberikan.",
+              },
+              {
+                role: "user",
+                content: `Berikan 3 petunjuk singkat (masing-masing max 8 kata) untuk menebak objek "${randomObj}", dari yang paling sulit ke paling mudah.`,
+              },
+            ],
+            tools: [
+              {
+                type: "function",
+                function: {
+                  name: "provide_hints",
+                  description: "Provide hints for the guessing game",
+                  parameters: {
+                    type: "object",
+                    properties: {
+                      hints: {
+                        type: "array",
+                        items: { type: "string" },
+                        description: "3 petunjuk dari sulit ke mudah",
+                      },
+                    },
+                    required: ["hints"],
+                    additionalProperties: false,
+                  },
+                },
+              },
+            ],
+            tool_choice: { type: "function", function: { name: "provide_hints" } },
+          }),
+        }),
+      ]);
 
       if (!response.ok) {
         if (response.status === 429) {
@@ -107,50 +151,6 @@ Deno.serve(async (req) => {
         console.error("No image in response, content:", JSON.stringify(data.choices?.[0]?.message).substring(0, 500));
         return Response.json({ error: "Gagal mendapatkan gambar dari AI" }, { status: 500, headers: corsHeaders });
       }
-
-      // Generate hints using text model
-      const hintResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${LOVABLE_API_KEY}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          model: "google/gemini-3-flash-preview",
-          messages: [
-            {
-              role: "system",
-              content: "Kamu membantu game tebak gambar. Berikan petunjuk untuk objek yang diberikan."
-            },
-            {
-              role: "user",
-              content: `Berikan 3 petunjuk singkat (masing-masing max 8 kata) untuk menebak objek "${randomObj}", dari yang paling sulit ke paling mudah. Jawab HANYA dalam format JSON: {"hints":["petunjuk1","petunjuk2","petunjuk3"]}`
-            }
-          ],
-          tools: [
-            {
-              type: "function",
-              function: {
-                name: "provide_hints",
-                description: "Provide hints for the guessing game",
-                parameters: {
-                  type: "object",
-                  properties: {
-                    hints: {
-                      type: "array",
-                      items: { type: "string" },
-                      description: "3 petunjuk dari sulit ke mudah"
-                    }
-                  },
-                  required: ["hints"],
-                  additionalProperties: false
-                }
-              }
-            }
-          ],
-          tool_choice: { type: "function", function: { name: "provide_hints" } }
-        }),
-      });
 
       let hints: string[] = [];
       if (hintResponse.ok) {

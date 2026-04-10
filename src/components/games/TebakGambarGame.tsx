@@ -22,6 +22,12 @@ const DIFFICULTIES: { key: Difficulty; label: string; color: string; time: numbe
   { key: "sulit", label: "Sulit", color: "text-red-500", time: 30 },
 ];
 
+const INITIAL_BLUR: Record<Difficulty, number> = {
+  mudah: 8,
+  sedang: 12,
+  sulit: 16,
+};
+
 export default function TebakGambarGame() {
   const [difficulty, setDifficulty] = useState<Difficulty | null>(null);
   const [imageData, setImageData] = useState("");
@@ -67,7 +73,7 @@ export default function TebakGambarGame() {
     setWrongCount(0);
     setGuess("");
     setShownHints(0);
-    setBlurLevel(20);
+    setBlurLevel(INITIAL_BLUR[difficulty]);
     setGameOver(false);
 
     try {
@@ -139,7 +145,7 @@ export default function TebakGambarGame() {
   const revealHint = () => {
     if (shownHints < hints.length) {
       setShownHints(prev => prev + 1);
-      setBlurLevel(prev => Math.max(prev - 4, 0));
+      setBlurLevel(prev => Math.max(prev - 3, 0));
     }
   };
 
