@@ -142,13 +142,14 @@ Deno.serve(async (request) => {
 
       const phoneVariants = normalizedPhoneVariants(normalizedPhone);
 
-      const { data: existingPhone } = await admin
+      const phoneQuery = admin
         .from("user_balances")
         .select("id")
-        .in("phone", phoneVariants.length > 0 ? phoneVariants : [normalizedPhone])
-        .neq("phone", "")
-        .limit(1)
-        .maybeSingle();
+        .neq("phone", "");
+
+      const { data: existingPhone } = await (phoneVariants.length > 0
+        ? phoneQuery.in("phone", phoneVariants).limit(1).maybeSingle()
+        : phoneQuery.eq("phone", normalizedPhone).maybeSingle());
 
       if (existingPhone && existingPhone.id !== existingByVisitor?.id && existingPhone.id !== existingByEmail?.id) {
         return Response.json({ error: "Nomor HP sudah terdaftar. Silakan login." }, { status: 400, headers: corsHeaders });
