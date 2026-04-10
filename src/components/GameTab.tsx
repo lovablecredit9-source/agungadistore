@@ -2,12 +2,13 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { motion } from "framer-motion";
-import { Gamepad2, ArrowLeft, Swords, Brain, ImageIcon } from "lucide-react";
+import { Gamepad2, ArrowLeft, Swords, Brain, ImageIcon, HelpCircle } from "lucide-react";
 import SuitGame from "@/components/games/SuitGame";
 import TebakKataGame from "@/components/games/TebakKataGame";
 import TebakGambarGame from "@/components/games/TebakGambarGame";
+import TekaTekiGame from "@/components/games/TekaTekiGame";
 
-type GameMode = "menu" | "suit" | "tebak" | "tebak_gambar";
+type GameMode = "menu" | "suit" | "tebak" | "tebak_gambar" | "teka_teki";
 
 export default function GameTab() {
   const [mode, setMode] = useState<GameMode>("menu");
@@ -56,6 +57,22 @@ export default function GameTab() {
           </h2>
         </div>
         <TebakGambarGame />
+      </div>
+    );
+  }
+
+  if (mode === "teka_teki") {
+    return (
+      <div className="space-y-4 p-4 pb-24">
+        <div className="flex items-center gap-2">
+          <Button variant="ghost" size="sm" onClick={() => setMode("menu")} className="gap-1">
+            <ArrowLeft className="w-4 h-4" /> Kembali
+          </Button>
+          <h2 className="font-extrabold text-lg flex items-center gap-2">
+            <HelpCircle className="w-5 h-5 text-primary" /> Teka-Teki Logika AI
+          </h2>
+        </div>
+        <TekaTekiGame />
       </div>
     );
   }
