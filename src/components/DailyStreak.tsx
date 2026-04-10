@@ -627,6 +627,74 @@ export default function DailyStreak() {
         </div>
       </motion.div>
 
+      {/* Auto-Klaim Streak Plans */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.3 }}
+        className="bg-card rounded-2xl border p-4 space-y-3"
+      >
+        <h4 className="text-sm font-bold flex items-center gap-2">
+          <ShoppingCart className="w-4 h-4 text-primary" /> Paket Auto-Klaim Streak
+        </h4>
+        <p className="text-[10px] text-muted-foreground">
+          Beli paket untuk klaim otomatis setiap tengah malam, streak tidak akan putus walau kamu tidak klik!
+        </p>
+
+        {activeSub && (
+          <div className="bg-green-500/10 border border-green-500/20 rounded-xl p-3 text-sm">
+            <p className="font-bold text-green-600 flex items-center gap-1">
+              <Check className="w-4 h-4" /> Paket Aktif: {activeSub.plan_name}
+            </p>
+            <p className="text-[10px] text-muted-foreground mt-1">
+              Berlaku sampai: {new Date(activeSub.expires_at).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" })}
+            </p>
+          </div>
+        )}
+
+        <div className="grid grid-cols-2 gap-2">
+          {AUTO_CLAIM_PLANS.map(plan => (
+            <Button
+              key={plan.days}
+              variant="outline"
+              className="h-auto py-2.5 px-3 flex flex-col items-center gap-0.5 text-xs hover:border-primary/50"
+              disabled={buyingPlan === plan.days}
+              onClick={() => purchaseStreakPlan(plan.days)}
+            >
+              {buyingPlan === plan.days ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <>
+                  <span className="font-extrabold text-sm">{plan.name}</span>
+                  <span className="text-primary font-bold">Rp{plan.price.toLocaleString("id-ID")}</span>
+                </>
+              )}
+            </Button>
+          ))}
+        </div>
+      </motion.div>
+
+      {/* PIN Modal for Streak */}
+      {showPinForStreak && (
+        <div className="fixed inset-0 z-[95] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setShowPinForStreak(false)}>
+          <div className="bg-card w-full max-w-sm rounded-2xl p-5 space-y-4 animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between">
+              <h3 className="font-extrabold text-lg flex items-center gap-2"><Lock className="w-5 h-5 text-primary" /> Masukkan PIN</h3>
+              <button onClick={() => setShowPinForStreak(false)} className="w-8 h-8 rounded-full bg-muted flex items-center justify-center"><X className="w-4 h-4" /></button>
+            </div>
+            <p className="text-xs text-muted-foreground text-center">Masukkan PIN untuk konfirmasi pembelian paket streak</p>
+            <Input type="password" inputMode="numeric" maxLength={6} placeholder="PIN" value={streakPinInput}
+              onChange={e => setStreakPinInput(e.target.value.replace(/\D/g, ""))}
+              className="text-center text-2xl tracking-[0.3em] font-bold"
+              onKeyDown={e => { if (e.key === "Enter") confirmStreakPin(); }}
+              autoFocus />
+            <Button className="w-full h-11 bg-gradient-to-r from-primary to-accent text-primary-foreground font-bold gap-2"
+              onClick={confirmStreakPin} disabled={streakPinInput.length < 4}>
+              <Lock className="w-4 h-4" /> Konfirmasi
+            </Button>
+          </div>
+        </div>
+      )}
+
       {/* Milestone Popup */}
       <AnimatePresence>
         {showMilestone && (
