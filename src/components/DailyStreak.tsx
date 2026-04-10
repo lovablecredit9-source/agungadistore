@@ -595,7 +595,7 @@ export default function DailyStreak() {
                   </motion.div>
                   <div className="absolute -bottom-4 left-1/2 -translate-x-1/2">
                     <motion.div animate={{ scale: [1, 1.3, 1] }} transition={{ duration: 0.6, repeat: Infinity }}>
-                      <TierFire tier={showMilestone.tier} size="lg" />
+                      <EmojiFireSVG width={40} height={48} />
                     </motion.div>
                   </div>
                   <FloatingSparkles count={8} tier={showMilestone.tier} />
