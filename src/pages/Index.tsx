@@ -901,9 +901,11 @@ const Index = () => {
     if (likedIds.has(productId)) {
       await supabase.from("liked_products").delete().eq("product_id", productId).eq("visitor_id", visitorId);
       setLikedIds(prev => { const n = new Set(prev); n.delete(productId); return n; });
+      setProductLikeCounts(prev => ({ ...prev, [productId]: Math.max(0, (prev[productId] || 1) - 1) }));
     } else {
       await supabase.from("liked_products").insert({ product_id: productId, visitor_id: visitorId });
       setLikedIds(prev => new Set(prev).add(productId));
+      setProductLikeCounts(prev => ({ ...prev, [productId]: (prev[productId] || 0) + 1 }));
     }
   }
 
@@ -912,9 +914,11 @@ const Index = () => {
     if (likedSponsorIds.has(sponsorId)) {
       await supabase.from("liked_sponsors").delete().eq("sponsor_id", sponsorId).eq("visitor_id", visitorId);
       setLikedSponsorIds(prev => { const n = new Set(prev); n.delete(sponsorId); return n; });
+      setSponsorLikeCounts(prev => ({ ...prev, [sponsorId]: Math.max(0, (prev[sponsorId] || 1) - 1) }));
     } else {
       await supabase.from("liked_sponsors").insert({ sponsor_id: sponsorId, visitor_id: visitorId });
       setLikedSponsorIds(prev => new Set(prev).add(sponsorId));
+      setSponsorLikeCounts(prev => ({ ...prev, [sponsorId]: (prev[sponsorId] || 0) + 1 }));
     }
   }
 
