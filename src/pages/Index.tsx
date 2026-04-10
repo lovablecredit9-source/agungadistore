@@ -46,7 +46,7 @@ import DailyStreak from "@/components/DailyStreak";
 import HomeBannerSlider from "@/components/HomeBannerSlider";
 import BalanceAuth from "@/components/BalanceAuth";
 
-type Tab = "beranda" | "produk" | "voucher" | "history" | "likes" | "tiket" | "saldo" | "playlist" | "publik" | "sponsor";
+type Tab = "beranda" | "produk" | "voucher" | "history" | "likes" | "tiket" | "saldo" | "playlist" | "publik" | "sponsor" | "streak";
 
 interface UserBalance {
   id: string;
@@ -1460,8 +1460,7 @@ const Index = () => {
               </CardContent>
             </Card>
 
-            {/* Daily Streak */}
-            <DailyStreak />
+            {/* Daily Streak moved to streak tab */}
 
             {/* Tiket support shortcut */}
             <Card className="border-dashed border-2 border-destructive/20 hover:border-destructive/40 transition-all cursor-pointer hover:shadow-lg hover:-translate-y-0.5 duration-200" onClick={() => setTab("tiket")}>
@@ -2116,6 +2115,10 @@ const Index = () => {
 
         {tab === "sponsor" && (
           <SponsorBanner likedSponsorIds={likedSponsorIds} onToggleLikeSponsor={toggleLikeSponsor} />
+        )}
+
+        {tab === "streak" && (
+          <DailyStreak />
         )}
       </main>
 
@@ -3219,6 +3222,7 @@ const Index = () => {
             { key: "playlist" as Tab, icon: Music, label: t("nav.playlist", lang) },
             { key: "publik" as Tab, icon: Globe, label: "Publik" },
             { key: "sponsor" as Tab, icon: Megaphone, label: "Sponsor" },
+            { key: "streak" as Tab, icon: CalendarDays, label: "Streak" },
           ]).map(({ key, icon: Icon, label }) => (
             <button key={key} onClick={() => setTab(key)}
               className={`flex-1 flex flex-col items-center py-2 text-[10px] transition-all duration-200 ${tab === key ? "text-primary font-bold" : "text-muted-foreground hover:text-foreground"}`}>
