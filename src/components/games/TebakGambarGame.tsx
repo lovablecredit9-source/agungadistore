@@ -23,9 +23,9 @@ const DIFFICULTIES: { key: Difficulty; label: string; color: string; time: numbe
 ];
 
 const INITIAL_BLUR: Record<Difficulty, number> = {
-  mudah: 8,
-  sedang: 12,
-  sulit: 16,
+  mudah: 0,
+  sedang: 2,
+  sulit: 4,
 };
 
 export default function TebakGambarGame() {
@@ -46,7 +46,7 @@ export default function TebakGambarGame() {
   const [timerActive, setTimerActive] = useState(false);
   const [playerData, setPlayerData] = useState<GameLevel>(loadGameData());
   const [error, setError] = useState("");
-  const [blurLevel, setBlurLevel] = useState(20);
+  const [blurLevel, setBlurLevel] = useState(0);
 
   // Timer
   useEffect(() => {
@@ -73,6 +73,10 @@ export default function TebakGambarGame() {
     setWrongCount(0);
     setGuess("");
     setShownHints(0);
+    setImageData("");
+    setAnswer("");
+    setHints([]);
+    setLetterCount(0);
     setBlurLevel(INITIAL_BLUR[difficulty]);
     setGameOver(false);
 
@@ -125,7 +129,7 @@ export default function TebakGambarGame() {
         setWrongCount(newWrong);
         setResult("wrong");
         // Reduce blur on wrong answer to give visual hint
-        setBlurLevel(prev => Math.max(prev - 5, 0));
+        setBlurLevel(prev => Math.max(prev - 2, 0));
         if (newWrong >= 3) {
           setGameOver(true);
           setTimerActive(false);
@@ -145,7 +149,7 @@ export default function TebakGambarGame() {
   const revealHint = () => {
     if (shownHints < hints.length) {
       setShownHints(prev => prev + 1);
-      setBlurLevel(prev => Math.max(prev - 3, 0));
+      setBlurLevel(prev => Math.max(prev - 1, 0));
     }
   };
 
@@ -257,7 +261,7 @@ export default function TebakGambarGame() {
               <img
                 src={imageData}
                 alt="Tebak gambar ini"
-                className="w-full aspect-square object-cover transition-all duration-500"
+                 className="w-full aspect-square object-contain bg-muted/30 transition-all duration-300"
                 style={{ filter: result === "correct" || gameOver ? "none" : `blur(${blurLevel}px)` }}
               />
               {letterCount > 0 && !result && !gameOver && (
@@ -352,7 +356,7 @@ export default function TebakGambarGame() {
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => setBlurLevel(prev => Math.max(prev - 3, 0))}
+               onClick={() => setBlurLevel(prev => Math.max(prev - 1, 0))}
               disabled={blurLevel <= 0}
               className="gap-1 text-xs"
             >

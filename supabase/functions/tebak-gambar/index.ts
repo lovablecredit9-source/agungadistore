@@ -50,7 +50,7 @@ Deno.serve(async (req) => {
       const cat = CATEGORIES[diff] || CATEGORIES.mudah;
       const randomObj = cat.objects[Math.floor(Math.random() * cat.objects.length)];
 
-      const imagePrompt = `Create one very clear image of a single object: "${randomObj}". Style: ${cat.style}. Requirements: object only, centered, large, fully visible, high contrast, easy to recognize for a guessing game, no scene clutter, no hands, no people, no extra objects, no text, no letters, no watermark.`;
+      const imagePrompt = `Create one very clear image of a single object: "${randomObj}". Style: ${cat.style}. Requirements: object only, centered, large, fully visible, high contrast, easy to recognize for a guessing game, simple silhouette, strong edges, plain light background, no scene clutter, no hands, no people, no extra objects, no text, no letters, no watermark.`;
 
       const [response, hintResponse] = await Promise.all([
         fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
@@ -60,7 +60,7 @@ Deno.serve(async (req) => {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            model: "google/gemini-3.1-flash-image-preview",
+            model: "google/gemini-2.5-flash-image",
             messages: [
               {
                 role: "user",
