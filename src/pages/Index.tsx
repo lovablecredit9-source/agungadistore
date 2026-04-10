@@ -46,7 +46,7 @@ import DailyStreak from "@/components/DailyStreak";
 import HomeBannerSlider from "@/components/HomeBannerSlider";
 import BalanceAuth from "@/components/BalanceAuth";
 
-type Tab = "beranda" | "produk" | "voucher" | "history" | "likes" | "tiket" | "saldo" | "playlist" | "publik" | "sponsor" | "streak";
+type Tab = "beranda" | "produk" | "voucher" | "history" | "likes" | "tiket" | "saldo" | "playlist" | "publik" | "sponsor" | "streak" | "adminpost";
 
 interface UserBalance {
   id: string;
@@ -267,6 +267,7 @@ const TAB_PATHS: Record<string, Tab> = {
   "/publik": "publik",
   "/sponsor": "sponsor",
   "/streak": "streak",
+  "/admin-post": "adminpost",
 };
 const PATH_FROM_TAB: Record<Tab, string> = Object.fromEntries(
   Object.entries(TAB_PATHS).map(([k, v]) => [v, k])
@@ -3348,6 +3349,7 @@ const Index = () => {
             { key: "publik" as Tab, icon: Globe, label: "Publik" },
             { key: "sponsor" as Tab, icon: Megaphone, label: "Sponsor" },
             { key: "streak" as Tab, icon: CalendarDays, label: "Streak" },
+            { key: "adminpost" as Tab, icon: FileText, label: "Admin" },
           ]).map(({ key, icon: Icon, label }) => (
             <button key={key} onClick={() => setTab(key)}
               className={`flex-1 flex flex-col items-center py-2 text-[10px] transition-all duration-200 ${tab === key ? "text-primary font-bold" : "text-muted-foreground hover:text-foreground"}`}>
