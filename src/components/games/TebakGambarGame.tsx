@@ -134,9 +134,13 @@ export default function TebakGambarGame() {
         const newWrong = wrongCount + 1;
         setWrongCount(newWrong);
         setResult("wrong");
-        // Reduce blur on wrong answer to give visual hint
         setBlurLevel(prev => Math.max(prev - 2, 0));
-        setTimeout(() => setResult(null), 1200);
+        if (newWrong >= 3) {
+          setTimerActive(false);
+          setGameOver(true);
+        } else {
+          setTimeout(() => setResult(null), 1200);
+        }
       }
     } catch (e: any) {
       setError(e.message || "Gagal memeriksa jawaban");
