@@ -2,11 +2,12 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { motion } from "framer-motion";
-import { Gamepad2, ArrowLeft, Swords, Brain } from "lucide-react";
+import { Gamepad2, ArrowLeft, Swords, Brain, ImageIcon } from "lucide-react";
 import SuitGame from "@/components/games/SuitGame";
 import TebakKataGame from "@/components/games/TebakKataGame";
+import TebakGambarGame from "@/components/games/TebakGambarGame";
 
-type GameMode = "menu" | "suit" | "tebak";
+type GameMode = "menu" | "suit" | "tebak" | "tebak_gambar";
 
 export default function GameTab() {
   const [mode, setMode] = useState<GameMode>("menu");
@@ -39,6 +40,22 @@ export default function GameTab() {
           </h2>
         </div>
         <TebakKataGame />
+      </div>
+    );
+  }
+
+  if (mode === "tebak_gambar") {
+    return (
+      <div className="space-y-4 p-4 pb-24">
+        <div className="flex items-center gap-2">
+          <Button variant="ghost" size="sm" onClick={() => setMode("menu")} className="gap-1">
+            <ArrowLeft className="w-4 h-4" /> Kembali
+          </Button>
+          <h2 className="font-extrabold text-lg flex items-center gap-2">
+            <ImageIcon className="w-5 h-5 text-primary" /> Tebak Gambar AI
+          </h2>
+        </div>
+        <TebakGambarGame />
       </div>
     );
   }
@@ -78,6 +95,21 @@ export default function GameTab() {
               </CardContent>
             </Card>
           </motion.div>
+
+          <motion.div whileTap={{ scale: 0.97 }}>
+            <Card className="cursor-pointer hover:border-primary/50 transition-colors" onClick={() => setMode("tebak_gambar")}>
+              <CardContent className="p-5 flex items-center gap-4">
+                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-green-500 to-teal-600 flex items-center justify-center shadow-lg">
+                  <ImageIcon className="w-7 h-7 text-white" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="font-extrabold text-base">Tebak Gambar AI</h3>
+                  <p className="text-xs text-muted-foreground">AI buat gambar, kamu tebak objeknya!</p>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+
         </div>
       </motion.div>
     </div>

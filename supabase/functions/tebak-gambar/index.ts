@@ -1,0 +1,193 @@
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+};
+
+const CATEGORIES: Record<string, { objects: string[]; style: string }> = {
+  mudah: {
+    objects: [
+      "kucing", "anjing", "rumah", "mobil", "pohon", "bunga", "matahari", "bulan",
+      "bintang", "ikan", "burung", "apel", "pisang", "bola", "payung", "sepeda",
+      "kursi", "meja", "jam", "topi", "kunci", "gitar", "piano", "lilin",
+      "sendok", "garpu", "piring", "gelas", "buku", "pensil"
+    ],
+    style: "simple cartoon illustration, clear and colorful, white background"
+  },
+  sedang: {
+    objects: [
+      "helikopter", "kapal selam", "kastil", "mercusuar", "kincir angin", "teleskop",
+      "mikroskop", "robot", "dinosaurus", "penguin", "lumba-lumba", "jerapah",
+      "kaktus", "jamur", "pelangi", "gunung berapi", "air terjun", "kompas",
+      "globe", "biola", "terompet", "drum", "stetoskop", "magnet"
+    ],
+    style: "detailed cartoon illustration, colorful, white background"
+  },
+  sulit: {
+    objects: [
+      "akordeon", "astrolabe", "katapel", "sundial", "gramofon", "periskop",
+      "sextant", "abakus", "caduceus", "pendulum", "prisma", "hieroglif",
+      "gargoyle", "pagoda", "obelisk", "amfiteater", "akuaduk", "koliseum",
+      "sphinx", "totem"
+    ],
+    style: "semi-realistic illustration, detailed, white background"
+  },
+};
+
+Deno.serve(async (req) => {
+  if (req.method === "OPTIONS") {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  try {
+    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+    if (!LOVABLE_API_KEY) {
+      return Response.json({ error: "AI belum dikonfigurasi" }, { status: 500, headers: corsHeaders });
+    }
+
+    const { action, guess, answer, difficulty } = await req.json();
+
+    if (action === "new_image") {
+      const diff = difficulty || "mudah";
+      const cat = CATEGORIES[diff] || CATEGORIES.mudah;
+      const randomObj = cat.objects[Math.floor(Math.random() * cat.objects.length)];
+
+      // Generate image using Gemini image model
+      const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${LOVABLE_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: "google/gemini-3.1-flash-image-preview",
+          messages: [
+            {
+              role: "user",
+              content: `Generate an image of: ${randomObj}. Style: ${cat.style}. Do NOT include any text, labels, or words in the image.`
+            }
+          ],
+        }),
+      });
+
+      if (!response.ok) {
+        if (response.status === 429) {
+          return Response.json({ error: "Terlalu banyak permintaan, coba lagi nanti" }, { status: 429, headers: corsHeaders });
+        }
+        if (response.status === 402) {
+          return Response.json({ error: "Kredit AI habis" }, { status: 402, headers: corsHeaders });
+        }
+        const errText = await response.text();
+        console.error("AI error:", response.status, errText);
+        return Response.json({ error: "Gagal generate gambar" }, { status: 500, headers: corsHeaders });
+      }
+
+      const data = await response.json();
+      
+      // Extract image from response - check for inline_data in parts
+      const message = data.choices?.[0]?.message;
+      let imageBase64 = "";
+      let textContent = "";
+
+      if (message?.content) {
+        // Content could be string or array of parts
+        if (typeof message.content === "string") {
+          textContent = message.content;
+        } else if (Array.isArray(message.content)) {
+          for (const part of message.content) {
+            if (part.type === "image_url" && part.image_url?.url) {
+              imageBase64 = part.image_url.url;
+            } else if (part.type === "text") {
+              textContent = part.text || "";
+            }
+          }
+        }
+      }
+
+      if (!imageBase64) {
+        // Fallback: try to get image from different response formats
+        console.error("No image in response, content:", JSON.stringify(data.choices?.[0]?.message).substring(0, 500));
+        return Response.json({ error: "Gagal mendapatkan gambar dari AI" }, { status: 500, headers: corsHeaders });
+      }
+
+      // Generate hints using text model
+      const hintResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${LOVABLE_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: "google/gemini-3-flash-preview",
+          messages: [
+            {
+              role: "system",
+              content: "Kamu membantu game tebak gambar. Berikan petunjuk untuk objek yang diberikan."
+            },
+            {
+              role: "user",
+              content: `Berikan 3 petunjuk singkat (masing-masing max 8 kata) untuk menebak objek "${randomObj}", dari yang paling sulit ke paling mudah. Jawab HANYA dalam format JSON: {"hints":["petunjuk1","petunjuk2","petunjuk3"]}`
+            }
+          ],
+          tools: [
+            {
+              type: "function",
+              function: {
+                name: "provide_hints",
+                description: "Provide hints for the guessing game",
+                parameters: {
+                  type: "object",
+                  properties: {
+                    hints: {
+                      type: "array",
+                      items: { type: "string" },
+                      description: "3 petunjuk dari sulit ke mudah"
+                    }
+                  },
+                  required: ["hints"],
+                  additionalProperties: false
+                }
+              }
+            }
+          ],
+          tool_choice: { type: "function", function: { name: "provide_hints" } }
+        }),
+      });
+
+      let hints: string[] = [];
+      if (hintResponse.ok) {
+        const hintData = await hintResponse.json();
+        const toolCall = hintData.choices?.[0]?.message?.tool_calls?.[0];
+        if (toolCall?.function?.arguments) {
+          const parsed = JSON.parse(toolCall.function.arguments);
+          hints = parsed.hints || [];
+        }
+      }
+      
+      if (hints.length === 0) {
+        hints = ["Perhatikan bentuknya", "Perhatikan detailnya", `Huruf pertama: ${randomObj[0].toUpperCase()}`];
+      }
+
+      return Response.json({
+        image: imageBase64,
+        answer: randomObj.toUpperCase(),
+        hints,
+        letterCount: randomObj.length,
+      }, { headers: corsHeaders });
+
+    } else if (action === "check_guess") {
+      if (!guess || !answer) {
+        return Response.json({ error: "Data tidak lengkap" }, { status: 400, headers: corsHeaders });
+      }
+      const normalize = (s: string) => s.toUpperCase().trim().replace(/\s+/g, " ");
+      const isCorrect = normalize(guess) === normalize(answer);
+      return Response.json({ correct: isCorrect }, { headers: corsHeaders });
+    }
+
+    return Response.json({ error: "Aksi tidak valid" }, { status: 400, headers: corsHeaders });
+
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Terjadi kesalahan";
+    console.error("tebak-gambar error:", error);
+    return Response.json({ error: message }, { status: 500, headers: corsHeaders });
+  }
+});

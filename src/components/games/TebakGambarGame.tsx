@@ -1,0 +1,380 @@
+import { useState, useEffect, useCallback } from "react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { motion, AnimatePresence } from "framer-motion";
+import { supabase } from "@/integrations/supabase/client";
+import {
+  Image, Eye, EyeOff, HelpCircle, Trophy, XCircle,
+  Loader2, RefreshCw, Clock, Star, Lightbulb, AlertTriangle
+} from "lucide-react";
+import {
+  addPoints, getPointsForQuestion, loadGameData, getLevelFromPoints,
+  getNextLevelThreshold, getCurrentLevelThreshold, type GameLevel
+} from "./gameStore";
+
+type Difficulty = "mudah" | "sedang" | "sulit";
+
+const DIFFICULTIES: { key: Difficulty; label: string; color: string; time: number }[] = [
+  { key: "mudah", label: "Mudah", color: "text-green-500", time: 60 },
+  { key: "sedang", label: "Sedang", color: "text-blue-500", time: 45 },
+  { key: "sulit", label: "Sulit", color: "text-red-500", time: 30 },
+];
+
+export default function TebakGambarGame() {
+  const [difficulty, setDifficulty] = useState<Difficulty | null>(null);
+  const [imageData, setImageData] = useState("");
+  const [answer, setAnswer] = useState("");
+  const [hints, setHints] = useState<string[]>([]);
+  const [letterCount, setLetterCount] = useState(0);
+  const [shownHints, setShownHints] = useState(0);
+  const [guess, setGuess] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [result, setResult] = useState<"correct" | "wrong" | null>(null);
+  const [wrongCount, setWrongCount] = useState(0);
+  const [gameOver, setGameOver] = useState(false);
+  const [score, setScore] = useState(0);
+  const [questionNum, setQuestionNum] = useState(0);
+  const [timeLeft, setTimeLeft] = useState(0);
+  const [timerActive, setTimerActive] = useState(false);
+  const [playerData, setPlayerData] = useState<GameLevel>(loadGameData());
+  const [error, setError] = useState("");
+  const [blurLevel, setBlurLevel] = useState(20);
+
+  // Timer
+  useEffect(() => {
+    if (!timerActive || timeLeft <= 0) return;
+    const t = setInterval(() => {
+      setTimeLeft(prev => {
+        if (prev <= 1) {
+          clearInterval(t);
+          setTimerActive(false);
+          setGameOver(true);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(t);
+  }, [timerActive, timeLeft]);
+
+  const fetchNewImage = useCallback(async () => {
+    if (!difficulty) return;
+    setLoading(true);
+    setError("");
+    setResult(null);
+    setWrongCount(0);
+    setGuess("");
+    setShownHints(0);
+    setBlurLevel(20);
+    setGameOver(false);
+
+    try {
+      const { data, error: fnError } = await supabase.functions.invoke("tebak-gambar", {
+        body: { action: "new_image", difficulty },
+      });
+      if (fnError) throw fnError;
+      if (data?.error) throw new Error(data.error);
+
+      setImageData(data.image);
+      setAnswer(data.answer);
+      setHints(data.hints || []);
+      setLetterCount(data.letterCount || 0);
+      setQuestionNum(prev => prev + 1);
+
+      const diffConfig = DIFFICULTIES.find(d => d.key === difficulty);
+      setTimeLeft(diffConfig?.time || 60);
+      setTimerActive(true);
+    } catch (e: any) {
+      setError(e.message || "Gagal memuat gambar");
+    } finally {
+      setLoading(false);
+    }
+  }, [difficulty]);
+
+  useEffect(() => {
+    if (difficulty) fetchNewImage();
+  }, [difficulty]);
+
+  const handleGuess = async () => {
+    if (!guess.trim() || gameOver) return;
+    setLoading(true);
+
+    try {
+      const { data, error: fnError } = await supabase.functions.invoke("tebak-gambar", {
+        body: { action: "check_guess", guess: guess.trim(), answer },
+      });
+      if (fnError) throw fnError;
+
+      if (data.correct) {
+        setResult("correct");
+        setTimerActive(false);
+        const pts = getPointsForQuestion(questionNum);
+        setScore(prev => prev + pts);
+        const updated = addPoints(pts);
+        setPlayerData(updated);
+      } else {
+        const newWrong = wrongCount + 1;
+        setWrongCount(newWrong);
+        setResult("wrong");
+        // Reduce blur on wrong answer to give visual hint
+        setBlurLevel(prev => Math.max(prev - 5, 0));
+        if (newWrong >= 3) {
+          setGameOver(true);
+          setTimerActive(false);
+          addPoints(0);
+          setPlayerData(loadGameData());
+        }
+        setTimeout(() => setResult(null), 1200);
+      }
+    } catch (e: any) {
+      setError(e.message || "Gagal memeriksa jawaban");
+    } finally {
+      setLoading(false);
+      setGuess("");
+    }
+  };
+
+  const revealHint = () => {
+    if (shownHints < hints.length) {
+      setShownHints(prev => prev + 1);
+      setBlurLevel(prev => Math.max(prev - 4, 0));
+    }
+  };
+
+  const nextRound = () => {
+    setResult(null);
+    fetchNewImage();
+  };
+
+  const resetGame = () => {
+    setDifficulty(null);
+    setScore(0);
+    setQuestionNum(0);
+    setImageData("");
+    setAnswer("");
+    setResult(null);
+    setGameOver(false);
+    setError("");
+  };
+
+  // Level progress
+  const level = playerData.level;
+  const currentThreshold = getCurrentLevelThreshold(level);
+  const nextThreshold = getNextLevelThreshold(level);
+  const progress = ((playerData.totalPoints - currentThreshold) / (nextThreshold - currentThreshold)) * 100;
+
+  // Difficulty selection
+  if (!difficulty) {
+    return (
+      <div className="space-y-4">
+        <Card className="border-primary/20">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2 mb-1">
+              <Star className="w-4 h-4 text-yellow-500" />
+              <span className="text-sm font-bold">Level {level}</span>
+              <span className="text-xs text-muted-foreground ml-auto">{playerData.totalPoints} poin</span>
+            </div>
+            <div className="w-full bg-muted rounded-full h-2">
+              <div className="bg-primary rounded-full h-2 transition-all" style={{ width: `${Math.min(progress, 100)}%` }} />
+            </div>
+          </CardContent>
+        </Card>
+
+        <p className="text-sm text-muted-foreground text-center">Pilih tingkat kesulitan:</p>
+        <div className="grid gap-2">
+          {DIFFICULTIES.map(d => (
+            <motion.div key={d.key} whileTap={{ scale: 0.97 }}>
+              <Button
+                variant="outline"
+                className="w-full justify-between h-auto py-3"
+                onClick={() => setDifficulty(d.key)}
+              >
+                <span className={`font-bold ${d.color}`}>{d.label}</span>
+                <span className="text-xs text-muted-foreground flex items-center gap-1">
+                  <Clock className="w-3 h-3" /> {d.time}s
+                </span>
+              </Button>
+            </motion.div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-3">
+      {/* Stats bar */}
+      <div className="flex items-center justify-between text-sm">
+        <Badge variant="outline" className="gap-1">
+          <Star className="w-3 h-3 text-yellow-500" /> Lv.{level}
+        </Badge>
+        <Badge variant="outline" className="gap-1">
+          <Trophy className="w-3 h-3 text-primary" /> {score} poin
+        </Badge>
+        <Badge variant={timeLeft <= 10 ? "destructive" : "outline"} className="gap-1">
+          <Clock className="w-3 h-3" /> {timeLeft}s
+        </Badge>
+      </div>
+
+      {/* Wrong count */}
+      <div className="flex gap-1 justify-center">
+        {[0, 1, 2].map(i => (
+          <XCircle key={i} className={`w-5 h-5 ${i < wrongCount ? "text-destructive" : "text-muted"}`} />
+        ))}
+      </div>
+
+      {error && (
+        <Card className="border-destructive/50 bg-destructive/10">
+          <CardContent className="p-3 flex items-center gap-2 text-sm text-destructive">
+            <AlertTriangle className="w-4 h-4" /> {error}
+            <Button size="sm" variant="ghost" onClick={fetchNewImage} className="ml-auto">
+              <RefreshCw className="w-4 h-4" />
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Image area */}
+      {loading && !imageData ? (
+        <Card>
+          <CardContent className="p-8 flex flex-col items-center justify-center gap-3">
+            <Loader2 className="w-10 h-10 animate-spin text-primary" />
+            <p className="text-sm text-muted-foreground">AI sedang membuat gambar...</p>
+          </CardContent>
+        </Card>
+      ) : imageData ? (
+        <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}>
+          <Card className="overflow-hidden">
+            <CardContent className="p-0 relative">
+              <img
+                src={imageData}
+                alt="Tebak gambar ini"
+                className="w-full aspect-square object-cover transition-all duration-500"
+                style={{ filter: result === "correct" || gameOver ? "none" : `blur(${blurLevel}px)` }}
+              />
+              {letterCount > 0 && !result && !gameOver && (
+                <div className="absolute bottom-2 right-2 bg-background/80 backdrop-blur rounded-md px-2 py-1 text-xs font-bold">
+                  {letterCount} huruf
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </motion.div>
+      ) : null}
+
+      {/* Hints */}
+      {shownHints > 0 && (
+        <div className="space-y-1">
+          {hints.slice(0, shownHints).map((h, i) => (
+            <motion.div key={i} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }}>
+              <div className="flex items-start gap-2 text-xs bg-muted/50 rounded-lg p-2">
+                <Lightbulb className="w-3.5 h-3.5 text-yellow-500 mt-0.5 shrink-0" />
+                <span>{h}</span>
+              </div>
+            </motion.div>
+          ))}
+        </div>
+      )}
+
+      {/* Game result */}
+      <AnimatePresence>
+        {result === "correct" && (
+          <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }}>
+            <Card className="border-green-500/50 bg-green-500/10">
+              <CardContent className="p-4 text-center">
+                <Trophy className="w-8 h-8 text-green-500 mx-auto mb-2" />
+                <p className="font-bold text-green-600">Benar! Jawabannya: {answer}</p>
+                <p className="text-xs text-muted-foreground mt-1">+{getPointsForQuestion(questionNum)} poin</p>
+                <Button className="mt-3" onClick={nextRound}>
+                  <RefreshCw className="w-4 h-4 mr-1" /> Gambar Berikutnya
+                </Button>
+              </CardContent>
+            </Card>
+          </motion.div>
+        )}
+
+        {gameOver && result !== "correct" && (
+          <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }}>
+            <Card className="border-destructive/50 bg-destructive/10">
+              <CardContent className="p-4 text-center">
+                <XCircle className="w-8 h-8 text-destructive mx-auto mb-2" />
+                <p className="font-bold text-destructive">
+                  {timeLeft <= 0 ? "Waktu habis!" : "3x salah!"}
+                </p>
+                <p className="text-sm mt-1">Jawabannya: <strong>{answer}</strong></p>
+                <div className="flex gap-2 mt-3 justify-center">
+                  <Button variant="outline" onClick={resetGame}>Menu</Button>
+                  <Button onClick={nextRound}>
+                    <RefreshCw className="w-4 h-4 mr-1" /> Coba Lagi
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Input area */}
+      {!result && !gameOver && imageData && (
+        <div className="space-y-2">
+          <div className="flex gap-2">
+            <Input
+              value={guess}
+              onChange={e => setGuess(e.target.value)}
+              placeholder="Ketik jawabanmu..."
+              onKeyDown={e => e.key === "Enter" && handleGuess()}
+              disabled={loading}
+              className="flex-1"
+            />
+            <Button onClick={handleGuess} disabled={loading || !guess.trim()}>
+              {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Tebak"}
+            </Button>
+          </div>
+          <div className="flex gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={revealHint}
+              disabled={shownHints >= hints.length}
+              className="gap-1 text-xs"
+            >
+              <HelpCircle className="w-3.5 h-3.5" />
+              Petunjuk ({shownHints}/{hints.length})
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setBlurLevel(prev => Math.max(prev - 3, 0))}
+              disabled={blurLevel <= 0}
+              className="gap-1 text-xs"
+            >
+              <Eye className="w-3.5 h-3.5" />
+              Perjelas
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* Result wrong flash */}
+      <AnimatePresence>
+        {result === "wrong" && !gameOver && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+            className="text-center text-sm font-bold text-destructive"
+          >
+            Salah! Coba lagi ({3 - wrongCount} kesempatan)
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Back button */}
+      <Button variant="ghost" size="sm" className="w-full text-xs text-muted-foreground" onClick={resetGame}>
+        Kembali ke menu
+      </Button>
+    </div>
+  );
+}
