@@ -127,6 +127,20 @@ export default function GameTab() {
             </Card>
           </motion.div>
 
+          <motion.div whileTap={{ scale: 0.97 }}>
+            <Card className="cursor-pointer hover:border-primary/50 transition-colors" onClick={() => setMode("teka_teki")}>
+              <CardContent className="p-5 flex items-center gap-4">
+                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg">
+                  <HelpCircle className="w-7 h-7 text-white" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="font-extrabold text-base">Teka-Teki Logika AI</h3>
+                  <p className="text-xs text-muted-foreground">AI kasih riddle, kamu jawab!</p>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+
         </div>
       </motion.div>
     </div>
