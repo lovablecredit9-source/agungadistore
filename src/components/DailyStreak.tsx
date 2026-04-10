@@ -85,60 +85,37 @@ function useCountdown() {
   return timeLeft;
 }
 
-// CSS Fire Animation Component
-function FireEffect({ size = "md", intensity = 1 }: { size?: "sm" | "md" | "lg" | "xl"; intensity?: number }) {
-  const sizes = { sm: "w-8 h-10", md: "w-12 h-16", lg: "w-16 h-20", xl: "w-24 h-32" };
+// SVG Emoji-style Fire Component 🔥
+function EmojiFireSVG({ width = 36, height = 44, animated = true, gray = false }: { width?: number; height?: number; animated?: boolean; gray?: boolean }) {
+  const Wrapper = animated ? motion.svg : 'svg';
+  const animProps = animated ? {
+    animate: { scaleY: [1, 1.06, 0.96, 1.04, 1], scaleX: [1, 0.97, 1.04, 0.98, 1] },
+    transition: { duration: 1.8, repeat: Infinity, ease: "easeInOut" as const },
+  } : {};
+
+  if (gray) {
+    return (
+      <svg viewBox="0 0 36 36" width={width} height={height} style={{ opacity: 0.4 }}>
+        <path d="M17.56 1.56c-.28-.45-.88-.45-1.12 0C14.86 4.36 6 18.56 6 24c0 6.63 4.92 12 11 12h2c6.08 0 11-5.37 11-12 0-5.44-8.86-19.64-10.44-22.44z" fill="#9ca3af"/>
+        <path d="M18 8c-.2-.32-.64-.32-.82 0C16.08 10.08 10 19.6 10 24c0 4.42 3.36 8 7.5 8h1c4.14 0 7.5-3.58 7.5-8 0-4.4-6.08-13.92-7.18-16z" fill="#d1d5db"/>
+        <ellipse cx="18" cy="28" rx="4" ry="5" fill="#e5e7eb"/>
+      </svg>
+    );
+  }
+
   return (
-    <div className={`relative ${sizes[size]} flex items-end justify-center`}>
-      {Array.from({ length: Math.min(5, Math.ceil(intensity * 3)) }).map((_, i) => (
-        <motion.div
-          key={i}
-          className="absolute bottom-0 rounded-full"
-          style={{
-            width: `${60 - i * 8}%`,
-            height: `${80 - i * 10}%`,
-            background: i === 0
-              ? "radial-gradient(ellipse at bottom, #ff4500 0%, #ff6b35 40%, transparent 70%)"
-              : i === 1
-              ? "radial-gradient(ellipse at bottom, #ff8c00 0%, #ffa500 40%, transparent 70%)"
-              : "radial-gradient(ellipse at bottom, #ffcc00 0%, #ffd700 40%, transparent 70%)",
-            filter: `blur(${i * 1.5}px)`,
-            left: "50%",
-            transform: "translateX(-50%)",
-          }}
-          animate={{
-            scaleY: [1, 1.2 + i * 0.1, 0.9, 1.1, 1],
-            scaleX: [1, 0.9, 1.1, 0.95, 1],
-            opacity: [0.8, 1, 0.7, 0.9, 0.8],
-          }}
-          transition={{
-            duration: 0.6 + i * 0.2,
-            repeat: Infinity,
-            ease: "easeInOut",
-            delay: i * 0.1,
-          }}
-        />
-      ))}
-      {/* Particles */}
-      {intensity >= 2 && Array.from({ length: 4 }).map((_, i) => (
-        <motion.div
-          key={`p-${i}`}
-          className="absolute w-1 h-1 rounded-full bg-yellow-400"
-          style={{ bottom: "30%", left: `${30 + i * 12}%` }}
-          animate={{
-            y: [-5, -25 - i * 8],
-            x: [0, (i % 2 === 0 ? 8 : -8)],
-            opacity: [1, 0],
-            scale: [1, 0.3],
-          }}
-          transition={{
-            duration: 0.8 + i * 0.2,
-            repeat: Infinity,
-            delay: i * 0.3,
-          }}
-        />
-      ))}
-    </div>
+    <Wrapper viewBox="0 0 36 36" width={width} height={height} {...animProps}
+      style={{ filter: "drop-shadow(0 2px 4px rgba(255,100,0,0.3))" }}>
+      {/* Outer flame - deep orange/red */}
+      <path d="M17.56 1.56c-.28-.45-.88-.45-1.12 0C14.86 4.36 6 18.56 6 24c0 6.63 4.92 12 11 12h2c6.08 0 11-5.37 11-12 0-5.44-8.86-19.64-10.44-22.44z" fill="#F4900C"/>
+      {/* Left highlight */}
+      <path d="M18.5 3c-1 1.6-9.5 15.8-9.5 21 0 5.52 3.8 10 8.5 10.5C12.2 34 8 29.8 8 24.5 8 19 16.2 5.8 18.5 3z" fill="#FFAC33" opacity="0.7"/>
+      {/* Mid flame - orange */}
+      <path d="M18 8c-.2-.32-.64-.32-.82 0C16.08 10.08 10 19.6 10 24c0 4.42 3.36 8 7.5 8h1c4.14 0 7.5-3.58 7.5-8 0-4.4-6.08-13.92-7.18-16z" fill="#FFCC4D"/>
+      {/* Inner core - yellow/white */}
+      <ellipse cx="18" cy="28" rx="4" ry="5.5" fill="#FFEE93"/>
+      <ellipse cx="18" cy="29" rx="2.5" ry="3.5" fill="#FFF4C8" opacity="0.8"/>
+    </Wrapper>
   );
 }
 
