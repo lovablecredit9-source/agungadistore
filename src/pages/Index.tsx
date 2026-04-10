@@ -464,6 +464,7 @@ const Index = () => {
     fetchProducts();
     loadHistory();
     fetchLikes();
+    fetchAdminPosts();
     fetchTickets();
     fetchProductChatHistory();
     fetchUserBalance();
