@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { getVisitorId } from "@/lib/visitor-id";
 import { Button } from "@/components/ui/button";
 import { Check, Trophy, Star, Gift, Zap } from "lucide-react";
+import { Sparkles } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 interface StreakData {
@@ -15,15 +16,15 @@ interface StreakData {
 }
 
 const MILESTONES = [
-  { days: 3, label: "3 Hari", reward: "Pemula", tier: 1 },
-  { days: 7, label: "7 Hari", reward: "Rajin", tier: 1 },
-  { days: 14, label: "14 Hari", reward: "Konsisten", tier: 2 },
-  { days: 30, label: "30 Hari", reward: "Master", tier: 2 },
-  { days: 60, label: "60 Hari", reward: "Legend", tier: 3 },
-  { days: 100, label: "100 Hari", reward: "Diamond", tier: 3 },
-  { days: 120, label: "120 Hari", reward: "Mythic", tier: 4 },
-  { days: 150, label: "150 Hari", reward: "Supreme", tier: 4 },
-  { days: 365, label: "1 Tahun", reward: "Immortal", tier: 5 },
+  { days: 3, label: "3 Hari", reward: "Pemula", tier: 1, emoji: "🔥" },
+  { days: 7, label: "7 Hari", reward: "Rajin", tier: 1, emoji: "⚡" },
+  { days: 14, label: "14 Hari", reward: "Konsisten", tier: 2, emoji: "💎" },
+  { days: 30, label: "30 Hari", reward: "Master", tier: 2, emoji: "👑" },
+  { days: 60, label: "60 Hari", reward: "Legend", tier: 3, emoji: "🏆" },
+  { days: 100, label: "100 Hari", reward: "Diamond", tier: 3, emoji: "💠" },
+  { days: 120, label: "120 Hari", reward: "Mythic", tier: 4, emoji: "🐉" },
+  { days: 150, label: "150 Hari", reward: "Supreme", tier: 4, emoji: "⭐" },
+  { days: 365, label: "1 Tahun", reward: "Immortal", tier: 5, emoji: "🌟" },
 ];
 
 function getTierColor(tier: number) {
@@ -135,6 +136,99 @@ function FireEffect({ size = "md", intensity = 1 }: { size?: "sm" | "md" | "lg" 
             repeat: Infinity,
             delay: i * 0.3,
           }}
+        />
+      ))}
+    </div>
+  );
+}
+
+// Confetti particles for milestone popup
+function ConfettiEffect() {
+  const particles = Array.from({ length: 30 }).map((_, i) => ({
+    id: i,
+    x: Math.random() * 100,
+    delay: Math.random() * 0.8,
+    duration: 1.5 + Math.random() * 2,
+    size: 4 + Math.random() * 8,
+    color: ["#ff4500", "#ffd700", "#ff6b35", "#3b82f6", "#a855f7", "#ec4899", "#22c55e", "#06b6d4"][i % 8],
+    rotation: Math.random() * 360,
+  }));
+  return (
+    <div className="absolute inset-0 overflow-hidden pointer-events-none z-20">
+      {particles.map((p) => (
+        <motion.div
+          key={p.id}
+          className="absolute"
+          style={{
+            left: `${p.x}%`,
+            top: "-5%",
+            width: p.size,
+            height: p.size,
+            backgroundColor: p.color,
+            borderRadius: p.id % 3 === 0 ? "50%" : p.id % 3 === 1 ? "2px" : "0",
+            rotate: `${p.rotation}deg`,
+          }}
+          initial={{ y: 0, opacity: 1 }}
+          animate={{
+            y: [0, 500],
+            x: [0, (p.id % 2 === 0 ? 30 : -30) * Math.random()],
+            opacity: [1, 1, 0],
+            rotate: [p.rotation, p.rotation + 360 * (p.id % 2 === 0 ? 1 : -1)],
+          }}
+          transition={{
+            duration: p.duration,
+            delay: p.delay,
+            ease: "easeOut",
+          }}
+        />
+      ))}
+    </div>
+  );
+}
+
+// Shimmer overlay for achieved milestones
+function ShimmerEffect() {
+  return (
+    <motion.div
+      className="absolute inset-0 pointer-events-none overflow-hidden rounded-xl"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+    >
+      <motion.div
+        className="absolute inset-0"
+        style={{
+          background: "linear-gradient(105deg, transparent 40%, rgba(255,255,255,0.15) 45%, rgba(255,255,255,0.25) 50%, rgba(255,255,255,0.15) 55%, transparent 60%)",
+          backgroundSize: "200% 100%",
+        }}
+        animate={{ backgroundPosition: ["200% 0", "-200% 0"] }}
+        transition={{ duration: 3, repeat: Infinity, ease: "linear", repeatDelay: 2 }}
+      />
+    </motion.div>
+  );
+}
+
+// Floating sparkles around fire
+function FloatingSparkles({ count = 6, tier = 1 }: { count?: number; tier?: number }) {
+  const colors: Record<number, string> = { 1: "#ff6b35", 2: "#6366f1", 3: "#ec4899", 4: "#e11d48", 5: "#fbbf24" };
+  return (
+    <div className="absolute inset-0 pointer-events-none">
+      {Array.from({ length: count }).map((_, i) => (
+        <motion.div
+          key={i}
+          className="absolute w-1.5 h-1.5 rounded-full"
+          style={{
+            backgroundColor: colors[tier] || colors[1],
+            left: `${15 + Math.random() * 70}%`,
+            top: `${10 + Math.random() * 60}%`,
+            boxShadow: `0 0 6px ${colors[tier] || colors[1]}`,
+          }}
+          animate={{
+            y: [0, -15, 0],
+            x: [0, i % 2 === 0 ? 8 : -8, 0],
+            opacity: [0, 1, 0],
+            scale: [0, 1.2, 0],
+          }}
+          transition={{ duration: 2 + Math.random(), repeat: Infinity, delay: i * 0.5, ease: "easeInOut" }}
         />
       ))}
     </div>
