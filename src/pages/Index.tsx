@@ -322,7 +322,12 @@ const Index = () => {
   // Likes
   const [likedIds, setLikedIds] = useState<Set<string>>(new Set());
   const [likedSponsorIds, setLikedSponsorIds] = useState<Set<string>>(new Set());
+  const [productLikeCounts, setProductLikeCounts] = useState<Record<string, number>>({});
+  const [sponsorLikeCounts, setSponsorLikeCounts] = useState<Record<string, number>>({});
   const visitorId = getVisitorId();
+
+  // Admin posts
+  const [adminPosts, setAdminPosts] = useState<any[]>([]);
 
   // Tickets
   const [tickets, setTickets] = useState<SupportTicket[]>([]);
