@@ -21,7 +21,7 @@ export default function TekaTekiGame() {
     if (typeof window === "undefined") return null;
     return localStorage.getItem("balance_visitor_id") || getVisitorId();
   }, []);
-  const { credits, isUnlimited, fetchCredits, useCredit } = useGameCredits(activeVisitorId);
+  const { credits, isUnlimited, fetchCredits, useCredit, freeRemaining } = useGameCredits(activeVisitorId);
   const [riddle, setRiddle] = useState("");
   const [answer, setAnswer] = useState("");
   const [explanation, setExplanation] = useState("");

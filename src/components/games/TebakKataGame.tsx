@@ -23,7 +23,7 @@ export default function TebakKataGame() {
     if (typeof window === "undefined") return null;
     return localStorage.getItem("balance_visitor_id") || getVisitorId();
   }, []);
-  const { credits, isUnlimited, fetchCredits, useCredit } = useGameCredits(activeVisitorId);
+  const { credits, isUnlimited, fetchCredits, useCredit, freeRemaining } = useGameCredits(activeVisitorId);
   const [word, setWord] = useState("");
   const [hints, setHints] = useState<string[]>([]);
   const [revealedHints, setRevealedHints] = useState(0);

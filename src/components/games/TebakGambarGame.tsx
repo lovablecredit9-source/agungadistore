@@ -32,7 +32,7 @@ const INITIAL_BLUR: Record<Difficulty, number> = {
 export default function TebakGambarGame() {
   const balanceVisitorId = localStorage.getItem("balance_visitor_id");
   const activeVisitorId = balanceVisitorId || localStorage.getItem("visitor_id");
-  const { credits, isUnlimited, fetchCredits, useCredit } = useGameCredits(activeVisitorId);
+  const { credits, isUnlimited, fetchCredits, useCredit, freeRemaining } = useGameCredits(activeVisitorId);
   const [difficulty, setDifficulty] = useState<Difficulty | null>(null);
   const [imageData, setImageData] = useState("");
   const [answer, setAnswer] = useState("");
