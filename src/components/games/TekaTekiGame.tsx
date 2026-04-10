@@ -260,7 +260,7 @@ export default function TekaTekiGame() {
                 <Timer className="w-8 h-8 text-orange-500 mx-auto" />
                 <p className="font-bold text-orange-600">Waktu Habis!</p>
                 <div className="flex gap-2 justify-center">
-                  <RevealAnswerButton credits={credits} isUnlimited={isUnlimited} onReveal={handleRevealAnswer} />
+                  <RevealAnswerButton credits={credits} isUnlimited={isUnlimited} onReveal={handleRevealAnswer} visitorId={activeVisitorId} useCredit={useCredit} />
                   <Button onClick={fetchRiddle} variant="outline" size="sm" className="gap-1">
                     <RefreshCw className="w-4 h-4" /> Soal Baru
                   </Button>
@@ -289,7 +289,7 @@ export default function TekaTekiGame() {
           {/* Reveal answer button during game */}
           {gameActive && !answerRevealed && (
             <div className="flex justify-center">
-              <RevealAnswerButton credits={credits} isUnlimited={isUnlimited} onReveal={handleRevealAnswer} />
+              <RevealAnswerButton credits={credits} isUnlimited={isUnlimited} onReveal={handleRevealAnswer} visitorId={activeVisitorId} useCredit={useCredit} />
             </div>
           )}
         </>
