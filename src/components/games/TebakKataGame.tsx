@@ -16,7 +16,7 @@ import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-const MAX_WRONG = 3;
+const MAX_WRONG = Infinity; // No limit - keep same question until correct
 
 export default function TebakKataGame() {
   const visitorId = getVisitorId();
@@ -109,20 +109,12 @@ export default function TebakKataGame() {
     } else {
       const newWrong = wrongCount + 1;
       setWrongCount(newWrong);
-      if (newWrong >= MAX_WRONG) {
-        if (timerRef.current) clearInterval(timerRef.current);
-        setGameActive(false);
-        setResult("wrong");
-        // Add 0 points (game over)
-        const newData = addPoints(0);
-        setPlayerData(newData);
-      } else {
-        setResult("wrong");
-        if (revealedHints < hints.length) {
-          setRevealedHints(r => r + 1);
-        }
-        setTimeout(() => setResult(null), 1200);
+      setResult("wrong");
+      // Reveal extra hint on wrong answer
+      if (revealedHints < hints.length) {
+        setRevealedHints(r => r + 1);
       }
+      setTimeout(() => setResult(null), 1200);
     }
     setGuess("");
   };
