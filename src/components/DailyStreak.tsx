@@ -220,10 +220,26 @@ export default function DailyStreak() {
   const [claiming, setClaiming] = useState(false);
   const [justClaimed, setJustClaimed] = useState(false);
   const [showMilestone, setShowMilestone] = useState<typeof MILESTONES[0] | null>(null);
+  const [activeSub, setActiveSub] = useState<{plan_name: string; expires_at: string} | null>(null);
+  const [buyingPlan, setBuyingPlan] = useState<number | null>(null);
+  const [showPinForStreak, setShowPinForStreak] = useState(false);
+  const [streakPinInput, setStreakPinInput] = useState("");
+  const [pendingPlanDays, setPendingPlanDays] = useState<number | null>(null);
   const visitorId = getVisitorId();
   const countdown = useCountdown();
+  const { toast } = useToast();
 
-  useEffect(() => { fetchStreak(); }, []);
+  const AUTO_CLAIM_PLANS = [
+    { name: "10 Hari", days: 10, price: 5000 },
+    { name: "20 Hari", days: 20, price: 10000 },
+    { name: "30 Hari", days: 30, price: 15000 },
+    { name: "2 Bulan", days: 60, price: 20000 },
+    { name: "3 Bulan", days: 90, price: 30000 },
+    { name: "6 Bulan", days: 180, price: 50000 },
+    { name: "1 Tahun", days: 365, price: 80000 },
+  ];
+
+  useEffect(() => { fetchStreak(); fetchSubscription(); }, []);
 
   const fetchStreak = useCallback(async () => {
     const { data } = await supabase
@@ -231,7 +247,51 @@ export default function DailyStreak() {
     if (data) setStreak(data as unknown as StreakData);
   }, [visitorId]);
 
-  const canClaim = !streak || !isToday(streak.last_claim_date);
+  const fetchSubscription = useCallback(async () => {
+    const { data } = await supabase
+      .from("streak_subscriptions" as any)
+      .select("plan_name, expires_at")
+      .eq("visitor_id", visitorId)
+      .eq("is_active", true)
+      .gte("expires_at", new Date().toISOString())
+      .order("expires_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (data) setActiveSub(data as any);
+  }, [visitorId]);
+
+  async function purchaseStreakPlan(planDays: number, pin?: string) {
+    setBuyingPlan(planDays);
+    try {
+      const { data, error } = await supabase.functions.invoke("purchase-streak-plan", {
+        body: { visitorId, planDays, pin },
+      });
+      if (error || data?.error) {
+        if (data?.needPin) {
+          setPendingPlanDays(planDays);
+          setShowPinForStreak(true);
+          setBuyingPlan(null);
+          return;
+        }
+        toast({ title: "Gagal", description: data?.error || "Gagal membeli paket", variant: "destructive" });
+        return;
+      }
+      toast({ title: "Berhasil! 🎉", description: `Paket Auto-Klaim ${data.plan} aktif sampai ${new Date(data.expires_at).toLocaleDateString("id-ID")}` });
+      fetchSubscription();
+    } catch {
+      toast({ title: "Error", description: "Koneksi gagal", variant: "destructive" });
+    } finally {
+      setBuyingPlan(null);
+    }
+  }
+
+  function confirmStreakPin() {
+    if (!pendingPlanDays || streakPinInput.length < 4) return;
+    setShowPinForStreak(false);
+    purchaseStreakPlan(pendingPlanDays, streakPinInput);
+    setStreakPinInput("");
+    setPendingPlanDays(null);
+  }
   const streakBroken = streak && !isToday(streak.last_claim_date) && !isYesterday(streak.last_claim_date);
 
   async function claimStreak() {
