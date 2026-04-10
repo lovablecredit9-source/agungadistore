@@ -7,9 +7,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import {
   Image, Eye, EyeOff, HelpCircle, Trophy, XCircle,
-  Loader2, RefreshCw, Clock, Star, Lightbulb, AlertTriangle
-import {
-  Image, Eye, EyeOff, HelpCircle, Trophy, XCircle,
   Loader2, RefreshCw, Clock, Star, Lightbulb, AlertTriangle, Gift
 } from "lucide-react";
 import {
