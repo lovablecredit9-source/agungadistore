@@ -225,6 +225,7 @@ export default function DailyStreak() {
   const [showPinForStreak, setShowPinForStreak] = useState(false);
   const [streakPinInput, setStreakPinInput] = useState("");
   const [pendingPlanDays, setPendingPlanDays] = useState<number | null>(null);
+  const [showConfirm, setShowConfirm] = useState<{ days: number; name: string; price: number } | null>(null);
   const visitorId = getVisitorId();
   const countdown = useCountdown();
   const { toast } = useToast();
