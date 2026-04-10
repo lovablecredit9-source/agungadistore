@@ -2226,6 +2226,10 @@ const Index = () => {
           <DailyStreak />
         )}
 
+        {tab === "game" && (
+          <GameTab />
+        )}
+
         {tab === "adminpost" && (
           <div className="space-y-4">
             <h2 className="text-lg font-extrabold flex items-center gap-2">
