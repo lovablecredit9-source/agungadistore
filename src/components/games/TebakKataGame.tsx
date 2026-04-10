@@ -4,6 +4,8 @@ import { Input } from "@/components/ui/input";
 import { motion, AnimatePresence } from "framer-motion";
 import { RefreshCw, Loader2, Lightbulb, Check, X, Zap, Timer, Trophy, Star, Brain, ChevronDown } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { getVisitorId } from "@/lib/visitor-id";
+import { useGameCredits, GameCreditsBadge, BuyCreditsDialog, RevealAnswerButton } from "./GameCredits";
 import { useToast } from "@/hooks/use-toast";
 import {
   loadGameData, addPoints, getPointsForQuestion,
@@ -17,6 +19,9 @@ import {
 const MAX_WRONG = 3;
 
 export default function TebakKataGame() {
+  const visitorId = getVisitorId();
+  const balanceVisitorId = localStorage.getItem("balance_visitor_id");
+  const { credits, isUnlimited, fetchCredits, useCredit } = useGameCredits(balanceVisitorId);
   const [word, setWord] = useState("");
   const [hints, setHints] = useState<string[]>([]);
   const [revealedHints, setRevealedHints] = useState(0);
@@ -30,6 +35,7 @@ export default function TebakKataGame() {
   const [playerData, setPlayerData] = useState<GameLevel>(loadGameData);
   const [timeLeft, setTimeLeft] = useState(0);
   const [earnedPoints, setEarnedPoints] = useState(0);
+  const [answerRevealed, setAnswerRevealed] = useState(false);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const { toast } = useToast();
 
@@ -65,6 +71,7 @@ export default function TebakKataGame() {
     setWrongCount(0);
     setGameActive(false);
     setEarnedPoints(0);
+    setAnswerRevealed(false);
 
     try {
       const { data, error } = await supabase.functions.invoke("tebak-kata", {
@@ -347,10 +354,36 @@ export default function TebakKataGame() {
                 <X className="w-4 h-4" /> Menyerah
               </Button>
             )}
+            {gameActive && !answerRevealed && (
+              <RevealAnswerButton
+                onReveal={() => { setAnswerRevealed(true); }}
+                visitorId={balanceVisitorId}
+                useCredit={useCredit}
+                credits={credits}
+                isUnlimited={isUnlimited}
+              />
+            )}
             <Button onClick={startNewGame} disabled={loading} className="flex-1 gap-1">
               {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
               {gameActive ? "Kata Baru" : "Main Lagi"}
             </Button>
+          </div>
+
+          {/* Revealed answer */}
+          {answerRevealed && gameActive && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
+              className="bg-accent/10 border border-accent/20 rounded-xl p-3 text-center"
+            >
+              <p className="text-xs text-muted-foreground">Kunci Jawaban:</p>
+              <p className="font-extrabold text-lg text-accent">{word}</p>
+            </motion.div>
+          )}
+
+          {/* Credits info */}
+          <div className="flex items-center justify-between">
+            <GameCreditsBadge credits={credits} isUnlimited={isUnlimited} />
+            <BuyCreditsDialog visitorId={balanceVisitorId} onPurchased={fetchCredits} />
           </div>
 
           {/* Question info */}
