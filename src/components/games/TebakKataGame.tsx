@@ -16,7 +16,7 @@ import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-const MAX_WRONG = Infinity; // No limit - keep same question until correct
+const MAX_WRONG = Number.MAX_SAFE_INTEGER; // effectively unlimited without crashing array lengths
 
 export default function TebakKataGame() {
   const balanceVisitorId = localStorage.getItem("balance_visitor_id");
