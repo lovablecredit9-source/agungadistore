@@ -673,7 +673,7 @@ export default function DailyStreak() {
               variant="outline"
               className="h-auto py-2.5 px-3 flex flex-col items-center gap-0.5 text-xs hover:border-primary/50"
               disabled={buyingPlan === plan.days}
-              onClick={() => purchaseStreakPlan(plan.days)}
+              onClick={() => handlePlanClick(plan.days)}
             >
               {buyingPlan === plan.days ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
