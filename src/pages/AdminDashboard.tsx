@@ -1870,6 +1870,7 @@ const AdminDashboard = () => {
         )}
         {tab === "sponsor" && <AdminSponsorTab />}
         {tab === "apikey" && <AdminApiKeyTab />}
+        {tab === "postingan" && <AdminPostsTab />}
       </main>
     </div>
   );
