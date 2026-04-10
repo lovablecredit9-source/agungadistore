@@ -237,7 +237,7 @@ export default function TekaTekiGame() {
 
           {/* Wrong count */}
           {wrongCount > 0 && gameActive && (
-            <p className="text-xs text-muted-foreground text-center">Salah: {wrongCount}x — Coba lagi!</p>
+            <p className="text-xs text-muted-foreground text-center">Salah: {wrongCount}/{MAX_WRONG} — Sisa {MAX_WRONG - wrongCount} kesempatan!</p>
           )}
 
           {/* Answer revealed */}
