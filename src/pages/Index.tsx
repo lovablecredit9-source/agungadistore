@@ -46,7 +46,7 @@ import DailyStreak from "@/components/DailyStreak";
 import HomeBannerSlider from "@/components/HomeBannerSlider";
 import BalanceAuth from "@/components/BalanceAuth";
 
-type Tab = "beranda" | "produk" | "voucher" | "history" | "likes" | "tiket" | "saldo" | "playlist" | "publik" | "sponsor" | "streak";
+type Tab = "beranda" | "produk" | "voucher" | "history" | "likes" | "tiket" | "saldo" | "playlist" | "publik" | "sponsor" | "streak" | "adminpost";
 
 interface UserBalance {
   id: string;
@@ -267,6 +267,7 @@ const TAB_PATHS: Record<string, Tab> = {
   "/publik": "publik",
   "/sponsor": "sponsor",
   "/streak": "streak",
+  "/admin-post": "adminpost",
 };
 const PATH_FROM_TAB: Record<Tab, string> = Object.fromEntries(
   Object.entries(TAB_PATHS).map(([k, v]) => [v, k])
@@ -1480,51 +1481,28 @@ const Index = () => {
               </div>
             </div>
 
-            {/* Admin Posts */}
+            {/* Admin Posts Preview */}
             {adminPosts.length > 0 && (
               <div className="space-y-3">
-                <h3 className="font-bold text-sm flex items-center gap-2">
-                  <FileText className="w-4 h-4 text-primary" /> Postingan Terbaru
-                </h3>
-                {adminPosts.slice(0, 5).map(post => (
-                  <Card key={post.id} className="overflow-hidden hover:shadow-lg transition-all">
-                    {post.image_url && (
-                      <img src={post.image_url} alt={post.title} className="w-full h-40 object-cover" />
-                    )}
-                    <CardContent className="p-4 space-y-2">
-                      <h4 className="font-bold text-sm">{post.title}</h4>
-                      {post.content && <p className="text-xs text-muted-foreground line-clamp-3">{post.content}</p>}
-                      {post.link_url && (
-                        <a href={post.link_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs text-primary font-medium hover:underline">
-                          <ExternalLink className="w-3 h-3" /> Buka Link
-                        </a>
+                <div className="flex items-center justify-between">
+                  <h3 className="font-bold text-sm flex items-center gap-2">
+                    <FileText className="w-4 h-4 text-primary" /> Postingan Admin
+                  </h3>
+                  <button onClick={() => setTab("adminpost")} className="text-xs text-primary font-medium hover:underline">
+                    Lihat Semua →
+                  </button>
+                </div>
+                {adminPosts.slice(0, 2).map(post => (
+                  <Card key={post.id} className="overflow-hidden hover:shadow-lg transition-all cursor-pointer" onClick={() => setTab("adminpost")}>
+                    <CardContent className="p-3 flex items-center gap-3">
+                      {post.image_url && (
+                        <img src={post.image_url} alt={post.title} className="w-14 h-14 rounded-lg object-cover shrink-0" />
                       )}
-                      {/* Social media links */}
-                      {[
-                        { val: post.whatsapp, label: "WA", href: post.whatsapp?.startsWith("http") ? post.whatsapp : `https://wa.me/62${(post.whatsapp || "").replace(/^0/, "")}` },
-                        { val: post.instagram, label: "IG", href: post.instagram?.startsWith("http") ? post.instagram : `https://instagram.com/${post.instagram}` },
-                        { val: post.tiktok, label: "TikTok", href: post.tiktok?.startsWith("http") ? post.tiktok : `https://tiktok.com/@${post.tiktok}` },
-                        { val: post.youtube, label: "YT", href: post.youtube?.startsWith("http") ? post.youtube : `https://youtube.com/@${post.youtube}` },
-                        { val: post.twitter, label: "X", href: post.twitter?.startsWith("http") ? post.twitter : `https://twitter.com/${post.twitter}` },
-                        { val: post.facebook, label: "FB", href: post.facebook?.startsWith("http") ? post.facebook : `https://facebook.com/${post.facebook}` },
-                      ].filter(s => s.val).length > 0 && (
-                        <div className="flex flex-wrap gap-1.5">
-                          {[
-                            { val: post.whatsapp, label: "WA", href: post.whatsapp?.startsWith("http") ? post.whatsapp : `https://wa.me/62${(post.whatsapp || "").replace(/^0/, "")}` },
-                            { val: post.instagram, label: "IG", href: post.instagram?.startsWith("http") ? post.instagram : `https://instagram.com/${post.instagram}` },
-                            { val: post.tiktok, label: "TikTok", href: post.tiktok?.startsWith("http") ? post.tiktok : `https://tiktok.com/@${post.tiktok}` },
-                            { val: post.youtube, label: "YT", href: post.youtube?.startsWith("http") ? post.youtube : `https://youtube.com/@${post.youtube}` },
-                            { val: post.twitter, label: "X", href: post.twitter?.startsWith("http") ? post.twitter : `https://twitter.com/${post.twitter}` },
-                            { val: post.facebook, label: "FB", href: post.facebook?.startsWith("http") ? post.facebook : `https://facebook.com/${post.facebook}` },
-                          ].filter(s => s.val).map(s => (
-                            <a key={s.label} href={s.href} target="_blank" rel="noopener noreferrer"
-                              className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-primary/10 text-primary hover:bg-primary/20 transition-colors">
-                              {s.label}
-                            </a>
-                          ))}
-                        </div>
-                      )}
-                      <p className="text-[10px] text-muted-foreground">{new Date(post.created_at).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" })}</p>
+                      <div className="min-w-0 flex-1">
+                        <h4 className="font-bold text-sm truncate">{post.title}</h4>
+                        {post.content && <p className="text-[11px] text-muted-foreground line-clamp-1">{post.content}</p>}
+                        <p className="text-[10px] text-muted-foreground mt-0.5">{new Date(post.created_at).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" })}</p>
+                      </div>
                     </CardContent>
                   </Card>
                 ))}
@@ -2244,6 +2222,64 @@ const Index = () => {
 
         {tab === "streak" && (
           <DailyStreak />
+        )}
+
+        {tab === "adminpost" && (
+          <div className="space-y-4">
+            <h2 className="text-lg font-extrabold flex items-center gap-2">
+              <FileText className="w-5 h-5 text-primary" /> Postingan Admin
+            </h2>
+            {adminPosts.length === 0 && (
+              <div className="text-center py-16 text-muted-foreground">
+                <FileText className="w-16 h-16 mx-auto mb-3 opacity-20" />
+                <p className="text-sm font-medium">Belum ada postingan.</p>
+              </div>
+            )}
+            {adminPosts.map(post => (
+              <Card key={post.id} className="overflow-hidden hover:shadow-lg transition-all">
+                {post.image_url && (
+                  <img src={post.image_url} alt={post.title} className="w-full h-48 object-cover" />
+                )}
+                <CardContent className="p-4 space-y-2">
+                  <h3 className="font-bold text-base">{post.title}</h3>
+                  {post.content && <p className="text-xs text-muted-foreground whitespace-pre-line">{post.content}</p>}
+                  {post.link_url && (
+                    <a href={post.link_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs text-primary font-medium hover:underline">
+                      <ExternalLink className="w-3 h-3" /> Buka Link
+                    </a>
+                  )}
+                  {[
+                    { val: post.whatsapp, label: "WhatsApp", href: post.whatsapp?.startsWith("http") ? post.whatsapp : `https://wa.me/62${(post.whatsapp || "").replace(/^0/, "")}` },
+                    { val: post.instagram, label: "Instagram", href: post.instagram?.startsWith("http") ? post.instagram : `https://instagram.com/${post.instagram}` },
+                    { val: post.tiktok, label: "TikTok", href: post.tiktok?.startsWith("http") ? post.tiktok : `https://tiktok.com/@${post.tiktok}` },
+                    { val: post.youtube, label: "YouTube", href: post.youtube?.startsWith("http") ? post.youtube : `https://youtube.com/@${post.youtube}` },
+                    { val: post.twitter, label: "X/Twitter", href: post.twitter?.startsWith("http") ? post.twitter : `https://twitter.com/${post.twitter}` },
+                    { val: post.facebook, label: "Facebook", href: post.facebook?.startsWith("http") ? post.facebook : `https://facebook.com/${post.facebook}` },
+                  ].filter(s => s.val).length > 0 && (
+                    <div className="flex flex-wrap gap-1.5 pt-1">
+                      {[
+                        { val: post.whatsapp, label: "WhatsApp", href: post.whatsapp?.startsWith("http") ? post.whatsapp : `https://wa.me/62${(post.whatsapp || "").replace(/^0/, "")}` },
+                        { val: post.instagram, label: "Instagram", href: post.instagram?.startsWith("http") ? post.instagram : `https://instagram.com/${post.instagram}` },
+                        { val: post.tiktok, label: "TikTok", href: post.tiktok?.startsWith("http") ? post.tiktok : `https://tiktok.com/@${post.tiktok}` },
+                        { val: post.youtube, label: "YouTube", href: post.youtube?.startsWith("http") ? post.youtube : `https://youtube.com/@${post.youtube}` },
+                        { val: post.twitter, label: "X/Twitter", href: post.twitter?.startsWith("http") ? post.twitter : `https://twitter.com/${post.twitter}` },
+                        { val: post.facebook, label: "Facebook", href: post.facebook?.startsWith("http") ? post.facebook : `https://facebook.com/${post.facebook}` },
+                      ].filter(s => s.val).map(s => (
+                        <a key={s.label} href={s.href} target="_blank" rel="noopener noreferrer"
+                          className="text-[10px] font-bold px-2.5 py-1 rounded-full bg-primary/10 text-primary hover:bg-primary/20 transition-colors">
+                          {s.label}
+                        </a>
+                      ))}
+                    </div>
+                  )}
+                  <p className="text-[10px] text-muted-foreground pt-1">
+                    <CalendarDays className="w-3 h-3 inline mr-1" />
+                    {new Date(post.created_at).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" })}
+                  </p>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
         )}
       </main>
 
@@ -3348,6 +3384,7 @@ const Index = () => {
             { key: "publik" as Tab, icon: Globe, label: "Publik" },
             { key: "sponsor" as Tab, icon: Megaphone, label: "Sponsor" },
             { key: "streak" as Tab, icon: CalendarDays, label: "Streak" },
+            { key: "adminpost" as Tab, icon: FileText, label: "Admin" },
           ]).map(({ key, icon: Icon, label }) => (
             <button key={key} onClick={() => setTab(key)}
               className={`flex-1 flex flex-col items-center py-2 text-[10px] transition-all duration-200 ${tab === key ? "text-primary font-bold" : "text-muted-foreground hover:text-foreground"}`}>
