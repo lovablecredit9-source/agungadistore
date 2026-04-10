@@ -1143,6 +1143,45 @@ export type Database = {
         }
         Relationships: []
       }
+      streak_subscriptions: {
+        Row: {
+          created_at: string
+          expires_at: string
+          id: string
+          is_active: boolean
+          plan_days: number
+          plan_name: string
+          price_paid: number
+          starts_at: string
+          updated_at: string
+          visitor_id: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at: string
+          id?: string
+          is_active?: boolean
+          plan_days: number
+          plan_name: string
+          price_paid?: number
+          starts_at?: string
+          updated_at?: string
+          visitor_id: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string
+          id?: string
+          is_active?: boolean
+          plan_days?: number
+          plan_name?: string
+          price_paid?: number
+          starts_at?: string
+          updated_at?: string
+          visitor_id?: string
+        }
+        Relationships: []
+      }
       support_tickets: {
         Row: {
           category: string
