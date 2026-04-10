@@ -45,8 +45,9 @@ import LikesTab from "@/components/LikesTab";
 import DailyStreak from "@/components/DailyStreak";
 import HomeBannerSlider from "@/components/HomeBannerSlider";
 import BalanceAuth from "@/components/BalanceAuth";
+import GameTab from "@/components/GameTab";
 
-type Tab = "beranda" | "produk" | "voucher" | "history" | "likes" | "tiket" | "saldo" | "playlist" | "publik" | "sponsor" | "streak" | "adminpost";
+type Tab = "beranda" | "produk" | "voucher" | "history" | "likes" | "tiket" | "saldo" | "playlist" | "publik" | "sponsor" | "streak" | "adminpost" | "game";
 
 interface UserBalance {
   id: string;
