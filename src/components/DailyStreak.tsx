@@ -688,6 +688,32 @@ export default function DailyStreak() {
         </div>
       </motion.div>
 
+      {/* Confirmation Dialog */}
+      {showConfirm && (
+        <div className="fixed inset-0 z-[94] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setShowConfirm(null)}>
+          <div className="bg-card w-full max-w-sm rounded-2xl p-5 space-y-4 animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between">
+              <h3 className="font-extrabold text-lg flex items-center gap-2"><ShoppingCart className="w-5 h-5 text-primary" /> Konfirmasi Pembelian</h3>
+              <button onClick={() => setShowConfirm(null)} className="w-8 h-8 rounded-full bg-muted flex items-center justify-center"><X className="w-4 h-4" /></button>
+            </div>
+            <div className="bg-muted/50 rounded-xl p-4 text-center space-y-1">
+              <p className="text-sm text-muted-foreground">Paket Auto-Klaim</p>
+              <p className="text-xl font-extrabold">{showConfirm.name}</p>
+              <p className="text-lg font-bold text-primary">Rp{showConfirm.price.toLocaleString("id-ID")}</p>
+            </div>
+            <p className="text-xs text-muted-foreground text-center">Apakah kamu yakin ingin membeli paket ini? Saldo akan dipotong otomatis.</p>
+            <div className="flex gap-2">
+              <Button variant="outline" className="flex-1" onClick={() => setShowConfirm(null)}>
+                Tidak
+              </Button>
+              <Button className="flex-1 bg-gradient-to-r from-primary to-accent text-primary-foreground font-bold" onClick={confirmPurchase}>
+                Ya, Beli
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* PIN Modal for Streak */}
       {showPinForStreak && (
         <div className="fixed inset-0 z-[95] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setShowPinForStreak(false)}>
