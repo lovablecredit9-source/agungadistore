@@ -562,6 +562,7 @@ export default function DailyStreak() {
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             className="fixed inset-0 z-[100] bg-black/70 backdrop-blur-md flex items-center justify-center p-4"
           >
+            <ConfettiEffect />
             <motion.div
               initial={{ scale: 0.5, rotate: -10 }}
               animate={{ scale: 1, rotate: 0 }}
@@ -569,25 +570,46 @@ export default function DailyStreak() {
               transition={{ type: "spring", damping: 15 }}
               className="bg-card w-full max-w-xs rounded-2xl p-6 text-center space-y-4 relative overflow-hidden"
             >
-              {/* BG glow */}
-              <div className={`absolute inset-0 bg-gradient-to-br ${getTierColor(showMilestone.tier)} opacity-10`} />
+              <motion.div
+                className={`absolute inset-0 bg-gradient-to-br ${getTierColor(showMilestone.tier)}`}
+                animate={{ opacity: [0.05, 0.15, 0.05] }}
+                transition={{ duration: 2, repeat: Infinity }}
+              />
+              <ShimmerEffect />
               <div className="relative z-10 space-y-4">
-                <div className="flex justify-center">
+                <div className="flex justify-center relative">
                   <motion.div
-                    animate={{ scale: [1, 1.2, 1] }}
-                    transition={{ duration: 0.6, repeat: Infinity }}
+                    animate={{ scale: [1, 1.15, 1], rotate: [0, 5, -5, 0] }}
+                    transition={{ duration: 1.2, repeat: Infinity }}
                   >
-                    <TierFire tier={showMilestone.tier} size="xl" />
+                    <span className="text-6xl block">{showMilestone.emoji}</span>
                   </motion.div>
+                  <div className="absolute -bottom-4 left-1/2 -translate-x-1/2">
+                    <motion.div animate={{ scale: [1, 1.3, 1] }} transition={{ duration: 0.6, repeat: Infinity }}>
+                      <TierFire tier={showMilestone.tier} size="lg" />
+                    </motion.div>
+                  </div>
+                  <FloatingSparkles count={8} tier={showMilestone.tier} />
                 </div>
-                <h3 className="text-xl font-extrabold">Milestone Tercapai!</h3>
+                <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
+                  <motion.div animate={{ scale: [1, 1.05, 1] }} transition={{ duration: 1.5, repeat: Infinity }}>
+                    <Sparkles className="w-5 h-5 mx-auto mb-1 text-yellow-500" />
+                  </motion.div>
+                  <h3 className="text-xl font-extrabold">🎉 Milestone Tercapai!</h3>
+                </motion.div>
                 <p className="text-sm text-muted-foreground">
                   Kamu berhasil streak <span className="font-bold text-foreground">{showMilestone.label}</span>!
                 </p>
-                <div className={`bg-gradient-to-r ${getTierColor(showMilestone.tier)} rounded-xl p-3`}>
-                  <p className="text-xs font-bold text-white/80">Gelar Baru</p>
-                  <p className="text-lg font-extrabold text-white">{showMilestone.reward}</p>
-                </div>
+                <motion.div
+                  initial={{ scale: 0.8, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  transition={{ delay: 0.5, type: "spring" }}
+                  className={`bg-gradient-to-r ${getTierColor(showMilestone.tier)} rounded-xl p-4 relative overflow-hidden`}
+                >
+                  <ShimmerEffect />
+                  <p className="text-xs font-bold text-white/80 relative z-10">Gelar Baru</p>
+                  <p className="text-2xl font-extrabold text-white relative z-10">{showMilestone.emoji} {showMilestone.reward}</p>
+                </motion.div>
                 <Button
                   onClick={() => setShowMilestone(null)}
                   className={`w-full bg-gradient-to-r ${getTierColor(showMilestone.tier)} text-white font-bold`}
