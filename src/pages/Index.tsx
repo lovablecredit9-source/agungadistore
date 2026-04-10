@@ -1481,51 +1481,28 @@ const Index = () => {
               </div>
             </div>
 
-            {/* Admin Posts */}
+            {/* Admin Posts Preview */}
             {adminPosts.length > 0 && (
               <div className="space-y-3">
-                <h3 className="font-bold text-sm flex items-center gap-2">
-                  <FileText className="w-4 h-4 text-primary" /> Postingan Terbaru
-                </h3>
-                {adminPosts.slice(0, 5).map(post => (
-                  <Card key={post.id} className="overflow-hidden hover:shadow-lg transition-all">
-                    {post.image_url && (
-                      <img src={post.image_url} alt={post.title} className="w-full h-40 object-cover" />
-                    )}
-                    <CardContent className="p-4 space-y-2">
-                      <h4 className="font-bold text-sm">{post.title}</h4>
-                      {post.content && <p className="text-xs text-muted-foreground line-clamp-3">{post.content}</p>}
-                      {post.link_url && (
-                        <a href={post.link_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs text-primary font-medium hover:underline">
-                          <ExternalLink className="w-3 h-3" /> Buka Link
-                        </a>
+                <div className="flex items-center justify-between">
+                  <h3 className="font-bold text-sm flex items-center gap-2">
+                    <FileText className="w-4 h-4 text-primary" /> Postingan Admin
+                  </h3>
+                  <button onClick={() => setTab("adminpost")} className="text-xs text-primary font-medium hover:underline">
+                    Lihat Semua →
+                  </button>
+                </div>
+                {adminPosts.slice(0, 2).map(post => (
+                  <Card key={post.id} className="overflow-hidden hover:shadow-lg transition-all cursor-pointer" onClick={() => setTab("adminpost")}>
+                    <CardContent className="p-3 flex items-center gap-3">
+                      {post.image_url && (
+                        <img src={post.image_url} alt={post.title} className="w-14 h-14 rounded-lg object-cover shrink-0" />
                       )}
-                      {/* Social media links */}
-                      {[
-                        { val: post.whatsapp, label: "WA", href: post.whatsapp?.startsWith("http") ? post.whatsapp : `https://wa.me/62${(post.whatsapp || "").replace(/^0/, "")}` },
-                        { val: post.instagram, label: "IG", href: post.instagram?.startsWith("http") ? post.instagram : `https://instagram.com/${post.instagram}` },
-                        { val: post.tiktok, label: "TikTok", href: post.tiktok?.startsWith("http") ? post.tiktok : `https://tiktok.com/@${post.tiktok}` },
-                        { val: post.youtube, label: "YT", href: post.youtube?.startsWith("http") ? post.youtube : `https://youtube.com/@${post.youtube}` },
-                        { val: post.twitter, label: "X", href: post.twitter?.startsWith("http") ? post.twitter : `https://twitter.com/${post.twitter}` },
-                        { val: post.facebook, label: "FB", href: post.facebook?.startsWith("http") ? post.facebook : `https://facebook.com/${post.facebook}` },
-                      ].filter(s => s.val).length > 0 && (
-                        <div className="flex flex-wrap gap-1.5">
-                          {[
-                            { val: post.whatsapp, label: "WA", href: post.whatsapp?.startsWith("http") ? post.whatsapp : `https://wa.me/62${(post.whatsapp || "").replace(/^0/, "")}` },
-                            { val: post.instagram, label: "IG", href: post.instagram?.startsWith("http") ? post.instagram : `https://instagram.com/${post.instagram}` },
-                            { val: post.tiktok, label: "TikTok", href: post.tiktok?.startsWith("http") ? post.tiktok : `https://tiktok.com/@${post.tiktok}` },
-                            { val: post.youtube, label: "YT", href: post.youtube?.startsWith("http") ? post.youtube : `https://youtube.com/@${post.youtube}` },
-                            { val: post.twitter, label: "X", href: post.twitter?.startsWith("http") ? post.twitter : `https://twitter.com/${post.twitter}` },
-                            { val: post.facebook, label: "FB", href: post.facebook?.startsWith("http") ? post.facebook : `https://facebook.com/${post.facebook}` },
-                          ].filter(s => s.val).map(s => (
-                            <a key={s.label} href={s.href} target="_blank" rel="noopener noreferrer"
-                              className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-primary/10 text-primary hover:bg-primary/20 transition-colors">
-                              {s.label}
-                            </a>
-                          ))}
-                        </div>
-                      )}
-                      <p className="text-[10px] text-muted-foreground">{new Date(post.created_at).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" })}</p>
+                      <div className="min-w-0 flex-1">
+                        <h4 className="font-bold text-sm truncate">{post.title}</h4>
+                        {post.content && <p className="text-[11px] text-muted-foreground line-clamp-1">{post.content}</p>}
+                        <p className="text-[10px] text-muted-foreground mt-0.5">{new Date(post.created_at).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" })}</p>
+                      </div>
                     </CardContent>
                   </Card>
                 ))}
