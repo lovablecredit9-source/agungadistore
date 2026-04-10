@@ -397,8 +397,7 @@ export default function TebakKataGame() {
               initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
               className="bg-accent/10 border border-accent/20 rounded-xl p-3 text-center"
             >
-              <p className="text-xs text-muted-foreground">Kunci Jawaban:</p>
-              <p className="font-extrabold text-lg text-accent">{word}</p>
+              <p className="text-xs text-muted-foreground">Jawaban sudah diisi otomatis, tekan tombol Tebak untuk submit!</p>
             </motion.div>
           )}
 
