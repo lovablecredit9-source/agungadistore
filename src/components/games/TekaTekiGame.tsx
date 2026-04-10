@@ -318,7 +318,7 @@ export default function TekaTekiGame() {
           </AnimatePresence>
 
           {/* Input */}
-          {gameActive && !answerRevealed && (
+          {gameActive && (
             <div className="flex gap-2">
               <Input
                 value={guess}
