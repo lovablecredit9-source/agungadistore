@@ -251,6 +251,20 @@ export default function TekaTekiGame() {
             </motion.div>
           )}
 
+          {/* Game over - max wrong */}
+          {result === "wrong" && !gameActive && wrongCount >= MAX_WRONG && (
+            <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }}
+              className="rounded-xl bg-red-500/10 border border-red-500/30 p-4 text-center space-y-2">
+              <X className="w-8 h-8 text-red-500 mx-auto" />
+              <p className="font-bold text-red-600">Game Over! Salah {MAX_WRONG}x</p>
+              <p className="text-sm font-bold">Jawaban: <span className="uppercase">{answer}</span></p>
+              {explanation && <p className="text-xs text-muted-foreground">{explanation}</p>}
+              <Button onClick={fetchRiddle} className="gap-2 mt-2" size="sm">
+                <RefreshCw className="w-4 h-4" /> Soal Baru
+              </Button>
+            </motion.div>
+          )}
+
           {/* Result */}
           <AnimatePresence>
             {result === "correct" && (
