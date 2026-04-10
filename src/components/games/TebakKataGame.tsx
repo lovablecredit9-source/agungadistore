@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useRef } from "react";
+import { useState, useCallback, useEffect, useRef, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { motion, AnimatePresence } from "framer-motion";
@@ -19,8 +19,10 @@ import {
 const MAX_WRONG = Number.MAX_SAFE_INTEGER; // effectively unlimited without crashing array lengths
 
 export default function TebakKataGame() {
-  const balanceVisitorId = localStorage.getItem("balance_visitor_id");
-  const activeVisitorId = balanceVisitorId || getVisitorId();
+  const activeVisitorId = useMemo(() => {
+    if (typeof window === "undefined") return null;
+    return localStorage.getItem("balance_visitor_id") || getVisitorId();
+  }, []);
   const { credits, isUnlimited, fetchCredits, useCredit } = useGameCredits(activeVisitorId);
   const [word, setWord] = useState("");
   const [hints, setHints] = useState<string[]>([]);

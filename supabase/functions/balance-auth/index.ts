@@ -5,6 +5,68 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+function normalizePhone(value: string) {
+  return value.trim().replace(/[\s-]/g, "");
+}
+
+function normalizedPhoneVariants(value: string) {
+  const cleaned = value.replace(/\D/g, "");
+  const variants = new Set<string>();
+
+  if (!cleaned) return [];
+
+  variants.add(cleaned);
+  variants.add(`+${cleaned}`);
+
+  if (cleaned.startsWith("62")) {
+    variants.add(`0${cleaned.slice(2)}`);
+  }
+
+  if (cleaned.startsWith("0")) {
+    variants.add(`62${cleaned.slice(1)}`);
+    variants.add(`+62${cleaned.slice(1)}`);
+  }
+
+  return Array.from(variants);
+}
+
+async function findUserByLogin(admin: ReturnType<typeof createClient>, identifier: string, passwordHash: string) {
+  const trimmed = identifier.trim();
+  const lowered = trimmed.toLowerCase();
+
+  const { data: byEmail } = await admin
+    .from("user_balances")
+    .select("id, visitor_id, username, phone, email, balance")
+    .eq("email", lowered)
+    .eq("password_hash", passwordHash)
+    .maybeSingle();
+
+  if (byEmail) return byEmail;
+
+  const { data: byUsername } = await admin
+    .from("user_balances")
+    .select("id, visitor_id, username, phone, email, balance")
+    .ilike("username", trimmed)
+    .eq("password_hash", passwordHash)
+    .maybeSingle();
+
+  if (byUsername) return byUsername;
+
+  const phoneVariants = normalizedPhoneVariants(trimmed);
+  if (phoneVariants.length > 0) {
+    const { data: phoneUsers } = await admin
+      .from("user_balances")
+      .select("id, visitor_id, username, phone, email, balance")
+      .in("phone", phoneVariants)
+      .eq("password_hash", passwordHash)
+      .limit(1);
+
+    if (phoneUsers?.[0]) return phoneUsers[0];
+  }
+
+  return null;
+}
+
 async function hashPassword(password: string): Promise<string> {
   const encoder = new TextEncoder();
   const data = encoder.encode(password);
@@ -50,7 +112,7 @@ Deno.serve(async (request) => {
       }
 
       const normalizedEmail = email.trim().toLowerCase();
-      const normalizedPhone = phone.trim();
+      const normalizedPhone = normalizePhone(phone);
       const normalizedUsername = username.trim();
       const passwordHash = await hashPassword(password);
       const visitorId = payload.visitorId || crypto.randomUUID();
@@ -78,26 +140,38 @@ Deno.serve(async (request) => {
         return Response.json({ error: "Username sudah dipakai. Pilih username lain." }, { status: 400, headers: corsHeaders });
       }
 
+      const phoneVariants = normalizedPhoneVariants(normalizedPhone);
+
       const { data: existingPhone } = await admin
         .from("user_balances")
         .select("id")
-        .eq("phone", normalizedPhone)
+        .in("phone", phoneVariants.length > 0 ? phoneVariants : [normalizedPhone])
         .neq("phone", "")
+        .limit(1)
         .maybeSingle();
 
       if (existingPhone && existingPhone.id !== existingByVisitor?.id && existingPhone.id !== existingByEmail?.id) {
         return Response.json({ error: "Nomor HP sudah terdaftar. Silakan login." }, { status: 400, headers: corsHeaders });
       }
 
-      const upgradeTarget = existingByEmail ?? existingByVisitor;
-
-      if (upgradeTarget) {
-        const sameAccount = !existingByEmail || !existingByVisitor || existingByEmail.id === existingByVisitor.id;
-        if (!sameAccount) {
-          return Response.json({ error: "Perangkat ini sudah terhubung ke akun lain. Silakan login dengan akun yang sudah ada." }, { status: 400, headers: corsHeaders });
+      if (existingByEmail && existingByVisitor && existingByEmail.id !== existingByVisitor.id) {
+        const visitorAlreadyRegistered = Boolean(existingByVisitor.email && existingByVisitor.password_hash);
+        if (visitorAlreadyRegistered) {
+          return Response.json({ error: "Perangkat ini sudah dipakai akun lain. Logout dulu atau login ke akun yang sudah ada." }, { status: 400, headers: corsHeaders });
         }
 
-        const alreadyRegistered = Boolean(upgradeTarget.email && upgradeTarget.password_hash);
+        const { error: releaseVisitorError } = await admin
+          .from("user_balances")
+          .update({ visitor_id: crypto.randomUUID() })
+          .eq("id", existingByVisitor.id);
+
+        if (releaseVisitorError) {
+          return Response.json({ error: "Gagal menyiapkan perangkat untuk akun ini. Coba lagi." }, { status: 500, headers: corsHeaders });
+        }
+      }
+
+      if (existingByEmail) {
+        const alreadyRegistered = Boolean(existingByEmail.email && existingByEmail.password_hash);
         if (alreadyRegistered) {
           return Response.json({ error: "Email sudah terdaftar. Silakan login." }, { status: 400, headers: corsHeaders });
         }
@@ -111,7 +185,7 @@ Deno.serve(async (request) => {
             email: normalizedEmail,
             password_hash: passwordHash,
           })
-          .eq("id", upgradeTarget.id)
+          .eq("id", existingByEmail.id)
           .select("id, visitor_id, username, phone, email, balance")
           .single();
 
@@ -130,6 +204,41 @@ Deno.serve(async (request) => {
         }
 
         return Response.json({ success: true, user: upgradedUser, action: "registered" }, { headers: corsHeaders });
+      }
+
+      if (existingByVisitor) {
+        const alreadyRegistered = Boolean(existingByVisitor.email && existingByVisitor.password_hash);
+        if (alreadyRegistered) {
+          return Response.json({ error: "Perangkat ini sudah memiliki akun. Silakan login." }, { status: 400, headers: corsHeaders });
+        }
+
+        const { data: upgradedGuest, error: upgradeGuestError } = await admin
+          .from("user_balances")
+          .update({
+            username: normalizedUsername,
+            phone: normalizedPhone,
+            email: normalizedEmail,
+            password_hash: passwordHash,
+          })
+          .eq("id", existingByVisitor.id)
+          .select("id, visitor_id, username, phone, email, balance")
+          .single();
+
+        if (upgradeGuestError || !upgradedGuest) {
+          return Response.json({ error: "Gagal melengkapi akun: " + (upgradeGuestError?.message || "unknown") }, { status: 500, headers: corsHeaders });
+        }
+
+        if (payload.deviceInfo) {
+          await admin.from("balance_login_history").insert({
+            user_balance_id: upgradedGuest.id,
+            visitor_id: visitorId,
+            device_info: payload.deviceInfo?.device || null,
+            browser: payload.deviceInfo?.browser || null,
+            ip_address: payload.deviceInfo?.ip || null,
+          });
+        }
+
+        return Response.json({ success: true, user: upgradedGuest, action: "registered" }, { headers: corsHeaders });
       }
 
       const { data: newUser, error: insertError } = await admin
@@ -171,40 +280,7 @@ Deno.serve(async (request) => {
       }
 
       const passwordHash = await hashPassword(password);
-      const trimmed = identifier.trim().toLowerCase();
-
-      // Try to find user by email, username, or phone
-      let user = null;
-
-      // Try email
-      const { data: byEmail } = await admin
-        .from("user_balances")
-        .select("id, visitor_id, username, phone, email, balance")
-        .eq("email", trimmed)
-        .eq("password_hash", passwordHash)
-        .maybeSingle();
-      
-      if (byEmail) {
-        user = byEmail;
-      } else {
-        // Try username (case insensitive)
-        const { data: allUsers } = await admin
-          .from("user_balances")
-          .select("id, visitor_id, username, phone, email, balance, password_hash")
-          .eq("password_hash", passwordHash);
-        
-        if (allUsers) {
-          user = allUsers.find(u => 
-            u.username.toLowerCase() === trimmed || 
-            u.phone.replace(/[\s\-+]/g, "").endsWith(trimmed.replace(/[\s\-+]/g, ""))
-          );
-          if (user) {
-            // Remove password_hash from response
-            const { password_hash, ...safeUser } = user;
-            user = safeUser;
-          }
-        }
-      }
+      const user = await findUserByLogin(admin, identifier, passwordHash);
 
       if (!user) {
         return Response.json({ error: "Email/Username/No HP atau sandi salah" }, { status: 401, headers: corsHeaders });
@@ -354,7 +430,7 @@ Deno.serve(async (request) => {
         updates.username = username.trim();
       }
       if (phone && phone.trim().length >= 7) {
-        updates.phone = phone.trim();
+        updates.phone = normalizePhone(phone);
       }
 
       if (Object.keys(updates).length === 0) {
