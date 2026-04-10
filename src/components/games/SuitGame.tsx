@@ -1,16 +1,19 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
-import { RefreshCw, Swords, Shield, Wind } from "lucide-react";
+import { RefreshCw, Swords } from "lucide-react";
 import { loadSuitScore, saveSuitScore, type SuitScore } from "./gameStore";
+import handBatu from "@/assets/hand-batu.png";
+import handGunting from "@/assets/hand-gunting.png";
+import handKertas from "@/assets/hand-kertas.png";
 
 type RPS = "batu" | "gunting" | "kertas";
 type GameResult = "menang" | "kalah" | "seri";
 
-const RPS_CONFIG: Record<RPS, { icon: React.ReactNode; label: string; gradient: string }> = {
-  batu: { icon: <Shield className="w-7 h-7" />, label: "Batu", gradient: "from-slate-500 to-slate-700" },
-  gunting: { icon: <Swords className="w-7 h-7" />, label: "Gunting", gradient: "from-red-500 to-red-700" },
-  kertas: { icon: <Wind className="w-7 h-7" />, label: "Kertas", gradient: "from-blue-500 to-blue-700" },
+const RPS_CONFIG: Record<RPS, { img: string; label: string; gradient: string }> = {
+  batu: { img: handBatu, label: "Batu", gradient: "from-slate-500 to-slate-700" },
+  gunting: { img: handGunting, label: "Gunting", gradient: "from-red-500 to-red-700" },
+  kertas: { img: handKertas, label: "Kertas", gradient: "from-blue-500 to-blue-700" },
 };
 
 function getResult(player: RPS, ai: RPS): GameResult {
@@ -103,7 +106,7 @@ export default function SuitGame() {
               animate={animating ? { rotate: [0, -15, 15, -10, 0], scale: [1, 1.05, 0.95, 1] } : {}}
               transition={{ duration: 0.7 }}
             >
-              {playerChoice ? RPS_CONFIG[playerChoice].icon : <span className="text-muted-foreground text-xs">?</span>}
+              {playerChoice ? <img src={RPS_CONFIG[playerChoice].img} alt={RPS_CONFIG[playerChoice].label} className="w-14 h-14 object-contain" /> : <span className="text-muted-foreground text-xs">?</span>}
             </motion.div>
             {playerChoice && !animating && (
               <p className="text-xs font-bold">{RPS_CONFIG[playerChoice].label}</p>
@@ -133,7 +136,7 @@ export default function SuitGame() {
                 <motion.div animate={{ rotate: 360 }} transition={{ duration: 0.5, repeat: Infinity }}>
                   <Swords className="w-6 h-6 text-muted-foreground" />
                 </motion.div>
-              ) : aiChoice ? RPS_CONFIG[aiChoice].icon : <span className="text-muted-foreground text-xs">?</span>}
+              ) : aiChoice ? <img src={RPS_CONFIG[aiChoice].img} alt={RPS_CONFIG[aiChoice].label} className="w-14 h-14 object-contain" /> : <span className="text-muted-foreground text-xs">?</span>}
             </motion.div>
             {aiChoice && !animating && (
               <p className="text-xs font-bold">{RPS_CONFIG[aiChoice].label}</p>
@@ -175,11 +178,7 @@ export default function SuitGame() {
                 : "border-border hover:border-primary/50 bg-card"
             } disabled:opacity-50`}
           >
-            <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
-              playerChoice === choice && !animating ? "text-white" : "text-foreground"
-            }`}>
-              {RPS_CONFIG[choice].icon}
-            </div>
+            <img src={RPS_CONFIG[choice].img} alt={RPS_CONFIG[choice].label} className="w-12 h-12 object-contain" />
             <span className="text-xs font-bold">{RPS_CONFIG[choice].label}</span>
           </motion.button>
         ))}
