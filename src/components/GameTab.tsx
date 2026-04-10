@@ -2,11 +2,12 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { motion } from "framer-motion";
-import { Gamepad2, ArrowLeft, Swords, Brain } from "lucide-react";
+import { Gamepad2, ArrowLeft, Swords, Brain, ImageIcon } from "lucide-react";
 import SuitGame from "@/components/games/SuitGame";
 import TebakKataGame from "@/components/games/TebakKataGame";
+import TebakGambarGame from "@/components/games/TebakGambarGame";
 
-type GameMode = "menu" | "suit" | "tebak";
+type GameMode = "menu" | "suit" | "tebak" | "tebak_gambar";
 
 export default function GameTab() {
   const [mode, setMode] = useState<GameMode>("menu");
