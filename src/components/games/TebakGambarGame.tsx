@@ -220,6 +220,18 @@ export default function TebakGambarGame() {
           </CardContent>
         </Card>
 
+        {/* Credits & Free plays */}
+        <div className="flex items-center justify-between flex-wrap gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
+            <div className="flex items-center gap-1 text-xs bg-green-500/10 border border-green-500/30 rounded-lg px-2 py-1">
+              <Gift className="w-3 h-3 text-green-500" />
+              <span className="font-bold text-green-600">{freePlays}/{MAX_FREE_PLAYS} gratis</span>
+            </div>
+            <GameCreditsBadge credits={credits} isUnlimited={isUnlimited} />
+          </div>
+          <BuyCreditsDialog visitorId={activeVisitorId} onPurchased={fetchCredits} />
+        </div>
+
         <p className="text-sm text-muted-foreground text-center">Pilih tingkat kesulitan:</p>
         <div className="grid gap-2">
           {DIFFICULTIES.map(d => (
