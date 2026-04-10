@@ -75,6 +75,29 @@ Deno.serve(async (request) => {
       const passwordHash = await hashPassword(password);
       const visitorId = payload.visitorId || crypto.randomUUID();
 
+      // Check if visitor_id already has an account
+      const { data: existingVisitor } = await admin
+        .from("user_balances")
+        .select("id")
+        .eq("visitor_id", visitorId)
+        .maybeSingle();
+
+      if (existingVisitor) {
+        return Response.json({ error: "Perangkat ini sudah memiliki akun. Silakan login." }, { status: 400, headers: corsHeaders });
+      }
+
+      // Check if phone already exists
+      const { data: existingPhone } = await admin
+        .from("user_balances")
+        .select("id")
+        .eq("phone", phone.trim())
+        .neq("phone", "")
+        .maybeSingle();
+
+      if (existingPhone) {
+        return Response.json({ error: "Nomor HP sudah terdaftar. Silakan login." }, { status: 400, headers: corsHeaders });
+      }
+
       const { data: newUser, error: insertError } = await admin
         .from("user_balances")
         .insert({
