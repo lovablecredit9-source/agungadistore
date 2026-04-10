@@ -374,6 +374,7 @@ export default function TebakGambarGame() {
                 useCredit={useCredit}
                 credits={credits}
                 isUnlimited={isUnlimited}
+                freeRemaining={freeRemaining}
               />
             )}
           </div>
@@ -391,7 +392,7 @@ export default function TebakGambarGame() {
 
       {/* Credits info */}
       <div className="flex items-center justify-between">
-        <GameCreditsBadge credits={credits} isUnlimited={isUnlimited} />
+        <GameCreditsBadge credits={credits} isUnlimited={isUnlimited} freeRemaining={freeRemaining} />
         <BuyCreditsDialog visitorId={activeVisitorId} onPurchased={fetchCredits} />
       </div>
 

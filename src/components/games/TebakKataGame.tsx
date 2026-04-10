@@ -354,6 +354,7 @@ export default function TebakKataGame() {
                 useCredit={useCredit}
                 credits={credits}
                 isUnlimited={isUnlimited}
+                freeRemaining={freeRemaining}
               />
             )}
             <Button onClick={startNewGame} disabled={loading} className="flex-1 gap-1">
@@ -375,7 +376,7 @@ export default function TebakKataGame() {
 
           {/* Credits info */}
           <div className="flex items-center justify-between">
-            <GameCreditsBadge credits={credits} isUnlimited={isUnlimited} />
+            <GameCreditsBadge credits={credits} isUnlimited={isUnlimited} freeRemaining={freeRemaining} />
             <BuyCreditsDialog visitorId={activeVisitorId} onPurchased={fetchCredits} />
           </div>
 
