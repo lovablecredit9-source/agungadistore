@@ -226,6 +226,16 @@ export default function TebakKataGame() {
           </div>
           <h3 className="font-extrabold text-lg">Tebak Kata AI</h3>
           <p className="text-sm text-muted-foreground">AI beri petunjuk, kamu tebak kata! Maksimal 3x salah.</p>
+          <div className="flex items-center justify-center gap-2 flex-wrap">
+            <div className="flex items-center gap-1 text-xs bg-green-500/10 border border-green-500/30 rounded-lg px-2 py-1">
+              <Gift className="w-3 h-3 text-green-500" />
+              <span className="font-bold text-green-600">{freePlays}/{MAX_FREE_PLAYS} gratis</span>
+            </div>
+            <GameCreditsBadge credits={credits} isUnlimited={isUnlimited} />
+          </div>
+          <div className="flex gap-2 justify-center">
+            <BuyCreditsDialog visitorId={activeVisitorId} onPurchased={fetchCredits} />
+          </div>
           <Button onClick={startNewGame} disabled={loading} className="gap-2">
             {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Zap className="w-4 h-4" />}
             Mulai Game
