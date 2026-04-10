@@ -1409,6 +1409,50 @@ const Index = () => {
               ]}
             />
 
+            {/* Streak Promo Card */}
+            <div
+              onClick={() => setTab("streak")}
+              className="relative overflow-hidden rounded-2xl cursor-pointer group transition-transform hover:scale-[1.01] active:scale-[0.99]"
+              style={{
+                background: "linear-gradient(135deg, #ff6b00 0%, #ff4500 40%, #e63900 100%)",
+              }}
+            >
+              <div className="absolute inset-0 opacity-20">
+                {[...Array(5)].map((_, i) => (
+                  <div
+                    key={i}
+                    className="absolute rounded-full animate-pulse"
+                    style={{
+                      width: 40 + i * 20,
+                      height: 40 + i * 20,
+                      background: "radial-gradient(circle, rgba(255,204,0,0.4), transparent 70%)",
+                      top: `${10 + i * 12}%`,
+                      left: `${60 + i * 6}%`,
+                      animationDelay: `${i * 0.3}s`,
+                    }}
+                  />
+                ))}
+              </div>
+              <div className="relative z-10 p-4 flex items-center gap-4">
+                <div className="shrink-0">
+                  <svg viewBox="0 0 36 36" width={48} height={56} style={{ filter: "drop-shadow(0 2px 8px rgba(255,200,0,0.5))" }}>
+                    <path d="M17.56 1.56c-.28-.45-.88-.45-1.12 0C14.86 4.36 6 18.56 6 24c0 6.63 4.92 12 11 12h2c6.08 0 11-5.37 11-12 0-5.44-8.86-19.64-10.44-22.44z" fill="#F4900C"/>
+                    <path d="M18.5 3c-1 1.6-9.5 15.8-9.5 21 0 5.52 3.8 10 8.5 10.5C12.2 34 8 29.8 8 24.5 8 19 16.2 5.8 18.5 3z" fill="#FFAC33" opacity="0.7"/>
+                    <path d="M18 8c-.2-.32-.64-.32-.82 0C16.08 10.08 10 19.6 10 24c0 4.42 3.36 8 7.5 8h1c4.14 0 7.5-3.58 7.5-8 0-4.4-6.08-13.92-7.18-16z" fill="#FFCC4D"/>
+                    <ellipse cx="18" cy="28" rx="4" ry="5.5" fill="#FFEE93"/>
+                    <ellipse cx="18" cy="29" rx="2.5" ry="3.5" fill="#FFF4C8" opacity="0.8"/>
+                  </svg>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-white font-extrabold text-base leading-tight">Daily Streak 🔥</h3>
+                  <p className="text-white/80 text-xs mt-0.5">Klaim setiap hari, raih milestone & gelar eksklusif!</p>
+                  <div className="mt-2 inline-flex items-center gap-1.5 bg-white/20 backdrop-blur-sm rounded-full px-3 py-1">
+                    <span className="text-white text-[11px] font-bold">Klaim Sekarang →</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
             <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary/15 via-accent/10 to-primary/5 p-5">
               <div className="absolute -top-4 -right-4 opacity-10"><Crown className="w-24 h-24 text-primary" /></div>
               <div className="relative z-10 text-center">
