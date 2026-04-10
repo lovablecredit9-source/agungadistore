@@ -3377,7 +3377,7 @@ const Index = () => {
 
 
       <nav className="fixed bottom-0 left-0 right-0 bg-card/95 backdrop-blur-md border-t border-border z-50 shadow-[0_-4px_20px_rgba(0,0,0,0.08)]">
-        <div className="flex max-w-lg mx-auto">
+        <div className="flex max-w-lg mx-auto overflow-x-auto scrollbar-hide">
           {([
             { key: "beranda" as Tab, icon: Home, label: t("nav.home", lang) },
             { key: "produk" as Tab, icon: Package, label: t("nav.products", lang) },
@@ -3390,10 +3390,11 @@ const Index = () => {
             { key: "publik" as Tab, icon: Globe, label: "Publik" },
             { key: "sponsor" as Tab, icon: Megaphone, label: "Sponsor" },
             { key: "streak" as Tab, icon: CalendarDays, label: "Streak" },
+            { key: "game" as Tab, icon: Gamepad2, label: "Game" },
             { key: "adminpost" as Tab, icon: FileText, label: "Admin" },
           ]).map(({ key, icon: Icon, label }) => (
             <button key={key} onClick={() => setTab(key)}
-              className={`flex-1 flex flex-col items-center py-2 text-[10px] transition-all duration-200 ${tab === key ? "text-primary font-bold" : "text-muted-foreground hover:text-foreground"}`}>
+              className={`min-w-[52px] flex-shrink-0 flex flex-col items-center py-2 text-[10px] transition-all duration-200 ${tab === key ? "text-primary font-bold" : "text-muted-foreground hover:text-foreground"}`}>
               <div className={`p-1 rounded-xl transition-all duration-200 ${tab === key ? "bg-primary/10 scale-110" : ""}`}><Icon className="w-4 h-4" /></div>
               <span className="mt-0.5">{label}</span>
             </button>
