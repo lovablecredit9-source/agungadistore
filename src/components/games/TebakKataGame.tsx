@@ -23,7 +23,7 @@ export default function TebakKataGame() {
     if (typeof window === "undefined") return null;
     return localStorage.getItem("balance_visitor_id") || getVisitorId();
   }, []);
-  const { credits, isUnlimited, fetchCredits, useCredit } = useGameCredits(activeVisitorId);
+  const { credits, isUnlimited, fetchCredits, useCredit, freeRemaining } = useGameCredits(activeVisitorId);
   const [word, setWord] = useState("");
   const [hints, setHints] = useState<string[]>([]);
   const [revealedHints, setRevealedHints] = useState(0);
@@ -354,6 +354,7 @@ export default function TebakKataGame() {
                 useCredit={useCredit}
                 credits={credits}
                 isUnlimited={isUnlimited}
+                freeRemaining={freeRemaining}
               />
             )}
             <Button onClick={startNewGame} disabled={loading} className="flex-1 gap-1">
@@ -375,7 +376,7 @@ export default function TebakKataGame() {
 
           {/* Credits info */}
           <div className="flex items-center justify-between">
-            <GameCreditsBadge credits={credits} isUnlimited={isUnlimited} />
+            <GameCreditsBadge credits={credits} isUnlimited={isUnlimited} freeRemaining={freeRemaining} />
             <BuyCreditsDialog visitorId={activeVisitorId} onPurchased={fetchCredits} />
           </div>
 

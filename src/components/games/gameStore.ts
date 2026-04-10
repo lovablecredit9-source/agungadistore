@@ -79,3 +79,51 @@ export function loadSuitScore(): SuitScore {
 export function saveSuitScore(s: SuitScore) {
   localStorage.setItem(SUIT_KEY, JSON.stringify(s));
 }
+
+// Daily free reveal system
+const FREE_REVEAL_KEY = "game_daily_free_reveals";
+const MAX_FREE_REVEALS = 3;
+
+interface DailyFreeData {
+  date: string; // YYYY-MM-DD
+  used: number;
+}
+
+function getTodayStr(): string {
+  return new Date().toISOString().slice(0, 10);
+}
+
+export function getDailyFreeReveals(): { used: number; remaining: number } {
+  try {
+    const raw = localStorage.getItem(FREE_REVEAL_KEY);
+    if (raw) {
+      const data: DailyFreeData = JSON.parse(raw);
+      if (data.date === getTodayStr()) {
+        return { used: data.used, remaining: Math.max(0, MAX_FREE_REVEALS - data.used) };
+      }
+    }
+  } catch {}
+  return { used: 0, remaining: MAX_FREE_REVEALS };
+}
+
+export function useDailyFreeReveal(): boolean {
+  const { remaining } = getDailyFreeReveals();
+  if (remaining <= 0) return false;
+  const today = getTodayStr();
+  try {
+    const raw = localStorage.getItem(FREE_REVEAL_KEY);
+    let data: DailyFreeData = { date: today, used: 0 };
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed.date === today) data = parsed;
+      else data = { date: today, used: 0 };
+    }
+    data.used += 1;
+    localStorage.setItem(FREE_REVEAL_KEY, JSON.stringify(data));
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export { MAX_FREE_REVEALS };
