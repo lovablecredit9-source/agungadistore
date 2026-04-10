@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { motion } from "framer-motion";
@@ -9,8 +9,16 @@ import TebakGambarGame from "@/components/games/TebakGambarGame";
 
 type GameMode = "menu" | "suit" | "tebak" | "tebak_gambar";
 
-export default function GameTab() {
+interface GameTabProps {
+  resetSignal?: number;
+}
+
+export default function GameTab({ resetSignal = 0 }: GameTabProps) {
   const [mode, setMode] = useState<GameMode>("menu");
+
+  useEffect(() => {
+    setMode("menu");
+  }, [resetSignal]);
 
   if (mode === "suit") {
     return (
