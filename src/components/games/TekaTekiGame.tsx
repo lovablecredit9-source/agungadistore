@@ -90,6 +90,8 @@ export default function TekaTekiGame() {
     }
   }, [difficulty, diffConfig.timeSeconds, toast]);
 
+  const MAX_WRONG = 3;
+
   const handleGuess = () => {
     if (!guess.trim()) return;
     const g = guess.trim().toLowerCase();
@@ -103,11 +105,20 @@ export default function TekaTekiGame() {
       setEarnedPoints(pts);
       const updated = addPoints(pts);
       setPlayerData(updated);
+      // Auto-next after 2 seconds
+      setTimeout(() => fetchRiddle(), 2000);
     } else {
-      setResult("wrong");
-      setWrongCount(c => c + 1);
+      const newWrong = wrongCount + 1;
+      setWrongCount(newWrong);
       setGuess("");
-      setTimeout(() => setResult(null), 1500);
+      if (newWrong >= MAX_WRONG) {
+        if (timerRef.current) clearInterval(timerRef.current);
+        setResult("wrong");
+        setGameActive(false);
+      } else {
+        setResult("wrong");
+        setTimeout(() => setResult(null), 1500);
+      }
     }
   };
 
