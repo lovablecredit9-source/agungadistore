@@ -500,7 +500,7 @@ export default function DailyStreak() {
         </div>
       </motion.div>
 
-      {/* Milestones */}
+      {/* Milestones - Horizontal Fire Progress */}
       <motion.div
         initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.2 }}
@@ -513,6 +513,111 @@ export default function DailyStreak() {
             transition={{ duration: 2, repeat: Infinity, repeatDelay: 3 }}
           >✨</motion.span>
         </h4>
+
+        {/* Horizontal fire row like reference image */}
+        <div className="overflow-x-auto pb-2">
+          <div className="flex items-center justify-start gap-0 min-w-max px-2">
+            {MILESTONES.map((m, i) => {
+              const achieved = currentStreak >= m.days;
+              const isNext = !achieved && (i === 0 || currentStreak >= MILESTONES[i - 1].days);
+              return (
+                <div key={m.days} className="flex items-center">
+                  {/* Connector dash */}
+                  {i > 0 && (
+                    <div className={`w-5 h-[3px] rounded-full mx-0.5 ${
+                      achieved ? `bg-gradient-to-r ${getTierColor(m.tier)}` : "bg-muted-foreground/20"
+                    }`} />
+                  )}
+                  {/* Fire icon + label */}
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.5 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: 0.1 + i * 0.06 }}
+                    className="flex flex-col items-center"
+                  >
+                    <div className="relative w-10 h-12 flex items-end justify-center">
+                      {achieved ? (
+                        /* Animated colored fire */
+                        <div className="relative w-full h-full flex items-end justify-center">
+                          {[0, 1, 2].map(j => {
+                            const tierColors: Record<number, string[]> = {
+                              1: ["#ff6b00", "#ff9500", "#ffcc00"],
+                              2: ["#3b82f6", "#60a5fa", "#93c5fd"],
+                              3: ["#a855f7", "#c084fc", "#e879f9"],
+                              4: ["#ef4444", "#f87171", "#fca5a5"],
+                              5: ["#f59e0b", "#fbbf24", "#fde68a"],
+                            };
+                            const c = tierColors[m.tier] || tierColors[1];
+                            return (
+                              <motion.div
+                                key={j}
+                                className="absolute bottom-0 rounded-[50%_50%_50%_50%/60%_60%_40%_40%]"
+                                style={{
+                                  width: j === 0 ? '65%' : j === 1 ? '45%' : '28%',
+                                  height: j === 0 ? '80%' : j === 1 ? '60%' : '40%',
+                                  background: `radial-gradient(ellipse at bottom, ${c[j]} 0%, ${c[j]}99 50%, transparent 100%)`,
+                                  filter: `blur(${j === 0 ? 0.5 : j}px)`,
+                                  zIndex: 3 - j,
+                                }}
+                                animate={{
+                                  scaleY: [1, 1.25, 0.9, 1.15, 1],
+                                  scaleX: [1, 0.9, 1.1, 0.95, 1],
+                                  opacity: [0.9, 1, 0.7, 0.95, 0.9],
+                                }}
+                                transition={{
+                                  duration: 0.7 + j * 0.2,
+                                  repeat: Infinity,
+                                  ease: "easeInOut",
+                                  delay: j * 0.1,
+                                }}
+                              />
+                            );
+                          })}
+                          {/* Glow */}
+                          <motion.div
+                            className="absolute bottom-0 left-1/2 -translate-x-1/2 w-8 h-4 rounded-full"
+                            style={{
+                              background: m.tier === 1 ? "rgba(255,107,0,0.3)" : m.tier === 2 ? "rgba(59,130,246,0.3)" : m.tier === 3 ? "rgba(168,85,247,0.3)" : m.tier === 4 ? "rgba(239,68,68,0.3)" : "rgba(245,158,11,0.3)",
+                              filter: "blur(4px)",
+                            }}
+                            animate={{ opacity: [0.5, 1, 0.5], scale: [0.9, 1.1, 0.9] }}
+                            transition={{ duration: 1.5, repeat: Infinity }}
+                          />
+                        </div>
+                      ) : (
+                        /* Gray inactive fire */
+                        <div className="relative w-full h-full flex items-end justify-center opacity-40">
+                          {[0, 1].map(j => (
+                            <div
+                              key={j}
+                              className="absolute bottom-0 rounded-[50%_50%_50%_50%/60%_60%_40%_40%]"
+                              style={{
+                                width: j === 0 ? '60%' : '35%',
+                                height: j === 0 ? '75%' : '50%',
+                                background: `radial-gradient(ellipse at bottom, #9ca3af ${j === 0 ? '0%' : '10%'}, #d1d5db 50%, transparent 100%)`,
+                                filter: `blur(${j}px)`,
+                                zIndex: 2 - j,
+                              }}
+                            />
+                          ))}
+                          {/* Gray droplet center */}
+                          <div className="absolute bottom-[25%] w-2 h-2.5 rounded-full bg-gray-300/60" style={{ zIndex: 3 }} />
+                        </div>
+                      )}
+                    </div>
+                    <span className={`text-[10px] font-bold mt-0.5 ${
+                      achieved ? "text-foreground" : isNext ? "text-muted-foreground" : "text-muted-foreground/40"
+                    }`}>
+                      {m.days}d
+                    </span>
+                  </motion.div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Detailed milestone list */}
         <div className="space-y-2">
           {MILESTONES.map((m, i) => {
             const achieved = currentStreak >= m.days;
@@ -522,12 +627,8 @@ export default function DailyStreak() {
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.1 + i * 0.05 }}
-                className={`flex items-center gap-3 rounded-xl p-3 transition-all ${
-                  achieved ? "relative overflow-hidden " : ""
-                }${
-                  achieved
-                    ? `bg-gradient-to-r ${getTierColor(m.tier)} bg-opacity-10 border border-current/10`
-                    : "bg-muted/30 opacity-50"
+                className={`flex items-center gap-3 rounded-xl p-2.5 transition-all ${
+                  achieved ? "relative overflow-hidden" : "bg-muted/30 opacity-50"
                 }`}
                 style={achieved ? {
                   background: `linear-gradient(to right, hsl(var(--card)), hsl(var(--card)))`,
@@ -535,31 +636,18 @@ export default function DailyStreak() {
                 } : undefined}
               >
                 {achieved && <ShimmerEffect />}
-                <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                  achieved ? `bg-gradient-to-br ${getTierColor(m.tier)} shadow-lg ${getTierGlow(m.tier)}` : "bg-muted"
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${
+                  achieved ? `bg-gradient-to-br ${getTierColor(m.tier)} shadow-md` : "bg-muted"
                 }`}>
                   {achieved ? (
-                    <motion.span
-                      className="text-lg"
-                      animate={{ scale: [1, 1.2, 1] }}
-                      transition={{ duration: 2, repeat: Infinity, delay: i * 0.3 }}
-                    >{m.emoji}</motion.span>
+                    <Check className="w-4 h-4 text-white" />
                   ) : (
-                    <span className="text-xs font-bold text-muted-foreground">{m.days}</span>
+                    <span className="text-[10px] font-bold text-muted-foreground">{m.days}</span>
                   )}
                 </div>
                 <div className="flex-1 min-w-0 relative z-10">
-                  <p className={`font-bold text-sm ${achieved ? "text-foreground" : "text-muted-foreground"}`}>{m.label}</p>
-                  <p className={`text-[10px] ${achieved ? "text-muted-foreground" : "text-muted-foreground/60"}`}>{m.emoji} {m.reward}</p>
+                  <p className={`font-bold text-xs ${achieved ? "text-foreground" : "text-muted-foreground"}`}>{m.label} • {m.reward}</p>
                 </div>
-                {achieved && (
-                  <motion.div
-                    initial={{ scale: 0 }} animate={{ scale: 1 }}
-                    className={`w-6 h-6 rounded-full bg-gradient-to-br ${getTierColor(m.tier)} flex items-center justify-center relative z-10`}
-                  >
-                    <Check className="w-3.5 h-3.5 text-white" />
-                  </motion.div>
-                )}
               </motion.div>
             );
           })}
