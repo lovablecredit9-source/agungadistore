@@ -11,7 +11,6 @@ import {
   loadGameData, addPoints, getPointsForQuestion,
   getLevelFromPoints, getNextLevelThreshold, getCurrentLevelThreshold,
   DIFFICULTIES, type Difficulty, type GameLevel,
-  getDailyFreePlays, useDailyFreePlay, MAX_FREE_PLAYS,
 } from "./gameStore";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
@@ -23,7 +22,6 @@ export default function TekaTekiGame() {
     return localStorage.getItem("balance_visitor_id") || getVisitorId();
   }, []);
   const { credits, isUnlimited, fetchCredits, useCredit } = useGameCredits(activeVisitorId);
-  const [freePlays, setFreePlays] = useState(getDailyFreePlays().remaining);
   const [riddle, setRiddle] = useState("");
   const [answer, setAnswer] = useState("");
   const [explanation, setExplanation] = useState("");
@@ -64,27 +62,6 @@ export default function TekaTekiGame() {
   }, [gameActive, timeLeft > 0]);
 
   const fetchRiddle = useCallback(async () => {
-    // Check free plays or credits
-    if (questionNumber > 0) {
-      const fp = getDailyFreePlays();
-      if (fp.remaining > 0) {
-        useDailyFreePlay();
-        setFreePlays(getDailyFreePlays().remaining);
-      } else if (!isUnlimited && credits <= 0) {
-        toast({ title: "Kesempatan habis", description: `${MAX_FREE_PLAYS}x gratis harian sudah terpakai. Beli kredit untuk lanjut bermain!`, variant: "destructive" });
-        return;
-      } else if (!isUnlimited) {
-        const ok = await useCredit();
-        if (!ok) {
-          toast({ title: "Kredit habis", description: "Beli kredit untuk lanjut bermain", variant: "destructive" });
-          return;
-        }
-      }
-    } else {
-      // First question always uses a free play
-      useDailyFreePlay();
-      setFreePlays(getDailyFreePlays().remaining);
-    }
 
     setLoading(true);
     setResult(null);

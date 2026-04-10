@@ -12,7 +12,6 @@ import {
 import {
   addPoints, getPointsForQuestion, loadGameData, getLevelFromPoints,
   getNextLevelThreshold, getCurrentLevelThreshold, type GameLevel,
-  getDailyFreePlays, useDailyFreePlay, MAX_FREE_PLAYS,
 } from "./gameStore";
 import { useGameCredits, GameCreditsBadge, BuyCreditsDialog, RevealAnswerButton } from "./GameCredits";
 
@@ -34,7 +33,6 @@ export default function TebakGambarGame() {
   const balanceVisitorId = localStorage.getItem("balance_visitor_id");
   const activeVisitorId = balanceVisitorId || localStorage.getItem("visitor_id");
   const { credits, isUnlimited, fetchCredits, useCredit } = useGameCredits(activeVisitorId);
-  const [freePlays, setFreePlays] = useState(getDailyFreePlays().remaining);
   const [difficulty, setDifficulty] = useState<Difficulty | null>(null);
   const [imageData, setImageData] = useState("");
   const [answer, setAnswer] = useState("");
@@ -74,27 +72,6 @@ export default function TebakGambarGame() {
 
   const fetchNewImage = useCallback(async () => {
     if (!difficulty) return;
-
-    // Check free plays or credits
-    if (questionNum > 0) {
-      const fp = getDailyFreePlays();
-      if (fp.remaining > 0) {
-        useDailyFreePlay();
-        setFreePlays(getDailyFreePlays().remaining);
-      } else if (!isUnlimited && credits <= 0) {
-        setError(`${MAX_FREE_PLAYS}x gratis harian sudah terpakai. Beli kredit untuk lanjut bermain!`);
-        return;
-      } else if (!isUnlimited) {
-        const ok = await useCredit();
-        if (!ok) {
-          setError("Kredit habis. Beli kredit untuk lanjut bermain.");
-          return;
-        }
-      }
-    } else {
-      useDailyFreePlay();
-      setFreePlays(getDailyFreePlays().remaining);
-    }
 
     setLoading(true);
     setError("");
