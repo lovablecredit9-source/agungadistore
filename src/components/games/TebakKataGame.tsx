@@ -4,6 +4,8 @@ import { Input } from "@/components/ui/input";
 import { motion, AnimatePresence } from "framer-motion";
 import { RefreshCw, Loader2, Lightbulb, Check, X, Zap, Timer, Trophy, Star, Brain, ChevronDown } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { getVisitorId } from "@/lib/visitor-id";
+import { useGameCredits, GameCreditsBadge, BuyCreditsDialog, RevealAnswerButton } from "./GameCredits";
 import { useToast } from "@/hooks/use-toast";
 import {
   loadGameData, addPoints, getPointsForQuestion,
