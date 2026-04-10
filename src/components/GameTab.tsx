@@ -44,6 +44,22 @@ export default function GameTab() {
     );
   }
 
+  if (mode === "tebak_gambar") {
+    return (
+      <div className="space-y-4 p-4 pb-24">
+        <div className="flex items-center gap-2">
+          <Button variant="ghost" size="sm" onClick={() => setMode("menu")} className="gap-1">
+            <ArrowLeft className="w-4 h-4" /> Kembali
+          </Button>
+          <h2 className="font-extrabold text-lg flex items-center gap-2">
+            <ImageIcon className="w-5 h-5 text-primary" /> Tebak Gambar AI
+          </h2>
+        </div>
+        <TebakGambarGame />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-4 p-4 pb-24">
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
