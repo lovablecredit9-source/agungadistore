@@ -51,7 +51,7 @@ Deno.serve(async (req) => {
       const cat = CATEGORIES[diff] || CATEGORIES.mudah;
       const randomObj = cat.objects[Math.floor(Math.random() * cat.objects.length)];
 
-      // Generate image using Gemini image model
+      // Generate image using Gemini image model (high quality)
       const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
         method: "POST",
         headers: {
@@ -59,11 +59,11 @@ Deno.serve(async (req) => {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          model: "google/gemini-2.5-flash-image",
+          model: "google/gemini-3-pro-image-preview",
           messages: [
             {
               role: "user",
-              content: `Generate an image of: ${randomObj}. Style: ${cat.style}. Do NOT include any text, labels, or words in the image.`
+              content: `Create a high-quality, clear, detailed illustration of: "${randomObj}". Style: ${cat.style}. The object must be clearly recognizable and centered. Do NOT include any text, labels, letters, or words in the image. No watermarks.`
             }
           ],
           modalities: ["image", "text"],
