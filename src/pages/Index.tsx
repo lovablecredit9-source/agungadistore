@@ -2239,7 +2239,7 @@ const Index = () => {
         )}
 
         {tab === "sponsor" && (
-          <SponsorBanner likedSponsorIds={likedSponsorIds} onToggleLikeSponsor={toggleLikeSponsor} />
+          <SponsorBanner likedSponsorIds={likedSponsorIds} onToggleLikeSponsor={toggleLikeSponsor} sponsorLikeCounts={sponsorLikeCounts} />
         )}
 
         {tab === "streak" && (
