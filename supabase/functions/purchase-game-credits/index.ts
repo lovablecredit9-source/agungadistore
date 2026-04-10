@@ -24,7 +24,7 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { action, visitorId, packageId, pin } = await req.json();
+    const { action, visitorId, packageId, pin, voucherCode } = await req.json();
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const admin = createClient(supabaseUrl, serviceKey, {
@@ -60,6 +60,15 @@ Deno.serve(async (req) => {
       return Response.json({ success: true, credits: data.credits - 1, is_unlimited: false }, { headers: corsHeaders });
     }
 
+    if (action === "check_voucher") {
+      if (!voucherCode) return Response.json({ error: "Kode voucher diperlukan" }, { status: 400, headers: corsHeaders });
+      const { data: voucher } = await admin.from("discount_vouchers").select("*").eq("code", voucherCode.trim().toUpperCase()).eq("is_active", true).maybeSingle();
+      if (!voucher) return Response.json({ error: "Voucher tidak ditemukan atau tidak aktif" }, { status: 404, headers: corsHeaders });
+      if (voucher.used_count >= voucher.max_uses) return Response.json({ error: "Voucher sudah habis" }, { status: 400, headers: corsHeaders });
+      if (voucher.expires_at && new Date(voucher.expires_at) < new Date()) return Response.json({ error: "Voucher sudah kedaluwarsa" }, { status: 400, headers: corsHeaders });
+      return Response.json({ valid: true, discount_amount: voucher.discount_amount, voucher_id: voucher.id }, { headers: corsHeaders });
+    }
+
     if (action === "purchase") {
       if (!visitorId || !packageId) return Response.json({ error: "Data tidak lengkap" }, { status: 400, headers: corsHeaders });
 
@@ -76,20 +85,45 @@ Deno.serve(async (req) => {
         if (hashHex !== pinRow.pin_hash) return Response.json({ error: "PIN salah" }, { status: 403, headers: corsHeaders });
       }
 
+      // Calculate price with voucher discount
+      let finalPrice = pkg.price;
+      let discountAmount = 0;
+      let voucherId: string | null = null;
+
+      if (voucherCode) {
+        const { data: voucher } = await admin.from("discount_vouchers").select("*").eq("code", voucherCode.trim().toUpperCase()).eq("is_active", true).maybeSingle();
+        if (voucher && voucher.used_count < voucher.max_uses && (!voucher.expires_at || new Date(voucher.expires_at) > new Date())) {
+          discountAmount = Math.min(voucher.discount_amount, pkg.price);
+          finalPrice = Math.max(0, pkg.price - discountAmount);
+          voucherId = voucher.id;
+        }
+      }
+
       // Check balance
       const { data: balance } = await admin.from("user_balances").select("id, balance").eq("visitor_id", visitorId).maybeSingle();
       if (!balance) return Response.json({ error: "Akun saldo tidak ditemukan" }, { status: 404, headers: corsHeaders });
-      if (balance.balance < pkg.price) return Response.json({ error: "Saldo tidak cukup" }, { status: 400, headers: corsHeaders });
+      if (balance.balance < finalPrice) return Response.json({ error: "Saldo tidak cukup" }, { status: 400, headers: corsHeaders });
 
       // Deduct balance
-      await admin.from("user_balances").update({ balance: balance.balance - pkg.price }).eq("id", balance.id);
+      await admin.from("user_balances").update({ balance: balance.balance - finalPrice }).eq("id", balance.id);
+
+      // Update voucher used count
+      if (voucherId) {
+        const { data: v } = await admin.from("discount_vouchers").select("used_count").eq("id", voucherId).maybeSingle();
+        if (v) {
+          await admin.from("discount_vouchers").update({ used_count: v.used_count + 1 }).eq("id", voucherId);
+        }
+      }
 
       // Record transaction
+      const desc = discountAmount > 0
+        ? `Beli ${pkg.label} (Kredit Game) - Diskon Rp${discountAmount.toLocaleString("id-ID")}`
+        : `Beli ${pkg.label} (Kredit Jawaban Game)`;
       await admin.from("balance_transactions").insert({
         visitor_id: visitorId,
         type: "purchase",
-        amount: pkg.price,
-        description: `Beli ${pkg.label} (Kredit Jawaban Game)`,
+        amount: finalPrice,
+        description: desc,
       });
 
       // Upsert credits
@@ -103,7 +137,6 @@ Deno.serve(async (req) => {
           unlimitilDate.setDate(unlimitilDate.getDate() + 30);
         }
         if (existing) {
-          // Extend from current unlimited_until if still active
           const baseDate = existing.unlimited_until && new Date(existing.unlimited_until) > new Date()
             ? new Date(existing.unlimited_until)
             : new Date();
@@ -144,7 +177,9 @@ Deno.serve(async (req) => {
         success: true,
         package: pkg,
         credits: finalCredits,
-        balance_remaining: balance.balance - pkg.price,
+        balance_remaining: balance.balance - finalPrice,
+        discount_amount: discountAmount,
+        final_price: finalPrice,
       }, { headers: corsHeaders });
     }
 
