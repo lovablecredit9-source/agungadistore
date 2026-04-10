@@ -19,6 +19,9 @@ import {
 const MAX_WRONG = 3;
 
 export default function TebakKataGame() {
+  const visitorId = getVisitorId();
+  const balanceVisitorId = localStorage.getItem("balance_visitor_id");
+  const { credits, isUnlimited, fetchCredits, useCredit } = useGameCredits(balanceVisitorId);
   const [word, setWord] = useState("");
   const [hints, setHints] = useState<string[]>([]);
   const [revealedHints, setRevealedHints] = useState(0);
@@ -32,6 +35,7 @@ export default function TebakKataGame() {
   const [playerData, setPlayerData] = useState<GameLevel>(loadGameData);
   const [timeLeft, setTimeLeft] = useState(0);
   const [earnedPoints, setEarnedPoints] = useState(0);
+  const [answerRevealed, setAnswerRevealed] = useState(false);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const { toast } = useToast();
 
