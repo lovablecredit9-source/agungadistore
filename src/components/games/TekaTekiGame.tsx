@@ -154,9 +154,7 @@ export default function TekaTekiGame() {
     const ok = await useCredit();
     if (ok) {
       setAnswerRevealed(true);
-      if (timerRef.current) clearInterval(timerRef.current);
-      setGameActive(false);
-      setResult(null);
+      setGuess(answer);
       fetchCredits();
     }
   };

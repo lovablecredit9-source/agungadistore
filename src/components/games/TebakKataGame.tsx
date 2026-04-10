@@ -378,7 +378,7 @@ export default function TebakKataGame() {
             )}
             {gameActive && !answerRevealed && (
               <RevealAnswerButton
-                onReveal={() => { setAnswerRevealed(true); }}
+                onReveal={() => { setAnswerRevealed(true); setGuess(word); }}
                 visitorId={activeVisitorId}
                 useCredit={useCredit}
                 credits={credits}
