@@ -79,9 +79,10 @@ const socialIcons: Record<string, { label: string; url: (v: string) => string; c
 interface SponsorBannerProps {
   likedSponsorIds?: Set<string>;
   onToggleLikeSponsor?: (sponsorId: string, e?: React.MouseEvent) => void;
+  sponsorLikeCounts?: Record<string, number>;
 }
 
-export default function SponsorBanner({ likedSponsorIds = new Set(), onToggleLikeSponsor }: SponsorBannerProps) {
+export default function SponsorBanner({ likedSponsorIds = new Set(), onToggleLikeSponsor, sponsorLikeCounts = {} }: SponsorBannerProps) {
   const [sponsors, setSponsors] = useState<Sponsor[]>([]);
   const [sponsorImages, setSponsorImages] = useState<Record<string, SponsorImage[]>>({});
   const [wholesalePrices, setWholesalePrices] = useState<any[]>([]);
