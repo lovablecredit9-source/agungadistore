@@ -195,7 +195,7 @@ export default function TebakKataGame() {
             <Brain className="w-8 h-8 text-white" />
           </div>
           <h3 className="font-extrabold text-lg">Tebak Kata AI</h3>
-          <p className="text-sm text-muted-foreground">AI beri petunjuk, kamu tebak kata! Maks {MAX_WRONG}x salah.</p>
+          <p className="text-sm text-muted-foreground">AI beri petunjuk, kamu tebak kata! Tidak ada batas salah.</p>
           <Button onClick={startNewGame} disabled={loading} className="gap-2">
             {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Zap className="w-4 h-4" />}
             Mulai Game
@@ -217,15 +217,7 @@ export default function TebakKataGame() {
                 </motion.span>
               </div>
               <div className="flex items-center gap-1">
-                {Array.from({ length: MAX_WRONG }).map((_, i) => (
-                  <div
-                    key={i}
-                    className={`w-3 h-3 rounded-full transition-all ${
-                      i < wrongCount ? "bg-red-500" : "bg-muted-foreground/20"
-                    }`}
-                  />
-                ))}
-                <span className="text-[10px] text-muted-foreground ml-1">{MAX_WRONG - wrongCount} sisa</span>
+                <span className="text-[10px] text-muted-foreground">Salah: {wrongCount}x</span>
               </div>
             </div>
           )}
@@ -292,12 +284,12 @@ export default function TebakKataGame() {
                 )}
               </motion.div>
             )}
-            {result === "wrong" && wrongCount < MAX_WRONG && (
+            {result === "wrong" && (
               <motion.div
                 initial={{ scale: 0.5, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ opacity: 0 }}
                 className="bg-red-500/10 text-red-500 border border-red-500/20 rounded-xl p-3 text-center font-bold text-sm"
               >
-                <X className="w-4 h-4 inline mr-1" /> Salah! Sisa {MAX_WRONG - wrongCount} percobaan
+                <X className="w-4 h-4 inline mr-1" /> Salah! Coba lagi
               </motion.div>
             )}
             {gameOver && (
