@@ -225,6 +225,7 @@ export default function DailyStreak() {
   const [showPinForStreak, setShowPinForStreak] = useState(false);
   const [streakPinInput, setStreakPinInput] = useState("");
   const [pendingPlanDays, setPendingPlanDays] = useState<number | null>(null);
+  const [showConfirm, setShowConfirm] = useState<{ days: number; name: string; price: number } | null>(null);
   const visitorId = getVisitorId();
   const countdown = useCountdown();
   const { toast } = useToast();
@@ -260,6 +261,20 @@ export default function DailyStreak() {
     if (data) setActiveSub(data as any);
   }, [visitorId]);
 
+  function handlePlanClick(planDays: number) {
+    const plan = AUTO_CLAIM_PLANS.find(p => p.days === planDays);
+    if (!plan) return;
+    setShowConfirm({ days: plan.days, name: plan.name, price: plan.price });
+  }
+
+  function confirmPurchase() {
+    if (!showConfirm) return;
+    const days = showConfirm.days;
+    setShowConfirm(null);
+    setPendingPlanDays(days);
+    setShowPinForStreak(true);
+  }
+
   async function purchaseStreakPlan(planDays: number, pin?: string) {
     setBuyingPlan(planDays);
     try {
@@ -276,7 +291,7 @@ export default function DailyStreak() {
         toast({ title: "Gagal", description: data?.error || "Gagal membeli paket", variant: "destructive" });
         return;
       }
-      toast({ title: "Berhasil! 🎉", description: `Paket Auto-Klaim ${data.plan} aktif sampai ${new Date(data.expires_at).toLocaleDateString("id-ID")}` });
+      toast({ title: "Berhasil!", description: `Paket Auto-Klaim ${data.plan} aktif sampai ${new Date(data.expires_at).toLocaleDateString("id-ID")}` });
       fetchSubscription();
     } catch {
       toast({ title: "Error", description: "Koneksi gagal", variant: "destructive" });
@@ -658,7 +673,7 @@ export default function DailyStreak() {
               variant="outline"
               className="h-auto py-2.5 px-3 flex flex-col items-center gap-0.5 text-xs hover:border-primary/50"
               disabled={buyingPlan === plan.days}
-              onClick={() => purchaseStreakPlan(plan.days)}
+              onClick={() => handlePlanClick(plan.days)}
             >
               {buyingPlan === plan.days ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
@@ -672,6 +687,32 @@ export default function DailyStreak() {
           ))}
         </div>
       </motion.div>
+
+      {/* Confirmation Dialog */}
+      {showConfirm && (
+        <div className="fixed inset-0 z-[94] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setShowConfirm(null)}>
+          <div className="bg-card w-full max-w-sm rounded-2xl p-5 space-y-4 animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between">
+              <h3 className="font-extrabold text-lg flex items-center gap-2"><ShoppingCart className="w-5 h-5 text-primary" /> Konfirmasi Pembelian</h3>
+              <button onClick={() => setShowConfirm(null)} className="w-8 h-8 rounded-full bg-muted flex items-center justify-center"><X className="w-4 h-4" /></button>
+            </div>
+            <div className="bg-muted/50 rounded-xl p-4 text-center space-y-1">
+              <p className="text-sm text-muted-foreground">Paket Auto-Klaim</p>
+              <p className="text-xl font-extrabold">{showConfirm.name}</p>
+              <p className="text-lg font-bold text-primary">Rp{showConfirm.price.toLocaleString("id-ID")}</p>
+            </div>
+            <p className="text-xs text-muted-foreground text-center">Apakah kamu yakin ingin membeli paket ini? Saldo akan dipotong otomatis.</p>
+            <div className="flex gap-2">
+              <Button variant="outline" className="flex-1" onClick={() => setShowConfirm(null)}>
+                Tidak
+              </Button>
+              <Button className="flex-1 bg-gradient-to-r from-primary to-accent text-primary-foreground font-bold" onClick={confirmPurchase}>
+                Ya, Beli
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* PIN Modal for Streak */}
       {showPinForStreak && (
