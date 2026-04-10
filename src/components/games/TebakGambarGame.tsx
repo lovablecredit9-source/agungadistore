@@ -13,6 +13,7 @@ import {
   addPoints, getPointsForQuestion, loadGameData, getLevelFromPoints,
   getNextLevelThreshold, getCurrentLevelThreshold, type GameLevel
 } from "./gameStore";
+import { useGameCredits, GameCreditsBadge, BuyCreditsDialog, RevealAnswerButton } from "./GameCredits";
 
 type Difficulty = "mudah" | "sedang" | "sulit";
 
@@ -29,6 +30,8 @@ const INITIAL_BLUR: Record<Difficulty, number> = {
 };
 
 export default function TebakGambarGame() {
+  const balanceVisitorId = localStorage.getItem("balance_visitor_id");
+  const { credits, isUnlimited, fetchCredits, useCredit } = useGameCredits(balanceVisitorId);
   const [difficulty, setDifficulty] = useState<Difficulty | null>(null);
   const [imageData, setImageData] = useState("");
   const [answer, setAnswer] = useState("");
@@ -47,6 +50,7 @@ export default function TebakGambarGame() {
   const [playerData, setPlayerData] = useState<GameLevel>(loadGameData());
   const [error, setError] = useState("");
   const [blurLevel, setBlurLevel] = useState(0);
+  const [answerRevealed, setAnswerRevealed] = useState(false);
 
   // Timer
   useEffect(() => {
