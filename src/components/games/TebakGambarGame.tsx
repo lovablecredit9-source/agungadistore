@@ -8,10 +8,14 @@ import { supabase } from "@/integrations/supabase/client";
 import {
   Image, Eye, EyeOff, HelpCircle, Trophy, XCircle,
   Loader2, RefreshCw, Clock, Star, Lightbulb, AlertTriangle
+import {
+  Image, Eye, EyeOff, HelpCircle, Trophy, XCircle,
+  Loader2, RefreshCw, Clock, Star, Lightbulb, AlertTriangle, Gift
 } from "lucide-react";
 import {
   addPoints, getPointsForQuestion, loadGameData, getLevelFromPoints,
-  getNextLevelThreshold, getCurrentLevelThreshold, type GameLevel
+  getNextLevelThreshold, getCurrentLevelThreshold, type GameLevel,
+  getDailyFreePlays, useDailyFreePlay, MAX_FREE_PLAYS,
 } from "./gameStore";
 import { useGameCredits, GameCreditsBadge, BuyCreditsDialog, RevealAnswerButton } from "./GameCredits";
 
@@ -32,7 +36,8 @@ const INITIAL_BLUR: Record<Difficulty, number> = {
 export default function TebakGambarGame() {
   const balanceVisitorId = localStorage.getItem("balance_visitor_id");
   const activeVisitorId = balanceVisitorId || localStorage.getItem("visitor_id");
-  const { credits, isUnlimited, fetchCredits, useCredit, freeRemaining } = useGameCredits(activeVisitorId);
+  const { credits, isUnlimited, fetchCredits, useCredit } = useGameCredits(activeVisitorId);
+  const [freePlays, setFreePlays] = useState(getDailyFreePlays().remaining);
   const [difficulty, setDifficulty] = useState<Difficulty | null>(null);
   const [imageData, setImageData] = useState("");
   const [answer, setAnswer] = useState("");
