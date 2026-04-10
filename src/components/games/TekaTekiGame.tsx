@@ -90,6 +90,8 @@ export default function TekaTekiGame() {
     }
   }, [difficulty, diffConfig.timeSeconds, toast]);
 
+  const MAX_WRONG = 3;
+
   const handleGuess = () => {
     if (!guess.trim()) return;
     const g = guess.trim().toLowerCase();
@@ -103,11 +105,20 @@ export default function TekaTekiGame() {
       setEarnedPoints(pts);
       const updated = addPoints(pts);
       setPlayerData(updated);
+      // Auto-next after 2 seconds
+      setTimeout(() => fetchRiddle(), 2000);
     } else {
-      setResult("wrong");
-      setWrongCount(c => c + 1);
+      const newWrong = wrongCount + 1;
+      setWrongCount(newWrong);
       setGuess("");
-      setTimeout(() => setResult(null), 1500);
+      if (newWrong >= MAX_WRONG) {
+        if (timerRef.current) clearInterval(timerRef.current);
+        setResult("wrong");
+        setGameActive(false);
+      } else {
+        setResult("wrong");
+        setTimeout(() => setResult(null), 1500);
+      }
     }
   };
 
@@ -226,7 +237,7 @@ export default function TekaTekiGame() {
 
           {/* Wrong count */}
           {wrongCount > 0 && gameActive && (
-            <p className="text-xs text-muted-foreground text-center">Salah: {wrongCount}x — Coba lagi!</p>
+            <p className="text-xs text-muted-foreground text-center">Salah: {wrongCount}/{MAX_WRONG} — Sisa {MAX_WRONG - wrongCount} kesempatan!</p>
           )}
 
           {/* Answer revealed */}
@@ -236,6 +247,20 @@ export default function TekaTekiGame() {
               {explanation && <p className="text-xs text-muted-foreground">{explanation}</p>}
               <Button onClick={fetchRiddle} className="gap-2 mt-2" size="sm">
                 <RefreshCw className="w-4 h-4" /> Soal Berikutnya
+              </Button>
+            </motion.div>
+          )}
+
+          {/* Game over - max wrong */}
+          {result === "wrong" && !gameActive && wrongCount >= MAX_WRONG && (
+            <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }}
+              className="rounded-xl bg-red-500/10 border border-red-500/30 p-4 text-center space-y-2">
+              <X className="w-8 h-8 text-red-500 mx-auto" />
+              <p className="font-bold text-red-600">Game Over! Salah {MAX_WRONG}x</p>
+              <p className="text-sm font-bold">Jawaban: <span className="uppercase">{answer}</span></p>
+              {explanation && <p className="text-xs text-muted-foreground">{explanation}</p>}
+              <Button onClick={fetchRiddle} className="gap-2 mt-2" size="sm">
+                <RefreshCw className="w-4 h-4" /> Soal Baru
               </Button>
             </motion.div>
           )}
