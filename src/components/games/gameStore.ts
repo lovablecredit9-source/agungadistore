@@ -59,11 +59,11 @@ export function addPoints(points: number): GameLevel {
 export type Difficulty = "mudah" | "sedang" | "sulit" | "pro" | "sangat_pro";
 
 export const DIFFICULTIES: { key: Difficulty; label: string; color: string; timeSeconds: number; hintCount: number }[] = [
-  { key: "mudah", label: "Mudah", color: "text-green-500", timeSeconds: 120, hintCount: 8 },
-  { key: "sedang", label: "Sedang", color: "text-blue-500", timeSeconds: 90, hintCount: 6 },
-  { key: "sulit", label: "Sulit", color: "text-orange-500", timeSeconds: 60, hintCount: 5 },
-  { key: "pro", label: "Pro", color: "text-red-500", timeSeconds: 45, hintCount: 4 },
-  { key: "sangat_pro", label: "Sangat Pro", color: "text-purple-500", timeSeconds: 30, hintCount: 3 },
+  { key: "mudah", label: "Mudah", color: "text-green-500", timeSeconds: 120, hintCount: 4 },
+  { key: "sedang", label: "Sedang", color: "text-blue-500", timeSeconds: 90, hintCount: 4 },
+  { key: "sulit", label: "Sulit", color: "text-orange-500", timeSeconds: 60, hintCount: 3 },
+  { key: "pro", label: "Pro", color: "text-red-500", timeSeconds: 45, hintCount: 3 },
+  { key: "sangat_pro", label: "Sangat Pro", color: "text-purple-500", timeSeconds: 30, hintCount: 2 },
 ];
 
 // Suit game persistent state

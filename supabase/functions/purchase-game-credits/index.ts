@@ -6,6 +6,7 @@ const corsHeaders = {
 };
 
 const CREDIT_PACKAGES = [
+  { id: "2", credits: 2, price: 2000, label: "2 Kredit" },
   { id: "10", credits: 10, price: 5000, label: "10 Kredit" },
   { id: "30", credits: 30, price: 10000, label: "30 Kredit" },
   { id: "60", credits: 60, price: 15000, label: "60 Kredit" },
@@ -14,6 +15,7 @@ const CREDIT_PACKAGES = [
   { id: "500", credits: 500, price: 30000, label: "500 Kredit" },
   { id: "1000", credits: 1000, price: 50000, label: "1000 Kredit" },
   { id: "unlimited", credits: -1, price: 100000, label: "Unlimited 1 Bulan" },
+  { id: "unlimited_year", credits: -1, price: 1000000, label: "Unlimited 1 Tahun" },
 ];
 
 Deno.serve(async (req) => {
@@ -93,12 +95,25 @@ Deno.serve(async (req) => {
       // Upsert credits
       const { data: existing } = await admin.from("user_game_credits").select("*").eq("visitor_id", visitorId).maybeSingle();
       
-      if (pkg.id === "unlimited") {
+      if (pkg.id === "unlimited" || pkg.id === "unlimited_year") {
         const unlimitilDate = new Date();
-        unlimitilDate.setDate(unlimitilDate.getDate() + 30);
+        if (pkg.id === "unlimited_year") {
+          unlimitilDate.setFullYear(unlimitilDate.getFullYear() + 1);
+        } else {
+          unlimitilDate.setDate(unlimitilDate.getDate() + 30);
+        }
         if (existing) {
+          // Extend from current unlimited_until if still active
+          const baseDate = existing.unlimited_until && new Date(existing.unlimited_until) > new Date()
+            ? new Date(existing.unlimited_until)
+            : new Date();
+          if (pkg.id === "unlimited_year") {
+            baseDate.setFullYear(baseDate.getFullYear() + 1);
+          } else {
+            baseDate.setDate(baseDate.getDate() + 30);
+          }
           await admin.from("user_game_credits").update({
-            unlimited_until: unlimitilDate.toISOString(),
+            unlimited_until: baseDate.toISOString(),
             updated_at: new Date().toISOString(),
           }).eq("id", existing.id);
         } else {
@@ -122,7 +137,8 @@ Deno.serve(async (req) => {
         }
       }
 
-      const finalCredits = existing ? (pkg.id === "unlimited" ? existing.credits : existing.credits + pkg.credits) : (pkg.id === "unlimited" ? 0 : pkg.credits);
+      const isUnlimitedPkg = pkg.id === "unlimited" || pkg.id === "unlimited_year";
+      const finalCredits = existing ? (isUnlimitedPkg ? existing.credits : existing.credits + pkg.credits) : (isUnlimitedPkg ? 0 : pkg.credits);
       
       return Response.json({
         success: true,

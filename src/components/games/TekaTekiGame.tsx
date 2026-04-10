@@ -189,6 +189,7 @@ export default function TekaTekiGame() {
             <span className="font-bold text-green-600">{freePlays}/{MAX_FREE_PLAYS} gratis hari ini</span>
           </div>
           <GameCreditsBadge credits={credits} isUnlimited={isUnlimited} />
+          <BuyCreditsDialog visitorId={activeVisitorId} onPurchased={fetchCredits} />
         </div>
 
         <div className="flex items-center gap-2">
