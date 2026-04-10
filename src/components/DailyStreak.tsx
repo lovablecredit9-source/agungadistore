@@ -508,6 +508,10 @@ export default function DailyStreak() {
       >
         <h4 className="text-sm font-bold flex items-center gap-2">
           <Gift className="w-4 h-4 text-primary" /> Milestone Streak
+          <motion.span
+            animate={{ rotate: [0, 15, -15, 0] }}
+            transition={{ duration: 2, repeat: Infinity, repeatDelay: 3 }}
+          >✨</motion.span>
         </h4>
         <div className="space-y-2">
           {MILESTONES.map((m, i) => {
@@ -519,6 +523,8 @@ export default function DailyStreak() {
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.1 + i * 0.05 }}
                 className={`flex items-center gap-3 rounded-xl p-3 transition-all ${
+                  achieved ? "relative overflow-hidden " : ""
+                }${
                   achieved
                     ? `bg-gradient-to-r ${getTierColor(m.tier)} bg-opacity-10 border border-current/10`
                     : "bg-muted/30 opacity-50"
@@ -528,23 +534,28 @@ export default function DailyStreak() {
                   borderColor: 'hsl(var(--border))',
                 } : undefined}
               >
+                {achieved && <ShimmerEffect />}
                 <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
                   achieved ? `bg-gradient-to-br ${getTierColor(m.tier)} shadow-lg ${getTierGlow(m.tier)}` : "bg-muted"
                 }`}>
                   {achieved ? (
-                    <TierFire tier={m.tier} size="sm" />
+                    <motion.span
+                      className="text-lg"
+                      animate={{ scale: [1, 1.2, 1] }}
+                      transition={{ duration: 2, repeat: Infinity, delay: i * 0.3 }}
+                    >{m.emoji}</motion.span>
                   ) : (
                     <span className="text-xs font-bold text-muted-foreground">{m.days}</span>
                   )}
                 </div>
-                <div className="flex-1 min-w-0">
+                <div className="flex-1 min-w-0 relative z-10">
                   <p className={`font-bold text-sm ${achieved ? "text-foreground" : "text-muted-foreground"}`}>{m.label}</p>
-                  <p className={`text-[10px] ${achieved ? "text-muted-foreground" : "text-muted-foreground/60"}`}>{m.reward}</p>
+                  <p className={`text-[10px] ${achieved ? "text-muted-foreground" : "text-muted-foreground/60"}`}>{m.emoji} {m.reward}</p>
                 </div>
                 {achieved && (
                   <motion.div
                     initial={{ scale: 0 }} animate={{ scale: 1 }}
-                    className={`w-6 h-6 rounded-full bg-gradient-to-br ${getTierColor(m.tier)} flex items-center justify-center`}
+                    className={`w-6 h-6 rounded-full bg-gradient-to-br ${getTierColor(m.tier)} flex items-center justify-center relative z-10`}
                   >
                     <Check className="w-3.5 h-3.5 text-white" />
                   </motion.div>
