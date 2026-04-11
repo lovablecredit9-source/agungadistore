@@ -368,6 +368,8 @@ const Index = () => {
   const [userBalance, setUserBalance] = useState<UserBalance | null>(null);
   const [balanceTransactions, setBalanceTransactions] = useState<BalanceTransaction[]>([]);
   const [selectedTransaction, setSelectedTransaction] = useState<BalanceTransaction | null>(null);
+  const [selectedTxIds, setSelectedTxIds] = useState<Set<string>>(new Set());
+  const [showTxExport, setShowTxExport] = useState(false);
   const [setupUsername, setSetupUsername] = useState("");
   const [setupPhone, setSetupPhone] = useState("");
   const [showProfileModal, setShowProfileModal] = useState(false);
