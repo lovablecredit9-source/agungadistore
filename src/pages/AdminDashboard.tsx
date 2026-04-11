@@ -321,7 +321,7 @@ const AdminDashboard = () => {
   }
 
   async function createMusicDiscountVoucher() {
-    if (!mdvCode.trim() || !mdvAmount) { toast({ title: "Isi kode dan nominal", variant: "destructive" }); return; }
+    if (!mdvAmount) { toast({ title: "Isi nominal diskon", variant: "destructive" }); return; }
     const amount = parseInt(mdvAmount) || 0;
     if (amount <= 0) { toast({ title: "Nominal harus lebih dari 0", variant: "destructive" }); return; }
     let expiresAt: string | null = null;
@@ -329,13 +329,14 @@ const AdminDashboard = () => {
       const time = mdvExpiryTime || "23:59:59";
       expiresAt = new Date(`${mdvExpiryDate}T${time}`).toISOString();
     }
+    const autoCode = generateVoucherCode();
     const { error } = await supabase.from("music_discount_vouchers").insert({
-      code: mdvCode.trim().toUpperCase(), discount_amount: amount,
+      code: autoCode, discount_amount: amount,
       max_uses: parseInt(mdvMaxUses) || 10, expires_at: expiresAt,
     } as any);
-    if (error) { toast({ title: "Gagal buat voucher (kode mungkin sudah ada)", variant: "destructive" }); return; }
-    toast({ title: `Voucher diskon musik Rp${amount.toLocaleString()} berhasil dibuat! 🎵` });
-    setMdvCode(""); setMdvAmount(""); setMdvMaxUses("10"); setMdvExpiryDate(""); setMdvExpiryTime("");
+    if (error) { toast({ title: "Gagal buat voucher", variant: "destructive" }); return; }
+    toast({ title: `Voucher diskon musik ${autoCode} Rp${amount.toLocaleString()} berhasil dibuat! 🎵` });
+    setMdvCode(autoCode); setMdvAmount(""); setMdvMaxUses("10"); setMdvExpiryDate(""); setMdvExpiryTime("");
     fetchMusicVouchers();
   }
 
@@ -350,18 +351,19 @@ const AdminDashboard = () => {
   }
 
   async function createDiscountVoucher() {
-    if (!dvCode.trim() || !dvAmount) { toast({ title: "Isi kode dan nominal", variant: "destructive" }); return; }
+    if (!dvAmount) { toast({ title: "Isi nominal diskon", variant: "destructive" }); return; }
     const amount = parseInt(dvAmount) || 0;
     if (amount <= 0) { toast({ title: "Nominal harus lebih dari 0", variant: "destructive" }); return; }
+    const autoCode = generateVoucherCode();
     const { error } = await supabase.from("discount_vouchers").insert({
-      code: dvCode.trim().toUpperCase(),
+      code: autoCode,
       discount_amount: amount,
       max_uses: parseInt(dvMaxUses) || 10,
       expires_at: dvExpiry ? new Date(dvExpiry).toISOString() : null,
     } as any);
-    if (error) { toast({ title: "Gagal buat voucher (kode mungkin sudah ada)", variant: "destructive" }); return; }
-    toast({ title: `Voucher diskon ${dvCode.toUpperCase()} berhasil dibuat! 🏷️` });
-    setDvCode(""); setDvAmount(""); setDvMaxUses("10"); setDvExpiry("");
+    if (error) { toast({ title: "Gagal buat voucher", variant: "destructive" }); return; }
+    toast({ title: `Voucher ${autoCode} berhasil dibuat! 🏷️` });
+    setDvCode(autoCode); setDvAmount(""); setDvMaxUses("10"); setDvExpiry("");
     fetchDiscountVouchers();
   }
 
@@ -1604,15 +1606,19 @@ const AdminDashboard = () => {
             <Card>
               <CardHeader><CardTitle className="text-base flex items-center gap-2"><Tag className="w-5 h-5 text-primary" /> Buat Voucher Diskon</CardTitle></CardHeader>
               <CardContent className="space-y-3">
-                <Input placeholder="Kode voucher (misal: DISKON10K)" value={dvCode} onChange={e => setDvCode(e.target.value.toUpperCase())} className="font-mono" />
+                <div className="bg-muted/50 rounded-lg p-2 text-center">
+                  <p className="text-[10px] text-muted-foreground mb-1">Kode otomatis</p>
+                  {dvCode && <p className="font-mono font-bold text-sm">{dvCode}</p>}
+                  {!dvCode && <p className="text-xs text-muted-foreground italic">Kode akan dibuat otomatis</p>}
+                </div>
                 <Input type="number" placeholder="Nominal diskon (Rp)" value={dvAmount} onChange={e => setDvAmount(e.target.value)} />
                 <Input type="number" placeholder="Maks pemakaian" value={dvMaxUses} onChange={e => setDvMaxUses(e.target.value)} />
                 <div>
                   <label className="text-xs text-muted-foreground">Expired (opsional)</label>
                   <Input type="date" value={dvExpiry} onChange={e => setDvExpiry(e.target.value)} />
                 </div>
-                <Button className="w-full gap-2" onClick={createDiscountVoucher} disabled={!dvCode.trim() || !dvAmount}>
-                  <Tag className="w-4 h-4" /> Buat Voucher Diskon
+                <Button className="w-full gap-2" onClick={createDiscountVoucher} disabled={!dvAmount}>
+                  <Tag className="w-4 h-4" /> Buat Voucher Diskon (Auto-Kode)
                 </Button>
               </CardContent>
             </Card>
@@ -1823,7 +1829,11 @@ const AdminDashboard = () => {
             <Card className="mt-4">
               <CardHeader><CardTitle className="text-base flex items-center gap-2"><Tag className="w-5 h-5 text-primary" /> Buat Voucher Diskon Musik</CardTitle></CardHeader>
               <CardContent className="space-y-3">
-                <Input placeholder="Kode voucher (misal: MUSIKDISKON5K)" value={mdvCode} onChange={e => setMdvCode(e.target.value.toUpperCase())} className="font-mono" />
+                <div className="bg-muted/50 rounded-lg p-2 text-center">
+                  <p className="text-[10px] text-muted-foreground mb-1">Kode otomatis</p>
+                  {mdvCode && <p className="font-mono font-bold text-sm">{mdvCode}</p>}
+                  {!mdvCode && <p className="text-xs text-muted-foreground italic">Kode akan dibuat otomatis</p>}
+                </div>
                 <Input type="number" placeholder="Nominal diskon (Rp)" value={mdvAmount} onChange={e => setMdvAmount(e.target.value)} />
                 <Input type="number" placeholder="Maks pemakaian" value={mdvMaxUses} onChange={e => setMdvMaxUses(e.target.value)} />
                 <div className="grid grid-cols-2 gap-2">
@@ -1836,8 +1846,8 @@ const AdminDashboard = () => {
                     <Input type="time" step="1" value={mdvExpiryTime} onChange={e => setMdvExpiryTime(e.target.value)} />
                   </div>
                 </div>
-                <Button className="w-full gap-2" onClick={createMusicDiscountVoucher} disabled={!mdvCode.trim() || !mdvAmount}>
-                  <Tag className="w-4 h-4" /> Buat Voucher Diskon Musik
+                <Button className="w-full gap-2" onClick={createMusicDiscountVoucher} disabled={!mdvAmount}>
+                  <Tag className="w-4 h-4" /> Buat Voucher Diskon Musik (Auto-Kode)
                 </Button>
               </CardContent>
             </Card>
