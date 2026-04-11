@@ -64,6 +64,7 @@ export default function TebakKataGame() {
   function handleTimeout() {
     setGameActive(false);
     setResult("timeout");
+    updateGameStats(activeVisitorId, "tebak", false, 0);
   }
 
   const startNewGame = useCallback(async () => {

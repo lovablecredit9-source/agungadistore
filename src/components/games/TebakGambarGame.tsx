@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { updateGameStats } from "./GameProfile";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -131,6 +132,7 @@ export default function TebakGambarGame() {
         setScore(prev => prev + pts);
         const updated = addPoints(pts);
         setPlayerData(updated);
+        updateGameStats(activeVisitorId || "", "tebak_gambar", true, pts);
       } else {
         const newWrong = wrongCount + 1;
         setWrongCount(newWrong);
@@ -139,6 +141,7 @@ export default function TebakGambarGame() {
         if (newWrong >= 3) {
           setTimerActive(false);
           setGameOver(true);
+          updateGameStats(activeVisitorId || "", "tebak_gambar", false, 0);
         } else {
           setTimeout(() => setResult(null), 1200);
         }
