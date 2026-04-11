@@ -789,7 +789,14 @@ export default function DailyStreak() {
             <div className="bg-muted/50 rounded-xl p-4 text-center space-y-1">
               <p className="text-sm text-muted-foreground">Paket Auto-Klaim</p>
               <p className="text-xl font-extrabold">{showConfirm.name}</p>
-              <p className="text-lg font-bold text-primary">Rp{showConfirm.price.toLocaleString("id-ID")}</p>
+              {showConfirm.discountedPrice !== undefined ? (
+                <div className="space-y-0.5">
+                  <p className="text-sm text-muted-foreground line-through">Rp{showConfirm.price.toLocaleString("id-ID")}</p>
+                  <p className="text-lg font-bold text-green-600">Rp{showConfirm.discountedPrice.toLocaleString("id-ID")}</p>
+                </div>
+              ) : (
+                <p className="text-lg font-bold text-primary">Rp{showConfirm.price.toLocaleString("id-ID")}</p>
+              )}
             </div>
             <p className="text-xs text-muted-foreground text-center">Apakah kamu yakin ingin membeli paket ini? Saldo akan dipotong otomatis.</p>
             <div className="flex gap-2">
