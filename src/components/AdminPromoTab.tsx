@@ -68,7 +68,8 @@ export default function AdminPromoTab() {
   }
 
   async function saveSetting(key: string, value: string) {
-    const existing = values[key] !== undefined;
+    // Check if row exists in DB first
+    const { data: existing } = await supabase.from("admin_settings").select("id").eq("setting_key", key).maybeSingle();
     if (existing) {
       await supabase.from("admin_settings").update({ setting_value: value }).eq("setting_key", key);
     } else {
