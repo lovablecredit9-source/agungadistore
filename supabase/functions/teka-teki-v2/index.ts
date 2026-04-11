@@ -22,8 +22,11 @@ Deno.serve(async (req) => {
       return Response.json({ error: "AI belum dikonfigurasi" }, { status: 500, headers: corsHeaders });
     }
 
-    const { difficulty = "sedang" } = await req.json();
+     const { difficulty = "sedang", previousAnswers = [] } = await req.json();
     const diffPrompt = DIFFICULTY_PROMPTS[difficulty] || DIFFICULTY_PROMPTS.sedang;
+     const avoidText = previousAnswers.length > 0
+       ? `\n\nPENTING: JANGAN gunakan jawaban berikut karena sudah pernah muncul: ${previousAnswers.join(", ")}. Pilih teka-teki dengan jawaban yang BENAR-BENAR BERBEDA. Jangan tentang bayangan, cermin, atau topik klise lainnya.`
+       : "\n\nBuat teka-teki dengan jawaban yang unik dan bervariasi. Hindari jawaban klise seperti BAYANGAN, CERMIN, dll.";
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -36,7 +39,7 @@ Deno.serve(async (req) => {
         messages: [
           {
             role: "system",
-            content: `Kamu pembuat teka-teki logika dalam bahasa Indonesia. ${diffPrompt} Jawaban HARUS satu kata saja. Berikan juga huruf-huruf acak tambahan sebagai pengecoh. Jawab HANYA dalam format JSON tanpa markdown.`,
+            content: `Kamu pembuat teka-teki logika dalam bahasa Indonesia. ${diffPrompt} Jawaban HARUS satu kata saja. Berikan juga huruf-huruf acak tambahan sebagai pengecoh. Jawab HANYA dalam format JSON tanpa markdown.${avoidText}`,
           },
           {
             role: "user",
