@@ -54,6 +54,22 @@ Deno.serve(async (req) => {
       }
     }
 
+    // Calculate price with voucher
+    let finalPrice = plan.price;
+    let discountAmount = 0;
+    let voucherId: string | null = null;
+
+    if (voucherCode) {
+      const { data: voucher } = await admin
+        .from("streak_discount_vouchers").select("*")
+        .eq("code", voucherCode.trim().toUpperCase()).eq("is_active", true).maybeSingle();
+      if (voucher && voucher.used_count < voucher.max_uses && (!voucher.expires_at || new Date(voucher.expires_at) > new Date())) {
+        discountAmount = Math.min(voucher.discount_amount, plan.price);
+        finalPrice = Math.max(0, plan.price - discountAmount);
+        voucherId = voucher.id;
+      }
+    }
+
     // Check balance
     const { data: balanceRow } = await admin
       .from("user_balances").select("id, balance").eq("visitor_id", visitorId).maybeSingle();
@@ -62,7 +78,7 @@ Deno.serve(async (req) => {
       return Response.json({ error: "Akun saldo tidak ditemukan" }, { status: 404, headers: corsHeaders });
     }
 
-    if (balanceRow.balance < plan.price) {
+    if (balanceRow.balance < finalPrice) {
       return Response.json({ error: "Saldo tidak cukup" }, { status: 400, headers: corsHeaders });
     }
 
