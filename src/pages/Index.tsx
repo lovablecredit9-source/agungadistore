@@ -1436,7 +1436,7 @@ const Index = () => {
                   id: "game",
                   image: promoGameImg,
                   title: "Main Game Seru Lawan AI!",
-                  subtitle: "🎮 8 Game Menantang",
+                  subtitle: "🎮 11 Game AI Menantang",
                   cta: "Main Sekarang",
                   onClick: () => setTab("game"),
                 },
