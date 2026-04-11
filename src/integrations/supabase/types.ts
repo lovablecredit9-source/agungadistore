@@ -370,6 +370,105 @@ export type Database = {
         }
         Relationships: []
       }
+      game_follows: {
+        Row: {
+          created_at: string
+          follower_visitor_id: string
+          following_visitor_id: string
+          id: string
+        }
+        Insert: {
+          created_at?: string
+          follower_visitor_id: string
+          following_visitor_id: string
+          id?: string
+        }
+        Update: {
+          created_at?: string
+          follower_visitor_id?: string
+          following_visitor_id?: string
+          id?: string
+        }
+        Relationships: []
+      }
+      game_profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          description: string | null
+          display_name: string
+          email: string | null
+          id: string
+          is_guest: boolean
+          password_hash: string | null
+          phone: string | null
+          updated_at: string
+          visitor_id: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          description?: string | null
+          display_name?: string
+          email?: string | null
+          id?: string
+          is_guest?: boolean
+          password_hash?: string | null
+          phone?: string | null
+          updated_at?: string
+          visitor_id: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          description?: string | null
+          display_name?: string
+          email?: string | null
+          id?: string
+          is_guest?: boolean
+          password_hash?: string | null
+          phone?: string | null
+          updated_at?: string
+          visitor_id?: string
+        }
+        Relationships: []
+      }
+      game_stats: {
+        Row: {
+          created_at: string
+          game_type: string
+          id: string
+          losses: number
+          points: number
+          total_questions: number
+          updated_at: string
+          visitor_id: string
+          wins: number
+        }
+        Insert: {
+          created_at?: string
+          game_type: string
+          id?: string
+          losses?: number
+          points?: number
+          total_questions?: number
+          updated_at?: string
+          visitor_id: string
+          wins?: number
+        }
+        Update: {
+          created_at?: string
+          game_type?: string
+          id?: string
+          losses?: number
+          points?: number
+          total_questions?: number
+          updated_at?: string
+          visitor_id?: string
+          wins?: number
+        }
+        Relationships: []
+      }
       liked_products: {
         Row: {
           created_at: string
