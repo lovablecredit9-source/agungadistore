@@ -4,6 +4,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { RotateCcw, Trophy, Loader2, Dices } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useGameCredits, GameCreditsBadge, BuyCreditsDialog } from "./GameCredits";
+import { updateGameStats } from "./GameProfile";
+import { getVisitorId } from "@/lib/visitor-id";
 
 const BOARD_SIZE = 100;
 const COLS = 10;
@@ -202,6 +204,8 @@ export default function UlarTanggaGame() {
     if (finalPos >= BOARD_SIZE) {
       setWinner("player");
       setMessage("🎉 Kamu MENANG!");
+      const vid = localStorage.getItem("balance_visitor_id") || getVisitorId();
+      updateGameStats(vid, "ular_tangga", true, 50);
       return;
     }
 
@@ -317,6 +321,8 @@ export default function UlarTanggaGame() {
     if (pos >= BOARD_SIZE) {
       setWinner("ai");
       setMessage("😢 AI menang! Coba lagi.");
+      const vid = localStorage.getItem("balance_visitor_id") || getVisitorId();
+      updateGameStats(vid, "ular_tangga", false, 0);
     } else {
       setIsPlayerTurn(true);
     }

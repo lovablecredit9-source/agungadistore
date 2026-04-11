@@ -1,4 +1,6 @@
 import { useState, useCallback, useRef } from "react";
+import { updateGameStats } from "./GameProfile";
+import { getVisitorId } from "@/lib/visitor-id";
 import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
 import { RotateCcw, Trophy, Loader2 } from "lucide-react";
@@ -181,6 +183,8 @@ export default function LudoGame() {
       setWinner("player");
       setMessage("🎉 Kamu MENANG!");
       setRolling(false);
+      const vid = localStorage.getItem("balance_visitor_id") || getVisitorId();
+      updateGameStats(vid, "ludo", true, 50);
       return;
     }
 
@@ -270,6 +274,8 @@ export default function LudoGame() {
       if (checkWin(newAt)) {
         setWinner("ai");
         setMessage("😢 AI menang! Coba lagi.");
+        const vid = localStorage.getItem("balance_visitor_id") || getVisitorId();
+        updateGameStats(vid, "ludo", false, 0);
         return;
       }
 
