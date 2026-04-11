@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { RefreshCw, Loader2, Check, X, Zap, Timer, Trophy, Star, ChevronDown, ThumbsUp, ThumbsDown } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { getVisitorId } from "@/lib/visitor-id";
+import { updateGameStats } from "./GameProfile";
 import { useGameCredits, GameCreditsBadge, BuyCreditsDialog } from "./GameCredits";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -95,12 +96,14 @@ export default function KuisGame() {
       setStreak(s => s + 1);
       const pts = getPointsForQuestion(questionNumber) + (streak >= 3 ? 5 : 0);
       setEarnedPoints(pts);
+      updateGameStats(activeVisitorId, "kuis", true, pts);
       const updated = addPoints(pts);
       setPlayerData(updated);
       setTimeout(() => fetchQuestion(), 2000);
     } else {
       setResult("wrong");
       setStreak(0);
+      updateGameStats(activeVisitorId, "kuis", false, 0);
     }
   };
 

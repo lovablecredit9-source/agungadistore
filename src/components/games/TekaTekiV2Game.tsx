@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { RefreshCw, Loader2, Lightbulb, Check, X, Zap, Timer, Trophy, Star, ChevronDown, Puzzle, Delete } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { getVisitorId } from "@/lib/visitor-id";
+import { updateGameStats } from "./GameProfile";
 import { useGameCredits, GameCreditsBadge, BuyCreditsDialog, RevealAnswerButton } from "./GameCredits";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -139,12 +140,13 @@ export default function TekaTekiV2Game() {
       setTimeout(() => {
         if (guess === answer) {
           if (timerRef.current) clearInterval(timerRef.current);
+          const pts = getPointsForQuestion(questionNumber);
           setResult("correct");
           setGameActive(false);
-          const pts = getPointsForQuestion(questionNumber);
           setEarnedPoints(pts);
           const updated = addPoints(pts);
           setPlayerData(updated);
+          updateGameStats(activeVisitorId, "teka_teki_v2", true, pts);
           setTimeout(() => fetchPuzzle(), 2000);
         } else {
           const newWrong = wrongCount + 1;
@@ -156,6 +158,7 @@ export default function TekaTekiV2Game() {
             if (timerRef.current) clearInterval(timerRef.current);
             setResult("wrong");
             setGameActive(false);
+            updateGameStats(activeVisitorId, "teka_teki_v2", false, 0);
           } else {
             setResult("wrong");
             setTimeout(() => setResult(null), 1200);

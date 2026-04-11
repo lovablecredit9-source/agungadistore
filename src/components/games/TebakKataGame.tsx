@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { RefreshCw, Loader2, Lightbulb, Check, X, Zap, Timer, Trophy, Star, Brain, ChevronDown, Gift } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { getVisitorId } from "@/lib/visitor-id";
+import { updateGameStats } from "./GameProfile";
 import { useGameCredits, GameCreditsBadge, BuyCreditsDialog, RevealAnswerButton } from "./GameCredits";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -63,6 +64,7 @@ export default function TebakKataGame() {
   function handleTimeout() {
     setGameActive(false);
     setResult("timeout");
+    updateGameStats(activeVisitorId, "tebak", false, 0);
   }
 
   const startNewGame = useCallback(async () => {
@@ -109,6 +111,7 @@ export default function TebakKataGame() {
       setPlayerData(newData);
       setResult("correct");
       setGameActive(false);
+      updateGameStats(activeVisitorId, "tebak", true, pts);
     } else {
       const newWrong = wrongCount + 1;
       setWrongCount(newWrong);
@@ -120,6 +123,7 @@ export default function TebakKataGame() {
       if (newWrong >= MAX_WRONG) {
         if (timerRef.current) clearInterval(timerRef.current);
         setGameActive(false);
+        updateGameStats(activeVisitorId, "tebak", false, 0);
       } else {
         setTimeout(() => setResult(null), 1200);
       }

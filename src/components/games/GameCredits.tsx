@@ -14,7 +14,7 @@ interface CreditPackage {
   label: string;
 }
 
-const PACKAGES: CreditPackage[] = [
+const DEFAULT_PACKAGES: CreditPackage[] = [
   { id: "2", credits: 2, price: 2000, label: "2 Kredit" },
   { id: "10", credits: 10, price: 5000, label: "10 Kredit" },
   { id: "30", credits: 30, price: 10000, label: "30 Kredit" },
@@ -109,7 +109,41 @@ export function BuyCreditsDialog({ visitorId, onPurchased }: BuyCreditsDialogPro
   const [voucherDiscount, setVoucherDiscount] = useState(0);
   const [voucherValid, setVoucherValid] = useState(false);
   const [checkingVoucher, setCheckingVoucher] = useState(false);
+  const [packages, setPackages] = useState<CreditPackage[]>(DEFAULT_PACKAGES);
+  const [flashSaleEnd, setFlashSaleEnd] = useState<string>("");
   const { toast } = useToast();
+
+  // Fetch promo prices from admin_settings
+  useEffect(() => {
+    if (!open) return;
+    (async () => {
+      const { data } = await supabase.from("admin_settings").select("*");
+      if (!data) return;
+      const settings: Record<string, string> = {};
+      (data as any[]).forEach(s => { settings[s.setting_key] = s.setting_value; });
+
+      const fsEnd = settings.flash_sale_end || "";
+      setFlashSaleEnd(fsEnd);
+      const isFlashActive = fsEnd && new Date(fsEnd) > new Date();
+
+      if (isFlashActive) {
+        const priceMap: Record<string, string> = {
+          "2": "credit_price_2", "10": "credit_price_10", "30": "credit_price_30",
+          "60": "credit_price_60", "100": "credit_price_100", "200": "credit_price_200",
+          "500": "credit_price_500", "1000": "credit_price_1000",
+          "unlimited": "credit_price_unlimited_month", "unlimited_year": "credit_price_unlimited_year",
+        };
+        const updated = DEFAULT_PACKAGES.map(pkg => {
+          const settingKey = priceMap[pkg.id];
+          const promoPrice = settingKey && settings[settingKey] ? parseInt(settings[settingKey]) : 0;
+          return promoPrice > 0 ? { ...pkg, price: promoPrice, originalPrice: pkg.price } : pkg;
+        });
+        setPackages(updated as any);
+      } else {
+        setPackages(DEFAULT_PACKAGES);
+      }
+    })();
+  }, [open]);
 
   const resetVoucher = () => {
     setVoucherCode("");
@@ -256,9 +290,20 @@ export function BuyCreditsDialog({ visitorId, onPurchased }: BuyCreditsDialogPro
               </div>
             )}
 
+            {/* Flash sale banner */}
+            {flashSaleEnd && new Date(flashSaleEnd) > new Date() && (
+              <div className="bg-gradient-to-r from-yellow-500/20 to-orange-500/20 border border-yellow-500/30 rounded-lg p-2 text-center">
+                <p className="text-xs font-bold text-yellow-600 flex items-center justify-center gap-1">
+                  🔥 FLASH SALE! Berakhir {new Date(flashSaleEnd).toLocaleString("id-ID")}
+                </p>
+              </div>
+            )}
+
             {/* Package list */}
             <div className="grid gap-2">
-              {PACKAGES.map(pkg => {
+              {packages.map(pkg => {
+                const origPrice = (pkg as any).originalPrice || pkg.price;
+                const isPromo = origPrice !== pkg.price;
                 const discountedPrice = getDiscountedPrice(pkg.price);
                 const hasDiscount = voucherValid && discountedPrice < pkg.price;
                 return (
@@ -278,10 +323,10 @@ export function BuyCreditsDialog({ visitorId, onPurchased }: BuyCreditsDialogPro
                         <span className="font-bold text-sm">{pkg.label}</span>
                       </div>
                       <div className="flex items-center gap-2">
-                        {hasDiscount ? (
+                        {isPromo || hasDiscount ? (
                           <div className="text-right">
-                            <span className="text-[10px] text-muted-foreground line-through block">Rp{pkg.price.toLocaleString("id-ID")}</span>
-                            <span className="text-xs font-bold text-green-600">Rp{discountedPrice.toLocaleString("id-ID")}</span>
+                            <span className="text-[10px] text-muted-foreground line-through block">Rp{(isPromo ? origPrice : pkg.price).toLocaleString("id-ID")}</span>
+                            <span className="text-xs font-bold text-green-600">Rp{(hasDiscount ? discountedPrice : pkg.price).toLocaleString("id-ID")}</span>
                           </div>
                         ) : (
                           <span className="text-xs text-muted-foreground">Rp{pkg.price.toLocaleString("id-ID")}</span>

@@ -100,6 +100,27 @@ export default function GameTab() {
           </div>
         </div>
 
+        {/* Hero Banner */}
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-violet-600 via-indigo-600 to-blue-600 p-4 mb-4 shadow-lg"
+        >
+          <div className="absolute inset-0 opacity-10">
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_50%,rgba(255,255,255,0.3),transparent_70%)]" />
+          </div>
+          <div className="relative z-10">
+            <h3 className="font-extrabold text-white text-lg leading-tight">🎮 Game AI Seru!</h3>
+            <p className="text-white/80 text-xs mt-1">{GAMES.length} game seru siap dimainkan. Tantang AI, kumpulkan poin, dan naik leaderboard!</p>
+            <div className="flex flex-wrap gap-1.5 mt-2">
+              {["Suit AI", "Tebak Kata", "Puzzle Huruf", "Kuis", "Ular Tangga", "Ludo"].map(name => (
+                <span key={name} className="text-[9px] font-bold bg-white/20 text-white rounded-full px-2 py-0.5">{name}</span>
+              ))}
+              <span className="text-[9px] font-bold bg-white/20 text-white rounded-full px-2 py-0.5">+{GAMES.length - 6} lainnya</span>
+            </div>
+          </div>
+        </motion.div>
+
         <div className="grid grid-cols-2 gap-3">
           {GAMES.map((game, i) => (
             <motion.div
@@ -111,9 +132,9 @@ export default function GameTab() {
             >
               <button
                 onClick={() => setMode(game.mode)}
-                className={`relative w-full overflow-hidden rounded-2xl bg-gradient-to-br ${game.gradient} p-3 text-left shadow-lg hover:shadow-xl transition-all aspect-[4/3] flex flex-col justify-between`}
+                className={`relative w-full overflow-hidden rounded-2xl bg-gradient-to-br ${game.gradient} p-3 text-left shadow-lg hover:shadow-xl transition-all flex flex-col`}
               >
-                <div className="flex-1 flex items-center justify-center">
+                <div className="flex items-center justify-center py-3">
                   <img
                     src={game.image}
                     alt={game.title}
@@ -121,9 +142,9 @@ export default function GameTab() {
                     className="w-16 h-16 object-contain drop-shadow-lg"
                   />
                 </div>
-                <div className="mt-1">
+                <div className="mt-auto">
                   <h3 className="font-extrabold text-sm text-white leading-tight drop-shadow">{game.title}</h3>
-                  <p className="text-[10px] text-white/80 leading-tight mt-0.5">{game.desc}</p>
+                  <p className="text-[10px] text-white/80 leading-snug mt-0.5 break-words">{game.desc}</p>
                 </div>
               </button>
             </motion.div>

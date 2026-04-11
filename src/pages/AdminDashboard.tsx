@@ -21,6 +21,7 @@ import AdminMusicTab from "@/components/AdminMusicTab";
 import AdminSponsorTab from "@/components/AdminSponsorTab";
 import AdminApiKeyTab from "@/components/AdminApiKeyTab";
 import AdminPostsTab from "@/components/AdminPostsTab";
+import AdminPromoTab from "@/components/AdminPromoTab";
 
 interface Product {
   id: string;
@@ -122,7 +123,7 @@ interface UserBalance {
   created_at: string;
 }
 
-type AdminTab = "products" | "tokens" | "claims" | "tickets" | "chats" | "saldo" | "notif" | "deposit" | "settings" | "diskon" | "pin" | "musik" | "vmusik" | "sponsor" | "apikey" | "postingan";
+type AdminTab = "products" | "tokens" | "claims" | "tickets" | "chats" | "saldo" | "notif" | "deposit" | "settings" | "diskon" | "pin" | "musik" | "vmusik" | "sponsor" | "apikey" | "postingan" | "promo";
 type ClaimDateFilter = "all" | "today" | "yesterday" | "lastmonth" | "custom";
 type DepositStatusFilter = "all" | "pending" | "approved" | "rejected";
 type DepositMethodFilter = "all" | "qris" | "ewallet";
@@ -1039,6 +1040,7 @@ const AdminDashboard = () => {
           { key: "sponsor" as AdminTab, icon: Megaphone, label: "Sponsor" },
           { key: "apikey" as AdminTab, icon: Key, label: "API" },
           { key: "postingan" as AdminTab, icon: FileText, label: "Post" },
+          { key: "promo" as AdminTab, icon: Tag, label: "Promo" },
         ]).map(({ key, icon: Icon, label }) => (
           <button key={key} onClick={() => setTab(key)} className={`flex-1 py-3 text-xs font-medium text-center border-b-2 transition-colors whitespace-nowrap px-2 ${tab === key ? "border-primary text-primary" : "border-transparent text-muted-foreground"}`}>
             <Icon className="w-4 h-4 inline mr-1" /> {label}
@@ -1881,6 +1883,7 @@ const AdminDashboard = () => {
         {tab === "sponsor" && <AdminSponsorTab />}
         {tab === "apikey" && <AdminApiKeyTab />}
         {tab === "postingan" && <AdminPostsTab />}
+        {tab === "promo" && <AdminPromoTab />}
       </main>
     </div>
   );
