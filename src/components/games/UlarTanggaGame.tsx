@@ -126,7 +126,7 @@ export default function UlarTanggaGame() {
 
   // Get visitorId from localStorage
   const visitorId = typeof window !== "undefined" ? localStorage.getItem("balance_visitor_id") : null;
-  const { credits, isUnlimited, fetchCredits, useCredit } = useGameCredits(visitorId);
+  const { credits, isUnlimited, unlimitedUntil, fetchCredits, useCredit } = useGameCredits(visitorId);
 
   const rollDice = () => Math.floor(Math.random() * 6) + 1;
 
@@ -382,7 +382,7 @@ export default function UlarTanggaGame() {
         </div>
         {/* Credits & Extra Turns */}
         <div className="mt-2 flex items-center justify-center gap-2">
-          <GameCreditsBadge credits={credits} isUnlimited={isUnlimited} unlimitedUntil={(useGameCredits as any).__unlimitedUntil} />
+          <GameCreditsBadge credits={credits} isUnlimited={isUnlimited} unlimitedUntil={unlimitedUntil} />
           {extraTurns > 0 && (
             <div className="flex items-center gap-1 text-xs bg-yellow-500/30 border border-yellow-400/50 rounded-lg px-2 py-1">
               <Dices className="w-3 h-3" />
