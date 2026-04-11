@@ -269,7 +269,51 @@ export default function DailyStreak() {
   function handlePlanClick(planDays: number) {
     const plan = AUTO_CLAIM_PLANS.find(p => p.days === planDays);
     if (!plan) return;
-    setShowConfirm({ days: plan.days, name: plan.name, price: plan.price });
+    const discountedPrice = voucherDiscount > 0 ? Math.max(0, plan.price - voucherDiscount) : undefined;
+    setShowConfirm({ days: plan.days, name: plan.name, price: plan.price, discountedPrice });
+  }
+
+  async function applyVoucher() {
+    if (!voucherCode.trim()) return;
+    setVoucherLoading(true);
+    setVoucherError("");
+    try {
+      const { data, error } = await supabase
+        .from("discount_vouchers")
+        .select("*")
+        .eq("code", voucherCode.trim().toUpperCase())
+        .eq("is_active", true)
+        .maybeSingle();
+
+      if (error || !data) {
+        setVoucherError("Kode voucher tidak valid");
+        setVoucherDiscount(0);
+        setVoucherApplied(false);
+      } else if (data.max_uses > 0 && data.used_count >= data.max_uses) {
+        setVoucherError("Voucher sudah habis dipakai");
+        setVoucherDiscount(0);
+        setVoucherApplied(false);
+      } else if (data.expires_at && new Date(data.expires_at) < new Date()) {
+        setVoucherError("Voucher sudah expired");
+        setVoucherDiscount(0);
+        setVoucherApplied(false);
+      } else {
+        setVoucherDiscount(data.discount_amount);
+        setVoucherApplied(true);
+        setVoucherError("");
+        toast({ title: "🎉 Voucher Berhasil!", description: `Diskon Rp${data.discount_amount.toLocaleString("id-ID")} diterapkan` });
+      }
+    } catch {
+      setVoucherError("Gagal memvalidasi voucher");
+    }
+    setVoucherLoading(false);
+  }
+
+  function removeVoucher() {
+    setVoucherCode("");
+    setVoucherDiscount(0);
+    setVoucherApplied(false);
+    setVoucherError("");
   }
 
   function confirmPurchase() {
