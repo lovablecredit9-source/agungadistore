@@ -323,10 +323,10 @@ export function BuyCreditsDialog({ visitorId, onPurchased }: BuyCreditsDialogPro
                         <span className="font-bold text-sm">{pkg.label}</span>
                       </div>
                       <div className="flex items-center gap-2">
-                        {hasDiscount ? (
+                        {isPromo || hasDiscount ? (
                           <div className="text-right">
-                            <span className="text-[10px] text-muted-foreground line-through block">Rp{pkg.price.toLocaleString("id-ID")}</span>
-                            <span className="text-xs font-bold text-green-600">Rp{discountedPrice.toLocaleString("id-ID")}</span>
+                            <span className="text-[10px] text-muted-foreground line-through block">Rp{(isPromo ? origPrice : pkg.price).toLocaleString("id-ID")}</span>
+                            <span className="text-xs font-bold text-green-600">Rp{(hasDiscount ? discountedPrice : pkg.price).toLocaleString("id-ID")}</span>
                           </div>
                         ) : (
                           <span className="text-xs text-muted-foreground">Rp{pkg.price.toLocaleString("id-ID")}</span>
