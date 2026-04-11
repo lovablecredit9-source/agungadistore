@@ -329,7 +329,7 @@ export default function DailyStreak() {
     setBuyingPlan(planDays);
     try {
       const { data, error } = await supabase.functions.invoke("purchase-streak-plan", {
-        body: { visitorId, planDays, pin },
+        body: { visitorId, planDays, pin, voucherCode: voucherApplied ? voucherCode.trim() : undefined },
       });
       if (error || data?.error) {
         if (data?.needPin) {
