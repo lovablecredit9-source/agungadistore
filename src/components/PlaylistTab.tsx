@@ -343,7 +343,20 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer, onPlayE
     return () => clearInterval(interval);
   }, [activeRedeemedMb]);
 
-  useEffect(() => { fetchSongs(); fetchRedeemedStorages(); checkPinExists(); fetchLikedSongs(); }, []);
+  useEffect(() => { fetchSongs(); fetchRedeemedStorages(); checkPinExists(); fetchLikedSongs(); fetchStoragePlans(); }, []);
+
+  async function fetchStoragePlans() {
+    const { data } = await supabase.from("storage_packages" as any).select("*").eq("is_active", true).order("sort_order", { ascending: true });
+    if (data && (data as any[]).length > 0) {
+      setStoragePlans((data as any[]).map((p: any) => ({
+        id: p.id,
+        name: p.name,
+        storage_mb: p.storage_mb,
+        addBytes: p.storage_mb * 1024 * 1024,
+        pricePerMonth: p.price,
+      })));
+    }
+  }
   useEffect(() => {
     if (songs.length === 0) return;
     void fetchAiRecommendations();
