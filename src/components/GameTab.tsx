@@ -40,6 +40,8 @@ const GAME_COMPONENTS: Record<string, React.ComponentType> = {
 export default function GameTab() {
   const [mode, setMode] = useState<GameMode>("menu");
 
+  const visitorId = typeof window !== "undefined" ? localStorage.getItem("balance_visitor_id") : null;
+  const { credits, isUnlimited, unlimitedUntil, fetchCredits } = useGameCredits(visitorId);
   if (mode !== "menu") {
     const game = GAMES.find(g => g.mode === mode);
     const GameComponent = GAME_COMPONENTS[mode];
