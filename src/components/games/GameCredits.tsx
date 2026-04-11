@@ -296,11 +296,16 @@ interface RevealAnswerButtonProps {
 
 export function RevealAnswerButton({ onReveal, visitorId, useCredit, credits, isUnlimited, disabled }: RevealAnswerButtonProps) {
   const [revealing, setRevealing] = useState(false);
+  const [showBuyFirst, setShowBuyFirst] = useState(false);
   const { toast } = useToast();
 
   const handleReveal = async () => {
     if (!visitorId) {
       toast({ title: "Login dulu", description: "Login ke akun saldo untuk menggunakan kredit jawaban", variant: "destructive" });
+      return;
+    }
+    if (!isUnlimited && credits <= 0) {
+      setShowBuyFirst(true);
       return;
     }
     setRevealing(true);
@@ -316,15 +321,20 @@ export function RevealAnswerButton({ onReveal, visitorId, useCredit, credits, is
   const canUse = isUnlimited || credits > 0;
 
   return (
-    <Button
-      variant="secondary"
-      size="sm"
-      className="gap-1 text-xs"
-      disabled={disabled || revealing || !canUse}
-      onClick={handleReveal}
-    >
-      {revealing ? <Loader2 className="w-3 h-3 animate-spin" /> : <Key className="w-3 h-3" />}
-      Kunci Jawaban {!isUnlimited && `(${credits})`}
-    </Button>
+    <div className="flex items-center gap-1.5">
+      <Button
+        variant="secondary"
+        size="sm"
+        className="gap-1 text-xs"
+        disabled={disabled || revealing}
+        onClick={handleReveal}
+      >
+        {revealing ? <Loader2 className="w-3 h-3 animate-spin" /> : <Key className="w-3 h-3" />}
+        Kunci Jawaban {!isUnlimited && `(${credits})`}
+      </Button>
+      {showBuyFirst && (
+        <BuyCreditsDialog visitorId={visitorId} onPurchased={() => { setShowBuyFirst(false); }} />
+      )}
+    </div>
   );
 }
