@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { RefreshCw, Loader2, Check, X, Zap, Timer, Trophy, Star, ChevronDown } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { getVisitorId } from "@/lib/visitor-id";
+import { updateGameStats } from "./GameProfile";
 import { useGameCredits } from "./GameCredits";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -112,11 +113,13 @@ export default function PilihanGandaGame() {
       setPlayerData(updated);
       setResult("correct");
       setStreak(s => s + 1);
+      updateGameStats(activeVisitorId, "pilihan_ganda", true, total);
       setTimeout(() => fetchQuestion(), 2000);
     } else {
       setResult("wrong");
       setGameActive(false);
       setStreak(0);
+      updateGameStats(activeVisitorId, "pilihan_ganda", false, 0);
     }
   };
 

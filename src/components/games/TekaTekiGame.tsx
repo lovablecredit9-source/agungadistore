@@ -101,13 +101,13 @@ export default function TekaTekiGame() {
 
     if (g === a || a.includes(g) || g.includes(a)) {
       if (timerRef.current) clearInterval(timerRef.current);
+      const pts = getPointsForQuestion(questionNumber);
       setResult("correct");
       setGameActive(false);
-      updateGameStats(activeVisitorId, "teka_teki", true, pts);
-      const pts = getPointsForQuestion(questionNumber);
       setEarnedPoints(pts);
       const updated = addPoints(pts);
       setPlayerData(updated);
+      updateGameStats(activeVisitorId, "teka_teki", true, pts);
       // Auto-next after 2 seconds
       setTimeout(() => fetchRiddle(), 2000);
     } else {
