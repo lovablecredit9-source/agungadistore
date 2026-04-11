@@ -59,9 +59,7 @@ Deno.serve(async (req) => {
         continue; // Already claimed today
       }
 
-      const yesterday = new Date();
-      yesterday.setDate(yesterday.getDate() - 1);
-      const yesterdayStr = yesterday.toISOString().split("T")[0];
+      const yesterdayStr = getYesterdayWIB();
 
       if (!streak) {
         // Create new streak
