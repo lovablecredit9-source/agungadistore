@@ -235,6 +235,45 @@ export type Database = {
           },
         ]
       }
+      credit_packages: {
+        Row: {
+          created_at: string
+          credits: number
+          id: string
+          is_active: boolean
+          is_unlimited: boolean
+          label: string
+          price: number
+          sort_order: number
+          unlimited_days: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          credits?: number
+          id?: string
+          is_active?: boolean
+          is_unlimited?: boolean
+          label?: string
+          price?: number
+          sort_order?: number
+          unlimited_days?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          credits?: number
+          id?: string
+          is_active?: boolean
+          is_unlimited?: boolean
+          label?: string
+          price?: number
+          sort_order?: number
+          unlimited_days?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       daily_streaks: {
         Row: {
           created_at: string

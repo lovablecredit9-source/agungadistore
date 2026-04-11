@@ -12,20 +12,9 @@ interface CreditPackage {
   credits: number;
   price: number;
   label: string;
+  is_unlimited?: boolean;
+  unlimited_days?: number;
 }
-
-const DEFAULT_PACKAGES: CreditPackage[] = [
-  { id: "2", credits: 2, price: 2000, label: "2 Kredit" },
-  { id: "10", credits: 10, price: 5000, label: "10 Kredit" },
-  { id: "30", credits: 30, price: 10000, label: "30 Kredit" },
-  { id: "60", credits: 60, price: 15000, label: "60 Kredit" },
-  { id: "100", credits: 100, price: 20000, label: "100 Kredit" },
-  { id: "200", credits: 200, price: 50000, label: "200 Kredit" },
-  { id: "500", credits: 500, price: 30000, label: "500 Kredit" },
-  { id: "1000", credits: 1000, price: 50000, label: "1000 Kredit" },
-  { id: "unlimited", credits: -1, price: 100000, label: "Unlimited 1 Bulan" },
-  { id: "unlimited_year", credits: -1, price: 1000000, label: "Unlimited 1 Tahun" },
-];
 
 export function useGameCredits(visitorId: string | null) {
   const [credits, setCredits] = useState(0);
@@ -109,38 +98,28 @@ export function BuyCreditsDialog({ visitorId, onPurchased }: BuyCreditsDialogPro
   const [voucherDiscount, setVoucherDiscount] = useState(0);
   const [voucherValid, setVoucherValid] = useState(false);
   const [checkingVoucher, setCheckingVoucher] = useState(false);
-  const [packages, setPackages] = useState<CreditPackage[]>(DEFAULT_PACKAGES);
+  const [packages, setPackages] = useState<CreditPackage[]>([]);
   const [flashSaleEnd, setFlashSaleEnd] = useState<string>("");
   const { toast } = useToast();
 
-  // Fetch promo prices from admin_settings
+  // Fetch packages from DB via edge function
   useEffect(() => {
     if (!open) return;
     (async () => {
-      const { data } = await supabase.from("admin_settings").select("*");
-      if (!data) return;
-      const settings: Record<string, string> = {};
-      (data as any[]).forEach(s => { settings[s.setting_key] = s.setting_value; });
-
-      const fsEnd = settings.flash_sale_end || "";
-      setFlashSaleEnd(fsEnd);
-      const isFlashActive = fsEnd && new Date(fsEnd) > new Date();
-
-      if (isFlashActive) {
-        const priceMap: Record<string, string> = {
-          "2": "credit_price_2", "10": "credit_price_10", "30": "credit_price_30",
-          "60": "credit_price_60", "100": "credit_price_100", "200": "credit_price_200",
-          "500": "credit_price_500", "1000": "credit_price_1000",
-          "unlimited": "credit_price_unlimited_month", "unlimited_year": "credit_price_unlimited_year",
-        };
-        const updated = DEFAULT_PACKAGES.map(pkg => {
-          const settingKey = priceMap[pkg.id];
-          const promoPrice = settingKey && settings[settingKey] ? parseInt(settings[settingKey]) : 0;
-          return promoPrice > 0 ? { ...pkg, price: promoPrice, originalPrice: pkg.price } : pkg;
+      try {
+        const { data } = await supabase.functions.invoke("purchase-game-credits", {
+          body: { action: "get_packages" },
         });
-        setPackages(updated as any);
-      } else {
-        setPackages(DEFAULT_PACKAGES);
+        if (data?.packages) {
+          setPackages(data.packages);
+        }
+      } catch {}
+      // Check flash sale
+      const { data: settingsData } = await supabase.from("admin_settings").select("*");
+      if (settingsData) {
+        const settings: Record<string, string> = {};
+        (settingsData as any[]).forEach(s => { settings[s.setting_key] = s.setting_value; });
+        setFlashSaleEnd(settings.flash_sale_end || "");
       }
     })();
   }, [open]);
@@ -315,7 +294,7 @@ export function BuyCreditsDialog({ visitorId, onPurchased }: BuyCreditsDialogPro
                       onClick={() => handleBuy(pkg.id)}
                     >
                       <div className="flex items-center gap-2">
-                        {pkg.id.startsWith("unlimited") ? (
+                        {pkg.is_unlimited ? (
                           <Infinity className="w-4 h-4 text-purple-500" />
                         ) : (
                           <Key className="w-4 h-4 text-accent" />

@@ -5,49 +5,24 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const DEFAULT_CREDIT_PACKAGES = [
-  { id: "2", credits: 2, price: 2000, label: "2 Kredit" },
-  { id: "10", credits: 10, price: 5000, label: "10 Kredit" },
-  { id: "30", credits: 30, price: 10000, label: "30 Kredit" },
-  { id: "60", credits: 60, price: 15000, label: "60 Kredit" },
-  { id: "100", credits: 100, price: 20000, label: "100 Kredit" },
-  { id: "200", credits: 200, price: 50000, label: "200 Kredit" },
-  { id: "500", credits: 500, price: 30000, label: "500 Kredit" },
-  { id: "1000", credits: 1000, price: 50000, label: "1000 Kredit" },
-  { id: "unlimited", credits: -1, price: 100000, label: "Unlimited 1 Bulan" },
-  { id: "unlimited_year", credits: -1, price: 1000000, label: "Unlimited 1 Tahun" },
-];
+interface CreditPackage {
+  id: string;
+  credits: number;
+  price: number;
+  label: string;
+  is_unlimited: boolean;
+  unlimited_days: number;
+  is_active: boolean;
+  sort_order: number;
+}
 
-const PRICE_SETTING_MAP: Record<string, string> = {
-  "2": "credit_price_2",
-  "10": "credit_price_10",
-  "30": "credit_price_30",
-  "60": "credit_price_60",
-  "100": "credit_price_100",
-  "200": "credit_price_200",
-  "500": "credit_price_500",
-  "1000": "credit_price_1000",
-  "unlimited": "credit_price_unlimited_month",
-  "unlimited_year": "credit_price_unlimited_year",
-};
-
-async function getPackagesWithDynamicPrices(admin: any) {
-  const { data: settings } = await admin.from("admin_settings").select("setting_key, setting_value")
-    .in("setting_key", Object.values(PRICE_SETTING_MAP));
-  
-  const priceMap: Record<string, number> = {};
-  if (settings) {
-    for (const s of settings) {
-      const val = parseInt(s.setting_value);
-      if (!isNaN(val) && val > 0) priceMap[s.setting_key] = val;
-    }
-  }
-
-  return DEFAULT_CREDIT_PACKAGES.map(pkg => {
-    const settingKey = PRICE_SETTING_MAP[pkg.id];
-    const dynamicPrice = settingKey ? priceMap[settingKey] : undefined;
-    return { ...pkg, price: dynamicPrice ?? pkg.price };
-  });
+async function getPackages(admin: any): Promise<CreditPackage[]> {
+  const { data } = await admin
+    .from("credit_packages")
+    .select("*")
+    .eq("is_active", true)
+    .order("sort_order", { ascending: true });
+  return data || [];
 }
 
 Deno.serve(async (req) => {
@@ -63,10 +38,9 @@ Deno.serve(async (req) => {
       auth: { autoRefreshToken: false, persistSession: false },
     });
 
-    const CREDIT_PACKAGES = await getPackagesWithDynamicPrices(admin);
-
     if (action === "get_packages") {
-      return Response.json({ packages: CREDIT_PACKAGES }, { headers: corsHeaders });
+      const packages = await getPackages(admin);
+      return Response.json({ packages }, { headers: corsHeaders });
     }
 
     if (action === "get_credits") {
@@ -107,7 +81,8 @@ Deno.serve(async (req) => {
     if (action === "purchase") {
       if (!visitorId || !packageId) return Response.json({ error: "Data tidak lengkap" }, { status: 400, headers: corsHeaders });
 
-      const pkg = CREDIT_PACKAGES.find(p => p.id === packageId);
+      // Fetch package from DB
+      const { data: pkg } = await admin.from("credit_packages").select("*").eq("id", packageId).eq("is_active", true).maybeSingle();
       if (!pkg) return Response.json({ error: "Paket tidak ditemukan" }, { status: 400, headers: corsHeaders });
 
       // Verify PIN
@@ -164,22 +139,15 @@ Deno.serve(async (req) => {
       // Upsert credits
       const { data: existing } = await admin.from("user_game_credits").select("*").eq("visitor_id", visitorId).maybeSingle();
       
-      if (pkg.id === "unlimited" || pkg.id === "unlimited_year") {
+      if (pkg.is_unlimited) {
         const unlimitilDate = new Date();
-        if (pkg.id === "unlimited_year") {
-          unlimitilDate.setFullYear(unlimitilDate.getFullYear() + 1);
-        } else {
-          unlimitilDate.setDate(unlimitilDate.getDate() + 30);
-        }
+        unlimitilDate.setDate(unlimitilDate.getDate() + (pkg.unlimited_days || 30));
+        
         if (existing) {
           const baseDate = existing.unlimited_until && new Date(existing.unlimited_until) > new Date()
             ? new Date(existing.unlimited_until)
             : new Date();
-          if (pkg.id === "unlimited_year") {
-            baseDate.setFullYear(baseDate.getFullYear() + 1);
-          } else {
-            baseDate.setDate(baseDate.getDate() + 30);
-          }
+          baseDate.setDate(baseDate.getDate() + (pkg.unlimited_days || 30));
           await admin.from("user_game_credits").update({
             unlimited_until: baseDate.toISOString(),
             updated_at: new Date().toISOString(),
@@ -205,8 +173,7 @@ Deno.serve(async (req) => {
         }
       }
 
-      const isUnlimitedPkg = pkg.id === "unlimited" || pkg.id === "unlimited_year";
-      const finalCredits = existing ? (isUnlimitedPkg ? existing.credits : existing.credits + pkg.credits) : (isUnlimitedPkg ? 0 : pkg.credits);
+      const finalCredits = existing ? (pkg.is_unlimited ? existing.credits : existing.credits + pkg.credits) : (pkg.is_unlimited ? 0 : pkg.credits);
       
       return Response.json({
         success: true,
