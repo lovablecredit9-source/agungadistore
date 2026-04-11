@@ -655,16 +655,25 @@ export default function DailyStreak() {
           Beli paket untuk klaim otomatis setiap tengah malam, streak tidak akan putus walau kamu tidak klik!
         </p>
 
-        {activeSub && (
-          <div className="bg-green-500/10 border border-green-500/20 rounded-xl p-3 text-sm">
-            <p className="font-bold text-green-600 flex items-center gap-1">
-              <Check className="w-4 h-4" /> Paket Aktif: {activeSub.plan_name}
-            </p>
-            <p className="text-[10px] text-muted-foreground mt-1">
-              Berlaku sampai: {new Date(activeSub.expires_at).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" })}
-            </p>
-          </div>
-        )}
+        {activeSub && (() => {
+          const expiresDate = new Date(activeSub.expires_at);
+          const now = new Date();
+          const remainingMs = expiresDate.getTime() - now.getTime();
+          const remainingDays = Math.max(0, Math.ceil(remainingMs / (1000 * 60 * 60 * 24)));
+          return (
+            <div className="bg-green-500/10 border border-green-500/20 rounded-xl p-3 text-sm">
+              <p className="font-bold text-green-600 flex items-center gap-1">
+                <Check className="w-4 h-4" /> Paket Aktif: {activeSub.plan_name}
+              </p>
+              <p className="text-[10px] text-muted-foreground mt-1">
+                Berlaku sampai: {expiresDate.toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" })}
+              </p>
+              <p className="text-xs font-bold text-green-700 mt-0.5">
+                ⏳ Sisa {remainingDays} hari lagi
+              </p>
+            </div>
+          );
+        })()}
 
         <div className="grid grid-cols-2 gap-2">
           {AUTO_CLAIM_PLANS.map(plan => (
