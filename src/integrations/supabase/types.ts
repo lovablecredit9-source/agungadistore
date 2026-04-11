@@ -195,6 +195,7 @@ export type Database = {
           id: string
           product_id: string | null
           token_id: string | null
+          trx_id: string | null
           type: string
           visitor_id: string
         }
@@ -205,6 +206,7 @@ export type Database = {
           id?: string
           product_id?: string | null
           token_id?: string | null
+          trx_id?: string | null
           type?: string
           visitor_id: string
         }
@@ -215,6 +217,7 @@ export type Database = {
           id?: string
           product_id?: string | null
           token_id?: string | null
+          trx_id?: string | null
           type?: string
           visitor_id?: string
         }
