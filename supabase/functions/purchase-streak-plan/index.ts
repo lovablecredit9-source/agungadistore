@@ -21,7 +21,7 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { visitorId, planDays, pin } = await req.json();
+    const { visitorId, planDays, pin, voucherCode } = await req.json();
 
     if (!visitorId || !planDays) {
       return Response.json({ error: "Data tidak lengkap" }, { status: 400, headers: corsHeaders });
