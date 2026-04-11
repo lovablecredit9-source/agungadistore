@@ -56,8 +56,9 @@ Deno.serve(async (req) => {
       if (data.credits <= 0) {
         return Response.json({ error: "Kredit jawaban habis" }, { status: 400, headers: corsHeaders });
       }
-      await admin.from("user_game_credits").update({ credits: data.credits - 1, updated_at: new Date().toISOString() }).eq("id", data.id);
-      return Response.json({ success: true, credits: data.credits - 1, is_unlimited: false }, { headers: corsHeaders });
+      const newCredits = Math.max(0, data.credits - 1);
+      await admin.from("user_game_credits").update({ credits: newCredits, updated_at: new Date().toISOString() }).eq("id", data.id);
+      return Response.json({ success: true, credits: newCredits, is_unlimited: false }, { headers: corsHeaders });
     }
 
     if (action === "check_voucher") {
