@@ -140,13 +140,13 @@ export default function TekaTekiV2Game() {
       setTimeout(() => {
         if (guess === answer) {
           if (timerRef.current) clearInterval(timerRef.current);
+          const pts = getPointsForQuestion(questionNumber);
           setResult("correct");
           setGameActive(false);
-          updateGameStats(activeVisitorId, "teka_teki_v2", true, pts);
-          const pts = getPointsForQuestion(questionNumber);
           setEarnedPoints(pts);
           const updated = addPoints(pts);
           setPlayerData(updated);
+          updateGameStats(activeVisitorId, "teka_teki_v2", true, pts);
           setTimeout(() => fetchPuzzle(), 2000);
         } else {
           const newWrong = wrongCount + 1;

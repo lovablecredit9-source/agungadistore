@@ -104,13 +104,13 @@ export default function TebakAngkaGame() {
 
     if (g === targetNumber) {
       if (timerRef.current) clearInterval(timerRef.current);
+      const pts = getPointsForQuestion(questionNumber);
       setResult("correct");
       setGameActive(false);
-      updateGameStats(activeVisitorId, "tebak_angka", true, pts);
-      const pts = getPointsForQuestion(questionNumber);
       setEarnedPoints(pts);
       const updated = addPoints(pts);
       setPlayerData(updated);
+      updateGameStats(activeVisitorId, "tebak_angka", true, pts);
       setTimeout(() => startNewGame(), 2000);
     } else {
       setLastGuessDirection(g < targetNumber ? "higher" : "lower");
