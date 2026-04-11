@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { motion } from "framer-motion";
@@ -11,6 +11,7 @@ import TebakAngkaGame from "@/components/games/TebakAngkaGame";
 import TebakBarangGame from "@/components/games/TebakBarangGame";
 import UlarTanggaGame from "@/components/games/UlarTanggaGame";
 import LudoGame from "@/components/games/LudoGame";
+import { useGameCredits, GameCreditsBadge, BuyCreditsDialog } from "@/components/games/GameCredits";
 
 type GameMode = "menu" | "suit" | "tebak" | "tebak_gambar" | "teka_teki" | "tebak_angka" | "tebak_barang" | "ular_tangga" | "ludo";
 
