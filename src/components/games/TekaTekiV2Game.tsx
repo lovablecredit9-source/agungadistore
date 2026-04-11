@@ -60,6 +60,7 @@ export default function TekaTekiV2Game() {
   const [earnedPoints, setEarnedPoints] = useState(0);
   const [answerRevealed, setAnswerRevealed] = useState(false);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const previousAnswersRef = useRef<string[]>([]);
   const { toast } = useToast();
 
   const diffConfig = DIFFICULTIES.find(d => d.key === difficulty)!;
@@ -104,13 +105,14 @@ export default function TekaTekiV2Game() {
 
     try {
       const { data, error } = await supabase.functions.invoke("teka-teki-v2", {
-        body: { difficulty },
+        body: { difficulty, previousAnswers: previousAnswersRef.current.slice(-10) },
       });
       if (error) throw error;
       const nextAnswer = (data.answer || "").toUpperCase().trim();
       setRiddle(data.riddle || "");
       setAnswer(nextAnswer);
       setScrambledLetters(buildKeyboardLetters(nextAnswer));
+      previousAnswersRef.current = [...previousAnswersRef.current, nextAnswer].slice(-15);
       setHints(data.hints || []);
       setExplanation(data.explanation || "");
       setGameActive(true);
