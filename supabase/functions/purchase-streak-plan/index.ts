@@ -5,6 +5,24 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+async function getActiveFlashDiscountPercent(admin: any, discountKey: string): Promise<number> {
+  const { data } = await admin
+    .from("admin_settings")
+    .select("setting_key, setting_value")
+    .in("setting_key", ["flash_sale_end", discountKey]);
+
+  const settings = Object.fromEntries((data || []).map((row: any) => [row.setting_key, row.setting_value || ""]));
+  const flashSaleEnd = settings.flash_sale_end;
+  const isFlashActive = !!flashSaleEnd && new Date(flashSaleEnd) > new Date();
+
+  if (!isFlashActive) return 0;
+
+  const rawDiscount = Number.parseInt(settings[discountKey] || "0", 10);
+  if (!Number.isFinite(rawDiscount)) return 0;
+
+  return Math.min(100, Math.max(0, rawDiscount));
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -49,19 +67,27 @@ Deno.serve(async (req) => {
       if (hashHex !== pinRow.pin_hash) return Response.json({ error: "PIN salah" }, { status: 403, headers: corsHeaders });
     }
 
-    // Calculate price with voucher
-    let finalPrice = plan.price;
-    let discountAmount = 0;
+    // Calculate price with flash sale + voucher
+    const flashDiscountPercent = await getActiveFlashDiscountPercent(admin, "promo_streak_discount");
+    const priceAfterFlashSale = flashDiscountPercent > 0
+      ? Math.max(0, Math.round(plan.price * (1 - flashDiscountPercent / 100)))
+      : plan.price;
+    const flashDiscountAmount = Math.max(0, plan.price - priceAfterFlashSale);
+
+    let finalPrice = priceAfterFlashSale;
+    let voucherDiscountAmount = 0;
     let voucherId: string | null = null;
 
     if (voucherCode) {
       const { data: voucher } = await admin.from("streak_discount_vouchers").select("*").eq("code", voucherCode.trim().toUpperCase()).eq("is_active", true).maybeSingle();
       if (voucher && voucher.used_count < voucher.max_uses && (!voucher.expires_at || new Date(voucher.expires_at) > new Date())) {
-        discountAmount = Math.min(voucher.discount_amount, plan.price);
-        finalPrice = Math.max(0, plan.price - discountAmount);
+        voucherDiscountAmount = Math.min(voucher.discount_amount, priceAfterFlashSale);
+        finalPrice = Math.max(0, priceAfterFlashSale - voucherDiscountAmount);
         voucherId = voucher.id;
       }
     }
+
+    const totalDiscountAmount = flashDiscountAmount + voucherDiscountAmount;
 
     // Check balance
     const { data: balanceRow } = await admin.from("user_balances").select("id, balance").eq("visitor_id", visitorId).maybeSingle();
@@ -102,8 +128,12 @@ Deno.serve(async (req) => {
     }
 
     // Record transaction
-    const desc = discountAmount > 0
-      ? `Beli paket Auto-Klaim Streak ${plan.name} - Diskon Rp${discountAmount.toLocaleString("id-ID")}`
+    const discountParts = [
+      flashDiscountAmount > 0 ? `Flash Sale ${flashDiscountPercent}%` : null,
+      voucherDiscountAmount > 0 ? `Voucher Rp${voucherDiscountAmount.toLocaleString("id-ID")}` : null,
+    ].filter(Boolean);
+    const desc = totalDiscountAmount > 0
+      ? `Beli paket Auto-Klaim Streak ${plan.name} - ${discountParts.join(" + ")}`
       : `Beli paket Auto-Klaim Streak ${plan.name}`;
     await admin.from("balance_transactions").insert({
       visitor_id: visitorId,
@@ -117,7 +147,9 @@ Deno.serve(async (req) => {
       plan: plan.name,
       expires_at: expiresAt.toISOString(),
       balance_remaining: newBalance,
-      discount_amount: discountAmount,
+      discount_amount: totalDiscountAmount,
+      flash_discount_amount: flashDiscountAmount,
+      voucher_discount_amount: voucherDiscountAmount,
     }, { headers: corsHeaders });
 
   } catch (error) {
