@@ -256,6 +256,7 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer, onPlayE
   const [activeSubs, setActiveSubs] = useState<ActiveSubscription[]>(getActiveSubscriptions());
   const [upgradeOpen, setUpgradeOpen] = useState(false);
   const [upgrading, setUpgrading] = useState(false);
+  const [storagePlans, setStoragePlans] = useState<StoragePlan[]>([]);
   const [selectedPlanIndex, setSelectedPlanIndex] = useState(0);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const { toast } = useToast();
