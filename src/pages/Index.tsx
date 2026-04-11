@@ -384,6 +384,7 @@ const Index = () => {
   // Cart
   const [cart, setCart] = useState<CartItem[]>([]);
   const [showCart, setShowCart] = useState(false);
+  const [navInfoDismissed, setNavInfoDismissed] = useState(() => !!localStorage.getItem("nav_swipe_info_dismissed"));
   const cartTotal = cart.reduce((sum, item) => sum + getWholesalePrice(item.product.id, item.quantity, item.product.price) * item.quantity, 0);
   const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
 
@@ -481,6 +482,18 @@ const Index = () => {
     fetchAdminSettings();
     checkPinStatus();
     fetchHomeSponsors();
+
+    // First visit notification - geser navigasi
+    const firstVisitKey = "first_visit_nav_notified";
+    if (!localStorage.getItem(firstVisitKey)) {
+      localStorage.setItem(firstVisitKey, "1");
+      supabase.from("notifications").insert({
+        visitor_id: visitorId,
+        title: "👆 Geser Navigasi ke Kiri!",
+        message: "Navigasi bawah bisa digeser untuk melihat tab lainnya seperti Musik, Sponsor, Streak, Game & lainnya.",
+        type: "info",
+      }).then(() => fetchNotifications());
+    }
 
     // Deep link handling for sponsor share links
     const params = new URLSearchParams(window.location.search);
@@ -1391,6 +1404,25 @@ const Index = () => {
       <main className="flex-1 max-w-lg mx-auto w-full px-4 py-4 pb-24">
         {tab === "beranda" && (
           <div className="space-y-5">
+            {/* Info: Geser navigasi */}
+            {!navInfoDismissed && (
+              <div className="relative flex items-center gap-3 rounded-xl bg-primary/10 border border-primary/20 px-4 py-3">
+                <div className="shrink-0 text-primary">
+                  <ChevronRight className="w-5 h-5 animate-pulse" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-semibold text-foreground">👆 Geser navigasi ke kiri</p>
+                  <p className="text-[11px] text-muted-foreground">Navigasi bawah bisa digeser untuk melihat tab lainnya seperti Musik, Sponsor, Streak, Game & lainnya.</p>
+                </div>
+                <button
+                  onClick={() => { localStorage.setItem("nav_swipe_info_dismissed", "1"); setNavInfoDismissed(true); }}
+                  className="shrink-0 p-1 rounded-full hover:bg-muted"
+                >
+                  <X className="w-4 h-4 text-muted-foreground" />
+                </button>
+              </div>
+            )}
+
             {/* Hero Promo Slider — Music / Produk / Sponsor */}
             <HomeBannerSlider
               banners={[
