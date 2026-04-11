@@ -103,6 +103,7 @@ export default function UlarTanggaGame() {
   const [winner, setWinner] = useState<"player" | "ai" | null>(null);
   const [message, setMessage] = useState("Giliran kamu! Lempar dadu 🎲");
   const [rollAnim, setRollAnim] = useState(false);
+  const [aiRollAnim, setAiRollAnim] = useState(false);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const { toast } = useToast();
 
@@ -193,8 +194,7 @@ export default function UlarTanggaGame() {
 
   function startAiTurn(currentPlayerPos: number, currentAiPos: number) {
     timeoutRef.current = setTimeout(() => {
-      // AI rolls dice with animation
-      setRollAnim(false);
+      setAiRollAnim(true);
       setMessage("🤖 AI melempar dadu...");
 
       let aiCount = 0;
@@ -205,6 +205,7 @@ export default function UlarTanggaGame() {
           clearInterval(aiAnimInterval);
           const aiDiceVal = rollDice();
           setAiDice(aiDiceVal);
+          setAiRollAnim(false);
 
           const aiRawPos = currentAiPos + aiDiceVal;
 
@@ -217,7 +218,6 @@ export default function UlarTanggaGame() {
           setAnimating(true);
           setMessage(`AI dapat ${aiDiceVal}! Maju...`);
 
-          // AI step-by-step
           animateSteps(currentAiPos, aiDiceVal, STEP_DELAY, (stepPos) => {
             setDisplayAiPos(stepPos);
           }, (landedPos) => {
@@ -267,7 +267,7 @@ export default function UlarTanggaGame() {
     setCurrentDice(1); setAiDice(0);
     setIsPlayerTurn(true); setWinner(null);
     setMessage("Giliran kamu! Lempar dadu 🎲");
-    setRolling(false); setAnimating(false);
+    setRolling(false); setAnimating(false); setAiRollAnim(false);
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
   };
 
@@ -343,28 +343,30 @@ export default function UlarTanggaGame() {
                 }`}>
                   {num}
                 </span>
-                {isSnakeHead && <span className="absolute -top-0.5 -right-0.5 text-[9px] leading-none">🐍</span>}
-                {isLadderBottom && <span className="absolute -top-0.5 -right-0.5 text-[9px] leading-none">🪜</span>}
-                {isFinish && <span className="absolute -top-0.5 -right-0.5 text-[9px] leading-none">🏁</span>}
+                {isSnakeHead && <span className="absolute top-0 right-0 text-[8px] leading-none z-10">🐍</span>}
+                {isLadderBottom && <span className="absolute top-0 right-0 text-[8px] leading-none z-10">🪜</span>}
+                {isFinish && <span className="absolute top-0 right-0 text-[8px] leading-none z-10">🏁</span>}
 
                 {hasPlayer && (
                   <motion.div
-                    className="absolute w-4 h-4 rounded-full bg-blue-500 border-2 border-white shadow-lg z-20 flex items-center justify-center"
+                    className="absolute w-4 h-4 rounded-sm bg-blue-500 border border-white shadow-lg z-20 flex items-center justify-center"
                     initial={false}
                     animate={{ scale: [1, 1.3, 1] }}
                     transition={{ duration: 0.25 }}
-                    style={{ top: hasAI ? "-2px" : "50%", left: hasAI ? "-2px" : "50%", transform: hasAI ? undefined : "translate(-50%, -50%)" }}
+                    key={`player-${displayPlayerPos}`}
+                    style={{ top: hasAI ? "0px" : "50%", left: hasAI ? "0px" : "50%", transform: hasAI ? undefined : "translate(-50%, -50%)" }}
                   >
                     <span className="text-[5px] text-white font-black">K</span>
                   </motion.div>
                 )}
                 {hasAI && (
                   <motion.div
-                    className="absolute w-4 h-4 rounded-full bg-red-500 border-2 border-white shadow-lg z-20 flex items-center justify-center"
+                    className="absolute w-4 h-4 rounded-sm bg-red-500 border border-white shadow-lg z-20 flex items-center justify-center"
                     initial={false}
                     animate={{ scale: [1, 1.3, 1] }}
                     transition={{ duration: 0.25 }}
-                    style={{ bottom: hasPlayer ? "-2px" : "50%", right: hasPlayer ? "-2px" : "50%", transform: hasPlayer ? undefined : "translate(50%, 50%)" }}
+                    key={`ai-${displayAiPos}`}
+                    style={{ bottom: hasPlayer ? "0px" : "50%", right: hasPlayer ? "0px" : "50%", transform: hasPlayer ? undefined : "translate(50%, 50%)" }}
                   >
                     <span className="text-[5px] text-white font-black">AI</span>
                   </motion.div>
@@ -392,7 +394,7 @@ export default function UlarTanggaGame() {
           {aiDice > 0 && (
             <div className="text-center">
               <p className="text-[10px] text-muted-foreground font-bold mb-1">AI</p>
-              <DiceFace value={aiDice} size={56} color="#ef4444" />
+              <DiceFace value={aiDice} size={56} color="#ef4444" rolling={aiRollAnim} />
             </div>
           )}
         </div>

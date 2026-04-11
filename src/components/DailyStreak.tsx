@@ -225,7 +225,12 @@ export default function DailyStreak() {
   const [showPinForStreak, setShowPinForStreak] = useState(false);
   const [streakPinInput, setStreakPinInput] = useState("");
   const [pendingPlanDays, setPendingPlanDays] = useState<number | null>(null);
-  const [showConfirm, setShowConfirm] = useState<{ days: number; name: string; price: number } | null>(null);
+  const [showConfirm, setShowConfirm] = useState<{ days: number; name: string; price: number; discountedPrice?: number } | null>(null);
+  const [voucherCode, setVoucherCode] = useState("");
+  const [voucherDiscount, setVoucherDiscount] = useState(0);
+  const [voucherLoading, setVoucherLoading] = useState(false);
+  const [voucherError, setVoucherError] = useState("");
+  const [voucherApplied, setVoucherApplied] = useState(false);
   const visitorId = getVisitorId();
   const countdown = useCountdown();
   const { toast } = useToast();
@@ -264,7 +269,51 @@ export default function DailyStreak() {
   function handlePlanClick(planDays: number) {
     const plan = AUTO_CLAIM_PLANS.find(p => p.days === planDays);
     if (!plan) return;
-    setShowConfirm({ days: plan.days, name: plan.name, price: plan.price });
+    const discountedPrice = voucherDiscount > 0 ? Math.max(0, plan.price - voucherDiscount) : undefined;
+    setShowConfirm({ days: plan.days, name: plan.name, price: plan.price, discountedPrice });
+  }
+
+  async function applyVoucher() {
+    if (!voucherCode.trim()) return;
+    setVoucherLoading(true);
+    setVoucherError("");
+    try {
+      const { data, error } = await supabase
+        .from("discount_vouchers")
+        .select("*")
+        .eq("code", voucherCode.trim().toUpperCase())
+        .eq("is_active", true)
+        .maybeSingle();
+
+      if (error || !data) {
+        setVoucherError("Kode voucher tidak valid");
+        setVoucherDiscount(0);
+        setVoucherApplied(false);
+      } else if (data.max_uses > 0 && data.used_count >= data.max_uses) {
+        setVoucherError("Voucher sudah habis dipakai");
+        setVoucherDiscount(0);
+        setVoucherApplied(false);
+      } else if (data.expires_at && new Date(data.expires_at) < new Date()) {
+        setVoucherError("Voucher sudah expired");
+        setVoucherDiscount(0);
+        setVoucherApplied(false);
+      } else {
+        setVoucherDiscount(data.discount_amount);
+        setVoucherApplied(true);
+        setVoucherError("");
+        toast({ title: "🎉 Voucher Berhasil!", description: `Diskon Rp${data.discount_amount.toLocaleString("id-ID")} diterapkan` });
+      }
+    } catch {
+      setVoucherError("Gagal memvalidasi voucher");
+    }
+    setVoucherLoading(false);
+  }
+
+  function removeVoucher() {
+    setVoucherCode("");
+    setVoucherDiscount(0);
+    setVoucherApplied(false);
+    setVoucherError("");
   }
 
   function confirmPurchase() {
@@ -675,25 +724,57 @@ export default function DailyStreak() {
           );
         })()}
 
-        <div className="grid grid-cols-2 gap-2">
-          {AUTO_CLAIM_PLANS.map(plan => (
-            <Button
-              key={plan.days}
-              variant="outline"
-              className="h-auto py-2.5 px-3 flex flex-col items-center gap-0.5 text-xs hover:border-primary/50"
-              disabled={buyingPlan === plan.days}
-              onClick={() => handlePlanClick(plan.days)}
-            >
-              {buyingPlan === plan.days ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              ) : (
-                <>
-                  <span className="font-extrabold text-sm">{plan.name}</span>
-                  <span className="text-primary font-bold">Rp{plan.price.toLocaleString("id-ID")}</span>
-                </>
-              )}
+        {/* Voucher Input */}
+        <div className="flex gap-2 items-center">
+          <Input
+            placeholder="Kode Voucher Diskon"
+            value={voucherCode}
+            onChange={e => { setVoucherCode(e.target.value.toUpperCase()); if (voucherApplied) removeVoucher(); }}
+            className="h-9 text-xs flex-1"
+            disabled={voucherApplied}
+          />
+          {voucherApplied ? (
+            <Button variant="outline" size="sm" className="h-9 text-xs text-destructive" onClick={removeVoucher}>
+              <X className="w-3 h-3 mr-1" /> Hapus
             </Button>
-          ))}
+          ) : (
+            <Button size="sm" className="h-9 text-xs" onClick={applyVoucher} disabled={voucherLoading || !voucherCode.trim()}>
+              {voucherLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : "Pakai"}
+            </Button>
+          )}
+        </div>
+        {voucherError && <p className="text-[10px] text-destructive font-medium">{voucherError}</p>}
+        {voucherApplied && <p className="text-[10px] text-green-600 font-bold">✅ Diskon Rp{voucherDiscount.toLocaleString("id-ID")} aktif!</p>}
+
+        <div className="grid grid-cols-2 gap-2">
+          {AUTO_CLAIM_PLANS.map(plan => {
+            const discounted = voucherDiscount > 0 ? Math.max(0, plan.price - voucherDiscount) : null;
+            return (
+              <Button
+                key={plan.days}
+                variant="outline"
+                className="h-auto py-2.5 px-3 flex flex-col items-center gap-0.5 text-xs hover:border-primary/50"
+                disabled={buyingPlan === plan.days}
+                onClick={() => handlePlanClick(plan.days)}
+              >
+                {buyingPlan === plan.days ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <>
+                    <span className="font-extrabold text-sm">{plan.name}</span>
+                    {discounted !== null ? (
+                      <div className="flex flex-col items-center">
+                        <span className="text-muted-foreground text-[10px] line-through">Rp{plan.price.toLocaleString("id-ID")}</span>
+                        <span className="text-green-600 font-bold">Rp{discounted.toLocaleString("id-ID")}</span>
+                      </div>
+                    ) : (
+                      <span className="text-primary font-bold">Rp{plan.price.toLocaleString("id-ID")}</span>
+                    )}
+                  </>
+                )}
+              </Button>
+            );
+          })}
         </div>
       </motion.div>
 
@@ -708,7 +789,14 @@ export default function DailyStreak() {
             <div className="bg-muted/50 rounded-xl p-4 text-center space-y-1">
               <p className="text-sm text-muted-foreground">Paket Auto-Klaim</p>
               <p className="text-xl font-extrabold">{showConfirm.name}</p>
-              <p className="text-lg font-bold text-primary">Rp{showConfirm.price.toLocaleString("id-ID")}</p>
+              {showConfirm.discountedPrice !== undefined ? (
+                <div className="space-y-0.5">
+                  <p className="text-sm text-muted-foreground line-through">Rp{showConfirm.price.toLocaleString("id-ID")}</p>
+                  <p className="text-lg font-bold text-green-600">Rp{showConfirm.discountedPrice.toLocaleString("id-ID")}</p>
+                </div>
+              ) : (
+                <p className="text-lg font-bold text-primary">Rp{showConfirm.price.toLocaleString("id-ID")}</p>
+              )}
             </div>
             <p className="text-xs text-muted-foreground text-center">Apakah kamu yakin ingin membeli paket ini? Saldo akan dipotong otomatis.</p>
             <div className="flex gap-2">
