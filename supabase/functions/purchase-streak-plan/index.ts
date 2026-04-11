@@ -23,6 +23,19 @@ async function getActiveFlashDiscountPercent(admin: any, discountKey: string): P
   return Math.min(100, Math.max(0, rawDiscount));
 }
 
+function getTodayWIB() {
+  const now = new Date();
+  const wib = new Date(now.getTime() + 7 * 60 * 60 * 1000);
+  return wib.toISOString().split("T")[0];
+}
+
+function getYesterdayWIB() {
+  const now = new Date();
+  const wib = new Date(now.getTime() + 7 * 60 * 60 * 1000);
+  wib.setDate(wib.getDate() - 1);
+  return wib.toISOString().split("T")[0];
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -127,6 +140,41 @@ Deno.serve(async (req) => {
       return Response.json({ error: "Gagal membuat langganan" }, { status: 500, headers: corsHeaders });
     }
 
+    // Auto-claim today's streak immediately after successful purchase
+    const today = getTodayWIB();
+    const yesterday = getYesterdayWIB();
+    let autoClaimed = false;
+
+    const { data: streak } = await admin
+      .from("daily_streaks")
+      .select("id, last_claim_date, current_streak, longest_streak, total_claims")
+      .eq("visitor_id", visitorId)
+      .maybeSingle();
+
+    if (!streak) {
+      const { error: streakInsertErr } = await admin.from("daily_streaks").insert({
+        visitor_id: visitorId,
+        last_claim_date: today,
+        current_streak: 1,
+        longest_streak: 1,
+        total_claims: 1,
+      });
+      autoClaimed = !streakInsertErr;
+    } else if (streak.last_claim_date !== today) {
+      const isContinuous = streak.last_claim_date === yesterday;
+      const newStreak = isContinuous ? streak.current_streak + 1 : 1;
+      const newLongest = Math.max(streak.longest_streak, newStreak);
+
+      const { error: streakUpdateErr } = await admin.from("daily_streaks").update({
+        last_claim_date: today,
+        current_streak: newStreak,
+        longest_streak: newLongest,
+        total_claims: streak.total_claims + 1,
+      }).eq("id", streak.id);
+
+      autoClaimed = !streakUpdateErr;
+    }
+
     // Record transaction
     const discountParts = [
       flashDiscountAmount > 0 ? `Flash Sale ${flashDiscountPercent}%` : null,
@@ -150,6 +198,7 @@ Deno.serve(async (req) => {
       discount_amount: totalDiscountAmount,
       flash_discount_amount: flashDiscountAmount,
       voucher_discount_amount: voucherDiscountAmount,
+      auto_claimed: autoClaimed,
     }, { headers: corsHeaders });
 
   } catch (error) {
