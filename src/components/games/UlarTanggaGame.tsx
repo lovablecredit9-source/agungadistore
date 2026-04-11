@@ -51,6 +51,23 @@ function DiceFace({ value, size = 64, color = "currentColor", rolling = false }:
   );
 }
 
+// Get row,col from cell number (visual grid position)
+function getRowCol(num: number): [number, number] {
+  const row = Math.floor((num - 1) / COLS); // 0 = bottom row
+  const visualRow = 9 - row; // flip so row 0 is top
+  const col = row % 2 === 0 ? (num - 1) % COLS : COLS - 1 - ((num - 1) % COLS);
+  return [visualRow, col];
+}
+
+// Get center position as percentage
+function getCellCenter(num: number): { x: number; y: number } {
+  const [row, col] = getRowCol(num);
+  return {
+    x: (col + 0.5) / COLS * 100,
+    y: (row + 0.5) / 10 * 100,
+  };
+}
+
 function getCellColor(num: number): string {
   if (SNAKES[num]) return "bg-red-100 dark:bg-red-900/30 border-red-300 dark:border-red-700";
   if (LADDERS[num]) return "bg-green-100 dark:bg-green-900/30 border-green-300 dark:border-green-700";
