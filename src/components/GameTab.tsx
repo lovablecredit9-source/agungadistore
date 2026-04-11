@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { motion } from "framer-motion";
@@ -11,6 +11,7 @@ import TebakAngkaGame from "@/components/games/TebakAngkaGame";
 import TebakBarangGame from "@/components/games/TebakBarangGame";
 import UlarTanggaGame from "@/components/games/UlarTanggaGame";
 import LudoGame from "@/components/games/LudoGame";
+import { useGameCredits, GameCreditsBadge, BuyCreditsDialog } from "@/components/games/GameCredits";
 
 type GameMode = "menu" | "suit" | "tebak" | "tebak_gambar" | "teka_teki" | "tebak_angka" | "tebak_barang" | "ular_tangga" | "ludo";
 
@@ -39,6 +40,8 @@ const GAME_COMPONENTS: Record<string, React.ComponentType> = {
 export default function GameTab() {
   const [mode, setMode] = useState<GameMode>("menu");
 
+  const visitorId = typeof window !== "undefined" ? localStorage.getItem("balance_visitor_id") : null;
+  const { credits, isUnlimited, unlimitedUntil, fetchCredits } = useGameCredits(visitorId);
   if (mode !== "menu") {
     const game = GAMES.find(g => g.mode === mode);
     const GameComponent = GAME_COMPONENTS[mode];
@@ -47,13 +50,16 @@ export default function GameTab() {
 
     return (
       <div className="space-y-4 p-4 pb-24">
-        <div className="flex items-center gap-2">
-          <Button variant="ghost" size="sm" onClick={() => setMode("menu")} className="gap-1">
-            <ArrowLeft className="w-4 h-4" /> Kembali
-          </Button>
-          <h2 className="font-extrabold text-lg flex items-center gap-2">
-            <Icon className="w-5 h-5 text-primary" /> {game.title}
-          </h2>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Button variant="ghost" size="sm" onClick={() => setMode("menu")} className="gap-1">
+              <ArrowLeft className="w-4 h-4" /> Kembali
+            </Button>
+            <h2 className="font-extrabold text-lg flex items-center gap-2">
+              <Icon className="w-5 h-5 text-primary" /> {game.title}
+            </h2>
+          </div>
+          <GameCreditsBadge credits={credits} isUnlimited={isUnlimited} unlimitedUntil={unlimitedUntil} />
         </div>
         <GameComponent />
       </div>
@@ -63,10 +69,15 @@ export default function GameTab() {
   return (
     <div className="space-y-4 p-4 pb-24">
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-        <h2 className="font-extrabold text-xl flex items-center gap-2 mb-4">
-          <Gamepad2 className="w-6 h-6 text-primary" /> Game
-        </h2>
-
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="font-extrabold text-xl flex items-center gap-2">
+            <Gamepad2 className="w-6 h-6 text-primary" /> Game
+          </h2>
+          <div className="flex items-center gap-2">
+            <GameCreditsBadge credits={credits} isUnlimited={isUnlimited} unlimitedUntil={unlimitedUntil} />
+            <BuyCreditsDialog visitorId={visitorId} onPurchased={fetchCredits} />
+          </div>
+        </div>
         <div className="grid grid-cols-1 gap-3">
           {GAMES.map(game => {
             const Icon = game.icon;
