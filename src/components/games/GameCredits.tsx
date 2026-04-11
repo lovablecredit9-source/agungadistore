@@ -64,16 +64,24 @@ export function useGameCredits(visitorId: string | null) {
 interface GameCreditsBadgeProps {
   credits: number;
   isUnlimited: boolean;
+  unlimitedUntil?: string | null;
 }
 
-export function GameCreditsBadge({ credits, isUnlimited }: GameCreditsBadgeProps) {
+export function GameCreditsBadge({ credits, isUnlimited, unlimitedUntil }: GameCreditsBadgeProps) {
+  const expiryLabel = unlimitedUntil
+    ? new Date(unlimitedUntil).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" })
+    : null;
+
   return (
     <div className="flex items-center gap-1 text-xs bg-accent/20 border border-accent/30 rounded-lg px-2 py-1">
       <Key className="w-3 h-3 text-accent" />
       {isUnlimited ? (
-        <span className="font-bold text-accent flex items-center gap-0.5"><Infinity className="w-3 h-3" /> Unlimited</span>
+        <span className="font-bold text-accent flex items-center gap-0.5">
+          <Infinity className="w-3 h-3" /> Unlimited
+          {expiryLabel && <span className="text-[9px] opacity-70 ml-0.5">s/d {expiryLabel}</span>}
+        </span>
       ) : (
-        <span className="font-bold">{credits} kredit</span>
+        <span className="font-bold">{Math.max(0, credits)} kredit</span>
       )}
     </div>
   );

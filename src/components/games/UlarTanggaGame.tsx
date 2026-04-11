@@ -341,13 +341,14 @@ export default function UlarTanggaGame() {
   }, [playerPos, aiPos, animating]);
 
   const boardNums: number[] = [];
-  for (let row = 0; row < 10; row++) {
-    const rowNums: number[] = [];
+  for (let visualRow = 0; visualRow < 10; visualRow++) {
+    const boardRow = 9 - visualRow;
     for (let col = 0; col < 10; col++) {
-      const num = (9 - row) * 10 + (row % 2 === 1 ? col + 1 : 10 - col);
-      rowNums.push(num);
+      const num = boardRow % 2 === 0
+        ? boardRow * 10 + col + 1
+        : boardRow * 10 + (10 - col);
+      boardNums.push(num);
     }
-    boardNums.push(...rowNums);
   }
 
   return (
@@ -405,12 +406,12 @@ export default function UlarTanggaGame() {
 
               return (
                 <div
-                  key={i}
+                  key={num}
                   className={`relative flex items-center justify-center aspect-square rounded-[3px] border text-[7px] font-bold ${getCellColor(num)} ${
                     isFinish ? "!bg-yellow-300 dark:!bg-yellow-600 !border-yellow-500" : ""
                   } ${isStart ? "!bg-green-300 dark:!bg-green-600 !border-green-500" : ""}`}
                 >
-                  <span className={`${isSnakeHead ? "text-red-600 dark:text-red-400 font-black" : isLadderBottom ? "text-green-600 dark:text-green-400 font-black" : "opacity-50"} ${
+                  <span className={`z-[1] select-none ${isSnakeHead ? "text-red-600 dark:text-red-400 font-black" : isLadderBottom ? "text-green-600 dark:text-green-400 font-black" : "opacity-60"} ${
                     isFinish ? "text-yellow-800 dark:text-yellow-100" : ""
                   }`}>
                     {num}
