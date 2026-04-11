@@ -6,7 +6,17 @@ const corsHeaders = {
 };
 
 function getToday() {
-  return new Date().toISOString().split("T")[0];
+  // Use WIB (UTC+7) timezone
+  const now = new Date();
+  const wib = new Date(now.getTime() + 7 * 60 * 60 * 1000);
+  return wib.toISOString().split("T")[0];
+}
+
+function getYesterdayWIB() {
+  const now = new Date();
+  const wib = new Date(now.getTime() + 7 * 60 * 60 * 1000);
+  wib.setDate(wib.getDate() - 1);
+  return wib.toISOString().split("T")[0];
 }
 
 Deno.serve(async (req) => {

@@ -51,15 +51,20 @@ function getTierGlow(tier: number) {
   }
 }
 
+function getWIBDate(date: Date = new Date()) {
+  // Convert to WIB (UTC+7)
+  const wib = new Date(date.getTime() + 7 * 60 * 60 * 1000);
+  return wib.toISOString().split("T")[0];
+}
+
 function getToday() {
-  return new Date().toISOString().split("T")[0];
+  return getWIBDate();
 }
 
 function isYesterday(dateStr: string) {
-  const d = new Date(dateStr);
   const yesterday = new Date();
   yesterday.setDate(yesterday.getDate() - 1);
-  return d.toISOString().split("T")[0] === yesterday.toISOString().split("T")[0];
+  return dateStr === getWIBDate(yesterday);
 }
 
 function isToday(dateStr: string) {
