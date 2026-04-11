@@ -339,58 +339,110 @@ export default function UlarTanggaGame() {
 
       {/* Board */}
       <div className="bg-gradient-to-br from-amber-100 to-orange-50 dark:from-amber-950/30 dark:to-orange-950/20 rounded-2xl border-2 border-amber-300 dark:border-amber-700 p-1.5 shadow-xl">
-        <div className="grid grid-cols-10 gap-[2px]">
-          {boardNums.map((num, i) => {
-            const isSnakeHead = SNAKES[num] !== undefined;
-            const isLadderBottom = LADDERS[num] !== undefined;
-            const hasPlayer = displayPlayerPos === num && displayPlayerPos > 0;
-            const hasAI = displayAiPos === num && displayAiPos > 0;
-            const isFinish = num === 100;
-            const isStart = num === 1;
+        <div className="relative">
+          <div className="grid grid-cols-10 gap-[2px]">
+            {boardNums.map((num, i) => {
+              const isSnakeHead = SNAKES[num] !== undefined;
+              const isLadderBottom = LADDERS[num] !== undefined;
+              const hasPlayer = displayPlayerPos === num && displayPlayerPos > 0;
+              const hasAI = displayAiPos === num && displayAiPos > 0;
+              const isFinish = num === 100;
+              const isStart = num === 1;
 
-            return (
-              <div
-                key={i}
-                className={`relative flex items-center justify-center aspect-square rounded-[3px] border text-[7px] font-bold ${getCellColor(num)} ${
-                  isFinish ? "!bg-yellow-300 dark:!bg-yellow-600 !border-yellow-500" : ""
-                } ${isStart ? "!bg-green-300 dark:!bg-green-600 !border-green-500" : ""}`}
-              >
-                <span className={`${isSnakeHead || isLadderBottom ? "font-black" : "opacity-50"} ${
-                  isFinish ? "text-yellow-800 dark:text-yellow-100" : ""
-                }`}>
-                  {num}
-                </span>
-                {isSnakeHead && <span className="absolute top-0 right-0 text-[8px] leading-none z-10">🐍</span>}
-                {isLadderBottom && <span className="absolute top-0 right-0 text-[8px] leading-none z-10">🪜</span>}
-                {isFinish && <span className="absolute top-0 right-0 text-[8px] leading-none z-10">🏁</span>}
+              return (
+                <div
+                  key={i}
+                  className={`relative flex items-center justify-center aspect-square rounded-[3px] border text-[7px] font-bold ${getCellColor(num)} ${
+                    isFinish ? "!bg-yellow-300 dark:!bg-yellow-600 !border-yellow-500" : ""
+                  } ${isStart ? "!bg-green-300 dark:!bg-green-600 !border-green-500" : ""}`}
+                >
+                  <span className={`${isSnakeHead || isLadderBottom ? "font-black" : "opacity-50"} ${
+                    isFinish ? "text-yellow-800 dark:text-yellow-100" : ""
+                  }`}>
+                    {num}
+                  </span>
+                  {isSnakeHead && <span className="absolute top-0 right-0 text-[8px] leading-none z-10">🐍</span>}
+                  {isLadderBottom && <span className="absolute top-0 right-0 text-[8px] leading-none z-10">🪜</span>}
+                  {isFinish && <span className="absolute top-0 right-0 text-[8px] leading-none z-10">🏁</span>}
 
-                {hasPlayer && (
-                  <motion.div
-                    className="absolute w-4 h-4 rounded-sm bg-blue-500 border border-white shadow-lg z-20 flex items-center justify-center"
-                    initial={false}
-                    animate={{ scale: [1, 1.3, 1] }}
-                    transition={{ duration: 0.25 }}
-                    key={`player-${displayPlayerPos}`}
-                    style={{ top: hasAI ? "0px" : "50%", left: hasAI ? "0px" : "50%", transform: hasAI ? undefined : "translate(-50%, -50%)" }}
-                  >
-                    <span className="text-[5px] text-white font-black">K</span>
-                  </motion.div>
-                )}
-                {hasAI && (
-                  <motion.div
-                    className="absolute w-4 h-4 rounded-sm bg-red-500 border border-white shadow-lg z-20 flex items-center justify-center"
-                    initial={false}
-                    animate={{ scale: [1, 1.3, 1] }}
-                    transition={{ duration: 0.25 }}
-                    key={`ai-${displayAiPos}`}
-                    style={{ bottom: hasPlayer ? "0px" : "50%", right: hasPlayer ? "0px" : "50%", transform: hasPlayer ? undefined : "translate(50%, 50%)" }}
-                  >
-                    <span className="text-[5px] text-white font-black">AI</span>
-                  </motion.div>
-                )}
-              </div>
-            );
-          })}
+                  {hasPlayer && (
+                    <motion.div
+                      className="absolute w-4 h-4 rounded-sm bg-blue-500 border border-white shadow-lg z-20 flex items-center justify-center"
+                      initial={false}
+                      animate={{ scale: [1, 1.3, 1] }}
+                      transition={{ duration: 0.25 }}
+                      key={`player-${displayPlayerPos}`}
+                      style={{ top: hasAI ? "0px" : "50%", left: hasAI ? "0px" : "50%", transform: hasAI ? undefined : "translate(-50%, -50%)" }}
+                    >
+                      <span className="text-[5px] text-white font-black">K</span>
+                    </motion.div>
+                  )}
+                  {hasAI && (
+                    <motion.div
+                      className="absolute w-4 h-4 rounded-sm bg-red-500 border border-white shadow-lg z-20 flex items-center justify-center"
+                      initial={false}
+                      animate={{ scale: [1, 1.3, 1] }}
+                      transition={{ duration: 0.25 }}
+                      key={`ai-${displayAiPos}`}
+                      style={{ bottom: hasPlayer ? "0px" : "50%", right: hasPlayer ? "0px" : "50%", transform: hasPlayer ? undefined : "translate(50%, 50%)" }}
+                    >
+                      <span className="text-[5px] text-white font-black">AI</span>
+                    </motion.div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+
+          {/* SVG Overlay for Snakes & Ladders */}
+          <svg className="absolute inset-0 w-full h-full pointer-events-none z-[5]" viewBox="0 0 100 100" preserveAspectRatio="none">
+            {/* Ladders */}
+            {Object.entries(LADDERS).map(([fromStr, to]) => {
+              const from = Number(fromStr);
+              const a = getCellCenter(from);
+              const b = getCellCenter(to);
+              const offsetX = 1.2;
+              return (
+                <g key={`ladder-${from}`}>
+                  <line x1={a.x - offsetX} y1={a.y} x2={b.x - offsetX} y2={b.y} stroke="#16a34a" strokeWidth="0.6" strokeLinecap="round" opacity="0.7" />
+                  <line x1={a.x + offsetX} y1={a.y} x2={b.x + offsetX} y2={b.y} stroke="#16a34a" strokeWidth="0.6" strokeLinecap="round" opacity="0.7" />
+                  {/* Rungs */}
+                  {Array.from({ length: Math.max(2, Math.floor(Math.abs(b.y - a.y) / 4)) }, (_, ri) => {
+                    const t = (ri + 1) / (Math.floor(Math.abs(b.y - a.y) / 4) + 1);
+                    const rx = a.x + (b.x - a.x) * t;
+                    const ry = a.y + (b.y - a.y) * t;
+                    return <line key={ri} x1={rx - offsetX} y1={ry} x2={rx + offsetX} y2={ry} stroke="#16a34a" strokeWidth="0.5" opacity="0.6" />;
+                  })}
+                  <text x={a.x} y={a.y + 1.5} textAnchor="middle" fontSize="2.5" fill="#16a34a" fontWeight="bold">{from}→{to}</text>
+                </g>
+              );
+            })}
+            {/* Snakes */}
+            {Object.entries(SNAKES).map(([fromStr, to]) => {
+              const from = Number(fromStr);
+              const a = getCellCenter(from);
+              const b = getCellCenter(to);
+              // Wavy snake path
+              const midX = (a.x + b.x) / 2 + (from % 2 === 0 ? 3 : -3);
+              const midY = (a.y + b.y) / 2;
+              return (
+                <g key={`snake-${from}`}>
+                  <path
+                    d={`M ${a.x} ${a.y} Q ${midX} ${midY} ${b.x} ${b.y}`}
+                    stroke="#dc2626"
+                    strokeWidth="0.8"
+                    fill="none"
+                    strokeLinecap="round"
+                    opacity="0.7"
+                    strokeDasharray="1.5 0.8"
+                  />
+                  <circle cx={a.x} cy={a.y} r="1" fill="#dc2626" opacity="0.8" />
+                  <circle cx={b.x} cy={b.y} r="0.7" fill="#dc2626" opacity="0.6" />
+                  <text x={a.x} y={a.y - 1.5} textAnchor="middle" fontSize="2.5" fill="#dc2626" fontWeight="bold">{from}→{to}</text>
+                </g>
+              );
+            })}
+          </svg>
         </div>
       </div>
 
