@@ -67,6 +67,7 @@ interface BalanceTransaction {
   product_id: string | null;
   token_id: string | null;
   created_at: string;
+  trx_id: string | null;
 }
 
 interface Product {
@@ -366,6 +367,7 @@ const Index = () => {
   // Saldo
   const [userBalance, setUserBalance] = useState<UserBalance | null>(null);
   const [balanceTransactions, setBalanceTransactions] = useState<BalanceTransaction[]>([]);
+  const [selectedTransaction, setSelectedTransaction] = useState<BalanceTransaction | null>(null);
   const [setupUsername, setSetupUsername] = useState("");
   const [setupPhone, setSetupPhone] = useState("");
   const [showProfileModal, setShowProfileModal] = useState(false);
@@ -2226,13 +2228,14 @@ const Index = () => {
                   <p className="text-center text-sm text-muted-foreground py-8">{t("balance.no_transactions", lang)}</p>
                 )}
                 {balanceTransactions.map(tx => (
-                  <Card key={tx.id}>
+                  <Card key={tx.id} className="cursor-pointer transition-all hover:shadow-lg" onClick={() => setSelectedTransaction(tx)}>
                     <CardContent className="p-3 flex items-center gap-3">
                       <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${tx.type === "topup" ? "bg-accent/10" : "bg-destructive/10"}`}>
                         {tx.type === "topup" ? <ArrowUpCircle className="w-5 h-5 text-accent" /> : <ArrowDownCircle className="w-5 h-5 text-destructive" />}
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="font-bold text-sm">{tx.type === "topup" ? t("balance.topup", lang) : t("balance.purchase", lang)}</p>
+                        {tx.trx_id && <p className="text-[10px] text-muted-foreground font-mono">ID: {tx.trx_id}</p>}
                         <p className="text-[10px] text-muted-foreground truncate">{tx.description || "-"}</p>
                         <p className="text-[10px] text-muted-foreground">{new Date(tx.created_at).toLocaleString("id-ID")}</p>
                       </div>
@@ -2242,6 +2245,53 @@ const Index = () => {
                     </CardContent>
                   </Card>
                 ))}
+
+                {/* Transaction Detail Popup */}
+                {selectedTransaction && (
+                  <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4" onClick={() => setSelectedTransaction(null)}>
+                    <div className="bg-background rounded-2xl shadow-2xl w-full max-w-sm p-5 space-y-4 animate-in fade-in zoom-in-95" onClick={e => e.stopPropagation()}>
+                      <div className="flex items-center justify-between">
+                        <h3 className="font-bold text-base">Detail Transaksi</h3>
+                        <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setSelectedTransaction(null)}>
+                          <X className="w-4 h-4" />
+                        </Button>
+                      </div>
+                      <div className={`w-14 h-14 rounded-2xl flex items-center justify-center mx-auto ${selectedTransaction.type === "topup" ? "bg-accent/10" : "bg-destructive/10"}`}>
+                        {selectedTransaction.type === "topup" ? <ArrowUpCircle className="w-8 h-8 text-accent" /> : <ArrowDownCircle className="w-8 h-8 text-destructive" />}
+                      </div>
+                      <p className={`text-center font-bold text-2xl ${selectedTransaction.type === "topup" ? "text-accent" : "text-destructive"}`}>
+                        {selectedTransaction.type === "topup" ? "+" : "-"}{formatPrice(selectedTransaction.amount)}
+                      </p>
+                      <div className="space-y-2.5 text-sm">
+                        {selectedTransaction.trx_id && (
+                          <div className="flex items-center justify-between bg-muted/50 rounded-xl px-3 py-2">
+                            <span className="text-muted-foreground text-xs">ID Transaksi</span>
+                            <div className="flex items-center gap-1.5">
+                              <span className="font-mono font-bold text-xs">{selectedTransaction.trx_id}</span>
+                              <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => { navigator.clipboard.writeText(selectedTransaction.trx_id || ""); toast({ title: "ID Transaksi disalin!" }); }}>
+                                <Copy className="w-3 h-3" />
+                              </Button>
+                            </div>
+                          </div>
+                        )}
+                        <div className="flex justify-between px-3 py-1.5">
+                          <span className="text-muted-foreground text-xs">Tipe</span>
+                          <span className="font-bold text-xs">{selectedTransaction.type === "topup" ? "Top Up" : "Pembelian"}</span>
+                        </div>
+                        <div className="flex justify-between px-3 py-1.5">
+                          <span className="text-muted-foreground text-xs">Tanggal</span>
+                          <span className="font-bold text-xs">{new Date(selectedTransaction.created_at).toLocaleString("id-ID")}</span>
+                        </div>
+                        {selectedTransaction.description && (
+                          <div className="px-3 py-1.5">
+                            <span className="text-muted-foreground text-xs block mb-1">Deskripsi</span>
+                            <span className="text-xs">{selectedTransaction.description}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
               </>
             )}
           </div>
