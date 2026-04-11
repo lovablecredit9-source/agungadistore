@@ -24,6 +24,7 @@ import promoSponsorsImg from "@/assets/promo-sponsors.jpg";
 import promoSaldoImg from "@/assets/promo-saldo.jpg";
 import promoPublikImg from "@/assets/promo-publik.jpg";
 import promoTiketImg from "@/assets/promo-tiket.jpg";
+import promoGameImg from "@/assets/promo-game.jpg";
 import { STORE_NAME, WA_NUMBER, SOCIAL_LINKS, YOUTUBE_NAME } from "@/lib/social-links";
 import { getDeviceSummary, collectDeviceInfo } from "@/lib/device-info";
 import { getVisitorId } from "@/lib/visitor-id";
@@ -1428,6 +1429,14 @@ const Index = () => {
                   subtitle: "🎤 AI & Admin Cek Otomatis",
                   cta: "Mulai Upload",
                   onClick: () => setTab("publik"),
+                },
+                {
+                  id: "game",
+                  image: promoGameImg,
+                  title: "Main Game Seru Lawan AI!",
+                  subtitle: "🎮 8 Game Menantang",
+                  cta: "Main Sekarang",
+                  onClick: () => setTab("game"),
                 },
                 {
                   id: "tiket",
@@ -2947,6 +2956,21 @@ const Index = () => {
                 </ul>
               </div>
 
+              {/* Game */}
+              <div className="rounded-xl bg-muted/60 border border-border p-3 space-y-1.5">
+                <p className="font-bold text-foreground text-xs uppercase tracking-wider">🎮 Game AI</p>
+                <ul className="list-disc list-inside space-y-0.5 text-[13px]">
+                  <li><strong>8 game seru</strong> melawan AI: Suit, Tebak Kata, Tebak Gambar, Teka-Teki, Tebak Angka, Tebak Barang, Ular Tangga, Ludo King</li>
+                  <li>Setiap game <strong>gratis dimainkan</strong> tanpa batasan harian</li>
+                  <li>Sistem <strong>kredit game</strong> — beli kredit atau paket <strong>Premium unlimited</strong></li>
+                  <li>Premium memberikan akses <strong>tanpa batas</strong> hingga tanggal kedaluwarsa</li>
+                  <li>Game tebakan punya <strong>3 nyawa</strong> (maksimal 3 kesalahan per ronde)</li>
+                  <li>Game papan (Ular Tangga & Ludo) punya <strong>animasi bidak</strong> dan giliran AI otomatis</li>
+                  <li>Kredit bisa dibeli dengan <strong>saldo akun</strong> atau voucher diskon game</li>
+                  <li>Tingkat kesulitan bervariasi: Mudah, Sedang, Sulit, Pro, Sangat Pro</li>
+                </ul>
+              </div>
+
               {/* FAQ */}
               <div className="rounded-xl bg-accent/10 border border-accent/20 p-3 space-y-2">
                 <p className="font-bold text-foreground text-xs uppercase tracking-wider">❓ FAQ (Pertanyaan Umum)</p>
@@ -3022,6 +3046,18 @@ const Index = () => {
                   <div>
                     <p className="font-semibold text-foreground">Q: Apakah ada biaya admin untuk transaksi?</p>
                     <p>A: Tidak ada biaya tambahan. Harga yang tertera adalah harga final. Rekber juga gratis.</p>
+                  </div>
+                  <div>
+                    <p className="font-semibold text-foreground">Q: Apa itu kredit game?</p>
+                    <p>A: Kredit game adalah mata uang virtual untuk bermain game AI. Bisa dibeli dengan saldo atau voucher. Paket Premium memberikan akses unlimited sampai tanggal tertentu.</p>
+                  </div>
+                  <div>
+                    <p className="font-semibold text-foreground">Q: Apakah game gratis dimainkan?</p>
+                    <p>A: Memulai game gratis, tapi membutuhkan kredit untuk terus bermain. Beli kredit atau upgrade ke Premium untuk akses tanpa batas.</p>
+                  </div>
+                  <div>
+                    <p className="font-semibold text-foreground">Q: Apa bedanya kredit biasa dan Premium?</p>
+                    <p>A: Kredit biasa habis setiap kali main. Premium memberikan akses unlimited hingga tanggal kedaluwarsa tanpa mengurangi kredit.</p>
                   </div>
                 </div>
               </div>
