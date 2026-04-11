@@ -382,7 +382,7 @@ export default function UlarTanggaGame() {
         </div>
         {/* Credits & Extra Turns */}
         <div className="mt-2 flex items-center justify-center gap-2">
-          <GameCreditsBadge credits={credits} isUnlimited={isUnlimited} />
+          <GameCreditsBadge credits={credits} isUnlimited={isUnlimited} unlimitedUntil={(useGameCredits as any).__unlimitedUntil} />
           {extraTurns > 0 && (
             <div className="flex items-center gap-1 text-xs bg-yellow-500/30 border border-yellow-400/50 rounded-lg px-2 py-1">
               <Dices className="w-3 h-3" />
