@@ -15,6 +15,26 @@ import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
+const KEYBOARD_ROWS = ["QWERTYUIOP", "ASDFGHJKL", "ZXCVBNM"];
+
+const buildKeyboardLetters = (rawAnswer: string) => {
+  const answerLetters = rawAnswer
+    .toUpperCase()
+    .split("")
+    .filter((letter) => /^[A-Z]$/.test(letter));
+
+  const duplicateCounts = answerLetters.reduce<Record<string, number>>((acc, letter) => {
+    acc[letter] = (acc[letter] || 0) + 1;
+    return acc;
+  }, {});
+
+  const extras = Object.entries(duplicateCounts).flatMap(([letter, count]) =>
+    Array.from({ length: Math.max(0, count - 1) }, () => letter),
+  );
+
+  return [...KEYBOARD_ROWS.join(""), ...extras];
+};
+
 export default function TekaTekiV2Game() {
   const activeVisitorId = useMemo(() => {
     if (typeof window === "undefined") return null;
@@ -44,6 +64,15 @@ export default function TekaTekiV2Game() {
 
   const diffConfig = DIFFICULTIES.find(d => d.key === difficulty)!;
   const MAX_WRONG = 3;
+  const keyboardRows = useMemo(() => {
+    const baseRows = [10, 9, 7].map((length, index) => {
+      const start = index === 0 ? 0 : index === 1 ? 10 : 19;
+      return scrambledLetters.slice(start, start + length);
+    }).filter((row) => row.length > 0);
+
+    const extraLetters = scrambledLetters.slice(26);
+    return extraLetters.length > 0 ? [...baseRows, extraLetters] : baseRows;
+  }, [scrambledLetters]);
 
   useEffect(() => {
     if (gameActive && timeLeft > 0) {
@@ -78,10 +107,10 @@ export default function TekaTekiV2Game() {
         body: { difficulty },
       });
       if (error) throw error;
+      const nextAnswer = (data.answer || "").toUpperCase().trim();
       setRiddle(data.riddle || "");
-      setAnswer((data.answer || "").toUpperCase().trim());
-      const letters = (data.scrambledLetters || []).map((l: string) => l.toUpperCase());
-      setScrambledLetters(letters);
+      setAnswer(nextAnswer);
+      setScrambledLetters(buildKeyboardLetters(nextAnswer));
       setHints(data.hints || []);
       setExplanation(data.explanation || "");
       setGameActive(true);
@@ -272,22 +301,34 @@ export default function TekaTekiV2Game() {
 
           {/* Scrambled letter tiles */}
           {gameActive && (
-            <div className="flex flex-wrap justify-center gap-2">
-              {scrambledLetters.map((letter, i) => (
-                <motion.button
-                  key={i}
-                  whileTap={{ scale: 0.9 }}
-                  onClick={() => selectLetter(letter, i)}
-                  disabled={usedIndices.has(i)}
-                  className={`w-11 h-11 rounded-xl font-extrabold text-base shadow-md transition-all ${
-                    usedIndices.has(i)
-                      ? "bg-muted/30 text-muted-foreground/30 cursor-default shadow-none"
-                      : "bg-gradient-to-br from-blue-500 to-indigo-600 text-white hover:from-blue-400 hover:to-indigo-500 active:shadow-inner"
-                  }`}
-                >
-                  {letter}
-                </motion.button>
-              ))}
+            <div className="space-y-2">
+              {keyboardRows.map((row, rowIndex) => {
+                const rowStartIndex = rowIndex === 0 ? 0 : rowIndex === 1 ? 10 : rowIndex === 2 ? 19 : 26;
+
+                return (
+                  <div key={rowIndex} className="flex flex-wrap justify-center gap-2">
+                    {row.map((letter, letterIndex) => {
+                      const absoluteIndex = rowStartIndex + letterIndex;
+
+                      return (
+                        <motion.button
+                          key={`${rowIndex}-${absoluteIndex}-${letter}`}
+                          whileTap={{ scale: 0.9 }}
+                          onClick={() => selectLetter(letter, absoluteIndex)}
+                          disabled={usedIndices.has(absoluteIndex)}
+                          className={`w-11 h-11 rounded-xl font-extrabold text-base shadow-md transition-all ${
+                            usedIndices.has(absoluteIndex)
+                              ? "bg-muted/30 text-muted-foreground/30 cursor-default shadow-none"
+                              : "bg-gradient-to-br from-blue-500 to-indigo-600 text-white hover:from-blue-400 hover:to-indigo-500 active:shadow-inner"
+                          }`}
+                        >
+                          {letter}
+                        </motion.button>
+                      );
+                    })}
+                  </div>
+                );
+              })}
             </div>
           )}
 
