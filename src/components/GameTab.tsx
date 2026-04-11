@@ -94,6 +94,7 @@ export default function GameTab() {
             <Gamepad2 className="w-6 h-6 text-primary" /> Game
           </h2>
           <div className="flex items-center gap-2">
+            <GameProfileDialog profile={profile} onUpdate={fetchProfile} visitorId={gameVisitorId} />
             <GameCreditsBadge credits={credits} isUnlimited={isUnlimited} unlimitedUntil={unlimitedUntil} />
             <BuyCreditsDialog visitorId={visitorId} onPurchased={fetchCredits} />
           </div>
