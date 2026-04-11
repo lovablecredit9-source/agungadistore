@@ -73,16 +73,23 @@ export function GameCreditsBadge({ credits, isUnlimited, unlimitedUntil }: GameC
     : null;
 
   return (
-    <div className="flex items-center gap-1 text-xs bg-accent/20 border border-accent/30 rounded-lg px-2 py-1">
-      <Key className="w-3 h-3 text-accent" />
-      {isUnlimited ? (
-        <span className="font-bold text-accent flex items-center gap-0.5">
-          <Infinity className="w-3 h-3" /> Unlimited
-          {expiryLabel && <span className="text-[9px] opacity-70 ml-0.5">s/d {expiryLabel}</span>}
-        </span>
-      ) : (
+    <div className="flex items-center gap-2 text-xs bg-accent/20 border border-accent/30 rounded-lg px-2 py-1">
+      <div className="flex items-center gap-1">
+        <Key className="w-3 h-3 text-accent" />
         <span className="font-bold">{Math.max(0, credits)} kredit</span>
-      )}
+      </div>
+      <span className="opacity-40">•</span>
+      <div className="flex items-center gap-1">
+        <span className="font-semibold text-muted-foreground">Aktif:</span>
+        {isUnlimited ? (
+          <span className="font-bold text-accent flex items-center gap-1">
+            <Infinity className="w-3 h-3" />
+            <span>{expiryLabel ? `s/d ${expiryLabel}` : "Premium"}</span>
+          </span>
+        ) : (
+          <span className="font-bold text-muted-foreground">-</span>
+        )}
+      </div>
     </div>
   );
 }
