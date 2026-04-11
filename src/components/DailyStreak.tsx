@@ -235,7 +235,7 @@ export default function DailyStreak() {
   const countdown = useCountdown();
   const { toast } = useToast();
 
-  const AUTO_CLAIM_PLANS = [
+  const DEFAULT_STREAK_PLANS = [
     { name: "10 Hari", days: 10, price: 5000 },
     { name: "20 Hari", days: 20, price: 10000 },
     { name: "30 Hari", days: 30, price: 15000 },
@@ -245,7 +245,38 @@ export default function DailyStreak() {
     { name: "1 Tahun", days: 365, price: 80000 },
   ];
 
-  useEffect(() => { fetchStreak(); fetchSubscription(); }, []);
+  const [AUTO_CLAIM_PLANS, setAutoClaimPlans] = useState(DEFAULT_STREAK_PLANS);
+  const [flashSaleEnd, setFlashSaleEnd] = useState("");
+  const [flashSaleLabel, setFlashSaleLabel] = useState("");
+
+  useEffect(() => { fetchStreak(); fetchSubscription(); fetchPromoSettings(); }, []);
+
+  const fetchPromoSettings = useCallback(async () => {
+    const { data } = await supabase.from("admin_settings").select("*");
+    if (!data) return;
+    const settings: Record<string, string> = {};
+    (data as any[]).forEach(s => { settings[s.setting_key] = s.setting_value; });
+
+    const fsEnd = settings.flash_sale_end || "";
+    setFlashSaleEnd(fsEnd);
+    setFlashSaleLabel(settings.flash_sale_label || "");
+    const isActive = fsEnd && new Date(fsEnd) > new Date();
+
+    if (isActive) {
+      const priceMap: Record<number, string> = {
+        10: "streak_price_10", 20: "streak_price_20", 30: "streak_price_30",
+        60: "streak_price_60", 90: "streak_price_90", 180: "streak_price_180", 365: "streak_price_365",
+      };
+      const updated = DEFAULT_STREAK_PLANS.map(plan => {
+        const key = priceMap[plan.days];
+        const promo = key && settings[key] ? parseInt(settings[key]) : 0;
+        return promo > 0 ? { ...plan, price: promo, originalPrice: plan.price } : plan;
+      });
+      setAutoClaimPlans(updated as any);
+    } else {
+      setAutoClaimPlans(DEFAULT_STREAK_PLANS);
+    }
+  }, []);
 
   const fetchStreak = useCallback(async () => {
     const { data } = await supabase
@@ -747,14 +778,25 @@ export default function DailyStreak() {
         {voucherError && <p className="text-[10px] text-destructive font-medium">{voucherError}</p>}
         {voucherApplied && <p className="text-[10px] text-green-600 font-bold">✅ Diskon Rp{voucherDiscount.toLocaleString("id-ID")} aktif!</p>}
 
+        {flashSaleEnd && new Date(flashSaleEnd) > new Date() && (
+          <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-2 flex items-center gap-2 mb-1">
+            <Zap className="w-4 h-4 text-yellow-500 animate-pulse" />
+            <div>
+              <p className="text-[10px] font-bold text-yellow-600">🔥 Flash Sale Aktif{flashSaleLabel ? ` — ${flashSaleLabel}` : ""}!</p>
+              <p className="text-[9px] text-muted-foreground">Harga spesial berlaku sampai {new Date(flashSaleEnd).toLocaleString("id-ID")}</p>
+            </div>
+          </div>
+        )}
+
         <div className="grid grid-cols-2 gap-2">
-          {AUTO_CLAIM_PLANS.map(plan => {
+          {AUTO_CLAIM_PLANS.map((plan: any) => {
+            const hasPromo = plan.originalPrice && plan.originalPrice !== plan.price;
             const discounted = voucherDiscount > 0 ? Math.max(0, plan.price - voucherDiscount) : null;
             return (
               <Button
                 key={plan.days}
                 variant="outline"
-                className="h-auto py-2.5 px-3 flex flex-col items-center gap-0.5 text-xs hover:border-primary/50"
+                className="h-auto py-2.5 px-3 flex flex-col items-center gap-0.5 text-xs hover:border-primary/50 relative"
                 disabled={buyingPlan === plan.days}
                 onClick={() => handlePlanClick(plan.days)}
               >
@@ -763,12 +805,18 @@ export default function DailyStreak() {
                 ) : (
                   <>
                     <span className="font-extrabold text-sm">{plan.name}</span>
+                    {hasPromo && !discounted && (
+                      <div className="flex flex-col items-center">
+                        <span className="text-muted-foreground text-[10px] line-through">Rp{plan.originalPrice.toLocaleString("id-ID")}</span>
+                        <span className="text-green-600 font-bold">Rp{plan.price.toLocaleString("id-ID")}</span>
+                      </div>
+                    )}
                     {discounted !== null ? (
                       <div className="flex flex-col items-center">
-                        <span className="text-muted-foreground text-[10px] line-through">Rp{plan.price.toLocaleString("id-ID")}</span>
+                        <span className="text-muted-foreground text-[10px] line-through">Rp{(hasPromo ? plan.originalPrice : plan.price).toLocaleString("id-ID")}</span>
                         <span className="text-green-600 font-bold">Rp{discounted.toLocaleString("id-ID")}</span>
                       </div>
-                    ) : (
+                    ) : !hasPromo && (
                       <span className="text-primary font-bold">Rp{plan.price.toLocaleString("id-ID")}</span>
                     )}
                   </>
