@@ -294,7 +294,7 @@ export function BuyCreditsDialog({ visitorId, onPurchased }: BuyCreditsDialogPro
                       onClick={() => handleBuy(pkg.id)}
                     >
                       <div className="flex items-center gap-2">
-                        {pkg.id.startsWith("unlimited") ? (
+                        {pkg.is_unlimited ? (
                           <Infinity className="w-4 h-4 text-purple-500" />
                         ) : (
                           <Key className="w-4 h-4 text-accent" />
