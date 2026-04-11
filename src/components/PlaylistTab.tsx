@@ -63,9 +63,11 @@ interface LyricLine {
 
 // --- Storage plan system ---
 interface StoragePlan {
+  id: string;
   name: string;
   addBytes: number;
   pricePerMonth: number;
+  storage_mb: number;
 }
 
 interface ActiveSubscription {
@@ -77,11 +79,6 @@ interface ActiveSubscription {
 }
 
 const FREE_BYTES = 2 * 1024 * 1024 * 1024;
-
-const PURCHASABLE_PLANS: StoragePlan[] = [
-  { name: "Pro 10GB", addBytes: 10 * 1024 * 1024 * 1024, pricePerMonth: 10000 },
-  { name: "Pro 100GB", addBytes: 100 * 1024 * 1024 * 1024, pricePerMonth: 100000 },
-];
 
 const CACHE_NAME = "playlist-offline-v1";
 const META_CACHE_KEY = "/offline-music-meta";
