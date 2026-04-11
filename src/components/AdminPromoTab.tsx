@@ -33,6 +33,8 @@ const EXTRA_SETTINGS: PromoSetting[] = [
   { key: "promo_product_discount", label: "Diskon Produk (%)", icon: <ShoppingBag className="w-4 h-4" />, suffix: "%", type: "number" },
   { key: "promo_sponsor_discount", label: "Diskon Sponsor (%)", icon: <Megaphone className="w-4 h-4" />, suffix: "%", type: "number" },
   { key: "promo_storage_discount", label: "Diskon Storage (%)", icon: <HardDrive className="w-4 h-4" />, suffix: "%", type: "number" },
+  { key: "promo_credit_discount", label: "Diskon Kredit Game (%)", icon: <Coins className="w-4 h-4" />, suffix: "%", type: "number" },
+  { key: "promo_streak_discount", label: "Diskon Streak (%)", icon: <Flame className="w-4 h-4" />, suffix: "%", type: "number" },
 ];
 
 const FLASH_SETTINGS = [

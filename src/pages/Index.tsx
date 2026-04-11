@@ -2248,7 +2248,7 @@ const Index = () => {
 
                 {/* Transaction Detail Popup */}
                 {selectedTransaction && (
-                  <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4" onClick={() => setSelectedTransaction(null)}>
+                  <div className="fixed inset-0 z-[70] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setSelectedTransaction(null)}>
                     <div className="bg-background rounded-2xl shadow-2xl w-full max-w-sm p-5 space-y-4 animate-in fade-in zoom-in-95" onClick={e => e.stopPropagation()}>
                       <div className="flex items-center justify-between">
                         <h3 className="font-bold text-base">Detail Transaksi</h3>
