@@ -1,135 +1,216 @@
 import { useState, useCallback, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
-import { Dice1, Dice2, Dice3, Dice4, Dice5, Dice6, RotateCcw, Trophy, Loader2 } from "lucide-react";
+import { RotateCcw, Trophy, Loader2 } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
-const DiceIcons = [Dice1, Dice2, Dice3, Dice4, Dice5, Dice6];
+const TRACK_LENGTH = 52;
+const HOME_LENGTH = 5;
+const TOKENS_PER_PLAYER = 2;
 
-// Simplified Ludo: 2 players (Player vs AI), each has 2 tokens
-// Track is 28 cells around the board, home stretch 4 cells each
-const TRACK_LENGTH = 28;
-const HOME_STRETCH = 4;
-const TOTAL = TRACK_LENGTH + HOME_STRETCH;
-
-// Player starts at 0, AI starts at 14 (opposite side)
-const PLAYER_START = 0;
-const AI_START = 14;
+// Dice face SVG
+function DiceFace({ value, size = 56, color = "#1e293b", rolling = false }: { value: number; size?: number; color?: string; rolling?: boolean }) {
+  const dotPositions: Record<number, [number, number][]> = {
+    1: [[50, 50]],
+    2: [[30, 30], [70, 70]],
+    3: [[30, 30], [50, 50], [70, 70]],
+    4: [[30, 30], [70, 30], [30, 70], [70, 70]],
+    5: [[30, 30], [70, 30], [50, 50], [30, 70], [70, 70]],
+    6: [[30, 30], [70, 30], [30, 50], [70, 50], [30, 70], [70, 70]],
+  };
+  const dots = dotPositions[value] || dotPositions[1];
+  return (
+    <motion.div
+      animate={rolling ? { rotateX: [0, 360], rotateY: [0, 360], scale: [1, 1.15, 1] } : {}}
+      transition={{ duration: 0.5, repeat: rolling ? Infinity : 0 }}
+      style={{ width: size, height: size }}
+    >
+      <svg viewBox="0 0 100 100" width={size} height={size}>
+        <defs>
+          <linearGradient id="ludoDice" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#fff" />
+            <stop offset="100%" stopColor="#e2e8f0" />
+          </linearGradient>
+          <filter id="ludoShadow"><feDropShadow dx="1" dy="2" stdDeviation="2" floodOpacity="0.25" /></filter>
+        </defs>
+        <rect x="5" y="5" width="90" height="90" rx="14" fill="url(#ludoDice)" stroke="#94a3b8" strokeWidth="1.5" filter="url(#ludoShadow)" />
+        {dots.map(([cx, cy], i) => (
+          <circle key={i} cx={cx} cy={cy} r={6} fill={color} />
+        ))}
+      </svg>
+    </motion.div>
+  );
+}
 
 interface Token {
   id: number;
-  pos: number; // -1 = base, 0..27 = track, 28..31 = home stretch, 32 = finished
-  isFinished: boolean;
+  state: "base" | "track" | "home" | "finished";
+  trackPos: number; // 0-51 for track, 0-4 for home stretch
 }
 
 function createTokens(): Token[] {
-  return [
-    { id: 0, pos: -1, isFinished: false },
-    { id: 1, pos: -1, isFinished: false },
-  ];
+  return Array.from({ length: TOKENS_PER_PLAYER }, (_, i) => ({
+    id: i, state: "base", trackPos: 0,
+  }));
 }
 
-function canMoveToken(token: Token, dice: number, startOffset: number): boolean {
-  if (token.isFinished) return false;
-  if (token.pos === -1) return dice === 6;
-  const absPos = token.pos;
-  const newPos = absPos + dice;
-  if (newPos > TOTAL) return false;
-  return true;
+function canMove(token: Token, dice: number): boolean {
+  if (token.state === "finished") return false;
+  if (token.state === "base") return dice === 6;
+  if (token.state === "home") return token.trackPos + dice <= HOME_LENGTH;
+  if (token.state === "track") {
+    const newPos = token.trackPos + dice;
+    if (newPos >= TRACK_LENGTH) {
+      const homeEntry = newPos - TRACK_LENGTH;
+      return homeEntry <= HOME_LENGTH;
+    }
+    return true;
+  }
+  return false;
 }
 
-function moveToken(token: Token, dice: number, startOffset: number): Token {
-  if (token.pos === -1 && dice === 6) {
-    return { ...token, pos: 0 };
+function doMove(token: Token, dice: number): Token {
+  if (token.state === "base" && dice === 6) {
+    return { ...token, state: "track", trackPos: 0 };
   }
-  const newPos = token.pos + dice;
-  if (newPos >= TOTAL) {
-    return { ...token, pos: TOTAL, isFinished: true };
+  if (token.state === "home") {
+    const np = token.trackPos + dice;
+    if (np >= HOME_LENGTH) return { ...token, state: "finished", trackPos: HOME_LENGTH };
+    return { ...token, trackPos: np };
   }
-  return { ...token, pos: newPos };
+  if (token.state === "track") {
+    const np = token.trackPos + dice;
+    if (np >= TRACK_LENGTH) {
+      const homeEntry = np - TRACK_LENGTH;
+      if (homeEntry >= HOME_LENGTH) return { ...token, state: "finished", trackPos: HOME_LENGTH };
+      return { ...token, state: "home", trackPos: homeEntry };
+    }
+    return { ...token, trackPos: np };
+  }
+  return token;
 }
 
-// Convert logical position to visual grid coordinates (7x7 Ludo-like)
-function getTokenVisualPos(pos: number, startOffset: number): { x: number; y: number } {
-  // Simplified: positions around a square track
-  const trackPositions: { x: number; y: number }[] = [];
+// Simple visual: show tokens as circles on a progress bar style
+function TokenProgress({ tokens, color, label }: { tokens: Token[]; color: string; label: string }) {
+  const totalSteps = TRACK_LENGTH + HOME_LENGTH;
+  return (
+    <div className="space-y-1">
+      <p className="text-[10px] font-bold text-muted-foreground">{label}</p>
+      {tokens.map(t => {
+        let progress = 0;
+        if (t.state === "track") progress = (t.trackPos / totalSteps) * 100;
+        else if (t.state === "home") progress = ((TRACK_LENGTH + t.trackPos) / totalSteps) * 100;
+        else if (t.state === "finished") progress = 100;
 
-  // Bottom row (left to right): 0-6
-  for (let i = 0; i <= 6; i++) trackPositions.push({ x: i, y: 6 });
-  // Right col (bottom to top): 7-13
-  for (let i = 5; i >= 0; i--) trackPositions.push({ x: 6, y: i });
-  // Top row (right to left): 14-20
-  for (let i = 5; i >= 0; i--) trackPositions.push({ x: i, y: 0 });
-  // Left col (top to bottom): 21-27
-  for (let i = 1; i <= 6; i++) trackPositions.push({ x: 0, y: i });
-
-  const actualPos = (pos + startOffset) % TRACK_LENGTH;
-  if (pos >= 0 && pos < TRACK_LENGTH) {
-    return trackPositions[actualPos];
-  }
-
-  // Home stretch (center path)
-  const homeIndex = pos - TRACK_LENGTH;
-  if (startOffset === PLAYER_START) {
-    return { x: 1 + homeIndex, y: 3 };
-  } else {
-    return { x: 5 - homeIndex, y: 3 };
-  }
+        return (
+          <div key={t.id} className="flex items-center gap-2">
+            <div className={`w-5 h-5 rounded-full ${color} border-2 border-white shadow-sm flex items-center justify-center`}>
+              <span className="text-[8px] text-white font-black">{t.id + 1}</span>
+            </div>
+            <div className="flex-1 h-3 bg-muted rounded-full overflow-hidden">
+              <motion.div
+                className={`h-full ${color} rounded-full`}
+                animate={{ width: `${progress}%` }}
+                transition={{ duration: 0.5 }}
+              />
+            </div>
+            <span className="text-[9px] font-bold w-12 text-right">
+              {t.state === "base" ? "Base" : t.state === "finished" ? "✅" : t.state === "home" ? "Home" : `${t.trackPos}/${TRACK_LENGTH}`}
+            </span>
+          </div>
+        );
+      })}
+    </div>
+  );
 }
 
 export default function LudoGame() {
-  const [playerTokens, setPlayerTokens] = useState<Token[]>(createTokens());
-  const [aiTokens, setAiTokens] = useState<Token[]>(createTokens());
-  const [dice, setDice] = useState(0);
+  const [pTokens, setPTokens] = useState<Token[]>(createTokens());
+  const [aTokens, setATokens] = useState<Token[]>(createTokens());
+  const [dice, setDice] = useState(1);
   const [isPlayerTurn, setIsPlayerTurn] = useState(true);
   const [rolling, setRolling] = useState(false);
   const [rollAnim, setRollAnim] = useState(false);
   const [winner, setWinner] = useState<"player" | "ai" | null>(null);
-  const [message, setMessage] = useState("Lempar dadu untuk mulai!");
-  const [selectingToken, setSelectingToken] = useState(false);
-  const [movableTokenIds, setMovableTokenIds] = useState<number[]>([]);
+  const [message, setMessage] = useState("Lempar dadu untuk mulai! Dapat 6 untuk keluar base.");
+  const [selectMode, setSelectMode] = useState(false);
+  const [movableIds, setMovableIds] = useState<number[]>([]);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const { toast } = useToast();
 
-  const rollDice = () => Math.floor(Math.random() * 6) + 1;
+  const rollDiceVal = () => Math.floor(Math.random() * 6) + 1;
+  const checkWin = (tokens: Token[]) => tokens.every(t => t.state === "finished");
 
-  const checkWin = (tokens: Token[]): boolean => tokens.every(t => t.isFinished);
-
-  const checkCapture = (movedTokens: Token[], opponentTokens: Token[], startOffset: number, oppStartOffset: number): Token[] => {
-    // Check if moved token captures opponent's token (same track position converted to absolute)
-    const updated = [...opponentTokens];
+  // Check capture: if player lands on opponent's track position
+  const checkCapture = (movedTokens: Token[], oppTokens: Token[], offset: number): Token[] => {
+    const result = [...oppTokens];
     for (const mt of movedTokens) {
-      if (mt.pos < 0 || mt.pos >= TRACK_LENGTH || mt.isFinished) continue;
-      const mtAbs = (mt.pos + startOffset) % TRACK_LENGTH;
-      for (let i = 0; i < updated.length; i++) {
-        if (updated[i].pos < 0 || updated[i].pos >= TRACK_LENGTH || updated[i].isFinished) continue;
-        const oppAbs = (updated[i].pos + oppStartOffset) % TRACK_LENGTH;
+      if (mt.state !== "track") continue;
+      for (let i = 0; i < result.length; i++) {
+        if (result[i].state !== "track") continue;
+        // Simplify: both on same relative track position but offset
+        const mtAbs = mt.trackPos;
+        const oppAbs = (result[i].trackPos + offset) % TRACK_LENGTH;
         if (mtAbs === oppAbs) {
-          updated[i] = { ...updated[i], pos: -1 };
+          result[i] = { ...result[i], state: "base", trackPos: 0 };
         }
       }
     }
-    return updated;
+    return result;
+  };
+
+  const executeMove = (tokenId: number, diceVal: number) => {
+    const newTokens = pTokens.map(t => t.id === tokenId ? doMove(t, diceVal) : t);
+    const newATokens = checkCapture(newTokens, aTokens, TRACK_LENGTH / 2);
+    const captured = newATokens.some((t, i) => t.state !== aTokens[i].state);
+
+    setPTokens(newTokens);
+    setATokens(newATokens);
+    setSelectMode(false);
+    setMovableIds([]);
+
+    if (captured) {
+      setMessage(`Dapat ${diceVal}! Token AI tertangkap! 🎯`);
+      toast({ title: "🎯 Tangkap!", description: "Token AI kembali ke base!" });
+    } else {
+      const moved = newTokens.find(t => t.id === tokenId)!;
+      setMessage(`Dapat ${diceVal}! Token ${tokenId + 1} ${moved.state === "finished" ? "sampai! ✅" : "bergerak."}`);
+    }
+
+    if (checkWin(newTokens)) {
+      setWinner("player");
+      setMessage("🎉 Kamu MENANG!");
+      setRolling(false);
+      return;
+    }
+
+    if (diceVal === 6) {
+      setMessage(prev => prev + " Dapat 6, lempar lagi! 🎲");
+      setRolling(false);
+      return;
+    }
+
+    setRolling(false);
+    setIsPlayerTurn(false);
+    aiTurn(newTokens, newATokens);
   };
 
   const handleRoll = useCallback(() => {
-    if (rolling || winner || !isPlayerTurn || selectingToken) return;
+    if (rolling || winner || !isPlayerTurn || selectMode) return;
     setRolling(true);
     setRollAnim(true);
 
     let count = 0;
     const anim = setInterval(() => {
-      setDice(rollDice());
+      setDice(rollDiceVal());
       count++;
-      if (count >= 8) {
+      if (count >= 10) {
         clearInterval(anim);
-        const d = rollDice();
+        const d = rollDiceVal();
         setDice(d);
         setRollAnim(false);
 
-        // Check which tokens can move
-        const movable = playerTokens
-          .filter(t => canMoveToken(t, d, PLAYER_START))
-          .map(t => t.id);
-
+        const movable = pTokens.filter(t => canMove(t, d)).map(t => t.id);
         if (movable.length === 0) {
           setMessage(`Dapat ${d}. Tidak ada token yang bisa bergerak.`);
           setRolling(false);
@@ -137,102 +218,56 @@ export default function LudoGame() {
           aiTurn();
           return;
         }
-
         if (movable.length === 1) {
-          executePlayerMove(movable[0], d);
+          executeMove(movable[0], d);
         } else {
-          setMovableTokenIds(movable);
-          setSelectingToken(true);
+          setMovableIds(movable);
+          setSelectMode(true);
           setMessage(`Dapat ${d}! Pilih token yang mau digerakkan.`);
           setRolling(false);
         }
       }
-    }, 100);
-  }, [rolling, winner, isPlayerTurn, selectingToken, playerTokens, aiTokens]);
+    }, 80);
+  }, [rolling, winner, isPlayerTurn, selectMode, pTokens, aTokens]);
 
-  const executePlayerMove = (tokenId: number, diceVal: number) => {
-    const newTokens = playerTokens.map(t =>
-      t.id === tokenId ? moveToken(t, diceVal, PLAYER_START) : t
-    );
-    
-    // Check captures
-    const newAiTokens = checkCapture(newTokens, aiTokens, PLAYER_START, AI_START);
-    const captured = newAiTokens.some((t, i) => t.pos !== aiTokens[i].pos);
-    
-    setPlayerTokens(newTokens);
-    setAiTokens(newAiTokens);
-    setSelectingToken(false);
-    setMovableTokenIds([]);
-
-    if (captured) {
-      setMessage(`Dapat ${diceVal}! Token AI tertangkap! 🎯`);
-    } else {
-      setMessage(`Dapat ${diceVal}! Token bergerak.`);
-    }
-
-    if (checkWin(newTokens)) {
-      setWinner("player");
-      setMessage("🎉 Kamu menang!");
-      setRolling(false);
-      return;
-    }
-
-    // Extra turn on 6
-    if (diceVal === 6) {
-      setMessage(prev => prev + " Dapat 6, lempar lagi!");
-      setRolling(false);
-      return;
-    }
-
-    setRolling(false);
-    setIsPlayerTurn(false);
-    aiTurn(newTokens, newAiTokens);
-  };
-
-  const selectToken = (tokenId: number) => {
-    if (!movableTokenIds.includes(tokenId)) return;
-    executePlayerMove(tokenId, dice);
-  };
-
-  const aiTurn = (currentPlayerTokens?: Token[], currentAiTokens?: Token[]) => {
-    const pt = currentPlayerTokens || playerTokens;
-    const at = currentAiTokens || aiTokens;
+  const aiTurn = (currentPTokens?: Token[], currentATokens?: Token[]) => {
+    const pt = currentPTokens || pTokens;
+    const at = currentATokens || aTokens;
 
     timeoutRef.current = setTimeout(() => {
-      const d = rollDice();
+      const d = rollDiceVal();
       setDice(d);
 
-      const movable = at.filter(t => canMoveToken(t, d, AI_START));
+      const movable = at.filter(t => canMove(t, d));
       if (movable.length === 0) {
         setMessage(`AI dapat ${d}. Tidak bisa bergerak. Giliran kamu!`);
         setIsPlayerTurn(true);
         return;
       }
 
-      // AI strategy: prefer moving token closest to finish, or exiting base
+      // AI: prefer exiting base, then furthest token
       const chosen = movable.sort((a, b) => {
-        if (a.pos === -1) return -1; // prefer getting out
-        return b.pos - a.pos; // prefer furthest along
+        if (a.state === "base") return -1;
+        if (b.state === "base") return 1;
+        if (a.state === "home" && b.state !== "home") return -1;
+        return b.trackPos - a.trackPos;
       })[0];
 
-      const newAiTokens = at.map(t =>
-        t.id === chosen.id ? moveToken(t, d, AI_START) : t
-      );
+      const newAt = at.map(t => t.id === chosen.id ? doMove(t, d) : t);
+      const newPt = checkCapture(newAt, pt, TRACK_LENGTH / 2);
+      const captured = newPt.some((t, i) => t.state !== pt[i].state);
 
-      // Check captures
-      const newPlayerTokens = checkCapture(newAiTokens, pt, AI_START, PLAYER_START);
-      const captured = newPlayerTokens.some((t, i) => t.pos !== pt[i].pos);
-
-      setAiTokens(newAiTokens);
-      setPlayerTokens(newPlayerTokens);
+      setATokens(newAt);
+      setPTokens(newPt);
 
       if (captured) {
-        setMessage(`AI dapat ${d}! Token kamu tertangkap! 😱 Giliran kamu!`);
+        setMessage(`AI dapat ${d}! Token kamu tertangkap! 😱`);
+        toast({ title: "😱 Tertangkap!", description: "Token kamu kembali ke base!", variant: "destructive" });
       } else {
         setMessage(`AI dapat ${d}. Giliran kamu!`);
       }
 
-      if (checkWin(newAiTokens)) {
+      if (checkWin(newAt)) {
         setWinner("ai");
         setMessage("😢 AI menang! Coba lagi.");
         return;
@@ -240,8 +275,7 @@ export default function LudoGame() {
 
       if (d === 6) {
         setMessage(`AI dapat 6, lempar lagi!`);
-        // AI gets another turn
-        setTimeout(() => aiTurn(newPlayerTokens, newAiTokens), 1000);
+        setTimeout(() => aiTurn(newPt, newAt), 1200);
         return;
       }
 
@@ -250,161 +284,125 @@ export default function LudoGame() {
   };
 
   const resetGame = () => {
-    setPlayerTokens(createTokens());
-    setAiTokens(createTokens());
-    setDice(0);
-    setIsPlayerTurn(true);
-    setRolling(false);
-    setWinner(null);
-    setMessage("Lempar dadu untuk mulai!");
-    setSelectingToken(false);
-    setMovableTokenIds([]);
+    setPTokens(createTokens()); setATokens(createTokens());
+    setDice(1); setIsPlayerTurn(true); setRolling(false); setWinner(null);
+    setMessage("Lempar dadu untuk mulai! Dapat 6 untuk keluar base.");
+    setSelectMode(false); setMovableIds([]);
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
   };
 
-  const DiceIcon = dice > 0 ? DiceIcons[dice - 1] : Dice1;
-
-  // Render a simplified board
-  const GRID = 7;
-  const boardCells: { x: number; y: number; type: "track" | "center" | "base" }[][] = [];
-  for (let y = 0; y < GRID; y++) {
-    const row: typeof boardCells[0] = [];
-    for (let x = 0; x < GRID; x++) {
-      const isEdge = x === 0 || x === GRID - 1 || y === 0 || y === GRID - 1;
-      const isCenter = x >= 2 && x <= 4 && y >= 2 && y <= 4;
-      row.push({ x, y, type: isEdge ? "track" : isCenter ? "center" : "base" });
-    }
-    boardCells.push(row);
-  }
-
   return (
     <div className="space-y-3">
-      {/* Status */}
-      <div className="bg-muted/50 rounded-xl p-3 text-center">
-        <p className="text-sm font-bold">{message}</p>
-        <div className="flex items-center justify-center gap-6 mt-2 text-xs">
-          <div className="flex items-center gap-1">
-            <span className="w-3 h-3 rounded-full bg-blue-500" />
-            <span>Kamu: {playerTokens.filter(t => t.isFinished).length}/2</span>
+      {/* Header */}
+      <div className="bg-gradient-to-r from-pink-500 to-rose-600 rounded-2xl p-4 text-white">
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-full bg-blue-400 border-2 border-white flex items-center justify-center text-xs font-black">K</div>
+            <span className="font-extrabold text-sm">Kamu</span>
           </div>
-          <div className="flex items-center gap-1">
-            <span className="w-3 h-3 rounded-full bg-red-500" />
-            <span>AI: {aiTokens.filter(t => t.isFinished).length}/2</span>
+          <span className="text-xs font-bold opacity-80">{isPlayerTurn ? "Giliran Kamu" : "Giliran AI"}</span>
+          <div className="flex items-center gap-2">
+            <span className="font-extrabold text-sm">AI</span>
+            <div className="w-8 h-8 rounded-full bg-red-400 border-2 border-white flex items-center justify-center text-xs font-black">AI</div>
           </div>
+        </div>
+        <div className="bg-white/20 rounded-lg p-2">
+          <p className="text-xs text-center font-medium">{message}</p>
         </div>
       </div>
 
-      {/* Simplified Board */}
-      <div className="bg-card rounded-xl border p-2">
-        <div className="grid grid-cols-7 gap-[2px]" style={{ aspectRatio: "1" }}>
-          {boardCells.flat().map((cell, i) => {
-            const isTrack = cell.type === "track";
-            const isCenter = cell.type === "center";
+      {/* Token Progress */}
+      <div className="bg-card rounded-2xl border p-4 space-y-3">
+        <TokenProgress tokens={pTokens} color="bg-blue-500" label="🔵 Token Kamu" />
+        <div className="border-t pt-3">
+          <TokenProgress tokens={aTokens} color="bg-red-500" label="🔴 Token AI" />
+        </div>
+      </div>
 
-            // Find tokens on this cell
-            const pHere = playerTokens.filter(t => {
-              if (t.pos < 0 || t.isFinished) return false;
-              const vis = getTokenVisualPos(t.pos, PLAYER_START);
-              return vis.x === cell.x && vis.y === cell.y;
-            });
-            const aHere = aiTokens.filter(t => {
-              if (t.pos < 0 || t.isFinished) return false;
-              const vis = getTokenVisualPos(t.pos, AI_START);
-              return vis.x === cell.x && vis.y === cell.y;
-            });
-
-            const isSelectable = selectingToken && pHere.some(t => movableTokenIds.includes(t.id));
-
-            return (
-              <div
-                key={i}
-                className={`relative flex items-center justify-center rounded-sm aspect-square ${
-                  isTrack ? "bg-muted/50 border border-border/30" :
-                  isCenter ? "bg-primary/5" : "bg-muted/20"
-                } ${isSelectable ? "ring-2 ring-primary cursor-pointer animate-pulse" : ""}`}
-                onClick={() => {
-                  if (isSelectable) {
-                    const tokenToSelect = pHere.find(t => movableTokenIds.includes(t.id));
-                    if (tokenToSelect) selectToken(tokenToSelect.id);
-                  }
-                }}
+      {/* Token Selection */}
+      {selectMode && (
+        <div className="bg-primary/5 border-2 border-primary/30 rounded-2xl p-4 space-y-2">
+          <p className="text-xs font-bold text-center">Pilih token yang mau digerakkan:</p>
+          <div className="flex items-center justify-center gap-3">
+            {movableIds.map(id => (
+              <motion.button
+                key={id}
+                whileTap={{ scale: 0.9 }}
+                className="w-14 h-14 rounded-2xl bg-blue-500 text-white font-black text-lg flex items-center justify-center shadow-lg border-2 border-blue-300"
+                onClick={() => executeMove(id, dice)}
               >
-                {pHere.map((t, j) => (
-                  <motion.div
-                    key={`p${t.id}`}
-                    className="w-3.5 h-3.5 rounded-full bg-blue-500 border-2 border-white shadow-md z-10"
-                    layoutId={`p${t.id}`}
-                    style={{ position: pHere.length > 1 ? "absolute" : undefined, left: j === 0 ? "20%" : "50%" }}
-                  />
-                ))}
-                {aHere.map((t, j) => (
-                  <motion.div
-                    key={`a${t.id}`}
-                    className="w-3.5 h-3.5 rounded-full bg-red-500 border-2 border-white shadow-md z-10"
-                    layoutId={`a${t.id}`}
-                    style={{ position: aHere.length > 1 ? "absolute" : undefined, right: j === 0 ? "20%" : "50%" }}
-                  />
-                ))}
-              </div>
-            );
-          })}
+                {id + 1}
+              </motion.button>
+            ))}
+          </div>
         </div>
+      )}
+
+      {/* Dice */}
+      <div className="bg-card rounded-2xl border p-4 flex items-center justify-center">
+        <DiceFace value={dice} size={64} color="#1e293b" rolling={rollAnim} />
       </div>
 
-      {/* Base tokens */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-1">
-          <span className="text-[10px] text-muted-foreground">Base Kamu:</span>
-          {playerTokens.filter(t => t.pos === -1).map(t => (
-            <span key={t.id} className="w-4 h-4 rounded-full bg-blue-500/50 border inline-block" />
-          ))}
-          {playerTokens.filter(t => t.pos === -1).length === 0 && <span className="text-[10px] text-muted-foreground">-</span>}
-        </div>
-        <div className="flex items-center gap-1">
-          <span className="text-[10px] text-muted-foreground">Base AI:</span>
-          {aiTokens.filter(t => t.pos === -1).map(t => (
-            <span key={t.id} className="w-4 h-4 rounded-full bg-red-500/50 border inline-block" />
-          ))}
-          {aiTokens.filter(t => t.pos === -1).length === 0 && <span className="text-[10px] text-muted-foreground">-</span>}
-        </div>
-      </div>
-
-      {/* Dice & Controls */}
-      <div className="flex items-center justify-center gap-4">
-        <motion.div animate={rollAnim ? { rotate: [0, 360], scale: [1, 1.3, 1] } : {}} transition={{ duration: 0.3, repeat: rollAnim ? Infinity : 0 }}>
-          <DiceIcon className="w-12 h-12 text-primary" />
-        </motion.div>
-      </div>
-
+      {/* Controls */}
       <div className="flex gap-2">
         <Button
-          className="flex-1 h-12 font-bold gap-2"
+          className="flex-1 h-14 font-extrabold text-base gap-2 rounded-2xl bg-gradient-to-r from-pink-500 to-rose-600 hover:from-pink-600 hover:to-rose-700 text-white shadow-lg"
           onClick={handleRoll}
-          disabled={rolling || !!winner || !isPlayerTurn || selectingToken}
+          disabled={rolling || !!winner || !isPlayerTurn || selectMode}
         >
-          {rolling ? <Loader2 className="w-4 h-4 animate-spin" /> : <DiceIcon className="w-5 h-5" />}
-          {selectingToken ? "Pilih Token..." : rolling ? "Melempar..." : "Lempar Dadu"}
+          {rolling ? (
+            <><Loader2 className="w-5 h-5 animate-spin" /> Melempar...</>
+          ) : !isPlayerTurn ? (
+            <><Loader2 className="w-5 h-5 animate-spin" /> Giliran AI...</>
+          ) : selectMode ? (
+            "Pilih Token ☝️"
+          ) : (
+            <>🎲 Lempar Dadu</>
+          )}
         </Button>
-        <Button variant="outline" size="icon" onClick={resetGame} className="h-12 w-12">
+        <Button variant="outline" onClick={resetGame} className="h-14 w-14 rounded-2xl">
           <RotateCcw className="w-5 h-5" />
         </Button>
+      </div>
+
+      {/* Rules */}
+      <div className="bg-muted/30 rounded-xl p-3 text-[10px] text-muted-foreground space-y-1">
+        <p className="font-bold text-xs">📖 Cara Main:</p>
+        <p>• Dapat <strong>6</strong> untuk mengeluarkan token dari base</p>
+        <p>• Dapat <strong>6</strong> mendapat giliran lempar lagi</p>
+        <p>• Token yang mendarat di posisi lawan akan menangkap & mengembalikan ke base</p>
+        <p>• Semua token sampai finish = MENANG! 🏆</p>
       </div>
 
       {/* Winner */}
       <AnimatePresence>
         {winner && (
           <motion.div
-            initial={{ scale: 0.8, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            className="bg-card rounded-2xl border p-6 text-center space-y-3"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4"
           >
-            <Trophy className={`w-12 h-12 mx-auto ${winner === "player" ? "text-yellow-500" : "text-red-500"}`} />
-            <h3 className="text-xl font-extrabold">
-              {winner === "player" ? "🎉 Kamu Menang!" : "😢 AI Menang!"}
-            </h3>
-            <Button onClick={resetGame} className="gap-2">
-              <RotateCcw className="w-4 h-4" /> Main Lagi
-            </Button>
+            <motion.div
+              initial={{ scale: 0.5, y: 50 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.5, opacity: 0 }}
+              transition={{ type: "spring", damping: 15 }}
+              className="bg-card w-full max-w-xs rounded-3xl p-8 text-center space-y-4 shadow-2xl"
+            >
+              <motion.div
+                animate={{ scale: [1, 1.2, 1], rotate: [0, 10, -10, 0] }}
+                transition={{ duration: 1, repeat: Infinity }}
+              >
+                <Trophy className={`w-16 h-16 mx-auto ${winner === "player" ? "text-yellow-500" : "text-red-500"}`} />
+              </motion.div>
+              <h3 className="text-2xl font-black">
+                {winner === "player" ? "🎉 Kamu Menang!" : "😢 AI Menang!"}
+              </h3>
+              <Button onClick={resetGame} className="w-full h-12 font-bold gap-2 rounded-xl bg-gradient-to-r from-pink-500 to-rose-600 text-white">
+                <RotateCcw className="w-4 h-4" /> Main Lagi
+              </Button>
+            </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
