@@ -25,8 +25,8 @@ import gameUlarTanggaImg from "@/assets/game-ular-tangga.png";
 import gameLudoImg from "@/assets/game-ludo.png";
 import gameKuisImg from "@/assets/game-kuis.png";
 import gameTekaTekiV2Img from "@/assets/game-teka-teki-v2.png";
-
-type GameMode = "menu" | "suit" | "tebak" | "tebak_gambar" | "teka_teki" | "tebak_angka" | "tebak_barang" | "ular_tangga" | "ludo" | "kuis" | "teka_teki_v2";
+import gamePilihanGandaImg from "@/assets/game-pilihan-ganda.png";
+type GameMode = "menu" | "suit" | "tebak" | "tebak_gambar" | "teka_teki" | "tebak_angka" | "tebak_barang" | "ular_tangga" | "ludo" | "kuis" | "teka_teki_v2" | "pilihan_ganda";
 
 const GAMES: { mode: GameMode; title: string; desc: string; image: string; gradient: string }[] = [
   { mode: "suit", title: "Suit AI", desc: "Batu Gunting Kertas", image: gameSuitImg, gradient: "from-orange-500 to-red-500" },
@@ -39,6 +39,7 @@ const GAMES: { mode: GameMode; title: string; desc: string; image: string; gradi
   { mode: "teka_teki_v2", title: "Puzzle Huruf", desc: "Susun huruf jadi kata", image: gameTekaTekiV2Img, gradient: "from-teal-500 to-cyan-600" },
   { mode: "ular_tangga", title: "Ular Tangga", desc: "Papan klasik vs AI", image: gameUlarTanggaImg, gradient: "from-emerald-500 to-green-700" },
   { mode: "ludo", title: "Ludo King", desc: "Siapa duluan finish?", image: gameLudoImg, gradient: "from-pink-500 to-rose-600" },
+  { mode: "pilihan_ganda", title: "Pilihan Ganda", desc: "Pilih jawaban benar!", image: gamePilihanGandaImg, gradient: "from-violet-500 to-purple-600" },
 ];
 
 const GAME_COMPONENTS: Record<string, React.ComponentType> = {
@@ -52,6 +53,7 @@ const GAME_COMPONENTS: Record<string, React.ComponentType> = {
   ludo: LudoGame,
   kuis: KuisGame,
   teka_teki_v2: TekaTekiV2Game,
+  pilihan_ganda: PilihanGandaGame,
 };
 
 export default function GameTab() {
