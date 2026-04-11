@@ -2,15 +2,17 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { motion } from "framer-motion";
-import { Gamepad2, ArrowLeft, Swords, Brain, ImageIcon, HelpCircle, Hash, Package } from "lucide-react";
+import { Gamepad2, ArrowLeft, Swords, Brain, ImageIcon, HelpCircle, Hash, Package, Grid3X3, Crown } from "lucide-react";
 import SuitGame from "@/components/games/SuitGame";
 import TebakKataGame from "@/components/games/TebakKataGame";
 import TebakGambarGame from "@/components/games/TebakGambarGame";
 import TekaTekiGame from "@/components/games/TekaTekiGame";
 import TebakAngkaGame from "@/components/games/TebakAngkaGame";
 import TebakBarangGame from "@/components/games/TebakBarangGame";
+import UlarTanggaGame from "@/components/games/UlarTanggaGame";
+import LudoGame from "@/components/games/LudoGame";
 
-type GameMode = "menu" | "suit" | "tebak" | "tebak_gambar" | "teka_teki" | "tebak_angka" | "tebak_barang";
+type GameMode = "menu" | "suit" | "tebak" | "tebak_gambar" | "teka_teki" | "tebak_angka" | "tebak_barang" | "ular_tangga" | "ludo";
 
 const GAMES: { mode: GameMode; title: string; desc: string; icon: any; gradient: string }[] = [
   { mode: "suit", title: "Suit AI", desc: "Batu, Gunting, Kertas melawan AI!", icon: Swords, gradient: "from-orange-500 to-red-600" },
@@ -19,6 +21,8 @@ const GAMES: { mode: GameMode; title: string; desc: string; icon: any; gradient:
   { mode: "teka_teki", title: "Teka-Teki Logika AI", desc: "AI kasih riddle, kamu jawab!", icon: HelpCircle, gradient: "from-indigo-500 to-purple-600" },
   { mode: "tebak_angka", title: "Tebak Angka AI", desc: "AI pilih angka rahasia, tebak dengan petunjuk!", icon: Hash, gradient: "from-cyan-500 to-blue-600" },
   { mode: "tebak_barang", title: "Tebak Barang AI", desc: "AI deskripsikan benda, kamu tebak!", icon: Package, gradient: "from-amber-500 to-orange-600" },
+  { mode: "ular_tangga", title: "Ular Tangga", desc: "Lawan AI di papan ular tangga klasik!", icon: Grid3X3, gradient: "from-emerald-500 to-green-700" },
+  { mode: "ludo", title: "Ludo King", desc: "Main Ludo lawan AI, siapa sampai duluan!", icon: Crown, gradient: "from-pink-500 to-rose-600" },
 ];
 
 const GAME_COMPONENTS: Record<string, React.ComponentType> = {
@@ -28,6 +32,8 @@ const GAME_COMPONENTS: Record<string, React.ComponentType> = {
   teka_teki: TekaTekiGame,
   tebak_angka: TebakAngkaGame,
   tebak_barang: TebakBarangGame,
+  ular_tangga: UlarTanggaGame,
+  ludo: LudoGame,
 };
 
 export default function GameTab() {
