@@ -14,7 +14,7 @@ interface CreditPackage {
   label: string;
 }
 
-const PACKAGES: CreditPackage[] = [
+const DEFAULT_PACKAGES: CreditPackage[] = [
   { id: "2", credits: 2, price: 2000, label: "2 Kredit" },
   { id: "10", credits: 10, price: 5000, label: "10 Kredit" },
   { id: "30", credits: 30, price: 10000, label: "30 Kredit" },
@@ -109,7 +109,41 @@ export function BuyCreditsDialog({ visitorId, onPurchased }: BuyCreditsDialogPro
   const [voucherDiscount, setVoucherDiscount] = useState(0);
   const [voucherValid, setVoucherValid] = useState(false);
   const [checkingVoucher, setCheckingVoucher] = useState(false);
+  const [packages, setPackages] = useState<CreditPackage[]>(DEFAULT_PACKAGES);
+  const [flashSaleEnd, setFlashSaleEnd] = useState<string>("");
   const { toast } = useToast();
+
+  // Fetch promo prices from admin_settings
+  useEffect(() => {
+    if (!open) return;
+    (async () => {
+      const { data } = await supabase.from("admin_settings").select("*");
+      if (!data) return;
+      const settings: Record<string, string> = {};
+      (data as any[]).forEach(s => { settings[s.setting_key] = s.setting_value; });
+
+      const fsEnd = settings.flash_sale_end || "";
+      setFlashSaleEnd(fsEnd);
+      const isFlashActive = fsEnd && new Date(fsEnd) > new Date();
+
+      if (isFlashActive) {
+        const priceMap: Record<string, string> = {
+          "2": "credit_price_2", "10": "credit_price_10", "30": "credit_price_30",
+          "60": "credit_price_60", "100": "credit_price_100", "200": "credit_price_200",
+          "500": "credit_price_500", "1000": "credit_price_1000",
+          "unlimited": "credit_price_unlimited_month", "unlimited_year": "credit_price_unlimited_year",
+        };
+        const updated = DEFAULT_PACKAGES.map(pkg => {
+          const settingKey = priceMap[pkg.id];
+          const promoPrice = settingKey && settings[settingKey] ? parseInt(settings[settingKey]) : 0;
+          return promoPrice > 0 ? { ...pkg, price: promoPrice, originalPrice: pkg.price } : pkg;
+        });
+        setPackages(updated as any);
+      } else {
+        setPackages(DEFAULT_PACKAGES);
+      }
+    })();
+  }, [open]);
 
   const resetVoucher = () => {
     setVoucherCode("");
