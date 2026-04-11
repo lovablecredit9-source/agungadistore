@@ -825,7 +825,6 @@ export default function DailyStreak() {
             );
           })}
         </div>
-        </div>
       </motion.div>
 
       {/* Confirmation Dialog */}
