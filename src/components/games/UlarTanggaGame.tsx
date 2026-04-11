@@ -194,8 +194,7 @@ export default function UlarTanggaGame() {
 
   function startAiTurn(currentPlayerPos: number, currentAiPos: number) {
     timeoutRef.current = setTimeout(() => {
-      // AI rolls dice with animation
-      setRollAnim(false);
+      setAiRollAnim(true);
       setMessage("🤖 AI melempar dadu...");
 
       let aiCount = 0;
@@ -206,6 +205,7 @@ export default function UlarTanggaGame() {
           clearInterval(aiAnimInterval);
           const aiDiceVal = rollDice();
           setAiDice(aiDiceVal);
+          setAiRollAnim(false);
 
           const aiRawPos = currentAiPos + aiDiceVal;
 
@@ -218,7 +218,6 @@ export default function UlarTanggaGame() {
           setAnimating(true);
           setMessage(`AI dapat ${aiDiceVal}! Maju...`);
 
-          // AI step-by-step
           animateSteps(currentAiPos, aiDiceVal, STEP_DELAY, (stepPos) => {
             setDisplayAiPos(stepPos);
           }, (landedPos) => {
