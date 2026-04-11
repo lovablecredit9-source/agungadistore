@@ -82,16 +82,19 @@ Deno.serve(async (req) => {
       return Response.json({ error: "Saldo tidak cukup" }, { status: 400, headers: corsHeaders });
     }
 
-    // Check if already has active subscription
-    const { data: existingSub } = await admin
+    // Check if already has active subscription - get the LATEST one
+    const { data: existingSubs } = await admin
       .from("streak_subscriptions")
       .select("id, expires_at")
       .eq("visitor_id", visitorId)
       .eq("is_active", true)
       .gte("expires_at", new Date().toISOString())
-      .maybeSingle();
+      .order("expires_at", { ascending: false })
+      .limit(1);
 
-    // Calculate start from existing expiry or now
+    const existingSub = existingSubs && existingSubs.length > 0 ? existingSubs[0] : null;
+
+    // Calculate start from existing expiry or now - ACCUMULATE
     const startsAt = existingSub ? new Date(existingSub.expires_at) : new Date();
     const expiresAt = new Date(startsAt.getTime() + plan.days * 24 * 60 * 60 * 1000);
 
