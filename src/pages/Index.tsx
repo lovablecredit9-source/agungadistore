@@ -482,6 +482,18 @@ const Index = () => {
     checkPinStatus();
     fetchHomeSponsors();
 
+    // First visit notification - geser navigasi
+    const firstVisitKey = "first_visit_nav_notified";
+    if (!localStorage.getItem(firstVisitKey)) {
+      localStorage.setItem(firstVisitKey, "1");
+      supabase.from("notifications").insert({
+        visitor_id: visitorId,
+        title: "👆 Geser Navigasi ke Kiri!",
+        message: "Navigasi bawah bisa digeser untuk melihat tab lainnya seperti Musik, Sponsor, Streak, Game & lainnya.",
+        type: "info",
+      }).then(() => fetchNotifications());
+    }
+
     // Deep link handling for sponsor share links
     const params = new URLSearchParams(window.location.search);
     const sponsorParam = params.get("sponsor");
