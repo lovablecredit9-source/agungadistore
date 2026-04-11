@@ -370,8 +370,14 @@ export default function DailyStreak() {
         toast({ title: "Gagal", description: data?.error || "Gagal membeli paket", variant: "destructive" });
         return;
       }
-      toast({ title: "Berhasil!", description: `Paket Auto-Klaim ${data.plan} aktif sampai ${new Date(data.expires_at).toLocaleDateString("id-ID")}` });
+      toast({
+        title: "Berhasil!",
+        description: data?.auto_claimed
+          ? `Paket Auto-Klaim ${data.plan} aktif dan streak hari ini langsung diklaim otomatis`
+          : `Paket Auto-Klaim ${data.plan} aktif sampai ${new Date(data.expires_at).toLocaleDateString("id-ID")}`
+      });
       fetchSubscription();
+      fetchStreak();
     } catch {
       toast({ title: "Error", description: "Koneksi gagal", variant: "destructive" });
     } finally {
