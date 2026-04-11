@@ -279,7 +279,7 @@ export default function DailyStreak() {
     setVoucherError("");
     try {
       const { data, error } = await supabase
-        .from("discount_vouchers")
+        .from("streak_discount_vouchers" as any)
         .select("*")
         .eq("code", voucherCode.trim().toUpperCase())
         .eq("is_active", true)
