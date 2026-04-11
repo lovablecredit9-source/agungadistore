@@ -14,6 +14,7 @@ import KuisGame from "@/components/games/KuisGame";
 import TekaTekiV2Game from "@/components/games/TekaTekiV2Game";
 import PilihanGandaGame from "@/components/games/PilihanGandaGame";
 import { useGameCredits, GameCreditsBadge, BuyCreditsDialog } from "@/components/games/GameCredits";
+import { useGameProfile, GameProfileDialog, updateGameStats } from "@/components/games/GameProfile";
 
 import gameSuitImg from "@/assets/game-suit.png";
 import gameTebakKataImg from "@/assets/game-tebak-kata.png";
