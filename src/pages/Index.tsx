@@ -2225,13 +2225,108 @@ const Index = () => {
                 )}
 
                 {/* Transaction History */}
-                <h3 className="font-bold text-sm flex items-center gap-1.5"><History className="w-4 h-4" /> {t("balance.transaction_history", lang)}</h3>
+                <div className="flex items-center justify-between">
+                  <h3 className="font-bold text-sm flex items-center gap-1.5"><History className="w-4 h-4" /> {t("balance.transaction_history", lang)}</h3>
+                  {balanceTransactions.length > 0 && (
+                    <Button variant="outline" size="sm" className="gap-1 text-xs h-7" onClick={() => setShowTxExport(!showTxExport)}>
+                      <Download className="w-3 h-3" /> {showTxExport ? "Tutup" : "Ekspor"}
+                    </Button>
+                  )}
+                </div>
+
+                {showTxExport && balanceTransactions.length > 0 && (
+                  <div className="space-y-2 bg-muted/30 rounded-xl p-3 border">
+                    <div className="flex items-center justify-between">
+                      <label className="flex items-center gap-2 text-xs cursor-pointer">
+                        <Checkbox
+                          checked={selectedTxIds.size === balanceTransactions.length}
+                          onCheckedChange={(checked) => {
+                            if (checked) {
+                              setSelectedTxIds(new Set(balanceTransactions.map(tx => tx.id)));
+                            } else {
+                              setSelectedTxIds(new Set());
+                            }
+                          }}
+                        />
+                        <span className="font-bold">Pilih Semua ({balanceTransactions.length})</span>
+                      </label>
+                      <span className="text-[10px] text-muted-foreground">{selectedTxIds.size} dipilih</span>
+                    </div>
+                    <Button
+                      size="sm"
+                      className="w-full gap-1 text-xs"
+                      disabled={selectedTxIds.size === 0}
+                      onClick={() => {
+                        const selected = balanceTransactions.filter(tx => selectedTxIds.has(tx.id));
+                        if (selected.length === 0) return;
+                        const doc = new jsPDF();
+                        const pageW = doc.internal.pageSize.getWidth();
+                        const pageH = doc.internal.pageSize.getHeight();
+                        const totalPages = selected.length;
+                        selected.forEach((tx, idx) => {
+                          if (idx > 0) doc.addPage();
+                          // Header
+                          doc.setFillColor(41, 98, 255);
+                          doc.rect(0, 0, pageW, 50, "F");
+                          doc.setTextColor(255, 255, 255);
+                          doc.setFontSize(16);
+                          doc.setFont("helvetica", "bold");
+                          doc.text(STORE_NAME, pageW / 2, 22, { align: "center" });
+                          doc.setFontSize(9);
+                          doc.setFont("helvetica", "normal");
+                          doc.text("Bukti Transaksi Saldo", pageW / 2, 32, { align: "center" });
+                          doc.text(`Dicetak: ${new Date().toLocaleString("id-ID")}`, pageW / 2, 40, { align: "center" });
+                          // Body
+                          doc.setTextColor(0, 0, 0);
+                          let y = 65;
+                          doc.setFontSize(11);
+                          doc.setFont("helvetica", "bold");
+                          doc.text(`Transaksi #${idx + 1}`, 20, y);
+                          y += 10;
+                          doc.setFontSize(10);
+                          doc.setFont("helvetica", "normal");
+                          if (tx.trx_id) { doc.text(`ID Transaksi: ${tx.trx_id}`, 20, y); y += 7; }
+                          doc.text(`Tipe: ${tx.type === "topup" ? "Top Up" : "Pembelian"}`, 20, y); y += 7;
+                          doc.text(`Jumlah: ${tx.type === "topup" ? "+" : "-"}${formatPrice(tx.amount)}`, 20, y); y += 7;
+                          doc.text(`Tanggal: ${new Date(tx.created_at).toLocaleString("id-ID")}`, 20, y); y += 7;
+                          if (tx.description) { doc.text(`Deskripsi: ${tx.description}`, 20, y, { maxWidth: pageW - 40 }); y += 10; }
+                          if (userBalance) {
+                            y += 5;
+                            doc.text(`Username: ${userBalance.username}`, 20, y); y += 7;
+                          }
+                          // Footer
+                          doc.setFontSize(8);
+                          doc.setTextColor(150, 150, 150);
+                          doc.text(`Halaman ${idx + 1} dari ${totalPages}`, pageW / 2, pageH - 20, { align: "center" });
+                          doc.text("Harap simpan bukti ini. Jika ada masalah hubungi admin.", pageW / 2, pageH - 15, { align: "center" });
+                          doc.text(`${STORE_NAME} — WA: ${WA_NUMBER}`, pageW / 2, pageH - 10, { align: "center" });
+                        });
+                        doc.save("riwayat-transaksi-saldo.pdf");
+                        toast({ title: `${selected.length} transaksi berhasil diekspor!` });
+                      }}
+                    >
+                      <FileText className="w-3 h-3" /> Download PDF ({selectedTxIds.size})
+                    </Button>
+                  </div>
+                )}
+
                 {balanceTransactions.length === 0 && (
                   <p className="text-center text-sm text-muted-foreground py-8">{t("balance.no_transactions", lang)}</p>
                 )}
                 {balanceTransactions.map(tx => (
                   <Card key={tx.id} className="cursor-pointer transition-all hover:shadow-lg" onClick={() => setSelectedTransaction(tx)}>
                     <CardContent className="p-3 flex items-center gap-3">
+                      {showTxExport && (
+                        <Checkbox
+                          checked={selectedTxIds.has(tx.id)}
+                          onCheckedChange={(checked) => {
+                            const next = new Set(selectedTxIds);
+                            if (checked) next.add(tx.id); else next.delete(tx.id);
+                            setSelectedTxIds(next);
+                          }}
+                          onClick={(e) => e.stopPropagation()}
+                        />
+                      )}
                       <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${tx.type === "topup" ? "bg-accent/10" : "bg-destructive/10"}`}>
                         {tx.type === "topup" ? <ArrowUpCircle className="w-5 h-5 text-accent" /> : <ArrowDownCircle className="w-5 h-5 text-destructive" />}
                       </div>
