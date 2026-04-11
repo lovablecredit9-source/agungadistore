@@ -12,20 +12,9 @@ interface CreditPackage {
   credits: number;
   price: number;
   label: string;
+  is_unlimited?: boolean;
+  unlimited_days?: number;
 }
-
-const DEFAULT_PACKAGES: CreditPackage[] = [
-  { id: "2", credits: 2, price: 2000, label: "2 Kredit" },
-  { id: "10", credits: 10, price: 5000, label: "10 Kredit" },
-  { id: "30", credits: 30, price: 10000, label: "30 Kredit" },
-  { id: "60", credits: 60, price: 15000, label: "60 Kredit" },
-  { id: "100", credits: 100, price: 20000, label: "100 Kredit" },
-  { id: "200", credits: 200, price: 50000, label: "200 Kredit" },
-  { id: "500", credits: 500, price: 30000, label: "500 Kredit" },
-  { id: "1000", credits: 1000, price: 50000, label: "1000 Kredit" },
-  { id: "unlimited", credits: -1, price: 100000, label: "Unlimited 1 Bulan" },
-  { id: "unlimited_year", credits: -1, price: 1000000, label: "Unlimited 1 Tahun" },
-];
 
 export function useGameCredits(visitorId: string | null) {
   const [credits, setCredits] = useState(0);
