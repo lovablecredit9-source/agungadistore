@@ -1,8 +1,9 @@
 import { useState, useCallback, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
-import { RotateCcw, Trophy, Loader2 } from "lucide-react";
+import { RotateCcw, Trophy, Loader2, Dices } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useGameCredits, GameCreditsBadge, BuyCreditsDialog } from "./GameCredits";
 
 const BOARD_SIZE = 100;
 const COLS = 10;
@@ -51,15 +52,13 @@ function DiceFace({ value, size = 64, color = "currentColor", rolling = false }:
   );
 }
 
-// Get row,col from cell number (visual grid position)
 function getRowCol(num: number): [number, number] {
-  const row = Math.floor((num - 1) / COLS); // 0 = bottom row
-  const visualRow = 9 - row; // flip so row 0 is top
+  const row = Math.floor((num - 1) / COLS);
+  const visualRow = 9 - row;
   const col = row % 2 === 0 ? (num - 1) % COLS : COLS - 1 - ((num - 1) % COLS);
   return [visualRow, col];
 }
 
-// Get center position as percentage
 function getCellCenter(num: number): { x: number; y: number } {
   const [row, col] = getRowCol(num);
   return {
@@ -77,7 +76,6 @@ function getCellColor(num: number): string {
   return "bg-blue-50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-800";
 }
 
-// Animate position step by step, calling onStep for each cell
 function animateSteps(
   startPos: number,
   steps: number,
@@ -96,7 +94,6 @@ function animateSteps(
     }
     current++;
     if (current > BOARD_SIZE) {
-      // Can't move past 100
       onDone(startPos);
       return;
     }
@@ -121,15 +118,23 @@ export default function UlarTanggaGame() {
   const [message, setMessage] = useState("Giliran kamu! Lempar dadu 🎲");
   const [rollAnim, setRollAnim] = useState(false);
   const [aiRollAnim, setAiRollAnim] = useState(false);
+  // Extra turns
+  const [extraTurns, setExtraTurns] = useState(0);
+  const [showExtraTurnUI, setShowExtraTurnUI] = useState(false);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const { toast } = useToast();
 
+  // Get visitorId from localStorage
+  const visitorId = typeof window !== "undefined" ? localStorage.getItem("balance_visitor_id") : null;
+  const { credits, isUnlimited, fetchCredits, useCredit } = useGameCredits(visitorId);
+
   const rollDice = () => Math.floor(Math.random() * 6) + 1;
 
-  const STEP_DELAY = 350; // ms per step
+  const STEP_DELAY = 350;
 
   const handleRoll = useCallback(() => {
     if (rolling || animating || winner || !isPlayerTurn) return;
+    setShowExtraTurnUI(false);
     setRolling(true);
     setRollAnim(true);
 
@@ -145,68 +150,107 @@ export default function UlarTanggaGame() {
 
         const rawNewPos = playerPos + dice;
 
-        // Check if move is valid
         if (rawNewPos > BOARD_SIZE) {
           setMessage(`Dapat ${dice}! Tidak bisa maju (harus tepat 100)`);
           setRolling(false);
-          setIsPlayerTurn(false);
-          // AI turn after delay
-          startAiTurn(playerPos, aiPos);
+          finishPlayerMove(playerPos);
           return;
         }
 
         setAnimating(true);
         setMessage(`Dapat ${dice}! Maju...`);
 
-        // Step-by-step animation
         animateSteps(playerPos, dice, STEP_DELAY, (stepPos) => {
           setDisplayPlayerPos(stepPos);
         }, (landedPos) => {
-          // Check snake/ladder
           const finalPos = SNAKES[landedPos] ? SNAKES[landedPos] :
                            LADDERS[landedPos] ? LADDERS[landedPos] : landedPos;
 
           if (SNAKES[landedPos]) {
-            setMessage(`Dapat ${dice}! 🐍 Ular! Turun ke ${finalPos}`);
+            setMessage(`Dapat ${dice}! Ular! Turun ke ${finalPos}`);
             toast({ title: "🐍 Terkena Ular!", description: `Turun dari ${landedPos} ke ${finalPos}` });
-            // Animate slide down after a short pause
             setTimeout(() => {
               setDisplayPlayerPos(finalPos);
               setPlayerPos(finalPos);
-              finishPlayerTurn(finalPos);
+              setAnimating(false);
+              setRolling(false);
+              finishPlayerMove(finalPos);
             }, 500);
           } else if (LADDERS[landedPos]) {
-            setMessage(`Dapat ${dice}! 🪜 Tangga! Naik ke ${finalPos}`);
+            setMessage(`Dapat ${dice}! Tangga! Naik ke ${finalPos}`);
             toast({ title: "🪜 Naik Tangga!", description: `Naik dari ${landedPos} ke ${finalPos}` });
             setTimeout(() => {
               setDisplayPlayerPos(finalPos);
               setPlayerPos(finalPos);
-              finishPlayerTurn(finalPos);
+              setAnimating(false);
+              setRolling(false);
+              finishPlayerMove(finalPos);
             }, 500);
           } else {
             setMessage(`Dapat ${dice}! Maju ke kotak ${finalPos}`);
             setPlayerPos(finalPos);
-            finishPlayerTurn(finalPos);
+            setAnimating(false);
+            setRolling(false);
+            finishPlayerMove(finalPos);
           }
         });
       }
     }, 80);
-  }, [rolling, animating, winner, isPlayerTurn, playerPos, aiPos, toast]);
+  }, [rolling, animating, winner, isPlayerTurn, playerPos, aiPos, extraTurns, toast]);
 
-  function finishPlayerTurn(finalPos: number) {
-    setAnimating(false);
-    setRolling(false);
-
+  function finishPlayerMove(finalPos: number) {
     if (finalPos >= BOARD_SIZE) {
       setWinner("player");
       setMessage("🎉 Kamu MENANG!");
       return;
     }
 
+    // If player has extra turns remaining, use one
+    if (extraTurns > 0) {
+      setExtraTurns(prev => prev - 1);
+      setMessage(`🎲 Extra turn! Sisa ${extraTurns - 1} lagi. Lempar dadu!`);
+      setIsPlayerTurn(true);
+      return;
+    }
+
+    // Show option to buy extra turns before AI turn
+    setShowExtraTurnUI(true);
+    setMessage("Beli extra turn atau lanjut giliran AI?");
+  }
+
+  function proceedToAiTurn() {
+    setShowExtraTurnUI(false);
     setIsPlayerTurn(false);
     setMessage("⏳ Giliran AI...");
-    // Start AI turn after 1 second
-    startAiTurn(finalPos, aiPos);
+    startAiTurn(playerPos, aiPos);
+  }
+
+  async function buyExtraTurn(amount: number) {
+    if (!visitorId) {
+      toast({ title: "Login dulu", description: "Login ke akun saldo untuk menggunakan kredit", variant: "destructive" });
+      return;
+    }
+
+    // Use credits one by one
+    for (let i = 0; i < amount; i++) {
+      const ok = await useCredit();
+      if (!ok) {
+        toast({ title: "Kredit tidak cukup", description: `Berhasil beli ${i} extra turn`, variant: "destructive" });
+        if (i > 0) {
+          setExtraTurns(prev => prev + i);
+          setShowExtraTurnUI(false);
+          setMessage(`🎲 +${i} extra turn! Lempar dadu!`);
+        }
+        fetchCredits();
+        return;
+      }
+    }
+
+    setExtraTurns(prev => prev + amount);
+    setShowExtraTurnUI(false);
+    setMessage(`🎲 +${amount} extra turn! Total ${extraTurns + amount}. Lempar dadu!`);
+    fetchCredits();
+    toast({ title: "Extra Turn!", description: `+${amount} giliran tambahan dibeli` });
   }
 
   function startAiTurn(currentPlayerPos: number, currentAiPos: number) {
@@ -242,7 +286,7 @@ export default function UlarTanggaGame() {
                                LADDERS[landedPos] ? LADDERS[landedPos] : landedPos;
 
             if (SNAKES[landedPos]) {
-              setMessage(`AI dapat ${aiDiceVal}! 🐍 Ular turun ke ${finalAiPos}. Giliran kamu!`);
+              setMessage(`AI dapat ${aiDiceVal}! Ular turun ke ${finalAiPos}. Giliran kamu!`);
               setTimeout(() => {
                 setDisplayAiPos(finalAiPos);
                 setAiPos(finalAiPos);
@@ -250,7 +294,7 @@ export default function UlarTanggaGame() {
                 checkAiWin(finalAiPos);
               }, 500);
             } else if (LADDERS[landedPos]) {
-              setMessage(`AI dapat ${aiDiceVal}! 🪜 Tangga naik ke ${finalAiPos}. Giliran kamu!`);
+              setMessage(`AI dapat ${aiDiceVal}! Tangga naik ke ${finalAiPos}. Giliran kamu!`);
               setTimeout(() => {
                 setDisplayAiPos(finalAiPos);
                 setAiPos(finalAiPos);
@@ -285,10 +329,10 @@ export default function UlarTanggaGame() {
     setIsPlayerTurn(true); setWinner(null);
     setMessage("Giliran kamu! Lempar dadu 🎲");
     setRolling(false); setAnimating(false); setAiRollAnim(false);
+    setExtraTurns(0); setShowExtraTurnUI(false);
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
   };
 
-  // Sync display positions when not animating
   useEffect(() => {
     if (!animating) {
       setDisplayPlayerPos(playerPos);
@@ -335,6 +379,16 @@ export default function UlarTanggaGame() {
         <div className="mt-2 bg-white/20 rounded-lg p-2">
           <p className="text-xs text-center font-medium">{message}</p>
         </div>
+        {/* Credits & Extra Turns */}
+        <div className="mt-2 flex items-center justify-center gap-2">
+          <GameCreditsBadge credits={credits} isUnlimited={isUnlimited} />
+          {extraTurns > 0 && (
+            <div className="flex items-center gap-1 text-xs bg-yellow-500/30 border border-yellow-400/50 rounded-lg px-2 py-1">
+              <Dices className="w-3 h-3" />
+              <span className="font-bold">{extraTurns} extra</span>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Board */}
@@ -356,14 +410,11 @@ export default function UlarTanggaGame() {
                     isFinish ? "!bg-yellow-300 dark:!bg-yellow-600 !border-yellow-500" : ""
                   } ${isStart ? "!bg-green-300 dark:!bg-green-600 !border-green-500" : ""}`}
                 >
-                  <span className={`${isSnakeHead || isLadderBottom ? "font-black" : "opacity-50"} ${
+                  <span className={`${isSnakeHead ? "text-red-600 dark:text-red-400 font-black" : isLadderBottom ? "text-green-600 dark:text-green-400 font-black" : "opacity-50"} ${
                     isFinish ? "text-yellow-800 dark:text-yellow-100" : ""
                   }`}>
                     {num}
                   </span>
-                  {isSnakeHead && <span className="absolute top-0 right-0 text-[8px] leading-none z-10">🐍</span>}
-                  {isLadderBottom && <span className="absolute top-0 right-0 text-[8px] leading-none z-10">🪜</span>}
-                  {isFinish && <span className="absolute top-0 right-0 text-[8px] leading-none z-10">🏁</span>}
 
                   {hasPlayer && (
                     <motion.div
@@ -406,7 +457,6 @@ export default function UlarTanggaGame() {
                 <g key={`ladder-${from}`}>
                   <line x1={a.x - offsetX} y1={a.y} x2={b.x - offsetX} y2={b.y} stroke="#16a34a" strokeWidth="0.6" strokeLinecap="round" opacity="0.7" />
                   <line x1={a.x + offsetX} y1={a.y} x2={b.x + offsetX} y2={b.y} stroke="#16a34a" strokeWidth="0.6" strokeLinecap="round" opacity="0.7" />
-                  {/* Rungs */}
                   {Array.from({ length: Math.max(2, Math.floor(Math.abs(b.y - a.y) / 4)) }, (_, ri) => {
                     const t = (ri + 1) / (Math.floor(Math.abs(b.y - a.y) / 4) + 1);
                     const rx = a.x + (b.x - a.x) * t;
@@ -422,7 +472,6 @@ export default function UlarTanggaGame() {
               const from = Number(fromStr);
               const a = getCellCenter(from);
               const b = getCellCenter(to);
-              // Wavy snake path
               const midX = (a.x + b.x) / 2 + (from % 2 === 0 ? 3 : -3);
               const midY = (a.y + b.y) / 2;
               return (
@@ -448,9 +497,9 @@ export default function UlarTanggaGame() {
 
       {/* Legend */}
       <div className="flex items-center justify-center gap-4 text-[10px]">
-        <span className="flex items-center gap-1">🐍 Ular (turun)</span>
-        <span className="flex items-center gap-1">🪜 Tangga (naik)</span>
-        <span className="flex items-center gap-1">🏁 Finish</span>
+        <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm bg-red-500 inline-block"></span> Ular (turun)</span>
+        <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm bg-green-500 inline-block"></span> Tangga (naik)</span>
+        <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm bg-yellow-400 inline-block"></span> Finish</span>
       </div>
 
       {/* Dice Area */}
@@ -469,19 +518,54 @@ export default function UlarTanggaGame() {
         </div>
       </div>
 
+      {/* Extra Turn UI - shown after player's move */}
+      {showExtraTurnUI && isPlayerTurn && !rolling && !animating && !winner && (
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-card rounded-2xl border-2 border-primary/30 p-3 space-y-2"
+        >
+          <p className="text-xs font-bold text-center flex items-center justify-center gap-1">
+            <Dices className="w-4 h-4 text-primary" /> Beli Extra Turn (1 kredit = 1 giliran)
+          </p>
+          <div className="flex gap-2 justify-center">
+            {[1, 2, 3].map(amount => (
+              <Button
+                key={amount}
+                variant="outline"
+                size="sm"
+                className="text-xs gap-1"
+                disabled={!isUnlimited && credits < amount}
+                onClick={() => buyExtraTurn(amount)}
+              >
+                +{amount} Turn ({amount} kredit)
+              </Button>
+            ))}
+          </div>
+          <div className="flex justify-center gap-2">
+            <Button variant="ghost" size="sm" className="text-xs" onClick={proceedToAiTurn}>
+              Lewati → Giliran AI
+            </Button>
+            <BuyCreditsDialog visitorId={visitorId} onPurchased={fetchCredits} />
+          </div>
+        </motion.div>
+      )}
+
       {/* Controls */}
       <div className="flex gap-2">
         <Button
           className="flex-1 h-14 font-extrabold text-base gap-2 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white shadow-lg"
           onClick={handleRoll}
-          disabled={rolling || animating || !!winner || !isPlayerTurn}
+          disabled={rolling || animating || !!winner || !isPlayerTurn || showExtraTurnUI}
         >
           {rolling || animating ? (
             <><Loader2 className="w-5 h-5 animate-spin" /> Melempar...</>
           ) : !isPlayerTurn ? (
             <><Loader2 className="w-5 h-5 animate-spin" /> Giliran AI...</>
+          ) : showExtraTurnUI ? (
+            <>Pilih extra turn atau lewati</>
           ) : (
-            <>🎲 Lempar Dadu</>
+            <>🎲 Lempar Dadu {extraTurns > 0 ? `(+${extraTurns} extra)` : ""}</>
           )}
         </Button>
         <Button variant="outline" onClick={resetGame} className="h-14 w-14 rounded-2xl">

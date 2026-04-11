@@ -62,7 +62,7 @@ Deno.serve(async (req) => {
 
     if (action === "check_voucher") {
       if (!voucherCode) return Response.json({ error: "Kode voucher diperlukan" }, { status: 400, headers: corsHeaders });
-      const { data: voucher } = await admin.from("discount_vouchers").select("*").eq("code", voucherCode.trim().toUpperCase()).eq("is_active", true).maybeSingle();
+      const { data: voucher } = await admin.from("game_discount_vouchers").select("*").eq("code", voucherCode.trim().toUpperCase()).eq("is_active", true).maybeSingle();
       if (!voucher) return Response.json({ error: "Voucher tidak ditemukan atau tidak aktif" }, { status: 404, headers: corsHeaders });
       if (voucher.used_count >= voucher.max_uses) return Response.json({ error: "Voucher sudah habis" }, { status: 400, headers: corsHeaders });
       if (voucher.expires_at && new Date(voucher.expires_at) < new Date()) return Response.json({ error: "Voucher sudah kedaluwarsa" }, { status: 400, headers: corsHeaders });
@@ -91,7 +91,7 @@ Deno.serve(async (req) => {
       let voucherId: string | null = null;
 
       if (voucherCode) {
-        const { data: voucher } = await admin.from("discount_vouchers").select("*").eq("code", voucherCode.trim().toUpperCase()).eq("is_active", true).maybeSingle();
+        const { data: voucher } = await admin.from("game_discount_vouchers").select("*").eq("code", voucherCode.trim().toUpperCase()).eq("is_active", true).maybeSingle();
         if (voucher && voucher.used_count < voucher.max_uses && (!voucher.expires_at || new Date(voucher.expires_at) > new Date())) {
           discountAmount = Math.min(voucher.discount_amount, pkg.price);
           finalPrice = Math.max(0, pkg.price - discountAmount);
@@ -109,9 +109,9 @@ Deno.serve(async (req) => {
 
       // Update voucher used count
       if (voucherId) {
-        const { data: v } = await admin.from("discount_vouchers").select("used_count").eq("id", voucherId).maybeSingle();
+        const { data: v } = await admin.from("game_discount_vouchers").select("used_count").eq("id", voucherId).maybeSingle();
         if (v) {
-          await admin.from("discount_vouchers").update({ used_count: v.used_count + 1 }).eq("id", voucherId);
+          await admin.from("game_discount_vouchers").update({ used_count: v.used_count + 1 }).eq("id", voucherId);
         }
       }
 

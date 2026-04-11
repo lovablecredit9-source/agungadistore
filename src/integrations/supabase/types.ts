@@ -337,6 +337,39 @@ export type Database = {
         }
         Relationships: []
       }
+      game_discount_vouchers: {
+        Row: {
+          code: string
+          created_at: string
+          discount_amount: number
+          expires_at: string | null
+          id: string
+          is_active: boolean
+          max_uses: number
+          used_count: number
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          discount_amount?: number
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          max_uses?: number
+          used_count?: number
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          discount_amount?: number
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          max_uses?: number
+          used_count?: number
+        }
+        Relationships: []
+      }
       liked_products: {
         Row: {
           created_at: string
@@ -1140,6 +1173,39 @@ export type Database = {
           wa_number?: string | null
           warranty_duration_type?: string
           warranty_duration_value?: number
+        }
+        Relationships: []
+      }
+      streak_discount_vouchers: {
+        Row: {
+          code: string
+          created_at: string
+          discount_amount: number
+          expires_at: string | null
+          id: string
+          is_active: boolean
+          max_uses: number
+          used_count: number
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          discount_amount?: number
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          max_uses?: number
+          used_count?: number
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          discount_amount?: number
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          max_uses?: number
+          used_count?: number
         }
         Relationships: []
       }
