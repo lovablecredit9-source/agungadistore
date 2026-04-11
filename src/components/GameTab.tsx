@@ -129,22 +129,23 @@ export default function GameTab() {
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: i * 0.05 }}
               whileTap={{ scale: 0.95 }}
+              className="flex"
             >
               <button
                 onClick={() => setMode(game.mode)}
-                className={`relative w-full overflow-hidden rounded-2xl bg-gradient-to-br ${game.gradient} p-3 text-left shadow-lg hover:shadow-xl transition-all flex flex-col`}
+                className={`relative w-full overflow-hidden rounded-2xl bg-gradient-to-br ${game.gradient} p-3 text-left shadow-lg hover:shadow-xl transition-all flex flex-col h-[140px]`}
               >
-                <div className="flex items-center justify-center py-3">
+                <div className="flex items-center justify-center flex-1">
                   <img
                     src={game.image}
                     alt={game.title}
                     loading="lazy"
-                    className="w-16 h-16 object-contain drop-shadow-lg"
+                    className="w-14 h-14 object-contain drop-shadow-lg"
                   />
                 </div>
                 <div className="mt-auto">
-                  <h3 className="font-extrabold text-sm text-white leading-tight drop-shadow">{game.title}</h3>
-                  <p className="text-[10px] text-white/80 leading-snug mt-0.5 break-words">{game.desc}</p>
+                  <h3 className="font-extrabold text-sm text-white leading-tight drop-shadow truncate">{game.title}</h3>
+                  <p className="text-[10px] text-white/80 leading-snug mt-0.5 truncate">{game.desc}</p>
                 </div>
               </button>
             </motion.div>
