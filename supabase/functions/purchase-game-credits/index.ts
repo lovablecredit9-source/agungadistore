@@ -109,9 +109,9 @@ Deno.serve(async (req) => {
 
       // Update voucher used count
       if (voucherId) {
-        const { data: v } = await admin.from("discount_vouchers").select("used_count").eq("id", voucherId).maybeSingle();
+        const { data: v } = await admin.from("game_discount_vouchers").select("used_count").eq("id", voucherId).maybeSingle();
         if (v) {
-          await admin.from("discount_vouchers").update({ used_count: v.used_count + 1 }).eq("id", voucherId);
+          await admin.from("game_discount_vouchers").update({ used_count: v.used_count + 1 }).eq("id", voucherId);
         }
       }
 
