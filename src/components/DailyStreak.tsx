@@ -291,8 +291,10 @@ export default function DailyStreak() {
   function handlePlanClick(planDays: number) {
     const plan = AUTO_CLAIM_PLANS.find(p => p.days === planDays);
     if (!plan) return;
-    const discountedPrice = voucherDiscount > 0 ? Math.max(0, plan.price - voucherDiscount) : undefined;
-    setShowConfirm({ days: plan.days, name: plan.name, price: plan.price, discountedPrice });
+    const basePrice = plan.originalPrice ?? plan.price;
+    const finalPrice = voucherDiscount > 0 ? Math.max(0, plan.price - voucherDiscount) : plan.price;
+    const discountedPrice = finalPrice < basePrice ? finalPrice : undefined;
+    setShowConfirm({ days: plan.days, name: plan.name, price: basePrice, discountedPrice });
   }
 
   async function applyVoucher() {

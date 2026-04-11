@@ -16,6 +16,24 @@ interface CreditPackage {
   sort_order: number;
 }
 
+async function getActiveFlashDiscountPercent(admin: any, discountKey: string): Promise<number> {
+  const { data } = await admin
+    .from("admin_settings")
+    .select("setting_key, setting_value")
+    .in("setting_key", ["flash_sale_end", discountKey]);
+
+  const settings = Object.fromEntries((data || []).map((row: any) => [row.setting_key, row.setting_value || ""]));
+  const flashSaleEnd = settings.flash_sale_end;
+  const isFlashActive = !!flashSaleEnd && new Date(flashSaleEnd) > new Date();
+
+  if (!isFlashActive) return 0;
+
+  const rawDiscount = Number.parseInt(settings[discountKey] || "0", 10);
+  if (!Number.isFinite(rawDiscount)) return 0;
+
+  return Math.min(100, Math.max(0, rawDiscount));
+}
+
 async function getPackages(admin: any): Promise<CreditPackage[]> {
   const { data } = await admin
     .from("credit_packages")
@@ -96,18 +114,26 @@ Deno.serve(async (req) => {
       }
 
       // Calculate price with voucher discount
-      let finalPrice = pkg.price;
-      let discountAmount = 0;
+      const flashDiscountPercent = await getActiveFlashDiscountPercent(admin, "promo_credit_discount");
+      const priceAfterFlashSale = flashDiscountPercent > 0
+        ? Math.max(0, Math.round(pkg.price * (1 - flashDiscountPercent / 100)))
+        : pkg.price;
+      const flashDiscountAmount = Math.max(0, pkg.price - priceAfterFlashSale);
+
+      let finalPrice = priceAfterFlashSale;
+      let voucherDiscountAmount = 0;
       let voucherId: string | null = null;
 
       if (voucherCode) {
         const { data: voucher } = await admin.from("game_discount_vouchers").select("*").eq("code", voucherCode.trim().toUpperCase()).eq("is_active", true).maybeSingle();
         if (voucher && voucher.used_count < voucher.max_uses && (!voucher.expires_at || new Date(voucher.expires_at) > new Date())) {
-          discountAmount = Math.min(voucher.discount_amount, pkg.price);
-          finalPrice = Math.max(0, pkg.price - discountAmount);
+          voucherDiscountAmount = Math.min(voucher.discount_amount, priceAfterFlashSale);
+          finalPrice = Math.max(0, priceAfterFlashSale - voucherDiscountAmount);
           voucherId = voucher.id;
         }
       }
+
+      const totalDiscountAmount = flashDiscountAmount + voucherDiscountAmount;
 
       // Check balance
       const { data: balance } = await admin.from("user_balances").select("id, balance").eq("visitor_id", visitorId).maybeSingle();
@@ -126,8 +152,12 @@ Deno.serve(async (req) => {
       }
 
       // Record transaction
-      const desc = discountAmount > 0
-        ? `Beli ${pkg.label} (Kredit Game) - Diskon Rp${discountAmount.toLocaleString("id-ID")}`
+      const discountParts = [
+        flashDiscountAmount > 0 ? `Flash Sale ${flashDiscountPercent}%` : null,
+        voucherDiscountAmount > 0 ? `Voucher Rp${voucherDiscountAmount.toLocaleString("id-ID")}` : null,
+      ].filter(Boolean);
+      const desc = totalDiscountAmount > 0
+        ? `Beli ${pkg.label} (Kredit Game) - ${discountParts.join(" + ")}`
         : `Beli ${pkg.label} (Kredit Jawaban Game)`;
       await admin.from("balance_transactions").insert({
         visitor_id: visitorId,
@@ -180,7 +210,9 @@ Deno.serve(async (req) => {
         package: pkg,
         credits: finalCredits,
         balance_remaining: balance.balance - finalPrice,
-        discount_amount: discountAmount,
+        discount_amount: totalDiscountAmount,
+        flash_discount_amount: flashDiscountAmount,
+        voucher_discount_amount: voucherDiscountAmount,
         final_price: finalPrice,
       }, { headers: corsHeaders });
     }
