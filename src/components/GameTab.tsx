@@ -61,6 +61,7 @@ export default function GameTab() {
   const [mode, setMode] = useState<GameMode>("menu");
   const visitorId = typeof window !== "undefined" ? localStorage.getItem("balance_visitor_id") : null;
   const { credits, isUnlimited, unlimitedUntil, fetchCredits } = useGameCredits(visitorId);
+  const { profile, fetchProfile, visitorId: gameVisitorId } = useGameProfile();
 
   if (mode !== "menu") {
     const game = GAMES.find(g => g.mode === mode);
