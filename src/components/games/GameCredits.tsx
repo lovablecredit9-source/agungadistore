@@ -290,9 +290,20 @@ export function BuyCreditsDialog({ visitorId, onPurchased }: BuyCreditsDialogPro
               </div>
             )}
 
+            {/* Flash sale banner */}
+            {flashSaleEnd && new Date(flashSaleEnd) > new Date() && (
+              <div className="bg-gradient-to-r from-yellow-500/20 to-orange-500/20 border border-yellow-500/30 rounded-lg p-2 text-center">
+                <p className="text-xs font-bold text-yellow-600 flex items-center justify-center gap-1">
+                  🔥 FLASH SALE! Berakhir {new Date(flashSaleEnd).toLocaleString("id-ID")}
+                </p>
+              </div>
+            )}
+
             {/* Package list */}
             <div className="grid gap-2">
-              {PACKAGES.map(pkg => {
+              {packages.map(pkg => {
+                const origPrice = (pkg as any).originalPrice || pkg.price;
+                const isPromo = origPrice !== pkg.price;
                 const discountedPrice = getDiscountedPrice(pkg.price);
                 const hasDiscount = voucherValid && discountedPrice < pkg.price;
                 return (
