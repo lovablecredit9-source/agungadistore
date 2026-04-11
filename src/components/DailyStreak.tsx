@@ -285,23 +285,24 @@ export default function DailyStreak() {
         .eq("is_active", true)
         .maybeSingle();
 
-      if (error || !data) {
+      const v = data as any;
+      if (error || !v) {
         setVoucherError("Kode voucher tidak valid");
         setVoucherDiscount(0);
         setVoucherApplied(false);
-      } else if (data.max_uses > 0 && data.used_count >= data.max_uses) {
+      } else if (v.max_uses > 0 && v.used_count >= v.max_uses) {
         setVoucherError("Voucher sudah habis dipakai");
         setVoucherDiscount(0);
         setVoucherApplied(false);
-      } else if (data.expires_at && new Date(data.expires_at) < new Date()) {
+      } else if (v.expires_at && new Date(v.expires_at) < new Date()) {
         setVoucherError("Voucher sudah expired");
         setVoucherDiscount(0);
         setVoucherApplied(false);
       } else {
-        setVoucherDiscount(data.discount_amount);
+        setVoucherDiscount(v.discount_amount);
         setVoucherApplied(true);
         setVoucherError("");
-        toast({ title: "🎉 Voucher Berhasil!", description: `Diskon Rp${data.discount_amount.toLocaleString("id-ID")} diterapkan` });
+        toast({ title: "🎉 Voucher Berhasil!", description: `Diskon Rp${v.discount_amount.toLocaleString("id-ID")} diterapkan` });
       }
     } catch {
       setVoucherError("Gagal memvalidasi voucher");
