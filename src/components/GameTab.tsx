@@ -10,6 +10,8 @@ import TebakAngkaGame from "@/components/games/TebakAngkaGame";
 import TebakBarangGame from "@/components/games/TebakBarangGame";
 import UlarTanggaGame from "@/components/games/UlarTanggaGame";
 import LudoGame from "@/components/games/LudoGame";
+import KuisGame from "@/components/games/KuisGame";
+import TekaTekiV2Game from "@/components/games/TekaTekiV2Game";
 import { useGameCredits, GameCreditsBadge, BuyCreditsDialog } from "@/components/games/GameCredits";
 
 import gameSuitImg from "@/assets/game-suit.png";
@@ -20,18 +22,22 @@ import gameTebakAngkaImg from "@/assets/game-tebak-angka.png";
 import gameTebakBarangImg from "@/assets/game-tebak-barang.png";
 import gameUlarTanggaImg from "@/assets/game-ular-tangga.png";
 import gameLudoImg from "@/assets/game-ludo.png";
+import gameKuisImg from "@/assets/game-kuis.png";
+import gameTekaTekiV2Img from "@/assets/game-teka-teki-v2.png";
 
-type GameMode = "menu" | "suit" | "tebak" | "tebak_gambar" | "teka_teki" | "tebak_angka" | "tebak_barang" | "ular_tangga" | "ludo";
+type GameMode = "menu" | "suit" | "tebak" | "tebak_gambar" | "teka_teki" | "tebak_angka" | "tebak_barang" | "ular_tangga" | "ludo" | "kuis" | "teka_teki_v2";
 
 const GAMES: { mode: GameMode; title: string; desc: string; image: string; gradient: string }[] = [
-  { mode: "suit", title: "Suit AI", desc: "Batu, Gunting, Kertas lawan AI!", image: gameSuitImg, gradient: "from-orange-500 to-red-500" },
-  { mode: "tebak", title: "Tebak Kata", desc: "AI beri petunjuk, kamu tebak!", image: gameTebakKataImg, gradient: "from-blue-500 to-indigo-600" },
-  { mode: "tebak_gambar", title: "Tebak Gambar", desc: "AI buat gambar, kamu tebak!", image: gameTebakGambarImg, gradient: "from-green-500 to-emerald-600" },
-  { mode: "teka_teki", title: "Teka-Teki", desc: "AI kasih riddle, jawab!", image: gameTekaTekiImg, gradient: "from-purple-500 to-violet-600" },
-  { mode: "tebak_angka", title: "Tebak Angka", desc: "Tebak angka rahasia AI!", image: gameTebakAngkaImg, gradient: "from-cyan-500 to-blue-600" },
-  { mode: "tebak_barang", title: "Tebak Barang", desc: "AI deskripsikan, kamu tebak!", image: gameTebakBarangImg, gradient: "from-amber-500 to-orange-600" },
-  { mode: "ular_tangga", title: "Ular Tangga", desc: "Lawan AI di papan klasik!", image: gameUlarTanggaImg, gradient: "from-emerald-500 to-green-700" },
-  { mode: "ludo", title: "Ludo King", desc: "Siapa sampai duluan?", image: gameLudoImg, gradient: "from-pink-500 to-rose-600" },
+  { mode: "suit", title: "Suit AI", desc: "Batu Gunting Kertas", image: gameSuitImg, gradient: "from-orange-500 to-red-500" },
+  { mode: "tebak", title: "Tebak Kata", desc: "Tebak dari petunjuk AI", image: gameTebakKataImg, gradient: "from-blue-500 to-indigo-600" },
+  { mode: "tebak_gambar", title: "Tebak Gambar", desc: "Tebak gambar dari AI", image: gameTebakGambarImg, gradient: "from-green-500 to-emerald-600" },
+  { mode: "teka_teki", title: "Teka-Teki", desc: "Jawab riddle AI", image: gameTekaTekiImg, gradient: "from-purple-500 to-violet-600" },
+  { mode: "tebak_angka", title: "Tebak Angka", desc: "Cari angka rahasia", image: gameTebakAngkaImg, gradient: "from-cyan-500 to-blue-600" },
+  { mode: "tebak_barang", title: "Tebak Barang", desc: "Tebak dari deskripsi", image: gameTebakBarangImg, gradient: "from-amber-500 to-orange-600" },
+  { mode: "kuis", title: "Kuis Ya/Tidak", desc: "Jawab Ya atau Tidak!", image: gameKuisImg, gradient: "from-green-500 to-teal-600" },
+  { mode: "teka_teki_v2", title: "Puzzle Huruf", desc: "Susun huruf jadi kata", image: gameTekaTekiV2Img, gradient: "from-teal-500 to-cyan-600" },
+  { mode: "ular_tangga", title: "Ular Tangga", desc: "Papan klasik vs AI", image: gameUlarTanggaImg, gradient: "from-emerald-500 to-green-700" },
+  { mode: "ludo", title: "Ludo King", desc: "Siapa duluan finish?", image: gameLudoImg, gradient: "from-pink-500 to-rose-600" },
 ];
 
 const GAME_COMPONENTS: Record<string, React.ComponentType> = {
@@ -43,6 +49,8 @@ const GAME_COMPONENTS: Record<string, React.ComponentType> = {
   tebak_barang: TebakBarangGame,
   ular_tangga: UlarTanggaGame,
   ludo: LudoGame,
+  kuis: KuisGame,
+  teka_teki_v2: TekaTekiV2Game,
 };
 
 export default function GameTab() {
@@ -99,7 +107,6 @@ export default function GameTab() {
                 onClick={() => setMode(game.mode)}
                 className={`relative w-full overflow-hidden rounded-2xl bg-gradient-to-br ${game.gradient} p-3 text-left shadow-lg hover:shadow-xl transition-all aspect-[4/3] flex flex-col justify-between`}
               >
-                {/* Game image */}
                 <div className="flex-1 flex items-center justify-center">
                   <img
                     src={game.image}
@@ -108,8 +115,6 @@ export default function GameTab() {
                     className="w-16 h-16 object-contain drop-shadow-lg"
                   />
                 </div>
-
-                {/* Text */}
                 <div className="mt-1">
                   <h3 className="font-extrabold text-sm text-white leading-tight drop-shadow">{game.title}</h3>
                   <p className="text-[10px] text-white/80 leading-tight mt-0.5">{game.desc}</p>
