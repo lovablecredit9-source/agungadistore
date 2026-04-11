@@ -96,7 +96,7 @@ Deno.serve(async (req) => {
     const expiresAt = new Date(startsAt.getTime() + plan.days * 24 * 60 * 60 * 1000);
 
     // Deduct balance
-    const newBalance = balanceRow.balance - plan.price;
+    const newBalance = balanceRow.balance - finalPrice;
     const { error: balErr } = await admin
       .from("user_balances").update({ balance: newBalance }).eq("id", balanceRow.id);
 
@@ -104,12 +104,20 @@ Deno.serve(async (req) => {
       return Response.json({ error: "Gagal memotong saldo" }, { status: 500, headers: corsHeaders });
     }
 
+    // Update voucher used count
+    if (voucherId) {
+      const { data: vRow } = await admin.from("streak_discount_vouchers").select("used_count").eq("id", voucherId).maybeSingle();
+      if (vRow) {
+        await admin.from("streak_discount_vouchers").update({ used_count: vRow.used_count + 1 }).eq("id", voucherId);
+      }
+    }
+
     // Create subscription
     const { error: subErr } = await admin.from("streak_subscriptions").insert({
       visitor_id: visitorId,
       plan_name: plan.name,
       plan_days: plan.days,
-      price_paid: plan.price,
+      price_paid: finalPrice,
       starts_at: startsAt.toISOString(),
       expires_at: expiresAt.toISOString(),
       is_active: true,
@@ -122,11 +130,14 @@ Deno.serve(async (req) => {
     }
 
     // Record transaction
+    const desc = discountAmount > 0
+      ? `Beli paket Auto-Klaim Streak ${plan.name} - Diskon Rp${discountAmount.toLocaleString("id-ID")}`
+      : `Beli paket Auto-Klaim Streak ${plan.name}`;
     await admin.from("balance_transactions").insert({
       visitor_id: visitorId,
       type: "purchase",
-      amount: plan.price,
-      description: `Beli paket Auto-Klaim Streak ${plan.name}`,
+      amount: finalPrice,
+      description: desc,
     });
 
     return Response.json({
@@ -134,6 +145,7 @@ Deno.serve(async (req) => {
       plan: plan.name,
       expires_at: expiresAt.toISOString(),
       balance_remaining: newBalance,
+      discount_amount: discountAmount,
     }, { headers: corsHeaders });
 
   } catch (error) {
