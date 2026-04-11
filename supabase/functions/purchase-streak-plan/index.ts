@@ -5,7 +5,7 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const PLANS = [
+const DEFAULT_PLANS = [
   { name: "10 Hari", days: 10, price: 5000 },
   { name: "20 Hari", days: 20, price: 10000 },
   { name: "30 Hari", days: 30, price: 15000 },
@@ -14,6 +14,35 @@ const PLANS = [
   { name: "6 Bulan", days: 180, price: 50000 },
   { name: "1 Tahun", days: 365, price: 80000 },
 ];
+
+const STREAK_SETTING_MAP: Record<number, string> = {
+  10: "streak_price_10",
+  20: "streak_price_20",
+  30: "streak_price_30",
+  60: "streak_price_60",
+  90: "streak_price_90",
+  180: "streak_price_180",
+  365: "streak_price_365",
+};
+
+async function getPlansWithDynamicPrices(admin: any) {
+  const { data: settings } = await admin.from("admin_settings").select("setting_key, setting_value")
+    .in("setting_key", Object.values(STREAK_SETTING_MAP));
+
+  const priceMap: Record<string, number> = {};
+  if (settings) {
+    for (const s of settings) {
+      const val = parseInt(s.setting_value);
+      if (!isNaN(val) && val > 0) priceMap[s.setting_key] = val;
+    }
+  }
+
+  return DEFAULT_PLANS.map(plan => {
+    const settingKey = STREAK_SETTING_MAP[plan.days];
+    const dynamicPrice = settingKey ? priceMap[settingKey] : undefined;
+    return { ...plan, price: dynamicPrice ?? plan.price };
+  });
+}
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -27,16 +56,18 @@ Deno.serve(async (req) => {
       return Response.json({ error: "Data tidak lengkap" }, { status: 400, headers: corsHeaders });
     }
 
-    const plan = PLANS.find(p => p.days === planDays);
-    if (!plan) {
-      return Response.json({ error: "Paket tidak valid" }, { status: 400, headers: corsHeaders });
-    }
-
     const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
     const admin = createClient(supabaseUrl, serviceRoleKey, {
       auth: { autoRefreshToken: false, persistSession: false },
     });
+
+    const PLANS = await getPlansWithDynamicPrices(admin);
+
+    const plan = PLANS.find(p => p.days === planDays);
+    if (!plan) {
+      return Response.json({ error: "Paket tidak valid" }, { status: 400, headers: corsHeaders });
+    }
 
     // Verify PIN
     const { data: pinRow } = await admin
