@@ -12,6 +12,7 @@ import UlarTanggaGame from "@/components/games/UlarTanggaGame";
 import LudoGame from "@/components/games/LudoGame";
 import KuisGame from "@/components/games/KuisGame";
 import TekaTekiV2Game from "@/components/games/TekaTekiV2Game";
+import PilihanGandaGame from "@/components/games/PilihanGandaGame";
 import { useGameCredits, GameCreditsBadge, BuyCreditsDialog } from "@/components/games/GameCredits";
 
 import gameSuitImg from "@/assets/game-suit.png";
