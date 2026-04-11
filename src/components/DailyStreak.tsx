@@ -225,7 +225,12 @@ export default function DailyStreak() {
   const [showPinForStreak, setShowPinForStreak] = useState(false);
   const [streakPinInput, setStreakPinInput] = useState("");
   const [pendingPlanDays, setPendingPlanDays] = useState<number | null>(null);
-  const [showConfirm, setShowConfirm] = useState<{ days: number; name: string; price: number } | null>(null);
+  const [showConfirm, setShowConfirm] = useState<{ days: number; name: string; price: number; discountedPrice?: number } | null>(null);
+  const [voucherCode, setVoucherCode] = useState("");
+  const [voucherDiscount, setVoucherDiscount] = useState(0);
+  const [voucherLoading, setVoucherLoading] = useState(false);
+  const [voucherError, setVoucherError] = useState("");
+  const [voucherApplied, setVoucherApplied] = useState(false);
   const visitorId = getVisitorId();
   const countdown = useCountdown();
   const { toast } = useToast();
