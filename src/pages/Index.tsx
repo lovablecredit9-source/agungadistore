@@ -1405,27 +1405,23 @@ const Index = () => {
         {tab === "beranda" && (
           <div className="space-y-5">
             {/* Info: Geser navigasi */}
-            {(() => {
-              const dismissed = localStorage.getItem("nav_swipe_info_dismissed");
-              if (dismissed) return null;
-              return (
-                <div className="relative flex items-center gap-3 rounded-xl bg-primary/10 border border-primary/20 px-4 py-3">
-                  <div className="shrink-0 text-primary">
-                    <ChevronRight className="w-5 h-5 animate-pulse" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs font-semibold text-foreground">👆 Geser navigasi ke kiri</p>
-                    <p className="text-[11px] text-muted-foreground">Navigasi bawah bisa digeser untuk melihat tab lainnya seperti Musik, Sponsor, Streak, Game & lainnya.</p>
-                  </div>
-                  <button
-                    onClick={() => { localStorage.setItem("nav_swipe_info_dismissed", "1"); window.dispatchEvent(new Event("storage")); }}
-                    className="shrink-0 p-1 rounded-full hover:bg-muted"
-                  >
-                    <X className="w-4 h-4 text-muted-foreground" />
-                  </button>
+            {!navInfoDismissed && (
+              <div className="relative flex items-center gap-3 rounded-xl bg-primary/10 border border-primary/20 px-4 py-3">
+                <div className="shrink-0 text-primary">
+                  <ChevronRight className="w-5 h-5 animate-pulse" />
                 </div>
-              );
-            })()}
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-semibold text-foreground">👆 Geser navigasi ke kiri</p>
+                  <p className="text-[11px] text-muted-foreground">Navigasi bawah bisa digeser untuk melihat tab lainnya seperti Musik, Sponsor, Streak, Game & lainnya.</p>
+                </div>
+                <button
+                  onClick={() => { localStorage.setItem("nav_swipe_info_dismissed", "1"); setNavInfoDismissed(true); }}
+                  className="shrink-0 p-1 rounded-full hover:bg-muted"
+                >
+                  <X className="w-4 h-4 text-muted-foreground" />
+                </button>
+              </div>
+            )}
 
             {/* Hero Promo Slider — Music / Produk / Sponsor */}
             <HomeBannerSlider
