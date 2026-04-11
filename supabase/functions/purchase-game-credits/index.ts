@@ -5,7 +5,7 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const CREDIT_PACKAGES = [
+const DEFAULT_CREDIT_PACKAGES = [
   { id: "2", credits: 2, price: 2000, label: "2 Kredit" },
   { id: "10", credits: 10, price: 5000, label: "10 Kredit" },
   { id: "30", credits: 30, price: 10000, label: "30 Kredit" },
@@ -17,6 +17,38 @@ const CREDIT_PACKAGES = [
   { id: "unlimited", credits: -1, price: 100000, label: "Unlimited 1 Bulan" },
   { id: "unlimited_year", credits: -1, price: 1000000, label: "Unlimited 1 Tahun" },
 ];
+
+const PRICE_SETTING_MAP: Record<string, string> = {
+  "2": "credit_price_2",
+  "10": "credit_price_10",
+  "30": "credit_price_30",
+  "60": "credit_price_60",
+  "100": "credit_price_100",
+  "200": "credit_price_200",
+  "500": "credit_price_500",
+  "1000": "credit_price_1000",
+  "unlimited": "credit_price_unlimited_month",
+  "unlimited_year": "credit_price_unlimited_year",
+};
+
+async function getPackagesWithDynamicPrices(admin: any) {
+  const { data: settings } = await admin.from("admin_settings").select("setting_key, setting_value")
+    .in("setting_key", Object.values(PRICE_SETTING_MAP));
+  
+  const priceMap: Record<string, number> = {};
+  if (settings) {
+    for (const s of settings) {
+      const val = parseInt(s.setting_value);
+      if (!isNaN(val) && val > 0) priceMap[s.setting_key] = val;
+    }
+  }
+
+  return DEFAULT_CREDIT_PACKAGES.map(pkg => {
+    const settingKey = PRICE_SETTING_MAP[pkg.id];
+    const dynamicPrice = settingKey ? priceMap[settingKey] : undefined;
+    return { ...pkg, price: dynamicPrice ?? pkg.price };
+  });
+}
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -30,6 +62,8 @@ Deno.serve(async (req) => {
     const admin = createClient(supabaseUrl, serviceKey, {
       auth: { autoRefreshToken: false, persistSession: false },
     });
+
+    const CREDIT_PACKAGES = await getPackagesWithDynamicPrices(admin);
 
     if (action === "get_packages") {
       return Response.json({ packages: CREDIT_PACKAGES }, { headers: corsHeaders });
