@@ -63,6 +63,7 @@ export default function TebakGambarGame() {
           clearInterval(t);
           setTimerActive(false);
           setGameOver(true);
+          updateGameStats(activeVisitorId || "", "tebak_gambar", false, 0);
           return 0;
         }
         return prev - 1;
