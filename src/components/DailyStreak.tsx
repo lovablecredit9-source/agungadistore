@@ -244,16 +244,27 @@ export default function DailyStreak() {
   const fetchStreakPackages = useCallback(async () => {
     // Fetch packages from DB
     const { data: pkgs } = await supabase.from("streak_packages" as any).select("*").eq("is_active", true).order("sort_order", { ascending: true });
-    const plans = (pkgs as any[] || []).map((p: any) => ({ id: p.id, name: p.name, days: p.days, price: p.price }));
 
     // Fetch flash sale settings
     const { data: settingsData } = await supabase.from("admin_settings").select("*");
     const settings: Record<string, string> = {};
-    if (settingsData) (settingsData as any[]).forEach(s => { settings[s.setting_key] = s.setting_value; });
+    if (settingsData) (settingsData as any[]).forEach((s: any) => { settings[s.setting_key] = s.setting_value; });
 
     const fsEnd = settings.flash_sale_end || "";
     setFlashSaleEnd(fsEnd);
     setFlashSaleLabel(settings.flash_sale_label || "");
+
+    const isFlashActive = fsEnd && new Date(fsEnd) > new Date();
+    const streakDisc = parseInt(settings.promo_streak_discount || "0");
+
+    const plans = (pkgs as any[] || []).map((p: any) => {
+      const base = { id: p.id, name: p.name, days: p.days, price: p.price };
+      if (isFlashActive && streakDisc > 0) {
+        const discountedPrice = Math.max(0, Math.round(p.price * (1 - streakDisc / 100)));
+        return { ...base, originalPrice: p.price, price: discountedPrice };
+      }
+      return base;
+    });
 
     setAutoClaimPlans(plans.length > 0 ? plans : []);
   }, []);

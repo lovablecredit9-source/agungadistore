@@ -100,6 +100,7 @@ export function BuyCreditsDialog({ visitorId, onPurchased }: BuyCreditsDialogPro
   const [checkingVoucher, setCheckingVoucher] = useState(false);
   const [packages, setPackages] = useState<CreditPackage[]>([]);
   const [flashSaleEnd, setFlashSaleEnd] = useState<string>("");
+  const [creditDiscount, setCreditDiscount] = useState(0);
   const { toast } = useToast();
 
   // Fetch packages from DB via edge function
@@ -111,16 +112,27 @@ export function BuyCreditsDialog({ visitorId, onPurchased }: BuyCreditsDialogPro
           body: { action: "get_packages" },
         });
         if (data?.packages) {
-          setPackages(data.packages);
+          // Check flash sale settings
+          const { data: settingsData } = await supabase.from("admin_settings").select("*");
+          const settings: Record<string, string> = {};
+          if (settingsData) (settingsData as any[]).forEach((s: any) => { settings[s.setting_key] = s.setting_value; });
+          const fsEnd = settings.flash_sale_end || "";
+          setFlashSaleEnd(fsEnd);
+          const disc = parseInt(settings.promo_credit_discount || "0");
+          const isFlashActive = fsEnd && new Date(fsEnd) > new Date();
+          setCreditDiscount(isFlashActive ? disc : 0);
+          
+          // Apply flash sale discount to packages
+          const pkgs = (data.packages as CreditPackage[]).map(pkg => {
+            if (isFlashActive && disc > 0) {
+              const discountedPrice = Math.max(0, Math.round(pkg.price * (1 - disc / 100)));
+              return { ...pkg, originalPrice: pkg.price, price: discountedPrice } as any;
+            }
+            return pkg;
+          });
+          setPackages(pkgs);
         }
       } catch {}
-      // Check flash sale
-      const { data: settingsData } = await supabase.from("admin_settings").select("*");
-      if (settingsData) {
-        const settings: Record<string, string> = {};
-        (settingsData as any[]).forEach(s => { settings[s.setting_key] = s.setting_value; });
-        setFlashSaleEnd(settings.flash_sale_end || "");
-      }
     })();
   }, [open]);
 
