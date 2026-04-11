@@ -63,9 +63,11 @@ interface LyricLine {
 
 // --- Storage plan system ---
 interface StoragePlan {
+  id: string;
   name: string;
   addBytes: number;
   pricePerMonth: number;
+  storage_mb: number;
 }
 
 interface ActiveSubscription {
@@ -77,11 +79,6 @@ interface ActiveSubscription {
 }
 
 const FREE_BYTES = 2 * 1024 * 1024 * 1024;
-
-const PURCHASABLE_PLANS: StoragePlan[] = [
-  { name: "Pro 10GB", addBytes: 10 * 1024 * 1024 * 1024, pricePerMonth: 10000 },
-  { name: "Pro 100GB", addBytes: 100 * 1024 * 1024 * 1024, pricePerMonth: 100000 },
-];
 
 const CACHE_NAME = "playlist-offline-v1";
 const META_CACHE_KEY = "/offline-music-meta";
@@ -259,6 +256,7 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer, onPlayE
   const [activeSubs, setActiveSubs] = useState<ActiveSubscription[]>(getActiveSubscriptions());
   const [upgradeOpen, setUpgradeOpen] = useState(false);
   const [upgrading, setUpgrading] = useState(false);
+  const [storagePlans, setStoragePlans] = useState<StoragePlan[]>([]);
   const [selectedPlanIndex, setSelectedPlanIndex] = useState(0);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const { toast } = useToast();
@@ -345,7 +343,20 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer, onPlayE
     return () => clearInterval(interval);
   }, [activeRedeemedMb]);
 
-  useEffect(() => { fetchSongs(); fetchRedeemedStorages(); checkPinExists(); fetchLikedSongs(); }, []);
+  useEffect(() => { fetchSongs(); fetchRedeemedStorages(); checkPinExists(); fetchLikedSongs(); fetchStoragePlans(); }, []);
+
+  async function fetchStoragePlans() {
+    const { data } = await supabase.from("storage_packages" as any).select("*").eq("is_active", true).order("sort_order", { ascending: true });
+    if (data && (data as any[]).length > 0) {
+      setStoragePlans((data as any[]).map((p: any) => ({
+        id: p.id,
+        name: p.name,
+        storage_mb: p.storage_mb,
+        addBytes: p.storage_mb * 1024 * 1024,
+        pricePerMonth: p.price,
+      })));
+    }
+  }
   useEffect(() => {
     if (songs.length === 0) return;
     void fetchAiRecommendations();
@@ -705,7 +716,7 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer, onPlayE
   }
 
   function attemptUpgrade() {
-    const plan = PURCHASABLE_PLANS[selectedPlanIndex];
+    const plan = storagePlans[selectedPlanIndex];
     if (!plan) return;
     if (hasPin) {
       setUpgradePinInput("");
@@ -728,7 +739,7 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer, onPlayE
   }
 
   async function handleUpgrade() {
-    const plan = PURCHASABLE_PLANS[selectedPlanIndex];
+    const plan = storagePlans[selectedPlanIndex];
     if (!plan) return;
     setUpgrading(true);
     try {
@@ -1500,7 +1511,7 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer, onPlayE
               </div>
             </div>
             <p className="text-[11px] font-semibold text-muted-foreground">Pilih Paket:</p>
-            {PURCHASABLE_PLANS.map((plan, idx) => (
+            {storagePlans.map((plan, idx) => (
               <div key={plan.name} onClick={() => setSelectedPlanIndex(idx)} className={`rounded-xl border-2 p-3 cursor-pointer transition-all ${selectedPlanIndex === idx ? "border-primary bg-primary/5" : "border-border hover:border-primary/40"}`}>
                 <div className="flex items-center justify-between">
                   <div><p className="text-sm font-bold flex items-center gap-1"><Crown className="w-4 h-4 text-primary" /> {plan.name}</p><p className="text-xs text-muted-foreground">+{formatStorageSize(plan.addBytes)} selama 30 hari</p></div>
@@ -1520,8 +1531,8 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer, onPlayE
               )}
             </div>
             <p className="text-[11px] text-muted-foreground">
-              💡 Saldo dipotong {formatCurrency(Math.max(0, (PURCHASABLE_PLANS[selectedPlanIndex]?.pricePerMonth || 0) - upgradeDiscountAmount))}
-              {upgradeDiscountAmount > 0 && <span className="line-through ml-1 text-muted-foreground/50">{formatCurrency(PURCHASABLE_PLANS[selectedPlanIndex]?.pricePerMonth || 0)}</span>}
+              💡 Saldo dipotong {formatCurrency(Math.max(0, (storagePlans[selectedPlanIndex]?.pricePerMonth || 0) - upgradeDiscountAmount))}
+              {upgradeDiscountAmount > 0 && <span className="line-through ml-1 text-muted-foreground/50">{formatCurrency(storagePlans[selectedPlanIndex]?.pricePerMonth || 0)}</span>}
               . Paket berlaku 30 hari.
             </p>
           </div>

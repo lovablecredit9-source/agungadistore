@@ -1314,6 +1314,39 @@ export type Database = {
         }
         Relationships: []
       }
+      storage_packages: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          name: string
+          price: number
+          sort_order: number
+          storage_mb: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          price?: number
+          sort_order?: number
+          storage_mb?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          price?: number
+          sort_order?: number
+          storage_mb?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       streak_discount_vouchers: {
         Row: {
           code: string
@@ -1344,6 +1377,39 @@ export type Database = {
           is_active?: boolean
           max_uses?: number
           used_count?: number
+        }
+        Relationships: []
+      }
+      streak_packages: {
+        Row: {
+          created_at: string
+          days: number
+          id: string
+          is_active: boolean
+          name: string
+          price: number
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          days?: number
+          id?: string
+          is_active?: boolean
+          name?: string
+          price?: number
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          days?: number
+          id?: string
+          is_active?: boolean
+          name?: string
+          price?: number
+          sort_order?: number
+          updated_at?: string
         }
         Relationships: []
       }
