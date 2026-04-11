@@ -35,6 +35,7 @@ export default function KuisGame() {
   const [timeLeft, setTimeLeft] = useState(0);
   const [earnedPoints, setEarnedPoints] = useState(0);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const previousTopicsRef = useRef<string[]>([]);
   const { toast } = useToast();
 
   const diffConfig = DIFFICULTIES.find(d => d.key === difficulty)!;
@@ -65,13 +66,15 @@ export default function KuisGame() {
 
     try {
       const { data, error } = await supabase.functions.invoke("kuis-yatidak", {
-        body: { difficulty },
+        body: { difficulty, previousTopics: previousTopicsRef.current.slice(-10) },
       });
       if (error) throw error;
       setQuestion(data.question || "");
       setAnswer((data.answer || "ya").toLowerCase().trim() as "ya" | "tidak");
       setExplanation(data.explanation || "");
       setFunFact(data.funFact || "");
+      const topic = (data.question || "").slice(0, 50);
+      previousTopicsRef.current = [...previousTopicsRef.current, topic].slice(-15);
       setGameActive(true);
       setTimeLeft(diffConfig.timeSeconds);
       setQuestionNumber(n => n + 1);

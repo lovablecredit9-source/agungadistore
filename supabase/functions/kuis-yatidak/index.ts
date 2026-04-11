@@ -22,8 +22,11 @@ Deno.serve(async (req) => {
       return Response.json({ error: "AI belum dikonfigurasi" }, { status: 500, headers: corsHeaders });
     }
 
-    const { difficulty = "sedang" } = await req.json();
+     const { difficulty = "sedang", previousTopics = [] } = await req.json();
     const diffPrompt = DIFFICULTY_PROMPTS[difficulty] || DIFFICULTY_PROMPTS.sedang;
+     const avoidText = previousTopics.length > 0
+       ? `\n\nPENTING: JANGAN buat pertanyaan tentang topik berikut karena sudah pernah ditanyakan: ${previousTopics.join(", ")}. Pilih topik yang BENAR-BENAR BERBEDA dan BERVARIASI. Jangan tentang Everest, Tembok China, atau bayangan kecuali diminta.`
+       : "\n\nBuat pertanyaan dengan topik yang unik dan bervariasi. Hindari topik klise seperti Gunung Everest, Tembok China, bayangan, dll.";
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -36,7 +39,7 @@ Deno.serve(async (req) => {
         messages: [
           {
             role: "system",
-            content: `Kamu pembuat kuis Ya atau Tidak dalam bahasa Indonesia. ${diffPrompt} Pertanyaan harus bisa dijawab dengan YA atau TIDAK saja. Jawab HANYA dalam format JSON tanpa markdown.`,
+            content: `Kamu pembuat kuis Ya atau Tidak dalam bahasa Indonesia. ${diffPrompt} Pertanyaan harus bisa dijawab dengan YA atau TIDAK saja. Jawab HANYA dalam format JSON tanpa markdown.${avoidText}`,
           },
           {
             role: "user",
