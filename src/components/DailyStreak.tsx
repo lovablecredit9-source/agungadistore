@@ -724,25 +724,57 @@ export default function DailyStreak() {
           );
         })()}
 
-        <div className="grid grid-cols-2 gap-2">
-          {AUTO_CLAIM_PLANS.map(plan => (
-            <Button
-              key={plan.days}
-              variant="outline"
-              className="h-auto py-2.5 px-3 flex flex-col items-center gap-0.5 text-xs hover:border-primary/50"
-              disabled={buyingPlan === plan.days}
-              onClick={() => handlePlanClick(plan.days)}
-            >
-              {buyingPlan === plan.days ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              ) : (
-                <>
-                  <span className="font-extrabold text-sm">{plan.name}</span>
-                  <span className="text-primary font-bold">Rp{plan.price.toLocaleString("id-ID")}</span>
-                </>
-              )}
+        {/* Voucher Input */}
+        <div className="flex gap-2 items-center">
+          <Input
+            placeholder="Kode Voucher Diskon"
+            value={voucherCode}
+            onChange={e => { setVoucherCode(e.target.value.toUpperCase()); if (voucherApplied) removeVoucher(); }}
+            className="h-9 text-xs flex-1"
+            disabled={voucherApplied}
+          />
+          {voucherApplied ? (
+            <Button variant="outline" size="sm" className="h-9 text-xs text-destructive" onClick={removeVoucher}>
+              <X className="w-3 h-3 mr-1" /> Hapus
             </Button>
-          ))}
+          ) : (
+            <Button size="sm" className="h-9 text-xs" onClick={applyVoucher} disabled={voucherLoading || !voucherCode.trim()}>
+              {voucherLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : "Pakai"}
+            </Button>
+          )}
+        </div>
+        {voucherError && <p className="text-[10px] text-destructive font-medium">{voucherError}</p>}
+        {voucherApplied && <p className="text-[10px] text-green-600 font-bold">✅ Diskon Rp{voucherDiscount.toLocaleString("id-ID")} aktif!</p>}
+
+        <div className="grid grid-cols-2 gap-2">
+          {AUTO_CLAIM_PLANS.map(plan => {
+            const discounted = voucherDiscount > 0 ? Math.max(0, plan.price - voucherDiscount) : null;
+            return (
+              <Button
+                key={plan.days}
+                variant="outline"
+                className="h-auto py-2.5 px-3 flex flex-col items-center gap-0.5 text-xs hover:border-primary/50"
+                disabled={buyingPlan === plan.days}
+                onClick={() => handlePlanClick(plan.days)}
+              >
+                {buyingPlan === plan.days ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <>
+                    <span className="font-extrabold text-sm">{plan.name}</span>
+                    {discounted !== null ? (
+                      <div className="flex flex-col items-center">
+                        <span className="text-muted-foreground text-[10px] line-through">Rp{plan.price.toLocaleString("id-ID")}</span>
+                        <span className="text-green-600 font-bold">Rp{discounted.toLocaleString("id-ID")}</span>
+                      </div>
+                    ) : (
+                      <span className="text-primary font-bold">Rp{plan.price.toLocaleString("id-ID")}</span>
+                    )}
+                  </>
+                )}
+              </Button>
+            );
+          })}
         </div>
       </motion.div>
 
