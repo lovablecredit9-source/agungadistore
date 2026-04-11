@@ -1,8 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { motion } from "framer-motion";
-import { Gamepad2, ArrowLeft, Swords, Brain, ImageIcon, HelpCircle, Hash, Package, Grid3X3, Crown } from "lucide-react";
+import { Gamepad2, ArrowLeft } from "lucide-react";
 import SuitGame from "@/components/games/SuitGame";
 import TebakKataGame from "@/components/games/TebakKataGame";
 import TebakGambarGame from "@/components/games/TebakGambarGame";
@@ -15,15 +14,15 @@ import { useGameCredits, GameCreditsBadge, BuyCreditsDialog } from "@/components
 
 type GameMode = "menu" | "suit" | "tebak" | "tebak_gambar" | "teka_teki" | "tebak_angka" | "tebak_barang" | "ular_tangga" | "ludo";
 
-const GAMES: { mode: GameMode; title: string; desc: string; icon: any; gradient: string }[] = [
-  { mode: "suit", title: "Suit AI", desc: "Batu, Gunting, Kertas melawan AI!", icon: Swords, gradient: "from-orange-500 to-red-600" },
-  { mode: "tebak", title: "Tebak Kata AI", desc: "AI beri petunjuk, kamu tebak kata!", icon: Brain, gradient: "from-blue-500 to-purple-600" },
-  { mode: "tebak_gambar", title: "Tebak Gambar AI", desc: "AI buat gambar, kamu tebak objeknya!", icon: ImageIcon, gradient: "from-green-500 to-teal-600" },
-  { mode: "teka_teki", title: "Teka-Teki Logika AI", desc: "AI kasih riddle, kamu jawab!", icon: HelpCircle, gradient: "from-indigo-500 to-purple-600" },
-  { mode: "tebak_angka", title: "Tebak Angka AI", desc: "AI pilih angka rahasia, tebak dengan petunjuk!", icon: Hash, gradient: "from-cyan-500 to-blue-600" },
-  { mode: "tebak_barang", title: "Tebak Barang AI", desc: "AI deskripsikan benda, kamu tebak!", icon: Package, gradient: "from-amber-500 to-orange-600" },
-  { mode: "ular_tangga", title: "Ular Tangga", desc: "Lawan AI di papan ular tangga klasik!", icon: Grid3X3, gradient: "from-emerald-500 to-green-700" },
-  { mode: "ludo", title: "Ludo King", desc: "Main Ludo lawan AI, siapa sampai duluan!", icon: Crown, gradient: "from-pink-500 to-rose-600" },
+const GAMES: { mode: GameMode; title: string; desc: string; emoji: string; gradient: string; bgEmoji: string }[] = [
+  { mode: "suit", title: "Suit AI", desc: "Batu, Gunting, Kertas lawan AI!", emoji: "✊", gradient: "from-orange-500 to-red-500", bgEmoji: "✌️" },
+  { mode: "tebak", title: "Tebak Kata", desc: "AI beri petunjuk, kamu tebak!", emoji: "🔤", gradient: "from-blue-500 to-indigo-600", bgEmoji: "💬" },
+  { mode: "tebak_gambar", title: "Tebak Gambar", desc: "AI buat gambar, kamu tebak!", emoji: "🖼️", gradient: "from-green-500 to-emerald-600", bgEmoji: "🎨" },
+  { mode: "teka_teki", title: "Teka-Teki", desc: "AI kasih riddle, jawab!", emoji: "🧩", gradient: "from-purple-500 to-violet-600", bgEmoji: "🤔" },
+  { mode: "tebak_angka", title: "Tebak Angka", desc: "Tebak angka rahasia AI!", emoji: "🔢", gradient: "from-cyan-500 to-blue-600", bgEmoji: "🎯" },
+  { mode: "tebak_barang", title: "Tebak Barang", desc: "AI deskripsikan, kamu tebak!", emoji: "📦", gradient: "from-amber-500 to-orange-600", bgEmoji: "🎁" },
+  { mode: "ular_tangga", title: "Ular Tangga", desc: "Lawan AI di papan klasik!", emoji: "🐍", gradient: "from-emerald-500 to-green-700", bgEmoji: "🪜" },
+  { mode: "ludo", title: "Ludo King", desc: "Siapa sampai duluan?", emoji: "♟️", gradient: "from-pink-500 to-rose-600", bgEmoji: "👑" },
 ];
 
 const GAME_COMPONENTS: Record<string, React.ComponentType> = {
@@ -39,14 +38,13 @@ const GAME_COMPONENTS: Record<string, React.ComponentType> = {
 
 export default function GameTab() {
   const [mode, setMode] = useState<GameMode>("menu");
-
   const visitorId = typeof window !== "undefined" ? localStorage.getItem("balance_visitor_id") : null;
   const { credits, isUnlimited, unlimitedUntil, fetchCredits } = useGameCredits(visitorId);
+
   if (mode !== "menu") {
     const game = GAMES.find(g => g.mode === mode);
     const GameComponent = GAME_COMPONENTS[mode];
     if (!game || !GameComponent) return null;
-    const Icon = game.icon;
 
     return (
       <div className="space-y-4 p-4 pb-24">
@@ -56,7 +54,7 @@ export default function GameTab() {
               <ArrowLeft className="w-4 h-4" /> Kembali
             </Button>
             <h2 className="font-extrabold text-lg flex items-center gap-2">
-              <Icon className="w-5 h-5 text-primary" /> {game.title}
+              <span className="text-xl">{game.emoji}</span> {game.title}
             </h2>
           </div>
           <GameCreditsBadge credits={credits} isUnlimited={isUnlimited} unlimitedUntil={unlimitedUntil} />
@@ -78,25 +76,39 @@ export default function GameTab() {
             <BuyCreditsDialog visitorId={visitorId} onPurchased={fetchCredits} />
           </div>
         </div>
-        <div className="grid grid-cols-1 gap-3">
-          {GAMES.map(game => {
-            const Icon = game.icon;
-            return (
-              <motion.div key={game.mode} whileTap={{ scale: 0.97 }}>
-                <Card className="cursor-pointer hover:border-primary/50 transition-colors" onClick={() => setMode(game.mode)}>
-                  <CardContent className="p-5 flex items-center gap-4">
-                    <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${game.gradient} flex items-center justify-center shadow-lg`}>
-                      <Icon className="w-7 h-7 text-white" />
-                    </div>
-                    <div className="flex-1">
-                      <h3 className="font-extrabold text-base">{game.title}</h3>
-                      <p className="text-xs text-muted-foreground">{game.desc}</p>
-                    </div>
-                  </CardContent>
-                </Card>
-              </motion.div>
-            );
-          })}
+
+        <div className="grid grid-cols-2 gap-3">
+          {GAMES.map((game, i) => (
+            <motion.div
+              key={game.mode}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: i * 0.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              <button
+                onClick={() => setMode(game.mode)}
+                className={`relative w-full overflow-hidden rounded-2xl bg-gradient-to-br ${game.gradient} p-4 text-left shadow-lg hover:shadow-xl transition-shadow aspect-[4/3] flex flex-col justify-between`}
+              >
+                {/* Background decorative emoji */}
+                <span className="absolute -right-2 -top-2 text-5xl opacity-20 rotate-12 select-none pointer-events-none">
+                  {game.bgEmoji}
+                </span>
+                <span className="absolute right-2 bottom-8 text-3xl opacity-15 -rotate-12 select-none pointer-events-none">
+                  {game.emoji}
+                </span>
+
+                {/* Main emoji */}
+                <div className="text-4xl mb-1 drop-shadow-lg">{game.emoji}</div>
+
+                {/* Text */}
+                <div>
+                  <h3 className="font-extrabold text-sm text-white leading-tight drop-shadow">{game.title}</h3>
+                  <p className="text-[10px] text-white/80 leading-tight mt-0.5">{game.desc}</p>
+                </div>
+              </button>
+            </motion.div>
+          ))}
         </div>
       </motion.div>
     </div>
