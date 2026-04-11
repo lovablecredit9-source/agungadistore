@@ -267,7 +267,7 @@ export default function UlarTanggaGame() {
     setCurrentDice(1); setAiDice(0);
     setIsPlayerTurn(true); setWinner(null);
     setMessage("Giliran kamu! Lempar dadu 🎲");
-    setRolling(false); setAnimating(false);
+    setRolling(false); setAnimating(false); setAiRollAnim(false);
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
   };
 
@@ -394,7 +394,7 @@ export default function UlarTanggaGame() {
           {aiDice > 0 && (
             <div className="text-center">
               <p className="text-[10px] text-muted-foreground font-bold mb-1">AI</p>
-              <DiceFace value={aiDice} size={56} color="#ef4444" />
+              <DiceFace value={aiDice} size={56} color="#ef4444" rolling={aiRollAnim} />
             </div>
           )}
         </div>
