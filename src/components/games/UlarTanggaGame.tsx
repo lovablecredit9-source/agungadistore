@@ -103,6 +103,7 @@ export default function UlarTanggaGame() {
   const [winner, setWinner] = useState<"player" | "ai" | null>(null);
   const [message, setMessage] = useState("Giliran kamu! Lempar dadu 🎲");
   const [rollAnim, setRollAnim] = useState(false);
+  const [aiRollAnim, setAiRollAnim] = useState(false);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const { toast } = useToast();
 
