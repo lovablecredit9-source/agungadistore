@@ -1493,6 +1493,31 @@ const Index = () => {
               </div>
             </div>
 
+            {/* Game Promo Card */}
+            <div
+              onClick={() => setTab("game")}
+              className="relative overflow-hidden rounded-2xl cursor-pointer group hover:shadow-xl transition-all hover:-translate-y-0.5 duration-200"
+            >
+              <div className="absolute inset-0 bg-gradient-to-br from-violet-600 via-purple-600 to-indigo-700" />
+              <div className="absolute inset-0 opacity-10">
+                <div className="absolute top-2 right-4 text-6xl">🎮</div>
+                <div className="absolute bottom-2 left-4 text-4xl">🎲</div>
+                <div className="absolute top-6 left-20 text-3xl">🧩</div>
+              </div>
+              <div className="relative z-10 p-4 flex items-center gap-3">
+                <div className="w-14 h-14 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-lg border border-white/10 shrink-0">
+                  <Gamepad2 className="w-7 h-7 text-white" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-white font-extrabold text-base leading-tight">Game AI Seru 🎮</h3>
+                  <p className="text-white/80 text-xs mt-0.5">8 game menantang lawan AI! Suit, Tebak Kata, Ular Tangga & lainnya</p>
+                  <div className="mt-2 inline-flex items-center gap-1.5 bg-white/20 backdrop-blur-sm rounded-full px-3 py-1">
+                    <span className="text-white text-[11px] font-bold">Main Sekarang →</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
             {/* Admin Posts Preview */}
             {adminPosts.length > 0 && (
               <div className="space-y-3">
