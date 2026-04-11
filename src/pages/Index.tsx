@@ -384,6 +384,7 @@ const Index = () => {
   // Cart
   const [cart, setCart] = useState<CartItem[]>([]);
   const [showCart, setShowCart] = useState(false);
+  const [navInfoDismissed, setNavInfoDismissed] = useState(() => !!localStorage.getItem("nav_swipe_info_dismissed"));
   const cartTotal = cart.reduce((sum, item) => sum + getWholesalePrice(item.product.id, item.quantity, item.product.price) * item.quantity, 0);
   const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
 
