@@ -66,10 +66,15 @@ export default function GameTab() {
   return (
     <div className="space-y-4 p-4 pb-24">
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-        <h2 className="font-extrabold text-xl flex items-center gap-2 mb-4">
-          <Gamepad2 className="w-6 h-6 text-primary" /> Game
-        </h2>
-
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="font-extrabold text-xl flex items-center gap-2">
+            <Gamepad2 className="w-6 h-6 text-primary" /> Game
+          </h2>
+          <div className="flex items-center gap-2">
+            <GameCreditsBadge credits={credits} isUnlimited={isUnlimited} unlimitedUntil={unlimitedUntil} />
+            <BuyCreditsDialog visitorId={visitorId} onPurchased={fetchCredits} />
+          </div>
+        </div>
         <div className="grid grid-cols-1 gap-3">
           {GAMES.map(game => {
             const Icon = game.icon;
