@@ -728,6 +728,164 @@ Deno.serve(async (req) => {
         result = data;
         break;
       }
+      // ── Admin posts ──
+      case "admin_posts": {
+        const { data } = await supabase.from("admin_posts").select("*").eq("is_active", true).order("created_at", { ascending: false }).limit(20);
+        result = data;
+        break;
+      }
+      // ── Claim voucher (calls claim-voucher edge function) ──
+      case "claim_voucher": {
+        if (req.method !== "POST") return new Response(JSON.stringify({ error: "POST required" }), { status: 405, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        const body = await req.json();
+        const { codes, visitor_id, device_info, browser: browserInfo } = body;
+        if (!visitor_id || !codes?.length) return new Response(JSON.stringify({ error: "visitor_id and codes required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        const claimRes = await fetch(`${supabaseUrl}/functions/v1/claim-voucher`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "Authorization": `Bearer ${serviceKey}` },
+          body: JSON.stringify({ codes, visitorId: visitor_id, deviceInfo: device_info || "WhatsApp Bot", browser: browserInfo || "Bot" }),
+        });
+        const claimData = await claimRes.json();
+        result = claimData;
+        break;
+      }
+      // ── Create support ticket ──
+      case "create_ticket": {
+        if (req.method !== "POST") return new Response(JSON.stringify({ error: "POST required" }), { status: 405, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        const body = await req.json();
+        const { name, phone, category, description } = body;
+        if (!name || !phone || !description) return new Response(JSON.stringify({ error: "name, phone, description required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        const { data: ticket, error: ticketErr } = await supabase.from("support_tickets").insert({
+          name, phone, category: category || "Umum", description,
+        }).select().single();
+        if (ticketErr) throw ticketErr;
+        result = ticket;
+        break;
+      }
+      // ── User tickets by phone ──
+      case "user_tickets": {
+        const phone = url.searchParams.get("phone");
+        const name = url.searchParams.get("name");
+        if (!phone && !name) return new Response(JSON.stringify({ error: "phone or name param required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        let q = supabase.from("support_tickets").select("*").order("created_at", { ascending: false }).limit(20);
+        if (phone) q = q.eq("phone", phone);
+        else if (name) q = q.ilike("name", `%${name}%`);
+        const { data } = await q;
+        result = data;
+        break;
+      }
+      // ── Ticket messages ──
+      case "ticket_messages": {
+        const ticketId = url.searchParams.get("ticket_id");
+        if (!ticketId) return new Response(JSON.stringify({ error: "ticket_id required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        const { data } = await supabase.from("ticket_messages").select("*").eq("ticket_id", ticketId).order("created_at");
+        result = data;
+        break;
+      }
+      // ── Reply to ticket ──
+      case "reply_ticket": {
+        if (req.method !== "POST") return new Response(JSON.stringify({ error: "POST required" }), { status: 405, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        const body = await req.json();
+        const { ticket_id, message: ticketMsg, sender_type } = body;
+        if (!ticket_id || !ticketMsg) return new Response(JSON.stringify({ error: "ticket_id and message required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        const { data: msgData, error: msgErr } = await supabase.from("ticket_messages").insert({
+          ticket_id, message: ticketMsg, sender_type: sender_type || "user",
+        }).select().single();
+        if (msgErr) throw msgErr;
+        result = msgData;
+        break;
+      }
+      // ── Like / Unlike product ──
+      case "like_product": {
+        if (req.method !== "POST") return new Response(JSON.stringify({ error: "POST required" }), { status: 405, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        const body = await req.json();
+        const { visitor_id, product_id } = body;
+        if (!visitor_id || !product_id) return new Response(JSON.stringify({ error: "visitor_id and product_id required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        const { data: existing } = await supabase.from("liked_products").select("id").eq("visitor_id", visitor_id).eq("product_id", product_id).maybeSingle();
+        if (existing) {
+          await supabase.from("liked_products").delete().eq("id", existing.id);
+          result = { action: "unliked", product_id };
+        } else {
+          await supabase.from("liked_products").insert({ visitor_id, product_id });
+          result = { action: "liked", product_id };
+        }
+        break;
+      }
+      // ── Like / Unlike song ──
+      case "like_song": {
+        if (req.method !== "POST") return new Response(JSON.stringify({ error: "POST required" }), { status: 405, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        const body = await req.json();
+        const { visitor_id, song_id } = body;
+        if (!visitor_id || !song_id) return new Response(JSON.stringify({ error: "visitor_id and song_id required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        const { data: existing } = await supabase.from("liked_songs").select("id").eq("visitor_id", visitor_id).eq("song_id", song_id).maybeSingle();
+        if (existing) {
+          await supabase.from("liked_songs").delete().eq("id", existing.id);
+          result = { action: "unliked", song_id };
+        } else {
+          await supabase.from("liked_songs").insert({ visitor_id, song_id });
+          result = { action: "liked", song_id };
+        }
+        break;
+      }
+      // ── Like / Unlike sponsor ──
+      case "like_sponsor": {
+        if (req.method !== "POST") return new Response(JSON.stringify({ error: "POST required" }), { status: 405, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        const body = await req.json();
+        const { visitor_id, sponsor_id: spId } = body;
+        if (!visitor_id || !spId) return new Response(JSON.stringify({ error: "visitor_id and sponsor_id required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        const { data: existing } = await supabase.from("liked_sponsors").select("id").eq("visitor_id", visitor_id).eq("sponsor_id", spId).maybeSingle();
+        if (existing) {
+          await supabase.from("liked_sponsors").delete().eq("id", existing.id);
+          result = { action: "unliked", sponsor_id: spId };
+        } else {
+          await supabase.from("liked_sponsors").insert({ visitor_id, sponsor_id: spId });
+          result = { action: "liked", sponsor_id: spId };
+        }
+        break;
+      }
+      // ── User likes ──
+      case "user_likes": {
+        const vid = url.searchParams.get("visitor_id");
+        if (!vid) return new Response(JSON.stringify({ error: "visitor_id required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        const [{ data: prods }, { data: songs }, { data: sponsors }] = await Promise.all([
+          supabase.from("liked_products").select("product_id, products(title, price)").eq("visitor_id", vid),
+          supabase.from("liked_songs").select("song_id, playlist_songs(title, artist)").eq("visitor_id", vid),
+          supabase.from("liked_sponsors").select("sponsor_id, sponsors(title, price, seller_name)").eq("visitor_id", vid),
+        ]);
+        result = { products: prods || [], songs: songs || [], sponsors: sponsors || [] };
+        break;
+      }
+      // ── Claim daily streak ──
+      case "claim_streak": {
+        if (req.method !== "POST") return new Response(JSON.stringify({ error: "POST required" }), { status: 405, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        const body = await req.json();
+        const { visitor_id } = body;
+        if (!visitor_id) return new Response(JSON.stringify({ error: "visitor_id required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        const claimRes2 = await fetch(`${supabaseUrl}/functions/v1/auto-claim-streak`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "Authorization": `Bearer ${serviceKey}` },
+          body: JSON.stringify({ visitorId: visitor_id }),
+        });
+        const claimData2 = await claimRes2.json();
+        result = claimData2;
+        break;
+      }
+      // ── Product images ──
+      case "product_images": {
+        const pid = url.searchParams.get("product_id");
+        if (!pid) return new Response(JSON.stringify({ error: "product_id required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        const { data } = await supabase.from("product_images").select("*").eq("product_id", pid).order("image_order");
+        result = data;
+        break;
+      }
+      // ── Sponsor images ──
+      case "sponsor_images": {
+        const spId = url.searchParams.get("sponsor_id");
+        if (!spId) return new Response(JSON.stringify({ error: "sponsor_id required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        const { data } = await supabase.from("sponsor_images").select("*").eq("sponsor_id", spId).order("image_order");
+        result = data;
+        break;
+      }
       default:
         return new Response(JSON.stringify({
           error: "Unknown endpoint",
