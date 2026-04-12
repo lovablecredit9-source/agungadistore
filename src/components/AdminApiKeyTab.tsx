@@ -844,7 +844,7 @@ node index.js`}
               </Card>
 
               <p className="text-[10px] text-muted-foreground text-center">
-                💡 Download file bot.js — total 80+ perintah lengkap.
+                💡 Download ZIP lalu jalankan file index.js yang sudah siap dipakai.
               </p>
             </TabsContent>
 
