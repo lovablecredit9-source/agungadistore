@@ -1287,11 +1287,18 @@ npm install whatsapp-web.js qrcode-terminal`}
                   {[
                     { ep: "products", desc: "Semua produk (judul, harga, stok, gambar, kategori)" },
                     { ep: "sponsors", desc: "Sponsor/iklan aktif (penjual, harga, kontak)" },
-                    { ep: "balances", desc: "Saldo user (username, balance)" },
+                    { ep: "balances", desc: "Saldo user (username, balance, visitor_id)" },
                     { ep: "songs", desc: "Lagu di playlist (judul, artis, durasi)" },
                     { ep: "deposits", desc: "Riwayat deposit (status, metode, jumlah)" },
                     { ep: "tokens", desc: "Token & info produk terkait" },
                     { ep: "notifications", desc: "Notifikasi (tambah &visitor_id=xxx)" },
+                    { ep: "game_stats", desc: "Statistik game (&visitor_id=xxx opsional)" },
+                    { ep: "game_credits", desc: "Kredit game (&visitor_id=xxx opsional)" },
+                    { ep: "streaks", desc: "Data streak (&visitor_id=xxx opsional)" },
+                    { ep: "storage", desc: "Status storage musik (&visitor_id=xxx opsional)" },
+                    { ep: "artists", desc: "Daftar artis (nama, genre, bio)" },
+                    { ep: "tickets", desc: "Tiket support terbaru (nama, kategori, status)" },
+                    { ep: "transactions", desc: "Riwayat transaksi (&visitor_id=xxx wajib)" },
                   ].map(e => (
                     <div key={e.ep} className="flex items-start gap-1.5 text-[11px]">
                       <code className="bg-primary/10 text-primary px-1 rounded shrink-0 font-mono text-[10px]">{e.ep}</code>
