@@ -1470,6 +1470,178 @@ _🔐 v4.0 — Hanya admin_\`);
     await msg.reply(r);
     return;
   }
+
+  // ── STREAK SUBSCRIPTIONS (admin) ──
+  if (text === "!streaksub") {
+    if (!isAdmin(msg)) { await msg.reply("🔒 Perintah ini hanya untuk admin."); return; }
+    const data = await apiGet("streak_subs");
+    if (!data || data.length === 0) { await msg.reply("🔥 Belum ada langganan streak."); return; }
+    let r = "🔥 *LANGGANAN STREAK AKTIF*\\n━━━━━━━━━━━━━━━━━━\\n\\n";
+    data.filter(s => s.is_active).forEach((s, i) => {
+      r += \`\${i + 1}. 🆔 \${s.visitor_id.substring(0, 12)}\\n   📋 \${s.plan_name} (\${s.plan_days}h)\\n   💰 \${rp(s.price_paid)}\\n   📅 \${new Date(s.starts_at).toLocaleDateString("id-ID")} s/d \${new Date(s.expires_at).toLocaleDateString("id-ID")}\\n\\n\`;
+    });
+    await msg.reply(r);
+    return;
+  }
+
+  // ── TOKEN DETAIL (admin) ──
+  if (text.startsWith("!tokendetail")) {
+    if (!isAdmin(msg)) { await msg.reply("🔒 Perintah ini hanya untuk admin."); return; }
+    const kode = msg.body.trim().split(" ")[1];
+    if (!kode) { await msg.reply("❌ Tulis: !tokendetail [kode_token]"); return; }
+    const data = await apiGet("tokens");
+    if (!data) { await msg.reply("❌ Gagal mengambil data."); return; }
+    const t = data.find(x => x.token_code.toLowerCase().includes(kode.toLowerCase()));
+    if (!t) { await msg.reply(\`🎟️ Token "\${kode}" tidak ditemukan.\`); return; }
+    let r = "🎟️ *DETAIL TOKEN*\\n━━━━━━━━━━━━━━━━━━\\n\\n";
+    r += \`📌 Kode: *\${t.token_code}*\\n🆔 ID: \${t.id}\\n📦 Produk: \${t.products ? t.products.title : "-"}\\n\`;
+    r += \`✅ Status: \${t.is_claimed ? "Sudah diklaim" : "Belum diklaim"}\\n\`;
+    if (t.claimed_at) r += \`📅 Diklaim: \${new Date(t.claimed_at).toLocaleString("id-ID")}\\n\`;
+    r += \`📅 Dibuat: \${new Date(t.created_at).toLocaleString("id-ID")}\`;
+    await msg.reply(r);
+    return;
+  }
+
+  // ── DETAIL USER LENGKAP (admin) ──
+  if (text.startsWith("!detailuser")) {
+    if (!isAdmin(msg)) { await msg.reply("🔒 Perintah ini hanya untuk admin."); return; }
+    const vid = msg.body.trim().split(" ")[1];
+    if (!vid) { await msg.reply("❌ Tulis: !detailuser [visitor_id]"); return; }
+    const [balances, credits, streaks, storage, gameProfile, transactions] = await Promise.all([
+      apiGet("balances"), apiGet("game_credits&visitor_id=" + vid),
+      apiGet("streaks&visitor_id=" + vid), apiGet("storage&visitor_id=" + vid),
+      apiGet("game_profiles&visitor_id=" + vid), apiGet("transactions&visitor_id=" + vid),
+    ]);
+    const user = balances ? balances.find(b => b.visitor_id === vid || b.visitor_id.startsWith(vid)) : null;
+    let r = "👤 *DETAIL USER LENGKAP*\\n━━━━━━━━━━━━━━━━━━\\n\\n";
+    if (user) {
+      r += \`👤 *\${user.username}*\\n🆔 \${user.visitor_id}\\n💰 Saldo: \${rp(user.balance)}\\n📧 Email: \${user.email || "-"}\\n📱 HP: \${user.phone || "-"}\\n\\n\`;
+    } else {
+      r += \`🆔 VID: \${vid}\\n⚠️ Akun saldo tidak ditemukan\\n\\n\`;
+    }
+    if (credits && credits.length > 0) {
+      r += \`🎮 *Game:* \${credits[0].credits} kredit\`;
+      if (credits[0].unlimited_until) r += \` | ♾️ s/d \${new Date(credits[0].unlimited_until).toLocaleDateString("id-ID")}\`;
+      r += "\\n";
+    }
+    if (streaks && streaks.length > 0) {
+      r += \`🔥 *Streak:* \${streaks[0].current_streak} hari (Max: \${streaks[0].longest_streak})\\n\`;
+    }
+    if (storage && storage.length > 0) {
+      const totalMb = storage.reduce((sum, s) => sum + s.storage_mb, 0);
+      r += \`💾 *Storage:* \${totalMb} MB\\n\`;
+    }
+    if (gameProfile && gameProfile.length > 0) {
+      r += \`🎭 *Profil Game:* \${gameProfile[0].display_name} (\${gameProfile[0].is_guest ? "Guest" : "Registered"})\\n\`;
+    }
+    if (transactions && transactions.length > 0) {
+      r += \`\\n📋 *Transaksi Terakhir (\${Math.min(transactions.length, 5)}):*\\n\`;
+      transactions.slice(0, 5).forEach((t, i) => {
+        r += \`   \${t.type === "topup" ? "➕" : "➖"} \${rp(t.amount)} — \${new Date(t.created_at).toLocaleDateString("id-ID")}\\n\`;
+      });
+    }
+    await msg.reply(r);
+    return;
+  }
+
+  // ── TIKET DETAIL (admin) ──
+  if (text.startsWith("!tiketdetail")) {
+    if (!isAdmin(msg)) { await msg.reply("🔒 Perintah ini hanya untuk admin."); return; }
+    const tid = msg.body.trim().split(" ")[1];
+    if (!tid) { await msg.reply("❌ Tulis: !tiketdetail [ticket_id atau nomor]"); return; }
+    const data = await apiGet("tickets");
+    if (!data) { await msg.reply("❌ Gagal mengambil data."); return; }
+    const t = data.find(x => x.id === tid || x.id.startsWith(tid) || String(x.ticket_number) === tid);
+    if (!t) { await msg.reply("❌ Tiket tidak ditemukan."); return; }
+    let r = "🎫 *DETAIL TIKET*\\n━━━━━━━━━━━━━━━━━━\\n\\n";
+    r += \`📌 #\${t.ticket_number}\\n🆔 \${t.id}\\n👤 Nama: \${t.name}\\n📱 HP: \${t.phone}\\n🏷️ Kategori: \${t.category}\\n📊 Status: \${t.status}\\n\\n📝 Deskripsi:\\n\${t.description}\\n\\n📅 Dibuat: \${new Date(t.created_at).toLocaleString("id-ID")}\\n📅 Update: \${new Date(t.updated_at).toLocaleString("id-ID")}\`;
+    await msg.reply(r);
+    return;
+  }
+
+  // ── AKTIVITAS TERBARU (admin) ──
+  if (text === "!aktivitas" || text === "!activity") {
+    if (!isAdmin(msg)) { await msg.reply("🔒 Perintah ini hanya untuk admin."); return; }
+    const [deposits, transactions, tickets, notifications] = await Promise.all([
+      apiGet("deposits"), apiGet("transactions"), apiGet("tickets"), apiGet("notifications"),
+    ]);
+    let r = "📡 *AKTIVITAS TERBARU*\\n━━━━━━━━━━━━━━━━━━\\n\\n";
+    if (deposits && deposits.length > 0) {
+      r += "💳 *Deposit Terbaru:*\\n";
+      deposits.slice(0, 3).forEach(d => {
+        r += \`   \${d.username} — \${rp(d.amount)} (\${d.status}) \${new Date(d.created_at).toLocaleDateString("id-ID")}\\n\`;
+      });
+      r += "\\n";
+    }
+    if (transactions && transactions.length > 0) {
+      r += "📋 *Transaksi Terbaru:*\\n";
+      transactions.slice(0, 3).forEach(t => {
+        r += \`   \${t.type === "topup" ? "➕" : "➖"} \${rp(t.amount)} — \${t.description || "-"} (\${new Date(t.created_at).toLocaleDateString("id-ID")})\\n\`;
+      });
+      r += "\\n";
+    }
+    if (tickets && tickets.length > 0) {
+      r += "🎫 *Tiket Terbaru:*\\n";
+      tickets.slice(0, 3).forEach(t => {
+        r += \`   #\${t.ticket_number} \${t.name} — \${t.status}\\n\`;
+      });
+      r += "\\n";
+    }
+    r += \`📅 \${new Date().toLocaleString("id-ID")}\`;
+    await msg.reply(r);
+    return;
+  }
+
+  // ── BACKUP INFO (admin) ──
+  if (text === "!backup") {
+    if (!isAdmin(msg)) { await msg.reply("🔒 Perintah ini hanya untuk admin."); return; }
+    const dashboard = await apiGet("dashboard");
+    let r = "💾 *INFO BACKUP DATA*\\n━━━━━━━━━━━━━━━━━━\\n\\n";
+    r += "📊 *Jumlah Data Saat Ini:*\\n";
+    if (dashboard) {
+      r += \`   📦 Produk: \${dashboard.products}\\n   📢 Sponsor: \${dashboard.sponsors}\\n   👥 User: \${dashboard.users}\\n   🎵 Lagu: \${dashboard.songs}\\n   🎤 Artis: \${dashboard.artists}\\n   💳 Deposit: \${dashboard.deposits}\\n   🎫 Tiket: \${dashboard.tickets}\\n\\n\`;
+    }
+    r += "💡 *Tips Backup:*\\n";
+    r += "   • Data tersimpan aman di cloud\\n";
+    r += "   • Gunakan !dashboard untuk monitoring\\n";
+    r += "   • Gunakan !report untuk laporan harian\\n";
+    r += \`\\n📅 \${new Date().toLocaleString("id-ID")}\`;
+    await msg.reply(r);
+    return;
+  }
+
+  // ── LEADERBOARD ADMIN (detail) ──
+  if (text === "!leaderboardadmin" || text === "!lba") {
+    if (!isAdmin(msg)) { await msg.reply("🔒 Perintah ini hanya untuk admin."); return; }
+    const [stats, profiles, credits] = await Promise.all([
+      apiGet("game_stats"), apiGet("game_profiles"), apiGet("game_credits")
+    ]);
+    if (!stats || stats.length === 0) { await msg.reply("🏆 Belum ada data game."); return; }
+    const playerMap = {};
+    stats.forEach(g => {
+      if (!playerMap[g.visitor_id]) playerMap[g.visitor_id] = { total: 0, wins: 0, losses: 0, games: [] };
+      playerMap[g.visitor_id].total += g.points;
+      playerMap[g.visitor_id].wins += g.wins;
+      playerMap[g.visitor_id].losses += g.losses;
+      playerMap[g.visitor_id].games.push(g.game_type);
+    });
+    const sorted = Object.entries(playerMap).sort((a, b) => b[1].total - a[1].total).slice(0, 15);
+    const medals = ["🥇", "🥈", "🥉"];
+    let r = "🏆 *LEADERBOARD ADMIN (DETAIL)*\\n━━━━━━━━━━━━━━━━━━\\n\\n";
+    sorted.forEach(([vid, s], i) => {
+      const profile = profiles ? profiles.find(p => p.visitor_id === vid) : null;
+      const credit = credits ? credits.find(c => c.visitor_id === vid) : null;
+      const name = profile ? profile.display_name : vid.substring(0, 10) + "...";
+      r += \`\${medals[i] || (i + 1) + "."} *\${name}*\\n\`;
+      r += \`   🆔 \${vid.substring(0, 16)}\\n\`;
+      r += \`   💎 \${s.total} poin | W:\${s.wins} L:\${s.losses}\\n\`;
+      r += \`   🎮 Games: \${s.games.join(", ")}\\n\`;
+      if (credit) r += \`   🏆 Kredit: \${credit.credits}\\n\`;
+      r += "\\n";
+    });
+    await msg.reply(r);
+    return;
+  }
 });
 
 client.initialize();
