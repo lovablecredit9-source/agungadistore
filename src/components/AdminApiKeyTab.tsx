@@ -1711,7 +1711,7 @@ console.log("📱 Kode 8 digit akan muncul di terminal...\\n");
   }
 
   function generateReadmeMd() {
-    return \`# 🤖 Bot WhatsApp - Agung Adi Store v5.0
+    return `# 🤖 Bot WhatsApp - Agung Adi Store v5.0
 
 ## 📋 Persyaratan
 - Node.js >= 18
@@ -1720,16 +1720,16 @@ console.log("📱 Kode 8 digit akan muncul di terminal...\\n");
 ## 🚀 Cara Install
 
 ### Lokal / VPS
-\\\`\\\`\\\`bash
+${"```"}bash
 npm install
 node bot.js 628xxxxxxxxxx
-\\\`\\\`\\\`
+${"```"}
 
 ### Panel Pterodactyl
 1. Buat server baru dengan **Egg Node.js** (versi 18+)
-2. Upload semua file (\\\`bot.js\\\`, \\\`package.json\\\`) ke server
-3. Set **Startup Command**: \\\`npm start\\\`
-4. Di file \\\`bot.js\\\`, isi \\\`PAIRING_PHONE\\\` dengan nomor WA
+2. Upload semua file (bot.js, package.json) ke server
+3. Set **Startup Command**: npm start
+4. Di file bot.js, isi PAIRING_PHONE dengan nomor WA
 5. Start server → kode 8 digit muncul di console
 6. Buka WhatsApp > Linked Devices > Link with phone number
 7. Masukkan kode 8 digit
@@ -1738,26 +1738,26 @@ node bot.js 628xxxxxxxxxx
 Bot menggunakan sistem **Pairing Code** (bukan QR).
 - Jalankan bot → kode 8 digit muncul di terminal
 - Masukkan kode di WhatsApp > Linked Devices
-- Sesi tersimpan di folder \\\`auth_session/\\\`
+- Sesi tersimpan di folder auth_session/
 
 ## 🔄 Reset Sesi
 Jika bot error atau logout:
-\\\`\\\`\\\`bash
+${"```"}bash
 rm -rf auth_session
 node bot.js 628xxxxxxxxxx
-\\\`\\\`\\\`
+${"```"}
 
 ## 📌 Konfigurasi
-- \\\`API_KEY\\\` — API Key dari dashboard admin
-- \\\`PAIRING_PHONE\\\` — Nomor WA untuk pairing (format: 628xxx)
-- \\\`ADMIN_NUMBERS\\\` — Daftar nomor admin
+- API_KEY — API Key dari dashboard admin
+- PAIRING_PHONE — Nomor WA untuk pairing (format: 628xxx)
+- ADMIN_NUMBERS — Daftar nomor admin
 
 ## 📱 Perintah
-Kirim \\\`!help\\\` di chat untuk melihat semua perintah.
+Kirim !help di chat untuk melihat semua perintah.
 
 ---
 _© 2026 Agung Adi Store_
-\\\`;
+`;
   }
 
   const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID || "";
