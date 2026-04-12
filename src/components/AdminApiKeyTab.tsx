@@ -168,7 +168,7 @@ async function askAuthMethod() {
     }
 
     const promptPhone = DEFAULT_PAIRING_PHONE
-      ? `Masukkan nomor WhatsApp [${DEFAULT_PAIRING_PHONE}]: `
+      ? "Masukkan nomor WhatsApp [" + DEFAULT_PAIRING_PHONE + "]: "
       : "Masukkan nomor WhatsApp: ";
     const rawPhone = await rl.question(promptPhone);
     const phoneNum = normalizePhoneNumber(rawPhone || DEFAULT_PAIRING_PHONE);
