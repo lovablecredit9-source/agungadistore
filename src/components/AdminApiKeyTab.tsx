@@ -2107,9 +2107,10 @@ node bot.js 628xxxxxxxxxx`}
                   <ul className="text-[11px] text-muted-foreground space-y-1 mt-1 list-disc pl-3">
                     <li>Jangan tutup terminal saat bot jalan</li>
                     <li>Untuk background: install <code className="bg-muted px-1 rounded">pm2</code> lalu <code className="bg-muted px-1 rounded">pm2 start bot.js</code></li>
-                    <li>QR expired? Hapus folder <code className="bg-muted px-1 rounded">.wwebjs_auth</code> lalu jalankan ulang</li>
+                    <li>Sesi error? Hapus folder <code className="bg-muted px-1 rounded">auth_session</code> lalu jalankan ulang</li>
                     <li>Gunakan nomor WA cadangan untuk testing</li>
                     <li>Pastikan koneksi internet stabil</li>
+                    <li>Bot menggunakan Baileys — tidak perlu Chrome/Puppeteer</li>
                   </ul>
                 </CardContent>
               </Card>
