@@ -168,22 +168,18 @@ async function startBot() {
     }
 
     pairingRequested = true;
-    console.log("
-📱 Meminta kode pairing untuk: " + phoneNum);
+    console.log("\n📱 Meminta kode pairing untuk: " + phoneNum);
 
     try {
       await wait(1500);
       const code = await client.requestPairingCode(phoneNum);
-      console.log("
-" + "=".repeat(40));
+      console.log("\n" + "=".repeat(40));
       console.log("  📲 KODE PAIRING (8 DIGIT):");
       console.log("  ➡️  " + code);
       console.log("=".repeat(40));
-      console.log("
-✅ Buka WhatsApp > Linked Devices > Link a Device");
+      console.log("\n✅ Buka WhatsApp > Linked Devices > Link a Device");
       console.log("   Pilih 'Link with phone number' dan masukkan kode di atas");
-      console.log("ℹ️ Kode pairing tampil di terminal/panel, bukan dikirim sebagai notif/chat WhatsApp.
-");
+      console.log("ℹ️ Kode pairing tampil di terminal/panel, bukan dikirim sebagai notif/chat WhatsApp.\n");
     } catch (error) {
       console.error("❌ Gagal meminta pairing code:", error?.message || error);
       console.log("⏹️ Bot dihentikan agar tidak spam reconnect / spam kode pairing.");
