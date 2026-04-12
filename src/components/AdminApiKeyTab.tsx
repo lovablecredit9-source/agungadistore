@@ -153,7 +153,7 @@ async function askAuthMethod() {
   const rl = readline.createInterface({ input, output });
 
   try {
-    console.log("\n========================================");
+    console.log("\\n========================================");
     console.log(" PILIH METODE LOGIN WHATSAPP");
     console.log("========================================");
     console.log("1. Scan QR");
@@ -162,8 +162,8 @@ async function askAuthMethod() {
     const method = String(await rl.question("Pilih 1 atau 2: ")).trim();
 
     if (method === "1") {
-      console.log("\n📲 Mode QR dipilih.");
-      console.log("✅ Buka WhatsApp > Perangkat tertaut > Tautkan perangkat lalu scan QR dari terminal.\n");
+      console.log("\\n📲 Mode QR dipilih.");
+      console.log("✅ Buka WhatsApp > Perangkat tertaut > Tautkan perangkat lalu scan QR dari terminal.\\n");
       return { mode: "qr", phoneNum: "" };
     }
 
@@ -177,9 +177,9 @@ async function askAuthMethod() {
       throw new Error("Nomor WhatsApp wajib diisi untuk pairing.");
     }
 
-    console.log("\n📱 Nomor diterima: " + phoneNum);
+    console.log("\\n📱 Nomor diterima: " + phoneNum);
     console.log("📢 Setelah ini akan muncul kode login untuk dimasukkan ke WhatsApp Web / Linked Devices.");
-    console.log("⏳ Kode pairing biasanya berlaku sekitar 30 detik. Jika habis, jalankan ulang bot.\n");
+    console.log("⏳ Kode pairing biasanya berlaku sekitar 30 detik. Jika habis, jalankan ulang bot.\\n");
 
     return { mode: "pairing", phoneNum };
   } finally {
@@ -225,20 +225,20 @@ async function startBot() {
     }
 
     pairingRequested = true;
-    console.log("\n📱 Meminta kode pairing untuk: " + phoneNum);
+    console.log("\\n📱 Meminta kode pairing untuk: " + phoneNum);
 
     try {
       await wait(1500);
       const code = await client.requestPairingCode(phoneNum);
-      console.log("\n" + "=".repeat(40));
+      console.log("\\n" + "=".repeat(40));
       console.log("  📲 KODE PAIRING (8 DIGIT):");
       console.log("  ➡️  " + code);
       console.log("=".repeat(40));
-      console.log("\n✅ Buka WhatsApp > Perangkat tertaut / Linked Devices");
+      console.log("\\n✅ Buka WhatsApp > Perangkat tertaut / Linked Devices");
       console.log("   Pilih 'Tautkan dengan nomor telepon / Link with phone number'");
       console.log("   Lalu masukkan kode di atas");
       console.log("ℹ️ Kode tampil di terminal/panel, bukan dikirim sebagai chat WhatsApp.");
-      console.log("⏳ Jika kode expired (sekitar 30 detik), jalankan ulang bot untuk minta kode baru.\n");
+      console.log("⏳ Jika kode expired (sekitar 30 detik), jalankan ulang bot untuk minta kode baru.\\n");
     } catch (error) {
       console.error("❌ Gagal meminta pairing code:", error?.message || error);
       console.log("⏹️ Bot dihentikan agar tidak spam reconnect / spam kode pairing.");
@@ -253,12 +253,12 @@ async function startBot() {
 
     if (qr && authChoice.mode === "qr" && !client.authState.creds.registered) {
       qrShown = true;
-      console.log("\n" + "=".repeat(40));
+      console.log("\\n" + "=".repeat(40));
       console.log("  📷 SCAN QR DI BAWAH INI");
       console.log("=".repeat(40));
       qrcode.generate(qr, { small: true });
       console.log("✅ Buka WhatsApp > Perangkat tertaut > Tautkan perangkat");
-      console.log("⏳ Jika QR expired, tunggu QR baru muncul otomatis.\n");
+      console.log("⏳ Jika QR expired, tunggu QR baru muncul otomatis.\\n");
     }
 
     if (connection === "connecting" && authChoice.mode === "pairing" && !client.authState.creds.registered) {
@@ -291,8 +291,8 @@ async function startBot() {
         setTimeout(() => startBot(), 3000);
       }
     } else if (connection === "open") {
-      console.log("\n✅ Bot WhatsApp sudah siap! (Baileys)");
-      console.log("📋 Kirim !help di chat untuk lihat perintah\n");
+      console.log("\\n✅ Bot WhatsApp sudah siap! (Baileys)");
+      console.log("📋 Kirim !help di chat untuk lihat perintah\\n");
     }
   });
 `;
