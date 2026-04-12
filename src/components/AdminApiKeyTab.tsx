@@ -135,7 +135,7 @@ const DEFAULT_PAIRING_PHONE = "${phoneNumber.replace(/[^0-9]/g, "")}";`
 const DEFAULT_PAIRING_PHONE = ""; // Opsional: nomor default pairing, format: 628xxxxxxxxxx`;
 
     return `// =============================================
-// 🤖 BOT WHATSAPP - Agung Adi Store v5.2.0
+// 🤖 BOT WHATSAPP - Agung Adi Store v6.0.0
 // =============================================
 // Library: @whiskeysockets/baileys (QR / Pairing Code)
 // Cara pakai:
@@ -159,7 +159,7 @@ function normalizePhoneNumber(value) {
 }
 
 function formatPairingCode(code) {
-  const cleaned = String(code || "").replace(/\s+/g, "").trim();
+  const cleaned = String(code || "").replace(/\\s+/g, "").trim();
   if (!cleaned) return "-";
   return cleaned.match(/.{1,4}/g)?.join("-") || cleaned;
 }
@@ -172,6 +172,9 @@ function getDisconnectMessage(lastDisconnect) {
 const API_KEY = "${apiKey}";
 const BASE = "${baseUrl}";
 ${phoneConfig}
+
+// === SESSION LOGIN USER (per nomor WA) ===
+const userSessions = {};
 
 async function askAuthMethod() {
   const rl = readline.createInterface({ input, output });
@@ -220,6 +223,30 @@ const ADMIN_NUMBERS = [
 function isAdmin(msg) {
   if (ADMIN_NUMBERS.length === 0) return true;
   return ADMIN_NUMBERS.includes(msg.key.remoteJid);
+}
+
+const fmtRp = (n) => "Rp " + Number(n || 0).toLocaleString("id-ID");
+const api = async (ep, method, body) => {
+  const opt = { method: method || "GET", headers: { "x-api-key": API_KEY, "Content-Type": "application/json" } };
+  if (body) opt.body = JSON.stringify(body);
+  const r = await fetch(BASE + "?endpoint=" + ep, opt);
+  return r.json();
+};
+
+// Helper: resolve username/identifier to visitor_id
+async function resolveVid(identifier) {
+  if (!identifier) return null;
+  // Try exact username first
+  const res = await api("balances");
+  const users = res.data || [];
+  const exact = users.find((u) => u.username.toLowerCase() === identifier.toLowerCase());
+  if (exact) return exact;
+  // Try partial match
+  const partial = users.find((u) => u.username.toLowerCase().includes(identifier.toLowerCase()));
+  if (partial) return partial;
+  // Try if it's a visitor_id directly
+  const byVid = users.find((u) => u.visitor_id === identifier);
+  return byVid || null;
 }
 
 async function connectToWhatsApp(authChoice, attempt = 0) {
@@ -292,7 +319,7 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
     }
 
     if (connection === "open") {
-      console.log("\\n✅ Bot WhatsApp sudah siap! (Baileys)");
+      console.log("\\n✅ Bot WhatsApp sudah siap! (Baileys v6.0.0)");
       console.log("📋 Kirim !help di chat untuk lihat perintah\\n");
       return;
     }
@@ -364,47 +391,61 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
     if (!text.startsWith("!")) return;
 
     const command = text.trim().toLowerCase();
-    const args = text.trim().split(/\\s+/).slice(1);
+    const rawArgs = text.trim().split(/\\s+/).slice(1);
+    const args = rawArgs;
     const reply = async (t) => client.sendMessage(remoteJid, { text: t }, { quoted: msg });
-    const fmtRp = (n) => "Rp " + Number(n || 0).toLocaleString("id-ID");
-    const api = async (ep, method, body) => {
-      const opt = { method: method || "GET", headers: { "x-api-key": API_KEY, "Content-Type": "application/json" } };
-      if (body) opt.body = JSON.stringify(body);
-      const r = await fetch(BASE + "?endpoint=" + ep, opt);
-      return r.json();
-    };
+    const session = userSessions[remoteJid] || null;
 
     try {
+    // ═══════════════════════════════════════
     // ═══ USER COMMANDS ═══
-    if (command === "!ping") { return reply("🏓 Pong! Bot aktif v5.2.0"); }
-    if (command === "!versi") { return reply("🤖 Bot WA Agung Adi Store v5.2.0\\n📅 " + new Date().toLocaleString("id-ID")); }
+    // ═══════════════════════════════════════
+    if (command === "!ping") { return reply("🏓 Pong! Bot aktif v6.0.0"); }
+    if (command === "!versi") { return reply("🤖 Bot WA Agung Adi Store v6.0.0\\n📅 " + new Date().toLocaleString("id-ID")); }
     if (command === "!waktu") { return reply("🕐 Waktu server: " + new Date().toLocaleString("id-ID", { timeZone: "Asia/Jakarta" }) + " WIB"); }
 
-    if (command === "!help") {
+    if (command === "!help" || command === "!menu") {
       return reply([
-        "🤖 *Bot WhatsApp Agung Adi Store v5.2.0*",
+        "🤖 *Bot WhatsApp Agung Adi Store v6.0.0*",
         "",
-        "📌 *Perintah User:*",
-        "• !help — Menu bantuan ini",
-        "• !ping — Cek status bot",
+        "🔑 *Akun Saldo:*",
+        "• !login [user/email/hp] [password] — Login akun saldo",
+        "• !logout — Logout akun",
+        "• !saldoku — Cek saldo (perlu login)",
+        "• !profilku — Lihat profil (perlu login)",
+        "• !riwayat — Riwayat transaksi (perlu login)",
+        "• !riwayat [jumlah] — Riwayat N terakhir",
+        "• !gameku — Stats game saya (perlu login)",
+        "• !kreditku — Kredit game saya (perlu login)",
+        "• !streakku — Status streak saya (perlu login)",
+        "• !notifku — Notifikasi saya (perlu login)",
+        "",
+        "📦 *Produk & Toko:*",
         "• !produk — Daftar produk",
         "• !cari [kata] — Cari produk",
         "• !kategori — Kategori produk",
         "• !harga [min] [max] — Filter harga",
         "• !random — Produk random",
         "• !top — Produk terpopuler",
-        "• !detailproduk [id] — Detail produk",
+        "• !detailproduk [id/nama] — Detail produk",
+        "",
+        "🏪 *Sponsor:*",
         "• !sponsor — Sponsor aktif",
         "• !detailsponsor [no] — Detail sponsor",
+        "",
+        "🎵 *Musik:*",
         "• !lagu — Daftar lagu",
         "• !carilagu [kata] — Cari lagu",
+        "• !download [judul] — Link download lagu",
         "• !artis — Daftar artis",
         "• !detailartis [nama] — Detail artis",
         "• !playlist — Daftar playlist",
         "• !publik — Lagu publik",
+        "",
+        "📊 *Info & Lainnya:*",
         "• !info — Statistik toko",
-        "• !ceksaldo [nama] — Cek saldo",
-        "• !cekgame [nama] — Stats game",
+        "• !ceksaldo [username] — Cek saldo user",
+        "• !cekgame [username] — Stats game user",
         "• !paket — Paket tersedia",
         "• !cekvoucher — Voucher aktif",
         "• !promo — Promo aktif",
@@ -421,73 +462,139 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
       ].join("\\n"));
     }
 
-    if (command === "!admin") {
-      if (!isAdmin(msg)) return reply("❌ Hanya admin yang bisa akses.");
-      return reply([
-        "🔐 *Perintah Admin:*",
-        "",
-        "💰 *Saldo:*",
-        "• !saldo — Semua saldo user",
-        "• !tambahsaldo [vid] [jumlah] — Tambah saldo",
-        "• !kurangsaldo [vid] [jumlah] — Kurangi saldo",
-        "• !setsaldo [vid] [jumlah] — Set saldo",
-        "• !resetsaldo [vid] — Reset saldo ke 0",
-        "",
-        "🏦 *Deposit:*",
-        "• !deposit — Riwayat deposit",
-        "• !setdeposit [id] [status] — Ubah status deposit",
-        "• !rekapdeposit — Rekap deposit",
-        "",
-        "🎮 *Game:*",
-        "• !game [vid] — Stats game user",
-        "• !kredit [vid] — Kredit game user",
-        "• !setkredit [vid] [jumlah] — Set kredit",
-        "• !resetkredit [vid] — Reset kredit",
-        "• !resetgame [vid] — Reset game stats",
-        "• !leaderboardadmin — Leaderboard detail",
-        "",
-        "🔥 *Streak:*",
-        "• !streak [vid] — Status streak",
-        "• !setstreak [vid] [jumlah] — Set streak",
-        "• !resetstreak [vid] — Reset streak",
-        "• !streaksub [vid] — Langganan streak",
-        "",
-        "📦 *Produk & Sponsor:*",
-        "• !stok [id] [jumlah] — Stok produk",
-        "• !produkdetail [id] — Detail produk",
-        "• !sponsordetail [no] — Detail sponsor",
-        "• !stoksponsor [id] [jumlah] — Stok sponsor",
-        "",
-        "👥 *User:*",
-        "• !user [nama] — Cari user",
-        "• !alluser — Semua user",
-        "• !topuser — Top user saldo",
-        "• !detailuser [vid] — Detail lengkap",
-        "• !loginhistory [vid] — Riwayat login",
-        "• !transaksi [vid] — Riwayat transaksi",
-        "",
-        "🎵 *Musik:*",
-        "• !musikprofil [vid] — Profil musik",
-        "• !storage [vid] — Storage musik",
-        "• !resetstorage [vid] — Reset storage",
-        "",
-        "📊 *Lainnya:*",
-        "• !profil [vid] — Profil game",
-        "• !follow — Stats follow",
-        "• !tiket — Tiket support",
-        "• !settiket [id] [status] — Status tiket",
-        "• !tiketdetail [id] — Detail tiket",
-        "• !chat — Chat produk",
-        "• !notif [vid] [isi] — Kirim notif",
-        "• !broadcast [judul] | [isi] — Broadcast",
-        "• !hapusnotif [vid] — Hapus notif user",
-        "• !likes — Stats likes",
-        "• !dashboard — Dashboard ringkas",
-        "• !report — Laporan",
-        "• !aktivitas — Aktivitas terbaru",
-        "• !token — Daftar token",
-        "• !tokendetail [id] — Detail token",
-      ].join("\\n"));
+    // ═══ LOGIN / LOGOUT USER ═══
+    if (command.startsWith("!login")) {
+      if (args.length < 2) return reply("⚠️ Gunakan: !login [username/email/hp] [password]\\n\\nContoh:\\n• !login agung password123\\n• !login agung@gmail.com password123\\n• !login 08123456789 password123");
+      const identifier = args[0];
+      const password = args.slice(1).join(" ");
+      const res = await api("login", "POST", { identifier, password });
+      if (res.error) return reply("❌ " + res.error);
+      if (!res.data) return reply("❌ Gagal login.");
+      userSessions[remoteJid] = res.data;
+      return reply("✅ *Login berhasil!*\\n\\n👤 " + res.data.username + "\\n💰 Saldo: " + fmtRp(res.data.balance) + "\\n\\nKetik !saldoku, !riwayat, !gameku untuk akses fitur akun.");
+    }
+
+    if (command === "!logout") {
+      if (!session) return reply("ℹ️ Kamu belum login. Ketik !login [user] [password]");
+      delete userSessions[remoteJid];
+      return reply("✅ Logout berhasil.");
+    }
+
+    // ═══ USER LOGGED-IN COMMANDS ═══
+    if (command === "!saldoku") {
+      if (!session) return reply("🔒 Login dulu: !login [user] [password]");
+      // Refresh balance
+      const res = await api("balances");
+      const user = (res.data || []).find((u) => u.visitor_id === session.visitor_id);
+      if (user) { session.balance = user.balance; userSessions[remoteJid] = session; }
+      return reply("💰 *Saldo " + session.username + ":*\\n\\n" + fmtRp(user?.balance ?? session.balance));
+    }
+
+    if (command === "!profilku") {
+      if (!session) return reply("🔒 Login dulu: !login [user] [password]");
+      const res = await api("balances");
+      const user = (res.data || []).find((u) => u.visitor_id === session.visitor_id);
+      if (!user) return reply("❌ Profil tidak ditemukan.");
+      let txt = "👤 *Profil Saya:*\\n\\n📛 Username: " + user.username + "\\n📞 No HP: " + user.phone + "\\n📧 Email: " + (user.email || "-") + "\\n💰 Saldo: " + fmtRp(user.balance);
+      // Game profile
+      const gp = await api("game_profiles&visitor_id=" + session.visitor_id);
+      if (gp.data?.[0]) {
+        const p = gp.data[0];
+        txt += "\\n\\n🎮 *Profil Game:*\\n📛 " + p.display_name + "\\n📝 " + (p.description || "-") + "\\n👻 Guest: " + (p.is_guest ? "Ya" : "Tidak");
+      }
+      // Music profile
+      const mp = await api("music_profiles&visitor_id=" + session.visitor_id);
+      if (mp.data?.[0]) {
+        txt += "\\n\\n🎵 *Profil Musik:*\\n📛 " + mp.data[0].username + "\\n📝 " + (mp.data[0].description || "-");
+      }
+      return reply(txt);
+    }
+
+    if (command.startsWith("!riwayat") && !command.startsWith("!riwayatadmin")) {
+      if (command === "!riwayat" || command.startsWith("!riwayat ")) {
+        if (!session) return reply("🔒 Login dulu: !login [user] [password]");
+        const limit = Number(args[0]) || 10;
+        const res = await api("transactions&visitor_id=" + session.visitor_id);
+        if (!res.data?.length) return reply("📋 Belum ada transaksi.");
+        const txns = res.data.slice(0, Math.min(limit, 20));
+        let txt = "📋 *Riwayat Transaksi " + session.username + ":*\\n(" + txns.length + " dari " + res.data.length + " total)\\n";
+        txns.forEach((t, i) => {
+          const date = new Date(t.created_at).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" });
+          const icon = t.type === "topup" ? "💵" : t.type === "purchase" ? "🛒" : "💸";
+          txt += "\\n" + (i+1) + ". " + icon + " [" + t.type.toUpperCase() + "] " + fmtRp(t.amount);
+          txt += "\\n   📝 " + (t.description || "-");
+          txt += "\\n   📅 " + date;
+          if (t.trx_id) txt += " | 🆔 " + t.trx_id;
+          txt += "\\n";
+        });
+        return reply(txt);
+      }
+    }
+
+    if (command === "!gameku") {
+      if (!session) return reply("🔒 Login dulu: !login [user] [password]");
+      const [gs, gc] = await Promise.all([
+        api("game_stats&visitor_id=" + session.visitor_id),
+        api("game_credits&visitor_id=" + session.visitor_id),
+      ]);
+      let txt = "🎮 *Game Stats " + session.username + ":*\\n";
+      if (gc.data?.[0]) {
+        const c = gc.data[0];
+        txt += "\\n💎 Kredit: " + c.credits;
+        if (c.unlimited_until) txt += "\\n♾️ Unlimited sampai: " + new Date(c.unlimited_until).toLocaleString("id-ID");
+        txt += "\\n";
+      }
+      if (!gs.data?.length) { txt += "\\nBelum ada data game."; }
+      else {
+        let totalW = 0, totalL = 0, totalP = 0;
+        gs.data.forEach((g) => { totalW += g.wins; totalL += g.losses; totalP += g.points; });
+        txt += "\\n📊 Total: W" + totalW + " / L" + totalL + " | " + totalP + " pts\\n";
+        gs.data.forEach((g) => {
+          txt += "\\n• " + g.game_type + ": W" + g.wins + "/L" + g.losses + " | " + g.points + " pts | " + g.total_questions + " soal";
+        });
+      }
+      return reply(txt);
+    }
+
+    if (command === "!kreditku") {
+      if (!session) return reply("🔒 Login dulu: !login [user] [password]");
+      const res = await api("game_credits&visitor_id=" + session.visitor_id);
+      if (!res.data?.length) return reply("💎 Kamu belum punya kredit game.");
+      const c = res.data[0];
+      return reply("💎 *Kredit Game:*\\n\\nKredit: " + c.credits + (c.unlimited_until ? "\\n♾️ Unlimited sampai: " + new Date(c.unlimited_until).toLocaleString("id-ID") : ""));
+    }
+
+    if (command === "!streakku") {
+      if (!session) return reply("🔒 Login dulu: !login [user] [password]");
+      const res = await api("streaks&visitor_id=" + session.visitor_id);
+      if (!res.data?.length) return reply("🔥 Belum ada data streak.");
+      const s = res.data[0];
+      return reply("🔥 *Streak " + session.username + ":*\\n\\n🔥 Streak: " + s.current_streak + " hari\\n🏆 Terpanjang: " + s.longest_streak + "\\n📅 Total klaim: " + s.total_claims + "\\n📆 Terakhir: " + s.last_claim_date);
+    }
+
+    if (command === "!notifku") {
+      if (!session) return reply("🔒 Login dulu: !login [user] [password]");
+      const res = await api("notifications&visitor_id=" + session.visitor_id);
+      if (!res.data?.length) return reply("🔔 Tidak ada notifikasi.");
+      const list = res.data.slice(0, 10).map((n, i) => {
+        const date = new Date(n.created_at).toLocaleDateString("id-ID");
+        const icon = n.type === "warning" ? "⚠️" : n.type === "success" ? "✅" : "ℹ️";
+        return (i+1) + ". " + icon + " *" + n.title + "*\\n   " + (n.message || "-") + " — " + date;
+      }).join("\\n");
+      return reply("🔔 *Notifikasi " + session.username + ":*\\n\\n" + list);
+    }
+
+    // ═══ DOWNLOAD LAGU ═══
+    if (command.startsWith("!download ")) {
+      const q = args.join(" ");
+      if (!q) return reply("⚠️ Gunakan: !download [judul lagu]");
+      const res = await api("song_url&q=" + encodeURIComponent(q));
+      if (!res.data?.length) return reply("🎵 Lagu tidak ditemukan: " + q);
+      const list = res.data.map((s, i) => {
+        const dur = s.duration ? Math.floor(s.duration / 60) + ":" + String(s.duration % 60).padStart(2, "0") : "-";
+        return (i+1) + ". 🎵 *" + s.title + "* — " + s.artist + "\\n   ⏱️ " + dur + "\\n   🔗 " + s.file_url;
+      }).join("\\n\\n");
+      return reply("🎵 *Hasil Download:*\\n\\n" + list + "\\n\\n💡 Klik/salin link untuk download.");
     }
 
     // ── PRODUK ──
@@ -539,8 +646,8 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
     }
 
     if (command.startsWith("!detailproduk")) {
-      const id = args[0];
-      if (!id) return reply("⚠️ Gunakan: !detailproduk [id_produk]");
+      const id = args.join(" ");
+      if (!id) return reply("⚠️ Gunakan: !detailproduk [id/nama]");
       const res = await api("products");
       const p = (res.data || []).find((x) => x.id === id || x.title.toLowerCase().includes(id.toLowerCase()));
       if (!p) return reply("❌ Produk tidak ditemukan.");
@@ -570,7 +677,7 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
       const res = await api("songs");
       if (!res.data?.length) return reply("🎵 Tidak ada lagu.");
       const list = res.data.slice(0, 20).map((s, i) => (i+1) + ". " + s.title + " — " + s.artist).join("\\n");
-      return reply("🎵 *Daftar Lagu:*\\n\\n" + list + (res.data.length > 20 ? "\\n\\n...dan " + (res.data.length - 20) + " lainnya" : ""));
+      return reply("🎵 *Daftar Lagu:*\\n\\n" + list + (res.data.length > 20 ? "\\n\\n...dan " + (res.data.length - 20) + " lainnya" : "") + "\\n\\n💡 Ketik !download [judul] untuk link download");
     }
 
     if (command.startsWith("!carilagu ")) {
@@ -579,7 +686,7 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
       const found = (res.data || []).filter((s) => s.title.toLowerCase().includes(q) || s.artist.toLowerCase().includes(q));
       if (!found.length) return reply("🔍 Lagu tidak ditemukan: " + q);
       const list = found.slice(0, 15).map((s, i) => (i+1) + ". " + s.title + " — " + s.artist).join("\\n");
-      return reply("🔍 *Hasil Cari Lagu:*\\n\\n" + list);
+      return reply("🔍 *Hasil Cari Lagu:*\\n\\n" + list + "\\n\\n💡 Ketik !download [judul] untuk link download");
     }
 
     if (command === "!artis") {
@@ -630,9 +737,8 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
 
     if (command.startsWith("!cekgame")) {
       const nama = args.join(" ");
-      if (!nama) return reply("⚠️ Gunakan: !cekgame [username/vid]");
-      const res = await api("balances");
-      const user = (res.data || []).find((u) => u.username.toLowerCase().includes(nama.toLowerCase()) || u.visitor_id === nama);
+      if (!nama) return reply("⚠️ Gunakan: !cekgame [username]");
+      const user = await resolveVid(nama);
       if (!user) return reply("❌ User tidak ditemukan.");
       const gs = await api("game_stats&visitor_id=" + user.visitor_id);
       if (!gs.data?.length) return reply("🎮 " + user.username + " belum punya stats game.");
@@ -670,7 +776,7 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
     }
 
     if (command === "!bantuan") {
-      return reply("❓ *FAQ:*\\n\\n1️⃣ *Cara beli produk?*\\nPilih produk → bayar via saldo\\n\\n2️⃣ *Cara top up saldo?*\\nDeposit via admin\\n\\n3️⃣ *Cara claim voucher?*\\nMasukkan kode voucher di menu Plus\\n\\n4️⃣ *Garansi?*\\nSesuai deskripsi produk\\n\\n5️⃣ *Butuh bantuan?*\\nHubungi admin via tiket support");
+      return reply("❓ *FAQ:*\\n\\n1️⃣ *Cara beli produk?*\\nPilih produk → bayar via saldo\\n\\n2️⃣ *Cara top up saldo?*\\nDeposit via admin\\n\\n3️⃣ *Cara claim voucher?*\\nMasukkan kode voucher di menu Plus\\n\\n4️⃣ *Garansi?*\\nSesuai deskripsi produk\\n\\n5️⃣ *Butuh bantuan?*\\nHubungi admin via tiket support\\n\\n6️⃣ *Cara login di bot?*\\n!login [username] [password]\\n\\n7️⃣ *Cara download lagu?*\\n!download [judul lagu]");
     }
 
     if (command === "!syarat") {
@@ -681,7 +787,79 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
       return reply("📱 *Social Media:*\\n\\nKunjungi website kami untuk info lengkap media sosial.");
     }
 
+    // ═══════════════════════════════════════
     // ═══ ADMIN COMMANDS ═══
+    // ═══════════════════════════════════════
+    if (command === "!admin") {
+      if (!isAdmin(msg)) return reply("❌ Hanya admin yang bisa akses.");
+      return reply([
+        "🔐 *Perintah Admin v6.0.0:*",
+        "",
+        "💡 Semua perintah admin sekarang pakai *username* bukan visitor_id!",
+        "",
+        "💰 *Saldo:*",
+        "• !saldo — Semua saldo user",
+        "• !tambahsaldo [username] [jumlah] — Tambah saldo",
+        "• !kurangsaldo [username] [jumlah] — Kurangi saldo",
+        "• !setsaldo [username] [jumlah] — Set saldo",
+        "• !resetsaldo [username] — Reset saldo ke 0",
+        "",
+        "🏦 *Deposit:*",
+        "• !deposit — Riwayat deposit",
+        "• !setdeposit [id] [status] — Ubah status deposit",
+        "• !rekapdeposit — Rekap deposit",
+        "",
+        "🎮 *Game:*",
+        "• !game [username] — Stats game user",
+        "• !kredit [username] — Kredit game user",
+        "• !setkredit [username] [jumlah] — Set kredit",
+        "• !resetkredit [username] — Reset kredit",
+        "• !resetgame [username] — Reset game stats",
+        "• !leaderboardadmin — Leaderboard detail",
+        "",
+        "🔥 *Streak:*",
+        "• !streak [username] — Status streak",
+        "• !setstreak [username] [jumlah] — Set streak",
+        "• !resetstreak [username] — Reset streak",
+        "• !streaksub [username] — Langganan streak",
+        "",
+        "📦 *Produk & Sponsor:*",
+        "• !stok [id] [jumlah] — Stok produk",
+        "• !stoksponsor [id] [jumlah] — Stok sponsor",
+        "",
+        "👥 *User:*",
+        "• !user [nama] — Cari user",
+        "• !alluser — Semua user",
+        "• !topuser — Top user saldo",
+        "• !detailuser [username] — Detail lengkap",
+        "• !loginhistory [username] — Riwayat login",
+        "• !transaksi [username] — Riwayat transaksi",
+        "",
+        "🎵 *Musik:*",
+        "• !musikprofil [username] — Profil musik",
+        "• !storage [username] — Storage musik",
+        "• !resetstorage [username] — Reset storage",
+        "",
+        "📊 *Lainnya:*",
+        "• !profil [username] — Profil game",
+        "• !follow — Stats follow",
+        "• !tiket — Tiket support",
+        "• !settiket [id] [status] — Status tiket",
+        "• !tiketdetail [id] — Detail tiket",
+        "• !chat — Chat produk",
+        "• !notif [username] [isi] — Kirim notif",
+        "• !broadcast [judul] | [isi] — Broadcast",
+        "• !hapusnotif [username] — Hapus notif user",
+        "• !likes — Stats likes",
+        "• !dashboard — Dashboard ringkas",
+        "• !report — Laporan",
+        "• !aktivitas — Aktivitas terbaru",
+        "• !token — Daftar token",
+        "• !tokendetail [id] — Detail token",
+      ].join("\\n"));
+    }
+
+    // ── ADMIN: SALDO (username-based) ──
     if (command === "!saldo") {
       if (!isAdmin(msg)) return reply("❌ Akses ditolak.");
       const res = await api("balances");
@@ -692,50 +870,59 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
 
     if (command.startsWith("!tambahsaldo")) {
       if (!isAdmin(msg)) return reply("❌ Akses ditolak.");
-      if (args.length < 2) return reply("⚠️ Gunakan: !tambahsaldo [visitor_id] [jumlah]");
-      const res = await api("add_balance", "POST", { visitor_id: args[0], amount: Number(args[1]), description: "Top up via bot admin" });
+      if (args.length < 2) return reply("⚠️ Gunakan: !tambahsaldo [username] [jumlah]");
+      const user = await resolveVid(args[0]);
+      if (!user) return reply("❌ User '" + args[0] + "' tidak ditemukan.");
+      const res = await api("add_balance", "POST", { visitor_id: user.visitor_id, amount: Number(args[1]), description: "Top up via bot admin" });
       if (res.error) return reply("❌ " + res.error);
-      return reply("✅ Saldo ditambah " + fmtRp(args[1]) + "\\nSaldo baru: " + fmtRp(res.data?.new_balance));
+      return reply("✅ Saldo *" + user.username + "* ditambah " + fmtRp(args[1]) + "\\nSaldo baru: " + fmtRp(res.data?.new_balance));
     }
 
     if (command.startsWith("!kurangsaldo")) {
       if (!isAdmin(msg)) return reply("❌ Akses ditolak.");
-      if (args.length < 2) return reply("⚠️ Gunakan: !kurangsaldo [visitor_id] [jumlah]");
-      const res = await api("deduct_balance", "POST", { visitor_id: args[0], amount: Number(args[1]), description: "Potong via bot admin" });
+      if (args.length < 2) return reply("⚠️ Gunakan: !kurangsaldo [username] [jumlah]");
+      const user = await resolveVid(args[0]);
+      if (!user) return reply("❌ User '" + args[0] + "' tidak ditemukan.");
+      const res = await api("deduct_balance", "POST", { visitor_id: user.visitor_id, amount: Number(args[1]), description: "Potong via bot admin" });
       if (res.error) return reply("❌ " + res.error);
-      return reply("✅ Saldo dikurangi " + fmtRp(args[1]) + "\\nSaldo baru: " + fmtRp(res.data?.new_balance));
+      return reply("✅ Saldo *" + user.username + "* dikurangi " + fmtRp(args[1]) + "\\nSaldo baru: " + fmtRp(res.data?.new_balance));
     }
 
     if (command.startsWith("!setsaldo")) {
       if (!isAdmin(msg)) return reply("❌ Akses ditolak.");
-      if (args.length < 2) return reply("⚠️ Gunakan: !setsaldo [visitor_id] [jumlah]");
-      const res = await api("set_balance", "POST", { visitor_id: args[0], balance: Number(args[1]) });
+      if (args.length < 2) return reply("⚠️ Gunakan: !setsaldo [username] [jumlah]");
+      const user = await resolveVid(args[0]);
+      if (!user) return reply("❌ User '" + args[0] + "' tidak ditemukan.");
+      const res = await api("set_balance", "POST", { visitor_id: user.visitor_id, balance: Number(args[1]) });
       if (res.error) return reply("❌ " + res.error);
-      return reply("✅ Saldo diset ke " + fmtRp(args[1]) + "\\n(Sebelumnya: " + fmtRp(res.data?.old_balance) + ")");
+      return reply("✅ Saldo *" + user.username + "* diset ke " + fmtRp(args[1]) + "\\n(Sebelumnya: " + fmtRp(res.data?.old_balance) + ")");
     }
 
     if (command.startsWith("!resetsaldo")) {
       if (!isAdmin(msg)) return reply("❌ Akses ditolak.");
-      if (!args[0]) return reply("⚠️ Gunakan: !resetsaldo [visitor_id]");
-      const res = await api("reset_balance", "POST", { visitor_id: args[0] });
+      if (!args[0]) return reply("⚠️ Gunakan: !resetsaldo [username]");
+      const user = await resolveVid(args[0]);
+      if (!user) return reply("❌ User '" + args[0] + "' tidak ditemukan.");
+      const res = await api("reset_balance", "POST", { visitor_id: user.visitor_id });
       if (res.error) return reply("❌ " + res.error);
-      return reply("✅ Saldo direset ke Rp 0 (sebelumnya: " + fmtRp(res.data?.old_balance) + ")");
+      return reply("✅ Saldo *" + user.username + "* direset ke Rp 0 (sebelumnya: " + fmtRp(res.data?.old_balance) + ")");
     }
 
+    // ── ADMIN: DEPOSIT ──
     if (command === "!deposit") {
       if (!isAdmin(msg)) return reply("❌ Akses ditolak.");
       const res = await api("deposits");
       if (!res.data?.length) return reply("🏦 Tidak ada deposit.");
-      const list = res.data.slice(0, 15).map((d, i) => (i+1) + ". " + d.username + " — " + fmtRp(d.amount) + " [" + d.status + "] " + d.payment_method).join("\\n");
+      const list = res.data.slice(0, 15).map((d, i) => (i+1) + ". " + d.username + " — " + fmtRp(d.amount) + " [" + d.status + "] " + d.payment_method + "\\n   🆔 " + d.trx_id).join("\\n");
       return reply("🏦 *Riwayat Deposit:*\\n\\n" + list);
     }
 
     if (command.startsWith("!setdeposit")) {
       if (!isAdmin(msg)) return reply("❌ Akses ditolak.");
-      if (args.length < 2) return reply("⚠️ Gunakan: !setdeposit [deposit_id] [status]");
+      if (args.length < 2) return reply("⚠️ Gunakan: !setdeposit [deposit_id/trx_id] [status]");
       const res = await api("set_deposit_status", "POST", { deposit_id: args[0], status: args[1] });
       if (res.error) return reply("❌ " + res.error);
-      return reply("✅ Deposit " + args[0] + " diubah ke: " + args[1]);
+      return reply("✅ Deposit diubah ke: " + args[1]);
     }
 
     if (command === "!rekapdeposit") {
@@ -748,6 +935,7 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
       return reply("🏦 *Rekap Deposit:*\\n\\n📊 Total: " + deps.length + "\\n⏳ Pending: " + pending.length + "\\n✅ Approved: " + approved.length + "\\n💰 Total Amount: " + fmtRp(totalAll));
     }
 
+    // ── ADMIN: TOKEN ──
     if (command === "!token") {
       if (!isAdmin(msg)) return reply("❌ Akses ditolak.");
       const res = await api("tokens");
@@ -758,55 +946,64 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
 
     if (command.startsWith("!tokendetail")) {
       if (!isAdmin(msg)) return reply("❌ Akses ditolak.");
-      if (!args[0]) return reply("⚠️ Gunakan: !tokendetail [token_id]");
+      if (!args[0]) return reply("⚠️ Gunakan: !tokendetail [token_id/code]");
       const res = await api("tokens");
       const t = (res.data || []).find((x) => x.id === args[0] || x.token_code === args[0]);
       if (!t) return reply("❌ Token tidak ditemukan.");
       return reply("🎫 *Token:* " + t.token_code + "\\n📦 Produk: " + (t.products?.title || "-") + "\\n📌 Status: " + (t.is_claimed ? "Claimed" : "Available") + "\\n📅 Dibuat: " + new Date(t.created_at).toLocaleString("id-ID"));
     }
 
+    // ── ADMIN: GAME (username-based) ──
     if (command.startsWith("!game ") || (command === "!game" && args[0])) {
       if (!isAdmin(msg)) return reply("❌ Akses ditolak.");
-      const vid = args[0];
-      if (!vid) return reply("⚠️ Gunakan: !game [visitor_id]");
-      const res = await api("game_stats&visitor_id=" + vid);
-      if (!res.data?.length) return reply("🎮 User belum punya stats game.");
+      if (!args[0]) return reply("⚠️ Gunakan: !game [username]");
+      const user = await resolveVid(args[0]);
+      if (!user) return reply("❌ User '" + args[0] + "' tidak ditemukan.");
+      const res = await api("game_stats&visitor_id=" + user.visitor_id);
+      if (!res.data?.length) return reply("🎮 " + user.username + " belum punya stats game.");
       const list = res.data.map((g) => "• " + g.game_type + ": W" + g.wins + "/L" + g.losses + " | Pts:" + g.points + " | Q:" + g.total_questions).join("\\n");
-      return reply("🎮 *Game Stats:*\\n\\n" + list);
+      return reply("🎮 *Game Stats " + user.username + ":*\\n\\n" + list);
     }
 
     if (command.startsWith("!kredit")) {
       if (!isAdmin(msg)) return reply("❌ Akses ditolak.");
-      const vid = args[0];
-      if (!vid) return reply("⚠️ Gunakan: !kredit [visitor_id]");
-      const res = await api("game_credits&visitor_id=" + vid);
-      if (!res.data?.length) return reply("💎 User belum punya kredit game.");
+      if (!args[0]) return reply("⚠️ Gunakan: !kredit [username]");
+      const user = await resolveVid(args[0]);
+      if (!user) return reply("❌ User '" + args[0] + "' tidak ditemukan.");
+      const res = await api("game_credits&visitor_id=" + user.visitor_id);
+      if (!res.data?.length) return reply("💎 " + user.username + " belum punya kredit game.");
       const c = res.data[0];
-      return reply("💎 *Kredit Game:*\\n\\nKredit: " + c.credits + (c.unlimited_until ? "\\n♾️ Unlimited sampai: " + new Date(c.unlimited_until).toLocaleString("id-ID") : ""));
+      return reply("💎 *Kredit Game " + user.username + ":*\\n\\nKredit: " + c.credits + (c.unlimited_until ? "\\n♾️ Unlimited sampai: " + new Date(c.unlimited_until).toLocaleString("id-ID") : ""));
     }
 
     if (command.startsWith("!setkredit")) {
       if (!isAdmin(msg)) return reply("❌ Akses ditolak.");
-      if (args.length < 2) return reply("⚠️ Gunakan: !setkredit [visitor_id] [jumlah]");
-      const res = await api("set_credits", "POST", { visitor_id: args[0], credits: Number(args[1]) });
+      if (args.length < 2) return reply("⚠️ Gunakan: !setkredit [username] [jumlah]");
+      const user = await resolveVid(args[0]);
+      if (!user) return reply("❌ User '" + args[0] + "' tidak ditemukan.");
+      const res = await api("set_credits", "POST", { visitor_id: user.visitor_id, credits: Number(args[1]) });
       if (res.error) return reply("❌ " + res.error);
-      return reply("✅ Kredit game diset ke " + args[1]);
+      return reply("✅ Kredit game *" + user.username + "* diset ke " + args[1]);
     }
 
     if (command.startsWith("!resetkredit")) {
       if (!isAdmin(msg)) return reply("❌ Akses ditolak.");
-      if (!args[0]) return reply("⚠️ Gunakan: !resetkredit [visitor_id]");
-      const res = await api("reset_credits", "POST", { visitor_id: args[0] });
+      if (!args[0]) return reply("⚠️ Gunakan: !resetkredit [username]");
+      const user = await resolveVid(args[0]);
+      if (!user) return reply("❌ User '" + args[0] + "' tidak ditemukan.");
+      const res = await api("reset_credits", "POST", { visitor_id: user.visitor_id });
       if (res.error) return reply("❌ " + res.error);
-      return reply("✅ Kredit game direset ke 0");
+      return reply("✅ Kredit game *" + user.username + "* direset ke 0");
     }
 
     if (command.startsWith("!resetgame")) {
       if (!isAdmin(msg)) return reply("❌ Akses ditolak.");
-      if (!args[0]) return reply("⚠️ Gunakan: !resetgame [visitor_id]");
-      const res = await api("reset_game_stats", "POST", { visitor_id: args[0] });
+      if (!args[0]) return reply("⚠️ Gunakan: !resetgame [username]");
+      const user = await resolveVid(args[0]);
+      if (!user) return reply("❌ User '" + args[0] + "' tidak ditemukan.");
+      const res = await api("reset_game_stats", "POST", { visitor_id: user.visitor_id });
       if (res.error) return reply("❌ " + res.error);
-      return reply("✅ Game stats direset");
+      return reply("✅ Game stats *" + user.username + "* direset");
     }
 
     if (command === "!leaderboardadmin") {
@@ -814,64 +1011,73 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
       const [bal, gs] = await Promise.all([api("balances"), api("game_stats")]);
       const sorted = (bal.data || []).sort((a, b) => b.balance - a.balance).slice(0, 10);
       let txt = "🏆 *Leaderboard Admin:*\\n\\n💰 *Top Saldo:*\\n";
-      txt += sorted.map((u, i) => (i+1) + ". " + u.username + " — " + fmtRp(u.balance) + " [" + u.visitor_id.slice(0,8) + "]").join("\\n");
+      txt += sorted.map((u, i) => (i+1) + ". " + u.username + " — " + fmtRp(u.balance)).join("\\n");
       const gsSorted = (gs.data || []).sort((a, b) => b.points - a.points).slice(0, 5);
-      if (gsSorted.length) { txt += "\\n\\n🎮 *Top Game Points:*\\n" + gsSorted.map((g, i) => (i+1) + ". " + g.visitor_id.slice(0,8) + " — " + g.points + " pts (" + g.game_type + ")").join("\\n"); }
+      if (gsSorted.length) {
+        // Map game stats visitor_id to username
+        const users = bal.data || [];
+        txt += "\\n\\n🎮 *Top Game Points:*\\n" + gsSorted.map((g, i) => {
+          const u = users.find((x) => x.visitor_id === g.visitor_id);
+          return (i+1) + ". " + (u ? u.username : g.visitor_id.slice(0,8)) + " — " + g.points + " pts (" + g.game_type + ")";
+        }).join("\\n");
+      }
       return reply(txt);
     }
 
-    if (command.startsWith("!streak") && !command.startsWith("!streaksub")) {
+    // ── ADMIN: STREAK (username-based) ──
+    if (command.startsWith("!streak") && !command.startsWith("!streaksub") && !command.startsWith("!streakku")) {
       if (!isAdmin(msg)) return reply("❌ Akses ditolak.");
-      const vid = args[0];
-      if (!vid) return reply("⚠️ Gunakan: !streak [visitor_id]");
-      const res = await api("streaks&visitor_id=" + vid);
-      if (!res.data?.length) return reply("🔥 User belum punya data streak.");
+      if (!args[0]) return reply("⚠️ Gunakan: !streak [username]");
+      const user = await resolveVid(args[0]);
+      if (!user) return reply("❌ User '" + args[0] + "' tidak ditemukan.");
+      const res = await api("streaks&visitor_id=" + user.visitor_id);
+      if (!res.data?.length) return reply("🔥 " + user.username + " belum punya data streak.");
       const s = res.data[0];
-      return reply("🔥 *Streak:*\\n\\nStreak: " + s.current_streak + " hari\\nTerpanjang: " + s.longest_streak + "\\nTotal claim: " + s.total_claims + "\\nTerakhir: " + s.last_claim_date);
+      return reply("🔥 *Streak " + user.username + ":*\\n\\nStreak: " + s.current_streak + " hari\\nTerpanjang: " + s.longest_streak + "\\nTotal claim: " + s.total_claims + "\\nTerakhir: " + s.last_claim_date);
     }
 
     if (command.startsWith("!setstreak")) {
       if (!isAdmin(msg)) return reply("❌ Akses ditolak.");
-      if (args.length < 2) return reply("⚠️ Gunakan: !setstreak [visitor_id] [jumlah]");
-      const res = await api("set_streak", "POST", { visitor_id: args[0], current_streak: Number(args[1]) });
+      if (args.length < 2) return reply("⚠️ Gunakan: !setstreak [username] [jumlah]");
+      const user = await resolveVid(args[0]);
+      if (!user) return reply("❌ User '" + args[0] + "' tidak ditemukan.");
+      const res = await api("set_streak", "POST", { visitor_id: user.visitor_id, current_streak: Number(args[1]) });
       if (res.error) return reply("❌ " + res.error);
-      return reply("✅ Streak diset ke " + args[1] + " hari");
+      return reply("✅ Streak *" + user.username + "* diset ke " + args[1] + " hari");
     }
 
     if (command.startsWith("!resetstreak")) {
       if (!isAdmin(msg)) return reply("❌ Akses ditolak.");
-      if (!args[0]) return reply("⚠️ Gunakan: !resetstreak [visitor_id]");
-      const res = await api("reset_streak", "POST", { visitor_id: args[0] });
+      if (!args[0]) return reply("⚠️ Gunakan: !resetstreak [username]");
+      const user = await resolveVid(args[0]);
+      if (!user) return reply("❌ User '" + args[0] + "' tidak ditemukan.");
+      const res = await api("reset_streak", "POST", { visitor_id: user.visitor_id });
       if (res.error) return reply("❌ " + res.error);
-      return reply("✅ Streak direset");
+      return reply("✅ Streak *" + user.username + "* direset");
     }
 
     if (command.startsWith("!streaksub")) {
       if (!isAdmin(msg)) return reply("❌ Akses ditolak.");
-      const vid = args[0];
-      const ep = vid ? "streak_subs&visitor_id=" + vid : "streak_subs";
+      const uname = args[0];
+      let ep = "streak_subs";
+      if (uname) {
+        const user = await resolveVid(uname);
+        if (!user) return reply("❌ User '" + uname + "' tidak ditemukan.");
+        ep = "streak_subs&visitor_id=" + user.visitor_id;
+      }
       const res = await api(ep);
       if (!res.data?.length) return reply("🔥 Tidak ada langganan streak.");
       const list = res.data.slice(0, 10).map((s, i) => (i+1) + ". " + s.plan_name + " [" + (s.is_active ? "Aktif" : "Expired") + "] — " + fmtRp(s.price_paid)).join("\\n");
       return reply("🔥 *Langganan Streak:*\\n\\n" + list);
     }
 
+    // ── ADMIN: STOK ──
     if (command.startsWith("!stok ") && !command.startsWith("!stoksponsor")) {
       if (!isAdmin(msg)) return reply("❌ Akses ditolak.");
       if (args.length < 2) return reply("⚠️ Gunakan: !stok [product_id] [jumlah]");
       const res = await api("update_stock", "POST", { product_id: args[0], stock: Number(args[1]) });
       if (res.error) return reply("❌ " + res.error);
       return reply("✅ Stok produk diubah ke " + args[1]);
-    }
-
-    if (command.startsWith("!produkdetail")) {
-      if (!isAdmin(msg)) return reply("❌ Akses ditolak.");
-      return reply("ℹ️ Gunakan !detailproduk [id] untuk melihat detail produk.");
-    }
-
-    if (command.startsWith("!sponsordetail")) {
-      if (!isAdmin(msg)) return reply("❌ Akses ditolak.");
-      return reply("ℹ️ Gunakan !detailsponsor [nomor] untuk melihat detail sponsor.");
     }
 
     if (command.startsWith("!stoksponsor")) {
@@ -882,13 +1088,14 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
       return reply("✅ Stok sponsor diubah ke " + args[1]);
     }
 
+    // ── ADMIN: USER (username-based) ──
     if (command.startsWith("!user ")) {
       if (!isAdmin(msg)) return reply("❌ Akses ditolak.");
       const q = args.join(" ").toLowerCase();
       const res = await api("balances");
-      const found = (res.data || []).filter((u) => u.username.toLowerCase().includes(q));
+      const found = (res.data || []).filter((u) => u.username.toLowerCase().includes(q) || (u.phone || "").includes(q) || (u.email || "").toLowerCase().includes(q));
       if (!found.length) return reply("❌ User '" + q + "' tidak ditemukan.");
-      const list = found.slice(0, 10).map((u, i) => (i+1) + ". " + u.username + " — " + fmtRp(u.balance) + "\\n   VID: " + u.visitor_id.slice(0, 12) + "...").join("\\n");
+      const list = found.slice(0, 10).map((u, i) => (i+1) + ". " + u.username + " — " + fmtRp(u.balance) + "\\n   📞 " + u.phone + " | 📧 " + (u.email || "-")).join("\\n");
       return reply("👥 *Hasil Cari:*\\n\\n" + list);
     }
 
@@ -909,47 +1116,64 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
 
     if (command.startsWith("!detailuser")) {
       if (!isAdmin(msg)) return reply("❌ Akses ditolak.");
-      if (!args[0]) return reply("⚠️ Gunakan: !detailuser [visitor_id]");
-      const vid = args[0];
-      const [bal, gs, gc, st, stor] = await Promise.all([
-        api("balances"), api("game_stats&visitor_id=" + vid), api("game_credits&visitor_id=" + vid),
+      if (!args[0]) return reply("⚠️ Gunakan: !detailuser [username]");
+      const user = await resolveVid(args[0]);
+      if (!user) return reply("❌ User '" + args[0] + "' tidak ditemukan.");
+      const vid = user.visitor_id;
+      const [gs, gc, st, stor] = await Promise.all([
+        api("game_stats&visitor_id=" + vid), api("game_credits&visitor_id=" + vid),
         api("streaks&visitor_id=" + vid), api("storage&visitor_id=" + vid),
       ]);
-      const user = (bal.data || []).find((u) => u.visitor_id === vid);
-      if (!user) return reply("❌ User tidak ditemukan.");
       let txt = "👤 *Detail User:*\\n\\n📛 " + user.username + "\\n📞 " + user.phone + "\\n📧 " + (user.email || "-") + "\\n💰 Saldo: " + fmtRp(user.balance);
       if (gc.data?.[0]) txt += "\\n💎 Kredit: " + gc.data[0].credits;
       if (st.data?.[0]) txt += "\\n🔥 Streak: " + st.data[0].current_streak + " hari";
-      if (gs.data?.length) txt += "\\n🎮 Game: " + gs.data.length + " tipe";
+      if (gs.data?.length) {
+        let totalP = 0; gs.data.forEach((g) => totalP += g.points);
+        txt += "\\n🎮 Game: " + gs.data.length + " tipe | " + totalP + " total pts";
+      }
       if (stor.data?.length) txt += "\\n💾 Storage: " + stor.data.reduce((s, x) => s + x.storage_mb, 0) + " MB";
-      txt += "\\n🆔 VID: " + vid;
       return reply(txt);
     }
 
     if (command.startsWith("!loginhistory")) {
       if (!isAdmin(msg)) return reply("❌ Akses ditolak.");
-      const vid = args[0];
-      const ep = vid ? "login_history&visitor_id=" + vid : "login_history";
+      let ep = "login_history";
+      if (args[0]) {
+        const user = await resolveVid(args[0]);
+        if (!user) return reply("❌ User '" + args[0] + "' tidak ditemukan.");
+        ep = "login_history&visitor_id=" + user.visitor_id;
+      }
       const res = await api(ep);
       if (!res.data?.length) return reply("📋 Tidak ada riwayat login.");
-      const list = res.data.slice(0, 10).map((l, i) => (i+1) + ". " + new Date(l.logged_in_at).toLocaleString("id-ID") + " — " + (l.browser || "?") + " | " + (l.ip_address || "?")).join("\\n");
+      const list = res.data.slice(0, 10).map((l, i) => (i+1) + ". " + new Date(l.logged_in_at).toLocaleString("id-ID") + "\\n   🌐 " + (l.browser || "?") + " | 📍 " + (l.ip_address || "?")).join("\\n");
       return reply("📋 *Riwayat Login:*\\n\\n" + list);
     }
 
     if (command.startsWith("!transaksi")) {
       if (!isAdmin(msg)) return reply("❌ Akses ditolak.");
-      const vid = args[0];
-      const ep = vid ? "transactions&visitor_id=" + vid : "transactions";
+      let ep = "transactions";
+      if (args[0]) {
+        const user = await resolveVid(args[0]);
+        if (!user) return reply("❌ User '" + args[0] + "' tidak ditemukan.");
+        ep = "transactions&visitor_id=" + user.visitor_id;
+      }
       const res = await api(ep);
       if (!res.data?.length) return reply("📋 Tidak ada transaksi.");
-      const list = res.data.slice(0, 10).map((t, i) => (i+1) + ". [" + t.type + "] " + fmtRp(t.amount) + " — " + (t.description || "-")).join("\\n");
+      const list = res.data.slice(0, 15).map((t, i) => {
+        const date = new Date(t.created_at).toLocaleDateString("id-ID");
+        return (i+1) + ". [" + t.type + "] " + fmtRp(t.amount) + " — " + (t.description || "-") + "\\n   📅 " + date + (t.trx_id ? " | 🆔 " + t.trx_id : "");
+      }).join("\\n");
       return reply("📋 *Riwayat Transaksi:*\\n\\n" + list);
     }
 
+    // ── ADMIN: MUSIK (username-based) ──
     if (command.startsWith("!musikprofil")) {
       if (!isAdmin(msg)) return reply("❌ Akses ditolak.");
-      const vid = args[0];
-      const ep = vid ? "music_profiles&visitor_id=" + vid : "music_profiles";
+      let ep = "music_profiles";
+      if (args[0]) {
+        const user = await resolveVid(args[0]);
+        if (user) ep = "music_profiles&visitor_id=" + user.visitor_id;
+      }
       const res = await api(ep);
       if (!res.data?.length) return reply("🎵 Tidak ada profil musik.");
       const list = res.data.slice(0, 10).map((m, i) => (i+1) + ". " + m.username + (m.description ? " — " + m.description : "")).join("\\n");
@@ -958,32 +1182,37 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
 
     if (command.startsWith("!storage") && !command.startsWith("!stok")) {
       if (!isAdmin(msg)) return reply("❌ Akses ditolak.");
-      const vid = args[0];
-      if (!vid) return reply("⚠️ Gunakan: !storage [visitor_id]");
-      const res = await api("storage&visitor_id=" + vid);
-      if (!res.data?.length) return reply("💾 User belum punya storage.");
+      if (!args[0]) return reply("⚠️ Gunakan: !storage [username]");
+      const user = await resolveVid(args[0]);
+      if (!user) return reply("❌ User '" + args[0] + "' tidak ditemukan.");
+      const res = await api("storage&visitor_id=" + user.visitor_id);
+      if (!res.data?.length) return reply("💾 " + user.username + " belum punya storage.");
       const total = res.data.reduce((s, x) => s + x.storage_mb, 0);
-      return reply("💾 *Storage Musik:*\\n\\nTotal: " + total + " MB\\nVoucher: " + res.data.length + " kali redeem");
+      return reply("💾 *Storage Musik " + user.username + ":*\\n\\nTotal: " + total + " MB\\nVoucher: " + res.data.length + " kali redeem");
     }
 
     if (command.startsWith("!resetstorage")) {
       if (!isAdmin(msg)) return reply("❌ Akses ditolak.");
-      if (!args[0]) return reply("⚠️ Gunakan: !resetstorage [visitor_id]");
-      const res = await api("reset_storage", "POST", { visitor_id: args[0] });
+      if (!args[0]) return reply("⚠️ Gunakan: !resetstorage [username]");
+      const user = await resolveVid(args[0]);
+      if (!user) return reply("❌ User '" + args[0] + "' tidak ditemukan.");
+      const res = await api("reset_storage", "POST", { visitor_id: user.visitor_id });
       if (res.error) return reply("❌ " + res.error);
-      return reply("✅ Storage musik direset");
+      return reply("✅ Storage musik *" + user.username + "* direset");
     }
 
-    if (command.startsWith("!profil")) {
+    if (command.startsWith("!profil") && !command.startsWith("!profilku")) {
       if (!isAdmin(msg)) return reply("❌ Akses ditolak.");
-      const vid = args[0];
-      if (!vid) return reply("⚠️ Gunakan: !profil [visitor_id]");
-      const res = await api("game_profiles&visitor_id=" + vid);
-      if (!res.data?.length) return reply("👤 Profil game tidak ditemukan.");
+      if (!args[0]) return reply("⚠️ Gunakan: !profil [username]");
+      const user = await resolveVid(args[0]);
+      if (!user) return reply("❌ User '" + args[0] + "' tidak ditemukan.");
+      const res = await api("game_profiles&visitor_id=" + user.visitor_id);
+      if (!res.data?.length) return reply("👤 " + user.username + " belum punya profil game.");
       const p = res.data[0];
-      return reply("👤 *Profil Game:*\\n\\n📛 " + p.display_name + "\\n📝 " + (p.description || "-") + "\\n👻 Guest: " + (p.is_guest ? "Ya" : "Tidak") + "\\n🆔 VID: " + p.visitor_id);
+      return reply("👤 *Profil Game " + user.username + ":*\\n\\n📛 " + p.display_name + "\\n📝 " + (p.description || "-") + "\\n👻 Guest: " + (p.is_guest ? "Ya" : "Tidak"));
     }
 
+    // ── ADMIN: OTHER ──
     if (command === "!follow") {
       if (!isAdmin(msg)) return reply("❌ Akses ditolak.");
       const [uf, gf] = await Promise.all([api("follows"), api("game_follows")]);
@@ -1003,12 +1232,12 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
       if (args.length < 2) return reply("⚠️ Gunakan: !settiket [ticket_id] [status]");
       const res = await api("set_ticket_status", "POST", { ticket_id: args[0], status: args[1] });
       if (res.error) return reply("❌ " + res.error);
-      return reply("✅ Tiket " + args[0] + " diubah ke: " + args[1]);
+      return reply("✅ Tiket diubah ke: " + args[1]);
     }
 
     if (command.startsWith("!tiketdetail")) {
       if (!isAdmin(msg)) return reply("❌ Akses ditolak.");
-      if (!args[0]) return reply("⚠️ Gunakan: !tiketdetail [ticket_id]");
+      if (!args[0]) return reply("⚠️ Gunakan: !tiketdetail [ticket_id/nomor]");
       const res = await api("tickets");
       const t = (res.data || []).find((x) => x.id === args[0] || String(x.ticket_number) === args[0]);
       if (!t) return reply("❌ Tiket tidak ditemukan.");
@@ -1025,12 +1254,13 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
 
     if (command.startsWith("!notif ")) {
       if (!isAdmin(msg)) return reply("❌ Akses ditolak.");
-      if (args.length < 2) return reply("⚠️ Gunakan: !notif [visitor_id] [pesan]");
-      const vid = args[0];
+      if (args.length < 2) return reply("⚠️ Gunakan: !notif [username] [pesan]");
+      const user = await resolveVid(args[0]);
+      if (!user) return reply("❌ User '" + args[0] + "' tidak ditemukan.");
       const isi = args.slice(1).join(" ");
-      const res = await api("notifications", "POST", { visitor_id: vid, title: "Notif Admin", message: isi, type: "info" });
+      const res = await api("notifications", "POST", { visitor_id: user.visitor_id, title: "Notif Admin", message: isi, type: "info" });
       if (res.error) return reply("❌ " + res.error);
-      return reply("✅ Notifikasi terkirim ke " + vid);
+      return reply("✅ Notifikasi terkirim ke *" + user.username + "*");
     }
 
     if (command.startsWith("!broadcast")) {
@@ -1045,10 +1275,12 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
 
     if (command.startsWith("!hapusnotif")) {
       if (!isAdmin(msg)) return reply("❌ Akses ditolak.");
-      if (!args[0]) return reply("⚠️ Gunakan: !hapusnotif [visitor_id]");
-      const res = await api("delete_notifications", "POST", { visitor_id: args[0] });
+      if (!args[0]) return reply("⚠️ Gunakan: !hapusnotif [username]");
+      const user = await resolveVid(args[0]);
+      if (!user) return reply("❌ User '" + args[0] + "' tidak ditemukan.");
+      const res = await api("delete_notifications", "POST", { visitor_id: user.visitor_id });
       if (res.error) return reply("❌ " + res.error);
-      return reply("✅ " + (res.data?.deleted || 0) + " notifikasi dihapus");
+      return reply("✅ " + (res.data?.deleted || 0) + " notifikasi *" + user.username + "* dihapus");
     }
 
     if (command === "!likes") {
