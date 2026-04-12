@@ -595,6 +595,36 @@ const AdminDashboard = () => {
     fetchUserBalances();
   }
 
+  async function adminResetBalance(user: UserBalance) {
+    if (!confirm(`Reset saldo ${user.username} ke Rp 0?`)) return;
+    await supabase.from("user_balances").update({ balance: 0 }).eq("id", user.id);
+    await supabase.from("notifications").insert({ visitor_id: user.visitor_id, title: "Saldo Direset", message: "Saldo kamu telah direset oleh admin menjadi Rp 0", type: "info" } as any);
+    toast({ title: `Saldo ${user.username} berhasil direset ke Rp 0` });
+    fetchUserBalances();
+  }
+
+  async function adminResetCredits(user: UserBalance) {
+    if (!confirm(`Reset kredit game ${user.username} ke 0?`)) return;
+    await supabase.from("user_game_credits").update({ credits: 0, unlimited_until: null }).eq("visitor_id", user.visitor_id);
+    await supabase.from("notifications").insert({ visitor_id: user.visitor_id, title: "Kredit Direset", message: "Kredit game kamu telah direset oleh admin", type: "info" } as any);
+    toast({ title: `Kredit ${user.username} berhasil direset` });
+  }
+
+  async function adminResetStreak(user: UserBalance) {
+    if (!confirm(`Reset streak ${user.username}? (streak & langganan akan dihapus)`)) return;
+    await supabase.from("daily_streaks").delete().eq("visitor_id", user.visitor_id);
+    await supabase.from("streak_subscriptions").update({ is_active: false }).eq("visitor_id", user.visitor_id);
+    await supabase.from("notifications").insert({ visitor_id: user.visitor_id, title: "Streak Direset", message: "Data streak kamu telah direset oleh admin", type: "info" } as any);
+    toast({ title: `Streak ${user.username} berhasil direset` });
+  }
+
+  async function adminResetStorage(user: UserBalance) {
+    if (!confirm(`Reset storage ${user.username}? (semua kuota storage akan dihapus)`)) return;
+    await supabase.from("user_music_storage").delete().eq("visitor_id", user.visitor_id);
+    await supabase.from("notifications").insert({ visitor_id: user.visitor_id, title: "Storage Direset", message: "Kuota storage musik kamu telah direset oleh admin", type: "info" } as any);
+    toast({ title: `Storage ${user.username} berhasil direset` });
+  }
+
   function getProductImages(productId: string): string[] {
     const imgs = productImages.filter(i => i.product_id === productId).map(i => i.image_url);
     const product = products.find(p => p.id === productId);
