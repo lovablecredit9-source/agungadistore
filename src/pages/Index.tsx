@@ -639,6 +639,22 @@ const Index = () => {
     return () => { supabase.removeChannel(ch); };
   }, []);
 
+  // Realtime user_balances & transactions - auto-refresh on admin changes
+  useEffect(() => {
+    const balVid = localStorage.getItem("balance_visitor_id");
+    if (!balVid) return;
+    const ch = supabase.channel("balance-realtime-" + balVid)
+      .on("postgres_changes", { event: "*", schema: "public", table: "user_balances", filter: `visitor_id=eq.${balVid}` }, () => fetchUserBalance())
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "balance_transactions", filter: `visitor_id=eq.${balVid}` }, () => fetchUserBalance())
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "notifications", filter: `visitor_id=eq.${balVid}` }, (payload) => {
+        const notif = payload.new as unknown as Notification;
+        setNotifications(prev => [notif, ...prev]);
+        toast({ title: notif.title, description: notif.message || undefined });
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, [userBalance?.visitor_id]);
+
   const [wholesalePrices, setWholesalePrices] = useState<any[]>([]);
 
   async function fetchProducts() {
