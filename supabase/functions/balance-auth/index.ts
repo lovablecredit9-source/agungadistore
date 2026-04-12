@@ -350,7 +350,7 @@ Deno.serve(async (request) => {
 
       const { data: tokenRow } = await admin.from("password_reset_tokens")
         .select("*")
-        .eq("token", resetToken.toUpperCase())
+        .eq("token", resetToken.toString().trim())
         .eq("visitor_id", visitorId)
         .eq("is_used", false)
         .maybeSingle();
