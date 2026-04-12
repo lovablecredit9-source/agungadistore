@@ -2469,6 +2469,100 @@ const Index = () => {
 
         {tab === "plus" && <PlusTab key={userBalance?.visitor_id || "no-user"} />}
 
+        {tab === "update" && (
+          <div className="space-y-4">
+            <h2 className="text-lg font-extrabold flex items-center gap-2">
+              <RefreshCw className="w-5 h-5 text-primary" /> Update Web
+            </h2>
+            <p className="text-xs text-muted-foreground">Riwayat pembaruan dan fitur terbaru {STORE_NAME}.</p>
+
+            {/* April 2026 - Week 2 */}
+            <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-extrabold text-primary uppercase tracking-wider">🆕 12 April 2026</span>
+                <span className="text-[10px] bg-primary/10 text-primary px-2 py-0.5 rounded-full font-bold">v2.5</span>
+              </div>
+              <ul className="text-[13px] space-y-1 text-muted-foreground">
+                <li>✨ Tab <strong>Update Web</strong> baru — riwayat pembaruan</li>
+                <li>✨ Bot WA diperlengkap: 20+ perintah</li>
+                <li>✨ Pusat Bantuan lebih lengkap</li>
+                <li>🔧 Perbaikan bug riwayat transaksi</li>
+                <li>🔧 Fix data stale saat ganti akun</li>
+                <li>🔧 Real-time update saldo & transaksi</li>
+              </ul>
+            </div>
+
+            {/* April 2026 - Week 1 */}
+            <div className="rounded-xl border border-border bg-muted/40 p-4 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-extrabold text-foreground uppercase tracking-wider">🔄 8 April 2026</span>
+                <span className="text-[10px] bg-muted text-muted-foreground px-2 py-0.5 rounded-full font-bold">v2.4</span>
+              </div>
+              <ul className="text-[13px] space-y-1 text-muted-foreground">
+                <li>✨ Paket bundel: Kredit + Streak + Storage</li>
+                <li>✨ Flash sale paket streak & kredit</li>
+                <li>✨ Admin bisa reset saldo, kredit, streak, storage user</li>
+                <li>✨ Admin kelola paket Pro, Bundel, Mantap</li>
+                <li>🔧 Fix pembelian kredit & streak gagal</li>
+                <li>🔧 Fix error handling edge functions</li>
+              </ul>
+            </div>
+
+            {/* April 2026 - Early */}
+            <div className="rounded-xl border border-border bg-muted/40 p-4 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-extrabold text-foreground uppercase tracking-wider">🔄 4 April 2026</span>
+                <span className="text-[10px] bg-muted text-muted-foreground px-2 py-0.5 rounded-full font-bold">v2.3</span>
+              </div>
+              <ul className="text-[13px] space-y-1 text-muted-foreground">
+                <li>✨ Sponsor: Syarat & Ketentuan lengkap</li>
+                <li>✨ Tombol Rekber WA kirim detail produk otomatis</li>
+                <li>✨ Pusat Bantuan: panduan Sponsor & Rekber</li>
+                <li>✨ FAQ diperluas 20+ pertanyaan</li>
+                <li>🔧 Fix navigasi dan banner discovery</li>
+              </ul>
+            </div>
+
+            {/* April 2026 - Launch */}
+            <div className="rounded-xl border border-border bg-muted/40 p-4 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-extrabold text-foreground uppercase tracking-wider">🚀 1 April 2026</span>
+                <span className="text-[10px] bg-accent/10 text-accent px-2 py-0.5 rounded-full font-bold">v2.0</span>
+              </div>
+              <ul className="text-[13px] space-y-1 text-muted-foreground">
+                <li>🚀 Peluncuran <strong>{STORE_NAME}</strong> v2.0</li>
+                <li>✨ Dukungan {LANGUAGES.length}+ bahasa dengan bendera negara</li>
+                <li>✨ Fitur musik: streaming, playlist, lirik sinkron</li>
+                <li>✨ Voucher musik (kapasitas & diskon)</li>
+                <li>✨ Sistem deposit QRIS & E-Wallet</li>
+                <li>✨ Chat produk real-time dengan gambar</li>
+                <li>✨ Sistem notifikasi lengkap</li>
+                <li>✨ Tema emas premium</li>
+                <li>✨ PWA + dukungan offline</li>
+                <li>✨ Keranjang belanja multi-produk</li>
+                <li>✨ Game AI: 8+ game seru</li>
+                <li>✨ Sistem kredit game & Premium unlimited</li>
+                <li>✨ Daily streak & langganan streak</li>
+                <li>✨ Sponsor / iklan produk pihak ketiga</li>
+                <li>✨ Sistem tiket dukungan dengan 18+ kategori</li>
+                <li>✨ Pusat Bantuan komprehensif</li>
+              </ul>
+            </div>
+
+            {/* Copyright */}
+            <div className="text-center pt-4 pb-2 border-t border-border space-y-1">
+              <p className="text-xs font-bold text-foreground">© 2026 {STORE_NAME}</p>
+              <p className="text-[11px] text-muted-foreground">Murah & Terpercaya — Semua hak dilindungi.</p>
+              <div className="flex items-center justify-center gap-3 mt-2">
+                <a href={SOCIAL_LINKS.whatsapp} target="_blank" rel="noopener noreferrer" className="text-[10px] text-primary hover:underline">WhatsApp</a>
+                <a href={SOCIAL_LINKS.youtube} target="_blank" rel="noopener noreferrer" className="text-[10px] text-primary hover:underline">YouTube</a>
+                <a href={SOCIAL_LINKS.instagram} target="_blank" rel="noopener noreferrer" className="text-[10px] text-primary hover:underline">Instagram</a>
+                <a href={SOCIAL_LINKS.tiktok} target="_blank" rel="noopener noreferrer" className="text-[10px] text-primary hover:underline">TikTok</a>
+              </div>
+            </div>
+          </div>
+        )}
+
         {tab === "adminpost" && (
           <div className="space-y-4">
             <h2 className="text-lg font-extrabold flex items-center gap-2">
