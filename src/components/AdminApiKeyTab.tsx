@@ -119,6 +119,12 @@ export default function AdminApiKeyTab() {
 const { default: makeWASocket, useMultiFileAuthState, DisconnectReason, makeCacheableSignalKeyStore } = require("@whiskeysockets/baileys");
 const pino = require("pino");
 
+const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+function normalizePhoneNumber(value) {
+  return String(value || "").replace(/[^0-9]/g, "");
+}
+
 // ✅ API Key sudah otomatis terisi!
 const API_KEY = "${apiKey}";
 const BASE = "${baseUrl}";
@@ -147,42 +153,76 @@ async function startBot() {
     browser: ["Agung Adi Store Bot", "Chrome", "1.0.0"],
   });
 
-  // Pairing Code (8 digit)
-  if (!client.authState.creds.registered) {
-    const phoneNum = PAIRING_PHONE || process.argv[2];
+  const phoneNum = normalizePhoneNumber(PAIRING_PHONE || process.argv[2]);
+  let pairingRequested = false;
+  let reconnectScheduled = false;
+
+  async function requestPairingCodeOnce() {
+    if (pairingRequested || client.authState.creds.registered) return;
+
     if (!phoneNum) {
       console.log("❌ Masukkan nomor HP untuk pairing!");
       console.log("   Cara: node bot.js 628xxxxxxxxxx");
       console.log("   Atau isi PAIRING_PHONE di file bot.js");
       process.exit(1);
     }
-    console.log("\\n📱 Meminta kode pairing untuk: " + phoneNum);
-    setTimeout(async () => {
+
+    pairingRequested = true;
+    console.log("\n📱 Meminta kode pairing untuk: " + phoneNum);
+
+    try {
+      await wait(1500);
       const code = await client.requestPairingCode(phoneNum);
-      console.log("\\n" + "=".repeat(40));
+      console.log("\n" + "=".repeat(40));
       console.log("  📲 KODE PAIRING (8 DIGIT):");
       console.log("  ➡️  " + code);
       console.log("=".repeat(40));
-      console.log("\\n✅ Buka WhatsApp > Linked Devices > Link a Device");
-      console.log("   Pilih 'Link with phone number' dan masukkan kode di atas\\n");
-    }, 3000);
+      console.log("\n✅ Buka WhatsApp > Linked Devices > Link a Device");
+      console.log("   Pilih 'Link with phone number' dan masukkan kode di atas");
+      console.log("ℹ️ Kode pairing tampil di terminal/panel, bukan dikirim sebagai notif/chat WhatsApp.\n");
+    } catch (error) {
+      console.error("❌ Gagal meminta pairing code:", error?.message || error);
+      console.log("⏹️ Bot dihentikan agar tidak spam reconnect / spam kode pairing.");
+      console.log("🔁 Jalankan ulang manual setelah koneksi stabil.");
+    }
   }
 
   client.ev.on("creds.update", saveCreds);
 
-  client.ev.on("connection.update", (update) => {
+  client.ev.on("connection.update", async (update) => {
     const { connection, lastDisconnect } = update;
+
+    if (connection === "connecting" && !client.authState.creds.registered) {
+      await requestPairingCodeOnce();
+      return;
+    }
+
     if (connection === "close") {
       const reason = lastDisconnect?.error?.output?.statusCode;
-      if (reason !== DisconnectReason.loggedOut) {
-        console.log("🔄 Reconnecting...");
-        startBot();
-      } else {
+      const message = lastDisconnect?.error?.message || "Connection Closed";
+
+      if (reason === DisconnectReason.loggedOut) {
         console.log("❌ Logged out. Hapus folder auth_session dan jalankan ulang.");
+        return;
+      }
+
+      if (!client.authState.creds.registered) {
+        console.log("❌ Koneksi tertutup sebelum pairing selesai: " + message);
+        console.log("ℹ️ Tidak auto reconnect agar tidak spam kode pairing.");
+        console.log("ℹ️ Kalau pairing belum masuk, jalankan ulang bot sekali lagi.");
+        return;
+      }
+
+      if (!reconnectScheduled) {
+        reconnectScheduled = true;
+        console.log("🔄 Koneksi putus, mencoba hubungkan ulang...");
+        setTimeout(() => startBot(), 3000);
       }
     } else if (connection === "open") {
-      console.log("\\n✅ Bot WhatsApp sudah siap! (Baileys)");
-      console.log("📋 Kirim !help di chat untuk lihat perintah\\n");
+      console.log("
+✅ Bot WhatsApp sudah siap! (Baileys)");
+      console.log("📋 Kirim !help di chat untuk lihat perintah
+");
     }
   });
 
@@ -1693,7 +1733,7 @@ console.log("📱 Kode 8 digit akan muncul di terminal...\\n");
   function generatePackageJson() {
     return JSON.stringify({
       name: "bot-wa-agungadi",
-      version: "5.0.0",
+      version: "5.0.1",
       description: "Bot WhatsApp Agung Adi Store - Pairing Code",
       main: "bot.js",
       scripts: {
@@ -1711,7 +1751,7 @@ console.log("📱 Kode 8 digit akan muncul di terminal...\\n");
   }
 
   function generateReadmeMd() {
-    return `# 🤖 Bot WhatsApp - Agung Adi Store v5.0
+    return `# 🤖 Bot WhatsApp - Agung Adi Store v5.0.1
 
 ## 📋 Persyaratan
 - Node.js >= 18
@@ -1733,15 +1773,17 @@ ${"```"}
 5. Start server → kode 8 digit muncul di console
 6. Buka WhatsApp > Linked Devices > Link with phone number
 7. Masukkan kode 8 digit
+8. Kode pairing tampil di console panel, bukan sebagai notif/chat WhatsApp
 
 ## 📲 Pairing Code
 Bot menggunakan sistem **Pairing Code** (bukan QR).
-- Jalankan bot → kode 8 digit muncul di terminal
+- Jalankan bot → kode 8 digit muncul di terminal / console panel
+- Kode pairing tidak dikirim lewat chat / notif WhatsApp
 - Masukkan kode di WhatsApp > Linked Devices
 - Sesi tersimpan di folder auth_session/
 
 ## 🔄 Reset Sesi
-Jika bot error atau logout:
+Jika bot error, logout, atau koneksi close saat pairing:
 ${"```"}bash
 rm -rf auth_session
 node bot.js 628xxxxxxxxxx
@@ -1781,30 +1823,22 @@ npm --version
 mkdir bot-wa-agungadi
 cd bot-wa-agungadi
 
-# LANGKAH 3: Inisialisasi project
-npm init -y
+# LANGKAH 3: Upload file hasil download
+# Upload: bot.js, package.json, README.md
 
 # LANGKAH 4: Install dependencies
-npm install whatsapp-web.js qrcode-terminal
+npm install
 
-# LANGKAH 5: Buat file bot.js
-# Salin kode dari tab "Kode Bot WA" di atas
-# Paste ke file bot.js
+# LANGKAH 5: Jalankan bot
+node bot.js 628xxxxxxxxxx
 
-# LANGKAH 6: Ganti API Key
-# Buka file bot.js
-# Cari baris: const API_KEY = "PASTE_API_KEY_DISINI";
-# Ganti dengan API Key yang sudah kamu buat
+# LANGKAH 6: Pairing
+# Kode 8 digit muncul di terminal / console panel
+# Buka WhatsApp > Linked Devices > Link with phone number
+# Masukkan kode yang tampil
+# Kode ini tidak dikirim lewat notif/chat WhatsApp
 
-# LANGKAH 7: Jalankan bot
-node bot.js
-
-# LANGKAH 8: Scan QR Code
-# QR code akan muncul di terminal
-# Buka WhatsApp > Menu > Linked Devices > Link a Device
-# Scan QR code yang muncul
-
-# LANGKAH 9: Test bot
+# LANGKAH 7: Test bot
 # Kirim pesan "!help" ke nomor WA yang terhubung
 # Bot akan membalas dengan daftar perintah
 
@@ -1818,8 +1852,8 @@ node bot.js
 #   pm2 save
 #   pm2 startup
 #
-# - Jika QR expired, hapus folder .wwebjs_auth
-#   lalu jalankan ulang: node bot.js
+# - Jika pairing gagal / koneksi close, hapus folder auth_session
+#   lalu jalankan ulang: node bot.js 628xxxxxxxxxx
 #
 # - Pastikan internet stabil
 # - Jangan gunakan nomor WA utama untuk testing
@@ -2043,7 +2077,7 @@ node bot.js
           </div>
 
           <p className="text-[10px] text-muted-foreground text-center">
-            📲 Jalankan <code className="bg-muted px-1 rounded">npm install</code> lalu <code className="bg-muted px-1 rounded">node bot.js</code> — kode 8 digit muncul otomatis
+            📲 Jalankan <code className="bg-muted px-1 rounded">npm install</code> lalu <code className="bg-muted px-1 rounded">node bot.js</code> — kode tampil di terminal, bukan notif WA
           </p>
         </CardContent>
       </Card>
@@ -2075,8 +2109,8 @@ node bot.js
                       { step: "2", title: "Download file", desc: "Download bot.js, package.json, dan README.md dari panel di atas." },
                       { step: "3", title: "Install dependencies", desc: "Buka terminal di folder project, ketik: npm install" },
                       { step: "4", title: "Isi nomor HP", desc: "Di bot.js, isi PAIRING_PHONE dengan nomor WA (format: 628xxx)." },
-                      { step: "5", title: "Jalankan bot", desc: "Di terminal, ketik: node bot.js" },
-                      { step: "6", title: "Masukkan kode", desc: "Kode 8 digit muncul → buka WhatsApp > Linked Devices > Link with phone number" },
+                      { step: "5", title: "Jalankan bot", desc: "Di terminal, ketik: node bot.js atau node bot.js 628xxx." },
+                      { step: "6", title: "Masukkan kode", desc: "Kode 8 digit muncul di terminal, bukan notif WA → buka WhatsApp > Linked Devices > Link with phone number." },
                     ].map(s => (
                       <div key={s.step} className="flex gap-2">
                         <span className="bg-primary text-primary-foreground rounded-full w-5 h-5 flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5">
@@ -2107,6 +2141,7 @@ node bot.js 628xxxxxxxxxx`}
                   <ul className="text-[11px] text-muted-foreground space-y-1 mt-1 list-disc pl-3">
                     <li>Jangan tutup terminal saat bot jalan</li>
                     <li>Untuk background: install <code className="bg-muted px-1 rounded">pm2</code> lalu <code className="bg-muted px-1 rounded">pm2 start bot.js</code></li>
+                    <li>Kode pairing muncul di terminal / panel, bukan lewat notif atau chat WhatsApp</li>
                     <li>Sesi error? Hapus folder <code className="bg-muted px-1 rounded">auth_session</code> lalu jalankan ulang</li>
                     <li>Gunakan nomor WA cadangan untuk testing</li>
                     <li>Pastikan koneksi internet stabil</li>
