@@ -135,7 +135,7 @@ const DEFAULT_PAIRING_PHONE = "${phoneNumber.replace(/[^0-9]/g, "")}";`
 const DEFAULT_PAIRING_PHONE = ""; // Opsional: nomor default pairing, format: 628xxxxxxxxxx`;
 
     return `// =============================================
-// 🤖 BOT WHATSAPP - Agung Adi Store v6.0.0
+// 🤖 BOT WHATSAPP - Agung Adi Store v7.0.0
 // =============================================
 // Library: @whiskeysockets/baileys (QR / Pairing Code)
 // Cara pakai:
@@ -319,7 +319,7 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
     }
 
     if (connection === "open") {
-      console.log("\\n✅ Bot WhatsApp sudah siap! (Baileys v6.0.0)");
+      console.log("\\n✅ Bot WhatsApp sudah siap! (Baileys v7.0.0)");
       console.log("📋 Kirim !help di chat untuk lihat perintah\\n");
       return;
     }
@@ -400,8 +400,8 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
     // ═══════════════════════════════════════
     // ═══ USER COMMANDS ═══
     // ═══════════════════════════════════════
-    if (command === "!ping") { return reply("🏓 Pong! Bot aktif v6.0.0"); }
-    if (command === "!versi") { return reply("🤖 Bot WA Agung Adi Store v6.0.0\\n📅 " + new Date().toLocaleString("id-ID")); }
+    if (command === "!ping") { return reply("🏓 Pong! Bot aktif v7.0.0"); }
+    if (command === "!versi") { return reply("🤖 Bot WA Agung Adi Store v7.0.0\\n📅 " + new Date().toLocaleString("id-ID")); }
     if (command === "!waktu") { return reply("🕐 Waktu server: " + new Date().toLocaleString("id-ID", { timeZone: "Asia/Jakarta" }) + " WIB"); }
 
     if (command === "!help" || command === "!menu") {
@@ -967,7 +967,7 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
     if (command === "!admin") {
       if (!isAdmin(msg)) return reply("❌ Hanya admin yang bisa akses.");
       return reply([
-        "🔐 *Perintah Admin v6.0.0:*",
+        "🔐 *Perintah Admin v7.0.0:*",
         "",
         "💡 Semua perintah admin sekarang pakai *username* bukan visitor_id!",
         "",
@@ -1530,7 +1530,7 @@ startBot().catch((error) => {
   }
 
   function generateReadmeMd() {
-    return `# 🤖 Bot WhatsApp - Agung Adi Store v6.0.0
+    return `# 🤖 Bot WhatsApp - Agung Adi Store v7.0.0
 
 ## 📋 Persyaratan
 - Node.js >= 18
