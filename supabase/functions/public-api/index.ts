@@ -500,6 +500,69 @@ Deno.serve(async (req) => {
         result = data;
         break;
       }
+      // ── Login (verify credentials) ──
+      case "login": {
+        if (req.method !== "POST") return new Response(JSON.stringify({ error: "POST required" }), { status: 405, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        const body = await req.json();
+        const { identifier, password } = body;
+        if (!identifier || !password) return new Response(JSON.stringify({ error: "identifier and password required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+
+        // Normalize phone
+        const normalizePhone = (v: string) => {
+          let n = v.replace(/[\s\-\(\)]/g, "");
+          if (n.startsWith("+62")) n = "0" + n.slice(3);
+          else if (n.startsWith("62") && n.length > 5) n = "0" + n.slice(2);
+          return n;
+        };
+        const isPhone = /^[\d\+]/.test(identifier);
+        const isEmail = identifier.includes("@");
+
+        let q = supabase.from("user_balances").select("id, visitor_id, username, phone, email, balance, password_hash");
+        if (isEmail) {
+          q = q.eq("email", identifier.toLowerCase());
+        } else if (isPhone) {
+          q = q.eq("phone", normalizePhone(identifier));
+        } else {
+          q = q.eq("username", identifier);
+        }
+        const { data: user } = await q.maybeSingle();
+        if (!user || !user.password_hash) return new Response(JSON.stringify({ error: "Akun tidak ditemukan atau belum punya password" }), { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+
+        // Verify password (SHA-256)
+        const encoder = new TextEncoder();
+        const hashBuffer = await crypto.subtle.digest("SHA-256", encoder.encode(password));
+        const hashHex = Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, "0")).join("");
+        if (hashHex !== user.password_hash) return new Response(JSON.stringify({ error: "Password salah" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+
+        result = { id: user.id, visitor_id: user.visitor_id, username: user.username, phone: user.phone, email: user.email, balance: user.balance };
+        break;
+      }
+      // ── Resolve username to visitor_id ──
+      case "resolve_user": {
+        const uname = url.searchParams.get("username");
+        if (!uname) return new Response(JSON.stringify({ error: "username param required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        const { data: found } = await supabase.from("user_balances").select("id, visitor_id, username, phone, email, balance").ilike("username", `%${uname}%`).limit(5);
+        result = found;
+        break;
+      }
+      // ── User transactions by username ──
+      case "user_transactions": {
+        const uname = url.searchParams.get("username");
+        if (!uname) return new Response(JSON.stringify({ error: "username param required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        const { data: u } = await supabase.from("user_balances").select("visitor_id").eq("username", uname).maybeSingle();
+        if (!u) return new Response(JSON.stringify({ error: "User not found" }), { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        const { data: txns } = await supabase.from("balance_transactions").select("*").eq("visitor_id", u.visitor_id).order("created_at", { ascending: false }).limit(20);
+        result = txns;
+        break;
+      }
+      // ── Song download URL ──
+      case "song_url": {
+        const songQuery = url.searchParams.get("q");
+        if (!songQuery) return new Response(JSON.stringify({ error: "q param required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        const { data: songs } = await supabase.from("playlist_songs").select("id, title, artist, file_url, cover_url, duration").ilike("title", `%${songQuery}%`).limit(5);
+        result = songs;
+        break;
+      }
       default:
         return new Response(JSON.stringify({
           error: "Unknown endpoint",
@@ -510,14 +573,14 @@ Deno.serve(async (req) => {
             "playlists", "artists", "public_songs", "storage",
             "vouchers", "packages", "likes", "chats", "streak_subs",
             "music_profiles", "login_history", "dashboard",
-            "follows", "game_follows",
+            "follows", "game_follows", "resolve_user", "user_transactions", "song_url",
           ],
           available_post: [
             "notifications", "add_balance", "deduct_balance", "reset_balance", "set_balance",
             "reset_credits", "set_credits", "reset_streak", "set_streak", "reset_storage",
             "reset_game_stats", "update_stock", "update_sponsor_stock",
             "broadcast", "delete_notifications",
-            "set_deposit_status", "set_ticket_status",
+            "set_deposit_status", "set_ticket_status", "login",
           ],
         }), {
           status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
