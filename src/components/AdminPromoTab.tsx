@@ -52,6 +52,7 @@ export default function AdminPromoTab() {
   const [creditPkgs, setCreditPkgs] = useState<PackageItem[]>([]);
   const [streakPkgs, setStreakPkgs] = useState<PackageItem[]>([]);
   const [storagePkgs, setStoragePkgs] = useState<PackageItem[]>([]);
+  const [bundlePkgs, setBundlePkgs] = useState<any[]>([]);
 
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<any>({});
