@@ -439,6 +439,67 @@ Deno.serve(async (req) => {
         result = { ticket_id, status };
         break;
       }
+      // ── Set balance directly ──
+      case "set_balance": {
+        if (req.method !== "POST") return new Response(JSON.stringify({ error: "POST required" }), { status: 405, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        const body = await req.json();
+        const { visitor_id, balance } = body;
+        if (!visitor_id || balance === undefined) return new Response(JSON.stringify({ error: "visitor_id and balance required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        const { data: user } = await supabase.from("user_balances").select("id, balance").eq("visitor_id", visitor_id).maybeSingle();
+        if (!user) return new Response(JSON.stringify({ error: "User not found" }), { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        await supabase.from("user_balances").update({ balance: Number(balance) }).eq("id", user.id);
+        await supabase.from("balance_transactions").insert({ visitor_id, type: Number(balance) > user.balance ? "topup" : "debit", amount: Math.abs(Number(balance) - user.balance), description: `Saldo diset ke ${balance} via API` });
+        result = { visitor_id, old_balance: user.balance, new_balance: Number(balance) };
+        break;
+      }
+      // ── Reset game stats ──
+      case "reset_game_stats": {
+        if (req.method !== "POST") return new Response(JSON.stringify({ error: "POST required" }), { status: 405, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        const body = await req.json();
+        const { visitor_id } = body;
+        if (!visitor_id) return new Response(JSON.stringify({ error: "visitor_id required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        await supabase.from("game_stats").delete().eq("visitor_id", visitor_id);
+        await supabase.from("notifications").insert({ visitor_id, title: "Game Stats Direset", message: "Semua statistik game Anda telah direset", type: "warning" });
+        result = { visitor_id, reset: true };
+        break;
+      }
+      // ── Set streak ──
+      case "set_streak": {
+        if (req.method !== "POST") return new Response(JSON.stringify({ error: "POST required" }), { status: 405, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        const body = await req.json();
+        const { visitor_id, current_streak } = body;
+        if (!visitor_id || current_streak === undefined) return new Response(JSON.stringify({ error: "visitor_id and current_streak required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        const { data: existing } = await supabase.from("daily_streaks").select("id").eq("visitor_id", visitor_id).maybeSingle();
+        if (existing) {
+          await supabase.from("daily_streaks").update({ current_streak: Number(current_streak) }).eq("id", existing.id);
+        } else {
+          await supabase.from("daily_streaks").insert({ visitor_id, current_streak: Number(current_streak) });
+        }
+        result = { visitor_id, current_streak: Number(current_streak) };
+        break;
+      }
+      // ── Update sponsor stock ──
+      case "update_sponsor_stock": {
+        if (req.method !== "POST") return new Response(JSON.stringify({ error: "POST required" }), { status: 405, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        const body = await req.json();
+        const { sponsor_id, stock } = body;
+        if (!sponsor_id || stock === undefined) return new Response(JSON.stringify({ error: "sponsor_id and stock required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        const { error } = await supabase.from("sponsors").update({ stock: Number(stock) }).eq("id", sponsor_id);
+        if (error) throw error;
+        result = { sponsor_id, stock: Number(stock) };
+        break;
+      }
+      // ── Follows ──
+      case "follows": {
+        const { data } = await supabase.from("user_follows").select("*").order("created_at", { ascending: false }).limit(100);
+        result = data;
+        break;
+      }
+      case "game_follows": {
+        const { data } = await supabase.from("game_follows").select("*").order("created_at", { ascending: false }).limit(100);
+        result = data;
+        break;
+      }
       default:
         return new Response(JSON.stringify({
           error: "Unknown endpoint",
@@ -449,11 +510,13 @@ Deno.serve(async (req) => {
             "playlists", "artists", "public_songs", "storage",
             "vouchers", "packages", "likes", "chats", "streak_subs",
             "music_profiles", "login_history", "dashboard",
+            "follows", "game_follows",
           ],
           available_post: [
-            "notifications", "add_balance", "deduct_balance", "reset_balance",
-            "reset_credits", "set_credits", "reset_streak", "reset_storage",
-            "update_stock", "broadcast", "delete_notifications",
+            "notifications", "add_balance", "deduct_balance", "reset_balance", "set_balance",
+            "reset_credits", "set_credits", "reset_streak", "set_streak", "reset_storage",
+            "reset_game_stats", "update_stock", "update_sponsor_stock",
+            "broadcast", "delete_notifications",
             "set_deposit_status", "set_ticket_status",
           ],
         }), {
