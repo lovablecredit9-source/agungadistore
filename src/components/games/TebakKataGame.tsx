@@ -224,7 +224,7 @@ export default function TebakKataGame() {
           {/* Timer + Wrong count */}
           {gameActive && (
             <div className="flex items-center justify-between">
-              <div className={`flex items-center gap-1.5 text-sm font-bold ${timeLeft <= 10 ? "text-red-500" : "text-foreground"}`}>
+              <div className={`flex items-center gap-1.5 text-sm font-bold ${timeLeft <= 10 ? "text-red-500 animate-pulse" : timeLeft <= 20 ? "text-orange-500 animate-pulse" : timeLeft <= 30 ? "text-yellow-600" : "text-foreground"}`}>
                 <Timer className="w-4 h-4" />
                 <motion.span
                   key={timeLeft}
