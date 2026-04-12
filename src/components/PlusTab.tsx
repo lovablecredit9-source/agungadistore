@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { FunctionsHttpError } from "@supabase/supabase-js";
 import { getVisitorId } from "@/lib/visitor-id";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -127,13 +128,20 @@ export default function PlusTab() {
       const { data, error } = await supabase.functions.invoke("purchase-game-credits", {
         body: { action: "purchase", visitorId: balVid, packageId: pkgId, pin: pin || undefined, voucherCode: creditVoucherValid ? creditVoucher.trim() : undefined },
       });
-      if (error) throw error;
+      if (error) {
+        if (error instanceof FunctionsHttpError) {
+          const errBody = await error.context.json();
+          if (errBody?.needPin) { setCreditNeedPin(true); setCreditSelectedPkg(pkgId); setCreditBuying(null); return; }
+          toast({ title: "Gagal", description: errBody?.error || "Terjadi kesalahan", variant: "destructive" }); setCreditBuying(null); return;
+        }
+        throw error;
+      }
       if (data?.needPin) { setCreditNeedPin(true); setCreditSelectedPkg(pkgId); setCreditBuying(null); return; }
       if (data?.error) { toast({ title: "Gagal", description: data.error, variant: "destructive" }); setCreditBuying(null); return; }
       toast({ title: "Berhasil!", description: `${data.package.label} berhasil dibeli. Sisa saldo: ${formatPrice(data.balance_remaining)}` });
       setCreditNeedPin(false); setCreditPin(""); setCreditSelectedPkg(null);
       fetchCredits(); fetchBalance();
-    } catch { toast({ title: "Error", variant: "destructive" }); }
+    } catch (e: any) { toast({ title: "Error", description: e?.message || "Terjadi kesalahan", variant: "destructive" }); }
     finally { setCreditBuying(null); }
   };
 
@@ -145,13 +153,20 @@ export default function PlusTab() {
       const { data, error } = await supabase.functions.invoke("purchase-streak-plan", {
         body: { visitorId: balVid, packageId: pkgId, pin: pin || undefined },
       });
-      if (error) throw error;
+      if (error) {
+        if (error instanceof FunctionsHttpError) {
+          const errBody = await error.context.json();
+          if (errBody?.needPin) { setStreakNeedPin(true); setStreakSelectedPkg(pkgId); setStreakBuying(null); return; }
+          toast({ title: "Gagal", description: errBody?.error || "Terjadi kesalahan", variant: "destructive" }); setStreakBuying(null); return;
+        }
+        throw error;
+      }
       if (data?.needPin) { setStreakNeedPin(true); setStreakSelectedPkg(pkgId); setStreakBuying(null); return; }
       if (data?.error) { toast({ title: "Gagal", description: data.error, variant: "destructive" }); setStreakBuying(null); return; }
       toast({ title: "Berhasil!", description: `Paket streak berhasil dibeli. Sisa saldo: ${formatPrice(data.balance_remaining)}` });
       setStreakNeedPin(false); setStreakPin(""); setStreakSelectedPkg(null);
       fetchBalance();
-    } catch { toast({ title: "Error", variant: "destructive" }); }
+    } catch (e: any) { toast({ title: "Error", description: e?.message || "Terjadi kesalahan", variant: "destructive" }); }
     finally { setStreakBuying(null); }
   };
 
@@ -163,13 +178,20 @@ export default function PlusTab() {
       const { data, error } = await supabase.functions.invoke("upgrade-storage", {
         body: { visitorId: balVid, packageId: pkgId, pin: pin || undefined },
       });
-      if (error) throw error;
+      if (error) {
+        if (error instanceof FunctionsHttpError) {
+          const errBody = await error.context.json();
+          if (errBody?.needPin) { setStorageNeedPin(true); setStorageSelectedPkg(pkgId); setStorageBuying(null); return; }
+          toast({ title: "Gagal", description: errBody?.error || "Terjadi kesalahan", variant: "destructive" }); setStorageBuying(null); return;
+        }
+        throw error;
+      }
       if (data?.needPin) { setStorageNeedPin(true); setStorageSelectedPkg(pkgId); setStorageBuying(null); return; }
       if (data?.error) { toast({ title: "Gagal", description: data.error, variant: "destructive" }); setStorageBuying(null); return; }
       toast({ title: "Berhasil!", description: `Storage berhasil ditambah. Sisa saldo: ${formatPrice(data.balance_remaining)}` });
       setStorageNeedPin(false); setStoragePin(""); setStorageSelectedPkg(null);
       fetchBalance();
-    } catch { toast({ title: "Error", variant: "destructive" }); }
+    } catch (e: any) { toast({ title: "Error", description: e?.message || "Terjadi kesalahan", variant: "destructive" }); }
     finally { setStorageBuying(null); }
   };
 
@@ -181,13 +203,20 @@ export default function PlusTab() {
       const { data, error } = await supabase.functions.invoke("purchase-bundle", {
         body: { visitorId: balVid, packageId: pkgId, pin: pin || undefined },
       });
-      if (error) throw error;
+      if (error) {
+        if (error instanceof FunctionsHttpError) {
+          const errBody = await error.context.json();
+          if (errBody?.needPin) { setBundleNeedPin(true); setBundleSelectedPkg(pkgId); setBundleBuying(null); return; }
+          toast({ title: "Gagal", description: errBody?.error || "Terjadi kesalahan", variant: "destructive" }); setBundleBuying(null); return;
+        }
+        throw error;
+      }
       if (data?.needPin) { setBundleNeedPin(true); setBundleSelectedPkg(pkgId); setBundleBuying(null); return; }
       if (data?.error) { toast({ title: "Gagal", description: data.error, variant: "destructive" }); setBundleBuying(null); return; }
       toast({ title: "Berhasil!", description: `${data.bundle_name} berhasil dibeli. Sisa saldo: ${formatPrice(data.balance_remaining)}` });
       setBundleNeedPin(false); setBundlePin(""); setBundleSelectedPkg(null);
       fetchCredits(); fetchBalance();
-    } catch { toast({ title: "Error", variant: "destructive" }); }
+    } catch (e: any) { toast({ title: "Error", description: e?.message || "Terjadi kesalahan", variant: "destructive" }); }
     finally { setBundleBuying(null); }
   };
 
