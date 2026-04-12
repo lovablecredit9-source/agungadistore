@@ -722,7 +722,8 @@ const Index = () => {
       localStorage.removeItem("balance_visitor_id");
       setUserBalance(null);
     }
-    const { data: txns } = await supabase.from("balance_transactions").select("*").eq("visitor_id", visitorId).order("created_at", { ascending: false });
+    const balVid = localStorage.getItem("balance_visitor_id") || visitorId;
+    const { data: txns } = await supabase.from("balance_transactions").select("*").eq("visitor_id", balVid).order("created_at", { ascending: false });
     if (txns) setBalanceTransactions(txns as unknown as BalanceTransaction[]);
   }
 
@@ -2449,7 +2450,7 @@ const Index = () => {
           <GameTab />
         </div>
 
-        {tab === "plus" && <PlusTab />}
+        {tab === "plus" && <PlusTab key={userBalance?.visitor_id || "no-user"} />}
 
         {tab === "adminpost" && (
           <div className="space-y-4">
