@@ -1748,7 +1748,7 @@ const AdminDashboard = () => {
                 {generatedPwResetToken && (
                   <div className="bg-accent/10 border border-accent/20 rounded-lg p-3 text-center space-y-2">
                     <p className="text-xs text-muted-foreground">Token reset sandi berhasil dibuat:</p>
-                    <p className="font-mono text-xl font-extrabold text-primary tracking-[0.2em]">{generatedPwResetToken}</p>
+                    <p className="font-mono text-xl font-extrabold text-primary tracking-[0.2em]">#{generatedPwResetToken}</p>
                     <Button size="sm" variant="outline" className="gap-1" onClick={() => copyText(generatedPwResetToken)}><Copy className="w-3 h-3" /> Salin Token</Button>
                     <p className="text-[10px] text-muted-foreground">Kirimkan token ini ke user. Berlaku 24 jam.</p>
                   </div>
