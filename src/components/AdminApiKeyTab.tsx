@@ -608,6 +608,169 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
       return reply("🎵 *Hasil Download:*\\n\\n" + list + "\\n\\n💡 Klik/salin link untuk download.");
     }
 
+    // ═══ PURCHASE COMMANDS (perlu login) ═══
+    if (command.startsWith("!beli ") && !command.startsWith("!belistreak") && !command.startsWith("!belikredit") && !command.startsWith("!belistorage") && !command.startsWith("!belibundle")) {
+      if (!session) return reply("🔒 Login dulu: !login [user] [password]");
+      const lastArg = args[args.length - 1];
+      const qty = args.length > 1 && /^\\d+$/.test(lastArg) ? Number(lastArg) : 1;
+      const nameParts = qty > 1 ? args.slice(0, -1) : args;
+      const productName = nameParts.join(" ");
+      if (!productName) return reply("⚠️ Gunakan: !beli [nama produk] [jumlah]\\n\\nContoh:\\n• !beli Netflix 1\\n• !beli Spotify Premium\\n• !beli Voucher Game 3");
+      const res = await api("purchase_product", "POST", { visitor_id: session.visitor_id, product_name: productName, quantity: qty, pin: session.pin || undefined });
+      if (res.needPin) {
+        return reply("🔐 *PIN diperlukan!*\\n\\nKirim: !setpin [6 digit] untuk set PIN sesi\\nLalu ulangi perintah !beli");
+      }
+      if (res.error) return reply("❌ " + res.error);
+      let txt = "✅ *Pembelian Berhasil!*\\n\\n📦 " + (res.product?.title || productName) + "\\n🔢 Jumlah: " + (res.quantity || qty) + "\\n💰 Total: " + fmtRp(res.total_price) + "\\n💳 Sisa Saldo: " + fmtRp(res.balance_remaining);
+      if (res.discount_amount > 0) txt += "\\n🏷️ Diskon: " + fmtRp(res.discount_amount);
+      if (res.tokens?.length) {
+        txt += "\\n\\n🎫 *Voucher:*";
+        res.tokens.forEach((t, i) => {
+          txt += "\\n" + (i+1) + ". " + t.token_code;
+          if (t.fields?.length) t.fields.forEach((f) => { txt += "\\n   " + f.field_name + ": " + f.field_value; });
+        });
+        txt += "\\n\\n💡 Salin kode voucher untuk klaim di menu Voucher.";
+      }
+      // Refresh session balance
+      session.balance = res.balance_remaining;
+      userSessions[remoteJid] = session;
+      return reply(txt);
+    }
+
+    if (command.startsWith("!belistreak")) {
+      if (!session) return reply("🔒 Login dulu: !login [user] [password]");
+      const packageName = args.join(" ");
+      if (!packageName) {
+        const pkgs = await api("packages&type=streak");
+        const list = (pkgs.data?.streak || []).map((p, i) => (i+1) + ". " + p.name + " — " + fmtRp(p.price) + " (" + p.days + " hari)").join("\\n");
+        return reply("🔥 *Paket Auto-Klaim Streak:*\\n\\n" + (list || "Tidak ada paket") + "\\n\\n💡 Gunakan: !belistreak [nama paket]");
+      }
+      const res = await api("purchase_streak", "POST", { visitor_id: session.visitor_id, package_name: packageName, pin: session.pin || undefined });
+      if (res.needPin) return reply("🔐 *PIN diperlukan!*\\nKirim: !setpin [6 digit] lalu ulangi");
+      if (res.error) return reply("❌ " + res.error);
+      session.balance = res.balance_remaining;
+      userSessions[remoteJid] = session;
+      return reply("✅ *Paket Streak Berhasil!*\\n\\n🔥 Paket: " + res.plan + "\\n📅 Aktif sampai: " + new Date(res.expires_at).toLocaleString("id-ID") + "\\n💳 Sisa Saldo: " + fmtRp(res.balance_remaining) + (res.discount_amount > 0 ? "\\n🏷️ Diskon: " + fmtRp(res.discount_amount) : "") + (res.auto_claimed ? "\\n✅ Streak hari ini otomatis diklaim!" : ""));
+    }
+
+    if (command.startsWith("!belikredit")) {
+      if (!session) return reply("🔒 Login dulu: !login [user] [password]");
+      const packageName = args.join(" ");
+      if (!packageName) {
+        const pkgs = await api("packages&type=credit");
+        const list = (pkgs.data?.credit || []).map((p, i) => (i+1) + ". " + p.label + " — " + fmtRp(p.price) + " (" + (p.is_unlimited ? "Unlimited " + p.unlimited_days + " hari" : p.credits + " kredit") + ")").join("\\n");
+        return reply("💎 *Paket Kredit Game:*\\n\\n" + (list || "Tidak ada paket") + "\\n\\n💡 Gunakan: !belikredit [nama paket]");
+      }
+      const res = await api("purchase_credits", "POST", { visitor_id: session.visitor_id, package_name: packageName, pin: session.pin || undefined });
+      if (res.needPin) return reply("🔐 *PIN diperlukan!*\\nKirim: !setpin [6 digit] lalu ulangi");
+      if (res.error) return reply("❌ " + res.error);
+      session.balance = res.balance_remaining;
+      userSessions[remoteJid] = session;
+      return reply("✅ *Kredit Game Berhasil!*\\n\\n💎 " + (res.plan || packageName) + "\\n💳 Sisa Saldo: " + fmtRp(res.balance_remaining) + (res.discount_amount > 0 ? "\\n🏷️ Diskon: " + fmtRp(res.discount_amount) : ""));
+    }
+
+    if (command.startsWith("!belistorage")) {
+      if (!session) return reply("🔒 Login dulu: !login [user] [password]");
+      const packageName = args.join(" ");
+      if (!packageName) {
+        const pkgs = await api("packages&type=storage");
+        const list = (pkgs.data?.storage || []).map((p, i) => (i+1) + ". " + p.name + " — " + fmtRp(p.price) + " (" + p.storage_mb + " MB)").join("\\n");
+        return reply("💾 *Paket Storage Musik:*\\n\\n" + (list || "Tidak ada paket") + "\\n\\n💡 Gunakan: !belistorage [nama paket]");
+      }
+      const res = await api("purchase_storage", "POST", { visitor_id: session.visitor_id, package_name: packageName, pin: session.pin || undefined });
+      if (res.needPin) return reply("🔐 *PIN diperlukan!*\\nKirim: !setpin [6 digit] lalu ulangi");
+      if (res.error) return reply("❌ " + res.error);
+      session.balance = res.balance_remaining;
+      userSessions[remoteJid] = session;
+      return reply("✅ *Storage Berhasil!*\\n\\n💾 " + (res.plan || packageName) + "\\n💳 Sisa Saldo: " + fmtRp(res.balance_remaining) + (res.discount_amount > 0 ? "\\n🏷️ Diskon: " + fmtRp(res.discount_amount) : ""));
+    }
+
+    if (command.startsWith("!belibundle")) {
+      if (!session) return reply("🔒 Login dulu: !login [user] [password]");
+      const packageName = args.join(" ");
+      if (!packageName) {
+        const pkgs = await api("packages&type=bundle");
+        const list = (pkgs.data?.bundle || []).map((p, i) => (i+1) + ". " + p.name + " — " + fmtRp(p.price) + " (" + p.credits + " kredit + " + p.streak_days + " hari streak + " + p.storage_mb + " MB)").join("\\n");
+        return reply("🎁 *Paket Bundle:*\\n\\n" + (list || "Tidak ada paket") + "\\n\\n💡 Gunakan: !belibundle [nama paket]");
+      }
+      const res = await api("purchase_bundle", "POST", { visitor_id: session.visitor_id, package_name: packageName, pin: session.pin || undefined });
+      if (res.needPin) return reply("🔐 *PIN diperlukan!*\\nKirim: !setpin [6 digit] lalu ulangi");
+      if (res.error) return reply("❌ " + res.error);
+      session.balance = res.balance_remaining;
+      userSessions[remoteJid] = session;
+      return reply("✅ *Bundle Berhasil!*\\n\\n🎁 " + (res.plan || packageName) + "\\n💳 Sisa Saldo: " + fmtRp(res.balance_remaining) + (res.discount_amount > 0 ? "\\n🏷️ Diskon: " + fmtRp(res.discount_amount) : ""));
+    }
+
+    // ── SET PIN SESSION ──
+    if (command.startsWith("!setpin")) {
+      if (!session) return reply("🔒 Login dulu: !login [user] [password]");
+      const pinVal = args[0];
+      if (!pinVal || pinVal.length !== 6 || !/^\\d{6}$/.test(pinVal)) return reply("⚠️ PIN harus 6 digit angka.\\nGunakan: !setpin 123456");
+      session.pin = pinVal;
+      userSessions[remoteJid] = session;
+      return reply("✅ PIN sesi berhasil disimpan.\\n🔒 PIN ini digunakan untuk verifikasi pembelian di sesi ini.");
+    }
+
+    // ── DETAIL TRANSAKSI ──
+    if (command.startsWith("!detailtrx")) {
+      if (!session) return reply("🔒 Login dulu: !login [user] [password]");
+      const trxId = args[0];
+      if (!trxId) return reply("⚠️ Gunakan: !detailtrx [TRX-ID]\\nContoh: !detailtrx TRX-20260412-A1B2C3");
+      const res = await api("transaction_detail&trx_id=" + encodeURIComponent(trxId));
+      if (res.error) return reply("❌ " + res.error);
+      const t = res.data;
+      if (!t) return reply("❌ Transaksi tidak ditemukan.");
+      let txt = "📋 *Detail Transaksi:*\\n\\n🆔 " + (t.trx_id || "-");
+      txt += "\\n📌 Tipe: " + (t.type || "-").toUpperCase();
+      txt += "\\n💰 Jumlah: " + fmtRp(t.amount);
+      txt += "\\n📝 Deskripsi: " + (t.description || "-");
+      txt += "\\n📅 Tanggal: " + new Date(t.created_at).toLocaleString("id-ID");
+      if (t.products) txt += "\\n📦 Produk: " + t.products.title + " (" + fmtRp(t.products.price) + ")";
+      if (t.token_id) txt += "\\n🎫 Token ID: " + t.token_id;
+      return reply(txt);
+    }
+
+    // ── GROSIR / WHOLESALE ──
+    if (command.startsWith("!grosir")) {
+      const q = args.join(" ");
+      if (!q) return reply("⚠️ Gunakan: !grosir [nama produk]");
+      const pRes = await api("products");
+      const p = (pRes.data || []).find((x) => x.title.toLowerCase().includes(q.toLowerCase()));
+      if (!p) return reply("❌ Produk '" + q + "' tidak ditemukan.");
+      const wRes = await api("wholesale&product_id=" + p.id);
+      let txt = "📦 *Harga Grosir: " + p.title + "*\\n\\n💰 Harga satuan: " + fmtRp(p.price);
+      if (!wRes.data?.length) {
+        txt += "\\n\\nBelum ada harga grosir untuk produk ini.";
+      } else {
+        txt += "\\n\\n📊 *Tier Grosir:*";
+        wRes.data.forEach((w) => { txt += "\\n• Min " + w.min_quantity + " pcs → " + fmtRp(w.price_per_item) + "/pcs"; });
+      }
+      return reply(txt);
+    }
+
+    // ── FLASH SALE ──
+    if (command === "!flashsale") {
+      const res = await api("admin_settings");
+      const settings = Object.fromEntries((res.data || []).map((r) => [r.setting_key, r.setting_value || ""]));
+      const flashEnd = settings.flash_sale_end;
+      const isActive = !!flashEnd && new Date(flashEnd) > new Date();
+      if (!isActive) return reply("🔥 Tidak ada Flash Sale aktif saat ini.");
+      const endDate = new Date(flashEnd).toLocaleString("id-ID");
+      let txt = "🔥 *FLASH SALE AKTIF!*\\n⏰ Berakhir: " + endDate + "\\n";
+      const categories = [
+        { key: "promo_product_discount", label: "Produk" },
+        { key: "promo_credit_discount", label: "Kredit Game" },
+        { key: "promo_streak_discount", label: "Streak" },
+        { key: "promo_storage_discount", label: "Storage" },
+        { key: "promo_bundle_discount", label: "Bundle" },
+      ];
+      categories.forEach((c) => {
+        const d = Number(settings[c.key] || 0);
+        if (d > 0) txt += "\\n🏷️ " + c.label + ": *" + d + "% OFF*";
+      });
+      return reply(txt);
+    }
+
     // ── PRODUK ──
     if (command === "!produk") {
       const res = await api("products");
