@@ -120,6 +120,18 @@ const qrcode = require("qrcode-terminal");
 const API_KEY = "${apiKey}";
 const BASE = "${baseUrl}";
 
+// === KONFIGURASI ADMIN ===
+// Tambahkan nomor admin yang boleh akses perintah admin
+// Format: "628xxxxxxxxxx@c.us"
+const ADMIN_NUMBERS = [
+  // "6285769302532@c.us",
+];
+
+function isAdmin(msg) {
+  if (ADMIN_NUMBERS.length === 0) return true; // Jika kosong, semua bisa akses
+  return ADMIN_NUMBERS.includes(msg.from);
+}
+
 const client = new Client({
   authStrategy: new LocalAuth(),
   puppeteer: {
@@ -178,31 +190,59 @@ function rp(n) {
 client.on("message", async (msg) => {
   const text = msg.body.trim().toLowerCase();
 
-  // ── MENU ──
+  // ══════════════════════════════════════
+  // 📌 MENU USER (Semua orang bisa akses)
+  // ══════════════════════════════════════
+
   if (text === "!help" || text === "!menu") {
     await msg.reply(\`🤖 *BOT AGUNG ADI STORE*
 ━━━━━━━━━━━━━━━━━━━━━━
+
+📌 *PERINTAH USER:*
 📦 *!produk* — Lihat semua produk
 🔍 *!cari [kata]* — Cari produk
 📢 *!sponsor* — Lihat sponsor aktif
-💰 *!saldo* — Cek saldo semua user
 🎵 *!lagu* — Daftar lagu
-💳 *!deposit* — Riwayat deposit
-🎟️ *!token* — Daftar token
-🔔 *!notif [pesan]* — Kirim notifikasi
-📊 *!info* — Info & statistik
-🎮 *!game [visitor_id]* — Statistik game
-🏆 *!kredit [visitor_id]* — Kredit game
-🔥 *!streak [visitor_id]* — Status streak
-💾 *!storage [visitor_id]* — Status storage
 🎤 *!artis* — Daftar artis
-🎫 *!tiket* — Tiket support terbaru
-📡 *!broadcast [pesan]* — Broadcast ke semua user
-💵 *!tambahsaldo [visitor_id] [jumlah]* — Tambah saldo
-📋 *!transaksi [visitor_id]* — Riwayat transaksi
-ℹ️ *!help* — Menu ini
+🎧 *!playlist* — Daftar playlist
+🎶 *!publik* — Lagu publik terbaru
+📊 *!info* — Info & statistik toko
+💰 *!ceksaldo [username]* — Cek saldo
+🎮 *!cekgame [username]* — Stats game user
+📋 *!paket* — Lihat paket tersedia
+🎟️ *!cekvoucher* — Voucher aktif
+🏪 *!toko* — Info toko
+🏓 *!ping* — Cek status bot
+
+🔐 *PERINTAH ADMIN:*
+Ketik *!admin* untuk lihat perintah admin.
+
 ━━━━━━━━━━━━━━━━━━━━━━
 _Bot otomatis Agung Adi Store_\`);
+    return;
+  }
+
+  // ── PING ──
+  if (text === "!ping") {
+    const start = Date.now();
+    await apiGet("dashboard");
+    const ms = Date.now() - start;
+    await msg.reply(\`🏓 *PONG!*\\n⏱️ Response: \${ms}ms\\n✅ Bot aktif & terhubung ke server\`);
+    return;
+  }
+
+  // ── TOKO ──
+  if (text === "!toko") {
+    await msg.reply(\`🏪 *AGUNG ADI STORE*
+━━━━━━━━━━━━━━━━━━
+📱 WA: 085769302532
+🌐 Web: produkklaimtransaksiagungadistore.lovable.app
+📦 Jual berbagai produk digital
+🎵 Layanan musik streaming
+🎮 Game & hiburan
+💰 Sistem saldo digital
+━━━━━━━━━━━━━━━━━━
+© 2026 Agung Adi Store\`);
     return;
   }
 
@@ -216,10 +256,11 @@ _Bot otomatis Agung Adi Store_\`);
       r += \`   💰 \${rp(p.price)}\\n\`;
       r += \`   📦 Stok: \${p.stock}\\n\`;
       if (p.category) r += \`   🏷️ \${p.category}\\n\`;
+      if (p.has_warranty) r += \`   🛡️ Bergaransi\\n\`;
       if (p.description) r += \`   📝 \${p.description.substring(0, 80)}\\n\`;
       r += "\\n";
     });
-    r += \`_Total: \${data.length} produk_\`;
+    r += \`_Total: \${data.length} produk_\\n📱 Beli: wa.me/6285769302532\`;
     await msg.reply(r);
     return;
   }
@@ -229,16 +270,8 @@ _Bot otomatis Agung Adi Store_\`);
     const keyword = msg.body.trim().substring(6).toLowerCase();
     const data = await apiGet("products");
     if (!data) { await msg.reply("❌ Gagal mengambil data."); return; }
-    const hasil = data.filter(
-      (p) =>
-        p.title.toLowerCase().includes(keyword) ||
-        (p.category || "").toLowerCase().includes(keyword) ||
-        (p.description || "").toLowerCase().includes(keyword)
-    );
-    if (hasil.length === 0) {
-      await msg.reply(\`🔍 Tidak ditemukan produk "*\${keyword}*"\`);
-      return;
-    }
+    const hasil = data.filter(p => p.title.toLowerCase().includes(keyword) || (p.category || "").toLowerCase().includes(keyword) || (p.description || "").toLowerCase().includes(keyword));
+    if (hasil.length === 0) { await msg.reply(\`🔍 Tidak ditemukan produk "*\${keyword}*"\`); return; }
     let r = \`🔍 *HASIL: "\${keyword}"*\\n━━━━━━━━━━━━━━━━━━\\n\\n\`;
     hasil.forEach((p, i) => {
       r += \`*\${i + 1}. \${p.title}*\\n   💰 \${rp(p.price)} | 📦 Stok: \${p.stock}\\n\\n\`;
@@ -253,24 +286,13 @@ _Bot otomatis Agung Adi Store_\`);
     const data = await apiGet("sponsors");
     if (!data || data.length === 0) { await msg.reply("📢 Belum ada sponsor."); return; }
     let r = "📢 *DAFTAR SPONSOR*\\n━━━━━━━━━━━━━━━━━━\\n\\n";
-    data.forEach((s, i) => {
+    data.filter(s => s.is_active).forEach((s, i) => {
       r += \`*\${i + 1}. \${s.title}* (#\${s.sponsor_number})\\n\`;
       r += \`   👤 \${s.seller_name}\\n\`;
       r += \`   💰 \${rp(s.price)} | 📦 Stok: \${s.stock}\\n\`;
+      r += \`   👁️ \${s.view_count}x dilihat\\n\`;
       if (s.wa_number) r += \`   📱 WA: \${s.wa_number}\\n\`;
-      r += \`   ⏰ \${s.is_active ? "✅ Aktif" : "❌ Nonaktif"}\\n\\n\`;
-    });
-    await msg.reply(r);
-    return;
-  }
-
-  // ── SALDO ──
-  if (text === "!saldo") {
-    const data = await apiGet("balances");
-    if (!data || data.length === 0) { await msg.reply("💰 Belum ada data saldo."); return; }
-    let r = "💰 *DAFTAR SALDO*\\n━━━━━━━━━━━━━━━━━━\\n\\n";
-    data.forEach((b, i) => {
-      r += \`\${i + 1}. *\${b.username}*: \${rp(b.balance)}\\n\`;
+      r += "\\n";
     });
     await msg.reply(r);
     return;
@@ -290,23 +312,264 @@ _Bot otomatis Agung Adi Store_\`);
     return;
   }
 
-  // ── DEPOSIT ──
-  if (text === "!deposit") {
-    const data = await apiGet("deposits");
-    if (!data || data.length === 0) { await msg.reply("💳 Belum ada deposit."); return; }
-    let r = "💳 *RIWAYAT DEPOSIT*\\n━━━━━━━━━━━━━━━━━━\\n\\n";
-    data.slice(0, 10).forEach((d, i) => {
-      const tgl = new Date(d.created_at).toLocaleString("id-ID");
-      r += \`\${i + 1}. *\${d.username}* — \${rp(d.amount)}\\n\`;
-      r += \`   📅 \${tgl}\\n\`;
-      r += \`   💳 \${d.payment_method.toUpperCase()} | \${d.status === "success" ? "✅" : "⏳"} \${d.status}\\n\\n\`;
+  // ── ARTIS ──
+  if (text === "!artis") {
+    const data = await apiGet("artists");
+    if (!data || data.length === 0) { await msg.reply("🎤 Belum ada artis."); return; }
+    let r = "🎤 *DAFTAR ARTIS*\\n━━━━━━━━━━━━━━━━━━\\n\\n";
+    data.forEach((a, i) => {
+      r += \`\${i + 1}. *\${a.name}*\`;
+      if (a.genre) r += \` — \${a.genre}\`;
+      if (a.bio) r += \`\\n   📝 \${a.bio.substring(0, 60)}\`;
+      r += "\\n";
     });
     await msg.reply(r);
     return;
   }
 
-  // ── TOKEN ──
+  // ── PLAYLIST ──
+  if (text === "!playlist") {
+    const data = await apiGet("playlists");
+    if (!data || data.length === 0) { await msg.reply("🎧 Belum ada playlist."); return; }
+    let r = "🎧 *DAFTAR PLAYLIST*\\n━━━━━━━━━━━━━━━━━━\\n\\n";
+    data.forEach((p, i) => {
+      const items = p.playlist_items ? p.playlist_items.length : 0;
+      r += \`\${i + 1}. *\${p.name}* (\${items} lagu) — \${p.playlist_type}\\n\`;
+    });
+    await msg.reply(r);
+    return;
+  }
+
+  // ── PUBLIK (lagu publik) ──
+  if (text === "!publik") {
+    const data = await apiGet("public_songs");
+    if (!data || data.length === 0) { await msg.reply("🎶 Belum ada lagu publik."); return; }
+    let r = "🎶 *LAGU PUBLIK TERBARU*\\n━━━━━━━━━━━━━━━━━━\\n\\n";
+    data.filter(s => s.status === "approved").forEach((s, i) => {
+      r += \`\${i + 1}. *\${s.title}* — \${s.artist}\\n\`;
+      if (s.description) r += \`   📝 \${s.description.substring(0, 60)}\\n\`;
+      r += "\\n";
+    });
+    await msg.reply(r);
+    return;
+  }
+
+  // ── INFO / STATISTIK ──
+  if (text === "!info") {
+    const data = await apiGet("dashboard");
+    if (!data) { await msg.reply("❌ Gagal mengambil statistik."); return; }
+    let r = "📊 *STATISTIK TOKO*\\n━━━━━━━━━━━━━━━━━━\\n\\n";
+    r += \`📦 Produk: \${data.products}\\n\`;
+    r += \`📢 Sponsor: \${data.sponsors}\\n\`;
+    r += \`👥 User: \${data.users}\\n\`;
+    r += \`🎵 Lagu: \${data.songs}\\n\`;
+    r += \`🎤 Artis: \${data.artists}\\n\`;
+    r += \`🎶 Lagu Publik: \${data.public_songs}\\n\`;
+    r += \`💳 Deposit: \${data.deposits}\\n\`;
+    r += \`🎫 Tiket: \${data.tickets}\\n\`;
+    r += \`\\n💰 Total saldo: \${rp(data.total_balance)}\\n\`;
+    r += \`\\n📅 \${new Date().toLocaleString("id-ID")}\`;
+    await msg.reply(r);
+    return;
+  }
+
+  // ── CEK SALDO USER ──
+  if (text.startsWith("!ceksaldo")) {
+    const keyword = msg.body.trim().split(" ").slice(1).join(" ").toLowerCase();
+    const data = await apiGet("balances");
+    if (!data) { await msg.reply("❌ Gagal mengambil data."); return; }
+    if (!keyword) {
+      let r = "💰 *DAFTAR SALDO*\\n━━━━━━━━━━━━━━━━━━\\n\\n";
+      data.forEach((b, i) => { r += \`\${i + 1}. *\${b.username}*: \${rp(b.balance)}\\n\`; });
+      await msg.reply(r);
+      return;
+    }
+    const hasil = data.filter(b => b.username.toLowerCase().includes(keyword));
+    if (hasil.length === 0) { await msg.reply(\`👤 User "\${keyword}" tidak ditemukan.\`); return; }
+    let r = \`💰 *SALDO: "\${keyword}"*\\n━━━━━━━━━━━━━━━━━━\\n\\n\`;
+    hasil.forEach((b, i) => { r += \`\${i + 1}. *\${b.username}*: \${rp(b.balance)}\\n   📧 \${b.email || "-"} | 📱 \${b.phone || "-"}\\n\\n\`; });
+    await msg.reply(r);
+    return;
+  }
+
+  // ── CEK GAME USER ──
+  if (text.startsWith("!cekgame")) {
+    const keyword = msg.body.trim().split(" ").slice(1).join(" ").toLowerCase();
+    if (!keyword) { await msg.reply("❌ Tulis: !cekgame [username]"); return; }
+    const balances = await apiGet("balances");
+    if (!balances) { await msg.reply("❌ Gagal mengambil data."); return; }
+    const user = balances.find(b => b.username.toLowerCase().includes(keyword));
+    if (!user) { await msg.reply(\`👤 User "\${keyword}" tidak ditemukan.\`); return; }
+    const [stats, credits, streak] = await Promise.all([
+      apiGet("game_stats&visitor_id=" + user.visitor_id),
+      apiGet("game_credits&visitor_id=" + user.visitor_id),
+      apiGet("streaks&visitor_id=" + user.visitor_id),
+    ]);
+    let r = \`🎮 *GAME INFO: \${user.username}*\\n━━━━━━━━━━━━━━━━━━\\n\\n\`;
+    if (credits && credits.length > 0) {
+      r += \`🏆 Kredit: \${credits[0].credits}\`;
+      if (credits[0].unlimited_until) r += \` | ♾️ s/d \${new Date(credits[0].unlimited_until).toLocaleDateString("id-ID")}\`;
+      r += "\\n";
+    }
+    if (streak && streak.length > 0) {
+      r += \`🔥 Streak: \${streak[0].current_streak} hari (Terlama: \${streak[0].longest_streak})\\n\`;
+    }
+    if (stats && stats.length > 0) {
+      r += "\\n📊 *Stats per game:*\\n";
+      stats.forEach(g => { r += \`   • \${g.game_type}: W\${g.wins} L\${g.losses} | \${g.points} poin\\n\`; });
+    }
+    await msg.reply(r);
+    return;
+  }
+
+  // ── PAKET ──
+  if (text === "!paket") {
+    const data = await apiGet("packages");
+    if (!data) { await msg.reply("❌ Gagal mengambil data paket."); return; }
+    let r = "📋 *PAKET TERSEDIA*\\n━━━━━━━━━━━━━━━━━━\\n\\n";
+    if (data.credit && data.credit.length > 0) {
+      r += "🎮 *Paket Kredit Game:*\\n";
+      data.credit.forEach(p => {
+        r += \`   • \${p.label}: \${p.is_unlimited ? "♾️ Unlimited " + p.unlimited_days + " hari" : p.credits + " kredit"} — \${rp(p.price)}\\n\`;
+      });
+      r += "\\n";
+    }
+    if (data.streak && data.streak.length > 0) {
+      r += "🔥 *Paket Streak:*\\n";
+      data.streak.forEach(p => { r += \`   • \${p.name}: \${p.days} hari — \${rp(p.price)}\\n\`; });
+      r += "\\n";
+    }
+    if (data.storage && data.storage.length > 0) {
+      r += "💾 *Paket Storage:*\\n";
+      data.storage.forEach(p => { r += \`   • \${p.name}: \${p.storage_mb} MB — \${rp(p.price)}\\n\`; });
+      r += "\\n";
+    }
+    if (data.bundle && data.bundle.length > 0) {
+      r += "📦 *Paket Bundle:*\\n";
+      data.bundle.forEach(p => { r += \`   • \${p.name}: \${p.credits} kredit + \${p.streak_days}h streak + \${p.storage_mb}MB — \${rp(p.price)}\\n\`; });
+    }
+    await msg.reply(r);
+    return;
+  }
+
+  // ── CEK VOUCHER ──
+  if (text === "!cekvoucher") {
+    const data = await apiGet("vouchers");
+    if (!data) { await msg.reply("❌ Gagal mengambil data voucher."); return; }
+    let r = "🎟️ *VOUCHER AKTIF*\\n━━━━━━━━━━━━━━━━━━\\n\\n";
+    let count = 0;
+    if (data.discount) {
+      data.discount.filter(v => v.is_active).forEach(v => { r += \`🏷️ *\${v.code}* — Diskon \${rp(v.discount_amount)} (sisa: \${v.max_uses - v.used_count})\\n\`; count++; });
+    }
+    if (data.game) {
+      data.game.filter(v => v.is_active).forEach(v => { r += \`🎮 *\${v.code}* — Diskon game \${rp(v.discount_amount)} (sisa: \${v.max_uses - v.used_count})\\n\`; count++; });
+    }
+    if (data.streak) {
+      data.streak.filter(v => v.is_active).forEach(v => { r += \`🔥 *\${v.code}* — Diskon streak \${rp(v.discount_amount)} (sisa: \${v.max_uses - v.used_count})\\n\`; count++; });
+    }
+    if (data.music) {
+      data.music.filter(v => v.is_active).forEach(v => { r += \`🎵 *\${v.code}* — Diskon musik \${rp(v.discount_amount)} (sisa: \${v.max_uses - v.used_count})\\n\`; count++; });
+    }
+    if (data.storage) {
+      data.storage.filter(v => v.is_active).forEach(v => { r += \`💾 *\${v.code}* — Storage \${v.storage_mb}MB (sisa: \${v.max_uses - v.used_count})\\n\`; count++; });
+    }
+    if (count === 0) r += "_Tidak ada voucher aktif saat ini._";
+    await msg.reply(r);
+    return;
+  }
+
+  // ══════════════════════════════════════
+  // 🔐 MENU ADMIN (Hanya admin)
+  // ══════════════════════════════════════
+
+  if (text === "!admin") {
+    if (!isAdmin(msg)) { await msg.reply("🔒 Perintah ini hanya untuk admin."); return; }
+    await msg.reply(\`🔐 *PERINTAH ADMIN*
+━━━━━━━━━━━━━━━━━━━━━━
+
+💰 *SALDO:*
+!saldo — Semua saldo user
+!tambahsaldo [vid] [jumlah] — Tambah saldo
+!kurangsaldo [vid] [jumlah] — Kurangi saldo
+!resetsaldo [vid] — Reset saldo ke 0
+
+🎮 *GAME:*
+!game [vid] — Stats game
+!kredit [vid] — Kredit game
+!setkredit [vid] [jumlah] — Set kredit
+!resetkredit [vid] — Reset kredit ke 0
+!profil [vid] — Profil game
+
+🔥 *STREAK:*
+!streak [vid] — Status streak
+!resetstreak [vid] — Reset streak
+
+💾 *STORAGE:*
+!storage [vid] — Status storage
+!resetstorage [vid] — Reset storage
+
+📦 *PRODUK:*
+!stok [id] [jumlah] — Update stok
+!deposit — Riwayat deposit
+!setdeposit [id] [status] — Ubah status deposit
+!token — Daftar token
+
+👥 *USER:*
+!user [nama] — Cari user
+!loginhistory [vid] — Riwayat login
+!hapusnotif [vid] — Hapus semua notif
+
+🎫 *SUPPORT:*
+!tiket — Tiket support
+!settiket [id] [status] — Ubah status tiket
+!chat — Chat produk terbaru
+
+📡 *BROADCAST:*
+!notif [pesan] — Kirim notifikasi
+!broadcast [pesan] — Broadcast ke semua
+!dashboard — Dashboard lengkap
+!likes — Statistik likes
+
+━━━━━━━━━━━━━━━━━━━━━━
+_🔐 Hanya admin yang bisa akses_\`);
+    return;
+  }
+
+  // ═══ ADMIN COMMANDS ═══
+
+  // ── SALDO (admin) ──
+  if (text === "!saldo") {
+    if (!isAdmin(msg)) { await msg.reply("🔒 Perintah admin. Gunakan !ceksaldo"); return; }
+    const data = await apiGet("balances");
+    if (!data || data.length === 0) { await msg.reply("💰 Belum ada data saldo."); return; }
+    let r = "💰 *DAFTAR SALDO USER*\\n━━━━━━━━━━━━━━━━━━\\n\\n";
+    data.forEach((b, i) => {
+      r += \`\${i + 1}. *\${b.username}*: \${rp(b.balance)}\\n   🆔 \${b.visitor_id.substring(0, 16)}...\\n   📧 \${b.email || "-"} | 📱 \${b.phone || "-"}\\n\\n\`;
+    });
+    await msg.reply(r);
+    return;
+  }
+
+  // ── DEPOSIT (admin) ──
+  if (text === "!deposit") {
+    if (!isAdmin(msg)) { await msg.reply("🔒 Perintah ini hanya untuk admin."); return; }
+    const data = await apiGet("deposits");
+    if (!data || data.length === 0) { await msg.reply("💳 Belum ada deposit."); return; }
+    let r = "💳 *RIWAYAT DEPOSIT*\\n━━━━━━━━━━━━━━━━━━\\n\\n";
+    data.slice(0, 15).forEach((d, i) => {
+      const tgl = new Date(d.created_at).toLocaleString("id-ID");
+      r += \`\${i + 1}. *\${d.username}* — \${rp(d.amount)}\\n\`;
+      r += \`   🆔 \${d.id.substring(0, 8)}\\n\`;
+      r += \`   📅 \${tgl}\\n\`;
+      r += \`   💳 \${d.payment_method.toUpperCase()} | \${d.status === "success" ? "✅" : d.status === "rejected" ? "❌" : "⏳"} \${d.status}\\n\\n\`;
+    });
+    await msg.reply(r);
+    return;
+  }
+
+  // ── TOKEN (admin) ──
   if (text === "!token") {
+    if (!isAdmin(msg)) { await msg.reply("🔒 Perintah ini hanya untuk admin."); return; }
     const data = await apiGet("tokens");
     if (!data || data.length === 0) { await msg.reply("🎟️ Belum ada token."); return; }
     let r = "🎟️ *DAFTAR TOKEN*\\n━━━━━━━━━━━━━━━━━━\\n\\n";
@@ -318,128 +581,109 @@ _Bot otomatis Agung Adi Store_\`);
     return;
   }
 
-  // ── INFO / STATISTIK ──
-  if (text === "!info") {
-    const [produk, sponsor, saldo, lagu] = await Promise.all([
-      apiGet("products"),
-      apiGet("sponsors"),
-      apiGet("balances"),
-      apiGet("songs"),
-    ]);
-    let r = "📊 *STATISTIK TOKO*\\n━━━━━━━━━━━━━━━━━━\\n\\n";
-    r += \`📦 Produk: \${produk ? produk.length : 0}\\n\`;
-    r += \`📢 Sponsor: \${sponsor ? sponsor.length : 0}\\n\`;
-    r += \`👥 User: \${saldo ? saldo.length : 0}\\n\`;
-    r += \`🎵 Lagu: \${lagu ? lagu.length : 0}\\n\`;
-    if (saldo && saldo.length > 0) {
-      const totalSaldo = saldo.reduce((s, b) => s + Number(b.balance), 0);
-      r += \`\\n💰 Total saldo: \${rp(totalSaldo)}\\n\`;
-    }
-    r += \`\\n📅 \${new Date().toLocaleString("id-ID")}\`;
+  // ── GAME STATS (admin) ──
+  if (text.startsWith("!game")) {
+    if (!isAdmin(msg)) { await msg.reply("🔒 Perintah admin. Gunakan !cekgame"); return; }
+    const vid = msg.body.trim().split(" ")[1];
+    const url2 = vid ? "game_stats&visitor_id=" + vid : "game_stats";
+    const data = await apiGet(url2);
+    if (!data || data.length === 0) { await msg.reply("🎮 Tidak ada data game."); return; }
+    let r = "🎮 *STATISTIK GAME*\\n━━━━━━━━━━━━━━━━━━\\n\\n";
+    data.forEach((g, i) => {
+      r += \`\${i + 1}. *\${g.game_type}*\\n   🆔 \${g.visitor_id.substring(0, 12)}\\n   🏆 W:\${g.wins} L:\${g.losses} Q:\${g.total_questions} | 💎 \${g.points} poin\\n\\n\`;
+    });
     await msg.reply(r);
     return;
   }
 
-  // ── NOTIFIKASI ──
+  // ── KREDIT (admin) ──
+  if (text.startsWith("!kredit")) {
+    if (!isAdmin(msg)) { await msg.reply("🔒 Perintah ini hanya untuk admin."); return; }
+    const vid = msg.body.trim().split(" ")[1];
+    const url2 = vid ? "game_credits&visitor_id=" + vid : "game_credits";
+    const data = await apiGet(url2);
+    if (!data || data.length === 0) { await msg.reply("🏆 Tidak ada data kredit."); return; }
+    let r = "🏆 *KREDIT GAME*\\n━━━━━━━━━━━━━━━━━━\\n\\n";
+    data.forEach((c, i) => {
+      r += \`\${i + 1}. 🆔 \${c.visitor_id.substring(0, 12)} | Kredit: \${c.credits}\`;
+      if (c.unlimited_until) r += \` | ♾️ s/d \${new Date(c.unlimited_until).toLocaleDateString("id-ID")}\`;
+      r += "\\n";
+    });
+    await msg.reply(r);
+    return;
+  }
+
+  // ── STREAK (admin) ──
+  if (text.startsWith("!streak")) {
+    if (!isAdmin(msg)) { await msg.reply("🔒 Perintah ini hanya untuk admin."); return; }
+    const vid = msg.body.trim().split(" ")[1];
+    const url2 = vid ? "streaks&visitor_id=" + vid : "streaks";
+    const data = await apiGet(url2);
+    if (!data || data.length === 0) { await msg.reply("🔥 Tidak ada data streak."); return; }
+    let r = "🔥 *STATUS STREAK*\\n━━━━━━━━━━━━━━━━━━\\n\\n";
+    data.forEach((s, i) => {
+      r += \`\${i + 1}. 🆔 \${s.visitor_id.substring(0, 12)}\\n   Streak: \${s.current_streak} hari | Total: \${s.total_claims} | Terlama: \${s.longest_streak}\\n\\n\`;
+    });
+    await msg.reply(r);
+    return;
+  }
+
+  // ── STORAGE (admin) ──
+  if (text.startsWith("!storage")) {
+    if (!isAdmin(msg)) { await msg.reply("🔒 Perintah ini hanya untuk admin."); return; }
+    const vid = msg.body.trim().split(" ")[1];
+    const url2 = vid ? "storage&visitor_id=" + vid : "storage";
+    const data = await apiGet(url2);
+    if (!data || data.length === 0) { await msg.reply("💾 Tidak ada data storage."); return; }
+    let r = "💾 *STATUS STORAGE*\\n━━━━━━━━━━━━━━━━━━\\n\\n";
+    data.forEach((s, i) => {
+      r += \`\${i + 1}. 🆔 \${s.visitor_id.substring(0, 12)} | \${s.storage_mb} MB | Kode: \${s.voucher_code}\\n\`;
+    });
+    await msg.reply(r);
+    return;
+  }
+
+  // ── PROFIL GAME (admin) ──
+  if (text.startsWith("!profil")) {
+    if (!isAdmin(msg)) { await msg.reply("🔒 Perintah ini hanya untuk admin."); return; }
+    const vid = msg.body.trim().split(" ")[1];
+    const url2 = vid ? "game_profiles&visitor_id=" + vid : "game_profiles";
+    const data = await apiGet(url2);
+    if (!data || data.length === 0) { await msg.reply("👤 Tidak ada profil game."); return; }
+    let r = "👤 *PROFIL GAME*\\n━━━━━━━━━━━━━━━━━━\\n\\n";
+    data.forEach((p, i) => {
+      r += \`\${i + 1}. *\${p.display_name}*\\n   🆔 \${p.visitor_id.substring(0, 16)}\\n   📝 \${p.description || "-"}\\n   🎭 \${p.is_guest ? "Guest" : "Registered"}\\n\\n\`;
+    });
+    await msg.reply(r);
+    return;
+  }
+
+  // ── NOTIFIKASI (admin) ──
   if (text.startsWith("!notif ")) {
+    if (!isAdmin(msg)) { await msg.reply("🔒 Perintah ini hanya untuk admin."); return; }
     const pesan = msg.body.trim().substring(7);
     if (!pesan) { await msg.reply("❌ Tulis: !notif [isi pesan]"); return; }
-    const result = await apiPost("notifications", {
-      visitor_id: "wa-bot",
-      title: "Notifikasi Bot WA",
-      message: pesan,
-      type: "info",
-    });
+    const result = await apiPost("notifications", { visitor_id: "wa-bot", title: "Notifikasi Bot WA", message: pesan, type: "info" });
     await msg.reply(result && result.success ? "✅ Notifikasi terkirim!" : "❌ Gagal mengirim.");
     return;
   }
 
-  // ── GAME STATS ──
-  if (text.startsWith("!game")) {
-    const vid = msg.body.trim().split(" ")[1];
-    const url = vid ? "game_stats&visitor_id=" + vid : "game_stats";
-    const data = await apiGet(url);
-    if (!data || data.length === 0) { await msg.reply("🎮 Tidak ada data game."); return; }
-    let r = "🎮 *STATISTIK GAME*\\n━━━━━━━━━━━━━━━━━━\\n\\n";
-    data.forEach((g, i) => {
-      r += \`\${i + 1}. *\${g.game_type}*\\n   🏆 W:\${g.wins} L:\${g.losses} | 💎 \${g.points} poin\\n\\n\`;
-    });
-    await msg.reply(r);
-    return;
-  }
-
-  // ── KREDIT GAME ──
-  if (text.startsWith("!kredit")) {
-    const vid = msg.body.trim().split(" ")[1];
-    const url = vid ? "game_credits&visitor_id=" + vid : "game_credits";
-    const data = await apiGet(url);
-    if (!data || data.length === 0) { await msg.reply("🏆 Tidak ada data kredit."); return; }
-    let r = "🏆 *KREDIT GAME*\\n━━━━━━━━━━━━━━━━━━\\n\\n";
-    data.forEach((c, i) => {
-      r += \`\${i + 1}. Kredit: \${c.credits}\`;
-      if (c.unlimited_until) r += \` | ♾️ Unlimited s/d \${new Date(c.unlimited_until).toLocaleDateString("id-ID")}\`;
-      r += "\\n";
-    });
-    await msg.reply(r);
-    return;
-  }
-
-  // ── STREAK ──
-  if (text.startsWith("!streak")) {
-    const vid = msg.body.trim().split(" ")[1];
-    const url = vid ? "streaks&visitor_id=" + vid : "streaks";
-    const data = await apiGet(url);
-    if (!data || data.length === 0) { await msg.reply("🔥 Tidak ada data streak."); return; }
-    let r = "🔥 *STATUS STREAK*\\n━━━━━━━━━━━━━━━━━━\\n\\n";
-    data.forEach((s, i) => {
-      r += \`\${i + 1}. Streak: \${s.current_streak} hari | Total: \${s.total_claims} klaim\\n   Terlama: \${s.longest_streak} hari\\n\\n\`;
-    });
-    await msg.reply(r);
-    return;
-  }
-
-  // ── STORAGE ──
-  if (text.startsWith("!storage")) {
-    const vid = msg.body.trim().split(" ")[1];
-    const url = vid ? "storage&visitor_id=" + vid : "storage";
-    const data = await apiGet(url);
-    if (!data || data.length === 0) { await msg.reply("💾 Tidak ada data storage."); return; }
-    let r = "💾 *STATUS STORAGE*\\n━━━━━━━━━━━━━━━━━━\\n\\n";
-    data.forEach((s, i) => {
-      r += \`\${i + 1}. \${s.storage_mb} MB | Kode: \${s.voucher_code}\\n\`;
-    });
-    await msg.reply(r);
-    return;
-  }
-
-  // ── ARTIS ──
-  if (text === "!artis") {
-    const data = await apiGet("artists");
-    if (!data || data.length === 0) { await msg.reply("🎤 Belum ada artis."); return; }
-    let r = "🎤 *DAFTAR ARTIS*\\n━━━━━━━━━━━━━━━━━━\\n\\n";
-    data.forEach((a, i) => {
-      r += \`\${i + 1}. *\${a.name}*\`;
-      if (a.genre) r += \` — \${a.genre}\`;
-      r += "\\n";
-    });
-    await msg.reply(r);
-    return;
-  }
-
-  // ── TIKET SUPPORT ──
+  // ── TIKET SUPPORT (admin) ──
   if (text === "!tiket") {
+    if (!isAdmin(msg)) { await msg.reply("🔒 Perintah ini hanya untuk admin."); return; }
     const data = await apiGet("tickets");
     if (!data || data.length === 0) { await msg.reply("🎫 Belum ada tiket."); return; }
     let r = "🎫 *TIKET SUPPORT*\\n━━━━━━━━━━━━━━━━━━\\n\\n";
     data.slice(0, 10).forEach((t, i) => {
-      r += \`\${i + 1}. #\${t.ticket_number} — *\${t.name}*\\n   📋 \${t.category || "-"} | \${t.status}\\n   📝 \${t.description.substring(0, 60)}\\n\\n\`;
+      r += \`\${i + 1}. #\${t.ticket_number} — *\${t.name}*\\n   🆔 \${t.id.substring(0, 8)}\\n   📋 \${t.category || "-"} | \${t.status}\\n   📝 \${t.description.substring(0, 60)}\\n\\n\`;
     });
     await msg.reply(r);
     return;
   }
 
-  // ── TRANSAKSI ──
+  // ── TRANSAKSI (admin) ──
   if (text.startsWith("!transaksi")) {
+    if (!isAdmin(msg)) { await msg.reply("🔒 Perintah ini hanya untuk admin."); return; }
     const vid = msg.body.trim().split(" ")[1];
     if (!vid) { await msg.reply("❌ Tulis: !transaksi [visitor_id]"); return; }
     const data = await apiGet("transactions&visitor_id=" + vid);
@@ -453,31 +697,210 @@ _Bot otomatis Agung Adi Store_\`);
     return;
   }
 
-  // ── TAMBAH SALDO ──
+  // ── TAMBAH SALDO (admin) ──
   if (text.startsWith("!tambahsaldo")) {
+    if (!isAdmin(msg)) { await msg.reply("🔒 Perintah ini hanya untuk admin."); return; }
     const parts = msg.body.trim().split(" ");
-    const vid = parts[1];
-    const amount = parseInt(parts[2]);
+    const vid = parts[1]; const amount = parseInt(parts[2]);
     if (!vid || isNaN(amount)) { await msg.reply("❌ Tulis: !tambahsaldo [visitor_id] [jumlah]"); return; }
     const result = await apiPost("add_balance", { visitor_id: vid, amount, description: "Top up via Bot WA" });
-    if (result && result.success) {
-      await msg.reply(\`✅ Saldo ditambahkan!\\n💰 Saldo baru: \${rp(result.data.new_balance)}\`);
-    } else {
-      await msg.reply("❌ Gagal: " + (result?.error || "Error"));
-    }
+    if (result && result.success) { await msg.reply(\`✅ Saldo ditambahkan!\\n💰 Saldo baru: \${rp(result.data.new_balance)}\`); }
+    else { await msg.reply("❌ Gagal: " + (result?.error || "Error")); }
     return;
   }
 
-  // ── BROADCAST ──
+  // ── KURANGI SALDO (admin) ──
+  if (text.startsWith("!kurangsaldo")) {
+    if (!isAdmin(msg)) { await msg.reply("🔒 Perintah ini hanya untuk admin."); return; }
+    const parts = msg.body.trim().split(" ");
+    const vid = parts[1]; const amount = parseInt(parts[2]);
+    if (!vid || isNaN(amount) || amount <= 0) { await msg.reply("❌ Tulis: !kurangsaldo [visitor_id] [jumlah]"); return; }
+    const result = await apiPost("deduct_balance", { visitor_id: vid, amount, description: "Potong saldo via Bot WA" });
+    if (result && result.success) { await msg.reply(\`✅ Saldo dikurangi!\\n💰 Saldo baru: \${rp(result.data.new_balance)}\`); }
+    else { await msg.reply("❌ Gagal: " + (result?.error || "Error")); }
+    return;
+  }
+
+  // ── RESET SALDO (admin) ──
+  if (text.startsWith("!resetsaldo")) {
+    if (!isAdmin(msg)) { await msg.reply("🔒 Perintah ini hanya untuk admin."); return; }
+    const vid = msg.body.trim().split(" ")[1];
+    if (!vid) { await msg.reply("❌ Tulis: !resetsaldo [visitor_id]"); return; }
+    const result = await apiPost("reset_balance", { visitor_id: vid });
+    if (result && result.success) { await msg.reply(\`✅ Saldo direset!\\n💰 Saldo lama: \${rp(result.data.old_balance)} → Rp 0\`); }
+    else { await msg.reply("❌ Gagal: " + (result?.error || "Error")); }
+    return;
+  }
+
+  // ── SET KREDIT (admin) ──
+  if (text.startsWith("!setkredit")) {
+    if (!isAdmin(msg)) { await msg.reply("🔒 Perintah ini hanya untuk admin."); return; }
+    const parts = msg.body.trim().split(" ");
+    const vid = parts[1]; const credits = parseInt(parts[2]);
+    if (!vid || isNaN(credits)) { await msg.reply("❌ Tulis: !setkredit [visitor_id] [jumlah]"); return; }
+    const result = await apiPost("set_credits", { visitor_id: vid, credits });
+    if (result && result.success) { await msg.reply(\`✅ Kredit diubah menjadi \${credits}\`); }
+    else { await msg.reply("❌ Gagal: " + (result?.error || "Error")); }
+    return;
+  }
+
+  // ── RESET KREDIT (admin) ──
+  if (text.startsWith("!resetkredit")) {
+    if (!isAdmin(msg)) { await msg.reply("🔒 Perintah ini hanya untuk admin."); return; }
+    const vid = msg.body.trim().split(" ")[1];
+    if (!vid) { await msg.reply("❌ Tulis: !resetkredit [visitor_id]"); return; }
+    const result = await apiPost("reset_credits", { visitor_id: vid });
+    if (result && result.success) { await msg.reply("✅ Kredit game direset ke 0"); }
+    else { await msg.reply("❌ Gagal: " + (result?.error || "Error")); }
+    return;
+  }
+
+  // ── RESET STREAK (admin) ──
+  if (text.startsWith("!resetstreak")) {
+    if (!isAdmin(msg)) { await msg.reply("🔒 Perintah ini hanya untuk admin."); return; }
+    const vid = msg.body.trim().split(" ")[1];
+    if (!vid) { await msg.reply("❌ Tulis: !resetstreak [visitor_id]"); return; }
+    const result = await apiPost("reset_streak", { visitor_id: vid });
+    if (result && result.success) { await msg.reply("✅ Streak direset ke 0"); }
+    else { await msg.reply("❌ Gagal: " + (result?.error || "Error")); }
+    return;
+  }
+
+  // ── RESET STORAGE (admin) ──
+  if (text.startsWith("!resetstorage")) {
+    if (!isAdmin(msg)) { await msg.reply("🔒 Perintah ini hanya untuk admin."); return; }
+    const vid = msg.body.trim().split(" ")[1];
+    if (!vid) { await msg.reply("❌ Tulis: !resetstorage [visitor_id]"); return; }
+    const result = await apiPost("reset_storage", { visitor_id: vid });
+    if (result && result.success) { await msg.reply("✅ Storage direset"); }
+    else { await msg.reply("❌ Gagal: " + (result?.error || "Error")); }
+    return;
+  }
+
+  // ── UPDATE STOK (admin) ──
+  if (text.startsWith("!stok")) {
+    if (!isAdmin(msg)) { await msg.reply("🔒 Perintah ini hanya untuk admin."); return; }
+    const parts = msg.body.trim().split(" ");
+    const pid = parts[1]; const stock = parseInt(parts[2]);
+    if (!pid || isNaN(stock)) { await msg.reply("❌ Tulis: !stok [product_id] [jumlah]"); return; }
+    const result = await apiPost("update_stock", { product_id: pid, stock });
+    if (result && result.success) { await msg.reply(\`✅ Stok diubah menjadi \${stock}\`); }
+    else { await msg.reply("❌ Gagal: " + (result?.error || "Error")); }
+    return;
+  }
+
+  // ── BROADCAST (admin) ──
   if (text.startsWith("!broadcast ")) {
+    if (!isAdmin(msg)) { await msg.reply("🔒 Perintah ini hanya untuk admin."); return; }
     const pesan = msg.body.trim().substring(11);
     if (!pesan) { await msg.reply("❌ Tulis: !broadcast [pesan]"); return; }
     const result = await apiPost("broadcast", { title: "📢 Broadcast", message: pesan, type: "info" });
-    if (result && result.success) {
-      await msg.reply(\`✅ Broadcast terkirim ke \${result.data.sent_to} user!\`);
-    } else {
-      await msg.reply("❌ Gagal broadcast.");
-    }
+    if (result && result.success) { await msg.reply(\`✅ Broadcast terkirim ke \${result.data.sent_to} user!\`); }
+    else { await msg.reply("❌ Gagal broadcast."); }
+    return;
+  }
+
+  // ── CARI USER (admin) ──
+  if (text.startsWith("!user ")) {
+    if (!isAdmin(msg)) { await msg.reply("🔒 Perintah ini hanya untuk admin."); return; }
+    const keyword = msg.body.trim().substring(6).toLowerCase();
+    const data = await apiGet("balances");
+    if (!data) { await msg.reply("❌ Gagal mengambil data."); return; }
+    const hasil = data.filter(b => b.username.toLowerCase().includes(keyword));
+    if (hasil.length === 0) { await msg.reply(\`👤 User "*\${keyword}*" tidak ditemukan.\`); return; }
+    let r = \`👤 *USER: "\${keyword}"*\\n━━━━━━━━━━━━━━━━━━\\n\\n\`;
+    hasil.forEach((b, i) => {
+      r += \`\${i + 1}. *\${b.username}*\\n   💰 \${rp(b.balance)}\\n   🆔 \${b.visitor_id}\\n   📧 \${b.email || "-"} | 📱 \${b.phone || "-"}\\n\\n\`;
+    });
+    await msg.reply(r);
+    return;
+  }
+
+  // ── LOGIN HISTORY (admin) ──
+  if (text.startsWith("!loginhistory")) {
+    if (!isAdmin(msg)) { await msg.reply("🔒 Perintah ini hanya untuk admin."); return; }
+    const vid = msg.body.trim().split(" ")[1];
+    if (!vid) { await msg.reply("❌ Tulis: !loginhistory [visitor_id]"); return; }
+    const data = await apiGet("login_history&visitor_id=" + vid);
+    if (!data || data.length === 0) { await msg.reply("📋 Tidak ada riwayat login."); return; }
+    let r = "📋 *RIWAYAT LOGIN*\\n━━━━━━━━━━━━━━━━━━\\n\\n";
+    data.slice(0, 10).forEach((l, i) => {
+      const tgl = new Date(l.logged_in_at).toLocaleString("id-ID");
+      r += \`\${i + 1}. 📅 \${tgl}\\n   🌐 \${l.browser || "-"} | 📱 \${l.device_info || "-"}\\n   🔗 IP: \${l.ip_address || "-"}\\n\\n\`;
+    });
+    await msg.reply(r);
+    return;
+  }
+
+  // ── HAPUS NOTIFIKASI (admin) ──
+  if (text.startsWith("!hapusnotif")) {
+    if (!isAdmin(msg)) { await msg.reply("🔒 Perintah ini hanya untuk admin."); return; }
+    const vid = msg.body.trim().split(" ")[1];
+    if (!vid) { await msg.reply("❌ Tulis: !hapusnotif [visitor_id]"); return; }
+    const result = await apiPost("delete_notifications", { visitor_id: vid });
+    if (result && result.success) { await msg.reply(\`✅ \${result.data.deleted} notifikasi dihapus\`); }
+    else { await msg.reply("❌ Gagal: " + (result?.error || "Error")); }
+    return;
+  }
+
+  // ── SET DEPOSIT STATUS (admin) ──
+  if (text.startsWith("!setdeposit")) {
+    if (!isAdmin(msg)) { await msg.reply("🔒 Perintah ini hanya untuk admin."); return; }
+    const parts = msg.body.trim().split(" ");
+    const did = parts[1]; const status = parts[2];
+    if (!did || !status) { await msg.reply("❌ Tulis: !setdeposit [deposit_id] [pending/success/rejected]"); return; }
+    const result = await apiPost("set_deposit_status", { deposit_id: did, status });
+    if (result && result.success) { await msg.reply(\`✅ Status deposit diubah ke \${status}\`); }
+    else { await msg.reply("❌ Gagal: " + (result?.error || "Error")); }
+    return;
+  }
+
+  // ── SET TIKET STATUS (admin) ──
+  if (text.startsWith("!settiket")) {
+    if (!isAdmin(msg)) { await msg.reply("🔒 Perintah ini hanya untuk admin."); return; }
+    const parts = msg.body.trim().split(" ");
+    const tid = parts[1]; const status = parts[2];
+    if (!tid || !status) { await msg.reply("❌ Tulis: !settiket [ticket_id] [open/in_progress/resolved/closed]"); return; }
+    const result = await apiPost("set_ticket_status", { ticket_id: tid, status });
+    if (result && result.success) { await msg.reply(\`✅ Status tiket diubah ke \${status}\`); }
+    else { await msg.reply("❌ Gagal: " + (result?.error || "Error")); }
+    return;
+  }
+
+  // ── CHAT PRODUK (admin) ──
+  if (text === "!chat") {
+    if (!isAdmin(msg)) { await msg.reply("🔒 Perintah ini hanya untuk admin."); return; }
+    const data = await apiGet("chats");
+    if (!data || data.length === 0) { await msg.reply("💬 Belum ada chat."); return; }
+    let r = "💬 *CHAT PRODUK*\\n━━━━━━━━━━━━━━━━━━\\n\\n";
+    data.slice(0, 10).forEach((c, i) => {
+      const msgs = c.product_chat_messages ? c.product_chat_messages.length : 0;
+      r += \`\${i + 1}. *\${c.visitor_name}* — \${c.status}\\n   💬 \${msgs} pesan\\n\\n\`;
+    });
+    await msg.reply(r);
+    return;
+  }
+
+  // ── LIKES (admin) ──
+  if (text === "!likes") {
+    if (!isAdmin(msg)) { await msg.reply("🔒 Perintah ini hanya untuk admin."); return; }
+    const data = await apiGet("likes");
+    if (!data) { await msg.reply("❌ Gagal mengambil data likes."); return; }
+    await msg.reply(\`❤️ *STATISTIK LIKES*\\n━━━━━━━━━━━━━━━━━━\\n\\n📦 Produk: \${data.products} likes\\n🎵 Lagu: \${data.songs} likes\\n📢 Sponsor: \${data.sponsors} likes\`);
+    return;
+  }
+
+  // ── DASHBOARD (admin) ──
+  if (text === "!dashboard") {
+    if (!isAdmin(msg)) { await msg.reply("🔒 Perintah ini hanya untuk admin."); return; }
+    const data = await apiGet("dashboard");
+    if (!data) { await msg.reply("❌ Gagal."); return; }
+    const likes = await apiGet("likes");
+    let r = "📊 *DASHBOARD ADMIN*\\n━━━━━━━━━━━━━━━━━━\\n\\n";
+    r += \`📦 Produk: \${data.products}\\n📢 Sponsor: \${data.sponsors}\\n👥 User: \${data.users}\\n🎵 Lagu: \${data.songs}\\n🎤 Artis: \${data.artists}\\n🎶 Lagu Publik: \${data.public_songs}\\n💳 Deposit: \${data.deposits}\\n🎫 Tiket: \${data.tickets}\\n\\n💰 Total saldo: \${rp(data.total_balance)}\\n\`;
+    if (likes) r += \`\\n❤️ Likes: 📦\${likes.products} 🎵\${likes.songs} 📢\${likes.sponsors}\\n\`;
+    r += \`\\n📅 \${new Date().toLocaleString("id-ID")}\`;
+    await msg.reply(r);
     return;
   }
 });
@@ -491,446 +914,9 @@ console.log("📱 Tunggu QR code muncul...\\n");
   const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID || "";
   const baseUrl = `https://${projectId}.supabase.co/functions/v1/public-api`;
 
-  const waFullBot = `// =============================================
-// 🤖 BOT WHATSAPP - Agung Adi Store (LENGKAP)
-// =============================================
-// File: bot.js
-// Jalankan: node bot.js
-// =============================================
-
-const { Client, LocalAuth } = require("whatsapp-web.js");
-const qrcode = require("qrcode-terminal");
-
-// ⚠️ GANTI DENGAN API KEY KAMU!
-const API_KEY = "PASTE_API_KEY_DISINI";
-const BASE = "${baseUrl}";
-
-// Inisialisasi client dengan sesi tersimpan
-const client = new Client({
-  authStrategy: new LocalAuth(),
-  puppeteer: {
-    headless: true,
-    args: ["--no-sandbox", "--disable-setuid-sandbox"],
-  },
-});
-
-// Tampilkan QR untuk login
-client.on("qr", (qr) => {
-  console.log("📱 Scan QR code di bawah dengan WhatsApp:");
-  qrcode.generate(qr, { small: true });
-});
-
-client.on("ready", () => {
-  console.log("✅ Bot WhatsApp sudah siap!");
-  console.log("📋 Ketik !help di chat untuk lihat perintah");
-});
-
-client.on("authenticated", () => {
-  console.log("🔐 Autentikasi berhasil!");
-});
-
-client.on("auth_failure", (msg) => {
-  console.error("❌ Autentikasi gagal:", msg);
-});
-
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// Helper: panggil API
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-async function apiGet(endpoint) {
-  try {
-    const res = await fetch(BASE + "?endpoint=" + endpoint, {
-      headers: { "x-api-key": API_KEY },
-    });
-    const json = await res.json();
-    if (!json.success) throw new Error(json.error || "API Error");
-    return json.data;
-  } catch (err) {
-    console.error("API Error:", err.message);
-    return null;
-  }
-}
-
-async function apiPost(endpoint, body) {
-  try {
-    const res = await fetch(BASE + "?endpoint=" + endpoint, {
-      method: "POST",
-      headers: {
-        "x-api-key": API_KEY,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(body),
-    });
-    const json = await res.json();
-    return json;
-  } catch (err) {
-    console.error("API Error:", err.message);
-    return null;
-  }
-}
-
-// Format angka ke Rupiah
-function rp(n) {
-  return "Rp " + Number(n).toLocaleString("id-ID");
-}
-
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// Handler pesan masuk
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-client.on("message", async (msg) => {
-   const text = msg.body.trim().toLowerCase();
-  const chat = await msg.getChat();
-
-  // ── MENU BANTUAN ──
-  if (text === "!help" || text === "!menu") {
-    const menu = \`🤖 *BOT AGUNG ADI STORE*
-━━━━━━━━━━━━━━━━━━━━━━
-📦 *!produk* — Lihat semua produk
-🔍 *!cari [kata]* — Cari produk
-📢 *!sponsor* — Lihat sponsor aktif
-💰 *!saldo* — Cek saldo semua user
-🎵 *!lagu* — Daftar lagu
-💳 *!deposit* — Riwayat deposit
-🎟️ *!token* — Daftar token
-🔔 *!notif [pesan]* — Kirim notifikasi
-📊 *!info* — Info & statistik
-🎮 *!game [visitor_id]* — Statistik game
-🏆 *!kredit [visitor_id]* — Kredit game
-🔥 *!streak [visitor_id]* — Status streak
-💾 *!storage [visitor_id]* — Status storage
-🎤 *!artis* — Daftar artis
-🎫 *!tiket* — Tiket support terbaru
-📡 *!broadcast [pesan]* — Broadcast ke semua user
-💵 *!tambahsaldo [visitor_id] [jumlah]* — Tambah saldo
-📋 *!transaksi [visitor_id]* — Riwayat transaksi
-👤 *!user [username]* — Cari user
-ℹ️ *!help* — Tampilkan menu ini
-━━━━━━━━━━━━━━━━━━━━━━
-_Bot otomatis Agung Adi Store_\`;
-    await msg.reply(menu);
-    return;
-  }
-
-  // ── DAFTAR PRODUK ──
-  if (text === "!produk") {
-    const data = await apiGet("products");
-    if (!data || data.length === 0) {
-      await msg.reply("📦 Belum ada produk.");
-      return;
-    }
-    let reply = "📦 *DAFTAR PRODUK*\\n━━━━━━━━━━━━━━━━━━\\n\\n";
-    data.forEach((p, i) => {
-      reply += \`*\${i + 1}. \${p.title}*\\n\`;
-      reply += \`   💰 \${rp(p.price)}\\n\`;
-      reply += \`   📦 Stok: \${p.stock}\\n\`;
-      if (p.category) reply += \`   🏷️ Kategori: \${p.category}\\n\`;
-      if (p.description) reply += \`   📝 \${p.description.substring(0, 80)}\\n\`;
-      reply += "\\n";
-    });
-    reply += \`_Total: \${data.length} produk_\`;
-    await msg.reply(reply);
-    return;
-  }
-
-  // ── CARI PRODUK ──
-  if (text.startsWith("!cari ")) {
-    const keyword = msg.body.trim().substring(6).toLowerCase();
-    const data = await apiGet("products");
-    if (!data) { await msg.reply("❌ Gagal mengambil data."); return; }
-    const hasil = data.filter(
-      (p) =>
-        p.title.toLowerCase().includes(keyword) ||
-        (p.category || "").toLowerCase().includes(keyword) ||
-        (p.description || "").toLowerCase().includes(keyword)
-    );
-    if (hasil.length === 0) {
-      await msg.reply(\`🔍 Tidak ditemukan produk dengan kata kunci "*\${keyword}*"\`);
-      return;
-    }
-    let reply = \`🔍 *HASIL PENCARIAN: "\${keyword}"*\\n━━━━━━━━━━━━━━━━━━\\n\\n\`;
-    hasil.forEach((p, i) => {
-      reply += \`*\${i + 1}. \${p.title}*\\n\`;
-      reply += \`   💰 \${rp(p.price)} | 📦 Stok: \${p.stock}\\n\\n\`;
-    });
-    reply += \`_Ditemukan: \${hasil.length} produk_\`;
-    await msg.reply(reply);
-    return;
-  }
-
-  // ── DAFTAR SPONSOR ──
-  if (text === "!sponsor") {
-    const data = await apiGet("sponsors");
-    if (!data || data.length === 0) {
-      await msg.reply("📢 Belum ada sponsor.");
-      return;
-    }
-    let reply = "📢 *DAFTAR SPONSOR*\\n━━━━━━━━━━━━━━━━━━\\n\\n";
-    data.forEach((s, i) => {
-      reply += \`*\${i + 1}. \${s.title}* (#\${s.sponsor_number})\\n\`;
-      reply += \`   👤 \${s.seller_name}\\n\`;
-      reply += \`   💰 \${rp(s.price)}\\n\`;
-      reply += \`   📦 Stok: \${s.stock}\\n\`;
-      if (s.wa_number) reply += \`   📱 WA: \${s.wa_number}\\n\`;
-      reply += \`   ⏰ Status: \${s.is_active ? "✅ Aktif" : "❌ Nonaktif"}\\n\\n\`;
-    });
-    await msg.reply(reply);
-    return;
-  }
-
-  // ── CEK SALDO ──
-  if (text === "!saldo") {
-    const data = await apiGet("balances");
-    if (!data || data.length === 0) {
-      await msg.reply("💰 Belum ada data saldo.");
-      return;
-    }
-    let reply = "💰 *DAFTAR SALDO USER*\\n━━━━━━━━━━━━━━━━━━\\n\\n";
-    data.forEach((b, i) => {
-      reply += \`\${i + 1}. *\${b.username}*: \${rp(b.balance)}\\n\`;
-    });
-    await msg.reply(reply);
-    return;
-  }
-
-  // ── DAFTAR LAGU ──
-  if (text === "!lagu") {
-    const data = await apiGet("songs");
-    if (!data || data.length === 0) {
-      await msg.reply("🎵 Belum ada lagu.");
-      return;
-    }
-    let reply = "🎵 *DAFTAR LAGU*\\n━━━━━━━━━━━━━━━━━━\\n\\n";
-    data.forEach((s, i) => {
-      const durasi = s.duration ? \`\${Math.floor(s.duration / 60)}:\${String(s.duration % 60).padStart(2, "0")}\` : "-";
-      reply += \`\${i + 1}. *\${s.title}* — \${s.artist}\\n\`;
-      reply += \`   ⏱️ \${durasi}\\n\\n\`;
-    });
-    reply += \`_Total: \${data.length} lagu_\`;
-    await msg.reply(reply);
-    return;
-  }
-
-  // ── RIWAYAT DEPOSIT ──
-  if (text === "!deposit") {
-    const data = await apiGet("deposits");
-    if (!data || data.length === 0) {
-      await msg.reply("💳 Belum ada deposit.");
-      return;
-    }
-    let reply = "💳 *RIWAYAT DEPOSIT*\\n━━━━━━━━━━━━━━━━━━\\n\\n";
-    data.slice(0, 10).forEach((d, i) => {
-      const tgl = new Date(d.created_at).toLocaleString("id-ID");
-      reply += \`\${i + 1}. *\${d.username}* — \${rp(d.amount)}\\n\`;
-      reply += \`   📅 \${tgl}\\n\`;
-      reply += \`   💳 \${d.payment_method.toUpperCase()} | \${d.status === "success" ? "✅" : "⏳"} \${d.status}\\n\\n\`;
-    });
-    await msg.reply(reply);
-    return;
-  }
-
-  // ── DAFTAR TOKEN ──
-  if (text === "!token") {
-    const data = await apiGet("tokens");
-    if (!data || data.length === 0) {
-      await msg.reply("🎟️ Belum ada token.");
-      return;
-    }
-    let reply = "🎟️ *DAFTAR TOKEN*\\n━━━━━━━━━━━━━━━━━━\\n\\n";
-    data.slice(0, 15).forEach((t, i) => {
-      const produk = t.products ? t.products.title : "-";
-      reply += \`\${i + 1}. \${t.token_code}\\n\`;
-      reply += \`   📦 \${produk} | \${t.is_claimed ? "✅ Diklaim" : "⏳ Belum"}\\n\\n\`;
-    });
-    await msg.reply(reply);
-    return;
-  }
-
-  // ── KIRIM NOTIFIKASI ──
-  if (text.startsWith("!notif ")) {
-    const pesan = msg.body.trim().substring(7);
-    if (!pesan) { await msg.reply("❌ Tulis pesan: !notif [isi pesan]"); return; }
-    const result = await apiPost("notifications", {
-      visitor_id: "wa-bot",
-      title: "Notifikasi dari Bot WA",
-      message: pesan,
-      type: "info",
-    });
-    if (result && result.success) {
-      await msg.reply("✅ Notifikasi berhasil dikirim!");
-    } else {
-      await msg.reply("❌ Gagal mengirim notifikasi.");
-    }
-    return;
-  }
-
-  // ── INFO / STATISTIK ──
-  if (text === "!info") {
-    const [produk, sponsor, saldo, lagu] = await Promise.all([
-      apiGet("products"),
-      apiGet("sponsors"),
-      apiGet("balances"),
-      apiGet("songs"),
-    ]);
-    let r = "📊 *STATISTIK TOKO*\\n━━━━━━━━━━━━━━━━━━\\n\\n";
-    r += \`📦 Produk: \${produk ? produk.length : 0}\\n\`;
-    r += \`📢 Sponsor: \${sponsor ? sponsor.length : 0}\\n\`;
-    r += \`👥 User: \${saldo ? saldo.length : 0}\\n\`;
-    r += \`🎵 Lagu: \${lagu ? lagu.length : 0}\\n\`;
-    if (saldo && saldo.length > 0) {
-      const totalSaldo = saldo.reduce((s, b) => s + Number(b.balance), 0);
-      r += \`\\n💰 Total saldo: \${rp(totalSaldo)}\\n\`;
-    }
-    r += \`\\n📅 \${new Date().toLocaleString("id-ID")}\`;
-    await msg.reply(r);
-    return;
-  }
-
-  // ── GAME STATS ──
-  if (text.startsWith("!game")) {
-    const vid = msg.body.trim().split(" ")[1];
-    const url = vid ? "game_stats&visitor_id=" + vid : "game_stats";
-    const data = await apiGet(url);
-    if (!data || data.length === 0) { await msg.reply("🎮 Tidak ada data game."); return; }
-    let r = "🎮 *STATISTIK GAME*\\n━━━━━━━━━━━━━━━━━━\\n\\n";
-    data.forEach((g, i) => {
-      r += \`\${i + 1}. *\${g.game_type}*\\n   🏆 W:\${g.wins} L:\${g.losses} | 💎 \${g.points} poin\\n\\n\`;
-    });
-    await msg.reply(r);
-    return;
-  }
-
-  // ── KREDIT GAME ──
-  if (text.startsWith("!kredit")) {
-    const vid = msg.body.trim().split(" ")[1];
-    const url = vid ? "game_credits&visitor_id=" + vid : "game_credits";
-    const data = await apiGet(url);
-    if (!data || data.length === 0) { await msg.reply("🏆 Tidak ada data kredit."); return; }
-    let r = "🏆 *KREDIT GAME*\\n━━━━━━━━━━━━━━━━━━\\n\\n";
-    data.forEach((c, i) => {
-      r += \`\${i + 1}. Kredit: \${c.credits}\`;
-      if (c.unlimited_until) r += \` | ♾️ Unlimited s/d \${new Date(c.unlimited_until).toLocaleDateString("id-ID")}\`;
-      r += "\\n";
-    });
-    await msg.reply(r);
-    return;
-  }
-
-  // ── STREAK ──
-  if (text.startsWith("!streak")) {
-    const vid = msg.body.trim().split(" ")[1];
-    const url = vid ? "streaks&visitor_id=" + vid : "streaks";
-    const data = await apiGet(url);
-    if (!data || data.length === 0) { await msg.reply("🔥 Tidak ada data streak."); return; }
-    let r = "🔥 *STATUS STREAK*\\n━━━━━━━━━━━━━━━━━━\\n\\n";
-    data.forEach((s, i) => {
-      r += \`\${i + 1}. Streak: \${s.current_streak} hari | Total: \${s.total_claims} klaim\\n   Terlama: \${s.longest_streak} hari\\n\\n\`;
-    });
-    await msg.reply(r);
-    return;
-  }
-
-  // ── STORAGE ──
-  if (text.startsWith("!storage")) {
-    const vid = msg.body.trim().split(" ")[1];
-    const url = vid ? "storage&visitor_id=" + vid : "storage";
-    const data = await apiGet(url);
-    if (!data || data.length === 0) { await msg.reply("💾 Tidak ada data storage."); return; }
-    let r = "💾 *STATUS STORAGE*\\n━━━━━━━━━━━━━━━━━━\\n\\n";
-    data.forEach((s, i) => {
-      r += \`\${i + 1}. \${s.storage_mb} MB | Kode: \${s.voucher_code}\\n\`;
-    });
-    await msg.reply(r);
-    return;
-  }
-
-  // ── ARTIS ──
-  if (text === "!artis") {
-    const data = await apiGet("artists");
-    if (!data || data.length === 0) { await msg.reply("🎤 Belum ada artis."); return; }
-    let r = "🎤 *DAFTAR ARTIS*\\n━━━━━━━━━━━━━━━━━━\\n\\n";
-    data.forEach((a, i) => {
-      r += \`\${i + 1}. *\${a.name}*\`;
-      if (a.genre) r += \` — \${a.genre}\`;
-      r += "\\n";
-    });
-    await msg.reply(r);
-    return;
-  }
-
-  // ── TIKET SUPPORT ──
-  if (text === "!tiket") {
-    const data = await apiGet("tickets");
-    if (!data || data.length === 0) { await msg.reply("🎫 Belum ada tiket."); return; }
-    let r = "🎫 *TIKET SUPPORT*\\n━━━━━━━━━━━━━━━━━━\\n\\n";
-    data.slice(0, 10).forEach((t, i) => {
-      r += \`\${i + 1}. #\${t.ticket_number} — *\${t.name}*\\n   📋 \${t.category || "-"} | \${t.status}\\n   📝 \${t.description.substring(0, 60)}\\n\\n\`;
-    });
-    await msg.reply(r);
-    return;
-  }
-
-  // ── TRANSAKSI ──
-  if (text.startsWith("!transaksi")) {
-    const vid = msg.body.trim().split(" ")[1];
-    if (!vid) { await msg.reply("❌ Tulis: !transaksi [visitor_id]"); return; }
-    const data = await apiGet("transactions&visitor_id=" + vid);
-    if (!data || data.length === 0) { await msg.reply("📋 Tidak ada transaksi."); return; }
-    let r = "📋 *RIWAYAT TRANSAKSI*\\n━━━━━━━━━━━━━━━━━━\\n\\n";
-    data.slice(0, 10).forEach((t, i) => {
-      const tgl = new Date(t.created_at).toLocaleString("id-ID");
-      r += \`\${i + 1}. \${t.type === "topup" ? "➕" : "➖"} \${rp(t.amount)}\\n   📅 \${tgl}\\n   📝 \${t.description || "-"}\\n\\n\`;
-    });
-    await msg.reply(r);
-    return;
-  }
-
-  // ── TAMBAH SALDO ──
-  if (text.startsWith("!tambahsaldo")) {
-    const parts = msg.body.trim().split(" ");
-    const vid = parts[1];
-    const amount = parseInt(parts[2]);
-    if (!vid || isNaN(amount)) { await msg.reply("❌ Tulis: !tambahsaldo [visitor_id] [jumlah]"); return; }
-    const result = await apiPost("add_balance", { visitor_id: vid, amount, description: "Top up via Bot WA" });
-    if (result && result.success) {
-      await msg.reply(\`✅ Saldo ditambahkan!\\n💰 Saldo baru: \${rp(result.data.new_balance)}\`);
-    } else {
-      await msg.reply("❌ Gagal: " + (result?.error || "Error"));
-    }
-    return;
-  }
-
-  // ── BROADCAST ──
-  if (text.startsWith("!broadcast ")) {
-    const pesan = msg.body.trim().substring(11);
-    if (!pesan) { await msg.reply("❌ Tulis: !broadcast [pesan]"); return; }
-    const result = await apiPost("broadcast", { title: "📢 Broadcast", message: pesan, type: "info" });
-    if (result && result.success) {
-      await msg.reply(\`✅ Broadcast terkirim ke \${result.data.sent_to} user!\`);
-    } else {
-      await msg.reply("❌ Gagal broadcast.");
-    }
-    return;
-  }
-
-  // ── CARI USER ──
-  if (text.startsWith("!user ")) {
-    const keyword = msg.body.trim().substring(6).toLowerCase();
-    const data = await apiGet("balances");
-    if (!data) { await msg.reply("❌ Gagal mengambil data."); return; }
-    const hasil = data.filter(b => b.username.toLowerCase().includes(keyword));
-    if (hasil.length === 0) { await msg.reply(\`👤 User "*\${keyword}*" tidak ditemukan.\`); return; }
-    let r = \`👤 *HASIL CARI USER: "\${keyword}"*\\n━━━━━━━━━━━━━━━━━━\\n\\n\`;
-    hasil.forEach((b, i) => {
-      r += \`\${i + 1}. *\${b.username}*\\n   💰 Saldo: \${rp(b.balance)}\\n   🆔 \${b.visitor_id.substring(0, 12)}...\\n\\n\`;
-    });
-    await msg.reply(r);
-    return;
-  }
-});
-
-// Jalankan bot
-client.initialize();
-console.log("🚀 Memulai bot WhatsApp...");
-console.log("📱 Tunggu QR code muncul...");`;
+  const waFullBot = `Kode bot sudah tertanam di file yang didownload.
+Gunakan tombol "Download bot.js" di atas untuk mendapatkan file lengkap dengan API Key tertanam.
+Atau salin kode dari panduan di atas.`;
 
   const setupSteps = `# =============================================
 # 🛠️ PANDUAN SETUP BOT WHATSAPP (Step by Step)
@@ -1224,44 +1210,83 @@ npm install whatsapp-web.js qrcode-terminal`}
             {/* TAB: Bot Code */}
             <TabsContent value="botcode" className="space-y-3 mt-3">
               <p className="text-xs text-muted-foreground">
-                Salin kode di bawah, paste ke file <code className="bg-muted px-1 rounded font-bold">bot.js</code>, ganti API Key, lalu jalankan <code className="bg-muted px-1 rounded">node bot.js</code>
+                Download file bot.js dari bagian atas, atau gunakan tombol download di setiap API Key. File sudah lengkap dengan semua perintah.
               </p>
 
-              <Card className="border-green-500/30 bg-green-500/5">
+              <Card className="border-blue-500/30 bg-blue-500/5">
                 <CardContent className="p-2">
-                  <p className="text-[11px] font-bold text-green-700 mb-1">📋 Perintah yang tersedia di bot:</p>
+                  <p className="text-[11px] font-bold text-blue-700 mb-1">📌 Perintah USER (Semua orang):</p>
                   <div className="grid grid-cols-2 gap-1 text-[10px]">
                     <span><code>!help</code> — Menu bantuan</span>
                     <span><code>!produk</code> — Daftar produk</span>
                     <span><code>!cari [kata]</code> — Cari produk</span>
-                    <span><code>!sponsor</code> — Daftar sponsor</span>
-                    <span><code>!saldo</code> — Saldo user</span>
+                    <span><code>!sponsor</code> — Sponsor aktif</span>
                     <span><code>!lagu</code> — Daftar lagu</span>
-                    <span><code>!deposit</code> — Riwayat deposit</span>
-                    <span><code>!token</code> — Daftar token</span>
-                    <span><code>!notif [isi]</code> — Kirim notif</span>
-                    <span><code>!info</code> — Statistik toko</span>
-                    <span><code>!game [vid]</code> — Stats game</span>
-                    <span><code>!kredit [vid]</code> — Kredit game</span>
-                    <span><code>!streak [vid]</code> — Status streak</span>
-                    <span><code>!storage [vid]</code> — Status storage</span>
                     <span><code>!artis</code> — Daftar artis</span>
-                    <span><code>!tiket</code> — Tiket support</span>
-                    <span><code>!transaksi [vid]</code> — Riwayat trx</span>
-                    <span><code>!tambahsaldo</code> — Tambah saldo</span>
-                    <span><code>!broadcast [msg]</code> — Broadcast</span>
-                    <span><code>!user [nama]</code> — Cari user</span>
+                    <span><code>!playlist</code> — Daftar playlist</span>
+                    <span><code>!publik</code> — Lagu publik</span>
+                    <span><code>!info</code> — Statistik toko</span>
+                    <span><code>!ceksaldo [nama]</code> — Cek saldo</span>
+                    <span><code>!cekgame [nama]</code> — Stats game</span>
+                    <span><code>!paket</code> — Paket tersedia</span>
+                    <span><code>!cekvoucher</code> — Voucher aktif</span>
+                    <span><code>!toko</code> — Info toko</span>
+                    <span><code>!ping</code> — Status bot</span>
                   </div>
                 </CardContent>
               </Card>
 
-              <pre className="text-[9px] bg-muted p-2 rounded overflow-x-auto font-mono whitespace-pre-wrap leading-relaxed max-h-[50vh] overflow-y-auto border">
-                {waFullBot}
-              </pre>
+              <Card className="border-red-500/30 bg-red-500/5">
+                <CardContent className="p-2">
+                  <p className="text-[11px] font-bold text-red-700 mb-1">🔐 Perintah ADMIN (Hanya admin):</p>
+                  <div className="grid grid-cols-2 gap-1 text-[10px]">
+                    <span><code>!admin</code> — Menu admin</span>
+                    <span><code>!saldo</code> — Semua saldo</span>
+                    <span><code>!tambahsaldo</code> — Tambah saldo</span>
+                    <span><code>!kurangsaldo</code> — Kurangi saldo</span>
+                    <span><code>!resetsaldo</code> — Reset saldo</span>
+                    <span><code>!deposit</code> — Riwayat deposit</span>
+                    <span><code>!setdeposit</code> — Ubah status</span>
+                    <span><code>!token</code> — Daftar token</span>
+                    <span><code>!game [vid]</code> — Stats game</span>
+                    <span><code>!kredit [vid]</code> — Kredit game</span>
+                    <span><code>!setkredit</code> — Set kredit</span>
+                    <span><code>!resetkredit</code> — Reset kredit</span>
+                    <span><code>!streak [vid]</code> — Status streak</span>
+                    <span><code>!resetstreak</code> — Reset streak</span>
+                    <span><code>!storage [vid]</code> — Storage</span>
+                    <span><code>!resetstorage</code> — Reset storage</span>
+                    <span><code>!profil [vid]</code> — Profil game</span>
+                    <span><code>!stok [id] [n]</code> — Update stok</span>
+                    <span><code>!user [nama]</code> — Cari user</span>
+                    <span><code>!loginhistory</code> — Riwayat login</span>
+                    <span><code>!transaksi</code> — Riwayat trx</span>
+                    <span><code>!tiket</code> — Tiket support</span>
+                    <span><code>!settiket</code> — Status tiket</span>
+                    <span><code>!chat</code> — Chat produk</span>
+                    <span><code>!notif [isi]</code> — Kirim notif</span>
+                    <span><code>!broadcast</code> — Broadcast</span>
+                    <span><code>!hapusnotif</code> — Hapus notif</span>
+                    <span><code>!likes</code> — Stats likes</span>
+                    <span><code>!dashboard</code> — Dashboard</span>
+                  </div>
+                </CardContent>
+              </Card>
 
-              <Button size="sm" className="w-full gap-2" onClick={() => copyText(waFullBot, "Kode bot WA")}>
-                <Copy className="w-3 h-3" /> Salin Kode Bot (Siap Pakai)
-              </Button>
+              <Card className="border-yellow-500/30 bg-yellow-500/5">
+                <CardContent className="p-2">
+                  <p className="text-[11px] font-bold text-yellow-700 mb-1">⚙️ Konfigurasi Admin:</p>
+                  <p className="text-[10px] text-muted-foreground">
+                    Di file bot.js, isi array <code className="bg-muted px-1 rounded">ADMIN_NUMBERS</code> dengan nomor WA admin.
+                    Format: <code className="bg-muted px-1 rounded">"628xxxxxxxxxx@c.us"</code>.
+                    Jika kosong, semua bisa akses perintah admin.
+                  </p>
+                </CardContent>
+              </Card>
+
+              <p className="text-[10px] text-muted-foreground text-center">
+                💡 Download file bot.js dari bagian atas halaman ini. File sudah lengkap 40+ perintah.
+              </p>
             </TabsContent>
 
             {/* TAB: API Reference */}
@@ -1282,23 +1307,41 @@ npm install whatsapp-web.js qrcode-terminal`}
               </div>
 
               <div>
-                <p className="text-xs font-bold mb-1">Endpoint GET:</p>
+                <p className="text-xs font-bold mb-1">Endpoint GET ({[
+                  "products", "sponsors", "balances", "songs", "deposits",
+                  "notifications", "tokens", "transactions", "streaks",
+                  "game_credits", "game_stats", "game_profiles", "tickets",
+                  "playlists", "artists", "public_songs", "storage",
+                  "vouchers", "packages", "likes", "chats", "streak_subs",
+                  "music_profiles", "login_history", "dashboard",
+                ].length}):</p>
                 <div className="space-y-1">
                   {[
-                    { ep: "products", desc: "Semua produk (judul, harga, stok, gambar, kategori)" },
-                    { ep: "sponsors", desc: "Sponsor/iklan aktif (penjual, harga, kontak)" },
-                    { ep: "balances", desc: "Saldo user (username, balance, visitor_id)" },
-                    { ep: "songs", desc: "Lagu di playlist (judul, artis, durasi)" },
-                    { ep: "deposits", desc: "Riwayat deposit (status, metode, jumlah)" },
-                    { ep: "tokens", desc: "Token & info produk terkait" },
-                    { ep: "notifications", desc: "Notifikasi (tambah &visitor_id=xxx)" },
-                    { ep: "game_stats", desc: "Statistik game (&visitor_id=xxx opsional)" },
-                    { ep: "game_credits", desc: "Kredit game (&visitor_id=xxx opsional)" },
-                    { ep: "streaks", desc: "Data streak (&visitor_id=xxx opsional)" },
-                    { ep: "storage", desc: "Status storage musik (&visitor_id=xxx opsional)" },
-                    { ep: "artists", desc: "Daftar artis (nama, genre, bio)" },
-                    { ep: "tickets", desc: "Tiket support terbaru (nama, kategori, status)" },
-                    { ep: "transactions", desc: "Riwayat transaksi (&visitor_id=xxx wajib)" },
+                    { ep: "products", desc: "Semua produk" },
+                    { ep: "sponsors", desc: "Sponsor aktif" },
+                    { ep: "balances", desc: "Saldo user" },
+                    { ep: "songs", desc: "Lagu playlist" },
+                    { ep: "deposits", desc: "Riwayat deposit" },
+                    { ep: "notifications", desc: "Notifikasi (?visitor_id=xxx)" },
+                    { ep: "tokens", desc: "Token & produk" },
+                    { ep: "transactions", desc: "Transaksi (?visitor_id=xxx)" },
+                    { ep: "streaks", desc: "Data streak (?visitor_id=xxx)" },
+                    { ep: "game_credits", desc: "Kredit game (?visitor_id=xxx)" },
+                    { ep: "game_stats", desc: "Stats game (?visitor_id=xxx)" },
+                    { ep: "game_profiles", desc: "Profil game (?visitor_id=xxx)" },
+                    { ep: "tickets", desc: "Tiket support" },
+                    { ep: "playlists", desc: "Playlist + items" },
+                    { ep: "artists", desc: "Daftar artis" },
+                    { ep: "public_songs", desc: "Lagu publik (?visitor_id=xxx)" },
+                    { ep: "storage", desc: "Storage musik (?visitor_id=xxx)" },
+                    { ep: "vouchers", desc: "Semua voucher (?type=discount/game/streak/music/storage)" },
+                    { ep: "packages", desc: "Paket tersedia (?type=credit/streak/storage/bundle)" },
+                    { ep: "likes", desc: "Jumlah likes (produk, lagu, sponsor)" },
+                    { ep: "chats", desc: "Chat produk + pesan" },
+                    { ep: "streak_subs", desc: "Langganan streak (?visitor_id=xxx)" },
+                    { ep: "music_profiles", desc: "Profil musik (?visitor_id=xxx)" },
+                    { ep: "login_history", desc: "Riwayat login (?visitor_id=xxx)" },
+                    { ep: "dashboard", desc: "Statistik lengkap toko" },
                   ].map(e => (
                     <div key={e.ep} className="flex items-start gap-1.5 text-[11px]">
                       <code className="bg-primary/10 text-primary px-1 rounded shrink-0 font-mono text-[10px]">{e.ep}</code>
@@ -1309,33 +1352,28 @@ npm install whatsapp-web.js qrcode-terminal`}
               </div>
 
               <div>
-                <p className="text-xs font-bold mb-1">Endpoint POST:</p>
-                <div className="text-[11px] space-y-2">
-                  <div>
-                    <code className="bg-primary/10 text-primary px-1 rounded font-mono text-[10px]">notifications</code>
-                    <pre className="text-[9px] bg-muted p-2 rounded font-mono mt-1">{`{
-  "visitor_id": "xxx",
-  "title": "Judul",
-  "message": "Isi pesan",
-  "type": "info"
-}`}</pre>
-                  </div>
-                  <div>
-                    <code className="bg-primary/10 text-primary px-1 rounded font-mono text-[10px]">add_balance</code>
-                    <pre className="text-[9px] bg-muted p-2 rounded font-mono mt-1">{`{
-  "visitor_id": "xxx",
-  "amount": 10000,
-  "description": "Top up manual"
-}`}</pre>
-                  </div>
-                  <div>
-                    <code className="bg-primary/10 text-primary px-1 rounded font-mono text-[10px]">broadcast</code>
-                    <pre className="text-[9px] bg-muted p-2 rounded font-mono mt-1">{`{
-  "title": "📢 Broadcast",
-  "message": "Isi broadcast",
-  "type": "info"
-}`}</pre>
-                  </div>
+                <p className="text-xs font-bold mb-1">Endpoint POST (13):</p>
+                <div className="space-y-1">
+                  {[
+                    { ep: "notifications", desc: "Kirim notifikasi {visitor_id, title, message, type}" },
+                    { ep: "add_balance", desc: "Tambah saldo {visitor_id, amount, description}" },
+                    { ep: "deduct_balance", desc: "Kurangi saldo {visitor_id, amount, description}" },
+                    { ep: "reset_balance", desc: "Reset saldo ke 0 {visitor_id}" },
+                    { ep: "reset_credits", desc: "Reset kredit game {visitor_id}" },
+                    { ep: "set_credits", desc: "Set kredit {visitor_id, credits}" },
+                    { ep: "reset_streak", desc: "Reset streak {visitor_id}" },
+                    { ep: "reset_storage", desc: "Reset storage {visitor_id}" },
+                    { ep: "update_stock", desc: "Update stok produk {product_id, stock}" },
+                    { ep: "broadcast", desc: "Broadcast ke semua {title, message, type}" },
+                    { ep: "delete_notifications", desc: "Hapus notif user {visitor_id}" },
+                    { ep: "set_deposit_status", desc: "Ubah status deposit {deposit_id, status}" },
+                    { ep: "set_ticket_status", desc: "Ubah status tiket {ticket_id, status}" },
+                  ].map(e => (
+                    <div key={e.ep} className="flex items-start gap-1.5 text-[11px]">
+                      <code className="bg-primary/10 text-primary px-1 rounded shrink-0 font-mono text-[10px]">{e.ep}</code>
+                      <span className="text-muted-foreground">{e.desc}</span>
+                    </div>
+                  ))}
                 </div>
               </div>
 
@@ -1357,21 +1395,13 @@ npm install whatsapp-web.js qrcode-terminal`}
               </div>
 
               <div>
-                <p className="text-xs font-bold mb-1">Contoh Python:</p>
-                <pre className="text-[9px] bg-muted p-2 rounded font-mono whitespace-pre-wrap">{`import requests
-
-API_KEY = "YOUR_KEY"
-BASE = "${baseUrl}"
-headers = {"x-api-key": API_KEY}
-
-res = requests.get(
-  f"{BASE}?endpoint=products",
-  headers=headers
-)
-data = res.json()["data"]
-for p in data:
-    print(f"{p['title']} - Rp {p['price']:,}")`}</pre>
-                <Button size="sm" variant="ghost" className="h-6 text-[10px] mt-1" onClick={() => copyText(`import requests\n\nAPI_KEY = "YOUR_KEY"\nBASE = "${baseUrl}"\nheaders = {"x-api-key": API_KEY}\n\nres = requests.get(f"{BASE}?endpoint=products", headers=headers)\ndata = res.json()["data"]\nfor p in data:\n    print(f"{p['title']} - Rp {p['price']:,}")`, "Python")}>
+                <p className="text-xs font-bold mb-1">Contoh POST:</p>
+                <pre className="text-[9px] bg-muted p-2 rounded font-mono whitespace-pre-wrap">{`curl -X POST \\
+  -H "x-api-key: YOUR_KEY" \\
+  -H "Content-Type: application/json" \\
+  -d '{"visitor_id":"xxx","amount":10000}' \\
+  "${baseUrl}?endpoint=add_balance"`}</pre>
+                <Button size="sm" variant="ghost" className="h-6 text-[10px] mt-1" onClick={() => copyText(`curl -X POST -H "x-api-key: YOUR_KEY" -H "Content-Type: application/json" -d '{"visitor_id":"xxx","amount":10000}' "${baseUrl}?endpoint=add_balance"`, "cURL POST")}>
                   <Copy className="w-3 h-3 mr-1" /> Salin
                 </Button>
               </div>
