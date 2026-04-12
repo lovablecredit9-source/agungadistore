@@ -648,6 +648,179 @@ _© 2026 Agung Adi Store_\`);
     return;
   }
 
+  // ── DETAIL PRODUK (user) ──
+  if (text.startsWith("!detailproduk ")) {
+    const keyword = msg.body.trim().substring(14).toLowerCase();
+    const data = await apiGet("products");
+    if (!data) { await msg.reply("❌ Gagal mengambil data."); return; }
+    const p = data.find(x => x.title.toLowerCase().includes(keyword));
+    if (!p) { await msg.reply(\`📦 Produk "\${keyword}" tidak ditemukan.\`); return; }
+    let r = "📦 *DETAIL PRODUK*\\n━━━━━━━━━━━━━━━━━━\\n\\n";
+    r += \`📌 *\${p.title}*\\n💰 Harga: \${rp(p.price)}\\n📦 Stok: \${p.stock}\\n🏷️ Kategori: \${p.category || "-"}\\n🛡️ Garansi: \${p.has_warranty ? "Ya ✅" : "Tidak"}\\n📝 Deskripsi:\\n\${p.description || "-"}\\n\\n📱 Beli: wa.me/6285769302532\`;
+    await msg.reply(r);
+    return;
+  }
+
+  // ── DETAIL SPONSOR (user) ──
+  if (text.startsWith("!detailsponsor ")) {
+    const keyword = msg.body.trim().substring(15).toLowerCase();
+    const data = await apiGet("sponsors");
+    if (!data) { await msg.reply("❌ Gagal mengambil data."); return; }
+    const s = data.find(x => x.title.toLowerCase().includes(keyword) || String(x.sponsor_number) === keyword);
+    if (!s) { await msg.reply(\`📢 Sponsor "\${keyword}" tidak ditemukan.\`); return; }
+    let r = "📢 *DETAIL SPONSOR*\\n━━━━━━━━━━━━━━━━━━\\n\\n";
+    r += \`📌 *\${s.title}* (#\${s.sponsor_number})\\n👤 Penjual: \${s.seller_name}\\n💰 Harga: \${rp(s.price)}\\n📦 Stok: \${s.stock}\\n🏷️ Kategori: \${s.category}\\n👁️ Dilihat: \${s.view_count}x\\n\`;
+    if (s.wa_number) r += \`📱 WA: \${s.wa_number}\\n\`;
+    if (s.instagram) r += \`📸 IG: @\${s.instagram}\\n\`;
+    if (s.tiktok) r += \`🎵 TikTok: @\${s.tiktok}\\n\`;
+    if (s.description) r += \`\\n📝 \${s.description}\\n\`;
+    r += \`\\n📱 Hubungi: wa.me/\${(s.wa_number || "6285769302532").replace(/\\D/g, "")}\`;
+    await msg.reply(r);
+    return;
+  }
+
+  // ── DETAIL ARTIS (user) ──
+  if (text.startsWith("!detailartis ")) {
+    const keyword = msg.body.trim().substring(13).toLowerCase();
+    const [artists, songs] = await Promise.all([apiGet("artists"), apiGet("songs")]);
+    if (!artists) { await msg.reply("❌ Gagal mengambil data."); return; }
+    const a = artists.find(x => x.name.toLowerCase().includes(keyword));
+    if (!a) { await msg.reply(\`🎤 Artis "\${keyword}" tidak ditemukan.\`); return; }
+    const artistSongs = songs ? songs.filter(s => s.artist.toLowerCase() === a.name.toLowerCase()) : [];
+    let r = "🎤 *DETAIL ARTIS*\\n━━━━━━━━━━━━━━━━━━\\n\\n";
+    r += \`🎤 *\${a.name}*\\n🎵 Genre: \${a.genre || "-"}\\n📝 Bio: \${a.bio || "-"}\\n🎶 Jumlah lagu: \${artistSongs.length}\\n\`;
+    if (artistSongs.length > 0) {
+      r += "\\n🎵 *Daftar Lagu:*\\n";
+      artistSongs.forEach((s, i) => {
+        const dur = s.duration ? \`\${Math.floor(s.duration / 60)}:\${String(s.duration % 60).padStart(2, "0")}\` : "-";
+        r += \`   \${i + 1}. \${s.title} (\${dur})\\n\`;
+      });
+    }
+    await msg.reply(r);
+    return;
+  }
+
+  // ── LEADERBOARD PUBLIC ──
+  if (text === "!lb" || text === "!leaderboard") {
+    const data = await apiGet("game_stats");
+    if (!data || data.length === 0) { await msg.reply("🏆 Belum ada data game."); return; }
+    const playerMap = {};
+    data.forEach(g => {
+      if (!playerMap[g.visitor_id]) playerMap[g.visitor_id] = { total: 0, wins: 0 };
+      playerMap[g.visitor_id].total += g.points;
+      playerMap[g.visitor_id].wins += g.wins;
+    });
+    const profiles = await apiGet("game_profiles");
+    const sorted = Object.entries(playerMap).sort((a, b) => b[1].total - a[1].total).slice(0, 10);
+    const medals = ["🥇", "🥈", "🥉"];
+    let r = "🏆 *LEADERBOARD GAME*\\n━━━━━━━━━━━━━━━━━━\\n\\n";
+    sorted.forEach(([vid, s], i) => {
+      const profile = profiles ? profiles.find(p => p.visitor_id === vid) : null;
+      const name = profile ? profile.display_name : vid.substring(0, 10) + "...";
+      r += \`\${medals[i] || (i + 1) + "."} *\${name}*\\n   💎 \${s.total} poin | 🏆 \${s.wins} wins\\n\\n\`;
+    });
+    await msg.reply(r);
+    return;
+  }
+
+  // ── BANTUAN / PUSAT BANTUAN ──
+  if (text === "!bantuan" || text === "!faq") {
+    await msg.reply(\`📖 *PUSAT BANTUAN*
+━━━━━━━━━━━━━━━━━━
+
+❓ *Cara beli produk?*
+Pilih produk > Hubungi admin via WA > Bayar > Terima token klaim.
+
+❓ *Cara klaim token?*
+Masuk tab Plus > Masukkan token > Klik Klaim.
+
+❓ *Cara top up saldo?*
+Tab Plus > Deposit > Pilih nominal > Bayar QRIS > Tunggu konfirmasi.
+
+❓ *Apa itu sponsor?*
+Iklankan produk di toko kami! Hubungi admin.
+
+❓ *Cara main game?*
+Tab Game > Pilih game > Butuh kredit game.
+
+❓ *Saldo tidak masuk?*
+Tunggu 1x24 jam, atau buat tiket support.
+
+❓ *Cara daftar akun?*
+Tab Plus > Buat Akun > Isi data > Selesai.
+
+📱 *Hubungi Admin:*
+wa.me/6285769302532
+
+🌐 *Website:*
+produkklaimtransaksiagungadistore.lovable.app\`);
+    return;
+  }
+
+  // ── SYARAT & KETENTUAN ──
+  if (text === "!syarat" || text === "!tos") {
+    await msg.reply(\`📜 *SYARAT & KETENTUAN*
+━━━━━━━━━━━━━━━━━━
+
+1️⃣ Pembeli wajib membaca deskripsi produk sebelum membeli.
+2️⃣ Semua transaksi bersifat final, tidak bisa refund kecuali produk bermasalah.
+3️⃣ Garansi berlaku sesuai durasi yang tertera di produk.
+4️⃣ Dilarang menyalahgunakan sistem saldo/voucher.
+5️⃣ Admin berhak menonaktifkan akun yang melanggar aturan.
+6️⃣ Sponsor harus mematuhi aturan iklan yang berlaku.
+7️⃣ Kredit game tidak bisa ditukar dengan saldo.
+8️⃣ Musik publik harus bebas hak cipta.
+9️⃣ Data pribadi dijaga kerahasiaannya.
+🔟 Syarat dapat berubah sewaktu-waktu.
+
+📱 Hubungi: wa.me/6285769302532
+_© 2026 Agung Adi Store_\`);
+    return;
+  }
+
+  // ── SOSIAL MEDIA ──
+  if (text === "!sosmed" || text === "!social") {
+    await msg.reply(\`📱 *SOCIAL MEDIA*
+━━━━━━━━━━━━━━━━━━
+
+📱 *WhatsApp:* wa.me/6285769302532
+🌐 *Website:* produkklaimtransaksiagungadistore.lovable.app
+📸 *Instagram:* @agungadistore
+🎵 *TikTok:* @agungadistore
+📘 *Facebook:* Agung Adi Store
+🐦 *Twitter/X:* @agungadistore
+📺 *YouTube:* Agung Adi Store
+
+━━━━━━━━━━━━━━━━━━
+_Follow untuk update terbaru!_\`);
+    return;
+  }
+
+  // ── RANGKUMAN TOKO ──
+  if (text === "!rangkuman" || text === "!summary") {
+    const [dashboard, likes, vouchers] = await Promise.all([
+      apiGet("dashboard"), apiGet("likes"), apiGet("vouchers")
+    ]);
+    let r = "📊 *RANGKUMAN TOKO*\\n━━━━━━━━━━━━━━━━━━\\n\\n";
+    if (dashboard) {
+      r += \`📦 *Produk:* \${dashboard.products}\\n📢 *Sponsor:* \${dashboard.sponsors}\\n🎵 *Lagu:* \${dashboard.songs}\\n🎤 *Artis:* \${dashboard.artists}\\n🎶 *Lagu Publik:* \${dashboard.public_songs}\\n👥 *User:* \${dashboard.users}\\n\\n\`;
+    }
+    if (likes) {
+      r += \`❤️ *Total Likes:*\\n   📦 Produk: \${likes.products} | 🎵 Lagu: \${likes.songs} | 📢 Sponsor: \${likes.sponsors}\\n\\n\`;
+    }
+    if (vouchers) {
+      let activeCount = 0;
+      if (vouchers.discount) activeCount += vouchers.discount.filter(v => v.is_active).length;
+      if (vouchers.game) activeCount += vouchers.game.filter(v => v.is_active).length;
+      if (vouchers.streak) activeCount += vouchers.streak.filter(v => v.is_active).length;
+      if (vouchers.music) activeCount += vouchers.music.filter(v => v.is_active).length;
+      r += \`🎟️ *Voucher Aktif:* \${activeCount}\\n\`;
+    }
+    r += \`\\n📅 \${new Date().toLocaleString("id-ID")}\\n_© 2026 Agung Adi Store_\`;
+    await msg.reply(r);
+    return;
+  }
+
   // ══════════════════════════════════════
   // 🔐 MENU ADMIN (Hanya admin)
   // ══════════════════════════════════════
