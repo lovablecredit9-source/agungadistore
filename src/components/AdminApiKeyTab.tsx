@@ -104,55 +104,87 @@ export default function AdminApiKeyTab() {
     toast({ title: "File bot.js berhasil didownload! 🤖" });
   }
 
-  function generateBotCode(apiKey: string) {
+  function generateBotCode(apiKey: string, phoneNumber?: string) {
+    const phoneConfig = phoneNumber ? `\nconst PAIRING_PHONE = "${phoneNumber.replace(/[^0-9]/g, '')}";` : `\nconst PAIRING_PHONE = ""; // Isi nomor HP untuk pairing, format: 628xxxxxxxxxx`;
     return `// =============================================
-// 🤖 BOT WHATSAPP - Agung Adi Store
+// 🤖 BOT WHATSAPP - Agung Adi Store v5.0
 // =============================================
+// Library: @whiskeysockets/baileys (Pairing Code)
 // Cara pakai:
-//   1. npm install whatsapp-web.js qrcode-terminal
+//   1. npm install
 //   2. node bot.js
-//   3. Scan QR di WhatsApp > Linked Devices
+//   3. Masukkan kode 8 digit yang muncul ke WhatsApp
 // =============================================
 
-const { Client, LocalAuth } = require("whatsapp-web.js");
-const qrcode = require("qrcode-terminal");
+const { default: makeWASocket, useMultiFileAuthState, DisconnectReason, makeCacheableSignalKeyStore } = require("@whiskeysockets/baileys");
+const pino = require("pino");
 
 // ✅ API Key sudah otomatis terisi!
 const API_KEY = "${apiKey}";
 const BASE = "${baseUrl}";
+${phoneConfig}
 
 // === KONFIGURASI ADMIN ===
-// Tambahkan nomor admin yang boleh akses perintah admin
-// Format: "628xxxxxxxxxx@c.us"
 const ADMIN_NUMBERS = [
-  // "6285769302532@c.us",
+  // "6285769302532@s.whatsapp.net",
 ];
 
 function isAdmin(msg) {
-  if (ADMIN_NUMBERS.length === 0) return true; // Jika kosong, semua bisa akses
-  return ADMIN_NUMBERS.includes(msg.from);
+  if (ADMIN_NUMBERS.length === 0) return true;
+  return ADMIN_NUMBERS.includes(msg.key.remoteJid);
 }
 
-const client = new Client({
-  authStrategy: new LocalAuth(),
-  puppeteer: {
-    headless: true,
-    args: ["--no-sandbox", "--disable-setuid-sandbox"],
-  },
-});
+async function startBot() {
+  const { state, saveCreds } = await useMultiFileAuthState("./auth_session");
+  
+  const client = makeWASocket({
+    auth: {
+      creds: state.creds,
+      keys: makeCacheableSignalKeyStore(state.keys, pino({ level: "silent" })),
+    },
+    printQRInTerminal: false,
+    logger: pino({ level: "silent" }),
+    browser: ["Agung Adi Store Bot", "Chrome", "1.0.0"],
+  });
 
-client.on("qr", (qr) => {
-  console.log("\\n📱 Scan QR code di bawah dengan WhatsApp:");
-  qrcode.generate(qr, { small: true });
-});
+  // Pairing Code (8 digit)
+  if (!client.authState.creds.registered) {
+    const phoneNum = PAIRING_PHONE || process.argv[2];
+    if (!phoneNum) {
+      console.log("❌ Masukkan nomor HP untuk pairing!");
+      console.log("   Cara: node bot.js 628xxxxxxxxxx");
+      console.log("   Atau isi PAIRING_PHONE di file bot.js");
+      process.exit(1);
+    }
+    console.log("\\n📱 Meminta kode pairing untuk: " + phoneNum);
+    setTimeout(async () => {
+      const code = await client.requestPairingCode(phoneNum);
+      console.log("\\n" + "=".repeat(40));
+      console.log("  📲 KODE PAIRING (8 DIGIT):");
+      console.log("  ➡️  " + code);
+      console.log("=".repeat(40));
+      console.log("\\n✅ Buka WhatsApp > Linked Devices > Link a Device");
+      console.log("   Pilih 'Link with phone number' dan masukkan kode di atas\\n");
+    }, 3000);
+  }
 
-client.on("ready", () => {
-  console.log("\\n✅ Bot WhatsApp sudah siap!");
-  console.log("📋 Kirim !help di chat untuk lihat perintah\\n");
-});
+  client.ev.on("creds.update", saveCreds);
 
-client.on("authenticated", () => console.log("🔐 Autentikasi berhasil!"));
-client.on("auth_failure", (msg) => console.error("❌ Autentikasi gagal:", msg));
+  client.ev.on("connection.update", (update) => {
+    const { connection, lastDisconnect } = update;
+    if (connection === "close") {
+      const reason = lastDisconnect?.error?.output?.statusCode;
+      if (reason !== DisconnectReason.loggedOut) {
+        console.log("🔄 Reconnecting...");
+        startBot();
+      } else {
+        console.log("❌ Logged out. Hapus folder auth_session dan jalankan ulang.");
+      }
+    } else if (connection === "open") {
+      console.log("\\n✅ Bot WhatsApp sudah siap! (Baileys)");
+      console.log("📋 Kirim !help di chat untuk lihat perintah\\n");
+    }
+  });
 
 // ━━━ Helper API ━━━
 async function apiGet(endpoint) {
