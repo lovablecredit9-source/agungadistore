@@ -1092,6 +1092,25 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
       return reply(txt);
     }
 
+    // ═══ FOTO PROFIL ═══
+    if (command === "!fotoprofil") {
+      try {
+        const ppUrl = await client.profilePictureUrl(remoteJid, "image").catch(() => null);
+        if (ppUrl) {
+          await client.sendMessage(remoteJid, { image: { url: ppUrl }, caption: "📸 Foto profil WhatsApp kamu" }, { quoted: msg });
+          return;
+        }
+        return reply("📸 Kamu tidak punya foto profil WhatsApp atau privasi disetel privat.");
+      } catch { return reply("📸 Gagal mengambil foto profil."); }
+    }
+
+    // ═══ TOP UP KREDIT INFO ═══
+    if (command === "!topupkredit") {
+      const pkgs = await api("packages&type=credit");
+      const list = (pkgs.data?.credit || []).map((p, i) => (i+1) + ". " + p.label + " — " + fmtRp(p.price) + " (" + (p.is_unlimited ? "Unlimited " + p.unlimited_days + " hari" : p.credits + " kredit") + ")").join("\\n");
+      return reply("💎 *Paket Kredit Game:*\\n\\n" + (list || "Tidak ada paket") + "\\n\\n💡 Beli: !belikredit [nama paket]\\n🔒 Harus login dulu: !login [user] [pass]");
+    }
+
     // ═══ KIRIM FILE LAGU VIA WA ═══
     if (command.startsWith("!kirim ")) {
       const q = args.join(" ");
@@ -1100,10 +1119,20 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
       if (!res.data?.length) return reply("🎵 Lagu tidak ditemukan: " + q);
       const song = res.data[0];
       try {
-        await client.sendMessage(remoteJid, { audio: { url: song.file_url }, mimetype: "audio/mpeg", fileName: song.title + " - " + song.artist + ".mp3" }, { quoted: msg });
-        return reply("🎵 *" + song.title + "* — " + song.artist + "\\n✅ File lagu terkirim!");
+        await reply("⏳ Mengirim lagu *" + song.title + "* — " + song.artist + "...");
+        const response = await fetch(song.file_url);
+        if (!response.ok) throw new Error("Fetch failed");
+        const arrayBuf = await response.arrayBuffer();
+        const audioBuf = Buffer.from(arrayBuf);
+        await client.sendMessage(remoteJid, { 
+          audio: audioBuf, 
+          mimetype: "audio/mpeg", 
+          fileName: song.title + " - " + song.artist + ".mp3",
+          ptt: false 
+        }, { quoted: msg });
+        return;
       } catch (e) {
-        return reply("🎵 *" + song.title + "* — " + song.artist + "\\n\\n❌ Gagal kirim file. Coba download manual:\\n🔗 " + song.file_url);
+        return reply("🎵 *" + song.title + "* — " + song.artist + "\\n\\n❌ Gagal kirim file audio. Download manual:\\n🔗 " + song.file_url);
       }
     }
 
