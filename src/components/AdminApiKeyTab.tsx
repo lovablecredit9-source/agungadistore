@@ -27,11 +27,23 @@ export default function AdminApiKeyTab() {
   const [visibleKeys, setVisibleKeys] = useState<Set<string>>(new Set());
   const [showUsage, setShowUsage] = useState(false);
   const [downloadKeyId, setDownloadKeyId] = useState<string>("");
-  const [customApiKey, setCustomApiKey] = useState("");
   const [pairingPhone, setPairingPhone] = useState("");
   const { toast } = useToast();
 
   useEffect(() => { fetchKeys(); }, []);
+
+  useEffect(() => {
+    const activeKeyIds = keys.filter((key) => key.is_active).map((key) => key.id);
+
+    if (activeKeyIds.length === 0) {
+      if (downloadKeyId) setDownloadKeyId("");
+      return;
+    }
+
+    if (!activeKeyIds.includes(downloadKeyId)) {
+      setDownloadKeyId(activeKeyIds[0]);
+    }
+  }, [keys, downloadKeyId]);
 
   async function fetchKeys() {
     const { data } = await supabase.from("api_keys").select("*").order("created_at", { ascending: false });
@@ -123,7 +135,7 @@ const DEFAULT_PAIRING_PHONE = "${phoneNumber.replace(/[^0-9]/g, '')}";`
 const DEFAULT_PAIRING_PHONE = ""; // Opsional: nomor default pairing, format: 628xxxxxxxxxx`;
 
     return `// =============================================
-// 🤖 BOT WHATSAPP - Agung Adi Store v5.0
+// 🤖 BOT WHATSAPP - Agung Adi Store v5.1.2
 // =============================================
 // Library: @whiskeysockets/baileys (QR / Pairing Code)
 // Cara pakai:
@@ -200,6 +212,7 @@ function isAdmin(msg) {
 async function startBot() {
   const authChoice = await askAuthMethod();
   const { state, saveCreds } = await useMultiFileAuthState("./auth_session");
+  const isRegistered = () => Boolean(state.creds?.registered);
 
   const client = makeWASocket({
     auth: {
@@ -217,7 +230,7 @@ async function startBot() {
   let qrShown = false;
 
   async function requestPairingCodeOnce() {
-    if (pairingRequested || client.authState.creds.registered) return;
+    if (pairingRequested || isRegistered()) return;
 
     if (!phoneNum) {
       console.log("❌ Nomor WhatsApp untuk pairing belum diisi!");
@@ -251,7 +264,7 @@ async function startBot() {
   client.ev.on("connection.update", async (update) => {
     const { connection, lastDisconnect, qr } = update;
 
-    if (qr && authChoice.mode === "qr" && !client.authState.creds.registered) {
+    if (qr && authChoice.mode === "qr" && !isRegistered()) {
       qrShown = true;
       console.log("\\n" + "=".repeat(40));
       console.log("  📷 SCAN QR DI BAWAH INI");
@@ -261,7 +274,7 @@ async function startBot() {
       console.log("⏳ Jika QR expired, tunggu QR baru muncul otomatis.\\n");
     }
 
-    if (connection === "connecting" && authChoice.mode === "pairing" && !client.authState.creds.registered) {
+    if (connection === "connecting" && authChoice.mode === "pairing" && !isRegistered()) {
       await requestPairingCodeOnce();
       return;
     }
@@ -275,7 +288,7 @@ async function startBot() {
         return;
       }
 
-      if (!client.authState.creds.registered) {
+      if (!isRegistered()) {
         if (authChoice.mode === "qr" && !qrShown) {
           console.log("ℹ️ QR belum tampil. Menunggu update QR baru...");
         }
@@ -295,13 +308,65 @@ async function startBot() {
       console.log("📋 Kirim !help di chat untuk lihat perintah\\n");
     }
   });
+
+  client.ev.on("messages.upsert", async ({ messages }) => {
+    const msg = messages?.[0];
+    const remoteJid = msg?.key?.remoteJid;
+
+    if (!msg?.message || msg.key?.fromMe || !remoteJid || remoteJid === "status@broadcast") {
+      return;
+    }
+
+    const text =
+      msg.message.conversation ||
+      msg.message.extendedTextMessage?.text ||
+      msg.message.imageMessage?.caption ||
+      "";
+
+    if (!text.startsWith("!")) return;
+
+    const command = text.trim().toLowerCase();
+
+    if (command === "!ping") {
+      await client.sendMessage(remoteJid, { text: "🏓 Pong! Bot aktif." }, { quoted: msg });
+      return;
+    }
+
+    if (command === "!help") {
+      const helpText = [
+        "🤖 *Bot WhatsApp Aktif*",
+        "",
+        "Perintah dasar:",
+        "• !help — tampilkan bantuan",
+        "• !ping — cek status bot",
+        "",
+        "API backend:",
+        "• BASE: " + BASE,
+        "• Header: x-api-key: API_KEY",
+        "",
+        "Tips:",
+        "• Isi ADMIN_NUMBERS jika mau batasi command admin",
+        "• Session tersimpan di folder auth_session",
+      ].join("\\n");
+
+      await client.sendMessage(remoteJid, { text: helpText }, { quoted: msg });
+    }
+  });
+
+  return client;
+}
+
+startBot().catch((error) => {
+  console.error("❌ Bot gagal dijalankan:", error?.stack || error?.message || error);
+  process.exit(1);
+});
 `;
   }
 
   function generatePackageJson() {
     return JSON.stringify({
       name: "bot-wa-agungadi",
-      version: "5.0.1",
+      version: "5.1.2",
       description: "Bot WhatsApp Agung Adi Store - QR & Pairing Code",
       main: "index.js",
       scripts: {
@@ -320,7 +385,7 @@ async function startBot() {
   }
 
   function generateReadmeMd() {
-    return `# 🤖 Bot WhatsApp - Agung Adi Store v5.0.1
+    return `# 🤖 Bot WhatsApp - Agung Adi Store v5.1.2
 
 ## 📋 Persyaratan
 - Node.js >= 18
@@ -375,10 +440,6 @@ _© 2026 Agung Adi Store_
   const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID || "";
   const baseUrl = `https://${projectId}.supabase.co/functions/v1/public-api`;
 
-  const waFullBot = `Kode bot sudah tertanam di file yang didownload.
-Gunakan tombol download ZIP di atas untuk mendapatkan 3 file lengkap dengan API Key tertanam di index.js.
-Atau salin kode dari panduan di atas.`;
-
   const setupSteps = `# =============================================
 # 🛠️ PANDUAN SETUP BOT WHATSAPP (Step by Step)
 # =============================================
@@ -430,6 +491,9 @@ node index.js
 # - Pastikan internet stabil
 # - Jangan gunakan nomor WA utama untuk testing
 # =============================================`;
+
+  const activeKeys = keys.filter((k) => k.is_active);
+  const selectedDownloadKey = activeKeys.find((k) => k.id === downloadKeyId) ?? null;
 
   return (
     <div className="space-y-3">
@@ -519,23 +583,19 @@ node index.js
         </CardHeader>
         <CardContent className="space-y-3">
           <p className="text-[11px] text-muted-foreground">
-            Pilih API Key atau masukkan manual. Nanti terdownload ZIP berisi index.js, package.json, dan README.md.
+            Pilih API Key aktif. Nanti terdownload ZIP berisi index.js, package.json, dan README.md.
           </p>
 
           {/* Pilih dari API Key yang ada */}
-          {keys.length > 0 && (
+          {activeKeys.length > 0 && (
             <div className="space-y-1">
               <label className="text-[11px] font-semibold">Pilih API Key:</label>
-              <Select value={downloadKeyId} onValueChange={(val) => {
-                setDownloadKeyId(val);
-                const found = keys.find(k => k.id === val);
-                if (found) setCustomApiKey(found.api_key);
-              }}>
+              <Select value={downloadKeyId} onValueChange={setDownloadKeyId}>
                 <SelectTrigger className="h-8 text-xs">
                   <SelectValue placeholder="-- Pilih API Key --" />
                 </SelectTrigger>
                 <SelectContent>
-                  {keys.filter(k => k.is_active).map(k => (
+                  {activeKeys.map(k => (
                     <SelectItem key={k.id} value={k.id} className="text-xs">
                       {k.key_name} — {k.api_key.substring(0, 10)}...
                     </SelectItem>
@@ -545,22 +605,11 @@ node index.js
             </div>
           )}
 
-          <div className="flex items-center gap-2">
-            <div className="h-px flex-1 bg-border" />
-            <span className="text-[10px] text-muted-foreground">atau masukkan manual</span>
-            <div className="h-px flex-1 bg-border" />
-          </div>
-
-          {/* Input manual API Key */}
-          <div className="space-y-1">
-            <label className="text-[11px] font-semibold">API Key Manual:</label>
-            <Input
-              placeholder="Paste API Key di sini..."
-              value={customApiKey}
-              onChange={e => { setCustomApiKey(e.target.value); setDownloadKeyId(""); }}
-              className="text-xs font-mono h-8"
-            />
-          </div>
+          {activeKeys.length === 0 && (
+            <p className="text-[10px] text-muted-foreground">
+              Belum ada API Key aktif. Buat atau aktifkan API Key dulu, lalu download ZIP dari tombol pada list key.
+            </p>
+          )}
 
           {/* Input nomor HP untuk pairing */}
           <div className="space-y-1">
@@ -579,10 +628,10 @@ node index.js
           </div>
 
           {/* Preview */}
-          {customApiKey && (
+          {selectedDownloadKey && (
             <div className="bg-muted rounded p-2 space-y-1">
               <p className="text-[10px] font-semibold text-muted-foreground">API Key yang akan masuk di index.js:</p>
-              <code className="text-[10px] font-mono text-primary break-all">{customApiKey}</code>
+              <code className="text-[10px] font-mono text-primary break-all">{selectedDownloadKey.api_key}</code>
               {pairingPhone && (
                 <>
                   <p className="text-[10px] font-semibold text-muted-foreground mt-1">Nomor Default Pairing:</p>
@@ -595,8 +644,8 @@ node index.js
           <Button
             size="sm"
             className="w-full gap-2"
-            disabled={!customApiKey.trim()}
-            onClick={() => downloadBotFile(customApiKey.trim(), downloadKeyId ? (keys.find(k => k.id === downloadKeyId)?.key_name || "bot-wa") : "bot-wa-manual")}
+            disabled={!selectedDownloadKey}
+            onClick={() => selectedDownloadKey && downloadBotFile(selectedDownloadKey.api_key, selectedDownloadKey.key_name)}
           >
             <Download className="w-4 h-4" /> Download ZIP 3 File
           </Button>
