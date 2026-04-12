@@ -216,7 +216,7 @@ export default function PlusTab() {
       toast({ title: "Berhasil!", description: `${data.bundle_name} berhasil dibeli. Sisa saldo: ${formatPrice(data.balance_remaining)}` });
       setBundleNeedPin(false); setBundlePin(""); setBundleSelectedPkg(null);
       fetchCredits(); fetchBalance();
-    } catch { toast({ title: "Error", variant: "destructive" }); }
+    } catch (e: any) { toast({ title: "Error", description: e?.message || "Terjadi kesalahan", variant: "destructive" }); }
     finally { setBundleBuying(null); }
   };
 
