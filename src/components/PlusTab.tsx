@@ -128,13 +128,20 @@ export default function PlusTab() {
       const { data, error } = await supabase.functions.invoke("purchase-game-credits", {
         body: { action: "purchase", visitorId: balVid, packageId: pkgId, pin: pin || undefined, voucherCode: creditVoucherValid ? creditVoucher.trim() : undefined },
       });
-      if (error) throw error;
+      if (error) {
+        if (error instanceof FunctionsHttpError) {
+          const errBody = await error.context.json();
+          if (errBody?.needPin) { setCreditNeedPin(true); setCreditSelectedPkg(pkgId); setCreditBuying(null); return; }
+          toast({ title: "Gagal", description: errBody?.error || "Terjadi kesalahan", variant: "destructive" }); setCreditBuying(null); return;
+        }
+        throw error;
+      }
       if (data?.needPin) { setCreditNeedPin(true); setCreditSelectedPkg(pkgId); setCreditBuying(null); return; }
       if (data?.error) { toast({ title: "Gagal", description: data.error, variant: "destructive" }); setCreditBuying(null); return; }
       toast({ title: "Berhasil!", description: `${data.package.label} berhasil dibeli. Sisa saldo: ${formatPrice(data.balance_remaining)}` });
       setCreditNeedPin(false); setCreditPin(""); setCreditSelectedPkg(null);
       fetchCredits(); fetchBalance();
-    } catch { toast({ title: "Error", variant: "destructive" }); }
+    } catch (e: any) { toast({ title: "Error", description: e?.message || "Terjadi kesalahan", variant: "destructive" }); }
     finally { setCreditBuying(null); }
   };
 
