@@ -2071,14 +2071,12 @@ node bot.js
                   <p className="text-xs font-bold text-primary">🚀 Cara Setup Bot WA (5 Menit)</p>
                   <div className="space-y-3">
                     {[
-                      { step: "1", title: "Install Node.js", desc: "Download dari nodejs.org (pilih LTS), lalu install." },
-                      { step: "2", title: "Buat folder project", desc: "Buka terminal/CMD, ketik:" },
-                      { step: "3", title: "Install library", desc: "Di folder project, ketik:" },
-                      { step: "4", title: "Buat API Key", desc: "Buat API Key di halaman ini, lalu salin." },
-                      { step: "5", title: "Buat file bot.js", desc: 'Salin kode dari tab "🤖 Kode Bot", paste ke file bot.js' },
-                      { step: "6", title: "Paste API Key", desc: 'Di bot.js, ganti PASTE_API_KEY_DISINI dengan API Key kamu.' },
-                      { step: "7", title: "Jalankan bot", desc: "Di terminal, ketik: node bot.js" },
-                      { step: "8", title: "Scan QR", desc: "QR muncul di terminal → Scan di WhatsApp → Linked Devices" },
+                      { step: "1", title: "Install Node.js", desc: "Download dari nodejs.org (pilih LTS v18+), lalu install." },
+                      { step: "2", title: "Download file", desc: "Download bot.js, package.json, dan README.md dari panel di atas." },
+                      { step: "3", title: "Install dependencies", desc: "Buka terminal di folder project, ketik: npm install" },
+                      { step: "4", title: "Isi nomor HP", desc: "Di bot.js, isi PAIRING_PHONE dengan nomor WA (format: 628xxx)." },
+                      { step: "5", title: "Jalankan bot", desc: "Di terminal, ketik: node bot.js" },
+                      { step: "6", title: "Masukkan kode", desc: "Kode 8 digit muncul → buka WhatsApp > Linked Devices > Link with phone number" },
                     ].map(s => (
                       <div key={s.step} className="flex gap-2">
                         <span className="bg-primary text-primary-foreground rounded-full w-5 h-5 flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5">
