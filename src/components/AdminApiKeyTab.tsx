@@ -405,8 +405,11 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
     if (command === "!waktu") { return reply("🕐 Waktu server: " + new Date().toLocaleString("id-ID", { timeZone: "Asia/Jakarta" }) + " WIB"); }
 
     if (command === "!help" || command === "!menu") {
+      const senderPhone = remoteJid.replace("@s.whatsapp.net", "");
       return reply([
         "🤖 *Bot WhatsApp Agung Adi Store v8.0.0*",
+        "📱 Nomor kamu: " + senderPhone,
+        session ? "👤 Login: " + session.username : "🔒 Belum login",
         "",
         "🔑 *Akun Saldo:*",
         "• !login [user/email/hp] [password]",
@@ -420,6 +423,8 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
         "• !streakku — Status streak saya",
         "• !notifku — Notifikasi saya",
         "• !likeku — Daftar favorit saya",
+        "• !nomorku — Tampilkan nomor WA",
+        "• !fotoprofil — Kirim foto profil kamu",
         "",
         "🛒 *Belanja (perlu login):*",
         "• !beli [ID/nama produk] [jumlah]",
@@ -438,7 +443,7 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
         "• !likelagu [judul] — Like lagu",
         "• !likesponsor [no] — Like sponsor",
         "",
-        "🎮 *Game AI:*",
+        "🎮 *Game AI (pakai kredit):*",
         "• !tekateki [mudah/sedang/sulit]",
         "• !tebakkata [mudah/sedang/sulit]",
         "• !tebakangka [mudah/sedang/sulit]",
@@ -449,7 +454,9 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
         "• !tekatekilanjut [mudah/sedang/sulit]",
         "• !lbgame — Leaderboard game",
         "• !jawab [jawaban] — Jawab game",
+        "• !hint — Minta petunjuk (1 kredit)",
         "• !nyerah — Menyerah game",
+        "• !topupkredit — Info beli kredit",
         "",
         "📦 *Produk & Toko:*",
         "• !produk — Daftar produk + ID",
@@ -469,7 +476,7 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
         "• !lagu — Daftar lagu",
         "• !carilagu [kata] — Cari lagu",
         "• !download [judul] — Link download",
-        "• !kirim [judul] — Kirim file lagu",
+        "• !kirim [judul] — Kirim file audio langsung",
         "• !artis — Daftar artis",
         "• !detailartis [nama]",
         "• !playlist — Daftar playlist",
