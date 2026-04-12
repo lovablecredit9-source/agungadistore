@@ -238,6 +238,45 @@ export type Database = {
           },
         ]
       }
+      bundle_packages: {
+        Row: {
+          created_at: string
+          credits: number
+          id: string
+          is_active: boolean
+          name: string
+          price: number
+          sort_order: number
+          storage_mb: number
+          streak_days: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          credits?: number
+          id?: string
+          is_active?: boolean
+          name?: string
+          price?: number
+          sort_order?: number
+          storage_mb?: number
+          streak_days?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          credits?: number
+          id?: string
+          is_active?: boolean
+          name?: string
+          price?: number
+          sort_order?: number
+          storage_mb?: number
+          streak_days?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       credit_packages: {
         Row: {
           created_at: string
