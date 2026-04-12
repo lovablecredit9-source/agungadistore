@@ -3752,6 +3752,7 @@ const Index = () => {
             { key: "streak" as Tab, icon: CalendarDays, label: "Streak" },
             { key: "game" as Tab, icon: Gamepad2, label: "Game" },
             { key: "plus" as Tab, icon: Sparkles, label: "Plus" },
+            { key: "update" as Tab, icon: RefreshCw, label: "Update" },
             { key: "adminpost" as Tab, icon: FileText, label: "Admin" },
           ]).map(({ key, icon: Icon, label }) => (
             <button
