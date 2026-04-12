@@ -93,7 +93,7 @@ export default function AdminApiKeyTab() {
   }
 
   function downloadBotFile(apiKey: string, keyName: string) {
-    const code = generateBotCode(apiKey);
+    const code = generateBotCode(apiKey, pairingPhone.trim() || undefined);
     const blob = new Blob([code], { type: "text/javascript" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
