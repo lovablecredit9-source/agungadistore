@@ -2094,13 +2094,11 @@ node bot.js
 
               <p className="text-xs font-bold">📋 Command Terminal:</p>
               <pre className="text-[10px] bg-muted p-2 rounded font-mono whitespace-pre-wrap leading-relaxed">
-{`mkdir bot-wa-agungadi
-cd bot-wa-agungadi
-npm init -y
-npm install whatsapp-web.js qrcode-terminal`}
+{`npm install
+node bot.js 628xxxxxxxxxx`}
               </pre>
-              <Button size="sm" variant="outline" className="w-full gap-2 text-xs" onClick={() => copyText("mkdir bot-wa-agungadi && cd bot-wa-agungadi && npm init -y && npm install whatsapp-web.js qrcode-terminal", "Command")}>
-                <Copy className="w-3 h-3" /> Salin Command Install
+              <Button size="sm" variant="outline" className="w-full gap-2 text-xs" onClick={() => copyText("npm install && node bot.js", "Command")}>
+                <Copy className="w-3 h-3" /> Salin Command
               </Button>
 
               <Card className="border-yellow-500/30 bg-yellow-500/5">
