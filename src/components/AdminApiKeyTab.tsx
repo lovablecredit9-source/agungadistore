@@ -448,6 +448,8 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
         "• !kuisyatidak [mudah/sedang/sulit]",
         "• !tekatekilanjut [mudah/sedang/sulit]",
         "• !lbgame — Leaderboard game",
+        "• !jawab [jawaban] — Jawab game",
+        "• !nyerah — Menyerah game",
         "",
         "📦 *Produk & Toko:*",
         "• !produk — Daftar produk + ID",
