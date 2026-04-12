@@ -195,10 +195,10 @@ client.on("message", async (msg) => {
   // ══════════════════════════════════════
 
   if (text === "!help" || text === "!menu") {
-    await msg.reply(\`🤖 *BOT AGUNG ADI STORE*
+    await msg.reply(\`🤖 *BOT AGUNG ADI STORE v4.0*
 ━━━━━━━━━━━━━━━━━━━━━━
 
-📌 *PERINTAH USER:*
+📌 *PERINTAH USER (30+):*
 📦 *!produk* — Lihat semua produk
 🔍 *!cari [kata]* — Cari produk
 📢 *!sponsor* — Lihat sponsor aktif
@@ -207,27 +207,36 @@ client.on("message", async (msg) => {
 🎤 *!artis* — Daftar artis
 🎧 *!playlist* — Daftar playlist
 🎶 *!publik* — Lagu publik terbaru
-📊 *!info* — Info & statistik toko
-💰 *!ceksaldo [username]* — Cek saldo
-🎮 *!cekgame [username]* — Stats game user
-📋 *!paket* — Lihat paket tersedia
+📊 *!info* — Statistik toko
+💰 *!ceksaldo [nama]* — Cek saldo
+🎮 *!cekgame [nama]* — Stats game
+📋 *!paket* — Paket tersedia
 🎟️ *!cekvoucher* — Voucher aktif
 🏪 *!toko* — Info toko
-🏓 *!ping* — Cek status bot
+🏓 *!ping* — Status bot
 ⏰ *!waktu* — Waktu server
 📱 *!versi* — Versi bot
 🎲 *!random* — Produk random
-🏆 *!top* — Produk & sponsor terpopuler
+🏆 *!top* — Terpopuler
 🛒 *!kategori* — Kategori produk
 💎 *!harga [min] [max]* — Filter harga
-📢 *!promo* — Promo & diskon aktif
-🎵 *!musikpublik [user]* — Lagu publik user
+📢 *!promo* — Promo aktif
+🎵 *!musikpublik [kata]* — Musik publik
+📦 *!detailproduk [nama]* — Detail produk
+📢 *!detailsponsor [no]* — Detail sponsor
+🎤 *!detailartis [nama]* — Detail artis
+🎮 *!lb* — Leaderboard game
+📖 *!bantuan* — Pusat bantuan
+📜 *!syarat* — Syarat & ketentuan
+📱 *!sosmed* — Social media
+📊 *!rangkuman* — Rangkuman toko
 
 🔐 *PERINTAH ADMIN:*
 Ketik *!admin* untuk lihat perintah admin.
 
 ━━━━━━━━━━━━━━━━━━━━━━
-_Bot otomatis Agung Adi Store v3.0_\`);
+_Bot otomatis Agung Adi Store v4.0_
+_© 2026 Agung Adi Store_\`);
     return;
   }
 
