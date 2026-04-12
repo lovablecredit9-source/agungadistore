@@ -1205,7 +1205,7 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
       return reply("✅ Balasan terkirim ke tiket #" + ticket.ticket_number);
     }
 
-    // ═══ GAME AI VIA WHATSAPP ═══
+    // ═══ GAME AI VIA WHATSAPP (Interactive) ═══
     const gameTypes = {
       "!tekateki": { fn: "teka-teki", name: "Teka-Teki Logika" },
       "!tebakkata": { fn: "tebak-kata", name: "Tebak Kata" },
@@ -1216,6 +1216,74 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
       "!kuisyatidak": { fn: "kuis-yatidak", name: "Kuis Ya/Tidak" },
       "!tekatekilanjut": { fn: "teka-teki-v2", name: "Teka-Teki V2" },
     };
+
+    // Check if user is answering an active game
+    if (!command.startsWith("!") || command === "!jawab" || command.startsWith("!jawab ")) {
+      // Handle game answer - check if there's an active game session
+    }
+
+    const activeGame = userSessions[remoteJid + "_game"];
+    if (activeGame && !command.startsWith("!")) {
+      // User is answering the game
+      const userAnswer = text.trim();
+      const correctAnswer = activeGame.answer;
+      const normalize = (s) => s.toUpperCase().trim().replace(/\\s+/g, " ");
+      const isCorrect = normalize(userAnswer) === normalize(correctAnswer);
+      
+      if (isCorrect) {
+        delete userSessions[remoteJid + "_game"];
+        return reply("✅ *BENAR!* 🎉\\n\\n🔑 Jawaban: *" + correctAnswer + "*" + (activeGame.explanation ? "\\n\\n📖 " + activeGame.explanation : ""));
+      } else {
+        activeGame.lives = (activeGame.lives || 3) - 1;
+        if (activeGame.lives <= 0) {
+          delete userSessions[remoteJid + "_game"];
+          return reply("❌ Salah! Nyawa habis! 💀\\n\\n🔑 Jawaban yang benar: *" + correctAnswer + "*" + (activeGame.explanation ? "\\n\\n📖 " + activeGame.explanation : ""));
+        }
+        userSessions[remoteJid + "_game"] = activeGame;
+        let hintTxt = "";
+        if (activeGame.hints?.length) {
+          const hintIdx = 3 - activeGame.lives;
+          if (activeGame.hints[hintIdx - 1]) hintTxt = "\\n💡 Petunjuk: " + activeGame.hints[hintIdx - 1];
+        }
+        return reply("❌ Salah! ❤️ Nyawa: " + activeGame.lives + "/3" + hintTxt + "\\n\\nCoba lagi! Ketik jawabanmu langsung.");
+      }
+    }
+
+    // Handle !jawab command
+    if (command.startsWith("!jawab")) {
+      if (!userSessions[remoteJid + "_game"]) return reply("ℹ️ Tidak ada game aktif. Mulai game dulu, contoh: !tekateki mudah");
+      const userAnswer = args.join(" ");
+      if (!userAnswer) return reply("⚠️ Gunakan: !jawab [jawabanmu]");
+      const ag = userSessions[remoteJid + "_game"];
+      const normalize = (s) => s.toUpperCase().trim().replace(/\\s+/g, " ");
+      const isCorrect = normalize(userAnswer) === normalize(ag.answer);
+      if (isCorrect) {
+        delete userSessions[remoteJid + "_game"];
+        return reply("✅ *BENAR!* 🎉\\n\\n🔑 Jawaban: *" + ag.answer + "*" + (ag.explanation ? "\\n\\n📖 " + ag.explanation : ""));
+      } else {
+        ag.lives = (ag.lives || 3) - 1;
+        if (ag.lives <= 0) {
+          delete userSessions[remoteJid + "_game"];
+          return reply("❌ Salah! Nyawa habis! 💀\\n\\n🔑 Jawaban yang benar: *" + ag.answer + "*" + (ag.explanation ? "\\n\\n📖 " + ag.explanation : ""));
+        }
+        userSessions[remoteJid + "_game"] = ag;
+        let hintTxt = "";
+        if (ag.hints?.length) {
+          const hintIdx = 3 - ag.lives;
+          if (ag.hints[hintIdx - 1]) hintTxt = "\\n💡 Petunjuk: " + ag.hints[hintIdx - 1];
+        }
+        return reply("❌ Salah! ❤️ Nyawa: " + ag.lives + "/3" + hintTxt + "\\n\\nCoba lagi!");
+      }
+    }
+
+    // Cancel game
+    if (command === "!nyerah" || command === "!menyerah") {
+      if (!userSessions[remoteJid + "_game"]) return reply("ℹ️ Tidak ada game aktif.");
+      const ag = userSessions[remoteJid + "_game"];
+      delete userSessions[remoteJid + "_game"];
+      return reply("🏳️ *Menyerah!*\\n\\n🔑 Jawaban: *" + ag.answer + "*" + (ag.explanation ? "\\n\\n📖 " + ag.explanation : ""));
+    }
+
     const gameCmd = Object.keys(gameTypes).find((k) => command.startsWith(k));
     if (gameCmd) {
       const gt = gameTypes[gameCmd];
@@ -1224,22 +1292,52 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
       const res = await api("play_game", "POST", { game_type: gt.fn, difficulty });
       if (res.error) return reply("❌ Gagal: " + res.error);
       const d = res.data || res;
-      let txt = "🎮 *" + gt.name + "*\\n\\n";
+
+      // Store game session for interactive play
+      const gameSession = {
+        type: gt.fn,
+        name: gt.name,
+        answer: (d.answer || d.jawaban || "").toUpperCase(),
+        explanation: d.explanation || d.penjelasan || "",
+        hints: d.hints || [],
+        lives: 3,
+      };
+      userSessions[remoteJid + "_game"] = gameSession;
+
+      let txt = "🎮 *" + gt.name + "*\\n❤️ Nyawa: 3/3\\n\\n";
+
+      // Special handling for tebak gambar - send actual image
+      if (gt.fn === "tebak-gambar" && d.image) {
+        try {
+          let imgBuffer;
+          if (d.image.startsWith("data:")) {
+            const base64Data = d.image.split(",")[1] || d.image;
+            imgBuffer = Buffer.from(base64Data, "base64");
+          } else {
+            imgBuffer = Buffer.from(d.image, "base64");
+          }
+          await client.sendMessage(remoteJid, { image: imgBuffer, caption: "🎮 *" + gt.name + "*\\n❤️ Nyawa: 3/3\\n🔤 Jumlah huruf: " + (d.letterCount || "?") + "\\n\\n❓ Tebak objek apa ini?\\n💡 Ketik jawabanmu langsung atau !jawab [jawaban]\\n🏳️ Menyerah? Ketik !nyerah" }, { quoted: msg });
+          return;
+        } catch (e) {
+          txt += "🖼️ Gambar gagal dikirim.\\n";
+        }
+      }
+
       // Different format per game type
       if (d.riddle || d.question || d.pertanyaan) {
         txt += "❓ *Soal:* " + (d.riddle || d.question || d.pertanyaan) + "\\n";
         if (d.options) { d.options.forEach((o, i) => { txt += "\\n" + ["A", "B", "C", "D"][i] + ". " + o; }); txt += "\\n"; }
-        if (d.hints?.length) { txt += "\\n💡 *Petunjuk:*\\n" + d.hints.map((h, i) => (i+1) + ". " + h).join("\\n") + "\\n"; }
-        txt += "\\n\\n🔑 *Jawaban:* ||" + (d.answer || d.jawaban || "-") + "||";
-        if (d.explanation || d.penjelasan) txt += "\\n📖 " + (d.explanation || d.penjelasan);
+        if (d.hints?.length) { txt += "\\n💡 *Petunjuk pertama:*\\n" + d.hints[0] + "\\n"; }
       } else if (d.word || d.kata) {
         txt += "🔤 Kata: " + (d.word || d.kata) + "\\n";
         if (d.hint || d.petunjuk) txt += "💡 Petunjuk: " + (d.hint || d.petunjuk) + "\\n";
-        txt += "\\n🔑 Jawaban: ||" + (d.answer || d.jawaban || "-") + "||";
+      } else if (d.letterCount) {
+        txt += "🔤 Jumlah huruf: " + d.letterCount + "\\n";
+        if (d.hints?.[0]) txt += "💡 Petunjuk: " + d.hints[0] + "\\n";
       } else {
-        // Generic fallback
-        txt += JSON.stringify(d, null, 2).slice(0, 500);
+        txt += JSON.stringify(d, null, 2).slice(0, 300);
       }
+      txt += "\\n\\n✏️ Ketik jawabanmu langsung atau !jawab [jawaban]\\n🏳️ Menyerah? Ketik !nyerah";
       return reply(txt);
     }
 
