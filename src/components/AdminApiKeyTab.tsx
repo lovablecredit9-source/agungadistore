@@ -827,67 +827,73 @@ _Follow untuk update terbaru!_\`);
 
   if (text === "!admin") {
     if (!isAdmin(msg)) { await msg.reply("🔒 Perintah ini hanya untuk admin."); return; }
-    await msg.reply(\`🔐 *PERINTAH ADMIN*
+    await msg.reply(\`🔐 *PERINTAH ADMIN (50+)*
 ━━━━━━━━━━━━━━━━━━━━━━
 
 💰 *SALDO:*
 !saldo — Semua saldo user
-!tambahsaldo [vid] [jumlah] — Tambah saldo
-!kurangsaldo [vid] [jumlah] — Kurangi saldo
+!tambahsaldo [vid] [jml] — Tambah saldo
+!kurangsaldo [vid] [jml] — Kurangi saldo
 !resetsaldo [vid] — Reset saldo ke 0
-!setsaldo [vid] [jumlah] — Set saldo langsung
+!setsaldo [vid] [jml] — Set saldo langsung
 
 🎮 *GAME:*
 !game [vid] — Stats game
 !kredit [vid] — Kredit game
-!setkredit [vid] [jumlah] — Set kredit
-!resetkredit [vid] — Reset kredit ke 0
+!setkredit [vid] [jml] — Set kredit
+!resetkredit [vid] — Reset kredit
 !profil [vid] — Profil game
-!resetgame [vid] — Reset semua game stats
-!leaderboard — Top 10 pemain
+!resetgame [vid] — Reset game stats
+!leaderboardadmin — Leaderboard detail
 
 🔥 *STREAK:*
 !streak [vid] — Status streak
 !resetstreak [vid] — Reset streak
-!setstreak [vid] [hari] — Set streak manual
+!setstreak [vid] [hari] — Set streak
+!streaksub — Langganan streak aktif
 
 💾 *STORAGE:*
 !storage [vid] — Status storage
 !resetstorage [vid] — Reset storage
 
-📦 *PRODUK:*
-!stok [id] [jumlah] — Update stok
+📦 *PRODUK & SPONSOR:*
+!stok [id] [jml] — Update stok produk
+!produkdetail [id] — Detail produk
+!sponsordetail [id] — Detail sponsor
+!stoksponsor [id] [jml] — Update stok sponsor
 !deposit — Riwayat deposit
-!setdeposit [id] [status] — Ubah status deposit
+!setdeposit [id] [status] — Status deposit
 !token — Daftar token
-!produkdetail [id] — Detail produk lengkap
-!sponsordetail [id] — Detail sponsor lengkap
-!stoksponsor [id] [jumlah] — Update stok sponsor
+!tokendetail [kode] — Detail token
 
 👥 *USER:*
 !user [nama] — Cari user
 !alluser — Semua user
 !loginhistory [vid] — Riwayat login
-!hapusnotif [vid] — Hapus semua notif
-!musikprofil — Semua profil musik
-!follow — Statistik follow
+!hapusnotif [vid] — Hapus notif user
+!musikprofil — Profil musik
+!follow — Stats follow
+!detailuser [vid] — Detail lengkap user
 
 🎫 *SUPPORT:*
 !tiket — Tiket support
-!settiket [id] [status] — Ubah status tiket
-!chat — Chat produk terbaru
+!settiket [id] [status] — Status tiket
+!chat — Chat produk
+!tiketdetail [id] — Detail tiket
 
 📡 *BROADCAST & MONITORING:*
 !notif [pesan] — Kirim notifikasi
-!broadcast [pesan] — Broadcast ke semua
+!broadcast [pesan] — Broadcast semua
 !dashboard — Dashboard lengkap
-!likes — Statistik likes
+!likes — Stats likes
 !report — Laporan harian
-!topuser — Top user by saldo
+!topuser — Top user saldo
 !rekapdeposit — Rekap deposit
+!aktivitas — Aktivitas terbaru
+!backup — Info backup data
 
 ━━━━━━━━━━━━━━━━━━━━━━
-_🔐 Hanya admin yang bisa akses_\`);
+_🔐 v4.0 — Hanya admin_\`);
     return;
   }
 
