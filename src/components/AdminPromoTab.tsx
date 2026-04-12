@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { Switch } from "@/components/ui/switch";
-import { Tag, Clock, Save, Loader2, Zap, Coins, Flame, HardDrive, Sparkles, ShoppingBag, Megaphone, Plus, Trash2, Edit2, Check, X } from "lucide-react";
+import { Tag, Clock, Save, Loader2, Zap, Coins, Flame, HardDrive, Sparkles, ShoppingBag, Megaphone, Plus, Trash2, Edit2, Check, X, Package } from "lucide-react";
 
 interface PromoSetting {
   key: string;
