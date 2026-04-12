@@ -1210,44 +1210,83 @@ npm install whatsapp-web.js qrcode-terminal`}
             {/* TAB: Bot Code */}
             <TabsContent value="botcode" className="space-y-3 mt-3">
               <p className="text-xs text-muted-foreground">
-                Salin kode di bawah, paste ke file <code className="bg-muted px-1 rounded font-bold">bot.js</code>, ganti API Key, lalu jalankan <code className="bg-muted px-1 rounded">node bot.js</code>
+                Download file bot.js dari bagian atas, atau gunakan tombol download di setiap API Key. File sudah lengkap dengan semua perintah.
               </p>
 
-              <Card className="border-green-500/30 bg-green-500/5">
+              <Card className="border-blue-500/30 bg-blue-500/5">
                 <CardContent className="p-2">
-                  <p className="text-[11px] font-bold text-green-700 mb-1">📋 Perintah yang tersedia di bot:</p>
+                  <p className="text-[11px] font-bold text-blue-700 mb-1">📌 Perintah USER (Semua orang):</p>
                   <div className="grid grid-cols-2 gap-1 text-[10px]">
                     <span><code>!help</code> — Menu bantuan</span>
                     <span><code>!produk</code> — Daftar produk</span>
                     <span><code>!cari [kata]</code> — Cari produk</span>
-                    <span><code>!sponsor</code> — Daftar sponsor</span>
-                    <span><code>!saldo</code> — Saldo user</span>
+                    <span><code>!sponsor</code> — Sponsor aktif</span>
                     <span><code>!lagu</code> — Daftar lagu</span>
-                    <span><code>!deposit</code> — Riwayat deposit</span>
-                    <span><code>!token</code> — Daftar token</span>
-                    <span><code>!notif [isi]</code> — Kirim notif</span>
-                    <span><code>!info</code> — Statistik toko</span>
-                    <span><code>!game [vid]</code> — Stats game</span>
-                    <span><code>!kredit [vid]</code> — Kredit game</span>
-                    <span><code>!streak [vid]</code> — Status streak</span>
-                    <span><code>!storage [vid]</code> — Status storage</span>
                     <span><code>!artis</code> — Daftar artis</span>
-                    <span><code>!tiket</code> — Tiket support</span>
-                    <span><code>!transaksi [vid]</code> — Riwayat trx</span>
-                    <span><code>!tambahsaldo</code> — Tambah saldo</span>
-                    <span><code>!broadcast [msg]</code> — Broadcast</span>
-                    <span><code>!user [nama]</code> — Cari user</span>
+                    <span><code>!playlist</code> — Daftar playlist</span>
+                    <span><code>!publik</code> — Lagu publik</span>
+                    <span><code>!info</code> — Statistik toko</span>
+                    <span><code>!ceksaldo [nama]</code> — Cek saldo</span>
+                    <span><code>!cekgame [nama]</code> — Stats game</span>
+                    <span><code>!paket</code> — Paket tersedia</span>
+                    <span><code>!cekvoucher</code> — Voucher aktif</span>
+                    <span><code>!toko</code> — Info toko</span>
+                    <span><code>!ping</code> — Status bot</span>
                   </div>
                 </CardContent>
               </Card>
 
-              <pre className="text-[9px] bg-muted p-2 rounded overflow-x-auto font-mono whitespace-pre-wrap leading-relaxed max-h-[50vh] overflow-y-auto border">
-                {waFullBot}
-              </pre>
+              <Card className="border-red-500/30 bg-red-500/5">
+                <CardContent className="p-2">
+                  <p className="text-[11px] font-bold text-red-700 mb-1">🔐 Perintah ADMIN (Hanya admin):</p>
+                  <div className="grid grid-cols-2 gap-1 text-[10px]">
+                    <span><code>!admin</code> — Menu admin</span>
+                    <span><code>!saldo</code> — Semua saldo</span>
+                    <span><code>!tambahsaldo</code> — Tambah saldo</span>
+                    <span><code>!kurangsaldo</code> — Kurangi saldo</span>
+                    <span><code>!resetsaldo</code> — Reset saldo</span>
+                    <span><code>!deposit</code> — Riwayat deposit</span>
+                    <span><code>!setdeposit</code> — Ubah status</span>
+                    <span><code>!token</code> — Daftar token</span>
+                    <span><code>!game [vid]</code> — Stats game</span>
+                    <span><code>!kredit [vid]</code> — Kredit game</span>
+                    <span><code>!setkredit</code> — Set kredit</span>
+                    <span><code>!resetkredit</code> — Reset kredit</span>
+                    <span><code>!streak [vid]</code> — Status streak</span>
+                    <span><code>!resetstreak</code> — Reset streak</span>
+                    <span><code>!storage [vid]</code> — Storage</span>
+                    <span><code>!resetstorage</code> — Reset storage</span>
+                    <span><code>!profil [vid]</code> — Profil game</span>
+                    <span><code>!stok [id] [n]</code> — Update stok</span>
+                    <span><code>!user [nama]</code> — Cari user</span>
+                    <span><code>!loginhistory</code> — Riwayat login</span>
+                    <span><code>!transaksi</code> — Riwayat trx</span>
+                    <span><code>!tiket</code> — Tiket support</span>
+                    <span><code>!settiket</code> — Status tiket</span>
+                    <span><code>!chat</code> — Chat produk</span>
+                    <span><code>!notif [isi]</code> — Kirim notif</span>
+                    <span><code>!broadcast</code> — Broadcast</span>
+                    <span><code>!hapusnotif</code> — Hapus notif</span>
+                    <span><code>!likes</code> — Stats likes</span>
+                    <span><code>!dashboard</code> — Dashboard</span>
+                  </div>
+                </CardContent>
+              </Card>
 
-              <Button size="sm" className="w-full gap-2" onClick={() => copyText(waFullBot, "Kode bot WA")}>
-                <Copy className="w-3 h-3" /> Salin Kode Bot (Siap Pakai)
-              </Button>
+              <Card className="border-yellow-500/30 bg-yellow-500/5">
+                <CardContent className="p-2">
+                  <p className="text-[11px] font-bold text-yellow-700 mb-1">⚙️ Konfigurasi Admin:</p>
+                  <p className="text-[10px] text-muted-foreground">
+                    Di file bot.js, isi array <code className="bg-muted px-1 rounded">ADMIN_NUMBERS</code> dengan nomor WA admin.
+                    Format: <code className="bg-muted px-1 rounded">"628xxxxxxxxxx@c.us"</code>.
+                    Jika kosong, semua bisa akses perintah admin.
+                  </p>
+                </CardContent>
+              </Card>
+
+              <p className="text-[10px] text-muted-foreground text-center">
+                💡 Download file bot.js dari bagian atas halaman ini. File sudah lengkap 40+ perintah.
+              </p>
             </TabsContent>
 
             {/* TAB: API Reference */}
@@ -1268,23 +1307,41 @@ npm install whatsapp-web.js qrcode-terminal`}
               </div>
 
               <div>
-                <p className="text-xs font-bold mb-1">Endpoint GET:</p>
+                <p className="text-xs font-bold mb-1">Endpoint GET ({[
+                  "products", "sponsors", "balances", "songs", "deposits",
+                  "notifications", "tokens", "transactions", "streaks",
+                  "game_credits", "game_stats", "game_profiles", "tickets",
+                  "playlists", "artists", "public_songs", "storage",
+                  "vouchers", "packages", "likes", "chats", "streak_subs",
+                  "music_profiles", "login_history", "dashboard",
+                ].length}):</p>
                 <div className="space-y-1">
                   {[
-                    { ep: "products", desc: "Semua produk (judul, harga, stok, gambar, kategori)" },
-                    { ep: "sponsors", desc: "Sponsor/iklan aktif (penjual, harga, kontak)" },
-                    { ep: "balances", desc: "Saldo user (username, balance, visitor_id)" },
-                    { ep: "songs", desc: "Lagu di playlist (judul, artis, durasi)" },
-                    { ep: "deposits", desc: "Riwayat deposit (status, metode, jumlah)" },
-                    { ep: "tokens", desc: "Token & info produk terkait" },
-                    { ep: "notifications", desc: "Notifikasi (tambah &visitor_id=xxx)" },
-                    { ep: "game_stats", desc: "Statistik game (&visitor_id=xxx opsional)" },
-                    { ep: "game_credits", desc: "Kredit game (&visitor_id=xxx opsional)" },
-                    { ep: "streaks", desc: "Data streak (&visitor_id=xxx opsional)" },
-                    { ep: "storage", desc: "Status storage musik (&visitor_id=xxx opsional)" },
-                    { ep: "artists", desc: "Daftar artis (nama, genre, bio)" },
-                    { ep: "tickets", desc: "Tiket support terbaru (nama, kategori, status)" },
-                    { ep: "transactions", desc: "Riwayat transaksi (&visitor_id=xxx wajib)" },
+                    { ep: "products", desc: "Semua produk" },
+                    { ep: "sponsors", desc: "Sponsor aktif" },
+                    { ep: "balances", desc: "Saldo user" },
+                    { ep: "songs", desc: "Lagu playlist" },
+                    { ep: "deposits", desc: "Riwayat deposit" },
+                    { ep: "notifications", desc: "Notifikasi (?visitor_id=xxx)" },
+                    { ep: "tokens", desc: "Token & produk" },
+                    { ep: "transactions", desc: "Transaksi (?visitor_id=xxx)" },
+                    { ep: "streaks", desc: "Data streak (?visitor_id=xxx)" },
+                    { ep: "game_credits", desc: "Kredit game (?visitor_id=xxx)" },
+                    { ep: "game_stats", desc: "Stats game (?visitor_id=xxx)" },
+                    { ep: "game_profiles", desc: "Profil game (?visitor_id=xxx)" },
+                    { ep: "tickets", desc: "Tiket support" },
+                    { ep: "playlists", desc: "Playlist + items" },
+                    { ep: "artists", desc: "Daftar artis" },
+                    { ep: "public_songs", desc: "Lagu publik (?visitor_id=xxx)" },
+                    { ep: "storage", desc: "Storage musik (?visitor_id=xxx)" },
+                    { ep: "vouchers", desc: "Semua voucher (?type=discount/game/streak/music/storage)" },
+                    { ep: "packages", desc: "Paket tersedia (?type=credit/streak/storage/bundle)" },
+                    { ep: "likes", desc: "Jumlah likes (produk, lagu, sponsor)" },
+                    { ep: "chats", desc: "Chat produk + pesan" },
+                    { ep: "streak_subs", desc: "Langganan streak (?visitor_id=xxx)" },
+                    { ep: "music_profiles", desc: "Profil musik (?visitor_id=xxx)" },
+                    { ep: "login_history", desc: "Riwayat login (?visitor_id=xxx)" },
+                    { ep: "dashboard", desc: "Statistik lengkap toko" },
                   ].map(e => (
                     <div key={e.ep} className="flex items-start gap-1.5 text-[11px]">
                       <code className="bg-primary/10 text-primary px-1 rounded shrink-0 font-mono text-[10px]">{e.ep}</code>
@@ -1295,33 +1352,28 @@ npm install whatsapp-web.js qrcode-terminal`}
               </div>
 
               <div>
-                <p className="text-xs font-bold mb-1">Endpoint POST:</p>
-                <div className="text-[11px] space-y-2">
-                  <div>
-                    <code className="bg-primary/10 text-primary px-1 rounded font-mono text-[10px]">notifications</code>
-                    <pre className="text-[9px] bg-muted p-2 rounded font-mono mt-1">{`{
-  "visitor_id": "xxx",
-  "title": "Judul",
-  "message": "Isi pesan",
-  "type": "info"
-}`}</pre>
-                  </div>
-                  <div>
-                    <code className="bg-primary/10 text-primary px-1 rounded font-mono text-[10px]">add_balance</code>
-                    <pre className="text-[9px] bg-muted p-2 rounded font-mono mt-1">{`{
-  "visitor_id": "xxx",
-  "amount": 10000,
-  "description": "Top up manual"
-}`}</pre>
-                  </div>
-                  <div>
-                    <code className="bg-primary/10 text-primary px-1 rounded font-mono text-[10px]">broadcast</code>
-                    <pre className="text-[9px] bg-muted p-2 rounded font-mono mt-1">{`{
-  "title": "📢 Broadcast",
-  "message": "Isi broadcast",
-  "type": "info"
-}`}</pre>
-                  </div>
+                <p className="text-xs font-bold mb-1">Endpoint POST (13):</p>
+                <div className="space-y-1">
+                  {[
+                    { ep: "notifications", desc: "Kirim notifikasi {visitor_id, title, message, type}" },
+                    { ep: "add_balance", desc: "Tambah saldo {visitor_id, amount, description}" },
+                    { ep: "deduct_balance", desc: "Kurangi saldo {visitor_id, amount, description}" },
+                    { ep: "reset_balance", desc: "Reset saldo ke 0 {visitor_id}" },
+                    { ep: "reset_credits", desc: "Reset kredit game {visitor_id}" },
+                    { ep: "set_credits", desc: "Set kredit {visitor_id, credits}" },
+                    { ep: "reset_streak", desc: "Reset streak {visitor_id}" },
+                    { ep: "reset_storage", desc: "Reset storage {visitor_id}" },
+                    { ep: "update_stock", desc: "Update stok produk {product_id, stock}" },
+                    { ep: "broadcast", desc: "Broadcast ke semua {title, message, type}" },
+                    { ep: "delete_notifications", desc: "Hapus notif user {visitor_id}" },
+                    { ep: "set_deposit_status", desc: "Ubah status deposit {deposit_id, status}" },
+                    { ep: "set_ticket_status", desc: "Ubah status tiket {ticket_id, status}" },
+                  ].map(e => (
+                    <div key={e.ep} className="flex items-start gap-1.5 text-[11px]">
+                      <code className="bg-primary/10 text-primary px-1 rounded shrink-0 font-mono text-[10px]">{e.ep}</code>
+                      <span className="text-muted-foreground">{e.desc}</span>
+                    </div>
+                  ))}
                 </div>
               </div>
 
@@ -1343,21 +1395,13 @@ npm install whatsapp-web.js qrcode-terminal`}
               </div>
 
               <div>
-                <p className="text-xs font-bold mb-1">Contoh Python:</p>
-                <pre className="text-[9px] bg-muted p-2 rounded font-mono whitespace-pre-wrap">{`import requests
-
-API_KEY = "YOUR_KEY"
-BASE = "${baseUrl}"
-headers = {"x-api-key": API_KEY}
-
-res = requests.get(
-  f"{BASE}?endpoint=products",
-  headers=headers
-)
-data = res.json()["data"]
-for p in data:
-    print(f"{p['title']} - Rp {p['price']:,}")`}</pre>
-                <Button size="sm" variant="ghost" className="h-6 text-[10px] mt-1" onClick={() => copyText(`import requests\n\nAPI_KEY = "YOUR_KEY"\nBASE = "${baseUrl}"\nheaders = {"x-api-key": API_KEY}\n\nres = requests.get(f"{BASE}?endpoint=products", headers=headers)\ndata = res.json()["data"]\nfor p in data:\n    print(f"{p['title']} - Rp {p['price']:,}")`, "Python")}>
+                <p className="text-xs font-bold mb-1">Contoh POST:</p>
+                <pre className="text-[9px] bg-muted p-2 rounded font-mono whitespace-pre-wrap">{`curl -X POST \\
+  -H "x-api-key: YOUR_KEY" \\
+  -H "Content-Type: application/json" \\
+  -d '{"visitor_id":"xxx","amount":10000}' \\
+  "${baseUrl}?endpoint=add_balance"`}</pre>
+                <Button size="sm" variant="ghost" className="h-6 text-[10px] mt-1" onClick={() => copyText(`curl -X POST -H "x-api-key: YOUR_KEY" -H "Content-Type: application/json" -d '{"visitor_id":"xxx","amount":10000}' "${baseUrl}?endpoint=add_balance"`, "cURL POST")}>
                   <Copy className="w-3 h-3 mr-1" /> Salin
                 </Button>
               </div>
