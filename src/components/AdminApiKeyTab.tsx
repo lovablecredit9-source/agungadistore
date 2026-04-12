@@ -1240,6 +1240,17 @@ npm install whatsapp-web.js qrcode-terminal`}
                     <span><code>!deposit</code> — Riwayat deposit</span>
                     <span><code>!token</code> — Daftar token</span>
                     <span><code>!notif [isi]</code> — Kirim notif</span>
+                    <span><code>!info</code> — Statistik toko</span>
+                    <span><code>!game [vid]</code> — Stats game</span>
+                    <span><code>!kredit [vid]</code> — Kredit game</span>
+                    <span><code>!streak [vid]</code> — Status streak</span>
+                    <span><code>!storage [vid]</code> — Status storage</span>
+                    <span><code>!artis</code> — Daftar artis</span>
+                    <span><code>!tiket</code> — Tiket support</span>
+                    <span><code>!transaksi [vid]</code> — Riwayat trx</span>
+                    <span><code>!tambahsaldo</code> — Tambah saldo</span>
+                    <span><code>!broadcast [msg]</code> — Broadcast</span>
+                    <span><code>!user [nama]</code> — Cari user</span>
                   </div>
                 </CardContent>
               </Card>
