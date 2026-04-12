@@ -1956,11 +1956,33 @@ node bot.js
             />
           </div>
 
+          {/* Input nomor HP untuk pairing */}
+          <div className="space-y-1">
+            <label className="text-[11px] font-semibold flex items-center gap-1">
+              <Phone className="w-3 h-3" /> Nomor HP Pairing (opsional):
+            </label>
+            <Input
+              placeholder="628xxxxxxxxxx"
+              value={pairingPhone}
+              onChange={e => setPairingPhone(e.target.value)}
+              className="text-xs font-mono h-8"
+            />
+            <p className="text-[10px] text-muted-foreground">
+              Nomor akan otomatis tertanam di bot.js untuk pairing 8 digit kode
+            </p>
+          </div>
+
           {/* Preview */}
           {customApiKey && (
             <div className="bg-muted rounded p-2 space-y-1">
               <p className="text-[10px] font-semibold text-muted-foreground">API Key yang akan masuk di file:</p>
               <code className="text-[10px] font-mono text-primary break-all">{customApiKey}</code>
+              {pairingPhone && (
+                <>
+                  <p className="text-[10px] font-semibold text-muted-foreground mt-1">Nomor Pairing:</p>
+                  <code className="text-[10px] font-mono text-primary">{pairingPhone}</code>
+                </>
+              )}
             </div>
           )}
 
@@ -1969,14 +1991,59 @@ node bot.js
             className="w-full gap-2"
             disabled={!customApiKey.trim()}
             onClick={() => {
-              downloadBotFile(customApiKey.trim(), downloadKeyId ? keys.find(k => k.id === downloadKeyId)?.key_name || "custom" : "custom");
+              const code = generateBotCode(customApiKey.trim(), pairingPhone.trim() || undefined);
+              const blob = new Blob([code], { type: "text/javascript" });
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement("a");
+              a.href = url;
+              a.download = "bot.js";
+              a.click();
+              URL.revokeObjectURL(url);
+              toast({ title: "File bot.js berhasil didownload! 🤖" });
             }}
           >
-            <Download className="w-4 h-4" /> Download bot.js (API Key Tertanam)
+            <Download className="w-4 h-4" /> Download bot.js (Pairing Code)
           </Button>
 
+          <div className="grid grid-cols-2 gap-2">
+            <Button
+              size="sm"
+              variant="outline"
+              className="gap-1 text-xs"
+              onClick={() => {
+                const blob = new Blob([generatePackageJson()], { type: "application/json" });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement("a");
+                a.href = url;
+                a.download = "package.json";
+                a.click();
+                URL.revokeObjectURL(url);
+                toast({ title: "package.json didownload! 📦" });
+              }}
+            >
+              <FileText className="w-3 h-3" /> package.json
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              className="gap-1 text-xs"
+              onClick={() => {
+                const blob = new Blob([generateReadmeMd()], { type: "text/markdown" });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement("a");
+                a.href = url;
+                a.download = "README.md";
+                a.click();
+                URL.revokeObjectURL(url);
+                toast({ title: "README.md didownload! 📝" });
+              }}
+            >
+              <FileText className="w-3 h-3" /> README.md
+            </Button>
+          </div>
+
           <p className="text-[10px] text-muted-foreground text-center">
-            File siap pakai — tinggal <code className="bg-muted px-1 rounded">node bot.js</code>
+            📲 Jalankan <code className="bg-muted px-1 rounded">npm install</code> lalu <code className="bg-muted px-1 rounded">node bot.js</code> — kode 8 digit muncul otomatis
           </p>
         </CardContent>
       </Card>
