@@ -400,8 +400,8 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
     // ═══════════════════════════════════════
     // ═══ USER COMMANDS ═══
     // ═══════════════════════════════════════
-    if (command === "!ping") { return reply("🏓 Pong! Bot aktif v7.0.0"); }
-    if (command === "!versi") { return reply("🤖 Bot WA Agung Adi Store v7.0.0\\n📅 " + new Date().toLocaleString("id-ID")); }
+    if (command === "!ping") { return reply("🏓 Pong! Bot aktif v8.0.0"); }
+    if (command === "!versi") { return reply("🤖 Bot WA Agung Adi Store v8.0.0\\n📅 " + new Date().toLocaleString("id-ID")); }
     if (command === "!waktu") { return reply("🕐 Waktu server: " + new Date().toLocaleString("id-ID", { timeZone: "Asia/Jakarta" }) + " WIB"); }
 
     if (command === "!help" || command === "!menu") {
@@ -640,14 +640,16 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
       const lastArg = args[args.length - 1];
       const qty = args.length > 1 && /^\\d+$/.test(lastArg) ? Number(lastArg) : 1;
       const nameParts = qty > 1 ? args.slice(0, -1) : args;
-      const productName = nameParts.join(" ");
-      if (!productName) return reply("⚠️ Gunakan: !beli [nama produk] [jumlah]\\n\\nContoh:\\n• !beli Netflix 1\\n• !beli Spotify Premium\\n• !beli Voucher Game 3");
-      const res = await api("purchase_product", "POST", { visitor_id: session.visitor_id, product_name: productName, quantity: qty, pin: session.pin || undefined });
+      const productQuery = nameParts.join(" ");
+      if (!productQuery) return reply("⚠️ Gunakan:\\n• !beli [ID produk] [jumlah]\\n• !beli [nama produk] [jumlah]\\n\\nContoh:\\n• !beli abc123-def456 1\\n• !beli Netflix 1\\n• !beli Spotify Premium\\n\\n💡 Lihat ID produk di !produk atau !detailproduk");
+      // Check if it looks like a UUID (product ID)
+      const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}/.test(productQuery.toLowerCase());
+      const res = await api("purchase_product", "POST", { visitor_id: session.visitor_id, ...(isUuid ? { product_id: productQuery } : { product_name: productQuery }), quantity: qty, pin: session.pin || undefined });
       if (res.needPin) {
         return reply("🔐 *PIN diperlukan!*\\n\\nKirim: !setpin [6 digit] untuk set PIN sesi\\nLalu ulangi perintah !beli");
       }
       if (res.error) return reply("❌ " + res.error);
-      let txt = "✅ *Pembelian Berhasil!*\\n\\n📦 " + (res.product?.title || productName) + "\\n🔢 Jumlah: " + (res.quantity || qty) + "\\n💰 Total: " + fmtRp(res.total_price) + "\\n💳 Sisa Saldo: " + fmtRp(res.balance_remaining);
+      let txt = "✅ *Pembelian Berhasil!*\\n\\n📦 " + (res.product?.title || productQuery) + "\\n🔢 Jumlah: " + (res.quantity || qty) + "\\n💰 Total: " + fmtRp(res.total_price) + "\\n💳 Sisa Saldo: " + fmtRp(res.balance_remaining);
       if (res.discount_amount > 0) txt += "\\n🏷️ Diskon: " + fmtRp(res.discount_amount);
       if (res.tokens?.length) {
         txt += "\\n\\n🎫 *Voucher:*";
