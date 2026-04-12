@@ -203,6 +203,7 @@ client.on("message", async (msg) => {
 🔍 *!cari [kata]* — Cari produk
 📢 *!sponsor* — Lihat sponsor aktif
 🎵 *!lagu* — Daftar lagu
+🔎 *!carilagu [kata]* — Cari lagu
 🎤 *!artis* — Daftar artis
 🎧 *!playlist* — Daftar playlist
 🎶 *!publik* — Lagu publik terbaru
@@ -213,12 +214,20 @@ client.on("message", async (msg) => {
 🎟️ *!cekvoucher* — Voucher aktif
 🏪 *!toko* — Info toko
 🏓 *!ping* — Cek status bot
+⏰ *!waktu* — Waktu server
+📱 *!versi* — Versi bot
+🎲 *!random* — Produk random
+🏆 *!top* — Produk & sponsor terpopuler
+🛒 *!kategori* — Kategori produk
+💎 *!harga [min] [max]* — Filter harga
+📢 *!promo* — Promo & diskon aktif
+🎵 *!musikpublik [user]* — Lagu publik user
 
 🔐 *PERINTAH ADMIN:*
 Ketik *!admin* untuk lihat perintah admin.
 
 ━━━━━━━━━━━━━━━━━━━━━━
-_Bot otomatis Agung Adi Store_\`);
+_Bot otomatis Agung Adi Store v3.0_\`);
     return;
   }
 
@@ -478,6 +487,158 @@ _Bot otomatis Agung Adi Store_\`);
     return;
   }
 
+  // ── WAKTU SERVER ──
+  if (text === "!waktu") {
+    const now = new Date();
+    const wib = new Date(now.getTime() + 7 * 60 * 60 * 1000);
+    await msg.reply(\`⏰ *WAKTU SERVER*\\n━━━━━━━━━━━━━━━━━━\\n\\n🌍 UTC: \${now.toUTCString()}\\n🇮🇩 WIB: \${wib.toLocaleString("id-ID", { timeZone: "Asia/Jakarta" })}\\n📅 Hari: \${["Minggu","Senin","Selasa","Rabu","Kamis","Jumat","Sabtu"][wib.getDay()]}\`);
+    return;
+  }
+
+  // ── VERSI BOT ──
+  if (text === "!versi" || text === "!version") {
+    await msg.reply(\`📱 *INFO BOT*\\n━━━━━━━━━━━━━━━━━━\\n\\n🤖 Bot: Agung Adi Store\\n📌 Versi: 3.0\\n📅 Update: April 2026\\n⚙️ Runtime: Node.js\\n📡 API: public-api v2\\n📋 Total perintah: 60+\\n🔒 Keamanan: API Key Auth\\n\\n_Dibuat oleh Agung Adi Store_\`);
+    return;
+  }
+
+  // ── RANDOM PRODUK ──
+  if (text === "!random") {
+    const data = await apiGet("products");
+    if (!data || data.length === 0) { await msg.reply("📦 Belum ada produk."); return; }
+    const p = data[Math.floor(Math.random() * data.length)];
+    let r = "🎲 *PRODUK RANDOM*\\n━━━━━━━━━━━━━━━━━━\\n\\n";
+    r += \`📦 *\${p.title}*\\n💰 \${rp(p.price)}\\n📦 Stok: \${p.stock}\\n\`;
+    if (p.category) r += \`🏷️ Kategori: \${p.category}\\n\`;
+    if (p.has_warranty) r += \`🛡️ Bergaransi\\n\`;
+    if (p.description) r += \`📝 \${p.description}\\n\`;
+    r += \`\\n📱 Beli: wa.me/6285769302532\`;
+    await msg.reply(r);
+    return;
+  }
+
+  // ── TOP / POPULER ──
+  if (text === "!top" || text === "!populer") {
+    const [products, sponsors] = await Promise.all([apiGet("products"), apiGet("sponsors")]);
+    let r = "🏆 *TERPOPULER*\\n━━━━━━━━━━━━━━━━━━\\n\\n";
+    if (products && products.length > 0) {
+      r += "📦 *Top Produk (stok terbanyak):*\\n";
+      [...products].sort((a, b) => b.stock - a.stock).slice(0, 5).forEach((p, i) => {
+        r += \`   \${i + 1}. *\${p.title}* — \${rp(p.price)} (stok: \${p.stock})\\n\`;
+      });
+      r += "\\n";
+    }
+    if (sponsors && sponsors.length > 0) {
+      r += "📢 *Top Sponsor (paling dilihat):*\\n";
+      [...sponsors].filter(s => s.is_active).sort((a, b) => b.view_count - a.view_count).slice(0, 5).forEach((s, i) => {
+        r += \`   \${i + 1}. *\${s.title}* — 👁️ \${s.view_count}x\\n\`;
+      });
+    }
+    await msg.reply(r);
+    return;
+  }
+
+  // ── KATEGORI ──
+  if (text === "!kategori") {
+    const data = await apiGet("products");
+    if (!data || data.length === 0) { await msg.reply("📦 Belum ada produk."); return; }
+    const cats = {};
+    data.forEach(p => { const c = p.category || "Tanpa Kategori"; cats[c] = (cats[c] || 0) + 1; });
+    let r = "🛒 *KATEGORI PRODUK*\\n━━━━━━━━━━━━━━━━━━\\n\\n";
+    Object.entries(cats).sort((a, b) => b[1] - a[1]).forEach(([cat, count], i) => {
+      r += \`\${i + 1}. *\${cat}* — \${count} produk\\n\`;
+    });
+    r += \`\\n📦 Total: \${data.length} produk\\n🔍 Gunakan *!cari [kategori]* untuk filter\`;
+    await msg.reply(r);
+    return;
+  }
+
+  // ── FILTER HARGA ──
+  if (text.startsWith("!harga")) {
+    const parts = msg.body.trim().split(" ");
+    const min = parseInt(parts[1]) || 0;
+    const max = parseInt(parts[2]) || 999999999;
+    const data = await apiGet("products");
+    if (!data) { await msg.reply("❌ Gagal mengambil data."); return; }
+    const hasil = data.filter(p => p.price >= min && p.price <= max).sort((a, b) => a.price - b.price);
+    if (hasil.length === 0) { await msg.reply(\`💎 Tidak ada produk harga \${rp(min)} - \${rp(max)}\`); return; }
+    let r = \`💎 *PRODUK HARGA \${rp(min)} - \${rp(max)}*\\n━━━━━━━━━━━━━━━━━━\\n\\n\`;
+    hasil.forEach((p, i) => {
+      r += \`\${i + 1}. *\${p.title}* — \${rp(p.price)}\\n   📦 Stok: \${p.stock}\\n\\n\`;
+    });
+    await msg.reply(r);
+    return;
+  }
+
+  // ── PROMO / DISKON ──
+  if (text === "!promo" || text === "!diskon") {
+    const data = await apiGet("vouchers");
+    if (!data) { await msg.reply("❌ Gagal mengambil data."); return; }
+    let r = "📢 *PROMO & DISKON AKTIF*\\n━━━━━━━━━━━━━━━━━━\\n\\n";
+    let count = 0;
+    if (data.discount) {
+      data.discount.filter(v => v.is_active).forEach(v => {
+        r += \`🏷️ *\${v.code}* — Diskon \${rp(v.discount_amount)}\\n   Sisa: \${v.max_uses - v.used_count} kuota\\n\`;
+        if (v.expires_at) r += \`   ⏳ Exp: \${new Date(v.expires_at).toLocaleDateString("id-ID")}\\n\`;
+        r += "\\n"; count++;
+      });
+    }
+    if (data.game) {
+      data.game.filter(v => v.is_active).forEach(v => {
+        r += \`🎮 *\${v.code}* — Diskon game \${rp(v.discount_amount)}\\n   Sisa: \${v.max_uses - v.used_count} kuota\\n\\n\`; count++;
+      });
+    }
+    if (data.streak) {
+      data.streak.filter(v => v.is_active).forEach(v => {
+        r += \`🔥 *\${v.code}* — Diskon streak \${rp(v.discount_amount)}\\n   Sisa: \${v.max_uses - v.used_count} kuota\\n\\n\`; count++;
+      });
+    }
+    if (data.music) {
+      data.music.filter(v => v.is_active).forEach(v => {
+        r += \`🎵 *\${v.code}* — Diskon musik \${rp(v.discount_amount)}\\n   Sisa: \${v.max_uses - v.used_count} kuota\\n\\n\`; count++;
+      });
+    }
+    if (count === 0) r += "_Tidak ada promo aktif saat ini. Cek lagi nanti!_";
+    else r += \`_Total \${count} promo aktif_\`;
+    await msg.reply(r);
+    return;
+  }
+
+  // ── CARI LAGU ──
+  if (text.startsWith("!carilagu ")) {
+    const keyword = msg.body.trim().substring(10).toLowerCase();
+    const data = await apiGet("songs");
+    if (!data) { await msg.reply("❌ Gagal mengambil data."); return; }
+    const hasil = data.filter(s => s.title.toLowerCase().includes(keyword) || s.artist.toLowerCase().includes(keyword));
+    if (hasil.length === 0) { await msg.reply(\`🔎 Tidak ditemukan lagu "*\${keyword}*"\`); return; }
+    let r = \`🔎 *HASIL CARI LAGU: "\${keyword}"*\\n━━━━━━━━━━━━━━━━━━\\n\\n\`;
+    hasil.forEach((s, i) => {
+      const dur = s.duration ? \`\${Math.floor(s.duration / 60)}:\${String(s.duration % 60).padStart(2, "0")}\` : "-";
+      r += \`\${i + 1}. *\${s.title}* — \${s.artist} (\${dur})\\n\`;
+    });
+    r += \`\\n_Ditemukan: \${hasil.length} lagu_\`;
+    await msg.reply(r);
+    return;
+  }
+
+  // ── MUSIK PUBLIK USER ──
+  if (text.startsWith("!musikpublik")) {
+    const keyword = msg.body.trim().split(" ").slice(1).join(" ").toLowerCase();
+    const data = await apiGet("public_songs");
+    if (!data || data.length === 0) { await msg.reply("🎶 Belum ada lagu publik."); return; }
+    let filtered = data.filter(s => s.status === "approved");
+    if (keyword) filtered = filtered.filter(s => s.artist.toLowerCase().includes(keyword) || s.title.toLowerCase().includes(keyword));
+    if (filtered.length === 0) { await msg.reply(\`🎵 Tidak ditemukan lagu publik "\${keyword}"\`); return; }
+    let r = \`🎵 *MUSIK PUBLIK\${keyword ? ": " + keyword : ""}*\\n━━━━━━━━━━━━━━━━━━\\n\\n\`;
+    filtered.slice(0, 20).forEach((s, i) => {
+      r += \`\${i + 1}. *\${s.title}* — \${s.artist}\\n\`;
+      if (s.description) r += \`   📝 \${s.description.substring(0, 50)}\\n\`;
+      r += "\\n";
+    });
+    r += \`_Total: \${filtered.length} lagu_\`;
+    await msg.reply(r);
+    return;
+  }
+
   // ══════════════════════════════════════
   // 🔐 MENU ADMIN (Hanya admin)
   // ══════════════════════════════════════
@@ -492,6 +653,7 @@ _Bot otomatis Agung Adi Store_\`);
 !tambahsaldo [vid] [jumlah] — Tambah saldo
 !kurangsaldo [vid] [jumlah] — Kurangi saldo
 !resetsaldo [vid] — Reset saldo ke 0
+!setsaldo [vid] [jumlah] — Set saldo langsung
 
 🎮 *GAME:*
 !game [vid] — Stats game
@@ -499,10 +661,13 @@ _Bot otomatis Agung Adi Store_\`);
 !setkredit [vid] [jumlah] — Set kredit
 !resetkredit [vid] — Reset kredit ke 0
 !profil [vid] — Profil game
+!resetgame [vid] — Reset semua game stats
+!leaderboard — Top 10 pemain
 
 🔥 *STREAK:*
 !streak [vid] — Status streak
 !resetstreak [vid] — Reset streak
+!setstreak [vid] [hari] — Set streak manual
 
 💾 *STORAGE:*
 !storage [vid] — Status storage
@@ -513,22 +678,31 @@ _Bot otomatis Agung Adi Store_\`);
 !deposit — Riwayat deposit
 !setdeposit [id] [status] — Ubah status deposit
 !token — Daftar token
+!produkdetail [id] — Detail produk lengkap
+!sponsordetail [id] — Detail sponsor lengkap
+!stoksponsor [id] [jumlah] — Update stok sponsor
 
 👥 *USER:*
 !user [nama] — Cari user
+!alluser — Semua user
 !loginhistory [vid] — Riwayat login
 !hapusnotif [vid] — Hapus semua notif
+!musikprofil — Semua profil musik
+!follow — Statistik follow
 
 🎫 *SUPPORT:*
 !tiket — Tiket support
 !settiket [id] [status] — Ubah status tiket
 !chat — Chat produk terbaru
 
-📡 *BROADCAST:*
+📡 *BROADCAST & MONITORING:*
 !notif [pesan] — Kirim notifikasi
 !broadcast [pesan] — Broadcast ke semua
 !dashboard — Dashboard lengkap
 !likes — Statistik likes
+!report — Laporan harian
+!topuser — Top user by saldo
+!rekapdeposit — Rekap deposit
 
 ━━━━━━━━━━━━━━━━━━━━━━
 _🔐 Hanya admin yang bisa akses_\`);
@@ -903,6 +1077,211 @@ _🔐 Hanya admin yang bisa akses_\`);
     await msg.reply(r);
     return;
   }
+
+  // ── SET SALDO LANGSUNG (admin) ──
+  if (text.startsWith("!setsaldo")) {
+    if (!isAdmin(msg)) { await msg.reply("🔒 Perintah ini hanya untuk admin."); return; }
+    const parts = msg.body.trim().split(" ");
+    const vid = parts[1]; const amount = parseInt(parts[2]);
+    if (!vid || isNaN(amount)) { await msg.reply("❌ Tulis: !setsaldo [visitor_id] [jumlah]"); return; }
+    const result = await apiPost("set_balance", { visitor_id: vid, balance: amount });
+    if (result && result.success) { await msg.reply(\`✅ Saldo diset ke \${rp(amount)}\`); }
+    else { await msg.reply("❌ Gagal: " + (result?.error || "Error")); }
+    return;
+  }
+
+  // ── RESET GAME STATS (admin) ──
+  if (text.startsWith("!resetgame")) {
+    if (!isAdmin(msg)) { await msg.reply("🔒 Perintah ini hanya untuk admin."); return; }
+    const vid = msg.body.trim().split(" ")[1];
+    if (!vid) { await msg.reply("❌ Tulis: !resetgame [visitor_id]"); return; }
+    const result = await apiPost("reset_game_stats", { visitor_id: vid });
+    if (result && result.success) { await msg.reply("✅ Semua statistik game direset!"); }
+    else { await msg.reply("❌ Gagal: " + (result?.error || "Error")); }
+    return;
+  }
+
+  // ── LEADERBOARD (admin) ──
+  if (text === "!leaderboard" || text === "!lb") {
+    if (!isAdmin(msg)) { await msg.reply("🔒 Perintah ini hanya untuk admin."); return; }
+    const data = await apiGet("game_stats");
+    if (!data || data.length === 0) { await msg.reply("🏆 Belum ada data game."); return; }
+    const playerMap = {};
+    data.forEach(g => {
+      if (!playerMap[g.visitor_id]) playerMap[g.visitor_id] = { total: 0, wins: 0, games: 0 };
+      playerMap[g.visitor_id].total += g.points;
+      playerMap[g.visitor_id].wins += g.wins;
+      playerMap[g.visitor_id].games++;
+    });
+    const sorted = Object.entries(playerMap).sort((a, b) => b[1].total - a[1].total).slice(0, 10);
+    let r = "🏆 *LEADERBOARD TOP 10*\\n━━━━━━━━━━━━━━━━━━\\n\\n";
+    const medals = ["🥇", "🥈", "🥉"];
+    sorted.forEach(([vid, s], i) => {
+      r += \`\${medals[i] || (i + 1) + "."} *\${vid.substring(0, 12)}...*\\n   💎 \${s.total} poin | 🏆 \${s.wins} wins | 🎮 \${s.games} games\\n\\n\`;
+    });
+    await msg.reply(r);
+    return;
+  }
+
+  // ── SET STREAK (admin) ──
+  if (text.startsWith("!setstreak")) {
+    if (!isAdmin(msg)) { await msg.reply("🔒 Perintah ini hanya untuk admin."); return; }
+    const parts = msg.body.trim().split(" ");
+    const vid = parts[1]; const days = parseInt(parts[2]);
+    if (!vid || isNaN(days)) { await msg.reply("❌ Tulis: !setstreak [visitor_id] [hari]"); return; }
+    const result = await apiPost("set_streak", { visitor_id: vid, current_streak: days });
+    if (result && result.success) { await msg.reply(\`✅ Streak diset ke \${days} hari\`); }
+    else { await msg.reply("❌ Gagal: " + (result?.error || "Error")); }
+    return;
+  }
+
+  // ── PRODUK DETAIL (admin) ──
+  if (text.startsWith("!produkdetail")) {
+    if (!isAdmin(msg)) { await msg.reply("🔒 Perintah ini hanya untuk admin."); return; }
+    const pid = msg.body.trim().split(" ")[1];
+    if (!pid) { await msg.reply("❌ Tulis: !produkdetail [product_id]"); return; }
+    const data = await apiGet("products");
+    if (!data) { await msg.reply("❌ Gagal mengambil data."); return; }
+    const p = data.find(x => x.id === pid || x.id.startsWith(pid));
+    if (!p) { await msg.reply("❌ Produk tidak ditemukan."); return; }
+    let r = "📦 *DETAIL PRODUK*\\n━━━━━━━━━━━━━━━━━━\\n\\n";
+    r += \`📌 *\${p.title}*\\n🆔 \${p.id}\\n💰 Harga: \${rp(p.price)}\\n📦 Stok: \${p.stock}\\n🏷️ Kategori: \${p.category || "-"}\\n🛡️ Garansi: \${p.has_warranty ? "Ya" : "Tidak"}\\n📝 Deskripsi: \${p.description || "-"}\\n📅 Dibuat: \${new Date(p.created_at).toLocaleString("id-ID")}\\n📅 Update: \${new Date(p.updated_at).toLocaleString("id-ID")}\`;
+    await msg.reply(r);
+    return;
+  }
+
+  // ── SPONSOR DETAIL (admin) ──
+  if (text.startsWith("!sponsordetail")) {
+    if (!isAdmin(msg)) { await msg.reply("🔒 Perintah ini hanya untuk admin."); return; }
+    const sid = msg.body.trim().split(" ")[1];
+    if (!sid) { await msg.reply("❌ Tulis: !sponsordetail [sponsor_id atau nomor]"); return; }
+    const data = await apiGet("sponsors");
+    if (!data) { await msg.reply("❌ Gagal."); return; }
+    const s = data.find(x => x.id === sid || x.id.startsWith(sid) || String(x.sponsor_number) === sid);
+    if (!s) { await msg.reply("❌ Sponsor tidak ditemukan."); return; }
+    let r = "📢 *DETAIL SPONSOR*\\n━━━━━━━━━━━━━━━━━━\\n\\n";
+    r += \`📌 *\${s.title}* (#\${s.sponsor_number})\\n🆔 \${s.id}\\n👤 Penjual: \${s.seller_name}\\n📞 Kontak: \${s.seller_contact}\\n💰 Harga: \${rp(s.price)}\\n📦 Stok: \${s.stock}\\n🏷️ Kategori: \${s.category}\\n👁️ Views: \${s.view_count}\\n\`;
+    r += \`✅ Aktif: \${s.is_active ? "Ya" : "Tidak"}\\n📅 Mulai: \${new Date(s.starts_at).toLocaleDateString("id-ID")}\\n\`;
+    if (s.expires_at) r += \`⏳ Expired: \${new Date(s.expires_at).toLocaleDateString("id-ID")}\\n\`;
+    if (s.wa_number) r += \`📱 WA: \${s.wa_number}\\n\`;
+    if (s.instagram) r += \`📸 IG: \${s.instagram}\\n\`;
+    if (s.tiktok) r += \`🎵 TikTok: \${s.tiktok}\\n\`;
+    if (s.facebook) r += \`📘 FB: \${s.facebook}\\n\`;
+    if (s.description) r += \`📝 \${s.description}\\n\`;
+    if (s.custom_note) r += \`📋 Note: \${s.custom_note}\\n\`;
+    await msg.reply(r);
+    return;
+  }
+
+  // ── STOK SPONSOR (admin) ──
+  if (text.startsWith("!stoksponsor")) {
+    if (!isAdmin(msg)) { await msg.reply("🔒 Perintah ini hanya untuk admin."); return; }
+    const parts = msg.body.trim().split(" ");
+    const sid = parts[1]; const stock = parseInt(parts[2]);
+    if (!sid || isNaN(stock)) { await msg.reply("❌ Tulis: !stoksponsor [sponsor_id] [jumlah]"); return; }
+    const result = await apiPost("update_sponsor_stock", { sponsor_id: sid, stock });
+    if (result && result.success) { await msg.reply(\`✅ Stok sponsor diubah menjadi \${stock}\`); }
+    else { await msg.reply("❌ Gagal: " + (result?.error || "Error")); }
+    return;
+  }
+
+  // ── ALL USER (admin) ──
+  if (text === "!alluser") {
+    if (!isAdmin(msg)) { await msg.reply("🔒 Perintah ini hanya untuk admin."); return; }
+    const data = await apiGet("balances");
+    if (!data || data.length === 0) { await msg.reply("👥 Belum ada user."); return; }
+    let r = "👥 *SEMUA USER*\\n━━━━━━━━━━━━━━━━━━\\n\\n";
+    data.forEach((b, i) => {
+      r += \`\${i + 1}. *\${b.username}*\\n   💰 \${rp(b.balance)} | 📧 \${b.email || "-"}\\n   🆔 \${b.visitor_id.substring(0, 20)}\\n\\n\`;
+    });
+    r += \`_Total: \${data.length} user_\`;
+    await msg.reply(r);
+    return;
+  }
+
+  // ── MUSIK PROFIL (admin) ──
+  if (text === "!musikprofil") {
+    if (!isAdmin(msg)) { await msg.reply("🔒 Perintah ini hanya untuk admin."); return; }
+    const data = await apiGet("music_profiles");
+    if (!data || data.length === 0) { await msg.reply("🎵 Belum ada profil musik."); return; }
+    let r = "🎵 *PROFIL MUSIK*\\n━━━━━━━━━━━━━━━━━━\\n\\n";
+    data.forEach((p, i) => {
+      r += \`\${i + 1}. *\${p.username}*\\n   🆔 \${p.visitor_id.substring(0, 16)}\\n   📝 \${p.description || "-"}\\n\\n\`;
+    });
+    await msg.reply(r);
+    return;
+  }
+
+  // ── FOLLOW STATS (admin) ──
+  if (text === "!follow") {
+    if (!isAdmin(msg)) { await msg.reply("🔒 Perintah ini hanya untuk admin."); return; }
+    const [follows, gameFollows] = await Promise.all([apiGet("follows"), apiGet("game_follows")]);
+    let r = "👥 *STATISTIK FOLLOW*\\n━━━━━━━━━━━━━━━━━━\\n\\n";
+    r += \`🎵 Musik follow: \${follows ? follows.length : 0}\\n\`;
+    r += \`🎮 Game follow: \${gameFollows ? gameFollows.length : 0}\\n\`;
+    await msg.reply(r);
+    return;
+  }
+
+  // ── REPORT HARIAN (admin) ──
+  if (text === "!report" || text === "!laporan") {
+    if (!isAdmin(msg)) { await msg.reply("🔒 Perintah ini hanya untuk admin."); return; }
+    const [dashboard, likes, deposits] = await Promise.all([
+      apiGet("dashboard"), apiGet("likes"), apiGet("deposits")
+    ]);
+    const today = new Date().toISOString().split("T")[0];
+    let r = "📋 *LAPORAN HARIAN*\\n━━━━━━━━━━━━━━━━━━\\n📅 " + new Date().toLocaleDateString("id-ID") + "\\n\\n";
+    if (dashboard) {
+      r += "📊 *Ringkasan:*\\n";
+      r += \`   📦 Produk: \${dashboard.products}\\n   📢 Sponsor: \${dashboard.sponsors}\\n   👥 User: \${dashboard.users}\\n   🎵 Lagu: \${dashboard.songs}\\n   💰 Total saldo: \${rp(dashboard.total_balance)}\\n\\n\`;
+    }
+    if (likes) {
+      r += "❤️ *Likes:*\\n";
+      r += \`   📦 Produk: \${likes.products} | 🎵 Lagu: \${likes.songs} | 📢 Sponsor: \${likes.sponsors}\\n\\n\`;
+    }
+    if (deposits && deposits.length > 0) {
+      const todayDeposits = deposits.filter(d => d.created_at.startsWith(today));
+      const totalToday = todayDeposits.reduce((sum, d) => sum + d.amount, 0);
+      r += \`💳 *Deposit Hari Ini:*\\n   \${todayDeposits.length} transaksi | Total: \${rp(totalToday)}\\n\\n\`;
+    }
+    r += "_Laporan otomatis Bot WA_";
+    await msg.reply(r);
+    return;
+  }
+
+  // ── TOP USER BY SALDO (admin) ──
+  if (text === "!topuser") {
+    if (!isAdmin(msg)) { await msg.reply("🔒 Perintah ini hanya untuk admin."); return; }
+    const data = await apiGet("balances");
+    if (!data || data.length === 0) { await msg.reply("👥 Belum ada user."); return; }
+    const sorted = [...data].sort((a, b) => b.balance - a.balance).slice(0, 10);
+    let r = "🏆 *TOP USER BY SALDO*\\n━━━━━━━━━━━━━━━━━━\\n\\n";
+    const medals = ["🥇", "🥈", "🥉"];
+    sorted.forEach((b, i) => {
+      r += \`\${medals[i] || (i + 1) + "."} *\${b.username}* — \${rp(b.balance)}\\n\`;
+    });
+    await msg.reply(r);
+    return;
+  }
+
+  // ── REKAP DEPOSIT (admin) ──
+  if (text === "!rekapdeposit") {
+    if (!isAdmin(msg)) { await msg.reply("🔒 Perintah ini hanya untuk admin."); return; }
+    const data = await apiGet("deposits");
+    if (!data || data.length === 0) { await msg.reply("💳 Belum ada deposit."); return; }
+    const success = data.filter(d => d.status === "success");
+    const pending = data.filter(d => d.status === "pending");
+    const rejected = data.filter(d => d.status === "rejected");
+    const totalSuccess = success.reduce((sum, d) => sum + d.amount, 0);
+    const totalPending = pending.reduce((sum, d) => sum + d.amount, 0);
+    let r = "💳 *REKAP DEPOSIT*\\n━━━━━━━━━━━━━━━━━━\\n\\n";
+    r += \`✅ Berhasil: \${success.length} trx — \${rp(totalSuccess)}\\n\`;
+    r += \`⏳ Pending: \${pending.length} trx — \${rp(totalPending)}\\n\`;
+    r += \`❌ Ditolak: \${rejected.length} trx\\n\\n\`;
+    r += \`📊 Total: \${data.length} deposit\\n💰 Sudah masuk: \${rp(totalSuccess)}\`;
+    await msg.reply(r);
+    return;
+  }
 });
 
 client.initialize();
@@ -1215,22 +1594,31 @@ npm install whatsapp-web.js qrcode-terminal`}
 
               <Card className="border-blue-500/30 bg-blue-500/5">
                 <CardContent className="p-2">
-                  <p className="text-[11px] font-bold text-blue-700 mb-1">📌 Perintah USER (Semua orang):</p>
+                  <p className="text-[11px] font-bold text-blue-700 mb-1">📌 Perintah USER ({23} perintah):</p>
                   <div className="grid grid-cols-2 gap-1 text-[10px]">
                     <span><code>!help</code> — Menu bantuan</span>
                     <span><code>!produk</code> — Daftar produk</span>
                     <span><code>!cari [kata]</code> — Cari produk</span>
                     <span><code>!sponsor</code> — Sponsor aktif</span>
                     <span><code>!lagu</code> — Daftar lagu</span>
+                    <span><code>!carilagu [kata]</code> — Cari lagu</span>
                     <span><code>!artis</code> — Daftar artis</span>
                     <span><code>!playlist</code> — Daftar playlist</span>
                     <span><code>!publik</code> — Lagu publik</span>
+                    <span><code>!musikpublik</code> — Musik publik</span>
                     <span><code>!info</code> — Statistik toko</span>
                     <span><code>!ceksaldo [nama]</code> — Cek saldo</span>
                     <span><code>!cekgame [nama]</code> — Stats game</span>
                     <span><code>!paket</code> — Paket tersedia</span>
                     <span><code>!cekvoucher</code> — Voucher aktif</span>
+                    <span><code>!promo</code> — Promo aktif</span>
+                    <span><code>!kategori</code> — Kategori produk</span>
+                    <span><code>!harga [min] [max]</code> — Filter harga</span>
+                    <span><code>!random</code> — Produk random</span>
+                    <span><code>!top</code> — Terpopuler</span>
                     <span><code>!toko</code> — Info toko</span>
+                    <span><code>!waktu</code> — Waktu server</span>
+                    <span><code>!versi</code> — Info bot</span>
                     <span><code>!ping</code> — Status bot</span>
                   </div>
                 </CardContent>
@@ -1238,29 +1626,41 @@ npm install whatsapp-web.js qrcode-terminal`}
 
               <Card className="border-red-500/30 bg-red-500/5">
                 <CardContent className="p-2">
-                  <p className="text-[11px] font-bold text-red-700 mb-1">🔐 Perintah ADMIN (Hanya admin):</p>
+                  <p className="text-[11px] font-bold text-red-700 mb-1">🔐 Perintah ADMIN ({42} perintah):</p>
                   <div className="grid grid-cols-2 gap-1 text-[10px]">
                     <span><code>!admin</code> — Menu admin</span>
                     <span><code>!saldo</code> — Semua saldo</span>
                     <span><code>!tambahsaldo</code> — Tambah saldo</span>
                     <span><code>!kurangsaldo</code> — Kurangi saldo</span>
                     <span><code>!resetsaldo</code> — Reset saldo</span>
+                    <span><code>!setsaldo</code> — Set saldo</span>
                     <span><code>!deposit</code> — Riwayat deposit</span>
                     <span><code>!setdeposit</code> — Ubah status</span>
+                    <span><code>!rekapdeposit</code> — Rekap deposit</span>
                     <span><code>!token</code> — Daftar token</span>
                     <span><code>!game [vid]</code> — Stats game</span>
                     <span><code>!kredit [vid]</code> — Kredit game</span>
                     <span><code>!setkredit</code> — Set kredit</span>
                     <span><code>!resetkredit</code> — Reset kredit</span>
+                    <span><code>!resetgame</code> — Reset game stats</span>
+                    <span><code>!leaderboard</code> — Top 10 pemain</span>
                     <span><code>!streak [vid]</code> — Status streak</span>
                     <span><code>!resetstreak</code> — Reset streak</span>
+                    <span><code>!setstreak</code> — Set streak</span>
                     <span><code>!storage [vid]</code> — Storage</span>
                     <span><code>!resetstorage</code> — Reset storage</span>
                     <span><code>!profil [vid]</code> — Profil game</span>
                     <span><code>!stok [id] [n]</code> — Update stok</span>
+                    <span><code>!produkdetail</code> — Detail produk</span>
+                    <span><code>!sponsordetail</code> — Detail sponsor</span>
+                    <span><code>!stoksponsor</code> — Stok sponsor</span>
                     <span><code>!user [nama]</code> — Cari user</span>
+                    <span><code>!alluser</code> — Semua user</span>
+                    <span><code>!topuser</code> — Top user saldo</span>
                     <span><code>!loginhistory</code> — Riwayat login</span>
                     <span><code>!transaksi</code> — Riwayat trx</span>
+                    <span><code>!musikprofil</code> — Profil musik</span>
+                    <span><code>!follow</code> — Stats follow</span>
                     <span><code>!tiket</code> — Tiket support</span>
                     <span><code>!settiket</code> — Status tiket</span>
                     <span><code>!chat</code> — Chat produk</span>
@@ -1269,6 +1669,7 @@ npm install whatsapp-web.js qrcode-terminal`}
                     <span><code>!hapusnotif</code> — Hapus notif</span>
                     <span><code>!likes</code> — Stats likes</span>
                     <span><code>!dashboard</code> — Dashboard</span>
+                    <span><code>!report</code> — Laporan harian</span>
                   </div>
                 </CardContent>
               </Card>
@@ -1285,7 +1686,7 @@ npm install whatsapp-web.js qrcode-terminal`}
               </Card>
 
               <p className="text-[10px] text-muted-foreground text-center">
-                💡 Download file bot.js dari bagian atas halaman ini. File sudah lengkap 40+ perintah.
+                💡 Download file bot.js dari bagian atas halaman ini. File sudah lengkap 65+ perintah.
               </p>
             </TabsContent>
 
