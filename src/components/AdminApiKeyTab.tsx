@@ -653,6 +653,7 @@ _Bot otomatis Agung Adi Store v3.0_\`);
 !tambahsaldo [vid] [jumlah] — Tambah saldo
 !kurangsaldo [vid] [jumlah] — Kurangi saldo
 !resetsaldo [vid] — Reset saldo ke 0
+!setsaldo [vid] [jumlah] — Set saldo langsung
 
 🎮 *GAME:*
 !game [vid] — Stats game
@@ -660,10 +661,13 @@ _Bot otomatis Agung Adi Store v3.0_\`);
 !setkredit [vid] [jumlah] — Set kredit
 !resetkredit [vid] — Reset kredit ke 0
 !profil [vid] — Profil game
+!resetgame [vid] — Reset semua game stats
+!leaderboard — Top 10 pemain
 
 🔥 *STREAK:*
 !streak [vid] — Status streak
 !resetstreak [vid] — Reset streak
+!setstreak [vid] [hari] — Set streak manual
 
 💾 *STORAGE:*
 !storage [vid] — Status storage
@@ -674,22 +678,31 @@ _Bot otomatis Agung Adi Store v3.0_\`);
 !deposit — Riwayat deposit
 !setdeposit [id] [status] — Ubah status deposit
 !token — Daftar token
+!produkdetail [id] — Detail produk lengkap
+!sponsordetail [id] — Detail sponsor lengkap
+!stoksponsor [id] [jumlah] — Update stok sponsor
 
 👥 *USER:*
 !user [nama] — Cari user
+!alluser — Semua user
 !loginhistory [vid] — Riwayat login
 !hapusnotif [vid] — Hapus semua notif
+!musikprofil — Semua profil musik
+!follow — Statistik follow
 
 🎫 *SUPPORT:*
 !tiket — Tiket support
 !settiket [id] [status] — Ubah status tiket
 !chat — Chat produk terbaru
 
-📡 *BROADCAST:*
+📡 *BROADCAST & MONITORING:*
 !notif [pesan] — Kirim notifikasi
 !broadcast [pesan] — Broadcast ke semua
 !dashboard — Dashboard lengkap
 !likes — Statistik likes
+!report — Laporan harian
+!topuser — Top user by saldo
+!rekapdeposit — Rekap deposit
 
 ━━━━━━━━━━━━━━━━━━━━━━
 _🔐 Hanya admin yang bisa akses_\`);
