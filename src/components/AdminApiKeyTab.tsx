@@ -220,8 +220,13 @@ function rp(n) {
 }
 
 // ━━━ Handler Pesan ━━━
-client.on("message", async (msg) => {
-  const text = msg.body.trim().toLowerCase();
+  client.ev.on("messages.upsert", async ({ messages }) => {
+    const msg = messages[0];
+    if (!msg.message || msg.key.fromMe) return;
+    const text = (msg.message.conversation || msg.message.extendedTextMessage?.text || "").trim().toLowerCase();
+    const jid = msg.key.remoteJid;
+    
+    async function reply(t) { await client.sendMessage(jid, { text: t }); }
 
   // ══════════════════════════════════════
   // 📌 MENU USER (Semua orang bisa akses)
