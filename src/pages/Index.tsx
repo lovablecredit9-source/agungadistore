@@ -2449,6 +2449,8 @@ const Index = () => {
           <GameTab />
         </div>
 
+        {tab === "plus" && <PlusTab />}
+
         {tab === "adminpost" && (
           <div className="space-y-4">
             <h2 className="text-lg font-extrabold flex items-center gap-2">
