@@ -930,6 +930,165 @@ Deno.serve(async (req) => {
         result = { ...sp, images: spImgs || [] };
         break;
       }
+      // ── Deduct game credit ──
+      case "deduct_credit": {
+        if (req.method !== "POST") return new Response(JSON.stringify({ error: "POST required" }), { status: 405, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        const body = await req.json();
+        const { visitor_id, amount: creditAmt } = body;
+        if (!visitor_id) return new Response(JSON.stringify({ error: "visitor_id required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        const deductAmount = Number(creditAmt) || 1;
+        const { data: gc } = await supabase.from("user_game_credits").select("id, credits, unlimited_until").eq("visitor_id", visitor_id).maybeSingle();
+        if (!gc) return new Response(JSON.stringify({ error: "No credits found" }), { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        const isUnlimited = gc.unlimited_until && new Date(gc.unlimited_until) > new Date();
+        if (!isUnlimited) {
+          if (gc.credits < deductAmount) return new Response(JSON.stringify({ error: "Kredit tidak cukup" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+          await supabase.from("user_game_credits").update({ credits: gc.credits - deductAmount }).eq("id", gc.id);
+        }
+        result = { visitor_id, deducted: deductAmount, remaining: isUnlimited ? gc.credits : gc.credits - deductAmount };
+        break;
+      }
+      // ── Manage PIN via API ──
+      case "check_pin": {
+        if (req.method !== "POST") return new Response(JSON.stringify({ error: "POST required" }), { status: 405, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        const body = await req.json();
+        const { visitor_id } = body;
+        if (!visitor_id) return new Response(JSON.stringify({ error: "visitor_id required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        const pinRes = await fetch(`${supabaseUrl}/functions/v1/manage-pin`, {
+          method: "POST", headers: { "Content-Type": "application/json", "Authorization": `Bearer ${serviceKey}` },
+          body: JSON.stringify({ action: "check", visitorId: visitor_id }),
+        });
+        result = await pinRes.json();
+        break;
+      }
+      case "create_pin": {
+        if (req.method !== "POST") return new Response(JSON.stringify({ error: "POST required" }), { status: 405, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        const body = await req.json();
+        const { visitor_id, pin } = body;
+        if (!visitor_id || !pin) return new Response(JSON.stringify({ error: "visitor_id and pin required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        const createPinRes = await fetch(`${supabaseUrl}/functions/v1/manage-pin`, {
+          method: "POST", headers: { "Content-Type": "application/json", "Authorization": `Bearer ${serviceKey}` },
+          body: JSON.stringify({ action: "create", visitorId: visitor_id, pin }),
+        });
+        result = await createPinRes.json();
+        break;
+      }
+      case "verify_pin": {
+        if (req.method !== "POST") return new Response(JSON.stringify({ error: "POST required" }), { status: 405, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        const body = await req.json();
+        const { visitor_id, pin } = body;
+        if (!visitor_id || !pin) return new Response(JSON.stringify({ error: "visitor_id and pin required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        const verifyPinRes = await fetch(`${supabaseUrl}/functions/v1/manage-pin`, {
+          method: "POST", headers: { "Content-Type": "application/json", "Authorization": `Bearer ${serviceKey}` },
+          body: JSON.stringify({ action: "verify", visitorId: visitor_id, pin }),
+        });
+        result = await verifyPinRes.json();
+        break;
+      }
+      case "reset_pin": {
+        if (req.method !== "POST") return new Response(JSON.stringify({ error: "POST required" }), { status: 405, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        const body = await req.json();
+        const { visitor_id, reset_token, new_pin, old_pin } = body;
+        if (!visitor_id) return new Response(JSON.stringify({ error: "visitor_id required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        if (old_pin && new_pin) {
+          const vrr = await fetch(`${supabaseUrl}/functions/v1/manage-pin`, { method: "POST", headers: { "Content-Type": "application/json", "Authorization": `Bearer ${serviceKey}` }, body: JSON.stringify({ action: "verify", visitorId: visitor_id, pin: old_pin }) });
+          const vrd = await vrr.json();
+          if (!vrd.valid) return new Response(JSON.stringify({ error: "PIN lama salah" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+          const enc = new TextEncoder();
+          const hb = await crypto.subtle.digest("SHA-256", enc.encode(new_pin));
+          const hh = Array.from(new Uint8Array(hb)).map(b => b.toString(16).padStart(2, "0")).join("");
+          await supabase.from("user_pins").update({ pin_hash: hh, updated_at: new Date().toISOString() }).eq("visitor_id", visitor_id);
+          result = { success: true, message: "PIN berhasil diubah" };
+        } else if (reset_token && new_pin) {
+          const rr = await fetch(`${supabaseUrl}/functions/v1/manage-pin`, { method: "POST", headers: { "Content-Type": "application/json", "Authorization": `Bearer ${serviceKey}` }, body: JSON.stringify({ action: "reset", visitorId: visitor_id, resetToken: reset_token, newPin: new_pin }) });
+          result = await rr.json();
+        } else {
+          return new Response(JSON.stringify({ error: "old_pin+new_pin atau reset_token+new_pin diperlukan" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        }
+        break;
+      }
+      case "reset_password": {
+        if (req.method !== "POST") return new Response(JSON.stringify({ error: "POST required" }), { status: 405, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        const body = await req.json();
+        const { visitor_id, old_password, new_password, reset_token } = body;
+        if (!visitor_id) return new Response(JSON.stringify({ error: "visitor_id required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        const enc2 = new TextEncoder();
+        if (old_password && new_password) {
+          const { data: u } = await supabase.from("user_balances").select("id, password_hash").eq("visitor_id", visitor_id).maybeSingle();
+          if (!u) return new Response(JSON.stringify({ error: "User tidak ditemukan" }), { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+          const oh = Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256", enc2.encode(old_password)))).map(b => b.toString(16).padStart(2, "0")).join("");
+          if (oh !== u.password_hash) return new Response(JSON.stringify({ error: "Password lama salah" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+          const nh = Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256", enc2.encode(new_password)))).map(b => b.toString(16).padStart(2, "0")).join("");
+          await supabase.from("user_balances").update({ password_hash: nh }).eq("id", u.id);
+          result = { success: true, message: "Password berhasil diubah" };
+        } else if (reset_token && new_password) {
+          const rr = await fetch(`${supabaseUrl}/functions/v1/balance-auth`, { method: "POST", headers: { "Content-Type": "application/json", "Authorization": `Bearer ${serviceKey}` }, body: JSON.stringify({ action: "reset_password", visitorId: visitor_id, resetToken: reset_token, newPassword: new_password }) });
+          result = await rr.json();
+        } else {
+          return new Response(JSON.stringify({ error: "old_password+new_password atau reset_token+new_password diperlukan" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        }
+        break;
+      }
+      case "update_profile": {
+        if (req.method !== "POST") return new Response(JSON.stringify({ error: "POST required" }), { status: 405, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        const body = await req.json();
+        const { visitor_id, username, phone, email } = body;
+        if (!visitor_id) return new Response(JSON.stringify({ error: "visitor_id required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        const ups: any = {};
+        if (username) ups.username = username;
+        if (phone) ups.phone = phone;
+        if (email) ups.email = email;
+        if (Object.keys(ups).length === 0) return new Response(JSON.stringify({ error: "Nothing to update" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        if (username) { const { data: ex } = await supabase.from("user_balances").select("id").eq("username", username).neq("visitor_id", visitor_id).maybeSingle(); if (ex) return new Response(JSON.stringify({ error: "Username sudah digunakan" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }); }
+        await supabase.from("user_balances").update(ups).eq("visitor_id", visitor_id);
+        result = { success: true, updated: ups };
+        break;
+      }
+      case "register": {
+        if (req.method !== "POST") return new Response(JSON.stringify({ error: "POST required" }), { status: 405, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        const body = await req.json();
+        const { username, phone, email, password, visitor_id } = body;
+        if (!username || !password) return new Response(JSON.stringify({ error: "username and password required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        const rr2 = await fetch(`${supabaseUrl}/functions/v1/balance-auth`, { method: "POST", headers: { "Content-Type": "application/json", "Authorization": `Bearer ${serviceKey}` }, body: JSON.stringify({ action: "register", username, phone: phone || "", email: email || "", password, visitorId: visitor_id || crypto.randomUUID() }) });
+        const rd2 = await rr2.json();
+        if (!rr2.ok || rd2.error) return new Response(JSON.stringify({ error: rd2.error || "Gagal mendaftar" }), { status: rr2.status || 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        result = rd2;
+        break;
+      }
+      case "confirm_deposit": {
+        if (req.method !== "POST") return new Response(JSON.stringify({ error: "POST required" }), { status: 405, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        const body = await req.json();
+        const { trx_id, action: depAct } = body;
+        if (!trx_id) return new Response(JSON.stringify({ error: "trx_id required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        let dep2: any = null;
+        const { data: d1 } = await supabase.from("deposits").select("*").eq("trx_id", trx_id).maybeSingle();
+        if (d1) { dep2 = d1; } else {
+          const { data: d2 } = await supabase.from("deposits").select("*").ilike("trx_id", `%${trx_id}%`).limit(1);
+          if (d2?.length) dep2 = d2[0];
+        }
+        if (!dep2) return new Response(JSON.stringify({ error: "Deposit tidak ditemukan" }), { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        const ns = depAct === "tolak" || depAct === "reject" ? "rejected" : "approved";
+        await supabase.from("deposits").update({ status: ns }).eq("id", dep2.id);
+        if (ns === "approved") {
+          const { data: bl } = await supabase.from("user_balances").select("id, balance").eq("visitor_id", dep2.visitor_id).maybeSingle();
+          if (bl) { await supabase.from("user_balances").update({ balance: bl.balance + dep2.amount }).eq("id", bl.id); await supabase.from("balance_transactions").insert({ visitor_id: dep2.visitor_id, type: "topup", amount: dep2.amount, description: `Deposit ${dep2.payment_method} dikonfirmasi` }); }
+          await supabase.from("notifications").insert({ visitor_id: dep2.visitor_id, title: "Deposit Dikonfirmasi", message: `Deposit ${dep2.trx_id} sebesar Rp ${dep2.amount.toLocaleString()} telah dikonfirmasi`, type: "success" });
+        } else {
+          await supabase.from("notifications").insert({ visitor_id: dep2.visitor_id, title: "Deposit Ditolak", message: `Deposit ${dep2.trx_id} ditolak`, type: "warning" });
+        }
+        result = { deposit: dep2, new_status: ns };
+        break;
+      }
+      case "create_deposit": {
+        if (req.method !== "POST") return new Response(JSON.stringify({ error: "POST required" }), { status: 405, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        const body = await req.json();
+        const { visitor_id, amount, payment_method, username } = body;
+        if (!visitor_id || !amount || !payment_method) return new Response(JSON.stringify({ error: "visitor_id, amount, payment_method required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        const dti = "DEP-" + Date.now().toString(36).toUpperCase() + "-" + Math.random().toString(36).slice(2, 6).toUpperCase();
+        const { data: nd, error: de } = await supabase.from("deposits").insert({ visitor_id, amount: Number(amount), payment_method, username: username || "", trx_id: dti }).select().single();
+        if (de) throw de;
+        result = nd;
+        break;
+      }
       default:
         return new Response(JSON.stringify({
           error: "Unknown endpoint",
@@ -944,6 +1103,7 @@ Deno.serve(async (req) => {
             "transaction_detail", "wholesale", "admin_settings", "admin_posts",
             "user_likes", "user_tickets", "ticket_messages", "product_images", "sponsor_images",
             "game_leaderboard", "sponsor_detail",
+            "check_pin",
           ],
           available_post: [
             "notifications", "add_balance", "deduct_balance", "reset_balance", "set_balance",
@@ -956,6 +1116,9 @@ Deno.serve(async (req) => {
             "claim_voucher", "create_ticket", "reply_ticket",
             "like_product", "like_song", "like_sponsor", "claim_streak",
             "play_game",
+            "deduct_credit", "check_pin", "create_pin", "verify_pin", "reset_pin",
+            "reset_password", "update_profile", "register",
+            "confirm_deposit", "create_deposit",
           ],
         }), {
           status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
