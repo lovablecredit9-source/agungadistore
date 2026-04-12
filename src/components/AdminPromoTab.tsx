@@ -366,6 +366,96 @@ export default function AdminPromoTab() {
         </CardContent>
       </Card>
 
+      {/* Bundle Packages */}
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base flex items-center gap-2">
+            <Package className="w-5 h-5 text-purple-500" /> Paket Bundel
+          </CardTitle>
+          <p className="text-xs text-muted-foreground">Paket kombo kredit + streak + storage.</p>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <div className="space-y-2">
+            {bundlePkgs.map(item => (
+              <div key={item.id} className={`border rounded-lg p-3 ${!item.is_active ? 'opacity-50' : ''}`}>
+                {editingId === item.id ? (
+                  <div className="space-y-2">
+                    <Input placeholder="Nama paket" value={editForm.name || ""} onChange={e => setEditForm((f: any) => ({ ...f, name: e.target.value }))} className="text-xs h-8" />
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="space-y-1">
+                        <label className="text-[10px] text-muted-foreground">Kredit</label>
+                        <Input type="number" value={editForm.credits || 0} onChange={e => setEditForm((f: any) => ({ ...f, credits: parseInt(e.target.value) || 0 }))} className="text-xs h-8" />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[10px] text-muted-foreground">Streak (hari)</label>
+                        <Input type="number" value={editForm.streak_days || 0} onChange={e => setEditForm((f: any) => ({ ...f, streak_days: parseInt(e.target.value) || 0 }))} className="text-xs h-8" />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[10px] text-muted-foreground">Storage (MB)</label>
+                        <Input type="number" value={editForm.storage_mb || 0} onChange={e => setEditForm((f: any) => ({ ...f, storage_mb: parseInt(e.target.value) || 0 }))} className="text-xs h-8" />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[10px] text-muted-foreground">Harga (Rp)</label>
+                        <Input type="number" value={editForm.price || 0} onChange={e => setEditForm((f: any) => ({ ...f, price: parseInt(e.target.value) || 0 }))} className="text-xs h-8" />
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button size="sm" onClick={() => handleSaveEdit("bundle_packages")} className="text-xs gap-1"><Check className="w-3 h-3" /> Simpan</Button>
+                      <Button size="sm" variant="outline" onClick={() => setEditingId(null)} className="text-xs gap-1"><X className="w-3 h-3" /> Batal</Button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium">{item.name}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {item.credits > 0 ? `${item.credits} kredit` : ''}{item.streak_days > 0 ? ` + ${item.streak_days} hari streak` : ''}{item.storage_mb > 0 ? ` + ${(item.storage_mb / 1024).toFixed(0)}GB` : ''} — Rp{item.price.toLocaleString("id-ID")}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Switch checked={item.is_active} onCheckedChange={() => handleToggle("bundle_packages", item)} />
+                      <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => startEdit(item)}><Edit2 className="w-3.5 h-3.5" /></Button>
+                      <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" onClick={() => handleDelete("bundle_packages", item.id)}><Trash2 className="w-3.5 h-3.5" /></Button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+          {addType !== "bundle" ? (
+            <Button variant="outline" className="w-full gap-2 text-xs" onClick={() => { setAddType("bundle"); setNewForm({}); }}>
+              <Plus className="w-4 h-4" /> Tambah Paket Bundel
+            </Button>
+          ) : (
+            <div className="border border-dashed border-primary/50 rounded-lg p-3 space-y-2">
+              <Input placeholder="Nama paket" value={newForm.name || ""} onChange={e => setNewForm((f: any) => ({ ...f, name: e.target.value }))} className="text-xs h-8" />
+              <div className="grid grid-cols-2 gap-2">
+                <div className="space-y-1">
+                  <label className="text-[10px] text-muted-foreground">Kredit</label>
+                  <Input type="number" value={newForm.credits || ""} onChange={e => setNewForm((f: any) => ({ ...f, credits: parseInt(e.target.value) || 0 }))} className="text-xs h-8" />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[10px] text-muted-foreground">Streak (hari)</label>
+                  <Input type="number" value={newForm.streak_days || ""} onChange={e => setNewForm((f: any) => ({ ...f, streak_days: parseInt(e.target.value) || 0 }))} className="text-xs h-8" />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[10px] text-muted-foreground">Storage (MB)</label>
+                  <Input type="number" value={newForm.storage_mb || ""} onChange={e => setNewForm((f: any) => ({ ...f, storage_mb: parseInt(e.target.value) || 0 }))} className="text-xs h-8" />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[10px] text-muted-foreground">Harga (Rp)</label>
+                  <Input type="number" value={newForm.price || ""} onChange={e => setNewForm((f: any) => ({ ...f, price: parseInt(e.target.value) || 0 }))} className="text-xs h-8" />
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <Button size="sm" onClick={() => handleAdd("bundle_packages", { name: newForm.name || "", credits: newForm.credits || 0, streak_days: newForm.streak_days || 0, storage_mb: newForm.storage_mb || 0, price: newForm.price || 0, sort_order: bundlePkgs.length > 0 ? Math.max(...bundlePkgs.map((p: any) => p.sort_order)) + 1 : 1 })} className="text-xs gap-1"><Check className="w-3 h-3" /> Tambah</Button>
+                <Button size="sm" variant="outline" onClick={() => setAddType(null)} className="text-xs gap-1"><X className="w-3 h-3" /> Batal</Button>
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
       {/* Flash Sale & Diskon */}
       <Card>
         <CardHeader className="pb-2">
