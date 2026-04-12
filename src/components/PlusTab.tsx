@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { FunctionsHttpError } from "@supabase/supabase-js";
 import { getVisitorId } from "@/lib/visitor-id";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
