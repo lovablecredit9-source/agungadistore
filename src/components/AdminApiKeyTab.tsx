@@ -1337,8 +1337,8 @@ startBot().catch((error) => {
   function generatePackageJson() {
     return JSON.stringify({
       name: "bot-wa-agungadi",
-        version: "5.2.0",
-        description: "Bot WhatsApp Agung Adi Store - QR & Pairing Code stabil",
+        version: "6.0.0",
+        description: "Bot WhatsApp Agung Adi Store - Login, Game, Download Lagu, Username-based Admin",
       main: "index.js",
       scripts: {
         start: "node index.js",
@@ -1356,7 +1356,7 @@ startBot().catch((error) => {
   }
 
   function generateReadmeMd() {
-    return `# 🤖 Bot WhatsApp - Agung Adi Store v5.2.0
+    return `# 🤖 Bot WhatsApp - Agung Adi Store v6.0.0
 
 ## 📋 Persyaratan
 - Node.js >= 18
