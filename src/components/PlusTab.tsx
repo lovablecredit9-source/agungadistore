@@ -4,51 +4,20 @@ import { getVisitorId } from "@/lib/visitor-id";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Wallet, Key, CalendarDays, HardDrive, Loader2, Lock, Tag, CheckCircle, Infinity, Coins, ShoppingCart, Sparkles } from "lucide-react";
+import { Wallet, Key, CalendarDays, HardDrive, Loader2, Lock, Infinity, Sparkles, Package } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useGameCredits, GameCreditsBadge } from "@/components/games/GameCredits";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { motion } from "framer-motion";
 
 function formatPrice(price: number) {
   return new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", minimumFractionDigits: 0 }).format(price);
 }
 
-interface UserBalance {
-  id: string;
-  visitor_id: string;
-  username: string;
-  phone: string;
-  balance: number;
-}
-
-interface CreditPackage {
-  id: string;
-  credits: number;
-  price: number;
-  label: string;
-  is_unlimited?: boolean;
-  unlimited_days?: number;
-  originalPrice?: number;
-}
-
-interface StreakPackage {
-  id: string;
-  name: string;
-  days: number;
-  price: number;
-  is_active: boolean;
-  sort_order: number;
-}
-
-interface StoragePackage {
-  id: string;
-  name: string;
-  storage_mb: number;
-  price: number;
-  is_active: boolean;
-  sort_order: number;
-}
+interface UserBalance { id: string; visitor_id: string; username: string; phone: string; balance: number; }
+interface CreditPackage { id: string; credits: number; price: number; label: string; is_unlimited?: boolean; unlimited_days?: number; originalPrice?: number; }
+interface StreakPackage { id: string; name: string; days: number; price: number; is_active: boolean; sort_order: number; originalPrice?: number; }
+interface StoragePackage { id: string; name: string; storage_mb: number; price: number; is_active: boolean; sort_order: number; }
+interface BundlePackage { id: string; name: string; credits: number; streak_days: number; storage_mb: number; price: number; }
 
 export default function PlusTab() {
   const visitorId = getVisitorId();
@@ -56,7 +25,6 @@ export default function PlusTab() {
   const [userBalance, setUserBalance] = useState<UserBalance | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Credits
   const { credits, isUnlimited, unlimitedUntil, fetchCredits } = useGameCredits(
     localStorage.getItem("balance_visitor_id") || visitorId
   );
@@ -66,30 +34,31 @@ export default function PlusTab() {
   const [creditNeedPin, setCreditNeedPin] = useState(false);
   const [creditSelectedPkg, setCreditSelectedPkg] = useState<string | null>(null);
 
-  // Streak
   const [streakPackages, setStreakPackages] = useState<StreakPackage[]>([]);
   const [streakBuying, setStreakBuying] = useState<string | null>(null);
   const [streakPin, setStreakPin] = useState("");
   const [streakNeedPin, setStreakNeedPin] = useState(false);
   const [streakSelectedPkg, setStreakSelectedPkg] = useState<string | null>(null);
 
-  // Storage
   const [storagePackages, setStoragePackages] = useState<StoragePackage[]>([]);
   const [storageBuying, setStorageBuying] = useState<string | null>(null);
   const [storagePin, setStoragePin] = useState("");
   const [storageNeedPin, setStorageNeedPin] = useState(false);
   const [storageSelectedPkg, setStorageSelectedPkg] = useState<string | null>(null);
 
-  // Voucher states
+  const [bundlePackages, setBundlePackages] = useState<BundlePackage[]>([]);
+  const [bundleBuying, setBundleBuying] = useState<string | null>(null);
+  const [bundlePin, setBundlePin] = useState("");
+  const [bundleNeedPin, setBundleNeedPin] = useState(false);
+  const [bundleSelectedPkg, setBundleSelectedPkg] = useState<string | null>(null);
+
   const [creditVoucher, setCreditVoucher] = useState("");
   const [creditVoucherValid, setCreditVoucherValid] = useState(false);
-  const [creditVoucherDiscount, setCreditVoucherDiscount] = useState(0);
 
-  // Flash sale
   const [flashSaleEnd, setFlashSaleEnd] = useState("");
   const [creditDiscount, setCreditDiscount] = useState(0);
+  const [streakDiscount, setStreakDiscount] = useState(0);
 
-  // Fetch user balance
   const fetchBalance = useCallback(async () => {
     setLoading(true);
     const balVid = localStorage.getItem("balance_visitor_id");
@@ -99,41 +68,57 @@ export default function PlusTab() {
     setLoading(false);
   }, []);
 
-  // Fetch all packages
   useEffect(() => {
     fetchBalance();
-    // Credits
+
     (async () => {
-      const { data } = await supabase.functions.invoke("purchase-game-credits", { body: { action: "get_packages" } });
-      if (data?.packages) {
-        const { data: settingsData } = await supabase.from("admin_settings").select("*");
-        const settings: Record<string, string> = {};
-        if (settingsData) (settingsData as any[]).forEach((s: any) => { settings[s.setting_key] = s.setting_value; });
-        const fsEnd = settings.flash_sale_end || "";
-        setFlashSaleEnd(fsEnd);
-        const disc = parseInt(settings.promo_credit_discount || "0");
-        const isFlashActive = fsEnd && new Date(fsEnd) > new Date();
-        setCreditDiscount(isFlashActive ? disc : 0);
-        const pkgs = (data.packages as CreditPackage[]).map(pkg => {
-          if (isFlashActive && disc > 0) {
-            return { ...pkg, originalPrice: pkg.price, price: Math.max(0, Math.round(pkg.price * (1 - disc / 100))) };
+      const { data: settingsData } = await supabase.from("admin_settings").select("*");
+      const settings: Record<string, string> = {};
+      if (settingsData) (settingsData as any[]).forEach((s: any) => { settings[s.setting_key] = s.setting_value; });
+      const fsEnd = settings.flash_sale_end || "";
+      setFlashSaleEnd(fsEnd);
+      const isFlashActive = !!fsEnd && new Date(fsEnd) > new Date();
+      const cDisc = parseInt(settings.promo_credit_discount || "0");
+      const sDisc = parseInt(settings.promo_streak_discount || "0");
+      setCreditDiscount(isFlashActive ? cDisc : 0);
+      setStreakDiscount(isFlashActive ? sDisc : 0);
+
+      // Credits
+      const { data: creditData } = await supabase.functions.invoke("purchase-game-credits", { body: { action: "get_packages" } });
+      if (creditData?.packages) {
+        const pkgs = (creditData.packages as CreditPackage[]).map(pkg => {
+          if (isFlashActive && cDisc > 0) {
+            return { ...pkg, originalPrice: pkg.price, price: Math.max(0, Math.round(pkg.price * (1 - cDisc / 100))) };
           }
           return pkg;
         });
         setCreditPackages(pkgs);
       }
+
+      // Streak
+      const { data: streakData } = await supabase.from("streak_packages").select("*").eq("is_active", true).order("sort_order");
+      if (streakData) {
+        const pkgs = (streakData as StreakPackage[]).map(pkg => {
+          if (isFlashActive && sDisc > 0) {
+            return { ...pkg, originalPrice: pkg.price, price: Math.max(0, Math.round(pkg.price * (1 - sDisc / 100))) };
+          }
+          return pkg;
+        });
+        setStreakPackages(pkgs);
+      }
     })();
-    // Streak
-    supabase.from("streak_packages").select("*").eq("is_active", true).order("sort_order").then(({ data }) => {
-      if (data) setStreakPackages(data as StreakPackage[]);
-    });
+
     // Storage
     supabase.from("storage_packages").select("*").eq("is_active", true).order("sort_order").then(({ data }) => {
       if (data) setStoragePackages(data as StoragePackage[]);
     });
+
+    // Bundles
+    supabase.functions.invoke("purchase-bundle", { body: { action: "get_packages" } }).then(({ data }) => {
+      if (data?.packages) setBundlePackages(data.packages);
+    });
   }, []);
 
-  // Buy credit
   const handleBuyCredit = async (pkgId: string, pin?: string) => {
     const balVid = localStorage.getItem("balance_visitor_id");
     if (!balVid) { toast({ title: "Login dulu ke akun saldo", variant: "destructive" }); return; }
@@ -152,7 +137,6 @@ export default function PlusTab() {
     finally { setCreditBuying(null); }
   };
 
-  // Buy streak
   const handleBuyStreak = async (pkgId: string, pin?: string) => {
     const balVid = localStorage.getItem("balance_visitor_id");
     if (!balVid) { toast({ title: "Login dulu ke akun saldo", variant: "destructive" }); return; }
@@ -171,7 +155,6 @@ export default function PlusTab() {
     finally { setStreakBuying(null); }
   };
 
-  // Buy storage
   const handleBuyStorage = async (pkgId: string, pin?: string) => {
     const balVid = localStorage.getItem("balance_visitor_id");
     if (!balVid) { toast({ title: "Login dulu ke akun saldo", variant: "destructive" }); return; }
@@ -190,7 +173,23 @@ export default function PlusTab() {
     finally { setStorageBuying(null); }
   };
 
-  const balVid = localStorage.getItem("balance_visitor_id");
+  const handleBuyBundle = async (pkgId: string, pin?: string) => {
+    const balVid = localStorage.getItem("balance_visitor_id");
+    if (!balVid) { toast({ title: "Login dulu ke akun saldo", variant: "destructive" }); return; }
+    setBundleBuying(pkgId);
+    try {
+      const { data, error } = await supabase.functions.invoke("purchase-bundle", {
+        body: { visitorId: balVid, packageId: pkgId, pin: pin || undefined },
+      });
+      if (error) throw error;
+      if (data?.needPin) { setBundleNeedPin(true); setBundleSelectedPkg(pkgId); setBundleBuying(null); return; }
+      if (data?.error) { toast({ title: "Gagal", description: data.error, variant: "destructive" }); setBundleBuying(null); return; }
+      toast({ title: "Berhasil!", description: `${data.bundle_name} berhasil dibeli. Sisa saldo: ${formatPrice(data.balance_remaining)}` });
+      setBundleNeedPin(false); setBundlePin(""); setBundleSelectedPkg(null);
+      fetchCredits(); fetchBalance();
+    } catch { toast({ title: "Error", variant: "destructive" }); }
+    finally { setBundleBuying(null); }
+  };
 
   if (loading) {
     return <div className="flex items-center justify-center py-20"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>;
@@ -202,7 +201,6 @@ export default function PlusTab() {
         <Sparkles className="w-5 h-5 text-primary" /> Plus
       </h2>
 
-      {/* Balance Card */}
       <Card className="border-2 border-primary/20 bg-gradient-to-br from-primary/5 to-accent/5">
         <CardContent className="p-4">
           {userBalance ? (
@@ -223,12 +221,10 @@ export default function PlusTab() {
         </CardContent>
       </Card>
 
-      {/* Credit Status */}
       <div className="flex items-center gap-2 flex-wrap">
         <GameCreditsBadge credits={credits} isUnlimited={isUnlimited} unlimitedUntil={unlimitedUntil} />
       </div>
 
-      {/* Flash Sale Banner */}
       {flashSaleEnd && new Date(flashSaleEnd) > new Date() && (
         <div className="bg-gradient-to-r from-yellow-500/20 to-orange-500/20 border border-yellow-500/30 rounded-lg p-2 text-center">
           <p className="text-xs font-bold text-yellow-600 flex items-center justify-center gap-1">
@@ -237,7 +233,41 @@ export default function PlusTab() {
         </div>
       )}
 
-      {/* === KREDIT GAME === */}
+      {/* PAKET BUNDEL */}
+      {bundlePackages.length > 0 && (
+        <SectionCard
+          title="Paket Bundel"
+          icon={<Package className="w-4 h-4 text-purple-500" />}
+          description="Hemat lebih banyak dengan paket kombo"
+          needPin={bundleNeedPin}
+          pin={bundlePin}
+          setPin={setBundlePin}
+          buying={bundleBuying}
+          selectedPkg={bundleSelectedPkg}
+          onConfirmPin={() => handleBuyBundle(bundleSelectedPkg!, bundlePin)}
+          onCancelPin={() => { setBundleNeedPin(false); setBundlePin(""); setBundleSelectedPkg(null); }}
+        >
+          {bundlePackages.map(pkg => {
+            const parts: string[] = [];
+            if (pkg.credits > 0) parts.push(`${pkg.credits} Kredit`);
+            if (pkg.streak_days > 0) parts.push(`${pkg.streak_days} Hari Streak`);
+            if (pkg.storage_mb > 0) parts.push(`${(pkg.storage_mb / 1024).toFixed(0)} GB Storage`);
+            return (
+              <PackageButton
+                key={pkg.id}
+                label={parts.join(" + ")}
+                price={pkg.price}
+                buying={bundleBuying === pkg.id}
+                anyBuying={!!bundleBuying}
+                icon={<Package className="w-4 h-4 text-purple-500" />}
+                onClick={() => handleBuyBundle(pkg.id)}
+              />
+            );
+          })}
+        </SectionCard>
+      )}
+
+      {/* KREDIT GAME */}
       <SectionCard
         title="Kredit Game"
         icon={<Key className="w-4 h-4 text-accent" />}
@@ -264,7 +294,7 @@ export default function PlusTab() {
         ))}
       </SectionCard>
 
-      {/* === STREAK === */}
+      {/* STREAK */}
       <SectionCard
         title="Paket Streak"
         icon={<CalendarDays className="w-4 h-4 text-orange-500" />}
@@ -282,6 +312,7 @@ export default function PlusTab() {
             key={pkg.id}
             label={`${pkg.name} (${pkg.days} hari)`}
             price={pkg.price}
+            originalPrice={pkg.originalPrice}
             buying={streakBuying === pkg.id}
             anyBuying={!!streakBuying}
             icon={<CalendarDays className="w-4 h-4 text-orange-500" />}
@@ -290,7 +321,7 @@ export default function PlusTab() {
         ))}
       </SectionCard>
 
-      {/* === STORAGE === */}
+      {/* STORAGE */}
       <SectionCard
         title="Paket Storage Musik"
         icon={<HardDrive className="w-4 h-4 text-blue-500" />}
@@ -319,19 +350,10 @@ export default function PlusTab() {
   );
 }
 
-// Reusable section card with PIN support
 function SectionCard({ title, icon, description, children, needPin, pin, setPin, buying, selectedPkg, onConfirmPin, onCancelPin }: {
-  title: string;
-  icon: React.ReactNode;
-  description: string;
-  children: React.ReactNode;
-  needPin: boolean;
-  pin: string;
-  setPin: (v: string) => void;
-  buying: string | null;
-  selectedPkg: string | null;
-  onConfirmPin: () => void;
-  onCancelPin: () => void;
+  title: string; icon: React.ReactNode; description: string; children: React.ReactNode;
+  needPin: boolean; pin: string; setPin: (v: string) => void; buying: string | null; selectedPkg: string | null;
+  onConfirmPin: () => void; onCancelPin: () => void;
 }) {
   return (
     <Card>
@@ -357,15 +379,8 @@ function SectionCard({ title, icon, description, children, needPin, pin, setPin,
   );
 }
 
-// Reusable package button
 function PackageButton({ label, price, originalPrice, buying, anyBuying, icon, onClick }: {
-  label: string;
-  price: number;
-  originalPrice?: number;
-  buying: boolean;
-  anyBuying: boolean;
-  icon: React.ReactNode;
-  onClick: () => void;
+  label: string; price: number; originalPrice?: number; buying: boolean; anyBuying: boolean; icon: React.ReactNode; onClick: () => void;
 }) {
   const hasPromo = originalPrice && originalPrice !== price;
   return (
@@ -373,7 +388,7 @@ function PackageButton({ label, price, originalPrice, buying, anyBuying, icon, o
       <Button variant="outline" className="w-full justify-between h-auto py-3" disabled={anyBuying} onClick={onClick}>
         <div className="flex items-center gap-2">
           {icon}
-          <span className="font-bold text-sm">{label}</span>
+          <span className="font-bold text-sm text-left">{label}</span>
         </div>
         <div className="flex items-center gap-2">
           {hasPromo ? (
