@@ -487,6 +487,158 @@ _Bot otomatis Agung Adi Store v3.0_\`);
     return;
   }
 
+  // ── WAKTU SERVER ──
+  if (text === "!waktu") {
+    const now = new Date();
+    const wib = new Date(now.getTime() + 7 * 60 * 60 * 1000);
+    await msg.reply(\`⏰ *WAKTU SERVER*\\n━━━━━━━━━━━━━━━━━━\\n\\n🌍 UTC: \${now.toUTCString()}\\n🇮🇩 WIB: \${wib.toLocaleString("id-ID", { timeZone: "Asia/Jakarta" })}\\n📅 Hari: \${["Minggu","Senin","Selasa","Rabu","Kamis","Jumat","Sabtu"][wib.getDay()]}\`);
+    return;
+  }
+
+  // ── VERSI BOT ──
+  if (text === "!versi" || text === "!version") {
+    await msg.reply(\`📱 *INFO BOT*\\n━━━━━━━━━━━━━━━━━━\\n\\n🤖 Bot: Agung Adi Store\\n📌 Versi: 3.0\\n📅 Update: April 2026\\n⚙️ Runtime: Node.js\\n📡 API: public-api v2\\n📋 Total perintah: 60+\\n🔒 Keamanan: API Key Auth\\n\\n_Dibuat oleh Agung Adi Store_\`);
+    return;
+  }
+
+  // ── RANDOM PRODUK ──
+  if (text === "!random") {
+    const data = await apiGet("products");
+    if (!data || data.length === 0) { await msg.reply("📦 Belum ada produk."); return; }
+    const p = data[Math.floor(Math.random() * data.length)];
+    let r = "🎲 *PRODUK RANDOM*\\n━━━━━━━━━━━━━━━━━━\\n\\n";
+    r += \`📦 *\${p.title}*\\n💰 \${rp(p.price)}\\n📦 Stok: \${p.stock}\\n\`;
+    if (p.category) r += \`🏷️ Kategori: \${p.category}\\n\`;
+    if (p.has_warranty) r += \`🛡️ Bergaransi\\n\`;
+    if (p.description) r += \`📝 \${p.description}\\n\`;
+    r += \`\\n📱 Beli: wa.me/6285769302532\`;
+    await msg.reply(r);
+    return;
+  }
+
+  // ── TOP / POPULER ──
+  if (text === "!top" || text === "!populer") {
+    const [products, sponsors] = await Promise.all([apiGet("products"), apiGet("sponsors")]);
+    let r = "🏆 *TERPOPULER*\\n━━━━━━━━━━━━━━━━━━\\n\\n";
+    if (products && products.length > 0) {
+      r += "📦 *Top Produk (stok terbanyak):*\\n";
+      [...products].sort((a, b) => b.stock - a.stock).slice(0, 5).forEach((p, i) => {
+        r += \`   \${i + 1}. *\${p.title}* — \${rp(p.price)} (stok: \${p.stock})\\n\`;
+      });
+      r += "\\n";
+    }
+    if (sponsors && sponsors.length > 0) {
+      r += "📢 *Top Sponsor (paling dilihat):*\\n";
+      [...sponsors].filter(s => s.is_active).sort((a, b) => b.view_count - a.view_count).slice(0, 5).forEach((s, i) => {
+        r += \`   \${i + 1}. *\${s.title}* — 👁️ \${s.view_count}x\\n\`;
+      });
+    }
+    await msg.reply(r);
+    return;
+  }
+
+  // ── KATEGORI ──
+  if (text === "!kategori") {
+    const data = await apiGet("products");
+    if (!data || data.length === 0) { await msg.reply("📦 Belum ada produk."); return; }
+    const cats = {};
+    data.forEach(p => { const c = p.category || "Tanpa Kategori"; cats[c] = (cats[c] || 0) + 1; });
+    let r = "🛒 *KATEGORI PRODUK*\\n━━━━━━━━━━━━━━━━━━\\n\\n";
+    Object.entries(cats).sort((a, b) => b[1] - a[1]).forEach(([cat, count], i) => {
+      r += \`\${i + 1}. *\${cat}* — \${count} produk\\n\`;
+    });
+    r += \`\\n📦 Total: \${data.length} produk\\n🔍 Gunakan *!cari [kategori]* untuk filter\`;
+    await msg.reply(r);
+    return;
+  }
+
+  // ── FILTER HARGA ──
+  if (text.startsWith("!harga")) {
+    const parts = msg.body.trim().split(" ");
+    const min = parseInt(parts[1]) || 0;
+    const max = parseInt(parts[2]) || 999999999;
+    const data = await apiGet("products");
+    if (!data) { await msg.reply("❌ Gagal mengambil data."); return; }
+    const hasil = data.filter(p => p.price >= min && p.price <= max).sort((a, b) => a.price - b.price);
+    if (hasil.length === 0) { await msg.reply(\`💎 Tidak ada produk harga \${rp(min)} - \${rp(max)}\`); return; }
+    let r = \`💎 *PRODUK HARGA \${rp(min)} - \${rp(max)}*\\n━━━━━━━━━━━━━━━━━━\\n\\n\`;
+    hasil.forEach((p, i) => {
+      r += \`\${i + 1}. *\${p.title}* — \${rp(p.price)}\\n   📦 Stok: \${p.stock}\\n\\n\`;
+    });
+    await msg.reply(r);
+    return;
+  }
+
+  // ── PROMO / DISKON ──
+  if (text === "!promo" || text === "!diskon") {
+    const data = await apiGet("vouchers");
+    if (!data) { await msg.reply("❌ Gagal mengambil data."); return; }
+    let r = "📢 *PROMO & DISKON AKTIF*\\n━━━━━━━━━━━━━━━━━━\\n\\n";
+    let count = 0;
+    if (data.discount) {
+      data.discount.filter(v => v.is_active).forEach(v => {
+        r += \`🏷️ *\${v.code}* — Diskon \${rp(v.discount_amount)}\\n   Sisa: \${v.max_uses - v.used_count} kuota\\n\`;
+        if (v.expires_at) r += \`   ⏳ Exp: \${new Date(v.expires_at).toLocaleDateString("id-ID")}\\n\`;
+        r += "\\n"; count++;
+      });
+    }
+    if (data.game) {
+      data.game.filter(v => v.is_active).forEach(v => {
+        r += \`🎮 *\${v.code}* — Diskon game \${rp(v.discount_amount)}\\n   Sisa: \${v.max_uses - v.used_count} kuota\\n\\n\`; count++;
+      });
+    }
+    if (data.streak) {
+      data.streak.filter(v => v.is_active).forEach(v => {
+        r += \`🔥 *\${v.code}* — Diskon streak \${rp(v.discount_amount)}\\n   Sisa: \${v.max_uses - v.used_count} kuota\\n\\n\`; count++;
+      });
+    }
+    if (data.music) {
+      data.music.filter(v => v.is_active).forEach(v => {
+        r += \`🎵 *\${v.code}* — Diskon musik \${rp(v.discount_amount)}\\n   Sisa: \${v.max_uses - v.used_count} kuota\\n\\n\`; count++;
+      });
+    }
+    if (count === 0) r += "_Tidak ada promo aktif saat ini. Cek lagi nanti!_";
+    else r += \`_Total \${count} promo aktif_\`;
+    await msg.reply(r);
+    return;
+  }
+
+  // ── CARI LAGU ──
+  if (text.startsWith("!carilagu ")) {
+    const keyword = msg.body.trim().substring(10).toLowerCase();
+    const data = await apiGet("songs");
+    if (!data) { await msg.reply("❌ Gagal mengambil data."); return; }
+    const hasil = data.filter(s => s.title.toLowerCase().includes(keyword) || s.artist.toLowerCase().includes(keyword));
+    if (hasil.length === 0) { await msg.reply(\`🔎 Tidak ditemukan lagu "*\${keyword}*"\`); return; }
+    let r = \`🔎 *HASIL CARI LAGU: "\${keyword}"*\\n━━━━━━━━━━━━━━━━━━\\n\\n\`;
+    hasil.forEach((s, i) => {
+      const dur = s.duration ? \`\${Math.floor(s.duration / 60)}:\${String(s.duration % 60).padStart(2, "0")}\` : "-";
+      r += \`\${i + 1}. *\${s.title}* — \${s.artist} (\${dur})\\n\`;
+    });
+    r += \`\\n_Ditemukan: \${hasil.length} lagu_\`;
+    await msg.reply(r);
+    return;
+  }
+
+  // ── MUSIK PUBLIK USER ──
+  if (text.startsWith("!musikpublik")) {
+    const keyword = msg.body.trim().split(" ").slice(1).join(" ").toLowerCase();
+    const data = await apiGet("public_songs");
+    if (!data || data.length === 0) { await msg.reply("🎶 Belum ada lagu publik."); return; }
+    let filtered = data.filter(s => s.status === "approved");
+    if (keyword) filtered = filtered.filter(s => s.artist.toLowerCase().includes(keyword) || s.title.toLowerCase().includes(keyword));
+    if (filtered.length === 0) { await msg.reply(\`🎵 Tidak ditemukan lagu publik "\${keyword}"\`); return; }
+    let r = \`🎵 *MUSIK PUBLIK\${keyword ? ": " + keyword : ""}*\\n━━━━━━━━━━━━━━━━━━\\n\\n\`;
+    filtered.slice(0, 20).forEach((s, i) => {
+      r += \`\${i + 1}. *\${s.title}* — \${s.artist}\\n\`;
+      if (s.description) r += \`   📝 \${s.description.substring(0, 50)}\\n\`;
+      r += "\\n";
+    });
+    r += \`_Total: \${filtered.length} lagu_\`;
+    await msg.reply(r);
+    return;
+  }
+
   // ══════════════════════════════════════
   // 🔐 MENU ADMIN (Hanya admin)
   // ══════════════════════════════════════
