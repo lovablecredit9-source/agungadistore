@@ -1833,7 +1833,7 @@ startBot().catch((error) => {
   }
 
   function generateReadmeMd() {
-    return `# 🤖 Bot WhatsApp - Agung Adi Store v7.0.0
+    return `# 🤖 Bot WhatsApp - Agung Adi Store v8.0.0
 
 ## 📋 Persyaratan
 - Node.js >= 18
