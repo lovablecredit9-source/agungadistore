@@ -65,11 +65,12 @@ export default function AdminPromoTab() {
 
   async function fetchAll() {
     setLoading(true);
-    const [s, c, st, stor] = await Promise.all([
+    const [s, c, st, stor, bun] = await Promise.all([
       supabase.from("admin_settings").select("*"),
       supabase.from("credit_packages" as any).select("*").order("sort_order", { ascending: true }),
       supabase.from("streak_packages" as any).select("*").order("sort_order", { ascending: true }),
       supabase.from("storage_packages" as any).select("*").order("sort_order", { ascending: true }),
+      supabase.from("bundle_packages" as any).select("*").order("sort_order", { ascending: true }),
     ]);
     if (s.data) {
       const map: Record<string, string> = {};
@@ -79,6 +80,7 @@ export default function AdminPromoTab() {
     if (c.data) setCreditPkgs(c.data as any[]);
     if (st.data) setStreakPkgs(st.data as any[]);
     if (stor.data) setStoragePkgs(stor.data as any[]);
+    if (bun.data) setBundlePkgs(bun.data as any[]);
     setLoading(false);
   }
 
