@@ -1310,14 +1310,32 @@ npm install whatsapp-web.js qrcode-terminal`}
 
               <div>
                 <p className="text-xs font-bold mb-1">Endpoint POST:</p>
-                <div className="text-[11px] space-y-1">
-                  <code className="bg-primary/10 text-primary px-1 rounded font-mono text-[10px]">notifications</code>
-                  <pre className="text-[9px] bg-muted p-2 rounded font-mono mt-1">{`{
+                <div className="text-[11px] space-y-2">
+                  <div>
+                    <code className="bg-primary/10 text-primary px-1 rounded font-mono text-[10px]">notifications</code>
+                    <pre className="text-[9px] bg-muted p-2 rounded font-mono mt-1">{`{
   "visitor_id": "xxx",
   "title": "Judul",
   "message": "Isi pesan",
   "type": "info"
 }`}</pre>
+                  </div>
+                  <div>
+                    <code className="bg-primary/10 text-primary px-1 rounded font-mono text-[10px]">add_balance</code>
+                    <pre className="text-[9px] bg-muted p-2 rounded font-mono mt-1">{`{
+  "visitor_id": "xxx",
+  "amount": 10000,
+  "description": "Top up manual"
+}`}</pre>
+                  </div>
+                  <div>
+                    <code className="bg-primary/10 text-primary px-1 rounded font-mono text-[10px]">broadcast</code>
+                    <pre className="text-[9px] bg-muted p-2 rounded font-mono mt-1">{`{
+  "title": "📢 Broadcast",
+  "message": "Isi broadcast",
+  "type": "info"
+}`}</pre>
+                  </div>
                 </div>
               </div>
 
