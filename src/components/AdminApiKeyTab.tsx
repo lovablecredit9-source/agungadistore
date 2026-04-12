@@ -1954,7 +1954,7 @@ npm install whatsapp-web.js qrcode-terminal`}
 
               <Card className="border-blue-500/30 bg-blue-500/5">
                 <CardContent className="p-2">
-                  <p className="text-[11px] font-bold text-blue-700 mb-1">📌 Perintah USER ({23} perintah):</p>
+                  <p className="text-[11px] font-bold text-blue-700 mb-1">📌 Perintah USER ({30} perintah):</p>
                   <div className="grid grid-cols-2 gap-1 text-[10px]">
                     <span><code>!help</code> — Menu bantuan</span>
                     <span><code>!produk</code> — Daftar produk</span>
@@ -1976,6 +1976,14 @@ npm install whatsapp-web.js qrcode-terminal`}
                     <span><code>!harga [min] [max]</code> — Filter harga</span>
                     <span><code>!random</code> — Produk random</span>
                     <span><code>!top</code> — Terpopuler</span>
+                    <span><code>!detailproduk</code> — Detail produk</span>
+                    <span><code>!detailsponsor</code> — Detail sponsor</span>
+                    <span><code>!detailartis</code> — Detail artis</span>
+                    <span><code>!lb</code> — Leaderboard</span>
+                    <span><code>!bantuan</code> — FAQ</span>
+                    <span><code>!syarat</code> — S&K</span>
+                    <span><code>!sosmed</code> — Social media</span>
+                    <span><code>!rangkuman</code> — Rangkuman</span>
                     <span><code>!toko</code> — Info toko</span>
                     <span><code>!waktu</code> — Waktu server</span>
                     <span><code>!versi</code> — Info bot</span>
@@ -1986,7 +1994,7 @@ npm install whatsapp-web.js qrcode-terminal`}
 
               <Card className="border-red-500/30 bg-red-500/5">
                 <CardContent className="p-2">
-                  <p className="text-[11px] font-bold text-red-700 mb-1">🔐 Perintah ADMIN ({42} perintah):</p>
+                  <p className="text-[11px] font-bold text-red-700 mb-1">🔐 Perintah ADMIN ({52} perintah):</p>
                   <div className="grid grid-cols-2 gap-1 text-[10px]">
                     <span><code>!admin</code> — Menu admin</span>
                     <span><code>!saldo</code> — Semua saldo</span>
@@ -1998,31 +2006,35 @@ npm install whatsapp-web.js qrcode-terminal`}
                     <span><code>!setdeposit</code> — Ubah status</span>
                     <span><code>!rekapdeposit</code> — Rekap deposit</span>
                     <span><code>!token</code> — Daftar token</span>
+                    <span><code>!tokendetail</code> — Detail token</span>
                     <span><code>!game [vid]</code> — Stats game</span>
                     <span><code>!kredit [vid]</code> — Kredit game</span>
                     <span><code>!setkredit</code> — Set kredit</span>
                     <span><code>!resetkredit</code> — Reset kredit</span>
                     <span><code>!resetgame</code> — Reset game stats</span>
-                    <span><code>!leaderboard</code> — Top 10 pemain</span>
+                    <span><code>!leaderboardadmin</code> — LB detail</span>
                     <span><code>!streak [vid]</code> — Status streak</span>
                     <span><code>!resetstreak</code> — Reset streak</span>
                     <span><code>!setstreak</code> — Set streak</span>
+                    <span><code>!streaksub</code> — Langganan streak</span>
                     <span><code>!storage [vid]</code> — Storage</span>
                     <span><code>!resetstorage</code> — Reset storage</span>
                     <span><code>!profil [vid]</code> — Profil game</span>
-                    <span><code>!stok [id] [n]</code> — Update stok</span>
+                    <span><code>!stok [id] [n]</code> — Stok produk</span>
                     <span><code>!produkdetail</code> — Detail produk</span>
                     <span><code>!sponsordetail</code> — Detail sponsor</span>
                     <span><code>!stoksponsor</code> — Stok sponsor</span>
                     <span><code>!user [nama]</code> — Cari user</span>
                     <span><code>!alluser</code> — Semua user</span>
                     <span><code>!topuser</code> — Top user saldo</span>
+                    <span><code>!detailuser</code> — Detail lengkap</span>
                     <span><code>!loginhistory</code> — Riwayat login</span>
                     <span><code>!transaksi</code> — Riwayat trx</span>
                     <span><code>!musikprofil</code> — Profil musik</span>
                     <span><code>!follow</code> — Stats follow</span>
                     <span><code>!tiket</code> — Tiket support</span>
                     <span><code>!settiket</code> — Status tiket</span>
+                    <span><code>!tiketdetail</code> — Detail tiket</span>
                     <span><code>!chat</code> — Chat produk</span>
                     <span><code>!notif [isi]</code> — Kirim notif</span>
                     <span><code>!broadcast</code> — Broadcast</span>
@@ -2030,6 +2042,8 @@ npm install whatsapp-web.js qrcode-terminal`}
                     <span><code>!likes</code> — Stats likes</span>
                     <span><code>!dashboard</code> — Dashboard</span>
                     <span><code>!report</code> — Laporan harian</span>
+                    <span><code>!aktivitas</code> — Aktivitas baru</span>
+                    <span><code>!backup</code> — Info backup</span>
                   </div>
                 </CardContent>
               </Card>
@@ -2046,7 +2060,7 @@ npm install whatsapp-web.js qrcode-terminal`}
               </Card>
 
               <p className="text-[10px] text-muted-foreground text-center">
-                💡 Download file bot.js dari bagian atas halaman ini. File sudah lengkap 65+ perintah.
+                💡 Download file bot.js — total 80+ perintah lengkap.
               </p>
             </TabsContent>
 
