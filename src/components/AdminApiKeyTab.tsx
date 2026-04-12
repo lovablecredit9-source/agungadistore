@@ -676,9 +676,10 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
       const res = await api("purchase_streak", "POST", { visitor_id: session.visitor_id, package_name: packageName, pin: session.pin || undefined });
       if (res.needPin) return reply("🔐 *PIN diperlukan!*\\nKirim: !setpin [6 digit] lalu ulangi");
       if (res.error) return reply("❌ " + res.error);
-      session.balance = res.balance_remaining;
+      const sd = res.data || res;
+      session.balance = sd.balance_remaining;
       userSessions[remoteJid] = session;
-      return reply("✅ *Paket Streak Berhasil!*\\n\\n🔥 Paket: " + res.plan + "\\n📅 Aktif sampai: " + new Date(res.expires_at).toLocaleString("id-ID") + "\\n💳 Sisa Saldo: " + fmtRp(res.balance_remaining) + (res.discount_amount > 0 ? "\\n🏷️ Diskon: " + fmtRp(res.discount_amount) : "") + (res.auto_claimed ? "\\n✅ Streak hari ini otomatis diklaim!" : ""));
+      return reply("✅ *Paket Streak Berhasil!*\\n\\n🔥 Paket: " + (sd.plan || packageName) + "\\n📅 Aktif sampai: " + (sd.expires_at ? new Date(sd.expires_at).toLocaleString("id-ID") : "-") + "\\n💳 Sisa Saldo: " + fmtRp(sd.balance_remaining) + (sd.discount_amount > 0 ? "\\n🏷️ Diskon: " + fmtRp(sd.discount_amount) : "") + (sd.auto_claimed ? "\\n✅ Streak hari ini otomatis diklaim!" : ""));
     }
 
     if (command.startsWith("!belikredit")) {
@@ -692,9 +693,10 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
       const res = await api("purchase_credits", "POST", { visitor_id: session.visitor_id, package_name: packageName, pin: session.pin || undefined });
       if (res.needPin) return reply("🔐 *PIN diperlukan!*\\nKirim: !setpin [6 digit] lalu ulangi");
       if (res.error) return reply("❌ " + res.error);
-      session.balance = res.balance_remaining;
+      const cd = res.data || res;
+      session.balance = cd.balance_remaining;
       userSessions[remoteJid] = session;
-      return reply("✅ *Kredit Game Berhasil!*\\n\\n💎 " + (res.plan || packageName) + "\\n💳 Sisa Saldo: " + fmtRp(res.balance_remaining) + (res.discount_amount > 0 ? "\\n🏷️ Diskon: " + fmtRp(res.discount_amount) : ""));
+      return reply("✅ *Kredit Game Berhasil!*\\n\\n💎 " + (cd.plan || cd.label || packageName) + "\\n💳 Sisa Saldo: " + fmtRp(cd.balance_remaining) + (cd.discount_amount > 0 ? "\\n🏷️ Diskon: " + fmtRp(cd.discount_amount) : ""));
     }
 
     if (command.startsWith("!belistorage")) {
@@ -812,8 +814,8 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
       const res = await api("products");
       const found = (res.data || []).filter((p) => p.title.toLowerCase().includes(q) || (p.description || "").toLowerCase().includes(q));
       if (!found.length) return reply("🔍 Tidak ditemukan produk dengan kata: " + q);
-      const list = found.slice(0, 15).map((p, i) => (i+1) + ". " + p.title + " — " + fmtRp(p.price)).join("\\n");
-      return reply("🔍 *Hasil Pencarian:* " + q + "\\n\\n" + list);
+      const list = found.slice(0, 15).map((p, i) => (i+1) + ".  #" + p.id.slice(0, 8) + " " + p.title + " — " + fmtRp(p.price)).join("\\n");
+      return reply("🔍 *Hasil Pencarian:* " + q + "\\n\\n" + list + "\\n\\nJika ingin beli !beli [nama] atau !beli #[id produk]");
     }
 
     if (command === "!kategori") {
