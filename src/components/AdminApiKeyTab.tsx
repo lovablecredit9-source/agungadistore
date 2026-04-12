@@ -203,6 +203,7 @@ client.on("message", async (msg) => {
 🔍 *!cari [kata]* — Cari produk
 📢 *!sponsor* — Lihat sponsor aktif
 🎵 *!lagu* — Daftar lagu
+🔎 *!carilagu [kata]* — Cari lagu
 🎤 *!artis* — Daftar artis
 🎧 *!playlist* — Daftar playlist
 🎶 *!publik* — Lagu publik terbaru
@@ -213,12 +214,20 @@ client.on("message", async (msg) => {
 🎟️ *!cekvoucher* — Voucher aktif
 🏪 *!toko* — Info toko
 🏓 *!ping* — Cek status bot
+⏰ *!waktu* — Waktu server
+📱 *!versi* — Versi bot
+🎲 *!random* — Produk random
+🏆 *!top* — Produk & sponsor terpopuler
+🛒 *!kategori* — Kategori produk
+💎 *!harga [min] [max]* — Filter harga
+📢 *!promo* — Promo & diskon aktif
+🎵 *!musikpublik [user]* — Lagu publik user
 
 🔐 *PERINTAH ADMIN:*
 Ketik *!admin* untuk lihat perintah admin.
 
 ━━━━━━━━━━━━━━━━━━━━━━
-_Bot otomatis Agung Adi Store_\`);
+_Bot otomatis Agung Adi Store v3.0_\`);
     return;
   }
 
