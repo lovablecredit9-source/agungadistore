@@ -135,7 +135,7 @@ const DEFAULT_PAIRING_PHONE = "${phoneNumber.replace(/[^0-9]/g, "")}";`
 const DEFAULT_PAIRING_PHONE = ""; // Opsional: nomor default pairing, format: 628xxxxxxxxxx`;
 
     return `// =============================================
-// 🤖 BOT WHATSAPP - Agung Adi Store v7.0.0
+// 🤖 BOT WHATSAPP - Agung Adi Store v8.0.0
 // =============================================
 // Library: @whiskeysockets/baileys (QR / Pairing Code)
 // Cara pakai:
@@ -1270,7 +1270,7 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
     if (command === "!admin") {
       if (!isAdmin(msg)) return reply("❌ Hanya admin yang bisa akses.");
       return reply([
-        "🔐 *Perintah Admin v7.0.0:*",
+        "🔐 *Perintah Admin v8.0.0:*",
         "",
         "💡 Semua perintah admin sekarang pakai *username* bukan visitor_id!",
         "",
@@ -1814,8 +1814,8 @@ startBot().catch((error) => {
   function generatePackageJson() {
     return JSON.stringify({
       name: "bot-wa-agungadi",
-        version: "6.0.0",
-        description: "Bot WhatsApp Agung Adi Store - Login, Game, Download Lagu, Username-based Admin",
+        version: "8.0.0",
+        description: "Bot WhatsApp Agung Adi Store - Full Feature: Game AI, Tiket, Like, Klaim, Kirim Lagu",
       main: "index.js",
       scripts: {
         start: "node index.js",
