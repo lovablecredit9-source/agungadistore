@@ -388,7 +388,7 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
       msg.message.imageMessage?.caption ||
       "";
 
-    if (!text.startsWith("!")) return;
+    if (!text.startsWith("!") && !userSessions[remoteJid + "_game"]) return;
 
     const command = text.trim().toLowerCase();
     const rawArgs = text.trim().split(/\\s+/).slice(1);
