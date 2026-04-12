@@ -897,7 +897,8 @@ Deno.serve(async (req) => {
             "vouchers", "packages", "likes", "chats", "streak_subs",
             "music_profiles", "login_history", "dashboard",
             "follows", "game_follows", "resolve_user", "user_transactions", "song_url",
-            "transaction_detail", "wholesale", "admin_settings",
+            "transaction_detail", "wholesale", "admin_settings", "admin_posts",
+            "user_likes", "user_tickets", "ticket_messages", "product_images", "sponsor_images",
           ],
           available_post: [
             "notifications", "add_balance", "deduct_balance", "reset_balance", "set_balance",
@@ -907,6 +908,8 @@ Deno.serve(async (req) => {
             "set_deposit_status", "set_ticket_status", "login",
             "purchase_product", "purchase_streak", "purchase_credits",
             "purchase_storage", "purchase_bundle",
+            "claim_voucher", "create_ticket", "reply_ticket",
+            "like_product", "like_song", "like_sponsor", "claim_streak",
           ],
         }), {
           status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
