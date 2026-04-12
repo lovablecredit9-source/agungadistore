@@ -1885,26 +1885,44 @@ node index.js`}
 
               <Card className="border-blue-500/30 bg-blue-500/5">
                 <CardContent className="p-2">
-                  <p className="text-[11px] font-bold text-blue-700 mb-1">📌 Perintah USER ({30} perintah):</p>
+                  <p className="text-[11px] font-bold text-blue-700 mb-1">📌 Perintah USER ({45} perintah):</p>
                   <div className="grid grid-cols-2 gap-1 text-[10px]">
                     <span><code>!help</code> — Menu bantuan</span>
+                    <span><code>!login</code> — Login akun</span>
+                    <span><code>!logout</code> — Logout akun</span>
+                    <span><code>!saldoku</code> — Cek saldo</span>
+                    <span><code>!profilku</code> — Profil lengkap</span>
+                    <span><code>!riwayat</code> — Riwayat transaksi</span>
+                    <span><code>!detailtrx</code> — Detail transaksi</span>
+                    <span><code>!gameku</code> — Stats game</span>
+                    <span><code>!kreditku</code> — Kredit game</span>
+                    <span><code>!streakku</code> — Status streak</span>
+                    <span><code>!notifku</code> — Notifikasi</span>
+                    <span><code>!beli [nama]</code> — Beli produk</span>
+                    <span><code>!belistreak</code> — Beli streak</span>
+                    <span><code>!belikredit</code> — Beli kredit</span>
+                    <span><code>!belistorage</code> — Beli storage</span>
+                    <span><code>!belibundle</code> — Beli bundle</span>
+                    <span><code>!setpin</code> — Set PIN sesi</span>
+                    <span><code>!grosir [nama]</code> — Harga grosir</span>
+                    <span><code>!flashsale</code> — Info flash sale</span>
                     <span><code>!produk</code> — Daftar produk</span>
                     <span><code>!cari [kata]</code> — Cari produk</span>
                     <span><code>!sponsor</code> — Sponsor aktif</span>
                     <span><code>!lagu</code> — Daftar lagu</span>
                     <span><code>!carilagu [kata]</code> — Cari lagu</span>
+                    <span><code>!download [judul]</code> — Download lagu</span>
                     <span><code>!artis</code> — Daftar artis</span>
                     <span><code>!playlist</code> — Daftar playlist</span>
                     <span><code>!publik</code> — Lagu publik</span>
-                    <span><code>!musikpublik</code> — Musik publik</span>
                     <span><code>!info</code> — Statistik toko</span>
                     <span><code>!ceksaldo [nama]</code> — Cek saldo</span>
                     <span><code>!cekgame [nama]</code> — Stats game</span>
                     <span><code>!paket</code> — Paket tersedia</span>
                     <span><code>!cekvoucher</code> — Voucher aktif</span>
                     <span><code>!promo</code> — Promo aktif</span>
-                    <span><code>!kategori</code> — Kategori produk</span>
-                    <span><code>!harga [min] [max]</code> — Filter harga</span>
+                    <span><code>!kategori</code> — Kategori</span>
+                    <span><code>!harga [min] [max]</code> — Filter</span>
                     <span><code>!random</code> — Produk random</span>
                     <span><code>!top</code> — Terpopuler</span>
                     <span><code>!detailproduk</code> — Detail produk</span>
@@ -1913,9 +1931,6 @@ node index.js`}
                     <span><code>!lb</code> — Leaderboard</span>
                     <span><code>!bantuan</code> — FAQ</span>
                     <span><code>!syarat</code> — S&K</span>
-                    <span><code>!sosmed</code> — Social media</span>
-                    <span><code>!rangkuman</code> — Rangkuman</span>
-                    <span><code>!toko</code> — Info toko</span>
                     <span><code>!waktu</code> — Waktu server</span>
                     <span><code>!versi</code> — Info bot</span>
                     <span><code>!ping</code> — Status bot</span>
