@@ -649,18 +649,18 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
         return reply("🔐 *PIN diperlukan!*\\n\\nKirim: !setpin [6 digit] untuk set PIN sesi\\nLalu ulangi perintah !beli");
       }
       if (res.error) return reply("❌ " + res.error);
-      let txt = "✅ *Pembelian Berhasil!*\\n\\n📦 " + (res.product?.title || productQuery) + "\\n🔢 Jumlah: " + (res.quantity || qty) + "\\n💰 Total: " + fmtRp(res.total_price) + "\\n💳 Sisa Saldo: " + fmtRp(res.balance_remaining);
-      if (res.discount_amount > 0) txt += "\\n🏷️ Diskon: " + fmtRp(res.discount_amount);
-      if (res.tokens?.length) {
+      const pd = res.data || res;
+      let txt = "✅ *Pembelian Berhasil!*\\n\\n📦 " + (pd.product?.title || productQuery) + "\\n🔢 Jumlah: " + (pd.quantity || qty) + "\\n💰 Total: " + fmtRp(pd.total_price) + "\\n💳 Sisa Saldo: " + fmtRp(pd.balance_remaining);
+      if (pd.discount_amount > 0) txt += "\\n🏷️ Diskon: " + fmtRp(pd.discount_amount);
+      if (pd.tokens?.length) {
         txt += "\\n\\n🎫 *Voucher:*";
-        res.tokens.forEach((t, i) => {
+        pd.tokens.forEach((t, i) => {
           txt += "\\n" + (i+1) + ". " + t.token_code;
           if (t.fields?.length) t.fields.forEach((f) => { txt += "\\n   " + f.field_name + ": " + f.field_value; });
         });
         txt += "\\n\\n💡 Salin kode voucher untuk klaim di menu Voucher.";
       }
-      // Refresh session balance
-      session.balance = res.balance_remaining;
+      session.balance = pd.balance_remaining;
       userSessions[remoteJid] = session;
       return reply(txt);
     }
