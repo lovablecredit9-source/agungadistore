@@ -886,6 +886,50 @@ Deno.serve(async (req) => {
         result = data;
         break;
       }
+      // ── Play AI game ──
+      case "play_game": {
+        if (req.method !== "POST") return new Response(JSON.stringify({ error: "POST required" }), { status: 405, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        const body = await req.json();
+        const { game_type, difficulty } = body;
+        if (!game_type) return new Response(JSON.stringify({ error: "game_type required (teka-teki, tebak-kata, tebak-angka, tebak-gambar, tebak-barang, pilihan-ganda, kuis-yatidak, teka-teki-v2)" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        const fnName = game_type;
+        const gameRes = await fetch(`${supabaseUrl}/functions/v1/${fnName}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "Authorization": `Bearer ${serviceKey}` },
+          body: JSON.stringify({ difficulty: difficulty || "sedang" }),
+        });
+        const gameData = await gameRes.json();
+        if (!gameRes.ok) return new Response(JSON.stringify({ error: gameData.error || "Game error" }), { status: gameRes.status, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        result = gameData;
+        break;
+      }
+      // ── Leaderboard game ──
+      case "game_leaderboard": {
+        const { data: stats } = await supabase.from("game_stats").select("visitor_id, game_type, wins, losses, points, total_questions").order("points", { ascending: false }).limit(50);
+        const { data: users } = await supabase.from("user_balances").select("visitor_id, username");
+        const userMap: Record<string, string> = {};
+        (users || []).forEach((u: any) => { userMap[u.visitor_id] = u.username; });
+        // Also check game_profiles
+        const { data: gProfiles } = await supabase.from("game_profiles").select("visitor_id, display_name");
+        (gProfiles || []).forEach((p: any) => { if (!userMap[p.visitor_id]) userMap[p.visitor_id] = p.display_name; });
+        result = (stats || []).map((s: any) => ({ ...s, username: userMap[s.visitor_id] || s.visitor_id.slice(0, 8) }));
+        break;
+      }
+      // ── Sponsor detail with social media ──
+      case "sponsor_detail": {
+        const spNo = url.searchParams.get("sponsor_number");
+        const spId2 = url.searchParams.get("sponsor_id");
+        let q2 = supabase.from("sponsors").select("*");
+        if (spNo) q2 = q2.eq("sponsor_number", Number(spNo));
+        else if (spId2) q2 = q2.eq("id", spId2);
+        else return new Response(JSON.stringify({ error: "sponsor_number or sponsor_id required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        const { data: sp } = await q2.maybeSingle();
+        if (!sp) return new Response(JSON.stringify({ error: "Sponsor tidak ditemukan" }), { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        // Get images
+        const { data: spImgs } = await supabase.from("sponsor_images").select("image_url, image_order").eq("sponsor_id", sp.id).order("image_order");
+        result = { ...sp, images: spImgs || [] };
+        break;
+      }
       default:
         return new Response(JSON.stringify({
           error: "Unknown endpoint",
@@ -899,6 +943,7 @@ Deno.serve(async (req) => {
             "follows", "game_follows", "resolve_user", "user_transactions", "song_url",
             "transaction_detail", "wholesale", "admin_settings", "admin_posts",
             "user_likes", "user_tickets", "ticket_messages", "product_images", "sponsor_images",
+            "game_leaderboard", "sponsor_detail",
           ],
           available_post: [
             "notifications", "add_balance", "deduct_balance", "reset_balance", "set_balance",
@@ -910,6 +955,7 @@ Deno.serve(async (req) => {
             "purchase_storage", "purchase_bundle",
             "claim_voucher", "create_ticket", "reply_ticket",
             "like_product", "like_song", "like_sponsor", "claim_streak",
+            "play_game",
           ],
         }), {
           status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },

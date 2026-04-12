@@ -135,7 +135,7 @@ const DEFAULT_PAIRING_PHONE = "${phoneNumber.replace(/[^0-9]/g, "")}";`
 const DEFAULT_PAIRING_PHONE = ""; // Opsional: nomor default pairing, format: 628xxxxxxxxxx`;
 
     return `// =============================================
-// 🤖 BOT WHATSAPP - Agung Adi Store v7.0.0
+// 🤖 BOT WHATSAPP - Agung Adi Store v8.0.0
 // =============================================
 // Library: @whiskeysockets/baileys (QR / Pairing Code)
 // Cara pakai:
@@ -319,7 +319,7 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
     }
 
     if (connection === "open") {
-      console.log("\\n✅ Bot WhatsApp sudah siap! (Baileys v7.0.0)");
+      console.log("\\n✅ Bot WhatsApp sudah siap! (v8.0.0)");
       console.log("📋 Kirim !help di chat untuk lihat perintah\\n");
       return;
     }
@@ -400,13 +400,13 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
     // ═══════════════════════════════════════
     // ═══ USER COMMANDS ═══
     // ═══════════════════════════════════════
-    if (command === "!ping") { return reply("🏓 Pong! Bot aktif v7.0.0"); }
-    if (command === "!versi") { return reply("🤖 Bot WA Agung Adi Store v7.0.0\\n📅 " + new Date().toLocaleString("id-ID")); }
+    if (command === "!ping") { return reply("🏓 Pong! Bot aktif v8.0.0"); }
+    if (command === "!versi") { return reply("🤖 Bot WA Agung Adi Store v8.0.0\\n📅 " + new Date().toLocaleString("id-ID")); }
     if (command === "!waktu") { return reply("🕐 Waktu server: " + new Date().toLocaleString("id-ID", { timeZone: "Asia/Jakarta" }) + " WIB"); }
 
     if (command === "!help" || command === "!menu") {
       return reply([
-        "🤖 *Bot WhatsApp Agung Adi Store v7.0.0*",
+        "🤖 *Bot WhatsApp Agung Adi Store v8.0.0*",
         "",
         "🔑 *Akun Saldo:*",
         "• !login [user/email/hp] [password]",
@@ -419,51 +419,77 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
         "• !kreditku — Kredit game saya",
         "• !streakku — Status streak saya",
         "• !notifku — Notifikasi saya",
+        "• !likeku — Daftar favorit saya",
         "",
         "🛒 *Belanja (perlu login):*",
-        "• !beli [nama produk] — Beli 1 produk",
-        "• !beli [nama produk] [jumlah] — Beli banyak",
-        "• !belistreak [nama paket] — Beli Auto-Klaim",
-        "• !belikredit [nama paket] — Beli kredit game",
-        "• !belistorage [nama paket] — Beli storage",
-        "• !belibundle [nama paket] — Beli bundle",
-        "• !setpin [pin 6 digit] — Set PIN baru",
+        "• !beli [ID/nama produk] [jumlah]",
+        "• !belistreak [nama paket]",
+        "• !belikredit [nama paket]",
+        "• !belistorage [nama paket]",
+        "• !belibundle [nama paket]",
+        "• !setpin [pin 6 digit]",
+        "",
+        "🎫 *Voucher & Streak (perlu login):*",
+        "• !klaim [kode1] [kode2] ... — Klaim voucher",
+        "• !klaimstreak — Klaim streak harian",
+        "",
+        "❤️ *Like (perlu login):*",
+        "• !likeproduk [nama/id] — Like produk",
+        "• !likelagu [judul] — Like lagu",
+        "• !likesponsor [no] — Like sponsor",
+        "",
+        "🎮 *Game AI:*",
+        "• !tekateki [mudah/sedang/sulit]",
+        "• !tebakkata [mudah/sedang/sulit]",
+        "• !tebakangka [mudah/sedang/sulit]",
+        "• !tebakgambar [mudah/sedang/sulit]",
+        "• !tebakbarang [mudah/sedang/sulit]",
+        "• !pilihlanganda [mudah/sedang/sulit]",
+        "• !kuisyatidak [mudah/sedang/sulit]",
+        "• !tekatekilanjut [mudah/sedang/sulit]",
+        "• !lbgame — Leaderboard game",
         "",
         "📦 *Produk & Toko:*",
-        "• !produk — Daftar produk",
+        "• !produk — Daftar produk + ID",
         "• !cari [kata] — Cari produk",
         "• !kategori — Kategori produk",
         "• !harga [min] [max] — Filter harga",
         "• !random — Produk random",
         "• !top — Produk terpopuler",
-        "• !detailproduk [id/nama] — Detail produk",
-        "• !grosir [nama] — Cek harga grosir",
+        "• !detailproduk [id/nama]",
+        "• !grosir [nama] — Harga grosir",
         "",
         "🏪 *Sponsor:*",
         "• !sponsor — Sponsor aktif",
-        "• !detailsponsor [no] — Detail sponsor",
+        "• !detailsponsor [no]",
         "",
         "🎵 *Musik:*",
         "• !lagu — Daftar lagu",
         "• !carilagu [kata] — Cari lagu",
-        "• !download [judul] — Link download lagu",
+        "• !download [judul] — Link download",
+        "• !kirim [judul] — Kirim file lagu",
         "• !artis — Daftar artis",
-        "• !detailartis [nama] — Detail artis",
+        "• !detailartis [nama]",
         "• !playlist — Daftar playlist",
         "• !publik — Lagu publik",
         "",
+        "🎫 *Support (perlu login):*",
+        "• !buattiket [kategori] | [deskripsi]",
+        "• !tiketku — Lihat tiket saya",
+        "• !balastiket [no_tiket] [pesan]",
+        "",
         "📊 *Info & Lainnya:*",
         "• !info — Statistik toko",
-        "• !ceksaldo [username] — Cek saldo user",
-        "• !cekgame [username] — Stats game user",
+        "• !ceksaldo [username]",
+        "• !cekgame [username]",
         "• !paket — Paket tersedia",
         "• !cekvoucher — Voucher aktif",
-        "• !flashsale — Info flash sale",
+        "• !flashsale — Flash sale",
         "• !promo — Promo aktif",
-        "• !lb — Leaderboard",
-        "• !bantuan — FAQ",
+        "• !lb — Leaderboard saldo",
+        "• !bantuan — Pusat bantuan lengkap",
         "• !syarat — S&K",
-        "• !sosmed — Social media",
+        "• !sosmed — Social media admin",
         "• !rangkuman — Rangkuman toko",
         "• !toko — Info toko",
         "• !waktu — Waktu server",
@@ -614,14 +640,16 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
       const lastArg = args[args.length - 1];
       const qty = args.length > 1 && /^\\d+$/.test(lastArg) ? Number(lastArg) : 1;
       const nameParts = qty > 1 ? args.slice(0, -1) : args;
-      const productName = nameParts.join(" ");
-      if (!productName) return reply("⚠️ Gunakan: !beli [nama produk] [jumlah]\\n\\nContoh:\\n• !beli Netflix 1\\n• !beli Spotify Premium\\n• !beli Voucher Game 3");
-      const res = await api("purchase_product", "POST", { visitor_id: session.visitor_id, product_name: productName, quantity: qty, pin: session.pin || undefined });
+      const productQuery = nameParts.join(" ");
+      if (!productQuery) return reply("⚠️ Gunakan:\\n• !beli [ID produk] [jumlah]\\n• !beli [nama produk] [jumlah]\\n\\nContoh:\\n• !beli abc123-def456 1\\n• !beli Netflix 1\\n• !beli Spotify Premium\\n\\n💡 Lihat ID produk di !produk atau !detailproduk");
+      // Check if it looks like a UUID (product ID)
+      const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}/.test(productQuery.toLowerCase());
+      const res = await api("purchase_product", "POST", { visitor_id: session.visitor_id, ...(isUuid ? { product_id: productQuery } : { product_name: productQuery }), quantity: qty, pin: session.pin || undefined });
       if (res.needPin) {
         return reply("🔐 *PIN diperlukan!*\\n\\nKirim: !setpin [6 digit] untuk set PIN sesi\\nLalu ulangi perintah !beli");
       }
       if (res.error) return reply("❌ " + res.error);
-      let txt = "✅ *Pembelian Berhasil!*\\n\\n📦 " + (res.product?.title || productName) + "\\n🔢 Jumlah: " + (res.quantity || qty) + "\\n💰 Total: " + fmtRp(res.total_price) + "\\n💳 Sisa Saldo: " + fmtRp(res.balance_remaining);
+      let txt = "✅ *Pembelian Berhasil!*\\n\\n📦 " + (res.product?.title || productQuery) + "\\n🔢 Jumlah: " + (res.quantity || qty) + "\\n💰 Total: " + fmtRp(res.total_price) + "\\n💳 Sisa Saldo: " + fmtRp(res.balance_remaining);
       if (res.discount_amount > 0) txt += "\\n🏷️ Diskon: " + fmtRp(res.discount_amount);
       if (res.tokens?.length) {
         txt += "\\n\\n🎫 *Voucher:*";
@@ -775,8 +803,8 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
     if (command === "!produk") {
       const res = await api("products");
       if (!res.data?.length) return reply("📦 Tidak ada produk.");
-      const list = res.data.slice(0, 20).map((p, i) => (i+1) + ". " + p.title + " — " + fmtRp(p.price) + " (Stok: " + p.stock + ")").join("\\n");
-      return reply("📦 *Daftar Produk:*\\n\\n" + list + (res.data.length > 20 ? "\\n\\n...dan " + (res.data.length - 20) + " lainnya" : ""));
+      const list = res.data.slice(0, 20).map((p, i) => (i+1) + ". " + p.title + " — " + fmtRp(p.price) + " (Stok: " + p.stock + ")\\n   🆔 " + p.id).join("\\n");
+      return reply("📦 *Daftar Produk:*\\n\\n" + list + (res.data.length > 20 ? "\\n\\n...dan " + (res.data.length - 20) + " lainnya" : "") + "\\n\\n💡 Beli: !beli [ID] atau !beli [nama]");
     }
 
     if (command.startsWith("!cari ")) {
@@ -825,25 +853,33 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
       const res = await api("products");
       const p = (res.data || []).find((x) => x.id === id || x.title.toLowerCase().includes(id.toLowerCase()));
       if (!p) return reply("❌ Produk tidak ditemukan.");
-      return reply("📦 *Detail Produk:*\\n\\n📌 " + p.title + "\\n💰 " + fmtRp(p.price) + "\\n📊 Stok: " + p.stock + "\\n🏷️ Kategori: " + (p.category || "Umum") + "\\n🛡️ Garansi: " + (p.has_warranty ? "Ya" : "Tidak") + "\\n📝 " + (p.description || "-") + "\\n🆔 ID: " + p.id);
+      return reply("📦 *Detail Produk:*\\n\\n🆔 *ID: " + p.id + "*\\n📌 " + p.title + "\\n💰 " + fmtRp(p.price) + "\\n📊 Stok: " + p.stock + "\\n🏷️ Kategori: " + (p.category || "Umum") + "\\n🛡️ Garansi: " + (p.has_warranty ? "Ya" : "Tidak") + "\\n📝 " + (p.description || "-") + "\\n\\n💡 Beli: !beli " + p.id);
     }
 
-    // ── SPONSOR ──
-    if (command === "!sponsor") {
-      const res = await api("sponsors");
-      const active = (res.data || []).filter((s) => s.is_active);
-      if (!active.length) return reply("🏪 Tidak ada sponsor aktif.");
-      const list = active.slice(0, 15).map((s, i) => (i+1) + ". [#" + s.sponsor_number + "] " + s.title + " — " + fmtRp(s.price) + " oleh " + s.seller_name).join("\\n");
-      return reply("🏪 *Sponsor Aktif:*\\n\\n" + list);
-    }
-
+    // ── DETAIL SPONSOR LENGKAP ──
     if (command.startsWith("!detailsponsor")) {
       const no = args[0];
       if (!no) return reply("⚠️ Gunakan: !detailsponsor [nomor]");
-      const res = await api("sponsors");
-      const s = (res.data || []).find((x) => String(x.sponsor_number) === no);
-      if (!s) return reply("❌ Sponsor #" + no + " tidak ditemukan.");
-      return reply("🏪 *Sponsor #" + s.sponsor_number + "*\\n\\n📌 " + s.title + "\\n💰 " + fmtRp(s.price) + "\\n🏷️ Kategori: " + s.category + "\\n📊 Stok: " + s.stock + "\\n🛡️ Garansi: " + (s.has_warranty ? s.warranty_duration_value + " " + s.warranty_duration_type : "Tidak") + "\\n🏪 Penjual: " + s.seller_name + "\\n📞 Kontak: " + s.seller_contact + "\\n👁️ View: " + s.view_count + "\\n📝 " + (s.description || "-"));
+      const res = await api("sponsor_detail&sponsor_number=" + no);
+      if (res.error) {
+        // fallback
+        const res2 = await api("sponsors");
+        const s = (res2.data || []).find((x) => String(x.sponsor_number) === no);
+        if (!s) return reply("❌ Sponsor #" + no + " tidak ditemukan.");
+        return reply("🏪 *Sponsor #" + s.sponsor_number + "*\\n\\n📌 " + s.title + "\\n💰 " + fmtRp(s.price) + "\\n🏷️ Kategori: " + s.category + "\\n📊 Stok: " + s.stock + "\\n🏪 Penjual: " + s.seller_name + "\\n📝 " + (s.description || "-"));
+      }
+      const s = res.data;
+      let txt = "🏪 *Sponsor #" + s.sponsor_number + "*\\n\\n📌 " + s.title + "\\n💰 " + fmtRp(s.price) + "\\n🏷️ Kategori: " + s.category + "\\n📊 Stok: " + s.stock + "\\n🛡️ Garansi: " + (s.has_warranty ? s.warranty_duration_value + " " + s.warranty_duration_type : "Tidak") + "\\n🏪 Penjual: " + s.seller_name + "\\n📞 Kontak: " + s.seller_contact + "\\n👁️ View: " + s.view_count + "\\n📝 " + (s.description || "-");
+      // Social media
+      if (s.wa_number) txt += "\\n\\n📱 *Sosmed Penjual:*";
+      if (s.wa_number) txt += "\\n• WhatsApp: " + s.wa_number;
+      if (s.instagram) txt += "\\n• Instagram: " + s.instagram;
+      if (s.facebook) txt += "\\n• Facebook: " + s.facebook;
+      if (s.tiktok) txt += "\\n• TikTok: " + s.tiktok;
+      if (s.twitter) txt += "\\n• Twitter: " + s.twitter;
+      if (s.threads) txt += "\\n• Threads: " + s.threads;
+      if (s.images?.length) { txt += "\\n\\n📸 Foto: " + s.images.length + " gambar"; s.images.forEach((img, i) => { txt += "\\n" + (i+1) + ". " + img.image_url; }); }
+      return reply(txt);
     }
 
     // ── MUSIK ──
@@ -950,15 +986,282 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
     }
 
     if (command === "!bantuan") {
-      return reply("❓ *FAQ:*\\n\\n1️⃣ *Cara beli produk?*\\nPilih produk → bayar via saldo\\n\\n2️⃣ *Cara top up saldo?*\\nDeposit via admin\\n\\n3️⃣ *Cara claim voucher?*\\nMasukkan kode voucher di menu Plus\\n\\n4️⃣ *Garansi?*\\nSesuai deskripsi produk\\n\\n5️⃣ *Butuh bantuan?*\\nHubungi admin via tiket support\\n\\n6️⃣ *Cara login di bot?*\\n!login [username] [password]\\n\\n7️⃣ *Cara download lagu?*\\n!download [judul lagu]");
+      return reply([
+        "❓ *Pusat Bantuan Lengkap*",
+        "",
+        "🛒 *Cara Belanja:*",
+        "1. Daftar akun saldo di website/bot",
+        "2. Top up saldo melalui deposit ke admin",
+        "3. Login di bot: !login [user] [password]",
+        "4. Lihat produk: !produk (ada ID produk)",
+        "5. Beli: !beli [ID/nama] [jumlah]",
+        "6. Set PIN: !setpin [6 digit] untuk verifikasi",
+        "7. Voucher otomatis dikirim setelah pembelian",
+        "",
+        "🎫 *Klaim Voucher:*",
+        "• Ketik !klaim [kode1] [kode2] ...",
+        "• Masukkan kode voucher yang didapat",
+        "• Bisa klaim beberapa kode sekaligus",
+        "",
+        "💰 *Saldo & Deposit:*",
+        "• Top up via admin (hubungi WA admin)",
+        "• Cek saldo: !saldoku",
+        "• Riwayat: !riwayat",
+        "",
+        "🔥 *Streak Harian:*",
+        "• Beli paket streak: !belistreak [paket]",
+        "• Auto-klaim otomatis setelah beli",
+        "• Klaim manual: !klaimstreak",
+        "• Cek status: !streakku",
+        "",
+        "🎮 *Game AI:*",
+        "• 8 jenis game AI tersedia",
+        "• Ketik !tekateki, !tebakkata, dll",
+        "• Sistem 3 nyawa per soal",
+        "• Leaderboard: !lbgame",
+        "• Beli kredit: !belikredit",
+        "",
+        "❤️ *Like & Favorit:*",
+        "• Like produk: !likeproduk [nama/id]",
+        "• Like lagu: !likelagu [judul]",
+        "• Like sponsor: !likesponsor [no]",
+        "• Lihat favorit: !likeku",
+        "",
+        "🎵 *Musik:*",
+        "• Daftar lagu: !lagu",
+        "• Download: !download [judul]",
+        "• Kirim file: !kirim [judul]",
+        "• Artis & playlist tersedia",
+        "",
+        "🎫 *Support / Tiket:*",
+        "• Buat tiket: !buattiket [kategori] | [deskripsi]",
+        "• Lihat tiket: !tiketku",
+        "• Balas tiket: !balastiket [no] [pesan]",
+        "• Kategori: Akun, Refund, Deposit, Produk, dll",
+        "",
+        "🏪 *Sponsor / Rekber:*",
+        "• Sponsor adalah produk pihak ke-3",
+        "• Gunakan rekber admin untuk keamanan",
+        "• Lihat: !sponsor, !detailsponsor [no]",
+        "",
+        "📋 *FAQ:*",
+        "Q: Saldo tidak masuk? → Hubungi admin",
+        "Q: Voucher tidak valid? → Cek kode & expired",
+        "Q: Akun terkunci? → Reset password via admin",
+        "Q: Kredit game habis? → Beli di !belikredit",
+        "Q: Cara login bot? → !login [user] [pass]",
+        "Q: Download lagu? → !download [judul]",
+        "Q: Lupa PIN? → Hubungi admin untuk reset",
+      ].join("\\n"));
     }
 
     if (command === "!syarat") {
-      return reply("📋 *Syarat & Ketentuan:*\\n\\n1. Produk sponsor bukan tanggung jawab admin platform\\n2. Penjual wajib kirim produk sesuai deskripsi\\n3. Pembeli wajib cek deskripsi sebelum beli\\n4. Garansi sesuai detail produk\\n5. Penipuan = akun diblokir\\n6. Tanpa rekber = risiko ditanggung pembeli\\n7. Dilarang jual produk ilegal\\n8. Admin berhak hapus sponsor melanggar\\n9. Harga & stok bisa berubah\\n10. Komplain max 1x24 jam");
+      return reply("📋 *Syarat & Ketentuan:*\\n\\n1. Produk sponsor bukan tanggung jawab admin platform\\n2. Penjual wajib kirim produk sesuai deskripsi\\n3. Pembeli wajib cek deskripsi sebelum beli\\n4. Garansi sesuai detail produk\\n5. Penipuan = akun diblokir\\n6. Tanpa rekber = risiko ditanggung pembeli\\n7. Dilarang jual produk ilegal\\n8. Admin berhak hapus sponsor melanggar\\n9. Harga & stok bisa berubah\\n10. Komplain max 1x24 jam\\n11. Batas komplain max 1x24 jam setelah transaksi");
     }
 
+    // ═══ SOSMED ADMIN ═══
     if (command === "!sosmed") {
-      return reply("📱 *Social Media:*\\n\\nKunjungi website kami untuk info lengkap media sosial.");
+      const res = await api("admin_posts");
+      const posts = res.data || [];
+      let txt = "📱 *Social Media Admin:*\\n";
+      let hasSocmed = false;
+      posts.forEach((p) => {
+        const links = [];
+        if (p.whatsapp) links.push("📞 WA: " + p.whatsapp);
+        if (p.instagram) links.push("📸 IG: " + p.instagram);
+        if (p.facebook) links.push("👥 FB: " + p.facebook);
+        if (p.tiktok) links.push("🎵 TT: " + p.tiktok);
+        if (p.youtube) links.push("📺 YT: " + p.youtube);
+        if (p.twitter) links.push("🐦 X: " + p.twitter);
+        if (links.length) { hasSocmed = true; txt += "\\n*" + p.title + "*\\n" + links.join("\\n") + "\\n"; }
+      });
+      if (!hasSocmed) txt += "\\nBelum ada info sosmed. Kunjungi website untuk detail.";
+      return reply(txt);
+    }
+
+    // ═══ KIRIM FILE LAGU VIA WA ═══
+    if (command.startsWith("!kirim ")) {
+      const q = args.join(" ");
+      if (!q) return reply("⚠️ Gunakan: !kirim [judul lagu]");
+      const res = await api("song_url&q=" + encodeURIComponent(q));
+      if (!res.data?.length) return reply("🎵 Lagu tidak ditemukan: " + q);
+      const song = res.data[0];
+      try {
+        await client.sendMessage(remoteJid, { audio: { url: song.file_url }, mimetype: "audio/mpeg", fileName: song.title + " - " + song.artist + ".mp3" }, { quoted: msg });
+        return reply("🎵 *" + song.title + "* — " + song.artist + "\\n✅ File lagu terkirim!");
+      } catch (e) {
+        return reply("🎵 *" + song.title + "* — " + song.artist + "\\n\\n❌ Gagal kirim file. Coba download manual:\\n🔗 " + song.file_url);
+      }
+    }
+
+    // ═══ KLAIM VOUCHER (perlu login) ═══
+    if (command.startsWith("!klaim ")) {
+      if (!session) return reply("🔒 Login dulu: !login [user] [password]");
+      const codes = args.filter((c) => c.length > 0);
+      if (!codes.length) return reply("⚠️ Gunakan: !klaim [kode1] [kode2] ...\\nContoh: !klaim ABC123 DEF456");
+      const res = await api("claim_voucher", "POST", { visitor_id: session.visitor_id, codes, device_info: "WhatsApp Bot", browser: "Bot" });
+      if (res.error) return reply("❌ " + res.error);
+      if (res.data?.results) {
+        const results = res.data.results;
+        let txt = "🎫 *Hasil Klaim Voucher:*\\n";
+        results.forEach((r) => {
+          txt += "\\n" + (r.success ? "✅" : "❌") + " " + r.code + ": " + (r.message || r.error || "OK");
+        });
+        return reply(txt);
+      }
+      return reply("✅ Voucher berhasil diklaim!");
+    }
+
+    // ═══ KLAIM STREAK HARIAN (perlu login) ═══
+    if (command === "!klaimstreak") {
+      if (!session) return reply("🔒 Login dulu: !login [user] [password]");
+      const res = await api("claim_streak", "POST", { visitor_id: session.visitor_id });
+      if (res.error) return reply("❌ " + res.error);
+      const d = res.data || {};
+      return reply("🔥 *Streak Harian:*\\n\\n" + (d.already_claimed ? "ℹ️ Sudah diklaim hari ini" : "✅ Berhasil diklaim!") + "\\n🔥 Streak: " + (d.current_streak || 0) + " hari\\n🏆 Terpanjang: " + (d.longest_streak || 0));
+    }
+
+    // ═══ LIKE/UNLIKE (perlu login) ═══
+    if (command.startsWith("!likeproduk")) {
+      if (!session) return reply("🔒 Login dulu: !login [user] [password]");
+      const q = args.join(" ");
+      if (!q) return reply("⚠️ Gunakan: !likeproduk [nama/id produk]");
+      const pRes = await api("products");
+      const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}/.test(q.toLowerCase());
+      const p = (pRes.data || []).find((x) => isUuid ? x.id === q : x.title.toLowerCase().includes(q.toLowerCase()));
+      if (!p) return reply("❌ Produk tidak ditemukan.");
+      const res = await api("like_product", "POST", { visitor_id: session.visitor_id, product_id: p.id });
+      return reply((res.data?.action === "liked" ? "❤️" : "💔") + " " + p.title + " " + (res.data?.action === "liked" ? "di-like!" : "di-unlike!"));
+    }
+
+    if (command.startsWith("!likelagu")) {
+      if (!session) return reply("🔒 Login dulu: !login [user] [password]");
+      const q = args.join(" ");
+      if (!q) return reply("⚠️ Gunakan: !likelagu [judul lagu]");
+      const sRes = await api("songs");
+      const s = (sRes.data || []).find((x) => x.title.toLowerCase().includes(q.toLowerCase()));
+      if (!s) return reply("❌ Lagu tidak ditemukan.");
+      const res = await api("like_song", "POST", { visitor_id: session.visitor_id, song_id: s.id });
+      return reply((res.data?.action === "liked" ? "❤️" : "💔") + " " + s.title + " " + (res.data?.action === "liked" ? "di-like!" : "di-unlike!"));
+    }
+
+    if (command.startsWith("!likesponsor")) {
+      if (!session) return reply("🔒 Login dulu: !login [user] [password]");
+      const no = args[0];
+      if (!no) return reply("⚠️ Gunakan: !likesponsor [nomor sponsor]");
+      const sRes = await api("sponsors");
+      const s = (sRes.data || []).find((x) => String(x.sponsor_number) === no);
+      if (!s) return reply("❌ Sponsor #" + no + " tidak ditemukan.");
+      const res = await api("like_sponsor", "POST", { visitor_id: session.visitor_id, sponsor_id: s.id });
+      return reply((res.data?.action === "liked" ? "❤️" : "💔") + " Sponsor #" + no + " " + (res.data?.action === "liked" ? "di-like!" : "di-unlike!"));
+    }
+
+    if (command === "!likeku") {
+      if (!session) return reply("🔒 Login dulu: !login [user] [password]");
+      const res = await api("user_likes&visitor_id=" + session.visitor_id);
+      const d = res.data || {};
+      let txt = "❤️ *Favorit Saya:*\\n";
+      if (d.products?.length) { txt += "\\n📦 *Produk:*\\n" + d.products.map((p, i) => (i+1) + ". " + (p.products?.title || p.product_id) + " — " + fmtRp(p.products?.price || 0)).join("\\n"); }
+      if (d.songs?.length) { txt += "\\n\\n🎵 *Lagu:*\\n" + d.songs.map((s, i) => (i+1) + ". " + (s.playlist_songs?.title || s.song_id) + " — " + (s.playlist_songs?.artist || "")).join("\\n"); }
+      if (d.sponsors?.length) { txt += "\\n\\n🏪 *Sponsor:*\\n" + d.sponsors.map((s, i) => (i+1) + ". " + (s.sponsors?.title || s.sponsor_id) + " — " + fmtRp(s.sponsors?.price || 0)).join("\\n"); }
+      if (!d.products?.length && !d.songs?.length && !d.sponsors?.length) txt += "\\nBelum ada favorit.";
+      return reply(txt);
+    }
+
+    // ═══ TIKET SUPPORT (perlu login) ═══
+    if (command.startsWith("!buattiket")) {
+      if (!session) return reply("🔒 Login dulu: !login [user] [password]");
+      const parts = args.join(" ").split("|");
+      const category = (parts[0] || "").trim() || "Umum";
+      const description = (parts[1] || "").trim();
+      if (!description) return reply("⚠️ Gunakan: !buattiket [kategori] | [deskripsi masalah]\\n\\nKategori: Akun/Login, Refund, Deposit, Produk/Token, Rekber, Game, Musik, Sponsor, Lainnya\\n\\nContoh: !buattiket Deposit | Saldo belum masuk sudah 2 jam");
+      const res = await api("create_ticket", "POST", { name: session.username, phone: session.phone || "-", category, description });
+      if (res.error) return reply("❌ " + res.error);
+      const t = res.data;
+      return reply("✅ *Tiket Dibuat!*\\n\\n🆔 #" + (t.ticket_number || "-") + "\\n📂 Kategori: " + category + "\\n📝 " + description + "\\n\\n💡 Cek status: !tiketku\\nBalas: !balastiket " + (t.ticket_number || t.id) + " [pesan]");
+    }
+
+    if (command === "!tiketku") {
+      if (!session) return reply("🔒 Login dulu: !login [user] [password]");
+      const res = await api("user_tickets&name=" + encodeURIComponent(session.username));
+      if (!res.data?.length) return reply("🎫 Belum ada tiket support.");
+      const list = res.data.slice(0, 10).map((t, i) => (i+1) + ". #" + t.ticket_number + " [" + t.status + "] " + t.category + "\\n   📝 " + (t.description || "-").slice(0, 50) + "\\n   📅 " + new Date(t.created_at).toLocaleDateString("id-ID")).join("\\n");
+      return reply("🎫 *Tiket Saya:*\\n\\n" + list);
+    }
+
+    if (command.startsWith("!balastiket")) {
+      if (!session) return reply("🔒 Login dulu: !login [user] [password]");
+      if (args.length < 2) return reply("⚠️ Gunakan: !balastiket [no_tiket/id] [pesan]");
+      const ticketRef = args[0];
+      const message = args.slice(1).join(" ");
+      // Find ticket
+      const tRes = await api("user_tickets&name=" + encodeURIComponent(session.username));
+      const ticket = (tRes.data || []).find((t) => String(t.ticket_number) === ticketRef || t.id === ticketRef);
+      if (!ticket) return reply("❌ Tiket #" + ticketRef + " tidak ditemukan.");
+      const res = await api("reply_ticket", "POST", { ticket_id: ticket.id, message, sender_type: "user" });
+      if (res.error) return reply("❌ " + res.error);
+      return reply("✅ Balasan terkirim ke tiket #" + ticket.ticket_number);
+    }
+
+    // ═══ GAME AI VIA WHATSAPP ═══
+    const gameTypes = {
+      "!tekateki": { fn: "teka-teki", name: "Teka-Teki Logika" },
+      "!tebakkata": { fn: "tebak-kata", name: "Tebak Kata" },
+      "!tebakangka": { fn: "tebak-angka", name: "Tebak Angka" },
+      "!tebakgambar": { fn: "tebak-gambar", name: "Tebak Gambar" },
+      "!tebakbarang": { fn: "tebak-barang", name: "Tebak Barang" },
+      "!pilihlanganda": { fn: "pilihan-ganda", name: "Pilihan Ganda" },
+      "!kuisyatidak": { fn: "kuis-yatidak", name: "Kuis Ya/Tidak" },
+      "!tekatekilanjut": { fn: "teka-teki-v2", name: "Teka-Teki V2" },
+    };
+    const gameCmd = Object.keys(gameTypes).find((k) => command.startsWith(k));
+    if (gameCmd) {
+      const gt = gameTypes[gameCmd];
+      const difficulty = args[0] || "sedang";
+      await reply("🎮 *" + gt.name + "* (Tingkat: " + difficulty + ")\\n⏳ Membuat soal...");
+      const res = await api("play_game", "POST", { game_type: gt.fn, difficulty });
+      if (res.error) return reply("❌ Gagal: " + res.error);
+      const d = res.data || res;
+      let txt = "🎮 *" + gt.name + "*\\n\\n";
+      // Different format per game type
+      if (d.riddle || d.question || d.pertanyaan) {
+        txt += "❓ *Soal:* " + (d.riddle || d.question || d.pertanyaan) + "\\n";
+        if (d.options) { d.options.forEach((o, i) => { txt += "\\n" + ["A", "B", "C", "D"][i] + ". " + o; }); txt += "\\n"; }
+        if (d.hints?.length) { txt += "\\n💡 *Petunjuk:*\\n" + d.hints.map((h, i) => (i+1) + ". " + h).join("\\n") + "\\n"; }
+        txt += "\\n\\n🔑 *Jawaban:* ||" + (d.answer || d.jawaban || "-") + "||";
+        if (d.explanation || d.penjelasan) txt += "\\n📖 " + (d.explanation || d.penjelasan);
+      } else if (d.word || d.kata) {
+        txt += "🔤 Kata: " + (d.word || d.kata) + "\\n";
+        if (d.hint || d.petunjuk) txt += "💡 Petunjuk: " + (d.hint || d.petunjuk) + "\\n";
+        txt += "\\n🔑 Jawaban: ||" + (d.answer || d.jawaban || "-") + "||";
+      } else {
+        // Generic fallback
+        txt += JSON.stringify(d, null, 2).slice(0, 500);
+      }
+      return reply(txt);
+    }
+
+    // ═══ LEADERBOARD GAME ═══
+    if (command === "!lbgame") {
+      const res = await api("game_leaderboard");
+      if (!res.data?.length) return reply("🏆 Belum ada data leaderboard game.");
+      // Aggregate by visitor
+      const agg = {};
+      res.data.forEach((s) => {
+        if (!agg[s.visitor_id]) agg[s.visitor_id] = { username: s.username, points: 0, wins: 0, losses: 0 };
+        agg[s.visitor_id].points += s.points;
+        agg[s.visitor_id].wins += s.wins;
+        agg[s.visitor_id].losses += s.losses;
+      });
+      const sorted = Object.values(agg).sort((a, b) => b.points - a.points).slice(0, 10);
+      const list = sorted.map((u, i) => (i+1) + ". " + u.username + " — " + u.points + " pts (W" + u.wins + "/L" + u.losses + ")").join("\\n");
+      return reply("🏆 *Leaderboard Game:*\\n\\n" + list);
+    }
+
+    // ═══ TAMPILKAN NO HP PENGIRIM ═══
+    if (command === "!nomorku") {
+      const phoneNum = remoteJid.replace("@s.whatsapp.net", "");
+      return reply("📱 *Nomor WA Kamu:*\\n\\n" + phoneNum);
     }
 
     // ═══════════════════════════════════════
@@ -967,7 +1270,7 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
     if (command === "!admin") {
       if (!isAdmin(msg)) return reply("❌ Hanya admin yang bisa akses.");
       return reply([
-        "🔐 *Perintah Admin v7.0.0:*",
+        "🔐 *Perintah Admin v8.0.0:*",
         "",
         "💡 Semua perintah admin sekarang pakai *username* bukan visitor_id!",
         "",
@@ -1511,8 +1814,8 @@ startBot().catch((error) => {
   function generatePackageJson() {
     return JSON.stringify({
       name: "bot-wa-agungadi",
-        version: "6.0.0",
-        description: "Bot WhatsApp Agung Adi Store - Login, Game, Download Lagu, Username-based Admin",
+        version: "8.0.0",
+        description: "Bot WhatsApp Agung Adi Store - Full Feature: Game AI, Tiket, Like, Klaim, Kirim Lagu",
       main: "index.js",
       scripts: {
         start: "node index.js",
@@ -1530,7 +1833,7 @@ startBot().catch((error) => {
   }
 
   function generateReadmeMd() {
-    return `# 🤖 Bot WhatsApp - Agung Adi Store v7.0.0
+    return `# 🤖 Bot WhatsApp - Agung Adi Store v8.0.0
 
 ## 📋 Persyaratan
 - Node.js >= 18
