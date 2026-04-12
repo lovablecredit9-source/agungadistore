@@ -12,7 +12,7 @@ import {
   HelpCircle, X, ExternalLink, Search, ChevronLeft, ChevronRight, FileText,
   Heart, Send, ImagePlus, AlertCircle, History, Wallet, ArrowUpCircle, ArrowDownCircle,
   Bell, Check, CheckCheck, Globe, Edit2, ShoppingCart, Plus, Minus, Trash2,
-  Moon, Sun, Lock, Tag, Music, Megaphone, Diamond, Image as ImageIcon, Gem, Sparkles, Palette, CalendarDays, Gamepad2
+  Moon, Sun, Lock, Tag, Music, Megaphone, Diamond, Image as ImageIcon, Gem, Sparkles, Palette, CalendarDays, Gamepad2, RefreshCw
 } from "lucide-react";
 import { useTheme } from "@/lib/theme";
 import { useToast } from "@/hooks/use-toast";
@@ -49,7 +49,7 @@ import BalanceAuth from "@/components/BalanceAuth";
 import GameTab from "@/components/GameTab";
 import PlusTab from "@/components/PlusTab";
 
-type Tab = "beranda" | "produk" | "voucher" | "history" | "likes" | "tiket" | "saldo" | "playlist" | "publik" | "sponsor" | "streak" | "adminpost" | "game" | "plus";
+type Tab = "beranda" | "produk" | "voucher" | "history" | "likes" | "tiket" | "saldo" | "playlist" | "publik" | "sponsor" | "streak" | "adminpost" | "game" | "plus" | "update";
 
 interface UserBalance {
   id: string;
@@ -274,6 +274,7 @@ const TAB_PATHS: Record<string, Tab> = {
   "/admin-post": "adminpost",
   "/game": "game",
   "/plus": "plus",
+  "/update": "update",
 };
 const PATH_FROM_TAB: Record<Tab, string> = Object.fromEntries(
   Object.entries(TAB_PATHS).map(([k, v]) => [v, k])
