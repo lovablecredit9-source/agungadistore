@@ -153,17 +153,20 @@ export default function PlusTab() {
       const { data, error } = await supabase.functions.invoke("purchase-streak-plan", {
         body: { visitorId: balVid, packageId: pkgId, pin: pin || undefined },
       });
-      if (error) throw error;
+      if (error) {
+        if (error instanceof FunctionsHttpError) {
+          const errBody = await error.context.json();
+          if (errBody?.needPin) { setStreakNeedPin(true); setStreakSelectedPkg(pkgId); setStreakBuying(null); return; }
+          toast({ title: "Gagal", description: errBody?.error || "Terjadi kesalahan", variant: "destructive" }); setStreakBuying(null); return;
+        }
+        throw error;
+      }
       if (data?.needPin) { setStreakNeedPin(true); setStreakSelectedPkg(pkgId); setStreakBuying(null); return; }
       if (data?.error) { toast({ title: "Gagal", description: data.error, variant: "destructive" }); setStreakBuying(null); return; }
       toast({ title: "Berhasil!", description: `Paket streak berhasil dibeli. Sisa saldo: ${formatPrice(data.balance_remaining)}` });
       setStreakNeedPin(false); setStreakPin(""); setStreakSelectedPkg(null);
       fetchBalance();
-    } catch { toast({ title: "Error", variant: "destructive" }); }
-    finally { setStreakBuying(null); }
-  };
-
-  const handleBuyStorage = async (pkgId: string, pin?: string) => {
+    } catch (e: any) { toast({ title: "Error", description: e?.message || "Terjadi kesalahan", variant: "destructive" }); }
     const balVid = localStorage.getItem("balance_visitor_id");
     if (!balVid) { toast({ title: "Login dulu ke akun saldo", variant: "destructive" }); return; }
     setStorageBuying(pkgId);
