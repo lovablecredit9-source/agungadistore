@@ -14,7 +14,6 @@ Deno.serve(async (req) => {
   const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
   const supabase = createClient(supabaseUrl, serviceKey);
 
-  // Validate API key from header
   const apiKey = req.headers.get("x-api-key");
   if (!apiKey) {
     return new Response(JSON.stringify({ error: "Missing x-api-key header" }), {
@@ -35,7 +34,6 @@ Deno.serve(async (req) => {
     });
   }
 
-  // Update last_used_at
   await supabase.from("api_keys").update({ last_used_at: new Date().toISOString() }).eq("id", keyData.id);
 
   const url = new URL(req.url);
@@ -56,7 +54,7 @@ Deno.serve(async (req) => {
         break;
       }
       case "balances": {
-        const { data } = await supabase.from("user_balances").select("*");
+        const { data } = await supabase.from("user_balances").select("id, visitor_id, username, phone, email, balance, created_at");
         result = data;
         break;
       }
@@ -98,10 +96,127 @@ Deno.serve(async (req) => {
         result = data;
         break;
       }
+      // === NEW ENDPOINTS ===
+      case "transactions": {
+        const vid = url.searchParams.get("visitor_id");
+        let q = supabase.from("balance_transactions").select("*").order("created_at", { ascending: false }).limit(50);
+        if (vid) q = q.eq("visitor_id", vid);
+        const { data } = await q;
+        result = data;
+        break;
+      }
+      case "streaks": {
+        const vid = url.searchParams.get("visitor_id");
+        let q = supabase.from("daily_streaks").select("*");
+        if (vid) q = q.eq("visitor_id", vid);
+        const { data } = await q;
+        result = data;
+        break;
+      }
+      case "game_credits": {
+        const vid = url.searchParams.get("visitor_id");
+        let q = supabase.from("user_game_credits").select("*");
+        if (vid) q = q.eq("visitor_id", vid);
+        const { data } = await q;
+        result = data;
+        break;
+      }
+      case "game_stats": {
+        const vid = url.searchParams.get("visitor_id");
+        let q = supabase.from("game_stats").select("*");
+        if (vid) q = q.eq("visitor_id", vid);
+        const { data } = await q;
+        result = data;
+        break;
+      }
+      case "game_profiles": {
+        const vid = url.searchParams.get("visitor_id");
+        let q = supabase.from("game_profiles").select("id, visitor_id, display_name, description, avatar_url, is_guest, created_at");
+        if (vid) q = q.eq("visitor_id", vid);
+        const { data } = await q;
+        result = data;
+        break;
+      }
+      case "tickets": {
+        const { data } = await supabase.from("support_tickets").select("*").order("created_at", { ascending: false }).limit(50);
+        result = data;
+        break;
+      }
+      case "playlists": {
+        const { data } = await supabase.from("playlists").select("*, playlist_items(song_id)").order("created_at", { ascending: false });
+        result = data;
+        break;
+      }
+      case "artists": {
+        const { data } = await supabase.from("artists").select("*").order("name");
+        result = data;
+        break;
+      }
+      case "public_songs": {
+        const { data } = await supabase.from("public_songs").select("*").order("created_at", { ascending: false }).limit(50);
+        result = data;
+        break;
+      }
+      case "storage": {
+        const vid = url.searchParams.get("visitor_id");
+        let q = supabase.from("user_music_storage").select("*");
+        if (vid) q = q.eq("visitor_id", vid);
+        const { data } = await q;
+        result = data;
+        break;
+      }
+      case "add_balance": {
+        if (req.method !== "POST") {
+          return new Response(JSON.stringify({ error: "POST required" }), { status: 405, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        }
+        const body = await req.json();
+        const { visitor_id, amount, description } = body;
+        if (!visitor_id || !amount) {
+          return new Response(JSON.stringify({ error: "visitor_id and amount required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        }
+        // Update balance
+        const { data: user } = await supabase.from("user_balances").select("id, balance").eq("visitor_id", visitor_id).maybeSingle();
+        if (!user) {
+          return new Response(JSON.stringify({ error: "User not found" }), { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        }
+        const newBalance = user.balance + Number(amount);
+        await supabase.from("user_balances").update({ balance: newBalance }).eq("id", user.id);
+        await supabase.from("balance_transactions").insert({
+          visitor_id, type: Number(amount) >= 0 ? "topup" : "debit", amount: Math.abs(Number(amount)),
+          description: description || (Number(amount) >= 0 ? "Top up via API" : "Debit via API"),
+        });
+        result = { visitor_id, new_balance: newBalance };
+        break;
+      }
+      case "broadcast": {
+        if (req.method !== "POST") {
+          return new Response(JSON.stringify({ error: "POST required" }), { status: 405, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        }
+        const body = await req.json();
+        const { title, message, type } = body;
+        if (!title) {
+          return new Response(JSON.stringify({ error: "title required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        }
+        const { data: users } = await supabase.from("user_balances").select("visitor_id");
+        if (users && users.length > 0) {
+          const notifs = users.map((u: any) => ({
+            visitor_id: u.visitor_id, title, message: message || "", type: type || "info",
+          }));
+          await supabase.from("notifications").insert(notifs);
+        }
+        result = { sent_to: users?.length || 0 };
+        break;
+      }
       default:
         return new Response(JSON.stringify({
           error: "Unknown endpoint",
-          available: ["products", "sponsors", "balances", "songs", "deposits", "notifications", "tokens"],
+          available: [
+            "products", "sponsors", "balances", "songs", "deposits",
+            "notifications", "tokens", "transactions", "streaks",
+            "game_credits", "game_stats", "game_profiles", "tickets",
+            "playlists", "artists", "public_songs", "storage",
+            "add_balance (POST)", "broadcast (POST)",
+          ],
         }), {
           status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
