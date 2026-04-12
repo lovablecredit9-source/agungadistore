@@ -563,6 +563,171 @@ Deno.serve(async (req) => {
         result = songs;
         break;
       }
+      // ── Purchase product (calls purchase-with-balance internally) ──
+      case "purchase_product": {
+        if (req.method !== "POST") return new Response(JSON.stringify({ error: "POST required" }), { status: 405, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        const body = await req.json();
+        const { visitor_id, product_name, quantity, pin, discount_code } = body;
+        if (!visitor_id) return new Response(JSON.stringify({ error: "visitor_id required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+
+        // Find product by name
+        let productId = body.product_id;
+        if (!productId && product_name) {
+          const { data: prods } = await supabase.from("products").select("id, title").ilike("title", `%${product_name}%`).limit(1);
+          if (!prods?.length) return new Response(JSON.stringify({ error: `Produk '${product_name}' tidak ditemukan` }), { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+          productId = prods[0].id;
+        }
+        if (!productId) return new Response(JSON.stringify({ error: "product_id or product_name required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+
+        const purchaseRes = await fetch(`${supabaseUrl}/functions/v1/purchase-with-balance`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "Authorization": `Bearer ${serviceKey}` },
+          body: JSON.stringify({ visitorId: visitor_id, productId, quantity: quantity || 1, pin: pin || undefined, discountCode: discount_code || undefined }),
+        });
+        const purchaseData = await purchaseRes.json();
+        if (!purchaseRes.ok || purchaseData.error) {
+          return new Response(JSON.stringify({ error: purchaseData.error || "Gagal membeli produk", needPin: purchaseData.needPin }), { status: purchaseRes.status || 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        }
+        result = purchaseData;
+        break;
+      }
+      // ── Purchase streak plan ──
+      case "purchase_streak": {
+        if (req.method !== "POST") return new Response(JSON.stringify({ error: "POST required" }), { status: 405, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        const body = await req.json();
+        const { visitor_id, package_name, pin, voucher_code } = body;
+        if (!visitor_id) return new Response(JSON.stringify({ error: "visitor_id required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+
+        let packageId = body.package_id;
+        if (!packageId && package_name) {
+          const { data: pkgs } = await supabase.from("streak_packages").select("id, name").eq("is_active", true).ilike("name", `%${package_name}%`).limit(1);
+          if (!pkgs?.length) return new Response(JSON.stringify({ error: `Paket streak '${package_name}' tidak ditemukan` }), { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+          packageId = pkgs[0].id;
+        }
+        if (!packageId) return new Response(JSON.stringify({ error: "package_id or package_name required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+
+        const res2 = await fetch(`${supabaseUrl}/functions/v1/purchase-streak-plan`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "Authorization": `Bearer ${serviceKey}` },
+          body: JSON.stringify({ action: "purchase", visitorId: visitor_id, packageId, pin: pin || undefined, voucherCode: voucher_code || undefined }),
+        });
+        const data2 = await res2.json();
+        if (!res2.ok || data2.error) {
+          return new Response(JSON.stringify({ error: data2.error || "Gagal membeli paket streak", needPin: data2.needPin }), { status: res2.status || 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        }
+        result = data2;
+        break;
+      }
+      // ── Purchase game credits ──
+      case "purchase_credits": {
+        if (req.method !== "POST") return new Response(JSON.stringify({ error: "POST required" }), { status: 405, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        const body = await req.json();
+        const { visitor_id, package_name, pin, voucher_code } = body;
+        if (!visitor_id) return new Response(JSON.stringify({ error: "visitor_id required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+
+        let packageId = body.package_id;
+        if (!packageId && package_name) {
+          const { data: pkgs } = await supabase.from("credit_packages").select("id, label").eq("is_active", true).ilike("label", `%${package_name}%`).limit(1);
+          if (!pkgs?.length) return new Response(JSON.stringify({ error: `Paket kredit '${package_name}' tidak ditemukan` }), { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+          packageId = pkgs[0].id;
+        }
+        if (!packageId) return new Response(JSON.stringify({ error: "package_id or package_name required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+
+        const res3 = await fetch(`${supabaseUrl}/functions/v1/purchase-game-credits`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "Authorization": `Bearer ${serviceKey}` },
+          body: JSON.stringify({ visitorId: visitor_id, packageId, pin: pin || undefined, voucherCode: voucher_code || undefined }),
+        });
+        const data3 = await res3.json();
+        if (!res3.ok || data3.error) {
+          return new Response(JSON.stringify({ error: data3.error || "Gagal membeli kredit", needPin: data3.needPin }), { status: res3.status || 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        }
+        result = data3;
+        break;
+      }
+      // ── Purchase storage ──
+      case "purchase_storage": {
+        if (req.method !== "POST") return new Response(JSON.stringify({ error: "POST required" }), { status: 405, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        const body = await req.json();
+        const { visitor_id, package_name, pin, voucher_code } = body;
+        if (!visitor_id) return new Response(JSON.stringify({ error: "visitor_id required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+
+        let packageId = body.package_id;
+        if (!packageId && package_name) {
+          const { data: pkgs } = await supabase.from("storage_packages").select("id, name").eq("is_active", true).ilike("name", `%${package_name}%`).limit(1);
+          if (!pkgs?.length) return new Response(JSON.stringify({ error: `Paket storage '${package_name}' tidak ditemukan` }), { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+          packageId = pkgs[0].id;
+        }
+        if (!packageId) return new Response(JSON.stringify({ error: "package_id or package_name required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+
+        const res4 = await fetch(`${supabaseUrl}/functions/v1/upgrade-storage`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "Authorization": `Bearer ${serviceKey}` },
+          body: JSON.stringify({ visitorId: visitor_id, packageId, pin: pin || undefined, voucherCode: voucher_code || undefined }),
+        });
+        const data4 = await res4.json();
+        if (!res4.ok || data4.error) {
+          return new Response(JSON.stringify({ error: data4.error || "Gagal membeli storage", needPin: data4.needPin }), { status: res4.status || 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        }
+        result = data4;
+        break;
+      }
+      // ── Purchase bundle ──
+      case "purchase_bundle": {
+        if (req.method !== "POST") return new Response(JSON.stringify({ error: "POST required" }), { status: 405, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        const body = await req.json();
+        const { visitor_id, package_name, pin, voucher_code } = body;
+        if (!visitor_id) return new Response(JSON.stringify({ error: "visitor_id required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+
+        let packageId = body.package_id;
+        if (!packageId && package_name) {
+          const { data: pkgs } = await supabase.from("bundle_packages").select("id, name").eq("is_active", true).ilike("name", `%${package_name}%`).limit(1);
+          if (!pkgs?.length) return new Response(JSON.stringify({ error: `Paket bundle '${package_name}' tidak ditemukan` }), { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+          packageId = pkgs[0].id;
+        }
+        if (!packageId) return new Response(JSON.stringify({ error: "package_id or package_name required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+
+        const res5 = await fetch(`${supabaseUrl}/functions/v1/purchase-bundle`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "Authorization": `Bearer ${serviceKey}` },
+          body: JSON.stringify({ visitorId: visitor_id, packageId, pin: pin || undefined, voucherCode: voucher_code || undefined }),
+        });
+        const data5 = await res5.json();
+        if (!res5.ok || data5.error) {
+          return new Response(JSON.stringify({ error: data5.error || "Gagal membeli bundle", needPin: data5.needPin }), { status: res5.status || 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        }
+        result = data5;
+        break;
+      }
+      // ── Transaction detail by trx_id ──
+      case "transaction_detail": {
+        const trxId = url.searchParams.get("trx_id");
+        if (!trxId) return new Response(JSON.stringify({ error: "trx_id param required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        const { data: txn } = await supabase.from("balance_transactions").select("*, products(title, price, category)").eq("trx_id", trxId).maybeSingle();
+        if (!txn) {
+          // Try searching by partial trx_id
+          const { data: txns } = await supabase.from("balance_transactions").select("*, products(title, price, category)").ilike("trx_id", `%${trxId}%`).limit(1);
+          result = txns?.[0] || null;
+        } else {
+          result = txn;
+        }
+        if (!result) return new Response(JSON.stringify({ error: "Transaksi tidak ditemukan" }), { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        break;
+      }
+      // ── Wholesale prices for a product ──
+      case "wholesale": {
+        const pid = url.searchParams.get("product_id");
+        if (!pid) return new Response(JSON.stringify({ error: "product_id required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        const { data } = await supabase.from("wholesale_prices").select("*").eq("entity_type", "product").eq("entity_id", pid).order("min_quantity");
+        result = data;
+        break;
+      }
+      // ── Admin settings (flash sale etc) ──
+      case "admin_settings": {
+        const { data } = await supabase.from("admin_settings").select("setting_key, setting_value");
+        result = data;
+        break;
+      }
       default:
         return new Response(JSON.stringify({
           error: "Unknown endpoint",
@@ -574,6 +739,7 @@ Deno.serve(async (req) => {
             "vouchers", "packages", "likes", "chats", "streak_subs",
             "music_profiles", "login_history", "dashboard",
             "follows", "game_follows", "resolve_user", "user_transactions", "song_url",
+            "transaction_detail", "wholesale", "admin_settings",
           ],
           available_post: [
             "notifications", "add_balance", "deduct_balance", "reset_balance", "set_balance",
@@ -581,6 +747,8 @@ Deno.serve(async (req) => {
             "reset_game_stats", "update_stock", "update_sponsor_stock",
             "broadcast", "delete_notifications",
             "set_deposit_status", "set_ticket_status", "login",
+            "purchase_product", "purchase_streak", "purchase_credits",
+            "purchase_storage", "purchase_bundle",
           ],
         }), {
           status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
