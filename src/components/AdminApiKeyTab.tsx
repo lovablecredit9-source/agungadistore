@@ -710,9 +710,10 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
       const res = await api("purchase_storage", "POST", { visitor_id: session.visitor_id, package_name: packageName, pin: session.pin || undefined });
       if (res.needPin) return reply("🔐 *PIN diperlukan!*\\nKirim: !setpin [6 digit] lalu ulangi");
       if (res.error) return reply("❌ " + res.error);
-      session.balance = res.balance_remaining;
+      const std = res.data || res;
+      session.balance = std.balance_remaining;
       userSessions[remoteJid] = session;
-      return reply("✅ *Storage Berhasil!*\\n\\n💾 " + (res.plan || packageName) + "\\n💳 Sisa Saldo: " + fmtRp(res.balance_remaining) + (res.discount_amount > 0 ? "\\n🏷️ Diskon: " + fmtRp(res.discount_amount) : ""));
+      return reply("✅ *Storage Berhasil!*\\n\\n💾 " + (std.plan || packageName) + "\\n💳 Sisa Saldo: " + fmtRp(std.balance_remaining) + (std.discount_amount > 0 ? "\\n🏷️ Diskon: " + fmtRp(std.discount_amount) : ""));
     }
 
     if (command.startsWith("!belibundle")) {
@@ -726,9 +727,10 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
       const res = await api("purchase_bundle", "POST", { visitor_id: session.visitor_id, package_name: packageName, pin: session.pin || undefined });
       if (res.needPin) return reply("🔐 *PIN diperlukan!*\\nKirim: !setpin [6 digit] lalu ulangi");
       if (res.error) return reply("❌ " + res.error);
-      session.balance = res.balance_remaining;
+      const bd = res.data || res;
+      session.balance = bd.balance_remaining;
       userSessions[remoteJid] = session;
-      return reply("✅ *Bundle Berhasil!*\\n\\n🎁 " + (res.plan || packageName) + "\\n💳 Sisa Saldo: " + fmtRp(res.balance_remaining) + (res.discount_amount > 0 ? "\\n🏷️ Diskon: " + fmtRp(res.discount_amount) : ""));
+      return reply("✅ *Bundle Berhasil!*\\n\\n🎁 " + (bd.plan || packageName) + "\\n💳 Sisa Saldo: " + fmtRp(bd.balance_remaining) + (bd.discount_amount > 0 ? "\\n🏷️ Diskon: " + fmtRp(bd.discount_amount) : ""));
     }
 
     // ── SET PIN SESSION ──
