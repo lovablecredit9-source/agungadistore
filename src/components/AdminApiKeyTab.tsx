@@ -191,6 +191,15 @@ client.on("message", async (msg) => {
 🎟️ *!token* — Daftar token
 🔔 *!notif [pesan]* — Kirim notifikasi
 📊 *!info* — Info & statistik
+🎮 *!game [visitor_id]* — Statistik game
+🏆 *!kredit [visitor_id]* — Kredit game
+🔥 *!streak [visitor_id]* — Status streak
+💾 *!storage [visitor_id]* — Status storage
+🎤 *!artis* — Daftar artis
+🎫 *!tiket* — Tiket support terbaru
+📡 *!broadcast [pesan]* — Broadcast ke semua user
+💵 *!tambahsaldo [visitor_id] [jumlah]* — Tambah saldo
+📋 *!transaksi [visitor_id]* — Riwayat transaksi
 ℹ️ *!help* — Menu ini
 ━━━━━━━━━━━━━━━━━━━━━━
 _Bot otomatis Agung Adi Store_\`);
