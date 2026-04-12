@@ -323,7 +323,7 @@ _© 2026 Agung Adi Store_\`);
 
   // ── CARI PRODUK ──
   if (text.startsWith("!cari ")) {
-    const keyword = msg.body.trim().substring(6).toLowerCase();
+    const keyword = rawText.substring(6).toLowerCase();
     const data = await apiGet("products");
     if (!data) { await reply("❌ Gagal mengambil data."); return; }
     const hasil = data.filter(p => p.title.toLowerCase().includes(keyword) || (p.category || "").toLowerCase().includes(keyword) || (p.description || "").toLowerCase().includes(keyword));
@@ -431,7 +431,7 @@ _© 2026 Agung Adi Store_\`);
 
   // ── CEK SALDO USER ──
   if (text.startsWith("!ceksaldo")) {
-    const keyword = msg.body.trim().split(" ").slice(1).join(" ").toLowerCase();
+    const keyword = rawText.split(" ").slice(1).join(" ").toLowerCase();
     const data = await apiGet("balances");
     if (!data) { await reply("❌ Gagal mengambil data."); return; }
     if (!keyword) {
@@ -450,7 +450,7 @@ _© 2026 Agung Adi Store_\`);
 
   // ── CEK GAME USER ──
   if (text.startsWith("!cekgame")) {
-    const keyword = msg.body.trim().split(" ").slice(1).join(" ").toLowerCase();
+    const keyword = rawText.split(" ").slice(1).join(" ").toLowerCase();
     if (!keyword) { await reply("❌ Tulis: !cekgame [username]"); return; }
     const balances = await apiGet("balances");
     if (!balances) { await reply("❌ Gagal mengambil data."); return; }
@@ -601,7 +601,7 @@ _© 2026 Agung Adi Store_\`);
 
   // ── FILTER HARGA ──
   if (text.startsWith("!harga")) {
-    const parts = msg.body.trim().split(" ");
+    const parts = rawText.split(" ");
     const min = parseInt(parts[1]) || 0;
     const max = parseInt(parts[2]) || 999999999;
     const data = await apiGet("products");
@@ -652,7 +652,7 @@ _© 2026 Agung Adi Store_\`);
 
   // ── CARI LAGU ──
   if (text.startsWith("!carilagu ")) {
-    const keyword = msg.body.trim().substring(10).toLowerCase();
+    const keyword = rawText.substring(10).toLowerCase();
     const data = await apiGet("songs");
     if (!data) { await reply("❌ Gagal mengambil data."); return; }
     const hasil = data.filter(s => s.title.toLowerCase().includes(keyword) || s.artist.toLowerCase().includes(keyword));
@@ -669,7 +669,7 @@ _© 2026 Agung Adi Store_\`);
 
   // ── MUSIK PUBLIK USER ──
   if (text.startsWith("!musikpublik")) {
-    const keyword = msg.body.trim().split(" ").slice(1).join(" ").toLowerCase();
+    const keyword = rawText.split(" ").slice(1).join(" ").toLowerCase();
     const data = await apiGet("public_songs");
     if (!data || data.length === 0) { await reply("🎶 Belum ada lagu publik."); return; }
     let filtered = data.filter(s => s.status === "approved");
@@ -688,7 +688,7 @@ _© 2026 Agung Adi Store_\`);
 
   // ── DETAIL PRODUK (user) ──
   if (text.startsWith("!detailproduk ")) {
-    const keyword = msg.body.trim().substring(14).toLowerCase();
+    const keyword = rawText.substring(14).toLowerCase();
     const data = await apiGet("products");
     if (!data) { await reply("❌ Gagal mengambil data."); return; }
     const p = data.find(x => x.title.toLowerCase().includes(keyword));
@@ -701,7 +701,7 @@ _© 2026 Agung Adi Store_\`);
 
   // ── DETAIL SPONSOR (user) ──
   if (text.startsWith("!detailsponsor ")) {
-    const keyword = msg.body.trim().substring(15).toLowerCase();
+    const keyword = rawText.substring(15).toLowerCase();
     const data = await apiGet("sponsors");
     if (!data) { await reply("❌ Gagal mengambil data."); return; }
     const s = data.find(x => x.title.toLowerCase().includes(keyword) || String(x.sponsor_number) === keyword);
@@ -719,7 +719,7 @@ _© 2026 Agung Adi Store_\`);
 
   // ── DETAIL ARTIS (user) ──
   if (text.startsWith("!detailartis ")) {
-    const keyword = msg.body.trim().substring(13).toLowerCase();
+    const keyword = rawText.substring(13).toLowerCase();
     const [artists, songs] = await Promise.all([apiGet("artists"), apiGet("songs")]);
     if (!artists) { await reply("❌ Gagal mengambil data."); return; }
     const a = artists.find(x => x.name.toLowerCase().includes(keyword));
@@ -984,7 +984,7 @@ _🔐 v4.0 — Hanya admin_\`);
   // ── GAME STATS (admin) ──
   if (text.startsWith("!game")) {
     if (!isAdmin(msg)) { await reply("🔒 Perintah admin. Gunakan !cekgame"); return; }
-    const vid = msg.body.trim().split(" ")[1];
+    const vid = rawText.split(" ")[1];
     const url2 = vid ? "game_stats&visitor_id=" + vid : "game_stats";
     const data = await apiGet(url2);
     if (!data || data.length === 0) { await reply("🎮 Tidak ada data game."); return; }
@@ -999,7 +999,7 @@ _🔐 v4.0 — Hanya admin_\`);
   // ── KREDIT (admin) ──
   if (text.startsWith("!kredit")) {
     if (!isAdmin(msg)) { await reply("🔒 Perintah ini hanya untuk admin."); return; }
-    const vid = msg.body.trim().split(" ")[1];
+    const vid = rawText.split(" ")[1];
     const url2 = vid ? "game_credits&visitor_id=" + vid : "game_credits";
     const data = await apiGet(url2);
     if (!data || data.length === 0) { await reply("🏆 Tidak ada data kredit."); return; }
@@ -1016,7 +1016,7 @@ _🔐 v4.0 — Hanya admin_\`);
   // ── STREAK (admin) ──
   if (text.startsWith("!streak")) {
     if (!isAdmin(msg)) { await reply("🔒 Perintah ini hanya untuk admin."); return; }
-    const vid = msg.body.trim().split(" ")[1];
+    const vid = rawText.split(" ")[1];
     const url2 = vid ? "streaks&visitor_id=" + vid : "streaks";
     const data = await apiGet(url2);
     if (!data || data.length === 0) { await reply("🔥 Tidak ada data streak."); return; }
@@ -1031,7 +1031,7 @@ _🔐 v4.0 — Hanya admin_\`);
   // ── STORAGE (admin) ──
   if (text.startsWith("!storage")) {
     if (!isAdmin(msg)) { await reply("🔒 Perintah ini hanya untuk admin."); return; }
-    const vid = msg.body.trim().split(" ")[1];
+    const vid = rawText.split(" ")[1];
     const url2 = vid ? "storage&visitor_id=" + vid : "storage";
     const data = await apiGet(url2);
     if (!data || data.length === 0) { await reply("💾 Tidak ada data storage."); return; }
@@ -1046,7 +1046,7 @@ _🔐 v4.0 — Hanya admin_\`);
   // ── PROFIL GAME (admin) ──
   if (text.startsWith("!profil")) {
     if (!isAdmin(msg)) { await reply("🔒 Perintah ini hanya untuk admin."); return; }
-    const vid = msg.body.trim().split(" ")[1];
+    const vid = rawText.split(" ")[1];
     const url2 = vid ? "game_profiles&visitor_id=" + vid : "game_profiles";
     const data = await apiGet(url2);
     if (!data || data.length === 0) { await reply("👤 Tidak ada profil game."); return; }
@@ -1061,7 +1061,7 @@ _🔐 v4.0 — Hanya admin_\`);
   // ── NOTIFIKASI (admin) ──
   if (text.startsWith("!notif ")) {
     if (!isAdmin(msg)) { await reply("🔒 Perintah ini hanya untuk admin."); return; }
-    const pesan = msg.body.trim().substring(7);
+    const pesan = rawText.substring(7);
     if (!pesan) { await reply("❌ Tulis: !notif [isi pesan]"); return; }
     const result = await apiPost("notifications", { visitor_id: "wa-bot", title: "Notifikasi Bot WA", message: pesan, type: "info" });
     await reply(result && result.success ? "✅ Notifikasi terkirim!" : "❌ Gagal mengirim.");
@@ -1084,7 +1084,7 @@ _🔐 v4.0 — Hanya admin_\`);
   // ── TRANSAKSI (admin) ──
   if (text.startsWith("!transaksi")) {
     if (!isAdmin(msg)) { await reply("🔒 Perintah ini hanya untuk admin."); return; }
-    const vid = msg.body.trim().split(" ")[1];
+    const vid = rawText.split(" ")[1];
     if (!vid) { await reply("❌ Tulis: !transaksi [visitor_id]"); return; }
     const data = await apiGet("transactions&visitor_id=" + vid);
     if (!data || data.length === 0) { await reply("📋 Tidak ada transaksi."); return; }
@@ -1100,7 +1100,7 @@ _🔐 v4.0 — Hanya admin_\`);
   // ── TAMBAH SALDO (admin) ──
   if (text.startsWith("!tambahsaldo")) {
     if (!isAdmin(msg)) { await reply("🔒 Perintah ini hanya untuk admin."); return; }
-    const parts = msg.body.trim().split(" ");
+    const parts = rawText.split(" ");
     const vid = parts[1]; const amount = parseInt(parts[2]);
     if (!vid || isNaN(amount)) { await reply("❌ Tulis: !tambahsaldo [visitor_id] [jumlah]"); return; }
     const result = await apiPost("add_balance", { visitor_id: vid, amount, description: "Top up via Bot WA" });
@@ -1112,7 +1112,7 @@ _🔐 v4.0 — Hanya admin_\`);
   // ── KURANGI SALDO (admin) ──
   if (text.startsWith("!kurangsaldo")) {
     if (!isAdmin(msg)) { await reply("🔒 Perintah ini hanya untuk admin."); return; }
-    const parts = msg.body.trim().split(" ");
+    const parts = rawText.split(" ");
     const vid = parts[1]; const amount = parseInt(parts[2]);
     if (!vid || isNaN(amount) || amount <= 0) { await reply("❌ Tulis: !kurangsaldo [visitor_id] [jumlah]"); return; }
     const result = await apiPost("deduct_balance", { visitor_id: vid, amount, description: "Potong saldo via Bot WA" });
@@ -1124,7 +1124,7 @@ _🔐 v4.0 — Hanya admin_\`);
   // ── RESET SALDO (admin) ──
   if (text.startsWith("!resetsaldo")) {
     if (!isAdmin(msg)) { await reply("🔒 Perintah ini hanya untuk admin."); return; }
-    const vid = msg.body.trim().split(" ")[1];
+    const vid = rawText.split(" ")[1];
     if (!vid) { await reply("❌ Tulis: !resetsaldo [visitor_id]"); return; }
     const result = await apiPost("reset_balance", { visitor_id: vid });
     if (result && result.success) { await reply(\`✅ Saldo direset!\\n💰 Saldo lama: \${rp(result.data.old_balance)} → Rp 0\`); }
@@ -1135,7 +1135,7 @@ _🔐 v4.0 — Hanya admin_\`);
   // ── SET KREDIT (admin) ──
   if (text.startsWith("!setkredit")) {
     if (!isAdmin(msg)) { await reply("🔒 Perintah ini hanya untuk admin."); return; }
-    const parts = msg.body.trim().split(" ");
+    const parts = rawText.split(" ");
     const vid = parts[1]; const credits = parseInt(parts[2]);
     if (!vid || isNaN(credits)) { await reply("❌ Tulis: !setkredit [visitor_id] [jumlah]"); return; }
     const result = await apiPost("set_credits", { visitor_id: vid, credits });
@@ -1147,7 +1147,7 @@ _🔐 v4.0 — Hanya admin_\`);
   // ── RESET KREDIT (admin) ──
   if (text.startsWith("!resetkredit")) {
     if (!isAdmin(msg)) { await reply("🔒 Perintah ini hanya untuk admin."); return; }
-    const vid = msg.body.trim().split(" ")[1];
+    const vid = rawText.split(" ")[1];
     if (!vid) { await reply("❌ Tulis: !resetkredit [visitor_id]"); return; }
     const result = await apiPost("reset_credits", { visitor_id: vid });
     if (result && result.success) { await reply("✅ Kredit game direset ke 0"); }
@@ -1158,7 +1158,7 @@ _🔐 v4.0 — Hanya admin_\`);
   // ── RESET STREAK (admin) ──
   if (text.startsWith("!resetstreak")) {
     if (!isAdmin(msg)) { await reply("🔒 Perintah ini hanya untuk admin."); return; }
-    const vid = msg.body.trim().split(" ")[1];
+    const vid = rawText.split(" ")[1];
     if (!vid) { await reply("❌ Tulis: !resetstreak [visitor_id]"); return; }
     const result = await apiPost("reset_streak", { visitor_id: vid });
     if (result && result.success) { await reply("✅ Streak direset ke 0"); }
@@ -1169,7 +1169,7 @@ _🔐 v4.0 — Hanya admin_\`);
   // ── RESET STORAGE (admin) ──
   if (text.startsWith("!resetstorage")) {
     if (!isAdmin(msg)) { await reply("🔒 Perintah ini hanya untuk admin."); return; }
-    const vid = msg.body.trim().split(" ")[1];
+    const vid = rawText.split(" ")[1];
     if (!vid) { await reply("❌ Tulis: !resetstorage [visitor_id]"); return; }
     const result = await apiPost("reset_storage", { visitor_id: vid });
     if (result && result.success) { await reply("✅ Storage direset"); }
@@ -1180,7 +1180,7 @@ _🔐 v4.0 — Hanya admin_\`);
   // ── UPDATE STOK (admin) ──
   if (text.startsWith("!stok")) {
     if (!isAdmin(msg)) { await reply("🔒 Perintah ini hanya untuk admin."); return; }
-    const parts = msg.body.trim().split(" ");
+    const parts = rawText.split(" ");
     const pid = parts[1]; const stock = parseInt(parts[2]);
     if (!pid || isNaN(stock)) { await reply("❌ Tulis: !stok [product_id] [jumlah]"); return; }
     const result = await apiPost("update_stock", { product_id: pid, stock });
@@ -1192,7 +1192,7 @@ _🔐 v4.0 — Hanya admin_\`);
   // ── BROADCAST (admin) ──
   if (text.startsWith("!broadcast ")) {
     if (!isAdmin(msg)) { await reply("🔒 Perintah ini hanya untuk admin."); return; }
-    const pesan = msg.body.trim().substring(11);
+    const pesan = rawText.substring(11);
     if (!pesan) { await reply("❌ Tulis: !broadcast [pesan]"); return; }
     const result = await apiPost("broadcast", { title: "📢 Broadcast", message: pesan, type: "info" });
     if (result && result.success) { await reply(\`✅ Broadcast terkirim ke \${result.data.sent_to} user!\`); }
@@ -1203,7 +1203,7 @@ _🔐 v4.0 — Hanya admin_\`);
   // ── CARI USER (admin) ──
   if (text.startsWith("!user ")) {
     if (!isAdmin(msg)) { await reply("🔒 Perintah ini hanya untuk admin."); return; }
-    const keyword = msg.body.trim().substring(6).toLowerCase();
+    const keyword = rawText.substring(6).toLowerCase();
     const data = await apiGet("balances");
     if (!data) { await reply("❌ Gagal mengambil data."); return; }
     const hasil = data.filter(b => b.username.toLowerCase().includes(keyword));
@@ -1219,7 +1219,7 @@ _🔐 v4.0 — Hanya admin_\`);
   // ── LOGIN HISTORY (admin) ──
   if (text.startsWith("!loginhistory")) {
     if (!isAdmin(msg)) { await reply("🔒 Perintah ini hanya untuk admin."); return; }
-    const vid = msg.body.trim().split(" ")[1];
+    const vid = rawText.split(" ")[1];
     if (!vid) { await reply("❌ Tulis: !loginhistory [visitor_id]"); return; }
     const data = await apiGet("login_history&visitor_id=" + vid);
     if (!data || data.length === 0) { await reply("📋 Tidak ada riwayat login."); return; }
@@ -1235,7 +1235,7 @@ _🔐 v4.0 — Hanya admin_\`);
   // ── HAPUS NOTIFIKASI (admin) ──
   if (text.startsWith("!hapusnotif")) {
     if (!isAdmin(msg)) { await reply("🔒 Perintah ini hanya untuk admin."); return; }
-    const vid = msg.body.trim().split(" ")[1];
+    const vid = rawText.split(" ")[1];
     if (!vid) { await reply("❌ Tulis: !hapusnotif [visitor_id]"); return; }
     const result = await apiPost("delete_notifications", { visitor_id: vid });
     if (result && result.success) { await reply(\`✅ \${result.data.deleted} notifikasi dihapus\`); }
@@ -1246,7 +1246,7 @@ _🔐 v4.0 — Hanya admin_\`);
   // ── SET DEPOSIT STATUS (admin) ──
   if (text.startsWith("!setdeposit")) {
     if (!isAdmin(msg)) { await reply("🔒 Perintah ini hanya untuk admin."); return; }
-    const parts = msg.body.trim().split(" ");
+    const parts = rawText.split(" ");
     const did = parts[1]; const status = parts[2];
     if (!did || !status) { await reply("❌ Tulis: !setdeposit [deposit_id] [pending/success/rejected]"); return; }
     const result = await apiPost("set_deposit_status", { deposit_id: did, status });
@@ -1258,7 +1258,7 @@ _🔐 v4.0 — Hanya admin_\`);
   // ── SET TIKET STATUS (admin) ──
   if (text.startsWith("!settiket")) {
     if (!isAdmin(msg)) { await reply("🔒 Perintah ini hanya untuk admin."); return; }
-    const parts = msg.body.trim().split(" ");
+    const parts = rawText.split(" ");
     const tid = parts[1]; const status = parts[2];
     if (!tid || !status) { await reply("❌ Tulis: !settiket [ticket_id] [open/in_progress/resolved/closed]"); return; }
     const result = await apiPost("set_ticket_status", { ticket_id: tid, status });
@@ -1307,7 +1307,7 @@ _🔐 v4.0 — Hanya admin_\`);
   // ── SET SALDO LANGSUNG (admin) ──
   if (text.startsWith("!setsaldo")) {
     if (!isAdmin(msg)) { await reply("🔒 Perintah ini hanya untuk admin."); return; }
-    const parts = msg.body.trim().split(" ");
+    const parts = rawText.split(" ");
     const vid = parts[1]; const amount = parseInt(parts[2]);
     if (!vid || isNaN(amount)) { await reply("❌ Tulis: !setsaldo [visitor_id] [jumlah]"); return; }
     const result = await apiPost("set_balance", { visitor_id: vid, balance: amount });
@@ -1319,7 +1319,7 @@ _🔐 v4.0 — Hanya admin_\`);
   // ── RESET GAME STATS (admin) ──
   if (text.startsWith("!resetgame")) {
     if (!isAdmin(msg)) { await reply("🔒 Perintah ini hanya untuk admin."); return; }
-    const vid = msg.body.trim().split(" ")[1];
+    const vid = rawText.split(" ")[1];
     if (!vid) { await reply("❌ Tulis: !resetgame [visitor_id]"); return; }
     const result = await apiPost("reset_game_stats", { visitor_id: vid });
     if (result && result.success) { await reply("✅ Semua statistik game direset!"); }
@@ -1352,7 +1352,7 @@ _🔐 v4.0 — Hanya admin_\`);
   // ── SET STREAK (admin) ──
   if (text.startsWith("!setstreak")) {
     if (!isAdmin(msg)) { await reply("🔒 Perintah ini hanya untuk admin."); return; }
-    const parts = msg.body.trim().split(" ");
+    const parts = rawText.split(" ");
     const vid = parts[1]; const days = parseInt(parts[2]);
     if (!vid || isNaN(days)) { await reply("❌ Tulis: !setstreak [visitor_id] [hari]"); return; }
     const result = await apiPost("set_streak", { visitor_id: vid, current_streak: days });
@@ -1364,7 +1364,7 @@ _🔐 v4.0 — Hanya admin_\`);
   // ── PRODUK DETAIL (admin) ──
   if (text.startsWith("!produkdetail")) {
     if (!isAdmin(msg)) { await reply("🔒 Perintah ini hanya untuk admin."); return; }
-    const pid = msg.body.trim().split(" ")[1];
+    const pid = rawText.split(" ")[1];
     if (!pid) { await reply("❌ Tulis: !produkdetail [product_id]"); return; }
     const data = await apiGet("products");
     if (!data) { await reply("❌ Gagal mengambil data."); return; }
@@ -1379,7 +1379,7 @@ _🔐 v4.0 — Hanya admin_\`);
   // ── SPONSOR DETAIL (admin) ──
   if (text.startsWith("!sponsordetail")) {
     if (!isAdmin(msg)) { await reply("🔒 Perintah ini hanya untuk admin."); return; }
-    const sid = msg.body.trim().split(" ")[1];
+    const sid = rawText.split(" ")[1];
     if (!sid) { await reply("❌ Tulis: !sponsordetail [sponsor_id atau nomor]"); return; }
     const data = await apiGet("sponsors");
     if (!data) { await reply("❌ Gagal."); return; }
@@ -1402,7 +1402,7 @@ _🔐 v4.0 — Hanya admin_\`);
   // ── STOK SPONSOR (admin) ──
   if (text.startsWith("!stoksponsor")) {
     if (!isAdmin(msg)) { await reply("🔒 Perintah ini hanya untuk admin."); return; }
-    const parts = msg.body.trim().split(" ");
+    const parts = rawText.split(" ");
     const sid = parts[1]; const stock = parseInt(parts[2]);
     if (!sid || isNaN(stock)) { await reply("❌ Tulis: !stoksponsor [sponsor_id] [jumlah]"); return; }
     const result = await apiPost("update_sponsor_stock", { sponsor_id: sid, stock });
@@ -1525,7 +1525,7 @@ _🔐 v4.0 — Hanya admin_\`);
   // ── TOKEN DETAIL (admin) ──
   if (text.startsWith("!tokendetail")) {
     if (!isAdmin(msg)) { await reply("🔒 Perintah ini hanya untuk admin."); return; }
-    const kode = msg.body.trim().split(" ")[1];
+    const kode = rawText.split(" ")[1];
     if (!kode) { await reply("❌ Tulis: !tokendetail [kode_token]"); return; }
     const data = await apiGet("tokens");
     if (!data) { await reply("❌ Gagal mengambil data."); return; }
@@ -1543,7 +1543,7 @@ _🔐 v4.0 — Hanya admin_\`);
   // ── DETAIL USER LENGKAP (admin) ──
   if (text.startsWith("!detailuser")) {
     if (!isAdmin(msg)) { await reply("🔒 Perintah ini hanya untuk admin."); return; }
-    const vid = msg.body.trim().split(" ")[1];
+    const vid = rawText.split(" ")[1];
     if (!vid) { await reply("❌ Tulis: !detailuser [visitor_id]"); return; }
     const [balances, credits, streaks, storage, gameProfile, transactions] = await Promise.all([
       apiGet("balances"), apiGet("game_credits&visitor_id=" + vid),
@@ -1585,7 +1585,7 @@ _🔐 v4.0 — Hanya admin_\`);
   // ── TIKET DETAIL (admin) ──
   if (text.startsWith("!tiketdetail")) {
     if (!isAdmin(msg)) { await reply("🔒 Perintah ini hanya untuk admin."); return; }
-    const tid = msg.body.trim().split(" ")[1];
+    const tid = rawText.split(" ")[1];
     if (!tid) { await reply("❌ Tulis: !tiketdetail [ticket_id atau nomor]"); return; }
     const data = await apiGet("tickets");
     if (!data) { await reply("❌ Gagal mengambil data."); return; }
