@@ -577,7 +577,7 @@ function rp(n) {
 // Handler pesan masuk
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 client.on("message", async (msg) => {
-  const text = msg.body.trim().toLowerCase();
+   const text = msg.body.trim().toLowerCase();
   const chat = await msg.getChat();
 
   // ── MENU BANTUAN ──
@@ -592,6 +592,17 @@ client.on("message", async (msg) => {
 💳 *!deposit* — Riwayat deposit
 🎟️ *!token* — Daftar token
 🔔 *!notif [pesan]* — Kirim notifikasi
+📊 *!info* — Info & statistik
+🎮 *!game [visitor_id]* — Statistik game
+🏆 *!kredit [visitor_id]* — Kredit game
+🔥 *!streak [visitor_id]* — Status streak
+💾 *!storage [visitor_id]* — Status storage
+🎤 *!artis* — Daftar artis
+🎫 *!tiket* — Tiket support terbaru
+📡 *!broadcast [pesan]* — Broadcast ke semua user
+💵 *!tambahsaldo [visitor_id] [jumlah]* — Tambah saldo
+📋 *!transaksi [visitor_id]* — Riwayat transaksi
+👤 *!user [username]* — Cari user
 ℹ️ *!help* — Tampilkan menu ini
 ━━━━━━━━━━━━━━━━━━━━━━
 _Bot otomatis Agung Adi Store_\`;
