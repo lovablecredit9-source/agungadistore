@@ -803,8 +803,8 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
     if (command === "!produk") {
       const res = await api("products");
       if (!res.data?.length) return reply("📦 Tidak ada produk.");
-      const list = res.data.slice(0, 20).map((p, i) => (i+1) + ". " + p.title + " — " + fmtRp(p.price) + " (Stok: " + p.stock + ")").join("\\n");
-      return reply("📦 *Daftar Produk:*\\n\\n" + list + (res.data.length > 20 ? "\\n\\n...dan " + (res.data.length - 20) + " lainnya" : ""));
+      const list = res.data.slice(0, 20).map((p, i) => (i+1) + ". " + p.title + " — " + fmtRp(p.price) + " (Stok: " + p.stock + ")\\n   🆔 " + p.id).join("\\n");
+      return reply("📦 *Daftar Produk:*\\n\\n" + list + (res.data.length > 20 ? "\\n\\n...dan " + (res.data.length - 20) + " lainnya" : "") + "\\n\\n💡 Beli: !beli [ID] atau !beli [nama]");
     }
 
     if (command.startsWith("!cari ")) {
@@ -853,25 +853,33 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
       const res = await api("products");
       const p = (res.data || []).find((x) => x.id === id || x.title.toLowerCase().includes(id.toLowerCase()));
       if (!p) return reply("❌ Produk tidak ditemukan.");
-      return reply("📦 *Detail Produk:*\\n\\n📌 " + p.title + "\\n💰 " + fmtRp(p.price) + "\\n📊 Stok: " + p.stock + "\\n🏷️ Kategori: " + (p.category || "Umum") + "\\n🛡️ Garansi: " + (p.has_warranty ? "Ya" : "Tidak") + "\\n📝 " + (p.description || "-") + "\\n🆔 ID: " + p.id);
+      return reply("📦 *Detail Produk:*\\n\\n🆔 *ID: " + p.id + "*\\n📌 " + p.title + "\\n💰 " + fmtRp(p.price) + "\\n📊 Stok: " + p.stock + "\\n🏷️ Kategori: " + (p.category || "Umum") + "\\n🛡️ Garansi: " + (p.has_warranty ? "Ya" : "Tidak") + "\\n📝 " + (p.description || "-") + "\\n\\n💡 Beli: !beli " + p.id);
     }
 
-    // ── SPONSOR ──
-    if (command === "!sponsor") {
-      const res = await api("sponsors");
-      const active = (res.data || []).filter((s) => s.is_active);
-      if (!active.length) return reply("🏪 Tidak ada sponsor aktif.");
-      const list = active.slice(0, 15).map((s, i) => (i+1) + ". [#" + s.sponsor_number + "] " + s.title + " — " + fmtRp(s.price) + " oleh " + s.seller_name).join("\\n");
-      return reply("🏪 *Sponsor Aktif:*\\n\\n" + list);
-    }
-
+    // ── DETAIL SPONSOR LENGKAP ──
     if (command.startsWith("!detailsponsor")) {
       const no = args[0];
       if (!no) return reply("⚠️ Gunakan: !detailsponsor [nomor]");
-      const res = await api("sponsors");
-      const s = (res.data || []).find((x) => String(x.sponsor_number) === no);
-      if (!s) return reply("❌ Sponsor #" + no + " tidak ditemukan.");
-      return reply("🏪 *Sponsor #" + s.sponsor_number + "*\\n\\n📌 " + s.title + "\\n💰 " + fmtRp(s.price) + "\\n🏷️ Kategori: " + s.category + "\\n📊 Stok: " + s.stock + "\\n🛡️ Garansi: " + (s.has_warranty ? s.warranty_duration_value + " " + s.warranty_duration_type : "Tidak") + "\\n🏪 Penjual: " + s.seller_name + "\\n📞 Kontak: " + s.seller_contact + "\\n👁️ View: " + s.view_count + "\\n📝 " + (s.description || "-"));
+      const res = await api("sponsor_detail&sponsor_number=" + no);
+      if (res.error) {
+        // fallback
+        const res2 = await api("sponsors");
+        const s = (res2.data || []).find((x) => String(x.sponsor_number) === no);
+        if (!s) return reply("❌ Sponsor #" + no + " tidak ditemukan.");
+        return reply("🏪 *Sponsor #" + s.sponsor_number + "*\\n\\n📌 " + s.title + "\\n💰 " + fmtRp(s.price) + "\\n🏷️ Kategori: " + s.category + "\\n📊 Stok: " + s.stock + "\\n🏪 Penjual: " + s.seller_name + "\\n📝 " + (s.description || "-"));
+      }
+      const s = res.data;
+      let txt = "🏪 *Sponsor #" + s.sponsor_number + "*\\n\\n📌 " + s.title + "\\n💰 " + fmtRp(s.price) + "\\n🏷️ Kategori: " + s.category + "\\n📊 Stok: " + s.stock + "\\n🛡️ Garansi: " + (s.has_warranty ? s.warranty_duration_value + " " + s.warranty_duration_type : "Tidak") + "\\n🏪 Penjual: " + s.seller_name + "\\n📞 Kontak: " + s.seller_contact + "\\n👁️ View: " + s.view_count + "\\n📝 " + (s.description || "-");
+      // Social media
+      if (s.wa_number) txt += "\\n\\n📱 *Sosmed Penjual:*";
+      if (s.wa_number) txt += "\\n• WhatsApp: " + s.wa_number;
+      if (s.instagram) txt += "\\n• Instagram: " + s.instagram;
+      if (s.facebook) txt += "\\n• Facebook: " + s.facebook;
+      if (s.tiktok) txt += "\\n• TikTok: " + s.tiktok;
+      if (s.twitter) txt += "\\n• Twitter: " + s.twitter;
+      if (s.threads) txt += "\\n• Threads: " + s.threads;
+      if (s.images?.length) { txt += "\\n\\n📸 Foto: " + s.images.length + " gambar"; s.images.forEach((img, i) => { txt += "\\n" + (i+1) + ". " + img.image_url; }); }
+      return reply(txt);
     }
 
     // ── MUSIK ──
