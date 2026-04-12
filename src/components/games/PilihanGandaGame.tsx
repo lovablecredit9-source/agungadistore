@@ -201,16 +201,16 @@ export default function PilihanGandaGame() {
             {/* Timer */}
             {gameActive && (
               <div className="flex items-center gap-2">
-                <Timer className={`w-4 h-4 ${timeLeft <= 10 ? "text-red-500 animate-pulse" : "text-muted-foreground"}`} />
+                <Timer className={`w-4 h-4 ${timeLeft <= 10 ? "text-red-500 animate-pulse" : timeLeft <= 20 ? "text-orange-500 animate-pulse" : timeLeft <= 30 ? "text-yellow-600" : "text-muted-foreground"}`} />
                 <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
                   <motion.div
-                    className={`h-full rounded-full ${timeLeft <= 10 ? "bg-red-500" : "bg-primary"}`}
+                    className={`h-full rounded-full ${timeLeft <= 10 ? "bg-red-500" : timeLeft <= 20 ? "bg-orange-500" : timeLeft <= 30 ? "bg-yellow-500" : "bg-primary"}`}
                     initial={{ width: "100%" }}
                     animate={{ width: `${(timeLeft / diffConfig.timeSeconds) * 100}%` }}
                     transition={{ duration: 0.5 }}
                   />
                 </div>
-                <span className={`text-sm font-mono font-bold ${timeLeft <= 10 ? "text-red-500" : ""}`}>{timeLeft}s</span>
+                <span className={`text-sm font-mono font-bold ${timeLeft <= 10 ? "text-red-500 animate-pulse" : timeLeft <= 20 ? "text-orange-500 animate-pulse" : timeLeft <= 30 ? "text-yellow-600" : ""}`}>{timeLeft}s</span>
               </div>
             )}
 
