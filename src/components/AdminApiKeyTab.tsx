@@ -195,10 +195,10 @@ client.on("message", async (msg) => {
   // ══════════════════════════════════════
 
   if (text === "!help" || text === "!menu") {
-    await msg.reply(\`🤖 *BOT AGUNG ADI STORE*
+    await msg.reply(\`🤖 *BOT AGUNG ADI STORE v4.0*
 ━━━━━━━━━━━━━━━━━━━━━━
 
-📌 *PERINTAH USER:*
+📌 *PERINTAH USER (30+):*
 📦 *!produk* — Lihat semua produk
 🔍 *!cari [kata]* — Cari produk
 📢 *!sponsor* — Lihat sponsor aktif
@@ -207,27 +207,36 @@ client.on("message", async (msg) => {
 🎤 *!artis* — Daftar artis
 🎧 *!playlist* — Daftar playlist
 🎶 *!publik* — Lagu publik terbaru
-📊 *!info* — Info & statistik toko
-💰 *!ceksaldo [username]* — Cek saldo
-🎮 *!cekgame [username]* — Stats game user
-📋 *!paket* — Lihat paket tersedia
+📊 *!info* — Statistik toko
+💰 *!ceksaldo [nama]* — Cek saldo
+🎮 *!cekgame [nama]* — Stats game
+📋 *!paket* — Paket tersedia
 🎟️ *!cekvoucher* — Voucher aktif
 🏪 *!toko* — Info toko
-🏓 *!ping* — Cek status bot
+🏓 *!ping* — Status bot
 ⏰ *!waktu* — Waktu server
 📱 *!versi* — Versi bot
 🎲 *!random* — Produk random
-🏆 *!top* — Produk & sponsor terpopuler
+🏆 *!top* — Terpopuler
 🛒 *!kategori* — Kategori produk
 💎 *!harga [min] [max]* — Filter harga
-📢 *!promo* — Promo & diskon aktif
-🎵 *!musikpublik [user]* — Lagu publik user
+📢 *!promo* — Promo aktif
+🎵 *!musikpublik [kata]* — Musik publik
+📦 *!detailproduk [nama]* — Detail produk
+📢 *!detailsponsor [no]* — Detail sponsor
+🎤 *!detailartis [nama]* — Detail artis
+🎮 *!lb* — Leaderboard game
+📖 *!bantuan* — Pusat bantuan
+📜 *!syarat* — Syarat & ketentuan
+📱 *!sosmed* — Social media
+📊 *!rangkuman* — Rangkuman toko
 
 🔐 *PERINTAH ADMIN:*
 Ketik *!admin* untuk lihat perintah admin.
 
 ━━━━━━━━━━━━━━━━━━━━━━
-_Bot otomatis Agung Adi Store v3.0_\`);
+_Bot otomatis Agung Adi Store v4.0_
+_© 2026 Agung Adi Store_\`);
     return;
   }
 
@@ -639,73 +648,252 @@ _Bot otomatis Agung Adi Store v3.0_\`);
     return;
   }
 
+  // ── DETAIL PRODUK (user) ──
+  if (text.startsWith("!detailproduk ")) {
+    const keyword = msg.body.trim().substring(14).toLowerCase();
+    const data = await apiGet("products");
+    if (!data) { await msg.reply("❌ Gagal mengambil data."); return; }
+    const p = data.find(x => x.title.toLowerCase().includes(keyword));
+    if (!p) { await msg.reply(\`📦 Produk "\${keyword}" tidak ditemukan.\`); return; }
+    let r = "📦 *DETAIL PRODUK*\\n━━━━━━━━━━━━━━━━━━\\n\\n";
+    r += \`📌 *\${p.title}*\\n💰 Harga: \${rp(p.price)}\\n📦 Stok: \${p.stock}\\n🏷️ Kategori: \${p.category || "-"}\\n🛡️ Garansi: \${p.has_warranty ? "Ya ✅" : "Tidak"}\\n📝 Deskripsi:\\n\${p.description || "-"}\\n\\n📱 Beli: wa.me/6285769302532\`;
+    await msg.reply(r);
+    return;
+  }
+
+  // ── DETAIL SPONSOR (user) ──
+  if (text.startsWith("!detailsponsor ")) {
+    const keyword = msg.body.trim().substring(15).toLowerCase();
+    const data = await apiGet("sponsors");
+    if (!data) { await msg.reply("❌ Gagal mengambil data."); return; }
+    const s = data.find(x => x.title.toLowerCase().includes(keyword) || String(x.sponsor_number) === keyword);
+    if (!s) { await msg.reply(\`📢 Sponsor "\${keyword}" tidak ditemukan.\`); return; }
+    let r = "📢 *DETAIL SPONSOR*\\n━━━━━━━━━━━━━━━━━━\\n\\n";
+    r += \`📌 *\${s.title}* (#\${s.sponsor_number})\\n👤 Penjual: \${s.seller_name}\\n💰 Harga: \${rp(s.price)}\\n📦 Stok: \${s.stock}\\n🏷️ Kategori: \${s.category}\\n👁️ Dilihat: \${s.view_count}x\\n\`;
+    if (s.wa_number) r += \`📱 WA: \${s.wa_number}\\n\`;
+    if (s.instagram) r += \`📸 IG: @\${s.instagram}\\n\`;
+    if (s.tiktok) r += \`🎵 TikTok: @\${s.tiktok}\\n\`;
+    if (s.description) r += \`\\n📝 \${s.description}\\n\`;
+    r += \`\\n📱 Hubungi: wa.me/\${(s.wa_number || "6285769302532").replace(/\\D/g, "")}\`;
+    await msg.reply(r);
+    return;
+  }
+
+  // ── DETAIL ARTIS (user) ──
+  if (text.startsWith("!detailartis ")) {
+    const keyword = msg.body.trim().substring(13).toLowerCase();
+    const [artists, songs] = await Promise.all([apiGet("artists"), apiGet("songs")]);
+    if (!artists) { await msg.reply("❌ Gagal mengambil data."); return; }
+    const a = artists.find(x => x.name.toLowerCase().includes(keyword));
+    if (!a) { await msg.reply(\`🎤 Artis "\${keyword}" tidak ditemukan.\`); return; }
+    const artistSongs = songs ? songs.filter(s => s.artist.toLowerCase() === a.name.toLowerCase()) : [];
+    let r = "🎤 *DETAIL ARTIS*\\n━━━━━━━━━━━━━━━━━━\\n\\n";
+    r += \`🎤 *\${a.name}*\\n🎵 Genre: \${a.genre || "-"}\\n📝 Bio: \${a.bio || "-"}\\n🎶 Jumlah lagu: \${artistSongs.length}\\n\`;
+    if (artistSongs.length > 0) {
+      r += "\\n🎵 *Daftar Lagu:*\\n";
+      artistSongs.forEach((s, i) => {
+        const dur = s.duration ? \`\${Math.floor(s.duration / 60)}:\${String(s.duration % 60).padStart(2, "0")}\` : "-";
+        r += \`   \${i + 1}. \${s.title} (\${dur})\\n\`;
+      });
+    }
+    await msg.reply(r);
+    return;
+  }
+
+  // ── LEADERBOARD PUBLIC ──
+  if (text === "!lb" || text === "!leaderboard") {
+    const data = await apiGet("game_stats");
+    if (!data || data.length === 0) { await msg.reply("🏆 Belum ada data game."); return; }
+    const playerMap = {};
+    data.forEach(g => {
+      if (!playerMap[g.visitor_id]) playerMap[g.visitor_id] = { total: 0, wins: 0 };
+      playerMap[g.visitor_id].total += g.points;
+      playerMap[g.visitor_id].wins += g.wins;
+    });
+    const profiles = await apiGet("game_profiles");
+    const sorted = Object.entries(playerMap).sort((a, b) => b[1].total - a[1].total).slice(0, 10);
+    const medals = ["🥇", "🥈", "🥉"];
+    let r = "🏆 *LEADERBOARD GAME*\\n━━━━━━━━━━━━━━━━━━\\n\\n";
+    sorted.forEach(([vid, s], i) => {
+      const profile = profiles ? profiles.find(p => p.visitor_id === vid) : null;
+      const name = profile ? profile.display_name : vid.substring(0, 10) + "...";
+      r += \`\${medals[i] || (i + 1) + "."} *\${name}*\\n   💎 \${s.total} poin | 🏆 \${s.wins} wins\\n\\n\`;
+    });
+    await msg.reply(r);
+    return;
+  }
+
+  // ── BANTUAN / PUSAT BANTUAN ──
+  if (text === "!bantuan" || text === "!faq") {
+    await msg.reply(\`📖 *PUSAT BANTUAN*
+━━━━━━━━━━━━━━━━━━
+
+❓ *Cara beli produk?*
+Pilih produk > Hubungi admin via WA > Bayar > Terima token klaim.
+
+❓ *Cara klaim token?*
+Masuk tab Plus > Masukkan token > Klik Klaim.
+
+❓ *Cara top up saldo?*
+Tab Plus > Deposit > Pilih nominal > Bayar QRIS > Tunggu konfirmasi.
+
+❓ *Apa itu sponsor?*
+Iklankan produk di toko kami! Hubungi admin.
+
+❓ *Cara main game?*
+Tab Game > Pilih game > Butuh kredit game.
+
+❓ *Saldo tidak masuk?*
+Tunggu 1x24 jam, atau buat tiket support.
+
+❓ *Cara daftar akun?*
+Tab Plus > Buat Akun > Isi data > Selesai.
+
+📱 *Hubungi Admin:*
+wa.me/6285769302532
+
+🌐 *Website:*
+produkklaimtransaksiagungadistore.lovable.app\`);
+    return;
+  }
+
+  // ── SYARAT & KETENTUAN ──
+  if (text === "!syarat" || text === "!tos") {
+    await msg.reply(\`📜 *SYARAT & KETENTUAN*
+━━━━━━━━━━━━━━━━━━
+
+1️⃣ Pembeli wajib membaca deskripsi produk sebelum membeli.
+2️⃣ Semua transaksi bersifat final, tidak bisa refund kecuali produk bermasalah.
+3️⃣ Garansi berlaku sesuai durasi yang tertera di produk.
+4️⃣ Dilarang menyalahgunakan sistem saldo/voucher.
+5️⃣ Admin berhak menonaktifkan akun yang melanggar aturan.
+6️⃣ Sponsor harus mematuhi aturan iklan yang berlaku.
+7️⃣ Kredit game tidak bisa ditukar dengan saldo.
+8️⃣ Musik publik harus bebas hak cipta.
+9️⃣ Data pribadi dijaga kerahasiaannya.
+🔟 Syarat dapat berubah sewaktu-waktu.
+
+📱 Hubungi: wa.me/6285769302532
+_© 2026 Agung Adi Store_\`);
+    return;
+  }
+
+  // ── SOSIAL MEDIA ──
+  if (text === "!sosmed" || text === "!social") {
+    await msg.reply(\`📱 *SOCIAL MEDIA*
+━━━━━━━━━━━━━━━━━━
+
+📱 *WhatsApp:* wa.me/6285769302532
+🌐 *Website:* produkklaimtransaksiagungadistore.lovable.app
+📸 *Instagram:* @agungadistore
+🎵 *TikTok:* @agungadistore
+📘 *Facebook:* Agung Adi Store
+🐦 *Twitter/X:* @agungadistore
+📺 *YouTube:* Agung Adi Store
+
+━━━━━━━━━━━━━━━━━━
+_Follow untuk update terbaru!_\`);
+    return;
+  }
+
+  // ── RANGKUMAN TOKO ──
+  if (text === "!rangkuman" || text === "!summary") {
+    const [dashboard, likes, vouchers] = await Promise.all([
+      apiGet("dashboard"), apiGet("likes"), apiGet("vouchers")
+    ]);
+    let r = "📊 *RANGKUMAN TOKO*\\n━━━━━━━━━━━━━━━━━━\\n\\n";
+    if (dashboard) {
+      r += \`📦 *Produk:* \${dashboard.products}\\n📢 *Sponsor:* \${dashboard.sponsors}\\n🎵 *Lagu:* \${dashboard.songs}\\n🎤 *Artis:* \${dashboard.artists}\\n🎶 *Lagu Publik:* \${dashboard.public_songs}\\n👥 *User:* \${dashboard.users}\\n\\n\`;
+    }
+    if (likes) {
+      r += \`❤️ *Total Likes:*\\n   📦 Produk: \${likes.products} | 🎵 Lagu: \${likes.songs} | 📢 Sponsor: \${likes.sponsors}\\n\\n\`;
+    }
+    if (vouchers) {
+      let activeCount = 0;
+      if (vouchers.discount) activeCount += vouchers.discount.filter(v => v.is_active).length;
+      if (vouchers.game) activeCount += vouchers.game.filter(v => v.is_active).length;
+      if (vouchers.streak) activeCount += vouchers.streak.filter(v => v.is_active).length;
+      if (vouchers.music) activeCount += vouchers.music.filter(v => v.is_active).length;
+      r += \`🎟️ *Voucher Aktif:* \${activeCount}\\n\`;
+    }
+    r += \`\\n📅 \${new Date().toLocaleString("id-ID")}\\n_© 2026 Agung Adi Store_\`;
+    await msg.reply(r);
+    return;
+  }
+
   // ══════════════════════════════════════
   // 🔐 MENU ADMIN (Hanya admin)
   // ══════════════════════════════════════
 
   if (text === "!admin") {
     if (!isAdmin(msg)) { await msg.reply("🔒 Perintah ini hanya untuk admin."); return; }
-    await msg.reply(\`🔐 *PERINTAH ADMIN*
+    await msg.reply(\`🔐 *PERINTAH ADMIN (50+)*
 ━━━━━━━━━━━━━━━━━━━━━━
 
 💰 *SALDO:*
 !saldo — Semua saldo user
-!tambahsaldo [vid] [jumlah] — Tambah saldo
-!kurangsaldo [vid] [jumlah] — Kurangi saldo
+!tambahsaldo [vid] [jml] — Tambah saldo
+!kurangsaldo [vid] [jml] — Kurangi saldo
 !resetsaldo [vid] — Reset saldo ke 0
-!setsaldo [vid] [jumlah] — Set saldo langsung
+!setsaldo [vid] [jml] — Set saldo langsung
 
 🎮 *GAME:*
 !game [vid] — Stats game
 !kredit [vid] — Kredit game
-!setkredit [vid] [jumlah] — Set kredit
-!resetkredit [vid] — Reset kredit ke 0
+!setkredit [vid] [jml] — Set kredit
+!resetkredit [vid] — Reset kredit
 !profil [vid] — Profil game
-!resetgame [vid] — Reset semua game stats
-!leaderboard — Top 10 pemain
+!resetgame [vid] — Reset game stats
+!leaderboardadmin — Leaderboard detail
 
 🔥 *STREAK:*
 !streak [vid] — Status streak
 !resetstreak [vid] — Reset streak
-!setstreak [vid] [hari] — Set streak manual
+!setstreak [vid] [hari] — Set streak
+!streaksub — Langganan streak aktif
 
 💾 *STORAGE:*
 !storage [vid] — Status storage
 !resetstorage [vid] — Reset storage
 
-📦 *PRODUK:*
-!stok [id] [jumlah] — Update stok
+📦 *PRODUK & SPONSOR:*
+!stok [id] [jml] — Update stok produk
+!produkdetail [id] — Detail produk
+!sponsordetail [id] — Detail sponsor
+!stoksponsor [id] [jml] — Update stok sponsor
 !deposit — Riwayat deposit
-!setdeposit [id] [status] — Ubah status deposit
+!setdeposit [id] [status] — Status deposit
 !token — Daftar token
-!produkdetail [id] — Detail produk lengkap
-!sponsordetail [id] — Detail sponsor lengkap
-!stoksponsor [id] [jumlah] — Update stok sponsor
+!tokendetail [kode] — Detail token
 
 👥 *USER:*
 !user [nama] — Cari user
 !alluser — Semua user
 !loginhistory [vid] — Riwayat login
-!hapusnotif [vid] — Hapus semua notif
-!musikprofil — Semua profil musik
-!follow — Statistik follow
+!hapusnotif [vid] — Hapus notif user
+!musikprofil — Profil musik
+!follow — Stats follow
+!detailuser [vid] — Detail lengkap user
 
 🎫 *SUPPORT:*
 !tiket — Tiket support
-!settiket [id] [status] — Ubah status tiket
-!chat — Chat produk terbaru
+!settiket [id] [status] — Status tiket
+!chat — Chat produk
+!tiketdetail [id] — Detail tiket
 
 📡 *BROADCAST & MONITORING:*
 !notif [pesan] — Kirim notifikasi
-!broadcast [pesan] — Broadcast ke semua
+!broadcast [pesan] — Broadcast semua
 !dashboard — Dashboard lengkap
-!likes — Statistik likes
+!likes — Stats likes
 !report — Laporan harian
-!topuser — Top user by saldo
+!topuser — Top user saldo
 !rekapdeposit — Rekap deposit
+!aktivitas — Aktivitas terbaru
+!backup — Info backup data
 
 ━━━━━━━━━━━━━━━━━━━━━━
-_🔐 Hanya admin yang bisa akses_\`);
+_🔐 v4.0 — Hanya admin_\`);
     return;
   }
 
@@ -1282,6 +1470,178 @@ _🔐 Hanya admin yang bisa akses_\`);
     await msg.reply(r);
     return;
   }
+
+  // ── STREAK SUBSCRIPTIONS (admin) ──
+  if (text === "!streaksub") {
+    if (!isAdmin(msg)) { await msg.reply("🔒 Perintah ini hanya untuk admin."); return; }
+    const data = await apiGet("streak_subs");
+    if (!data || data.length === 0) { await msg.reply("🔥 Belum ada langganan streak."); return; }
+    let r = "🔥 *LANGGANAN STREAK AKTIF*\\n━━━━━━━━━━━━━━━━━━\\n\\n";
+    data.filter(s => s.is_active).forEach((s, i) => {
+      r += \`\${i + 1}. 🆔 \${s.visitor_id.substring(0, 12)}\\n   📋 \${s.plan_name} (\${s.plan_days}h)\\n   💰 \${rp(s.price_paid)}\\n   📅 \${new Date(s.starts_at).toLocaleDateString("id-ID")} s/d \${new Date(s.expires_at).toLocaleDateString("id-ID")}\\n\\n\`;
+    });
+    await msg.reply(r);
+    return;
+  }
+
+  // ── TOKEN DETAIL (admin) ──
+  if (text.startsWith("!tokendetail")) {
+    if (!isAdmin(msg)) { await msg.reply("🔒 Perintah ini hanya untuk admin."); return; }
+    const kode = msg.body.trim().split(" ")[1];
+    if (!kode) { await msg.reply("❌ Tulis: !tokendetail [kode_token]"); return; }
+    const data = await apiGet("tokens");
+    if (!data) { await msg.reply("❌ Gagal mengambil data."); return; }
+    const t = data.find(x => x.token_code.toLowerCase().includes(kode.toLowerCase()));
+    if (!t) { await msg.reply(\`🎟️ Token "\${kode}" tidak ditemukan.\`); return; }
+    let r = "🎟️ *DETAIL TOKEN*\\n━━━━━━━━━━━━━━━━━━\\n\\n";
+    r += \`📌 Kode: *\${t.token_code}*\\n🆔 ID: \${t.id}\\n📦 Produk: \${t.products ? t.products.title : "-"}\\n\`;
+    r += \`✅ Status: \${t.is_claimed ? "Sudah diklaim" : "Belum diklaim"}\\n\`;
+    if (t.claimed_at) r += \`📅 Diklaim: \${new Date(t.claimed_at).toLocaleString("id-ID")}\\n\`;
+    r += \`📅 Dibuat: \${new Date(t.created_at).toLocaleString("id-ID")}\`;
+    await msg.reply(r);
+    return;
+  }
+
+  // ── DETAIL USER LENGKAP (admin) ──
+  if (text.startsWith("!detailuser")) {
+    if (!isAdmin(msg)) { await msg.reply("🔒 Perintah ini hanya untuk admin."); return; }
+    const vid = msg.body.trim().split(" ")[1];
+    if (!vid) { await msg.reply("❌ Tulis: !detailuser [visitor_id]"); return; }
+    const [balances, credits, streaks, storage, gameProfile, transactions] = await Promise.all([
+      apiGet("balances"), apiGet("game_credits&visitor_id=" + vid),
+      apiGet("streaks&visitor_id=" + vid), apiGet("storage&visitor_id=" + vid),
+      apiGet("game_profiles&visitor_id=" + vid), apiGet("transactions&visitor_id=" + vid),
+    ]);
+    const user = balances ? balances.find(b => b.visitor_id === vid || b.visitor_id.startsWith(vid)) : null;
+    let r = "👤 *DETAIL USER LENGKAP*\\n━━━━━━━━━━━━━━━━━━\\n\\n";
+    if (user) {
+      r += \`👤 *\${user.username}*\\n🆔 \${user.visitor_id}\\n💰 Saldo: \${rp(user.balance)}\\n📧 Email: \${user.email || "-"}\\n📱 HP: \${user.phone || "-"}\\n\\n\`;
+    } else {
+      r += \`🆔 VID: \${vid}\\n⚠️ Akun saldo tidak ditemukan\\n\\n\`;
+    }
+    if (credits && credits.length > 0) {
+      r += \`🎮 *Game:* \${credits[0].credits} kredit\`;
+      if (credits[0].unlimited_until) r += \` | ♾️ s/d \${new Date(credits[0].unlimited_until).toLocaleDateString("id-ID")}\`;
+      r += "\\n";
+    }
+    if (streaks && streaks.length > 0) {
+      r += \`🔥 *Streak:* \${streaks[0].current_streak} hari (Max: \${streaks[0].longest_streak})\\n\`;
+    }
+    if (storage && storage.length > 0) {
+      const totalMb = storage.reduce((sum, s) => sum + s.storage_mb, 0);
+      r += \`💾 *Storage:* \${totalMb} MB\\n\`;
+    }
+    if (gameProfile && gameProfile.length > 0) {
+      r += \`🎭 *Profil Game:* \${gameProfile[0].display_name} (\${gameProfile[0].is_guest ? "Guest" : "Registered"})\\n\`;
+    }
+    if (transactions && transactions.length > 0) {
+      r += \`\\n📋 *Transaksi Terakhir (\${Math.min(transactions.length, 5)}):*\\n\`;
+      transactions.slice(0, 5).forEach((t, i) => {
+        r += \`   \${t.type === "topup" ? "➕" : "➖"} \${rp(t.amount)} — \${new Date(t.created_at).toLocaleDateString("id-ID")}\\n\`;
+      });
+    }
+    await msg.reply(r);
+    return;
+  }
+
+  // ── TIKET DETAIL (admin) ──
+  if (text.startsWith("!tiketdetail")) {
+    if (!isAdmin(msg)) { await msg.reply("🔒 Perintah ini hanya untuk admin."); return; }
+    const tid = msg.body.trim().split(" ")[1];
+    if (!tid) { await msg.reply("❌ Tulis: !tiketdetail [ticket_id atau nomor]"); return; }
+    const data = await apiGet("tickets");
+    if (!data) { await msg.reply("❌ Gagal mengambil data."); return; }
+    const t = data.find(x => x.id === tid || x.id.startsWith(tid) || String(x.ticket_number) === tid);
+    if (!t) { await msg.reply("❌ Tiket tidak ditemukan."); return; }
+    let r = "🎫 *DETAIL TIKET*\\n━━━━━━━━━━━━━━━━━━\\n\\n";
+    r += \`📌 #\${t.ticket_number}\\n🆔 \${t.id}\\n👤 Nama: \${t.name}\\n📱 HP: \${t.phone}\\n🏷️ Kategori: \${t.category}\\n📊 Status: \${t.status}\\n\\n📝 Deskripsi:\\n\${t.description}\\n\\n📅 Dibuat: \${new Date(t.created_at).toLocaleString("id-ID")}\\n📅 Update: \${new Date(t.updated_at).toLocaleString("id-ID")}\`;
+    await msg.reply(r);
+    return;
+  }
+
+  // ── AKTIVITAS TERBARU (admin) ──
+  if (text === "!aktivitas" || text === "!activity") {
+    if (!isAdmin(msg)) { await msg.reply("🔒 Perintah ini hanya untuk admin."); return; }
+    const [deposits, transactions, tickets, notifications] = await Promise.all([
+      apiGet("deposits"), apiGet("transactions"), apiGet("tickets"), apiGet("notifications"),
+    ]);
+    let r = "📡 *AKTIVITAS TERBARU*\\n━━━━━━━━━━━━━━━━━━\\n\\n";
+    if (deposits && deposits.length > 0) {
+      r += "💳 *Deposit Terbaru:*\\n";
+      deposits.slice(0, 3).forEach(d => {
+        r += \`   \${d.username} — \${rp(d.amount)} (\${d.status}) \${new Date(d.created_at).toLocaleDateString("id-ID")}\\n\`;
+      });
+      r += "\\n";
+    }
+    if (transactions && transactions.length > 0) {
+      r += "📋 *Transaksi Terbaru:*\\n";
+      transactions.slice(0, 3).forEach(t => {
+        r += \`   \${t.type === "topup" ? "➕" : "➖"} \${rp(t.amount)} — \${t.description || "-"} (\${new Date(t.created_at).toLocaleDateString("id-ID")})\\n\`;
+      });
+      r += "\\n";
+    }
+    if (tickets && tickets.length > 0) {
+      r += "🎫 *Tiket Terbaru:*\\n";
+      tickets.slice(0, 3).forEach(t => {
+        r += \`   #\${t.ticket_number} \${t.name} — \${t.status}\\n\`;
+      });
+      r += "\\n";
+    }
+    r += \`📅 \${new Date().toLocaleString("id-ID")}\`;
+    await msg.reply(r);
+    return;
+  }
+
+  // ── BACKUP INFO (admin) ──
+  if (text === "!backup") {
+    if (!isAdmin(msg)) { await msg.reply("🔒 Perintah ini hanya untuk admin."); return; }
+    const dashboard = await apiGet("dashboard");
+    let r = "💾 *INFO BACKUP DATA*\\n━━━━━━━━━━━━━━━━━━\\n\\n";
+    r += "📊 *Jumlah Data Saat Ini:*\\n";
+    if (dashboard) {
+      r += \`   📦 Produk: \${dashboard.products}\\n   📢 Sponsor: \${dashboard.sponsors}\\n   👥 User: \${dashboard.users}\\n   🎵 Lagu: \${dashboard.songs}\\n   🎤 Artis: \${dashboard.artists}\\n   💳 Deposit: \${dashboard.deposits}\\n   🎫 Tiket: \${dashboard.tickets}\\n\\n\`;
+    }
+    r += "💡 *Tips Backup:*\\n";
+    r += "   • Data tersimpan aman di cloud\\n";
+    r += "   • Gunakan !dashboard untuk monitoring\\n";
+    r += "   • Gunakan !report untuk laporan harian\\n";
+    r += \`\\n📅 \${new Date().toLocaleString("id-ID")}\`;
+    await msg.reply(r);
+    return;
+  }
+
+  // ── LEADERBOARD ADMIN (detail) ──
+  if (text === "!leaderboardadmin" || text === "!lba") {
+    if (!isAdmin(msg)) { await msg.reply("🔒 Perintah ini hanya untuk admin."); return; }
+    const [stats, profiles, credits] = await Promise.all([
+      apiGet("game_stats"), apiGet("game_profiles"), apiGet("game_credits")
+    ]);
+    if (!stats || stats.length === 0) { await msg.reply("🏆 Belum ada data game."); return; }
+    const playerMap = {};
+    stats.forEach(g => {
+      if (!playerMap[g.visitor_id]) playerMap[g.visitor_id] = { total: 0, wins: 0, losses: 0, games: [] };
+      playerMap[g.visitor_id].total += g.points;
+      playerMap[g.visitor_id].wins += g.wins;
+      playerMap[g.visitor_id].losses += g.losses;
+      playerMap[g.visitor_id].games.push(g.game_type);
+    });
+    const sorted = Object.entries(playerMap).sort((a, b) => b[1].total - a[1].total).slice(0, 15);
+    const medals = ["🥇", "🥈", "🥉"];
+    let r = "🏆 *LEADERBOARD ADMIN (DETAIL)*\\n━━━━━━━━━━━━━━━━━━\\n\\n";
+    sorted.forEach(([vid, s], i) => {
+      const profile = profiles ? profiles.find(p => p.visitor_id === vid) : null;
+      const credit = credits ? credits.find(c => c.visitor_id === vid) : null;
+      const name = profile ? profile.display_name : vid.substring(0, 10) + "...";
+      r += \`\${medals[i] || (i + 1) + "."} *\${name}*\\n\`;
+      r += \`   🆔 \${vid.substring(0, 16)}\\n\`;
+      r += \`   💎 \${s.total} poin | W:\${s.wins} L:\${s.losses}\\n\`;
+      r += \`   🎮 Games: \${s.games.join(", ")}\\n\`;
+      if (credit) r += \`   🏆 Kredit: \${credit.credits}\\n\`;
+      r += "\\n";
+    });
+    await msg.reply(r);
+    return;
+  }
 });
 
 client.initialize();
@@ -1594,7 +1954,7 @@ npm install whatsapp-web.js qrcode-terminal`}
 
               <Card className="border-blue-500/30 bg-blue-500/5">
                 <CardContent className="p-2">
-                  <p className="text-[11px] font-bold text-blue-700 mb-1">📌 Perintah USER ({23} perintah):</p>
+                  <p className="text-[11px] font-bold text-blue-700 mb-1">📌 Perintah USER ({30} perintah):</p>
                   <div className="grid grid-cols-2 gap-1 text-[10px]">
                     <span><code>!help</code> — Menu bantuan</span>
                     <span><code>!produk</code> — Daftar produk</span>
@@ -1616,6 +1976,14 @@ npm install whatsapp-web.js qrcode-terminal`}
                     <span><code>!harga [min] [max]</code> — Filter harga</span>
                     <span><code>!random</code> — Produk random</span>
                     <span><code>!top</code> — Terpopuler</span>
+                    <span><code>!detailproduk</code> — Detail produk</span>
+                    <span><code>!detailsponsor</code> — Detail sponsor</span>
+                    <span><code>!detailartis</code> — Detail artis</span>
+                    <span><code>!lb</code> — Leaderboard</span>
+                    <span><code>!bantuan</code> — FAQ</span>
+                    <span><code>!syarat</code> — S&K</span>
+                    <span><code>!sosmed</code> — Social media</span>
+                    <span><code>!rangkuman</code> — Rangkuman</span>
                     <span><code>!toko</code> — Info toko</span>
                     <span><code>!waktu</code> — Waktu server</span>
                     <span><code>!versi</code> — Info bot</span>
@@ -1626,7 +1994,7 @@ npm install whatsapp-web.js qrcode-terminal`}
 
               <Card className="border-red-500/30 bg-red-500/5">
                 <CardContent className="p-2">
-                  <p className="text-[11px] font-bold text-red-700 mb-1">🔐 Perintah ADMIN ({42} perintah):</p>
+                  <p className="text-[11px] font-bold text-red-700 mb-1">🔐 Perintah ADMIN ({52} perintah):</p>
                   <div className="grid grid-cols-2 gap-1 text-[10px]">
                     <span><code>!admin</code> — Menu admin</span>
                     <span><code>!saldo</code> — Semua saldo</span>
@@ -1638,31 +2006,35 @@ npm install whatsapp-web.js qrcode-terminal`}
                     <span><code>!setdeposit</code> — Ubah status</span>
                     <span><code>!rekapdeposit</code> — Rekap deposit</span>
                     <span><code>!token</code> — Daftar token</span>
+                    <span><code>!tokendetail</code> — Detail token</span>
                     <span><code>!game [vid]</code> — Stats game</span>
                     <span><code>!kredit [vid]</code> — Kredit game</span>
                     <span><code>!setkredit</code> — Set kredit</span>
                     <span><code>!resetkredit</code> — Reset kredit</span>
                     <span><code>!resetgame</code> — Reset game stats</span>
-                    <span><code>!leaderboard</code> — Top 10 pemain</span>
+                    <span><code>!leaderboardadmin</code> — LB detail</span>
                     <span><code>!streak [vid]</code> — Status streak</span>
                     <span><code>!resetstreak</code> — Reset streak</span>
                     <span><code>!setstreak</code> — Set streak</span>
+                    <span><code>!streaksub</code> — Langganan streak</span>
                     <span><code>!storage [vid]</code> — Storage</span>
                     <span><code>!resetstorage</code> — Reset storage</span>
                     <span><code>!profil [vid]</code> — Profil game</span>
-                    <span><code>!stok [id] [n]</code> — Update stok</span>
+                    <span><code>!stok [id] [n]</code> — Stok produk</span>
                     <span><code>!produkdetail</code> — Detail produk</span>
                     <span><code>!sponsordetail</code> — Detail sponsor</span>
                     <span><code>!stoksponsor</code> — Stok sponsor</span>
                     <span><code>!user [nama]</code> — Cari user</span>
                     <span><code>!alluser</code> — Semua user</span>
                     <span><code>!topuser</code> — Top user saldo</span>
+                    <span><code>!detailuser</code> — Detail lengkap</span>
                     <span><code>!loginhistory</code> — Riwayat login</span>
                     <span><code>!transaksi</code> — Riwayat trx</span>
                     <span><code>!musikprofil</code> — Profil musik</span>
                     <span><code>!follow</code> — Stats follow</span>
                     <span><code>!tiket</code> — Tiket support</span>
                     <span><code>!settiket</code> — Status tiket</span>
+                    <span><code>!tiketdetail</code> — Detail tiket</span>
                     <span><code>!chat</code> — Chat produk</span>
                     <span><code>!notif [isi]</code> — Kirim notif</span>
                     <span><code>!broadcast</code> — Broadcast</span>
@@ -1670,6 +2042,8 @@ npm install whatsapp-web.js qrcode-terminal`}
                     <span><code>!likes</code> — Stats likes</span>
                     <span><code>!dashboard</code> — Dashboard</span>
                     <span><code>!report</code> — Laporan harian</span>
+                    <span><code>!aktivitas</code> — Aktivitas baru</span>
+                    <span><code>!backup</code> — Info backup</span>
                   </div>
                 </CardContent>
               </Card>
@@ -1686,7 +2060,7 @@ npm install whatsapp-web.js qrcode-terminal`}
               </Card>
 
               <p className="text-[10px] text-muted-foreground text-center">
-                💡 Download file bot.js dari bagian atas halaman ini. File sudah lengkap 65+ perintah.
+                💡 Download file bot.js — total 80+ perintah lengkap.
               </p>
             </TabsContent>
 
