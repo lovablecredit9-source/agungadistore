@@ -130,12 +130,12 @@ export default function AdminApiKeyTab() {
   function generateBotCode(apiKey: string, phoneNumber?: string) {
     const phoneConfig = phoneNumber
       ? `
-const DEFAULT_PAIRING_PHONE = "${phoneNumber.replace(/[^0-9]/g, '')}";`
+const DEFAULT_PAIRING_PHONE = "${phoneNumber.replace(/[^0-9]/g, "")}";`
       : `
 const DEFAULT_PAIRING_PHONE = ""; // Opsional: nomor default pairing, format: 628xxxxxxxxxx`;
 
     return `// =============================================
-// 🤖 BOT WHATSAPP - Agung Adi Store v5.1.2
+// 🤖 BOT WHATSAPP - Agung Adi Store v5.2.0
 // =============================================
 // Library: @whiskeysockets/baileys (QR / Pairing Code)
 // Cara pakai:
@@ -144,16 +144,28 @@ const DEFAULT_PAIRING_PHONE = ""; // Opsional: nomor default pairing, format: 62
 //   3. Pilih 1 = Scan QR / 2 = Pairing nomor
 // =============================================
 
-const { default: makeWASocket, useMultiFileAuthState, DisconnectReason, makeCacheableSignalKeyStore } = require("@whiskeysockets/baileys");
+const { default: makeWASocket, useMultiFileAuthState, DisconnectReason, fetchLatestBaileysVersion } = require("@whiskeysockets/baileys");
 const pino = require("pino");
 const qrcode = require("qrcode-terminal");
 const readline = require("readline/promises");
 const { stdin: input, stdout: output } = require("process");
 
 const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+const MAX_RECONNECT_ATTEMPTS = 8;
+const RECONNECT_DELAY_MS = 4000;
 
 function normalizePhoneNumber(value) {
   return String(value || "").replace(/[^0-9]/g, "");
+}
+
+function formatPairingCode(code) {
+  const cleaned = String(code || "").replace(/\s+/g, "").trim();
+  if (!cleaned) return "-";
+  return cleaned.match(/.{1,4}/g)?.join("-") || cleaned;
+}
+
+function getDisconnectMessage(lastDisconnect) {
+  return lastDisconnect?.error?.message || lastDisconnect?.error?.data?.reason || "Connection Closed";
 }
 
 // ✅ API Key sudah otomatis terisi!
@@ -190,8 +202,9 @@ async function askAuthMethod() {
     }
 
     console.log("\\n📱 Nomor diterima: " + phoneNum);
-    console.log("📢 Setelah ini akan muncul kode login untuk dimasukkan ke WhatsApp Web / Linked Devices.");
-    console.log("⏳ Kode pairing biasanya berlaku sekitar 30 detik. Jika habis, jalankan ulang bot.\\n");
+    console.log("📢 Kode login akan muncul di terminal/panel untuk dimasukkan manual ke WhatsApp > Perangkat tertaut.");
+    console.log("ℹ️ Pairing code tidak dikirim sebagai chat / notif WhatsApp.");
+    console.log("⏳ Jika kode habis, bot akan coba sambung ulang lalu keluarkan kode baru.\\n");
 
     return { mode: "pairing", phoneNum };
   } finally {
@@ -209,53 +222,51 @@ function isAdmin(msg) {
   return ADMIN_NUMBERS.includes(msg.key.remoteJid);
 }
 
-async function startBot() {
-  const authChoice = await askAuthMethod();
+async function connectToWhatsApp(authChoice, attempt = 0) {
   const { state, saveCreds } = await useMultiFileAuthState("./auth_session");
-  const isRegistered = () => Boolean(state.creds?.registered);
-
+  const { version } = await fetchLatestBaileysVersion();
   const client = makeWASocket({
-    auth: {
-      creds: state.creds,
-      keys: makeCacheableSignalKeyStore(state.keys, pino({ level: "silent" })),
-    },
+    version,
+    auth: state,
     printQRInTerminal: false,
     logger: pino({ level: "silent" }),
     browser: ["Agung Adi Store Bot", "Chrome", "1.0.0"],
+    markOnlineOnConnect: false,
+    syncFullHistory: false,
+    defaultQueryTimeoutMs: 60_000,
   });
 
   const phoneNum = normalizePhoneNumber(authChoice.phoneNum);
   let pairingRequested = false;
   let reconnectScheduled = false;
   let qrShown = false;
+  let connectingLogged = false;
 
   async function requestPairingCodeOnce() {
-    if (pairingRequested || isRegistered()) return;
+    if (authChoice.mode !== "pairing" || pairingRequested || client.authState?.creds?.registered) return;
 
     if (!phoneNum) {
-      console.log("❌ Nomor WhatsApp untuk pairing belum diisi!");
-      process.exit(1);
+      throw new Error("Nomor WhatsApp untuk pairing belum diisi!");
     }
 
     pairingRequested = true;
     console.log("\\n📱 Meminta kode pairing untuk: " + phoneNum);
 
     try {
-      await wait(1500);
+      await wait(2500);
       const code = await client.requestPairingCode(phoneNum);
       console.log("\\n" + "=".repeat(40));
       console.log("  📲 KODE PAIRING (8 DIGIT):");
-      console.log("  ➡️  " + code);
+      console.log("  ➡️  " + formatPairingCode(code));
       console.log("=".repeat(40));
       console.log("\\n✅ Buka WhatsApp > Perangkat tertaut / Linked Devices");
       console.log("   Pilih 'Tautkan dengan nomor telepon / Link with phone number'");
       console.log("   Lalu masukkan kode di atas");
       console.log("ℹ️ Kode tampil di terminal/panel, bukan dikirim sebagai chat WhatsApp.");
-      console.log("⏳ Jika kode expired (sekitar 30 detik), jalankan ulang bot untuk minta kode baru.\\n");
+      console.log("⏳ Kalau kode expired, bot akan reconnect dan menampilkan kode baru.\\n");
     } catch (error) {
+      pairingRequested = false;
       console.error("❌ Gagal meminta pairing code:", error?.message || error);
-      console.log("⏹️ Bot dihentikan agar tidak spam reconnect / spam kode pairing.");
-      console.log("🔁 Jalankan ulang manual setelah koneksi stabil.");
     }
   }
 
@@ -263,51 +274,78 @@ async function startBot() {
 
   client.ev.on("connection.update", async (update) => {
     const { connection, lastDisconnect, qr } = update;
+    const isRegistered = Boolean(client.authState?.creds?.registered);
 
-    if (qr && authChoice.mode === "qr" && !isRegistered()) {
+    if (connection === "connecting" && !connectingLogged) {
+      connectingLogged = true;
+      console.log(attempt === 0 ? "🔌 Menghubungkan ke server WhatsApp..." : "🔌 Menghubungkan ulang ke server WhatsApp...");
+    }
+
+    if (qr && authChoice.mode === "qr" && !isRegistered) {
       qrShown = true;
       console.log("\\n" + "=".repeat(40));
       console.log("  📷 SCAN QR DI BAWAH INI");
       console.log("=".repeat(40));
       qrcode.generate(qr, { small: true });
       console.log("✅ Buka WhatsApp > Perangkat tertaut > Tautkan perangkat");
-      console.log("⏳ Jika QR expired, tunggu QR baru muncul otomatis.\\n");
+      console.log("⏳ Jika QR expired, bot akan tunggu QR baru otomatis.\\n");
     }
 
-    if (connection === "connecting" && authChoice.mode === "pairing" && !isRegistered()) {
-      await requestPairingCodeOnce();
+    if (connection === "open") {
+      console.log("\\n✅ Bot WhatsApp sudah siap! (Baileys)");
+      console.log("📋 Kirim !help di chat untuk lihat perintah\\n");
       return;
     }
 
     if (connection === "close") {
       const reason = lastDisconnect?.error?.output?.statusCode;
-      const message = lastDisconnect?.error?.message || "Connection Closed";
+      const message = getDisconnectMessage(lastDisconnect);
 
       if (reason === DisconnectReason.loggedOut) {
-        console.log("❌ Logged out. Hapus folder auth_session dan jalankan ulang.");
+        console.log("❌ Session logout / expired. Hapus folder auth_session lalu jalankan ulang bot.");
         return;
       }
 
-      if (!isRegistered()) {
+      if (reconnectScheduled) return;
+
+      if (attempt >= MAX_RECONNECT_ATTEMPTS) {
+        console.log("❌ Gagal terhubung setelah " + MAX_RECONNECT_ATTEMPTS + " percobaan.");
+        console.log("ℹ️ Hapus folder auth_session lalu jalankan ulang bot untuk sesi baru.");
+        return;
+      }
+
+      reconnectScheduled = true;
+
+      if (!isRegistered) {
         if (authChoice.mode === "qr" && !qrShown) {
-          console.log("ℹ️ QR belum tampil. Menunggu update QR baru...");
+          console.log("ℹ️ QR belum sempat tampil. Saya akan coba sambung ulang supaya QR baru muncul.");
         }
-        console.log("❌ Koneksi tertutup sebelum login selesai: " + message);
-        console.log("ℹ️ Tidak auto reconnect agar tidak spam QR / kode pairing.");
-        console.log("ℹ️ Kalau login belum masuk, jalankan ulang bot sekali lagi.");
-        return;
+
+        console.log("⚠️ Koneksi awal terputus sebelum login selesai: " + message);
+        console.log(authChoice.mode === "pairing"
+          ? "ℹ️ Bot akan reconnect otomatis dan minta kode pairing baru."
+          : "ℹ️ Bot akan reconnect otomatis dan menunggu QR baru.");
+      } else {
+        console.log("⚠️ Koneksi putus: " + message);
+        console.log("ℹ️ Bot akan reconnect otomatis.");
       }
 
-      if (!reconnectScheduled) {
-        reconnectScheduled = true;
-        console.log("🔄 Koneksi putus, mencoba hubungkan ulang...");
-        setTimeout(() => startBot(), 3000);
-      }
-    } else if (connection === "open") {
-      console.log("\\n✅ Bot WhatsApp sudah siap! (Baileys)");
-      console.log("📋 Kirim !help di chat untuk lihat perintah\\n");
+      const nextAttempt = attempt + 1;
+      console.log("🔄 Reconnect " + nextAttempt + "/" + MAX_RECONNECT_ATTEMPTS + " dalam " + (RECONNECT_DELAY_MS / 1000) + " detik...\\n");
+
+      setTimeout(() => {
+        connectToWhatsApp(authChoice, nextAttempt).catch((error) => {
+          console.error("❌ Gagal reconnect:", error?.stack || error?.message || error);
+        });
+      }, RECONNECT_DELAY_MS);
     }
   });
+
+  if (authChoice.mode === "pairing" && !client.authState?.creds?.registered) {
+    requestPairingCodeOnce().catch((error) => {
+      console.error("❌ Gagal memulai pairing:", error?.stack || error?.message || error);
+    });
+  }
 
   client.ev.on("messages.upsert", async ({ messages }) => {
     const msg = messages?.[0];
@@ -356,6 +394,11 @@ async function startBot() {
   return client;
 }
 
+async function startBot() {
+  const authChoice = await askAuthMethod();
+  await connectToWhatsApp(authChoice, 0);
+}
+
 startBot().catch((error) => {
   console.error("❌ Bot gagal dijalankan:", error?.stack || error?.message || error);
   process.exit(1);
@@ -366,8 +409,8 @@ startBot().catch((error) => {
   function generatePackageJson() {
     return JSON.stringify({
       name: "bot-wa-agungadi",
-      version: "5.1.2",
-      description: "Bot WhatsApp Agung Adi Store - QR & Pairing Code",
+        version: "5.2.0",
+        description: "Bot WhatsApp Agung Adi Store - QR & Pairing Code stabil",
       main: "index.js",
       scripts: {
         start: "node index.js",
@@ -385,7 +428,7 @@ startBot().catch((error) => {
   }
 
   function generateReadmeMd() {
-    return `# 🤖 Bot WhatsApp - Agung Adi Store v5.1.2
+    return `# 🤖 Bot WhatsApp - Agung Adi Store v5.2.0
 
 ## 📋 Persyaratan
 - Node.js >= 18
@@ -408,6 +451,7 @@ ${"```"}
 6. Jika pilih pairing, masukkan nomor WA lalu tekan Enter
 7. Kode login muncul di console dan biasanya berlaku sekitar 30 detik
 8. Buka WhatsApp > Linked Devices > Link with phone number lalu masukkan kode
+9. Jika koneksi awal putus, bot akan reconnect otomatis dan menampilkan QR / kode baru
 
 ## 📲 Login WhatsApp
 Bot mendukung **2 mode login**:
@@ -416,6 +460,7 @@ Bot mendukung **2 mode login**:
 - Kode pairing tidak dikirim lewat chat / notif WhatsApp
 - Kode pairing biasanya berlaku sekitar 30 detik
 - Sesi tersimpan di folder auth_session/
+- Jika koneksi awal putus, bot akan reconnect otomatis sampai 8x
 
 ## 🔄 Reset Sesi
 Jika bot error, logout, atau koneksi close saat pairing:
