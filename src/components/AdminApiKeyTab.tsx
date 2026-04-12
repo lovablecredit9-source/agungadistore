@@ -223,7 +223,8 @@ function rp(n) {
   client.ev.on("messages.upsert", async ({ messages }) => {
     const msg = messages[0];
     if (!msg.message || msg.key.fromMe) return;
-    const text = (msg.message.conversation || msg.message.extendedTextMessage?.text || "").trim().toLowerCase();
+    const rawText = (msg.message.conversation || msg.message.extendedTextMessage?.text || "").trim();
+    const text = rawText.toLowerCase();
     const jid = msg.key.remoteJid;
     
     async function reply(t) { await client.sendMessage(jid, { text: t }); }
