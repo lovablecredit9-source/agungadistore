@@ -595,6 +595,36 @@ const AdminDashboard = () => {
     fetchUserBalances();
   }
 
+  async function adminResetBalance(user: UserBalance) {
+    if (!confirm(`Reset saldo ${user.username} ke Rp 0?`)) return;
+    await supabase.from("user_balances").update({ balance: 0 }).eq("id", user.id);
+    await supabase.from("notifications").insert({ visitor_id: user.visitor_id, title: "Saldo Direset", message: "Saldo kamu telah direset oleh admin menjadi Rp 0", type: "info" } as any);
+    toast({ title: `Saldo ${user.username} berhasil direset ke Rp 0` });
+    fetchUserBalances();
+  }
+
+  async function adminResetCredits(user: UserBalance) {
+    if (!confirm(`Reset kredit game ${user.username} ke 0?`)) return;
+    await supabase.from("user_game_credits").update({ credits: 0, unlimited_until: null }).eq("visitor_id", user.visitor_id);
+    await supabase.from("notifications").insert({ visitor_id: user.visitor_id, title: "Kredit Direset", message: "Kredit game kamu telah direset oleh admin", type: "info" } as any);
+    toast({ title: `Kredit ${user.username} berhasil direset` });
+  }
+
+  async function adminResetStreak(user: UserBalance) {
+    if (!confirm(`Reset streak ${user.username}? (streak & langganan akan dihapus)`)) return;
+    await supabase.from("daily_streaks").delete().eq("visitor_id", user.visitor_id);
+    await supabase.from("streak_subscriptions").update({ is_active: false }).eq("visitor_id", user.visitor_id);
+    await supabase.from("notifications").insert({ visitor_id: user.visitor_id, title: "Streak Direset", message: "Data streak kamu telah direset oleh admin", type: "info" } as any);
+    toast({ title: `Streak ${user.username} berhasil direset` });
+  }
+
+  async function adminResetStorage(user: UserBalance) {
+    if (!confirm(`Reset storage ${user.username}? (semua kuota storage akan dihapus)`)) return;
+    await supabase.from("user_music_storage").delete().eq("visitor_id", user.visitor_id);
+    await supabase.from("notifications").insert({ visitor_id: user.visitor_id, title: "Storage Direset", message: "Kuota storage musik kamu telah direset oleh admin", type: "info" } as any);
+    toast({ title: `Storage ${user.username} berhasil direset` });
+  }
+
   function getProductImages(productId: string): string[] {
     const imgs = productImages.filter(i => i.product_id === productId).map(i => i.image_url);
     const product = products.find(p => p.id === productId);
@@ -1503,15 +1533,31 @@ const AdminDashboard = () => {
             {userBalances.length === 0 && <p className="text-center text-sm text-muted-foreground py-8">Belum ada user terdaftar</p>}
             {userBalances.map(u => (
               <Card key={u.id}>
-                <CardContent className="p-3 flex items-center justify-between">
-                  <div>
-                    <p className="font-bold text-sm">{u.username}</p>
-                    <p className="text-xs text-muted-foreground">HP: {u.phone}</p>
-                    <p className="text-[10px] text-muted-foreground font-mono">ID: {u.visitor_id.slice(0, 12)}...</p>
+                <CardContent className="p-3 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="font-bold text-sm">{u.username}</p>
+                      <p className="text-xs text-muted-foreground">HP: {u.phone}</p>
+                      <p className="text-[10px] text-muted-foreground font-mono">ID: {u.visitor_id.slice(0, 12)}...</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-extrabold text-primary text-lg">Rp {u.balance.toLocaleString()}</p>
+                      <p className="text-[10px] text-muted-foreground">{new Date(u.created_at || "").toLocaleDateString("id-ID")}</p>
+                    </div>
                   </div>
-                  <div className="text-right">
-                    <p className="font-extrabold text-primary text-lg">Rp {u.balance.toLocaleString()}</p>
-                    <p className="text-[10px] text-muted-foreground">{new Date(u.created_at || "").toLocaleDateString("id-ID")}</p>
+                  <div className="grid grid-cols-2 gap-1.5">
+                    <Button size="sm" variant="outline" className="text-[10px] h-7 gap-1" onClick={() => adminResetBalance(u)}>
+                      <Wallet className="w-3 h-3" /> Reset Saldo
+                    </Button>
+                    <Button size="sm" variant="outline" className="text-[10px] h-7 gap-1" onClick={() => adminResetCredits(u)}>
+                      <Key className="w-3 h-3" /> Reset Kredit
+                    </Button>
+                    <Button size="sm" variant="outline" className="text-[10px] h-7 gap-1" onClick={() => adminResetStreak(u)}>
+                      <Clock className="w-3 h-3" /> Reset Streak
+                    </Button>
+                    <Button size="sm" variant="outline" className="text-[10px] h-7 gap-1" onClick={() => adminResetStorage(u)}>
+                      <HardDrive className="w-3 h-3" /> Reset Storage
+                    </Button>
                   </div>
                 </CardContent>
               </Card>
