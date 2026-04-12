@@ -403,34 +403,32 @@ const AdminDashboard = () => {
     await supabase.functions.invoke("manage-pin", {
       body: { action: "invalidate_tokens", visitorId: pinResetTarget },
     });
-    const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-    const token = Array.from({ length: 8 }, () => chars[Math.floor(Math.random() * chars.length)]).join("");
+    const numToken = String(Math.floor(10000 + Math.random() * 90000));
     const { error } = await supabase.from("pin_reset_tokens").insert({
-      visitor_id: pinResetTarget, token,
+      visitor_id: pinResetTarget, token: numToken,
     } as any);
     if (error) { toast({ title: "Gagal buat token", variant: "destructive" }); return; }
-    setGeneratedResetToken(token);
+    setGeneratedResetToken(numToken);
     await supabase.from("notifications").insert({
-      visitor_id: pinResetTarget, title: "Token Reset PIN 🔑", message: `Token reset PIN Anda: ${token}\nGunakan untuk membuat PIN baru.`, type: "pin_reset",
+      visitor_id: pinResetTarget, title: "Token Reset PIN 🔑", message: `Token reset PIN Anda: #${numToken}\nGunakan untuk membuat PIN baru.`, type: "pin_reset",
     } as any);
-    toast({ title: `Token reset dibuat: ${token}` });
+    toast({ title: `Token reset dibuat: #${numToken}` });
   }
 
   async function generatePwResetToken() {
     if (!pwResetTarget) { toast({ title: "Pilih user", variant: "destructive" }); return; }
     // Invalidate old password reset tokens
     await supabase.from("password_reset_tokens").update({ is_used: true } as any).eq("visitor_id", pwResetTarget).eq("is_used", false);
-    const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-    const token = Array.from({ length: 8 }, () => chars[Math.floor(Math.random() * chars.length)]).join("");
+    const numPwToken = String(Math.floor(10000 + Math.random() * 90000));
     const { error } = await supabase.from("password_reset_tokens").insert({
-      visitor_id: pwResetTarget, token,
+      visitor_id: pwResetTarget, token: numPwToken,
     } as any);
     if (error) { toast({ title: "Gagal buat token", variant: "destructive" }); return; }
-    setGeneratedPwResetToken(token);
+    setGeneratedPwResetToken(numPwToken);
     await supabase.from("notifications").insert({
-      visitor_id: pwResetTarget, title: "Token Reset Sandi 🔐", message: `Token reset sandi Anda: ${token}\nGunakan untuk membuat sandi baru.`, type: "password_reset",
+      visitor_id: pwResetTarget, title: "Token Reset Sandi 🔐", message: `Token reset sandi Anda: #${numPwToken}\nGunakan untuk membuat sandi baru.`, type: "password_reset",
     } as any);
-    toast({ title: `Token reset sandi dibuat: ${token}` });
+    toast({ title: `Token reset sandi dibuat: #${numPwToken}` });
   }
 
   async function fetchDeposits() {
@@ -1729,7 +1727,7 @@ const AdminDashboard = () => {
                 {generatedResetToken && (
                   <div className="bg-accent/10 border border-accent/20 rounded-lg p-3 text-center space-y-2">
                     <p className="text-xs text-muted-foreground">Token berhasil dibuat:</p>
-                    <p className="font-mono text-xl font-extrabold text-primary tracking-[0.2em]">{generatedResetToken}</p>
+                    <p className="font-mono text-xl font-extrabold text-primary tracking-[0.2em]">#{generatedResetToken}</p>
                     <Button size="sm" variant="outline" className="gap-1" onClick={() => copyText(generatedResetToken)}><Copy className="w-3 h-3" /> Salin Token</Button>
                     <p className="text-[10px] text-muted-foreground">Kirimkan token ini ke user. Berlaku 24 jam.</p>
                   </div>
