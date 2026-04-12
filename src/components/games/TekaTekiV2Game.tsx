@@ -259,7 +259,7 @@ export default function TekaTekiV2Game() {
         </span>
         <span className="flex items-center gap-1"><Trophy className="w-3 h-3 text-primary" /> #{questionNumber}</span>
         {gameActive && (
-          <span className={`flex items-center gap-1 font-mono font-bold ${timeLeft <= 10 ? "text-red-500 animate-pulse" : ""}`}>
+          <span className={`flex items-center gap-1 font-mono font-bold ${timeLeft <= 10 ? "text-red-500 animate-pulse" : timeLeft <= 20 ? "text-orange-500 animate-pulse" : timeLeft <= 30 ? "text-yellow-600" : ""}`}>
             <Timer className="w-3 h-3" /> {timeLeft}s
           </span>
         )}
