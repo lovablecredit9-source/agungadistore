@@ -761,6 +761,170 @@ _Bot otomatis Agung Adi Store_\`;
     }
     return;
   }
+
+  // ── INFO / STATISTIK ──
+  if (text === "!info") {
+    const [produk, sponsor, saldo, lagu] = await Promise.all([
+      apiGet("products"),
+      apiGet("sponsors"),
+      apiGet("balances"),
+      apiGet("songs"),
+    ]);
+    let r = "📊 *STATISTIK TOKO*\\n━━━━━━━━━━━━━━━━━━\\n\\n";
+    r += \`📦 Produk: \${produk ? produk.length : 0}\\n\`;
+    r += \`📢 Sponsor: \${sponsor ? sponsor.length : 0}\\n\`;
+    r += \`👥 User: \${saldo ? saldo.length : 0}\\n\`;
+    r += \`🎵 Lagu: \${lagu ? lagu.length : 0}\\n\`;
+    if (saldo && saldo.length > 0) {
+      const totalSaldo = saldo.reduce((s, b) => s + Number(b.balance), 0);
+      r += \`\\n💰 Total saldo: \${rp(totalSaldo)}\\n\`;
+    }
+    r += \`\\n📅 \${new Date().toLocaleString("id-ID")}\`;
+    await msg.reply(r);
+    return;
+  }
+
+  // ── GAME STATS ──
+  if (text.startsWith("!game")) {
+    const vid = msg.body.trim().split(" ")[1];
+    const url = vid ? "game_stats&visitor_id=" + vid : "game_stats";
+    const data = await apiGet(url);
+    if (!data || data.length === 0) { await msg.reply("🎮 Tidak ada data game."); return; }
+    let r = "🎮 *STATISTIK GAME*\\n━━━━━━━━━━━━━━━━━━\\n\\n";
+    data.forEach((g, i) => {
+      r += \`\${i + 1}. *\${g.game_type}*\\n   🏆 W:\${g.wins} L:\${g.losses} | 💎 \${g.points} poin\\n\\n\`;
+    });
+    await msg.reply(r);
+    return;
+  }
+
+  // ── KREDIT GAME ──
+  if (text.startsWith("!kredit")) {
+    const vid = msg.body.trim().split(" ")[1];
+    const url = vid ? "game_credits&visitor_id=" + vid : "game_credits";
+    const data = await apiGet(url);
+    if (!data || data.length === 0) { await msg.reply("🏆 Tidak ada data kredit."); return; }
+    let r = "🏆 *KREDIT GAME*\\n━━━━━━━━━━━━━━━━━━\\n\\n";
+    data.forEach((c, i) => {
+      r += \`\${i + 1}. Kredit: \${c.credits}\`;
+      if (c.unlimited_until) r += \` | ♾️ Unlimited s/d \${new Date(c.unlimited_until).toLocaleDateString("id-ID")}\`;
+      r += "\\n";
+    });
+    await msg.reply(r);
+    return;
+  }
+
+  // ── STREAK ──
+  if (text.startsWith("!streak")) {
+    const vid = msg.body.trim().split(" ")[1];
+    const url = vid ? "streaks&visitor_id=" + vid : "streaks";
+    const data = await apiGet(url);
+    if (!data || data.length === 0) { await msg.reply("🔥 Tidak ada data streak."); return; }
+    let r = "🔥 *STATUS STREAK*\\n━━━━━━━━━━━━━━━━━━\\n\\n";
+    data.forEach((s, i) => {
+      r += \`\${i + 1}. Streak: \${s.current_streak} hari | Total: \${s.total_claims} klaim\\n   Terlama: \${s.longest_streak} hari\\n\\n\`;
+    });
+    await msg.reply(r);
+    return;
+  }
+
+  // ── STORAGE ──
+  if (text.startsWith("!storage")) {
+    const vid = msg.body.trim().split(" ")[1];
+    const url = vid ? "storage&visitor_id=" + vid : "storage";
+    const data = await apiGet(url);
+    if (!data || data.length === 0) { await msg.reply("💾 Tidak ada data storage."); return; }
+    let r = "💾 *STATUS STORAGE*\\n━━━━━━━━━━━━━━━━━━\\n\\n";
+    data.forEach((s, i) => {
+      r += \`\${i + 1}. \${s.storage_mb} MB | Kode: \${s.voucher_code}\\n\`;
+    });
+    await msg.reply(r);
+    return;
+  }
+
+  // ── ARTIS ──
+  if (text === "!artis") {
+    const data = await apiGet("artists");
+    if (!data || data.length === 0) { await msg.reply("🎤 Belum ada artis."); return; }
+    let r = "🎤 *DAFTAR ARTIS*\\n━━━━━━━━━━━━━━━━━━\\n\\n";
+    data.forEach((a, i) => {
+      r += \`\${i + 1}. *\${a.name}*\`;
+      if (a.genre) r += \` — \${a.genre}\`;
+      r += "\\n";
+    });
+    await msg.reply(r);
+    return;
+  }
+
+  // ── TIKET SUPPORT ──
+  if (text === "!tiket") {
+    const data = await apiGet("tickets");
+    if (!data || data.length === 0) { await msg.reply("🎫 Belum ada tiket."); return; }
+    let r = "🎫 *TIKET SUPPORT*\\n━━━━━━━━━━━━━━━━━━\\n\\n";
+    data.slice(0, 10).forEach((t, i) => {
+      r += \`\${i + 1}. #\${t.ticket_number} — *\${t.name}*\\n   📋 \${t.category || "-"} | \${t.status}\\n   📝 \${t.description.substring(0, 60)}\\n\\n\`;
+    });
+    await msg.reply(r);
+    return;
+  }
+
+  // ── TRANSAKSI ──
+  if (text.startsWith("!transaksi")) {
+    const vid = msg.body.trim().split(" ")[1];
+    if (!vid) { await msg.reply("❌ Tulis: !transaksi [visitor_id]"); return; }
+    const data = await apiGet("transactions&visitor_id=" + vid);
+    if (!data || data.length === 0) { await msg.reply("📋 Tidak ada transaksi."); return; }
+    let r = "📋 *RIWAYAT TRANSAKSI*\\n━━━━━━━━━━━━━━━━━━\\n\\n";
+    data.slice(0, 10).forEach((t, i) => {
+      const tgl = new Date(t.created_at).toLocaleString("id-ID");
+      r += \`\${i + 1}. \${t.type === "topup" ? "➕" : "➖"} \${rp(t.amount)}\\n   📅 \${tgl}\\n   📝 \${t.description || "-"}\\n\\n\`;
+    });
+    await msg.reply(r);
+    return;
+  }
+
+  // ── TAMBAH SALDO ──
+  if (text.startsWith("!tambahsaldo")) {
+    const parts = msg.body.trim().split(" ");
+    const vid = parts[1];
+    const amount = parseInt(parts[2]);
+    if (!vid || isNaN(amount)) { await msg.reply("❌ Tulis: !tambahsaldo [visitor_id] [jumlah]"); return; }
+    const result = await apiPost("add_balance", { visitor_id: vid, amount, description: "Top up via Bot WA" });
+    if (result && result.success) {
+      await msg.reply(\`✅ Saldo ditambahkan!\\n💰 Saldo baru: \${rp(result.data.new_balance)}\`);
+    } else {
+      await msg.reply("❌ Gagal: " + (result?.error || "Error"));
+    }
+    return;
+  }
+
+  // ── BROADCAST ──
+  if (text.startsWith("!broadcast ")) {
+    const pesan = msg.body.trim().substring(11);
+    if (!pesan) { await msg.reply("❌ Tulis: !broadcast [pesan]"); return; }
+    const result = await apiPost("broadcast", { title: "📢 Broadcast", message: pesan, type: "info" });
+    if (result && result.success) {
+      await msg.reply(\`✅ Broadcast terkirim ke \${result.data.sent_to} user!\`);
+    } else {
+      await msg.reply("❌ Gagal broadcast.");
+    }
+    return;
+  }
+
+  // ── CARI USER ──
+  if (text.startsWith("!user ")) {
+    const keyword = msg.body.trim().substring(6).toLowerCase();
+    const data = await apiGet("balances");
+    if (!data) { await msg.reply("❌ Gagal mengambil data."); return; }
+    const hasil = data.filter(b => b.username.toLowerCase().includes(keyword));
+    if (hasil.length === 0) { await msg.reply(\`👤 User "*\${keyword}*" tidak ditemukan.\`); return; }
+    let r = \`👤 *HASIL CARI USER: "\${keyword}"*\\n━━━━━━━━━━━━━━━━━━\\n\\n\`;
+    hasil.forEach((b, i) => {
+      r += \`\${i + 1}. *\${b.username}*\\n   💰 Saldo: \${rp(b.balance)}\\n   🆔 \${b.visitor_id.substring(0, 12)}...\\n\\n\`;
+    });
+    await msg.reply(r);
+    return;
+  }
 });
 
 // Jalankan bot
