@@ -167,6 +167,10 @@ export default function PlusTab() {
       setStreakNeedPin(false); setStreakPin(""); setStreakSelectedPkg(null);
       fetchBalance();
     } catch (e: any) { toast({ title: "Error", description: e?.message || "Terjadi kesalahan", variant: "destructive" }); }
+    finally { setStreakBuying(null); }
+  };
+
+  const handleBuyStorage = async (pkgId: string, pin?: string) => {
     const balVid = localStorage.getItem("balance_visitor_id");
     if (!balVid) { toast({ title: "Login dulu ke akun saldo", variant: "destructive" }); return; }
     setStorageBuying(pkgId);
@@ -174,13 +178,20 @@ export default function PlusTab() {
       const { data, error } = await supabase.functions.invoke("upgrade-storage", {
         body: { visitorId: balVid, packageId: pkgId, pin: pin || undefined },
       });
-      if (error) throw error;
+      if (error) {
+        if (error instanceof FunctionsHttpError) {
+          const errBody = await error.context.json();
+          if (errBody?.needPin) { setStorageNeedPin(true); setStorageSelectedPkg(pkgId); setStorageBuying(null); return; }
+          toast({ title: "Gagal", description: errBody?.error || "Terjadi kesalahan", variant: "destructive" }); setStorageBuying(null); return;
+        }
+        throw error;
+      }
       if (data?.needPin) { setStorageNeedPin(true); setStorageSelectedPkg(pkgId); setStorageBuying(null); return; }
       if (data?.error) { toast({ title: "Gagal", description: data.error, variant: "destructive" }); setStorageBuying(null); return; }
       toast({ title: "Berhasil!", description: `Storage berhasil ditambah. Sisa saldo: ${formatPrice(data.balance_remaining)}` });
       setStorageNeedPin(false); setStoragePin(""); setStorageSelectedPkg(null);
       fetchBalance();
-    } catch { toast({ title: "Error", variant: "destructive" }); }
+    } catch (e: any) { toast({ title: "Error", description: e?.message || "Terjadi kesalahan", variant: "destructive" }); }
     finally { setStorageBuying(null); }
   };
 
@@ -192,7 +203,14 @@ export default function PlusTab() {
       const { data, error } = await supabase.functions.invoke("purchase-bundle", {
         body: { visitorId: balVid, packageId: pkgId, pin: pin || undefined },
       });
-      if (error) throw error;
+      if (error) {
+        if (error instanceof FunctionsHttpError) {
+          const errBody = await error.context.json();
+          if (errBody?.needPin) { setBundleNeedPin(true); setBundleSelectedPkg(pkgId); setBundleBuying(null); return; }
+          toast({ title: "Gagal", description: errBody?.error || "Terjadi kesalahan", variant: "destructive" }); setBundleBuying(null); return;
+        }
+        throw error;
+      }
       if (data?.needPin) { setBundleNeedPin(true); setBundleSelectedPkg(pkgId); setBundleBuying(null); return; }
       if (data?.error) { toast({ title: "Gagal", description: data.error, variant: "destructive" }); setBundleBuying(null); return; }
       toast({ title: "Berhasil!", description: `${data.bundle_name} berhasil dibeli. Sisa saldo: ${formatPrice(data.balance_remaining)}` });
