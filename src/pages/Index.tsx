@@ -47,8 +47,9 @@ import DailyStreak from "@/components/DailyStreak";
 import HomeBannerSlider from "@/components/HomeBannerSlider";
 import BalanceAuth from "@/components/BalanceAuth";
 import GameTab from "@/components/GameTab";
+import PlusTab from "@/components/PlusTab";
 
-type Tab = "beranda" | "produk" | "voucher" | "history" | "likes" | "tiket" | "saldo" | "playlist" | "publik" | "sponsor" | "streak" | "adminpost" | "game";
+type Tab = "beranda" | "produk" | "voucher" | "history" | "likes" | "tiket" | "saldo" | "playlist" | "publik" | "sponsor" | "streak" | "adminpost" | "game" | "plus";
 
 interface UserBalance {
   id: string;
@@ -272,6 +273,7 @@ const TAB_PATHS: Record<string, Tab> = {
   "/streak": "streak",
   "/admin-post": "adminpost",
   "/game": "game",
+  "/plus": "plus",
 };
 const PATH_FROM_TAB: Record<Tab, string> = Object.fromEntries(
   Object.entries(TAB_PATHS).map(([k, v]) => [v, k])
@@ -2447,6 +2449,8 @@ const Index = () => {
           <GameTab />
         </div>
 
+        {tab === "plus" && <PlusTab />}
+
         {tab === "adminpost" && (
           <div className="space-y-4">
             <h2 className="text-lg font-extrabold flex items-center gap-2">
@@ -3635,6 +3639,7 @@ const Index = () => {
             { key: "sponsor" as Tab, icon: Megaphone, label: "Sponsor" },
             { key: "streak" as Tab, icon: CalendarDays, label: "Streak" },
             { key: "game" as Tab, icon: Gamepad2, label: "Game" },
+            { key: "plus" as Tab, icon: Sparkles, label: "Plus" },
             { key: "adminpost" as Tab, icon: FileText, label: "Admin" },
           ]).map(({ key, icon: Icon, label }) => (
             <button
