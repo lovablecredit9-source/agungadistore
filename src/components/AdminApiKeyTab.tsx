@@ -1077,6 +1077,211 @@ _🔐 Hanya admin yang bisa akses_\`);
     await msg.reply(r);
     return;
   }
+
+  // ── SET SALDO LANGSUNG (admin) ──
+  if (text.startsWith("!setsaldo")) {
+    if (!isAdmin(msg)) { await msg.reply("🔒 Perintah ini hanya untuk admin."); return; }
+    const parts = msg.body.trim().split(" ");
+    const vid = parts[1]; const amount = parseInt(parts[2]);
+    if (!vid || isNaN(amount)) { await msg.reply("❌ Tulis: !setsaldo [visitor_id] [jumlah]"); return; }
+    const result = await apiPost("set_balance", { visitor_id: vid, balance: amount });
+    if (result && result.success) { await msg.reply(\`✅ Saldo diset ke \${rp(amount)}\`); }
+    else { await msg.reply("❌ Gagal: " + (result?.error || "Error")); }
+    return;
+  }
+
+  // ── RESET GAME STATS (admin) ──
+  if (text.startsWith("!resetgame")) {
+    if (!isAdmin(msg)) { await msg.reply("🔒 Perintah ini hanya untuk admin."); return; }
+    const vid = msg.body.trim().split(" ")[1];
+    if (!vid) { await msg.reply("❌ Tulis: !resetgame [visitor_id]"); return; }
+    const result = await apiPost("reset_game_stats", { visitor_id: vid });
+    if (result && result.success) { await msg.reply("✅ Semua statistik game direset!"); }
+    else { await msg.reply("❌ Gagal: " + (result?.error || "Error")); }
+    return;
+  }
+
+  // ── LEADERBOARD (admin) ──
+  if (text === "!leaderboard" || text === "!lb") {
+    if (!isAdmin(msg)) { await msg.reply("🔒 Perintah ini hanya untuk admin."); return; }
+    const data = await apiGet("game_stats");
+    if (!data || data.length === 0) { await msg.reply("🏆 Belum ada data game."); return; }
+    const playerMap = {};
+    data.forEach(g => {
+      if (!playerMap[g.visitor_id]) playerMap[g.visitor_id] = { total: 0, wins: 0, games: 0 };
+      playerMap[g.visitor_id].total += g.points;
+      playerMap[g.visitor_id].wins += g.wins;
+      playerMap[g.visitor_id].games++;
+    });
+    const sorted = Object.entries(playerMap).sort((a, b) => b[1].total - a[1].total).slice(0, 10);
+    let r = "🏆 *LEADERBOARD TOP 10*\\n━━━━━━━━━━━━━━━━━━\\n\\n";
+    const medals = ["🥇", "🥈", "🥉"];
+    sorted.forEach(([vid, s], i) => {
+      r += \`\${medals[i] || (i + 1) + "."} *\${vid.substring(0, 12)}...*\\n   💎 \${s.total} poin | 🏆 \${s.wins} wins | 🎮 \${s.games} games\\n\\n\`;
+    });
+    await msg.reply(r);
+    return;
+  }
+
+  // ── SET STREAK (admin) ──
+  if (text.startsWith("!setstreak")) {
+    if (!isAdmin(msg)) { await msg.reply("🔒 Perintah ini hanya untuk admin."); return; }
+    const parts = msg.body.trim().split(" ");
+    const vid = parts[1]; const days = parseInt(parts[2]);
+    if (!vid || isNaN(days)) { await msg.reply("❌ Tulis: !setstreak [visitor_id] [hari]"); return; }
+    const result = await apiPost("set_streak", { visitor_id: vid, current_streak: days });
+    if (result && result.success) { await msg.reply(\`✅ Streak diset ke \${days} hari\`); }
+    else { await msg.reply("❌ Gagal: " + (result?.error || "Error")); }
+    return;
+  }
+
+  // ── PRODUK DETAIL (admin) ──
+  if (text.startsWith("!produkdetail")) {
+    if (!isAdmin(msg)) { await msg.reply("🔒 Perintah ini hanya untuk admin."); return; }
+    const pid = msg.body.trim().split(" ")[1];
+    if (!pid) { await msg.reply("❌ Tulis: !produkdetail [product_id]"); return; }
+    const data = await apiGet("products");
+    if (!data) { await msg.reply("❌ Gagal mengambil data."); return; }
+    const p = data.find(x => x.id === pid || x.id.startsWith(pid));
+    if (!p) { await msg.reply("❌ Produk tidak ditemukan."); return; }
+    let r = "📦 *DETAIL PRODUK*\\n━━━━━━━━━━━━━━━━━━\\n\\n";
+    r += \`📌 *\${p.title}*\\n🆔 \${p.id}\\n💰 Harga: \${rp(p.price)}\\n📦 Stok: \${p.stock}\\n🏷️ Kategori: \${p.category || "-"}\\n🛡️ Garansi: \${p.has_warranty ? "Ya" : "Tidak"}\\n📝 Deskripsi: \${p.description || "-"}\\n📅 Dibuat: \${new Date(p.created_at).toLocaleString("id-ID")}\\n📅 Update: \${new Date(p.updated_at).toLocaleString("id-ID")}\`;
+    await msg.reply(r);
+    return;
+  }
+
+  // ── SPONSOR DETAIL (admin) ──
+  if (text.startsWith("!sponsordetail")) {
+    if (!isAdmin(msg)) { await msg.reply("🔒 Perintah ini hanya untuk admin."); return; }
+    const sid = msg.body.trim().split(" ")[1];
+    if (!sid) { await msg.reply("❌ Tulis: !sponsordetail [sponsor_id atau nomor]"); return; }
+    const data = await apiGet("sponsors");
+    if (!data) { await msg.reply("❌ Gagal."); return; }
+    const s = data.find(x => x.id === sid || x.id.startsWith(sid) || String(x.sponsor_number) === sid);
+    if (!s) { await msg.reply("❌ Sponsor tidak ditemukan."); return; }
+    let r = "📢 *DETAIL SPONSOR*\\n━━━━━━━━━━━━━━━━━━\\n\\n";
+    r += \`📌 *\${s.title}* (#\${s.sponsor_number})\\n🆔 \${s.id}\\n👤 Penjual: \${s.seller_name}\\n📞 Kontak: \${s.seller_contact}\\n💰 Harga: \${rp(s.price)}\\n📦 Stok: \${s.stock}\\n🏷️ Kategori: \${s.category}\\n👁️ Views: \${s.view_count}\\n\`;
+    r += \`✅ Aktif: \${s.is_active ? "Ya" : "Tidak"}\\n📅 Mulai: \${new Date(s.starts_at).toLocaleDateString("id-ID")}\\n\`;
+    if (s.expires_at) r += \`⏳ Expired: \${new Date(s.expires_at).toLocaleDateString("id-ID")}\\n\`;
+    if (s.wa_number) r += \`📱 WA: \${s.wa_number}\\n\`;
+    if (s.instagram) r += \`📸 IG: \${s.instagram}\\n\`;
+    if (s.tiktok) r += \`🎵 TikTok: \${s.tiktok}\\n\`;
+    if (s.facebook) r += \`📘 FB: \${s.facebook}\\n\`;
+    if (s.description) r += \`📝 \${s.description}\\n\`;
+    if (s.custom_note) r += \`📋 Note: \${s.custom_note}\\n\`;
+    await msg.reply(r);
+    return;
+  }
+
+  // ── STOK SPONSOR (admin) ──
+  if (text.startsWith("!stoksponsor")) {
+    if (!isAdmin(msg)) { await msg.reply("🔒 Perintah ini hanya untuk admin."); return; }
+    const parts = msg.body.trim().split(" ");
+    const sid = parts[1]; const stock = parseInt(parts[2]);
+    if (!sid || isNaN(stock)) { await msg.reply("❌ Tulis: !stoksponsor [sponsor_id] [jumlah]"); return; }
+    const result = await apiPost("update_sponsor_stock", { sponsor_id: sid, stock });
+    if (result && result.success) { await msg.reply(\`✅ Stok sponsor diubah menjadi \${stock}\`); }
+    else { await msg.reply("❌ Gagal: " + (result?.error || "Error")); }
+    return;
+  }
+
+  // ── ALL USER (admin) ──
+  if (text === "!alluser") {
+    if (!isAdmin(msg)) { await msg.reply("🔒 Perintah ini hanya untuk admin."); return; }
+    const data = await apiGet("balances");
+    if (!data || data.length === 0) { await msg.reply("👥 Belum ada user."); return; }
+    let r = "👥 *SEMUA USER*\\n━━━━━━━━━━━━━━━━━━\\n\\n";
+    data.forEach((b, i) => {
+      r += \`\${i + 1}. *\${b.username}*\\n   💰 \${rp(b.balance)} | 📧 \${b.email || "-"}\\n   🆔 \${b.visitor_id.substring(0, 20)}\\n\\n\`;
+    });
+    r += \`_Total: \${data.length} user_\`;
+    await msg.reply(r);
+    return;
+  }
+
+  // ── MUSIK PROFIL (admin) ──
+  if (text === "!musikprofil") {
+    if (!isAdmin(msg)) { await msg.reply("🔒 Perintah ini hanya untuk admin."); return; }
+    const data = await apiGet("music_profiles");
+    if (!data || data.length === 0) { await msg.reply("🎵 Belum ada profil musik."); return; }
+    let r = "🎵 *PROFIL MUSIK*\\n━━━━━━━━━━━━━━━━━━\\n\\n";
+    data.forEach((p, i) => {
+      r += \`\${i + 1}. *\${p.username}*\\n   🆔 \${p.visitor_id.substring(0, 16)}\\n   📝 \${p.description || "-"}\\n\\n\`;
+    });
+    await msg.reply(r);
+    return;
+  }
+
+  // ── FOLLOW STATS (admin) ──
+  if (text === "!follow") {
+    if (!isAdmin(msg)) { await msg.reply("🔒 Perintah ini hanya untuk admin."); return; }
+    const [follows, gameFollows] = await Promise.all([apiGet("follows"), apiGet("game_follows")]);
+    let r = "👥 *STATISTIK FOLLOW*\\n━━━━━━━━━━━━━━━━━━\\n\\n";
+    r += \`🎵 Musik follow: \${follows ? follows.length : 0}\\n\`;
+    r += \`🎮 Game follow: \${gameFollows ? gameFollows.length : 0}\\n\`;
+    await msg.reply(r);
+    return;
+  }
+
+  // ── REPORT HARIAN (admin) ──
+  if (text === "!report" || text === "!laporan") {
+    if (!isAdmin(msg)) { await msg.reply("🔒 Perintah ini hanya untuk admin."); return; }
+    const [dashboard, likes, deposits] = await Promise.all([
+      apiGet("dashboard"), apiGet("likes"), apiGet("deposits")
+    ]);
+    const today = new Date().toISOString().split("T")[0];
+    let r = "📋 *LAPORAN HARIAN*\\n━━━━━━━━━━━━━━━━━━\\n📅 " + new Date().toLocaleDateString("id-ID") + "\\n\\n";
+    if (dashboard) {
+      r += "📊 *Ringkasan:*\\n";
+      r += \`   📦 Produk: \${dashboard.products}\\n   📢 Sponsor: \${dashboard.sponsors}\\n   👥 User: \${dashboard.users}\\n   🎵 Lagu: \${dashboard.songs}\\n   💰 Total saldo: \${rp(dashboard.total_balance)}\\n\\n\`;
+    }
+    if (likes) {
+      r += "❤️ *Likes:*\\n";
+      r += \`   📦 Produk: \${likes.products} | 🎵 Lagu: \${likes.songs} | 📢 Sponsor: \${likes.sponsors}\\n\\n\`;
+    }
+    if (deposits && deposits.length > 0) {
+      const todayDeposits = deposits.filter(d => d.created_at.startsWith(today));
+      const totalToday = todayDeposits.reduce((sum, d) => sum + d.amount, 0);
+      r += \`💳 *Deposit Hari Ini:*\\n   \${todayDeposits.length} transaksi | Total: \${rp(totalToday)}\\n\\n\`;
+    }
+    r += "_Laporan otomatis Bot WA_";
+    await msg.reply(r);
+    return;
+  }
+
+  // ── TOP USER BY SALDO (admin) ──
+  if (text === "!topuser") {
+    if (!isAdmin(msg)) { await msg.reply("🔒 Perintah ini hanya untuk admin."); return; }
+    const data = await apiGet("balances");
+    if (!data || data.length === 0) { await msg.reply("👥 Belum ada user."); return; }
+    const sorted = [...data].sort((a, b) => b.balance - a.balance).slice(0, 10);
+    let r = "🏆 *TOP USER BY SALDO*\\n━━━━━━━━━━━━━━━━━━\\n\\n";
+    const medals = ["🥇", "🥈", "🥉"];
+    sorted.forEach((b, i) => {
+      r += \`\${medals[i] || (i + 1) + "."} *\${b.username}* — \${rp(b.balance)}\\n\`;
+    });
+    await msg.reply(r);
+    return;
+  }
+
+  // ── REKAP DEPOSIT (admin) ──
+  if (text === "!rekapdeposit") {
+    if (!isAdmin(msg)) { await msg.reply("🔒 Perintah ini hanya untuk admin."); return; }
+    const data = await apiGet("deposits");
+    if (!data || data.length === 0) { await msg.reply("💳 Belum ada deposit."); return; }
+    const success = data.filter(d => d.status === "success");
+    const pending = data.filter(d => d.status === "pending");
+    const rejected = data.filter(d => d.status === "rejected");
+    const totalSuccess = success.reduce((sum, d) => sum + d.amount, 0);
+    const totalPending = pending.reduce((sum, d) => sum + d.amount, 0);
+    let r = "💳 *REKAP DEPOSIT*\\n━━━━━━━━━━━━━━━━━━\\n\\n";
+    r += \`✅ Berhasil: \${success.length} trx — \${rp(totalSuccess)}\\n\`;
+    r += \`⏳ Pending: \${pending.length} trx — \${rp(totalPending)}\\n\`;
+    r += \`❌ Ditolak: \${rejected.length} trx\\n\\n\`;
+    r += \`📊 Total: \${data.length} deposit\\n💰 Sudah masuk: \${rp(totalSuccess)}\`;
+    await msg.reply(r);
+    return;
+  }
 });
 
 client.initialize();
