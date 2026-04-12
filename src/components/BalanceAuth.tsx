@@ -101,7 +101,13 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser }: BalanceA
     }
 
     setLoading(true);
-    const visitorId = getVisitorId();
+    // Generate fresh visitor_id for new registration to avoid linking to old account
+    const isLoggedOut = !localStorage.getItem("balance_logged_in");
+    let visitorId = getVisitorId();
+    if (isLoggedOut) {
+      visitorId = crypto.randomUUID();
+      localStorage.setItem("visitor_id", visitorId);
+    }
     const deviceSummary = getDeviceSummary(navigator.userAgent);
 
     const { data, error } = await supabase.functions.invoke("balance-auth", {

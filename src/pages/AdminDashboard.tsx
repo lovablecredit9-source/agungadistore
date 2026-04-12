@@ -1503,15 +1503,31 @@ const AdminDashboard = () => {
             {userBalances.length === 0 && <p className="text-center text-sm text-muted-foreground py-8">Belum ada user terdaftar</p>}
             {userBalances.map(u => (
               <Card key={u.id}>
-                <CardContent className="p-3 flex items-center justify-between">
-                  <div>
-                    <p className="font-bold text-sm">{u.username}</p>
-                    <p className="text-xs text-muted-foreground">HP: {u.phone}</p>
-                    <p className="text-[10px] text-muted-foreground font-mono">ID: {u.visitor_id.slice(0, 12)}...</p>
+                <CardContent className="p-3 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="font-bold text-sm">{u.username}</p>
+                      <p className="text-xs text-muted-foreground">HP: {u.phone}</p>
+                      <p className="text-[10px] text-muted-foreground font-mono">ID: {u.visitor_id.slice(0, 12)}...</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-extrabold text-primary text-lg">Rp {u.balance.toLocaleString()}</p>
+                      <p className="text-[10px] text-muted-foreground">{new Date(u.created_at || "").toLocaleDateString("id-ID")}</p>
+                    </div>
                   </div>
-                  <div className="text-right">
-                    <p className="font-extrabold text-primary text-lg">Rp {u.balance.toLocaleString()}</p>
-                    <p className="text-[10px] text-muted-foreground">{new Date(u.created_at || "").toLocaleDateString("id-ID")}</p>
+                  <div className="grid grid-cols-2 gap-1.5">
+                    <Button size="sm" variant="outline" className="text-[10px] h-7 gap-1" onClick={() => adminResetBalance(u)}>
+                      <Wallet className="w-3 h-3" /> Reset Saldo
+                    </Button>
+                    <Button size="sm" variant="outline" className="text-[10px] h-7 gap-1" onClick={() => adminResetCredits(u)}>
+                      <Key className="w-3 h-3" /> Reset Kredit
+                    </Button>
+                    <Button size="sm" variant="outline" className="text-[10px] h-7 gap-1" onClick={() => adminResetStreak(u)}>
+                      <Clock className="w-3 h-3" /> Reset Streak
+                    </Button>
+                    <Button size="sm" variant="outline" className="text-[10px] h-7 gap-1" onClick={() => adminResetStorage(u)}>
+                      <HardDrive className="w-3 h-3" /> Reset Storage
+                    </Button>
                   </div>
                 </CardContent>
               </Card>
