@@ -35,8 +35,11 @@ Deno.serve(async (request) => {
     }
 
     if (action === "create") {
-      if (!pin || pin.length < 4 || pin.length > 6 || !/^\d+$/.test(pin)) {
-        return Response.json({ error: "PIN harus 4-6 digit angka" }, { status: 400, headers: corsHeaders });
+      if (!visitorId) {
+        return Response.json({ error: "Visitor ID diperlukan" }, { status: 400, headers: corsHeaders });
+      }
+      if (!pin || pin.length !== 6 || !/^\d{6}$/.test(pin)) {
+        return Response.json({ error: "PIN harus 6 digit angka" }, { status: 400, headers: corsHeaders });
       }
       const hash = await hashPin(pin);
       const { data: existing } = await admin.from("user_pins").select("id").eq("visitor_id", visitorId).maybeSingle();
@@ -48,6 +51,9 @@ Deno.serve(async (request) => {
     }
 
     if (action === "verify") {
+      if (!visitorId) {
+        return Response.json({ error: "Visitor ID diperlukan" }, { status: 400, headers: corsHeaders });
+      }
       if (!pin) {
         return Response.json({ error: "PIN diperlukan" }, { status: 400, headers: corsHeaders });
       }
@@ -70,11 +76,11 @@ Deno.serve(async (request) => {
 
     if (action === "reset") {
       // Reset PIN using token
-      if (!resetToken || !newPin) {
+      if (!visitorId || !resetToken || !newPin) {
         return Response.json({ error: "Token dan PIN baru diperlukan" }, { status: 400, headers: corsHeaders });
       }
-      if (newPin.length < 4 || newPin.length > 6 || !/^\d+$/.test(newPin)) {
-        return Response.json({ error: "PIN baru harus 4-6 digit angka" }, { status: 400, headers: corsHeaders });
+      if (newPin.length !== 6 || !/^\d{6}$/.test(newPin)) {
+        return Response.json({ error: "PIN baru harus 6 digit angka" }, { status: 400, headers: corsHeaders });
       }
 
       const { data: tokenRow } = await admin.from("pin_reset_tokens")
