@@ -636,7 +636,7 @@ Deno.serve(async (req) => {
         const res3 = await fetch(`${supabaseUrl}/functions/v1/purchase-game-credits`, {
           method: "POST",
           headers: { "Content-Type": "application/json", "Authorization": `Bearer ${serviceKey}` },
-          body: JSON.stringify({ visitorId: visitor_id, packageId, pin: pin || undefined, voucherCode: voucher_code || undefined }),
+          body: JSON.stringify({ action: "purchase", visitorId: visitor_id, packageId, pin: pin || undefined, voucherCode: voucher_code || undefined }),
         });
         const data3 = await res3.json();
         if (!res3.ok || data3.error) {

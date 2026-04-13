@@ -44,20 +44,20 @@ Deno.serve(async (request) => {
       .eq("visitor_id", visitorId)
       .maybeSingle();
 
-    if (pinRow) {
-      if (!pin) {
-        return Response.json({ error: "PIN diperlukan untuk pembelian", needPin: true }, { status: 403, headers: corsHeaders });
-      }
-      // Simple hash comparison (SHA-256)
-      const encoder = new TextEncoder();
-      const data = encoder.encode(pin);
-      const hashBuffer = await crypto.subtle.digest("SHA-256", data);
-      const hashArray = Array.from(new Uint8Array(hashBuffer));
-      const hashHex = hashArray.map(b => b.toString(16).padStart(2, "0")).join("");
-      
-      if (hashHex !== pinRow.pin_hash) {
-        return Response.json({ error: "PIN salah" }, { status: 403, headers: corsHeaders });
-      }
+    if (!pinRow) {
+      return Response.json({ error: "PIN belum dibuat", needPin: true }, { status: 403, headers: corsHeaders });
+    }
+    if (!pin) {
+      return Response.json({ error: "PIN diperlukan untuk pembelian", needPin: true }, { status: 403, headers: corsHeaders });
+    }
+    const encoder = new TextEncoder();
+    const data = encoder.encode(pin);
+    const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    const hashHex = hashArray.map(b => b.toString(16).padStart(2, "0")).join("");
+    
+    if (hashHex !== pinRow.pin_hash) {
+      return Response.json({ error: "PIN salah", needPin: true }, { status: 403, headers: corsHeaders });
     }
 
     const { data: balanceRow, error: balanceError } = await admin
