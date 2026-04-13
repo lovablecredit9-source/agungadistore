@@ -1110,7 +1110,7 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
         "3. Login di bot: !login [user] [password]",
         "4. Lihat produk: !produk (ada ID produk)",
         "5. Beli: !beli [ID/nama] [jumlah]",
-        "6. Set PIN: !setpin [6 digit] untuk verifikasi",
+        "6. Set PIN: !buatpin [6 digit] untuk buat PIN",
         "7. Voucher otomatis dikirim setelah pembelian",
         "",
         "🎫 *Klaim Voucher:*",
@@ -2619,7 +2619,7 @@ node index.js`}
                     <span><code>!belikredit</code> — Beli kredit</span>
                     <span><code>!belistorage</code> — Beli storage</span>
                     <span><code>!belibundle</code> — Beli bundle</span>
-                    <span><code>!setpin</code> — Set PIN sesi</span>
+                    <span><code>!buatpin</code> — Buat PIN</span>
                     <span><code>!grosir [nama]</code> — Harga grosir</span>
                     <span><code>!flashsale</code> — Info flash sale</span>
                     <span><code>!produk</code> — Daftar produk</span>
