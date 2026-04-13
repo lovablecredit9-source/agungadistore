@@ -8,7 +8,7 @@
 //   3. Pilih 1 = Scan QR / 2 = Pairing nomor
 // =============================================
 
-const { default: makeWASocket, useMultiFileAuthState, DisconnectReason, fetchLatestBaileysVersion } = require("@whiskeysockets/baileys");
+const { default: makeWASocket, useMultiFileAuthState, DisconnectReason, fetchLatestBaileysVersion, downloadMediaMessage } = require("@whiskeysockets/baileys");
 const pino = require("pino");
 const qrcode = require("qrcode-terminal");
 const readline = require("readline/promises");
@@ -243,7 +243,7 @@ async function sendDepositInstructions(client, remoteJid, quotedMsg, deposit) {
 }
 
 async function sendDepositProofToAdmin(client, remoteJid, msg, session, deposit) {
-  const buffer = await client.downloadMediaMessage(msg);
+  const buffer = await downloadMediaMessage(msg, "buffer", {});
   if (!buffer) throw new Error("Bukti pembayaran kosong");
 
   const caption = [
