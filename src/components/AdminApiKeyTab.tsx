@@ -2178,6 +2178,27 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
       return reply(txt);
     }
 
+    // ── ADMIN: KONFIRMASI DEPOSIT ──
+    if (command.startsWith("!konfirmasi")) {
+      if (!isAdmin(msg)) return reply("❌ Akses ditolak.");
+      if (!args[0]) return reply("⚠️ Gunakan: !konfirmasi [trx_id]");
+      const res = await api("confirm_deposit", "POST", { trx_id: args[0] });
+      if (res.error) return reply("❌ " + res.error);
+      return reply("✅ Deposit " + args[0] + " dikonfirmasi! Saldo user sudah ditambah.");
+    }
+
+    // ── ADMIN: BUAT TOKEN RESET PIN ──
+    if (command.startsWith("!buattoken")) {
+      if (!isAdmin(msg)) return reply("❌ Akses ditolak.");
+      if (!args[0]) return reply("⚠️ Gunakan: !buattoken [username]");
+      const user = await resolveVid(args[0]);
+      if (!user) return reply("❌ User '" + args[0] + "' tidak ditemukan.");
+      const token = "#" + String(Math.floor(10000 + Math.random() * 90000));
+      const res = await api("create_reset_token", "POST", { visitor_id: user.visitor_id, token: token.replace("#", ""), type: "pin" });
+      if (res.error) return reply("❌ " + res.error);
+      return reply("✅ *Token Reset PIN:*\\n\\n👤 User: " + user.username + "\\n🔑 Token: " + token + "\\n⏰ Berlaku 24 jam\\n\\n💡 User pakai: !resetpin " + token.replace("#", "") + " [pin_baru]");
+    }
+
     if (command === "!backup") {
       if (!isAdmin(msg)) return reply("❌ Akses ditolak.");
       return reply("💾 *Info Backup:*\\n\\nData tersimpan di Lovable Cloud (auto-backup).\\nSession bot: folder auth_session/\\nUntuk backup manual, download data dari dashboard admin.");
@@ -2206,8 +2227,8 @@ startBot().catch((error) => {
   function generatePackageJson() {
     return JSON.stringify({
       name: "bot-wa-agungadi",
-        version: "8.0.0",
-        description: "Bot WhatsApp Agung Adi Store - Full Feature: Game AI, Tiket, Like, Klaim, Kirim Lagu",
+        version: "10.0.0",
+        description: "Bot WhatsApp Agung Adi Store v10.0.0 - Full Feature",
       main: "index.js",
       scripts: {
         start: "node index.js",
@@ -2225,7 +2246,7 @@ startBot().catch((error) => {
   }
 
   function generateReadmeMd() {
-    return `# 🤖 Bot WhatsApp - Agung Adi Store v8.0.0
+    return `# 🤖 Bot WhatsApp - Agung Adi Store v10.0.0
 
 ## 📋 Persyaratan
 - Node.js >= 18
