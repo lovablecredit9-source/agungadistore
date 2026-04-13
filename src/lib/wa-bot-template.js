@@ -726,7 +726,7 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
         "• !deposit — Bot akan minta nominal & metode",
         "• bukti / !bukti — Lalu kirim foto bukti bayar",
         "• !cekdeposit [ID transaksi]",
-        "• batal / batal [ID] — Batalkan proses / deposit pending",
+        "• batal [ID transaksi] — Batalkan deposit pending",
         "",
         "🎫 *Voucher & Streak (perlu login):*",
         "• !klaim [kode1] [kode2] ... — Klaim voucher",
