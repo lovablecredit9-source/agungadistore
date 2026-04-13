@@ -141,9 +141,8 @@ export default function AdminApiKeyTab() {
       .replace('__BOT_PAIRING_PHONE__', phone);
   }
 
-    return `// =============================================
-// 🤖 BOT WHATSAPP - Agung Adi Store v10.0.0
-// =============================================
+
+
 // Library: @whiskeysockets/baileys (QR / Pairing Code)
 // Cara pakai:
 //   1. npm install
