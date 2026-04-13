@@ -709,17 +709,21 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
     // ═══ PURCHASE COMMANDS (perlu login) ═══
     if (command.startsWith("!beli ") && !command.startsWith("!belistreak") && !command.startsWith("!belikredit") && !command.startsWith("!belistorage") && !command.startsWith("!belibundle")) {
       if (!session) return reply("🔒 Login dulu: !login [user] [password]");
-      const lastArg = args[args.length - 1];
-      const qty = args.length > 1 && /^\\d+$/.test(lastArg) ? Number(lastArg) : 1;
-      const nameParts = qty > 1 ? args.slice(0, -1) : args;
-      const productQuery = nameParts.join(" ");
-      if (!productQuery) return reply("⚠️ Gunakan:\\n• !beli [ID produk] [jumlah]\\n• !beli [nama produk] [jumlah]\\n\\nContoh:\\n• !beli abc123-def456 1\\n• !beli Netflix 1\\n• !beli Spotify Premium\\n\\n💡 Lihat ID produk di !produk atau !detailproduk");
-      // Check if it looks like a UUID (product ID)
-      const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}/.test(productQuery.toLowerCase());
-      const res = await api("purchase_product", "POST", { visitor_id: session.visitor_id, ...(isUuid ? { product_id: productQuery } : { product_name: productQuery }), quantity: qty, pin: session.pin || undefined });
-      if (res.needPin) {
-        return reply("🔐 *PIN diperlukan!*\\n\\nKirim: !setpin [6 digit] untuk set PIN sesi\\nLalu ulangi perintah !beli");
+      // Parse: !beli [produk] [jumlah] [PIN]
+      // PIN = last arg if 6 digits, qty = second-to-last if numeric
+      let pin = "";
+      let workArgs = [...args];
+      if (workArgs.length > 0 && /^\\d{6}$/.test(workArgs[workArgs.length - 1])) {
+        pin = workArgs.pop();
       }
+      const lastArg = workArgs[workArgs.length - 1];
+      const qty = workArgs.length > 1 && /^\\d+$/.test(lastArg) ? Number(workArgs.pop()) : 1;
+      const productQuery = workArgs.join(" ");
+      if (!productQuery) return reply("⚠️ Gunakan: !beli [nama/ID] [jumlah] [PIN 6 digit]\\n\\nContoh:\\n• !beli Netflix 1 123456\\n• !beli Spotify 2 654321\\n\\n💡 PIN wajib tiap pembelian. Buat PIN: !buatpin [6 digit]");
+      if (!pin) return reply("🔐 *PIN wajib untuk pembelian!*\\n\\nGunakan: !beli " + productQuery + " " + qty + " [PIN 6 digit]\\n\\n💡 Buat PIN: !buatpin [6 digit]");
+      const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}/.test(productQuery.toLowerCase());
+      const res = await api("purchase_product", "POST", { visitor_id: session.visitor_id, ...(isUuid ? { product_id: productQuery } : { product_name: productQuery }), quantity: qty, pin });
+      if (res.needPin) return reply("🔐 *PIN salah atau belum dibuat!*\\n\\nBuat PIN: !buatpin [6 digit]\\nReset PIN: hubungi admin untuk token reset");
       if (res.error) return reply("❌ " + res.error);
       const pd = res.data || res;
       let txt = "✅ *Pembelian Berhasil!*\\n\\n📦 " + (pd.product?.title || productQuery) + "\\n🔢 Jumlah: " + (pd.quantity || qty) + "\\n💰 Total: " + fmtRp(pd.total_price) + "\\n💳 Sisa Saldo: " + fmtRp(pd.balance_remaining);
@@ -739,13 +743,17 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
 
     if (command.startsWith("!belistreak")) {
       if (!session) return reply("🔒 Login dulu: !login [user] [password]");
-      const packageName = args.join(" ");
+      let workArgs = [...args];
+      let pin = "";
+      if (workArgs.length > 0 && /^\\d{6}$/.test(workArgs[workArgs.length - 1])) pin = workArgs.pop();
+      const packageName = workArgs.join(" ");
       if (!packageName) {
         const pkgs = await api("packages&type=streak");
         const list = (pkgs.data?.streak || []).map((p, i) => (i+1) + ". " + p.name + " — " + fmtRp(p.price) + " (" + p.days + " hari)").join("\\n");
-        return reply("🔥 *Paket Auto-Klaim Streak:*\\n\\n" + (list || "Tidak ada paket") + "\\n\\n💡 Gunakan: !belistreak [nama paket]");
+        return reply("🔥 *Paket Auto-Klaim Streak:*\\n\\n" + (list || "Tidak ada paket") + "\\n\\n💡 Gunakan: !belistreak [nama paket] [PIN]");
       }
-      const res = await api("purchase_streak", "POST", { visitor_id: session.visitor_id, package_name: packageName, pin: session.pin || undefined });
+      if (!pin) return reply("🔐 *PIN wajib!*\\nGunakan: !belistreak " + packageName + " [PIN 6 digit]");
+      const res = await api("purchase_streak", "POST", { visitor_id: session.visitor_id, package_name: packageName, pin });
       if (res.needPin) return reply("🔐 *PIN diperlukan!*\\nKirim: !setpin [6 digit] lalu ulangi");
       if (res.error) return reply("❌ " + res.error);
       const sd = res.data || res;
