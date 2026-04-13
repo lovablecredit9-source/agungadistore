@@ -475,7 +475,7 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
       if (flow.type === "create_pin") {
         if (!/^\d{6}$/.test(plainText)) return reply("⚠️ PIN harus 6 digit angka.\nKirim lagi PIN baru kamu, contoh: 123456");
         const pinCheck = await api("check_pin", "POST", { visitor_id: session.visitor_id });
-        if (pinCheck.hasPin) {
+        if (pinCheck.data?.hasPin) {
           delete chatFlows[remoteJid];
           return reply("ℹ️ PIN kamu sudah pernah dibuat. Gunakan *!resetpin* kalau ingin ganti PIN.");
         }
@@ -765,7 +765,7 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
       userSessions[remoteJid] = res.data;
       // Check PIN status
       const pinCheck = await api("check_pin", "POST", { visitor_id: res.data.visitor_id });
-      const hasPin = pinCheck.hasPin || false;
+      const hasPin = pinCheck.data?.hasPin || false;
       return reply([
         "✅ *Login berhasil!*",
         "",
@@ -793,7 +793,7 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
     if (command === "!buatpin") {
       if (!session) return reply("🔒 Login dulu: !login [user] [password]");
       const pinCheck = await api("check_pin", "POST", { visitor_id: session.visitor_id });
-      if (pinCheck.hasPin) return reply("ℹ️ PIN kamu sudah pernah dibuat. Gunakan *!resetpin* kalau ingin ganti PIN.");
+      if (pinCheck.data?.hasPin) return reply("ℹ️ PIN kamu sudah pernah dibuat. Gunakan *!resetpin* kalau ingin ganti PIN.");
       chatFlows[remoteJid] = { type: "create_pin" };
       return reply("🔐 *Buat PIN Baru*\n\nKirim 6 digit PIN transaksi kamu sekarang.\nContoh: 123456");
     }
@@ -801,7 +801,7 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
     if (command.startsWith("!buatpin ")) {
       if (!session) return reply("🔒 Login dulu: !login [user] [password]");
       const pinCheck = await api("check_pin", "POST", { visitor_id: session.visitor_id });
-      if (pinCheck.hasPin) return reply("ℹ️ PIN kamu sudah pernah dibuat. Gunakan *!resetpin* kalau ingin ganti PIN.");
+      if (pinCheck.data?.hasPin) return reply("ℹ️ PIN kamu sudah pernah dibuat. Gunakan *!resetpin* kalau ingin ganti PIN.");
       const pinVal = args[0];
       if (!pinVal || !/^\d{6}$/.test(pinVal)) return reply("⚠️ PIN harus *6 digit angka*.\nGunakan: !buatpin 123456");
       const res = await api("create_pin", "POST", { visitor_id: session.visitor_id, pin: pinVal });
@@ -927,7 +927,7 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
       if (!user) return reply("❌ Profil tidak ditemukan.");
       // Check PIN
       const pinCheck = await api("check_pin", "POST", { visitor_id: session.visitor_id });
-      let txt = "👤 *Profil Saya:*\n\n📛 Username: " + user.username + "\n📞 No HP: " + user.phone + "\n📧 Email: " + (user.email || "-") + "\n💰 Saldo: " + fmtRp(user.balance) + "\n🔐 PIN: " + (pinCheck.hasPin ? "✅ Sudah dibuat" : "❌ Belum — Ketik !buatpin") + "\n📱 WA: " + senderPhone;
+      let txt = "👤 *Profil Saya:*\n\n📛 Username: " + user.username + "\n📞 No HP: " + user.phone + "\n📧 Email: " + (user.email || "-") + "\n💰 Saldo: " + fmtRp(user.balance) + "\n🔐 PIN: " + (pinCheck.data?.hasPin ? "✅ Sudah dibuat" : "❌ Belum — Ketik !buatpin") + "\n📱 WA: " + senderPhone;
       // Game profile
       const gp = await api("game_profiles&visitor_id=" + session.visitor_id);
       if (gp.data?.[0]) {
@@ -1170,7 +1170,7 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
       
       // Check PIN exists first
       const pinCheck = await api("check_pin", "POST", { visitor_id: session.visitor_id });
-      if (!pinCheck.hasPin) return reply("🔐 *PIN belum dibuat!*\n\nKetik !buatpin [6 digit] untuk buat PIN.\nContoh: !buatpin 123456\n\n⚠️ PIN wajib untuk setiap transaksi.");
+      if (!pinCheck.data?.hasPin) return reply("🔐 *PIN belum dibuat!*\n\nKetik !buatpin [6 digit] untuk buat PIN.\nContoh: !buatpin 123456\n\n⚠️ PIN wajib untuk setiap transaksi.");
 
       return startPurchaseFlow("purchase_product", {
         visitor_id: session.visitor_id,
@@ -1199,7 +1199,7 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
         return reply("🔥 *Paket Auto-Klaim Streak:*\n\n" + (list || "Tidak ada paket") + "\n\n💡 Gunakan: !belistreak [nama paket]");
       }
       const pinCheck = await api("check_pin", "POST", { visitor_id: session.visitor_id });
-      if (!pinCheck.hasPin) return reply("🔐 *PIN belum dibuat!*\nKetik !buatpin [6 digit] untuk buat PIN.");
+      if (!pinCheck.data?.hasPin) return reply("🔐 *PIN belum dibuat!*\nKetik !buatpin [6 digit] untuk buat PIN.");
       return startPurchaseFlow("purchase_streak", { visitor_id: session.visitor_id, package_name: packageName }, (sd) => {
         return "✅ *Paket Streak Berhasil!*\n\n🔥 Paket: " + (sd.plan || packageName) + "\n📅 Aktif sampai: " + (sd.expires_at ? new Date(sd.expires_at).toLocaleString("id-ID") : "-") + "\n💳 Sisa Saldo: " + fmtRp(sd.balance_remaining) + (sd.discount_amount > 0 ? "\n🏷️ Diskon: " + fmtRp(sd.discount_amount) : "") + (sd.auto_claimed ? "\n✅ Streak hari ini otomatis diklaim!" : "");
       });
@@ -1214,7 +1214,7 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
         return reply("💎 *Paket Kredit Game:*\n\n" + (list || "Tidak ada paket") + "\n\n💡 Gunakan: !belikredit [nama paket]");
       }
       const pinCheck = await api("check_pin", "POST", { visitor_id: session.visitor_id });
-      if (!pinCheck.hasPin) return reply("🔐 *PIN belum dibuat!*\nKetik !buatpin [6 digit] untuk buat PIN.");
+      if (!pinCheck.data?.hasPin) return reply("🔐 *PIN belum dibuat!*\nKetik !buatpin [6 digit] untuk buat PIN.");
       return startPurchaseFlow("purchase_credits", { visitor_id: session.visitor_id, package_name: packageName }, (cd) => {
         return "✅ *Kredit Game Berhasil!*\n\n💎 " + (cd.plan || cd.label || packageName) + "\n💳 Sisa Saldo: " + fmtRp(cd.balance_remaining) + (cd.discount_amount > 0 ? "\n🏷️ Diskon: " + fmtRp(cd.discount_amount) : "");
       });
@@ -1229,7 +1229,7 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
         return reply("💾 *Paket Storage Musik:*\n\n" + (list || "Tidak ada paket") + "\n\n💡 Gunakan: !belistorage [nama paket]");
       }
       const pinCheck = await api("check_pin", "POST", { visitor_id: session.visitor_id });
-      if (!pinCheck.hasPin) return reply("🔐 *PIN belum dibuat!*\nKetik !buatpin [6 digit] untuk buat PIN.");
+      if (!pinCheck.data?.hasPin) return reply("🔐 *PIN belum dibuat!*\nKetik !buatpin [6 digit] untuk buat PIN.");
       return startPurchaseFlow("purchase_storage", { visitor_id: session.visitor_id, package_name: packageName }, (std) => {
         return "✅ *Storage Berhasil!*\n\n💾 " + (std.plan || packageName) + "\n💳 Sisa Saldo: " + fmtRp(std.balance_remaining) + (std.discount_amount > 0 ? "\n🏷️ Diskon: " + fmtRp(std.discount_amount) : "");
       });
@@ -1244,7 +1244,7 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
         return reply("🎁 *Paket Bundle:*\n\n" + (list || "Tidak ada paket") + "\n\n💡 Gunakan: !belibundle [nama paket]");
       }
       const pinCheck = await api("check_pin", "POST", { visitor_id: session.visitor_id });
-      if (!pinCheck.hasPin) return reply("🔐 *PIN belum dibuat!*\nKetik !buatpin [6 digit] untuk buat PIN.");
+      if (!pinCheck.data?.hasPin) return reply("🔐 *PIN belum dibuat!*\nKetik !buatpin [6 digit] untuk buat PIN.");
       return startPurchaseFlow("purchase_bundle", { visitor_id: session.visitor_id, package_name: packageName }, (bd) => {
         return "✅ *Bundle Berhasil!*\n\n🎁 " + (bd.plan || packageName) + "\n💳 Sisa Saldo: " + fmtRp(bd.balance_remaining) + (bd.discount_amount > 0 ? "\n🏷️ Diskon: " + fmtRp(bd.discount_amount) : "");
       });
@@ -2319,7 +2319,7 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
         api("game_stats&visitor_id=" + vid), api("game_credits&visitor_id=" + vid),
         api("streaks&visitor_id=" + vid), api("check_pin", "POST", { visitor_id: vid }),
       ]);
-      let txt = "👤 *Detail User:*\n\n📛 " + user.username + "\n📞 " + user.phone + "\n📧 " + (user.email || "-") + "\n💰 Saldo: " + fmtRp(user.balance) + "\n🔐 PIN: " + (pinCheck.hasPin ? "✅" : "❌");
+      let txt = "👤 *Detail User:*\n\n📛 " + user.username + "\n📞 " + user.phone + "\n📧 " + (user.email || "-") + "\n💰 Saldo: " + fmtRp(user.balance) + "\n🔐 PIN: " + (pinCheck.data?.hasPin ? "✅" : "❌");
       if (gc.data?.[0]) txt += "\n💎 Kredit: " + gc.data[0].credits;
       if (st.data?.[0]) txt += "\n🔥 Streak: " + st.data[0].current_streak;
       if (gs.data?.length) {
