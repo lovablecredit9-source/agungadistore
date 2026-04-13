@@ -1,5 +1,5 @@
 // =============================================
-// 🤖 BOT WHATSAPP - Agung Adi Store v11.0.0
+// 🤖 BOT WHATSAPP - Agung Adi Store v12.0.0
 // =============================================
 // Library: @whiskeysockets/baileys (QR / Pairing Code)
 // Cara pakai:
@@ -364,7 +364,7 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
     }
 
     if (connection === "open") {
-      console.log("\n✅ Bot WhatsApp sudah siap! (v11.0.0)");
+      console.log("\n✅ Bot WhatsApp sudah siap! (v12.0.0)");
       console.log("📋 Kirim !help di chat untuk lihat perintah\n");
       return;
     }
@@ -593,8 +593,8 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
     // ═══════════════════════════════════════
     // ═══ USER COMMANDS ═══
     // ═══════════════════════════════════════
-    if (command === "!ping") { return reply("🏓 Pong! Bot aktif v11.0.0"); }
-    if (command === "!versi") { return reply("🤖 Bot WA Agung Adi Store v11.0.0\n📅 " + new Date().toLocaleString("id-ID")); }
+    if (command === "!ping") { return reply("🏓 Pong! Bot aktif v12.0.0"); }
+    if (command === "!versi") { return reply("🤖 Bot WA Agung Adi Store v12.0.0\n📅 " + new Date().toLocaleString("id-ID")); }
     if (command === "!waktu") { return reply("🕐 Waktu server: " + new Date().toLocaleString("id-ID", { timeZone: "Asia/Jakarta" }) + " WIB"); }
 
     // ═══ WEBAPP LINK ═══
@@ -604,7 +604,7 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
 
     if (command === "!help" || command === "!menu") {
       return reply([
-        "🤖 *Bot WhatsApp Agung Adi Store v11.0.0*",
+        "🤖 *Bot WhatsApp Agung Adi Store v12.0.0*",
         "📱 Nomor kamu: " + senderPhone,
         session ? "👤 Login: " + session.username : "🔒 Belum login",
         "",
@@ -1988,7 +1988,7 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
     if (command === "!admin") {
       if (!isAdmin(msg)) return reply("❌ Hanya admin yang bisa akses.");
       return reply([
-        "🔐 *Perintah Admin v11.0.0:*",
+        "🔐 *Perintah Admin v12.0.0:*",
         "",
         "💰 *Saldo:*",
         "• !saldo — Semua saldo user",
