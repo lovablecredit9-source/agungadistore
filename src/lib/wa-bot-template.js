@@ -243,7 +243,7 @@ async function sendDepositInstructions(client, remoteJid, quotedMsg, deposit) {
 }
 
 async function sendDepositProofToAdmin(client, remoteJid, msg, session, deposit) {
-  const buffer = await client.downloadMediaMessage(msg);
+  const buffer = await downloadMediaMessage(msg, "buffer", {});
   if (!buffer) throw new Error("Bukti pembayaran kosong");
 
   const caption = [
