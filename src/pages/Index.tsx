@@ -183,7 +183,7 @@ interface ProductChatMessage {
   is_read: boolean;
 }
 
-type DepositStatusFilter = "all" | "pending" | "approved" | "rejected";
+type DepositStatusFilter = "all" | "pending" | "approved" | "rejected" | "cancelled";
 type DepositMethodFilter = "all" | "qris" | "ewallet";
 
 const usernameSchema = z.string().trim().min(3, "Username minimal 3 karakter").max(30, "Username maksimal 30 karakter").regex(/^[A-Za-z0-9_]+$/, "Username hanya boleh huruf, angka, dan underscore");
@@ -215,6 +215,7 @@ function isEwalletMethod(method: string) {
 function getDepositStatusLabel(status: string, lang: Lang) {
   if (status === "approved") return t("deposit.approved", lang);
   if (status === "rejected") return t("deposit.rejected", lang);
+  if (status === "cancelled") return lang === "id" ? "Dibatalkan" : "Cancelled";
   return lang === "id" ? "Belum dikonfirmasi admin" : "Waiting for admin confirmation";
 }
 
@@ -2249,6 +2250,7 @@ const Index = () => {
                         <option value="pending">Belum Konfirmasi</option>
                         <option value="approved">Disetujui</option>
                         <option value="rejected">Ditolak</option>
+                        <option value="cancelled">Dibatalkan</option>
                       </select>
                       <select className="rounded-md border border-input bg-background px-2 py-2 text-[11px]" value={depositHistorySort} onChange={e => setDepositHistorySort(e.target.value as "newest" | "oldest")}>
                         <option value="newest">Terbaru</option>

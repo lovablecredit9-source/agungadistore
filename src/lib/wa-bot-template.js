@@ -145,6 +145,39 @@ function parseResetToken(value) {
   return cleaned.replace("#", "");
 }
 
+function normalizeCommandText(value) {
+  const trimmed = String(value || "").trim();
+  if (!trimmed) return { command: "", isCommand: false };
+  if (/^[!./]/.test(trimmed)) {
+    return {
+      command: ("!" + trimmed.slice(1)).toLowerCase(),
+      isCommand: true,
+    };
+  }
+  return {
+    command: trimmed.toLowerCase(),
+    isCommand: false,
+  };
+}
+
+function isCancelInput(value) {
+  return /^(?:[!./])?batal(?:\s+.+)?$/i.test(String(value || "").trim());
+}
+
+function getCancelTarget(value) {
+  const parts = String(value || "").trim().split(/\s+/).slice(1);
+  return parts.join(" ").trim() || "";
+}
+
+function getFlowLabel(flowType) {
+  if (!flowType) return "proses aktif";
+  if (flowType === "deposit_amount" || flowType === "deposit_method") return "deposit";
+  if (flowType === "create_pin") return "pembuatan PIN";
+  if (String(flowType).startsWith("resetpin")) return "reset PIN";
+  if (String(flowType).startsWith("resetsandi")) return "reset password";
+  return "proses aktif";
+}
+
 async function fetchPaymentSettings() {
   const res = await api("admin_settings");
   const rows = res.data || [];
@@ -365,7 +398,7 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
 
     if (connection === "open") {
       console.log("\n✅ Bot WhatsApp sudah siap! (v12.0.0)");
-      console.log("📋 Kirim !help di chat untuk lihat perintah\n");
+      console.log("📋 Kirim !menu / .menu / /menu di chat untuk lihat perintah\n");
       return;
     }
 
@@ -430,16 +463,57 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
       "";
     const plainText = text.trim();
     const lowerText = plainText.toLowerCase();
+    const normalizedInput = normalizeCommandText(plainText);
 
     const session = userSessions[remoteJid] || null;
     const senderPhone = remoteJid.replace("@s.whatsapp.net", "");
-    const command = lowerText;
+    const command = normalizedInput.command;
+    const isCommand = normalizedInput.isCommand;
+    const commandBase = command.split(/\s+/)[0] || "";
     const rawArgs = plainText.split(/\s+/).slice(1);
     const args = rawArgs;
     const reply = async (t) => sendLongMessage(client, remoteJid, t, msg);
 
+    if (isCancelInput(plainText)) {
+      const cancelTarget = getCancelTarget(plainText);
+
+      if (pinPending[remoteJid]) {
+        delete pinPending[remoteJid];
+        return reply("🚫 Proses konfirmasi PIN dibatalkan.");
+      }
+
+      if (chatFlows[remoteJid]) {
+        const flowLabel = getFlowLabel(chatFlows[remoteJid]?.type);
+        delete chatFlows[remoteJid];
+        return reply("🚫 Proses " + flowLabel + " dibatalkan.");
+      }
+
+      if (session) {
+        const cancelRes = await api("cancel_deposit", "POST", {
+          visitor_id: session.visitor_id,
+          trx_id: cancelTarget || pendingDeposits[remoteJid]?.trx_id || undefined,
+        });
+
+        if (!cancelRes.error && cancelRes.data?.deposit) {
+          delete pendingDeposits[remoteJid];
+          return reply("🚫 Deposit *" + cancelRes.data.deposit.trx_id + "* berhasil dibatalkan.");
+        }
+
+        if (cancelTarget) {
+          return reply("❌ " + (cancelRes.error || "Deposit tidak bisa dibatalkan."));
+        }
+      }
+
+      return reply("ℹ️ Tidak ada proses atau deposit pending yang bisa dibatalkan.");
+    }
+
+    if ((pinPending[remoteJid] || chatFlows[remoteJid]) && isCommand && !["!menu", "!help"].includes(commandBase)) {
+      const flowLabel = pinPending[remoteJid] ? "konfirmasi PIN" : getFlowLabel(chatFlows[remoteJid]?.type);
+      return reply("⚠️ Kamu masih dalam proses " + flowLabel + ". Selesaikan dulu atau ketik *batal* untuk membatalkan.");
+    }
+
     // Handle pending PIN input (for purchases)
-    if (pinPending[remoteJid] && !plainText.startsWith("!")) {
+    if (pinPending[remoteJid] && !isCommand) {
       const pending = pinPending[remoteJid];
       delete pinPending[remoteJid];
       const pinInput = plainText;
@@ -464,7 +538,7 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
       }
     }
 
-    if (chatFlows[remoteJid] && !plainText.startsWith("!")) {
+    if (chatFlows[remoteJid] && !isCommand) {
       const flow = chatFlows[remoteJid];
 
       if (!session) {
@@ -473,7 +547,7 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
       }
 
       if (flow.type === "create_pin") {
-        if (!/^\d{6}$/.test(plainText)) return reply("⚠️ PIN harus 6 digit angka.\nKirim lagi PIN baru kamu, contoh: 123456");
+        if (!/^\d{6}$/.test(plainText)) return reply("⚠️ PIN harus 6 digit angka.\nKirim lagi PIN baru kamu, contoh: 123456\n\n🚫 Batal? Ketik *batal*");
         const pinCheck = await api("check_pin", "POST", { visitor_id: session.visitor_id });
         if (pinCheck.data?.hasPin) {
           delete chatFlows[remoteJid];
@@ -487,13 +561,13 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
 
       if (flow.type === "deposit_amount") {
         const amount = Number(plainText.replace(/[^\d]/g, ""));
-        if (!amount || amount < 1000) return reply("⚠️ Nominal deposit minimal Rp 1.000.\nMasukkan nominal lagi, contoh: 50000");
+        if (!amount || amount < 1000) return reply("⚠️ Nominal deposit minimal Rp 1.000.\nMasukkan nominal lagi, contoh: 50000\n\n🚫 Batal? Ketik *batal*");
         chatFlows[remoteJid] = { type: "deposit_method", amount };
-        return reply("💳 *Pilih Metode Deposit*\n\nNominal: " + fmtRp(amount) + "\n\nKetik salah satu:\n• qris\n• dana");
+        return reply("💳 *Pilih Metode Deposit*\n\nNominal: " + fmtRp(amount) + "\n\nKetik salah satu:\n• qris\n• dana\n\n🚫 Batal? Ketik *batal*");
       }
 
       if (flow.type === "deposit_method") {
-        if (!["qris", "dana"].includes(lowerText)) return reply("⚠️ Metode tidak valid. Ketik *qris* atau *dana*.");
+        if (!["qris", "dana"].includes(lowerText)) return reply("⚠️ Metode tidak valid. Ketik *qris* atau *dana*.\n\n🚫 Batal? Ketik *batal*");
         const res = await api("create_deposit", "POST", { visitor_id: session.visitor_id, amount: flow.amount, payment_method: lowerText.toUpperCase(), username: session.username });
         if (res.error) return reply("❌ " + res.error);
         const dep = res.data || res;
@@ -507,21 +581,21 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
         const token = parseResetToken(plainText);
         if (lowerText === "lama") {
           chatFlows[remoteJid] = { type: "resetpin_wait_old" };
-          return reply("🔐 Kirim PIN lama kamu sekarang (6 digit).");
+          return reply("🔐 Kirim PIN lama kamu sekarang (6 digit).\n\n🚫 Batal? Ketik *batal*");
         }
-        if (!token) return reply("⚠️ Kirim token reset format *#12345* atau ketik *LAMA* untuk pakai PIN lama.");
+        if (!token) return reply("⚠️ Kirim token reset format *#12345* atau ketik *LAMA* untuk pakai PIN lama.\n\n🚫 Batal? Ketik *batal*");
         chatFlows[remoteJid] = { type: "resetpin_wait_new", token };
-        return reply("🔐 Token diterima. Sekarang kirim PIN baru kamu (6 digit).");
+        return reply("🔐 Token diterima. Sekarang kirim PIN baru kamu (6 digit).\n\n🚫 Batal? Ketik *batal*");
       }
 
       if (flow.type === "resetpin_wait_old") {
-        if (!/^\d{6}$/.test(plainText)) return reply("⚠️ PIN lama harus 6 digit angka.");
+        if (!/^\d{6}$/.test(plainText)) return reply("⚠️ PIN lama harus 6 digit angka.\n\n🚫 Batal? Ketik *batal*");
         chatFlows[remoteJid] = { type: "resetpin_wait_new", oldPin: plainText };
-        return reply("🔐 PIN lama diterima. Sekarang kirim PIN baru kamu (6 digit).");
+        return reply("🔐 PIN lama diterima. Sekarang kirim PIN baru kamu (6 digit).\n\n🚫 Batal? Ketik *batal*");
       }
 
       if (flow.type === "resetpin_wait_new") {
-        if (!/^\d{6}$/.test(plainText)) return reply("⚠️ PIN baru harus 6 digit angka.");
+        if (!/^\d{6}$/.test(plainText)) return reply("⚠️ PIN baru harus 6 digit angka.\n\n🚫 Batal? Ketik *batal*");
         const body = { visitor_id: session.visitor_id, new_pin: plainText };
         if (flow.token) body.reset_token = flow.token;
         if (flow.oldPin) body.old_pin = flow.oldPin;
@@ -535,21 +609,21 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
         const token = parseResetToken(plainText);
         if (lowerText === "lama") {
           chatFlows[remoteJid] = { type: "resetsandi_wait_old" };
-          return reply("🔑 Kirim password lama kamu sekarang.");
+          return reply("🔑 Kirim password lama kamu sekarang.\n\n🚫 Batal? Ketik *batal*");
         }
-        if (!token) return reply("⚠️ Kirim token reset format *#12345* atau ketik *LAMA* untuk pakai password lama.");
+        if (!token) return reply("⚠️ Kirim token reset format *#12345* atau ketik *LAMA* untuk pakai password lama.\n\n🚫 Batal? Ketik *batal*");
         chatFlows[remoteJid] = { type: "resetsandi_wait_new", token };
-        return reply("🔑 Token diterima. Sekarang kirim password baru kamu.");
+        return reply("🔑 Token diterima. Sekarang kirim password baru kamu.\n\n🚫 Batal? Ketik *batal*");
       }
 
       if (flow.type === "resetsandi_wait_old") {
-        if (!plainText) return reply("⚠️ Password lama tidak boleh kosong.");
+        if (!plainText) return reply("⚠️ Password lama tidak boleh kosong.\n\n🚫 Batal? Ketik *batal*");
         chatFlows[remoteJid] = { type: "resetsandi_wait_new", oldPassword: plainText };
-        return reply("🔑 Password lama diterima. Sekarang kirim password baru kamu.");
+        return reply("🔑 Password lama diterima. Sekarang kirim password baru kamu.\n\n🚫 Batal? Ketik *batal*");
       }
 
       if (flow.type === "resetsandi_wait_new") {
-        if (!plainText) return reply("⚠️ Password baru tidak boleh kosong.");
+        if (!plainText) return reply("⚠️ Password baru tidak boleh kosong.\n\n🚫 Batal? Ketik *batal*");
         const body = { visitor_id: session.visitor_id, new_password: plainText };
         if (flow.token) body.reset_token = flow.token;
         if (flow.oldPassword) body.old_password = flow.oldPassword;
@@ -587,7 +661,7 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
       }
     }
 
-    if (!plainText.startsWith("!") && !userSessions[remoteJid + "_game"]) return;
+    if (!isCommand && !userSessions[remoteJid + "_game"]) return;
 
     try {
     // ═══════════════════════════════════════
@@ -609,6 +683,7 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
         session ? "👤 Login: " + session.username : "🔒 Belum login",
         "",
         "🔑 *Akun Saldo:*",
+        "• !menu / .menu / /menu — Menu bantuan",
         "• !daftar — Buat akun saldo baru",
         "• !login [user/email/hp] [password]",
         "• !logout — Logout akun",
@@ -640,6 +715,7 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
         "• !deposit — Bot akan minta nominal & metode",
         "• bukti / !bukti — Lalu kirim foto bukti bayar",
         "• !cekdeposit [ID transaksi]",
+        "• batal / batal [ID] — Batalkan proses / deposit pending",
         "",
         "🎫 *Voucher & Streak (perlu login):*",
         "• !klaim [kode1] [kode2] ... — Klaim voucher",
@@ -795,7 +871,7 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
       const pinCheck = await api("check_pin", "POST", { visitor_id: session.visitor_id });
       if (pinCheck.data?.hasPin) return reply("ℹ️ PIN kamu sudah pernah dibuat. Gunakan *!resetpin* kalau ingin ganti PIN.");
       chatFlows[remoteJid] = { type: "create_pin" };
-      return reply("🔐 *Buat PIN Baru*\n\nKirim 6 digit PIN transaksi kamu sekarang.\nContoh: 123456");
+      return reply("🔐 *Buat PIN Baru*\n\nKirim 6 digit PIN transaksi kamu sekarang.\nContoh: 123456\n\n🚫 Batal? Ketik *batal*");
     }
 
     if (command.startsWith("!buatpin ")) {
@@ -823,7 +899,7 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
     if (command === "!resetpin") {
       if (!session) return reply("🔒 Login dulu: !login [user] [password]");
       chatFlows[remoteJid] = { type: "resetpin_wait_method" };
-      return reply("🔐 *Reset PIN*\n\nKirim token reset admin (contoh: #12345)\natau ketik *LAMA* untuk pakai PIN lama.\n\nSetelah itu bot akan minta PIN baru.");
+      return reply("🔐 *Reset PIN*\n\nKirim token reset admin (contoh: #12345)\natau ketik *LAMA* untuk pakai PIN lama.\n\nSetelah itu bot akan minta PIN baru.\n\n🚫 Batal? Ketik *batal*");
     }
 
     if (command.startsWith("!resetpin lama")) {
@@ -852,7 +928,7 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
     if (command === "!resetsandi") {
       if (!session) return reply("🔒 Login dulu: !login [user] [password]");
       chatFlows[remoteJid] = { type: "resetsandi_wait_method" };
-      return reply("🔑 *Reset Password*\n\nKirim token reset admin (contoh: #12345)\natau ketik *LAMA* untuk pakai password lama.\n\nSetelah itu bot akan minta password baru.");
+      return reply("🔑 *Reset Password*\n\nKirim token reset admin (contoh: #12345)\natau ketik *LAMA* untuk pakai password lama.\n\nSetelah itu bot akan minta password baru.\n\n🚫 Batal? Ketik *batal*");
     }
 
     if (command.startsWith("!resetsandi lama")) {
@@ -1101,7 +1177,7 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
     if (command === "!deposit" || command === "!buatdeposit") {
       if (!session) return reply("🔒 Login dulu: !login [user] [password]");
       chatFlows[remoteJid] = { type: "deposit_amount" };
-      return reply("💰 *Buat Deposit*\n\nMasukkan nominal deposit sekarang.\nContoh: 50000");
+      return reply("💰 *Buat Deposit*\n\nMasukkan nominal deposit sekarang.\nContoh: 50000\n\n🚫 Batal? Ketik *batal*");
     }
 
     if (command.startsWith("!deposit ") || command.startsWith("!buatdeposit ")) {
@@ -1145,15 +1221,7 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
     function startPurchaseFlow(endpoint, body, successMsgFn) {
       // Check if user has PIN first
       pinPending[remoteJid] = { endpoint, body, successMsg: successMsgFn, session };
-      return reply("🔐 *Masukkan PIN 6 digit untuk konfirmasi:*\n\n(Ketik PIN langsung, contoh: 123456)\n\n❌ PIN salah? Ketik !resetpin untuk reset\n🚫 Batal? Ketik !batal");
-    }
-
-    if (command === "!batal") {
-      if (pinPending[remoteJid]) {
-        delete pinPending[remoteJid];
-        return reply("🚫 Pembelian dibatalkan.");
-      }
-      return reply("ℹ️ Tidak ada transaksi yang pending.");
+      return reply("🔐 *Masukkan PIN 6 digit untuk konfirmasi:*\n\n(Ketik PIN langsung, contoh: 123456)\n\n❌ PIN salah? Ketik !resetpin untuk reset\n🚫 Batal? Ketik *batal*");
     }
 
     // ═══ BELI PRODUK ═══
@@ -1721,6 +1789,7 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
         "• Pilih metode: qris atau dana",
         "• Ketik bukti lalu kirim foto bukti bayar",
         "• Cek status: !cekdeposit [ID]",
+        "• Ketik batal / batal [ID] untuk membatalkan",
         "",
         "🎫 *Support:*",
         "• !buattiket [kategori] | [deskripsi]",
@@ -2047,11 +2116,13 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
       const user = await resolveVid(args[0]);
       if (!user) return reply("❌ User '" + args[0] + "' tidak ditemukan.");
       const tokenType = args[1].toLowerCase();
+      if (!["pin", "sandi", "password"].includes(tokenType)) return reply("⚠️ Jenis token harus *pin* atau *sandi*.");
       const tokenNum = Math.floor(10000 + Math.random() * 90000).toString();
       const tokenTable = tokenType === "pin" ? "pin_reset_tokens" : "password_reset_tokens";
       
       // Invalidate old tokens
       const ivRes = await api("invalidate_tokens", "POST", { visitor_id: user.visitor_id, type: tokenType });
+      if (ivRes.error) return reply("❌ " + ivRes.error);
       
       // Create new token via direct insert
       const insertRes = await api("create_reset_token", "POST", { visitor_id: user.visitor_id, token: tokenNum, type: tokenType });

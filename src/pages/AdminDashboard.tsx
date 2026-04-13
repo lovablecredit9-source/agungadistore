@@ -125,7 +125,7 @@ interface UserBalance {
 
 type AdminTab = "products" | "tokens" | "claims" | "tickets" | "chats" | "saldo" | "notif" | "deposit" | "settings" | "diskon" | "pin" | "musik" | "vmusik" | "sponsor" | "apikey" | "postingan" | "promo";
 type ClaimDateFilter = "all" | "today" | "yesterday" | "lastmonth" | "custom";
-type DepositStatusFilter = "all" | "pending" | "approved" | "rejected";
+type DepositStatusFilter = "all" | "pending" | "approved" | "rejected" | "cancelled";
 type DepositMethodFilter = "all" | "qris" | "ewallet";
 
 function isEwalletMethod(method: string) {
@@ -135,6 +135,7 @@ function isEwalletMethod(method: string) {
 function getDepositStatusLabel(status: string) {
   if (status === "approved") return "✅ Disetujui";
   if (status === "rejected") return "❌ Ditolak";
+  if (status === "cancelled") return "🚫 Dibatalkan";
   return "⏳ Belum dikonfirmasi";
 }
 
@@ -1605,6 +1606,7 @@ const AdminDashboard = () => {
                 <option value="pending">Belum Konfirmasi</option>
                 <option value="approved">Disetujui</option>
                 <option value="rejected">Ditolak</option>
+                <option value="cancelled">Dibatalkan</option>
               </select>
               <select className="rounded-md border border-input bg-background px-3 py-2 text-xs" value={depositSort} onChange={e => setDepositSort(e.target.value as "newest" | "oldest")}>
                 <option value="newest">Terbaru</option>

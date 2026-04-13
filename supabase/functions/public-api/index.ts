@@ -892,15 +892,72 @@ Deno.serve(async (req) => {
         const body = await req.json();
         const { game_type, difficulty } = body;
         if (!game_type) return new Response(JSON.stringify({ error: "game_type required (teka-teki, tebak-kata, tebak-angka, tebak-gambar, tebak-barang, pilihan-ganda, kuis-yatidak, teka-teki-v2)" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-        const fnName = game_type;
+        const gameConfig: Record<string, { fnName: string; payload: Record<string, unknown>; normalize?: (payload: any) => any }> = {
+          "teka-teki": { fnName: "teka-teki", payload: { difficulty: difficulty || "sedang" } },
+          "tebak-kata": {
+            fnName: "tebak-kata",
+            payload: { action: "new_word", difficulty: difficulty || "sedang" },
+            normalize: (payload) => ({
+              question: "Tebak kata berdasarkan petunjuk berikut.",
+              answer: String(payload.word || "").toUpperCase(),
+              hints: payload.hints || [],
+              letterCount: String(payload.word || "").length,
+            }),
+          },
+          "tebak-angka": {
+            fnName: "tebak-angka",
+            payload: { difficulty: difficulty || "sedang" },
+            normalize: (payload) => ({
+              question: `Tebak angka rahasia dalam rentang ${payload.range || "yang ditentukan"}.`,
+              answer: String(payload.number ?? ""),
+              hints: payload.hints || [],
+              range: payload.range || null,
+            }),
+          },
+          "tebak-gambar": {
+            fnName: "tebak-gambar",
+            payload: { action: "new_image", difficulty: difficulty || "sedang" },
+          },
+          "tebak-barang": {
+            fnName: "tebak-barang",
+            payload: { difficulty: difficulty || "sedang" },
+            normalize: (payload) => ({
+              question: "Tebak nama barang dari petunjuk berikut.",
+              answer: String(payload.item || "").toUpperCase(),
+              hints: payload.hints || [],
+              category: payload.category || "",
+            }),
+          },
+          "pilihan-ganda": {
+            fnName: "pilihan-ganda",
+            payload: { difficulty: difficulty || "sedang" },
+            normalize: (payload) => {
+              const correctIndex = Number(payload.correctIndex ?? -1);
+              const correctOption = correctIndex >= 0 ? String.fromCharCode(65 + correctIndex) : "";
+              const optionText = Array.isArray(payload.options) && correctIndex >= 0 ? String(payload.options[correctIndex] || "") : "";
+              return {
+                ...payload,
+                answer: optionText,
+                acceptedAnswers: [correctOption, optionText].filter(Boolean),
+              };
+            },
+          },
+          "kuis-yatidak": { fnName: "kuis-yatidak", payload: { difficulty: difficulty || "sedang" } },
+          "teka-teki-v2": { fnName: "teka-teki-v2", payload: { difficulty: difficulty || "sedang" } },
+        };
+        const selectedGame = gameConfig[game_type];
+        if (!selectedGame) {
+          return new Response(JSON.stringify({ error: "Jenis game tidak valid" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        }
+        const { fnName, payload, normalize } = selectedGame;
         const gameRes = await fetch(`${supabaseUrl}/functions/v1/${fnName}`, {
           method: "POST",
           headers: { "Content-Type": "application/json", "Authorization": `Bearer ${serviceKey}` },
-          body: JSON.stringify({ difficulty: difficulty || "sedang" }),
+          body: JSON.stringify(payload),
         });
         const gameData = await gameRes.json();
-        if (!gameRes.ok) return new Response(JSON.stringify({ error: gameData.error || "Game error" }), { status: gameRes.status, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-        result = gameData;
+        if (!gameRes.ok || gameData.error) return new Response(JSON.stringify({ error: gameData.error || "Game error" }), { status: gameRes.status || 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        result = normalize ? normalize(gameData) : gameData;
         break;
       }
       // ── Leaderboard game ──
@@ -1043,6 +1100,39 @@ Deno.serve(async (req) => {
         result = { success: true, updated: ups };
         break;
       }
+      case "invalidate_tokens": {
+        if (req.method !== "POST") return new Response(JSON.stringify({ error: "POST required" }), { status: 405, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        const body = await req.json();
+        const { visitor_id, type } = body;
+        if (!visitor_id || !type) return new Response(JSON.stringify({ error: "visitor_id and type required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        const normalizedType = String(type).toLowerCase();
+        const tokenTable = normalizedType === "pin" ? "pin_reset_tokens" : normalizedType === "sandi" || normalizedType === "password" ? "password_reset_tokens" : "";
+        if (!tokenTable) return new Response(JSON.stringify({ error: "type harus pin atau sandi" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        await supabase.from(tokenTable).update({ is_used: true }).eq("visitor_id", visitor_id).eq("is_used", false);
+        result = { success: true, type: normalizedType };
+        break;
+      }
+      case "create_reset_token": {
+        if (req.method !== "POST") return new Response(JSON.stringify({ error: "POST required" }), { status: 405, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        const body = await req.json();
+        const { visitor_id, token, type } = body;
+        if (!visitor_id || !token || !type) return new Response(JSON.stringify({ error: "visitor_id, token, type required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        const normalizedType = String(type).toLowerCase();
+        const tokenTable = normalizedType === "pin" ? "pin_reset_tokens" : normalizedType === "sandi" || normalizedType === "password" ? "password_reset_tokens" : "";
+        if (!tokenTable) return new Response(JSON.stringify({ error: "type harus pin atau sandi" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        const cleanToken = String(token).replace(/#/g, "").trim();
+        if (!/^\d{5}$/.test(cleanToken)) return new Response(JSON.stringify({ error: "token harus 5 digit angka" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+        const { data: createdToken, error: createTokenError } = await supabase.from(tokenTable).insert({
+          visitor_id,
+          token: cleanToken,
+          expires_at: expiresAt,
+          is_used: false,
+        }).select().single();
+        if (createTokenError) throw createTokenError;
+        result = createdToken;
+        break;
+      }
       case "register": {
         if (req.method !== "POST") return new Response(JSON.stringify({ error: "POST required" }), { status: 405, headers: { ...corsHeaders, "Content-Type": "application/json" } });
         const body = await req.json();
@@ -1089,6 +1179,34 @@ Deno.serve(async (req) => {
         result = nd;
         break;
       }
+      case "cancel_deposit": {
+        if (req.method !== "POST") return new Response(JSON.stringify({ error: "POST required" }), { status: 405, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        const body = await req.json();
+        const { visitor_id, trx_id } = body;
+        if (!visitor_id) return new Response(JSON.stringify({ error: "visitor_id required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+
+        let depQuery = supabase.from("deposits").select("*").eq("visitor_id", visitor_id).eq("status", "pending").order("created_at", { ascending: false });
+        if (trx_id) depQuery = depQuery.ilike("trx_id", `%${trx_id}%`);
+        const { data: pendingDeposits } = await depQuery.limit(1);
+        const deposit = pendingDeposits?.[0];
+
+        if (!deposit) {
+          return new Response(JSON.stringify({ error: trx_id ? "Deposit pending tidak ditemukan" : "Tidak ada deposit pending" }), { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        }
+
+        const { error: cancelError } = await supabase.from("deposits").update({ status: "cancelled" }).eq("id", deposit.id).eq("status", "pending");
+        if (cancelError) throw cancelError;
+
+        await supabase.from("notifications").insert({
+          visitor_id,
+          title: "Deposit Dibatalkan",
+          message: `Deposit ${deposit.trx_id} berhasil dibatalkan.`,
+          type: "deposit_cancelled",
+        });
+
+        result = { deposit: { ...deposit, status: "cancelled" }, new_status: "cancelled" };
+        break;
+      }
       default:
         return new Response(JSON.stringify({
           error: "Unknown endpoint",
@@ -1118,7 +1236,8 @@ Deno.serve(async (req) => {
             "play_game",
             "deduct_credit", "check_pin", "create_pin", "verify_pin", "reset_pin",
             "reset_password", "update_profile", "register",
-            "confirm_deposit", "create_deposit",
+            "invalidate_tokens", "create_reset_token",
+            "confirm_deposit", "create_deposit", "cancel_deposit",
           ],
         }), {
           status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
