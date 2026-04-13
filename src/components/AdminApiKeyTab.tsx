@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { Key, Copy, Trash2, Check, Eye, EyeOff, Plus, Clock, BookOpen, Download, Bot, ChevronDown, Phone } from "lucide-react";
+import botTemplate from "@/lib/wa-bot-template.js?raw";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -128,11 +129,17 @@ export default function AdminApiKeyTab() {
   }
 
   function generateBotCode(apiKey: string, phoneNumber?: string) {
-    const phoneConfig = phoneNumber
-      ? `
-const DEFAULT_PAIRING_PHONE = "${phoneNumber.replace(/[^0-9]/g, "")}";`
-      : `
-const DEFAULT_PAIRING_PHONE = ""; // Opsional: nomor default pairing, format: 628xxxxxxxxxx`;
+    const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID || "";
+    const base = `https://${projectId}.supabase.co/functions/v1/public-api`;
+    const web = `https://produkklaimtransaksiagungadistore.lovable.app`;
+    const phone = phoneNumber ? phoneNumber.replace(/[^0-9]/g, "") : "";
+
+    return botTemplate
+      .replace('__BOT_API_KEY__', apiKey)
+      .replace('__BOT_BASE_URL__', base)
+      .replace('__BOT_WEB_URL__', web)
+      .replace('__BOT_PAIRING_PHONE__', phone);
+  }
 
     return `// =============================================
 // 🤖 BOT WHATSAPP - Agung Adi Store v10.0.0
