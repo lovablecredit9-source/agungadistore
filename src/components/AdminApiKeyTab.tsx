@@ -754,7 +754,7 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
       }
       if (!pin) return reply("🔐 *PIN wajib!*\\nGunakan: !belistreak " + packageName + " [PIN 6 digit]");
       const res = await api("purchase_streak", "POST", { visitor_id: session.visitor_id, package_name: packageName, pin });
-      if (res.needPin) return reply("🔐 *PIN diperlukan!*\\nKirim: !setpin [6 digit] lalu ulangi");
+      if (res.needPin) return reply("🔐 *PIN salah atau belum dibuat!*\\nBuat PIN: !buatpin [6 digit]");
       if (res.error) return reply("❌ " + res.error);
       const sd = res.data || res;
       session.balance = sd.balance_remaining;
@@ -764,14 +764,18 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
 
     if (command.startsWith("!belikredit")) {
       if (!session) return reply("🔒 Login dulu: !login [user] [password]");
-      const packageName = args.join(" ");
+      let workArgs = [...args];
+      let pin = "";
+      if (workArgs.length > 0 && /^\\d{6}$/.test(workArgs[workArgs.length - 1])) pin = workArgs.pop();
+      const packageName = workArgs.join(" ");
       if (!packageName) {
         const pkgs = await api("packages&type=credit");
         const list = (pkgs.data?.credit || []).map((p, i) => (i+1) + ". " + p.label + " — " + fmtRp(p.price) + " (" + (p.is_unlimited ? "Unlimited " + p.unlimited_days + " hari" : p.credits + " kredit") + ")").join("\\n");
-        return reply("💎 *Paket Kredit Game:*\\n\\n" + (list || "Tidak ada paket") + "\\n\\n💡 Gunakan: !belikredit [nama paket]");
+        return reply("💎 *Paket Kredit Game:*\\n\\n" + (list || "Tidak ada paket") + "\\n\\n💡 Gunakan: !belikredit [nama paket] [PIN]");
       }
-      const res = await api("purchase_credits", "POST", { visitor_id: session.visitor_id, package_name: packageName, pin: session.pin || undefined });
-      if (res.needPin) return reply("🔐 *PIN diperlukan!*\\nKirim: !setpin [6 digit] lalu ulangi");
+      if (!pin) return reply("🔐 *PIN wajib!*\\nGunakan: !belikredit " + packageName + " [PIN 6 digit]");
+      const res = await api("purchase_credits", "POST", { visitor_id: session.visitor_id, package_name: packageName, pin });
+      if (res.needPin) return reply("🔐 *PIN salah atau belum dibuat!*\\nBuat PIN: !buatpin [6 digit]");
       if (res.error) return reply("❌ " + res.error);
       const cd = res.data || res;
       session.balance = cd.balance_remaining;
@@ -781,14 +785,18 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
 
     if (command.startsWith("!belistorage")) {
       if (!session) return reply("🔒 Login dulu: !login [user] [password]");
-      const packageName = args.join(" ");
+      let workArgs = [...args];
+      let pin = "";
+      if (workArgs.length > 0 && /^\\d{6}$/.test(workArgs[workArgs.length - 1])) pin = workArgs.pop();
+      const packageName = workArgs.join(" ");
       if (!packageName) {
         const pkgs = await api("packages&type=storage");
         const list = (pkgs.data?.storage || []).map((p, i) => (i+1) + ". " + p.name + " — " + fmtRp(p.price) + " (" + p.storage_mb + " MB)").join("\\n");
-        return reply("💾 *Paket Storage Musik:*\\n\\n" + (list || "Tidak ada paket") + "\\n\\n💡 Gunakan: !belistorage [nama paket]");
+        return reply("💾 *Paket Storage Musik:*\\n\\n" + (list || "Tidak ada paket") + "\\n\\n💡 Gunakan: !belistorage [nama paket] [PIN]");
       }
-      const res = await api("purchase_storage", "POST", { visitor_id: session.visitor_id, package_name: packageName, pin: session.pin || undefined });
-      if (res.needPin) return reply("🔐 *PIN diperlukan!*\\nKirim: !setpin [6 digit] lalu ulangi");
+      if (!pin) return reply("🔐 *PIN wajib!*\\nGunakan: !belistorage " + packageName + " [PIN 6 digit]");
+      const res = await api("purchase_storage", "POST", { visitor_id: session.visitor_id, package_name: packageName, pin });
+      if (res.needPin) return reply("🔐 *PIN salah atau belum dibuat!*\\nBuat PIN: !buatpin [6 digit]");
       if (res.error) return reply("❌ " + res.error);
       const std = res.data || res;
       session.balance = std.balance_remaining;
@@ -798,14 +806,18 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
 
     if (command.startsWith("!belibundle")) {
       if (!session) return reply("🔒 Login dulu: !login [user] [password]");
-      const packageName = args.join(" ");
+      let workArgs = [...args];
+      let pin = "";
+      if (workArgs.length > 0 && /^\\d{6}$/.test(workArgs[workArgs.length - 1])) pin = workArgs.pop();
+      const packageName = workArgs.join(" ");
       if (!packageName) {
         const pkgs = await api("packages&type=bundle");
         const list = (pkgs.data?.bundle || []).map((p, i) => (i+1) + ". " + p.name + " — " + fmtRp(p.price) + " (" + p.credits + " kredit + " + p.streak_days + " hari streak + " + p.storage_mb + " MB)").join("\\n");
-        return reply("🎁 *Paket Bundle:*\\n\\n" + (list || "Tidak ada paket") + "\\n\\n💡 Gunakan: !belibundle [nama paket]");
+        return reply("🎁 *Paket Bundle:*\\n\\n" + (list || "Tidak ada paket") + "\\n\\n💡 Gunakan: !belibundle [nama paket] [PIN]");
       }
-      const res = await api("purchase_bundle", "POST", { visitor_id: session.visitor_id, package_name: packageName, pin: session.pin || undefined });
-      if (res.needPin) return reply("🔐 *PIN diperlukan!*\\nKirim: !setpin [6 digit] lalu ulangi");
+      if (!pin) return reply("🔐 *PIN wajib!*\\nGunakan: !belibundle " + packageName + " [PIN 6 digit]");
+      const res = await api("purchase_bundle", "POST", { visitor_id: session.visitor_id, package_name: packageName, pin });
+      if (res.needPin) return reply("🔐 *PIN salah atau belum dibuat!*\\nBuat PIN: !buatpin [6 digit]");
       if (res.error) return reply("❌ " + res.error);
       const bd = res.data || res;
       session.balance = bd.balance_remaining;
@@ -813,14 +825,33 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
       return reply("✅ *Bundle Berhasil!*\\n\\n🎁 " + (bd.plan || packageName) + "\\n💳 Sisa Saldo: " + fmtRp(bd.balance_remaining) + (bd.discount_amount > 0 ? "\\n🏷️ Diskon: " + fmtRp(bd.discount_amount) : ""));
     }
 
-    // ── SET PIN SESSION ──
-    if (command.startsWith("!setpin")) {
+    // ── BUAT PIN (via manage-pin edge function) ──
+    if (command.startsWith("!buatpin")) {
       if (!session) return reply("🔒 Login dulu: !login [user] [password]");
       const pinVal = args[0];
-      if (!pinVal || pinVal.length !== 6 || !/^\\d{6}$/.test(pinVal)) return reply("⚠️ PIN harus 6 digit angka.\\nGunakan: !setpin 123456");
-      session.pin = pinVal;
-      userSessions[remoteJid] = session;
-      return reply("✅ PIN sesi berhasil disimpan.\\n🔒 PIN ini digunakan untuk verifikasi pembelian di sesi ini.");
+      if (!pinVal || pinVal.length !== 6 || !/^\\d{6}$/.test(pinVal)) return reply("⚠️ PIN harus 6 digit angka.\\nGunakan: !buatpin 123456");
+      const res = await api("create_pin", "POST", { visitor_id: session.visitor_id, pin: pinVal });
+      if (res.error) return reply("❌ " + res.error);
+      return reply("✅ *PIN berhasil dibuat!*\\n🔒 PIN digunakan untuk verifikasi setiap pembelian.\\n⚠️ Ingat PIN kamu, jangan bagikan ke siapapun!");
+    }
+
+    // ── CEK PIN STATUS ──
+    if (command === "!cekpin") {
+      if (!session) return reply("🔒 Login dulu: !login [user] [password]");
+      const res = await api("check_pin", "POST", { visitor_id: session.visitor_id });
+      return reply(res.hasPin ? "✅ PIN sudah aktif." : "❌ Belum ada PIN. Buat: !buatpin [6 digit]");
+    }
+
+    // ── RESET PIN (pakai token dari admin) ──
+    if (command.startsWith("!resetpin")) {
+      if (!session) return reply("🔒 Login dulu: !login [user] [password]");
+      if (args.length < 2) return reply("⚠️ Gunakan: !resetpin [token] [pin_baru]\\n\\nMinta token reset ke admin dulu.");
+      const resetToken = args[0];
+      const newPin = args[1];
+      if (!newPin || newPin.length !== 6 || !/^\\d{6}$/.test(newPin)) return reply("⚠️ PIN baru harus 6 digit angka.");
+      const res = await api("reset_pin", "POST", { visitor_id: session.visitor_id, resetToken, newPin });
+      if (res.error) return reply("❌ " + res.error);
+      return reply("✅ *PIN berhasil direset!*\\n🔒 PIN baru aktif. Jangan bagikan ke siapapun!");
     }
 
     // ── DETAIL TRANSAKSI ──
