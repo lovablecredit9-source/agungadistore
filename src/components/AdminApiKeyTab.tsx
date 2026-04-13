@@ -135,7 +135,7 @@ const DEFAULT_PAIRING_PHONE = "${phoneNumber.replace(/[^0-9]/g, "")}";`
 const DEFAULT_PAIRING_PHONE = ""; // Opsional: nomor default pairing, format: 628xxxxxxxxxx`;
 
     return `// =============================================
-// 🤖 BOT WHATSAPP - Agung Adi Store v8.0.0
+// 🤖 BOT WHATSAPP - Agung Adi Store v10.0.0
 // =============================================
 // Library: @whiskeysockets/baileys (QR / Pairing Code)
 // Cara pakai:
@@ -173,7 +173,21 @@ const API_KEY = "${apiKey}";
 const BASE = "${baseUrl}";
 ${phoneConfig}
 
+// Short ID helper: UUID → #XXXXX
+const shortId = (uuid) => {
+  if (!uuid) return "#00000";
+  return "#" + String(parseInt(uuid.replace(/-/g, "").slice(0, 10), 16) % 100000).padStart(5, "0");
+};
+
+// Hash PIN helper (SHA-256)
+async function hashPin(pin) {
+  const { createHash } = require("crypto");
+  return createHash("sha256").update(pin).digest("hex");
+}
+
+
 // === SESSION LOGIN USER (per nomor WA) ===
+// PIN TIDAK disimpan di sesi - harus input tiap transaksi
 const userSessions = {};
 
 async function askAuthMethod() {
@@ -319,7 +333,7 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
     }
 
     if (connection === "open") {
-      console.log("\\n✅ Bot WhatsApp sudah siap! (v8.0.0)");
+      console.log("\\n✅ Bot WhatsApp sudah siap! (v10.0.0)");
       console.log("📋 Kirim !help di chat untuk lihat perintah\\n");
       return;
     }
@@ -400,23 +414,26 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
     // ═══════════════════════════════════════
     // ═══ USER COMMANDS ═══
     // ═══════════════════════════════════════
-    if (command === "!ping") { return reply("🏓 Pong! Bot aktif v8.0.0"); }
-    if (command === "!versi") { return reply("🤖 Bot WA Agung Adi Store v8.0.0\\n📅 " + new Date().toLocaleString("id-ID")); }
+    if (command === "!ping") { return reply("🏓 Pong! Bot aktif v10.0.0"); }
+    if (command === "!versi") { return reply("🤖 Bot WA Agung Adi Store v10.0.0\\n📅 " + new Date().toLocaleString("id-ID")); }
     if (command === "!waktu") { return reply("🕐 Waktu server: " + new Date().toLocaleString("id-ID", { timeZone: "Asia/Jakarta" }) + " WIB"); }
 
     if (command === "!help" || command === "!menu") {
       const senderPhone = remoteJid.replace("@s.whatsapp.net", "");
       return reply([
-        "🤖 *Bot WhatsApp Agung Adi Store v8.0.0*",
+        "🤖 *Bot WhatsApp Agung Adi Store v10.0.0*",
         "📱 Nomor kamu: " + senderPhone,
         session ? "👤 Login: " + session.username : "🔒 Belum login",
         "",
         "🔑 *Akun Saldo:*",
+        "• !daftar [user] [hp] [email] [password] — Daftar baru",
         "• !login [user/email/hp] [password]",
         "• !logout — Logout akun",
+        "• !editprofil [field] [nilai] — Edit profil",
         "• !saldoku — Cek saldo",
         "• !profilku — Lihat profil lengkap",
         "• !riwayat [jumlah] — Riwayat transaksi",
+        "• !download_riwayat [pdf/txt] — Export riwayat",
         "• !detailtrx [trx_id] — Detail transaksi",
         "• !gameku — Stats game saya",
         "• !kreditku — Kredit game saya",
@@ -425,14 +442,24 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
         "• !likeku — Daftar favorit saya",
         "• !nomorku — Tampilkan nomor WA",
         "• !fotoprofil — Kirim foto profil kamu",
+        "• !webapp — Link ke website",
         "",
-        "🛒 *Belanja (perlu login):*",
-        "• !beli [ID/nama produk] [jumlah]",
-        "• !belistreak [nama paket]",
-        "• !belikredit [nama paket]",
-        "• !belistorage [nama paket]",
-        "• !belibundle [nama paket]",
-        "• !setpin [pin 6 digit]",
+        "🔐 *PIN Keamanan:*",
+        "• !buatpin [6 digit] — Buat PIN baru",
+        "• !cekpin — Cek status PIN",
+        "• !resetpin [token] [pin baru] — Reset PIN",
+        "",
+        "🛒 *Belanja (perlu login + PIN):*",
+        "• !beli [nama/ID] [jumlah] [PIN]",
+        "• !belistreak [paket] [PIN]",
+        "• !belikredit [paket] [PIN]",
+        "• !belistorage [paket] [PIN]",
+        "• !belibundle [paket] [PIN]",
+        "",
+        "💰 *Deposit:*",
+        "• !depositku — Riwayat deposit saya",
+        "• !buatdeposit [jumlah] [metode] — Buat deposit",
+        "• !bukti — Kirim bukti (reply foto + !bukti [trx_id])",
         "",
         "🎫 *Voucher & Streak (perlu login):*",
         "• !klaim [kode1] [kode2] ... — Klaim voucher",
@@ -508,6 +535,16 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
       ].join("\\n"));
     }
 
+    // ═══ DAFTAR AKUN SALDO ═══
+    if (command.startsWith("!daftar")) {
+      if (args.length < 4) return reply("⚠️ Gunakan: !daftar [username] [no_hp] [email] [password]\\n\\nContoh: !daftar agung 08123456789 agung@gmail.com password123");
+      const [username, phone, email, ...passParts] = args;
+      const password = passParts.join(" ");
+      const res = await api("register", "POST", { username, phone, email, password });
+      if (res.error) return reply("❌ " + res.error);
+      return reply("✅ *Pendaftaran Berhasil!*\\n\\n👤 Username: " + username + "\\n📞 HP: " + phone + "\\n📧 Email: " + email + "\\n\\n💡 Sekarang login: !login " + username + " " + password);
+    }
+
     // ═══ LOGIN / LOGOUT USER ═══
     if (command.startsWith("!login")) {
       if (args.length < 2) return reply("⚠️ Gunakan: !login [username/email/hp] [password]\\n\\nContoh:\\n• !login agung password123\\n• !login agung@gmail.com password123\\n• !login 08123456789 password123");
@@ -524,6 +561,32 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
       if (!session) return reply("ℹ️ Kamu belum login. Ketik !login [user] [password]");
       delete userSessions[remoteJid];
       return reply("✅ Logout berhasil.");
+    }
+
+    if (command === "!logout") {
+      if (!session) return reply("ℹ️ Kamu belum login. Ketik !login [user] [password]");
+      delete userSessions[remoteJid];
+      return reply("✅ Logout berhasil.");
+    }
+
+    // ═══ EDIT PROFIL ═══
+    if (command.startsWith("!editprofil")) {
+      if (!session) return reply("🔒 Login dulu: !login [user] [password]");
+      if (args.length < 2) return reply("⚠️ Gunakan: !editprofil [field] [nilai]\\n\\nField: username, phone, email\\nContoh: !editprofil phone 08123456789");
+      const field = args[0].toLowerCase();
+      const value = args.slice(1).join(" ");
+      const res = await api("edit_profile", "POST", { visitor_id: session.visitor_id, field, value });
+      if (res.error) return reply("❌ " + res.error);
+      if (field === "username") session.username = value;
+      if (field === "phone") session.phone = value;
+      if (field === "email") session.email = value;
+      userSessions[remoteJid] = session;
+      return reply("✅ Profil berhasil diupdate!\\n📝 " + field + " → " + value);
+    }
+
+    // ═══ WEBAPP LINK ═══
+    if (command === "!webapp") {
+      return reply("🌐 *Kunjungi Website:*\\n\\nhttps://produkklaimtransaksiagungadistore.lovable.app\\n\\n💡 Akses semua fitur langsung di web!");
     }
 
     // ═══ USER LOGGED-IN COMMANDS ═══
@@ -646,17 +709,21 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
     // ═══ PURCHASE COMMANDS (perlu login) ═══
     if (command.startsWith("!beli ") && !command.startsWith("!belistreak") && !command.startsWith("!belikredit") && !command.startsWith("!belistorage") && !command.startsWith("!belibundle")) {
       if (!session) return reply("🔒 Login dulu: !login [user] [password]");
-      const lastArg = args[args.length - 1];
-      const qty = args.length > 1 && /^\\d+$/.test(lastArg) ? Number(lastArg) : 1;
-      const nameParts = qty > 1 ? args.slice(0, -1) : args;
-      const productQuery = nameParts.join(" ");
-      if (!productQuery) return reply("⚠️ Gunakan:\\n• !beli [ID produk] [jumlah]\\n• !beli [nama produk] [jumlah]\\n\\nContoh:\\n• !beli abc123-def456 1\\n• !beli Netflix 1\\n• !beli Spotify Premium\\n\\n💡 Lihat ID produk di !produk atau !detailproduk");
-      // Check if it looks like a UUID (product ID)
-      const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}/.test(productQuery.toLowerCase());
-      const res = await api("purchase_product", "POST", { visitor_id: session.visitor_id, ...(isUuid ? { product_id: productQuery } : { product_name: productQuery }), quantity: qty, pin: session.pin || undefined });
-      if (res.needPin) {
-        return reply("🔐 *PIN diperlukan!*\\n\\nKirim: !setpin [6 digit] untuk set PIN sesi\\nLalu ulangi perintah !beli");
+      // Parse: !beli [produk] [jumlah] [PIN]
+      // PIN = last arg if 6 digits, qty = second-to-last if numeric
+      let pin = "";
+      let workArgs = [...args];
+      if (workArgs.length > 0 && /^\\d{6}$/.test(workArgs[workArgs.length - 1])) {
+        pin = workArgs.pop();
       }
+      const lastArg = workArgs[workArgs.length - 1];
+      const qty = workArgs.length > 1 && /^\\d+$/.test(lastArg) ? Number(workArgs.pop()) : 1;
+      const productQuery = workArgs.join(" ");
+      if (!productQuery) return reply("⚠️ Gunakan: !beli [nama/ID] [jumlah] [PIN 6 digit]\\n\\nContoh:\\n• !beli Netflix 1 123456\\n• !beli Spotify 2 654321\\n\\n💡 PIN wajib tiap pembelian. Buat PIN: !buatpin [6 digit]");
+      if (!pin) return reply("🔐 *PIN wajib untuk pembelian!*\\n\\nGunakan: !beli " + productQuery + " " + qty + " [PIN 6 digit]\\n\\n💡 Buat PIN: !buatpin [6 digit]");
+      const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}/.test(productQuery.toLowerCase());
+      const res = await api("purchase_product", "POST", { visitor_id: session.visitor_id, ...(isUuid ? { product_id: productQuery } : { product_name: productQuery }), quantity: qty, pin });
+      if (res.needPin) return reply("🔐 *PIN salah atau belum dibuat!*\\n\\nBuat PIN: !buatpin [6 digit]\\nReset PIN: hubungi admin untuk token reset");
       if (res.error) return reply("❌ " + res.error);
       const pd = res.data || res;
       let txt = "✅ *Pembelian Berhasil!*\\n\\n📦 " + (pd.product?.title || productQuery) + "\\n🔢 Jumlah: " + (pd.quantity || qty) + "\\n💰 Total: " + fmtRp(pd.total_price) + "\\n💳 Sisa Saldo: " + fmtRp(pd.balance_remaining);
@@ -676,14 +743,18 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
 
     if (command.startsWith("!belistreak")) {
       if (!session) return reply("🔒 Login dulu: !login [user] [password]");
-      const packageName = args.join(" ");
+      let workArgs = [...args];
+      let pin = "";
+      if (workArgs.length > 0 && /^\\d{6}$/.test(workArgs[workArgs.length - 1])) pin = workArgs.pop();
+      const packageName = workArgs.join(" ");
       if (!packageName) {
         const pkgs = await api("packages&type=streak");
         const list = (pkgs.data?.streak || []).map((p, i) => (i+1) + ". " + p.name + " — " + fmtRp(p.price) + " (" + p.days + " hari)").join("\\n");
-        return reply("🔥 *Paket Auto-Klaim Streak:*\\n\\n" + (list || "Tidak ada paket") + "\\n\\n💡 Gunakan: !belistreak [nama paket]");
+        return reply("🔥 *Paket Auto-Klaim Streak:*\\n\\n" + (list || "Tidak ada paket") + "\\n\\n💡 Gunakan: !belistreak [nama paket] [PIN]");
       }
-      const res = await api("purchase_streak", "POST", { visitor_id: session.visitor_id, package_name: packageName, pin: session.pin || undefined });
-      if (res.needPin) return reply("🔐 *PIN diperlukan!*\\nKirim: !setpin [6 digit] lalu ulangi");
+      if (!pin) return reply("🔐 *PIN wajib!*\\nGunakan: !belistreak " + packageName + " [PIN 6 digit]");
+      const res = await api("purchase_streak", "POST", { visitor_id: session.visitor_id, package_name: packageName, pin });
+      if (res.needPin) return reply("🔐 *PIN salah atau belum dibuat!*\\nBuat PIN: !buatpin [6 digit]");
       if (res.error) return reply("❌ " + res.error);
       const sd = res.data || res;
       session.balance = sd.balance_remaining;
@@ -693,14 +764,18 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
 
     if (command.startsWith("!belikredit")) {
       if (!session) return reply("🔒 Login dulu: !login [user] [password]");
-      const packageName = args.join(" ");
+      let workArgs = [...args];
+      let pin = "";
+      if (workArgs.length > 0 && /^\\d{6}$/.test(workArgs[workArgs.length - 1])) pin = workArgs.pop();
+      const packageName = workArgs.join(" ");
       if (!packageName) {
         const pkgs = await api("packages&type=credit");
         const list = (pkgs.data?.credit || []).map((p, i) => (i+1) + ". " + p.label + " — " + fmtRp(p.price) + " (" + (p.is_unlimited ? "Unlimited " + p.unlimited_days + " hari" : p.credits + " kredit") + ")").join("\\n");
-        return reply("💎 *Paket Kredit Game:*\\n\\n" + (list || "Tidak ada paket") + "\\n\\n💡 Gunakan: !belikredit [nama paket]");
+        return reply("💎 *Paket Kredit Game:*\\n\\n" + (list || "Tidak ada paket") + "\\n\\n💡 Gunakan: !belikredit [nama paket] [PIN]");
       }
-      const res = await api("purchase_credits", "POST", { visitor_id: session.visitor_id, package_name: packageName, pin: session.pin || undefined });
-      if (res.needPin) return reply("🔐 *PIN diperlukan!*\\nKirim: !setpin [6 digit] lalu ulangi");
+      if (!pin) return reply("🔐 *PIN wajib!*\\nGunakan: !belikredit " + packageName + " [PIN 6 digit]");
+      const res = await api("purchase_credits", "POST", { visitor_id: session.visitor_id, package_name: packageName, pin });
+      if (res.needPin) return reply("🔐 *PIN salah atau belum dibuat!*\\nBuat PIN: !buatpin [6 digit]");
       if (res.error) return reply("❌ " + res.error);
       const cd = res.data || res;
       session.balance = cd.balance_remaining;
@@ -710,14 +785,18 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
 
     if (command.startsWith("!belistorage")) {
       if (!session) return reply("🔒 Login dulu: !login [user] [password]");
-      const packageName = args.join(" ");
+      let workArgs = [...args];
+      let pin = "";
+      if (workArgs.length > 0 && /^\\d{6}$/.test(workArgs[workArgs.length - 1])) pin = workArgs.pop();
+      const packageName = workArgs.join(" ");
       if (!packageName) {
         const pkgs = await api("packages&type=storage");
         const list = (pkgs.data?.storage || []).map((p, i) => (i+1) + ". " + p.name + " — " + fmtRp(p.price) + " (" + p.storage_mb + " MB)").join("\\n");
-        return reply("💾 *Paket Storage Musik:*\\n\\n" + (list || "Tidak ada paket") + "\\n\\n💡 Gunakan: !belistorage [nama paket]");
+        return reply("💾 *Paket Storage Musik:*\\n\\n" + (list || "Tidak ada paket") + "\\n\\n💡 Gunakan: !belistorage [nama paket] [PIN]");
       }
-      const res = await api("purchase_storage", "POST", { visitor_id: session.visitor_id, package_name: packageName, pin: session.pin || undefined });
-      if (res.needPin) return reply("🔐 *PIN diperlukan!*\\nKirim: !setpin [6 digit] lalu ulangi");
+      if (!pin) return reply("🔐 *PIN wajib!*\\nGunakan: !belistorage " + packageName + " [PIN 6 digit]");
+      const res = await api("purchase_storage", "POST", { visitor_id: session.visitor_id, package_name: packageName, pin });
+      if (res.needPin) return reply("🔐 *PIN salah atau belum dibuat!*\\nBuat PIN: !buatpin [6 digit]");
       if (res.error) return reply("❌ " + res.error);
       const std = res.data || res;
       session.balance = std.balance_remaining;
@@ -727,14 +806,18 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
 
     if (command.startsWith("!belibundle")) {
       if (!session) return reply("🔒 Login dulu: !login [user] [password]");
-      const packageName = args.join(" ");
+      let workArgs = [...args];
+      let pin = "";
+      if (workArgs.length > 0 && /^\\d{6}$/.test(workArgs[workArgs.length - 1])) pin = workArgs.pop();
+      const packageName = workArgs.join(" ");
       if (!packageName) {
         const pkgs = await api("packages&type=bundle");
         const list = (pkgs.data?.bundle || []).map((p, i) => (i+1) + ". " + p.name + " — " + fmtRp(p.price) + " (" + p.credits + " kredit + " + p.streak_days + " hari streak + " + p.storage_mb + " MB)").join("\\n");
-        return reply("🎁 *Paket Bundle:*\\n\\n" + (list || "Tidak ada paket") + "\\n\\n💡 Gunakan: !belibundle [nama paket]");
+        return reply("🎁 *Paket Bundle:*\\n\\n" + (list || "Tidak ada paket") + "\\n\\n💡 Gunakan: !belibundle [nama paket] [PIN]");
       }
-      const res = await api("purchase_bundle", "POST", { visitor_id: session.visitor_id, package_name: packageName, pin: session.pin || undefined });
-      if (res.needPin) return reply("🔐 *PIN diperlukan!*\\nKirim: !setpin [6 digit] lalu ulangi");
+      if (!pin) return reply("🔐 *PIN wajib!*\\nGunakan: !belibundle " + packageName + " [PIN 6 digit]");
+      const res = await api("purchase_bundle", "POST", { visitor_id: session.visitor_id, package_name: packageName, pin });
+      if (res.needPin) return reply("🔐 *PIN salah atau belum dibuat!*\\nBuat PIN: !buatpin [6 digit]");
       if (res.error) return reply("❌ " + res.error);
       const bd = res.data || res;
       session.balance = bd.balance_remaining;
@@ -742,14 +825,33 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
       return reply("✅ *Bundle Berhasil!*\\n\\n🎁 " + (bd.plan || packageName) + "\\n💳 Sisa Saldo: " + fmtRp(bd.balance_remaining) + (bd.discount_amount > 0 ? "\\n🏷️ Diskon: " + fmtRp(bd.discount_amount) : ""));
     }
 
-    // ── SET PIN SESSION ──
-    if (command.startsWith("!setpin")) {
+    // ── BUAT PIN (via manage-pin edge function) ──
+    if (command.startsWith("!buatpin")) {
       if (!session) return reply("🔒 Login dulu: !login [user] [password]");
       const pinVal = args[0];
-      if (!pinVal || pinVal.length !== 6 || !/^\\d{6}$/.test(pinVal)) return reply("⚠️ PIN harus 6 digit angka.\\nGunakan: !setpin 123456");
-      session.pin = pinVal;
-      userSessions[remoteJid] = session;
-      return reply("✅ PIN sesi berhasil disimpan.\\n🔒 PIN ini digunakan untuk verifikasi pembelian di sesi ini.");
+      if (!pinVal || pinVal.length !== 6 || !/^\\d{6}$/.test(pinVal)) return reply("⚠️ PIN harus 6 digit angka.\\nGunakan: !buatpin 123456");
+      const res = await api("create_pin", "POST", { visitor_id: session.visitor_id, pin: pinVal });
+      if (res.error) return reply("❌ " + res.error);
+      return reply("✅ *PIN berhasil dibuat!*\\n🔒 PIN digunakan untuk verifikasi setiap pembelian.\\n⚠️ Ingat PIN kamu, jangan bagikan ke siapapun!");
+    }
+
+    // ── CEK PIN STATUS ──
+    if (command === "!cekpin") {
+      if (!session) return reply("🔒 Login dulu: !login [user] [password]");
+      const res = await api("check_pin", "POST", { visitor_id: session.visitor_id });
+      return reply(res.hasPin ? "✅ PIN sudah aktif." : "❌ Belum ada PIN. Buat: !buatpin [6 digit]");
+    }
+
+    // ── RESET PIN (pakai token dari admin) ──
+    if (command.startsWith("!resetpin")) {
+      if (!session) return reply("🔒 Login dulu: !login [user] [password]");
+      if (args.length < 2) return reply("⚠️ Gunakan: !resetpin [token] [pin_baru]\\n\\nMinta token reset ke admin dulu.");
+      const resetToken = args[0];
+      const newPin = args[1];
+      if (!newPin || newPin.length !== 6 || !/^\\d{6}$/.test(newPin)) return reply("⚠️ PIN baru harus 6 digit angka.");
+      const res = await api("reset_pin", "POST", { visitor_id: session.visitor_id, resetToken, newPin });
+      if (res.error) return reply("❌ " + res.error);
+      return reply("✅ *PIN berhasil direset!*\\n🔒 PIN baru aktif. Jangan bagikan ke siapapun!");
     }
 
     // ── DETAIL TRANSAKSI ──
@@ -1008,7 +1110,7 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
         "3. Login di bot: !login [user] [password]",
         "4. Lihat produk: !produk (ada ID produk)",
         "5. Beli: !beli [ID/nama] [jumlah]",
-        "6. Set PIN: !setpin [6 digit] untuk verifikasi",
+        "6. Set PIN: !buatpin [6 digit] untuk buat PIN",
         "7. Voucher otomatis dikirim setelah pembelian",
         "",
         "🎫 *Klaim Voucher:*",
@@ -1134,6 +1236,52 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
       } catch (e) {
         return reply("🎵 *" + song.title + "* — " + song.artist + "\\n\\n❌ Gagal kirim file audio. Download manual:\\n🔗 " + song.file_url);
       }
+    }
+
+    // ═══ DEPOSIT USER ═══
+    if (command === "!depositku") {
+      if (!session) return reply("🔒 Login dulu: !login [user] [password]");
+      const res = await api("deposits&visitor_id=" + session.visitor_id);
+      if (!res.data?.length) return reply("🏦 Belum ada deposit.");
+      const list = res.data.slice(0, 10).map((d, i) => (i+1) + ". " + shortId(d.id) + " " + fmtRp(d.amount) + " [" + d.status + "] " + d.payment_method + "\\n   🆔 " + d.trx_id).join("\\n");
+      return reply("🏦 *Deposit Saya:*\\n\\n" + list);
+    }
+
+    if (command.startsWith("!buatdeposit")) {
+      if (!session) return reply("🔒 Login dulu: !login [user] [password]");
+      if (args.length < 1) return reply("⚠️ Gunakan: !buatdeposit [jumlah] [metode]\\nMetode: qris, dana, transfer\\nContoh: !buatdeposit 50000 qris");
+      const amount = Number(args[0]);
+      const method = args[1] || "qris";
+      if (!amount || amount < 1000) return reply("⚠️ Jumlah minimal Rp 1.000");
+      const res = await api("create_deposit", "POST", { visitor_id: session.visitor_id, username: session.username, amount, payment_method: method });
+      if (res.error) return reply("❌ " + res.error);
+      const d = res.data || {};
+      return reply("✅ *Deposit Dibuat!*\\n\\n🆔 " + (d.trx_id || "-") + "\\n💰 " + fmtRp(amount) + "\\n💳 Metode: " + method.toUpperCase() + "\\n\\n📸 Kirim bukti: balas foto lalu ketik !bukti " + (d.trx_id || "") + "\\n⏳ Status: pending — tunggu konfirmasi admin");
+    }
+
+    if (command.startsWith("!bukti")) {
+      if (!session) return reply("🔒 Login dulu: !login [user] [password]");
+      const trxId = args[0];
+      if (!trxId) return reply("⚠️ Gunakan: !bukti [trx_id]\\nKirim foto bukti transfer sebagai reply ke pesan ini.");
+      return reply("📸 *Bukti Deposit " + trxId + "*\\n\\nKirim foto bukti pembayaran ke admin langsung atau via tiket:\\n!buattiket Deposit | Bukti transfer " + trxId);
+    }
+
+    // ═══ DOWNLOAD RIWAYAT ═══
+    if (command.startsWith("!download_riwayat")) {
+      if (!session) return reply("🔒 Login dulu: !login [user] [password]");
+      const format = (args[0] || "txt").toLowerCase();
+      const res = await api("transactions&visitor_id=" + session.visitor_id);
+      if (!res.data?.length) return reply("📋 Belum ada transaksi.");
+      const txns = res.data.slice(0, 50);
+      let content = "Riwayat Transaksi " + session.username + "\\n" + "=".repeat(40) + "\\n\\n";
+      txns.forEach((t, i) => {
+        const date = new Date(t.created_at).toLocaleString("id-ID");
+        content += (i+1) + ". [" + t.type.toUpperCase() + "] " + fmtRp(t.amount) + "\\n";
+        content += "   " + (t.description || "-") + "\\n";
+        content += "   " + date + (t.trx_id ? " | " + t.trx_id : "") + "\\n\\n";
+      });
+      content += "\\nTotal: " + txns.length + " transaksi\\nDiekspor: " + new Date().toLocaleString("id-ID");
+      return reply("📋 *Riwayat Transaksi " + session.username + " (" + format.toUpperCase() + "):*\\n\\n" + content.slice(0, 3000));
     }
 
     // ═══ KLAIM VOUCHER (perlu login) ═══
@@ -1522,69 +1670,61 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
     if (command === "!admin") {
       if (!isAdmin(msg)) return reply("❌ Hanya admin yang bisa akses.");
       return reply([
-        "🔐 *Perintah Admin v8.0.0:*",
+        "🔐 *Perintah Admin v10.0.0:*",
         "",
-        "💡 Semua perintah admin sekarang pakai *username* bukan visitor_id!",
+        "💡 Semua perintah admin sekarang pakai *username*!",
         "",
         "💰 *Saldo:*",
         "• !saldo — Semua saldo user",
-        "• !tambahsaldo [username] [jumlah] — Tambah saldo",
-        "• !kurangsaldo [username] [jumlah] — Kurangi saldo",
-        "• !setsaldo [username] [jumlah] — Set saldo",
-        "• !resetsaldo [username] — Reset saldo ke 0",
+        "• !tambahsaldo [username] [jumlah]",
+        "• !kurangsaldo [username] [jumlah]",
+        "• !setsaldo [username] [jumlah]",
+        "• !resetsaldo [username]",
         "",
         "🏦 *Deposit:*",
         "• !deposit — Riwayat deposit",
-        "• !setdeposit [id] [status] — Ubah status deposit",
+        "• !setdeposit [id] [status]",
+        "• !konfirmasi [trx_id] — Konfirmasi deposit",
         "• !rekapdeposit — Rekap deposit",
+        "",
+        "🔐 *PIN & Token:*",
+        "• !buattoken [username] — Buat token reset PIN",
         "",
         "🎮 *Game:*",
         "• !game [username] — Stats game user",
         "• !kredit [username] — Kredit game user",
-        "• !setkredit [username] [jumlah] — Set kredit",
-        "• !resetkredit [username] — Reset kredit",
-        "• !resetgame [username] — Reset game stats",
-        "• !leaderboardadmin — Leaderboard detail",
+        "• !setkredit [username] [jumlah]",
+        "• !resetkredit [username]",
+        "• !resetgame [username]",
+        "• !leaderboardadmin",
         "",
         "🔥 *Streak:*",
-        "• !streak [username] — Status streak",
-        "• !setstreak [username] [jumlah] — Set streak",
-        "• !resetstreak [username] — Reset streak",
-        "• !streaksub [username] — Langganan streak",
+        "• !streak [username]",
+        "• !setstreak [username] [jumlah]",
+        "• !resetstreak [username]",
+        "• !streaksub [username]",
         "",
         "📦 *Produk & Sponsor:*",
-        "• !stok [id] [jumlah] — Stok produk",
-        "• !stoksponsor [id] [jumlah] — Stok sponsor",
+        "• !stok [id] [jumlah]",
+        "• !stoksponsor [id] [jumlah]",
         "",
         "👥 *User:*",
         "• !user [nama] — Cari user",
         "• !alluser — Semua user",
         "• !topuser — Top user saldo",
-        "• !detailuser [username] — Detail lengkap",
-        "• !loginhistory [username] — Riwayat login",
-        "• !transaksi [username] — Riwayat transaksi",
-        "",
-        "🎵 *Musik:*",
-        "• !musikprofil [username] — Profil musik",
-        "• !storage [username] — Storage musik",
-        "• !resetstorage [username] — Reset storage",
+        "• !detailuser [username]",
+        "• !loginhistory [username]",
+        "• !transaksi [username]",
         "",
         "📊 *Lainnya:*",
-        "• !profil [username] — Profil game",
-        "• !follow — Stats follow",
+        "• !notif [username] [isi]",
+        "• !broadcast [judul] | [isi]",
+        "• !hapusnotif [username]",
         "• !tiket — Tiket support",
-        "• !settiket [id] [status] — Status tiket",
-        "• !tiketdetail [id] — Detail tiket",
-        "• !chat — Chat produk",
-        "• !notif [username] [isi] — Kirim notif",
-        "• !broadcast [judul] | [isi] — Broadcast",
-        "• !hapusnotif [username] — Hapus notif user",
-        "• !likes — Stats likes",
-        "• !dashboard — Dashboard ringkas",
+        "• !settiket [id] [status]",
+        "• !dashboard — Dashboard",
         "• !report — Laporan",
-        "• !aktivitas — Aktivitas terbaru",
         "• !token — Daftar token",
-        "• !tokendetail [id] — Detail token",
       ].join("\\n"));
     }
 
@@ -2038,6 +2178,27 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
       return reply(txt);
     }
 
+    // ── ADMIN: KONFIRMASI DEPOSIT ──
+    if (command.startsWith("!konfirmasi")) {
+      if (!isAdmin(msg)) return reply("❌ Akses ditolak.");
+      if (!args[0]) return reply("⚠️ Gunakan: !konfirmasi [trx_id]");
+      const res = await api("confirm_deposit", "POST", { trx_id: args[0] });
+      if (res.error) return reply("❌ " + res.error);
+      return reply("✅ Deposit " + args[0] + " dikonfirmasi! Saldo user sudah ditambah.");
+    }
+
+    // ── ADMIN: BUAT TOKEN RESET PIN ──
+    if (command.startsWith("!buattoken")) {
+      if (!isAdmin(msg)) return reply("❌ Akses ditolak.");
+      if (!args[0]) return reply("⚠️ Gunakan: !buattoken [username]");
+      const user = await resolveVid(args[0]);
+      if (!user) return reply("❌ User '" + args[0] + "' tidak ditemukan.");
+      const token = "#" + String(Math.floor(10000 + Math.random() * 90000));
+      const res = await api("create_reset_token", "POST", { visitor_id: user.visitor_id, token: token.replace("#", ""), type: "pin" });
+      if (res.error) return reply("❌ " + res.error);
+      return reply("✅ *Token Reset PIN:*\\n\\n👤 User: " + user.username + "\\n🔑 Token: " + token + "\\n⏰ Berlaku 24 jam\\n\\n💡 User pakai: !resetpin " + token.replace("#", "") + " [pin_baru]");
+    }
+
     if (command === "!backup") {
       if (!isAdmin(msg)) return reply("❌ Akses ditolak.");
       return reply("💾 *Info Backup:*\\n\\nData tersimpan di Lovable Cloud (auto-backup).\\nSession bot: folder auth_session/\\nUntuk backup manual, download data dari dashboard admin.");
@@ -2066,8 +2227,8 @@ startBot().catch((error) => {
   function generatePackageJson() {
     return JSON.stringify({
       name: "bot-wa-agungadi",
-        version: "8.0.0",
-        description: "Bot WhatsApp Agung Adi Store - Full Feature: Game AI, Tiket, Like, Klaim, Kirim Lagu",
+        version: "10.0.0",
+        description: "Bot WhatsApp Agung Adi Store v10.0.0 - Full Feature",
       main: "index.js",
       scripts: {
         start: "node index.js",
@@ -2085,7 +2246,7 @@ startBot().catch((error) => {
   }
 
   function generateReadmeMd() {
-    return `# 🤖 Bot WhatsApp - Agung Adi Store v8.0.0
+    return `# 🤖 Bot WhatsApp - Agung Adi Store v10.0.0
 
 ## 📋 Persyaratan
 - Node.js >= 18
@@ -2458,7 +2619,7 @@ node index.js`}
                     <span><code>!belikredit</code> — Beli kredit</span>
                     <span><code>!belistorage</code> — Beli storage</span>
                     <span><code>!belibundle</code> — Beli bundle</span>
-                    <span><code>!setpin</code> — Set PIN sesi</span>
+                    <span><code>!buatpin</code> — Buat PIN</span>
                     <span><code>!grosir [nama]</code> — Harga grosir</span>
                     <span><code>!flashsale</code> — Info flash sale</span>
                     <span><code>!produk</code> — Daftar produk</span>
