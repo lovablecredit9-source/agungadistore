@@ -8,7 +8,7 @@
 //   3. Pilih 1 = Scan QR / 2 = Pairing nomor
 // =============================================
 
-const { default: makeWASocket, useMultiFileAuthState, DisconnectReason, fetchLatestBaileysVersion } = require("@whiskeysockets/baileys");
+const { default: makeWASocket, useMultiFileAuthState, DisconnectReason, fetchLatestBaileysVersion, downloadMediaMessage } = require("@whiskeysockets/baileys");
 const pino = require("pino");
 const qrcode = require("qrcode-terminal");
 const readline = require("readline/promises");
