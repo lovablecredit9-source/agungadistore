@@ -211,7 +211,7 @@ ${"```"}
 - ADMIN_NUMBERS — Daftar nomor admin
 
 ## 📱 Perintah
-Kirim !help di chat untuk melihat semua perintah.
+Kirim !menu / .menu / /menu di chat untuk melihat semua perintah.
 
 ---
 _© 2026 Agung Adi Store_
@@ -253,7 +253,7 @@ node index.js
 # Masukkan kode yang tampil (biasanya berlaku sekitar 30 detik)
 
 # LANGKAH 7: Test bot
-# Kirim pesan "!help" ke nomor WA yang terhubung
+# Kirim pesan "!menu" atau ".menu" atau "/menu" ke nomor WA yang terhubung
 # Bot akan membalas dengan daftar perintah
 
 # =============================================
@@ -521,7 +521,7 @@ node index.js`}
                 <CardContent className="p-2">
                   <p className="text-[11px] font-bold text-blue-700 mb-1">📌 Perintah USER ({45} perintah):</p>
                   <div className="grid grid-cols-2 gap-1 text-[10px]">
-                    <span><code>!help</code> — Menu bantuan</span>
+                    <span><code>!menu</code>/<code>.menu</code>/<code>/menu</code> — Menu bantuan</span>
                     <span><code>!login</code> — Login akun</span>
                     <span><code>!logout</code> — Logout akun</span>
                     <span><code>!saldoku</code> — Cek saldo</span>
