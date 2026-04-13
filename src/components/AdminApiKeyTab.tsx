@@ -1238,6 +1238,52 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
       }
     }
 
+    // ═══ DEPOSIT USER ═══
+    if (command === "!depositku") {
+      if (!session) return reply("🔒 Login dulu: !login [user] [password]");
+      const res = await api("deposits&visitor_id=" + session.visitor_id);
+      if (!res.data?.length) return reply("🏦 Belum ada deposit.");
+      const list = res.data.slice(0, 10).map((d, i) => (i+1) + ". " + shortId(d.id) + " " + fmtRp(d.amount) + " [" + d.status + "] " + d.payment_method + "\\n   🆔 " + d.trx_id).join("\\n");
+      return reply("🏦 *Deposit Saya:*\\n\\n" + list);
+    }
+
+    if (command.startsWith("!buatdeposit")) {
+      if (!session) return reply("🔒 Login dulu: !login [user] [password]");
+      if (args.length < 1) return reply("⚠️ Gunakan: !buatdeposit [jumlah] [metode]\\nMetode: qris, dana, transfer\\nContoh: !buatdeposit 50000 qris");
+      const amount = Number(args[0]);
+      const method = args[1] || "qris";
+      if (!amount || amount < 1000) return reply("⚠️ Jumlah minimal Rp 1.000");
+      const res = await api("create_deposit", "POST", { visitor_id: session.visitor_id, username: session.username, amount, payment_method: method });
+      if (res.error) return reply("❌ " + res.error);
+      const d = res.data || {};
+      return reply("✅ *Deposit Dibuat!*\\n\\n🆔 " + (d.trx_id || "-") + "\\n💰 " + fmtRp(amount) + "\\n💳 Metode: " + method.toUpperCase() + "\\n\\n📸 Kirim bukti: balas foto lalu ketik !bukti " + (d.trx_id || "") + "\\n⏳ Status: pending — tunggu konfirmasi admin");
+    }
+
+    if (command.startsWith("!bukti")) {
+      if (!session) return reply("🔒 Login dulu: !login [user] [password]");
+      const trxId = args[0];
+      if (!trxId) return reply("⚠️ Gunakan: !bukti [trx_id]\\nKirim foto bukti transfer sebagai reply ke pesan ini.");
+      return reply("📸 *Bukti Deposit " + trxId + "*\\n\\nKirim foto bukti pembayaran ke admin langsung atau via tiket:\\n!buattiket Deposit | Bukti transfer " + trxId);
+    }
+
+    // ═══ DOWNLOAD RIWAYAT ═══
+    if (command.startsWith("!download_riwayat")) {
+      if (!session) return reply("🔒 Login dulu: !login [user] [password]");
+      const format = (args[0] || "txt").toLowerCase();
+      const res = await api("transactions&visitor_id=" + session.visitor_id);
+      if (!res.data?.length) return reply("📋 Belum ada transaksi.");
+      const txns = res.data.slice(0, 50);
+      let content = "Riwayat Transaksi " + session.username + "\\n" + "=".repeat(40) + "\\n\\n";
+      txns.forEach((t, i) => {
+        const date = new Date(t.created_at).toLocaleString("id-ID");
+        content += (i+1) + ". [" + t.type.toUpperCase() + "] " + fmtRp(t.amount) + "\\n";
+        content += "   " + (t.description || "-") + "\\n";
+        content += "   " + date + (t.trx_id ? " | " + t.trx_id : "") + "\\n\\n";
+      });
+      content += "\\nTotal: " + txns.length + " transaksi\\nDiekspor: " + new Date().toLocaleString("id-ID");
+      return reply("📋 *Riwayat Transaksi " + session.username + " (" + format.toUpperCase() + "):*\\n\\n" + content.slice(0, 3000));
+    }
+
     // ═══ KLAIM VOUCHER (perlu login) ═══
     if (command.startsWith("!klaim ")) {
       if (!session) return reply("🔒 Login dulu: !login [user] [password]");
@@ -1624,69 +1670,61 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
     if (command === "!admin") {
       if (!isAdmin(msg)) return reply("❌ Hanya admin yang bisa akses.");
       return reply([
-        "🔐 *Perintah Admin v8.0.0:*",
+        "🔐 *Perintah Admin v10.0.0:*",
         "",
-        "💡 Semua perintah admin sekarang pakai *username* bukan visitor_id!",
+        "💡 Semua perintah admin sekarang pakai *username*!",
         "",
         "💰 *Saldo:*",
         "• !saldo — Semua saldo user",
-        "• !tambahsaldo [username] [jumlah] — Tambah saldo",
-        "• !kurangsaldo [username] [jumlah] — Kurangi saldo",
-        "• !setsaldo [username] [jumlah] — Set saldo",
-        "• !resetsaldo [username] — Reset saldo ke 0",
+        "• !tambahsaldo [username] [jumlah]",
+        "• !kurangsaldo [username] [jumlah]",
+        "• !setsaldo [username] [jumlah]",
+        "• !resetsaldo [username]",
         "",
         "🏦 *Deposit:*",
         "• !deposit — Riwayat deposit",
-        "• !setdeposit [id] [status] — Ubah status deposit",
+        "• !setdeposit [id] [status]",
+        "• !konfirmasi [trx_id] — Konfirmasi deposit",
         "• !rekapdeposit — Rekap deposit",
+        "",
+        "🔐 *PIN & Token:*",
+        "• !buattoken [username] — Buat token reset PIN",
         "",
         "🎮 *Game:*",
         "• !game [username] — Stats game user",
         "• !kredit [username] — Kredit game user",
-        "• !setkredit [username] [jumlah] — Set kredit",
-        "• !resetkredit [username] — Reset kredit",
-        "• !resetgame [username] — Reset game stats",
-        "• !leaderboardadmin — Leaderboard detail",
+        "• !setkredit [username] [jumlah]",
+        "• !resetkredit [username]",
+        "• !resetgame [username]",
+        "• !leaderboardadmin",
         "",
         "🔥 *Streak:*",
-        "• !streak [username] — Status streak",
-        "• !setstreak [username] [jumlah] — Set streak",
-        "• !resetstreak [username] — Reset streak",
-        "• !streaksub [username] — Langganan streak",
+        "• !streak [username]",
+        "• !setstreak [username] [jumlah]",
+        "• !resetstreak [username]",
+        "• !streaksub [username]",
         "",
         "📦 *Produk & Sponsor:*",
-        "• !stok [id] [jumlah] — Stok produk",
-        "• !stoksponsor [id] [jumlah] — Stok sponsor",
+        "• !stok [id] [jumlah]",
+        "• !stoksponsor [id] [jumlah]",
         "",
         "👥 *User:*",
         "• !user [nama] — Cari user",
         "• !alluser — Semua user",
         "• !topuser — Top user saldo",
-        "• !detailuser [username] — Detail lengkap",
-        "• !loginhistory [username] — Riwayat login",
-        "• !transaksi [username] — Riwayat transaksi",
-        "",
-        "🎵 *Musik:*",
-        "• !musikprofil [username] — Profil musik",
-        "• !storage [username] — Storage musik",
-        "• !resetstorage [username] — Reset storage",
+        "• !detailuser [username]",
+        "• !loginhistory [username]",
+        "• !transaksi [username]",
         "",
         "📊 *Lainnya:*",
-        "• !profil [username] — Profil game",
-        "• !follow — Stats follow",
+        "• !notif [username] [isi]",
+        "• !broadcast [judul] | [isi]",
+        "• !hapusnotif [username]",
         "• !tiket — Tiket support",
-        "• !settiket [id] [status] — Status tiket",
-        "• !tiketdetail [id] — Detail tiket",
-        "• !chat — Chat produk",
-        "• !notif [username] [isi] — Kirim notif",
-        "• !broadcast [judul] | [isi] — Broadcast",
-        "• !hapusnotif [username] — Hapus notif user",
-        "• !likes — Stats likes",
-        "• !dashboard — Dashboard ringkas",
+        "• !settiket [id] [status]",
+        "• !dashboard — Dashboard",
         "• !report — Laporan",
-        "• !aktivitas — Aktivitas terbaru",
         "• !token — Daftar token",
-        "• !tokendetail [id] — Detail token",
       ].join("\\n"));
     }
 
