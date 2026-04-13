@@ -45,6 +45,11 @@ const userSessions = {};
 // === PIN PENDING STATE (per nomor WA) — untuk flow interaktif ===
 const pinPending = {};
 
+// === FLOW CHAT INTERAKTIF ===
+const chatFlows = {};
+const pendingDeposits = {};
+const MAX_TEXT_CHUNK = 3500;
+
 // === GAME TIMER WARNINGS ===
 const gameTimerWarnings = {};
 
@@ -112,6 +117,125 @@ const api = async (ep, method, body) => {
   const r = await fetch(BASE + "?endpoint=" + ep, opt);
   return r.json();
 };
+
+async function sendLongMessage(client, jid, text, quoted) {
+  const message = String(text || "").trim();
+  if (!message) return;
+  if (message.length <= MAX_TEXT_CHUNK) {
+    await client.sendMessage(jid, { text: message }, { quoted });
+    return;
+  }
+
+  let rest = message;
+  while (rest.length > MAX_TEXT_CHUNK) {
+    let cut = rest.lastIndexOf("\n", MAX_TEXT_CHUNK);
+    if (cut < 1200) cut = MAX_TEXT_CHUNK;
+    await client.sendMessage(jid, { text: rest.slice(0, cut).trim() }, { quoted });
+    rest = rest.slice(cut).trim();
+  }
+
+  if (rest) {
+    await client.sendMessage(jid, { text: rest }, { quoted });
+  }
+}
+
+function parseResetToken(value) {
+  const cleaned = String(value || "").trim();
+  if (!/^#?\d{5}$/.test(cleaned)) return null;
+  return cleaned.replace("#", "");
+}
+
+async function fetchPaymentSettings() {
+  const res = await api("admin_settings");
+  const rows = res.data || [];
+  const settings = Object.fromEntries(rows.map((row) => [row.setting_key, row.setting_value || ""]));
+  let ewallets = [];
+  try { ewallets = JSON.parse(settings.ewallets || "[]"); } catch { ewallets = []; }
+  const dana = ewallets.find((item) => String(item.name || "").toLowerCase().includes("dana"));
+  return {
+    qrisUrl: settings.qris_url || "",
+    danaName: dana?.name || "DANA",
+    danaNumber: dana?.number || "085769302532",
+  };
+}
+
+async function getLatestPendingDeposit(session, remoteJid) {
+  if (!session?.visitor_id) return null;
+  const res = await api("deposits");
+  const deposit = (res.data || [])
+    .filter((dep) => dep.visitor_id === session.visitor_id && String(dep.status || "").toLowerCase() === "pending")
+    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())[0] || null;
+  if (deposit) pendingDeposits[remoteJid] = deposit;
+  else delete pendingDeposits[remoteJid];
+  return deposit;
+}
+
+async function sendDepositInstructions(client, remoteJid, quotedMsg, deposit) {
+  const settings = await fetchPaymentSettings();
+  const method = String(deposit.payment_method || "").trim().toUpperCase();
+  const lines = [
+    "✅ *Deposit Dibuat!*",
+    "",
+    "🆔 ID: " + (deposit.trx_id || "-"),
+    "💰 Nominal: " + fmtRp(deposit.amount),
+    "💳 Metode: " + method,
+    "📌 Status: PENDING",
+    "",
+  ];
+
+  if (method === "QRIS") {
+    lines.push("📱 *Pembayaran QRIS*", "Scan QRIS di bawah ini. Ini sama seperti QRIS yang tampil di web.");
+    if (settings.qrisUrl) {
+      lines.push("", "📸 Setelah bayar ketik *bukti* lalu kirim foto bukti transfer.", "📋 Cek status: !cekdeposit " + (deposit.trx_id || ""));
+      await client.sendMessage(remoteJid, {
+        image: { url: settings.qrisUrl },
+        caption: lines.join("\n"),
+      }, { quoted: quotedMsg });
+      return;
+    }
+    lines.push("QRIS belum diatur admin. Sementara buka web: " + WEB_URL);
+  } else {
+    lines.push(
+      "📱 *Pembayaran " + method + "*",
+      "Transfer ke akun berikut:",
+      "👤 Nama: " + settings.danaName,
+      "📞 Nomor: " + settings.danaNumber,
+      "",
+      "📸 Setelah bayar ketik *bukti* lalu kirim foto bukti transfer.",
+      "📋 Cek status: !cekdeposit " + (deposit.trx_id || "")
+    );
+  }
+
+  await sendLongMessage(client, remoteJid, lines.join("\n"), quotedMsg);
+}
+
+async function sendDepositProofToAdmin(client, remoteJid, msg, session, deposit) {
+  const buffer = await client.downloadMediaMessage(msg);
+  if (!buffer) throw new Error("Bukti pembayaran kosong");
+
+  const caption = [
+    "📥 *BUKTI BAYAR DEPOSIT*",
+    "",
+    "👤 Username: " + (session?.username || deposit.username || "-"),
+    "📞 WA User: " + remoteJid.replace("@s.whatsapp.net", ""),
+    "🆔 ID Deposit: " + (deposit.trx_id || "-"),
+    "💰 Nominal: " + fmtRp(deposit.amount),
+    "💳 Metode: " + String(deposit.payment_method || "-").toUpperCase(),
+    "",
+    "Admin: !konfirmasi " + (deposit.trx_id || "") + " / !tolakdeposit " + (deposit.trx_id || ""),
+  ].join("\n");
+
+  for (const adminJid of ADMIN_NUMBERS) {
+    await client.sendMessage(adminJid, { image: buffer, caption });
+  }
+
+  await api("notifications", "POST", {
+    visitor_id: deposit.visitor_id,
+    title: "Bukti deposit dikirim",
+    message: "Bukti pembayaran untuk deposit " + (deposit.trx_id || "-") + " sudah dikirim via WhatsApp.",
+    type: "info"
+  });
+}
 
 // Helper: resolve username/identifier to visitor_id
 async function resolveVid(identifier) {
@@ -304,12 +428,21 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
       msg.message.extendedTextMessage?.text ||
       msg.message.imageMessage?.caption ||
       "";
+    const plainText = text.trim();
+    const lowerText = plainText.toLowerCase();
+
+    const session = userSessions[remoteJid] || null;
+    const senderPhone = remoteJid.replace("@s.whatsapp.net", "");
+    const command = lowerText;
+    const rawArgs = plainText.split(/\s+/).slice(1);
+    const args = rawArgs;
+    const reply = async (t) => sendLongMessage(client, remoteJid, t, msg);
 
     // Handle pending PIN input (for purchases)
-    if (pinPending[remoteJid] && !text.startsWith("!")) {
+    if (pinPending[remoteJid] && !plainText.startsWith("!")) {
       const pending = pinPending[remoteJid];
       delete pinPending[remoteJid];
-      const pinInput = text.trim();
+      const pinInput = plainText;
       if (!/^\d{6}$/.test(pinInput)) {
         return client.sendMessage(remoteJid, { text: "❌ PIN harus 6 digit angka.\n\n🔄 Ulangi perintah pembelian." }, { quoted: msg });
       }
@@ -331,14 +464,130 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
       }
     }
 
-    if (!text.startsWith("!") && !userSessions[remoteJid + "_game"]) return;
+    if (chatFlows[remoteJid] && !plainText.startsWith("!")) {
+      const flow = chatFlows[remoteJid];
 
-    const command = text.trim().toLowerCase();
-    const rawArgs = text.trim().split(/\s+/).slice(1);
-    const args = rawArgs;
-    const reply = async (t) => client.sendMessage(remoteJid, { text: t }, { quoted: msg });
-    const session = userSessions[remoteJid] || null;
-    const senderPhone = remoteJid.replace("@s.whatsapp.net", "");
+      if (!session) {
+        delete chatFlows[remoteJid];
+        return reply("🔒 Sesi login tidak ditemukan. Silakan login lagi dengan !login [user] [password]");
+      }
+
+      if (flow.type === "create_pin") {
+        if (!/^\d{6}$/.test(plainText)) return reply("⚠️ PIN harus 6 digit angka.\nKirim lagi PIN baru kamu, contoh: 123456");
+        const pinCheck = await api("check_pin", "POST", { visitor_id: session.visitor_id });
+        if (pinCheck.hasPin) {
+          delete chatFlows[remoteJid];
+          return reply("ℹ️ PIN kamu sudah pernah dibuat. Gunakan *!resetpin* kalau ingin ganti PIN.");
+        }
+        const res = await api("create_pin", "POST", { visitor_id: session.visitor_id, pin: plainText });
+        if (res.error) return reply("❌ " + res.error);
+        delete chatFlows[remoteJid];
+        return reply("✅ *PIN Berhasil Dibuat!*\n\n🔐 PIN: " + plainText + "\n\n⚠️ Simpan PIN ini baik-baik.");
+      }
+
+      if (flow.type === "deposit_amount") {
+        const amount = Number(plainText.replace(/[^\d]/g, ""));
+        if (!amount || amount < 1000) return reply("⚠️ Nominal deposit minimal Rp 1.000.\nMasukkan nominal lagi, contoh: 50000");
+        chatFlows[remoteJid] = { type: "deposit_method", amount };
+        return reply("💳 *Pilih Metode Deposit*\n\nNominal: " + fmtRp(amount) + "\n\nKetik salah satu:\n• qris\n• dana");
+      }
+
+      if (flow.type === "deposit_method") {
+        if (!["qris", "dana"].includes(lowerText)) return reply("⚠️ Metode tidak valid. Ketik *qris* atau *dana*.");
+        const res = await api("create_deposit", "POST", { visitor_id: session.visitor_id, amount: flow.amount, payment_method: lowerText.toUpperCase(), username: session.username });
+        if (res.error) return reply("❌ " + res.error);
+        const dep = res.data || res;
+        pendingDeposits[remoteJid] = dep;
+        delete chatFlows[remoteJid];
+        await sendDepositInstructions(client, remoteJid, msg, dep);
+        return;
+      }
+
+      if (flow.type === "resetpin_wait_method") {
+        const token = parseResetToken(plainText);
+        if (lowerText === "lama") {
+          chatFlows[remoteJid] = { type: "resetpin_wait_old" };
+          return reply("🔐 Kirim PIN lama kamu sekarang (6 digit).");
+        }
+        if (!token) return reply("⚠️ Kirim token reset format *#12345* atau ketik *LAMA* untuk pakai PIN lama.");
+        chatFlows[remoteJid] = { type: "resetpin_wait_new", token };
+        return reply("🔐 Token diterima. Sekarang kirim PIN baru kamu (6 digit).");
+      }
+
+      if (flow.type === "resetpin_wait_old") {
+        if (!/^\d{6}$/.test(plainText)) return reply("⚠️ PIN lama harus 6 digit angka.");
+        chatFlows[remoteJid] = { type: "resetpin_wait_new", oldPin: plainText };
+        return reply("🔐 PIN lama diterima. Sekarang kirim PIN baru kamu (6 digit).");
+      }
+
+      if (flow.type === "resetpin_wait_new") {
+        if (!/^\d{6}$/.test(plainText)) return reply("⚠️ PIN baru harus 6 digit angka.");
+        const body = { visitor_id: session.visitor_id, new_pin: plainText };
+        if (flow.token) body.reset_token = flow.token;
+        if (flow.oldPin) body.old_pin = flow.oldPin;
+        const res = await api("reset_pin", "POST", body);
+        if (res.error) return reply("❌ " + res.error);
+        delete chatFlows[remoteJid];
+        return reply("✅ *PIN berhasil diperbarui!*\n\n🔐 PIN baru: " + plainText);
+      }
+
+      if (flow.type === "resetsandi_wait_method") {
+        const token = parseResetToken(plainText);
+        if (lowerText === "lama") {
+          chatFlows[remoteJid] = { type: "resetsandi_wait_old" };
+          return reply("🔑 Kirim password lama kamu sekarang.");
+        }
+        if (!token) return reply("⚠️ Kirim token reset format *#12345* atau ketik *LAMA* untuk pakai password lama.");
+        chatFlows[remoteJid] = { type: "resetsandi_wait_new", token };
+        return reply("🔑 Token diterima. Sekarang kirim password baru kamu.");
+      }
+
+      if (flow.type === "resetsandi_wait_old") {
+        if (!plainText) return reply("⚠️ Password lama tidak boleh kosong.");
+        chatFlows[remoteJid] = { type: "resetsandi_wait_new", oldPassword: plainText };
+        return reply("🔑 Password lama diterima. Sekarang kirim password baru kamu.");
+      }
+
+      if (flow.type === "resetsandi_wait_new") {
+        if (!plainText) return reply("⚠️ Password baru tidak boleh kosong.");
+        const body = { visitor_id: session.visitor_id, new_password: plainText };
+        if (flow.token) body.reset_token = flow.token;
+        if (flow.oldPassword) body.old_password = flow.oldPassword;
+        const res = await api("reset_password", "POST", body);
+        if (res.error) return reply("❌ " + res.error);
+        delete chatFlows[remoteJid];
+        return reply("✅ *Password berhasil diperbarui!*\n\n🔑 Password baru: " + plainText);
+      }
+    }
+
+    if ((lowerText === "bukti" || lowerText === "!bukti") && !msg.message?.imageMessage) {
+      if (!session) return reply("🔒 Login dulu: !login [user] [password]");
+      const deposit = await getLatestPendingDeposit(session, remoteJid);
+      if (!deposit) return reply("⚠️ Belum ada deposit pending. Ketik *!deposit* dulu untuk membuat deposit.");
+      pendingDeposits[remoteJid] = deposit;
+      return reply("📸 *Kirim Foto Bukti Bayar Sekarang*\n\n🆔 " + (deposit.trx_id || "-") + "\n💰 " + fmtRp(deposit.amount) + "\n💳 " + String(deposit.payment_method || "-").toUpperCase() + "\n\nSilakan kirim foto bukti pembayaran. Tidak perlu tulis ID transaksi lagi.");
+    }
+
+    if (msg.message?.imageMessage && session) {
+      const captionText = (msg.message.imageMessage.caption || "").trim().toLowerCase();
+      const isProofImage = !captionText || captionText === "bukti" || captionText === "!bukti" || captionText.startsWith("!bukti ");
+      if (isProofImage) {
+        let deposit = null;
+        if (captionText.startsWith("!bukti ")) {
+          const trxQuery = (msg.message.imageMessage.caption || "").trim().split(/\s+/).slice(1).join(" ").trim();
+          const depRes = await api("deposits");
+          deposit = (depRes.data || []).find((d) => d.visitor_id === session.visitor_id && (d.trx_id === trxQuery || String(d.trx_id || "").includes(trxQuery)));
+        }
+        if (!deposit) deposit = await getLatestPendingDeposit(session, remoteJid);
+        if (deposit) {
+          pendingDeposits[remoteJid] = deposit;
+          await sendDepositProofToAdmin(client, remoteJid, msg, session, deposit);
+          return reply("✅ Bukti pembayaran untuk *" + (deposit.trx_id || "-") + "* berhasil dikirim ke admin.\n\n⏳ Silakan tunggu verifikasi admin.");
+        }
+      }
+    }
+
+    if (!plainText.startsWith("!") && !userSessions[remoteJid + "_game"]) return;
 
     try {
     // ═══════════════════════════════════════
@@ -366,8 +615,8 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
         "• !saldoku — Cek saldo",
         "• !profilku — Lihat profil lengkap",
         "• !editprofil — Edit profil akun",
-        "• !resetsandi — Reset password",
-        "• !resetpin — Reset PIN",
+        "• !resetsandi — Bot akan minta sandi lama / token",
+        "• !resetpin — Bot akan minta PIN lama / token",
         "• !riwayat [jumlah] — Riwayat transaksi",
         "• !download_riwayat [pdf/word/txt] [semua/1-20]",
         "• !detailtrx [trx_id] — Detail transaksi",
@@ -388,8 +637,8 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
         "• ⚠️ PIN diminta setiap transaksi (tidak disimpan)",
         "",
         "💰 *Deposit:*",
-        "• !deposit [jumlah] [qris/dana]",
-        "• !bukti — Upload bukti bayar (kirim foto)",
+        "• !deposit — Bot akan minta nominal & metode",
+        "• bukti / !bukti — Lalu kirim foto bukti bayar",
         "• !cekdeposit [ID transaksi]",
         "",
         "🎫 *Voucher & Streak (perlu login):*",
@@ -524,7 +773,7 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
         "📞 No HP: " + (res.data.phone || "-"),
         "📧 Email: " + (res.data.email || "-"),
         "💰 Saldo: " + fmtRp(res.data.balance),
-        "🔐 PIN: " + (hasPin ? "✅ Sudah dibuat" : "❌ Belum dibuat — Ketik !buatpin [6 digit]"),
+        "🔐 PIN: " + (hasPin ? "✅ Sudah dibuat" : "❌ Belum dibuat — Ketik !buatpin"),
         "",
         "📱 Nomor WA: " + senderPhone,
         "",
@@ -541,8 +790,18 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
     }
 
     // ═══ BUAT PIN ═══
-    if (command.startsWith("!buatpin")) {
+    if (command === "!buatpin") {
       if (!session) return reply("🔒 Login dulu: !login [user] [password]");
+      const pinCheck = await api("check_pin", "POST", { visitor_id: session.visitor_id });
+      if (pinCheck.hasPin) return reply("ℹ️ PIN kamu sudah pernah dibuat. Gunakan *!resetpin* kalau ingin ganti PIN.");
+      chatFlows[remoteJid] = { type: "create_pin" };
+      return reply("🔐 *Buat PIN Baru*\n\nKirim 6 digit PIN transaksi kamu sekarang.\nContoh: 123456");
+    }
+
+    if (command.startsWith("!buatpin ")) {
+      if (!session) return reply("🔒 Login dulu: !login [user] [password]");
+      const pinCheck = await api("check_pin", "POST", { visitor_id: session.visitor_id });
+      if (pinCheck.hasPin) return reply("ℹ️ PIN kamu sudah pernah dibuat. Gunakan *!resetpin* kalau ingin ganti PIN.");
       const pinVal = args[0];
       if (!pinVal || !/^\d{6}$/.test(pinVal)) return reply("⚠️ PIN harus *6 digit angka*.\nGunakan: !buatpin 123456");
       const res = await api("create_pin", "POST", { visitor_id: session.visitor_id, pin: pinVal });
@@ -563,21 +822,8 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
     // ═══ RESET PIN ═══
     if (command === "!resetpin") {
       if (!session) return reply("🔒 Login dulu: !login [user] [password]");
-      return reply([
-        "🔐 *Reset PIN*",
-        "",
-        "Pilih metode reset:",
-        "",
-        "1️⃣ *Pakai PIN lama:*",
-        "   !resetpin lama [pin_lama] [pin_baru]",
-        "   Contoh: !resetpin lama 123456 654321",
-        "",
-        "2️⃣ *Pakai token admin:*",
-        "   !resetpin token [#token] [pin_baru]",
-        "   Contoh: !resetpin token #12345 654321",
-        "",
-        "💡 Minta token reset ke admin jika lupa PIN.",
-      ].join("\n"));
+      chatFlows[remoteJid] = { type: "resetpin_wait_method" };
+      return reply("🔐 *Reset PIN*\n\nKirim token reset admin (contoh: #12345)\natau ketik *LAMA* untuk pakai PIN lama.\n\nSetelah itu bot akan minta PIN baru.");
     }
 
     if (command.startsWith("!resetpin lama")) {
@@ -605,21 +851,8 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
     // ═══ RESET SANDI ═══
     if (command === "!resetsandi") {
       if (!session) return reply("🔒 Login dulu: !login [user] [password]");
-      return reply([
-        "🔑 *Reset Password*",
-        "",
-        "Pilih metode:",
-        "",
-        "1️⃣ *Pakai password lama:*",
-        "   !resetsandi lama [password_lama] [password_baru]",
-        "   Contoh: !resetsandi lama pass123 newpass456",
-        "",
-        "2️⃣ *Pakai token admin:*",
-        "   !resetsandi token [#token] [password_baru]",
-        "   Contoh: !resetsandi token #12345 newpass456",
-        "",
-        "💡 Minta token reset ke admin.",
-      ].join("\n"));
+      chatFlows[remoteJid] = { type: "resetsandi_wait_method" };
+      return reply("🔑 *Reset Password*\n\nKirim token reset admin (contoh: #12345)\natau ketik *LAMA* untuk pakai password lama.\n\nSetelah itu bot akan minta password baru.");
     }
 
     if (command.startsWith("!resetsandi lama")) {
@@ -865,23 +1098,24 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
     }
 
     // ═══ DEPOSIT ═══
-    if (command.startsWith("!deposit")) {
+    if (command === "!deposit" || command === "!buatdeposit") {
       if (!session) return reply("🔒 Login dulu: !login [user] [password]");
-      if (args.length < 2) return reply("⚠️ Gunakan: !deposit [jumlah] [qris/dana]\n\nContoh:\n• !deposit 50000 qris\n• !deposit 100000 dana");
+      chatFlows[remoteJid] = { type: "deposit_amount" };
+      return reply("💰 *Buat Deposit*\n\nMasukkan nominal deposit sekarang.\nContoh: 50000");
+    }
+
+    if (command.startsWith("!deposit ") || command.startsWith("!buatdeposit ")) {
+      if (!session) return reply("🔒 Login dulu: !login [user] [password]");
+      if (args.length < 2) return reply("⚠️ Cukup ketik *!deposit* lalu bot akan minta nominal dan metode pembayaran.");
       const amount = Number(args[0]);
       const method = (args[1] || "qris").toUpperCase();
       if (!amount || amount < 1000) return reply("⚠️ Minimal deposit Rp 1.000");
       const res = await api("create_deposit", "POST", { visitor_id: session.visitor_id, amount, payment_method: method, username: session.username });
       if (res.error) return reply("❌ " + res.error);
       const dep = res.data || res;
-      let txt = "✅ *Deposit Dibuat!*\n\n🆔 ID: " + (dep.trx_id || "-") + "\n💰 Nominal: " + fmtRp(amount) + "\n💳 Metode: " + method + "\n📌 Status: Pending\n";
-      if (method === "QRIS") {
-        txt += "\n📱 *Pembayaran QRIS:*\nSilakan scan QRIS yang tersedia di website atau hubungi admin.";
-      } else if (method === "DANA") {
-        txt += "\n📱 *Pembayaran DANA:*\nTransfer ke nomor DANA admin:\n📞 085769302532\n👤 Agung Adi Store";
-      }
-      txt += "\n\n📸 Setelah bayar, kirim bukti: !bukti (kirim foto)\n📋 Cek status: !cekdeposit " + (dep.trx_id || "");
-      return reply(txt);
+      pendingDeposits[remoteJid] = dep;
+      await sendDepositInstructions(client, remoteJid, msg, dep);
+      return;
     }
 
     // ═══ CEK DEPOSIT ═══
@@ -890,7 +1124,7 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
       const trxId = args[0];
       if (!trxId) return reply("⚠️ Gunakan: !cekdeposit [ID transaksi]\nContoh: !cekdeposit DEP-ABC123");
       const res = await api("deposits");
-      const dep = (res.data || []).find((d) => d.trx_id === trxId || d.trx_id.includes(trxId));
+      const dep = (res.data || []).find((d) => d.visitor_id === session.visitor_id && (d.trx_id === trxId || d.trx_id.includes(trxId)));
       if (!dep) return reply("❌ Deposit tidak ditemukan: " + trxId);
       const statusIcon = dep.status === "approved" ? "✅" : dep.status === "rejected" ? "❌" : "⏳";
       return reply("🏦 *Status Deposit:*\n\n🆔 " + dep.trx_id + "\n💰 " + fmtRp(dep.amount) + "\n💳 " + dep.payment_method + "\n📌 Status: " + statusIcon + " " + dep.status.toUpperCase() + "\n📅 " + new Date(dep.created_at).toLocaleString("id-ID"));
@@ -899,29 +1133,10 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
     // ═══ BUKTI BAYAR (foto) ═══
     if (command === "!bukti") {
       if (!session) return reply("🔒 Login dulu: !login [user] [password]");
-      return reply("📸 *Upload Bukti Bayar:*\n\nKirim foto bukti pembayaran dengan caption:\n!bukti [ID transaksi]\n\nContoh: Kirim foto dengan caption !bukti DEP-ABC123\n\n💡 Bukti akan otomatis masuk ke admin untuk verifikasi.");
-    }
-
-    // Handle image with !bukti caption
-    if (msg.message?.imageMessage?.caption?.toLowerCase()?.startsWith("!bukti")) {
-      if (!session) return reply("🔒 Login dulu: !login [user] [password]");
-      const captionArgs = (msg.message.imageMessage.caption || "").split(/\s+/).slice(1);
-      const trxId = captionArgs[0] || "";
-      try {
-        const buffer = await client.downloadMediaMessage(msg);
-        if (buffer) {
-          // Send notification to admin about payment proof
-          await api("notifications", "POST", {
-            visitor_id: "admin",
-            title: "Bukti Bayar Deposit",
-            message: "User " + session.username + " mengirim bukti bayar" + (trxId ? " untuk " + trxId : "") + " via WhatsApp",
-            type: "info"
-          });
-          return reply("✅ Bukti pembayaran terkirim ke admin!" + (trxId ? "\n🆔 ID: " + trxId : "") + "\n\n⏳ Tunggu konfirmasi admin.");
-        }
-      } catch (e) {
-        return reply("❌ Gagal mengupload bukti. Coba lagi.");
-      }
+      const deposit = await getLatestPendingDeposit(session, remoteJid);
+      if (!deposit) return reply("⚠️ Belum ada deposit pending. Ketik *!deposit* dulu untuk membuat deposit.");
+      pendingDeposits[remoteJid] = deposit;
+      return reply("📸 *Kirim Foto Bukti Bayar*\n\n🆔 " + (deposit.trx_id || "-") + "\nSekarang kirim foto bukti pembayaran. Tidak perlu tulis ID transaksi lagi.");
     }
 
     // ═══ PURCHASE WITH PIN FLOW (TANPA SIMPAN SESI) ═══
@@ -1489,8 +1704,8 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
         "🛒 *Cara Belanja:*",
         "1. Daftar akun: !daftar [user] [hp] [email] [pass]",
         "2. Login: !login [user] [pass]",
-        "3. Buat PIN: !buatpin [6 digit]",
-        "4. Top up via deposit: !deposit [jumlah] [qris/dana]",
+        "3. Buat PIN: !buatpin",
+        "4. Top up via deposit: !deposit",
         "5. Lihat produk: !produk",
         "6. Beli: !beli #[ID] [jumlah]",
         "7. Masukkan PIN 6 digit saat diminta",
@@ -1502,8 +1717,9 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
         "• Lupa password? Ketik !resetsandi",
         "",
         "💰 *Deposit:*",
-        "• !deposit [jumlah] [qris/dana]",
-        "• Kirim bukti bayar: foto + caption !bukti [ID]",
+        "• Ketik !deposit lalu masukkan nominal",
+        "• Pilih metode: qris atau dana",
+        "• Ketik bukti lalu kirim foto bukti bayar",
         "• Cek status: !cekdeposit [ID]",
         "",
         "🎫 *Support:*",
@@ -1813,6 +2029,7 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
         "🎫 *Tiket:*",
         "• !tiket — Semua tiket",
         "• !tiketdetail [no]",
+        "• !lihatsemuatiket [no] — Semua chat admin/user",
         "• !settiket [no] [open/closed]",
         "• !adminbalas [no_tiket] [pesan]",
         "",
@@ -2149,7 +2366,7 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
       const res = await api("tickets");
       if (!res.data?.length) return reply("🎫 Tidak ada tiket.");
       const list = res.data.slice(0, 10).map((t, i) => (i+1) + ". #" + t.ticket_number + " [" + t.status + "] " + t.name + " — " + t.category).join("\n");
-      return reply("🎫 *Tiket Support:*\n\n" + list + "\n\n💡 Detail: !tiketdetail [no]\n✍️ Balas: !adminbalas [no] [pesan]\n📌 Status: !settiket [no] [open/closed]");
+      return reply("🎫 *Tiket Support:*\n\n" + list + "\n\n💡 Detail: !tiketdetail [no]\n👀 Semua chat: !lihatsemuatiket [no]\n✍️ Balas: !adminbalas [no] [pesan]\n📌 Status: !settiket [no] [open/closed]");
     }
 
     if (command.startsWith("!settiket")) {
@@ -2179,6 +2396,24 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
           txt += "\n" + (m.sender_type === "admin" ? "👨‍💼" : "👤") + " " + (m.message || "(foto)") + " — " + new Date(m.created_at).toLocaleString("id-ID");
         });
       }
+      return reply(txt);
+    }
+
+    if (command.startsWith("!lihatsemuatiket")) {
+      if (!isAdmin(msg)) return reply("❌ Akses ditolak.");
+      if (!args[0]) return reply("⚠️ Gunakan: !lihatsemuatiket [no_tiket]");
+      const tRes = await api("tickets");
+      const ticket = (tRes.data || []).find((x) => String(x.ticket_number) === args[0] || x.id === args[0]);
+      if (!ticket) return reply("❌ Tiket tidak ditemukan.");
+      const mRes = await api("ticket_messages&ticket_id=" + ticket.id);
+      const messages = mRes.data || [];
+      if (!messages.length) return reply("💬 Belum ada pesan di tiket #" + ticket.ticket_number);
+      let txt = "💬 *Semua Pesan Tiket #" + ticket.ticket_number + "*\n\n📛 " + ticket.name + "\n📂 " + ticket.category + "\n📌 Status: " + ticket.status + "\n" + "─".repeat(28);
+      messages.forEach((m, i) => {
+        txt += "\n\n" + (i + 1) + ". " + (m.sender_type === "admin" ? "👨‍💼 *Admin*" : "👤 *User*");
+        txt += "\n🕒 " + new Date(m.created_at).toLocaleString("id-ID");
+        txt += "\n💬 " + (m.message || "(foto)");
+      });
       return reply(txt);
     }
 
