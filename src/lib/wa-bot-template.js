@@ -646,17 +646,22 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
       const captionText = (msg.message.imageMessage.caption || "").trim().toLowerCase();
       const isProofImage = !captionText || captionText === "bukti" || captionText === "!bukti" || captionText.startsWith("!bukti ");
       if (isProofImage) {
-        let deposit = null;
-        if (captionText.startsWith("!bukti ")) {
-          const trxQuery = (msg.message.imageMessage.caption || "").trim().split(/\s+/).slice(1).join(" ").trim();
-          const depRes = await api("deposits");
-          deposit = (depRes.data || []).find((d) => d.visitor_id === session.visitor_id && (d.trx_id === trxQuery || String(d.trx_id || "").includes(trxQuery)));
-        }
-        if (!deposit) deposit = await getLatestPendingDeposit(session, remoteJid);
-        if (deposit) {
-          pendingDeposits[remoteJid] = deposit;
-          await sendDepositProofToAdmin(client, remoteJid, msg, session, deposit);
-          return reply("✅ Bukti pembayaran untuk *" + (deposit.trx_id || "-") + "* berhasil dikirim ke admin.\n\n⏳ Silakan tunggu verifikasi admin.");
+        try {
+          let deposit = null;
+          if (captionText.startsWith("!bukti ")) {
+            const trxQuery = (msg.message.imageMessage.caption || "").trim().split(/\s+/).slice(1).join(" ").trim();
+            const depRes = await api("deposits");
+            deposit = (depRes.data || []).find((d) => d.visitor_id === session.visitor_id && (d.trx_id === trxQuery || String(d.trx_id || "").includes(trxQuery)));
+          }
+          if (!deposit) deposit = await getLatestPendingDeposit(session, remoteJid);
+          if (deposit) {
+            pendingDeposits[remoteJid] = deposit;
+            await sendDepositProofToAdmin(client, remoteJid, msg, session, deposit);
+            return reply("✅ Bukti pembayaran untuk *" + (deposit.trx_id || "-") + "* berhasil dikirim ke admin.\n\n⏳ Silakan tunggu verifikasi admin.");
+          }
+        } catch (err) {
+          console.error("❌ Gagal kirim bukti bayar:", err?.message || err);
+          return reply("❌ Gagal mengirim bukti pembayaran: " + (err?.message || "Coba kirim ulang foto bukti bayar."));
         }
       }
     }
