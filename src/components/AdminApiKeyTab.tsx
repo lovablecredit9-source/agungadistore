@@ -187,6 +187,7 @@ async function hashPin(pin) {
 
 
 // === SESSION LOGIN USER (per nomor WA) ===
+// PIN TIDAK disimpan di sesi - harus input tiap transaksi
 const userSessions = {};
 
 async function askAuthMethod() {
@@ -332,7 +333,7 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
     }
 
     if (connection === "open") {
-      console.log("\\n✅ Bot WhatsApp sudah siap! (v8.0.0)");
+      console.log("\\n✅ Bot WhatsApp sudah siap! (v10.0.0)");
       console.log("📋 Kirim !help di chat untuk lihat perintah\\n");
       return;
     }
@@ -413,8 +414,8 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
     // ═══════════════════════════════════════
     // ═══ USER COMMANDS ═══
     // ═══════════════════════════════════════
-    if (command === "!ping") { return reply("🏓 Pong! Bot aktif v8.0.0"); }
-    if (command === "!versi") { return reply("🤖 Bot WA Agung Adi Store v8.0.0\\n📅 " + new Date().toLocaleString("id-ID")); }
+    if (command === "!ping") { return reply("🏓 Pong! Bot aktif v10.0.0"); }
+    if (command === "!versi") { return reply("🤖 Bot WA Agung Adi Store v10.0.0\\n📅 " + new Date().toLocaleString("id-ID")); }
     if (command === "!waktu") { return reply("🕐 Waktu server: " + new Date().toLocaleString("id-ID", { timeZone: "Asia/Jakarta" }) + " WIB"); }
 
     if (command === "!help" || command === "!menu") {
