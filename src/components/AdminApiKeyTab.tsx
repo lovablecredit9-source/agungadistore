@@ -135,7 +135,7 @@ const DEFAULT_PAIRING_PHONE = "${phoneNumber.replace(/[^0-9]/g, "")}";`
 const DEFAULT_PAIRING_PHONE = ""; // Opsional: nomor default pairing, format: 628xxxxxxxxxx`;
 
     return `// =============================================
-// 🤖 BOT WHATSAPP - Agung Adi Store v8.0.0
+// 🤖 BOT WHATSAPP - Agung Adi Store v10.0.0
 // =============================================
 // Library: @whiskeysockets/baileys (QR / Pairing Code)
 // Cara pakai:
@@ -172,6 +172,19 @@ function getDisconnectMessage(lastDisconnect) {
 const API_KEY = "${apiKey}";
 const BASE = "${baseUrl}";
 ${phoneConfig}
+
+// Short ID helper: UUID → #XXXXX
+const shortId = (uuid) => {
+  if (!uuid) return "#00000";
+  return "#" + String(parseInt(uuid.replace(/-/g, "").slice(0, 10), 16) % 100000).padStart(5, "0");
+};
+
+// Hash PIN helper (SHA-256)
+async function hashPin(pin) {
+  const { createHash } = require("crypto");
+  return createHash("sha256").update(pin).digest("hex");
+}
+
 
 // === SESSION LOGIN USER (per nomor WA) ===
 const userSessions = {};
