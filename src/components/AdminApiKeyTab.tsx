@@ -535,6 +535,16 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
       ].join("\\n"));
     }
 
+    // ═══ DAFTAR AKUN SALDO ═══
+    if (command.startsWith("!daftar")) {
+      if (args.length < 4) return reply("⚠️ Gunakan: !daftar [username] [no_hp] [email] [password]\\n\\nContoh: !daftar agung 08123456789 agung@gmail.com password123");
+      const [username, phone, email, ...passParts] = args;
+      const password = passParts.join(" ");
+      const res = await api("register", "POST", { username, phone, email, password });
+      if (res.error) return reply("❌ " + res.error);
+      return reply("✅ *Pendaftaran Berhasil!*\\n\\n👤 Username: " + username + "\\n📞 HP: " + phone + "\\n📧 Email: " + email + "\\n\\n💡 Sekarang login: !login " + username + " " + password);
+    }
+
     // ═══ LOGIN / LOGOUT USER ═══
     if (command.startsWith("!login")) {
       if (args.length < 2) return reply("⚠️ Gunakan: !login [username/email/hp] [password]\\n\\nContoh:\\n• !login agung password123\\n• !login agung@gmail.com password123\\n• !login 08123456789 password123");
@@ -551,6 +561,32 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
       if (!session) return reply("ℹ️ Kamu belum login. Ketik !login [user] [password]");
       delete userSessions[remoteJid];
       return reply("✅ Logout berhasil.");
+    }
+
+    if (command === "!logout") {
+      if (!session) return reply("ℹ️ Kamu belum login. Ketik !login [user] [password]");
+      delete userSessions[remoteJid];
+      return reply("✅ Logout berhasil.");
+    }
+
+    // ═══ EDIT PROFIL ═══
+    if (command.startsWith("!editprofil")) {
+      if (!session) return reply("🔒 Login dulu: !login [user] [password]");
+      if (args.length < 2) return reply("⚠️ Gunakan: !editprofil [field] [nilai]\\n\\nField: username, phone, email\\nContoh: !editprofil phone 08123456789");
+      const field = args[0].toLowerCase();
+      const value = args.slice(1).join(" ");
+      const res = await api("edit_profile", "POST", { visitor_id: session.visitor_id, field, value });
+      if (res.error) return reply("❌ " + res.error);
+      if (field === "username") session.username = value;
+      if (field === "phone") session.phone = value;
+      if (field === "email") session.email = value;
+      userSessions[remoteJid] = session;
+      return reply("✅ Profil berhasil diupdate!\\n📝 " + field + " → " + value);
+    }
+
+    // ═══ WEBAPP LINK ═══
+    if (command === "!webapp") {
+      return reply("🌐 *Kunjungi Website:*\\n\\nhttps://produkklaimtransaksiagungadistore.lovable.app\\n\\n💡 Akses semua fitur langsung di web!");
     }
 
     // ═══ USER LOGGED-IN COMMANDS ═══
