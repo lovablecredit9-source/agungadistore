@@ -489,17 +489,23 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
       }
 
       if (session) {
-        const cancelRes = await api("cancel_deposit", "POST", {
-          visitor_id: session.visitor_id,
-          trx_id: cancelTarget || pendingDeposits[remoteJid]?.trx_id || undefined,
-        });
-
-        if (!cancelRes.error && cancelRes.data?.deposit) {
-          delete pendingDeposits[remoteJid];
-          return reply("🚫 Deposit *" + cancelRes.data.deposit.trx_id + "* berhasil dibatalkan.");
+        // Jika ada deposit pending, wajib tulis ID transaksi
+        const currentPending = pendingDeposits[remoteJid] || await getLatestPendingDeposit(session, remoteJid);
+        if (currentPending && !cancelTarget) {
+          return reply("⚠️ Kamu memiliki deposit pending:\n\n🆔 *" + (currentPending.trx_id || "-") + "*\n💰 " + fmtRp(currentPending.amount) + "\n\nUntuk membatalkan, ketik:\n*batal " + (currentPending.trx_id || "") + "*\n\nAtau ketik *!cekdeposit* untuk cek status.");
         }
 
         if (cancelTarget) {
+          const cancelRes = await api("cancel_deposit", "POST", {
+            visitor_id: session.visitor_id,
+            trx_id: cancelTarget,
+          });
+
+          if (!cancelRes.error && cancelRes.data?.deposit) {
+            delete pendingDeposits[remoteJid];
+            return reply("🚫 Deposit *" + cancelRes.data.deposit.trx_id + "* berhasil dibatalkan.");
+          }
+
           return reply("❌ " + (cancelRes.error || "Deposit tidak bisa dibatalkan."));
         }
       }
