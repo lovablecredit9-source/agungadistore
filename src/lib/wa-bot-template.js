@@ -566,12 +566,15 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
             body: JSON.stringify(receiptData),
           });
           const receiptJson = await receiptRes.json();
-          if (receiptJson.svg_base64) {
-            const svgBuffer = Buffer.from(receiptJson.svg_base64, "base64");
+          if (receiptJson.image_base64) {
+            const imgBuffer = Buffer.from(receiptJson.image_base64, "base64");
+            const caption = "🧾 Bukti Transaksi — " + (receiptData.plan_name || receiptData.product_title || "Pembelian");
+            // Send as document since WA may not render SVG inline
             await client.sendMessage(remoteJid, {
-              image: svgBuffer,
-              caption: "🧾 Bukti Transaksi — " + (receiptData.plan_name || receiptData.product_title || "Pembelian"),
+              document: imgBuffer,
               mimetype: "image/svg+xml",
+              fileName: "receipt-" + Date.now() + ".svg",
+              caption: caption,
             }, { quoted: msg });
           }
         } catch (receiptErr) {
