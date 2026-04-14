@@ -1292,6 +1292,7 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
       return startPurchaseFlow("purchase_product", {
         visitor_id: session.visitor_id,
         product_id: product.id,
+        product_title: product.title,
         quantity: qty,
       }, (pd) => {
         let txt = "✅ *Pembelian Berhasil!*\n\n📦 " + (pd.product?.title || product.title) + "\n🆔 " + shortId(product.id) + "\n🔢 Jumlah: " + (pd.quantity || qty) + "\n💰 Total: " + fmtRp(pd.total_price) + "\n💳 Sisa Saldo: " + fmtRp(pd.balance_remaining);
@@ -1304,7 +1305,7 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
           });
         }
         return txt;
-      });
+      }, "purchase");
     }
 
     if (command.startsWith("!belistreak")) {
