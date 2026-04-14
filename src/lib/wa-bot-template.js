@@ -1320,7 +1320,7 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
       if (!pinCheck.data?.hasPin) return reply("🔐 *PIN belum dibuat!*\nKetik !buatpin [6 digit] untuk buat PIN.");
       return startPurchaseFlow("purchase_streak", { visitor_id: session.visitor_id, package_name: packageName }, (sd) => {
         return "✅ *Paket Streak Berhasil!*\n\n🔥 Paket: " + (sd.plan || packageName) + "\n📅 Aktif sampai: " + (sd.expires_at ? new Date(sd.expires_at).toLocaleString("id-ID") : "-") + "\n💳 Sisa Saldo: " + fmtRp(sd.balance_remaining) + (sd.discount_amount > 0 ? "\n🏷️ Diskon: " + fmtRp(sd.discount_amount) : "") + (sd.auto_claimed ? "\n✅ Streak hari ini otomatis diklaim!" : "");
-      });
+      }, "streak");
     }
 
     if (command.startsWith("!belikredit")) {
@@ -1335,7 +1335,7 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
       if (!pinCheck.data?.hasPin) return reply("🔐 *PIN belum dibuat!*\nKetik !buatpin [6 digit] untuk buat PIN.");
       return startPurchaseFlow("purchase_credits", { visitor_id: session.visitor_id, package_name: packageName }, (cd) => {
         return "✅ *Kredit Game Berhasil!*\n\n💎 " + (cd.plan || cd.label || packageName) + "\n💳 Sisa Saldo: " + fmtRp(cd.balance_remaining) + (cd.discount_amount > 0 ? "\n🏷️ Diskon: " + fmtRp(cd.discount_amount) : "");
-      });
+      }, "credit");
     }
 
     if (command.startsWith("!belistorage")) {
@@ -1350,7 +1350,7 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
       if (!pinCheck.data?.hasPin) return reply("🔐 *PIN belum dibuat!*\nKetik !buatpin [6 digit] untuk buat PIN.");
       return startPurchaseFlow("purchase_storage", { visitor_id: session.visitor_id, package_name: packageName }, (std) => {
         return "✅ *Storage Berhasil!*\n\n💾 " + (std.plan || packageName) + "\n💳 Sisa Saldo: " + fmtRp(std.balance_remaining) + (std.discount_amount > 0 ? "\n🏷️ Diskon: " + fmtRp(std.discount_amount) : "");
-      });
+      }, "storage");
     }
 
     if (command.startsWith("!belibundle")) {
@@ -1365,7 +1365,7 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
       if (!pinCheck.data?.hasPin) return reply("🔐 *PIN belum dibuat!*\nKetik !buatpin [6 digit] untuk buat PIN.");
       return startPurchaseFlow("purchase_bundle", { visitor_id: session.visitor_id, package_name: packageName }, (bd) => {
         return "✅ *Bundle Berhasil!*\n\n🎁 " + (bd.plan || packageName) + "\n💳 Sisa Saldo: " + fmtRp(bd.balance_remaining) + (bd.discount_amount > 0 ? "\n🏷️ Diskon: " + fmtRp(bd.discount_amount) : "");
-      });
+      }, "bundle");
     }
 
     // ── DETAIL TRANSAKSI ──
