@@ -1,8 +1,4 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.4";
-import { Resvg, initWasm } from "https://esm.sh/@aspect-dev/resvg-wasm@1.0.5";
-import resvgWasm from "https://esm.sh/@aspect-dev/resvg-wasm@1.0.5/resvg.wasm?module";
-
-let wasmInitialized = false;
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
