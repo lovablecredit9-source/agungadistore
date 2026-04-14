@@ -10,6 +10,8 @@
 
 const { default: makeWASocket, useMultiFileAuthState, DisconnectReason, fetchLatestBaileysVersion, downloadMediaMessage } = require("@whiskeysockets/baileys");
 const { Resvg } = require("@resvg/resvg-js");
+const fs = require("fs");
+const path = require("path");
 const pino = require("pino");
 const qrcode = require("qrcode-terminal");
 const readline = require("readline/promises");
@@ -18,6 +20,8 @@ const { stdin: input, stdout: output } = require("process");
 const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 const MAX_RECONNECT_ATTEMPTS = 8;
 const RECONNECT_DELAY_MS = 4000;
+const AUTH_SESSION_DIR = "./auth_session";
+const lidToPhoneMap = new Map();
 
 function normalizePhoneNumber(value) {
   return String(value || "").replace(/[^0-9]/g, "");
@@ -34,6 +38,148 @@ function isLikelyPublicPhoneNumber(value) {
   return /^(?:62|0)\d{8,13}$/.test(normalizePhoneNumber(value));
 }
 
+function rememberResolvedPhone(jid, phone) {
+  const normalizedPhone = normalizePhoneNumber(phone);
+  if (!jid || !isLikelyPublicPhoneNumber(normalizedPhone)) return "";
+
+  const normalizedJid = String(jid);
+  if (normalizedJid.includes("@lid")) {
+    lidToPhoneMap.set(normalizedJid, normalizedPhone);
+  }
+
+  return normalizedPhone;
+}
+
+function collectPhoneCandidates(values) {
+  return values
+    .map((value) => normalizePhoneNumber(value))
+    .filter((value, index, arr) => Boolean(value) && arr.indexOf(value) === index)
+    .filter((value) => isLikelyPublicPhoneNumber(value));
+}
+
+function walkLidMappings(payload, inheritedLid = "") {
+  const pairs = [];
+
+  if (!payload) return pairs;
+
+  if (Array.isArray(payload)) {
+    payload.forEach((entry) => pairs.push(...walkLidMappings(entry, inheritedLid)));
+    return pairs;
+  }
+
+  if (typeof payload !== "object") {
+    return pairs;
+  }
+
+  const objectPayload = payload;
+  const lidCandidates = [
+    inheritedLid,
+    objectPayload.id,
+    objectPayload.jid,
+    objectPayload.lid,
+    objectPayload.remoteJid,
+    objectPayload.chatId,
+  ]
+    .map((value) => String(value || "").trim())
+    .filter((value, index, arr) => value.includes("@lid") && arr.indexOf(value) === index);
+
+  const phoneCandidates = collectPhoneCandidates([
+    objectPayload.phoneNumber,
+    objectPayload.phone,
+    objectPayload.pn,
+    objectPayload.userPn,
+    objectPayload.participantPn,
+    objectPayload.notifyPhone,
+    extractDigitsFromWhatsAppId(objectPayload.phoneJid),
+    extractDigitsFromWhatsAppId(objectPayload.pnJid),
+    extractDigitsFromWhatsAppId(objectPayload.user),
+  ]);
+
+  if (lidCandidates.length && phoneCandidates.length) {
+    lidCandidates.forEach((lid) => pairs.push([lid, phoneCandidates[0]]));
+  }
+
+  for (const [key, value] of Object.entries(objectPayload)) {
+    const keyString = String(key || "").trim();
+    const nextInheritedLid = keyString.includes("@lid") ? keyString : lidCandidates[0] || inheritedLid;
+
+    if (typeof value === "string") {
+      const normalizedValue = normalizePhoneNumber(value);
+
+      if (keyString.includes("@lid") && isLikelyPublicPhoneNumber(normalizedValue)) {
+        pairs.push([keyString, normalizedValue]);
+      }
+
+      if (value.includes("@lid")) {
+        const normalizedKey = normalizePhoneNumber(keyString);
+        if (isLikelyPublicPhoneNumber(normalizedKey)) {
+          pairs.push([value, normalizedKey]);
+        }
+      }
+
+      if (nextInheritedLid && /(phone|(^|_)pn$|participantpn|userpn|phonenumber|number)$/i.test(keyString) && isLikelyPublicPhoneNumber(normalizedValue)) {
+        pairs.push([nextInheritedLid, normalizedValue]);
+      }
+
+      continue;
+    }
+
+    if (value && typeof value === "object") {
+      pairs.push(...walkLidMappings(value, nextInheritedLid));
+    }
+  }
+
+  return pairs;
+}
+
+function loadLidMapFromAuthSession() {
+  try {
+    if (!fs.existsSync(AUTH_SESSION_DIR)) return;
+
+    const files = fs.readdirSync(AUTH_SESSION_DIR).filter((fileName) => fileName.toLowerCase().includes("lid") && fileName.toLowerCase().endsWith(".json"));
+
+    files.forEach((fileName) => {
+      try {
+        const filePath = path.join(AUTH_SESSION_DIR, fileName);
+        const parsed = JSON.parse(fs.readFileSync(filePath, "utf8"));
+        walkLidMappings(parsed).forEach(([lid, phone]) => {
+          rememberResolvedPhone(lid, phone);
+        });
+      } catch (error) {
+        console.log("⚠️ Gagal membaca mapping LID:", fileName, error?.message || error);
+      }
+    });
+  } catch (error) {
+    console.log("⚠️ Gagal memuat cache nomor WhatsApp:", error?.message || error);
+  }
+}
+
+function rememberContactMappings(contacts = []) {
+  contacts.forEach((contact) => {
+    if (!contact || typeof contact !== "object") return;
+
+    const phoneCandidates = collectPhoneCandidates([
+      contact.phoneNumber,
+      contact.phone,
+      contact.pn,
+      contact.userPn,
+      contact.participantPn,
+      contact.notifyPhone,
+      extractDigitsFromWhatsAppId(contact.phoneJid),
+      extractDigitsFromWhatsAppId(contact.pnJid),
+      extractDigitsFromWhatsAppId(contact.user),
+      extractDigitsFromWhatsAppId(contact.id),
+      extractDigitsFromWhatsAppId(contact.jid),
+    ]);
+
+    if (!phoneCandidates.length) return;
+
+    [contact.id, contact.jid, contact.lid, contact.remoteJid, contact.chatId]
+      .filter(Boolean)
+      .forEach((jid) => rememberResolvedPhone(jid, phoneCandidates[0]));
+  });
+}
+
 function resolveSenderPhone(msg, remoteJid, session) {
   const messagePayloads = Object.values(msg?.message || {});
   const candidates = [
@@ -47,16 +193,23 @@ function resolveSenderPhone(msg, remoteJid, session) {
     ...messagePayloads.flatMap((entry) => [entry?.contextInfo?.participantPn, entry?.contextInfo?.participant]),
   ];
 
-  const publicNumber = candidates
-    .map((value) => normalizePhoneNumber(value))
-    .find((value) => isLikelyPublicPhoneNumber(value));
+  const publicNumber = collectPhoneCandidates(candidates)[0];
 
-  if (publicNumber) return publicNumber;
-  if (session?.phone) return normalizePhoneNumber(session.phone);
-  if (String(remoteJid || "").includes("@lid")) return "Nomor privat WhatsApp";
+  if (publicNumber) return rememberResolvedPhone(remoteJid, publicNumber) || publicNumber;
+
+  const cachedPhone = lidToPhoneMap.get(String(remoteJid || ""));
+  if (cachedPhone) return cachedPhone;
+
+  if (session?.phone) {
+    return rememberResolvedPhone(remoteJid, session.phone) || normalizePhoneNumber(session.phone);
+  }
 
   const fallback = extractDigitsFromWhatsAppId(remoteJid);
-  return fallback || "-";
+  if (isLikelyPublicPhoneNumber(fallback)) {
+    return fallback;
+  }
+
+  return String(remoteJid || "").includes("@lid") ? "Nomor WA belum sinkron" : (fallback || "-");
 }
 
 function formatPairingCode(code) {
@@ -371,6 +524,7 @@ function clearGameTimerWarnings(jid) {
 }
 
 async function connectToWhatsApp(authChoice, attempt = 0) {
+  loadLidMapFromAuthSession();
   const { state, saveCreds } = await useMultiFileAuthState("./auth_session");
   const { version } = await fetchLatestBaileysVersion();
   const client = makeWASocket({
@@ -382,6 +536,14 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
     markOnlineOnConnect: false,
     syncFullHistory: false,
     defaultQueryTimeoutMs: 60_000,
+  });
+
+  client.ev.on("contacts.upsert", (contacts) => {
+    rememberContactMappings(Array.isArray(contacts) ? contacts : []);
+  });
+
+  client.ev.on("contacts.update", (contacts) => {
+    rememberContactMappings(Array.isArray(contacts) ? contacts : []);
   });
 
   const phoneNum = normalizePhoneNumber(authChoice.phoneNum);
