@@ -1268,9 +1268,8 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
     // ═══ PURCHASE WITH PIN FLOW (TANPA SIMPAN SESI) ═══
 
     // Helper: start purchase flow - ask for PIN
-    function startPurchaseFlow(endpoint, body, successMsgFn) {
-      // Check if user has PIN first
-      pinPending[remoteJid] = { endpoint, body, successMsg: successMsgFn, session };
+    function startPurchaseFlow(endpoint, body, successMsgFn, receiptType) {
+      pinPending[remoteJid] = { endpoint, body, successMsg: successMsgFn, session, receiptType: receiptType || "purchase" };
       return reply("🔐 *Masukkan PIN 6 digit untuk konfirmasi:*\n\n(Ketik PIN langsung, contoh: 123456)\n\n❌ PIN salah? Ketik !resetpin untuk reset\n🚫 Batal? Ketik *batal*");
     }
 
