@@ -136,7 +136,7 @@ Deno.serve(async (req) => {
 
       // Check balance
       const { data: balance } = await admin.from("user_balances").select("id, balance").eq("visitor_id", visitorId).maybeSingle();
-      if (!balance) return Response.json({ error: "Akun saldo tidak ditemukan" }, { status: 404, headers: corsHeaders });
+      if (!balance) return Response.json({ error: "Akun saldo tidak ditemukan. Silakan login ulang di menu Saldo terlebih dahulu.", needLogin: true }, { status: 404, headers: corsHeaders });
       if (balance.balance < finalPrice) return Response.json({ error: "Saldo tidak cukup" }, { status: 400, headers: corsHeaders });
 
       // Deduct balance
