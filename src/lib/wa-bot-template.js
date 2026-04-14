@@ -9,6 +9,7 @@
 // =============================================
 
 const { default: makeWASocket, useMultiFileAuthState, DisconnectReason, fetchLatestBaileysVersion, downloadMediaMessage } = require("@whiskeysockets/baileys");
+const { Resvg } = require("@resvg/resvg-js");
 const pino = require("pino");
 const qrcode = require("qrcode-terminal");
 const readline = require("readline/promises");
@@ -20,6 +21,42 @@ const RECONNECT_DELAY_MS = 4000;
 
 function normalizePhoneNumber(value) {
   return String(value || "").replace(/[^0-9]/g, "");
+}
+
+function extractDigitsFromWhatsAppId(value) {
+  return String(value || "")
+    .replace(/:\d+/g, "")
+    .replace(/@.*$/g, "")
+    .replace(/[^0-9]/g, "");
+}
+
+function isLikelyPublicPhoneNumber(value) {
+  return /^(?:62|0)\d{8,13}$/.test(normalizePhoneNumber(value));
+}
+
+function resolveSenderPhone(msg, remoteJid, session) {
+  const messagePayloads = Object.values(msg?.message || {});
+  const candidates = [
+    session?.phone,
+    msg?.key?.participantPn,
+    msg?.key?.remoteJidAlt,
+    msg?.key?.participant,
+    msg?.participant,
+    msg?.sender,
+    msg?.message?.messageContextInfo?.participantPn,
+    ...messagePayloads.flatMap((entry) => [entry?.contextInfo?.participantPn, entry?.contextInfo?.participant]),
+  ];
+
+  const publicNumber = candidates
+    .map((value) => normalizePhoneNumber(value))
+    .find((value) => isLikelyPublicPhoneNumber(value));
+
+  if (publicNumber) return publicNumber;
+  if (session?.phone) return normalizePhoneNumber(session.phone);
+  if (String(remoteJid || "").includes("@lid")) return "Nomor privat WhatsApp";
+
+  const fallback = extractDigitsFromWhatsAppId(remoteJid);
+  return fallback || "-";
 }
 
 function formatPairingCode(code) {
@@ -245,12 +282,13 @@ async function sendDepositInstructions(client, remoteJid, quotedMsg, deposit) {
 async function sendDepositProofToAdmin(client, remoteJid, msg, session, deposit) {
   const buffer = await downloadMediaMessage(msg, "buffer", {});
   if (!buffer) throw new Error("Bukti pembayaran kosong");
+  const senderPhone = resolveSenderPhone(msg, remoteJid, session);
 
   const caption = [
     "📥 *BUKTI BAYAR DEPOSIT*",
     "",
     "👤 Username: " + (session?.username || deposit.username || "-"),
-    "📞 WA User: " + remoteJid.replace("@s.whatsapp.net", ""),
+    "📞 WA User: " + senderPhone,
     "🆔 ID Deposit: " + (deposit.trx_id || "-"),
     "💰 Nominal: " + fmtRp(deposit.amount),
     "💳 Metode: " + String(deposit.payment_method || "-").toUpperCase(),
@@ -466,7 +504,7 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
     const normalizedInput = normalizeCommandText(plainText);
 
     const session = userSessions[remoteJid] || null;
-    const senderPhone = remoteJid.replace("@s.whatsapp.net", "");
+    const senderPhone = resolveSenderPhone(msg, remoteJid, session);
     const command = normalizedInput.command;
     const isCommand = normalizedInput.isCommand;
     const commandBase = command.split(/\s+/)[0] || "";
@@ -567,14 +605,16 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
           });
           const receiptJson = await receiptRes.json();
           if (receiptJson.image_base64) {
-            const imgBuffer = Buffer.from(receiptJson.image_base64, "base64");
+            const svgBuffer = Buffer.from(receiptJson.image_base64, "base64");
             const caption = "🧾 Bukti Transaksi — " + (receiptData.plan_name || receiptData.product_title || "Pembelian");
-            // Send as document since WA may not render SVG inline
+            const pngBuffer = new Resvg(svgBuffer, {
+              fitTo: { mode: "width", value: 1080 },
+              background: "rgba(15,23,42,1)",
+            }).render().asPng();
+
             await client.sendMessage(remoteJid, {
-              document: imgBuffer,
-              mimetype: "image/svg+xml",
-              fileName: "receipt-" + Date.now() + ".svg",
-              caption: caption,
+              image: pngBuffer,
+              caption,
             }, { quoted: msg });
           }
         } catch (receiptErr) {

@@ -145,8 +145,8 @@ export default function AdminApiKeyTab() {
   function generatePackageJson() {
     return JSON.stringify({
       name: "bot-wa-agungadi",
-        version: "12.0.0",
-        description: "Bot WhatsApp Agung Adi Store v12.0.0 - Full Feature",
+        version: "13.0.0",
+        description: "Bot WhatsApp Agung Adi Store v13.0.0 - Full Feature",
       main: "index.js",
       scripts: {
         start: "node index.js",
@@ -154,6 +154,7 @@ export default function AdminApiKeyTab() {
       },
       dependencies: {
         "@whiskeysockets/baileys": "^6.7.16",
+        "@resvg/resvg-js": "^2.6.2",
         "pino": "^9.6.0",
         "qrcode-terminal": "^0.12.0"
       },
@@ -164,7 +165,7 @@ export default function AdminApiKeyTab() {
   }
 
   function generateReadmeMd() {
-    return `# 🤖 Bot WhatsApp - Agung Adi Store v12.0.0
+    return `# 🤖 Bot WhatsApp - Agung Adi Store v13.0.0
 
 ## 📋 Persyaratan
 - Node.js >= 18
