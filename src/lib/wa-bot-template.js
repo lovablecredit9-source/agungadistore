@@ -1,5 +1,5 @@
 // =============================================
-// 🤖 BOT WHATSAPP - Agung Adi Store v12.0.0
+// 🤖 BOT WHATSAPP - Agung Adi Store v13.0.0
 // =============================================
 // Library: @whiskeysockets/baileys (QR / Pairing Code)
 // Cara pakai:
@@ -397,7 +397,7 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
     }
 
     if (connection === "open") {
-      console.log("\n✅ Bot WhatsApp sudah siap! (v12.0.0)");
+      console.log("\n✅ Bot WhatsApp sudah siap! (v13.0.0)");
       console.log("📋 Kirim !menu / .menu / /menu di chat untuk lihat perintah\n");
       return;
     }
@@ -538,7 +538,49 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
           pending.session.balance = pd.balance_remaining;
           userSessions[remoteJid] = pending.session;
         }
-        return client.sendMessage(remoteJid, { text: txt }, { quoted: msg });
+        await client.sendMessage(remoteJid, { text: txt }, { quoted: msg });
+
+        // Generate & send receipt image
+        try {
+          const receiptData = {
+            type: pending.receiptType || "purchase",
+            username: pending.session?.username || "-",
+            trx_id: pd.trx_id || null,
+            product_title: pd.product?.title || pending.body?.product_title || null,
+            product_id_short: pending.body?.product_id ? shortId(pending.body.product_id) : null,
+            quantity: pd.quantity || pending.body?.quantity || 1,
+            total_price: pd.total_price || pd.price_paid || pending.body?.price || 0,
+            balance_remaining: pd.balance_remaining ?? 0,
+            discount_amount: pd.discount_amount || 0,
+            plan_name: pd.plan || pd.plan_name || pd.label || pending.body?.package_name || null,
+            expires_at: pd.expires_at || null,
+            tokens: pd.tokens || null,
+            storage_mb: pd.storage_mb || null,
+            credits: pd.credits || null,
+            streak_days: pd.streak_days || null,
+            auto_claimed: pd.auto_claimed || false,
+          };
+          const receiptRes = await fetch(BASE.replace("/public-api", "/generate-receipt"), {
+            method: "POST",
+            headers: { "Content-Type": "application/json", "x-api-key": API_KEY },
+            body: JSON.stringify(receiptData),
+          });
+          const receiptJson = await receiptRes.json();
+          if (receiptJson.image_base64) {
+            const imgBuffer = Buffer.from(receiptJson.image_base64, "base64");
+            const caption = "🧾 Bukti Transaksi — " + (receiptData.plan_name || receiptData.product_title || "Pembelian");
+            // Send as document since WA may not render SVG inline
+            await client.sendMessage(remoteJid, {
+              document: imgBuffer,
+              mimetype: "image/svg+xml",
+              fileName: "receipt-" + Date.now() + ".svg",
+              caption: caption,
+            }, { quoted: msg });
+          }
+        } catch (receiptErr) {
+          console.log("⚠️ Gagal kirim receipt image:", receiptErr.message);
+        }
+        return;
       } catch (err) {
         return client.sendMessage(remoteJid, { text: "❌ Error: " + (err.message || err) }, { quoted: msg });
       }
@@ -678,8 +720,8 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
     // ═══════════════════════════════════════
     // ═══ USER COMMANDS ═══
     // ═══════════════════════════════════════
-    if (command === "!ping") { return reply("🏓 Pong! Bot aktif v12.0.0"); }
-    if (command === "!versi") { return reply("🤖 Bot WA Agung Adi Store v12.0.0\n📅 " + new Date().toLocaleString("id-ID")); }
+    if (command === "!ping") { return reply("🏓 Pong! Bot aktif v13.0.0"); }
+    if (command === "!versi") { return reply("🤖 Bot WA Agung Adi Store v13.0.0\n📅 " + new Date().toLocaleString("id-ID")); }
     if (command === "!waktu") { return reply("🕐 Waktu server: " + new Date().toLocaleString("id-ID", { timeZone: "Asia/Jakarta" }) + " WIB"); }
 
     // ═══ WEBAPP LINK ═══
@@ -688,108 +730,118 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
     }
 
     if (command === "!help" || command === "!menu") {
+      const loginStatus = session ? "✅ *" + session.username + "*" : "🔒 Belum login";
+      const balanceStr = session?.balance !== undefined ? " ┃ 💰 " + fmtRp(session.balance) : "";
       return reply([
-        "🤖 *Bot WhatsApp Agung Adi Store v12.0.0*",
-        "📱 Nomor kamu: " + senderPhone,
-        session ? "👤 Login: " + session.username : "🔒 Belum login",
+        "╔══════════════════════════════╗",
+        "║  🤖 *AGUNG ADI STORE*  v13.0  ║",
+        "╚══════════════════════════════╝",
         "",
-        "🔑 *Akun Saldo:*",
-        "• !menu / .menu / /menu — Menu bantuan",
-        "• !daftar — Buat akun saldo baru",
-        "• !login [user/email/hp] [password]",
-        "• !logout — Logout akun",
-        "• !saldoku — Cek saldo",
-        "• !profilku — Lihat profil lengkap",
-        "• !editprofil — Edit profil akun",
-        "• !resetsandi — Bot akan minta sandi lama / token",
-        "• !resetpin — Bot akan minta PIN lama / token",
-        "• !riwayat [jumlah] — Riwayat transaksi",
-        "• !download_riwayat [pdf/word/txt] [semua/1-20]",
-        "• !detailtrx [trx_id] — Detail transaksi",
-        "• !gameku — Stats game saya",
-        "• !kreditku — Kredit game saya",
-        "• !streakku — Status streak saya",
-        "• !notifku — Notifikasi saya",
-        "• !likeku — Daftar favorit saya",
-        "• !nomorku — Tampilkan nomor WA",
-        "• !fotoprofil — Kirim foto profil kamu",
+        "┌─── 📱 *Info Kamu* ──────────┐",
+        "│ " + loginStatus + balanceStr,
+        "│ 📱 " + senderPhone,
+        "└────────────────────────────┘",
         "",
-        "🛒 *Belanja (perlu login + PIN 6 digit):*",
-        "• !beli [#ID/nama produk] [jumlah]",
-        "• !belistreak [nama paket]",
-        "• !belikredit [nama paket]",
-        "• !belistorage [nama paket]",
-        "• !belibundle [nama paket]",
-        "• ⚠️ PIN diminta setiap transaksi (tidak disimpan)",
+        "╭━━━ 🔑 *AKUN SALDO* ━━━━━━━╮",
+        "┃ !daftar — Buat akun baru",
+        "┃ !login [user] [password]",
+        "┃ !logout — Logout akun",
+        "┃ !saldoku — Cek saldo",
+        "┃ !profilku — Profil lengkap",
+        "┃ !editprofil — Edit profil",
+        "┃ !resetsandi — Reset sandi",
+        "┃ !resetpin — Reset PIN",
+        "┃ !riwayat [jumlah] — Riwayat",
+        "┃ !download_riwayat [format]",
+        "┃ !detailtrx [trx_id]",
+        "╰━━━━━━━━━━━━━━━━━━━━━━━━━━╯",
         "",
-        "💰 *Deposit:*",
-        "• !deposit — Bot akan minta nominal & metode",
-        "• bukti / !bukti — Lalu kirim foto bukti bayar",
-        "• !cekdeposit [ID transaksi]",
-        "• batal [ID transaksi] — Batalkan deposit pending",
+        "╭━━━ 🛒 *BELANJA* ━━━━━━━━━━╮",
+        "┃ !beli [#ID/nama] [jumlah]",
+        "┃ !belistreak [nama paket]",
+        "┃ !belikredit [nama paket]",
+        "┃ !belistorage [nama paket]",
+        "┃ !belibundle [nama paket]",
+        "┃ 🔐 PIN diminta tiap transaksi",
+        "╰━━━━━━━━━━━━━━━━━━━━━━━━━━╯",
         "",
-        "🎫 *Voucher & Streak (perlu login):*",
-        "• !klaim [kode1] [kode2] ... — Klaim voucher",
-        "• !klaimstreak — Klaim streak harian",
+        "╭━━━ 💰 *DEPOSIT* ━━━━━━━━━━╮",
+        "┃ !deposit — Mulai deposit",
+        "┃ bukti — Kirim bukti bayar",
+        "┃ !cekdeposit [ID transaksi]",
+        "┃ batal [ID] — Batalkan",
+        "╰━━━━━━━━━━━━━━━━━━━━━━━━━━╯",
         "",
-        "🎮 *Game AI:*",
-        "• !profil — Profil game lengkap",
-        "• !tekateki [mudah/sedang/sulit]",
-        "• !tebakkata [mudah/sedang/sulit]",
-        "• !tebakangka [mudah/sedang/sulit]",
-        "• !tebakgambar [mudah/sedang/sulit]",
-        "• !tebakbarang [mudah/sedang/sulit]",
-        "• !pilihlanganda [mudah/sedang/sulit]",
-        "• !kuisyatidak [mudah/sedang/sulit]",
-        "• !tekatekilanjut [mudah/sedang/sulit]",
-        "• !lbgame — Leaderboard game",
-        "• !jawab [jawaban] — Jawab game",
-        "• !hint — Minta petunjuk (1 kredit)",
-        "• !nyerah — Menyerah game",
+        "╭━━━ 🎫 *VOUCHER & STREAK* ━╮",
+        "┃ !klaim [kode] — Klaim",
+        "┃ !klaimstreak — Streak harian",
+        "┃ !streakku — Status streak",
+        "╰━━━━━━━━━━━━━━━━━━━━━━━━━━╯",
         "",
-        "❤️ *Like (perlu login):*",
-        "• !likeproduk [nama/id]",
-        "• !likelagu [judul]",
-        "• !likesponsor [no]",
+        "╭━━━ 🎮 *GAME AI* ━━━━━━━━━━╮",
+        "┃ !profil — Profil game",
+        "┃ !tekateki [level]",
+        "┃ !tebakkata [level]",
+        "┃ !tebakangka [level]",
+        "┃ !tebakgambar [level]",
+        "┃ !tebakbarang [level]",
+        "┃ !pilihlanganda [level]",
+        "┃ !kuisyatidak [level]",
+        "┃ !tekatekilanjut [level]",
+        "┃ !lbgame ┃ !jawab [jwb]",
+        "┃ !hint ┃ !nyerah",
+        "┃ !gameku ┃ !kreditku",
+        "╰━━━━━━━━━━━━━━━━━━━━━━━━━━╯",
         "",
-        "📦 *Produk & Toko:*",
-        "• !produk — Daftar produk + Short ID",
-        "• !cari [kata] — Cari produk",
-        "• !kategori — Kategori produk",
-        "• !harga [min] [max] — Filter harga",
-        "• !random — Produk random",
-        "• !top — Produk terpopuler",
-        "• !detailproduk [#id/nama]",
-        "• !grosir [nama] — Harga grosir",
+        "╭━━━ ❤️ *LIKE* ━━━━━━━━━━━━━╮",
+        "┃ !likeproduk [nama/id]",
+        "┃ !likelagu [judul]",
+        "┃ !likesponsor [no]",
+        "┃ !likeku — Daftar favorit",
+        "╰━━━━━━━━━━━━━━━━━━━━━━━━━━╯",
         "",
-        "🏪 *Sponsor:*",
-        "• !sponsor — Sponsor aktif",
-        "• !detailsponsor [no]",
+        "╭━━━ 📦 *PRODUK & TOKO* ━━━━╮",
+        "┃ !produk — Daftar produk",
+        "┃ !cari [kata] — Cari",
+        "┃ !kategori — Kategori",
+        "┃ !harga [min] [max]",
+        "┃ !random ┃ !top",
+        "┃ !detailproduk [#id/nama]",
+        "┃ !grosir [nama]",
+        "╰━━━━━━━━━━━━━━━━━━━━━━━━━━╯",
         "",
-        "🎵 *Musik:*",
-        "• !lagu — Daftar lagu",
-        "• !carilagu [kata] — Cari lagu",
-        "• !download [judul] — Link download",
-        "• !kirim [judul] — Kirim file audio",
-        "• !artis — Daftar artis",
-        "• !playlist — Daftar playlist",
+        "╭━━━ 🏪 *SPONSOR* ━━━━━━━━━━╮",
+        "┃ !sponsor — Sponsor aktif",
+        "┃ !detailsponsor [no]",
+        "╰━━━━━━━━━━━━━━━━━━━━━━━━━━╯",
         "",
-        "🎫 *Support (perlu login):*",
-        "• !buattiket [kategori] | [deskripsi]",
-        "• !tiketku — Lihat tiket saya",
-        "• !tiketpesan [no_tiket] — Lihat pesan tiket",
-        "• !balastiket [no_tiket] [pesan]",
+        "╭━━━ 🎵 *MUSIK* ━━━━━━━━━━━━╮",
+        "┃ !lagu ┃ !carilagu [kata]",
+        "┃ !download [judul]",
+        "┃ !kirim [judul]",
+        "┃ !artis ┃ !playlist",
+        "╰━━━━━━━━━━━━━━━━━━━━━━━━━━╯",
         "",
-        "📊 *Info:*",
-        "• !info / !toko — Statistik toko",
-        "• !paket — Paket tersedia",
-        "• !flashsale — Flash sale",
-        "• !sosmed — Social media",
-        "• !webapp — Link web app",
-        "• !bantuan — Pusat bantuan",
-        "• !syarat — S&K",
+        "╭━━━ 🎫 *SUPPORT* ━━━━━━━━━━╮",
+        "┃ !buattiket [kat] | [desc]",
+        "┃ !tiketku — Lihat tiket",
+        "┃ !tiketpesan [no_tiket]",
+        "┃ !balastiket [no] [pesan]",
+        "╰━━━━━━━━━━━━━━━━━━━━━━━━━━╯",
         "",
-        "🔐 Ketik *!admin* untuk perintah admin",
+        "╭━━━ 📊 *INFO* ━━━━━━━━━━━━━╮",
+        "┃ !info ┃ !paket",
+        "┃ !flashsale ┃ !sosmed",
+        "┃ !webapp ┃ !bantuan",
+        "┃ !syarat ┃ !nomorku",
+        "┃ !fotoprofil ┃ !notifku",
+        "╰━━━━━━━━━━━━━━━━━━━━━━━━━━╯",
+        "",
+        "┌────────────────────────────┐",
+        "│ 🔐 Ketik *!admin* (admin)  │",
+        "│ 💬 WA: 085769302532        │",
+        "│ 🌐 " + WEB_URL.replace("https://", "") + " │",
+        "└────────────────────────────┘",
       ].join("\n"));
     }
 
@@ -1229,9 +1281,8 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
     // ═══ PURCHASE WITH PIN FLOW (TANPA SIMPAN SESI) ═══
 
     // Helper: start purchase flow - ask for PIN
-    function startPurchaseFlow(endpoint, body, successMsgFn) {
-      // Check if user has PIN first
-      pinPending[remoteJid] = { endpoint, body, successMsg: successMsgFn, session };
+    function startPurchaseFlow(endpoint, body, successMsgFn, receiptType) {
+      pinPending[remoteJid] = { endpoint, body, successMsg: successMsgFn, session, receiptType: receiptType || "purchase" };
       return reply("🔐 *Masukkan PIN 6 digit untuk konfirmasi:*\n\n(Ketik PIN langsung, contoh: 123456)\n\n❌ PIN salah? Ketik !resetpin untuk reset\n🚫 Batal? Ketik *batal*");
     }
 
@@ -1254,6 +1305,7 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
       return startPurchaseFlow("purchase_product", {
         visitor_id: session.visitor_id,
         product_id: product.id,
+        product_title: product.title,
         quantity: qty,
       }, (pd) => {
         let txt = "✅ *Pembelian Berhasil!*\n\n📦 " + (pd.product?.title || product.title) + "\n🆔 " + shortId(product.id) + "\n🔢 Jumlah: " + (pd.quantity || qty) + "\n💰 Total: " + fmtRp(pd.total_price) + "\n💳 Sisa Saldo: " + fmtRp(pd.balance_remaining);
@@ -1266,7 +1318,7 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
           });
         }
         return txt;
-      });
+      }, "purchase");
     }
 
     if (command.startsWith("!belistreak")) {
@@ -1281,7 +1333,7 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
       if (!pinCheck.data?.hasPin) return reply("🔐 *PIN belum dibuat!*\nKetik !buatpin [6 digit] untuk buat PIN.");
       return startPurchaseFlow("purchase_streak", { visitor_id: session.visitor_id, package_name: packageName }, (sd) => {
         return "✅ *Paket Streak Berhasil!*\n\n🔥 Paket: " + (sd.plan || packageName) + "\n📅 Aktif sampai: " + (sd.expires_at ? new Date(sd.expires_at).toLocaleString("id-ID") : "-") + "\n💳 Sisa Saldo: " + fmtRp(sd.balance_remaining) + (sd.discount_amount > 0 ? "\n🏷️ Diskon: " + fmtRp(sd.discount_amount) : "") + (sd.auto_claimed ? "\n✅ Streak hari ini otomatis diklaim!" : "");
-      });
+      }, "streak");
     }
 
     if (command.startsWith("!belikredit")) {
@@ -1296,7 +1348,7 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
       if (!pinCheck.data?.hasPin) return reply("🔐 *PIN belum dibuat!*\nKetik !buatpin [6 digit] untuk buat PIN.");
       return startPurchaseFlow("purchase_credits", { visitor_id: session.visitor_id, package_name: packageName }, (cd) => {
         return "✅ *Kredit Game Berhasil!*\n\n💎 " + (cd.plan || cd.label || packageName) + "\n💳 Sisa Saldo: " + fmtRp(cd.balance_remaining) + (cd.discount_amount > 0 ? "\n🏷️ Diskon: " + fmtRp(cd.discount_amount) : "");
-      });
+      }, "credit");
     }
 
     if (command.startsWith("!belistorage")) {
@@ -1311,7 +1363,7 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
       if (!pinCheck.data?.hasPin) return reply("🔐 *PIN belum dibuat!*\nKetik !buatpin [6 digit] untuk buat PIN.");
       return startPurchaseFlow("purchase_storage", { visitor_id: session.visitor_id, package_name: packageName }, (std) => {
         return "✅ *Storage Berhasil!*\n\n💾 " + (std.plan || packageName) + "\n💳 Sisa Saldo: " + fmtRp(std.balance_remaining) + (std.discount_amount > 0 ? "\n🏷️ Diskon: " + fmtRp(std.discount_amount) : "");
-      });
+      }, "storage");
     }
 
     if (command.startsWith("!belibundle")) {
@@ -1326,7 +1378,7 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
       if (!pinCheck.data?.hasPin) return reply("🔐 *PIN belum dibuat!*\nKetik !buatpin [6 digit] untuk buat PIN.");
       return startPurchaseFlow("purchase_bundle", { visitor_id: session.visitor_id, package_name: packageName }, (bd) => {
         return "✅ *Bundle Berhasil!*\n\n🎁 " + (bd.plan || packageName) + "\n💳 Sisa Saldo: " + fmtRp(bd.balance_remaining) + (bd.discount_amount > 0 ? "\n🏷️ Diskon: " + fmtRp(bd.discount_amount) : "");
-      });
+      }, "bundle");
     }
 
     // ── DETAIL TRANSAKSI ──
@@ -2068,7 +2120,7 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
     if (command === "!admin") {
       if (!isAdmin(msg)) return reply("❌ Hanya admin yang bisa akses.");
       return reply([
-        "🔐 *Perintah Admin v12.0.0:*",
+        "🔐 *Perintah Admin v13.0.0:*",
         "",
         "💰 *Saldo:*",
         "• !saldo — Semua saldo user",
