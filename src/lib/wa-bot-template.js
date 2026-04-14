@@ -538,7 +538,46 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
           pending.session.balance = pd.balance_remaining;
           userSessions[remoteJid] = pending.session;
         }
-        return client.sendMessage(remoteJid, { text: txt }, { quoted: msg });
+        await client.sendMessage(remoteJid, { text: txt }, { quoted: msg });
+
+        // Generate & send receipt image
+        try {
+          const receiptData = {
+            type: pending.receiptType || "purchase",
+            username: pending.session?.username || "-",
+            trx_id: pd.trx_id || null,
+            product_title: pd.product?.title || pending.body?.product_title || null,
+            product_id_short: pending.body?.product_id ? shortId(pending.body.product_id) : null,
+            quantity: pd.quantity || pending.body?.quantity || 1,
+            total_price: pd.total_price || pd.price_paid || pending.body?.price || 0,
+            balance_remaining: pd.balance_remaining ?? 0,
+            discount_amount: pd.discount_amount || 0,
+            plan_name: pd.plan || pd.plan_name || pd.label || pending.body?.package_name || null,
+            expires_at: pd.expires_at || null,
+            tokens: pd.tokens || null,
+            storage_mb: pd.storage_mb || null,
+            credits: pd.credits || null,
+            streak_days: pd.streak_days || null,
+            auto_claimed: pd.auto_claimed || false,
+          };
+          const receiptRes = await fetch(BASE.replace("/public-api", "/generate-receipt"), {
+            method: "POST",
+            headers: { "Content-Type": "application/json", "x-api-key": API_KEY },
+            body: JSON.stringify(receiptData),
+          });
+          const receiptJson = await receiptRes.json();
+          if (receiptJson.svg_base64) {
+            const svgBuffer = Buffer.from(receiptJson.svg_base64, "base64");
+            await client.sendMessage(remoteJid, {
+              image: svgBuffer,
+              caption: "🧾 Bukti Transaksi — " + (receiptData.plan_name || receiptData.product_title || "Pembelian"),
+              mimetype: "image/svg+xml",
+            }, { quoted: msg });
+          }
+        } catch (receiptErr) {
+          console.log("⚠️ Gagal kirim receipt image:", receiptErr.message);
+        }
+        return;
       } catch (err) {
         return client.sendMessage(remoteJid, { text: "❌ Error: " + (err.message || err) }, { quoted: msg });
       }
