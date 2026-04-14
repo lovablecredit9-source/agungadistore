@@ -67,7 +67,7 @@ Deno.serve(async (request) => {
       .maybeSingle();
 
     if (balanceError || !balanceRow) {
-      return Response.json({ error: "Akun saldo tidak ditemukan" }, { status: 404, headers: corsHeaders });
+      return Response.json({ error: "Akun saldo tidak ditemukan. Silakan login ulang di menu Saldo terlebih dahulu.", needLogin: true }, { status: 404, headers: corsHeaders });
     }
 
     const { data: product, error: productError } = await admin
