@@ -22,6 +22,7 @@ const MAX_RECONNECT_ATTEMPTS = 8;
 const RECONNECT_DELAY_MS = 4000;
 const AUTH_SESSION_DIR = "./auth_session";
 const lidToPhoneMap = new Map();
+const jidToPhoneMap = new Map();
 
 function normalizePhoneNumber(value) {
   return String(value || "").replace(/[^0-9]/g, "");
@@ -45,14 +46,28 @@ function isLikelyPublicPhoneNumber(value) {
   return /^(?:628\d{7,11}|08\d{8,12})$/.test(normalizePhoneNumber(value));
 }
 
+function resolvePublicPhone(values = []) {
+  const direct = collectPhoneCandidates(values)[0];
+  if (direct) return direct;
+
+  const extracted = collectPhoneCandidates(values.map((value) => extractDigitsFromWhatsAppId(value)))[0];
+  return extracted || "";
+}
+
 function rememberResolvedPhone(jid, phone) {
   const normalizedPhone = normalizePhoneNumber(phone);
   if (!jid || !isLikelyPublicPhoneNumber(normalizedPhone)) return "";
 
-  const normalizedJid = String(jid);
+  const normalizedJid = String(jid).trim();
+  if (!normalizedJid) return "";
+
   if (normalizedJid.includes("@lid")) {
     lidToPhoneMap.set(normalizedJid, normalizedPhone);
   }
+
+  jidToPhoneMap.set(normalizedJid, normalizedPhone);
+  jidToPhoneMap.set(normalizedPhone, normalizedPhone);
+  jidToPhoneMap.set(normalizedPhone + "@s.whatsapp.net", normalizedPhone);
 
   return normalizedPhone;
 }
@@ -181,9 +196,13 @@ function rememberContactMappings(contacts = []) {
 
     if (!phoneCandidates.length) return;
 
-    [contact.id, contact.jid, contact.lid, contact.remoteJid, contact.chatId]
+    [contact.id, contact.jid, contact.lid, contact.remoteJid, contact.chatId, contact.phoneJid, contact.pnJid]
       .filter(Boolean)
       .forEach((jid) => rememberResolvedPhone(jid, phoneCandidates[0]));
+
+    walkLidMappings(contact).forEach(([lid, phone]) => {
+      rememberResolvedPhone(lid, phone);
+    });
   });
 }
 
@@ -193,31 +212,64 @@ function rememberMessageMappings(payload) {
   });
 }
 
+function resolveCachedPhoneByJid(jid) {
+  const normalizedJid = String(jid || "").trim();
+  if (!normalizedJid) return "";
+  return jidToPhoneMap.get(normalizedJid) || lidToPhoneMap.get(normalizedJid) || "";
+}
+
+function resolveBotPhone(client, authChoice) {
+  const botNumber = resolvePublicPhone([
+    authChoice?.phoneNum,
+    client?.user?.phoneNumber,
+    client?.user?.pn,
+    client?.user?.id,
+    client?.user?.jid,
+    client?.user?.lid,
+  ]);
+
+  return botNumber ? formatPhoneForDisplay(botNumber) : "-";
+}
+
 function resolveSenderPhone(msg, remoteJid, session) {
   rememberMessageMappings(msg);
 
   const messagePayloads = Object.values(msg?.message || {});
-  const candidates = [
+  const publicNumber = resolvePublicPhone([
     msg?.key?.participantPn,
-    msg?.key?.remoteJidAlt,
-    msg?.key?.participantAlt,
+    msg?.message?.messageContextInfo?.participantPn,
+    msg?.message?.extendedTextMessage?.contextInfo?.participantPn,
+    msg?.message?.imageMessage?.contextInfo?.participantPn,
+    msg?.message?.videoMessage?.contextInfo?.participantPn,
+    ...messagePayloads.flatMap((entry) => [entry?.contextInfo?.participantPn]),
+  ]);
+
+  const jidCandidates = [
+    remoteJid,
+    msg?.key?.remoteJid,
     msg?.key?.participant,
     msg?.participant,
     msg?.sender,
-    msg?.message?.messageContextInfo?.participantPn,
-    msg?.message?.messageContextInfo?.participantAlt,
-    ...messagePayloads.flatMap((entry) => [entry?.contextInfo?.participantPn, entry?.contextInfo?.participant, entry?.contextInfo?.participantAlt]),
-  ];
+    msg?.message?.messageContextInfo?.participant,
+    msg?.message?.extendedTextMessage?.contextInfo?.participant,
+    msg?.message?.imageMessage?.contextInfo?.participant,
+    msg?.message?.videoMessage?.contextInfo?.participant,
+    ...messagePayloads.flatMap((entry) => [entry?.contextInfo?.participant, entry?.contextInfo?.remoteJid]),
+  ].filter(Boolean);
 
-  const publicNumber = collectPhoneCandidates(candidates)[0];
+  if (publicNumber) {
+    jidCandidates.forEach((jid) => rememberResolvedPhone(jid, publicNumber));
+    return formatPhoneForDisplay(publicNumber);
+  }
 
-  if (publicNumber) return rememberResolvedPhone(remoteJid, publicNumber) || formatPhoneForDisplay(publicNumber);
+  for (const jid of jidCandidates) {
+    const cachedPhone = resolveCachedPhoneByJid(jid);
+    if (cachedPhone) return formatPhoneForDisplay(cachedPhone);
+  }
 
-  const cachedPhone = lidToPhoneMap.get(String(remoteJid || ""));
-  if (cachedPhone) return formatPhoneForDisplay(cachedPhone);
-
-  const fallback = extractDigitsFromWhatsAppId(remoteJid);
-  if (isLikelyPublicPhoneNumber(fallback)) {
+  const fallback = resolvePublicPhone(jidCandidates);
+  if (fallback) {
+    jidCandidates.forEach((jid) => rememberResolvedPhone(jid, fallback));
     return formatPhoneForDisplay(fallback);
   }
 
@@ -558,6 +610,15 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
     rememberContactMappings(Array.isArray(contacts) ? contacts : []);
   });
 
+  client.ev.on("lid-mapping.update", (payload) => {
+    rememberMessageMappings(payload);
+  });
+
+  client.ev.on("messaging-history.set", (payload) => {
+    rememberMessageMappings(payload);
+    rememberContactMappings(Array.isArray(payload?.contacts) ? payload.contacts : []);
+  });
+
   const phoneNum = normalizePhoneNumber(authChoice.phoneNum);
   let pairingRequested = false;
   let reconnectScheduled = false;
@@ -680,6 +741,7 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
     const session = userSessions[remoteJid] || null;
     const senderPhone = resolveSenderPhone(msg, remoteJid, session);
     const accountPhone = formatPhoneForDisplay(session?.phone);
+    const botPhone = resolveBotPhone(client, authChoice);
     const command = normalizedInput.command;
     const isCommand = normalizedInput.isCommand;
     const commandBase = command.split(/\s+/)[0] || "";
@@ -956,6 +1018,7 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
         "│ " + loginStatus + balanceStr,
         "│ 📲 WA Chat: " + senderPhone,
         "│ ☎️ No Akun: " + accountPhone,
+        "│ 🤖 No Bot: " + botPhone,
         "└────────────────────────────┘",
         "",
         "╭━━━ 🔑 *AKUN SALDO* ━━━━━━━╮",
@@ -2040,7 +2103,15 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
 
     // ═══ NO HP PENGIRIM (fixed) ═══
     if (command === "!nomorku") {
-      return reply("📱 *Nomor WA Chat Kamu:*\n\n" + senderPhone + "\n\n💡 Ini nomor WhatsApp yang sedang chat ke bot, bukan nomor akun saldo.");
+      return reply([
+        "📱 *Info Nomor WhatsApp*",
+        "",
+        "👤 WA chat kamu: " + senderPhone,
+        "☎️ No akun terdaftar: " + accountPhone,
+        "🤖 No bot: " + botPhone,
+        "",
+        "💡 WA chat = nomor WhatsApp yang sedang mengirim pesan ke bot.",
+      ].join("\n"));
     }
 
     // ═══ BANTUAN & SYARAT ═══
