@@ -199,31 +199,12 @@ Deno.serve(async (request) => {
     }
 
     const svg = generateReceiptSVG(body);
+    const svgBase64 = btoa(unescape(encodeURIComponent(svg)));
 
-    // Try to render SVG to PNG using resvg-wasm
-    try {
-      if (!wasmInitialized) {
-        await initWasm(resvgWasm);
-        wasmInitialized = true;
-      }
-      const resvg = new Resvg(svg, { fitTo: { mode: "width", value: 480 } });
-      const pngData = resvg.render();
-      const pngBuffer = pngData.asPng();
-      const base64 = btoa(String.fromCharCode(...pngBuffer));
-
-      return Response.json(
-        { success: true, image_base64: base64, mime: "image/png" },
-        { headers: corsHeaders },
-      );
-    } catch (renderErr) {
-      // Fallback: return SVG as base64
-      console.log("PNG render fallback to SVG:", renderErr);
-      const svgBase64 = btoa(unescape(encodeURIComponent(svg)));
-      return Response.json(
-        { success: true, image_base64: svgBase64, mime: "image/svg+xml" },
-        { headers: corsHeaders },
-      );
-    }
+    return Response.json(
+      { success: true, image_base64: svgBase64, mime: "image/svg+xml" },
+      { headers: corsHeaders },
+    );
   } catch (error) {
     const message = error instanceof Error ? error.message : "Terjadi kesalahan";
     return Response.json({ error: message }, { status: 500, headers: corsHeaders });
