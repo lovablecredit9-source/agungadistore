@@ -79,6 +79,83 @@ function collectPhoneCandidates(values) {
     .filter((value) => isLikelyPublicPhoneNumber(value));
 }
 
+function uniqueNonEmpty(values) {
+  return values
+    .map((value) => String(value || "").trim())
+    .filter((value, index, arr) => Boolean(value) && arr.indexOf(value) === index);
+}
+
+function extractLidUser(value) {
+  const match = String(value || "").trim().match(/^([^:@]+)(?::\d+)?@(?:hosted\.)?lid$/i);
+  return match?.[1] || "";
+}
+
+function collectPhoneFieldsFromPayload(payload, result = []) {
+  if (!payload) return result;
+
+  if (Array.isArray(payload)) {
+    payload.forEach((entry) => collectPhoneFieldsFromPayload(entry, result));
+    return result;
+  }
+
+  if (typeof payload !== "object") return result;
+
+  for (const [key, value] of Object.entries(payload)) {
+    const keyString = String(key || "").trim();
+
+    if (typeof value === "string") {
+      const candidates = [];
+
+      if (/(phone|(^|_)pn$|participantpn|userpn|notifyphone|phonenumber|number|phonejid|pnjid)$/i.test(keyString)) {
+        candidates.push(value, extractDigitsFromWhatsAppId(value));
+      }
+
+      if (/(jid|participant|sender|remotejid|chatid|id|user)$/i.test(keyString)) {
+        candidates.push(extractDigitsFromWhatsAppId(value));
+      }
+
+      collectPhoneCandidates(candidates).forEach((phone) => {
+        if (!result.includes(phone)) result.push(phone);
+      });
+      continue;
+    }
+
+    if (value && typeof value === "object") {
+      collectPhoneFieldsFromPayload(value, result);
+    }
+  }
+
+  return result;
+}
+
+function collectJidFieldsFromPayload(payload, result = []) {
+  if (!payload) return result;
+
+  if (Array.isArray(payload)) {
+    payload.forEach((entry) => collectJidFieldsFromPayload(entry, result));
+    return result;
+  }
+
+  if (typeof payload !== "object") return result;
+
+  for (const [key, value] of Object.entries(payload)) {
+    const keyString = String(key || "").trim();
+
+    if (typeof value === "string") {
+      if ((/(jid|participant|sender|remotejid|chatid|id|user|lid)$/i.test(keyString) || value.includes("@")) && value.includes("@")) {
+        if (!result.includes(value)) result.push(value);
+      }
+      continue;
+    }
+
+    if (value && typeof value === "object") {
+      collectJidFieldsFromPayload(value, result);
+    }
+  }
+
+  return result;
+}
+
 function walkLidMappings(payload, inheritedLid = "") {
   const pairs = [];
 
@@ -127,9 +204,15 @@ function walkLidMappings(payload, inheritedLid = "") {
 
     if (typeof value === "string") {
       const normalizedValue = normalizePhoneNumber(value);
+      const reverseLidUser = keyString.replace(/_reverse$/i, "");
 
       if (keyString.includes("@lid") && isLikelyPublicPhoneNumber(normalizedValue)) {
         pairs.push([keyString, normalizedValue]);
+      }
+
+      if (reverseLidUser !== keyString && isLikelyPublicPhoneNumber(normalizedValue)) {
+        pairs.push([reverseLidUser + "@lid", normalizedValue]);
+        pairs.push([reverseLidUser + "@hosted.lid", normalizedValue]);
       }
 
       if (value.includes("@lid")) {
@@ -158,7 +241,7 @@ function loadLidMapFromAuthSession() {
   try {
     if (!fs.existsSync(AUTH_SESSION_DIR)) return;
 
-    const files = fs.readdirSync(AUTH_SESSION_DIR).filter((fileName) => fileName.toLowerCase().includes("lid") && fileName.toLowerCase().endsWith(".json"));
+    const files = fs.readdirSync(AUTH_SESSION_DIR).filter((fileName) => fileName.toLowerCase().endsWith(".json"));
 
     files.forEach((fileName) => {
       try {
@@ -212,15 +295,95 @@ function rememberMessageMappings(payload) {
   });
 }
 
+function rememberResolvedPhone(jid, phone) {
+  const normalizedPhone = normalizePhoneNumber(phone);
+  if (!jid || !isLikelyPublicPhoneNumber(normalizedPhone)) return "";
+
+  const normalizedJid = String(jid).trim();
+  if (!normalizedJid) return "";
+
+  if (normalizedJid.includes("@lid")) {
+    lidToPhoneMap.set(normalizedJid, normalizedPhone);
+  }
+
+  const lidUser = extractLidUser(normalizedJid);
+  if (lidUser) {
+    lidToPhoneMap.set(lidUser, normalizedPhone);
+    lidToPhoneMap.set(lidUser + "@lid", normalizedPhone);
+    lidToPhoneMap.set(lidUser + "@hosted.lid", normalizedPhone);
+  }
+
+  jidToPhoneMap.set(normalizedJid, normalizedPhone);
+  jidToPhoneMap.set(normalizedPhone, normalizedPhone);
+  jidToPhoneMap.set(normalizedPhone + "@s.whatsapp.net", normalizedPhone);
+  jidToPhoneMap.set(normalizedPhone + "@hosted", normalizedPhone);
+
+  return normalizedPhone;
+}
+
 function resolveCachedPhoneByJid(jid) {
   const normalizedJid = String(jid || "").trim();
   if (!normalizedJid) return "";
-  return jidToPhoneMap.get(normalizedJid) || lidToPhoneMap.get(normalizedJid) || "";
+
+  const direct = jidToPhoneMap.get(normalizedJid) || lidToPhoneMap.get(normalizedJid);
+  if (direct) return direct;
+
+  const lidUser = extractLidUser(normalizedJid);
+  if (lidUser) {
+    return lidToPhoneMap.get(lidUser) || lidToPhoneMap.get(lidUser + "@lid") || lidToPhoneMap.get(lidUser + "@hosted.lid") || "";
+  }
+
+  const jidDigits = extractDigitsFromWhatsAppId(normalizedJid);
+  if (isLikelyPublicPhoneNumber(jidDigits)) {
+    return jidToPhoneMap.get(jidDigits) || jidToPhoneMap.get(jidDigits + "@s.whatsapp.net") || jidToPhoneMap.get(jidDigits + "@hosted") || "";
+  }
+
+  return "";
 }
 
-function resolveBotPhone(client, authChoice) {
+async function resolvePhoneViaLidStore(client, jidCandidates = []) {
+  const lidMappingStore = client?.signalRepository?.lidMapping;
+  if (!lidMappingStore) return "";
+
+  const lids = uniqueNonEmpty(jidCandidates).filter((jid) => String(jid).includes("@lid"));
+  if (!lids.length) return "";
+
+  try {
+    if (typeof lidMappingStore.getPNsForLIDs === "function") {
+      const pairs = await lidMappingStore.getPNsForLIDs(lids);
+      for (const pair of Array.isArray(pairs) ? pairs : []) {
+        const phone = resolvePublicPhone([pair?.pn, pair?.phone, pair?.phoneNumber]);
+        if (phone) {
+          rememberResolvedPhone(pair?.lid || lids[0], phone);
+          return phone;
+        }
+      }
+    }
+  } catch {}
+
+  for (const lid of lids) {
+    try {
+      if (typeof lidMappingStore.getPNForLID !== "function") break;
+      const pn = await lidMappingStore.getPNForLID(lid);
+      const phone = resolvePublicPhone([pn]);
+      if (phone) {
+        rememberResolvedPhone(lid, phone);
+        return phone;
+      }
+    } catch {}
+  }
+
+  return "";
+}
+
+function resolveBotPhone(client, authChoice, authState) {
   const botNumber = resolvePublicPhone([
     authChoice?.phoneNum,
+    authState?.creds?.me?.phoneNumber,
+    authState?.creds?.me?.pn,
+    authState?.creds?.me?.id,
+    authState?.creds?.me?.jid,
+    authState?.creds?.me?.lid,
     client?.user?.phoneNumber,
     client?.user?.pn,
     client?.user?.id,
@@ -228,13 +391,17 @@ function resolveBotPhone(client, authChoice) {
     client?.user?.lid,
   ]);
 
-  return botNumber ? formatPhoneForDisplay(botNumber) : "-";
+  if (botNumber) return formatPhoneForDisplay(botNumber);
+
+  const cachedBotPhone = resolveCachedPhoneByJid(authState?.creds?.me?.id) || resolveCachedPhoneByJid(client?.user?.id);
+  return cachedBotPhone ? formatPhoneForDisplay(cachedBotPhone) : "-";
 }
 
-function resolveSenderPhone(msg, remoteJid, session) {
+async function resolveSenderPhone(client, msg, remoteJid) {
   rememberMessageMappings(msg);
 
   const messagePayloads = Object.values(msg?.message || {});
+  const payloadPhoneCandidates = collectPhoneFieldsFromPayload(msg);
   const publicNumber = resolvePublicPhone([
     msg?.key?.participantPn,
     msg?.message?.messageContextInfo?.participantPn,
@@ -242,9 +409,10 @@ function resolveSenderPhone(msg, remoteJid, session) {
     msg?.message?.imageMessage?.contextInfo?.participantPn,
     msg?.message?.videoMessage?.contextInfo?.participantPn,
     ...messagePayloads.flatMap((entry) => [entry?.contextInfo?.participantPn]),
+    ...payloadPhoneCandidates,
   ]);
 
-  const jidCandidates = [
+  const jidCandidates = uniqueNonEmpty([
     remoteJid,
     msg?.key?.remoteJid,
     msg?.key?.participant,
@@ -255,7 +423,8 @@ function resolveSenderPhone(msg, remoteJid, session) {
     msg?.message?.imageMessage?.contextInfo?.participant,
     msg?.message?.videoMessage?.contextInfo?.participant,
     ...messagePayloads.flatMap((entry) => [entry?.contextInfo?.participant, entry?.contextInfo?.remoteJid]),
-  ].filter(Boolean);
+    ...collectJidFieldsFromPayload(msg),
+  ]);
 
   if (publicNumber) {
     jidCandidates.forEach((jid) => rememberResolvedPhone(jid, publicNumber));
@@ -265,6 +434,12 @@ function resolveSenderPhone(msg, remoteJid, session) {
   for (const jid of jidCandidates) {
     const cachedPhone = resolveCachedPhoneByJid(jid);
     if (cachedPhone) return formatPhoneForDisplay(cachedPhone);
+  }
+
+  const lidStorePhone = await resolvePhoneViaLidStore(client, jidCandidates);
+  if (lidStorePhone) {
+    jidCandidates.forEach((jid) => rememberResolvedPhone(jid, lidStorePhone));
+    return formatPhoneForDisplay(lidStorePhone);
   }
 
   const fallback = resolvePublicPhone(jidCandidates);
@@ -499,7 +674,7 @@ async function sendDepositInstructions(client, remoteJid, quotedMsg, deposit) {
 async function sendDepositProofToAdmin(client, remoteJid, msg, session, deposit) {
   const buffer = await downloadMediaMessage(msg, "buffer", {});
   if (!buffer) throw new Error("Bukti pembayaran kosong");
-  const senderPhone = resolveSenderPhone(msg, remoteJid, session);
+  const senderPhone = await resolveSenderPhone(client, msg, remoteJid);
 
   const caption = [
     "📥 *BUKTI BAYAR DEPOSIT*",
@@ -739,9 +914,9 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
     const normalizedInput = normalizeCommandText(plainText);
 
     const session = userSessions[remoteJid] || null;
-    const senderPhone = resolveSenderPhone(msg, remoteJid, session);
+    const senderPhone = await resolveSenderPhone(client, msg, remoteJid);
     const accountPhone = formatPhoneForDisplay(session?.phone);
-    const botPhone = resolveBotPhone(client, authChoice);
+    const botPhone = resolveBotPhone(client, authChoice, state);
     const command = normalizedInput.command;
     const isCommand = normalizedInput.isCommand;
     const commandBase = command.split(/\s+/)[0] || "";
