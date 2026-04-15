@@ -54,24 +54,6 @@ function resolvePublicPhone(values = []) {
   return extracted || "";
 }
 
-function rememberResolvedPhone(jid, phone) {
-  const normalizedPhone = normalizePhoneNumber(phone);
-  if (!jid || !isLikelyPublicPhoneNumber(normalizedPhone)) return "";
-
-  const normalizedJid = String(jid).trim();
-  if (!normalizedJid) return "";
-
-  if (normalizedJid.includes("@lid")) {
-    lidToPhoneMap.set(normalizedJid, normalizedPhone);
-  }
-
-  jidToPhoneMap.set(normalizedJid, normalizedPhone);
-  jidToPhoneMap.set(normalizedPhone, normalizedPhone);
-  jidToPhoneMap.set(normalizedPhone + "@s.whatsapp.net", normalizedPhone);
-
-  return normalizedPhone;
-}
-
 function collectPhoneCandidates(values) {
   return values
     .map((value) => normalizePhoneNumber(value))
