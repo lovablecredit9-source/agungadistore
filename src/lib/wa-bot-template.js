@@ -88,11 +88,11 @@ function collectPhoneFieldsFromPayload(payload, result = []) {
     if (typeof value === "string") {
       const candidates = [];
 
-      if (/(phone|(^|_)pn$|participantpn|userpn|notifyphone|phonenumber|number|phonejid|pnjid)$/i.test(keyString)) {
+      if (/(phone|(^|_)pn$|participantpn|userpn|notifyphone|phonenumber|number|phonejid|pnjid|senderpn|authorpn|chatpn|frompn|memberpn)$/i.test(keyString)) {
         candidates.push(value, extractDigitsFromWhatsAppId(value));
       }
 
-      if (/(jid|participant|sender|remotejid|chatid|id|user)$/i.test(keyString)) {
+      if (/(jid|participant|sender|remotejid|chatid|id|user|author|from|member)$/i.test(keyString)) {
         candidates.push(extractDigitsFromWhatsAppId(value));
       }
 
@@ -275,6 +275,13 @@ function rememberMessageMappings(payload) {
   walkLidMappings(payload).forEach(([lid, phone]) => {
     rememberResolvedPhone(lid, phone);
   });
+
+  const phones = collectPhoneFieldsFromPayload(payload);
+  const jids = collectJidFieldsFromPayload(payload);
+  const fallbackPhone = phones[0] || "";
+  if (fallbackPhone) {
+    jids.forEach((jid) => rememberResolvedPhone(jid, fallbackPhone));
+  }
 }
 
 function rememberResolvedPhone(jid, phone) {
@@ -390,7 +397,15 @@ async function resolveSenderPhone(client, msg, remoteJid) {
     msg?.message?.extendedTextMessage?.contextInfo?.participantPn,
     msg?.message?.imageMessage?.contextInfo?.participantPn,
     msg?.message?.videoMessage?.contextInfo?.participantPn,
-    ...messagePayloads.flatMap((entry) => [entry?.contextInfo?.participantPn]),
+    msg?.pushName,
+    msg?.verifiedBizName,
+    ...messagePayloads.flatMap((entry) => [
+      entry?.contextInfo?.participantPn,
+      entry?.contextInfo?.remoteJidAlt,
+      entry?.contextInfo?.participantAlt,
+      entry?.contextInfo?.senderAlt,
+      entry?.contextInfo?.stanzaId,
+    ]),
     ...payloadPhoneCandidates,
   ]);
 
@@ -400,11 +415,20 @@ async function resolveSenderPhone(client, msg, remoteJid) {
     msg?.key?.participant,
     msg?.participant,
     msg?.sender,
+    msg?.chat,
     msg?.message?.messageContextInfo?.participant,
     msg?.message?.extendedTextMessage?.contextInfo?.participant,
     msg?.message?.imageMessage?.contextInfo?.participant,
     msg?.message?.videoMessage?.contextInfo?.participant,
-    ...messagePayloads.flatMap((entry) => [entry?.contextInfo?.participant, entry?.contextInfo?.remoteJid]),
+    ...messagePayloads.flatMap((entry) => [
+      entry?.contextInfo?.participant,
+      entry?.contextInfo?.remoteJid,
+      entry?.contextInfo?.remoteJidAlt,
+      entry?.contextInfo?.participantAlt,
+      entry?.contextInfo?.senderAlt,
+      entry?.contextInfo?.pnJid,
+      entry?.contextInfo?.phoneJid,
+    ]),
     ...collectJidFieldsFromPayload(msg),
   ]);
 
@@ -416,6 +440,25 @@ async function resolveSenderPhone(client, msg, remoteJid) {
   for (const jid of jidCandidates) {
     const cachedPhone = resolveCachedPhoneByJid(jid);
     if (cachedPhone) return formatPhoneForDisplay(cachedPhone);
+  }
+
+  const contactPhone = resolvePublicPhone([
+    client?.contacts?.[remoteJid]?.phoneNumber,
+    client?.contacts?.[remoteJid]?.notify,
+    client?.contacts?.[remoteJid]?.verifiedName,
+    client?.contacts?.[msg?.key?.participant]?.phoneNumber,
+    client?.contacts?.[msg?.key?.participant]?.notify,
+    client?.contacts?.[msg?.key?.participant]?.verifiedName,
+    ...jidCandidates.flatMap((jid) => [
+      client?.contacts?.[jid]?.phoneNumber,
+      client?.contacts?.[jid]?.notify,
+      client?.contacts?.[jid]?.verifiedName,
+      extractDigitsFromWhatsAppId(jid),
+    ]),
+  ]);
+  if (contactPhone) {
+    jidCandidates.forEach((jid) => rememberResolvedPhone(jid, contactPhone));
+    return formatPhoneForDisplay(contactPhone);
   }
 
   const lidStorePhone = await resolvePhoneViaLidStore(client, jidCandidates);
@@ -430,7 +473,8 @@ async function resolveSenderPhone(client, msg, remoteJid) {
     return formatPhoneForDisplay(fallback);
   }
 
-  return String(remoteJid || "").includes("@lid") ? "Nomor WA belum sinkron" : (fallback || "-");
+  const directDigits = formatPhoneForDisplay(extractDigitsFromWhatsAppId(remoteJid));
+  return directDigits !== "-" ? directDigits : "Nomor WA belum sinkron";
 }
 
 function formatPairingCode(code) {
