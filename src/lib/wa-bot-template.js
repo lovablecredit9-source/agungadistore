@@ -2049,7 +2049,58 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
       }, "bundle");
     }
 
-    // ── DETAIL TRANSAKSI ──
+    // ═══ SEWA BOT WA ═══
+    if (command.startsWith("!sewabot")) {
+      if (!session) return reply("🔒 Login dulu: !login [user] [password]");
+      const packageName = args.join(" ");
+      if (!packageName) {
+        // Fetch packages from Supabase
+        const pkgs = await supabaseRequest("wa_bot_packages?is_active=eq.true&order=sort_order.asc&select=id,name,duration_hours,price");
+        if (!pkgs || !pkgs.length) return reply("🤖 Tidak ada paket bot WA tersedia saat ini.");
+        const list = pkgs.map((p, i) => {
+          let dur = p.duration_hours < 24 ? p.duration_hours + " jam" : p.duration_hours < 168 ? Math.round(p.duration_hours / 24) + " hari" : p.duration_hours < 720 ? Math.round(p.duration_hours / 168) + " minggu" : Math.round(p.duration_hours / 720) + " bulan";
+          return (i + 1) + ". *" + p.name + "* — " + fmtRp(p.price) + " (" + dur + ")";
+        }).join("\n");
+        return reply("🤖 *Paket Sewa Bot WA:*\n\n" + list + "\n\n💡 Gunakan: !sewabot [nama paket]\nContoh: !sewabot 1 Bulan\n\n📋 Lihat botmu: !botku");
+      }
+      // Find matching package
+      const allPkgs = await supabaseRequest("wa_bot_packages?is_active=eq.true&order=sort_order.asc&select=id,name,duration_hours,price");
+      if (!allPkgs || !allPkgs.length) return reply("🤖 Tidak ada paket bot WA tersedia.");
+      const matchPkg = allPkgs.find((p) => p.name.toLowerCase() === packageName.toLowerCase()) || allPkgs.find((p) => p.name.toLowerCase().includes(packageName.toLowerCase()));
+      if (!matchPkg) return reply("❌ Paket '" + packageName + "' tidak ditemukan.\n\n💡 Ketik !sewabot untuk lihat daftar paket.");
+      // Check PIN exists
+      const pinCheck = await api("check_pin", "POST", { visitor_id: session.visitor_id });
+      if (!pinCheck.data?.hasPin) return reply("🔐 *PIN belum dibuat!*\nKetik !buatpin [6 digit] untuk buat PIN.");
+      // Ask for bot name via chatFlow
+      chatFlows[remoteJid] = { type: "sewabot_name", packageId: matchPkg.id, packageName: matchPkg.name, packagePrice: matchPkg.price, durationHours: matchPkg.duration_hours };
+      return reply("🤖 *Sewa Bot WA — " + matchPkg.name + " (" + fmtRp(matchPkg.price) + ")*\n\n📝 Masukkan nama bot yang kamu inginkan:\n(Contoh: Bot Jualan Aku)\n\n🚫 Batal? Ketik *batal*");
+    }
+
+    // ═══ BOTKU — LIHAT LANGGANAN BOT WA ═══
+    if (command === "!botku") {
+      if (!session) return reply("🔒 Login dulu: !login [user] [password]");
+      const subs = await supabaseRequest("wa_bot_subscriptions?visitor_id=eq." + session.visitor_id + "&order=created_at.desc&limit=10&select=id,bot_name,status,price_paid,starts_at,expires_at,qr_code_url,wa_bot_packages(name,duration_hours)");
+      if (!subs || !subs.length) return reply("🤖 Kamu belum punya langganan bot WA.\n\n💡 Sewa bot: !sewabot");
+      let txt = "🤖 *Langganan Bot WA Kamu:*\n";
+      subs.forEach((s, i) => {
+        const status = s.status === "active" && s.expires_at && new Date(s.expires_at) > new Date() ? "✅ Aktif" : s.status === "pending" ? "⏳ Pending" : "❌ Expired";
+        let remaining = "";
+        if (s.status === "active" && s.expires_at) {
+          const diff = new Date(s.expires_at).getTime() - Date.now();
+          if (diff > 0) {
+            const h = Math.floor(diff / 3600000);
+            remaining = h >= 24 ? " (sisa " + Math.floor(h / 24) + "h " + (h % 24) + "j)" : " (sisa " + h + "j " + Math.floor((diff % 3600000) / 60000) + "m)";
+          }
+        }
+        txt += "\n" + (i + 1) + ". *" + s.bot_name + "* " + status + remaining;
+        txt += "\n   Paket: " + (s.wa_bot_packages?.name || "-") + " — " + fmtRp(s.price_paid);
+        if (s.qr_code_url && s.status === "pending") txt += "\n   📱 QR tersedia di web";
+      });
+      txt += "\n\n💡 Sewa baru: !sewabot\n💡 Perpanjang: !sewabot [nama paket]";
+      return reply(txt);
+    }
+
+
     if (command.startsWith("!detailtrx")) {
       if (!session) return reply("🔒 Login dulu: !login [user] [password]");
       const trxId = args[0];
