@@ -237,7 +237,7 @@ const BotWaTab = () => {
           </h3>
           {activeSubs.map((sub) => (
             <Card key={sub.id} className="border-green-500/30 bg-green-500/5">
-              <CardContent className="p-3 space-y-1">
+              <CardContent className="p-3 space-y-2">
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-bold">{sub.bot_name}</span>
                   <Badge className="bg-green-500/20 text-green-700 text-[10px]">Aktif</Badge>
@@ -247,6 +247,12 @@ const BotWaTab = () => {
                 </div>
                 {sub.wa_bot_packages && (
                   <div className="text-[10px] text-muted-foreground">Paket: {sub.wa_bot_packages.name}</div>
+                )}
+                {(sub as any).qr_code_url && (
+                  <div className="mt-2 p-2 bg-white rounded-lg text-center">
+                    <p className="text-[10px] text-gray-600 mb-1 font-medium">📱 Scan QR di WhatsApp → Linked Devices</p>
+                    <img src={(sub as any).qr_code_url} alt="QR Code Bot WA" className="mx-auto max-w-[200px] rounded" />
+                  </div>
                 )}
               </CardContent>
             </Card>
@@ -262,14 +268,22 @@ const BotWaTab = () => {
           </h3>
           {pendingSubs.map((sub) => (
             <Card key={sub.id} className="border-yellow-500/30 bg-yellow-500/5">
-              <CardContent className="p-3 space-y-1">
+              <CardContent className="p-3 space-y-2">
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-bold">{sub.bot_name}</span>
                   <Badge className="bg-yellow-500/20 text-yellow-700 text-[10px]">Pending</Badge>
                 </div>
-                <div className="text-xs text-muted-foreground">
-                  Admin akan segera mengaktifkan bot Anda dan mengirim QR code.
-                </div>
+                {(sub as any).qr_code_url ? (
+                  <div className="p-2 bg-white rounded-lg text-center">
+                    <p className="text-[10px] text-gray-600 mb-1 font-medium">📱 Scan QR di WhatsApp → Linked Devices</p>
+                    <img src={(sub as any).qr_code_url} alt="QR Code Bot WA" className="mx-auto max-w-[200px] rounded" />
+                    <p className="text-[10px] text-green-600 mt-1">Setelah scan, bot akan otomatis aktif!</p>
+                  </div>
+                ) : (
+                  <div className="text-xs text-muted-foreground">
+                    Admin akan segera mengaktifkan bot Anda dan mengirim QR code.
+                  </div>
+                )}
                 {sub.wa_bot_packages && (
                   <div className="text-[10px] text-muted-foreground">Paket: {sub.wa_bot_packages.name}</div>
                 )}
