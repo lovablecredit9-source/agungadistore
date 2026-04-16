@@ -1,5 +1,5 @@
 // =============================================
-// 🤖 BOT WHATSAPP - Agung Adi Store v13.5.1
+// 🤖 BOT WHATSAPP - Agung Adi Store v13.6.0
 // =============================================
 // Library: @whiskeysockets/baileys (QR / Pairing Code)
 // Cara pakai:
@@ -605,6 +605,8 @@ async function getPendingSubscriptions() {
 // === MULTI-SESSION BOT RENTAL (Child Bots) ===
 const BOT_SESSIONS_DIR = "./bot_sessions";
 const childBotSessions = new Map(); // subscriptionId -> { client, qrInterval, authDir, buyerJid }
+const qrGenerateCounts = new Map(); // subscriptionId -> count (max 6 per sub lifetime)
+const MAX_QR_GENERATES = 6; // max total QR generate sessions per subscription
 
 function safeRemoveDir(targetDir) {
   try {
@@ -644,15 +646,17 @@ async function fetchSubscriptionState(subId) {
 async function scheduleChildBotRestart(parentClient, subscription, buyerJid, options = {}) {
   const retryCount = Number(options.retryCount || 0);
   const maxRetries = Number(options.maxRetries || 10);
-  const restartDelayMs = Number(options.delayMs || 3000);
+  const restartDelayMs = Number(options.delayMs || 5000 + retryCount * 2000);
   const preserveAuth = Boolean(options.preserveAuth);
   const subId = subscription.id || subscription.subscription?.id;
   const botName = subscription.subscription?.bot_name || subscription.bot_name || "Bot";
 
   if (retryCount >= maxRetries) {
-    await parentClient.sendMessage(buyerJid, {
-      text: "⏰ *QR Bot Gagal Tersambung Otomatis*\n\n🤖 Bot: *" + botName + "*\nQR sudah beberapa kali gagal tersambung.\n\n💡 Ketik *!qrulang " + String(subId || "").slice(0, 8) + "* untuk buat QR baru.",
-    });
+    try {
+      await parentClient.sendMessage(buyerJid, {
+        text: "⏰ *QR Bot Gagal Tersambung Otomatis*\n\n🤖 Bot: *" + botName + "*\nQR sudah beberapa kali gagal tersambung.\n\n💡 Ketik *!qr [nomor]* (lihat !riwayatbot) untuk buat QR baru.",
+      });
+    } catch (e) {}
     return;
   }
 
@@ -694,7 +698,21 @@ async function startChildBot(parentClient, subscription, buyerJid, options = {})
   const { version } = await fetchLatestBaileysVersion();
 
   let qrAttempts = 0;
-  const MAX_QR_ATTEMPTS = 10; // 10 * 30s = 5 minutes max
+  const MAX_QR_ATTEMPTS = 6; // 6 * 30s = 3 minutes max per session
+
+  // Track total QR generates for this subscription
+  const totalGenerates = qrGenerateCounts.get(subId) || 0;
+  if (totalGenerates >= MAX_QR_GENERATES) {
+    if (buyerJid) {
+      try {
+        await parentClient.sendMessage(buyerJid, {
+          text: "⚠️ *Batas Generate QR Tercapai*\n\n🤖 Bot: *" + botName + "*\nSudah " + MAX_QR_GENERATES + "x generate QR.\n\n❌ Tidak bisa generate lagi.\n💡 Beli paket baru: !sewabot",
+        });
+      } catch (e) {}
+    }
+    return;
+  }
+  qrGenerateCounts.set(subId, totalGenerates + 1);
 
   const childClient = makeWASocket({
     version,
@@ -721,9 +739,12 @@ async function startChildBot(parentClient, subscription, buyerJid, options = {})
 
       if (qrAttempts > MAX_QR_ATTEMPTS) {
         console.log("⏰ QR timeout for bot: " + botName);
-        await parentClient.sendMessage(buyerJid, {
-          text: "⏰ *QR Code Expired*\n\n🤖 Bot: *" + botName + "*\nQR sudah expired (5 menit).\n\n💡 Ketik *!qrulang " + subId.slice(0, 8) + "* untuk generate QR baru.",
-        });
+        const remaining = MAX_QR_GENERATES - (qrGenerateCounts.get(subId) || 0);
+        try {
+          await parentClient.sendMessage(buyerJid, {
+            text: "⏰ *QR Code Expired*\n\n🤖 Bot: *" + botName + "*\n🔄 Sisa generate: " + remaining + "/" + MAX_QR_GENERATES + "\n\n💡 Ketik *!qr [nomor]* (lihat !riwayatbot) untuk generate QR baru.",
+          });
+        } catch (e) {}
         await stopChildBot(subId);
         return;
       }
@@ -806,9 +827,11 @@ async function startChildBot(parentClient, subscription, buyerJid, options = {})
 
       if (isLoggedOut && sessionData.connected) {
         await supabaseRequest("wa_bot_subscriptions?id=eq." + subId, "PATCH", { status: "pending", qr_code_url: null });
-        await parentClient.sendMessage(buyerJid, {
-          text: "🔌 *Bot Terputus dari WhatsApp*\n\n🤖 Bot: *" + botName + "*\nStatus diubah ke pending supaya bisa scan ulang.\n\n💡 Ketik *!qrulang " + subId.slice(0, 8) + "* untuk sambungkan lagi.",
-        });
+        try {
+          await parentClient.sendMessage(buyerJid, {
+            text: "🔌 *Bot Terputus dari WhatsApp*\n\n🤖 Bot: *" + botName + "*\nStatus diubah ke pending.\n\n💡 Ketik *!qr [nomor]* (lihat !riwayatbot) untuk sambungkan lagi.",
+          });
+        } catch (e) {}
         return;
       }
 
@@ -818,19 +841,24 @@ async function startChildBot(parentClient, subscription, buyerJid, options = {})
         await supabaseRequest("wa_bot_subscriptions?id=eq." + subId, "PATCH", { status: "pending", qr_code_url: null });
       }
 
-      console.log("🔄 Menjalankan ulang child bot: " + botName + " (retry " + (retryCount + 1) + "/" + maxRetries + ")");
-      await scheduleChildBotRestart(parentClient, {
-        ...(subscription.subscription || subscription),
-        id: subId,
-        bot_name: botName,
-        session_id: sessionId,
-        status: shouldPreserveAuth ? "active" : "pending",
-        expires_at: latestSub?.expires_at || subscription.expires_at,
-      }, buyerJid, {
-        retryCount,
-        maxRetries,
-        preserveAuth: shouldPreserveAuth,
-      });
+      // Only auto-reconnect if was previously connected (active), NOT for pending/QR failures
+      if (shouldPreserveAuth && sessionData.connected) {
+        console.log("🔄 Menjalankan ulang child bot: " + botName + " (retry " + (retryCount + 1) + "/" + maxRetries + ")");
+        await scheduleChildBotRestart(parentClient, {
+          ...(subscription.subscription || subscription),
+          id: subId,
+          bot_name: botName,
+          session_id: sessionId,
+          status: "active",
+          expires_at: latestSub?.expires_at || subscription.expires_at,
+        }, buyerJid, {
+          retryCount,
+          maxRetries,
+          preserveAuth: true,
+        });
+      } else {
+        console.log("🛑 Child bot QR/pending gagal, stop retry: " + botName);
+      }
     }
   });
 
@@ -1758,8 +1786,9 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
         "┃ !belibundle [nama paket]",
         "┃ !sewabot [nama paket]",
         "┃ !botku — Langganan bot WA",
-        "┃ !qrulang [ID] — QR ulang",
-        "┃ 🔐 PIN diminta tiap transaksi",
+        "┃ !riwayatbot — Riwayat bot",
+        "┃ !qr [nomor] — QR ulang",
+        "┃ 🔐 PIN diminta tiap transaksi", 
         "╰━━━━━━━━━━━━━━━━━━━━━━━━━━╯",
         "",
         "╭━━━ 💰 *DEPOSIT* ━━━━━━━━━━╮",
