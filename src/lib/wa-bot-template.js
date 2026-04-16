@@ -1344,6 +1344,25 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
         delete chatFlows[remoteJid];
         return reply("✅ *Password berhasil diperbarui!*\n\n🔑 Password baru: " + plainText);
       }
+
+      // ── SEWA BOT WA: input nama bot ──
+      if (flow.type === "sewabot_name") {
+        const botName = plainText.trim().slice(0, 50);
+        if (!botName || botName.length < 1) return reply("⚠️ Nama bot tidak boleh kosong.\n\n🚫 Batal? Ketik *batal*");
+        delete chatFlows[remoteJid];
+        // Now trigger PIN flow via pinPending with direct Supabase function call
+        pinPending[remoteJid] = {
+          endpoint: "__direct_sewabot__",
+          body: { visitorId: session.visitor_id, packageId: flow.packageId, botName },
+          successMsg: (pd) => {
+            let dur = flow.durationHours < 24 ? flow.durationHours + " jam" : flow.durationHours < 168 ? Math.round(flow.durationHours / 24) + " hari" : flow.durationHours < 720 ? Math.round(flow.durationHours / 168) + " minggu" : Math.round(flow.durationHours / 720) + " bulan";
+            return "✅ *Bot WA Berhasil Disewa!*\n\n🤖 Nama Bot: *" + botName + "*\n📦 Paket: " + flow.packageName + " (" + dur + ")\n💰 Harga: " + fmtRp(flow.packagePrice) + "\n💳 Sisa Saldo: " + fmtRp(pd.balance_remaining) + "\n🆔 ID: " + (pd.trx_id || "-") + "\n\n⏳ Admin akan segera mengaktifkan bot dan mengirim QR code.\n📱 Scan QR di WhatsApp → Perangkat Tertaut\n\n💡 Cek status: !botku";
+          },
+          session,
+          receiptType: "bot_wa",
+        };
+        return reply("🔐 *Masukkan PIN 6 digit untuk konfirmasi:*\n\n🤖 Bot: *" + botName + "*\n📦 Paket: " + flow.packageName + "\n💰 Harga: " + fmtRp(flow.packagePrice) + "\n\n(Ketik PIN langsung, contoh: 123456)\n\n❌ PIN salah? Ketik *!resetpin* untuk reset\n🚫 Batal? Ketik *batal*");
+      }
     }
 
     if ((lowerText === "bukti" || lowerText === "!bukti") && !msg.message?.imageMessage) {
