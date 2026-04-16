@@ -454,7 +454,7 @@ export default function DailyStreak() {
       {/* Hero Streak Card */}
       <motion.div
         initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-        className="relative overflow-hidden rounded-2xl border border-border bg-card"
+        className="relative overflow-hidden rounded-2xl border border-border glass-card-strong glow-border"
       >
         {/* Animated BG glow */}
         <div className={`absolute inset-0 bg-gradient-to-br ${getTierColor(currentTier)} opacity-[0.06]`} />
@@ -602,7 +602,7 @@ export default function DailyStreak() {
       <motion.div
         initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.2 }}
-        className="bg-card rounded-2xl border p-4 space-y-3"
+        className="glass-card-strong rounded-2xl border p-4 space-y-3"
       >
         <h4 className="text-sm font-bold flex items-center gap-2">
           <Gift className="w-4 h-4 text-primary" /> Milestone Streak
@@ -731,7 +731,7 @@ export default function DailyStreak() {
       <motion.div
         initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.3 }}
-        className="bg-card rounded-2xl border p-4 space-y-3"
+        className="glass-card-strong rounded-2xl border p-4 space-y-3"
       >
         <h4 className="text-sm font-bold flex items-center gap-2">
           <ShoppingCart className="w-4 h-4 text-primary" /> Paket Auto-Klaim Streak
