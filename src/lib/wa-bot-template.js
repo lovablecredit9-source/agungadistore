@@ -1,5 +1,5 @@
 // =============================================
-// 🤖 BOT WHATSAPP - Agung Adi Store v13.6.0
+// 🤖 BOT WHATSAPP - Agung Adi Store v13.6.1
 // =============================================
 // Library: @whiskeysockets/baileys (QR / Pairing Code)
 // Cara pakai:
@@ -520,7 +520,7 @@ const SUPABASE_URL = "__BOT_SUPABASE_URL__";
 const SUPABASE_ANON_KEY = "__BOT_SUPABASE_ANON_KEY__";
 
 const DEFAULT_PAIRING_PHONE = "__BOT_PAIRING_PHONE__"; // Opsional: nomor default pairing, format: 628xxxxxxxxxx
-const BOT_VERSION = "13.5.1";
+const BOT_VERSION = "13.6.1";
 
 // === BOT RENTAL MANAGEMENT ===
 // Menyimpan sesi bot rental aktif: { subscriptionId, botName, expiresAt, checkInterval }
@@ -700,19 +700,23 @@ async function startChildBot(parentClient, subscription, buyerJid, options = {})
   let qrAttempts = 0;
   const MAX_QR_ATTEMPTS = 6; // 6 * 30s = 3 minutes max per session
 
-  // Track total QR generates for this subscription
+  // Track total QR generates hanya saat benar-benar membuat sesi QR baru
   const totalGenerates = qrGenerateCounts.get(subId) || 0;
-  if (totalGenerates >= MAX_QR_GENERATES) {
-    if (buyerJid) {
-      try {
-        await parentClient.sendMessage(buyerJid, {
-          text: "⚠️ *Batas Generate QR Tercapai*\n\n🤖 Bot: *" + botName + "*\nSudah " + MAX_QR_GENERATES + "x generate QR.\n\n❌ Tidak bisa generate lagi.\n💡 Beli paket baru: !sewabot",
-        });
-      } catch (e) {}
+  const shouldCountQrGeneration = !preserveAuth || !hasRegisteredCreds;
+  if (shouldCountQrGeneration) {
+    if (totalGenerates >= MAX_QR_GENERATES) {
+      if (buyerJid) {
+        try {
+          await parentClient.sendMessage(buyerJid, {
+            text: "⚠️ *Batas Generate QR Tercapai*\n\n🤖 Bot: *" + botName + "*\nSudah " + MAX_QR_GENERATES + "x generate QR.\n\n❌ Tidak bisa generate lagi.\n💡 Beli paket baru: !sewabot",
+          });
+        } catch (e) {}
+      }
+      return;
     }
-    return;
+
+    qrGenerateCounts.set(subId, totalGenerates + 1);
   }
-  qrGenerateCounts.set(subId, totalGenerates + 1);
 
   const childClient = makeWASocket({
     version,
@@ -812,6 +816,11 @@ async function startChildBot(parentClient, subscription, buyerJid, options = {})
       const badMacDetected = /bad\s*mac/i.test(String(disconnectMessage || ""));
       const latestSub = await fetchSubscriptionState(subId);
       const stillUsable = isSubscriptionStillUsable(latestSub);
+      const registeredSessionReady = Boolean(state?.creds?.registered || readChildCreds(authDir)?.registered);
+      const isRestartRequired =
+        statusCode === DisconnectReason.restartRequired ||
+        statusCode === 515 ||
+        /restart required|stream errored|stream error|515/i.test(String(disconnectMessage || ""));
 
       console.log("🔌 Child Bot [" + botName + "] disconnected, code:", statusCode, "status:", latestSub?.status || "-", "usable:", stillUsable, "msg:", disconnectMessage);
 
@@ -832,6 +841,30 @@ async function startChildBot(parentClient, subscription, buyerJid, options = {})
             text: "🔌 *Bot Terputus dari WhatsApp*\n\n🤖 Bot: *" + botName + "*\nStatus diubah ke pending.\n\n💡 Ketik *!qr [nomor]* (lihat !riwayatbot) untuk sambungkan lagi.",
           });
         } catch (e) {}
+        return;
+      }
+
+      const shouldResumeRegisteredSession = registeredSessionReady && !badMacDetected && !isLoggedOut && (isRestartRequired || sessionData.connected);
+      if (shouldResumeRegisteredSession) {
+        console.log("♻️ Melanjutkan sesi child bot tanpa QR baru: " + botName);
+        await supabaseRequest("wa_bot_subscriptions?id=eq." + subId, "PATCH", {
+          status: latestSub?.status === "active" ? "active" : "connecting",
+          qr_code_url: null,
+        });
+
+        await scheduleChildBotRestart(parentClient, {
+          ...(subscription.subscription || subscription),
+          id: subId,
+          bot_name: botName,
+          session_id: sessionId,
+          status: latestSub?.status || "connecting",
+          expires_at: latestSub?.expires_at || subscription.expires_at,
+        }, buyerJid, {
+          retryCount,
+          maxRetries,
+          preserveAuth: true,
+          delayMs: 3000,
+        });
         return;
       }
 
@@ -1576,7 +1609,7 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
             await startChildBot(client, pd, pending._buyerJid || remoteJid);
           } catch (botErr) {
             console.error("❌ Gagal start child bot:", botErr.message);
-            await client.sendMessage(remoteJid, { text: "⚠️ Gagal generate QR otomatis.\n\n💡 Ketik *!qrulang " + (pd.subscription?.id || "").slice(0, 8) + "* untuk coba lagi." });
+            await client.sendMessage(remoteJid, { text: "⚠️ Gagal generate QR otomatis.\n\n💡 Ketik *!riwayatbot* lalu gunakan *!qr [nomor]* untuk coba lagi." });
           }
         }
         return;
@@ -2435,14 +2468,14 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
     }
 
     // ═══ BOTKU — LIHAT LANGGANAN BOT WA ═══
-    if (command === "!botku") {
+    if (command === "!botku" || command === "!riwayatbot") {
       if (!session) return reply("🔒 Login dulu: !login [user] [password]");
       const subs = await supabaseRequest("wa_bot_subscriptions?visitor_id=eq." + session.visitor_id + "&order=created_at.desc&limit=10&select=id,bot_name,status,price_paid,starts_at,expires_at,qr_code_url,wa_bot_packages(name,duration_hours)");
       if (!subs || !subs.length) return reply("🤖 Kamu belum punya langganan bot WA.\n\n💡 Sewa bot: !sewabot");
       let txt = "🤖 *Langganan Bot WA Kamu:*\n";
       subs.forEach((s, i) => {
         const isActive = s.status === "active" && s.expires_at && new Date(s.expires_at) > new Date();
-        const status = isActive ? "✅ Aktif" : s.status === "pending" ? "⏳ Menunggu QR Scan" : "❌ Expired";
+        const status = isActive ? "✅ Aktif" : s.status === "connecting" ? "🔄 Menyambungkan" : s.status === "pending" ? "⏳ Menunggu QR Scan" : "❌ Expired";
         let remaining = "";
         if (isActive && s.expires_at) {
           const diff = new Date(s.expires_at).getTime() - Date.now();
@@ -2458,8 +2491,8 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
         if (childSession?.botNumber) {
           txt += "\n   📱 No Bot: +" + childSession.botNumber;
         }
-        if (s.status === "pending") {
-          txt += "\n   💡 Ketik *!qrulang " + s.id.slice(0, 8) + "* untuk kirim QR ulang";
+        if (["pending", "connecting"].includes(String(s.status || ""))) {
+          txt += "\n   💡 Ketik *!qr " + (i + 1) + "* untuk kirim QR ulang";
         }
       });
       txt += "\n\n💡 Sewa baru: !sewabot\n💡 Perpanjang: !sewabot [nama paket]";
@@ -2467,15 +2500,17 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
     }
 
     // ═══ QR ULANG — REGENERATE QR UNTUK BOT PENDING ═══
-    if (command.startsWith("!qrulang")) {
+    if (command.startsWith("!qrulang") || command.startsWith("!qr")) {
       if (!session) return reply("🔒 Login dulu: !login [user] [password]");
-      const subIdPrefix = String(args[0] || "").trim();
-      if (!subIdPrefix) return reply("⚠️ Gunakan: !qrulang [ID subscription]\n\n💡 Lihat ID di !botku");
-      // Find matching subscription
-      const allSubs = await supabaseRequest("wa_bot_subscriptions?visitor_id=eq." + session.visitor_id + "&status=eq.pending&select=id,bot_name,session_id,expires_at");
+      const selectedRef = String(args[0] || "").trim();
+      if (!selectedRef) return reply("⚠️ Gunakan: !qr [nomor]\n\n💡 Lihat nomor bot di !riwayatbot");
+      const selectedIndex = Number(selectedRef);
+      const allSubs = await supabaseRequest("wa_bot_subscriptions?visitor_id=eq." + session.visitor_id + "&status=in.(pending,connecting)&order=created_at.desc&select=id,bot_name,session_id,expires_at,status");
       if (!allSubs || !allSubs.length) return reply("❌ Tidak ada bot pending yang bisa di-QR ulang.");
-      const matchSub = allSubs.find((s) => s.id.startsWith(subIdPrefix) || s.id === subIdPrefix);
-      if (!matchSub) return reply("❌ Subscription tidak ditemukan. Cek ID di !botku");
+      const matchSub = Number.isInteger(selectedIndex) && selectedIndex > 0
+        ? allSubs[selectedIndex - 1]
+        : allSubs.find((s) => s.id.startsWith(selectedRef) || s.id === selectedRef);
+      if (!matchSub) return reply("❌ Bot tidak ditemukan. Cek nomor urut di !riwayatbot");
       if (new Date(matchSub.expires_at) <= new Date()) return reply("❌ Subscription sudah expired.");
       
       await reply("📱 *Generating QR Code ulang...*\n\n🤖 Bot: *" + matchSub.bot_name + "*\n⏳ Mohon tunggu...");

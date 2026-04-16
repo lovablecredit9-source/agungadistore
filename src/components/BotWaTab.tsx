@@ -28,6 +28,7 @@ interface BotSubscription {
   expires_at: string | null;
   session_id: string | null;
   created_at: string;
+  qr_code_url?: string | null;
   wa_bot_packages?: { name: string; duration_hours: number } | null;
 }
 
@@ -68,20 +69,30 @@ const BotWaTab = () => {
 
   const visitorId = getVisitorId();
 
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    const [pkgRes, subRes, balRes] = await Promise.all([
-      supabase.from("wa_bot_packages").select("*").eq("is_active", true).order("sort_order"),
-      supabase.from("wa_bot_subscriptions").select("*, wa_bot_packages(name, duration_hours)").eq("visitor_id", visitorId).order("created_at", { ascending: false }),
-      supabase.from("user_balances").select("balance").eq("visitor_id", visitorId).maybeSingle(),
-    ]);
-    if (pkgRes.data) setPackages(pkgRes.data);
-    if (subRes.data) setSubscriptions(subRes.data as any);
-    if (balRes.data) setUserBalance(balRes.data.balance);
-    setLoading(false);
+  const fetchData = useCallback(async (silent = false) => {
+    if (!silent) setLoading(true);
+    try {
+      const [pkgRes, subRes, balRes] = await Promise.all([
+        supabase.from("wa_bot_packages").select("*").eq("is_active", true).order("sort_order"),
+        supabase.from("wa_bot_subscriptions").select("*, wa_bot_packages(name, duration_hours)").eq("visitor_id", visitorId).order("created_at", { ascending: false }),
+        supabase.from("user_balances").select("balance").eq("visitor_id", visitorId).maybeSingle(),
+      ]);
+      if (pkgRes.data) setPackages(pkgRes.data);
+      if (subRes.data) setSubscriptions(subRes.data as BotSubscription[]);
+      if (balRes.data) setUserBalance(balRes.data.balance);
+    } finally {
+      if (!silent) setLoading(false);
+    }
   }, [visitorId]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
+
+  useEffect(() => {
+    const iv = setInterval(() => {
+      fetchData(true);
+    }, 10000);
+    return () => clearInterval(iv);
+  }, [fetchData]);
 
   // Refresh remaining time every minute
   useEffect(() => {
@@ -119,7 +130,7 @@ const BotWaTab = () => {
   };
 
   const activeSubs = subscriptions.filter(s => s.status === "active" && s.expires_at && new Date(s.expires_at) > new Date());
-  const pendingSubs = subscriptions.filter(s => s.status === "pending");
+  const pendingSubs = subscriptions.filter(s => ["pending", "connecting"].includes(s.status) && (!s.expires_at || new Date(s.expires_at) > new Date()));
   const expiredSubs = subscriptions.filter(s => s.status === "expired" || (s.expires_at && new Date(s.expires_at) <= new Date()));
 
   if (loading) {
@@ -248,10 +259,10 @@ const BotWaTab = () => {
                 {sub.wa_bot_packages && (
                   <div className="text-[10px] text-muted-foreground">Paket: {sub.wa_bot_packages.name}</div>
                 )}
-                {(sub as any).qr_code_url && (
+                {sub.qr_code_url && (
                   <div className="mt-2 p-2 bg-white rounded-lg text-center">
                     <p className="text-[10px] text-gray-600 mb-1 font-medium">📱 Scan QR di WhatsApp → Linked Devices</p>
-                    <img src={(sub as any).qr_code_url} alt="QR Code Bot WA" className="mx-auto max-w-[200px] rounded" />
+                    <img src={sub.qr_code_url} alt="QR Code Bot WA" className="mx-auto max-w-[200px] rounded" />
                   </div>
                 )}
               </CardContent>
@@ -263,25 +274,29 @@ const BotWaTab = () => {
       {/* Pending Subscriptions */}
       {pendingSubs.length > 0 && (
         <div className="space-y-2">
-          <h3 className="text-sm font-bold flex items-center gap-1.5 text-yellow-600">
-            <AlertCircle className="w-4 h-4" /> Menunggu Aktivasi
+            <h3 className="text-sm font-bold flex items-center gap-1.5 text-yellow-600">
+              <AlertCircle className="w-4 h-4" /> Menunggu Aktivasi
           </h3>
           {pendingSubs.map((sub) => (
-            <Card key={sub.id} className="border-yellow-500/30 bg-yellow-500/5">
+            <Card key={sub.id} className={sub.status === "connecting" ? "border-blue-500/30 bg-blue-500/5" : "border-yellow-500/30 bg-yellow-500/5"}>
               <CardContent className="p-3 space-y-2">
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-bold">{sub.bot_name}</span>
-                  <Badge className="bg-yellow-500/20 text-yellow-700 text-[10px]">Pending</Badge>
+                  <Badge className={sub.status === "connecting" ? "bg-blue-500/20 text-blue-700 text-[10px]" : "bg-yellow-500/20 text-yellow-700 text-[10px]"}>
+                    {sub.status === "connecting" ? "Menghubungkan" : "Pending"}
+                  </Badge>
                 </div>
-                {(sub as any).qr_code_url ? (
+                {sub.qr_code_url ? (
                   <div className="p-2 bg-white rounded-lg text-center">
                     <p className="text-[10px] text-gray-600 mb-1 font-medium">📱 Scan QR di WhatsApp → Linked Devices</p>
-                    <img src={(sub as any).qr_code_url} alt="QR Code Bot WA" className="mx-auto max-w-[200px] rounded" />
-                    <p className="text-[10px] text-green-600 mt-1">Setelah scan, bot akan otomatis aktif!</p>
+                    <img src={sub.qr_code_url} alt="QR Code Bot WA" className="mx-auto max-w-[200px] rounded" />
+                    <p className="text-[10px] text-green-600 mt-1">Setelah scan, status akan update otomatis di panel.</p>
                   </div>
                 ) : (
                   <div className="text-xs text-muted-foreground">
-                    ⏳ QR sedang digenerate otomatis via bot WA. Cek chat bot Anda.
+                    {sub.status === "connecting"
+                      ? "🔄 QR sudah discan. Sistem sedang menyelesaikan koneksi bot ke WhatsApp."
+                      : "⏳ QR sedang digenerate otomatis via bot WA. Cek chat bot Anda."}
                   </div>
                 )}
                 {sub.wa_bot_packages && (
