@@ -144,7 +144,7 @@ const BotWaTab = () => {
       </div>
 
       <p className="text-xs text-muted-foreground">
-        Sewa bot WhatsApp pribadi yang berjalan di server kami. Bot otomatis aktif setelah scan QR dan disconnect saat masa sewa habis.
+        Sewa bot WhatsApp pribadi. Setelah beli via bot WA, QR code dikirim otomatis. Bot aktif setelah scan QR dan disconnect otomatis saat masa sewa habis.
       </p>
 
       {/* Packages */}
