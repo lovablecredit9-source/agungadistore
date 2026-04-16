@@ -158,8 +158,8 @@ export default function AdminApiKeyTab() {
   function generatePackageJson() {
     return JSON.stringify({
       name: "bot-wa-agungadi",
-        version: "13.5.0",
-        description: "Bot WhatsApp Agung Adi Store v13.5.0 - Bot Rental + QR Upload Management",
+        version: "13.5.1",
+        description: "Bot WhatsApp Agung Adi Store v13.5.1 - Bot Rental + QR Auto-Reconnect",
       main: "index.js",
       scripts: {
         start: "node index.js",
@@ -179,7 +179,7 @@ export default function AdminApiKeyTab() {
   }
 
   function generateReadmeMd() {
-    return `# 🤖 Bot WhatsApp - Agung Adi Store v13.5.0
+    return `# 🤖 Bot WhatsApp - Agung Adi Store v13.5.1
 
 ## 📋 Persyaratan
 - Node.js >= 18
@@ -204,6 +204,7 @@ ${"```"}
 8. Di HP, buka WhatsApp > Linked Devices > Link with phone number lalu masukkan **RAW code** itu secara manual tanpa spasi/strip
 9. Tidak ada notif/chat otomatis ke WhatsApp — kodenya hanya tampil di terminal
 10. Jika gagal / expired, bot akan reset sesi pairing dan membuat kode baru
+11. Untuk bot sewaan, QR child bot akan otomatis dibuat ulang jika koneksi awal gagal
 
 ## 📲 Login WhatsApp
 Bot mendukung **2 mode login**:
