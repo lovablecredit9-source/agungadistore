@@ -1648,17 +1648,22 @@ const Index = () => {
             )}
 
             {/* Voucher Card */}
-            <Card className="overflow-hidden border-0 shadow-lg hover:shadow-xl transition-all cursor-pointer hover:-translate-y-0.5 duration-200" onClick={() => setTab("voucher")}>
-              <div className="bg-gradient-to-r from-primary/10 via-accent/5 to-primary/10 p-0.5">
-                <CardContent className="p-4 flex items-center gap-3 bg-card rounded-lg">
-                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-md shrink-0">
-                    <Ticket className="w-6 h-6 text-white" />
+            <Card className="overflow-hidden border-0 shadow-lg hover:shadow-2xl transition-all cursor-pointer hover:-translate-y-1 duration-300 glass-card glow-border" onClick={() => setTab("voucher")}>
+              <div className="bg-gradient-to-r from-primary/15 via-accent/10 to-primary/15 p-0.5">
+                <CardContent className="p-4 flex items-center gap-3 bg-card/80 backdrop-blur-sm rounded-lg">
+                  <div className="relative">
+                    <div className="absolute -inset-1 bg-gradient-to-br from-primary to-accent rounded-xl blur-md opacity-40" />
+                    <div className="relative w-12 h-12 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-xl">
+                      <Ticket className="w-6 h-6 text-white" />
+                    </div>
                   </div>
                   <div className="flex-1">
                     <h3 className="font-bold text-sm">{t("home.have_voucher", lang)}</h3>
                     <p className="text-xs text-muted-foreground">{t("home.claim_now", lang)}</p>
                   </div>
-                  <ChevronRight className="w-5 h-5 text-muted-foreground" />
+                  <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                    <ChevronRight className="w-4 h-4 text-primary" />
+                  </div>
                 </CardContent>
               </div>
             </Card>
