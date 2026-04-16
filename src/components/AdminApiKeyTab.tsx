@@ -146,13 +146,19 @@ export default function AdminApiKeyTab() {
     const phone = phoneNumber ? normalizePairingPhoneInput(phoneNumber) : "";
     const anonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || "";
 
+    const validAdmins = adminNumbers.filter(n => n.trim().length >= 10);
+    const adminArr = validAdmins.length > 0
+      ? `[\n  ${validAdmins.map(n => `"${normalizePairingPhoneInput(n)}@s.whatsapp.net"`).join(",\n  ")}\n]`
+      : `[]`;
+
     return botTemplate
       .replace('__BOT_API_KEY__', apiKey)
       .replace('__BOT_BASE_URL__', base)
       .replace('__BOT_WEB_URL__', web)
       .replace('__BOT_PAIRING_PHONE__', phone)
       .replace('__BOT_SUPABASE_URL__', supabaseUrl)
-      .replace('__BOT_SUPABASE_ANON_KEY__', anonKey);
+      .replace('__BOT_SUPABASE_ANON_KEY__', anonKey)
+      .replace('__BOT_ADMIN_NUMBERS__', adminArr);
   }
 
 
