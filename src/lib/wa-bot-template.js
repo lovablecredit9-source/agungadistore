@@ -730,6 +730,7 @@ function getFlowLabel(flowType) {
   if (!flowType) return "proses aktif";
   if (flowType === "deposit_amount" || flowType === "deposit_method") return "deposit";
   if (flowType === "create_pin") return "pembuatan PIN";
+  if (flowType === "sewabot_name") return "sewa bot WA";
   if (String(flowType).startsWith("resetpin")) return "reset PIN";
   if (String(flowType).startsWith("resetsandi")) return "reset password";
   return "proses aktif";
@@ -1190,7 +1191,19 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
       }
       // Re-execute the purchase with PIN
       try {
-        const res = await api(pending.endpoint, "POST", { ...pending.body, pin: pinInput });
+        let res;
+        if (pending.endpoint === "__direct_sewabot__") {
+          // Direct call to purchase-wa-bot edge function
+          const fnUrl = SUPABASE_URL + "/functions/v1/purchase-wa-bot";
+          const fnRes = await fetch(fnUrl, {
+            method: "POST",
+            headers: { "Content-Type": "application/json", "Authorization": "Bearer " + SUPABASE_ANON_KEY },
+            body: JSON.stringify({ ...pending.body, pin: pinInput }),
+          });
+          res = await fnRes.json();
+        } else {
+          res = await api(pending.endpoint, "POST", { ...pending.body, pin: pinInput });
+        }
         if (res.error) return client.sendMessage(remoteJid, { text: "❌ " + res.error + "\n\n💡 PIN salah? Ketik *!resetpin* untuk reset." }, { quoted: msg });
         if (res.needPin) return client.sendMessage(remoteJid, { text: "🔐 PIN masih diperlukan. Ulangi perintah pembelian." }, { quoted: msg });
         const pd = res.data || res;
@@ -1214,13 +1227,14 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
             total_price: pd.total_price || pd.price_paid || pending.body?.price || 0,
             balance_remaining: pd.balance_remaining ?? 0,
             discount_amount: pd.discount_amount || 0,
-            plan_name: pd.plan || pd.plan_name || pd.label || pending.body?.package_name || null,
-            expires_at: pd.expires_at || null,
+            plan_name: pd.plan || pd.plan_name || pd.package_name || pd.label || pending.body?.package_name || pending.body?.botName || null,
+            expires_at: pd.expires_at || pd.subscription?.expires_at || null,
             tokens: pd.tokens || null,
             storage_mb: pd.storage_mb || null,
             credits: pd.credits || null,
             streak_days: pd.streak_days || null,
             auto_claimed: pd.auto_claimed || false,
+            bot_name: pd.subscription?.bot_name || pending.body?.botName || null,
           };
           const receiptRes = await fetch(BASE.replace("/public-api", "/generate-receipt"), {
             method: "POST",
@@ -1230,7 +1244,7 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
           const receiptJson = await receiptRes.json();
           if (receiptJson.image_base64) {
             const svgBuffer = Buffer.from(receiptJson.image_base64, "base64");
-            const caption = "🧾 Bukti Transaksi — " + (receiptData.plan_name || receiptData.product_title || "Pembelian");
+            const caption = "🧾 Bukti Transaksi — " + (receiptData.bot_name ? "Bot WA: " + receiptData.bot_name : receiptData.plan_name || receiptData.product_title || "Pembelian");
             const pngBuffer = new Resvg(svgBuffer, {
               fitTo: { mode: "width", value: 1080 },
               background: "rgba(15,23,42,1)",
@@ -1344,6 +1358,25 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
         delete chatFlows[remoteJid];
         return reply("✅ *Password berhasil diperbarui!*\n\n🔑 Password baru: " + plainText);
       }
+
+      // ── SEWA BOT WA: input nama bot ──
+      if (flow.type === "sewabot_name") {
+        const botName = plainText.trim().slice(0, 50);
+        if (!botName || botName.length < 1) return reply("⚠️ Nama bot tidak boleh kosong.\n\n🚫 Batal? Ketik *batal*");
+        delete chatFlows[remoteJid];
+        // Now trigger PIN flow via pinPending with direct Supabase function call
+        pinPending[remoteJid] = {
+          endpoint: "__direct_sewabot__",
+          body: { visitorId: session.visitor_id, packageId: flow.packageId, botName },
+          successMsg: (pd) => {
+            let dur = flow.durationHours < 24 ? flow.durationHours + " jam" : flow.durationHours < 168 ? Math.round(flow.durationHours / 24) + " hari" : flow.durationHours < 720 ? Math.round(flow.durationHours / 168) + " minggu" : Math.round(flow.durationHours / 720) + " bulan";
+            return "✅ *Bot WA Berhasil Disewa!*\n\n🤖 Nama Bot: *" + botName + "*\n📦 Paket: " + flow.packageName + " (" + dur + ")\n💰 Harga: " + fmtRp(flow.packagePrice) + "\n💳 Sisa Saldo: " + fmtRp(pd.balance_remaining) + "\n🆔 ID: " + (pd.trx_id || "-") + "\n\n⏳ Admin akan segera mengaktifkan bot dan mengirim QR code.\n📱 Scan QR di WhatsApp → Perangkat Tertaut\n\n💡 Cek status: !botku";
+          },
+          session,
+          receiptType: "bot_wa",
+        };
+        return reply("🔐 *Masukkan PIN 6 digit untuk konfirmasi:*\n\n🤖 Bot: *" + botName + "*\n📦 Paket: " + flow.packageName + "\n💰 Harga: " + fmtRp(flow.packagePrice) + "\n\n(Ketik PIN langsung, contoh: 123456)\n\n❌ PIN salah? Ketik *!resetpin* untuk reset\n🚫 Batal? Ketik *batal*");
+      }
     }
 
     if ((lowerText === "bukti" || lowerText === "!bukti") && !msg.message?.imageMessage) {
@@ -1428,6 +1461,8 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
         "┃ !belikredit [nama paket]",
         "┃ !belistorage [nama paket]",
         "┃ !belibundle [nama paket]",
+        "┃ !sewabot [nama paket]",
+        "┃ !botku — Langganan bot WA",
         "┃ 🔐 PIN diminta tiap transaksi",
         "╰━━━━━━━━━━━━━━━━━━━━━━━━━━╯",
         "",
@@ -2047,7 +2082,58 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
       }, "bundle");
     }
 
-    // ── DETAIL TRANSAKSI ──
+    // ═══ SEWA BOT WA ═══
+    if (command.startsWith("!sewabot")) {
+      if (!session) return reply("🔒 Login dulu: !login [user] [password]");
+      const packageName = args.join(" ");
+      if (!packageName) {
+        // Fetch packages from Supabase
+        const pkgs = await supabaseRequest("wa_bot_packages?is_active=eq.true&order=sort_order.asc&select=id,name,duration_hours,price");
+        if (!pkgs || !pkgs.length) return reply("🤖 Tidak ada paket bot WA tersedia saat ini.");
+        const list = pkgs.map((p, i) => {
+          let dur = p.duration_hours < 24 ? p.duration_hours + " jam" : p.duration_hours < 168 ? Math.round(p.duration_hours / 24) + " hari" : p.duration_hours < 720 ? Math.round(p.duration_hours / 168) + " minggu" : Math.round(p.duration_hours / 720) + " bulan";
+          return (i + 1) + ". *" + p.name + "* — " + fmtRp(p.price) + " (" + dur + ")";
+        }).join("\n");
+        return reply("🤖 *Paket Sewa Bot WA:*\n\n" + list + "\n\n💡 Gunakan: !sewabot [nama paket]\nContoh: !sewabot 1 Bulan\n\n📋 Lihat botmu: !botku");
+      }
+      // Find matching package
+      const allPkgs = await supabaseRequest("wa_bot_packages?is_active=eq.true&order=sort_order.asc&select=id,name,duration_hours,price");
+      if (!allPkgs || !allPkgs.length) return reply("🤖 Tidak ada paket bot WA tersedia.");
+      const matchPkg = allPkgs.find((p) => p.name.toLowerCase() === packageName.toLowerCase()) || allPkgs.find((p) => p.name.toLowerCase().includes(packageName.toLowerCase()));
+      if (!matchPkg) return reply("❌ Paket '" + packageName + "' tidak ditemukan.\n\n💡 Ketik !sewabot untuk lihat daftar paket.");
+      // Check PIN exists
+      const pinCheck = await api("check_pin", "POST", { visitor_id: session.visitor_id });
+      if (!pinCheck.data?.hasPin) return reply("🔐 *PIN belum dibuat!*\nKetik !buatpin [6 digit] untuk buat PIN.");
+      // Ask for bot name via chatFlow
+      chatFlows[remoteJid] = { type: "sewabot_name", packageId: matchPkg.id, packageName: matchPkg.name, packagePrice: matchPkg.price, durationHours: matchPkg.duration_hours };
+      return reply("🤖 *Sewa Bot WA — " + matchPkg.name + " (" + fmtRp(matchPkg.price) + ")*\n\n📝 Masukkan nama bot yang kamu inginkan:\n(Contoh: Bot Jualan Aku)\n\n🚫 Batal? Ketik *batal*");
+    }
+
+    // ═══ BOTKU — LIHAT LANGGANAN BOT WA ═══
+    if (command === "!botku") {
+      if (!session) return reply("🔒 Login dulu: !login [user] [password]");
+      const subs = await supabaseRequest("wa_bot_subscriptions?visitor_id=eq." + session.visitor_id + "&order=created_at.desc&limit=10&select=id,bot_name,status,price_paid,starts_at,expires_at,qr_code_url,wa_bot_packages(name,duration_hours)");
+      if (!subs || !subs.length) return reply("🤖 Kamu belum punya langganan bot WA.\n\n💡 Sewa bot: !sewabot");
+      let txt = "🤖 *Langganan Bot WA Kamu:*\n";
+      subs.forEach((s, i) => {
+        const status = s.status === "active" && s.expires_at && new Date(s.expires_at) > new Date() ? "✅ Aktif" : s.status === "pending" ? "⏳ Pending" : "❌ Expired";
+        let remaining = "";
+        if (s.status === "active" && s.expires_at) {
+          const diff = new Date(s.expires_at).getTime() - Date.now();
+          if (diff > 0) {
+            const h = Math.floor(diff / 3600000);
+            remaining = h >= 24 ? " (sisa " + Math.floor(h / 24) + "h " + (h % 24) + "j)" : " (sisa " + h + "j " + Math.floor((diff % 3600000) / 60000) + "m)";
+          }
+        }
+        txt += "\n" + (i + 1) + ". *" + s.bot_name + "* " + status + remaining;
+        txt += "\n   Paket: " + (s.wa_bot_packages?.name || "-") + " — " + fmtRp(s.price_paid);
+        if (s.qr_code_url && s.status === "pending") txt += "\n   📱 QR tersedia di web";
+      });
+      txt += "\n\n💡 Sewa baru: !sewabot\n💡 Perpanjang: !sewabot [nama paket]";
+      return reply(txt);
+    }
+
+
     if (command.startsWith("!detailtrx")) {
       if (!session) return reply("🔒 Login dulu: !login [user] [password]");
       const trxId = args[0];
