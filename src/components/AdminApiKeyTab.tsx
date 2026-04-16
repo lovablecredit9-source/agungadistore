@@ -37,7 +37,7 @@ export default function AdminApiKeyTab() {
   const [visibleKeys, setVisibleKeys] = useState<Set<string>>(new Set());
   const [showUsage, setShowUsage] = useState(false);
   const [downloadKeyId, setDownloadKeyId] = useState<string>("");
-  const [pairingPhone, setPairingPhone] = useState("");
+  
   const [adminNumbers, setAdminNumbers] = useState<string[]>([""]);
   const { toast } = useToast();
 
@@ -121,7 +121,8 @@ export default function AdminApiKeyTab() {
       const zip = new JSZip();
       const safeName = keyName.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") || "bot-wa";
 
-      zip.file("index.js", generateBotCode(apiKey, pairingPhone.trim() || undefined));
+      const firstAdmin = adminNumbers.find(n => n.trim().length >= 10);
+      zip.file("index.js", generateBotCode(apiKey, firstAdmin?.trim() || undefined));
       zip.file("package.json", generatePackageJson());
       zip.file("README.md", generateReadmeMd());
 
@@ -422,29 +423,14 @@ node index.js
             </p>
           )}
 
-          {/* Input nomor HP untuk pairing */}
-          <div className="space-y-1">
-            <label className="text-[11px] font-semibold flex items-center gap-1">
-              <Phone className="w-3 h-3" /> Nomor default pairing (opsional):
-            </label>
-            <Input
-              placeholder="628xxxxxxxxxx"
-              value={pairingPhone}
-                onChange={e => setPairingPhone(normalizePairingPhoneInput(e.target.value))}
-              className="text-xs font-mono h-8"
-            />
-            <p className="text-[10px] text-muted-foreground">
-                Nomor ini jadi default saat pilih mode pairing. Input 08xxx otomatis jadi 62xxx.
-            </p>
-          </div>
 
           {/* Input nomor Admin */}
           <div className="space-y-1">
             <label className="text-[11px] font-semibold flex items-center gap-1">
-              🔐 Nomor Admin Bot:
+              <Phone className="w-3 h-3" /> 🔐 Nomor Admin Bot:
             </label>
             <p className="text-[10px] text-muted-foreground mb-1">
-              Hanya nomor di list ini yang bisa akses perintah admin di bot. Kosong = semua bisa akses.
+              Nomor admin pertama otomatis jadi default pairing. Hanya nomor di list ini yang bisa akses perintah admin. Input 08xxx otomatis jadi 62xxx.
             </p>
             {adminNumbers.map((num, idx) => (
               <div key={idx} className="flex items-center gap-1">
@@ -485,12 +471,6 @@ node index.js
             <div className="bg-muted rounded p-2 space-y-1">
               <p className="text-[10px] font-semibold text-muted-foreground">API Key yang akan masuk di index.js:</p>
               <code className="text-[10px] font-mono text-primary break-all">{selectedDownloadKey.api_key}</code>
-              {pairingPhone && (
-                <>
-                  <p className="text-[10px] font-semibold text-muted-foreground mt-1">Nomor Default Pairing:</p>
-                  <code className="text-[10px] font-mono text-primary">{pairingPhone}</code>
-                </>
-              )}
               {adminNumbers.filter(n => n.trim().length >= 10).length > 0 && (
                 <>
                   <p className="text-[10px] font-semibold text-muted-foreground mt-1">Admin Numbers:</p>
