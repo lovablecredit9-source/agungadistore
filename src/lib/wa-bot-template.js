@@ -3721,6 +3721,9 @@ async function startBot() {
   if (SUPABASE_URL && SUPABASE_ANON_KEY) {
     startSubscriptionChecker(client);
     console.log("✅ Bot Rental checker aktif — cek subscription expired setiap 60 detik");
+    // Restore active child bot sessions
+    await restoreChildBotSessions(client);
+    console.log("✅ Child bot sessions restored. Active: " + childBotSessions.size);
   }
 }
 
