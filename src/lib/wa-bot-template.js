@@ -1,5 +1,5 @@
 // =============================================
-// 🤖 BOT WHATSAPP - Agung Adi Store v13.3.0
+// 🤖 BOT WHATSAPP - Agung Adi Store v13.5.1
 // =============================================
 // Library: @whiskeysockets/baileys (QR / Pairing Code)
 // Cara pakai:
@@ -520,7 +520,7 @@ const SUPABASE_URL = "__BOT_SUPABASE_URL__";
 const SUPABASE_ANON_KEY = "__BOT_SUPABASE_ANON_KEY__";
 
 const DEFAULT_PAIRING_PHONE = "__BOT_PAIRING_PHONE__"; // Opsional: nomor default pairing, format: 628xxxxxxxxxx
-const BOT_VERSION = "13.5.0";
+const BOT_VERSION = "13.5.1";
 
 // === BOT RENTAL MANAGEMENT ===
 // Menyimpan sesi bot rental aktif: { subscriptionId, botName, expiresAt, checkInterval }
@@ -606,15 +606,86 @@ async function getPendingSubscriptions() {
 const BOT_SESSIONS_DIR = "./bot_sessions";
 const childBotSessions = new Map(); // subscriptionId -> { client, qrInterval, authDir, buyerJid }
 
-async function startChildBot(parentClient, subscription, buyerJid) {
+function safeRemoveDir(targetDir) {
+  try {
+    if (targetDir && fs.existsSync(targetDir)) {
+      fs.rmSync(targetDir, { recursive: true, force: true });
+    }
+  } catch (error) {
+    console.log("⚠️ Gagal menghapus folder sesi bot:", error?.message || error);
+  }
+}
+
+function readChildCreds(authDir) {
+  try {
+    const credsPath = path.join(authDir, "creds.json");
+    if (!fs.existsSync(credsPath)) return null;
+    return JSON.parse(fs.readFileSync(credsPath, "utf8"));
+  } catch {
+    return null;
+  }
+}
+
+function isSubscriptionStillUsable(subscriptionRow) {
+  if (!subscriptionRow?.expires_at) return false;
+  const expiresAt = new Date(subscriptionRow.expires_at);
+  return ["pending", "active"].includes(String(subscriptionRow.status || "")) && expiresAt > new Date();
+}
+
+async function fetchSubscriptionState(subId) {
+  try {
+    const data = await supabaseRequest("wa_bot_subscriptions?id=eq." + subId + "&select=id,bot_name,status,session_id,expires_at");
+    return data?.[0] || null;
+  } catch {
+    return null;
+  }
+}
+
+async function scheduleChildBotRestart(parentClient, subscription, buyerJid, options = {}) {
+  const retryCount = Number(options.retryCount || 0);
+  const maxRetries = Number(options.maxRetries || 10);
+  const restartDelayMs = Number(options.delayMs || 3000);
+  const preserveAuth = Boolean(options.preserveAuth);
+  const subId = subscription.id || subscription.subscription?.id;
+  const botName = subscription.subscription?.bot_name || subscription.bot_name || "Bot";
+
+  if (retryCount >= maxRetries) {
+    await parentClient.sendMessage(buyerJid, {
+      text: "⏰ *QR Bot Gagal Tersambung Otomatis*\n\n🤖 Bot: *" + botName + "*\nQR sudah beberapa kali gagal tersambung.\n\n💡 Ketik *!qrulang " + String(subId || "").slice(0, 8) + "* untuk buat QR baru.",
+    });
+    return;
+  }
+
+  setTimeout(() => {
+    startChildBot(parentClient, subscription, buyerJid, {
+      retryCount: retryCount + 1,
+      preserveAuth,
+      maxRetries,
+    }).catch((error) => {
+      console.error("❌ Gagal restart child bot:", error?.message || error);
+    });
+  }, restartDelayMs);
+}
+
+async function startChildBot(parentClient, subscription, buyerJid, options = {}) {
   const subId = subscription.id || subscription.subscription?.id;
   const botName = subscription.subscription?.bot_name || subscription.bot_name || "Bot";
   const sessionId = subscription.subscription?.session_id || subscription.session_id || subId;
   const authDir = path.join(BOT_SESSIONS_DIR, sessionId);
+  const retryCount = Number(options.retryCount || 0);
+  const maxRetries = Number(options.maxRetries || 10);
+  const preserveAuth = Boolean(options.preserveAuth);
 
   // Cleanup existing session if any
   if (childBotSessions.has(subId)) {
     await stopChildBot(subId);
+  }
+
+  const existingCreds = readChildCreds(authDir);
+  const hasRegisteredCreds = Boolean(existingCreds?.registered);
+
+  if (!preserveAuth || !hasRegisteredCreds) {
+    safeRemoveDir(authDir);
   }
 
   if (!fs.existsSync(authDir)) fs.mkdirSync(authDir, { recursive: true });
@@ -634,12 +705,14 @@ async function startChildBot(parentClient, subscription, buyerJid) {
     generateHighQualityLinkPreview: false,
   });
 
-  const sessionData = { client: childClient, qrInterval: null, authDir, buyerJid, botName, subId };
+  const sessionData = { client: childClient, qrInterval: null, authDir, buyerJid, botName, subId, sessionId, retryCount, maxRetries, stopped: false, connected: false };
   childBotSessions.set(subId, sessionData);
 
   childClient.ev.on("creds.update", saveCreds);
 
   childClient.ev.on("connection.update", async (update) => {
+    if (childBotSessions.get(subId) !== sessionData || sessionData.stopped) return;
+
     const { connection, lastDisconnect, qr } = update;
 
     if (qr) {
@@ -651,7 +724,7 @@ async function startChildBot(parentClient, subscription, buyerJid) {
         await parentClient.sendMessage(buyerJid, {
           text: "⏰ *QR Code Expired*\n\n🤖 Bot: *" + botName + "*\nQR sudah expired (5 menit).\n\n💡 Ketik *!qrulang " + subId.slice(0, 8) + "* untuk generate QR baru.",
         });
-        stopChildBot(subId);
+        await stopChildBot(subId);
         return;
       }
 
@@ -687,6 +760,7 @@ async function startChildBot(parentClient, subscription, buyerJid) {
     if (connection === "open") {
       console.log("✅ Child Bot [" + botName + "] CONNECTED!");
       const botNumber = extractDigitsFromWhatsAppId(childClient.user?.id || "");
+      sessionData.connected = true;
 
       // Update subscription to active with bot number
       await supabaseRequest(
@@ -712,57 +786,51 @@ async function startChildBot(parentClient, subscription, buyerJid) {
 
     if (connection === "close") {
       const statusCode = lastDisconnect?.error?.output?.statusCode;
-      const shouldReconnect = statusCode !== DisconnectReason.loggedOut && statusCode !== 401;
-      console.log("🔌 Child Bot [" + botName + "] disconnected, code:", statusCode, "reconnect:", shouldReconnect);
+      const disconnectMessage = getDisconnectMessage(lastDisconnect);
+      const isLoggedOut = statusCode === DisconnectReason.loggedOut || statusCode === 401;
+      const badMacDetected = /bad\s*mac/i.test(String(disconnectMessage || ""));
+      const latestSub = await fetchSubscriptionState(subId);
+      const stillUsable = isSubscriptionStillUsable(latestSub);
 
-      if (shouldReconnect) {
-        // Check if subscription is still valid
-        const subData = await supabaseRequest("wa_bot_subscriptions?id=eq." + subId + "&select=status,expires_at");
-        if (subData && subData[0] && subData[0].status === "active" && new Date(subData[0].expires_at) > new Date()) {
-          console.log("🔄 Reconnecting child bot: " + botName);
-          await wait(3000);
-          try {
-            const { state: newState, saveCreds: newSaveCreds } = await useMultiFileAuthState(authDir);
-            const { version: newVersion } = await fetchLatestBaileysVersion();
-            const newClient = makeWASocket({
-              version: newVersion,
-              auth: newState,
-              logger: pino({ level: "silent" }),
-              printQRInTerminal: false,
-              browser: ["Bot-" + botName, "Chrome", "22.0"],
-            });
-            newClient.ev.on("creds.update", newSaveCreds);
-            sessionData.client = newClient;
-            // Re-attach same connection handler
-            newClient.ev.on("connection.update", async (u) => {
-              if (u.connection === "open") {
-                console.log("✅ Child Bot [" + botName + "] RECONNECTED!");
-              }
-              if (u.connection === "close") {
-                const sc = u.lastDisconnect?.error?.output?.statusCode;
-                if (sc === DisconnectReason.loggedOut || sc === 401) {
-                  console.log("🔌 Child Bot [" + botName + "] logged out permanently");
-                  await supabaseRequest("wa_bot_subscriptions?id=eq." + subId, "PATCH", { status: "expired" });
-                  childBotSessions.delete(subId);
-                }
-              }
-            });
-          } catch (e) {
-            console.error("❌ Failed to reconnect child bot:", e.message);
-          }
-        } else {
-          console.log("⏰ Subscription expired, not reconnecting: " + botName);
-          childBotSessions.delete(subId);
+      console.log("🔌 Child Bot [" + botName + "] disconnected, code:", statusCode, "status:", latestSub?.status || "-", "usable:", stillUsable, "msg:", disconnectMessage);
+
+      childBotSessions.delete(subId);
+
+      if (!stillUsable) {
+        console.log("⏰ Subscription expired / tidak valid, stop reconnect: " + botName);
+        if (latestSub?.status === "active") {
+          await supabaseRequest("wa_bot_subscriptions?id=eq." + subId, "PATCH", { status: "expired", qr_code_url: null });
         }
-      } else {
-        // Logged out
-        console.log("🔌 Child Bot [" + botName + "] logged out");
-        await supabaseRequest("wa_bot_subscriptions?id=eq." + subId, "PATCH", { status: "expired" });
-        childBotSessions.delete(subId);
-        await parentClient.sendMessage(buyerJid, {
-          text: "🔌 *Bot Terputus*\n\n🤖 Bot: *" + botName + "*\n❌ Bot telah logout dari WhatsApp.\n\n💡 Hubungi admin jika ini tidak disengaja.",
-        });
+        return;
       }
+
+      if (isLoggedOut && sessionData.connected) {
+        await supabaseRequest("wa_bot_subscriptions?id=eq." + subId, "PATCH", { status: "pending", qr_code_url: null });
+        await parentClient.sendMessage(buyerJid, {
+          text: "🔌 *Bot Terputus dari WhatsApp*\n\n🤖 Bot: *" + botName + "*\nStatus diubah ke pending supaya bisa scan ulang.\n\n💡 Ketik *!qrulang " + subId.slice(0, 8) + "* untuk sambungkan lagi.",
+        });
+        return;
+      }
+
+      const shouldPreserveAuth = latestSub?.status === "active" && !badMacDetected && !isLoggedOut;
+      if (!shouldPreserveAuth) {
+        safeRemoveDir(authDir);
+        await supabaseRequest("wa_bot_subscriptions?id=eq." + subId, "PATCH", { status: "pending", qr_code_url: null });
+      }
+
+      console.log("🔄 Menjalankan ulang child bot: " + botName + " (retry " + (retryCount + 1) + "/" + maxRetries + ")");
+      await scheduleChildBotRestart(parentClient, {
+        ...(subscription.subscription || subscription),
+        id: subId,
+        bot_name: botName,
+        session_id: sessionId,
+        status: shouldPreserveAuth ? "active" : "pending",
+        expires_at: latestSub?.expires_at || subscription.expires_at,
+      }, buyerJid, {
+        retryCount,
+        maxRetries,
+        preserveAuth: shouldPreserveAuth,
+      });
     }
   });
 
@@ -773,6 +841,7 @@ async function stopChildBot(subId) {
   const session = childBotSessions.get(subId);
   if (!session) return;
   try {
+    session.stopped = true;
     if (session.client?.ws) session.client.ws.close();
     if (session.client?.end) session.client.end();
   } catch (e) {}
@@ -795,48 +864,7 @@ async function restoreChildBotSessions(parentClient) {
 
       console.log("🔄 Restoring child bot: " + sub.bot_name);
       try {
-        const { state, saveCreds } = await useMultiFileAuthState(authDir);
-        const { version } = await fetchLatestBaileysVersion();
-        const childClient = makeWASocket({
-          version,
-          auth: state,
-          logger: pino({ level: "silent" }),
-          printQRInTerminal: false,
-          browser: ["Bot-" + sub.bot_name, "Chrome", "22.0"],
-        });
-        childClient.ev.on("creds.update", saveCreds);
-
-        const sessionData = { client: childClient, authDir, botName: sub.bot_name, subId: sub.id, buyerJid: null };
-        childBotSessions.set(sub.id, sessionData);
-
-        childClient.ev.on("connection.update", async (update) => {
-          if (update.connection === "open") {
-            const botNumber = extractDigitsFromWhatsAppId(childClient.user?.id || "");
-            sessionData.botNumber = botNumber;
-            console.log("✅ Restored child bot [" + sub.bot_name + "] connected as " + botNumber);
-          }
-          if (update.connection === "close") {
-            const sc = update.lastDisconnect?.error?.output?.statusCode;
-            if (sc === DisconnectReason.loggedOut || sc === 401) {
-              await supabaseRequest("wa_bot_subscriptions?id=eq." + sub.id, "PATCH", { status: "expired" });
-              childBotSessions.delete(sub.id);
-            } else {
-              // Try reconnect if still active
-              const subCheck = await supabaseRequest("wa_bot_subscriptions?id=eq." + sub.id + "&select=status,expires_at");
-              if (subCheck?.[0]?.status === "active" && new Date(subCheck[0].expires_at) > new Date()) {
-                await wait(5000);
-                // Simple reconnect attempt
-                try {
-                  const { state: ns, saveCreds: nsc } = await useMultiFileAuthState(authDir);
-                  const { version: nv } = await fetchLatestBaileysVersion();
-                  const nc = makeWASocket({ version: nv, auth: ns, logger: pino({ level: "silent" }), printQRInTerminal: false });
-                  nc.ev.on("creds.update", nsc);
-                  sessionData.client = nc;
-                } catch (e) {}
-              }
-            }
-          }
-        });
+        await startChildBot(parentClient, sub, null, { preserveAuth: true, retryCount: 0, maxRetries: 10 });
       } catch (e) {
         console.error("❌ Failed to restore bot " + sub.bot_name + ":", e.message);
       }
@@ -2412,7 +2440,7 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
     // ═══ QR ULANG — REGENERATE QR UNTUK BOT PENDING ═══
     if (command.startsWith("!qrulang")) {
       if (!session) return reply("🔒 Login dulu: !login [user] [password]");
-      const subIdPrefix = args.trim();
+      const subIdPrefix = String(args[0] || "").trim();
       if (!subIdPrefix) return reply("⚠️ Gunakan: !qrulang [ID subscription]\n\n💡 Lihat ID di !botku");
       // Find matching subscription
       const allSubs = await supabaseRequest("wa_bot_subscriptions?visitor_id=eq." + session.visitor_id + "&status=eq.pending&select=id,bot_name,session_id,expires_at");
