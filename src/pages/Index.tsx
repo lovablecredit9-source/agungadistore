@@ -2240,8 +2240,22 @@ const Index = () => {
         )}
 
         {tab === "saldo" && (
-          <div className="space-y-4">
-            <h2 className="text-lg font-extrabold flex items-center gap-2"><Wallet className="w-5 h-5 text-primary" /> {t("balance.title", lang)}</h2>
+          <div className="space-y-4 animate-fade-in">
+            {/* Hero Header */}
+            <div className="relative overflow-hidden rounded-2xl p-5" style={{ background: "linear-gradient(135deg, hsl(270, 70%, 55%) 0%, hsl(250, 60%, 45%) 100%)" }}>
+              <div className="absolute inset-0 opacity-10">
+                <div className="absolute -top-8 -right-8 w-32 h-32 rounded-full bg-white/30 blur-2xl" />
+              </div>
+              <div className="relative z-10 flex items-center gap-4">
+                <div className="w-14 h-14 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-lg">
+                  <Wallet className="w-7 h-7 text-white" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-extrabold text-white">{t("balance.title", lang)}</h2>
+                  <p className="text-white/70 text-xs font-medium mt-0.5">{userBalance ? `Hai, ${userBalance.username}` : "Kelola saldo akun kamu"}</p>
+                </div>
+              </div>
+            </div>
 
             {!userBalance ? (
               <BalanceAuth
