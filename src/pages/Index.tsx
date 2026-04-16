@@ -1445,28 +1445,33 @@ const Index = () => {
             )}
 
             {/* Welcome Header */}
-            <div className="relative overflow-hidden rounded-2xl p-5" style={{ background: "linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--accent)) 100%)" }}>
-              <div className="absolute inset-0 opacity-10">
-                <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full bg-white/30 blur-2xl" />
-                <div className="absolute -bottom-10 -left-10 w-32 h-32 rounded-full bg-white/20 blur-2xl" />
+            <div className="relative overflow-hidden rounded-2xl p-5 glow-border" style={{ background: "linear-gradient(135deg, hsl(250, 85%, 55%) 0%, hsl(280, 70%, 50%) 30%, hsl(200, 80%, 50%) 70%, hsl(160, 70%, 42%) 100%)" }}>
+              <div className="absolute inset-0">
+                <div className="absolute -top-10 -right-10 w-44 h-44 rounded-full bg-white/20 blur-3xl animate-pulse" />
+                <div className="absolute -bottom-10 -left-10 w-36 h-36 rounded-full bg-white/15 blur-3xl animate-pulse" style={{ animationDelay: "1s" }} />
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-24 h-24 rounded-full bg-white/10 blur-2xl animate-pulse" style={{ animationDelay: "2s" }} />
+                <div className="absolute inset-0 shimmer" />
               </div>
               <div className="relative z-10 flex items-center gap-4">
-                <img src={storeQris} alt={STORE_NAME} className="w-16 h-16 rounded-2xl object-cover shadow-lg border-2 border-white/30" />
+                <div className="relative floating">
+                  <div className="absolute -inset-1 bg-white/30 rounded-2xl blur-md" />
+                  <img src={storeQris} alt={STORE_NAME} className="relative w-16 h-16 rounded-2xl object-cover shadow-2xl border-2 border-white/40 ring-2 ring-white/20" />
+                </div>
                 <div>
-                  <p className="text-white/80 text-xs font-medium">
+                  <p className="text-white/90 text-xs font-semibold tracking-wide">
                     {new Date().getHours() < 12 ? "☀️ Selamat Pagi" : new Date().getHours() < 18 ? "🌤️ Selamat Siang" : "🌙 Selamat Malam"}
                   </p>
-                  <h2 className="text-xl font-extrabold text-white leading-tight">{STORE_NAME}</h2>
-                  <p className="text-white/70 text-[11px] font-medium mt-0.5">{t("header.tagline", lang)}</p>
+                  <h2 className="text-2xl font-extrabold text-white leading-tight drop-shadow-lg">{STORE_NAME}</h2>
+                  <p className="text-white/80 text-[11px] font-medium mt-0.5 tracking-wider">{t("header.tagline", lang)}</p>
                 </div>
               </div>
               <div className="relative z-10 flex gap-2 mt-4">
                 <a href={`${SOCIAL_LINKS.whatsapp}?text=${encodeURIComponent("Halo, saya mau order di Agung Adi Store")}`} target="_blank" rel="noopener noreferrer" className="flex-1">
-                  <Button size="sm" className="w-full bg-white/20 hover:bg-white/30 text-white border border-white/20 backdrop-blur-sm gap-1.5 text-xs font-bold shadow-lg">
+                  <Button size="sm" className="w-full bg-white/20 hover:bg-white/30 text-white border border-white/30 backdrop-blur-md gap-1.5 text-xs font-bold shadow-xl hover:shadow-2xl transition-all hover:scale-[1.02]">
                     <MessageCircle className="w-4 h-4" /> {t("home.contact_wa", lang)}
                   </Button>
                 </a>
-                <Button size="sm" className="flex-1 bg-white text-primary hover:bg-white/90 gap-1.5 text-xs font-bold shadow-lg" onClick={() => setTab("voucher")}>
+                <Button size="sm" className="flex-1 bg-white/95 text-primary hover:bg-white gap-1.5 text-xs font-bold shadow-xl hover:shadow-2xl transition-all hover:scale-[1.02]" onClick={() => setTab("voucher")}>
                   <Ticket className="w-4 h-4" /> {t("home.claim_voucher", lang)}
                 </Button>
               </div>
