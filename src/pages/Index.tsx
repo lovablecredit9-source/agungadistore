@@ -1729,22 +1729,34 @@ const Index = () => {
         )}
 
         {tab === "produk" && (
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg font-extrabold flex items-center gap-2"><Package className="w-5 h-5 text-primary" /> {t("products.title", lang)}</h2>
-              <span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded-full font-medium">{sortedProducts.length} {t("products.items", lang)}</span>
+          <div className="space-y-4 animate-fade-in">
+            {/* Hero Header */}
+            <div className="relative overflow-hidden rounded-2xl p-5" style={{ background: "linear-gradient(135deg, hsl(220, 80%, 55%) 0%, hsl(250, 70%, 50%) 100%)" }}>
+              <div className="absolute inset-0 opacity-10">
+                <div className="absolute -top-8 -right-8 w-32 h-32 rounded-full bg-white/30 blur-2xl" />
+                <div className="absolute -bottom-8 -left-8 w-24 h-24 rounded-full bg-white/20 blur-2xl" />
+              </div>
+              <div className="relative z-10 flex items-center gap-4">
+                <div className="w-14 h-14 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-lg">
+                  <Package className="w-7 h-7 text-white" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-extrabold text-white">{t("products.title", lang)}</h2>
+                  <p className="text-white/70 text-xs font-medium mt-0.5">{sortedProducts.length} {t("products.items", lang)} tersedia</p>
+                </div>
+              </div>
             </div>
 
             {/* Search */}
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input placeholder={t("products.search", lang)} value={productSearch} onChange={e => setProductSearch(e.target.value)} className="pl-9" />
+              <Input placeholder={t("products.search", lang)} value={productSearch} onChange={e => setProductSearch(e.target.value)} className="pl-9 h-11 rounded-xl border-2 border-border/50 focus:border-primary/50" />
             </div>
 
             {/* Dropdown filters */}
             <div className="flex gap-2">
               <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                <SelectTrigger className="flex-1 h-9 text-xs">
+                <SelectTrigger className="flex-1 h-10 text-xs rounded-xl">
                   <SelectValue placeholder="Kategori" />
                 </SelectTrigger>
                 <SelectContent>
@@ -1754,7 +1766,7 @@ const Index = () => {
                 </SelectContent>
               </Select>
               <Select value={sortOrder} onValueChange={(v) => setSortOrder(v as "newest" | "oldest")}>
-                <SelectTrigger className="w-[120px] h-9 text-xs">
+                <SelectTrigger className="w-[120px] h-10 text-xs rounded-xl">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -1828,8 +1840,22 @@ const Index = () => {
         )}
 
         {tab === "voucher" && (
-          <div className="space-y-4">
-            <h2 className="text-lg font-extrabold flex items-center gap-2"><Ticket className="w-5 h-5 text-primary" /> {t("voucher.title", lang)}</h2>
+          <div className="space-y-4 animate-fade-in">
+            {/* Hero Header */}
+            <div className="relative overflow-hidden rounded-2xl p-5" style={{ background: "linear-gradient(135deg, hsl(160, 70%, 42%) 0%, hsl(140, 60%, 35%) 100%)" }}>
+              <div className="absolute inset-0 opacity-10">
+                <div className="absolute -top-8 -right-8 w-32 h-32 rounded-full bg-white/30 blur-2xl" />
+              </div>
+              <div className="relative z-10 flex items-center gap-4">
+                <div className="w-14 h-14 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-lg">
+                  <Ticket className="w-7 h-7 text-white" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-extrabold text-white">{t("voucher.title", lang)}</h2>
+                  <p className="text-white/70 text-xs font-medium mt-0.5">Klaim kode voucher produkmu</p>
+                </div>
+              </div>
+            </div>
             {/* Info: Harus beli dulu */}
             <Card className="bg-gradient-to-r from-amber-500/10 to-orange-500/10 border-amber-500/30 shadow-md">
               <CardContent className="p-3 flex items-start gap-3">
@@ -1917,9 +1943,21 @@ const Index = () => {
         )}
 
         {tab === "history" && (
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg font-extrabold flex items-center gap-2"><Clock className="w-5 h-5 text-primary" /> {t("history.title", lang)}</h2>
+          <div className="space-y-4 animate-fade-in">
+            {/* Hero Header */}
+            <div className="relative overflow-hidden rounded-2xl p-5" style={{ background: "linear-gradient(135deg, hsl(200, 80%, 50%) 0%, hsl(220, 70%, 45%) 100%)" }}>
+              <div className="absolute inset-0 opacity-10">
+                <div className="absolute -top-8 -right-8 w-32 h-32 rounded-full bg-white/30 blur-2xl" />
+              </div>
+              <div className="relative z-10 flex items-center gap-4">
+                <div className="w-14 h-14 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-lg">
+                  <Clock className="w-7 h-7 text-white" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-extrabold text-white">{t("history.title", lang)}</h2>
+                  <p className="text-white/70 text-xs font-medium mt-0.5">{history.length} riwayat klaim</p>
+                </div>
+              </div>
             </div>
 
             {history.length > 0 && (
