@@ -1445,47 +1445,52 @@ const Index = () => {
             )}
 
             {/* Welcome Header */}
-            <div className="relative overflow-hidden rounded-2xl p-5" style={{ background: "linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--accent)) 100%)" }}>
-              <div className="absolute inset-0 opacity-10">
-                <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full bg-white/30 blur-2xl" />
-                <div className="absolute -bottom-10 -left-10 w-32 h-32 rounded-full bg-white/20 blur-2xl" />
+            <div className="relative overflow-hidden rounded-2xl p-5 glow-border" style={{ background: "linear-gradient(135deg, hsl(250, 85%, 55%) 0%, hsl(280, 70%, 50%) 30%, hsl(200, 80%, 50%) 70%, hsl(160, 70%, 42%) 100%)" }}>
+              <div className="absolute inset-0">
+                <div className="absolute -top-10 -right-10 w-44 h-44 rounded-full bg-white/20 blur-3xl animate-pulse" />
+                <div className="absolute -bottom-10 -left-10 w-36 h-36 rounded-full bg-white/15 blur-3xl animate-pulse" style={{ animationDelay: "1s" }} />
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-24 h-24 rounded-full bg-white/10 blur-2xl animate-pulse" style={{ animationDelay: "2s" }} />
+                <div className="absolute inset-0 shimmer" />
               </div>
               <div className="relative z-10 flex items-center gap-4">
-                <img src={storeQris} alt={STORE_NAME} className="w-16 h-16 rounded-2xl object-cover shadow-lg border-2 border-white/30" />
+                <div className="relative floating">
+                  <div className="absolute -inset-1 bg-white/30 rounded-2xl blur-md" />
+                  <img src={storeQris} alt={STORE_NAME} className="relative w-16 h-16 rounded-2xl object-cover shadow-2xl border-2 border-white/40 ring-2 ring-white/20" />
+                </div>
                 <div>
-                  <p className="text-white/80 text-xs font-medium">
+                  <p className="text-white/90 text-xs font-semibold tracking-wide">
                     {new Date().getHours() < 12 ? "☀️ Selamat Pagi" : new Date().getHours() < 18 ? "🌤️ Selamat Siang" : "🌙 Selamat Malam"}
                   </p>
-                  <h2 className="text-xl font-extrabold text-white leading-tight">{STORE_NAME}</h2>
-                  <p className="text-white/70 text-[11px] font-medium mt-0.5">{t("header.tagline", lang)}</p>
+                  <h2 className="text-2xl font-extrabold text-white leading-tight drop-shadow-lg">{STORE_NAME}</h2>
+                  <p className="text-white/80 text-[11px] font-medium mt-0.5 tracking-wider">{t("header.tagline", lang)}</p>
                 </div>
               </div>
               <div className="relative z-10 flex gap-2 mt-4">
                 <a href={`${SOCIAL_LINKS.whatsapp}?text=${encodeURIComponent("Halo, saya mau order di Agung Adi Store")}`} target="_blank" rel="noopener noreferrer" className="flex-1">
-                  <Button size="sm" className="w-full bg-white/20 hover:bg-white/30 text-white border border-white/20 backdrop-blur-sm gap-1.5 text-xs font-bold shadow-lg">
+                  <Button size="sm" className="w-full bg-white/20 hover:bg-white/30 text-white border border-white/30 backdrop-blur-md gap-1.5 text-xs font-bold shadow-xl hover:shadow-2xl transition-all hover:scale-[1.02]">
                     <MessageCircle className="w-4 h-4" /> {t("home.contact_wa", lang)}
                   </Button>
                 </a>
-                <Button size="sm" className="flex-1 bg-white text-primary hover:bg-white/90 gap-1.5 text-xs font-bold shadow-lg" onClick={() => setTab("voucher")}>
+                <Button size="sm" className="flex-1 bg-white/95 text-primary hover:bg-white gap-1.5 text-xs font-bold shadow-xl hover:shadow-2xl transition-all hover:scale-[1.02]" onClick={() => setTab("voucher")}>
                   <Ticket className="w-4 h-4" /> {t("home.claim_voucher", lang)}
                 </Button>
               </div>
             </div>
 
             {/* Quick Action Grid */}
-            <div className="grid grid-cols-4 gap-2">
+            <div className="grid grid-cols-4 gap-2.5">
               {[
-                { icon: <Package className="w-5 h-5" />, label: "Produk", tab: "produk" as Tab, gradient: "from-blue-500 to-blue-600" },
-                { icon: <Wallet className="w-5 h-5" />, label: "Saldo", tab: "saldo" as Tab, gradient: "from-emerald-500 to-emerald-600" },
-                { icon: <Gamepad2 className="w-5 h-5" />, label: "Game", tab: "game" as Tab, gradient: "from-violet-500 to-purple-600" },
-                { icon: <Music className="w-5 h-5" />, label: "Musik", tab: "playlist" as Tab, gradient: "from-pink-500 to-rose-600" },
+                { icon: <Package className="w-5 h-5" />, label: "Produk", tab: "produk" as Tab, gradient: "from-blue-500 to-indigo-600", shadow: "shadow-blue-500/25" },
+                { icon: <Wallet className="w-5 h-5" />, label: "Saldo", tab: "saldo" as Tab, gradient: "from-emerald-500 to-teal-600", shadow: "shadow-emerald-500/25" },
+                { icon: <Gamepad2 className="w-5 h-5" />, label: "Game", tab: "game" as Tab, gradient: "from-violet-500 to-purple-600", shadow: "shadow-violet-500/25" },
+                { icon: <Music className="w-5 h-5" />, label: "Musik", tab: "playlist" as Tab, gradient: "from-pink-500 to-rose-600", shadow: "shadow-pink-500/25" },
               ].map((item) => (
                 <button
                   key={item.label}
                   onClick={() => setTab(item.tab)}
-                  className="flex flex-col items-center gap-1.5 p-3 rounded-2xl bg-card border border-border hover:border-primary/30 hover:shadow-md transition-all duration-200 hover:-translate-y-0.5 active:scale-95"
+                  className="flex flex-col items-center gap-1.5 p-3 rounded-2xl glass-card hover:border-primary/30 hover:shadow-lg transition-all duration-300 hover:-translate-y-1 active:scale-95 group"
                 >
-                  <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${item.gradient} flex items-center justify-center text-white shadow-md`}>
+                  <div className={`w-11 h-11 rounded-xl bg-gradient-to-br ${item.gradient} flex items-center justify-center text-white shadow-lg ${item.shadow} group-hover:scale-110 transition-transform duration-300`}>
                     {item.icon}
                   </div>
                   <span className="text-[11px] font-bold text-foreground">{item.label}</span>
@@ -1560,24 +1565,24 @@ const Index = () => {
               {/* Streak Card */}
               <div
                 onClick={() => setTab("streak")}
-                className="relative overflow-hidden rounded-2xl cursor-pointer transition-all hover:shadow-lg hover:-translate-y-0.5 active:scale-[0.98] duration-200"
+                className="relative overflow-hidden rounded-2xl cursor-pointer transition-all hover:shadow-xl hover:-translate-y-1 active:scale-[0.97] duration-300 card-shine"
                 style={{ background: "linear-gradient(145deg, #ff6b00, #e63900)" }}
               >
-                <div className="absolute inset-0 opacity-15">
-                  {[...Array(3)].map((_, i) => (
+                <div className="absolute inset-0 opacity-20">
+                  {[...Array(5)].map((_, i) => (
                     <div key={i} className="absolute rounded-full animate-pulse" style={{
-                      width: 30 + i * 15, height: 30 + i * 15,
-                      background: "radial-gradient(circle, rgba(255,204,0,0.5), transparent 70%)",
-                      top: `${10 + i * 20}%`, right: `${5 + i * 10}%`,
-                      animationDelay: `${i * 0.3}s`,
+                      width: 20 + i * 12, height: 20 + i * 12,
+                      background: "radial-gradient(circle, rgba(255,204,0,0.6), transparent 70%)",
+                      top: `${5 + i * 18}%`, right: `${3 + i * 8}%`,
+                      animationDelay: `${i * 0.4}s`,
                     }} />
                   ))}
                 </div>
-                <div className="relative z-10 p-3.5 text-center">
-                  <div className="text-3xl mb-1">🔥</div>
-                  <h3 className="text-white font-extrabold text-sm leading-tight">Daily Streak</h3>
-                  <p className="text-white/70 text-[10px] mt-0.5 leading-snug">Klaim setiap hari!</p>
-                  <div className="mt-2 bg-white/20 backdrop-blur-sm rounded-full px-2 py-1 inline-block">
+                <div className="relative z-10 p-4 text-center">
+                  <div className="text-4xl mb-1.5 floating">🔥</div>
+                  <h3 className="text-white font-extrabold text-sm leading-tight drop-shadow-lg">Daily Streak</h3>
+                  <p className="text-white/80 text-[10px] mt-0.5 leading-snug">Klaim setiap hari!</p>
+                  <div className="mt-2.5 bg-white/25 backdrop-blur-sm rounded-full px-3 py-1.5 inline-flex items-center gap-1 shadow-lg">
                     <span className="text-white text-[10px] font-bold">Klaim →</span>
                   </div>
                 </div>
@@ -1586,18 +1591,18 @@ const Index = () => {
               {/* Game Card */}
               <div
                 onClick={() => setTab("game")}
-                className="relative overflow-hidden rounded-2xl cursor-pointer transition-all hover:shadow-lg hover:-translate-y-0.5 active:scale-[0.98] duration-200"
+                className="relative overflow-hidden rounded-2xl cursor-pointer transition-all hover:shadow-xl hover:-translate-y-1 active:scale-[0.97] duration-300 card-shine"
                 style={{ background: "linear-gradient(145deg, #7c3aed, #4338ca)" }}
               >
-                <div className="absolute inset-0 opacity-10">
-                  <div className="absolute top-1 right-2 text-4xl">🎮</div>
-                  <div className="absolute bottom-1 left-2 text-2xl">🎲</div>
+                <div className="absolute inset-0 opacity-15">
+                  <div className="absolute top-1 right-2 text-4xl floating" style={{ animationDelay: "0.5s" }}>🎮</div>
+                  <div className="absolute bottom-1 left-2 text-2xl floating" style={{ animationDelay: "1.5s" }}>🎲</div>
                 </div>
-                <div className="relative z-10 p-3.5 text-center">
-                  <div className="text-3xl mb-1">🎮</div>
-                  <h3 className="text-white font-extrabold text-sm leading-tight">Game AI</h3>
-                  <p className="text-white/70 text-[10px] mt-0.5 leading-snug">11 game menantang!</p>
-                  <div className="mt-2 bg-white/20 backdrop-blur-sm rounded-full px-2 py-1 inline-block">
+                <div className="relative z-10 p-4 text-center">
+                  <div className="text-4xl mb-1.5 floating" style={{ animationDelay: "0.3s" }}>🎮</div>
+                  <h3 className="text-white font-extrabold text-sm leading-tight drop-shadow-lg">Game AI</h3>
+                  <p className="text-white/80 text-[10px] mt-0.5 leading-snug">11 game menantang!</p>
+                  <div className="mt-2.5 bg-white/25 backdrop-blur-sm rounded-full px-3 py-1.5 inline-flex items-center gap-1 shadow-lg">
                     <span className="text-white text-[10px] font-bold">Main →</span>
                   </div>
                 </div>
@@ -1605,16 +1610,16 @@ const Index = () => {
             </div>
 
             {/* Stats Bar */}
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-3 gap-2.5">
               {[
-                { value: `${products.length}+`, label: "Produk", icon: "🛍️" },
-                { value: `${homeSponsors.length}`, label: "Sponsor", icon: "📢" },
-                { value: "11", label: "Game", icon: "🎮" },
+                { value: `${products.length}+`, label: "Produk", icon: "🛍️", gradient: "from-blue-500/10 to-indigo-500/5" },
+                { value: `${homeSponsors.length}`, label: "Sponsor", icon: "📢", gradient: "from-amber-500/10 to-orange-500/5" },
+                { value: "11", label: "Game", icon: "🎮", gradient: "from-violet-500/10 to-purple-500/5" },
               ].map((stat) => (
-                <div key={stat.label} className="bg-card border border-border rounded-xl p-3 text-center hover:border-primary/20 transition-colors">
-                  <span className="text-lg">{stat.icon}</span>
-                  <p className="text-base font-extrabold text-foreground mt-0.5">{stat.value}</p>
-                  <p className="text-[10px] text-muted-foreground font-medium">{stat.label}</p>
+                <div key={stat.label} className={`glass-card rounded-2xl p-3.5 text-center hover:border-primary/30 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg bg-gradient-to-br ${stat.gradient}`}>
+                  <span className="text-xl">{stat.icon}</span>
+                  <p className="text-lg font-extrabold text-foreground mt-0.5">{stat.value}</p>
+                  <p className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wider">{stat.label}</p>
                 </div>
               ))}
             </div>
@@ -1648,17 +1653,22 @@ const Index = () => {
             )}
 
             {/* Voucher Card */}
-            <Card className="overflow-hidden border-0 shadow-lg hover:shadow-xl transition-all cursor-pointer hover:-translate-y-0.5 duration-200" onClick={() => setTab("voucher")}>
-              <div className="bg-gradient-to-r from-primary/10 via-accent/5 to-primary/10 p-0.5">
-                <CardContent className="p-4 flex items-center gap-3 bg-card rounded-lg">
-                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-md shrink-0">
-                    <Ticket className="w-6 h-6 text-white" />
+            <Card className="overflow-hidden border-0 shadow-lg hover:shadow-2xl transition-all cursor-pointer hover:-translate-y-1 duration-300 glass-card glow-border" onClick={() => setTab("voucher")}>
+              <div className="bg-gradient-to-r from-primary/15 via-accent/10 to-primary/15 p-0.5">
+                <CardContent className="p-4 flex items-center gap-3 bg-card/80 backdrop-blur-sm rounded-lg">
+                  <div className="relative">
+                    <div className="absolute -inset-1 bg-gradient-to-br from-primary to-accent rounded-xl blur-md opacity-40" />
+                    <div className="relative w-12 h-12 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-xl">
+                      <Ticket className="w-6 h-6 text-white" />
+                    </div>
                   </div>
                   <div className="flex-1">
                     <h3 className="font-bold text-sm">{t("home.have_voucher", lang)}</h3>
                     <p className="text-xs text-muted-foreground">{t("home.claim_now", lang)}</p>
                   </div>
-                  <ChevronRight className="w-5 h-5 text-muted-foreground" />
+                  <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                    <ChevronRight className="w-4 h-4 text-primary" />
+                  </div>
                 </CardContent>
               </div>
             </Card>
@@ -1690,36 +1700,43 @@ const Index = () => {
             </Card>
 
             {/* Support Shortcut */}
-            <Card className="overflow-hidden border-0 shadow-lg hover:shadow-xl transition-all cursor-pointer hover:-translate-y-0.5 duration-200" onClick={() => setTab("tiket")}>
-              <div className="bg-gradient-to-r from-destructive/10 via-destructive/5 to-destructive/10 p-0.5">
-                <CardContent className="p-4 flex items-center gap-3 bg-card rounded-lg">
-                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-destructive to-destructive/70 flex items-center justify-center shadow-md shrink-0">
-                    <AlertCircle className="w-6 h-6 text-destructive-foreground" />
+            <Card className="overflow-hidden border-0 shadow-lg hover:shadow-2xl transition-all cursor-pointer hover:-translate-y-1 duration-300 glass-card" onClick={() => setTab("tiket")}>
+              <div className="bg-gradient-to-r from-destructive/15 via-destructive/5 to-destructive/15 p-0.5">
+                <CardContent className="p-4 flex items-center gap-3 bg-card/80 backdrop-blur-sm rounded-lg">
+                  <div className="relative">
+                    <div className="absolute -inset-1 bg-gradient-to-br from-destructive to-destructive/70 rounded-xl blur-md opacity-30" />
+                    <div className="relative w-12 h-12 rounded-xl bg-gradient-to-br from-destructive to-destructive/70 flex items-center justify-center shadow-xl">
+                      <AlertCircle className="w-6 h-6 text-destructive-foreground" />
+                    </div>
                   </div>
                   <div className="flex-1">
                     <h3 className="font-bold text-sm">{t("home.have_issue", lang)}</h3>
                     <p className="text-xs text-muted-foreground">{t("home.submit_ticket", lang)}</p>
                   </div>
-                  <ChevronRight className="w-5 h-5 text-muted-foreground" />
+                  <div className="w-8 h-8 rounded-full bg-destructive/10 flex items-center justify-center">
+                    <ChevronRight className="w-4 h-4 text-destructive" />
+                  </div>
                 </CardContent>
               </div>
             </Card>
 
             {/* Social Links */}
-            <Card className="overflow-hidden">
+            <Card className="overflow-hidden glass-card border-0 shadow-lg">
               <CardContent className="p-4">
-                <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3">{t("home.follow_us", lang)}</p>
-                <div className="grid grid-cols-2 gap-2">
+                <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-3 flex items-center gap-2">
+                  <Globe className="w-3.5 h-3.5" /> {t("home.follow_us", lang)}
+                </p>
+                <div className="grid grid-cols-2 gap-2.5">
                   {[
-                    { label: `WA: ${WA_NUMBER}`, href: SOCIAL_LINKS.whatsapp, color: "from-green-500 to-green-600", emoji: "💬" },
-                    { label: YOUTUBE_NAME, href: SOCIAL_LINKS.youtube, color: "from-red-500 to-red-600", emoji: "▶️" },
-                    { label: "@agungadi981", href: SOCIAL_LINKS.twitter, color: "from-sky-400 to-sky-500", emoji: "🐦" },
-                    { label: "@agungadi57", href: SOCIAL_LINKS.instagram, color: "from-pink-500 to-purple-500", emoji: "📸" },
-                    { label: "@pphitampro9", href: SOCIAL_LINKS.tiktok, color: "from-gray-800 to-black", emoji: "🎵" },
+                    { label: `WA: ${WA_NUMBER}`, href: SOCIAL_LINKS.whatsapp, color: "from-green-500 to-emerald-600", emoji: "💬" },
+                    { label: YOUTUBE_NAME, href: SOCIAL_LINKS.youtube, color: "from-red-500 to-rose-600", emoji: "▶️" },
+                    { label: "@agungadi981", href: SOCIAL_LINKS.twitter, color: "from-sky-400 to-cyan-500", emoji: "🐦" },
+                    { label: "@agungadi57", href: SOCIAL_LINKS.instagram, color: "from-pink-500 to-fuchsia-600", emoji: "📸" },
+                    { label: "@pphitampro9", href: SOCIAL_LINKS.tiktok, color: "from-gray-700 to-gray-900", emoji: "🎵" },
                   ].map((s) => (
                     <a key={s.label} href={s.href} target="_blank" rel="noopener noreferrer"
-                      className={`bg-gradient-to-r ${s.color} text-white text-xs font-medium px-3 py-2.5 rounded-xl flex items-center gap-2 hover:opacity-90 hover:shadow-md transition-all duration-200`}>
-                      <span>{s.emoji}</span><span className="truncate">{s.label}</span>
+                      className={`bg-gradient-to-r ${s.color} text-white text-xs font-semibold px-3 py-3 rounded-xl flex items-center gap-2.5 hover:opacity-90 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 shadow-md`}>
+                      <span className="text-base">{s.emoji}</span><span className="truncate">{s.label}</span>
                     </a>
                   ))}
                 </div>
@@ -1731,19 +1748,23 @@ const Index = () => {
         {tab === "produk" && (
           <div className="space-y-4 animate-fade-in">
             {/* Hero Header */}
-            <div className="relative overflow-hidden rounded-2xl p-5" style={{ background: "linear-gradient(135deg, hsl(220, 80%, 55%) 0%, hsl(260, 70%, 50%) 100%)" }}>
-              <div className="absolute inset-0 opacity-15">
-                <div className="absolute -top-8 -right-8 w-40 h-40 rounded-full bg-white/30 blur-3xl animate-pulse" />
-                <div className="absolute -bottom-8 -left-8 w-28 h-28 rounded-full bg-white/20 blur-2xl" />
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-20 h-20 rounded-full bg-white/10 blur-xl" />
+            <div className="relative overflow-hidden rounded-2xl p-5 glow-border" style={{ background: "linear-gradient(135deg, hsl(220, 80%, 55%) 0%, hsl(260, 70%, 50%) 50%, hsl(200, 80%, 50%) 100%)" }}>
+              <div className="absolute inset-0">
+                <div className="absolute -top-8 -right-8 w-44 h-44 rounded-full bg-white/20 blur-3xl animate-pulse" />
+                <div className="absolute -bottom-8 -left-8 w-32 h-32 rounded-full bg-white/15 blur-2xl animate-pulse" style={{ animationDelay: "1.5s" }} />
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-24 h-24 rounded-full bg-white/10 blur-xl" />
+                <div className="absolute inset-0 shimmer" />
               </div>
               <div className="relative z-10 flex items-center gap-4">
-                <div className="w-14 h-14 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-lg ring-2 ring-white/20">
-                  <Package className="w-7 h-7 text-white" />
+                <div className="relative floating">
+                  <div className="absolute -inset-1 bg-white/30 rounded-2xl blur-md" />
+                  <div className="relative w-14 h-14 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-2xl ring-2 ring-white/30">
+                    <Package className="w-7 h-7 text-white" />
+                  </div>
                 </div>
                 <div>
-                  <h2 className="text-xl font-extrabold text-white tracking-tight">{t("products.title", lang)}</h2>
-                  <p className="text-white/70 text-xs font-medium mt-0.5">{sortedProducts.length} {t("products.items", lang)} tersedia</p>
+                  <h2 className="text-xl font-extrabold text-white tracking-tight drop-shadow-lg">{t("products.title", lang)}</h2>
+                  <p className="text-white/80 text-xs font-medium mt-0.5">{sortedProducts.length} {t("products.items", lang)} tersedia</p>
                 </div>
               </div>
               {/* Stats bar */}
@@ -1753,9 +1774,9 @@ const Index = () => {
                   { label: "Tersedia", value: sortedProducts.filter(p => p.stock > 0).length },
                   { label: "Garansi", value: sortedProducts.filter(p => p.has_warranty).length },
                 ].map(s => (
-                  <div key={s.label} className="flex-1 bg-white/10 backdrop-blur-sm rounded-xl px-3 py-2 text-center">
-                    <p className="text-white font-extrabold text-lg leading-none">{s.value}</p>
-                    <p className="text-white/60 text-[10px] font-medium">{s.label}</p>
+                  <div key={s.label} className="flex-1 bg-white/15 backdrop-blur-md rounded-xl px-3 py-2.5 text-center border border-white/10">
+                    <p className="text-white font-extrabold text-lg leading-none drop-shadow">{s.value}</p>
+                    <p className="text-white/70 text-[10px] font-semibold uppercase tracking-wider">{s.label}</p>
                   </div>
                 ))}
               </div>
@@ -1763,17 +1784,17 @@ const Index = () => {
 
             {/* Search */}
             <div className="relative group">
-              <div className="absolute -inset-0.5 bg-gradient-to-r from-primary/20 to-accent/20 rounded-2xl blur opacity-0 group-focus-within:opacity-100 transition-opacity" />
+              <div className="absolute -inset-0.5 bg-gradient-to-r from-primary/30 to-accent/30 rounded-2xl blur opacity-0 group-focus-within:opacity-100 transition-opacity duration-300" />
               <div className="relative">
                 <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <Input placeholder={t("products.search", lang)} value={productSearch} onChange={e => setProductSearch(e.target.value)} className="pl-10 h-12 rounded-xl border-2 border-border/50 focus:border-primary/50 bg-card/80 backdrop-blur-sm" />
+                <Input placeholder={t("products.search", lang)} value={productSearch} onChange={e => setProductSearch(e.target.value)} className="pl-10 h-12 rounded-xl border-2 border-border/50 focus:border-primary/50 glass-card" />
               </div>
             </div>
 
             {/* Dropdown filters */}
-            <div className="flex gap-2">
+            <div className="flex gap-2.5">
               <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                <SelectTrigger className="flex-1 h-11 text-xs rounded-xl bg-card/80 backdrop-blur-sm border-2 border-border/50">
+                <SelectTrigger className="flex-1 h-11 text-xs rounded-xl glass-card border-2 border-border/50">
                   <SelectValue placeholder="Kategori" />
                 </SelectTrigger>
                 <SelectContent>
@@ -1783,7 +1804,7 @@ const Index = () => {
                 </SelectContent>
               </Select>
               <Select value={sortOrder} onValueChange={(v) => setSortOrder(v as "newest" | "oldest")}>
-                <SelectTrigger className="w-[120px] h-11 text-xs rounded-xl bg-card/80 backdrop-blur-sm border-2 border-border/50">
+                <SelectTrigger className="w-[120px] h-11 text-xs rounded-xl glass-card border-2 border-border/50">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -1806,7 +1827,7 @@ const Index = () => {
             {sortedProducts.map((p) => {
               const imgs = getProductImages(p.id);
               return (
-                <Card key={p.id} className="overflow-hidden hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 border-0 shadow-lg bg-card/90 backdrop-blur-sm cursor-pointer group" onClick={() => openProduct(p)}>
+                <Card key={p.id} className="overflow-hidden hover:shadow-2xl transition-all duration-300 hover:-translate-y-1.5 border-0 shadow-lg glass-card cursor-pointer group card-shine" onClick={() => openProduct(p)}>
                   {imgs.length > 0 && (
                     <div className="relative overflow-hidden">
                       <ImageCarousel images={imgs} />
@@ -1863,17 +1884,22 @@ const Index = () => {
         {tab === "voucher" && (
           <div className="space-y-4 animate-fade-in">
             {/* Hero Header */}
-            <div className="relative overflow-hidden rounded-2xl p-5" style={{ background: "linear-gradient(135deg, hsl(160, 70%, 42%) 0%, hsl(140, 60%, 35%) 100%)" }}>
-              <div className="absolute inset-0 opacity-10">
-                <div className="absolute -top-8 -right-8 w-32 h-32 rounded-full bg-white/30 blur-2xl" />
+            <div className="relative overflow-hidden rounded-2xl p-5 glow-border" style={{ background: "linear-gradient(135deg, hsl(160, 70%, 42%) 0%, hsl(180, 60%, 40%) 50%, hsl(140, 60%, 35%) 100%)" }}>
+              <div className="absolute inset-0">
+                <div className="absolute -top-8 -right-8 w-40 h-40 rounded-full bg-white/20 blur-3xl animate-pulse" />
+                <div className="absolute -bottom-8 -left-8 w-28 h-28 rounded-full bg-white/15 blur-2xl animate-pulse" style={{ animationDelay: "1s" }} />
+                <div className="absolute inset-0 shimmer" />
               </div>
               <div className="relative z-10 flex items-center gap-4">
-                <div className="w-14 h-14 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-lg">
-                  <Ticket className="w-7 h-7 text-white" />
+                <div className="relative floating">
+                  <div className="absolute -inset-1 bg-white/30 rounded-2xl blur-md" />
+                  <div className="relative w-14 h-14 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-2xl ring-2 ring-white/30">
+                    <Ticket className="w-7 h-7 text-white" />
+                  </div>
                 </div>
                 <div>
-                  <h2 className="text-xl font-extrabold text-white">{t("voucher.title", lang)}</h2>
-                  <p className="text-white/70 text-xs font-medium mt-0.5">Klaim kode voucher produkmu</p>
+                  <h2 className="text-xl font-extrabold text-white drop-shadow-lg">{t("voucher.title", lang)}</h2>
+                  <p className="text-white/80 text-xs font-medium mt-0.5">Klaim kode voucher produkmu</p>
                 </div>
               </div>
             </div>
@@ -1891,8 +1917,8 @@ const Index = () => {
               </CardContent>
             </Card>
 
-            <Card className="border-0 shadow-xl overflow-hidden bg-card/90 backdrop-blur-sm">
-              <div className="h-1.5 bg-gradient-to-r from-primary via-accent to-primary" />
+            <Card className="border-0 shadow-2xl overflow-hidden glass-card-strong glow-border">
+              <div className="h-1.5 bg-gradient-to-r from-primary via-accent to-primary shimmer" />
               <CardContent className="p-5 space-y-4">
                 <div className="text-center">
                   <div className="relative w-18 h-18 mx-auto mb-3">
@@ -1984,17 +2010,22 @@ const Index = () => {
         {tab === "history" && (
           <div className="space-y-4 animate-fade-in">
             {/* Hero Header */}
-            <div className="relative overflow-hidden rounded-2xl p-5" style={{ background: "linear-gradient(135deg, hsl(200, 80%, 50%) 0%, hsl(220, 70%, 45%) 100%)" }}>
-              <div className="absolute inset-0 opacity-10">
-                <div className="absolute -top-8 -right-8 w-32 h-32 rounded-full bg-white/30 blur-2xl" />
+            <div className="relative overflow-hidden rounded-2xl p-5 glow-border" style={{ background: "linear-gradient(135deg, hsl(200, 80%, 50%) 0%, hsl(210, 75%, 48%) 50%, hsl(220, 70%, 45%) 100%)" }}>
+              <div className="absolute inset-0">
+                <div className="absolute -top-8 -right-8 w-40 h-40 rounded-full bg-white/20 blur-3xl animate-pulse" />
+                <div className="absolute -bottom-8 -left-8 w-28 h-28 rounded-full bg-white/15 blur-2xl animate-pulse" style={{ animationDelay: "1s" }} />
+                <div className="absolute inset-0 shimmer" />
               </div>
               <div className="relative z-10 flex items-center gap-4">
-                <div className="w-14 h-14 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-lg">
-                  <Clock className="w-7 h-7 text-white" />
+                <div className="relative floating">
+                  <div className="absolute -inset-1 bg-white/30 rounded-2xl blur-md" />
+                  <div className="relative w-14 h-14 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-2xl ring-2 ring-white/30">
+                    <Clock className="w-7 h-7 text-white" />
+                  </div>
                 </div>
                 <div>
-                  <h2 className="text-xl font-extrabold text-white">{t("history.title", lang)}</h2>
-                  <p className="text-white/70 text-xs font-medium mt-0.5">{history.length} riwayat klaim</p>
+                  <h2 className="text-xl font-extrabold text-white drop-shadow-lg">{t("history.title", lang)}</h2>
+                  <p className="text-white/80 text-xs font-medium mt-0.5">{history.length} riwayat klaim</p>
                 </div>
               </div>
             </div>
@@ -2031,7 +2062,7 @@ const Index = () => {
               const deviceSummary = h.device_info ? getDeviceSummary(h.device_info) : "Tidak diketahui";
               const globalIdx = (historyPage - 1) * HISTORY_PER_PAGE + idx;
               return (
-                <Card key={`${h.id}-${globalIdx}`} className="overflow-hidden hover:shadow-xl transition-all duration-300 border-0 shadow-lg bg-card/90 backdrop-blur-sm hover:-translate-y-0.5">
+                <Card key={`${h.id}-${globalIdx}`} className="overflow-hidden hover:shadow-2xl transition-all duration-300 border-0 shadow-lg glass-card hover:-translate-y-1 card-shine">
                   <div className="bg-gradient-to-r from-primary/15 to-accent/10 px-4 py-2.5 flex items-center justify-between border-b border-border/30">
                     <div className="flex items-center gap-2.5">
                       <Checkbox checked={selectedHistoryIds.has(h.id)} onCheckedChange={() => toggleHistorySelect(h.id)} />
@@ -2111,21 +2142,26 @@ const Index = () => {
             {ticketView === "list" && (
               <>
                 {/* Hero Header */}
-                <div className="relative overflow-hidden rounded-2xl p-5" style={{ background: "linear-gradient(135deg, hsl(0, 70%, 55%) 0%, hsl(20, 80%, 50%) 100%)" }}>
-                  <div className="absolute inset-0 opacity-10">
-                    <div className="absolute -top-8 -right-8 w-32 h-32 rounded-full bg-white/30 blur-2xl" />
+                <div className="relative overflow-hidden rounded-2xl p-5 glow-border" style={{ background: "linear-gradient(135deg, hsl(0, 70%, 55%) 0%, hsl(10, 75%, 52%) 50%, hsl(20, 80%, 50%) 100%)" }}>
+                  <div className="absolute inset-0">
+                    <div className="absolute -top-8 -right-8 w-40 h-40 rounded-full bg-white/20 blur-3xl animate-pulse" />
+                    <div className="absolute -bottom-8 -left-8 w-28 h-28 rounded-full bg-white/15 blur-2xl animate-pulse" style={{ animationDelay: "1s" }} />
+                    <div className="absolute inset-0 shimmer" />
                   </div>
                   <div className="relative z-10 flex items-center justify-between">
                     <div className="flex items-center gap-4">
-                      <div className="w-14 h-14 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-lg">
-                        <AlertCircle className="w-7 h-7 text-white" />
+                      <div className="relative floating">
+                        <div className="absolute -inset-1 bg-white/30 rounded-2xl blur-md" />
+                        <div className="relative w-14 h-14 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-2xl ring-2 ring-white/30">
+                          <AlertCircle className="w-7 h-7 text-white" />
+                        </div>
                       </div>
                       <div>
-                        <h2 className="text-xl font-extrabold text-white">{t("ticket.title", lang)}</h2>
-                        <p className="text-white/70 text-xs font-medium mt-0.5">{tickets.length} tiket dibuat</p>
+                        <h2 className="text-xl font-extrabold text-white drop-shadow-lg">{t("ticket.title", lang)}</h2>
+                        <p className="text-white/80 text-xs font-medium mt-0.5">{tickets.length} tiket dibuat</p>
                       </div>
                     </div>
-                    <Button size="sm" onClick={() => setTicketView("create")} className="bg-white/20 hover:bg-white/30 text-white border border-white/20 backdrop-blur-sm gap-1 font-bold"><Send className="w-3 h-3" /> Buat</Button>
+                    <Button size="sm" onClick={() => setTicketView("create")} className="bg-white/25 hover:bg-white/35 text-white border border-white/30 backdrop-blur-md gap-1 font-bold shadow-lg hover:shadow-xl transition-all"><Send className="w-3 h-3" /> Buat</Button>
                   </div>
                 </div>
 
@@ -2284,17 +2320,22 @@ const Index = () => {
         {tab === "saldo" && (
           <div className="space-y-4 animate-fade-in">
             {/* Hero Header */}
-            <div className="relative overflow-hidden rounded-2xl p-5" style={{ background: "linear-gradient(135deg, hsl(270, 70%, 55%) 0%, hsl(250, 60%, 45%) 100%)" }}>
-              <div className="absolute inset-0 opacity-10">
-                <div className="absolute -top-8 -right-8 w-32 h-32 rounded-full bg-white/30 blur-2xl" />
+            <div className="relative overflow-hidden rounded-2xl p-5 glow-border" style={{ background: "linear-gradient(135deg, hsl(270, 70%, 55%) 0%, hsl(260, 65%, 50%) 50%, hsl(250, 60%, 45%) 100%)" }}>
+              <div className="absolute inset-0">
+                <div className="absolute -top-8 -right-8 w-40 h-40 rounded-full bg-white/20 blur-3xl animate-pulse" />
+                <div className="absolute -bottom-8 -left-8 w-28 h-28 rounded-full bg-white/15 blur-2xl animate-pulse" style={{ animationDelay: "1.2s" }} />
+                <div className="absolute inset-0 shimmer" />
               </div>
               <div className="relative z-10 flex items-center gap-4">
-                <div className="w-14 h-14 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-lg">
-                  <Wallet className="w-7 h-7 text-white" />
+                <div className="relative floating">
+                  <div className="absolute -inset-1 bg-white/30 rounded-2xl blur-md" />
+                  <div className="relative w-14 h-14 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-2xl ring-2 ring-white/30">
+                    <Wallet className="w-7 h-7 text-white" />
+                  </div>
                 </div>
                 <div>
-                  <h2 className="text-xl font-extrabold text-white">{t("balance.title", lang)}</h2>
-                  <p className="text-white/70 text-xs font-medium mt-0.5">{userBalance ? `Hai, ${userBalance.username}` : "Kelola saldo akun kamu"}</p>
+                  <h2 className="text-xl font-extrabold text-white drop-shadow-lg">{t("balance.title", lang)}</h2>
+                  <p className="text-white/80 text-xs font-medium mt-0.5">{userBalance ? `Hai, ${userBalance.username}` : "Kelola saldo akun kamu"}</p>
                 </div>
               </div>
             </div>
@@ -2314,9 +2355,9 @@ const Index = () => {
             ) : (
               <>
                 {/* Balance Card */}
-                <Card className="border-0 shadow-xl overflow-hidden bg-card/90 backdrop-blur-sm">
-                  <div className="h-1.5 bg-gradient-to-r from-primary via-accent to-primary" />
-                  <CardContent className="p-5 bg-gradient-to-br from-primary/5 to-accent/5">
+                <Card className="border-0 shadow-2xl overflow-hidden glass-card-strong glow-border">
+                  <div className="h-1.5 bg-gradient-to-r from-primary via-accent to-primary shimmer" />
+                  <CardContent className="p-5 bg-gradient-to-br from-primary/5 via-transparent to-accent/5">
                     <div className="flex items-center justify-between mb-4">
                       <div>
                         <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider">Saldo Aktif</p>
