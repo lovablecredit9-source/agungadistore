@@ -223,7 +223,7 @@ const BotWaTab = () => {
             </Button>
 
             <p className="text-[10px] text-muted-foreground text-center">
-              Setelah berhasil, admin akan mengaktifkan bot Anda dan mengirim QR code untuk scan.
+              Setelah bayar via bot WA, QR code dikirim otomatis. Scan untuk mengaktifkan bot.
             </p>
           </CardContent>
         </Card>
