@@ -730,6 +730,7 @@ function getFlowLabel(flowType) {
   if (!flowType) return "proses aktif";
   if (flowType === "deposit_amount" || flowType === "deposit_method") return "deposit";
   if (flowType === "create_pin") return "pembuatan PIN";
+  if (flowType === "sewabot_name") return "sewa bot WA";
   if (String(flowType).startsWith("resetpin")) return "reset PIN";
   if (String(flowType).startsWith("resetsandi")) return "reset password";
   return "proses aktif";
