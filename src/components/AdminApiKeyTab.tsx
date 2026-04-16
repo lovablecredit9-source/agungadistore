@@ -38,6 +38,7 @@ export default function AdminApiKeyTab() {
   const [showUsage, setShowUsage] = useState(false);
   const [downloadKeyId, setDownloadKeyId] = useState<string>("");
   const [pairingPhone, setPairingPhone] = useState("");
+  const [adminNumbers, setAdminNumbers] = useState<string[]>([""]);
   const { toast } = useToast();
 
   useEffect(() => { fetchKeys(); }, []);
