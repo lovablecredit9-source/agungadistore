@@ -38,6 +38,7 @@ export default function AdminApiKeyTab() {
   const [showUsage, setShowUsage] = useState(false);
   const [downloadKeyId, setDownloadKeyId] = useState<string>("");
   const [pairingPhone, setPairingPhone] = useState("");
+  const [adminNumbers, setAdminNumbers] = useState<string[]>([""]);
   const { toast } = useToast();
 
   useEffect(() => { fetchKeys(); }, []);
@@ -145,21 +146,27 @@ export default function AdminApiKeyTab() {
     const phone = phoneNumber ? normalizePairingPhoneInput(phoneNumber) : "";
     const anonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || "";
 
+    const validAdmins = adminNumbers.filter(n => n.trim().length >= 10);
+    const adminArr = validAdmins.length > 0
+      ? `[\n  ${validAdmins.map(n => `"${normalizePairingPhoneInput(n)}@s.whatsapp.net"`).join(",\n  ")}\n]`
+      : `[]`;
+
     return botTemplate
       .replace('__BOT_API_KEY__', apiKey)
       .replace('__BOT_BASE_URL__', base)
       .replace('__BOT_WEB_URL__', web)
       .replace('__BOT_PAIRING_PHONE__', phone)
       .replace('__BOT_SUPABASE_URL__', supabaseUrl)
-      .replace('__BOT_SUPABASE_ANON_KEY__', anonKey);
+      .replace('__BOT_SUPABASE_ANON_KEY__', anonKey)
+      .replace('__BOT_ADMIN_NUMBERS__', adminArr);
   }
 
 
   function generatePackageJson() {
     return JSON.stringify({
       name: "bot-wa-agungadi",
-        version: "13.6.1",
-        description: "Bot WhatsApp Agung Adi Store v13.6.1 - Stabilitas QR Scan + Auto Sync Panel",
+        version: "13.7.0",
+        description: "Bot WhatsApp Agung Adi Store v13.7.0 - Admin Numbers dari Panel",
       main: "index.js",
       scripts: {
         start: "node index.js",
@@ -179,7 +186,7 @@ export default function AdminApiKeyTab() {
   }
 
   function generateReadmeMd() {    
-    return `# 🤖 Bot WhatsApp - Agung Adi Store v13.6.1
+    return `# 🤖 Bot WhatsApp - Agung Adi Store v13.7.0
 
 ## 📋 Persyaratan
 - Node.js >= 18
@@ -427,8 +434,50 @@ node index.js
               className="text-xs font-mono h-8"
             />
             <p className="text-[10px] text-muted-foreground">
-                Nomor ini jadi default saat pilih mode pairing. Input 08xxx otomatis jadi 62xxx, lalu di WhatsApp masukkan baris RAW code yang tampil di terminal tanpa spasi/strip.
+                Nomor ini jadi default saat pilih mode pairing. Input 08xxx otomatis jadi 62xxx.
             </p>
+          </div>
+
+          {/* Input nomor Admin */}
+          <div className="space-y-1">
+            <label className="text-[11px] font-semibold flex items-center gap-1">
+              🔐 Nomor Admin Bot:
+            </label>
+            <p className="text-[10px] text-muted-foreground mb-1">
+              Hanya nomor di list ini yang bisa akses perintah admin di bot. Kosong = semua bisa akses.
+            </p>
+            {adminNumbers.map((num, idx) => (
+              <div key={idx} className="flex items-center gap-1">
+                <Input
+                  placeholder="628xxxxxxxxxx"
+                  value={num}
+                  onChange={e => {
+                    const updated = [...adminNumbers];
+                    updated[idx] = normalizePairingPhoneInput(e.target.value);
+                    setAdminNumbers(updated);
+                  }}
+                  className="text-xs font-mono h-8 flex-1"
+                />
+                {adminNumbers.length > 1 && (
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="h-8 w-8 p-0 text-destructive"
+                    onClick={() => setAdminNumbers(adminNumbers.filter((_, i) => i !== idx))}
+                  >
+                    <Trash2 className="w-3 h-3" />
+                  </Button>
+                )}
+              </div>
+            ))}
+            <Button
+              size="sm"
+              variant="outline"
+              className="w-full gap-1 text-xs h-7"
+              onClick={() => setAdminNumbers([...adminNumbers, ""])}
+            >
+              <Plus className="w-3 h-3" /> Tambah Admin
+            </Button>
           </div>
 
           {/* Preview */}
@@ -442,6 +491,14 @@ node index.js
                   <code className="text-[10px] font-mono text-primary">{pairingPhone}</code>
                 </>
               )}
+              {adminNumbers.filter(n => n.trim().length >= 10).length > 0 && (
+                <>
+                  <p className="text-[10px] font-semibold text-muted-foreground mt-1">Admin Numbers:</p>
+                  {adminNumbers.filter(n => n.trim().length >= 10).map((n, i) => (
+                    <code key={i} className="text-[10px] font-mono text-primary block">{n}@s.whatsapp.net</code>
+                  ))}
+                </>
+              )}
             </div>
           )}
 
@@ -451,7 +508,7 @@ node index.js
             disabled={!selectedDownloadKey}
             onClick={() => selectedDownloadKey && downloadBotFile(selectedDownloadKey.api_key, selectedDownloadKey.key_name)}
           >
-            <Download className="w-4 h-4" /> <Download className="w-4 h-4" /> Download ZIP Bot v13.6.1
+            <Download className="w-4 h-4" /> <Download className="w-4 h-4" /> Download ZIP Bot v13.7.0
           </Button>
 
           <p className="text-[10px] text-muted-foreground text-center">
@@ -658,9 +715,9 @@ node index.js`}
                 <CardContent className="p-2">
                   <p className="text-[11px] font-bold text-yellow-700 mb-1">⚙️ Konfigurasi Admin:</p>
                   <p className="text-[10px] text-muted-foreground">
-                    Di file index.js, isi array <code className="bg-muted px-1 rounded">ADMIN_NUMBERS</code> dengan nomor WA admin.
-                    Format: <code className="bg-muted px-1 rounded">"628xxxxxxxxxx@c.us"</code>.
-                    Jika kosong, semua bisa akses perintah admin.
+                    Masukkan nomor admin di bagian <strong>"Nomor Admin Bot"</strong> pada panel download di atas sebelum download ZIP.
+                    Nomor otomatis diformat ke <code className="bg-muted px-1 rounded">628xxx@s.whatsapp.net</code>.
+                    Jika kosong, semua orang bisa akses perintah admin.
                   </p>
                 </CardContent>
               </Card>
