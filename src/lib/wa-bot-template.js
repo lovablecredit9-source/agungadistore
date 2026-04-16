@@ -28,6 +28,19 @@ function normalizePhoneNumber(value) {
   return String(value || "").replace(/[^0-9]/g, "");
 }
 
+function normalizePairingPhoneNumber(value) {
+  const digits = normalizePhoneNumber(value);
+  if (!digits) return "";
+  if (digits.startsWith("620")) return "62" + digits.slice(3);
+  if (digits.startsWith("0")) return "62" + digits.slice(1);
+  if (digits.startsWith("8")) return "62" + digits;
+  return digits;
+}
+
+function isValidPairingPhoneNumber(value) {
+  return /^62\d{8,13}$/.test(normalizePairingPhoneNumber(value));
+}
+
 function formatPhoneForDisplay(value) {
   const normalized = normalizePhoneNumber(value);
   if (!normalized) return "-";
@@ -530,10 +543,14 @@ async function askAuthMethod() {
       ? "Masukkan nomor WhatsApp [" + DEFAULT_PAIRING_PHONE + "]: "
       : "Masukkan nomor WhatsApp: ";
     const rawPhone = await rl.question(promptPhone);
-    const phoneNum = normalizePhoneNumber(rawPhone || DEFAULT_PAIRING_PHONE);
+    const phoneNum = normalizePairingPhoneNumber(rawPhone || DEFAULT_PAIRING_PHONE);
 
     if (!phoneNum) {
       throw new Error("Nomor WhatsApp wajib diisi untuk pairing.");
+    }
+
+    if (!isValidPairingPhoneNumber(phoneNum)) {
+      throw new Error("Format nomor WhatsApp tidak valid. Gunakan 08xxxxxxxxxx atau 628xxxxxxxxxx.");
     }
 
     console.log("\n📱 Nomor diterima: " + phoneNum);
@@ -820,7 +837,7 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
     rememberContactMappings(Array.isArray(payload?.contacts) ? payload.contacts : []);
   });
 
-  const phoneNum = normalizePhoneNumber(authChoice.phoneNum);
+  const phoneNum = normalizePairingPhoneNumber(authChoice.phoneNum);
   let pairingRequested = false;
   let reconnectScheduled = false;
   let qrShown = false;
@@ -829,11 +846,29 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
   async function requestPairingCodeOnce() {
     if (authChoice.mode !== "pairing" || pairingRequested || client.authState?.creds?.registered) return;
     if (!phoneNum) throw new Error("Nomor WhatsApp untuk pairing belum diisi!");
+    if (!isValidPairingPhoneNumber(phoneNum)) {
+      throw new Error("Nomor WhatsApp pairing tidak valid. Gunakan format 62xxxxxxxxxx.");
+    }
     pairingRequested = true;
     console.log("\n📱 Meminta kode pairing untuk: " + phoneNum);
     try {
-      await wait(2500);
-      const code = await client.requestPairingCode(phoneNum);
+      let code = "";
+      let lastError = null;
+
+      for (const delayMs of [1500, 3500]) {
+        await wait(delayMs);
+        try {
+          code = await client.requestPairingCode(phoneNum);
+          break;
+        } catch (error) {
+          lastError = error;
+        }
+      }
+
+      if (!code) {
+        throw lastError || new Error("Pairing code belum bisa dibuat.");
+      }
+
       console.log("\n" + "=".repeat(40));
       console.log("  📲 KODE PAIRING (8 DIGIT):");
       console.log("  ➡️  " + formatPairingCode(code));
@@ -858,6 +893,12 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
     if (connection === "connecting" && !connectingLogged) {
       connectingLogged = true;
       console.log(attempt === 0 ? "🔌 Menghubungkan ke server WhatsApp..." : "🔌 Menghubungkan ulang ke server WhatsApp...");
+    }
+
+    if (authChoice.mode === "pairing" && connection === "connecting" && !isRegistered && !pairingRequested) {
+      requestPairingCodeOnce().catch((error) => {
+        console.error("❌ Gagal memulai pairing:", error?.stack || error?.message || error);
+      });
     }
 
     if (qr && authChoice.mode === "qr" && !isRegistered) {
@@ -915,12 +956,6 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
       }, RECONNECT_DELAY_MS);
     }
   });
-
-  if (authChoice.mode === "pairing" && !client.authState?.creds?.registered) {
-    requestPairingCodeOnce().catch((error) => {
-      console.error("❌ Gagal memulai pairing:", error?.stack || error?.message || error);
-    });
-  }
 
   client.ev.on("messages.upsert", async ({ messages }) => {
     const msg = messages?.[0];
