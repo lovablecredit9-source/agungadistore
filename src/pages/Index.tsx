@@ -48,9 +48,8 @@ import HomeBannerSlider from "@/components/HomeBannerSlider";
 import BalanceAuth from "@/components/BalanceAuth";
 import GameTab from "@/components/GameTab";
 import PlusTab from "@/components/PlusTab";
-import BotWaTab from "@/components/BotWaTab";
 
-type Tab = "beranda" | "produk" | "voucher" | "history" | "likes" | "tiket" | "saldo" | "playlist" | "publik" | "sponsor" | "streak" | "adminpost" | "game" | "plus" | "update" | "botwa";
+type Tab = "beranda" | "produk" | "voucher" | "history" | "likes" | "tiket" | "saldo" | "playlist" | "publik" | "sponsor" | "streak" | "adminpost" | "game" | "plus" | "update";
 
 interface UserBalance {
   id: string;
@@ -277,7 +276,6 @@ const TAB_PATHS: Record<string, Tab> = {
   "/game": "game",
   "/plus": "plus",
   "/update": "update",
-  "/bot-wa": "botwa",
 };
 const PATH_FROM_TAB: Record<Tab, string> = Object.fromEntries(
   Object.entries(TAB_PATHS).map(([k, v]) => [v, k])
@@ -2473,7 +2471,7 @@ const Index = () => {
 
         {tab === "plus" && <PlusTab key={userBalance?.visitor_id || "no-user"} />}
 
-        {tab === "botwa" && <BotWaTab key={userBalance?.visitor_id || "no-user-bot"} />}
+
 
         {tab === "update" && (
           <div className="space-y-4">
@@ -3758,7 +3756,6 @@ const Index = () => {
             { key: "streak" as Tab, icon: CalendarDays, label: "Streak" },
             { key: "game" as Tab, icon: Gamepad2, label: "Game" },
             { key: "plus" as Tab, icon: Sparkles, label: "Plus" },
-            { key: "botwa" as Tab, icon: Bot, label: "Bot WA" },
             { key: "update" as Tab, icon: RefreshCw, label: "Update" },
             { key: "adminpost" as Tab, icon: FileText, label: "Admin" },
           ]).map(({ key, icon: Icon, label }) => (
