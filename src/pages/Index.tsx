@@ -3778,33 +3778,47 @@ const Index = () => {
       )}
 
 
-      <nav className="fixed bottom-0 left-0 right-0 bg-card/95 backdrop-blur-md border-t border-border z-50 shadow-[0_-4px_20px_rgba(0,0,0,0.08)]">
-        <div className="flex max-w-lg mx-auto overflow-x-auto scrollbar-hide">
+      <nav className="fixed bottom-0 left-0 right-0 z-50">
+        {/* Glassmorphism background */}
+        <div className="absolute inset-0 bg-card/80 backdrop-blur-xl border-t border-white/10 shadow-[0_-8px_32px_rgba(0,0,0,0.12)]" />
+        <div className="relative flex max-w-lg mx-auto overflow-x-auto scrollbar-hide px-1 py-1">
           {([
-            { key: "beranda" as Tab, icon: Home, label: t("nav.home", lang) },
-            { key: "produk" as Tab, icon: Package, label: t("nav.products", lang) },
-            { key: "voucher" as Tab, icon: Ticket, label: t("nav.voucher", lang) },
-            { key: "saldo" as Tab, icon: Wallet, label: t("nav.balance", lang) },
-            { key: "likes" as Tab, icon: Heart, label: t("nav.likes", lang) },
-            { key: "history" as Tab, icon: Clock, label: t("nav.history", lang) },
-            { key: "tiket" as Tab, icon: AlertCircle, label: t("nav.ticket", lang) },
-            { key: "playlist" as Tab, icon: Music, label: t("nav.playlist", lang) },
-            { key: "publik" as Tab, icon: Globe, label: "Publik" },
-            { key: "sponsor" as Tab, icon: Megaphone, label: "Sponsor" },
-            { key: "streak" as Tab, icon: CalendarDays, label: "Streak" },
-            { key: "game" as Tab, icon: Gamepad2, label: "Game" },
-            { key: "plus" as Tab, icon: Sparkles, label: "Plus" },
-            { key: "update" as Tab, icon: RefreshCw, label: "Update" },
-            { key: "adminpost" as Tab, icon: FileText, label: "Admin" },
-          ]).map(({ key, icon: Icon, label }) => (
-            <button
-              key={key}
-              onClick={() => setTab(key)}
-              className={`min-w-[52px] flex-shrink-0 flex flex-col items-center py-2 text-[10px] transition-all duration-200 ${tab === key ? "text-primary font-bold" : "text-muted-foreground hover:text-foreground"}`}>
-              <div className={`p-1 rounded-xl transition-all duration-200 ${tab === key ? "bg-primary/10 scale-110" : ""}`}><Icon className="w-4 h-4" /></div>
-              <span className="mt-0.5">{label}</span>
-            </button>
-          ))}
+            { key: "beranda" as Tab, icon: Home, label: t("nav.home", lang), gradient: "from-blue-500 to-cyan-400" },
+            { key: "produk" as Tab, icon: Package, label: t("nav.products", lang), gradient: "from-orange-500 to-amber-400" },
+            { key: "voucher" as Tab, icon: Ticket, label: t("nav.voucher", lang), gradient: "from-emerald-500 to-green-400" },
+            { key: "saldo" as Tab, icon: Wallet, label: t("nav.balance", lang), gradient: "from-violet-500 to-purple-400" },
+            { key: "likes" as Tab, icon: Heart, label: t("nav.likes", lang), gradient: "from-pink-500 to-rose-400" },
+            { key: "history" as Tab, icon: Clock, label: t("nav.history", lang), gradient: "from-sky-500 to-blue-400" },
+            { key: "tiket" as Tab, icon: AlertCircle, label: t("nav.ticket", lang), gradient: "from-red-500 to-orange-400" },
+            { key: "playlist" as Tab, icon: Music, label: t("nav.playlist", lang), gradient: "from-fuchsia-500 to-pink-400" },
+            { key: "publik" as Tab, icon: Globe, label: "Publik", gradient: "from-teal-500 to-emerald-400" },
+            { key: "sponsor" as Tab, icon: Megaphone, label: "Sponsor", gradient: "from-amber-500 to-yellow-400" },
+            { key: "streak" as Tab, icon: CalendarDays, label: "Streak", gradient: "from-orange-600 to-red-500" },
+            { key: "game" as Tab, icon: Gamepad2, label: "Game", gradient: "from-indigo-500 to-violet-400" },
+            { key: "plus" as Tab, icon: Sparkles, label: "Plus", gradient: "from-yellow-500 to-orange-400" },
+            { key: "update" as Tab, icon: RefreshCw, label: "Update", gradient: "from-cyan-500 to-blue-400" },
+            { key: "adminpost" as Tab, icon: FileText, label: "Admin", gradient: "from-slate-500 to-gray-400" },
+          ]).map(({ key, icon: Icon, label, gradient }) => {
+            const active = tab === key;
+            return (
+              <button
+                key={key}
+                onClick={() => setTab(key)}
+                className={`min-w-[56px] flex-shrink-0 flex flex-col items-center py-1.5 text-[10px] transition-all duration-300 relative ${active ? "text-primary font-extrabold" : "text-muted-foreground hover:text-foreground"}`}
+              >
+                {active && (
+                  <div className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-0.5 rounded-full bg-gradient-to-r from-primary to-accent" />
+                )}
+                <div className={`relative p-1.5 rounded-2xl transition-all duration-300 ${active ? `bg-gradient-to-br ${gradient} shadow-lg scale-110` : "hover:bg-muted/50"}`}>
+                  <Icon className={`w-[18px] h-[18px] transition-colors duration-200 ${active ? "text-white" : ""}`} />
+                  {active && (
+                    <div className={`absolute inset-0 rounded-2xl bg-gradient-to-br ${gradient} opacity-30 blur-md -z-10`} />
+                  )}
+                </div>
+                <span className={`mt-0.5 transition-all duration-200 ${active ? "text-[10px]" : "text-[9px]"}`}>{label}</span>
+              </button>
+            );
+          })}
         </div>
       </nav>
 
