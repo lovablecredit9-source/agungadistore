@@ -12,7 +12,7 @@ import {
   HelpCircle, X, ExternalLink, Search, ChevronLeft, ChevronRight, FileText,
   Heart, Send, ImagePlus, AlertCircle, History, Wallet, ArrowUpCircle, ArrowDownCircle,
   Bell, Check, CheckCheck, Globe, Edit2, ShoppingCart, Plus, Minus, Trash2,
-  Moon, Sun, Lock, Tag, Music, Megaphone, Diamond, Image as ImageIcon, Gem, Sparkles, Palette, CalendarDays, Gamepad2, RefreshCw
+  Moon, Sun, Lock, Tag, Music, Megaphone, Diamond, Image as ImageIcon, Gem, Sparkles, Palette, CalendarDays, Gamepad2, RefreshCw, Bot
 } from "lucide-react";
 import { useTheme } from "@/lib/theme";
 import { useToast } from "@/hooks/use-toast";
@@ -277,6 +277,7 @@ const TAB_PATHS: Record<string, Tab> = {
   "/game": "game",
   "/plus": "plus",
   "/update": "update",
+  "/bot-wa": "botwa",
 };
 const PATH_FROM_TAB: Record<Tab, string> = Object.fromEntries(
   Object.entries(TAB_PATHS).map(([k, v]) => [v, k])
@@ -2472,6 +2473,8 @@ const Index = () => {
 
         {tab === "plus" && <PlusTab key={userBalance?.visitor_id || "no-user"} />}
 
+        {tab === "botwa" && <BotWaTab key={userBalance?.visitor_id || "no-user-bot"} />}
+
         {tab === "update" && (
           <div className="space-y-4">
             <h2 className="text-lg font-extrabold flex items-center gap-2">
@@ -3755,6 +3758,7 @@ const Index = () => {
             { key: "streak" as Tab, icon: CalendarDays, label: "Streak" },
             { key: "game" as Tab, icon: Gamepad2, label: "Game" },
             { key: "plus" as Tab, icon: Sparkles, label: "Plus" },
+            { key: "botwa" as Tab, icon: Bot, label: "Bot WA" },
             { key: "update" as Tab, icon: RefreshCw, label: "Update" },
             { key: "adminpost" as Tab, icon: FileText, label: "Admin" },
           ]).map(({ key, icon: Icon, label }) => (
