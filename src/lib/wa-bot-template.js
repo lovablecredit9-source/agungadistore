@@ -3267,6 +3267,37 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
       return reply(txt);
     }
 
+    // ── ADMIN: BOT RENTAL MANAGEMENT ──
+    if (command === "!botstatus") {
+      if (!isAdmin(msg)) return reply("❌ Akses ditolak.");
+      if (!SUPABASE_URL) return reply("❌ Supabase belum dikonfigurasi di bot ini.");
+      const pending = await getPendingSubscriptions();
+      const active = await supabaseRequest("wa_bot_subscriptions?status=eq.active&select=id,bot_name,visitor_id,expires_at,wa_bot_packages(name)") || [];
+      let txt = "🤖 *Status Bot Rental:*\n\n";
+      txt += "⏳ *Pending (" + pending.length + "):*\n";
+      if (pending.length === 0) txt += "  Tidak ada\n";
+      for (const s of pending) {
+        txt += "• " + s.bot_name + " (ID: " + s.id.slice(0, 8) + ")\n";
+      }
+      txt += "\n✅ *Aktif (" + active.length + "):*\n";
+      if (active.length === 0) txt += "  Tidak ada\n";
+      for (const s of active) {
+        const remaining = s.expires_at ? Math.max(0, Math.floor((new Date(s.expires_at).getTime() - Date.now()) / 3600000)) : 0;
+        txt += "• " + s.bot_name + " (" + remaining + " jam tersisa)\n";
+      }
+      return reply(txt);
+    }
+
+    if (command === "!botaktifkan") {
+      if (!isAdmin(msg)) return reply("❌ Akses ditolak.");
+      if (!SUPABASE_URL) return reply("❌ Supabase belum dikonfigurasi di bot ini.");
+      const subId = args.trim();
+      if (!subId) return reply("❌ Format: !botaktifkan <subscription_id>\n\nGunakan !botstatus untuk melihat ID.");
+      const ok = await activateSubscription(subId);
+      if (ok) return reply("✅ Subscription " + subId.slice(0, 8) + "... berhasil diaktifkan!");
+      return reply("❌ Gagal mengaktifkan subscription. Pastikan ID benar.");
+    }
+
     } catch (err) {
       await reply("❌ Error: " + (err.message || err));
     }
