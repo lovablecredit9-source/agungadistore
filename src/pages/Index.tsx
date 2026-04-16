@@ -1763,16 +1763,16 @@ const Index = () => {
                   <Globe className="w-3.5 h-3.5" /> {t("home.follow_us", lang)}
                 </p>
                 <div className="grid grid-cols-2 gap-2.5">
-                  {[
-                    { label: `WA: ${WA_NUMBER}`, href: SOCIAL_LINKS.whatsapp, color: "from-green-500 to-emerald-600", emoji: "💬" },
-                    { label: YOUTUBE_NAME, href: SOCIAL_LINKS.youtube, color: "from-red-500 to-rose-600", emoji: "▶️" },
-                    { label: "@agungadi981", href: SOCIAL_LINKS.twitter, color: "from-sky-400 to-cyan-500", emoji: "🐦" },
-                    { label: "@agungadi57", href: SOCIAL_LINKS.instagram, color: "from-pink-500 to-fuchsia-600", emoji: "📸" },
-                    { label: "@pphitampro9", href: SOCIAL_LINKS.tiktok, color: "from-gray-700 to-gray-900", emoji: "🎵" },
-                  ].map((s) => (
-                    <a key={s.label} href={s.href} target="_blank" rel="noopener noreferrer"
-                      className={`bg-gradient-to-r ${s.color} text-white text-xs font-semibold px-3.5 py-3.5 rounded-xl flex items-center gap-2.5 hover:opacity-90 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 shadow-lg group`}>
-                      <span className="text-lg group-hover:scale-110 transition-transform">{s.emoji}</span><span className="truncate">{s.label}</span>
+                  {socialLinks.map((s) => (
+                    <a key={s.id} href={s.url} target="_blank" rel="noopener noreferrer"
+                      className="text-white text-xs font-semibold px-3.5 py-3.5 rounded-xl flex items-center gap-2.5 hover:opacity-90 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 shadow-lg group"
+                      style={{ background: `linear-gradient(135deg, ${s.color_from}, ${s.color_to})` }}>
+                      {s.icon_url ? (
+                        <img src={s.icon_url} alt={s.platform} className="w-6 h-6 object-contain rounded group-hover:scale-110 transition-transform flex-shrink-0" />
+                      ) : (
+                        <span className="w-6 h-6 rounded bg-white/20 flex items-center justify-center text-sm font-bold flex-shrink-0 group-hover:scale-110 transition-transform">{s.platform[0]?.toUpperCase()}</span>
+                      )}
+                      <span className="truncate">{s.label}</span>
                     </a>
                   ))}
                 </div>
