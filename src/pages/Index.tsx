@@ -1729,22 +1729,34 @@ const Index = () => {
         )}
 
         {tab === "produk" && (
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg font-extrabold flex items-center gap-2"><Package className="w-5 h-5 text-primary" /> {t("products.title", lang)}</h2>
-              <span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded-full font-medium">{sortedProducts.length} {t("products.items", lang)}</span>
+          <div className="space-y-4 animate-fade-in">
+            {/* Hero Header */}
+            <div className="relative overflow-hidden rounded-2xl p-5" style={{ background: "linear-gradient(135deg, hsl(220, 80%, 55%) 0%, hsl(250, 70%, 50%) 100%)" }}>
+              <div className="absolute inset-0 opacity-10">
+                <div className="absolute -top-8 -right-8 w-32 h-32 rounded-full bg-white/30 blur-2xl" />
+                <div className="absolute -bottom-8 -left-8 w-24 h-24 rounded-full bg-white/20 blur-2xl" />
+              </div>
+              <div className="relative z-10 flex items-center gap-4">
+                <div className="w-14 h-14 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-lg">
+                  <Package className="w-7 h-7 text-white" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-extrabold text-white">{t("products.title", lang)}</h2>
+                  <p className="text-white/70 text-xs font-medium mt-0.5">{sortedProducts.length} {t("products.items", lang)} tersedia</p>
+                </div>
+              </div>
             </div>
 
             {/* Search */}
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input placeholder={t("products.search", lang)} value={productSearch} onChange={e => setProductSearch(e.target.value)} className="pl-9" />
+              <Input placeholder={t("products.search", lang)} value={productSearch} onChange={e => setProductSearch(e.target.value)} className="pl-9 h-11 rounded-xl border-2 border-border/50 focus:border-primary/50" />
             </div>
 
             {/* Dropdown filters */}
             <div className="flex gap-2">
               <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                <SelectTrigger className="flex-1 h-9 text-xs">
+                <SelectTrigger className="flex-1 h-10 text-xs rounded-xl">
                   <SelectValue placeholder="Kategori" />
                 </SelectTrigger>
                 <SelectContent>
@@ -1754,7 +1766,7 @@ const Index = () => {
                 </SelectContent>
               </Select>
               <Select value={sortOrder} onValueChange={(v) => setSortOrder(v as "newest" | "oldest")}>
-                <SelectTrigger className="w-[120px] h-9 text-xs">
+                <SelectTrigger className="w-[120px] h-10 text-xs rounded-xl">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -1828,8 +1840,22 @@ const Index = () => {
         )}
 
         {tab === "voucher" && (
-          <div className="space-y-4">
-            <h2 className="text-lg font-extrabold flex items-center gap-2"><Ticket className="w-5 h-5 text-primary" /> {t("voucher.title", lang)}</h2>
+          <div className="space-y-4 animate-fade-in">
+            {/* Hero Header */}
+            <div className="relative overflow-hidden rounded-2xl p-5" style={{ background: "linear-gradient(135deg, hsl(160, 70%, 42%) 0%, hsl(140, 60%, 35%) 100%)" }}>
+              <div className="absolute inset-0 opacity-10">
+                <div className="absolute -top-8 -right-8 w-32 h-32 rounded-full bg-white/30 blur-2xl" />
+              </div>
+              <div className="relative z-10 flex items-center gap-4">
+                <div className="w-14 h-14 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-lg">
+                  <Ticket className="w-7 h-7 text-white" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-extrabold text-white">{t("voucher.title", lang)}</h2>
+                  <p className="text-white/70 text-xs font-medium mt-0.5">Klaim kode voucher produkmu</p>
+                </div>
+              </div>
+            </div>
             {/* Info: Harus beli dulu */}
             <Card className="bg-gradient-to-r from-amber-500/10 to-orange-500/10 border-amber-500/30 shadow-md">
               <CardContent className="p-3 flex items-start gap-3">
@@ -1917,9 +1943,21 @@ const Index = () => {
         )}
 
         {tab === "history" && (
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg font-extrabold flex items-center gap-2"><Clock className="w-5 h-5 text-primary" /> {t("history.title", lang)}</h2>
+          <div className="space-y-4 animate-fade-in">
+            {/* Hero Header */}
+            <div className="relative overflow-hidden rounded-2xl p-5" style={{ background: "linear-gradient(135deg, hsl(200, 80%, 50%) 0%, hsl(220, 70%, 45%) 100%)" }}>
+              <div className="absolute inset-0 opacity-10">
+                <div className="absolute -top-8 -right-8 w-32 h-32 rounded-full bg-white/30 blur-2xl" />
+              </div>
+              <div className="relative z-10 flex items-center gap-4">
+                <div className="w-14 h-14 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-lg">
+                  <Clock className="w-7 h-7 text-white" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-extrabold text-white">{t("history.title", lang)}</h2>
+                  <p className="text-white/70 text-xs font-medium mt-0.5">{history.length} riwayat klaim</p>
+                </div>
+              </div>
             </div>
 
             {history.length > 0 && (
@@ -2027,12 +2065,26 @@ const Index = () => {
         )}
 
         {tab === "tiket" && (
-          <div className="space-y-4">
+          <div className="space-y-4 animate-fade-in">
             {ticketView === "list" && (
               <>
-                <div className="flex items-center justify-between">
-                  <h2 className="text-lg font-extrabold flex items-center gap-2"><AlertCircle className="w-5 h-5 text-destructive" /> {t("ticket.title", lang)}</h2>
-                  <Button size="sm" onClick={() => setTicketView("create")} className="gap-1"><Send className="w-3 h-3" /> Buat Tiket</Button>
+                {/* Hero Header */}
+                <div className="relative overflow-hidden rounded-2xl p-5" style={{ background: "linear-gradient(135deg, hsl(0, 70%, 55%) 0%, hsl(20, 80%, 50%) 100%)" }}>
+                  <div className="absolute inset-0 opacity-10">
+                    <div className="absolute -top-8 -right-8 w-32 h-32 rounded-full bg-white/30 blur-2xl" />
+                  </div>
+                  <div className="relative z-10 flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                      <div className="w-14 h-14 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-lg">
+                        <AlertCircle className="w-7 h-7 text-white" />
+                      </div>
+                      <div>
+                        <h2 className="text-xl font-extrabold text-white">{t("ticket.title", lang)}</h2>
+                        <p className="text-white/70 text-xs font-medium mt-0.5">{tickets.length} tiket dibuat</p>
+                      </div>
+                    </div>
+                    <Button size="sm" onClick={() => setTicketView("create")} className="bg-white/20 hover:bg-white/30 text-white border border-white/20 backdrop-blur-sm gap-1 font-bold"><Send className="w-3 h-3" /> Buat</Button>
+                  </div>
                 </div>
 
                 {tickets.length === 0 && (
@@ -2188,8 +2240,22 @@ const Index = () => {
         )}
 
         {tab === "saldo" && (
-          <div className="space-y-4">
-            <h2 className="text-lg font-extrabold flex items-center gap-2"><Wallet className="w-5 h-5 text-primary" /> {t("balance.title", lang)}</h2>
+          <div className="space-y-4 animate-fade-in">
+            {/* Hero Header */}
+            <div className="relative overflow-hidden rounded-2xl p-5" style={{ background: "linear-gradient(135deg, hsl(270, 70%, 55%) 0%, hsl(250, 60%, 45%) 100%)" }}>
+              <div className="absolute inset-0 opacity-10">
+                <div className="absolute -top-8 -right-8 w-32 h-32 rounded-full bg-white/30 blur-2xl" />
+              </div>
+              <div className="relative z-10 flex items-center gap-4">
+                <div className="w-14 h-14 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-lg">
+                  <Wallet className="w-7 h-7 text-white" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-extrabold text-white">{t("balance.title", lang)}</h2>
+                  <p className="text-white/70 text-xs font-medium mt-0.5">{userBalance ? `Hai, ${userBalance.username}` : "Kelola saldo akun kamu"}</p>
+                </div>
+              </div>
+            </div>
 
             {!userBalance ? (
               <BalanceAuth
@@ -2512,11 +2578,22 @@ const Index = () => {
 
 
         {tab === "update" && (
-          <div className="space-y-4">
-            <h2 className="text-lg font-extrabold flex items-center gap-2">
-              <RefreshCw className="w-5 h-5 text-primary" /> Update Web
-            </h2>
-            <p className="text-xs text-muted-foreground">Riwayat pembaruan dan fitur terbaru {STORE_NAME}.</p>
+          <div className="space-y-4 animate-fade-in">
+            {/* Hero Header */}
+            <div className="relative overflow-hidden rounded-2xl p-5" style={{ background: "linear-gradient(135deg, hsl(190, 80%, 45%) 0%, hsl(210, 70%, 50%) 100%)" }}>
+              <div className="absolute inset-0 opacity-10">
+                <div className="absolute -top-8 -right-8 w-32 h-32 rounded-full bg-white/30 blur-2xl" />
+              </div>
+              <div className="relative z-10 flex items-center gap-4">
+                <div className="w-14 h-14 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-lg">
+                  <RefreshCw className="w-7 h-7 text-white" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-extrabold text-white">Update Web</h2>
+                  <p className="text-white/70 text-xs font-medium mt-0.5">Riwayat pembaruan dan fitur terbaru {STORE_NAME}</p>
+                </div>
+              </div>
+            </div>
 
             {/* April 2026 - Week 2 */}
             <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 space-y-2">
@@ -2606,10 +2683,22 @@ const Index = () => {
         )}
 
         {tab === "adminpost" && (
-          <div className="space-y-4">
-            <h2 className="text-lg font-extrabold flex items-center gap-2">
-              <FileText className="w-5 h-5 text-primary" /> Postingan Admin
-            </h2>
+          <div className="space-y-4 animate-fade-in">
+            {/* Hero Header */}
+            <div className="relative overflow-hidden rounded-2xl p-5" style={{ background: "linear-gradient(135deg, hsl(240, 40%, 45%) 0%, hsl(260, 50%, 40%) 100%)" }}>
+              <div className="absolute inset-0 opacity-10">
+                <div className="absolute -top-8 -right-8 w-32 h-32 rounded-full bg-white/30 blur-2xl" />
+              </div>
+              <div className="relative z-10 flex items-center gap-4">
+                <div className="w-14 h-14 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-lg">
+                  <FileText className="w-7 h-7 text-white" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-extrabold text-white">Postingan Admin</h2>
+                  <p className="text-white/70 text-xs font-medium mt-0.5">{adminPosts.length} pengumuman resmi</p>
+                </div>
+              </div>
+            </div>
             {adminPosts.length === 0 && (
               <div className="text-center py-16 text-muted-foreground">
                 <FileText className="w-16 h-16 mx-auto mb-3 opacity-20" />

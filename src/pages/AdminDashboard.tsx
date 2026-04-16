@@ -1044,46 +1044,75 @@ const AdminDashboard = () => {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <header className="sticky top-0 z-50 bg-primary text-primary-foreground px-4 py-3 shadow-lg flex items-center justify-between">
-        <h1 className="text-lg font-bold">Admin Panel</h1>
-        <Button variant="ghost" size="sm" onClick={handleLogout} className="text-primary-foreground hover:text-primary-foreground/80">
-          <LogOut className="w-4 h-4 mr-1" /> Logout
-        </Button>
+      {/* Admin Header */}
+      <header className="sticky top-0 z-50 shadow-xl">
+        <div className="bg-gradient-to-r from-primary via-primary/90 to-accent/80 text-primary-foreground px-4 py-4">
+          <div className="max-w-lg mx-auto flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-lg">
+                <Shield className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <h1 className="text-lg font-extrabold tracking-tight">Admin Panel</h1>
+                <p className="text-[10px] opacity-70">Dashboard Pengelolaan {STORE_NAME}</p>
+              </div>
+            </div>
+            <Button variant="ghost" size="sm" onClick={handleLogout} className="text-primary-foreground hover:text-primary-foreground/80 bg-white/10 hover:bg-white/20 rounded-xl gap-1.5 font-bold">
+              <LogOut className="w-4 h-4" /> Logout
+            </Button>
+          </div>
+        </div>
       </header>
 
-      <div className="flex border-b border-border overflow-x-auto">
-        {([
-          { key: "products" as AdminTab, icon: Package, label: "Produk" },
-          { key: "tokens" as AdminTab, icon: Ticket, label: "Token" },
-          { key: "claims" as AdminTab, icon: Clock, label: "Klaim" },
-          { key: "saldo" as AdminTab, icon: Wallet, label: "Saldo" },
-          { key: "deposit" as AdminTab, icon: ArrowUpCircle, label: "Deposit" },
-          { key: "diskon" as AdminTab, icon: Tag, label: "Diskon" },
-          { key: "pin" as AdminTab, icon: Lock, label: "PIN" },
-          { key: "tickets" as AdminTab, icon: AlertCircle, label: "Tiket" },
-          { key: "chats" as AdminTab, icon: MessageCircle, label: "Chat" },
-          { key: "notif" as AdminTab, icon: Bell, label: "Notif" },
-          { key: "settings" as AdminTab, icon: Edit2, label: "Setting" },
-          { key: "musik" as AdminTab, icon: Music, label: "Musik" },
-          { key: "vmusik" as AdminTab, icon: HardDrive, label: "V.Musik" },
-          { key: "sponsor" as AdminTab, icon: Megaphone, label: "Sponsor" },
-          { key: "apikey" as AdminTab, icon: Key, label: "API" },
-          { key: "postingan" as AdminTab, icon: FileText, label: "Post" },
-          { key: "promo" as AdminTab, icon: Tag, label: "Promo" },
-        ]).map(({ key, icon: Icon, label }) => (
-          <button key={key} onClick={() => setTab(key)} className={`flex-1 py-3 text-xs font-medium text-center border-b-2 transition-colors whitespace-nowrap px-2 ${tab === key ? "border-primary text-primary" : "border-transparent text-muted-foreground"}`}>
-            <Icon className="w-4 h-4 inline mr-1" /> {label}
-            {key === "tickets" && allTickets.filter(t => t.status === "open").length > 0 && (
-              <span className="ml-1 bg-destructive text-destructive-foreground text-[9px] px-1.5 py-0.5 rounded-full">{allTickets.filter(t => t.status === "open").length}</span>
-            )}
-            {key === "chats" && allChats.filter(c => c.status === "open").length > 0 && (
-              <span className="ml-1 bg-destructive text-destructive-foreground text-[9px] px-1.5 py-0.5 rounded-full">{allChats.filter(c => c.status === "open").length}</span>
-            )}
-            {key === "deposit" && allDeposits.filter(d => d.status === "pending").length > 0 && (
-              <span className="ml-1 bg-destructive text-destructive-foreground text-[9px] px-1.5 py-0.5 rounded-full">{allDeposits.filter(d => d.status === "pending").length}</span>
-            )}
-          </button>
-        ))}
+      {/* Tab Navigation */}
+      <div className="sticky top-[60px] z-40 bg-card/95 backdrop-blur-xl border-b border-border/50 shadow-sm">
+        <div className="flex max-w-lg mx-auto overflow-x-auto scrollbar-hide px-1 py-1">
+          {([
+            { key: "products" as AdminTab, icon: Package, label: "Produk", gradient: "from-blue-500 to-cyan-400" },
+            { key: "tokens" as AdminTab, icon: Ticket, label: "Token", gradient: "from-emerald-500 to-green-400" },
+            { key: "claims" as AdminTab, icon: Clock, label: "Klaim", gradient: "from-orange-500 to-amber-400" },
+            { key: "saldo" as AdminTab, icon: Wallet, label: "Saldo", gradient: "from-violet-500 to-purple-400" },
+            { key: "deposit" as AdminTab, icon: ArrowUpCircle, label: "Deposit", gradient: "from-teal-500 to-emerald-400" },
+            { key: "diskon" as AdminTab, icon: Tag, label: "Diskon", gradient: "from-pink-500 to-rose-400" },
+            { key: "pin" as AdminTab, icon: Lock, label: "PIN", gradient: "from-red-500 to-orange-400" },
+            { key: "tickets" as AdminTab, icon: AlertCircle, label: "Tiket", gradient: "from-amber-500 to-yellow-400" },
+            { key: "chats" as AdminTab, icon: MessageCircle, label: "Chat", gradient: "from-sky-500 to-blue-400" },
+            { key: "notif" as AdminTab, icon: Bell, label: "Notif", gradient: "from-fuchsia-500 to-pink-400" },
+            { key: "settings" as AdminTab, icon: Edit2, label: "Setting", gradient: "from-slate-500 to-gray-400" },
+            { key: "musik" as AdminTab, icon: Music, label: "Musik", gradient: "from-purple-500 to-violet-400" },
+            { key: "vmusik" as AdminTab, icon: HardDrive, label: "V.Musik", gradient: "from-indigo-500 to-blue-400" },
+            { key: "sponsor" as AdminTab, icon: Megaphone, label: "Sponsor", gradient: "from-yellow-500 to-orange-400" },
+            { key: "apikey" as AdminTab, icon: Key, label: "API", gradient: "from-gray-500 to-zinc-400" },
+            { key: "postingan" as AdminTab, icon: FileText, label: "Post", gradient: "from-cyan-500 to-teal-400" },
+            { key: "promo" as AdminTab, icon: Tag, label: "Promo", gradient: "from-rose-500 to-red-400" },
+          ]).map(({ key, icon: Icon, label, gradient }) => {
+            const active = tab === key;
+            const badgeCount = key === "tickets" ? allTickets.filter(t => t.status === "open").length
+              : key === "chats" ? allChats.filter(c => c.status === "open").length
+              : key === "deposit" ? allDeposits.filter(d => d.status === "pending").length : 0;
+            return (
+              <button
+                key={key}
+                onClick={() => setTab(key)}
+                className={`min-w-[52px] flex-shrink-0 flex flex-col items-center py-1.5 text-[9px] transition-all duration-300 relative ${active ? "font-extrabold" : "text-muted-foreground hover:text-foreground"}`}
+              >
+                {active && (
+                  <div className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-0.5 rounded-full bg-gradient-to-r from-primary to-accent" />
+                )}
+                <div className={`relative p-1.5 rounded-xl transition-all duration-300 ${active ? `bg-gradient-to-br ${gradient} shadow-lg scale-110` : "hover:bg-muted/50"}`}>
+                  <Icon className={`w-[16px] h-[16px] transition-colors duration-200 ${active ? "text-white" : ""}`} />
+                  {badgeCount > 0 && (
+                    <span className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground text-[8px] font-bold min-w-[14px] h-[14px] rounded-full flex items-center justify-center px-0.5">{badgeCount}</span>
+                  )}
+                  {active && (
+                    <div className={`absolute inset-0 rounded-xl bg-gradient-to-br ${gradient} opacity-30 blur-md -z-10`} />
+                  )}
+                </div>
+                <span className={`mt-0.5 transition-all duration-200 ${active ? "text-[9px] text-foreground" : "text-[8px]"}`}>{label}</span>
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       <main className="max-w-lg mx-auto p-4 space-y-6">
