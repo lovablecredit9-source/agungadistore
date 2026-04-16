@@ -281,7 +281,7 @@ const BotWaTab = () => {
                   </div>
                 ) : (
                   <div className="text-xs text-muted-foreground">
-                    Admin akan segera mengaktifkan bot Anda dan mengirim QR code.
+                    ⏳ QR sedang digenerate otomatis via bot WA. Cek chat bot Anda.
                   </div>
                 )}
                 {sub.wa_bot_packages && (
