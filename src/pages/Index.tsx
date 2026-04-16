@@ -294,6 +294,7 @@ const Index = () => {
   }, [navigate]);
   const [products, setProducts] = useState<Product[]>([]);
   const [productImages, setProductImages] = useState<ProductImage[]>([]);
+  const [socialLinks, setSocialLinks] = useState<{ id: string; platform: string; label: string; url: string; icon_url: string | null; color_from: string; color_to: string; sort_order: number }[]>([]);
   const [tokenInput, setTokenInput] = useState("");
   const [claimResults, setClaimResults] = useState<ClaimResult[]>([]);
   const [claiming, setClaiming] = useState(false);
