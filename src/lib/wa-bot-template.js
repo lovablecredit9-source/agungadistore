@@ -1789,7 +1789,7 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
         "┃ !qrulang [ID] — QR ulang",
         "┃ !riwayatbot — Riwayat bot",
         "┃ !qr [nomor] — QR ulang",
-        "┃ 🔐 PIN diminta tiap transaksi",
+        "┃ 🔐 PIN diminta tiap transaksi", 
         "╰━━━━━━━━━━━━━━━━━━━━━━━━━━╯",
         "",
         "╭━━━ 💰 *DEPOSIT* ━━━━━━━━━━╮",
