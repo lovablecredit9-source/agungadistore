@@ -238,8 +238,7 @@ ${"```"}
 
 ## 📌 Konfigurasi
 - API_KEY — API Key dari dashboard admin
-- DEFAULT_PAIRING_PHONE — Nomor default pairing opsional (akan dinormalisasi ke 62xxxxxxxxxx)
-- ADMIN_NUMBERS — Daftar nomor admin
+- ADMIN_NUMBERS — Daftar nomor admin (nomor pertama otomatis jadi default pairing)
 
 ## 📱 Perintah
 Kirim !menu / .menu / /menu di chat untuk melihat semua perintah.
