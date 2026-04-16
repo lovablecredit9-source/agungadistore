@@ -154,8 +154,8 @@ export default function AdminApiKeyTab() {
   function generatePackageJson() {
     return JSON.stringify({
       name: "bot-wa-agungadi",
-        version: "13.2.0",
-        description: "Bot WhatsApp Agung Adi Store v13.2.0 - Pairing nomor diperbaiki",
+        version: "13.3.0",
+        description: "Bot WhatsApp Agung Adi Store v13.3.0 - Pairing code tunggal + raw code",
       main: "index.js",
       scripts: {
         start: "node index.js",
@@ -174,7 +174,7 @@ export default function AdminApiKeyTab() {
   }
 
   function generateReadmeMd() {
-    return `# 🤖 Bot WhatsApp - Agung Adi Store v13.2.0
+    return `# 🤖 Bot WhatsApp - Agung Adi Store v13.3.0
 
 ## 📋 Persyaratan
 - Node.js >= 18
@@ -195,20 +195,21 @@ ${"```"}
 4. Start server lalu pilih metode login
 5. Ketik **1** untuk scan QR atau **2** untuk pairing nomor WhatsApp
 6. Jika pilih pairing, masukkan nomor WA (08xxx / 628xxx) lalu tekan Enter
-7. Tunggu sampai bot menulis **KODE PAIRING** di console / terminal
-8. Di HP, buka WhatsApp > Linked Devices > Link with phone number lalu masukkan kode itu secara manual
+7. Tunggu sampai bot menulis **KODE PAIRING AKTIF** dan baris **RAW** di console / terminal
+8. Di HP, buka WhatsApp > Linked Devices > Link with phone number lalu masukkan **RAW code** itu secara manual tanpa spasi/strip
 9. Tidak ada notif/chat otomatis ke WhatsApp — kodenya hanya tampil di terminal
 10. Jika gagal / expired, bot akan reset sesi pairing dan membuat kode baru
 
 ## 📲 Login WhatsApp
 Bot mendukung **2 mode login**:
 - **1. Scan QR** → QR muncul di terminal
-- **2. Pairing nomor** → masukkan nomor WA lalu kode 8 digit muncul di terminal
+- **2. Pairing nomor** → masukkan nomor WA lalu satu kode pairing aktif muncul di terminal
 - Kode pairing tidak dikirim lewat chat / notif WhatsApp
 - Setelah nomor dimasukkan, kamu tetap harus buka menu Linked Devices di HP sendiri
+- Gunakan baris **RAW** saat input di WhatsApp, jangan yang pakai strip
 - Kode pairing berlaku sekitar 20 detik — segera masukkan
 - Sesi tersimpan di folder auth_session/
-- Bot hanya meminta pairing code saat sesi WhatsApp sudah siap, jadi kode tidak stale
+- Bot hanya menjaga satu kode aktif per sesi agar kode tidak tertimpa update koneksi
 - Bot otomatis hapus sesi stale saat pairing untuk koneksi bersih
 - Jika koneksi awal putus, bot akan reconnect otomatis sampai 8x
 
@@ -418,7 +419,7 @@ node index.js
               className="text-xs font-mono h-8"
             />
             <p className="text-[10px] text-muted-foreground">
-                Nomor ini jadi default saat pilih mode pairing. Input 08xxx otomatis jadi 62xxx, lalu kode login nanti tetap dimasukkan manual di menu Linked Devices WhatsApp.
+                Nomor ini jadi default saat pilih mode pairing. Input 08xxx otomatis jadi 62xxx, lalu di WhatsApp masukkan baris RAW code yang tampil di terminal tanpa spasi/strip.
             </p>
           </div>
 
@@ -442,11 +443,11 @@ node index.js
             disabled={!selectedDownloadKey}
             onClick={() => selectedDownloadKey && downloadBotFile(selectedDownloadKey.api_key, selectedDownloadKey.key_name)}
           >
-            <Download className="w-4 h-4" /> Download ZIP Bot v13.2.0
+            <Download className="w-4 h-4" /> Download ZIP Bot v13.3.0
           </Button>
 
           <p className="text-[10px] text-muted-foreground text-center">
-            📲 Jalankan <code className="bg-muted px-1 rounded">npm install</code> lalu <code className="bg-muted px-1 rounded">node index.js</code> — pilih 2, masukkan nomor, lalu input kode manual di WhatsApp &gt; Linked Devices
+            📲 Jalankan <code className="bg-muted px-1 rounded">npm install</code> lalu <code className="bg-muted px-1 rounded">node index.js</code> — pilih 2, masukkan nomor, lalu input baris RAW code di WhatsApp &gt; Linked Devices
           </p>
         </CardContent>
       </Card>
@@ -479,7 +480,7 @@ node index.js
                       { step: "3", title: "Install dependencies", desc: "Buka terminal di folder project, ketik: npm install" },
                       { step: "4", title: "Jalankan bot", desc: "Di terminal, ketik: node index.js" },
                       { step: "5", title: "Pilih metode", desc: "Pilih 1 untuk scan QR atau 2 untuk pairing nomor WhatsApp." },
-                       { step: "6", title: "Login ke WhatsApp", desc: "Kalau pilih pairing, masukkan nomor WA lalu Enter, tunggu tulisan KODE PAIRING muncul, lalu buka WhatsApp di HP > Linked Devices > Link with phone number dan masukkan kode manual." },
+                       { step: "6", title: "Login ke WhatsApp", desc: "Kalau pilih pairing, masukkan nomor WA lalu Enter, tunggu tulisan KODE PAIRING AKTIF dan RAW muncul, lalu buka WhatsApp di HP > Linked Devices > Link with phone number dan masukkan RAW code tanpa spasi/strip." },
                     ].map(s => (
                       <div key={s.step} className="flex gap-2">
                         <span className="bg-primary text-primary-foreground rounded-full w-5 h-5 flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5">
@@ -511,9 +512,9 @@ node index.js`}
                     <li>Jangan tutup terminal saat bot jalan</li>
                     <li>Untuk background: install <code className="bg-muted px-1 rounded">pm2</code> lalu <code className="bg-muted px-1 rounded">pm2 start index.js</code></li>
                     <li>Saat bot jalan, pilih 1 untuk scan QR atau 2 untuk pairing nomor</li>
-                     <li>Kode pairing muncul di terminal — masukkan dalam 20 detik, bukan lewat notif/chat WA</li>
+                     <li>Kode pairing muncul di terminal — pakai baris RAW dan masukkan dalam 20 detik, bukan lewat notif/chat WA</li>
                      <li>Setelah input nomor di panel, WhatsApp tidak kirim notif otomatis; kamu harus buka menu Linked Devices sendiri</li>
-                     <li>Bot sekarang hanya membuat kode saat sesi pairing sudah siap agar kode tidak stale</li>
+                     <li>Bot sekarang menjaga satu kode aktif per sesi supaya kode tidak ketimpa dan ditolak WhatsApp</li>
                      <li>Bot otomatis hapus sesi lama saat pairing agar koneksi bersih</li>
                     <li>Sesi error? Hapus folder <code className="bg-muted px-1 rounded">auth_session</code> lalu jalankan ulang</li>
                     <li>Gunakan nomor WA cadangan untuk testing</li>
