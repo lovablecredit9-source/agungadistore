@@ -1743,19 +1743,23 @@ const Index = () => {
         {tab === "produk" && (
           <div className="space-y-4 animate-fade-in">
             {/* Hero Header */}
-            <div className="relative overflow-hidden rounded-2xl p-5" style={{ background: "linear-gradient(135deg, hsl(220, 80%, 55%) 0%, hsl(260, 70%, 50%) 100%)" }}>
-              <div className="absolute inset-0 opacity-15">
-                <div className="absolute -top-8 -right-8 w-40 h-40 rounded-full bg-white/30 blur-3xl animate-pulse" />
-                <div className="absolute -bottom-8 -left-8 w-28 h-28 rounded-full bg-white/20 blur-2xl" />
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-20 h-20 rounded-full bg-white/10 blur-xl" />
+            <div className="relative overflow-hidden rounded-2xl p-5 glow-border" style={{ background: "linear-gradient(135deg, hsl(220, 80%, 55%) 0%, hsl(260, 70%, 50%) 50%, hsl(200, 80%, 50%) 100%)" }}>
+              <div className="absolute inset-0">
+                <div className="absolute -top-8 -right-8 w-44 h-44 rounded-full bg-white/20 blur-3xl animate-pulse" />
+                <div className="absolute -bottom-8 -left-8 w-32 h-32 rounded-full bg-white/15 blur-2xl animate-pulse" style={{ animationDelay: "1.5s" }} />
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-24 h-24 rounded-full bg-white/10 blur-xl" />
+                <div className="absolute inset-0 shimmer" />
               </div>
               <div className="relative z-10 flex items-center gap-4">
-                <div className="w-14 h-14 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-lg ring-2 ring-white/20">
-                  <Package className="w-7 h-7 text-white" />
+                <div className="relative floating">
+                  <div className="absolute -inset-1 bg-white/30 rounded-2xl blur-md" />
+                  <div className="relative w-14 h-14 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-2xl ring-2 ring-white/30">
+                    <Package className="w-7 h-7 text-white" />
+                  </div>
                 </div>
                 <div>
-                  <h2 className="text-xl font-extrabold text-white tracking-tight">{t("products.title", lang)}</h2>
-                  <p className="text-white/70 text-xs font-medium mt-0.5">{sortedProducts.length} {t("products.items", lang)} tersedia</p>
+                  <h2 className="text-xl font-extrabold text-white tracking-tight drop-shadow-lg">{t("products.title", lang)}</h2>
+                  <p className="text-white/80 text-xs font-medium mt-0.5">{sortedProducts.length} {t("products.items", lang)} tersedia</p>
                 </div>
               </div>
               {/* Stats bar */}
@@ -1765,9 +1769,9 @@ const Index = () => {
                   { label: "Tersedia", value: sortedProducts.filter(p => p.stock > 0).length },
                   { label: "Garansi", value: sortedProducts.filter(p => p.has_warranty).length },
                 ].map(s => (
-                  <div key={s.label} className="flex-1 bg-white/10 backdrop-blur-sm rounded-xl px-3 py-2 text-center">
-                    <p className="text-white font-extrabold text-lg leading-none">{s.value}</p>
-                    <p className="text-white/60 text-[10px] font-medium">{s.label}</p>
+                  <div key={s.label} className="flex-1 bg-white/15 backdrop-blur-md rounded-xl px-3 py-2.5 text-center border border-white/10">
+                    <p className="text-white font-extrabold text-lg leading-none drop-shadow">{s.value}</p>
+                    <p className="text-white/70 text-[10px] font-semibold uppercase tracking-wider">{s.label}</p>
                   </div>
                 ))}
               </div>
@@ -1775,17 +1779,17 @@ const Index = () => {
 
             {/* Search */}
             <div className="relative group">
-              <div className="absolute -inset-0.5 bg-gradient-to-r from-primary/20 to-accent/20 rounded-2xl blur opacity-0 group-focus-within:opacity-100 transition-opacity" />
+              <div className="absolute -inset-0.5 bg-gradient-to-r from-primary/30 to-accent/30 rounded-2xl blur opacity-0 group-focus-within:opacity-100 transition-opacity duration-300" />
               <div className="relative">
                 <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <Input placeholder={t("products.search", lang)} value={productSearch} onChange={e => setProductSearch(e.target.value)} className="pl-10 h-12 rounded-xl border-2 border-border/50 focus:border-primary/50 bg-card/80 backdrop-blur-sm" />
+                <Input placeholder={t("products.search", lang)} value={productSearch} onChange={e => setProductSearch(e.target.value)} className="pl-10 h-12 rounded-xl border-2 border-border/50 focus:border-primary/50 glass-card" />
               </div>
             </div>
 
             {/* Dropdown filters */}
-            <div className="flex gap-2">
+            <div className="flex gap-2.5">
               <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                <SelectTrigger className="flex-1 h-11 text-xs rounded-xl bg-card/80 backdrop-blur-sm border-2 border-border/50">
+                <SelectTrigger className="flex-1 h-11 text-xs rounded-xl glass-card border-2 border-border/50">
                   <SelectValue placeholder="Kategori" />
                 </SelectTrigger>
                 <SelectContent>
@@ -1795,7 +1799,7 @@ const Index = () => {
                 </SelectContent>
               </Select>
               <Select value={sortOrder} onValueChange={(v) => setSortOrder(v as "newest" | "oldest")}>
-                <SelectTrigger className="w-[120px] h-11 text-xs rounded-xl bg-card/80 backdrop-blur-sm border-2 border-border/50">
+                <SelectTrigger className="w-[120px] h-11 text-xs rounded-xl glass-card border-2 border-border/50">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
