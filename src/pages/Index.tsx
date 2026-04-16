@@ -488,6 +488,7 @@ const Index = () => {
     fetchAdminSettings();
     checkPinStatus();
     fetchHomeSponsors();
+    fetchSocialLinks();
 
     // First visit notification - geser navigasi
     const firstVisitKey = "first_visit_nav_notified";
