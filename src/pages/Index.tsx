@@ -294,6 +294,7 @@ const Index = () => {
   }, [navigate]);
   const [products, setProducts] = useState<Product[]>([]);
   const [productImages, setProductImages] = useState<ProductImage[]>([]);
+  const [socialLinks, setSocialLinks] = useState<{ id: string; platform: string; label: string; url: string; icon_url: string | null; color_from: string; color_to: string; sort_order: number }[]>([]);
   const [tokenInput, setTokenInput] = useState("");
   const [claimResults, setClaimResults] = useState<ClaimResult[]>([]);
   const [claiming, setClaiming] = useState(false);
@@ -436,6 +437,11 @@ const Index = () => {
     if (data) setHomeSponsors(data as unknown as HomeSponsor[]);
   }
 
+  async function fetchSocialLinks() {
+    const { data } = await supabase.from("social_links").select("*").eq("is_active", true).order("sort_order");
+    if (data) setSocialLinks(data as any[]);
+  }
+
   // Notifications
   interface Notification {
     id: string;
@@ -487,6 +493,7 @@ const Index = () => {
     fetchAdminSettings();
     checkPinStatus();
     fetchHomeSponsors();
+    fetchSocialLinks();
 
     // First visit notification - geser navigasi
     const firstVisitKey = "first_visit_nav_notified";
@@ -1756,16 +1763,16 @@ const Index = () => {
                   <Globe className="w-3.5 h-3.5" /> {t("home.follow_us", lang)}
                 </p>
                 <div className="grid grid-cols-2 gap-2.5">
-                  {[
-                    { label: `WA: ${WA_NUMBER}`, href: SOCIAL_LINKS.whatsapp, color: "from-green-500 to-emerald-600", emoji: "💬" },
-                    { label: YOUTUBE_NAME, href: SOCIAL_LINKS.youtube, color: "from-red-500 to-rose-600", emoji: "▶️" },
-                    { label: "@agungadi981", href: SOCIAL_LINKS.twitter, color: "from-sky-400 to-cyan-500", emoji: "🐦" },
-                    { label: "@agungadi57", href: SOCIAL_LINKS.instagram, color: "from-pink-500 to-fuchsia-600", emoji: "📸" },
-                    { label: "@pphitampro9", href: SOCIAL_LINKS.tiktok, color: "from-gray-700 to-gray-900", emoji: "🎵" },
-                  ].map((s) => (
-                    <a key={s.label} href={s.href} target="_blank" rel="noopener noreferrer"
-                      className={`bg-gradient-to-r ${s.color} text-white text-xs font-semibold px-3.5 py-3.5 rounded-xl flex items-center gap-2.5 hover:opacity-90 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 shadow-lg group`}>
-                      <span className="text-lg group-hover:scale-110 transition-transform">{s.emoji}</span><span className="truncate">{s.label}</span>
+                  {socialLinks.map((s) => (
+                    <a key={s.id} href={s.url} target="_blank" rel="noopener noreferrer"
+                      className="text-white text-xs font-semibold px-3.5 py-3.5 rounded-xl flex items-center gap-2.5 hover:opacity-90 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 shadow-lg group"
+                      style={{ background: `linear-gradient(135deg, ${s.color_from}, ${s.color_to})` }}>
+                      {s.icon_url ? (
+                        <img src={s.icon_url} alt={s.platform} className="w-6 h-6 object-contain rounded group-hover:scale-110 transition-transform flex-shrink-0" />
+                      ) : (
+                        <span className="w-6 h-6 rounded bg-white/20 flex items-center justify-center text-sm font-bold flex-shrink-0 group-hover:scale-110 transition-transform">{s.platform[0]?.toUpperCase()}</span>
+                      )}
+                      <span className="truncate">{s.label}</span>
                     </a>
                   ))}
                 </div>
@@ -2810,14 +2817,10 @@ const Index = () => {
                 <p className="text-xs font-extrabold text-foreground">© 2026 {STORE_NAME}</p>
                 <p className="text-[11px] text-muted-foreground">Murah & Terpercaya — Semua hak dilindungi.</p>
                 <div className="flex items-center justify-center gap-2 mt-2 flex-wrap">
-                  {[
-                    { label: "WhatsApp", href: SOCIAL_LINKS.whatsapp },
-                    { label: "YouTube", href: SOCIAL_LINKS.youtube },
-                    { label: "Instagram", href: SOCIAL_LINKS.instagram },
-                    { label: "TikTok", href: SOCIAL_LINKS.tiktok },
-                  ].map(s => (
-                    <a key={s.label} href={s.href} target="_blank" rel="noopener noreferrer" className="text-[10px] font-bold px-3 py-1.5 rounded-full bg-primary/10 text-primary hover:bg-primary/20 transition-colors border border-primary/10">
-                      {s.label}
+                  {socialLinks.map(s => (
+                    <a key={s.id} href={s.url} target="_blank" rel="noopener noreferrer" className="text-[10px] font-bold px-3 py-1.5 rounded-full bg-primary/10 text-primary hover:bg-primary/20 transition-colors border border-primary/10 flex items-center gap-1">
+                      {s.icon_url && <img src={s.icon_url} alt={s.platform} className="w-3 h-3 object-contain" />}
+                      {s.platform}
                     </a>
                   ))}
                 </div>

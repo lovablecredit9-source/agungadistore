@@ -1163,6 +1163,48 @@ export type Database = {
         }
         Relationships: []
       }
+      social_links: {
+        Row: {
+          color_from: string
+          color_to: string
+          created_at: string
+          icon_url: string | null
+          id: string
+          is_active: boolean
+          label: string
+          platform: string
+          sort_order: number
+          updated_at: string
+          url: string
+        }
+        Insert: {
+          color_from?: string
+          color_to?: string
+          created_at?: string
+          icon_url?: string | null
+          id?: string
+          is_active?: boolean
+          label: string
+          platform: string
+          sort_order?: number
+          updated_at?: string
+          url: string
+        }
+        Update: {
+          color_from?: string
+          color_to?: string
+          created_at?: string
+          icon_url?: string | null
+          id?: string
+          is_active?: boolean
+          label?: string
+          platform?: string
+          sort_order?: number
+          updated_at?: string
+          url?: string
+        }
+        Relationships: []
+      }
       song_lyrics: {
         Row: {
           created_at: string
