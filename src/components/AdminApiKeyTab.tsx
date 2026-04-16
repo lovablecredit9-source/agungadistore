@@ -139,23 +139,27 @@ export default function AdminApiKeyTab() {
 
   function generateBotCode(apiKey: string, phoneNumber?: string) {
     const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID || "";
-    const base = `https://${projectId}.supabase.co/functions/v1/public-api`;
+    const supabaseUrl = `https://${projectId}.supabase.co`;
+    const base = `${supabaseUrl}/functions/v1/public-api`;
     const web = `https://produkklaimtransaksiagungadistore.lovable.app`;
     const phone = phoneNumber ? normalizePairingPhoneInput(phoneNumber) : "";
+    const anonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || "";
 
     return botTemplate
       .replace('__BOT_API_KEY__', apiKey)
       .replace('__BOT_BASE_URL__', base)
       .replace('__BOT_WEB_URL__', web)
-      .replace('__BOT_PAIRING_PHONE__', phone);
+      .replace('__BOT_PAIRING_PHONE__', phone)
+      .replace('__BOT_SUPABASE_URL__', supabaseUrl)
+      .replace('__BOT_SUPABASE_ANON_KEY__', anonKey);
   }
 
 
   function generatePackageJson() {
     return JSON.stringify({
       name: "bot-wa-agungadi",
-        version: "13.3.0",
-        description: "Bot WhatsApp Agung Adi Store v13.3.0 - Pairing code tunggal + raw code",
+        version: "13.4.0",
+        description: "Bot WhatsApp Agung Adi Store v13.4.0 - Bot Rental + Subscription Management",
       main: "index.js",
       scripts: {
         start: "node index.js",
@@ -443,7 +447,7 @@ node index.js
             disabled={!selectedDownloadKey}
             onClick={() => selectedDownloadKey && downloadBotFile(selectedDownloadKey.api_key, selectedDownloadKey.key_name)}
           >
-            <Download className="w-4 h-4" /> Download ZIP Bot v13.3.0
+            <Download className="w-4 h-4" /> Download ZIP Bot v13.4.0
           </Button>
 
           <p className="text-[10px] text-muted-foreground text-center">

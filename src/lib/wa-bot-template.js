@@ -515,9 +515,82 @@ function clearAuthSession(logMessage) {
 const API_KEY = "__BOT_API_KEY__";
 const BASE = "__BOT_BASE_URL__";
 const WEB_URL = "__BOT_WEB_URL__";
+const SUPABASE_URL = "__BOT_SUPABASE_URL__";
+const SUPABASE_ANON_KEY = "__BOT_SUPABASE_ANON_KEY__";
 
 const DEFAULT_PAIRING_PHONE = "__BOT_PAIRING_PHONE__"; // Opsional: nomor default pairing, format: 628xxxxxxxxxx
-const BOT_VERSION = "13.3.0";
+const BOT_VERSION = "13.4.0";
+
+// === BOT RENTAL MANAGEMENT ===
+// Menyimpan sesi bot rental aktif: { subscriptionId, botName, expiresAt, checkInterval }
+const rentalSessions = {};
+
+async function supabaseRequest(endpoint, method = "GET", body = null) {
+  const url = SUPABASE_URL + "/rest/v1/" + endpoint;
+  const headers = {
+    "apikey": SUPABASE_ANON_KEY,
+    "Authorization": "Bearer " + SUPABASE_ANON_KEY,
+    "Content-Type": "application/json",
+    "Prefer": method === "PATCH" ? "return=minimal" : "return=representation",
+  };
+  const opts = { method, headers };
+  if (body) opts.body = JSON.stringify(body);
+  const res = await fetch(url, opts);
+  if (!res.ok) return null;
+  if (method === "PATCH") return true;
+  return res.json();
+}
+
+async function checkAndExpireSubscriptions(client) {
+  try {
+    const data = await supabaseRequest(
+      "wa_bot_subscriptions?status=eq.active&expires_at=lt." + new Date().toISOString() + "&select=id,bot_name,visitor_id"
+    );
+    if (!data || !data.length) return;
+    for (const sub of data) {
+      console.log("⏰ Subscription expired:", sub.bot_name, "- ID:", sub.id);
+      // Update status to expired
+      await supabaseRequest(
+        "wa_bot_subscriptions?id=eq." + sub.id,
+        "PATCH",
+        { status: "expired" }
+      );
+      // Notify if possible
+      if (client?.user?.id) {
+        console.log("🔌 Bot", sub.bot_name, "auto-disconnected (masa sewa habis)");
+      }
+    }
+  } catch (err) {
+    console.error("❌ Error checking subscriptions:", err?.message || err);
+  }
+}
+
+// Check subscriptions every 60 seconds
+function startSubscriptionChecker(client) {
+  setInterval(() => checkAndExpireSubscriptions(client), 60000);
+  // Run immediately on start
+  checkAndExpireSubscriptions(client);
+}
+
+async function activateSubscription(subscriptionId) {
+  try {
+    const result = await supabaseRequest(
+      "wa_bot_subscriptions?id=eq." + subscriptionId,
+      "PATCH",
+      { status: "active" }
+    );
+    return !!result;
+  } catch { return false; }
+}
+
+async function getPendingSubscriptions() {
+  try {
+    const data = await supabaseRequest(
+      "wa_bot_subscriptions?status=eq.pending&select=id,bot_name,visitor_id,price_paid,starts_at,expires_at,wa_bot_packages(name)"
+    );
+    return data || [];
+  } catch { return []; }
+}
 
 // === SESSION LOGIN USER (per nomor WA) — TIDAK simpan PIN ===
 const userSessions = {};
@@ -3194,6 +3267,37 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
       return reply(txt);
     }
 
+    // ── ADMIN: BOT RENTAL MANAGEMENT ──
+    if (command === "!botstatus") {
+      if (!isAdmin(msg)) return reply("❌ Akses ditolak.");
+      if (!SUPABASE_URL) return reply("❌ Supabase belum dikonfigurasi di bot ini.");
+      const pending = await getPendingSubscriptions();
+      const active = await supabaseRequest("wa_bot_subscriptions?status=eq.active&select=id,bot_name,visitor_id,expires_at,wa_bot_packages(name)") || [];
+      let txt = "🤖 *Status Bot Rental:*\n\n";
+      txt += "⏳ *Pending (" + pending.length + "):*\n";
+      if (pending.length === 0) txt += "  Tidak ada\n";
+      for (const s of pending) {
+        txt += "• " + s.bot_name + " (ID: " + s.id.slice(0, 8) + ")\n";
+      }
+      txt += "\n✅ *Aktif (" + active.length + "):*\n";
+      if (active.length === 0) txt += "  Tidak ada\n";
+      for (const s of active) {
+        const remaining = s.expires_at ? Math.max(0, Math.floor((new Date(s.expires_at).getTime() - Date.now()) / 3600000)) : 0;
+        txt += "• " + s.bot_name + " (" + remaining + " jam tersisa)\n";
+      }
+      return reply(txt);
+    }
+
+    if (command === "!botaktifkan") {
+      if (!isAdmin(msg)) return reply("❌ Akses ditolak.");
+      if (!SUPABASE_URL) return reply("❌ Supabase belum dikonfigurasi di bot ini.");
+      const subId = args.trim();
+      if (!subId) return reply("❌ Format: !botaktifkan <subscription_id>\n\nGunakan !botstatus untuk melihat ID.");
+      const ok = await activateSubscription(subId);
+      if (ok) return reply("✅ Subscription " + subId.slice(0, 8) + "... berhasil diaktifkan!");
+      return reply("❌ Gagal mengaktifkan subscription. Pastikan ID benar.");
+    }
+
     } catch (err) {
       await reply("❌ Error: " + (err.message || err));
     }
@@ -3204,7 +3308,12 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
 
 async function startBot() {
   const authChoice = await askAuthMethod();
-  await connectToWhatsApp(authChoice, 0);
+  const client = await connectToWhatsApp(authChoice, 0);
+  // Start subscription expiry checker
+  if (SUPABASE_URL && SUPABASE_ANON_KEY) {
+    startSubscriptionChecker(client);
+    console.log("✅ Bot Rental checker aktif — cek subscription expired setiap 60 detik");
+  }
 }
 
 startBot().catch((error) => {
