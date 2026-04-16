@@ -1444,56 +1444,71 @@ const Index = () => {
               </div>
             )}
 
-            {/* Welcome Header */}
-            <div className="relative overflow-hidden rounded-2xl p-5 glow-border" style={{ background: "linear-gradient(135deg, hsl(250, 85%, 55%) 0%, hsl(280, 70%, 50%) 30%, hsl(200, 80%, 50%) 70%, hsl(160, 70%, 42%) 100%)" }}>
+            {/* Welcome Header - PREMIUM */}
+            <div className="relative overflow-hidden rounded-3xl p-6 glow-border" style={{ background: "linear-gradient(135deg, hsl(250, 85%, 50%) 0%, hsl(280, 75%, 45%) 25%, hsl(320, 70%, 45%) 50%, hsl(200, 80%, 45%) 75%, hsl(160, 70%, 40%) 100%)" }}>
               <div className="absolute inset-0">
-                <div className="absolute -top-10 -right-10 w-44 h-44 rounded-full bg-white/20 blur-3xl animate-pulse" />
-                <div className="absolute -bottom-10 -left-10 w-36 h-36 rounded-full bg-white/15 blur-3xl animate-pulse" style={{ animationDelay: "1s" }} />
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-24 h-24 rounded-full bg-white/10 blur-2xl animate-pulse" style={{ animationDelay: "2s" }} />
+                <div className="absolute -top-12 -right-12 w-56 h-56 rounded-full bg-white/15 blur-[60px] animate-pulse" />
+                <div className="absolute -bottom-16 -left-16 w-48 h-48 rounded-full bg-white/10 blur-[50px] animate-pulse" style={{ animationDelay: "1s" }} />
+                <div className="absolute top-1/3 right-1/4 w-32 h-32 rounded-full bg-yellow-300/10 blur-[40px] animate-pulse" style={{ animationDelay: "2s" }} />
+                <div className="absolute bottom-1/4 left-1/3 w-24 h-24 rounded-full bg-cyan-300/10 blur-[30px] animate-pulse" style={{ animationDelay: "1.5s" }} />
                 <div className="absolute inset-0 shimmer" />
+                {/* Decorative particles */}
+                <div className="absolute top-4 right-8 w-2 h-2 rounded-full bg-white/40 floating" />
+                <div className="absolute top-12 right-16 w-1.5 h-1.5 rounded-full bg-white/30 floating" style={{ animationDelay: "1s" }} />
+                <div className="absolute bottom-8 left-12 w-1 h-1 rounded-full bg-white/30 floating" style={{ animationDelay: "2s" }} />
+                <div className="absolute top-6 left-1/2 w-1.5 h-1.5 rounded-full bg-yellow-300/40 floating" style={{ animationDelay: "0.5s" }} />
               </div>
               <div className="relative z-10 flex items-center gap-4">
                 <div className="relative floating">
-                  <div className="absolute -inset-1 bg-white/30 rounded-2xl blur-md" />
-                  <img src={storeQris} alt={STORE_NAME} className="relative w-16 h-16 rounded-2xl object-cover shadow-2xl border-2 border-white/40 ring-2 ring-white/20" />
+                  <div className="absolute -inset-2 bg-white/25 rounded-2xl blur-lg" />
+                  <div className="absolute -inset-1 bg-gradient-to-br from-white/40 to-transparent rounded-2xl" />
+                  <img src={storeQris} alt={STORE_NAME} className="relative w-[72px] h-[72px] rounded-2xl object-cover shadow-2xl border-2 border-white/50 ring-2 ring-white/20 ring-offset-2 ring-offset-transparent" />
                 </div>
                 <div>
-                  <p className="text-white/90 text-xs font-semibold tracking-wide">
+                  <p className="text-white/90 text-xs font-semibold tracking-wide flex items-center gap-1.5">
                     {new Date().getHours() < 12 ? "☀️ Selamat Pagi" : new Date().getHours() < 18 ? "🌤️ Selamat Siang" : "🌙 Selamat Malam"}
                   </p>
-                  <h2 className="text-2xl font-extrabold text-white leading-tight drop-shadow-lg">{STORE_NAME}</h2>
-                  <p className="text-white/80 text-[11px] font-medium mt-0.5 tracking-wider">{t("header.tagline", lang)}</p>
+                  <h2 className="text-[26px] font-black text-white leading-tight drop-shadow-lg tracking-tight">{STORE_NAME}</h2>
+                  <p className="text-white/75 text-[11px] font-medium mt-1 tracking-widest uppercase">{t("header.tagline", lang)}</p>
                 </div>
               </div>
-              <div className="relative z-10 flex gap-2 mt-4">
+              <div className="relative z-10 flex gap-2 mt-5">
                 <a href={`${SOCIAL_LINKS.whatsapp}?text=${encodeURIComponent("Halo, saya mau order di Agung Adi Store")}`} target="_blank" rel="noopener noreferrer" className="flex-1">
-                  <Button size="sm" className="w-full bg-white/20 hover:bg-white/30 text-white border border-white/30 backdrop-blur-md gap-1.5 text-xs font-bold shadow-xl hover:shadow-2xl transition-all hover:scale-[1.02]">
+                  <Button size="sm" className="w-full bg-white/15 hover:bg-white/25 text-white border border-white/25 backdrop-blur-xl gap-1.5 text-xs font-bold shadow-xl hover:shadow-2xl transition-all hover:scale-[1.02] rounded-xl h-10">
                     <MessageCircle className="w-4 h-4" /> {t("home.contact_wa", lang)}
                   </Button>
                 </a>
-                <Button size="sm" className="flex-1 bg-white/95 text-primary hover:bg-white gap-1.5 text-xs font-bold shadow-xl hover:shadow-2xl transition-all hover:scale-[1.02]" onClick={() => setTab("voucher")}>
+                <Button size="sm" className="flex-1 bg-white text-primary hover:bg-white/95 gap-1.5 text-xs font-extrabold shadow-xl hover:shadow-2xl transition-all hover:scale-[1.02] rounded-xl h-10" onClick={() => setTab("voucher")}>
                   <Ticket className="w-4 h-4" /> {t("home.claim_voucher", lang)}
                 </Button>
               </div>
             </div>
 
-            {/* Quick Action Grid */}
+            {/* Quick Action Grid - ENHANCED */}
             <div className="grid grid-cols-4 gap-2.5">
               {[
-                { icon: <Package className="w-5 h-5" />, label: "Produk", tab: "produk" as Tab, gradient: "from-blue-500 to-indigo-600", shadow: "shadow-blue-500/25" },
-                { icon: <Wallet className="w-5 h-5" />, label: "Saldo", tab: "saldo" as Tab, gradient: "from-emerald-500 to-teal-600", shadow: "shadow-emerald-500/25" },
-                { icon: <Gamepad2 className="w-5 h-5" />, label: "Game", tab: "game" as Tab, gradient: "from-violet-500 to-purple-600", shadow: "shadow-violet-500/25" },
-                { icon: <Music className="w-5 h-5" />, label: "Musik", tab: "playlist" as Tab, gradient: "from-pink-500 to-rose-600", shadow: "shadow-pink-500/25" },
+                { icon: <Package className="w-5 h-5" />, label: "Produk", tab: "produk" as Tab, gradient: "from-blue-500 to-indigo-600", shadow: "shadow-blue-500/30", badge: `${products.length}` },
+                { icon: <Wallet className="w-5 h-5" />, label: "Saldo", tab: "saldo" as Tab, gradient: "from-emerald-500 to-teal-600", shadow: "shadow-emerald-500/30" },
+                { icon: <Gamepad2 className="w-5 h-5" />, label: "Game", tab: "game" as Tab, gradient: "from-violet-500 to-purple-600", shadow: "shadow-violet-500/30", badge: "11" },
+                { icon: <Music className="w-5 h-5" />, label: "Musik", tab: "playlist" as Tab, gradient: "from-pink-500 to-rose-600", shadow: "shadow-pink-500/30" },
               ].map((item) => (
                 <button
                   key={item.label}
                   onClick={() => setTab(item.tab)}
-                  className="flex flex-col items-center gap-1.5 p-3 rounded-2xl glass-card hover:border-primary/30 hover:shadow-lg transition-all duration-300 hover:-translate-y-1 active:scale-95 group"
+                  className="relative flex flex-col items-center gap-1.5 p-3.5 rounded-2xl glass-card-strong hover:border-primary/30 hover:shadow-xl transition-all duration-300 hover:-translate-y-1.5 active:scale-95 group overflow-hidden"
                 >
-                  <div className={`w-11 h-11 rounded-xl bg-gradient-to-br ${item.gradient} flex items-center justify-center text-white shadow-lg ${item.shadow} group-hover:scale-110 transition-transform duration-300`}>
-                    {item.icon}
+                  <div className="absolute inset-0 bg-gradient-to-br from-primary/3 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                  <div className="relative">
+                    <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${item.gradient} flex items-center justify-center text-white shadow-lg ${item.shadow} group-hover:scale-110 group-hover:shadow-xl transition-all duration-300`}>
+                      {item.icon}
+                    </div>
+                    {item.badge && (
+                      <span className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] rounded-full bg-destructive text-destructive-foreground text-[9px] font-bold flex items-center justify-center px-1 shadow-sm">
+                        {item.badge}
+                      </span>
+                    )}
                   </div>
-                  <span className="text-[11px] font-bold text-foreground">{item.label}</span>
+                  <span className="text-[11px] font-bold text-foreground relative z-10">{item.label}</span>
                 </button>
               ))}
             </div>
@@ -1560,30 +1575,31 @@ const Index = () => {
               ]}
             />
 
-            {/* Streak & Game Side by Side */}
+            {/* Streak & Game Side by Side - MORE PREMIUM */}
             <div className="grid grid-cols-2 gap-3">
               {/* Streak Card */}
               <div
                 onClick={() => setTab("streak")}
-                className="relative overflow-hidden rounded-2xl cursor-pointer transition-all hover:shadow-xl hover:-translate-y-1 active:scale-[0.97] duration-300 card-shine"
-                style={{ background: "linear-gradient(145deg, #ff6b00, #e63900)" }}
+                className="relative overflow-hidden rounded-2xl cursor-pointer transition-all hover:shadow-2xl hover:-translate-y-2 active:scale-[0.97] duration-300 card-shine group"
+                style={{ background: "linear-gradient(145deg, #ff8c00, #ff4500, #dc2626)" }}
               >
+                <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
                 <div className="absolute inset-0 opacity-20">
-                  {[...Array(5)].map((_, i) => (
+                  {[...Array(6)].map((_, i) => (
                     <div key={i} className="absolute rounded-full animate-pulse" style={{
-                      width: 20 + i * 12, height: 20 + i * 12,
-                      background: "radial-gradient(circle, rgba(255,204,0,0.6), transparent 70%)",
-                      top: `${5 + i * 18}%`, right: `${3 + i * 8}%`,
-                      animationDelay: `${i * 0.4}s`,
+                      width: 16 + i * 10, height: 16 + i * 10,
+                      background: "radial-gradient(circle, rgba(255,220,0,0.7), transparent 70%)",
+                      top: `${5 + i * 15}%`, right: `${3 + i * 7}%`,
+                      animationDelay: `${i * 0.3}s`,
                     }} />
                   ))}
                 </div>
                 <div className="relative z-10 p-4 text-center">
-                  <div className="text-4xl mb-1.5 floating">🔥</div>
-                  <h3 className="text-white font-extrabold text-sm leading-tight drop-shadow-lg">Daily Streak</h3>
-                  <p className="text-white/80 text-[10px] mt-0.5 leading-snug">Klaim setiap hari!</p>
-                  <div className="mt-2.5 bg-white/25 backdrop-blur-sm rounded-full px-3 py-1.5 inline-flex items-center gap-1 shadow-lg">
-                    <span className="text-white text-[10px] font-bold">Klaim →</span>
+                  <div className="text-5xl mb-2 floating group-hover:scale-110 transition-transform">🔥</div>
+                  <h3 className="text-white font-black text-sm leading-tight drop-shadow-lg">Daily Streak</h3>
+                  <p className="text-white/75 text-[10px] mt-1 leading-snug font-medium">Klaim setiap hari!</p>
+                  <div className="mt-3 bg-white/20 backdrop-blur-md rounded-full px-4 py-2 inline-flex items-center gap-1.5 shadow-xl border border-white/20 group-hover:bg-white/30 transition-colors">
+                    <span className="text-white text-[11px] font-extrabold">Klaim →</span>
                   </div>
                 </div>
               </div>
@@ -1591,35 +1607,36 @@ const Index = () => {
               {/* Game Card */}
               <div
                 onClick={() => setTab("game")}
-                className="relative overflow-hidden rounded-2xl cursor-pointer transition-all hover:shadow-xl hover:-translate-y-1 active:scale-[0.97] duration-300 card-shine"
-                style={{ background: "linear-gradient(145deg, #7c3aed, #4338ca)" }}
+                className="relative overflow-hidden rounded-2xl cursor-pointer transition-all hover:shadow-2xl hover:-translate-y-2 active:scale-[0.97] duration-300 card-shine group"
+                style={{ background: "linear-gradient(145deg, #8b5cf6, #6d28d9, #4c1d95)" }}
               >
+                <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
                 <div className="absolute inset-0 opacity-15">
-                  <div className="absolute top-1 right-2 text-4xl floating" style={{ animationDelay: "0.5s" }}>🎮</div>
-                  <div className="absolute bottom-1 left-2 text-2xl floating" style={{ animationDelay: "1.5s" }}>🎲</div>
+                  <div className="absolute top-2 right-3 text-4xl floating" style={{ animationDelay: "0.5s" }}>🎮</div>
+                  <div className="absolute bottom-2 left-3 text-2xl floating" style={{ animationDelay: "1.5s" }}>🎲</div>
                 </div>
                 <div className="relative z-10 p-4 text-center">
-                  <div className="text-4xl mb-1.5 floating" style={{ animationDelay: "0.3s" }}>🎮</div>
-                  <h3 className="text-white font-extrabold text-sm leading-tight drop-shadow-lg">Game AI</h3>
-                  <p className="text-white/80 text-[10px] mt-0.5 leading-snug">11 game menantang!</p>
-                  <div className="mt-2.5 bg-white/25 backdrop-blur-sm rounded-full px-3 py-1.5 inline-flex items-center gap-1 shadow-lg">
-                    <span className="text-white text-[10px] font-bold">Main →</span>
+                  <div className="text-5xl mb-2 floating group-hover:scale-110 transition-transform" style={{ animationDelay: "0.3s" }}>🎮</div>
+                  <h3 className="text-white font-black text-sm leading-tight drop-shadow-lg">Game AI</h3>
+                  <p className="text-white/75 text-[10px] mt-1 leading-snug font-medium">11 game menantang!</p>
+                  <div className="mt-3 bg-white/20 backdrop-blur-md rounded-full px-4 py-2 inline-flex items-center gap-1.5 shadow-xl border border-white/20 group-hover:bg-white/30 transition-colors">
+                    <span className="text-white text-[11px] font-extrabold">Main →</span>
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* Stats Bar */}
+            {/* Stats Bar - GLASSMORPHISM */}
             <div className="grid grid-cols-3 gap-2.5">
               {[
-                { value: `${products.length}+`, label: "Produk", icon: "🛍️", gradient: "from-blue-500/10 to-indigo-500/5" },
-                { value: `${homeSponsors.length}`, label: "Sponsor", icon: "📢", gradient: "from-amber-500/10 to-orange-500/5" },
-                { value: "11", label: "Game", icon: "🎮", gradient: "from-violet-500/10 to-purple-500/5" },
+                { value: `${products.length}+`, label: "Produk", icon: "🛍️", gradient: "from-blue-500/15 to-indigo-500/5" },
+                { value: `${homeSponsors.length}`, label: "Sponsor", icon: "📢", gradient: "from-amber-500/15 to-orange-500/5" },
+                { value: "11", label: "Game", icon: "🎮", gradient: "from-violet-500/15 to-purple-500/5" },
               ].map((stat) => (
-                <div key={stat.label} className={`glass-card rounded-2xl p-3.5 text-center hover:border-primary/30 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg bg-gradient-to-br ${stat.gradient}`}>
-                  <span className="text-xl">{stat.icon}</span>
-                  <p className="text-lg font-extrabold text-foreground mt-0.5">{stat.value}</p>
-                  <p className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wider">{stat.label}</p>
+                <div key={stat.label} className={`glass-card-strong rounded-2xl p-4 text-center hover:border-primary/30 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl bg-gradient-to-br ${stat.gradient} group cursor-pointer`}>
+                  <span className="text-2xl group-hover:scale-110 inline-block transition-transform">{stat.icon}</span>
+                  <p className="text-xl font-black text-foreground mt-1">{stat.value}</p>
+                  <p className="text-[9px] text-muted-foreground font-bold uppercase tracking-widest">{stat.label}</p>
                 </div>
               ))}
             </div>
@@ -1628,23 +1645,29 @@ const Index = () => {
             {adminPosts.length > 0 && (
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <h3 className="font-bold text-sm flex items-center gap-2">
-                    <FileText className="w-4 h-4 text-primary" /> Postingan Admin
+                  <h3 className="font-extrabold text-sm flex items-center gap-2">
+                    <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center">
+                      <FileText className="w-3.5 h-3.5 text-white" />
+                    </div>
+                    Postingan Admin
                   </h3>
-                  <button onClick={() => setTab("adminpost")} className="text-xs text-primary font-medium hover:underline">
-                    Lihat Semua →
+                  <button onClick={() => setTab("adminpost")} className="text-xs text-primary font-bold hover:underline flex items-center gap-1">
+                    Lihat Semua <ChevronRight className="w-3 h-3" />
                   </button>
                 </div>
                 {adminPosts.slice(0, 2).map(post => (
-                  <Card key={post.id} className="overflow-hidden hover:shadow-lg transition-all cursor-pointer hover:-translate-y-0.5 duration-200" onClick={() => setTab("adminpost")}>
-                    <CardContent className="p-3 flex items-center gap-3">
+                  <Card key={post.id} className="overflow-hidden glass-card hover:shadow-xl transition-all cursor-pointer hover:-translate-y-1 duration-300 border-border/50 group" onClick={() => setTab("adminpost")}>
+                    <CardContent className="p-3.5 flex items-center gap-3.5">
                       {post.image_url && (
-                        <img src={post.image_url} alt={post.title} className="w-14 h-14 rounded-lg object-cover shrink-0" />
+                        <img src={post.image_url} alt={post.title} className="w-16 h-16 rounded-xl object-cover shrink-0 shadow-md group-hover:scale-105 transition-transform" />
                       )}
                       <div className="min-w-0 flex-1">
                         <h4 className="font-bold text-sm truncate">{post.title}</h4>
-                        {post.content && <p className="text-[11px] text-muted-foreground line-clamp-1">{post.content}</p>}
-                        <p className="text-[10px] text-muted-foreground mt-0.5">{new Date(post.created_at).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" })}</p>
+                        {post.content && <p className="text-[11px] text-muted-foreground line-clamp-1 mt-0.5">{post.content}</p>}
+                        <p className="text-[10px] text-muted-foreground mt-1 flex items-center gap-1">
+                          <CalendarDays className="w-3 h-3" />
+                          {new Date(post.created_at).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" })}
+                        </p>
                       </div>
                     </CardContent>
                   </Card>
@@ -1652,78 +1675,82 @@ const Index = () => {
               </div>
             )}
 
-            {/* Voucher Card */}
-            <Card className="overflow-hidden border-0 shadow-lg hover:shadow-2xl transition-all cursor-pointer hover:-translate-y-1 duration-300 glass-card glow-border" onClick={() => setTab("voucher")}>
-              <div className="bg-gradient-to-r from-primary/15 via-accent/10 to-primary/15 p-0.5">
-                <CardContent className="p-4 flex items-center gap-3 bg-card/80 backdrop-blur-sm rounded-lg">
+            {/* Voucher Card - ULTRA PREMIUM */}
+            <Card className="overflow-hidden border-0 shadow-xl hover:shadow-2xl transition-all cursor-pointer hover:-translate-y-1.5 duration-300 glass-card-strong glow-border group" onClick={() => setTab("voucher")}>
+              <div className="bg-gradient-to-r from-primary/20 via-accent/10 to-primary/20 p-[2px] rounded-xl">
+                <CardContent className="p-5 flex items-center gap-4 bg-card/90 backdrop-blur-xl rounded-[10px]">
                   <div className="relative">
-                    <div className="absolute -inset-1 bg-gradient-to-br from-primary to-accent rounded-xl blur-md opacity-40" />
-                    <div className="relative w-12 h-12 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-xl">
-                      <Ticket className="w-6 h-6 text-white" />
+                    <div className="absolute -inset-2 bg-gradient-to-br from-primary to-accent rounded-2xl blur-lg opacity-40 group-hover:opacity-60 transition-opacity" />
+                    <div className="relative w-14 h-14 rounded-2xl bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-2xl group-hover:scale-110 transition-transform">
+                      <Ticket className="w-7 h-7 text-white" />
                     </div>
                   </div>
                   <div className="flex-1">
-                    <h3 className="font-bold text-sm">{t("home.have_voucher", lang)}</h3>
-                    <p className="text-xs text-muted-foreground">{t("home.claim_now", lang)}</p>
+                    <h3 className="font-extrabold text-sm">{t("home.have_voucher", lang)}</h3>
+                    <p className="text-xs text-muted-foreground mt-0.5">{t("home.claim_now", lang)}</p>
                   </div>
-                  <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-                    <ChevronRight className="w-4 h-4 text-primary" />
+                  <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
+                    <ChevronRight className="w-4 h-4 text-primary group-hover:translate-x-0.5 transition-transform" />
                   </div>
                 </CardContent>
               </div>
             </Card>
 
-            {/* How To Claim */}
-            <Card className="border border-border/50 shadow-md overflow-hidden">
-              <div className="bg-gradient-to-r from-primary/10 to-accent/10 px-4 py-2.5 flex items-center gap-2">
-                <HelpCircle className="w-4 h-4 text-primary" />
-                <h3 className="text-sm font-bold">Cara Klaim Voucher</h3>
+            {/* How To Claim - PREMIUM */}
+            <Card className="border border-border/50 shadow-lg overflow-hidden glass-card">
+              <div className="bg-gradient-to-r from-primary/15 via-accent/10 to-primary/15 px-4 py-3 flex items-center gap-2">
+                <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center">
+                  <HelpCircle className="w-3.5 h-3.5 text-white" />
+                </div>
+                <h3 className="text-sm font-extrabold">Cara Klaim Voucher</h3>
               </div>
-              <CardContent className="p-4 space-y-3">
+              <CardContent className="p-4 space-y-4">
                 {[
-                  { step: "1", icon: <ShoppingBag className="w-4 h-4 text-primary" />, title: "Beli Produk", desc: "Pilih dan beli produk di tab Produk menggunakan saldo." },
-                  { step: "2", icon: <Ticket className="w-4 h-4 text-accent" />, title: "Masukkan Kode Voucher", desc: "Setelah beli, masukkan kode voucher yang didapat di tab Voucher." },
-                  { step: "3", icon: <CheckCircle2 className="w-4 h-4 text-green-500" />, title: "Klaim & Dapat Akun!", desc: "Klik Klaim dan dapatkan detail akun produkmu." },
+                  { step: "1", icon: <ShoppingBag className="w-4 h-4" />, title: "Beli Produk", desc: "Pilih dan beli produk di tab Produk menggunakan saldo.", color: "from-blue-500 to-indigo-600" },
+                  { step: "2", icon: <Ticket className="w-4 h-4" />, title: "Masukkan Kode Voucher", desc: "Setelah beli, masukkan kode voucher yang didapat di tab Voucher.", color: "from-primary to-accent" },
+                  { step: "3", icon: <CheckCircle2 className="w-4 h-4" />, title: "Klaim & Dapat Akun!", desc: "Klik Klaim dan dapatkan detail akun produkmu.", color: "from-green-500 to-emerald-600" },
                 ].map((item) => (
-                  <div key={item.step} className="flex items-start gap-3">
-                    <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0 text-xs font-extrabold text-primary">{item.step}</div>
+                  <div key={item.step} className="flex items-start gap-3.5">
+                    <div className={`w-9 h-9 rounded-xl bg-gradient-to-br ${item.color} flex items-center justify-center shrink-0 text-white shadow-md`}>
+                      {item.icon}
+                    </div>
                     <div>
-                      <p className="text-sm font-bold flex items-center gap-1.5">{item.icon} {item.title}</p>
-                      <p className="text-xs text-muted-foreground mt-0.5">{item.desc}</p>
+                      <p className="text-sm font-bold flex items-center gap-1.5">{item.title}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">{item.desc}</p>
                     </div>
                   </div>
                 ))}
-                <Button size="sm" variant="outline" className="w-full gap-1.5 mt-1" onClick={() => setTab("voucher")}>
+                <Button size="sm" variant="outline" className="w-full gap-1.5 mt-2 rounded-xl h-10 font-bold border-primary/30 hover:bg-primary/5" onClick={() => setTab("voucher")}>
                   <Ticket className="w-4 h-4" /> Coba Klaim Sekarang
                 </Button>
               </CardContent>
             </Card>
 
-            {/* Support Shortcut */}
-            <Card className="overflow-hidden border-0 shadow-lg hover:shadow-2xl transition-all cursor-pointer hover:-translate-y-1 duration-300 glass-card" onClick={() => setTab("tiket")}>
-              <div className="bg-gradient-to-r from-destructive/15 via-destructive/5 to-destructive/15 p-0.5">
-                <CardContent className="p-4 flex items-center gap-3 bg-card/80 backdrop-blur-sm rounded-lg">
+            {/* Support Shortcut - ENHANCED */}
+            <Card className="overflow-hidden border-0 shadow-xl hover:shadow-2xl transition-all cursor-pointer hover:-translate-y-1.5 duration-300 glass-card-strong group" onClick={() => setTab("tiket")}>
+              <div className="bg-gradient-to-r from-destructive/20 via-destructive/5 to-destructive/20 p-[2px] rounded-xl">
+                <CardContent className="p-5 flex items-center gap-4 bg-card/90 backdrop-blur-xl rounded-[10px]">
                   <div className="relative">
-                    <div className="absolute -inset-1 bg-gradient-to-br from-destructive to-destructive/70 rounded-xl blur-md opacity-30" />
-                    <div className="relative w-12 h-12 rounded-xl bg-gradient-to-br from-destructive to-destructive/70 flex items-center justify-center shadow-xl">
-                      <AlertCircle className="w-6 h-6 text-destructive-foreground" />
+                    <div className="absolute -inset-2 bg-gradient-to-br from-destructive to-destructive/60 rounded-2xl blur-lg opacity-30 group-hover:opacity-50 transition-opacity" />
+                    <div className="relative w-14 h-14 rounded-2xl bg-gradient-to-br from-destructive to-destructive/70 flex items-center justify-center shadow-2xl group-hover:scale-110 transition-transform">
+                      <AlertCircle className="w-7 h-7 text-destructive-foreground" />
                     </div>
                   </div>
                   <div className="flex-1">
-                    <h3 className="font-bold text-sm">{t("home.have_issue", lang)}</h3>
-                    <p className="text-xs text-muted-foreground">{t("home.submit_ticket", lang)}</p>
+                    <h3 className="font-extrabold text-sm">{t("home.have_issue", lang)}</h3>
+                    <p className="text-xs text-muted-foreground mt-0.5">{t("home.submit_ticket", lang)}</p>
                   </div>
-                  <div className="w-8 h-8 rounded-full bg-destructive/10 flex items-center justify-center">
-                    <ChevronRight className="w-4 h-4 text-destructive" />
+                  <div className="w-9 h-9 rounded-full bg-destructive/10 flex items-center justify-center group-hover:bg-destructive/20 transition-colors">
+                    <ChevronRight className="w-4 h-4 text-destructive group-hover:translate-x-0.5 transition-transform" />
                   </div>
                 </CardContent>
               </div>
             </Card>
 
-            {/* Social Links */}
-            <Card className="overflow-hidden glass-card border-0 shadow-lg">
-              <CardContent className="p-4">
-                <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-3 flex items-center gap-2">
+            {/* Social Links - PREMIUM GRID */}
+            <Card className="overflow-hidden glass-card-strong border-0 shadow-xl">
+              <CardContent className="p-5">
+                <p className="text-xs font-extrabold text-muted-foreground uppercase tracking-widest mb-3.5 flex items-center gap-2">
                   <Globe className="w-3.5 h-3.5" /> {t("home.follow_us", lang)}
                 </p>
                 <div className="grid grid-cols-2 gap-2.5">
@@ -1735,8 +1762,8 @@ const Index = () => {
                     { label: "@pphitampro9", href: SOCIAL_LINKS.tiktok, color: "from-gray-700 to-gray-900", emoji: "🎵" },
                   ].map((s) => (
                     <a key={s.label} href={s.href} target="_blank" rel="noopener noreferrer"
-                      className={`bg-gradient-to-r ${s.color} text-white text-xs font-semibold px-3 py-3 rounded-xl flex items-center gap-2.5 hover:opacity-90 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 shadow-md`}>
-                      <span className="text-base">{s.emoji}</span><span className="truncate">{s.label}</span>
+                      className={`bg-gradient-to-r ${s.color} text-white text-xs font-semibold px-3.5 py-3.5 rounded-xl flex items-center gap-2.5 hover:opacity-90 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 shadow-lg group`}>
+                      <span className="text-lg group-hover:scale-110 transition-transform">{s.emoji}</span><span className="truncate">{s.label}</span>
                     </a>
                   ))}
                 </div>
