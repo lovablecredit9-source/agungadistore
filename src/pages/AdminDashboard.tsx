@@ -22,6 +22,7 @@ import AdminSponsorTab from "@/components/AdminSponsorTab";
 import AdminApiKeyTab from "@/components/AdminApiKeyTab";
 import AdminPostsTab from "@/components/AdminPostsTab";
 import AdminPromoTab from "@/components/AdminPromoTab";
+import AdminSocialLinksTab from "@/components/AdminSocialLinksTab";
 
 interface Product {
   id: string;
@@ -123,7 +124,7 @@ interface UserBalance {
   created_at: string;
 }
 
-type AdminTab = "products" | "tokens" | "claims" | "tickets" | "chats" | "saldo" | "notif" | "deposit" | "settings" | "diskon" | "pin" | "musik" | "vmusik" | "sponsor" | "apikey" | "postingan" | "promo";
+type AdminTab = "products" | "tokens" | "claims" | "tickets" | "chats" | "saldo" | "notif" | "deposit" | "settings" | "diskon" | "pin" | "musik" | "vmusik" | "sponsor" | "apikey" | "postingan" | "promo" | "sosmed";
 type ClaimDateFilter = "all" | "today" | "yesterday" | "lastmonth" | "custom";
 type DepositStatusFilter = "all" | "pending" | "approved" | "rejected" | "cancelled";
 type DepositMethodFilter = "all" | "qris" | "ewallet";
@@ -1085,6 +1086,7 @@ const AdminDashboard = () => {
             { key: "apikey" as AdminTab, icon: Key, label: "API", gradient: "from-gray-500 to-zinc-400" },
             { key: "postingan" as AdminTab, icon: FileText, label: "Post", gradient: "from-cyan-500 to-teal-400" },
             { key: "promo" as AdminTab, icon: Tag, label: "Promo", gradient: "from-rose-500 to-red-400" },
+            { key: "sosmed" as AdminTab, icon: Globe, label: "Sosmed", gradient: "from-emerald-500 to-teal-400" },
           ]).map(({ key, icon: Icon, label, gradient }) => {
             const active = tab === key;
             const badgeCount = key === "tickets" ? allTickets.filter(t => t.status === "open").length
@@ -1959,6 +1961,7 @@ const AdminDashboard = () => {
         {tab === "apikey" && <AdminApiKeyTab />}
         {tab === "postingan" && <AdminPostsTab />}
         {tab === "promo" && <AdminPromoTab />}
+        {tab === "sosmed" && <AdminSocialLinksTab />}
       </main>
     </div>
   );
