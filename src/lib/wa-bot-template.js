@@ -1244,7 +1244,7 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
           const receiptJson = await receiptRes.json();
           if (receiptJson.image_base64) {
             const svgBuffer = Buffer.from(receiptJson.image_base64, "base64");
-            const caption = "🧾 Bukti Transaksi — " + (receiptData.plan_name || receiptData.product_title || "Pembelian");
+            const caption = "🧾 Bukti Transaksi — " + (receiptData.bot_name ? "Bot WA: " + receiptData.bot_name : receiptData.plan_name || receiptData.product_title || "Pembelian");
             const pngBuffer = new Resvg(svgBuffer, {
               fitTo: { mode: "width", value: 1080 },
               background: "rgba(15,23,42,1)",
