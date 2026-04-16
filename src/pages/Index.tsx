@@ -2065,12 +2065,26 @@ const Index = () => {
         )}
 
         {tab === "tiket" && (
-          <div className="space-y-4">
+          <div className="space-y-4 animate-fade-in">
             {ticketView === "list" && (
               <>
-                <div className="flex items-center justify-between">
-                  <h2 className="text-lg font-extrabold flex items-center gap-2"><AlertCircle className="w-5 h-5 text-destructive" /> {t("ticket.title", lang)}</h2>
-                  <Button size="sm" onClick={() => setTicketView("create")} className="gap-1"><Send className="w-3 h-3" /> Buat Tiket</Button>
+                {/* Hero Header */}
+                <div className="relative overflow-hidden rounded-2xl p-5" style={{ background: "linear-gradient(135deg, hsl(0, 70%, 55%) 0%, hsl(20, 80%, 50%) 100%)" }}>
+                  <div className="absolute inset-0 opacity-10">
+                    <div className="absolute -top-8 -right-8 w-32 h-32 rounded-full bg-white/30 blur-2xl" />
+                  </div>
+                  <div className="relative z-10 flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                      <div className="w-14 h-14 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-lg">
+                        <AlertCircle className="w-7 h-7 text-white" />
+                      </div>
+                      <div>
+                        <h2 className="text-xl font-extrabold text-white">{t("ticket.title", lang)}</h2>
+                        <p className="text-white/70 text-xs font-medium mt-0.5">{tickets.length} tiket dibuat</p>
+                      </div>
+                    </div>
+                    <Button size="sm" onClick={() => setTicketView("create")} className="bg-white/20 hover:bg-white/30 text-white border border-white/20 backdrop-blur-sm gap-1 font-bold"><Send className="w-3 h-3" /> Buat</Button>
+                  </div>
                 </div>
 
                 {tickets.length === 0 && (
@@ -2550,11 +2564,22 @@ const Index = () => {
 
 
         {tab === "update" && (
-          <div className="space-y-4">
-            <h2 className="text-lg font-extrabold flex items-center gap-2">
-              <RefreshCw className="w-5 h-5 text-primary" /> Update Web
-            </h2>
-            <p className="text-xs text-muted-foreground">Riwayat pembaruan dan fitur terbaru {STORE_NAME}.</p>
+          <div className="space-y-4 animate-fade-in">
+            {/* Hero Header */}
+            <div className="relative overflow-hidden rounded-2xl p-5" style={{ background: "linear-gradient(135deg, hsl(190, 80%, 45%) 0%, hsl(210, 70%, 50%) 100%)" }}>
+              <div className="absolute inset-0 opacity-10">
+                <div className="absolute -top-8 -right-8 w-32 h-32 rounded-full bg-white/30 blur-2xl" />
+              </div>
+              <div className="relative z-10 flex items-center gap-4">
+                <div className="w-14 h-14 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-lg">
+                  <RefreshCw className="w-7 h-7 text-white" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-extrabold text-white">Update Web</h2>
+                  <p className="text-white/70 text-xs font-medium mt-0.5">Riwayat pembaruan dan fitur terbaru {STORE_NAME}</p>
+                </div>
+              </div>
+            </div>
 
             {/* April 2026 - Week 2 */}
             <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 space-y-2">
@@ -2644,10 +2669,22 @@ const Index = () => {
         )}
 
         {tab === "adminpost" && (
-          <div className="space-y-4">
-            <h2 className="text-lg font-extrabold flex items-center gap-2">
-              <FileText className="w-5 h-5 text-primary" /> Postingan Admin
-            </h2>
+          <div className="space-y-4 animate-fade-in">
+            {/* Hero Header */}
+            <div className="relative overflow-hidden rounded-2xl p-5" style={{ background: "linear-gradient(135deg, hsl(240, 40%, 45%) 0%, hsl(260, 50%, 40%) 100%)" }}>
+              <div className="absolute inset-0 opacity-10">
+                <div className="absolute -top-8 -right-8 w-32 h-32 rounded-full bg-white/30 blur-2xl" />
+              </div>
+              <div className="relative z-10 flex items-center gap-4">
+                <div className="w-14 h-14 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-lg">
+                  <FileText className="w-7 h-7 text-white" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-extrabold text-white">Postingan Admin</h2>
+                  <p className="text-white/70 text-xs font-medium mt-0.5">{adminPosts.length} pengumuman resmi</p>
+                </div>
+              </div>
+            </div>
             {adminPosts.length === 0 && (
               <div className="text-center py-16 text-muted-foreground">
                 <FileText className="w-16 h-16 mx-auto mb-3 opacity-20" />
