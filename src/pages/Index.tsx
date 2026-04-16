@@ -1822,7 +1822,7 @@ const Index = () => {
             {sortedProducts.map((p) => {
               const imgs = getProductImages(p.id);
               return (
-                <Card key={p.id} className="overflow-hidden hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 border-0 shadow-lg bg-card/90 backdrop-blur-sm cursor-pointer group" onClick={() => openProduct(p)}>
+                <Card key={p.id} className="overflow-hidden hover:shadow-2xl transition-all duration-300 hover:-translate-y-1.5 border-0 shadow-lg glass-card cursor-pointer group card-shine" onClick={() => openProduct(p)}>
                   {imgs.length > 0 && (
                     <div className="relative overflow-hidden">
                       <ImageCarousel images={imgs} />
