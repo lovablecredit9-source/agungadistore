@@ -491,6 +491,14 @@ node index.js
                   <code className="text-[10px] font-mono text-primary">{pairingPhone}</code>
                 </>
               )}
+              {adminNumbers.filter(n => n.trim().length >= 10).length > 0 && (
+                <>
+                  <p className="text-[10px] font-semibold text-muted-foreground mt-1">Admin Numbers:</p>
+                  {adminNumbers.filter(n => n.trim().length >= 10).map((n, i) => (
+                    <code key={i} className="text-[10px] font-mono text-primary block">{n}@s.whatsapp.net</code>
+                  ))}
+                </>
+              )}
             </div>
           )}
 
@@ -500,7 +508,7 @@ node index.js
             disabled={!selectedDownloadKey}
             onClick={() => selectedDownloadKey && downloadBotFile(selectedDownloadKey.api_key, selectedDownloadKey.key_name)}
           >
-            <Download className="w-4 h-4" /> <Download className="w-4 h-4" /> Download ZIP Bot v13.6.1
+            <Download className="w-4 h-4" /> <Download className="w-4 h-4" /> Download ZIP Bot v13.7.0
           </Button>
 
           <p className="text-[10px] text-muted-foreground text-center">
