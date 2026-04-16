@@ -1731,32 +1731,49 @@ const Index = () => {
         {tab === "produk" && (
           <div className="space-y-4 animate-fade-in">
             {/* Hero Header */}
-            <div className="relative overflow-hidden rounded-2xl p-5" style={{ background: "linear-gradient(135deg, hsl(220, 80%, 55%) 0%, hsl(250, 70%, 50%) 100%)" }}>
-              <div className="absolute inset-0 opacity-10">
-                <div className="absolute -top-8 -right-8 w-32 h-32 rounded-full bg-white/30 blur-2xl" />
-                <div className="absolute -bottom-8 -left-8 w-24 h-24 rounded-full bg-white/20 blur-2xl" />
+            <div className="relative overflow-hidden rounded-2xl p-5" style={{ background: "linear-gradient(135deg, hsl(220, 80%, 55%) 0%, hsl(260, 70%, 50%) 100%)" }}>
+              <div className="absolute inset-0 opacity-15">
+                <div className="absolute -top-8 -right-8 w-40 h-40 rounded-full bg-white/30 blur-3xl animate-pulse" />
+                <div className="absolute -bottom-8 -left-8 w-28 h-28 rounded-full bg-white/20 blur-2xl" />
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-20 h-20 rounded-full bg-white/10 blur-xl" />
               </div>
               <div className="relative z-10 flex items-center gap-4">
-                <div className="w-14 h-14 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-lg">
+                <div className="w-14 h-14 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-lg ring-2 ring-white/20">
                   <Package className="w-7 h-7 text-white" />
                 </div>
                 <div>
-                  <h2 className="text-xl font-extrabold text-white">{t("products.title", lang)}</h2>
+                  <h2 className="text-xl font-extrabold text-white tracking-tight">{t("products.title", lang)}</h2>
                   <p className="text-white/70 text-xs font-medium mt-0.5">{sortedProducts.length} {t("products.items", lang)} tersedia</p>
                 </div>
+              </div>
+              {/* Stats bar */}
+              <div className="relative z-10 flex gap-3 mt-4">
+                {[
+                  { label: "Total", value: sortedProducts.length },
+                  { label: "Tersedia", value: sortedProducts.filter(p => p.stock > 0).length },
+                  { label: "Garansi", value: sortedProducts.filter(p => p.has_warranty).length },
+                ].map(s => (
+                  <div key={s.label} className="flex-1 bg-white/10 backdrop-blur-sm rounded-xl px-3 py-2 text-center">
+                    <p className="text-white font-extrabold text-lg leading-none">{s.value}</p>
+                    <p className="text-white/60 text-[10px] font-medium">{s.label}</p>
+                  </div>
+                ))}
               </div>
             </div>
 
             {/* Search */}
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input placeholder={t("products.search", lang)} value={productSearch} onChange={e => setProductSearch(e.target.value)} className="pl-9 h-11 rounded-xl border-2 border-border/50 focus:border-primary/50" />
+            <div className="relative group">
+              <div className="absolute -inset-0.5 bg-gradient-to-r from-primary/20 to-accent/20 rounded-2xl blur opacity-0 group-focus-within:opacity-100 transition-opacity" />
+              <div className="relative">
+                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input placeholder={t("products.search", lang)} value={productSearch} onChange={e => setProductSearch(e.target.value)} className="pl-10 h-12 rounded-xl border-2 border-border/50 focus:border-primary/50 bg-card/80 backdrop-blur-sm" />
+              </div>
             </div>
 
             {/* Dropdown filters */}
             <div className="flex gap-2">
               <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                <SelectTrigger className="flex-1 h-10 text-xs rounded-xl">
+                <SelectTrigger className="flex-1 h-11 text-xs rounded-xl bg-card/80 backdrop-blur-sm border-2 border-border/50">
                   <SelectValue placeholder="Kategori" />
                 </SelectTrigger>
                 <SelectContent>
@@ -1766,7 +1783,7 @@ const Index = () => {
                 </SelectContent>
               </Select>
               <Select value={sortOrder} onValueChange={(v) => setSortOrder(v as "newest" | "oldest")}>
-                <SelectTrigger className="w-[120px] h-10 text-xs rounded-xl">
+                <SelectTrigger className="w-[120px] h-11 text-xs rounded-xl bg-card/80 backdrop-blur-sm border-2 border-border/50">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -1777,40 +1794,44 @@ const Index = () => {
             </div>
 
             {sortedProducts.length === 0 && (
-              <div className="text-center py-16 text-muted-foreground">
-                <Package className="w-16 h-16 mx-auto mb-3 opacity-20" />
-                <p className="text-sm font-medium">Belum ada produk.</p>
+              <div className="text-center py-20 text-muted-foreground">
+                <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-primary/10 to-accent/10 flex items-center justify-center mx-auto mb-4">
+                  <Package className="w-10 h-10 opacity-30" />
+                </div>
+                <p className="text-sm font-bold">Belum ada produk.</p>
+                <p className="text-xs text-muted-foreground mt-1">Coba ubah filter pencarian</p>
               </div>
             )}
 
             {sortedProducts.map((p) => {
               const imgs = getProductImages(p.id);
               return (
-                <Card key={p.id} className="overflow-hidden hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 border-border/50 cursor-pointer" onClick={() => openProduct(p)}>
+                <Card key={p.id} className="overflow-hidden hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 border-0 shadow-lg bg-card/90 backdrop-blur-sm cursor-pointer group" onClick={() => openProduct(p)}>
                   {imgs.length > 0 && (
-                    <div className="relative">
+                    <div className="relative overflow-hidden">
                       <ImageCarousel images={imgs} />
-                      <div className="absolute top-2 right-2 flex gap-1.5 items-center">
-                        <span className="text-xs font-bold bg-primary text-primary-foreground px-2.5 py-1 rounded-full shadow-md">{formatPrice(p.price)}</span>
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent pointer-events-none" />
+                      <div className="absolute top-2.5 right-2.5 flex gap-1.5 items-center">
+                        <span className="text-xs font-extrabold bg-gradient-to-r from-primary to-primary/80 text-primary-foreground px-3 py-1.5 rounded-full shadow-lg backdrop-blur-sm">{formatPrice(p.price)}</span>
                       </div>
                       <button onClick={(e) => toggleLike(p.id, e)}
-                        className="absolute top-2 left-2 flex items-center gap-1 rounded-full bg-background/80 backdrop-blur-sm px-2 py-1">
-                        <Heart className={`w-4 h-4 ${likedIds.has(p.id) ? "fill-destructive text-destructive" : "text-muted-foreground"}`} />
+                        className="absolute top-2.5 left-2.5 flex items-center gap-1 rounded-full bg-background/70 backdrop-blur-md px-2.5 py-1.5 shadow-md hover:bg-background/90 transition-colors">
+                        <Heart className={`w-4 h-4 transition-all ${likedIds.has(p.id) ? "fill-destructive text-destructive scale-110" : "text-muted-foreground"}`} />
                         {(productLikeCounts[p.id] || 0) > 0 && <span className="text-[10px] font-bold text-muted-foreground">{productLikeCounts[p.id]}</span>}
                       </button>
                       {p.category && (
-                        <div className="absolute bottom-2 left-2">
-                          <span className="text-[10px] font-medium bg-background/90 backdrop-blur-sm px-2 py-0.5 rounded-full">{p.category}</span>
+                        <div className="absolute bottom-2.5 left-2.5">
+                          <span className="text-[10px] font-bold bg-background/80 backdrop-blur-md px-2.5 py-1 rounded-full shadow-sm">{p.category}</span>
                         </div>
                       )}
                     </div>
                   )}
-                  <CardContent className="p-4 space-y-2">
+                  <CardContent className="p-4 space-y-3">
                     <div className="flex items-start justify-between">
-                      <h3 className="font-bold text-base flex-1">{p.title}</h3>
+                      <h3 className="font-bold text-base flex-1 group-hover:text-primary transition-colors">{p.title}</h3>
                       {imgs.length === 0 && (
-                        <button onClick={(e) => toggleLike(p.id, e)} className="flex items-center gap-1">
-                          <Heart className={`w-4 h-4 ${likedIds.has(p.id) ? "fill-destructive text-destructive" : "text-muted-foreground"}`} />
+                        <button onClick={(e) => toggleLike(p.id, e)} className="flex items-center gap-1 ml-2">
+                          <Heart className={`w-4 h-4 transition-all ${likedIds.has(p.id) ? "fill-destructive text-destructive" : "text-muted-foreground"}`} />
                           {(productLikeCounts[p.id] || 0) > 0 && <span className="text-[10px] font-bold text-muted-foreground">{productLikeCounts[p.id]}</span>}
                         </button>
                       )}
@@ -1819,15 +1840,15 @@ const Index = () => {
                     <div className="flex items-center justify-between flex-wrap gap-1.5">
                       {imgs.length === 0 && <span className="text-sm font-extrabold text-primary">{formatPrice(p.price)}</span>}
                       <div className="flex items-center gap-1.5 flex-wrap">
-                        <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${p.stock > 0 ? 'bg-accent/10 text-accent' : 'bg-destructive/10 text-destructive'}`}>
+                        <span className={`text-[10px] px-2.5 py-1 rounded-full font-bold flex items-center gap-1 ${p.stock > 0 ? 'bg-gradient-to-r from-accent/15 to-accent/5 text-accent border border-accent/20' : 'bg-gradient-to-r from-destructive/15 to-destructive/5 text-destructive border border-destructive/20'}`}>
                           {p.stock > 0 ? `✓ Stok: ${p.stock}` : '✗ Habis'}
                         </span>
                         {p.has_warranty && (
-                          <span className="text-xs px-2 py-1 rounded-full font-medium bg-primary/10 text-primary">
+                          <span className="text-[10px] px-2 py-1 rounded-full font-bold bg-gradient-to-r from-primary/15 to-primary/5 text-primary border border-primary/20">
                             <Shield className="w-3 h-3 inline mr-0.5" />Garansi
                           </span>
                         )}
-                        <span className="text-xs px-2 py-1 rounded-full font-medium bg-muted text-muted-foreground flex items-center gap-1">
+                        <span className="text-[10px] px-2 py-1 rounded-full font-medium bg-muted text-muted-foreground flex items-center gap-1">
                           <CalendarDays className="w-3 h-3" /> {new Date(p.created_at).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" })}
                         </span>
                       </div>
