@@ -646,15 +646,17 @@ async function fetchSubscriptionState(subId) {
 async function scheduleChildBotRestart(parentClient, subscription, buyerJid, options = {}) {
   const retryCount = Number(options.retryCount || 0);
   const maxRetries = Number(options.maxRetries || 10);
-  const restartDelayMs = Number(options.delayMs || 3000);
+  const restartDelayMs = Number(options.delayMs || 5000 + retryCount * 2000);
   const preserveAuth = Boolean(options.preserveAuth);
   const subId = subscription.id || subscription.subscription?.id;
   const botName = subscription.subscription?.bot_name || subscription.bot_name || "Bot";
 
   if (retryCount >= maxRetries) {
-    await parentClient.sendMessage(buyerJid, {
-      text: "⏰ *QR Bot Gagal Tersambung Otomatis*\n\n🤖 Bot: *" + botName + "*\nQR sudah beberapa kali gagal tersambung.\n\n💡 Ketik *!qrulang " + String(subId || "").slice(0, 8) + "* untuk buat QR baru.",
-    });
+    try {
+      await parentClient.sendMessage(buyerJid, {
+        text: "⏰ *QR Bot Gagal Tersambung Otomatis*\n\n🤖 Bot: *" + botName + "*\nQR sudah beberapa kali gagal tersambung.\n\n💡 Ketik *!qr [nomor]* (lihat !riwayatbot) untuk buat QR baru.",
+      });
+    } catch (e) {}
     return;
   }
 
