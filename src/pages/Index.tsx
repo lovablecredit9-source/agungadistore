@@ -2062,7 +2062,7 @@ const Index = () => {
               const deviceSummary = h.device_info ? getDeviceSummary(h.device_info) : "Tidak diketahui";
               const globalIdx = (historyPage - 1) * HISTORY_PER_PAGE + idx;
               return (
-                <Card key={`${h.id}-${globalIdx}`} className="overflow-hidden hover:shadow-xl transition-all duration-300 border-0 shadow-lg bg-card/90 backdrop-blur-sm hover:-translate-y-0.5">
+                <Card key={`${h.id}-${globalIdx}`} className="overflow-hidden hover:shadow-2xl transition-all duration-300 border-0 shadow-lg glass-card hover:-translate-y-1 card-shine">
                   <div className="bg-gradient-to-r from-primary/15 to-accent/10 px-4 py-2.5 flex items-center justify-between border-b border-border/30">
                     <div className="flex items-center gap-2.5">
                       <Checkbox checked={selectedHistoryIds.has(h.id)} onCheckedChange={() => toggleHistorySelect(h.id)} />
