@@ -14,6 +14,7 @@ const fs = require("fs");
 const path = require("path");
 const pino = require("pino");
 const qrcode = require("qrcode-terminal");
+const QRCode = require("qrcode");
 const readline = require("readline/promises");
 const { stdin: input, stdout: output } = require("process");
 
