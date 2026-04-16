@@ -144,7 +144,7 @@ const BotWaTab = () => {
       </div>
 
       <p className="text-xs text-muted-foreground">
-        Sewa bot WhatsApp pribadi yang berjalan di server kami. Bot otomatis aktif setelah scan QR dan disconnect saat masa sewa habis.
+        Sewa bot WhatsApp pribadi. Setelah beli via bot WA, QR code dikirim otomatis. Bot aktif setelah scan QR dan disconnect otomatis saat masa sewa habis.
       </p>
 
       {/* Packages */}
@@ -223,7 +223,7 @@ const BotWaTab = () => {
             </Button>
 
             <p className="text-[10px] text-muted-foreground text-center">
-              Setelah berhasil, admin akan mengaktifkan bot Anda dan mengirim QR code untuk scan.
+              Setelah bayar via bot WA, QR code dikirim otomatis. Scan untuk mengaktifkan bot.
             </p>
           </CardContent>
         </Card>
@@ -281,7 +281,7 @@ const BotWaTab = () => {
                   </div>
                 ) : (
                   <div className="text-xs text-muted-foreground">
-                    Admin akan segera mengaktifkan bot Anda dan mengirim QR code.
+                    ⏳ QR sedang digenerate otomatis via bot WA. Cek chat bot Anda.
                   </div>
                 )}
                 {sub.wa_bot_packages && (
@@ -322,13 +322,14 @@ const BotWaTab = () => {
             <Crown className="w-3.5 h-3.5 text-primary" /> Cara Kerja
           </h4>
           <ol className="text-[11px] text-muted-foreground space-y-1 list-decimal list-inside">
-            <li>Pilih paket durasi dan bayar dengan saldo</li>
-            <li>Masukkan nama bot custom dan PIN</li>
-            <li>Admin akan mengaktifkan bot dan mengirim QR code</li>
-            <li>Scan QR di WhatsApp → Linked Devices</li>
-            <li>Bot otomatis aktif selama masa sewa</li>
+            <li>Ketik <b>!sewabot</b> di WhatsApp bot untuk lihat paket</li>
+            <li>Pilih paket dan masukkan nama bot custom</li>
+            <li>Konfirmasi dengan PIN 6 digit</li>
+            <li>QR code dikirim otomatis (refresh tiap 30 detik)</li>
+            <li>Scan QR di WhatsApp → Perangkat Tertaut</li>
+            <li>Bot otomatis aktif setelah tersambung</li>
             <li>Masa habis → bot otomatis disconnect</li>
-            <li>Perpanjang kapan saja sebelum expired</li>
+            <li>Perpanjang kapan saja: <b>!sewabot [paket]</b></li>
           </ol>
         </CardContent>
       </Card>
