@@ -434,8 +434,50 @@ node index.js
               className="text-xs font-mono h-8"
             />
             <p className="text-[10px] text-muted-foreground">
-                Nomor ini jadi default saat pilih mode pairing. Input 08xxx otomatis jadi 62xxx, lalu di WhatsApp masukkan baris RAW code yang tampil di terminal tanpa spasi/strip.
+                Nomor ini jadi default saat pilih mode pairing. Input 08xxx otomatis jadi 62xxx.
             </p>
+          </div>
+
+          {/* Input nomor Admin */}
+          <div className="space-y-1">
+            <label className="text-[11px] font-semibold flex items-center gap-1">
+              🔐 Nomor Admin Bot:
+            </label>
+            <p className="text-[10px] text-muted-foreground mb-1">
+              Hanya nomor di list ini yang bisa akses perintah admin di bot. Kosong = semua bisa akses.
+            </p>
+            {adminNumbers.map((num, idx) => (
+              <div key={idx} className="flex items-center gap-1">
+                <Input
+                  placeholder="628xxxxxxxxxx"
+                  value={num}
+                  onChange={e => {
+                    const updated = [...adminNumbers];
+                    updated[idx] = normalizePairingPhoneInput(e.target.value);
+                    setAdminNumbers(updated);
+                  }}
+                  className="text-xs font-mono h-8 flex-1"
+                />
+                {adminNumbers.length > 1 && (
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="h-8 w-8 p-0 text-destructive"
+                    onClick={() => setAdminNumbers(adminNumbers.filter((_, i) => i !== idx))}
+                  >
+                    <Trash2 className="w-3 h-3" />
+                  </Button>
+                )}
+              </div>
+            ))}
+            <Button
+              size="sm"
+              variant="outline"
+              className="w-full gap-1 text-xs h-7"
+              onClick={() => setAdminNumbers([...adminNumbers, ""])}
+            >
+              <Plus className="w-3 h-3" /> Tambah Admin
+            </Button>
           </div>
 
           {/* Preview */}
