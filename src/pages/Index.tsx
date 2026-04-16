@@ -437,6 +437,11 @@ const Index = () => {
     if (data) setHomeSponsors(data as unknown as HomeSponsor[]);
   }
 
+  async function fetchSocialLinks() {
+    const { data } = await supabase.from("social_links").select("*").eq("is_active", true).order("sort_order");
+    if (data) setSocialLinks(data as any[]);
+  }
+
   // Notifications
   interface Notification {
     id: string;
