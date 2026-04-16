@@ -1695,36 +1695,43 @@ const Index = () => {
             </Card>
 
             {/* Support Shortcut */}
-            <Card className="overflow-hidden border-0 shadow-lg hover:shadow-xl transition-all cursor-pointer hover:-translate-y-0.5 duration-200" onClick={() => setTab("tiket")}>
-              <div className="bg-gradient-to-r from-destructive/10 via-destructive/5 to-destructive/10 p-0.5">
-                <CardContent className="p-4 flex items-center gap-3 bg-card rounded-lg">
-                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-destructive to-destructive/70 flex items-center justify-center shadow-md shrink-0">
-                    <AlertCircle className="w-6 h-6 text-destructive-foreground" />
+            <Card className="overflow-hidden border-0 shadow-lg hover:shadow-2xl transition-all cursor-pointer hover:-translate-y-1 duration-300 glass-card" onClick={() => setTab("tiket")}>
+              <div className="bg-gradient-to-r from-destructive/15 via-destructive/5 to-destructive/15 p-0.5">
+                <CardContent className="p-4 flex items-center gap-3 bg-card/80 backdrop-blur-sm rounded-lg">
+                  <div className="relative">
+                    <div className="absolute -inset-1 bg-gradient-to-br from-destructive to-destructive/70 rounded-xl blur-md opacity-30" />
+                    <div className="relative w-12 h-12 rounded-xl bg-gradient-to-br from-destructive to-destructive/70 flex items-center justify-center shadow-xl">
+                      <AlertCircle className="w-6 h-6 text-destructive-foreground" />
+                    </div>
                   </div>
                   <div className="flex-1">
                     <h3 className="font-bold text-sm">{t("home.have_issue", lang)}</h3>
                     <p className="text-xs text-muted-foreground">{t("home.submit_ticket", lang)}</p>
                   </div>
-                  <ChevronRight className="w-5 h-5 text-muted-foreground" />
+                  <div className="w-8 h-8 rounded-full bg-destructive/10 flex items-center justify-center">
+                    <ChevronRight className="w-4 h-4 text-destructive" />
+                  </div>
                 </CardContent>
               </div>
             </Card>
 
             {/* Social Links */}
-            <Card className="overflow-hidden">
+            <Card className="overflow-hidden glass-card border-0 shadow-lg">
               <CardContent className="p-4">
-                <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3">{t("home.follow_us", lang)}</p>
-                <div className="grid grid-cols-2 gap-2">
+                <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-3 flex items-center gap-2">
+                  <Globe className="w-3.5 h-3.5" /> {t("home.follow_us", lang)}
+                </p>
+                <div className="grid grid-cols-2 gap-2.5">
                   {[
-                    { label: `WA: ${WA_NUMBER}`, href: SOCIAL_LINKS.whatsapp, color: "from-green-500 to-green-600", emoji: "💬" },
-                    { label: YOUTUBE_NAME, href: SOCIAL_LINKS.youtube, color: "from-red-500 to-red-600", emoji: "▶️" },
-                    { label: "@agungadi981", href: SOCIAL_LINKS.twitter, color: "from-sky-400 to-sky-500", emoji: "🐦" },
-                    { label: "@agungadi57", href: SOCIAL_LINKS.instagram, color: "from-pink-500 to-purple-500", emoji: "📸" },
-                    { label: "@pphitampro9", href: SOCIAL_LINKS.tiktok, color: "from-gray-800 to-black", emoji: "🎵" },
+                    { label: `WA: ${WA_NUMBER}`, href: SOCIAL_LINKS.whatsapp, color: "from-green-500 to-emerald-600", emoji: "💬" },
+                    { label: YOUTUBE_NAME, href: SOCIAL_LINKS.youtube, color: "from-red-500 to-rose-600", emoji: "▶️" },
+                    { label: "@agungadi981", href: SOCIAL_LINKS.twitter, color: "from-sky-400 to-cyan-500", emoji: "🐦" },
+                    { label: "@agungadi57", href: SOCIAL_LINKS.instagram, color: "from-pink-500 to-fuchsia-600", emoji: "📸" },
+                    { label: "@pphitampro9", href: SOCIAL_LINKS.tiktok, color: "from-gray-700 to-gray-900", emoji: "🎵" },
                   ].map((s) => (
                     <a key={s.label} href={s.href} target="_blank" rel="noopener noreferrer"
-                      className={`bg-gradient-to-r ${s.color} text-white text-xs font-medium px-3 py-2.5 rounded-xl flex items-center gap-2 hover:opacity-90 hover:shadow-md transition-all duration-200`}>
-                      <span>{s.emoji}</span><span className="truncate">{s.label}</span>
+                      className={`bg-gradient-to-r ${s.color} text-white text-xs font-semibold px-3 py-3 rounded-xl flex items-center gap-2.5 hover:opacity-90 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 shadow-md`}>
+                      <span className="text-base">{s.emoji}</span><span className="truncate">{s.label}</span>
                     </a>
                   ))}
                 </div>
