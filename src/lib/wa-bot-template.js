@@ -1,5 +1,5 @@
 // =============================================
-// 🤖 BOT WHATSAPP - Agung Adi Store v13.5.1
+// 🤖 BOT WHATSAPP - Agung Adi Store v13.6.0
 // =============================================
 // Library: @whiskeysockets/baileys (QR / Pairing Code)
 // Cara pakai:
@@ -605,6 +605,8 @@ async function getPendingSubscriptions() {
 // === MULTI-SESSION BOT RENTAL (Child Bots) ===
 const BOT_SESSIONS_DIR = "./bot_sessions";
 const childBotSessions = new Map(); // subscriptionId -> { client, qrInterval, authDir, buyerJid }
+const qrGenerateCounts = new Map(); // subscriptionId -> count (max 6 per sub lifetime)
+const MAX_QR_GENERATES = 6; // max total QR generate sessions per subscription
 
 function safeRemoveDir(targetDir) {
   try {
