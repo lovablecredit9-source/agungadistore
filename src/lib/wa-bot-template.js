@@ -1227,13 +1227,14 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
             total_price: pd.total_price || pd.price_paid || pending.body?.price || 0,
             balance_remaining: pd.balance_remaining ?? 0,
             discount_amount: pd.discount_amount || 0,
-            plan_name: pd.plan || pd.plan_name || pd.label || pending.body?.package_name || null,
-            expires_at: pd.expires_at || null,
+            plan_name: pd.plan || pd.plan_name || pd.package_name || pd.label || pending.body?.package_name || pending.body?.botName || null,
+            expires_at: pd.expires_at || pd.subscription?.expires_at || null,
             tokens: pd.tokens || null,
             storage_mb: pd.storage_mb || null,
             credits: pd.credits || null,
             streak_days: pd.streak_days || null,
             auto_claimed: pd.auto_claimed || false,
+            bot_name: pd.subscription?.bot_name || pending.body?.botName || null,
           };
           const receiptRes = await fetch(BASE.replace("/public-api", "/generate-receipt"), {
             method: "POST",
