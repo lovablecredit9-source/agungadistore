@@ -698,7 +698,21 @@ async function startChildBot(parentClient, subscription, buyerJid, options = {})
   const { version } = await fetchLatestBaileysVersion();
 
   let qrAttempts = 0;
-  const MAX_QR_ATTEMPTS = 10; // 10 * 30s = 5 minutes max
+  const MAX_QR_ATTEMPTS = 6; // 6 * 30s = 3 minutes max per session
+
+  // Track total QR generates for this subscription
+  const totalGenerates = qrGenerateCounts.get(subId) || 0;
+  if (totalGenerates >= MAX_QR_GENERATES) {
+    if (buyerJid) {
+      try {
+        await parentClient.sendMessage(buyerJid, {
+          text: "⚠️ *Batas Generate QR Tercapai*\n\n🤖 Bot: *" + botName + "*\nSudah " + MAX_QR_GENERATES + "x generate QR.\n\n❌ Tidak bisa generate lagi.\n💡 Beli paket baru: !sewabot",
+        });
+      } catch (e) {}
+    }
+    return;
+  }
+  qrGenerateCounts.set(subId, totalGenerates + 1);
 
   const childClient = makeWASocket({
     version,
