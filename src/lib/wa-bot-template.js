@@ -517,7 +517,7 @@ const BASE = "__BOT_BASE_URL__";
 const WEB_URL = "__BOT_WEB_URL__";
 
 const DEFAULT_PAIRING_PHONE = "__BOT_PAIRING_PHONE__"; // Opsional: nomor default pairing, format: 628xxxxxxxxxx
-const BOT_VERSION = "13.2.0";
+const BOT_VERSION = "13.3.0";
 
 // === SESSION LOGIN USER (per nomor WA) — TIDAK simpan PIN ===
 const userSessions = {};
@@ -873,34 +873,75 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
 
   const phoneNum = normalizePairingPhoneNumber(authChoice.phoneNum);
   let pairingRequestInFlight = false;
+  let pairingCodeIssued = false;
+  let pairingCodeExpiresAt = 0;
+  let pairingCodeRefreshTimer = null;
   let reconnectScheduled = false;
   let qrShown = false;
   let connectingLogged = false;
   let lastPairingQr = "";
 
-  async function requestPairingCodeOnce() {
+  function clearPairingRefreshTimer() {
+    if (pairingCodeRefreshTimer) {
+      clearTimeout(pairingCodeRefreshTimer);
+      pairingCodeRefreshTimer = null;
+    }
+  }
+
+  function schedulePairingCodeRefresh() {
+    clearPairingRefreshTimer();
+    pairingCodeRefreshTimer = setTimeout(() => {
+      if (authChoice.mode !== "pairing" || client.authState?.creds?.registered) return;
+
+      pairingCodeIssued = false;
+      pairingCodeExpiresAt = 0;
+      console.log("⏳ Masa kode pairing habis. Bot menyiapkan kode baru...");
+      requestPairingCodeOnce(true).catch((error) => {
+        console.error("❌ Gagal memperbarui pairing code:", error?.stack || error?.message || error);
+      });
+    }, 25000);
+  }
+
+  async function requestPairingCodeOnce(forceRefresh = false) {
     if (authChoice.mode !== "pairing" || pairingRequestInFlight || client.authState?.creds?.registered) return;
     if (!phoneNum) throw new Error("Nomor WhatsApp untuk pairing belum diisi!");
     if (!isValidPairingPhoneNumber(phoneNum)) {
       throw new Error("Nomor WhatsApp pairing tidak valid. Gunakan format 62xxxxxxxxxx.");
     }
+
+    const now = Date.now();
+    if (!forceRefresh && pairingCodeIssued && pairingCodeExpiresAt > now) {
+      console.log("ℹ️ Kode pairing masih aktif. Masukkan kode yang terakhir tampil di terminal.");
+      return;
+    }
+
     pairingRequestInFlight = true;
     console.log("\n📱 Meminta kode pairing untuk: " + phoneNum);
     try {
       const code = await client.requestPairingCode(phoneNum);
+      const rawCode = String(code || "").replace(/\s+/g, "").trim();
+
+      pairingCodeIssued = true;
+      pairingCodeExpiresAt = Date.now() + 20000;
+      schedulePairingCodeRefresh();
 
       console.log("\n" + "=".repeat(40));
-      console.log("  📲 KODE PAIRING (8 DIGIT):");
+      console.log("  📲 KODE PAIRING AKTIF:");
       console.log("  ➡️  " + formatPairingCode(code));
+      console.log("  🔢 RAW: " + rawCode);
       console.log("=".repeat(40));
       console.log("\n✅ Buka WhatsApp > Perangkat tertaut / Linked Devices");
       console.log("   Pilih 'Tautkan dengan nomor telepon / Link with phone number'");
-      console.log("   Lalu masukkan kode di atas");
+      console.log("   Lalu masukkan RAW code di atas TANPA spasi atau strip");
       console.log("ℹ️ Tidak ada notif/chat otomatis ke WhatsApp kamu. Kode hanya tampil di terminal/panel.");
       console.log("⏱️ Masukkan kode dalam 20 detik sebelum expired.");
+      console.log("⛔ Selama kode ini masih aktif, bot tidak akan membuat kode baru agar tidak tertukar.");
       console.log("⏳ Jika kode gagal / expired, tunggu bot membuat kode baru lagi.");
       console.log("💡 Jika masih gagal, bot akan reset sesi pairing agar kode berikutnya fresh.\n");
     } catch (error) {
+      pairingCodeIssued = false;
+      pairingCodeExpiresAt = 0;
+      clearPairingRefreshTimer();
       console.error("❌ Gagal meminta pairing code:", error?.message || error);
       console.log("💡 Bot akan mencoba membuat sesi pairing baru pada reconnect berikutnya.");
     } finally {
@@ -931,19 +972,25 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
 
     if (qr && authChoice.mode === "pairing" && !isRegistered && qr !== lastPairingQr) {
       lastPairingQr = qr;
-      console.log("📶 Sesi pairing siap. Membuat kode login baru...");
+      console.log(pairingCodeIssued && pairingCodeExpiresAt > Date.now()
+        ? "📶 Sesi pairing masih aktif. Tetap gunakan kode terakhir yang tampil."
+        : "📶 Sesi pairing siap. Membuat kode login baru...");
       requestPairingCodeOnce().catch((error) => {
         console.error("❌ Gagal memulai pairing:", error?.stack || error?.message || error);
       });
     }
 
     if (connection === "open") {
+      clearPairingRefreshTimer();
       console.log("\n✅ Bot WhatsApp sudah siap! (v" + BOT_VERSION + ")");
       console.log("📋 Kirim !menu / .menu / /menu di chat untuk lihat perintah\n");
       return;
     }
 
     if (connection === "close") {
+      clearPairingRefreshTimer();
+      pairingCodeIssued = false;
+      pairingCodeExpiresAt = 0;
       const reason = lastDisconnect?.error?.output?.statusCode;
       const message = getDisconnectMessage(lastDisconnect);
 
