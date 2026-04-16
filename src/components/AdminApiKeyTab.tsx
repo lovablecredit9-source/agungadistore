@@ -158,8 +158,8 @@ export default function AdminApiKeyTab() {
   function generatePackageJson() {
     return JSON.stringify({
       name: "bot-wa-agungadi",
-        version: "13.5.1",
-        description: "Bot WhatsApp Agung Adi Store v13.5.1 - Bot Rental + QR Auto-Reconnect",
+        version: "13.6.0",
+        description: "Bot WhatsApp Agung Adi Store v13.6.0 - QR Limit + Riwayat Bot + Anti-Spam",
       main: "index.js",
       scripts: {
         start: "node index.js",
@@ -178,8 +178,8 @@ export default function AdminApiKeyTab() {
     }, null, 2);
   }
 
-  function generateReadmeMd() {
-    return `# 🤖 Bot WhatsApp - Agung Adi Store v13.5.1
+  function generateReadmeMd() {    
+    return `# 🤖 Bot WhatsApp - Agung Adi Store v13.6.0
 
 ## 📋 Persyaratan
 - Node.js >= 18
@@ -205,6 +205,8 @@ ${"```"}
 9. Tidak ada notif/chat otomatis ke WhatsApp — kodenya hanya tampil di terminal
 10. Jika gagal / expired, bot akan reset sesi pairing dan membuat kode baru
 11. Untuk bot sewaan, QR child bot akan otomatis dibuat ulang jika koneksi awal gagal
+12. Batas generate QR: 6x per subscription (anti-spam)
+13. Gunakan !riwayatbot untuk lihat semua bot, !qr [nomor] untuk generate QR
 
 ## 📲 Login WhatsApp
 Bot mendukung **2 mode login**:
