@@ -1503,6 +1503,17 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
         } catch (receiptErr) {
           console.log("⚠️ Gagal kirim receipt image:", receiptErr.message);
         }
+
+        // Auto-start child bot session if this was a bot purchase
+        if (pending._autoStartBot && pd.subscription) {
+          try {
+            await client.sendMessage(remoteJid, { text: "📱 *Generating QR Code...*\n\n🤖 Bot: *" + (pd.subscription.bot_name || "-") + "*\n⏳ Mohon tunggu, QR code akan dikirim otomatis.\n🔄 QR akan refresh otomatis setiap ~30 detik.\n\n_Scan QR dalam 5 menit sebelum expired._" });
+            await startChildBot(client, pd, pending._buyerJid || remoteJid);
+          } catch (botErr) {
+            console.error("❌ Gagal start child bot:", botErr.message);
+            await client.sendMessage(remoteJid, { text: "⚠️ Gagal generate QR otomatis.\n\n💡 Ketik *!qrulang " + (pd.subscription?.id || "").slice(0, 8) + "* untuk coba lagi." });
+          }
+        }
         return;
       } catch (err) {
         return client.sendMessage(remoteJid, { text: "❌ Error: " + (err.message || err) }, { quoted: msg });
