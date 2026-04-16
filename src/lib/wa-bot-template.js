@@ -593,7 +593,251 @@ async function getPendingSubscriptions() {
   } catch { return []; }
 }
 
-// === SESSION LOGIN USER (per nomor WA) — TIDAK simpan PIN ===
+// === MULTI-SESSION BOT RENTAL (Child Bots) ===
+const BOT_SESSIONS_DIR = "./bot_sessions";
+const childBotSessions = new Map(); // subscriptionId -> { client, qrInterval, authDir, buyerJid }
+
+async function startChildBot(parentClient, subscription, buyerJid) {
+  const subId = subscription.id || subscription.subscription?.id;
+  const botName = subscription.subscription?.bot_name || subscription.bot_name || "Bot";
+  const sessionId = subscription.subscription?.session_id || subscription.session_id || subId;
+  const authDir = path.join(BOT_SESSIONS_DIR, sessionId);
+
+  // Cleanup existing session if any
+  if (childBotSessions.has(subId)) {
+    await stopChildBot(subId);
+  }
+
+  if (!fs.existsSync(authDir)) fs.mkdirSync(authDir, { recursive: true });
+
+  const { state, saveCreds } = await useMultiFileAuthState(authDir);
+  const { version } = await fetchLatestBaileysVersion();
+
+  let qrAttempts = 0;
+  const MAX_QR_ATTEMPTS = 10; // 10 * 30s = 5 minutes max
+
+  const childClient = makeWASocket({
+    version,
+    auth: state,
+    logger: pino({ level: "silent" }),
+    printQRInTerminal: false,
+    browser: ["Bot-" + botName, "Chrome", "22.0"],
+    generateHighQualityLinkPreview: false,
+  });
+
+  const sessionData = { client: childClient, qrInterval: null, authDir, buyerJid, botName, subId };
+  childBotSessions.set(subId, sessionData);
+
+  childClient.ev.on("creds.update", saveCreds);
+
+  childClient.ev.on("connection.update", async (update) => {
+    const { connection, lastDisconnect, qr } = update;
+
+    if (qr) {
+      qrAttempts++;
+      console.log("📱 QR Child Bot [" + botName + "] attempt " + qrAttempts + "/" + MAX_QR_ATTEMPTS);
+
+      if (qrAttempts > MAX_QR_ATTEMPTS) {
+        console.log("⏰ QR timeout for bot: " + botName);
+        await parentClient.sendMessage(buyerJid, {
+          text: "⏰ *QR Code Expired*\n\n🤖 Bot: *" + botName + "*\nQR sudah expired (5 menit).\n\n💡 Ketik *!qrulang " + subId.slice(0, 8) + "* untuk generate QR baru.",
+        });
+        stopChildBot(subId);
+        return;
+      }
+
+      try {
+        // Generate QR as PNG buffer
+        const qrBuffer = await QRCode.toBuffer(qr, {
+          type: "png",
+          width: 512,
+          margin: 2,
+          color: { dark: "#000000", light: "#FFFFFF" },
+        });
+
+        const remainingSeconds = (MAX_QR_ATTEMPTS - qrAttempts) * 30;
+        const caption = "📱 *QR Code Bot WA*\n\n🤖 Bot: *" + botName + "*\n⏱️ Berlaku: ~30 detik\n🔄 Sisa percobaan: " + (MAX_QR_ATTEMPTS - qrAttempts) + " (" + remainingSeconds + "s)\n\n📲 Buka WhatsApp → Perangkat Tertaut → Tautkan Perangkat\n\n_QR akan otomatis refresh jika belum di-scan_";
+
+        await parentClient.sendMessage(buyerJid, {
+          image: qrBuffer,
+          caption,
+        });
+
+        // Update qr_code_url in DB
+        const base64QR = qrBuffer.toString("base64");
+        await supabaseRequest(
+          "wa_bot_subscriptions?id=eq." + subId,
+          "PATCH",
+          { qr_code_url: "data:image/png;base64," + base64QR }
+        );
+      } catch (err) {
+        console.error("❌ Error sending QR for " + botName + ":", err.message);
+      }
+    }
+
+    if (connection === "open") {
+      console.log("✅ Child Bot [" + botName + "] CONNECTED!");
+      const botNumber = extractDigitsFromWhatsAppId(childClient.user?.id || "");
+
+      // Update subscription to active with bot number
+      await supabaseRequest(
+        "wa_bot_subscriptions?id=eq." + subId,
+        "PATCH",
+        { status: "active", qr_code_url: null }
+      );
+
+      // Notify buyer
+      await parentClient.sendMessage(buyerJid, {
+        text: "✅ *Bot WA Berhasil Tersambung!*\n\n🤖 Bot: *" + botName + "*\n📱 No Bot WA: " + (botNumber ? "+" + botNumber : "-") + "\n⏰ Status: Aktif\n\n🔄 Bot akan otomatis disconnect saat masa sewa habis.\n💡 Cek status: *!botku*\n\n⚠️ *PENTING:* Jangan logout perangkat tertaut di WhatsApp, atau bot akan terputus!",
+      });
+
+      // Also send a message FROM the child bot to confirm it works
+      try {
+        await childClient.sendMessage(childClient.user.id, {
+          text: "🤖 *" + botName + "* aktif!\n\nBot ini disewa dari Agung Adi Store.\n🌐 " + WEB_URL,
+        });
+      } catch (e) {}
+
+      sessionData.botNumber = botNumber;
+    }
+
+    if (connection === "close") {
+      const statusCode = lastDisconnect?.error?.output?.statusCode;
+      const shouldReconnect = statusCode !== DisconnectReason.loggedOut && statusCode !== 401;
+      console.log("🔌 Child Bot [" + botName + "] disconnected, code:", statusCode, "reconnect:", shouldReconnect);
+
+      if (shouldReconnect) {
+        // Check if subscription is still valid
+        const subData = await supabaseRequest("wa_bot_subscriptions?id=eq." + subId + "&select=status,expires_at");
+        if (subData && subData[0] && subData[0].status === "active" && new Date(subData[0].expires_at) > new Date()) {
+          console.log("🔄 Reconnecting child bot: " + botName);
+          await wait(3000);
+          try {
+            const { state: newState, saveCreds: newSaveCreds } = await useMultiFileAuthState(authDir);
+            const { version: newVersion } = await fetchLatestBaileysVersion();
+            const newClient = makeWASocket({
+              version: newVersion,
+              auth: newState,
+              logger: pino({ level: "silent" }),
+              printQRInTerminal: false,
+              browser: ["Bot-" + botName, "Chrome", "22.0"],
+            });
+            newClient.ev.on("creds.update", newSaveCreds);
+            sessionData.client = newClient;
+            // Re-attach same connection handler
+            newClient.ev.on("connection.update", async (u) => {
+              if (u.connection === "open") {
+                console.log("✅ Child Bot [" + botName + "] RECONNECTED!");
+              }
+              if (u.connection === "close") {
+                const sc = u.lastDisconnect?.error?.output?.statusCode;
+                if (sc === DisconnectReason.loggedOut || sc === 401) {
+                  console.log("🔌 Child Bot [" + botName + "] logged out permanently");
+                  await supabaseRequest("wa_bot_subscriptions?id=eq." + subId, "PATCH", { status: "expired" });
+                  childBotSessions.delete(subId);
+                }
+              }
+            });
+          } catch (e) {
+            console.error("❌ Failed to reconnect child bot:", e.message);
+          }
+        } else {
+          console.log("⏰ Subscription expired, not reconnecting: " + botName);
+          childBotSessions.delete(subId);
+        }
+      } else {
+        // Logged out
+        console.log("🔌 Child Bot [" + botName + "] logged out");
+        await supabaseRequest("wa_bot_subscriptions?id=eq." + subId, "PATCH", { status: "expired" });
+        childBotSessions.delete(subId);
+        await parentClient.sendMessage(buyerJid, {
+          text: "🔌 *Bot Terputus*\n\n🤖 Bot: *" + botName + "*\n❌ Bot telah logout dari WhatsApp.\n\n💡 Hubungi admin jika ini tidak disengaja.",
+        });
+      }
+    }
+  });
+
+  return sessionData;
+}
+
+async function stopChildBot(subId) {
+  const session = childBotSessions.get(subId);
+  if (!session) return;
+  try {
+    if (session.client?.ws) session.client.ws.close();
+    if (session.client?.end) session.client.end();
+  } catch (e) {}
+  childBotSessions.delete(subId);
+  console.log("🛑 Stopped child bot: " + (session.botName || subId));
+}
+
+// Restore active child bot sessions on startup
+async function restoreChildBotSessions(parentClient) {
+  try {
+    const activeSubs = await supabaseRequest(
+      "wa_bot_subscriptions?status=eq.active&select=id,bot_name,session_id,visitor_id,expires_at"
+    );
+    if (!activeSubs || !activeSubs.length) return;
+
+    for (const sub of activeSubs) {
+      if (new Date(sub.expires_at) <= new Date()) continue;
+      const authDir = path.join(BOT_SESSIONS_DIR, sub.session_id || sub.id);
+      if (!fs.existsSync(authDir)) continue; // No auth data, skip
+
+      console.log("🔄 Restoring child bot: " + sub.bot_name);
+      try {
+        const { state, saveCreds } = await useMultiFileAuthState(authDir);
+        const { version } = await fetchLatestBaileysVersion();
+        const childClient = makeWASocket({
+          version,
+          auth: state,
+          logger: pino({ level: "silent" }),
+          printQRInTerminal: false,
+          browser: ["Bot-" + sub.bot_name, "Chrome", "22.0"],
+        });
+        childClient.ev.on("creds.update", saveCreds);
+
+        const sessionData = { client: childClient, authDir, botName: sub.bot_name, subId: sub.id, buyerJid: null };
+        childBotSessions.set(sub.id, sessionData);
+
+        childClient.ev.on("connection.update", async (update) => {
+          if (update.connection === "open") {
+            const botNumber = extractDigitsFromWhatsAppId(childClient.user?.id || "");
+            sessionData.botNumber = botNumber;
+            console.log("✅ Restored child bot [" + sub.bot_name + "] connected as " + botNumber);
+          }
+          if (update.connection === "close") {
+            const sc = update.lastDisconnect?.error?.output?.statusCode;
+            if (sc === DisconnectReason.loggedOut || sc === 401) {
+              await supabaseRequest("wa_bot_subscriptions?id=eq." + sub.id, "PATCH", { status: "expired" });
+              childBotSessions.delete(sub.id);
+            } else {
+              // Try reconnect if still active
+              const subCheck = await supabaseRequest("wa_bot_subscriptions?id=eq." + sub.id + "&select=status,expires_at");
+              if (subCheck?.[0]?.status === "active" && new Date(subCheck[0].expires_at) > new Date()) {
+                await wait(5000);
+                // Simple reconnect attempt
+                try {
+                  const { state: ns, saveCreds: nsc } = await useMultiFileAuthState(authDir);
+                  const { version: nv } = await fetchLatestBaileysVersion();
+                  const nc = makeWASocket({ version: nv, auth: ns, logger: pino({ level: "silent" }), printQRInTerminal: false });
+                  nc.ev.on("creds.update", nsc);
+                  sessionData.client = nc;
+                } catch (e) {}
+              }
+            }
+          }
+        });
+      } catch (e) {
+        console.error("❌ Failed to restore bot " + sub.bot_name + ":", e.message);
+      }
+    }
+  } catch (e) {
+    console.error("❌ Error restoring child sessions:", e.message);
+  }
+}
+
+
 const userSessions = {};
 
 // === PIN PENDING STATE (per nomor WA) — untuk flow interaktif ===
