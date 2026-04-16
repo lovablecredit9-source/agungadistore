@@ -715,9 +715,9 @@ node index.js`}
                 <CardContent className="p-2">
                   <p className="text-[11px] font-bold text-yellow-700 mb-1">⚙️ Konfigurasi Admin:</p>
                   <p className="text-[10px] text-muted-foreground">
-                    Di file index.js, isi array <code className="bg-muted px-1 rounded">ADMIN_NUMBERS</code> dengan nomor WA admin.
-                    Format: <code className="bg-muted px-1 rounded">"628xxxxxxxxxx@c.us"</code>.
-                    Jika kosong, semua bisa akses perintah admin.
+                    Masukkan nomor admin di bagian <strong>"Nomor Admin Bot"</strong> pada panel download di atas sebelum download ZIP.
+                    Nomor otomatis diformat ke <code className="bg-muted px-1 rounded">628xxx@s.whatsapp.net</code>.
+                    Jika kosong, semua orang bisa akses perintah admin.
                   </p>
                 </CardContent>
               </Card>
