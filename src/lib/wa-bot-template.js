@@ -1428,6 +1428,8 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
         "┃ !belikredit [nama paket]",
         "┃ !belistorage [nama paket]",
         "┃ !belibundle [nama paket]",
+        "┃ !sewabot [nama paket]",
+        "┃ !botku — Langganan bot WA",
         "┃ 🔐 PIN diminta tiap transaksi",
         "╰━━━━━━━━━━━━━━━━━━━━━━━━━━╯",
         "",
