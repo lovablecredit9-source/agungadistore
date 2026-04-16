@@ -149,9 +149,11 @@ export default function SponsorBanner({ likedSponsorIds = new Set(), onToggleLik
   }
 
   if (sponsors.length === 0) return (
-    <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
-      <Megaphone className="w-10 h-10 mb-2 opacity-30" />
-      <p className="text-sm">Belum ada sponsor aktif</p>
+    <div className="flex flex-col items-center justify-center py-16 text-muted-foreground gap-3">
+      <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary/10 to-accent/10 flex items-center justify-center">
+        <Megaphone className="w-7 h-7 text-muted-foreground/50" />
+      </div>
+      <p className="text-sm font-medium">Belum ada sponsor aktif</p>
     </div>
   );
 
@@ -189,16 +191,32 @@ export default function SponsorBanner({ likedSponsorIds = new Set(), onToggleLik
   return (
     <>
       <div className="relative">
-        <div className="flex items-center gap-1.5 mb-2">
-          <Megaphone className="w-4 h-4 text-primary" />
-          <span className="text-xs font-bold text-primary uppercase tracking-wider">Sponsor</span>
-          <div className="ml-auto flex items-center gap-1">
-            <button onClick={() => setShowSearch(v => !v)} className="p-1 rounded-md hover:bg-muted transition-colors">
-              <Search className="w-3.5 h-3.5 text-muted-foreground" />
-            </button>
-            {filtered.length > 1 && (
-              <span className="text-[10px] text-muted-foreground">{(current % filtered.length) + 1}/{filtered.length}</span>
-            )}
+        {/* Hero Header */}
+        <div className="relative overflow-hidden rounded-2xl border border-border glass-card-strong p-4 mb-3">
+          <div className="absolute inset-0 bg-gradient-to-br from-primary/8 via-accent/5 to-transparent" />
+          <div className="absolute top-1 right-1 opacity-[0.05]">
+            <Megaphone className="w-20 h-20 text-primary" />
+          </div>
+          <div className="relative z-10 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-lg">
+                <Megaphone className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <h2 className="font-extrabold text-base leading-tight">Sponsor</h2>
+                <p className="text-[10px] text-muted-foreground">{filtered.length} iklan aktif</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <button onClick={() => setShowSearch(v => !v)} className="w-8 h-8 rounded-full bg-background/60 hover:bg-background flex items-center justify-center transition-colors backdrop-blur-sm">
+                <Search className="w-3.5 h-3.5 text-muted-foreground" />
+              </button>
+              {filtered.length > 1 && (
+                <span className="text-[10px] text-muted-foreground bg-background/60 px-2 py-1 rounded-full backdrop-blur-sm font-medium">
+                  {(current % filtered.length) + 1}/{filtered.length}
+                </span>
+              )}
+            </div>
           </div>
         </div>
         {/* Filter & Sort Bar - selalu tampil */}
@@ -266,7 +284,7 @@ export default function SponsorBanner({ likedSponsorIds = new Set(), onToggleLik
         )}
         {sponsor && (
         <Card
-          className="overflow-hidden border-primary/20 bg-gradient-to-br from-primary/5 via-accent/5 to-transparent cursor-pointer hover:shadow-lg transition-all"
+          className="overflow-hidden border-primary/20 glass-card cursor-pointer hover:shadow-xl hover:scale-[1.01] transition-all duration-300 card-shine"
           onClick={() => { setSelectedSponsor(sponsor); setImgIdx(0); }}
         >
           {displayImage && (
