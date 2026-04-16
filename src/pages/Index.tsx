@@ -2137,21 +2137,26 @@ const Index = () => {
             {ticketView === "list" && (
               <>
                 {/* Hero Header */}
-                <div className="relative overflow-hidden rounded-2xl p-5" style={{ background: "linear-gradient(135deg, hsl(0, 70%, 55%) 0%, hsl(20, 80%, 50%) 100%)" }}>
-                  <div className="absolute inset-0 opacity-10">
-                    <div className="absolute -top-8 -right-8 w-32 h-32 rounded-full bg-white/30 blur-2xl" />
+                <div className="relative overflow-hidden rounded-2xl p-5 glow-border" style={{ background: "linear-gradient(135deg, hsl(0, 70%, 55%) 0%, hsl(10, 75%, 52%) 50%, hsl(20, 80%, 50%) 100%)" }}>
+                  <div className="absolute inset-0">
+                    <div className="absolute -top-8 -right-8 w-40 h-40 rounded-full bg-white/20 blur-3xl animate-pulse" />
+                    <div className="absolute -bottom-8 -left-8 w-28 h-28 rounded-full bg-white/15 blur-2xl animate-pulse" style={{ animationDelay: "1s" }} />
+                    <div className="absolute inset-0 shimmer" />
                   </div>
                   <div className="relative z-10 flex items-center justify-between">
                     <div className="flex items-center gap-4">
-                      <div className="w-14 h-14 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-lg">
-                        <AlertCircle className="w-7 h-7 text-white" />
+                      <div className="relative floating">
+                        <div className="absolute -inset-1 bg-white/30 rounded-2xl blur-md" />
+                        <div className="relative w-14 h-14 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-2xl ring-2 ring-white/30">
+                          <AlertCircle className="w-7 h-7 text-white" />
+                        </div>
                       </div>
                       <div>
-                        <h2 className="text-xl font-extrabold text-white">{t("ticket.title", lang)}</h2>
-                        <p className="text-white/70 text-xs font-medium mt-0.5">{tickets.length} tiket dibuat</p>
+                        <h2 className="text-xl font-extrabold text-white drop-shadow-lg">{t("ticket.title", lang)}</h2>
+                        <p className="text-white/80 text-xs font-medium mt-0.5">{tickets.length} tiket dibuat</p>
                       </div>
                     </div>
-                    <Button size="sm" onClick={() => setTicketView("create")} className="bg-white/20 hover:bg-white/30 text-white border border-white/20 backdrop-blur-sm gap-1 font-bold"><Send className="w-3 h-3" /> Buat</Button>
+                    <Button size="sm" onClick={() => setTicketView("create")} className="bg-white/25 hover:bg-white/35 text-white border border-white/30 backdrop-blur-md gap-1 font-bold shadow-lg hover:shadow-xl transition-all"><Send className="w-3 h-3" /> Buat</Button>
                   </div>
                 </div>
 
