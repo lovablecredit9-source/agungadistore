@@ -519,7 +519,7 @@ const SUPABASE_URL = "__BOT_SUPABASE_URL__";
 const SUPABASE_ANON_KEY = "__BOT_SUPABASE_ANON_KEY__";
 
 const DEFAULT_PAIRING_PHONE = "__BOT_PAIRING_PHONE__"; // Opsional: nomor default pairing, format: 628xxxxxxxxxx
-const BOT_VERSION = "13.4.0";
+const BOT_VERSION = "13.5.0";
 
 // === BOT RENTAL MANAGEMENT ===
 // Menyimpan sesi bot rental aktif: { subscriptionId, botName, expiresAt, checkInterval }
@@ -3296,6 +3296,32 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
       const ok = await activateSubscription(subId);
       if (ok) return reply("✅ Subscription " + subId.slice(0, 8) + "... berhasil diaktifkan!");
       return reply("❌ Gagal mengaktifkan subscription. Pastikan ID benar.");
+    }
+
+    if (command === "!botqr") {
+      if (!isAdmin(msg)) return reply("❌ Akses ditolak.");
+      if (!SUPABASE_URL) return reply("❌ Supabase belum dikonfigurasi di bot ini.");
+      const subId = args.trim();
+      if (!subId) return reply("❌ Format: !botqr <subscription_id>\n\nKirim dengan foto QR terlampir.\nGunakan !botstatus untuk melihat ID.");
+      const quoted = msg.message?.imageMessage || msg.message?.extendedTextMessage?.contextInfo?.quotedMessage?.imageMessage;
+      const directImage = msg.message?.imageMessage;
+      const imageMsg = directImage || quoted;
+      if (!imageMsg) return reply("❌ Kirim foto QR bersamaan dengan perintah ini, atau reply foto QR dengan perintah !botqr <id>");
+      try {
+        const buffer = await downloadMediaMessage({ message: { imageMessage: imageMsg } }, "buffer", {});
+        const base64 = buffer.toString("base64");
+        const mimeType = imageMsg.mimetype || "image/jpeg";
+        const dataUrl = "data:" + mimeType + ";base64," + base64;
+        const updateResult = await supabaseRequest(
+          "wa_bot_subscriptions?id=eq." + subId,
+          "PATCH",
+          { qr_code_url: dataUrl }
+        );
+        if (updateResult) return reply("✅ QR Code berhasil diupload untuk subscription " + subId.slice(0, 8) + "...\n\nUser sekarang bisa melihat QR di tab Bot WA.");
+        return reply("❌ Gagal update QR. Pastikan subscription ID benar.");
+      } catch (err) {
+        return reply("❌ Gagal memproses gambar: " + (err.message || err));
+      }
     }
 
     } catch (err) {

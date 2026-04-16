@@ -158,8 +158,8 @@ export default function AdminApiKeyTab() {
   function generatePackageJson() {
     return JSON.stringify({
       name: "bot-wa-agungadi",
-        version: "13.4.0",
-        description: "Bot WhatsApp Agung Adi Store v13.4.0 - Bot Rental + Subscription Management",
+        version: "13.5.0",
+        description: "Bot WhatsApp Agung Adi Store v13.5.0 - Bot Rental + QR Upload Management",
       main: "index.js",
       scripts: {
         start: "node index.js",
@@ -178,7 +178,7 @@ export default function AdminApiKeyTab() {
   }
 
   function generateReadmeMd() {
-    return `# 🤖 Bot WhatsApp - Agung Adi Store v13.3.0
+    return `# 🤖 Bot WhatsApp - Agung Adi Store v13.5.0
 
 ## 📋 Persyaratan
 - Node.js >= 18
@@ -447,7 +447,7 @@ node index.js
             disabled={!selectedDownloadKey}
             onClick={() => selectedDownloadKey && downloadBotFile(selectedDownloadKey.api_key, selectedDownloadKey.key_name)}
           >
-            <Download className="w-4 h-4" /> Download ZIP Bot v13.4.0
+            <Download className="w-4 h-4" /> Download ZIP Bot v13.5.0
           </Button>
 
           <p className="text-[10px] text-muted-foreground text-center">
