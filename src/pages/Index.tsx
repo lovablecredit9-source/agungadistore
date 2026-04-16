@@ -1473,19 +1473,19 @@ const Index = () => {
             </div>
 
             {/* Quick Action Grid */}
-            <div className="grid grid-cols-4 gap-2">
+            <div className="grid grid-cols-4 gap-2.5">
               {[
-                { icon: <Package className="w-5 h-5" />, label: "Produk", tab: "produk" as Tab, gradient: "from-blue-500 to-blue-600" },
-                { icon: <Wallet className="w-5 h-5" />, label: "Saldo", tab: "saldo" as Tab, gradient: "from-emerald-500 to-emerald-600" },
-                { icon: <Gamepad2 className="w-5 h-5" />, label: "Game", tab: "game" as Tab, gradient: "from-violet-500 to-purple-600" },
-                { icon: <Music className="w-5 h-5" />, label: "Musik", tab: "playlist" as Tab, gradient: "from-pink-500 to-rose-600" },
+                { icon: <Package className="w-5 h-5" />, label: "Produk", tab: "produk" as Tab, gradient: "from-blue-500 to-indigo-600", shadow: "shadow-blue-500/25" },
+                { icon: <Wallet className="w-5 h-5" />, label: "Saldo", tab: "saldo" as Tab, gradient: "from-emerald-500 to-teal-600", shadow: "shadow-emerald-500/25" },
+                { icon: <Gamepad2 className="w-5 h-5" />, label: "Game", tab: "game" as Tab, gradient: "from-violet-500 to-purple-600", shadow: "shadow-violet-500/25" },
+                { icon: <Music className="w-5 h-5" />, label: "Musik", tab: "playlist" as Tab, gradient: "from-pink-500 to-rose-600", shadow: "shadow-pink-500/25" },
               ].map((item) => (
                 <button
                   key={item.label}
                   onClick={() => setTab(item.tab)}
-                  className="flex flex-col items-center gap-1.5 p-3 rounded-2xl bg-card border border-border hover:border-primary/30 hover:shadow-md transition-all duration-200 hover:-translate-y-0.5 active:scale-95"
+                  className="flex flex-col items-center gap-1.5 p-3 rounded-2xl glass-card hover:border-primary/30 hover:shadow-lg transition-all duration-300 hover:-translate-y-1 active:scale-95 group"
                 >
-                  <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${item.gradient} flex items-center justify-center text-white shadow-md`}>
+                  <div className={`w-11 h-11 rounded-xl bg-gradient-to-br ${item.gradient} flex items-center justify-center text-white shadow-lg ${item.shadow} group-hover:scale-110 transition-transform duration-300`}>
                     {item.icon}
                   </div>
                   <span className="text-[11px] font-bold text-foreground">{item.label}</span>
@@ -1560,24 +1560,24 @@ const Index = () => {
               {/* Streak Card */}
               <div
                 onClick={() => setTab("streak")}
-                className="relative overflow-hidden rounded-2xl cursor-pointer transition-all hover:shadow-lg hover:-translate-y-0.5 active:scale-[0.98] duration-200"
+                className="relative overflow-hidden rounded-2xl cursor-pointer transition-all hover:shadow-xl hover:-translate-y-1 active:scale-[0.97] duration-300 card-shine"
                 style={{ background: "linear-gradient(145deg, #ff6b00, #e63900)" }}
               >
-                <div className="absolute inset-0 opacity-15">
-                  {[...Array(3)].map((_, i) => (
+                <div className="absolute inset-0 opacity-20">
+                  {[...Array(5)].map((_, i) => (
                     <div key={i} className="absolute rounded-full animate-pulse" style={{
-                      width: 30 + i * 15, height: 30 + i * 15,
-                      background: "radial-gradient(circle, rgba(255,204,0,0.5), transparent 70%)",
-                      top: `${10 + i * 20}%`, right: `${5 + i * 10}%`,
-                      animationDelay: `${i * 0.3}s`,
+                      width: 20 + i * 12, height: 20 + i * 12,
+                      background: "radial-gradient(circle, rgba(255,204,0,0.6), transparent 70%)",
+                      top: `${5 + i * 18}%`, right: `${3 + i * 8}%`,
+                      animationDelay: `${i * 0.4}s`,
                     }} />
                   ))}
                 </div>
-                <div className="relative z-10 p-3.5 text-center">
-                  <div className="text-3xl mb-1">🔥</div>
-                  <h3 className="text-white font-extrabold text-sm leading-tight">Daily Streak</h3>
-                  <p className="text-white/70 text-[10px] mt-0.5 leading-snug">Klaim setiap hari!</p>
-                  <div className="mt-2 bg-white/20 backdrop-blur-sm rounded-full px-2 py-1 inline-block">
+                <div className="relative z-10 p-4 text-center">
+                  <div className="text-4xl mb-1.5 floating">🔥</div>
+                  <h3 className="text-white font-extrabold text-sm leading-tight drop-shadow-lg">Daily Streak</h3>
+                  <p className="text-white/80 text-[10px] mt-0.5 leading-snug">Klaim setiap hari!</p>
+                  <div className="mt-2.5 bg-white/25 backdrop-blur-sm rounded-full px-3 py-1.5 inline-flex items-center gap-1 shadow-lg">
                     <span className="text-white text-[10px] font-bold">Klaim →</span>
                   </div>
                 </div>
@@ -1586,18 +1586,18 @@ const Index = () => {
               {/* Game Card */}
               <div
                 onClick={() => setTab("game")}
-                className="relative overflow-hidden rounded-2xl cursor-pointer transition-all hover:shadow-lg hover:-translate-y-0.5 active:scale-[0.98] duration-200"
+                className="relative overflow-hidden rounded-2xl cursor-pointer transition-all hover:shadow-xl hover:-translate-y-1 active:scale-[0.97] duration-300 card-shine"
                 style={{ background: "linear-gradient(145deg, #7c3aed, #4338ca)" }}
               >
-                <div className="absolute inset-0 opacity-10">
-                  <div className="absolute top-1 right-2 text-4xl">🎮</div>
-                  <div className="absolute bottom-1 left-2 text-2xl">🎲</div>
+                <div className="absolute inset-0 opacity-15">
+                  <div className="absolute top-1 right-2 text-4xl floating" style={{ animationDelay: "0.5s" }}>🎮</div>
+                  <div className="absolute bottom-1 left-2 text-2xl floating" style={{ animationDelay: "1.5s" }}>🎲</div>
                 </div>
-                <div className="relative z-10 p-3.5 text-center">
-                  <div className="text-3xl mb-1">🎮</div>
-                  <h3 className="text-white font-extrabold text-sm leading-tight">Game AI</h3>
-                  <p className="text-white/70 text-[10px] mt-0.5 leading-snug">11 game menantang!</p>
-                  <div className="mt-2 bg-white/20 backdrop-blur-sm rounded-full px-2 py-1 inline-block">
+                <div className="relative z-10 p-4 text-center">
+                  <div className="text-4xl mb-1.5 floating" style={{ animationDelay: "0.3s" }}>🎮</div>
+                  <h3 className="text-white font-extrabold text-sm leading-tight drop-shadow-lg">Game AI</h3>
+                  <p className="text-white/80 text-[10px] mt-0.5 leading-snug">11 game menantang!</p>
+                  <div className="mt-2.5 bg-white/25 backdrop-blur-sm rounded-full px-3 py-1.5 inline-flex items-center gap-1 shadow-lg">
                     <span className="text-white text-[10px] font-bold">Main →</span>
                   </div>
                 </div>
@@ -1605,16 +1605,16 @@ const Index = () => {
             </div>
 
             {/* Stats Bar */}
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-3 gap-2.5">
               {[
-                { value: `${products.length}+`, label: "Produk", icon: "🛍️" },
-                { value: `${homeSponsors.length}`, label: "Sponsor", icon: "📢" },
-                { value: "11", label: "Game", icon: "🎮" },
+                { value: `${products.length}+`, label: "Produk", icon: "🛍️", gradient: "from-blue-500/10 to-indigo-500/5" },
+                { value: `${homeSponsors.length}`, label: "Sponsor", icon: "📢", gradient: "from-amber-500/10 to-orange-500/5" },
+                { value: "11", label: "Game", icon: "🎮", gradient: "from-violet-500/10 to-purple-500/5" },
               ].map((stat) => (
-                <div key={stat.label} className="bg-card border border-border rounded-xl p-3 text-center hover:border-primary/20 transition-colors">
-                  <span className="text-lg">{stat.icon}</span>
-                  <p className="text-base font-extrabold text-foreground mt-0.5">{stat.value}</p>
-                  <p className="text-[10px] text-muted-foreground font-medium">{stat.label}</p>
+                <div key={stat.label} className={`glass-card rounded-2xl p-3.5 text-center hover:border-primary/30 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg bg-gradient-to-br ${stat.gradient}`}>
+                  <span className="text-xl">{stat.icon}</span>
+                  <p className="text-lg font-extrabold text-foreground mt-0.5">{stat.value}</p>
+                  <p className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wider">{stat.label}</p>
                 </div>
               ))}
             </div>
