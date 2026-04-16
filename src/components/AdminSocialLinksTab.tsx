@@ -1,10 +1,10 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Trash2, Edit2, X, Check, GripVertical, Eye, EyeOff, Globe } from "lucide-react";
+import { Plus, Trash2, Edit2, X, Check, Eye, EyeOff, Globe, Upload, ImagePlus, Loader2 } from "lucide-react";
 
 interface SocialLink {
   id: string;
@@ -24,6 +24,8 @@ export default function AdminSocialLinksTab() {
   const [loading, setLoading] = useState(true);
   const [editId, setEditId] = useState<string | null>(null);
   const [form, setForm] = useState({ platform: "", label: "", url: "", icon_url: "", color_from: "#3b82f6", color_to: "#6366f1" });
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const fetchLinks = async () => {
     const { data } = await supabase.from("social_links").select("*").order("sort_order");
@@ -36,6 +38,41 @@ export default function AdminSocialLinksTab() {
   const resetForm = () => {
     setForm({ platform: "", label: "", url: "", icon_url: "", color_from: "#3b82f6", color_to: "#6366f1" });
     setEditId(null);
+  };
+
+  const handleUploadIcon = async (file: File) => {
+    if (!file) return;
+    if (file.size > 2 * 1024 * 1024) {
+      toast({ title: "File terlalu besar!", description: "Maksimal 2MB", variant: "destructive" });
+      return;
+    }
+    if (!file.type.startsWith("image/")) {
+      toast({ title: "File harus gambar!", variant: "destructive" });
+      return;
+    }
+
+    setUploading(true);
+    try {
+      const ext = file.name.split(".").pop() || "png";
+      const fileName = `icon_${Date.now()}_${Math.random().toString(36).slice(2, 8)}.${ext}`;
+      
+      const { error } = await supabase.storage
+        .from("social-icons")
+        .upload(fileName, file, { contentType: file.type, upsert: true });
+
+      if (error) throw error;
+
+      const { data: urlData } = supabase.storage
+        .from("social-icons")
+        .getPublicUrl(fileName);
+
+      setForm(f => ({ ...f, icon_url: urlData.publicUrl }));
+      toast({ title: "Gambar berhasil diupload!" });
+    } catch (err: any) {
+      toast({ title: "Gagal upload", description: err.message, variant: "destructive" });
+    } finally {
+      setUploading(false);
+    }
   };
 
   const handleSave = async () => {
@@ -98,21 +135,58 @@ export default function AdminSocialLinksTab() {
             <Input placeholder="Label (@username)" value={form.label} onChange={e => setForm(f => ({ ...f, label: e.target.value }))} className="text-xs" />
           </div>
           <Input placeholder="URL (https://...)" value={form.url} onChange={e => setForm(f => ({ ...f, url: e.target.value }))} className="text-xs" />
-          <Input placeholder="URL Gambar/Logo (opsional)" value={form.icon_url} onChange={e => setForm(f => ({ ...f, icon_url: e.target.value }))} className="text-xs" />
+          
+          {/* Upload Gambar */}
+          <div className="space-y-2">
+            <label className="text-xs font-medium text-muted-foreground">Gambar / Logo</label>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={e => {
+                const file = e.target.files?.[0];
+                if (file) handleUploadIcon(file);
+                e.target.value = "";
+              }}
+            />
+            <div className="flex gap-2">
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                className="flex-1 gap-1.5 text-xs h-10 border-dashed border-2"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploading}
+              >
+                {uploading ? (
+                  <><Loader2 className="w-4 h-4 animate-spin" /> Mengupload...</>
+                ) : (
+                  <><ImagePlus className="w-4 h-4" /> Pilih Gambar</>
+                )}
+              </Button>
+              {form.icon_url && (
+                <Button size="sm" variant="ghost" className="h-10 px-2 text-destructive" onClick={() => setForm(f => ({ ...f, icon_url: "" }))}>
+                  <X className="w-4 h-4" />
+                </Button>
+              )}
+            </div>
+            {form.icon_url && (
+              <div className="flex items-center gap-2 p-2 rounded-lg bg-muted/50 border">
+                <img src={form.icon_url} alt="preview" className="w-10 h-10 object-contain rounded" onError={e => (e.currentTarget.style.display = "none")} />
+                <span className="text-[10px] text-muted-foreground truncate flex-1">{form.icon_url.split("/").pop()}</span>
+              </div>
+            )}
+          </div>
+
           <div className="flex gap-2 items-center">
             <label className="text-xs text-muted-foreground">Warna:</label>
             <input type="color" value={form.color_from} onChange={e => setForm(f => ({ ...f, color_from: e.target.value }))} className="w-8 h-8 rounded cursor-pointer" />
             <span className="text-xs text-muted-foreground">→</span>
             <input type="color" value={form.color_to} onChange={e => setForm(f => ({ ...f, color_to: e.target.value }))} className="w-8 h-8 rounded cursor-pointer" />
           </div>
-          {form.icon_url && (
-            <div className="flex items-center gap-2 p-2 rounded-lg bg-muted/50">
-              <img src={form.icon_url} alt="preview" className="w-8 h-8 object-contain rounded" onError={e => (e.currentTarget.style.display = "none")} />
-              <span className="text-xs text-muted-foreground">Preview logo</span>
-            </div>
-          )}
           <div className="flex gap-2">
-            <Button size="sm" onClick={handleSave} className="flex-1 gap-1">
+            <Button size="sm" onClick={handleSave} className="flex-1 gap-1" disabled={uploading}>
               {editId ? <Check className="w-3 h-3" /> : <Plus className="w-3 h-3" />}
               {editId ? "Simpan" : "Tambah"}
             </Button>
