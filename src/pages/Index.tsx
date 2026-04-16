@@ -1912,8 +1912,8 @@ const Index = () => {
               </CardContent>
             </Card>
 
-            <Card className="border-0 shadow-xl overflow-hidden bg-card/90 backdrop-blur-sm">
-              <div className="h-1.5 bg-gradient-to-r from-primary via-accent to-primary" />
+            <Card className="border-0 shadow-2xl overflow-hidden glass-card-strong glow-border">
+              <div className="h-1.5 bg-gradient-to-r from-primary via-accent to-primary shimmer" />
               <CardContent className="p-5 space-y-4">
                 <div className="text-center">
                   <div className="relative w-18 h-18 mx-auto mb-3">
@@ -2350,9 +2350,9 @@ const Index = () => {
             ) : (
               <>
                 {/* Balance Card */}
-                <Card className="border-0 shadow-xl overflow-hidden bg-card/90 backdrop-blur-sm">
-                  <div className="h-1.5 bg-gradient-to-r from-primary via-accent to-primary" />
-                  <CardContent className="p-5 bg-gradient-to-br from-primary/5 to-accent/5">
+                <Card className="border-0 shadow-2xl overflow-hidden glass-card-strong glow-border">
+                  <div className="h-1.5 bg-gradient-to-r from-primary via-accent to-primary shimmer" />
+                  <CardContent className="p-5 bg-gradient-to-br from-primary/5 via-transparent to-accent/5">
                     <div className="flex items-center justify-between mb-4">
                       <div>
                         <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider">Saldo Aktif</p>
