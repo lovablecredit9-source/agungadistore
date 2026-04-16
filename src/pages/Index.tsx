@@ -1424,7 +1424,7 @@ const Index = () => {
       {/* Content */}
       <main className="flex-1 max-w-lg mx-auto w-full px-4 py-4 pb-24">
         {tab === "beranda" && (
-          <div className="space-y-5">
+          <div className="space-y-5 animate-fade-in">
             {/* Info: Geser navigasi */}
             {!navInfoDismissed && (
               <div className="relative flex items-center gap-3 rounded-xl bg-primary/10 border border-primary/20 px-4 py-3">
@@ -1444,7 +1444,56 @@ const Index = () => {
               </div>
             )}
 
-            {/* Hero Promo Slider — Music / Produk / Sponsor */}
+            {/* Welcome Header */}
+            <div className="relative overflow-hidden rounded-2xl p-5" style={{ background: "linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--accent)) 100%)" }}>
+              <div className="absolute inset-0 opacity-10">
+                <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full bg-white/30 blur-2xl" />
+                <div className="absolute -bottom-10 -left-10 w-32 h-32 rounded-full bg-white/20 blur-2xl" />
+              </div>
+              <div className="relative z-10 flex items-center gap-4">
+                <img src={storeQris} alt={STORE_NAME} className="w-16 h-16 rounded-2xl object-cover shadow-lg border-2 border-white/30" />
+                <div>
+                  <p className="text-white/80 text-xs font-medium">
+                    {new Date().getHours() < 12 ? "☀️ Selamat Pagi" : new Date().getHours() < 18 ? "🌤️ Selamat Siang" : "🌙 Selamat Malam"}
+                  </p>
+                  <h2 className="text-xl font-extrabold text-white leading-tight">{STORE_NAME}</h2>
+                  <p className="text-white/70 text-[11px] font-medium mt-0.5">{t("header.tagline", lang)}</p>
+                </div>
+              </div>
+              <div className="relative z-10 flex gap-2 mt-4">
+                <a href={`${SOCIAL_LINKS.whatsapp}?text=${encodeURIComponent("Halo, saya mau order di Agung Adi Store")}`} target="_blank" rel="noopener noreferrer" className="flex-1">
+                  <Button size="sm" className="w-full bg-white/20 hover:bg-white/30 text-white border border-white/20 backdrop-blur-sm gap-1.5 text-xs font-bold shadow-lg">
+                    <MessageCircle className="w-4 h-4" /> {t("home.contact_wa", lang)}
+                  </Button>
+                </a>
+                <Button size="sm" className="flex-1 bg-white text-primary hover:bg-white/90 gap-1.5 text-xs font-bold shadow-lg" onClick={() => setTab("voucher")}>
+                  <Ticket className="w-4 h-4" /> {t("home.claim_voucher", lang)}
+                </Button>
+              </div>
+            </div>
+
+            {/* Quick Action Grid */}
+            <div className="grid grid-cols-4 gap-2">
+              {[
+                { icon: <Package className="w-5 h-5" />, label: "Produk", tab: "produk" as Tab, gradient: "from-blue-500 to-blue-600" },
+                { icon: <Wallet className="w-5 h-5" />, label: "Saldo", tab: "saldo" as Tab, gradient: "from-emerald-500 to-emerald-600" },
+                { icon: <Gamepad2 className="w-5 h-5" />, label: "Game", tab: "game" as Tab, gradient: "from-violet-500 to-purple-600" },
+                { icon: <Music className="w-5 h-5" />, label: "Musik", tab: "playlist" as Tab, gradient: "from-pink-500 to-rose-600" },
+              ].map((item) => (
+                <button
+                  key={item.label}
+                  onClick={() => setTab(item.tab)}
+                  className="flex flex-col items-center gap-1.5 p-3 rounded-2xl bg-card border border-border hover:border-primary/30 hover:shadow-md transition-all duration-200 hover:-translate-y-0.5 active:scale-95"
+                >
+                  <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${item.gradient} flex items-center justify-center text-white shadow-md`}>
+                    {item.icon}
+                  </div>
+                  <span className="text-[11px] font-bold text-foreground">{item.label}</span>
+                </button>
+              ))}
+            </div>
+
+            {/* Hero Promo Slider */}
             <HomeBannerSlider
               banners={[
                 {
@@ -1506,73 +1555,68 @@ const Index = () => {
               ]}
             />
 
-            {/* Streak Promo Card */}
-            <div
-              onClick={() => setTab("streak")}
-              className="relative overflow-hidden rounded-2xl cursor-pointer group transition-transform hover:scale-[1.01] active:scale-[0.99]"
-              style={{
-                background: "linear-gradient(135deg, #ff6b00 0%, #ff4500 40%, #e63900 100%)",
-              }}
-            >
-              <div className="absolute inset-0 opacity-20">
-                {[...Array(5)].map((_, i) => (
-                  <div
-                    key={i}
-                    className="absolute rounded-full animate-pulse"
-                    style={{
-                      width: 40 + i * 20,
-                      height: 40 + i * 20,
-                      background: "radial-gradient(circle, rgba(255,204,0,0.4), transparent 70%)",
-                      top: `${10 + i * 12}%`,
-                      left: `${60 + i * 6}%`,
+            {/* Streak & Game Side by Side */}
+            <div className="grid grid-cols-2 gap-3">
+              {/* Streak Card */}
+              <div
+                onClick={() => setTab("streak")}
+                className="relative overflow-hidden rounded-2xl cursor-pointer transition-all hover:shadow-lg hover:-translate-y-0.5 active:scale-[0.98] duration-200"
+                style={{ background: "linear-gradient(145deg, #ff6b00, #e63900)" }}
+              >
+                <div className="absolute inset-0 opacity-15">
+                  {[...Array(3)].map((_, i) => (
+                    <div key={i} className="absolute rounded-full animate-pulse" style={{
+                      width: 30 + i * 15, height: 30 + i * 15,
+                      background: "radial-gradient(circle, rgba(255,204,0,0.5), transparent 70%)",
+                      top: `${10 + i * 20}%`, right: `${5 + i * 10}%`,
                       animationDelay: `${i * 0.3}s`,
-                    }}
-                  />
-                ))}
-              </div>
-              <div className="relative z-10 p-4 flex items-center gap-4">
-                <div className="shrink-0">
-                  <svg viewBox="0 0 36 36" width={48} height={56} style={{ filter: "drop-shadow(0 2px 8px rgba(255,200,0,0.5))" }}>
-                    <path d="M17.56 1.56c-.28-.45-.88-.45-1.12 0C14.86 4.36 6 18.56 6 24c0 6.63 4.92 12 11 12h2c6.08 0 11-5.37 11-12 0-5.44-8.86-19.64-10.44-22.44z" fill="#F4900C"/>
-                    <path d="M18.5 3c-1 1.6-9.5 15.8-9.5 21 0 5.52 3.8 10 8.5 10.5C12.2 34 8 29.8 8 24.5 8 19 16.2 5.8 18.5 3z" fill="#FFAC33" opacity="0.7"/>
-                    <path d="M18 8c-.2-.32-.64-.32-.82 0C16.08 10.08 10 19.6 10 24c0 4.42 3.36 8 7.5 8h1c4.14 0 7.5-3.58 7.5-8 0-4.4-6.08-13.92-7.18-16z" fill="#FFCC4D"/>
-                    <ellipse cx="18" cy="28" rx="4" ry="5.5" fill="#FFEE93"/>
-                    <ellipse cx="18" cy="29" rx="2.5" ry="3.5" fill="#FFF4C8" opacity="0.8"/>
-                  </svg>
+                    }} />
+                  ))}
                 </div>
-                <div className="flex-1 min-w-0">
-                  <h3 className="text-white font-extrabold text-base leading-tight">Daily Streak 🔥</h3>
-                  <p className="text-white/80 text-xs mt-0.5">Klaim setiap hari, raih milestone & gelar eksklusif!</p>
-                  <div className="mt-2 inline-flex items-center gap-1.5 bg-white/20 backdrop-blur-sm rounded-full px-3 py-1">
-                    <span className="text-white text-[11px] font-bold">Klaim Sekarang →</span>
+                <div className="relative z-10 p-3.5 text-center">
+                  <div className="text-3xl mb-1">🔥</div>
+                  <h3 className="text-white font-extrabold text-sm leading-tight">Daily Streak</h3>
+                  <p className="text-white/70 text-[10px] mt-0.5 leading-snug">Klaim setiap hari!</p>
+                  <div className="mt-2 bg-white/20 backdrop-blur-sm rounded-full px-2 py-1 inline-block">
+                    <span className="text-white text-[10px] font-bold">Klaim →</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Game Card */}
+              <div
+                onClick={() => setTab("game")}
+                className="relative overflow-hidden rounded-2xl cursor-pointer transition-all hover:shadow-lg hover:-translate-y-0.5 active:scale-[0.98] duration-200"
+                style={{ background: "linear-gradient(145deg, #7c3aed, #4338ca)" }}
+              >
+                <div className="absolute inset-0 opacity-10">
+                  <div className="absolute top-1 right-2 text-4xl">🎮</div>
+                  <div className="absolute bottom-1 left-2 text-2xl">🎲</div>
+                </div>
+                <div className="relative z-10 p-3.5 text-center">
+                  <div className="text-3xl mb-1">🎮</div>
+                  <h3 className="text-white font-extrabold text-sm leading-tight">Game AI</h3>
+                  <p className="text-white/70 text-[10px] mt-0.5 leading-snug">11 game menantang!</p>
+                  <div className="mt-2 bg-white/20 backdrop-blur-sm rounded-full px-2 py-1 inline-block">
+                    <span className="text-white text-[10px] font-bold">Main →</span>
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* Game Promo Card */}
-            <div
-              onClick={() => setTab("game")}
-              className="relative overflow-hidden rounded-2xl cursor-pointer group hover:shadow-xl transition-all hover:-translate-y-0.5 duration-200"
-            >
-              <div className="absolute inset-0 bg-gradient-to-br from-violet-600 via-purple-600 to-indigo-700" />
-              <div className="absolute inset-0 opacity-10">
-                <div className="absolute top-2 right-4 text-6xl">🎮</div>
-                <div className="absolute bottom-2 left-4 text-4xl">🎲</div>
-                <div className="absolute top-6 left-20 text-3xl">🧩</div>
-              </div>
-              <div className="relative z-10 p-4 flex items-center gap-3">
-                <div className="w-14 h-14 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-lg border border-white/10 shrink-0">
-                  <Gamepad2 className="w-7 h-7 text-white" />
+            {/* Stats Bar */}
+            <div className="grid grid-cols-3 gap-2">
+              {[
+                { value: `${products.length}+`, label: "Produk", icon: "🛍️" },
+                { value: `${homeSponsors.length}`, label: "Sponsor", icon: "📢" },
+                { value: "11", label: "Game", icon: "🎮" },
+              ].map((stat) => (
+                <div key={stat.label} className="bg-card border border-border rounded-xl p-3 text-center hover:border-primary/20 transition-colors">
+                  <span className="text-lg">{stat.icon}</span>
+                  <p className="text-base font-extrabold text-foreground mt-0.5">{stat.value}</p>
+                  <p className="text-[10px] text-muted-foreground font-medium">{stat.label}</p>
                 </div>
-                <div className="flex-1 min-w-0">
-                  <h3 className="text-white font-extrabold text-base leading-tight">Game AI Seru 🎮</h3>
-                  <p className="text-white/80 text-xs mt-0.5">8 game menantang lawan AI! Suit, Tebak Kata, Ular Tangga & lainnya</p>
-                  <div className="mt-2 inline-flex items-center gap-1.5 bg-white/20 backdrop-blur-sm rounded-full px-3 py-1">
-                    <span className="text-white text-[11px] font-bold">Main Sekarang →</span>
-                  </div>
-                </div>
-              </div>
+              ))}
             </div>
 
             {/* Admin Posts Preview */}
@@ -1587,7 +1631,7 @@ const Index = () => {
                   </button>
                 </div>
                 {adminPosts.slice(0, 2).map(post => (
-                  <Card key={post.id} className="overflow-hidden hover:shadow-lg transition-all cursor-pointer" onClick={() => setTab("adminpost")}>
+                  <Card key={post.id} className="overflow-hidden hover:shadow-lg transition-all cursor-pointer hover:-translate-y-0.5 duration-200" onClick={() => setTab("adminpost")}>
                     <CardContent className="p-3 flex items-center gap-3">
                       {post.image_url && (
                         <img src={post.image_url} alt={post.title} className="w-14 h-14 rounded-lg object-cover shrink-0" />
@@ -1603,34 +1647,24 @@ const Index = () => {
               </div>
             )}
 
-            <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary/15 via-accent/10 to-primary/5 p-5">
-              <div className="absolute -top-4 -right-4 opacity-10"><Crown className="w-24 h-24 text-primary" /></div>
-              <div className="relative z-10 text-center">
-                <img src={storeQris} alt={STORE_NAME} className="w-20 h-20 rounded-2xl object-cover mx-auto mb-3 shadow-lg border-2 border-primary/20" />
-                <h2 className="text-xl font-extrabold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">{STORE_NAME}</h2>
-                <p className="text-xs text-muted-foreground mt-1 font-medium">{t("header.tagline", lang)}</p>
-                <p className="text-muted-foreground text-sm mt-2 leading-relaxed">{t("home.buy_premium", lang)}</p>
-                <div className="mt-3 flex items-center justify-center gap-2 flex-wrap">
-                  <a href={`${SOCIAL_LINKS.whatsapp}?text=${encodeURIComponent("Halo, saya mau order di Agung Adi Store")}`} target="_blank" rel="noopener noreferrer">
-                    <Button size="sm" className="bg-gradient-to-r from-accent to-accent/80 text-accent-foreground shadow-md gap-1.5"><MessageCircle className="w-4 h-4" /> {t("home.contact_wa", lang)}</Button>
-                  </a>
-                  <Button size="sm" variant="outline" className="gap-1.5" onClick={() => setTab("voucher")}><Ticket className="w-4 h-4" /> {t("home.claim_voucher", lang)}</Button>
-                </div>
+            {/* Voucher Card */}
+            <Card className="overflow-hidden border-0 shadow-lg hover:shadow-xl transition-all cursor-pointer hover:-translate-y-0.5 duration-200" onClick={() => setTab("voucher")}>
+              <div className="bg-gradient-to-r from-primary/10 via-accent/5 to-primary/10 p-0.5">
+                <CardContent className="p-4 flex items-center gap-3 bg-card rounded-lg">
+                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-md shrink-0">
+                    <Ticket className="w-6 h-6 text-white" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="font-bold text-sm">{t("home.have_voucher", lang)}</h3>
+                    <p className="text-xs text-muted-foreground">{t("home.claim_now", lang)}</p>
+                  </div>
+                  <ChevronRight className="w-5 h-5 text-muted-foreground" />
+                </CardContent>
               </div>
-            </div>
-
-            <Card className="border-dashed border-2 border-primary/20 hover:border-primary/40 transition-all cursor-pointer hover:shadow-lg hover:-translate-y-0.5 duration-200" onClick={() => setTab("voucher")}>
-              <CardContent className="p-4 flex items-center gap-3">
-                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-md"><Ticket className="w-6 h-6 text-primary-foreground" /></div>
-                <div className="flex-1">
-                  <h3 className="font-bold text-sm">{t("home.have_voucher", lang)}</h3>
-                  <p className="text-xs text-muted-foreground">{t("home.claim_now", lang)}</p>
-                </div>
-              </CardContent>
             </Card>
 
-            {/* Voucher Tutorial */}
-            <Card className="border border-primary/15 shadow-md overflow-hidden">
+            {/* How To Claim */}
+            <Card className="border border-border/50 shadow-md overflow-hidden">
               <div className="bg-gradient-to-r from-primary/10 to-accent/10 px-4 py-2.5 flex items-center gap-2">
                 <HelpCircle className="w-4 h-4 text-primary" />
                 <h3 className="text-sm font-bold">Cara Klaim Voucher</h3>
@@ -1655,33 +1689,37 @@ const Index = () => {
               </CardContent>
             </Card>
 
-            {/* Daily Streak moved to streak tab */}
-
-            {/* Tiket support shortcut */}
-            <Card className="border-dashed border-2 border-destructive/20 hover:border-destructive/40 transition-all cursor-pointer hover:shadow-lg hover:-translate-y-0.5 duration-200" onClick={() => setTab("tiket")}>
-              <CardContent className="p-4 flex items-center gap-3">
-                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-destructive to-destructive/70 flex items-center justify-center shadow-md"><AlertCircle className="w-6 h-6 text-destructive-foreground" /></div>
-                <div className="flex-1">
-                  <h3 className="font-bold text-sm">{t("home.have_issue", lang)}</h3>
-                  <p className="text-xs text-muted-foreground">{t("home.submit_ticket", lang)}</p>
-                </div>
-              </CardContent>
+            {/* Support Shortcut */}
+            <Card className="overflow-hidden border-0 shadow-lg hover:shadow-xl transition-all cursor-pointer hover:-translate-y-0.5 duration-200" onClick={() => setTab("tiket")}>
+              <div className="bg-gradient-to-r from-destructive/10 via-destructive/5 to-destructive/10 p-0.5">
+                <CardContent className="p-4 flex items-center gap-3 bg-card rounded-lg">
+                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-destructive to-destructive/70 flex items-center justify-center shadow-md shrink-0">
+                    <AlertCircle className="w-6 h-6 text-destructive-foreground" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="font-bold text-sm">{t("home.have_issue", lang)}</h3>
+                    <p className="text-xs text-muted-foreground">{t("home.submit_ticket", lang)}</p>
+                  </div>
+                  <ChevronRight className="w-5 h-5 text-muted-foreground" />
+                </CardContent>
+              </div>
             </Card>
 
-            <Card>
+            {/* Social Links */}
+            <Card className="overflow-hidden">
               <CardContent className="p-4">
                 <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3">{t("home.follow_us", lang)}</p>
                 <div className="grid grid-cols-2 gap-2">
                   {[
-                    { label: `WA: ${WA_NUMBER}`, href: SOCIAL_LINKS.whatsapp, color: "from-green-500 to-green-600" },
-                    { label: YOUTUBE_NAME, href: SOCIAL_LINKS.youtube, color: "from-red-500 to-red-600" },
-                    { label: "@agungadi981", href: SOCIAL_LINKS.twitter, color: "from-sky-400 to-sky-500" },
-                    { label: "@agungadi57", href: SOCIAL_LINKS.instagram, color: "from-pink-500 to-purple-500" },
-                    { label: "@pphitampro9", href: SOCIAL_LINKS.tiktok, color: "from-gray-800 to-black" },
+                    { label: `WA: ${WA_NUMBER}`, href: SOCIAL_LINKS.whatsapp, color: "from-green-500 to-green-600", emoji: "💬" },
+                    { label: YOUTUBE_NAME, href: SOCIAL_LINKS.youtube, color: "from-red-500 to-red-600", emoji: "▶️" },
+                    { label: "@agungadi981", href: SOCIAL_LINKS.twitter, color: "from-sky-400 to-sky-500", emoji: "🐦" },
+                    { label: "@agungadi57", href: SOCIAL_LINKS.instagram, color: "from-pink-500 to-purple-500", emoji: "📸" },
+                    { label: "@pphitampro9", href: SOCIAL_LINKS.tiktok, color: "from-gray-800 to-black", emoji: "🎵" },
                   ].map((s) => (
                     <a key={s.label} href={s.href} target="_blank" rel="noopener noreferrer"
-                      className={`bg-gradient-to-r ${s.color} text-white text-xs font-medium px-3 py-2 rounded-lg flex items-center gap-1.5 hover:opacity-90 transition-opacity`}>
-                      <ExternalLink className="w-3 h-3 shrink-0" /><span className="truncate">{s.label}</span>
+                      className={`bg-gradient-to-r ${s.color} text-white text-xs font-medium px-3 py-2.5 rounded-xl flex items-center gap-2 hover:opacity-90 hover:shadow-md transition-all duration-200`}>
+                      <span>{s.emoji}</span><span className="truncate">{s.label}</span>
                     </a>
                   ))}
                 </div>
