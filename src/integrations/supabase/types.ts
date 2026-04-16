@@ -1805,6 +1805,92 @@ export type Database = {
         }
         Relationships: []
       }
+      wa_bot_packages: {
+        Row: {
+          created_at: string
+          duration_hours: number
+          id: string
+          is_active: boolean
+          name: string
+          price: number
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          duration_hours?: number
+          id?: string
+          is_active?: boolean
+          name: string
+          price?: number
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          duration_hours?: number
+          id?: string
+          is_active?: boolean
+          name?: string
+          price?: number
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      wa_bot_subscriptions: {
+        Row: {
+          bot_name: string
+          created_at: string
+          expires_at: string | null
+          id: string
+          package_id: string | null
+          price_paid: number
+          qr_code_url: string | null
+          session_id: string | null
+          starts_at: string | null
+          status: string
+          updated_at: string
+          visitor_id: string
+        }
+        Insert: {
+          bot_name?: string
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          package_id?: string | null
+          price_paid?: number
+          qr_code_url?: string | null
+          session_id?: string | null
+          starts_at?: string | null
+          status?: string
+          updated_at?: string
+          visitor_id: string
+        }
+        Update: {
+          bot_name?: string
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          package_id?: string | null
+          price_paid?: number
+          qr_code_url?: string | null
+          session_id?: string | null
+          starts_at?: string | null
+          status?: string
+          updated_at?: string
+          visitor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wa_bot_subscriptions_package_id_fkey"
+            columns: ["package_id"]
+            isOneToOne: false
+            referencedRelation: "wa_bot_packages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       wholesale_prices: {
         Row: {
           created_at: string
