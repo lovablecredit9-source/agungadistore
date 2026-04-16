@@ -21,6 +21,15 @@ interface ApiKey {
   last_used_at: string | null;
 }
 
+function normalizePairingPhoneInput(value: string) {
+  const digits = value.replace(/\D/g, "");
+  if (!digits) return "";
+  if (digits.startsWith("620")) return `62${digits.slice(3)}`;
+  if (digits.startsWith("0")) return `62${digits.slice(1)}`;
+  if (digits.startsWith("8")) return `62${digits}`;
+  return digits;
+}
+
 export default function AdminApiKeyTab() {
   const [keys, setKeys] = useState<ApiKey[]>([]);
   const [keyName, setKeyName] = useState("");
@@ -132,7 +141,7 @@ export default function AdminApiKeyTab() {
     const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID || "";
     const base = `https://${projectId}.supabase.co/functions/v1/public-api`;
     const web = `https://produkklaimtransaksiagungadistore.lovable.app`;
-    const phone = phoneNumber ? phoneNumber.replace(/[^0-9]/g, "") : "";
+    const phone = phoneNumber ? normalizePairingPhoneInput(phoneNumber) : "";
 
     return botTemplate
       .replace('__BOT_API_KEY__', apiKey)
@@ -185,7 +194,7 @@ ${"```"}
 3. Set **Startup Command**: npm start
 4. Start server lalu pilih metode login
 5. Ketik **1** untuk scan QR atau **2** untuk pairing nomor WhatsApp
-6. Jika pilih pairing, masukkan nomor WA lalu tekan Enter
+6. Jika pilih pairing, masukkan nomor WA (08xxx / 628xxx) lalu tekan Enter
 7. Kode login muncul di console dan biasanya berlaku sekitar 30 detik
 8. Buka WhatsApp > Linked Devices > Link with phone number lalu masukkan kode
 9. Jika koneksi awal putus, bot akan reconnect otomatis dan menampilkan QR / kode baru
@@ -208,7 +217,7 @@ ${"```"}
 
 ## 📌 Konfigurasi
 - API_KEY — API Key dari dashboard admin
-- DEFAULT_PAIRING_PHONE — Nomor default pairing opsional (format: 628xxx)
+- DEFAULT_PAIRING_PHONE — Nomor default pairing opsional (akan dinormalisasi ke 62xxxxxxxxxx)
 - ADMIN_NUMBERS — Daftar nomor admin
 
 ## 📱 Perintah
@@ -401,11 +410,11 @@ node index.js
             <Input
               placeholder="628xxxxxxxxxx"
               value={pairingPhone}
-              onChange={e => setPairingPhone(e.target.value)}
+                onChange={e => setPairingPhone(normalizePairingPhoneInput(e.target.value))}
               className="text-xs font-mono h-8"
             />
             <p className="text-[10px] text-muted-foreground">
-              Nomor ini jadi default saat pilih mode pairing. Saat bot jalan tetap pilih 1 (QR) atau 2 (pairing).
+                Nomor ini jadi default saat pilih mode pairing. Input 08xxx akan otomatis diubah ke 62xxx.
             </p>
           </div>
 
