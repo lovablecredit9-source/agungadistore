@@ -2374,9 +2374,10 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
       if (!subs || !subs.length) return reply("🤖 Kamu belum punya langganan bot WA.\n\n💡 Sewa bot: !sewabot");
       let txt = "🤖 *Langganan Bot WA Kamu:*\n";
       subs.forEach((s, i) => {
-        const status = s.status === "active" && s.expires_at && new Date(s.expires_at) > new Date() ? "✅ Aktif" : s.status === "pending" ? "⏳ Pending" : "❌ Expired";
+        const isActive = s.status === "active" && s.expires_at && new Date(s.expires_at) > new Date();
+        const status = isActive ? "✅ Aktif" : s.status === "pending" ? "⏳ Menunggu QR Scan" : "❌ Expired";
         let remaining = "";
-        if (s.status === "active" && s.expires_at) {
+        if (isActive && s.expires_at) {
           const diff = new Date(s.expires_at).getTime() - Date.now();
           if (diff > 0) {
             const h = Math.floor(diff / 3600000);
@@ -2385,10 +2386,38 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
         }
         txt += "\n" + (i + 1) + ". *" + s.bot_name + "* " + status + remaining;
         txt += "\n   Paket: " + (s.wa_bot_packages?.name || "-") + " — " + fmtRp(s.price_paid);
-        if (s.qr_code_url && s.status === "pending") txt += "\n   📱 QR tersedia di web";
+        // Show connected bot number from child session
+        const childSession = childBotSessions.get(s.id);
+        if (childSession?.botNumber) {
+          txt += "\n   📱 No Bot: +" + childSession.botNumber;
+        }
+        if (s.status === "pending") {
+          txt += "\n   💡 Ketik *!qrulang " + s.id.slice(0, 8) + "* untuk kirim QR ulang";
+        }
       });
       txt += "\n\n💡 Sewa baru: !sewabot\n💡 Perpanjang: !sewabot [nama paket]";
       return reply(txt);
+    }
+
+    // ═══ QR ULANG — REGENERATE QR UNTUK BOT PENDING ═══
+    if (command.startsWith("!qrulang")) {
+      if (!session) return reply("🔒 Login dulu: !login [user] [password]");
+      const subIdPrefix = args.trim();
+      if (!subIdPrefix) return reply("⚠️ Gunakan: !qrulang [ID subscription]\n\n💡 Lihat ID di !botku");
+      // Find matching subscription
+      const allSubs = await supabaseRequest("wa_bot_subscriptions?visitor_id=eq." + session.visitor_id + "&status=eq.pending&select=id,bot_name,session_id,expires_at");
+      if (!allSubs || !allSubs.length) return reply("❌ Tidak ada bot pending yang bisa di-QR ulang.");
+      const matchSub = allSubs.find((s) => s.id.startsWith(subIdPrefix) || s.id === subIdPrefix);
+      if (!matchSub) return reply("❌ Subscription tidak ditemukan. Cek ID di !botku");
+      if (new Date(matchSub.expires_at) <= new Date()) return reply("❌ Subscription sudah expired.");
+      
+      await reply("📱 *Generating QR Code ulang...*\n\n🤖 Bot: *" + matchSub.bot_name + "*\n⏳ Mohon tunggu...");
+      try {
+        await startChildBot(client, matchSub, remoteJid);
+      } catch (err) {
+        return reply("❌ Gagal generate QR: " + (err.message || err));
+      }
+      return;
     }
 
 
