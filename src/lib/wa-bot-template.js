@@ -3277,7 +3277,12 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
 
 async function startBot() {
   const authChoice = await askAuthMethod();
-  await connectToWhatsApp(authChoice, 0);
+  const client = await connectToWhatsApp(authChoice, 0);
+  // Start subscription expiry checker
+  if (SUPABASE_URL && SUPABASE_ANON_KEY) {
+    startSubscriptionChecker(client);
+    console.log("✅ Bot Rental checker aktif — cek subscription expired setiap 60 detik");
+  }
 }
 
 startBot().catch((error) => {

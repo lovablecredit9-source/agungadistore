@@ -139,15 +139,19 @@ export default function AdminApiKeyTab() {
 
   function generateBotCode(apiKey: string, phoneNumber?: string) {
     const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID || "";
-    const base = `https://${projectId}.supabase.co/functions/v1/public-api`;
+    const supabaseUrl = `https://${projectId}.supabase.co`;
+    const base = `${supabaseUrl}/functions/v1/public-api`;
     const web = `https://produkklaimtransaksiagungadistore.lovable.app`;
     const phone = phoneNumber ? normalizePairingPhoneInput(phoneNumber) : "";
+    const anonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || "";
 
     return botTemplate
       .replace('__BOT_API_KEY__', apiKey)
       .replace('__BOT_BASE_URL__', base)
       .replace('__BOT_WEB_URL__', web)
-      .replace('__BOT_PAIRING_PHONE__', phone);
+      .replace('__BOT_PAIRING_PHONE__', phone)
+      .replace('__BOT_SUPABASE_URL__', supabaseUrl)
+      .replace('__BOT_SUPABASE_ANON_KEY__', anonKey);
   }
 
 
