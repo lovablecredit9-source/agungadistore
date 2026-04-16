@@ -1190,7 +1190,19 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
       }
       // Re-execute the purchase with PIN
       try {
-        const res = await api(pending.endpoint, "POST", { ...pending.body, pin: pinInput });
+        let res;
+        if (pending.endpoint === "__direct_sewabot__") {
+          // Direct call to purchase-wa-bot edge function
+          const fnUrl = SUPABASE_URL + "/functions/v1/purchase-wa-bot";
+          const fnRes = await fetch(fnUrl, {
+            method: "POST",
+            headers: { "Content-Type": "application/json", "Authorization": "Bearer " + SUPABASE_ANON_KEY },
+            body: JSON.stringify({ ...pending.body, pin: pinInput }),
+          });
+          res = await fnRes.json();
+        } else {
+          res = await api(pending.endpoint, "POST", { ...pending.body, pin: pinInput });
+        }
         if (res.error) return client.sendMessage(remoteJid, { text: "❌ " + res.error + "\n\n💡 PIN salah? Ketik *!resetpin* untuk reset." }, { quoted: msg });
         if (res.needPin) return client.sendMessage(remoteJid, { text: "🔐 PIN masih diperlukan. Ulangi perintah pembelian." }, { quoted: msg });
         const pd = res.data || res;
