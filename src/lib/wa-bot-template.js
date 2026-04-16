@@ -806,15 +806,37 @@ function clearGameTimerWarnings(jid) {
 }
 
 async function connectToWhatsApp(authChoice, attempt = 0) {
+  // Untuk pairing mode pada percobaan pertama, hapus sesi lama agar tidak stale
+  if (authChoice.mode === "pairing" && attempt === 0) {
+    try {
+      const credsPath = path.join(AUTH_SESSION_DIR, "creds.json");
+      if (fs.existsSync(credsPath)) {
+        const creds = JSON.parse(fs.readFileSync(credsPath, "utf8"));
+        if (!creds.registered) {
+          console.log("🗑️ Menghapus sesi lama yang belum terdaftar untuk pairing bersih...");
+          fs.rmSync(AUTH_SESSION_DIR, { recursive: true, force: true });
+        }
+      }
+    } catch (cleanErr) {
+      console.log("⚠️ Gagal cek/hapus sesi lama:", cleanErr?.message || cleanErr);
+    }
+  }
+
   loadLidMapFromAuthSession();
-  const { state, saveCreds } = await useMultiFileAuthState("./auth_session");
+  const { state, saveCreds } = await useMultiFileAuthState(AUTH_SESSION_DIR);
   const { version } = await fetchLatestBaileysVersion();
+
+  // Untuk pairing, gunakan browser Baileys agar kompatibel dengan server WhatsApp
+  const browserConfig = authChoice.mode === "pairing"
+    ? ["Chrome (Linux)", "Chrome", "127.0.0"]
+    : ["Agung Adi Store Bot", "Chrome", "1.0.0"];
+
   const client = makeWASocket({
     version,
     auth: state,
     printQRInTerminal: false,
     logger: pino({ level: "silent" }),
-    browser: ["Agung Adi Store Bot", "Chrome", "1.0.0"],
+    browser: browserConfig,
     markOnlineOnConnect: false,
     syncFullHistory: false,
     defaultQueryTimeoutMs: 60_000,
@@ -855,13 +877,17 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
       let code = "";
       let lastError = null;
 
-      for (const delayMs of [1500, 3500]) {
+      // Tunggu socket benar-benar siap sebelum request pairing code
+      // Delay lebih lama di awal agar WebSocket stabil
+      for (const delayMs of [3000, 5000, 7000]) {
+        if (client.authState?.creds?.registered) return; // sudah terdaftar saat menunggu
         await wait(delayMs);
         try {
           code = await client.requestPairingCode(phoneNum);
           break;
         } catch (error) {
           lastError = error;
+          console.log("⚠️ Percobaan pairing gagal, mencoba lagi... (" + (error?.message || error) + ")");
         }
       }
 
@@ -876,11 +902,14 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
       console.log("\n✅ Buka WhatsApp > Perangkat tertaut / Linked Devices");
       console.log("   Pilih 'Tautkan dengan nomor telepon / Link with phone number'");
       console.log("   Lalu masukkan kode di atas");
-      console.log("ℹ️ Kode tampil di terminal/panel, bukan dikirim sebagai chat WhatsApp.");
-      console.log("⏳ Kalau kode expired, bot akan reconnect dan menampilkan kode baru.\n");
+      console.log("ℹ️ Kode tampil di terminal/panel, BUKAN dikirim sebagai chat/notif WhatsApp.");
+      console.log("⏱️ Masukkan kode dalam 20 detik sebelum expired.");
+      console.log("⏳ Kalau kode expired / gagal, bot akan reconnect dan menampilkan kode baru.");
+      console.log("💡 Jika tetap gagal, hapus folder auth_session lalu jalankan ulang bot.\n");
     } catch (error) {
       pairingRequested = false;
       console.error("❌ Gagal meminta pairing code:", error?.message || error);
+      console.log("💡 Coba hapus folder auth_session lalu jalankan ulang: rm -rf auth_session && node index.js");
     }
   }
 
@@ -896,9 +925,15 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
     }
 
     if (authChoice.mode === "pairing" && connection === "connecting" && !isRegistered && !pairingRequested) {
-      requestPairingCodeOnce().catch((error) => {
-        console.error("❌ Gagal memulai pairing:", error?.stack || error?.message || error);
-      });
+      // Jangan langsung request — tunggu event 'open' tidak datang dulu
+      // Delay kecil agar WebSocket handshake selesai
+      setTimeout(() => {
+        if (!client.authState?.creds?.registered && !pairingRequested) {
+          requestPairingCodeOnce().catch((error) => {
+            console.error("❌ Gagal memulai pairing:", error?.stack || error?.message || error);
+          });
+        }
+      }, 2000);
     }
 
     if (qr && authChoice.mode === "qr" && !isRegistered) {
@@ -922,7 +957,9 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
       const message = getDisconnectMessage(lastDisconnect);
 
       if (reason === DisconnectReason.loggedOut) {
-        console.log("❌ Session logout / expired. Hapus folder auth_session lalu jalankan ulang bot.");
+        console.log("❌ Session logout / expired. Menghapus sesi...");
+        try { fs.rmSync(AUTH_SESSION_DIR, { recursive: true, force: true }); } catch {}
+        console.log("✅ Folder auth_session dihapus. Jalankan ulang bot: node index.js");
         return;
       }
 
@@ -936,7 +973,11 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
 
       reconnectScheduled = true;
 
-      if (!isRegistered) {
+      if (!isRegistered && authChoice.mode === "pairing") {
+        // Hapus sesi stale agar reconnect pairing pakai sesi bersih
+        try { fs.rmSync(AUTH_SESSION_DIR, { recursive: true, force: true }); } catch {}
+        console.log("🗑️ Sesi lama dihapus untuk pairing bersih.");
+      } else if (!isRegistered) {
         if (authChoice.mode === "qr" && !qrShown) {
           console.log("ℹ️ QR belum sempat tampil. Saya akan coba sambung ulang supaya QR baru muncul.");
         }

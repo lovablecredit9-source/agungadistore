@@ -154,8 +154,8 @@ export default function AdminApiKeyTab() {
   function generatePackageJson() {
     return JSON.stringify({
       name: "bot-wa-agungadi",
-        version: "13.0.0",
-        description: "Bot WhatsApp Agung Adi Store v13.0.0 - Full Feature",
+        version: "13.1.0",
+        description: "Bot WhatsApp Agung Adi Store v13.1.0 - Fix Pairing",
       main: "index.js",
       scripts: {
         start: "node index.js",
@@ -174,7 +174,7 @@ export default function AdminApiKeyTab() {
   }
 
   function generateReadmeMd() {
-    return `# 🤖 Bot WhatsApp - Agung Adi Store v13.0.0
+    return `# 🤖 Bot WhatsApp - Agung Adi Store v13.1.0
 
 ## 📋 Persyaratan
 - Node.js >= 18
@@ -195,17 +195,18 @@ ${"```"}
 4. Start server lalu pilih metode login
 5. Ketik **1** untuk scan QR atau **2** untuk pairing nomor WhatsApp
 6. Jika pilih pairing, masukkan nomor WA (08xxx / 628xxx) lalu tekan Enter
-7. Kode login muncul di console dan biasanya berlaku sekitar 30 detik
+7. Kode login muncul di console — masukkan dalam 20 detik sebelum expired
 8. Buka WhatsApp > Linked Devices > Link with phone number lalu masukkan kode
-9. Jika koneksi awal putus, bot akan reconnect otomatis dan menampilkan QR / kode baru
+9. Bot otomatis hapus sesi lama saat pairing & reconnect jika gagal
 
 ## 📲 Login WhatsApp
 Bot mendukung **2 mode login**:
 - **1. Scan QR** → QR muncul di terminal
 - **2. Pairing nomor** → masukkan nomor WA lalu kode 8 digit muncul di terminal
 - Kode pairing tidak dikirim lewat chat / notif WhatsApp
-- Kode pairing biasanya berlaku sekitar 30 detik
+- Kode pairing berlaku sekitar 20 detik — segera masukkan
 - Sesi tersimpan di folder auth_session/
+- Bot otomatis hapus sesi stale saat pairing untuk koneksi bersih
 - Jika koneksi awal putus, bot akan reconnect otomatis sampai 8x
 
 ## 🔄 Reset Sesi
@@ -276,8 +277,8 @@ node index.js
 #   pm2 save
 #   pm2 startup
 #
-# - Jika pairing gagal / koneksi close, hapus folder auth_session
-#   lalu jalankan ulang: node index.js
+# - Jika pairing gagal, bot otomatis hapus sesi lama
+#   Jika masih gagal manual: rm -rf auth_session && node index.js
 #
 # - Pastikan internet stabil
 # - Jangan gunakan nomor WA utama untuk testing
@@ -475,7 +476,7 @@ node index.js
                       { step: "3", title: "Install dependencies", desc: "Buka terminal di folder project, ketik: npm install" },
                       { step: "4", title: "Jalankan bot", desc: "Di terminal, ketik: node index.js" },
                       { step: "5", title: "Pilih metode", desc: "Pilih 1 untuk scan QR atau 2 untuk pairing nomor WhatsApp." },
-                      { step: "6", title: "Login ke WhatsApp", desc: "Kalau pilih pairing, masukkan nomor WA lalu Enter. Kode muncul di terminal dan biasanya berlaku sekitar 30 detik." },
+                      { step: "6", title: "Login ke WhatsApp", desc: "Kalau pilih pairing, masukkan nomor WA lalu Enter. Kode muncul di terminal — masukkan dalam 20 detik. Bot otomatis hapus sesi lama." },
                     ].map(s => (
                       <div key={s.step} className="flex gap-2">
                         <span className="bg-primary text-primary-foreground rounded-full w-5 h-5 flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5">
@@ -507,7 +508,8 @@ node index.js`}
                     <li>Jangan tutup terminal saat bot jalan</li>
                     <li>Untuk background: install <code className="bg-muted px-1 rounded">pm2</code> lalu <code className="bg-muted px-1 rounded">pm2 start index.js</code></li>
                     <li>Saat bot jalan, pilih 1 untuk scan QR atau 2 untuk pairing nomor</li>
-                        <li>Kode pairing muncul di terminal / panel, bukan lewat notif atau chat WhatsApp</li>
+                    <li>Kode pairing muncul di terminal — masukkan dalam 20 detik, bukan lewat notif/chat WA</li>
+                    <li>Bot otomatis hapus sesi lama saat pairing agar koneksi bersih</li>
                     <li>Sesi error? Hapus folder <code className="bg-muted px-1 rounded">auth_session</code> lalu jalankan ulang</li>
                     <li>Gunakan nomor WA cadangan untuk testing</li>
                     <li>Pastikan koneksi internet stabil</li>
