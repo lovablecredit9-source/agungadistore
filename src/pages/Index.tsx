@@ -2817,14 +2817,10 @@ const Index = () => {
                 <p className="text-xs font-extrabold text-foreground">© 2026 {STORE_NAME}</p>
                 <p className="text-[11px] text-muted-foreground">Murah & Terpercaya — Semua hak dilindungi.</p>
                 <div className="flex items-center justify-center gap-2 mt-2 flex-wrap">
-                  {[
-                    { label: "WhatsApp", href: SOCIAL_LINKS.whatsapp },
-                    { label: "YouTube", href: SOCIAL_LINKS.youtube },
-                    { label: "Instagram", href: SOCIAL_LINKS.instagram },
-                    { label: "TikTok", href: SOCIAL_LINKS.tiktok },
-                  ].map(s => (
-                    <a key={s.label} href={s.href} target="_blank" rel="noopener noreferrer" className="text-[10px] font-bold px-3 py-1.5 rounded-full bg-primary/10 text-primary hover:bg-primary/20 transition-colors border border-primary/10">
-                      {s.label}
+                  {socialLinks.map(s => (
+                    <a key={s.id} href={s.url} target="_blank" rel="noopener noreferrer" className="text-[10px] font-bold px-3 py-1.5 rounded-full bg-primary/10 text-primary hover:bg-primary/20 transition-colors border border-primary/10 flex items-center gap-1">
+                      {s.icon_url && <img src={s.icon_url} alt={s.platform} className="w-3 h-3 object-contain" />}
+                      {s.platform}
                     </a>
                   ))}
                 </div>
