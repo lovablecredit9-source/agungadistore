@@ -34,7 +34,7 @@ export default function HomeBannerSlider({ banners, autoPlayMs = 4500 }: Props) 
 
   return (
     <div
-      className="relative overflow-hidden rounded-2xl shadow-xl group cursor-pointer"
+      className="relative overflow-hidden rounded-2xl shadow-2xl group cursor-pointer glow-border"
       onClick={banner.onClick}
       onTouchStart={(e) => setTouchStart(e.touches[0].clientX)}
       onTouchEnd={(e) => {
@@ -60,7 +60,7 @@ export default function HomeBannerSlider({ banners, autoPlayMs = 4500 }: Props) 
       <div className="absolute bottom-0 left-0 right-0 p-4">
         <p className="text-[10px] uppercase tracking-[0.2em] font-bold text-white/70 mb-1">{banner.subtitle}</p>
         <h3 className="text-base sm:text-lg font-extrabold text-white leading-snug drop-shadow-lg mb-2">{banner.title}</h3>
-        <span className="inline-flex items-center gap-1.5 text-xs font-bold bg-white/20 backdrop-blur-sm text-white px-3 py-1.5 rounded-full border border-white/20 hover:bg-white/30 transition-colors">
+        <span className="inline-flex items-center gap-1.5 text-xs font-bold bg-white/25 backdrop-blur-md text-white px-4 py-2 rounded-full border border-white/30 shadow-lg hover:bg-white/35 transition-all duration-300 hover:scale-105">
           {banner.cta} →
         </span>
       </div>
