@@ -49,6 +49,7 @@ import BalanceAuth from "@/components/BalanceAuth";
 import GameTab from "@/components/GameTab";
 import PlusTab from "@/components/PlusTab";
 import LiveClock from "@/components/LiveClock";
+import LoginGate from "@/components/LoginGate";
 
 type Tab = "beranda" | "produk" | "voucher" | "history" | "likes" | "tiket" | "saldo" | "playlist" | "publik" | "sponsor" | "streak" | "adminpost" | "game" | "plus" | "update";
 
@@ -2694,11 +2695,31 @@ const Index = () => {
         )}
 
         {tab === "streak" && (
-          <DailyStreak />
+          userBalance ? (
+            <DailyStreak />
+          ) : (
+            <LoginGate
+              title="Daily Streak"
+              description="Login saldo untuk mulai klaim streak harian dan dapatkan reward keren!"
+              emoji="🔥"
+              gradient="from-orange-500 to-red-600"
+              onGoToLogin={() => setTab("saldo")}
+            />
+          )
         )}
 
         <div className={tab === "game" ? "" : "hidden"}>
-          <GameTab />
+          {userBalance ? (
+            <GameTab />
+          ) : (
+            <LoginGate
+              title="Game AI"
+              description="Login saldo untuk bermain 11 game AI seru dan kumpulkan poin!"
+              emoji="🎮"
+              gradient="from-violet-500 to-purple-700"
+              onGoToLogin={() => setTab("saldo")}
+            />
+          )}
         </div>
 
         {tab === "plus" && <PlusTab key={userBalance?.visitor_id || "no-user"} />}
