@@ -515,9 +515,82 @@ function clearAuthSession(logMessage) {
 const API_KEY = "__BOT_API_KEY__";
 const BASE = "__BOT_BASE_URL__";
 const WEB_URL = "__BOT_WEB_URL__";
+const SUPABASE_URL = "__BOT_SUPABASE_URL__";
+const SUPABASE_ANON_KEY = "__BOT_SUPABASE_ANON_KEY__";
 
 const DEFAULT_PAIRING_PHONE = "__BOT_PAIRING_PHONE__"; // Opsional: nomor default pairing, format: 628xxxxxxxxxx
-const BOT_VERSION = "13.3.0";
+const BOT_VERSION = "13.4.0";
+
+// === BOT RENTAL MANAGEMENT ===
+// Menyimpan sesi bot rental aktif: { subscriptionId, botName, expiresAt, checkInterval }
+const rentalSessions = {};
+
+async function supabaseRequest(endpoint, method = "GET", body = null) {
+  const url = SUPABASE_URL + "/rest/v1/" + endpoint;
+  const headers = {
+    "apikey": SUPABASE_ANON_KEY,
+    "Authorization": "Bearer " + SUPABASE_ANON_KEY,
+    "Content-Type": "application/json",
+    "Prefer": method === "PATCH" ? "return=minimal" : "return=representation",
+  };
+  const opts = { method, headers };
+  if (body) opts.body = JSON.stringify(body);
+  const res = await fetch(url, opts);
+  if (!res.ok) return null;
+  if (method === "PATCH") return true;
+  return res.json();
+}
+
+async function checkAndExpireSubscriptions(client) {
+  try {
+    const data = await supabaseRequest(
+      "wa_bot_subscriptions?status=eq.active&expires_at=lt." + new Date().toISOString() + "&select=id,bot_name,visitor_id"
+    );
+    if (!data || !data.length) return;
+    for (const sub of data) {
+      console.log("⏰ Subscription expired:", sub.bot_name, "- ID:", sub.id);
+      // Update status to expired
+      await supabaseRequest(
+        "wa_bot_subscriptions?id=eq." + sub.id,
+        "PATCH",
+        { status: "expired" }
+      );
+      // Notify if possible
+      if (client?.user?.id) {
+        console.log("🔌 Bot", sub.bot_name, "auto-disconnected (masa sewa habis)");
+      }
+    }
+  } catch (err) {
+    console.error("❌ Error checking subscriptions:", err?.message || err);
+  }
+}
+
+// Check subscriptions every 60 seconds
+function startSubscriptionChecker(client) {
+  setInterval(() => checkAndExpireSubscriptions(client), 60000);
+  // Run immediately on start
+  checkAndExpireSubscriptions(client);
+}
+
+async function activateSubscription(subscriptionId) {
+  try {
+    const result = await supabaseRequest(
+      "wa_bot_subscriptions?id=eq." + subscriptionId,
+      "PATCH",
+      { status: "active" }
+    );
+    return !!result;
+  } catch { return false; }
+}
+
+async function getPendingSubscriptions() {
+  try {
+    const data = await supabaseRequest(
+      "wa_bot_subscriptions?status=eq.pending&select=id,bot_name,visitor_id,price_paid,starts_at,expires_at,wa_bot_packages(name)"
+    );
+    return data || [];
+  } catch { return []; }
+}
 
 // === SESSION LOGIN USER (per nomor WA) — TIDAK simpan PIN ===
 const userSessions = {};
