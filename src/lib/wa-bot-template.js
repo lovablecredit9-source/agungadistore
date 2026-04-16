@@ -554,12 +554,21 @@ async function checkAndExpireSubscriptions(client) {
       await supabaseRequest(
         "wa_bot_subscriptions?id=eq." + sub.id,
         "PATCH",
-        { status: "expired" }
+        { status: "expired", qr_code_url: null }
       );
-      // Notify if possible
-      if (client?.user?.id) {
-        console.log("🔌 Bot", sub.bot_name, "auto-disconnected (masa sewa habis)");
+      // Disconnect child bot session
+      const childSession = childBotSessions.get(sub.id);
+      if (childSession) {
+        try {
+          if (childSession.buyerJid) {
+            await client.sendMessage(childSession.buyerJid, {
+              text: "⏰ *Masa Sewa Bot Habis!*\n\n🤖 Bot: *" + sub.bot_name + "*\n🔌 Bot otomatis disconnect.\n\n💡 Perpanjang: !sewabot [nama paket]",
+            });
+          }
+          await stopChildBot(sub.id);
+        } catch (e) {}
       }
+      console.log("🔌 Bot", sub.bot_name, "auto-disconnected (masa sewa habis)");
     }
   } catch (err) {
     console.error("❌ Error checking subscriptions:", err?.message || err);
