@@ -1469,7 +1469,8 @@ const Index = () => {
                     {new Date().getHours() < 12 ? "☀️ Selamat Pagi" : new Date().getHours() < 18 ? "🌤️ Selamat Siang" : "🌙 Selamat Malam"}
                   </p>
                   <h2 className="text-[26px] font-black text-white leading-tight drop-shadow-lg tracking-tight">{STORE_NAME}</h2>
-                  <p className="text-white/75 text-[11px] font-medium mt-1 tracking-widest uppercase">{t("header.tagline", lang)}</p>
+                  <p className="text-white/75 text-[11px] font-medium mt-0.5 tracking-widest uppercase">{t("header.tagline", lang)}</p>
+                  <LiveClock />
                 </div>
               </div>
               <div className="relative z-10 flex gap-2 mt-5">
