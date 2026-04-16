@@ -1787,6 +1787,8 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
         "┃ !sewabot [nama paket]",
         "┃ !botku — Langganan bot WA",
         "┃ !qrulang [ID] — QR ulang",
+        "┃ !riwayatbot — Riwayat bot",
+        "┃ !qr [nomor] — QR ulang",
         "┃ 🔐 PIN diminta tiap transaksi",
         "╰━━━━━━━━━━━━━━━━━━━━━━━━━━╯",
         "",
