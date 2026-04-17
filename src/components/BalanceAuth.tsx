@@ -7,8 +7,12 @@ import { useToast } from "@/hooks/use-toast";
 import { getVisitorId } from "@/lib/visitor-id";
 import { getDeviceSummary } from "@/lib/device-info";
 import {
+  getSavedAccounts, saveAccount, removeSavedAccount, MAX_SAVED_ACCOUNTS,
+  type SavedAccount,
+} from "@/lib/saved-accounts";
+import {
   Wallet, LogIn, UserPlus, LogOut, Smartphone, History, Eye, EyeOff, Mail, Lock, User, Phone,
-  Edit2, KeyRound, Save, X,
+  Edit2, KeyRound, Save, X, Users, Trash2, ArrowRightLeft,
 } from "lucide-react";
 
 interface UserBalance {
