@@ -484,8 +484,22 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser }: BalanceA
                   })}
                 </div>
               )}
+              {savedAccounts.length < MAX_SAVED_ACCOUNTS ? (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="w-full gap-1.5 text-xs font-bold border-dashed"
+                  onClick={handleAddAccount}
+                >
+                  <Plus className="w-3.5 h-3.5" /> Tambah Akun ({savedAccounts.length}/{MAX_SAVED_ACCOUNTS})
+                </Button>
+              ) : (
+                <div className="text-[10px] text-amber-600 dark:text-amber-400 text-center py-1.5 px-2 rounded bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900">
+                  ⚠️ Slot penuh ({MAX_SAVED_ACCOUNTS}/{MAX_SAVED_ACCOUNTS}). Hapus salah satu akun untuk menambah baru.
+                </div>
+              )}
               <p className="text-[10px] text-muted-foreground leading-relaxed">
-                💡 Klik akun untuk beralih cepat tanpa input sandi. Maksimal {MAX_SAVED_ACCOUNTS} akun per perangkat.
+                💡 Klik akun untuk beralih cepat tanpa input sandi. <strong>Logout Semua</strong> akan menghapus semua akun tersimpan dari perangkat.
               </p>
             </CardContent>
           </Card>
