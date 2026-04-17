@@ -410,11 +410,14 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser }: BalanceA
               </span>
             )}
           </Button>
-          <Button size="sm" variant="outline" className="gap-1.5 text-xs font-bold" onClick={handleSwitchAccount}>
-            <LogIn className="w-3.5 h-3.5" /> Login Lain
+          <Button size="sm" variant="outline" className="gap-1.5 text-xs font-bold" onClick={handleAddAccount} disabled={savedAccounts.length >= MAX_SAVED_ACCOUNTS}>
+            <Plus className="w-3.5 h-3.5" /> Tambah Akun
           </Button>
           <Button size="sm" variant="outline" className="gap-1.5 text-xs font-bold text-destructive border-destructive/30" onClick={handleLogout}>
             <LogOut className="w-3.5 h-3.5" /> Logout
+          </Button>
+          <Button size="sm" variant="outline" className="gap-1.5 text-xs font-bold text-destructive border-destructive/30" onClick={handleLogoutAll}>
+            <Trash2 className="w-3.5 h-3.5" /> Logout Semua
           </Button>
           <Button size="sm" variant="ghost" className="gap-1.5 text-xs font-bold" onClick={() => setShowHistory(!showHistory)}>
             <Smartphone className="w-3.5 h-3.5" /> Riwayat
