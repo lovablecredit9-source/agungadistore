@@ -653,12 +653,12 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser }: BalanceA
   return (
     <Card className="border-2 border-primary/20 relative">
       <CardContent className="p-5 space-y-4">
-        {addingAccount && savedAccounts.length > 0 && (
+        {savedAccounts.length > 0 && (
           <button
             type="button"
-            onClick={() => { setAddingAccount(false); resetForm(); }}
+            onClick={() => { setAddingAccount(false); setShowSwitcher(true); resetForm(); }}
             className="absolute top-3 left-3 z-10 inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-muted hover:bg-muted/70 text-xs font-bold text-foreground transition-colors shadow-sm"
-            aria-label="Kembali"
+            aria-label="Kembali ke daftar akun"
           >
             <ArrowLeft className="w-4 h-4" /> Kembali
           </button>
