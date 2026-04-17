@@ -55,6 +55,7 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser }: BalanceA
   const [savedAccounts, setSavedAccounts] = useState<SavedAccount[]>(() => getSavedAccounts());
   const [switchingId, setSwitchingId] = useState<string | null>(null);
   const [showSwitcher, setShowSwitcher] = useState(false);
+  const [addingAccount, setAddingAccount] = useState(false); // when true, show login/register form even though logged in
 
   // Edit profile states
   const [showEditProfile, setShowEditProfile] = useState(false);
