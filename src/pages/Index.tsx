@@ -662,20 +662,37 @@ const Index = () => {
     fetchDeposits();
   }
 
-  // Realtime notifications
+  // Notifications: poll + refetch on focus (realtime postgres_changes blocked by RLS for privacy)
   useEffect(() => {
-    const ch = supabase.channel("user-notifications-" + activeBalanceVisitorId)
-      .on("postgres_changes", { event: "INSERT", schema: "public", table: "notifications", filter: `visitor_id=eq.${activeBalanceVisitorId}` },
-        (payload) => {
-          const notif = payload.new as unknown as Notification;
-          setNotifications(prev => [notif, ...prev]);
-          // Show toast if not in chat view
+    if (!activeBalanceVisitorId) return;
+    let lastIds = new Set(notifications.map(n => n.id));
+    const check = async () => {
+      const { data } = await (supabase as any).rpc("get_my_notifications", {
+        p_visitor_id: activeBalanceVisitorId,
+        p_limit: 50,
+      });
+      if (!data) return;
+      const fresh = data as Notification[];
+      const newOnes = fresh.filter(n => !lastIds.has(n.id));
+      if (newOnes.length > 0 && lastIds.size > 0) {
+        // Toast for new notifications
+        newOnes.forEach(notif => {
           if (ticketView !== "chat" && !showProductChat) {
             toast({ title: notif.title, description: notif.message || undefined });
           }
-        })
-      .subscribe();
-    return () => { supabase.removeChannel(ch); };
+        });
+      }
+      lastIds = new Set(fresh.map(n => n.id));
+      setNotifications(fresh);
+    };
+    const interval = setInterval(check, 15000);
+    const onFocus = () => check();
+    window.addEventListener("focus", onFocus);
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener("focus", onFocus);
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ticketView, showProductChat, activeBalanceVisitorId]);
 
   // Realtime products
