@@ -88,6 +88,14 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser }: BalanceA
     }
   }, [currentUser, showEditProfile]);
 
+  // Auto-reset "tambah akun" mode if no saved accounts — back arrow only
+  // makes sense when the user has at least one account to return to.
+  useEffect(() => {
+    if (addingAccount && savedAccounts.length === 0) {
+      setAddingAccount(false);
+    }
+  }, [addingAccount, savedAccounts.length]);
+
   async function fetchLoginHistory() {
     if (!currentUser) return;
     const { data } = await supabase.functions.invoke("balance-auth", {
