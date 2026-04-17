@@ -440,17 +440,18 @@ export default function WhatsAppChat({
                     </button>
                   </div>
                 )}
+                </div>
               </div>
             </div>
           );
         })}
 
         {otherTyping && (
-          <div className="flex justify-start">
-            <div className="bg-card border border-border rounded-2xl rounded-bl-md px-3 py-2 flex items-center gap-1">
-              <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground animate-bounce" style={{ animationDelay: "0ms" }} />
-              <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground animate-bounce" style={{ animationDelay: "120ms" }} />
-              <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground animate-bounce" style={{ animationDelay: "240ms" }} />
+          <div className="flex justify-start animate-fade-in">
+            <div className="bg-card/95 backdrop-blur-sm border border-border/60 rounded-2xl rounded-bl-sm px-3.5 py-2.5 flex items-center gap-1 shadow-md">
+              <span className="w-1.5 h-1.5 rounded-full bg-primary/70 animate-bounce" style={{ animationDelay: "0ms" }} />
+              <span className="w-1.5 h-1.5 rounded-full bg-primary/70 animate-bounce" style={{ animationDelay: "120ms" }} />
+              <span className="w-1.5 h-1.5 rounded-full bg-primary/70 animate-bounce" style={{ animationDelay: "240ms" }} />
             </div>
           </div>
         )}
