@@ -1623,6 +1623,36 @@ export type Database = {
         }
         Relationships: []
       }
+      streak_profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          description: string | null
+          id: string
+          updated_at: string
+          username: string
+          visitor_id: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          updated_at?: string
+          username: string
+          visitor_id: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          updated_at?: string
+          username?: string
+          visitor_id?: string
+        }
+        Relationships: []
+      }
       streak_rewards_log: {
         Row: {
           claim_date: string
@@ -2247,6 +2277,36 @@ export type Database = {
           total_bonus_points: number | null
           total_claims: number | null
           visitor_id: string | null
+        }
+        Relationships: []
+      }
+      streak_profiles_public: {
+        Row: {
+          avatar_url: string | null
+          created_at: string | null
+          description: string | null
+          id: string | null
+          updated_at: string | null
+          username: string | null
+          visitor_id: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string | null
+          updated_at?: string | null
+          username?: string | null
+          visitor_id?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string | null
+          updated_at?: string | null
+          username?: string | null
+          visitor_id?: string | null
         }
         Relationships: []
       }
