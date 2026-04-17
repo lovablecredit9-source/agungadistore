@@ -13,7 +13,7 @@ import {
   Heart, Send, ImagePlus, AlertCircle, History, Wallet, ArrowUpCircle, ArrowDownCircle,
   Bell, Check, CheckCheck, Globe, Edit2, ShoppingCart, Plus, Minus, Trash2,
   Moon, Sun, Lock, Tag, Music, Megaphone, Diamond, Image as ImageIcon, Gem, Sparkles, Palette, CalendarDays, Gamepad2, RefreshCw,
-  Eye, LayoutGrid, Rows3, Flame, SlidersHorizontal, Zap, TrendingUp, Award, Activity, Inbox
+  Eye, LayoutGrid, Rows3, Flame, SlidersHorizontal, Zap, TrendingUp, Award, Activity, Inbox, User, Phone
 } from "lucide-react";
 import CountUp from "@/components/CountUp";
 import { useTheme } from "@/lib/theme";
@@ -2492,17 +2492,42 @@ const Index = () => {
             )}
 
             {ticketView === "create" && (
-              <>
-                <div className="flex items-center gap-2">
-                  <Button variant="ghost" size="icon" onClick={() => setTicketView("list")}><ChevronLeft className="w-5 h-5" /></Button>
-                  <h2 className="text-lg font-extrabold">Buat Tiket Baru</h2>
+              <div className="space-y-4 animate-fade-in">
+                {/* Hero Header */}
+                <div className="relative overflow-hidden rounded-2xl p-5 glow-border" style={{ background: "linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--accent)) 100%)" }}>
+                  <div className="absolute inset-0">
+                    <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full bg-white/20 blur-3xl animate-pulse" />
+                    <div className="absolute -bottom-8 -left-8 w-28 h-28 rounded-full bg-white/15 blur-2xl animate-pulse" style={{ animationDelay: "1.2s" }} />
+                    <div className="absolute inset-0 shimmer" />
+                  </div>
+                  <div className="relative z-10 flex items-center gap-3">
+                    <Button variant="ghost" size="icon" onClick={() => setTicketView("list")} className="text-white hover:bg-white/20 hover:text-white shrink-0 -ml-2">
+                      <ChevronLeft className="w-5 h-5" />
+                    </Button>
+                    <div className="relative floating">
+                      <div className="absolute -inset-1 bg-white/30 rounded-2xl blur-md" />
+                      <div className="relative w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-2xl ring-2 ring-white/30">
+                        <Send className="w-6 h-6 text-white" />
+                      </div>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h2 className="text-lg font-extrabold text-white drop-shadow-lg">Buat Tiket Baru</h2>
+                      <p className="text-white/80 text-[11px] font-medium mt-0.5">Ceritakan kendala kamu, kami siap bantu ✨</p>
+                    </div>
+                  </div>
                 </div>
-                <Card>
-                  <CardContent className="p-4 space-y-3">
-                    <div>
-                      <label className="text-xs font-semibold text-muted-foreground mb-1.5 block">Kategori Masalah</label>
+
+                {/* Form Card */}
+                <Card className="glass-card-strong border-primary/10 shadow-xl overflow-hidden">
+                  <CardContent className="p-4 space-y-4">
+                    {/* Kategori */}
+                    <div className="space-y-1.5">
+                      <label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                        <span className="w-1 h-3 rounded-full bg-primary" />
+                        Kategori Masalah
+                      </label>
                       <Select value={ticketCategory} onValueChange={setTicketCategory}>
-                        <SelectTrigger className="w-full">
+                        <SelectTrigger className="w-full h-11 rounded-xl border-border/60 bg-background/60 backdrop-blur-sm hover:border-primary/40 transition-colors">
                           <SelectValue placeholder="Pilih kategori..." />
                         </SelectTrigger>
                         <SelectContent>
@@ -2512,24 +2537,64 @@ const Index = () => {
                         </SelectContent>
                       </Select>
                     </div>
-                    <Input placeholder="Nama Lengkap" value={ticketName} onChange={e => setTicketName(e.target.value)} />
-                    <Input placeholder="No HP" value={ticketPhone} onChange={e => setTicketPhone(e.target.value)} />
-                    <Textarea placeholder="Jelaskan masalah kamu..." value={ticketDesc} onChange={e => setTicketDesc(e.target.value)} rows={4} />
-                    <div>
-                      <label className="text-xs font-semibold text-muted-foreground mb-1.5 block">📸 Screenshot Bukti (opsional)</label>
+
+                    {/* Nama */}
+                    <div className="space-y-1.5">
+                      <label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                        <span className="w-1 h-3 rounded-full bg-primary" />
+                        Nama Lengkap
+                      </label>
+                      <div className="relative">
+                        <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+                        <Input placeholder="Contoh: Budi Santoso" value={ticketName} onChange={e => setTicketName(e.target.value)} className="h-11 pl-9 rounded-xl border-border/60 bg-background/60 backdrop-blur-sm" />
+                      </div>
+                    </div>
+
+                    {/* HP */}
+                    <div className="space-y-1.5">
+                      <label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                        <span className="w-1 h-3 rounded-full bg-primary" />
+                        Nomor HP
+                      </label>
+                      <div className="relative">
+                        <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+                        <Input placeholder="08xxxxxxxxxx" value={ticketPhone} onChange={e => setTicketPhone(e.target.value)} className="h-11 pl-9 rounded-xl border-border/60 bg-background/60 backdrop-blur-sm" />
+                      </div>
+                    </div>
+
+                    {/* Deskripsi */}
+                    <div className="space-y-1.5">
+                      <label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                        <span className="w-1 h-3 rounded-full bg-primary" />
+                        Deskripsi Masalah
+                      </label>
+                      <Textarea placeholder="Jelaskan masalah kamu sedetail mungkin..." value={ticketDesc} onChange={e => setTicketDesc(e.target.value)} rows={4} className="rounded-xl border-border/60 bg-background/60 backdrop-blur-sm resize-none" />
+                      <p className="text-[10px] text-muted-foreground text-right">{ticketDesc.length} karakter</p>
+                    </div>
+
+                    {/* Screenshot */}
+                    <div className="space-y-1.5">
+                      <label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                        <span className="w-1 h-3 rounded-full bg-accent" />
+                        Screenshot Bukti <span className="text-muted-foreground/60 normal-case font-medium">(opsional)</span>
+                      </label>
                       {ticketScreenshotPreview ? (
-                        <div className="relative inline-block">
-                          <img src={ticketScreenshotPreview} alt="Preview" className="max-h-32 rounded-lg border" />
+                        <div className="relative inline-block group">
+                          <div className="absolute -inset-1 bg-gradient-to-br from-primary/30 to-accent/30 rounded-xl blur opacity-60" />
+                          <img src={ticketScreenshotPreview} alt="Preview" className="relative max-h-40 rounded-xl border border-border/60 shadow-lg" />
                           <button
                             type="button"
                             onClick={() => { setTicketScreenshot(null); setTicketScreenshotPreview(null); }}
-                            className="absolute -top-2 -right-2 w-5 h-5 bg-destructive text-destructive-foreground rounded-full flex items-center justify-center text-xs"
+                            className="absolute -top-2 -right-2 w-7 h-7 bg-destructive text-destructive-foreground rounded-full flex items-center justify-center text-sm shadow-lg hover:scale-110 transition-transform"
                           >×</button>
                         </div>
                       ) : (
-                        <label className="flex items-center gap-2 px-3 py-2.5 rounded-lg border border-dashed border-border cursor-pointer hover:border-primary/40 transition-colors">
-                          <ImagePlus className="w-4 h-4 text-muted-foreground" />
-                          <span className="text-xs text-muted-foreground">Pilih gambar...</span>
+                        <label className="flex flex-col items-center justify-center gap-2 px-4 py-6 rounded-xl border-2 border-dashed border-border/60 cursor-pointer hover:border-primary/50 hover:bg-primary/5 transition-all group">
+                          <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors group-hover:scale-110">
+                            <ImagePlus className="w-5 h-5 text-primary" />
+                          </div>
+                          <span className="text-xs font-medium text-foreground">Tap untuk pilih gambar</span>
+                          <span className="text-[10px] text-muted-foreground">PNG, JPG hingga 5MB</span>
                           <input type="file" accept="image/*" className="hidden" onChange={e => {
                             const file = e.target.files?.[0];
                             if (file) {
@@ -2543,10 +2608,22 @@ const Index = () => {
                         </label>
                       )}
                     </div>
-                    <Button className="w-full" onClick={createTicket}><Send className="w-4 h-4 mr-2" /> Kirim Tiket</Button>
+
+                    {/* Submit */}
+                    <Button
+                      className="w-full h-12 rounded-xl text-sm font-bold shadow-lg hover:shadow-xl transition-all hover:scale-[1.02] text-white border-0"
+                      style={{ background: "linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--accent)) 100%)" }}
+                      onClick={createTicket}
+                    >
+                      <Send className="w-4 h-4 mr-2" /> Kirim Tiket Sekarang
+                    </Button>
+
+                    <p className="text-[10px] text-center text-muted-foreground">
+                      💡 Respon admin biasanya dalam 1-24 jam
+                    </p>
                   </CardContent>
                 </Card>
-              </>
+              </div>
             )}
 
             {ticketView === "chat" && activeTicket && (
