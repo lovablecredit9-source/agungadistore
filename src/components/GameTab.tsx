@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 import { Gamepad2, ArrowLeft } from "lucide-react";
@@ -15,6 +15,8 @@ import TekaTekiV2Game from "@/components/games/TekaTekiV2Game";
 import PilihanGandaGame from "@/components/games/PilihanGandaGame";
 import { useGameCredits, GameCreditsBadge, BuyCreditsDialog } from "@/components/games/GameCredits";
 import { useGameProfile, GameProfileDialog, updateGameStats } from "@/components/games/GameProfile";
+import NeonGameExtras from "@/components/games/NeonGameExtras";
+import { Zap } from "lucide-react";
 
 import gameSuitImg from "@/assets/game-suit.png";
 import gameTebakKataImg from "@/assets/game-tebak-kata.png";
@@ -59,9 +61,18 @@ const GAME_COMPONENTS: Record<string, React.ComponentType> = {
 
 export default function GameTab() {
   const [mode, setMode] = useState<GameMode>("menu");
+  const [dailyGame, setDailyGame] = useState<string>("");
   const visitorId = typeof window !== "undefined" ? localStorage.getItem("balance_visitor_id") : null;
   const { credits, isUnlimited, unlimitedUntil, fetchCredits } = useGameCredits(visitorId);
   const { profile, fetchProfile, visitorId: gameVisitorId } = useGameProfile();
+
+  // Fetch today's daily challenge game (server-side deterministic)
+  useEffect(() => {
+    import("@/integrations/supabase/client").then(({ supabase }) => {
+      supabase.functions.invoke("game-profile", { body: { action: "get_daily_challenge" } })
+        .then(({ data }) => { if (data?.game_type) setDailyGame(data.game_type); });
+    });
+  }, []);
 
   if (mode !== "menu") {
     const game = GAMES.find(g => g.mode === mode);
@@ -119,34 +130,47 @@ export default function GameTab() {
         </motion.div>
 
         <div className="grid grid-cols-2 gap-3">
-          {GAMES.map((game, i) => (
-            <motion.div
-              key={game.mode}
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: i * 0.05 }}
-              whileTap={{ scale: 0.95 }}
-              className="flex"
-            >
-              <button
-                onClick={() => setMode(game.mode)}
-                className={`relative w-full overflow-hidden rounded-2xl bg-gradient-to-br ${game.gradient} p-3 text-left shadow-lg hover:shadow-xl transition-all flex flex-col h-[140px]`}
+          {GAMES.map((game, i) => {
+            const isDaily = game.mode === dailyGame;
+            return (
+              <motion.div
+                key={game.mode}
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: i * 0.05 }}
+                whileTap={{ scale: 0.95 }}
+                className="flex"
               >
-                <div className="flex items-center justify-center flex-1">
-                  <img
-                    src={game.image}
-                    alt={game.title}
-                    loading="lazy"
-                    className="w-14 h-14 object-contain drop-shadow-lg"
-                  />
-                </div>
-                <div className="mt-auto">
-                  <h3 className="font-extrabold text-sm text-white leading-tight drop-shadow truncate">{game.title}</h3>
-                  <p className="text-[10px] text-white/80 leading-snug mt-0.5 truncate">{game.desc}</p>
-                </div>
-              </button>
-            </motion.div>
-          ))}
+                <button
+                  onClick={() => setMode(game.mode)}
+                  className={`relative w-full overflow-hidden rounded-2xl bg-gradient-to-br ${game.gradient} p-3 text-left shadow-lg hover:shadow-xl transition-all flex flex-col h-[140px]`}
+                >
+                  {isDaily && (
+                    <div className="absolute top-1.5 right-1.5 z-20 flex items-center gap-1 bg-yellow-400 text-yellow-950 text-[9px] font-black px-1.5 py-0.5 rounded-full shadow-lg animate-pulse">
+                      <Zap className="w-2.5 h-2.5 fill-current" /> 2X
+                    </div>
+                  )}
+                  <div className="flex items-center justify-center flex-1">
+                    <img
+                      src={game.image}
+                      alt={game.title}
+                      loading="lazy"
+                      className="w-14 h-14 object-contain drop-shadow-lg"
+                    />
+                  </div>
+                  <div className="mt-auto">
+                    <h3 className="font-extrabold text-sm text-white leading-tight drop-shadow truncate">{game.title}</h3>
+                    <p className="text-[10px] text-white/80 leading-snug mt-0.5 truncate">{game.desc}</p>
+                  </div>
+                </button>
+              </motion.div>
+            );
+          })}
+        </div>
+
+        {/* 🎮 Neon Extras: Daily Challenge · Tournament · Leaderboard · Achievements */}
+        <div className="mt-5">
+          <NeonGameExtras visitorId={visitorId} onPlayDailyChallenge={(g) => setMode(g as GameMode)} />
         </div>
       </motion.div>
     </div>

@@ -4482,6 +4482,23 @@ const Index = () => {
                 </div>
                 <Input type="number" placeholder={t("deposit.amount", lang)} value={depositAmount} onChange={e => setDepositAmount(e.target.value)} />
 
+                {/* Visual bonus badge (display only — no actual bonus applied) */}
+                {(() => {
+                  const amt = parseInt(depositAmount) || 0;
+                  if (amt < 50000) return null;
+                  const pct = amt >= 200000 ? 10 : amt >= 100000 ? 7 : 5;
+                  return (
+                    <div className="rounded-xl border border-yellow-400/40 bg-gradient-to-r from-yellow-400/15 via-orange-400/10 to-pink-400/15 p-2.5 flex items-center gap-2 animate-pulse">
+                      <span className="text-base">⚡</span>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[10px] font-black text-yellow-600 dark:text-yellow-400 tracking-wider uppercase">Cyber Bonus Badge</p>
+                        <p className="text-[10px] text-muted-foreground leading-tight">Nominal besar terdeteksi · tampilan visual +{pct}%</p>
+                      </div>
+                      <span className="text-[11px] font-black bg-yellow-400 text-yellow-950 rounded-full px-2 py-0.5 shadow">+{pct}%</span>
+                    </div>
+                  );
+                })()}
+
                 <Button className="w-full bg-gradient-to-r from-accent to-accent/80 text-accent-foreground font-bold gap-2"
                   onClick={submitDeposit} disabled={!depositAmount}>
                   <MessageCircle className="w-4 h-4" /> Buat Deposit & Kirim WA

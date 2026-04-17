@@ -11,6 +11,7 @@ import MysteryRewardPopup from "./streak/MysteryRewardPopup";
 import StreakLeaderboard from "./streak/StreakLeaderboard";
 import AchievementBadges from "./streak/AchievementBadges";
 import StreakFreezeCard from "./streak/StreakFreezeCard";
+import NeonStreakHub from "./streak/NeonStreakHub";
 
 interface StreakData {
   id: string;
@@ -1160,6 +1161,9 @@ export default function DailyStreak({ visitorId }: DailyStreakProps) {
           </div>
         </div>
       )}
+
+      {/* 🎮 Neon Hub: Multiplier · Mystery Box · Streak Shop · Weekly Challenges */}
+      <NeonStreakHub visitorId={visitorId} />
     </div>
   );
 }
