@@ -4029,6 +4029,8 @@ const Index = () => {
                 <div className="space-y-1 text-[13px]">
                   <p className="font-semibold text-foreground text-xs">April 2026</p>
                   <ul className="list-disc list-inside space-y-0.5">
+                    <li>🆕 Hero Beranda baru: gradient ungu→magenta + 4 Quick Action (Flash Sale, Grosir, Baru Datang, Premium)</li>
+                    <li>🆕 Badge "100% Trusted Store" + mini stats live (Produk, Sponsor, Support 24/7)</li>
                     <li>✨ Dukungan {LANGUAGES.length}+ bahasa dengan bendera negara</li>
                     <li>✨ Fitur musik: streaming, playlist, lirik sinkron</li>
                     <li>✨ Voucher musik (kapasitas & diskon)</li>
