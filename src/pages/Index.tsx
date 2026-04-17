@@ -3055,6 +3055,67 @@ const Index = () => {
                     "✨ CTA baru 'Mulai Belanja' dan 'Lihat Katalog' agar navigasi lebih cepat",
                   ]
                 },
+                {
+                  date: "12 April 2026", version: "v2.5",
+                  items: [
+                    "✨ Tab Update Web baru — riwayat pembaruan aplikasi",
+                    "✨ Bot WhatsApp diperlengkap: 40+ perintah (User & Admin)",
+                    "✨ Pusat Bantuan diperluas dengan FAQ & panduan lengkap",
+                    "🔧 Perbaikan bug riwayat transaksi & data stale saat ganti akun",
+                    "🔧 Real-time update saldo, transaksi, dan notifikasi",
+                  ]
+                },
+                {
+                  date: "8 April 2026", version: "v2.4",
+                  items: [
+                    "✨ Paket bundel: Kredit + Streak + Storage dalam satu paket",
+                    "✨ Flash sale untuk paket streak & kredit game",
+                    "✨ Admin bisa reset saldo, kredit, streak, & storage user",
+                    "✨ Admin kelola paket Pro, Bundel, dan Mantap",
+                    "🔧 Fix pembelian kredit & streak yang sebelumnya gagal",
+                    "🔧 Fix error handling pada edge functions",
+                  ]
+                },
+                {
+                  date: "4 April 2026", version: "v2.3",
+                  items: [
+                    "✨ Sponsor: Syarat & Ketentuan lengkap sebelum pembelian",
+                    "✨ Tombol Rekber WA otomatis kirim detail produk",
+                    "✨ Pusat Bantuan: panduan Sponsor & sistem Rekber",
+                    "✨ FAQ diperluas hingga 20+ pertanyaan",
+                    "🔧 Fix navigasi dan banner discovery untuk pengguna baru",
+                  ]
+                },
+                {
+                  date: "1 April 2026", version: "v2.2",
+                  items: [
+                    "✨ Sistem sponsor pihak ketiga dengan ID numerik",
+                    "✨ Wholesale pricing (harga grosir) untuk produk & sponsor",
+                    "✨ Ekspor riwayat transaksi PDF / Word / TXT",
+                    "🔧 Perbaikan tampilan kartu produk dan sponsor",
+                  ]
+                },
+                {
+                  date: "1 April 2026", version: "v2.1",
+                  items: [
+                    "✨ Sistem musik publik dengan moderasi AI + admin",
+                    "✨ Lirik otomatis menggunakan AI transkripsi",
+                    "✨ Direktori artis dengan profil lengkap",
+                    "✨ Like song & follow artist",
+                    "🔧 Fix sinkronisasi pemutar musik antar tab",
+                  ]
+                },
+                {
+                  date: "1 April 2026", version: "v2.0", isLaunch: true,
+                  items: [
+                    "🚀 Peluncuran resmi Agung Adi Store v2.0",
+                    "🚀 Sistem saldo, PIN 6-digit, & deposit QRIS/Dana",
+                    "🚀 Game AI dengan 11 jenis permainan & sistem kredit",
+                    "🚀 Daily streak harian dengan reset 00:00 WIB",
+                    "🚀 Bot WhatsApp interaktif untuk deposit & dukungan",
+                    "🚀 Multi-bahasa otomatis (195 negara) via Gemini AI",
+                  ]
+                },
               ].map((entry, i) => (
                 <div key={i} className="relative pl-12 pb-4">
                   {/* Timeline dot */}
