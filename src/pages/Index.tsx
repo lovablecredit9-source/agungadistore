@@ -318,8 +318,13 @@ const Index = () => {
   }, []);
   const [showHelp, setShowHelp] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState("Semua");
-  const [sortOrder, setSortOrder] = useState<"newest" | "oldest">("newest");
+  const [sortOrder, setSortOrder] = useState<"newest" | "oldest" | "cheapest" | "expensive" | "popular">("newest");
   const [productSearch, setProductSearch] = useState("");
+  const [productViewMode, setProductViewMode] = useState<"list" | "grid">(() => (localStorage.getItem("product_view_mode") as "list" | "grid") || "list");
+  const [inStockOnly, setInStockOnly] = useState(false);
+  const [warrantyOnly, setWarrantyOnly] = useState(false);
+  const [productsLoading, setProductsLoading] = useState(true);
+  const [quickViewProduct, setQuickViewProduct] = useState<Product | null>(null);
   const [selectedHistoryIds, setSelectedHistoryIds] = useState<Set<string>>(new Set());
   const [historyPage, setHistoryPage] = useState(1);
   const HISTORY_PER_PAGE = 5;
