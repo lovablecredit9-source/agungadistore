@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Gift, Loader2, Sparkles, ShoppingBag, Trophy, Coins } from "lucide-react";
+import { Gift, Loader2, Sparkles, ShoppingBag, Trophy, Coins, Target } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface Props {
@@ -46,6 +46,7 @@ export default function NeonStreakHub({ visitorId }: Props) {
   const [items, setItems] = useState<ShopItem[]>([]);
   const [redeeming, setRedeeming] = useState<string | null>(null);
   const [challenges, setChallenges] = useState<Challenge[]>([]);
+  const [dailyMissions, setDailyMissions] = useState<Challenge[]>([]);
 
   function getToday() {
     const wib = new Date(Date.now() + 7 * 3600 * 1000);
@@ -78,6 +79,26 @@ export default function NeonStreakHub({ visitorId }: Props) {
         is_completed: progMap[c.id]?.is_completed || false,
         claimed_at: progMap[c.id]?.claimed_at || null,
         is_locked: new Date(c.starts_at) > new Date(),
+      })));
+    }
+
+    // Daily missions (reset per day)
+    const { data: dms } = await supabase.from("daily_challenges").select("*").eq("is_active", true).order("sort_order");
+    if (dms) {
+      const { data: dprogs } = await supabase.from("daily_challenge_progress")
+        .select("*")
+        .eq("visitor_id", visitorId)
+        .eq("challenge_date", today)
+        .in("challenge_id", dms.map((d: any) => d.id));
+      const dpMap = Object.fromEntries((dprogs || []).map((p: any) => [p.challenge_id, p]));
+      setDailyMissions(dms.map((c: any) => ({
+        ...c,
+        starts_at: today,
+        ends_at: today,
+        current_value: dpMap[c.id]?.current_value || 0,
+        is_completed: dpMap[c.id]?.is_completed || false,
+        claimed_at: dpMap[c.id]?.claimed_at || null,
+        is_locked: false,
       })));
     }
   }
@@ -131,6 +152,16 @@ export default function NeonStreakHub({ visitorId }: Props) {
       toast({ title: "Gagal", description: data?.error || error?.message, variant: "destructive" });
     } else {
       toast({ title: "🏆 Reward Diklaim!", description: `+${data.reward_coins} Streak Coins` });
+      loadAll();
+    }
+  }
+
+  async function claimDailyMission(ch: Challenge) {
+    const { data, error } = await supabase.functions.invoke("check-daily-challenge", { body: { visitorId, claimChallengeId: ch.id } });
+    if (error || data?.error) {
+      toast({ title: "Gagal", description: data?.error || error?.message, variant: "destructive" });
+    } else {
+      toast({ title: "🎯 Misi Harian Selesai!", description: `+${data.reward_coins} Streak Coins` });
       loadAll();
     }
   }
