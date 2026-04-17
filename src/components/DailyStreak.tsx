@@ -2,11 +2,16 @@ import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { getVisitorId } from "@/lib/visitor-id";
 import { Button } from "@/components/ui/button";
-import { Check, Trophy, Star, Gift, Zap, ShoppingCart, Loader2, Lock, X } from "lucide-react";
+import { Check, Trophy, Star, Gift, Zap, ShoppingCart, Loader2, Lock, X, Shield } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Input } from "@/components/ui/input";
 import { Sparkles } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { rollMysteryReward, checkNewAchievements, type MysteryReward, type Achievement } from "./streak/streakRewards";
+import MysteryRewardPopup from "./streak/MysteryRewardPopup";
+import StreakLeaderboard from "./streak/StreakLeaderboard";
+import AchievementBadges from "./streak/AchievementBadges";
+import StreakFreezeCard from "./streak/StreakFreezeCard";
 
 interface StreakData {
   id: string;
@@ -15,6 +20,9 @@ interface StreakData {
   current_streak: number;
   longest_streak: number;
   total_claims: number;
+  total_bonus_points?: number;
+  freeze_count?: number;
+  achievements?: string[];
 }
 
 const MILESTONES = [
