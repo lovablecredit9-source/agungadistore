@@ -470,19 +470,20 @@ const Index = () => {
   }, [userBalance?.visitor_id, visitorId]);
 
   async function fetchNotifications(targetVisitorId = activeBalanceVisitorId) {
-    const { data } = await supabase
-      .from("notifications")
-      .select("*")
-      .eq("visitor_id", targetVisitorId)
-      .order("created_at", { ascending: false })
-      .limit(50);
+    const { data } = await (supabase as any).rpc("get_my_notifications", {
+      p_visitor_id: targetVisitorId,
+      p_limit: 50,
+    });
     if (data) setNotifications(data as unknown as Notification[]);
   }
 
   async function markNotificationsRead() {
     const unreadIds = notifications.filter(n => !n.is_read).map(n => n.id);
     if (unreadIds.length === 0) return;
-    await supabase.from("notifications").update({ is_read: true } as any).in("id", unreadIds);
+    await (supabase as any).rpc("mark_notifications_read", {
+      p_visitor_id: activeBalanceVisitorId,
+      p_ids: unreadIds,
+    });
     setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
   }
 
@@ -491,14 +492,21 @@ const Index = () => {
   }
 
   async function markNotifRead(id: string) {
-    await supabase.from("notifications").update({ is_read: true } as any).eq("id", id);
+    await (supabase as any).rpc("mark_notifications_read", {
+      p_visitor_id: activeBalanceVisitorId,
+      p_ids: [id],
+    });
     setNotifications(prev => prev.map(n => (n.id === id ? { ...n, is_read: true } : n)));
   }
 
   async function createNotification(title: string, message: string, type: string, relatedId?: string) {
-    await supabase.from("notifications").insert({
-      visitor_id: activeBalanceVisitorId, title, message, type, related_id: relatedId || null,
-    } as any);
+    await (supabase as any).rpc("create_notification", {
+      p_visitor_id: activeBalanceVisitorId,
+      p_title: title,
+      p_message: message,
+      p_type: type,
+      p_related_id: relatedId || null,
+    });
   }
 
   useEffect(() => {
@@ -517,11 +525,12 @@ const Index = () => {
     const firstVisitKey = "first_visit_nav_notified";
     if (!localStorage.getItem(firstVisitKey)) {
       localStorage.setItem(firstVisitKey, "1");
-      supabase.from("notifications").insert({
-        visitor_id: visitorId,
-        title: "👆 Geser Navigasi ke Kiri!",
-        message: "Navigasi bawah bisa digeser untuk melihat tab lainnya seperti Musik, Sponsor, Streak, Game & lainnya.",
-        type: "info",
+      (supabase as any).rpc("create_notification", {
+        p_visitor_id: visitorId,
+        p_title: "👆 Geser Navigasi ke Kiri!",
+        p_message: "Navigasi bawah bisa digeser untuk melihat tab lainnya seperti Musik, Sponsor, Streak, Game & lainnya.",
+        p_type: "info",
+        p_related_id: null,
       }).then(() => fetchNotifications(visitorId));
     }
 
@@ -653,20 +662,37 @@ const Index = () => {
     fetchDeposits();
   }
 
-  // Realtime notifications
+  // Notifications: poll + refetch on focus (realtime postgres_changes blocked by RLS for privacy)
   useEffect(() => {
-    const ch = supabase.channel("user-notifications-" + activeBalanceVisitorId)
-      .on("postgres_changes", { event: "INSERT", schema: "public", table: "notifications", filter: `visitor_id=eq.${activeBalanceVisitorId}` },
-        (payload) => {
-          const notif = payload.new as unknown as Notification;
-          setNotifications(prev => [notif, ...prev]);
-          // Show toast if not in chat view
+    if (!activeBalanceVisitorId) return;
+    let lastIds = new Set(notifications.map(n => n.id));
+    const check = async () => {
+      const { data } = await (supabase as any).rpc("get_my_notifications", {
+        p_visitor_id: activeBalanceVisitorId,
+        p_limit: 50,
+      });
+      if (!data) return;
+      const fresh = data as Notification[];
+      const newOnes = fresh.filter(n => !lastIds.has(n.id));
+      if (newOnes.length > 0 && lastIds.size > 0) {
+        // Toast for new notifications
+        newOnes.forEach(notif => {
           if (ticketView !== "chat" && !showProductChat) {
             toast({ title: notif.title, description: notif.message || undefined });
           }
-        })
-      .subscribe();
-    return () => { supabase.removeChannel(ch); };
+        });
+      }
+      lastIds = new Set(fresh.map(n => n.id));
+      setNotifications(fresh);
+    };
+    const interval = setInterval(check, 15000);
+    const onFocus = () => check();
+    window.addEventListener("focus", onFocus);
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener("focus", onFocus);
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ticketView, showProductChat, activeBalanceVisitorId]);
 
   // Realtime products

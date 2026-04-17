@@ -2064,11 +2064,44 @@ export type Database = {
       }
     }
     Functions: {
+      create_notification: {
+        Args: {
+          p_message: string
+          p_related_id?: string
+          p_title: string
+          p_type?: string
+          p_visitor_id: string
+        }
+        Returns: string
+      }
+      get_my_notifications: {
+        Args: { p_limit?: number; p_visitor_id: string }
+        Returns: {
+          created_at: string
+          id: string
+          is_read: boolean
+          message: string | null
+          related_id: string | null
+          title: string
+          type: string
+          visitor_id: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "notifications"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       increment_sponsor_views: {
         Args: { sponsor_id: string }
         Returns: undefined
       }
       is_admin_user: { Args: never; Returns: boolean }
+      mark_notifications_read: {
+        Args: { p_ids: string[]; p_visitor_id: string }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never
