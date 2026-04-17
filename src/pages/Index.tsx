@@ -486,6 +486,15 @@ const Index = () => {
     setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
   }
 
+  async function markAllRead() {
+    await markNotificationsRead();
+  }
+
+  async function markNotifRead(id: string) {
+    await supabase.from("notifications").update({ is_read: true } as any).eq("id", id);
+    setNotifications(prev => prev.map(n => (n.id === id ? { ...n, is_read: true } : n)));
+  }
+
   async function createNotification(title: string, message: string, type: string, relatedId?: string) {
     await supabase.from("notifications").insert({
       visitor_id: activeBalanceVisitorId, title, message, type, related_id: relatedId || null,
