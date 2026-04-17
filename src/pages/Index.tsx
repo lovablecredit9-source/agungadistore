@@ -674,6 +674,7 @@ const Index = () => {
   const [wholesalePrices, setWholesalePrices] = useState<any[]>([]);
 
   async function fetchProducts() {
+    setProductsLoading(true);
     const [pRes, piRes, wRes] = await Promise.all([
       supabase.from("products").select("*").order("created_at", { ascending: false }),
       supabase.from("product_images").select("*").order("image_order"),
@@ -682,6 +683,7 @@ const Index = () => {
     if (pRes.data) setProducts(pRes.data as unknown as Product[]);
     if (piRes.data) setProductImages(piRes.data as ProductImage[]);
     if (wRes.data) setWholesalePrices(wRes.data);
+    setProductsLoading(false);
   }
 
   function getWholesalePrice(productId: string, quantity: number, normalPrice: number): number {
