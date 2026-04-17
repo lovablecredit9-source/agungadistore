@@ -2365,11 +2365,39 @@ const Index = () => {
                   </div>
                 </div>
 
+                {/* Stats Summary */}
+                {tickets.length > 0 && (() => {
+                  const openCount = tickets.filter(t => t.status === "open").length;
+                  const closedCount = tickets.filter(t => t.status !== "open").length;
+                  return (
+                    <div className="grid grid-cols-3 gap-2">
+                      <div className="bg-gradient-to-br from-orange-500/15 to-red-500/5 border border-orange-500/20 rounded-xl p-2.5 text-center">
+                        <Inbox className="w-4 h-4 text-orange-500 mx-auto mb-1" />
+                        <p className="text-[9px] font-bold text-muted-foreground uppercase">Total</p>
+                        <p className="text-base font-extrabold text-orange-500 leading-none mt-0.5"><CountUp value={tickets.length} /></p>
+                      </div>
+                      <div className="bg-gradient-to-br from-accent/15 to-accent/5 border border-accent/20 rounded-xl p-2.5 text-center">
+                        <Activity className="w-4 h-4 text-accent mx-auto mb-1" />
+                        <p className="text-[9px] font-bold text-muted-foreground uppercase">Terbuka</p>
+                        <p className="text-base font-extrabold text-accent leading-none mt-0.5"><CountUp value={openCount} /></p>
+                      </div>
+                      <div className="bg-gradient-to-br from-muted to-muted/30 border border-border rounded-xl p-2.5 text-center">
+                        <CheckCircle2 className="w-4 h-4 text-muted-foreground mx-auto mb-1" />
+                        <p className="text-[9px] font-bold text-muted-foreground uppercase">Selesai</p>
+                        <p className="text-base font-extrabold text-muted-foreground leading-none mt-0.5"><CountUp value={closedCount} /></p>
+                      </div>
+                    </div>
+                  );
+                })()}
+
                 {tickets.length === 0 && (
                   <div className="text-center py-16 text-muted-foreground">
-                    <AlertCircle className="w-16 h-16 mx-auto mb-3 opacity-20" />
-                    <p className="text-sm font-medium">Belum ada tiket.</p>
-                    <Button size="sm" variant="outline" className="mt-4 gap-1.5" onClick={() => setTicketView("create")}><Send className="w-4 h-4" /> Ajukan Keluhan</Button>
+                    <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-orange-500/10 to-red-500/10 flex items-center justify-center mx-auto mb-4 floating">
+                      <Inbox className="w-10 h-10 opacity-40" />
+                    </div>
+                    <p className="text-sm font-bold">Belum ada tiket.</p>
+                    <p className="text-xs text-muted-foreground mt-1">Hubungi kami jika ada kendala</p>
+                    <Button size="sm" variant="outline" className="mt-4 gap-1.5 rounded-xl font-bold" onClick={() => setTicketView("create")}><Send className="w-4 h-4" /> Ajukan Keluhan</Button>
                   </div>
                 )}
 
