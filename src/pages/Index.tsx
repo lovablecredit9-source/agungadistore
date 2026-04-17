@@ -13,8 +13,9 @@ import {
   Heart, Send, ImagePlus, AlertCircle, History, Wallet, ArrowUpCircle, ArrowDownCircle,
   Bell, Check, CheckCheck, Globe, Edit2, ShoppingCart, Plus, Minus, Trash2,
   Moon, Sun, Lock, Tag, Music, Megaphone, Diamond, Image as ImageIcon, Gem, Sparkles, Palette, CalendarDays, Gamepad2, RefreshCw,
-  Eye, LayoutGrid, Rows3, Flame, SlidersHorizontal, Zap
+  Eye, LayoutGrid, Rows3, Flame, SlidersHorizontal, Zap, TrendingUp, Award, Activity, Inbox
 } from "lucide-react";
+import CountUp from "@/components/CountUp";
 import { useTheme } from "@/lib/theme";
 import { useToast } from "@/hooks/use-toast";
 import jsPDF from "jspdf";
@@ -2201,6 +2202,34 @@ const Index = () => {
               </div>
             </div>
 
+            {/* Stats Summary */}
+            {history.length > 0 && (() => {
+              const now = new Date();
+              const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+              const weekAgo = new Date(today.getTime() - 7 * 86400000);
+              const todayCount = history.filter(h => new Date(h.claimed_at) >= today).length;
+              const weekCount = history.filter(h => new Date(h.claimed_at) >= weekAgo).length;
+              return (
+                <div className="grid grid-cols-3 gap-2">
+                  <div className="bg-gradient-to-br from-primary/15 to-primary/5 border border-primary/20 rounded-xl p-2.5 text-center">
+                    <Award className="w-4 h-4 text-primary mx-auto mb-1" />
+                    <p className="text-[9px] font-bold text-muted-foreground uppercase">Total</p>
+                    <p className="text-base font-extrabold text-primary leading-none mt-0.5"><CountUp value={history.length} /></p>
+                  </div>
+                  <div className="bg-gradient-to-br from-accent/15 to-accent/5 border border-accent/20 rounded-xl p-2.5 text-center">
+                    <CalendarDays className="w-4 h-4 text-accent mx-auto mb-1" />
+                    <p className="text-[9px] font-bold text-muted-foreground uppercase">Hari Ini</p>
+                    <p className="text-base font-extrabold text-accent leading-none mt-0.5"><CountUp value={todayCount} /></p>
+                  </div>
+                  <div className="bg-gradient-to-br from-fuchsia-500/15 to-pink-500/5 border border-fuchsia-500/20 rounded-xl p-2.5 text-center">
+                    <TrendingUp className="w-4 h-4 text-fuchsia-500 mx-auto mb-1" />
+                    <p className="text-[9px] font-bold text-muted-foreground uppercase">7 Hari</p>
+                    <p className="text-base font-extrabold text-fuchsia-500 leading-none mt-0.5"><CountUp value={weekCount} /></p>
+                  </div>
+                </div>
+              );
+            })()}
+
             {history.length > 0 && (
               <div className="flex items-center justify-between bg-card/80 backdrop-blur-sm rounded-xl p-3 border border-border/50 shadow-sm">
                 <Button size="sm" variant="outline" onClick={toggleSelectAll} className="gap-1.5 text-xs rounded-lg font-bold">
@@ -2336,11 +2365,39 @@ const Index = () => {
                   </div>
                 </div>
 
+                {/* Stats Summary */}
+                {tickets.length > 0 && (() => {
+                  const openCount = tickets.filter(t => t.status === "open").length;
+                  const closedCount = tickets.filter(t => t.status !== "open").length;
+                  return (
+                    <div className="grid grid-cols-3 gap-2">
+                      <div className="bg-gradient-to-br from-orange-500/15 to-red-500/5 border border-orange-500/20 rounded-xl p-2.5 text-center">
+                        <Inbox className="w-4 h-4 text-orange-500 mx-auto mb-1" />
+                        <p className="text-[9px] font-bold text-muted-foreground uppercase">Total</p>
+                        <p className="text-base font-extrabold text-orange-500 leading-none mt-0.5"><CountUp value={tickets.length} /></p>
+                      </div>
+                      <div className="bg-gradient-to-br from-accent/15 to-accent/5 border border-accent/20 rounded-xl p-2.5 text-center">
+                        <Activity className="w-4 h-4 text-accent mx-auto mb-1" />
+                        <p className="text-[9px] font-bold text-muted-foreground uppercase">Terbuka</p>
+                        <p className="text-base font-extrabold text-accent leading-none mt-0.5"><CountUp value={openCount} /></p>
+                      </div>
+                      <div className="bg-gradient-to-br from-muted to-muted/30 border border-border rounded-xl p-2.5 text-center">
+                        <CheckCircle2 className="w-4 h-4 text-muted-foreground mx-auto mb-1" />
+                        <p className="text-[9px] font-bold text-muted-foreground uppercase">Selesai</p>
+                        <p className="text-base font-extrabold text-muted-foreground leading-none mt-0.5"><CountUp value={closedCount} /></p>
+                      </div>
+                    </div>
+                  );
+                })()}
+
                 {tickets.length === 0 && (
                   <div className="text-center py-16 text-muted-foreground">
-                    <AlertCircle className="w-16 h-16 mx-auto mb-3 opacity-20" />
-                    <p className="text-sm font-medium">Belum ada tiket.</p>
-                    <Button size="sm" variant="outline" className="mt-4 gap-1.5" onClick={() => setTicketView("create")}><Send className="w-4 h-4" /> Ajukan Keluhan</Button>
+                    <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-orange-500/10 to-red-500/10 flex items-center justify-center mx-auto mb-4 floating">
+                      <Inbox className="w-10 h-10 opacity-40" />
+                    </div>
+                    <p className="text-sm font-bold">Belum ada tiket.</p>
+                    <p className="text-xs text-muted-foreground mt-1">Hubungi kami jika ada kendala</p>
+                    <Button size="sm" variant="outline" className="mt-4 gap-1.5 rounded-xl font-bold" onClick={() => setTicketView("create")}><Send className="w-4 h-4" /> Ajukan Keluhan</Button>
                   </div>
                 )}
 
@@ -2534,15 +2591,50 @@ const Index = () => {
                         <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider">Saldo Aktif</p>
                         <p className="text-xs text-muted-foreground mt-0.5">Hai, {userBalance.username}</p>
                         <p className="text-[11px] text-muted-foreground">{userBalance.phone}</p>
-                        <p className="text-3xl font-extrabold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent mt-1">{formatPrice(userBalance.balance)}</p>
+                        <p className="text-3xl font-extrabold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent mt-1">
+                          <CountUp value={userBalance.balance} format={(n) => formatPrice(n)} />
+                        </p>
                       </div>
                       <div className="relative">
-                        <div className="absolute inset-0 bg-gradient-to-br from-primary to-accent rounded-2xl blur-md opacity-30" />
-                        <div className="relative w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-xl ring-2 ring-primary/20">
+                        <div className="absolute inset-0 bg-gradient-to-br from-primary to-accent rounded-2xl blur-md opacity-30 animate-pulse" />
+                        <div className="relative w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-xl ring-2 ring-primary/20 floating">
                           <Wallet className="w-8 h-8 text-primary-foreground" />
                         </div>
                       </div>
                     </div>
+
+                    {/* Stats Mini Cards */}
+                    {(() => {
+                      const totalIn = balanceTransactions.filter(t => t.amount > 0).reduce((s, t) => s + t.amount, 0);
+                      const totalOut = balanceTransactions.filter(t => t.amount < 0).reduce((s, t) => s + Math.abs(t.amount), 0);
+                      const txCount = balanceTransactions.length;
+                      return (
+                        <div className="grid grid-cols-3 gap-2 mb-3">
+                          <div className="bg-accent/10 border border-accent/20 rounded-xl p-2 text-center">
+                            <ArrowUpCircle className="w-3.5 h-3.5 text-accent mx-auto mb-0.5" />
+                            <p className="text-[9px] font-bold text-muted-foreground">Masuk</p>
+                            <p className="text-[10px] font-extrabold text-accent leading-tight">
+                              <CountUp value={totalIn} format={(n) => formatPrice(n)} />
+                            </p>
+                          </div>
+                          <div className="bg-destructive/10 border border-destructive/20 rounded-xl p-2 text-center">
+                            <ArrowDownCircle className="w-3.5 h-3.5 text-destructive mx-auto mb-0.5" />
+                            <p className="text-[9px] font-bold text-muted-foreground">Keluar</p>
+                            <p className="text-[10px] font-extrabold text-destructive leading-tight">
+                              <CountUp value={totalOut} format={(n) => formatPrice(n)} />
+                            </p>
+                          </div>
+                          <div className="bg-primary/10 border border-primary/20 rounded-xl p-2 text-center">
+                            <Activity className="w-3.5 h-3.5 text-primary mx-auto mb-0.5" />
+                            <p className="text-[9px] font-bold text-muted-foreground">Transaksi</p>
+                            <p className="text-[10px] font-extrabold text-primary leading-tight">
+                              <CountUp value={txCount} />x
+                            </p>
+                          </div>
+                        </div>
+                      );
+                    })()}
+
                     <div className="grid grid-cols-2 gap-2">
                       <Button size="sm" variant="outline" className="gap-1.5 font-bold rounded-xl h-10 border-2 border-border/50 hover:border-primary/30"
                         onClick={() => { setProfileUsername(userBalance.username); setProfilePhone(userBalance.phone); setShowProfileModal(true); }}>
