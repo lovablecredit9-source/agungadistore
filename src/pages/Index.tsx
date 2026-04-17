@@ -1612,6 +1612,18 @@ const Index = () => {
               ))}
             </div>
 
+            {/* Vibrant Hero - new premium feature */}
+            <VibrantHeroSection
+              productCount={products.length}
+              sponsorCount={homeSponsors.length}
+              onShop={() => setTab("produk")}
+              onCatalog={() => setTab("produk")}
+              onFlashSale={() => setTab("voucher")}
+              onWholesale={() => setTab("plus")}
+              onNewArrivals={() => setTab("produk")}
+              onPremium={() => setTab("sponsor")}
+            />
+
             {/* Hero Promo Slider */}
             <HomeBannerSlider
               banners={[
