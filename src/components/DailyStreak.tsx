@@ -738,6 +738,24 @@ export default function DailyStreak() {
         </div>
       </motion.div>
 
+      {/* NEW: Leaderboard Top 10 */}
+      <StreakLeaderboard />
+
+      {/* NEW: Achievement Badges */}
+      <AchievementBadges
+        unlockedIds={streak?.achievements || []}
+        newlyUnlocked={newAchievement}
+        onCloseNewly={() => setNewAchievement(null)}
+      />
+
+      {/* NEW: Streak Freeze Card */}
+      <StreakFreezeCard
+        freezeCount={streak?.freeze_count || 0}
+        onBuy={handleBuyFreeze}
+        buying={buyingFreeze}
+        isStreakAtRisk={!!streak && !canClaim === false && (streak.freeze_count || 0) > 0}
+      />
+
       {/* Milestones - Horizontal Fire Progress */}
       <motion.div
         initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
