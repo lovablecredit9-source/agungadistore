@@ -3963,6 +3963,89 @@ const Index = () => {
         );
       })()}
 
+      {/* Quick View Modal — preview cepat tanpa buka detail */}
+      {quickViewProduct && (() => {
+        const p = quickViewProduct;
+        const imgs = getProductImages(p.id);
+        const badges = getProductBadges(p);
+        return (
+          <div className="fixed inset-0 z-[85] bg-black/70 backdrop-blur-md flex items-center justify-center p-4 animate-fade-in" onClick={() => setQuickViewProduct(null)}>
+            <div className="bg-card w-full max-w-sm rounded-3xl overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200 max-h-[88vh] flex flex-col" onClick={e => e.stopPropagation()}>
+              <div className="relative">
+                {imgs.length > 0 ? (
+                  <div className="relative aspect-square overflow-hidden bg-muted">
+                    <img src={imgs[0]} alt={p.title} className="w-full h-full object-cover" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+                  </div>
+                ) : (
+                  <div className="aspect-square bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center">
+                    <Package className="w-20 h-20 text-primary/40" />
+                  </div>
+                )}
+                <button
+                  onClick={() => setQuickViewProduct(null)}
+                  className="absolute top-3 right-3 w-9 h-9 rounded-full bg-background/90 backdrop-blur-md flex items-center justify-center shadow-lg hover:scale-110 transition-transform"
+                  aria-label="Close"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+                {badges.length > 0 && (
+                  <div className="absolute top-3 left-3 flex flex-col gap-1.5">
+                    {badges.map((b, i) => (
+                      <span key={i} className={`text-[10px] font-extrabold px-2.5 py-1 rounded-full shadow-lg ${b.className}`}>{b.label}</span>
+                    ))}
+                  </div>
+                )}
+                <div className="absolute bottom-3 left-3 right-3 flex items-end justify-between gap-3">
+                  <div className="flex-1 min-w-0">
+                    {p.category && <span className="text-[10px] font-bold bg-background/80 backdrop-blur-md px-2 py-0.5 rounded-full inline-block mb-1">{p.category}</span>}
+                    <h3 className="text-white font-extrabold text-lg drop-shadow-lg line-clamp-2">{p.title}</h3>
+                  </div>
+                  <span className="text-sm font-extrabold bg-gradient-to-r from-primary to-primary/80 text-primary-foreground px-3 py-1.5 rounded-full shadow-xl shrink-0">{formatPrice(p.price)}</span>
+                </div>
+              </div>
+
+              <div className="p-5 space-y-4 overflow-y-auto">
+                {p.description && <p className="text-sm text-muted-foreground leading-relaxed">{p.description}</p>}
+
+                <div className="flex flex-wrap gap-2">
+                  <span className={`text-xs px-3 py-1.5 rounded-full font-bold flex items-center gap-1 ${p.stock > 0 ? 'bg-gradient-to-r from-accent/15 to-accent/5 text-accent border border-accent/20' : 'bg-gradient-to-r from-destructive/15 to-destructive/5 text-destructive border border-destructive/20'}`}>
+                    {p.stock > 0 ? `✓ Stok ${p.stock}` : '✗ Habis'}
+                  </span>
+                  {p.has_warranty && (
+                    <span className="text-xs px-3 py-1.5 rounded-full font-bold bg-gradient-to-r from-primary/15 to-primary/5 text-primary border border-primary/20 flex items-center gap-1">
+                      <Shield className="w-3 h-3" /> Garansi
+                    </span>
+                  )}
+                  {(productLikeCounts[p.id] || 0) > 0 && (
+                    <span className="text-xs px-3 py-1.5 rounded-full font-bold bg-destructive/10 text-destructive border border-destructive/20 flex items-center gap-1">
+                      <Heart className="w-3 h-3 fill-current" /> {productLikeCounts[p.id]} suka
+                    </span>
+                  )}
+                </div>
+
+                <div className="flex gap-2 pt-1">
+                  <Button
+                    variant="outline"
+                    onClick={(e) => { toggleLike(p.id, e); }}
+                    className="flex-1 h-11 rounded-xl border-2 font-bold gap-2"
+                  >
+                    <Heart className={`w-4 h-4 ${likedIds.has(p.id) ? "fill-destructive text-destructive" : ""}`} />
+                    {likedIds.has(p.id) ? "Disukai" : "Suka"}
+                  </Button>
+                  <Button
+                    onClick={() => { setQuickViewProduct(null); openProduct(p); }}
+                    className="flex-[2] h-11 rounded-xl bg-gradient-to-r from-primary to-accent shadow-xl font-extrabold gap-2 hover:scale-[1.02] transition-transform"
+                  >
+                    <ShoppingBag className="w-4 h-4" /> Lihat Detail
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
       {/* Purchase Success Modal */}
       {purchaseSuccess && (
         <div className="fixed inset-0 z-[85] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setPurchaseSuccess(null)}>
