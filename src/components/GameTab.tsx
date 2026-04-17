@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 import { Gamepad2, ArrowLeft } from "lucide-react";
@@ -67,13 +67,12 @@ export default function GameTab() {
   const { profile, fetchProfile, visitorId: gameVisitorId } = useGameProfile();
 
   // Fetch today's daily challenge game (server-side deterministic)
-  useState(() => {
+  useEffect(() => {
     import("@/integrations/supabase/client").then(({ supabase }) => {
       supabase.functions.invoke("game-profile", { body: { action: "get_daily_challenge" } })
         .then(({ data }) => { if (data?.game_type) setDailyGame(data.game_type); });
     });
-    return undefined;
-  });
+  }, []);
 
   if (mode !== "menu") {
     const game = GAMES.find(g => g.mode === mode);
