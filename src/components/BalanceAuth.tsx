@@ -645,6 +645,17 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser }: BalanceA
   return (
     <Card className="border-2 border-primary/20">
       <CardContent className="p-5 space-y-4">
+        {addingAccount && (
+          <Button
+            type="button"
+            size="sm"
+            variant="ghost"
+            className="gap-1.5 text-xs font-bold -ml-2"
+            onClick={() => { setAddingAccount(false); resetForm(); }}
+          >
+            <ArrowRightLeft className="w-3.5 h-3.5 rotate-180" /> Kembali ke Daftar Akun
+          </Button>
+        )}
         <div className="text-center">
           <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-accent flex items-center justify-center mx-auto mb-3 shadow-lg">
             <Wallet className="w-8 h-8 text-primary-foreground" />
