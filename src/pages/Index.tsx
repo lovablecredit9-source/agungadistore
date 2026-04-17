@@ -525,11 +525,12 @@ const Index = () => {
     const firstVisitKey = "first_visit_nav_notified";
     if (!localStorage.getItem(firstVisitKey)) {
       localStorage.setItem(firstVisitKey, "1");
-      supabase.from("notifications").insert({
-        visitor_id: visitorId,
-        title: "👆 Geser Navigasi ke Kiri!",
-        message: "Navigasi bawah bisa digeser untuk melihat tab lainnya seperti Musik, Sponsor, Streak, Game & lainnya.",
-        type: "info",
+      (supabase as any).rpc("create_notification", {
+        p_visitor_id: visitorId,
+        p_title: "👆 Geser Navigasi ke Kiri!",
+        p_message: "Navigasi bawah bisa digeser untuk melihat tab lainnya seperti Musik, Sponsor, Streak, Game & lainnya.",
+        p_type: "info",
+        p_related_id: null,
       }).then(() => fetchNotifications(visitorId));
     }
 
