@@ -82,7 +82,7 @@ export default function StreakFreezeCard({ freezeCount, onBuy, buying, isStreakA
             <span className="flex items-center gap-1.5"><Snowflake className="w-4 h-4 animate-spin" /> Memproses...</span>
           ) : (
             <>
-              <Plus className="w-4 h-4" /> Beli Pelindung (Rp 5.000)
+              <Plus className="w-4 h-4" /> Beli Pelindung (Rp 1.000)
             </>
           )}
         </Button>
