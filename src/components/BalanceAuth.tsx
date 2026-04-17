@@ -198,7 +198,38 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser }: BalanceA
     localStorage.removeItem("balance_email");
     localStorage.removeItem("balance_visitor_id");
     onLogout();
-    toast({ title: "Berhasil logout dari akun saldo" });
+    toast({ title: "Berhasil logout (akun tetap tersimpan di daftar)" });
+  }
+
+  function handleLogoutAll() {
+    if (!window.confirm("Logout & hapus SEMUA akun tersimpan di perangkat ini? Anda harus login ulang dengan username & sandi.")) return;
+    localStorage.removeItem("balance_logged_in");
+    localStorage.removeItem("balance_email");
+    localStorage.removeItem("balance_visitor_id");
+    localStorage.removeItem(SAVED_KEY);
+    setSavedAccounts([]);
+    onLogout();
+    toast({ title: "Semua akun dihapus dari perangkat ini" });
+  }
+
+  function handleAddAccount() {
+    if (savedAccounts.length >= MAX_SAVED_ACCOUNTS) {
+      toast({
+        title: `Maksimal ${MAX_SAVED_ACCOUNTS} akun`,
+        description: "Hapus salah satu akun tersimpan untuk menambah akun baru.",
+        variant: "destructive",
+      });
+      return;
+    }
+    // Logout active session so login/register form appears, then user logs into another account
+    localStorage.removeItem("balance_logged_in");
+    localStorage.removeItem("balance_email");
+    localStorage.removeItem("balance_visitor_id");
+    onLogout();
+    setMode("login");
+    setAddingAccount(true);
+    setShowSwitcher(false);
+    toast({ title: "Silakan login / daftar akun baru" });
   }
 
   function handleSwitchAccount() {
