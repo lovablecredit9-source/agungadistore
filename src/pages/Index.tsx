@@ -53,6 +53,7 @@ import GameTab from "@/components/GameTab";
 import PlusTab from "@/components/PlusTab";
 import LiveClock from "@/components/LiveClock";
 import LoginGate from "@/components/LoginGate";
+import WhatsAppChat from "@/components/WhatsAppChat";
 
 type Tab = "beranda" | "produk" | "voucher" | "history" | "likes" | "tiket" | "saldo" | "playlist" | "publik" | "sponsor" | "streak" | "adminpost" | "game" | "plus" | "update";
 
@@ -2558,54 +2559,40 @@ const Index = () => {
                   </div>
                 </div>
 
-                <div ref={ticketChatRef} className="bg-muted/30 rounded-xl p-3 space-y-3 max-h-[50vh] overflow-y-auto">
-                  {/* Ticket info card */}
-                  <div className="bg-primary/5 border border-primary/20 rounded-lg p-3 text-xs space-y-1">
-                    {activeTicket.category && (
-                      <p><strong>Kategori:</strong> {TICKET_CATEGORIES.find(c => c.value === activeTicket.category)?.label || activeTicket.category}</p>
-                    )}
-                    <p><strong>Nama:</strong> {activeTicket.name}</p>
-                    <p><strong>HP:</strong> {activeTicket.phone}</p>
-                    <p><strong>Masalah:</strong> {activeTicket.description}</p>
-                    {activeTicket.screenshot_url && (
-                      <div className="mt-2">
-                        <p className="font-bold mb-1">📸 Screenshot:</p>
-                        <img src={activeTicket.screenshot_url} alt="Screenshot bukti" className="max-w-full rounded-lg border" />
-                      </div>
-                    )}
-                  </div>
-
-                  {ticketMessages.map(m => (
-                    <div key={m.id} className={`flex ${m.sender_type === "user" ? "justify-end" : "justify-start"}`}>
-                      <div className={`max-w-[80%] rounded-2xl px-3 py-2 ${m.sender_type === "user" ? "bg-primary text-primary-foreground rounded-br-md" : "bg-card border border-border rounded-bl-md"}`}>
-                        {m.sender_type === "admin" && <p className="text-[10px] font-bold text-primary mb-0.5">{STORE_NAME}</p>}
-                        {m.message && <p className="text-sm whitespace-pre-wrap">{m.message}</p>}
-                        {m.image_url && <img src={m.image_url} className="max-w-full rounded-lg mt-1" alt="" />}
-                        <p className={`text-[9px] mt-1 flex items-center gap-0.5 ${m.sender_type === "user" ? "text-primary-foreground/60 justify-end" : "text-muted-foreground"}`}>
-                          {new Date(m.created_at).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })}
-                          <MessageStatus isRead={m.is_read} isUserMsg={m.sender_type === "user"} />
-                        </p>
-                      </div>
+                <WhatsAppChat
+                  kind="ticket"
+                  parentId={activeTicket.id}
+                  viewerType="user"
+                  viewerId={visitorId}
+                  incomingLabel={STORE_NAME}
+                  disabled={activeTicket.status !== "open"}
+                  disabledHint={
+                    <div>
+                      {t("chat.ticket_closed", lang)}
+                      <Button size="sm" variant="outline" className="mt-2 gap-1 mx-auto flex" onClick={() => setTicketView("create")}>
+                        <Send className="w-3 h-3" /> {t("ticket.create", lang)}
+                      </Button>
                     </div>
-                  ))}
-                </div>
-
-                {activeTicket.status === "open" ? (
-                  <div className="flex gap-2">
-                    <label className="w-9 h-9 rounded-lg bg-muted flex items-center justify-center cursor-pointer hover:bg-muted/80">
-                      <ImagePlus className="w-4 h-4 text-muted-foreground" />
-                      <input type="file" accept="image/*" className="hidden" onChange={e => { if (e.target.files?.[0]) sendTicketImage(e.target.files[0]); e.target.value = ""; }} />
-                    </label>
-                    <Input placeholder={t("chat.write_message", lang)} value={ticketMsg} onChange={e => setTicketMsg(e.target.value)}
-                      onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendTicketMessage(); } }} className="flex-1" />
-                    <Button size="icon" onClick={sendTicketMessage} disabled={!ticketMsg.trim()}><Send className="w-4 h-4" /></Button>
-                  </div>
-                ) : (
-                  <div className="text-center text-sm text-muted-foreground bg-muted/50 p-3 rounded-lg">
-                    {t("chat.ticket_closed", lang)}
-                    <Button size="sm" variant="outline" className="mt-2 gap-1" onClick={() => setTicketView("create")}><Send className="w-3 h-3" /> {t("ticket.create", lang)}</Button>
-                  </div>
-                )}
+                  }
+                  className="bg-muted/30 rounded-xl border border-border h-[55vh]"
+                  scrollClassName="max-h-full"
+                  headerSlot={
+                    <div className="bg-primary/5 border border-primary/20 rounded-lg p-3 text-xs space-y-1">
+                      {activeTicket.category && (
+                        <p><strong>Kategori:</strong> {TICKET_CATEGORIES.find(c => c.value === activeTicket.category)?.label || activeTicket.category}</p>
+                      )}
+                      <p><strong>Nama:</strong> {activeTicket.name}</p>
+                      <p><strong>HP:</strong> {activeTicket.phone}</p>
+                      <p><strong>Masalah:</strong> {activeTicket.description}</p>
+                      {activeTicket.screenshot_url && (
+                        <div className="mt-2">
+                          <p className="font-bold mb-1">📸 Screenshot:</p>
+                          <img src={activeTicket.screenshot_url} alt="Screenshot bukti" className="max-w-full rounded-lg border" />
+                        </div>
+                      )}
+                    </div>
+                  }
+                />
               </>
             )}
           </div>
@@ -3406,33 +3393,16 @@ const Index = () => {
               </button>
             </div>
 
-            {/* Chat Messages */}
-            <div ref={productChatRef} className="flex-1 overflow-y-auto p-3 space-y-3 min-h-[200px] max-h-[50vh]">
-              {productChatMessages.map(m => (
-                <div key={m.id} className={`flex ${m.sender_type === "user" ? "justify-end" : "justify-start"}`}>
-                  <div className={`max-w-[80%] rounded-2xl px-3 py-2 ${m.sender_type === "user" ? "bg-primary text-primary-foreground rounded-br-md" : "bg-muted rounded-bl-md"}`}>
-                    {m.sender_type === "admin" && <p className="text-[10px] font-bold text-primary mb-0.5">{STORE_NAME}</p>}
-                    {m.message && <p className="text-sm whitespace-pre-wrap">{m.message}</p>}
-                    {m.image_url && <img src={m.image_url} className="max-w-full rounded-lg mt-1" alt="" />}
-                    <p className={`text-[9px] mt-1 flex items-center gap-0.5 ${m.sender_type === "user" ? "text-primary-foreground/60 justify-end" : "text-muted-foreground"}`}>
-                      {new Date(m.created_at).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })}
-                      <MessageStatus isRead={m.is_read} isUserMsg={m.sender_type === "user"} />
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {/* Chat Input */}
-            <div className="border-t border-border p-3 flex gap-2">
-              <label className="w-9 h-9 rounded-lg bg-muted flex items-center justify-center cursor-pointer hover:bg-muted/80">
-                <ImagePlus className="w-4 h-4 text-muted-foreground" />
-                <input type="file" accept="image/*" className="hidden" onChange={e => { if (e.target.files?.[0]) sendProductChatImage(e.target.files[0]); e.target.value = ""; }} />
-              </label>
-              <Input placeholder={t("chat.write_message", lang)} value={productChatMsg} onChange={e => setProductChatMsg(e.target.value)}
-                onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendProductChatMessage(); } }} className="flex-1" />
-              <Button size="icon" onClick={sendProductChatMessage} disabled={!productChatMsg.trim()}><Send className="w-4 h-4" /></Button>
-            </div>
+            {/* Chat (WhatsApp-style) */}
+            <WhatsAppChat
+              kind="product"
+              parentId={productChat.id}
+              viewerType="user"
+              viewerId={visitorId}
+              incomingLabel={STORE_NAME}
+              className="flex-1 min-h-[300px] max-h-[60vh]"
+              scrollClassName="max-h-full"
+            />
           </div>
         </div>
       )}

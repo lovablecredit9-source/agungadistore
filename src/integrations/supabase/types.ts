@@ -971,33 +971,113 @@ export type Database = {
         Row: {
           chat_id: string
           created_at: string
+          deleted_at: string | null
           id: string
           image_url: string | null
+          is_deleted: boolean
           is_read: boolean
           message: string | null
+          reply_to_id: string | null
           sender_type: string
         }
         Insert: {
           chat_id: string
           created_at?: string
+          deleted_at?: string | null
           id?: string
           image_url?: string | null
+          is_deleted?: boolean
           is_read?: boolean
           message?: string | null
+          reply_to_id?: string | null
           sender_type?: string
         }
         Update: {
           chat_id?: string
           created_at?: string
+          deleted_at?: string | null
           id?: string
           image_url?: string | null
+          is_deleted?: boolean
           is_read?: boolean
           message?: string | null
+          reply_to_id?: string | null
           sender_type?: string
         }
         Relationships: [
           {
             foreignKeyName: "product_chat_messages_chat_id_fkey"
+            columns: ["chat_id"]
+            isOneToOne: false
+            referencedRelation: "product_chats"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_chat_messages_reply_to_id_fkey"
+            columns: ["reply_to_id"]
+            isOneToOne: false
+            referencedRelation: "product_chat_messages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      product_chat_reactions: {
+        Row: {
+          created_at: string
+          emoji: string
+          id: string
+          message_id: string
+          sender_type: string
+          visitor_id: string
+        }
+        Insert: {
+          created_at?: string
+          emoji: string
+          id?: string
+          message_id: string
+          sender_type?: string
+          visitor_id: string
+        }
+        Update: {
+          created_at?: string
+          emoji?: string
+          id?: string
+          message_id?: string
+          sender_type?: string
+          visitor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_chat_reactions_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "product_chat_messages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      product_chat_typing: {
+        Row: {
+          chat_id: string
+          is_typing: boolean
+          sender_type: string
+          updated_at: string
+        }
+        Insert: {
+          chat_id: string
+          is_typing?: boolean
+          sender_type: string
+          updated_at?: string
+        }
+        Update: {
+          chat_id?: string
+          is_typing?: boolean
+          sender_type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_chat_typing_chat_id_fkey"
             columns: ["chat_id"]
             isOneToOne: false
             referencedRelation: "product_chats"
@@ -1609,37 +1689,117 @@ export type Database = {
         }
         Relationships: []
       }
+      ticket_message_reactions: {
+        Row: {
+          created_at: string
+          emoji: string
+          id: string
+          message_id: string
+          sender_type: string
+          visitor_id: string
+        }
+        Insert: {
+          created_at?: string
+          emoji: string
+          id?: string
+          message_id: string
+          sender_type?: string
+          visitor_id: string
+        }
+        Update: {
+          created_at?: string
+          emoji?: string
+          id?: string
+          message_id?: string
+          sender_type?: string
+          visitor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ticket_message_reactions_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "ticket_messages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ticket_messages: {
         Row: {
           created_at: string
+          deleted_at: string | null
           id: string
           image_url: string | null
+          is_deleted: boolean
           is_read: boolean
           message: string | null
+          reply_to_id: string | null
           sender_type: string
           ticket_id: string
         }
         Insert: {
           created_at?: string
+          deleted_at?: string | null
           id?: string
           image_url?: string | null
+          is_deleted?: boolean
           is_read?: boolean
           message?: string | null
+          reply_to_id?: string | null
           sender_type?: string
           ticket_id: string
         }
         Update: {
           created_at?: string
+          deleted_at?: string | null
           id?: string
           image_url?: string | null
+          is_deleted?: boolean
           is_read?: boolean
           message?: string | null
+          reply_to_id?: string | null
           sender_type?: string
           ticket_id?: string
         }
         Relationships: [
           {
+            foreignKeyName: "ticket_messages_reply_to_id_fkey"
+            columns: ["reply_to_id"]
+            isOneToOne: false
+            referencedRelation: "ticket_messages"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "ticket_messages_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "support_tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ticket_typing: {
+        Row: {
+          is_typing: boolean
+          sender_type: string
+          ticket_id: string
+          updated_at: string
+        }
+        Insert: {
+          is_typing?: boolean
+          sender_type: string
+          ticket_id: string
+          updated_at?: string
+        }
+        Update: {
+          is_typing?: boolean
+          sender_type?: string
+          ticket_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ticket_typing_ticket_id_fkey"
             columns: ["ticket_id"]
             isOneToOne: false
             referencedRelation: "support_tickets"
