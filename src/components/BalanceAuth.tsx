@@ -50,6 +50,9 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser }: BalanceA
   const [loading, setLoading] = useState(false);
   const [loginHistory, setLoginHistory] = useState<LoginHistoryEntry[]>([]);
   const [showHistory, setShowHistory] = useState(false);
+  const [savedAccounts, setSavedAccounts] = useState<SavedAccount[]>(() => getSavedAccounts());
+  const [switchingId, setSwitchingId] = useState<string | null>(null);
+  const [showSwitcher, setShowSwitcher] = useState(false);
 
   // Edit profile states
   const [showEditProfile, setShowEditProfile] = useState(false);
