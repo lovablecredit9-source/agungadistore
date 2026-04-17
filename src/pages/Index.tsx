@@ -3034,7 +3034,7 @@ const Index = () => {
                 </div>
                 <div>
                   <h2 className="text-xl font-extrabold text-white tracking-tight">Update Web</h2>
-                  <p className="text-white/70 text-xs font-medium mt-0.5">Riwayat pembaruan dan fitur terbaru {STORE_NAME}</p>
+                  <p className="text-white/70 text-xs font-medium mt-0.5">Fitur tambahan terbaru tanggal 17 April 2026</p>
                 </div>
               </div>
             </div>
@@ -3046,56 +3046,13 @@ const Index = () => {
               
               {[
                 {
-                  date: "12 April 2026", version: "v2.5", isNew: true,
+                  date: "17 April 2026", version: "v2.6", isNew: true,
                   items: [
-                    "✨ Tab Update Web baru — riwayat pembaruan",
-                    "✨ Bot WA diperlengkap: 20+ perintah",
-                    "✨ Pusat Bantuan lebih lengkap",
-                    "🔧 Perbaikan bug riwayat transaksi",
-                    "🔧 Fix data stale saat ganti akun",
-                    "🔧 Real-time update saldo & transaksi",
-                  ]
-                },
-                {
-                  date: "8 April 2026", version: "v2.4", isNew: false,
-                  items: [
-                    "✨ Paket bundel: Kredit + Streak + Storage",
-                    "✨ Flash sale paket streak & kredit",
-                    "✨ Admin bisa reset saldo, kredit, streak, storage user",
-                    "✨ Admin kelola paket Pro, Bundel, Mantap",
-                    "🔧 Fix pembelian kredit & streak gagal",
-                    "🔧 Fix error handling edge functions",
-                  ]
-                },
-                {
-                  date: "4 April 2026", version: "v2.3", isNew: false,
-                  items: [
-                    "✨ Sponsor: Syarat & Ketentuan lengkap",
-                    "✨ Tombol Rekber WA kirim detail produk otomatis",
-                    "✨ Pusat Bantuan: panduan Sponsor & Rekber",
-                    "✨ FAQ diperluas 20+ pertanyaan",
-                    "🔧 Fix navigasi dan banner discovery",
-                  ]
-                },
-                {
-                  date: "1 April 2026", version: "v2.0", isNew: false, isLaunch: true,
-                  items: [
-                    `🚀 Peluncuran ${STORE_NAME} v2.0`,
-                    `✨ Dukungan ${LANGUAGES.length}+ bahasa dengan bendera negara`,
-                    "✨ Fitur musik: streaming, playlist, lirik sinkron",
-                    "✨ Voucher musik (kapasitas & diskon)",
-                    "✨ Sistem deposit QRIS & E-Wallet",
-                    "✨ Chat produk real-time dengan gambar",
-                    "✨ Sistem notifikasi lengkap",
-                    "✨ Tema emas premium",
-                    "✨ PWA + dukungan offline",
-                    "✨ Keranjang belanja multi-produk",
-                    "✨ Game AI: 8+ game seru",
-                    "✨ Sistem kredit game & Premium unlimited",
-                    "✨ Daily streak & langganan streak",
-                    "✨ Sponsor / iklan produk pihak ketiga",
-                    "✨ Sistem tiket dukungan dengan 18+ kategori",
-                    "✨ Pusat Bantuan komprehensif",
+                    "✨ Hero beranda baru dengan tampilan Vibrant Spatial Commerce",
+                    "✨ Badge '100% Trusted Store' ditambahkan di bagian atas beranda",
+                    "✨ Tombol cepat baru: Flash Sale, Grosir, Baru Datang, dan Premium",
+                    "✨ Statistik live produk, sponsor, dan support 24/7 di hero beranda",
+                    "✨ CTA baru 'Mulai Belanja' dan 'Lihat Katalog' agar navigasi lebih cepat",
                   ]
                 },
               ].map((entry, i) => (
