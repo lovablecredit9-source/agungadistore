@@ -2,11 +2,16 @@ import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { getVisitorId } from "@/lib/visitor-id";
 import { Button } from "@/components/ui/button";
-import { Check, Trophy, Star, Gift, Zap, ShoppingCart, Loader2, Lock, X } from "lucide-react";
+import { Check, Trophy, Star, Gift, Zap, ShoppingCart, Loader2, Lock, X, Shield } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Input } from "@/components/ui/input";
 import { Sparkles } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { rollMysteryReward, checkNewAchievements, type MysteryReward, type Achievement } from "./streak/streakRewards";
+import MysteryRewardPopup from "./streak/MysteryRewardPopup";
+import StreakLeaderboard from "./streak/StreakLeaderboard";
+import AchievementBadges from "./streak/AchievementBadges";
+import StreakFreezeCard from "./streak/StreakFreezeCard";
 
 interface StreakData {
   id: string;
@@ -15,6 +20,9 @@ interface StreakData {
   current_streak: number;
   longest_streak: number;
   total_claims: number;
+  total_bonus_points?: number;
+  freeze_count?: number;
+  achievements?: string[];
 }
 
 const MILESTONES = [
@@ -236,6 +244,12 @@ export default function DailyStreak() {
   const [voucherLoading, setVoucherLoading] = useState(false);
   const [voucherError, setVoucherError] = useState("");
   const [voucherApplied, setVoucherApplied] = useState(false);
+  const [mysteryReward, setMysteryReward] = useState<MysteryReward | null>(null);
+  const [newAchievement, setNewAchievement] = useState<Achievement | null>(null);
+  const [achievementQueue, setAchievementQueue] = useState<Achievement[]>([]);
+  const [buyingFreeze, setBuyingFreeze] = useState(false);
+  const [showFreezePinModal, setShowFreezePinModal] = useState(false);
+  const [freezePinInput, setFreezePinInput] = useState("");
   const visitorId = getVisitorId();
   const countdown = useCountdown();
   const { toast } = useToast();
@@ -245,6 +259,15 @@ export default function DailyStreak() {
   const [flashSaleLabel, setFlashSaleLabel] = useState("");
 
   useEffect(() => { fetchStreak(); fetchSubscription(); fetchStreakPackages(); }, []);
+
+  // Process achievement queue one-by-one
+  useEffect(() => {
+    if (!newAchievement && achievementQueue.length > 0) {
+      const [next, ...rest] = achievementQueue;
+      setNewAchievement(next);
+      setAchievementQueue(rest);
+    }
+  }, [newAchievement, achievementQueue]);
 
   const fetchStreakPackages = useCallback(async () => {
     // Fetch packages from DB
@@ -395,24 +418,113 @@ export default function DailyStreak() {
   const canClaim = !streak || !isToday(streak.last_claim_date);
   const streakBroken = streak && !isToday(streak.last_claim_date) && !isYesterday(streak.last_claim_date);
 
+  // Apply mystery reward (only updates DB; UI state updated separately)
+  async function applyMysteryReward(reward: MysteryReward, currentBonus: number, currentFreeze: number) {
+    const updates: any = {};
+    if (reward.type === "bonus_points" || reward.type === "double_points") {
+      const points = reward.type === "double_points" ? reward.value * 10 : reward.value;
+      updates.total_bonus_points = currentBonus + points;
+    }
+    if (reward.type === "freeze_token") {
+      updates.freeze_count = currentFreeze + reward.value;
+    }
+    // Log reward
+    await supabase.from("streak_rewards_log" as any).insert({
+      visitor_id: visitorId,
+      claim_date: getToday(),
+      reward_type: reward.type,
+      reward_value: reward.value,
+      reward_label: reward.label,
+      reward_emoji: reward.emoji,
+      rarity: reward.rarity,
+    });
+    return updates;
+  }
+
   async function claimStreak() {
     if (!canClaim) return;
     setClaiming(true);
     try {
+      const reward = rollMysteryReward();
+      const now = new Date();
+      const wibNow = new Date(now.getTime() + 7 * 60 * 60 * 1000);
+      const claimHour = wibNow.getUTCHours();
+      const claimDay = wibNow.getUTCDay();
+
+      let updatedStreak: StreakData | null = null;
+      let prevAchievements: string[] = streak?.achievements || [];
+      let totalBonusAfter = streak?.total_bonus_points || 0;
+
       if (!streak) {
-        const { data, error } = await supabase.from("daily_streaks").insert({
-          visitor_id: visitorId, last_claim_date: getToday(),
-          current_streak: 1, longest_streak: 1, total_claims: 1,
-        } as any).select().single();
-        if (!error && data) { setStreak(data as unknown as StreakData); setJustClaimed(true); checkMilestone(1); }
+        const rewardUpdates = await applyMysteryReward(reward, 0, 0);
+        const insertData: any = {
+          visitor_id: visitorId,
+          last_claim_date: getToday(),
+          current_streak: 1,
+          longest_streak: 1,
+          total_claims: 1,
+          ...rewardUpdates,
+        };
+        const { data, error } = await supabase.from("daily_streaks").insert(insertData).select().single();
+        if (!error && data) {
+          updatedStreak = data as unknown as StreakData;
+          totalBonusAfter = updatedStreak.total_bonus_points || 0;
+        }
       } else {
-        const newStreak = streakBroken ? 1 : streak.current_streak + 1;
+        const usedFreeze = streakBroken && (streak.freeze_count || 0) > 0;
+        const effectiveStreak = usedFreeze ? streak.current_streak + 1 : (streakBroken ? 1 : streak.current_streak + 1);
+        const newStreak = effectiveStreak;
         const newLongest = Math.max(streak.longest_streak, newStreak);
-        const { data, error } = await supabase.from("daily_streaks").update({
-          last_claim_date: getToday(), current_streak: newStreak,
-          longest_streak: newLongest, total_claims: streak.total_claims + 1,
-        } as any).eq("id", streak.id).select().single();
-        if (!error && data) { setStreak(data as unknown as StreakData); setJustClaimed(true); checkMilestone(newStreak); }
+        const rewardUpdates = await applyMysteryReward(reward, streak.total_bonus_points || 0, streak.freeze_count || 0);
+        const updateData: any = {
+          last_claim_date: getToday(),
+          current_streak: newStreak,
+          longest_streak: newLongest,
+          total_claims: streak.total_claims + 1,
+          ...rewardUpdates,
+        };
+        if (usedFreeze) {
+          updateData.freeze_count = Math.max(0, (rewardUpdates.freeze_count ?? streak.freeze_count ?? 0) - 1);
+          updateData.freeze_used_at = getToday();
+          toast({ title: "🛡️ Pelindung Streak Terpakai!", description: "Streak kamu diselamatkan dari putus!" });
+        }
+        const { data, error } = await supabase.from("daily_streaks").update(updateData).eq("id", streak.id).select().single();
+        if (!error && data) {
+          updatedStreak = data as unknown as StreakData;
+          totalBonusAfter = updatedStreak.total_bonus_points || 0;
+        }
+      }
+
+      if (updatedStreak) {
+        setStreak(updatedStreak);
+        setJustClaimed(true);
+
+        // Show mystery reward popup
+        setTimeout(() => setMysteryReward(reward), 1200);
+
+        // Check milestone
+        checkMilestone(updatedStreak.current_streak);
+
+        // Check new achievements
+        const newAchs = checkNewAchievements(prevAchievements, {
+          currentStreak: updatedStreak.current_streak,
+          longestStreak: updatedStreak.longest_streak,
+          totalClaims: updatedStreak.total_claims,
+          claimHour,
+          claimDay,
+          totalBonus: totalBonusAfter,
+        });
+        // Auto-unlock legendary achievement if got legendary reward
+        if (reward.rarity === "legendary" && !prevAchievements.includes("lucky_legendary")) {
+          const legendary = { id: "lucky_legendary", label: "Tersentuh Dewi Fortuna", description: "Dapat hadiah Legendary", emoji: "🌟", check: () => true };
+          newAchs.push(legendary as any);
+        }
+        if (newAchs.length > 0) {
+          const newIds = [...prevAchievements, ...newAchs.map(a => a.id)];
+          await supabase.from("daily_streaks").update({ achievements: newIds } as any).eq("id", updatedStreak.id);
+          setStreak(prev => prev ? { ...prev, achievements: newIds } : prev);
+          setAchievementQueue(prev => [...prev, ...newAchs]);
+        }
       }
     } finally {
       setClaiming(false);
@@ -423,6 +535,33 @@ export default function DailyStreak() {
   function checkMilestone(days: number) {
     const milestone = MILESTONES.find(m => m.days === days);
     if (milestone) { setShowMilestone(milestone); setTimeout(() => setShowMilestone(null), 4000); }
+  }
+
+  // Buy streak freeze
+  function handleBuyFreeze() {
+    setShowFreezePinModal(true);
+  }
+
+  async function confirmBuyFreeze() {
+    if (freezePinInput.length < 4) return;
+    setShowFreezePinModal(false);
+    setBuyingFreeze(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("buy-streak-freeze", {
+        body: { visitorId, pin: freezePinInput },
+      });
+      if (error || data?.error) {
+        toast({ title: "Gagal", description: data?.error || "Gagal membeli pelindung", variant: "destructive" });
+      } else {
+        toast({ title: "🛡️ Berhasil!", description: `Pelindung streak ditambahkan! Total: ${data.freeze_count}` });
+        fetchStreak();
+      }
+    } catch {
+      toast({ title: "Error", description: "Koneksi gagal", variant: "destructive" });
+    } finally {
+      setBuyingFreeze(false);
+      setFreezePinInput("");
+    }
   }
 
   const currentStreak = streak?.current_streak || 0;
@@ -575,28 +714,47 @@ export default function DailyStreak() {
             </motion.p>
           )}
 
-          {/* Stats */}
-          <div className="grid grid-cols-3 gap-2 mt-4">
+          {/* Stats - 4 columns now with bonus points */}
+          <div className="grid grid-cols-4 gap-2 mt-4">
             {[
-              { icon: <EmojiFireSVG width={22} height={26} />, val: currentStreak, label: "Streak" },
-              { icon: <Trophy className="w-5 h-5 text-yellow-500" />, val: longestStreak, label: "Terbaik" },
-              { icon: <Star className="w-5 h-5 text-primary" />, val: totalClaims, label: "Total" },
+              { icon: <EmojiFireSVG width={20} height={24} />, val: currentStreak, label: "Streak" },
+              { icon: <Trophy className="w-4 h-4 text-yellow-500" />, val: longestStreak, label: "Terbaik" },
+              { icon: <Star className="w-4 h-4 text-primary" />, val: totalClaims, label: "Total" },
+              { icon: <Sparkles className="w-4 h-4 text-purple-500" />, val: streak?.total_bonus_points || 0, label: "Bonus" },
             ].map((s, i) => (
               <motion.div
                 key={i}
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.3 + i * 0.1 }}
-                className="bg-muted/40 rounded-xl p-3 text-center"
+                className="bg-muted/40 rounded-xl p-2 text-center"
               >
                 <div className="flex justify-center mb-1">{s.icon}</div>
-                <p className="text-lg font-extrabold">{s.val}</p>
-                <p className="text-[9px] text-muted-foreground">{s.label}</p>
+                <p className="text-sm font-extrabold">{s.val}</p>
+                <p className="text-[8px] text-muted-foreground">{s.label}</p>
               </motion.div>
             ))}
           </div>
         </div>
       </motion.div>
+
+      {/* NEW: Leaderboard Top 10 */}
+      <StreakLeaderboard />
+
+      {/* NEW: Achievement Badges */}
+      <AchievementBadges
+        unlockedIds={streak?.achievements || []}
+        newlyUnlocked={newAchievement}
+        onCloseNewly={() => setNewAchievement(null)}
+      />
+
+      {/* NEW: Streak Freeze Card */}
+      <StreakFreezeCard
+        freezeCount={streak?.freeze_count || 0}
+        onBuy={handleBuyFreeze}
+        buying={buyingFreeze}
+        isStreakAtRisk={!!streak && !canClaim === false && (streak.freeze_count || 0) > 0}
+      />
 
       {/* Milestones - Horizontal Fire Progress */}
       <motion.div
@@ -952,6 +1110,31 @@ export default function DailyStreak() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* NEW: Mystery Reward Popup */}
+      <MysteryRewardPopup reward={mysteryReward} onClose={() => setMysteryReward(null)} />
+
+      {/* NEW: PIN Modal for buying Streak Freeze */}
+      {showFreezePinModal && (
+        <div className="fixed inset-0 z-[96] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setShowFreezePinModal(false)}>
+          <div className="bg-card w-full max-w-sm rounded-2xl p-5 space-y-4 animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between">
+              <h3 className="font-extrabold text-lg flex items-center gap-2"><Shield className="w-5 h-5 text-cyan-500" /> Beli Pelindung Streak</h3>
+              <button onClick={() => setShowFreezePinModal(false)} className="w-8 h-8 rounded-full bg-muted flex items-center justify-center"><X className="w-4 h-4" /></button>
+            </div>
+            <p className="text-xs text-muted-foreground text-center">Masukkan PIN untuk konfirmasi pembelian Pelindung Streak (Rp 5.000)</p>
+            <Input type="password" inputMode="numeric" maxLength={6} placeholder="PIN" value={freezePinInput}
+              onChange={e => setFreezePinInput(e.target.value.replace(/\D/g, ""))}
+              className="text-center text-2xl tracking-[0.3em] font-bold"
+              onKeyDown={e => { if (e.key === "Enter") confirmBuyFreeze(); }}
+              autoFocus />
+            <Button className="w-full h-11 bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-bold gap-2"
+              onClick={confirmBuyFreeze} disabled={freezePinInput.length < 4}>
+              <Shield className="w-4 h-4" /> Konfirmasi Beli
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -325,31 +325,43 @@ export type Database = {
       }
       daily_streaks: {
         Row: {
+          achievements: string[]
           created_at: string
           current_streak: number
+          freeze_count: number
+          freeze_used_at: string | null
           id: string
           last_claim_date: string
           longest_streak: number
+          total_bonus_points: number
           total_claims: number
           updated_at: string
           visitor_id: string
         }
         Insert: {
+          achievements?: string[]
           created_at?: string
           current_streak?: number
+          freeze_count?: number
+          freeze_used_at?: string | null
           id?: string
           last_claim_date?: string
           longest_streak?: number
+          total_bonus_points?: number
           total_claims?: number
           updated_at?: string
           visitor_id: string
         }
         Update: {
+          achievements?: string[]
           created_at?: string
           current_streak?: number
+          freeze_count?: number
+          freeze_used_at?: string | null
           id?: string
           last_claim_date?: string
           longest_streak?: number
+          total_bonus_points?: number
           total_claims?: number
           updated_at?: string
           visitor_id?: string
@@ -1611,6 +1623,42 @@ export type Database = {
         }
         Relationships: []
       }
+      streak_rewards_log: {
+        Row: {
+          claim_date: string
+          created_at: string
+          id: string
+          rarity: string
+          reward_emoji: string
+          reward_label: string
+          reward_type: string
+          reward_value: number
+          visitor_id: string
+        }
+        Insert: {
+          claim_date?: string
+          created_at?: string
+          id?: string
+          rarity?: string
+          reward_emoji?: string
+          reward_label?: string
+          reward_type: string
+          reward_value?: number
+          visitor_id: string
+        }
+        Update: {
+          claim_date?: string
+          created_at?: string
+          id?: string
+          rarity?: string
+          reward_emoji?: string
+          reward_label?: string
+          reward_type?: string
+          reward_value?: number
+          visitor_id?: string
+        }
+        Relationships: []
+      }
       streak_subscriptions: {
         Row: {
           created_at: string
@@ -2186,6 +2234,19 @@ export type Database = {
           is_guest?: boolean | null
           updated_at?: string | null
           visitor_id?: string | null
+        }
+        Relationships: []
+      }
+      streak_leaderboard: {
+        Row: {
+          avatar_url: string | null
+          current_streak: number | null
+          display_name: string | null
+          id: string | null
+          longest_streak: number | null
+          total_bonus_points: number | null
+          total_claims: number | null
+          visitor_id: string | null
         }
         Relationships: []
       }
