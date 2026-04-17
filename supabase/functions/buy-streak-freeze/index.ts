@@ -25,18 +25,25 @@ Deno.serve(async (req) => {
       auth: { autoRefreshToken: false, persistSession: false },
     });
 
-    // Verify PIN
-    const { data: pinRow } = await admin.from("user_pins").select("pin_hash").eq("visitor_id", visitorId).maybeSingle();
-    if (!pinRow) return Response.json({ error: "PIN belum dibuat", needPin: true }, { status: 403, headers: corsHeaders });
+    // Get balance account (akun saldo aktif untuk visitor ini)
+    const { data: balanceRow } = await admin.from("user_balances").select("id, balance, visitor_id").eq("visitor_id", visitorId).maybeSingle();
+    if (!balanceRow) return Response.json({ error: "Akun saldo tidak ditemukan. Login/daftar saldo dulu di tab Plus → Saldo Saya." }, { status: 404, headers: corsHeaders });
+
+    // Verify PIN — cari PIN berdasarkan visitor_id akun saldo (bukan browser visitor)
+    // Cek di kedua kemungkinan: visitor request ATAU visitor akun saldo
+    const { data: pinRows } = await admin
+      .from("user_pins")
+      .select("pin_hash, visitor_id")
+      .in("visitor_id", [visitorId, balanceRow.visitor_id]);
+
+    const pinRow = pinRows && pinRows.length > 0 ? pinRows[0] : null;
+    if (!pinRow) return Response.json({ error: "PIN belum dibuat. Buat PIN di tab Plus → Saldo Saya.", needPin: true }, { status: 403, headers: corsHeaders });
     if (!pin) return Response.json({ error: "PIN diperlukan", needPin: true }, { status: 403, headers: corsHeaders });
     const encoder = new TextEncoder();
     const hashBuffer = await crypto.subtle.digest("SHA-256", encoder.encode(pin));
     const hashHex = Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, "0")).join("");
-    if (hashHex !== pinRow.pin_hash) return Response.json({ error: "PIN salah", needPin: true }, { status: 403, headers: corsHeaders });
+    if (hashHex !== pinRow.pin_hash) return Response.json({ error: "PIN salah" }, { status: 403, headers: corsHeaders });
 
-    // Check balance
-    const { data: balanceRow } = await admin.from("user_balances").select("id, balance").eq("visitor_id", visitorId).maybeSingle();
-    if (!balanceRow) return Response.json({ error: "Akun saldo tidak ditemukan" }, { status: 404, headers: corsHeaders });
     if (balanceRow.balance < FREEZE_PRICE) return Response.json({ error: "Saldo tidak cukup" }, { status: 400, headers: corsHeaders });
 
     // Get current streak record
