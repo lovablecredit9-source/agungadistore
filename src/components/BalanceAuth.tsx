@@ -12,7 +12,7 @@ import {
 } from "@/lib/saved-accounts";
 import {
   Wallet, LogIn, UserPlus, LogOut, Smartphone, History, Eye, EyeOff, Mail, Lock, User, Phone,
-  Edit2, KeyRound, Save, X, Users, Trash2, ArrowRightLeft, Plus, LogOut as LogOutIcon,
+  Edit2, KeyRound, Save, X, Users, Trash2, ArrowRightLeft, Plus, ArrowLeft,
 } from "lucide-react";
 
 const SAVED_KEY = "saved_balance_accounts_v1";
