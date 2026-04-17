@@ -464,18 +464,22 @@ const Index = () => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [showNotifPanel, setShowNotifPanel] = useState(false);
   const unreadCount = notifications.filter(n => !n.is_read).length;
+  const activeBalanceVisitorId = useMemo(() => {
+    if (userBalance?.visitor_id) return userBalance.visitor_id;
+    return localStorage.getItem("balance_visitor_id") || visitorId;
+  }, [userBalance?.visitor_id, visitorId]);
 
-  async function fetchNotifications() {
-    const { data } = await supabase.from("notifications").select("*").eq("visitor_id", visitorId).order("created_at", { ascending: false }).limit(50);
+  async function fetchNotifications(targetVisitorId = activeBalanceVisitorId) {
+    const { data } = await supabase
+      .from("notifications")
+      .select("*")
+      .eq("visitor_id", targetVisitorId)
+      .order("created_at", { ascending: false })
+      .limit(50);
     if (data) setNotifications(data as unknown as Notification[]);
   }
 
-  async function markNotifRead(id: string) {
-    await supabase.from("notifications").update({ is_read: true } as any).eq("id", id);
-    setNotifications(prev => prev.map(n => n.id === id ? { ...n, is_read: true } : n));
-  }
-
-  async function markAllRead() {
+  async function markNotificationsRead() {
     const unreadIds = notifications.filter(n => !n.is_read).map(n => n.id);
     if (unreadIds.length === 0) return;
     await supabase.from("notifications").update({ is_read: true } as any).in("id", unreadIds);
@@ -484,7 +488,7 @@ const Index = () => {
 
   async function createNotification(title: string, message: string, type: string, relatedId?: string) {
     await supabase.from("notifications").insert({
-      visitor_id: visitorId, title, message, type, related_id: relatedId || null,
+      visitor_id: activeBalanceVisitorId, title, message, type, related_id: relatedId || null,
     } as any);
   }
 
@@ -496,10 +500,7 @@ const Index = () => {
     fetchTickets();
     fetchProductChatHistory();
     fetchUserBalance();
-    fetchNotifications();
-    fetchDeposits();
     fetchAdminSettings();
-    checkPinStatus();
     fetchHomeSponsors();
     fetchSocialLinks();
 
@@ -512,7 +513,7 @@ const Index = () => {
         title: "👆 Geser Navigasi ke Kiri!",
         message: "Navigasi bawah bisa digeser untuk melihat tab lainnya seperti Musik, Sponsor, Streak, Game & lainnya.",
         type: "info",
-      }).then(() => fetchNotifications());
+      }).then(() => fetchNotifications(visitorId));
     }
 
     // Deep link handling for sponsor share links
@@ -524,6 +525,12 @@ const Index = () => {
       window.history.replaceState({}, "", window.location.pathname);
     }
   }, []);
+
+  useEffect(() => {
+    fetchNotifications();
+    fetchDeposits();
+    checkPinStatus();
+  }, [activeBalanceVisitorId]);
 
   // Auto-open product from URL ?id= param
   useEffect(() => {
@@ -537,8 +544,8 @@ const Index = () => {
   }, [products, tab]);
 
   async function checkPinStatus() {
-    const { data } = await supabase.functions.invoke("manage-pin", { body: { action: "check", visitorId } });
-    if (data) setHasPin(data.hasPin);
+    const { data } = await supabase.functions.invoke("manage-pin", { body: { action: "check", visitorId: activeBalanceVisitorId } });
+    setHasPin(Boolean(data?.hasPin));
   }
 
   async function createPin() {
@@ -548,7 +555,7 @@ const Index = () => {
     if (pinInput !== pinConfirm) {
       toast({ title: "Konfirmasi PIN tidak cocok", variant: "destructive" }); return;
     }
-    const { data, error } = await supabase.functions.invoke("manage-pin", { body: { action: "create", visitorId, pin: pinInput } });
+    const { data, error } = await supabase.functions.invoke("manage-pin", { body: { action: "create", visitorId: activeBalanceVisitorId, pin: pinInput } });
     if (error || data?.error) { toast({ title: data?.error || "Gagal membuat PIN", variant: "destructive" }); return; }
     setHasPin(true);
     setShowPinSetup(false);
@@ -561,7 +568,7 @@ const Index = () => {
       toast({ title: "Isi token dan PIN baru", variant: "destructive" }); return;
     }
     const { data, error } = await supabase.functions.invoke("manage-pin", {
-      body: { action: "reset", visitorId, resetToken, newPin: newPinInput },
+      body: { action: "reset", visitorId: activeBalanceVisitorId, resetToken, newPin: newPinInput },
     });
     if (error || data?.error) { toast({ title: data?.error || "Gagal reset PIN", variant: "destructive" }); return; }
     setShowForgotPin(false);
@@ -583,7 +590,11 @@ const Index = () => {
   }
 
   async function fetchDeposits() {
-    const { data } = await supabase.from("deposits").select("*").eq("visitor_id", visitorId).order("created_at", { ascending: false });
+    const { data } = await supabase
+      .from("deposits")
+      .select("*")
+      .eq("visitor_id", activeBalanceVisitorId)
+      .order("created_at", { ascending: false });
     if (data) setDeposits(data as unknown as Deposit[]);
   }
 
@@ -610,7 +621,7 @@ const Index = () => {
 
     const { data, error } = await supabase.functions.invoke("create-deposit", {
       body: {
-        visitorId,
+        visitorId: activeBalanceVisitorId,
         amount,
         paymentMethod: methodLabel,
       },
@@ -635,8 +646,8 @@ const Index = () => {
 
   // Realtime notifications
   useEffect(() => {
-    const ch = supabase.channel("user-notifications")
-      .on("postgres_changes", { event: "INSERT", schema: "public", table: "notifications", filter: `visitor_id=eq.${visitorId}` },
+    const ch = supabase.channel("user-notifications-" + activeBalanceVisitorId)
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "notifications", filter: `visitor_id=eq.${activeBalanceVisitorId}` },
         (payload) => {
           const notif = payload.new as unknown as Notification;
           setNotifications(prev => [notif, ...prev]);
@@ -647,7 +658,7 @@ const Index = () => {
         })
       .subscribe();
     return () => { supabase.removeChannel(ch); };
-  }, [ticketView, showProductChat]);
+  }, [ticketView, showProductChat, activeBalanceVisitorId]);
 
   // Realtime products
   useEffect(() => {
@@ -757,8 +768,11 @@ const Index = () => {
       localStorage.removeItem("balance_email");
       localStorage.removeItem("balance_visitor_id");
       setUserBalance(null);
+      setBalanceTransactions([]);
+      setHasPin(false);
+      return;
     }
-    const balVid = localStorage.getItem("balance_visitor_id") || visitorId;
+    const balVid = localStorage.getItem("balance_visitor_id") || (data as any).visitor_id || visitorId;
     const { data: txns } = await supabase.from("balance_transactions").select("*").eq("visitor_id", balVid).order("created_at", { ascending: false });
     if (txns) setBalanceTransactions(txns as unknown as BalanceTransaction[]);
   }
@@ -864,7 +878,7 @@ const Index = () => {
   async function confirmPinAndBuy() {
     if (!pendingPurchase) return;
     const { data, error } = await supabase.functions.invoke("manage-pin", {
-      body: { action: "verify", visitorId, pin: pinVerifyInput },
+      body: { action: "verify", visitorId: activeBalanceVisitorId, pin: pinVerifyInput },
     });
     if (error || data?.error || !data?.valid) {
       toast({ title: "PIN salah", variant: "destructive" }); return;
@@ -882,7 +896,7 @@ const Index = () => {
       toast({ title: "Saldo tidak cukup", variant: "destructive" }); return;
     }
     const { data, error } = await supabase.functions.invoke("purchase-with-balance", {
-      body: { visitorId, productId: product.id, quantity, discountCode: voucherCode || undefined, pin },
+      body: { visitorId: activeBalanceVisitorId, productId: product.id, quantity, discountCode: voucherCode || undefined, pin },
     });
 
     if (error || data?.error) {
