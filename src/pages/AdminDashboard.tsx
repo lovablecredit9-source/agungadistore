@@ -1441,37 +1441,23 @@ const AdminDashboard = () => {
                   </Button>
                 </div>
 
-                <div ref={ticketChatRef} className="bg-muted/30 rounded-xl p-3 space-y-3 max-h-[55vh] overflow-y-auto">
-                  <div className="bg-primary/5 border border-primary/20 rounded-lg p-3 text-xs space-y-1">
-                    <p><strong>Nama:</strong> {activeTicket.name}</p>
-                    <p><strong>HP:</strong> {activeTicket.phone}</p>
-                    <p><strong>Masalah:</strong> {activeTicket.description}</p>
-                    <p className="text-muted-foreground">{new Date(activeTicket.created_at).toLocaleString("id-ID")}</p>
-                  </div>
-
-                  {ticketMessages.map(m => (
-                    <div key={m.id} className={`flex ${m.sender_type === "admin" ? "justify-end" : "justify-start"}`}>
-                      <div className={`max-w-[80%] rounded-2xl px-3 py-2 ${m.sender_type === "admin" ? "bg-primary text-primary-foreground rounded-br-md" : "bg-card border border-border rounded-bl-md"}`}>
-                        {m.sender_type === "admin" && <p className="text-[10px] font-bold mb-0.5">Admin</p>}
-                        {m.message && <p className="text-sm whitespace-pre-wrap">{m.message}</p>}
-                        {m.image_url && <img src={m.image_url} className="max-w-full rounded-lg mt-1" alt="" />}
-                        <p className={`text-[9px] mt-1 ${m.sender_type === "admin" ? "text-primary-foreground/60" : "text-muted-foreground"}`}>
-                          {new Date(m.created_at).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })}
-                        </p>
-                      </div>
+                <WhatsAppChat
+                  kind="ticket"
+                  parentId={activeTicket.id}
+                  viewerType="admin"
+                  viewerId="admin"
+                  incomingLabel={activeTicket.name}
+                  className="bg-muted/30 rounded-xl border border-border h-[60vh]"
+                  scrollClassName="max-h-full"
+                  headerSlot={
+                    <div className="bg-primary/5 border border-primary/20 rounded-lg p-3 text-xs space-y-1">
+                      <p><strong>Nama:</strong> {activeTicket.name}</p>
+                      <p><strong>HP:</strong> {activeTicket.phone}</p>
+                      <p><strong>Masalah:</strong> {activeTicket.description}</p>
+                      <p className="text-muted-foreground">{new Date(activeTicket.created_at).toLocaleString("id-ID")}</p>
                     </div>
-                  ))}
-                </div>
-
-                <div className="flex gap-2">
-                  <label className="w-9 h-9 rounded-lg bg-muted flex items-center justify-center cursor-pointer hover:bg-muted/80">
-                    <ImagePlus className="w-4 h-4 text-muted-foreground" />
-                    <input type="file" accept="image/*" className="hidden" onChange={e => { if (e.target.files?.[0]) sendTicketImage(e.target.files[0]); e.target.value = ""; }} />
-                  </label>
-                  <Input placeholder="Balas tiket..." value={ticketMsg} onChange={e => setTicketMsg(e.target.value)}
-                    onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendTicketMessage(); } }} className="flex-1" />
-                  <Button size="icon" onClick={sendTicketMessage} disabled={!ticketMsg.trim()}><Send className="w-4 h-4" /></Button>
-                </div>
+                  }
+                />
               </>
             )}
           </>
