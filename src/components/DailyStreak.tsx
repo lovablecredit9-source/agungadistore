@@ -244,6 +244,12 @@ export default function DailyStreak() {
   const [voucherLoading, setVoucherLoading] = useState(false);
   const [voucherError, setVoucherError] = useState("");
   const [voucherApplied, setVoucherApplied] = useState(false);
+  const [mysteryReward, setMysteryReward] = useState<MysteryReward | null>(null);
+  const [newAchievement, setNewAchievement] = useState<Achievement | null>(null);
+  const [achievementQueue, setAchievementQueue] = useState<Achievement[]>([]);
+  const [buyingFreeze, setBuyingFreeze] = useState(false);
+  const [showFreezePinModal, setShowFreezePinModal] = useState(false);
+  const [freezePinInput, setFreezePinInput] = useState("");
   const visitorId = getVisitorId();
   const countdown = useCountdown();
   const { toast } = useToast();
@@ -253,6 +259,15 @@ export default function DailyStreak() {
   const [flashSaleLabel, setFlashSaleLabel] = useState("");
 
   useEffect(() => { fetchStreak(); fetchSubscription(); fetchStreakPackages(); }, []);
+
+  // Process achievement queue one-by-one
+  useEffect(() => {
+    if (!newAchievement && achievementQueue.length > 0) {
+      const [next, ...rest] = achievementQueue;
+      setNewAchievement(next);
+      setAchievementQueue(rest);
+    }
+  }, [newAchievement, achievementQueue]);
 
   const fetchStreakPackages = useCallback(async () => {
     // Fetch packages from DB
