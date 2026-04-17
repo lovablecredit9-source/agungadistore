@@ -79,7 +79,7 @@ const BotWaTab = () => {
       ]);
       if (pkgRes.data) setPackages(pkgRes.data);
       if (subRes.data) setSubscriptions(subRes.data as BotSubscription[]);
-      if (balRes.data) setUserBalance(balRes.data.balance);
+      if (balRes.data) setUserBalance((balRes.data as any).balance);
     } finally {
       if (!silent) setLoading(false);
     }
