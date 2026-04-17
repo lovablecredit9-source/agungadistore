@@ -327,12 +327,14 @@ export type Database = {
         Row: {
           achievements: string[]
           created_at: string
+          current_multiplier: number
           current_streak: number
           freeze_count: number
           freeze_used_at: string | null
           id: string
           last_claim_date: string
           longest_streak: number
+          streak_coins: number
           total_bonus_points: number
           total_claims: number
           updated_at: string
@@ -341,12 +343,14 @@ export type Database = {
         Insert: {
           achievements?: string[]
           created_at?: string
+          current_multiplier?: number
           current_streak?: number
           freeze_count?: number
           freeze_used_at?: string | null
           id?: string
           last_claim_date?: string
           longest_streak?: number
+          streak_coins?: number
           total_bonus_points?: number
           total_claims?: number
           updated_at?: string
@@ -355,12 +359,14 @@ export type Database = {
         Update: {
           achievements?: string[]
           created_at?: string
+          current_multiplier?: number
           current_streak?: number
           freeze_count?: number
           freeze_used_at?: string | null
           id?: string
           last_claim_date?: string
           longest_streak?: number
+          streak_coins?: number
           total_bonus_points?: number
           total_claims?: number
           updated_at?: string
@@ -434,6 +440,27 @@ export type Database = {
           is_active?: boolean
           max_uses?: number
           used_count?: number
+        }
+        Relationships: []
+      }
+      game_achievements: {
+        Row: {
+          achievement_key: string
+          id: string
+          unlocked_at: string
+          visitor_id: string
+        }
+        Insert: {
+          achievement_key: string
+          id?: string
+          unlocked_at?: string
+          visitor_id: string
+        }
+        Update: {
+          achievement_key?: string
+          id?: string
+          unlocked_at?: string
+          visitor_id?: string
         }
         Relationships: []
       }
@@ -749,6 +776,39 @@ export type Database = {
           max_uses?: number
           storage_mb?: number
           used_count?: number
+        }
+        Relationships: []
+      }
+      mystery_box_claims: {
+        Row: {
+          claim_date: string
+          created_at: string
+          id: string
+          rarity: string
+          reward_label: string
+          reward_type: string
+          reward_value: number
+          visitor_id: string
+        }
+        Insert: {
+          claim_date?: string
+          created_at?: string
+          id?: string
+          rarity?: string
+          reward_label?: string
+          reward_type: string
+          reward_value?: number
+          visitor_id: string
+        }
+        Update: {
+          claim_date?: string
+          created_at?: string
+          id?: string
+          rarity?: string
+          reward_label?: string
+          reward_type?: string
+          reward_value?: number
+          visitor_id?: string
         }
         Relationships: []
       }
@@ -1689,6 +1749,92 @@ export type Database = {
         }
         Relationships: []
       }
+      streak_shop_items: {
+        Row: {
+          cost_coins: number
+          created_at: string
+          description: string
+          icon: string
+          id: string
+          is_active: boolean
+          name: string
+          reward_type: string
+          reward_value: number
+          sort_order: number
+          stock: number
+          updated_at: string
+        }
+        Insert: {
+          cost_coins?: number
+          created_at?: string
+          description?: string
+          icon?: string
+          id?: string
+          is_active?: boolean
+          name: string
+          reward_type: string
+          reward_value?: number
+          sort_order?: number
+          stock?: number
+          updated_at?: string
+        }
+        Update: {
+          cost_coins?: number
+          created_at?: string
+          description?: string
+          icon?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          reward_type?: string
+          reward_value?: number
+          sort_order?: number
+          stock?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      streak_shop_redemptions: {
+        Row: {
+          cost_coins: number
+          created_at: string
+          id: string
+          item_id: string
+          reward_code: string | null
+          reward_type: string
+          reward_value: number
+          visitor_id: string
+        }
+        Insert: {
+          cost_coins?: number
+          created_at?: string
+          id?: string
+          item_id: string
+          reward_code?: string | null
+          reward_type: string
+          reward_value?: number
+          visitor_id: string
+        }
+        Update: {
+          cost_coins?: number
+          created_at?: string
+          id?: string
+          item_id?: string
+          reward_code?: string | null
+          reward_type?: string
+          reward_value?: number
+          visitor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "streak_shop_redemptions_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "streak_shop_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       streak_subscriptions: {
         Row: {
           created_at: string
@@ -1984,6 +2130,83 @@ export type Database = {
           },
         ]
       }
+      tournament_entries: {
+        Row: {
+          id: string
+          total_points: number
+          total_wins: number
+          tournament_id: string
+          updated_at: string
+          visitor_id: string
+        }
+        Insert: {
+          id?: string
+          total_points?: number
+          total_wins?: number
+          tournament_id: string
+          updated_at?: string
+          visitor_id: string
+        }
+        Update: {
+          id?: string
+          total_points?: number
+          total_wins?: number
+          tournament_id?: string
+          updated_at?: string
+          visitor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tournament_entries_tournament_id_fkey"
+            columns: ["tournament_id"]
+            isOneToOne: false
+            referencedRelation: "tournaments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tournaments: {
+        Row: {
+          created_at: string
+          description: string
+          ends_at: string
+          id: string
+          is_active: boolean
+          is_settled: boolean
+          name: string
+          prize_first: number
+          prize_second: number
+          prize_third: number
+          starts_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string
+          ends_at?: string
+          id?: string
+          is_active?: boolean
+          is_settled?: boolean
+          name?: string
+          prize_first?: number
+          prize_second?: number
+          prize_third?: number
+          starts_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          ends_at?: string
+          id?: string
+          is_active?: boolean
+          is_settled?: boolean
+          name?: string
+          prize_first?: number
+          prize_second?: number
+          prize_third?: number
+          starts_at?: string
+        }
+        Relationships: []
+      }
       user_balances: {
         Row: {
           balance: number
@@ -2204,6 +2427,86 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      weekly_challenge_progress: {
+        Row: {
+          challenge_id: string
+          claimed_at: string | null
+          current_value: number
+          id: string
+          is_completed: boolean
+          updated_at: string
+          visitor_id: string
+        }
+        Insert: {
+          challenge_id: string
+          claimed_at?: string | null
+          current_value?: number
+          id?: string
+          is_completed?: boolean
+          updated_at?: string
+          visitor_id: string
+        }
+        Update: {
+          challenge_id?: string
+          claimed_at?: string | null
+          current_value?: number
+          id?: string
+          is_completed?: boolean
+          updated_at?: string
+          visitor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "weekly_challenge_progress_challenge_id_fkey"
+            columns: ["challenge_id"]
+            isOneToOne: false
+            referencedRelation: "weekly_challenges"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      weekly_challenges: {
+        Row: {
+          challenge_type: string
+          created_at: string
+          description: string
+          ends_at: string
+          id: string
+          is_active: boolean
+          reward_coins: number
+          reward_label: string
+          starts_at: string
+          target_value: number
+          title: string
+        }
+        Insert: {
+          challenge_type: string
+          created_at?: string
+          description?: string
+          ends_at?: string
+          id?: string
+          is_active?: boolean
+          reward_coins?: number
+          reward_label?: string
+          starts_at?: string
+          target_value?: number
+          title: string
+        }
+        Update: {
+          challenge_type?: string
+          created_at?: string
+          description?: string
+          ends_at?: string
+          id?: string
+          is_active?: boolean
+          reward_coins?: number
+          reward_label?: string
+          starts_at?: string
+          target_value?: number
+          title?: string
+        }
+        Relationships: []
       }
       wholesale_prices: {
         Row: {
