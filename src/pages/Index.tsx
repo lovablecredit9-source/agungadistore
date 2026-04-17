@@ -470,19 +470,20 @@ const Index = () => {
   }, [userBalance?.visitor_id, visitorId]);
 
   async function fetchNotifications(targetVisitorId = activeBalanceVisitorId) {
-    const { data } = await supabase
-      .from("notifications")
-      .select("*")
-      .eq("visitor_id", targetVisitorId)
-      .order("created_at", { ascending: false })
-      .limit(50);
+    const { data } = await (supabase as any).rpc("get_my_notifications", {
+      p_visitor_id: targetVisitorId,
+      p_limit: 50,
+    });
     if (data) setNotifications(data as unknown as Notification[]);
   }
 
   async function markNotificationsRead() {
     const unreadIds = notifications.filter(n => !n.is_read).map(n => n.id);
     if (unreadIds.length === 0) return;
-    await supabase.from("notifications").update({ is_read: true } as any).in("id", unreadIds);
+    await (supabase as any).rpc("mark_notifications_read", {
+      p_visitor_id: activeBalanceVisitorId,
+      p_ids: unreadIds,
+    });
     setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
   }
 
@@ -491,14 +492,21 @@ const Index = () => {
   }
 
   async function markNotifRead(id: string) {
-    await supabase.from("notifications").update({ is_read: true } as any).eq("id", id);
+    await (supabase as any).rpc("mark_notifications_read", {
+      p_visitor_id: activeBalanceVisitorId,
+      p_ids: [id],
+    });
     setNotifications(prev => prev.map(n => (n.id === id ? { ...n, is_read: true } : n)));
   }
 
   async function createNotification(title: string, message: string, type: string, relatedId?: string) {
-    await supabase.from("notifications").insert({
-      visitor_id: activeBalanceVisitorId, title, message, type, related_id: relatedId || null,
-    } as any);
+    await (supabase as any).rpc("create_notification", {
+      p_visitor_id: activeBalanceVisitorId,
+      p_title: title,
+      p_message: message,
+      p_type: type,
+      p_related_id: relatedId || null,
+    });
   }
 
   useEffect(() => {
