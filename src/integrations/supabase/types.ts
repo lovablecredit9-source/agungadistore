@@ -2068,6 +2068,7 @@ export type Database = {
         Args: { sponsor_id: string }
         Returns: undefined
       }
+      is_admin_user: { Args: never; Returns: boolean }
     }
     Enums: {
       [_ in never]: never
