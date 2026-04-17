@@ -816,6 +816,10 @@ const Index = () => {
     const currentBalanceVisitorId = (data as any).visitor_id;
     const { data: txns } = await supabase.from("balance_transactions").select("*").eq("visitor_id", currentBalanceVisitorId).order("created_at", { ascending: false });
     if (txns) setBalanceTransactions(txns as unknown as BalanceTransaction[]);
+    else setBalanceTransactions([]);
+    setSelectedTxIds(new Set());
+    setSelectedTransaction(null);
+    setShowTxExport(false);
   }
 
   async function createUserBalance() {
@@ -2706,6 +2710,10 @@ const Index = () => {
                   setUserBalance(user as any);
                   setProfileUsername(user.username);
                   setProfilePhone(user.phone);
+                    setBalanceTransactions([]);
+                    setSelectedTxIds(new Set());
+                    setSelectedTransaction(null);
+                    setShowTxExport(false);
                   fetchUserBalance();
                 }}
                 onLogout={() => {}}
@@ -2814,14 +2822,20 @@ const Index = () => {
                     setUserBalance(user as any);
                     setProfileUsername(user.username);
                     setProfilePhone(user.phone);
+                    setBalanceTransactions([]);
+                    setSelectedTxIds(new Set());
+                    setSelectedTransaction(null);
+                    setShowTxExport(false);
                     fetchUserBalance();
                   }}
                   onLogout={() => {
                     localStorage.removeItem("balance_visitor_id");
                     setUserBalance(null);
                     setBalanceTransactions([]);
-                  setHasPin(false);
-                  setSelectedTransaction(null);
+                    setHasPin(false);
+                    setSelectedTxIds(new Set());
+                    setSelectedTransaction(null);
+                    setShowTxExport(false);
                   }}
                 />
 
@@ -3054,7 +3068,7 @@ const Index = () => {
 
         {tab === "streak" && (
           userBalance ? (
-            <DailyStreak />
+            <DailyStreak key={userBalance.visitor_id} visitorId={userBalance.visitor_id} />
           ) : (
             <LoginGate
               title="Daily Streak"

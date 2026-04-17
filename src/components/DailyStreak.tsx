@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { getVisitorId } from "@/lib/visitor-id";
 import { Button } from "@/components/ui/button";
 import { Check, Trophy, Star, Gift, Zap, ShoppingCart, Loader2, Lock, X, Shield } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -228,7 +227,11 @@ function FloatingSparkles({ count = 6, tier = 1 }: { count?: number; tier?: numb
 }
 
 
-export default function DailyStreak() {
+interface DailyStreakProps {
+  visitorId: string;
+}
+
+export default function DailyStreak({ visitorId }: DailyStreakProps) {
   const [streak, setStreak] = useState<StreakData | null>(null);
   const [claiming, setClaiming] = useState(false);
   const [justClaimed, setJustClaimed] = useState(false);
@@ -250,15 +253,12 @@ export default function DailyStreak() {
   const [buyingFreeze, setBuyingFreeze] = useState(false);
   const [showFreezePinModal, setShowFreezePinModal] = useState(false);
   const [freezePinInput, setFreezePinInput] = useState("");
-  const visitorId = getVisitorId();
   const countdown = useCountdown();
   const { toast } = useToast();
 
   const [AUTO_CLAIM_PLANS, setAutoClaimPlans] = useState<any[]>([]);
   const [flashSaleEnd, setFlashSaleEnd] = useState("");
   const [flashSaleLabel, setFlashSaleLabel] = useState("");
-
-  useEffect(() => { fetchStreak(); fetchSubscription(); fetchStreakPackages(); }, []);
 
   // Process achievement queue one-by-one
   useEffect(() => {
@@ -300,7 +300,7 @@ export default function DailyStreak() {
   const fetchStreak = useCallback(async () => {
     const { data } = await supabase
       .from("daily_streaks").select("*").eq("visitor_id", visitorId).maybeSingle();
-    if (data) setStreak(data as unknown as StreakData);
+    setStreak(data ? (data as unknown as StreakData) : null);
   }, [visitorId]);
 
   const fetchSubscription = useCallback(async () => {
@@ -313,8 +313,29 @@ export default function DailyStreak() {
       .order("expires_at", { ascending: false })
       .limit(1)
       .maybeSingle();
-    if (data) setActiveSub(data as any);
+    setActiveSub(data ? (data as any) : null);
   }, [visitorId]);
+
+  useEffect(() => {
+    fetchStreakPackages();
+  }, [fetchStreakPackages]);
+
+  useEffect(() => {
+    setStreak(null);
+    setActiveSub(null);
+    setVoucherCode("");
+    setVoucherDiscount(0);
+    setVoucherError("");
+    setVoucherApplied(false);
+    setPendingPlanDays(null);
+    setShowConfirm(null);
+    setShowPinForStreak(false);
+    setShowFreezePinModal(false);
+    setStreakPinInput("");
+    setFreezePinInput("");
+    fetchStreak();
+    fetchSubscription();
+  }, [visitorId, fetchStreak, fetchSubscription]);
 
   function handlePlanClick(planDays: number) {
     const plan = AUTO_CLAIM_PLANS.find(p => p.days === planDays);
