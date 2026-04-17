@@ -5,7 +5,7 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const FREEZE_PRICE = 5000;
+const FREEZE_PRICE = 1000;
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
