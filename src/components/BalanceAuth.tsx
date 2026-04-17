@@ -12,8 +12,10 @@ import {
 } from "@/lib/saved-accounts";
 import {
   Wallet, LogIn, UserPlus, LogOut, Smartphone, History, Eye, EyeOff, Mail, Lock, User, Phone,
-  Edit2, KeyRound, Save, X, Users, Trash2, ArrowRightLeft,
+  Edit2, KeyRound, Save, X, Users, Trash2, ArrowRightLeft, Plus, LogOut as LogOutIcon,
 } from "lucide-react";
+
+const SAVED_KEY = "saved_balance_accounts_v1";
 
 interface UserBalance {
   id: string;
@@ -53,6 +55,7 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser }: BalanceA
   const [savedAccounts, setSavedAccounts] = useState<SavedAccount[]>(() => getSavedAccounts());
   const [switchingId, setSwitchingId] = useState<string | null>(null);
   const [showSwitcher, setShowSwitcher] = useState(false);
+  const [addingAccount, setAddingAccount] = useState(false); // when true, show login/register form even though logged in
 
   // Edit profile states
   const [showEditProfile, setShowEditProfile] = useState(false);
@@ -195,7 +198,38 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser }: BalanceA
     localStorage.removeItem("balance_email");
     localStorage.removeItem("balance_visitor_id");
     onLogout();
-    toast({ title: "Berhasil logout dari akun saldo" });
+    toast({ title: "Berhasil logout (akun tetap tersimpan di daftar)" });
+  }
+
+  function handleLogoutAll() {
+    if (!window.confirm("Logout & hapus SEMUA akun tersimpan di perangkat ini? Anda harus login ulang dengan username & sandi.")) return;
+    localStorage.removeItem("balance_logged_in");
+    localStorage.removeItem("balance_email");
+    localStorage.removeItem("balance_visitor_id");
+    localStorage.removeItem(SAVED_KEY);
+    setSavedAccounts([]);
+    onLogout();
+    toast({ title: "Semua akun dihapus dari perangkat ini" });
+  }
+
+  function handleAddAccount() {
+    if (savedAccounts.length >= MAX_SAVED_ACCOUNTS) {
+      toast({
+        title: `Maksimal ${MAX_SAVED_ACCOUNTS} akun`,
+        description: "Hapus salah satu akun tersimpan untuk menambah akun baru.",
+        variant: "destructive",
+      });
+      return;
+    }
+    // Logout active session so login/register form appears, then user logs into another account
+    localStorage.removeItem("balance_logged_in");
+    localStorage.removeItem("balance_email");
+    localStorage.removeItem("balance_visitor_id");
+    onLogout();
+    setMode("login");
+    setAddingAccount(true);
+    setShowSwitcher(false);
+    toast({ title: "Silakan login / daftar akun baru" });
   }
 
   function handleSwitchAccount() {
@@ -376,11 +410,14 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser }: BalanceA
               </span>
             )}
           </Button>
-          <Button size="sm" variant="outline" className="gap-1.5 text-xs font-bold" onClick={handleSwitchAccount}>
-            <LogIn className="w-3.5 h-3.5" /> Login Lain
+          <Button size="sm" variant="outline" className="gap-1.5 text-xs font-bold" onClick={handleAddAccount} disabled={savedAccounts.length >= MAX_SAVED_ACCOUNTS}>
+            <Plus className="w-3.5 h-3.5" /> Tambah Akun
           </Button>
           <Button size="sm" variant="outline" className="gap-1.5 text-xs font-bold text-destructive border-destructive/30" onClick={handleLogout}>
             <LogOut className="w-3.5 h-3.5" /> Logout
+          </Button>
+          <Button size="sm" variant="outline" className="gap-1.5 text-xs font-bold text-destructive border-destructive/30" onClick={handleLogoutAll}>
+            <Trash2 className="w-3.5 h-3.5" /> Logout Semua
           </Button>
           <Button size="sm" variant="ghost" className="gap-1.5 text-xs font-bold" onClick={() => setShowHistory(!showHistory)}>
             <Smartphone className="w-3.5 h-3.5" /> Riwayat
@@ -447,8 +484,22 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser }: BalanceA
                   })}
                 </div>
               )}
+              {savedAccounts.length < MAX_SAVED_ACCOUNTS ? (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="w-full gap-1.5 text-xs font-bold border-dashed"
+                  onClick={handleAddAccount}
+                >
+                  <Plus className="w-3.5 h-3.5" /> Tambah Akun ({savedAccounts.length}/{MAX_SAVED_ACCOUNTS})
+                </Button>
+              ) : (
+                <div className="text-[10px] text-amber-600 dark:text-amber-400 text-center py-1.5 px-2 rounded bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900">
+                  ⚠️ Slot penuh ({MAX_SAVED_ACCOUNTS}/{MAX_SAVED_ACCOUNTS}). Hapus salah satu akun untuk menambah baru.
+                </div>
+              )}
               <p className="text-[10px] text-muted-foreground leading-relaxed">
-                💡 Klik akun untuk beralih cepat tanpa input sandi. Maksimal {MAX_SAVED_ACCOUNTS} akun per perangkat.
+                💡 Klik akun untuk beralih cepat tanpa input sandi. <strong>Logout Semua</strong> akan menghapus semua akun tersimpan dari perangkat.
               </p>
             </CardContent>
           </Card>
