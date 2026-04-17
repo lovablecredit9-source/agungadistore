@@ -1,0 +1,304 @@
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { motion, AnimatePresence } from "framer-motion";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Gift, Loader2, Sparkles, ShoppingBag, Trophy, Coins } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+
+interface Props {
+  visitorId: string;
+}
+
+interface ShopItem {
+  id: string;
+  name: string;
+  description: string;
+  icon: string;
+  cost_coins: number;
+  reward_type: string;
+  reward_value: number;
+}
+
+interface Challenge {
+  id: string;
+  title: string;
+  description: string;
+  target_value: number;
+  reward_coins: number;
+  current_value?: number;
+  is_completed?: boolean;
+  claimed_at?: string | null;
+}
+
+export default function NeonStreakHub({ visitorId }: Props) {
+  const { toast } = useToast();
+  const [coins, setCoins] = useState(0);
+  const [multiplier, setMultiplier] = useState(1);
+  const [currentStreak, setCurrentStreak] = useState(0);
+  const [boxOpened, setBoxOpened] = useState(false);
+  const [opening, setOpening] = useState(false);
+  const [reward, setReward] = useState<any>(null);
+  const [showShop, setShowShop] = useState(false);
+  const [items, setItems] = useState<ShopItem[]>([]);
+  const [redeeming, setRedeeming] = useState<string | null>(null);
+  const [challenges, setChallenges] = useState<Challenge[]>([]);
+
+  function getToday() {
+    const wib = new Date(Date.now() + 7 * 3600 * 1000);
+    return wib.toISOString().split("T")[0];
+  }
+
+  async function loadAll() {
+    const today = getToday();
+    const { data: streak } = await supabase.from("daily_streaks").select("*").eq("visitor_id", visitorId).maybeSingle();
+    if (streak) {
+      setCoins((streak as any).streak_coins || 0);
+      setMultiplier(Number((streak as any).current_multiplier) || 1);
+      setCurrentStreak(streak.current_streak || 0);
+    }
+    const { data: box } = await supabase.from("mystery_box_claims").select("*").eq("visitor_id", visitorId).eq("claim_date", today).maybeSingle();
+    setBoxOpened(!!box);
+    if (box) setReward(box);
+
+    const { data: shopItems } = await supabase.from("streak_shop_items").select("*").eq("is_active", true).order("sort_order");
+    setItems((shopItems as any[]) || []);
+
+    const { data: chs } = await supabase.from("weekly_challenges").select("*").eq("is_active", true).gte("ends_at", new Date().toISOString());
+    if (chs) {
+      const { data: progs } = await supabase.from("weekly_challenge_progress").select("*").eq("visitor_id", visitorId).in("challenge_id", chs.map(c => c.id));
+      const progMap = Object.fromEntries((progs || []).map((p: any) => [p.challenge_id, p]));
+      setChallenges(chs.map((c: any) => ({
+        ...c,
+        current_value: progMap[c.id]?.current_value || 0,
+        is_completed: progMap[c.id]?.is_completed || false,
+        claimed_at: progMap[c.id]?.claimed_at || null,
+      })));
+    }
+  }
+
+  useEffect(() => {
+    if (visitorId) loadAll();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [visitorId]);
+
+  async function openMysteryBox() {
+    setOpening(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("mystery-box-open", { body: { visitorId } });
+      if (error || data?.error) {
+        toast({ title: "Gagal", description: data?.error || error?.message, variant: "destructive" });
+      } else if (data?.alreadyOpened) {
+        toast({ title: "Sudah dibuka", description: "Mystery box hari ini sudah dibuka." });
+        setReward(data.reward);
+        setBoxOpened(true);
+      } else {
+        setReward(data.reward);
+        setBoxOpened(true);
+        loadAll();
+      }
+    } finally {
+      setOpening(false);
+    }
+  }
+
+  async function redeem(item: ShopItem) {
+    setRedeeming(item.id);
+    try {
+      const { data, error } = await supabase.functions.invoke("streak-shop-redeem", { body: { visitorId, itemId: item.id } });
+      if (error || data?.error) {
+        toast({ title: "Gagal", description: data?.error || error?.message, variant: "destructive" });
+      } else {
+        toast({
+          title: `🛒 ${item.name} ditebus!`,
+          description: data.rewardCode ? `Kode: ${data.rewardCode}` : "Reward sudah ditambahkan!",
+        });
+        loadAll();
+      }
+    } finally {
+      setRedeeming(null);
+    }
+  }
+
+  async function claimChallenge(ch: Challenge) {
+    const { data, error } = await supabase.functions.invoke("check-weekly-challenge", { body: { visitorId, claimChallengeId: ch.id } });
+    if (error || data?.error) {
+      toast({ title: "Gagal", description: data?.error || error?.message, variant: "destructive" });
+    } else {
+      toast({ title: "🏆 Reward Diklaim!", description: `+${data.reward_coins} Streak Coins` });
+      loadAll();
+    }
+  }
+
+  const rarityColor = (r: string) =>
+    r === "legendary" ? "from-yellow-400 to-orange-600"
+    : r === "epic" ? "from-purple-500 to-pink-600"
+    : r === "rare" ? "from-blue-400 to-cyan-500"
+    : "from-slate-400 to-slate-600";
+
+  return (
+    <div className="space-y-3">
+      {/* Coins + multiplier neon header */}
+      <div className="cyber-card rounded-2xl p-4 relative scanline">
+        <div className="absolute inset-0 cyber-grid opacity-30 rounded-2xl" />
+        <div className="relative z-10 flex items-center justify-between">
+          <div>
+            <div className="text-[10px] font-black tracking-widest neon-text-cyan uppercase">Streak Coins</div>
+            <div className="flex items-center gap-2 mt-1">
+              <Coins className="w-6 h-6 neon-text-yellow neon-pulse" />
+              <span className="text-3xl font-black neon-gradient-text tabular-nums">{coins.toLocaleString("id-ID")}</span>
+            </div>
+          </div>
+          {multiplier > 1 && (
+            <motion.div
+              animate={{ scale: [1, 1.08, 1] }}
+              transition={{ duration: 1.5, repeat: Infinity }}
+              className="px-3 py-1.5 rounded-full bg-gradient-to-r from-pink-500 to-purple-600 text-white text-xs font-black shadow-[0_0_20px_hsl(var(--neon-pink)/0.7)]"
+            >
+              ⚡ x{multiplier} BOOST
+            </motion.div>
+          )}
+        </div>
+      </div>
+
+      {/* Mystery Box */}
+      <button
+        onClick={openMysteryBox}
+        disabled={opening || boxOpened}
+        className="w-full cyber-card-pink rounded-2xl p-4 text-left relative overflow-hidden group disabled:opacity-80"
+      >
+        <div className="absolute -right-6 -top-6 w-32 h-32 rounded-full bg-pink-500/30 blur-3xl group-hover:bg-pink-500/50 transition" />
+        <div className="relative flex items-center gap-3">
+          <motion.div
+            animate={boxOpened ? {} : { rotate: [0, -6, 6, 0], scale: [1, 1.05, 1] }}
+            transition={{ duration: 1.2, repeat: Infinity }}
+            className="text-5xl"
+          >
+            {boxOpened && reward ? reward.reward_label?.split(" ")[0] || "🎁" : "🎁"}
+          </motion.div>
+          <div className="flex-1 min-w-0">
+            <div className="text-xs neon-text-cyan font-black tracking-widest uppercase">Mystery Box Harian</div>
+            <div className="font-extrabold text-white text-base">
+              {boxOpened ? (reward?.reward_label || "Sudah dibuka") : "Buka sekarang!"}
+            </div>
+            <div className="text-[11px] text-white/70">
+              {boxOpened ? "Kembali besok untuk box baru" : "Reward acak: coins, credit, freeze..."}
+            </div>
+          </div>
+          {opening ? <Loader2 className="w-5 h-5 animate-spin text-white" /> : <Sparkles className="w-5 h-5 neon-text-yellow neon-pulse" />}
+        </div>
+      </button>
+
+      {/* Weekly Challenges */}
+      {challenges.length > 0 && (
+        <div className="cyber-card-cyan rounded-2xl p-3 space-y-2">
+          <div className="flex items-center gap-2">
+            <Trophy className="w-4 h-4 neon-text-yellow" />
+            <span className="text-xs font-black neon-text-cyan tracking-widest uppercase">Tantangan Mingguan</span>
+          </div>
+          {challenges.map(ch => {
+            const pct = Math.min(100, ((ch.current_value || 0) / ch.target_value) * 100);
+            const claimable = ch.is_completed && !ch.claimed_at;
+            return (
+              <div key={ch.id} className="bg-black/30 rounded-xl p-3 border border-cyan-500/20">
+                <div className="flex items-start justify-between mb-2">
+                  <div className="flex-1 min-w-0">
+                    <div className="font-extrabold text-white text-sm">{ch.title}</div>
+                    <div className="text-[10px] text-white/60">{ch.description}</div>
+                  </div>
+                  <div className="text-[10px] font-black neon-text-yellow tabular-nums">+{ch.reward_coins}🪙</div>
+                </div>
+                <div className="h-1.5 bg-white/10 rounded-full overflow-hidden mb-2">
+                  <motion.div
+                    initial={{ width: 0 }}
+                    animate={{ width: `${pct}%` }}
+                    className="h-full bg-gradient-to-r from-cyan-400 to-pink-500 shadow-[0_0_10px_hsl(var(--neon-cyan)/0.7)]"
+                  />
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-bold text-white/70 tabular-nums">{ch.current_value || 0} / {ch.target_value}</span>
+                  {claimable && (
+                    <Button size="sm" onClick={() => claimChallenge(ch)} className="h-6 text-[10px] bg-gradient-to-r from-yellow-400 to-pink-500 text-black font-black">
+                      KLAIM
+                    </Button>
+                  )}
+                  {ch.claimed_at && <span className="text-[10px] font-bold text-emerald-400">✓ DIKLAIM</span>}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Streak Shop button */}
+      <Button
+        onClick={() => setShowShop(true)}
+        className="w-full bg-gradient-to-r from-purple-600 via-pink-600 to-cyan-600 text-white font-black h-12 shadow-[0_0_20px_hsl(var(--neon-purple)/0.5)] hover:shadow-[0_0_30px_hsl(var(--neon-pink)/0.7)]"
+      >
+        <ShoppingBag className="w-5 h-5 mr-2" /> STREAK SHOP — Tukar Coins
+      </Button>
+
+      {/* Mystery reward popup */}
+      <AnimatePresence>
+        {reward && !boxOpened && (
+          <motion.div
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[200] bg-black/80 backdrop-blur flex items-center justify-center p-4"
+            onClick={() => setReward(null)}
+          >
+            <motion.div
+              initial={{ scale: 0.3, rotate: 180 }} animate={{ scale: 1, rotate: 0 }}
+              transition={{ type: "spring" }}
+              className={`max-w-xs w-full rounded-3xl p-6 text-center bg-gradient-to-br ${rarityColor(reward.rarity)} shadow-2xl`}
+              onClick={e => e.stopPropagation()}
+            >
+              <div className="text-7xl mb-3">{reward.reward_label?.split(" ")[0] || "🎁"}</div>
+              <div className="text-[10px] font-black tracking-widest text-white/80 mb-1">{reward.rarity?.toUpperCase()}</div>
+              <div className="text-2xl font-black text-white drop-shadow mb-2">{reward.reward_label}</div>
+              <Button onClick={() => setReward(null)} className="bg-white text-black font-black w-full">Mantap! 🚀</Button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Shop dialog */}
+      <Dialog open={showShop} onOpenChange={setShowShop}>
+        <DialogContent className="max-w-md bg-gradient-to-br from-purple-950 via-slate-950 to-cyan-950 border-purple-500/40">
+          <DialogHeader>
+            <DialogTitle className="neon-gradient-text text-2xl font-black flex items-center gap-2">
+              <ShoppingBag className="w-6 h-6 text-pink-400" /> STREAK SHOP
+            </DialogTitle>
+          </DialogHeader>
+          <div className="flex items-center justify-between p-3 rounded-xl bg-black/40 border border-yellow-500/30">
+            <span className="text-xs font-bold text-white/80">Saldo Coins</span>
+            <span className="text-xl font-black neon-text-yellow tabular-nums">🪙 {coins.toLocaleString("id-ID")}</span>
+          </div>
+          <div className="grid grid-cols-2 gap-2 max-h-[60vh] overflow-y-auto">
+            {items.map(item => {
+              const canBuy = coins >= item.cost_coins;
+              return (
+                <button
+                  key={item.id}
+                  disabled={!canBuy || redeeming === item.id}
+                  onClick={() => redeem(item)}
+                  className={`relative p-3 rounded-xl border text-left transition group ${
+                    canBuy ? "bg-gradient-to-br from-purple-900/60 to-pink-900/60 border-pink-500/40 hover:border-pink-400 hover:scale-[1.02]" : "bg-black/40 border-white/10 opacity-50"
+                  }`}
+                >
+                  <div className="text-3xl mb-1">{item.icon}</div>
+                  <div className="font-extrabold text-white text-xs leading-tight">{item.name}</div>
+                  <div className="text-[10px] text-white/60 mb-2 line-clamp-2">{item.description}</div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-black neon-text-yellow tabular-nums">🪙 {item.cost_coins}</span>
+                    {redeeming === item.id && <Loader2 className="w-3 h-3 animate-spin text-white" />}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+          <p className="text-[10px] text-center text-white/50">Coins didapat dari klaim streak harian (bonus saat multiplier aktif), Mystery Box, dan Tantangan Mingguan.</p>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
