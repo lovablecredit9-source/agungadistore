@@ -79,23 +79,28 @@ export default function LikesTab({
           <div className="absolute -bottom-8 -left-8 w-28 h-28 rounded-full bg-white/20 blur-2xl" />
         </div>
         <div className="relative z-10 flex items-center gap-4">
-          <div className="w-14 h-14 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-lg ring-2 ring-white/20">
-            <Heart className="w-7 h-7 text-white" />
+          <div className="relative">
+            <div className="absolute inset-0 bg-white/40 rounded-2xl blur-xl animate-pulse" />
+            <div className="relative w-14 h-14 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-lg ring-2 ring-white/20">
+              <Heart className="w-7 h-7 text-white animate-pulse" style={{ animationDuration: "1.5s" }} />
+            </div>
           </div>
           <div>
-            <h2 className="text-xl font-extrabold text-white tracking-tight">{t("likes.title", lang)}</h2>
-            <p className="text-white/70 text-xs font-medium mt-0.5">{likedProducts.length + likedSponsors.length} item disukai</p>
+            <h2 className="text-xl font-extrabold text-white tracking-tight drop-shadow-lg">{t("likes.title", lang)}</h2>
+            <p className="text-white/80 text-xs font-medium mt-0.5">{likedProducts.length + likedSponsors.length} item disukai</p>
           </div>
         </div>
         {/* Stats */}
         <div className="relative z-10 flex gap-3 mt-4">
-          <div className="flex-1 bg-white/10 backdrop-blur-sm rounded-xl px-3 py-2 text-center">
+          <div className="flex-1 bg-white/15 backdrop-blur-md rounded-xl px-3 py-2 text-center border border-white/10 hover:bg-white/20 transition-all">
+            <Package className="w-3.5 h-3.5 text-white/80 mx-auto mb-0.5" />
             <p className="text-white font-extrabold text-lg leading-none">{likedProducts.length}</p>
-            <p className="text-white/60 text-[10px] font-medium">Produk</p>
+            <p className="text-white/70 text-[10px] font-medium mt-0.5">Produk</p>
           </div>
-          <div className="flex-1 bg-white/10 backdrop-blur-sm rounded-xl px-3 py-2 text-center">
+          <div className="flex-1 bg-white/15 backdrop-blur-md rounded-xl px-3 py-2 text-center border border-white/10 hover:bg-white/20 transition-all">
+            <Megaphone className="w-3.5 h-3.5 text-white/80 mx-auto mb-0.5" />
             <p className="text-white font-extrabold text-lg leading-none">{likedSponsors.length}</p>
-            <p className="text-white/60 text-[10px] font-medium">Sponsor</p>
+            <p className="text-white/70 text-[10px] font-medium mt-0.5">Sponsor</p>
           </div>
         </div>
       </div>
