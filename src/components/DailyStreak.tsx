@@ -1110,6 +1110,31 @@ export default function DailyStreak() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* NEW: Mystery Reward Popup */}
+      <MysteryRewardPopup reward={mysteryReward} onClose={() => setMysteryReward(null)} />
+
+      {/* NEW: PIN Modal for buying Streak Freeze */}
+      {showFreezePinModal && (
+        <div className="fixed inset-0 z-[96] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setShowFreezePinModal(false)}>
+          <div className="bg-card w-full max-w-sm rounded-2xl p-5 space-y-4 animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between">
+              <h3 className="font-extrabold text-lg flex items-center gap-2"><Shield className="w-5 h-5 text-cyan-500" /> Beli Pelindung Streak</h3>
+              <button onClick={() => setShowFreezePinModal(false)} className="w-8 h-8 rounded-full bg-muted flex items-center justify-center"><X className="w-4 h-4" /></button>
+            </div>
+            <p className="text-xs text-muted-foreground text-center">Masukkan PIN untuk konfirmasi pembelian Pelindung Streak (Rp 5.000)</p>
+            <Input type="password" inputMode="numeric" maxLength={6} placeholder="PIN" value={freezePinInput}
+              onChange={e => setFreezePinInput(e.target.value.replace(/\D/g, ""))}
+              className="text-center text-2xl tracking-[0.3em] font-bold"
+              onKeyDown={e => { if (e.key === "Enter") confirmBuyFreeze(); }}
+              autoFocus />
+            <Button className="w-full h-11 bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-bold gap-2"
+              onClick={confirmBuyFreeze} disabled={freezePinInput.length < 4}>
+              <Shield className="w-4 h-4" /> Konfirmasi Beli
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
