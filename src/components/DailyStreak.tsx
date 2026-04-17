@@ -714,23 +714,24 @@ export default function DailyStreak() {
             </motion.p>
           )}
 
-          {/* Stats */}
-          <div className="grid grid-cols-3 gap-2 mt-4">
+          {/* Stats - 4 columns now with bonus points */}
+          <div className="grid grid-cols-4 gap-2 mt-4">
             {[
-              { icon: <EmojiFireSVG width={22} height={26} />, val: currentStreak, label: "Streak" },
-              { icon: <Trophy className="w-5 h-5 text-yellow-500" />, val: longestStreak, label: "Terbaik" },
-              { icon: <Star className="w-5 h-5 text-primary" />, val: totalClaims, label: "Total" },
+              { icon: <EmojiFireSVG width={20} height={24} />, val: currentStreak, label: "Streak" },
+              { icon: <Trophy className="w-4 h-4 text-yellow-500" />, val: longestStreak, label: "Terbaik" },
+              { icon: <Star className="w-4 h-4 text-primary" />, val: totalClaims, label: "Total" },
+              { icon: <Sparkles className="w-4 h-4 text-purple-500" />, val: streak?.total_bonus_points || 0, label: "Bonus" },
             ].map((s, i) => (
               <motion.div
                 key={i}
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.3 + i * 0.1 }}
-                className="bg-muted/40 rounded-xl p-3 text-center"
+                className="bg-muted/40 rounded-xl p-2 text-center"
               >
                 <div className="flex justify-center mb-1">{s.icon}</div>
-                <p className="text-lg font-extrabold">{s.val}</p>
-                <p className="text-[9px] text-muted-foreground">{s.label}</p>
+                <p className="text-sm font-extrabold">{s.val}</p>
+                <p className="text-[8px] text-muted-foreground">{s.label}</p>
               </motion.div>
             ))}
           </div>
