@@ -225,6 +225,52 @@ export default function NeonStreakHub({ visitorId }: Props) {
         </div>
       </button>
 
+      {/* Daily Missions */}
+      {dailyMissions.length > 0 && (
+        <div className="cyber-card-pink rounded-2xl p-3 space-y-2">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Target className="w-4 h-4 neon-text-pink" />
+              <span className="text-xs font-black neon-text-pink tracking-widest uppercase">Tantangan Harian</span>
+            </div>
+            <span className="text-[9px] font-bold text-white/60 uppercase tracking-wider">Reset 00:00 WIB</span>
+          </div>
+          {dailyMissions.map(ch => {
+            const pct = Math.min(100, ((ch.current_value || 0) / ch.target_value) * 100);
+            const claimable = ch.is_completed && !ch.claimed_at;
+            return (
+              <div key={ch.id} className="bg-black/30 rounded-xl p-3 border border-pink-500/20">
+                <div className="flex items-start justify-between mb-2">
+                  <div className="flex-1 min-w-0 pr-3">
+                    <div className="font-extrabold text-white text-sm">{ch.title}</div>
+                    <div className="text-[10px] text-white/60">{ch.description}</div>
+                  </div>
+                  <div className="text-[10px] font-black neon-text-yellow tabular-nums whitespace-nowrap">+{ch.reward_coins}🪙</div>
+                </div>
+                <div className="h-1.5 bg-white/10 rounded-full overflow-hidden mb-2">
+                  <motion.div
+                    initial={{ width: 0 }}
+                    animate={{ width: `${pct}%` }}
+                    className="h-full bg-gradient-to-r from-pink-400 to-yellow-400 shadow-[0_0_10px_hsl(var(--neon-pink)/0.7)]"
+                  />
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-bold text-white/70 tabular-nums">
+                    {ch.current_value || 0} / {ch.target_value}
+                  </span>
+                  {claimable && (
+                    <Button size="sm" onClick={() => claimDailyMission(ch)} className="h-6 text-[10px] bg-gradient-to-r from-pink-400 to-yellow-400 text-black font-black">
+                      KLAIM
+                    </Button>
+                  )}
+                  {ch.claimed_at && <span className="text-[10px] font-bold text-emerald-400">✓ DIKLAIM HARI INI</span>}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
       {/* Weekly Challenges */}
       {challenges.length > 0 && (
         <div className="cyber-card-cyan rounded-2xl p-3 space-y-2">
