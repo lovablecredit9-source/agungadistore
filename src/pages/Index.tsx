@@ -2229,6 +2229,9 @@ const Index = () => {
                 </div>
               );
             })()}
+
+            {history.length > 0 && (
+              <div className="flex items-center justify-between bg-card/80 backdrop-blur-sm rounded-xl p-3 border border-border/50 shadow-sm">
                 <Button size="sm" variant="outline" onClick={toggleSelectAll} className="gap-1.5 text-xs rounded-lg font-bold">
                   <Checkbox checked={history.length > 0 && selectedHistoryIds.size === history.length} className="pointer-events-none" />
                   Pilih Semua ({selectedHistoryIds.size}/{history.length})
