@@ -781,11 +781,14 @@ const Index = () => {
       return;
     }
 
+    const storedBalanceVisitorId = localStorage.getItem("balance_visitor_id");
     const savedEmail = localStorage.getItem("balance_email");
     let query = supabase.from("user_balances_public" as any).select("*");
-    
-    // Prefer finding by saved email (more reliable across devices)
-    if (savedEmail) {
+
+    // Always resolve the active account from the stored balance account id first.
+    if (storedBalanceVisitorId) {
+      query = query.eq("visitor_id", storedBalanceVisitorId);
+    } else if (savedEmail) {
       query = query.eq("email", savedEmail);
     } else {
       query = query.eq("visitor_id", visitorId);
@@ -794,6 +797,7 @@ const Index = () => {
     const { data } = await query.maybeSingle();
     if (data) {
       const user = data as unknown as UserBalance;
+      localStorage.setItem("balance_visitor_id", user.visitor_id);
       setUserBalance(user);
       setProfileUsername(user.username);
       setProfilePhone(user.phone);
@@ -807,8 +811,8 @@ const Index = () => {
       setHasPin(false);
       return;
     }
-    const balVid = localStorage.getItem("balance_visitor_id") || (data as any).visitor_id || visitorId;
-    const { data: txns } = await supabase.from("balance_transactions").select("*").eq("visitor_id", balVid).order("created_at", { ascending: false });
+    const currentBalanceVisitorId = (data as any).visitor_id;
+    const { data: txns } = await supabase.from("balance_transactions").select("*").eq("visitor_id", currentBalanceVisitorId).order("created_at", { ascending: false });
     if (txns) setBalanceTransactions(txns as unknown as BalanceTransaction[]);
   }
 
@@ -2739,6 +2743,8 @@ const Index = () => {
                     localStorage.removeItem("balance_visitor_id");
                     setUserBalance(null);
                     setBalanceTransactions([]);
+                  setHasPin(false);
+                  setSelectedTransaction(null);
                   }}
                 />
 

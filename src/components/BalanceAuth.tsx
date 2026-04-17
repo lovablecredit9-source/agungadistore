@@ -56,6 +56,7 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser }: BalanceA
   const [switchingId, setSwitchingId] = useState<string | null>(null);
   const [showSwitcher, setShowSwitcher] = useState(false);
   const [addingAccount, setAddingAccount] = useState(false); // when true, show login/register form even though logged in
+  const [previousActiveAccount, setPreviousActiveAccount] = useState<SavedAccount | null>(null);
 
   // Edit profile states
   const [showEditProfile, setShowEditProfile] = useState(false);
@@ -157,6 +158,9 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser }: BalanceA
     }));
 
     onLogin(data.user);
+    setAddingAccount(false);
+    setPreviousActiveAccount(null);
+    setShowSwitcher(false);
     toast({ title: "Pendaftaran berhasil! 🎉" });
     resetForm();
   }
@@ -197,6 +201,9 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser }: BalanceA
     }));
 
     onLogin(data.user);
+    setAddingAccount(false);
+    setPreviousActiveAccount(null);
+    setShowSwitcher(false);
     toast({ title: `Selamat datang, ${data.user.username}! 👋` });
     resetForm();
   }
@@ -205,6 +212,9 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser }: BalanceA
     localStorage.removeItem("balance_logged_in");
     localStorage.removeItem("balance_email");
     localStorage.removeItem("balance_visitor_id");
+    setAddingAccount(false);
+    setPreviousActiveAccount(null);
+    setShowSwitcher(false);
     onLogout();
     toast({ title: "Berhasil logout (akun tetap tersimpan di daftar)" });
   }
@@ -216,6 +226,9 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser }: BalanceA
     localStorage.removeItem("balance_visitor_id");
     localStorage.removeItem(SAVED_KEY);
     setSavedAccounts([]);
+    setAddingAccount(false);
+    setPreviousActiveAccount(null);
+    setShowSwitcher(false);
     onLogout();
     toast({ title: "Semua akun dihapus dari perangkat ini" });
   }
@@ -229,6 +242,13 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser }: BalanceA
       });
       return;
     }
+    setPreviousActiveAccount(currentUser ? {
+      visitor_id: currentUser.visitor_id,
+      username: currentUser.username,
+      email: currentUser.email ?? null,
+      phone: currentUser.phone,
+      last_used_at: Date.now(),
+    } : null);
     // Logout active session so login/register form appears, then user logs into another account
     localStorage.removeItem("balance_logged_in");
     localStorage.removeItem("balance_email");
@@ -238,6 +258,12 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser }: BalanceA
     setAddingAccount(true);
     setShowSwitcher(false);
     toast({ title: "Silakan login / daftar akun baru" });
+  }
+
+  async function handleBackToPreviousAccount() {
+    if (!previousActiveAccount) return;
+    resetForm();
+    await handleQuickSwitch(previousActiveAccount);
   }
 
   function handleSwitchAccount() {
@@ -273,6 +299,10 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser }: BalanceA
       phone: user.phone,
     }));
     onLogin(user);
+    setAddingAccount(false);
+    setPreviousActiveAccount(null);
+    setShowSwitcher(false);
+    resetForm();
     toast({ title: `Beralih ke ${user.username} ✅` });
   }
 
@@ -653,12 +683,12 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser }: BalanceA
   return (
     <Card className="border-2 border-primary/20 relative">
       <CardContent className="p-5 space-y-4">
-        {savedAccounts.length > 0 && (
+        {addingAccount && previousActiveAccount && (
           <button
             type="button"
-            onClick={() => { setAddingAccount(false); setShowSwitcher(true); resetForm(); }}
+            onClick={handleBackToPreviousAccount}
             className="absolute top-3 left-3 z-10 inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-muted hover:bg-muted/70 text-xs font-bold text-foreground transition-colors shadow-sm"
-            aria-label="Kembali ke daftar akun"
+            aria-label="Kembali ke akun awal"
           >
             <ArrowLeft className="w-4 h-4" /> Kembali
           </button>
