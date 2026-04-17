@@ -1324,8 +1324,34 @@ const Index = () => {
   const categories = ["Semua", ...Array.from(new Set(products.map(p => p.category || "Lainnya").filter(Boolean)))];
   const filteredProducts = products
     .filter(p => selectedCategory === "Semua" || (p.category || "Lainnya") === selectedCategory)
-    .filter(p => p.title.toLowerCase().includes(productSearch.toLowerCase()) || (p.description || "").toLowerCase().includes(productSearch.toLowerCase()));
-  const sortedProducts = sortOrder === "oldest" ? [...filteredProducts].reverse() : filteredProducts;
+    .filter(p => p.title.toLowerCase().includes(productSearch.toLowerCase()) || (p.description || "").toLowerCase().includes(productSearch.toLowerCase()))
+    .filter(p => !inStockOnly || p.stock > 0)
+    .filter(p => !warrantyOnly || p.has_warranty);
+  const sortedProducts = [...filteredProducts].sort((a, b) => {
+    if (sortOrder === "newest") return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+    if (sortOrder === "oldest") return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+    if (sortOrder === "cheapest") return a.price - b.price;
+    if (sortOrder === "expensive") return b.price - a.price;
+    if (sortOrder === "popular") return (productLikeCounts[b.id] || 0) - (productLikeCounts[a.id] || 0);
+    return 0;
+  });
+
+  // Persist view mode
+  useEffect(() => { localStorage.setItem("product_view_mode", productViewMode); }, [productViewMode]);
+
+  // Helper untuk badge dinamis produk
+  function getProductBadges(p: Product) {
+    const badges: { label: string; className: string }[] = [];
+    const ageDays = (Date.now() - new Date(p.created_at).getTime()) / (1000 * 60 * 60 * 24);
+    const likes = productLikeCounts[p.id] || 0;
+    // Trending: top 3 berdasarkan likes (likes > 0)
+    const sortedByLikes = [...products].sort((a, b) => (productLikeCounts[b.id] || 0) - (productLikeCounts[a.id] || 0));
+    const isTrending = likes > 0 && sortedByLikes.slice(0, 3).some(x => x.id === p.id);
+    if (isTrending) badges.push({ label: "🔥 Trending", className: "bg-gradient-to-r from-orange-500 to-red-500 text-white" });
+    if (ageDays < 7) badges.push({ label: "✨ Baru", className: "bg-gradient-to-r from-emerald-500 to-teal-500 text-white" });
+    if (p.stock > 0 && p.stock <= 5) badges.push({ label: "⚡ Terbatas", className: "bg-gradient-to-r from-amber-500 to-yellow-500 text-white" });
+    return badges;
+  }
 
   const totalClaimPrice = claimResults.reduce((sum, r) => sum + r.product.price, 0);
 
