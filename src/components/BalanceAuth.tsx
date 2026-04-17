@@ -7,8 +7,12 @@ import { useToast } from "@/hooks/use-toast";
 import { getVisitorId } from "@/lib/visitor-id";
 import { getDeviceSummary } from "@/lib/device-info";
 import {
+  getSavedAccounts, saveAccount, removeSavedAccount, MAX_SAVED_ACCOUNTS,
+  type SavedAccount,
+} from "@/lib/saved-accounts";
+import {
   Wallet, LogIn, UserPlus, LogOut, Smartphone, History, Eye, EyeOff, Mail, Lock, User, Phone,
-  Edit2, KeyRound, Save, X,
+  Edit2, KeyRound, Save, X, Users, Trash2, ArrowRightLeft,
 } from "lucide-react";
 
 interface UserBalance {
@@ -46,6 +50,9 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser }: BalanceA
   const [loading, setLoading] = useState(false);
   const [loginHistory, setLoginHistory] = useState<LoginHistoryEntry[]>([]);
   const [showHistory, setShowHistory] = useState(false);
+  const [savedAccounts, setSavedAccounts] = useState<SavedAccount[]>(() => getSavedAccounts());
+  const [switchingId, setSwitchingId] = useState<string | null>(null);
+  const [showSwitcher, setShowSwitcher] = useState(false);
 
   // Edit profile states
   const [showEditProfile, setShowEditProfile] = useState(false);
@@ -131,6 +138,12 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser }: BalanceA
     localStorage.setItem("balance_logged_in", "true");
     localStorage.setItem("balance_email", (data.user.email || email.trim()).toLowerCase());
     localStorage.setItem("balance_visitor_id", data.user.visitor_id);
+    setSavedAccounts(saveAccount({
+      visitor_id: data.user.visitor_id,
+      username: data.user.username,
+      email: data.user.email || email.trim(),
+      phone: data.user.phone,
+    }));
 
     onLogin(data.user);
     toast({ title: "Pendaftaran berhasil! 🎉" });
@@ -165,6 +178,12 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser }: BalanceA
     localStorage.setItem("balance_logged_in", "true");
     localStorage.setItem("balance_email", (data.user.email || loginId.trim()).toLowerCase());
     localStorage.setItem("balance_visitor_id", data.user.visitor_id);
+    setSavedAccounts(saveAccount({
+      visitor_id: data.user.visitor_id,
+      username: data.user.username,
+      email: data.user.email || loginId.trim(),
+      phone: data.user.phone,
+    }));
 
     onLogin(data.user);
     toast({ title: `Selamat datang, ${data.user.username}! 👋` });
@@ -182,6 +201,43 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser }: BalanceA
   function handleSwitchAccount() {
     handleLogout();
     setMode("login");
+    setShowSwitcher(true);
+  }
+
+  async function handleQuickSwitch(account: SavedAccount) {
+    if (currentUser?.visitor_id === account.visitor_id) {
+      toast({ title: `Akun ${account.username} sedang aktif` }); return;
+    }
+    setSwitchingId(account.visitor_id);
+    const { data, error } = await supabase
+      .from("user_balances_public" as any)
+      .select("id, visitor_id, username, phone, email, balance")
+      .eq("visitor_id", account.visitor_id)
+      .maybeSingle();
+    setSwitchingId(null);
+    if (error || !data) {
+      toast({ title: "Akun tidak ditemukan, silakan login ulang", variant: "destructive" });
+      setSavedAccounts(removeSavedAccount(account.visitor_id));
+      return;
+    }
+    const user = data as unknown as UserBalance;
+    localStorage.setItem("balance_logged_in", "true");
+    localStorage.setItem("balance_email", (user.email || account.email || "").toLowerCase());
+    localStorage.setItem("balance_visitor_id", user.visitor_id);
+    setSavedAccounts(saveAccount({
+      visitor_id: user.visitor_id,
+      username: user.username,
+      email: user.email,
+      phone: user.phone,
+    }));
+    onLogin(user);
+    toast({ title: `Beralih ke ${user.username} ✅` });
+  }
+
+  function handleRemoveSaved(visitorId: string, e: React.MouseEvent) {
+    e.stopPropagation();
+    setSavedAccounts(removeSavedAccount(visitorId));
+    toast({ title: "Akun dihapus dari daftar" });
   }
 
   function resetForm() {
@@ -312,6 +368,14 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser }: BalanceA
           <Button size="sm" variant="outline" className="gap-1.5 text-xs font-bold" onClick={() => { setShowEditProfile(!showEditProfile); resetEditForm(); }}>
             <Edit2 className="w-3.5 h-3.5" /> Edit Profil
           </Button>
+          <Button size="sm" variant="outline" className="gap-1.5 text-xs font-bold" onClick={() => setShowSwitcher(!showSwitcher)}>
+            <Users className="w-3.5 h-3.5" /> Ganti Akun
+            {savedAccounts.length > 0 && (
+              <span className="ml-0.5 px-1.5 py-0.5 rounded-full bg-primary/15 text-primary text-[10px] font-bold">
+                {savedAccounts.length}/{MAX_SAVED_ACCOUNTS}
+              </span>
+            )}
+          </Button>
           <Button size="sm" variant="outline" className="gap-1.5 text-xs font-bold" onClick={handleSwitchAccount}>
             <LogIn className="w-3.5 h-3.5" /> Login Lain
           </Button>
@@ -322,6 +386,73 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser }: BalanceA
             <Smartphone className="w-3.5 h-3.5" /> Riwayat
           </Button>
         </div>
+
+        {showSwitcher && (
+          <Card className="border border-primary/20">
+            <CardContent className="p-3 space-y-2">
+              <div className="flex items-center justify-between">
+                <h4 className="text-xs font-bold flex items-center gap-1.5">
+                  <ArrowRightLeft className="w-3.5 h-3.5 text-primary" /> Akun Tersimpan ({savedAccounts.length}/{MAX_SAVED_ACCOUNTS})
+                </h4>
+                <Button size="sm" variant="ghost" className="h-6 px-2 text-[11px]" onClick={() => setShowSwitcher(false)}>
+                  <X className="w-3 h-3" />
+                </Button>
+              </div>
+              {savedAccounts.length === 0 ? (
+                <p className="text-[11px] text-muted-foreground text-center py-2">
+                  Belum ada akun tersimpan di perangkat ini.
+                </p>
+              ) : (
+                <div className="space-y-1.5">
+                  {savedAccounts.map((acc) => {
+                    const isActive = acc.visitor_id === currentUser.visitor_id;
+                    const isSwitching = switchingId === acc.visitor_id;
+                    return (
+                      <button
+                        key={acc.visitor_id}
+                        type="button"
+                        disabled={isSwitching}
+                        onClick={() => handleQuickSwitch(acc)}
+                        className={`w-full flex items-center gap-2 p-2 rounded-lg border text-left transition-colors ${
+                          isActive ? "bg-primary/10 border-primary/40" : "bg-muted/40 border-transparent hover:bg-muted"
+                        }`}
+                      >
+                        <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs ${
+                          isActive ? "bg-primary text-primary-foreground" : "bg-gradient-to-br from-primary/70 to-accent/70 text-primary-foreground"
+                        }`}>
+                          {acc.username.slice(0, 2).toUpperCase()}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-bold truncate">{acc.username}</p>
+                          <p className="text-[10px] text-muted-foreground truncate">
+                            {acc.email || acc.phone || acc.visitor_id.slice(0, 8)}
+                          </p>
+                        </div>
+                        {isActive ? (
+                          <span className="text-[10px] font-bold text-primary">Aktif</span>
+                        ) : isSwitching ? (
+                          <span className="text-[10px] text-muted-foreground">Beralih...</span>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={(e) => handleRemoveSaved(acc.visitor_id, e)}
+                            className="p-1 rounded hover:bg-destructive/10 text-destructive"
+                            aria-label="Hapus akun"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+              <p className="text-[10px] text-muted-foreground leading-relaxed">
+                💡 Klik akun untuk beralih cepat tanpa input sandi. Maksimal {MAX_SAVED_ACCOUNTS} akun per perangkat.
+              </p>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Edit Profile Panel */}
         {showEditProfile && (
@@ -474,6 +605,58 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser }: BalanceA
             {mode === "register" ? "Buat akun baru dengan email dan sandi" : "Masuk dengan email, username, atau no HP"}
           </p>
         </div>
+
+        {savedAccounts.length > 0 && mode === "login" && (
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <p className="text-xs font-bold flex items-center gap-1.5">
+                <Users className="w-3.5 h-3.5 text-primary" /> Akun Tersimpan ({savedAccounts.length}/{MAX_SAVED_ACCOUNTS})
+              </p>
+              <span className="text-[10px] text-muted-foreground">Klik untuk masuk cepat</span>
+            </div>
+            <div className="space-y-1.5">
+              {savedAccounts.map((acc) => {
+                const isSwitching = switchingId === acc.visitor_id;
+                return (
+                  <button
+                    key={acc.visitor_id}
+                    type="button"
+                    disabled={isSwitching}
+                    onClick={() => handleQuickSwitch(acc)}
+                    className="w-full flex items-center gap-2 p-2 rounded-lg border border-transparent bg-muted/40 hover:bg-muted text-left transition-colors"
+                  >
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary/70 to-accent/70 text-primary-foreground flex items-center justify-center font-bold text-xs">
+                      {acc.username.slice(0, 2).toUpperCase()}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-bold truncate">{acc.username}</p>
+                      <p className="text-[10px] text-muted-foreground truncate">
+                        {acc.email || acc.phone || acc.visitor_id.slice(0, 8)}
+                      </p>
+                    </div>
+                    {isSwitching ? (
+                      <span className="text-[10px] text-muted-foreground">Beralih...</span>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={(e) => handleRemoveSaved(acc.visitor_id, e)}
+                        className="p-1 rounded hover:bg-destructive/10 text-destructive"
+                        aria-label="Hapus akun"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+            <div className="relative flex items-center gap-2 py-1">
+              <div className="flex-1 h-px bg-border" />
+              <span className="text-[10px] text-muted-foreground">atau login akun lain</span>
+              <div className="flex-1 h-px bg-border" />
+            </div>
+          </div>
+        )}
 
         <div className="space-y-3">
           {mode === "register" && (
