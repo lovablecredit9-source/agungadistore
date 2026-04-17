@@ -800,6 +800,33 @@ export type Database = {
         }
         Relationships: []
       }
+      pin_attempts: {
+        Row: {
+          action: string
+          attempted_at: string
+          id: string
+          ip_address: string | null
+          succeeded: boolean
+          visitor_id: string
+        }
+        Insert: {
+          action: string
+          attempted_at?: string
+          id?: string
+          ip_address?: string | null
+          succeeded?: boolean
+          visitor_id: string
+        }
+        Update: {
+          action?: string
+          attempted_at?: string
+          id?: string
+          ip_address?: string | null
+          succeeded?: boolean
+          visitor_id?: string
+        }
+        Relationships: []
+      }
       pin_reset_tokens: {
         Row: {
           created_at: string
@@ -1969,6 +1996,39 @@ export type Database = {
       }
     }
     Views: {
+      game_profiles_public: {
+        Row: {
+          avatar_url: string | null
+          created_at: string | null
+          description: string | null
+          display_name: string | null
+          id: string | null
+          is_guest: boolean | null
+          updated_at: string | null
+          visitor_id: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string | null
+          description?: string | null
+          display_name?: string | null
+          id?: string | null
+          is_guest?: boolean | null
+          updated_at?: string | null
+          visitor_id?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string | null
+          description?: string | null
+          display_name?: string | null
+          id?: string | null
+          is_guest?: boolean | null
+          updated_at?: string | null
+          visitor_id?: string | null
+        }
+        Relationships: []
+      }
       user_balances_public: {
         Row: {
           balance: number | null
