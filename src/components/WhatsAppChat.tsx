@@ -270,25 +270,56 @@ export default function WhatsAppChat({
     return map;
   }, [messages]);
 
+  // Group messages by date for separators
+  const dateLabel = (iso: string) => {
+    const d = new Date(iso);
+    const today = new Date();
+    const yest = new Date();
+    yest.setDate(today.getDate() - 1);
+    if (d.toDateString() === today.toDateString()) return "Hari ini";
+    if (d.toDateString() === yest.toDateString()) return "Kemarin";
+    return d.toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" });
+  };
+
   return (
     <div className={`flex flex-col ${className ?? ""}`}>
-      <div ref={scrollRef} className={`flex-1 overflow-y-auto p-3 space-y-2 ${scrollClassName ?? ""}`}>
+      <div
+        ref={scrollRef}
+        className={`flex-1 overflow-y-auto p-3 space-y-2 chat-wallpaper ${scrollClassName ?? ""}`}
+      >
         {headerSlot}
-        {messages.map((m) => {
+        {messages.map((m, idx) => {
           const mine = m.sender_type === viewerType;
           const replied = m.reply_to_id ? messagesById[m.reply_to_id] : null;
           const rx = reactionsByMsg[m.id];
+          const prev = messages[idx - 1];
+          const showDate = !prev || dateLabel(prev.created_at) !== dateLabel(m.created_at);
+          const groupedWithPrev =
+            prev && prev.sender_type === m.sender_type && !showDate &&
+            new Date(m.created_at).getTime() - new Date(prev.created_at).getTime() < 60_000;
           return (
-            <div key={m.id} className={`flex ${mine ? "justify-end" : "justify-start"}`}>
-              <div className="relative group max-w-[82%]">
-                <div
-                  className={`relative rounded-2xl px-3 py-2 shadow-sm ${
-                    mine
-                      ? "bg-primary text-primary-foreground rounded-br-md"
-                      : "bg-card border border-border rounded-bl-md"
-                  } ${m.is_deleted ? "italic opacity-70" : ""}`}
-                  onDoubleClick={() => !m.is_deleted && setEmojiFor(emojiFor === m.id ? null : m.id)}
-                >
+            <div key={m.id}>
+              {showDate && (
+                <div className="flex justify-center my-3">
+                  <span className="text-[10px] font-semibold px-2.5 py-1 rounded-full bg-background/80 backdrop-blur-md border border-border/50 text-muted-foreground shadow-sm">
+                    {dateLabel(m.created_at)}
+                  </span>
+                </div>
+              )}
+              <div className={`flex ${mine ? "justify-end" : "justify-start"} ${groupedWithPrev ? "mt-0.5" : "mt-1.5"} animate-fade-in`}>
+                <div className="relative group max-w-[82%]">
+                  <div
+                    className={`relative px-3 py-2 shadow-md transition-all ${
+                      mine
+                        ? `bg-gradient-to-br from-primary to-primary/85 text-primary-foreground ${
+                            groupedWithPrev ? "rounded-2xl rounded-br-md" : "rounded-2xl rounded-br-sm"
+                          }`
+                        : `bg-card/95 backdrop-blur-sm border border-border/60 ${
+                            groupedWithPrev ? "rounded-2xl rounded-bl-md" : "rounded-2xl rounded-bl-sm"
+                          }`
+                    } ${m.is_deleted ? "italic opacity-70" : ""}`}
+                    onDoubleClick={() => !m.is_deleted && setEmojiFor(emojiFor === m.id ? null : m.id)}
+                  >
                   {!mine && incomingLabel && !m.is_deleted && (
                     <p className="text-[10px] font-bold mb-0.5 opacity-80">{incomingLabel}</p>
                   )}
@@ -329,7 +360,7 @@ export default function WhatsAppChat({
                     {mine && !m.is_deleted && (
                       <span className="ml-0.5">
                         {m.is_read ? (
-                          <CheckCheck className="w-3 h-3 text-sky-300" />
+                          <CheckCheck className={`w-3 h-3 ${mine ? "text-cyan-200" : "text-primary"}`} />
                         ) : (
                           <Check className="w-3 h-3" />
                         )}
@@ -409,17 +440,18 @@ export default function WhatsAppChat({
                     </button>
                   </div>
                 )}
+                </div>
               </div>
             </div>
           );
         })}
 
         {otherTyping && (
-          <div className="flex justify-start">
-            <div className="bg-card border border-border rounded-2xl rounded-bl-md px-3 py-2 flex items-center gap-1">
-              <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground animate-bounce" style={{ animationDelay: "0ms" }} />
-              <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground animate-bounce" style={{ animationDelay: "120ms" }} />
-              <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground animate-bounce" style={{ animationDelay: "240ms" }} />
+          <div className="flex justify-start animate-fade-in">
+            <div className="bg-card/95 backdrop-blur-sm border border-border/60 rounded-2xl rounded-bl-sm px-3.5 py-2.5 flex items-center gap-1 shadow-md">
+              <span className="w-1.5 h-1.5 rounded-full bg-primary/70 animate-bounce" style={{ animationDelay: "0ms" }} />
+              <span className="w-1.5 h-1.5 rounded-full bg-primary/70 animate-bounce" style={{ animationDelay: "120ms" }} />
+              <span className="w-1.5 h-1.5 rounded-full bg-primary/70 animate-bounce" style={{ animationDelay: "240ms" }} />
             </div>
           </div>
         )}
@@ -430,9 +462,10 @@ export default function WhatsAppChat({
           {disabledHint || "Chat ditutup"}
         </div>
       ) : (
-        <div className="border-t border-border p-2 space-y-2">
+        <div className="border-t border-border/60 bg-background/95 backdrop-blur-md p-2.5 space-y-2">
           {replyTo && (
-            <div className="flex items-start gap-2 bg-muted/60 border-l-2 border-primary rounded-md px-2 py-1.5 text-[11px]">
+            <div className="flex items-start gap-2 bg-primary/5 border-l-[3px] border-primary rounded-lg px-2.5 py-2 text-[11px] animate-fade-in">
+              <Reply className="w-3.5 h-3.5 text-primary mt-0.5 shrink-0" />
               <div className="flex-1 min-w-0">
                 <p className="font-semibold text-primary">
                   Membalas {replyTo.sender_type === viewerType ? "diri sendiri" : incomingLabel || "pesan"}
@@ -441,14 +474,14 @@ export default function WhatsAppChat({
                   {replyTo.message || (replyTo.image_url ? "📷 Foto" : "")}
                 </p>
               </div>
-              <button onClick={() => setReplyTo(null)} className="p-0.5 hover:bg-background rounded">
+              <button onClick={() => setReplyTo(null)} className="p-1 hover:bg-background rounded-full transition-colors">
                 <X className="w-3.5 h-3.5" />
               </button>
             </div>
           )}
-          <div className="flex gap-2">
-            <label className="w-9 h-9 rounded-lg bg-muted flex items-center justify-center cursor-pointer hover:bg-muted/80 shrink-0">
-              <ImagePlus className="w-4 h-4 text-muted-foreground" />
+          <div className="flex items-center gap-2">
+            <label className="w-10 h-10 rounded-full bg-muted/70 hover:bg-muted flex items-center justify-center cursor-pointer shrink-0 transition-all hover:scale-105 active:scale-95">
+              <ImagePlus className="w-[18px] h-[18px] text-muted-foreground" />
               <input
                 type="file"
                 accept="image/*"
@@ -459,21 +492,28 @@ export default function WhatsAppChat({
                 }}
               />
             </label>
-            <Input
-              placeholder="Tulis pesan…"
-              value={draft}
-              onChange={(e) => onChangeDraft(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey) {
-                  e.preventDefault();
-                  sendMessage();
-                }
-              }}
-              onBlur={() => pushTyping(false)}
-              className="flex-1"
-            />
-            <Button size="icon" onClick={sendMessage} disabled={!draft.trim()} className="shrink-0">
-              <Send className="w-4 h-4" />
+            <div className="flex-1 relative">
+              <Input
+                placeholder="Tulis pesan…"
+                value={draft}
+                onChange={(e) => onChangeDraft(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    sendMessage();
+                  }
+                }}
+                onBlur={() => pushTyping(false)}
+                className="rounded-full bg-muted/60 border-border/60 focus-visible:ring-primary/40 pl-4 pr-4 h-10"
+              />
+            </div>
+            <Button
+              size="icon"
+              onClick={sendMessage}
+              disabled={!draft.trim()}
+              className="shrink-0 rounded-full h-10 w-10 bg-gradient-to-br from-primary to-primary/80 shadow-md hover:shadow-lg hover:scale-105 active:scale-95 transition-all disabled:opacity-50 disabled:scale-100"
+            >
+              <Send className="w-[18px] h-[18px]" />
             </Button>
           </div>
         </div>

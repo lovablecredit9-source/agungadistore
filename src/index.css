@@ -377,3 +377,24 @@
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
 }
+
+/* Chat wallpaper - subtle gradient + dot pattern */
+.chat-wallpaper {
+  background-color: hsl(var(--muted) / 0.35);
+  background-image:
+    radial-gradient(hsl(var(--primary) / 0.06) 1px, transparent 1px),
+    radial-gradient(hsl(var(--accent) / 0.05) 1px, transparent 1px),
+    linear-gradient(180deg, hsl(var(--primary) / 0.04) 0%, transparent 40%);
+  background-size: 22px 22px, 22px 22px, 100% 100%;
+  background-position: 0 0, 11px 11px, 0 0;
+}
+
+.dark .chat-wallpaper {
+  background-color: hsl(var(--background));
+  background-image:
+    radial-gradient(hsl(var(--primary) / 0.1) 1px, transparent 1px),
+    radial-gradient(hsl(var(--accent) / 0.08) 1px, transparent 1px),
+    linear-gradient(180deg, hsl(var(--primary) / 0.06) 0%, transparent 40%);
+  background-size: 22px 22px, 22px 22px, 100% 100%;
+  background-position: 0 0, 11px 11px, 0 0;
+}
