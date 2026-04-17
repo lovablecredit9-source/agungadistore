@@ -23,6 +23,7 @@ import AdminApiKeyTab from "@/components/AdminApiKeyTab";
 import AdminPostsTab from "@/components/AdminPostsTab";
 import AdminPromoTab from "@/components/AdminPromoTab";
 import AdminSocialLinksTab from "@/components/AdminSocialLinksTab";
+import WhatsAppChat from "@/components/WhatsAppChat";
 
 interface Product {
   id: string;
@@ -1499,30 +1500,15 @@ const AdminDashboard = () => {
                   </div>
                 </div>
 
-                <div ref={chatRef} className="bg-muted/30 rounded-xl p-3 space-y-3 max-h-[55vh] overflow-y-auto">
-                  {chatMessages.map(m => (
-                    <div key={m.id} className={`flex ${m.sender_type === "admin" ? "justify-end" : "justify-start"}`}>
-                      <div className={`max-w-[80%] rounded-2xl px-3 py-2 ${m.sender_type === "admin" ? "bg-primary text-primary-foreground rounded-br-md" : "bg-card border border-border rounded-bl-md"}`}>
-                        {m.sender_type === "admin" && <p className="text-[10px] font-bold mb-0.5">Admin</p>}
-                        {m.message && <p className="text-sm whitespace-pre-wrap">{m.message}</p>}
-                        {m.image_url && <img src={m.image_url} className="max-w-full rounded-lg mt-1" alt="" />}
-                        <p className={`text-[9px] mt-1 ${m.sender_type === "admin" ? "text-primary-foreground/60" : "text-muted-foreground"}`}>
-                          {new Date(m.created_at).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-                <div className="flex gap-2">
-                  <label className="w-9 h-9 rounded-lg bg-muted flex items-center justify-center cursor-pointer hover:bg-muted/80">
-                    <ImagePlus className="w-4 h-4 text-muted-foreground" />
-                    <input type="file" accept="image/*" className="hidden" onChange={e => { if (e.target.files?.[0]) sendChatImage(e.target.files[0]); e.target.value = ""; }} />
-                  </label>
-                  <Input placeholder="Balas chat..." value={chatMsg} onChange={e => setChatMsg(e.target.value)}
-                    onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendChatMessage(); } }} className="flex-1" />
-                  <Button size="icon" onClick={sendChatMessage} disabled={!chatMsg.trim()}><Send className="w-4 h-4" /></Button>
-                </div>
+                <WhatsAppChat
+                  kind="product"
+                  parentId={activeChat.id}
+                  viewerType="admin"
+                  viewerId="admin"
+                  incomingLabel="Pengunjung"
+                  className="bg-muted/30 rounded-xl border border-border h-[60vh]"
+                  scrollClassName="max-h-full"
+                />
               </>
             )}
           </>
