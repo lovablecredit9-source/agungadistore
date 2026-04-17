@@ -1862,8 +1862,8 @@ const Index = () => {
               </div>
             </div>
 
-            {/* Dropdown filters */}
-            <div className="flex gap-2.5">
+            {/* Filter row: kategori + sort + view toggle */}
+            <div className="flex gap-2.5 items-stretch">
               <Select value={selectedCategory} onValueChange={setSelectedCategory}>
                 <SelectTrigger className="flex-1 h-11 text-xs rounded-xl glass-card border-2 border-border/50">
                   <SelectValue placeholder="Kategori" />
@@ -1874,81 +1874,181 @@ const Index = () => {
                   ))}
                 </SelectContent>
               </Select>
-              <Select value={sortOrder} onValueChange={(v) => setSortOrder(v as "newest" | "oldest")}>
-                <SelectTrigger className="w-[120px] h-11 text-xs rounded-xl glass-card border-2 border-border/50">
+              <Select value={sortOrder} onValueChange={(v) => setSortOrder(v as typeof sortOrder)}>
+                <SelectTrigger className="w-[130px] h-11 text-xs rounded-xl glass-card border-2 border-border/50">
+                  <SlidersHorizontal className="w-3.5 h-3.5 mr-1 text-muted-foreground" />
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="newest">Terbaru</SelectItem>
-                  <SelectItem value="oldest">Terlama</SelectItem>
+                  <SelectItem value="newest">⏱ Terbaru</SelectItem>
+                  <SelectItem value="oldest">📅 Terlama</SelectItem>
+                  <SelectItem value="cheapest">💰 Termurah</SelectItem>
+                  <SelectItem value="expensive">💎 Termahal</SelectItem>
+                  <SelectItem value="popular">🔥 Populer</SelectItem>
                 </SelectContent>
               </Select>
+              <div className="flex rounded-xl glass-card border-2 border-border/50 overflow-hidden">
+                <button
+                  onClick={() => setProductViewMode("list")}
+                  className={`px-2.5 flex items-center justify-center transition-all ${productViewMode === "list" ? "bg-gradient-to-br from-primary to-accent text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
+                  aria-label="List view"
+                >
+                  <Rows3 className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={() => setProductViewMode("grid")}
+                  className={`px-2.5 flex items-center justify-center transition-all ${productViewMode === "grid" ? "bg-gradient-to-br from-primary to-accent text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
+                  aria-label="Grid view"
+                >
+                  <LayoutGrid className="w-4 h-4" />
+                </button>
+              </div>
             </div>
 
-            {sortedProducts.length === 0 && (
-              <div className="text-center py-20 text-muted-foreground">
-                <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-primary/10 to-accent/10 flex items-center justify-center mx-auto mb-4">
-                  <Package className="w-10 h-10 opacity-30" />
-                </div>
-                <p className="text-sm font-bold">Belum ada produk.</p>
-                <p className="text-xs text-muted-foreground mt-1">Coba ubah filter pencarian</p>
+            {/* Quick filter chips */}
+            <div className="flex gap-2 flex-wrap">
+              <button
+                onClick={() => setInStockOnly(v => !v)}
+                className={`text-[11px] font-bold px-3 py-1.5 rounded-full border-2 transition-all ${inStockOnly ? "bg-gradient-to-r from-emerald-500 to-teal-500 text-white border-transparent shadow-md" : "bg-card text-muted-foreground border-border/50 hover:border-primary/30"}`}
+              >
+                ✓ Tersedia saja
+              </button>
+              <button
+                onClick={() => setWarrantyOnly(v => !v)}
+                className={`text-[11px] font-bold px-3 py-1.5 rounded-full border-2 transition-all ${warrantyOnly ? "bg-gradient-to-r from-blue-500 to-indigo-500 text-white border-transparent shadow-md" : "bg-card text-muted-foreground border-border/50 hover:border-primary/30"}`}
+              >
+                <Shield className="w-3 h-3 inline mr-0.5" /> Bergaransi
+              </button>
+              {(inStockOnly || warrantyOnly || sortOrder !== "newest" || selectedCategory !== "Semua" || productSearch) && (
+                <button
+                  onClick={() => { setInStockOnly(false); setWarrantyOnly(false); setSortOrder("newest"); setSelectedCategory("Semua"); setProductSearch(""); }}
+                  className="text-[11px] font-bold px-3 py-1.5 rounded-full border-2 bg-destructive/10 text-destructive border-destructive/20 hover:bg-destructive/20 transition-all"
+                >
+                  <X className="w-3 h-3 inline mr-0.5" /> Reset filter
+                </button>
+              )}
+            </div>
+
+            {/* Skeleton loading */}
+            {productsLoading && (
+              <div className={productViewMode === "grid" ? "grid grid-cols-2 gap-3" : "space-y-3"}>
+                {Array.from({ length: 4 }).map((_, i) => (
+                  <div key={i} className="rounded-2xl border border-border/40 overflow-hidden glass-card animate-pulse">
+                    <div className={`bg-muted/60 ${productViewMode === "grid" ? "h-32" : "h-44"} shimmer`} />
+                    <div className="p-3 space-y-2">
+                      <div className="h-3 bg-muted/60 rounded w-3/4" />
+                      <div className="h-2.5 bg-muted/40 rounded w-1/2" />
+                      <div className="h-5 bg-muted/40 rounded-full w-16" />
+                    </div>
+                  </div>
+                ))}
               </div>
             )}
 
-            {sortedProducts.map((p) => {
-              const imgs = getProductImages(p.id);
-              return (
-                <Card key={p.id} className="overflow-hidden hover:shadow-2xl transition-all duration-300 hover:-translate-y-1.5 border-0 shadow-lg glass-card cursor-pointer group card-shine" onClick={() => openProduct(p)}>
-                  {imgs.length > 0 && (
-                    <div className="relative overflow-hidden">
-                      <ImageCarousel images={imgs} />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent pointer-events-none" />
-                      <div className="absolute top-2.5 right-2.5 flex gap-1.5 items-center">
-                        <span className="text-xs font-extrabold bg-gradient-to-r from-primary to-primary/80 text-primary-foreground px-3 py-1.5 rounded-full shadow-lg backdrop-blur-sm">{formatPrice(p.price)}</span>
-                      </div>
-                      <button onClick={(e) => toggleLike(p.id, e)}
-                        className="absolute top-2.5 left-2.5 flex items-center gap-1 rounded-full bg-background/70 backdrop-blur-md px-2.5 py-1.5 shadow-md hover:bg-background/90 transition-colors">
-                        <Heart className={`w-4 h-4 transition-all ${likedIds.has(p.id) ? "fill-destructive text-destructive scale-110" : "text-muted-foreground"}`} />
-                        {(productLikeCounts[p.id] || 0) > 0 && <span className="text-[10px] font-bold text-muted-foreground">{productLikeCounts[p.id]}</span>}
-                      </button>
-                      {p.category && (
-                        <div className="absolute bottom-2.5 left-2.5">
-                          <span className="text-[10px] font-bold bg-background/80 backdrop-blur-md px-2.5 py-1 rounded-full shadow-sm">{p.category}</span>
+            {!productsLoading && sortedProducts.length === 0 && (
+              <div className="text-center py-16 text-muted-foreground glass-card rounded-2xl border-2 border-dashed border-border/50">
+                <div className="w-24 h-24 rounded-3xl bg-gradient-to-br from-primary/10 via-accent/10 to-primary/5 flex items-center justify-center mx-auto mb-4 floating">
+                  <Package className="w-12 h-12 opacity-40" />
+                </div>
+                <p className="text-sm font-extrabold">Tidak ada produk cocok</p>
+                <p className="text-xs text-muted-foreground mt-1 px-6">Coba ubah filter, kategori, atau kata kunci pencarian.</p>
+              </div>
+            )}
+
+            {/* Product list/grid */}
+            {!productsLoading && sortedProducts.length > 0 && (
+              <div className={productViewMode === "grid" ? "grid grid-cols-2 gap-3" : "space-y-4"}>
+                {sortedProducts.map((p) => {
+                  const imgs = getProductImages(p.id);
+                  const badges = getProductBadges(p);
+                  const isGrid = productViewMode === "grid";
+                  return (
+                    <Card key={p.id} className="overflow-hidden hover:shadow-2xl transition-all duration-300 hover:-translate-y-1.5 border-0 shadow-lg glass-card cursor-pointer group card-shine relative" onClick={() => openProduct(p)}>
+                      {/* Premium glow accent on hover */}
+                      <div className="absolute -inset-0.5 bg-gradient-to-br from-primary/0 via-accent/0 to-primary/0 group-hover:from-primary/20 group-hover:via-accent/10 group-hover:to-primary/20 rounded-lg blur opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none -z-10" />
+
+                      {imgs.length > 0 && (
+                        <div className={`relative overflow-hidden ${isGrid ? "aspect-square" : ""}`}>
+                          <ImageCarousel images={imgs} />
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent pointer-events-none" />
+
+                          {/* Dynamic badges (top-left, stacked) */}
+                          {badges.length > 0 && (
+                            <div className="absolute top-2 left-2 flex flex-col gap-1 max-w-[60%]">
+                              {badges.map((b, i) => (
+                                <span key={i} className={`text-[9px] font-extrabold px-2 py-0.5 rounded-full shadow-lg backdrop-blur-sm ${b.className} animate-fade-in`} style={{ animationDelay: `${i * 80}ms` }}>
+                                  {b.label}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+
+                          {/* Price badge top-right */}
+                          <div className="absolute top-2 right-2">
+                            <span className={`font-extrabold bg-gradient-to-r from-primary to-primary/80 text-primary-foreground rounded-full shadow-lg backdrop-blur-sm ${isGrid ? "text-[10px] px-2 py-1" : "text-xs px-3 py-1.5"}`}>{formatPrice(p.price)}</span>
+                          </div>
+
+                          {/* Action buttons bottom-right */}
+                          <div className="absolute bottom-2 right-2 flex gap-1.5">
+                            <button onClick={(e) => { e.stopPropagation(); setQuickViewProduct(p); }}
+                              className="rounded-full bg-background/80 backdrop-blur-md p-2 shadow-md hover:bg-background hover:scale-110 transition-all"
+                              aria-label="Quick view">
+                              <Eye className="w-3.5 h-3.5 text-foreground" />
+                            </button>
+                            <button onClick={(e) => toggleLike(p.id, e)}
+                              className="rounded-full bg-background/80 backdrop-blur-md p-2 shadow-md hover:bg-background hover:scale-110 transition-all"
+                              aria-label="Like">
+                              <Heart className={`w-3.5 h-3.5 transition-all ${likedIds.has(p.id) ? "fill-destructive text-destructive scale-110" : "text-muted-foreground"}`} />
+                            </button>
+                          </div>
+
+                          {p.category && !isGrid && (
+                            <div className="absolute bottom-2 left-2">
+                              <span className="text-[10px] font-bold bg-background/80 backdrop-blur-md px-2.5 py-1 rounded-full shadow-sm">{p.category}</span>
+                            </div>
+                          )}
+                          {(productLikeCounts[p.id] || 0) > 0 && (
+                            <div className="absolute bottom-2 left-2 flex items-center gap-1 bg-background/80 backdrop-blur-md px-2 py-0.5 rounded-full shadow-sm" style={isGrid || !p.category ? {} : { display: "none" }}>
+                              <Heart className="w-3 h-3 fill-destructive text-destructive" />
+                              <span className="text-[10px] font-bold">{productLikeCounts[p.id]}</span>
+                            </div>
+                          )}
                         </div>
                       )}
-                    </div>
-                  )}
-                  <CardContent className="p-4 space-y-3">
-                    <div className="flex items-start justify-between">
-                      <h3 className="font-bold text-base flex-1 group-hover:text-primary transition-colors">{p.title}</h3>
-                      {imgs.length === 0 && (
-                        <button onClick={(e) => toggleLike(p.id, e)} className="flex items-center gap-1 ml-2">
-                          <Heart className={`w-4 h-4 transition-all ${likedIds.has(p.id) ? "fill-destructive text-destructive" : "text-muted-foreground"}`} />
-                          {(productLikeCounts[p.id] || 0) > 0 && <span className="text-[10px] font-bold text-muted-foreground">{productLikeCounts[p.id]}</span>}
-                        </button>
-                      )}
-                    </div>
-                    {p.description && <p className="text-xs text-muted-foreground line-clamp-2">{p.description}</p>}
-                    <div className="flex items-center justify-between flex-wrap gap-1.5">
-                      {imgs.length === 0 && <span className="text-sm font-extrabold text-primary">{formatPrice(p.price)}</span>}
-                      <div className="flex items-center gap-1.5 flex-wrap">
-                        <span className={`text-[10px] px-2.5 py-1 rounded-full font-bold flex items-center gap-1 ${p.stock > 0 ? 'bg-gradient-to-r from-accent/15 to-accent/5 text-accent border border-accent/20' : 'bg-gradient-to-r from-destructive/15 to-destructive/5 text-destructive border border-destructive/20'}`}>
-                          {p.stock > 0 ? `✓ Stok: ${p.stock}` : '✗ Habis'}
-                        </span>
-                        {p.has_warranty && (
-                          <span className="text-[10px] px-2 py-1 rounded-full font-bold bg-gradient-to-r from-primary/15 to-primary/5 text-primary border border-primary/20">
-                            <Shield className="w-3 h-3 inline mr-0.5" />Garansi
-                          </span>
-                        )}
-                        <span className="text-[10px] px-2 py-1 rounded-full font-medium bg-muted text-muted-foreground flex items-center gap-1">
-                          <CalendarDays className="w-3 h-3" /> {new Date(p.created_at).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" })}
-                        </span>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              );
-            })}
+                      <CardContent className={`space-y-2 ${isGrid ? "p-3" : "p-4 space-y-3"}`}>
+                        <div className="flex items-start justify-between gap-2">
+                          <h3 className={`font-bold flex-1 group-hover:text-primary transition-colors line-clamp-2 ${isGrid ? "text-xs" : "text-base"}`}>{p.title}</h3>
+                          {imgs.length === 0 && (
+                            <button onClick={(e) => toggleLike(p.id, e)} className="flex items-center gap-1 shrink-0">
+                              <Heart className={`w-4 h-4 transition-all ${likedIds.has(p.id) ? "fill-destructive text-destructive" : "text-muted-foreground"}`} />
+                            </button>
+                          )}
+                        </div>
+                        {p.description && !isGrid && <p className="text-xs text-muted-foreground line-clamp-2">{p.description}</p>}
+                        <div className="flex items-center justify-between flex-wrap gap-1.5">
+                          {imgs.length === 0 && <span className={`font-extrabold text-primary ${isGrid ? "text-xs" : "text-sm"}`}>{formatPrice(p.price)}</span>}
+                          <div className={`flex items-center gap-1.5 flex-wrap ${isGrid ? "text-[9px]" : ""}`}>
+                            <span className={`px-2 py-0.5 rounded-full font-bold flex items-center gap-1 ${isGrid ? "text-[9px]" : "text-[10px] px-2.5 py-1"} ${p.stock > 0 ? 'bg-gradient-to-r from-accent/15 to-accent/5 text-accent border border-accent/20' : 'bg-gradient-to-r from-destructive/15 to-destructive/5 text-destructive border border-destructive/20'}`}>
+                              {p.stock > 0 ? `✓ ${p.stock}` : '✗ Habis'}
+                            </span>
+                            {p.has_warranty && !isGrid && (
+                              <span className="text-[10px] px-2 py-1 rounded-full font-bold bg-gradient-to-r from-primary/15 to-primary/5 text-primary border border-primary/20">
+                                <Shield className="w-3 h-3 inline mr-0.5" />Garansi
+                              </span>
+                            )}
+                            {!isGrid && (
+                              <span className="text-[10px] px-2 py-1 rounded-full font-medium bg-muted text-muted-foreground flex items-center gap-1">
+                                <CalendarDays className="w-3 h-3" /> {new Date(p.created_at).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" })}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
+            )}
           </div>
         )}
 
