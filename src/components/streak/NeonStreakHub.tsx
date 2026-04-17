@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Gift, Loader2, Sparkles, ShoppingBag, Trophy, Coins, Target } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { trackDailyMission } from "@/lib/daily-mission";
 
 interface Props {
   visitorId: string;
@@ -121,6 +122,7 @@ export default function NeonStreakHub({ visitorId }: Props) {
       } else {
         setReward(data.reward);
         setBoxOpened(true);
+        trackDailyMission(visitorId, "mystery_box", 1);
         loadAll();
       }
     } finally {
