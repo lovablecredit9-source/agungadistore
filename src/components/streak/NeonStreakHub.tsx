@@ -26,9 +26,12 @@ interface Challenge {
   description: string;
   target_value: number;
   reward_coins: number;
+  starts_at: string;
+  ends_at: string;
   current_value?: number;
   is_completed?: boolean;
   claimed_at?: string | null;
+  is_locked?: boolean;
 }
 
 export default function NeonStreakHub({ visitorId }: Props) {
@@ -64,7 +67,8 @@ export default function NeonStreakHub({ visitorId }: Props) {
     const { data: shopItems } = await supabase.from("streak_shop_items").select("*").eq("is_active", true).order("sort_order");
     setItems((shopItems as any[]) || []);
 
-    const { data: chs } = await supabase.from("weekly_challenges").select("*").eq("is_active", true).gte("ends_at", new Date().toISOString());
+    const nowIso = new Date().toISOString();
+    const { data: chs } = await supabase.from("weekly_challenges").select("*").eq("is_active", true).gte("ends_at", nowIso).order("starts_at");
     if (chs) {
       const { data: progs } = await supabase.from("weekly_challenge_progress").select("*").eq("visitor_id", visitorId).in("challenge_id", chs.map(c => c.id));
       const progMap = Object.fromEntries((progs || []).map((p: any) => [p.challenge_id, p]));
@@ -73,6 +77,7 @@ export default function NeonStreakHub({ visitorId }: Props) {
         current_value: progMap[c.id]?.current_value || 0,
         is_completed: progMap[c.id]?.is_completed || false,
         claimed_at: progMap[c.id]?.claimed_at || null,
+        is_locked: new Date(c.starts_at) > new Date(),
       })));
     }
   }
@@ -198,25 +203,37 @@ export default function NeonStreakHub({ visitorId }: Props) {
           </div>
           {challenges.map(ch => {
             const pct = Math.min(100, ((ch.current_value || 0) / ch.target_value) * 100);
-            const claimable = ch.is_completed && !ch.claimed_at;
+            const claimable = ch.is_completed && !ch.claimed_at && !ch.is_locked;
+            const daysToStart = ch.is_locked
+              ? Math.max(1, Math.ceil((new Date(ch.starts_at).getTime() - Date.now()) / 86400000))
+              : 0;
             return (
-              <div key={ch.id} className="bg-black/30 rounded-xl p-3 border border-cyan-500/20">
+              <div key={ch.id} className={`bg-black/30 rounded-xl p-3 border ${ch.is_locked ? "border-white/10 opacity-70" : "border-cyan-500/20"} relative`}>
+                {ch.is_locked && (
+                  <div className="absolute top-2 right-2 text-[9px] font-black tracking-widest uppercase px-2 py-0.5 rounded-full bg-white/10 text-white/80 border border-white/20">
+                    🔒 {daysToStart}h lagi
+                  </div>
+                )}
                 <div className="flex items-start justify-between mb-2">
-                  <div className="flex-1 min-w-0">
+                  <div className="flex-1 min-w-0 pr-16">
                     <div className="font-extrabold text-white text-sm">{ch.title}</div>
                     <div className="text-[10px] text-white/60">{ch.description}</div>
                   </div>
-                  <div className="text-[10px] font-black neon-text-yellow tabular-nums">+{ch.reward_coins}🪙</div>
+                  {!ch.is_locked && <div className="text-[10px] font-black neon-text-yellow tabular-nums">+{ch.reward_coins}🪙</div>}
                 </div>
-                <div className="h-1.5 bg-white/10 rounded-full overflow-hidden mb-2">
-                  <motion.div
-                    initial={{ width: 0 }}
-                    animate={{ width: `${pct}%` }}
-                    className="h-full bg-gradient-to-r from-cyan-400 to-pink-500 shadow-[0_0_10px_hsl(var(--neon-cyan)/0.7)]"
-                  />
-                </div>
+                {!ch.is_locked && (
+                  <div className="h-1.5 bg-white/10 rounded-full overflow-hidden mb-2">
+                    <motion.div
+                      initial={{ width: 0 }}
+                      animate={{ width: `${pct}%` }}
+                      className="h-full bg-gradient-to-r from-cyan-400 to-pink-500 shadow-[0_0_10px_hsl(var(--neon-cyan)/0.7)]"
+                    />
+                  </div>
+                )}
                 <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-bold text-white/70 tabular-nums">{ch.current_value || 0} / {ch.target_value}</span>
+                  <span className="text-[10px] font-bold text-white/70 tabular-nums">
+                    {ch.is_locked ? `Hadiah: +${ch.reward_coins}🪙` : `${ch.current_value || 0} / ${ch.target_value}`}
+                  </span>
                   {claimable && (
                     <Button size="sm" onClick={() => claimChallenge(ch)} className="h-6 text-[10px] bg-gradient-to-r from-yellow-400 to-pink-500 text-black font-black">
                       KLAIM
