@@ -323,6 +323,10 @@ export default function DailyStreak({ visitorId }: DailyStreakProps) {
   useEffect(() => {
     setStreak(null);
     setActiveSub(null);
+    setVoucherCode("");
+    setVoucherDiscount(0);
+    setVoucherError("");
+    setVoucherApplied(false);
     setPendingPlanDays(null);
     setShowConfirm(null);
     setShowPinForStreak(false);
