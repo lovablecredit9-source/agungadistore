@@ -368,6 +368,14 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser }: BalanceA
           <Button size="sm" variant="outline" className="gap-1.5 text-xs font-bold" onClick={() => { setShowEditProfile(!showEditProfile); resetEditForm(); }}>
             <Edit2 className="w-3.5 h-3.5" /> Edit Profil
           </Button>
+          <Button size="sm" variant="outline" className="gap-1.5 text-xs font-bold" onClick={() => setShowSwitcher(!showSwitcher)}>
+            <Users className="w-3.5 h-3.5" /> Ganti Akun
+            {savedAccounts.length > 0 && (
+              <span className="ml-0.5 px-1.5 py-0.5 rounded-full bg-primary/15 text-primary text-[10px] font-bold">
+                {savedAccounts.length}/{MAX_SAVED_ACCOUNTS}
+              </span>
+            )}
+          </Button>
           <Button size="sm" variant="outline" className="gap-1.5 text-xs font-bold" onClick={handleSwitchAccount}>
             <LogIn className="w-3.5 h-3.5" /> Login Lain
           </Button>
@@ -378,6 +386,73 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser }: BalanceA
             <Smartphone className="w-3.5 h-3.5" /> Riwayat
           </Button>
         </div>
+
+        {showSwitcher && (
+          <Card className="border border-primary/20">
+            <CardContent className="p-3 space-y-2">
+              <div className="flex items-center justify-between">
+                <h4 className="text-xs font-bold flex items-center gap-1.5">
+                  <ArrowRightLeft className="w-3.5 h-3.5 text-primary" /> Akun Tersimpan ({savedAccounts.length}/{MAX_SAVED_ACCOUNTS})
+                </h4>
+                <Button size="sm" variant="ghost" className="h-6 px-2 text-[11px]" onClick={() => setShowSwitcher(false)}>
+                  <X className="w-3 h-3" />
+                </Button>
+              </div>
+              {savedAccounts.length === 0 ? (
+                <p className="text-[11px] text-muted-foreground text-center py-2">
+                  Belum ada akun tersimpan di perangkat ini.
+                </p>
+              ) : (
+                <div className="space-y-1.5">
+                  {savedAccounts.map((acc) => {
+                    const isActive = acc.visitor_id === currentUser.visitor_id;
+                    const isSwitching = switchingId === acc.visitor_id;
+                    return (
+                      <button
+                        key={acc.visitor_id}
+                        type="button"
+                        disabled={isSwitching}
+                        onClick={() => handleQuickSwitch(acc)}
+                        className={`w-full flex items-center gap-2 p-2 rounded-lg border text-left transition-colors ${
+                          isActive ? "bg-primary/10 border-primary/40" : "bg-muted/40 border-transparent hover:bg-muted"
+                        }`}
+                      >
+                        <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs ${
+                          isActive ? "bg-primary text-primary-foreground" : "bg-gradient-to-br from-primary/70 to-accent/70 text-primary-foreground"
+                        }`}>
+                          {acc.username.slice(0, 2).toUpperCase()}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-bold truncate">{acc.username}</p>
+                          <p className="text-[10px] text-muted-foreground truncate">
+                            {acc.email || acc.phone || acc.visitor_id.slice(0, 8)}
+                          </p>
+                        </div>
+                        {isActive ? (
+                          <span className="text-[10px] font-bold text-primary">Aktif</span>
+                        ) : isSwitching ? (
+                          <span className="text-[10px] text-muted-foreground">Beralih...</span>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={(e) => handleRemoveSaved(acc.visitor_id, e)}
+                            className="p-1 rounded hover:bg-destructive/10 text-destructive"
+                            aria-label="Hapus akun"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+              <p className="text-[10px] text-muted-foreground leading-relaxed">
+                💡 Klik akun untuk beralih cepat tanpa input sandi. Maksimal {MAX_SAVED_ACCOUNTS} akun per perangkat.
+              </p>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Edit Profile Panel */}
         {showEditProfile && (
