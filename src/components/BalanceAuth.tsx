@@ -178,6 +178,12 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser }: BalanceA
     localStorage.setItem("balance_logged_in", "true");
     localStorage.setItem("balance_email", (data.user.email || loginId.trim()).toLowerCase());
     localStorage.setItem("balance_visitor_id", data.user.visitor_id);
+    setSavedAccounts(saveAccount({
+      visitor_id: data.user.visitor_id,
+      username: data.user.username,
+      email: data.user.email || loginId.trim(),
+      phone: data.user.phone,
+    }));
 
     onLogin(data.user);
     toast({ title: `Selamat datang, ${data.user.username}! 👋` });
@@ -195,6 +201,43 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser }: BalanceA
   function handleSwitchAccount() {
     handleLogout();
     setMode("login");
+    setShowSwitcher(true);
+  }
+
+  async function handleQuickSwitch(account: SavedAccount) {
+    if (currentUser?.visitor_id === account.visitor_id) {
+      toast({ title: `Akun ${account.username} sedang aktif` }); return;
+    }
+    setSwitchingId(account.visitor_id);
+    const { data, error } = await supabase
+      .from("user_balances_public" as any)
+      .select("id, visitor_id, username, phone, email, balance")
+      .eq("visitor_id", account.visitor_id)
+      .maybeSingle();
+    setSwitchingId(null);
+    if (error || !data) {
+      toast({ title: "Akun tidak ditemukan, silakan login ulang", variant: "destructive" });
+      setSavedAccounts(removeSavedAccount(account.visitor_id));
+      return;
+    }
+    const user = data as unknown as UserBalance;
+    localStorage.setItem("balance_logged_in", "true");
+    localStorage.setItem("balance_email", (user.email || account.email || "").toLowerCase());
+    localStorage.setItem("balance_visitor_id", user.visitor_id);
+    setSavedAccounts(saveAccount({
+      visitor_id: user.visitor_id,
+      username: user.username,
+      email: user.email,
+      phone: user.phone,
+    }));
+    onLogin(user);
+    toast({ title: `Beralih ke ${user.username} ✅` });
+  }
+
+  function handleRemoveSaved(visitorId: string, e: React.MouseEvent) {
+    e.stopPropagation();
+    setSavedAccounts(removeSavedAccount(visitorId));
+    toast({ title: "Akun dihapus dari daftar" });
   }
 
   function resetForm() {
