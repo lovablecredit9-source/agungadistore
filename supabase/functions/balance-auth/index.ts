@@ -287,20 +287,10 @@ Deno.serve(async (request) => {
         return Response.json({ error: "Email/Username/No HP atau sandi salah" }, { status: 401, headers: corsHeaders });
       }
 
-      // Update visitor_id to current device if provided
-      const newVisitorId = payload.visitorId;
-      if (newVisitorId && newVisitorId !== user.visitor_id) {
-        await admin
-          .from("user_balances")
-          .update({ visitor_id: newVisitorId })
-          .eq("id", user.id);
-        user.visitor_id = newVisitorId;
-      }
-
       if (payload.deviceInfo) {
         await admin.from("balance_login_history").insert({
           user_balance_id: user.id,
-          visitor_id: newVisitorId || user.visitor_id,
+          visitor_id: user.visitor_id,
           device_info: payload.deviceInfo?.device || null,
           browser: payload.deviceInfo?.browser || null,
           ip_address: payload.deviceInfo?.ip || null,
