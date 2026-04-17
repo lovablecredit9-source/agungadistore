@@ -651,18 +651,17 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser }: BalanceA
 
   // Show login/register form
   return (
-    <Card className="border-2 border-primary/20">
+    <Card className="border-2 border-primary/20 relative">
       <CardContent className="p-5 space-y-4">
-        {addingAccount && (
-          <Button
+        {addingAccount && savedAccounts.length > 0 && (
+          <button
             type="button"
-            size="sm"
-            variant="ghost"
-            className="gap-1.5 text-xs font-bold -ml-2"
             onClick={() => { setAddingAccount(false); resetForm(); }}
+            className="absolute top-3 left-3 z-10 inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-muted hover:bg-muted/70 text-xs font-bold text-foreground transition-colors shadow-sm"
+            aria-label="Kembali"
           >
-            <ArrowRightLeft className="w-3.5 h-3.5 rotate-180" /> Kembali ke Daftar Akun
-          </Button>
+            <ArrowLeft className="w-4 h-4" /> Kembali
+          </button>
         )}
         <div className="text-center">
           <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-accent flex items-center justify-center mx-auto mb-3 shadow-lg">
