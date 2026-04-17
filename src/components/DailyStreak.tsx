@@ -556,7 +556,6 @@ export default function DailyStreak() {
         } else {
           toast({ title: "Gagal", description: data?.error || "Gagal membeli pelindung", variant: "destructive" });
         }
-      }
       } else {
         toast({ title: "🛡️ Berhasil!", description: `Pelindung streak ditambahkan! Total: ${data.freeze_count}` });
         fetchStreak();
