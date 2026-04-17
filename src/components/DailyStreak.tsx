@@ -551,7 +551,11 @@ export default function DailyStreak() {
         body: { visitorId, pin: freezePinInput },
       });
       if (error || data?.error) {
-        toast({ title: "Gagal", description: data?.error || "Gagal membeli pelindung", variant: "destructive" });
+        if (data?.needPin) {
+          toast({ title: "PIN Saldo Diperlukan", description: "Buat PIN saldo dulu di tab Plus → Saldo Saya untuk bisa beli pelindung.", variant: "destructive" });
+        } else {
+          toast({ title: "Gagal", description: data?.error || "Gagal membeli pelindung", variant: "destructive" });
+        }
       } else {
         toast({ title: "🛡️ Berhasil!", description: `Pelindung streak ditambahkan! Total: ${data.freeze_count}` });
         fetchStreak();
