@@ -260,23 +260,6 @@ export default function DailyStreak({ visitorId }: DailyStreakProps) {
   const [flashSaleEnd, setFlashSaleEnd] = useState("");
   const [flashSaleLabel, setFlashSaleLabel] = useState("");
 
-  useEffect(() => {
-    fetchStreakPackages();
-  }, [fetchStreakPackages]);
-
-  useEffect(() => {
-    setStreak(null);
-    setActiveSub(null);
-    setPendingPlanDays(null);
-    setShowConfirm(null);
-    setShowPinForStreak(false);
-    setShowFreezePinModal(false);
-    setStreakPinInput("");
-    setFreezePinInput("");
-    fetchStreak();
-    fetchSubscription();
-  }, [visitorId, fetchStreak, fetchSubscription]);
-
   // Process achievement queue one-by-one
   useEffect(() => {
     if (!newAchievement && achievementQueue.length > 0) {
@@ -332,6 +315,23 @@ export default function DailyStreak({ visitorId }: DailyStreakProps) {
       .maybeSingle();
     setActiveSub(data ? (data as any) : null);
   }, [visitorId]);
+
+  useEffect(() => {
+    fetchStreakPackages();
+  }, [fetchStreakPackages]);
+
+  useEffect(() => {
+    setStreak(null);
+    setActiveSub(null);
+    setPendingPlanDays(null);
+    setShowConfirm(null);
+    setShowPinForStreak(false);
+    setShowFreezePinModal(false);
+    setStreakPinInput("");
+    setFreezePinInput("");
+    fetchStreak();
+    fetchSubscription();
+  }, [visitorId, fetchStreak, fetchSubscription]);
 
   function handlePlanClick(planDays: number) {
     const plan = AUTO_CLAIM_PLANS.find(p => p.days === planDays);
