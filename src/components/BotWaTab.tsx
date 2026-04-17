@@ -75,7 +75,7 @@ const BotWaTab = () => {
       const [pkgRes, subRes, balRes] = await Promise.all([
         supabase.from("wa_bot_packages").select("*").eq("is_active", true).order("sort_order"),
         supabase.from("wa_bot_subscriptions").select("*, wa_bot_packages(name, duration_hours)").eq("visitor_id", visitorId).order("created_at", { ascending: false }),
-        supabase.from("user_balances").select("balance").eq("visitor_id", visitorId).maybeSingle(),
+        supabase.from("user_balances_public" as any).select("balance").eq("visitor_id", visitorId).maybeSingle(),
       ]);
       if (pkgRes.data) setPackages(pkgRes.data);
       if (subRes.data) setSubscriptions(subRes.data as BotSubscription[]);

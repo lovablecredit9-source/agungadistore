@@ -64,7 +64,7 @@ export default function PlusTab() {
     setLoading(true);
     const balVid = localStorage.getItem("balance_visitor_id");
     if (!balVid) { setLoading(false); return; }
-    const { data } = await supabase.from("user_balances").select("*").eq("visitor_id", balVid).maybeSingle();
+    const { data } = await supabase.from("user_balances_public" as any).select("*").eq("visitor_id", balVid).maybeSingle();
     if (data) setUserBalance(data as unknown as UserBalance);
     setLoading(false);
   }, []);
