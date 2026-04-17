@@ -520,6 +520,7 @@ export default function DailyStreak({ visitorId }: DailyStreakProps) {
       if (updatedStreak) {
         setStreak(updatedStreak);
         setJustClaimed(true);
+        try { (await import("@/lib/daily-mission")).trackDailyMission(visitorId, "streak_claim", 1); } catch {}
 
         // Show mystery reward popup
         setTimeout(() => setMysteryReward(reward), 1200);

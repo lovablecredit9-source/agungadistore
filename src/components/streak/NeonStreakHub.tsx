@@ -3,8 +3,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Gift, Loader2, Sparkles, ShoppingBag, Trophy, Coins } from "lucide-react";
+import { Gift, Loader2, Sparkles, ShoppingBag, Trophy, Coins, Target } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { trackDailyMission } from "@/lib/daily-mission";
 
 interface Props {
   visitorId: string;
@@ -46,6 +47,7 @@ export default function NeonStreakHub({ visitorId }: Props) {
   const [items, setItems] = useState<ShopItem[]>([]);
   const [redeeming, setRedeeming] = useState<string | null>(null);
   const [challenges, setChallenges] = useState<Challenge[]>([]);
+  const [dailyMissions, setDailyMissions] = useState<Challenge[]>([]);
 
   function getToday() {
     const wib = new Date(Date.now() + 7 * 3600 * 1000);
@@ -80,6 +82,26 @@ export default function NeonStreakHub({ visitorId }: Props) {
         is_locked: new Date(c.starts_at) > new Date(),
       })));
     }
+
+    // Daily missions (reset per day)
+    const { data: dms } = await supabase.from("daily_challenges").select("*").eq("is_active", true).order("sort_order");
+    if (dms) {
+      const { data: dprogs } = await supabase.from("daily_challenge_progress")
+        .select("*")
+        .eq("visitor_id", visitorId)
+        .eq("challenge_date", today)
+        .in("challenge_id", dms.map((d: any) => d.id));
+      const dpMap = Object.fromEntries((dprogs || []).map((p: any) => [p.challenge_id, p]));
+      setDailyMissions(dms.map((c: any) => ({
+        ...c,
+        starts_at: today,
+        ends_at: today,
+        current_value: dpMap[c.id]?.current_value || 0,
+        is_completed: dpMap[c.id]?.is_completed || false,
+        claimed_at: dpMap[c.id]?.claimed_at || null,
+        is_locked: false,
+      })));
+    }
   }
 
   useEffect(() => {
@@ -100,6 +122,7 @@ export default function NeonStreakHub({ visitorId }: Props) {
       } else {
         setReward(data.reward);
         setBoxOpened(true);
+        trackDailyMission(visitorId, "mystery_box", 1);
         loadAll();
       }
     } finally {
@@ -131,6 +154,16 @@ export default function NeonStreakHub({ visitorId }: Props) {
       toast({ title: "Gagal", description: data?.error || error?.message, variant: "destructive" });
     } else {
       toast({ title: "🏆 Reward Diklaim!", description: `+${data.reward_coins} Streak Coins` });
+      loadAll();
+    }
+  }
+
+  async function claimDailyMission(ch: Challenge) {
+    const { data, error } = await supabase.functions.invoke("check-daily-challenge", { body: { visitorId, claimChallengeId: ch.id } });
+    if (error || data?.error) {
+      toast({ title: "Gagal", description: data?.error || error?.message, variant: "destructive" });
+    } else {
+      toast({ title: "🎯 Misi Harian Selesai!", description: `+${data.reward_coins} Streak Coins` });
       loadAll();
     }
   }
@@ -193,6 +226,52 @@ export default function NeonStreakHub({ visitorId }: Props) {
           {opening ? <Loader2 className="w-5 h-5 animate-spin text-white" /> : <Sparkles className="w-5 h-5 neon-text-yellow neon-pulse" />}
         </div>
       </button>
+
+      {/* Daily Missions */}
+      {dailyMissions.length > 0 && (
+        <div className="cyber-card-pink rounded-2xl p-3 space-y-2">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Target className="w-4 h-4 neon-text-pink" />
+              <span className="text-xs font-black neon-text-pink tracking-widest uppercase">Tantangan Harian</span>
+            </div>
+            <span className="text-[9px] font-bold text-white/60 uppercase tracking-wider">Reset 00:00 WIB</span>
+          </div>
+          {dailyMissions.map(ch => {
+            const pct = Math.min(100, ((ch.current_value || 0) / ch.target_value) * 100);
+            const claimable = ch.is_completed && !ch.claimed_at;
+            return (
+              <div key={ch.id} className="bg-black/30 rounded-xl p-3 border border-pink-500/20">
+                <div className="flex items-start justify-between mb-2">
+                  <div className="flex-1 min-w-0 pr-3">
+                    <div className="font-extrabold text-white text-sm">{ch.title}</div>
+                    <div className="text-[10px] text-white/60">{ch.description}</div>
+                  </div>
+                  <div className="text-[10px] font-black neon-text-yellow tabular-nums whitespace-nowrap">+{ch.reward_coins}🪙</div>
+                </div>
+                <div className="h-1.5 bg-white/10 rounded-full overflow-hidden mb-2">
+                  <motion.div
+                    initial={{ width: 0 }}
+                    animate={{ width: `${pct}%` }}
+                    className="h-full bg-gradient-to-r from-pink-400 to-yellow-400 shadow-[0_0_10px_hsl(var(--neon-pink)/0.7)]"
+                  />
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-bold text-white/70 tabular-nums">
+                    {ch.current_value || 0} / {ch.target_value}
+                  </span>
+                  {claimable && (
+                    <Button size="sm" onClick={() => claimDailyMission(ch)} className="h-6 text-[10px] bg-gradient-to-r from-pink-400 to-yellow-400 text-black font-black">
+                      KLAIM
+                    </Button>
+                  )}
+                  {ch.claimed_at && <span className="text-[10px] font-bold text-emerald-400">✓ DIKLAIM HARI INI</span>}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
 
       {/* Weekly Challenges */}
       {challenges.length > 0 && (
