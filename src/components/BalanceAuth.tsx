@@ -97,6 +97,30 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser }: BalanceA
     }
   }, [addingAccount, savedAccounts.length]);
 
+  function resetTransientUiState() {
+    setAddingAccount(false);
+    setPreviousActiveAccount(null);
+    setShowSwitcher(false);
+    resetForm();
+  }
+
+  useEffect(() => {
+    const navigationEntry = performance.getEntriesByType("navigation")[0] as PerformanceNavigationTiming | undefined;
+
+    if (!currentUser && navigationEntry?.type === "reload") {
+      resetTransientUiState();
+    }
+
+    const handlePageShow = (event: PageTransitionEvent) => {
+      if (!currentUser && event.persisted) {
+        resetTransientUiState();
+      }
+    };
+
+    window.addEventListener("pageshow", handlePageShow);
+    return () => window.removeEventListener("pageshow", handlePageShow);
+  }, [currentUser]);
+
   async function fetchLoginHistory() {
     if (!currentUser) return;
     const { data } = await supabase.functions.invoke("balance-auth", {
