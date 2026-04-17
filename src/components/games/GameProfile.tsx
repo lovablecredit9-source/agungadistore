@@ -598,4 +598,11 @@ export async function updateGameStats(visitorId: string, gameType: string, won: 
       body: { action: "update_stats", visitorId, gameType, won, points, questionsAnswered },
     });
   } catch { }
+  // Daily mission tracking (silent)
+  try {
+    const { trackDailyMission } = await import("@/lib/daily-mission");
+    trackDailyMission(visitorId, "game_play", 1);
+    if (won) trackDailyMission(visitorId, "game_win", 1);
+    if (points > 0) trackDailyMission(visitorId, "game_points", points);
+  } catch { }
 }
