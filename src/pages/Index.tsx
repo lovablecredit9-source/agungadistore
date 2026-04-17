@@ -3377,7 +3377,7 @@ const Index = () => {
       )}
 
       {/* Product Chat Modal */}
-      {showProductChat && productChatProduct && (
+      {showProductChat && productChatProduct && productChat && (
         <div className="fixed inset-0 z-[70] bg-black/60 backdrop-blur-sm flex items-end justify-center" onClick={() => setShowProductChat(false)}>
           <div className="bg-card w-full max-w-lg rounded-t-3xl max-h-[85vh] flex flex-col animate-in slide-in-from-bottom duration-300" onClick={e => e.stopPropagation()}>
             {/* Chat Header */}
