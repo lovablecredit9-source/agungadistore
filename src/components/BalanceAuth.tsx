@@ -138,6 +138,12 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser }: BalanceA
     localStorage.setItem("balance_logged_in", "true");
     localStorage.setItem("balance_email", (data.user.email || email.trim()).toLowerCase());
     localStorage.setItem("balance_visitor_id", data.user.visitor_id);
+    setSavedAccounts(saveAccount({
+      visitor_id: data.user.visitor_id,
+      username: data.user.username,
+      email: data.user.email || email.trim(),
+      phone: data.user.phone,
+    }));
 
     onLogin(data.user);
     toast({ title: "Pendaftaran berhasil! 🎉" });
