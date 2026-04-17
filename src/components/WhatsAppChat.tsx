@@ -462,9 +462,10 @@ export default function WhatsAppChat({
           {disabledHint || "Chat ditutup"}
         </div>
       ) : (
-        <div className="border-t border-border p-2 space-y-2">
+        <div className="border-t border-border/60 bg-background/95 backdrop-blur-md p-2.5 space-y-2">
           {replyTo && (
-            <div className="flex items-start gap-2 bg-muted/60 border-l-2 border-primary rounded-md px-2 py-1.5 text-[11px]">
+            <div className="flex items-start gap-2 bg-primary/5 border-l-[3px] border-primary rounded-lg px-2.5 py-2 text-[11px] animate-fade-in">
+              <Reply className="w-3.5 h-3.5 text-primary mt-0.5 shrink-0" />
               <div className="flex-1 min-w-0">
                 <p className="font-semibold text-primary">
                   Membalas {replyTo.sender_type === viewerType ? "diri sendiri" : incomingLabel || "pesan"}
@@ -473,14 +474,14 @@ export default function WhatsAppChat({
                   {replyTo.message || (replyTo.image_url ? "📷 Foto" : "")}
                 </p>
               </div>
-              <button onClick={() => setReplyTo(null)} className="p-0.5 hover:bg-background rounded">
+              <button onClick={() => setReplyTo(null)} className="p-1 hover:bg-background rounded-full transition-colors">
                 <X className="w-3.5 h-3.5" />
               </button>
             </div>
           )}
-          <div className="flex gap-2">
-            <label className="w-9 h-9 rounded-lg bg-muted flex items-center justify-center cursor-pointer hover:bg-muted/80 shrink-0">
-              <ImagePlus className="w-4 h-4 text-muted-foreground" />
+          <div className="flex items-center gap-2">
+            <label className="w-10 h-10 rounded-full bg-muted/70 hover:bg-muted flex items-center justify-center cursor-pointer shrink-0 transition-all hover:scale-105 active:scale-95">
+              <ImagePlus className="w-[18px] h-[18px] text-muted-foreground" />
               <input
                 type="file"
                 accept="image/*"
@@ -491,21 +492,28 @@ export default function WhatsAppChat({
                 }}
               />
             </label>
-            <Input
-              placeholder="Tulis pesan…"
-              value={draft}
-              onChange={(e) => onChangeDraft(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey) {
-                  e.preventDefault();
-                  sendMessage();
-                }
-              }}
-              onBlur={() => pushTyping(false)}
-              className="flex-1"
-            />
-            <Button size="icon" onClick={sendMessage} disabled={!draft.trim()} className="shrink-0">
-              <Send className="w-4 h-4" />
+            <div className="flex-1 relative">
+              <Input
+                placeholder="Tulis pesan…"
+                value={draft}
+                onChange={(e) => onChangeDraft(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    sendMessage();
+                  }
+                }}
+                onBlur={() => pushTyping(false)}
+                className="rounded-full bg-muted/60 border-border/60 focus-visible:ring-primary/40 pl-4 pr-4 h-10"
+              />
+            </div>
+            <Button
+              size="icon"
+              onClick={sendMessage}
+              disabled={!draft.trim()}
+              className="shrink-0 rounded-full h-10 w-10 bg-gradient-to-br from-primary to-primary/80 shadow-md hover:shadow-lg hover:scale-105 active:scale-95 transition-all disabled:opacity-50 disabled:scale-100"
+            >
+              <Send className="w-[18px] h-[18px]" />
             </Button>
           </div>
         </div>
