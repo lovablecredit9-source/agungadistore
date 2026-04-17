@@ -736,7 +736,7 @@ const Index = () => {
     }
 
     const savedEmail = localStorage.getItem("balance_email");
-    let query = supabase.from("user_balances").select("*");
+    let query = supabase.from("user_balances_public" as any).select("*");
     
     // Prefer finding by saved email (more reliable across devices)
     if (savedEmail) {

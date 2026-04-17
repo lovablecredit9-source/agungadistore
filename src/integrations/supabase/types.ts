@@ -185,6 +185,13 @@ export type Database = {
             referencedRelation: "user_balances"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "balance_login_history_user_balance_id_fkey"
+            columns: ["user_balance_id"]
+            isOneToOne: false
+            referencedRelation: "user_balances_public"
+            referencedColumns: ["id"]
+          },
         ]
       }
       balance_transactions: {
@@ -1962,7 +1969,39 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      user_balances_public: {
+        Row: {
+          balance: number | null
+          created_at: string | null
+          email: string | null
+          id: string | null
+          phone: string | null
+          updated_at: string | null
+          username: string | null
+          visitor_id: string | null
+        }
+        Insert: {
+          balance?: number | null
+          created_at?: string | null
+          email?: string | null
+          id?: string | null
+          phone?: string | null
+          updated_at?: string | null
+          username?: string | null
+          visitor_id?: string | null
+        }
+        Update: {
+          balance?: number | null
+          created_at?: string | null
+          email?: string | null
+          id?: string | null
+          phone?: string | null
+          updated_at?: string | null
+          username?: string | null
+          visitor_id?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       increment_sponsor_views: {
