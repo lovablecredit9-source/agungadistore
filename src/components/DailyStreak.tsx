@@ -418,24 +418,113 @@ export default function DailyStreak() {
   const canClaim = !streak || !isToday(streak.last_claim_date);
   const streakBroken = streak && !isToday(streak.last_claim_date) && !isYesterday(streak.last_claim_date);
 
+  // Apply mystery reward (only updates DB; UI state updated separately)
+  async function applyMysteryReward(reward: MysteryReward, currentBonus: number, currentFreeze: number) {
+    const updates: any = {};
+    if (reward.type === "bonus_points" || reward.type === "double_points") {
+      const points = reward.type === "double_points" ? reward.value * 10 : reward.value;
+      updates.total_bonus_points = currentBonus + points;
+    }
+    if (reward.type === "freeze_token") {
+      updates.freeze_count = currentFreeze + reward.value;
+    }
+    // Log reward
+    await supabase.from("streak_rewards_log" as any).insert({
+      visitor_id: visitorId,
+      claim_date: getToday(),
+      reward_type: reward.type,
+      reward_value: reward.value,
+      reward_label: reward.label,
+      reward_emoji: reward.emoji,
+      rarity: reward.rarity,
+    });
+    return updates;
+  }
+
   async function claimStreak() {
     if (!canClaim) return;
     setClaiming(true);
     try {
+      const reward = rollMysteryReward();
+      const now = new Date();
+      const wibNow = new Date(now.getTime() + 7 * 60 * 60 * 1000);
+      const claimHour = wibNow.getUTCHours();
+      const claimDay = wibNow.getUTCDay();
+
+      let updatedStreak: StreakData | null = null;
+      let prevAchievements: string[] = streak?.achievements || [];
+      let totalBonusAfter = streak?.total_bonus_points || 0;
+
       if (!streak) {
-        const { data, error } = await supabase.from("daily_streaks").insert({
-          visitor_id: visitorId, last_claim_date: getToday(),
-          current_streak: 1, longest_streak: 1, total_claims: 1,
-        } as any).select().single();
-        if (!error && data) { setStreak(data as unknown as StreakData); setJustClaimed(true); checkMilestone(1); }
+        const rewardUpdates = await applyMysteryReward(reward, 0, 0);
+        const insertData: any = {
+          visitor_id: visitorId,
+          last_claim_date: getToday(),
+          current_streak: 1,
+          longest_streak: 1,
+          total_claims: 1,
+          ...rewardUpdates,
+        };
+        const { data, error } = await supabase.from("daily_streaks").insert(insertData).select().single();
+        if (!error && data) {
+          updatedStreak = data as unknown as StreakData;
+          totalBonusAfter = updatedStreak.total_bonus_points || 0;
+        }
       } else {
-        const newStreak = streakBroken ? 1 : streak.current_streak + 1;
+        const usedFreeze = streakBroken && (streak.freeze_count || 0) > 0;
+        const effectiveStreak = usedFreeze ? streak.current_streak + 1 : (streakBroken ? 1 : streak.current_streak + 1);
+        const newStreak = effectiveStreak;
         const newLongest = Math.max(streak.longest_streak, newStreak);
-        const { data, error } = await supabase.from("daily_streaks").update({
-          last_claim_date: getToday(), current_streak: newStreak,
-          longest_streak: newLongest, total_claims: streak.total_claims + 1,
-        } as any).eq("id", streak.id).select().single();
-        if (!error && data) { setStreak(data as unknown as StreakData); setJustClaimed(true); checkMilestone(newStreak); }
+        const rewardUpdates = await applyMysteryReward(reward, streak.total_bonus_points || 0, streak.freeze_count || 0);
+        const updateData: any = {
+          last_claim_date: getToday(),
+          current_streak: newStreak,
+          longest_streak: newLongest,
+          total_claims: streak.total_claims + 1,
+          ...rewardUpdates,
+        };
+        if (usedFreeze) {
+          updateData.freeze_count = Math.max(0, (rewardUpdates.freeze_count ?? streak.freeze_count ?? 0) - 1);
+          updateData.freeze_used_at = getToday();
+          toast({ title: "🛡️ Pelindung Streak Terpakai!", description: "Streak kamu diselamatkan dari putus!" });
+        }
+        const { data, error } = await supabase.from("daily_streaks").update(updateData).eq("id", streak.id).select().single();
+        if (!error && data) {
+          updatedStreak = data as unknown as StreakData;
+          totalBonusAfter = updatedStreak.total_bonus_points || 0;
+        }
+      }
+
+      if (updatedStreak) {
+        setStreak(updatedStreak);
+        setJustClaimed(true);
+
+        // Show mystery reward popup
+        setTimeout(() => setMysteryReward(reward), 1200);
+
+        // Check milestone
+        checkMilestone(updatedStreak.current_streak);
+
+        // Check new achievements
+        const newAchs = checkNewAchievements(prevAchievements, {
+          currentStreak: updatedStreak.current_streak,
+          longestStreak: updatedStreak.longest_streak,
+          totalClaims: updatedStreak.total_claims,
+          claimHour,
+          claimDay,
+          totalBonus: totalBonusAfter,
+        });
+        // Auto-unlock legendary achievement if got legendary reward
+        if (reward.rarity === "legendary" && !prevAchievements.includes("lucky_legendary")) {
+          const legendary = { id: "lucky_legendary", label: "Tersentuh Dewi Fortuna", description: "Dapat hadiah Legendary", emoji: "🌟", check: () => true };
+          newAchs.push(legendary as any);
+        }
+        if (newAchs.length > 0) {
+          const newIds = [...prevAchievements, ...newAchs.map(a => a.id)];
+          await supabase.from("daily_streaks").update({ achievements: newIds } as any).eq("id", updatedStreak.id);
+          setStreak(prev => prev ? { ...prev, achievements: newIds } : prev);
+          setAchievementQueue(prev => [...prev, ...newAchs]);
+        }
       }
     } finally {
       setClaiming(false);
@@ -446,6 +535,33 @@ export default function DailyStreak() {
   function checkMilestone(days: number) {
     const milestone = MILESTONES.find(m => m.days === days);
     if (milestone) { setShowMilestone(milestone); setTimeout(() => setShowMilestone(null), 4000); }
+  }
+
+  // Buy streak freeze
+  function handleBuyFreeze() {
+    setShowFreezePinModal(true);
+  }
+
+  async function confirmBuyFreeze() {
+    if (freezePinInput.length < 4) return;
+    setShowFreezePinModal(false);
+    setBuyingFreeze(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("buy-streak-freeze", {
+        body: { visitorId, pin: freezePinInput },
+      });
+      if (error || data?.error) {
+        toast({ title: "Gagal", description: data?.error || "Gagal membeli pelindung", variant: "destructive" });
+      } else {
+        toast({ title: "🛡️ Berhasil!", description: `Pelindung streak ditambahkan! Total: ${data.freeze_count}` });
+        fetchStreak();
+      }
+    } catch {
+      toast({ title: "Error", description: "Koneksi gagal", variant: "destructive" });
+    } finally {
+      setBuyingFreeze(false);
+      setFreezePinInput("");
+    }
   }
 
   const currentStreak = streak?.current_streak || 0;
