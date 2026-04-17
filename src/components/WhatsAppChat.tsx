@@ -270,25 +270,56 @@ export default function WhatsAppChat({
     return map;
   }, [messages]);
 
+  // Group messages by date for separators
+  const dateLabel = (iso: string) => {
+    const d = new Date(iso);
+    const today = new Date();
+    const yest = new Date();
+    yest.setDate(today.getDate() - 1);
+    if (d.toDateString() === today.toDateString()) return "Hari ini";
+    if (d.toDateString() === yest.toDateString()) return "Kemarin";
+    return d.toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" });
+  };
+
   return (
     <div className={`flex flex-col ${className ?? ""}`}>
-      <div ref={scrollRef} className={`flex-1 overflow-y-auto p-3 space-y-2 ${scrollClassName ?? ""}`}>
+      <div
+        ref={scrollRef}
+        className={`flex-1 overflow-y-auto p-3 space-y-2 chat-wallpaper ${scrollClassName ?? ""}`}
+      >
         {headerSlot}
-        {messages.map((m) => {
+        {messages.map((m, idx) => {
           const mine = m.sender_type === viewerType;
           const replied = m.reply_to_id ? messagesById[m.reply_to_id] : null;
           const rx = reactionsByMsg[m.id];
+          const prev = messages[idx - 1];
+          const showDate = !prev || dateLabel(prev.created_at) !== dateLabel(m.created_at);
+          const groupedWithPrev =
+            prev && prev.sender_type === m.sender_type && !showDate &&
+            new Date(m.created_at).getTime() - new Date(prev.created_at).getTime() < 60_000;
           return (
-            <div key={m.id} className={`flex ${mine ? "justify-end" : "justify-start"}`}>
-              <div className="relative group max-w-[82%]">
-                <div
-                  className={`relative rounded-2xl px-3 py-2 shadow-sm ${
-                    mine
-                      ? "bg-primary text-primary-foreground rounded-br-md"
-                      : "bg-card border border-border rounded-bl-md"
-                  } ${m.is_deleted ? "italic opacity-70" : ""}`}
-                  onDoubleClick={() => !m.is_deleted && setEmojiFor(emojiFor === m.id ? null : m.id)}
-                >
+            <div key={m.id}>
+              {showDate && (
+                <div className="flex justify-center my-3">
+                  <span className="text-[10px] font-semibold px-2.5 py-1 rounded-full bg-background/80 backdrop-blur-md border border-border/50 text-muted-foreground shadow-sm">
+                    {dateLabel(m.created_at)}
+                  </span>
+                </div>
+              )}
+              <div className={`flex ${mine ? "justify-end" : "justify-start"} ${groupedWithPrev ? "mt-0.5" : "mt-1.5"} animate-fade-in`}>
+                <div className="relative group max-w-[82%]">
+                  <div
+                    className={`relative px-3 py-2 shadow-md transition-all ${
+                      mine
+                        ? `bg-gradient-to-br from-primary to-primary/85 text-primary-foreground ${
+                            groupedWithPrev ? "rounded-2xl rounded-br-md" : "rounded-2xl rounded-br-sm"
+                          }`
+                        : `bg-card/95 backdrop-blur-sm border border-border/60 ${
+                            groupedWithPrev ? "rounded-2xl rounded-bl-md" : "rounded-2xl rounded-bl-sm"
+                          }`
+                    } ${m.is_deleted ? "italic opacity-70" : ""}`}
+                    onDoubleClick={() => !m.is_deleted && setEmojiFor(emojiFor === m.id ? null : m.id)}
+                  >
                   {!mine && incomingLabel && !m.is_deleted && (
                     <p className="text-[10px] font-bold mb-0.5 opacity-80">{incomingLabel}</p>
                   )}
