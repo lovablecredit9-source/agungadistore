@@ -360,7 +360,7 @@ export default function WhatsAppChat({
                     {mine && !m.is_deleted && (
                       <span className="ml-0.5">
                         {m.is_read ? (
-                          <CheckCheck className="w-3 h-3 text-sky-300" />
+                          <CheckCheck className={`w-3 h-3 ${mine ? "text-cyan-200" : "text-primary"}`} />
                         ) : (
                           <Check className="w-3 h-3" />
                         )}
