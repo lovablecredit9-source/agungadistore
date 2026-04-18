@@ -96,6 +96,9 @@ export default function StreakShopFlashDeals({ visitorId, onUpdate }: Props) {
       if (error) throw error;
       if ((data as any)?.error) throw new Error((data as any).error);
       toast({ title: `⚡ ${deal.name} Berhasil!`, description: (data as any).rewardSummary });
+      // Refresh power-up cache di localStorage agar bertambah di game
+      await syncPowerUpsFromServer();
+      window.dispatchEvent(new CustomEvent("power-ups-updated"));
       load();
       onUpdate?.();
     } catch (e) {
