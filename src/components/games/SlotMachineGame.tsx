@@ -94,6 +94,11 @@ export default function SlotMachineGame() {
       triggerGameCreditsRefresh();
       if (data.payout.type !== "none") {
         toast({ title: "🎉 Menang!", description: data.payout.label });
+        // Jika hadiah menambah power-up (mis. extra_life), refresh cache power-up
+        if (data.payout.type === "extra_life") {
+          import("./gameStore").then(m => m.syncPowerUpsFromServer()).catch(() => {});
+          window.dispatchEvent(new CustomEvent("power-ups-updated"));
+        }
       }
     }, animDuration);
   };
