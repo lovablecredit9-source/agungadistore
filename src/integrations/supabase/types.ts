@@ -3759,6 +3759,7 @@ export type Database = {
         }
         Returns: string
       }
+      get_account_gems: { Args: { p_visitor_id: string }; Returns: number }
       get_my_notifications: {
         Args: { p_limit?: number; p_visitor_id: string }
         Returns: {

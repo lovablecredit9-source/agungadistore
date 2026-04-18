@@ -28,30 +28,28 @@ export default function GemShop({ visitorId: visitorIdProp, onUpdate }: Props) {
 
   const load = async () => {
     setLoading(true);
-    const [{ data: pkgs }, { data: prof }] = await Promise.all([
+    const [{ data: pkgs }, { data: gemTotal }] = await Promise.all([
       supabase.from("gem_packages").select("*").eq("is_active", true).order("sort_order"),
-      supabase.from("game_profiles").select("gems").eq("visitor_id", visitorId).maybeSingle(),
+      supabase.rpc("get_account_gems", { p_visitor_id: visitorId }),
     ]);
     setPackages(pkgs || []);
-    setMyGems(prof?.gems || 0);
+    setMyGems(typeof gemTotal === "number" ? gemTotal : 0);
     setLoading(false);
   };
 
   useEffect(() => { load(); }, [visitorId]);
   useEffect(() => { if (open) load(); }, [open]);
 
-  // Realtime: ikut perubahan gem di game_profiles & gem_transactions
+  // Realtime: ikut perubahan gem di game_profiles & gem_transactions (semua device akun ini)
   useEffect(() => {
     if (!visitorId) return;
     const ch = supabase
       .channel(`gem-${visitorId}`)
       .on("postgres_changes", {
         event: "*", schema: "public", table: "game_profiles",
-        filter: `visitor_id=eq.${visitorId}`,
       }, () => load())
       .on("postgres_changes", {
         event: "INSERT", schema: "public", table: "gem_transactions",
-        filter: `visitor_id=eq.${visitorId}`,
       }, () => load())
       .subscribe();
     return () => { supabase.removeChannel(ch); };
