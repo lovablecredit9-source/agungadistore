@@ -214,7 +214,38 @@ export default function NeonStreakHub({ visitorId }: Props) {
     }
   }
 
-  async function topUpCoins(pkgId: string) {
+  async function redeemPowerUp(p: typeof POWER_UPS[number]) {
+    if (coins < p.cost) {
+      toast({ title: "Coins kurang", description: `Butuh ${p.cost} coin (kamu punya ${coins})`, variant: "destructive" });
+      return;
+    }
+    setRedeemingPower(p.id);
+    try {
+      // Deduct coins di server (pakai daily_streaks update langsung — kebijakan RLS sudah Anyone update)
+      const { data: streak } = await supabase.from("daily_streaks").select("id, streak_coins").eq("visitor_id", visitorId).maybeSingle();
+      if (!streak) { toast({ title: "Streak tidak ada", variant: "destructive" }); return; }
+      if ((streak.streak_coins || 0) < p.cost) { toast({ title: "Coins kurang", variant: "destructive" }); return; }
+      await supabase.from("daily_streaks").update({ streak_coins: (streak.streak_coins || 0) - p.cost }).eq("id", streak.id);
+
+      // Update powerup state
+      const next = { ...powerUps };
+      if (p.id === "extra_life") next.extra_life = (next.extra_life || 0) + 1;
+      if (p.id === "auto_hint") next.auto_hint = (next.auto_hint || 0) + 1;
+      if (p.id === "time_freeze") next.time_freeze = (next.time_freeze || 0) + 1;
+      if (p.id === "double_xp") next.double_xp_until = new Date(Date.now() + 60 * 60 * 1000).toISOString();
+      if (p.id === "shield") {
+        // tambahkan freeze_count langsung
+        await supabase.from("daily_streaks").update({ freeze_count: ((streak as any).freeze_count || 0) + 1, streak_coins: (streak.streak_coins || 0) - p.cost }).eq("id", streak.id);
+      }
+      setPowerUps(next);
+      try { localStorage.setItem(`streak_powerups_${visitorId}`, JSON.stringify(next)); } catch {}
+
+      toast({ title: `⚡ ${p.name} aktif!`, description: p.desc });
+      loadAll();
+    } finally {
+      setRedeemingPower(null);
+    }
+  }
     if (!topupPin.trim()) {
       toast({ title: "PIN diperlukan", description: "Masukkan PIN untuk melanjutkan", variant: "destructive" });
       return;
