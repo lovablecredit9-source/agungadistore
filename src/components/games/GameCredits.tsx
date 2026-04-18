@@ -17,6 +17,14 @@ interface CreditPackage {
   unlimited_days?: number;
 }
 
+const GAME_CREDITS_REFRESH_EVENT = "game-credits-refresh";
+
+export function triggerGameCreditsRefresh() {
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new CustomEvent(GAME_CREDITS_REFRESH_EVENT));
+  }
+}
+
 export function useGameCredits(visitorId: string | null) {
   const [credits, setCredits] = useState(0);
   const [isUnlimited, setIsUnlimited] = useState(false);
@@ -36,6 +44,27 @@ export function useGameCredits(visitorId: string | null) {
   }, [visitorId]);
 
   useEffect(() => { fetchCredits(); }, [fetchCredits]);
+
+  // Cross-component refresh listener
+  useEffect(() => {
+    const handler = () => fetchCredits();
+    window.addEventListener(GAME_CREDITS_REFRESH_EVENT, handler);
+    return () => window.removeEventListener(GAME_CREDITS_REFRESH_EVENT, handler);
+  }, [fetchCredits]);
+
+  // Realtime: auto-refresh when DB row changes (e.g. slot machine win)
+  useEffect(() => {
+    if (!visitorId) return;
+    const channel = supabase
+      .channel(`user_game_credits_${visitorId}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "user_game_credits", filter: `visitor_id=eq.${visitorId}` },
+        () => fetchCredits(),
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [visitorId, fetchCredits]);
 
   const useCredit = useCallback(async (): Promise<boolean> => {
     if (!visitorId) return false;
