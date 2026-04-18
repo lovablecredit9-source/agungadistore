@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Gift, Loader2, Sparkles, ShoppingBag, Trophy, Coins, Target } from "lucide-react";
+import { Gift, Loader2, Sparkles, ShoppingBag, Trophy, Coins, Target, Lock, Zap, Check, Rocket } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { trackDailyMission } from "@/lib/daily-mission";
 
@@ -183,7 +183,7 @@ export default function NeonStreakHub({ visitorId }: Props) {
           <div>
             <div className="text-[10px] font-black tracking-widest neon-text-cyan uppercase">Streak Coins</div>
             <div className="flex items-center gap-2 mt-1">
-              <Coins className="w-6 h-6 neon-text-yellow neon-pulse" />
+              <Coins className="w-7 h-7 icon-3d-coin neon-pulse" strokeWidth={2.5} />
               <span className="text-3xl font-black neon-gradient-text tabular-nums">{coins.toLocaleString("id-ID")}</span>
             </div>
           </div>
@@ -191,9 +191,10 @@ export default function NeonStreakHub({ visitorId }: Props) {
             <motion.div
               animate={{ scale: [1, 1.08, 1] }}
               transition={{ duration: 1.5, repeat: Infinity }}
-              className="px-3 py-1.5 rounded-full bg-gradient-to-r from-pink-500 to-purple-600 text-white text-xs font-black shadow-[0_0_20px_hsl(var(--neon-pink)/0.7)]"
+              className="px-3 py-1.5 rounded-full bg-gradient-to-r from-pink-500 to-purple-600 text-white text-xs font-black shadow-[0_0_20px_hsl(var(--neon-pink)/0.7)] flex items-center gap-1"
             >
-              ⚡ x{multiplier} BOOST
+              <Zap className="w-3.5 h-3.5 icon-3d-zap" strokeWidth={3} />
+              x{multiplier} BOOST
             </motion.div>
           )}
         </div>
@@ -210,9 +211,9 @@ export default function NeonStreakHub({ visitorId }: Props) {
           <motion.div
             animate={boxOpened ? {} : { rotate: [0, -6, 6, 0], scale: [1, 1.05, 1] }}
             transition={{ duration: 1.2, repeat: Infinity }}
-            className="text-5xl"
+            className="flex items-center justify-center w-14 h-14"
           >
-            {boxOpened && reward ? reward.reward_label?.split(" ")[0] || "🎁" : "🎁"}
+            <Gift className="w-12 h-12 icon-3d-gift" strokeWidth={2.5} />
           </motion.div>
           <div className="flex-1 min-w-0">
             <div className="text-xs neon-text-cyan font-black tracking-widest uppercase">Mystery Box Harian</div>
@@ -232,7 +233,7 @@ export default function NeonStreakHub({ visitorId }: Props) {
         <div className="cyber-card-pink rounded-2xl p-3 space-y-2">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Target className="w-4 h-4 neon-text-pink" />
+              <Target className="w-4 h-4 icon-3d-target" strokeWidth={2.5} />
               <span className="text-xs font-black neon-text-pink tracking-widest uppercase">Tantangan Harian</span>
             </div>
             <span className="text-[9px] font-bold text-white/60 uppercase tracking-wider">Reset 00:00 WIB</span>
@@ -247,7 +248,7 @@ export default function NeonStreakHub({ visitorId }: Props) {
                     <div className="font-extrabold text-white text-sm">{ch.title}</div>
                     <div className="text-[10px] text-white/60">{ch.description}</div>
                   </div>
-                  <div className="text-[10px] font-black neon-text-yellow tabular-nums whitespace-nowrap">+{ch.reward_coins}🪙</div>
+                  <div className="text-[10px] font-black tabular-nums whitespace-nowrap flex items-center gap-1"><span className="neon-text-yellow">+{ch.reward_coins}</span><Coins className="w-3 h-3 icon-3d-coin" strokeWidth={2.5} /></div>
                 </div>
                 <div className="h-1.5 bg-white/10 rounded-full overflow-hidden mb-2">
                   <motion.div
@@ -265,7 +266,7 @@ export default function NeonStreakHub({ visitorId }: Props) {
                       KLAIM
                     </Button>
                   )}
-                  {ch.claimed_at && <span className="text-[10px] font-bold text-emerald-400">✓ DIKLAIM HARI INI</span>}
+                  {ch.claimed_at && <span className="text-[10px] font-bold text-emerald-400 flex items-center gap-1"><Check className="w-3 h-3 icon-3d-check" strokeWidth={3} /> DIKLAIM HARI INI</span>}
                 </div>
               </div>
             );
@@ -277,7 +278,7 @@ export default function NeonStreakHub({ visitorId }: Props) {
       {challenges.length > 0 && (
         <div className="cyber-card-cyan rounded-2xl p-3 space-y-2">
           <div className="flex items-center gap-2">
-            <Trophy className="w-4 h-4 neon-text-yellow" />
+            <Trophy className="w-4 h-4 icon-3d-trophy" strokeWidth={2.5} />
             <span className="text-xs font-black neon-text-cyan tracking-widest uppercase">Tantangan Mingguan</span>
           </div>
           {challenges.map(ch => {
@@ -289,8 +290,8 @@ export default function NeonStreakHub({ visitorId }: Props) {
             return (
               <div key={ch.id} className={`bg-black/30 rounded-xl p-3 border ${ch.is_locked ? "border-white/10 opacity-70" : "border-cyan-500/20"} relative`}>
                 {ch.is_locked && (
-                  <div className="absolute top-2 right-2 text-[9px] font-black tracking-widest uppercase px-2 py-0.5 rounded-full bg-white/10 text-white/80 border border-white/20">
-                    🔒 {daysToStart}h lagi
+                  <div className="absolute top-2 right-2 text-[9px] font-black tracking-widest uppercase px-2 py-0.5 rounded-full bg-white/10 text-white/80 border border-white/20 flex items-center gap-1">
+                    <Lock className="w-2.5 h-2.5 icon-3d-lock" strokeWidth={3} /> {daysToStart}h lagi
                   </div>
                 )}
                 <div className="flex items-start justify-between mb-2">
@@ -298,7 +299,7 @@ export default function NeonStreakHub({ visitorId }: Props) {
                     <div className="font-extrabold text-white text-sm">{ch.title}</div>
                     <div className="text-[10px] text-white/60">{ch.description}</div>
                   </div>
-                  {!ch.is_locked && <div className="text-[10px] font-black neon-text-yellow tabular-nums">+{ch.reward_coins}🪙</div>}
+                  {!ch.is_locked && <div className="text-[10px] font-black tabular-nums flex items-center gap-1"><span className="neon-text-yellow">+{ch.reward_coins}</span><Coins className="w-3 h-3 icon-3d-coin" strokeWidth={2.5} /></div>}
                 </div>
                 {!ch.is_locked && (
                   <div className="h-1.5 bg-white/10 rounded-full overflow-hidden mb-2">
@@ -310,15 +311,19 @@ export default function NeonStreakHub({ visitorId }: Props) {
                   </div>
                 )}
                 <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-bold text-white/70 tabular-nums">
-                    {ch.is_locked ? `Hadiah: +${ch.reward_coins}🪙` : `${ch.current_value || 0} / ${ch.target_value}`}
+                  <span className="text-[10px] font-bold text-white/70 tabular-nums flex items-center gap-1">
+                    {ch.is_locked ? (
+                      <>Hadiah: +{ch.reward_coins}<Coins className="w-3 h-3 icon-3d-coin" strokeWidth={2.5} /></>
+                    ) : (
+                      `${ch.current_value || 0} / ${ch.target_value}`
+                    )}
                   </span>
                   {claimable && (
                     <Button size="sm" onClick={() => claimChallenge(ch)} className="h-6 text-[10px] bg-gradient-to-r from-yellow-400 to-pink-500 text-black font-black">
                       KLAIM
                     </Button>
                   )}
-                  {ch.claimed_at && <span className="text-[10px] font-bold text-emerald-400">✓ DIKLAIM</span>}
+                  {ch.claimed_at && <span className="text-[10px] font-bold text-emerald-400 flex items-center gap-1"><Check className="w-3 h-3 icon-3d-check" strokeWidth={3} /> DIKLAIM</span>}
                 </div>
               </div>
             );
@@ -348,10 +353,14 @@ export default function NeonStreakHub({ visitorId }: Props) {
               className={`max-w-xs w-full rounded-3xl p-6 text-center bg-gradient-to-br ${rarityColor(reward.rarity)} shadow-2xl`}
               onClick={e => e.stopPropagation()}
             >
-              <div className="text-7xl mb-3">{reward.reward_label?.split(" ")[0] || "🎁"}</div>
+              <div className="mb-3 flex justify-center">
+                <Gift className="w-20 h-20 icon-3d-gift drop-shadow-2xl" strokeWidth={2.5} />
+              </div>
               <div className="text-[10px] font-black tracking-widest text-white/80 mb-1">{reward.rarity?.toUpperCase()}</div>
               <div className="text-2xl font-black text-white drop-shadow mb-2">{reward.reward_label}</div>
-              <Button onClick={() => setReward(null)} className="bg-white text-black font-black w-full">Mantap! 🚀</Button>
+              <Button onClick={() => setReward(null)} className="bg-white text-black font-black w-full">
+                Mantap! <Rocket className="w-4 h-4 ml-1.5 icon-3d-rocket" strokeWidth={2.5} />
+              </Button>
             </motion.div>
           </motion.div>
         )}
@@ -367,7 +376,9 @@ export default function NeonStreakHub({ visitorId }: Props) {
           </DialogHeader>
           <div className="flex items-center justify-between p-3 rounded-xl bg-black/40 border border-yellow-500/30">
             <span className="text-xs font-bold text-white/80">Saldo Coins</span>
-            <span className="text-xl font-black neon-text-yellow tabular-nums">🪙 {coins.toLocaleString("id-ID")}</span>
+            <span className="text-xl font-black neon-text-yellow tabular-nums flex items-center gap-1.5">
+              <Coins className="w-5 h-5 icon-3d-coin" strokeWidth={2.5} /> {coins.toLocaleString("id-ID")}
+            </span>
           </div>
           <div className="grid grid-cols-2 gap-2 max-h-[60vh] overflow-y-auto">
             {items.map(item => {
@@ -385,7 +396,9 @@ export default function NeonStreakHub({ visitorId }: Props) {
                   <div className="font-extrabold text-white text-xs leading-tight">{item.name}</div>
                   <div className="text-[10px] text-white/60 mb-2 line-clamp-2">{item.description}</div>
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-black neon-text-yellow tabular-nums">🪙 {item.cost_coins}</span>
+                    <span className="text-xs font-black neon-text-yellow tabular-nums flex items-center gap-1">
+                      <Coins className="w-3.5 h-3.5 icon-3d-coin" strokeWidth={2.5} /> {item.cost_coins}
+                    </span>
                     {redeeming === item.id && <Loader2 className="w-3 h-3 animate-spin text-white" />}
                   </div>
                 </button>

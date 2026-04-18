@@ -1,6 +1,6 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { Sparkles } from "lucide-react";
+import { Sparkles, Gift, Rocket } from "lucide-react";
 import type { MysteryReward } from "./streakRewards";
 import { getRarityColor, getRarityGlow, getRarityLabel } from "./streakRewards";
 
@@ -101,7 +101,10 @@ export default function MysteryRewardPopup({ reward, onClose }: Props) {
 
               <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}>
                 <Sparkles className="w-5 h-5 mx-auto mb-1 text-yellow-400 animate-pulse" />
-                <h3 className="text-xl font-extrabold text-foreground">🎁 Mystery Reward!</h3>
+                <h3 className="text-xl font-extrabold text-foreground flex items-center justify-center gap-2">
+                  <Gift className="w-6 h-6 icon-3d-gift" strokeWidth={2.5} />
+                  Mystery Reward!
+                </h3>
               </motion.div>
 
               <motion.div
@@ -120,7 +123,7 @@ export default function MysteryRewardPopup({ reward, onClose }: Props) {
                 onClick={onClose}
                 className={`w-full bg-gradient-to-r ${getRarityColor(reward.rarity)} text-white font-bold shadow-lg`}
               >
-                Mantap! 🚀
+                Mantap! <Rocket className="w-4 h-4 ml-1.5 icon-3d-rocket" strokeWidth={2.5} />
               </Button>
             </div>
           </motion.div>
