@@ -16,16 +16,18 @@ function genVoucher() {
   return Array.from({ length: 16 }, () => c[Math.floor(Math.random() * c.length)]).join("");
 }
 
-// Weighted reward pool (100% sum)
+// Rebalanced: hadiah saldo lebih kecil, kredit/storage lebih banyak.
+// Saldo masuk ke Saldo IN (game_balance).
 const REWARDS = [
-  { type: "balance", value: 500, label: "Saldo Rp 500", rarity: "common", weight: 30 },
-  { type: "balance", value: 1000, label: "Saldo Rp 1.000", rarity: "common", weight: 20 },
-  { type: "gems", value: 5, label: "5 Gems", rarity: "common", weight: 15 },
-  { type: "streak_coins", value: 10, label: "10 Streak Coins", rarity: "common", weight: 12 },
-  { type: "game_credits", value: 3, label: "3 Game Credits", rarity: "rare", weight: 10 },
-  { type: "voucher", value: 2000, label: "Voucher Rp 2.000", rarity: "rare", weight: 8 },
-  { type: "balance", value: 5000, label: "Saldo Rp 5.000", rarity: "epic", weight: 4 },
-  { type: "voucher", value: 10000, label: "Voucher Rp 10.000", rarity: "legendary", weight: 1 },
+  { type: "game_credits", value: 2, label: "2 Game Credits", rarity: "common", weight: 28 },
+  { type: "game_credits", value: 5, label: "5 Game Credits", rarity: "common", weight: 20 },
+  { type: "streak_coins", value: 10, label: "10 Streak Coins", rarity: "common", weight: 14 },
+  { type: "game_balance", value: 200, label: "Saldo IN Rp 200", rarity: "common", weight: 12 },
+  { type: "gems", value: 5, label: "5 Gems", rarity: "rare", weight: 10 },
+  { type: "game_credits", value: 10, label: "10 Game Credits", rarity: "rare", weight: 8 },
+  { type: "game_balance", value: 500, label: "Saldo IN Rp 500", rarity: "rare", weight: 5 },
+  { type: "voucher", value: 2000, label: "Voucher Rp 2.000", rarity: "epic", weight: 2.5 },
+  { type: "game_balance", value: 1000, label: "Saldo IN Rp 1.000", rarity: "legendary", weight: 0.5 },
 ];
 
 function pickReward() {
@@ -80,13 +82,25 @@ Deno.serve(async (req) => {
           is_active: true,
           expires_at: new Date(Date.now() + 30 * 86400000).toISOString(),
         });
-      } else if (reward.type === "balance") {
-        await supabase.from("balance_transactions").insert({
-          visitor_id: visitorId,
-          amount: reward.value,
-          type: "scratch_card",
-          description: `Hadiah Scratch Card: ${reward.label}`,
+      } else if (reward.type === "game_balance") {
+        const { data: gb } = await supabase.from("game_balance").select("id, amount, total_earned").eq("visitor_id", visitorId).maybeSingle();
+        if (gb) {
+          await supabase.from("game_balance")
+            .update({ amount: (gb.amount || 0) + reward.value, total_earned: (gb.total_earned || 0) + reward.value })
+            .eq("id", gb.id);
+        } else {
+          await supabase.from("game_balance").insert({ visitor_id: visitorId, amount: reward.value, total_earned: reward.value });
+        }
+        await supabase.from("game_balance_transactions").insert({
+          visitor_id: visitorId, amount: reward.value, type: "scratch_card", description: `Scratch Card: ${reward.label}`,
         });
+      } else if (reward.type === "game_credits") {
+        const { data: gc } = await supabase.from("user_game_credits").select("id, credits").eq("visitor_id", visitorId).maybeSingle();
+        if (gc) {
+          await supabase.from("user_game_credits").update({ credits: (gc.credits || 0) + reward.value }).eq("id", gc.id);
+        } else {
+          await supabase.from("user_game_credits").insert({ visitor_id: visitorId, credits: reward.value });
+        }
       } else if (reward.type === "gems") {
         await supabase.rpc("create_notification", {
           p_visitor_id: visitorId,
