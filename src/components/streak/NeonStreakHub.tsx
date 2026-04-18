@@ -31,6 +31,8 @@ import StreakPetCompanion from "./StreakPetCompanion";
 import StreakLuckySpin from "./StreakLuckySpin";
 import StreakMissionChain from "./StreakMissionChain";
 import StreakLeaderboard from "./StreakLeaderboard";
+import StreakEventLive from "./StreakEventLive";
+import StreakShopFlashDeals from "./StreakShopFlashDeals";
 
 // Strip leading emoji from a title and map to a 3D Lucide icon
 const EMOJI_ICON_MAP: Array<{ regex: RegExp; Icon: any; cls: string }> = [
@@ -411,6 +413,7 @@ export default function NeonStreakHub({ visitorId, forcedView }: Props) {
 
       {activeView === "event" && (
         <div className="space-y-3">
+          <StreakEventLive visitorId={visitorId} currentStreak={currentStreak} totalClaims={totalClaims} />
           <DailyGiftBox visitorId={visitorId} onUpdate={loadAll} />
           <SpinWheel visitorId={visitorId} coins={coins} onUpdate={loadAll} />
           <WeeklyQuests visitorId={visitorId} onUpdate={loadAll} />
@@ -440,6 +443,7 @@ export default function NeonStreakHub({ visitorId, forcedView }: Props) {
 
       {activeView === "shop" && (
         <div className="space-y-3">
+          <StreakShopFlashDeals />
           <GemShop visitorId={visitorId} onUpdate={loadAll} />
           <Button
             onClick={() => setShowShop(true)}
