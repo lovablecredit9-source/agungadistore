@@ -24,11 +24,18 @@ Deno.serve(async (req) => {
 
   try {
     const url = new URL(req.url);
-    const action = url.searchParams.get("action") ?? "status";
+    let action = url.searchParams.get("action") ?? "status";
     const admin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
 
+    // Allow body to override action (since supabase.functions.invoke strips query strings)
+    let body: any = {};
+    if (req.method === "POST") {
+      try { body = await req.json(); } catch { body = {}; }
+      if (body?.action) action = body.action;
+    }
+
     if (action === "status") {
-      const visitorId = url.searchParams.get("visitorId");
+      const visitorId = url.searchParams.get("visitorId") || body?.visitorId;
       if (!visitorId) return Response.json({ error: "visitorId required" }, { status: 400, headers: corsHeaders });
       const weekStart = getWeekStartWIB();
       const [{ data: quests }, { data: progress }] = await Promise.all([
@@ -39,7 +46,7 @@ Deno.serve(async (req) => {
     }
 
     if (action === "track") {
-      const { visitorId, eventType, increment = 1 } = await req.json();
+      const { visitorId, eventType, increment = 1 } = body;
       if (!visitorId || !eventType) return Response.json({ error: "visitorId & eventType required" }, { status: 400, headers: corsHeaders });
       const weekStart = getWeekStartWIB();
 
@@ -86,7 +93,7 @@ Deno.serve(async (req) => {
     }
 
     if (action === "claim") {
-      const { visitorId, questId } = await req.json();
+      const { visitorId, questId } = body;
       if (!visitorId || !questId) return Response.json({ error: "visitorId & questId required" }, { status: 400, headers: corsHeaders });
       const weekStart = getWeekStartWIB();
 

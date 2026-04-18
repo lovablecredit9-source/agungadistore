@@ -29,8 +29,8 @@ export async function trackDailyMission(
   }
   // Weekly quest (best-effort, don't await failures)
   try {
-    await supabase.functions.invoke("weekly-quest?action=track", {
-      body: { visitorId, eventType, increment },
+    await supabase.functions.invoke("weekly-quest", {
+      body: { action: "track", visitorId, eventType, increment },
     });
   } catch {
     // silent
