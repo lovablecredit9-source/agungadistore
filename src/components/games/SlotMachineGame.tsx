@@ -5,7 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Loader2, Coins } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { useGameCredits } from "./GameCredits";
+import { useGameCredits, triggerGameCreditsRefresh } from "./GameCredits";
+import { triggerGameBalanceRefresh } from "./GameBalance";
 import { ServerLuckCard } from "./ServerLuckCard";
 
 const SYMBOLS = ["🍒", "🍋", "🍇", "🔔", "⭐", "💎", "7️⃣"];
@@ -61,6 +62,9 @@ export default function SlotMachineGame() {
       setResult(data.payout);
       setSpinning(false);
       fetchCredits();
+      // Refresh Saldo IN & kredit lintas-komponen (Plus tab, GameTab badge, dll)
+      triggerGameBalanceRefresh();
+      triggerGameCreditsRefresh();
       if (data.payout.type !== "none") {
         toast({ title: "🎉 Menang!", description: data.payout.label });
       }
