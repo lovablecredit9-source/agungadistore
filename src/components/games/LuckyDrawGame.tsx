@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Loader2, Ticket, Gem, Coins, Copy, Check, Sparkles } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { ServerLuckCard } from "./ServerLuckCard";
 
 const RARITY_STYLES: Record<string, string> = {
   common: "from-slate-400 to-slate-600",
@@ -65,10 +66,12 @@ export default function LuckyDrawGame() {
 
   return (
     <div className="space-y-4">
+      <ServerLuckCard visitorId={visitorId} />
+
       <Card className="p-4 bg-gradient-to-br from-amber-500 via-orange-500 to-rose-500 text-white border-none text-center">
         <Sparkles className="w-8 h-8 mx-auto mb-1" />
         <h3 className="font-extrabold text-lg">🎯 Lucky Draw Belanja</h3>
-        <p className="text-xs opacity-90 mt-1">Beli tiket pakai gems/coins, undi hadiah hingga Rp 25.000!</p>
+        <p className="text-xs opacity-90 mt-1">Beli tiket pakai gems/coins, undi hadiah! Hati-hati ada zonk juga 😅</p>
       </Card>
 
       {/* Ticket counter */}

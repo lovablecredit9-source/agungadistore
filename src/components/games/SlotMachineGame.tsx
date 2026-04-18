@@ -6,6 +6,7 @@ import { Card } from "@/components/ui/card";
 import { Loader2, Coins } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useGameCredits } from "./GameCredits";
+import { ServerLuckCard } from "./ServerLuckCard";
 
 const SYMBOLS = ["🍒", "🍋", "🍇", "🔔", "⭐", "💎", "7️⃣"];
 
@@ -68,6 +69,8 @@ export default function SlotMachineGame() {
 
   return (
     <div className="space-y-4">
+      <ServerLuckCard visitorId={visitorId} />
+
       <Card className={`p-4 bg-gradient-to-br ${tierInfo.gradient} text-white border-none text-center`}>
         <h3 className="font-extrabold text-lg">🎰 Slot Machine 3-Reel</h3>
         <p className="text-xs opacity-90 mt-1">Tier {tierInfo.label} • {tierInfo.desc}</p>
