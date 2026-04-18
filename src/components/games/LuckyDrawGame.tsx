@@ -38,11 +38,26 @@ export default function LuckyDrawGame() {
 
   useEffect(() => { refresh(); }, [visitorId]);
 
+  const extractError = async (error: any, data: any): Promise<string> => {
+    if (data?.error) return data.error;
+    try {
+      const ctx = error?.context;
+      if (ctx instanceof Response) {
+        const txt = await ctx.text();
+        try { return JSON.parse(txt)?.error || txt || "Coba lagi"; } catch { return txt || "Coba lagi"; }
+      }
+    } catch {}
+    return error?.message || "Coba lagi";
+  };
+
   const buyPackage = async (pkgId: string) => {
     setBuying(pkgId);
     const { data, error } = await supabase.functions.invoke("lucky-draw", { body: { action: "buy", visitorId, packageId: pkgId } });
     setBuying(null);
-    if (error || data?.error) return toast({ title: "Gagal", description: data?.error || "Coba lagi", variant: "destructive" });
+    if (error || data?.error) {
+      const msg = await extractError(error, data);
+      return toast({ title: "Gagal", description: msg, variant: "destructive" });
+    }
     setTickets(data.tickets);
     toast({ title: "Berhasil!", description: "Tiket bertambah" });
   };
