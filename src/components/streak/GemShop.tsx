@@ -11,7 +11,14 @@ interface GemPackage {
   id: string; name: string; gems: number; bonus_gems: number; price: number; icon: string; sort_order: number;
 }
 
-export default function GemShop({ visitorId, onUpdate }: Props) {
+// Selalu utamakan visitor_id akun saldo (tempat pembelian gem dicatat)
+function resolveActiveVisitor(fallback: string): string {
+  if (typeof window === "undefined") return fallback;
+  return localStorage.getItem("balance_visitor_id") || fallback;
+}
+
+export default function GemShop({ visitorId: visitorIdProp, onUpdate }: Props) {
+  const visitorId = resolveActiveVisitor(visitorIdProp);
   const [open, setOpen] = useState(false);
   const [packages, setPackages] = useState<GemPackage[]>([]);
   const [myGems, setMyGems] = useState(0);
