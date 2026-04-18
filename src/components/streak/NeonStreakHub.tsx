@@ -213,6 +213,8 @@ export default function NeonStreakHub({ visitorId }: Props) {
       setTopupPkgId(null);
     }
   }
+
+  async function claimChallenge(ch: Challenge) {
     const { data, error } = await supabase.functions.invoke("check-weekly-challenge", { body: { visitorId, claimChallengeId: ch.id } });
     if (error || data?.error) {
       toast({ title: "Gagal", description: data?.error || error?.message, variant: "destructive" });
