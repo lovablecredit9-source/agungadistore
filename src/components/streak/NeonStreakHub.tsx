@@ -105,6 +105,9 @@ export default function NeonStreakHub({ visitorId }: Props) {
     const { data: shopItems } = await supabase.from("streak_shop_items").select("*").eq("is_active", true).order("sort_order");
     setItems((shopItems as any[]) || []);
 
+    const { data: coinPkgs } = await supabase.from("streak_coin_packages" as any).select("id, name, coins, price").eq("is_active", true).order("sort_order");
+    setCoinPackages((coinPkgs as any[]) || []);
+
     const nowIso = new Date().toISOString();
     const { data: chs } = await supabase.from("weekly_challenges").select("*").eq("is_active", true).gte("ends_at", nowIso).order("starts_at");
     if (chs) {
