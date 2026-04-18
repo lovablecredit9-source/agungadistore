@@ -159,7 +159,7 @@ Deno.serve(async (req) => {
     if (!visitorId) return new Response(JSON.stringify({ error: "visitorId required" }), { status: 400, headers: corsHeaders });
 
     const luck = await getActiveLuck(visitorId);
-    const reels = [spinReel(tier, luck), spinReel(tier, luck), spinReel(tier, luck)];
+    const reels = spinThreeReels(tier, luck);
     const payout = calculatePayout(tier, reels);
     await applyPayout(visitorId, payout);
 
