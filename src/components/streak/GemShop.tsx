@@ -3,7 +3,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Gem, Loader2, Sparkles, Crown } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Gem, Loader2, Sparkles, Crown, Plus, Minus, Lock, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface Props { visitorId: string; onUpdate?: () => void; }
@@ -24,46 +25,61 @@ export default function GemShop({ visitorId: visitorIdProp, onUpdate }: Props) {
   const [myGems, setMyGems] = useState(0);
   const [loading, setLoading] = useState(false);
   const [buying, setBuying] = useState<string | null>(null);
+  const [qty, setQty] = useState<Record<string, number>>({});
+  const [hasPin, setHasPin] = useState(false);
+  const [pinDialog, setPinDialog] = useState<{ pkg: GemPackage; quantity: number } | null>(null);
+  const [pinInput, setPinInput] = useState("");
   const { toast } = useToast();
 
   const load = async () => {
     setLoading(true);
-    const [{ data: pkgs }, { data: gemTotal }] = await Promise.all([
+    const [{ data: pkgs }, { data: gemTotal }, pinResp] = await Promise.all([
       supabase.from("gem_packages").select("*").eq("is_active", true).order("sort_order"),
       supabase.rpc("get_account_gems", { p_visitor_id: visitorId }),
+      supabase.functions.invoke("manage-pin", { body: { action: "check", visitorId } }),
     ]);
     setPackages(pkgs || []);
     setMyGems(typeof gemTotal === "number" ? gemTotal : 0);
+    setHasPin(!!pinResp.data?.hasPin);
     setLoading(false);
   };
 
   useEffect(() => { load(); }, [visitorId]);
   useEffect(() => { if (open) load(); }, [open]);
 
-  // Realtime: ikut perubahan gem di game_profiles & gem_transactions (semua device akun ini)
   useEffect(() => {
     if (!visitorId) return;
     const ch = supabase
       .channel(`gem-${visitorId}`)
-      .on("postgres_changes", {
-        event: "*", schema: "public", table: "game_profiles",
-      }, () => load())
-      .on("postgres_changes", {
-        event: "INSERT", schema: "public", table: "gem_transactions",
-      }, () => load())
+      .on("postgres_changes", { event: "*", schema: "public", table: "game_profiles" }, () => load())
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "gem_transactions" }, () => load())
       .subscribe();
     return () => { supabase.removeChannel(ch); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [visitorId]);
 
-  const buy = async (packageId: string) => {
-    setBuying(packageId);
+  const getQty = (id: string) => Math.max(1, Math.min(99, qty[id] || 1));
+  const setPkgQty = (id: string, n: number) => setQty(q => ({ ...q, [id]: Math.max(1, Math.min(99, n)) }));
+
+  const requestBuy = (p: GemPackage) => {
+    const quantity = getQty(p.id);
+    if (hasPin) {
+      setPinInput("");
+      setPinDialog({ pkg: p, quantity });
+    } else {
+      doBuy(p, quantity);
+    }
+  };
+
+  const doBuy = async (p: GemPackage, quantity: number, pin?: string) => {
+    setBuying(p.id);
     try {
       const { data, error } = await supabase.functions.invoke("gem-purchase", {
-        body: { visitorId, packageId },
+        body: { visitorId, packageId: p.id, quantity, pin },
       });
       if (error || data?.error) throw new Error(data?.error || error?.message || "Gagal");
-      toast({ title: "💎 Gem Dibeli!", description: `+${data.gems_added} 💎` });
+      toast({ title: "💎 Gem Dibeli!", description: `+${data.gems_added} 💎 (x${data.quantity})` });
+      setPkgQty(p.id, 1);
       await load();
       onUpdate?.();
     } catch (e: any) {
@@ -71,6 +87,15 @@ export default function GemShop({ visitorId: visitorIdProp, onUpdate }: Props) {
     } finally {
       setBuying(null);
     }
+  };
+
+  const confirmPin = async () => {
+    if (!pinDialog) return;
+    if (pinInput.length < 4) { toast({ title: "PIN minimal 4 digit", variant: "destructive" }); return; }
+    const { pkg, quantity } = pinDialog;
+    setPinDialog(null);
+    await doBuy(pkg, quantity, pinInput);
+    setPinInput("");
   };
 
   return (
@@ -116,6 +141,8 @@ export default function GemShop({ visitorId: visitorIdProp, onUpdate }: Props) {
                 const total = p.gems + (p.bonus_gems || 0);
                 const isPopular = p.sort_order === 2;
                 const isBest = p.sort_order === 4;
+                const q = getQty(p.id);
+                const totalPrice = p.price * q;
                 return (
                   <motion.div
                     key={p.id}
@@ -136,31 +163,92 @@ export default function GemShop({ visitorId: visitorIdProp, onUpdate }: Props) {
                         POPULER
                       </div>
                     )}
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className="text-3xl">{p.icon}</div>
-                        <div>
-                          <p className="text-sm font-black text-white">{p.name}</p>
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className="text-3xl shrink-0">{p.icon}</div>
+                        <div className="min-w-0">
+                          <p className="text-sm font-black text-white truncate">{p.name}</p>
                           <p className="text-xs text-cyan-300 font-bold">
                             {p.gems.toLocaleString("id-ID")} 💎
-                            {p.bonus_gems > 0 && <span className="text-yellow-400"> +{p.bonus_gems} bonus</span>}
+                            {p.bonus_gems > 0 && <span className="text-yellow-400"> +{p.bonus_gems}</span>}
                           </p>
-                          <p className="text-[10px] text-white/60">Total: {total.toLocaleString("id-ID")} 💎</p>
+                          <p className="text-[10px] text-white/60">Total: {(total * q).toLocaleString("id-ID")} 💎</p>
                         </div>
                       </div>
-                      <Button
-                        size="sm"
-                        disabled={buying === p.id}
-                        onClick={() => buy(p.id)}
-                        className="bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-black"
-                      >
-                        {buying === p.id ? <Loader2 className="w-3 h-3 animate-spin" /> : `Rp${(p.price/1000).toFixed(0)}k`}
-                      </Button>
+                      <div className="flex flex-col items-end gap-2 shrink-0">
+                        {/* Qty selector */}
+                        <div className="flex items-center gap-1 bg-black/40 rounded-lg p-0.5 border border-white/10">
+                          <button
+                            type="button"
+                            onClick={() => setPkgQty(p.id, q - 1)}
+                            disabled={q <= 1 || buying === p.id}
+                            className="w-6 h-6 rounded-md bg-white/10 hover:bg-white/20 disabled:opacity-40 flex items-center justify-center text-white"
+                            aria-label="Kurangi"
+                          >
+                            <Minus className="w-3 h-3" />
+                          </button>
+                          <span className="text-white font-black text-sm w-6 text-center">{q}</span>
+                          <button
+                            type="button"
+                            onClick={() => setPkgQty(p.id, q + 1)}
+                            disabled={q >= 99 || buying === p.id}
+                            className="w-6 h-6 rounded-md bg-white/10 hover:bg-white/20 disabled:opacity-40 flex items-center justify-center text-white"
+                            aria-label="Tambah"
+                          >
+                            <Plus className="w-3 h-3" />
+                          </button>
+                        </div>
+                        <Button
+                          size="sm"
+                          disabled={buying === p.id}
+                          onClick={() => requestBuy(p)}
+                          className="bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-black h-8"
+                        >
+                          {buying === p.id ? <Loader2 className="w-3 h-3 animate-spin" /> : `Rp${totalPrice.toLocaleString("id-ID")}`}
+                        </Button>
+                      </div>
                     </div>
                   </motion.div>
                 );
               })}
-              <p className="text-[10px] text-white/50 text-center">💡 Pembelian potong saldo akun login</p>
+              <p className="text-[10px] text-white/50 text-center">💡 Pembelian potong saldo akun login{hasPin ? " · Dilindungi PIN" : ""}</p>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* PIN dialog */}
+      <Dialog open={!!pinDialog} onOpenChange={(o) => { if (!o) { setPinDialog(null); setPinInput(""); } }}>
+        <DialogContent className="max-w-xs bg-gradient-to-br from-slate-950 to-cyan-950/40 border-2 border-cyan-500/40">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-white">
+              <Lock className="w-4 h-4 text-cyan-400" /> Masukkan PIN
+            </DialogTitle>
+          </DialogHeader>
+          {pinDialog && (
+            <div className="space-y-3">
+              <p className="text-xs text-white/70 text-center">
+                Beli <span className="font-bold text-cyan-300">{pinDialog.pkg.name}</span> x{pinDialog.quantity} <br />
+                Total: <span className="font-bold text-emerald-400">Rp{(pinDialog.pkg.price * pinDialog.quantity).toLocaleString("id-ID")}</span>
+              </p>
+              <Input
+                type="password"
+                inputMode="numeric"
+                maxLength={6}
+                placeholder="••••••"
+                value={pinInput}
+                onChange={(e) => setPinInput(e.target.value.replace(/\D/g, ""))}
+                onKeyDown={(e) => { if (e.key === "Enter") confirmPin(); }}
+                className="text-center text-2xl tracking-[0.3em] font-black bg-black/40 border-cyan-500/40 text-white"
+                autoFocus
+              />
+              <Button
+                onClick={confirmPin}
+                disabled={pinInput.length < 4}
+                className="w-full bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-black"
+              >
+                <Lock className="w-4 h-4 mr-1" /> Konfirmasi
+              </Button>
             </div>
           )}
         </DialogContent>
