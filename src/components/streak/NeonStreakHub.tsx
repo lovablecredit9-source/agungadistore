@@ -6,6 +6,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Gift, Loader2, Sparkles, ShoppingBag, Trophy, Coins, Target, Lock, Zap, Check, Rocket, Gamepad2, Flame, Crown, Star, Gem, Box, Calendar, Award, Medal } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { trackDailyMission } from "@/lib/daily-mission";
+import { EmojiIcon } from "./emojiToIcon";
 
 // Strip leading emoji from a title and map to a 3D Lucide icon
 const EMOJI_ICON_MAP: Array<{ regex: RegExp; Icon: any; cls: string }> = [
@@ -426,7 +427,7 @@ export default function NeonStreakHub({ visitorId }: Props) {
                     canBuy ? "bg-gradient-to-br from-purple-900/60 to-pink-900/60 border-pink-500/40 hover:border-pink-400 hover:scale-[1.02]" : "bg-black/40 border-white/10 opacity-50"
                   }`}
                 >
-                  <div className="text-3xl mb-1">{item.icon}</div>
+                  <div className="mb-1"><EmojiIcon emoji={item.icon} className="w-8 h-8" /></div>
                   <div className="font-extrabold text-white text-xs leading-tight">{item.name}</div>
                   <div className="text-[10px] text-white/60 mb-2 line-clamp-2">{item.description}</div>
                   <div className="flex items-center justify-between">
