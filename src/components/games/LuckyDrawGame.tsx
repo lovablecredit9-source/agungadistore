@@ -97,9 +97,10 @@ export default function LuckyDrawGame() {
           </motion.div>
         )}
         {prize && !drawing && (
-          <motion.div initial={{ scale: 0, rotate: -180 }} animate={{ scale: 1, rotate: 0 }} transition={{ type: "spring", duration: 0.8 }} className={`aspect-[4/3] rounded-2xl bg-gradient-to-br ${RARITY_STYLES[prize.rarity] || RARITY_STYLES.common} text-white flex flex-col items-center justify-center p-6 shadow-2xl`}>
+          <motion.div initial={{ scale: 0, rotate: -180 }} animate={{ scale: 1, rotate: 0 }} transition={{ type: "spring", duration: 0.8 }} className={`aspect-[4/3] rounded-2xl bg-gradient-to-br ${prize.reward_type === "none" ? "from-slate-500 to-slate-700" : (RARITY_STYLES[prize.rarity] || RARITY_STYLES.common)} text-white flex flex-col items-center justify-center p-6 shadow-2xl`}>
+            <div className="text-5xl mb-2">{prize.reward_type === "none" ? "😢" : "🎉"}</div>
             <div className="text-[10px] font-bold uppercase tracking-widest opacity-80">{prize.rarity}</div>
-            <div className="text-3xl font-black mt-1 text-center drop-shadow">{prize.reward_label}</div>
+            <div className="text-2xl font-black mt-1 text-center drop-shadow">{prize.reward_label}</div>
             {prize.voucher_code && (
               <button onClick={() => { navigator.clipboard.writeText(prize.voucher_code); setCopied(true); setTimeout(() => setCopied(false), 2000); }} className="mt-3 inline-flex items-center gap-1 text-xs bg-white/20 backdrop-blur rounded-full px-3 py-1 font-mono font-bold">
                 {prize.voucher_code} {copied ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
