@@ -24,6 +24,10 @@ import { useGameCredits, GameCreditsBadge, BuyCreditsDialog } from "@/components
 import { useGameBalance, GameBalanceBadge } from "@/components/games/GameBalance";
 import { useGameProfile, GameProfileDialog, updateGameStats } from "@/components/games/GameProfile";
 import NeonGameExtras from "@/components/games/NeonGameExtras";
+import GamePvPBattle from "@/components/games/GamePvPBattle";
+import GameQuestChain from "@/components/games/GameQuestChain";
+import GameClanSystem from "@/components/games/GameClanSystem";
+import GameSeasonPass from "@/components/games/GameSeasonPass";
 import { Zap } from "lucide-react";
 
 import gameSuitImg from "@/assets/game-suit.png";
@@ -199,6 +203,16 @@ export default function GameTab() {
         <div className="mt-4 space-y-3">
           <FlashSaleBanner />
           <WeeklyLeaderboard />
+        </div>
+
+        {/* ✨ Fitur Game baru */}
+        <div className="mt-5 space-y-3">
+          <GameSeasonPass visitorId={visitorId} />
+          <div className="grid grid-cols-1 gap-3">
+            <GamePvPBattle visitorId={visitorId} />
+            <GameClanSystem visitorId={visitorId} />
+          </div>
+          <GameQuestChain visitorId={visitorId} />
         </div>
 
         {/* 🎮 Neon Extras: Daily Challenge · Tournament · Leaderboard · Achievements */}
