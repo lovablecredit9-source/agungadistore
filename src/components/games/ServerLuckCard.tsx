@@ -58,6 +58,20 @@ const TIER_GRADIENT: Record<number, string> = {
   20: "from-pink-500 via-rose-500 to-red-600",
 };
 
+// Hitung keunggulan per tier (sinkron dengan logika edge function)
+function tierBenefits(mult: number) {
+  // Lucky Draw zonk: base 30%, turun kuadrat → 30 / mult²
+  const zonkBase = 30;
+  const zonkNew = zonkBase / (mult * mult);
+  const zonkReduction = Math.round(((zonkBase - zonkNew) / zonkBase) * 100);
+  // Slot reel match bias: (mult-1)*8%, max 70%
+  const matchProb = Math.min(70, Math.max(0, (mult - 1) * 8));
+  // Jackpot/legendary boost: linear (slot rare symbols) & mult² (lucky draw legendary)
+  const rareBoost = Math.round((mult - 1) * 100); // % naik
+  const legendaryBoost = Math.round((mult * mult - 1) * 100);
+  return { zonkReduction, matchProb: Math.round(matchProb), rareBoost, legendaryBoost };
+}
+
 export function ServerLuckCard({ visitorId }: { visitorId: string | null }) {
   const { booster, tiers, fetchStatus, isActive, activeTier, remainingMs } = useServerLuck(visitorId);
   const [open, setOpen] = useState(false);
