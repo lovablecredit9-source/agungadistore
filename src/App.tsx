@@ -35,6 +35,8 @@ const App = () => (
             <Route path="/publik" element={<Index />} />
             <Route path="/sponsor" element={<Index />} />
             <Route path="/streak" element={<Index />} />
+            <Route path="/streak-event" element={<Index />} />
+            <Route path="/streak-shop" element={<Index />} />
             <Route path="/game" element={<Index />} />
             <Route path="/plus" element={<Index />} />
             
