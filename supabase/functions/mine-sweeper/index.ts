@@ -12,7 +12,7 @@ const supabase = createClient(
 );
 
 const GRID_SIZE = 9;
-// Multiplier per safe tile (per jumlah bom). Ambil dari rumus standar yang ramah-pengguna.
+
 function multiplierFor(mines: number, revealed: number): number {
   const safe = GRID_SIZE - mines;
   if (revealed <= 0) return 1;
@@ -20,7 +20,6 @@ function multiplierFor(mines: number, revealed: number): number {
   for (let i = 0; i < revealed; i++) {
     m *= (GRID_SIZE - i) / (safe - i);
   }
-  // Margin house ~10%
   return Math.max(1, +(m * 0.9).toFixed(2));
 }
 
@@ -32,22 +31,6 @@ function pickMines(mines: number): number[] {
   }
   return idx.slice(0, mines).sort((a, b) => a - b);
 }
-
-type Session = {
-  visitorId: string;
-  bet: number;
-  mines: number;
-  minePositions: number[];
-  revealed: number[];
-  status: "active" | "lost" | "cashout";
-  createdAt: number;
-};
-
-// Sesi disimpan di memori function (cukup utk satu sesi pendek per user).
-// Untuk produksi serius bisa dipindah ke tabel; untuk MVP ini sudah cukup.
-const sessions = new Map<string, Session>();
-
-function sessionKey(v: string) { return `mine:${v}`; }
 
 async function chargeCredits(visitorId: string, amount: number): Promise<{ ok: boolean; error?: string }> {
   const { data } = await supabase.from("user_game_credits").select("id, credits, unlimited_until").eq("visitor_id", visitorId).maybeSingle();
@@ -89,39 +72,50 @@ Deno.serve(async (req) => {
       const charge = await chargeCredits(visitorId, bet);
       if (!charge.ok) return new Response(JSON.stringify({ error: charge.error }), { status: 400, headers: corsHeaders });
       const minePositions = pickMines(mines);
-      const session: Session = { visitorId, bet, mines, minePositions, revealed: [], status: "active", createdAt: Date.now() };
-      sessions.set(sessionKey(visitorId), session);
+      // Upsert session (overwrites any prior unfinished session for same visitor)
+      await supabase.from("mine_sweeper_sessions").upsert({
+        visitor_id: visitorId,
+        bet,
+        mines,
+        mine_positions: minePositions,
+        revealed: [],
+        status: "active",
+        updated_at: new Date().toISOString(),
+      }, { onConflict: "visitor_id" });
       return new Response(JSON.stringify({ success: true, bet, mines, gridSize: GRID_SIZE, multiplier: 1 }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    const s = sessions.get(sessionKey(visitorId));
+    const { data: s } = await supabase.from("mine_sweeper_sessions").select("*").eq("visitor_id", visitorId).maybeSingle();
     if (!s || s.status !== "active") return new Response(JSON.stringify({ error: "Tidak ada sesi aktif. Mulai game baru." }), { status: 400, headers: corsHeaders });
 
     if (action === "reveal") {
       const tile = Number(body.tile);
       if (!Number.isInteger(tile) || tile < 0 || tile >= GRID_SIZE) return new Response(JSON.stringify({ error: "Tile invalid" }), { status: 400, headers: corsHeaders });
-      if (s.revealed.includes(tile)) return new Response(JSON.stringify({ error: "Tile sudah dibuka" }), { status: 400, headers: corsHeaders });
+      const revealed: number[] = s.revealed || [];
+      const minePositions: number[] = s.mine_positions || [];
+      if (revealed.includes(tile)) return new Response(JSON.stringify({ error: "Tile sudah dibuka" }), { status: 400, headers: corsHeaders });
 
-      if (s.minePositions.includes(tile)) {
-        s.status = "lost";
+      if (minePositions.includes(tile)) {
         await supabase.from("mine_sweeper_history").insert({
-          visitor_id: visitorId, bet_credits: s.bet, mines_count: s.mines, tiles_revealed: s.revealed.length,
+          visitor_id: visitorId, bet_credits: s.bet, mines_count: s.mines, tiles_revealed: revealed.length,
           multiplier: 0, payout_type: "none", payout_value: 0, payout_label: "Boom! Kena bom 💣", status: "lost",
         });
-        sessions.delete(sessionKey(visitorId));
-        return new Response(JSON.stringify({ success: true, status: "lost", tile, minePositions: s.minePositions, revealed: s.revealed, payout: { type: "none", value: 0, label: "💥 Boom! Kena bom" } }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        await supabase.from("mine_sweeper_sessions").delete().eq("visitor_id", visitorId);
+        return new Response(JSON.stringify({ success: true, status: "lost", tile, minePositions, revealed, payout: { type: "none", value: 0, label: "💥 Boom! Kena bom" } }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
       }
 
-      s.revealed.push(tile);
-      const mult = multiplierFor(s.mines, s.revealed.length);
-      const wonNow = Math.floor(s.bet * mult); // dalam unit "credits-equivalent"
-      return new Response(JSON.stringify({ success: true, status: "active", tile, revealed: s.revealed, multiplier: mult, potentialCredits: wonNow }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      const newRevealed = [...revealed, tile];
+      await supabase.from("mine_sweeper_sessions").update({ revealed: newRevealed, updated_at: new Date().toISOString() }).eq("visitor_id", visitorId);
+      const mult = multiplierFor(s.mines, newRevealed.length);
+      const wonNow = Math.floor(s.bet * mult);
+      return new Response(JSON.stringify({ success: true, status: "active", tile, revealed: newRevealed, multiplier: mult, potentialCredits: wonNow }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
     if (action === "cashout") {
-      if (s.revealed.length === 0) return new Response(JSON.stringify({ error: "Buka minimal 1 tile" }), { status: 400, headers: corsHeaders });
-      const mult = multiplierFor(s.mines, s.revealed.length);
-      // Mapping hadiah: jika multiplier ≥ 4 dan bet ≥ 5 → saldo game; selain itu → credits.
+      const revealed: number[] = s.revealed || [];
+      const minePositions: number[] = s.mine_positions || [];
+      if (revealed.length === 0) return new Response(JSON.stringify({ error: "Buka minimal 1 tile" }), { status: 400, headers: corsHeaders });
+      const mult = multiplierFor(s.mines, revealed.length);
       let payout: { type: string; value: number; label: string };
       if (mult >= 4 && s.bet >= 5) {
         const value = Math.min(5000, Math.floor(s.bet * mult * 100));
@@ -131,13 +125,12 @@ Deno.serve(async (req) => {
         payout = { type: "game_credits", value, label: `+${value} Credits` };
       }
       await applyReward(visitorId, payout);
-      s.status = "cashout";
       await supabase.from("mine_sweeper_history").insert({
-        visitor_id: visitorId, bet_credits: s.bet, mines_count: s.mines, tiles_revealed: s.revealed.length,
+        visitor_id: visitorId, bet_credits: s.bet, mines_count: s.mines, tiles_revealed: revealed.length,
         multiplier: mult, payout_type: payout.type, payout_value: payout.value, payout_label: payout.label, status: "cashout",
       });
-      sessions.delete(sessionKey(visitorId));
-      return new Response(JSON.stringify({ success: true, status: "cashout", multiplier: mult, payout, minePositions: s.minePositions }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      await supabase.from("mine_sweeper_sessions").delete().eq("visitor_id", visitorId);
+      return new Response(JSON.stringify({ success: true, status: "cashout", multiplier: mult, payout, minePositions }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
     return new Response(JSON.stringify({ error: "Action tidak dikenal" }), { status: 400, headers: corsHeaders });
