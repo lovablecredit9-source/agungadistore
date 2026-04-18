@@ -42,18 +42,13 @@ Deno.serve(async (req) => {
 
       if (source === "balance") {
         if (!pin) throw new Error("PIN saldo wajib");
-        // find active balance account
-        const { data: hist } = await supa.from("balance_login_history")
-          .select("user_balance_id").eq("visitor_id", visitorId).order("logged_in_at", { ascending: false }).limit(1).maybeSingle();
-        if (!hist) throw new Error("Belum login akun saldo");
-        const { data: acc } = await supa.from("user_balances").select("*").eq("id", hist.user_balance_id).maybeSingle();
+        const { data: pinRow } = await supa.from("user_pins").select("pin_hash").eq("visitor_id", visitorId).maybeSingle();
+        if (!pinRow) throw new Error("PIN belum dibuat");
+        const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(pin));
+        const hashed = Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, "0")).join("");
+        if (hashed !== pinRow.pin_hash) throw new Error("PIN salah");
+        const { data: acc } = await supa.from("user_balances").select("*").eq("visitor_id", visitorId).maybeSingle();
         if (!acc) throw new Error("Akun saldo tidak ditemukan");
-        if (acc.pin_hash) {
-          const enc = new TextEncoder();
-          const buf = await crypto.subtle.digest("SHA-256", enc.encode(pin));
-          const hashed = Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, "0")).join("");
-          if (hashed !== acc.pin_hash) throw new Error("PIN salah");
-        }
         if ((acc.balance || 0) < PRICE_BALANCE) throw new Error("Saldo tidak cukup");
         await supa.from("user_balances").update({ balance: acc.balance - PRICE_BALANCE }).eq("id", acc.id);
         await supa.from("balance_transactions").insert({
