@@ -6,6 +6,15 @@ function formatPrice(n: number) {
   return new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", minimumFractionDigits: 0 }).format(n);
 }
 
+// Event name for cross-component refresh trigger
+const GAME_BALANCE_REFRESH_EVENT = "game-balance-refresh";
+
+export function triggerGameBalanceRefresh() {
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new CustomEvent(GAME_BALANCE_REFRESH_EVENT));
+  }
+}
+
 export function useGameBalance(visitorId: string | null) {
   const [amount, setAmount] = useState(0);
   const [loading, setLoading] = useState(false);
@@ -23,6 +32,27 @@ export function useGameBalance(visitorId: string | null) {
   }, [visitorId]);
 
   useEffect(() => { fetchBalance(); }, [fetchBalance]);
+
+  // Listen to manual triggers (after slot/lucky-draw wins, purchases, etc.)
+  useEffect(() => {
+    const handler = () => fetchBalance();
+    window.addEventListener(GAME_BALANCE_REFRESH_EVENT, handler);
+    return () => window.removeEventListener(GAME_BALANCE_REFRESH_EVENT, handler);
+  }, [fetchBalance]);
+
+  // Realtime subscription so Saldo IN auto-updates when DB changes
+  useEffect(() => {
+    if (!visitorId) return;
+    const channel = supabase
+      .channel(`game_balance_${visitorId}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "game_balance", filter: `visitor_id=eq.${visitorId}` },
+        () => fetchBalance(),
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [visitorId, fetchBalance]);
 
   return { amount, loading, fetchBalance };
 }

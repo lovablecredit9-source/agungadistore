@@ -6,6 +6,8 @@ import { Card } from "@/components/ui/card";
 import { Loader2, Ticket, Gem, Coins, Copy, Check, Sparkles } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { ServerLuckCard } from "./ServerLuckCard";
+import { triggerGameBalanceRefresh, useGameBalance, GameBalanceBadge } from "./GameBalance";
+import { triggerGameCreditsRefresh } from "./GameCredits";
 
 const RARITY_STYLES: Record<string, string> = {
   common: "from-slate-400 to-slate-600",
@@ -58,6 +60,9 @@ export default function LuckyDrawGame() {
     setPrize(data.prize);
     setDrawing(false);
     refresh();
+    // Refresh Saldo IN, kredit, gems lintas-komponen — supaya hadiah langsung terlihat
+    triggerGameBalanceRefresh();
+    triggerGameCreditsRefresh();
   };
 
   if (!visitorId) {
