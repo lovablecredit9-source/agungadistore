@@ -81,7 +81,7 @@ export default function StreakShopFlashDeals({ visitorId, onUpdate }: Props) {
   const handleBuy = async (deal: Deal) => {
     if (!deal.can_purchase) {
       if (deal.locked_reason === "premium_required") {
-        toast({ title: "🔒 VIP/Premium dibutuhkan", description: "Aktifkan Streak Pass / Season Pass Premium dulu untuk beli flash deal!", variant: "destructive" });
+        toast({ title: "🔒 Premium dibutuhkan", description: "Aktifkan Streak Pass Premium atau Season Pass Premium dulu untuk beli flash deal ini!", variant: "destructive" });
       } else if (deal.locked_reason === "daily_limit") {
         toast({ title: "Batas Harian Tercapai", description: "Coba lagi besok ya, hanya bisa 1x per hari!", variant: "destructive" });
       }
@@ -133,7 +133,7 @@ export default function StreakShopFlashDeals({ visitorId, onUpdate }: Props) {
             </motion.div>
             <div>
               <div className="text-[10px] font-black tracking-widest text-orange-300 uppercase">⚡ FLASH DEAL · 1X / HARI</div>
-              <div className="text-base font-black text-white">Diskon Kilat VIP</div>
+              <div className="text-base font-black text-white">Diskon Kilat Harian</div>
             </div>
           </div>
 
@@ -154,8 +154,8 @@ export default function StreakShopFlashDeals({ visitorId, onUpdate }: Props) {
           <div className="mb-3 p-2.5 rounded-xl bg-gradient-to-r from-yellow-500/20 to-amber-500/20 border border-yellow-400/40 flex items-center gap-2">
             <Crown className="w-4 h-4 text-yellow-300 flex-shrink-0" strokeWidth={2.5} />
             <div className="flex-1 min-w-0">
-              <div className="text-[10px] font-black text-yellow-100">Aktivasi VIP / Premium Pass dulu</div>
-              <div className="text-[9px] text-yellow-200/80">Flash deal khusus member premium</div>
+              <div className="text-[10px] font-black text-yellow-100">2 deal hemat tersedia untuk semua! 🎉</div>
+              <div className="text-[9px] text-yellow-200/80">Aktifkan Premium (Streak Pass / Season Pass) untuk buka 4 deal eksklusif</div>
             </div>
           </div>
         )}
@@ -215,7 +215,7 @@ export default function StreakShopFlashDeals({ visitorId, onUpdate }: Props) {
                     ) : deal.claimed_today ? (
                       <span className="flex items-center gap-1"><Check className="w-3 h-3" strokeWidth={3} />Sudah hari ini</span>
                     ) : deal.locked_reason === "premium_required" ? (
-                      <span className="flex items-center gap-1"><Lock className="w-3 h-3" />VIP Only</span>
+                      <span className="flex items-center gap-1"><Lock className="w-3 h-3" />Premium Only</span>
                     ) : (
                       "Beli Sekarang"
                     )}
