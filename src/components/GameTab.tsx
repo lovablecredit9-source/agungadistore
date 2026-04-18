@@ -186,6 +186,11 @@ export default function GameTab() {
           })}
         </div>
 
+        <div className="mt-4 space-y-3">
+          <FlashSaleBanner />
+          <WeeklyLeaderboard />
+        </div>
+
         {/* 🎮 Neon Extras: Daily Challenge · Tournament · Leaderboard · Achievements */}
         <div className="mt-5">
           <NeonGameExtras visitorId={visitorId} onPlayDailyChallenge={(g) => setMode(g as GameMode)} />
