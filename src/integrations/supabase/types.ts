@@ -1509,6 +1509,42 @@ export type Database = {
           },
         ]
       }
+      spin_wheel_history: {
+        Row: {
+          cost_coins: number
+          created_at: string
+          id: string
+          rarity: string
+          reward_label: string
+          reward_type: string
+          reward_value: number
+          spin_date: string
+          visitor_id: string
+        }
+        Insert: {
+          cost_coins?: number
+          created_at?: string
+          id?: string
+          rarity?: string
+          reward_label?: string
+          reward_type: string
+          reward_value?: number
+          spin_date?: string
+          visitor_id: string
+        }
+        Update: {
+          cost_coins?: number
+          created_at?: string
+          id?: string
+          rarity?: string
+          reward_label?: string
+          reward_type?: string
+          reward_value?: number
+          spin_date?: string
+          visitor_id?: string
+        }
+        Relationships: []
+      }
       sponsor_history: {
         Row: {
           action: string
@@ -1700,6 +1736,66 @@ export type Database = {
         }
         Relationships: []
       }
+      streak_active_boosters: {
+        Row: {
+          booster_type: string
+          created_at: string
+          expires_at: string
+          id: string
+          metadata: Json
+          visitor_id: string
+        }
+        Insert: {
+          booster_type: string
+          created_at?: string
+          expires_at: string
+          id?: string
+          metadata?: Json
+          visitor_id: string
+        }
+        Update: {
+          booster_type?: string
+          created_at?: string
+          expires_at?: string
+          id?: string
+          metadata?: Json
+          visitor_id?: string
+        }
+        Relationships: []
+      }
+      streak_avatar_stages: {
+        Row: {
+          color_from: string
+          color_to: string
+          created_at: string
+          emoji: string
+          id: string
+          is_active: boolean
+          min_streak: number
+          stage_name: string
+        }
+        Insert: {
+          color_from?: string
+          color_to?: string
+          created_at?: string
+          emoji?: string
+          id?: string
+          is_active?: boolean
+          min_streak: number
+          stage_name: string
+        }
+        Update: {
+          color_from?: string
+          color_to?: string
+          created_at?: string
+          emoji?: string
+          id?: string
+          is_active?: boolean
+          min_streak?: number
+          stage_name?: string
+        }
+        Relationships: []
+      }
       streak_coin_packages: {
         Row: {
           coins: number
@@ -1763,6 +1859,74 @@ export type Database = {
           is_active?: boolean
           max_uses?: number
           used_count?: number
+        }
+        Relationships: []
+      }
+      streak_milestone_claims: {
+        Row: {
+          claimed_at: string
+          id: string
+          milestone_id: string
+          visitor_id: string
+        }
+        Insert: {
+          claimed_at?: string
+          id?: string
+          milestone_id: string
+          visitor_id: string
+        }
+        Update: {
+          claimed_at?: string
+          id?: string
+          milestone_id?: string
+          visitor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "streak_milestone_claims_milestone_id_fkey"
+            columns: ["milestone_id"]
+            isOneToOne: false
+            referencedRelation: "streak_milestones"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      streak_milestones: {
+        Row: {
+          badge_icon: string
+          created_at: string
+          description: string
+          id: string
+          is_active: boolean
+          milestone_days: number
+          reward_type: string
+          reward_value: number
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          badge_icon?: string
+          created_at?: string
+          description?: string
+          id?: string
+          is_active?: boolean
+          milestone_days: number
+          reward_type?: string
+          reward_value?: number
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          badge_icon?: string
+          created_at?: string
+          description?: string
+          id?: string
+          is_active?: boolean
+          milestone_days?: number
+          reward_type?: string
+          reward_value?: number
+          title?: string
+          updated_at?: string
         }
         Relationships: []
       }
