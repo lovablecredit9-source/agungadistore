@@ -106,6 +106,7 @@ export default function NeonStreakHub({ visitorId }: Props) {
   const [powerUps, setPowerUps] = useState<{ extra_life: number; double_xp_until: string | null; time_freeze: number; auto_hint: number }>({ extra_life: 0, double_xp_until: null, time_freeze: 0, auto_hint: 0 });
   const [redeemingPower, setRedeemingPower] = useState<string | null>(null);
   const [longestStreak, setLongestStreak] = useState(0);
+  const [totalClaims, setTotalClaims] = useState(0);
   const [celebrate, setCelebrate] = useState<{ show: boolean; msg: string }>({ show: false, msg: "" });
   const [activeView, setActiveView] = useState<"main" | "leaderboard" | "calendar">("main");
 
@@ -130,6 +131,7 @@ export default function NeonStreakHub({ visitorId }: Props) {
       setMultiplier(Number((streak as any).current_multiplier) || 1);
       setCurrentStreak(streak.current_streak || 0);
       setLongestStreak((streak as any).longest_streak || 0);
+      setTotalClaims((streak as any).total_claims || 0);
     }
     const { data: box } = await supabase.from("mystery_box_claims").select("*").eq("visitor_id", visitorId).eq("claim_date", today).maybeSingle();
     setBoxOpened(!!box);
@@ -369,7 +371,7 @@ export default function NeonStreakHub({ visitorId }: Props) {
           visitorId={visitorId}
           currentStreak={currentStreak}
           longestStreak={longestStreak}
-          totalClaims={streakData?.total_claims || 0}
+          totalClaims={totalClaims}
         />
       </div>
 
