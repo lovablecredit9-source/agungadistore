@@ -433,6 +433,7 @@ export default function NeonStreakHub({ visitorId, forcedView }: Props) {
               {opening ? <Loader2 className="w-4 h-4 animate-spin" /> : boxOpened ? "Sudah Dibuka Hari Ini" : "Buka Mystery Box"}
             </Button>
           </div>
+          <StreakMilestones visitorId={visitorId} onUpdate={() => { loadAll(); setCelebrate({ show: true, msg: "🏆 MILESTONE!" }); }} />
         </div>
       )}
 
