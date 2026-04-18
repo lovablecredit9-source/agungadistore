@@ -26,6 +26,11 @@ import SmartReminder from "./SmartReminder";
 import GemShop from "./GemShop";
 import StreakBattleArena from "./StreakBattleArena";
 import StreakTournament from "./StreakTournament";
+import StreakComboMultiplier from "./StreakComboMultiplier";
+import StreakPetCompanion from "./StreakPetCompanion";
+import StreakLuckySpin from "./StreakLuckySpin";
+import StreakMissionChain from "./StreakMissionChain";
+import StreakLeaderboard from "./StreakLeaderboard";
 
 // Strip leading emoji from a title and map to a 3D Lucide icon
 const EMOJI_ICON_MAP: Array<{ regex: RegExp; Icon: any; cls: string }> = [
