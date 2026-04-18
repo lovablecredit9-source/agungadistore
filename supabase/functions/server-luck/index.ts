@@ -50,10 +50,10 @@ async function getOrCreateBooster(visitorId: string) {
     const { data: created } = await supabase.from("server_luck_boosters").insert({ visitor_id: visitorId }).select().single();
     data = created;
   }
-  // expire if past
+  // expire if past — RESET highest_tier_owned ke 1 supaya wajib mulai dari x2 lagi
   if (data && data.active_until && new Date(data.active_until).getTime() < Date.now() && data.active_tier > 1) {
     const { data: updated } = await supabase.from("server_luck_boosters")
-      .update({ active_tier: 1, active_until: null }).eq("id", data.id).select().single();
+      .update({ active_tier: 1, active_until: null, highest_tier_owned: 1 }).eq("id", data.id).select().single();
     data = updated;
   }
   return data!;
