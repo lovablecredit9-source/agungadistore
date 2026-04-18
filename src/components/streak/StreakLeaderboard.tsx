@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { motion } from "framer-motion";
-import { Trophy, Crown, Medal, Award, Loader2, UserPlus, Pencil, Camera } from "lucide-react";
+import { Trophy, Crown, Medal, Award, Loader2, UserPlus, Pencil, Camera, Flame } from "lucide-react";
 import { getVisitorId } from "@/lib/visitor-id";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
