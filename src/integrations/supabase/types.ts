@@ -3252,6 +3252,39 @@ export type Database = {
         }
         Relationships: []
       }
+      user_power_ups: {
+        Row: {
+          auto_hint: number
+          created_at: string
+          double_xp_until: string | null
+          extra_life: number
+          id: string
+          time_freeze: number
+          updated_at: string
+          visitor_id: string
+        }
+        Insert: {
+          auto_hint?: number
+          created_at?: string
+          double_xp_until?: string | null
+          extra_life?: number
+          id?: string
+          time_freeze?: number
+          updated_at?: string
+          visitor_id: string
+        }
+        Update: {
+          auto_hint?: number
+          created_at?: string
+          double_xp_until?: string | null
+          extra_life?: number
+          id?: string
+          time_freeze?: number
+          updated_at?: string
+          visitor_id?: string
+        }
+        Relationships: []
+      }
       wa_bot_packages: {
         Row: {
           created_at: string
