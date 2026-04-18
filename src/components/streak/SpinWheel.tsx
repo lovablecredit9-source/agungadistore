@@ -70,6 +70,7 @@ export default function SpinWheel({ visitorId, coins, onUpdate }: Props) {
       setSpinning(false);
       load();
       onUpdate?.();
+      import("@/lib/daily-mission").then(m => m.trackDailyMission(visitorId, "spin_wheel", 1)).catch(() => {});
     }, 4200);
   }
 
