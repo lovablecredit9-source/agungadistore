@@ -439,7 +439,7 @@ export default function NeonStreakHub({ visitorId }: Props) {
       <StreakMilestones visitorId={visitorId} onUpdate={() => { loadAll(); setCelebrate({ show: true, msg: "🏆 MILESTONE!" }); }} />
 
       {/* Leaderboard global */}
-      <StreakLeaderboard visitorId={visitorId} />
+      <StreakLeaderboard />
       </>
       )}
 
