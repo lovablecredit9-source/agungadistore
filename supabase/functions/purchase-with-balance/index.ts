@@ -213,11 +213,11 @@ Deno.serve(async (request) => {
       return Response.json({ error: "Gagal mencatat pembelian" }, { status: 500, headers: corsHeaders });
     }
 
-    // Update discount voucher used_count
-    if (discountVoucherId) {
-      const { data: vData } = await admin.from("discount_vouchers").select("used_count").eq("id", discountVoucherId).single();
+    // Update voucher used_count (in correct table)
+    if (discountVoucherId && voucherSource) {
+      const { data: vData } = await admin.from(voucherSource).select("used_count").eq("id", discountVoucherId).single();
       if (vData) {
-        await admin.from("discount_vouchers").update({ used_count: (vData.used_count || 0) + 1 }).eq("id", discountVoucherId);
+        await admin.from(voucherSource).update({ used_count: (vData.used_count || 0) + 1 }).eq("id", discountVoucherId);
       }
     }
 
