@@ -409,18 +409,7 @@ export default function NeonStreakHub({ visitorId }: Props) {
 
       {activeView === "main" && (
       <>
-      {/* Power Hour + Insight */}
-      <div className="grid grid-cols-1 gap-3">
-        <StreakPowerHour visitorId={visitorId} />
-        <StreakInsight
-          visitorId={visitorId}
-          currentStreak={currentStreak}
-          longestStreak={longestStreak}
-          totalClaims={totalClaims}
-        />
-      </div>
-
-      {/* ✨ Fitur baru: Combo Multiplier + Pet Companion */}
+      {/* ✨ Combo Multiplier + Pet Companion */}
       <div className="grid grid-cols-1 gap-3">
         <StreakComboMultiplier visitorId={visitorId} currentStreak={currentStreak} />
         <StreakPetCompanion visitorId={visitorId} currentStreak={currentStreak} />
@@ -432,49 +421,87 @@ export default function NeonStreakHub({ visitorId }: Props) {
       {/* ✨ Mission Chain 3 tahap */}
       <StreakMissionChain visitorId={visitorId} currentStreak={currentStreak} totalClaims={totalClaims} onUpdate={loadAll} />
 
-      {/* Mystery Box (cepat akses di Utama juga) */}
       <SmartReminder visitorId={visitorId} />
 
-      {/* Milestones */}
       <StreakMilestones visitorId={visitorId} onUpdate={() => { loadAll(); setCelebrate({ show: true, msg: "🏆 MILESTONE!" }); }} />
 
-      {/* Leaderboard global */}
       <StreakLeaderboard />
       </>
       )}
 
       {activeView === "event" && (
       <>
-      {/* Daily Gift Box (7 hari) */}
       <DailyGiftBox visitorId={visitorId} onUpdate={loadAll} />
-
-      {/* Spin Wheel */}
       <SpinWheel visitorId={visitorId} coins={coins} onUpdate={loadAll} />
 
-      {/* Power Hour + Boosters */}
-      <StreakPowerHour visitorId={visitorId} />
+      {/* Mystery Box */}
+      <button onClick={openMysteryBox} disabled={opening || boxOpened}
+        className="w-full cyber-card-pink rounded-2xl p-4 text-left relative overflow-hidden group disabled:opacity-80">
+        <div className="absolute -right-6 -top-6 w-32 h-32 rounded-full bg-pink-500/30 blur-3xl" />
+        <div className="relative flex items-center gap-3">
+          <motion.div animate={boxOpened ? {} : { rotate: [0, -6, 6, 0], scale: [1, 1.05, 1] }} transition={{ duration: 1.2, repeat: Infinity }} className="flex items-center justify-center w-14 h-14">
+            <Gift className="w-12 h-12 icon-3d-gift" strokeWidth={2.5} />
+          </motion.div>
+          <div className="flex-1 min-w-0">
+            <div className="text-xs neon-text-cyan font-black tracking-widest uppercase">Mystery Box Harian</div>
+            <div className="font-extrabold text-white text-base">{boxOpened ? (reward?.reward_label || "Sudah dibuka") : "Buka sekarang!"}</div>
+            <div className="text-[11px] text-white/70">{boxOpened ? "Kembali besok untuk box baru" : "Reward acak: coins, credit, freeze..."}</div>
+          </div>
+          {opening ? <Loader2 className="w-5 h-5 animate-spin text-white" /> : <Sparkles className="w-5 h-5 neon-text-yellow neon-pulse" />}
+        </div>
+      </button>
+
+      {/* Daily Missions */}
+      {dailyMissions.length > 0 && (
+        <div className="cyber-card-pink rounded-2xl p-3 space-y-2">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2"><Target className="w-4 h-4 icon-3d-target" strokeWidth={2.5} /><span className="text-xs font-black neon-text-pink tracking-widest uppercase">Tantangan Harian</span></div>
+            <span className="text-[9px] font-bold text-white/60 uppercase tracking-wider">Reset 00:00 WIB</span>
+          </div>
+          {dailyMissions.map(ch => {
+            const pct = Math.min(100, ((ch.current_value || 0) / ch.target_value) * 100);
+            const claimable = ch.is_completed && !ch.claimed_at;
+            return (
+              <div key={ch.id} className="bg-black/30 rounded-xl p-3 border border-pink-500/20">
+                <div className="flex items-start justify-between mb-2">
+                  <div className="flex-1 min-w-0 pr-3">
+                    <div className="font-extrabold text-white text-sm flex items-center gap-1.5">
+                      {(() => { const p = parseTitleIcon(ch.title); return (<>{p.Icon && <p.Icon className={`w-4 h-4 ${p.cls}`} strokeWidth={2.5} />}<span>{p.text}</span></>); })()}
+                    </div>
+                    <div className="text-[10px] text-white/60">{ch.description}</div>
+                  </div>
+                  <div className="text-[10px] font-black tabular-nums whitespace-nowrap flex items-center gap-1"><span className="neon-text-yellow">+{ch.reward_coins}</span><Coins className="w-3 h-3 icon-3d-coin" strokeWidth={2.5} /></div>
+                </div>
+                <div className="h-1.5 bg-white/10 rounded-full overflow-hidden mb-2">
+                  <motion.div initial={{ width: 0 }} animate={{ width: `${pct}%` }} className="h-full bg-gradient-to-r from-pink-400 to-yellow-400" />
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-bold text-white/70 tabular-nums">{ch.current_value || 0} / {ch.target_value}</span>
+                  {claimable && <Button size="sm" onClick={() => claimDailyMission(ch)} className="h-6 text-[10px] bg-gradient-to-r from-pink-400 to-yellow-400 text-black font-black">KLAIM</Button>}
+                  {ch.claimed_at && <span className="text-[10px] font-bold text-emerald-400 flex items-center gap-1"><Check className="w-3 h-3" strokeWidth={3} /> DIKLAIM</span>}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
       <StreakBoosters visitorId={visitorId} coins={coins} onUpdate={loadAll} />
-
-      {/* Battle Arena 1v1 */}
       <StreakBattleArena visitorId={visitorId} onUpdate={loadAll} />
-
-      {/* Tournament Mingguan */}
       <StreakTournament visitorId={visitorId} />
-
-      {/* Streak Pass (Battle Pass) */}
       <StreakPass visitorId={visitorId} onUpdate={loadAll} />
-
-      {/* Weekly Quests */}
       <WeeklyQuests visitorId={visitorId} onUpdate={loadAll} />
-
-      {/* Leaderboard Mingguan */}
       <StreakLeaderboardWeekly visitorId={visitorId} />
       </>
       )}
 
       {activeView === "shop" && (
       <>
-      {/* Gem Shop */}
+      <Button onClick={() => setShowShop(true)}
+        className="w-full bg-gradient-to-r from-purple-600 via-pink-600 to-cyan-600 text-white font-black h-14 shadow-[0_0_20px_hsl(var(--neon-purple)/0.5)]">
+        <ShoppingBag className="w-5 h-5 mr-2" /> BUKA STREAK SHOP — Tukar Koin
+      </Button>
+      <p className="text-[10px] text-center text-white/60">Tukarkan Streak Koin: Freeze, Voucher, Booster XP, Frame Avatar &amp; lainnya.</p>
       <GemShop visitorId={visitorId} onUpdate={loadAll} />
       </>
       )}
