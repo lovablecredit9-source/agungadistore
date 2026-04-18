@@ -102,14 +102,32 @@ Deno.serve(async (request) => {
     let discountAmount = 0;
     let discountVoucherId: string | null = null;
 
-    // Apply discount code if provided
+    // Apply discount code if provided (try product vouchers, then game-reward vouchers)
+    let voucherSource: "discount_vouchers" | "game_discount_vouchers" | null = null;
     if (discountCode) {
-      const { data: voucher } = await admin
+      const code = discountCode.toUpperCase();
+      let voucher: any = null;
+      const { data: v1 } = await admin
         .from("discount_vouchers")
         .select("*")
-        .eq("code", discountCode.toUpperCase())
+        .eq("code", code)
         .eq("is_active", true)
         .maybeSingle();
+      if (v1) {
+        voucher = v1;
+        voucherSource = "discount_vouchers";
+      } else {
+        const { data: v2 } = await admin
+          .from("game_discount_vouchers")
+          .select("*")
+          .eq("code", code)
+          .eq("is_active", true)
+          .maybeSingle();
+        if (v2) {
+          voucher = v2;
+          voucherSource = "game_discount_vouchers";
+        }
+      }
 
       if (!voucher) {
         return Response.json({ error: "Kode voucher diskon tidak valid" }, { status: 400, headers: corsHeaders });
@@ -195,11 +213,11 @@ Deno.serve(async (request) => {
       return Response.json({ error: "Gagal mencatat pembelian" }, { status: 500, headers: corsHeaders });
     }
 
-    // Update discount voucher used_count
-    if (discountVoucherId) {
-      const { data: vData } = await admin.from("discount_vouchers").select("used_count").eq("id", discountVoucherId).single();
+    // Update voucher used_count (in correct table)
+    if (discountVoucherId && voucherSource) {
+      const { data: vData } = await admin.from(voucherSource).select("used_count").eq("id", discountVoucherId).single();
       if (vData) {
-        await admin.from("discount_vouchers").update({ used_count: (vData.used_count || 0) + 1 }).eq("id", discountVoucherId);
+        await admin.from(voucherSource).update({ used_count: (vData.used_count || 0) + 1 }).eq("id", discountVoucherId);
       }
     }
 

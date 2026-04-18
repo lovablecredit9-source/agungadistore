@@ -1,0 +1,136 @@
+import { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { supabase } from "@/integrations/supabase/client";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Loader2, Ticket, Gem, Coins, Copy, Check, Sparkles } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+
+const RARITY_STYLES: Record<string, string> = {
+  common: "from-slate-400 to-slate-600",
+  rare: "from-blue-500 to-indigo-600",
+  epic: "from-purple-500 to-pink-600",
+  legendary: "from-yellow-400 via-orange-500 to-red-500",
+};
+
+export default function LuckyDrawGame() {
+  const visitorId = typeof window !== "undefined" ? localStorage.getItem("balance_visitor_id") : null;
+  const [tickets, setTickets] = useState<any>(null);
+  const [packages, setPackages] = useState<any[]>([]);
+  const [drawing, setDrawing] = useState(false);
+  const [buying, setBuying] = useState<string | null>(null);
+  const [prize, setPrize] = useState<any>(null);
+  const [copied, setCopied] = useState(false);
+  const { toast } = useToast();
+
+  const refresh = async () => {
+    if (!visitorId) return;
+    const [{ data: status }, { data: pkgs }] = await Promise.all([
+      supabase.functions.invoke("lucky-draw", { body: { action: "status", visitorId } }),
+      supabase.from("lucky_draw_ticket_packages").select("*").eq("is_active", true).order("sort_order"),
+    ]);
+    if (status?.tickets) setTickets(status.tickets);
+    if (pkgs) setPackages(pkgs);
+  };
+
+  useEffect(() => { refresh(); }, [visitorId]);
+
+  const buyPackage = async (pkgId: string) => {
+    setBuying(pkgId);
+    const { data, error } = await supabase.functions.invoke("lucky-draw", { body: { action: "buy", visitorId, packageId: pkgId } });
+    setBuying(null);
+    if (error || data?.error) return toast({ title: "Gagal", description: data?.error || "Coba lagi", variant: "destructive" });
+    setTickets(data.tickets);
+    toast({ title: "Berhasil!", description: "Tiket bertambah" });
+  };
+
+  const draw = async () => {
+    if (!tickets || tickets.ticket_count < 1) return toast({ title: "Tiket habis", description: "Beli tiket dulu", variant: "destructive" });
+    setDrawing(true); setPrize(null);
+    const { data, error } = await supabase.functions.invoke("lucky-draw", { body: { action: "draw", visitorId } });
+    if (error || data?.error) {
+      setDrawing(false);
+      return toast({ title: "Gagal", description: data?.error || "Coba lagi", variant: "destructive" });
+    }
+    // dramatic delay
+    await new Promise(r => setTimeout(r, 1500));
+    setPrize(data.prize);
+    setDrawing(false);
+    refresh();
+  };
+
+  if (!visitorId) {
+    return <div className="p-6 text-center text-sm text-muted-foreground">Login akun saldo dulu untuk main Lucky Draw.</div>;
+  }
+
+  return (
+    <div className="space-y-4">
+      <Card className="p-4 bg-gradient-to-br from-amber-500 via-orange-500 to-rose-500 text-white border-none text-center">
+        <Sparkles className="w-8 h-8 mx-auto mb-1" />
+        <h3 className="font-extrabold text-lg">🎯 Lucky Draw Belanja</h3>
+        <p className="text-xs opacity-90 mt-1">Beli tiket pakai gems/coins, undi hadiah hingga Rp 25.000!</p>
+      </Card>
+
+      {/* Ticket counter */}
+      <div className="bg-gradient-to-r from-yellow-400/20 to-orange-500/20 border border-yellow-500/30 rounded-2xl p-4 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Ticket className="w-6 h-6 text-orange-500" />
+          <div>
+            <div className="text-xs text-muted-foreground">Tiket kamu</div>
+            <div className="font-black text-2xl">{tickets?.ticket_count || 0}</div>
+          </div>
+        </div>
+        <Button onClick={draw} disabled={drawing || !tickets || tickets.ticket_count < 1} className="bg-gradient-to-r from-orange-500 to-rose-500 font-bold">
+          {drawing ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Sparkles className="w-4 h-4 mr-1" />}
+          Undi!
+        </Button>
+      </div>
+
+      {/* Prize reveal */}
+      <AnimatePresence>
+        {drawing && (
+          <motion.div initial={{ scale: 0.5, opacity: 0 }} animate={{ scale: [1, 1.1, 1], opacity: 1, rotate: [0, 5, -5, 0] }} transition={{ duration: 1.4, repeat: Infinity }} className="aspect-square rounded-2xl bg-gradient-to-br from-yellow-400 via-orange-500 to-red-500 flex items-center justify-center text-white shadow-2xl">
+            <Sparkles className="w-20 h-20 animate-spin" />
+          </motion.div>
+        )}
+        {prize && !drawing && (
+          <motion.div initial={{ scale: 0, rotate: -180 }} animate={{ scale: 1, rotate: 0 }} transition={{ type: "spring", duration: 0.8 }} className={`aspect-[4/3] rounded-2xl bg-gradient-to-br ${RARITY_STYLES[prize.rarity] || RARITY_STYLES.common} text-white flex flex-col items-center justify-center p-6 shadow-2xl`}>
+            <div className="text-[10px] font-bold uppercase tracking-widest opacity-80">{prize.rarity}</div>
+            <div className="text-3xl font-black mt-1 text-center drop-shadow">{prize.reward_label}</div>
+            {prize.voucher_code && (
+              <button onClick={() => { navigator.clipboard.writeText(prize.voucher_code); setCopied(true); setTimeout(() => setCopied(false), 2000); }} className="mt-3 inline-flex items-center gap-1 text-xs bg-white/20 backdrop-blur rounded-full px-3 py-1 font-mono font-bold">
+                {prize.voucher_code} {copied ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
+              </button>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Packages */}
+      <div>
+        <div className="text-sm font-bold mb-2">Beli Tiket</div>
+        <div className="grid grid-cols-2 gap-2">
+          {packages.map(pkg => (
+            <motion.button
+              key={pkg.id}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => buyPackage(pkg.id)}
+              disabled={buying === pkg.id}
+              className="bg-gradient-to-br from-violet-600 to-purple-700 text-white p-3 rounded-xl text-left shadow-md disabled:opacity-50"
+            >
+              <div className="flex items-center gap-1 text-xs opacity-80">
+                <Ticket className="w-3 h-3" /> {pkg.tickets} tiket
+              </div>
+              <div className="font-extrabold text-sm mt-1">{pkg.name}</div>
+              <div className="flex items-center gap-1 text-xs mt-2 bg-white/20 rounded-full px-2 py-0.5 w-fit">
+                {pkg.cost_currency === "gems" ? <Gem className="w-3 h-3" /> : <Coins className="w-3 h-3" />}
+                <span className="font-bold">{pkg.cost_amount}</span>
+              </div>
+              {buying === pkg.id && <Loader2 className="w-3 h-3 animate-spin mt-1" />}
+            </motion.button>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}

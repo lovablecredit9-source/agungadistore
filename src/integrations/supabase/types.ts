@@ -595,6 +595,62 @@ export type Database = {
         }
         Relationships: []
       }
+      flash_sales: {
+        Row: {
+          banner_url: string | null
+          created_at: string
+          description: string | null
+          discount_amount: number
+          discount_percent: number
+          ends_at: string
+          id: string
+          is_active: boolean
+          notify_sent: boolean
+          product_id: string | null
+          starts_at: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          banner_url?: string | null
+          created_at?: string
+          description?: string | null
+          discount_amount?: number
+          discount_percent?: number
+          ends_at: string
+          id?: string
+          is_active?: boolean
+          notify_sent?: boolean
+          product_id?: string | null
+          starts_at?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          banner_url?: string | null
+          created_at?: string
+          description?: string | null
+          discount_amount?: number
+          discount_percent?: number
+          ends_at?: string
+          id?: string
+          is_active?: boolean
+          notify_sent?: boolean
+          product_id?: string | null
+          starts_at?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "flash_sales_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       game_achievements: {
         Row: {
           achievement_key: string
@@ -906,6 +962,141 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      lucky_draw_history: {
+        Row: {
+          created_at: string
+          id: string
+          rarity: string
+          reward_label: string
+          reward_type: string
+          reward_value: number
+          visitor_id: string
+          voucher_code: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          rarity?: string
+          reward_label?: string
+          reward_type: string
+          reward_value?: number
+          visitor_id: string
+          voucher_code?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          rarity?: string
+          reward_label?: string
+          reward_type?: string
+          reward_value?: number
+          visitor_id?: string
+          voucher_code?: string | null
+        }
+        Relationships: []
+      }
+      lucky_draw_ticket_packages: {
+        Row: {
+          cost_amount: number
+          cost_currency: string
+          created_at: string
+          id: string
+          is_active: boolean
+          name: string
+          sort_order: number
+          tickets: number
+          updated_at: string
+        }
+        Insert: {
+          cost_amount?: number
+          cost_currency?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          sort_order?: number
+          tickets?: number
+          updated_at?: string
+        }
+        Update: {
+          cost_amount?: number
+          cost_currency?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          sort_order?: number
+          tickets?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      lucky_draw_tickets: {
+        Row: {
+          id: string
+          ticket_count: number
+          total_purchased: number
+          total_used: number
+          updated_at: string
+          visitor_id: string
+        }
+        Insert: {
+          id?: string
+          ticket_count?: number
+          total_purchased?: number
+          total_used?: number
+          updated_at?: string
+          visitor_id: string
+        }
+        Update: {
+          id?: string
+          ticket_count?: number
+          total_purchased?: number
+          total_used?: number
+          updated_at?: string
+          visitor_id?: string
+        }
+        Relationships: []
+      }
+      match3_scores: {
+        Row: {
+          combo_max: number
+          created_at: string
+          id: string
+          moves: number
+          payout_label: string
+          payout_type: string | null
+          payout_value: number
+          score: number
+          visitor_id: string
+          voucher_code: string | null
+        }
+        Insert: {
+          combo_max?: number
+          created_at?: string
+          id?: string
+          moves?: number
+          payout_label?: string
+          payout_type?: string | null
+          payout_value?: number
+          score?: number
+          visitor_id: string
+          voucher_code?: string | null
+        }
+        Update: {
+          combo_max?: number
+          created_at?: string
+          id?: string
+          moves?: number
+          payout_label?: string
+          payout_type?: string | null
+          payout_value?: number
+          score?: number
+          visitor_id?: string
+          voucher_code?: string | null
+        }
+        Relationships: []
       }
       music_discount_vouchers: {
         Row: {
@@ -1570,6 +1761,78 @@ export type Database = {
           updated_at?: string
           visibility?: string
           visitor_id?: string
+        }
+        Relationships: []
+      }
+      scratch_card_claims: {
+        Row: {
+          claim_date: string
+          created_at: string
+          id: string
+          rarity: string
+          reward_label: string
+          reward_type: string
+          reward_value: number
+          visitor_id: string
+          voucher_code: string | null
+        }
+        Insert: {
+          claim_date?: string
+          created_at?: string
+          id?: string
+          rarity?: string
+          reward_label?: string
+          reward_type: string
+          reward_value?: number
+          visitor_id: string
+          voucher_code?: string | null
+        }
+        Update: {
+          claim_date?: string
+          created_at?: string
+          id?: string
+          rarity?: string
+          reward_label?: string
+          reward_type?: string
+          reward_value?: number
+          visitor_id?: string
+          voucher_code?: string | null
+        }
+        Relationships: []
+      }
+      slot_machine_history: {
+        Row: {
+          cost_credits: number
+          created_at: string
+          id: string
+          payout_label: string
+          payout_type: string
+          payout_value: number
+          reels: string[]
+          visitor_id: string
+          voucher_code: string | null
+        }
+        Insert: {
+          cost_credits?: number
+          created_at?: string
+          id?: string
+          payout_label?: string
+          payout_type?: string
+          payout_value?: number
+          reels: string[]
+          visitor_id: string
+          voucher_code?: string | null
+        }
+        Update: {
+          cost_credits?: number
+          created_at?: string
+          id?: string
+          payout_label?: string
+          payout_type?: string
+          payout_value?: number
+          reels?: string[]
+          visitor_id?: string
+          voucher_code?: string | null
         }
         Relationships: []
       }
@@ -3152,6 +3415,75 @@ export type Database = {
           starts_at?: string
           target_value?: number
           title?: string
+        }
+        Relationships: []
+      }
+      weekly_leaderboard_claims: {
+        Row: {
+          claimed_at: string
+          id: string
+          rank_position: number
+          reward_label: string
+          reward_type: string
+          reward_value: number
+          visitor_id: string
+          voucher_code: string | null
+          week_start: string
+        }
+        Insert: {
+          claimed_at?: string
+          id?: string
+          rank_position: number
+          reward_label?: string
+          reward_type: string
+          reward_value?: number
+          visitor_id: string
+          voucher_code?: string | null
+          week_start: string
+        }
+        Update: {
+          claimed_at?: string
+          id?: string
+          rank_position?: number
+          reward_label?: string
+          reward_type?: string
+          reward_value?: number
+          visitor_id?: string
+          voucher_code?: string | null
+          week_start?: string
+        }
+        Relationships: []
+      }
+      weekly_leaderboard_rewards: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          rank_position: number
+          reward_label: string
+          reward_type: string
+          reward_value: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          rank_position: number
+          reward_label?: string
+          reward_type?: string
+          reward_value?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          rank_position?: number
+          reward_label?: string
+          reward_type?: string
+          reward_value?: number
+          updated_at?: string
         }
         Relationships: []
       }

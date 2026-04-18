@@ -13,6 +13,12 @@ import LudoGame from "@/components/games/LudoGame";
 import KuisGame from "@/components/games/KuisGame";
 import TekaTekiV2Game from "@/components/games/TekaTekiV2Game";
 import PilihanGandaGame from "@/components/games/PilihanGandaGame";
+import ScratchCardGame from "@/components/games/ScratchCardGame";
+import SlotMachineGame from "@/components/games/SlotMachineGame";
+import Match3Game from "@/components/games/Match3Game";
+import LuckyDrawGame from "@/components/games/LuckyDrawGame";
+import WeeklyLeaderboard from "@/components/WeeklyLeaderboard";
+import FlashSaleBanner from "@/components/FlashSaleBanner";
 import { useGameCredits, GameCreditsBadge, BuyCreditsDialog } from "@/components/games/GameCredits";
 import { useGameProfile, GameProfileDialog, updateGameStats } from "@/components/games/GameProfile";
 import NeonGameExtras from "@/components/games/NeonGameExtras";
@@ -29,9 +35,17 @@ import gameLudoImg from "@/assets/game-ludo.png";
 import gameKuisImg from "@/assets/game-kuis.png";
 import gameTekaTekiV2Img from "@/assets/game-teka-teki-v2.png";
 import gamePilihanGandaImg from "@/assets/game-pilihan-ganda.png";
-type GameMode = "menu" | "suit" | "tebak" | "tebak_gambar" | "teka_teki" | "tebak_angka" | "tebak_barang" | "ular_tangga" | "ludo" | "kuis" | "teka_teki_v2" | "pilihan_ganda";
+import gameScratchImg from "@/assets/game-scratch.png";
+import gameSlotImg from "@/assets/game-slot.png";
+import gameMatch3Img from "@/assets/game-match3.png";
+import gameLuckyDrawImg from "@/assets/game-lucky-draw.png";
+type GameMode = "menu" | "suit" | "tebak" | "tebak_gambar" | "teka_teki" | "tebak_angka" | "tebak_barang" | "ular_tangga" | "ludo" | "kuis" | "teka_teki_v2" | "pilihan_ganda" | "scratch" | "slot" | "match3" | "lucky_draw";
 
 const GAMES: { mode: GameMode; title: string; desc: string; image: string; gradient: string }[] = [
+  { mode: "scratch", title: "Scratch Card", desc: "Gosok hadiah harian", image: gameScratchImg, gradient: "from-violet-500 to-fuchsia-600" },
+  { mode: "slot", title: "Slot 3-Reel", desc: "Spin & menang JACKPOT", image: gameSlotImg, gradient: "from-red-500 to-rose-600" },
+  { mode: "match3", title: "Match-3", desc: "Cocokkan permata", image: gameMatch3Img, gradient: "from-cyan-500 to-emerald-600" },
+  { mode: "lucky_draw", title: "Lucky Draw", desc: "Undi hadiah misterius", image: gameLuckyDrawImg, gradient: "from-amber-500 to-rose-600" },
   { mode: "suit", title: "Suit AI", desc: "Batu Gunting Kertas", image: gameSuitImg, gradient: "from-orange-500 to-red-500" },
   { mode: "tebak", title: "Tebak Kata", desc: "Tebak dari petunjuk AI", image: gameTebakKataImg, gradient: "from-blue-500 to-indigo-600" },
   { mode: "tebak_gambar", title: "Tebak Gambar", desc: "Tebak gambar dari AI", image: gameTebakGambarImg, gradient: "from-green-500 to-emerald-600" },
@@ -57,6 +71,10 @@ const GAME_COMPONENTS: Record<string, React.ComponentType> = {
   kuis: KuisGame,
   teka_teki_v2: TekaTekiV2Game,
   pilihan_ganda: PilihanGandaGame,
+  scratch: ScratchCardGame,
+  slot: SlotMachineGame,
+  match3: Match3Game,
+  lucky_draw: LuckyDrawGame,
 };
 
 export default function GameTab() {
@@ -166,6 +184,11 @@ export default function GameTab() {
               </motion.div>
             );
           })}
+        </div>
+
+        <div className="mt-4 space-y-3">
+          <FlashSaleBanner />
+          <WeeklyLeaderboard />
         </div>
 
         {/* 🎮 Neon Extras: Daily Challenge · Tournament · Leaderboard · Achievements */}
