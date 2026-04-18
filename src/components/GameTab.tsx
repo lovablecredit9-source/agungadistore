@@ -24,6 +24,10 @@ import { useGameCredits, GameCreditsBadge, BuyCreditsDialog } from "@/components
 import { useGameBalance, GameBalanceBadge } from "@/components/games/GameBalance";
 import { useGameProfile, GameProfileDialog, updateGameStats } from "@/components/games/GameProfile";
 import NeonGameExtras from "@/components/games/NeonGameExtras";
+import GamePvPBattle from "@/components/games/GamePvPBattle";
+import GameQuestChain from "@/components/games/GameQuestChain";
+import GameClanSystem from "@/components/games/GameClanSystem";
+import GameSeasonPass from "@/components/games/GameSeasonPass";
 import { Zap } from "lucide-react";
 
 import gameSuitImg from "@/assets/game-suit.png";
