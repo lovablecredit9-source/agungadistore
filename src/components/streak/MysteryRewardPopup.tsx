@@ -1,6 +1,6 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { Sparkles } from "lucide-react";
+import { Sparkles, Gift, Rocket } from "lucide-react";
 import type { MysteryReward } from "./streakRewards";
 import { getRarityColor, getRarityGlow, getRarityLabel } from "./streakRewards";
 
