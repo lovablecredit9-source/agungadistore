@@ -56,7 +56,7 @@ export function useGameCredits(visitorId: string | null) {
   useEffect(() => {
     if (!visitorId) return;
     const channel = supabase
-      .channel(`user_game_credits_${visitorId}`)
+      .channel(`user_game_credits_${visitorId}_${Math.random().toString(36).slice(2, 10)}`)
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "user_game_credits", filter: `visitor_id=eq.${visitorId}` },
