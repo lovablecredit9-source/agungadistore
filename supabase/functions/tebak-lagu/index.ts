@@ -19,17 +19,26 @@ async function generateQuestion(): Promise<SongQuestion> {
   const apiKey = Deno.env.get("LOVABLE_API_KEY");
   if (!apiKey) throw new Error("LOVABLE_API_KEY belum diatur");
 
-  const prompt = `Buat 1 soal kuis "Tebak Lagu" dari potongan lirik lagu populer (Indonesia atau internasional, era 1990-2024).
-Acak genre: pop, rock, dangdut, ballad, hip-hop, dll. Pilih lagu yang cukup terkenal tapi tidak selalu yang itu-itu saja.
+  const prompt = `Buat 1 soal kuis "Tebak Lagu" dari potongan lirik LAGU POP INDONESIA yang pernah VIRAL/HITS di era 1990 sampai 2026.
+
+ATURAN KETAT:
+- HANYA lagu berbahasa Indonesia (TIDAK BOLEH bahasa Inggris, Korea, Jepang, Mandarin, atau bahasa asing lain).
+- HANYA genre pop Indonesia (boleh pop-rock, pop-melayu, pop-indie, pop-dangdut, asalkan mainstream/viral).
+- Penyanyi/band HARUS dari Indonesia (contoh: Sheila on 7, Peterpan/NOAH, Dewa 19, Nidji, Ungu, Letto, Anggun, Krisdayanti, Agnes Monica, Raisa, Tulus, Isyana, Afgan, Rizky Febian, Mahalini, Lyodra, Tiara Andini, Pamungkas, Hindia, Fiersa Besari, Ardhito Pramono, Juicy Luicy, Yura Yunita, Andmesh, Virgoun, Armada, Wali, ST12, Kotak, Geisha, dll).
+- Lagu HARUS pernah viral/hits/populer (sering diputar di radio, TV, TikTok, Spotify Top, atau jadi OST sinetron/film terkenal).
+- Lirik snippet HARUS lirik asli berbahasa Indonesia, 1-2 baris yang ikonik/mudah dikenali.
+- Acak era: jangan selalu lagu 2020-an, variasikan 1990-an, 2000-an, 2010-an, dan 2020-an.
+- Jangan ulang lagu yang itu-itu saja.
+
 Format JSON ketat:
 {
-  "lyric_snippet": "1-2 baris lirik (terjemahan jika non-Indonesia, atau lirik asli jika Indonesia)",
-  "correct_title": "Judul lagu",
-  "correct_artist": "Nama penyanyi/band",
+  "lyric_snippet": "1-2 baris lirik asli berbahasa Indonesia",
+  "correct_title": "Judul lagu (bahasa Indonesia)",
+  "correct_artist": "Nama penyanyi/band Indonesia",
   "options": ["Judul Benar", "Judul Salah 1", "Judul Salah 2", "Judul Salah 3"],
-  "hint": "Petunjuk singkat tentang lagu ini (genre/era/tema, tanpa menyebut judul)"
+  "hint": "Petunjuk singkat (era/tema/genre, tanpa menyebut judul atau penyanyi)"
 }
-Pastikan options[0] adalah judul yang benar (akan diacak di sisi klien). Jangan tambahkan teks lain.`;
+Semua options HARUS judul lagu pop Indonesia juga (bukan lagu asing). Pastikan options[0] adalah judul yang benar (akan diacak di sisi klien). Jangan tambahkan teks lain di luar JSON.`;
 
   const res = await fetch(LOVABLE_AI_URL, {
     method: "POST",
