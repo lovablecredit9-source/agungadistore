@@ -101,7 +101,10 @@ export default function MysteryRewardPopup({ reward, onClose }: Props) {
 
               <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}>
                 <Sparkles className="w-5 h-5 mx-auto mb-1 text-yellow-400 animate-pulse" />
-                <h3 className="text-xl font-extrabold text-foreground">🎁 Mystery Reward!</h3>
+                <h3 className="text-xl font-extrabold text-foreground flex items-center justify-center gap-2">
+                  <Gift className="w-6 h-6 icon-3d-gift" strokeWidth={2.5} />
+                  Mystery Reward!
+                </h3>
               </motion.div>
 
               <motion.div
