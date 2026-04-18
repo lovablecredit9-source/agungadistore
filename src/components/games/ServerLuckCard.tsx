@@ -166,6 +166,26 @@ export function ServerLuckCard({ visitorId }: { visitorId: string | null }) {
                   </div>
                   {isCurrent && <span className="text-[9px] font-black bg-white/30 rounded-full px-2 py-0.5">AKTIF</span>}
                 </div>
+                {/* Benefit pills */}
+                {(() => {
+                  const b = tierBenefits(t.tier);
+                  return (
+                    <div className="flex flex-wrap gap-1 mb-2">
+                      <span className="text-[9px] font-bold bg-white/25 backdrop-blur rounded-full px-1.5 py-0.5">
+                        🚫 Zonk −{b.zonkReduction}%
+                      </span>
+                      <span className="text-[9px] font-bold bg-white/25 backdrop-blur rounded-full px-1.5 py-0.5">
+                        🎰 Match {b.matchProb}%
+                      </span>
+                      <span className="text-[9px] font-bold bg-white/25 backdrop-blur rounded-full px-1.5 py-0.5">
+                        💎 Rare +{b.rareBoost}%
+                      </span>
+                      <span className="text-[9px] font-bold bg-yellow-300/40 backdrop-blur rounded-full px-1.5 py-0.5">
+                        👑 Jackpot +{b.legendaryBoost}%
+                      </span>
+                    </div>
+                  );
+                })()}
                 <div className="grid grid-cols-3 gap-1.5">
                   {t.durations.map(d => {
                     const k = `${t.tier}-${d.hours}`;
