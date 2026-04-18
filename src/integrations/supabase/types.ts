@@ -1935,6 +1935,72 @@ export type Database = {
         }
         Relationships: []
       }
+      server_luck_boosters: {
+        Row: {
+          active_tier: number
+          active_until: string | null
+          created_at: string
+          highest_tier_owned: number
+          id: string
+          total_purchases: number
+          total_spent: number
+          updated_at: string
+          visitor_id: string
+        }
+        Insert: {
+          active_tier?: number
+          active_until?: string | null
+          created_at?: string
+          highest_tier_owned?: number
+          id?: string
+          total_purchases?: number
+          total_spent?: number
+          updated_at?: string
+          visitor_id: string
+        }
+        Update: {
+          active_tier?: number
+          active_until?: string | null
+          created_at?: string
+          highest_tier_owned?: number
+          id?: string
+          total_purchases?: number
+          total_spent?: number
+          updated_at?: string
+          visitor_id?: string
+        }
+        Relationships: []
+      }
+      server_luck_history: {
+        Row: {
+          created_at: string
+          duration_hours: number
+          id: string
+          payment_source: string
+          price: number
+          tier: number
+          visitor_id: string
+        }
+        Insert: {
+          created_at?: string
+          duration_hours: number
+          id?: string
+          payment_source?: string
+          price: number
+          tier: number
+          visitor_id: string
+        }
+        Update: {
+          created_at?: string
+          duration_hours?: number
+          id?: string
+          payment_source?: string
+          price?: number
+          tier?: number
+          visitor_id?: string
+        }
+        Relationships: []
+      }
       slot_machine_history: {
         Row: {
           cost_credits: number
