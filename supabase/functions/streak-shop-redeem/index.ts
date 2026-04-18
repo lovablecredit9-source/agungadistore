@@ -33,6 +33,7 @@ Deno.serve(async (req) => {
     }
 
     let rewardCode: string | null = null;
+    let rewardSummary = "Reward sudah ditambahkan!";
 
     // Apply reward
     if (item.reward_type === "discount_voucher") {
@@ -44,34 +45,70 @@ Deno.serve(async (req) => {
         is_active: true,
         expires_at: new Date(Date.now() + 30 * 24 * 3600 * 1000).toISOString(),
       });
+      rewardSummary = `Voucher diskon Rp${Number(item.reward_value).toLocaleString("id-ID")}`;
     } else if (item.reward_type === "game_credit") {
-      // Log it in balance_transactions and toast user; actual credit add via game_profile not direct here.
-      // For simplicity we'll create a game_credit_grant note; real game credit table not exposed here.
+      // DIRECTLY ADD GAME CREDITS to user_game_credits
+      const { data: gc } = await admin
+        .from("user_game_credits")
+        .select("id, credits")
+        .eq("visitor_id", visitorId)
+        .maybeSingle();
+
+      if (gc) {
+        const { error: updErr } = await admin
+          .from("user_game_credits")
+          .update({ credits: (gc.credits || 0) + item.reward_value })
+          .eq("id", gc.id);
+        if (updErr) {
+          return Response.json({ error: `Gagal menambah credit: ${updErr.message}` }, { status: 500, headers: corsHeaders });
+        }
+      } else {
+        const { error: insErr } = await admin
+          .from("user_game_credits")
+          .insert({ visitor_id: visitorId, credits: item.reward_value });
+        if (insErr) {
+          return Response.json({ error: `Gagal membuat credit: ${insErr.message}` }, { status: 500, headers: corsHeaders });
+        }
+      }
+
       await admin.from("balance_transactions").insert({
         visitor_id: visitorId,
         amount: 0,
         type: "game_credit_reward",
         description: `Streak Shop: ${item.name} (+${item.reward_value} credit)`,
       });
+      rewardSummary = `+${item.reward_value} Credit Game ditambahkan!`;
     } else if (item.reward_type === "music_storage") {
+      // DIRECTLY ADD MUSIC STORAGE to user_music_storage (no voucher needed)
       rewardCode = generateCode("MUS");
-      await admin.from("music_storage_vouchers").insert({
-        code: rewardCode,
+      const { error: insErr } = await admin.from("user_music_storage").insert({
+        visitor_id: visitorId,
         storage_mb: item.reward_value,
-        max_uses: 1,
-        is_active: true,
-        expires_at: new Date(Date.now() + 30 * 24 * 3600 * 1000).toISOString(),
+        voucher_code: rewardCode,
+        expires_at: null,
       });
+      if (insErr) {
+        return Response.json({ error: `Gagal menambah storage: ${insErr.message}` }, { status: 500, headers: corsHeaders });
+      }
+      rewardSummary = `+${item.reward_value}MB storage musik ditambahkan!`;
+      rewardCode = null; // don't show code to user, it's already applied
     } else if (item.reward_type === "streak_freeze") {
-      await admin.from("daily_streaks").update({
+      const { error: updErr } = await admin.from("daily_streaks").update({
         freeze_count: (streak.freeze_count || 0) + item.reward_value,
       }).eq("id", streak.id);
+      if (updErr) {
+        return Response.json({ error: `Gagal menambah freeze: ${updErr.message}` }, { status: 500, headers: corsHeaders });
+      }
+      rewardSummary = `+${item.reward_value} Streak Freeze ditambahkan!`;
     }
 
     // Deduct coins
-    await admin.from("daily_streaks").update({
+    const { error: deductErr } = await admin.from("daily_streaks").update({
       streak_coins: coins - item.cost_coins,
     }).eq("id", streak.id);
+    if (deductErr) {
+      return Response.json({ error: `Gagal memotong coins: ${deductErr.message}` }, { status: 500, headers: corsHeaders });
+    }
 
     // Log redemption
     await admin.from("streak_shop_redemptions").insert({
@@ -86,11 +123,11 @@ Deno.serve(async (req) => {
     await admin.from("notifications").insert({
       visitor_id: visitorId,
       title: `🛒 Streak Shop: ${item.name}`,
-      message: rewardCode ? `Kode: ${rewardCode}` : `Reward sudah ditambahkan!`,
+      message: rewardCode ? `Kode: ${rewardCode}` : rewardSummary,
       type: "streak_shop",
     });
 
-    return Response.json({ success: true, rewardCode, item }, { headers: corsHeaders });
+    return Response.json({ success: true, rewardCode, rewardSummary, item }, { headers: corsHeaders });
   } catch (e) {
     return Response.json({ error: e instanceof Error ? e.message : "Error" }, { status: 500, headers: corsHeaders });
   }
