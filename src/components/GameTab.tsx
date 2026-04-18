@@ -71,6 +71,10 @@ const GAME_COMPONENTS: Record<string, React.ComponentType> = {
   kuis: KuisGame,
   teka_teki_v2: TekaTekiV2Game,
   pilihan_ganda: PilihanGandaGame,
+  scratch: ScratchCardGame,
+  slot: SlotMachineGame,
+  match3: Match3Game,
+  lucky_draw: LuckyDrawGame,
 };
 
 export default function GameTab() {
