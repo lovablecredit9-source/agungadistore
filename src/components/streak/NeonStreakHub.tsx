@@ -222,6 +222,8 @@ export default function NeonStreakHub({ visitorId, forcedView }: Props) {
         setReward(data.reward);
         setBoxOpened(true);
         trackDailyMission(visitorId, "mystery_box", 1);
+        await syncPowerUpsFromServer();
+        window.dispatchEvent(new CustomEvent("power-ups-updated"));
         loadAll();
       }
     } finally {
