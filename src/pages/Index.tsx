@@ -51,6 +51,7 @@ import VibrantHeroSection from "@/components/VibrantHeroSection";
 import BalanceAuth from "@/components/BalanceAuth";
 import GameTab from "@/components/GameTab";
 import PlusTab from "@/components/PlusTab";
+import { useGameBalance } from "@/components/games/GameBalance";
 import LiveClock from "@/components/LiveClock";
 import LoginGate from "@/components/LoginGate";
 import WhatsAppChat from "@/components/WhatsAppChat";
@@ -470,6 +471,7 @@ const Index = () => {
     if (userBalance?.visitor_id) return userBalance.visitor_id;
     return localStorage.getItem("balance_visitor_id") || visitorId;
   }, [userBalance?.visitor_id, visitorId]);
+  const { amount: gameBalanceAmount } = useGameBalance(activeBalanceVisitorId);
 
   async function fetchNotifications(targetVisitorId = activeBalanceVisitorId) {
     const { data } = await (supabase as any).rpc("get_my_notifications", {
@@ -2741,6 +2743,11 @@ const Index = () => {
                         <p className="text-3xl font-extrabold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent mt-1">
                           <CountUp value={userBalance.balance} format={(n) => formatPrice(n)} />
                         </p>
+                        <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider mt-2">Saldo IN (Game)</p>
+                        <p className="text-base font-extrabold text-emerald-600">
+                          <CountUp value={gameBalanceAmount} format={(n) => formatPrice(n)} />
+                        </p>
+                        <p className="text-[9px] text-muted-foreground italic">Hanya untuk kredit/streak/storage. Auto digunakan dulu sebelum Saldo Utama.</p>
                       </div>
                       <div className="relative">
                         <div className="absolute inset-0 bg-gradient-to-br from-primary to-accent rounded-2xl blur-md opacity-30 animate-pulse" />

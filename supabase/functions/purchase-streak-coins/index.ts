@@ -11,6 +11,7 @@ const requestSchema = z.object({
   packageId: z.string().uuid().optional(),
   pin: z.string().trim().min(1).optional(),
   action: z.enum(["get_packages", "purchase"]).default("purchase"),
+  paymentSource: z.enum(["auto", "game", "main"]).default("auto"),
 });
 
 async function sha256Hex(input: string) {
@@ -34,7 +35,7 @@ Deno.serve(async (req) => {
       auth: { autoRefreshToken: false, persistSession: false },
     });
 
-    const { visitorId, packageId, pin, action } = parsed.data;
+    const { visitorId, packageId, pin, action, paymentSource } = parsed.data;
 
     if (action === "get_packages") {
       const { data } = await admin
@@ -69,26 +70,45 @@ Deno.serve(async (req) => {
       return Response.json({ error: "PIN salah", needPin: true }, { status: 403, headers: corsHeaders });
     }
 
-    // Check balance
-    const { data: balanceRow } = await admin
-      .from("user_balances")
-      .select("id, balance")
-      .eq("visitor_id", visitorId)
-      .maybeSingle();
-
-    if (!balanceRow) {
+    // Check balances - split between Saldo IN (game_balance) and Saldo Utama (user_balances)
+    const { data: gameBal } = await admin.from("game_balance").select("id, amount, total_spent").eq("visitor_id", visitorId).maybeSingle();
+    const { data: balanceRow } = await admin.from("user_balances").select("id, balance").eq("visitor_id", visitorId).maybeSingle();
+    if (!balanceRow && !gameBal) {
       return Response.json({ error: "Akun saldo tidak ditemukan" }, { status: 404, headers: corsHeaders });
     }
-    if (balanceRow.balance < pkg.price) {
-      return Response.json({ error: "Saldo tidak cukup" }, { status: 400, headers: corsHeaders });
+    const gameAmount = gameBal?.amount || 0;
+    const mainAmount = balanceRow?.balance || 0;
+
+    let payFromGame = 0;
+    let payFromMain = 0;
+    let sourceLabel = "";
+    if (paymentSource === "main") {
+      if (mainAmount < pkg.price) return Response.json({ error: "Saldo Utama tidak cukup" }, { status: 400, headers: corsHeaders });
+      payFromMain = pkg.price;
+      sourceLabel = "Saldo Utama";
+    } else if (paymentSource === "game") {
+      if (gameAmount < pkg.price) return Response.json({ error: "Saldo IN tidak cukup" }, { status: 400, headers: corsHeaders });
+      payFromGame = pkg.price;
+      sourceLabel = "Saldo IN";
+    } else {
+      if (gameAmount + mainAmount < pkg.price) return Response.json({ error: "Saldo tidak cukup (gabungan Saldo IN + Utama)" }, { status: 400, headers: corsHeaders });
+      payFromGame = Math.min(gameAmount, pkg.price);
+      payFromMain = pkg.price - payFromGame;
+      sourceLabel = payFromGame > 0 && payFromMain > 0 ? "Saldo IN + Utama" : payFromGame > 0 ? "Saldo IN" : "Saldo Utama";
     }
 
-    // Deduct balance
-    const newBalance = balanceRow.balance - pkg.price;
-    const { error: balErr } = await admin.from("user_balances").update({ balance: newBalance }).eq("id", balanceRow.id);
-    if (balErr) {
-      return Response.json({ error: "Gagal memotong saldo" }, { status: 500, headers: corsHeaders });
+    // Deduct
+    if (payFromGame > 0 && gameBal) {
+      await admin.from("game_balance").update({ amount: gameAmount - payFromGame, total_spent: (gameBal.total_spent || 0) + payFromGame }).eq("id", gameBal.id);
+      await admin.from("game_balance_transactions").insert({ visitor_id: visitorId, type: "spend", amount: -payFromGame, description: `Beli ${pkg.coins} Koin Streak` });
     }
+    if (payFromMain > 0 && balanceRow) {
+      const { error: balErr } = await admin.from("user_balances").update({ balance: mainAmount - payFromMain }).eq("id", balanceRow.id);
+      if (balErr) {
+        return Response.json({ error: "Gagal memotong saldo" }, { status: 500, headers: corsHeaders });
+      }
+    }
+    const newBalance = mainAmount - payFromMain;
 
     // Add coins to daily_streaks
     const { data: streak } = await admin
@@ -104,8 +124,9 @@ Deno.serve(async (req) => {
         .update({ streak_coins: newCoins })
         .eq("id", streak.id);
       if (updErr) {
-        // Rollback balance
-        await admin.from("user_balances").update({ balance: balanceRow.balance }).eq("id", balanceRow.id);
+        // Rollback
+        if (payFromMain > 0 && balanceRow) await admin.from("user_balances").update({ balance: mainAmount }).eq("id", balanceRow.id);
+        if (payFromGame > 0 && gameBal) await admin.from("game_balance").update({ amount: gameAmount }).eq("id", gameBal.id);
         return Response.json({ error: "Gagal menambah koin streak" }, { status: 500, headers: corsHeaders });
       }
     } else {
@@ -119,23 +140,30 @@ Deno.serve(async (req) => {
         streak_coins: pkg.coins,
       });
       if (insErr) {
-        await admin.from("user_balances").update({ balance: balanceRow.balance }).eq("id", balanceRow.id);
+        if (payFromMain > 0 && balanceRow) await admin.from("user_balances").update({ balance: mainAmount }).eq("id", balanceRow.id);
+        if (payFromGame > 0 && gameBal) await admin.from("game_balance").update({ amount: gameAmount }).eq("id", gameBal.id);
         return Response.json({ error: "Gagal membuat data streak" }, { status: 500, headers: corsHeaders });
       }
     }
 
-    // Record transaction
-    await admin.from("balance_transactions").insert({
-      visitor_id: visitorId,
-      type: "purchase",
-      amount: pkg.price,
-      description: `Beli ${pkg.coins.toLocaleString("id-ID")} Koin Streak (${pkg.name})`,
-    });
+    // Record transaction (main balance only)
+    if (payFromMain > 0) {
+      await admin.from("balance_transactions").insert({
+        visitor_id: visitorId,
+        type: "purchase",
+        amount: payFromMain,
+        description: `Beli ${pkg.coins.toLocaleString("id-ID")} Koin Streak (${pkg.name}) [${sourceLabel}]`,
+      });
+    }
 
     return Response.json({
       success: true,
       coins_added: pkg.coins,
       balance_remaining: newBalance,
+      game_balance_remaining: gameAmount - payFromGame,
+      paid_from_game: payFromGame,
+      paid_from_main: payFromMain,
+      source_label: sourceLabel,
       package_name: pkg.name,
     }, { headers: corsHeaders });
   } catch (error) {

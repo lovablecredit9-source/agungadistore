@@ -102,9 +102,12 @@ export function BuyCreditsDialog({ visitorId, onPurchased }: BuyCreditsDialogPro
   const [packages, setPackages] = useState<CreditPackage[]>([]);
   const [flashSaleEnd, setFlashSaleEnd] = useState<string>("");
   const [creditDiscount, setCreditDiscount] = useState(0);
+  const [paymentSource, setPaymentSource] = useState<"auto" | "game" | "main">("auto");
+  const [gameBalanceAmount, setGameBalanceAmount] = useState(0);
+  const [mainBalanceAmount, setMainBalanceAmount] = useState(0);
   const { toast } = useToast();
 
-  // Fetch packages from DB via edge function
+  // Fetch packages from DB via edge function + balances
   useEffect(() => {
     if (!open) return;
     (async () => {
@@ -133,9 +136,19 @@ export function BuyCreditsDialog({ visitorId, onPurchased }: BuyCreditsDialogPro
           });
           setPackages(pkgs);
         }
+
+        // Fetch both balances
+        if (visitorId) {
+          const [{ data: gb }, { data: mb }] = await Promise.all([
+            supabase.from("game_balance" as any).select("amount").eq("visitor_id", visitorId).maybeSingle(),
+            supabase.from("user_balances").select("balance").eq("visitor_id", visitorId).maybeSingle(),
+          ]);
+          setGameBalanceAmount(((gb as any)?.amount as number) || 0);
+          setMainBalanceAmount(((mb as any)?.balance as number) || 0);
+        }
       } catch {}
     })();
-  }, [open]);
+  }, [open, visitorId]);
 
   const resetVoucher = () => {
     setVoucherCode("");
@@ -180,6 +193,7 @@ export function BuyCreditsDialog({ visitorId, onPurchased }: BuyCreditsDialogPro
           packageId: pkgId,
           pin: pinValue || undefined,
           voucherCode: voucherValid ? voucherCode.trim() : undefined,
+          paymentSource,
         },
       });
       if (error) {
@@ -215,7 +229,8 @@ export function BuyCreditsDialog({ visitorId, onPurchased }: BuyCreditsDialogPro
       const discountInfo = data.discount_amount > 0
         ? ` (Diskon Rp${data.discount_amount.toLocaleString("id-ID")})`
         : "";
-      toast({ title: "Berhasil!", description: `${data.package.label} berhasil dibeli${discountInfo}. Sisa saldo: Rp${data.balance_remaining.toLocaleString("id-ID")}` });
+      const sourceInfo = data.source_label ? ` via ${data.source_label}` : "";
+      toast({ title: "Berhasil!", description: `${data.package.label} dibeli${sourceInfo}${discountInfo}. Saldo Utama: Rp${data.balance_remaining.toLocaleString("id-ID")} • Saldo IN: Rp${(data.game_balance_remaining || 0).toLocaleString("id-ID")}` });
       setNeedPin(false);
       setPin("");
       setSelectedPkg(null);
@@ -308,6 +323,37 @@ export function BuyCreditsDialog({ visitorId, onPurchased }: BuyCreditsDialogPro
                 </p>
               </div>
             )}
+
+            {/* Payment source selector */}
+            <div className="space-y-1.5 bg-muted/30 rounded-lg p-2">
+              <p className="text-[10px] font-bold uppercase text-muted-foreground">Sumber Pembayaran</p>
+              <div className="grid grid-cols-3 gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => setPaymentSource("auto")}
+                  className={`text-[10px] font-bold rounded-md py-1.5 px-1 border transition ${paymentSource === "auto" ? "bg-primary text-primary-foreground border-primary" : "bg-card border-border text-muted-foreground"}`}
+                >
+                  Otomatis
+                  <div className="text-[8px] font-normal opacity-80">IN dulu</div>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPaymentSource("game")}
+                  className={`text-[10px] font-bold rounded-md py-1.5 px-1 border transition ${paymentSource === "game" ? "bg-emerald-600 text-white border-emerald-600" : "bg-card border-border text-muted-foreground"}`}
+                >
+                  Saldo IN
+                  <div className="text-[8px] font-normal opacity-80">Rp{gameBalanceAmount.toLocaleString("id-ID")}</div>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPaymentSource("main")}
+                  className={`text-[10px] font-bold rounded-md py-1.5 px-1 border transition ${paymentSource === "main" ? "bg-primary text-primary-foreground border-primary" : "bg-card border-border text-muted-foreground"}`}
+                >
+                  Saldo Utama
+                  <div className="text-[8px] font-normal opacity-80">Rp{mainBalanceAmount.toLocaleString("id-ID")}</div>
+                </button>
+              </div>
+            </div>
 
             {/* Package list */}
             <div className="grid gap-2">

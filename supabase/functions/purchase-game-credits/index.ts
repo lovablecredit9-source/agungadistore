@@ -49,7 +49,7 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { action, visitorId, packageId, pin, voucherCode } = await req.json();
+    const { action, visitorId, packageId, pin, voucherCode, paymentSource = "auto" } = await req.json();
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const admin = createClient(supabaseUrl, serviceKey, {
@@ -134,13 +134,40 @@ Deno.serve(async (req) => {
 
       const totalDiscountAmount = flashDiscountAmount + voucherDiscountAmount;
 
-      // Check balance
+      // Check balances - support split payment between Saldo IN (game_balance) and Saldo Utama (user_balances)
+      const { data: gameBal } = await admin.from("game_balance").select("id, amount").eq("visitor_id", visitorId).maybeSingle();
       const { data: balance } = await admin.from("user_balances").select("id, balance").eq("visitor_id", visitorId).maybeSingle();
-      if (!balance) return Response.json({ error: "Akun saldo tidak ditemukan. Silakan login ulang di menu Saldo terlebih dahulu.", needLogin: true }, { status: 404, headers: corsHeaders });
-      if (balance.balance < finalPrice) return Response.json({ error: "Saldo tidak cukup" }, { status: 400, headers: corsHeaders });
+      const gameAmount = gameBal?.amount || 0;
+      const mainAmount = balance?.balance || 0;
 
-      // Deduct balance
-      await admin.from("user_balances").update({ balance: balance.balance - finalPrice }).eq("id", balance.id);
+      let payFromGame = 0;
+      let payFromMain = 0;
+      let sourceLabel = "";
+
+      if (paymentSource === "main") {
+        if (mainAmount < finalPrice) return Response.json({ error: "Saldo Utama tidak cukup" }, { status: 400, headers: corsHeaders });
+        payFromMain = finalPrice;
+        sourceLabel = "Saldo Utama";
+      } else if (paymentSource === "game") {
+        if (gameAmount < finalPrice) return Response.json({ error: "Saldo IN tidak cukup" }, { status: 400, headers: corsHeaders });
+        payFromGame = finalPrice;
+        sourceLabel = "Saldo IN";
+      } else {
+        // auto: gunakan Saldo IN dulu, sisanya Saldo Utama
+        if (gameAmount + mainAmount < finalPrice) return Response.json({ error: "Saldo tidak cukup (gabungan Saldo IN + Utama)" }, { status: 400, headers: corsHeaders });
+        payFromGame = Math.min(gameAmount, finalPrice);
+        payFromMain = finalPrice - payFromGame;
+        sourceLabel = payFromGame > 0 && payFromMain > 0 ? "Saldo IN + Utama" : payFromGame > 0 ? "Saldo IN" : "Saldo Utama";
+      }
+
+      // Deduct
+      if (payFromGame > 0 && gameBal) {
+        await admin.from("game_balance").update({ amount: gameAmount - payFromGame, total_spent: (gameBal as any).total_spent ? (gameBal as any).total_spent + payFromGame : payFromGame }).eq("id", gameBal.id);
+        await admin.from("game_balance_transactions").insert({ visitor_id: visitorId, type: "spend", amount: -payFromGame, description: `Beli ${pkg.label}` });
+      }
+      if (payFromMain > 0 && balance) {
+        await admin.from("user_balances").update({ balance: mainAmount - payFromMain }).eq("id", balance.id);
+      }
 
       // Update voucher used count
       if (voucherId) {
@@ -156,14 +183,16 @@ Deno.serve(async (req) => {
         voucherDiscountAmount > 0 ? `Voucher Rp${voucherDiscountAmount.toLocaleString("id-ID")}` : null,
       ].filter(Boolean);
       const desc = totalDiscountAmount > 0
-        ? `Beli ${pkg.label} (Kredit Game) - ${discountParts.join(" + ")}`
-        : `Beli ${pkg.label} (Kredit Jawaban Game)`;
-      await admin.from("balance_transactions").insert({
-        visitor_id: visitorId,
-        type: "purchase",
-        amount: finalPrice,
-        description: desc,
-      });
+        ? `Beli ${pkg.label} (Kredit Game) [${sourceLabel}] - ${discountParts.join(" + ")}`
+        : `Beli ${pkg.label} (Kredit Jawaban Game) [${sourceLabel}]`;
+      if (payFromMain > 0) {
+        await admin.from("balance_transactions").insert({
+          visitor_id: visitorId,
+          type: "purchase",
+          amount: payFromMain,
+          description: desc,
+        });
+      }
 
       // Upsert credits
       const { data: existing } = await admin.from("user_game_credits").select("*").eq("visitor_id", visitorId).maybeSingle();
@@ -208,7 +237,11 @@ Deno.serve(async (req) => {
         success: true,
         package: pkg,
         credits: finalCredits,
-        balance_remaining: balance.balance - finalPrice,
+        balance_remaining: mainAmount - payFromMain,
+        game_balance_remaining: gameAmount - payFromGame,
+        paid_from_game: payFromGame,
+        paid_from_main: payFromMain,
+        source_label: sourceLabel,
         discount_amount: totalDiscountAmount,
         flash_discount_amount: flashDiscountAmount,
         voucher_discount_amount: voucherDiscountAmount,
