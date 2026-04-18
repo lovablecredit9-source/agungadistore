@@ -414,6 +414,8 @@ export default function NeonStreakHub({ visitorId, forcedView }: Props) {
           <DailyGiftBox visitorId={visitorId} onUpdate={loadAll} />
           <SpinWheel visitorId={visitorId} coins={coins} onUpdate={loadAll} />
           <WeeklyQuests visitorId={visitorId} onUpdate={loadAll} />
+          <StreakMissionChain visitorId={visitorId} currentStreak={currentStreak} totalClaims={totalClaims} onUpdate={loadAll} />
+          <SmartReminder visitorId={visitorId} />
           <StreakBattleArena visitorId={visitorId} />
           <StreakTournament visitorId={visitorId} />
           <StreakPass visitorId={visitorId} onUpdate={loadAll} />
