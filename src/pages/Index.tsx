@@ -3098,6 +3098,34 @@ const Index = () => {
           )
         )}
 
+        {tab === "streakevent" && (
+          userBalance ? (
+            <NeonStreakHub key={`event-${userBalance.visitor_id}`} visitorId={userBalance.visitor_id} forcedView="event" />
+          ) : (
+            <LoginGate
+              title="Streak Event"
+              description="Login saldo untuk akses Daily Gift, Spin Wheel, Mystery Box, Power Hour, Battle Arena & Quest mingguan."
+              emoji="✨"
+              gradient="from-pink-500 to-purple-600"
+              onGoToLogin={() => setTab("saldo")}
+            />
+          )
+        )}
+
+        {tab === "streakshop" && (
+          userBalance ? (
+            <NeonStreakHub key={`shop-${userBalance.visitor_id}`} visitorId={userBalance.visitor_id} forcedView="shop" />
+          ) : (
+            <LoginGate
+              title="Streak Shop"
+              description="Login saldo untuk tukar Streak Koin: Freeze, Voucher, Booster XP, Frame Avatar & lainnya."
+              emoji="🛒"
+              gradient="from-purple-600 to-cyan-600"
+              onGoToLogin={() => setTab("saldo")}
+            />
+          )
+        )}
+
         <div className={tab === "game" ? "" : "hidden"}>
           {userBalance ? (
             <GameTab />
