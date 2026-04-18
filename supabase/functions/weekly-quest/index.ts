@@ -46,7 +46,7 @@ Deno.serve(async (req) => {
     }
 
     if (action === "track") {
-      const { visitorId, eventType, increment = 1 } = await req.json();
+      const { visitorId, eventType, increment = 1 } = body;
       if (!visitorId || !eventType) return Response.json({ error: "visitorId & eventType required" }, { status: 400, headers: corsHeaders });
       const weekStart = getWeekStartWIB();
 
@@ -93,7 +93,7 @@ Deno.serve(async (req) => {
     }
 
     if (action === "claim") {
-      const { visitorId, questId } = await req.json();
+      const { visitorId, questId } = body;
       if (!visitorId || !questId) return Response.json({ error: "visitorId & questId required" }, { status: 400, headers: corsHeaders });
       const weekStart = getWeekStartWIB();
 
