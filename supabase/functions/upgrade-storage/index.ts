@@ -35,6 +35,7 @@ Deno.serve(async (request) => {
     const legacyTierName = body.tier_name;
     const legacyPrice = body.price;
     const pin = body.pin;
+    const paymentSource: "auto" | "game" | "main" = body.paymentSource || "auto";
 
     if (!visitorId) {
       return Response.json({ error: "Visitor ID diperlukan" }, { status: 400, headers: corsHeaders });
@@ -81,44 +82,67 @@ Deno.serve(async (request) => {
       return Response.json({ error: "Data tidak lengkap" }, { status: 400, headers: corsHeaders });
     }
 
-    const { data: balanceRow, error: balanceError } = await admin
+    const { data: gameBal } = await admin.from("game_balance").select("id, amount, total_spent").eq("visitor_id", visitorId).maybeSingle();
+    const { data: balanceRow } = await admin
       .from("user_balances")
       .select("id, balance")
       .eq("visitor_id", visitorId)
       .maybeSingle();
 
-    if (balanceError || !balanceRow) {
+    if (!balanceRow && !gameBal) {
       return Response.json({ error: "Akun saldo tidak ditemukan" }, { status: 404, headers: corsHeaders });
     }
 
-    if (balanceRow.balance < price) {
-      return Response.json(
-        { error: `Saldo tidak cukup. Butuh Rp${price.toLocaleString("id-ID")}, saldo Rp${balanceRow.balance.toLocaleString("id-ID")}` },
-        { status: 400, headers: corsHeaders },
-      );
+    const gameAmount = gameBal?.amount || 0;
+    const mainAmount = balanceRow?.balance || 0;
+
+    let payFromGame = 0;
+    let payFromMain = 0;
+    let sourceLabel = "";
+    if (paymentSource === "main") {
+      if (mainAmount < price) return Response.json({ error: `Saldo Utama tidak cukup. Butuh Rp${price.toLocaleString("id-ID")}, saldo Rp${mainAmount.toLocaleString("id-ID")}` }, { status: 400, headers: corsHeaders });
+      payFromMain = price;
+      sourceLabel = "Saldo Utama";
+    } else if (paymentSource === "game") {
+      if (gameAmount < price) return Response.json({ error: `Saldo IN tidak cukup. Butuh Rp${price.toLocaleString("id-ID")}, Saldo IN Rp${gameAmount.toLocaleString("id-ID")}` }, { status: 400, headers: corsHeaders });
+      payFromGame = price;
+      sourceLabel = "Saldo IN";
+    } else {
+      if (gameAmount + mainAmount < price) {
+        return Response.json({ error: `Saldo tidak cukup. Butuh Rp${price.toLocaleString("id-ID")}, total (Saldo IN + Utama) Rp${(gameAmount + mainAmount).toLocaleString("id-ID")}` }, { status: 400, headers: corsHeaders });
+      }
+      payFromGame = Math.min(gameAmount, price);
+      payFromMain = price - payFromGame;
+      sourceLabel = payFromGame > 0 && payFromMain > 0 ? "Saldo IN + Utama" : payFromGame > 0 ? "Saldo IN" : "Saldo Utama";
     }
 
-    const newBalance = balanceRow.balance - price;
-
-    const { error: updateError } = await admin
-      .from("user_balances")
-      .update({ balance: newBalance })
-      .eq("id", balanceRow.id);
-
-    if (updateError) {
-      return Response.json({ error: "Gagal memotong saldo" }, { status: 500, headers: corsHeaders });
+    if (payFromGame > 0 && gameBal) {
+      await admin.from("game_balance").update({ amount: gameAmount - payFromGame, total_spent: (gameBal.total_spent || 0) + payFromGame }).eq("id", gameBal.id);
+      await admin.from("game_balance_transactions").insert({ visitor_id: visitorId, type: "spend", amount: -payFromGame, description: `Upgrade storage ${tierName}` });
     }
+    if (payFromMain > 0 && balanceRow) {
+      const { error: updateError } = await admin
+        .from("user_balances")
+        .update({ balance: mainAmount - payFromMain })
+        .eq("id", balanceRow.id);
+      if (updateError) {
+        return Response.json({ error: "Gagal memotong saldo" }, { status: 500, headers: corsHeaders });
+      }
+    }
+    const newBalance = mainAmount - payFromMain;
 
-    const { error: txError } = await admin.from("balance_transactions").insert({
-      visitor_id: visitorId,
-      type: "purchase",
-      amount: price,
-      description: `Upgrade penyimpanan musik ke ${tierName}`,
-    });
-
-    if (txError) {
-      await admin.from("user_balances").update({ balance: balanceRow.balance }).eq("id", balanceRow.id);
-      return Response.json({ error: "Gagal mencatat transaksi" }, { status: 500, headers: corsHeaders });
+    if (payFromMain > 0) {
+      const { error: txError } = await admin.from("balance_transactions").insert({
+        visitor_id: visitorId,
+        type: "purchase",
+        amount: payFromMain,
+        description: `Upgrade penyimpanan musik ke ${tierName} [${sourceLabel}]`,
+      });
+      if (txError) {
+        if (balanceRow) await admin.from("user_balances").update({ balance: mainAmount }).eq("id", balanceRow.id);
+        if (payFromGame > 0 && gameBal) await admin.from("game_balance").update({ amount: gameAmount }).eq("id", gameBal.id);
+        return Response.json({ error: "Gagal mencatat transaksi" }, { status: 500, headers: corsHeaders });
+      }
     }
 
     if (storageMb > 0) {
@@ -130,7 +154,7 @@ Deno.serve(async (request) => {
     }
 
     return Response.json(
-      { success: true, balance_remaining: newBalance, tier_name: tierName, storage_mb: storageMb },
+      { success: true, balance_remaining: newBalance, game_balance_remaining: gameAmount - payFromGame, paid_from_game: payFromGame, paid_from_main: payFromMain, source_label: sourceLabel, tier_name: tierName, storage_mb: storageMb },
       { headers: corsHeaders },
     );
   } catch (error) {

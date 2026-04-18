@@ -42,7 +42,7 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { action, visitorId, packageId, planDays, pin, voucherCode } = await req.json();
+    const { action, visitorId, packageId, planDays, pin, voucherCode, paymentSource = "auto" } = await req.json();
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
@@ -101,10 +101,30 @@ Deno.serve(async (req) => {
 
     const totalDiscountAmount = flashDiscountAmount + voucherDiscountAmount;
 
-    // Check balance
+    // Check balances - split between Saldo IN (game_balance) and Saldo Utama (user_balances)
+    const { data: gameBal } = await admin.from("game_balance").select("id, amount, total_spent").eq("visitor_id", visitorId).maybeSingle();
     const { data: balanceRow } = await admin.from("user_balances").select("id, balance").eq("visitor_id", visitorId).maybeSingle();
-    if (!balanceRow) return Response.json({ error: "Akun saldo tidak ditemukan" }, { status: 404, headers: corsHeaders });
-    if (balanceRow.balance < finalPrice) return Response.json({ error: "Saldo tidak cukup" }, { status: 400, headers: corsHeaders });
+    if (!balanceRow && !gameBal) return Response.json({ error: "Akun saldo tidak ditemukan" }, { status: 404, headers: corsHeaders });
+    const gameAmount = gameBal?.amount || 0;
+    const mainAmount = balanceRow?.balance || 0;
+
+    let payFromGame = 0;
+    let payFromMain = 0;
+    let sourceLabel = "";
+    if (paymentSource === "main") {
+      if (mainAmount < finalPrice) return Response.json({ error: "Saldo Utama tidak cukup" }, { status: 400, headers: corsHeaders });
+      payFromMain = finalPrice;
+      sourceLabel = "Saldo Utama";
+    } else if (paymentSource === "game") {
+      if (gameAmount < finalPrice) return Response.json({ error: "Saldo IN tidak cukup" }, { status: 400, headers: corsHeaders });
+      payFromGame = finalPrice;
+      sourceLabel = "Saldo IN";
+    } else {
+      if (gameAmount + mainAmount < finalPrice) return Response.json({ error: "Saldo tidak cukup (gabungan Saldo IN + Utama)" }, { status: 400, headers: corsHeaders });
+      payFromGame = Math.min(gameAmount, finalPrice);
+      payFromMain = finalPrice - payFromGame;
+      sourceLabel = payFromGame > 0 && payFromMain > 0 ? "Saldo IN + Utama" : payFromGame > 0 ? "Saldo IN" : "Saldo Utama";
+    }
 
     // Check existing subscription - accumulate
     const { data: existingSubs } = await admin.from("streak_subscriptions").select("id, expires_at").eq("visitor_id", visitorId).eq("is_active", true).gte("expires_at", new Date().toISOString()).order("expires_at", { ascending: false }).limit(1);
@@ -112,10 +132,16 @@ Deno.serve(async (req) => {
     const startsAt = existingSub ? new Date(existingSub.expires_at) : new Date();
     const expiresAt = new Date(startsAt.getTime() + plan.days * 24 * 60 * 60 * 1000);
 
-    // Deduct balance
-    const newBalance = balanceRow.balance - finalPrice;
-    const { error: balErr } = await admin.from("user_balances").update({ balance: newBalance }).eq("id", balanceRow.id);
-    if (balErr) return Response.json({ error: "Gagal memotong saldo" }, { status: 500, headers: corsHeaders });
+    // Deduct
+    if (payFromGame > 0 && gameBal) {
+      await admin.from("game_balance").update({ amount: gameAmount - payFromGame, total_spent: (gameBal.total_spent || 0) + payFromGame }).eq("id", gameBal.id);
+      await admin.from("game_balance_transactions").insert({ visitor_id: visitorId, type: "spend", amount: -payFromGame, description: `Beli Auto-Klaim Streak ${plan.name}` });
+    }
+    if (payFromMain > 0 && balanceRow) {
+      const { error: balErr } = await admin.from("user_balances").update({ balance: mainAmount - payFromMain }).eq("id", balanceRow.id);
+      if (balErr) return Response.json({ error: "Gagal memotong saldo" }, { status: 500, headers: corsHeaders });
+    }
+    const newBalance = mainAmount - payFromMain;
 
     // Update voucher
     if (voucherId) {
