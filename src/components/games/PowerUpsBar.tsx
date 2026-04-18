@@ -51,12 +51,15 @@ export default function PowerUpsBar({ onUseHint, onUseTimeFreeze, compact, enabl
     const onStorage = (e: StorageEvent) => {
       if (!e.key || e.key.startsWith("streak_powerups_")) refresh();
     };
+    const onPuUpdated = () => syncRefresh();
     window.addEventListener("focus", onFocus);
     window.addEventListener("storage", onStorage);
+    window.addEventListener("power-ups-updated", onPuUpdated);
     const t = setInterval(refresh, 5000);
     return () => {
       window.removeEventListener("focus", onFocus);
       window.removeEventListener("storage", onStorage);
+      window.removeEventListener("power-ups-updated", onPuUpdated);
       clearInterval(t);
     };
   }, [refresh, syncRefresh]);
