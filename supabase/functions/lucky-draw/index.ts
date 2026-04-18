@@ -11,38 +11,39 @@ const supabase = createClient(
   Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
 );
 
-// Rebalanced + ZONK seperti Slot. Hadiah max disesuaikan permintaan:
-// gems max 10, kredit max 15, streak coins max 20, saldo max 5.000
+// Rebalanced. Hadiah max: gems 10, kredit 15, streak coins 20, saldo 5.000.
+// Zonk diturunkan dari 45→30 base; booster sangat efektif menekan zonk + naikkan epic/legendary.
 const PRIZES = [
-  // ZONK (45% tanpa booster) - tipe khusus
-  { type: "none",         value: 0,    label: "Zonk! Coba lagi",       rarity: "common",    weight: 45 },
+  // ZONK base 30% tanpa booster
+  { type: "none",         value: 0,    label: "Zonk! Coba lagi",       rarity: "common",    weight: 30 },
 
-  // Hadiah kecil (umum)
-  { type: "game_credits", value: 2,    label: "2 Game Credits",        rarity: "common",    weight: 14 },
-  { type: "game_credits", value: 5,    label: "5 Game Credits",        rarity: "common",    weight: 10 },
-  { type: "streak_coins", value: 10,   label: "10 Streak Coins",       rarity: "common",    weight: 8  },
-  { type: "streak_coins", value: 20,   label: "20 Streak Coins",       rarity: "rare",     weight: 5  },
-  { type: "gems",         value: 3,    label: "3 Gems",                rarity: "common",   weight: 6  },
-  { type: "game_credits", value: 10,   label: "10 Game Credits",       rarity: "rare",     weight: 5  },
-  { type: "game_balance", value: 200,  label: "Saldo IN Rp 200",       rarity: "rare",     weight: 3  },
-  { type: "gems",         value: 6,    label: "6 Gems",                rarity: "rare",     weight: 2  },
+  // Hadiah kecil (umum) — bobot dinaikkan agar lebih sering menang
+  { type: "game_credits", value: 2,    label: "2 Game Credits",        rarity: "common",    weight: 18 },
+  { type: "game_credits", value: 5,    label: "5 Game Credits",        rarity: "common",    weight: 12 },
+  { type: "streak_coins", value: 10,   label: "10 Streak Coins",       rarity: "common",    weight: 10 },
+  { type: "streak_coins", value: 20,   label: "20 Streak Coins",       rarity: "rare",     weight: 6  },
+  { type: "gems",         value: 3,    label: "3 Gems",                rarity: "common",   weight: 7  },
+  { type: "game_credits", value: 10,   label: "10 Game Credits",       rarity: "rare",     weight: 6  },
+  { type: "game_balance", value: 200,  label: "Saldo IN Rp 200",       rarity: "rare",     weight: 4  },
+  { type: "gems",         value: 6,    label: "6 Gems",                rarity: "rare",     weight: 3  },
 
   // Hadiah menengah (langka)
-  { type: "game_credits", value: 15,   label: "15 Game Credits",       rarity: "epic",     weight: 1.5 },
-  { type: "game_balance", value: 500,  label: "Saldo IN Rp 500",       rarity: "epic",     weight: 0.4 },
-  { type: "gems",         value: 10,   label: "10 Gems",               rarity: "epic",     weight: 0.08 },
+  { type: "game_credits", value: 15,   label: "15 Game Credits",       rarity: "epic",     weight: 2   },
+  { type: "game_balance", value: 500,  label: "Saldo IN Rp 500",       rarity: "epic",     weight: 0.6 },
+  { type: "gems",         value: 10,   label: "10 Gems",               rarity: "epic",     weight: 0.12 },
 
   // Mega prize (super langka)
-  { type: "game_balance", value: 5000, label: "MEGA! Saldo IN Rp 5.000", rarity: "legendary", weight: 0.02 },
+  { type: "game_balance", value: 5000, label: "MEGA! Saldo IN Rp 5.000", rarity: "legendary", weight: 0.03 },
 ];
 
 function pickPrize(luckMultiplier = 1) {
-  // Booster mengurangi bobot ZONK + meningkatkan bobot hadiah rare/epic/legendary
+  // Booster: ZONK turun drastis (kuadrat), epic linear, legendary kuadrat
   const adjusted = PRIZES.map(p => {
     let w = p.weight;
-    if (p.type === "none") w = w / luckMultiplier;
-    else if (p.rarity === "epic") w = w * Math.sqrt(luckMultiplier);
-    else if (p.rarity === "legendary") w = w * luckMultiplier;
+    if (p.type === "none") w = w / (luckMultiplier * luckMultiplier);
+    else if (p.rarity === "rare") w = w * Math.sqrt(luckMultiplier);
+    else if (p.rarity === "epic") w = w * luckMultiplier;
+    else if (p.rarity === "legendary") w = w * luckMultiplier * luckMultiplier;
     return { ...p, _w: w };
   });
   const total = adjusted.reduce((s, r) => s + r._w, 0);
