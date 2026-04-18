@@ -15,6 +15,8 @@ import {
   getNextLevelThreshold, getCurrentLevelThreshold, type GameLevel,
 } from "./gameStore";
 import { useGameCredits, GameCreditsBadge, BuyCreditsDialog, RevealAnswerButton } from "./GameCredits";
+import PowerUpsBar from "./PowerUpsBar";
+import { applyDoubleXP } from "./gameStore";
 
 type Difficulty = "mudah" | "sedang" | "sulit";
 
@@ -129,7 +131,7 @@ export default function TebakGambarGame() {
       if (data.correct) {
         setResult("correct");
         setTimerActive(false);
-        const pts = getPointsForQuestion(questionNum);
+        const pts = applyDoubleXP(getPointsForQuestion(questionNum));
         setScore(prev => prev + pts);
         const updated = addPoints(pts);
         setPlayerData(updated);
@@ -251,6 +253,15 @@ export default function TebakGambarGame() {
           <XCircle key={i} className={`w-5 h-5 ${i < wrongCount ? "text-destructive" : "text-muted"}`} />
         ))}
       </div>
+
+      {!gameOver && (
+        <PowerUpsBar
+          enabled={!gameOver}
+          onUseExtraLife={() => setWrongCount(w => Math.max(0, w - 1))}
+          onUseHint={() => setShownHints(s => Math.min(hints.length, s + 1))}
+          onUseTimeFreeze={(s) => setTimeLeft(t => t + s)}
+        />
+      )}
 
       {error && (
         <Card className="border-destructive/50 bg-destructive/10">
