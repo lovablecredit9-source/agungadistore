@@ -6,7 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { getVisitorId } from "@/lib/visitor-id";
 import { updateGameStats } from "./GameProfile";
 import { useGameCredits, GameCreditsBadge, BuyCreditsDialog, RevealAnswerButton } from "./GameCredits";
-import PowerUpsBar from "./PowerUpsBar";
+import PowerUpsBar, { ReviveButton } from "./PowerUpsBar";
 import { applyDoubleXP } from "./gameStore";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -365,7 +365,6 @@ export default function TekaTekiV2Game() {
           {gameActive && (
             <PowerUpsBar
               enabled={gameActive}
-              onUseExtraLife={() => setWrongCount(w => Math.max(0, w - 1))}
               onUseHint={() => setRevealedHints(r => Math.min(hints.length, r + 1))}
               onUseTimeFreeze={(s) => setTimeLeft(t => t + s)}
             />
@@ -389,9 +388,17 @@ export default function TekaTekiV2Game() {
                 <p className="font-bold text-red-600">Game Over!</p>
                 <p className="text-sm font-bold">Jawaban: <span className="text-primary">{answer}</span></p>
                 {explanation && <p className="text-xs text-muted-foreground">{explanation}</p>}
-                <Button onClick={fetchPuzzle} className="gap-2 mt-2" size="sm">
-                  <RefreshCw className="w-4 h-4" /> Soal Baru
-                </Button>
+                <ReviveButton onRevive={() => {
+                  setWrongCount(w => Math.max(0, w - 1));
+                  setResult(null);
+                  setGameActive(true);
+                  setTimeLeft(t => Math.max(t, 30));
+                }} />
+                <div>
+                  <Button onClick={fetchPuzzle} className="gap-2 mt-2" size="sm">
+                    <RefreshCw className="w-4 h-4" /> Soal Baru
+                  </Button>
+                </div>
               </motion.div>
             )}
             {result === "wrong" && !gameActive && timeLeft <= 0 && wrongCount < MAX_WRONG && (

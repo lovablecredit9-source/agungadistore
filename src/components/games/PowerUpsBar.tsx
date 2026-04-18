@@ -1,6 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
 import { Heart, Lightbulb, Clock, Zap, ShoppingBag } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -9,7 +8,7 @@ import {
 } from "./gameStore";
 
 interface Props {
-  /** Dipanggil saat user pakai Nyawa Ekstra. Game harus mengurangi wrongCount -1. */
+  /** Dipanggil saat user pakai Nyawa Ekstra. (Sekarang HANYA dipakai lewat ReviveButton saat game over) */
   onUseExtraLife?: () => void;
   /** Dipanggil saat user pakai Hint. Game harus reveal hint berikutnya. */
   onUseHint?: () => void;
@@ -22,12 +21,14 @@ interface Props {
 }
 
 /**
- * Bar power-up yang muncul DI DALAM game.
- * Membaca jumlah power-up dari localStorage (yang ditambahkan saat redeem di Streak Shop)
- * lalu mengonsumsinya saat tombol diklik dan memanggil callback supaya game memberi efek
- * (kurangi wrongCount, tambah hint, tambah waktu, dst).
+ * Bar power-up yang muncul DI DALAM game (saat masih main).
+ * Sekarang HANYA menampilkan Hint & Time Freeze. Nyawa Ekstra dipindah ke
+ * ReviveButton yang muncul saat Game Over (lihat <ReviveButton/>).
+ *
+ * Filosofi: nyawa ekstra adalah "kesempatan kedua" — hanya boleh dipakai
+ * setelah benar-benar kalah, bukan dipakai sembarangan saat masih hidup.
  */
-export default function PowerUpsBar({ onUseExtraLife, onUseHint, onUseTimeFreeze, compact, enabled = true }: Props) {
+export default function PowerUpsBar({ onUseHint, onUseTimeFreeze, compact, enabled = true }: Props) {
   const { toast } = useToast();
   const [pu, setPu] = useState<PowerUpsState>(() => loadPowerUps());
   const [doubleXp, setDoubleXp] = useState(isDoubleXPActive());
@@ -37,7 +38,6 @@ export default function PowerUpsBar({ onUseExtraLife, onUseHint, onUseTimeFreeze
     setDoubleXp(isDoubleXPActive());
   }, []);
 
-  // Re-load saat tab kembali aktif & saat localStorage berubah dari tab lain (mis. setelah redeem di Streak Shop)
   useEffect(() => {
     refresh();
     const onFocus = () => refresh();
@@ -54,7 +54,7 @@ export default function PowerUpsBar({ onUseExtraLife, onUseHint, onUseTimeFreeze
     };
   }, [refresh]);
 
-  function tryUse(kind: "extra_life" | "auto_hint" | "time_freeze", cb?: (() => void) | ((s: number) => void)) {
+  function tryUse(kind: "auto_hint" | "time_freeze", cb?: (() => void) | ((s: number) => void)) {
     if (!enabled) return;
     if ((pu[kind] || 0) <= 0) {
       toast({
@@ -70,15 +70,11 @@ export default function PowerUpsBar({ onUseExtraLife, onUseHint, onUseTimeFreeze
     if (kind === "time_freeze") (cb as (s: number) => void)?.(30);
     else (cb as () => void)?.();
     toast({
-      title:
-        kind === "extra_life" ? "❤️ +1 Nyawa dipakai!"
-        : kind === "auto_hint" ? "💡 Hint dibuka!"
-        : "⏱️ +30 detik!",
+      title: kind === "auto_hint" ? "💡 Hint dibuka!" : "⏱️ +30 detik!",
     });
   }
 
   const items = ([
-    { id: "extra_life" as const, label: "Nyawa", Icon: Heart, cb: onUseExtraLife, show: !!onUseExtraLife, color: "from-red-500 to-pink-600" },
     { id: "auto_hint" as const, label: "Hint", Icon: Lightbulb, cb: onUseHint, show: !!onUseHint, color: "from-yellow-400 to-orange-500" },
     { id: "time_freeze" as const, label: "Freeze", Icon: Clock, cb: onUseTimeFreeze, show: !!onUseTimeFreeze, color: "from-cyan-400 to-blue-600" },
   ]).filter(x => x.show);
@@ -131,5 +127,59 @@ export default function PowerUpsBar({ onUseExtraLife, onUseHint, onUseTimeFreeze
         </span>
       )}
     </div>
+  );
+}
+
+/**
+ * Tombol "Hidup Lagi" yang muncul HANYA di layar Game Over.
+ * Mengkonsumsi 1 Nyawa Ekstra dan memanggil onRevive() supaya game
+ * mereset wrongCount & melanjutkan soal yang sama.
+ */
+export function ReviveButton({ onRevive }: { onRevive: () => void }) {
+  const { toast } = useToast();
+  const [pu, setPu] = useState<PowerUpsState>(() => loadPowerUps());
+
+  useEffect(() => {
+    setPu(loadPowerUps());
+  }, []);
+
+  const count = pu.extra_life || 0;
+  if (count <= 0) {
+    return (
+      <div className="flex flex-col items-center gap-1 mt-2">
+        <span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground">
+          <ShoppingBag className="w-3 h-3" /> Punya Nyawa Ekstra? Tukar di Streak Shop untuk hidup lagi
+        </span>
+      </div>
+    );
+  }
+
+  const handleClick = () => {
+    const ok = consumePowerUp("extra_life");
+    if (!ok) {
+      setPu(loadPowerUps());
+      return;
+    }
+    setPu(loadPowerUps());
+    toast({ title: "❤️ Hidup Lagi!", description: "Lanjutkan soal yang sama." });
+    onRevive();
+  };
+
+  return (
+    <motion.button
+      type="button"
+      initial={{ scale: 0.9, opacity: 0 }}
+      animate={{ scale: 1, opacity: 1 }}
+      whileTap={{ scale: 0.94 }}
+      onClick={handleClick}
+      className="mt-2 inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-extrabold text-white shadow-md bg-gradient-to-r from-red-500 to-pink-600 hover:shadow-lg hover:scale-105 ring-1 ring-white/20 transition-all"
+      title="Pakai Nyawa Ekstra untuk hidup lagi"
+    >
+      <Heart className="w-4 h-4 fill-white/40" strokeWidth={2.5} />
+      Hidup Lagi
+      <span className="min-w-[20px] text-center rounded-full px-1.5 py-0.5 text-[10px] font-black bg-white/30">
+        {count}
+      </span>
+    </motion.button>
   );
 }
