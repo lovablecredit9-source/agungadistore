@@ -124,8 +124,9 @@ Deno.serve(async (req) => {
         .update({ streak_coins: newCoins })
         .eq("id", streak.id);
       if (updErr) {
-        // Rollback balance
-        await admin.from("user_balances").update({ balance: balanceRow.balance }).eq("id", balanceRow.id);
+        // Rollback
+        if (payFromMain > 0 && balanceRow) await admin.from("user_balances").update({ balance: mainAmount }).eq("id", balanceRow.id);
+        if (payFromGame > 0 && gameBal) await admin.from("game_balance").update({ amount: gameAmount }).eq("id", gameBal.id);
         return Response.json({ error: "Gagal menambah koin streak" }, { status: 500, headers: corsHeaders });
       }
     } else {
@@ -139,7 +140,8 @@ Deno.serve(async (req) => {
         streak_coins: pkg.coins,
       });
       if (insErr) {
-        await admin.from("user_balances").update({ balance: balanceRow.balance }).eq("id", balanceRow.id);
+        if (payFromMain > 0 && balanceRow) await admin.from("user_balances").update({ balance: mainAmount }).eq("id", balanceRow.id);
+        if (payFromGame > 0 && gameBal) await admin.from("game_balance").update({ amount: gameAmount }).eq("id", gameBal.id);
         return Response.json({ error: "Gagal membuat data streak" }, { status: 500, headers: corsHeaders });
       }
     }
