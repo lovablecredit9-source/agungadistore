@@ -380,17 +380,19 @@ export default function NeonStreakHub({ visitorId }: Props) {
         />
       </div>
 
-      {/* View tabs */}
-      <div className="flex gap-1 p-1 rounded-xl bg-black/40 border border-purple-500/30">
+      {/* View tabs (5: Utama, Event, Shop, Ranking, Kalender) */}
+      <div className="grid grid-cols-5 gap-1 p-1 rounded-xl bg-black/40 border border-purple-500/30">
         {[
           { id: "main", label: "Utama", Icon: Target, cls: "icon-3d-target" },
-          { id: "leaderboard", label: "Ranking", Icon: Trophy, cls: "icon-3d-trophy" },
-          { id: "calendar", label: "Kalender", Icon: Calendar, cls: "icon-3d-target" },
+          { id: "event", label: "Event", Icon: Sparkles, cls: "icon-3d-sparkles" },
+          { id: "shop", label: "Shop", Icon: ShoppingBag, cls: "icon-3d-gift" },
+          { id: "leaderboard", label: "Rank", Icon: Trophy, cls: "icon-3d-trophy" },
+          { id: "calendar", label: "Cal", Icon: Calendar, cls: "icon-3d-target" },
         ].map(t => (
           <button
             key={t.id}
             onClick={() => setActiveView(t.id as any)}
-            className={`flex-1 py-1.5 rounded-lg text-[11px] font-black transition flex items-center justify-center gap-1.5 ${
+            className={`py-1.5 rounded-lg text-[10px] font-black transition flex flex-col items-center justify-center gap-0.5 ${
               activeView === t.id
                 ? "bg-gradient-to-r from-pink-500 to-purple-600 text-white shadow-lg"
                 : "text-white/60 hover:text-white"
@@ -407,17 +409,57 @@ export default function NeonStreakHub({ visitorId }: Props) {
 
       {activeView === "main" && (
       <>
-      {/* Batch 2: Gem Shop */}
-      <GemShop visitorId={visitorId} onUpdate={loadAll} />
+      {/* Power Hour + Insight */}
+      <div className="grid grid-cols-1 gap-3">
+        <StreakPowerHour visitorId={visitorId} />
+        <StreakInsight
+          visitorId={visitorId}
+          currentStreak={currentStreak}
+          longestStreak={longestStreak}
+          totalClaims={totalClaims}
+        />
+      </div>
 
-      {/* Batch 2: Streak Battle 1v1 */}
-      <StreakBattleArena visitorId={visitorId} onUpdate={loadAll} />
+      {/* ✨ Fitur baru: Combo Multiplier + Pet Companion */}
+      <div className="grid grid-cols-1 gap-3">
+        <StreakComboMultiplier visitorId={visitorId} currentStreak={currentStreak} />
+        <StreakPetCompanion visitorId={visitorId} currentStreak={currentStreak} />
+      </div>
 
-      {/* Batch 2: Tournament Mingguan */}
-      <StreakTournament visitorId={visitorId} />
+      {/* ✨ Lucky Spin gratis (unlock 7+) */}
+      <StreakLuckySpin visitorId={visitorId} currentStreak={currentStreak} onUpdate={loadAll} />
 
+      {/* ✨ Mission Chain 3 tahap */}
+      <StreakMissionChain visitorId={visitorId} currentStreak={currentStreak} totalClaims={totalClaims} onUpdate={loadAll} />
+
+      {/* Mystery Box (cepat akses di Utama juga) */}
+      <SmartReminder visitorId={visitorId} />
+
+      {/* Milestones */}
+      <StreakMilestones visitorId={visitorId} onUpdate={() => { loadAll(); setCelebrate({ show: true, msg: "🏆 MILESTONE!" }); }} />
+
+      {/* Leaderboard global */}
+      <StreakLeaderboard visitorId={visitorId} />
+      </>
+      )}
+
+      {activeView === "event" && (
+      <>
       {/* Daily Gift Box (7 hari) */}
       <DailyGiftBox visitorId={visitorId} onUpdate={loadAll} />
+
+      {/* Spin Wheel */}
+      <SpinWheel visitorId={visitorId} coins={coins} onUpdate={loadAll} />
+
+      {/* Power Hour + Boosters */}
+      <StreakPowerHour visitorId={visitorId} />
+      <StreakBoosters visitorId={visitorId} coins={coins} onUpdate={loadAll} />
+
+      {/* Battle Arena 1v1 */}
+      <StreakBattleArena visitorId={visitorId} onUpdate={loadAll} />
+
+      {/* Tournament Mingguan */}
+      <StreakTournament visitorId={visitorId} />
 
       {/* Streak Pass (Battle Pass) */}
       <StreakPass visitorId={visitorId} onUpdate={loadAll} />
@@ -425,17 +467,15 @@ export default function NeonStreakHub({ visitorId }: Props) {
       {/* Weekly Quests */}
       <WeeklyQuests visitorId={visitorId} onUpdate={loadAll} />
 
-      {/* Smart Reminder */}
-      <SmartReminder visitorId={visitorId} />
+      {/* Leaderboard Mingguan */}
+      <StreakLeaderboardWeekly visitorId={visitorId} />
+      </>
+      )}
 
-      {/* Spin Wheel */}
-      <SpinWheel visitorId={visitorId} coins={coins} onUpdate={loadAll} />
-
-      {/* Milestones */}
-      <StreakMilestones visitorId={visitorId} onUpdate={() => { loadAll(); setCelebrate({ show: true, msg: "🏆 MILESTONE!" }); }} />
-
-      {/* Boosters */}
-      <StreakBoosters visitorId={visitorId} coins={coins} onUpdate={loadAll} />
+      {activeView === "shop" && (
+      <>
+      {/* Gem Shop */}
+      <GemShop visitorId={visitorId} onUpdate={loadAll} />
       </>
       )}
 
