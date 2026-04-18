@@ -382,29 +382,31 @@ export default function NeonStreakHub({ visitorId, forcedView }: Props) {
         />
       </div>
 
-      {/* View tabs (5: Utama, Event, Shop, Ranking, Kalender) */}
-      <div className="grid grid-cols-5 gap-1 p-1 rounded-xl bg-black/40 border border-purple-500/30">
-        {[
-          { id: "main", label: "Utama", Icon: Target, cls: "icon-3d-target" },
-          { id: "event", label: "Event", Icon: Sparkles, cls: "icon-3d-sparkles" },
-          { id: "shop", label: "Shop", Icon: ShoppingBag, cls: "icon-3d-gift" },
-          { id: "leaderboard", label: "Rank", Icon: Trophy, cls: "icon-3d-trophy" },
-          { id: "calendar", label: "Cal", Icon: Calendar, cls: "icon-3d-target" },
-        ].map(t => (
-          <button
-            key={t.id}
-            onClick={() => setActiveView(t.id as any)}
-            className={`py-1.5 rounded-lg text-[10px] font-black transition flex flex-col items-center justify-center gap-0.5 ${
-              activeView === t.id
-                ? "bg-gradient-to-r from-pink-500 to-purple-600 text-white shadow-lg"
-                : "text-white/60 hover:text-white"
-            }`}
-          >
-            <t.Icon className={`w-3.5 h-3.5 ${activeView === t.id ? "" : t.cls}`} strokeWidth={2.5} />
-            {t.label}
-          </button>
-        ))}
-      </div>
+      {/* View tabs (only when not forced via top-level navigation) */}
+      {!forcedView && (
+        <div className="grid grid-cols-5 gap-1 p-1 rounded-xl bg-black/40 border border-purple-500/30">
+          {[
+            { id: "main", label: "Utama", Icon: Target, cls: "icon-3d-target" },
+            { id: "event", label: "Event", Icon: Sparkles, cls: "icon-3d-sparkles" },
+            { id: "shop", label: "Shop", Icon: ShoppingBag, cls: "icon-3d-gift" },
+            { id: "leaderboard", label: "Rank", Icon: Trophy, cls: "icon-3d-trophy" },
+            { id: "calendar", label: "Cal", Icon: Calendar, cls: "icon-3d-target" },
+          ].map(t => (
+            <button
+              key={t.id}
+              onClick={() => setActiveView(t.id as any)}
+              className={`py-1.5 rounded-lg text-[10px] font-black transition flex flex-col items-center justify-center gap-0.5 ${
+                activeView === t.id
+                  ? "bg-gradient-to-r from-pink-500 to-purple-600 text-white shadow-lg"
+                  : "text-white/60 hover:text-white"
+              }`}
+            >
+              <t.Icon className={`w-3.5 h-3.5 ${activeView === t.id ? "" : t.cls}`} strokeWidth={2.5} />
+              {t.label}
+            </button>
+          ))}
+        </div>
+      )}
 
       {activeView === "leaderboard" && <StreakLeaderboardWeekly visitorId={visitorId} />}
       {activeView === "calendar" && <StreakCalendar visitorId={visitorId} />}
