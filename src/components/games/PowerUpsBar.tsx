@@ -77,11 +77,11 @@ export default function PowerUpsBar({ onUseExtraLife, onUseHint, onUseTimeFreeze
     });
   }
 
-  const items: { id: "extra_life" | "auto_hint" | "time_freeze"; label: string; Icon: any; cb?: any; show: boolean; color: string }[] = [
-    { id: "extra_life", label: "Nyawa", Icon: Heart, cb: onUseExtraLife, show: !!onUseExtraLife, color: "from-red-500 to-pink-600" },
-    { id: "auto_hint", label: "Hint", Icon: Lightbulb, cb: onUseHint, show: !!onUseHint, color: "from-yellow-400 to-orange-500" },
-    { id: "time_freeze", label: "Freeze", Icon: Clock, cb: onUseTimeFreeze, show: !!onUseTimeFreeze, color: "from-cyan-400 to-blue-600" },
-  ].filter(x => x.show);
+  const items = ([
+    { id: "extra_life" as const, label: "Nyawa", Icon: Heart, cb: onUseExtraLife, show: !!onUseExtraLife, color: "from-red-500 to-pink-600" },
+    { id: "auto_hint" as const, label: "Hint", Icon: Lightbulb, cb: onUseHint, show: !!onUseHint, color: "from-yellow-400 to-orange-500" },
+    { id: "time_freeze" as const, label: "Freeze", Icon: Clock, cb: onUseTimeFreeze, show: !!onUseTimeFreeze, color: "from-cyan-400 to-blue-600" },
+  ]).filter(x => x.show);
 
   if (items.length === 0 && !doubleXp) return null;
 
