@@ -15,31 +15,32 @@ const supabase = createClient(
 export const LUCK_TIERS = [
   { tier: 2,  name: "x2 Lumayan",      tagline: "Sedikit lebih hoki",
     durations: [
-      { hours: 2,  price: 1000 },
-      { hours: 6,  price: 2500 },
-      { hours: 10, price: 4000 },
+      { hours: 2,  price: 2000 },
+      { hours: 6,  price: 5000 },
+      { hours: 10, price: 8000 },
     ] },
   { tier: 6,  name: "x6 Mantap",       tagline: "Hoki naik signifikan",
     durations: [
-      { hours: 2,  price: 3000 },
-      { hours: 6,  price: 7000 },
-      { hours: 10, price: 11000 },
+      { hours: 2,  price: 12000 },
+      { hours: 6,  price: 25000 },
+      { hours: 10, price: 38000 },
     ] },
   { tier: 8,  name: "x8 Mantap+",      tagline: "Lebih sering jackpot",
     durations: [
-      { hours: 2,  price: 5000 },
-      { hours: 6,  price: 11000 },
-      { hours: 10, price: 17000 },
+      { hours: 2,  price: 20000 },
+      { hours: 6,  price: 45000 },
+      { hours: 10, price: 70000 },
     ] },
   { tier: 10, name: "x10 Luar Biasa",  tagline: "Hoki ekstrim",
     durations: [
-      { hours: 2,  price: 8000 },
-      { hours: 6,  price: 17000 },
-      { hours: 10, price: 25000 },
+      { hours: 2,  price: 35000 },
+      { hours: 6,  price: 80000 },
+      { hours: 10, price: 125000 },
     ] },
   { tier: 20, name: "x20 Plus Ultra",  tagline: "Semalam super hoki",
     durations: [
-      { hours: 10, price: 50000 },
+      { hours: 6,  price: 200000 },
+      { hours: 10, price: 350000 },
     ] },
 ];
 
