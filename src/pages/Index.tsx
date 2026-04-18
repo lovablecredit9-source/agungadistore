@@ -550,6 +550,15 @@ const Index = () => {
     fetchNotifications();
     fetchDeposits();
     checkPinStatus();
+    // Auto-claim streak harian (server-side cek subscription aktif). Throttle 1x per hari per browser.
+    if (activeBalanceVisitorId) {
+      const todayKey = `auto_streak_claimed_${new Date().toISOString().slice(0, 10)}`;
+      if (!localStorage.getItem(todayKey)) {
+        supabase.functions.invoke("auto-claim-streak", { body: {} })
+          .then(() => localStorage.setItem(todayKey, "1"))
+          .catch(() => {});
+      }
+    }
   }, [activeBalanceVisitorId]);
 
   // Auto-open product from URL ?id= param

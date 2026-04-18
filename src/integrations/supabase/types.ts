@@ -672,6 +672,66 @@ export type Database = {
         }
         Relationships: []
       }
+      game_balance: {
+        Row: {
+          amount: number
+          created_at: string
+          id: string
+          total_earned: number
+          total_spent: number
+          updated_at: string
+          visitor_id: string
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          id?: string
+          total_earned?: number
+          total_spent?: number
+          updated_at?: string
+          visitor_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          id?: string
+          total_earned?: number
+          total_spent?: number
+          updated_at?: string
+          visitor_id?: string
+        }
+        Relationships: []
+      }
+      game_balance_transactions: {
+        Row: {
+          amount: number
+          created_at: string
+          description: string | null
+          id: string
+          reference_id: string | null
+          type: string
+          visitor_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          description?: string | null
+          id?: string
+          reference_id?: string | null
+          type?: string
+          visitor_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          description?: string | null
+          id?: string
+          reference_id?: string | null
+          type?: string
+          visitor_id?: string
+        }
+        Relationships: []
+      }
       game_discount_vouchers: {
         Row: {
           code: string
@@ -1095,6 +1155,48 @@ export type Database = {
           score?: number
           visitor_id?: string
           voucher_code?: string | null
+        }
+        Relationships: []
+      }
+      mine_sweeper_history: {
+        Row: {
+          bet_credits: number
+          created_at: string
+          id: string
+          mines_count: number
+          multiplier: number
+          payout_label: string
+          payout_type: string
+          payout_value: number
+          status: string
+          tiles_revealed: number
+          visitor_id: string
+        }
+        Insert: {
+          bet_credits?: number
+          created_at?: string
+          id?: string
+          mines_count?: number
+          multiplier?: number
+          payout_label?: string
+          payout_type?: string
+          payout_value?: number
+          status?: string
+          tiles_revealed?: number
+          visitor_id: string
+        }
+        Update: {
+          bet_credits?: number
+          created_at?: string
+          id?: string
+          mines_count?: number
+          multiplier?: number
+          payout_label?: string
+          payout_type?: string
+          payout_value?: number
+          status?: string
+          tiles_revealed?: number
+          visitor_id?: string
         }
         Relationships: []
       }
