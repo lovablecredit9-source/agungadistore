@@ -337,6 +337,50 @@ export default function NeonStreakHub({ visitorId }: Props) {
         </div>
       </div>
 
+      {/* Avatar Evolution */}
+      <StreakAvatarEvolution visitorId={visitorId} currentStreak={currentStreak} longestStreak={longestStreak} />
+
+      {/* View tabs */}
+      <div className="flex gap-1 p-1 rounded-xl bg-black/40 border border-purple-500/30">
+        {[
+          { id: "main", label: "🎯 Utama" },
+          { id: "leaderboard", label: "🏆 Ranking" },
+          { id: "calendar", label: "📅 Kalender" },
+        ].map(t => (
+          <button
+            key={t.id}
+            onClick={() => setActiveView(t.id as any)}
+            className={`flex-1 py-1.5 rounded-lg text-[11px] font-black transition ${
+              activeView === t.id
+                ? "bg-gradient-to-r from-pink-500 to-purple-600 text-white shadow-lg"
+                : "text-white/60 hover:text-white"
+            }`}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      {activeView === "leaderboard" && <StreakLeaderboardWeekly visitorId={visitorId} />}
+      {activeView === "calendar" && <StreakCalendar visitorId={visitorId} />}
+
+      {activeView === "main" && (
+      <>
+      {/* Spin Wheel */}
+      <SpinWheel visitorId={visitorId} coins={coins} onUpdate={loadAll} />
+
+      {/* Milestones */}
+      <StreakMilestones visitorId={visitorId} onUpdate={() => { loadAll(); setCelebrate({ show: true, msg: "🏆 MILESTONE!" }); }} />
+
+      {/* Boosters */}
+      <StreakBoosters visitorId={visitorId} coins={coins} onUpdate={loadAll} />
+      </>
+      )}
+
+      {/* Celebration overlay */}
+      <CelebrationOverlay show={celebrate.show} message={celebrate.msg} onComplete={() => setCelebrate({ show: false, msg: "" })} />
+
+
       {/* Mystery Box */}
       <button
         onClick={openMysteryBox}
