@@ -1163,9 +1163,6 @@ export default function DailyStreak({ visitorId }: DailyStreakProps) {
           </div>
         </div>
       )}
-
-      {/* 🎮 Neon Hub: Multiplier · Mystery Box · Streak Shop · Weekly Challenges */}
-      <NeonStreakHub visitorId={visitorId} />
     </div>
   );
 }
