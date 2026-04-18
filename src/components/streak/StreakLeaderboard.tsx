@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { motion } from "framer-motion";
-import { Trophy, Crown, Medal, Award, Loader2, UserPlus, Pencil, Camera } from "lucide-react";
+import { Trophy, Crown, Medal, Award, Loader2, UserPlus, Pencil, Camera, Flame } from "lucide-react";
 import { getVisitorId } from "@/lib/visitor-id";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -214,8 +214,8 @@ export default function StreakLeaderboard() {
                         {entry.display_name} {isMe && <span className="text-primary">(Kamu)</span>}
                       </p>
                       <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
-                        <span className="flex items-center gap-0.5">🔥 {entry.current_streak}</span>
-                        <span className="flex items-center gap-0.5">🏆 {entry.longest_streak}</span>
+                        <span className="flex items-center gap-1"><Flame className="w-3 h-3 icon-3d-flame" strokeWidth={2.5} /> {entry.current_streak}</span>
+                        <span className="flex items-center gap-1"><Trophy className="w-3 h-3 icon-3d-trophy" strokeWidth={2.5} /> {entry.longest_streak}</span>
                       </div>
                     </div>
                     <div className="text-right shrink-0">

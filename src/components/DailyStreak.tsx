@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Check, Trophy, Star, Gift, Zap, ShoppingCart, Loader2, Lock, X, Shield } from "lucide-react";
+import { Check, Trophy, Star, Gift, Zap, ShoppingCart, Loader2, Lock, X, Shield, Flame, PartyPopper } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Input } from "@/components/ui/input";
 import { Sparkles } from "lucide-react";
@@ -725,9 +725,9 @@ export default function DailyStreak({ visitorId }: DailyStreakProps) {
               ) : !canClaim ? (
                 <><Check className="w-4 h-4" /> Sudah Diklaim Hari Ini</>
               ) : streakBroken ? (
-                <span className="flex items-center gap-2">🔥 Mulai Streak Baru!</span>
+                <span className="flex items-center gap-2"><Flame className="w-4 h-4 icon-3d-flame" strokeWidth={2.5} /> Mulai Streak Baru!</span>
               ) : (
-                <span className="flex items-center gap-2">🔥 Klaim Hari Ini!</span>
+                <span className="flex items-center gap-2"><Flame className="w-4 h-4 icon-3d-flame" strokeWidth={2.5} /> Klaim Hari Ini!</span>
               )}
             </Button>
           </motion.div>
@@ -794,7 +794,8 @@ export default function DailyStreak({ visitorId }: DailyStreakProps) {
           <motion.span
             animate={{ rotate: [0, 15, -15, 0] }}
             transition={{ duration: 2, repeat: Infinity, repeatDelay: 3 }}
-          >✨</motion.span>
+            className="inline-flex"
+          ><Sparkles className="w-4 h-4 icon-3d-sparkles" strokeWidth={2.5} /></motion.span>
         </h4>
 
         {/* Horizontal fire row like reference image */}
@@ -971,7 +972,7 @@ export default function DailyStreak({ visitorId }: DailyStreakProps) {
           <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-2 flex items-center gap-2 mb-1">
             <Zap className="w-4 h-4 text-yellow-500 animate-pulse" />
             <div>
-              <p className="text-[10px] font-bold text-yellow-600">🔥 Flash Sale Aktif{flashSaleLabel ? ` — ${flashSaleLabel}` : ""}!</p>
+              <p className="text-[10px] font-bold text-yellow-600 flex items-center gap-1"><Flame className="w-3 h-3 icon-3d-flame" strokeWidth={2.5} /> Flash Sale Aktif{flashSaleLabel ? ` — ${flashSaleLabel}` : ""}!</p>
               <p className="text-[9px] text-muted-foreground">Harga spesial berlaku sampai {new Date(flashSaleEnd).toLocaleString("id-ID")}</p>
             </div>
           </div>
@@ -1111,7 +1112,7 @@ export default function DailyStreak({ visitorId }: DailyStreakProps) {
                   <motion.div animate={{ scale: [1, 1.05, 1] }} transition={{ duration: 1.5, repeat: Infinity }}>
                     <Sparkles className="w-5 h-5 mx-auto mb-1 text-yellow-500" />
                   </motion.div>
-                  <h3 className="text-xl font-extrabold">🎉 Milestone Tercapai!</h3>
+                  <h3 className="text-xl font-extrabold flex items-center justify-center gap-2"><PartyPopper className="w-6 h-6 icon-3d-party" strokeWidth={2.5} /> Milestone Tercapai!</h3>
                 </motion.div>
                 <p className="text-sm text-muted-foreground">
                   Kamu berhasil streak <span className="font-bold text-foreground">{showMilestone.label}</span>!

@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { Lock, Award } from "lucide-react";
+import { Lock, Award, PartyPopper } from "lucide-react";
 import { ACHIEVEMENTS, type Achievement } from "./streakRewards";
 import { Button } from "@/components/ui/button";
 
@@ -115,7 +115,7 @@ export default function AchievementBadges({ unlockedIds, newlyUnlocked, onCloseN
                   onClick={onCloseNewly}
                   className="w-full bg-gradient-to-r from-purple-500 via-pink-500 to-orange-500 text-white font-bold"
                 >
-                  Keren! 🎉
+                  Keren! <PartyPopper className="w-4 h-4 ml-1.5 icon-3d-party" strokeWidth={2.5} />
                 </Button>
               </div>
             </motion.div>
