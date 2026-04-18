@@ -345,6 +345,13 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer, onPlayE
 
   useEffect(() => { fetchSongs(); fetchRedeemedStorages(); checkPinExists(); fetchLikedSongs(); fetchStoragePlans(); }, []);
 
+  // Refresh storage saat ditebus dari Streak Shop / tempat lain
+  useEffect(() => {
+    const onStorageUpdated = () => fetchRedeemedStorages();
+    window.addEventListener("music-storage-updated", onStorageUpdated);
+    return () => window.removeEventListener("music-storage-updated", onStorageUpdated);
+  }, []);
+
   async function fetchStoragePlans() {
     const { data } = await supabase.from("storage_packages" as any).select("*").eq("is_active", true).order("sort_order", { ascending: true });
     if (data && (data as any[]).length > 0) {
@@ -1442,14 +1449,19 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer, onPlayE
                   const isExpired = rs.expires_at && new Date(rs.expires_at) < new Date();
                   const storageMb = rs.storage_mb;
                   const label = storageMb >= 1024 * 1024 ? `${(storageMb / (1024 * 1024)).toFixed(0)} TB` : storageMb >= 1024 ? `${(storageMb / 1024).toFixed(0)} GB` : `${storageMb} MB`;
+                  const daysLeft = rs.expires_at ? Math.max(0, Math.ceil((new Date(rs.expires_at).getTime() - Date.now()) / (1000 * 60 * 60 * 24))) : null;
                   return (
                     <div key={rs.id} className={`flex items-center justify-between text-[11px] rounded-lg px-3 py-2 border ${isExpired ? "bg-destructive/5 border-destructive/20 opacity-60" : "bg-primary/5 border-primary/10"}`}>
                       <div>
                         <span className="font-bold">+{label}</span>
                         <span className="text-muted-foreground ml-1">• {rs.voucher_code}</span>
                       </div>
-                      <div className="text-[10px]">
-                        {isExpired ? <span className="text-destructive font-bold">Expired</span> : rs.expires_at ? <span className="text-muted-foreground">{formatDate(rs.expires_at)}</span> : <span className="text-muted-foreground">Permanen</span>}
+                      <div className="text-[10px] flex items-center gap-1">
+                        {isExpired
+                          ? <span className="text-destructive font-bold">Expired</span>
+                          : daysLeft !== null
+                            ? <><Clock className="w-3 h-3 text-muted-foreground" /><span className={`font-semibold ${daysLeft <= 3 ? "text-destructive" : "text-muted-foreground"}`}>{daysLeft}h lagi</span></>
+                            : <span className="text-muted-foreground">Permanen</span>}
                       </div>
                     </div>
                   );

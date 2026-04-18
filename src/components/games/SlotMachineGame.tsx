@@ -13,10 +13,37 @@ const SYMBOLS = ["🍒", "🍋", "🍇", "🔔", "⭐", "💎", "7️⃣"];
 
 type Tier = "hemat" | "sedang" | "besar";
 const TIERS: { key: Tier; label: string; cost: number; gradient: string; desc: string }[] = [
-  { key: "hemat",  label: "Hemat",  cost: 1,  gradient: "from-emerald-500 to-teal-600",  desc: "Jackpot Rp 1.000" },
-  { key: "sedang", label: "Sedang", cost: 5,  gradient: "from-blue-500 to-indigo-600",   desc: "Jackpot Rp 2.000 + Bonus" },
-  { key: "besar",  label: "Besar",  cost: 10, gradient: "from-amber-500 to-rose-600",    desc: "Mega Jackpot Rp 5.000" },
+  { key: "hemat",  label: "Hemat",  cost: 1,  gradient: "from-emerald-500 to-teal-600",  desc: "Jackpot Rp 100" },
+  { key: "sedang", label: "Sedang", cost: 5,  gradient: "from-blue-500 to-indigo-600",   desc: "Jackpot Rp 200 + Bonus" },
+  { key: "besar",  label: "Besar",  cost: 10, gradient: "from-amber-500 to-rose-600",    desc: "Mega Jackpot Rp 500" },
 ];
+
+// Tabel hadiah per tier — ditampilkan ringkas di bawah mesin
+const TIER_REWARDS: Record<Tier, { sym: string; reward: string }[]> = {
+  hemat: [
+    { sym: "7️⃣7️⃣7️⃣", reward: "MAX Saldo Rp 100" },
+    { sym: "💎💎💎", reward: "5 kredit" },
+    { sym: "⭐⭐⭐", reward: "4 kredit" },
+    { sym: "🔔🔔🔔", reward: "3 kredit" },
+    { sym: "🍇🍇🍇", reward: "3 kredit" },
+    { sym: "🍋🍋🍋", reward: "2 kredit" },
+    { sym: "🍒🍒🍒", reward: "2 kredit" },
+  ],
+  sedang: [
+    { sym: "7️⃣7️⃣7️⃣", reward: "MAX Saldo Rp 200" },
+    { sym: "💎💎💎", reward: "Saldo Rp 100" },
+    { sym: "⭐⭐⭐", reward: "8 kredit" },
+    { sym: "🔔🔔🔔", reward: "+50 MB storage" },
+    { sym: "🍇🍇🍇", reward: "+1 Nyawa Ekstra" },
+  ],
+  besar: [
+    { sym: "7️⃣7️⃣7️⃣", reward: "MAX Saldo Rp 500" },
+    { sym: "💎💎💎", reward: "Saldo Rp 200" },
+    { sym: "⭐⭐⭐", reward: "15 kredit" },
+    { sym: "🔔🔔🔔", reward: "+100 MB storage" },
+    { sym: "🍇🍇🍇", reward: "+2 Nyawa Ekstra" },
+  ],
+};
 
 export default function SlotMachineGame() {
   const visitorId = typeof window !== "undefined" ? localStorage.getItem("balance_visitor_id") : null;
@@ -136,12 +163,25 @@ export default function SlotMachineGame() {
         </motion.div>
       )}
 
-      <div className="text-xs text-muted-foreground space-y-1 bg-muted/50 p-3 rounded-lg">
-        <div className="font-bold mb-1">💰 Hadiah per Tier (kredit difokuskan, saldo dibatasi):</div>
-        <div><span className="font-bold text-emerald-600">Hemat (1):</span> 7️⃣7️⃣7️⃣ → MAX Saldo Rp 100 · 💎 → 5 kredit · ⭐ → 4 · 🔔/🍇 → 3 · 🍋/🍒 → 2</div>
-        <div><span className="font-bold text-blue-600">Sedang (5):</span> 7️⃣7️⃣7️⃣ → MAX Saldo Rp 200 · 💎 → Rp 100 · ⭐ → 8 kredit · 🔔 → +50MB · 🍇 → +1 Nyawa</div>
-        <div><span className="font-bold text-amber-600">Besar (10):</span> 7️⃣7️⃣7️⃣ → MAX Saldo Rp 500 · 💎 → Rp 200 · ⭐ → 15 kredit · 🔔 → +100MB · 🍇 → +2 Nyawa</div>
-        <div className="pt-1 italic opacity-80">Saldo tetap langka walau Server Luck aktif. Booster hanya menaikkan peluang simbol langka.</div>
+      {/* Tabel hadiah dinamis: hanya tier yang dipilih */}
+      <div className="bg-muted/40 rounded-xl p-3 border border-border/50">
+        <div className="flex items-center justify-between mb-2">
+          <div className="text-xs font-extrabold uppercase tracking-wide">
+            💰 Hadiah Tier <span className={`bg-gradient-to-r ${tierInfo.gradient} bg-clip-text text-transparent`}>{tierInfo.label}</span>
+          </div>
+          <div className="text-[10px] text-muted-foreground">3 simbol sama</div>
+        </div>
+        <div className="grid grid-cols-1 gap-1.5">
+          {TIER_REWARDS[tier].map((r, i) => (
+            <div key={i} className="flex items-center justify-between text-xs bg-background/60 rounded-lg px-3 py-1.5 border border-border/40">
+              <span className="font-bold tracking-wider">{r.sym}</span>
+              <span className="text-muted-foreground font-medium">{r.reward}</span>
+            </div>
+          ))}
+        </div>
+        <div className="text-[10px] text-muted-foreground italic mt-2 opacity-80">
+          Saldo tetap langka walau Server Luck aktif. Booster hanya menaikkan peluang simbol langka.
+        </div>
       </div>
     </div>
   );
