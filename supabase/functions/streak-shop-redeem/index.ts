@@ -79,18 +79,19 @@ Deno.serve(async (req) => {
       });
       rewardSummary = `+${item.reward_value} Credit Game ditambahkan!`;
     } else if (item.reward_type === "music_storage") {
-      // DIRECTLY ADD MUSIC STORAGE to user_music_storage (no voucher needed)
+      // DIRECTLY ADD MUSIC STORAGE to user_music_storage (berlaku 30 hari)
       rewardCode = generateCode("MUS");
+      const expires30d = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
       const { error: insErr } = await admin.from("user_music_storage").insert({
         visitor_id: visitorId,
         storage_mb: item.reward_value,
         voucher_code: rewardCode,
-        expires_at: null,
+        expires_at: expires30d,
       });
       if (insErr) {
         return Response.json({ error: `Gagal menambah storage: ${insErr.message}` }, { status: 500, headers: corsHeaders });
       }
-      rewardSummary = `+${item.reward_value}MB storage musik ditambahkan!`;
+      rewardSummary = `+${item.reward_value}MB storage musik ditambahkan! Berlaku 30 hari.`;
       rewardCode = null; // don't show code to user, it's already applied
     } else if (item.reward_type === "streak_freeze") {
       const { error: updErr } = await admin.from("daily_streaks").update({
