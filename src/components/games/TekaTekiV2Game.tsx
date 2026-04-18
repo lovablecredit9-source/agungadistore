@@ -6,6 +6,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { getVisitorId } from "@/lib/visitor-id";
 import { updateGameStats } from "./GameProfile";
 import { useGameCredits, GameCreditsBadge, BuyCreditsDialog, RevealAnswerButton } from "./GameCredits";
+import PowerUpsBar from "./PowerUpsBar";
+import { applyDoubleXP } from "./gameStore";
 import { useToast } from "@/hooks/use-toast";
 import {
   loadGameData, addPoints, getPointsForQuestion,
@@ -140,7 +142,7 @@ export default function TekaTekiV2Game() {
       setTimeout(() => {
         if (guess === answer) {
           if (timerRef.current) clearInterval(timerRef.current);
-          const pts = getPointsForQuestion(questionNumber);
+          const pts = applyDoubleXP(getPointsForQuestion(questionNumber));
           setResult("correct");
           setGameActive(false);
           setEarnedPoints(pts);
@@ -358,6 +360,15 @@ export default function TekaTekiV2Game() {
           {/* Wrong count */}
           {wrongCount > 0 && gameActive && (
             <p className="text-xs text-muted-foreground text-center">Salah: {wrongCount}/{MAX_WRONG}</p>
+          )}
+
+          {gameActive && (
+            <PowerUpsBar
+              enabled={gameActive}
+              onUseExtraLife={() => setWrongCount(w => Math.max(0, w - 1))}
+              onUseHint={() => setRevealedHints(r => Math.min(hints.length, r + 1))}
+              onUseTimeFreeze={(s) => setTimeLeft(t => t + s)}
+            />
           )}
 
           {/* Results */}

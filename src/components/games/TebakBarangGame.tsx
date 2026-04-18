@@ -7,6 +7,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { getVisitorId } from "@/lib/visitor-id";
 import { updateGameStats } from "./GameProfile";
 import { useGameCredits, GameCreditsBadge, BuyCreditsDialog, RevealAnswerButton } from "./GameCredits";
+import PowerUpsBar from "./PowerUpsBar";
+import { applyDoubleXP } from "./gameStore";
 import { useToast } from "@/hooks/use-toast";
 import {
   loadGameData, addPoints, getPointsForQuestion,
@@ -99,7 +101,7 @@ export default function TebakBarangGame() {
 
     if (g === a || a.includes(g) || g.includes(a)) {
       if (timerRef.current) clearInterval(timerRef.current);
-      const pts = getPointsForQuestion(questionNumber);
+      const pts = applyDoubleXP(getPointsForQuestion(questionNumber));
       setResult("correct");
       setGameActive(false);
       setEarnedPoints(pts);
@@ -211,6 +213,15 @@ export default function TebakBarangGame() {
         <GameCreditsBadge credits={credits} isUnlimited={isUnlimited} />
         {category && <span className="text-[10px] bg-amber-500/10 text-amber-600 rounded-full px-2 py-0.5 flex items-center gap-1"><Tag className="w-2.5 h-2.5" /> {category}</span>}
       </div>
+
+      {gameActive && (
+        <PowerUpsBar
+          enabled={gameActive}
+          onUseExtraLife={() => setWrongCount(w => Math.max(0, w - 1))}
+          onUseHint={() => setRevealedHints(r => Math.min(hints.length, r + 1))}
+          onUseTimeFreeze={(s) => setTimeLeft(t => t + s)}
+        />
+      )}
 
       {loading ? (
         <div className="flex flex-col items-center gap-3 py-10">

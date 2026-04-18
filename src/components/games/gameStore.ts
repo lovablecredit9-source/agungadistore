@@ -127,3 +127,67 @@ export function useDailyFreePlay(): boolean {
 }
 
 export { MAX_FREE_PLAYS };
+
+// =====================================================
+// POWER-UPS (dibeli di Streak Shop, dipakai di game)
+// =====================================================
+export interface PowerUpsState {
+  extra_life: number;
+  auto_hint: number;
+  time_freeze: number;
+  double_xp_until: string | null;
+}
+
+const POWERUPS_KEY_PREFIX = "streak_powerups_";
+
+function getPowerUpsKey(): string | null {
+  if (typeof window === "undefined") return null;
+  const vid = localStorage.getItem("balance_visitor_id");
+  if (!vid) {
+    // fallback ke visitor id lokal
+    try {
+      const local = localStorage.getItem("visitor_id");
+      if (local) return `${POWERUPS_KEY_PREFIX}${local}`;
+    } catch {}
+    return null;
+  }
+  return `${POWERUPS_KEY_PREFIX}${vid}`;
+}
+
+export function loadPowerUps(): PowerUpsState {
+  const empty: PowerUpsState = { extra_life: 0, auto_hint: 0, time_freeze: 0, double_xp_until: null };
+  try {
+    const key = getPowerUpsKey();
+    if (!key) return empty;
+    const raw = localStorage.getItem(key);
+    if (raw) return { ...empty, ...JSON.parse(raw) };
+  } catch {}
+  return empty;
+}
+
+export function savePowerUps(s: PowerUpsState) {
+  try {
+    const key = getPowerUpsKey();
+    if (key) localStorage.setItem(key, JSON.stringify(s));
+  } catch {}
+}
+
+export type PowerUpKind = "extra_life" | "auto_hint" | "time_freeze";
+
+export function consumePowerUp(kind: PowerUpKind): boolean {
+  const s = loadPowerUps();
+  if ((s[kind] || 0) <= 0) return false;
+  s[kind] = (s[kind] || 0) - 1;
+  savePowerUps(s);
+  return true;
+}
+
+export function isDoubleXPActive(): boolean {
+  const s = loadPowerUps();
+  if (!s.double_xp_until) return false;
+  return new Date(s.double_xp_until).getTime() > Date.now();
+}
+
+export function applyDoubleXP(points: number): number {
+  return isDoubleXPActive() ? points * 2 : points;
+}
