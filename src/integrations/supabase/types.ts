@@ -677,6 +677,7 @@ export type Database = {
           description: string | null
           display_name: string
           email: string | null
+          gems: number
           id: string
           is_guest: boolean
           password_hash: string | null
@@ -690,6 +691,7 @@ export type Database = {
           description?: string | null
           display_name?: string
           email?: string | null
+          gems?: number
           id?: string
           is_guest?: boolean
           password_hash?: string | null
@@ -703,6 +705,7 @@ export type Database = {
           description?: string | null
           display_name?: string
           email?: string | null
+          gems?: number
           id?: string
           is_guest?: boolean
           password_hash?: string | null
@@ -745,6 +748,75 @@ export type Database = {
           updated_at?: string
           visitor_id?: string
           wins?: number
+        }
+        Relationships: []
+      }
+      gem_packages: {
+        Row: {
+          bonus_gems: number
+          created_at: string
+          gems: number
+          icon: string
+          id: string
+          is_active: boolean
+          name: string
+          price: number
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          bonus_gems?: number
+          created_at?: string
+          gems?: number
+          icon?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          price?: number
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          bonus_gems?: number
+          created_at?: string
+          gems?: number
+          icon?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          price?: number
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      gem_transactions: {
+        Row: {
+          amount: number
+          created_at: string
+          description: string
+          id: string
+          reference_id: string | null
+          type: string
+          visitor_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          description?: string
+          id?: string
+          reference_id?: string | null
+          type?: string
+          visitor_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          description?: string
+          id?: string
+          reference_id?: string | null
+          type?: string
+          visitor_id?: string
         }
         Relationships: []
       }
@@ -1862,6 +1934,54 @@ export type Database = {
           is_active?: boolean
           min_streak?: number
           stage_name?: string
+        }
+        Relationships: []
+      }
+      streak_battles: {
+        Row: {
+          bet_gems: number
+          challenger_id: string
+          challenger_score: number
+          created_at: string
+          expires_at: string
+          id: string
+          opponent_id: string | null
+          opponent_score: number
+          prize_gems: number
+          resolved_at: string | null
+          status: string
+          updated_at: string
+          winner_id: string | null
+        }
+        Insert: {
+          bet_gems?: number
+          challenger_id: string
+          challenger_score?: number
+          created_at?: string
+          expires_at?: string
+          id?: string
+          opponent_id?: string | null
+          opponent_score?: number
+          prize_gems?: number
+          resolved_at?: string | null
+          status?: string
+          updated_at?: string
+          winner_id?: string | null
+        }
+        Update: {
+          bet_gems?: number
+          challenger_id?: string
+          challenger_score?: number
+          created_at?: string
+          expires_at?: string
+          id?: string
+          opponent_id?: string | null
+          opponent_score?: number
+          prize_gems?: number
+          resolved_at?: string | null
+          status?: string
+          updated_at?: string
+          winner_id?: string | null
         }
         Relationships: []
       }
