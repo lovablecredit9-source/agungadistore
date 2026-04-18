@@ -285,6 +285,8 @@ export default function NeonStreakHub({ visitorId, forcedView }: Props) {
       try { localStorage.setItem(`streak_powerups_${visitorId}`, JSON.stringify(next)); } catch {}
 
       toast({ title: `⚡ ${p.name} aktif!`, description: p.desc });
+      await syncPowerUpsFromServer();
+      window.dispatchEvent(new CustomEvent("power-ups-updated"));
       loadAll();
     } finally {
       setRedeemingPower(null);
