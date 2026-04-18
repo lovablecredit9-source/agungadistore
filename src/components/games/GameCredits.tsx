@@ -193,6 +193,7 @@ export function BuyCreditsDialog({ visitorId, onPurchased }: BuyCreditsDialogPro
           packageId: pkgId,
           pin: pinValue || undefined,
           voucherCode: voucherValid ? voucherCode.trim() : undefined,
+          paymentSource,
         },
       });
       if (error) {
