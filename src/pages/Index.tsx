@@ -51,6 +51,7 @@ import VibrantHeroSection from "@/components/VibrantHeroSection";
 import BalanceAuth from "@/components/BalanceAuth";
 import GameTab from "@/components/GameTab";
 import PlusTab from "@/components/PlusTab";
+import { useGameBalance } from "@/components/games/GameBalance";
 import LiveClock from "@/components/LiveClock";
 import LoginGate from "@/components/LoginGate";
 import WhatsAppChat from "@/components/WhatsAppChat";
