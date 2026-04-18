@@ -91,7 +91,7 @@ interface Challenge {
   is_locked?: boolean;
 }
 
-export default function NeonStreakHub({ visitorId }: Props) {
+export default function NeonStreakHub({ visitorId, forcedView }: Props) {
   const { toast } = useToast();
   const [coins, setCoins] = useState(0);
   const [multiplier, setMultiplier] = useState(1);
