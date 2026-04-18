@@ -18,6 +18,7 @@ import SlotMachineGame from "@/components/games/SlotMachineGame";
 import Match3Game from "@/components/games/Match3Game";
 import LuckyDrawGame from "@/components/games/LuckyDrawGame";
 import MineSweeperGame from "@/components/games/MineSweeperGame";
+import TebakLaguGame from "@/components/games/TebakLaguGame";
 import WeeklyLeaderboard from "@/components/WeeklyLeaderboard";
 import FlashSaleBanner from "@/components/FlashSaleBanner";
 import { useGameCredits, GameCreditsBadge, BuyCreditsDialog } from "@/components/games/GameCredits";
@@ -46,7 +47,8 @@ import gameSlotImg from "@/assets/game-slot.png";
 import gameMatch3Img from "@/assets/game-match3.png";
 import gameLuckyDrawImg from "@/assets/game-lucky-draw.png";
 import gameMineImg from "@/assets/game-mine.png";
-type GameMode = "menu" | "suit" | "tebak" | "tebak_gambar" | "teka_teki" | "tebak_angka" | "tebak_barang" | "ular_tangga" | "ludo" | "kuis" | "teka_teki_v2" | "pilihan_ganda" | "scratch" | "slot" | "match3" | "lucky_draw" | "mine";
+import gameTebakLaguImg from "@/assets/game-tebak-lagu.png";
+type GameMode = "menu" | "suit" | "tebak" | "tebak_gambar" | "teka_teki" | "tebak_angka" | "tebak_barang" | "ular_tangga" | "ludo" | "kuis" | "teka_teki_v2" | "pilihan_ganda" | "scratch" | "slot" | "match3" | "lucky_draw" | "mine" | "tebak_lagu";
 
 const GAMES: { mode: GameMode; title: string; desc: string; image: string; gradient: string }[] = [
   { mode: "scratch", title: "Scratch Card", desc: "Gosok hadiah harian", image: gameScratchImg, gradient: "from-violet-500 to-fuchsia-600" },
@@ -65,6 +67,7 @@ const GAMES: { mode: GameMode; title: string; desc: string; image: string; gradi
   { mode: "ular_tangga", title: "Ular Tangga", desc: "Papan klasik vs AI", image: gameUlarTanggaImg, gradient: "from-emerald-500 to-green-700" },
   { mode: "ludo", title: "Ludo King", desc: "Siapa duluan finish?", image: gameLudoImg, gradient: "from-pink-500 to-rose-600" },
   { mode: "pilihan_ganda", title: "Pilihan Ganda", desc: "Pilih jawaban benar!", image: gamePilihanGandaImg, gradient: "from-violet-500 to-purple-600" },
+  { mode: "tebak_lagu", title: "Tebak Lagu", desc: "Tebak dari potongan lirik 🎵", image: gameTebakLaguImg, gradient: "from-pink-500 to-purple-600" },
 ];
 
 const GAME_COMPONENTS: Record<string, React.ComponentType> = {
@@ -84,6 +87,7 @@ const GAME_COMPONENTS: Record<string, React.ComponentType> = {
   match3: Match3Game,
   lucky_draw: LuckyDrawGame,
   mine: MineSweeperGame,
+  tebak_lagu: TebakLaguGame,
 };
 
 export default function GameTab() {
