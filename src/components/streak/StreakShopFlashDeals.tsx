@@ -4,6 +4,7 @@ import { Flame, Clock, Tag, ShoppingBag, Crown, Lock, Loader2, Check } from "luc
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
+import { syncPowerUpsFromServer } from "@/components/games/gameStore";
 
 interface Deal {
   id: string;
@@ -95,6 +96,9 @@ export default function StreakShopFlashDeals({ visitorId, onUpdate }: Props) {
       if (error) throw error;
       if ((data as any)?.error) throw new Error((data as any).error);
       toast({ title: `⚡ ${deal.name} Berhasil!`, description: (data as any).rewardSummary });
+      // Refresh power-up cache di localStorage agar bertambah di game
+      await syncPowerUpsFromServer();
+      window.dispatchEvent(new CustomEvent("power-ups-updated"));
       load();
       onUpdate?.();
     } catch (e) {

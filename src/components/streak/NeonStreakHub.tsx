@@ -33,6 +33,7 @@ import StreakMissionChain from "./StreakMissionChain";
 import StreakLeaderboard from "./StreakLeaderboard";
 import StreakEventLive from "./StreakEventLive";
 import StreakShopFlashDeals from "./StreakShopFlashDeals";
+import { syncPowerUpsFromServer } from "@/components/games/gameStore";
 
 // Strip leading emoji from a title and map to a 3D Lucide icon
 const EMOJI_ICON_MAP: Array<{ regex: RegExp; Icon: any; cls: string }> = [
@@ -221,6 +222,8 @@ export default function NeonStreakHub({ visitorId, forcedView }: Props) {
         setReward(data.reward);
         setBoxOpened(true);
         trackDailyMission(visitorId, "mystery_box", 1);
+        await syncPowerUpsFromServer();
+        window.dispatchEvent(new CustomEvent("power-ups-updated"));
         loadAll();
       }
     } finally {
@@ -239,6 +242,8 @@ export default function NeonStreakHub({ visitorId, forcedView }: Props) {
           title: `🛒 ${item.name} ditebus!`,
           description: data.rewardCode ? `Kode: ${data.rewardCode}` : (data.rewardSummary || "Reward sudah ditambahkan!"),
         });
+        await syncPowerUpsFromServer();
+        window.dispatchEvent(new CustomEvent("power-ups-updated"));
         loadAll();
         // Beritahu komponen lain (PlaylistTab, GameCredits) supaya refresh
         if (item.reward_type === "music_storage") {
@@ -280,6 +285,8 @@ export default function NeonStreakHub({ visitorId, forcedView }: Props) {
       try { localStorage.setItem(`streak_powerups_${visitorId}`, JSON.stringify(next)); } catch {}
 
       toast({ title: `⚡ ${p.name} aktif!`, description: p.desc });
+      await syncPowerUpsFromServer();
+      window.dispatchEvent(new CustomEvent("power-ups-updated"));
       loadAll();
     } finally {
       setRedeemingPower(null);

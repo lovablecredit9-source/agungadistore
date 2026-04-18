@@ -72,6 +72,9 @@ export default function DailyGiftBox({ visitorId, onUpdate }: Props) {
       load();
       // Track weekly quest + daily mission
       import("@/lib/daily-mission").then(m => m.trackDailyMission(visitorId, "gift_box", 1)).catch(() => {});
+      // Refresh power-ups cache (kalau hadiahnya power-up)
+      import("@/components/games/gameStore").then(m => m.syncPowerUpsFromServer()).catch(() => {});
+      window.dispatchEvent(new CustomEvent("power-ups-updated"));
     } catch (e) {
       toast({ title: "Gagal klaim", description: e instanceof Error ? e.message : "Error", variant: "destructive" });
     } finally {

@@ -69,6 +69,8 @@ export default function StreakBoosters({ visitorId, coins, onUpdate }: Props) {
       toast({ title: `⚡ ${b.name} aktif!`, description: b.desc });
       load();
       onUpdate?.();
+      import("@/components/games/gameStore").then(m => m.syncPowerUpsFromServer()).catch(() => {});
+      window.dispatchEvent(new CustomEvent("power-ups-updated"));
     }
     setActivating(null);
   }
