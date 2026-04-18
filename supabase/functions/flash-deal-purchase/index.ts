@@ -10,6 +10,37 @@ function getWIBDateStr(): string {
   return wib.toISOString().split("T")[0];
 }
 
+// User dianggap Premium kalau punya Streak Pass Premium (season aktif) ATAU Game Season Pass Premium
+async function checkPremium(admin: ReturnType<typeof createClient>, visitorId: string): Promise<boolean> {
+  // 1. Game Season Pass premium
+  const { data: gamePass } = await admin
+    .from("game_season_pass")
+    .select("is_premium")
+    .eq("visitor_id", visitorId)
+    .maybeSingle();
+  if (gamePass?.is_premium) return true;
+
+  // 2. Streak Pass premium pada season yang sedang aktif
+  const { data: season } = await admin
+    .from("streak_pass_seasons")
+    .select("id")
+    .eq("is_active", true)
+    .order("starts_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (season) {
+    const { data: progress } = await admin
+      .from("streak_pass_progress")
+      .select("is_premium")
+      .eq("visitor_id", visitorId)
+      .eq("season_id", season.id)
+      .maybeSingle();
+    if (progress?.is_premium) return true;
+  }
+
+  return false;
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
@@ -29,26 +60,30 @@ Deno.serve(async (req) => {
     const today = getWIBDateStr();
 
     if (action === "list") {
-      const [{ data: deals }, { data: redemptions }, { data: pass }] = await Promise.all([
+      const [{ data: deals }, { data: redemptions }, isPremium] = await Promise.all([
         admin.from("streak_flash_deals").select("*").eq("is_active", true).order("sort_order", { ascending: true }),
         admin
           .from("flash_deal_redemptions")
           .select("deal_id")
           .eq("visitor_id", visitorId)
           .eq("redemption_date", today),
-        admin.from("game_season_pass").select("is_premium").eq("visitor_id", visitorId).maybeSingle(),
+        checkPremium(admin, visitorId),
       ]);
 
-      const isPremium = !!pass?.is_premium;
       const claimedToday = new Set((redemptions ?? []).map((r: any) => r.deal_id));
 
       return Response.json({
-        deals: (deals ?? []).map((d: any) => ({
-          ...d,
-          claimed_today: claimedToday.has(d.id),
-          can_purchase: isPremium && !claimedToday.has(d.id),
-          locked_reason: !isPremium ? "premium_required" : (claimedToday.has(d.id) ? "daily_limit" : null),
-        })),
+        deals: (deals ?? []).map((d: any) => {
+          const needsPremium = !!d.requires_premium;
+          const claimed = claimedToday.has(d.id);
+          const premiumOk = !needsPremium || isPremium;
+          return {
+            ...d,
+            claimed_today: claimed,
+            can_purchase: premiumOk && !claimed,
+            locked_reason: !premiumOk ? "premium_required" : (claimed ? "daily_limit" : null),
+          };
+        }),
         is_premium: isPremium,
         date: today,
       }, { headers: corsHeaders });
@@ -61,11 +96,11 @@ Deno.serve(async (req) => {
       const { data: deal } = await admin.from("streak_flash_deals").select("*").eq("id", dealId).eq("is_active", true).maybeSingle();
       if (!deal) return Response.json({ error: "Flash deal tidak ditemukan" }, { status: 404, headers: corsHeaders });
 
-      // Premium check
+      // Premium check (kalau deal butuh premium)
       if (deal.requires_premium) {
-        const { data: pass } = await admin.from("game_season_pass").select("is_premium").eq("visitor_id", visitorId).maybeSingle();
-        if (!pass?.is_premium) {
-          return Response.json({ error: "Aktifkan VIP / Premium Pass dulu untuk beli flash deal!" }, { status: 403, headers: corsHeaders });
+        const isPremium = await checkPremium(admin, visitorId);
+        if (!isPremium) {
+          return Response.json({ error: "Aktifkan Premium dulu (Streak Pass Premium atau Season Pass Premium) untuk beli flash deal ini!" }, { status: 403, headers: corsHeaders });
         }
       }
 
