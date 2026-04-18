@@ -443,7 +443,7 @@ export default function NeonStreakHub({ visitorId, forcedView }: Props) {
 
       {activeView === "shop" && (
         <div className="space-y-3">
-          <StreakShopFlashDeals />
+          <StreakShopFlashDeals visitorId={visitorId} onUpdate={loadAll} />
           <GemShop visitorId={visitorId} onUpdate={loadAll} />
           <Button
             onClick={() => setShowShop(true)}
