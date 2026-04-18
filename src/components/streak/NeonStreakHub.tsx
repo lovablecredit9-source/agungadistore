@@ -20,6 +20,9 @@ import DailyGiftBox from "./DailyGiftBox";
 import StreakPass from "./StreakPass";
 import WeeklyQuests from "./WeeklyQuests";
 import SmartReminder from "./SmartReminder";
+import GemShop from "./GemShop";
+import StreakBattleArena from "./StreakBattleArena";
+import StreakTournament from "./StreakTournament";
 
 // Strip leading emoji from a title and map to a 3D Lucide icon
 const EMOJI_ICON_MAP: Array<{ regex: RegExp; Icon: any; cls: string }> = [
@@ -370,6 +373,15 @@ export default function NeonStreakHub({ visitorId }: Props) {
 
       {activeView === "main" && (
       <>
+      {/* Batch 2: Gem Shop */}
+      <GemShop visitorId={visitorId} onUpdate={loadAll} />
+
+      {/* Batch 2: Streak Battle 1v1 */}
+      <StreakBattleArena visitorId={visitorId} onUpdate={loadAll} />
+
+      {/* Batch 2: Tournament Mingguan */}
+      <StreakTournament visitorId={visitorId} />
+
       {/* Daily Gift Box (7 hari) */}
       <DailyGiftBox visitorId={visitorId} onUpdate={loadAll} />
 
