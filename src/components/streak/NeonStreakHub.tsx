@@ -409,6 +409,43 @@ export default function NeonStreakHub({ visitorId, forcedView }: Props) {
       {activeView === "leaderboard" && <StreakLeaderboardWeekly visitorId={visitorId} />}
       {activeView === "calendar" && <StreakCalendar visitorId={visitorId} />}
 
+      {activeView === "event" && (
+        <div className="space-y-3">
+          <DailyGiftBox visitorId={visitorId} onUpdate={loadAll} />
+          <SpinWheel visitorId={visitorId} coins={coins} onUpdate={loadAll} />
+          <WeeklyQuests visitorId={visitorId} onUpdate={loadAll} />
+          <StreakBattleArena visitorId={visitorId} />
+          <StreakTournament visitorId={visitorId} />
+          <StreakPass visitorId={visitorId} onUpdate={loadAll} />
+          <StreakBoosters visitorId={visitorId} onUpdate={loadAll} />
+          <div className="cyber-card rounded-2xl p-4">
+            <div className="flex items-center gap-2 mb-3">
+              <Gift className="w-5 h-5 icon-3d-gift" strokeWidth={2.5} />
+              <span className="text-sm font-black neon-gradient-text tracking-wider uppercase">Mystery Box Harian</span>
+            </div>
+            <Button
+              onClick={openMysteryBox}
+              disabled={opening || boxOpened}
+              className="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white font-black"
+            >
+              {opening ? <Loader2 className="w-4 h-4 animate-spin" /> : boxOpened ? "Sudah Dibuka Hari Ini" : "Buka Mystery Box"}
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {activeView === "shop" && (
+        <div className="space-y-3">
+          <GemShop visitorId={visitorId} onUpdate={loadAll} />
+          <Button
+            onClick={() => setShowShop(true)}
+            className="w-full bg-gradient-to-r from-pink-500 to-purple-600 text-white font-black h-12"
+          >
+            <ShoppingBag className="w-5 h-5 mr-2" /> Buka Streak Shop
+          </Button>
+        </div>
+      )}
+
       {activeView === "main" && (
       <>
       {/* ✨ Combo Multiplier + Pet Companion */}
