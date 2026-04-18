@@ -2,6 +2,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Lock, Award, PartyPopper } from "lucide-react";
 import { ACHIEVEMENTS, type Achievement } from "./streakRewards";
 import { Button } from "@/components/ui/button";
+import { EmojiIcon } from "./emojiToIcon";
 
 interface Props {
   unlockedIds: string[];
@@ -58,9 +59,9 @@ export default function AchievementBadges({ unlockedIds, newlyUnlocked, onCloseN
                   <motion.div
                     animate={{ rotate: [0, 8, -8, 0] }}
                     transition={{ duration: 2, repeat: Infinity, repeatDelay: 3, delay: i * 0.2 }}
-                    className="text-xl leading-none"
+                    className="leading-none"
                   >
-                    {a.emoji}
+                    <EmojiIcon emoji={a.emoji} className="w-5 h-5" />
                   </motion.div>
                 ) : (
                   <Lock className="w-4 h-4 text-muted-foreground/50" />
@@ -102,7 +103,7 @@ export default function AchievementBadges({ unlockedIds, newlyUnlocked, onCloseN
                   animate={{ scale: 1, rotate: 0 }}
                   transition={{ type: "spring", damping: 10 }}
                 >
-                  <span className="text-7xl block">{newlyUnlocked.emoji}</span>
+                  <EmojiIcon emoji={newlyUnlocked.emoji} className="w-20 h-20 mx-auto" />
                 </motion.div>
 
                 <div>
