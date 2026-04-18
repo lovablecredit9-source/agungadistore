@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
-import { Flame, Zap, Trophy, Sparkles, Clock, Users, TrendingUp, Star } from "lucide-react";
+import { Flame, Zap, Trophy, Sparkles, Clock, Users, TrendingUp, Star, Loader2 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 interface Props {
   visitorId: string;
@@ -8,16 +9,19 @@ interface Props {
   totalClaims: number;
 }
 
-function getWeekEnd(): Date {
-  const now = new Date();
-  const wibOffset = 7 * 60;
-  const local = new Date(now.getTime() + (wibOffset + now.getTimezoneOffset()) * 60000);
-  const day = local.getDay(); // 0 Sun
-  const daysUntilSun = (7 - day) % 7 || 7;
-  const end = new Date(local);
-  end.setDate(local.getDate() + daysUntilSun);
-  end.setHours(0, 0, 0, 0);
-  return new Date(end.getTime() - (wibOffset + now.getTimezoneOffset()) * 60000);
+interface LiveData {
+  weekStart: string;
+  weeklyParticipants: number;
+  totalRegistered: number;
+  questEngaged: number;
+  totalClaimsWeek: number;
+  jackpotPool: number;
+  leaderboard: Array<{ visitor_id: string; current_streak: number; total_claims: number; streak_coins: number }>;
+}
+
+function getWeekEndFromStart(weekStartIso: string): Date {
+  const start = new Date(weekStartIso);
+  return new Date(start.getTime() + 7 * 24 * 3600 * 1000);
 }
 
 function fmt(ms: number) {
@@ -32,36 +36,58 @@ function fmt(ms: number) {
 
 export default function StreakEventLive({ visitorId, currentStreak, totalClaims }: Props) {
   const [now, setNow] = useState(Date.now());
-  const weekEnd = useMemo(() => getWeekEnd(), []);
-  const [participants, setParticipants] = useState(0);
+  const [live, setLive] = useState<LiveData | null>(null);
+  const [loading, setLoading] = useState(true);
 
+  // Tick clock
   useEffect(() => {
     const t = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(t);
   }, []);
 
-  // Pseudo-random but stable participant counter (per visitor + hour)
+  // Load REAL data from backend, refresh every 30s
   useEffect(() => {
-    const base = 1247;
-    const hour = Math.floor(Date.now() / 3_600_000);
-    const seed = (visitorId.charCodeAt(0) || 7) + hour;
-    const variance = (seed * 31) % 437;
-    setParticipants(base + variance + Math.floor(currentStreak * 3.7));
-  }, [visitorId, currentStreak, now]);
+    let mounted = true;
+    const load = async () => {
+      try {
+        const { data, error } = await supabase.functions.invoke("streak-event-live", { body: {} });
+        if (error) throw error;
+        if (mounted) setLive(data as LiveData);
+      } catch (e) {
+        console.error("[event-live]", e);
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    };
+    load();
+    const t = setInterval(load, 30_000);
+    return () => { mounted = false; clearInterval(t); };
+  }, [visitorId]);
 
+  const weekEnd = useMemo(() => live ? getWeekEndFromStart(live.weekStart) : new Date(Date.now() + 7 * 86400_000), [live]);
+  const weekStart = useMemo(() => live ? new Date(live.weekStart).getTime() : Date.now(), [live]);
   const remaining = weekEnd.getTime() - now;
   const totalWeek = 7 * 86400 * 1000;
-  const elapsed = totalWeek - remaining;
+  const elapsed = Math.max(0, now - weekStart);
   const progressPct = Math.min(100, Math.max(0, (elapsed / totalWeek) * 100));
 
-  // Jackpot grows as the week progresses + bonus from user activity
-  const jackpotBase = 5000;
-  const jackpotPool = Math.floor(jackpotBase + progressPct * 50 + totalClaims * 12 + currentStreak * 25);
-
-  // Live multiplier window (every 6 hours we get a 30 min surge)
+  // Power surge window (every 6 hours, 30 min)
   const minuteOfDay = (Math.floor(now / 60000) % (6 * 60));
   const isSurge = minuteOfDay < 30;
   const surgeRemaining = isSurge ? (30 - minuteOfDay) * 60000 : (6 * 60 - minuteOfDay) * 60000;
+
+  if (loading) {
+    return (
+      <div className="rounded-2xl border-2 border-pink-500/50 p-6 bg-gradient-to-br from-pink-950 via-purple-950 to-indigo-950 flex items-center justify-center gap-2">
+        <Loader2 className="w-4 h-4 animate-spin text-pink-300" />
+        <span className="text-xs text-pink-200 font-bold">Memuat data live event...</span>
+      </div>
+    );
+  }
+
+  const realParticipants = live?.weeklyParticipants ?? 0;
+  const totalRegistered = live?.totalRegistered ?? 0;
+  const jackpotPool = live?.jackpotPool ?? 5000;
 
   return (
     <motion.div
@@ -69,7 +95,6 @@ export default function StreakEventLive({ visitorId, currentStreak, totalClaims 
       animate={{ opacity: 1, y: 0 }}
       className="relative overflow-hidden rounded-2xl border-2 border-pink-500/50 p-4 bg-gradient-to-br from-pink-950 via-purple-950 to-indigo-950 shadow-[0_0_30px_rgba(236,72,153,0.35)]"
     >
-      {/* animated bg glow */}
       <motion.div
         className="absolute -top-10 -right-10 w-40 h-40 rounded-full bg-pink-500/30 blur-3xl"
         animate={{ scale: [1, 1.3, 1], opacity: [0.3, 0.6, 0.3] }}
@@ -88,7 +113,7 @@ export default function StreakEventLive({ visitorId, currentStreak, totalClaims 
               <Flame className="w-6 h-6 text-pink-400 drop-shadow-[0_0_8px_rgba(236,72,153,0.8)]" strokeWidth={2.5} />
             </motion.div>
             <div>
-              <div className="text-[10px] font-black tracking-widest text-pink-300 uppercase">LIVE EVENT</div>
+              <div className="text-[10px] font-black tracking-widest text-pink-300 uppercase">LIVE EVENT · DATA ASLI</div>
               <div className="text-base font-black text-white">Mega Streak Festival</div>
             </div>
           </div>
@@ -98,11 +123,11 @@ export default function StreakEventLive({ visitorId, currentStreak, totalClaims 
           </div>
         </div>
 
-        {/* Jackpot */}
+        {/* Jackpot from REAL activity */}
         <div className="mb-3 p-3 rounded-xl bg-gradient-to-r from-yellow-500/20 to-orange-500/20 border border-yellow-400/40">
           <div className="flex items-center gap-1.5 mb-1">
             <Trophy className="w-3.5 h-3.5 text-yellow-300" strokeWidth={2.5} />
-            <span className="text-[10px] font-black text-yellow-200 tracking-wider uppercase">Jackpot Pool</span>
+            <span className="text-[10px] font-black text-yellow-200 tracking-wider uppercase">Jackpot Pool · Real-time</span>
           </div>
           <motion.div
             key={jackpotPool}
@@ -113,12 +138,9 @@ export default function StreakEventLive({ visitorId, currentStreak, totalClaims 
             {jackpotPool.toLocaleString("id-ID")} <span className="text-sm">koin</span>
           </motion.div>
           <div className="mt-2 h-1.5 rounded-full bg-black/40 overflow-hidden">
-            <motion.div
-              className="h-full bg-gradient-to-r from-yellow-400 to-orange-500"
-              animate={{ width: `${progressPct}%` }}
-            />
+            <motion.div className="h-full bg-gradient-to-r from-yellow-400 to-orange-500" animate={{ width: `${progressPct}%` }} />
           </div>
-          <div className="text-[9px] text-yellow-200/70 mt-1">Pool naik tiap quest selesai · dibagi rata Top 100</div>
+          <div className="text-[9px] text-yellow-200/70 mt-1">Pool naik tiap pemain klaim · dibagi rata Top 10</div>
         </div>
 
         {/* Surge */}
@@ -139,22 +161,22 @@ export default function StreakEventLive({ visitorId, currentStreak, totalClaims 
           </div>
         </div>
 
-        {/* Stats grid */}
+        {/* REAL Stats grid */}
         <div className="grid grid-cols-3 gap-2">
           <div className="p-2 rounded-lg bg-black/40 border border-purple-500/30 text-center">
             <Users className="w-3.5 h-3.5 mx-auto mb-0.5 text-purple-300" strokeWidth={2.5} />
-            <div className="text-sm font-black text-white tabular-nums">{participants.toLocaleString("id-ID")}</div>
-            <div className="text-[8px] text-white/60 uppercase tracking-wider">Pemain</div>
+            <div className="text-sm font-black text-white tabular-nums">{realParticipants.toLocaleString("id-ID")}</div>
+            <div className="text-[8px] text-white/60 uppercase tracking-wider">Pemain Aktif</div>
           </div>
           <div className="p-2 rounded-lg bg-black/40 border border-pink-500/30 text-center">
             <Star className="w-3.5 h-3.5 mx-auto mb-0.5 text-pink-300" strokeWidth={2.5} />
             <div className="text-sm font-black text-white tabular-nums">{currentStreak}</div>
-            <div className="text-[8px] text-white/60 uppercase tracking-wider">Streak</div>
+            <div className="text-[8px] text-white/60 uppercase tracking-wider">Streak Kamu</div>
           </div>
           <div className="p-2 rounded-lg bg-black/40 border border-cyan-500/30 text-center">
             <TrendingUp className="w-3.5 h-3.5 mx-auto mb-0.5 text-cyan-300" strokeWidth={2.5} />
-            <div className="text-sm font-black text-white tabular-nums">+{Math.floor(progressPct)}%</div>
-            <div className="text-[8px] text-white/60 uppercase tracking-wider">Bonus</div>
+            <div className="text-sm font-black text-white tabular-nums">{totalRegistered.toLocaleString("id-ID")}</div>
+            <div className="text-[8px] text-white/60 uppercase tracking-wider">Total Member</div>
           </div>
         </div>
 
