@@ -114,7 +114,8 @@ export default function NeonStreakHub({ visitorId, forcedView }: Props) {
   const [longestStreak, setLongestStreak] = useState(0);
   const [totalClaims, setTotalClaims] = useState(0);
   const [celebrate, setCelebrate] = useState<{ show: boolean; msg: string }>({ show: false, msg: "" });
-  const [activeView, setActiveView] = useState<"main" | "event" | "shop" | "leaderboard" | "calendar">("main");
+  const [activeView, setActiveView] = useState<"main" | "event" | "shop" | "leaderboard" | "calendar">(forcedView || "main");
+  useEffect(() => { if (forcedView) setActiveView(forcedView); }, [forcedView]);
 
   const POWER_UPS = [
     { id: "extra_life", name: "Nyawa Ekstra", desc: "+1 nyawa untuk semua game", icon: Heart, cost: 30, color: "from-red-500 to-pink-600" },
