@@ -4573,6 +4573,8 @@ const Index = () => {
             { key: "publik" as Tab, icon: Globe, label: "Publik", gradient: "from-teal-500 to-emerald-400" },
             { key: "sponsor" as Tab, icon: Megaphone, label: "Sponsor", gradient: "from-amber-500 to-yellow-400" },
             { key: "streak" as Tab, icon: CalendarDays, label: "Streak", gradient: "from-orange-600 to-red-500" },
+            { key: "streakevent" as Tab, icon: Sparkles, label: "S.Event", gradient: "from-pink-500 to-purple-600" },
+            { key: "streakshop" as Tab, icon: ShoppingBag, label: "S.Shop", gradient: "from-purple-600 to-cyan-600" },
             { key: "game" as Tab, icon: Gamepad2, label: "Game", gradient: "from-indigo-500 to-violet-400" },
             { key: "plus" as Tab, icon: Sparkles, label: "Plus", gradient: "from-yellow-500 to-orange-400" },
             { key: "update" as Tab, icon: RefreshCw, label: "Update", gradient: "from-cyan-500 to-blue-400" },
