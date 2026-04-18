@@ -275,7 +275,9 @@ export default function NeonStreakHub({ visitorId }: Props) {
               <div key={ch.id} className="bg-black/30 rounded-xl p-3 border border-pink-500/20">
                 <div className="flex items-start justify-between mb-2">
                   <div className="flex-1 min-w-0 pr-3">
-                    <div className="font-extrabold text-white text-sm">{ch.title}</div>
+                    <div className="font-extrabold text-white text-sm flex items-center gap-1.5">
+                      {(() => { const p = parseTitleIcon(ch.title); return (<>{p.Icon && <p.Icon className={`w-4 h-4 ${p.cls}`} strokeWidth={2.5} />}<span>{p.text}</span></>); })()}
+                    </div>
                     <div className="text-[10px] text-white/60">{ch.description}</div>
                   </div>
                   <div className="text-[10px] font-black tabular-nums whitespace-nowrap flex items-center gap-1"><span className="neon-text-yellow">+{ch.reward_coins}</span><Coins className="w-3 h-3 icon-3d-coin" strokeWidth={2.5} /></div>
