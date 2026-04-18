@@ -85,6 +85,17 @@ export default function NeonStreakHub({ visitorId }: Props) {
   const [topupPin, setTopupPin] = useState("");
   const [topupPkgId, setTopupPkgId] = useState<string | null>(null);
   const [toppingUp, setToppingUp] = useState(false);
+  const [history, setHistory] = useState<any[]>([]);
+  const [powerUps, setPowerUps] = useState<{ extra_life: number; double_xp_until: string | null; time_freeze: number; auto_hint: number }>({ extra_life: 0, double_xp_until: null, time_freeze: 0, auto_hint: 0 });
+  const [redeemingPower, setRedeemingPower] = useState<string | null>(null);
+
+  const POWER_UPS = [
+    { id: "extra_life", name: "Nyawa Ekstra", desc: "+1 nyawa untuk semua game", icon: Heart, cost: 30, color: "from-red-500 to-pink-600" },
+    { id: "auto_hint", name: "Petunjuk Auto", desc: "1x hint otomatis di game", icon: Lightbulb, cost: 25, color: "from-yellow-400 to-orange-500" },
+    { id: "time_freeze", name: "Freeze Waktu", desc: "Pause timer 30 detik", icon: Clock, cost: 40, color: "from-cyan-400 to-blue-600" },
+    { id: "double_xp", name: "Double XP 1 Jam", desc: "2x poin selama 60 menit", icon: Zap, cost: 80, color: "from-purple-500 to-fuchsia-600" },
+    { id: "shield", name: "Shield Streak", desc: "Lindungi streak 1 hari", icon: Shield, cost: 60, color: "from-emerald-400 to-teal-600" },
+  ];
 
   function getToday() {
     const wib = new Date(Date.now() + 7 * 3600 * 1000);
