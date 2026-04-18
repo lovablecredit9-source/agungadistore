@@ -595,6 +595,47 @@ export type Database = {
         }
         Relationships: []
       }
+      flash_deal_redemptions: {
+        Row: {
+          cost_paid: number
+          created_at: string
+          deal_id: string
+          id: string
+          redemption_date: string
+          reward_type: string
+          reward_value: number
+          visitor_id: string
+        }
+        Insert: {
+          cost_paid: number
+          created_at?: string
+          deal_id: string
+          id?: string
+          redemption_date?: string
+          reward_type: string
+          reward_value: number
+          visitor_id: string
+        }
+        Update: {
+          cost_paid?: number
+          created_at?: string
+          deal_id?: string
+          id?: string
+          redemption_date?: string
+          reward_type?: string
+          reward_value?: number
+          visitor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "flash_deal_redemptions_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "streak_flash_deals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       flash_sales: {
         Row: {
           banner_url: string | null
@@ -2706,6 +2747,63 @@ export type Database = {
           is_active?: boolean
           max_uses?: number
           used_count?: number
+        }
+        Relationships: []
+      }
+      streak_flash_deals: {
+        Row: {
+          badge: string | null
+          created_at: string
+          daily_limit: number
+          description: string
+          discount_pct: number
+          gradient: string
+          icon: string
+          id: string
+          is_active: boolean
+          name: string
+          original_cost: number
+          requires_premium: boolean
+          reward_type: string
+          reward_value: number
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          badge?: string | null
+          created_at?: string
+          daily_limit?: number
+          description?: string
+          discount_pct?: number
+          gradient?: string
+          icon?: string
+          id?: string
+          is_active?: boolean
+          name: string
+          original_cost?: number
+          requires_premium?: boolean
+          reward_type: string
+          reward_value?: number
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          badge?: string | null
+          created_at?: string
+          daily_limit?: number
+          description?: string
+          discount_pct?: number
+          gradient?: string
+          icon?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          original_cost?: number
+          requires_premium?: boolean
+          reward_type?: string
+          reward_value?: number
+          sort_order?: number
+          updated_at?: string
         }
         Relationships: []
       }
