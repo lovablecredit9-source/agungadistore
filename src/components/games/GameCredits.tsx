@@ -324,6 +324,37 @@ export function BuyCreditsDialog({ visitorId, onPurchased }: BuyCreditsDialogPro
               </div>
             )}
 
+            {/* Payment source selector */}
+            <div className="space-y-1.5 bg-muted/30 rounded-lg p-2">
+              <p className="text-[10px] font-bold uppercase text-muted-foreground">Sumber Pembayaran</p>
+              <div className="grid grid-cols-3 gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => setPaymentSource("auto")}
+                  className={`text-[10px] font-bold rounded-md py-1.5 px-1 border transition ${paymentSource === "auto" ? "bg-primary text-primary-foreground border-primary" : "bg-card border-border text-muted-foreground"}`}
+                >
+                  Otomatis
+                  <div className="text-[8px] font-normal opacity-80">IN dulu</div>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPaymentSource("game")}
+                  className={`text-[10px] font-bold rounded-md py-1.5 px-1 border transition ${paymentSource === "game" ? "bg-emerald-600 text-white border-emerald-600" : "bg-card border-border text-muted-foreground"}`}
+                >
+                  Saldo IN
+                  <div className="text-[8px] font-normal opacity-80">Rp{gameBalanceAmount.toLocaleString("id-ID")}</div>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPaymentSource("main")}
+                  className={`text-[10px] font-bold rounded-md py-1.5 px-1 border transition ${paymentSource === "main" ? "bg-primary text-primary-foreground border-primary" : "bg-card border-border text-muted-foreground"}`}
+                >
+                  Saldo Utama
+                  <div className="text-[8px] font-normal opacity-80">Rp{mainBalanceAmount.toLocaleString("id-ID")}</div>
+                </button>
+              </div>
+            </div>
+
             {/* Package list */}
             <div className="grid gap-2">
               {packages.map(pkg => {
