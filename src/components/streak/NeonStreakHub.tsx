@@ -80,6 +80,10 @@ export default function NeonStreakHub({ visitorId }: Props) {
   const [redeeming, setRedeeming] = useState<string | null>(null);
   const [challenges, setChallenges] = useState<Challenge[]>([]);
   const [dailyMissions, setDailyMissions] = useState<Challenge[]>([]);
+  const [coinPackages, setCoinPackages] = useState<{ id: string; name: string; coins: number; price: number }[]>([]);
+  const [topupPin, setTopupPin] = useState("");
+  const [topupPkgId, setTopupPkgId] = useState<string | null>(null);
+  const [toppingUp, setToppingUp] = useState(false);
 
   function getToday() {
     const wib = new Date(Date.now() + 7 * 3600 * 1000);
