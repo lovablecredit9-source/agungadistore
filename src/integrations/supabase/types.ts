@@ -2755,6 +2755,60 @@ export type Database = {
           },
         ]
       }
+      streak_power_hour_claims: {
+        Row: {
+          bonus_coins: number
+          claim_date: string
+          created_at: string
+          hour_claimed: number
+          hour_target: number
+          id: string
+          success: boolean
+          visitor_id: string
+        }
+        Insert: {
+          bonus_coins?: number
+          claim_date: string
+          created_at?: string
+          hour_claimed: number
+          hour_target: number
+          id?: string
+          success?: boolean
+          visitor_id: string
+        }
+        Update: {
+          bonus_coins?: number
+          claim_date?: string
+          created_at?: string
+          hour_claimed?: number
+          hour_target?: number
+          id?: string
+          success?: boolean
+          visitor_id?: string
+        }
+        Relationships: []
+      }
+      streak_power_hour_schedule: {
+        Row: {
+          created_at: string
+          hour_start: number
+          id: string
+          schedule_date: string
+        }
+        Insert: {
+          created_at?: string
+          hour_start: number
+          id?: string
+          schedule_date: string
+        }
+        Update: {
+          created_at?: string
+          hour_start?: number
+          id?: string
+          schedule_date?: string
+        }
+        Relationships: []
+      }
       streak_profiles: {
         Row: {
           avatar_url: string | null

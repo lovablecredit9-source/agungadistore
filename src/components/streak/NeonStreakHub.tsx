@@ -15,6 +15,9 @@ import StreakLeaderboardWeekly from "./StreakLeaderboardWeekly";
 import StreakBoosters from "./StreakBoosters";
 import StreakAvatarEvolution from "./StreakAvatarEvolution";
 import StreakCalendar from "./StreakCalendar";
+import StreakTitleBadge from "./StreakTitleBadge";
+import StreakPowerHour from "./StreakPowerHour";
+import StreakInsight from "./StreakInsight";
 import CelebrationOverlay from "./CelebrationOverlay";
 import DailyGiftBox from "./DailyGiftBox";
 import StreakPass from "./StreakPass";
@@ -103,6 +106,7 @@ export default function NeonStreakHub({ visitorId }: Props) {
   const [powerUps, setPowerUps] = useState<{ extra_life: number; double_xp_until: string | null; time_freeze: number; auto_hint: number }>({ extra_life: 0, double_xp_until: null, time_freeze: 0, auto_hint: 0 });
   const [redeemingPower, setRedeemingPower] = useState<string | null>(null);
   const [longestStreak, setLongestStreak] = useState(0);
+  const [totalClaims, setTotalClaims] = useState(0);
   const [celebrate, setCelebrate] = useState<{ show: boolean; msg: string }>({ show: false, msg: "" });
   const [activeView, setActiveView] = useState<"main" | "leaderboard" | "calendar">("main");
 
@@ -127,6 +131,7 @@ export default function NeonStreakHub({ visitorId }: Props) {
       setMultiplier(Number((streak as any).current_multiplier) || 1);
       setCurrentStreak(streak.current_streak || 0);
       setLongestStreak((streak as any).longest_streak || 0);
+      setTotalClaims((streak as any).total_claims || 0);
     }
     const { data: box } = await supabase.from("mystery_box_claims").select("*").eq("visitor_id", visitorId).eq("claim_date", today).maybeSingle();
     setBoxOpened(!!box);
@@ -351,8 +356,24 @@ export default function NeonStreakHub({ visitorId }: Props) {
         </div>
       </div>
 
+      {/* Title kosmetik berdasar streak */}
+      <div className="flex justify-center">
+        <StreakTitleBadge currentStreak={currentStreak} longestStreak={longestStreak} size="md" />
+      </div>
+
       {/* Avatar Evolution */}
       <StreakAvatarEvolution visitorId={visitorId} currentStreak={currentStreak} longestStreak={longestStreak} />
+
+      {/* Power Hour + Insight (fitur baru) */}
+      <div className="grid grid-cols-1 gap-3">
+        <StreakPowerHour visitorId={visitorId} />
+        <StreakInsight
+          visitorId={visitorId}
+          currentStreak={currentStreak}
+          longestStreak={longestStreak}
+          totalClaims={totalClaims}
+        />
+      </div>
 
       {/* View tabs */}
       <div className="flex gap-1 p-1 rounded-xl bg-black/40 border border-purple-500/30">
