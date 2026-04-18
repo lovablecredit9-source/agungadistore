@@ -40,11 +40,13 @@ import gameScratchImg from "@/assets/game-scratch.png";
 import gameSlotImg from "@/assets/game-slot.png";
 import gameMatch3Img from "@/assets/game-match3.png";
 import gameLuckyDrawImg from "@/assets/game-lucky-draw.png";
-type GameMode = "menu" | "suit" | "tebak" | "tebak_gambar" | "teka_teki" | "tebak_angka" | "tebak_barang" | "ular_tangga" | "ludo" | "kuis" | "teka_teki_v2" | "pilihan_ganda" | "scratch" | "slot" | "match3" | "lucky_draw";
+import gameMineImg from "@/assets/game-mine.png";
+type GameMode = "menu" | "suit" | "tebak" | "tebak_gambar" | "teka_teki" | "tebak_angka" | "tebak_barang" | "ular_tangga" | "ludo" | "kuis" | "teka_teki_v2" | "pilihan_ganda" | "scratch" | "slot" | "match3" | "lucky_draw" | "mine";
 
 const GAMES: { mode: GameMode; title: string; desc: string; image: string; gradient: string }[] = [
   { mode: "scratch", title: "Scratch Card", desc: "Gosok hadiah harian", image: gameScratchImg, gradient: "from-violet-500 to-fuchsia-600" },
   { mode: "slot", title: "Slot 3-Reel", desc: "Spin & menang JACKPOT", image: gameSlotImg, gradient: "from-red-500 to-rose-600" },
+  { mode: "mine", title: "Mine Sweeper", desc: "Cari bom, cash out!", image: gameMineImg, gradient: "from-cyan-500 to-blue-700" },
   { mode: "match3", title: "Match-3", desc: "Cocokkan permata", image: gameMatch3Img, gradient: "from-cyan-500 to-emerald-600" },
   { mode: "lucky_draw", title: "Lucky Draw", desc: "Undi hadiah misterius", image: gameLuckyDrawImg, gradient: "from-amber-500 to-rose-600" },
   { mode: "suit", title: "Suit AI", desc: "Batu Gunting Kertas", image: gameSuitImg, gradient: "from-orange-500 to-red-500" },
@@ -76,6 +78,7 @@ const GAME_COMPONENTS: Record<string, React.ComponentType> = {
   slot: SlotMachineGame,
   match3: Match3Game,
   lucky_draw: LuckyDrawGame,
+  mine: MineSweeperGame,
 };
 
 export default function GameTab() {
