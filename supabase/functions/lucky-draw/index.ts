@@ -11,33 +11,47 @@ const supabase = createClient(
   Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
 );
 
-function genVoucher() {
-  const c = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-  return Array.from({ length: 16 }, () => c[Math.floor(Math.random() * c.length)]).join("");
-}
-
-// Rebalanced: hadiah saldo diperkecil, kredit diperbanyak.
-// Saldo masuk ke Saldo IN (game_balance), bukan saldo utama.
+// Rebalanced + ZONK seperti Slot. Hadiah max disesuaikan permintaan:
+// gems max 10, kredit max 15, streak coins max 20, saldo max 5.000
 const PRIZES = [
-  { type: "game_credits", value: 2,  label: "2 Game Credits",  rarity: "common", weight: 28 },
-  { type: "game_credits", value: 5,  label: "5 Game Credits",  rarity: "common", weight: 22 },
-  { type: "game_balance", value: 200, label: "Saldo IN Rp 200", rarity: "common", weight: 14 },
-  { type: "streak_coins", value: 15, label: "15 Streak Coins", rarity: "common", weight: 12 },
-  { type: "game_credits", value: 10, label: "10 Game Credits", rarity: "rare", weight: 10 },
-  { type: "gems", value: 8, label: "8 Gems", rarity: "rare", weight: 7 },
-  { type: "game_balance", value: 500, label: "Saldo IN Rp 500", rarity: "rare", weight: 4 },
-  { type: "game_credits", value: 25, label: "25 Game Credits", rarity: "epic", weight: 2.5 },
-  { type: "game_balance", value: 1000, label: "Saldo IN Rp 1.000", rarity: "legendary", weight: 0.5 },
+  // ZONK (45% tanpa booster) - tipe khusus
+  { type: "none",         value: 0,    label: "Zonk! Coba lagi",       rarity: "common",    weight: 45 },
+
+  // Hadiah kecil (umum)
+  { type: "game_credits", value: 2,    label: "2 Game Credits",        rarity: "common",    weight: 14 },
+  { type: "game_credits", value: 5,    label: "5 Game Credits",        rarity: "common",    weight: 10 },
+  { type: "streak_coins", value: 10,   label: "10 Streak Coins",       rarity: "common",    weight: 8  },
+  { type: "streak_coins", value: 20,   label: "20 Streak Coins",       rarity: "rare",     weight: 5  },
+  { type: "gems",         value: 3,    label: "3 Gems",                rarity: "common",   weight: 6  },
+  { type: "game_credits", value: 10,   label: "10 Game Credits",       rarity: "rare",     weight: 5  },
+  { type: "game_balance", value: 200,  label: "Saldo IN Rp 200",       rarity: "rare",     weight: 3  },
+  { type: "gems",         value: 6,    label: "6 Gems",                rarity: "rare",     weight: 2  },
+
+  // Hadiah menengah (langka)
+  { type: "game_credits", value: 15,   label: "15 Game Credits",       rarity: "epic",     weight: 1.5 },
+  { type: "game_balance", value: 500,  label: "Saldo IN Rp 500",       rarity: "epic",     weight: 0.4 },
+  { type: "gems",         value: 10,   label: "10 Gems",               rarity: "epic",     weight: 0.08 },
+
+  // Mega prize (super langka)
+  { type: "game_balance", value: 5000, label: "MEGA! Saldo IN Rp 5.000", rarity: "legendary", weight: 0.02 },
 ];
 
-function pickPrize() {
-  const total = PRIZES.reduce((s, r) => s + r.weight, 0);
+function pickPrize(luckMultiplier = 1) {
+  // Booster mengurangi bobot ZONK + meningkatkan bobot hadiah rare/epic/legendary
+  const adjusted = PRIZES.map(p => {
+    let w = p.weight;
+    if (p.type === "none") w = w / luckMultiplier;
+    else if (p.rarity === "epic") w = w * Math.sqrt(luckMultiplier);
+    else if (p.rarity === "legendary") w = w * luckMultiplier;
+    return { ...p, _w: w };
+  });
+  const total = adjusted.reduce((s, r) => s + r._w, 0);
   let roll = Math.random() * total;
-  for (const r of PRIZES) {
-    roll -= r.weight;
+  for (const r of adjusted) {
+    roll -= r._w;
     if (roll <= 0) return r;
   }
-  return PRIZES[0];
+  return adjusted[0];
 }
 
 async function getOrCreateTickets(visitorId: string) {
@@ -47,6 +61,14 @@ async function getOrCreateTickets(visitorId: string) {
     data = created;
   }
   return data!;
+}
+
+async function getActiveLuck(visitorId: string): Promise<number> {
+  const { data } = await supabase.from("server_luck_boosters").select("active_tier, active_until").eq("visitor_id", visitorId).maybeSingle();
+  if (!data) return 1;
+  if (!data.active_until) return 1;
+  if (new Date(data.active_until).getTime() < Date.now()) return 1;
+  return data.active_tier || 1;
 }
 
 async function addGameBalance(visitorId: string, value: number, label: string) {
@@ -72,7 +94,8 @@ Deno.serve(async (req) => {
 
     if (action === "status") {
       const tickets = await getOrCreateTickets(visitorId);
-      return new Response(JSON.stringify({ tickets }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      const luck = await getActiveLuck(visitorId);
+      return new Response(JSON.stringify({ tickets, luck }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
     if (action === "buy") {
@@ -113,7 +136,8 @@ Deno.serve(async (req) => {
         return new Response(JSON.stringify({ error: "Tidak punya tiket" }), { status: 400, headers: corsHeaders });
       }
 
-      const prize = pickPrize();
+      const luck = await getActiveLuck(visitorId);
+      const prize = pickPrize(luck);
       let voucherCode: string | null = null;
 
       if (prize.type === "game_balance") {
@@ -133,6 +157,7 @@ Deno.serve(async (req) => {
           await supabase.from("user_game_credits").insert({ visitor_id: visitorId, credits: prize.value });
         }
       }
+      // type === "none" → tidak apply apapun, tetap konsumsi tiket
 
       await supabase.from("lucky_draw_tickets").update({
         ticket_count: tickets.ticket_count - 1,
@@ -145,7 +170,7 @@ Deno.serve(async (req) => {
         voucher_code: voucherCode,
       }).select().single();
 
-      return new Response(JSON.stringify({ success: true, prize: hist }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      return new Response(JSON.stringify({ success: true, prize: hist, luck }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
     return new Response(JSON.stringify({ error: "Unknown action" }), { status: 400, headers: corsHeaders });

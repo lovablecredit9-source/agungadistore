@@ -24,8 +24,10 @@ type Tier = "hemat" | "sedang" | "besar";
 
 const TIER_COSTS: Record<Tier, number> = { hemat: 1, sedang: 5, besar: 10 };
 
-function spinReel(tier: Tier) {
-  const weights = WEIGHTS_BY_TIER[tier];
+function spinReel(tier: Tier, luckMultiplier = 1) {
+  // Booster: bobot simbol langka (index 4-6: ⭐ 💎 7️⃣) ditingkatkan
+  const base = WEIGHTS_BY_TIER[tier];
+  const weights = base.map((w, i) => i >= 4 ? w * Math.sqrt(luckMultiplier) : w);
   const total = weights.reduce((a, b) => a + b, 0);
   let roll = Math.random() * total;
   for (let i = 0; i < SYMBOLS.length; i++) {
@@ -33,6 +35,14 @@ function spinReel(tier: Tier) {
     if (roll <= 0) return SYMBOLS[i];
   }
   return SYMBOLS[0];
+}
+
+async function getActiveLuck(visitorId: string): Promise<number> {
+  const { data } = await supabase.from("server_luck_boosters").select("active_tier, active_until").eq("visitor_id", visitorId).maybeSingle();
+  if (!data) return 1;
+  if (!data.active_until) return 1;
+  if (new Date(data.active_until).getTime() < Date.now()) return 1;
+  return data.active_tier || 1;
 }
 
 // Payout dipisah per tier sesuai permintaan user
@@ -138,7 +148,8 @@ Deno.serve(async (req) => {
     const tier: Tier = (["hemat", "sedang", "besar"].includes(rawTier) ? rawTier : "hemat") as Tier;
     if (!visitorId) return new Response(JSON.stringify({ error: "visitorId required" }), { status: 400, headers: corsHeaders });
 
-    const reels = [spinReel(tier), spinReel(tier), spinReel(tier)];
+    const luck = await getActiveLuck(visitorId);
+    const reels = [spinReel(tier, luck), spinReel(tier, luck), spinReel(tier, luck)];
     const payout = calculatePayout(tier, reels);
     await applyPayout(visitorId, payout);
 
@@ -151,7 +162,7 @@ Deno.serve(async (req) => {
       cost_credits: TIER_COSTS[tier],
     }).select().single();
 
-    return new Response(JSON.stringify({ success: true, reels, payout, tier, cost: TIER_COSTS[tier], record: data }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    return new Response(JSON.stringify({ success: true, reels, payout, tier, cost: TIER_COSTS[tier], luck, record: data }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
   } catch (e: any) {
     return new Response(JSON.stringify({ error: e.message }), { status: 500, headers: corsHeaders });
   }
