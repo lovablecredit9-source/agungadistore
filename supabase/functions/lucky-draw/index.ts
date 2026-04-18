@@ -16,15 +16,18 @@ function genVoucher() {
   return Array.from({ length: 16 }, () => c[Math.floor(Math.random() * c.length)]).join("");
 }
 
+// Rebalanced: hadiah saldo diperkecil, kredit diperbanyak.
+// Saldo masuk ke Saldo IN (game_balance), bukan saldo utama.
 const PRIZES = [
-  { type: "balance", value: 500, label: "Saldo Rp 500", rarity: "common", weight: 28 },
-  { type: "balance", value: 1500, label: "Saldo Rp 1.500", rarity: "common", weight: 22 },
-  { type: "gems", value: 10, label: "10 Gems", rarity: "common", weight: 18 },
-  { type: "streak_coins", value: 20, label: "20 Coins", rarity: "common", weight: 12 },
-  { type: "game_credits", value: 5, label: "5 Game Credits", rarity: "rare", weight: 10 },
-  { type: "voucher", value: 5000, label: "Voucher Rp 5.000", rarity: "rare", weight: 6 },
-  { type: "balance", value: 10000, label: "Saldo Rp 10.000", rarity: "epic", weight: 3 },
-  { type: "voucher", value: 25000, label: "Voucher Rp 25.000", rarity: "legendary", weight: 1 },
+  { type: "game_credits", value: 2,  label: "2 Game Credits",  rarity: "common", weight: 28 },
+  { type: "game_credits", value: 5,  label: "5 Game Credits",  rarity: "common", weight: 22 },
+  { type: "game_balance", value: 200, label: "Saldo IN Rp 200", rarity: "common", weight: 14 },
+  { type: "streak_coins", value: 15, label: "15 Streak Coins", rarity: "common", weight: 12 },
+  { type: "game_credits", value: 10, label: "10 Game Credits", rarity: "rare", weight: 10 },
+  { type: "gems", value: 8, label: "8 Gems", rarity: "rare", weight: 7 },
+  { type: "game_balance", value: 500, label: "Saldo IN Rp 500", rarity: "rare", weight: 4 },
+  { type: "game_credits", value: 25, label: "25 Game Credits", rarity: "epic", weight: 2.5 },
+  { type: "game_balance", value: 1000, label: "Saldo IN Rp 1.000", rarity: "legendary", weight: 0.5 },
 ];
 
 function pickPrize() {
@@ -46,6 +49,20 @@ async function getOrCreateTickets(visitorId: string) {
   return data!;
 }
 
+async function addGameBalance(visitorId: string, value: number, label: string) {
+  const { data: gb } = await supabase.from("game_balance").select("id, amount, total_earned").eq("visitor_id", visitorId).maybeSingle();
+  if (gb) {
+    await supabase.from("game_balance")
+      .update({ amount: (gb.amount || 0) + value, total_earned: (gb.total_earned || 0) + value })
+      .eq("id", gb.id);
+  } else {
+    await supabase.from("game_balance").insert({ visitor_id: visitorId, amount: value, total_earned: value });
+  }
+  await supabase.from("game_balance_transactions").insert({
+    visitor_id: visitorId, amount: value, type: "lucky_draw_win", description: `Lucky Draw: ${label}`,
+  });
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
   try {
@@ -63,7 +80,6 @@ Deno.serve(async (req) => {
       const { data: pkg } = await supabase.from("lucky_draw_ticket_packages").select("*").eq("id", packageId).eq("is_active", true).maybeSingle();
       if (!pkg) return new Response(JSON.stringify({ error: "Paket tidak ditemukan" }), { status: 404, headers: corsHeaders });
 
-      // Deduct currency
       if (pkg.cost_currency === "gems") {
         const { data: prof } = await supabase.from("game_profiles").select("id, gems").eq("visitor_id", visitorId).maybeSingle();
         if (!prof || (prof.gems || 0) < pkg.cost_amount) {
@@ -100,16 +116,8 @@ Deno.serve(async (req) => {
       const prize = pickPrize();
       let voucherCode: string | null = null;
 
-      if (prize.type === "voucher") {
-        voucherCode = genVoucher();
-        await supabase.from("game_discount_vouchers").insert({
-          code: voucherCode, discount_amount: prize.value, max_uses: 1, is_active: true,
-          expires_at: new Date(Date.now() + 30 * 86400000).toISOString(),
-        });
-      } else if (prize.type === "balance") {
-        await supabase.from("balance_transactions").insert({
-          visitor_id: visitorId, amount: prize.value, type: "lucky_draw_win", description: prize.label,
-        });
+      if (prize.type === "game_balance") {
+        await addGameBalance(visitorId, prize.value, prize.label);
       } else if (prize.type === "gems") {
         const { data: p } = await supabase.from("game_profiles").select("id, gems").eq("visitor_id", visitorId).maybeSingle();
         if (p) await supabase.from("game_profiles").update({ gems: (p.gems || 0) + prize.value }).eq("id", p.id);
@@ -117,6 +125,13 @@ Deno.serve(async (req) => {
       } else if (prize.type === "streak_coins") {
         const { data: s } = await supabase.from("daily_streaks").select("id, streak_coins").eq("visitor_id", visitorId).maybeSingle();
         if (s) await supabase.from("daily_streaks").update({ streak_coins: (s.streak_coins || 0) + prize.value }).eq("id", s.id);
+      } else if (prize.type === "game_credits") {
+        const { data: gc } = await supabase.from("user_game_credits").select("id, credits").eq("visitor_id", visitorId).maybeSingle();
+        if (gc) {
+          await supabase.from("user_game_credits").update({ credits: (gc.credits || 0) + prize.value }).eq("id", gc.id);
+        } else {
+          await supabase.from("user_game_credits").insert({ visitor_id: visitorId, credits: prize.value });
+        }
       }
 
       await supabase.from("lucky_draw_tickets").update({

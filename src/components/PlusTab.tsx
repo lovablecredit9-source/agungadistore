@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Wallet, Key, CalendarDays, HardDrive, Loader2, Lock, Infinity, Sparkles, Package } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useGameCredits, GameCreditsBadge } from "@/components/games/GameCredits";
+import { useGameBalance, GameBalanceBadge } from "@/components/games/GameBalance";
 import { motion } from "framer-motion";
 
 function formatPrice(price: number) {
@@ -29,6 +30,7 @@ export default function PlusTab() {
   const { credits, isUnlimited, unlimitedUntil, fetchCredits } = useGameCredits(
     localStorage.getItem("balance_visitor_id") || visitorId
   );
+  const { amount: gameBalance } = useGameBalance(localStorage.getItem("balance_visitor_id") || visitorId);
   const [creditPackages, setCreditPackages] = useState<CreditPackage[]>([]);
   const [creditBuying, setCreditBuying] = useState<string | null>(null);
   const [creditPin, setCreditPin] = useState("");
@@ -252,7 +254,11 @@ export default function PlusTab() {
 
       <div className="flex items-center gap-2 flex-wrap">
         <GameCreditsBadge credits={credits} isUnlimited={isUnlimited} unlimitedUntil={unlimitedUntil} />
+        <GameBalanceBadge amount={gameBalance} />
       </div>
+      <p className="text-[10px] text-muted-foreground -mt-2 px-1">
+        💡 <strong>Saldo IN</strong> hanya bisa dipakai untuk Game, Streak, dan Storage — tidak untuk produk.
+      </p>
 
       {flashSaleEnd && new Date(flashSaleEnd) > new Date() && (
         <div className="bg-gradient-to-r from-yellow-500/20 to-orange-500/20 border border-yellow-500/30 rounded-lg p-2 text-center">
