@@ -61,50 +61,49 @@ function calculatePayout(tier: Tier, reels: string[]) {
   const sym = reels[0];
 
   if (tier === "hemat") {
-    // 1 kredit → jackpot saldo 1k, 500, 100, 10/5/2 kredit, zonk
+    // 1 kredit → MAX saldo Rp 100, fokus ke kredit
     if (same3) {
-      if (sym === "7️⃣") return { type: "game_balance", value: 1000, label: "JACKPOT! Saldo Game Rp 1.000" };
-      if (sym === "💎") return { type: "game_balance", value: 500, label: "Saldo Game Rp 500" };
-      if (sym === "⭐") return { type: "game_balance", value: 100, label: "Saldo Game Rp 100" };
-      if (sym === "🔔") return { type: "game_credits", value: 10, label: "10 Credits" };
-      if (sym === "🍇") return { type: "game_credits", value: 5, label: "5 Credits" };
+      if (sym === "7️⃣") return { type: "game_balance", value: 100, label: "JACKPOT! Saldo Game Rp 100" };
+      if (sym === "💎") return { type: "game_credits", value: 5, label: "5 Credits" };
+      if (sym === "⭐") return { type: "game_credits", value: 4, label: "4 Credits" };
+      if (sym === "🔔") return { type: "game_credits", value: 3, label: "3 Credits" };
+      if (sym === "🍇") return { type: "game_credits", value: 3, label: "3 Credits" };
       if (sym === "🍋") return { type: "game_credits", value: 2, label: "2 Credits" };
       if (sym === "🍒") return { type: "game_credits", value: 2, label: "2 Credits" };
     }
-    // 2 cherry → 1 kredit kecil
     const cherries = reels.filter(r => r === "🍒").length;
     if (cherries === 2) return { type: "game_credits", value: 1, label: "1 Credit" };
     return { type: "none", value: 0, label: "Zonk! Coba lagi" };
   }
 
   if (tier === "sedang") {
-    // 5 kredit → utama saldo 2k, 1k, 500, 10 kredit + bonus storage/nyawa
+    // 5 kredit → MAX saldo Rp 200, fokus ke kredit + bonus storage/nyawa
     if (same3) {
-      if (sym === "7️⃣") return { type: "game_balance", value: 2000, label: "JACKPOT! Saldo Game Rp 2.000" };
-      if (sym === "💎") return { type: "game_balance", value: 1000, label: "Saldo Game Rp 1.000" };
-      if (sym === "⭐") return { type: "game_balance", value: 500, label: "Saldo Game Rp 500" };
+      if (sym === "7️⃣") return { type: "game_balance", value: 200, label: "JACKPOT! Saldo Game Rp 200" };
+      if (sym === "💎") return { type: "game_balance", value: 100, label: "Saldo Game Rp 100" };
+      if (sym === "⭐") return { type: "game_credits", value: 8, label: "8 Credits" };
       if (sym === "🔔") return { type: "storage_mb", value: 50, label: "+50 MB Storage Musik" };
       if (sym === "🍇") return { type: "extra_life", value: 1, label: "+1 Nyawa Power-Up" };
-      if (sym === "🍋") return { type: "game_credits", value: 10, label: "10 Credits" };
-      if (sym === "🍒") return { type: "game_credits", value: 5, label: "5 Credits" };
+      if (sym === "🍋") return { type: "game_credits", value: 6, label: "6 Credits" };
+      if (sym === "🍒") return { type: "game_credits", value: 4, label: "4 Credits" };
     }
     const cherries = reels.filter(r => r === "🍒").length;
-    if (cherries === 2) return { type: "game_credits", value: 3, label: "3 Credits" };
+    if (cherries === 2) return { type: "game_credits", value: 2, label: "2 Credits" };
     return { type: "none", value: 0, label: "Zonk! Coba lagi" };
   }
 
-  // tier === "besar" → 10 kredit
+  // tier === "besar" → 10 kredit, MAX saldo Rp 500
   if (same3) {
-    if (sym === "7️⃣") return { type: "game_balance", value: 5000, label: "MEGA JACKPOT! Saldo Game Rp 5.000" };
-    if (sym === "💎") return { type: "game_balance", value: 2000, label: "Saldo Game Rp 2.000" };
-    if (sym === "⭐") return { type: "game_balance", value: 2000, label: "Saldo Game Rp 2.000" };
+    if (sym === "7️⃣") return { type: "game_balance", value: 500, label: "MEGA JACKPOT! Saldo Game Rp 500" };
+    if (sym === "💎") return { type: "game_balance", value: 200, label: "Saldo Game Rp 200" };
+    if (sym === "⭐") return { type: "game_credits", value: 15, label: "15 Credits" };
     if (sym === "🔔") return { type: "storage_mb", value: 100, label: "+100 MB Storage Musik" };
     if (sym === "🍇") return { type: "extra_life", value: 2, label: "+2 Nyawa Power-Up" };
-    if (sym === "🍋") return { type: "game_credits", value: 25, label: "25 Credits" };
-    if (sym === "🍒") return { type: "game_credits", value: 15, label: "15 Credits" };
+    if (sym === "🍋") return { type: "game_credits", value: 12, label: "12 Credits" };
+    if (sym === "🍒") return { type: "game_credits", value: 8, label: "8 Credits" };
   }
   const cherries = reels.filter(r => r === "🍒").length;
-  if (cherries === 2) return { type: "game_credits", value: 5, label: "5 Credits" };
+  if (cherries === 2) return { type: "game_credits", value: 4, label: "4 Credits" };
   return { type: "none", value: 0, label: "Zonk! Coba lagi" };
 }
 
