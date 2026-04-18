@@ -15,31 +15,32 @@ const supabase = createClient(
 export const LUCK_TIERS = [
   { tier: 2,  name: "x2 Lumayan",      tagline: "Sedikit lebih hoki",
     durations: [
-      { hours: 2,  price: 1000 },
-      { hours: 6,  price: 2500 },
-      { hours: 10, price: 4000 },
+      { hours: 2,  price: 2000 },
+      { hours: 6,  price: 5000 },
+      { hours: 10, price: 8000 },
     ] },
   { tier: 6,  name: "x6 Mantap",       tagline: "Hoki naik signifikan",
     durations: [
-      { hours: 2,  price: 3000 },
-      { hours: 6,  price: 7000 },
-      { hours: 10, price: 11000 },
+      { hours: 2,  price: 12000 },
+      { hours: 6,  price: 25000 },
+      { hours: 10, price: 38000 },
     ] },
   { tier: 8,  name: "x8 Mantap+",      tagline: "Lebih sering jackpot",
     durations: [
-      { hours: 2,  price: 5000 },
-      { hours: 6,  price: 11000 },
-      { hours: 10, price: 17000 },
+      { hours: 2,  price: 20000 },
+      { hours: 6,  price: 45000 },
+      { hours: 10, price: 70000 },
     ] },
   { tier: 10, name: "x10 Luar Biasa",  tagline: "Hoki ekstrim",
     durations: [
-      { hours: 2,  price: 8000 },
-      { hours: 6,  price: 17000 },
-      { hours: 10, price: 25000 },
+      { hours: 2,  price: 35000 },
+      { hours: 6,  price: 80000 },
+      { hours: 10, price: 125000 },
     ] },
   { tier: 20, name: "x20 Plus Ultra",  tagline: "Semalam super hoki",
     durations: [
-      { hours: 10, price: 50000 },
+      { hours: 6,  price: 200000 },
+      { hours: 10, price: 350000 },
     ] },
 ];
 
@@ -49,10 +50,10 @@ async function getOrCreateBooster(visitorId: string) {
     const { data: created } = await supabase.from("server_luck_boosters").insert({ visitor_id: visitorId }).select().single();
     data = created;
   }
-  // expire if past
+  // expire if past — RESET highest_tier_owned ke 1 supaya wajib mulai dari x2 lagi
   if (data && data.active_until && new Date(data.active_until).getTime() < Date.now() && data.active_tier > 1) {
     const { data: updated } = await supabase.from("server_luck_boosters")
-      .update({ active_tier: 1, active_until: null }).eq("id", data.id).select().single();
+      .update({ active_tier: 1, active_until: null, highest_tier_owned: 1 }).eq("id", data.id).select().single();
     data = updated;
   }
   return data!;
@@ -89,6 +90,14 @@ Deno.serve(async (req) => {
         const required = LUCK_TIERS[currentIdx + 1];
         return new Response(JSON.stringify({
           error: `Wajib beli ${required.name} dulu sebelum upgrade ke ${tierDef.name}`,
+        }), { status: 400, headers: corsHeaders });
+      }
+
+      // Saat booster masih aktif: tidak boleh beli tier LEBIH RENDAH dari yang sedang aktif
+      const stillActive = booster.active_until && new Date(booster.active_until).getTime() > Date.now();
+      if (stillActive && tier < booster.active_tier) {
+        return new Response(JSON.stringify({
+          error: `Booster x${booster.active_tier} masih aktif. Tidak bisa downgrade ke ${tierDef.name}. Tunggu habis atau beli tier lebih tinggi.`,
         }), { status: 400, headers: corsHeaders });
       }
 

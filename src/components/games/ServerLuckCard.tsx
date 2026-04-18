@@ -45,9 +45,8 @@ function formatRemaining(ms: number) {
   const h = Math.floor(totalSec / 3600);
   const m = Math.floor((totalSec % 3600) / 60);
   const s = totalSec % 60;
-  if (h > 0) return `${h}j ${m}m`;
-  if (m > 0) return `${m}m ${s}s`;
-  return `${s}s`;
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${pad(h)}:${pad(m)}:${pad(s)}`;
 }
 
 const TIER_GRADIENT: Record<number, string> = {
@@ -141,7 +140,9 @@ export function ServerLuckCard({ visitorId }: { visitorId: string | null }) {
           </div>
 
           {tiers.map((t, idx) => {
-            const locked = idx > currentIdx + 1;
+            const lockedSequence = idx > currentIdx + 1;
+            const lockedDowngrade = isActive && t.tier < activeTier;
+            const locked = lockedSequence || lockedDowngrade;
             const isCurrent = isActive && activeTier === t.tier;
             return (
               <div
@@ -153,9 +154,13 @@ export function ServerLuckCard({ visitorId }: { visitorId: string | null }) {
                 {locked && (
                   <div className="absolute inset-0 bg-black/70 backdrop-blur-sm flex flex-col items-center justify-center z-10 text-center p-3">
                     <Lock className="w-6 h-6 mb-1" />
-                    <div className="text-xs font-bold">Wajib unlock tier sebelumnya</div>
+                    <div className="text-xs font-bold">
+                      {lockedDowngrade ? `Booster x${activeTier} masih aktif` : "Wajib unlock tier sebelumnya"}
+                    </div>
                     <div className="text-[10px] opacity-80 mt-0.5">
-                      Beli {tiers[currentIdx + 1]?.name} dulu
+                      {lockedDowngrade
+                        ? "Tunggu habis atau beli tier lebih tinggi"
+                        : `Beli ${tiers[currentIdx + 1]?.name} dulu`}
                     </div>
                   </div>
                 )}
