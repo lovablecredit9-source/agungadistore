@@ -223,9 +223,16 @@ export default function NeonStreakHub({ visitorId }: Props) {
       } else {
         toast({
           title: `🛒 ${item.name} ditebus!`,
-          description: data.rewardCode ? `Kode: ${data.rewardCode}` : "Reward sudah ditambahkan!",
+          description: data.rewardCode ? `Kode: ${data.rewardCode}` : (data.rewardSummary || "Reward sudah ditambahkan!"),
         });
         loadAll();
+        // Beritahu komponen lain (PlaylistTab, GameCredits) supaya refresh
+        if (item.reward_type === "music_storage") {
+          window.dispatchEvent(new CustomEvent("music-storage-updated"));
+        }
+        if (item.reward_type === "game_credit") {
+          window.dispatchEvent(new CustomEvent("game-credits-refresh"));
+        }
       }
     } finally {
       setRedeeming(null);
