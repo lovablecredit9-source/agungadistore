@@ -161,7 +161,8 @@ Deno.serve(async (req) => {
     });
 
     if (subErr) {
-      await admin.from("user_balances").update({ balance: balanceRow.balance }).eq("id", balanceRow.id);
+      if (payFromMain > 0 && balanceRow) await admin.from("user_balances").update({ balance: mainAmount }).eq("id", balanceRow.id);
+      if (payFromGame > 0 && gameBal) await admin.from("game_balance").update({ amount: gameAmount }).eq("id", gameBal.id);
       return Response.json({ error: "Gagal membuat langganan" }, { status: 500, headers: corsHeaders });
     }
 
@@ -206,20 +207,26 @@ Deno.serve(async (req) => {
       voucherDiscountAmount > 0 ? `Voucher Rp${voucherDiscountAmount.toLocaleString("id-ID")}` : null,
     ].filter(Boolean);
     const desc = totalDiscountAmount > 0
-      ? `Beli paket Auto-Klaim Streak ${plan.name} - ${discountParts.join(" + ")}`
-      : `Beli paket Auto-Klaim Streak ${plan.name}`;
-    await admin.from("balance_transactions").insert({
-      visitor_id: visitorId,
-      type: "purchase",
-      amount: finalPrice,
-      description: desc,
-    });
+      ? `Beli paket Auto-Klaim Streak ${plan.name} [${sourceLabel}] - ${discountParts.join(" + ")}`
+      : `Beli paket Auto-Klaim Streak ${plan.name} [${sourceLabel}]`;
+    if (payFromMain > 0) {
+      await admin.from("balance_transactions").insert({
+        visitor_id: visitorId,
+        type: "purchase",
+        amount: payFromMain,
+        description: desc,
+      });
+    }
 
     return Response.json({
       success: true,
       plan: plan.name,
       expires_at: expiresAt.toISOString(),
       balance_remaining: newBalance,
+      game_balance_remaining: gameAmount - payFromGame,
+      paid_from_game: payFromGame,
+      paid_from_main: payFromMain,
+      source_label: sourceLabel,
       discount_amount: totalDiscountAmount,
       flash_discount_amount: flashDiscountAmount,
       voucher_discount_amount: voucherDiscountAmount,
