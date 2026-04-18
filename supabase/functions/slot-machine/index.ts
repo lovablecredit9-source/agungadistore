@@ -118,7 +118,8 @@ async function applyPayout(visitorId: string, payout: { type: string; value: num
     if (ms) {
       await supabase.from("user_music_storage").update({ storage_mb: (ms.storage_mb || 0) + payout.value }).eq("id", ms.id);
     } else {
-      await supabase.from("user_music_storage").insert({ visitor_id: visitorId, storage_mb: payout.value });
+      const dummyVoucher = "SLOT-" + Math.random().toString(36).slice(2, 10).toUpperCase();
+      await supabase.from("user_music_storage").insert({ visitor_id: visitorId, storage_mb: payout.value, voucher_code: dummyVoucher });
     }
   } else if (payout.type === "extra_life") {
     const { data: pu } = await supabase.from("user_power_ups").select("id, extra_life").eq("visitor_id", visitorId).maybeSingle();
