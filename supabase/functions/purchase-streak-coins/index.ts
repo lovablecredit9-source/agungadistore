@@ -144,18 +144,24 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Record transaction
-    await admin.from("balance_transactions").insert({
-      visitor_id: visitorId,
-      type: "purchase",
-      amount: pkg.price,
-      description: `Beli ${pkg.coins.toLocaleString("id-ID")} Koin Streak (${pkg.name})`,
-    });
+    // Record transaction (main balance only)
+    if (payFromMain > 0) {
+      await admin.from("balance_transactions").insert({
+        visitor_id: visitorId,
+        type: "purchase",
+        amount: payFromMain,
+        description: `Beli ${pkg.coins.toLocaleString("id-ID")} Koin Streak (${pkg.name}) [${sourceLabel}]`,
+      });
+    }
 
     return Response.json({
       success: true,
       coins_added: pkg.coins,
       balance_remaining: newBalance,
+      game_balance_remaining: gameAmount - payFromGame,
+      paid_from_game: payFromGame,
+      paid_from_main: payFromMain,
+      source_label: sourceLabel,
       package_name: pkg.name,
     }, { headers: corsHeaders });
   } catch (error) {
