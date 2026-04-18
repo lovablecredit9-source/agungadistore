@@ -21,6 +21,7 @@ import MineSweeperGame from "@/components/games/MineSweeperGame";
 import WeeklyLeaderboard from "@/components/WeeklyLeaderboard";
 import FlashSaleBanner from "@/components/FlashSaleBanner";
 import { useGameCredits, GameCreditsBadge, BuyCreditsDialog } from "@/components/games/GameCredits";
+import { useGameBalance, GameBalanceBadge } from "@/components/games/GameBalance";
 import { useGameProfile, GameProfileDialog, updateGameStats } from "@/components/games/GameProfile";
 import NeonGameExtras from "@/components/games/NeonGameExtras";
 import { Zap } from "lucide-react";
@@ -86,6 +87,7 @@ export default function GameTab() {
   const [dailyGame, setDailyGame] = useState<string>("");
   const visitorId = typeof window !== "undefined" ? localStorage.getItem("balance_visitor_id") : null;
   const { credits, isUnlimited, unlimitedUntil, fetchCredits } = useGameCredits(visitorId);
+  const { amount: gameBalance } = useGameBalance(visitorId);
   const { profile, fetchProfile, visitorId: gameVisitorId } = useGameProfile();
 
   // Fetch today's daily challenge game (server-side deterministic)
@@ -125,10 +127,14 @@ export default function GameTab() {
           </h2>
           <GameProfileDialog profile={profile} onUpdate={fetchProfile} visitorId={gameVisitorId} />
         </div>
-        <div className="flex items-center gap-2 mb-4">
+        <div className="flex items-center gap-2 mb-1 flex-wrap">
           <GameCreditsBadge credits={credits} isUnlimited={isUnlimited} unlimitedUntil={unlimitedUntil} />
+          <GameBalanceBadge amount={gameBalance} />
           <BuyCreditsDialog visitorId={visitorId} onPurchased={fetchCredits} />
         </div>
+        <p className="text-[10px] text-muted-foreground mb-3 px-1">
+          💡 <strong>Saldo IN</strong> hanya untuk Game/Streak/Storage, bukan produk.
+        </p>
 
         {/* Hero Banner */}
         <motion.div
