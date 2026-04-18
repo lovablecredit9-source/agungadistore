@@ -4,6 +4,7 @@ import { Flame, Clock, Tag, ShoppingBag, Crown, Lock, Loader2, Check } from "luc
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
+import { syncPowerUpsFromServer } from "@/components/games/gameStore";
 
 interface Deal {
   id: string;
