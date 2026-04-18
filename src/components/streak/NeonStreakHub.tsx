@@ -467,8 +467,6 @@ export default function NeonStreakHub({ visitorId, forcedView }: Props) {
       <SmartReminder visitorId={visitorId} />
 
       <StreakMilestones visitorId={visitorId} onUpdate={() => { loadAll(); setCelebrate({ show: true, msg: "🏆 MILESTONE!" }); }} />
-
-      <StreakLeaderboard />
       </>
       )}
 
