@@ -71,6 +71,8 @@ export default function SpinWheel({ visitorId, coins, onUpdate }: Props) {
       load();
       onUpdate?.();
       import("@/lib/daily-mission").then(m => m.trackDailyMission(visitorId, "spin_wheel", 1)).catch(() => {});
+      import("@/components/games/gameStore").then(m => m.syncPowerUpsFromServer()).catch(() => {});
+      window.dispatchEvent(new CustomEvent("power-ups-updated"));
     }, 4200);
   }
 
