@@ -15,7 +15,7 @@ import {
   getNextLevelThreshold, getCurrentLevelThreshold, type GameLevel,
 } from "./gameStore";
 import { useGameCredits, GameCreditsBadge, BuyCreditsDialog, RevealAnswerButton } from "./GameCredits";
-import PowerUpsBar from "./PowerUpsBar";
+import PowerUpsBar, { ReviveButton } from "./PowerUpsBar";
 import { applyDoubleXP } from "./gameStore";
 
 type Difficulty = "mudah" | "sedang" | "sulit";
@@ -257,7 +257,6 @@ export default function TebakGambarGame() {
       {!gameOver && (
         <PowerUpsBar
           enabled={!gameOver}
-          onUseExtraLife={() => setWrongCount(w => Math.max(0, w - 1))}
           onUseHint={() => setShownHints(s => Math.min(hints.length, s + 1))}
           onUseTimeFreeze={(s) => setTimeLeft(t => t + s)}
         />
@@ -342,6 +341,15 @@ export default function TebakGambarGame() {
                   {timeLeft <= 0 ? "Waktu habis!" : "3x salah!"}
                 </p>
                 <p className="text-sm mt-1">Jawabannya: <strong>{answer}</strong></p>
+                <ReviveButton onRevive={() => {
+                  setWrongCount(w => Math.max(0, w - 1));
+                  setGameOver(false);
+                  setResult(null);
+                  if (timeLeft <= 0) {
+                    setTimeLeft(30);
+                    setTimerActive(true);
+                  }
+                }} />
                 <div className="flex gap-2 mt-3 justify-center">
                   <Button variant="outline" onClick={resetGame}>Menu</Button>
                   <Button onClick={nextRound}>

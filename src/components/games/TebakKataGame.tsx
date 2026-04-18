@@ -7,7 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { getVisitorId } from "@/lib/visitor-id";
 import { updateGameStats } from "./GameProfile";
 import { useGameCredits, GameCreditsBadge, BuyCreditsDialog, RevealAnswerButton } from "./GameCredits";
-import PowerUpsBar from "./PowerUpsBar";
+import PowerUpsBar, { ReviveButton } from "./PowerUpsBar";
 import { applyDoubleXP } from "./gameStore";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -247,7 +247,6 @@ export default function TebakKataGame() {
           {gameActive && (
             <PowerUpsBar
               enabled={gameActive}
-              onUseExtraLife={() => setWrongCount(w => Math.max(0, w - 1))}
               onUseHint={() => setRevealedHints(r => Math.min(hints.length, r + 1))}
               onUseTimeFreeze={(s) => setTimeLeft(t => t + s)}
             />
@@ -330,6 +329,12 @@ export default function TebakKataGame() {
               >
                 <p className="font-extrabold text-lg">Game Over!</p>
                 <p className="text-sm">Kata: <span className="font-bold">{word}</span></p>
+                <ReviveButton onRevive={() => {
+                  setWrongCount(w => Math.max(0, w - 1));
+                  setResult(null);
+                  setGameActive(true);
+                  setTimeLeft(t => Math.max(t, 30));
+                }} />
               </motion.div>
             )}
             {timeoutOver && (
