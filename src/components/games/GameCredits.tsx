@@ -182,7 +182,21 @@ export function BuyCreditsDialog({ visitorId, onPurchased }: BuyCreditsDialogPro
           voucherCode: voucherValid ? voucherCode.trim() : undefined,
         },
       });
-      if (error) throw error;
+      if (error) {
+        if (error instanceof FunctionsHttpError) {
+          const errBody = await error.context.json();
+          if (errBody?.needPin) {
+            setNeedPin(true);
+            setSelectedPkg(pkgId);
+            setBuying(null);
+            return;
+          }
+          toast({ title: "Gagal", description: errBody?.error || "Terjadi kesalahan", variant: "destructive" });
+          setBuying(null);
+          return;
+        }
+        throw error;
+      }
       if (data?.needPin) {
         setNeedPin(true);
         setSelectedPkg(pkgId);
