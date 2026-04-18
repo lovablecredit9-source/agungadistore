@@ -229,7 +229,8 @@ export function BuyCreditsDialog({ visitorId, onPurchased }: BuyCreditsDialogPro
       const discountInfo = data.discount_amount > 0
         ? ` (Diskon Rp${data.discount_amount.toLocaleString("id-ID")})`
         : "";
-      toast({ title: "Berhasil!", description: `${data.package.label} berhasil dibeli${discountInfo}. Sisa saldo: Rp${data.balance_remaining.toLocaleString("id-ID")}` });
+      const sourceInfo = data.source_label ? ` via ${data.source_label}` : "";
+      toast({ title: "Berhasil!", description: `${data.package.label} dibeli${sourceInfo}${discountInfo}. Saldo Utama: Rp${data.balance_remaining.toLocaleString("id-ID")} • Saldo IN: Rp${(data.game_balance_remaining || 0).toLocaleString("id-ID")}` });
       setNeedPin(false);
       setPin("");
       setSelectedPkg(null);
