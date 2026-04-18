@@ -9,6 +9,13 @@ import { useToast } from "@/hooks/use-toast";
 import { trackDailyMission } from "@/lib/daily-mission";
 import { EmojiIcon } from "./emojiToIcon";
 import { Input } from "@/components/ui/input";
+import SpinWheel from "./SpinWheel";
+import StreakMilestones from "./StreakMilestones";
+import StreakLeaderboardWeekly from "./StreakLeaderboardWeekly";
+import StreakBoosters from "./StreakBoosters";
+import StreakAvatarEvolution from "./StreakAvatarEvolution";
+import StreakCalendar from "./StreakCalendar";
+import CelebrationOverlay from "./CelebrationOverlay";
 
 // Strip leading emoji from a title and map to a 3D Lucide icon
 const EMOJI_ICON_MAP: Array<{ regex: RegExp; Icon: any; cls: string }> = [
@@ -88,6 +95,9 @@ export default function NeonStreakHub({ visitorId }: Props) {
   const [history, setHistory] = useState<any[]>([]);
   const [powerUps, setPowerUps] = useState<{ extra_life: number; double_xp_until: string | null; time_freeze: number; auto_hint: number }>({ extra_life: 0, double_xp_until: null, time_freeze: 0, auto_hint: 0 });
   const [redeemingPower, setRedeemingPower] = useState<string | null>(null);
+  const [longestStreak, setLongestStreak] = useState(0);
+  const [celebrate, setCelebrate] = useState<{ show: boolean; msg: string }>({ show: false, msg: "" });
+  const [activeView, setActiveView] = useState<"main" | "leaderboard" | "calendar">("main");
 
   const POWER_UPS = [
     { id: "extra_life", name: "Nyawa Ekstra", desc: "+1 nyawa untuk semua game", icon: Heart, cost: 30, color: "from-red-500 to-pink-600" },
@@ -109,6 +119,7 @@ export default function NeonStreakHub({ visitorId }: Props) {
       setCoins((streak as any).streak_coins || 0);
       setMultiplier(Number((streak as any).current_multiplier) || 1);
       setCurrentStreak(streak.current_streak || 0);
+      setLongestStreak((streak as any).longest_streak || 0);
     }
     const { data: box } = await supabase.from("mystery_box_claims").select("*").eq("visitor_id", visitorId).eq("claim_date", today).maybeSingle();
     setBoxOpened(!!box);
