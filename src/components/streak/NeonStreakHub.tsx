@@ -3,10 +3,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Gift, Loader2, Sparkles, ShoppingBag, Trophy, Coins, Target, Lock, Zap, Check, Rocket, Gamepad2, Flame, Crown, Star, Gem, Box, Calendar, Award, Medal } from "lucide-react";
+import { Gift, Loader2, Sparkles, ShoppingBag, Trophy, Coins, Target, Lock, Zap, Check, Rocket, Gamepad2, Flame, Crown, Star, Gem, Box, Calendar, Award, Medal, Wallet, Plus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { trackDailyMission } from "@/lib/daily-mission";
 import { EmojiIcon } from "./emojiToIcon";
+import { Input } from "@/components/ui/input";
 
 // Strip leading emoji from a title and map to a 3D Lucide icon
 const EMOJI_ICON_MAP: Array<{ regex: RegExp; Icon: any; cls: string }> = [
@@ -79,6 +80,10 @@ export default function NeonStreakHub({ visitorId }: Props) {
   const [redeeming, setRedeeming] = useState<string | null>(null);
   const [challenges, setChallenges] = useState<Challenge[]>([]);
   const [dailyMissions, setDailyMissions] = useState<Challenge[]>([]);
+  const [coinPackages, setCoinPackages] = useState<{ id: string; name: string; coins: number; price: number }[]>([]);
+  const [topupPin, setTopupPin] = useState("");
+  const [topupPkgId, setTopupPkgId] = useState<string | null>(null);
+  const [toppingUp, setToppingUp] = useState(false);
 
   function getToday() {
     const wib = new Date(Date.now() + 7 * 3600 * 1000);
@@ -99,6 +104,9 @@ export default function NeonStreakHub({ visitorId }: Props) {
 
     const { data: shopItems } = await supabase.from("streak_shop_items").select("*").eq("is_active", true).order("sort_order");
     setItems((shopItems as any[]) || []);
+
+    const { data: coinPkgs } = await supabase.from("streak_coin_packages" as any).select("id, name, coins, price").eq("is_active", true).order("sort_order");
+    setCoinPackages((coinPkgs as any[]) || []);
 
     const nowIso = new Date().toISOString();
     const { data: chs } = await supabase.from("weekly_challenges").select("*").eq("is_active", true).gte("ends_at", nowIso).order("starts_at");
@@ -176,6 +184,33 @@ export default function NeonStreakHub({ visitorId }: Props) {
       }
     } finally {
       setRedeeming(null);
+    }
+  }
+
+  async function topUpCoins(pkgId: string) {
+    if (!topupPin.trim()) {
+      toast({ title: "PIN diperlukan", description: "Masukkan PIN untuk melanjutkan", variant: "destructive" });
+      return;
+    }
+    setToppingUp(true);
+    setTopupPkgId(pkgId);
+    try {
+      const { data, error } = await supabase.functions.invoke("purchase-streak-coins", {
+        body: { visitorId, packageId: pkgId, pin: topupPin.trim(), action: "purchase" },
+      });
+      if (error || data?.error) {
+        toast({ title: "Gagal top up", description: data?.error || error?.message, variant: "destructive" });
+      } else {
+        toast({
+          title: "🎉 Top Up Berhasil!",
+          description: `+${data.coins_added.toLocaleString("id-ID")} koin. Sisa saldo: Rp${data.balance_remaining.toLocaleString("id-ID")}`,
+        });
+        setTopupPin("");
+        loadAll();
+      }
+    } finally {
+      setToppingUp(false);
+      setTopupPkgId(null);
     }
   }
 
@@ -415,7 +450,47 @@ export default function NeonStreakHub({ visitorId }: Props) {
               <Coins className="w-5 h-5 icon-3d-coin" strokeWidth={2.5} /> {coins.toLocaleString("id-ID")}
             </span>
           </div>
-          <div className="grid grid-cols-2 gap-2 max-h-[60vh] overflow-y-auto">
+
+          {/* Top Up Koin via Saldo */}
+          {coinPackages.length > 0 && (
+            <div className="rounded-xl border border-cyan-500/30 bg-gradient-to-br from-cyan-950/60 to-purple-950/60 p-3 space-y-2">
+              <div className="flex items-center gap-2">
+                <Wallet className="w-4 h-4 icon-3d-coin" strokeWidth={2.5} />
+                <span className="text-xs font-black neon-text-cyan tracking-widest uppercase">Top Up Koin (Bayar Saldo)</span>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                {coinPackages.map((pkg) => (
+                  <button
+                    key={pkg.id}
+                    disabled={toppingUp}
+                    onClick={() => topUpCoins(pkg.id)}
+                    className="relative p-2.5 rounded-lg border border-cyan-400/40 bg-black/40 text-left hover:border-cyan-300 hover:scale-[1.02] transition disabled:opacity-50"
+                  >
+                    <div className="flex items-center gap-1.5 mb-1">
+                      <Plus className="w-3.5 h-3.5 text-cyan-300" strokeWidth={3} />
+                      <span className="text-sm font-black text-white tabular-nums">{pkg.coins.toLocaleString("id-ID")}</span>
+                      <Coins className="w-3.5 h-3.5 icon-3d-coin" strokeWidth={2.5} />
+                    </div>
+                    <div className="text-[10px] font-bold neon-text-yellow tabular-nums">Rp{pkg.price.toLocaleString("id-ID")}</div>
+                    {toppingUp && topupPkgId === pkg.id && (
+                      <Loader2 className="w-3 h-3 animate-spin text-cyan-300 absolute top-2 right-2" />
+                    )}
+                  </button>
+                ))}
+              </div>
+              <Input
+                type="password"
+                inputMode="numeric"
+                placeholder="Masukkan PIN saldo"
+                value={topupPin}
+                onChange={(e) => setTopupPin(e.target.value)}
+                className="h-9 text-xs bg-black/40 border-cyan-500/30 text-white placeholder:text-white/40"
+              />
+              <p className="text-[10px] text-white/50">Pembayaran dipotong dari saldo akun. PIN wajib untuk konfirmasi.</p>
+            </div>
+          )}
+
+          <div className="grid grid-cols-2 gap-2 max-h-[40vh] overflow-y-auto">
             {items.map(item => {
               const canBuy = coins >= item.cost_coins;
               return (
