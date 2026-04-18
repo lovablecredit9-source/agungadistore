@@ -55,6 +55,9 @@ export default function GameSeasonPass({ visitorId }: Props) {
     if (error || data?.error) { toast({ title: "Gagal", description: data?.error || error?.message, variant: "destructive" }); return; }
     setPass(data.pass);
     setRevealSlot({ tier: t.lvl, slot: data.slot, awarded: data.awarded, label: data.rewardLabel });
+    // Sinkron cache power-up jika hadiah berupa lives/hints/time
+    import("./gameStore").then(m => m.syncPowerUpsFromServer()).catch(() => {});
+    window.dispatchEvent(new CustomEvent("power-ups-updated"));
   }
 
   async function buyPremium(source: "balance" | "gems" | "coins") {
