@@ -434,6 +434,7 @@ export default function NeonStreakHub({ visitorId, forcedView }: Props) {
             </Button>
           </div>
           <StreakMilestones visitorId={visitorId} onUpdate={() => { loadAll(); setCelebrate({ show: true, msg: "🏆 MILESTONE!" }); }} />
+          <StreakLeaderboard />
         </div>
       )}
 
