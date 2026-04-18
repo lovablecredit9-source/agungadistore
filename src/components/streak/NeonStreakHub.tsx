@@ -3,10 +3,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Gift, Loader2, Sparkles, ShoppingBag, Trophy, Coins, Target, Lock, Zap, Check, Rocket, Gamepad2, Flame, Crown, Star, Gem, Box, Calendar, Award, Medal } from "lucide-react";
+import { Gift, Loader2, Sparkles, ShoppingBag, Trophy, Coins, Target, Lock, Zap, Check, Rocket, Gamepad2, Flame, Crown, Star, Gem, Box, Calendar, Award, Medal, Wallet, Plus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { trackDailyMission } from "@/lib/daily-mission";
 import { EmojiIcon } from "./emojiToIcon";
+import { Input } from "@/components/ui/input";
 
 // Strip leading emoji from a title and map to a 3D Lucide icon
 const EMOJI_ICON_MAP: Array<{ regex: RegExp; Icon: any; cls: string }> = [
