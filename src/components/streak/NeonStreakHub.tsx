@@ -246,6 +246,8 @@ export default function NeonStreakHub({ visitorId }: Props) {
       setRedeemingPower(null);
     }
   }
+
+  async function topUpCoins(pkgId: string) {
     if (!topupPin.trim()) {
       toast({ title: "PIN diperlukan", description: "Masukkan PIN untuk melanjutkan", variant: "destructive" });
       return;
