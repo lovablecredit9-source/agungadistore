@@ -183,19 +183,23 @@ export function BuyCreditsDialog({ visitorId, onPurchased }: BuyCreditsDialogPro
         },
       });
       if (error) {
-        if (error instanceof FunctionsHttpError) {
-          const errBody = await error.context.json();
-          if (errBody?.needPin) {
-            setNeedPin(true);
-            setSelectedPkg(pkgId);
-            setBuying(null);
-            return;
+        let errBody: any = null;
+        try {
+          if (error instanceof FunctionsHttpError && error.context) {
+            errBody = await error.context.json();
           }
-          toast({ title: "Gagal", description: errBody?.error || "Terjadi kesalahan", variant: "destructive" });
+        } catch {
+          errBody = null;
+        }
+        if (errBody?.needPin) {
+          setNeedPin(true);
+          setSelectedPkg(pkgId);
           setBuying(null);
           return;
         }
-        throw error;
+        toast({ title: "Gagal", description: errBody?.error || "Terjadi kesalahan", variant: "destructive" });
+        setBuying(null);
+        return;
       }
       if (data?.needPin) {
         setNeedPin(true);
