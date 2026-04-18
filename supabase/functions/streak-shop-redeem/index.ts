@@ -100,6 +100,53 @@ Deno.serve(async (req) => {
         return Response.json({ error: `Gagal menambah freeze: ${updErr.message}` }, { status: 500, headers: corsHeaders });
       }
       rewardSummary = `+${item.reward_value} Streak Freeze ditambahkan!`;
+    } else if (
+      item.reward_type === "extra_life" ||
+      item.reward_type === "auto_hint" ||
+      item.reward_type === "time_freeze" ||
+      item.reward_type === "double_xp"
+    ) {
+      // Pastikan row ada
+      const { data: pu } = await admin
+        .from("user_power_ups")
+        .select("*")
+        .eq("visitor_id", visitorId)
+        .maybeSingle();
+
+      const updates: Record<string, unknown> = {};
+      if (item.reward_type === "double_xp") {
+        const baseMs = pu?.double_xp_until && new Date(pu.double_xp_until).getTime() > Date.now()
+          ? new Date(pu.double_xp_until).getTime()
+          : Date.now();
+        updates.double_xp_until = new Date(baseMs + item.reward_value * 3600 * 1000).toISOString();
+        rewardSummary = `Double XP aktif ${item.reward_value} jam!`;
+      } else {
+        const cur = (pu?.[item.reward_type] as number) || 0;
+        updates[item.reward_type] = cur + item.reward_value;
+        const labelMap: Record<string, string> = {
+          extra_life: "Nyawa Ekstra",
+          auto_hint: "Hint Otomatis",
+          time_freeze: "Time Freeze",
+        };
+        rewardSummary = `+${item.reward_value} ${labelMap[item.reward_type]} ditambahkan!`;
+      }
+
+      if (pu) {
+        const { error: upErr } = await admin
+          .from("user_power_ups")
+          .update(updates)
+          .eq("visitor_id", visitorId);
+        if (upErr) {
+          return Response.json({ error: `Gagal update power-up: ${upErr.message}` }, { status: 500, headers: corsHeaders });
+        }
+      } else {
+        const { error: insErr } = await admin
+          .from("user_power_ups")
+          .insert({ visitor_id: visitorId, ...updates });
+        if (insErr) {
+          return Response.json({ error: `Gagal buat power-up: ${insErr.message}` }, { status: 500, headers: corsHeaders });
+        }
+      }
     }
 
     // Deduct coins

@@ -129,8 +129,11 @@ export function useDailyFreePlay(): boolean {
 export { MAX_FREE_PLAYS };
 
 // =====================================================
-// POWER-UPS (dibeli di Streak Shop, dipakai di game)
+// POWER-UPS (server-backed; localStorage = cache UX cepat)
+// Dibeli di Streak Shop → user_power_ups, dipakai di game.
 // =====================================================
+import { supabase } from "@/integrations/supabase/client";
+
 export interface PowerUpsState {
   extra_life: number;
   auto_hint: number;
@@ -140,29 +143,30 @@ export interface PowerUpsState {
 
 const POWERUPS_KEY_PREFIX = "streak_powerups_";
 
-function getPowerUpsKey(): string | null {
+function getActiveVisitorId(): string | null {
   if (typeof window === "undefined") return null;
-  const vid = localStorage.getItem("balance_visitor_id");
-  if (!vid) {
-    // fallback ke visitor id lokal
-    try {
-      const local = localStorage.getItem("visitor_id");
-      if (local) return `${POWERUPS_KEY_PREFIX}${local}`;
-    } catch {}
-    return null;
-  }
-  return `${POWERUPS_KEY_PREFIX}${vid}`;
+  return (
+    localStorage.getItem("balance_visitor_id") ||
+    localStorage.getItem("visitor_id") ||
+    null
+  );
 }
 
+function getPowerUpsKey(): string | null {
+  const vid = getActiveVisitorId();
+  return vid ? `${POWERUPS_KEY_PREFIX}${vid}` : null;
+}
+
+const EMPTY_PU: PowerUpsState = { extra_life: 0, auto_hint: 0, time_freeze: 0, double_xp_until: null };
+
 export function loadPowerUps(): PowerUpsState {
-  const empty: PowerUpsState = { extra_life: 0, auto_hint: 0, time_freeze: 0, double_xp_until: null };
   try {
     const key = getPowerUpsKey();
-    if (!key) return empty;
+    if (!key) return EMPTY_PU;
     const raw = localStorage.getItem(key);
-    if (raw) return { ...empty, ...JSON.parse(raw) };
+    if (raw) return { ...EMPTY_PU, ...JSON.parse(raw) };
   } catch {}
-  return empty;
+  return EMPTY_PU;
 }
 
 export function savePowerUps(s: PowerUpsState) {
@@ -172,13 +176,43 @@ export function savePowerUps(s: PowerUpsState) {
   } catch {}
 }
 
+/** Sinkron dari server (sumber kebenaran) lalu cache ke localStorage. */
+export async function syncPowerUpsFromServer(): Promise<PowerUpsState> {
+  const vid = getActiveVisitorId();
+  if (!vid) return EMPTY_PU;
+  try {
+    const { data } = await supabase.functions.invoke("power-up-consume", {
+      body: { action: "get", visitorId: vid },
+    });
+    if (data && !data.error) {
+      const next: PowerUpsState = {
+        extra_life: data.extra_life || 0,
+        auto_hint: data.auto_hint || 0,
+        time_freeze: data.time_freeze || 0,
+        double_xp_until: data.double_xp_until || null,
+      };
+      savePowerUps(next);
+      return next;
+    }
+  } catch {}
+  return loadPowerUps();
+}
+
 export type PowerUpKind = "extra_life" | "auto_hint" | "time_freeze";
 
+/** Konsumsi 1 power-up: kurangi cache lokal dulu (instan) lalu sinkron ke server. */
 export function consumePowerUp(kind: PowerUpKind): boolean {
   const s = loadPowerUps();
   if ((s[kind] || 0) <= 0) return false;
   s[kind] = (s[kind] || 0) - 1;
   savePowerUps(s);
+  // fire-and-forget sync ke server
+  const vid = getActiveVisitorId();
+  if (vid) {
+    supabase.functions.invoke("power-up-consume", {
+      body: { action: "consume", visitorId: vid, kind },
+    }).catch(() => {});
+  }
   return true;
 }
 

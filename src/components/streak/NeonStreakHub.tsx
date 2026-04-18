@@ -350,19 +350,20 @@ export default function NeonStreakHub({ visitorId }: Props) {
       {/* View tabs */}
       <div className="flex gap-1 p-1 rounded-xl bg-black/40 border border-purple-500/30">
         {[
-          { id: "main", label: "🎯 Utama" },
-          { id: "leaderboard", label: "🏆 Ranking" },
-          { id: "calendar", label: "📅 Kalender" },
+          { id: "main", label: "Utama", Icon: Target, cls: "icon-3d-target" },
+          { id: "leaderboard", label: "Ranking", Icon: Trophy, cls: "icon-3d-trophy" },
+          { id: "calendar", label: "Kalender", Icon: Calendar, cls: "icon-3d-target" },
         ].map(t => (
           <button
             key={t.id}
             onClick={() => setActiveView(t.id as any)}
-            className={`flex-1 py-1.5 rounded-lg text-[11px] font-black transition ${
+            className={`flex-1 py-1.5 rounded-lg text-[11px] font-black transition flex items-center justify-center gap-1.5 ${
               activeView === t.id
                 ? "bg-gradient-to-r from-pink-500 to-purple-600 text-white shadow-lg"
                 : "text-white/60 hover:text-white"
             }`}
           >
+            <t.Icon className={`w-3.5 h-3.5 ${activeView === t.id ? "" : t.cls}`} strokeWidth={2.5} />
             {t.label}
           </button>
         ))}

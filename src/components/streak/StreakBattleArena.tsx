@@ -274,7 +274,33 @@ export default function StreakBattleArena({ visitorId, onUpdate }: Props) {
                 <p className="text-xs font-black text-white/80 mb-2">🔥 Battle Terbuka</p>
                 <div className="space-y-2">
                   {openList.length === 0 ? (
-                    <p className="text-[11px] text-white/50 text-center py-3">Belum ada battle terbuka</p>
+                    <div className="rounded-xl border border-dashed border-red-500/40 bg-red-500/5 p-4 text-center space-y-2">
+                      <Swords className="w-8 h-8 mx-auto text-red-400/60" />
+                      <p className="text-[11px] text-white/70 font-bold">
+                        Belum ada lawan online 😴
+                      </p>
+                      <p className="text-[10px] text-white/50 leading-relaxed">
+                        Buat tantangan di atas, lalu <b>bagikan link aplikasi</b> ke teman
+                        agar mereka bisa terima battle kamu. Battle akan kedaluwarsa dalam 1 jam
+                        — kalau tidak ada yang terima, Gem otomatis dikembalikan.
+                      </p>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          const url = window.location.origin;
+                          if (navigator.share) {
+                            navigator.share({ title: "Tantang aku Battle Streak!", url }).catch(() => {});
+                          } else {
+                            navigator.clipboard.writeText(url);
+                            toast({ title: "Link disalin!", description: "Bagikan ke teman 👥" });
+                          }
+                        }}
+                        className="border-red-500/50 text-red-300 text-[11px] h-7"
+                      >
+                        🔗 Bagikan Link Aplikasi
+                      </Button>
+                    </div>
                   ) : openList.map((b) => renderBattle(b, "open"))}
                 </div>
               </div>
