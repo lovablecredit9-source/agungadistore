@@ -187,7 +187,32 @@ export default function NeonStreakHub({ visitorId }: Props) {
     }
   }
 
-  async function claimChallenge(ch: Challenge) {
+  async function topUpCoins(pkgId: string) {
+    if (!topupPin.trim()) {
+      toast({ title: "PIN diperlukan", description: "Masukkan PIN untuk melanjutkan", variant: "destructive" });
+      return;
+    }
+    setToppingUp(true);
+    setTopupPkgId(pkgId);
+    try {
+      const { data, error } = await supabase.functions.invoke("purchase-streak-coins", {
+        body: { visitorId, packageId: pkgId, pin: topupPin.trim(), action: "purchase" },
+      });
+      if (error || data?.error) {
+        toast({ title: "Gagal top up", description: data?.error || error?.message, variant: "destructive" });
+      } else {
+        toast({
+          title: "🎉 Top Up Berhasil!",
+          description: `+${data.coins_added.toLocaleString("id-ID")} koin. Sisa saldo: Rp${data.balance_remaining.toLocaleString("id-ID")}`,
+        });
+        setTopupPin("");
+        loadAll();
+      }
+    } finally {
+      setToppingUp(false);
+      setTopupPkgId(null);
+    }
+  }
     const { data, error } = await supabase.functions.invoke("check-weekly-challenge", { body: { visitorId, claimChallengeId: ch.id } });
     if (error || data?.error) {
       toast({ title: "Gagal", description: data?.error || error?.message, variant: "destructive" });
