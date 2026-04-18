@@ -450,7 +450,47 @@ export default function NeonStreakHub({ visitorId }: Props) {
               <Coins className="w-5 h-5 icon-3d-coin" strokeWidth={2.5} /> {coins.toLocaleString("id-ID")}
             </span>
           </div>
-          <div className="grid grid-cols-2 gap-2 max-h-[60vh] overflow-y-auto">
+
+          {/* Top Up Koin via Saldo */}
+          {coinPackages.length > 0 && (
+            <div className="rounded-xl border border-cyan-500/30 bg-gradient-to-br from-cyan-950/60 to-purple-950/60 p-3 space-y-2">
+              <div className="flex items-center gap-2">
+                <Wallet className="w-4 h-4 icon-3d-coin" strokeWidth={2.5} />
+                <span className="text-xs font-black neon-text-cyan tracking-widest uppercase">Top Up Koin (Bayar Saldo)</span>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                {coinPackages.map((pkg) => (
+                  <button
+                    key={pkg.id}
+                    disabled={toppingUp}
+                    onClick={() => topUpCoins(pkg.id)}
+                    className="relative p-2.5 rounded-lg border border-cyan-400/40 bg-black/40 text-left hover:border-cyan-300 hover:scale-[1.02] transition disabled:opacity-50"
+                  >
+                    <div className="flex items-center gap-1.5 mb-1">
+                      <Plus className="w-3.5 h-3.5 text-cyan-300" strokeWidth={3} />
+                      <span className="text-sm font-black text-white tabular-nums">{pkg.coins.toLocaleString("id-ID")}</span>
+                      <Coins className="w-3.5 h-3.5 icon-3d-coin" strokeWidth={2.5} />
+                    </div>
+                    <div className="text-[10px] font-bold neon-text-yellow tabular-nums">Rp{pkg.price.toLocaleString("id-ID")}</div>
+                    {toppingUp && topupPkgId === pkg.id && (
+                      <Loader2 className="w-3 h-3 animate-spin text-cyan-300 absolute top-2 right-2" />
+                    )}
+                  </button>
+                ))}
+              </div>
+              <Input
+                type="password"
+                inputMode="numeric"
+                placeholder="Masukkan PIN saldo"
+                value={topupPin}
+                onChange={(e) => setTopupPin(e.target.value)}
+                className="h-9 text-xs bg-black/40 border-cyan-500/30 text-white placeholder:text-white/40"
+              />
+              <p className="text-[10px] text-white/50">Pembayaran dipotong dari saldo akun. PIN wajib untuk konfirmasi.</p>
+            </div>
+          )}
+
+          <div className="grid grid-cols-2 gap-2 max-h-[40vh] overflow-y-auto">
             {items.map(item => {
               const canBuy = coins >= item.cost_coins;
               return (
