@@ -1200,6 +1200,39 @@ export type Database = {
         }
         Relationships: []
       }
+      mine_sweeper_sessions: {
+        Row: {
+          bet: number
+          created_at: string
+          mine_positions: number[]
+          mines: number
+          revealed: number[]
+          status: string
+          updated_at: string
+          visitor_id: string
+        }
+        Insert: {
+          bet: number
+          created_at?: string
+          mine_positions: number[]
+          mines: number
+          revealed?: number[]
+          status?: string
+          updated_at?: string
+          visitor_id: string
+        }
+        Update: {
+          bet?: number
+          created_at?: string
+          mine_positions?: number[]
+          mines?: number
+          revealed?: number[]
+          status?: string
+          updated_at?: string
+          visitor_id?: string
+        }
+        Relationships: []
+      }
       music_discount_vouchers: {
         Row: {
           code: string
