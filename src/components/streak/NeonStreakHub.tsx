@@ -242,6 +242,8 @@ export default function NeonStreakHub({ visitorId, forcedView }: Props) {
           title: `🛒 ${item.name} ditebus!`,
           description: data.rewardCode ? `Kode: ${data.rewardCode}` : (data.rewardSummary || "Reward sudah ditambahkan!"),
         });
+        await syncPowerUpsFromServer();
+        window.dispatchEvent(new CustomEvent("power-ups-updated"));
         loadAll();
         // Beritahu komponen lain (PlaylistTab, GameCredits) supaya refresh
         if (item.reward_type === "music_storage") {
