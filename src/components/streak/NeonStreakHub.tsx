@@ -417,7 +417,7 @@ export default function NeonStreakHub({ visitorId, forcedView }: Props) {
           <StreakBattleArena visitorId={visitorId} />
           <StreakTournament visitorId={visitorId} />
           <StreakPass visitorId={visitorId} onUpdate={loadAll} />
-          <StreakBoosters visitorId={visitorId} onUpdate={loadAll} />
+          <StreakBoosters visitorId={visitorId} coins={coins} onUpdate={loadAll} />
           <div className="cyber-card rounded-2xl p-4">
             <div className="flex items-center gap-2 mb-3">
               <Gift className="w-5 h-5 icon-3d-gift" strokeWidth={2.5} />
