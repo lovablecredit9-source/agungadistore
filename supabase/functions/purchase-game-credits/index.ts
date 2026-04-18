@@ -135,7 +135,7 @@ Deno.serve(async (req) => {
       const totalDiscountAmount = flashDiscountAmount + voucherDiscountAmount;
 
       // Check balances - support split payment between Saldo IN (game_balance) and Saldo Utama (user_balances)
-      const { data: gameBal } = await admin.from("game_balance").select("id, amount").eq("visitor_id", visitorId).maybeSingle();
+      const { data: gameBal } = await admin.from("game_balance").select("id, amount, total_spent").eq("visitor_id", visitorId).maybeSingle();
       const { data: balance } = await admin.from("user_balances").select("id, balance").eq("visitor_id", visitorId).maybeSingle();
       const gameAmount = gameBal?.amount || 0;
       const mainAmount = balance?.balance || 0;
@@ -153,17 +153,24 @@ Deno.serve(async (req) => {
         payFromGame = finalPrice;
         sourceLabel = "Saldo IN";
       } else {
-        // auto: gunakan Saldo IN dulu, sisanya Saldo Utama
         if (gameAmount + mainAmount < finalPrice) return Response.json({ error: "Saldo tidak cukup (gabungan Saldo IN + Utama)" }, { status: 400, headers: corsHeaders });
         payFromGame = Math.min(gameAmount, finalPrice);
         payFromMain = finalPrice - payFromGame;
         sourceLabel = payFromGame > 0 && payFromMain > 0 ? "Saldo IN + Utama" : payFromGame > 0 ? "Saldo IN" : "Saldo Utama";
       }
 
-      // Deduct
-      if (payFromGame > 0 && gameBal) {
-        await admin.from("game_balance").update({ amount: gameAmount - payFromGame, total_spent: (gameBal as any).total_spent ? (gameBal as any).total_spent + payFromGame : payFromGame }).eq("id", gameBal.id);
-        await admin.from("game_balance_transactions").insert({ visitor_id: visitorId, type: "spend", amount: -payFromGame, description: `Beli ${pkg.label}` });
+      // Deduct Saldo IN — pakai akumulasi total_spent yang benar (bukan overwrite)
+      if (payFromGame > 0) {
+        if (!gameBal) {
+          return Response.json({ error: "Saldo IN tidak ditemukan" }, { status: 400, headers: corsHeaders });
+        }
+        await admin.from("game_balance").update({
+          amount: gameAmount - payFromGame,
+          total_spent: (gameBal.total_spent || 0) + payFromGame,
+        }).eq("id", gameBal.id);
+        await admin.from("game_balance_transactions").insert({
+          visitor_id: visitorId, type: "spend", amount: -payFromGame, description: `Beli ${pkg.label}`,
+        });
       }
       if (payFromMain > 0 && balance) {
         await admin.from("user_balances").update({ balance: mainAmount - payFromMain }).eq("id", balance.id);
