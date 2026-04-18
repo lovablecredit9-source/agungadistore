@@ -137,11 +137,11 @@ export default function SlotMachineGame() {
       )}
 
       <div className="text-xs text-muted-foreground space-y-1 bg-muted/50 p-3 rounded-lg">
-        <div className="font-bold mb-1">💰 Hadiah per Tier:</div>
-        <div><span className="font-bold text-emerald-600">Hemat (1):</span> 7️⃣7️⃣7️⃣ → Saldo Rp 1.000 · 💎💎💎 → Rp 500 · ⭐⭐⭐ → Rp 100 · 🔔/🍇/🍋/🍒 → 2-10 kredit</div>
-        <div><span className="font-bold text-blue-600">Sedang (5):</span> 7️⃣7️⃣7️⃣ → Rp 2.000 · 💎💎💎 → Rp 1.000 · 🔔🔔🔔 → +50MB Storage · 🍇🍇🍇 → +1 Nyawa</div>
-        <div><span className="font-bold text-amber-600">Besar (10):</span> 7️⃣7️⃣7️⃣ → MEGA Rp 5.000 · 🔔🔔🔔 → +100MB · 🍇🍇🍇 → +2 Nyawa</div>
-        <div className="pt-1 italic opacity-80">Saldo Game hanya bisa dipakai untuk: kredit game, paket streak, storage musik, gem (bukan produk).</div>
+        <div className="font-bold mb-1">💰 Hadiah per Tier (kredit difokuskan, saldo dibatasi):</div>
+        <div><span className="font-bold text-emerald-600">Hemat (1):</span> 7️⃣7️⃣7️⃣ → MAX Saldo Rp 100 · 💎 → 5 kredit · ⭐ → 4 · 🔔/🍇 → 3 · 🍋/🍒 → 2</div>
+        <div><span className="font-bold text-blue-600">Sedang (5):</span> 7️⃣7️⃣7️⃣ → MAX Saldo Rp 200 · 💎 → Rp 100 · ⭐ → 8 kredit · 🔔 → +50MB · 🍇 → +1 Nyawa</div>
+        <div><span className="font-bold text-amber-600">Besar (10):</span> 7️⃣7️⃣7️⃣ → MAX Saldo Rp 500 · 💎 → Rp 200 · ⭐ → 15 kredit · 🔔 → +100MB · 🍇 → +2 Nyawa</div>
+        <div className="pt-1 italic opacity-80">Saldo tetap langka walau Server Luck aktif. Booster hanya menaikkan peluang simbol langka.</div>
       </div>
     </div>
   );
