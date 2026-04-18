@@ -123,7 +123,7 @@ export default function MysteryRewardPopup({ reward, onClose }: Props) {
                 onClick={onClose}
                 className={`w-full bg-gradient-to-r ${getRarityColor(reward.rarity)} text-white font-bold shadow-lg`}
               >
-                Mantap! 🚀
+                Mantap! <Rocket className="w-4 h-4 ml-1.5 icon-3d-rocket" strokeWidth={2.5} />
               </Button>
             </div>
           </motion.div>
