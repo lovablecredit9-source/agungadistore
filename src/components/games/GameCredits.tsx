@@ -102,9 +102,12 @@ export function BuyCreditsDialog({ visitorId, onPurchased }: BuyCreditsDialogPro
   const [packages, setPackages] = useState<CreditPackage[]>([]);
   const [flashSaleEnd, setFlashSaleEnd] = useState<string>("");
   const [creditDiscount, setCreditDiscount] = useState(0);
+  const [paymentSource, setPaymentSource] = useState<"auto" | "game" | "main">("auto");
+  const [gameBalanceAmount, setGameBalanceAmount] = useState(0);
+  const [mainBalanceAmount, setMainBalanceAmount] = useState(0);
   const { toast } = useToast();
 
-  // Fetch packages from DB via edge function
+  // Fetch packages from DB via edge function + balances
   useEffect(() => {
     if (!open) return;
     (async () => {
@@ -133,9 +136,19 @@ export function BuyCreditsDialog({ visitorId, onPurchased }: BuyCreditsDialogPro
           });
           setPackages(pkgs);
         }
+
+        // Fetch both balances
+        if (visitorId) {
+          const [{ data: gb }, { data: mb }] = await Promise.all([
+            supabase.from("game_balance" as any).select("amount").eq("visitor_id", visitorId).maybeSingle(),
+            supabase.from("user_balances").select("balance").eq("visitor_id", visitorId).maybeSingle(),
+          ]);
+          setGameBalanceAmount(((gb as any)?.amount as number) || 0);
+          setMainBalanceAmount(((mb as any)?.balance as number) || 0);
+        }
       } catch {}
     })();
-  }, [open]);
+  }, [open, visitorId]);
 
   const resetVoucher = () => {
     setVoucherCode("");
