@@ -64,6 +64,7 @@ function parseTitleIcon(title: string): { Icon: any | null; cls: string; text: s
 
 interface Props {
   visitorId: string;
+  forcedView?: "main" | "event" | "shop";
 }
 
 interface ShopItem {
