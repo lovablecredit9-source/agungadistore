@@ -39,10 +39,9 @@ export default function WeeklyQuests({ visitorId, onUpdate }: Props) {
   const load = async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke(
-        `weekly-quest?action=status&visitorId=${visitorId}`,
-        { method: "GET" as any },
-      );
+      const { data, error } = await supabase.functions.invoke("weekly-quest", {
+        body: { action: "status", visitorId },
+      });
       if (error) throw error;
       setQuests((data as any).quests || []);
       setProgress((data as any).progress || []);
@@ -59,8 +58,8 @@ export default function WeeklyQuests({ visitorId, onUpdate }: Props) {
   const handleClaim = async (questId: string) => {
     setClaiming(questId);
     try {
-      const { data, error } = await supabase.functions.invoke("weekly-quest?action=claim", {
-        body: { visitorId, questId },
+      const { data, error } = await supabase.functions.invoke("weekly-quest", {
+        body: { action: "claim", visitorId, questId },
       });
       if (error) throw error;
       if ((data as any)?.error) throw new Error((data as any).error);
