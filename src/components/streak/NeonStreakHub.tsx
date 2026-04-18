@@ -3,9 +3,39 @@ import { supabase } from "@/integrations/supabase/client";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Gift, Loader2, Sparkles, ShoppingBag, Trophy, Coins, Target, Lock, Zap, Check, Rocket } from "lucide-react";
+import { Gift, Loader2, Sparkles, ShoppingBag, Trophy, Coins, Target, Lock, Zap, Check, Rocket, Gamepad2, Flame, Crown, Star, Gem, Box, Calendar, Award, Medal } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { trackDailyMission } from "@/lib/daily-mission";
+
+// Strip leading emoji from a title and map to a 3D Lucide icon
+const EMOJI_ICON_MAP: Array<{ regex: RegExp; Icon: any; cls: string }> = [
+  { regex: /^🎮\s*/u, Icon: Gamepad2, cls: "icon-3d-zap" },
+  { regex: /^🏆\s*/u, Icon: Trophy, cls: "icon-3d-trophy" },
+  { regex: /^🔥\s*/u, Icon: Flame, cls: "icon-3d-flame" },
+  { regex: /^⚡\s*/u, Icon: Zap, cls: "icon-3d-zap" },
+  { regex: /^🎁\s*/u, Icon: Gift, cls: "icon-3d-gift" },
+  { regex: /^💎\s*/u, Icon: Gem, cls: "icon-3d-trophy" },
+  { regex: /^👑\s*/u, Icon: Crown, cls: "icon-3d-trophy" },
+  { regex: /^⭐\s*/u, Icon: Star, cls: "icon-3d-sparkles" },
+  { regex: /^🌟\s*/u, Icon: Sparkles, cls: "icon-3d-sparkles" },
+  { regex: /^✨\s*/u, Icon: Sparkles, cls: "icon-3d-sparkles" },
+  { regex: /^🎯\s*/u, Icon: Target, cls: "icon-3d-target" },
+  { regex: /^📦\s*/u, Icon: Box, cls: "icon-3d-gift" },
+  { regex: /^🚀\s*/u, Icon: Rocket, cls: "icon-3d-zap" },
+  { regex: /^📅\s*/u, Icon: Calendar, cls: "icon-3d-target" },
+  { regex: /^🏅\s*/u, Icon: Medal, cls: "icon-3d-trophy" },
+  { regex: /^🥇\s*/u, Icon: Award, cls: "icon-3d-trophy" },
+  { regex: /^💰\s*/u, Icon: Coins, cls: "icon-3d-coin" },
+];
+
+function parseTitleIcon(title: string): { Icon: any | null; cls: string; text: string } {
+  for (const { regex, Icon, cls } of EMOJI_ICON_MAP) {
+    if (regex.test(title)) return { Icon, cls, text: title.replace(regex, "") };
+  }
+  // Fallback: strip any leading emoji-like chars
+  const stripped = title.replace(/^(\p{Extended_Pictographic}|\p{Emoji_Presentation})\uFE0F?\s*/u, "");
+  return { Icon: null, cls: "", text: stripped };
+}
 
 interface Props {
   visitorId: string;
