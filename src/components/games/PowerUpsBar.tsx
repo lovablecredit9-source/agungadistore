@@ -3,7 +3,7 @@ import { Heart, Lightbulb, Clock, Zap, ShoppingBag } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useToast } from "@/hooks/use-toast";
 import {
-  loadPowerUps, consumePowerUp, isDoubleXPActive,
+  loadPowerUps, consumePowerUp, isDoubleXPActive, syncPowerUpsFromServer,
   type PowerUpsState,
 } from "./gameStore";
 
@@ -38,9 +38,16 @@ export default function PowerUpsBar({ onUseHint, onUseTimeFreeze, compact, enabl
     setDoubleXp(isDoubleXPActive());
   }, []);
 
+  const syncRefresh = useCallback(async () => {
+    const fresh = await syncPowerUpsFromServer();
+    setPu(fresh);
+    setDoubleXp(isDoubleXPActive());
+  }, []);
+
   useEffect(() => {
     refresh();
-    const onFocus = () => refresh();
+    syncRefresh(); // sinkron dari server saat mount
+    const onFocus = () => syncRefresh();
     const onStorage = (e: StorageEvent) => {
       if (!e.key || e.key.startsWith("streak_powerups_")) refresh();
     };
@@ -52,7 +59,7 @@ export default function PowerUpsBar({ onUseHint, onUseTimeFreeze, compact, enabl
       window.removeEventListener("storage", onStorage);
       clearInterval(t);
     };
-  }, [refresh]);
+  }, [refresh, syncRefresh]);
 
   function tryUse(kind: "auto_hint" | "time_freeze", cb?: (() => void) | ((s: number) => void)) {
     if (!enabled) return;
@@ -141,6 +148,7 @@ export function ReviveButton({ onRevive }: { onRevive: () => void }) {
 
   useEffect(() => {
     setPu(loadPowerUps());
+    syncPowerUpsFromServer().then(setPu);
   }, []);
 
   const count = pu.extra_life || 0;
