@@ -25,9 +25,9 @@ type Tier = "hemat" | "sedang" | "besar";
 const TIER_COSTS: Record<Tier, number> = { hemat: 1, sedang: 5, besar: 10 };
 
 function spinReel(tier: Tier, luckMultiplier = 1) {
-  // Booster: bobot simbol langka (index 4-6: ⭐ 💎 7️⃣) ditingkatkan
+  // Booster: bobot simbol langka (index 4-6: ⭐ 💎 7️⃣) ditingkatkan secara linear
   const base = WEIGHTS_BY_TIER[tier];
-  const weights = base.map((w, i) => i >= 4 ? w * Math.sqrt(luckMultiplier) : w);
+  const weights = base.map((w, i) => i >= 4 ? w * luckMultiplier : w);
   const total = weights.reduce((a, b) => a + b, 0);
   let roll = Math.random() * total;
   for (let i = 0; i < SYMBOLS.length; i++) {
@@ -35,6 +35,16 @@ function spinReel(tier: Tier, luckMultiplier = 1) {
     if (roll <= 0) return SYMBOLS[i];
   }
   return SYMBOLS[0];
+}
+
+// Spin 3 reel dengan "lucky bias" — saat booster aktif, peluang reel 2 & 3 force-match reel 1
+function spinThreeReels(tier: Tier, luckMultiplier = 1): string[] {
+  const r1 = spinReel(tier, luckMultiplier);
+  // Bias aktif mulai x2: per reel match prob = (luck-1)*0.08, max 70% (x10≈72%→clamp, x20=clamp)
+  const matchProb = Math.min(0.7, Math.max(0, (luckMultiplier - 1) * 0.08));
+  const r2 = Math.random() < matchProb ? r1 : spinReel(tier, luckMultiplier);
+  const r3 = Math.random() < matchProb ? r1 : spinReel(tier, luckMultiplier);
+  return [r1, r2, r3];
 }
 
 async function getActiveLuck(visitorId: string): Promise<number> {
@@ -149,7 +159,7 @@ Deno.serve(async (req) => {
     if (!visitorId) return new Response(JSON.stringify({ error: "visitorId required" }), { status: 400, headers: corsHeaders });
 
     const luck = await getActiveLuck(visitorId);
-    const reels = [spinReel(tier, luck), spinReel(tier, luck), spinReel(tier, luck)];
+    const reels = spinThreeReels(tier, luck);
     const payout = calculatePayout(tier, reels);
     await applyPayout(visitorId, payout);
 
