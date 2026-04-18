@@ -10,7 +10,7 @@ Deno.serve(async (req) => {
 
   try {
     const { visitorId, eventType, increment = 1, claimChallengeId } = await req.json();
-    if (!visitorId) return Response.json({ error: "visitorId required" }, { status: 400, headers: corsHeaders });
+    if (!visitorId) return Response.json({ error: "visitorId required" }, { headers: corsHeaders });
 
     const admin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
 
@@ -23,11 +23,11 @@ Deno.serve(async (req) => {
         .eq("visitor_id", visitorId)
         .maybeSingle();
 
-      if (!progress) return Response.json({ error: "Belum ada progres" }, { status: 400, headers: corsHeaders });
-      if (progress.claimed_at) return Response.json({ error: "Reward sudah diklaim" }, { status: 400, headers: corsHeaders });
+      if (!progress) return Response.json({ error: "Belum ada progres" }, { headers: corsHeaders });
+      if (progress.claimed_at) return Response.json({ error: "Reward sudah diklaim" }, { headers: corsHeaders });
       const ch = (progress as any).weekly_challenges;
       if (!ch || progress.current_value < ch.target_value) {
-        return Response.json({ error: "Tantangan belum selesai" }, { status: 400, headers: corsHeaders });
+        return Response.json({ error: "Tantangan belum selesai" }, { headers: corsHeaders });
       }
 
       const { data: streak } = await admin.from("daily_streaks").select("*").eq("visitor_id", visitorId).maybeSingle();
