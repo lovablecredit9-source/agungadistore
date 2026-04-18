@@ -435,56 +435,6 @@ export default function NeonStreakHub({ visitorId, forcedView }: Props) {
       {/* Celebration overlay */}
       <CelebrationOverlay show={celebrate.show} message={celebrate.msg} onComplete={() => setCelebrate({ show: false, msg: "" })} />
 
-      {/* Weekly Challenges (tetap tampil global, lintas tab) */}
-      {activeView === "event" && challenges.length > 0 && (
-        <div className="cyber-card-cyan rounded-2xl p-3 space-y-2">
-          <div className="flex items-center gap-2">
-            <Trophy className="w-4 h-4 icon-3d-trophy" strokeWidth={2.5} />
-            <span className="text-xs font-black neon-text-cyan tracking-widest uppercase">Tantangan Mingguan</span>
-          </div>
-          {challenges.map(ch => {
-            const pct = Math.min(100, ((ch.current_value || 0) / ch.target_value) * 100);
-            const claimable = ch.is_completed && !ch.claimed_at && !ch.is_locked;
-            const daysToStart = ch.is_locked
-              ? Math.max(1, Math.ceil((new Date(ch.starts_at).getTime() - Date.now()) / 86400000))
-              : 0;
-            return (
-              <div key={ch.id} className={`bg-black/30 rounded-xl p-3 border ${ch.is_locked ? "border-white/10 opacity-70" : "border-cyan-500/20"} relative`}>
-                {ch.is_locked && (
-                  <div className="absolute top-2 right-2 text-[9px] font-black tracking-widest uppercase px-2 py-0.5 rounded-full bg-white/10 text-white/80 border border-white/20 flex items-center gap-1">
-                    <Lock className="w-2.5 h-2.5 icon-3d-lock" strokeWidth={3} /> {daysToStart}h lagi
-                  </div>
-                )}
-                <div className="flex items-start justify-between mb-2">
-                  <div className="flex-1 min-w-0 pr-16">
-                    <div className="font-extrabold text-white text-sm flex items-center gap-1.5">
-                      {(() => { const p = parseTitleIcon(ch.title); return (<>{p.Icon && <p.Icon className={`w-4 h-4 ${p.cls}`} strokeWidth={2.5} />}<span>{p.text}</span></>); })()}
-                    </div>
-                    <div className="text-[10px] text-white/60">{ch.description}</div>
-                  </div>
-                  {!ch.is_locked && <div className="text-[10px] font-black tabular-nums flex items-center gap-1"><span className="neon-text-yellow">+{ch.reward_coins}</span><Coins className="w-3 h-3 icon-3d-coin" strokeWidth={2.5} /></div>}
-                </div>
-                {!ch.is_locked && (
-                  <div className="h-1.5 bg-white/10 rounded-full overflow-hidden mb-2">
-                    <motion.div initial={{ width: 0 }} animate={{ width: `${pct}%` }} className="h-full bg-gradient-to-r from-cyan-400 to-pink-500 shadow-[0_0_10px_hsl(var(--neon-cyan)/0.7)]" />
-                  </div>
-                )}
-                <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-bold text-white/70 tabular-nums flex items-center gap-1">
-                    {ch.is_locked ? (<>Hadiah: +{ch.reward_coins}<Coins className="w-3 h-3 icon-3d-coin" strokeWidth={2.5} /></>) : (`${ch.current_value || 0} / ${ch.target_value}`)}
-                  </span>
-                  {claimable && (
-                    <Button size="sm" onClick={() => claimChallenge(ch)} className="h-6 text-[10px] bg-gradient-to-r from-yellow-400 to-pink-500 text-black font-black">
-                      KLAIM
-                    </Button>
-                  )}
-                  {ch.claimed_at && <span className="text-[10px] font-bold text-emerald-400 flex items-center gap-1"><Check className="w-3 h-3 icon-3d-check" strokeWidth={3} /> DIKLAIM</span>}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      )}
 
       {/* Mystery reward popup */}
       <AnimatePresence>
