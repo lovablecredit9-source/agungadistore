@@ -15,6 +15,9 @@ import StreakLeaderboardWeekly from "./StreakLeaderboardWeekly";
 import StreakBoosters from "./StreakBoosters";
 import StreakAvatarEvolution from "./StreakAvatarEvolution";
 import StreakCalendar from "./StreakCalendar";
+import StreakTitleBadge from "./StreakTitleBadge";
+import StreakPowerHour from "./StreakPowerHour";
+import StreakInsight from "./StreakInsight";
 import CelebrationOverlay from "./CelebrationOverlay";
 import DailyGiftBox from "./DailyGiftBox";
 import StreakPass from "./StreakPass";
@@ -351,8 +354,24 @@ export default function NeonStreakHub({ visitorId }: Props) {
         </div>
       </div>
 
+      {/* Title kosmetik berdasar streak */}
+      <div className="flex justify-center">
+        <StreakTitleBadge currentStreak={currentStreak} longestStreak={longestStreak} size="md" />
+      </div>
+
       {/* Avatar Evolution */}
       <StreakAvatarEvolution visitorId={visitorId} currentStreak={currentStreak} longestStreak={longestStreak} />
+
+      {/* Power Hour + Insight (fitur baru) */}
+      <div className="grid grid-cols-1 gap-3">
+        <StreakPowerHour visitorId={visitorId} />
+        <StreakInsight
+          visitorId={visitorId}
+          currentStreak={currentStreak}
+          longestStreak={longestStreak}
+          totalClaims={streakData?.total_claims || 0}
+        />
+      </div>
 
       {/* View tabs */}
       <div className="flex gap-1 p-1 rounded-xl bg-black/40 border border-purple-500/30">
