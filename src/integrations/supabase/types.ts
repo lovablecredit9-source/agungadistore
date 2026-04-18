@@ -1700,6 +1700,39 @@ export type Database = {
         }
         Relationships: []
       }
+      streak_coin_packages: {
+        Row: {
+          coins: number
+          created_at: string
+          id: string
+          is_active: boolean
+          name: string
+          price: number
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          coins?: number
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          price?: number
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          coins?: number
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          price?: number
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       streak_discount_vouchers: {
         Row: {
           code: string
