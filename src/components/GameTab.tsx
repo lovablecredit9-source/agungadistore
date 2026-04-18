@@ -17,6 +17,7 @@ import ScratchCardGame from "@/components/games/ScratchCardGame";
 import SlotMachineGame from "@/components/games/SlotMachineGame";
 import Match3Game from "@/components/games/Match3Game";
 import LuckyDrawGame from "@/components/games/LuckyDrawGame";
+import MineSweeperGame from "@/components/games/MineSweeperGame";
 import WeeklyLeaderboard from "@/components/WeeklyLeaderboard";
 import FlashSaleBanner from "@/components/FlashSaleBanner";
 import { useGameCredits, GameCreditsBadge, BuyCreditsDialog } from "@/components/games/GameCredits";
