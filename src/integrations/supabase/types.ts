@@ -406,6 +406,75 @@ export type Database = {
         }
         Relationships: []
       }
+      daily_gift_box_claims: {
+        Row: {
+          claimed_at: string
+          day_number: number
+          id: string
+          reward_label: string
+          reward_type: string
+          reward_value: number
+          visitor_id: string
+          week_start: string
+        }
+        Insert: {
+          claimed_at?: string
+          day_number: number
+          id?: string
+          reward_label?: string
+          reward_type: string
+          reward_value?: number
+          visitor_id: string
+          week_start: string
+        }
+        Update: {
+          claimed_at?: string
+          day_number?: number
+          id?: string
+          reward_label?: string
+          reward_type?: string
+          reward_value?: number
+          visitor_id?: string
+          week_start?: string
+        }
+        Relationships: []
+      }
+      daily_gift_box_rewards: {
+        Row: {
+          created_at: string
+          day_number: number
+          icon: string
+          id: string
+          is_premium: boolean
+          reward_label: string
+          reward_type: string
+          reward_value: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          day_number: number
+          icon?: string
+          id?: string
+          is_premium?: boolean
+          reward_label?: string
+          reward_type: string
+          reward_value?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          day_number?: number
+          icon?: string
+          id?: string
+          is_premium?: boolean
+          reward_label?: string
+          reward_type?: string
+          reward_value?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       daily_streaks: {
         Row: {
           achievements: string[]
@@ -1963,6 +2032,145 @@ export type Database = {
         }
         Relationships: []
       }
+      streak_pass_progress: {
+        Row: {
+          claimed_free_tiers: number[]
+          claimed_premium_tiers: number[]
+          created_at: string
+          id: string
+          is_premium: boolean
+          premium_purchased_at: string | null
+          season_id: string
+          total_xp: number
+          updated_at: string
+          visitor_id: string
+        }
+        Insert: {
+          claimed_free_tiers?: number[]
+          claimed_premium_tiers?: number[]
+          created_at?: string
+          id?: string
+          is_premium?: boolean
+          premium_purchased_at?: string | null
+          season_id: string
+          total_xp?: number
+          updated_at?: string
+          visitor_id: string
+        }
+        Update: {
+          claimed_free_tiers?: number[]
+          claimed_premium_tiers?: number[]
+          created_at?: string
+          id?: string
+          is_premium?: boolean
+          premium_purchased_at?: string | null
+          season_id?: string
+          total_xp?: number
+          updated_at?: string
+          visitor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "streak_pass_progress_season_id_fkey"
+            columns: ["season_id"]
+            isOneToOne: false
+            referencedRelation: "streak_pass_seasons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      streak_pass_seasons: {
+        Row: {
+          created_at: string
+          description: string
+          ends_at: string
+          id: string
+          is_active: boolean
+          name: string
+          premium_price: number
+          starts_at: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string
+          ends_at: string
+          id?: string
+          is_active?: boolean
+          name: string
+          premium_price?: number
+          starts_at?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          ends_at?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          premium_price?: number
+          starts_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      streak_pass_tiers: {
+        Row: {
+          created_at: string
+          free_reward_icon: string | null
+          free_reward_label: string | null
+          free_reward_type: string | null
+          free_reward_value: number | null
+          id: string
+          premium_reward_icon: string | null
+          premium_reward_label: string | null
+          premium_reward_type: string | null
+          premium_reward_value: number | null
+          season_id: string
+          tier_level: number
+          xp_required: number
+        }
+        Insert: {
+          created_at?: string
+          free_reward_icon?: string | null
+          free_reward_label?: string | null
+          free_reward_type?: string | null
+          free_reward_value?: number | null
+          id?: string
+          premium_reward_icon?: string | null
+          premium_reward_label?: string | null
+          premium_reward_type?: string | null
+          premium_reward_value?: number | null
+          season_id: string
+          tier_level: number
+          xp_required?: number
+        }
+        Update: {
+          created_at?: string
+          free_reward_icon?: string | null
+          free_reward_label?: string | null
+          free_reward_type?: string | null
+          free_reward_value?: number | null
+          id?: string
+          premium_reward_icon?: string | null
+          premium_reward_label?: string | null
+          premium_reward_type?: string | null
+          premium_reward_value?: number | null
+          season_id?: string
+          tier_level?: number
+          xp_required?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "streak_pass_tiers_season_id_fkey"
+            columns: ["season_id"]
+            isOneToOne: false
+            referencedRelation: "streak_pass_seasons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       streak_profiles: {
         Row: {
           avatar_url: string | null
@@ -1989,6 +2197,45 @@ export type Database = {
           id?: string
           updated_at?: string
           username?: string
+          visitor_id?: string
+        }
+        Relationships: []
+      }
+      streak_reminders: {
+        Row: {
+          created_at: string
+          id: string
+          is_enabled: boolean
+          last_notified_date: string | null
+          notify_browser: boolean
+          preferred_hour: number
+          preferred_minute: number
+          smart_mode: boolean
+          updated_at: string
+          visitor_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_enabled?: boolean
+          last_notified_date?: string | null
+          notify_browser?: boolean
+          preferred_hour?: number
+          preferred_minute?: number
+          smart_mode?: boolean
+          updated_at?: string
+          visitor_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_enabled?: boolean
+          last_notified_date?: string | null
+          notify_browser?: boolean
+          preferred_hour?: number
+          preferred_minute?: number
+          smart_mode?: boolean
+          updated_at?: string
           visitor_id?: string
         }
         Relationships: []
@@ -2785,6 +3032,95 @@ export type Database = {
           starts_at?: string
           target_value?: number
           title?: string
+        }
+        Relationships: []
+      }
+      weekly_quest_progress: {
+        Row: {
+          claimed_at: string | null
+          created_at: string
+          current_value: number
+          id: string
+          is_completed: boolean
+          quest_id: string
+          updated_at: string
+          visitor_id: string
+          week_start: string
+        }
+        Insert: {
+          claimed_at?: string | null
+          created_at?: string
+          current_value?: number
+          id?: string
+          is_completed?: boolean
+          quest_id: string
+          updated_at?: string
+          visitor_id: string
+          week_start: string
+        }
+        Update: {
+          claimed_at?: string | null
+          created_at?: string
+          current_value?: number
+          id?: string
+          is_completed?: boolean
+          quest_id?: string
+          updated_at?: string
+          visitor_id?: string
+          week_start?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "weekly_quest_progress_quest_id_fkey"
+            columns: ["quest_id"]
+            isOneToOne: false
+            referencedRelation: "weekly_quests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      weekly_quests: {
+        Row: {
+          created_at: string
+          description: string
+          icon: string
+          id: string
+          is_active: boolean
+          quest_type: string
+          reward_coins: number
+          reward_xp: number
+          sort_order: number
+          target_value: number
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string
+          icon?: string
+          id?: string
+          is_active?: boolean
+          quest_type: string
+          reward_coins?: number
+          reward_xp?: number
+          sort_order?: number
+          target_value?: number
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          icon?: string
+          id?: string
+          is_active?: boolean
+          quest_type?: string
+          reward_coins?: number
+          reward_xp?: number
+          sort_order?: number
+          target_value?: number
+          title?: string
+          updated_at?: string
         }
         Relationships: []
       }
