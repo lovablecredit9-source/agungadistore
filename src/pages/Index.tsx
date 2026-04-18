@@ -279,6 +279,8 @@ const TAB_PATHS: Record<string, Tab> = {
   "/publik": "publik",
   "/sponsor": "sponsor",
   "/streak": "streak",
+  "/streak-event": "streakevent",
+  "/streak-shop": "streakshop",
   "/admin-post": "adminpost",
   "/game": "game",
   "/plus": "plus",
