@@ -46,6 +46,8 @@ function pickPrize(luckMultiplier = 1) {
   const adjusted = PRIZES.map(p => {
     let w = p.weight;
     if (p.type === "none") w = w / (luckMultiplier * luckMultiplier);
+    // Saldo IN tidak ikut booster (tetap langka walau luck x20)
+    else if (p.type === "game_balance") w = w;
     else if (p.rarity === "rare") w = w * Math.sqrt(luckMultiplier);
     else if (p.rarity === "epic") w = w * luckMultiplier;
     else if (p.rarity === "legendary") w = w * luckMultiplier * luckMultiplier;
