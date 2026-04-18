@@ -107,12 +107,11 @@ async function applyPayout(visitorId: string, payout: { type: string; value: num
       visitor_id: visitorId, amount: payout.value, type: "slot_win", description: `Slot Machine: ${payout.label}`,
     });
   } else if (payout.type === "game_credits") {
-    // tambah kredit lewat tabel game_credits (kalau ada). Fallback: buat jika belum.
-    const { data: gc } = await supabase.from("game_credits").select("id, credits").eq("visitor_id", visitorId).maybeSingle();
+    const { data: gc } = await supabase.from("user_game_credits").select("id, credits").eq("visitor_id", visitorId).maybeSingle();
     if (gc) {
-      await supabase.from("game_credits").update({ credits: (gc.credits || 0) + payout.value }).eq("id", gc.id);
+      await supabase.from("user_game_credits").update({ credits: (gc.credits || 0) + payout.value }).eq("id", gc.id);
     } else {
-      await supabase.from("game_credits").insert({ visitor_id: visitorId, credits: payout.value });
+      await supabase.from("user_game_credits").insert({ visitor_id: visitorId, credits: payout.value });
     }
   } else if (payout.type === "storage_mb") {
     const { data: ms } = await supabase.from("user_music_storage").select("id, storage_mb").eq("visitor_id", visitorId).maybeSingle();
