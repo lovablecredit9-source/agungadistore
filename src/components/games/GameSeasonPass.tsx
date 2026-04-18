@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { Star, Lock, Check, Crown, Loader2 } from "lucide-react";
+import { Star, Lock, Check, Crown, Loader2, Wallet, Gem, Coins } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -19,60 +20,47 @@ const TIERS = Array.from({ length: 30 }, (_, i) => {
 export default function GameSeasonPass({ visitorId }: Props) {
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
-  const [xp, setXp] = useState(0);
-  const [claimed, setClaimed] = useState<number[]>([]);
-  const [premium, setPremium] = useState(false);
-  const [busy, setBusy] = useState<number | null>(null);
+  const [pass, setPass] = useState<any>(null);
+  const [busy, setBusy] = useState<string | null>(null);
+  const [showBuy, setShowBuy] = useState(false);
+  const [pin, setPin] = useState("");
 
-  const seasonKey = "season_2026Q2";
+  useEffect(() => { if (visitorId) load(); }, [visitorId]);
 
-  useEffect(() => {
+  async function load() {
     if (!visitorId) return;
-    try {
-      const raw = localStorage.getItem(`pass_${visitorId}_${seasonKey}`);
-      if (raw) {
-        const p = JSON.parse(raw);
-        setClaimed(p.claimed || []); setPremium(!!p.premium);
-      }
-    } catch { /* noop */ }
-    // Estimate XP from game stats
-    (async () => {
-      try {
-        const { data } = await supabase.from("game_stats").select("points").eq("visitor_id", visitorId);
-        if (data) {
-          const total = data.reduce((s, r: any) => s + (r.points || 0), 0);
-          setXp(total);
-        }
-      } catch { /* noop */ }
-    })();
-  }, [visitorId]);
-
-  function persist(c: number[], p: boolean) {
-    if (!visitorId) return;
-    try { localStorage.setItem(`pass_${visitorId}_${seasonKey}`, JSON.stringify({ claimed: c, premium: p })); } catch { /* noop */ }
+    const { data } = await supabase.functions.invoke("season-pass-purchase", { body: { action: "get", visitorId } });
+    setPass(data?.pass);
   }
 
+  const xp = pass?.total_xp || 0;
+  const claimed: number[] = pass?.claimed_tiers || [];
+  const isPremium = !!pass?.is_premium;
   const currentLvl = TIERS.filter(t => xp >= t.xpRequired).length;
 
   async function claim(t: typeof TIERS[number]) {
-    if (xp < t.xpRequired || claimed.includes(t.lvl)) return;
-    if (t.isPremium && !premium) { toast({ title: "Premium Pass", description: "Reward ini butuh Premium Pass!", variant: "destructive" }); return; }
-    setBusy(t.lvl);
-    if (visitorId) {
-      try {
-        const { data: streak } = await supabase.from("daily_streaks").select("id, streak_coins").eq("visitor_id", visitorId).maybeSingle();
-        if (streak) await supabase.from("daily_streaks").update({ streak_coins: (streak.streak_coins || 0) + t.value }).eq("id", streak.id);
-      } catch { /* noop */ }
-    }
-    const next = [...claimed, t.lvl];
-    setClaimed(next); persist(next, premium);
-    toast({ title: `⭐ Tier ${t.lvl} diklaim!`, description: t.reward });
+    if (!visitorId) return;
+    setBusy(`tier_${t.lvl}`);
+    const { data, error } = await supabase.functions.invoke("season-pass-purchase", {
+      body: { action: "claim_tier", visitorId, tierLevel: t.lvl },
+    });
     setBusy(null);
+    if (error || data?.error) { toast({ title: "Gagal", description: data?.error || error?.message, variant: "destructive" }); return; }
+    setPass(data.pass);
+    toast({ title: `⭐ Tier ${t.lvl} diklaim!`, description: `+${data.awarded} Streak Coins` });
   }
 
-  function unlockPremium() {
-    setPremium(true); persist(claimed, true);
-    toast({ title: "👑 Premium Pass aktif (demo)", description: "Reward premium kini bisa diklaim." });
+  async function buyPremium(source: "balance" | "gems" | "coins") {
+    if (!visitorId) return;
+    if (source === "balance" && !pin.trim()) { toast({ title: "PIN diperlukan", variant: "destructive" }); return; }
+    setBusy(`buy_${source}`);
+    const { data, error } = await supabase.functions.invoke("season-pass-purchase", {
+      body: { action: "buy_premium", visitorId, source, pin: pin.trim() },
+    });
+    setBusy(null);
+    if (error || data?.error) { toast({ title: "Gagal beli", description: data?.error || error?.message, variant: "destructive" }); return; }
+    setPass(data.pass); setShowBuy(false); setPin("");
+    toast({ title: "👑 Premium Pass aktif!", description: "Reward premium kini bisa diklaim." });
   }
 
   return (
@@ -87,7 +75,7 @@ export default function GameSeasonPass({ visitorId }: Props) {
             <div className="font-extrabold text-white text-sm">Tier {currentLvl}/30 • {xp.toLocaleString("id-ID")} XP</div>
             <div className="text-[10px] text-white/80">30 tier hadiah eksklusif</div>
           </div>
-          <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-white text-black">{premium ? "PREMIUM" : "FREE"}</span>
+          <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-white text-black">{isPremium ? "PREMIUM" : "FREE"}</span>
         </div>
       </button>
 
@@ -102,16 +90,21 @@ export default function GameSeasonPass({ visitorId }: Props) {
               <motion.div initial={{ width: 0 }} animate={{ width: `${(currentLvl / 30) * 100}%` }} className="h-full bg-gradient-to-r from-yellow-400 to-pink-500" />
             </div>
           </div>
-          {!premium && (
-            <Button onClick={unlockPremium} className="w-full bg-gradient-to-r from-yellow-400 to-orange-500 text-black font-black">
-              <Crown className="w-4 h-4 mr-1" /> Aktifkan Premium Pass (Demo)
+          {!isPremium && (
+            <Button onClick={() => setShowBuy(true)} className="w-full bg-gradient-to-r from-yellow-400 to-orange-500 text-black font-black">
+              <Crown className="w-4 h-4 mr-1" /> Aktifkan Premium Pass
             </Button>
+          )}
+          {isPremium && (
+            <div className="rounded-lg bg-emerald-500/20 border border-emerald-400/40 p-2 text-center">
+              <span className="text-xs font-black text-emerald-300">✓ PREMIUM AKTIF — via {pass?.premium_source?.toUpperCase()}</span>
+            </div>
           )}
           <div className="space-y-1.5 max-h-[50vh] overflow-y-auto pr-1">
             {TIERS.map(t => {
               const unlocked = xp >= t.xpRequired;
               const done = claimed.includes(t.lvl);
-              const ready = unlocked && !done && (!t.isPremium || premium);
+              const ready = unlocked && !done && (!t.isPremium || isPremium);
               return (
                 <div key={t.lvl} className={`rounded-lg p-2 flex items-center gap-2 border ${done ? "bg-emerald-500/10 border-emerald-500/40" : t.isPremium ? "bg-gradient-to-r from-yellow-500/10 to-pink-500/10 border-yellow-500/40" : "bg-black/30 border-white/10"}`}>
                   <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-black text-xs ${t.isPremium ? "bg-gradient-to-br from-yellow-400 to-pink-500 text-black" : "bg-cyan-500/30 text-cyan-200"}`}>{t.lvl}</div>
@@ -123,14 +116,57 @@ export default function GameSeasonPass({ visitorId }: Props) {
                     <div className="text-[9px] text-white/60">{t.xpRequired} XP {t.isPremium && "• Premium"}</div>
                   </div>
                   {!unlocked ? <Lock className="w-3.5 h-3.5 text-white/40" /> : done ? <Check className="w-4 h-4 text-emerald-300" strokeWidth={3} /> : ready ? (
-                    <Button size="sm" disabled={busy === t.lvl} onClick={() => claim(t)} className="h-6 text-[10px] bg-gradient-to-r from-yellow-400 to-pink-500 text-black font-black">
-                      {busy === t.lvl ? <Loader2 className="w-3 h-3 animate-spin" /> : "KLAIM"}
+                    <Button size="sm" disabled={busy === `tier_${t.lvl}`} onClick={() => claim(t)} className="h-6 text-[10px] bg-gradient-to-r from-yellow-400 to-pink-500 text-black font-black">
+                      {busy === `tier_${t.lvl}` ? <Loader2 className="w-3 h-3 animate-spin" /> : "KLAIM"}
                     </Button>
-                  ) : t.isPremium && !premium ? <span className="text-[9px] font-black text-yellow-300">PREMIUM</span> : null}
+                  ) : t.isPremium && !isPremium ? <span className="text-[9px] font-black text-yellow-300">PREMIUM</span> : null}
                 </div>
               );
             })}
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Buy Premium dialog */}
+      <Dialog open={showBuy} onOpenChange={setShowBuy}>
+        <DialogContent className="max-w-sm bg-gradient-to-br from-yellow-950 via-purple-950 to-pink-950 border-yellow-500/40">
+          <DialogHeader><DialogTitle className="text-lg font-black text-white">Beli Premium Pass</DialogTitle></DialogHeader>
+          <p className="text-[11px] text-white/70">Pilih metode pembayaran. Premium aktif sampai akhir musim (Q2 2026).</p>
+
+          <button onClick={() => buyPremium("balance")} disabled={!!busy} className="w-full p-3 rounded-xl bg-gradient-to-r from-cyan-500/30 to-blue-600/30 border border-cyan-400/40 text-left disabled:opacity-50">
+            <div className="flex items-center gap-2">
+              <Wallet className="w-6 h-6 text-cyan-300" />
+              <div className="flex-1">
+                <div className="text-sm font-black text-white">Bayar pakai Saldo</div>
+                <div className="text-[10px] text-white/70">Rp 25.000 — perlu PIN</div>
+              </div>
+              {busy === "buy_balance" && <Loader2 className="w-4 h-4 animate-spin text-white" />}
+            </div>
+          </button>
+          <Input type="password" inputMode="numeric" placeholder="Masukkan PIN saldo" value={pin} onChange={(e) => setPin(e.target.value)}
+            className="bg-black/40 border-cyan-500/30 text-white text-center" />
+
+          <button onClick={() => buyPremium("gems")} disabled={!!busy} className="w-full p-3 rounded-xl bg-gradient-to-r from-pink-500/30 to-purple-600/30 border border-pink-400/40 text-left disabled:opacity-50">
+            <div className="flex items-center gap-2">
+              <Gem className="w-6 h-6 text-pink-300" />
+              <div className="flex-1">
+                <div className="text-sm font-black text-white">Bayar pakai Gems</div>
+                <div className="text-[10px] text-white/70">500 Gems</div>
+              </div>
+              {busy === "buy_gems" && <Loader2 className="w-4 h-4 animate-spin text-white" />}
+            </div>
+          </button>
+
+          <button onClick={() => buyPremium("coins")} disabled={!!busy} className="w-full p-3 rounded-xl bg-gradient-to-r from-yellow-500/30 to-orange-600/30 border border-yellow-400/40 text-left disabled:opacity-50">
+            <div className="flex items-center gap-2">
+              <Coins className="w-6 h-6 text-yellow-300" />
+              <div className="flex-1">
+                <div className="text-sm font-black text-white">Tukar Streak Koin</div>
+                <div className="text-[10px] text-white/70">5.000 Streak Koin</div>
+              </div>
+              {busy === "buy_coins" && <Loader2 className="w-4 h-4 animate-spin text-white" />}
+            </div>
+          </button>
         </DialogContent>
       </Dialog>
     </>

@@ -732,6 +732,95 @@ export type Database = {
         }
         Relationships: []
       }
+      game_clan_members: {
+        Row: {
+          clan_id: string
+          contributed_xp: number
+          display_name: string
+          id: string
+          joined_at: string
+          role: string
+          visitor_id: string
+        }
+        Insert: {
+          clan_id: string
+          contributed_xp?: number
+          display_name?: string
+          id?: string
+          joined_at?: string
+          role?: string
+          visitor_id: string
+        }
+        Update: {
+          clan_id?: string
+          contributed_xp?: number
+          display_name?: string
+          id?: string
+          joined_at?: string
+          role?: string
+          visitor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "game_clan_members_clan_id_fkey"
+            columns: ["clan_id"]
+            isOneToOne: false
+            referencedRelation: "game_clans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      game_clans: {
+        Row: {
+          created_at: string
+          id: string
+          join_code: string | null
+          leader_name: string
+          leader_visitor_id: string
+          level: number
+          max_members: number
+          member_count: number
+          motto: string
+          name: string
+          tag: string
+          total_xp: number
+          updated_at: string
+          visibility: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          join_code?: string | null
+          leader_name?: string
+          leader_visitor_id: string
+          level?: number
+          max_members?: number
+          member_count?: number
+          motto?: string
+          name: string
+          tag: string
+          total_xp?: number
+          updated_at?: string
+          visibility?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          join_code?: string | null
+          leader_name?: string
+          leader_visitor_id?: string
+          level?: number
+          max_members?: number
+          member_count?: number
+          motto?: string
+          name?: string
+          tag?: string
+          total_xp?: number
+          updated_at?: string
+          visibility?: string
+        }
+        Relationships: []
+      }
       game_discount_vouchers: {
         Row: {
           code: string
@@ -826,6 +915,111 @@ export type Database = {
           is_guest?: boolean
           password_hash?: string | null
           phone?: string | null
+          updated_at?: string
+          visitor_id?: string
+        }
+        Relationships: []
+      }
+      game_pvp_rooms: {
+        Row: {
+          best_of: number
+          created_at: string
+          current_round: number
+          id: string
+          player1_choice: string | null
+          player1_name: string
+          player1_score: number
+          player1_visitor_id: string
+          player2_choice: string | null
+          player2_name: string | null
+          player2_score: number
+          player2_visitor_id: string | null
+          room_code: string | null
+          round_deadline_at: string | null
+          round_started_at: string | null
+          status: string
+          updated_at: string
+          visibility: string
+          winner_visitor_id: string | null
+        }
+        Insert: {
+          best_of?: number
+          created_at?: string
+          current_round?: number
+          id?: string
+          player1_choice?: string | null
+          player1_name?: string
+          player1_score?: number
+          player1_visitor_id: string
+          player2_choice?: string | null
+          player2_name?: string | null
+          player2_score?: number
+          player2_visitor_id?: string | null
+          room_code?: string | null
+          round_deadline_at?: string | null
+          round_started_at?: string | null
+          status?: string
+          updated_at?: string
+          visibility?: string
+          winner_visitor_id?: string | null
+        }
+        Update: {
+          best_of?: number
+          created_at?: string
+          current_round?: number
+          id?: string
+          player1_choice?: string | null
+          player1_name?: string
+          player1_score?: number
+          player1_visitor_id?: string
+          player2_choice?: string | null
+          player2_name?: string | null
+          player2_score?: number
+          player2_visitor_id?: string | null
+          room_code?: string | null
+          round_deadline_at?: string | null
+          round_started_at?: string | null
+          status?: string
+          updated_at?: string
+          visibility?: string
+          winner_visitor_id?: string | null
+        }
+        Relationships: []
+      }
+      game_season_pass: {
+        Row: {
+          claimed_tiers: number[]
+          created_at: string
+          id: string
+          is_premium: boolean
+          premium_purchased_at: string | null
+          premium_source: string | null
+          season_key: string
+          total_xp: number
+          updated_at: string
+          visitor_id: string
+        }
+        Insert: {
+          claimed_tiers?: number[]
+          created_at?: string
+          id?: string
+          is_premium?: boolean
+          premium_purchased_at?: string | null
+          premium_source?: string | null
+          season_key?: string
+          total_xp?: number
+          updated_at?: string
+          visitor_id: string
+        }
+        Update: {
+          claimed_tiers?: number[]
+          created_at?: string
+          id?: string
+          is_premium?: boolean
+          premium_purchased_at?: string | null
+          premium_source?: string | null
+          season_key?: string
+          total_xp?: number
           updated_at?: string
           visitor_id?: string
         }
