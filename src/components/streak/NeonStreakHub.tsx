@@ -33,6 +33,7 @@ import StreakMissionChain from "./StreakMissionChain";
 import StreakLeaderboard from "./StreakLeaderboard";
 import StreakEventLive from "./StreakEventLive";
 import StreakShopFlashDeals from "./StreakShopFlashDeals";
+import { syncPowerUpsFromServer } from "@/components/games/gameStore";
 
 // Strip leading emoji from a title and map to a 3D Lucide icon
 const EMOJI_ICON_MAP: Array<{ regex: RegExp; Icon: any; cls: string }> = [
