@@ -70,6 +70,8 @@ export default function DailyGiftBox({ visitorId, onUpdate }: Props) {
       toast({ title: "🎁 Hadiah Diterima!", description: (data as any).reward.reward_label });
       onUpdate?.();
       load();
+      // Track weekly quest + daily mission
+      import("@/lib/daily-mission").then(m => m.trackDailyMission(visitorId, "gift_box", 1)).catch(() => {});
     } catch (e) {
       toast({ title: "Gagal klaim", description: e instanceof Error ? e.message : "Error", variant: "destructive" });
     } finally {
