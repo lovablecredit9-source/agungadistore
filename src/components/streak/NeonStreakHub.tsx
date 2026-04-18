@@ -120,6 +120,21 @@ export default function NeonStreakHub({ visitorId }: Props) {
     const { data: coinPkgs } = await supabase.from("streak_coin_packages" as any).select("id, name, coins, price").eq("is_active", true).order("sort_order");
     setCoinPackages((coinPkgs as any[]) || []);
 
+    // Riwayat tukar streak shop
+    const { data: hist } = await supabase
+      .from("streak_shop_redemptions")
+      .select("id, cost_coins, reward_type, reward_value, reward_code, created_at, streak_shop_items(name, icon)")
+      .eq("visitor_id", visitorId)
+      .order("created_at", { ascending: false })
+      .limit(30);
+    setHistory((hist as any[]) || []);
+
+    // Power-ups dari localStorage
+    try {
+      const raw = localStorage.getItem(`streak_powerups_${visitorId}`);
+      if (raw) setPowerUps(JSON.parse(raw));
+    } catch {}
+
     const nowIso = new Date().toISOString();
     const { data: chs } = await supabase.from("weekly_challenges").select("*").eq("is_active", true).gte("ends_at", nowIso).order("starts_at");
     if (chs) {
