@@ -205,6 +205,16 @@ export default function GameTab() {
           <WeeklyLeaderboard />
         </div>
 
+        {/* ✨ Fitur Game baru */}
+        <div className="mt-5 space-y-3">
+          <GameSeasonPass visitorId={visitorId} />
+          <div className="grid grid-cols-1 gap-3">
+            <GamePvPBattle visitorId={visitorId} />
+            <GameClanSystem visitorId={visitorId} />
+          </div>
+          <GameQuestChain visitorId={visitorId} />
+        </div>
+
         {/* 🎮 Neon Extras: Daily Challenge · Tournament · Leaderboard · Achievements */}
         <div className="mt-5">
           <NeonGameExtras visitorId={visitorId} onPlayDailyChallenge={(g) => setMode(g as GameMode)} />
