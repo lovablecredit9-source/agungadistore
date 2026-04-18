@@ -102,14 +102,32 @@ Deno.serve(async (request) => {
     let discountAmount = 0;
     let discountVoucherId: string | null = null;
 
-    // Apply discount code if provided
+    // Apply discount code if provided (try product vouchers, then game-reward vouchers)
+    let voucherSource: "discount_vouchers" | "game_discount_vouchers" | null = null;
     if (discountCode) {
-      const { data: voucher } = await admin
+      const code = discountCode.toUpperCase();
+      let voucher: any = null;
+      const { data: v1 } = await admin
         .from("discount_vouchers")
         .select("*")
-        .eq("code", discountCode.toUpperCase())
+        .eq("code", code)
         .eq("is_active", true)
         .maybeSingle();
+      if (v1) {
+        voucher = v1;
+        voucherSource = "discount_vouchers";
+      } else {
+        const { data: v2 } = await admin
+          .from("game_discount_vouchers")
+          .select("*")
+          .eq("code", code)
+          .eq("is_active", true)
+          .maybeSingle();
+        if (v2) {
+          voucher = v2;
+          voucherSource = "game_discount_vouchers";
+        }
+      }
 
       if (!voucher) {
         return Response.json({ error: "Kode voucher diskon tidak valid" }, { status: 400, headers: corsHeaders });
