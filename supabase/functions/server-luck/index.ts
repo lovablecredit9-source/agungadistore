@@ -93,6 +93,14 @@ Deno.serve(async (req) => {
         }), { status: 400, headers: corsHeaders });
       }
 
+      // Saat booster masih aktif: tidak boleh beli tier LEBIH RENDAH dari yang sedang aktif
+      const stillActive = booster.active_until && new Date(booster.active_until).getTime() > Date.now();
+      if (stillActive && tier < booster.active_tier) {
+        return new Response(JSON.stringify({
+          error: `Booster x${booster.active_tier} masih aktif. Tidak bisa downgrade ke ${tierDef.name}. Tunggu habis atau beli tier lebih tinggi.`,
+        }), { status: 400, headers: corsHeaders });
+      }
+
       // Bayar: ambil dari Saldo IN (game_balance) dulu jika auto, lalu Saldo Utama
       const price = durDef.price;
       const { data: gb } = await supabase.from("game_balance").select("id, amount, total_spent").eq("visitor_id", visitorId).maybeSingle();
