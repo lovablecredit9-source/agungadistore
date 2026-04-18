@@ -456,62 +456,50 @@
   }
   .neon-pulse { animation: neon-pulse 2s ease-in-out infinite; }
 
-  /* 3D Gradient Icons — used for streak rewards & coins */
+  /* 3D Gradient Icons — for Lucide SVG icons (uses stroke color + drop-shadow glow) */
   .icon-3d-coin {
-    background: linear-gradient(135deg, hsl(45 100% 65%) 0%, hsl(38 95% 55%) 50%, hsl(28 90% 45%) 100%);
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
-    filter: drop-shadow(0 2px 0 hsl(28 90% 30%)) drop-shadow(0 0 12px hsl(45 100% 60% / 0.7));
+    color: hsl(45 100% 60%);
+    filter: drop-shadow(0 1px 0 hsl(28 90% 30%)) drop-shadow(0 0 10px hsl(45 100% 60% / 0.8));
   }
   .icon-3d-gift {
-    background: linear-gradient(135deg, hsl(330 100% 70%) 0%, hsl(290 90% 60%) 50%, hsl(260 85% 55%) 100%);
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
-    filter: drop-shadow(0 2px 0 hsl(290 90% 30%)) drop-shadow(0 0 14px hsl(320 100% 60% / 0.7));
+    color: hsl(320 100% 65%);
+    filter: drop-shadow(0 1px 0 hsl(290 90% 30%)) drop-shadow(0 0 12px hsl(320 100% 60% / 0.8));
   }
   .icon-3d-lock {
-    background: linear-gradient(135deg, hsl(220 15% 75%) 0%, hsl(220 12% 50%) 50%, hsl(220 15% 30%) 100%);
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
-    filter: drop-shadow(0 1px 0 hsl(220 20% 20%)) drop-shadow(0 0 6px hsl(220 30% 60% / 0.6));
+    color: hsl(220 15% 70%);
+    filter: drop-shadow(0 1px 0 hsl(220 20% 20%)) drop-shadow(0 0 6px hsl(220 30% 60% / 0.7));
   }
   .icon-3d-zap {
-    background: linear-gradient(135deg, hsl(55 100% 65%) 0%, hsl(35 100% 55%) 50%, hsl(15 95% 50%) 100%);
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
-    filter: drop-shadow(0 2px 0 hsl(20 90% 30%)) drop-shadow(0 0 14px hsl(45 100% 60% / 0.8));
+    color: hsl(50 100% 60%);
+    filter: drop-shadow(0 1px 0 hsl(20 90% 30%)) drop-shadow(0 0 12px hsl(45 100% 60% / 0.9));
   }
   .icon-3d-rocket {
-    background: linear-gradient(135deg, hsl(190 100% 65%) 0%, hsl(220 95% 60%) 50%, hsl(260 85% 55%) 100%);
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
-    filter: drop-shadow(0 2px 0 hsl(220 90% 25%)) drop-shadow(0 0 12px hsl(200 100% 60% / 0.7));
+    color: hsl(200 100% 65%);
+    filter: drop-shadow(0 1px 0 hsl(220 90% 25%)) drop-shadow(0 0 10px hsl(200 100% 60% / 0.8));
   }
   .icon-3d-check {
-    background: linear-gradient(135deg, hsl(140 90% 65%) 0%, hsl(160 85% 50%) 50%, hsl(175 90% 40%) 100%);
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
-    filter: drop-shadow(0 1px 0 hsl(160 90% 20%)) drop-shadow(0 0 10px hsl(150 100% 55% / 0.7));
+    color: hsl(150 90% 55%);
+    filter: drop-shadow(0 1px 0 hsl(160 90% 20%)) drop-shadow(0 0 8px hsl(150 100% 55% / 0.8));
   }
   .icon-3d-target {
-    background: linear-gradient(135deg, hsl(330 100% 70%) 0%, hsl(0 95% 60%) 100%);
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
-    filter: drop-shadow(0 1px 0 hsl(340 90% 25%)) drop-shadow(0 0 10px hsl(340 100% 60% / 0.7));
+    color: hsl(340 100% 65%);
+    filter: drop-shadow(0 1px 0 hsl(340 90% 25%)) drop-shadow(0 0 10px hsl(340 100% 60% / 0.8));
   }
   .icon-3d-trophy {
-    background: linear-gradient(135deg, hsl(48 100% 65%) 0%, hsl(38 100% 55%) 50%, hsl(25 95% 45%) 100%);
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
-    filter: drop-shadow(0 2px 0 hsl(25 90% 25%)) drop-shadow(0 0 14px hsl(45 100% 55% / 0.8));
+    color: hsl(45 100% 58%);
+    filter: drop-shadow(0 1px 0 hsl(25 90% 25%)) drop-shadow(0 0 12px hsl(45 100% 55% / 0.9));
+  }
+  .icon-3d-flame {
+    color: hsl(15 100% 60%);
+    filter: drop-shadow(0 1px 0 hsl(0 90% 25%)) drop-shadow(0 0 12px hsl(20 100% 55% / 0.9));
+  }
+  .icon-3d-sparkles {
+    color: hsl(280 100% 70%);
+    filter: drop-shadow(0 1px 0 hsl(290 90% 30%)) drop-shadow(0 0 12px hsl(280 100% 65% / 0.9));
+  }
+  .icon-3d-party {
+    color: hsl(320 100% 65%);
+    filter: drop-shadow(0 1px 0 hsl(290 90% 30%)) drop-shadow(0 0 12px hsl(320 100% 60% / 0.9));
   }
   .neon-rotate-border {
     position: relative;
