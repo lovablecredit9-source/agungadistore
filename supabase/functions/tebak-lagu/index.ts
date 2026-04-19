@@ -140,7 +140,9 @@ Deno.serve(async (req) => {
     }
 
     if (action === "question") {
-      const q = await generateQuestion();
+      const difficulty = (url.searchParams.get("difficulty") || body?.difficulty || "sedang") as Difficulty;
+      const safeDiff: Difficulty = difficulty === "mudah" || difficulty === "sulit" ? difficulty : "sedang";
+      const q = await generateQuestion(safeDiff);
       return Response.json(q, { headers: corsHeaders });
     }
 
