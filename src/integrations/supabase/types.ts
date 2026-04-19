@@ -595,6 +595,368 @@ export type Database = {
         }
         Relationships: []
       }
+      event_shop_activity_feed: {
+        Row: {
+          action_type: string
+          created_at: string
+          display_name: string
+          id: string
+          item_icon: string
+          item_name: string
+          rarity: string
+          visitor_id: string
+        }
+        Insert: {
+          action_type: string
+          created_at?: string
+          display_name?: string
+          id?: string
+          item_icon?: string
+          item_name?: string
+          rarity?: string
+          visitor_id: string
+        }
+        Update: {
+          action_type?: string
+          created_at?: string
+          display_name?: string
+          id?: string
+          item_icon?: string
+          item_name?: string
+          rarity?: string
+          visitor_id?: string
+        }
+        Relationships: []
+      }
+      event_shop_bundle_purchases: {
+        Row: {
+          bundle_id: string
+          contents_snapshot: Json
+          cost_paid: number
+          created_at: string
+          id: string
+          visitor_id: string
+          week_start: string
+        }
+        Insert: {
+          bundle_id: string
+          contents_snapshot?: Json
+          cost_paid: number
+          created_at?: string
+          id?: string
+          visitor_id: string
+          week_start: string
+        }
+        Update: {
+          bundle_id?: string
+          contents_snapshot?: Json
+          cost_paid?: number
+          created_at?: string
+          id?: string
+          visitor_id?: string
+          week_start?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_shop_bundle_purchases_bundle_id_fkey"
+            columns: ["bundle_id"]
+            isOneToOne: false
+            referencedRelation: "event_shop_bundles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      event_shop_bundles: {
+        Row: {
+          contents: Json
+          created_at: string
+          description: string
+          icon: string
+          id: string
+          is_active: boolean
+          name: string
+          original_price: number
+          price_coins: number
+          sort_order: number
+          updated_at: string
+          weekly_limit: number
+        }
+        Insert: {
+          contents?: Json
+          created_at?: string
+          description?: string
+          icon?: string
+          id?: string
+          is_active?: boolean
+          name: string
+          original_price?: number
+          price_coins?: number
+          sort_order?: number
+          updated_at?: string
+          weekly_limit?: number
+        }
+        Update: {
+          contents?: Json
+          created_at?: string
+          description?: string
+          icon?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          original_price?: number
+          price_coins?: number
+          sort_order?: number
+          updated_at?: string
+          weekly_limit?: number
+        }
+        Relationships: []
+      }
+      event_shop_daily_active: {
+        Row: {
+          created_at: string
+          discount_pct: number
+          id: string
+          item_id: string
+          rotation_date: string
+          slot_order: number
+        }
+        Insert: {
+          created_at?: string
+          discount_pct?: number
+          id?: string
+          item_id: string
+          rotation_date: string
+          slot_order?: number
+        }
+        Update: {
+          created_at?: string
+          discount_pct?: number
+          id?: string
+          item_id?: string
+          rotation_date?: string
+          slot_order?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_shop_daily_active_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "event_shop_daily_rotation"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      event_shop_daily_purchases: {
+        Row: {
+          cost_paid: number
+          created_at: string
+          id: string
+          item_id: string
+          purchase_date: string
+          visitor_id: string
+        }
+        Insert: {
+          cost_paid: number
+          created_at?: string
+          id?: string
+          item_id: string
+          purchase_date: string
+          visitor_id: string
+        }
+        Update: {
+          cost_paid?: number
+          created_at?: string
+          id?: string
+          item_id?: string
+          purchase_date?: string
+          visitor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_shop_daily_purchases_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "event_shop_daily_rotation"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      event_shop_daily_rotation: {
+        Row: {
+          base_price_coins: number
+          created_at: string
+          icon: string
+          id: string
+          is_active: boolean
+          name: string
+          rarity_weight: number
+          reward_label: string
+          reward_type: string
+          reward_value: number
+          updated_at: string
+        }
+        Insert: {
+          base_price_coins?: number
+          created_at?: string
+          icon?: string
+          id?: string
+          is_active?: boolean
+          name: string
+          rarity_weight?: number
+          reward_label?: string
+          reward_type: string
+          reward_value?: number
+          updated_at?: string
+        }
+        Update: {
+          base_price_coins?: number
+          created_at?: string
+          icon?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          rarity_weight?: number
+          reward_label?: string
+          reward_type?: string
+          reward_value?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      event_shop_mystery_boxes: {
+        Row: {
+          created_at: string
+          description: string
+          icon: string
+          id: string
+          is_active: boolean
+          name: string
+          price_coins: number
+          rarity_pool: Json
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string
+          icon?: string
+          id?: string
+          is_active?: boolean
+          name: string
+          price_coins?: number
+          rarity_pool?: Json
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          icon?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          price_coins?: number
+          rarity_pool?: Json
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      event_shop_mystery_openings: {
+        Row: {
+          box_id: string
+          cost_paid: number
+          created_at: string
+          id: string
+          rarity: string
+          reward_label: string
+          reward_type: string
+          reward_value: number
+          visitor_id: string
+        }
+        Insert: {
+          box_id: string
+          cost_paid: number
+          created_at?: string
+          id?: string
+          rarity: string
+          reward_label?: string
+          reward_type: string
+          reward_value?: number
+          visitor_id: string
+        }
+        Update: {
+          box_id?: string
+          cost_paid?: number
+          created_at?: string
+          id?: string
+          rarity?: string
+          reward_label?: string
+          reward_type?: string
+          reward_value?: number
+          visitor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_shop_mystery_openings_box_id_fkey"
+            columns: ["box_id"]
+            isOneToOne: false
+            referencedRelation: "event_shop_mystery_boxes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      event_shop_top_spenders: {
+        Row: {
+          id: string
+          purchase_count: number
+          total_spent: number
+          updated_at: string
+          visitor_id: string
+          week_start: string
+        }
+        Insert: {
+          id?: string
+          purchase_count?: number
+          total_spent?: number
+          updated_at?: string
+          visitor_id: string
+          week_start: string
+        }
+        Update: {
+          id?: string
+          purchase_count?: number
+          total_spent?: number
+          updated_at?: string
+          visitor_id?: string
+          week_start?: string
+        }
+        Relationships: []
+      }
+      event_shop_wishlist: {
+        Row: {
+          created_at: string
+          id: string
+          item_id: string
+          item_kind: string
+          visitor_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          item_id: string
+          item_kind: string
+          visitor_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          item_id?: string
+          item_kind?: string
+          visitor_id?: string
+        }
+        Relationships: []
+      }
       flash_deal_redemptions: {
         Row: {
           cost_paid: number
