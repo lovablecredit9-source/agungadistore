@@ -240,7 +240,7 @@ Deno.serve(async (req) => {
   try {
     const { visitorId, tier: rawTier } = await req.json();
     const tier: Tier = (["hemat", "sedang", "besar", "mega", "ultra", "sultan", "raja", "dewa"].includes(rawTier) ? rawTier : "hemat") as Tier;
-    if (!visitorId) return new Response(JSON.stringify({ error: "visitorId required" }), { status: 400, headers: corsHeaders });
+    if (!visitorId) return new Response(JSON.stringify({ error: "visitorId required" }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
     const cost = TIER_COSTS[tier];
 
@@ -255,14 +255,14 @@ Deno.serve(async (req) => {
 
     if (!unlimitedActive) {
       if (!gc || (gc.credits || 0) < cost) {
-        return new Response(JSON.stringify({ error: `Kredit tidak cukup. Butuh ${cost} kredit.` }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        return new Response(JSON.stringify({ error: `Kredit tidak cukup. Butuh ${cost} kredit.` }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
       }
       const { error: deductErr } = await supabase
         .from("user_game_credits")
         .update({ credits: (gc.credits || 0) - cost })
         .eq("id", gc.id);
       if (deductErr) {
-        return new Response(JSON.stringify({ error: "Gagal memotong kredit: " + deductErr.message }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        return new Response(JSON.stringify({ error: "Gagal memotong kredit: " + deductErr.message }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
       }
     }
 
@@ -282,6 +282,6 @@ Deno.serve(async (req) => {
 
     return new Response(JSON.stringify({ success: true, reels, payout, tier, cost, luck, record: data }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
   } catch (e: any) {
-    return new Response(JSON.stringify({ error: e.message }), { status: 500, headers: corsHeaders });
+    return new Response(JSON.stringify({ error: e.message }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
   }
 });
