@@ -5,7 +5,7 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const MAX_DAY = 5; // 5 hari progresif (3,5,10,15,20 gem)
+const MAX_DAY = 30; // 30 hari (1 bulan), reset bila skip 1 hari
 
 function getWIBDate(): Date {
   const now = new Date();
