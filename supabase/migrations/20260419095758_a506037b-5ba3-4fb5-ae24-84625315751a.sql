@@ -1,0 +1,2 @@
+ALTER TABLE public.streak_shop_items ADD COLUMN IF NOT EXISTS cost_gems integer NOT NULL DEFAULT 0;
+UPDATE public.streak_shop_items SET cost_gems = GREATEST(1, CEIL(cost_coins::numeric / 10)::int) WHERE cost_gems = 0;
