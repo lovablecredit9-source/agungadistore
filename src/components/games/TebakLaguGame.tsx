@@ -239,7 +239,7 @@ export default function TebakLaguGame() {
     advanceAfterReveal(score, correctCount, lives);
   };
 
-  const restart = () => {
+  const restart = (keepDifficulty = true) => {
     stopTimer();
     setRound(0);
     setScore(0);
@@ -253,7 +253,57 @@ export default function TebakLaguGame() {
     setFinished(false);
     setGameOver(false);
     setTimeLeft(TIME_PER_QUESTION);
+    if (!keepDifficulty) setDifficulty(null);
   };
+
+  // ===== Difficulty selection screen =====
+  if (!difficulty) {
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="rounded-2xl border-2 border-purple-500/50 p-5 bg-gradient-to-br from-purple-950 via-pink-950 to-rose-950 shadow-[0_0_30px_rgba(168,85,247,0.35)]"
+      >
+        <div className="flex items-center gap-2 mb-4">
+          <motion.div animate={{ rotate: [0, 8, -8, 0] }} transition={{ duration: 2, repeat: Infinity }}>
+            <Music className="w-7 h-7 text-pink-300 drop-shadow-[0_0_8px_rgba(236,72,153,0.8)]" strokeWidth={2.5} />
+          </motion.div>
+          <div>
+            <div className="text-[10px] font-black tracking-widest text-pink-300 uppercase">🎵 TEBAK LAGU AI</div>
+            <div className="text-base font-black text-white">Pilih Tingkat Kesulitan</div>
+          </div>
+        </div>
+
+        <div className="flex items-center justify-between gap-2 mb-4 flex-wrap">
+          <GameCreditsBadge credits={credits} isUnlimited={isUnlimited} />
+          <BuyCreditsDialog visitorId={activeVisitorId} onPurchased={fetchCredits} />
+        </div>
+
+        <div className="grid gap-2">
+          {DIFFICULTIES.map(d => (
+            <motion.button
+              key={d.key}
+              whileTap={{ scale: 0.97 }}
+              onClick={() => setDifficulty(d.key)}
+              className="w-full p-3 rounded-xl bg-gradient-to-r from-purple-700/60 to-pink-700/60 hover:from-purple-600 hover:to-pink-600 border-2 border-purple-400/40 text-left transition-all"
+            >
+              <div className="flex items-center justify-between mb-1">
+                <span className={`text-base font-black ${d.color}`}>{d.label}</span>
+                <span className="flex items-center gap-1 text-xs text-white/80 font-bold">
+                  <Clock className="w-3 h-3" /> {d.time}s
+                </span>
+              </div>
+              <div className="text-[11px] text-pink-100/80 font-medium">{d.desc}</div>
+            </motion.button>
+          ))}
+        </div>
+
+        <p className="text-[10px] text-purple-200/60 mt-4 text-center">
+          🎮 5 round · 3 nyawa · Hint pertama gratis
+        </p>
+      </motion.div>
+    );
+  }
 
   // ===== Game Over (nyawa habis) =====
   if (gameOver) {
