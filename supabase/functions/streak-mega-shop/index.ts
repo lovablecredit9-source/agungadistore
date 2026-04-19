@@ -255,7 +255,8 @@ Deno.serve(async (req) => {
 
     // ============ GROUP BUY ============
     if (action === "group_buy") {
-      const { itemId } = body;
+      const { itemId, paymentMethod } = body;
+      const payMethod = paymentMethod === "gem" ? "gem" : "coin";
       const { data: item } = await admin.from("streak_group_buy_items").select("*").eq("id", itemId).eq("is_active", true).maybeSingle();
       if (!item) return Response.json({ error: "Item tidak ditemukan" }, { status: 404, headers: corsHeaders });
 
@@ -268,18 +269,28 @@ Deno.serve(async (req) => {
       if (b >= item.tier3_buyers) discount = item.tier3_discount_pct;
       else if (b >= item.tier2_buyers) discount = item.tier2_discount_pct;
       else if (b >= item.tier1_buyers) discount = item.tier1_discount_pct;
-      const cost = Math.floor(item.base_cost_coins * (1 - discount / 100));
+      const coinCost = Math.floor(item.base_cost_coins * (1 - discount / 100));
+      const gemCost = Math.max(1, Math.floor((item.base_cost_gems || 0) * (1 - discount / 100)));
 
-      const { data: streak } = await admin.from("daily_streaks").select("*").eq("visitor_id", visitorId).maybeSingle();
-      if ((streak?.streak_coins || 0) < cost) return Response.json({ error: `Butuh ${cost} coins` }, { status: 400, headers: corsHeaders });
+      let costPaid = 0;
+      if (payMethod === "gem") {
+        if ((item.base_cost_gems || 0) <= 0) return Response.json({ error: "Pembayaran gem belum tersedia" }, { status: 400, headers: corsHeaders });
+        const err = await deductGems(admin, visitorId, gemCost, `Group Buy: ${item.name}`, itemId);
+        if (err) return Response.json({ error: err }, { status: 400, headers: corsHeaders });
+        costPaid = gemCost;
+      } else {
+        const { data: streak } = await admin.from("daily_streaks").select("*").eq("visitor_id", visitorId).maybeSingle();
+        if ((streak?.streak_coins || 0) < coinCost) return Response.json({ error: `Butuh ${coinCost} coins` }, { status: 400, headers: corsHeaders });
+        await admin.from("daily_streaks").update({ streak_coins: streak.streak_coins - coinCost }).eq("visitor_id", visitorId);
+        costPaid = coinCost;
+        await trackBpSpend(admin, visitorId, coinCost);
+      }
 
-      await admin.from("daily_streaks").update({ streak_coins: streak.streak_coins - cost }).eq("visitor_id", visitorId);
       const { data: streak2 } = await admin.from("daily_streaks").select("*").eq("visitor_id", visitorId).maybeSingle();
       await applyReward(admin, visitorId, item.reward_type, item.reward_value, streak2);
-      await admin.from("streak_group_buy_purchases").insert({ visitor_id: visitorId, item_id: itemId, cost_paid: cost, discount_pct_applied: discount, purchase_date: today });
+      await admin.from("streak_group_buy_purchases").insert({ visitor_id: visitorId, item_id: itemId, cost_paid: costPaid, discount_pct_applied: discount, purchase_date: today, payment_method: payMethod });
 
-      await trackBpSpend(admin, visitorId, cost);
-      return Response.json({ success: true, cost, discount, message: `${item.reward_label} (diskon ${discount}%)` }, { headers: corsHeaders });
+      return Response.json({ success: true, cost: costPaid, discount, payment_method: payMethod, message: `${item.reward_label} (diskon ${discount}%, bayar ${payMethod === "gem" ? `${costPaid} 💎` : `${costPaid} 🪙`})` }, { headers: corsHeaders });
     }
 
     return Response.json({ error: "Unknown action" }, { status: 400, headers: corsHeaders });
