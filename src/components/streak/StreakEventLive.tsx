@@ -1,12 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Flame, Zap, Trophy, Sparkles, Clock, Users, TrendingUp, Star, Loader2, Crown, Medal, Award, Target, Gift, Rocket } from "lucide-react";
+import { Flame, Zap, Trophy, Sparkles, Clock, Users, TrendingUp, Star, Loader2, Crown, Medal, Award, Target, Gift, Rocket, Coins, Gem } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 interface Props {
   visitorId: string;
   currentStreak: number;
   totalClaims: number;
+  streakCoins?: number;
 }
 
 interface LiveData {
