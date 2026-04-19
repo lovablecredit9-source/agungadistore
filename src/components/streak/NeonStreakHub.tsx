@@ -33,6 +33,7 @@ import StreakMissionChain from "./StreakMissionChain";
 import StreakLeaderboard from "./StreakLeaderboard";
 import StreakEventLive from "./StreakEventLive";
 import StreakShopFlashDeals from "./StreakShopFlashDeals";
+import StreakEventShop from "./event/StreakEventShop";
 import LiveActivityTicker from "./event/LiveActivityTicker";
 import EventCalendarSchedule from "./event/EventCalendarSchedule";
 import TreasureHuntGrid from "./event/TreasureHuntGrid";
@@ -487,6 +488,7 @@ export default function NeonStreakHub({ visitorId, forcedView }: Props) {
       {activeView === "shop" && (
         <div className="space-y-3">
           <StreakShopFlashDeals visitorId={visitorId} onUpdate={loadAll} />
+          <StreakEventShop visitorId={visitorId} onUpdate={loadAll} />
           <GemShop visitorId={visitorId} onUpdate={loadAll} />
           <Button
             onClick={() => setShowShop(true)}
