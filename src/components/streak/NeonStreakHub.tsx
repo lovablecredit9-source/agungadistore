@@ -524,13 +524,29 @@ export default function NeonStreakHub({ visitorId, forcedView }: Props) {
               <Gift className="w-5 h-5 icon-3d-gift" strokeWidth={2.5} />
               <span className="text-sm font-black neon-gradient-text tracking-wider uppercase">Mystery Box Harian</span>
             </div>
-            <Button
-              onClick={openMysteryBox}
-              disabled={opening || boxOpened}
-              className="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white font-black"
-            >
-              {opening ? <Loader2 className="w-4 h-4 animate-spin" /> : boxOpened ? "Sudah Dibuka Hari Ini" : "Buka Mystery Box"}
-            </Button>
+            <div className="flex flex-col gap-2">
+              <Button
+                onClick={() => openMysteryBox("free")}
+                disabled={opening || boxOpened}
+                className="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white font-black"
+              >
+                {opening ? <Loader2 className="w-4 h-4 animate-spin" /> : boxOpened ? "✓ Gratis Sudah Dibuka" : "🎁 Buka Gratis (1x/hari)"}
+              </Button>
+              <Button
+                onClick={() => openMysteryBox("gem")}
+                disabled={opening || gems < 5}
+                className="w-full bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-black border border-cyan-300/50"
+              >
+                {opening ? <Loader2 className="w-4 h-4 animate-spin" /> : (
+                  <span className="flex items-center justify-center gap-1.5">
+                    <Gem className="w-4 h-4" /> Buka Extra · 5 💎 (Luck Boost!)
+                  </span>
+                )}
+              </Button>
+              <p className="text-[10px] text-center text-white/50">
+                Pakai gem untuk buka berkali-kali · Peluang epic/legendary lebih besar
+              </p>
+            </div>
           </div>
           <StreakMilestones visitorId={visitorId} onUpdate={() => { loadAll(); setCelebrate({ show: true, msg: "🏆 MILESTONE!" }); }} />
           <StreakLeaderboard />
