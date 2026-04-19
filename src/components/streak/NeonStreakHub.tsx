@@ -132,11 +132,11 @@ export default function NeonStreakHub({ visitorId, forcedView }: Props) {
   useEffect(() => { if (forcedView) setActiveView(forcedView); }, [forcedView]);
 
   const POWER_UPS = [
-    { id: "extra_life", name: "Nyawa Ekstra", desc: "+1 nyawa untuk semua game", icon: Heart, cost: 30, color: "from-red-500 to-pink-600" },
-    { id: "auto_hint", name: "Petunjuk Auto", desc: "1x hint otomatis di game", icon: Lightbulb, cost: 25, color: "from-yellow-400 to-orange-500" },
-    { id: "time_freeze", name: "Freeze Waktu", desc: "Pause timer 30 detik", icon: Clock, cost: 40, color: "from-cyan-400 to-blue-600" },
-    { id: "double_xp", name: "Double XP 1 Jam", desc: "2x poin selama 60 menit", icon: Zap, cost: 80, color: "from-purple-500 to-fuchsia-600" },
-    { id: "shield", name: "Shield Streak", desc: "Lindungi streak 1 hari", icon: Shield, cost: 60, color: "from-emerald-400 to-teal-600" },
+    { id: "extra_life", name: "Nyawa Ekstra", desc: "+1 nyawa untuk semua game", icon: Heart, cost: 30, gemCost: 3, color: "from-red-500 to-pink-600" },
+    { id: "auto_hint", name: "Petunjuk Auto", desc: "1x hint otomatis di game", icon: Lightbulb, cost: 25, gemCost: 3, color: "from-yellow-400 to-orange-500" },
+    { id: "time_freeze", name: "Freeze Waktu", desc: "Pause timer 30 detik", icon: Clock, cost: 40, gemCost: 4, color: "from-cyan-400 to-blue-600" },
+    { id: "double_xp", name: "Double XP 1 Jam", desc: "2x poin selama 60 menit", icon: Zap, cost: 80, gemCost: 8, color: "from-purple-500 to-fuchsia-600" },
+    { id: "shield", name: "Shield Streak", desc: "Lindungi streak 1 hari", icon: Shield, cost: 60, gemCost: 6, color: "from-emerald-400 to-teal-600" },
   ];
 
   function getToday() {
@@ -278,33 +278,49 @@ export default function NeonStreakHub({ visitorId, forcedView }: Props) {
     }
   }
 
-  async function redeemPowerUp(p: typeof POWER_UPS[number]) {
-    if (coins < p.cost) {
-      toast({ title: "Coins kurang", description: `Butuh ${p.cost} coin (kamu punya ${coins})`, variant: "destructive" });
-      return;
-    }
-    setRedeemingPower(p.id);
+  async function redeemPowerUp(p: typeof POWER_UPS[number], paymentMethod: "coin" | "gem" = "coin") {
+    setRedeemingPower(p.id + ":" + paymentMethod);
     try {
-      // Deduct coins di server (pakai daily_streaks update langsung — kebijakan RLS sudah Anyone update)
-      const { data: streak } = await supabase.from("daily_streaks").select("id, streak_coins").eq("visitor_id", visitorId).maybeSingle();
-      if (!streak) { toast({ title: "Streak tidak ada", variant: "destructive" }); return; }
-      if ((streak.streak_coins || 0) < p.cost) { toast({ title: "Coins kurang", variant: "destructive" }); return; }
-      await supabase.from("daily_streaks").update({ streak_coins: (streak.streak_coins || 0) - p.cost }).eq("id", streak.id);
+      const { data: streak } = await supabase.from("daily_streaks").select("id, streak_coins, freeze_count").eq("visitor_id", visitorId).maybeSingle();
+      if (!streak) { toast({ title: "Streak tidak ada", description: "Mulai streak dulu", variant: "destructive" }); return; }
 
-      // Update powerup state
+      if (paymentMethod === "gem") {
+        const cost = p.gemCost;
+        const { data: gp } = await supabase.from("game_profiles").select("gems").eq("visitor_id", visitorId).maybeSingle();
+        const currentGems = (gp as any)?.gems || 0;
+        if (currentGems < cost) {
+          toast({ title: "Gem kurang", description: `Butuh ${cost} 💎 (kamu punya ${currentGems})`, variant: "destructive" });
+          return;
+        }
+        await supabase.from("game_profiles").update({ gems: currentGems - cost }).eq("visitor_id", visitorId);
+        await supabase.from("gem_transactions").insert({
+          visitor_id: visitorId,
+          amount: -cost,
+          type: "shop",
+          description: `Power-Up: ${p.name} (-${cost} 💎)`,
+        });
+      } else {
+        if ((streak.streak_coins || 0) < p.cost) {
+          toast({ title: "Coins kurang", description: `Butuh ${p.cost} coin (kamu punya ${streak.streak_coins || 0})`, variant: "destructive" });
+          return;
+        }
+        await supabase.from("daily_streaks").update({ streak_coins: (streak.streak_coins || 0) - p.cost }).eq("id", streak.id);
+      }
+
+      // Apply power-up effect
       const next = { ...powerUps };
       if (p.id === "extra_life") next.extra_life = (next.extra_life || 0) + 1;
       if (p.id === "auto_hint") next.auto_hint = (next.auto_hint || 0) + 1;
       if (p.id === "time_freeze") next.time_freeze = (next.time_freeze || 0) + 1;
       if (p.id === "double_xp") next.double_xp_until = new Date(Date.now() + 60 * 60 * 1000).toISOString();
       if (p.id === "shield") {
-        // tambahkan freeze_count langsung
-        await supabase.from("daily_streaks").update({ freeze_count: ((streak as any).freeze_count || 0) + 1, streak_coins: (streak.streak_coins || 0) - p.cost }).eq("id", streak.id);
+        await supabase.from("daily_streaks").update({ freeze_count: ((streak as any).freeze_count || 0) + 1 }).eq("id", streak.id);
       }
       setPowerUps(next);
       try { localStorage.setItem(`streak_powerups_${visitorId}`, JSON.stringify(next)); } catch {}
 
-      toast({ title: `⚡ ${p.name} aktif!`, description: p.desc });
+      const unit = paymentMethod === "gem" ? `${p.gemCost} 💎` : `${p.cost} 🪙`;
+      toast({ title: `⚡ ${p.name} aktif!`, description: `${p.desc} (-${unit})` });
       await syncPowerUpsFromServer();
       window.dispatchEvent(new CustomEvent("power-ups-updated"));
       loadAll();
