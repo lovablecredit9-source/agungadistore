@@ -311,7 +311,6 @@ export default function StreakShopFlashDeals({ visitorId, onUpdate }: Props) {
               <p className="text-xs text-white/90 mb-4 leading-relaxed">{infoDeal.description}</p>
 
               <div className="space-y-2 mb-4">
-                <div className="flex justify-between items-center p-2.5 rounded-xl bg-black/30 border border-white/10">
                 <div className="p-3 rounded-xl bg-gradient-to-r from-emerald-500/30 to-cyan-500/30 border border-emerald-400/40">
                   <div className="text-[10px] font-black uppercase tracking-wider text-emerald-100 mb-1.5">🎁 Yang Kamu Dapat</div>
                   {(() => {
