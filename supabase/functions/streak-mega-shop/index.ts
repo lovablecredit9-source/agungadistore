@@ -221,7 +221,8 @@ Deno.serve(async (req) => {
 
     // ============ BUY SKIN ============
     if (action === "buy_skin") {
-      const { skinId } = body;
+      const { skinId, paymentMethod } = body;
+      const payMethod = paymentMethod === "gem" ? "gem" : "coin";
       const { data: skin } = await admin.from("streak_limited_skins").select("*").eq("id", skinId).eq("is_active", true).maybeSingle();
       if (!skin) return Response.json({ error: "Skin tidak ditemukan" }, { status: 404, headers: corsHeaders });
       if (new Date(skin.ends_at).getTime() < Date.now()) return Response.json({ error: "Skin sudah berakhir" }, { status: 400, headers: corsHeaders });
@@ -230,16 +231,26 @@ Deno.serve(async (req) => {
       const { data: existing } = await admin.from("streak_skin_purchases").select("id").eq("visitor_id", visitorId).eq("skin_id", skinId).maybeSingle();
       if (existing) return Response.json({ error: "Kamu sudah punya skin ini" }, { status: 400, headers: corsHeaders });
 
-      const { data: streak } = await admin.from("daily_streaks").select("*").eq("visitor_id", visitorId).maybeSingle();
-      if ((streak?.streak_coins || 0) < skin.cost_coins) return Response.json({ error: `Butuh ${skin.cost_coins} coins` }, { status: 400, headers: corsHeaders });
+      let costPaid = 0;
+      if (payMethod === "gem") {
+        const gemCost = skin.cost_gems || 0;
+        if (gemCost <= 0) return Response.json({ error: "Pembayaran gem belum tersedia" }, { status: 400, headers: corsHeaders });
+        const err = await deductGems(admin, visitorId, gemCost, `Skin: ${skin.name}`, skinId);
+        if (err) return Response.json({ error: err }, { status: 400, headers: corsHeaders });
+        costPaid = gemCost;
+      } else {
+        const { data: streak } = await admin.from("daily_streaks").select("*").eq("visitor_id", visitorId).maybeSingle();
+        if ((streak?.streak_coins || 0) < skin.cost_coins) return Response.json({ error: `Butuh ${skin.cost_coins} coins` }, { status: 400, headers: corsHeaders });
+        await admin.from("daily_streaks").update({ streak_coins: streak.streak_coins - skin.cost_coins }).eq("visitor_id", visitorId);
+        costPaid = skin.cost_coins;
+        // Track BP spend (only for coin purchases)
+        await trackBpSpend(admin, visitorId, skin.cost_coins);
+      }
 
-      await admin.from("daily_streaks").update({ streak_coins: streak.streak_coins - skin.cost_coins }).eq("visitor_id", visitorId);
-      await admin.from("streak_skin_purchases").insert({ visitor_id: visitorId, skin_id: skinId, cost_paid: skin.cost_coins });
+      await admin.from("streak_skin_purchases").insert({ visitor_id: visitorId, skin_id: skinId, cost_paid: costPaid, payment_method: payMethod });
       await admin.from("streak_limited_skins").update({ sold_count: skin.sold_count + 1 }).eq("id", skinId);
 
-      // Track BP spend
-      await trackBpSpend(admin, visitorId, skin.cost_coins);
-      return Response.json({ success: true, message: `🎉 ${skin.name} berhasil dibeli!` }, { headers: corsHeaders });
+      return Response.json({ success: true, message: `🎉 ${skin.name} berhasil dibeli pakai ${payMethod === "gem" ? "Gem 💎" : "Koin 🪙"}!` }, { headers: corsHeaders });
     }
 
     // ============ GROUP BUY ============
