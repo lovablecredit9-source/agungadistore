@@ -177,6 +177,34 @@ export default function SlotMachineGame() {
         <p className="text-xs opacity-90 mt-1">Tier {tierInfo.label} • {tierInfo.desc}</p>
       </Card>
 
+      {/* Toggle Mode Latihan / Asli */}
+      <div className="flex items-center gap-1 bg-muted/40 rounded-xl p-1 border border-border/50">
+        <button
+          onClick={() => !spinning && setFreeMode(false)}
+          disabled={spinning}
+          className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-2 rounded-lg text-xs font-bold transition-all ${
+            !freeMode ? "bg-gradient-to-r from-amber-500 to-orange-600 text-white shadow" : "text-muted-foreground hover:bg-muted"
+          }`}
+        >
+          <Wifi className="w-3.5 h-3.5" /> Asli
+        </button>
+        <button
+          onClick={() => !spinning && setFreeMode(true)}
+          disabled={spinning}
+          className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-2 rounded-lg text-xs font-bold transition-all ${
+            freeMode ? "bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow" : "text-muted-foreground hover:bg-muted"
+          }`}
+        >
+          <Gift className="w-3.5 h-3.5" /> Latihan (GRATIS)
+        </button>
+      </div>
+
+      {freeMode && (
+        <div className="text-[11px] text-center bg-emerald-500/10 border border-emerald-500/30 text-emerald-700 dark:text-emerald-300 rounded-lg px-3 py-2 font-medium">
+          🎮 Mode latihan offline — putar bebas tanpa biaya. Hadiah hanya simulasi & <b>tidak masuk ke akun</b> (kredit/saldo/storage tetap).
+        </div>
+      )}
+
       {/* Tier Selector — scrollable horizontal di mobile */}
       <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1 snap-x snap-mandatory">
         {TIERS.map(t => (
