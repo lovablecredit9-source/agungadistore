@@ -277,10 +277,10 @@ Deno.serve(async (req) => {
       payout_type: payout.type,
       payout_value: payout.value,
       payout_label: payout.label,
-      cost_credits: TIER_COSTS[tier],
+      cost_credits: cost,
     }).select().single();
 
-    return new Response(JSON.stringify({ success: true, reels, payout, tier, cost: TIER_COSTS[tier], luck, record: data }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    return new Response(JSON.stringify({ success: true, reels, payout, tier, cost, luck, record: data }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
   } catch (e: any) {
     return new Response(JSON.stringify({ error: e.message }), { status: 500, headers: corsHeaders });
   }
