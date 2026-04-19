@@ -340,21 +340,32 @@ export default function StreakShopFlashDeals({ visitorId, onUpdate }: Props) {
 
               <div className="space-y-2 mb-4">
                 <div className="p-3 rounded-xl bg-gradient-to-r from-emerald-500/30 to-cyan-500/30 border border-emerald-400/40">
-                  <div className="text-[10px] font-black uppercase tracking-wider text-emerald-100 mb-1.5">🎁 Yang Kamu Dapat</div>
+                  <div className="text-[10px] font-black uppercase tracking-wider text-emerald-100 mb-2">🎁 Yang Kamu Dapat</div>
                   {(() => {
-                    const info = getRewardInfo(infoDeal.reward_type);
+                    const info = getRewardInfo(infoDeal.reward_type, infoDeal.reward_value);
                     return (
-                      <div className="flex items-center gap-3">
-                        <div className="w-11 h-11 rounded-xl bg-black/40 flex items-center justify-center text-2xl flex-shrink-0">
-                          {info.icon}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="text-base font-black text-white">
-                            +{infoDeal.reward_value} <span className="text-yellow-200">{info.label}</span>
+                      <>
+                        <div className="flex items-center gap-3 mb-2">
+                          <div className="w-11 h-11 rounded-xl bg-black/40 flex items-center justify-center text-2xl flex-shrink-0">
+                            {info.icon}
                           </div>
-                          <div className="text-[10px] text-white/80 leading-tight">{info.desc}</div>
+                          <div className="flex-1 min-w-0">
+                            <div className="text-sm font-black text-yellow-200">{info.label}</div>
+                            <div className="text-[10px] text-white/80 leading-tight">{info.desc}</div>
+                          </div>
                         </div>
-                      </div>
+                        {info.items && info.items.length > 0 && (
+                          <div className="space-y-1 pt-2 border-t border-white/10">
+                            <div className="text-[9px] font-black uppercase tracking-wider text-white/60 mb-1">Isi Lengkap:</div>
+                            {info.items.map((item, idx) => (
+                              <div key={idx} className="flex items-center gap-2 text-[11px] text-white">
+                                <span className="text-base flex-shrink-0">{item.icon}</span>
+                                <span className="font-semibold">{item.text}</span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </>
                     );
                   })()}
                 </div>
