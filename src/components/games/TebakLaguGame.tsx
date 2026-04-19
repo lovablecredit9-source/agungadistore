@@ -220,13 +220,11 @@ export default function TebakLaguGame() {
     stopTimer();
     setRevealed(true);
     setSelected(question.correct_title);
-    const newLives = Math.max(0, lives - 1);
-    setLives(newLives);
     toast({
       title: "Jawaban ditampilkan",
-      description: isUnlimited ? "Mode unlimited · -1 nyawa" : `-${REVEAL_ANSWER_COST} kredit · -1 nyawa · 0 poin`,
+      description: isUnlimited ? "Mode unlimited · 0 poin" : `-${REVEAL_ANSWER_COST} kredit · 0 poin`,
     });
-    advanceAfterReveal(score, correctCount, newLives);
+    advanceAfterReveal(score, correctCount, lives);
   };
 
   const restart = () => {
