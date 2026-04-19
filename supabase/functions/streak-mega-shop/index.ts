@@ -52,6 +52,22 @@ async function deductInput(admin: any, visitorId: string, type: string, amount: 
   return "Tipe input tidak didukung";
 }
 
+// Deduct gems from game_profiles
+async function deductGems(admin: any, visitorId: string, amount: number, description: string, refId?: string): Promise<string | null> {
+  const { data: prof } = await admin.from("game_profiles").select("gems").eq("visitor_id", visitorId).maybeSingle();
+  const gems = prof?.gems || 0;
+  if (gems < amount) return `Gem kurang. Butuh ${amount} 💎, kamu punya ${gems} 💎`;
+  await admin.from("game_profiles").update({ gems: gems - amount }).eq("visitor_id", visitorId);
+  await admin.from("gem_transactions").insert({
+    visitor_id: visitorId,
+    amount: -amount,
+    type: "shop",
+    description,
+    reference_id: refId,
+  });
+  return null;
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
   try {
@@ -111,37 +127,50 @@ Deno.serve(async (req) => {
         else if (buyers >= it.tier2_buyers) discount = it.tier2_discount_pct;
         else if (buyers >= it.tier1_buyers) discount = it.tier1_discount_pct;
         const cost = Math.floor(it.base_cost_coins * (1 - discount / 100));
-        return { ...it, buyers_today: buyers, current_discount_pct: discount, current_cost: cost, already_bought_today: userBoughtToday.has(it.id) };
+        const gemCost = Math.max(1, Math.floor((it.base_cost_gems || 0) * (1 - discount / 100)));
+        return { ...it, buyers_today: buyers, current_discount_pct: discount, current_cost: cost, current_gem_cost: it.base_cost_gems > 0 ? gemCost : 0, already_bought_today: userBoughtToday.has(it.id) };
       });
+
+      const { data: prof } = await admin.from("game_profiles").select("gems").eq("visitor_id", visitorId).maybeSingle();
 
       return Response.json({
         battle_pass: bp,
         tradein: { recipes: recipes.data || [], usage_today: tradeMap },
         skins: (skins.data || []).map((s: any) => ({ ...s, owned: ownedMap.has(s.id) })),
         group_buy: groupItemsWithStats,
+        user_gems: prof?.gems ?? 0,
         date: today,
       }, { headers: corsHeaders });
     }
 
     // ============ BATTLE PASS: BUY PREMIUM ============
     if (action === "bp_buy_premium") {
-      const { seasonId } = body;
+      const { seasonId, paymentMethod } = body;
+      const payMethod = paymentMethod === "gem" ? "gem" : "coin";
       const { data: season } = await admin.from("streak_battle_pass_seasons").select("*").eq("id", seasonId).eq("is_active", true).maybeSingle();
       if (!season) return Response.json({ error: "Season tidak ditemukan" }, { status: 404, headers: corsHeaders });
       const { data: streak } = await admin.from("daily_streaks").select("*").eq("visitor_id", visitorId).maybeSingle();
       if (!streak) return Response.json({ error: "Mulai streak dulu" }, { status: 400, headers: corsHeaders });
-      if ((streak.streak_coins || 0) < season.premium_cost_coins) return Response.json({ error: `Butuh ${season.premium_cost_coins} coins` }, { status: 400, headers: corsHeaders });
 
       const { data: existing } = await admin.from("streak_battle_pass_progress").select("*").eq("visitor_id", visitorId).eq("season_id", seasonId).maybeSingle();
       if (existing?.is_premium) return Response.json({ error: "Premium sudah aktif" }, { status: 400, headers: corsHeaders });
 
-      await admin.from("daily_streaks").update({ streak_coins: streak.streak_coins - season.premium_cost_coins }).eq("visitor_id", visitorId);
-      if (existing) {
-        await admin.from("streak_battle_pass_progress").update({ is_premium: true, premium_purchased_at: new Date().toISOString() }).eq("id", existing.id);
+      if (payMethod === "gem") {
+        const gemCost = season.premium_cost_gems || 0;
+        if (gemCost <= 0) return Response.json({ error: "Pembayaran gem belum tersedia" }, { status: 400, headers: corsHeaders });
+        const err = await deductGems(admin, visitorId, gemCost, `Battle Pass Premium: ${season.name}`, seasonId);
+        if (err) return Response.json({ error: err }, { status: 400, headers: corsHeaders });
       } else {
-        await admin.from("streak_battle_pass_progress").insert({ visitor_id: visitorId, season_id: seasonId, is_premium: true, premium_purchased_at: new Date().toISOString() });
+        if ((streak.streak_coins || 0) < season.premium_cost_coins) return Response.json({ error: `Butuh ${season.premium_cost_coins} coins` }, { status: 400, headers: corsHeaders });
+        await admin.from("daily_streaks").update({ streak_coins: streak.streak_coins - season.premium_cost_coins }).eq("visitor_id", visitorId);
       }
-      await admin.from("notifications").insert({ visitor_id: visitorId, title: "🌟 Battle Pass Premium Aktif!", message: "Sekarang kamu bisa klaim semua reward premium!", type: "battle_pass" });
+
+      if (existing) {
+        await admin.from("streak_battle_pass_progress").update({ is_premium: true, premium_purchased_at: new Date().toISOString(), premium_payment_method: payMethod }).eq("id", existing.id);
+      } else {
+        await admin.from("streak_battle_pass_progress").insert({ visitor_id: visitorId, season_id: seasonId, is_premium: true, premium_purchased_at: new Date().toISOString(), premium_payment_method: payMethod });
+      }
+      await admin.from("notifications").insert({ visitor_id: visitorId, title: "🌟 Battle Pass Premium Aktif!", message: `Bayar pakai ${payMethod === "gem" ? "Gem 💎" : "Koin 🪙"}. Sekarang kamu bisa klaim semua reward premium!`, type: "battle_pass" });
       return Response.json({ success: true }, { headers: corsHeaders });
     }
 
@@ -196,7 +225,8 @@ Deno.serve(async (req) => {
 
     // ============ BUY SKIN ============
     if (action === "buy_skin") {
-      const { skinId } = body;
+      const { skinId, paymentMethod } = body;
+      const payMethod = paymentMethod === "gem" ? "gem" : "coin";
       const { data: skin } = await admin.from("streak_limited_skins").select("*").eq("id", skinId).eq("is_active", true).maybeSingle();
       if (!skin) return Response.json({ error: "Skin tidak ditemukan" }, { status: 404, headers: corsHeaders });
       if (new Date(skin.ends_at).getTime() < Date.now()) return Response.json({ error: "Skin sudah berakhir" }, { status: 400, headers: corsHeaders });
@@ -205,21 +235,32 @@ Deno.serve(async (req) => {
       const { data: existing } = await admin.from("streak_skin_purchases").select("id").eq("visitor_id", visitorId).eq("skin_id", skinId).maybeSingle();
       if (existing) return Response.json({ error: "Kamu sudah punya skin ini" }, { status: 400, headers: corsHeaders });
 
-      const { data: streak } = await admin.from("daily_streaks").select("*").eq("visitor_id", visitorId).maybeSingle();
-      if ((streak?.streak_coins || 0) < skin.cost_coins) return Response.json({ error: `Butuh ${skin.cost_coins} coins` }, { status: 400, headers: corsHeaders });
+      let costPaid = 0;
+      if (payMethod === "gem") {
+        const gemCost = skin.cost_gems || 0;
+        if (gemCost <= 0) return Response.json({ error: "Pembayaran gem belum tersedia" }, { status: 400, headers: corsHeaders });
+        const err = await deductGems(admin, visitorId, gemCost, `Skin: ${skin.name}`, skinId);
+        if (err) return Response.json({ error: err }, { status: 400, headers: corsHeaders });
+        costPaid = gemCost;
+      } else {
+        const { data: streak } = await admin.from("daily_streaks").select("*").eq("visitor_id", visitorId).maybeSingle();
+        if ((streak?.streak_coins || 0) < skin.cost_coins) return Response.json({ error: `Butuh ${skin.cost_coins} coins` }, { status: 400, headers: corsHeaders });
+        await admin.from("daily_streaks").update({ streak_coins: streak.streak_coins - skin.cost_coins }).eq("visitor_id", visitorId);
+        costPaid = skin.cost_coins;
+        // Track BP spend (only for coin purchases)
+        await trackBpSpend(admin, visitorId, skin.cost_coins);
+      }
 
-      await admin.from("daily_streaks").update({ streak_coins: streak.streak_coins - skin.cost_coins }).eq("visitor_id", visitorId);
-      await admin.from("streak_skin_purchases").insert({ visitor_id: visitorId, skin_id: skinId, cost_paid: skin.cost_coins });
+      await admin.from("streak_skin_purchases").insert({ visitor_id: visitorId, skin_id: skinId, cost_paid: costPaid, payment_method: payMethod });
       await admin.from("streak_limited_skins").update({ sold_count: skin.sold_count + 1 }).eq("id", skinId);
 
-      // Track BP spend
-      await trackBpSpend(admin, visitorId, skin.cost_coins);
-      return Response.json({ success: true, message: `🎉 ${skin.name} berhasil dibeli!` }, { headers: corsHeaders });
+      return Response.json({ success: true, message: `🎉 ${skin.name} berhasil dibeli pakai ${payMethod === "gem" ? "Gem 💎" : "Koin 🪙"}!` }, { headers: corsHeaders });
     }
 
     // ============ GROUP BUY ============
     if (action === "group_buy") {
-      const { itemId } = body;
+      const { itemId, paymentMethod } = body;
+      const payMethod = paymentMethod === "gem" ? "gem" : "coin";
       const { data: item } = await admin.from("streak_group_buy_items").select("*").eq("id", itemId).eq("is_active", true).maybeSingle();
       if (!item) return Response.json({ error: "Item tidak ditemukan" }, { status: 404, headers: corsHeaders });
 
@@ -232,18 +273,28 @@ Deno.serve(async (req) => {
       if (b >= item.tier3_buyers) discount = item.tier3_discount_pct;
       else if (b >= item.tier2_buyers) discount = item.tier2_discount_pct;
       else if (b >= item.tier1_buyers) discount = item.tier1_discount_pct;
-      const cost = Math.floor(item.base_cost_coins * (1 - discount / 100));
+      const coinCost = Math.floor(item.base_cost_coins * (1 - discount / 100));
+      const gemCost = Math.max(1, Math.floor((item.base_cost_gems || 0) * (1 - discount / 100)));
 
-      const { data: streak } = await admin.from("daily_streaks").select("*").eq("visitor_id", visitorId).maybeSingle();
-      if ((streak?.streak_coins || 0) < cost) return Response.json({ error: `Butuh ${cost} coins` }, { status: 400, headers: corsHeaders });
+      let costPaid = 0;
+      if (payMethod === "gem") {
+        if ((item.base_cost_gems || 0) <= 0) return Response.json({ error: "Pembayaran gem belum tersedia" }, { status: 400, headers: corsHeaders });
+        const err = await deductGems(admin, visitorId, gemCost, `Group Buy: ${item.name}`, itemId);
+        if (err) return Response.json({ error: err }, { status: 400, headers: corsHeaders });
+        costPaid = gemCost;
+      } else {
+        const { data: streak } = await admin.from("daily_streaks").select("*").eq("visitor_id", visitorId).maybeSingle();
+        if ((streak?.streak_coins || 0) < coinCost) return Response.json({ error: `Butuh ${coinCost} coins` }, { status: 400, headers: corsHeaders });
+        await admin.from("daily_streaks").update({ streak_coins: streak.streak_coins - coinCost }).eq("visitor_id", visitorId);
+        costPaid = coinCost;
+        await trackBpSpend(admin, visitorId, coinCost);
+      }
 
-      await admin.from("daily_streaks").update({ streak_coins: streak.streak_coins - cost }).eq("visitor_id", visitorId);
       const { data: streak2 } = await admin.from("daily_streaks").select("*").eq("visitor_id", visitorId).maybeSingle();
       await applyReward(admin, visitorId, item.reward_type, item.reward_value, streak2);
-      await admin.from("streak_group_buy_purchases").insert({ visitor_id: visitorId, item_id: itemId, cost_paid: cost, discount_pct_applied: discount, purchase_date: today });
+      await admin.from("streak_group_buy_purchases").insert({ visitor_id: visitorId, item_id: itemId, cost_paid: costPaid, discount_pct_applied: discount, purchase_date: today, payment_method: payMethod });
 
-      await trackBpSpend(admin, visitorId, cost);
-      return Response.json({ success: true, cost, discount, message: `${item.reward_label} (diskon ${discount}%)` }, { headers: corsHeaders });
+      return Response.json({ success: true, cost: costPaid, discount, payment_method: payMethod, message: `${item.reward_label} (diskon ${discount}%, bayar ${payMethod === "gem" ? `${costPaid} 💎` : `${costPaid} 🪙`})` }, { headers: corsHeaders });
     }
 
     return Response.json({ error: "Unknown action" }, { status: 400, headers: corsHeaders });

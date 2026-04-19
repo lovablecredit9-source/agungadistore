@@ -3910,6 +3910,7 @@ export type Database = {
           discount_pct_applied: number
           id: string
           item_id: string
+          payment_method: string
           purchase_date: string
           visitor_id: string
         }
@@ -3919,6 +3920,7 @@ export type Database = {
           discount_pct_applied?: number
           id?: string
           item_id: string
+          payment_method?: string
           purchase_date?: string
           visitor_id: string
         }
@@ -3928,6 +3930,7 @@ export type Database = {
           discount_pct_applied?: number
           id?: string
           item_id?: string
+          payment_method?: string
           purchase_date?: string
           visitor_id?: string
         }
@@ -4489,6 +4492,7 @@ export type Database = {
           created_at: string
           id: string
           is_equipped: boolean
+          payment_method: string
           skin_id: string
           visitor_id: string
         }
@@ -4497,6 +4501,7 @@ export type Database = {
           created_at?: string
           id?: string
           is_equipped?: boolean
+          payment_method?: string
           skin_id: string
           visitor_id: string
         }
@@ -4505,6 +4510,7 @@ export type Database = {
           created_at?: string
           id?: string
           is_equipped?: boolean
+          payment_method?: string
           skin_id?: string
           visitor_id?: string
         }
