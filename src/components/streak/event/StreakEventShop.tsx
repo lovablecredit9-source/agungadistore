@@ -428,12 +428,7 @@ export default function StreakEventShop({ visitorId, onUpdate }: Props) {
                     -{d.slot_discount_pct}% slot
                   </Badge>
                 )}
-                <div className="flex items-center justify-between mt-1">
-                  <span className="text-sm font-bold text-yellow-300 flex items-center gap-0.5">
-                    <Coins className="h-3 w-3" />{d.final_price}
-                  </span>
-                </div>
-                <div className="flex gap-1 mt-1.5">
+                <div className="flex flex-col gap-1 mt-1.5">
                   <Button
                     size="sm"
                     disabled={d.claimed || busyId === `daily:${d.item_id}:coin` || userCoins < d.final_price}
