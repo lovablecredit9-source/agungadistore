@@ -242,6 +242,30 @@ Deno.serve(async (req) => {
     const tier: Tier = (["hemat", "sedang", "besar", "mega", "ultra", "sultan", "raja", "dewa"].includes(rawTier) ? rawTier : "hemat") as Tier;
     if (!visitorId) return new Response(JSON.stringify({ error: "visitorId required" }), { status: 400, headers: corsHeaders });
 
+    const cost = TIER_COSTS[tier];
+
+    // Cek & potong kredit (skip jika user unlimited masih aktif)
+    const { data: gc } = await supabase
+      .from("user_game_credits")
+      .select("id, credits, is_unlimited, unlimited_until")
+      .eq("visitor_id", visitorId)
+      .maybeSingle();
+
+    const unlimitedActive = !!(gc?.is_unlimited && gc?.unlimited_until && new Date(gc.unlimited_until).getTime() > Date.now());
+
+    if (!unlimitedActive) {
+      if (!gc || (gc.credits || 0) < cost) {
+        return new Response(JSON.stringify({ error: `Kredit tidak cukup. Butuh ${cost} kredit.` }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      const { error: deductErr } = await supabase
+        .from("user_game_credits")
+        .update({ credits: (gc.credits || 0) - cost })
+        .eq("id", gc.id);
+      if (deductErr) {
+        return new Response(JSON.stringify({ error: "Gagal memotong kredit: " + deductErr.message }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+    }
+
     const luck = await getActiveLuck(visitorId);
     const reels = spinThreeReels(tier, luck);
     const payout = calculatePayout(tier, reels);
