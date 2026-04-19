@@ -439,7 +439,8 @@ Deno.serve(async (req) => {
 
     // BUY DAILY ROTATION ITEM
     if (action === "buy_daily") {
-      const { itemId } = body;
+      const { itemId, paymentMethod } = body;
+      const payMethod = paymentMethod === "gem" ? "gem" : "coin";
       await ensureDailyRotation(admin, today);
       const { data: slot } = await admin
         .from("event_shop_daily_active")
@@ -462,27 +463,50 @@ Deno.serve(async (req) => {
       const lifetimeSpent = await getLifetimeSpent(admin, visitorId);
       const tierInfo = calculateTier(lifetimeSpent);
       const item = slot.item;
-      const baseAfterSlot = Math.floor(item.base_price_coins * (1 - slot.discount_pct / 100));
-      const finalCost = Math.max(1, Math.floor(baseAfterSlot * (1 - tierInfo.discount / 100)));
 
       const { data: streak } = await admin.from("daily_streaks").select("*").eq("visitor_id", visitorId).maybeSingle();
       if (!streak) return Response.json({ error: "Mulai streak dulu" }, { status: 400, headers: corsHeaders });
-      if ((streak.streak_coins || 0) < finalCost) {
-        return Response.json({ error: `Coins kurang. Butuh ${finalCost}` }, { status: 400, headers: corsHeaders });
-      }
 
-      const newCoins = (streak.streak_coins || 0) - finalCost;
-      await admin.from("daily_streaks").update({ streak_coins: newCoins }).eq("id", streak.id);
-      await applyReward(admin, visitorId, item.reward_type, item.reward_value, { ...streak, streak_coins: newCoins });
+      let finalCost = 0;
+      if (payMethod === "gem") {
+        const gemBase = (item as any).cost_gems || 0;
+        if (gemBase <= 0) return Response.json({ error: "Pembayaran gem belum tersedia untuk item ini" }, { status: 400, headers: corsHeaders });
+        const gemAfterSlot = Math.max(1, Math.floor(gemBase * (1 - slot.discount_pct / 100)));
+        finalCost = Math.max(1, Math.floor(gemAfterSlot * (1 - tierInfo.discount / 100)));
+        const { data: gp } = await admin.from("game_profiles").select("gems").eq("visitor_id", visitorId).maybeSingle();
+        const userGems = (gp as any)?.gems || 0;
+        if (userGems < finalCost) {
+          return Response.json({ error: `Gem kurang. Butuh ${finalCost} 💎, kamu punya ${userGems} 💎.` }, { status: 400, headers: corsHeaders });
+        }
+        await admin.from("game_profiles").update({ gems: userGems - finalCost }).eq("visitor_id", visitorId);
+        await admin.from("gem_transactions").insert({
+          visitor_id: visitorId,
+          amount: -finalCost,
+          type: "shop",
+          description: `Daily Item: ${item.name} (-${finalCost} 💎)`,
+          reference_id: itemId,
+        });
+        await applyReward(admin, visitorId, item.reward_type, item.reward_value, streak);
+      } else {
+        const baseAfterSlot = Math.floor(item.base_price_coins * (1 - slot.discount_pct / 100));
+        finalCost = Math.max(1, Math.floor(baseAfterSlot * (1 - tierInfo.discount / 100)));
+        if ((streak.streak_coins || 0) < finalCost) {
+          return Response.json({ error: `Coins kurang. Butuh ${finalCost}` }, { status: 400, headers: corsHeaders });
+        }
+        const newCoins = (streak.streak_coins || 0) - finalCost;
+        await admin.from("daily_streaks").update({ streak_coins: newCoins }).eq("id", streak.id);
+        await applyReward(admin, visitorId, item.reward_type, item.reward_value, { ...streak, streak_coins: newCoins });
+      }
 
       await admin.from("event_shop_daily_purchases").insert({
         visitor_id: visitorId,
         item_id: itemId,
         cost_paid: finalCost,
         purchase_date: today,
+        payment_method: payMethod,
       });
 
-      await bumpSpender(admin, visitorId, finalCost);
+      if (payMethod === "coin") await bumpSpender(admin, visitorId, finalCost);
       await pushActivity(admin, visitorId, "daily", item.name, item.icon, "rare");
 
       return Response.json({ success: true, cost: finalCost, reward_label: item.reward_label }, { headers: corsHeaders });
