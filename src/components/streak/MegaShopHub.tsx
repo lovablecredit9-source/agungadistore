@@ -96,7 +96,7 @@ export default function MegaShopHub({ visitorId, onUpdate }: Props) {
         {/* BATTLE PASS */}
         <TabsContent value="bp" className="mt-2 space-y-2">
           {data.battle_pass ? (
-            <BattlePassPanel bp={data.battle_pass} busy={busy} call={call} />
+            <BattlePassPanel bp={data.battle_pass} busy={busy} call={call} userGems={userGems} />
           ) : (
             <p className="text-xs text-center text-muted-foreground py-4">Belum ada season aktif</p>
           )}
