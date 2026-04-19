@@ -15,37 +15,61 @@ interface SongQuestion {
   hint: string;
 }
 
+// Pool era untuk variasi
+const ERA_POOL = ["1990-an", "2000-an awal (2000-2005)", "2000-an akhir (2006-2010)", "2010-an awal (2011-2015)", "2010-an akhir (2016-2020)", "2020-an (2021-2026)"];
+const SEED_ARTISTS = [
+  "Sheila on 7", "NOAH/Peterpan", "Dewa 19", "Nidji", "Ungu", "Letto", "Padi", "Gigi", "Slank", "Jamrud",
+  "Anggun", "Krisdayanti", "Rossa", "Agnes Monica", "BCL", "Raisa", "Tulus", "Isyana Sarasvati", "Afgan", "Rizky Febian",
+  "Mahalini", "Lyodra", "Tiara Andini", "Ziva Magnolya", "Pamungkas", "Hindia", "Fiersa Besari", "Ardhito Pramono", "Juicy Luicy", "Yura Yunita",
+  "Andmesh Kamaleng", "Virgoun", "Armada", "Wali", "ST12", "Kotak", "Geisha", "D'Masiv", "Last Child", "Kerispatih",
+  "Naff", "Samsons", "Vierra/Vierratale", "Drive", "Ada Band", "Maliq & D'Essentials", "RAN", "HiVi!", "Payung Teduh", "Nadin Amizah",
+  "Bunga Citra Lestari", "Melly Goeslaw", "Glenn Fredly", "Dewa Budjana", "Sammy Simorangkir", "Cakra Khan", "Judika", "Marcell", "Tompi", "Reza Artamevia"
+];
+
 async function generateQuestion(): Promise<SongQuestion> {
   const apiKey = Deno.env.get("LOVABLE_API_KEY");
   if (!apiKey) throw new Error("LOVABLE_API_KEY belum diatur");
 
-  const prompt = `Buat 1 soal kuis "Tebak Lagu" dari potongan lirik LAGU POP INDONESIA yang pernah VIRAL/HITS di era 1990 sampai 2026.
+  // Acak era + seed artis untuk variasi setiap request
+  const randomEra = ERA_POOL[Math.floor(Math.random() * ERA_POOL.length)];
+  const shuffledArtists = [...SEED_ARTISTS].sort(() => Math.random() - 0.5).slice(0, 8);
+  const randomSeed = Math.random().toString(36).substring(2, 10);
 
-ATURAN KETAT (WAJIB DIPATUHI):
-- HANYA lagu berbahasa Indonesia (TIDAK BOLEH bahasa Inggris, Korea, Jepang, Mandarin, atau bahasa asing lain).
-- HANYA genre pop Indonesia (boleh pop-rock, pop-melayu, pop-indie, pop-dangdut, asalkan mainstream/viral).
-- Penyanyi/band HARUS dari Indonesia (contoh: Sheila on 7, Peterpan/NOAH, Dewa 19, Nidji, Ungu, Letto, Anggun, Krisdayanti, Agnes Monica, Raisa, Tulus, Isyana, Afgan, Rizky Febian, Mahalini, Lyodra, Tiara Andini, Pamungkas, Hindia, Fiersa Besari, Ardhito Pramono, Juicy Luicy, Yura Yunita, Andmesh, Virgoun, Armada, Wali, ST12, Kotak, Geisha, dll).
-- Lagu HARUS pernah viral/hits/populer (sering diputar di radio, TV, TikTok, Spotify Top, atau jadi OST sinetron/film terkenal).
-- Lirik snippet HARUS lirik ASLI yang BENAR-BENAR ADA di lagu tersebut (jangan mengarang lirik). 1-2 baris yang ikonik/mudah dikenali.
-- Judul lagu dan nama penyanyi HARUS akurat 100% — jangan tebak-tebakan, jangan campur judul lagu dengan artis yang salah.
-- Acak era: jangan selalu lagu 2020-an, variasikan 1990-an, 2000-an, 2010-an, dan 2020-an.
-- Jangan ulang lagu yang itu-itu saja.
+  const prompt = `Buat 1 soal kuis "Tebak Lagu" dari potongan lirik LAGU POP INDONESIA yang pernah VIRAL/HITS.
 
-ATURAN OPTIONS (PENTING):
-- Setiap opsi HARUS dalam format: "Judul Lagu — Nama Artis" (gunakan em-dash " — ").
-- Opsi BENAR: judul + artis asli yang akurat.
-- 3 opsi SALAH: pilih lagu pop Indonesia LAIN yang BENAR-BENAR ADA (judul + artis asli, jangan dikarang). Pilih lagu yang segenre/seera supaya menantang.
-- JANGAN pasangkan judul lagu dengan artis yang salah (semua pasangan judul–artis di options harus pasangan asli yang benar).
+FOKUS ERA KALI INI: ${randomEra}
+INSPIRASI ARTIS (pilih SALAH SATU dari daftar ini, atau artis pop Indonesia lain yang segenre/seera): ${shuffledArtists.join(", ")}
+Seed variasi: ${randomSeed} (gunakan untuk memastikan soal berbeda dari sebelumnya)
 
-Format JSON ketat:
+ATURAN AKURASI LIRIK–ARTIS (PALING PENTING — JANGAN SALAH):
+- "lyric_snippet" HARUS lirik ASLI yang BENAR-BENAR ADA di lagu "correct_title" milik "correct_artist".
+- Pasangan lirik ↔ judul ↔ artis WAJIB 100% akurat. Jangan menebak. Jika ragu, pilih lagu lain yang kamu yakin.
+- Contoh BENAR: lirik "terjadi lagi kisah lama yang terulang kembali" → judul "Kisah Cintaku" → artis "Peterpan/NOAH" (Ariel).
+- Contoh SALAH (DILARANG): lirik Noah dipasangkan dengan artis lain seperti Ungu, Dewa, dll. JANGAN PERNAH lakukan ini.
+- Jika kamu tidak yakin lirik itu milik siapa, JANGAN gunakan lirik tersebut. Pilih lagu yang kamu yakin penuh.
+
+ATURAN UMUM:
+- HANYA lagu berbahasa Indonesia (TIDAK BOLEH bahasa Inggris, Korea, Jepang, Mandarin).
+- HANYA genre pop Indonesia (boleh pop-rock, pop-melayu, pop-indie, pop-dangdut mainstream).
+- Penyanyi/band HARUS dari Indonesia.
+- Lagu HARUS pernah viral/hits (radio, TV, TikTok, Spotify Top, OST sinetron/film).
+- Lirik 1-2 baris yang ikonik/mudah dikenali.
+- VARIASIKAN soal — JANGAN ulang lagu populer yang sama (hindari "Kisah Cintaku", "Cinta Sejati", "Sephia", "Laskar Pelangi" jika sudah sering muncul). Cari lagu hits LAIN dari era yang diminta.
+
+ATURAN OPTIONS:
+- Format setiap opsi: "Judul Lagu — Nama Artis" (em-dash " — ").
+- Opsi BENAR (options[0]): judul + artis asli yang akurat.
+- 3 opsi SALAH: pilih lagu pop Indonesia LAIN yang BENAR-BENAR ADA (judul + artis asli yang benar, jangan dikarang, jangan dicampur). Pilih segenre/seera supaya menantang.
+- SEMUA pasangan judul–artis di options HARUS pasangan asli yang benar (tidak boleh ada judul lagu yang dipasangkan dengan artis salah).
+
+Format JSON ketat (TANPA markdown, TANPA teks lain):
 {
   "lyric_snippet": "1-2 baris lirik asli berbahasa Indonesia",
-  "correct_title": "Judul lagu (bahasa Indonesia)",
+  "correct_title": "Judul lagu",
   "correct_artist": "Nama penyanyi/band Indonesia",
   "options": ["Judul Benar — Artis Benar", "Judul Lain 1 — Artis Lain 1", "Judul Lain 2 — Artis Lain 2", "Judul Lain 3 — Artis Lain 3"],
   "hint": "Petunjuk singkat (era/tema/genre, tanpa menyebut judul atau penyanyi)"
-}
-Pastikan options[0] adalah pasangan yang benar (akan diacak di sisi klien). Jangan tambahkan teks lain di luar JSON.`;
+}`;
 
   const res = await fetch(LOVABLE_AI_URL, {
     method: "POST",
