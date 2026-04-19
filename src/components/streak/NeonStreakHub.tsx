@@ -163,7 +163,13 @@ export default function NeonStreakHub({ visitorId, forcedView }: Props) {
       setGems((gp as any)?.gems || 0);
     }
 
-    const { data: box } = await supabase.from("mystery_box_claims").select("*").eq("visitor_id", visitorId).eq("claim_date", today).maybeSingle();
+    const { data: box } = await supabase
+      .from("mystery_box_claims")
+      .select("*")
+      .eq("visitor_id", visitorId)
+      .eq("claim_date", today)
+      .eq("payment_method", "free")
+      .maybeSingle();
     setBoxOpened(!!box);
     if (box) setReward(box);
 
