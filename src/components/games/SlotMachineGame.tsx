@@ -11,13 +11,16 @@ import { ServerLuckCard } from "./ServerLuckCard";
 
 const SYMBOLS = ["🍒", "🍋", "🍇", "🔔", "⭐", "💎", "7️⃣"];
 
-type Tier = "hemat" | "sedang" | "besar" | "mega" | "ultra";
+type Tier = "hemat" | "sedang" | "besar" | "mega" | "ultra" | "sultan" | "raja" | "dewa";
 const TIERS: { key: Tier; label: string; cost: number; gradient: string; desc: string }[] = [
-  { key: "hemat",  label: "Hemat",  cost: 1,   gradient: "from-emerald-500 to-teal-600",  desc: "Jackpot Rp 100" },
-  { key: "sedang", label: "Sedang", cost: 5,   gradient: "from-blue-500 to-indigo-600",   desc: "Jackpot Rp 200 + Bonus" },
-  { key: "besar",  label: "Besar",  cost: 10,  gradient: "from-amber-500 to-rose-600",    desc: "Mega Jackpot Rp 500" },
-  { key: "mega",   label: "Mega",   cost: 50,  gradient: "from-fuchsia-500 to-purple-700", desc: "Super Jackpot Rp 2.500" },
-  { key: "ultra",  label: "Ultra",  cost: 100, gradient: "from-rose-600 to-red-800",       desc: "Ultra Jackpot Rp 5.000" },
+  { key: "hemat",  label: "Hemat",  cost: 1,    gradient: "from-emerald-500 to-teal-600",  desc: "Jackpot Rp 100" },
+  { key: "sedang", label: "Sedang", cost: 5,    gradient: "from-blue-500 to-indigo-600",   desc: "Jackpot Rp 200 + Bonus" },
+  { key: "besar",  label: "Besar",  cost: 10,   gradient: "from-amber-500 to-rose-600",    desc: "Mega Jackpot Rp 500" },
+  { key: "mega",   label: "Mega",   cost: 50,   gradient: "from-fuchsia-500 to-purple-700", desc: "Super Jackpot Rp 2.500" },
+  { key: "ultra",  label: "Ultra",  cost: 100,  gradient: "from-rose-600 to-red-800",       desc: "Ultra Jackpot Rp 5.000" },
+  { key: "sultan", label: "Sultan", cost: 200,  gradient: "from-yellow-500 to-amber-700",   desc: "Sultan Jackpot Rp 10.000" },
+  { key: "raja",   label: "Raja",   cost: 500,  gradient: "from-violet-600 to-indigo-900",  desc: "Raja Jackpot Rp 25.000" },
+  { key: "dewa",   label: "Dewa",   cost: 1000, gradient: "from-pink-600 via-red-600 to-yellow-500", desc: "DEWA Jackpot Rp 50.000" },
 ];
 
 // Tabel hadiah per tier — ditampilkan ringkas di bawah mesin
@@ -62,6 +65,33 @@ const TIER_REWARDS: Record<Tier, { sym: string; reward: string }[]> = {
     { sym: "🍇🍇🍇", reward: "+10 Nyawa Ekstra" },
     { sym: "🍋🍋🍋", reward: "130 kredit" },
     { sym: "🍒🍒🍒", reward: "90 kredit" },
+  ],
+  sultan: [
+    { sym: "7️⃣7️⃣7️⃣", reward: "MAX Saldo Rp 10.000" },
+    { sym: "💎💎💎", reward: "Saldo Rp 4.000" },
+    { sym: "⭐⭐⭐", reward: "Saldo Rp 2.000" },
+    { sym: "🔔🔔🔔", reward: "+1 GB storage" },
+    { sym: "🍇🍇🍇", reward: "+20 Nyawa Ekstra" },
+    { sym: "🍋🍋🍋", reward: "260 kredit" },
+    { sym: "🍒🍒🍒", reward: "180 kredit" },
+  ],
+  raja: [
+    { sym: "7️⃣7️⃣7️⃣", reward: "MAX Saldo Rp 25.000" },
+    { sym: "💎💎💎", reward: "Saldo Rp 10.000" },
+    { sym: "⭐⭐⭐", reward: "Saldo Rp 5.000" },
+    { sym: "🔔🔔🔔", reward: "+2.5 GB storage" },
+    { sym: "🍇🍇🍇", reward: "+50 Nyawa Ekstra" },
+    { sym: "🍋🍋🍋", reward: "650 kredit" },
+    { sym: "🍒🍒🍒", reward: "450 kredit" },
+  ],
+  dewa: [
+    { sym: "7️⃣7️⃣7️⃣", reward: "MAX Saldo Rp 50.000" },
+    { sym: "💎💎💎", reward: "Saldo Rp 20.000" },
+    { sym: "⭐⭐⭐", reward: "Saldo Rp 10.000" },
+    { sym: "🔔🔔🔔", reward: "+5 GB storage" },
+    { sym: "🍇🍇🍇", reward: "+100 Nyawa Ekstra" },
+    { sym: "🍋🍋🍋", reward: "1.300 kredit" },
+    { sym: "🍒🍒🍒", reward: "900 kredit" },
   ],
 };
 
