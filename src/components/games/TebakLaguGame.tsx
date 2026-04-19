@@ -64,6 +64,7 @@ export default function TebakLaguGame() {
   };
 
   const loadQuestion = useCallback(async () => {
+    if (!difficulty) return;
     setLoading(true);
     setSelected(null);
     setRevealed(false);
@@ -73,7 +74,7 @@ export default function TebakLaguGame() {
     stopTimer();
     try {
       const { data, error } = await supabase.functions.invoke("tebak-lagu", {
-        body: { action: "question" },
+        body: { action: "question", difficulty },
       });
       if (error) throw error;
       if ((data as any)?.error) throw new Error((data as any).error);
@@ -87,11 +88,11 @@ export default function TebakLaguGame() {
     } finally {
       setLoading(false);
     }
-  }, [toast]);
+  }, [toast, difficulty, TIME_PER_QUESTION]);
 
   useEffect(() => {
-    if (round < TOTAL_ROUNDS && !finished && !gameOver) loadQuestion();
-  }, [round, finished, gameOver, loadQuestion]);
+    if (difficulty && round < TOTAL_ROUNDS && !finished && !gameOver) loadQuestion();
+  }, [round, finished, gameOver, loadQuestion, difficulty]);
 
   // Timer countdown
   useEffect(() => {
