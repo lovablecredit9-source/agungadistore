@@ -223,15 +223,29 @@ export default function MegaShopHub({ visitorId, onUpdate }: Props) {
                     {g.current_discount_pct > 0 && <span className="line-through text-pink-300/60 mr-1">{g.base_cost_coins}</span>}
                     <span className="font-bold text-amber-300">{g.current_cost} <Coins className="inline h-3 w-3" /></span>
                   </div>
-                  <Button
-                    size="sm"
-                    disabled={g.already_bought_today || busy === `g-${g.id}`}
-                    onClick={() => call("group_buy", { itemId: g.id }, `g-${g.id}`)}
-                    className="h-7 px-2 text-[10px] bg-pink-500 hover:bg-pink-600 text-white"
-                  >
-                    {g.already_bought_today ? "Sudah dibeli" :
-                     busy === `g-${g.id}` ? <Loader2 className="h-3 w-3 animate-spin" /> : "Beli"}
-                  </Button>
+                  <div className="flex gap-1">
+                    <Button
+                      size="sm"
+                      disabled={g.already_bought_today || busy === `g-${g.id}-coin`}
+                      onClick={() => call("group_buy", { itemId: g.id, paymentMethod: "coin" }, `g-${g.id}-coin`)}
+                      className="h-7 px-2 text-[10px] bg-pink-500 hover:bg-pink-600 text-white"
+                    >
+                      {g.already_bought_today ? "Sudah" :
+                       busy === `g-${g.id}-coin` ? <Loader2 className="h-3 w-3 animate-spin" /> :
+                       <><Coins className="h-3 w-3 mr-0.5" />{g.current_cost}</>}
+                    </Button>
+                    {!g.already_bought_today && g.current_gem_cost > 0 && (
+                      <Button
+                        size="sm"
+                        disabled={busy === `g-${g.id}-gem` || userGems < g.current_gem_cost}
+                        onClick={() => call("group_buy", { itemId: g.id, paymentMethod: "gem" }, `g-${g.id}-gem`)}
+                        className="h-7 px-2 text-[10px] bg-cyan-500 hover:bg-cyan-600 text-white disabled:opacity-50"
+                      >
+                        {busy === `g-${g.id}-gem` ? <Loader2 className="h-3 w-3 animate-spin" /> :
+                         <><Gem className="h-3 w-3 mr-0.5" />{g.current_gem_cost}</>}
+                      </Button>
+                    )}
+                  </div>
                 </div>
               </motion.div>
             );
