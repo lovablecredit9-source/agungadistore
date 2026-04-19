@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import {
   Loader2, Heart, Crown, Sparkles, Box as BoxIcon, ShoppingBag, Calendar,
-  Trophy, Clock, Coins, Flame, Star, Lock, TrendingUp,
+  Trophy, Clock, Coins, Flame, Star, Lock, TrendingUp, Gem,
 } from "lucide-react";
 import ShopExtras from "./ShopExtras";
 
@@ -57,7 +57,21 @@ export default function StreakEventShop({ visitorId, onUpdate }: Props) {
   const [busyId, setBusyId] = useState<string | null>(null);
   const [openResult, setOpenResult] = useState<any>(null);
   const [secondsLeft, setSecondsLeft] = useState(0);
+  const [userGems, setUserGems] = useState(0);
+  const [userCoins, setUserCoins] = useState(0);
   const { toast } = useToast();
+
+  const loadCurrencies = async () => {
+    try {
+      const { data: g } = await supabase.rpc("get_account_gems", { p_visitor_id: visitorId });
+      setUserGems(Number(g) || 0);
+    } catch {
+      const { data: gp } = await supabase.from("game_profiles").select("gems").eq("visitor_id", visitorId).maybeSingle();
+      setUserGems((gp as any)?.gems || 0);
+    }
+    const { data: streak } = await supabase.from("daily_streaks").select("streak_coins").eq("visitor_id", visitorId).maybeSingle();
+    setUserCoins((streak as any)?.streak_coins || 0);
+  };
 
   const load = async () => {
     setLoading(true);
@@ -70,6 +84,7 @@ export default function StreakEventShop({ visitorId, onUpdate }: Props) {
       setData(res);
       setSecondsLeft(res.seconds_to_reset || 0);
     }
+    await loadCurrencies();
     setLoading(false);
   };
 
@@ -105,10 +120,11 @@ export default function StreakEventShop({ visitorId, onUpdate }: Props) {
     return res;
   };
 
-  const buyBundle = async (b: any) => {
-    const res = await callAction("buy_bundle", { bundleId: b.id }, `bundle:${b.id}`);
+  const buyBundle = async (b: any, paymentMethod: "coin" | "gem" = "coin") => {
+    const res = await callAction("buy_bundle", { bundleId: b.id, paymentMethod }, `bundle:${b.id}:${paymentMethod}`);
     if (res?.success) {
-      toast({ title: `🎁 ${b.name}`, description: `Berhasil dibeli! -${res.cost} coins` });
+      const unit = paymentMethod === "gem" ? "💎" : "🪙";
+      toast({ title: `🎁 ${b.name}`, description: `Berhasil dibeli! -${res.cost} ${unit}` });
       load();
       onUpdate?.();
     }
