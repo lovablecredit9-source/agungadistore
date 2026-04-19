@@ -3322,6 +3322,122 @@ export type Database = {
         }
         Relationships: []
       }
+      streak_auction_bids: {
+        Row: {
+          auction_id: string
+          bid_amount: number
+          created_at: string
+          currency: string
+          display_name: string
+          id: string
+          is_winner: boolean
+          refunded: boolean
+          visitor_id: string
+        }
+        Insert: {
+          auction_id: string
+          bid_amount: number
+          created_at?: string
+          currency?: string
+          display_name?: string
+          id?: string
+          is_winner?: boolean
+          refunded?: boolean
+          visitor_id: string
+        }
+        Update: {
+          auction_id?: string
+          bid_amount?: number
+          created_at?: string
+          currency?: string
+          display_name?: string
+          id?: string
+          is_winner?: boolean
+          refunded?: boolean
+          visitor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "streak_auction_bids_auction_id_fkey"
+            columns: ["auction_id"]
+            isOneToOne: false
+            referencedRelation: "streak_auctions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      streak_auctions: {
+        Row: {
+          bid_currency: string
+          created_at: string
+          current_bid: number
+          current_winner_name: string | null
+          current_winner_visitor_id: string | null
+          description: string
+          ends_at: string
+          icon: string
+          id: string
+          is_active: boolean
+          min_increment: number
+          name: string
+          rarity: string
+          reward_label: string
+          reward_type: string
+          reward_value: number
+          starting_bid: number
+          starts_at: string
+          status: string
+          total_bids: number
+          updated_at: string
+        }
+        Insert: {
+          bid_currency?: string
+          created_at?: string
+          current_bid?: number
+          current_winner_name?: string | null
+          current_winner_visitor_id?: string | null
+          description?: string
+          ends_at: string
+          icon?: string
+          id?: string
+          is_active?: boolean
+          min_increment?: number
+          name: string
+          rarity?: string
+          reward_label?: string
+          reward_type: string
+          reward_value: number
+          starting_bid?: number
+          starts_at?: string
+          status?: string
+          total_bids?: number
+          updated_at?: string
+        }
+        Update: {
+          bid_currency?: string
+          created_at?: string
+          current_bid?: number
+          current_winner_name?: string | null
+          current_winner_visitor_id?: string | null
+          description?: string
+          ends_at?: string
+          icon?: string
+          id?: string
+          is_active?: boolean
+          min_increment?: number
+          name?: string
+          rarity?: string
+          reward_label?: string
+          reward_type?: string
+          reward_value?: number
+          starting_bid?: number
+          starts_at?: string
+          status?: string
+          total_bids?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       streak_avatar_stages: {
         Row: {
           color_from: string
@@ -4034,6 +4150,87 @@ export type Database = {
         }
         Relationships: []
       }
+      streak_loyalty_progress: {
+        Row: {
+          created_at: string
+          current_tier_key: string
+          id: string
+          last_monthly_claim_month: string | null
+          lifetime_spent_coins: number
+          total_monthly_claims: number
+          updated_at: string
+          visitor_id: string
+        }
+        Insert: {
+          created_at?: string
+          current_tier_key?: string
+          id?: string
+          last_monthly_claim_month?: string | null
+          lifetime_spent_coins?: number
+          total_monthly_claims?: number
+          updated_at?: string
+          visitor_id: string
+        }
+        Update: {
+          created_at?: string
+          current_tier_key?: string
+          id?: string
+          last_monthly_claim_month?: string | null
+          lifetime_spent_coins?: number
+          total_monthly_claims?: number
+          updated_at?: string
+          visitor_id?: string
+        }
+        Relationships: []
+      }
+      streak_loyalty_tiers: {
+        Row: {
+          color: string
+          created_at: string
+          discount_pct: number
+          icon: string
+          id: string
+          monthly_coins_reward: number
+          monthly_freeze_reward: number
+          monthly_gems_reward: number
+          perks: Json
+          required_lifetime_spent: number
+          tier_key: string
+          tier_name: string
+          tier_order: number
+        }
+        Insert: {
+          color?: string
+          created_at?: string
+          discount_pct?: number
+          icon?: string
+          id?: string
+          monthly_coins_reward?: number
+          monthly_freeze_reward?: number
+          monthly_gems_reward?: number
+          perks?: Json
+          required_lifetime_spent?: number
+          tier_key: string
+          tier_name: string
+          tier_order?: number
+        }
+        Update: {
+          color?: string
+          created_at?: string
+          discount_pct?: number
+          icon?: string
+          id?: string
+          monthly_coins_reward?: number
+          monthly_freeze_reward?: number
+          monthly_gems_reward?: number
+          perks?: Json
+          required_lifetime_spent?: number
+          tier_key?: string
+          tier_name?: string
+          tier_order?: number
+        }
+        Relationships: []
+      }
       streak_milestone_claims: {
         Row: {
           claimed_at: string
@@ -4101,6 +4298,110 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      streak_mystery_boxes: {
+        Row: {
+          cost_balance: number
+          cost_coins: number
+          cost_gems: number
+          created_at: string
+          daily_limit: number
+          description: string
+          icon: string
+          id: string
+          is_active: boolean
+          name: string
+          rarity: string
+          reward_pool: Json
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          cost_balance?: number
+          cost_coins?: number
+          cost_gems?: number
+          created_at?: string
+          daily_limit?: number
+          description?: string
+          icon?: string
+          id?: string
+          is_active?: boolean
+          name: string
+          rarity?: string
+          reward_pool?: Json
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          cost_balance?: number
+          cost_coins?: number
+          cost_gems?: number
+          created_at?: string
+          daily_limit?: number
+          description?: string
+          icon?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          rarity?: string
+          reward_pool?: Json
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      streak_mystery_openings: {
+        Row: {
+          box_id: string
+          cost_paid: number
+          created_at: string
+          id: string
+          opened_date: string
+          payment_method: string
+          rarity: string
+          reward_label: string
+          reward_type: string
+          reward_value: number
+          visitor_id: string
+          voucher_code: string | null
+        }
+        Insert: {
+          box_id: string
+          cost_paid: number
+          created_at?: string
+          id?: string
+          opened_date?: string
+          payment_method: string
+          rarity?: string
+          reward_label?: string
+          reward_type: string
+          reward_value: number
+          visitor_id: string
+          voucher_code?: string | null
+        }
+        Update: {
+          box_id?: string
+          cost_paid?: number
+          created_at?: string
+          id?: string
+          opened_date?: string
+          payment_method?: string
+          rarity?: string
+          reward_label?: string
+          reward_type?: string
+          reward_value?: number
+          visitor_id?: string
+          voucher_code?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "streak_mystery_openings_box_id_fkey"
+            columns: ["box_id"]
+            isOneToOne: false
+            referencedRelation: "streak_mystery_boxes"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       streak_packages: {
         Row: {
@@ -4355,6 +4656,75 @@ export type Database = {
           updated_at?: string
           username?: string
           visitor_id?: string
+        }
+        Relationships: []
+      }
+      streak_referral_codes: {
+        Row: {
+          created_at: string
+          display_name: string
+          id: string
+          referral_code: string
+          total_coins_earned: number
+          total_gems_earned: number
+          total_referred: number
+          visitor_id: string
+        }
+        Insert: {
+          created_at?: string
+          display_name?: string
+          id?: string
+          referral_code: string
+          total_coins_earned?: number
+          total_gems_earned?: number
+          total_referred?: number
+          visitor_id: string
+        }
+        Update: {
+          created_at?: string
+          display_name?: string
+          id?: string
+          referral_code?: string
+          total_coins_earned?: number
+          total_gems_earned?: number
+          total_referred?: number
+          visitor_id?: string
+        }
+        Relationships: []
+      }
+      streak_referral_uses: {
+        Row: {
+          created_at: string
+          id: string
+          referral_code: string
+          referred_visitor_id: string
+          referrer_visitor_id: string
+          reward_coins_to_referred: number
+          reward_coins_to_referrer: number
+          reward_gems_to_referred: number
+          reward_gems_to_referrer: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          referral_code: string
+          referred_visitor_id: string
+          referrer_visitor_id: string
+          reward_coins_to_referred?: number
+          reward_coins_to_referrer?: number
+          reward_gems_to_referred?: number
+          reward_gems_to_referrer?: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          referral_code?: string
+          referred_visitor_id?: string
+          referrer_visitor_id?: string
+          reward_coins_to_referred?: number
+          reward_coins_to_referrer?: number
+          reward_gems_to_referred?: number
+          reward_gems_to_referrer?: number
         }
         Relationships: []
       }
