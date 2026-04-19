@@ -16,7 +16,7 @@ interface LiveData {
   questEngaged: number;
   totalClaimsWeek: number;
   jackpotPool: number;
-  leaderboard: Array<{ visitor_id: string; current_streak: number; total_claims: number; streak_coins: number }>;
+  leaderboard: Array<{ visitor_id: string; current_streak: number; total_claims: number; streak_coins: number; display_name?: string; avatar_url?: string | null }>;
 }
 
 function getWeekEndFromStart(weekStartIso: string): Date {
