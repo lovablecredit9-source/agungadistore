@@ -4403,6 +4403,7 @@ export type Database = {
       streak_shop_items: {
         Row: {
           cost_coins: number
+          cost_gems: number
           created_at: string
           description: string
           icon: string
@@ -4417,6 +4418,7 @@ export type Database = {
         }
         Insert: {
           cost_coins?: number
+          cost_gems?: number
           created_at?: string
           description?: string
           icon?: string
@@ -4431,6 +4433,7 @@ export type Database = {
         }
         Update: {
           cost_coins?: number
+          cost_gems?: number
           created_at?: string
           description?: string
           icon?: string

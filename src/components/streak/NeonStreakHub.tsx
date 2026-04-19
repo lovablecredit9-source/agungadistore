@@ -85,6 +85,7 @@ interface ShopItem {
   description: string;
   icon: string;
   cost_coins: number;
+  cost_gems: number;
   reward_type: string;
   reward_value: number;
 }
@@ -250,10 +251,10 @@ export default function NeonStreakHub({ visitorId, forcedView }: Props) {
     }
   }
 
-  async function redeem(item: ShopItem) {
-    setRedeeming(item.id);
+  async function redeem(item: ShopItem, paymentMethod: "coin" | "gem" = "coin") {
+    setRedeeming(item.id + ":" + paymentMethod);
     try {
-      const { data, error } = await supabase.functions.invoke("streak-shop-redeem", { body: { visitorId, itemId: item.id } });
+      const { data, error } = await supabase.functions.invoke("streak-shop-redeem", { body: { visitorId, itemId: item.id, paymentMethod } });
       if (error || data?.error) {
         toast({ title: "Gagal", description: data?.error || error?.message, variant: "destructive" });
       } else {
@@ -630,26 +631,65 @@ export default function NeonStreakHub({ visitorId, forcedView }: Props) {
             <TabsContent value="items" className="mt-3">
               <div className="grid grid-cols-2 gap-2 max-h-[45vh] overflow-y-auto">
                 {items.map(item => {
-                  const canBuy = coins >= item.cost_coins;
+                  const gemPrice = item.cost_gems || 0;
+                  const canBuyCoin = coins >= item.cost_coins;
+                  const canBuyGem = gemPrice > 0 && gems >= gemPrice;
+                  const busyCoin = redeeming === item.id + ":coin";
+                  const busyGem = redeeming === item.id + ":gem";
+                  const anyBusy = busyCoin || busyGem;
                   return (
-                    <button
+                    <div
                       key={item.id}
-                      disabled={!canBuy || redeeming === item.id}
-                      onClick={() => redeem(item)}
-                      className={`relative p-3 rounded-xl border text-left transition group ${
-                        canBuy ? "bg-gradient-to-br from-purple-900/60 to-pink-900/60 border-pink-500/40 hover:border-pink-400 hover:scale-[1.02]" : "bg-black/40 border-white/10 opacity-50"
+                      className={`relative p-3 rounded-xl border text-left transition flex flex-col ${
+                        canBuyCoin || canBuyGem
+                          ? "bg-gradient-to-br from-purple-900/60 to-pink-900/60 border-pink-500/40"
+                          : "bg-black/40 border-white/10 opacity-60"
                       }`}
                     >
                       <div className="mb-1"><EmojiIcon emoji={item.icon} className="w-8 h-8" /></div>
                       <div className="font-extrabold text-white text-xs leading-tight">{item.name}</div>
-                      <div className="text-[10px] text-white/60 mb-2 line-clamp-2">{item.description}</div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs font-black neon-text-yellow tabular-nums flex items-center gap-1">
-                          <Coins className="w-3.5 h-3.5 icon-3d-coin" strokeWidth={2.5} /> {item.cost_coins}
-                        </span>
-                        {redeeming === item.id && <Loader2 className="w-3 h-3 animate-spin text-white" />}
+                      <div className="text-[10px] text-white/60 mb-2 line-clamp-2 flex-1">{item.description}</div>
+                      <div className="flex items-stretch gap-1 mt-auto">
+                        <button
+                          disabled={!canBuyCoin || anyBusy}
+                          onClick={() => redeem(item, "coin")}
+                          className={`flex-1 px-1.5 py-1 rounded-lg text-[10px] font-black tabular-nums flex items-center justify-center gap-1 border transition ${
+                            canBuyCoin
+                              ? "bg-yellow-500/20 border-yellow-400/50 text-yellow-200 hover:bg-yellow-500/30 active:scale-95"
+                              : "bg-black/30 border-white/10 text-white/40 cursor-not-allowed"
+                          }`}
+                          title={canBuyCoin ? "Bayar pakai Coin" : `Butuh ${item.cost_coins} coin`}
+                        >
+                          {busyCoin ? (
+                            <Loader2 className="w-3 h-3 animate-spin" />
+                          ) : (
+                            <>
+                              <Coins className="w-3 h-3 icon-3d-coin" strokeWidth={2.5} /> {item.cost_coins}
+                            </>
+                          )}
+                        </button>
+                        {gemPrice > 0 && (
+                          <button
+                            disabled={!canBuyGem || anyBusy}
+                            onClick={() => redeem(item, "gem")}
+                            className={`flex-1 px-1.5 py-1 rounded-lg text-[10px] font-black tabular-nums flex items-center justify-center gap-1 border transition ${
+                              canBuyGem
+                                ? "bg-cyan-500/20 border-cyan-400/50 text-cyan-200 hover:bg-cyan-500/30 active:scale-95"
+                                : "bg-black/30 border-white/10 text-white/40 cursor-not-allowed"
+                            }`}
+                            title={canBuyGem ? "Bayar pakai Gem" : `Butuh ${gemPrice} gem`}
+                          >
+                            {busyGem ? (
+                              <Loader2 className="w-3 h-3 animate-spin" />
+                            ) : (
+                              <>
+                                <Gem className="w-3 h-3" strokeWidth={2.5} /> {gemPrice}
+                              </>
+                            )}
+                          </button>
+                        )}
                       </div>
-                    </button>
+                    </div>
                   );
                 })}
                 {items.length === 0 && <p className="col-span-2 text-center text-xs text-white/50 py-4">Belum ada item.</p>}
