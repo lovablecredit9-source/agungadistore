@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Loader2, Coins } from "lucide-react";
+import { Loader2, Coins, Gift, Wifi } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useGameCredits, triggerGameCreditsRefresh } from "./GameCredits";
 import { triggerGameBalanceRefresh } from "./GameBalance";
@@ -72,11 +72,56 @@ export default function SlotMachineGame() {
   const [reels, setReels] = useState<string[]>(["🍒", "🍋", "🍇"]);
   const [spinning, setSpinning] = useState(false);
   const [result, setResult] = useState<any>(null);
+  const [freeMode, setFreeMode] = useState(false);
   const { toast } = useToast();
 
   const tierInfo = TIERS.find(t => t.key === tier)!;
 
+  // Mode latihan offline — tidak ada biaya, tidak ada perubahan saldo/kredit/storage real
+  const simulateSpin = () => {
+    setResult(null);
+    setSpinning(true);
+    const animDuration = 1500;
+    const start = Date.now();
+    const interval = setInterval(() => {
+      setReels([
+        SYMBOLS[Math.floor(Math.random() * SYMBOLS.length)],
+        SYMBOLS[Math.floor(Math.random() * SYMBOLS.length)],
+        SYMBOLS[Math.floor(Math.random() * SYMBOLS.length)],
+      ]);
+      if (Date.now() - start >= animDuration) clearInterval(interval);
+    }, 80);
+
+    setTimeout(() => {
+      clearInterval(interval);
+      const win = Math.random() < 0.3; // 30% peluang menang biar seru
+      let finalReels: string[];
+      let payout: any;
+      if (win) {
+        const tierRewards = TIER_REWARDS[tier];
+        const pick = tierRewards[Math.floor(Math.random() * tierRewards.length)];
+        const sym = Array.from(pick.sym)[0] || "💎";
+        finalReels = [sym, sym, sym];
+        payout = { type: "simulasi", label: `LATIHAN: ${pick.reward} (simulasi, tidak masuk akun)` };
+      } else {
+        let r1 = SYMBOLS[Math.floor(Math.random() * SYMBOLS.length)];
+        let r2 = SYMBOLS[Math.floor(Math.random() * SYMBOLS.length)];
+        let r3 = SYMBOLS[Math.floor(Math.random() * SYMBOLS.length)];
+        if (r1 === r2 && r2 === r3) r2 = SYMBOLS[(SYMBOLS.indexOf(r2) + 1) % SYMBOLS.length];
+        finalReels = [r1, r2, r3];
+        payout = { type: "none", label: "Belum hoki — coba lagi! (mode latihan)" };
+      }
+      setReels(finalReels);
+      setResult(payout);
+      setSpinning(false);
+      if (payout.type !== "none") {
+        toast({ title: "🎉 Latihan Menang!", description: payout.label });
+      }
+    }, animDuration);
+  };
+
   const spin = async () => {
+    if (freeMode) return simulateSpin();
     if (!visitorId) return toast({ title: "Login dulu", variant: "destructive" });
     if (!isUnlimited && credits < tierInfo.cost) {
       return toast({ title: "Kredit tidak cukup", description: `Butuh ${tierInfo.cost} kredit untuk tier ${tierInfo.label}`, variant: "destructive" });
@@ -132,6 +177,34 @@ export default function SlotMachineGame() {
         <p className="text-xs opacity-90 mt-1">Tier {tierInfo.label} • {tierInfo.desc}</p>
       </Card>
 
+      {/* Toggle Mode Latihan / Asli */}
+      <div className="flex items-center gap-1 bg-muted/40 rounded-xl p-1 border border-border/50">
+        <button
+          onClick={() => !spinning && setFreeMode(false)}
+          disabled={spinning}
+          className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-2 rounded-lg text-xs font-bold transition-all ${
+            !freeMode ? "bg-gradient-to-r from-amber-500 to-orange-600 text-white shadow" : "text-muted-foreground hover:bg-muted"
+          }`}
+        >
+          <Wifi className="w-3.5 h-3.5" /> Asli
+        </button>
+        <button
+          onClick={() => !spinning && setFreeMode(true)}
+          disabled={spinning}
+          className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-2 rounded-lg text-xs font-bold transition-all ${
+            freeMode ? "bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow" : "text-muted-foreground hover:bg-muted"
+          }`}
+        >
+          <Gift className="w-3.5 h-3.5" /> Latihan (GRATIS)
+        </button>
+      </div>
+
+      {freeMode && (
+        <div className="text-[11px] text-center bg-emerald-500/10 border border-emerald-500/30 text-emerald-700 dark:text-emerald-300 rounded-lg px-3 py-2 font-medium">
+          🎮 Mode latihan offline — putar bebas tanpa biaya. Hadiah hanya simulasi & <b>tidak masuk ke akun</b> (kredit/saldo/storage tetap).
+        </div>
+      )}
+
       {/* Tier Selector — scrollable horizontal di mobile */}
       <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1 snap-x snap-mandatory">
         {TIERS.map(t => (
@@ -169,11 +242,15 @@ export default function SlotMachineGame() {
 
         <Button
           onClick={spin}
-          disabled={spinning || (!isUnlimited && credits < tierInfo.cost)}
-          className="w-full mt-4 h-14 text-lg font-black bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600 text-amber-950 border-2 border-yellow-300 shadow-lg"
+          disabled={spinning || (!freeMode && !isUnlimited && credits < tierInfo.cost)}
+          className={`w-full mt-4 h-14 text-lg font-black border-2 shadow-lg ${
+            freeMode
+              ? "bg-gradient-to-r from-emerald-400 to-teal-500 hover:from-emerald-500 hover:to-teal-600 text-emerald-950 border-emerald-300"
+              : "bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600 text-amber-950 border-yellow-300"
+          }`}
         >
-          {spinning ? <Loader2 className="w-5 h-5 animate-spin mr-2" /> : <Coins className="w-5 h-5 mr-2" />}
-          {spinning ? "SPINNING..." : `PUTAR! (${tierInfo.cost} kredit)`}
+          {spinning ? <Loader2 className="w-5 h-5 animate-spin mr-2" /> : freeMode ? <Gift className="w-5 h-5 mr-2" /> : <Coins className="w-5 h-5 mr-2" />}
+          {spinning ? "SPINNING..." : freeMode ? "PUTAR LATIHAN! (GRATIS)" : `PUTAR! (${tierInfo.cost} kredit)`}
         </Button>
       </div>
 
