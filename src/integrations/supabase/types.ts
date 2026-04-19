@@ -1296,6 +1296,7 @@ export type Database = {
           created_at: string
           deal_id: string
           id: string
+          payment_method: string
           redemption_date: string
           reward_type: string
           reward_value: number
@@ -1306,6 +1307,7 @@ export type Database = {
           created_at?: string
           deal_id: string
           id?: string
+          payment_method?: string
           redemption_date?: string
           reward_type: string
           reward_value: number
@@ -1316,6 +1318,7 @@ export type Database = {
           created_at?: string
           deal_id?: string
           id?: string
+          payment_method?: string
           redemption_date?: string
           reward_type?: string
           reward_value?: number
@@ -3780,6 +3783,7 @@ export type Database = {
       streak_flash_deals: {
         Row: {
           badge: string | null
+          cost_gems: number
           created_at: string
           daily_limit: number
           description: string
@@ -3798,6 +3802,7 @@ export type Database = {
         }
         Insert: {
           badge?: string | null
+          cost_gems?: number
           created_at?: string
           daily_limit?: number
           description?: string
@@ -3816,6 +3821,7 @@ export type Database = {
         }
         Update: {
           badge?: string | null
+          cost_gems?: number
           created_at?: string
           daily_limit?: number
           description?: string
