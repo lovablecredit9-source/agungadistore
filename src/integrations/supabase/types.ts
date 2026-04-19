@@ -1645,6 +1645,7 @@ export type Database = {
           password_hash: string | null
           phone: string | null
           updated_at: string
+          user_balance_id: string | null
           visitor_id: string
         }
         Insert: {
@@ -1659,6 +1660,7 @@ export type Database = {
           password_hash?: string | null
           phone?: string | null
           updated_at?: string
+          user_balance_id?: string | null
           visitor_id: string
         }
         Update: {
@@ -1673,9 +1675,25 @@ export type Database = {
           password_hash?: string | null
           phone?: string | null
           updated_at?: string
+          user_balance_id?: string | null
           visitor_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "game_profiles_user_balance_id_fkey"
+            columns: ["user_balance_id"]
+            isOneToOne: false
+            referencedRelation: "user_balances"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "game_profiles_user_balance_id_fkey"
+            columns: ["user_balance_id"]
+            isOneToOne: false
+            referencedRelation: "user_balances_public"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       game_pvp_rooms: {
         Row: {
@@ -6165,6 +6183,10 @@ export type Database = {
         Returns: string
       }
       get_account_gems: { Args: { p_visitor_id: string }; Returns: number }
+      get_active_user_balance_id: {
+        Args: { p_visitor_id: string }
+        Returns: string
+      }
       get_my_notifications: {
         Args: { p_limit?: number; p_visitor_id: string }
         Returns: {
