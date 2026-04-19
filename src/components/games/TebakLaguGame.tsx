@@ -389,17 +389,29 @@ export default function TebakLaguGame() {
             </div>
           </motion.div>
 
-          {/* Hint button */}
-          {!showHint && !revealed && (
-            <button
-              onClick={handleRequestHint}
-              className="w-full mb-3 p-2 rounded-lg bg-yellow-500/20 border border-yellow-400/40 flex items-center justify-center gap-1.5 hover:bg-yellow-500/30 transition disabled:opacity-50"
-            >
-              <Lightbulb className="w-3.5 h-3.5 text-yellow-300" strokeWidth={2.5} />
-              <span className="text-[11px] font-black text-yellow-100">
-                {hintUsed === 0 ? "Lihat Hint (Gratis)" : `Hint Lagi (${isUnlimited ? "Unlimited" : `-${HINT_COST} kredit`})`}
-              </span>
-            </button>
+          {/* Hint + Reveal buttons */}
+          {!revealed && (
+            <div className="grid grid-cols-2 gap-2 mb-3">
+              <button
+                onClick={handleRequestHint}
+                disabled={showHint}
+                className="p-2 rounded-lg bg-yellow-500/20 border border-yellow-400/40 flex items-center justify-center gap-1.5 hover:bg-yellow-500/30 transition disabled:opacity-50"
+              >
+                <Lightbulb className="w-3.5 h-3.5 text-yellow-300" strokeWidth={2.5} />
+                <span className="text-[10px] font-black text-yellow-100 leading-tight">
+                  {hintUsed === 0 ? "Hint (Gratis)" : `Hint (${isUnlimited ? "∞" : `-${HINT_COST}`})`}
+                </span>
+              </button>
+              <button
+                onClick={handleRevealAnswer}
+                className="p-2 rounded-lg bg-rose-500/20 border border-rose-400/40 flex items-center justify-center gap-1.5 hover:bg-rose-500/30 transition disabled:opacity-50"
+              >
+                <Sparkles className="w-3.5 h-3.5 text-rose-300" strokeWidth={2.5} />
+                <span className="text-[10px] font-black text-rose-100 leading-tight">
+                  Lihat Jawaban ({isUnlimited ? "∞" : `-${REVEAL_ANSWER_COST}`})
+                </span>
+              </button>
+            </div>
           )}
           {showHint && (
             <motion.div
