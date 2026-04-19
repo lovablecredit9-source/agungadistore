@@ -54,6 +54,8 @@ export default function MegaShopHub({ visitorId, onUpdate }: Props) {
     }
   }
 
+  const userGems = data?.user_gems || 0;
+
   if (loading) {
     return (
       <div className="rounded-2xl bg-gradient-to-br from-red-500/10 via-amber-500/10 to-yellow-500/10 border border-amber-400/30 p-6 text-center">
