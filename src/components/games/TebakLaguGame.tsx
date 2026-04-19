@@ -19,6 +19,7 @@ const TOTAL_ROUNDS = 5;
 const TIME_PER_QUESTION = 45;
 const MAX_LIVES = 3;
 const HINT_COST = 5;
+const REVEAL_ANSWER_COST = 1;
 
 export default function TebakLaguGame() {
   const { toast } = useToast();
