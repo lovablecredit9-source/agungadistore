@@ -141,23 +141,32 @@ Deno.serve(async (req) => {
 
     // ============ BATTLE PASS: BUY PREMIUM ============
     if (action === "bp_buy_premium") {
-      const { seasonId } = body;
+      const { seasonId, paymentMethod } = body;
+      const payMethod = paymentMethod === "gem" ? "gem" : "coin";
       const { data: season } = await admin.from("streak_battle_pass_seasons").select("*").eq("id", seasonId).eq("is_active", true).maybeSingle();
       if (!season) return Response.json({ error: "Season tidak ditemukan" }, { status: 404, headers: corsHeaders });
       const { data: streak } = await admin.from("daily_streaks").select("*").eq("visitor_id", visitorId).maybeSingle();
       if (!streak) return Response.json({ error: "Mulai streak dulu" }, { status: 400, headers: corsHeaders });
-      if ((streak.streak_coins || 0) < season.premium_cost_coins) return Response.json({ error: `Butuh ${season.premium_cost_coins} coins` }, { status: 400, headers: corsHeaders });
 
       const { data: existing } = await admin.from("streak_battle_pass_progress").select("*").eq("visitor_id", visitorId).eq("season_id", seasonId).maybeSingle();
       if (existing?.is_premium) return Response.json({ error: "Premium sudah aktif" }, { status: 400, headers: corsHeaders });
 
-      await admin.from("daily_streaks").update({ streak_coins: streak.streak_coins - season.premium_cost_coins }).eq("visitor_id", visitorId);
-      if (existing) {
-        await admin.from("streak_battle_pass_progress").update({ is_premium: true, premium_purchased_at: new Date().toISOString() }).eq("id", existing.id);
+      if (payMethod === "gem") {
+        const gemCost = season.premium_cost_gems || 0;
+        if (gemCost <= 0) return Response.json({ error: "Pembayaran gem belum tersedia" }, { status: 400, headers: corsHeaders });
+        const err = await deductGems(admin, visitorId, gemCost, `Battle Pass Premium: ${season.name}`, seasonId);
+        if (err) return Response.json({ error: err }, { status: 400, headers: corsHeaders });
       } else {
-        await admin.from("streak_battle_pass_progress").insert({ visitor_id: visitorId, season_id: seasonId, is_premium: true, premium_purchased_at: new Date().toISOString() });
+        if ((streak.streak_coins || 0) < season.premium_cost_coins) return Response.json({ error: `Butuh ${season.premium_cost_coins} coins` }, { status: 400, headers: corsHeaders });
+        await admin.from("daily_streaks").update({ streak_coins: streak.streak_coins - season.premium_cost_coins }).eq("visitor_id", visitorId);
       }
-      await admin.from("notifications").insert({ visitor_id: visitorId, title: "🌟 Battle Pass Premium Aktif!", message: "Sekarang kamu bisa klaim semua reward premium!", type: "battle_pass" });
+
+      if (existing) {
+        await admin.from("streak_battle_pass_progress").update({ is_premium: true, premium_purchased_at: new Date().toISOString(), premium_payment_method: payMethod }).eq("id", existing.id);
+      } else {
+        await admin.from("streak_battle_pass_progress").insert({ visitor_id: visitorId, season_id: seasonId, is_premium: true, premium_purchased_at: new Date().toISOString(), premium_payment_method: payMethod });
+      }
+      await admin.from("notifications").insert({ visitor_id: visitorId, title: "🌟 Battle Pass Premium Aktif!", message: `Bayar pakai ${payMethod === "gem" ? "Gem 💎" : "Koin 🪙"}. Sekarang kamu bisa klaim semua reward premium!`, type: "battle_pass" });
       return Response.json({ success: true }, { headers: corsHeaders });
     }
 
