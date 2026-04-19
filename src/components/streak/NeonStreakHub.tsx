@@ -33,6 +33,12 @@ import StreakMissionChain from "./StreakMissionChain";
 import StreakLeaderboard from "./StreakLeaderboard";
 import StreakEventLive from "./StreakEventLive";
 import StreakShopFlashDeals from "./StreakShopFlashDeals";
+import LiveActivityTicker from "./event/LiveActivityTicker";
+import EventCalendarSchedule from "./event/EventCalendarSchedule";
+import TreasureHuntGrid from "./event/TreasureHuntGrid";
+import CommunityBossRaid from "./event/CommunityBossRaid";
+import CoinRainGame from "./event/CoinRainGame";
+import StreakRoyaleBracket from "./event/StreakRoyaleBracket";
 import { syncPowerUpsFromServer } from "@/components/games/gameStore";
 
 // Strip leading emoji from a title and map to a 3D Lucide icon
@@ -421,6 +427,12 @@ export default function NeonStreakHub({ visitorId, forcedView }: Props) {
       {activeView === "event" && (
         <div className="space-y-3">
           <StreakEventLive visitorId={visitorId} currentStreak={currentStreak} totalClaims={totalClaims} />
+          <LiveActivityTicker />
+          <EventCalendarSchedule />
+          <CommunityBossRaid visitorId={visitorId} onUpdate={loadAll} />
+          <CoinRainGame visitorId={visitorId} onUpdate={loadAll} />
+          <TreasureHuntGrid visitorId={visitorId} onUpdate={loadAll} />
+          <StreakRoyaleBracket visitorId={visitorId} />
           <DailyGiftBox visitorId={visitorId} onUpdate={loadAll} />
           <SpinWheel visitorId={visitorId} coins={coins} onUpdate={loadAll} />
           <WeeklyQuests visitorId={visitorId} onUpdate={loadAll} />
