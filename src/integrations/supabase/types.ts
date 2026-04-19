@@ -844,6 +844,7 @@ export type Database = {
           created_at: string
           id: string
           item_id: string
+          payment_method: string
           purchase_date: string
           visitor_id: string
         }
@@ -852,6 +853,7 @@ export type Database = {
           created_at?: string
           id?: string
           item_id: string
+          payment_method?: string
           purchase_date: string
           visitor_id: string
         }
@@ -860,6 +862,7 @@ export type Database = {
           created_at?: string
           id?: string
           item_id?: string
+          payment_method?: string
           purchase_date?: string
           visitor_id?: string
         }
@@ -876,6 +879,7 @@ export type Database = {
       event_shop_daily_rotation: {
         Row: {
           base_price_coins: number
+          cost_gems: number
           created_at: string
           icon: string
           id: string
@@ -889,6 +893,7 @@ export type Database = {
         }
         Insert: {
           base_price_coins?: number
+          cost_gems?: number
           created_at?: string
           icon?: string
           id?: string
@@ -902,6 +907,7 @@ export type Database = {
         }
         Update: {
           base_price_coins?: number
+          cost_gems?: number
           created_at?: string
           icon?: string
           id?: string
@@ -1131,6 +1137,7 @@ export type Database = {
       }
       event_shop_mystery_boxes: {
         Row: {
+          cost_gems: number
           created_at: string
           description: string
           icon: string
@@ -1143,6 +1150,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          cost_gems?: number
           created_at?: string
           description?: string
           icon?: string
@@ -1155,6 +1163,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          cost_gems?: number
           created_at?: string
           description?: string
           icon?: string
@@ -1174,6 +1183,7 @@ export type Database = {
           cost_paid: number
           created_at: string
           id: string
+          payment_method: string
           rarity: string
           reward_label: string
           reward_type: string
@@ -1185,6 +1195,7 @@ export type Database = {
           cost_paid: number
           created_at?: string
           id?: string
+          payment_method?: string
           rarity: string
           reward_label?: string
           reward_type: string
@@ -1196,6 +1207,7 @@ export type Database = {
           cost_paid?: number
           created_at?: string
           id?: string
+          payment_method?: string
           rarity?: string
           reward_label?: string
           reward_type?: string
