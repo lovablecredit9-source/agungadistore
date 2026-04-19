@@ -426,7 +426,7 @@ export default function NeonStreakHub({ visitorId, forcedView }: Props) {
 
       {activeView === "event" && (
         <div className="space-y-3">
-          <StreakEventLive visitorId={visitorId} currentStreak={currentStreak} totalClaims={totalClaims} />
+          <StreakEventLive visitorId={visitorId} currentStreak={currentStreak} totalClaims={totalClaims} streakCoins={coins} />
           <LiveActivityTicker />
           <EventCalendarSchedule />
           <CommunityBossRaid visitorId={visitorId} onUpdate={loadAll} />
