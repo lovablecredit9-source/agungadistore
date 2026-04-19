@@ -143,7 +143,7 @@ Deno.serve(async (req) => {
     // ====== LIST ======
     if (action === "list") {
       const today = todayWIB();
-      const [boxesRes, openingsRes, auctionsRes, tiersRes, progRes, refRes, refUsesRes, profileRes, streakRes] = await Promise.all([
+      const [boxesRes, openingsRes, auctionsRes, tiersRes, progRes, refRes, refUsesRes, profileRes, streakRes, gemsRes] = await Promise.all([
         admin.from("streak_mystery_boxes").select("*").eq("is_active", true).order("sort_order"),
         admin.from("streak_mystery_openings").select("box_id").eq("visitor_id", visitorId).eq("opened_date", today),
         admin.from("streak_auctions").select("*").eq("is_active", true).gte("ends_at", new Date().toISOString()).order("ends_at"),
@@ -155,8 +155,7 @@ Deno.serve(async (req) => {
         admin.from("daily_streaks").select("streak_coins,freeze_count").eq("visitor_id", visitorId).maybeSingle(),
         admin.rpc("get_account_gems", { p_visitor_id: visitorId }),
       ]);
-      const accountGems = Number((arguments as any)) || 0; // placeholder, replaced below
-      ]);
+      const accountGems = Number(gemsRes?.data) || 0;
 
       // count openings per box
       const usage: Record<string, number> = {};
@@ -199,7 +198,7 @@ Deno.serve(async (req) => {
         loyalty_progress: progress,
         my_referral: myRef,
         referral_leaderboard: refUsesRes.data || [],
-        user_gems: profileRes.data?.gems || 0,
+        user_gems: accountGems,
         user_coins: streakRes.data?.streak_coins || 0,
       }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
