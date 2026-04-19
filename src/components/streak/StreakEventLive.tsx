@@ -258,7 +258,7 @@ export default function StreakEventLive({ visitorId, currentStreak, totalClaims 
                   className="p-2 rounded-lg bg-gradient-to-b from-slate-300/30 to-slate-500/30 border border-slate-300/50 text-center h-20 flex flex-col justify-end"
                 >
                   <Medal className="w-4 h-4 mx-auto text-slate-200 mb-0.5" strokeWidth={2.5} />
-                  <div className="text-[9px] font-black text-slate-100 truncate">{maskId(top3[1].visitor_id)}</div>
+                  <div className="text-[9px] font-black text-slate-100 truncate">{top3[1].display_name || maskId(top3[1].visitor_id)}</div>
                   <div className="text-[10px] font-black text-white tabular-nums">🔥 {top3[1].current_streak}</div>
                 </motion.div>
               )}
@@ -273,7 +273,7 @@ export default function StreakEventLive({ visitorId, currentStreak, totalClaims 
                     animate={{ opacity: [0.3, 0.7, 0.3] }} transition={{ duration: 2, repeat: Infinity }}
                   />
                   <Crown className="w-5 h-5 mx-auto text-yellow-200 mb-0.5 drop-shadow relative" strokeWidth={2.5} />
-                  <div className="text-[10px] font-black text-yellow-50 truncate relative">{maskId(top3[0].visitor_id)}</div>
+                  <div className="text-[10px] font-black text-yellow-50 truncate relative">{top3[0].display_name || maskId(top3[0].visitor_id)}</div>
                   <div className="text-xs font-black text-white tabular-nums relative">🔥 {top3[0].current_streak}</div>
                 </motion.div>
               )}
@@ -284,7 +284,7 @@ export default function StreakEventLive({ visitorId, currentStreak, totalClaims 
                   className="p-2 rounded-lg bg-gradient-to-b from-amber-600/30 to-amber-800/30 border border-amber-500/50 text-center h-16 flex flex-col justify-end"
                 >
                   <Award className="w-4 h-4 mx-auto text-amber-300 mb-0.5" strokeWidth={2.5} />
-                  <div className="text-[9px] font-black text-amber-100 truncate">{maskId(top3[2].visitor_id)}</div>
+                  <div className="text-[9px] font-black text-amber-100 truncate">{top3[2].display_name || maskId(top3[2].visitor_id)}</div>
                   <div className="text-[10px] font-black text-white tabular-nums">🔥 {top3[2].current_streak}</div>
                 </motion.div>
               )}
