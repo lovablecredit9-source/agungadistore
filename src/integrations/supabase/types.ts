@@ -414,6 +414,7 @@ export type Database = {
           reward_label: string
           reward_type: string
           reward_value: number
+          streak_day: number
           visitor_id: string
           week_start: string
         }
@@ -424,6 +425,7 @@ export type Database = {
           reward_label?: string
           reward_type: string
           reward_value?: number
+          streak_day?: number
           visitor_id: string
           week_start: string
         }
@@ -434,6 +436,7 @@ export type Database = {
           reward_label?: string
           reward_type?: string
           reward_value?: number
+          streak_day?: number
           visitor_id?: string
           week_start?: string
         }
