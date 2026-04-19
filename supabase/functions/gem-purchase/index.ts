@@ -62,13 +62,8 @@ Deno.serve(async (req) => {
     // Deduct balance
     await admin.from("user_balances").update({ balance: bal.balance - totalPrice }).eq("id", balLogin.user_balance_id);
 
-    // Add gems to game profile
-    const { data: prof } = await admin.from("game_profiles").select("gems").eq("visitor_id", visitorId).maybeSingle();
-    if (!prof) {
-      await admin.from("game_profiles").insert({ visitor_id: visitorId, gems: totalGems });
-    } else {
-      await admin.from("game_profiles").update({ gems: (prof.gems || 0) + totalGems }).eq("visitor_id", visitorId);
-    }
+    // Add gems via account-aware RPC (puts gems on the active account's primary profile)
+    await admin.rpc("add_account_gems", { p_visitor_id: visitorId, p_amount: totalGems });
 
     const qtyLabel = quantity > 1 ? ` x${quantity}` : "";
     await admin.from("gem_transactions").insert({
