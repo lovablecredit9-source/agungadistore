@@ -286,7 +286,7 @@ export default function PlusTab() {
             const parts: string[] = [];
             if (pkg.credits > 0) parts.push(`${pkg.credits} Kredit`);
             if (pkg.streak_days > 0) parts.push(`${pkg.streak_days} Hari Streak`);
-            if (pkg.storage_mb > 0) parts.push(`${(pkg.storage_mb / 1024).toFixed(0)} GB Storage`);
+            if (pkg.storage_mb > 0) parts.push(`${(pkg.storage_mb / 1024).toFixed(0)} GB Storage (30 hari)`);
             return (
               <PackageButton
                 key={pkg.id}
@@ -372,7 +372,7 @@ export default function PlusTab() {
         {storagePackages.map(pkg => (
           <PackageButton
             key={pkg.id}
-            label={`${pkg.name} (${pkg.storage_mb} MB)`}
+            label={`${pkg.name} (${pkg.storage_mb >= 1024 ? `${(pkg.storage_mb/1024).toFixed(0)} GB` : `${pkg.storage_mb} MB`} • 30 hari)`}
             price={pkg.price}
             buying={storageBuying === pkg.id}
             anyBuying={!!storageBuying}

@@ -146,10 +146,12 @@ Deno.serve(async (request) => {
     }
 
     if (storageMb > 0) {
+      const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
       await admin.from("user_music_storage").insert({
         visitor_id: visitorId,
         storage_mb: storageMb,
         voucher_code: `STORAGE-${Date.now()}`,
+        expires_at: expiresAt,
       });
     }
 
