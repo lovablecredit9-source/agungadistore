@@ -130,8 +130,8 @@ export default function StreakEventShop({ visitorId, onUpdate }: Props) {
     }
   };
 
-  const openBox = async (b: any) => {
-    const res = await callAction("open_box", { boxId: b.id }, `box:${b.id}`);
+  const openBox = async (b: any, paymentMethod: "coin" | "gem" = "coin") => {
+    const res = await callAction("open_box", { boxId: b.id, paymentMethod }, `box:${b.id}:${paymentMethod}`);
     if (res?.success) {
       setOpenResult({ box: b, reward: res.reward, cost: res.cost });
       load();
@@ -139,10 +139,11 @@ export default function StreakEventShop({ visitorId, onUpdate }: Props) {
     }
   };
 
-  const buyDaily = async (item: any) => {
-    const res = await callAction("buy_daily", { itemId: item.item_id }, `daily:${item.item_id}`);
+  const buyDaily = async (item: any, paymentMethod: "coin" | "gem" = "coin") => {
+    const res = await callAction("buy_daily", { itemId: item.item_id, paymentMethod }, `daily:${item.item_id}:${paymentMethod}`);
     if (res?.success) {
-      toast({ title: `✨ ${item.name}`, description: `${res.reward_label} • -${res.cost} coins` });
+      const unit = paymentMethod === "gem" ? "💎" : "🪙";
+      toast({ title: `✨ ${item.name}`, description: `${res.reward_label} • -${res.cost} ${unit}` });
       load();
       onUpdate?.();
     }

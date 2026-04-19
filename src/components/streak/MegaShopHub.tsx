@@ -256,29 +256,42 @@ export default function MegaShopHub({ visitorId, onUpdate }: Props) {
   );
 }
 
-function BattlePassPanel({ bp, busy, call }: { bp: any; busy: string | null; call: (a: string, p: any, k: string) => void }) {
+function BattlePassPanel({ bp, busy, call, userGems }: { bp: any; busy: string | null; call: (a: string, p: any, k: string) => void; userGems: number }) {
   const { season, tiers, progress } = bp;
   const spent = progress.total_spent_coins;
   const maxRequired = tiers.length ? tiers[tiers.length - 1].required_spent_coins : 1;
   const pct = Math.min(100, (spent / maxRequired) * 100);
+  const gemPrice = season.premium_cost_gems || 0;
 
   return (
     <div className="space-y-2">
       <div className="rounded-xl bg-black/30 border border-amber-400/40 p-2.5">
-        <div className="flex items-center justify-between mb-1">
-          <div>
-            <p className="font-bold text-sm text-amber-100">{season.name}</p>
+        <div className="flex items-center justify-between mb-1 gap-2">
+          <div className="min-w-0">
+            <p className="font-bold text-sm text-amber-100 truncate">{season.name}</p>
             <p className="text-[10px] text-amber-200/70">Belanja coins: {spent} / {maxRequired}</p>
           </div>
           {!progress.is_premium ? (
-            <Button
-              size="sm"
-              disabled={busy === "premium"}
-              onClick={() => call("bp_buy_premium", { seasonId: season.id }, "premium")}
-              className="h-7 text-[10px] bg-gradient-to-r from-amber-500 to-orange-500 text-white"
-            >
-              {busy === "premium" ? <Loader2 className="h-3 w-3 animate-spin" /> : <><Crown className="h-3 w-3 mr-0.5" />Premium {season.premium_cost_coins}</>}
-            </Button>
+            <div className="flex gap-1 shrink-0">
+              <Button
+                size="sm"
+                disabled={busy === "premium-coin"}
+                onClick={() => call("bp_buy_premium", { seasonId: season.id, paymentMethod: "coin" }, "premium-coin")}
+                className="h-7 text-[10px] bg-gradient-to-r from-amber-500 to-orange-500 text-white px-2"
+              >
+                {busy === "premium-coin" ? <Loader2 className="h-3 w-3 animate-spin" /> : <><Crown className="h-3 w-3 mr-0.5" /><Coins className="h-3 w-3 mr-0.5" />{season.premium_cost_coins}</>}
+              </Button>
+              {gemPrice > 0 && (
+                <Button
+                  size="sm"
+                  disabled={busy === "premium-gem" || userGems < gemPrice}
+                  onClick={() => call("bp_buy_premium", { seasonId: season.id, paymentMethod: "gem" }, "premium-gem")}
+                  className="h-7 text-[10px] bg-gradient-to-r from-cyan-500 to-blue-500 text-white px-2 disabled:opacity-50"
+                >
+                  {busy === "premium-gem" ? <Loader2 className="h-3 w-3 animate-spin" /> : <><Gem className="h-3 w-3 mr-0.5" />{gemPrice}</>}
+                </Button>
+              )}
+            </div>
           ) : (
             <Badge className="bg-gradient-to-r from-amber-500 to-orange-500 text-white border-0 text-[10px]">
               <Crown className="h-3 w-3 mr-0.5" />PREMIUM
