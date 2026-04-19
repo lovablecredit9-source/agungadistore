@@ -99,7 +99,7 @@ export default function MegaShopHub({ visitorId, onUpdate }: Props) {
 
         {/* LUCKY WHEEL */}
         <TabsContent value="wheel" className="mt-2">
-          <StreakLuckyWheelShop visitorId={(data?.visitor_id) || ""} onUpdate={() => { load(); onUpdate?.(); }} />
+          <StreakLuckyWheelShop visitorId={visitorId} onUpdate={() => { load(); onUpdate?.(); }} />
         </TabsContent>
 
         {/* BATTLE PASS */}
