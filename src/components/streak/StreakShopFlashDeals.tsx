@@ -312,10 +312,24 @@ export default function StreakShopFlashDeals({ visitorId, onUpdate }: Props) {
 
               <div className="space-y-2 mb-4">
                 <div className="flex justify-between items-center p-2.5 rounded-xl bg-black/30 border border-white/10">
-                  <span className="text-[11px] font-bold text-white/70">Yang Kamu Dapat</span>
-                  <span className="text-sm font-black text-yellow-200">
-                    {infoDeal.reward_value > 0 ? `+${infoDeal.reward_value}` : ""} {infoDeal.reward_type.replace(/_/g, " ")}
-                  </span>
+                <div className="p-3 rounded-xl bg-gradient-to-r from-emerald-500/30 to-cyan-500/30 border border-emerald-400/40">
+                  <div className="text-[10px] font-black uppercase tracking-wider text-emerald-100 mb-1.5">🎁 Yang Kamu Dapat</div>
+                  {(() => {
+                    const info = getRewardInfo(infoDeal.reward_type);
+                    return (
+                      <div className="flex items-center gap-3">
+                        <div className="w-11 h-11 rounded-xl bg-black/40 flex items-center justify-center text-2xl flex-shrink-0">
+                          {info.icon}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="text-base font-black text-white">
+                            +{infoDeal.reward_value} <span className="text-yellow-200">{info.label}</span>
+                          </div>
+                          <div className="text-[10px] text-white/80 leading-tight">{info.desc}</div>
+                        </div>
+                      </div>
+                    );
+                  })()}
                 </div>
                 <div className="flex justify-between items-center p-2.5 rounded-xl bg-black/30 border border-white/10">
                   <span className="text-[11px] font-bold text-white/70">Harga Normal</span>
