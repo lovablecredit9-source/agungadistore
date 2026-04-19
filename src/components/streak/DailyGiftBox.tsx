@@ -15,25 +15,21 @@ interface Reward {
   is_premium: boolean;
 }
 
-interface Claim {
-  day_number: number;
-  reward_label: string;
-}
-
 interface Props {
   visitorId: string;
   onUpdate?: () => void;
 }
+
+const MAX_DAY = 5;
 
 export default function DailyGiftBox({ visitorId, onUpdate }: Props) {
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [claiming, setClaiming] = useState(false);
   const [today, setToday] = useState(1);
-  const [weekStart, setWeekStart] = useState("");
+  const [todayClaimed, setTodayClaimed] = useState(false);
   const [isPremium, setIsPremium] = useState(false);
   const [rewards, setRewards] = useState<Reward[]>([]);
-  const [claims, setClaims] = useState<Claim[]>([]);
   const [openedReward, setOpenedReward] = useState<Reward | null>(null);
 
   const load = async () => {
@@ -45,10 +41,9 @@ export default function DailyGiftBox({ visitorId, onUpdate }: Props) {
       );
       if (error) throw error;
       setToday(data.today);
-      setWeekStart(data.weekStart);
+      setTodayClaimed(!!data.todayClaimed);
       setIsPremium(data.isPremium);
       setRewards(data.rewards || []);
-      setClaims(data.claims || []);
     } catch (e) {
       console.error(e);
     } finally {
