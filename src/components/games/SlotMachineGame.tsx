@@ -242,11 +242,15 @@ export default function SlotMachineGame() {
 
         <Button
           onClick={spin}
-          disabled={spinning || (!isUnlimited && credits < tierInfo.cost)}
-          className="w-full mt-4 h-14 text-lg font-black bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600 text-amber-950 border-2 border-yellow-300 shadow-lg"
+          disabled={spinning || (!freeMode && !isUnlimited && credits < tierInfo.cost)}
+          className={`w-full mt-4 h-14 text-lg font-black border-2 shadow-lg ${
+            freeMode
+              ? "bg-gradient-to-r from-emerald-400 to-teal-500 hover:from-emerald-500 hover:to-teal-600 text-emerald-950 border-emerald-300"
+              : "bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600 text-amber-950 border-yellow-300"
+          }`}
         >
-          {spinning ? <Loader2 className="w-5 h-5 animate-spin mr-2" /> : <Coins className="w-5 h-5 mr-2" />}
-          {spinning ? "SPINNING..." : `PUTAR! (${tierInfo.cost} kredit)`}
+          {spinning ? <Loader2 className="w-5 h-5 animate-spin mr-2" /> : freeMode ? <Gift className="w-5 h-5 mr-2" /> : <Coins className="w-5 h-5 mr-2" />}
+          {spinning ? "SPINNING..." : freeMode ? "PUTAR LATIHAN! (GRATIS)" : `PUTAR! (${tierInfo.cost} kredit)`}
         </Button>
       </div>
 
