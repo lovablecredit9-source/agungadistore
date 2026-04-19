@@ -62,12 +62,17 @@ export default function StreakEventLive({ visitorId, currentStreak, totalClaims,
     if (!visitorId) return;
     let mounted = true;
     const loadGems = async () => {
-      const { data } = await supabase
-        .from("game_profiles")
-        .select("gems")
-        .eq("visitor_id", visitorId)
-        .maybeSingle();
-      if (mounted && data) setGems(data.gems ?? 0);
+      try {
+        const { data } = await supabase.rpc("get_account_gems", { p_visitor_id: visitorId });
+        if (mounted) setGems(Number(data) || 0);
+      } catch {
+        const { data } = await supabase
+          .from("game_profiles")
+          .select("gems")
+          .eq("visitor_id", visitorId)
+          .maybeSingle();
+        if (mounted && data) setGems(data.gems ?? 0);
+      }
     };
     loadGems();
     const t = setInterval(loadGems, 30_000);
