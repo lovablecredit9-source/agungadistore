@@ -16,8 +16,9 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const { visitorId, itemId } = await req.json();
+    const { visitorId, itemId, paymentMethod } = await req.json();
     if (!visitorId || !itemId) return Response.json({ error: "visitorId & itemId required" }, { status: 400, headers: corsHeaders });
+    const payMethod = paymentMethod === "gem" ? "gem" : "coin";
 
     const admin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
 
@@ -28,8 +29,23 @@ Deno.serve(async (req) => {
     if (!streak) return Response.json({ error: "Mulai streak dulu untuk dapat coins!" }, { status: 400, headers: corsHeaders });
 
     const coins = streak.streak_coins || 0;
-    if (coins < item.cost_coins) {
-      return Response.json({ error: `Coins tidak cukup. Butuh ${item.cost_coins}, kamu punya ${coins}.` }, { status: 400, headers: corsHeaders });
+    let costPaidCoins = 0;
+    let costPaidGems = 0;
+
+    if (payMethod === "gem") {
+      const gemCost = item.cost_gems || 0;
+      if (gemCost <= 0) return Response.json({ error: "Pembayaran gem belum tersedia untuk item ini" }, { status: 400, headers: corsHeaders });
+      const { data: prof } = await admin.from("game_profiles").select("gems").eq("visitor_id", visitorId).maybeSingle();
+      const userGems = prof?.gems || 0;
+      if (userGems < gemCost) {
+        return Response.json({ error: `Gem tidak cukup. Butuh ${gemCost} 💎, kamu punya ${userGems} 💎.` }, { status: 400, headers: corsHeaders });
+      }
+      costPaidGems = gemCost;
+    } else {
+      if (coins < item.cost_coins) {
+        return Response.json({ error: `Coins tidak cukup. Butuh ${item.cost_coins}, kamu punya ${coins}.` }, { status: 400, headers: corsHeaders });
+      }
+      costPaidCoins = item.cost_coins;
     }
 
     let rewardCode: string | null = null;
