@@ -427,8 +427,12 @@ export default function StreakShopFlashDeals({ visitorId, onUpdate }: Props) {
                     </span>
                   </div>
                 </div>
-                <div className="flex justify-between items-center p-2.5 rounded-xl bg-black/30 border border-white/10">
-                  <span className="text-[11px] font-bold text-white/70">Limit Harian</span>
+                {infoDeal.cost_gems > 0 && (
+                  <div className="flex justify-between items-center p-2.5 rounded-xl bg-gradient-to-r from-cyan-500/30 to-blue-500/30 border border-cyan-400/40">
+                    <span className="text-[11px] font-black text-white">Bayar pakai Gem 💎</span>
+                    <span className="text-base font-black text-cyan-200 tabular-nums">{infoDeal.cost_gems} 💎</span>
+                  </div>
+                )}
                   <span className="text-sm font-black text-white">{infoDeal.daily_limit}x / hari</span>
                 </div>
                 {infoDeal.requires_premium && (
