@@ -19,6 +19,7 @@ const TOTAL_ROUNDS = 5;
 const TIME_PER_QUESTION = 45;
 const MAX_LIVES = 3;
 const HINT_COST = 5;
+const REVEAL_ANSWER_COST = 1;
 
 export default function TebakLaguGame() {
   const { toast } = useToast();
@@ -198,6 +199,36 @@ export default function TebakLaguGame() {
     toast({ title: "Hint ditampilkan", description: isUnlimited ? "Mode unlimited" : `-${HINT_COST} kredit` });
   };
 
+  const handleRevealAnswer = async () => {
+    if (revealed || !question) return;
+    if (!isUnlimited) {
+      if (credits < REVEAL_ANSWER_COST) {
+        toast({
+          title: "Kredit kurang",
+          description: `Butuh ${REVEAL_ANSWER_COST} kredit untuk lihat jawaban.`,
+          variant: "destructive",
+        });
+        return;
+      }
+      const ok = await useCredit();
+      if (!ok) {
+        toast({ title: "Gagal konsumsi kredit", variant: "destructive" });
+        await fetchCredits();
+        return;
+      }
+    }
+    stopTimer();
+    setRevealed(true);
+    setSelected(question.correct_title);
+    const newLives = Math.max(0, lives - 1);
+    setLives(newLives);
+    toast({
+      title: "Jawaban ditampilkan",
+      description: isUnlimited ? "Mode unlimited · -1 nyawa" : `-${REVEAL_ANSWER_COST} kredit · -1 nyawa · 0 poin`,
+    });
+    advanceAfterReveal(score, correctCount, newLives);
+  };
+
   const restart = () => {
     stopTimer();
     setRound(0);
@@ -358,17 +389,29 @@ export default function TebakLaguGame() {
             </div>
           </motion.div>
 
-          {/* Hint button */}
-          {!showHint && !revealed && (
-            <button
-              onClick={handleRequestHint}
-              className="w-full mb-3 p-2 rounded-lg bg-yellow-500/20 border border-yellow-400/40 flex items-center justify-center gap-1.5 hover:bg-yellow-500/30 transition disabled:opacity-50"
-            >
-              <Lightbulb className="w-3.5 h-3.5 text-yellow-300" strokeWidth={2.5} />
-              <span className="text-[11px] font-black text-yellow-100">
-                {hintUsed === 0 ? "Lihat Hint (Gratis)" : `Hint Lagi (${isUnlimited ? "Unlimited" : `-${HINT_COST} kredit`})`}
-              </span>
-            </button>
+          {/* Hint + Reveal buttons */}
+          {!revealed && (
+            <div className="grid grid-cols-2 gap-2 mb-3">
+              <button
+                onClick={handleRequestHint}
+                disabled={showHint}
+                className="p-2 rounded-lg bg-yellow-500/20 border border-yellow-400/40 flex items-center justify-center gap-1.5 hover:bg-yellow-500/30 transition disabled:opacity-50"
+              >
+                <Lightbulb className="w-3.5 h-3.5 text-yellow-300" strokeWidth={2.5} />
+                <span className="text-[10px] font-black text-yellow-100 leading-tight">
+                  {hintUsed === 0 ? "Hint (Gratis)" : `Hint (${isUnlimited ? "∞" : `-${HINT_COST}`})`}
+                </span>
+              </button>
+              <button
+                onClick={handleRevealAnswer}
+                className="p-2 rounded-lg bg-rose-500/20 border border-rose-400/40 flex items-center justify-center gap-1.5 hover:bg-rose-500/30 transition disabled:opacity-50"
+              >
+                <Sparkles className="w-3.5 h-3.5 text-rose-300" strokeWidth={2.5} />
+                <span className="text-[10px] font-black text-rose-100 leading-tight">
+                  Lihat Jawaban ({isUnlimited ? "∞" : `-${REVEAL_ANSWER_COST}`})
+                </span>
+              </button>
+            </div>
           )}
           {showHint && (
             <motion.div
@@ -437,7 +480,7 @@ export default function TebakLaguGame() {
       )}
 
       <p className="text-[9px] text-purple-200/60 mt-4 text-center">
-        🎮 45 detik · 3 nyawa · Hint pertama gratis · Hint lagi {HINT_COST} kredit
+        🎮 45 detik · 3 nyawa · Hint pertama gratis · Hint {HINT_COST} kredit · Lihat jawaban {REVEAL_ANSWER_COST} kredit
       </p>
     </motion.div>
   );
