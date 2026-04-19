@@ -36,6 +36,10 @@ export default function TebakLaguGame() {
   }, []);
   const { credits, isUnlimited, fetchCredits, useCredit } = useGameCredits(activeVisitorId);
 
+  const [difficulty, setDifficulty] = useState<Difficulty | null>(null);
+  const diffConfig = useMemo(() => DIFFICULTIES.find(d => d.key === difficulty) ?? DIFFICULTIES[1], [difficulty]);
+  const TIME_PER_QUESTION = diffConfig.time;
+
   const [round, setRound] = useState(0);
   const [score, setScore] = useState(0);
   const [correctCount, setCorrectCount] = useState(0);
@@ -44,12 +48,12 @@ export default function TebakLaguGame() {
   const [loading, setLoading] = useState(false);
   const [selected, setSelected] = useState<string | null>(null);
   const [revealed, setRevealed] = useState(false);
-  const [hintUsed, setHintUsed] = useState(0); // jumlah hint terpakai (1 gratis, sisanya 5 kredit)
+  const [hintUsed, setHintUsed] = useState(0);
   const [showHint, setShowHint] = useState(false);
   const [finished, setFinished] = useState(false);
   const [gameOver, setGameOver] = useState(false);
   const [submittingScore, setSubmittingScore] = useState(false);
-  const [timeLeft, setTimeLeft] = useState(TIME_PER_QUESTION);
+  const [timeLeft, setTimeLeft] = useState(45);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const stopTimer = () => {
