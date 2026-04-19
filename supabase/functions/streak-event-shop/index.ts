@@ -211,17 +211,24 @@ Deno.serve(async (req) => {
         };
       });
 
-      const mysteryBoxes = (boxesRes.data ?? []).map((b: any) => ({
-        ...b,
-        final_price: applyDiscount(b.price_coins),
-        tier_discount_pct: tierInfo.discount,
-        is_wishlisted: wishlistSet.has(`box:${b.id}`),
-      }));
+      const mysteryBoxes = (boxesRes.data ?? []).map((b: any) => {
+        const gemBase = b.cost_gems || 0;
+        return {
+          ...b,
+          final_price: applyDiscount(b.price_coins),
+          final_gem_price: gemBase > 0 ? Math.max(1, Math.floor(gemBase * (1 - tierInfo.discount / 100))) : 0,
+          tier_discount_pct: tierInfo.discount,
+          is_wishlisted: wishlistSet.has(`box:${b.id}`),
+        };
+      });
 
       const dailyItems = (dailyRes.data ?? []).map((d: any) => {
         const item = d.item;
         const baseAfterSlotDiscount = Math.floor(item.base_price_coins * (1 - d.discount_pct / 100));
         const finalPrice = applyDiscount(baseAfterSlotDiscount);
+        const gemBase = item.cost_gems || 0;
+        const gemAfterSlot = gemBase > 0 ? Math.max(1, Math.floor(gemBase * (1 - d.discount_pct / 100))) : 0;
+        const finalGemPrice = gemAfterSlot > 0 ? Math.max(1, Math.floor(gemAfterSlot * (1 - tierInfo.discount / 100))) : 0;
         return {
           slot_id: d.id,
           slot_discount_pct: d.discount_pct,
@@ -234,6 +241,7 @@ Deno.serve(async (req) => {
           reward_label: item.reward_label,
           base_price: item.base_price_coins,
           final_price: finalPrice,
+          final_gem_price: finalGemPrice,
           tier_discount_pct: tierInfo.discount,
           claimed: dailyClaimed.has(item.id),
           is_wishlisted: wishlistSet.has(`daily:${item.id}`),
