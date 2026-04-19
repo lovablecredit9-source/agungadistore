@@ -83,8 +83,6 @@ export default function DailyGiftBox({ visitorId, onUpdate }: Props) {
     </div>
   );
 
-  const claimedDays = new Set(claims.map(c => c.day_number));
-  const todayClaimed = claimedDays.has(today);
   const visibleRewards = rewards.filter(r => r.is_premium === isPremium);
 
   return (
@@ -99,32 +97,31 @@ export default function DailyGiftBox({ visitorId, onUpdate }: Props) {
             </span>
           )}
         </div>
-        <span className="text-[9px] font-bold text-white/60 uppercase tracking-wider">Reset Senin</span>
+        <span className="text-[9px] font-bold text-white/60 uppercase tracking-wider">Skip 1 hari = reset</span>
       </div>
 
-      <div className="grid grid-cols-7 gap-1">
-        {Array.from({ length: 7 }, (_, i) => i + 1).map(day => {
+      <div className="grid grid-cols-5 gap-1.5">
+        {Array.from({ length: MAX_DAY }, (_, i) => i + 1).map(day => {
           const reward = visibleRewards.find(r => r.day_number === day);
-          const claimed = claimedDays.has(day);
+          const isPast = day < today;
           const isToday = day === today;
           const isFuture = day > today;
+          const claimed = isPast || (isToday && todayClaimed);
           return (
             <motion.div
               key={day}
-              whileHover={!isFuture && !claimed ? { scale: 1.05 } : {}}
+              whileHover={isToday && !todayClaimed ? { scale: 1.05 } : {}}
               className={`relative aspect-square rounded-lg flex flex-col items-center justify-center text-center p-1 border transition ${
                 claimed
                   ? "bg-green-500/20 border-green-400/60"
                   : isToday
-                  ? "bg-gradient-to-br from-pink-500/40 to-purple-600/40 border-pink-400 shadow-lg shadow-pink-500/40 ring-2 ring-pink-400/60"
-                  : isFuture
-                  ? "bg-black/40 border-white/10 opacity-60"
-                  : "bg-red-500/10 border-red-500/30 opacity-70"
+                  ? "bg-gradient-to-br from-pink-500/40 to-purple-600/40 border-pink-400 shadow-lg shadow-pink-500/40 ring-2 ring-pink-400/60 animate-pulse"
+                  : "bg-black/40 border-white/10 opacity-60"
               }`}
             >
-              <div className="text-[8px] font-black text-white/70 leading-none">D{day}</div>
-              <div className="text-base leading-none my-0.5">{reward?.icon ?? "🎁"}</div>
-              <div className="text-[7px] font-bold text-white/80 leading-none truncate max-w-full">
+              <div className="text-[9px] font-black text-white/70 leading-none">D{day}</div>
+              <div className="text-lg leading-none my-0.5">{reward?.icon ?? "💎"}</div>
+              <div className="text-[8px] font-bold text-white/90 leading-none truncate max-w-full">
                 {reward?.reward_value ? `+${reward.reward_value}` : "?"}
               </div>
               {claimed && (
