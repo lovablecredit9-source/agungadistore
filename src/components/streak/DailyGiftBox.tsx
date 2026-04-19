@@ -20,7 +20,7 @@ interface Props {
   onUpdate?: () => void;
 }
 
-const MAX_DAY = 5;
+const MAX_DAY = 30;
 
 export default function DailyGiftBox({ visitorId, onUpdate }: Props) {
   const { toast } = useToast();
