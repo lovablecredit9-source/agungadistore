@@ -266,13 +266,43 @@ export default function StreakShopFlashDeals({ visitorId, onUpdate }: Props) {
                   <div className="flex items-center justify-between mb-2">
                     <div>
                       <div className="text-[9px] text-white/50 line-through tabular-nums">{deal.original_cost} 🪙</div>
-                      <div className="text-sm font-black text-yellow-200 tabular-nums">{finalPrice} 🪙</div>
+                      {(payMethod[deal.id] || "coin") === "gem" && deal.cost_gems > 0 ? (
+                        <div className="text-sm font-black text-cyan-200 tabular-nums">{deal.cost_gems} 💎</div>
+                      ) : (
+                        <div className="text-sm font-black text-yellow-200 tabular-nums">{finalPrice} 🪙</div>
+                      )}
                     </div>
                     <div className="px-1.5 py-0.5 rounded bg-red-500 text-white text-[9px] font-black flex items-center gap-0.5">
                       <Tag className="w-2.5 h-2.5" strokeWidth={3} />
                       -{deal.discount_pct}%
                     </div>
                   </div>
+
+                  {/* Toggle Coin / Gem */}
+                  {deal.cost_gems > 0 && !deal.claimed_today && (
+                    <div className="flex gap-1 mb-1.5 p-0.5 rounded-lg bg-black/40 border border-white/10">
+                      <button
+                        onClick={() => setPayMethod((p) => ({ ...p, [deal.id]: "coin" }))}
+                        className={`flex-1 py-1 rounded text-[9px] font-black tabular-nums transition ${
+                          (payMethod[deal.id] || "coin") === "coin"
+                            ? "bg-yellow-500 text-black"
+                            : "text-yellow-200/70 hover:text-yellow-200"
+                        }`}
+                      >
+                        🪙 {finalPrice}
+                      </button>
+                      <button
+                        onClick={() => setPayMethod((p) => ({ ...p, [deal.id]: "gem" }))}
+                        className={`flex-1 py-1 rounded text-[9px] font-black tabular-nums transition ${
+                          (payMethod[deal.id] || "coin") === "gem"
+                            ? "bg-cyan-400 text-black"
+                            : "text-cyan-200/70 hover:text-cyan-200"
+                        }`}
+                      >
+                        💎 {deal.cost_gems}
+                      </button>
+                    </div>
+                  )}
 
                   <Button
                     onClick={() => handleBuy(deal)}
@@ -282,6 +312,8 @@ export default function StreakShopFlashDeals({ visitorId, onUpdate }: Props) {
                         ? "bg-green-600/40 text-green-200 cursor-not-allowed"
                         : locked
                         ? "bg-black/40 text-white/60 hover:bg-black/50"
+                        : (payMethod[deal.id] || "coin") === "gem"
+                        ? "bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 text-white"
                         : "bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white"
                     }`}
                   >
@@ -291,8 +323,10 @@ export default function StreakShopFlashDeals({ visitorId, onUpdate }: Props) {
                       <span className="flex items-center gap-1"><Check className="w-3 h-3" strokeWidth={3} />Sudah hari ini</span>
                     ) : deal.locked_reason === "premium_required" ? (
                       <span className="flex items-center gap-1"><Lock className="w-3 h-3" />Premium Only</span>
+                    ) : (payMethod[deal.id] || "coin") === "gem" ? (
+                      `Beli ${deal.cost_gems} 💎`
                     ) : (
-                      "Beli Sekarang"
+                      `Beli ${finalPrice} 🪙`
                     )}
                   </Button>
                 </motion.div>
