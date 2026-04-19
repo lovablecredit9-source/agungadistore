@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Flame, Clock, Tag, ShoppingBag, Crown, Lock, Loader2, Check } from "lucide-react";
+import { Flame, Clock, Tag, ShoppingBag, Crown, Lock, Loader2, Check, Info, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -45,6 +45,7 @@ export default function StreakShopFlashDeals({ visitorId, onUpdate }: Props) {
   const [isPremium, setIsPremium] = useState(false);
   const [loading, setLoading] = useState(true);
   const [buying, setBuying] = useState<string | null>(null);
+  const [infoDeal, setInfoDeal] = useState<Deal | null>(null);
 
   useEffect(() => {
     const t = setInterval(() => setNow(Date.now()), 1000);
@@ -184,6 +185,13 @@ export default function StreakShopFlashDeals({ visitorId, onUpdate }: Props) {
                       <span className="text-[8px] font-black text-white">{deal.badge}</span>
                     </div>
                   )}
+                  <button
+                    onClick={() => setInfoDeal(deal)}
+                    className="absolute top-1 left-1 w-5 h-5 rounded-full bg-black/50 hover:bg-black/70 backdrop-blur border border-white/30 flex items-center justify-center z-10"
+                    aria-label={`Info ${deal.name}`}
+                  >
+                    <Info className="w-3 h-3 text-white" strokeWidth={2.5} />
+                  </button>
                   <div className="flex items-start gap-2 mb-2">
                     <span className="text-xl flex-shrink-0">{deal.icon}</span>
                     <div className="min-w-0">
@@ -235,6 +243,85 @@ export default function StreakShopFlashDeals({ visitorId, onUpdate }: Props) {
           <span className="text-[10px] text-orange-200/90 font-bold">Reset 00:00 WIB · 1x per deal per hari</span>
         </div>
       </div>
+
+      <AnimatePresence>
+        {infoDeal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[200] bg-black/85 backdrop-blur flex items-center justify-center p-4"
+            onClick={() => setInfoDeal(null)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.9, y: 20 }}
+              className={`max-w-sm w-full rounded-3xl p-5 bg-gradient-to-br ${infoDeal.gradient} border-2 border-white/30 shadow-2xl`}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-start justify-between mb-3">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-12 h-12 rounded-xl bg-black/40 flex items-center justify-center text-2xl">
+                    {infoDeal.icon}
+                  </div>
+                  <div>
+                    <div className="text-[9px] font-black uppercase tracking-wider text-white/70">{infoDeal.badge || "FLASH DEAL"}</div>
+                    <div className="text-base font-black text-white">{infoDeal.name}</div>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setInfoDeal(null)}
+                  className="w-8 h-8 rounded-full bg-black/40 hover:bg-black/60 flex items-center justify-center flex-shrink-0"
+                >
+                  <X className="w-4 h-4 text-white" strokeWidth={2.5} />
+                </button>
+              </div>
+
+              <p className="text-xs text-white/90 mb-4 leading-relaxed">{infoDeal.description}</p>
+
+              <div className="space-y-2 mb-4">
+                <div className="flex justify-between items-center p-2.5 rounded-xl bg-black/30 border border-white/10">
+                  <span className="text-[11px] font-bold text-white/70">Yang Kamu Dapat</span>
+                  <span className="text-sm font-black text-yellow-200">
+                    {infoDeal.reward_value > 0 ? `+${infoDeal.reward_value}` : ""} {infoDeal.reward_type.replace(/_/g, " ")}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center p-2.5 rounded-xl bg-black/30 border border-white/10">
+                  <span className="text-[11px] font-bold text-white/70">Harga Normal</span>
+                  <span className="text-sm font-black text-white/80 line-through tabular-nums">{infoDeal.original_cost} 🪙</span>
+                </div>
+                <div className="flex justify-between items-center p-2.5 rounded-xl bg-gradient-to-r from-red-500/40 to-orange-500/40 border border-red-400/40">
+                  <span className="text-[11px] font-black text-white">Harga Diskon</span>
+                  <div className="flex items-center gap-2">
+                    <span className="px-1.5 py-0.5 rounded bg-red-500 text-white text-[9px] font-black">-{infoDeal.discount_pct}%</span>
+                    <span className="text-base font-black text-yellow-200 tabular-nums">
+                      {Math.floor(infoDeal.original_cost * (1 - infoDeal.discount_pct / 100))} 🪙
+                    </span>
+                  </div>
+                </div>
+                <div className="flex justify-between items-center p-2.5 rounded-xl bg-black/30 border border-white/10">
+                  <span className="text-[11px] font-bold text-white/70">Limit Harian</span>
+                  <span className="text-sm font-black text-white">{infoDeal.daily_limit}x / hari</span>
+                </div>
+                {infoDeal.requires_premium && (
+                  <div className="flex items-center gap-2 p-2.5 rounded-xl bg-yellow-500/20 border border-yellow-400/40">
+                    <Crown className="w-4 h-4 text-yellow-300" strokeWidth={2.5} />
+                    <span className="text-[11px] font-bold text-yellow-100">Khusus Premium (Streak Pass / Season Pass)</span>
+                  </div>
+                )}
+              </div>
+
+              <Button
+                onClick={() => setInfoDeal(null)}
+                className="w-full bg-white text-black font-black"
+              >
+                MENGERTI
+              </Button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 }
