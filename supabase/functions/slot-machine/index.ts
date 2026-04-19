@@ -239,7 +239,7 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
   try {
     const { visitorId, tier: rawTier } = await req.json();
-    const tier: Tier = (["hemat", "sedang", "besar", "mega", "ultra"].includes(rawTier) ? rawTier : "hemat") as Tier;
+    const tier: Tier = (["hemat", "sedang", "besar", "mega", "ultra", "sultan", "raja", "dewa"].includes(rawTier) ? rawTier : "hemat") as Tier;
     if (!visitorId) return new Response(JSON.stringify({ error: "visitorId required" }), { status: 400, headers: corsHeaders });
 
     const luck = await getActiveLuck(visitorId);
