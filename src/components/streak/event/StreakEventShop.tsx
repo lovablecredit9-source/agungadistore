@@ -433,14 +433,29 @@ export default function StreakEventShop({ visitorId, onUpdate }: Props) {
                     <Coins className="h-3 w-3" />{d.final_price}
                   </span>
                 </div>
-                <Button
-                  size="sm"
-                  disabled={d.claimed || busyId === `daily:${d.item_id}`}
-                  onClick={() => buyDaily(d)}
-                  className="w-full mt-1.5 h-7 text-[11px] bg-gradient-to-r from-pink-500 to-rose-600"
-                >
-                  {busyId === `daily:${d.item_id}` ? <Loader2 className="h-3 w-3 animate-spin" /> : d.claimed ? "✓ Dibeli" : "Beli"}
-                </Button>
+                <div className="flex gap-1 mt-1.5">
+                  <Button
+                    size="sm"
+                    disabled={d.claimed || busyId === `daily:${d.item_id}:coin` || userCoins < d.final_price}
+                    onClick={() => buyDaily(d, "coin")}
+                    className="flex-1 h-7 text-[10px] bg-yellow-500/20 hover:bg-yellow-500/30 border border-yellow-400/50 text-yellow-100 font-bold disabled:opacity-50 px-1"
+                  >
+                    {busyId === `daily:${d.item_id}:coin` ? <Loader2 className="h-3 w-3 animate-spin" /> :
+                      d.claimed ? "✓" :
+                      <span className="flex items-center gap-0.5"><Coins className="h-3 w-3" />{d.final_price}</span>}
+                  </Button>
+                  {!d.claimed && d.final_gem_price > 0 && (
+                    <Button
+                      size="sm"
+                      disabled={busyId === `daily:${d.item_id}:gem` || userGems < d.final_gem_price}
+                      onClick={() => buyDaily(d, "gem")}
+                      className="flex-1 h-7 text-[10px] bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-400/50 text-cyan-100 font-bold disabled:opacity-50 px-1"
+                    >
+                      {busyId === `daily:${d.item_id}:gem` ? <Loader2 className="h-3 w-3 animate-spin" /> :
+                        <span className="flex items-center gap-0.5"><Gem className="h-3 w-3" />{d.final_gem_price}</span>}
+                    </Button>
+                  )}
+                </div>
               </motion.div>
             ))}
           </div>
