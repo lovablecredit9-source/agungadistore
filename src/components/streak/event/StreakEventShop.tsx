@@ -130,8 +130,8 @@ export default function StreakEventShop({ visitorId, onUpdate }: Props) {
     }
   };
 
-  const openBox = async (b: any) => {
-    const res = await callAction("open_box", { boxId: b.id }, `box:${b.id}`);
+  const openBox = async (b: any, paymentMethod: "coin" | "gem" = "coin") => {
+    const res = await callAction("open_box", { boxId: b.id, paymentMethod }, `box:${b.id}:${paymentMethod}`);
     if (res?.success) {
       setOpenResult({ box: b, reward: res.reward, cost: res.cost });
       load();
@@ -139,10 +139,11 @@ export default function StreakEventShop({ visitorId, onUpdate }: Props) {
     }
   };
 
-  const buyDaily = async (item: any) => {
-    const res = await callAction("buy_daily", { itemId: item.item_id }, `daily:${item.item_id}`);
+  const buyDaily = async (item: any, paymentMethod: "coin" | "gem" = "coin") => {
+    const res = await callAction("buy_daily", { itemId: item.item_id, paymentMethod }, `daily:${item.item_id}:${paymentMethod}`);
     if (res?.success) {
-      toast({ title: `✨ ${item.name}`, description: `${res.reward_label} • -${res.cost} coins` });
+      const unit = paymentMethod === "gem" ? "💎" : "🪙";
+      toast({ title: `✨ ${item.name}`, description: `${res.reward_label} • -${res.cost} ${unit}` });
       load();
       onUpdate?.();
     }
@@ -362,25 +363,36 @@ export default function StreakEventShop({ visitorId, onUpdate }: Props) {
                   <Heart className={`h-4 w-4 ${b.is_wishlisted ? "fill-pink-400 text-pink-400" : "text-white/40"}`} />
                 </button>
               </div>
-              <div className="flex items-center justify-between mt-2 pt-2 border-t border-white/10 relative">
+              <div className="flex items-center justify-between mt-2 pt-2 border-t border-white/10 relative gap-2">
                 <div className="flex items-center gap-1.5">
-                  <span className="text-base font-bold text-yellow-300 flex items-center gap-0.5">
-                    <Coins className="h-3.5 w-3.5" />{b.final_price}
-                  </span>
                   {b.tier_discount_pct > 0 && (
                     <Badge className="bg-cyan-500/20 text-cyan-100 border-cyan-400/40 text-[9px] px-1 py-0 h-4">
                       -{b.tier_discount_pct}%
                     </Badge>
                   )}
                 </div>
-                <Button
-                  size="sm"
-                  disabled={busyId === `box:${b.id}`}
-                  onClick={() => openBox(b)}
-                  className="bg-gradient-to-r from-purple-500 to-violet-600 text-white text-xs h-8"
-                >
-                  {busyId === `box:${b.id}` ? <Loader2 className="h-3 w-3 animate-spin" /> : "Buka 🎲"}
-                </Button>
+                <div className="flex gap-1.5">
+                  <Button
+                    size="sm"
+                    disabled={busyId === `box:${b.id}:coin` || userCoins < b.final_price}
+                    onClick={() => openBox(b, "coin")}
+                    className="bg-yellow-500/20 hover:bg-yellow-500/30 border border-yellow-400/50 text-yellow-100 text-[11px] font-bold h-8 px-2 disabled:opacity-50"
+                  >
+                    {busyId === `box:${b.id}:coin` ? <Loader2 className="h-3 w-3 animate-spin" /> :
+                      <span className="flex items-center gap-1 tabular-nums"><Coins className="h-3.5 w-3.5" />{b.final_price}</span>}
+                  </Button>
+                  {b.final_gem_price > 0 && (
+                    <Button
+                      size="sm"
+                      disabled={busyId === `box:${b.id}:gem` || userGems < b.final_gem_price}
+                      onClick={() => openBox(b, "gem")}
+                      className="bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-400/50 text-cyan-100 text-[11px] font-bold h-8 px-2 disabled:opacity-50"
+                    >
+                      {busyId === `box:${b.id}:gem` ? <Loader2 className="h-3 w-3 animate-spin" /> :
+                        <span className="flex items-center gap-1 tabular-nums"><Gem className="h-3.5 w-3.5" />{b.final_gem_price}</span>}
+                    </Button>
+                  )}
+                </div>
               </div>
             </motion.div>
           ))}
@@ -421,14 +433,29 @@ export default function StreakEventShop({ visitorId, onUpdate }: Props) {
                     <Coins className="h-3 w-3" />{d.final_price}
                   </span>
                 </div>
-                <Button
-                  size="sm"
-                  disabled={d.claimed || busyId === `daily:${d.item_id}`}
-                  onClick={() => buyDaily(d)}
-                  className="w-full mt-1.5 h-7 text-[11px] bg-gradient-to-r from-pink-500 to-rose-600"
-                >
-                  {busyId === `daily:${d.item_id}` ? <Loader2 className="h-3 w-3 animate-spin" /> : d.claimed ? "✓ Dibeli" : "Beli"}
-                </Button>
+                <div className="flex gap-1 mt-1.5">
+                  <Button
+                    size="sm"
+                    disabled={d.claimed || busyId === `daily:${d.item_id}:coin` || userCoins < d.final_price}
+                    onClick={() => buyDaily(d, "coin")}
+                    className="flex-1 h-7 text-[10px] bg-yellow-500/20 hover:bg-yellow-500/30 border border-yellow-400/50 text-yellow-100 font-bold disabled:opacity-50 px-1"
+                  >
+                    {busyId === `daily:${d.item_id}:coin` ? <Loader2 className="h-3 w-3 animate-spin" /> :
+                      d.claimed ? "✓" :
+                      <span className="flex items-center gap-0.5"><Coins className="h-3 w-3" />{d.final_price}</span>}
+                  </Button>
+                  {!d.claimed && d.final_gem_price > 0 && (
+                    <Button
+                      size="sm"
+                      disabled={busyId === `daily:${d.item_id}:gem` || userGems < d.final_gem_price}
+                      onClick={() => buyDaily(d, "gem")}
+                      className="flex-1 h-7 text-[10px] bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-400/50 text-cyan-100 font-bold disabled:opacity-50 px-1"
+                    >
+                      {busyId === `daily:${d.item_id}:gem` ? <Loader2 className="h-3 w-3 animate-spin" /> :
+                        <span className="flex items-center gap-0.5"><Gem className="h-3 w-3" />{d.final_gem_price}</span>}
+                    </Button>
+                  )}
+                </div>
               </motion.div>
             ))}
           </div>

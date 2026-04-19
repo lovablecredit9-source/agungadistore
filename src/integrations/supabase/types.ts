@@ -844,6 +844,7 @@ export type Database = {
           created_at: string
           id: string
           item_id: string
+          payment_method: string
           purchase_date: string
           visitor_id: string
         }
@@ -852,6 +853,7 @@ export type Database = {
           created_at?: string
           id?: string
           item_id: string
+          payment_method?: string
           purchase_date: string
           visitor_id: string
         }
@@ -860,6 +862,7 @@ export type Database = {
           created_at?: string
           id?: string
           item_id?: string
+          payment_method?: string
           purchase_date?: string
           visitor_id?: string
         }
@@ -876,6 +879,7 @@ export type Database = {
       event_shop_daily_rotation: {
         Row: {
           base_price_coins: number
+          cost_gems: number
           created_at: string
           icon: string
           id: string
@@ -889,6 +893,7 @@ export type Database = {
         }
         Insert: {
           base_price_coins?: number
+          cost_gems?: number
           created_at?: string
           icon?: string
           id?: string
@@ -902,6 +907,7 @@ export type Database = {
         }
         Update: {
           base_price_coins?: number
+          cost_gems?: number
           created_at?: string
           icon?: string
           id?: string
@@ -1131,6 +1137,7 @@ export type Database = {
       }
       event_shop_mystery_boxes: {
         Row: {
+          cost_gems: number
           created_at: string
           description: string
           icon: string
@@ -1143,6 +1150,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          cost_gems?: number
           created_at?: string
           description?: string
           icon?: string
@@ -1155,6 +1163,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          cost_gems?: number
           created_at?: string
           description?: string
           icon?: string
@@ -1174,6 +1183,7 @@ export type Database = {
           cost_paid: number
           created_at: string
           id: string
+          payment_method: string
           rarity: string
           reward_label: string
           reward_type: string
@@ -1185,6 +1195,7 @@ export type Database = {
           cost_paid: number
           created_at?: string
           id?: string
+          payment_method?: string
           rarity: string
           reward_label?: string
           reward_type: string
@@ -1196,6 +1207,7 @@ export type Database = {
           cost_paid?: number
           created_at?: string
           id?: string
+          payment_method?: string
           rarity?: string
           reward_label?: string
           reward_type?: string
@@ -3347,6 +3359,7 @@ export type Database = {
           created_at: string
           id: string
           is_premium: boolean
+          premium_payment_method: string
           premium_purchased_at: string | null
           season_id: string
           total_spent_coins: number
@@ -3359,6 +3372,7 @@ export type Database = {
           created_at?: string
           id?: string
           is_premium?: boolean
+          premium_payment_method?: string
           premium_purchased_at?: string | null
           season_id: string
           total_spent_coins?: number
@@ -3371,6 +3385,7 @@ export type Database = {
           created_at?: string
           id?: string
           is_premium?: boolean
+          premium_payment_method?: string
           premium_purchased_at?: string | null
           season_id?: string
           total_spent_coins?: number
@@ -3396,6 +3411,7 @@ export type Database = {
           is_active: boolean
           name: string
           premium_cost_coins: number
+          premium_cost_gems: number
           starts_at: string
           updated_at: string
         }
@@ -3407,6 +3423,7 @@ export type Database = {
           is_active?: boolean
           name: string
           premium_cost_coins?: number
+          premium_cost_gems?: number
           starts_at?: string
           updated_at?: string
         }
@@ -3418,6 +3435,7 @@ export type Database = {
           is_active?: boolean
           name?: string
           premium_cost_coins?: number
+          premium_cost_gems?: number
           starts_at?: string
           updated_at?: string
         }
@@ -3849,6 +3867,7 @@ export type Database = {
       streak_group_buy_items: {
         Row: {
           base_cost_coins: number
+          base_cost_gems: number
           created_at: string
           description: string
           icon: string
@@ -3869,6 +3888,7 @@ export type Database = {
         }
         Insert: {
           base_cost_coins?: number
+          base_cost_gems?: number
           created_at?: string
           description?: string
           icon?: string
@@ -3889,6 +3909,7 @@ export type Database = {
         }
         Update: {
           base_cost_coins?: number
+          base_cost_gems?: number
           created_at?: string
           description?: string
           icon?: string
@@ -3953,6 +3974,7 @@ export type Database = {
       streak_limited_skins: {
         Row: {
           cost_coins: number
+          cost_gems: number
           created_at: string
           description: string
           emoji_fallback: string
@@ -3971,6 +3993,7 @@ export type Database = {
         }
         Insert: {
           cost_coins?: number
+          cost_gems?: number
           created_at?: string
           description?: string
           emoji_fallback?: string
@@ -3989,6 +4012,7 @@ export type Database = {
         }
         Update: {
           cost_coins?: number
+          cost_gems?: number
           created_at?: string
           description?: string
           emoji_fallback?: string

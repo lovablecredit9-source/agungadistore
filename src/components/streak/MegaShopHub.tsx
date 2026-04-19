@@ -54,6 +54,8 @@ export default function MegaShopHub({ visitorId, onUpdate }: Props) {
     }
   }
 
+  const userGems = data?.user_gems || 0;
+
   if (loading) {
     return (
       <div className="rounded-2xl bg-gradient-to-br from-red-500/10 via-amber-500/10 to-yellow-500/10 border border-amber-400/30 p-6 text-center">
@@ -94,7 +96,7 @@ export default function MegaShopHub({ visitorId, onUpdate }: Props) {
         {/* BATTLE PASS */}
         <TabsContent value="bp" className="mt-2 space-y-2">
           {data.battle_pass ? (
-            <BattlePassPanel bp={data.battle_pass} busy={busy} call={call} />
+            <BattlePassPanel bp={data.battle_pass} busy={busy} call={call} userGems={userGems} />
           ) : (
             <p className="text-xs text-center text-muted-foreground py-4">Belum ada season aktif</p>
           )}
@@ -140,6 +142,7 @@ export default function MegaShopHub({ visitorId, onUpdate }: Props) {
           {data.skins.map((s: any) => {
             const stockLeft = s.total_stock - s.sold_count;
             const pct = (s.sold_count / s.total_stock) * 100;
+            const gemPrice = s.cost_gems || 0;
             return (
               <motion.div
                 key={s.id}
@@ -153,16 +156,29 @@ export default function MegaShopHub({ visitorId, onUpdate }: Props) {
                   <Progress value={pct} className="h-1 my-1" />
                   <p className="text-[9px] text-white/80">Tersisa {stockLeft}/{s.total_stock}</p>
                 </div>
-                <Button
-                  size="sm"
-                  disabled={s.owned || stockLeft <= 0 || busy === `s-${s.id}`}
-                  onClick={() => call("buy_skin", { skinId: s.id }, `s-${s.id}`)}
-                  className="w-full mt-1.5 h-7 text-[10px] bg-gradient-to-r from-amber-500 to-red-500 text-white"
-                >
-                  {s.owned ? <><Check className="h-3 w-3 mr-0.5" />Dimiliki</> :
-                   busy === `s-${s.id}` ? <Loader2 className="h-3 w-3 animate-spin" /> :
-                   <><Coins className="h-3 w-3 mr-0.5" />{s.cost_coins}</>}
-                </Button>
+                <div className="flex gap-1 mt-1.5">
+                  <Button
+                    size="sm"
+                    disabled={s.owned || stockLeft <= 0 || busy === `s-${s.id}-coin`}
+                    onClick={() => call("buy_skin", { skinId: s.id, paymentMethod: "coin" }, `s-${s.id}-coin`)}
+                    className="flex-1 h-7 text-[10px] bg-gradient-to-r from-amber-500 to-red-500 text-white px-1"
+                  >
+                    {s.owned ? <><Check className="h-3 w-3 mr-0.5" />Punya</> :
+                     busy === `s-${s.id}-coin` ? <Loader2 className="h-3 w-3 animate-spin" /> :
+                     <><Coins className="h-3 w-3 mr-0.5" />{s.cost_coins}</>}
+                  </Button>
+                  {!s.owned && gemPrice > 0 && (
+                    <Button
+                      size="sm"
+                      disabled={stockLeft <= 0 || busy === `s-${s.id}-gem` || userGems < gemPrice}
+                      onClick={() => call("buy_skin", { skinId: s.id, paymentMethod: "gem" }, `s-${s.id}-gem`)}
+                      className="flex-1 h-7 text-[10px] bg-gradient-to-r from-cyan-500 to-blue-500 text-white px-1 disabled:opacity-50"
+                    >
+                      {busy === `s-${s.id}-gem` ? <Loader2 className="h-3 w-3 animate-spin" /> :
+                       <><Gem className="h-3 w-3 mr-0.5" />{gemPrice}</>}
+                    </Button>
+                  )}
+                </div>
               </motion.div>
             );
           })}
@@ -207,15 +223,29 @@ export default function MegaShopHub({ visitorId, onUpdate }: Props) {
                     {g.current_discount_pct > 0 && <span className="line-through text-pink-300/60 mr-1">{g.base_cost_coins}</span>}
                     <span className="font-bold text-amber-300">{g.current_cost} <Coins className="inline h-3 w-3" /></span>
                   </div>
-                  <Button
-                    size="sm"
-                    disabled={g.already_bought_today || busy === `g-${g.id}`}
-                    onClick={() => call("group_buy", { itemId: g.id }, `g-${g.id}`)}
-                    className="h-7 px-2 text-[10px] bg-pink-500 hover:bg-pink-600 text-white"
-                  >
-                    {g.already_bought_today ? "Sudah dibeli" :
-                     busy === `g-${g.id}` ? <Loader2 className="h-3 w-3 animate-spin" /> : "Beli"}
-                  </Button>
+                  <div className="flex gap-1">
+                    <Button
+                      size="sm"
+                      disabled={g.already_bought_today || busy === `g-${g.id}-coin`}
+                      onClick={() => call("group_buy", { itemId: g.id, paymentMethod: "coin" }, `g-${g.id}-coin`)}
+                      className="h-7 px-2 text-[10px] bg-pink-500 hover:bg-pink-600 text-white"
+                    >
+                      {g.already_bought_today ? "Sudah" :
+                       busy === `g-${g.id}-coin` ? <Loader2 className="h-3 w-3 animate-spin" /> :
+                       <><Coins className="h-3 w-3 mr-0.5" />{g.current_cost}</>}
+                    </Button>
+                    {!g.already_bought_today && g.current_gem_cost > 0 && (
+                      <Button
+                        size="sm"
+                        disabled={busy === `g-${g.id}-gem` || userGems < g.current_gem_cost}
+                        onClick={() => call("group_buy", { itemId: g.id, paymentMethod: "gem" }, `g-${g.id}-gem`)}
+                        className="h-7 px-2 text-[10px] bg-cyan-500 hover:bg-cyan-600 text-white disabled:opacity-50"
+                      >
+                        {busy === `g-${g.id}-gem` ? <Loader2 className="h-3 w-3 animate-spin" /> :
+                         <><Gem className="h-3 w-3 mr-0.5" />{g.current_gem_cost}</>}
+                      </Button>
+                    )}
+                  </div>
                 </div>
               </motion.div>
             );
@@ -226,29 +256,42 @@ export default function MegaShopHub({ visitorId, onUpdate }: Props) {
   );
 }
 
-function BattlePassPanel({ bp, busy, call }: { bp: any; busy: string | null; call: (a: string, p: any, k: string) => void }) {
+function BattlePassPanel({ bp, busy, call, userGems }: { bp: any; busy: string | null; call: (a: string, p: any, k: string) => void; userGems: number }) {
   const { season, tiers, progress } = bp;
   const spent = progress.total_spent_coins;
   const maxRequired = tiers.length ? tiers[tiers.length - 1].required_spent_coins : 1;
   const pct = Math.min(100, (spent / maxRequired) * 100);
+  const gemPrice = season.premium_cost_gems || 0;
 
   return (
     <div className="space-y-2">
       <div className="rounded-xl bg-black/30 border border-amber-400/40 p-2.5">
-        <div className="flex items-center justify-between mb-1">
-          <div>
-            <p className="font-bold text-sm text-amber-100">{season.name}</p>
+        <div className="flex items-center justify-between mb-1 gap-2">
+          <div className="min-w-0">
+            <p className="font-bold text-sm text-amber-100 truncate">{season.name}</p>
             <p className="text-[10px] text-amber-200/70">Belanja coins: {spent} / {maxRequired}</p>
           </div>
           {!progress.is_premium ? (
-            <Button
-              size="sm"
-              disabled={busy === "premium"}
-              onClick={() => call("bp_buy_premium", { seasonId: season.id }, "premium")}
-              className="h-7 text-[10px] bg-gradient-to-r from-amber-500 to-orange-500 text-white"
-            >
-              {busy === "premium" ? <Loader2 className="h-3 w-3 animate-spin" /> : <><Crown className="h-3 w-3 mr-0.5" />Premium {season.premium_cost_coins}</>}
-            </Button>
+            <div className="flex gap-1 shrink-0">
+              <Button
+                size="sm"
+                disabled={busy === "premium-coin"}
+                onClick={() => call("bp_buy_premium", { seasonId: season.id, paymentMethod: "coin" }, "premium-coin")}
+                className="h-7 text-[10px] bg-gradient-to-r from-amber-500 to-orange-500 text-white px-2"
+              >
+                {busy === "premium-coin" ? <Loader2 className="h-3 w-3 animate-spin" /> : <><Crown className="h-3 w-3 mr-0.5" /><Coins className="h-3 w-3 mr-0.5" />{season.premium_cost_coins}</>}
+              </Button>
+              {gemPrice > 0 && (
+                <Button
+                  size="sm"
+                  disabled={busy === "premium-gem" || userGems < gemPrice}
+                  onClick={() => call("bp_buy_premium", { seasonId: season.id, paymentMethod: "gem" }, "premium-gem")}
+                  className="h-7 text-[10px] bg-gradient-to-r from-cyan-500 to-blue-500 text-white px-2 disabled:opacity-50"
+                >
+                  {busy === "premium-gem" ? <Loader2 className="h-3 w-3 animate-spin" /> : <><Gem className="h-3 w-3 mr-0.5" />{gemPrice}</>}
+                </Button>
+              )}
+            </div>
           ) : (
             <Badge className="bg-gradient-to-r from-amber-500 to-orange-500 text-white border-0 text-[10px]">
               <Crown className="h-3 w-3 mr-0.5" />PREMIUM
