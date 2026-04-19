@@ -307,7 +307,7 @@ export default function StreakEventLive({ visitorId, currentStreak, totalClaims 
                   <div className="flex items-center gap-1.5 min-w-0">
                     <span className={`text-[9px] font-black tabular-nums w-5 ${isMe ? "text-pink-200" : "text-white/50"}`}>#{rank}</span>
                     <span className={`text-[10px] font-bold truncate ${isMe ? "text-pink-100" : "text-white/80"}`}>
-                      {isMe ? "👉 Kamu" : maskId(r.visitor_id)}
+                      {isMe ? "👉 Kamu" : (r.display_name || maskId(r.visitor_id))}
                     </span>
                   </div>
                   <span className="text-[10px] font-black text-orange-300 tabular-nums shrink-0">🔥 {r.current_streak}</span>
