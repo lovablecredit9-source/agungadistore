@@ -127,14 +127,18 @@ Deno.serve(async (req) => {
         else if (buyers >= it.tier2_buyers) discount = it.tier2_discount_pct;
         else if (buyers >= it.tier1_buyers) discount = it.tier1_discount_pct;
         const cost = Math.floor(it.base_cost_coins * (1 - discount / 100));
-        return { ...it, buyers_today: buyers, current_discount_pct: discount, current_cost: cost, already_bought_today: userBoughtToday.has(it.id) };
+        const gemCost = Math.max(1, Math.floor((it.base_cost_gems || 0) * (1 - discount / 100)));
+        return { ...it, buyers_today: buyers, current_discount_pct: discount, current_cost: cost, current_gem_cost: it.base_cost_gems > 0 ? gemCost : 0, already_bought_today: userBoughtToday.has(it.id) };
       });
+
+      const { data: prof } = await admin.from("game_profiles").select("gems").eq("visitor_id", visitorId).maybeSingle();
 
       return Response.json({
         battle_pass: bp,
         tradein: { recipes: recipes.data || [], usage_today: tradeMap },
         skins: (skins.data || []).map((s: any) => ({ ...s, owned: ownedMap.has(s.id) })),
         group_buy: groupItemsWithStats,
+        user_gems: prof?.gems ?? 0,
         date: today,
       }, { headers: corsHeaders });
     }
