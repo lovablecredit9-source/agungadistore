@@ -4694,6 +4694,131 @@ export type Database = {
         }
         Relationships: []
       }
+      streak_wheel_pity: {
+        Row: {
+          free_spin_used_date: string | null
+          spins_since_jackpot: number
+          total_jackpots: number
+          total_spins: number
+          updated_at: string
+          visitor_id: string
+        }
+        Insert: {
+          free_spin_used_date?: string | null
+          spins_since_jackpot?: number
+          total_jackpots?: number
+          total_spins?: number
+          updated_at?: string
+          visitor_id: string
+        }
+        Update: {
+          free_spin_used_date?: string | null
+          spins_since_jackpot?: number
+          total_jackpots?: number
+          total_spins?: number
+          updated_at?: string
+          visitor_id?: string
+        }
+        Relationships: []
+      }
+      streak_wheel_segments: {
+        Row: {
+          color_class: string
+          created_at: string
+          icon: string
+          id: string
+          is_active: boolean
+          is_jackpot: boolean
+          label: string
+          reward_type: string
+          reward_value: number
+          sort_order: number
+          updated_at: string
+          weight: number
+        }
+        Insert: {
+          color_class?: string
+          created_at?: string
+          icon?: string
+          id?: string
+          is_active?: boolean
+          is_jackpot?: boolean
+          label: string
+          reward_type: string
+          reward_value?: number
+          sort_order?: number
+          updated_at?: string
+          weight?: number
+        }
+        Update: {
+          color_class?: string
+          created_at?: string
+          icon?: string
+          id?: string
+          is_active?: boolean
+          is_jackpot?: boolean
+          label?: string
+          reward_type?: string
+          reward_value?: number
+          sort_order?: number
+          updated_at?: string
+          weight?: number
+        }
+        Relationships: []
+      }
+      streak_wheel_spins: {
+        Row: {
+          cost_paid: number
+          created_at: string
+          display_name: string
+          id: string
+          is_jackpot: boolean
+          is_pity: boolean
+          payment_method: string
+          reward_label: string
+          reward_type: string
+          reward_value: number
+          segment_id: string | null
+          visitor_id: string
+        }
+        Insert: {
+          cost_paid?: number
+          created_at?: string
+          display_name?: string
+          id?: string
+          is_jackpot?: boolean
+          is_pity?: boolean
+          payment_method?: string
+          reward_label: string
+          reward_type: string
+          reward_value?: number
+          segment_id?: string | null
+          visitor_id: string
+        }
+        Update: {
+          cost_paid?: number
+          created_at?: string
+          display_name?: string
+          id?: string
+          is_jackpot?: boolean
+          is_pity?: boolean
+          payment_method?: string
+          reward_label?: string
+          reward_type?: string
+          reward_value?: number
+          segment_id?: string | null
+          visitor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "streak_wheel_spins_segment_id_fkey"
+            columns: ["segment_id"]
+            isOneToOne: false
+            referencedRelation: "streak_wheel_segments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       support_tickets: {
         Row: {
           category: string
