@@ -50,12 +50,29 @@ const TIERS = [
   { name: "Diamond", min: 5000, color: "from-pink-400 via-fuchsia-500 to-purple-600", text: "text-pink-100", reward: "50% bonus" },
 ];
 
-export default function StreakEventLive({ visitorId, currentStreak, totalClaims }: Props) {
+export default function StreakEventLive({ visitorId, currentStreak, totalClaims, streakCoins = 0 }: Props) {
   const [now, setNow] = useState(Date.now());
   const [live, setLive] = useState<LiveData | null>(null);
   const [loading, setLoading] = useState(true);
   const [combo, setCombo] = useState(0);
   const [flashWinner, setFlashWinner] = useState<string | null>(null);
+  const [gems, setGems] = useState(0);
+
+  useEffect(() => {
+    if (!visitorId) return;
+    let mounted = true;
+    const loadGems = async () => {
+      const { data } = await supabase
+        .from("game_profiles")
+        .select("gems")
+        .eq("visitor_id", visitorId)
+        .maybeSingle();
+      if (mounted && data) setGems(data.gems ?? 0);
+    };
+    loadGems();
+    const t = setInterval(loadGems, 30_000);
+    return () => { mounted = false; clearInterval(t); };
+  }, [visitorId]);
 
   useEffect(() => {
     const t = setInterval(() => setNow(Date.now()), 1000);
