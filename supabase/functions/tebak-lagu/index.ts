@@ -54,9 +54,9 @@ Pastikan options[0] adalah pasangan yang benar (akan diacak di sisi klien). Jang
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      model: "google/gemini-2.5-flash",
+      model: "google/gemini-2.5-pro",
       messages: [
-        { role: "system", content: "Kamu adalah pembuat soal kuis musik. Selalu balas dengan JSON valid saja, tanpa markdown." },
+        { role: "system", content: "Kamu adalah pakar musik pop Indonesia 1990-2026. Hanya gunakan judul lagu dan nama artis yang BENAR-BENAR ADA dan akurat. Jangan mengarang judul/artis. Selalu balas dengan JSON valid saja, tanpa markdown." },
         { role: "user", content: prompt },
       ],
     }),
