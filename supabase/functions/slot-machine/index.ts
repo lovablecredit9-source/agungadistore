@@ -244,32 +244,47 @@ Deno.serve(async (req) => {
 
     const cost = TIER_COSTS[tier];
 
-    // Cek & potong kredit (skip jika user unlimited masih aktif)
+    // Cek kredit & status unlimited (sumber kebenaran: unlimited_until > now())
     const { data: gc } = await supabase
       .from("user_game_credits")
-      .select("id, credits, is_unlimited, unlimited_until")
+      .select("id, credits, unlimited_until")
       .eq("visitor_id", visitorId)
       .maybeSingle();
 
-    const unlimitedActive = !!(gc?.is_unlimited && gc?.unlimited_until && new Date(gc.unlimited_until).getTime() > Date.now());
+    const unlimitedActive = !!(gc?.unlimited_until && new Date(gc.unlimited_until).getTime() > Date.now());
+    const currentCredits = gc?.credits || 0;
 
-    if (!unlimitedActive) {
-      if (!gc || (gc.credits || 0) < cost) {
-        return new Response(JSON.stringify({ error: `Kredit tidak cukup. Butuh ${cost} kredit.` }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-      }
-      const { error: deductErr } = await supabase
-        .from("user_game_credits")
-        .update({ credits: (gc.credits || 0) - cost })
-        .eq("id", gc.id);
-      if (deductErr) {
-        return new Response(JSON.stringify({ error: "Gagal memotong kredit: " + deductErr.message }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-      }
+    if (!unlimitedActive && currentCredits < cost) {
+      return new Response(
+        JSON.stringify({ error: `Kredit tidak cukup. Butuh ${cost} kredit (kamu punya ${currentCredits}).` }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
     }
 
+    // Hitung hasil spin
     const luck = await getActiveLuck(visitorId);
     const reels = spinThreeReels(tier, luck);
     const payout = calculatePayout(tier, reels);
-    await applyPayout(visitorId, payout);
+
+    // Atomic update kredit: kurangi biaya + tambahkan hadiah game_credits sekaligus (mencegah race condition)
+    if (!unlimitedActive || payout.type === "game_credits") {
+      const creditDelta = (unlimitedActive ? 0 : -cost) + (payout.type === "game_credits" ? payout.value : 0);
+      if (creditDelta !== 0 || !unlimitedActive) {
+        const newCredits = Math.max(0, currentCredits + creditDelta);
+        if (gc) {
+          await supabase.from("user_game_credits").update({ credits: newCredits, updated_at: new Date().toISOString() }).eq("id", gc.id);
+        } else {
+          await supabase.from("user_game_credits").insert({ visitor_id: visitorId, credits: newCredits });
+        }
+      }
+    }
+
+    // Apply payout untuk tipe NON-game_credits (saldo, storage, nyawa)
+    if (payout.type !== "game_credits") {
+      await applyPayout(visitorId, payout);
+    } else {
+      // Catat transaksi info untuk hadiah kredit (opsional, tidak ada tabel khusus)
+    }
 
     const { data } = await supabase.from("slot_machine_history").insert({
       visitor_id: visitorId,
