@@ -399,7 +399,10 @@ export default function TebakLaguGame() {
             <Music className="w-6 h-6 text-pink-300 drop-shadow-[0_0_8px_rgba(236,72,153,0.8)]" strokeWidth={2.5} />
           </motion.div>
           <div>
-            <div className="text-[10px] font-black tracking-widest text-pink-300 uppercase">🎵 TEBAK LAGU AI</div>
+            <div className="text-[10px] font-black tracking-widest text-pink-300 uppercase flex items-center gap-1.5">
+              🎵 TEBAK LAGU AI
+              <span className={`px-1.5 py-0.5 rounded bg-black/40 border border-white/10 ${diffConfig.color}`}>{diffConfig.label}</span>
+            </div>
             <div className="text-base font-black text-white">Round {round + 1} / {TOTAL_ROUNDS}</div>
           </div>
         </div>
