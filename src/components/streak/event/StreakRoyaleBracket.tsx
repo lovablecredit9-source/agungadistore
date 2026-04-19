@@ -2,10 +2,9 @@ import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Crown, Swords } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { maskUsername } from "@/lib/mask-username";
 
-interface Player { visitor_id: string; current_streak: number }
-
-function maskId(id: string) { return id ? id.slice(0, 4) + "··" + id.slice(-2) : "?????"; }
+interface Player { visitor_id: string; current_streak: number; display_name?: string }
 
 export default function StreakRoyaleBracket({ visitorId }: { visitorId: string }) {
   const [players, setPlayers] = useState<Player[]>([]);
@@ -14,12 +13,24 @@ export default function StreakRoyaleBracket({ visitorId }: { visitorId: string }
     let mounted = true;
     (async () => {
       try {
-        const { data } = await supabase
+        const { data: streaks } = await supabase
           .from("daily_streaks")
           .select("visitor_id, current_streak")
           .order("current_streak", { ascending: false })
           .limit(8);
-        if (mounted) setPlayers(data ?? []);
+        const rows = (streaks ?? []) as Player[];
+        if (rows.length === 0) { if (mounted) setPlayers([]); return; }
+        const ids = rows.map(r => r.visitor_id);
+        const { data: profiles } = await supabase
+          .from("game_profiles")
+          .select("visitor_id, display_name")
+          .in("visitor_id", ids);
+        const nameMap = new Map<string, string>();
+        (profiles ?? []).forEach((p: any) => {
+          if (p?.visitor_id && p?.display_name) nameMap.set(p.visitor_id, p.display_name);
+        });
+        const merged = rows.map(r => ({ ...r, display_name: nameMap.get(r.visitor_id) || "" }));
+        if (mounted) setPlayers(merged);
       } catch { /* noop */ }
     })();
     return () => { mounted = false; };
@@ -38,7 +49,7 @@ export default function StreakRoyaleBracket({ visitorId }: { visitorId: string }
         !p ? "bg-black/30 border-white/10 text-white/30" :
         isMe ? "bg-pink-500/30 border-pink-400/60 text-pink-100" : "bg-black/40 border-purple-400/30 text-white"
       }`}>
-        <span className="truncate">{p ? (isMe ? "👉 Kamu" : maskId(p.visitor_id)) : "TBD"}</span>
+        <span className="truncate">{p ? (isMe ? "👉 Kamu" : maskUsername(p.display_name)) : "TBD"}</span>
         {p && <span className="text-orange-300 tabular-nums">🔥{p.current_streak}</span>}
       </div>
     );
@@ -89,7 +100,7 @@ export default function StreakRoyaleBracket({ visitorId }: { visitorId: string }
           className="rounded-lg p-1.5 bg-gradient-to-br from-yellow-400 to-orange-500 border-2 border-yellow-200 text-center"
         >
           <Crown className="w-4 h-4 mx-auto text-white drop-shadow" strokeWidth={2.5} />
-          <div className="text-[8px] font-black text-white mt-0.5 truncate">{champion ? maskId(champion.visitor_id) : "?"}</div>
+          <div className="text-[8px] font-black text-white mt-0.5 truncate">{champion ? maskUsername(champion.display_name) : "?"}</div>
           <div className="text-[8px] font-black text-yellow-100 mt-0.5">CHAMPION</div>
         </motion.div>
       </div>
