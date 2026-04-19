@@ -234,19 +234,23 @@ export default function NeonStreakHub({ visitorId, forcedView }: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [visitorId]);
 
-  async function openMysteryBox() {
+  async function openMysteryBox(paymentMethod: "free" | "gem" = "free") {
+    if (paymentMethod === "gem" && gems < 5) {
+      toast({ title: "Gem tidak cukup", description: "Butuh 5 💎 untuk buka extra", variant: "destructive" });
+      return;
+    }
     setOpening(true);
     try {
-      const { data, error } = await supabase.functions.invoke("mystery-box-open", { body: { visitorId } });
+      const { data, error } = await supabase.functions.invoke("mystery-box-open", { body: { visitorId, paymentMethod } });
       if (error || data?.error) {
         toast({ title: "Gagal", description: data?.error || error?.message, variant: "destructive" });
       } else if (data?.alreadyOpened) {
-        toast({ title: "Sudah dibuka", description: "Mystery box hari ini sudah dibuka." });
+        toast({ title: "Sudah dibuka", description: "Mystery box gratis hari ini sudah dibuka. Pakai 5💎 untuk buka lagi!" });
         setReward(data.reward);
         setBoxOpened(true);
       } else {
         setReward(data.reward);
-        setBoxOpened(true);
+        if (paymentMethod === "free") setBoxOpened(true);
         trackDailyMission(visitorId, "mystery_box", 1);
         await syncPowerUpsFromServer();
         window.dispatchEvent(new CustomEvent("power-ups-updated"));
