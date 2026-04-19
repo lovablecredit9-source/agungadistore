@@ -26,7 +26,9 @@ const SEED_ARTISTS = [
   "Bunga Citra Lestari", "Melly Goeslaw", "Glenn Fredly", "Dewa Budjana", "Sammy Simorangkir", "Cakra Khan", "Judika", "Marcell", "Tompi", "Reza Artamevia"
 ];
 
-async function generateQuestion(): Promise<SongQuestion> {
+type Difficulty = "mudah" | "sedang" | "sulit";
+
+async function generateQuestion(difficulty: Difficulty = "sedang"): Promise<SongQuestion> {
   const apiKey = Deno.env.get("LOVABLE_API_KEY");
   if (!apiKey) throw new Error("LOVABLE_API_KEY belum diatur");
 
@@ -35,7 +37,26 @@ async function generateQuestion(): Promise<SongQuestion> {
   const shuffledArtists = [...SEED_ARTISTS].sort(() => Math.random() - 0.5).slice(0, 8);
   const randomSeed = Math.random().toString(36).substring(2, 10);
 
+  // Aturan kesulitan
+  const difficultyRules: Record<Difficulty, string> = {
+    mudah: `TINGKAT KESULITAN: MUDAH
+- Gunakan lagu SUPER POPULER yang hampir semua orang Indonesia tahu (mega hits sepanjang masa).
+- Lirik yang dipilih HARUS bagian REFF/CHORUS yang paling ikonik dan sering didengar.
+- 3 opsi salah dari lagu yang BERBEDA GENRE/ERA jauh, supaya mudah dibedakan.`,
+    sedang: `TINGKAT KESULITAN: SEDANG
+- Gunakan lagu hits/populer yang cukup dikenal (bukan lagu obscure, tapi tidak harus mega-hit).
+- Lirik boleh dari reff atau verse yang cukup ikonik.
+- 3 opsi salah dari lagu segenre/seera, cukup menantang tapi masih bisa dibedakan.`,
+    sulit: `TINGKAT KESULITAN: SULIT
+- Gunakan lagu pop Indonesia hits namun pilih BAGIAN VERSE/BRIDGE (bukan reff utama) yang lebih jarang diingat.
+- Boleh juga lagu deep cut dari artis populer (album tracks, B-sides yang tetap dirilis resmi).
+- 3 opsi salah HARUS sangat mirip: dari artis yang sama atau era + genre + tema yang sangat dekat, supaya membingungkan.
+- TETAP wajib lirik & artis 100% akurat — jangan mengarang.`,
+  };
+
   const prompt = `Buat 1 soal kuis "Tebak Lagu" dari potongan lirik LAGU POP INDONESIA yang pernah VIRAL/HITS.
+
+${difficultyRules[difficulty]}
 
 FOKUS ERA KALI INI: ${randomEra}
 INSPIRASI ARTIS (pilih SALAH SATU dari daftar ini, atau artis pop Indonesia lain yang segenre/seera): ${shuffledArtists.join(", ")}
