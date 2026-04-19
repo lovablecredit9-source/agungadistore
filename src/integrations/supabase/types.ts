@@ -3910,6 +3910,7 @@ export type Database = {
           discount_pct_applied: number
           id: string
           item_id: string
+          payment_method: string
           purchase_date: string
           visitor_id: string
         }
@@ -3919,6 +3920,7 @@ export type Database = {
           discount_pct_applied?: number
           id?: string
           item_id: string
+          payment_method?: string
           purchase_date?: string
           visitor_id: string
         }
@@ -3928,6 +3930,7 @@ export type Database = {
           discount_pct_applied?: number
           id?: string
           item_id?: string
+          payment_method?: string
           purchase_date?: string
           visitor_id?: string
         }
