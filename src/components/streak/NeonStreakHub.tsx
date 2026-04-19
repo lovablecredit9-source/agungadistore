@@ -296,29 +296,33 @@ export default function NeonStreakHub({ visitorId, forcedView }: Props) {
 
       if (paymentMethod === "gem") {
         const cost = p.gemCost;
-        // Cek total gem agregat lintas visitor_id (sesuai akun saldo)
+        // Cek total gem hanya pada akun balance yang sedang aktif login
         const { data: totalGemsRpc } = await supabase.rpc("get_account_gems", { p_visitor_id: visitorId });
         const totalGems = Number(totalGemsRpc) || 0;
         if (totalGems < cost) {
           toast({ title: "Gem kurang", description: `Butuh ${cost} 💎 (kamu punya ${totalGems})`, variant: "destructive" });
           return;
         }
-        // Cari semua visitor_id pada akun ini yang punya gem, lalu potong dari yang paling banyak dulu
-        const { data: linked } = await supabase.from("balance_login_history").select("visitor_id, user_balance_id").eq("visitor_id", visitorId).order("logged_in_at", { ascending: false }).limit(1);
-        const ubId = linked?.[0]?.user_balance_id;
-        let visitorIds: string[] = [visitorId];
-        if (ubId) {
-          const { data: allLinked } = await supabase.from("balance_login_history").select("visitor_id").eq("user_balance_id", ubId);
-          visitorIds = Array.from(new Set([visitorId, ...(allLinked || []).map((r: any) => r.visitor_id)]));
+        // Cari user_balance_id aktif untuk visitor ini
+        const { data: ubRpc } = await supabase.rpc("get_active_user_balance_id", { p_visitor_id: visitorId });
+        const activeUbId = (ubRpc as string | null) || null;
+
+        // Potong dari profile-profile yang TERIKAT ke akun balance yang sama saja.
+        // Jika belum login akun balance, potong dari profile visitor sendiri.
+        let profilesQuery = supabase.from("game_profiles").select("id, visitor_id, gems");
+        if (activeUbId) {
+          profilesQuery = profilesQuery.eq("user_balance_id", activeUbId);
+        } else {
+          profilesQuery = profilesQuery.eq("visitor_id", visitorId);
         }
-        const { data: profiles } = await supabase.from("game_profiles").select("visitor_id, gems").in("visitor_id", visitorIds).order("gems", { ascending: false });
+        const { data: profiles } = await profilesQuery.order("gems", { ascending: false });
         let remaining = cost;
         for (const prof of (profiles || [])) {
           if (remaining <= 0) break;
           const have = (prof as any).gems || 0;
           if (have <= 0) continue;
           const take = Math.min(have, remaining);
-          await supabase.from("game_profiles").update({ gems: have - take }).eq("visitor_id", (prof as any).visitor_id);
+          await supabase.from("game_profiles").update({ gems: have - take }).eq("id", (prof as any).id);
           remaining -= take;
         }
         await supabase.from("gem_transactions").insert({
