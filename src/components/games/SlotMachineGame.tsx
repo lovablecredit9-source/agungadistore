@@ -72,11 +72,56 @@ export default function SlotMachineGame() {
   const [reels, setReels] = useState<string[]>(["🍒", "🍋", "🍇"]);
   const [spinning, setSpinning] = useState(false);
   const [result, setResult] = useState<any>(null);
+  const [freeMode, setFreeMode] = useState(false);
   const { toast } = useToast();
 
   const tierInfo = TIERS.find(t => t.key === tier)!;
 
+  // Mode latihan offline — tidak ada biaya, tidak ada perubahan saldo/kredit/storage real
+  const simulateSpin = () => {
+    setResult(null);
+    setSpinning(true);
+    const animDuration = 1500;
+    const start = Date.now();
+    const interval = setInterval(() => {
+      setReels([
+        SYMBOLS[Math.floor(Math.random() * SYMBOLS.length)],
+        SYMBOLS[Math.floor(Math.random() * SYMBOLS.length)],
+        SYMBOLS[Math.floor(Math.random() * SYMBOLS.length)],
+      ]);
+      if (Date.now() - start >= animDuration) clearInterval(interval);
+    }, 80);
+
+    setTimeout(() => {
+      clearInterval(interval);
+      const win = Math.random() < 0.3; // 30% peluang menang biar seru
+      let finalReels: string[];
+      let payout: any;
+      if (win) {
+        const tierRewards = TIER_REWARDS[tier];
+        const pick = tierRewards[Math.floor(Math.random() * tierRewards.length)];
+        const sym = Array.from(pick.sym)[0] || "💎";
+        finalReels = [sym, sym, sym];
+        payout = { type: "simulasi", label: `LATIHAN: ${pick.reward} (simulasi, tidak masuk akun)` };
+      } else {
+        let r1 = SYMBOLS[Math.floor(Math.random() * SYMBOLS.length)];
+        let r2 = SYMBOLS[Math.floor(Math.random() * SYMBOLS.length)];
+        let r3 = SYMBOLS[Math.floor(Math.random() * SYMBOLS.length)];
+        if (r1 === r2 && r2 === r3) r2 = SYMBOLS[(SYMBOLS.indexOf(r2) + 1) % SYMBOLS.length];
+        finalReels = [r1, r2, r3];
+        payout = { type: "none", label: "Belum hoki — coba lagi! (mode latihan)" };
+      }
+      setReels(finalReels);
+      setResult(payout);
+      setSpinning(false);
+      if (payout.type !== "none") {
+        toast({ title: "🎉 Latihan Menang!", description: payout.label });
+      }
+    }, animDuration);
+  };
+
   const spin = async () => {
+    if (freeMode) return simulateSpin();
     if (!visitorId) return toast({ title: "Login dulu", variant: "destructive" });
     if (!isUnlimited && credits < tierInfo.cost) {
       return toast({ title: "Kredit tidak cukup", description: `Butuh ${tierInfo.cost} kredit untuk tier ${tierInfo.label}`, variant: "destructive" });
