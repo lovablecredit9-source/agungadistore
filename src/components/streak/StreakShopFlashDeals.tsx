@@ -38,6 +38,36 @@ function fmt(ms: number) {
   return `${h.toString().padStart(2, "0")}:${m.toString().padStart(2, "0")}:${sec.toString().padStart(2, "0")}`;
 }
 
+const REWARD_LABELS: Record<string, { label: string; icon: string; desc: string }> = {
+  streak_coins: { label: "Streak Coins", icon: "🪙", desc: "Dipakai di Streak Shop & Spin Wheel" },
+  coins: { label: "Streak Coins", icon: "🪙", desc: "Dipakai di Streak Shop & Spin Wheel" },
+  game_credits: { label: "Kredit Game", icon: "🎮", desc: "Saldo main game (slot, mine, dll)" },
+  credits: { label: "Kredit Game", icon: "🎮", desc: "Saldo main game (slot, mine, dll)" },
+  xp: { label: "XP Season Pass", icon: "⚡", desc: "Naikin tier Season Pass" },
+  season_xp: { label: "XP Season Pass", icon: "⚡", desc: "Naikin tier Season Pass" },
+  streak_xp: { label: "XP Streak Pass", icon: "✨", desc: "Naikin tier Streak Pass" },
+  lives: { label: "Nyawa Game", icon: "❤️", desc: "Buat lanjut main kalau kalah" },
+  hearts: { label: "Nyawa Game", icon: "❤️", desc: "Buat lanjut main kalau kalah" },
+  freeze: { label: "Streak Freeze", icon: "❄️", desc: "Lindungi streak kalau lupa klaim" },
+  streak_freeze: { label: "Streak Freeze", icon: "❄️", desc: "Lindungi streak kalau lupa klaim" },
+  gems: { label: "Gems Premium", icon: "💎", desc: "Mata uang premium top up" },
+  power_up: { label: "Power Up", icon: "💥", desc: "Bantuan ekstra di game" },
+  hint: { label: "Hint Game", icon: "💡", desc: "Petunjuk soal di kuis & teka-teki" },
+  shuffle: { label: "Shuffle", icon: "🔀", desc: "Acak ulang papan/soal" },
+  skip: { label: "Skip", icon: "⏭️", desc: "Lewati 1 soal tanpa kalah" },
+  ticket: { label: "Tiket Lucky Draw", icon: "🎟️", desc: "Buat spin Lucky Draw" },
+  lucky_ticket: { label: "Tiket Lucky Draw", icon: "🎟️", desc: "Buat spin Lucky Draw" },
+  multiplier: { label: "Multiplier Bonus", icon: "✖️", desc: "Lipat gandakan reward streak" },
+};
+
+function getRewardInfo(type: string) {
+  return REWARD_LABELS[type] || {
+    label: type.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()),
+    icon: "🎁",
+    desc: "Hadiah spesial dari flash deal",
+  };
+}
+
 export default function StreakShopFlashDeals({ visitorId, onUpdate }: Props) {
   const { toast } = useToast();
   const [now, setNow] = useState(Date.now());
@@ -281,11 +311,24 @@ export default function StreakShopFlashDeals({ visitorId, onUpdate }: Props) {
               <p className="text-xs text-white/90 mb-4 leading-relaxed">{infoDeal.description}</p>
 
               <div className="space-y-2 mb-4">
-                <div className="flex justify-between items-center p-2.5 rounded-xl bg-black/30 border border-white/10">
-                  <span className="text-[11px] font-bold text-white/70">Yang Kamu Dapat</span>
-                  <span className="text-sm font-black text-yellow-200">
-                    {infoDeal.reward_value > 0 ? `+${infoDeal.reward_value}` : ""} {infoDeal.reward_type.replace(/_/g, " ")}
-                  </span>
+                <div className="p-3 rounded-xl bg-gradient-to-r from-emerald-500/30 to-cyan-500/30 border border-emerald-400/40">
+                  <div className="text-[10px] font-black uppercase tracking-wider text-emerald-100 mb-1.5">🎁 Yang Kamu Dapat</div>
+                  {(() => {
+                    const info = getRewardInfo(infoDeal.reward_type);
+                    return (
+                      <div className="flex items-center gap-3">
+                        <div className="w-11 h-11 rounded-xl bg-black/40 flex items-center justify-center text-2xl flex-shrink-0">
+                          {info.icon}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="text-base font-black text-white">
+                            +{infoDeal.reward_value} <span className="text-yellow-200">{info.label}</span>
+                          </div>
+                          <div className="text-[10px] text-white/80 leading-tight">{info.desc}</div>
+                        </div>
+                      </div>
+                    );
+                  })()}
                 </div>
                 <div className="flex justify-between items-center p-2.5 rounded-xl bg-black/30 border border-white/10">
                   <span className="text-[11px] font-bold text-white/70">Harga Normal</span>
