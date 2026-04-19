@@ -11,11 +11,13 @@ import { ServerLuckCard } from "./ServerLuckCard";
 
 const SYMBOLS = ["🍒", "🍋", "🍇", "🔔", "⭐", "💎", "7️⃣"];
 
-type Tier = "hemat" | "sedang" | "besar";
+type Tier = "hemat" | "sedang" | "besar" | "mega" | "ultra";
 const TIERS: { key: Tier; label: string; cost: number; gradient: string; desc: string }[] = [
-  { key: "hemat",  label: "Hemat",  cost: 1,  gradient: "from-emerald-500 to-teal-600",  desc: "Jackpot Rp 100" },
-  { key: "sedang", label: "Sedang", cost: 5,  gradient: "from-blue-500 to-indigo-600",   desc: "Jackpot Rp 200 + Bonus" },
-  { key: "besar",  label: "Besar",  cost: 10, gradient: "from-amber-500 to-rose-600",    desc: "Mega Jackpot Rp 500" },
+  { key: "hemat",  label: "Hemat",  cost: 1,   gradient: "from-emerald-500 to-teal-600",  desc: "Jackpot Rp 100" },
+  { key: "sedang", label: "Sedang", cost: 5,   gradient: "from-blue-500 to-indigo-600",   desc: "Jackpot Rp 200 + Bonus" },
+  { key: "besar",  label: "Besar",  cost: 10,  gradient: "from-amber-500 to-rose-600",    desc: "Mega Jackpot Rp 500" },
+  { key: "mega",   label: "Mega",   cost: 50,  gradient: "from-fuchsia-500 to-purple-700", desc: "Super Jackpot Rp 2.500" },
+  { key: "ultra",  label: "Ultra",  cost: 100, gradient: "from-rose-600 to-red-800",       desc: "Ultra Jackpot Rp 5.000" },
 ];
 
 // Tabel hadiah per tier — ditampilkan ringkas di bawah mesin
@@ -42,6 +44,24 @@ const TIER_REWARDS: Record<Tier, { sym: string; reward: string }[]> = {
     { sym: "⭐⭐⭐", reward: "15 kredit" },
     { sym: "🔔🔔🔔", reward: "+100 MB storage" },
     { sym: "🍇🍇🍇", reward: "+2 Nyawa Ekstra" },
+  ],
+  mega: [
+    { sym: "7️⃣7️⃣7️⃣", reward: "MAX Saldo Rp 2.500" },
+    { sym: "💎💎💎", reward: "Saldo Rp 1.000" },
+    { sym: "⭐⭐⭐", reward: "Saldo Rp 500" },
+    { sym: "🔔🔔🔔", reward: "+250 MB storage" },
+    { sym: "🍇🍇🍇", reward: "+5 Nyawa Ekstra" },
+    { sym: "🍋🍋🍋", reward: "60 kredit" },
+    { sym: "🍒🍒🍒", reward: "40 kredit" },
+  ],
+  ultra: [
+    { sym: "7️⃣7️⃣7️⃣", reward: "MAX Saldo Rp 5.000" },
+    { sym: "💎💎💎", reward: "Saldo Rp 2.000" },
+    { sym: "⭐⭐⭐", reward: "Saldo Rp 1.000" },
+    { sym: "🔔🔔🔔", reward: "+500 MB storage" },
+    { sym: "🍇🍇🍇", reward: "+10 Nyawa Ekstra" },
+    { sym: "🍋🍋🍋", reward: "130 kredit" },
+    { sym: "🍒🍒🍒", reward: "90 kredit" },
   ],
 };
 
@@ -112,14 +132,14 @@ export default function SlotMachineGame() {
         <p className="text-xs opacity-90 mt-1">Tier {tierInfo.label} • {tierInfo.desc}</p>
       </Card>
 
-      {/* Tier Selector */}
-      <div className="grid grid-cols-3 gap-2">
+      {/* Tier Selector — scrollable horizontal di mobile */}
+      <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1 snap-x snap-mandatory">
         {TIERS.map(t => (
           <button
             key={t.key}
             onClick={() => !spinning && setTier(t.key)}
             disabled={spinning}
-            className={`relative rounded-xl p-2 text-center border-2 transition-all ${
+            className={`relative flex-shrink-0 snap-start min-w-[80px] rounded-xl p-2 text-center border-2 transition-all ${
               tier === t.key
                 ? `bg-gradient-to-br ${t.gradient} text-white border-white/40 shadow-lg scale-105`
                 : "bg-muted/50 border-transparent hover:bg-muted"
