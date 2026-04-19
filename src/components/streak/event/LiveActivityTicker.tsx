@@ -2,17 +2,13 @@ import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Activity, Coins, Flame, Gift, Trophy, Zap } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { maskUsername } from "@/lib/mask-username";
 
 interface FeedItem {
   id: string;
   icon: any;
   color: string;
   text: string;
-}
-
-function maskId(id: string) {
-  if (!id) return "?????";
-  return id.slice(0, 4) + "···" + id.slice(-2);
 }
 
 // Templates pulled from real streak events but anonymized
@@ -33,12 +29,23 @@ export default function LiveActivityTicker() {
 
     const refreshPool = async () => {
       try {
-        const { data } = await supabase
+        const { data: streaks } = await supabase
           .from("daily_streaks")
           .select("visitor_id, current_streak, total_claims")
           .order("updated_at", { ascending: false })
           .limit(40);
-        pool = data ?? [];
+        const rows = streaks ?? [];
+        if (rows.length === 0) { pool = []; return; }
+        const ids = rows.map((r: any) => r.visitor_id);
+        const { data: profiles } = await supabase
+          .from("game_profiles")
+          .select("visitor_id, display_name")
+          .in("visitor_id", ids);
+        const nameMap = new Map<string, string>();
+        (profiles ?? []).forEach((p: any) => {
+          if (p?.visitor_id && p?.display_name) nameMap.set(p.visitor_id, p.display_name);
+        });
+        pool = rows.map((r: any) => ({ ...r, display_name: nameMap.get(r.visitor_id) || "" }));
       } catch { /* noop */ }
     };
 
@@ -46,7 +53,7 @@ export default function LiveActivityTicker() {
       if (!mounted || pool.length === 0) return;
       const row: any = pool[Math.floor(Math.random() * pool.length)];
       const tpl = TEMPLATES[Math.floor(Math.random() * TEMPLATES.length)];
-      const name = maskId(row.visitor_id);
+      const name = maskUsername(row.display_name);
       const v = row.current_streak || row.total_claims || Math.floor(Math.random() * 10) + 1;
       const item: FeedItem = {
         id: `${Date.now()}-${Math.random()}`,
