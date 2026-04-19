@@ -142,6 +142,7 @@ export default function MegaShopHub({ visitorId, onUpdate }: Props) {
           {data.skins.map((s: any) => {
             const stockLeft = s.total_stock - s.sold_count;
             const pct = (s.sold_count / s.total_stock) * 100;
+            const gemPrice = s.cost_gems || 0;
             return (
               <motion.div
                 key={s.id}
@@ -155,16 +156,29 @@ export default function MegaShopHub({ visitorId, onUpdate }: Props) {
                   <Progress value={pct} className="h-1 my-1" />
                   <p className="text-[9px] text-white/80">Tersisa {stockLeft}/{s.total_stock}</p>
                 </div>
-                <Button
-                  size="sm"
-                  disabled={s.owned || stockLeft <= 0 || busy === `s-${s.id}`}
-                  onClick={() => call("buy_skin", { skinId: s.id }, `s-${s.id}`)}
-                  className="w-full mt-1.5 h-7 text-[10px] bg-gradient-to-r from-amber-500 to-red-500 text-white"
-                >
-                  {s.owned ? <><Check className="h-3 w-3 mr-0.5" />Dimiliki</> :
-                   busy === `s-${s.id}` ? <Loader2 className="h-3 w-3 animate-spin" /> :
-                   <><Coins className="h-3 w-3 mr-0.5" />{s.cost_coins}</>}
-                </Button>
+                <div className="flex gap-1 mt-1.5">
+                  <Button
+                    size="sm"
+                    disabled={s.owned || stockLeft <= 0 || busy === `s-${s.id}-coin`}
+                    onClick={() => call("buy_skin", { skinId: s.id, paymentMethod: "coin" }, `s-${s.id}-coin`)}
+                    className="flex-1 h-7 text-[10px] bg-gradient-to-r from-amber-500 to-red-500 text-white px-1"
+                  >
+                    {s.owned ? <><Check className="h-3 w-3 mr-0.5" />Punya</> :
+                     busy === `s-${s.id}-coin` ? <Loader2 className="h-3 w-3 animate-spin" /> :
+                     <><Coins className="h-3 w-3 mr-0.5" />{s.cost_coins}</>}
+                  </Button>
+                  {!s.owned && gemPrice > 0 && (
+                    <Button
+                      size="sm"
+                      disabled={stockLeft <= 0 || busy === `s-${s.id}-gem` || userGems < gemPrice}
+                      onClick={() => call("buy_skin", { skinId: s.id, paymentMethod: "gem" }, `s-${s.id}-gem`)}
+                      className="flex-1 h-7 text-[10px] bg-gradient-to-r from-cyan-500 to-blue-500 text-white px-1 disabled:opacity-50"
+                    >
+                      {busy === `s-${s.id}-gem` ? <Loader2 className="h-3 w-3 animate-spin" /> :
+                       <><Gem className="h-3 w-3 mr-0.5" />{gemPrice}</>}
+                    </Button>
+                  )}
+                </div>
               </motion.div>
             );
           })}
