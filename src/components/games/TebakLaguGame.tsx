@@ -199,6 +199,36 @@ export default function TebakLaguGame() {
     toast({ title: "Hint ditampilkan", description: isUnlimited ? "Mode unlimited" : `-${HINT_COST} kredit` });
   };
 
+  const handleRevealAnswer = async () => {
+    if (revealed || !question) return;
+    if (!isUnlimited) {
+      if (credits < REVEAL_ANSWER_COST) {
+        toast({
+          title: "Kredit kurang",
+          description: `Butuh ${REVEAL_ANSWER_COST} kredit untuk lihat jawaban.`,
+          variant: "destructive",
+        });
+        return;
+      }
+      const ok = await useCredit();
+      if (!ok) {
+        toast({ title: "Gagal konsumsi kredit", variant: "destructive" });
+        await fetchCredits();
+        return;
+      }
+    }
+    stopTimer();
+    setRevealed(true);
+    setSelected(question.correct_title);
+    const newLives = Math.max(0, lives - 1);
+    setLives(newLives);
+    toast({
+      title: "Jawaban ditampilkan",
+      description: isUnlimited ? "Mode unlimited · -1 nyawa" : `-${REVEAL_ANSWER_COST} kredit · -1 nyawa · 0 poin`,
+    });
+    advanceAfterReveal(score, correctCount, newLives);
+  };
+
   const restart = () => {
     stopTimer();
     setRound(0);
