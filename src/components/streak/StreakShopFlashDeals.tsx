@@ -38,34 +38,62 @@ function fmt(ms: number) {
   return `${h.toString().padStart(2, "0")}:${m.toString().padStart(2, "0")}:${sec.toString().padStart(2, "0")}`;
 }
 
-const REWARD_LABELS: Record<string, { label: string; icon: string; desc: string }> = {
-  streak_coins: { label: "Streak Coins", icon: "🪙", desc: "Dipakai di Streak Shop & Spin Wheel" },
-  coins: { label: "Streak Coins", icon: "🪙", desc: "Dipakai di Streak Shop & Spin Wheel" },
-  game_credits: { label: "Kredit Game", icon: "🎮", desc: "Saldo main game (slot, mine, dll)" },
-  credits: { label: "Kredit Game", icon: "🎮", desc: "Saldo main game (slot, mine, dll)" },
-  xp: { label: "XP Season Pass", icon: "⚡", desc: "Naikin tier Season Pass" },
-  season_xp: { label: "XP Season Pass", icon: "⚡", desc: "Naikin tier Season Pass" },
-  streak_xp: { label: "XP Streak Pass", icon: "✨", desc: "Naikin tier Streak Pass" },
-  lives: { label: "Nyawa Game", icon: "❤️", desc: "Buat lanjut main kalau kalah" },
-  hearts: { label: "Nyawa Game", icon: "❤️", desc: "Buat lanjut main kalau kalah" },
-  freeze: { label: "Streak Freeze", icon: "❄️", desc: "Lindungi streak kalau lupa klaim" },
-  streak_freeze: { label: "Streak Freeze", icon: "❄️", desc: "Lindungi streak kalau lupa klaim" },
-  gems: { label: "Gems Premium", icon: "💎", desc: "Mata uang premium top up" },
-  power_up: { label: "Power Up", icon: "💥", desc: "Bantuan ekstra di game" },
-  hint: { label: "Hint Game", icon: "💡", desc: "Petunjuk soal di kuis & teka-teki" },
-  shuffle: { label: "Shuffle", icon: "🔀", desc: "Acak ulang papan/soal" },
-  skip: { label: "Skip", icon: "⏭️", desc: "Lewati 1 soal tanpa kalah" },
-  ticket: { label: "Tiket Lucky Draw", icon: "🎟️", desc: "Buat spin Lucky Draw" },
-  lucky_ticket: { label: "Tiket Lucky Draw", icon: "🎟️", desc: "Buat spin Lucky Draw" },
-  multiplier: { label: "Multiplier Bonus", icon: "✖️", desc: "Lipat gandakan reward streak" },
-};
+interface RewardInfo {
+  label: string;
+  icon: string;
+  desc: string;
+  items?: { icon: string; text: string }[];
+}
 
-function getRewardInfo(type: string) {
-  return REWARD_LABELS[type] || {
-    label: type.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()),
-    icon: "🎁",
-    desc: "Hadiah spesial dari flash deal",
-  };
+function getRewardInfo(type: string, value: number): RewardInfo {
+  switch (type) {
+    case "streak_freeze":
+      return {
+        label: "Streak Freeze",
+        icon: "❄️",
+        desc: "Lindungi streak harian kalau lupa klaim — streak gak putus!",
+        items: [{ icon: "❄️", text: `${value}× Streak Freeze (otomatis aktif kalau skip 1 hari)` }],
+      };
+    case "double_xp":
+      return {
+        label: "Double XP",
+        icon: "⚡",
+        desc: `XP streak & game digandakan 2× selama ${value} jam ke depan.`,
+        items: [
+          { icon: "⚡", text: `Boost XP 2× selama ${value} jam` },
+          { icon: "🏆", text: "Naikin tier Streak Pass / Season Pass lebih cepat" },
+        ],
+      };
+    case "mystery_bundle":
+      return {
+        label: "Mystery Bundle",
+        icon: "🎁",
+        desc: "Paket campuran power-up untuk main game lebih lama.",
+        items: [
+          { icon: "💡", text: "+5 Hint Otomatis (jawaban kuis muncul sebagian)" },
+          { icon: "❤️", text: "+3 Nyawa Ekstra (lanjut main kalau kalah)" },
+        ],
+      };
+    case "vip_pack":
+      return {
+        label: "VIP Power Pack",
+        icon: "👑",
+        desc: "Paket lengkap premium — semua power-up sekaligus.",
+        items: [
+          { icon: "💡", text: "+10 Hint Otomatis" },
+          { icon: "❤️", text: "+5 Nyawa Ekstra" },
+          { icon: "⏸️", text: "+5 Time Freeze (hentikan timer)" },
+          { icon: "❄️", text: "+2 Streak Freeze" },
+          { icon: "⚡", text: "Double XP 12 jam" },
+        ],
+      };
+    default:
+      return {
+        label: type.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()),
+        icon: "🎁",
+        desc: "Hadiah spesial dari flash deal",
+      };
+  }
 }
 
 export default function StreakShopFlashDeals({ visitorId, onUpdate }: Props) {
@@ -312,21 +340,32 @@ export default function StreakShopFlashDeals({ visitorId, onUpdate }: Props) {
 
               <div className="space-y-2 mb-4">
                 <div className="p-3 rounded-xl bg-gradient-to-r from-emerald-500/30 to-cyan-500/30 border border-emerald-400/40">
-                  <div className="text-[10px] font-black uppercase tracking-wider text-emerald-100 mb-1.5">🎁 Yang Kamu Dapat</div>
+                  <div className="text-[10px] font-black uppercase tracking-wider text-emerald-100 mb-2">🎁 Yang Kamu Dapat</div>
                   {(() => {
-                    const info = getRewardInfo(infoDeal.reward_type);
+                    const info = getRewardInfo(infoDeal.reward_type, infoDeal.reward_value);
                     return (
-                      <div className="flex items-center gap-3">
-                        <div className="w-11 h-11 rounded-xl bg-black/40 flex items-center justify-center text-2xl flex-shrink-0">
-                          {info.icon}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="text-base font-black text-white">
-                            +{infoDeal.reward_value} <span className="text-yellow-200">{info.label}</span>
+                      <>
+                        <div className="flex items-center gap-3 mb-2">
+                          <div className="w-11 h-11 rounded-xl bg-black/40 flex items-center justify-center text-2xl flex-shrink-0">
+                            {info.icon}
                           </div>
-                          <div className="text-[10px] text-white/80 leading-tight">{info.desc}</div>
+                          <div className="flex-1 min-w-0">
+                            <div className="text-sm font-black text-yellow-200">{info.label}</div>
+                            <div className="text-[10px] text-white/80 leading-tight">{info.desc}</div>
+                          </div>
                         </div>
-                      </div>
+                        {info.items && info.items.length > 0 && (
+                          <div className="space-y-1 pt-2 border-t border-white/10">
+                            <div className="text-[9px] font-black uppercase tracking-wider text-white/60 mb-1">Isi Lengkap:</div>
+                            {info.items.map((item, idx) => (
+                              <div key={idx} className="flex items-center gap-2 text-[11px] text-white">
+                                <span className="text-base flex-shrink-0">{item.icon}</span>
+                                <span className="font-semibold">{item.text}</span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </>
                     );
                   })()}
                 </div>
