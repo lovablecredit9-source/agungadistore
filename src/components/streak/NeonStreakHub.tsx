@@ -103,6 +103,7 @@ interface Challenge {
 export default function NeonStreakHub({ visitorId, forcedView }: Props) {
   const { toast } = useToast();
   const [coins, setCoins] = useState(0);
+  const [gems, setGems] = useState(0);
   const [multiplier, setMultiplier] = useState(1);
   const [currentStreak, setCurrentStreak] = useState(0);
   const [boxOpened, setBoxOpened] = useState(false);
