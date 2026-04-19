@@ -4489,6 +4489,7 @@ export type Database = {
           created_at: string
           id: string
           is_equipped: boolean
+          payment_method: string
           skin_id: string
           visitor_id: string
         }
@@ -4497,6 +4498,7 @@ export type Database = {
           created_at?: string
           id?: string
           is_equipped?: boolean
+          payment_method?: string
           skin_id: string
           visitor_id: string
         }
@@ -4505,6 +4507,7 @@ export type Database = {
           created_at?: string
           id?: string
           is_equipped?: boolean
+          payment_method?: string
           skin_id?: string
           visitor_id?: string
         }
