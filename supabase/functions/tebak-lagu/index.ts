@@ -79,8 +79,9 @@ Format JSON ketat (TANPA markdown, TANPA teks lain):
     },
     body: JSON.stringify({
       model: "google/gemini-2.5-pro",
+      temperature: 1.1,
       messages: [
-        { role: "system", content: "Kamu adalah pakar musik pop Indonesia 1990-2026. Hanya gunakan judul lagu dan nama artis yang BENAR-BENAR ADA dan akurat. Jangan mengarang judul/artis. Selalu balas dengan JSON valid saja, tanpa markdown." },
+        { role: "system", content: "Kamu adalah pakar musik pop Indonesia 1990-2026 dengan pengetahuan akurat tentang katalog lagu, judul, penyanyi, dan lirik asli. ATURAN MUTLAK: (1) Lirik yang kamu kutip HARUS benar-benar berasal dari lagu yang kamu sebut — jangan pernah salah memasangkan lirik dengan artis. Contoh: lirik 'terjadi lagi kisah lama yang terulang kembali' adalah lagu 'Kisah Cintaku' milik Peterpan/NOAH (Ariel), BUKAN artis lain. (2) Jika kamu tidak 100% yakin lirik itu milik artis siapa, GANTI ke lagu lain yang kamu yakin penuh. (3) Variasikan soal — JANGAN ulang lagu yang sama. (4) Selalu balas JSON valid saja, tanpa markdown, tanpa teks tambahan." },
         { role: "user", content: prompt },
       ],
     }),
