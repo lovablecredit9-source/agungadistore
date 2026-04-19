@@ -364,12 +364,21 @@ export default function TebakLaguGame() {
             <Loader2 className="w-3 h-3 animate-spin" /> Menyimpan skor ke leaderboard...
           </div>
         )}
-        <Button
-          onClick={restart}
-          className="w-full h-11 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-black"
-        >
-          <RotateCcw className="w-4 h-4 mr-2" /> Main Lagi
-        </Button>
+        <div className="grid grid-cols-2 gap-2">
+          <Button
+            onClick={() => restart(false)}
+            variant="outline"
+            className="h-11 border-purple-400/50 text-purple-100 hover:bg-purple-800/40 font-bold"
+          >
+            Ganti Mode
+          </Button>
+          <Button
+            onClick={() => restart(true)}
+            className="h-11 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-black"
+          >
+            <RotateCcw className="w-4 h-4 mr-1" /> Main Lagi
+          </Button>
+        </div>
       </motion.div>
     );
   }
