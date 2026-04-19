@@ -87,11 +87,12 @@ Deno.serve(async (req) => {
         }
         await admin.from("daily_streaks").update({ streak_coins: (streak.streak_coins || 0) - COST_COINS }).eq("id", streak.id);
       } else if (paymentMethod === "gems") {
-        const { data: profile } = await admin.from("game_profiles").select("id, gems, display_name").eq("visitor_id", visitorId).maybeSingle();
-        if (!profile || (profile.gems || 0) < COST_GEMS) {
+        const { data: totalGems } = await admin.rpc("get_account_gems", { p_visitor_id: visitorId });
+        const have = Number(totalGems) || 0;
+        if (have < COST_GEMS) {
           return Response.json({ error: `Butuh ${COST_GEMS} gem` }, { status: 400, headers: corsHeaders });
         }
-        await admin.from("game_profiles").update({ gems: (profile.gems || 0) - COST_GEMS }).eq("id", profile.id);
+        await admin.rpc("add_account_gems", { p_visitor_id: visitorId, p_amount: -COST_GEMS });
       } else if (paymentMethod === "balance") {
         // PIN required
         const { data: pinRow } = await admin.from("user_pins").select("pin_hash").eq("visitor_id", visitorId).maybeSingle();
@@ -130,12 +131,7 @@ Deno.serve(async (req) => {
           await admin.from("daily_streaks").insert({ visitor_id: visitorId, streak_coins: winning.reward_value });
         }
       } else if (winning.reward_type === "gems") {
-        const { data: gp } = await admin.from("game_profiles").select("id, gems").eq("visitor_id", visitorId).maybeSingle();
-        if (gp) {
-          await admin.from("game_profiles").update({ gems: (gp.gems || 0) + winning.reward_value }).eq("id", gp.id);
-        } else {
-          await admin.from("game_profiles").insert({ visitor_id: visitorId, display_name: displayName, gems: winning.reward_value });
-        }
+        await admin.rpc("add_account_gems", { p_visitor_id: visitorId, p_amount: winning.reward_value });
         await admin.from("gem_transactions").insert({ visitor_id: visitorId, type: "earn", amount: winning.reward_value, description: "Lucky Wheel Win" });
       } else if (winning.reward_type === "freeze_token") {
         const { data: ds } = await admin.from("daily_streaks").select("id, freeze_count").eq("visitor_id", visitorId).maybeSingle();

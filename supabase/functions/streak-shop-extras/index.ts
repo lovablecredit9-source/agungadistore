@@ -59,9 +59,12 @@ async function deductCost(admin: any, visitorId: string, method: string, amount:
     return null;
   }
   if (method === "gem") {
-    const p = await getProfile(admin, visitorId);
-    if ((p?.gems || 0) < amount) return `Gems kurang. Butuh ${amount} 💎, punya ${p?.gems || 0} 💎`;
-    await admin.from("game_profiles").update({ gems: p.gems - amount }).eq("visitor_id", visitorId);
+    // Cek saldo gem dari akun (bukan visitor langsung)
+    const { data: totalGems } = await admin.rpc("get_account_gems", { p_visitor_id: visitorId });
+    const have = Number(totalGems) || 0;
+    if (have < amount) return `Gems kurang. Butuh ${amount} 💎, punya ${have} 💎`;
+    const { error: rpcErr } = await admin.rpc("add_account_gems", { p_visitor_id: visitorId, p_amount: -amount });
+    if (rpcErr) return `Gems kurang atau gagal memotong`;
     await admin.from("gem_transactions").insert({ visitor_id: visitorId, amount: -amount, type: "shop", description: desc });
     return null;
   }
@@ -83,8 +86,7 @@ async function refundCost(admin: any, visitorId: string, method: string, amount:
     const s = await getStreak(admin, visitorId);
     await admin.from("daily_streaks").update({ streak_coins: (s?.streak_coins || 0) + amount }).eq("visitor_id", visitorId);
   } else if (method === "gem") {
-    const p = await getProfile(admin, visitorId);
-    await admin.from("game_profiles").update({ gems: (p?.gems || 0) + amount }).eq("visitor_id", visitorId);
+    await admin.rpc("add_account_gems", { p_visitor_id: visitorId, p_amount: amount });
     await admin.from("gem_transactions").insert({ visitor_id: visitorId, amount, type: "refund", description: "Auction refund" });
   } else if (method === "balance") {
     const bal = await getBalance(admin, visitorId);
@@ -97,8 +99,7 @@ async function applyReward(admin: any, visitorId: string, type: string, value: n
     const s = await getStreak(admin, visitorId);
     await admin.from("daily_streaks").update({ streak_coins: (s?.streak_coins || 0) + value }).eq("visitor_id", visitorId);
   } else if (type === "gems") {
-    const p = await getProfile(admin, visitorId);
-    await admin.from("game_profiles").update({ gems: (p?.gems || 0) + value }).eq("visitor_id", visitorId);
+    await admin.rpc("add_account_gems", { p_visitor_id: visitorId, p_amount: value });
     await admin.from("gem_transactions").insert({ visitor_id: visitorId, amount: value, type: "reward", description: label });
   } else if (type === "freeze") {
     const s = await getStreak(admin, visitorId);
@@ -142,7 +143,7 @@ Deno.serve(async (req) => {
     // ====== LIST ======
     if (action === "list") {
       const today = todayWIB();
-      const [boxesRes, openingsRes, auctionsRes, tiersRes, progRes, refRes, refUsesRes, profileRes, streakRes] = await Promise.all([
+      const [boxesRes, openingsRes, auctionsRes, tiersRes, progRes, refRes, refUsesRes, profileRes, streakRes, gemsRes] = await Promise.all([
         admin.from("streak_mystery_boxes").select("*").eq("is_active", true).order("sort_order"),
         admin.from("streak_mystery_openings").select("box_id").eq("visitor_id", visitorId).eq("opened_date", today),
         admin.from("streak_auctions").select("*").eq("is_active", true).gte("ends_at", new Date().toISOString()).order("ends_at"),
@@ -150,9 +151,11 @@ Deno.serve(async (req) => {
         admin.from("streak_loyalty_progress").select("*").eq("visitor_id", visitorId).maybeSingle(),
         admin.from("streak_referral_codes").select("*").eq("visitor_id", visitorId).maybeSingle(),
         admin.from("streak_referral_codes").select("display_name,total_referred,total_coins_earned,total_gems_earned").order("total_referred", { ascending: false }).limit(10),
-        admin.from("game_profiles").select("gems,display_name").eq("visitor_id", visitorId).maybeSingle(),
+        admin.from("game_profiles").select("display_name").eq("visitor_id", visitorId).maybeSingle(),
         admin.from("daily_streaks").select("streak_coins,freeze_count").eq("visitor_id", visitorId).maybeSingle(),
+        admin.rpc("get_account_gems", { p_visitor_id: visitorId }),
       ]);
+      const accountGems = Number(gemsRes?.data) || 0;
 
       // count openings per box
       const usage: Record<string, number> = {};
@@ -195,7 +198,7 @@ Deno.serve(async (req) => {
         loyalty_progress: progress,
         my_referral: myRef,
         referral_leaderboard: refUsesRes.data || [],
-        user_gems: profileRes.data?.gems || 0,
+        user_gems: accountGems,
         user_coins: streakRes.data?.streak_coins || 0,
       }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }

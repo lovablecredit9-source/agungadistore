@@ -6172,6 +6172,10 @@ export type Database = {
       }
     }
     Functions: {
+      add_account_gems: {
+        Args: { p_amount: number; p_visitor_id: string }
+        Returns: number
+      }
       create_notification: {
         Args: {
           p_message: string
