@@ -480,7 +480,7 @@ export default function TebakLaguGame() {
       )}
 
       <p className="text-[9px] text-purple-200/60 mt-4 text-center">
-        🎮 45 detik · 3 nyawa · Hint pertama gratis · Hint lagi {HINT_COST} kredit
+        🎮 45 detik · 3 nyawa · Hint pertama gratis · Hint {HINT_COST} kredit · Lihat jawaban {REVEAL_ANSWER_COST} kredit
       </p>
     </motion.div>
   );
