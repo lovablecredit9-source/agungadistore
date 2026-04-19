@@ -12,7 +12,6 @@ function getWIBDateStr(): string {
 
 // User dianggap Premium kalau punya Streak Pass Premium (season aktif) ATAU Game Season Pass Premium
 async function checkPremium(admin: ReturnType<typeof createClient>, visitorId: string): Promise<boolean> {
-  // 1. Game Season Pass premium
   const { data: gamePass } = await admin
     .from("game_season_pass")
     .select("is_premium")
@@ -20,7 +19,6 @@ async function checkPremium(admin: ReturnType<typeof createClient>, visitorId: s
     .maybeSingle();
   if (gamePass?.is_premium) return true;
 
-  // 2. Streak Pass premium pada season yang sedang aktif
   const { data: season } = await admin
     .from("streak_pass_seasons")
     .select("id")
@@ -60,7 +58,7 @@ Deno.serve(async (req) => {
     const today = getWIBDateStr();
 
     if (action === "list") {
-      const [{ data: deals }, { data: redemptions }, isPremium] = await Promise.all([
+      const [{ data: deals }, { data: redemptions }, isPremium, { data: prof }] = await Promise.all([
         admin.from("streak_flash_deals").select("*").eq("is_active", true).order("sort_order", { ascending: true }),
         admin
           .from("flash_deal_redemptions")
@@ -68,6 +66,7 @@ Deno.serve(async (req) => {
           .eq("visitor_id", visitorId)
           .eq("redemption_date", today),
         checkPremium(admin, visitorId),
+        admin.from("game_profiles").select("gems").eq("visitor_id", visitorId).maybeSingle(),
       ]);
 
       const claimedToday = new Set((redemptions ?? []).map((r: any) => r.deal_id));
@@ -85,18 +84,20 @@ Deno.serve(async (req) => {
           };
         }),
         is_premium: isPremium,
+        user_gems: prof?.gems ?? 0,
         date: today,
       }, { headers: corsHeaders });
     }
 
     if (action === "purchase") {
-      const { dealId } = body;
+      const { dealId, paymentMethod } = body;
+      const payMethod = paymentMethod === "gem" ? "gem" : "coin";
       if (!dealId) return Response.json({ error: "dealId required" }, { status: 400, headers: corsHeaders });
 
       const { data: deal } = await admin.from("streak_flash_deals").select("*").eq("id", dealId).eq("is_active", true).maybeSingle();
       if (!deal) return Response.json({ error: "Flash deal tidak ditemukan" }, { status: 404, headers: corsHeaders });
 
-      // Premium check (kalau deal butuh premium)
+      // Premium check
       if (deal.requires_premium) {
         const isPremium = await checkPremium(admin, visitorId);
         if (!isPremium) {
@@ -104,7 +105,7 @@ Deno.serve(async (req) => {
         }
       }
 
-      // Daily limit check
+      // Daily limit check (combined for both payment methods)
       const { count: usedToday } = await admin
         .from("flash_deal_redemptions")
         .select("id", { count: "exact", head: true })
@@ -116,13 +117,33 @@ Deno.serve(async (req) => {
         return Response.json({ error: `Hanya bisa beli ${deal.daily_limit}x per hari. Coba lagi besok!` }, { status: 400, headers: corsHeaders });
       }
 
-      const cost = Math.floor(deal.original_cost * (1 - deal.discount_pct / 100));
+      const coinCost = Math.floor(deal.original_cost * (1 - deal.discount_pct / 100));
+      const gemCost = deal.cost_gems || 0;
 
-      // Coin check
+      // Get streak (still needed for rewards)
       const { data: streak } = await admin.from("daily_streaks").select("*").eq("visitor_id", visitorId).maybeSingle();
       if (!streak) return Response.json({ error: "Mulai streak dulu" }, { status: 400, headers: corsHeaders });
-      if ((streak.streak_coins || 0) < cost) {
-        return Response.json({ error: `Coins kurang. Butuh ${cost}, kamu punya ${streak.streak_coins || 0}` }, { status: 400, headers: corsHeaders });
+
+      let costPaid = 0;
+      let costLabel = "";
+
+      if (payMethod === "gem") {
+        if (gemCost <= 0) {
+          return Response.json({ error: "Deal ini belum tersedia untuk pembayaran Gem" }, { status: 400, headers: corsHeaders });
+        }
+        const { data: prof } = await admin.from("game_profiles").select("gems").eq("visitor_id", visitorId).maybeSingle();
+        const userGems = prof?.gems ?? 0;
+        if (userGems < gemCost) {
+          return Response.json({ error: `Gem kurang. Butuh ${gemCost} 💎, kamu punya ${userGems} 💎` }, { status: 400, headers: corsHeaders });
+        }
+        costPaid = gemCost;
+        costLabel = `${gemCost} 💎`;
+      } else {
+        if ((streak.streak_coins || 0) < coinCost) {
+          return Response.json({ error: `Coins kurang. Butuh ${coinCost} 🪙, kamu punya ${streak.streak_coins || 0} 🪙` }, { status: 400, headers: corsHeaders });
+        }
+        costPaid = coinCost;
+        costLabel = `${coinCost} 🪙`;
       }
 
       // Apply reward
@@ -167,27 +188,40 @@ Deno.serve(async (req) => {
         return Response.json({ error: "Tipe hadiah tidak dikenal" }, { status: 400, headers: corsHeaders });
       }
 
-      // Deduct coins
-      await admin.from("daily_streaks").update({ streak_coins: (streak.streak_coins || 0) - cost }).eq("id", streak.id);
+      // Deduct payment
+      if (payMethod === "gem") {
+        const { data: prof } = await admin.from("game_profiles").select("gems").eq("visitor_id", visitorId).maybeSingle();
+        await admin.from("game_profiles").update({ gems: (prof?.gems || 0) - costPaid }).eq("visitor_id", visitorId);
+        await admin.from("gem_transactions").insert({
+          visitor_id: visitorId,
+          amount: -costPaid,
+          type: "flash_deal",
+          description: `Flash Deal: ${deal.name} (-${costPaid} 💎)`,
+          reference_id: dealId,
+        });
+      } else {
+        await admin.from("daily_streaks").update({ streak_coins: (streak.streak_coins || 0) - costPaid }).eq("id", streak.id);
+      }
 
       // Log redemption
       await admin.from("flash_deal_redemptions").insert({
         visitor_id: visitorId,
         deal_id: dealId,
         redemption_date: today,
-        cost_paid: cost,
+        cost_paid: costPaid,
         reward_type: deal.reward_type,
         reward_value: deal.reward_value,
+        payment_method: payMethod,
       });
 
       await admin.from("notifications").insert({
         visitor_id: visitorId,
         title: `⚡ Flash Deal: ${deal.name}`,
-        message: rewardSummary,
+        message: `${rewardSummary} — bayar ${costLabel}`,
         type: "flash_deal",
       });
 
-      return Response.json({ success: true, cost, rewardSummary, deal }, { headers: corsHeaders });
+      return Response.json({ success: true, cost: costPaid, payment_method: payMethod, costLabel, rewardSummary, deal }, { headers: corsHeaders });
     }
 
     return Response.json({ error: "Unknown action" }, { status: 400, headers: corsHeaders });

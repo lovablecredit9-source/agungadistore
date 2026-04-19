@@ -13,6 +13,7 @@ interface Deal {
   icon: string;
   original_cost: number;
   discount_pct: number;
+  cost_gems: number;
   reward_type: string;
   reward_value: number;
   badge: string;
@@ -101,9 +102,11 @@ export default function StreakShopFlashDeals({ visitorId, onUpdate }: Props) {
   const [now, setNow] = useState(Date.now());
   const [deals, setDeals] = useState<Deal[]>([]);
   const [isPremium, setIsPremium] = useState(false);
+  const [userGems, setUserGems] = useState(0);
   const [loading, setLoading] = useState(true);
   const [buying, setBuying] = useState<string | null>(null);
   const [infoDeal, setInfoDeal] = useState<Deal | null>(null);
+  const [payMethod, setPayMethod] = useState<Record<string, "coin" | "gem">>({});
 
   useEffect(() => {
     const t = setInterval(() => setNow(Date.now()), 1000);
@@ -129,6 +132,7 @@ export default function StreakShopFlashDeals({ visitorId, onUpdate }: Props) {
       if (error) throw error;
       setDeals((data as any).deals || []);
       setIsPremium(!!(data as any).is_premium);
+      setUserGems((data as any).user_gems ?? 0);
     } catch (e) {
       console.error(e);
     } finally {
@@ -147,10 +151,11 @@ export default function StreakShopFlashDeals({ visitorId, onUpdate }: Props) {
       }
       return;
     }
+    const method = payMethod[deal.id] || "coin";
     setBuying(deal.id);
     try {
       const { data, error } = await supabase.functions.invoke("flash-deal-purchase", {
-        body: { action: "purchase", visitorId, dealId: deal.id },
+        body: { action: "purchase", visitorId, dealId: deal.id, paymentMethod: method },
       });
       if (error) throw error;
       if ((data as any)?.error) throw new Error((data as any).error);
