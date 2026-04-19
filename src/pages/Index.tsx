@@ -3159,7 +3159,7 @@ const Index = () => {
                 </div>
                 <div>
                   <h2 className="text-xl font-extrabold text-white tracking-tight">Update Web</h2>
-                  <p className="text-white/70 text-xs font-medium mt-0.5">Fitur tambahan terbaru tanggal 17 April 2026</p>
+                  <p className="text-white/70 text-xs font-medium mt-0.5">Fitur tambahan terbaru tanggal 19 April 2026</p>
                 </div>
               </div>
             </div>
