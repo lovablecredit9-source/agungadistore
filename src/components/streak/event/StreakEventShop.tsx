@@ -363,25 +363,36 @@ export default function StreakEventShop({ visitorId, onUpdate }: Props) {
                   <Heart className={`h-4 w-4 ${b.is_wishlisted ? "fill-pink-400 text-pink-400" : "text-white/40"}`} />
                 </button>
               </div>
-              <div className="flex items-center justify-between mt-2 pt-2 border-t border-white/10 relative">
+              <div className="flex items-center justify-between mt-2 pt-2 border-t border-white/10 relative gap-2">
                 <div className="flex items-center gap-1.5">
-                  <span className="text-base font-bold text-yellow-300 flex items-center gap-0.5">
-                    <Coins className="h-3.5 w-3.5" />{b.final_price}
-                  </span>
                   {b.tier_discount_pct > 0 && (
                     <Badge className="bg-cyan-500/20 text-cyan-100 border-cyan-400/40 text-[9px] px-1 py-0 h-4">
                       -{b.tier_discount_pct}%
                     </Badge>
                   )}
                 </div>
-                <Button
-                  size="sm"
-                  disabled={busyId === `box:${b.id}`}
-                  onClick={() => openBox(b)}
-                  className="bg-gradient-to-r from-purple-500 to-violet-600 text-white text-xs h-8"
-                >
-                  {busyId === `box:${b.id}` ? <Loader2 className="h-3 w-3 animate-spin" /> : "Buka 🎲"}
-                </Button>
+                <div className="flex gap-1.5">
+                  <Button
+                    size="sm"
+                    disabled={busyId === `box:${b.id}:coin` || userCoins < b.final_price}
+                    onClick={() => openBox(b, "coin")}
+                    className="bg-yellow-500/20 hover:bg-yellow-500/30 border border-yellow-400/50 text-yellow-100 text-[11px] font-bold h-8 px-2 disabled:opacity-50"
+                  >
+                    {busyId === `box:${b.id}:coin` ? <Loader2 className="h-3 w-3 animate-spin" /> :
+                      <span className="flex items-center gap-1 tabular-nums"><Coins className="h-3.5 w-3.5" />{b.final_price}</span>}
+                  </Button>
+                  {b.final_gem_price > 0 && (
+                    <Button
+                      size="sm"
+                      disabled={busyId === `box:${b.id}:gem` || userGems < b.final_gem_price}
+                      onClick={() => openBox(b, "gem")}
+                      className="bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-400/50 text-cyan-100 text-[11px] font-bold h-8 px-2 disabled:opacity-50"
+                    >
+                      {busyId === `box:${b.id}:gem` ? <Loader2 className="h-3 w-3 animate-spin" /> :
+                        <span className="flex items-center gap-1 tabular-nums"><Gem className="h-3.5 w-3.5" />{b.final_gem_price}</span>}
+                    </Button>
+                  )}
+                </div>
               </div>
             </motion.div>
           ))}
