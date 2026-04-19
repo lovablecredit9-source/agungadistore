@@ -361,18 +361,42 @@ Deno.serve(async (req) => {
 
     // OPEN MYSTERY BOX
     if (action === "open_box") {
-      const { boxId } = body;
+      const { boxId, paymentMethod } = body;
+      const payMethod = paymentMethod === "gem" ? "gem" : "coin";
       const { data: box } = await admin.from("event_shop_mystery_boxes").select("*").eq("id", boxId).eq("is_active", true).maybeSingle();
       if (!box) return Response.json({ error: "Mystery box tidak ditemukan" }, { status: 404, headers: corsHeaders });
 
       const lifetimeSpent = await getLifetimeSpent(admin, visitorId);
       const tierInfo = calculateTier(lifetimeSpent);
-      const finalCost = Math.max(1, Math.floor(box.price_coins * (1 - tierInfo.discount / 100)));
 
       const { data: streak } = await admin.from("daily_streaks").select("*").eq("visitor_id", visitorId).maybeSingle();
       if (!streak) return Response.json({ error: "Mulai streak dulu" }, { status: 400, headers: corsHeaders });
-      if ((streak.streak_coins || 0) < finalCost) {
-        return Response.json({ error: `Coins kurang. Butuh ${finalCost}, kamu punya ${streak.streak_coins || 0}` }, { status: 400, headers: corsHeaders });
+
+      let finalCost = 0;
+      if (payMethod === "gem") {
+        const gemBase = (box as any).cost_gems || 0;
+        if (gemBase <= 0) return Response.json({ error: "Pembayaran gem belum tersedia untuk box ini" }, { status: 400, headers: corsHeaders });
+        finalCost = Math.max(1, Math.floor(gemBase * (1 - tierInfo.discount / 100)));
+        const { data: gp } = await admin.from("game_profiles").select("gems").eq("visitor_id", visitorId).maybeSingle();
+        const userGems = (gp as any)?.gems || 0;
+        if (userGems < finalCost) {
+          return Response.json({ error: `Gem kurang. Butuh ${finalCost} 💎, kamu punya ${userGems} 💎.` }, { status: 400, headers: corsHeaders });
+        }
+        await admin.from("game_profiles").update({ gems: userGems - finalCost }).eq("visitor_id", visitorId);
+        await admin.from("gem_transactions").insert({
+          visitor_id: visitorId,
+          amount: -finalCost,
+          type: "shop",
+          description: `Mystery Box: ${box.name} (-${finalCost} 💎)`,
+          reference_id: boxId,
+        });
+      } else {
+        finalCost = Math.max(1, Math.floor(box.price_coins * (1 - tierInfo.discount / 100)));
+        if ((streak.streak_coins || 0) < finalCost) {
+          return Response.json({ error: `Coins kurang. Butuh ${finalCost}, kamu punya ${streak.streak_coins || 0}` }, { status: 400, headers: corsHeaders });
+        }
+        await admin.from("daily_streaks").update({ streak_coins: (streak.streak_coins || 0) - finalCost }).eq("id", streak.id);
+        streak.streak_coins = (streak.streak_coins || 0) - finalCost;
       }
 
       // Weighted draw
@@ -385,10 +409,7 @@ Deno.serve(async (req) => {
         if (r <= 0) { chosen = p; break; }
       }
 
-      // Deduct coins, then apply
-      const newCoins = (streak.streak_coins || 0) - finalCost;
-      await admin.from("daily_streaks").update({ streak_coins: newCoins }).eq("id", streak.id);
-      await applyReward(admin, visitorId, chosen.reward_type, chosen.reward_value, { ...streak, streak_coins: newCoins });
+      await applyReward(admin, visitorId, chosen.reward_type, chosen.reward_value, streak);
 
       await admin.from("event_shop_mystery_openings").insert({
         visitor_id: visitorId,
@@ -398,9 +419,10 @@ Deno.serve(async (req) => {
         reward_type: chosen.reward_type,
         reward_value: chosen.reward_value,
         reward_label: chosen.reward_label,
+        payment_method: payMethod,
       });
 
-      await bumpSpender(admin, visitorId, finalCost);
+      if (payMethod === "coin") await bumpSpender(admin, visitorId, finalCost);
       await pushActivity(admin, visitorId, "mystery", `${box.name} → ${chosen.reward_label}`, chosen.icon || box.icon, chosen.rarity);
 
       if (chosen.rarity === "legendary") {
@@ -412,7 +434,7 @@ Deno.serve(async (req) => {
         });
       }
 
-      return Response.json({ success: true, cost: finalCost, reward: chosen }, { headers: corsHeaders });
+      return Response.json({ success: true, cost: finalCost, paymentMethod: payMethod, reward: chosen }, { headers: corsHeaders });
     }
 
     // BUY DAILY ROTATION ITEM
