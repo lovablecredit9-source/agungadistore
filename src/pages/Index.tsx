@@ -3159,7 +3159,7 @@ const Index = () => {
                 </div>
                 <div>
                   <h2 className="text-xl font-extrabold text-white tracking-tight">Update Web</h2>
-                  <p className="text-white/70 text-xs font-medium mt-0.5">Fitur tambahan terbaru tanggal 17 April 2026</p>
+                  <p className="text-white/70 text-xs font-medium mt-0.5">Fitur tambahan terbaru tanggal 19 April 2026</p>
                 </div>
               </div>
             </div>
@@ -3171,7 +3171,18 @@ const Index = () => {
               
               {[
                 {
-                  date: "17 April 2026", version: "v2.6", isNew: true,
+                  date: "19 April 2026", version: "v2.7", isNew: true,
+                  items: [
+                    "✨ Gem Streak kini terpisah per akun balance — login akun beda, saldo gem beda",
+                    "✨ Migrasi otomatis: gem lama digabung ke akun balance pertama",
+                    "✨ Sinkronisasi gem otomatis saat ganti akun (trigger login)",
+                    "🔧 Perbaikan bug Gem tampil 0 di Mystery Box, Auction House & Lucky Wheel",
+                    "🔧 Edge function streak-shop, lucky-wheel & gem-purchase pakai sumber gem akun",
+                    "🔧 Proteksi anti saldo gem negatif di server",
+                  ]
+                },
+                {
+                  date: "17 April 2026", version: "v2.6",
                   items: [
                     "✨ Hero beranda baru dengan tampilan Vibrant Spatial Commerce",
                     "✨ Badge '100% Trusted Store' ditambahkan di bagian atas beranda",
