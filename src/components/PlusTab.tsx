@@ -372,7 +372,7 @@ export default function PlusTab() {
         {storagePackages.map(pkg => (
           <PackageButton
             key={pkg.id}
-            label={`${pkg.name} (${pkg.storage_mb} MB)`}
+            label={`${pkg.name} (${pkg.storage_mb >= 1024 ? `${(pkg.storage_mb/1024).toFixed(0)} GB` : `${pkg.storage_mb} MB`} • 30 hari)`}
             price={pkg.price}
             buying={storageBuying === pkg.id}
             anyBuying={!!storageBuying}
