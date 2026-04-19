@@ -166,22 +166,35 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Deduct coins
-    const { error: deductErr } = await admin.from("daily_streaks").update({
-      streak_coins: coins - item.cost_coins,
-    }).eq("id", streak.id);
-    if (deductErr) {
-      return Response.json({ error: `Gagal memotong coins: ${deductErr.message}` }, { status: 500, headers: corsHeaders });
+    // Deduct payment (coin or gem)
+    if (payMethod === "gem") {
+      const { data: prof } = await admin.from("game_profiles").select("gems").eq("visitor_id", visitorId).maybeSingle();
+      await admin.from("game_profiles").update({ gems: (prof?.gems || 0) - costPaidGems }).eq("visitor_id", visitorId);
+      await admin.from("gem_transactions").insert({
+        visitor_id: visitorId,
+        amount: -costPaidGems,
+        type: "shop",
+        description: `Streak Shop: ${item.name} (-${costPaidGems} 💎)`,
+        reference_id: itemId,
+      });
+    } else {
+      const { error: deductErr } = await admin.from("daily_streaks").update({
+        streak_coins: coins - costPaidCoins,
+      }).eq("id", streak.id);
+      if (deductErr) {
+        return Response.json({ error: `Gagal memotong coins: ${deductErr.message}` }, { status: 500, headers: corsHeaders });
+      }
     }
 
     // Log redemption
     await admin.from("streak_shop_redemptions").insert({
       visitor_id: visitorId,
       item_id: itemId,
-      cost_coins: item.cost_coins,
+      cost_coins: costPaidCoins,
       reward_type: item.reward_type,
       reward_value: item.reward_value,
       reward_code: rewardCode,
+      payment_method: payMethod,
     });
 
     await admin.from("notifications").insert({
