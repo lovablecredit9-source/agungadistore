@@ -595,6 +595,92 @@ export type Database = {
         }
         Relationships: []
       }
+      event_shop_achievement_items: {
+        Row: {
+          created_at: string
+          description: string
+          icon: string
+          id: string
+          is_active: boolean
+          name: string
+          price_coins: number
+          reward_label: string
+          reward_type: string
+          reward_value: number
+          sort_order: number
+          unlock_requirement: string
+          unlock_threshold: number
+        }
+        Insert: {
+          created_at?: string
+          description?: string
+          icon?: string
+          id?: string
+          is_active?: boolean
+          name: string
+          price_coins?: number
+          reward_label?: string
+          reward_type: string
+          reward_value?: number
+          sort_order?: number
+          unlock_requirement?: string
+          unlock_threshold?: number
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          icon?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          price_coins?: number
+          reward_label?: string
+          reward_type?: string
+          reward_value?: number
+          sort_order?: number
+          unlock_requirement?: string
+          unlock_threshold?: number
+        }
+        Relationships: []
+      }
+      event_shop_achievement_purchases: {
+        Row: {
+          cost_paid: number
+          created_at: string
+          id: string
+          item_id: string
+          reward_type: string
+          reward_value: number
+          visitor_id: string
+        }
+        Insert: {
+          cost_paid: number
+          created_at?: string
+          id?: string
+          item_id: string
+          reward_type: string
+          reward_value?: number
+          visitor_id: string
+        }
+        Update: {
+          cost_paid?: number
+          created_at?: string
+          id?: string
+          item_id?: string
+          reward_type?: string
+          reward_value?: number
+          visitor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_shop_achievement_purchases_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "event_shop_achievement_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       event_shop_activity_feed: {
         Row: {
           action_type: string
@@ -823,6 +909,220 @@ export type Database = {
         }
         Relationships: []
       }
+      event_shop_flash_deals: {
+        Row: {
+          created_at: string
+          description: string
+          ends_at: string
+          flash_price: number
+          icon: string
+          id: string
+          is_active: boolean
+          name: string
+          original_price: number
+          reward_label: string
+          reward_type: string
+          reward_value: number
+          sold_count: number
+          sort_order: number
+          starts_at: string
+          total_stock: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string
+          ends_at?: string
+          flash_price?: number
+          icon?: string
+          id?: string
+          is_active?: boolean
+          name: string
+          original_price?: number
+          reward_label?: string
+          reward_type: string
+          reward_value?: number
+          sold_count?: number
+          sort_order?: number
+          starts_at?: string
+          total_stock?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          ends_at?: string
+          flash_price?: number
+          icon?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          original_price?: number
+          reward_label?: string
+          reward_type?: string
+          reward_value?: number
+          sold_count?: number
+          sort_order?: number
+          starts_at?: string
+          total_stock?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      event_shop_flash_purchases: {
+        Row: {
+          cost_paid: number
+          created_at: string
+          deal_id: string
+          id: string
+          reward_type: string
+          reward_value: number
+          visitor_id: string
+        }
+        Insert: {
+          cost_paid: number
+          created_at?: string
+          deal_id: string
+          id?: string
+          reward_type: string
+          reward_value?: number
+          visitor_id: string
+        }
+        Update: {
+          cost_paid?: number
+          created_at?: string
+          deal_id?: string
+          id?: string
+          reward_type?: string
+          reward_value?: number
+          visitor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_shop_flash_purchases_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "event_shop_flash_deals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      event_shop_gacha_history: {
+        Row: {
+          cost_paid: number
+          created_at: string
+          id: string
+          item_id: string
+          rarity: string
+          reward_label: string
+          reward_type: string
+          reward_value: number
+          visitor_id: string
+        }
+        Insert: {
+          cost_paid: number
+          created_at?: string
+          id?: string
+          item_id: string
+          rarity: string
+          reward_label: string
+          reward_type: string
+          reward_value?: number
+          visitor_id: string
+        }
+        Update: {
+          cost_paid?: number
+          created_at?: string
+          id?: string
+          item_id?: string
+          rarity?: string
+          reward_label?: string
+          reward_type?: string
+          reward_value?: number
+          visitor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_shop_gacha_history_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "event_shop_gacha_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      event_shop_gacha_items: {
+        Row: {
+          created_at: string
+          icon: string
+          id: string
+          is_active: boolean
+          name: string
+          rarity: string
+          reward_label: string
+          reward_type: string
+          reward_value: number
+          weight: number
+        }
+        Insert: {
+          created_at?: string
+          icon?: string
+          id?: string
+          is_active?: boolean
+          name: string
+          rarity?: string
+          reward_label?: string
+          reward_type: string
+          reward_value?: number
+          weight?: number
+        }
+        Update: {
+          created_at?: string
+          icon?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          rarity?: string
+          reward_label?: string
+          reward_type?: string
+          reward_value?: number
+          weight?: number
+        }
+        Relationships: []
+      }
+      event_shop_login_calendar: {
+        Row: {
+          claimed_at: string
+          cycle_start: string
+          day_number: number
+          id: string
+          reward_label: string
+          reward_type: string
+          reward_value: number
+          visitor_id: string
+        }
+        Insert: {
+          claimed_at?: string
+          cycle_start: string
+          day_number: number
+          id?: string
+          reward_label: string
+          reward_type: string
+          reward_value?: number
+          visitor_id: string
+        }
+        Update: {
+          claimed_at?: string
+          cycle_start?: string
+          day_number?: number
+          id?: string
+          reward_label?: string
+          reward_type?: string
+          reward_value?: number
+          visitor_id?: string
+        }
+        Relationships: []
+      }
       event_shop_mystery_boxes: {
         Row: {
           created_at: string
@@ -930,6 +1230,39 @@ export type Database = {
           updated_at?: string
           visitor_id?: string
           week_start?: string
+        }
+        Relationships: []
+      }
+      event_shop_vip_pass: {
+        Row: {
+          activated_at: string
+          created_at: string
+          expires_at: string
+          free_box_last_claim: string | null
+          id: string
+          total_purchases: number
+          updated_at: string
+          visitor_id: string
+        }
+        Insert: {
+          activated_at?: string
+          created_at?: string
+          expires_at?: string
+          free_box_last_claim?: string | null
+          id?: string
+          total_purchases?: number
+          updated_at?: string
+          visitor_id: string
+        }
+        Update: {
+          activated_at?: string
+          created_at?: string
+          expires_at?: string
+          free_box_last_claim?: string | null
+          id?: string
+          total_purchases?: number
+          updated_at?: string
+          visitor_id?: string
         }
         Relationships: []
       }
