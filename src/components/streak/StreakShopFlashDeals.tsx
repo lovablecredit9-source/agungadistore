@@ -217,6 +217,12 @@ export default function StreakShopFlashDeals({ visitorId, onUpdate }: Props) {
           </motion.div>
         </div>
 
+        {/* Gem balance info */}
+        <div className="mb-2 flex items-center justify-between p-2 rounded-lg bg-gradient-to-r from-cyan-500/15 to-blue-500/15 border border-cyan-400/30">
+          <div className="text-[10px] font-bold text-cyan-100">💎 Bisa bayar pakai Gem (lebih murah!)</div>
+          <div className="text-[11px] font-black text-cyan-200 tabular-nums">{userGems} 💎</div>
+        </div>
+
         {/* Premium badge */}
         {!isPremium && (
           <div className="mb-3 p-2.5 rounded-xl bg-gradient-to-r from-yellow-500/20 to-amber-500/20 border border-yellow-400/40 flex items-center gap-2">
