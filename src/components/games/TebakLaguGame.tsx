@@ -1,9 +1,11 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Music, Loader2, Sparkles, Check, X, Trophy, Lightbulb, RotateCcw } from "lucide-react";
+import { Music, Loader2, Sparkles, Check, X, Trophy, Lightbulb, RotateCcw, Heart, Timer } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { getVisitorId } from "@/lib/visitor-id";
+import { useGameCredits, GameCreditsBadge, BuyCreditsDialog } from "./GameCredits";
 
 interface Question {
   lyric_snippet: string;
@@ -14,27 +16,49 @@ interface Question {
 }
 
 const TOTAL_ROUNDS = 5;
+const TIME_PER_QUESTION = 45;
+const MAX_LIVES = 3;
+const HINT_COST = 5;
 
 export default function TebakLaguGame() {
   const { toast } = useToast();
-  const visitorId = typeof window !== "undefined" ? localStorage.getItem("balance_visitor_id") : null;
+  const activeVisitorId = useMemo(() => {
+    if (typeof window === "undefined") return null;
+    return localStorage.getItem("balance_visitor_id") || getVisitorId();
+  }, []);
+  const { credits, isUnlimited, fetchCredits, useCredit } = useGameCredits(activeVisitorId);
 
   const [round, setRound] = useState(0);
   const [score, setScore] = useState(0);
   const [correctCount, setCorrectCount] = useState(0);
+  const [lives, setLives] = useState(MAX_LIVES);
   const [question, setQuestion] = useState<Question | null>(null);
   const [loading, setLoading] = useState(false);
   const [selected, setSelected] = useState<string | null>(null);
   const [revealed, setRevealed] = useState(false);
+  const [hintUsed, setHintUsed] = useState(0); // jumlah hint terpakai (1 gratis, sisanya 5 kredit)
   const [showHint, setShowHint] = useState(false);
   const [finished, setFinished] = useState(false);
+  const [gameOver, setGameOver] = useState(false);
   const [submittingScore, setSubmittingScore] = useState(false);
+  const [timeLeft, setTimeLeft] = useState(TIME_PER_QUESTION);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const stopTimer = () => {
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
+  };
 
   const loadQuestion = useCallback(async () => {
     setLoading(true);
     setSelected(null);
     setRevealed(false);
     setShowHint(false);
+    setHintUsed(0);
+    setTimeLeft(TIME_PER_QUESTION);
+    stopTimer();
     try {
       const { data, error } = await supabase.functions.invoke("tebak-lagu", {
         body: { action: "question" },
@@ -54,17 +78,35 @@ export default function TebakLaguGame() {
   }, [toast]);
 
   useEffect(() => {
-    if (round < TOTAL_ROUNDS && !finished) loadQuestion();
-  }, [round, finished, loadQuestion]);
+    if (round < TOTAL_ROUNDS && !finished && !gameOver) loadQuestion();
+  }, [round, finished, gameOver, loadQuestion]);
+
+  // Timer countdown
+  useEffect(() => {
+    if (loading || !question || revealed || finished || gameOver) return;
+    stopTimer();
+    timerRef.current = setInterval(() => {
+      setTimeLeft((t) => {
+        if (t <= 1) {
+          stopTimer();
+          handleTimeout();
+          return 0;
+        }
+        return t - 1;
+      });
+    }, 1000);
+    return () => stopTimer();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loading, question, revealed, finished, gameOver]);
 
   const submitScore = async (finalScore: number, finalCorrect: number) => {
-    if (!visitorId) return;
+    if (!activeVisitorId) return;
     setSubmittingScore(true);
     try {
       await supabase.functions.invoke("tebak-lagu", {
         body: {
           action: "submit_score",
-          visitorId,
+          visitorId: activeVisitorId,
           score: finalScore,
           totalQuestions: TOTAL_ROUNDS,
           correctAnswers: finalCorrect,
@@ -77,19 +119,13 @@ export default function TebakLaguGame() {
     }
   };
 
-  const handleSelect = (opt: string) => {
-    if (revealed || !question) return;
-    setSelected(opt);
-    setRevealed(true);
-
-    const isCorrect = opt === question.correct_title;
-    const points = isCorrect ? (showHint ? 5 : 10) : 0;
-    const newScore = score + points;
-    const newCorrect = correctCount + (isCorrect ? 1 : 0);
-    setScore(newScore);
-    if (isCorrect) setCorrectCount(newCorrect);
-
+  const advanceAfterReveal = (newScore: number, newCorrect: number, newLives: number) => {
     setTimeout(() => {
+      if (newLives <= 0) {
+        setGameOver(true);
+        submitScore(newScore, newCorrect);
+        return;
+      }
       const nextRound = round + 1;
       if (nextRound >= TOTAL_ROUNDS) {
         setFinished(true);
@@ -97,20 +133,116 @@ export default function TebakLaguGame() {
       } else {
         setRound(nextRound);
       }
-    }, 2000);
+    }, 1800);
+  };
+
+  const handleTimeout = () => {
+    if (revealed || !question) return;
+    setRevealed(true);
+    const newLives = Math.max(0, lives - 1);
+    setLives(newLives);
+    advanceAfterReveal(score, correctCount, newLives);
+  };
+
+  const handleSelect = (opt: string) => {
+    if (revealed || !question) return;
+    stopTimer();
+    setSelected(opt);
+    setRevealed(true);
+
+    const isCorrect = opt === question.correct_title;
+    // Poin berkurang berdasarkan jumlah hint yang dipakai
+    const basePoints = isCorrect ? 10 : 0;
+    const points = isCorrect ? Math.max(2, basePoints - hintUsed * 3) : 0;
+    const newScore = score + points;
+    const newCorrect = correctCount + (isCorrect ? 1 : 0);
+    const newLives = isCorrect ? lives : Math.max(0, lives - 1);
+
+    setScore(newScore);
+    if (isCorrect) setCorrectCount(newCorrect);
+    if (!isCorrect) setLives(newLives);
+
+    advanceAfterReveal(newScore, newCorrect, newLives);
+  };
+
+  const handleRequestHint = async () => {
+    if (showHint || revealed) return;
+    if (hintUsed === 0) {
+      // hint pertama gratis
+      setShowHint(true);
+      setHintUsed(1);
+      return;
+    }
+    // hint berikutnya = 5 kredit (kalau bukan unlimited)
+    if (!isUnlimited) {
+      if (credits < HINT_COST) {
+        toast({
+          title: "Kredit kurang",
+          description: `Butuh ${HINT_COST} kredit untuk hint tambahan.`,
+          variant: "destructive",
+        });
+        return;
+      }
+      // konsumsi 5 kredit (loop useCredit)
+      for (let i = 0; i < HINT_COST; i++) {
+        const ok = await useCredit();
+        if (!ok) {
+          toast({ title: "Gagal konsumsi kredit", variant: "destructive" });
+          await fetchCredits();
+          return;
+        }
+      }
+    }
+    setShowHint(true);
+    setHintUsed((h) => h + 1);
+    toast({ title: "Hint ditampilkan", description: isUnlimited ? "Mode unlimited" : `-${HINT_COST} kredit` });
   };
 
   const restart = () => {
+    stopTimer();
     setRound(0);
     setScore(0);
     setCorrectCount(0);
+    setLives(MAX_LIVES);
     setQuestion(null);
     setSelected(null);
     setRevealed(false);
     setShowHint(false);
+    setHintUsed(0);
     setFinished(false);
+    setGameOver(false);
+    setTimeLeft(TIME_PER_QUESTION);
   };
 
+  // ===== Game Over (nyawa habis) =====
+  if (gameOver) {
+    return (
+      <motion.div
+        initial={{ opacity: 0, scale: 0.9 }}
+        animate={{ opacity: 1, scale: 1 }}
+        className="rounded-2xl border-2 border-red-500/50 p-6 bg-gradient-to-br from-red-950 via-rose-950 to-purple-950 text-center"
+      >
+        <Heart className="w-16 h-16 text-red-400 mx-auto mb-3 drop-shadow-[0_0_15px_rgba(248,113,113,0.6)]" />
+        <div className="text-2xl font-black text-white mb-1">💔 GAME OVER</div>
+        <div className="text-xs text-rose-200 mb-4">Nyawa habis di round {round + 1}</div>
+        <div className="text-5xl font-black text-yellow-200 tabular-nums mb-2">{score}</div>
+        <div className="text-sm text-white/80 mb-4">{correctCount} jawaban benar</div>
+        {submittingScore && (
+          <div className="flex items-center justify-center gap-1.5 text-[11px] text-rose-200 mb-3">
+            <Loader2 className="w-3 h-3 animate-spin" /> Menyimpan skor...
+          </div>
+        )}
+        <Button
+          onClick={restart}
+          className="w-full h-11 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-black"
+        >
+          <RotateCcw className="w-4 h-4 mr-2" /> Main Lagi
+        </Button>
+      </motion.div>
+    );
+  }
+
+  // ===== Finished (5 round selesai) =====
   if (finished) {
     const pct = Math.round((correctCount / TOTAL_ROUNDS) * 100);
     const verdict = pct === 100 ? "🏆 SEMPURNA!" : pct >= 80 ? "🎉 LUAR BIASA!" : pct >= 60 ? "👍 BAGUS!" : pct >= 40 ? "🙂 LUMAYAN" : "💪 COBA LAGI!";
@@ -138,12 +270,12 @@ export default function TebakLaguGame() {
         >
           <RotateCcw className="w-4 h-4 mr-2" /> Main Lagi
         </Button>
-        <p className="text-[10px] text-purple-200/70 mt-3">
-          🎵 Game ini murni untuk hiburan — tidak menggunakan saldo, kredit, atau streak coin.
-        </p>
       </motion.div>
     );
   }
+
+  const timeColor = timeLeft <= 10 ? "text-red-300" : timeLeft <= 20 ? "text-yellow-200" : "text-emerald-200";
+  const timePct = (timeLeft / TIME_PER_QUESTION) * 100;
 
   return (
     <motion.div
@@ -151,6 +283,7 @@ export default function TebakLaguGame() {
       animate={{ opacity: 1, y: 0 }}
       className="rounded-2xl border-2 border-purple-500/50 p-4 bg-gradient-to-br from-purple-950 via-pink-950 to-rose-950 shadow-[0_0_30px_rgba(168,85,247,0.35)]"
     >
+      {/* Header */}
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
           <motion.div animate={{ rotate: [0, 8, -8, 0] }} transition={{ duration: 2, repeat: Infinity }}>
@@ -167,7 +300,37 @@ export default function TebakLaguGame() {
         </div>
       </div>
 
-      {/* Progress bar */}
+      {/* Lives + Timer + Credits */}
+      <div className="flex items-center justify-between gap-2 mb-3">
+        <div className="flex items-center gap-1">
+          {Array.from({ length: MAX_LIVES }).map((_, i) => (
+            <motion.div
+              key={i}
+              animate={i >= lives ? { scale: [1, 0.8, 1], opacity: 0.3 } : { scale: 1, opacity: 1 }}
+            >
+              <Heart
+                className={`w-4 h-4 ${i < lives ? "text-red-400 fill-red-400 drop-shadow-[0_0_6px_rgba(248,113,113,0.7)]" : "text-white/20"}`}
+                strokeWidth={2.5}
+              />
+            </motion.div>
+          ))}
+        </div>
+        <div className={`flex items-center gap-1 px-2 py-0.5 rounded-full bg-black/40 border border-white/10 ${timeColor}`}>
+          <Timer className="w-3.5 h-3.5" strokeWidth={2.5} />
+          <span className="text-xs font-black tabular-nums">{timeLeft}s</span>
+        </div>
+        <GameCreditsBadge credits={credits} isUnlimited={isUnlimited} />
+      </div>
+
+      {/* Timer bar */}
+      <div className="h-1 rounded-full bg-black/40 overflow-hidden mb-2">
+        <motion.div
+          className={`h-full ${timeLeft <= 10 ? "bg-red-400" : timeLeft <= 20 ? "bg-yellow-300" : "bg-emerald-400"}`}
+          animate={{ width: `${timePct}%` }}
+          transition={{ duration: 0.3 }}
+        />
+      </div>
+      {/* Round progress bar */}
       <div className="h-1.5 rounded-full bg-black/40 overflow-hidden mb-4">
         <motion.div
           className="h-full bg-gradient-to-r from-pink-400 to-purple-500"
@@ -198,11 +361,13 @@ export default function TebakLaguGame() {
           {/* Hint button */}
           {!showHint && !revealed && (
             <button
-              onClick={() => setShowHint(true)}
-              className="w-full mb-3 p-2 rounded-lg bg-yellow-500/20 border border-yellow-400/40 flex items-center justify-center gap-1.5 hover:bg-yellow-500/30 transition"
+              onClick={handleRequestHint}
+              className="w-full mb-3 p-2 rounded-lg bg-yellow-500/20 border border-yellow-400/40 flex items-center justify-center gap-1.5 hover:bg-yellow-500/30 transition disabled:opacity-50"
             >
               <Lightbulb className="w-3.5 h-3.5 text-yellow-300" strokeWidth={2.5} />
-              <span className="text-[11px] font-black text-yellow-100">Lihat Hint (-50% poin)</span>
+              <span className="text-[11px] font-black text-yellow-100">
+                {hintUsed === 0 ? "Lihat Hint (Gratis)" : `Hint Lagi (${isUnlimited ? "Unlimited" : `-${HINT_COST} kredit`})`}
+              </span>
             </button>
           )}
           {showHint && (
@@ -263,11 +428,16 @@ export default function TebakLaguGame() {
               <div className="text-xs text-pink-200">— {question.correct_artist}</div>
             </motion.div>
           )}
+
+          {/* Buy credits */}
+          <div className="mt-3 flex justify-center">
+            <BuyCreditsDialog visitorId={activeVisitorId} onPurchased={fetchCredits} />
+          </div>
         </>
       )}
 
       <p className="text-[9px] text-purple-200/60 mt-4 text-center">
-        🎮 Murni hiburan · Tidak menggunakan saldo, kredit, atau streak coin
+        🎮 45 detik · 3 nyawa · Hint pertama gratis · Hint lagi {HINT_COST} kredit
       </p>
     </motion.div>
   );
