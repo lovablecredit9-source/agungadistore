@@ -721,6 +721,7 @@ export type Database = {
           cost_paid: number
           created_at: string
           id: string
+          payment_method: string
           visitor_id: string
           week_start: string
         }
@@ -730,6 +731,7 @@ export type Database = {
           cost_paid: number
           created_at?: string
           id?: string
+          payment_method?: string
           visitor_id: string
           week_start: string
         }
@@ -739,6 +741,7 @@ export type Database = {
           cost_paid?: number
           created_at?: string
           id?: string
+          payment_method?: string
           visitor_id?: string
           week_start?: string
         }
@@ -755,6 +758,7 @@ export type Database = {
       event_shop_bundles: {
         Row: {
           contents: Json
+          cost_gems: number
           created_at: string
           description: string
           icon: string
@@ -769,6 +773,7 @@ export type Database = {
         }
         Insert: {
           contents?: Json
+          cost_gems?: number
           created_at?: string
           description?: string
           icon?: string
@@ -783,6 +788,7 @@ export type Database = {
         }
         Update: {
           contents?: Json
+          cost_gems?: number
           created_at?: string
           description?: string
           icon?: string

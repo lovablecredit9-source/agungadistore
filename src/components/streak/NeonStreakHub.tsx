@@ -132,11 +132,11 @@ export default function NeonStreakHub({ visitorId, forcedView }: Props) {
   useEffect(() => { if (forcedView) setActiveView(forcedView); }, [forcedView]);
 
   const POWER_UPS = [
-    { id: "extra_life", name: "Nyawa Ekstra", desc: "+1 nyawa untuk semua game", icon: Heart, cost: 30, color: "from-red-500 to-pink-600" },
-    { id: "auto_hint", name: "Petunjuk Auto", desc: "1x hint otomatis di game", icon: Lightbulb, cost: 25, color: "from-yellow-400 to-orange-500" },
-    { id: "time_freeze", name: "Freeze Waktu", desc: "Pause timer 30 detik", icon: Clock, cost: 40, color: "from-cyan-400 to-blue-600" },
-    { id: "double_xp", name: "Double XP 1 Jam", desc: "2x poin selama 60 menit", icon: Zap, cost: 80, color: "from-purple-500 to-fuchsia-600" },
-    { id: "shield", name: "Shield Streak", desc: "Lindungi streak 1 hari", icon: Shield, cost: 60, color: "from-emerald-400 to-teal-600" },
+    { id: "extra_life", name: "Nyawa Ekstra", desc: "+1 nyawa untuk semua game", icon: Heart, cost: 30, gemCost: 3, color: "from-red-500 to-pink-600" },
+    { id: "auto_hint", name: "Petunjuk Auto", desc: "1x hint otomatis di game", icon: Lightbulb, cost: 25, gemCost: 3, color: "from-yellow-400 to-orange-500" },
+    { id: "time_freeze", name: "Freeze Waktu", desc: "Pause timer 30 detik", icon: Clock, cost: 40, gemCost: 4, color: "from-cyan-400 to-blue-600" },
+    { id: "double_xp", name: "Double XP 1 Jam", desc: "2x poin selama 60 menit", icon: Zap, cost: 80, gemCost: 8, color: "from-purple-500 to-fuchsia-600" },
+    { id: "shield", name: "Shield Streak", desc: "Lindungi streak 1 hari", icon: Shield, cost: 60, gemCost: 6, color: "from-emerald-400 to-teal-600" },
   ];
 
   function getToday() {
@@ -278,33 +278,49 @@ export default function NeonStreakHub({ visitorId, forcedView }: Props) {
     }
   }
 
-  async function redeemPowerUp(p: typeof POWER_UPS[number]) {
-    if (coins < p.cost) {
-      toast({ title: "Coins kurang", description: `Butuh ${p.cost} coin (kamu punya ${coins})`, variant: "destructive" });
-      return;
-    }
-    setRedeemingPower(p.id);
+  async function redeemPowerUp(p: typeof POWER_UPS[number], paymentMethod: "coin" | "gem" = "coin") {
+    setRedeemingPower(p.id + ":" + paymentMethod);
     try {
-      // Deduct coins di server (pakai daily_streaks update langsung — kebijakan RLS sudah Anyone update)
-      const { data: streak } = await supabase.from("daily_streaks").select("id, streak_coins").eq("visitor_id", visitorId).maybeSingle();
-      if (!streak) { toast({ title: "Streak tidak ada", variant: "destructive" }); return; }
-      if ((streak.streak_coins || 0) < p.cost) { toast({ title: "Coins kurang", variant: "destructive" }); return; }
-      await supabase.from("daily_streaks").update({ streak_coins: (streak.streak_coins || 0) - p.cost }).eq("id", streak.id);
+      const { data: streak } = await supabase.from("daily_streaks").select("id, streak_coins, freeze_count").eq("visitor_id", visitorId).maybeSingle();
+      if (!streak) { toast({ title: "Streak tidak ada", description: "Mulai streak dulu", variant: "destructive" }); return; }
 
-      // Update powerup state
+      if (paymentMethod === "gem") {
+        const cost = p.gemCost;
+        const { data: gp } = await supabase.from("game_profiles").select("gems").eq("visitor_id", visitorId).maybeSingle();
+        const currentGems = (gp as any)?.gems || 0;
+        if (currentGems < cost) {
+          toast({ title: "Gem kurang", description: `Butuh ${cost} 💎 (kamu punya ${currentGems})`, variant: "destructive" });
+          return;
+        }
+        await supabase.from("game_profiles").update({ gems: currentGems - cost }).eq("visitor_id", visitorId);
+        await supabase.from("gem_transactions").insert({
+          visitor_id: visitorId,
+          amount: -cost,
+          type: "shop",
+          description: `Power-Up: ${p.name} (-${cost} 💎)`,
+        });
+      } else {
+        if ((streak.streak_coins || 0) < p.cost) {
+          toast({ title: "Coins kurang", description: `Butuh ${p.cost} coin (kamu punya ${streak.streak_coins || 0})`, variant: "destructive" });
+          return;
+        }
+        await supabase.from("daily_streaks").update({ streak_coins: (streak.streak_coins || 0) - p.cost }).eq("id", streak.id);
+      }
+
+      // Apply power-up effect
       const next = { ...powerUps };
       if (p.id === "extra_life") next.extra_life = (next.extra_life || 0) + 1;
       if (p.id === "auto_hint") next.auto_hint = (next.auto_hint || 0) + 1;
       if (p.id === "time_freeze") next.time_freeze = (next.time_freeze || 0) + 1;
       if (p.id === "double_xp") next.double_xp_until = new Date(Date.now() + 60 * 60 * 1000).toISOString();
       if (p.id === "shield") {
-        // tambahkan freeze_count langsung
-        await supabase.from("daily_streaks").update({ freeze_count: ((streak as any).freeze_count || 0) + 1, streak_coins: (streak.streak_coins || 0) - p.cost }).eq("id", streak.id);
+        await supabase.from("daily_streaks").update({ freeze_count: ((streak as any).freeze_count || 0) + 1 }).eq("id", streak.id);
       }
       setPowerUps(next);
       try { localStorage.setItem(`streak_powerups_${visitorId}`, JSON.stringify(next)); } catch {}
 
-      toast({ title: `⚡ ${p.name} aktif!`, description: p.desc });
+      const unit = paymentMethod === "gem" ? `${p.gemCost} 💎` : `${p.cost} 🪙`;
+      toast({ title: `⚡ ${p.name} aktif!`, description: `${p.desc} (-${unit})` });
       await syncPowerUpsFromServer();
       window.dispatchEvent(new CustomEvent("power-ups-updated"));
       loadAll();
@@ -713,27 +729,49 @@ export default function NeonStreakHub({ visitorId, forcedView }: Props) {
               </div>
               <div className="grid grid-cols-2 gap-2 max-h-[40vh] overflow-y-auto">
                 {POWER_UPS.map(p => {
-                  const canBuy = coins >= p.cost;
                   const Icon = p.icon;
+                  const canCoin = coins >= p.cost;
+                  const canGem = gems >= p.gemCost;
+                  const busyCoin = redeemingPower === p.id + ":coin";
+                  const busyGem = redeemingPower === p.id + ":gem";
+                  const anyBusy = busyCoin || busyGem;
                   return (
-                    <button
+                    <div
                       key={p.id}
-                      disabled={!canBuy || redeemingPower === p.id}
-                      onClick={() => redeemPowerUp(p)}
-                      className={`relative p-3 rounded-xl border text-left transition ${
-                        canBuy ? `bg-gradient-to-br ${p.color} border-white/20 hover:scale-[1.02] shadow-lg` : "bg-black/40 border-white/10 opacity-50"
+                      className={`relative p-3 rounded-xl border flex flex-col ${
+                        canCoin || canGem ? `bg-gradient-to-br ${p.color} border-white/20 shadow-lg` : "bg-black/40 border-white/10 opacity-60"
                       }`}
                     >
                       <Icon className="w-7 h-7 text-white drop-shadow mb-1" strokeWidth={2.5} />
                       <div className="font-extrabold text-white text-xs leading-tight">{p.name}</div>
-                      <div className="text-[10px] text-white/80 mb-2 line-clamp-2">{p.desc}</div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs font-black text-white tabular-nums flex items-center gap-1">
-                          <Coins className="w-3.5 h-3.5" strokeWidth={2.5} /> {p.cost}
-                        </span>
-                        {redeemingPower === p.id && <Loader2 className="w-3 h-3 animate-spin text-white" />}
+                      <div className="text-[10px] text-white/80 mb-2 line-clamp-2 flex-1">{p.desc}</div>
+                      <div className="flex items-stretch gap-1 mt-auto">
+                        <button
+                          disabled={!canCoin || anyBusy}
+                          onClick={() => redeemPowerUp(p, "coin")}
+                          className={`flex-1 px-1.5 py-1 rounded-lg text-[10px] font-black tabular-nums flex items-center justify-center gap-1 border transition ${
+                            canCoin
+                              ? "bg-yellow-500/30 border-yellow-300/60 text-yellow-50 hover:bg-yellow-500/40 active:scale-95"
+                              : "bg-black/30 border-white/10 text-white/40 cursor-not-allowed"
+                          }`}
+                          title={canCoin ? "Bayar pakai Coin" : `Butuh ${p.cost} coin`}
+                        >
+                          {busyCoin ? <Loader2 className="w-3 h-3 animate-spin" /> : <><Coins className="w-3 h-3" strokeWidth={2.5} /> {p.cost}</>}
+                        </button>
+                        <button
+                          disabled={!canGem || anyBusy}
+                          onClick={() => redeemPowerUp(p, "gem")}
+                          className={`flex-1 px-1.5 py-1 rounded-lg text-[10px] font-black tabular-nums flex items-center justify-center gap-1 border transition ${
+                            canGem
+                              ? "bg-cyan-500/30 border-cyan-300/60 text-cyan-50 hover:bg-cyan-500/40 active:scale-95"
+                              : "bg-black/30 border-white/10 text-white/40 cursor-not-allowed"
+                          }`}
+                          title={canGem ? "Bayar pakai Gem" : `Butuh ${p.gemCost} gem`}
+                        >
+                          {busyGem ? <Loader2 className="w-3 h-3 animate-spin" /> : <><Gem className="w-3 h-3" strokeWidth={2.5} /> {p.gemCost}</>}
+                        </button>
                       </div>
-                    </button>
+                    </div>
                   );
                 })}
               </div>
