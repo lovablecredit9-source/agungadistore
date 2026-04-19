@@ -76,7 +76,8 @@ export default function StreakEventLive({ visitorId, currentStreak, totalClaims 
           const newData = data as LiveData;
           // Detect new top winner for ticker
           if (live && newData.leaderboard?.[0]?.visitor_id !== live.leaderboard?.[0]?.visitor_id) {
-            setFlashWinner(maskId(newData.leaderboard[0].visitor_id));
+            const top = newData.leaderboard[0];
+            setFlashWinner(top.display_name || maskId(top.visitor_id));
             setTimeout(() => setFlashWinner(null), 5000);
           }
           setLive(newData);
