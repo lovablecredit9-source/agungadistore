@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback, useRef, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Music, Loader2, Sparkles, Check, X, Trophy, Lightbulb, RotateCcw, Heart, Timer } from "lucide-react";
+import { Music, Loader2, Sparkles, Check, X, Trophy, Lightbulb, RotateCcw, Heart, Timer, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -15,8 +15,15 @@ interface Question {
   hint: string;
 }
 
+type Difficulty = "mudah" | "sedang" | "sulit";
+
+const DIFFICULTIES: { key: Difficulty; label: string; color: string; time: number; desc: string }[] = [
+  { key: "mudah", label: "Mudah", color: "text-green-400", time: 60, desc: "Lagu mega-hit · reff ikonik" },
+  { key: "sedang", label: "Sedang", color: "text-blue-400", time: 45, desc: "Lagu populer · reff/verse" },
+  { key: "sulit", label: "Sulit", color: "text-red-400", time: 30, desc: "Verse/bridge · opsi mirip" },
+];
+
 const TOTAL_ROUNDS = 5;
-const TIME_PER_QUESTION = 45;
 const MAX_LIVES = 3;
 const HINT_COST = 5;
 const REVEAL_ANSWER_COST = 1;
@@ -29,6 +36,10 @@ export default function TebakLaguGame() {
   }, []);
   const { credits, isUnlimited, fetchCredits, useCredit } = useGameCredits(activeVisitorId);
 
+  const [difficulty, setDifficulty] = useState<Difficulty | null>(null);
+  const diffConfig = useMemo(() => DIFFICULTIES.find(d => d.key === difficulty) ?? DIFFICULTIES[1], [difficulty]);
+  const TIME_PER_QUESTION = diffConfig.time;
+
   const [round, setRound] = useState(0);
   const [score, setScore] = useState(0);
   const [correctCount, setCorrectCount] = useState(0);
@@ -37,12 +48,12 @@ export default function TebakLaguGame() {
   const [loading, setLoading] = useState(false);
   const [selected, setSelected] = useState<string | null>(null);
   const [revealed, setRevealed] = useState(false);
-  const [hintUsed, setHintUsed] = useState(0); // jumlah hint terpakai (1 gratis, sisanya 5 kredit)
+  const [hintUsed, setHintUsed] = useState(0);
   const [showHint, setShowHint] = useState(false);
   const [finished, setFinished] = useState(false);
   const [gameOver, setGameOver] = useState(false);
   const [submittingScore, setSubmittingScore] = useState(false);
-  const [timeLeft, setTimeLeft] = useState(TIME_PER_QUESTION);
+  const [timeLeft, setTimeLeft] = useState(45);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const stopTimer = () => {
@@ -53,6 +64,7 @@ export default function TebakLaguGame() {
   };
 
   const loadQuestion = useCallback(async () => {
+    if (!difficulty) return;
     setLoading(true);
     setSelected(null);
     setRevealed(false);
@@ -62,7 +74,7 @@ export default function TebakLaguGame() {
     stopTimer();
     try {
       const { data, error } = await supabase.functions.invoke("tebak-lagu", {
-        body: { action: "question" },
+        body: { action: "question", difficulty },
       });
       if (error) throw error;
       if ((data as any)?.error) throw new Error((data as any).error);
@@ -76,11 +88,11 @@ export default function TebakLaguGame() {
     } finally {
       setLoading(false);
     }
-  }, [toast]);
+  }, [toast, difficulty, TIME_PER_QUESTION]);
 
   useEffect(() => {
-    if (round < TOTAL_ROUNDS && !finished && !gameOver) loadQuestion();
-  }, [round, finished, gameOver, loadQuestion]);
+    if (difficulty && round < TOTAL_ROUNDS && !finished && !gameOver) loadQuestion();
+  }, [round, finished, gameOver, loadQuestion, difficulty]);
 
   // Timer countdown
   useEffect(() => {
@@ -227,7 +239,7 @@ export default function TebakLaguGame() {
     advanceAfterReveal(score, correctCount, lives);
   };
 
-  const restart = () => {
+  const restart = (keepDifficulty = true) => {
     stopTimer();
     setRound(0);
     setScore(0);
@@ -241,7 +253,57 @@ export default function TebakLaguGame() {
     setFinished(false);
     setGameOver(false);
     setTimeLeft(TIME_PER_QUESTION);
+    if (!keepDifficulty) setDifficulty(null);
   };
+
+  // ===== Difficulty selection screen =====
+  if (!difficulty) {
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="rounded-2xl border-2 border-purple-500/50 p-5 bg-gradient-to-br from-purple-950 via-pink-950 to-rose-950 shadow-[0_0_30px_rgba(168,85,247,0.35)]"
+      >
+        <div className="flex items-center gap-2 mb-4">
+          <motion.div animate={{ rotate: [0, 8, -8, 0] }} transition={{ duration: 2, repeat: Infinity }}>
+            <Music className="w-7 h-7 text-pink-300 drop-shadow-[0_0_8px_rgba(236,72,153,0.8)]" strokeWidth={2.5} />
+          </motion.div>
+          <div>
+            <div className="text-[10px] font-black tracking-widest text-pink-300 uppercase">🎵 TEBAK LAGU AI</div>
+            <div className="text-base font-black text-white">Pilih Tingkat Kesulitan</div>
+          </div>
+        </div>
+
+        <div className="flex items-center justify-between gap-2 mb-4 flex-wrap">
+          <GameCreditsBadge credits={credits} isUnlimited={isUnlimited} />
+          <BuyCreditsDialog visitorId={activeVisitorId} onPurchased={fetchCredits} />
+        </div>
+
+        <div className="grid gap-2">
+          {DIFFICULTIES.map(d => (
+            <motion.button
+              key={d.key}
+              whileTap={{ scale: 0.97 }}
+              onClick={() => setDifficulty(d.key)}
+              className="w-full p-3 rounded-xl bg-gradient-to-r from-purple-700/60 to-pink-700/60 hover:from-purple-600 hover:to-pink-600 border-2 border-purple-400/40 text-left transition-all"
+            >
+              <div className="flex items-center justify-between mb-1">
+                <span className={`text-base font-black ${d.color}`}>{d.label}</span>
+                <span className="flex items-center gap-1 text-xs text-white/80 font-bold">
+                  <Clock className="w-3 h-3" /> {d.time}s
+                </span>
+              </div>
+              <div className="text-[11px] text-pink-100/80 font-medium">{d.desc}</div>
+            </motion.button>
+          ))}
+        </div>
+
+        <p className="text-[10px] text-purple-200/60 mt-4 text-center">
+          🎮 5 round · 3 nyawa · Hint pertama gratis
+        </p>
+      </motion.div>
+    );
+  }
 
   // ===== Game Over (nyawa habis) =====
   if (gameOver) {
@@ -261,12 +323,21 @@ export default function TebakLaguGame() {
             <Loader2 className="w-3 h-3 animate-spin" /> Menyimpan skor...
           </div>
         )}
-        <Button
-          onClick={restart}
-          className="w-full h-11 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-black"
-        >
-          <RotateCcw className="w-4 h-4 mr-2" /> Main Lagi
-        </Button>
+        <div className="grid grid-cols-2 gap-2">
+          <Button
+            onClick={() => restart(false)}
+            variant="outline"
+            className="h-11 border-purple-400/50 text-purple-100 hover:bg-purple-800/40 font-bold"
+          >
+            Ganti Mode
+          </Button>
+          <Button
+            onClick={() => restart(true)}
+            className="h-11 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-black"
+          >
+            <RotateCcw className="w-4 h-4 mr-1" /> Main Lagi
+          </Button>
+        </div>
       </motion.div>
     );
   }
@@ -293,12 +364,21 @@ export default function TebakLaguGame() {
             <Loader2 className="w-3 h-3 animate-spin" /> Menyimpan skor ke leaderboard...
           </div>
         )}
-        <Button
-          onClick={restart}
-          className="w-full h-11 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-black"
-        >
-          <RotateCcw className="w-4 h-4 mr-2" /> Main Lagi
-        </Button>
+        <div className="grid grid-cols-2 gap-2">
+          <Button
+            onClick={() => restart(false)}
+            variant="outline"
+            className="h-11 border-purple-400/50 text-purple-100 hover:bg-purple-800/40 font-bold"
+          >
+            Ganti Mode
+          </Button>
+          <Button
+            onClick={() => restart(true)}
+            className="h-11 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-black"
+          >
+            <RotateCcw className="w-4 h-4 mr-1" /> Main Lagi
+          </Button>
+        </div>
       </motion.div>
     );
   }
@@ -319,7 +399,10 @@ export default function TebakLaguGame() {
             <Music className="w-6 h-6 text-pink-300 drop-shadow-[0_0_8px_rgba(236,72,153,0.8)]" strokeWidth={2.5} />
           </motion.div>
           <div>
-            <div className="text-[10px] font-black tracking-widest text-pink-300 uppercase">🎵 TEBAK LAGU AI</div>
+            <div className="text-[10px] font-black tracking-widest text-pink-300 uppercase flex items-center gap-1.5">
+              🎵 TEBAK LAGU AI
+              <span className={`px-1.5 py-0.5 rounded bg-black/40 border border-white/10 ${diffConfig.color}`}>{diffConfig.label}</span>
+            </div>
             <div className="text-base font-black text-white">Round {round + 1} / {TOTAL_ROUNDS}</div>
           </div>
         </div>
