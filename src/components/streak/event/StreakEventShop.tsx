@@ -467,6 +467,16 @@ export default function StreakEventShop({ visitorId, onUpdate }: Props) {
         </TabsContent>
       </Tabs>
 
+      {/* SHOP EXTRAS — Flash Deals, Gacha, VIP, Login Calendar, Achievement Elite */}
+      <div className="pt-2 mt-2 border-t border-white/10">
+        <div className="flex items-center gap-2 mb-2 px-1">
+          <Sparkles className="h-4 w-4 text-amber-300" />
+          <h3 className="text-sm font-bold text-white">Fitur Premium Shop</h3>
+          <Badge className="bg-amber-500/30 text-amber-100 border-amber-400/50 text-[9px] px-1.5 py-0 h-4">NEW</Badge>
+        </div>
+        <ShopExtras visitorId={visitorId} onUpdate={onUpdate} />
+      </div>
+
       {/* MYSTERY BOX RESULT DIALOG */}
       <Dialog open={!!openResult} onOpenChange={() => setOpenResult(null)}>
         <DialogContent className="max-w-sm bg-gradient-to-br from-purple-950 via-violet-950 to-slate-950 border-purple-500/40">
