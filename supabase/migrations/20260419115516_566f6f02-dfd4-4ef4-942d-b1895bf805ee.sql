@@ -1,0 +1,2 @@
+ALTER TABLE public.mystery_box_claims ADD COLUMN IF NOT EXISTS payment_method TEXT NOT NULL DEFAULT 'free';
+CREATE INDEX IF NOT EXISTS idx_mystery_box_claims_visitor_date_method ON public.mystery_box_claims(visitor_id, claim_date, payment_method);

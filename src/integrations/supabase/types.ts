@@ -2285,6 +2285,7 @@ export type Database = {
           claim_date: string
           created_at: string
           id: string
+          payment_method: string
           rarity: string
           reward_label: string
           reward_type: string
@@ -2295,6 +2296,7 @@ export type Database = {
           claim_date?: string
           created_at?: string
           id?: string
+          payment_method?: string
           rarity?: string
           reward_label?: string
           reward_type: string
@@ -2305,6 +2307,7 @@ export type Database = {
           claim_date?: string
           created_at?: string
           id?: string
+          payment_method?: string
           rarity?: string
           reward_label?: string
           reward_type?: string

@@ -163,7 +163,13 @@ export default function NeonStreakHub({ visitorId, forcedView }: Props) {
       setGems((gp as any)?.gems || 0);
     }
 
-    const { data: box } = await supabase.from("mystery_box_claims").select("*").eq("visitor_id", visitorId).eq("claim_date", today).maybeSingle();
+    const { data: box } = await supabase
+      .from("mystery_box_claims")
+      .select("*")
+      .eq("visitor_id", visitorId)
+      .eq("claim_date", today)
+      .eq("payment_method", "free")
+      .maybeSingle();
     setBoxOpened(!!box);
     if (box) setReward(box);
 
@@ -228,19 +234,23 @@ export default function NeonStreakHub({ visitorId, forcedView }: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [visitorId]);
 
-  async function openMysteryBox() {
+  async function openMysteryBox(paymentMethod: "free" | "gem" = "free") {
+    if (paymentMethod === "gem" && gems < 5) {
+      toast({ title: "Gem tidak cukup", description: "Butuh 5 💎 untuk buka extra", variant: "destructive" });
+      return;
+    }
     setOpening(true);
     try {
-      const { data, error } = await supabase.functions.invoke("mystery-box-open", { body: { visitorId } });
+      const { data, error } = await supabase.functions.invoke("mystery-box-open", { body: { visitorId, paymentMethod } });
       if (error || data?.error) {
         toast({ title: "Gagal", description: data?.error || error?.message, variant: "destructive" });
       } else if (data?.alreadyOpened) {
-        toast({ title: "Sudah dibuka", description: "Mystery box hari ini sudah dibuka." });
+        toast({ title: "Sudah dibuka", description: "Mystery box gratis hari ini sudah dibuka. Pakai 5💎 untuk buka lagi!" });
         setReward(data.reward);
         setBoxOpened(true);
       } else {
         setReward(data.reward);
-        setBoxOpened(true);
+        if (paymentMethod === "free") setBoxOpened(true);
         trackDailyMission(visitorId, "mystery_box", 1);
         await syncPowerUpsFromServer();
         window.dispatchEvent(new CustomEvent("power-ups-updated"));
@@ -514,13 +524,29 @@ export default function NeonStreakHub({ visitorId, forcedView }: Props) {
               <Gift className="w-5 h-5 icon-3d-gift" strokeWidth={2.5} />
               <span className="text-sm font-black neon-gradient-text tracking-wider uppercase">Mystery Box Harian</span>
             </div>
-            <Button
-              onClick={openMysteryBox}
-              disabled={opening || boxOpened}
-              className="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white font-black"
-            >
-              {opening ? <Loader2 className="w-4 h-4 animate-spin" /> : boxOpened ? "Sudah Dibuka Hari Ini" : "Buka Mystery Box"}
-            </Button>
+            <div className="flex flex-col gap-2">
+              <Button
+                onClick={() => openMysteryBox("free")}
+                disabled={opening || boxOpened}
+                className="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white font-black"
+              >
+                {opening ? <Loader2 className="w-4 h-4 animate-spin" /> : boxOpened ? "✓ Gratis Sudah Dibuka" : "🎁 Buka Gratis (1x/hari)"}
+              </Button>
+              <Button
+                onClick={() => openMysteryBox("gem")}
+                disabled={opening || gems < 5}
+                className="w-full bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-black border border-cyan-300/50"
+              >
+                {opening ? <Loader2 className="w-4 h-4 animate-spin" /> : (
+                  <span className="flex items-center justify-center gap-1.5">
+                    <Gem className="w-4 h-4" /> Buka Extra · 5 💎 (Luck Boost!)
+                  </span>
+                )}
+              </Button>
+              <p className="text-[10px] text-center text-white/50">
+                Pakai gem untuk buka berkali-kali · Peluang epic/legendary lebih besar
+              </p>
+            </div>
           </div>
           <StreakMilestones visitorId={visitorId} onUpdate={() => { loadAll(); setCelebrate({ show: true, msg: "🏆 MILESTONE!" }); }} />
           <StreakLeaderboard />
