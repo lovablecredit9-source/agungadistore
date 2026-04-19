@@ -403,24 +403,28 @@ export default function NeonStreakHub({ visitorId, forcedView }: Props) {
         </div>
       </div>
 
-      {/* Title kosmetik berdasar streak */}
-      <div className="flex justify-center">
-        <StreakTitleBadge currentStreak={currentStreak} longestStreak={longestStreak} size="md" />
-      </div>
+      {activeView !== "shop" && (
+        <>
+          {/* Title kosmetik berdasar streak */}
+          <div className="flex justify-center">
+            <StreakTitleBadge currentStreak={currentStreak} longestStreak={longestStreak} size="md" />
+          </div>
 
-      {/* Avatar Evolution */}
-      <StreakAvatarEvolution visitorId={visitorId} currentStreak={currentStreak} longestStreak={longestStreak} />
+          {/* Avatar Evolution */}
+          <StreakAvatarEvolution visitorId={visitorId} currentStreak={currentStreak} longestStreak={longestStreak} />
 
-      {/* Power Hour + Insight (fitur baru) */}
-      <div className="grid grid-cols-1 gap-3">
-        <StreakPowerHour visitorId={visitorId} />
-        <StreakInsight
-          visitorId={visitorId}
-          currentStreak={currentStreak}
-          longestStreak={longestStreak}
-          totalClaims={totalClaims}
-        />
-      </div>
+          {/* Power Hour + Insight (fitur baru) */}
+          <div className="grid grid-cols-1 gap-3">
+            <StreakPowerHour visitorId={visitorId} />
+            <StreakInsight
+              visitorId={visitorId}
+              currentStreak={currentStreak}
+              longestStreak={longestStreak}
+              totalClaims={totalClaims}
+            />
+          </div>
+        </>
+      )}
 
       {/* View tabs (only when not forced via top-level navigation) */}
       {!forcedView && (
