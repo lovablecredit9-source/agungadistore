@@ -198,9 +198,12 @@ Deno.serve(async (req) => {
       const bundles = (bundlesRes.data ?? []).map((b: any) => {
         const used = bundleClaimedCount.get(b.id) || 0;
         const finalPrice = applyDiscount(b.price_coins);
+        const gemBase = b.cost_gems || 0;
+        const finalGemPrice = gemBase > 0 ? Math.max(1, Math.floor(gemBase * (1 - tierInfo.discount / 100))) : 0;
         return {
           ...b,
           final_price: finalPrice,
+          final_gem_price: finalGemPrice,
           tier_discount_pct: tierInfo.discount,
           weekly_used: used,
           can_buy: used < b.weekly_limit,
@@ -266,7 +269,8 @@ Deno.serve(async (req) => {
 
     // BUY BUNDLE
     if (action === "buy_bundle") {
-      const { bundleId } = body;
+      const { bundleId, paymentMethod } = body;
+      const payMethod = paymentMethod === "gem" ? "gem" : "coin";
       const { data: bundle } = await admin.from("event_shop_bundles").select("*").eq("id", bundleId).eq("is_active", true).maybeSingle();
       if (!bundle) return Response.json({ error: "Bundle tidak ditemukan" }, { status: 404, headers: corsHeaders });
 
@@ -282,20 +286,40 @@ Deno.serve(async (req) => {
 
       const lifetimeSpent = await getLifetimeSpent(admin, visitorId);
       const tierInfo = calculateTier(lifetimeSpent);
-      const finalCost = Math.max(1, Math.floor(bundle.price_coins * (1 - tierInfo.discount / 100)));
 
       const { data: streak } = await admin.from("daily_streaks").select("*").eq("visitor_id", visitorId).maybeSingle();
       if (!streak) return Response.json({ error: "Mulai streak dulu" }, { status: 400, headers: corsHeaders });
-      if ((streak.streak_coins || 0) < finalCost) {
-        return Response.json({ error: `Coins kurang. Butuh ${finalCost}, kamu punya ${streak.streak_coins || 0}` }, { status: 400, headers: corsHeaders });
+
+      let finalCost = 0;
+      if (payMethod === "gem") {
+        const gemBase = (bundle as any).cost_gems || 0;
+        if (gemBase <= 0) return Response.json({ error: "Pembayaran gem belum tersedia untuk paket ini" }, { status: 400, headers: corsHeaders });
+        finalCost = Math.max(1, Math.floor(gemBase * (1 - tierInfo.discount / 100)));
+        const { data: gp } = await admin.from("game_profiles").select("gems").eq("visitor_id", visitorId).maybeSingle();
+        const userGems = (gp as any)?.gems || 0;
+        if (userGems < finalCost) {
+          return Response.json({ error: `Gem tidak cukup. Butuh ${finalCost} 💎, kamu punya ${userGems} 💎.` }, { status: 400, headers: corsHeaders });
+        }
+        await admin.from("game_profiles").update({ gems: userGems - finalCost }).eq("visitor_id", visitorId);
+        await admin.from("gem_transactions").insert({
+          visitor_id: visitorId,
+          amount: -finalCost,
+          type: "shop",
+          description: `Event Shop Bundle: ${bundle.name} (-${finalCost} 💎)`,
+          reference_id: bundleId,
+        });
+      } else {
+        finalCost = Math.max(1, Math.floor(bundle.price_coins * (1 - tierInfo.discount / 100)));
+        if ((streak.streak_coins || 0) < finalCost) {
+          return Response.json({ error: `Coins kurang. Butuh ${finalCost}, kamu punya ${streak.streak_coins || 0}` }, { status: 400, headers: corsHeaders });
+        }
+        await admin.from("daily_streaks").update({ streak_coins: (streak.streak_coins || 0) - finalCost }).eq("id", streak.id);
+        streak.streak_coins = (streak.streak_coins || 0) - finalCost;
       }
 
       // Apply each item in bundle
       const contents = bundle.contents as any[];
       let currentStreak = streak;
-      currentStreak = { ...currentStreak, streak_coins: (currentStreak.streak_coins || 0) - finalCost };
-      await admin.from("daily_streaks").update({ streak_coins: currentStreak.streak_coins }).eq("id", streak.id);
-
       for (const item of contents) {
         await applyReward(admin, visitorId, item.type, item.value, currentStreak);
         if (item.type === "freeze") currentStreak.freeze_count = (currentStreak.freeze_count || 0) + item.value;
@@ -311,9 +335,10 @@ Deno.serve(async (req) => {
         cost_paid: finalCost,
         week_start: week,
         contents_snapshot: bundle.contents,
+        payment_method: payMethod,
       });
 
-      await bumpSpender(admin, visitorId, finalCost);
+      if (payMethod === "coin") await bumpSpender(admin, visitorId, finalCost);
       await pushActivity(admin, visitorId, "bundle", bundle.name, bundle.icon, "epic");
 
       await admin.from("notifications").insert({
@@ -323,7 +348,7 @@ Deno.serve(async (req) => {
         type: "event_shop",
       });
 
-      return Response.json({ success: true, cost: finalCost, contents }, { headers: corsHeaders });
+      return Response.json({ success: true, cost: finalCost, paymentMethod: payMethod, contents }, { headers: corsHeaders });
     }
 
     // OPEN MYSTERY BOX
