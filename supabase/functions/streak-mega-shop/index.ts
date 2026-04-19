@@ -52,6 +52,22 @@ async function deductInput(admin: any, visitorId: string, type: string, amount: 
   return "Tipe input tidak didukung";
 }
 
+// Deduct gems from game_profiles
+async function deductGems(admin: any, visitorId: string, amount: number, description: string, refId?: string): Promise<string | null> {
+  const { data: prof } = await admin.from("game_profiles").select("gems").eq("visitor_id", visitorId).maybeSingle();
+  const gems = prof?.gems || 0;
+  if (gems < amount) return `Gem kurang. Butuh ${amount} 💎, kamu punya ${gems} 💎`;
+  await admin.from("game_profiles").update({ gems: gems - amount }).eq("visitor_id", visitorId);
+  await admin.from("gem_transactions").insert({
+    visitor_id: visitorId,
+    amount: -amount,
+    type: "shop",
+    description,
+    reference_id: refId,
+  });
+  return null;
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
   try {
