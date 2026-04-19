@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Loader2, Coins, Sparkles, Trophy } from "lucide-react";
+import { Loader2, Coins, Sparkles, Trophy, Info, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface Prize {
@@ -30,6 +30,7 @@ export default function SpinWheel({ visitorId, coins, onUpdate }: Props) {
   const [spinning, setSpinning] = useState(false);
   const [resultPrize, setResultPrize] = useState<Prize | null>(null);
   const [showResult, setShowResult] = useState(false);
+  const [showInfo, setShowInfo] = useState(false);
 
   async function load() {
     const { data } = await supabase.functions.invoke("spin-wheel", { body: { visitorId, action: "check" } });
@@ -90,7 +91,16 @@ export default function SpinWheel({ visitorId, coins, onUpdate }: Props) {
           <Sparkles className="w-4 h-4 icon-3d-sparkles" strokeWidth={2.5} />
           <span className="text-xs font-black neon-text-pink tracking-widest uppercase">Spin Wheel Harian</span>
         </div>
-        <span className="text-[10px] font-bold text-white/60">1x / hari</span>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setShowInfo(true)}
+            className="w-7 h-7 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 flex items-center justify-center transition-colors"
+            aria-label="Lihat semua hadiah"
+          >
+            <Info className="w-3.5 h-3.5 text-cyan-300" strokeWidth={2.5} />
+          </button>
+          <span className="text-[10px] font-bold text-white/60">1x / hari</span>
+        </div>
       </div>
 
       <div className="relative w-full aspect-square max-w-[300px] mx-auto">
@@ -181,6 +191,85 @@ export default function SpinWheel({ visitorId, coins, onUpdate }: Props) {
               <div className="text-2xl font-black text-white drop-shadow mb-3">{resultPrize.label}</div>
               <Button onClick={() => setShowResult(false)} className="bg-white text-black font-black w-full">
                 MANTAP! 🚀
+              </Button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {showInfo && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[200] bg-black/85 backdrop-blur flex items-center justify-center p-4"
+            onClick={() => setShowInfo(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.9, y: 20 }}
+              className="max-w-sm w-full max-h-[80vh] overflow-y-auto rounded-3xl p-5 bg-gradient-to-br from-slate-900 via-purple-950 to-slate-900 border border-pink-500/40 shadow-[0_0_40px_rgba(236,72,153,0.4)]"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <Sparkles className="w-5 h-5 text-pink-400" strokeWidth={2.5} />
+                  <h3 className="text-base font-black text-white">Semua Hadiah Spin</h3>
+                </div>
+                <button
+                  onClick={() => setShowInfo(false)}
+                  className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center"
+                >
+                  <X className="w-4 h-4 text-white" strokeWidth={2.5} />
+                </button>
+              </div>
+
+              <div className="text-[10px] text-white/60 mb-3 px-1">
+                Biaya: <span className="font-black text-yellow-300">{cost} 🪙</span> · Total {prizes.length} hadiah
+              </div>
+
+              <div className="space-y-2">
+                {prizes.map((p, i) => {
+                  const totalWeight = prizes.reduce((s, x) => s + (x.weight || 0), 0);
+                  const chance = totalWeight > 0 ? ((p.weight / totalWeight) * 100).toFixed(1) : "0";
+                  const icon = p.value > 0
+                    ? p.type === "coins" ? "🪙"
+                    : p.type === "freeze" ? "❄️"
+                    : p.rarity === "legendary" ? "🎰" : "🎁"
+                    : "💀";
+                  return (
+                    <div
+                      key={i}
+                      className="flex items-center gap-3 p-2.5 rounded-xl border border-white/10"
+                      style={{ background: `linear-gradient(90deg, ${p.color}33, transparent)` }}
+                    >
+                      <div
+                        className="w-10 h-10 rounded-lg flex items-center justify-center text-xl flex-shrink-0"
+                        style={{ background: p.color }}
+                      >
+                        {icon}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-sm font-black text-white truncate">{p.label}</div>
+                        <div className="flex items-center gap-1.5 mt-0.5">
+                          <span className="text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded bg-white/10 text-white/80">
+                            {p.rarity}
+                          </span>
+                          <span className="text-[10px] text-white/60">Peluang ~{chance}%</span>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              <Button
+                onClick={() => setShowInfo(false)}
+                className="w-full mt-4 bg-gradient-to-r from-pink-500 to-purple-600 text-white font-black"
+              >
+                MENGERTI
               </Button>
             </motion.div>
           </motion.div>
