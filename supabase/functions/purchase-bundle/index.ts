@@ -103,9 +103,10 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Add storage
+    // Add storage (selalu 30 hari, tidak permanen)
     if (bundle.storage_mb > 0) {
-      await admin.from("user_music_storage").insert({ visitor_id: visitorId, storage_mb: bundle.storage_mb, voucher_code: `BUNDLE-${Date.now()}` });
+      const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+      await admin.from("user_music_storage").insert({ visitor_id: visitorId, storage_mb: bundle.storage_mb, voucher_code: `BUNDLE-${Date.now()}`, expires_at: expiresAt });
     }
 
     // Record transaction
