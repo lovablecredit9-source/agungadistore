@@ -286,7 +286,7 @@ export default function PlusTab() {
             const parts: string[] = [];
             if (pkg.credits > 0) parts.push(`${pkg.credits} Kredit`);
             if (pkg.streak_days > 0) parts.push(`${pkg.streak_days} Hari Streak`);
-            if (pkg.storage_mb > 0) parts.push(`${(pkg.storage_mb / 1024).toFixed(0)} GB Storage`);
+            if (pkg.storage_mb > 0) parts.push(`${(pkg.storage_mb / 1024).toFixed(0)} GB Storage (30 hari)`);
             return (
               <PackageButton
                 key={pkg.id}
