@@ -729,27 +729,49 @@ export default function NeonStreakHub({ visitorId, forcedView }: Props) {
               </div>
               <div className="grid grid-cols-2 gap-2 max-h-[40vh] overflow-y-auto">
                 {POWER_UPS.map(p => {
-                  const canBuy = coins >= p.cost;
                   const Icon = p.icon;
+                  const canCoin = coins >= p.cost;
+                  const canGem = gems >= p.gemCost;
+                  const busyCoin = redeemingPower === p.id + ":coin";
+                  const busyGem = redeemingPower === p.id + ":gem";
+                  const anyBusy = busyCoin || busyGem;
                   return (
-                    <button
+                    <div
                       key={p.id}
-                      disabled={!canBuy || redeemingPower === p.id}
-                      onClick={() => redeemPowerUp(p)}
-                      className={`relative p-3 rounded-xl border text-left transition ${
-                        canBuy ? `bg-gradient-to-br ${p.color} border-white/20 hover:scale-[1.02] shadow-lg` : "bg-black/40 border-white/10 opacity-50"
+                      className={`relative p-3 rounded-xl border flex flex-col ${
+                        canCoin || canGem ? `bg-gradient-to-br ${p.color} border-white/20 shadow-lg` : "bg-black/40 border-white/10 opacity-60"
                       }`}
                     >
                       <Icon className="w-7 h-7 text-white drop-shadow mb-1" strokeWidth={2.5} />
                       <div className="font-extrabold text-white text-xs leading-tight">{p.name}</div>
-                      <div className="text-[10px] text-white/80 mb-2 line-clamp-2">{p.desc}</div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs font-black text-white tabular-nums flex items-center gap-1">
-                          <Coins className="w-3.5 h-3.5" strokeWidth={2.5} /> {p.cost}
-                        </span>
-                        {redeemingPower === p.id && <Loader2 className="w-3 h-3 animate-spin text-white" />}
+                      <div className="text-[10px] text-white/80 mb-2 line-clamp-2 flex-1">{p.desc}</div>
+                      <div className="flex items-stretch gap-1 mt-auto">
+                        <button
+                          disabled={!canCoin || anyBusy}
+                          onClick={() => redeemPowerUp(p, "coin")}
+                          className={`flex-1 px-1.5 py-1 rounded-lg text-[10px] font-black tabular-nums flex items-center justify-center gap-1 border transition ${
+                            canCoin
+                              ? "bg-yellow-500/30 border-yellow-300/60 text-yellow-50 hover:bg-yellow-500/40 active:scale-95"
+                              : "bg-black/30 border-white/10 text-white/40 cursor-not-allowed"
+                          }`}
+                          title={canCoin ? "Bayar pakai Coin" : `Butuh ${p.cost} coin`}
+                        >
+                          {busyCoin ? <Loader2 className="w-3 h-3 animate-spin" /> : <><Coins className="w-3 h-3" strokeWidth={2.5} /> {p.cost}</>}
+                        </button>
+                        <button
+                          disabled={!canGem || anyBusy}
+                          onClick={() => redeemPowerUp(p, "gem")}
+                          className={`flex-1 px-1.5 py-1 rounded-lg text-[10px] font-black tabular-nums flex items-center justify-center gap-1 border transition ${
+                            canGem
+                              ? "bg-cyan-500/30 border-cyan-300/60 text-cyan-50 hover:bg-cyan-500/40 active:scale-95"
+                              : "bg-black/30 border-white/10 text-white/40 cursor-not-allowed"
+                          }`}
+                          title={canGem ? "Bayar pakai Gem" : `Butuh ${p.gemCost} gem`}
+                        >
+                          {busyGem ? <Loader2 className="w-3 h-3 animate-spin" /> : <><Gem className="w-3 h-3" strokeWidth={2.5} /> {p.gemCost}</>}
+                        </button>
                       </div>
-                    </button>
+                    </div>
                   );
                 })}
               </div>
