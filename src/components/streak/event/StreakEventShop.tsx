@@ -10,6 +10,7 @@ import {
   Loader2, Heart, Crown, Sparkles, Box as BoxIcon, ShoppingBag, Calendar,
   Trophy, Clock, Coins, Flame, Star, Lock, TrendingUp,
 } from "lucide-react";
+import ShopExtras from "./ShopExtras";
 
 interface Props {
   visitorId: string;
