@@ -150,6 +150,10 @@ export default function NeonStreakHub({ visitorId, forcedView }: Props) {
       setLongestStreak((streak as any).longest_streak || 0);
       setTotalClaims((streak as any).total_claims || 0);
     }
+    // Load gems from game_profiles
+    const { data: gp } = await supabase.from("game_profiles").select("gems").eq("visitor_id", visitorId).maybeSingle();
+    setGems((gp as any)?.gems || 0);
+
     const { data: box } = await supabase.from("mystery_box_claims").select("*").eq("visitor_id", visitorId).eq("claim_date", today).maybeSingle();
     setBoxOpened(!!box);
     if (box) setReward(box);
