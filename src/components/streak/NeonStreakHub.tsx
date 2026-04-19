@@ -103,6 +103,7 @@ interface Challenge {
 export default function NeonStreakHub({ visitorId, forcedView }: Props) {
   const { toast } = useToast();
   const [coins, setCoins] = useState(0);
+  const [gems, setGems] = useState(0);
   const [multiplier, setMultiplier] = useState(1);
   const [currentStreak, setCurrentStreak] = useState(0);
   const [boxOpened, setBoxOpened] = useState(false);
@@ -149,6 +150,10 @@ export default function NeonStreakHub({ visitorId, forcedView }: Props) {
       setLongestStreak((streak as any).longest_streak || 0);
       setTotalClaims((streak as any).total_claims || 0);
     }
+    // Load gems from game_profiles
+    const { data: gp } = await supabase.from("game_profiles").select("gems").eq("visitor_id", visitorId).maybeSingle();
+    setGems((gp as any)?.gems || 0);
+
     const { data: box } = await supabase.from("mystery_box_claims").select("*").eq("visitor_id", visitorId).eq("claim_date", today).maybeSingle();
     setBoxOpened(!!box);
     if (box) setReward(box);
@@ -357,22 +362,36 @@ export default function NeonStreakHub({ visitorId, forcedView }: Props) {
       {/* Coins + multiplier neon header */}
       <div className="cyber-card rounded-2xl p-4 relative scanline">
         <div className="absolute inset-0 cyber-grid opacity-30 rounded-2xl" />
-        <div className="relative z-10 flex items-center justify-between">
-          <div>
+        <div className="relative z-10 flex items-center justify-between gap-3">
+          <div className="flex-1 min-w-0">
             <div className="text-[10px] font-black tracking-widest neon-text-cyan uppercase">Streak Coins</div>
             <div className="flex items-center gap-2 mt-1">
-              <Coins className="w-7 h-7 icon-3d-coin neon-pulse" strokeWidth={2.5} />
-              <span className="text-3xl font-black neon-gradient-text tabular-nums">{coins.toLocaleString("id-ID")}</span>
+              <Coins className="w-7 h-7 icon-3d-coin neon-pulse shrink-0" strokeWidth={2.5} />
+              <span className="text-2xl font-black neon-gradient-text tabular-nums truncate">{coins.toLocaleString("id-ID")}</span>
+            </div>
+          </div>
+          <div className="h-12 w-px bg-gradient-to-b from-transparent via-cyan-400/50 to-transparent shrink-0" />
+          <div className="flex-1 min-w-0">
+            <div className="text-[10px] font-black tracking-widest uppercase bg-gradient-to-r from-cyan-300 via-blue-300 to-purple-300 bg-clip-text text-transparent">Streak Gem 💎</div>
+            <div className="flex items-center gap-2 mt-1">
+              <motion.div
+                animate={{ rotate: [0, 10, -10, 0], scale: [1, 1.1, 1] }}
+                transition={{ duration: 2.5, repeat: Infinity }}
+                className="shrink-0"
+              >
+                <Gem className="w-7 h-7 text-cyan-300 drop-shadow-[0_0_8px_rgba(34,211,238,0.8)]" strokeWidth={2.5} />
+              </motion.div>
+              <span className="text-2xl font-black tabular-nums truncate bg-gradient-to-r from-cyan-200 via-blue-300 to-purple-400 bg-clip-text text-transparent drop-shadow">{gems.toLocaleString("id-ID")}</span>
             </div>
           </div>
           {multiplier > 1 && (
             <motion.div
               animate={{ scale: [1, 1.08, 1] }}
               transition={{ duration: 1.5, repeat: Infinity }}
-              className="px-3 py-1.5 rounded-full bg-gradient-to-r from-pink-500 to-purple-600 text-white text-xs font-black shadow-[0_0_20px_hsl(var(--neon-pink)/0.7)] flex items-center gap-1"
+              className="px-2 py-1 rounded-full bg-gradient-to-r from-pink-500 to-purple-600 text-white text-[10px] font-black shadow-[0_0_20px_hsl(var(--neon-pink)/0.7)] flex items-center gap-1 shrink-0"
             >
-              <Zap className="w-3.5 h-3.5 icon-3d-zap" strokeWidth={3} />
-              x{multiplier} BOOST
+              <Zap className="w-3 h-3 icon-3d-zap" strokeWidth={3} />
+              x{multiplier}
             </motion.div>
           )}
         </div>
