@@ -10,6 +10,7 @@ import {
   Loader2, Crown, Sparkles, Repeat, Users, Gem, Coins, Lock, Check, Trophy, Flame, PartyPopper, Star, Zap,
 } from "lucide-react";
 import StreakLuckyWheelShop from "./StreakLuckyWheelShop";
+import StreakShopExtras from "./StreakShopExtras";
 
 interface Props {
   visitorId: string;
@@ -77,6 +78,10 @@ export default function MegaShopHub({ visitorId, onUpdate }: Props) {
           <Badge className="bg-red-500/40 text-red-100 border-red-400/60 text-[9px] px-1.5 py-0 h-4 animate-pulse">FESTIVE</Badge>
         </div>
       </div>
+
+      <StreakShopExtras visitorId={visitorId} onUpdate={() => { load(); onUpdate?.(); }} />
+
+      <div className="h-3" />
 
       <Tabs defaultValue="wheel" className="w-full">
         <TabsList className="grid grid-cols-5 bg-black/30 border border-amber-400/30 h-auto p-1 mb-2">
