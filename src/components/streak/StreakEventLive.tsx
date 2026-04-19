@@ -261,6 +261,51 @@ export default function StreakEventLive({ visitorId, currentStreak, totalClaims,
           <div className="text-[9px] text-yellow-200/70 mt-1">Pool naik tiap pemain klaim · dibagi rata Top 10</div>
         </div>
 
+        {/* MY WALLET — Streak Coin & Gem (Diamond) */}
+        <div className="grid grid-cols-2 gap-2">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
+            className="p-3 rounded-xl bg-gradient-to-br from-amber-500/25 to-yellow-600/25 border border-yellow-400/50 relative overflow-hidden"
+          >
+            <motion.div
+              className="absolute -top-4 -right-4 w-16 h-16 rounded-full bg-yellow-400/20 blur-2xl"
+              animate={{ scale: [1, 1.3, 1], opacity: [0.4, 0.7, 0.4] }}
+              transition={{ duration: 3, repeat: Infinity }}
+            />
+            <div className="flex items-center gap-1.5 mb-1 relative">
+              <motion.div animate={{ rotate: [0, 360] }} transition={{ duration: 8, repeat: Infinity, ease: "linear" }}>
+                <Coins className="w-4 h-4 text-yellow-300 drop-shadow-[0_0_6px_rgba(250,204,21,0.6)]" strokeWidth={2.5} />
+              </motion.div>
+              <span className="text-[9px] font-black text-yellow-100 uppercase tracking-widest">Streak Coin</span>
+            </div>
+            <div className="text-xl font-black text-yellow-50 tabular-nums relative drop-shadow-[0_0_8px_rgba(250,204,21,0.4)]">
+              {streakCoins.toLocaleString("id-ID")}
+            </div>
+            <div className="text-[9px] text-yellow-200/80 mt-0.5 font-bold relative">Buat klaim hadiah harian</div>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
+            className="p-3 rounded-xl bg-gradient-to-br from-cyan-500/25 to-blue-600/25 border border-cyan-400/50 relative overflow-hidden"
+          >
+            <motion.div
+              className="absolute -top-4 -right-4 w-16 h-16 rounded-full bg-cyan-400/25 blur-2xl"
+              animate={{ scale: [1.1, 1, 1.1], opacity: [0.5, 0.8, 0.5] }}
+              transition={{ duration: 2.5, repeat: Infinity }}
+            />
+            <div className="flex items-center gap-1.5 mb-1 relative">
+              <motion.div animate={{ scale: [1, 1.2, 1], rotate: [0, 15, -15, 0] }} transition={{ duration: 2, repeat: Infinity }}>
+                <Gem className="w-4 h-4 text-cyan-200 drop-shadow-[0_0_6px_rgba(34,211,238,0.7)]" strokeWidth={2.5} />
+              </motion.div>
+              <span className="text-[9px] font-black text-cyan-100 uppercase tracking-widest">Streak Gem 💎</span>
+            </div>
+            <div className="text-xl font-black text-cyan-50 tabular-nums relative drop-shadow-[0_0_8px_rgba(34,211,238,0.5)]">
+              {gems.toLocaleString("id-ID")}
+            </div>
+            <div className="text-[9px] text-cyan-200/80 mt-0.5 font-bold relative">Diamond premium · upgrade tier</div>
+          </motion.div>
+        </div>
+
         {/* TOP 3 PODIUM */}
         {top3.length > 0 && (
           <div>
