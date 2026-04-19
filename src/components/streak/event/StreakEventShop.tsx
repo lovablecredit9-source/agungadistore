@@ -279,29 +279,53 @@ export default function StreakEventShop({ visitorId, onUpdate }: Props) {
                     <Heart className={`h-4 w-4 ${b.is_wishlisted ? "fill-pink-400 text-pink-400" : "text-white/40"}`} />
                   </button>
                 </div>
-                <div className="flex items-center justify-between mt-2 pt-2 border-t border-white/10">
-                  <div>
+                <div className="mt-2 pt-2 border-t border-white/10 space-y-2">
+                  <div className="flex items-center justify-between">
                     <div className="text-[10px] text-white/60">Limit {b.weekly_used}/{b.weekly_limit} per minggu</div>
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-[10px] text-white/50 line-through">{b.original_price}</span>
-                      <span className="text-base font-bold text-yellow-300 flex items-center gap-0.5">
-                        <Coins className="h-3.5 w-3.5" />{b.final_price}
-                      </span>
-                      {b.tier_discount_pct > 0 && (
-                        <Badge className="bg-cyan-500/20 text-cyan-100 border-cyan-400/40 text-[9px] px-1 py-0 h-4">
-                          {data.tier.icon} -{b.tier_discount_pct}%
-                        </Badge>
-                      )}
-                    </div>
+                    {b.tier_discount_pct > 0 && (
+                      <Badge className="bg-cyan-500/20 text-cyan-100 border-cyan-400/40 text-[9px] px-1 py-0 h-4">
+                        {data.tier.icon} -{b.tier_discount_pct}%
+                      </Badge>
+                    )}
                   </div>
-                  <Button
-                    size="sm"
-                    disabled={!b.can_buy || busyId === `bundle:${b.id}`}
-                    onClick={() => buyBundle(b)}
-                    className="bg-gradient-to-r from-fuchsia-500 to-purple-600 text-white text-xs h-8"
-                  >
-                    {busyId === `bundle:${b.id}` ? <Loader2 className="h-3 w-3 animate-spin" /> : !b.can_buy ? <><Lock className="h-3 w-3 mr-1" />Habis</> : "Beli"}
-                  </Button>
+                  <div className="flex items-stretch gap-1.5">
+                    <Button
+                      size="sm"
+                      disabled={!b.can_buy || busyId?.startsWith(`bundle:${b.id}`) || userCoins < b.final_price}
+                      onClick={() => buyBundle(b, "coin")}
+                      className="flex-1 bg-yellow-500/20 hover:bg-yellow-500/30 border border-yellow-400/50 text-yellow-100 text-[11px] font-bold h-9 px-2 disabled:opacity-50"
+                    >
+                      {busyId === `bundle:${b.id}:coin` ? (
+                        <Loader2 className="h-3 w-3 animate-spin" />
+                      ) : (
+                        <span className="flex items-center gap-1 tabular-nums">
+                          <Coins className="h-3.5 w-3.5" />
+                          <span className="text-[9px] line-through opacity-60 mr-0.5">{b.original_price}</span>
+                          {b.final_price}
+                        </span>
+                      )}
+                    </Button>
+                    {b.final_gem_price > 0 && (
+                      <Button
+                        size="sm"
+                        disabled={!b.can_buy || busyId?.startsWith(`bundle:${b.id}`) || userGems < b.final_gem_price}
+                        onClick={() => buyBundle(b, "gem")}
+                        className="flex-1 bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-400/50 text-cyan-100 text-[11px] font-bold h-9 px-2 disabled:opacity-50"
+                      >
+                        {busyId === `bundle:${b.id}:gem` ? (
+                          <Loader2 className="h-3 w-3 animate-spin" />
+                        ) : (
+                          <span className="flex items-center gap-1 tabular-nums">
+                            <Gem className="h-3.5 w-3.5" />
+                            {b.final_gem_price}
+                          </span>
+                        )}
+                      </Button>
+                    )}
+                  </div>
+                  {!b.can_buy && (
+                    <div className="text-[10px] text-rose-300 flex items-center gap-1"><Lock className="h-3 w-3" />Limit minggu ini sudah tercapai</div>
+                  )}
                 </div>
               </motion.div>
             );
