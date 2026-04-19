@@ -40,6 +40,8 @@ import TreasureHuntGrid from "./event/TreasureHuntGrid";
 import CommunityBossRaid from "./event/CommunityBossRaid";
 import CoinRainGame from "./event/CoinRainGame";
 import StreakRoyaleBracket from "./event/StreakRoyaleBracket";
+import MegaShopHub from "./MegaShopHub";
+import MegaEventHub from "./MegaEventHub";
 import { syncPowerUpsFromServer } from "@/components/games/gameStore";
 
 // Strip leading emoji from a title and map to a 3D Lucide icon
@@ -455,6 +457,7 @@ export default function NeonStreakHub({ visitorId, forcedView }: Props) {
 
       {activeView === "event" && (
         <div className="space-y-3">
+          <MegaEventHub visitorId={visitorId} onUpdate={loadAll} />
           <StreakEventLive visitorId={visitorId} currentStreak={currentStreak} totalClaims={totalClaims} streakCoins={coins} />
           <LiveActivityTicker />
           <EventCalendarSchedule />
@@ -491,6 +494,7 @@ export default function NeonStreakHub({ visitorId, forcedView }: Props) {
 
       {activeView === "shop" && (
         <div className="space-y-3">
+          <MegaShopHub visitorId={visitorId} onUpdate={loadAll} />
           <StreakShopFlashDeals visitorId={visitorId} onUpdate={loadAll} />
           <StreakEventShop visitorId={visitorId} onUpdate={loadAll} />
           <GemShop visitorId={visitorId} onUpdate={loadAll} />
