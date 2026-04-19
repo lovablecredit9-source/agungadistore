@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback, useRef, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Music, Loader2, Sparkles, Check, X, Trophy, Lightbulb, RotateCcw, Heart, Timer } from "lucide-react";
+import { Music, Loader2, Sparkles, Check, X, Trophy, Lightbulb, RotateCcw, Heart, Timer, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -15,8 +15,15 @@ interface Question {
   hint: string;
 }
 
+type Difficulty = "mudah" | "sedang" | "sulit";
+
+const DIFFICULTIES: { key: Difficulty; label: string; color: string; time: number; desc: string }[] = [
+  { key: "mudah", label: "Mudah", color: "text-green-400", time: 60, desc: "Lagu mega-hit · reff ikonik" },
+  { key: "sedang", label: "Sedang", color: "text-blue-400", time: 45, desc: "Lagu populer · reff/verse" },
+  { key: "sulit", label: "Sulit", color: "text-red-400", time: 30, desc: "Verse/bridge · opsi mirip" },
+];
+
 const TOTAL_ROUNDS = 5;
-const TIME_PER_QUESTION = 45;
 const MAX_LIVES = 3;
 const HINT_COST = 5;
 const REVEAL_ANSWER_COST = 1;
