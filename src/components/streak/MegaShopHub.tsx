@@ -7,8 +7,9 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
 import {
-  Loader2, Crown, Sparkles, Repeat, Users, Gem, Coins, Lock, Check, Trophy, Flame, PartyPopper, Star,
+  Loader2, Crown, Sparkles, Repeat, Users, Gem, Coins, Lock, Check, Trophy, Flame, PartyPopper, Star, Zap,
 } from "lucide-react";
+import StreakLuckyWheelShop from "./StreakLuckyWheelShop";
 
 interface Props {
   visitorId: string;
@@ -77,8 +78,11 @@ export default function MegaShopHub({ visitorId, onUpdate }: Props) {
         </div>
       </div>
 
-      <Tabs defaultValue="bp" className="w-full">
-        <TabsList className="grid grid-cols-4 bg-black/30 border border-amber-400/30 h-auto p-1 mb-2">
+      <Tabs defaultValue="wheel" className="w-full">
+        <TabsList className="grid grid-cols-5 bg-black/30 border border-amber-400/30 h-auto p-1 mb-2">
+          <TabsTrigger value="wheel" className="text-[10px] sm:text-xs data-[state=active]:bg-pink-500/40 px-1 py-1.5">
+            <Zap className="h-3 w-3 mr-0.5" /> Wheel
+          </TabsTrigger>
           <TabsTrigger value="bp" className="text-[10px] sm:text-xs data-[state=active]:bg-amber-500/40 px-1 py-1.5">
             <Crown className="h-3 w-3 mr-0.5" /> Pass
           </TabsTrigger>
@@ -92,6 +96,11 @@ export default function MegaShopHub({ visitorId, onUpdate }: Props) {
             <Users className="h-3 w-3 mr-0.5" /> Group
           </TabsTrigger>
         </TabsList>
+
+        {/* LUCKY WHEEL */}
+        <TabsContent value="wheel" className="mt-2">
+          <StreakLuckyWheelShop visitorId={(data?.visitor_id) || ""} onUpdate={() => { load(); onUpdate?.(); }} />
+        </TabsContent>
 
         {/* BATTLE PASS */}
         <TabsContent value="bp" className="mt-2 space-y-2">
