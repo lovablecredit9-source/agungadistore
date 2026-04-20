@@ -2728,8 +2728,6 @@ const Index = () => {
                   onVoucher={() => setTab("voucher")}
                 />
 
-                {/* Live Hub: Auto Flash Sale + Daily Spin + Mystery Box */}
-                <EngagementHub />
 
                 {/* Account Actions Card — minimal clean */}
                 <Card className="border border-border/60 shadow-sm bg-card">
