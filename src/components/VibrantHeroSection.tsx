@@ -23,12 +23,6 @@ interface QuickAction {
   };
 }
 
-interface PersonaTab {
-  id: "for-you" | "trending" | "history";
-  label: string;
-  icon: React.ReactNode;
-  items: { emoji: string; title: string; sub: string; tag: string; tagTone: string }[];
-}
 
 interface Props {
   productCount: number;
