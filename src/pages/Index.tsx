@@ -56,6 +56,7 @@ import { useGameBalance } from "@/components/games/GameBalance";
 import LiveClock from "@/components/LiveClock";
 import LoginGate from "@/components/LoginGate";
 import WhatsAppChat from "@/components/WhatsAppChat";
+import EngagementHub from "@/components/EngagementHub";
 
 type Tab = "beranda" | "produk" | "voucher" | "history" | "likes" | "tiket" | "saldo" | "playlist" | "publik" | "sponsor" | "streak" | "streakevent" | "streakshop" | "adminpost" | "game" | "plus" | "update";
 
@@ -1630,6 +1631,9 @@ const Index = () => {
                 </button>
               ))}
             </div>
+
+            {/* Engagement Hub: Auto Flash Sale + Daily Spin + Mystery Box */}
+            <EngagementHub />
 
             {/* Vibrant Hero - new premium feature */}
             <VibrantHeroSection
