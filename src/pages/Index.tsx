@@ -308,6 +308,7 @@ const Index = () => {
   const setTab = useCallback((t: Tab) => {
     navigate(PATH_FROM_TAB[t] || "/", { replace: false });
   }, [navigate]);
+  const [musicSubTab, setMusicSubTab] = useState<MusicSubTab>("playlist");
   const [products, setProducts] = useState<Product[]>([]);
   const [productImages, setProductImages] = useState<ProductImage[]>([]);
   const [socialLinks, setSocialLinks] = useState<{ id: string; platform: string; label: string; url: string; icon_url: string | null; color_from: string; color_to: string; sort_order: number }[]>([]);
@@ -3129,8 +3130,8 @@ const Index = () => {
           </div>
         )}
 
-        {/* PlaylistTab always mounted, hidden when not active */}
-        <div className={tab === "playlist" ? "" : "hidden"}>
+        {/* PlaylistTab always mounted (audio persistence). Visible on legacy /playlist OR Musik hub Playlist sub-tab. */}
+        <div className={tab === "playlist" || (tab === "musik" && musicSubTab === "playlist") ? "" : "hidden"}>
           <PlaylistTab onPlaybackChange={setPlaybackState} onTogglePlay={togglePlayRef} onOpenFullPlayer={openFullPlayerRef} onPlayExternal={playExternalRef} />
         </div>
 
