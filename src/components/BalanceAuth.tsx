@@ -486,18 +486,12 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser }: BalanceA
           <Button size="sm" variant="outline" className="gap-1.5 text-xs font-bold" onClick={handleAddAccount} disabled={savedAccounts.length >= MAX_SAVED_ACCOUNTS}>
             <Plus className="w-3.5 h-3.5" /> Tambah Akun
           </Button>
-          <BanGuard fallbackLabel="tombol logout">
-            {(locked, openPopup) => (
-              <>
-                <Button size="sm" variant="outline" className="gap-1.5 text-xs font-bold text-destructive border-destructive/30" onClick={locked ? openPopup : handleLogout}>
-                  <LogOut className="w-3.5 h-3.5" /> Logout
-                </Button>
-                <Button size="sm" variant="outline" className="gap-1.5 text-xs font-bold text-destructive border-destructive/30" onClick={locked ? openPopup : handleLogoutAll}>
-                  <Trash2 className="w-3.5 h-3.5" /> Logout Semua
-                </Button>
-              </>
-            )}
-          </BanGuard>
+          <Button size="sm" variant="outline" className="gap-1.5 text-xs font-bold text-destructive border-destructive/30" onClick={handleLogout}>
+            <LogOut className="w-3.5 h-3.5" /> Logout
+          </Button>
+          <Button size="sm" variant="outline" className="gap-1.5 text-xs font-bold text-destructive border-destructive/30" onClick={handleLogoutAll}>
+            <Trash2 className="w-3.5 h-3.5" /> Logout Semua
+          </Button>
           <Button size="sm" variant="ghost" className="gap-1.5 text-xs font-bold" onClick={() => setShowHistory(!showHistory)}>
             <Smartphone className="w-3.5 h-3.5" /> Riwayat
           </Button>
