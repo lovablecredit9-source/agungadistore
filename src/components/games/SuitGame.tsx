@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
 import { RefreshCw, Swords } from "lucide-react";
-import { loadSuitScore, saveSuitScore, type SuitScore } from "./gameStore";
+import { awardGamePoints, loadSuitScore, saveSuitScore, type SuitScore } from "./gameStore";
 import { updateGameStats } from "./GameProfile";
 import { getVisitorId } from "@/lib/visitor-id";
 import handBatu from "@/assets/hand-batu.png";
@@ -68,7 +68,12 @@ export default function SuitGame() {
       // Track stats
       if (res !== "seri") {
         const vid = localStorage.getItem("balance_visitor_id") || getVisitorId();
-        updateGameStats(vid, "suit", res === "menang", res === "menang" ? 10 : 0);
+        if (res === "menang") {
+          const { awardedPoints } = awardGamePoints(10);
+          updateGameStats(vid, "suit", true, awardedPoints);
+        } else {
+          updateGameStats(vid, "suit", false, 0);
+        }
       }
     }, 900);
   };

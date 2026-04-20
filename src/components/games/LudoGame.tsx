@@ -1,5 +1,6 @@
 import { useState, useCallback, useRef } from "react";
 import { updateGameStats } from "./GameProfile";
+import { awardGamePoints } from "./gameStore";
 import { getVisitorId } from "@/lib/visitor-id";
 import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
@@ -184,7 +185,8 @@ export default function LudoGame() {
       setMessage("🎉 Kamu MENANG!");
       setRolling(false);
       const vid = localStorage.getItem("balance_visitor_id") || getVisitorId();
-      updateGameStats(vid, "ludo", true, 50);
+      const { awardedPoints } = awardGamePoints(50);
+      updateGameStats(vid, "ludo", true, awardedPoints);
       return;
     }
 

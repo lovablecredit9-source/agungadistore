@@ -6,6 +6,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useGameCredits, GameCreditsBadge, BuyCreditsDialog } from "./GameCredits";
 import { updateGameStats } from "./GameProfile";
 import { getVisitorId } from "@/lib/visitor-id";
+import { awardGamePoints } from "./gameStore";
 
 const BOARD_SIZE = 100;
 const COLS = 10;
@@ -205,7 +206,8 @@ export default function UlarTanggaGame() {
       setWinner("player");
       setMessage("🎉 Kamu MENANG!");
       const vid = localStorage.getItem("balance_visitor_id") || getVisitorId();
-      updateGameStats(vid, "ular_tangga", true, 50);
+      const { awardedPoints } = awardGamePoints(50);
+      updateGameStats(vid, "ular_tangga", true, awardedPoints);
       return;
     }
 
