@@ -3114,17 +3114,7 @@ const Index = () => {
         )}
 
         {tab === "streakshop" && (
-          userBalance ? (
-            <NeonStreakHub key={`shop-${userBalance.visitor_id}`} visitorId={userBalance.visitor_id} forcedView="shop" />
-          ) : (
-            <LoginGate
-              title="Streak Shop"
-              description="Login saldo untuk tukar Streak Koin: Freeze, Voucher, Booster XP, Frame Avatar & lainnya."
-              emoji="🛒"
-              gradient="from-purple-600 to-cyan-600"
-              onGoToLogin={() => setTab("saldo")}
-            />
-          )
+          <NeonStreakHub key={`shop-${activeBalanceVisitorId}`} visitorId={activeBalanceVisitorId} forcedView="shop" />
         )}
 
         <div className={tab === "game" ? "" : "hidden"}>
