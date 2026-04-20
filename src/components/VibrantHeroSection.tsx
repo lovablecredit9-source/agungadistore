@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import {
   Sparkles, Zap, Package, Crown, ShoppingBag, ArrowRight, ShieldCheck,
-  Flame, TrendingUp, Clock, Heart, Star, Eye, Tag, Gift, Compass, X,
+  Star, Eye, Tag, X,
 } from "lucide-react";
 
 interface QuickAction {
@@ -23,12 +23,6 @@ interface QuickAction {
   };
 }
 
-interface PersonaTab {
-  id: "for-you" | "trending" | "history";
-  label: string;
-  icon: React.ReactNode;
-  items: { emoji: string; title: string; sub: string; tag: string; tagTone: string }[];
-}
 
 interface Props {
   productCount: number;
@@ -59,7 +53,7 @@ export default function VibrantHeroSection({
   onPremium,
 }: Props) {
   const [previewId, setPreviewId] = useState<string | null>(null);
-  const [persona, setPersona] = useState<PersonaTab["id"]>("for-you");
+  
   const [liveViewers, setLiveViewers] = useState(127);
 
   // Live viewers ticker — fake but feels alive
@@ -141,48 +135,7 @@ export default function VibrantHeroSection({
     },
   ], [onFlashSale, onWholesale, onNewArrivals, onPremium]);
 
-  const personaTabs: PersonaTab[] = useMemo(() => [
-    {
-      id: "for-you",
-      label: "Untuk Kamu",
-      icon: <Sparkles className="w-3.5 h-3.5" />,
-      items: [
-        { emoji: "🎧", title: "Earbuds Pro", sub: "Best match · 96%", tag: "Pilihan", tagTone: "bg-purple-500/15 text-purple-600 dark:text-purple-300" },
-        { emoji: "👟", title: "Sneakers Original", sub: "Sesuai gaya kamu", tag: "Match", tagTone: "bg-pink-500/15 text-pink-600 dark:text-pink-300" },
-        { emoji: "🎮", title: "Gaming Bundle", sub: "Diskon khusus", tag: "−25%", tagTone: "bg-emerald-500/15 text-emerald-600 dark:text-emerald-300" },
-      ],
-    },
-    {
-      id: "trending",
-      label: "Trending",
-      icon: <Flame className="w-3.5 h-3.5" />,
-      items: [
-        { emoji: "🔥", title: "Hoodie Oversize", sub: "1.2k dilihat hari ini", tag: "#1", tagTone: "bg-red-500/15 text-red-600 dark:text-red-300" },
-        { emoji: "📱", title: "Powerbank 20K", sub: "856 dilihat", tag: "#2", tagTone: "bg-orange-500/15 text-orange-600 dark:text-orange-300" },
-        { emoji: "⌚", title: "Smartwatch X", sub: "612 dilihat", tag: "#3", tagTone: "bg-amber-500/15 text-amber-600 dark:text-amber-300" },
-      ],
-    },
-    {
-      id: "history",
-      label: "Riwayat",
-      icon: <Clock className="w-3.5 h-3.5" />,
-      items: [
-        { emoji: "🕒", title: "Lihat lagi koleksi", sub: "Berdasarkan kunjungan", tag: "Resume", tagTone: "bg-blue-500/15 text-blue-600 dark:text-blue-300" },
-        { emoji: "💾", title: "Wishlist tersimpan", sub: "Cek harga terbaru", tag: "Saved", tagTone: "bg-cyan-500/15 text-cyan-600 dark:text-cyan-300" },
-        { emoji: "🛒", title: "Keranjang aktif", sub: "Selesaikan checkout", tag: "Pending", tagTone: "bg-yellow-500/15 text-yellow-700 dark:text-yellow-300" },
-      ],
-    },
-  ], []);
-
-  const activePersona = personaTabs.find((p) => p.id === persona)!;
   const previewAction = actions.find((a) => a.id === previewId);
-
-  const handlePersonaClick = (id: PersonaTab["id"]) => {
-    setPersona(id);
-    if (id === "trending") onFlashSale();
-    else if (id === "history") onCatalog();
-    else onShop();
-  };
 
   return (
     <section className="relative">
@@ -335,63 +288,6 @@ export default function VibrantHeroSection({
               </button>
             </div>
           ))}
-        </div>
-      </div>
-
-      {/* Personalized rail — Untuk Kamu / Trending / Riwayat */}
-      <div className="relative z-10 mt-5 px-1">
-        <div className="rounded-2xl border border-border bg-card/80 backdrop-blur-sm p-4 shadow-lg animate-fade-in">
-          <div className="flex items-center justify-between mb-3 gap-2">
-            <div className="flex items-center gap-2">
-              <Compass className="w-4 h-4 text-primary" />
-              <h3 className="font-extrabold text-sm">Jelajah Pintar</h3>
-            </div>
-            <div className="flex items-center gap-1 bg-muted rounded-full p-0.5">
-              {personaTabs.map((tab) => (
-                <button
-                  key={tab.id}
-                  onClick={() => setPersona(tab.id)}
-                  className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold transition-all ${
-                    persona === tab.id
-                      ? "bg-primary text-primary-foreground shadow-md scale-105"
-                      : "text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  {tab.icon}
-                  <span className="hidden xs:inline">{tab.label}</span>
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div key={persona} className="space-y-2 animate-fade-in">
-            {activePersona.items.map((item, i) => (
-              <button
-                key={`${persona}-${i}`}
-                onClick={() => handlePersonaClick(persona)}
-                className="w-full flex items-center gap-3 p-2.5 rounded-xl hover:bg-muted/70 active:scale-[0.98] transition-all group text-left"
-              >
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary/15 to-primary/5 flex items-center justify-center text-xl shrink-0 group-hover:scale-110 transition-transform">
-                  {item.emoji}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="font-bold text-sm truncate">{item.title}</div>
-                  <div className="text-[11px] text-muted-foreground truncate">{item.sub}</div>
-                </div>
-                <div className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold ${item.tagTone}`}>
-                  {item.tag}
-                </div>
-                <ArrowRight className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
-              </button>
-            ))}
-          </div>
-
-          {/* Mini perks ribbon */}
-          <div className="mt-3 pt-3 border-t border-border flex items-center justify-between gap-2 text-[10px] font-bold text-muted-foreground">
-            <div className="flex items-center gap-1"><Heart className="w-3 h-3 text-red-500" /> 4.9★</div>
-            <div className="flex items-center gap-1"><Gift className="w-3 h-3 text-purple-500" /> Free Voucher</div>
-            <div className="flex items-center gap-1"><TrendingUp className="w-3 h-3 text-emerald-500" /> +18% wk</div>
-          </div>
         </div>
       </div>
 
