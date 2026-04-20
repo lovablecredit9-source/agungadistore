@@ -36,6 +36,7 @@ export default function StreakShopExtras({ visitorId, onUpdate }: Props) {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState("mystery");
   const [now, setNow] = useState(Date.now());
   const [reveal, setReveal] = useState<any>(null);
   const [refCode, setRefCode] = useState("");
@@ -76,6 +77,44 @@ export default function StreakShopExtras({ visitorId, onUpdate }: Props) {
   const currentTier = (data.loyalty_tiers || []).find((t: any) => t.tier_key === data.loyalty_progress?.current_tier_key);
   const nextTier = (data.loyalty_tiers || []).find((t: any) => (t.tier_order || 0) > (currentTier?.tier_order || 0));
   const tierPct = nextTier ? Math.min(100, ((data.loyalty_progress?.lifetime_spent_coins || 0) / nextTier.required_lifetime_spent) * 100) : 100;
+  const featureCards = [
+    {
+      value: "mystery",
+      label: "Mystery Box",
+      shortLabel: "Box",
+      description: `${(data.mystery_boxes || []).length} box aktif`,
+      icon: Gift,
+      activeClass: "border-violet-300/70 bg-violet-500/25",
+      iconClass: "text-violet-200",
+    },
+    {
+      value: "auction",
+      label: "Auction House",
+      shortLabel: "Lelang",
+      description: `${(data.auctions || []).length} lelang aktif`,
+      icon: Gavel,
+      activeClass: "border-rose-300/70 bg-rose-500/25",
+      iconClass: "text-rose-200",
+    },
+    {
+      value: "loyalty",
+      label: "Loyalty Tier",
+      shortLabel: "Loyal",
+      description: currentTier ? currentTier.tier_name : "Tier belum terbaca",
+      icon: Crown,
+      activeClass: "border-amber-300/70 bg-amber-500/25",
+      iconClass: "text-amber-200",
+    },
+    {
+      value: "referral",
+      label: "Referral Vault",
+      shortLabel: "Ajak",
+      description: `${myRef.total_referred || 0} teman diajak`,
+      icon: Users,
+      activeClass: "border-emerald-300/70 bg-emerald-500/25",
+      iconClass: "text-emerald-200",
+    },
+  ];
 
   function copyCode() {
     navigator.clipboard.writeText(myRef.referral_code || "");
@@ -99,20 +138,41 @@ export default function StreakShopExtras({ visitorId, onUpdate }: Props) {
         </div>
       </div>
 
-      <Tabs defaultValue="mystery" className="w-full">
-        <TabsList className="grid grid-cols-4 bg-black/30 border border-fuchsia-400/30 h-auto p-1 mb-2">
-          <TabsTrigger value="mystery" className="text-[10px] sm:text-xs data-[state=active]:bg-violet-500/40 px-1 py-1.5">
-            <Gift className="h-3 w-3 mr-0.5" />Box
-          </TabsTrigger>
-          <TabsTrigger value="auction" className="text-[10px] sm:text-xs data-[state=active]:bg-rose-500/40 px-1 py-1.5">
-            <Gavel className="h-3 w-3 mr-0.5" />Lelang
-          </TabsTrigger>
-          <TabsTrigger value="loyalty" className="text-[10px] sm:text-xs data-[state=active]:bg-amber-500/40 px-1 py-1.5">
-            <Crown className="h-3 w-3 mr-0.5" />Loyal
-          </TabsTrigger>
-          <TabsTrigger value="referral" className="text-[10px] sm:text-xs data-[state=active]:bg-emerald-500/40 px-1 py-1.5">
-            <Users className="h-3 w-3 mr-0.5" />Ajak
-          </TabsTrigger>
+      <div className="grid grid-cols-2 gap-2 mb-3">
+        {featureCards.map((feature) => {
+          const Icon = feature.icon;
+          const isActive = activeTab === feature.value;
+          return (
+            <button
+              key={feature.value}
+              type="button"
+              onClick={() => setActiveTab(feature.value)}
+              className={`rounded-xl border p-2 text-left transition-all ${isActive ? feature.activeClass : "border-white/10 bg-black/20"}`}
+            >
+              <div className="flex items-start gap-2">
+                <div className={`rounded-lg bg-black/30 p-1.5 ${feature.iconClass}`}>
+                  <Icon className="h-4 w-4" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-[11px] font-bold text-white truncate">{feature.label}</p>
+                  <p className="text-[9px] text-white/65 truncate">{feature.description}</p>
+                </div>
+              </div>
+            </button>
+          );
+        })}
+      </div>
+
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className="grid w-full grid-cols-4 bg-black/30 border border-fuchsia-400/30 h-auto p-1 mb-2">
+          {featureCards.map((feature) => {
+            const Icon = feature.icon;
+            return (
+              <TabsTrigger key={feature.value} value={feature.value} className="text-[10px] sm:text-xs px-1 py-1.5">
+                <Icon className="h-3 w-3 mr-0.5" />{feature.shortLabel}
+              </TabsTrigger>
+            );
+          })}
         </TabsList>
 
         {/* MYSTERY BOX */}
