@@ -2,6 +2,11 @@ import { useEffect, useState, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { getVisitorId } from "@/lib/visitor-id";
 
+function getActiveBanVisitorId() {
+  if (typeof window === "undefined") return null;
+  return localStorage.getItem("balance_visitor_id") || getVisitorId();
+}
+
 export interface BanInfo {
   id: string;
   reason: string;
@@ -15,10 +20,17 @@ export function useAccountBan() {
   const [banned, setBanned] = useState(false);
   const [info, setInfo] = useState<BanInfo | null>(null);
   const [loading, setLoading] = useState(true);
+  const [visitorId, setVisitorId] = useState<string | null>(() => getActiveBanVisitorId());
   const channelNameRef = useRef(`account_bans_changes_${crypto.randomUUID()}`);
 
-  const refresh = useCallback(async () => {
-    const visitor_id = getVisitorId();
+  const refresh = useCallback(async (nextVisitorId?: string | null) => {
+    const visitor_id = nextVisitorId ?? getActiveBanVisitorId();
+    if (!visitor_id) {
+      setInfo(null);
+      setBanned(false);
+      setLoading(false);
+      return;
+    }
     const { data } = await supabase.rpc("get_account_ban_info", { p_visitor_id: visitor_id });
     const row = Array.isArray(data) && data.length > 0 ? (data[0] as BanInfo) : null;
     setInfo(row);
@@ -27,7 +39,13 @@ export function useAccountBan() {
   }, []);
 
   useEffect(() => {
-    refresh();
+    refresh(visitorId);
+
+    const handleSessionChange = () => {
+      const nextVisitorId = getActiveBanVisitorId();
+      setVisitorId((current) => (current === nextVisitorId ? current : nextVisitorId));
+      refresh(nextVisitorId);
+    };
 
     const channel = supabase
       .channel(channelNameRef.current)
@@ -36,10 +54,17 @@ export function useAccountBan() {
       })
       .subscribe();
 
+    window.addEventListener("storage", handleSessionChange);
+    window.addEventListener("focus", handleSessionChange);
+    window.addEventListener("balance-auth-changed", handleSessionChange as EventListener);
+
     return () => {
+      window.removeEventListener("storage", handleSessionChange);
+      window.removeEventListener("focus", handleSessionChange);
+      window.removeEventListener("balance-auth-changed", handleSessionChange as EventListener);
       supabase.removeChannel(channel);
     };
-  }, [refresh]);
+  }, [refresh, visitorId]);
 
   return { banned, info, loading, refresh };
 }
