@@ -39,7 +39,7 @@ import {
 import { useLang, t, type Lang } from "@/lib/i18n";
 import { z } from "zod";
 import PlaylistTab, { type PlaybackState } from "@/components/PlaylistTab";
-import MusicHub from "@/components/MusicHub";
+import MusicHub, { type MusicSubTab } from "@/components/MusicHub";
 import LanguageSelector from "@/components/LanguageSelector";
 import { LANGUAGES } from "@/lib/languages";
 import InstallPrompt from "@/components/InstallPrompt";
@@ -1550,10 +1550,10 @@ const Index = () => {
       <main className="flex-1 max-w-lg mx-auto w-full px-4 py-4 pb-24">
         {tab === "musik" && (
           <MusicHub
-            onPlaybackChange={setPlaybackState}
-            togglePlayRef={togglePlayRef}
-            openFullPlayerRef={openFullPlayerRef}
-            playExternalRef={playExternalRef}
+            subTab={musicSubTab}
+            onSubTabChange={setMusicSubTab}
+            onPlayExternal={(song) => playExternalRef.current?.(song)}
+            playlistSlot={null /* PlaylistTab is mounted persistently below */}
           />
         )}
 
