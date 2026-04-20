@@ -14,6 +14,51 @@ export type Database = {
   }
   public: {
     Tables: {
+      account_bans: {
+        Row: {
+          banned_by: string
+          banned_until: string | null
+          created_at: string
+          id: string
+          is_active: boolean
+          is_permanent: boolean
+          reason: string
+          unban_reason: string | null
+          unbanned_at: string | null
+          updated_at: string
+          user_balance_id: string | null
+          visitor_id: string
+        }
+        Insert: {
+          banned_by?: string
+          banned_until?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          is_permanent?: boolean
+          reason?: string
+          unban_reason?: string | null
+          unbanned_at?: string | null
+          updated_at?: string
+          user_balance_id?: string | null
+          visitor_id: string
+        }
+        Update: {
+          banned_by?: string
+          banned_until?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          is_permanent?: boolean
+          reason?: string
+          unban_reason?: string | null
+          unbanned_at?: string | null
+          updated_at?: string
+          user_balance_id?: string | null
+          visitor_id?: string
+        }
+        Relationships: []
+      }
       admin_posts: {
         Row: {
           content: string | null
@@ -4722,6 +4767,69 @@ export type Database = {
         }
         Relationships: []
       }
+      streak_membership_plans: {
+        Row: {
+          badge_color: string
+          bonus_freeze_count: number
+          bonus_gems: number
+          bonus_multiplier: number
+          bonus_streak_coins: number
+          created_at: string
+          description: string
+          duration_days: number
+          icon: string
+          id: string
+          is_active: boolean
+          is_featured: boolean
+          name: string
+          price_coins: number
+          price_gems: number
+          price_idr: number
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          badge_color?: string
+          bonus_freeze_count?: number
+          bonus_gems?: number
+          bonus_multiplier?: number
+          bonus_streak_coins?: number
+          created_at?: string
+          description?: string
+          duration_days?: number
+          icon?: string
+          id?: string
+          is_active?: boolean
+          is_featured?: boolean
+          name: string
+          price_coins?: number
+          price_gems?: number
+          price_idr?: number
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          badge_color?: string
+          bonus_freeze_count?: number
+          bonus_gems?: number
+          bonus_multiplier?: number
+          bonus_streak_coins?: number
+          created_at?: string
+          description?: string
+          duration_days?: number
+          icon?: string
+          id?: string
+          is_active?: boolean
+          is_featured?: boolean
+          name?: string
+          price_coins?: number
+          price_gems?: number
+          price_idr?: number
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       streak_milestone_claims: {
         Row: {
           claimed_at: string
@@ -6803,6 +6911,102 @@ export type Database = {
         }
         Relationships: []
       }
+      weekly_spin_event_settings: {
+        Row: {
+          banner_color: string
+          banner_description: string
+          banner_title: string
+          cost_coins: number
+          cost_gems: number
+          cost_idr: number
+          created_at: string
+          event_ends_at: string | null
+          event_starts_at: string | null
+          free_spin_per_week: number
+          id: string
+          is_active: boolean
+          max_spin_per_week: number
+          updated_at: string
+        }
+        Insert: {
+          banner_color?: string
+          banner_description?: string
+          banner_title?: string
+          cost_coins?: number
+          cost_gems?: number
+          cost_idr?: number
+          created_at?: string
+          event_ends_at?: string | null
+          event_starts_at?: string | null
+          free_spin_per_week?: number
+          id?: string
+          is_active?: boolean
+          max_spin_per_week?: number
+          updated_at?: string
+        }
+        Update: {
+          banner_color?: string
+          banner_description?: string
+          banner_title?: string
+          cost_coins?: number
+          cost_gems?: number
+          cost_idr?: number
+          created_at?: string
+          event_ends_at?: string | null
+          event_starts_at?: string | null
+          free_spin_per_week?: number
+          id?: string
+          is_active?: boolean
+          max_spin_per_week?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      weekly_spin_wheel_segments: {
+        Row: {
+          color: string
+          created_at: string
+          icon: string
+          id: string
+          is_active: boolean
+          label: string
+          rarity: string
+          reward_type: string
+          reward_value: number
+          sort_order: number
+          updated_at: string
+          weight: number
+        }
+        Insert: {
+          color?: string
+          created_at?: string
+          icon?: string
+          id?: string
+          is_active?: boolean
+          label: string
+          rarity?: string
+          reward_type?: string
+          reward_value?: number
+          sort_order?: number
+          updated_at?: string
+          weight?: number
+        }
+        Update: {
+          color?: string
+          created_at?: string
+          icon?: string
+          id?: string
+          is_active?: boolean
+          label?: string
+          rarity?: string
+          reward_type?: string
+          reward_value?: number
+          sort_order?: number
+          updated_at?: string
+          weight?: number
+        }
+        Relationships: []
+      }
       wholesale_prices: {
         Row: {
           created_at: string
@@ -6961,6 +7165,17 @@ export type Database = {
         }
         Returns: string
       }
+      get_account_ban_info: {
+        Args: { p_visitor_id: string }
+        Returns: {
+          banned_by: string
+          banned_until: string
+          created_at: string
+          id: string
+          is_permanent: boolean
+          reason: string
+        }[]
+      }
       get_account_credits: { Args: { p_visitor_id: string }; Returns: number }
       get_account_gems: { Args: { p_visitor_id: string }; Returns: number }
       get_active_user_balance_id: {
@@ -6990,6 +7205,7 @@ export type Database = {
         Args: { sponsor_id: string }
         Returns: undefined
       }
+      is_account_banned: { Args: { p_visitor_id: string }; Returns: boolean }
       is_admin_user: { Args: never; Returns: boolean }
       mark_notifications_read: {
         Args: { p_ids: string[]; p_visitor_id: string }

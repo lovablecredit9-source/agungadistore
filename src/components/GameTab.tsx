@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 import { Gamepad2, ArrowLeft } from "lucide-react";
+import { BanBanner } from "@/components/BanBanner";
 import SuitGame from "@/components/games/SuitGame";
 import TebakKataGame from "@/components/games/TebakKataGame";
 import TebakGambarGame from "@/components/games/TebakGambarGame";
@@ -128,6 +129,7 @@ export default function GameTab() {
 
   return (
     <div className="space-y-4 p-4 pb-24">
+      <BanBanner />
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
         <div className="flex items-center justify-between mb-2">
           <h2 className="font-extrabold text-xl flex items-center gap-2">

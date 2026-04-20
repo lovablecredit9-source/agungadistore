@@ -100,6 +100,11 @@ Deno.serve(async (req) => {
     const { action, visitorId } = body;
     if (!visitorId) return new Response(JSON.stringify({ error: "visitorId required" }), { status: 400, headers: corsHeaders });
 
+    if (action !== "status") {
+      const { data: banned } = await supabase.rpc("is_account_banned", { p_visitor_id: visitorId });
+      if (banned) return new Response(JSON.stringify({ error: "Akun Anda dibanned. Tidak bisa bermain." }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
     if (action === "status") {
       const tickets = await getOrCreateTickets(visitorId);
       const luck = await getActiveLuck(visitorId);

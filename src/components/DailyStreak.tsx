@@ -12,6 +12,7 @@ import StreakLeaderboard from "./streak/StreakLeaderboard";
 import AchievementBadges from "./streak/AchievementBadges";
 import StreakFreezeCard from "./streak/StreakFreezeCard";
 import NeonStreakHub from "./streak/NeonStreakHub";
+import { BanBanner } from "@/components/BanBanner";
 
 interface StreakData {
   id: string;
@@ -617,6 +618,7 @@ export default function DailyStreak({ visitorId }: DailyStreakProps) {
 
   return (
     <div className="space-y-4 p-4 pb-24">
+      <BanBanner />
       {/* Hero Streak Card */}
       <motion.div
         initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}

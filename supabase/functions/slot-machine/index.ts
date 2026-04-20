@@ -242,6 +242,10 @@ Deno.serve(async (req) => {
     const tier: Tier = (["hemat", "sedang", "besar", "mega", "ultra", "sultan", "raja", "dewa"].includes(rawTier) ? rawTier : "hemat") as Tier;
     if (!visitorId) return new Response(JSON.stringify({ error: "visitorId required" }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
+    // Ban guard
+    const { data: banned } = await supabase.rpc("is_account_banned", { p_visitor_id: visitorId });
+    if (banned) return new Response(JSON.stringify({ error: "Akun Anda dibanned. Tidak bisa bermain." }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+
     const cost = TIER_COSTS[tier];
 
     // Cek kredit & status unlimited (sumber kebenaran: unlimited_until > now())

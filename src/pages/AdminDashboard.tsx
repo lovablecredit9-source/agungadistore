@@ -24,6 +24,10 @@ import AdminPostsTab from "@/components/AdminPostsTab";
 import AdminPromoTab from "@/components/AdminPromoTab";
 import AdminSocialLinksTab from "@/components/AdminSocialLinksTab";
 import AdminLuckyWheelTab from "@/components/AdminLuckyWheelTab";
+import AdminStreakShopTab from "@/components/AdminStreakShopTab";
+import AdminStreakEventTab from "@/components/AdminStreakEventTab";
+import AdminMembershipTab from "@/components/AdminMembershipTab";
+import AdminBannedTab from "@/components/AdminBannedTab";
 import WhatsAppChat from "@/components/WhatsAppChat";
 
 interface Product {
@@ -126,7 +130,7 @@ interface UserBalance {
   created_at: string;
 }
 
-type AdminTab = "products" | "tokens" | "claims" | "tickets" | "chats" | "saldo" | "notif" | "deposit" | "settings" | "diskon" | "pin" | "musik" | "vmusik" | "sponsor" | "apikey" | "postingan" | "promo" | "sosmed" | "wheel";
+type AdminTab = "products" | "tokens" | "claims" | "tickets" | "chats" | "saldo" | "notif" | "deposit" | "settings" | "diskon" | "pin" | "musik" | "vmusik" | "sponsor" | "apikey" | "postingan" | "promo" | "sosmed" | "wheel" | "shopstreak" | "eventstreak" | "membership" | "banned";
 type ClaimDateFilter = "all" | "today" | "yesterday" | "lastmonth" | "custom";
 type DepositStatusFilter = "all" | "pending" | "approved" | "rejected" | "cancelled";
 type DepositMethodFilter = "all" | "qris" | "ewallet";
@@ -1090,6 +1094,10 @@ const AdminDashboard = () => {
             { key: "promo" as AdminTab, icon: Tag, label: "Promo", gradient: "from-rose-500 to-red-400" },
             { key: "sosmed" as AdminTab, icon: Globe, label: "Sosmed", gradient: "from-emerald-500 to-teal-400" },
             { key: "wheel" as AdminTab, icon: Tag, label: "Wheel", gradient: "from-pink-500 to-fuchsia-400" },
+            { key: "shopstreak" as AdminTab, icon: Tag, label: "🛒 Shop", gradient: "from-orange-500 to-pink-400" },
+            { key: "eventstreak" as AdminTab, icon: Tag, label: "✨ Event", gradient: "from-purple-500 to-fuchsia-400" },
+            { key: "membership" as AdminTab, icon: Shield, label: "👑 Member", gradient: "from-yellow-500 to-amber-400" },
+            { key: "banned" as AdminTab, icon: Lock, label: "🚫 Banned", gradient: "from-red-600 to-rose-500" },
           ]).map(({ key, icon: Icon, label, gradient }) => {
             const active = tab === key;
             const badgeCount = key === "tickets" ? allTickets.filter(t => t.status === "open").length
@@ -1937,6 +1945,10 @@ const AdminDashboard = () => {
         {tab === "promo" && <AdminPromoTab />}
         {tab === "sosmed" && <AdminSocialLinksTab />}
         {tab === "wheel" && <AdminLuckyWheelTab />}
+        {tab === "shopstreak" && <AdminStreakShopTab />}
+        {tab === "eventstreak" && <AdminStreakEventTab />}
+        {tab === "membership" && <AdminMembershipTab />}
+        {tab === "banned" && <AdminBannedTab />}
       </main>
     </div>
   );
