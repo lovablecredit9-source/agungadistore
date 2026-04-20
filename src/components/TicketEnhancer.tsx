@@ -269,6 +269,161 @@ export function TicketEnhancer({ tickets, categoryLabels, onOpen, onReopen, onDu
     toast({ title: "📋 Saran balasan disalin", description: "Tempel di chat tiket" });
   }
 
+  const PRIORITY_META: Record<string, { label: string; cls: string; icon: any }> = {
+    critical: { label: "Critical", cls: "bg-red-500/15 text-red-600 border-red-500/40", icon: Flame },
+    high:     { label: "High",     cls: "bg-orange-500/15 text-orange-600 border-orange-500/40", icon: ShieldAlert },
+    medium:   { label: "Medium",   cls: "bg-yellow-500/15 text-yellow-600 border-yellow-500/40", icon: AlertCircle },
+    low:      { label: "Low",      cls: "bg-emerald-500/15 text-emerald-600 border-emerald-500/40", icon: CheckCircle2 },
+  };
+  const SENTIMENT_META: Record<string, { label: string; cls: string; icon: any }> = {
+    urgent:   { label: "Urgent",   cls: "bg-red-500/15 text-red-600 border-red-500/40", icon: Flame },
+    negative: { label: "Negatif",  cls: "bg-orange-500/15 text-orange-600 border-orange-500/40", icon: Frown },
+    positive: { label: "Positif",  cls: "bg-emerald-500/15 text-emerald-600 border-emerald-500/40", icon: Smile },
+    neutral:  { label: "Netral",   cls: "bg-muted text-muted-foreground border-border", icon: Meh },
+  };
+
+  function renderTicketCard(t: EnhancedTicket, idx: number, isPinned: boolean) {
+    const meta = STATUS_META[t.status] || STATUS_META.open;
+    const Icon = meta.icon;
+    const cat = categoryLabels[t.category || ""] || "Lainnya";
+    const myRating = ratings[t.id] || 0;
+    const priority = detectPriority(t);
+    const pmeta = PRIORITY_META[priority];
+    const sentiment = detectSentiment(t.description);
+    const smeta = SENTIMENT_META[sentiment];
+    const isOpen = t.status === "open";
+    const sla = isOpen ? slaInfo(t) : null;
+    const isPinnedNow = pins.includes(t.id);
+    const isNotify = notify.includes(t.id);
+
+    return (
+      <motion.div
+        key={t.id}
+        initial={{ opacity: 0, x: -10 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ delay: Math.min(idx * 0.04, 0.3) }}
+        className="relative mb-3"
+      >
+        {!isPinned && (
+          <div className={`absolute -left-[18px] top-3 w-6 h-6 rounded-full bg-gradient-to-br ${meta.bg} ring-4 ring-background flex items-center justify-center shadow-lg z-10`}>
+            <Icon className="w-3 h-3 text-white" />
+          </div>
+        )}
+
+        <Card className={`overflow-hidden hover:shadow-xl transition-all group border-border/60 bg-card/80 backdrop-blur ${priority === "critical" ? "ring-2 ring-red-500/40 shadow-red-500/10" : ""} ${isPinned ? "ring-1 ring-primary/40" : ""}`}>
+          {/* Progress strip (status) */}
+          <div className="h-1 bg-muted">
+            <motion.div
+              initial={{ width: 0 }}
+              animate={{ width: `${meta.pct}%` }}
+              transition={{ duration: 0.8 }}
+              className={`h-full bg-gradient-to-r ${meta.bg}`}
+            />
+          </div>
+          <CardContent className="p-3 cursor-pointer" onClick={() => onOpen(t)}>
+            <div className="flex items-start justify-between gap-2 mb-1.5">
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-1.5 mb-0.5 flex-wrap">
+                  <span className="font-extrabold text-sm text-primary">#{t.ticket_number}</span>
+                  <Badge className={`text-[9px] gap-0.5 bg-gradient-to-r ${meta.bg} text-white border-0 px-1.5 py-0`}>
+                    <Icon className="w-2.5 h-2.5" />{meta.label}
+                  </Badge>
+                  <Badge variant="outline" className={`text-[9px] py-0 px-1.5 gap-0.5 border ${pmeta.cls}`}>
+                    <pmeta.icon className="w-2.5 h-2.5" />{pmeta.label}
+                  </Badge>
+                  {isPinnedNow && (
+                    <Pin className="w-3 h-3 text-primary fill-primary" />
+                  )}
+                </div>
+                <p className="text-xs text-foreground line-clamp-2 leading-snug">{t.description}</p>
+              </div>
+              <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0 group-hover:translate-x-1 transition-transform" />
+            </div>
+
+            {/* SLA Countdown for open tickets */}
+            {sla && (
+              <div className="mt-2 p-1.5 rounded-lg bg-muted/40 border border-border/50">
+                <div className="flex items-center justify-between text-[9px] font-bold mb-1">
+                  <span className="flex items-center gap-1">
+                    <Timer className={`w-3 h-3 ${sla.breached ? "text-red-500" : "text-primary"}`} />
+                    SLA Response
+                  </span>
+                  <span className={sla.breached ? "text-red-500" : "text-foreground"}>
+                    {sla.breached ? "⚠️ Terlewat" : `Sisa ${fmtSla(sla.remainingMs)}`}
+                  </span>
+                </div>
+                <div className="h-1 bg-background rounded-full overflow-hidden">
+                  <div
+                    className={`h-full rounded-full transition-all ${sla.breached ? "bg-red-500" : sla.pct > 75 ? "bg-orange-500" : "bg-gradient-to-r from-emerald-500 to-cyan-500"}`}
+                    style={{ width: `${sla.pct}%` }}
+                  />
+                </div>
+              </div>
+            )}
+
+            <div className="flex items-center flex-wrap gap-1.5 mt-2">
+              <Badge variant="outline" className="text-[9px] py-0 px-1.5 gap-0.5">
+                <Tag className="w-2.5 h-2.5" /> {cat}
+              </Badge>
+              <Badge variant="outline" className="text-[9px] py-0 px-1.5 gap-0.5 text-muted-foreground">
+                <Clock className="w-2.5 h-2.5" /> {timeAgo(t.created_at)}
+              </Badge>
+              <Badge variant="outline" className={`text-[9px] py-0 px-1.5 gap-0.5 border ${smeta.cls}`}>
+                <smeta.icon className="w-2.5 h-2.5" /> {smeta.label}
+              </Badge>
+              {t.screenshot_url && (
+                <Badge variant="outline" className="text-[9px] py-0 px-1.5 gap-0.5">
+                  <AlertCircle className="w-2.5 h-2.5" /> Bukti
+                </Badge>
+              )}
+              {myRating > 0 && (
+                <Badge className="text-[9px] py-0 px-1.5 gap-0.5 bg-yellow-500/15 text-yellow-600 border-yellow-500/30 border">
+                  <Star className="w-2.5 h-2.5 fill-current" /> {myRating}/5
+                </Badge>
+              )}
+            </div>
+          </CardContent>
+
+          {/* Quick actions */}
+          <div className="border-t border-border/60 px-2 py-1.5 flex items-center gap-0.5 bg-muted/30 overflow-x-auto scrollbar-none">
+            <Button size="sm" variant="ghost" className="h-7 px-2 text-[10px] gap-1 shrink-0" onClick={(e) => { e.stopPropagation(); onOpen(t); }}>
+              <MessageCircle className="w-3 h-3" /> Buka
+            </Button>
+            <Button size="sm" variant="ghost" className="h-7 px-1.5 text-[10px] gap-1 shrink-0 text-primary" onClick={(e) => { e.stopPropagation(); setAiTicket(t); }}>
+              <Bot className="w-3 h-3" /> AI
+            </Button>
+            <Button size="sm" variant="ghost" className={`h-7 px-1.5 text-[10px] gap-1 shrink-0 ${isPinnedNow ? "text-primary" : ""}`} onClick={(e) => { e.stopPropagation(); togglePin(t.id); }}>
+              {isPinnedNow ? <PinOff className="w-3 h-3" /> : <Pin className="w-3 h-3" />}
+            </Button>
+            {isOpen && (
+              <Button size="sm" variant="ghost" className={`h-7 px-1.5 text-[10px] gap-1 shrink-0 ${isNotify ? "text-primary" : ""}`} onClick={(e) => { e.stopPropagation(); toggleNotify(t.id); }}>
+                {isNotify ? <Bell className="w-3 h-3 fill-current" /> : <BellOff className="w-3 h-3" />}
+              </Button>
+            )}
+            <Button size="sm" variant="ghost" className="h-7 px-1.5 text-[10px] gap-1 shrink-0" onClick={(e) => { e.stopPropagation(); shareTicket(t); }}>
+              <Share2 className="w-3 h-3" />
+            </Button>
+            {!isOpen && onReopen && (
+              <Button size="sm" variant="ghost" className="h-7 px-1.5 text-[10px] gap-1 shrink-0 text-orange-500 hover:text-orange-600" onClick={(e) => { e.stopPropagation(); onReopen(t); }}>
+                <RotateCcw className="w-3 h-3" />
+              </Button>
+            )}
+            {!isOpen && (
+              <Button size="sm" variant="ghost" className="h-7 px-1.5 text-[10px] gap-1 shrink-0 text-yellow-500 hover:text-yellow-600" onClick={(e) => { e.stopPropagation(); setRatingTicket(t); }}>
+                <Star className="w-3 h-3" />
+              </Button>
+            )}
+            {onDuplicate && (
+              <Button size="sm" variant="ghost" className="h-7 px-1.5 text-[10px] gap-1 shrink-0 text-primary" onClick={(e) => { e.stopPropagation(); onDuplicate(t); }}>
+                <Copy className="w-3 h-3" />
+              </Button>
+            )}
+          </div>
+        </Card>
+      </motion.div>
+    );
+  }
+
   return (
     <div className="space-y-4">
       {/* HERO STATS — Live tracker */}
