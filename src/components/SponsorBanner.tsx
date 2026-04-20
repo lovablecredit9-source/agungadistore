@@ -7,6 +7,7 @@ import { Megaphone, Clock, User, Phone, ChevronLeft, ChevronRight, X, Search, Fi
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
+import ProductNavToolbar, { type ProductNavToolbarValue, type SortKey, type ViewMode } from "@/components/ProductNavToolbar";
 
 interface SponsorImage {
   id: string;
@@ -45,7 +46,7 @@ interface Sponsor {
   view_count: number;
 }
 
-type SortOrder = "newest" | "oldest";
+type SortOrder = SortKey;
 
 function timeRemaining(expiresAt: string | null): string {
   if (!expiresAt) return "Tanpa batas";
@@ -175,8 +176,24 @@ export default function SponsorBanner({ likedSponsorIds = new Set(), onToggleLik
     .sort((a, b) => {
       const da = new Date(a.created_at).getTime();
       const db = new Date(b.created_at).getTime();
-      return sortOrder === "newest" ? db - da : da - db;
+      if (sortOrder === "cheapest") return a.price - b.price;
+      if (sortOrder === "expensive") return b.price - a.price;
+      if (sortOrder === "popular") return (b.view_count || 0) - (a.view_count || 0);
+      if (sortOrder === "name_asc") return a.title.localeCompare(b.title);
+      if (sortOrder === "name_desc") return b.title.localeCompare(a.title);
+      if (sortOrder === "oldest") return da - db;
+      return db - da;
     });
+
+  const sponsorCategoryCounts: Record<string, number> = { all: sponsors.length };
+  sponsors.forEach(s => {
+    const k = s.category || "Lainnya";
+    sponsorCategoryCounts[k] = (sponsorCategoryCounts[k] || 0) + 1;
+  });
+  const popularSponsorTerms = [...sponsors]
+    .sort((a, b) => (b.view_count || 0) - (a.view_count || 0))
+    .slice(0, 6)
+    .map(s => s.title.split(" ").slice(0, 2).join(" "));
 
   const sponsor = filtered.length > 0 ? filtered[current % filtered.length] : null;
 
@@ -219,63 +236,37 @@ export default function SponsorBanner({ likedSponsorIds = new Set(), onToggleLik
             </div>
           </div>
         </div>
-        {/* Filter & Sort Bar - selalu tampil */}
-        <div className="flex items-center gap-2 mb-2">
-          <Select value={filterCategory} onValueChange={v => { setFilterCategory(v); setCurrent(0); }}>
-            <SelectTrigger className="h-7 text-[11px] flex-1 min-w-0">
-              <Filter className="w-3 h-3 mr-1 shrink-0" />
-              <SelectValue placeholder="Kategori" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Semua Kategori</SelectItem>
-              {categories.map(c => (
-                <SelectItem key={c} value={c}>{c}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <button
-            onClick={() => setSortOrder(o => o === "newest" ? "oldest" : "newest")}
-            className="flex items-center gap-1 h-7 px-2 rounded-md border bg-background text-[11px] hover:bg-muted transition-colors shrink-0"
-          >
-            <ArrowUpDown className="w-3 h-3" />
-            {sortOrder === "newest" ? "Terbaru" : "Terlama"}
-          </button>
-        </div>
-        {/* Price Range Filter */}
-        <div className="flex items-center gap-2 mb-2">
-          <input
-            type="number"
-            placeholder="Harga min"
-            value={minPrice}
-            onChange={e => { setMinPrice(e.target.value); setCurrent(0); }}
-            className="flex-1 h-7 px-2 text-[11px] rounded-md border bg-background focus:outline-none focus:ring-1 focus:ring-primary min-w-0"
-          />
-          <span className="text-[10px] text-muted-foreground">-</span>
-          <input
-            type="number"
-            placeholder="Harga max"
-            value={maxPrice}
-            onChange={e => { setMaxPrice(e.target.value); setCurrent(0); }}
-            className="flex-1 h-7 px-2 text-[11px] rounded-md border bg-background focus:outline-none focus:ring-1 focus:ring-primary min-w-0"
+        {/* Advanced Sponsor Navigation Toolbar */}
+        <div className="mb-3">
+          <ProductNavToolbar
+            value={{
+              search,
+              category: filterCategory === "all" ? "Semua" : filterCategory,
+              sort: sortOrder,
+              view: "list" as ViewMode,
+              minPrice,
+              maxPrice,
+              inStockOnly: false,
+              warrantyOnly: false,
+            }}
+            onChange={(next) => {
+              if (next.search !== undefined) { setSearch(next.search); setCurrent(0); }
+              if (next.category !== undefined) { setFilterCategory(next.category === "Semua" ? "all" : next.category); setCurrent(0); }
+              if (next.sort !== undefined) setSortOrder(next.sort as SortOrder);
+              if (next.minPrice !== undefined) { setMinPrice(next.minPrice); setCurrent(0); }
+              if (next.maxPrice !== undefined) { setMaxPrice(next.maxPrice); setCurrent(0); }
+            }}
+            categories={["Semua", ...categories]}
+            categoryCounts={{ Semua: sponsors.length, ...sponsorCategoryCounts }}
+            storageKey="sponsor_search_history_v1"
+            popularSuggestions={popularSponsorTerms}
+            showStockFilter={false}
+            showWarrantyFilter={false}
+            totalCount={sponsors.length}
+            resultCount={filtered.length}
+            compact
           />
         </div>
-        {showSearch && (
-          <div className="relative mb-2">
-            <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
-            <input
-              type="text"
-              placeholder="Cari sponsor (nama, penjual, ID)..."
-              value={search}
-              onChange={e => { setSearch(e.target.value); setCurrent(0); }}
-              className="w-full pl-7 pr-7 py-1.5 text-xs rounded-lg border bg-background focus:outline-none focus:ring-1 focus:ring-primary"
-            />
-            {search && (
-              <button onClick={() => { setSearch(""); setCurrent(0); }} className="absolute right-2 top-1/2 -translate-y-1/2">
-                <X className="w-3.5 h-3.5 text-muted-foreground" />
-              </button>
-            )}
-          </div>
-        )}
         {!sponsor && q && (
           <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">
             <Search className="w-8 h-8 mb-2 opacity-30" />
