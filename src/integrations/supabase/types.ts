@@ -149,6 +149,122 @@ export type Database = {
         }
         Relationships: []
       }
+      auto_flash_sale_purchases: {
+        Row: {
+          cost_paid: number | null
+          created_at: string
+          id: string
+          payment_method: string | null
+          reward_type: string | null
+          reward_value: number | null
+          sale_id: string
+          visitor_id: string
+        }
+        Insert: {
+          cost_paid?: number | null
+          created_at?: string
+          id?: string
+          payment_method?: string | null
+          reward_type?: string | null
+          reward_value?: number | null
+          sale_id: string
+          visitor_id: string
+        }
+        Update: {
+          cost_paid?: number | null
+          created_at?: string
+          id?: string
+          payment_method?: string | null
+          reward_type?: string | null
+          reward_value?: number | null
+          sale_id?: string
+          visitor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "auto_flash_sale_purchases_sale_id_fkey"
+            columns: ["sale_id"]
+            isOneToOne: false
+            referencedRelation: "auto_flash_sales"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      auto_flash_sales: {
+        Row: {
+          content_type: string
+          cost_coins: number | null
+          cost_gems: number | null
+          created_at: string
+          description: string | null
+          discount_percent: number
+          ends_at: string
+          flash_price: number | null
+          icon: string | null
+          id: string
+          is_active: boolean
+          original_price: number | null
+          reward_type: string | null
+          reward_value: number | null
+          sale_date: string
+          session_slot: string
+          sold_count: number
+          starts_at: string
+          target_id: string | null
+          target_kind: string | null
+          title: string
+          total_stock: number
+        }
+        Insert: {
+          content_type: string
+          cost_coins?: number | null
+          cost_gems?: number | null
+          created_at?: string
+          description?: string | null
+          discount_percent?: number
+          ends_at: string
+          flash_price?: number | null
+          icon?: string | null
+          id?: string
+          is_active?: boolean
+          original_price?: number | null
+          reward_type?: string | null
+          reward_value?: number | null
+          sale_date: string
+          session_slot: string
+          sold_count?: number
+          starts_at: string
+          target_id?: string | null
+          target_kind?: string | null
+          title: string
+          total_stock?: number
+        }
+        Update: {
+          content_type?: string
+          cost_coins?: number | null
+          cost_gems?: number | null
+          created_at?: string
+          description?: string | null
+          discount_percent?: number
+          ends_at?: string
+          flash_price?: number | null
+          icon?: string | null
+          id?: string
+          is_active?: boolean
+          original_price?: number | null
+          reward_type?: string | null
+          reward_value?: number | null
+          sale_date?: string
+          session_slot?: string
+          sold_count?: number
+          starts_at?: string
+          target_id?: string | null
+          target_kind?: string | null
+          title?: string
+          total_stock?: number
+        }
+        Relationships: []
+      }
       balance_login_history: {
         Row: {
           browser: string | null
@@ -403,6 +519,78 @@ export type Database = {
           target_value?: number
           title?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      daily_free_spin_claims: {
+        Row: {
+          created_at: string
+          id: string
+          reward_label: string | null
+          reward_type: string | null
+          reward_value: number | null
+          segment_id: string | null
+          spin_date: string
+          visitor_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          reward_label?: string | null
+          reward_type?: string | null
+          reward_value?: number | null
+          segment_id?: string | null
+          spin_date: string
+          visitor_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          reward_label?: string | null
+          reward_type?: string | null
+          reward_value?: number | null
+          segment_id?: string | null
+          spin_date?: string
+          visitor_id?: string
+        }
+        Relationships: []
+      }
+      daily_free_spin_segments: {
+        Row: {
+          color: string | null
+          created_at: string
+          icon: string | null
+          id: string
+          is_active: boolean
+          label: string
+          reward_type: string
+          reward_value: number
+          sort_order: number
+          weight: number
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string
+          icon?: string | null
+          id?: string
+          is_active?: boolean
+          label: string
+          reward_type: string
+          reward_value?: number
+          sort_order?: number
+          weight?: number
+        }
+        Update: {
+          color?: string | null
+          created_at?: string
+          icon?: string | null
+          id?: string
+          is_active?: boolean
+          label?: string
+          reward_type?: string
+          reward_value?: number
+          sort_order?: number
+          weight?: number
         }
         Relationships: []
       }
@@ -2334,6 +2522,86 @@ export type Database = {
           reward_type?: string
           reward_value?: number
           visitor_id?: string
+        }
+        Relationships: []
+      }
+      mystery_box_drop_claims: {
+        Row: {
+          created_at: string
+          drop_id: string
+          id: string
+          rarity: string | null
+          reward_label: string | null
+          reward_type: string | null
+          reward_value: number | null
+          visitor_id: string
+        }
+        Insert: {
+          created_at?: string
+          drop_id: string
+          id?: string
+          rarity?: string | null
+          reward_label?: string | null
+          reward_type?: string | null
+          reward_value?: number | null
+          visitor_id: string
+        }
+        Update: {
+          created_at?: string
+          drop_id?: string
+          id?: string
+          rarity?: string | null
+          reward_label?: string | null
+          reward_type?: string | null
+          reward_value?: number | null
+          visitor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mystery_box_drop_claims_drop_id_fkey"
+            columns: ["drop_id"]
+            isOneToOne: false
+            referencedRelation: "mystery_box_drops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      mystery_box_drops: {
+        Row: {
+          created_at: string
+          drop_date: string
+          ends_at: string
+          id: string
+          is_active: boolean
+          opened_count: number
+          rarity_pool: Json
+          slot_index: number
+          starts_at: string
+          total_stock: number
+        }
+        Insert: {
+          created_at?: string
+          drop_date: string
+          ends_at: string
+          id?: string
+          is_active?: boolean
+          opened_count?: number
+          rarity_pool?: Json
+          slot_index: number
+          starts_at: string
+          total_stock?: number
+        }
+        Update: {
+          created_at?: string
+          drop_date?: string
+          ends_at?: string
+          id?: string
+          is_active?: boolean
+          opened_count?: number
+          rarity_pool?: Json
+          slot_index?: number
+          starts_at?: string
+          total_stock?: number
         }
         Relationships: []
       }
