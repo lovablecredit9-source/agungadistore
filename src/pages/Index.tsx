@@ -58,6 +58,7 @@ import LoginGate from "@/components/LoginGate";
 import WhatsAppChat from "@/components/WhatsAppChat";
 import EngagementHub from "@/components/EngagementHub";
 import WalletDashboard from "@/components/WalletDashboard";
+import { useAccountBan } from "@/hooks/useAccountBan";
 
 type Tab = "beranda" | "produk" | "voucher" | "history" | "likes" | "tiket" | "saldo" | "playlist" | "publik" | "sponsor" | "streak" | "streakevent" | "streakshop" | "adminpost" | "game" | "plus" | "update";
 
@@ -296,6 +297,7 @@ const PATH_FROM_TAB: Record<Tab, string> = Object.fromEntries(
 const Index = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const { banned } = useAccountBan();
   const { theme, setTheme, resolvedTheme, customBgUrl, setCustomBgUrl } = useTheme();
   const customBgInputRef = useRef<HTMLInputElement>(null);
   const [lang, setLang] = useLang();
@@ -2715,6 +2717,7 @@ const Index = () => {
               />
             ) : (
               <>
+                <div className={banned ? "pointer-events-none select-none opacity-60" : ""}>
                 {/* === Wallet Dashboard — clean minimal hero === */}
                 <WalletDashboard
                   username={userBalance.username}
@@ -2722,10 +2725,10 @@ const Index = () => {
                   gameBalance={gameBalanceAmount}
                   transactions={balanceTransactions}
                   formatPrice={formatPrice}
-                  onTopUp={() => { setShowDepositModal(true); setDepositStep("method"); }}
-                  onHistory={() => setTab("history")}
-                  onShop={() => setTab("produk")}
-                  onVoucher={() => setTab("voucher")}
+                  onTopUp={() => { if (banned) return; setShowDepositModal(true); setDepositStep("method"); }}
+                  onHistory={() => { if (banned) return; setTab("history"); }}
+                  onShop={() => { if (banned) return; setTab("produk"); }}
+                  onVoucher={() => { if (banned) return; setTab("voucher"); }}
                 />
 
 
@@ -2739,22 +2742,24 @@ const Index = () => {
                         <p className="text-[10px] text-muted-foreground">{userBalance.phone}</p>
                       </div>
                       <Button size="sm" className="bg-gradient-to-r from-accent to-accent/80 text-accent-foreground gap-1.5 font-bold rounded-xl h-9 shadow-sm"
-                        onClick={() => { setShowDepositModal(true); setDepositStep("method"); }}>
+                        onClick={() => { if (banned) return; setShowDepositModal(true); setDepositStep("method"); }}
+                        disabled={banned}>
                         <ArrowUpCircle className="w-4 h-4" /> {t("deposit.btn", lang)}
                       </Button>
                     </div>
 
                     <div className="grid grid-cols-2 gap-2">
                       <Button size="sm" variant="outline" className="gap-1.5 font-bold rounded-xl h-9 border border-border/60"
-                        onClick={() => { setProfileUsername(userBalance.username); setProfilePhone(userBalance.phone); setShowProfileModal(true); }}>
+                        onClick={() => { if (banned) return; setProfileUsername(userBalance.username); setProfilePhone(userBalance.phone); setShowProfileModal(true); }}
+                        disabled={banned}>
                         <Edit2 className="w-4 h-4" /> Edit Profil
                       </Button>
                       {!hasPin ? (
-                        <Button size="sm" variant="outline" className="gap-1.5 font-bold border-primary/30 rounded-xl h-9" onClick={() => setShowPinSetup(true)}>
+                        <Button size="sm" variant="outline" className="gap-1.5 font-bold border-primary/30 rounded-xl h-9" onClick={() => { if (banned) return; setShowPinSetup(true); }} disabled={banned}>
                           <Lock className="w-4 h-4 text-primary" /> Buat PIN
                         </Button>
                       ) : (
-                        <Button size="sm" variant="outline" className="gap-1.5 font-bold border-primary/30 rounded-xl h-9 text-primary" onClick={() => setShowForgotPin(true)}>
+                        <Button size="sm" variant="outline" className="gap-1.5 font-bold border-primary/30 rounded-xl h-9 text-primary" onClick={() => { if (banned) return; setShowForgotPin(true); }} disabled={banned}>
                           <KeyRound className="w-4 h-4" /> Reset PIN
                         </Button>
                       )}
@@ -2769,6 +2774,7 @@ const Index = () => {
                     )}
                   </CardContent>
                 </Card>
+                </div>
 
                 {/* Auth: Logout, Switch Account, Login History */}
                 <BalanceAuth
@@ -2797,6 +2803,7 @@ const Index = () => {
 
 
 
+                <div className={banned ? "pointer-events-none select-none opacity-60" : ""}>
                 {deposits.length > 0 && (
                   <>
                     <h3 className="font-bold text-sm flex items-center gap-1.5"><History className="w-4 h-4" /> {t("deposit.history", lang)}</h3>
@@ -2818,7 +2825,7 @@ const Index = () => {
                         <option value="oldest">Terlama</option>
                       </select>
                     </div>
-                    {filteredDeposits.map(dep => (
+                    {!banned && filteredDeposits.map(dep => (
                       <Card key={dep.id} className="cursor-pointer transition-all hover:shadow-lg" onClick={() => setSelectedDeposit(dep)}>
                         <CardContent className="p-3 flex items-center gap-3">
                           <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${dep.status === "approved" ? "bg-accent/10" : dep.status === "rejected" ? "bg-destructive/10" : "bg-muted"}`}>
@@ -2928,7 +2935,7 @@ const Index = () => {
                 {balanceTransactions.length === 0 && (
                   <p className="text-center text-sm text-muted-foreground py-8">{t("balance.no_transactions", lang)}</p>
                 )}
-                {balanceTransactions.map(tx => (
+                {!banned && balanceTransactions.map(tx => (
                   <Card key={tx.id} className="cursor-pointer transition-all hover:shadow-lg" onClick={() => setSelectedTransaction(tx)}>
                     <CardContent className="p-3 flex items-center gap-3">
                       {showTxExport && (
@@ -2959,7 +2966,7 @@ const Index = () => {
                 ))}
 
                 {/* Transaction Detail Popup */}
-                {selectedTransaction && (
+                {!banned && selectedTransaction && (
                   <div className="fixed inset-0 z-[70] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setSelectedTransaction(null)}>
                     <div className="bg-background rounded-2xl shadow-2xl w-full max-w-sm p-5 space-y-4 animate-in fade-in zoom-in-95" onClick={e => e.stopPropagation()}>
                       <div className="flex items-center justify-between">
@@ -3004,6 +3011,7 @@ const Index = () => {
                     </div>
                   </div>
                 )}
+                </div>
               </>
             )}
           </div>
@@ -3051,7 +3059,17 @@ const Index = () => {
         )}
 
         {tab === "streakshop" && (
-          <NeonStreakHub key={`shop-${activeBalanceVisitorId}`} visitorId={activeBalanceVisitorId} forcedView="shop" />
+          userBalance ? (
+            <NeonStreakHub key={`shop-${activeBalanceVisitorId}`} visitorId={activeBalanceVisitorId} forcedView="shop" />
+          ) : (
+            <LoginGate
+              title="Streak Event Shop"
+              description="Login saldo untuk akses shop event dan reward streak."
+              emoji="🛒"
+              gradient="from-fuchsia-500 to-rose-600"
+              onGoToLogin={() => setTab("saldo")}
+            />
+          )
         )}
 
         <div className={tab === "game" ? "" : "hidden"}>
@@ -4366,7 +4384,7 @@ const Index = () => {
         </div>
       )}
 
-      {selectedDeposit && (
+      {!banned && selectedDeposit && (
         <div className="fixed inset-0 z-[88] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setSelectedDeposit(null)}>
           <div className="bg-card w-full max-w-sm rounded-2xl p-5 space-y-4 animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between">
@@ -4387,7 +4405,7 @@ const Index = () => {
         </div>
       )}
 
-      {showProfileModal && userBalance && (
+      {showProfileModal && userBalance && !banned && (
         <div className="fixed inset-0 z-[89] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setShowProfileModal(false)}>
           <div className="bg-card w-full max-w-sm rounded-2xl p-5 space-y-4 animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between">
@@ -4407,7 +4425,7 @@ const Index = () => {
       )}
 
       {/* Deposit Modal */}
-      {showDepositModal && userBalance && (
+      {showDepositModal && userBalance && !banned && (
         <div className="fixed inset-0 z-[80] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setShowDepositModal(false)}>
           <div className="bg-card w-full max-w-sm rounded-2xl p-5 space-y-4 animate-in zoom-in-95 duration-200 max-h-[85vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between">
@@ -4637,7 +4655,7 @@ const Index = () => {
       </button>
 
       {/* PIN Setup Modal */}
-      {showPinSetup && (
+      {!banned && showPinSetup && (
         <div className="fixed inset-0 z-[92] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setShowPinSetup(false)}>
           <div className="bg-card w-full max-w-sm rounded-2xl p-5 space-y-4 animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between">
@@ -4676,7 +4694,7 @@ const Index = () => {
       )}
 
       {/* Forgot PIN Modal */}
-      {showForgotPin && (
+      {!banned && showForgotPin && (
         <div className="fixed inset-0 z-[95] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setShowForgotPin(false)}>
           <div className="bg-card w-full max-w-sm rounded-2xl p-5 space-y-4 animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between">

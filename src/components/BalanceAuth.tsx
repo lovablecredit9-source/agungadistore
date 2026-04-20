@@ -14,7 +14,7 @@ import {
   Wallet, LogIn, UserPlus, LogOut, Smartphone, History, Eye, EyeOff, Mail, Lock, User, Phone,
   Edit2, KeyRound, Save, X, Users, Trash2, ArrowRightLeft, Plus, ArrowLeft,
 } from "lucide-react";
-import { BanGuard } from "@/components/BanBanner";
+import { useAccountBan } from "@/hooks/useAccountBan";
 
 const SAVED_KEY = "saved_balance_accounts_v1";
 
@@ -43,6 +43,7 @@ interface BalanceAuthProps {
 }
 
 export default function BalanceAuth({ onLogin, onLogout, currentUser }: BalanceAuthProps) {
+  const { banned } = useAccountBan();
   const [mode, setMode] = useState<"login" | "register">("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -472,10 +473,10 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser }: BalanceA
     return (
       <div className="space-y-2">
         <div className="flex items-center gap-2 flex-wrap">
-          <Button size="sm" variant="outline" className="gap-1.5 text-xs font-bold" onClick={() => { setShowEditProfile(!showEditProfile); resetEditForm(); }}>
+          <Button size="sm" variant="outline" className="gap-1.5 text-xs font-bold" onClick={() => { setShowEditProfile(!showEditProfile); resetEditForm(); }} disabled={banned}>
             <Edit2 className="w-3.5 h-3.5" /> Edit Profil
           </Button>
-          <Button size="sm" variant="outline" className="gap-1.5 text-xs font-bold" onClick={() => setShowSwitcher(!showSwitcher)}>
+          <Button size="sm" variant="outline" className="gap-1.5 text-xs font-bold" onClick={() => setShowSwitcher(!showSwitcher)} disabled={banned}>
             <Users className="w-3.5 h-3.5" /> Ganti Akun
             {savedAccounts.length > 0 && (
               <span className="ml-0.5 px-1.5 py-0.5 rounded-full bg-primary/15 text-primary text-[10px] font-bold">
@@ -483,7 +484,7 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser }: BalanceA
               </span>
             )}
           </Button>
-          <Button size="sm" variant="outline" className="gap-1.5 text-xs font-bold" onClick={handleAddAccount} disabled={savedAccounts.length >= MAX_SAVED_ACCOUNTS}>
+          <Button size="sm" variant="outline" className="gap-1.5 text-xs font-bold" onClick={handleAddAccount} disabled={banned || savedAccounts.length >= MAX_SAVED_ACCOUNTS}>
             <Plus className="w-3.5 h-3.5" /> Tambah Akun
           </Button>
           <Button size="sm" variant="outline" className="gap-1.5 text-xs font-bold text-destructive border-destructive/30" onClick={handleLogout}>
@@ -492,12 +493,12 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser }: BalanceA
           <Button size="sm" variant="outline" className="gap-1.5 text-xs font-bold text-destructive border-destructive/30" onClick={handleLogoutAll}>
             <Trash2 className="w-3.5 h-3.5" /> Logout Semua
           </Button>
-          <Button size="sm" variant="ghost" className="gap-1.5 text-xs font-bold" onClick={() => setShowHistory(!showHistory)}>
+          <Button size="sm" variant="ghost" className="gap-1.5 text-xs font-bold" onClick={() => setShowHistory(!showHistory)} disabled={banned}>
             <Smartphone className="w-3.5 h-3.5" /> Riwayat
           </Button>
         </div>
 
-        {showSwitcher && (
+        {showSwitcher && !banned && (
           <Card className="border border-primary/20">
             <CardContent className="p-3 space-y-2">
               <div className="flex items-center justify-between">
@@ -579,7 +580,7 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser }: BalanceA
         )}
 
         {/* Edit Profile Panel */}
-        {showEditProfile && (
+        {showEditProfile && !banned && (
           <Card className="border border-primary/20">
             <CardContent className="p-3 space-y-3">
               <h4 className="text-sm font-bold flex items-center gap-1.5">
@@ -681,7 +682,7 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser }: BalanceA
           </Card>
         )}
 
-        {showHistory && (
+        {showHistory && !banned && (
           <Card className="border border-muted">
             <CardContent className="p-3 space-y-2">
               <h4 className="text-xs font-bold flex items-center gap-1.5">
