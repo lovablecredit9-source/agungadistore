@@ -78,9 +78,7 @@ export default function StreakEventShop({ visitorId, onUpdate }: Props) {
     const { data: res, error } = await supabase.functions.invoke("streak-event-shop", {
       body: { action: "overview", visitorId },
     });
-    if (error || res?.error) {
-      toast({ title: "Gagal memuat", description: res?.error || error?.message, variant: "destructive" });
-    } else {
+    if (!error && !res?.error && res) {
       setData(res);
       setSecondsLeft(res.seconds_to_reset || 0);
     }
