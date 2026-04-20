@@ -7,7 +7,7 @@ import { Progress } from "@/components/ui/progress";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Sparkles, Gem, Coins, Wallet, Gift, Trophy, Zap, Clock, Lock, Crown, History } from "lucide-react";
+import { Loader2, Sparkles, Gem, Coins, Wallet, Gift, Trophy, Zap, Lock, Crown, History } from "lucide-react";
 
 interface Segment {
   id: string;
@@ -19,6 +19,21 @@ interface Segment {
   color_class: string;
   is_jackpot: boolean;
   sort_order: number;
+  tier: string;
+}
+
+interface Tier {
+  id: string;
+  tier_key: string;
+  tier_name: string;
+  description: string;
+  icon: string;
+  cost_coins: number;
+  cost_gems: number;
+  cost_balance: number;
+  free_daily: boolean;
+  pity_threshold: number;
+  color_class: string;
 }
 
 interface Props {
@@ -37,6 +52,7 @@ export default function StreakLuckyWheelShop({ visitorId, onUpdate }: Props) {
   const [showPin, setShowPin] = useState(false);
   const [pin, setPin] = useState("");
   const [pendingMethod, setPendingMethod] = useState<string | null>(null);
+  const [activeTier, setActiveTier] = useState<string>("normal");
   const wheelRef = useRef<HTMLDivElement>(null);
 
   async function load() {
@@ -44,6 +60,9 @@ export default function StreakLuckyWheelShop({ visitorId, onUpdate }: Props) {
     try {
       const { data: res } = await supabase.functions.invoke("streak-lucky-wheel", { body: { action: "list", visitorId } });
       setData(res || null);
+      if (res?.tiers?.length && !res.tiers.find((t: Tier) => t.tier_key === activeTier)) {
+        setActiveTier(res.tiers[0].tier_key);
+      }
     } finally {
       setLoading(false);
     }
@@ -56,7 +75,7 @@ export default function StreakLuckyWheelShop({ visitorId, onUpdate }: Props) {
     setShowResult(false);
     try {
       const { data: res } = await supabase.functions.invoke("streak-lucky-wheel", {
-        body: { action: "spin", visitorId, paymentMethod, pin: pinValue },
+        body: { action: "spin", visitorId, tierKey: activeTier, paymentMethod, pin: pinValue },
       });
       if (res?.needPin) {
         setSpinning(false);
@@ -70,9 +89,8 @@ export default function StreakLuckyWheelShop({ visitorId, onUpdate }: Props) {
         return;
       }
       if (res?.success) {
-        // animate to winning segment
-        const segments = data?.segments || [];
-        const winIdx = segments.findIndex((s: Segment) => s.id === res.winning.id);
+        const segments = (data?.segmentsByTier?.[activeTier] || []) as Segment[];
+        const winIdx = segments.findIndex((s) => s.id === res.winning.id);
         const segDeg = 360 / segments.length;
         const targetDeg = 360 * 8 + (360 - (winIdx * segDeg + segDeg / 2));
         setRotation(prev => prev + targetDeg);
@@ -107,12 +125,27 @@ export default function StreakLuckyWheelShop({ visitorId, onUpdate }: Props) {
       </div>
     );
   }
-  if (!data) return null;
+  if (!data || !data.tiers?.length) return null;
 
-  const segments: Segment[] = data.segments || [];
+  const tiers: Tier[] = data.tiers || [];
+  const currentTier = tiers.find(t => t.tier_key === activeTier) || tiers[0];
+  const segments: Segment[] = data.segmentsByTier?.[activeTier] || [];
   const segDeg = segments.length ? 360 / segments.length : 0;
-  const pityProgress = ((data.pity.spins_since_jackpot || 0) / data.pityThreshold) * 100;
-  const pityRemaining = Math.max(0, data.pityThreshold - (data.pity.spins_since_jackpot || 0));
+  const pityProgress = currentTier ? ((data.pity.spins_since_jackpot || 0) / currentTier.pity_threshold) * 100 : 0;
+  const pityRemaining = currentTier ? Math.max(0, currentTier.pity_threshold - (data.pity.spins_since_jackpot || 0)) : 0;
+  const freeAvailable = data.freeAvailable?.[activeTier];
+
+  const colorMap: Record<string, string> = {
+    "from-cyan-400": "#22d3ee", "to-blue-500": "#3b82f6",
+    "from-pink-400": "#f472b6", "to-rose-500": "#f43f5e",
+    "from-purple-500": "#a855f7", "to-fuchsia-500": "#d946ef",
+    "from-emerald-400": "#34d399", "to-teal-500": "#14b8a6",
+    "from-sky-400": "#38bdf8", "to-indigo-500": "#6366f1",
+    "from-violet-500": "#8b5cf6", "to-purple-600": "#9333ea",
+    "from-yellow-400": "#facc15", "to-orange-500": "#f97316",
+    "from-yellow-300": "#fde047", "to-pink-500": "#ec4899", "to-orange-500 ": "#f97316",
+    "from-amber-400": "#fbbf24",
+  };
 
   return (
     <>
@@ -124,12 +157,44 @@ export default function StreakLuckyWheelShop({ visitorId, onUpdate }: Props) {
             <h3 className="font-black text-base sm:text-lg bg-gradient-to-r from-pink-200 via-fuchsia-100 to-cyan-200 bg-clip-text text-transparent tracking-wide">
               LUCKY WHEEL SHOP
             </h3>
-            <Badge className="bg-pink-500/40 text-pink-100 border-pink-400/60 text-[9px] px-1.5 py-0 h-4 animate-pulse">JACKPOT</Badge>
+            <Badge className="bg-pink-500/40 text-pink-100 border-pink-400/60 text-[9px] px-1.5 py-0 h-4 animate-pulse">3 TIER</Badge>
           </div>
           <div className="flex items-center gap-1 text-[10px] text-pink-200 font-bold">
             <Trophy className="h-3 w-3" /> {data.pity.total_jackpots}
           </div>
         </div>
+
+        {/* Tier Selector */}
+        <div className="grid grid-cols-3 gap-1.5">
+          {tiers.map(t => {
+            const isActive = activeTier === t.tier_key;
+            return (
+              <button
+                key={t.tier_key}
+                onClick={() => setActiveTier(t.tier_key)}
+                disabled={spinning}
+                className={`relative rounded-lg p-2 text-center transition-all ${
+                  isActive
+                    ? `bg-gradient-to-br ${t.color_class} text-white shadow-lg scale-105 ring-2 ring-white/40`
+                    : "bg-black/30 border border-white/10 text-white/60 hover:text-white/90"
+                }`}
+              >
+                <div className="text-lg leading-none mb-0.5">{t.icon}</div>
+                <div className="text-[10px] font-black uppercase tracking-wide">{t.tier_name}</div>
+                {t.free_daily && data.freeAvailable?.[t.tier_key] && (
+                  <Badge className="absolute -top-1 -right-1 bg-emerald-500 text-white text-[8px] px-1 h-3.5 border-none">FREE</Badge>
+                )}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Tier Description */}
+        {currentTier && (
+          <div className={`rounded-lg bg-gradient-to-r ${currentTier.color_class} p-2 text-white text-center`}>
+            <p className="text-[11px] font-bold leading-tight">{currentTier.description}</p>
+          </div>
+        )}
 
         {/* Live Jackpot Ticker */}
         {data.recentJackpots && data.recentJackpots.length > 0 && (
@@ -151,12 +216,10 @@ export default function StreakLuckyWheelShop({ visitorId, onUpdate }: Props) {
 
         {/* Wheel */}
         <div className="relative aspect-square max-w-[280px] mx-auto">
-          {/* Pointer */}
           <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1 z-20">
             <div className="w-0 h-0 border-l-[12px] border-l-transparent border-r-[12px] border-r-transparent border-t-[20px] border-t-yellow-400 drop-shadow-[0_0_8px_rgba(250,204,21,0.8)]" />
           </div>
 
-          {/* Outer glow ring */}
           <motion.div
             animate={{ rotate: 360 }}
             transition={{ duration: 12, repeat: Infinity, ease: "linear" }}
@@ -165,7 +228,6 @@ export default function StreakLuckyWheelShop({ visitorId, onUpdate }: Props) {
           />
           <div className="absolute inset-1 rounded-full bg-black" />
 
-          {/* Wheel SVG */}
           <motion.div
             ref={wheelRef}
             animate={{ rotate: rotation }}
@@ -181,17 +243,7 @@ export default function StreakLuckyWheelShop({ visitorId, onUpdate }: Props) {
                 const x2 = 100 + 100 * Math.cos(endAngle);
                 const y2 = 100 + 100 * Math.sin(endAngle);
                 const largeArc = segDeg > 180 ? 1 : 0;
-                const colors = seg.color_class.split(" ").filter(c => c.startsWith("from-") || c.startsWith("to-"));
-                const colorMap: Record<string, string> = {
-                  "from-cyan-400": "#22d3ee", "to-blue-500": "#3b82f6",
-                  "from-pink-400": "#f472b6", "to-rose-500": "#f43f5e",
-                  "from-purple-500": "#a855f7", "to-fuchsia-500": "#d946ef",
-                  "from-emerald-400": "#34d399", "to-teal-500": "#14b8a6",
-                  "from-sky-400": "#38bdf8", "to-indigo-500": "#6366f1",
-                  "from-violet-500": "#8b5cf6", "to-purple-600": "#9333ea",
-                  "from-yellow-400": "#facc15", "to-orange-500": "#f97316",
-                  "from-yellow-300": "#fde047", "via-amber-400": "#fbbf24", "to-pink-500": "#ec4899",
-                };
+                const colors = (seg.color_class || "").split(" ").filter(c => c.startsWith("from-") || c.startsWith("to-"));
                 const c1 = colorMap[colors[0]] || "#ec4899";
                 const c2 = colorMap[colors[colors.length - 1]] || "#06b6d4";
                 const labelAngle = (i * segDeg + segDeg / 2 - 90) * (Math.PI / 180);
@@ -232,13 +284,11 @@ export default function StreakLuckyWheelShop({ visitorId, onUpdate }: Props) {
                   </g>
                 );
               })}
-              {/* Center hub */}
               <circle cx="100" cy="100" r="14" fill="#0f172a" stroke="#ec4899" strokeWidth="2" />
               <circle cx="100" cy="100" r="6" fill="#ec4899" />
             </svg>
           </motion.div>
 
-          {/* Pity ring */}
           {pityRemaining <= 10 && pityRemaining > 0 && (
             <motion.div
               animate={{ scale: [1, 1.05, 1] }}
@@ -254,7 +304,7 @@ export default function StreakLuckyWheelShop({ visitorId, onUpdate }: Props) {
             <span className="text-yellow-200 font-bold flex items-center gap-1">
               <Zap className="h-3 w-3" /> JACKPOT GUARANTEED
             </span>
-            <span className="text-yellow-100 tabular-nums font-bold">{data.pity.spins_since_jackpot}/{data.pityThreshold}</span>
+            <span className="text-yellow-100 tabular-nums font-bold">{data.pity.spins_since_jackpot}/{currentTier?.pity_threshold || 50}</span>
           </div>
           <Progress value={pityProgress} className="h-1.5" />
           <p className="text-[9px] text-yellow-200/70">
@@ -264,48 +314,56 @@ export default function StreakLuckyWheelShop({ visitorId, onUpdate }: Props) {
 
         {/* Spin buttons */}
         <div className="grid grid-cols-2 gap-2">
-          <Button
-            disabled={spinning || !data.freeSpinAvailable}
-            onClick={() => spin("free")}
-            className="h-12 bg-gradient-to-br from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-white font-black shadow-lg shadow-emerald-500/30 disabled:opacity-50"
-          >
-            {spinning ? <Loader2 className="h-4 w-4 animate-spin" /> : (
+          {currentTier?.free_daily && (
+            <Button
+              disabled={spinning || !freeAvailable}
+              onClick={() => spin("free")}
+              className="h-12 bg-gradient-to-br from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-white font-black shadow-lg shadow-emerald-500/30 disabled:opacity-50"
+            >
+              {spinning ? <Loader2 className="h-4 w-4 animate-spin" /> : (
+                <div className="flex flex-col items-center leading-tight">
+                  <span className="flex items-center gap-1 text-xs"><Gift className="h-3 w-3" />FREE</span>
+                  <span className="text-[9px] opacity-90">{freeAvailable ? "Hari ini" : "Besok lagi"}</span>
+                </div>
+              )}
+            </Button>
+          )}
+          {currentTier && currentTier.cost_coins > 0 && (
+            <Button
+              disabled={spinning}
+              onClick={() => spin("coins")}
+              className="h-12 bg-gradient-to-br from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-black shadow-lg shadow-cyan-500/30"
+            >
               <div className="flex flex-col items-center leading-tight">
-                <span className="flex items-center gap-1 text-xs"><Gift className="h-3 w-3" />FREE</span>
-                <span className="text-[9px] opacity-90">{data.freeSpinAvailable ? "Hari ini" : "Besok lagi"}</span>
+                <span className="flex items-center gap-1 text-xs"><Coins className="h-3 w-3" />{currentTier.cost_coins}</span>
+                <span className="text-[9px] opacity-90">Streak Coin</span>
               </div>
-            )}
-          </Button>
-          <Button
-            disabled={spinning}
-            onClick={() => spin("coins")}
-            className="h-12 bg-gradient-to-br from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-black shadow-lg shadow-cyan-500/30"
-          >
-            <div className="flex flex-col items-center leading-tight">
-              <span className="flex items-center gap-1 text-xs"><Coins className="h-3 w-3" />{data.costs.coins}</span>
-              <span className="text-[9px] opacity-90">Streak Coin</span>
-            </div>
-          </Button>
-          <Button
-            disabled={spinning}
-            onClick={() => spin("gems")}
-            className="h-12 bg-gradient-to-br from-fuchsia-500 to-purple-600 hover:from-fuchsia-400 hover:to-purple-500 text-white font-black shadow-lg shadow-fuchsia-500/30"
-          >
-            <div className="flex flex-col items-center leading-tight">
-              <span className="flex items-center gap-1 text-xs"><Gem className="h-3 w-3" />{data.costs.gems}</span>
-              <span className="text-[9px] opacity-90">Gems</span>
-            </div>
-          </Button>
-          <Button
-            disabled={spinning}
-            onClick={() => spin("balance")}
-            className="h-12 bg-gradient-to-br from-amber-500 to-orange-600 hover:from-amber-400 hover:to-orange-500 text-white font-black shadow-lg shadow-amber-500/30"
-          >
-            <div className="flex flex-col items-center leading-tight">
-              <span className="flex items-center gap-1 text-xs"><Wallet className="h-3 w-3" />Rp{data.costs.balance.toLocaleString("id-ID")}</span>
-              <span className="text-[9px] opacity-90 flex items-center gap-0.5"><Lock className="h-2 w-2" />Saldo</span>
-            </div>
-          </Button>
+            </Button>
+          )}
+          {currentTier && currentTier.cost_gems > 0 && (
+            <Button
+              disabled={spinning}
+              onClick={() => spin("gems")}
+              className="h-12 bg-gradient-to-br from-fuchsia-500 to-purple-600 hover:from-fuchsia-400 hover:to-purple-500 text-white font-black shadow-lg shadow-fuchsia-500/30"
+            >
+              <div className="flex flex-col items-center leading-tight">
+                <span className="flex items-center gap-1 text-xs"><Gem className="h-3 w-3" />{currentTier.cost_gems}</span>
+                <span className="text-[9px] opacity-90">Gems</span>
+              </div>
+            </Button>
+          )}
+          {currentTier && currentTier.cost_balance > 0 && (
+            <Button
+              disabled={spinning}
+              onClick={() => spin("balance")}
+              className="h-12 bg-gradient-to-br from-amber-500 to-orange-600 hover:from-amber-400 hover:to-orange-500 text-white font-black shadow-lg shadow-amber-500/30"
+            >
+              <div className="flex flex-col items-center leading-tight">
+                <span className="flex items-center gap-1 text-xs"><Wallet className="h-3 w-3" />Rp{currentTier.cost_balance.toLocaleString("id-ID")}</span>
+                <span className="text-[9px] opacity-90 flex items-center gap-0.5"><Lock className="h-2 w-2" />Saldo</span>
+              </div>
+            </Button>
+          )}
         </div>
 
         {/* My recent spins */}
@@ -384,11 +442,11 @@ export default function StreakLuckyWheelShop({ visitorId, onUpdate }: Props) {
             maxLength={6}
             value={pin}
             onChange={(e) => setPin(e.target.value.replace(/\D/g, ""))}
-            placeholder="••••"
-            className="text-center text-2xl tracking-widest bg-black/50 border-amber-400/40 text-amber-100"
+            placeholder="••••••"
+            className="text-center text-2xl tracking-[0.5em] bg-slate-900 border-amber-400/30 text-amber-100"
           />
-          <Button onClick={handlePinSubmit} className="w-full bg-gradient-to-r from-amber-500 to-orange-500 text-white font-bold">
-            Konfirmasi & Spin
+          <Button onClick={handlePinSubmit} className="bg-gradient-to-r from-amber-500 to-orange-500 text-white font-bold">
+            Konfirmasi
           </Button>
         </DialogContent>
       </Dialog>
