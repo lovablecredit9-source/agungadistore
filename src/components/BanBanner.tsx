@@ -67,13 +67,6 @@ export function BanBanner({ className = "" }: { className?: string }) {
         </button>
       </div>
 
-      <button
-        type="button"
-        aria-label="Lihat detail banned"
-        onClick={() => setOpen(true)}
-        className="fixed inset-x-0 top-0 bottom-20 z-40 bg-background/20 backdrop-blur-[1px]"
-      />
-
       <BanDetailsDialog open={open} onOpenChange={setOpen} info={info} fallbackLabel="fitur ini" />
     </>
   );
