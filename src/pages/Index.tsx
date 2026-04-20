@@ -3038,13 +3038,25 @@ const Index = () => {
                 )}
 
                 {/* Transaction History */}
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between gap-2 flex-wrap">
                   <h3 className="font-bold text-sm flex items-center gap-1.5"><History className="w-4 h-4" /> {t("balance.transaction_history", lang)}</h3>
-                  {balanceTransactions.length > 0 && (
-                    <Button variant="outline" size="sm" className="gap-1 text-xs h-7" onClick={() => setShowTxExport(!showTxExport)}>
-                      <Download className="w-3 h-3" /> {showTxExport ? "Tutup" : "Ekspor"}
-                    </Button>
-                  )}
+                  <div className="flex items-center gap-1.5">
+                    {balanceTransactions.length > 0 && (
+                      <Button
+                        variant={smartSaldo ? "default" : "outline"}
+                        size="sm"
+                        className={`gap-1 text-xs h-7 rounded-full ${smartSaldo ? "bg-gradient-to-r from-primary to-accent text-primary-foreground" : ""}`}
+                        onClick={() => setSmartSaldo(v => !v)}
+                      >
+                        <Sparkles className="w-3 h-3" /> {smartSaldo ? "Pintar ✓" : "Pintar"}
+                      </Button>
+                    )}
+                    {balanceTransactions.length > 0 && (
+                      <Button variant="outline" size="sm" className="gap-1 text-xs h-7" onClick={() => setShowTxExport(!showTxExport)}>
+                        <Download className="w-3 h-3" /> {showTxExport ? "Tutup" : "Ekspor"}
+                      </Button>
+                    )}
+                  </div>
                 </div>
 
                 {showTxExport && balanceTransactions.length > 0 && (
