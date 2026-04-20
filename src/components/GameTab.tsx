@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 import { Gamepad2, ArrowLeft } from "lucide-react";
-import { BanBanner } from "@/components/BanBanner";
+import { BanBanner, BanLock } from "@/components/BanBanner";
 import SuitGame from "@/components/games/SuitGame";
 import TebakKataGame from "@/components/games/TebakKataGame";
 import TebakGambarGame from "@/components/games/TebakGambarGame";
