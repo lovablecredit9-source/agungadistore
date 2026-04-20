@@ -350,14 +350,41 @@ export function TicketEnhancer({ tickets, categoryLabels, onOpen, onReopen, onDu
               </SelectContent>
             </Select>
           </div>
-          {(search || statusFilter !== "all" || categoryFilter !== "all") && (
+          <Select value={priorityFilter} onValueChange={setPriorityFilter}>
+            <SelectTrigger className="h-9 rounded-xl bg-background/60 text-xs">
+              <Flame className="w-3 h-3 mr-1" />
+              <SelectValue placeholder="Prioritas" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Semua Prioritas</SelectItem>
+              <SelectItem value="critical">🔥 Critical</SelectItem>
+              <SelectItem value="high">🟠 High</SelectItem>
+              <SelectItem value="medium">🟡 Medium</SelectItem>
+              <SelectItem value="low">🟢 Low</SelectItem>
+            </SelectContent>
+          </Select>
+          {(search || statusFilter !== "all" || categoryFilter !== "all" || priorityFilter !== "all") && (
             <div className="flex items-center justify-between text-[10px] text-muted-foreground pt-1">
               <span>Menampilkan {filtered.length} dari {tickets.length} tiket</span>
-              <button onClick={() => { setSearch(""); setStatusFilter("all"); setCategoryFilter("all"); }} className="font-bold text-primary hover:underline">Reset</button>
+              <button onClick={() => { setSearch(""); setStatusFilter("all"); setCategoryFilter("all"); setPriorityFilter("all"); }} className="font-bold text-primary hover:underline">Reset</button>
             </div>
           )}
         </CardContent>
       </Card>
+
+      {/* PINNED SECTION */}
+      {pinnedTickets.length > 0 && (
+        <div>
+          <div className="flex items-center gap-2 mb-2 px-1">
+            <Pin className="w-3.5 h-3.5 text-primary fill-primary" />
+            <span className="text-xs font-extrabold uppercase tracking-wide text-primary">Tiket Disematkan</span>
+            <Badge variant="outline" className="text-[9px] py-0 h-4">{pinnedTickets.length}</Badge>
+          </div>
+          <div className="space-y-2">
+            {pinnedTickets.map((t, idx) => renderTicketCard(t, idx, true))}
+          </div>
+        </div>
+      )}
 
       {/* TIMELINE */}
       {grouped.length === 0 ? (
