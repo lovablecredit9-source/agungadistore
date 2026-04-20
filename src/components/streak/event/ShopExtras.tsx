@@ -60,9 +60,7 @@ export default function ShopExtras({ visitorId, onUpdate }: Props) {
     const { data: res, error } = await supabase.functions.invoke("streak-event-shop", {
       body: { action: "extras_overview", visitorId },
     });
-    if (error || res?.error) {
-      toast({ title: "Gagal memuat", description: res?.error || error?.message, variant: "destructive" });
-    } else {
+    if (!error && !res?.error && res) {
       setData(res);
     }
     setLoading(false);
