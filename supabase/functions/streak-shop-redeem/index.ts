@@ -23,10 +23,10 @@ Deno.serve(async (req) => {
     const admin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
 
     const { data: item } = await admin.from("streak_shop_items").select("*").eq("id", itemId).eq("is_active", true).maybeSingle();
-    if (!item) return Response.json({ error: "Item tidak ditemukan" }, { status: 404, headers: corsHeaders });
+    if (!item) return Response.json({ error: "Item tidak ditemukan" }, { status: 200, headers: corsHeaders });
 
     const { data: streak } = await admin.from("daily_streaks").select("*").eq("visitor_id", visitorId).maybeSingle();
-    if (!streak) return Response.json({ error: "Mulai streak dulu untuk dapat coins!" }, { status: 400, headers: corsHeaders });
+    if (!streak) return Response.json({ error: "Mulai streak dulu untuk dapat coins!" }, { status: 200, headers: corsHeaders });
 
     const coins = streak.streak_coins || 0;
     let costPaidCoins = 0;
@@ -34,16 +34,16 @@ Deno.serve(async (req) => {
 
     if (payMethod === "gem") {
       const gemCost = item.cost_gems || 0;
-      if (gemCost <= 0) return Response.json({ error: "Pembayaran gem belum tersedia untuk item ini" }, { status: 400, headers: corsHeaders });
+      if (gemCost <= 0) return Response.json({ error: "Pembayaran gem belum tersedia untuk item ini" }, { status: 200, headers: corsHeaders });
       const { data: prof } = await admin.from("game_profiles").select("gems").eq("visitor_id", visitorId).maybeSingle();
       const userGems = prof?.gems || 0;
       if (userGems < gemCost) {
-        return Response.json({ error: `Gem tidak cukup. Butuh ${gemCost} 💎, kamu punya ${userGems} 💎.` }, { status: 400, headers: corsHeaders });
+        return Response.json({ error: `Gem tidak cukup. Butuh ${gemCost} 💎, kamu punya ${userGems} 💎.` }, { status: 200, headers: corsHeaders });
       }
       costPaidGems = gemCost;
     } else {
       if (coins < item.cost_coins) {
-        return Response.json({ error: `Coins tidak cukup. Butuh ${item.cost_coins}, kamu punya ${coins}.` }, { status: 400, headers: corsHeaders });
+        return Response.json({ error: `Coins tidak cukup. Butuh ${item.cost_coins}, kamu punya ${coins}.` }, { status: 200, headers: corsHeaders });
       }
       costPaidCoins = item.cost_coins;
     }
