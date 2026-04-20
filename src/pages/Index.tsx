@@ -4384,7 +4384,7 @@ const Index = () => {
         </div>
       )}
 
-      {selectedDeposit && (
+      {!banned && selectedDeposit && (
         <div className="fixed inset-0 z-[88] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setSelectedDeposit(null)}>
           <div className="bg-card w-full max-w-sm rounded-2xl p-5 space-y-4 animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between">
@@ -4655,7 +4655,7 @@ const Index = () => {
       </button>
 
       {/* PIN Setup Modal */}
-      {showPinSetup && (
+      {!banned && showPinSetup && (
         <div className="fixed inset-0 z-[92] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setShowPinSetup(false)}>
           <div className="bg-card w-full max-w-sm rounded-2xl p-5 space-y-4 animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between">
@@ -4694,7 +4694,7 @@ const Index = () => {
       )}
 
       {/* Forgot PIN Modal */}
-      {showForgotPin && (
+      {!banned && showForgotPin && (
         <div className="fixed inset-0 z-[95] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setShowForgotPin(false)}>
           <div className="bg-card w-full max-w-sm rounded-2xl p-5 space-y-4 animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between">
