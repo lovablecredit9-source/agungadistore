@@ -108,6 +108,19 @@ export default function StreakShopFlashDeals({ visitorId, onUpdate }: Props) {
   const [infoDeal, setInfoDeal] = useState<Deal | null>(null);
   const [payMethod, setPayMethod] = useState<Record<string, "coin" | "gem">>({});
 
+  const refreshGemBalance = async () => {
+    if (!visitorId) return 0;
+    try {
+      const { data, error } = await supabase.rpc("get_account_gems", { p_visitor_id: visitorId });
+      if (error) throw error;
+      const latestGems = Number(data) || 0;
+      setUserGems(latestGems);
+      return latestGems;
+    } catch {
+      return userGems;
+    }
+  };
+
   useEffect(() => {
     const t = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(t);
@@ -160,9 +173,10 @@ export default function StreakShopFlashDeals({ visitorId, onUpdate }: Props) {
         toast({ title: "Belum tersedia", description: "Deal ini belum bisa dibayar pakai Gem", variant: "destructive" });
         return;
       }
-      if (userGems < gemCost) {
+      const latestGems = await refreshGemBalance();
+      if (latestGems < gemCost) {
         toast({
-          title: `💎 Gem kurang (${userGems}/${gemCost})`,
+          title: `💎 Gem kurang (${latestGems}/${gemCost})`,
           description: "Bayar pakai Coin aja, atau beli Gem dulu di Shop.",
           variant: "destructive",
         });
