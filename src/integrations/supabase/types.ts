@@ -5564,6 +5564,7 @@ export type Database = {
           reward_type: string
           reward_value: number
           sort_order: number
+          tier: string
           updated_at: string
           weight: number
         }
@@ -5578,6 +5579,7 @@ export type Database = {
           reward_type: string
           reward_value?: number
           sort_order?: number
+          tier?: string
           updated_at?: string
           weight?: number
         }
@@ -5592,6 +5594,7 @@ export type Database = {
           reward_type?: string
           reward_value?: number
           sort_order?: number
+          tier?: string
           updated_at?: string
           weight?: number
         }
@@ -5649,6 +5652,60 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      streak_wheel_tier_config: {
+        Row: {
+          color_class: string
+          cost_balance: number
+          cost_coins: number
+          cost_gems: number
+          created_at: string
+          description: string
+          free_daily: boolean
+          icon: string
+          id: string
+          is_active: boolean
+          pity_threshold: number
+          sort_order: number
+          tier_key: string
+          tier_name: string
+          updated_at: string
+        }
+        Insert: {
+          color_class?: string
+          cost_balance?: number
+          cost_coins?: number
+          cost_gems?: number
+          created_at?: string
+          description?: string
+          free_daily?: boolean
+          icon?: string
+          id?: string
+          is_active?: boolean
+          pity_threshold?: number
+          sort_order?: number
+          tier_key: string
+          tier_name: string
+          updated_at?: string
+        }
+        Update: {
+          color_class?: string
+          cost_balance?: number
+          cost_coins?: number
+          cost_gems?: number
+          created_at?: string
+          description?: string
+          free_daily?: boolean
+          icon?: string
+          id?: string
+          is_active?: boolean
+          pity_threshold?: number
+          sort_order?: number
+          tier_key?: string
+          tier_name?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       support_tickets: {
         Row: {
