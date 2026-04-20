@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,7 +8,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import {
   Search, Filter, Activity, CheckCircle2, Clock, Inbox, Star, Copy, RotateCcw,
   TrendingUp, Sparkles, Hourglass, MessageCircle, ChevronRight, Calendar,
-  Zap, ListFilter, X, AlertCircle, Tag,
+  Zap, ListFilter, X, AlertCircle, Tag, Pin, PinOff, Flame, Smile, Frown, Meh,
+  Bot, Timer, ShieldAlert, Share2, Bell, BellOff,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
