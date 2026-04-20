@@ -312,6 +312,7 @@ const Index = () => {
   const [tokenInput, setTokenInput] = useState("");
   const [claimResults, setClaimResults] = useState<ClaimResult[]>([]);
   const [claiming, setClaiming] = useState(false);
+  const [voucherSection, setVoucherSection] = useState<"claim" | "recent" | "tips">("claim");
   const [history, setHistory] = useState<ClaimHistory[]>([]);
   const [copiedField, setCopiedField] = useState<string | null>(null);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
