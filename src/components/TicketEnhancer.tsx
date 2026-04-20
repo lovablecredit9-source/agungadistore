@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,7 +8,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import {
   Search, Filter, Activity, CheckCircle2, Clock, Inbox, Star, Copy, RotateCcw,
   TrendingUp, Sparkles, Hourglass, MessageCircle, ChevronRight, Calendar,
-  Zap, ListFilter, X, AlertCircle, Tag,
+  Zap, ListFilter, X, AlertCircle, Tag, Pin, PinOff, Flame, Smile, Frown, Meh,
+  Bot, Timer, ShieldAlert, Share2, Bell, BellOff,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
@@ -34,6 +35,9 @@ interface TicketEnhancerProps {
 }
 
 const RATING_KEY = "ticket_ratings_v1";
+const PIN_KEY = "ticket_pins_v1";
+const NOTIFY_KEY = "ticket_notify_v1";
+const SLA_HOURS = 24; // SLA target response
 
 function getRatings(): Record<string, number> {
   try { return JSON.parse(localStorage.getItem(RATING_KEY) || "{}"); } catch { return {}; }
@@ -42,6 +46,72 @@ function saveRating(id: string, stars: number) {
   const all = getRatings();
   all[id] = stars;
   localStorage.setItem(RATING_KEY, JSON.stringify(all));
+}
+function getPins(): string[] {
+  try { return JSON.parse(localStorage.getItem(PIN_KEY) || "[]"); } catch { return []; }
+}
+function savePins(arr: string[]) { localStorage.setItem(PIN_KEY, JSON.stringify(arr)); }
+function getNotify(): string[] {
+  try { return JSON.parse(localStorage.getItem(NOTIFY_KEY) || "[]"); } catch { return []; }
+}
+function saveNotify(arr: string[]) { localStorage.setItem(NOTIFY_KEY, JSON.stringify(arr)); }
+
+// Sentiment heuristic — very simple keyword detection
+function detectSentiment(text: string): "urgent" | "negative" | "positive" | "neutral" {
+  const t = (text || "").toLowerCase();
+  if (/(urgent|segera|cepat|tolong banget|penting|asap|mendesak|darurat)/.test(t)) return "urgent";
+  if (/(marah|kecewa|jelek|buruk|parah|nipu|tipu|lambat|lama banget|bobrok|bangsat|anjir|kampret|sialan)/.test(t)) return "negative";
+  if (/(terima kasih|makasih|mantap|bagus|keren|puas|hebat|top|oke banget)/.test(t)) return "positive";
+  return "neutral";
+}
+
+// Priority — based on age + sentiment + status
+function detectPriority(t: { status: string; created_at: string; description: string }): "low" | "medium" | "high" | "critical" {
+  const ageH = (Date.now() - new Date(t.created_at).getTime()) / 3600000;
+  const s = detectSentiment(t.description);
+  if (t.status === "open" && (s === "urgent" || s === "negative") && ageH > 12) return "critical";
+  if (t.status === "open" && ageH > 24) return "high";
+  if (t.status === "open" && (s === "urgent" || ageH > 6)) return "medium";
+  return "low";
+}
+
+// AI Quick Replies — context aware suggestions
+function suggestReplies(t: { description: string; category?: string }): string[] {
+  const desc = (t.description || "").toLowerCase();
+  const cat = t.category || "";
+  if (cat === "deposit" || /deposit|transfer|saldo/.test(desc)) {
+    return [
+      "Mohon kirim bukti transfer + jam transaksi",
+      "Saldo sudah masuk, mohon refresh aplikasi",
+      "Kami cek dulu mutasi ya, mohon tunggu 5 menit",
+    ];
+  }
+  if (cat === "voucher" || /voucher|kode|klaim/.test(desc)) {
+    return [
+      "Kode voucher sudah expired, kami kirim ulang",
+      "Voucher sudah aktif, silakan klaim ulang",
+      "Mohon screenshot error yang muncul",
+    ];
+  }
+  if (cat === "refund" || /refund|kembali/.test(desc)) {
+    return [
+      "Refund diproses 1x24 jam ke saldo",
+      "Mohon konfirmasi rekening tujuan refund",
+      "Refund sudah masuk, silakan dicek",
+    ];
+  }
+  if (cat === "bug" || /bug|error|tidak bisa|gagal/.test(desc)) {
+    return [
+      "Mohon coba clear cache & buka ulang aplikasi",
+      "Bug sudah diperbaiki, silakan update",
+      "Tim teknis sedang investigasi, mohon tunggu",
+    ];
+  }
+  return [
+    "Halo, terima kasih sudah menghubungi kami",
+    "Mohon tunggu, kami cek dulu detailnya",
+    "Sudah kami tindak lanjuti, ada lagi yang bisa dibantu?",
+  ];
 }
 
 function timeAgo(iso: string): string {
@@ -80,9 +150,39 @@ export function TicketEnhancer({ tickets, categoryLabels, onOpen, onReopen, onDu
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
+  const [priorityFilter, setPriorityFilter] = useState<string>("all");
   const [ratings, setRatings] = useState<Record<string, number>>(getRatings());
   const [ratingTicket, setRatingTicket] = useState<EnhancedTicket | null>(null);
+  const [pins, setPins] = useState<string[]>(getPins());
+  const [notify, setNotify] = useState<string[]>(getNotify());
+  const [aiTicket, setAiTicket] = useState<EnhancedTicket | null>(null);
+  const [tick, setTick] = useState(0);
   const { toast } = useToast();
+
+  useEffect(() => {
+    const id = setInterval(() => setTick(x => x + 1), 30000);
+    return () => clearInterval(id);
+  }, []);
+
+  function togglePin(id: string) {
+    const next = pins.includes(id) ? pins.filter(x => x !== id) : [...pins, id];
+    setPins(next); savePins(next);
+    toast({ title: pins.includes(id) ? "Lepas pin tiket" : "📌 Tiket disematkan" });
+  }
+  function toggleNotify(id: string) {
+    const next = notify.includes(id) ? notify.filter(x => x !== id) : [...notify, id];
+    setNotify(next); saveNotify(next);
+    toast({ title: notify.includes(id) ? "Notifikasi dimatikan" : "🔔 Notifikasi diaktifkan" });
+  }
+  function shareTicket(t: EnhancedTicket) {
+    const text = `Tiket #${t.ticket_number}\nKategori: ${categoryLabels[t.category || ""] || "Lainnya"}\nStatus: ${t.status}\n\n${t.description}`;
+    if (navigator.share) {
+      navigator.share({ title: `Tiket #${t.ticket_number}`, text }).catch(() => {});
+    } else {
+      navigator.clipboard.writeText(text);
+      toast({ title: "📋 Disalin ke clipboard" });
+    }
+  }
 
   const filtered = useMemo(() => {
     const s = search.trim().toLowerCase();
@@ -92,37 +192,40 @@ export function TicketEnhancer({ tickets, categoryLabels, onOpen, onReopen, onDu
         if (statusFilter === "closed" && t.status === "open") return false;
       }
       if (categoryFilter !== "all" && t.category !== categoryFilter) return false;
+      if (priorityFilter !== "all" && detectPriority(t) !== priorityFilter) return false;
       if (s) {
         const hay = `${t.ticket_number} ${t.description} ${categoryLabels[t.category || ""] || ""}`.toLowerCase();
         if (!hay.includes(s)) return false;
       }
       return true;
     });
-  }, [tickets, search, statusFilter, categoryFilter, categoryLabels]);
+  }, [tickets, search, statusFilter, categoryFilter, priorityFilter, categoryLabels]);
 
-  // Stats
   const stats = useMemo(() => {
     const total = tickets.length;
     const open = tickets.filter(t => t.status === "open").length;
     const closed = total - open;
-    // Avg response (closed - created)
     const closedT = tickets.filter(t => t.status !== "open" && t.updated_at);
     const avgMin = closedT.length
       ? Math.floor(closedT.reduce((a, t) => a + (new Date(t.updated_at!).getTime() - new Date(t.created_at).getTime()), 0) / closedT.length / 60000)
       : 0;
     const rate = total ? Math.round((closed / total) * 100) : 0;
-    return { total, open, closed, avgMin, rate };
+    const critical = tickets.filter(t => detectPriority(t) === "critical").length;
+    return { total, open, closed, avgMin, rate, critical };
   }, [tickets]);
+
+  const pinnedTickets = useMemo(() => filtered.filter(t => pins.includes(t.id)), [filtered, pins]);
+  const unpinnedFiltered = useMemo(() => filtered.filter(t => !pins.includes(t.id)), [filtered, pins]);
 
   const grouped = useMemo(() => {
     const m = new Map<string, EnhancedTicket[]>();
-    filtered.forEach(t => {
+    unpinnedFiltered.forEach(t => {
       const k = dateGroup(t.created_at);
       if (!m.has(k)) m.set(k, []);
       m.get(k)!.push(t);
     });
     return Array.from(m.entries());
-  }, [filtered]);
+  }, [unpinnedFiltered]);
 
   const allCategories = useMemo(() => {
     const set = new Set<string>();
@@ -138,11 +241,187 @@ export function TicketEnhancer({ tickets, categoryLabels, onOpen, onReopen, onDu
     return `${Math.floor(h / 24)}h`;
   }
 
+  function slaInfo(t: EnhancedTicket) {
+    void tick;
+    const elapsed = Date.now() - new Date(t.created_at).getTime();
+    const total = SLA_HOURS * 3600000;
+    const remainingMs = Math.max(0, total - elapsed);
+    const pct = Math.min(100, Math.round((elapsed / total) * 100));
+    return { remainingMs, pct, breached: remainingMs === 0 };
+  }
+  function fmtSla(ms: number): string {
+    if (ms === 0) return "SLA terlewat";
+    const h = Math.floor(ms / 3600000);
+    const m = Math.floor((ms % 3600000) / 60000);
+    if (h > 0) return `${h}j ${m}m`;
+    return `${m}m`;
+  }
+
   function rateTicket(id: string, stars: number) {
     saveRating(id, stars);
     setRatings(getRatings());
-    toast({ title: `Rating ${stars} bintang tersimpan ⭐`, description: "Terima kasih atas penilaiannya!" });
+    toast({ title: `Rating ${stars} bintang tersimpan ⭐` });
     setRatingTicket(null);
+  }
+
+  function copyReply(text: string) {
+    navigator.clipboard.writeText(text);
+    toast({ title: "📋 Saran balasan disalin", description: "Tempel di chat tiket" });
+  }
+
+  const PRIORITY_META: Record<string, { label: string; cls: string; icon: any }> = {
+    critical: { label: "Critical", cls: "bg-red-500/15 text-red-600 border-red-500/40", icon: Flame },
+    high:     { label: "High",     cls: "bg-orange-500/15 text-orange-600 border-orange-500/40", icon: ShieldAlert },
+    medium:   { label: "Medium",   cls: "bg-yellow-500/15 text-yellow-600 border-yellow-500/40", icon: AlertCircle },
+    low:      { label: "Low",      cls: "bg-emerald-500/15 text-emerald-600 border-emerald-500/40", icon: CheckCircle2 },
+  };
+  const SENTIMENT_META: Record<string, { label: string; cls: string; icon: any }> = {
+    urgent:   { label: "Urgent",   cls: "bg-red-500/15 text-red-600 border-red-500/40", icon: Flame },
+    negative: { label: "Negatif",  cls: "bg-orange-500/15 text-orange-600 border-orange-500/40", icon: Frown },
+    positive: { label: "Positif",  cls: "bg-emerald-500/15 text-emerald-600 border-emerald-500/40", icon: Smile },
+    neutral:  { label: "Netral",   cls: "bg-muted text-muted-foreground border-border", icon: Meh },
+  };
+
+  function renderTicketCard(t: EnhancedTicket, idx: number, isPinned: boolean) {
+    const meta = STATUS_META[t.status] || STATUS_META.open;
+    const Icon = meta.icon;
+    const cat = categoryLabels[t.category || ""] || "Lainnya";
+    const myRating = ratings[t.id] || 0;
+    const priority = detectPriority(t);
+    const pmeta = PRIORITY_META[priority];
+    const sentiment = detectSentiment(t.description);
+    const smeta = SENTIMENT_META[sentiment];
+    const isOpen = t.status === "open";
+    const sla = isOpen ? slaInfo(t) : null;
+    const isPinnedNow = pins.includes(t.id);
+    const isNotify = notify.includes(t.id);
+
+    return (
+      <motion.div
+        key={t.id}
+        initial={{ opacity: 0, x: -10 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ delay: Math.min(idx * 0.04, 0.3) }}
+        className="relative mb-3"
+      >
+        {!isPinned && (
+          <div className={`absolute -left-[18px] top-3 w-6 h-6 rounded-full bg-gradient-to-br ${meta.bg} ring-4 ring-background flex items-center justify-center shadow-lg z-10`}>
+            <Icon className="w-3 h-3 text-white" />
+          </div>
+        )}
+
+        <Card className={`overflow-hidden hover:shadow-xl transition-all group border-border/60 bg-card/80 backdrop-blur ${priority === "critical" ? "ring-2 ring-red-500/40 shadow-red-500/10" : ""} ${isPinned ? "ring-1 ring-primary/40" : ""}`}>
+          {/* Progress strip (status) */}
+          <div className="h-1 bg-muted">
+            <motion.div
+              initial={{ width: 0 }}
+              animate={{ width: `${meta.pct}%` }}
+              transition={{ duration: 0.8 }}
+              className={`h-full bg-gradient-to-r ${meta.bg}`}
+            />
+          </div>
+          <CardContent className="p-3 cursor-pointer" onClick={() => onOpen(t)}>
+            <div className="flex items-start justify-between gap-2 mb-1.5">
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-1.5 mb-0.5 flex-wrap">
+                  <span className="font-extrabold text-sm text-primary">#{t.ticket_number}</span>
+                  <Badge className={`text-[9px] gap-0.5 bg-gradient-to-r ${meta.bg} text-white border-0 px-1.5 py-0`}>
+                    <Icon className="w-2.5 h-2.5" />{meta.label}
+                  </Badge>
+                  <Badge variant="outline" className={`text-[9px] py-0 px-1.5 gap-0.5 border ${pmeta.cls}`}>
+                    <pmeta.icon className="w-2.5 h-2.5" />{pmeta.label}
+                  </Badge>
+                  {isPinnedNow && (
+                    <Pin className="w-3 h-3 text-primary fill-primary" />
+                  )}
+                </div>
+                <p className="text-xs text-foreground line-clamp-2 leading-snug">{t.description}</p>
+              </div>
+              <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0 group-hover:translate-x-1 transition-transform" />
+            </div>
+
+            {/* SLA Countdown for open tickets */}
+            {sla && (
+              <div className="mt-2 p-1.5 rounded-lg bg-muted/40 border border-border/50">
+                <div className="flex items-center justify-between text-[9px] font-bold mb-1">
+                  <span className="flex items-center gap-1">
+                    <Timer className={`w-3 h-3 ${sla.breached ? "text-red-500" : "text-primary"}`} />
+                    SLA Response
+                  </span>
+                  <span className={sla.breached ? "text-red-500" : "text-foreground"}>
+                    {sla.breached ? "⚠️ Terlewat" : `Sisa ${fmtSla(sla.remainingMs)}`}
+                  </span>
+                </div>
+                <div className="h-1 bg-background rounded-full overflow-hidden">
+                  <div
+                    className={`h-full rounded-full transition-all ${sla.breached ? "bg-red-500" : sla.pct > 75 ? "bg-orange-500" : "bg-gradient-to-r from-emerald-500 to-cyan-500"}`}
+                    style={{ width: `${sla.pct}%` }}
+                  />
+                </div>
+              </div>
+            )}
+
+            <div className="flex items-center flex-wrap gap-1.5 mt-2">
+              <Badge variant="outline" className="text-[9px] py-0 px-1.5 gap-0.5">
+                <Tag className="w-2.5 h-2.5" /> {cat}
+              </Badge>
+              <Badge variant="outline" className="text-[9px] py-0 px-1.5 gap-0.5 text-muted-foreground">
+                <Clock className="w-2.5 h-2.5" /> {timeAgo(t.created_at)}
+              </Badge>
+              <Badge variant="outline" className={`text-[9px] py-0 px-1.5 gap-0.5 border ${smeta.cls}`}>
+                <smeta.icon className="w-2.5 h-2.5" /> {smeta.label}
+              </Badge>
+              {t.screenshot_url && (
+                <Badge variant="outline" className="text-[9px] py-0 px-1.5 gap-0.5">
+                  <AlertCircle className="w-2.5 h-2.5" /> Bukti
+                </Badge>
+              )}
+              {myRating > 0 && (
+                <Badge className="text-[9px] py-0 px-1.5 gap-0.5 bg-yellow-500/15 text-yellow-600 border-yellow-500/30 border">
+                  <Star className="w-2.5 h-2.5 fill-current" /> {myRating}/5
+                </Badge>
+              )}
+            </div>
+          </CardContent>
+
+          {/* Quick actions */}
+          <div className="border-t border-border/60 px-2 py-1.5 flex items-center gap-0.5 bg-muted/30 overflow-x-auto scrollbar-none">
+            <Button size="sm" variant="ghost" className="h-7 px-2 text-[10px] gap-1 shrink-0" onClick={(e) => { e.stopPropagation(); onOpen(t); }}>
+              <MessageCircle className="w-3 h-3" /> Buka
+            </Button>
+            <Button size="sm" variant="ghost" className="h-7 px-1.5 text-[10px] gap-1 shrink-0 text-primary" onClick={(e) => { e.stopPropagation(); setAiTicket(t); }}>
+              <Bot className="w-3 h-3" /> AI
+            </Button>
+            <Button size="sm" variant="ghost" className={`h-7 px-1.5 text-[10px] gap-1 shrink-0 ${isPinnedNow ? "text-primary" : ""}`} onClick={(e) => { e.stopPropagation(); togglePin(t.id); }}>
+              {isPinnedNow ? <PinOff className="w-3 h-3" /> : <Pin className="w-3 h-3" />}
+            </Button>
+            {isOpen && (
+              <Button size="sm" variant="ghost" className={`h-7 px-1.5 text-[10px] gap-1 shrink-0 ${isNotify ? "text-primary" : ""}`} onClick={(e) => { e.stopPropagation(); toggleNotify(t.id); }}>
+                {isNotify ? <Bell className="w-3 h-3 fill-current" /> : <BellOff className="w-3 h-3" />}
+              </Button>
+            )}
+            <Button size="sm" variant="ghost" className="h-7 px-1.5 text-[10px] gap-1 shrink-0" onClick={(e) => { e.stopPropagation(); shareTicket(t); }}>
+              <Share2 className="w-3 h-3" />
+            </Button>
+            {!isOpen && onReopen && (
+              <Button size="sm" variant="ghost" className="h-7 px-1.5 text-[10px] gap-1 shrink-0 text-orange-500 hover:text-orange-600" onClick={(e) => { e.stopPropagation(); onReopen(t); }}>
+                <RotateCcw className="w-3 h-3" />
+              </Button>
+            )}
+            {!isOpen && (
+              <Button size="sm" variant="ghost" className="h-7 px-1.5 text-[10px] gap-1 shrink-0 text-yellow-500 hover:text-yellow-600" onClick={(e) => { e.stopPropagation(); setRatingTicket(t); }}>
+                <Star className="w-3 h-3" />
+              </Button>
+            )}
+            {onDuplicate && (
+              <Button size="sm" variant="ghost" className="h-7 px-1.5 text-[10px] gap-1 shrink-0 text-primary" onClick={(e) => { e.stopPropagation(); onDuplicate(t); }}>
+                <Copy className="w-3 h-3" />
+              </Button>
+            )}
+          </div>
+        </Card>
+      </motion.div>
+    );
   }
 
   return (
@@ -159,11 +438,12 @@ export function TicketEnhancer({ tickets, categoryLabels, onOpen, onReopen, onDu
             </div>
             <Badge className="bg-white/25 text-white border-white/30 hover:bg-white/30 backdrop-blur">{stats.rate}% selesai</Badge>
           </div>
-          <div className="grid grid-cols-4 gap-2">
+          <div className="grid grid-cols-5 gap-1.5">
             <StatChip icon={Inbox} label="Total" value={stats.total} />
             <StatChip icon={Activity} label="Aktif" value={stats.open} />
             <StatChip icon={CheckCircle2} label="Tutup" value={stats.closed} />
             <StatChip icon={Zap} label="Avg" value={fmtAvg(stats.avgMin)} />
+            <StatChip icon={Flame} label="Urgent" value={stats.critical} highlight={stats.critical > 0} />
           </div>
           {/* Resolution bar */}
           <div className="mt-3">
@@ -225,14 +505,41 @@ export function TicketEnhancer({ tickets, categoryLabels, onOpen, onReopen, onDu
               </SelectContent>
             </Select>
           </div>
-          {(search || statusFilter !== "all" || categoryFilter !== "all") && (
+          <Select value={priorityFilter} onValueChange={setPriorityFilter}>
+            <SelectTrigger className="h-9 rounded-xl bg-background/60 text-xs">
+              <Flame className="w-3 h-3 mr-1" />
+              <SelectValue placeholder="Prioritas" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Semua Prioritas</SelectItem>
+              <SelectItem value="critical">🔥 Critical</SelectItem>
+              <SelectItem value="high">🟠 High</SelectItem>
+              <SelectItem value="medium">🟡 Medium</SelectItem>
+              <SelectItem value="low">🟢 Low</SelectItem>
+            </SelectContent>
+          </Select>
+          {(search || statusFilter !== "all" || categoryFilter !== "all" || priorityFilter !== "all") && (
             <div className="flex items-center justify-between text-[10px] text-muted-foreground pt-1">
               <span>Menampilkan {filtered.length} dari {tickets.length} tiket</span>
-              <button onClick={() => { setSearch(""); setStatusFilter("all"); setCategoryFilter("all"); }} className="font-bold text-primary hover:underline">Reset</button>
+              <button onClick={() => { setSearch(""); setStatusFilter("all"); setCategoryFilter("all"); setPriorityFilter("all"); }} className="font-bold text-primary hover:underline">Reset</button>
             </div>
           )}
         </CardContent>
       </Card>
+
+      {/* PINNED SECTION */}
+      {pinnedTickets.length > 0 && (
+        <div>
+          <div className="flex items-center gap-2 mb-2 px-1">
+            <Pin className="w-3.5 h-3.5 text-primary fill-primary" />
+            <span className="text-xs font-extrabold uppercase tracking-wide text-primary">Tiket Disematkan</span>
+            <Badge variant="outline" className="text-[9px] py-0 h-4">{pinnedTickets.length}</Badge>
+          </div>
+          <div className="space-y-2">
+            {pinnedTickets.map((t, idx) => renderTicketCard(t, idx, true))}
+          </div>
+        </div>
+      )}
 
       {/* TIMELINE */}
       {grouped.length === 0 ? (
@@ -259,93 +566,7 @@ export function TicketEnhancer({ tickets, categoryLabels, onOpen, onReopen, onDu
                 {/* connector line */}
                 <div className="absolute left-3 top-2 bottom-2 w-0.5 bg-gradient-to-b from-primary/40 via-accent/40 to-primary/10" />
 
-                {items.map((t, idx) => {
-                  const meta = STATUS_META[t.status] || STATUS_META.open;
-                  const Icon = meta.icon;
-                  const cat = categoryLabels[t.category || ""] || "Lainnya";
-                  const myRating = ratings[t.id] || 0;
-                  return (
-                    <motion.div
-                      key={t.id}
-                      initial={{ opacity: 0, x: -10 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: idx * 0.05 }}
-                      className="relative mb-3"
-                    >
-                      {/* Node */}
-                      <div className={`absolute -left-[18px] top-3 w-6 h-6 rounded-full bg-gradient-to-br ${meta.bg} ring-4 ring-background flex items-center justify-center shadow-lg`}>
-                        <Icon className="w-3 h-3 text-white" />
-                      </div>
-
-                      <Card className="overflow-hidden hover:shadow-xl transition-all group border-border/60 bg-card/80 backdrop-blur">
-                        {/* Progress strip */}
-                        <div className="h-1 bg-muted">
-                          <motion.div
-                            initial={{ width: 0 }}
-                            animate={{ width: `${meta.pct}%` }}
-                            transition={{ duration: 0.8, delay: idx * 0.05 }}
-                            className={`h-full bg-gradient-to-r ${meta.bg}`}
-                          />
-                        </div>
-                        <CardContent className="p-3 cursor-pointer" onClick={() => onOpen(t)}>
-                          <div className="flex items-start justify-between gap-2 mb-1.5">
-                            <div className="min-w-0 flex-1">
-                              <div className="flex items-center gap-1.5 mb-0.5">
-                                <span className="font-extrabold text-sm text-primary">#{t.ticket_number}</span>
-                                <Badge className={`text-[9px] gap-0.5 bg-gradient-to-r ${meta.bg} text-white border-0 px-1.5 py-0`}>
-                                  <Icon className="w-2.5 h-2.5" />{meta.label}
-                                </Badge>
-                              </div>
-                              <p className="text-xs text-foreground line-clamp-2 leading-snug">{t.description}</p>
-                            </div>
-                            <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0 group-hover:translate-x-1 transition-transform" />
-                          </div>
-
-                          <div className="flex items-center flex-wrap gap-1.5 mt-2">
-                            <Badge variant="outline" className="text-[9px] py-0 px-1.5 gap-0.5">
-                              <Tag className="w-2.5 h-2.5" /> {cat}
-                            </Badge>
-                            <Badge variant="outline" className="text-[9px] py-0 px-1.5 gap-0.5 text-muted-foreground">
-                              <Clock className="w-2.5 h-2.5" /> {timeAgo(t.created_at)}
-                            </Badge>
-                            {t.screenshot_url && (
-                              <Badge variant="outline" className="text-[9px] py-0 px-1.5 gap-0.5">
-                                <AlertCircle className="w-2.5 h-2.5" /> Bukti
-                              </Badge>
-                            )}
-                            {myRating > 0 && (
-                              <Badge className="text-[9px] py-0 px-1.5 gap-0.5 bg-yellow-500/15 text-yellow-600 border-yellow-500/30 border">
-                                <Star className="w-2.5 h-2.5 fill-current" /> {myRating}/5
-                              </Badge>
-                            )}
-                          </div>
-                        </CardContent>
-
-                        {/* Quick actions */}
-                        <div className="border-t border-border/60 px-2 py-1.5 flex items-center gap-1 bg-muted/30">
-                          <Button size="sm" variant="ghost" className="h-7 px-2 text-[10px] gap-1 flex-1" onClick={(e) => { e.stopPropagation(); onOpen(t); }}>
-                            <MessageCircle className="w-3 h-3" /> Buka
-                          </Button>
-                          {t.status !== "open" && onReopen && (
-                            <Button size="sm" variant="ghost" className="h-7 px-2 text-[10px] gap-1 text-orange-500 hover:text-orange-600" onClick={(e) => { e.stopPropagation(); onReopen(t); }}>
-                              <RotateCcw className="w-3 h-3" /> Reopen
-                            </Button>
-                          )}
-                          {t.status !== "open" && (
-                            <Button size="sm" variant="ghost" className="h-7 px-2 text-[10px] gap-1 text-yellow-500 hover:text-yellow-600" onClick={(e) => { e.stopPropagation(); setRatingTicket(t); }}>
-                              <Star className="w-3 h-3" /> Rate
-                            </Button>
-                          )}
-                          {onDuplicate && (
-                            <Button size="sm" variant="ghost" className="h-7 px-2 text-[10px] gap-1 text-primary" onClick={(e) => { e.stopPropagation(); onDuplicate(t); }}>
-                              <Copy className="w-3 h-3" /> Salin
-                            </Button>
-                          )}
-                        </div>
-                      </Card>
-                    </motion.div>
-                  );
-                })}
+                {items.map((t, idx) => renderTicketCard(t, idx, false))}
               </div>
             </div>
           ))}
@@ -388,13 +609,57 @@ export function TicketEnhancer({ tickets, categoryLabels, onOpen, onReopen, onDu
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* AI QUICK REPLY DIALOG */}
+      <AnimatePresence>
+        {aiTicket && (
+          <motion.div
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            onClick={() => setAiTicket(null)}
+            className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-4"
+          >
+            <motion.div
+              initial={{ scale: 0.9, y: 30 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 30 }}
+              onClick={e => e.stopPropagation()}
+              className="bg-card rounded-2xl p-5 max-w-sm w-full shadow-2xl border border-border max-h-[80vh] overflow-y-auto"
+            >
+              <div className="flex items-center gap-2 mb-3">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-lg">
+                  <Bot className="w-5 h-5 text-white" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-extrabold text-base">AI Saran Balasan</h3>
+                  <p className="text-[10px] text-muted-foreground">Tiket #{aiTicket.ticket_number} • {categoryLabels[aiTicket.category || ""] || "Lainnya"}</p>
+                </div>
+              </div>
+              <div className="space-y-2 mb-3">
+                {suggestReplies(aiTicket).map((rep, i) => (
+                  <button
+                    key={i}
+                    onClick={() => copyReply(rep)}
+                    className="w-full text-left p-3 rounded-xl border border-border bg-muted/30 hover:bg-primary/10 hover:border-primary/40 transition-all group"
+                  >
+                    <div className="flex items-start gap-2">
+                      <Sparkles className="w-3.5 h-3.5 text-primary shrink-0 mt-0.5 group-hover:scale-110 transition-transform" />
+                      <p className="text-xs leading-snug flex-1">{rep}</p>
+                      <Copy className="w-3 h-3 text-muted-foreground shrink-0 mt-0.5" />
+                    </div>
+                  </button>
+                ))}
+              </div>
+              <p className="text-[10px] text-muted-foreground text-center mb-2">💡 Tap saran untuk salin ke clipboard</p>
+              <Button variant="outline" className="w-full" onClick={() => setAiTicket(null)}>Tutup</Button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
 
-function StatChip({ icon: Icon, label, value }: { icon: any; label: string; value: number | string }) {
+function StatChip({ icon: Icon, label, value, highlight }: { icon: any; label: string; value: number | string; highlight?: boolean }) {
   return (
-    <div className="bg-white/15 backdrop-blur rounded-xl px-2 py-2 text-center border border-white/20">
+    <div className={`backdrop-blur rounded-xl px-1.5 py-2 text-center border ${highlight ? "bg-red-500/30 border-red-300/50 animate-pulse" : "bg-white/15 border-white/20"}`}>
       <Icon className="w-3.5 h-3.5 mx-auto mb-0.5 opacity-90" />
       <div className="text-[8px] uppercase font-bold opacity-80 leading-none">{label}</div>
       <div className="text-base font-extrabold leading-tight mt-0.5">{value}</div>
