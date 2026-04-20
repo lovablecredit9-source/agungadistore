@@ -66,7 +66,7 @@ Deno.serve(async (req) => {
           .eq("visitor_id", visitorId)
           .eq("redemption_date", today),
         checkPremium(admin, visitorId),
-        admin.from("game_profiles").select("gems").eq("visitor_id", visitorId).maybeSingle(),
+        admin.rpc("get_account_gems", { p_visitor_id: visitorId }),
       ]);
 
       const claimedToday = new Set((redemptions ?? []).map((r: any) => r.deal_id));
@@ -84,7 +84,7 @@ Deno.serve(async (req) => {
           };
         }),
         is_premium: isPremium,
-        user_gems: prof?.gems ?? 0,
+        user_gems: Number(prof) || 0,
         date: today,
       }, { headers: corsHeaders });
     }
@@ -131,8 +131,8 @@ Deno.serve(async (req) => {
         if (gemCost <= 0) {
           return Response.json({ error: "Deal ini belum tersedia untuk pembayaran Gem" }, { status: 400, headers: corsHeaders });
         }
-        const { data: prof } = await admin.from("game_profiles").select("gems").eq("visitor_id", visitorId).maybeSingle();
-        const userGems = prof?.gems ?? 0;
+        const { data: gemTotal } = await admin.rpc("get_account_gems", { p_visitor_id: visitorId });
+        const userGems = Number(gemTotal) || 0;
         if (userGems < gemCost) {
           return Response.json({ error: `Gem kurang. Butuh ${gemCost} 💎, kamu punya ${userGems} 💎` }, { status: 400, headers: corsHeaders });
         }
@@ -190,8 +190,11 @@ Deno.serve(async (req) => {
 
       // Deduct payment
       if (payMethod === "gem") {
-        const { data: prof } = await admin.from("game_profiles").select("gems").eq("visitor_id", visitorId).maybeSingle();
-        await admin.from("game_profiles").update({ gems: (prof?.gems || 0) - costPaid }).eq("visitor_id", visitorId);
+        // Potong gem lewat RPC akun-aware (multi-profile per akun balance)
+        const { error: gemErr } = await admin.rpc("add_account_gems", { p_visitor_id: visitorId, p_amount: -costPaid });
+        if (gemErr) {
+          return Response.json({ error: `Gagal potong Gem: ${gemErr.message}` }, { status: 400, headers: corsHeaders });
+        }
         await admin.from("gem_transactions").insert({
           visitor_id: visitorId,
           amount: -costPaid,
