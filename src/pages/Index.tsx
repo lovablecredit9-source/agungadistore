@@ -2822,7 +2822,7 @@ const Index = () => {
                         <option value="oldest">Terlama</option>
                       </select>
                     </div>
-                    {filteredDeposits.map(dep => (
+                    {!banned && filteredDeposits.map(dep => (
                       <Card key={dep.id} className="cursor-pointer transition-all hover:shadow-lg" onClick={() => setSelectedDeposit(dep)}>
                         <CardContent className="p-3 flex items-center gap-3">
                           <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${dep.status === "approved" ? "bg-accent/10" : dep.status === "rejected" ? "bg-destructive/10" : "bg-muted"}`}>
@@ -2932,7 +2932,7 @@ const Index = () => {
                 {balanceTransactions.length === 0 && (
                   <p className="text-center text-sm text-muted-foreground py-8">{t("balance.no_transactions", lang)}</p>
                 )}
-                {balanceTransactions.map(tx => (
+                {!banned && balanceTransactions.map(tx => (
                   <Card key={tx.id} className="cursor-pointer transition-all hover:shadow-lg" onClick={() => setSelectedTransaction(tx)}>
                     <CardContent className="p-3 flex items-center gap-3">
                       {showTxExport && (
@@ -2963,7 +2963,7 @@ const Index = () => {
                 ))}
 
                 {/* Transaction Detail Popup */}
-                {selectedTransaction && (
+                {!banned && selectedTransaction && (
                   <div className="fixed inset-0 z-[70] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setSelectedTransaction(null)}>
                     <div className="bg-background rounded-2xl shadow-2xl w-full max-w-sm p-5 space-y-4 animate-in fade-in zoom-in-95" onClick={e => e.stopPropagation()}>
                       <div className="flex items-center justify-between">
@@ -3055,7 +3055,17 @@ const Index = () => {
         )}
 
         {tab === "streakshop" && (
-          <NeonStreakHub key={`shop-${activeBalanceVisitorId}`} visitorId={activeBalanceVisitorId} forcedView="shop" />
+          userBalance ? (
+            <NeonStreakHub key={`shop-${activeBalanceVisitorId}`} visitorId={activeBalanceVisitorId} forcedView="shop" />
+          ) : (
+            <LoginGate
+              title="Streak Event Shop"
+              description="Login saldo untuk akses shop event dan reward streak."
+              emoji="🛒"
+              gradient="from-fuchsia-500 to-rose-600"
+              onGoToLogin={() => setTab("saldo")}
+            />
+          )
         )}
 
         <div className={tab === "game" ? "" : "hidden"}>
