@@ -14,6 +14,7 @@ import {
   Wallet, LogIn, UserPlus, LogOut, Smartphone, History, Eye, EyeOff, Mail, Lock, User, Phone,
   Edit2, KeyRound, Save, X, Users, Trash2, ArrowRightLeft, Plus, ArrowLeft,
 } from "lucide-react";
+import { BanGuard } from "@/components/BanBanner";
 
 const SAVED_KEY = "saved_balance_accounts_v1";
 
@@ -74,6 +75,10 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser }: BalanceA
   const [showNewPw, setShowNewPw] = useState(false);
 
   const { toast } = useToast();
+
+  function notifyAuthChanged() {
+    window.dispatchEvent(new CustomEvent("balance-auth-changed"));
+  }
 
   useEffect(() => {
     if (currentUser && showHistory) {
@@ -182,6 +187,7 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser }: BalanceA
     }));
 
     onLogin(data.user);
+    notifyAuthChanged();
     setAddingAccount(false);
     setPreviousActiveAccount(null);
     setShowSwitcher(false);
@@ -225,6 +231,7 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser }: BalanceA
     }));
 
     onLogin(data.user);
+    notifyAuthChanged();
     setAddingAccount(false);
     setPreviousActiveAccount(null);
     setShowSwitcher(false);
@@ -240,6 +247,7 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser }: BalanceA
     setPreviousActiveAccount(null);
     setShowSwitcher(false);
     onLogout();
+    notifyAuthChanged();
     toast({ title: "Berhasil logout (akun tetap tersimpan di daftar)" });
   }
 
@@ -254,6 +262,7 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser }: BalanceA
     setPreviousActiveAccount(null);
     setShowSwitcher(false);
     onLogout();
+    notifyAuthChanged();
     toast({ title: "Semua akun dihapus dari perangkat ini" });
   }
 
@@ -278,6 +287,7 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser }: BalanceA
     localStorage.removeItem("balance_email");
     localStorage.removeItem("balance_visitor_id");
     onLogout();
+    notifyAuthChanged();
     setMode("login");
     setAddingAccount(true);
     setShowSwitcher(false);
@@ -323,6 +333,7 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser }: BalanceA
       phone: user.phone,
     }));
     onLogin(user);
+    notifyAuthChanged();
     setAddingAccount(false);
     setPreviousActiveAccount(null);
     setShowSwitcher(false);
@@ -475,12 +486,18 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser }: BalanceA
           <Button size="sm" variant="outline" className="gap-1.5 text-xs font-bold" onClick={handleAddAccount} disabled={savedAccounts.length >= MAX_SAVED_ACCOUNTS}>
             <Plus className="w-3.5 h-3.5" /> Tambah Akun
           </Button>
-          <Button size="sm" variant="outline" className="gap-1.5 text-xs font-bold text-destructive border-destructive/30" onClick={handleLogout}>
-            <LogOut className="w-3.5 h-3.5" /> Logout
-          </Button>
-          <Button size="sm" variant="outline" className="gap-1.5 text-xs font-bold text-destructive border-destructive/30" onClick={handleLogoutAll}>
-            <Trash2 className="w-3.5 h-3.5" /> Logout Semua
-          </Button>
+          <BanGuard fallbackLabel="tombol logout">
+            {(locked, openPopup) => (
+              <>
+                <Button size="sm" variant="outline" className="gap-1.5 text-xs font-bold text-destructive border-destructive/30" onClick={locked ? openPopup : handleLogout}>
+                  <LogOut className="w-3.5 h-3.5" /> Logout
+                </Button>
+                <Button size="sm" variant="outline" className="gap-1.5 text-xs font-bold text-destructive border-destructive/30" onClick={locked ? openPopup : handleLogoutAll}>
+                  <Trash2 className="w-3.5 h-3.5" /> Logout Semua
+                </Button>
+              </>
+            )}
+          </BanGuard>
           <Button size="sm" variant="ghost" className="gap-1.5 text-xs font-bold" onClick={() => setShowHistory(!showHistory)}>
             <Smartphone className="w-3.5 h-3.5" /> Riwayat
           </Button>
