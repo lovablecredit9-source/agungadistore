@@ -4646,6 +4646,7 @@ const Index = () => {
         <div className="absolute inset-0 bg-card/80 backdrop-blur-xl border-t border-white/10 shadow-[0_-8px_32px_rgba(0,0,0,0.12)]" />
         <div className="relative flex max-w-lg mx-auto overflow-x-auto scrollbar-hide px-1 py-1">
           {([
+            { key: "beranda" as Tab, icon: Home, label: "Beranda", gradient: "from-blue-500 to-cyan-400" },
             { key: "musik" as Tab, icon: Music2, label: "Musik", gradient: "from-fuchsia-600 via-purple-600 to-indigo-600" },
             { key: "produk" as Tab, icon: Package, label: t("nav.products", lang), gradient: "from-orange-500 to-amber-400" },
             { key: "voucher" as Tab, icon: Ticket, label: t("nav.voucher", lang), gradient: "from-emerald-500 to-green-400" },
