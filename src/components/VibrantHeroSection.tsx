@@ -338,63 +338,6 @@ export default function VibrantHeroSection({
         </div>
       </div>
 
-      {/* Personalized rail — Untuk Kamu / Trending / Riwayat */}
-      <div className="relative z-10 mt-5 px-1">
-        <div className="rounded-2xl border border-border bg-card/80 backdrop-blur-sm p-4 shadow-lg animate-fade-in">
-          <div className="flex items-center justify-between mb-3 gap-2">
-            <div className="flex items-center gap-2">
-              <Compass className="w-4 h-4 text-primary" />
-              <h3 className="font-extrabold text-sm">Jelajah Pintar</h3>
-            </div>
-            <div className="flex items-center gap-1 bg-muted rounded-full p-0.5">
-              {personaTabs.map((tab) => (
-                <button
-                  key={tab.id}
-                  onClick={() => setPersona(tab.id)}
-                  className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold transition-all ${
-                    persona === tab.id
-                      ? "bg-primary text-primary-foreground shadow-md scale-105"
-                      : "text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  {tab.icon}
-                  <span className="hidden xs:inline">{tab.label}</span>
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div key={persona} className="space-y-2 animate-fade-in">
-            {activePersona.items.map((item, i) => (
-              <button
-                key={`${persona}-${i}`}
-                onClick={() => handlePersonaClick(persona)}
-                className="w-full flex items-center gap-3 p-2.5 rounded-xl hover:bg-muted/70 active:scale-[0.98] transition-all group text-left"
-              >
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary/15 to-primary/5 flex items-center justify-center text-xl shrink-0 group-hover:scale-110 transition-transform">
-                  {item.emoji}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="font-bold text-sm truncate">{item.title}</div>
-                  <div className="text-[11px] text-muted-foreground truncate">{item.sub}</div>
-                </div>
-                <div className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold ${item.tagTone}`}>
-                  {item.tag}
-                </div>
-                <ArrowRight className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
-              </button>
-            ))}
-          </div>
-
-          {/* Mini perks ribbon */}
-          <div className="mt-3 pt-3 border-t border-border flex items-center justify-between gap-2 text-[10px] font-bold text-muted-foreground">
-            <div className="flex items-center gap-1"><Heart className="w-3 h-3 text-red-500" /> 4.9★</div>
-            <div className="flex items-center gap-1"><Gift className="w-3 h-3 text-purple-500" /> Free Voucher</div>
-            <div className="flex items-center gap-1"><TrendingUp className="w-3 h-3 text-emerald-500" /> +18% wk</div>
-          </div>
-        </div>
-      </div>
-
       {/* Quick Preview Popover */}
       {previewAction && (
         <div
