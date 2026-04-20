@@ -60,6 +60,7 @@ import WhatsAppChat from "@/components/WhatsAppChat";
 import EngagementHub from "@/components/EngagementHub";
 import WalletDashboard from "@/components/WalletDashboard";
 import VoucherNavigation from "@/components/VoucherNavigation";
+import HistoryEnhancer, { type HistoryItem } from "@/components/HistoryEnhancer";
 import { useAccountBan } from "@/hooks/useAccountBan";
 
 type Tab = "musik" | "beranda" | "produk" | "voucher" | "history" | "likes" | "tiket" | "saldo" | "playlist" | "publik" | "sponsor" | "streak" | "streakevent" | "streakshop" | "adminpost" | "game" | "plus" | "update";
@@ -346,6 +347,10 @@ const Index = () => {
   const [selectedHistoryIds, setSelectedHistoryIds] = useState<Set<string>>(new Set());
   const [historyPage, setHistoryPage] = useState(1);
   const HISTORY_PER_PAGE = 5;
+  const [smartHistory, setSmartHistory] = useState<boolean>(() => localStorage.getItem("smart_history_v1") === "1");
+  const [smartSaldo, setSmartSaldo] = useState<boolean>(() => localStorage.getItem("smart_saldo_v1") === "1");
+  useEffect(() => { localStorage.setItem("smart_history_v1", smartHistory ? "1" : "0"); }, [smartHistory]);
+  useEffect(() => { localStorage.setItem("smart_saldo_v1", smartSaldo ? "1" : "0"); }, [smartSaldo]);
   const { toast } = useToast();
 
   // Music playback persistence
@@ -2434,12 +2439,20 @@ const Index = () => {
             })()}
 
             {history.length > 0 && (
-              <div className="flex items-center justify-between bg-card/80 backdrop-blur-sm rounded-xl p-3 border border-border/50 shadow-sm">
+              <div className="flex items-center justify-between bg-card/80 backdrop-blur-sm rounded-xl p-3 border border-border/50 shadow-sm gap-2 flex-wrap">
                 <Button size="sm" variant="outline" onClick={toggleSelectAll} className="gap-1.5 text-xs rounded-lg font-bold">
                   <Checkbox checked={history.length > 0 && selectedHistoryIds.size === history.length} className="pointer-events-none" />
                   Pilih Semua ({selectedHistoryIds.size}/{history.length})
                 </Button>
-                <div className="flex gap-2">
+                <div className="flex items-center gap-2">
+                  <Button
+                    size="sm"
+                    variant={smartHistory ? "default" : "outline"}
+                    onClick={() => setSmartHistory(v => !v)}
+                    className={`gap-1 rounded-full text-xs font-bold ${smartHistory ? "bg-gradient-to-r from-primary to-accent text-primary-foreground" : ""}`}
+                  >
+                    <Sparkles className="w-3 h-3" /> {smartHistory ? "Mode Pintar ✓" : "Mode Pintar"}
+                  </Button>
                   <Button size="sm" variant="outline" onClick={downloadHistoryPDF} className="gap-1 rounded-full border-primary/30 text-primary hover:bg-primary/10 text-xs font-bold">
                     <Download className="w-3 h-3" /> PDF
                   </Button>
@@ -2461,67 +2474,131 @@ const Index = () => {
               </div>
             )}
 
-            {paginatedHistory.map((h, idx) => {
-              const deviceSummary = h.device_info ? getDeviceSummary(h.device_info) : "Tidak diketahui";
-              const globalIdx = (historyPage - 1) * HISTORY_PER_PAGE + idx;
-              return (
-                <Card key={`${h.id}-${globalIdx}`} className="overflow-hidden hover:shadow-2xl transition-all duration-300 border-0 shadow-lg glass-card hover:-translate-y-1 card-shine">
-                  <div className="bg-gradient-to-r from-primary/15 to-accent/10 px-4 py-2.5 flex items-center justify-between border-b border-border/30">
-                    <div className="flex items-center gap-2.5">
-                      <Checkbox checked={selectedHistoryIds.has(h.id)} onCheckedChange={() => toggleHistorySelect(h.id)} />
-                      <span className="text-xs font-extrabold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">#{globalIdx + 1}</span>
-                    </div>
-                    <span className="text-[10px] font-mono text-muted-foreground bg-background/80 backdrop-blur-sm px-2.5 py-1 rounded-full border border-border/50">{h.token_code}</span>
-                  </div>
-                  <CardContent className="p-4 space-y-2.5">
-                    <div className="flex items-center gap-3">
-                      {h.product_image ? (
-                        <img src={h.product_image} className="w-11 h-11 rounded-xl object-cover ring-2 ring-border/50 shadow-sm" alt="" />
-                      ) : (
-                        <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-md ring-2 ring-primary/20">
-                          <Crown className="w-5 h-5 text-primary-foreground" />
-                        </div>
-                      )}
-                      <div>
-                        <h3 className="font-bold text-sm">{h.product_title}</h3>
-                        <p className="text-[10px] text-muted-foreground">{new Date(h.claimed_at).toLocaleString("id-ID")}</p>
+            {history.length > 0 && smartHistory && (() => {
+              const items: HistoryItem[] = history.map(h => ({
+                id: h.id,
+                title: h.product_title,
+                subtitle: h.fields.map(f => `${f.field_name}: ${f.field_value}`).join(" • ") || h.token_code,
+                amount: h.product_price || 0,
+                date: h.claimed_at,
+                category: "Klaim",
+                meta: { token: h.token_code },
+              }));
+              const renderClaim = (it: HistoryItem) => {
+                const h = history.find(hh => hh.id === it.id);
+                if (!h) return null;
+                const deviceSummary = h.device_info ? getDeviceSummary(h.device_info) : "Tidak diketahui";
+                return (
+                  <Card className="overflow-hidden border border-border/60 shadow-sm">
+                    <div className="bg-gradient-to-r from-primary/10 to-accent/5 px-3 py-2 flex items-center justify-between border-b border-border/30">
+                      <div className="flex items-center gap-2">
+                        <Checkbox checked={selectedHistoryIds.has(h.id)} onCheckedChange={() => toggleHistorySelect(h.id)} />
+                        <span className="text-[11px] font-extrabold text-primary">{h.product_title}</span>
                       </div>
+                      <span className="text-[10px] font-mono text-muted-foreground bg-background/80 px-2 py-0.5 rounded-full border border-border/50">{h.token_code}</span>
                     </div>
-                    <div className="flex items-start gap-3 text-xs text-muted-foreground bg-muted/30 rounded-xl p-2.5 border border-border/30">
-                      <Smartphone className="w-3.5 h-3.5 shrink-0 mt-0.5" />
-                      <span className="leading-relaxed break-words">{deviceSummary}</span>
-                    </div>
-                    {h.fields.length > 0 && (
-                      <div className="bg-gradient-to-br from-background to-muted/30 border border-border/50 rounded-xl p-3 space-y-2 shadow-inner">
-                        <p className="text-[10px] font-extrabold text-primary uppercase tracking-wider flex items-center gap-1"><Shield className="w-3 h-3" /> Detail Akun</p>
-                        {h.fields.map((f, i) => {
-                          const fid = `h-${h.id}-${i}`;
-                          return (
-                            <div key={i} className="flex items-center justify-between py-1.5 border-b border-border/20 last:border-0">
-                              <span className="text-xs text-muted-foreground">{f.field_name}</span>
-                              <div className="flex items-center gap-1.5">
-                                <span className="text-xs font-mono font-bold max-w-[120px] truncate">{f.field_value}</span>
+                    <CardContent className="p-3 space-y-2">
+                      <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
+                        <Smartphone className="w-3 h-3" /> {deviceSummary}
+                      </div>
+                      {h.fields.length > 0 && (
+                        <div className="bg-muted/30 rounded-lg p-2 space-y-1">
+                          {h.fields.map((f, i) => {
+                            const fid = `sm-${h.id}-${i}`;
+                            return (
+                              <div key={i} className="flex items-center justify-between text-[11px]">
+                                <span className="text-muted-foreground">{f.field_name}</span>
                                 <button onClick={() => copyText(f.field_value, fid)}
-                                  className={`text-[10px] font-bold px-2 py-0.5 rounded-md transition-all ${copiedField === fid ? 'bg-accent/20 text-accent' : 'bg-primary/10 text-primary hover:bg-primary/20'}`}>
-                                  {copiedField === fid ? '✓' : 'Salin'}
+                                  className={`font-mono font-bold px-1.5 py-0.5 rounded ${copiedField === fid ? 'bg-accent/20 text-accent' : 'bg-primary/10 text-primary'}`}>
+                                  {copiedField === fid ? '✓ Disalin' : f.field_value}
                                 </button>
                               </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                );
+              };
+              return (
+                <HistoryEnhancer
+                  title="Riwayat Klaim Voucher"
+                  items={items}
+                  categories={["Klaim"]}
+                  formatAmount={formatPrice}
+                  exportPrefix="riwayat-klaim"
+                  storeName={STORE_NAME}
+                  renderItem={renderClaim}
+                />
               );
-            })}
+            })()}
 
-            {totalHistoryPages > 1 && (
-              <div className="flex items-center justify-center gap-3 bg-card/80 backdrop-blur-sm rounded-xl p-3 border border-border/50">
-                <Button variant="outline" size="icon" className="rounded-full" disabled={historyPage <= 1} onClick={() => setHistoryPage(p => p - 1)}><ChevronLeft className="w-4 h-4" /></Button>
-                <span className="text-sm font-bold text-muted-foreground">{historyPage} / {totalHistoryPages}</span>
-                <Button variant="outline" size="icon" className="rounded-full" disabled={historyPage >= totalHistoryPages} onClick={() => setHistoryPage(p => p + 1)}><ChevronRight className="w-4 h-4" /></Button>
-              </div>
+            {history.length > 0 && !smartHistory && (
+              <>
+                {paginatedHistory.map((h, idx) => {
+                  const deviceSummary = h.device_info ? getDeviceSummary(h.device_info) : "Tidak diketahui";
+                  const globalIdx = (historyPage - 1) * HISTORY_PER_PAGE + idx;
+                  return (
+                    <Card key={`${h.id}-${globalIdx}`} className="overflow-hidden hover:shadow-2xl transition-all duration-300 border-0 shadow-lg glass-card hover:-translate-y-1 card-shine">
+                      <div className="bg-gradient-to-r from-primary/15 to-accent/10 px-4 py-2.5 flex items-center justify-between border-b border-border/30">
+                        <div className="flex items-center gap-2.5">
+                          <Checkbox checked={selectedHistoryIds.has(h.id)} onCheckedChange={() => toggleHistorySelect(h.id)} />
+                          <span className="text-xs font-extrabold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">#{globalIdx + 1}</span>
+                        </div>
+                        <span className="text-[10px] font-mono text-muted-foreground bg-background/80 backdrop-blur-sm px-2.5 py-1 rounded-full border border-border/50">{h.token_code}</span>
+                      </div>
+                      <CardContent className="p-4 space-y-2.5">
+                        <div className="flex items-center gap-3">
+                          {h.product_image ? (
+                            <img src={h.product_image} className="w-11 h-11 rounded-xl object-cover ring-2 ring-border/50 shadow-sm" alt="" />
+                          ) : (
+                            <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-md ring-2 ring-primary/20">
+                              <Crown className="w-5 h-5 text-primary-foreground" />
+                            </div>
+                          )}
+                          <div>
+                            <h3 className="font-bold text-sm">{h.product_title}</h3>
+                            <p className="text-[10px] text-muted-foreground">{new Date(h.claimed_at).toLocaleString("id-ID")}</p>
+                          </div>
+                        </div>
+                        <div className="flex items-start gap-3 text-xs text-muted-foreground bg-muted/30 rounded-xl p-2.5 border border-border/30">
+                          <Smartphone className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+                          <span className="leading-relaxed break-words">{deviceSummary}</span>
+                        </div>
+                        {h.fields.length > 0 && (
+                          <div className="bg-gradient-to-br from-background to-muted/30 border border-border/50 rounded-xl p-3 space-y-2 shadow-inner">
+                            <p className="text-[10px] font-extrabold text-primary uppercase tracking-wider flex items-center gap-1"><Shield className="w-3 h-3" /> Detail Akun</p>
+                            {h.fields.map((f, i) => {
+                              const fid = `h-${h.id}-${i}`;
+                              return (
+                                <div key={i} className="flex items-center justify-between py-1.5 border-b border-border/20 last:border-0">
+                                  <span className="text-xs text-muted-foreground">{f.field_name}</span>
+                                  <div className="flex items-center gap-1.5">
+                                    <span className="text-xs font-mono font-bold max-w-[120px] truncate">{f.field_value}</span>
+                                    <button onClick={() => copyText(f.field_value, fid)}
+                                      className={`text-[10px] font-bold px-2 py-0.5 rounded-md transition-all ${copiedField === fid ? 'bg-accent/20 text-accent' : 'bg-primary/10 text-primary hover:bg-primary/20'}`}>
+                                      {copiedField === fid ? '✓' : 'Salin'}
+                                    </button>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+
+                {totalHistoryPages > 1 && (
+                  <div className="flex items-center justify-center gap-3 bg-card/80 backdrop-blur-sm rounded-xl p-3 border border-border/50">
+                    <Button variant="outline" size="icon" className="rounded-full" disabled={historyPage <= 1} onClick={() => setHistoryPage(p => p - 1)}><ChevronLeft className="w-4 h-4" /></Button>
+                    <span className="text-sm font-bold text-muted-foreground">{historyPage} / {totalHistoryPages}</span>
+                    <Button variant="outline" size="icon" className="rounded-full" disabled={historyPage >= totalHistoryPages} onClick={() => setHistoryPage(p => p + 1)}><ChevronRight className="w-4 h-4" /></Button>
+                  </div>
+                )}
+              </>
             )}
           </div>
         )}
@@ -2961,13 +3038,25 @@ const Index = () => {
                 )}
 
                 {/* Transaction History */}
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between gap-2 flex-wrap">
                   <h3 className="font-bold text-sm flex items-center gap-1.5"><History className="w-4 h-4" /> {t("balance.transaction_history", lang)}</h3>
-                  {balanceTransactions.length > 0 && (
-                    <Button variant="outline" size="sm" className="gap-1 text-xs h-7" onClick={() => setShowTxExport(!showTxExport)}>
-                      <Download className="w-3 h-3" /> {showTxExport ? "Tutup" : "Ekspor"}
-                    </Button>
-                  )}
+                  <div className="flex items-center gap-1.5">
+                    {balanceTransactions.length > 0 && (
+                      <Button
+                        variant={smartSaldo ? "default" : "outline"}
+                        size="sm"
+                        className={`gap-1 text-xs h-7 rounded-full ${smartSaldo ? "bg-gradient-to-r from-primary to-accent text-primary-foreground" : ""}`}
+                        onClick={() => setSmartSaldo(v => !v)}
+                      >
+                        <Sparkles className="w-3 h-3" /> {smartSaldo ? "Pintar ✓" : "Pintar"}
+                      </Button>
+                    )}
+                    {balanceTransactions.length > 0 && (
+                      <Button variant="outline" size="sm" className="gap-1 text-xs h-7" onClick={() => setShowTxExport(!showTxExport)}>
+                        <Download className="w-3 h-3" /> {showTxExport ? "Tutup" : "Ekspor"}
+                      </Button>
+                    )}
+                  </div>
                 </div>
 
                 {showTxExport && balanceTransactions.length > 0 && (
@@ -3049,7 +3138,50 @@ const Index = () => {
                 {balanceTransactions.length === 0 && (
                   <p className="text-center text-sm text-muted-foreground py-8">{t("balance.no_transactions", lang)}</p>
                 )}
-                {!banned && balanceTransactions.map(tx => (
+                {!banned && balanceTransactions.length > 0 && smartSaldo && (() => {
+                  const items: HistoryItem[] = balanceTransactions.map(tx => ({
+                    id: tx.id,
+                    title: tx.type === "topup" ? t("balance.topup", lang) : t("balance.purchase", lang),
+                    subtitle: tx.description || (tx.trx_id ? `ID: ${tx.trx_id}` : "-"),
+                    amount: tx.type === "topup" ? Math.abs(tx.amount) : -Math.abs(tx.amount),
+                    date: tx.created_at,
+                    category: tx.type === "topup" ? "Top Up" : "Pembelian",
+                    meta: { trx_id: tx.trx_id || "" },
+                  }));
+                  const renderTx = (it: HistoryItem) => {
+                    const tx = balanceTransactions.find(t => t.id === it.id);
+                    if (!tx) return null;
+                    return (
+                      <Card className="cursor-pointer transition-all hover:shadow-md border border-border/60" onClick={() => setSelectedTransaction(tx)}>
+                        <CardContent className="p-3 flex items-center gap-3">
+                          <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${tx.type === "topup" ? "bg-accent/10" : "bg-destructive/10"}`}>
+                            {tx.type === "topup" ? <ArrowUpCircle className="w-5 h-5 text-accent" /> : <ArrowDownCircle className="w-5 h-5 text-destructive" />}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-bold text-sm">{tx.type === "topup" ? t("balance.topup", lang) : t("balance.purchase", lang)}</p>
+                            {tx.trx_id && <p className="text-[10px] text-muted-foreground font-mono">ID: {tx.trx_id}</p>}
+                            <p className="text-[10px] text-muted-foreground truncate">{tx.description || "-"}</p>
+                          </div>
+                          <span className={`font-bold text-sm ${tx.type === "topup" ? "text-accent" : "text-destructive"}`}>
+                            {tx.type === "topup" ? "+" : "-"}{formatPrice(tx.amount)}
+                          </span>
+                        </CardContent>
+                      </Card>
+                    );
+                  };
+                  return (
+                    <HistoryEnhancer
+                      title="Riwayat Transaksi Saldo"
+                      items={items}
+                      categories={["Top Up", "Pembelian"]}
+                      formatAmount={formatPrice}
+                      exportPrefix="riwayat-saldo"
+                      storeName={STORE_NAME}
+                      renderItem={renderTx}
+                    />
+                  );
+                })()}
+                {!banned && !smartSaldo && balanceTransactions.map(tx => (
                   <Card key={tx.id} className="cursor-pointer transition-all hover:shadow-lg" onClick={() => setSelectedTransaction(tx)}>
                     <CardContent className="p-3 flex items-center gap-3">
                       {showTxExport && (
