@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -110,7 +110,7 @@ export default function HistoryEnhancer({
   }, [items, search, category, sort, dateFrom, dateTo]);
 
   // Sinkronkan ke parent
-  useMemo(() => {
+  useEffect(() => {
     onFilteredChange?.(filtered.map((it) => it.id));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filtered]);
