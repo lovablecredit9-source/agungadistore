@@ -1633,9 +1633,6 @@ const Index = () => {
               ))}
             </div>
 
-            {/* Engagement Hub: Auto Flash Sale + Daily Spin + Mystery Box */}
-            <EngagementHub />
-
             {/* Vibrant Hero - new premium feature */}
             <VibrantHeroSection
               productCount={products.length}
@@ -2700,27 +2697,6 @@ const Index = () => {
 
         {tab === "saldo" && (
           <div className="space-y-4 animate-fade-in">
-            {/* Hero Header */}
-            <div className="relative overflow-hidden rounded-2xl p-5 glow-border" style={{ background: "linear-gradient(135deg, hsl(270, 70%, 55%) 0%, hsl(260, 65%, 50%) 50%, hsl(250, 60%, 45%) 100%)" }}>
-              <div className="absolute inset-0">
-                <div className="absolute -top-8 -right-8 w-40 h-40 rounded-full bg-white/20 blur-3xl animate-pulse" />
-                <div className="absolute -bottom-8 -left-8 w-28 h-28 rounded-full bg-white/15 blur-2xl animate-pulse" style={{ animationDelay: "1.2s" }} />
-                <div className="absolute inset-0 shimmer" />
-              </div>
-              <div className="relative z-10 flex items-center gap-4">
-                <div className="relative floating">
-                  <div className="absolute -inset-1 bg-white/30 rounded-2xl blur-md" />
-                  <div className="relative w-14 h-14 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-2xl ring-2 ring-white/30">
-                    <Wallet className="w-7 h-7 text-white" />
-                  </div>
-                </div>
-                <div>
-                  <h2 className="text-xl font-extrabold text-white drop-shadow-lg">{t("balance.title", lang)}</h2>
-                  <p className="text-white/80 text-xs font-medium mt-0.5">{userBalance ? `Hai, ${userBalance.username}` : "Kelola saldo akun kamu"}</p>
-                </div>
-              </div>
-            </div>
-
             {!userBalance ? (
               <BalanceAuth
                 currentUser={null}
@@ -2752,102 +2728,47 @@ const Index = () => {
                   onVoucher={() => setTab("voucher")}
                 />
 
-                {/* Balance Card */}
-                <Card className="border-0 shadow-2xl overflow-hidden glass-card-strong glow-border">
-                  <div className="h-1.5 bg-gradient-to-r from-primary via-accent to-primary shimmer" />
-                  <CardContent className="p-5 bg-gradient-to-br from-primary/5 via-transparent to-accent/5">
-                    <div className="flex items-center justify-between mb-4">
-                      <div>
-                        <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider">Saldo Aktif</p>
-                        <p className="text-xs text-muted-foreground mt-0.5">Hai, {userBalance.username}</p>
-                        <p className="text-[11px] text-muted-foreground">{userBalance.phone}</p>
-                        <p className="text-3xl font-extrabold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent mt-1">
-                          <CountUp value={userBalance.balance} format={(n) => formatPrice(n)} />
-                        </p>
-                        <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider mt-2">Saldo IN (Game)</p>
-                        <p className="text-base font-extrabold text-emerald-600">
-                          <CountUp value={gameBalanceAmount} format={(n) => formatPrice(n)} />
-                        </p>
-                        <p className="text-[9px] text-muted-foreground italic">Hanya untuk kredit/streak/storage. Auto digunakan dulu sebelum Saldo Utama.</p>
-                      </div>
-                      <div className="relative">
-                        <div className="absolute inset-0 bg-gradient-to-br from-primary to-accent rounded-2xl blur-md opacity-30 animate-pulse" />
-                        <div className="relative w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-xl ring-2 ring-primary/20 floating">
-                          <Wallet className="w-8 h-8 text-primary-foreground" />
-                        </div>
-                      </div>
-                    </div>
+                {/* Live Hub: Auto Flash Sale + Daily Spin + Mystery Box */}
+                <EngagementHub />
 
-                    {/* Stats Mini Cards */}
-                    {(() => {
-                      const totalIn = balanceTransactions.filter(t => t.amount > 0).reduce((s, t) => s + t.amount, 0);
-                      const totalOut = balanceTransactions.filter(t => t.amount < 0).reduce((s, t) => s + Math.abs(t.amount), 0);
-                      const txCount = balanceTransactions.length;
-                      return (
-                        <div className="grid grid-cols-3 gap-2 mb-3">
-                          <div className="bg-accent/10 border border-accent/20 rounded-xl p-2 text-center">
-                            <ArrowUpCircle className="w-3.5 h-3.5 text-accent mx-auto mb-0.5" />
-                            <p className="text-[9px] font-bold text-muted-foreground">Masuk</p>
-                            <p className="text-[10px] font-extrabold text-accent leading-tight">
-                              <CountUp value={totalIn} format={(n) => formatPrice(n)} />
-                            </p>
-                          </div>
-                          <div className="bg-destructive/10 border border-destructive/20 rounded-xl p-2 text-center">
-                            <ArrowDownCircle className="w-3.5 h-3.5 text-destructive mx-auto mb-0.5" />
-                            <p className="text-[9px] font-bold text-muted-foreground">Keluar</p>
-                            <p className="text-[10px] font-extrabold text-destructive leading-tight">
-                              <CountUp value={totalOut} format={(n) => formatPrice(n)} />
-                            </p>
-                          </div>
-                          <div className="bg-primary/10 border border-primary/20 rounded-xl p-2 text-center">
-                            <Activity className="w-3.5 h-3.5 text-primary mx-auto mb-0.5" />
-                            <p className="text-[9px] font-bold text-muted-foreground">Transaksi</p>
-                            <p className="text-[10px] font-extrabold text-primary leading-tight">
-                              <CountUp value={txCount} />x
-                            </p>
-                          </div>
-                        </div>
-                      );
-                    })()}
-
-                    <div className="grid grid-cols-2 gap-2">
-                      <Button size="sm" variant="outline" className="gap-1.5 font-bold rounded-xl h-10 border-2 border-border/50 hover:border-primary/30"
-                        onClick={() => { setProfileUsername(userBalance.username); setProfilePhone(userBalance.phone); setShowProfileModal(true); }}>
-                        <Edit2 className="w-4 h-4" /> Edit Profil
-                      </Button>
-                      <Button size="sm" className="bg-gradient-to-r from-accent to-accent/80 text-accent-foreground gap-1.5 font-bold rounded-xl h-10 shadow-lg hover:shadow-xl transition-all"
+                {/* Account Actions Card — minimal clean */}
+                <Card className="border border-border/60 shadow-sm bg-card">
+                  <CardContent className="p-4 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div className="min-w-0">
+                        <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Akun</p>
+                        <p className="text-sm font-extrabold text-foreground truncate">{userBalance.username}</p>
+                        <p className="text-[10px] text-muted-foreground">{userBalance.phone}</p>
+                      </div>
+                      <Button size="sm" className="bg-gradient-to-r from-accent to-accent/80 text-accent-foreground gap-1.5 font-bold rounded-xl h-9 shadow-sm"
                         onClick={() => { setShowDepositModal(true); setDepositStep("method"); }}>
                         <ArrowUpCircle className="w-4 h-4" /> {t("deposit.btn", lang)}
                       </Button>
                     </div>
-                    {/* PIN Management */}
-                    <div className="mt-3">
+
+                    <div className="grid grid-cols-2 gap-2">
+                      <Button size="sm" variant="outline" className="gap-1.5 font-bold rounded-xl h-9 border border-border/60"
+                        onClick={() => { setProfileUsername(userBalance.username); setProfilePhone(userBalance.phone); setShowProfileModal(true); }}>
+                        <Edit2 className="w-4 h-4" /> Edit Profil
+                      </Button>
                       {!hasPin ? (
-                        <Button size="sm" variant="outline" className="w-full gap-1.5 font-bold border-primary/30 rounded-xl h-10" onClick={() => setShowPinSetup(true)}>
-                          <Lock className="w-4 h-4 text-primary" /> Buat PIN Keamanan
+                        <Button size="sm" variant="outline" className="gap-1.5 font-bold border-primary/30 rounded-xl h-9" onClick={() => setShowPinSetup(true)}>
+                          <Lock className="w-4 h-4 text-primary" /> Buat PIN
                         </Button>
                       ) : (
-                        <div className="space-y-2">
-                          <div className="flex items-center gap-2 bg-gradient-to-r from-accent/10 to-accent/5 rounded-xl p-2.5 text-xs text-accent border border-accent/20">
-                            <div className="w-6 h-6 rounded-full bg-accent/20 flex items-center justify-center">
-                              <Lock className="w-3 h-3" />
-                            </div>
-                            <div>
-                              <span className="font-bold">PIN aktif</span>
-                              <span className="text-muted-foreground ml-1">— Pembelian dilindungi PIN</span>
-                            </div>
-                          </div>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            className="w-full gap-1.5 text-xs font-bold text-primary rounded-xl"
-                            onClick={() => setShowForgotPin(true)}
-                          >
-                            <KeyRound className="w-4 h-4" /> Lupa PIN / Reset PIN
-                          </Button>
-                        </div>
+                        <Button size="sm" variant="outline" className="gap-1.5 font-bold border-primary/30 rounded-xl h-9 text-primary" onClick={() => setShowForgotPin(true)}>
+                          <KeyRound className="w-4 h-4" /> Reset PIN
+                        </Button>
                       )}
                     </div>
+
+                    {hasPin && (
+                      <div className="flex items-center gap-2 bg-accent/10 rounded-xl p-2.5 text-xs text-accent border border-accent/20">
+                        <Lock className="w-3.5 h-3.5 flex-shrink-0" />
+                        <span className="font-bold">PIN aktif</span>
+                        <span className="text-muted-foreground text-[11px]">— Pembelian dilindungi PIN</span>
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
 
