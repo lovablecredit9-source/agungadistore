@@ -66,7 +66,7 @@ Deno.serve(async (req) => {
           .eq("visitor_id", visitorId)
           .eq("redemption_date", today),
         checkPremium(admin, visitorId),
-        admin.from("game_profiles").select("gems").eq("visitor_id", visitorId).maybeSingle(),
+        admin.rpc("get_account_gems", { p_visitor_id: visitorId }),
       ]);
 
       const claimedToday = new Set((redemptions ?? []).map((r: any) => r.deal_id));
@@ -84,7 +84,7 @@ Deno.serve(async (req) => {
           };
         }),
         is_premium: isPremium,
-        user_gems: prof?.gems ?? 0,
+        user_gems: Number(prof) || 0,
         date: today,
       }, { headers: corsHeaders });
     }
