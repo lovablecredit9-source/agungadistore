@@ -340,9 +340,11 @@ const Index = () => {
   const [selectedCategory, setSelectedCategory] = useState("Semua");
   const [sortOrder, setSortOrder] = useState<"newest" | "oldest" | "cheapest" | "expensive" | "popular">("newest");
   const [productSearch, setProductSearch] = useState("");
-  const [productViewMode, setProductViewMode] = useState<"list" | "grid">(() => (localStorage.getItem("product_view_mode") as "list" | "grid") || "list");
+  const [productViewMode, setProductViewMode] = useState<"list" | "grid" | "compact">(() => (localStorage.getItem("product_view_mode") as "list" | "grid" | "compact") || "list");
   const [inStockOnly, setInStockOnly] = useState(false);
   const [warrantyOnly, setWarrantyOnly] = useState(false);
+  const [productMinPrice, setProductMinPrice] = useState("");
+  const [productMaxPrice, setProductMaxPrice] = useState("");
   const [productsLoading, setProductsLoading] = useState(true);
   const [quickViewProduct, setQuickViewProduct] = useState<Product | null>(null);
   const [selectedHistoryIds, setSelectedHistoryIds] = useState<Set<string>>(new Set());
@@ -1415,19 +1417,34 @@ const Index = () => {
 
   // Filters
   const categories = ["Semua", ...Array.from(new Set(products.map(p => p.category || "Lainnya").filter(Boolean)))];
+  const productCategoryCounts: Record<string, number> = { Semua: products.length };
+  products.forEach(p => {
+    const k = p.category || "Lainnya";
+    productCategoryCounts[k] = (productCategoryCounts[k] || 0) + 1;
+  });
+  const _minP = parseInt(productMinPrice) || 0;
+  const _maxP = parseInt(productMaxPrice) || 0;
   const filteredProducts = products
     .filter(p => selectedCategory === "Semua" || (p.category || "Lainnya") === selectedCategory)
     .filter(p => p.title.toLowerCase().includes(productSearch.toLowerCase()) || (p.description || "").toLowerCase().includes(productSearch.toLowerCase()))
     .filter(p => !inStockOnly || p.stock > 0)
-    .filter(p => !warrantyOnly || p.has_warranty);
+    .filter(p => !warrantyOnly || p.has_warranty)
+    .filter(p => _minP <= 0 || p.price >= _minP)
+    .filter(p => _maxP <= 0 || p.price <= _maxP);
   const sortedProducts = [...filteredProducts].sort((a, b) => {
     if (sortOrder === "newest") return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
     if (sortOrder === "oldest") return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
     if (sortOrder === "cheapest") return a.price - b.price;
     if (sortOrder === "expensive") return b.price - a.price;
     if (sortOrder === "popular") return (productLikeCounts[b.id] || 0) - (productLikeCounts[a.id] || 0);
+    if (sortOrder === "name_asc") return a.title.localeCompare(b.title);
+    if (sortOrder === "name_desc") return b.title.localeCompare(a.title);
     return 0;
   });
+  const popularProductTerms = [...products]
+    .sort((a, b) => (productLikeCounts[b.id] || 0) - (productLikeCounts[a.id] || 0))
+    .slice(0, 6)
+    .map(p => p.title.split(" ").slice(0, 2).join(" "));
 
   // Persist view mode
   useEffect(() => { localStorage.setItem("product_view_mode", productViewMode); }, [productViewMode]);
