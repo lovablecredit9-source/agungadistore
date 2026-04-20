@@ -107,7 +107,7 @@ export default function PilihanGandaGame() {
     if (isCorrect) {
       const pts = getPointsForQuestion(questionNumber);
       const bonusPts = streak >= 3 ? Math.floor(pts * 0.5) : 0;
-      const total = pts + bonusPts;
+      const total = applyDoubleXP(pts + bonusPts);
       setEarnedPoints(total);
       const updated = addPoints(total);
       setPlayerData(updated);
