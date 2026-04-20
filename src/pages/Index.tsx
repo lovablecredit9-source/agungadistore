@@ -3138,7 +3138,50 @@ const Index = () => {
                 {balanceTransactions.length === 0 && (
                   <p className="text-center text-sm text-muted-foreground py-8">{t("balance.no_transactions", lang)}</p>
                 )}
-                {!banned && balanceTransactions.map(tx => (
+                {!banned && balanceTransactions.length > 0 && smartSaldo && (() => {
+                  const items: HistoryItem[] = balanceTransactions.map(tx => ({
+                    id: tx.id,
+                    title: tx.type === "topup" ? t("balance.topup", lang) : t("balance.purchase", lang),
+                    subtitle: tx.description || (tx.trx_id ? `ID: ${tx.trx_id}` : "-"),
+                    amount: tx.type === "topup" ? Math.abs(tx.amount) : -Math.abs(tx.amount),
+                    date: tx.created_at,
+                    category: tx.type === "topup" ? "Top Up" : "Pembelian",
+                    meta: { trx_id: tx.trx_id || "" },
+                  }));
+                  const renderTx = (it: HistoryItem) => {
+                    const tx = balanceTransactions.find(t => t.id === it.id);
+                    if (!tx) return null;
+                    return (
+                      <Card className="cursor-pointer transition-all hover:shadow-md border border-border/60" onClick={() => setSelectedTransaction(tx)}>
+                        <CardContent className="p-3 flex items-center gap-3">
+                          <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${tx.type === "topup" ? "bg-accent/10" : "bg-destructive/10"}`}>
+                            {tx.type === "topup" ? <ArrowUpCircle className="w-5 h-5 text-accent" /> : <ArrowDownCircle className="w-5 h-5 text-destructive" />}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-bold text-sm">{tx.type === "topup" ? t("balance.topup", lang) : t("balance.purchase", lang)}</p>
+                            {tx.trx_id && <p className="text-[10px] text-muted-foreground font-mono">ID: {tx.trx_id}</p>}
+                            <p className="text-[10px] text-muted-foreground truncate">{tx.description || "-"}</p>
+                          </div>
+                          <span className={`font-bold text-sm ${tx.type === "topup" ? "text-accent" : "text-destructive"}`}>
+                            {tx.type === "topup" ? "+" : "-"}{formatPrice(tx.amount)}
+                          </span>
+                        </CardContent>
+                      </Card>
+                    );
+                  };
+                  return (
+                    <HistoryEnhancer
+                      title="Riwayat Transaksi Saldo"
+                      items={items}
+                      categories={["Top Up", "Pembelian"]}
+                      formatAmount={formatPrice}
+                      exportPrefix="riwayat-saldo"
+                      storeName={STORE_NAME}
+                      renderItem={renderTx}
+                    />
+                  );
+                })()}
+                {!banned && !smartSaldo && balanceTransactions.map(tx => (
                   <Card key={tx.id} className="cursor-pointer transition-all hover:shadow-lg" onClick={() => setSelectedTransaction(tx)}>
                     <CardContent className="p-3 flex items-center gap-3">
                       {showTxExport && (
