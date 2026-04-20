@@ -115,6 +115,7 @@ export default function GameTab() {
     return (
       <div className="space-y-4 p-4 pb-24">
         <BanBanner />
+        <BanLock fallbackLabel="game">
         <div className="flex items-center gap-2">
           <Button variant="ghost" size="sm" onClick={() => setMode("menu")} className="gap-1">
             <ArrowLeft className="w-4 h-4" /> Kembali
@@ -124,6 +125,7 @@ export default function GameTab() {
           </h2>
         </div>
         <GameComponent />
+        </BanLock>
       </div>
     );
   }
@@ -131,6 +133,7 @@ export default function GameTab() {
   return (
     <div className="space-y-4 p-4 pb-24">
       <BanBanner />
+      <BanLock fallbackLabel="game">
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
         <div className="flex items-center justify-between mb-2">
           <h2 className="font-extrabold text-xl flex items-center gap-2">
