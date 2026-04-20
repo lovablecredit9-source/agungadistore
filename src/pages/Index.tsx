@@ -60,6 +60,7 @@ import WhatsAppChat from "@/components/WhatsAppChat";
 import EngagementHub from "@/components/EngagementHub";
 import WalletDashboard from "@/components/WalletDashboard";
 import VoucherNavigation from "@/components/VoucherNavigation";
+import HistoryEnhancer, { type HistoryItem } from "@/components/HistoryEnhancer";
 import { useAccountBan } from "@/hooks/useAccountBan";
 
 type Tab = "musik" | "beranda" | "produk" | "voucher" | "history" | "likes" | "tiket" | "saldo" | "playlist" | "publik" | "sponsor" | "streak" | "streakevent" | "streakshop" | "adminpost" | "game" | "plus" | "update";
@@ -346,6 +347,10 @@ const Index = () => {
   const [selectedHistoryIds, setSelectedHistoryIds] = useState<Set<string>>(new Set());
   const [historyPage, setHistoryPage] = useState(1);
   const HISTORY_PER_PAGE = 5;
+  const [smartHistory, setSmartHistory] = useState<boolean>(() => localStorage.getItem("smart_history_v1") === "1");
+  const [smartSaldo, setSmartSaldo] = useState<boolean>(() => localStorage.getItem("smart_saldo_v1") === "1");
+  useEffect(() => { localStorage.setItem("smart_history_v1", smartHistory ? "1" : "0"); }, [smartHistory]);
+  useEffect(() => { localStorage.setItem("smart_saldo_v1", smartSaldo ? "1" : "0"); }, [smartSaldo]);
   const { toast } = useToast();
 
   // Music playback persistence
