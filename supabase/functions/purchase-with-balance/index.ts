@@ -37,6 +37,12 @@ Deno.serve(async (request) => {
       auth: { autoRefreshToken: false, persistSession: false },
     });
 
+    // Ban guard
+    const { data: banned } = await admin.rpc("is_account_banned", { p_visitor_id: visitorId });
+    if (banned) {
+      return Response.json({ error: "Akun Anda dibanned. Tidak bisa melakukan pembelian." }, { status: 403, headers: corsHeaders });
+    }
+
     // Verify PIN
     const { data: pinRow } = await admin
       .from("user_pins")
