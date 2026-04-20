@@ -2474,67 +2474,131 @@ const Index = () => {
               </div>
             )}
 
-            {paginatedHistory.map((h, idx) => {
-              const deviceSummary = h.device_info ? getDeviceSummary(h.device_info) : "Tidak diketahui";
-              const globalIdx = (historyPage - 1) * HISTORY_PER_PAGE + idx;
-              return (
-                <Card key={`${h.id}-${globalIdx}`} className="overflow-hidden hover:shadow-2xl transition-all duration-300 border-0 shadow-lg glass-card hover:-translate-y-1 card-shine">
-                  <div className="bg-gradient-to-r from-primary/15 to-accent/10 px-4 py-2.5 flex items-center justify-between border-b border-border/30">
-                    <div className="flex items-center gap-2.5">
-                      <Checkbox checked={selectedHistoryIds.has(h.id)} onCheckedChange={() => toggleHistorySelect(h.id)} />
-                      <span className="text-xs font-extrabold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">#{globalIdx + 1}</span>
-                    </div>
-                    <span className="text-[10px] font-mono text-muted-foreground bg-background/80 backdrop-blur-sm px-2.5 py-1 rounded-full border border-border/50">{h.token_code}</span>
-                  </div>
-                  <CardContent className="p-4 space-y-2.5">
-                    <div className="flex items-center gap-3">
-                      {h.product_image ? (
-                        <img src={h.product_image} className="w-11 h-11 rounded-xl object-cover ring-2 ring-border/50 shadow-sm" alt="" />
-                      ) : (
-                        <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-md ring-2 ring-primary/20">
-                          <Crown className="w-5 h-5 text-primary-foreground" />
-                        </div>
-                      )}
-                      <div>
-                        <h3 className="font-bold text-sm">{h.product_title}</h3>
-                        <p className="text-[10px] text-muted-foreground">{new Date(h.claimed_at).toLocaleString("id-ID")}</p>
+            {history.length > 0 && smartHistory && (() => {
+              const items: HistoryItem[] = history.map(h => ({
+                id: h.id,
+                title: h.product_title,
+                subtitle: h.fields.map(f => `${f.field_name}: ${f.field_value}`).join(" • ") || h.token_code,
+                amount: h.product_price || 0,
+                date: h.claimed_at,
+                category: "Klaim",
+                meta: { token: h.token_code },
+              }));
+              const renderClaim = (it: HistoryItem) => {
+                const h = history.find(hh => hh.id === it.id);
+                if (!h) return null;
+                const deviceSummary = h.device_info ? getDeviceSummary(h.device_info) : "Tidak diketahui";
+                return (
+                  <Card className="overflow-hidden border border-border/60 shadow-sm">
+                    <div className="bg-gradient-to-r from-primary/10 to-accent/5 px-3 py-2 flex items-center justify-between border-b border-border/30">
+                      <div className="flex items-center gap-2">
+                        <Checkbox checked={selectedHistoryIds.has(h.id)} onCheckedChange={() => toggleHistorySelect(h.id)} />
+                        <span className="text-[11px] font-extrabold text-primary">{h.product_title}</span>
                       </div>
+                      <span className="text-[10px] font-mono text-muted-foreground bg-background/80 px-2 py-0.5 rounded-full border border-border/50">{h.token_code}</span>
                     </div>
-                    <div className="flex items-start gap-3 text-xs text-muted-foreground bg-muted/30 rounded-xl p-2.5 border border-border/30">
-                      <Smartphone className="w-3.5 h-3.5 shrink-0 mt-0.5" />
-                      <span className="leading-relaxed break-words">{deviceSummary}</span>
-                    </div>
-                    {h.fields.length > 0 && (
-                      <div className="bg-gradient-to-br from-background to-muted/30 border border-border/50 rounded-xl p-3 space-y-2 shadow-inner">
-                        <p className="text-[10px] font-extrabold text-primary uppercase tracking-wider flex items-center gap-1"><Shield className="w-3 h-3" /> Detail Akun</p>
-                        {h.fields.map((f, i) => {
-                          const fid = `h-${h.id}-${i}`;
-                          return (
-                            <div key={i} className="flex items-center justify-between py-1.5 border-b border-border/20 last:border-0">
-                              <span className="text-xs text-muted-foreground">{f.field_name}</span>
-                              <div className="flex items-center gap-1.5">
-                                <span className="text-xs font-mono font-bold max-w-[120px] truncate">{f.field_value}</span>
+                    <CardContent className="p-3 space-y-2">
+                      <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
+                        <Smartphone className="w-3 h-3" /> {deviceSummary}
+                      </div>
+                      {h.fields.length > 0 && (
+                        <div className="bg-muted/30 rounded-lg p-2 space-y-1">
+                          {h.fields.map((f, i) => {
+                            const fid = `sm-${h.id}-${i}`;
+                            return (
+                              <div key={i} className="flex items-center justify-between text-[11px]">
+                                <span className="text-muted-foreground">{f.field_name}</span>
                                 <button onClick={() => copyText(f.field_value, fid)}
-                                  className={`text-[10px] font-bold px-2 py-0.5 rounded-md transition-all ${copiedField === fid ? 'bg-accent/20 text-accent' : 'bg-primary/10 text-primary hover:bg-primary/20'}`}>
-                                  {copiedField === fid ? '✓' : 'Salin'}
+                                  className={`font-mono font-bold px-1.5 py-0.5 rounded ${copiedField === fid ? 'bg-accent/20 text-accent' : 'bg-primary/10 text-primary'}`}>
+                                  {copiedField === fid ? '✓ Disalin' : f.field_value}
                                 </button>
                               </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                );
+              };
+              return (
+                <HistoryEnhancer
+                  title="Riwayat Klaim Voucher"
+                  items={items}
+                  categories={["Klaim"]}
+                  formatAmount={formatPrice}
+                  exportPrefix="riwayat-klaim"
+                  storeName={STORE_NAME}
+                  renderItem={renderClaim}
+                />
               );
-            })}
+            })()}
 
-            {totalHistoryPages > 1 && (
-              <div className="flex items-center justify-center gap-3 bg-card/80 backdrop-blur-sm rounded-xl p-3 border border-border/50">
-                <Button variant="outline" size="icon" className="rounded-full" disabled={historyPage <= 1} onClick={() => setHistoryPage(p => p - 1)}><ChevronLeft className="w-4 h-4" /></Button>
-                <span className="text-sm font-bold text-muted-foreground">{historyPage} / {totalHistoryPages}</span>
-                <Button variant="outline" size="icon" className="rounded-full" disabled={historyPage >= totalHistoryPages} onClick={() => setHistoryPage(p => p + 1)}><ChevronRight className="w-4 h-4" /></Button>
-              </div>
+            {history.length > 0 && !smartHistory && (
+              <>
+                {paginatedHistory.map((h, idx) => {
+                  const deviceSummary = h.device_info ? getDeviceSummary(h.device_info) : "Tidak diketahui";
+                  const globalIdx = (historyPage - 1) * HISTORY_PER_PAGE + idx;
+                  return (
+                    <Card key={`${h.id}-${globalIdx}`} className="overflow-hidden hover:shadow-2xl transition-all duration-300 border-0 shadow-lg glass-card hover:-translate-y-1 card-shine">
+                      <div className="bg-gradient-to-r from-primary/15 to-accent/10 px-4 py-2.5 flex items-center justify-between border-b border-border/30">
+                        <div className="flex items-center gap-2.5">
+                          <Checkbox checked={selectedHistoryIds.has(h.id)} onCheckedChange={() => toggleHistorySelect(h.id)} />
+                          <span className="text-xs font-extrabold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">#{globalIdx + 1}</span>
+                        </div>
+                        <span className="text-[10px] font-mono text-muted-foreground bg-background/80 backdrop-blur-sm px-2.5 py-1 rounded-full border border-border/50">{h.token_code}</span>
+                      </div>
+                      <CardContent className="p-4 space-y-2.5">
+                        <div className="flex items-center gap-3">
+                          {h.product_image ? (
+                            <img src={h.product_image} className="w-11 h-11 rounded-xl object-cover ring-2 ring-border/50 shadow-sm" alt="" />
+                          ) : (
+                            <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-md ring-2 ring-primary/20">
+                              <Crown className="w-5 h-5 text-primary-foreground" />
+                            </div>
+                          )}
+                          <div>
+                            <h3 className="font-bold text-sm">{h.product_title}</h3>
+                            <p className="text-[10px] text-muted-foreground">{new Date(h.claimed_at).toLocaleString("id-ID")}</p>
+                          </div>
+                        </div>
+                        <div className="flex items-start gap-3 text-xs text-muted-foreground bg-muted/30 rounded-xl p-2.5 border border-border/30">
+                          <Smartphone className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+                          <span className="leading-relaxed break-words">{deviceSummary}</span>
+                        </div>
+                        {h.fields.length > 0 && (
+                          <div className="bg-gradient-to-br from-background to-muted/30 border border-border/50 rounded-xl p-3 space-y-2 shadow-inner">
+                            <p className="text-[10px] font-extrabold text-primary uppercase tracking-wider flex items-center gap-1"><Shield className="w-3 h-3" /> Detail Akun</p>
+                            {h.fields.map((f, i) => {
+                              const fid = `h-${h.id}-${i}`;
+                              return (
+                                <div key={i} className="flex items-center justify-between py-1.5 border-b border-border/20 last:border-0">
+                                  <span className="text-xs text-muted-foreground">{f.field_name}</span>
+                                  <div className="flex items-center gap-1.5">
+                                    <span className="text-xs font-mono font-bold max-w-[120px] truncate">{f.field_value}</span>
+                                    <button onClick={() => copyText(f.field_value, fid)}
+                                      className={`text-[10px] font-bold px-2 py-0.5 rounded-md transition-all ${copiedField === fid ? 'bg-accent/20 text-accent' : 'bg-primary/10 text-primary hover:bg-primary/20'}`}>
+                                      {copiedField === fid ? '✓' : 'Salin'}
+                                    </button>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+
+                {totalHistoryPages > 1 && (
+                  <div className="flex items-center justify-center gap-3 bg-card/80 backdrop-blur-sm rounded-xl p-3 border border-border/50">
+                    <Button variant="outline" size="icon" className="rounded-full" disabled={historyPage <= 1} onClick={() => setHistoryPage(p => p - 1)}><ChevronLeft className="w-4 h-4" /></Button>
+                    <span className="text-sm font-bold text-muted-foreground">{historyPage} / {totalHistoryPages}</span>
+                    <Button variant="outline" size="icon" className="rounded-full" disabled={historyPage >= totalHistoryPages} onClick={() => setHistoryPage(p => p + 1)}><ChevronRight className="w-4 h-4" /></Button>
+                  </div>
+                )}
+              </>
             )}
           </div>
         )}
