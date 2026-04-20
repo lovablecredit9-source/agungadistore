@@ -6943,6 +6943,10 @@ export type Database = {
       }
     }
     Functions: {
+      add_account_credits: {
+        Args: { p_amount: number; p_visitor_id: string }
+        Returns: number
+      }
       add_account_gems: {
         Args: { p_amount: number; p_visitor_id: string }
         Returns: number
@@ -6957,6 +6961,7 @@ export type Database = {
         }
         Returns: string
       }
+      get_account_credits: { Args: { p_visitor_id: string }; Returns: number }
       get_account_gems: { Args: { p_visitor_id: string }; Returns: number }
       get_active_user_balance_id: {
         Args: { p_visitor_id: string }
