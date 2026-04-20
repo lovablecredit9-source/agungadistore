@@ -57,6 +57,7 @@ import LiveClock from "@/components/LiveClock";
 import LoginGate from "@/components/LoginGate";
 import WhatsAppChat from "@/components/WhatsAppChat";
 import EngagementHub from "@/components/EngagementHub";
+import WalletDashboard from "@/components/WalletDashboard";
 
 type Tab = "beranda" | "produk" | "voucher" | "history" | "likes" | "tiket" | "saldo" | "playlist" | "publik" | "sponsor" | "streak" | "streakevent" | "streakshop" | "adminpost" | "game" | "plus" | "update";
 
@@ -2738,6 +2739,19 @@ const Index = () => {
               />
             ) : (
               <>
+                {/* === Wallet Dashboard — clean minimal hero === */}
+                <WalletDashboard
+                  username={userBalance.username}
+                  balance={userBalance.balance}
+                  gameBalance={gameBalanceAmount}
+                  transactions={balanceTransactions}
+                  formatPrice={formatPrice}
+                  onTopUp={() => { setShowDepositModal(true); setDepositStep("method"); }}
+                  onHistory={() => setTab("history")}
+                  onShop={() => setTab("produk")}
+                  onVoucher={() => setTab("voucher")}
+                />
+
                 {/* Balance Card */}
                 <Card className="border-0 shadow-2xl overflow-hidden glass-card-strong glow-border">
                   <div className="h-1.5 bg-gradient-to-r from-primary via-accent to-primary shimmer" />
