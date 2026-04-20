@@ -2042,7 +2042,7 @@ const Index = () => {
 
             {/* Product list/grid */}
             {!productsLoading && sortedProducts.length > 0 && (
-              <div className={productViewMode === "grid" ? "grid grid-cols-2 gap-3" : "space-y-4"}>
+              <div className={productViewMode === "grid" ? "grid grid-cols-2 gap-3" : productViewMode === "compact" ? "space-y-2 [&_.aspect-square]:aspect-[3/1] [&_img]:max-h-24" : "space-y-4"}>
                 {sortedProducts.map((p) => {
                   const imgs = getProductImages(p.id);
                   const badges = getProductBadges(p);
