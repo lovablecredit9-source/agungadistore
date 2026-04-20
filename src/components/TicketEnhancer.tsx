@@ -283,11 +283,12 @@ export function TicketEnhancer({ tickets, categoryLabels, onOpen, onReopen, onDu
             </div>
             <Badge className="bg-white/25 text-white border-white/30 hover:bg-white/30 backdrop-blur">{stats.rate}% selesai</Badge>
           </div>
-          <div className="grid grid-cols-4 gap-2">
+          <div className="grid grid-cols-5 gap-1.5">
             <StatChip icon={Inbox} label="Total" value={stats.total} />
             <StatChip icon={Activity} label="Aktif" value={stats.open} />
             <StatChip icon={CheckCircle2} label="Tutup" value={stats.closed} />
             <StatChip icon={Zap} label="Avg" value={fmtAvg(stats.avgMin)} />
+            <StatChip icon={Flame} label="Urgent" value={stats.critical} highlight={stats.critical > 0} />
           </div>
           {/* Resolution bar */}
           <div className="mt-3">
