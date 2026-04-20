@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import {
   Sparkles, Zap, Package, Crown, ShoppingBag, ArrowRight, ShieldCheck,
-  Flame, TrendingUp, Clock, Heart, Star, Eye, Tag, Gift, Compass, X,
+  Star, Eye, Tag, X,
 } from "lucide-react";
 
 interface QuickAction {
