@@ -7,6 +7,7 @@ import { Megaphone, Clock, User, Phone, ChevronLeft, ChevronRight, X, Search, Fi
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
+import ProductNavToolbar, { type ProductNavToolbarValue, type SortKey, type ViewMode } from "@/components/ProductNavToolbar";
 
 interface SponsorImage {
   id: string;
@@ -45,7 +46,7 @@ interface Sponsor {
   view_count: number;
 }
 
-type SortOrder = "newest" | "oldest";
+type SortOrder = SortKey;
 
 function timeRemaining(expiresAt: string | null): string {
   if (!expiresAt) return "Tanpa batas";
@@ -175,8 +176,24 @@ export default function SponsorBanner({ likedSponsorIds = new Set(), onToggleLik
     .sort((a, b) => {
       const da = new Date(a.created_at).getTime();
       const db = new Date(b.created_at).getTime();
-      return sortOrder === "newest" ? db - da : da - db;
+      if (sortOrder === "cheapest") return a.price - b.price;
+      if (sortOrder === "expensive") return b.price - a.price;
+      if (sortOrder === "popular") return (b.view_count || 0) - (a.view_count || 0);
+      if (sortOrder === "name_asc") return a.title.localeCompare(b.title);
+      if (sortOrder === "name_desc") return b.title.localeCompare(a.title);
+      if (sortOrder === "oldest") return da - db;
+      return db - da;
     });
+
+  const sponsorCategoryCounts: Record<string, number> = { all: sponsors.length };
+  sponsors.forEach(s => {
+    const k = s.category || "Lainnya";
+    sponsorCategoryCounts[k] = (sponsorCategoryCounts[k] || 0) + 1;
+  });
+  const popularSponsorTerms = [...sponsors]
+    .sort((a, b) => (b.view_count || 0) - (a.view_count || 0))
+    .slice(0, 6)
+    .map(s => s.title.split(" ").slice(0, 2).join(" "));
 
   const sponsor = filtered.length > 0 ? filtered[current % filtered.length] : null;
 
