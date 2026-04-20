@@ -152,6 +152,24 @@ export default function StreakShopFlashDeals({ visitorId, onUpdate }: Props) {
       return;
     }
     const method = payMethod[deal.id] || "coin";
+
+    // Pre-check gem balance biar gak error dari server
+    if (method === "gem") {
+      const gemCost = deal.cost_gems || 0;
+      if (gemCost <= 0) {
+        toast({ title: "Belum tersedia", description: "Deal ini belum bisa dibayar pakai Gem", variant: "destructive" });
+        return;
+      }
+      if (userGems < gemCost) {
+        toast({
+          title: `💎 Gem kurang (${userGems}/${gemCost})`,
+          description: "Bayar pakai Coin aja, atau beli Gem dulu di Shop.",
+          variant: "destructive",
+        });
+        return;
+      }
+    }
+
     setBuying(deal.id);
     try {
       const { data, error } = await supabase.functions.invoke("flash-deal-purchase", {
@@ -160,7 +178,6 @@ export default function StreakShopFlashDeals({ visitorId, onUpdate }: Props) {
       if (error) throw error;
       if ((data as any)?.error) throw new Error((data as any).error);
       toast({ title: `⚡ ${deal.name} Berhasil!`, description: (data as any).rewardSummary });
-      // Refresh power-up cache di localStorage agar bertambah di game
       await syncPowerUpsFromServer();
       window.dispatchEvent(new CustomEvent("power-ups-updated"));
       load();
