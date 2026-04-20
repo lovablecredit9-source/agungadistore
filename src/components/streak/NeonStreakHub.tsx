@@ -43,6 +43,7 @@ import CoinRainGame from "./event/CoinRainGame";
 import StreakRoyaleBracket from "./event/StreakRoyaleBracket";
 import MegaShopHub from "./MegaShopHub";
 import MegaEventHub from "./MegaEventHub";
+import { BanBanner, BanLock } from "@/components/BanBanner";
 import { syncPowerUpsFromServer } from "@/components/games/gameStore";
 
 // Strip leading emoji from a title and map to a 3D Lucide icon
@@ -417,6 +418,8 @@ export default function NeonStreakHub({ visitorId, forcedView }: Props) {
 
   return (
     <div className="space-y-3">
+      <BanBanner />
+      <BanLock fallbackLabel={forcedView === "event" ? "Streak Event" : forcedView === "shop" ? "Streak Event Shop" : "fitur streak"}>
       {/* Coins + multiplier neon header */}
       <div className="cyber-card rounded-2xl p-4 relative scanline">
         <div className="absolute inset-0 cyber-grid opacity-30 rounded-2xl" />
@@ -866,6 +869,7 @@ export default function NeonStreakHub({ visitorId, forcedView }: Props) {
           <p className="text-[10px] text-center text-white/50">Coins didapat dari klaim streak harian, Mystery Box, dan Tantangan.</p>
         </DialogContent>
       </Dialog>
+      </BanLock>
     </div>
   );
 }
