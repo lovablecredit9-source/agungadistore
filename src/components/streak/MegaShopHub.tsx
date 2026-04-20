@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import StreakLuckyWheelShop from "./StreakLuckyWheelShop";
 import StreakShopExtras from "./StreakShopExtras";
+import EngagementHub from "@/components/EngagementHub";
 
 interface Props {
   visitorId: string;
@@ -77,6 +78,18 @@ export default function MegaShopHub({ visitorId, onUpdate }: Props) {
           </h3>
           <Badge className="bg-red-500/40 text-red-100 border-red-400/60 text-[9px] px-1.5 py-0 h-4 animate-pulse">FESTIVE</Badge>
         </div>
+      </div>
+
+      {/* 3 Fitur Live: Flash Sale + Daily Spin + Mystery Box */}
+      <div className="mb-3">
+        <div className="flex items-center gap-2 mb-2 px-1">
+          <Zap className="h-4 w-4 text-pink-300 animate-pulse" />
+          <h4 className="text-xs font-bold bg-gradient-to-r from-pink-200 via-orange-200 to-yellow-200 bg-clip-text text-transparent uppercase tracking-wider">
+            Live · Flash Sale · Spin · Mystery Box
+          </h4>
+          <Badge className="bg-red-500/40 text-red-100 border-red-400/60 text-[9px] px-1.5 py-0 h-4 animate-pulse">HOT</Badge>
+        </div>
+        <EngagementHub />
       </div>
 
       <StreakShopExtras visitorId={visitorId} onUpdate={() => { load(); onUpdate?.(); }} />
