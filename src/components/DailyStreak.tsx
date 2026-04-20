@@ -619,6 +619,7 @@ export default function DailyStreak({ visitorId }: DailyStreakProps) {
   return (
     <div className="space-y-4 p-4 pb-24">
       <BanBanner />
+      <BanLock fallbackLabel="streak harian">
       {/* Hero Streak Card */}
       <motion.div
         initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
