@@ -1166,6 +1166,7 @@ export default function DailyStreak({ visitorId }: DailyStreakProps) {
           </div>
         </div>
       )}
+      </BanLock>
     </div>
   );
 }
