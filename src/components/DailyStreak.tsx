@@ -12,7 +12,7 @@ import StreakLeaderboard from "./streak/StreakLeaderboard";
 import AchievementBadges from "./streak/AchievementBadges";
 import StreakFreezeCard from "./streak/StreakFreezeCard";
 import NeonStreakHub from "./streak/NeonStreakHub";
-import { BanBanner } from "@/components/BanBanner";
+import { BanBanner, BanLock } from "@/components/BanBanner";
 
 interface StreakData {
   id: string;
