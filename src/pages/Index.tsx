@@ -13,7 +13,7 @@ import {
   Heart, Send, ImagePlus, AlertCircle, History, Wallet, ArrowUpCircle, ArrowDownCircle,
   Bell, Check, CheckCheck, Globe, Edit2, ShoppingCart, Plus, Minus, Trash2,
   Moon, Sun, Lock, Tag, Music, Megaphone, Diamond, Image as ImageIcon, Gem, Sparkles, Palette, CalendarDays, Gamepad2, RefreshCw,
-  Eye, LayoutGrid, Rows3, Flame, SlidersHorizontal, Zap, TrendingUp, Award, Activity, Inbox, User, Phone
+  Eye, LayoutGrid, Rows3, Flame, SlidersHorizontal, Zap, TrendingUp, Award, Activity, Inbox, User, Phone, Gift
 } from "lucide-react";
 import CountUp from "@/components/CountUp";
 import { useTheme } from "@/lib/theme";
@@ -58,6 +58,7 @@ import LoginGate from "@/components/LoginGate";
 import WhatsAppChat from "@/components/WhatsAppChat";
 import EngagementHub from "@/components/EngagementHub";
 import WalletDashboard from "@/components/WalletDashboard";
+import VoucherNavigation from "@/components/VoucherNavigation";
 import { useAccountBan } from "@/hooks/useAccountBan";
 
 type Tab = "beranda" | "produk" | "voucher" | "history" | "likes" | "tiket" | "saldo" | "playlist" | "publik" | "sponsor" | "streak" | "streakevent" | "streakshop" | "adminpost" | "game" | "plus" | "update";
@@ -311,6 +312,7 @@ const Index = () => {
   const [tokenInput, setTokenInput] = useState("");
   const [claimResults, setClaimResults] = useState<ClaimResult[]>([]);
   const [claiming, setClaiming] = useState(false);
+  const [voucherSection, setVoucherSection] = useState<"claim" | "recent" | "tips">("claim");
   const [history, setHistory] = useState<ClaimHistory[]>([]);
   const [copiedField, setCopiedField] = useState<string | null>(null);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
@@ -2142,7 +2144,14 @@ const Index = () => {
           </div>
         )}
 
-        {tab === "voucher" && (
+        {tab === "voucher" && (() => {
+          const today = new Date();
+          const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+          const todayCount = history.filter(h => new Date(h.claimed_at) >= todayStart).length;
+          const pendingCount = parseCodes(tokenInput).length;
+          const recentClaims = history.slice(0, 5);
+
+          return (
           <div className="space-y-4 animate-fade-in">
             {/* Hero Header */}
             <div className="relative overflow-hidden rounded-2xl p-5 glow-border" style={{ background: "linear-gradient(135deg, hsl(160, 70%, 42%) 0%, hsl(180, 60%, 40%) 50%, hsl(140, 60%, 35%) 100%)" }}>
@@ -2164,109 +2173,201 @@ const Index = () => {
                 </div>
               </div>
             </div>
-            {/* Info: Harus beli dulu */}
-            <Card className="border-0 shadow-lg overflow-hidden">
-              <div className="bg-gradient-to-r from-amber-500 to-orange-500 p-0.5" />
-              <CardContent className="p-3.5 flex items-start gap-3 bg-gradient-to-r from-amber-500/5 to-orange-500/5">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center shrink-0 shadow-lg ring-2 ring-amber-500/20">
-                  <ShoppingBag className="w-5 h-5 text-white" />
-                </div>
-                <div>
-                  <p className="text-xs font-extrabold text-amber-700 dark:text-amber-400">Cara Mendapatkan Voucher</p>
-                  <p className="text-[11px] text-muted-foreground mt-0.5">Beli produk terlebih dahulu di tab <span className="font-bold text-primary cursor-pointer" onClick={() => setTab("produk")}>Produk</span> atau gunakan <span className="font-bold text-primary cursor-pointer" onClick={() => setTab("saldo")}>Saldo</span>, lalu kode voucher akan diberikan setelah pembayaran berhasil.</p>
-                </div>
-              </CardContent>
-            </Card>
 
-            <Card className="border-0 shadow-2xl overflow-hidden glass-card-strong glow-border">
-              <div className="h-1.5 bg-gradient-to-r from-primary via-accent to-primary shimmer" />
-              <CardContent className="p-5 space-y-4">
-                <div className="text-center">
-                  <div className="relative w-18 h-18 mx-auto mb-3">
-                    <div className="absolute inset-0 bg-gradient-to-br from-primary to-accent rounded-2xl blur-lg opacity-30 animate-pulse" />
-                    <div className="relative w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-accent flex items-center justify-center mx-auto shadow-xl ring-2 ring-primary/20">
-                      <Ticket className="w-8 h-8 text-primary-foreground" />
-                    </div>
-                  </div>
-                  <p className="text-sm font-extrabold">Masukkan Kode Voucher</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">Pisahkan dengan <span className="font-mono font-bold text-primary bg-primary/10 px-1.5 py-0.5 rounded">|</span> atau Enter untuk banyak kode</p>
-                </div>
-                <div className="space-y-3">
-                  <div className="relative group">
-                    <div className="absolute -inset-0.5 bg-gradient-to-r from-primary/30 to-accent/30 rounded-xl blur opacity-0 group-focus-within:opacity-100 transition-opacity" />
-                    <Textarea placeholder="KODE1 | KODE2 | KODE3" value={tokenInput} onChange={(e) => setTokenInput(e.target.value.toUpperCase())}
-                      className="relative font-mono text-center text-sm tracking-wider uppercase border-2 border-primary/20 focus:border-primary min-h-[60px] bg-card" rows={2} />
-                  </div>
-                  {parseCodes(tokenInput).length > 0 && (
-                    <div className="flex items-center justify-center gap-2 bg-primary/5 rounded-lg p-2">
-                      <div className="w-5 h-5 rounded-full bg-primary/20 flex items-center justify-center">
-                        <span className="text-[10px] font-extrabold text-primary">{parseCodes(tokenInput).length}</span>
-                      </div>
-                      <span className="text-xs text-muted-foreground font-medium">kode terdeteksi</span>
-                    </div>
-                  )}
-                  <Button onClick={handleClaim} disabled={claiming || !tokenInput.trim()} className="w-full h-12 bg-gradient-to-r from-primary to-accent shadow-xl font-extrabold text-base gap-2 rounded-xl hover:shadow-2xl transition-all hover:scale-[1.02]">
-                    {claiming ? <span className="animate-pulse">Memproses...</span> : <><CheckCircle2 className="w-5 h-5" /> Klaim Sekarang</>}
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+            {/* === Navigasi Voucher Keren === */}
+            <VoucherNavigation
+              active={voucherSection}
+              onChange={setVoucherSection}
+              totalClaimed={history.length}
+              todayCount={todayCount}
+              pendingCodes={pendingCount}
+              onGoProduk={() => setTab("produk")}
+              onGoSaldo={() => setTab("saldo")}
+              onGoHistory={() => setTab("history")}
+            />
 
-            {claimResults.length > 0 && (
-              <div className="space-y-3">
+            {voucherSection === "claim" && (
+              <>
+                {/* Info: Harus beli dulu */}
                 <Card className="border-0 shadow-lg overflow-hidden">
-                  <div className="h-1 bg-gradient-to-r from-accent to-primary" />
-                  <CardContent className="p-5 text-center bg-gradient-to-br from-accent/5 to-primary/5">
-                    <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider">Total Harga</p>
-                    <p className="text-3xl font-extrabold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">{formatPrice(totalClaimPrice)}</p>
-                    <p className="text-xs text-muted-foreground mt-1">{claimResults.length} voucher berhasil diklaim</p>
+                  <div className="bg-gradient-to-r from-amber-500 to-orange-500 p-0.5" />
+                  <CardContent className="p-3.5 flex items-start gap-3 bg-gradient-to-r from-amber-500/5 to-orange-500/5">
+                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center shrink-0 shadow-lg ring-2 ring-amber-500/20">
+                      <ShoppingBag className="w-5 h-5 text-white" />
+                    </div>
+                    <div>
+                      <p className="text-xs font-extrabold text-amber-700 dark:text-amber-400">Cara Mendapatkan Voucher</p>
+                      <p className="text-[11px] text-muted-foreground mt-0.5">Beli produk terlebih dahulu di tab <span className="font-bold text-primary cursor-pointer" onClick={() => setTab("produk")}>Produk</span> atau gunakan <span className="font-bold text-primary cursor-pointer" onClick={() => setTab("saldo")}>Saldo</span>, lalu kode voucher akan diberikan setelah pembayaran berhasil.</p>
+                    </div>
                   </CardContent>
                 </Card>
 
-                {claimResults.map((result, ri) => (
-                  <Card key={ri} className="border-0 shadow-xl overflow-hidden">
-                    <div className="bg-gradient-to-r from-accent to-accent/70 p-3.5 text-accent-foreground flex items-center gap-2.5">
-                      <div className="w-7 h-7 rounded-full bg-white/20 flex items-center justify-center">
-                        <CheckCircle2 className="w-4 h-4" />
+                <Card className="border-0 shadow-2xl overflow-hidden glass-card-strong glow-border">
+                  <div className="h-1.5 bg-gradient-to-r from-primary via-accent to-primary shimmer" />
+                  <CardContent className="p-5 space-y-4">
+                    <div className="text-center">
+                      <div className="relative w-18 h-18 mx-auto mb-3">
+                        <div className="absolute inset-0 bg-gradient-to-br from-primary to-accent rounded-2xl blur-lg opacity-30 animate-pulse" />
+                        <div className="relative w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-accent flex items-center justify-center mx-auto shadow-xl ring-2 ring-primary/20">
+                          <Ticket className="w-8 h-8 text-primary-foreground" />
+                        </div>
                       </div>
-                      <span className="font-extrabold text-sm">Voucher Berhasil Diklaim!</span>
+                      <p className="text-sm font-extrabold">Masukkan Kode Voucher</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">Pisahkan dengan <span className="font-mono font-bold text-primary bg-primary/10 px-1.5 py-0.5 rounded">|</span> atau Enter untuk banyak kode</p>
                     </div>
-                    <CardContent className="p-4 space-y-3">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-accent to-accent/70 flex items-center justify-center shadow-md">
-                          <Crown className="w-5 h-5 text-accent-foreground" />
-                        </div>
-                        <div>
-                          <h3 className="font-bold">{result.product.title}</h3>
-                          <p className="text-xs text-muted-foreground">{formatPrice(result.product.price)}</p>
-                        </div>
+                    <div className="space-y-3">
+                      <div className="relative group">
+                        <div className="absolute -inset-0.5 bg-gradient-to-r from-primary/30 to-accent/30 rounded-xl blur opacity-0 group-focus-within:opacity-100 transition-opacity" />
+                        <Textarea placeholder="KODE1 | KODE2 | KODE3" value={tokenInput} onChange={(e) => setTokenInput(e.target.value.toUpperCase())}
+                          className="relative font-mono text-center text-sm tracking-wider uppercase border-2 border-primary/20 focus:border-primary min-h-[60px] bg-card" rows={2} />
                       </div>
-                      <div className="bg-muted/50 rounded-xl p-3 space-y-2 border border-border">
-                        <p className="text-xs font-bold text-primary uppercase tracking-wider flex items-center gap-1"><Shield className="w-3 h-3" /> Detail Akun</p>
-                        {result.fields.map((f, i) => {
-                          const fieldId = `claim-${ri}-${i}`;
-                          return (
-                            <div key={i} className="flex items-center justify-between py-2 border-b border-border/50 last:border-0">
-                              <span className="text-xs text-muted-foreground">{f.field_name}</span>
-                              <div className="flex items-center gap-1.5">
-                                <span className="text-sm font-mono font-bold max-w-[140px] truncate">{f.field_value}</span>
-                                <button onClick={() => copyText(f.field_value, fieldId)}
-                                  className={`text-xs font-bold px-2 py-0.5 rounded-md transition-all ${copiedField === fieldId ? 'bg-accent/20 text-accent' : 'bg-primary/10 text-primary hover:bg-primary/20'}`}>
-                                  {copiedField === fieldId ? <span className="flex items-center gap-0.5"><CheckCircle2 className="w-3 h-3" /> OK</span> : <span className="flex items-center gap-0.5"><Copy className="w-3 h-3" /> Salin</span>}
-                                </button>
-                              </div>
+                      {parseCodes(tokenInput).length > 0 && (
+                        <div className="flex items-center justify-center gap-2 bg-primary/5 rounded-lg p-2">
+                          <div className="w-5 h-5 rounded-full bg-primary/20 flex items-center justify-center">
+                            <span className="text-[10px] font-extrabold text-primary">{parseCodes(tokenInput).length}</span>
+                          </div>
+                          <span className="text-xs text-muted-foreground font-medium">kode terdeteksi</span>
+                        </div>
+                      )}
+                      <Button onClick={handleClaim} disabled={claiming || !tokenInput.trim()} className="w-full h-12 bg-gradient-to-r from-primary to-accent shadow-xl font-extrabold text-base gap-2 rounded-xl hover:shadow-2xl transition-all hover:scale-[1.02]">
+                        {claiming ? <span className="animate-pulse">Memproses...</span> : <><CheckCircle2 className="w-5 h-5" /> Klaim Sekarang</>}
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {claimResults.length > 0 && (
+                  <div className="space-y-3">
+                    <Card className="border-0 shadow-lg overflow-hidden">
+                      <div className="h-1 bg-gradient-to-r from-accent to-primary" />
+                      <CardContent className="p-5 text-center bg-gradient-to-br from-accent/5 to-primary/5">
+                        <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider">Total Harga</p>
+                        <p className="text-3xl font-extrabold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">{formatPrice(totalClaimPrice)}</p>
+                        <p className="text-xs text-muted-foreground mt-1">{claimResults.length} voucher berhasil diklaim</p>
+                      </CardContent>
+                    </Card>
+
+                    {claimResults.map((result, ri) => (
+                      <Card key={ri} className="border-0 shadow-xl overflow-hidden">
+                        <div className="bg-gradient-to-r from-accent to-accent/70 p-3.5 text-accent-foreground flex items-center gap-2.5">
+                          <div className="w-7 h-7 rounded-full bg-white/20 flex items-center justify-center">
+                            <CheckCircle2 className="w-4 h-4" />
+                          </div>
+                          <span className="font-extrabold text-sm">Voucher Berhasil Diklaim!</span>
+                        </div>
+                        <CardContent className="p-4 space-y-3">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-accent to-accent/70 flex items-center justify-center shadow-md">
+                              <Crown className="w-5 h-5 text-accent-foreground" />
                             </div>
-                          );
-                        })}
+                            <div>
+                              <h3 className="font-bold">{result.product.title}</h3>
+                              <p className="text-xs text-muted-foreground">{formatPrice(result.product.price)}</p>
+                            </div>
+                          </div>
+                          <div className="bg-muted/50 rounded-xl p-3 space-y-2 border border-border">
+                            <p className="text-xs font-bold text-primary uppercase tracking-wider flex items-center gap-1"><Shield className="w-3 h-3" /> Detail Akun</p>
+                            {result.fields.map((f, i) => {
+                              const fieldId = `claim-${ri}-${i}`;
+                              return (
+                                <div key={i} className="flex items-center justify-between py-2 border-b border-border/50 last:border-0">
+                                  <span className="text-xs text-muted-foreground">{f.field_name}</span>
+                                  <div className="flex items-center gap-1.5">
+                                    <span className="text-sm font-mono font-bold max-w-[140px] truncate">{f.field_value}</span>
+                                    <button onClick={() => copyText(f.field_value, fieldId)}
+                                      className={`text-xs font-bold px-2 py-0.5 rounded-md transition-all ${copiedField === fieldId ? 'bg-accent/20 text-accent' : 'bg-primary/10 text-primary hover:bg-primary/20'}`}>
+                                      {copiedField === fieldId ? <span className="flex items-center gap-0.5"><CheckCircle2 className="w-3 h-3" /> OK</span> : <span className="flex items-center gap-0.5"><Copy className="w-3 h-3" /> Salin</span>}
+                                    </button>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                          <p className="text-xs text-destructive font-medium bg-destructive/10 p-2.5 rounded-lg text-center">⚠ Kode voucher hanya berlaku 1 kali klaim</p>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                )}
+              </>
+            )}
+
+            {voucherSection === "recent" && (
+              <Card className="border-0 shadow-lg overflow-hidden">
+                <div className="h-1 bg-gradient-to-r from-sky-500 to-blue-500" />
+                <CardContent className="p-4 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <History className="w-4 h-4 text-sky-500" />
+                      <p className="text-xs font-extrabold">Klaim Terbaru</p>
+                    </div>
+                    <Button size="sm" variant="ghost" className="h-7 text-[10px] font-bold text-primary" onClick={() => setTab("history")}>
+                      Lihat Semua <ChevronRight className="w-3 h-3" />
+                    </Button>
+                  </div>
+                  {recentClaims.length === 0 ? (
+                    <div className="text-center py-8">
+                      <div className="w-14 h-14 rounded-2xl bg-muted flex items-center justify-center mx-auto mb-2">
+                        <Inbox className="w-7 h-7 text-muted-foreground opacity-40" />
                       </div>
-                      <p className="text-xs text-destructive font-medium bg-destructive/10 p-2.5 rounded-lg text-center">⚠ Kode voucher hanya berlaku 1 kali klaim</p>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
+                      <p className="text-xs font-bold text-muted-foreground">Belum ada klaim</p>
+                      <p className="text-[10px] text-muted-foreground mt-0.5">Klaim voucher pertamamu sekarang!</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      {recentClaims.map(h => (
+                        <div key={h.id} className="flex items-center gap-3 p-2.5 rounded-xl bg-gradient-to-r from-sky-50 to-blue-50 dark:from-sky-500/5 dark:to-blue-500/5 border border-sky-200/50 dark:border-sky-500/20">
+                          {h.product_image ? (
+                            <img src={h.product_image} className="w-10 h-10 rounded-lg object-cover shrink-0" alt="" />
+                          ) : (
+                            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-sky-500 to-blue-500 flex items-center justify-center shrink-0">
+                              <Crown className="w-5 h-5 text-white" />
+                            </div>
+                          )}
+                          <div className="min-w-0 flex-1">
+                            <p className="text-xs font-extrabold truncate">{h.product_title}</p>
+                            <p className="text-[10px] font-mono text-muted-foreground truncate">{h.token_code}</p>
+                          </div>
+                          <span className="text-[9px] text-muted-foreground shrink-0">{new Date(h.claimed_at).toLocaleDateString("id-ID", { day: "2-digit", month: "short" })}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+
+            {voucherSection === "tips" && (
+              <Card className="border-0 shadow-lg overflow-hidden">
+                <div className="h-1 bg-gradient-to-r from-violet-500 to-fuchsia-500" />
+                <CardContent className="p-4 space-y-3">
+                  <div className="flex items-center gap-2">
+                    <Sparkles className="w-4 h-4 text-violet-500" />
+                    <p className="text-xs font-extrabold">Tips & Trik Klaim Voucher</p>
+                  </div>
+                  {[
+                    { icon: Zap, title: "Klaim Massal", desc: "Pisahkan kode dengan tanda | atau Enter untuk klaim banyak voucher sekaligus.", color: "from-amber-500 to-orange-500" },
+                    { icon: Shield, title: "Aman & Terpercaya", desc: "Setiap kode hanya berlaku sekali pakai. Jangan bagikan ke siapapun.", color: "from-emerald-500 to-teal-500" },
+                    { icon: Gift, title: "Cek Histori", desc: "Semua klaim tersimpan di tab Riwayat lengkap dengan detail akun.", color: "from-sky-500 to-blue-500" },
+                    { icon: Award, title: "Beli Produk Dulu", desc: "Voucher hanya didapat setelah pembelian produk berhasil.", color: "from-violet-500 to-fuchsia-500" },
+                  ].map((tip, i) => (
+                    <div key={i} className="flex items-start gap-3 p-3 rounded-xl bg-muted/40 border border-border/50">
+                      <div className={`w-9 h-9 rounded-xl bg-gradient-to-br ${tip.color} flex items-center justify-center shrink-0 shadow-md`}>
+                        <tip.icon className="w-4 h-4 text-white" />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-xs font-extrabold">{tip.title}</p>
+                        <p className="text-[11px] text-muted-foreground mt-0.5 leading-relaxed">{tip.desc}</p>
+                      </div>
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
             )}
           </div>
-        )}
+          );
+        })()}
+
 
         {tab === "history" && (
           <div className="space-y-4 animate-fade-in">
