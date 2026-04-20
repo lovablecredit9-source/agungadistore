@@ -2648,30 +2648,22 @@ const Index = () => {
                   </div>
                 </div>
 
-                {/* Stats Summary */}
-                {tickets.length > 0 && (() => {
-                  const openCount = tickets.filter(t => t.status === "open").length;
-                  const closedCount = tickets.filter(t => t.status !== "open").length;
-                  return (
-                    <div className="grid grid-cols-3 gap-2">
-                      <div className="bg-gradient-to-br from-orange-500/15 to-red-500/5 border border-orange-500/20 rounded-xl p-2.5 text-center">
-                        <Inbox className="w-4 h-4 text-orange-500 mx-auto mb-1" />
-                        <p className="text-[9px] font-bold text-muted-foreground uppercase">Total</p>
-                        <p className="text-base font-extrabold text-orange-500 leading-none mt-0.5"><CountUp value={tickets.length} /></p>
-                      </div>
-                      <div className="bg-gradient-to-br from-accent/15 to-accent/5 border border-accent/20 rounded-xl p-2.5 text-center">
-                        <Activity className="w-4 h-4 text-accent mx-auto mb-1" />
-                        <p className="text-[9px] font-bold text-muted-foreground uppercase">Terbuka</p>
-                        <p className="text-base font-extrabold text-accent leading-none mt-0.5"><CountUp value={openCount} /></p>
-                      </div>
-                      <div className="bg-gradient-to-br from-muted to-muted/30 border border-border rounded-xl p-2.5 text-center">
-                        <CheckCircle2 className="w-4 h-4 text-muted-foreground mx-auto mb-1" />
-                        <p className="text-[9px] font-bold text-muted-foreground uppercase">Selesai</p>
-                        <p className="text-base font-extrabold text-muted-foreground leading-none mt-0.5"><CountUp value={closedCount} /></p>
-                      </div>
+                {/* Smart Mode Toggle */}
+                {tickets.length > 0 && (
+                  <div className="flex items-center justify-between gap-2 px-1">
+                    <div className="text-[11px] text-muted-foreground">
+                      {smartTickets ? "✨ Mode Pintar aktif — timeline, filter & rating" : "Tampilan klasik"}
                     </div>
-                  );
-                })()}
+                    <Button
+                      size="sm"
+                      variant={smartTickets ? "default" : "outline"}
+                      onClick={() => setSmartTickets(v => !v)}
+                      className={`gap-1 rounded-full text-xs font-bold ${smartTickets ? "bg-gradient-to-r from-primary to-accent text-primary-foreground" : ""}`}
+                    >
+                      <Sparkles className="w-3 h-3" /> {smartTickets ? "Mode Pintar ✓" : "Mode Pintar"}
+                    </Button>
+                  </div>
+                )}
 
                 {tickets.length === 0 && (
                   <div className="text-center py-16 text-muted-foreground">
@@ -2684,26 +2676,79 @@ const Index = () => {
                   </div>
                 )}
 
-                {tickets.map(t => {
-                  const catInfo = TICKET_CATEGORIES.find(c => c.value === (t as any).category) || TICKET_CATEGORIES[TICKET_CATEGORIES.length - 1];
-                  return (
-                  <Card key={t.id} className="cursor-pointer hover:shadow-lg transition-all" onClick={() => { setActiveTicket(t); setTicketView("chat"); }}>
-                    <CardContent className="p-4">
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="font-bold text-sm text-primary">Tiket #{t.ticket_number}</span>
-                        <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${t.status === "open" ? "bg-accent/10 text-accent" : "bg-muted text-muted-foreground"}`}>
-                          {t.status === "open" ? "Terbuka" : "Ditutup"}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-1.5 mb-1">
-                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-primary/10 text-primary font-medium">{catInfo.label}</span>
-                      </div>
-                      <p className="text-xs text-muted-foreground line-clamp-1">{t.description}</p>
-                      <p className="text-[10px] text-muted-foreground mt-1">{new Date(t.created_at).toLocaleString("id-ID")}</p>
-                    </CardContent>
-                  </Card>
-                  );
-                })}
+                {tickets.length > 0 && smartTickets && (
+                  <TicketEnhancer
+                    tickets={tickets as any}
+                    categoryLabels={Object.fromEntries(TICKET_CATEGORIES.map(c => [c.value, c.label]))}
+                    onOpen={(t) => { setActiveTicket(t as any); setTicketView("chat"); }}
+                    onReopen={(t) => {
+                      setTicketCategory(t.category || "lainnya");
+                      setTicketDesc(`[REOPEN dari Tiket #${t.ticket_number}]\n\n${t.description}`);
+                      setTicketName((t as any).name || "");
+                      setTicketPhone((t as any).phone || "");
+                      setTicketView("create");
+                      toast({ title: "Form siap di-reopen", description: "Edit detail lalu kirim ulang" });
+                    }}
+                    onDuplicate={(t) => {
+                      setTicketCategory(t.category || "lainnya");
+                      setTicketDesc(t.description);
+                      setTicketName((t as any).name || "");
+                      setTicketPhone((t as any).phone || "");
+                      setTicketView("create");
+                      toast({ title: "Template tiket disalin ✨" });
+                    }}
+                  />
+                )}
+
+                {tickets.length > 0 && !smartTickets && (
+                  <>
+                    {/* Stats Summary */}
+                    {(() => {
+                      const openCount = tickets.filter(t => t.status === "open").length;
+                      const closedCount = tickets.filter(t => t.status !== "open").length;
+                      return (
+                        <div className="grid grid-cols-3 gap-2">
+                          <div className="bg-gradient-to-br from-orange-500/15 to-red-500/5 border border-orange-500/20 rounded-xl p-2.5 text-center">
+                            <Inbox className="w-4 h-4 text-orange-500 mx-auto mb-1" />
+                            <p className="text-[9px] font-bold text-muted-foreground uppercase">Total</p>
+                            <p className="text-base font-extrabold text-orange-500 leading-none mt-0.5"><CountUp value={tickets.length} /></p>
+                          </div>
+                          <div className="bg-gradient-to-br from-accent/15 to-accent/5 border border-accent/20 rounded-xl p-2.5 text-center">
+                            <Activity className="w-4 h-4 text-accent mx-auto mb-1" />
+                            <p className="text-[9px] font-bold text-muted-foreground uppercase">Terbuka</p>
+                            <p className="text-base font-extrabold text-accent leading-none mt-0.5"><CountUp value={openCount} /></p>
+                          </div>
+                          <div className="bg-gradient-to-br from-muted to-muted/30 border border-border rounded-xl p-2.5 text-center">
+                            <CheckCircle2 className="w-4 h-4 text-muted-foreground mx-auto mb-1" />
+                            <p className="text-[9px] font-bold text-muted-foreground uppercase">Selesai</p>
+                            <p className="text-base font-extrabold text-muted-foreground leading-none mt-0.5"><CountUp value={closedCount} /></p>
+                          </div>
+                        </div>
+                      );
+                    })()}
+
+                    {tickets.map(t => {
+                      const catInfo = TICKET_CATEGORIES.find(c => c.value === (t as any).category) || TICKET_CATEGORIES[TICKET_CATEGORIES.length - 1];
+                      return (
+                      <Card key={t.id} className="cursor-pointer hover:shadow-lg transition-all" onClick={() => { setActiveTicket(t); setTicketView("chat"); }}>
+                        <CardContent className="p-4">
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="font-bold text-sm text-primary">Tiket #{t.ticket_number}</span>
+                            <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${t.status === "open" ? "bg-accent/10 text-accent" : "bg-muted text-muted-foreground"}`}>
+                              {t.status === "open" ? "Terbuka" : "Ditutup"}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-1.5 mb-1">
+                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-primary/10 text-primary font-medium">{catInfo.label}</span>
+                          </div>
+                          <p className="text-xs text-muted-foreground line-clamp-1">{t.description}</p>
+                          <p className="text-[10px] text-muted-foreground mt-1">{new Date(t.created_at).toLocaleString("id-ID")}</p>
+                        </CardContent>
+                      </Card>
+                      );
+                    })}
+                  </>
+                )}
               </>
             )}
 
