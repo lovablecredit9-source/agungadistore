@@ -5528,6 +5528,7 @@ export type Database = {
       streak_wheel_pity: {
         Row: {
           free_spin_used_date: string | null
+          free_spin_used_per_tier: Json
           spins_since_jackpot: number
           total_jackpots: number
           total_spins: number
@@ -5536,6 +5537,7 @@ export type Database = {
         }
         Insert: {
           free_spin_used_date?: string | null
+          free_spin_used_per_tier?: Json
           spins_since_jackpot?: number
           total_jackpots?: number
           total_spins?: number
@@ -5544,6 +5546,7 @@ export type Database = {
         }
         Update: {
           free_spin_used_date?: string | null
+          free_spin_used_per_tier?: Json
           spins_since_jackpot?: number
           total_jackpots?: number
           total_spins?: number
