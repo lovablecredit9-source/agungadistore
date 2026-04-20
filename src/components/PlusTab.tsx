@@ -10,6 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useGameCredits, GameCreditsBadge } from "@/components/games/GameCredits";
 import { useGameBalance, GameBalanceBadge } from "@/components/games/GameBalance";
 import { motion } from "framer-motion";
+import { BanBanner } from "@/components/BanBanner";
 
 function formatPrice(price: number) {
   return new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", minimumFractionDigits: 0 }).format(price);
@@ -228,6 +229,7 @@ export default function PlusTab() {
 
   return (
     <div className="space-y-4">
+      <BanBanner />
       <h2 className="text-lg font-extrabold flex items-center gap-2">
         <Sparkles className="w-5 h-5 text-primary" /> Plus
       </h2>

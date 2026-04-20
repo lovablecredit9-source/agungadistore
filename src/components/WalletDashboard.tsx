@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import CountUp from "@/components/CountUp";
 import { motion } from "framer-motion";
+import { BanBanner } from "@/components/BanBanner";
 
 interface BalanceTx {
   id: string;
@@ -80,6 +81,7 @@ export default function WalletDashboard({
 
   return (
     <div className="space-y-3">
+      <BanBanner />
       {/* === Hero Saldo Card — minimal clean white === */}
       <motion.div
         initial={{ opacity: 0, y: 12 }}
