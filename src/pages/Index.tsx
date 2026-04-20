@@ -338,7 +338,7 @@ const Index = () => {
   }, []);
   const [showHelp, setShowHelp] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState("Semua");
-  const [sortOrder, setSortOrder] = useState<"newest" | "oldest" | "cheapest" | "expensive" | "popular">("newest");
+  const [sortOrder, setSortOrder] = useState<"newest" | "oldest" | "cheapest" | "expensive" | "popular" | "name_asc" | "name_desc">("newest");
   const [productSearch, setProductSearch] = useState("");
   const [productViewMode, setProductViewMode] = useState<"list" | "grid" | "compact">(() => (localStorage.getItem("product_view_mode") as "list" | "grid" | "compact") || "list");
   const [inStockOnly, setInStockOnly] = useState(false);
@@ -1983,81 +1983,35 @@ const Index = () => {
               </div>
             </div>
 
-            {/* Search */}
-            <div className="relative group">
-              <div className="absolute -inset-0.5 bg-gradient-to-r from-primary/30 to-accent/30 rounded-2xl blur opacity-0 group-focus-within:opacity-100 transition-opacity duration-300" />
-              <div className="relative">
-                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <Input placeholder={t("products.search", lang)} value={productSearch} onChange={e => setProductSearch(e.target.value)} className="pl-10 h-12 rounded-xl border-2 border-border/50 focus:border-primary/50 glass-card" />
-              </div>
-            </div>
-
-            {/* Filter row: kategori + sort + view toggle */}
-            <div className="flex gap-2.5 items-stretch">
-              <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                <SelectTrigger className="flex-1 h-11 text-xs rounded-xl glass-card border-2 border-border/50">
-                  <SelectValue placeholder="Kategori" />
-                </SelectTrigger>
-                <SelectContent>
-                  {categories.map(cat => (
-                    <SelectItem key={cat} value={cat}>{cat}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Select value={sortOrder} onValueChange={(v) => setSortOrder(v as typeof sortOrder)}>
-                <SelectTrigger className="w-[130px] h-11 text-xs rounded-xl glass-card border-2 border-border/50">
-                  <SlidersHorizontal className="w-3.5 h-3.5 mr-1 text-muted-foreground" />
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="newest">⏱ Terbaru</SelectItem>
-                  <SelectItem value="oldest">📅 Terlama</SelectItem>
-                  <SelectItem value="cheapest">💰 Termurah</SelectItem>
-                  <SelectItem value="expensive">💎 Termahal</SelectItem>
-                  <SelectItem value="popular">🔥 Populer</SelectItem>
-                </SelectContent>
-              </Select>
-              <div className="flex rounded-xl glass-card border-2 border-border/50 overflow-hidden">
-                <button
-                  onClick={() => setProductViewMode("list")}
-                  className={`px-2.5 flex items-center justify-center transition-all ${productViewMode === "list" ? "bg-gradient-to-br from-primary to-accent text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
-                  aria-label="List view"
-                >
-                  <Rows3 className="w-4 h-4" />
-                </button>
-                <button
-                  onClick={() => setProductViewMode("grid")}
-                  className={`px-2.5 flex items-center justify-center transition-all ${productViewMode === "grid" ? "bg-gradient-to-br from-primary to-accent text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
-                  aria-label="Grid view"
-                >
-                  <LayoutGrid className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
-
-            {/* Quick filter chips */}
-            <div className="flex gap-2 flex-wrap">
-              <button
-                onClick={() => setInStockOnly(v => !v)}
-                className={`text-[11px] font-bold px-3 py-1.5 rounded-full border-2 transition-all ${inStockOnly ? "bg-gradient-to-r from-emerald-500 to-teal-500 text-white border-transparent shadow-md" : "bg-card text-muted-foreground border-border/50 hover:border-primary/30"}`}
-              >
-                ✓ Tersedia saja
-              </button>
-              <button
-                onClick={() => setWarrantyOnly(v => !v)}
-                className={`text-[11px] font-bold px-3 py-1.5 rounded-full border-2 transition-all ${warrantyOnly ? "bg-gradient-to-r from-blue-500 to-indigo-500 text-white border-transparent shadow-md" : "bg-card text-muted-foreground border-border/50 hover:border-primary/30"}`}
-              >
-                <Shield className="w-3 h-3 inline mr-0.5" /> Bergaransi
-              </button>
-              {(inStockOnly || warrantyOnly || sortOrder !== "newest" || selectedCategory !== "Semua" || productSearch) && (
-                <button
-                  onClick={() => { setInStockOnly(false); setWarrantyOnly(false); setSortOrder("newest"); setSelectedCategory("Semua"); setProductSearch(""); }}
-                  className="text-[11px] font-bold px-3 py-1.5 rounded-full border-2 bg-destructive/10 text-destructive border-destructive/20 hover:bg-destructive/20 transition-all"
-                >
-                  <X className="w-3 h-3 inline mr-0.5" /> Reset filter
-                </button>
-              )}
-            </div>
+            {/* Advanced Product Navigation Toolbar */}
+            <ProductNavToolbar
+              value={{
+                search: productSearch,
+                category: selectedCategory,
+                sort: sortOrder,
+                view: productViewMode,
+                minPrice: productMinPrice,
+                maxPrice: productMaxPrice,
+                inStockOnly,
+                warrantyOnly,
+              }}
+              onChange={(next) => {
+                if (next.search !== undefined) setProductSearch(next.search);
+                if (next.category !== undefined) setSelectedCategory(next.category);
+                if (next.sort !== undefined) setSortOrder(next.sort as any);
+                if (next.view !== undefined) setProductViewMode(next.view);
+                if (next.minPrice !== undefined) setProductMinPrice(next.minPrice);
+                if (next.maxPrice !== undefined) setProductMaxPrice(next.maxPrice);
+                if (next.inStockOnly !== undefined) setInStockOnly(next.inStockOnly);
+                if (next.warrantyOnly !== undefined) setWarrantyOnly(next.warrantyOnly);
+              }}
+              categories={categories}
+              categoryCounts={productCategoryCounts}
+              storageKey="product_search_history_v1"
+              popularSuggestions={popularProductTerms}
+              totalCount={products.length}
+              resultCount={sortedProducts.length}
+            />
 
             {/* Skeleton loading */}
             {productsLoading && (
