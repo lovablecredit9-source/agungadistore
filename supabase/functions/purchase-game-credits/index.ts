@@ -63,28 +63,56 @@ Deno.serve(async (req) => {
 
     if (action === "get_credits") {
       if (!visitorId) return Response.json({ error: "visitorId required" }, { status: 400, headers: corsHeaders });
-      const { data } = await admin.from("user_game_credits").select("*").eq("visitor_id", visitorId).maybeSingle();
-      const credits = data?.credits || 0;
-      const unlimitedUntil = data?.unlimited_until || null;
+      // Account-aware: aggregate credits from all visitor IDs linked to the same balance account
+      const { data: totalCredits } = await admin.rpc("get_account_credits", { p_visitor_id: visitorId });
+      const credits = Number(totalCredits) || 0;
+      // Get unlimited status from any row in the account
+      const { data: ubId } = await admin.rpc("get_active_user_balance_id", { p_visitor_id: visitorId });
+      let unlimitedUntil: string | null = null;
+      if (ubId) {
+        const { data: visitors } = await admin.from("balance_login_history").select("visitor_id").eq("user_balance_id", ubId);
+        const vids = Array.from(new Set((visitors || []).map((v: { visitor_id: string }) => v.visitor_id)));
+        if (vids.length) {
+          const { data: rows } = await admin.from("user_game_credits").select("unlimited_until").in("visitor_id", vids).not("unlimited_until", "is", null);
+          const maxTs = (rows || []).map((r: { unlimited_until: string }) => new Date(r.unlimited_until).getTime()).filter((t) => !isNaN(t)).sort((a, b) => b - a)[0];
+          if (maxTs) unlimitedUntil = new Date(maxTs).toISOString();
+        }
+      } else {
+        const { data: own } = await admin.from("user_game_credits").select("unlimited_until").eq("visitor_id", visitorId).maybeSingle();
+        unlimitedUntil = own?.unlimited_until || null;
+      }
       const isUnlimited = unlimitedUntil && new Date(unlimitedUntil) > new Date();
       return Response.json({ credits, unlimited_until: unlimitedUntil, is_unlimited: !!isUnlimited }, { headers: corsHeaders });
     }
 
     if (action === "use_credit") {
       if (!visitorId) return Response.json({ error: "visitorId required" }, { status: 400, headers: corsHeaders });
-      const { data } = await admin.from("user_game_credits").select("*").eq("visitor_id", visitorId).maybeSingle();
-      if (!data) return Response.json({ error: "Kamu belum punya kredit jawaban" }, { status: 400, headers: corsHeaders });
-      
-      const isUnlimited = data.unlimited_until && new Date(data.unlimited_until) > new Date();
+      // Check unlimited first (account-wide)
+      const { data: ubId } = await admin.rpc("get_active_user_balance_id", { p_visitor_id: visitorId });
+      let unlimitedUntil: string | null = null;
+      if (ubId) {
+        const { data: visitors } = await admin.from("balance_login_history").select("visitor_id").eq("user_balance_id", ubId);
+        const vids = Array.from(new Set((visitors || []).map((v: { visitor_id: string }) => v.visitor_id)));
+        if (vids.length) {
+          const { data: rows } = await admin.from("user_game_credits").select("unlimited_until").in("visitor_id", vids).not("unlimited_until", "is", null);
+          const maxTs = (rows || []).map((r: { unlimited_until: string }) => new Date(r.unlimited_until).getTime()).filter((t) => !isNaN(t)).sort((a, b) => b - a)[0];
+          if (maxTs) unlimitedUntil = new Date(maxTs).toISOString();
+        }
+      } else {
+        const { data: own } = await admin.from("user_game_credits").select("unlimited_until").eq("visitor_id", visitorId).maybeSingle();
+        unlimitedUntil = own?.unlimited_until || null;
+      }
+      const isUnlimited = unlimitedUntil && new Date(unlimitedUntil) > new Date();
       if (isUnlimited) {
-        return Response.json({ success: true, credits: data.credits, is_unlimited: true }, { headers: corsHeaders });
+        const { data: total } = await admin.rpc("get_account_credits", { p_visitor_id: visitorId });
+        return Response.json({ success: true, credits: Number(total) || 0, is_unlimited: true }, { headers: corsHeaders });
       }
-      if (data.credits <= 0) {
-        return Response.json({ error: "Kredit jawaban habis" }, { status: 400, headers: corsHeaders });
+      // Deduct 1 credit account-wide
+      const { data: newTotal, error: deductErr } = await admin.rpc("add_account_credits", { p_visitor_id: visitorId, p_amount: -1 });
+      if (deductErr) {
+        return Response.json({ error: "Kredit jawaban habis" }, { status: 200, headers: corsHeaders });
       }
-      const newCredits = Math.max(0, data.credits - 1);
-      await admin.from("user_game_credits").update({ credits: newCredits, updated_at: new Date().toISOString() }).eq("id", data.id);
-      return Response.json({ success: true, credits: newCredits, is_unlimited: false }, { headers: corsHeaders });
+      return Response.json({ success: true, credits: Number(newTotal) || 0, is_unlimited: false }, { headers: corsHeaders });
     }
 
     if (action === "check_voucher") {
