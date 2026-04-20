@@ -150,9 +150,39 @@ export function TicketEnhancer({ tickets, categoryLabels, onOpen, onReopen, onDu
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
+  const [priorityFilter, setPriorityFilter] = useState<string>("all");
   const [ratings, setRatings] = useState<Record<string, number>>(getRatings());
   const [ratingTicket, setRatingTicket] = useState<EnhancedTicket | null>(null);
+  const [pins, setPins] = useState<string[]>(getPins());
+  const [notify, setNotify] = useState<string[]>(getNotify());
+  const [aiTicket, setAiTicket] = useState<EnhancedTicket | null>(null);
+  const [tick, setTick] = useState(0);
   const { toast } = useToast();
+
+  useEffect(() => {
+    const id = setInterval(() => setTick(x => x + 1), 30000);
+    return () => clearInterval(id);
+  }, []);
+
+  function togglePin(id: string) {
+    const next = pins.includes(id) ? pins.filter(x => x !== id) : [...pins, id];
+    setPins(next); savePins(next);
+    toast({ title: pins.includes(id) ? "Lepas pin tiket" : "📌 Tiket disematkan" });
+  }
+  function toggleNotify(id: string) {
+    const next = notify.includes(id) ? notify.filter(x => x !== id) : [...notify, id];
+    setNotify(next); saveNotify(next);
+    toast({ title: notify.includes(id) ? "Notifikasi dimatikan" : "🔔 Notifikasi diaktifkan" });
+  }
+  function shareTicket(t: EnhancedTicket) {
+    const text = `Tiket #${t.ticket_number}\nKategori: ${categoryLabels[t.category || ""] || "Lainnya"}\nStatus: ${t.status}\n\n${t.description}`;
+    if (navigator.share) {
+      navigator.share({ title: `Tiket #${t.ticket_number}`, text }).catch(() => {});
+    } else {
+      navigator.clipboard.writeText(text);
+      toast({ title: "📋 Disalin ke clipboard" });
+    }
+  }
 
   const filtered = useMemo(() => {
     const s = search.trim().toLowerCase();
@@ -162,37 +192,40 @@ export function TicketEnhancer({ tickets, categoryLabels, onOpen, onReopen, onDu
         if (statusFilter === "closed" && t.status === "open") return false;
       }
       if (categoryFilter !== "all" && t.category !== categoryFilter) return false;
+      if (priorityFilter !== "all" && detectPriority(t) !== priorityFilter) return false;
       if (s) {
         const hay = `${t.ticket_number} ${t.description} ${categoryLabels[t.category || ""] || ""}`.toLowerCase();
         if (!hay.includes(s)) return false;
       }
       return true;
     });
-  }, [tickets, search, statusFilter, categoryFilter, categoryLabels]);
+  }, [tickets, search, statusFilter, categoryFilter, priorityFilter, categoryLabels]);
 
-  // Stats
   const stats = useMemo(() => {
     const total = tickets.length;
     const open = tickets.filter(t => t.status === "open").length;
     const closed = total - open;
-    // Avg response (closed - created)
     const closedT = tickets.filter(t => t.status !== "open" && t.updated_at);
     const avgMin = closedT.length
       ? Math.floor(closedT.reduce((a, t) => a + (new Date(t.updated_at!).getTime() - new Date(t.created_at).getTime()), 0) / closedT.length / 60000)
       : 0;
     const rate = total ? Math.round((closed / total) * 100) : 0;
-    return { total, open, closed, avgMin, rate };
+    const critical = tickets.filter(t => detectPriority(t) === "critical").length;
+    return { total, open, closed, avgMin, rate, critical };
   }, [tickets]);
+
+  const pinnedTickets = useMemo(() => filtered.filter(t => pins.includes(t.id)), [filtered, pins]);
+  const unpinnedFiltered = useMemo(() => filtered.filter(t => !pins.includes(t.id)), [filtered, pins]);
 
   const grouped = useMemo(() => {
     const m = new Map<string, EnhancedTicket[]>();
-    filtered.forEach(t => {
+    unpinnedFiltered.forEach(t => {
       const k = dateGroup(t.created_at);
       if (!m.has(k)) m.set(k, []);
       m.get(k)!.push(t);
     });
     return Array.from(m.entries());
-  }, [filtered]);
+  }, [unpinnedFiltered]);
 
   const allCategories = useMemo(() => {
     const set = new Set<string>();
@@ -208,11 +241,32 @@ export function TicketEnhancer({ tickets, categoryLabels, onOpen, onReopen, onDu
     return `${Math.floor(h / 24)}h`;
   }
 
+  function slaInfo(t: EnhancedTicket) {
+    void tick;
+    const elapsed = Date.now() - new Date(t.created_at).getTime();
+    const total = SLA_HOURS * 3600000;
+    const remainingMs = Math.max(0, total - elapsed);
+    const pct = Math.min(100, Math.round((elapsed / total) * 100));
+    return { remainingMs, pct, breached: remainingMs === 0 };
+  }
+  function fmtSla(ms: number): string {
+    if (ms === 0) return "SLA terlewat";
+    const h = Math.floor(ms / 3600000);
+    const m = Math.floor((ms % 3600000) / 60000);
+    if (h > 0) return `${h}j ${m}m`;
+    return `${m}m`;
+  }
+
   function rateTicket(id: string, stars: number) {
     saveRating(id, stars);
     setRatings(getRatings());
-    toast({ title: `Rating ${stars} bintang tersimpan ⭐`, description: "Terima kasih atas penilaiannya!" });
+    toast({ title: `Rating ${stars} bintang tersimpan ⭐` });
     setRatingTicket(null);
+  }
+
+  function copyReply(text: string) {
+    navigator.clipboard.writeText(text);
+    toast({ title: "📋 Saran balasan disalin", description: "Tempel di chat tiket" });
   }
 
   return (
