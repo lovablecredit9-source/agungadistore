@@ -35,8 +35,8 @@ Deno.serve(async (req) => {
     if (payMethod === "gem") {
       const gemCost = item.cost_gems || 0;
       if (gemCost <= 0) return Response.json({ error: "Pembayaran gem belum tersedia untuk item ini" }, { status: 200, headers: corsHeaders });
-      const { data: prof } = await admin.from("game_profiles").select("gems").eq("visitor_id", visitorId).maybeSingle();
-      const userGems = prof?.gems || 0;
+      const { data: accountGems } = await admin.rpc("get_account_gems", { p_visitor_id: visitorId });
+      const userGems = Number(accountGems) || 0;
       if (userGems < gemCost) {
         return Response.json({ error: `Gem tidak cukup. Butuh ${gemCost} 💎, kamu punya ${userGems} 💎.` }, { status: 200, headers: corsHeaders });
       }
