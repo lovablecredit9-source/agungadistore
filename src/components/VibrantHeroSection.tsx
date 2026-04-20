@@ -141,48 +141,7 @@ export default function VibrantHeroSection({
     },
   ], [onFlashSale, onWholesale, onNewArrivals, onPremium]);
 
-  const personaTabs: PersonaTab[] = useMemo(() => [
-    {
-      id: "for-you",
-      label: "Untuk Kamu",
-      icon: <Sparkles className="w-3.5 h-3.5" />,
-      items: [
-        { emoji: "🎧", title: "Earbuds Pro", sub: "Best match · 96%", tag: "Pilihan", tagTone: "bg-purple-500/15 text-purple-600 dark:text-purple-300" },
-        { emoji: "👟", title: "Sneakers Original", sub: "Sesuai gaya kamu", tag: "Match", tagTone: "bg-pink-500/15 text-pink-600 dark:text-pink-300" },
-        { emoji: "🎮", title: "Gaming Bundle", sub: "Diskon khusus", tag: "−25%", tagTone: "bg-emerald-500/15 text-emerald-600 dark:text-emerald-300" },
-      ],
-    },
-    {
-      id: "trending",
-      label: "Trending",
-      icon: <Flame className="w-3.5 h-3.5" />,
-      items: [
-        { emoji: "🔥", title: "Hoodie Oversize", sub: "1.2k dilihat hari ini", tag: "#1", tagTone: "bg-red-500/15 text-red-600 dark:text-red-300" },
-        { emoji: "📱", title: "Powerbank 20K", sub: "856 dilihat", tag: "#2", tagTone: "bg-orange-500/15 text-orange-600 dark:text-orange-300" },
-        { emoji: "⌚", title: "Smartwatch X", sub: "612 dilihat", tag: "#3", tagTone: "bg-amber-500/15 text-amber-600 dark:text-amber-300" },
-      ],
-    },
-    {
-      id: "history",
-      label: "Riwayat",
-      icon: <Clock className="w-3.5 h-3.5" />,
-      items: [
-        { emoji: "🕒", title: "Lihat lagi koleksi", sub: "Berdasarkan kunjungan", tag: "Resume", tagTone: "bg-blue-500/15 text-blue-600 dark:text-blue-300" },
-        { emoji: "💾", title: "Wishlist tersimpan", sub: "Cek harga terbaru", tag: "Saved", tagTone: "bg-cyan-500/15 text-cyan-600 dark:text-cyan-300" },
-        { emoji: "🛒", title: "Keranjang aktif", sub: "Selesaikan checkout", tag: "Pending", tagTone: "bg-yellow-500/15 text-yellow-700 dark:text-yellow-300" },
-      ],
-    },
-  ], []);
-
-  const activePersona = personaTabs.find((p) => p.id === persona)!;
   const previewAction = actions.find((a) => a.id === previewId);
-
-  const handlePersonaClick = (id: PersonaTab["id"]) => {
-    setPersona(id);
-    if (id === "trending") onFlashSale();
-    else if (id === "history") onCatalog();
-    else onShop();
-  };
 
   return (
     <section className="relative">
