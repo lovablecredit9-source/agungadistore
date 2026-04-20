@@ -2717,6 +2717,7 @@ const Index = () => {
               />
             ) : (
               <>
+                <div className={banned ? "pointer-events-none select-none opacity-60" : ""}>
                 {/* === Wallet Dashboard — clean minimal hero === */}
                 <WalletDashboard
                   username={userBalance.username}
@@ -2773,6 +2774,7 @@ const Index = () => {
                     )}
                   </CardContent>
                 </Card>
+                </div>
 
                 {/* Auth: Logout, Switch Account, Login History */}
                 <BalanceAuth
@@ -2801,6 +2803,7 @@ const Index = () => {
 
 
 
+                <div className={banned ? "pointer-events-none select-none opacity-60" : ""}>
                 {deposits.length > 0 && (
                   <>
                     <h3 className="font-bold text-sm flex items-center gap-1.5"><History className="w-4 h-4" /> {t("deposit.history", lang)}</h3>
@@ -3008,6 +3011,7 @@ const Index = () => {
                     </div>
                   </div>
                 )}
+                </div>
               </>
             )}
           </div>
