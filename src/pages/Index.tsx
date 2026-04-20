@@ -1633,9 +1633,6 @@ const Index = () => {
               ))}
             </div>
 
-            {/* Engagement Hub: Auto Flash Sale + Daily Spin + Mystery Box */}
-            <EngagementHub />
-
             {/* Vibrant Hero - new premium feature */}
             <VibrantHeroSection
               productCount={products.length}
@@ -2700,27 +2697,6 @@ const Index = () => {
 
         {tab === "saldo" && (
           <div className="space-y-4 animate-fade-in">
-            {/* Hero Header */}
-            <div className="relative overflow-hidden rounded-2xl p-5 glow-border" style={{ background: "linear-gradient(135deg, hsl(270, 70%, 55%) 0%, hsl(260, 65%, 50%) 50%, hsl(250, 60%, 45%) 100%)" }}>
-              <div className="absolute inset-0">
-                <div className="absolute -top-8 -right-8 w-40 h-40 rounded-full bg-white/20 blur-3xl animate-pulse" />
-                <div className="absolute -bottom-8 -left-8 w-28 h-28 rounded-full bg-white/15 blur-2xl animate-pulse" style={{ animationDelay: "1.2s" }} />
-                <div className="absolute inset-0 shimmer" />
-              </div>
-              <div className="relative z-10 flex items-center gap-4">
-                <div className="relative floating">
-                  <div className="absolute -inset-1 bg-white/30 rounded-2xl blur-md" />
-                  <div className="relative w-14 h-14 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-2xl ring-2 ring-white/30">
-                    <Wallet className="w-7 h-7 text-white" />
-                  </div>
-                </div>
-                <div>
-                  <h2 className="text-xl font-extrabold text-white drop-shadow-lg">{t("balance.title", lang)}</h2>
-                  <p className="text-white/80 text-xs font-medium mt-0.5">{userBalance ? `Hai, ${userBalance.username}` : "Kelola saldo akun kamu"}</p>
-                </div>
-              </div>
-            </div>
-
             {!userBalance ? (
               <BalanceAuth
                 currentUser={null}
