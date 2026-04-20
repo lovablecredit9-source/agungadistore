@@ -305,7 +305,7 @@ const Index = () => {
   const { theme, setTheme, resolvedTheme, customBgUrl, setCustomBgUrl } = useTheme();
   const customBgInputRef = useRef<HTMLInputElement>(null);
   const [lang, setLang] = useLang();
-  const tab: Tab = TAB_PATHS[location.pathname] || "musik";
+  const tab: Tab = TAB_PATHS[location.pathname] || "beranda";
   const setTab = useCallback((t: Tab) => {
     navigate(PATH_FROM_TAB[t] || "/", { replace: false });
   }, [navigate]);
