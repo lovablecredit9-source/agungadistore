@@ -12,7 +12,7 @@ import {
   HelpCircle, X, ExternalLink, Search, ChevronLeft, ChevronRight, FileText,
   Heart, Send, ImagePlus, AlertCircle, History, Wallet, ArrowUpCircle, ArrowDownCircle,
   Bell, Check, CheckCheck, Globe, Edit2, ShoppingCart, Plus, Minus, Trash2,
-  Moon, Sun, Lock, Tag, Music, Megaphone, Diamond, Image as ImageIcon, Gem, Sparkles, Palette, CalendarDays, Gamepad2, RefreshCw,
+  Moon, Sun, Lock, Tag, Music, Music2, Megaphone, Diamond, Image as ImageIcon, Gem, Sparkles, Palette, CalendarDays, Gamepad2, RefreshCw,
   Eye, LayoutGrid, Rows3, Flame, SlidersHorizontal, Zap, TrendingUp, Award, Activity, Inbox, User, Phone, Gift
 } from "lucide-react";
 import CountUp from "@/components/CountUp";
@@ -39,6 +39,7 @@ import {
 import { useLang, t, type Lang } from "@/lib/i18n";
 import { z } from "zod";
 import PlaylistTab, { type PlaybackState } from "@/components/PlaylistTab";
+import MusicHub, { type MusicSubTab } from "@/components/MusicHub";
 import LanguageSelector from "@/components/LanguageSelector";
 import { LANGUAGES } from "@/lib/languages";
 import InstallPrompt from "@/components/InstallPrompt";
@@ -61,7 +62,7 @@ import WalletDashboard from "@/components/WalletDashboard";
 import VoucherNavigation from "@/components/VoucherNavigation";
 import { useAccountBan } from "@/hooks/useAccountBan";
 
-type Tab = "beranda" | "produk" | "voucher" | "history" | "likes" | "tiket" | "saldo" | "playlist" | "publik" | "sponsor" | "streak" | "streakevent" | "streakshop" | "adminpost" | "game" | "plus" | "update";
+type Tab = "musik" | "beranda" | "produk" | "voucher" | "history" | "likes" | "tiket" | "saldo" | "playlist" | "publik" | "sponsor" | "streak" | "streakevent" | "streakshop" | "adminpost" | "game" | "plus" | "update";
 
 interface UserBalance {
   id: string;
@@ -273,7 +274,8 @@ function ImageCarousel({ images, className = "w-full h-44" }: { images: string[]
 }
 
 const TAB_PATHS: Record<string, Tab> = {
-  "/": "beranda",
+  "/": "musik",
+  "/musik": "musik",
   "/produk": "produk",
   "/voucher": "voucher",
   "/saldo": "saldo",
@@ -302,10 +304,11 @@ const Index = () => {
   const { theme, setTheme, resolvedTheme, customBgUrl, setCustomBgUrl } = useTheme();
   const customBgInputRef = useRef<HTMLInputElement>(null);
   const [lang, setLang] = useLang();
-  const tab: Tab = TAB_PATHS[location.pathname] || "beranda";
+  const tab: Tab = TAB_PATHS[location.pathname] || "musik";
   const setTab = useCallback((t: Tab) => {
     navigate(PATH_FROM_TAB[t] || "/", { replace: false });
   }, [navigate]);
+  const [musicSubTab, setMusicSubTab] = useState<MusicSubTab>("playlist");
   const [products, setProducts] = useState<Product[]>([]);
   const [productImages, setProductImages] = useState<ProductImage[]>([]);
   const [socialLinks, setSocialLinks] = useState<{ id: string; platform: string; label: string; url: string; icon_url: string | null; color_from: string; color_to: string; sort_order: number }[]>([]);
@@ -1546,6 +1549,15 @@ const Index = () => {
 
       {/* Content */}
       <main className="flex-1 max-w-lg mx-auto w-full px-4 py-4 pb-24">
+        {tab === "musik" && (
+          <MusicHub
+            subTab={musicSubTab}
+            onSubTabChange={setMusicSubTab}
+            onPlayExternal={(song) => playExternalRef.current?.(song)}
+            playlistSlot={null /* PlaylistTab is mounted persistently below */}
+          />
+        )}
+
         {tab === "beranda" && (
           <div className="space-y-5 animate-fade-in">
             {/* Info: Geser navigasi */}
@@ -3118,8 +3130,8 @@ const Index = () => {
           </div>
         )}
 
-        {/* PlaylistTab always mounted, hidden when not active */}
-        <div className={tab === "playlist" ? "" : "hidden"}>
+        {/* PlaylistTab always mounted (audio persistence). Visible on legacy /playlist OR Musik hub Playlist sub-tab. */}
+        <div className={tab === "playlist" || (tab === "musik" && musicSubTab === "playlist") ? "" : "hidden"}>
           <PlaylistTab onPlaybackChange={setPlaybackState} onTogglePlay={togglePlayRef} onOpenFullPlayer={openFullPlayerRef} onPlayExternal={playExternalRef} />
         </div>
 
@@ -4633,15 +4645,13 @@ const Index = () => {
         <div className="absolute inset-0 bg-card/80 backdrop-blur-xl border-t border-white/10 shadow-[0_-8px_32px_rgba(0,0,0,0.12)]" />
         <div className="relative flex max-w-lg mx-auto overflow-x-auto scrollbar-hide px-1 py-1">
           {([
-            { key: "beranda" as Tab, icon: Home, label: t("nav.home", lang), gradient: "from-blue-500 to-cyan-400" },
+            { key: "musik" as Tab, icon: Music2, label: "Musik", gradient: "from-fuchsia-600 via-purple-600 to-indigo-600" },
             { key: "produk" as Tab, icon: Package, label: t("nav.products", lang), gradient: "from-orange-500 to-amber-400" },
             { key: "voucher" as Tab, icon: Ticket, label: t("nav.voucher", lang), gradient: "from-emerald-500 to-green-400" },
             { key: "saldo" as Tab, icon: Wallet, label: t("nav.balance", lang), gradient: "from-violet-500 to-purple-400" },
             { key: "likes" as Tab, icon: Heart, label: t("nav.likes", lang), gradient: "from-pink-500 to-rose-400" },
             { key: "history" as Tab, icon: Clock, label: t("nav.history", lang), gradient: "from-sky-500 to-blue-400" },
             { key: "tiket" as Tab, icon: AlertCircle, label: t("nav.ticket", lang), gradient: "from-red-500 to-orange-400" },
-            { key: "playlist" as Tab, icon: Music, label: t("nav.playlist", lang), gradient: "from-fuchsia-500 to-pink-400" },
-            { key: "publik" as Tab, icon: Globe, label: "Publik", gradient: "from-teal-500 to-emerald-400" },
             { key: "sponsor" as Tab, icon: Megaphone, label: "Sponsor", gradient: "from-amber-500 to-yellow-400" },
             { key: "streak" as Tab, icon: CalendarDays, label: "Streak", gradient: "from-orange-600 to-red-500" },
             { key: "streakevent" as Tab, icon: CalendarDays, label: "Streak Event", gradient: "from-pink-500 to-purple-600" },
