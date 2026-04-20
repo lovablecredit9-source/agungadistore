@@ -12,7 +12,7 @@ import {
   HelpCircle, X, ExternalLink, Search, ChevronLeft, ChevronRight, FileText,
   Heart, Send, ImagePlus, AlertCircle, History, Wallet, ArrowUpCircle, ArrowDownCircle,
   Bell, Check, CheckCheck, Globe, Edit2, ShoppingCart, Plus, Minus, Trash2,
-  Moon, Sun, Lock, Tag, Music, Megaphone, Diamond, Image as ImageIcon, Gem, Sparkles, Palette, CalendarDays, Gamepad2, RefreshCw,
+  Moon, Sun, Lock, Tag, Music, Music2, Megaphone, Diamond, Image as ImageIcon, Gem, Sparkles, Palette, CalendarDays, Gamepad2, RefreshCw,
   Eye, LayoutGrid, Rows3, Flame, SlidersHorizontal, Zap, TrendingUp, Award, Activity, Inbox, User, Phone, Gift
 } from "lucide-react";
 import CountUp from "@/components/CountUp";
@@ -39,6 +39,7 @@ import {
 import { useLang, t, type Lang } from "@/lib/i18n";
 import { z } from "zod";
 import PlaylistTab, { type PlaybackState } from "@/components/PlaylistTab";
+import MusicHub from "@/components/MusicHub";
 import LanguageSelector from "@/components/LanguageSelector";
 import { LANGUAGES } from "@/lib/languages";
 import InstallPrompt from "@/components/InstallPrompt";
@@ -61,7 +62,7 @@ import WalletDashboard from "@/components/WalletDashboard";
 import VoucherNavigation from "@/components/VoucherNavigation";
 import { useAccountBan } from "@/hooks/useAccountBan";
 
-type Tab = "beranda" | "produk" | "voucher" | "history" | "likes" | "tiket" | "saldo" | "playlist" | "publik" | "sponsor" | "streak" | "streakevent" | "streakshop" | "adminpost" | "game" | "plus" | "update";
+type Tab = "musik" | "produk" | "voucher" | "history" | "likes" | "tiket" | "saldo" | "playlist" | "publik" | "sponsor" | "streak" | "streakevent" | "streakshop" | "adminpost" | "game" | "plus" | "update";
 
 interface UserBalance {
   id: string;
@@ -273,7 +274,8 @@ function ImageCarousel({ images, className = "w-full h-44" }: { images: string[]
 }
 
 const TAB_PATHS: Record<string, Tab> = {
-  "/": "beranda",
+  "/": "musik",
+  "/musik": "musik",
   "/produk": "produk",
   "/voucher": "voucher",
   "/saldo": "saldo",
@@ -302,7 +304,7 @@ const Index = () => {
   const { theme, setTheme, resolvedTheme, customBgUrl, setCustomBgUrl } = useTheme();
   const customBgInputRef = useRef<HTMLInputElement>(null);
   const [lang, setLang] = useLang();
-  const tab: Tab = TAB_PATHS[location.pathname] || "beranda";
+  const tab: Tab = TAB_PATHS[location.pathname] || "musik";
   const setTab = useCallback((t: Tab) => {
     navigate(PATH_FROM_TAB[t] || "/", { replace: false });
   }, [navigate]);
