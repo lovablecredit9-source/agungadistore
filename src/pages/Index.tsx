@@ -58,6 +58,7 @@ import LoginGate from "@/components/LoginGate";
 import WhatsAppChat from "@/components/WhatsAppChat";
 import EngagementHub from "@/components/EngagementHub";
 import WalletDashboard from "@/components/WalletDashboard";
+import VoucherNavigation from "@/components/VoucherNavigation";
 import { useAccountBan } from "@/hooks/useAccountBan";
 
 type Tab = "beranda" | "produk" | "voucher" | "history" | "likes" | "tiket" | "saldo" | "playlist" | "publik" | "sponsor" | "streak" | "streakevent" | "streakshop" | "adminpost" | "game" | "plus" | "update";
