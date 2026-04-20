@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { getVisitorId } from "@/lib/visitor-id";
 
@@ -15,6 +15,7 @@ export function useAccountBan() {
   const [banned, setBanned] = useState(false);
   const [info, setInfo] = useState<BanInfo | null>(null);
   const [loading, setLoading] = useState(true);
+  const channelNameRef = useRef(`account_bans_changes_${crypto.randomUUID()}`);
 
   const refresh = useCallback(async () => {
     const visitor_id = getVisitorId();
@@ -27,12 +28,14 @@ export function useAccountBan() {
 
   useEffect(() => {
     refresh();
+
     const channel = supabase
-      .channel("account_bans_changes")
+      .channel(channelNameRef.current)
       .on("postgres_changes", { event: "*", schema: "public", table: "account_bans" }, () => {
         refresh();
       })
       .subscribe();
+
     return () => {
       supabase.removeChannel(channel);
     };
