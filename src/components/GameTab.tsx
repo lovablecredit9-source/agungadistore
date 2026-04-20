@@ -230,6 +230,7 @@ export default function GameTab() {
           <NeonGameExtras visitorId={visitorId} onPlayDailyChallenge={(g) => setMode(g as GameMode)} />
         </div>
       </motion.div>
+      </BanLock>
     </div>
   );
 }
