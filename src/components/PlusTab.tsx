@@ -10,7 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useGameCredits, GameCreditsBadge } from "@/components/games/GameCredits";
 import { useGameBalance, GameBalanceBadge } from "@/components/games/GameBalance";
 import { motion } from "framer-motion";
-import { BanBanner } from "@/components/BanBanner";
+import { BanBanner, BanLock } from "@/components/BanBanner";
 
 function formatPrice(price: number) {
   return new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", minimumFractionDigits: 0 }).format(price);
@@ -233,6 +233,7 @@ export default function PlusTab() {
       <h2 className="text-lg font-extrabold flex items-center gap-2">
         <Sparkles className="w-5 h-5 text-primary" /> Plus
       </h2>
+      <BanLock fallbackLabel="Plus / Streak Shop">
 
       <Card className="border-2 border-primary/20 bg-gradient-to-br from-primary/5 to-accent/5">
         <CardContent className="p-4">
@@ -383,6 +384,7 @@ export default function PlusTab() {
           />
         ))}
       </SectionCard>
+      </BanLock>
     </div>
   );
 }
