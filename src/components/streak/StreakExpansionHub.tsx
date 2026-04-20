@@ -34,10 +34,9 @@ export default function StreakExpansionHub({ visitorId, onUpdate }: Props) {
     setLoading(true);
     try {
       const { data: res, error } = await supabase.functions.invoke("streak-expansion", { body: { action: "overview", visitorId } });
-      if (error || res?.error) throw new Error(res?.error || error?.message);
-      setData(res);
-    } catch (e) {
-      toast({ title: "Gagal memuat", description: e instanceof Error ? e.message : "Error", variant: "destructive" });
+      if (!error && !res?.error && res) setData(res);
+    } catch {
+      // silent — avoid spamming toast on transient network errors
     } finally {
       setLoading(false);
     }
