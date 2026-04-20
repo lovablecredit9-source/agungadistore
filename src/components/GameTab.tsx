@@ -30,6 +30,8 @@ import GamePvPBattle from "@/components/games/GamePvPBattle";
 import GameQuestChain from "@/components/games/GameQuestChain";
 import GameClanSystem from "@/components/games/GameClanSystem";
 import GameSeasonPass from "@/components/games/GameSeasonPass";
+import GameLevelHero from "@/components/games/GameLevelHero";
+import GameLevelMiniBar from "@/components/games/GameLevelMiniBar";
 import { Zap } from "lucide-react";
 
 import gameSuitImg from "@/assets/game-suit.png";
@@ -124,6 +126,7 @@ export default function GameTab() {
             <img src={game.image} alt={game.title} className="w-6 h-6 object-contain" /> {game.title}
           </h2>
         </div>
+        <GameLevelMiniBar visitorId={visitorId} />
         <GameComponent />
         </BanLock>
       </div>
@@ -149,6 +152,11 @@ export default function GameTab() {
         <p className="text-[10px] text-muted-foreground mb-3 px-1">
           💡 <strong>Saldo IN</strong> hanya untuk Game/Streak/Storage, bukan produk.
         </p>
+
+        {/* Hero level pemain + booster x2 */}
+        <div className="mb-4">
+          <GameLevelHero visitorId={visitorId} />
+        </div>
 
         {/* Hero Banner */}
         <motion.div
