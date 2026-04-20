@@ -83,3 +83,21 @@ export function BanGuard({ children, fallbackLabel = "fitur ini" }: { children: 
   );
 }
 
+export function BanLock({ children, fallbackLabel = "fitur ini" }: { children: ReactNode; fallbackLabel?: string }) {
+  const { banned, info } = useAccountBan();
+  const [open, setOpen] = useState(false);
+  if (!banned) return <>{children}</>;
+  return (
+    <div className="relative">
+      <div className="pointer-events-none select-none opacity-60">{children}</div>
+      <button
+        type="button"
+        aria-label="Akun dibanned, ketuk untuk detail"
+        onClick={() => setOpen(true)}
+        className="absolute inset-0 z-30 bg-transparent cursor-not-allowed"
+      />
+      <BanDetailsDialog open={open} onOpenChange={setOpen} info={info} fallbackLabel={fallbackLabel} />
+    </div>
+  );
+}
+
