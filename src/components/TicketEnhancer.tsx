@@ -35,6 +35,9 @@ interface TicketEnhancerProps {
 }
 
 const RATING_KEY = "ticket_ratings_v1";
+const PIN_KEY = "ticket_pins_v1";
+const NOTIFY_KEY = "ticket_notify_v1";
+const SLA_HOURS = 24; // SLA target response
 
 function getRatings(): Record<string, number> {
   try { return JSON.parse(localStorage.getItem(RATING_KEY) || "{}"); } catch { return {}; }
@@ -43,6 +46,72 @@ function saveRating(id: string, stars: number) {
   const all = getRatings();
   all[id] = stars;
   localStorage.setItem(RATING_KEY, JSON.stringify(all));
+}
+function getPins(): string[] {
+  try { return JSON.parse(localStorage.getItem(PIN_KEY) || "[]"); } catch { return []; }
+}
+function savePins(arr: string[]) { localStorage.setItem(PIN_KEY, JSON.stringify(arr)); }
+function getNotify(): string[] {
+  try { return JSON.parse(localStorage.getItem(NOTIFY_KEY) || "[]"); } catch { return []; }
+}
+function saveNotify(arr: string[]) { localStorage.setItem(NOTIFY_KEY, JSON.stringify(arr)); }
+
+// Sentiment heuristic — very simple keyword detection
+function detectSentiment(text: string): "urgent" | "negative" | "positive" | "neutral" {
+  const t = (text || "").toLowerCase();
+  if (/(urgent|segera|cepat|tolong banget|penting|asap|mendesak|darurat)/.test(t)) return "urgent";
+  if (/(marah|kecewa|jelek|buruk|parah|nipu|tipu|lambat|lama banget|bobrok|bangsat|anjir|kampret|sialan)/.test(t)) return "negative";
+  if (/(terima kasih|makasih|mantap|bagus|keren|puas|hebat|top|oke banget)/.test(t)) return "positive";
+  return "neutral";
+}
+
+// Priority — based on age + sentiment + status
+function detectPriority(t: { status: string; created_at: string; description: string }): "low" | "medium" | "high" | "critical" {
+  const ageH = (Date.now() - new Date(t.created_at).getTime()) / 3600000;
+  const s = detectSentiment(t.description);
+  if (t.status === "open" && (s === "urgent" || s === "negative") && ageH > 12) return "critical";
+  if (t.status === "open" && ageH > 24) return "high";
+  if (t.status === "open" && (s === "urgent" || ageH > 6)) return "medium";
+  return "low";
+}
+
+// AI Quick Replies — context aware suggestions
+function suggestReplies(t: { description: string; category?: string }): string[] {
+  const desc = (t.description || "").toLowerCase();
+  const cat = t.category || "";
+  if (cat === "deposit" || /deposit|transfer|saldo/.test(desc)) {
+    return [
+      "Mohon kirim bukti transfer + jam transaksi",
+      "Saldo sudah masuk, mohon refresh aplikasi",
+      "Kami cek dulu mutasi ya, mohon tunggu 5 menit",
+    ];
+  }
+  if (cat === "voucher" || /voucher|kode|klaim/.test(desc)) {
+    return [
+      "Kode voucher sudah expired, kami kirim ulang",
+      "Voucher sudah aktif, silakan klaim ulang",
+      "Mohon screenshot error yang muncul",
+    ];
+  }
+  if (cat === "refund" || /refund|kembali/.test(desc)) {
+    return [
+      "Refund diproses 1x24 jam ke saldo",
+      "Mohon konfirmasi rekening tujuan refund",
+      "Refund sudah masuk, silakan dicek",
+    ];
+  }
+  if (cat === "bug" || /bug|error|tidak bisa|gagal/.test(desc)) {
+    return [
+      "Mohon coba clear cache & buka ulang aplikasi",
+      "Bug sudah diperbaiki, silakan update",
+      "Tim teknis sedang investigasi, mohon tunggu",
+    ];
+  }
+  return [
+    "Halo, terima kasih sudah menghubungi kami",
+    "Mohon tunggu, kami cek dulu detailnya",
+    "Sudah kami tindak lanjuti, ada lagi yang bisa dibantu?",
+  ];
 }
 
 function timeAgo(iso: string): string {
