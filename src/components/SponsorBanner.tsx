@@ -236,63 +236,37 @@ export default function SponsorBanner({ likedSponsorIds = new Set(), onToggleLik
             </div>
           </div>
         </div>
-        {/* Filter & Sort Bar - selalu tampil */}
-        <div className="flex items-center gap-2 mb-2">
-          <Select value={filterCategory} onValueChange={v => { setFilterCategory(v); setCurrent(0); }}>
-            <SelectTrigger className="h-7 text-[11px] flex-1 min-w-0">
-              <Filter className="w-3 h-3 mr-1 shrink-0" />
-              <SelectValue placeholder="Kategori" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Semua Kategori</SelectItem>
-              {categories.map(c => (
-                <SelectItem key={c} value={c}>{c}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <button
-            onClick={() => setSortOrder(o => o === "newest" ? "oldest" : "newest")}
-            className="flex items-center gap-1 h-7 px-2 rounded-md border bg-background text-[11px] hover:bg-muted transition-colors shrink-0"
-          >
-            <ArrowUpDown className="w-3 h-3" />
-            {sortOrder === "newest" ? "Terbaru" : "Terlama"}
-          </button>
-        </div>
-        {/* Price Range Filter */}
-        <div className="flex items-center gap-2 mb-2">
-          <input
-            type="number"
-            placeholder="Harga min"
-            value={minPrice}
-            onChange={e => { setMinPrice(e.target.value); setCurrent(0); }}
-            className="flex-1 h-7 px-2 text-[11px] rounded-md border bg-background focus:outline-none focus:ring-1 focus:ring-primary min-w-0"
-          />
-          <span className="text-[10px] text-muted-foreground">-</span>
-          <input
-            type="number"
-            placeholder="Harga max"
-            value={maxPrice}
-            onChange={e => { setMaxPrice(e.target.value); setCurrent(0); }}
-            className="flex-1 h-7 px-2 text-[11px] rounded-md border bg-background focus:outline-none focus:ring-1 focus:ring-primary min-w-0"
+        {/* Advanced Sponsor Navigation Toolbar */}
+        <div className="mb-3">
+          <ProductNavToolbar
+            value={{
+              search,
+              category: filterCategory === "all" ? "all" : filterCategory,
+              sort: sortOrder,
+              view: "list" as ViewMode,
+              minPrice,
+              maxPrice,
+              inStockOnly: false,
+              warrantyOnly: false,
+            }}
+            onChange={(next) => {
+              if (next.search !== undefined) { setSearch(next.search); setCurrent(0); }
+              if (next.category !== undefined) { setFilterCategory(next.category); setCurrent(0); }
+              if (next.sort !== undefined) setSortOrder(next.sort as SortOrder);
+              if (next.minPrice !== undefined) { setMinPrice(next.minPrice); setCurrent(0); }
+              if (next.maxPrice !== undefined) { setMaxPrice(next.maxPrice); setCurrent(0); }
+            }}
+            categories={["all", ...categories]}
+            categoryCounts={sponsorCategoryCounts}
+            storageKey="sponsor_search_history_v1"
+            popularSuggestions={popularSponsorTerms}
+            showStockFilter={false}
+            showWarrantyFilter={false}
+            totalCount={sponsors.length}
+            resultCount={filtered.length}
+            compact
           />
         </div>
-        {showSearch && (
-          <div className="relative mb-2">
-            <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
-            <input
-              type="text"
-              placeholder="Cari sponsor (nama, penjual, ID)..."
-              value={search}
-              onChange={e => { setSearch(e.target.value); setCurrent(0); }}
-              className="w-full pl-7 pr-7 py-1.5 text-xs rounded-lg border bg-background focus:outline-none focus:ring-1 focus:ring-primary"
-            />
-            {search && (
-              <button onClick={() => { setSearch(""); setCurrent(0); }} className="absolute right-2 top-1/2 -translate-y-1/2">
-                <X className="w-3.5 h-3.5 text-muted-foreground" />
-              </button>
-            )}
-          </div>
-        )}
         {!sponsor && q && (
           <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">
             <Search className="w-8 h-8 mb-2 opacity-30" />
