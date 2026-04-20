@@ -2439,12 +2439,20 @@ const Index = () => {
             })()}
 
             {history.length > 0 && (
-              <div className="flex items-center justify-between bg-card/80 backdrop-blur-sm rounded-xl p-3 border border-border/50 shadow-sm">
+              <div className="flex items-center justify-between bg-card/80 backdrop-blur-sm rounded-xl p-3 border border-border/50 shadow-sm gap-2 flex-wrap">
                 <Button size="sm" variant="outline" onClick={toggleSelectAll} className="gap-1.5 text-xs rounded-lg font-bold">
                   <Checkbox checked={history.length > 0 && selectedHistoryIds.size === history.length} className="pointer-events-none" />
                   Pilih Semua ({selectedHistoryIds.size}/{history.length})
                 </Button>
-                <div className="flex gap-2">
+                <div className="flex items-center gap-2">
+                  <Button
+                    size="sm"
+                    variant={smartHistory ? "default" : "outline"}
+                    onClick={() => setSmartHistory(v => !v)}
+                    className={`gap-1 rounded-full text-xs font-bold ${smartHistory ? "bg-gradient-to-r from-primary to-accent text-primary-foreground" : ""}`}
+                  >
+                    <Sparkles className="w-3 h-3" /> {smartHistory ? "Mode Pintar ✓" : "Mode Pintar"}
+                  </Button>
                   <Button size="sm" variant="outline" onClick={downloadHistoryPDF} className="gap-1 rounded-full border-primary/30 text-primary hover:bg-primary/10 text-xs font-bold">
                     <Download className="w-3 h-3" /> PDF
                   </Button>
