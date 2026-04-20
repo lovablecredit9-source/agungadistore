@@ -24,6 +24,7 @@ import StreakPass from "./StreakPass";
 import WeeklyQuests from "./WeeklyQuests";
 import SmartReminder from "./SmartReminder";
 import GemShop from "./GemShop";
+import StreakExpansionHub from "./StreakExpansionHub";
 import StreakBattleArena from "./StreakBattleArena";
 import StreakTournament from "./StreakTournament";
 import StreakComboMultiplier from "./StreakComboMultiplier";
@@ -561,6 +562,7 @@ export default function NeonStreakHub({ visitorId, forcedView }: Props) {
         <div className="space-y-3">
           <MegaShopHub visitorId={visitorId} onUpdate={loadAll} />
           <StreakShopFlashDeals visitorId={visitorId} onUpdate={loadAll} />
+          <StreakExpansionHub visitorId={visitorId} onUpdate={loadAll} />
           <StreakEventShop visitorId={visitorId} onUpdate={loadAll} />
           <GemShop visitorId={visitorId} onUpdate={loadAll} />
           <Button
