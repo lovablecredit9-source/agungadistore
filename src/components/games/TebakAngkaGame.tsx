@@ -118,7 +118,6 @@ export default function TebakAngkaGame() {
       setLastGuessDirection(g < targetNumber ? "higher" : "lower");
       const newWrong = wrongCount + 1;
       setWrongCount(newWrong);
-      if (revealedHints < hints.length) setRevealedHints(r => r + 1);
       if (newWrong >= MAX_WRONG) {
         if (timerRef.current) clearInterval(timerRef.current);
         setResult("wrong");
@@ -263,9 +262,9 @@ export default function TebakAngkaGame() {
                 </motion.div>
               ))}
               {revealedHints < hints.length && gameActive && (
-                <Button variant="ghost" size="sm" onClick={() => setRevealedHints(r => r + 1)} className="text-xs gap-1">
-                  <Lightbulb className="w-3 h-3" /> Petunjuk ({revealedHints}/{hints.length})
-                </Button>
+                <p className="text-[10px] text-muted-foreground text-center italic">
+                  Sisa {hints.length - revealedHints} petunjuk — pakai tombol <b>Hint</b> di atas (power-up)
+                </p>
               )}
             </div>
           )}
