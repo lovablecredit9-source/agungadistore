@@ -274,7 +274,8 @@ function ImageCarousel({ images, className = "w-full h-44" }: { images: string[]
 }
 
 const TAB_PATHS: Record<string, Tab> = {
-  "/": "musik",
+  "/": "beranda",
+  "/beranda": "beranda",
   "/musik": "musik",
   "/produk": "produk",
   "/voucher": "voucher",
