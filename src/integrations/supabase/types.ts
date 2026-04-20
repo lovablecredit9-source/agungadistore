@@ -3863,6 +3863,208 @@ export type Database = {
         }
         Relationships: []
       }
+      streak_community_boss_attacks: {
+        Row: {
+          boss_id: string
+          cost_paid: number
+          created_at: string
+          damage_dealt: number
+          id: string
+          is_killing_blow: boolean
+          visitor_id: string
+        }
+        Insert: {
+          boss_id: string
+          cost_paid?: number
+          created_at?: string
+          damage_dealt?: number
+          id?: string
+          is_killing_blow?: boolean
+          visitor_id: string
+        }
+        Update: {
+          boss_id?: string
+          cost_paid?: number
+          created_at?: string
+          damage_dealt?: number
+          id?: string
+          is_killing_blow?: boolean
+          visitor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "streak_community_boss_attacks_boss_id_fkey"
+            columns: ["boss_id"]
+            isOneToOne: false
+            referencedRelation: "streak_community_bosses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      streak_community_bosses: {
+        Row: {
+          attack_cost_coins: number
+          attack_damage_max: number
+          attack_damage_min: number
+          created_at: string
+          current_hp: number
+          description: string
+          ends_at: string
+          icon: string
+          id: string
+          is_active: boolean
+          is_defeated: boolean
+          max_hp: number
+          name: string
+          reward_coins: number
+          reward_gems: number
+          reward_label: string
+          starts_at: string
+          updated_at: string
+        }
+        Insert: {
+          attack_cost_coins?: number
+          attack_damage_max?: number
+          attack_damage_min?: number
+          created_at?: string
+          current_hp?: number
+          description?: string
+          ends_at?: string
+          icon?: string
+          id?: string
+          is_active?: boolean
+          is_defeated?: boolean
+          max_hp?: number
+          name: string
+          reward_coins?: number
+          reward_gems?: number
+          reward_label?: string
+          starts_at?: string
+          updated_at?: string
+        }
+        Update: {
+          attack_cost_coins?: number
+          attack_damage_max?: number
+          attack_damage_min?: number
+          created_at?: string
+          current_hp?: number
+          description?: string
+          ends_at?: string
+          icon?: string
+          id?: string
+          is_active?: boolean
+          is_defeated?: boolean
+          max_hp?: number
+          name?: string
+          reward_coins?: number
+          reward_gems?: number
+          reward_label?: string
+          starts_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      streak_daily_mystery_boxes: {
+        Row: {
+          cost_coins: number
+          cost_gems: number
+          created_at: string
+          daily_limit: number
+          description: string
+          icon: string
+          id: string
+          is_active: boolean
+          is_free: boolean
+          name: string
+          rarity: string
+          reward_pool: Json
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          cost_coins?: number
+          cost_gems?: number
+          created_at?: string
+          daily_limit?: number
+          description?: string
+          icon?: string
+          id?: string
+          is_active?: boolean
+          is_free?: boolean
+          name: string
+          rarity?: string
+          reward_pool?: Json
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          cost_coins?: number
+          cost_gems?: number
+          created_at?: string
+          daily_limit?: number
+          description?: string
+          icon?: string
+          id?: string
+          is_active?: boolean
+          is_free?: boolean
+          name?: string
+          rarity?: string
+          reward_pool?: Json
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      streak_daily_mystery_claims: {
+        Row: {
+          box_id: string
+          claim_date: string
+          cost_paid: number
+          created_at: string
+          id: string
+          payment_method: string
+          rarity: string
+          reward_label: string
+          reward_type: string
+          reward_value: number
+          visitor_id: string
+        }
+        Insert: {
+          box_id: string
+          claim_date?: string
+          cost_paid?: number
+          created_at?: string
+          id?: string
+          payment_method?: string
+          rarity?: string
+          reward_label?: string
+          reward_type: string
+          reward_value?: number
+          visitor_id: string
+        }
+        Update: {
+          box_id?: string
+          claim_date?: string
+          cost_paid?: number
+          created_at?: string
+          id?: string
+          payment_method?: string
+          rarity?: string
+          reward_label?: string
+          reward_type?: string
+          reward_value?: number
+          visitor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "streak_daily_mystery_claims_box_id_fkey"
+            columns: ["box_id"]
+            isOneToOne: false
+            referencedRelation: "streak_daily_mystery_boxes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       streak_discount_vouchers: {
         Row: {
           code: string
@@ -4316,6 +4518,101 @@ export type Database = {
           reward_type?: string
           reward_value?: number
           title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      streak_mini_event_progress: {
+        Row: {
+          claimed_at: string | null
+          created_at: string
+          current_value: number
+          event_id: string
+          id: string
+          is_claimed: boolean
+          updated_at: string
+          visitor_id: string
+        }
+        Insert: {
+          claimed_at?: string | null
+          created_at?: string
+          current_value?: number
+          event_id: string
+          id?: string
+          is_claimed?: boolean
+          updated_at?: string
+          visitor_id: string
+        }
+        Update: {
+          claimed_at?: string | null
+          created_at?: string
+          current_value?: number
+          event_id?: string
+          id?: string
+          is_claimed?: boolean
+          updated_at?: string
+          visitor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "streak_mini_event_progress_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "streak_mini_events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      streak_mini_events: {
+        Row: {
+          created_at: string
+          description: string
+          ends_at: string
+          event_type: string
+          icon: string
+          id: string
+          is_active: boolean
+          name: string
+          reward_coins: number
+          reward_gems: number
+          reward_label: string
+          sort_order: number
+          starts_at: string
+          target_value: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string
+          ends_at?: string
+          event_type?: string
+          icon?: string
+          id?: string
+          is_active?: boolean
+          name: string
+          reward_coins?: number
+          reward_gems?: number
+          reward_label?: string
+          sort_order?: number
+          starts_at?: string
+          target_value?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          ends_at?: string
+          event_type?: string
+          icon?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          reward_coins?: number
+          reward_gems?: number
+          reward_label?: string
+          sort_order?: number
+          starts_at?: string
+          target_value?: number
           updated_at?: string
         }
         Relationships: []
@@ -4823,6 +5120,149 @@ export type Database = {
           visitor_id?: string
         }
         Relationships: []
+      }
+      streak_rotating_shop_active: {
+        Row: {
+          created_at: string
+          daily_limit: number
+          discount_pct: number
+          id: string
+          item_id: string
+          rotation_date: string
+          slot_order: number
+        }
+        Insert: {
+          created_at?: string
+          daily_limit?: number
+          discount_pct?: number
+          id?: string
+          item_id: string
+          rotation_date?: string
+          slot_order?: number
+        }
+        Update: {
+          created_at?: string
+          daily_limit?: number
+          discount_pct?: number
+          id?: string
+          item_id?: string
+          rotation_date?: string
+          slot_order?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "streak_rotating_shop_active_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "streak_rotating_shop_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      streak_rotating_shop_items: {
+        Row: {
+          base_cost_coins: number
+          base_cost_gems: number
+          created_at: string
+          description: string
+          icon: string
+          id: string
+          is_active: boolean
+          name: string
+          rarity: string
+          reward_label: string
+          reward_type: string
+          reward_value: number
+          updated_at: string
+        }
+        Insert: {
+          base_cost_coins?: number
+          base_cost_gems?: number
+          created_at?: string
+          description?: string
+          icon?: string
+          id?: string
+          is_active?: boolean
+          name: string
+          rarity?: string
+          reward_label?: string
+          reward_type: string
+          reward_value?: number
+          updated_at?: string
+        }
+        Update: {
+          base_cost_coins?: number
+          base_cost_gems?: number
+          created_at?: string
+          description?: string
+          icon?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          rarity?: string
+          reward_label?: string
+          reward_type?: string
+          reward_value?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      streak_rotating_shop_purchases: {
+        Row: {
+          active_id: string
+          cost_paid: number
+          created_at: string
+          id: string
+          item_id: string
+          payment_method: string
+          purchase_date: string
+          reward_label: string
+          reward_type: string
+          reward_value: number
+          visitor_id: string
+        }
+        Insert: {
+          active_id: string
+          cost_paid?: number
+          created_at?: string
+          id?: string
+          item_id: string
+          payment_method?: string
+          purchase_date?: string
+          reward_label?: string
+          reward_type: string
+          reward_value?: number
+          visitor_id: string
+        }
+        Update: {
+          active_id?: string
+          cost_paid?: number
+          created_at?: string
+          id?: string
+          item_id?: string
+          payment_method?: string
+          purchase_date?: string
+          reward_label?: string
+          reward_type?: string
+          reward_value?: number
+          visitor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "streak_rotating_shop_purchases_active_id_fkey"
+            columns: ["active_id"]
+            isOneToOne: false
+            referencedRelation: "streak_rotating_shop_active"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "streak_rotating_shop_purchases_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "streak_rotating_shop_items"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       streak_shop_items: {
         Row: {
