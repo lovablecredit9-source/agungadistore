@@ -53,7 +53,7 @@ export default function VibrantHeroSection({
   onPremium,
 }: Props) {
   const [previewId, setPreviewId] = useState<string | null>(null);
-  const [persona, setPersona] = useState<PersonaTab["id"]>("for-you");
+  
   const [liveViewers, setLiveViewers] = useState(127);
 
   // Live viewers ticker — fake but feels alive
