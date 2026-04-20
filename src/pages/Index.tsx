@@ -1548,6 +1548,15 @@ const Index = () => {
 
       {/* Content */}
       <main className="flex-1 max-w-lg mx-auto w-full px-4 py-4 pb-24">
+        {tab === "musik" && (
+          <MusicHub
+            onPlaybackChange={setPlaybackState}
+            togglePlayRef={togglePlayRef}
+            openFullPlayerRef={openFullPlayerRef}
+            playExternalRef={playExternalRef}
+          />
+        )}
+
         {tab === "beranda" && (
           <div className="space-y-5 animate-fade-in">
             {/* Info: Geser navigasi */}
@@ -4635,15 +4644,13 @@ const Index = () => {
         <div className="absolute inset-0 bg-card/80 backdrop-blur-xl border-t border-white/10 shadow-[0_-8px_32px_rgba(0,0,0,0.12)]" />
         <div className="relative flex max-w-lg mx-auto overflow-x-auto scrollbar-hide px-1 py-1">
           {([
-            { key: "beranda" as Tab, icon: Home, label: t("nav.home", lang), gradient: "from-blue-500 to-cyan-400" },
+            { key: "musik" as Tab, icon: Music2, label: "Musik", gradient: "from-fuchsia-600 via-purple-600 to-indigo-600" },
             { key: "produk" as Tab, icon: Package, label: t("nav.products", lang), gradient: "from-orange-500 to-amber-400" },
             { key: "voucher" as Tab, icon: Ticket, label: t("nav.voucher", lang), gradient: "from-emerald-500 to-green-400" },
             { key: "saldo" as Tab, icon: Wallet, label: t("nav.balance", lang), gradient: "from-violet-500 to-purple-400" },
             { key: "likes" as Tab, icon: Heart, label: t("nav.likes", lang), gradient: "from-pink-500 to-rose-400" },
             { key: "history" as Tab, icon: Clock, label: t("nav.history", lang), gradient: "from-sky-500 to-blue-400" },
             { key: "tiket" as Tab, icon: AlertCircle, label: t("nav.ticket", lang), gradient: "from-red-500 to-orange-400" },
-            { key: "playlist" as Tab, icon: Music, label: t("nav.playlist", lang), gradient: "from-fuchsia-500 to-pink-400" },
-            { key: "publik" as Tab, icon: Globe, label: "Publik", gradient: "from-teal-500 to-emerald-400" },
             { key: "sponsor" as Tab, icon: Megaphone, label: "Sponsor", gradient: "from-amber-500 to-yellow-400" },
             { key: "streak" as Tab, icon: CalendarDays, label: "Streak", gradient: "from-orange-600 to-red-500" },
             { key: "streakevent" as Tab, icon: CalendarDays, label: "Streak Event", gradient: "from-pink-500 to-purple-600" },
