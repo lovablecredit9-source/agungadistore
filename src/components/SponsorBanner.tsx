@@ -241,7 +241,7 @@ export default function SponsorBanner({ likedSponsorIds = new Set(), onToggleLik
           <ProductNavToolbar
             value={{
               search,
-              category: filterCategory === "all" ? "all" : filterCategory,
+              category: filterCategory === "all" ? "Semua" : filterCategory,
               sort: sortOrder,
               view: "list" as ViewMode,
               minPrice,
@@ -251,13 +251,13 @@ export default function SponsorBanner({ likedSponsorIds = new Set(), onToggleLik
             }}
             onChange={(next) => {
               if (next.search !== undefined) { setSearch(next.search); setCurrent(0); }
-              if (next.category !== undefined) { setFilterCategory(next.category); setCurrent(0); }
+              if (next.category !== undefined) { setFilterCategory(next.category === "Semua" ? "all" : next.category); setCurrent(0); }
               if (next.sort !== undefined) setSortOrder(next.sort as SortOrder);
               if (next.minPrice !== undefined) { setMinPrice(next.minPrice); setCurrent(0); }
               if (next.maxPrice !== undefined) { setMaxPrice(next.maxPrice); setCurrent(0); }
             }}
-            categories={["all", ...categories]}
-            categoryCounts={sponsorCategoryCounts}
+            categories={["Semua", ...categories]}
+            categoryCounts={{ Semua: sponsors.length, ...sponsorCategoryCounts }}
             storageKey="sponsor_search_history_v1"
             popularSuggestions={popularSponsorTerms}
             showStockFilter={false}
