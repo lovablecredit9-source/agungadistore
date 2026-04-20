@@ -23,6 +23,7 @@ import AdminApiKeyTab from "@/components/AdminApiKeyTab";
 import AdminPostsTab from "@/components/AdminPostsTab";
 import AdminPromoTab from "@/components/AdminPromoTab";
 import AdminSocialLinksTab from "@/components/AdminSocialLinksTab";
+import AdminLuckyWheelTab from "@/components/AdminLuckyWheelTab";
 import WhatsAppChat from "@/components/WhatsAppChat";
 
 interface Product {
@@ -125,7 +126,7 @@ interface UserBalance {
   created_at: string;
 }
 
-type AdminTab = "products" | "tokens" | "claims" | "tickets" | "chats" | "saldo" | "notif" | "deposit" | "settings" | "diskon" | "pin" | "musik" | "vmusik" | "sponsor" | "apikey" | "postingan" | "promo" | "sosmed";
+type AdminTab = "products" | "tokens" | "claims" | "tickets" | "chats" | "saldo" | "notif" | "deposit" | "settings" | "diskon" | "pin" | "musik" | "vmusik" | "sponsor" | "apikey" | "postingan" | "promo" | "sosmed" | "wheel";
 type ClaimDateFilter = "all" | "today" | "yesterday" | "lastmonth" | "custom";
 type DepositStatusFilter = "all" | "pending" | "approved" | "rejected" | "cancelled";
 type DepositMethodFilter = "all" | "qris" | "ewallet";
@@ -1088,6 +1089,7 @@ const AdminDashboard = () => {
             { key: "postingan" as AdminTab, icon: FileText, label: "Post", gradient: "from-cyan-500 to-teal-400" },
             { key: "promo" as AdminTab, icon: Tag, label: "Promo", gradient: "from-rose-500 to-red-400" },
             { key: "sosmed" as AdminTab, icon: Globe, label: "Sosmed", gradient: "from-emerald-500 to-teal-400" },
+            { key: "wheel" as AdminTab, icon: Tag, label: "Wheel", gradient: "from-pink-500 to-fuchsia-400" },
           ]).map(({ key, icon: Icon, label, gradient }) => {
             const active = tab === key;
             const badgeCount = key === "tickets" ? allTickets.filter(t => t.status === "open").length
@@ -1934,6 +1936,7 @@ const AdminDashboard = () => {
         {tab === "postingan" && <AdminPostsTab />}
         {tab === "promo" && <AdminPromoTab />}
         {tab === "sosmed" && <AdminSocialLinksTab />}
+        {tab === "wheel" && <AdminLuckyWheelTab />}
       </main>
     </div>
   );

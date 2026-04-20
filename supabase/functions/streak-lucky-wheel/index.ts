@@ -5,11 +5,6 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const PITY_THRESHOLD = 50; // jaminan jackpot setelah 50 spin
-const COST_COINS = 100;
-const COST_GEMS = 10;
-const COST_BALANCE = 1000;
-
 function getTodayWIB() {
   const wib = new Date(Date.now() + 7 * 3600 * 1000);
   return wib.toISOString().split("T")[0];
@@ -48,19 +43,36 @@ Deno.serve(async (req) => {
     // ============ LIST ============
     if (action === "list") {
       const today = getTodayWIB();
-      const [segs, pity, recentJackpots, mySpins] = await Promise.all([
+      const [tiersRes, segs, pity, recentJackpots, mySpins] = await Promise.all([
+        admin.from("streak_wheel_tier_config").select("*").eq("is_active", true).order("sort_order"),
         admin.from("streak_wheel_segments").select("*").eq("is_active", true).order("sort_order"),
         admin.from("streak_wheel_pity").select("*").eq("visitor_id", visitorId).maybeSingle(),
         admin.from("streak_wheel_spins").select("display_name, reward_label, created_at").eq("is_jackpot", true).order("created_at", { ascending: false }).limit(5),
         admin.from("streak_wheel_spins").select("reward_label, reward_type, reward_value, is_jackpot, created_at").eq("visitor_id", visitorId).order("created_at", { ascending: false }).limit(10),
       ]);
-      const pityData = pity.data || { spins_since_jackpot: 0, total_jackpots: 0, total_spins: 0, free_spin_used_date: null };
+      const pityData = pity.data || { spins_since_jackpot: 0, total_jackpots: 0, total_spins: 0, free_spin_used_per_tier: {} };
+      const tiers = tiersRes.data || [];
+      const allSegments = segs.data || [];
+
+      // Group segments by tier
+      const segmentsByTier: Record<string, any[]> = {};
+      for (const t of tiers) segmentsByTier[t.tier_key] = [];
+      for (const s of allSegments) {
+        if (segmentsByTier[s.tier]) segmentsByTier[s.tier].push(s);
+      }
+
+      // Free spin availability per tier
+      const freeUsed = pityData.free_spin_used_per_tier || {};
+      const freeAvailable: Record<string, boolean> = {};
+      for (const t of tiers) {
+        freeAvailable[t.tier_key] = t.free_daily && freeUsed[t.tier_key] !== today;
+      }
+
       return Response.json({
-        segments: segs.data || [],
+        tiers,
+        segmentsByTier,
         pity: pityData,
-        pityThreshold: PITY_THRESHOLD,
-        freeSpinAvailable: pityData.free_spin_used_date !== today,
-        costs: { coins: COST_COINS, gems: COST_GEMS, balance: COST_BALANCE },
+        freeAvailable,
         recentJackpots: recentJackpots.data || [],
         mySpins: mySpins.data || [],
       }, { headers: corsHeaders });
@@ -68,33 +80,39 @@ Deno.serve(async (req) => {
 
     // ============ SPIN ============
     if (action === "spin") {
-      const { paymentMethod, pin } = body; // 'free' | 'coins' | 'gems' | 'balance'
+      const { tierKey, paymentMethod, pin } = body; // tierKey: cheap/normal/premium, paymentMethod: 'free'|'coins'|'gems'|'balance'
       const today = getTodayWIB();
+
+      if (!tierKey) return Response.json({ error: "Tier wajib dipilih" }, { status: 400, headers: corsHeaders });
+
+      // Get tier config
+      const { data: tier } = await admin.from("streak_wheel_tier_config").select("*").eq("tier_key", tierKey).eq("is_active", true).maybeSingle();
+      if (!tier) return Response.json({ error: "Tier tidak ditemukan" }, { status: 404, headers: corsHeaders });
 
       // Get pity
       const { data: existingPity } = await admin.from("streak_wheel_pity").select("*").eq("visitor_id", visitorId).maybeSingle();
-      const pity = existingPity || { visitor_id: visitorId, spins_since_jackpot: 0, total_jackpots: 0, total_spins: 0, free_spin_used_date: null };
+      const pity = existingPity || { visitor_id: visitorId, spins_since_jackpot: 0, total_jackpots: 0, total_spins: 0, free_spin_used_per_tier: {} };
+      const freeUsed = pity.free_spin_used_per_tier || {};
 
       // ---- Validate payment ----
       if (paymentMethod === "free") {
-        if (pity.free_spin_used_date === today) {
-          return Response.json({ error: "Spin gratis hari ini sudah dipakai!" }, { status: 400, headers: corsHeaders });
-        }
+        if (!tier.free_daily) return Response.json({ error: "Tier ini tidak ada free spin" }, { status: 400, headers: corsHeaders });
+        if (freeUsed[tierKey] === today) return Response.json({ error: "Free spin tier ini sudah dipakai hari ini" }, { status: 400, headers: corsHeaders });
       } else if (paymentMethod === "coins") {
+        if (tier.cost_coins <= 0) return Response.json({ error: "Tier tidak terima koin" }, { status: 400, headers: corsHeaders });
         const { data: streak } = await admin.from("daily_streaks").select("id, streak_coins").eq("visitor_id", visitorId).maybeSingle();
-        if (!streak || (streak.streak_coins || 0) < COST_COINS) {
-          return Response.json({ error: `Butuh ${COST_COINS} koin streak` }, { status: 400, headers: corsHeaders });
+        if (!streak || (streak.streak_coins || 0) < tier.cost_coins) {
+          return Response.json({ error: `Butuh ${tier.cost_coins} koin streak` }, { status: 400, headers: corsHeaders });
         }
-        await admin.from("daily_streaks").update({ streak_coins: (streak.streak_coins || 0) - COST_COINS }).eq("id", streak.id);
+        await admin.from("daily_streaks").update({ streak_coins: (streak.streak_coins || 0) - tier.cost_coins }).eq("id", streak.id);
       } else if (paymentMethod === "gems") {
+        if (tier.cost_gems <= 0) return Response.json({ error: "Tier tidak terima gem" }, { status: 400, headers: corsHeaders });
         const { data: totalGems } = await admin.rpc("get_account_gems", { p_visitor_id: visitorId });
         const have = Number(totalGems) || 0;
-        if (have < COST_GEMS) {
-          return Response.json({ error: `Butuh ${COST_GEMS} gem` }, { status: 400, headers: corsHeaders });
-        }
-        await admin.rpc("add_account_gems", { p_visitor_id: visitorId, p_amount: -COST_GEMS });
+        if (have < tier.cost_gems) return Response.json({ error: `Butuh ${tier.cost_gems} gem` }, { status: 400, headers: corsHeaders });
+        await admin.rpc("add_account_gems", { p_visitor_id: visitorId, p_amount: -tier.cost_gems });
       } else if (paymentMethod === "balance") {
-        // PIN required
+        if (tier.cost_balance <= 0) return Response.json({ error: "Tier tidak terima saldo" }, { status: 400, headers: corsHeaders });
         const { data: pinRow } = await admin.from("user_pins").select("pin_hash").eq("visitor_id", visitorId).maybeSingle();
         if (!pinRow) return Response.json({ error: "PIN belum dibuat", needPin: true }, { status: 200, headers: corsHeaders });
         if (!pin) return Response.json({ error: "PIN diperlukan", needPin: true }, { status: 200, headers: corsHeaders });
@@ -102,44 +120,39 @@ Deno.serve(async (req) => {
         if (hashHex !== pinRow.pin_hash) return Response.json({ error: "PIN salah", needPin: true }, { status: 200, headers: corsHeaders });
 
         const { data: bal } = await admin.from("user_balances").select("id, balance").eq("visitor_id", visitorId).maybeSingle();
-        if (!bal || bal.balance < COST_BALANCE) return Response.json({ error: "Saldo tidak cukup" }, { status: 400, headers: corsHeaders });
-        await admin.from("user_balances").update({ balance: bal.balance - COST_BALANCE }).eq("id", bal.id);
-        await admin.from("balance_transactions").insert({ visitor_id: visitorId, type: "purchase", amount: COST_BALANCE, description: "Lucky Wheel Spin" });
+        if (!bal || bal.balance < tier.cost_balance) return Response.json({ error: "Saldo tidak cukup" }, { status: 400, headers: corsHeaders });
+        await admin.from("user_balances").update({ balance: bal.balance - tier.cost_balance }).eq("id", bal.id);
+        await admin.from("balance_transactions").insert({ visitor_id: visitorId, type: "purchase", amount: tier.cost_balance, description: `Lucky Wheel ${tier.tier_name}` });
       } else {
         return Response.json({ error: "Metode bayar tidak valid" }, { status: 400, headers: corsHeaders });
       }
 
-      // ---- Pick segment ----
-      const { data: segments } = await admin.from("streak_wheel_segments").select("*").eq("is_active", true).order("sort_order");
-      if (!segments || segments.length === 0) return Response.json({ error: "Roda kosong" }, { status: 500, headers: corsHeaders });
+      // ---- Pick segment from this tier's pool ----
+      const { data: segments } = await admin.from("streak_wheel_segments").select("*").eq("is_active", true).eq("tier", tierKey).order("sort_order");
+      if (!segments || segments.length === 0) return Response.json({ error: "Pool tier kosong" }, { status: 500, headers: corsHeaders });
 
-      const forceJackpot = pity.spins_since_jackpot + 1 >= PITY_THRESHOLD;
+      const forceJackpot = pity.spins_since_jackpot + 1 >= (tier.pity_threshold || 50);
       const winning = pickSegment(segments, forceJackpot);
       const isJackpot = !!winning.is_jackpot;
 
-      // ---- Apply reward ----
-      const cost = paymentMethod === "free" ? 0 : paymentMethod === "coins" ? COST_COINS : paymentMethod === "gems" ? COST_GEMS : COST_BALANCE;
+      const cost = paymentMethod === "free" ? 0 : paymentMethod === "coins" ? tier.cost_coins : paymentMethod === "gems" ? tier.cost_gems : tier.cost_balance;
+
       let displayName = "Player";
       const { data: prof } = await admin.from("game_profiles").select("display_name").eq("visitor_id", visitorId).maybeSingle();
       if (prof?.display_name) displayName = prof.display_name;
 
+      // ---- Apply reward ----
       if (winning.reward_type === "streak_coins") {
-        const { data: ds } = await admin.from("daily_streaks").select("id, streak_coins, longest_streak, current_streak, total_claims").eq("visitor_id", visitorId).maybeSingle();
-        if (ds) {
-          await admin.from("daily_streaks").update({ streak_coins: (ds.streak_coins || 0) + winning.reward_value }).eq("id", ds.id);
-        } else {
-          await admin.from("daily_streaks").insert({ visitor_id: visitorId, streak_coins: winning.reward_value });
-        }
+        const { data: ds } = await admin.from("daily_streaks").select("id, streak_coins").eq("visitor_id", visitorId).maybeSingle();
+        if (ds) await admin.from("daily_streaks").update({ streak_coins: (ds.streak_coins || 0) + winning.reward_value }).eq("id", ds.id);
+        else await admin.from("daily_streaks").insert({ visitor_id: visitorId, streak_coins: winning.reward_value });
       } else if (winning.reward_type === "gems") {
         await admin.rpc("add_account_gems", { p_visitor_id: visitorId, p_amount: winning.reward_value });
         await admin.from("gem_transactions").insert({ visitor_id: visitorId, type: "earn", amount: winning.reward_value, description: "Lucky Wheel Win" });
       } else if (winning.reward_type === "freeze_token") {
         const { data: ds } = await admin.from("daily_streaks").select("id, freeze_count").eq("visitor_id", visitorId).maybeSingle();
-        if (ds) {
-          await admin.from("daily_streaks").update({ freeze_count: (ds.freeze_count || 0) + winning.reward_value }).eq("id", ds.id);
-        } else {
-          await admin.from("daily_streaks").insert({ visitor_id: visitorId, freeze_count: winning.reward_value });
-        }
+        if (ds) await admin.from("daily_streaks").update({ freeze_count: (ds.freeze_count || 0) + winning.reward_value }).eq("id", ds.id);
+        else await admin.from("daily_streaks").insert({ visitor_id: visitorId, freeze_count: winning.reward_value });
       } else if (winning.reward_type === "balance") {
         const { data: bal } = await admin.from("user_balances").select("id, balance").eq("visitor_id", visitorId).maybeSingle();
         if (bal) {
@@ -149,19 +162,19 @@ Deno.serve(async (req) => {
       }
 
       // ---- Update pity ----
+      const newFreeUsed = { ...freeUsed };
+      if (paymentMethod === "free") newFreeUsed[tierKey] = today;
+
       const newPity = {
         visitor_id: visitorId,
         spins_since_jackpot: isJackpot ? 0 : pity.spins_since_jackpot + 1,
         total_jackpots: pity.total_jackpots + (isJackpot ? 1 : 0),
         total_spins: pity.total_spins + 1,
-        free_spin_used_date: paymentMethod === "free" ? today : pity.free_spin_used_date,
+        free_spin_used_per_tier: newFreeUsed,
         updated_at: new Date().toISOString(),
       };
-      if (existingPity) {
-        await admin.from("streak_wheel_pity").update(newPity).eq("visitor_id", visitorId);
-      } else {
-        await admin.from("streak_wheel_pity").insert(newPity);
-      }
+      if (existingPity) await admin.from("streak_wheel_pity").update(newPity).eq("visitor_id", visitorId);
+      else await admin.from("streak_wheel_pity").insert(newPity);
 
       // ---- Log spin ----
       await admin.from("streak_wheel_spins").insert({
@@ -180,18 +193,12 @@ Deno.serve(async (req) => {
       // ---- Notification ----
       await admin.from("notifications").insert({
         visitor_id: visitorId,
-        title: isJackpot ? `🎰 JACKPOT! ${winning.label}` : `🎁 Lucky Wheel: ${winning.label}`,
-        message: isJackpot ? "Selamat! Kamu memenangkan JACKPOT!" : `Hadiah berhasil ditambahkan ke akunmu`,
+        title: isJackpot ? `🎰 JACKPOT ${tier.tier_name}! ${winning.label}` : `🎁 Lucky Wheel ${tier.tier_name}: ${winning.label}`,
+        message: isJackpot ? "Selamat! Kamu memenangkan JACKPOT!" : "Hadiah berhasil ditambahkan ke akunmu",
         type: "lucky_wheel",
       });
 
-      return Response.json({
-        success: true,
-        winning,
-        isJackpot,
-        isPity: forceJackpot,
-        newPity,
-      }, { headers: corsHeaders });
+      return Response.json({ success: true, winning, isJackpot, isPity: forceJackpot, tier: tier.tier_key }, { headers: corsHeaders });
     }
 
     return Response.json({ error: "Action tidak valid" }, { status: 400, headers: corsHeaders });
