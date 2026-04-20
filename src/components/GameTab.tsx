@@ -114,6 +114,7 @@ export default function GameTab() {
 
     return (
       <div className="space-y-4 p-4 pb-24">
+        <BanBanner />
         <div className="flex items-center gap-2">
           <Button variant="ghost" size="sm" onClick={() => setMode("menu")} className="gap-1">
             <ArrowLeft className="w-4 h-4" /> Kembali
