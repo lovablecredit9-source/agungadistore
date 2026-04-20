@@ -168,8 +168,10 @@ Deno.serve(async (req) => {
 
     // Deduct payment (coin or gem)
     if (payMethod === "gem") {
-      const { data: prof } = await admin.from("game_profiles").select("gems").eq("visitor_id", visitorId).maybeSingle();
-      await admin.from("game_profiles").update({ gems: (prof?.gems || 0) - costPaidGems }).eq("visitor_id", visitorId);
+      const { error: deductGemErr } = await admin.rpc("add_account_gems", { p_visitor_id: visitorId, p_amount: -costPaidGems });
+      if (deductGemErr) {
+        return Response.json({ error: `Gagal memotong gem: ${deductGemErr.message}` }, { status: 200, headers: corsHeaders });
+      }
       await admin.from("gem_transactions").insert({
         visitor_id: visitorId,
         amount: -costPaidGems,
