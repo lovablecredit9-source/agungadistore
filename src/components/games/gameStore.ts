@@ -218,10 +218,58 @@ export function consumePowerUp(kind: PowerUpKind): boolean {
 
 export function isDoubleXPActive(): boolean {
   const s = loadPowerUps();
-  if (!s.double_xp_until) return false;
-  return new Date(s.double_xp_until).getTime() > Date.now();
+  if (s.double_xp_until && new Date(s.double_xp_until).getTime() > Date.now()) return true;
+  return isPointBoosterActive();
 }
 
 export function applyDoubleXP(points: number): number {
   return isDoubleXPActive() ? points * 2 : points;
+}
+
+// =====================================================
+// POINT BOOSTER x2 (gem-based, durasi pilihan)
+// =====================================================
+const BOOSTER_KEY_PREFIX = "game_point_booster_";
+
+function getBoosterKey(): string | null {
+  const vid = getActiveVisitorId();
+  return vid ? `${BOOSTER_KEY_PREFIX}${vid}` : null;
+}
+
+export interface BoosterTier {
+  key: "15m" | "1h" | "3h";
+  label: string;
+  durationMs: number;
+  gemCost: number;
+}
+
+export const BOOSTER_TIERS: BoosterTier[] = [
+  { key: "15m", label: "15 menit", durationMs: 15 * 60 * 1000, gemCost: 30 },
+  { key: "1h", label: "1 jam", durationMs: 60 * 60 * 1000, gemCost: 80 },
+  { key: "3h", label: "3 jam", durationMs: 3 * 60 * 60 * 1000, gemCost: 180 },
+];
+
+export function getPointBoosterUntil(): number {
+  try {
+    const key = getBoosterKey();
+    if (!key) return 0;
+    const raw = localStorage.getItem(key);
+    if (!raw) return 0;
+    const ts = parseInt(raw, 10);
+    return Number.isFinite(ts) ? ts : 0;
+  } catch { return 0; }
+}
+
+export function isPointBoosterActive(): boolean {
+  return getPointBoosterUntil() > Date.now();
+}
+
+export function activatePointBooster(durationMs: number): number {
+  const key = getBoosterKey();
+  if (!key) return 0;
+  const current = getPointBoosterUntil();
+  const base = current > Date.now() ? current : Date.now();
+  const next = base + durationMs;
+  try { localStorage.setItem(key, String(next)); } catch {}
+  return next;
 }
