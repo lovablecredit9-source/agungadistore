@@ -58,6 +58,7 @@ import LoginGate from "@/components/LoginGate";
 import WhatsAppChat from "@/components/WhatsAppChat";
 import EngagementHub from "@/components/EngagementHub";
 import WalletDashboard from "@/components/WalletDashboard";
+import { useAccountBan } from "@/hooks/useAccountBan";
 
 type Tab = "beranda" | "produk" | "voucher" | "history" | "likes" | "tiket" | "saldo" | "playlist" | "publik" | "sponsor" | "streak" | "streakevent" | "streakshop" | "adminpost" | "game" | "plus" | "update";
 
@@ -296,6 +297,7 @@ const PATH_FROM_TAB: Record<Tab, string> = Object.fromEntries(
 const Index = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const { banned } = useAccountBan();
   const { theme, setTheme, resolvedTheme, customBgUrl, setCustomBgUrl } = useTheme();
   const customBgInputRef = useRef<HTMLInputElement>(null);
   const [lang, setLang] = useLang();
@@ -2722,10 +2724,10 @@ const Index = () => {
                   gameBalance={gameBalanceAmount}
                   transactions={balanceTransactions}
                   formatPrice={formatPrice}
-                  onTopUp={() => { setShowDepositModal(true); setDepositStep("method"); }}
-                  onHistory={() => setTab("history")}
-                  onShop={() => setTab("produk")}
-                  onVoucher={() => setTab("voucher")}
+                  onTopUp={() => { if (banned) return; setShowDepositModal(true); setDepositStep("method"); }}
+                  onHistory={() => { if (banned) return; setTab("history"); }}
+                  onShop={() => { if (banned) return; setTab("produk"); }}
+                  onVoucher={() => { if (banned) return; setTab("voucher"); }}
                 />
 
 
@@ -2739,22 +2741,24 @@ const Index = () => {
                         <p className="text-[10px] text-muted-foreground">{userBalance.phone}</p>
                       </div>
                       <Button size="sm" className="bg-gradient-to-r from-accent to-accent/80 text-accent-foreground gap-1.5 font-bold rounded-xl h-9 shadow-sm"
-                        onClick={() => { setShowDepositModal(true); setDepositStep("method"); }}>
+                        onClick={() => { if (banned) return; setShowDepositModal(true); setDepositStep("method"); }}
+                        disabled={banned}>
                         <ArrowUpCircle className="w-4 h-4" /> {t("deposit.btn", lang)}
                       </Button>
                     </div>
 
                     <div className="grid grid-cols-2 gap-2">
                       <Button size="sm" variant="outline" className="gap-1.5 font-bold rounded-xl h-9 border border-border/60"
-                        onClick={() => { setProfileUsername(userBalance.username); setProfilePhone(userBalance.phone); setShowProfileModal(true); }}>
+                        onClick={() => { if (banned) return; setProfileUsername(userBalance.username); setProfilePhone(userBalance.phone); setShowProfileModal(true); }}
+                        disabled={banned}>
                         <Edit2 className="w-4 h-4" /> Edit Profil
                       </Button>
                       {!hasPin ? (
-                        <Button size="sm" variant="outline" className="gap-1.5 font-bold border-primary/30 rounded-xl h-9" onClick={() => setShowPinSetup(true)}>
+                        <Button size="sm" variant="outline" className="gap-1.5 font-bold border-primary/30 rounded-xl h-9" onClick={() => { if (banned) return; setShowPinSetup(true); }} disabled={banned}>
                           <Lock className="w-4 h-4 text-primary" /> Buat PIN
                         </Button>
                       ) : (
-                        <Button size="sm" variant="outline" className="gap-1.5 font-bold border-primary/30 rounded-xl h-9 text-primary" onClick={() => setShowForgotPin(true)}>
+                        <Button size="sm" variant="outline" className="gap-1.5 font-bold border-primary/30 rounded-xl h-9 text-primary" onClick={() => { if (banned) return; setShowForgotPin(true); }} disabled={banned}>
                           <KeyRound className="w-4 h-4" /> Reset PIN
                         </Button>
                       )}
@@ -4387,7 +4391,7 @@ const Index = () => {
         </div>
       )}
 
-      {showProfileModal && userBalance && (
+      {showProfileModal && userBalance && !banned && (
         <div className="fixed inset-0 z-[89] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setShowProfileModal(false)}>
           <div className="bg-card w-full max-w-sm rounded-2xl p-5 space-y-4 animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between">
@@ -4407,7 +4411,7 @@ const Index = () => {
       )}
 
       {/* Deposit Modal */}
-      {showDepositModal && userBalance && (
+      {showDepositModal && userBalance && !banned && (
         <div className="fixed inset-0 z-[80] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setShowDepositModal(false)}>
           <div className="bg-card w-full max-w-sm rounded-2xl p-5 space-y-4 animate-in zoom-in-95 duration-200 max-h-[85vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between">
