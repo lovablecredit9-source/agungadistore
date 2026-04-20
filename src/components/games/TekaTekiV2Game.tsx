@@ -179,10 +179,6 @@ export default function TekaTekiV2Game() {
     setUsedIndices(newUsed);
   };
 
-  const revealHint = () => {
-    if (revealedHints < hints.length) setRevealedHints(r => r + 1);
-  };
-
   const handleRevealAnswer = async () => {
     const ok = await useCredit();
     if (ok) {
@@ -350,9 +346,9 @@ export default function TekaTekiV2Game() {
                 </motion.div>
               ))}
               {revealedHints < hints.length && gameActive && (
-                <Button variant="ghost" size="sm" onClick={revealHint} className="text-xs gap-1">
-                  <Lightbulb className="w-3 h-3" /> Petunjuk ({revealedHints}/{hints.length})
-                </Button>
+                <p className="text-[10px] text-muted-foreground text-center italic">
+                  Sisa {hints.length - revealedHints} petunjuk — pakai tombol <b>Hint</b> di atas (power-up)
+                </p>
               )}
             </div>
           )}
