@@ -609,13 +609,57 @@ export function TicketEnhancer({ tickets, categoryLabels, onOpen, onReopen, onDu
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* AI QUICK REPLY DIALOG */}
+      <AnimatePresence>
+        {aiTicket && (
+          <motion.div
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            onClick={() => setAiTicket(null)}
+            className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-4"
+          >
+            <motion.div
+              initial={{ scale: 0.9, y: 30 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 30 }}
+              onClick={e => e.stopPropagation()}
+              className="bg-card rounded-2xl p-5 max-w-sm w-full shadow-2xl border border-border max-h-[80vh] overflow-y-auto"
+            >
+              <div className="flex items-center gap-2 mb-3">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-lg">
+                  <Bot className="w-5 h-5 text-white" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-extrabold text-base">AI Saran Balasan</h3>
+                  <p className="text-[10px] text-muted-foreground">Tiket #{aiTicket.ticket_number} • {categoryLabels[aiTicket.category || ""] || "Lainnya"}</p>
+                </div>
+              </div>
+              <div className="space-y-2 mb-3">
+                {suggestReplies(aiTicket).map((rep, i) => (
+                  <button
+                    key={i}
+                    onClick={() => copyReply(rep)}
+                    className="w-full text-left p-3 rounded-xl border border-border bg-muted/30 hover:bg-primary/10 hover:border-primary/40 transition-all group"
+                  >
+                    <div className="flex items-start gap-2">
+                      <Sparkles className="w-3.5 h-3.5 text-primary shrink-0 mt-0.5 group-hover:scale-110 transition-transform" />
+                      <p className="text-xs leading-snug flex-1">{rep}</p>
+                      <Copy className="w-3 h-3 text-muted-foreground shrink-0 mt-0.5" />
+                    </div>
+                  </button>
+                ))}
+              </div>
+              <p className="text-[10px] text-muted-foreground text-center mb-2">💡 Tap saran untuk salin ke clipboard</p>
+              <Button variant="outline" className="w-full" onClick={() => setAiTicket(null)}>Tutup</Button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
 
-function StatChip({ icon: Icon, label, value }: { icon: any; label: string; value: number | string }) {
+function StatChip({ icon: Icon, label, value, highlight }: { icon: any; label: string; value: number | string; highlight?: boolean }) {
   return (
-    <div className="bg-white/15 backdrop-blur rounded-xl px-2 py-2 text-center border border-white/20">
+    <div className={`backdrop-blur rounded-xl px-1.5 py-2 text-center border ${highlight ? "bg-red-500/30 border-red-300/50 animate-pulse" : "bg-white/15 border-white/20"}`}>
       <Icon className="w-3.5 h-3.5 mx-auto mb-0.5 opacity-90" />
       <div className="text-[8px] uppercase font-bold opacity-80 leading-none">{label}</div>
       <div className="text-base font-extrabold leading-tight mt-0.5">{value}</div>
