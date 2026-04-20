@@ -1,32 +1,24 @@
-import { useState } from "react";
 import { Music2, Globe, Users, Sparkles } from "lucide-react";
-import PlaylistTab, { type PlaybackState } from "@/components/PlaylistTab";
 import MusicPublicTab from "@/components/MusicPublicTab";
 import ArtistTab from "@/components/ArtistTab";
 
-type SubTab = "playlist" | "publik" | "artist";
+export type MusicSubTab = "playlist" | "publik" | "artist";
 
 interface MusicHubProps {
-  onPlaybackChange?: (s: PlaybackState) => void;
-  togglePlayRef?: React.MutableRefObject<(() => void) | null>;
-  openFullPlayerRef?: React.MutableRefObject<(() => void) | null>;
-  playExternalRef?: React.MutableRefObject<((song: { id: string; title: string; artist: string; file_url: string; cover_url: string | null }) => void) | null>;
+  subTab: MusicSubTab;
+  onSubTabChange: (s: MusicSubTab) => void;
+  onPlayExternal?: (song: { id: string; title: string; artist: string; file_url: string; cover_url: string | null }) => void;
+  /** Slot for the persistent PlaylistTab rendered by parent (kept mounted for audio persistence) */
+  playlistSlot: React.ReactNode;
 }
 
-const TABS: { key: SubTab; label: string; icon: typeof Music2; gradient: string; desc: string }[] = [
+const TABS: { key: MusicSubTab; label: string; icon: typeof Music2; gradient: string; desc: string }[] = [
   { key: "playlist", label: "Playlist", icon: Music2, gradient: "from-fuchsia-500 to-pink-500", desc: "Lagu resmi pilihan admin" },
   { key: "publik", label: "Publik", icon: Globe, gradient: "from-teal-500 to-emerald-500", desc: "Lagu komunitas pengguna" },
   { key: "artist", label: "Artist", icon: Users, gradient: "from-amber-500 to-orange-500", desc: "Jelajahi profil penyanyi" },
 ];
 
-export default function MusicHub({
-  onPlaybackChange,
-  togglePlayRef,
-  openFullPlayerRef,
-  playExternalRef,
-}: MusicHubProps) {
-  const [active, setActive] = useState<SubTab>("playlist");
-
+export default function MusicHub({ subTab, onSubTabChange, onPlayExternal, playlistSlot }: MusicHubProps) {
   return (
     <div className="space-y-4 animate-fade-in">
       {/* Hero Header */}
@@ -42,7 +34,7 @@ export default function MusicHub({
               <h2 className="text-lg font-extrabold text-white drop-shadow">Pusat Musik</h2>
               <Sparkles className="w-4 h-4 text-yellow-300" />
             </div>
-            <p className="text-[11px] text-white/80 truncate">{TABS.find((t) => t.key === active)?.desc}</p>
+            <p className="text-[11px] text-white/80 truncate">{TABS.find((t) => t.key === subTab)?.desc}</p>
           </div>
         </div>
       </div>
@@ -50,11 +42,11 @@ export default function MusicHub({
       {/* Sub-tab pills */}
       <div className="flex gap-2 overflow-x-auto scrollbar-hide -mx-1 px-1 pb-1">
         {TABS.map(({ key, label, icon: Icon, gradient }) => {
-          const isActive = active === key;
+          const isActive = subTab === key;
           return (
             <button
               key={key}
-              onClick={() => setActive(key)}
+              onClick={() => onSubTabChange(key)}
               className={`flex-shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-2xl text-xs font-bold transition-all duration-300 ${
                 isActive
                   ? `bg-gradient-to-r ${gradient} text-white shadow-lg scale-105`
@@ -68,22 +60,15 @@ export default function MusicHub({
         })}
       </div>
 
-      {/* Content panels — keep PlaylistTab mounted so audio persists */}
-      <div className={active === "playlist" ? "" : "hidden"}>
-        <PlaylistTab
-          onPlaybackChange={onPlaybackChange}
-          onTogglePlay={togglePlayRef}
-          onOpenFullPlayer={openFullPlayerRef}
-          onPlayExternal={playExternalRef}
-        />
-      </div>
+      {/* Playlist content rendered via slot to preserve persistent mount */}
+      <div className={subTab === "playlist" ? "" : "hidden"}>{playlistSlot}</div>
 
-      {active === "publik" && (
-        <MusicPublicTab onPlaySong={(song) => playExternalRef?.current?.(song)} />
+      {subTab === "publik" && (
+        <MusicPublicTab onPlaySong={(song) => onPlayExternal?.(song)} />
       )}
 
-      {active === "artist" && (
-        <ArtistTab onPlaySong={(song) => playExternalRef?.current?.(song)} />
+      {subTab === "artist" && (
+        <ArtistTab onPlaySong={(song) => onPlayExternal?.(song)} />
       )}
     </div>
   );
