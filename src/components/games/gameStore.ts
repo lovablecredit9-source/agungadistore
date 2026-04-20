@@ -226,6 +226,12 @@ export function applyDoubleXP(points: number): number {
   return isDoubleXPActive() ? points * 2 : points;
 }
 
+export function awardGamePoints(basePoints: number): { awardedPoints: number; data: GameLevel } {
+  const awardedPoints = applyDoubleXP(basePoints);
+  const data = addPoints(awardedPoints);
+  return { awardedPoints, data };
+}
+
 // =====================================================
 // POINT BOOSTER x2 (gem-based, durasi pilihan)
 // =====================================================
