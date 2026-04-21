@@ -21,41 +21,52 @@ interface Card {
   prizes: { label: string; value: number; weight: number; isJackpot?: boolean }[];
 }
 
+// Sistem hadiah: kemenangan terasa BESAR tapi jackpot tetap LANGKA.
+// Bobot kekalahan tinggi agar ekonomi tetap sehat (house edge positif).
 const CARDS: Card[] = [
   {
     id: "bronze", cost: 50, name: "Bronze Scratch", emoji: "🥉", rarity: "common", color: "from-amber-700 to-orange-700",
     prizes: [
-      { label: "+5 koin", value: 5, weight: 55 },
-      { label: "+10 koin", value: 10, weight: 30 },
-      { label: "+20 koin", value: 20, weight: 12 },
-      { label: "+60 koin JACKPOT", value: 60, weight: 3, isJackpot: true },
+      { label: "Zonk", value: 0, weight: 50 },
+      { label: "+30 koin", value: 30, weight: 25 },
+      { label: "+60 koin", value: 60, weight: 15 },
+      { label: "+100 koin", value: 100, weight: 7 },
+      { label: "+200 koin JACKPOT", value: 200, weight: 3, isJackpot: true },
     ],
   },
   {
     id: "silver", cost: 150, name: "Silver Scratch", emoji: "🥈", rarity: "rare", color: "from-slate-300 to-slate-500",
     prizes: [
-      { label: "+15 koin", value: 15, weight: 55 },
-      { label: "+25 koin", value: 25, weight: 30 },
-      { label: "+50 koin", value: 50, weight: 12 },
-      { label: "+160 koin JACKPOT", value: 160, weight: 3, isJackpot: true },
+      { label: "Zonk", value: 0, weight: 45 },
+      { label: "+100 koin", value: 100, weight: 28 },
+      { label: "+200 koin", value: 200, weight: 17 },
+      { label: "+350 koin", value: 350, weight: 7 },
+      { label: "+600 koin JACKPOT", value: 600, weight: 3, isJackpot: true },
     ],
   },
   {
-    id: "gold", cost: 400, name: "Gold Scratch", emoji: "🥇", rarity: "epic", color: "from-yellow-400 to-amber-600",
+    id: "gold", cost: 500, name: "Gold Scratch", emoji: "🥇", rarity: "epic", color: "from-yellow-400 to-amber-600",
     prizes: [
-      { label: "+40 koin", value: 40, weight: 55 },
-      { label: "+75 koin", value: 75, weight: 30 },
-      { label: "+130 koin", value: 130, weight: 12 },
-      { label: "+450 koin JACKPOT", value: 450, weight: 3, isJackpot: true },
+      { label: "Zonk", value: 0, weight: 42 },
+      { label: "+200 koin", value: 200, weight: 28 },
+      { label: "+700 koin", value: 700, weight: 16 },
+      { label: "+800 koin", value: 800, weight: 7 },
+      { label: "+1000 koin", value: 1000, weight: 4 },
+      { label: "+1500 koin", value: 1500, weight: 2 },
+      { label: "+2000 koin JACKPOT", value: 2000, weight: 1, isJackpot: true },
     ],
   },
   {
     id: "diamond", cost: 1000, name: "Diamond Scratch", emoji: "💎", rarity: "legendary", color: "from-cyan-300 via-blue-400 to-purple-500",
     prizes: [
-      { label: "+100 koin", value: 100, weight: 55 },
-      { label: "+180 koin", value: 180, weight: 30 },
-      { label: "+300 koin", value: 300, weight: 12 },
-      { label: "+900 koin MEGA JACKPOT", value: 900, weight: 3, isJackpot: true },
+      { label: "Zonk", value: 0, weight: 40 },
+      { label: "+200 koin", value: 200, weight: 18 },
+      { label: "+600 koin", value: 600, weight: 18 },
+      { label: "+700 koin", value: 700, weight: 12 },
+      { label: "+1500 koin", value: 1500, weight: 7 },
+      { label: "+2500 koin", value: 2500, weight: 3 },
+      { label: "+3000 koin JACKPOT", value: 3000, weight: 1.5, isJackpot: true },
+      { label: "+5000 koin MEGA JACKPOT", value: 5000, weight: 0.5, isJackpot: true },
     ],
   },
 ];
