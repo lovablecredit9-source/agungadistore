@@ -20,11 +20,13 @@ import {
 
 const MAX_WRONG = 3;
 
+function getCurrentActiveVisitorId() {
+  if (typeof window === "undefined") return null;
+  return localStorage.getItem("balance_visitor_id") || getVisitorId();
+}
+
 export default function TebakKataGame() {
-  const activeVisitorId = useMemo(() => {
-    if (typeof window === "undefined") return null;
-    return localStorage.getItem("balance_visitor_id") || getVisitorId();
-  }, []);
+  const [activeVisitorId, setActiveVisitorId] = useState<string | null>(() => getCurrentActiveVisitorId());
   const { credits, isUnlimited, fetchCredits, useCredit } = useGameCredits(activeVisitorId);
   const [word, setWord] = useState("");
   const [hints, setHints] = useState<string[]>([]);
@@ -44,6 +46,19 @@ export default function TebakKataGame() {
   const { toast } = useToast();
 
   const diffConfig = DIFFICULTIES.find(d => d.key === difficulty)!;
+
+  useEffect(() => {
+    const syncActiveVisitor = () => setActiveVisitorId(getCurrentActiveVisitorId());
+    syncActiveVisitor();
+    window.addEventListener("storage", syncActiveVisitor);
+    window.addEventListener("focus", syncActiveVisitor);
+    window.addEventListener("balance-auth-changed", syncActiveVisitor as EventListener);
+    return () => {
+      window.removeEventListener("storage", syncActiveVisitor);
+      window.removeEventListener("focus", syncActiveVisitor);
+      window.removeEventListener("balance-auth-changed", syncActiveVisitor as EventListener);
+    };
+  }, []);
 
   // Timer
   useEffect(() => {
@@ -103,6 +118,7 @@ export default function TebakKataGame() {
 
   const submitGuess = () => {
     if (!guess.trim() || !gameActive) return;
+    const currentVisitorId = getCurrentActiveVisitorId();
     const isCorrect = guess.trim().toUpperCase() === word.toUpperCase();
     if (isCorrect) {
       if (timerRef.current) clearInterval(timerRef.current);
@@ -112,7 +128,7 @@ export default function TebakKataGame() {
       setPlayerData(data);
       setResult("correct");
       setGameActive(false);
-      updateGameStats(activeVisitorId, "tebak", true, awardedPoints, 1, { basePoints }).then((serverAwardedPoints) => {
+      updateGameStats(currentVisitorId, "tebak", true, awardedPoints, 1, { basePoints }).then((serverAwardedPoints) => {
         if (typeof serverAwardedPoints === "number" && serverAwardedPoints !== awardedPoints) {
           setEarnedPoints(serverAwardedPoints);
           setPlayerData(loadGameData());
@@ -129,7 +145,7 @@ export default function TebakKataGame() {
       if (newWrong >= MAX_WRONG) {
         if (timerRef.current) clearInterval(timerRef.current);
         setGameActive(false);
-        updateGameStats(activeVisitorId, "tebak", false, 0);
+        updateGameStats(currentVisitorId, "tebak", false, 0);
       } else {
         setTimeout(() => setResult(null), 1200);
       }
