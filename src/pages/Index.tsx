@@ -1521,6 +1521,8 @@ const Index = () => {
                 {([
                   { key: "beranda" as Tab, icon: Home, label: "Beranda", gradient: "from-blue-500 to-cyan-400" },
                   { key: "musik" as Tab, icon: Music2, label: "Musik", gradient: "from-fuchsia-600 via-purple-600 to-indigo-600" },
+                  { key: "playlist" as Tab, icon: Music, label: "Playlist", gradient: "from-pink-500 to-rose-400" },
+                  { key: "publik" as Tab, icon: Globe, label: "Publik", gradient: "from-cyan-500 to-sky-400" },
                   { key: "produk" as Tab, icon: Package, label: t("nav.products", lang), gradient: "from-orange-500 to-amber-400" },
                   { key: "voucher" as Tab, icon: Ticket, label: t("nav.voucher", lang), gradient: "from-emerald-500 to-green-400" },
                   { key: "saldo" as Tab, icon: Wallet, label: t("nav.balance", lang), gradient: "from-violet-500 to-purple-400" },
