@@ -50,6 +50,7 @@ import ProductNavToolbar from "@/components/ProductNavToolbar";
 import LikesTab from "@/components/LikesTab";
 import DailyStreak from "@/components/DailyStreak";
 import NeonStreakHub from "@/components/streak/NeonStreakHub";
+import MembershipShop from "@/components/streak/MembershipShop";
 import HomeBannerSlider from "@/components/HomeBannerSlider";
 import VibrantHeroSection from "@/components/VibrantHeroSection";
 import BalanceAuth from "@/components/BalanceAuth";
@@ -66,7 +67,7 @@ import HistoryEnhancer, { type HistoryItem } from "@/components/HistoryEnhancer"
 import { TicketEnhancer, TICKET_TEMPLATES } from "@/components/TicketEnhancer";
 import { useAccountBan } from "@/hooks/useAccountBan";
 
-type Tab = "musik" | "beranda" | "produk" | "voucher" | "history" | "likes" | "tiket" | "saldo" | "playlist" | "publik" | "sponsor" | "streak" | "streakevent" | "streakshop" | "adminpost" | "game" | "plus" | "update";
+type Tab = "musik" | "beranda" | "produk" | "voucher" | "history" | "likes" | "tiket" | "saldo" | "playlist" | "publik" | "sponsor" | "streak" | "streakevent" | "streakshop" | "streakmembership" | "adminpost" | "game" | "plus" | "update";
 
 interface UserBalance {
   id: string;
@@ -293,6 +294,7 @@ const TAB_PATHS: Record<string, Tab> = {
   "/streak": "streak",
   "/streak-event": "streakevent",
   "/streak-shop": "streakshop",
+  "/streak-membership": "streakmembership",
   "/admin-post": "adminpost",
   "/game": "game",
   "/plus": "plus",
@@ -1533,6 +1535,7 @@ const Index = () => {
                   { key: "streak" as Tab, icon: CalendarDays, label: "Streak", gradient: "from-orange-600 to-red-500" },
                   { key: "streakevent" as Tab, icon: CalendarDays, label: "Streak Event", gradient: "from-pink-500 to-purple-600" },
                   { key: "streakshop" as Tab, icon: CalendarDays, label: "Streak Shop", gradient: "from-purple-600 to-cyan-600" },
+                  { key: "streakmembership" as Tab, icon: Crown, label: "M.Streak", gradient: "from-amber-500 via-yellow-500 to-orange-500" },
                   { key: "game" as Tab, icon: Gamepad2, label: "Game", gradient: "from-indigo-500 to-violet-400" },
                   { key: "plus" as Tab, icon: Sparkles, label: "Plus", gradient: "from-yellow-500 to-orange-400" },
                   { key: "update" as Tab, icon: RefreshCw, label: "Update", gradient: "from-cyan-500 to-blue-400" },
@@ -3432,6 +3435,35 @@ const Index = () => {
           )
         )}
 
+        {tab === "streakmembership" && (
+          userBalance ? (
+            <div className="space-y-3">
+              <div className="rounded-2xl p-4 bg-gradient-to-br from-amber-500/20 via-yellow-500/15 to-orange-500/20 border-2 border-amber-400/40">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center shadow-lg shadow-amber-500/40">
+                    <Crown className="w-6 h-6 text-white" />
+                  </div>
+                  <div className="min-w-0">
+                    <h2 className="text-lg font-black bg-gradient-to-r from-amber-200 via-yellow-100 to-orange-200 bg-clip-text text-transparent">
+                      Membership Streak VIP
+                    </h2>
+                    <p className="text-[11px] text-white/70">Bayar pakai saldo · Klaim hadiah harian otomatis</p>
+                  </div>
+                </div>
+              </div>
+              <MembershipShop key={`mship-${activeBalanceVisitorId}`} visitorId={activeBalanceVisitorId} />
+            </div>
+          ) : (
+            <LoginGate
+              title="Membership Streak VIP"
+              description="Login saldo untuk berlangganan membership streak dan klaim hadiah harian."
+              emoji="👑"
+              gradient="from-amber-500 to-orange-600"
+              onGoToLogin={() => setTab("saldo")}
+            />
+          )
+        )}
+
         <div className={tab === "game" ? "" : "hidden"}>
           {userBalance ? (
             <GameTab />
@@ -4940,6 +4972,7 @@ const Index = () => {
                 { key: "streak" as Tab, icon: CalendarDays, label: "Streak", gradient: "from-orange-600 to-red-500" },
                 { key: "streakevent" as Tab, icon: CalendarDays, label: "Streak Event", gradient: "from-pink-500 to-purple-600" },
                 { key: "streakshop" as Tab, icon: CalendarDays, label: "Streak Shop", gradient: "from-purple-600 to-cyan-600" },
+                { key: "streakmembership" as Tab, icon: Crown, label: "M.Streak", gradient: "from-amber-500 via-yellow-500 to-orange-500" },
                 { key: "game" as Tab, icon: Gamepad2, label: "Game", gradient: "from-indigo-500 to-violet-400" },
                 { key: "plus" as Tab, icon: Sparkles, label: "Plus", gradient: "from-yellow-500 to-orange-400" },
                 { key: "update" as Tab, icon: RefreshCw, label: "Update", gradient: "from-cyan-500 to-blue-400" },
