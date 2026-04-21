@@ -491,6 +491,7 @@ const Index = () => {
   }
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [showNotifPanel, setShowNotifPanel] = useState(false);
+  const [showNavMenu, setShowNavMenu] = useState(false);
   const unreadCount = notifications.filter(n => !n.is_read).length;
   const activeBalanceVisitorId = useMemo(() => {
     if (userBalance?.visitor_id) return userBalance.visitor_id;
