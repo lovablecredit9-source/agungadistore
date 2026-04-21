@@ -419,7 +419,7 @@ export default function MembershipShop({ visitorId, onUpdate }: Props) {
             {calendarDays.map((d, idx) => {
               const isToday = idx === 0;
               const isLocked = idx > 0 || (isToday && claimedToday);
-              const reward = selected.daily_reward_coins || 0;
+              const reward = isToday ? (todayRewardTotal || selected.daily_reward_coins || 0) : (selected.daily_reward_coins || 0);
               return (
                 <motion.div
                   key={idx}
