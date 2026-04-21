@@ -76,16 +76,20 @@ Deno.serve(async (req) => {
 
       // Cek klaim harian
       const today = todayWIB();
-      const { data: todayClaim } = await admin
+      const { data: todayClaims } = await admin
         .from("streak_membership_daily_claims")
         .select("id, coins_awarded, plan_name")
         .eq("visitor_id", visitorId)
         .eq("claim_date", today)
-        .maybeSingle();
+        .order("created_at", { ascending: true });
 
-      // Hitung hadiah harian dari membership aktif terbaik (paket terbesar wins)
+      const claimedToday = (todayClaims?.length || 0) > 0;
+      const claimedCoins = (todayClaims || []).reduce((sum, claim) => sum + (claim.coins_awarded || 0), 0);
+      const claimedPlanNames = Array.from(new Set((todayClaims || []).map((claim) => claim.plan_name).filter(Boolean)));
+
+      // Hitung hadiah harian dari semua membership aktif (stack per paket aktif)
       let dailyReward = 0;
-      let dailyPlanName: string | null = null;
+      const dailyPlanNames: string[] = [];
       if (activeMemberships && activeMemberships.length > 0) {
         const planIds = activeMemberships.map((m: any) => m.plan_id).filter(Boolean);
         if (planIds.length > 0) {
@@ -96,13 +100,17 @@ Deno.serve(async (req) => {
           for (const m of activeMemberships as any[]) {
             const pr = planRows?.find((p: any) => p.id === m.plan_id);
             const reward = pr?.daily_reward_coins || 0;
-            if (reward > dailyReward) {
-              dailyReward = reward;
-              dailyPlanName = pr?.name || m.plan_name;
+            if (reward > 0) {
+              dailyReward += reward;
+              const planName = pr?.name || m.plan_name;
+              if (planName) dailyPlanNames.push(planName);
             }
           }
         }
       }
+
+      const currentPlanLabel = Array.from(new Set(dailyPlanNames)).join(" + ") || null;
+      const claimedPlanLabel = claimedPlanNames.join(" + ") || null;
 
       return Response.json({
         plans: plans || [],
@@ -111,10 +119,10 @@ Deno.serve(async (req) => {
         game_balance: gameBal?.amount || 0,
         main_balance: balanceRow?.balance || 0,
         daily_claim: {
-          available: !todayClaim && dailyReward > 0,
-          claimed_today: !!todayClaim,
-          coins_today: todayClaim?.coins_awarded || dailyReward,
-          plan_name: dailyPlanName || todayClaim?.plan_name || null,
+          available: !claimedToday && dailyReward > 0,
+          claimed_today: claimedToday,
+          coins_today: claimedToday ? claimedCoins : dailyReward,
+          plan_name: claimedToday ? claimedPlanLabel : currentPlanLabel,
           next_unlock: nextUnlockISO(),
         },
       }, { headers: corsHeaders });
@@ -123,13 +131,13 @@ Deno.serve(async (req) => {
     // ---------- DAILY CLAIM ----------
     if (action === "daily-claim") {
       const today = todayWIB();
-      const { data: existing } = await admin
+      const { data: existingClaims } = await admin
         .from("streak_membership_daily_claims")
         .select("id")
         .eq("visitor_id", visitorId)
         .eq("claim_date", today)
-        .maybeSingle();
-      if (existing) {
+        .limit(1);
+      if ((existingClaims?.length || 0) > 0) {
         return Response.json({ error: "Sudah klaim hari ini", next_unlock: nextUnlockISO() }, { status: 400, headers: corsHeaders });
       }
 
@@ -150,48 +158,54 @@ Deno.serve(async (req) => {
         .select("id, name, daily_reward_coins")
         .in("id", planIds);
 
-      let bestReward = 0;
-      let bestPlan: any = null;
-      let bestMembershipId: string | null = null;
+      let totalReward = 0;
+      let primaryPlanId: string | null = null;
+      let primaryMembershipId: string | null = null;
+      const activePlanNames: string[] = [];
       for (const m of activeMemberships as any[]) {
         const pr = planRows?.find((p: any) => p.id === m.plan_id);
         const reward = pr?.daily_reward_coins || 0;
-        if (reward > bestReward) {
-          bestReward = reward;
-          bestPlan = pr;
-          bestMembershipId = m.id;
+        if (reward > 0) {
+          totalReward += reward;
+          if (!primaryPlanId) primaryPlanId = pr?.id || m.plan_id || null;
+          if (!primaryMembershipId) primaryMembershipId = m.id;
+          const planName = pr?.name || m.plan_name;
+          if (planName) activePlanNames.push(planName);
         }
       }
 
-      if (bestReward <= 0) {
+      if (totalReward <= 0) {
         return Response.json({ error: "Paket ini tidak punya hadiah harian" }, { status: 400, headers: corsHeaders });
       }
+
+      const uniquePlanNames = Array.from(new Set(activePlanNames));
+      const combinedPlanName = uniquePlanNames.join(" + ") || null;
 
       // Tambah koin ke daily_streaks
       const { data: s } = await admin.from("daily_streaks").select("id, streak_coins").eq("visitor_id", visitorId).maybeSingle();
       if (s) {
-        await admin.from("daily_streaks").update({ streak_coins: (s.streak_coins || 0) + bestReward }).eq("id", s.id);
+        await admin.from("daily_streaks").update({ streak_coins: (s.streak_coins || 0) + totalReward }).eq("id", s.id);
       } else {
         await admin.from("daily_streaks").insert({
           visitor_id: visitorId, last_claim_date: today,
-          current_streak: 0, longest_streak: 0, total_claims: 0, streak_coins: bestReward,
+          current_streak: 0, longest_streak: 0, total_claims: 0, streak_coins: totalReward,
         });
       }
 
       const { error: insErr } = await admin.from("streak_membership_daily_claims").insert({
         visitor_id: visitorId,
-        membership_id: bestMembershipId,
-        plan_id: bestPlan?.id || null,
-        plan_name: bestPlan?.name || null,
+        membership_id: uniquePlanNames.length === 1 ? primaryMembershipId : null,
+        plan_id: uniquePlanNames.length === 1 ? primaryPlanId : null,
+        plan_name: combinedPlanName,
         claim_date: today,
-        coins_awarded: bestReward,
+        coins_awarded: totalReward,
       });
       if (insErr) return Response.json({ error: "Gagal menyimpan klaim: " + insErr.message }, { status: 500, headers: corsHeaders });
 
       return Response.json({
         success: true,
-        coins_awarded: bestReward,
-        plan_name: bestPlan?.name,
+        coins_awarded: totalReward,
+        plan_name: combinedPlanName,
         next_unlock: nextUnlockISO(),
       }, { headers: corsHeaders });
     }
@@ -252,11 +266,12 @@ Deno.serve(async (req) => {
     }
     const amountPaid = price;
 
-    // Stack expiry: jika masih ada membership aktif, perpanjang dari expires_at terjauh
+    // Stack expiry hanya untuk paket yang sama; paket beda jenis aktif paralel
     const { data: existingActive } = await admin
       .from("streak_user_memberships")
       .select("expires_at")
       .eq("visitor_id", visitorId)
+      .eq("plan_id", plan.id)
       .eq("is_active", true)
       .gte("expires_at", new Date().toISOString())
       .order("expires_at", { ascending: false })

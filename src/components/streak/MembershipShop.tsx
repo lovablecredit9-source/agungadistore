@@ -146,8 +146,10 @@ export default function MembershipShop({ visitorId, onUpdate }: Props) {
   // Gabungan membership aktif untuk hitung sisa hari kalender
   const activeForSelected = useMemo(() => {
     if (!selected) return null;
-    return active.find((m) => m.plan_id === selected.id) || active[0] || null;
+    return active.find((m) => m.plan_id === selected.id) || null;
   }, [active, selected]);
+  const activePlanIds = useMemo(() => new Set(active.map((m) => m.plan_id)), [active]);
+  const todayRewardTotal = dailyClaim?.coins_today || 0;
 
   // Generate daftar tanggal untuk grid kalender hadiah harian (durasi paket terpilih)
   const calendarDays = useMemo(() => {
@@ -344,6 +346,7 @@ export default function MembershipShop({ visitorId, onUpdate }: Props) {
           {plans.map((p) => {
             const t = getTheme(p);
             const isSel = p.id === selected.id;
+            const isActivePlan = activePlanIds.has(p.id);
             return (
               <button
                 key={p.id}
@@ -354,6 +357,11 @@ export default function MembershipShop({ visitorId, onUpdate }: Props) {
                     : "border-white/10 bg-black/30 hover:bg-black/40"
                 }`}
               >
+                {isActivePlan && (
+                  <div className="absolute left-1 top-1 rounded-full border border-emerald-400/40 bg-emerald-500/20 px-1 py-0.5 text-[8px] font-black text-emerald-200">
+                    Aktif
+                  </div>
+                )}
                 {/* Reward chip atas */}
                 <div className="flex items-center justify-end gap-0.5 mb-1">
                   <Coins className="h-2.5 w-2.5 text-yellow-300" />
@@ -381,6 +389,11 @@ export default function MembershipShop({ visitorId, onUpdate }: Props) {
             <div className="flex items-center gap-1.5 min-w-0">
               <div className="w-1 h-3 bg-yellow-400 rounded-sm" />
               <p className="text-[11px] font-black text-white uppercase tracking-wider">Hadiah Harian</p>
+              {todayRewardTotal > 0 && (
+                <Badge className="h-5 border-amber-400/40 bg-amber-500/15 text-[9px] text-amber-200">
+                  +{todayRewardTotal.toLocaleString("id-ID")}
+                </Badge>
+              )}
               <span className="text-[9px] text-white/60">(Refresh setiap hari pada <span className="text-yellow-300 font-bold">00:00</span>)</span>
             </div>
             {dailyClaim && dailyClaim.coins_today > 0 && !claimedToday && (
@@ -406,7 +419,7 @@ export default function MembershipShop({ visitorId, onUpdate }: Props) {
             {calendarDays.map((d, idx) => {
               const isToday = idx === 0;
               const isLocked = idx > 0 || (isToday && claimedToday);
-              const reward = selected.daily_reward_coins || 0;
+              const reward = isToday ? (todayRewardTotal || selected.daily_reward_coins || 0) : (selected.daily_reward_coins || 0);
               return (
                 <motion.div
                   key={idx}
