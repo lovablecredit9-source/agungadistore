@@ -4976,7 +4976,7 @@ const Index = () => {
                     >
                       <Icon
                         className={`transition-all duration-300 ${
-                          active ? "w-[20px] h-[20px] text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.35)]" : "w-[19px] h-[19px] text-foreground/70 group-hover/item:text-foreground"
+                          active ? "w-[20px] h-[20px] text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.35)]" : "w-[19px] h-[19px] text-foreground/70 dark:text-white/75 group-hover/item:text-foreground dark:group-hover/item:text-white"
                         }`}
                         strokeWidth={active ? 2.4 : 2}
                       />
@@ -4987,7 +4987,7 @@ const Index = () => {
                       className={`relative z-10 mt-0.5 leading-none transition-all duration-300 ${
                         active
                           ? "text-[10px] font-extrabold text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.4)]"
-                          : "text-[9px] font-medium text-muted-foreground group-hover/item:text-foreground"
+                          : "text-[9px] font-medium text-muted-foreground dark:text-white/75 group-hover/item:text-foreground dark:group-hover/item:text-white"
                       }`}
                     >
                       {label}
