@@ -146,8 +146,10 @@ export default function MembershipShop({ visitorId, onUpdate }: Props) {
   // Gabungan membership aktif untuk hitung sisa hari kalender
   const activeForSelected = useMemo(() => {
     if (!selected) return null;
-    return active.find((m) => m.plan_id === selected.id) || active[0] || null;
+    return active.find((m) => m.plan_id === selected.id) || null;
   }, [active, selected]);
+  const activePlanIds = useMemo(() => new Set(active.map((m) => m.plan_id)), [active]);
+  const todayRewardTotal = dailyClaim?.coins_today || 0;
 
   // Generate daftar tanggal untuk grid kalender hadiah harian (durasi paket terpilih)
   const calendarDays = useMemo(() => {
