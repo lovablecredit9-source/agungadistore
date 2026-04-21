@@ -25,37 +25,37 @@ const CARDS: Card[] = [
   {
     id: "bronze", cost: 50, name: "Bronze Scratch", emoji: "🥉", rarity: "common", color: "from-amber-700 to-orange-700",
     prizes: [
-      { label: "+10 koin", value: 10, weight: 50 },
-      { label: "+25 koin", value: 25, weight: 30 },
-      { label: "+50 koin", value: 50, weight: 15 },
-      { label: "+150 koin JACKPOT", value: 150, weight: 5, isJackpot: true },
+      { label: "+5 koin", value: 5, weight: 55 },
+      { label: "+10 koin", value: 10, weight: 30 },
+      { label: "+20 koin", value: 20, weight: 12 },
+      { label: "+60 koin JACKPOT", value: 60, weight: 3, isJackpot: true },
     ],
   },
   {
     id: "silver", cost: 150, name: "Silver Scratch", emoji: "🥈", rarity: "rare", color: "from-slate-300 to-slate-500",
     prizes: [
-      { label: "+50 koin", value: 50, weight: 50 },
-      { label: "+100 koin", value: 100, weight: 30 },
-      { label: "+200 koin", value: 200, weight: 15 },
-      { label: "+500 koin JACKPOT", value: 500, weight: 5, isJackpot: true },
+      { label: "+15 koin", value: 15, weight: 55 },
+      { label: "+25 koin", value: 25, weight: 30 },
+      { label: "+50 koin", value: 50, weight: 12 },
+      { label: "+160 koin JACKPOT", value: 160, weight: 3, isJackpot: true },
     ],
   },
   {
     id: "gold", cost: 400, name: "Gold Scratch", emoji: "🥇", rarity: "epic", color: "from-yellow-400 to-amber-600",
     prizes: [
-      { label: "+150 koin", value: 150, weight: 45 },
-      { label: "+300 koin", value: 300, weight: 30 },
-      { label: "+600 koin", value: 600, weight: 18 },
-      { label: "+1500 koin JACKPOT", value: 1500, weight: 7, isJackpot: true },
+      { label: "+40 koin", value: 40, weight: 55 },
+      { label: "+75 koin", value: 75, weight: 30 },
+      { label: "+130 koin", value: 130, weight: 12 },
+      { label: "+450 koin JACKPOT", value: 450, weight: 3, isJackpot: true },
     ],
   },
   {
     id: "diamond", cost: 1000, name: "Diamond Scratch", emoji: "💎", rarity: "legendary", color: "from-cyan-300 via-blue-400 to-purple-500",
     prizes: [
-      { label: "+500 koin", value: 500, weight: 40 },
-      { label: "+1000 koin", value: 1000, weight: 30 },
-      { label: "+2500 koin", value: 2500, weight: 20 },
-      { label: "+5000 koin MEGA JACKPOT", value: 5000, weight: 10, isJackpot: true },
+      { label: "+100 koin", value: 100, weight: 55 },
+      { label: "+180 koin", value: 180, weight: 30 },
+      { label: "+300 koin", value: 300, weight: 12 },
+      { label: "+900 koin MEGA JACKPOT", value: 900, weight: 3, isJackpot: true },
     ],
   },
 ];
@@ -87,17 +87,17 @@ interface AchievementDef {
 }
 
 const ACHIEVEMENTS: AchievementDef[] = [
-  { id: "first_win", label: "First Win", emoji: "🎯", desc: "Menang pertama kali", bonus: 50, check: (s) => s.total_wins >= 1 },
-  { id: "high_roller", label: "High Roller", emoji: "💰", desc: "Beli 10 kartu total", bonus: 200, check: (s) => s.total_buys >= 10 },
-  { id: "jackpot_hunter", label: "Jackpot Hunter", emoji: "👑", desc: "Dapat 1x JACKPOT", bonus: 500, check: (s) => s.jackpots >= 1 },
-  { id: "diamond_master", label: "Diamond Master", emoji: "💎", desc: "Beli 5 Diamond Scratch", bonus: 2000, check: (s) => s.diamond_buys >= 5 },
+  { id: "first_win", label: "First Win", emoji: "🎯", desc: "Menang pertama kali", bonus: 10, check: (s) => s.total_wins >= 1 },
+  { id: "high_roller", label: "High Roller", emoji: "💰", desc: "Beli 10 kartu total", bonus: 25, check: (s) => s.total_buys >= 10 },
+  { id: "jackpot_hunter", label: "Jackpot Hunter", emoji: "👑", desc: "Dapat 1x JACKPOT", bonus: 50, check: (s) => s.jackpots >= 1 },
+  { id: "diamond_master", label: "Diamond Master", emoji: "💎", desc: "Beli 5 Diamond Scratch", bonus: 100, check: (s) => s.diamond_buys >= 5 },
 ];
 
 const COMBO_TIERS = [
   { min: 1, mult: 1.0, color: "from-slate-500 to-slate-600", label: "x1.0" },
-  { min: 2, mult: 1.2, color: "from-blue-500 to-cyan-500", label: "x1.2" },
-  { min: 3, mult: 1.5, color: "from-fuchsia-500 to-pink-500", label: "x1.5" },
-  { min: 5, mult: 2.0, color: "from-orange-500 via-red-500 to-yellow-500", label: "x2.0 🔥" },
+  { min: 2, mult: 1.05, color: "from-blue-500 to-cyan-500", label: "x1.05" },
+  { min: 3, mult: 1.1, color: "from-fuchsia-500 to-pink-500", label: "x1.1" },
+  { min: 5, mult: 1.2, color: "from-orange-500 via-red-500 to-yellow-500", label: "x1.2 🔥" },
 ];
 
 const COMBO_WINDOW_MS = 120_000; // 2 menit
@@ -129,6 +129,7 @@ export default function ScratchOffShop({ visitorId, onUpdate }: Props) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [scratchPct, setScratchPct] = useState(0);
   const [activated, setActivated] = useState(false);
+  const claimedRef = useRef(false);
 
   const [stats, setStats] = useState<ScratchStats>(DEFAULT_STATS);
   const [freeAvailable, setFreeAvailable] = useState(false);
@@ -180,7 +181,8 @@ export default function ScratchOffShop({ visitorId, onUpdate }: Props) {
 
   async function buyCard(card: Card, free = false) {
     if (!visitorId || scratching) return;
-    setScratching(card.id);
+    const scratchKey = free ? `${card.id}-free` : card.id;
+    setScratching(scratchKey);
     try {
       const { data: streak, error: selErr } = await supabase
         .from("daily_streaks")
@@ -237,6 +239,7 @@ export default function ScratchOffShop({ visitorId, onUpdate }: Props) {
       setReveal({ card, prize, multiplier, isFree: free });
       setScratchPct(0);
       setActivated(false);
+      claimedRef.current = false;
     } catch (e) {
       toast({ title: "Gagal beli kartu", description: e instanceof Error ? e.message : "Coba lagi", variant: "destructive" });
     } finally {
@@ -290,7 +293,8 @@ export default function ScratchOffShop({ visitorId, onUpdate }: Props) {
       const total = data.length / (4 * step);
       const pct = (cleared / total) * 100;
       setScratchPct(pct);
-      if (pct > 55 && !activated) {
+      if (pct > 55 && !activated && !claimedRef.current) {
+        claimedRef.current = true;
         setActivated(true);
         const finalPrize = Math.round(reveal.prize.value * reveal.multiplier);
         const isJackpot = !!reveal.prize.isJackpot;
