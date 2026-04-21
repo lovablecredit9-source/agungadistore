@@ -4,6 +4,27 @@
 @tailwind components;
 @tailwind utilities;
 
+/* === iOS GLOBAL TOKENS === */
+:root {
+  --ios-font: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text",
+    "SF Pro Icons", "Helvetica Neue", Helvetica, Arial, system-ui, sans-serif;
+  --ios-blue: 211 100% 50%;        /* #007AFF */
+  --ios-green: 142 70% 45%;        /* #34C759 */
+  --ios-red: 4 90% 58%;            /* #FF3B30 */
+  --ios-orange: 28 100% 50%;       /* #FF9500 */
+  --ios-yellow: 48 100% 50%;       /* #FFCC00 */
+  --ios-gray-1: 240 6% 90%;
+  --ios-gray-2: 240 6% 80%;
+  --ios-gray-fill: 240 6% 95%;
+  --ios-radius-sm: 10px;
+  --ios-radius-md: 14px;
+  --ios-radius-lg: 18px;
+  --ios-radius-xl: 22px;
+  --ios-radius-pill: 9999px;
+  --ios-shadow-card: 0 1px 2px hsl(0 0% 0% / 0.04), 0 8px 24px -8px hsl(0 0% 0% / 0.08);
+  --ios-shadow-modal: 0 20px 60px -10px hsl(0 0% 0% / 0.25), 0 0 0 1px hsl(0 0% 0% / 0.05);
+}
+
 @layer base {
   :root {
     --background: 220 20% 97%;
