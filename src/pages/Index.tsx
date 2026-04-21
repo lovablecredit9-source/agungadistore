@@ -1498,7 +1498,7 @@ const Index = () => {
       {/* Header */}
       <header className="sticky top-0 z-50 bg-gradient-to-r from-primary via-primary/90 to-primary/80 text-primary-foreground px-4 py-3 shadow-xl">
         <div className="flex items-center gap-2 max-w-lg mx-auto">
-          <Sheet>
+          <Sheet open={showNavMenu} onOpenChange={setShowNavMenu}>
             <SheetTrigger asChild>
               <button
                 aria-label="Buka menu navigasi"
