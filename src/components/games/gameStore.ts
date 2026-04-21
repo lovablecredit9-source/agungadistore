@@ -56,6 +56,14 @@ export function addPoints(points: number): GameLevel {
   return data;
 }
 
+export function adjustGameLevelPoints(pointsDelta: number): GameLevel {
+  const data = loadGameData();
+  data.totalPoints = Math.max(0, data.totalPoints + pointsDelta);
+  data.level = getLevelFromPoints(data.totalPoints);
+  saveGameData(data);
+  return data;
+}
+
 export type Difficulty = "mudah" | "sedang" | "sulit" | "pro" | "sangat_pro";
 
 export const DIFFICULTIES: { key: Difficulty; label: string; color: string; timeSeconds: number; hintCount: number }[] = [
