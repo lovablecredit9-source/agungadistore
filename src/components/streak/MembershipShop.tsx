@@ -441,7 +441,10 @@ export default function MembershipShop({ visitorId, onUpdate }: Props) {
                   </div>
                   <div className="relative h-12 flex items-center justify-center bg-gradient-to-b from-white/5 to-transparent">
                     {isLocked ? (
-                      <Lock className="h-4 w-4 text-white/40" />
+                      <div className="flex flex-col items-center gap-0.5 opacity-40">
+                        <Lock className="h-2.5 w-2.5 text-white/50" strokeWidth={2} />
+                        <span className="text-[8px] font-bold text-white/40">+{reward}</span>
+                      </div>
                     ) : (
                       <div className="flex flex-col items-center">
                         <Coins className="h-4 w-4 text-yellow-300" />
