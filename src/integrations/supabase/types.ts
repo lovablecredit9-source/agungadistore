@@ -4525,6 +4525,125 @@ export type Database = {
         }
         Relationships: []
       }
+      streak_flash_sale_purchases: {
+        Row: {
+          amount_paid: number
+          created_at: string
+          currency: string
+          deal_id: string
+          id: string
+          purchase_date: string
+          reward_payload: Json
+          visitor_id: string
+        }
+        Insert: {
+          amount_paid: number
+          created_at?: string
+          currency: string
+          deal_id: string
+          id?: string
+          purchase_date?: string
+          reward_payload?: Json
+          visitor_id: string
+        }
+        Update: {
+          amount_paid?: number
+          created_at?: string
+          currency?: string
+          deal_id?: string
+          id?: string
+          purchase_date?: string
+          reward_payload?: Json
+          visitor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "streak_flash_sale_purchases_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "streak_flash_sales"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      streak_flash_sales: {
+        Row: {
+          created_at: string
+          description: string | null
+          discount_pct: number | null
+          ends_at: string | null
+          gradient: string | null
+          icon: string | null
+          id: string
+          is_active: boolean
+          is_featured: boolean
+          item_type: string
+          name: string
+          original_price: number | null
+          per_user_daily_limit: number | null
+          price_balance: number | null
+          price_coins: number | null
+          price_gems: number | null
+          rarity: string | null
+          remaining_stock: number | null
+          reward_payload: Json
+          sort_order: number | null
+          starts_at: string
+          total_stock: number | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          discount_pct?: number | null
+          ends_at?: string | null
+          gradient?: string | null
+          icon?: string | null
+          id?: string
+          is_active?: boolean
+          is_featured?: boolean
+          item_type: string
+          name: string
+          original_price?: number | null
+          per_user_daily_limit?: number | null
+          price_balance?: number | null
+          price_coins?: number | null
+          price_gems?: number | null
+          rarity?: string | null
+          remaining_stock?: number | null
+          reward_payload?: Json
+          sort_order?: number | null
+          starts_at?: string
+          total_stock?: number | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          discount_pct?: number | null
+          ends_at?: string | null
+          gradient?: string | null
+          icon?: string | null
+          id?: string
+          is_active?: boolean
+          is_featured?: boolean
+          item_type?: string
+          name?: string
+          original_price?: number | null
+          per_user_daily_limit?: number | null
+          price_balance?: number | null
+          price_coins?: number | null
+          price_gems?: number | null
+          rarity?: string | null
+          remaining_stock?: number | null
+          reward_payload?: Json
+          sort_order?: number | null
+          starts_at?: string
+          total_stock?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       streak_group_buy_items: {
         Row: {
           base_cost_coins: number
