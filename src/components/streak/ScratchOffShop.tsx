@@ -442,7 +442,7 @@ export default function ScratchOffShop({ visitorId, onUpdate }: Props) {
               size="sm"
               disabled={scratching === "bronze-free"}
               onClick={() => buyCard({ ...CARDS[0] }, true)}
-              className="h-7 px-3 text-[11px] bg-white text-foreground hover:bg-white/90 font-bold rounded-full ios-pressable"
+              className="h-7 px-3 text-[11px] bg-white text-neutral-900 hover:bg-white/90 font-bold rounded-full ios-pressable"
             >
               {scratching === "bronze-free" ? <Loader2 className="h-3 w-3 animate-spin" /> : "Klaim"}
             </Button>
@@ -469,7 +469,7 @@ export default function ScratchOffShop({ visitorId, onUpdate }: Props) {
               size="sm"
               disabled={scratching === c.id}
               onClick={() => buyCard(c)}
-              className="w-full h-7 text-[11px] bg-white/95 hover:bg-white text-foreground font-bold rounded-full ios-pressable border-0"
+              className="w-full h-7 text-[11px] bg-white/95 hover:bg-white text-neutral-900 font-bold rounded-full ios-pressable border-0"
             >
               {scratching === c.id ? <Loader2 className="h-3 w-3 animate-spin" /> : (
                 <><Coins className="h-3 w-3 mr-1" />{c.cost}</>
@@ -581,7 +581,7 @@ export default function ScratchOffShop({ visitorId, onUpdate }: Props) {
               {activated && (
                 <Button
                   onClick={() => setReveal(null)}
-                  className="w-full mt-3 bg-white text-foreground hover:bg-white/95 font-bold rounded-full h-10 ios-pressable border-0"
+                  className="w-full mt-3 bg-white text-neutral-900 hover:bg-white/95 font-bold rounded-full h-10 ios-pressable border-0"
                 >
                   <Star className="h-4 w-4 mr-1" /> Selesai
                 </Button>
