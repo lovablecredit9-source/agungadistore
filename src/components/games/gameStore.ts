@@ -200,6 +200,8 @@ export async function syncPowerUpsFromServer(): Promise<PowerUpsState> {
         double_xp_until: data.double_xp_until || null,
       };
       savePowerUps(next);
+      const syncedUntil = next.double_xp_until ? new Date(next.double_xp_until).getTime() : 0;
+      setPointBoosterUntil(Number.isFinite(syncedUntil) ? syncedUntil : 0);
       return next;
     }
   } catch {}
@@ -266,11 +268,15 @@ export const BOOSTER_TIERS: BoosterTier[] = [
 export function getPointBoosterUntil(): number {
   try {
     const key = getBoosterKey();
-    if (!key) return 0;
-    const raw = localStorage.getItem(key);
-    if (!raw) return 0;
-    const ts = parseInt(raw, 10);
-    return Number.isFinite(ts) ? ts : 0;
+    const raw = key ? localStorage.getItem(key) : null;
+    const localUntil = raw ? parseInt(raw, 10) : 0;
+    const powerUpUntil = loadPowerUps().double_xp_until
+      ? new Date(loadPowerUps().double_xp_until as string).getTime()
+      : 0;
+    return Math.max(
+      Number.isFinite(localUntil) ? localUntil : 0,
+      Number.isFinite(powerUpUntil) ? powerUpUntil : 0,
+    );
   } catch { return 0; }
 }
 

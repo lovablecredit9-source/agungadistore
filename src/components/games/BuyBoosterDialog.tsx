@@ -1,10 +1,10 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Zap, Gem, Loader2, Clock } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { BOOSTER_TIERS, activatePointBooster, getPointBoosterUntil, setPointBoosterUntil } from "./gameStore";
+import { BOOSTER_TIERS, activatePointBooster, getPointBoosterUntil, setPointBoosterUntil, syncPowerUpsFromServer } from "./gameStore";
 
 interface Props {
   visitorId: string | null;
@@ -16,15 +16,50 @@ export default function BuyBoosterDialog({ visitorId, onActivated, trigger }: Pr
   const [open, setOpen] = useState(false);
   const [gems, setGems] = useState(0);
   const [buying, setBuying] = useState<string | null>(null);
+  const [activeUntil, setActiveUntil] = useState(0);
   const { toast } = useToast();
+
+  const remainingMs = Math.max(0, activeUntil - Date.now());
+  const isActive = remainingMs > 0;
+
+  const activeLabel = useMemo(() => {
+    if (!isActive) return "";
+    const totalMinutes = Math.floor(remainingMs / 60000);
+    const days = Math.floor(totalMinutes / (60 * 24));
+    const hours = Math.floor((totalMinutes % (60 * 24)) / 60);
+    const minutes = totalMinutes % 60;
+    const parts = [
+      days > 0 ? `${days}h` : null,
+      hours > 0 ? `${hours}j` : null,
+      minutes > 0 || (!days && !hours) ? `${minutes}m` : null,
+    ].filter(Boolean);
+    return parts.join(" ");
+  }, [isActive, remainingMs]);
 
   useEffect(() => {
     if (!open || !visitorId) return;
     (async () => {
       const { data } = await supabase.rpc("get_account_gems" as any, { p_visitor_id: visitorId });
       if (typeof data === "number") setGems(data);
+      await syncPowerUpsFromServer();
+      setActiveUntil(getPointBoosterUntil());
     })();
   }, [open, visitorId]);
+
+  useEffect(() => {
+    setActiveUntil(getPointBoosterUntil());
+    const refresh = () => setActiveUntil(getPointBoosterUntil());
+    const timer = window.setInterval(refresh, 1000);
+    window.addEventListener("power-ups-updated", refresh as EventListener);
+    window.addEventListener("storage", refresh);
+    window.addEventListener("focus", refresh);
+    return () => {
+      window.clearInterval(timer);
+      window.removeEventListener("power-ups-updated", refresh as EventListener);
+      window.removeEventListener("storage", refresh);
+      window.removeEventListener("focus", refresh);
+    };
+  }, []);
 
   const handleBuy = async (tierKey: string) => {
     if (!visitorId) {
@@ -51,6 +86,8 @@ export default function BuyBoosterDialog({ visitorId, onActivated, trigger }: Pr
       if (syncError) throw syncError;
       const syncedUntil = syncData?.double_xp_until ? new Date(syncData.double_xp_until).getTime() : localUntil;
       setPointBoosterUntil(syncedUntil);
+      setActiveUntil(syncedUntil);
+      window.dispatchEvent(new CustomEvent("power-ups-updated"));
       setGems(typeof data === "number" ? data : gems - tier.gemCost);
       toast({ title: "🚀 Booster aktif!", description: `x2 poin selama ${tier.label}` });
       onActivated?.();
@@ -61,9 +98,6 @@ export default function BuyBoosterDialog({ visitorId, onActivated, trigger }: Pr
       setBuying(null);
     }
   };
-
-  const activeUntil = getPointBoosterUntil();
-  const isActive = activeUntil > Date.now();
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -90,7 +124,7 @@ export default function BuyBoosterDialog({ visitorId, onActivated, trigger }: Pr
           {isActive && (
             <div className="flex items-center gap-1.5 text-xs bg-yellow-500/10 border border-yellow-500/30 rounded-lg px-3 py-2 text-yellow-700 dark:text-yellow-400 font-bold">
               <Clock className="w-3.5 h-3.5" />
-              Aktif sampai {new Date(activeUntil).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })}
+              Aktif sampai {new Date(activeUntil).toLocaleString("id-ID", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })} ({activeLabel})
             </div>
           )}
           <p className="text-[11px] text-muted-foreground">
