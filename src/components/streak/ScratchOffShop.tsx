@@ -469,7 +469,7 @@ export default function ScratchOffShop({ visitorId, onUpdate }: Props) {
               size="sm"
               disabled={scratching === c.id}
               onClick={() => buyCard(c)}
-              className="w-full h-7 text-[11px] bg-white/95 hover:bg-white text-foreground font-bold rounded-full ios-pressable border-0"
+              className="w-full h-7 text-[11px] bg-white/95 hover:bg-white text-neutral-900 font-bold rounded-full ios-pressable border-0"
             >
               {scratching === c.id ? <Loader2 className="h-3 w-3 animate-spin" /> : (
                 <><Coins className="h-3 w-3 mr-1" />{c.cost}</>
