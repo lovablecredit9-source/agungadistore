@@ -603,6 +603,7 @@ export async function updateGameStats(
 ) {
   let trackedPoints = points;
   try {
+    const hasBasePoints = typeof meta?.basePoints === "number" && Number.isFinite(meta.basePoints);
     const { data } = await supabase.functions.invoke("game-profile", {
       body: {
         action: "update_stats",
@@ -611,7 +612,7 @@ export async function updateGameStats(
         won,
         points,
         questionsAnswered,
-        basePoints: meta?.basePoints,
+        ...(hasBasePoints ? { basePoints: meta!.basePoints } : {}),
       },
     });
     if (typeof data?.awardedPoints === "number") {
