@@ -66,7 +66,7 @@ import HistoryEnhancer, { type HistoryItem } from "@/components/HistoryEnhancer"
 import { TicketEnhancer, TICKET_TEMPLATES } from "@/components/TicketEnhancer";
 import { useAccountBan } from "@/hooks/useAccountBan";
 
-type Tab = "musik" | "beranda" | "produk" | "voucher" | "history" | "likes" | "tiket" | "saldo" | "playlist" | "publik" | "sponsor" | "streak" | "streakevent" | "streakshop" | "adminpost" | "game" | "plus" | "update";
+type Tab = "musik" | "beranda" | "produk" | "voucher" | "history" | "likes" | "tiket" | "saldo" | "playlist" | "publik" | "sponsor" | "streak" | "streakevent" | "streakshop" | "streakmembership" | "adminpost" | "game" | "plus" | "update";
 
 interface UserBalance {
   id: string;
@@ -293,6 +293,7 @@ const TAB_PATHS: Record<string, Tab> = {
   "/streak": "streak",
   "/streak-event": "streakevent",
   "/streak-shop": "streakshop",
+  "/streak-membership": "streakmembership",
   "/admin-post": "adminpost",
   "/game": "game",
   "/plus": "plus",
@@ -1533,6 +1534,7 @@ const Index = () => {
                   { key: "streak" as Tab, icon: CalendarDays, label: "Streak", gradient: "from-orange-600 to-red-500" },
                   { key: "streakevent" as Tab, icon: CalendarDays, label: "Streak Event", gradient: "from-pink-500 to-purple-600" },
                   { key: "streakshop" as Tab, icon: CalendarDays, label: "Streak Shop", gradient: "from-purple-600 to-cyan-600" },
+                  { key: "streakmembership" as Tab, icon: Crown, label: "M.Streak", gradient: "from-amber-500 via-yellow-500 to-orange-500" },
                   { key: "game" as Tab, icon: Gamepad2, label: "Game", gradient: "from-indigo-500 to-violet-400" },
                   { key: "plus" as Tab, icon: Sparkles, label: "Plus", gradient: "from-yellow-500 to-orange-400" },
                   { key: "update" as Tab, icon: RefreshCw, label: "Update", gradient: "from-cyan-500 to-blue-400" },
@@ -4940,6 +4942,7 @@ const Index = () => {
                 { key: "streak" as Tab, icon: CalendarDays, label: "Streak", gradient: "from-orange-600 to-red-500" },
                 { key: "streakevent" as Tab, icon: CalendarDays, label: "Streak Event", gradient: "from-pink-500 to-purple-600" },
                 { key: "streakshop" as Tab, icon: CalendarDays, label: "Streak Shop", gradient: "from-purple-600 to-cyan-600" },
+                { key: "streakmembership" as Tab, icon: Crown, label: "M.Streak", gradient: "from-amber-500 via-yellow-500 to-orange-500" },
                 { key: "game" as Tab, icon: Gamepad2, label: "Game", gradient: "from-indigo-500 to-violet-400" },
                 { key: "plus" as Tab, icon: Sparkles, label: "Plus", gradient: "from-yellow-500 to-orange-400" },
                 { key: "update" as Tab, icon: RefreshCw, label: "Update", gradient: "from-cyan-500 to-blue-400" },
