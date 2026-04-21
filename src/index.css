@@ -70,37 +70,53 @@
     --sidebar-ring: 217.2 91.2% 59.8%;
   }
 
+  /* === iOS Dark Vibrant — true black, vibrant accents (Apple Music / Photos style) === */
   .dark {
-    --background: 0 0% 0%;
+    --background: 0 0% 0%;            /* true black */
     --foreground: 0 0% 100%;
 
-    --card: 240 6% 10%;
+    --card: 240 5% 8%;                /* L1 elevated surface */
     --card-foreground: 0 0% 100%;
 
-    --popover: 240 6% 12%;
+    --popover: 240 5% 11%;
     --popover-foreground: 0 0% 100%;
 
-    --primary: 211 100% 55%;
+    --primary: 211 100% 55%;          /* iOS systemBlue */
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 240 5% 16%;
-    --secondary-foreground: 0 0% 92%;
+    --secondary: 240 4% 14%;
+    --secondary-foreground: 0 0% 95%;
 
-    --muted: 240 5% 14%;
-    --muted-foreground: 240 5% 65%;
+    --muted: 240 4% 12%;
+    --muted-foreground: 240 5% 62%;
 
-    --accent: 211 100% 55%;
+    --accent: 320 90% 62%;            /* iOS systemPink vibrant */
     --accent-foreground: 0 0% 100%;
 
     --destructive: 4 90% 60%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 240 5% 18%;
-    --input: 240 5% 16%;
+    --border: 240 4% 16%;
+    --input: 240 4% 14%;
     --ring: 211 100% 55%;
 
     --success: 142 70% 50%;
     --success-foreground: 0 0% 100%;
+
+    /* iOS Dark Vibrant palette — Apple system colors (dark) */
+    --ios-vibrant-blue: 211 100% 55%;
+    --ios-vibrant-purple: 270 90% 65%;
+    --ios-vibrant-pink: 320 90% 62%;
+    --ios-vibrant-orange: 28 100% 55%;
+    --ios-vibrant-green: 142 70% 50%;
+    --ios-vibrant-teal: 188 95% 55%;
+    --ios-vibrant-indigo: 234 90% 65%;
+    --ios-vibrant-yellow: 48 100% 55%;
+    --ios-vibrant-red: 4 90% 60%;
+    --ios-elevated-1: 240 5% 8%;
+    --ios-elevated-2: 240 5% 11%;
+    --ios-elevated-3: 240 5% 14%;
+    --ios-hairline: 240 5% 18%;
   }
 
   .gold {
