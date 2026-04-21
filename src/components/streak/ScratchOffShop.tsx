@@ -1,9 +1,9 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { Sparkles, Coins, Loader2, Star } from "lucide-react";
+import { Sparkles, Coins, Loader2, Star, Gift, Trophy, Flame, Target, Crown } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 interface Props {
@@ -18,7 +18,7 @@ interface Card {
   emoji: string;
   rarity: "common" | "rare" | "epic" | "legendary";
   color: string;
-  prizes: { label: string; value: number; weight: number }[];
+  prizes: { label: string; value: number; weight: number; isJackpot?: boolean }[];
 }
 
 const CARDS: Card[] = [
@@ -28,7 +28,7 @@ const CARDS: Card[] = [
       { label: "+10 koin", value: 10, weight: 50 },
       { label: "+25 koin", value: 25, weight: 30 },
       { label: "+50 koin", value: 50, weight: 15 },
-      { label: "+150 koin JACKPOT", value: 150, weight: 5 },
+      { label: "+150 koin JACKPOT", value: 150, weight: 5, isJackpot: true },
     ],
   },
   {
@@ -37,7 +37,7 @@ const CARDS: Card[] = [
       { label: "+50 koin", value: 50, weight: 50 },
       { label: "+100 koin", value: 100, weight: 30 },
       { label: "+200 koin", value: 200, weight: 15 },
-      { label: "+500 koin JACKPOT", value: 500, weight: 5 },
+      { label: "+500 koin JACKPOT", value: 500, weight: 5, isJackpot: true },
     ],
   },
   {
@@ -46,7 +46,7 @@ const CARDS: Card[] = [
       { label: "+150 koin", value: 150, weight: 45 },
       { label: "+300 koin", value: 300, weight: 30 },
       { label: "+600 koin", value: 600, weight: 18 },
-      { label: "+1500 koin JACKPOT", value: 1500, weight: 7 },
+      { label: "+1500 koin JACKPOT", value: 1500, weight: 7, isJackpot: true },
     ],
   },
   {
@@ -55,7 +55,7 @@ const CARDS: Card[] = [
       { label: "+500 koin", value: 500, weight: 40 },
       { label: "+1000 koin", value: 1000, weight: 30 },
       { label: "+2500 koin", value: 2500, weight: 20 },
-      { label: "+5000 koin MEGA JACKPOT", value: 5000, weight: 10 },
+      { label: "+5000 koin MEGA JACKPOT", value: 5000, weight: 10, isJackpot: true },
     ],
   },
 ];
@@ -66,6 +66,51 @@ const RARITY_BG: Record<string, string> = {
   epic: "border-yellow-300/60",
   legendary: "border-cyan-300/70",
 };
+
+interface ScratchStats {
+  total_buys: number;
+  total_wins: number;
+  jackpots: number;
+  diamond_buys: number;
+  achievements: string[];
+}
+
+const DEFAULT_STATS: ScratchStats = { total_buys: 0, total_wins: 0, jackpots: 0, diamond_buys: 0, achievements: [] };
+
+interface AchievementDef {
+  id: string;
+  label: string;
+  emoji: string;
+  desc: string;
+  bonus: number;
+  check: (s: ScratchStats) => boolean;
+}
+
+const ACHIEVEMENTS: AchievementDef[] = [
+  { id: "first_win", label: "First Win", emoji: "🎯", desc: "Menang pertama kali", bonus: 50, check: (s) => s.total_wins >= 1 },
+  { id: "high_roller", label: "High Roller", emoji: "💰", desc: "Beli 10 kartu total", bonus: 200, check: (s) => s.total_buys >= 10 },
+  { id: "jackpot_hunter", label: "Jackpot Hunter", emoji: "👑", desc: "Dapat 1x JACKPOT", bonus: 500, check: (s) => s.jackpots >= 1 },
+  { id: "diamond_master", label: "Diamond Master", emoji: "💎", desc: "Beli 5 Diamond Scratch", bonus: 2000, check: (s) => s.diamond_buys >= 5 },
+];
+
+const COMBO_TIERS = [
+  { min: 1, mult: 1.0, color: "from-slate-500 to-slate-600", label: "x1.0" },
+  { min: 2, mult: 1.2, color: "from-blue-500 to-cyan-500", label: "x1.2" },
+  { min: 3, mult: 1.5, color: "from-fuchsia-500 to-pink-500", label: "x1.5" },
+  { min: 5, mult: 2.0, color: "from-orange-500 via-red-500 to-yellow-500", label: "x2.0 🔥" },
+];
+
+const COMBO_WINDOW_MS = 120_000; // 2 menit
+
+function getComboTier(count: number) {
+  return [...COMBO_TIERS].reverse().find((t) => count >= t.min) ?? COMBO_TIERS[0];
+}
+
+function todayWIB(): string {
+  const now = new Date();
+  const wib = new Date(now.getTime() + (now.getTimezoneOffset() + 420) * 60 * 1000);
+  return wib.toISOString().slice(0, 10);
+}
 
 function pickPrize(card: Card) {
   const total = card.prizes.reduce((s, p) => s + p.weight, 0);
@@ -79,51 +124,117 @@ function pickPrize(card: Card) {
 
 export default function ScratchOffShop({ visitorId, onUpdate }: Props) {
   const { toast } = useToast();
-  const totalKey = `scratch-total-${visitorId}`;
-  const [totalWon, setTotalWon] = useState(0);
   const [scratching, setScratching] = useState<string | null>(null);
-  const [reveal, setReveal] = useState<{ card: Card; prize: ReturnType<typeof pickPrize> } | null>(null);
+  const [reveal, setReveal] = useState<{ card: Card; prize: ReturnType<typeof pickPrize>; multiplier: number; isFree: boolean } | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [scratchPct, setScratchPct] = useState(0);
   const [activated, setActivated] = useState(false);
 
-  useEffect(() => {
-    setTotalWon(Number(localStorage.getItem(totalKey) || "0"));
-  }, [totalKey]);
+  const [stats, setStats] = useState<ScratchStats>(DEFAULT_STATS);
+  const [freeAvailable, setFreeAvailable] = useState(false);
+  const [comboCount, setComboCount] = useState(0);
+  const lastBuyAtRef = useRef<number>(0);
+  const comboTimerRef = useRef<number | null>(null);
+  const [unlockedAch, setUnlockedAch] = useState<AchievementDef | null>(null);
 
-  async function buyCard(card: Card) {
+  const loadState = useCallback(async () => {
     if (!visitorId) return;
-    if (scratching) return;
+    const { data } = await supabase
+      .from("daily_streaks")
+      .select("scratch_stats, free_scratch_date")
+      .eq("visitor_id", visitorId)
+      .maybeSingle();
+    if (data) {
+      const s = (data.scratch_stats as unknown as ScratchStats) || DEFAULT_STATS;
+      setStats({ ...DEFAULT_STATS, ...s });
+      setFreeAvailable(data.free_scratch_date !== todayWIB());
+    } else {
+      setFreeAvailable(true);
+    }
+  }, [visitorId]);
+
+  useEffect(() => { loadState(); }, [loadState]);
+
+  // Reset combo kalau idle
+  const resetComboTimer = useCallback(() => {
+    if (comboTimerRef.current) window.clearTimeout(comboTimerRef.current);
+    comboTimerRef.current = window.setTimeout(() => setComboCount(0), COMBO_WINDOW_MS);
+  }, []);
+
+  useEffect(() => () => { if (comboTimerRef.current) window.clearTimeout(comboTimerRef.current); }, []);
+
+  async function checkAndApplyAchievements(newStats: ScratchStats, streakId: string): Promise<{ stats: ScratchStats; bonus: number; unlocked: AchievementDef | null }> {
+    let bonus = 0;
+    let unlocked: AchievementDef | null = null;
+    const newAchievements = [...newStats.achievements];
+    for (const a of ACHIEVEMENTS) {
+      if (!newAchievements.includes(a.id) && a.check(newStats)) {
+        newAchievements.push(a.id);
+        bonus += a.bonus;
+        if (!unlocked) unlocked = a; // tampilkan yang pertama
+      }
+    }
+    const finalStats = { ...newStats, achievements: newAchievements };
+    return { stats: finalStats, bonus, unlocked };
+  }
+
+  async function buyCard(card: Card, free = false) {
+    if (!visitorId || scratching) return;
     setScratching(card.id);
     try {
-      // 1. Validasi & potong koin di DB
       const { data: streak, error: selErr } = await supabase
         .from("daily_streaks")
-        .select("id, streak_coins")
+        .select("id, streak_coins, free_scratch_date, scratch_stats")
         .eq("visitor_id", visitorId)
         .maybeSingle();
       if (selErr) throw selErr;
       if (!streak) {
         toast({ title: "Belum ada streak", description: "Klaim streak harian dulu untuk dapat koin.", variant: "destructive" });
-        setScratching(null);
-        return;
+        setScratching(null); return;
       }
       const balance = streak.streak_coins || 0;
-      if (balance < card.cost) {
-        toast({ title: "Koin kurang", description: `Butuh ${card.cost} koin (kamu punya ${balance})`, variant: "destructive" });
-        setScratching(null);
-        return;
+
+      if (free) {
+        if (streak.free_scratch_date === todayWIB()) {
+          toast({ title: "Sudah klaim hari ini", description: "Kartu gratis berikutnya besok ya!", variant: "destructive" });
+          setScratching(null); return;
+        }
+        await supabase.from("daily_streaks").update({ free_scratch_date: todayWIB() }).eq("id", streak.id);
+        setFreeAvailable(false);
+      } else {
+        if (balance < card.cost) {
+          toast({ title: "Koin kurang", description: `Butuh ${card.cost} koin (kamu punya ${balance})`, variant: "destructive" });
+          setScratching(null); return;
+        }
+        const { error: updErr } = await supabase
+          .from("daily_streaks").update({ streak_coins: balance - card.cost }).eq("id", streak.id);
+        if (updErr) throw updErr;
       }
-      const { error: updErr } = await supabase
-        .from("daily_streaks")
-        .update({ streak_coins: balance - card.cost })
-        .eq("id", streak.id);
-      if (updErr) throw updErr;
       onUpdate?.();
 
-      // 2. Roll hadiah lalu buka kartu untuk digosok
+      // Combo update (kartu berbayar saja)
+      let nextCombo = comboCount;
+      if (!free) {
+        const now = Date.now();
+        nextCombo = (now - lastBuyAtRef.current < COMBO_WINDOW_MS) ? comboCount + 1 : 1;
+        setComboCount(nextCombo);
+        lastBuyAtRef.current = now;
+        resetComboTimer();
+      }
+      const multiplier = free ? 1.0 : getComboTier(nextCombo).mult;
+
+      // Update total_buys + diamond_buys
+      const baseStats = (streak.scratch_stats as unknown as ScratchStats) || DEFAULT_STATS;
+      const newStats: ScratchStats = {
+        ...DEFAULT_STATS, ...baseStats,
+        total_buys: baseStats.total_buys + 1,
+        diamond_buys: baseStats.diamond_buys + (card.id === "diamond" ? 1 : 0),
+      };
+      await supabase.from("daily_streaks").update({ scratch_stats: newStats as any }).eq("id", streak.id);
+      setStats(newStats);
+
       const prize = pickPrize(card);
-      setReveal({ card, prize });
+      setReveal({ card, prize, multiplier, isFree: free });
       setScratchPct(0);
       setActivated(false);
     } catch (e) {
@@ -133,7 +244,6 @@ export default function ScratchOffShop({ visitorId, onUpdate }: Props) {
     }
   }
 
-  // Initialize scratch canvas when reveal opens
   useEffect(() => {
     if (!reveal) return;
     const cvs = canvasRef.current;
@@ -170,9 +280,7 @@ export default function ScratchOffShop({ visitorId, onUpdate }: Props) {
     ctx.arc(x, y, 22, 0, Math.PI * 2);
     ctx.fill();
 
-    // Calculate cleared % every few moves
     if (Math.random() < 0.15) {
-      const dpr = window.devicePixelRatio || 1;
       const data = ctx.getImageData(0, 0, cvs.width, cvs.height).data;
       let cleared = 0;
       const step = 60;
@@ -184,25 +292,45 @@ export default function ScratchOffShop({ visitorId, onUpdate }: Props) {
       setScratchPct(pct);
       if (pct > 55 && !activated) {
         setActivated(true);
-        // Tambahkan hadiah ke saldo koin DB (atomic-ish: re-fetch saldo terbaru)
-        const prizeValue = reveal.prize.value;
+        const finalPrize = Math.round(reveal.prize.value * reveal.multiplier);
+        const isJackpot = !!reveal.prize.isJackpot;
         (async () => {
           try {
             const { data: s } = await supabase
               .from("daily_streaks")
-              .select("id, streak_coins")
+              .select("id, streak_coins, scratch_stats")
               .eq("visitor_id", visitorId)
               .maybeSingle();
-            if (s) {
-              await supabase
-                .from("daily_streaks")
-                .update({ streak_coins: (s.streak_coins || 0) + prizeValue })
-                .eq("id", s.id);
+            if (!s) return;
+
+            // Update stats: total_wins + jackpots
+            const cur = (s.scratch_stats as unknown as ScratchStats) || DEFAULT_STATS;
+            const updated: ScratchStats = {
+              ...DEFAULT_STATS, ...cur,
+              total_wins: cur.total_wins + 1,
+              jackpots: cur.jackpots + (isJackpot ? 1 : 0),
+            };
+            const { stats: finalStats, bonus, unlocked } = await checkAndApplyAchievements(updated, s.id);
+
+            const totalCredit = finalPrize + bonus;
+            await supabase
+              .from("daily_streaks")
+              .update({
+                streak_coins: (s.streak_coins || 0) + totalCredit,
+                scratch_stats: finalStats as any,
+              })
+              .eq("id", s.id);
+
+            setStats(finalStats);
+            toast({
+              title: `🎉 +${finalPrize} koin!`,
+              description: reveal.multiplier > 1
+                ? `${reveal.prize.label} × COMBO ${reveal.multiplier}x`
+                : reveal.prize.label,
+            });
+            if (unlocked) {
+              setTimeout(() => setUnlockedAch(unlocked), 800);
             }
-            const newTotal = totalWon + prizeValue;
-            setTotalWon(newTotal);
-            localStorage.setItem(totalKey, String(newTotal));
-            toast({ title: "🎉 Hadiah Terbuka!", description: reveal.prize.label });
             onUpdate?.();
           } catch (err) {
             toast({ title: "Gagal mencairkan hadiah", description: err instanceof Error ? err.message : "Coba lagi", variant: "destructive" });
@@ -212,9 +340,14 @@ export default function ScratchOffShop({ visitorId, onUpdate }: Props) {
     }
   }
 
+  const tier = getComboTier(comboCount);
+  const nextTier = COMBO_TIERS.find((t) => t.min > comboCount);
+  const winRate = stats.total_buys > 0 ? Math.round((stats.total_wins / stats.total_buys) * 100) : 0;
+
   return (
     <div className="rounded-2xl bg-gradient-to-br from-fuchsia-500/15 via-purple-500/15 to-pink-500/15 border-2 border-fuchsia-400/40 p-3 sm:p-4 shadow-2xl">
-      <div className="flex items-center justify-between mb-3">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-2">
           <Sparkles className="h-5 w-5 text-fuchsia-300 animate-pulse" />
           <h3 className="font-bold text-base sm:text-lg bg-gradient-to-r from-fuchsia-200 via-pink-200 to-purple-200 bg-clip-text text-transparent">
@@ -222,11 +355,81 @@ export default function ScratchOffShop({ visitorId, onUpdate }: Props) {
           </h3>
           <Badge className="bg-fuchsia-500/40 text-fuchsia-100 border-fuchsia-400/60 text-[9px] h-4 animate-pulse">JACKPOT</Badge>
         </div>
-        <div className="flex items-center gap-1 text-xs text-amber-300 font-bold">
-          <Coins className="h-3.5 w-3.5" /> {totalWon}
+      </div>
+
+      {/* Mini stats */}
+      <div className="grid grid-cols-3 gap-1.5 mb-2">
+        <div className="rounded-lg bg-black/30 border border-white/10 px-2 py-1 text-center">
+          <p className="text-[8px] text-white/60 uppercase tracking-wider">Buys</p>
+          <p className="text-xs font-bold text-white">{stats.total_buys}</p>
+        </div>
+        <div className="rounded-lg bg-black/30 border border-emerald-400/30 px-2 py-1 text-center">
+          <p className="text-[8px] text-emerald-300/80 uppercase tracking-wider">Win Rate</p>
+          <p className="text-xs font-bold text-emerald-200">{winRate}%</p>
+        </div>
+        <div className="rounded-lg bg-black/30 border border-amber-400/30 px-2 py-1 text-center">
+          <p className="text-[8px] text-amber-300/80 uppercase tracking-wider">Jackpot</p>
+          <p className="text-xs font-bold text-amber-200 flex items-center justify-center gap-0.5">
+            <Crown className="h-2.5 w-2.5" />{stats.jackpots}
+          </p>
         </div>
       </div>
 
+      {/* Combo bar */}
+      <div className="mb-2 rounded-lg bg-black/40 border border-white/10 p-1.5">
+        <div className="flex items-center justify-between mb-1">
+          <div className="flex items-center gap-1">
+            <Flame className={`h-3 w-3 ${comboCount >= 2 ? "text-orange-400 animate-pulse" : "text-white/40"}`} />
+            <span className="text-[10px] font-bold text-white/80">COMBO</span>
+            <span className={`text-[10px] font-black bg-gradient-to-r ${tier.color} bg-clip-text text-transparent`}>{tier.label}</span>
+          </div>
+          <span className="text-[9px] text-white/50">
+            {nextTier ? `${nextTier.min - comboCount} lagi → ${nextTier.label}` : "MAX!"}
+          </span>
+        </div>
+        <div className="h-1.5 w-full rounded-full bg-white/10 overflow-hidden">
+          <motion.div
+            className={`h-full bg-gradient-to-r ${tier.color}`}
+            initial={{ width: 0 }}
+            animate={{ width: `${Math.min(100, (comboCount / 5) * 100)}%` }}
+            transition={{ duration: 0.4 }}
+          />
+        </div>
+      </div>
+
+      {/* Free Daily Card */}
+      {freeAvailable && (
+        <motion.div
+          initial={{ scale: 0.95, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          className="mb-2 relative overflow-hidden rounded-xl bg-gradient-to-r from-amber-500/30 via-yellow-400/30 to-amber-500/30 border-2 border-amber-300/60 p-2"
+        >
+          <motion.div
+            className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent"
+            animate={{ x: ["-100%", "100%"] }}
+            transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+          />
+          <div className="relative flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <Gift className="h-5 w-5 text-amber-200 animate-bounce" />
+              <div>
+                <p className="text-[11px] font-bold text-amber-100">KARTU GRATIS HARI INI 🎁</p>
+                <p className="text-[9px] text-amber-200/80">Bronze Scratch — reset jam 00:00</p>
+              </div>
+            </div>
+            <Button
+              size="sm"
+              disabled={scratching === "bronze-free"}
+              onClick={() => buyCard({ ...CARDS[0] }, true)}
+              className="h-7 text-[10px] bg-amber-400 hover:bg-amber-300 text-amber-900 font-black border border-amber-200"
+            >
+              {scratching === "bronze-free" ? <Loader2 className="h-3 w-3 animate-spin" /> : "KLAIM"}
+            </Button>
+          </div>
+        </motion.div>
+      )}
+
+      {/* Cards grid */}
       <div className="grid grid-cols-2 gap-2">
         {CARDS.map((c) => (
           <motion.div
@@ -253,6 +456,34 @@ export default function ScratchOffShop({ visitorId, onUpdate }: Props) {
         ))}
       </div>
 
+      {/* Achievement Badges */}
+      <div className="mt-3 rounded-xl bg-black/30 border border-white/10 p-2">
+        <div className="flex items-center gap-1 mb-1.5">
+          <Trophy className="h-3 w-3 text-amber-300" />
+          <p className="text-[10px] font-bold text-white/80 uppercase tracking-wider">Achievement</p>
+          <span className="text-[9px] text-white/50">{stats.achievements.length}/{ACHIEVEMENTS.length}</span>
+        </div>
+        <div className="grid grid-cols-4 gap-1.5">
+          {ACHIEVEMENTS.map((a) => {
+            const unlocked = stats.achievements.includes(a.id);
+            return (
+              <div
+                key={a.id}
+                title={`${a.label} — ${a.desc} (+${a.bonus} koin)`}
+                className={`rounded-lg p-1.5 text-center border ${
+                  unlocked
+                    ? "bg-gradient-to-br from-amber-500/30 to-yellow-500/30 border-amber-300/60"
+                    : "bg-white/5 border-white/10 grayscale opacity-50"
+                }`}
+              >
+                <div className="text-lg leading-none">{a.emoji}</div>
+                <p className="text-[8px] font-bold text-white/90 mt-0.5 truncate">{a.label}</p>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
       {/* Scratch reveal modal */}
       <AnimatePresence>
         {reveal && (
@@ -269,7 +500,15 @@ export default function ScratchOffShop({ visitorId, onUpdate }: Props) {
               className={`relative max-w-xs w-full rounded-3xl bg-gradient-to-br ${reveal.card.color} border-2 ${RARITY_BG[reveal.card.rarity]} p-5 shadow-2xl`}
             >
               <div className="flex items-center justify-between mb-3">
-                <p className="font-bold text-sm text-white">{reveal.card.emoji} {reveal.card.name}</p>
+                <div className="flex items-center gap-1.5">
+                  <p className="font-bold text-sm text-white">{reveal.card.emoji} {reveal.card.name}</p>
+                  {reveal.isFree && <Badge className="bg-amber-400 text-amber-900 text-[8px] h-4 border-0">FREE</Badge>}
+                  {reveal.multiplier > 1 && (
+                    <Badge className="bg-gradient-to-r from-orange-500 to-red-500 text-white text-[8px] h-4 border-0 animate-pulse">
+                      COMBO {reveal.multiplier}x
+                    </Badge>
+                  )}
+                </div>
                 <Button size="sm" variant="ghost" onClick={() => setReveal(null)} className="h-6 px-2 text-white hover:bg-white/20">✕</Button>
               </div>
 
@@ -283,6 +522,11 @@ export default function ScratchOffShop({ visitorId, onUpdate }: Props) {
                     {reveal.prize.value >= 1000 ? "👑" : reveal.prize.value >= 500 ? "💎" : "🪙"}
                   </motion.div>
                   <p className="font-black text-xl text-amber-900">{reveal.prize.label}</p>
+                  {reveal.multiplier > 1 && (
+                    <p className="font-bold text-sm text-orange-700 mt-1">
+                      = +{Math.round(reveal.prize.value * reveal.multiplier)} koin total!
+                    </p>
+                  )}
                 </div>
                 <canvas
                   ref={canvasRef}
@@ -293,7 +537,7 @@ export default function ScratchOffShop({ visitorId, onUpdate }: Props) {
               </div>
 
               <p className="text-[10px] text-center text-white/90 mt-2">
-                {activated ? "✨ Hadiah sudah dimasukkan ke poin bonusmu!" : `Gosok lebih dari 50% untuk klaim · ${Math.round(scratchPct)}%`}
+                {activated ? "✨ Hadiah sudah masuk ke saldo koin!" : `Gosok lebih dari 50% untuk klaim · ${Math.round(scratchPct)}%`}
               </p>
 
               {activated && (
@@ -301,6 +545,53 @@ export default function ScratchOffShop({ visitorId, onUpdate }: Props) {
                   <Star className="h-4 w-4 mr-1" /> Selesai
                 </Button>
               )}
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Achievement Unlock Popup */}
+      <AnimatePresence>
+        {unlockedAch && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[60] bg-black/85 backdrop-blur-md flex items-center justify-center p-4"
+            onClick={() => setUnlockedAch(null)}
+          >
+            <motion.div
+              initial={{ scale: 0.5, rotate: -10, y: 50 }}
+              animate={{ scale: 1, rotate: 0, y: 0 }}
+              exit={{ scale: 0.8, opacity: 0 }}
+              transition={{ type: "spring", stiffness: 200, damping: 15 }}
+              className="relative max-w-xs w-full rounded-3xl bg-gradient-to-br from-amber-400 via-yellow-500 to-orange-500 border-4 border-amber-200 p-6 text-center shadow-[0_0_60px_rgba(251,191,36,0.6)]"
+            >
+              <motion.div
+                animate={{ rotate: 360 }}
+                transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
+                className="absolute inset-0 -z-10 rounded-3xl bg-gradient-conic from-amber-300 via-yellow-200 to-amber-300 opacity-50 blur-xl"
+              />
+              <p className="text-[10px] font-black text-amber-900 tracking-[0.3em] mb-1">ACHIEVEMENT UNLOCKED</p>
+              <motion.div
+                animate={{ scale: [1, 1.2, 1] }}
+                transition={{ duration: 1, repeat: Infinity }}
+                className="text-7xl my-3"
+              >
+                {unlockedAch.emoji}
+              </motion.div>
+              <p className="font-black text-2xl text-amber-950">{unlockedAch.label}</p>
+              <p className="text-xs text-amber-900/80 mt-1 mb-3">{unlockedAch.desc}</p>
+              <div className="inline-flex items-center gap-1.5 bg-amber-950/30 rounded-full px-4 py-1.5">
+                <Coins className="h-4 w-4 text-amber-100" />
+                <span className="font-black text-amber-100">+{unlockedAch.bonus} koin bonus!</span>
+              </div>
+              <Button
+                onClick={() => setUnlockedAch(null)}
+                className="w-full mt-4 bg-amber-950/40 hover:bg-amber-950/60 text-white font-bold border border-amber-200/50"
+              >
+                <Target className="h-4 w-4 mr-1" /> Lanjut
+              </Button>
             </motion.div>
           </motion.div>
         )}
