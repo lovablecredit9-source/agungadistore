@@ -4,7 +4,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Zap, Gem, Loader2, Clock } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { BOOSTER_TIERS, activatePointBooster, getPointBoosterUntil } from "./gameStore";
+import { BOOSTER_TIERS, activatePointBooster, getPointBoosterUntil, setPointBoosterUntil } from "./gameStore";
 
 interface Props {
   visitorId: string | null;
@@ -44,7 +44,13 @@ export default function BuyBoosterDialog({ visitorId, onActivated, trigger }: Pr
         p_amount: -tier.gemCost,
       });
       if (error) throw error;
-      activatePointBooster(tier.durationMs);
+      const localUntil = activatePointBooster(tier.durationMs);
+      const { data: syncData, error: syncError } = await supabase.functions.invoke("power-up-consume", {
+        body: { action: "activate_double_xp", visitorId, durationMs: tier.durationMs },
+      });
+      if (syncError) throw syncError;
+      const syncedUntil = syncData?.double_xp_until ? new Date(syncData.double_xp_until).getTime() : localUntil;
+      setPointBoosterUntil(syncedUntil);
       setGems(typeof data === "number" ? data : gems - tier.gemCost);
       toast({ title: "🚀 Booster aktif!", description: `x2 poin selama ${tier.label}` });
       onActivated?.();

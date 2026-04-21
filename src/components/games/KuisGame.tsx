@@ -94,9 +94,10 @@ export default function KuisGame() {
     if (picked === answer) {
       setResult("correct");
       setStreak(s => s + 1);
-      const { awardedPoints, data } = awardGamePoints(getPointsForQuestion(questionNumber) + (streak >= 3 ? 5 : 0));
+      const basePoints = getPointsForQuestion(questionNumber) + (streak >= 3 ? 5 : 0);
+      const { awardedPoints, data } = awardGamePoints(basePoints);
       setEarnedPoints(awardedPoints);
-      updateGameStats(activeVisitorId, "kuis", true, awardedPoints);
+      updateGameStats(activeVisitorId, "kuis", true, awardedPoints, 1, { basePoints });
       setPlayerData(data);
       setTimeout(() => fetchQuestion(), 2000);
     } else {

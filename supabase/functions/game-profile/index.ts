@@ -282,13 +282,35 @@ Deno.serve(async (req) => {
     }
 
     if (action === "update_stats") {
-      const { visitorId, gameType, won, points, questionsAnswered } = body;
+      const { visitorId, gameType, won, points, questionsAnswered, basePoints } = body;
       if (!visitorId || !gameType) return json({ error: "Missing fields" }, 400);
 
       // Daily challenge bonus 2x
       const dailyGame = getDailyChallengeGame();
       const isDailyChallenge = gameType === dailyGame;
-      const finalPoints = (points || 0) * (isDailyChallenge ? 2 : 1);
+      const rawAwardedPoints = Number(points || 0);
+      const rawBasePoints = Number(basePoints);
+      const hasBasePoints = Number.isFinite(rawBasePoints) && rawBasePoints >= 0;
+
+      let boosterMultiplier = 1;
+      if (hasBasePoints && rawBasePoints > 0) {
+        const { data: powerUpState } = await supabase
+          .from("user_power_ups")
+          .select("double_xp_until")
+          .eq("visitor_id", visitorId)
+          .maybeSingle();
+
+        const doubleXpUntil = powerUpState?.double_xp_until
+          ? new Date(powerUpState.double_xp_until).getTime()
+          : 0;
+
+        boosterMultiplier = doubleXpUntil > Date.now() ? 2 : 1;
+      }
+
+      const dailyMultiplier = isDailyChallenge ? 2 : 1;
+      const finalPoints = hasBasePoints
+        ? Math.round(rawBasePoints * boosterMultiplier * dailyMultiplier)
+        : Math.round(Math.max(0, rawAwardedPoints) * dailyMultiplier);
 
       const { data: existing } = await supabase
         .from("game_stats")
@@ -395,12 +417,19 @@ Deno.serve(async (req) => {
       // Check achievements
       const newAchievements = await checkAndUnlockAchievements(visitorId);
 
-      return json({ ...result, isDailyChallenge, multiplier: isDailyChallenge ? 2 : 1, newAchievements });
+      return json({
+        ...result,
+        isDailyChallenge,
+        boosterMultiplier,
+        multiplier: boosterMultiplier * dailyMultiplier,
+        newAchievements,
+      });
     }
 
     return json({ error: "Unknown action" }, 400);
   } catch (e) {
-    return json({ error: e.message }, 500);
+    const message = e instanceof Error ? e.message : "Unknown error";
+    return json({ error: message }, 500);
   }
 });
 

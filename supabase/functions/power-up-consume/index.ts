@@ -9,7 +9,7 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const { visitorId, action, kind } = await req.json();
+    const { visitorId, action, kind, durationMs } = await req.json();
     if (!visitorId) return Response.json({ error: "visitorId required" }, { status: 400, headers: corsHeaders });
 
     const admin = createClient(
@@ -25,6 +25,32 @@ Deno.serve(async (req) => {
         time_freeze: data?.time_freeze || 0,
         double_xp_until: data?.double_xp_until || null,
       }, { headers: corsHeaders });
+    }
+
+    if (action === "activate_double_xp") {
+      const duration = Number(durationMs);
+      if (!Number.isFinite(duration) || duration <= 0) {
+        return Response.json({ error: "durationMs tidak valid" }, { status: 400, headers: corsHeaders });
+      }
+
+      const { data: pu } = await admin.from("user_power_ups").select("*").eq("visitor_id", visitorId).maybeSingle();
+      const now = Date.now();
+      const currentUntil = pu?.double_xp_until ? new Date(pu.double_xp_until).getTime() : 0;
+      const nextUntil = new Date(Math.max(now, currentUntil) + duration).toISOString();
+
+      if (pu) {
+        await admin.from("user_power_ups").update({ double_xp_until: nextUntil }).eq("visitor_id", visitorId);
+      } else {
+        await admin.from("user_power_ups").insert({
+          visitor_id: visitorId,
+          extra_life: 0,
+          auto_hint: 0,
+          time_freeze: 0,
+          double_xp_until: nextUntil,
+        });
+      }
+
+      return Response.json({ success: true, double_xp_until: nextUntil }, { headers: corsHeaders });
     }
 
     if (action === "consume") {
