@@ -3476,7 +3476,33 @@ const Index = () => {
               
               {[
                 {
-                  date: "19 April 2026", version: "v2.7", isNew: true,
+                  date: "21 April 2026", version: "v2.8", isNew: true,
+                  items: [
+                    "🎨 Tema baru iOS Dark Vibrant — true black canvas + aksen Apple system colors (Blue/Pink/Purple/Orange/Green/Yellow/Teal/Indigo)",
+                    "🎨 Design tokens iOS global di index.css: surface bertingkat L1/L2/L3, hairline divider, radius pill, blur bar",
+                    "🎨 Utility class baru: ios-card-vibrant, ios-surface-1/2/3, ios-tint-*, ios-grad-bronze/silver/gold/diamond/jackpot, ios-btn-filled/tinted/gray, ios-pressable",
+                    "🎨 Background gelap dengan dual radial glow (Blue di pojok atas, Pink di pojok bawah) ala Apple Music",
+                    "🎨 Tipografi pakai SF Pro Display/Text dengan letter-spacing -0.011em untuk look Apple yang khas",
+                    "🎰 Scratch-Off Lottery dirombak total dengan gaya iOS Vibrant — kartu pakai gradient rarity, badge tinted, modal sheet dengan backdrop-blur xl + spring animation",
+                    "🎰 Tombol pill putih ala iOS pada modal scratch dengan ios-pressable (scale 0.96 saat ditekan)",
+                    "🎰 Achievement grid pakai ios-tint-yellow untuk yang unlocked, grayscale untuk locked",
+                    "💰 Rebalance hadiah Scratch-Off: jackpot sekarang TERASA besar tapi tetap LANGKA (~3% chance)",
+                    "💰 Bronze (50 koin): hadiah +30/+60/+100, jackpot +200 koin",
+                    "💰 Silver (150 koin): hadiah +100/+200/+350, jackpot +600 koin",
+                    "💰 Gold (500 koin): hadiah +200/+700/+800/+1000/+1500, jackpot +2000 koin",
+                    "💰 Diamond (1000 koin): hadiah +200/+600/+700/+1500/+2500, jackpot +3000, MEGA JACKPOT +5000 koin",
+                    "💰 Sistem Zonk diperkenalkan (40-50% peluang) agar ekonomi koin tetap sehat & house edge positif",
+                    "🔧 Perbaikan transaksi Scratch-Off: streak_coins dipotong saat beli kartu, ditambahkan setelah scratch >55%",
+                    "🔧 Proteksi double-claim dengan claimedRef — mencegah saldo kredit ganda dari satu sesi gosok",
+                    "🔧 setScratching state diperbaiki untuk membedakan kartu berbayar vs kartu gratis (free key terpisah)",
+                    "🔧 Combo multiplier diturunkan jadi ringan (1.0 → 1.05 → 1.1 → 1.2x) agar tidak menggandakan jackpot besar",
+                    "🏆 Achievement bonus disesuaikan: First Win +10, High Roller +25, Jackpot Hunter +50, Diamond Master +100 koin",
+                    "📱 Modal scratch sekarang bisa ditutup dengan tap di luar setelah hadiah ter-claim (UX iOS)",
+                    "🎁 Banner kartu gratis harian dengan shimmer animation + ios-grad-jackpot rainbow",
+                  ]
+                },
+                {
+                  date: "19 April 2026", version: "v2.7",
                   items: [
                     "💎 Isolasi Gem per akun balance — tiap login akun saldo gem beda (akun A 220 ≠ akun B 220)",
                     "💎 Migrasi otomatis: semua gem lama dari device dipindah ke akun balance pertama yang login",
