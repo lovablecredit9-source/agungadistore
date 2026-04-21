@@ -479,12 +479,12 @@ export default function ScratchOffShop({ visitorId, onUpdate }: Props) {
         ))}
       </div>
 
-      {/* Achievement Badges */}
-      <div className="mt-3 rounded-xl bg-black/30 border border-white/10 p-2">
-        <div className="flex items-center gap-1 mb-1.5">
-          <Trophy className="h-3 w-3 text-amber-300" />
-          <p className="text-[10px] font-bold text-white/80 uppercase tracking-wider">Achievement</p>
-          <span className="text-[9px] text-white/50">{stats.achievements.length}/{ACHIEVEMENTS.length}</span>
+      {/* Achievement Badges — iOS list grid */}
+      <div className="mt-3 ios-surface-2 rounded-2xl border border-border/40 p-2.5">
+        <div className="flex items-center gap-1.5 mb-2">
+          <Trophy className="h-3.5 w-3.5" style={{ color: "hsl(var(--ios-vibrant-yellow))" }} />
+          <p className="text-[10px] font-bold text-foreground uppercase tracking-wider">Achievement</p>
+          <span className="text-[10px] text-muted-foreground tabular-nums">{stats.achievements.length}/{ACHIEVEMENTS.length}</span>
         </div>
         <div className="grid grid-cols-4 gap-1.5">
           {ACHIEVEMENTS.map((a) => {
@@ -493,60 +493,75 @@ export default function ScratchOffShop({ visitorId, onUpdate }: Props) {
               <div
                 key={a.id}
                 title={`${a.label} — ${a.desc} (+${a.bonus} koin)`}
-                className={`rounded-lg p-1.5 text-center border ${
+                className={`rounded-xl p-1.5 text-center border transition-all ${
                   unlocked
-                    ? "bg-gradient-to-br from-amber-500/30 to-yellow-500/30 border-amber-300/60"
-                    : "bg-white/5 border-white/10 grayscale opacity-50"
+                    ? "ios-tint-yellow border-transparent"
+                    : "bg-secondary/40 border-border/40 grayscale opacity-50"
                 }`}
               >
                 <div className="text-lg leading-none">{a.emoji}</div>
-                <p className="text-[8px] font-bold text-white/90 mt-0.5 truncate">{a.label}</p>
+                <p className="text-[8px] font-bold mt-0.5 truncate text-foreground">{a.label}</p>
               </div>
             );
           })}
         </div>
       </div>
 
-      {/* Scratch reveal modal */}
+      {/* Scratch reveal modal — iOS sheet */}
       <AnimatePresence>
         {reveal && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4"
+            className="fixed inset-0 z-50 bg-black/70 backdrop-blur-xl flex items-center justify-center p-4"
+            onClick={() => activated && setReveal(null)}
           >
             <motion.div
-              initial={{ scale: 0.8, y: 20 }}
+              initial={{ scale: 0.9, y: 30 }}
               animate={{ scale: 1, y: 0 }}
-              exit={{ scale: 0.8 }}
-              className={`relative max-w-xs w-full rounded-3xl bg-gradient-to-br ${reveal.card.color} border-2 ${RARITY_BG[reveal.card.rarity]} p-5 shadow-2xl`}
+              exit={{ scale: 0.9, opacity: 0 }}
+              transition={{ type: "spring", damping: 22, stiffness: 320 }}
+              onClick={(e) => e.stopPropagation()}
+              className={`relative max-w-xs w-full rounded-3xl ${RARITY_GRAD[reveal.card.rarity]} p-5 shadow-2xl`}
             >
               <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-1.5">
-                  <p className="font-bold text-sm text-white">{reveal.card.emoji} {reveal.card.name}</p>
-                  {reveal.isFree && <Badge className="bg-amber-400 text-amber-900 text-[8px] h-4 border-0">FREE</Badge>}
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <p className="font-bold text-sm text-white drop-shadow">{reveal.card.emoji} {reveal.card.name}</p>
+                  {reveal.isFree && (
+                    <span className="bg-white text-foreground text-[9px] h-4 leading-4 px-1.5 rounded-full font-bold">FREE</span>
+                  )}
                   {reveal.multiplier > 1 && (
-                    <Badge className="bg-gradient-to-r from-orange-500 to-red-500 text-white text-[8px] h-4 border-0 animate-pulse">
+                    <span
+                      className="text-white text-[9px] h-4 leading-4 px-1.5 rounded-full font-bold animate-pulse"
+                      style={{ background: "linear-gradient(90deg, hsl(var(--ios-vibrant-orange)), hsl(var(--ios-vibrant-pink)))" }}
+                    >
                       COMBO {reveal.multiplier}x
-                    </Badge>
+                    </span>
                   )}
                 </div>
-                <Button size="sm" variant="ghost" onClick={() => setReveal(null)} className="h-6 px-2 text-white hover:bg-white/20">✕</Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => setReveal(null)}
+                  className="h-7 w-7 p-0 rounded-full bg-black/30 text-white hover:bg-black/50 ios-pressable"
+                >
+                  ✕
+                </Button>
               </div>
 
-              <div className="relative w-full h-48 rounded-2xl overflow-hidden bg-gradient-to-br from-yellow-200 to-amber-400 shadow-inner">
+              <div className="relative w-full h-48 rounded-2xl overflow-hidden ios-grad-jackpot shadow-inner">
                 <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-3">
                   <motion.div
                     animate={activated ? { scale: [1, 1.3, 1], rotate: [0, 8, -8, 0] } : {}}
                     transition={{ duration: 0.6, repeat: activated ? 3 : 0 }}
-                    className="text-5xl mb-2"
+                    className="text-5xl mb-2 drop-shadow-lg"
                   >
                     {reveal.prize.value >= 1000 ? "👑" : reveal.prize.value >= 500 ? "💎" : "🪙"}
                   </motion.div>
-                  <p className="font-black text-xl text-amber-900">{reveal.prize.label}</p>
+                  <p className="font-black text-xl text-white drop-shadow-lg">{reveal.prize.label}</p>
                   {reveal.multiplier > 1 && (
-                    <p className="font-bold text-sm text-orange-700 mt-1">
+                    <p className="font-bold text-sm text-white/95 mt-1 drop-shadow">
                       = +{Math.round(reveal.prize.value * reveal.multiplier)} koin total!
                     </p>
                   )}
@@ -559,12 +574,15 @@ export default function ScratchOffShop({ visitorId, onUpdate }: Props) {
                 />
               </div>
 
-              <p className="text-[10px] text-center text-white/90 mt-2">
+              <p className="text-[11px] text-center text-white/95 mt-3 font-medium">
                 {activated ? "✨ Hadiah sudah masuk ke saldo koin!" : `Gosok lebih dari 50% untuk klaim · ${Math.round(scratchPct)}%`}
               </p>
 
               {activated && (
-                <Button onClick={() => setReveal(null)} className="w-full mt-3 bg-white/30 hover:bg-white/40 text-white border border-white/40 font-bold">
+                <Button
+                  onClick={() => setReveal(null)}
+                  className="w-full mt-3 bg-white text-foreground hover:bg-white/95 font-bold rounded-full h-10 ios-pressable border-0"
+                >
                   <Star className="h-4 w-4 mr-1" /> Selesai
                 </Button>
               )}
