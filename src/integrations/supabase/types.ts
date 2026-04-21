@@ -6098,6 +6098,62 @@ export type Database = {
         }
         Relationships: []
       }
+      streak_user_memberships: {
+        Row: {
+          amount_paid: number
+          bonus_multiplier: number
+          created_at: string
+          duration_days: number
+          expires_at: string
+          id: string
+          is_active: boolean
+          payment_method: string
+          plan_id: string | null
+          plan_name: string
+          starts_at: string
+          updated_at: string
+          visitor_id: string
+        }
+        Insert: {
+          amount_paid?: number
+          bonus_multiplier?: number
+          created_at?: string
+          duration_days: number
+          expires_at: string
+          id?: string
+          is_active?: boolean
+          payment_method: string
+          plan_id?: string | null
+          plan_name: string
+          starts_at?: string
+          updated_at?: string
+          visitor_id: string
+        }
+        Update: {
+          amount_paid?: number
+          bonus_multiplier?: number
+          created_at?: string
+          duration_days?: number
+          expires_at?: string
+          id?: string
+          is_active?: boolean
+          payment_method?: string
+          plan_id?: string | null
+          plan_name?: string
+          starts_at?: string
+          updated_at?: string
+          visitor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "streak_user_memberships_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "streak_membership_plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       streak_wheel_pity: {
         Row: {
           free_spin_used_date: string | null
