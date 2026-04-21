@@ -8,6 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useGameCredits, triggerGameCreditsRefresh } from "./GameCredits";
 import { triggerGameBalanceRefresh } from "./GameBalance";
 import { ServerLuckCard } from "./ServerLuckCard";
+import { awardGamePoints } from "./gameStore";
 
 const SYMBOLS = ["🍒", "🍋", "🍇", "🔔", "⭐", "💎", "7️⃣"];
 
@@ -95,6 +96,17 @@ const TIER_REWARDS: Record<Tier, { sym: string; reward: string }[]> = {
   ],
 };
 
+const TIER_POINT_REWARDS: Record<Tier, number> = {
+  hemat: 5,
+  sedang: 10,
+  besar: 16,
+  mega: 28,
+  ultra: 40,
+  sultan: 60,
+  raja: 90,
+  dewa: 140,
+};
+
 export default function SlotMachineGame() {
   const visitorId = typeof window !== "undefined" ? localStorage.getItem("balance_visitor_id") : null;
   const { credits, isUnlimited, fetchCredits } = useGameCredits(visitorId);
@@ -180,20 +192,24 @@ export default function SlotMachineGame() {
         setSpinning(false);
         return;
       }
+      const basePoints = TIER_POINT_REWARDS[tier] + (data.payout.type !== "none" ? Math.ceil(TIER_POINT_REWARDS[tier] * 0.5) : 0);
+      const { awardedPoints } = awardGamePoints(basePoints);
       setReels(data.reels);
-      setResult(data.payout);
+      setResult({ ...data.payout, awardedPoints });
       setSpinning(false);
       fetchCredits();
       // Refresh Saldo IN & kredit lintas-komponen (Plus tab, GameTab badge, dll)
       triggerGameBalanceRefresh();
       triggerGameCreditsRefresh();
       if (data.payout.type !== "none") {
-        toast({ title: "🎉 Menang!", description: data.payout.label });
+        toast({ title: "🎉 Menang!", description: `${data.payout.label} · +${awardedPoints} poin level` });
         // Jika hadiah menambah power-up (mis. extra_life), refresh cache power-up
         if (data.payout.type === "extra_life") {
           import("./gameStore").then(m => m.syncPowerUpsFromServer()).catch(() => {});
           window.dispatchEvent(new CustomEvent("power-ups-updated"));
         }
+      } else {
+        toast({ title: "+Poin masuk", description: `Spin ini memberi +${awardedPoints} poin level` });
       }
     }, animDuration);
   };
@@ -292,6 +308,7 @@ export default function SlotMachineGame() {
         >
           <div className="text-2xl mb-1">{result.type === "none" ? "😢" : "🎉"}</div>
           <div className="font-extrabold">{result.label}</div>
+          {result.awardedPoints ? <div className="text-xs font-black mt-1">+{result.awardedPoints} poin level</div> : null}
         </motion.div>
       )}
 
