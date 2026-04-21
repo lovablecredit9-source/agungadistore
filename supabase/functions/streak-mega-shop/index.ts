@@ -132,14 +132,14 @@ Deno.serve(async (req) => {
         return { ...it, buyers_today: buyers, current_discount_pct: discount, current_cost: cost, current_gem_cost: it.base_cost_gems > 0 ? gemCost : 0, already_bought_today: userBoughtToday.has(it.id) };
       });
 
-      const { data: prof } = await admin.from("game_profiles").select("gems").eq("visitor_id", visitorId).maybeSingle();
+      const { data: totalGems } = await admin.rpc("get_account_gems", { p_visitor_id: visitorId });
 
       return Response.json({
         battle_pass: bp,
         tradein: { recipes: recipes.data || [], usage_today: tradeMap },
         skins: (skins.data || []).map((s: any) => ({ ...s, owned: ownedMap.has(s.id) })),
         group_buy: groupItemsWithStats,
-        user_gems: prof?.gems ?? 0,
+        user_gems: totalGems ?? 0,
         date: today,
       }, { headers: corsHeaders });
     }
