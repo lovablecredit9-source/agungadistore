@@ -7,10 +7,9 @@ import { getVisitorId } from "@/lib/visitor-id";
 import { updateGameStats } from "./GameProfile";
 import { useGameCredits, GameCreditsBadge, BuyCreditsDialog, RevealAnswerButton } from "./GameCredits";
 import PowerUpsBar, { ReviveButton } from "./PowerUpsBar";
-import { applyDoubleXP } from "./gameStore";
 import { useToast } from "@/hooks/use-toast";
 import {
-  loadGameData, addPoints, getPointsForQuestion,
+  loadGameData, awardGamePoints, getPointsForQuestion,
   getCurrentLevelThreshold, getNextLevelThreshold,
   DIFFICULTIES, type Difficulty, type GameLevel,
 } from "./gameStore";
@@ -142,13 +141,12 @@ export default function TekaTekiV2Game() {
       setTimeout(() => {
         if (guess === answer) {
           if (timerRef.current) clearInterval(timerRef.current);
-          const pts = applyDoubleXP(getPointsForQuestion(questionNumber));
+          const { awardedPoints, data } = awardGamePoints(getPointsForQuestion(questionNumber));
           setResult("correct");
           setGameActive(false);
-          setEarnedPoints(pts);
-          const updated = addPoints(pts);
-          setPlayerData(updated);
-          updateGameStats(activeVisitorId, "teka_teki_v2", true, pts);
+          setEarnedPoints(awardedPoints);
+          setPlayerData(data);
+          updateGameStats(activeVisitorId, "teka_teki_v2", true, awardedPoints);
           setTimeout(() => fetchPuzzle(), 2000);
         } else {
           const newWrong = wrongCount + 1;

@@ -10,7 +10,7 @@ import { useGameCredits, GameCreditsBadge, BuyCreditsDialog, RevealAnswerButton 
 import PowerUpsBar, { ReviveButton } from "./PowerUpsBar";
 import { useToast } from "@/hooks/use-toast";
 import {
-  loadGameData, awardGamePoints, getPointsForQuestion,
+  loadGameData, addPoints, awardGamePoints, getPointsForQuestion,
   getLevelFromPoints, getNextLevelThreshold, getCurrentLevelThreshold,
   DIFFICULTIES, type Difficulty, type GameLevel,
 } from "./gameStore";
