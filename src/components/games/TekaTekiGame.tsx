@@ -8,10 +8,9 @@ import { getVisitorId } from "@/lib/visitor-id";
 import { updateGameStats } from "./GameProfile";
 import { useGameCredits, GameCreditsBadge, BuyCreditsDialog, RevealAnswerButton } from "./GameCredits";
 import PowerUpsBar, { ReviveButton } from "./PowerUpsBar";
-import { applyDoubleXP } from "./gameStore";
 import { useToast } from "@/hooks/use-toast";
 import {
-  loadGameData, addPoints, getPointsForQuestion,
+  loadGameData, awardGamePoints, getPointsForQuestion,
   getLevelFromPoints, getNextLevelThreshold, getCurrentLevelThreshold,
   DIFFICULTIES, type Difficulty, type GameLevel,
 } from "./gameStore";
@@ -103,13 +102,12 @@ export default function TekaTekiGame() {
 
     if (g === a || a.includes(g) || g.includes(a)) {
       if (timerRef.current) clearInterval(timerRef.current);
-      const pts = applyDoubleXP(getPointsForQuestion(questionNumber));
+      const { awardedPoints, data } = awardGamePoints(getPointsForQuestion(questionNumber));
       setResult("correct");
       setGameActive(false);
-      setEarnedPoints(pts);
-      const updated = addPoints(pts);
-      setPlayerData(updated);
-      updateGameStats(activeVisitorId, "teka_teki", true, pts);
+      setEarnedPoints(awardedPoints);
+      setPlayerData(data);
+      updateGameStats(activeVisitorId, "teka_teki", true, awardedPoints);
       // Auto-next after 2 seconds
       setTimeout(() => fetchRiddle(), 2000);
     } else {

@@ -11,12 +11,11 @@ import {
   Loader2, RefreshCw, Clock, Star, Lightbulb, AlertTriangle, Gift
 } from "lucide-react";
 import {
-  addPoints, getPointsForQuestion, loadGameData, getLevelFromPoints,
+  awardGamePoints, getPointsForQuestion, loadGameData, getLevelFromPoints,
   getNextLevelThreshold, getCurrentLevelThreshold, type GameLevel,
 } from "./gameStore";
 import { useGameCredits, GameCreditsBadge, BuyCreditsDialog, RevealAnswerButton } from "./GameCredits";
 import PowerUpsBar, { ReviveButton } from "./PowerUpsBar";
-import { applyDoubleXP } from "./gameStore";
 
 type Difficulty = "mudah" | "sedang" | "sulit";
 
@@ -131,11 +130,10 @@ export default function TebakGambarGame() {
       if (data.correct) {
         setResult("correct");
         setTimerActive(false);
-        const pts = applyDoubleXP(getPointsForQuestion(questionNum));
-        setScore(prev => prev + pts);
-        const updated = addPoints(pts);
-        setPlayerData(updated);
-        updateGameStats(activeVisitorId || "", "tebak_gambar", true, pts);
+        const { awardedPoints, data: updatedData } = awardGamePoints(getPointsForQuestion(questionNum));
+        setScore(prev => prev + awardedPoints);
+        setPlayerData(updatedData);
+        updateGameStats(activeVisitorId || "", "tebak_gambar", true, awardedPoints);
       } else {
         const newWrong = wrongCount + 1;
         setWrongCount(newWrong);
