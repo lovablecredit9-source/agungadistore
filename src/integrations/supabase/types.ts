@@ -2656,6 +2656,45 @@ export type Database = {
         }
         Relationships: []
       }
+      mystery_boxes: {
+        Row: {
+          created_at: string
+          id: string
+          is_opened: boolean
+          max_reward: number
+          min_reward: number
+          opened_at: string | null
+          reward_amount: number | null
+          source: string | null
+          tier: string
+          visitor_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_opened?: boolean
+          max_reward?: number
+          min_reward?: number
+          opened_at?: string | null
+          reward_amount?: number | null
+          source?: string | null
+          tier?: string
+          visitor_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_opened?: boolean
+          max_reward?: number
+          min_reward?: number
+          opened_at?: string | null
+          reward_amount?: number | null
+          source?: string | null
+          tier?: string
+          visitor_id?: string
+        }
+        Relationships: []
+      }
       notifications: {
         Row: {
           created_at: string
@@ -3226,6 +3265,39 @@ export type Database = {
           reward_value?: number
           visitor_id?: string
           voucher_code?: string | null
+        }
+        Relationships: []
+      }
+      scratch_off_cards: {
+        Row: {
+          created_at: string
+          id: string
+          is_scratched: boolean
+          reward_amount: number | null
+          scratched_at: string | null
+          source: string | null
+          tier: string
+          visitor_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_scratched?: boolean
+          reward_amount?: number | null
+          scratched_at?: string | null
+          source?: string | null
+          tier?: string
+          visitor_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_scratched?: boolean
+          reward_amount?: number | null
+          scratched_at?: string | null
+          source?: string | null
+          tier?: string
+          visitor_id?: string
         }
         Relationships: []
       }
@@ -6576,6 +6648,39 @@ export type Database = {
           phone?: string
           updated_at?: string
           username?: string
+          visitor_id?: string
+        }
+        Relationships: []
+      }
+      user_cosmetics: {
+        Row: {
+          acquired_at: string
+          cosmetic_id: string
+          cosmetic_name: string
+          cosmetic_type: string
+          id: string
+          is_equipped: boolean
+          source: string | null
+          visitor_id: string
+        }
+        Insert: {
+          acquired_at?: string
+          cosmetic_id: string
+          cosmetic_name: string
+          cosmetic_type: string
+          id?: string
+          is_equipped?: boolean
+          source?: string | null
+          visitor_id: string
+        }
+        Update: {
+          acquired_at?: string
+          cosmetic_id?: string
+          cosmetic_name?: string
+          cosmetic_type?: string
+          id?: string
+          is_equipped?: boolean
+          source?: string | null
           visitor_id?: string
         }
         Relationships: []
