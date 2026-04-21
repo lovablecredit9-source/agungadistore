@@ -8,7 +8,7 @@ import { updateGameStats } from "./GameProfile";
 import { useGameCredits } from "./GameCredits";
 import { useToast } from "@/hooks/use-toast";
 import {
-  loadGameData, addPoints, getPointsForQuestion, applyDoubleXP,
+  loadGameData, awardGamePoints, getPointsForQuestion,
   getLevelFromPoints, getNextLevelThreshold, getCurrentLevelThreshold,
   DIFFICULTIES, type Difficulty, type GameLevel,
 } from "./gameStore";
@@ -107,13 +107,12 @@ export default function PilihanGandaGame() {
     if (isCorrect) {
       const pts = getPointsForQuestion(questionNumber);
       const bonusPts = streak >= 3 ? Math.floor(pts * 0.5) : 0;
-      const total = applyDoubleXP(pts + bonusPts);
-      setEarnedPoints(total);
-      const updated = addPoints(total);
-      setPlayerData(updated);
+      const { awardedPoints, data } = awardGamePoints(pts + bonusPts);
+      setEarnedPoints(awardedPoints);
+      setPlayerData(data);
       setResult("correct");
       setStreak(s => s + 1);
-      updateGameStats(activeVisitorId, "pilihan_ganda", true, total);
+      updateGameStats(activeVisitorId, "pilihan_ganda", true, awardedPoints);
       setTimeout(() => fetchQuestion(), 2000);
     } else {
       setResult("wrong");
