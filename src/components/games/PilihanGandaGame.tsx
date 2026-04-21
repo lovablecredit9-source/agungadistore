@@ -8,7 +8,7 @@ import { updateGameStats } from "./GameProfile";
 import { useGameCredits } from "./GameCredits";
 import { useToast } from "@/hooks/use-toast";
 import {
-  loadGameData, awardGamePoints, getPointsForQuestion,
+  loadGameData, awardGamePoints, getPointsForQuestion, isDoubleXPActive,
   getLevelFromPoints, getNextLevelThreshold, getCurrentLevelThreshold,
   DIFFICULTIES, type Difficulty, type GameLevel,
 } from "./gameStore";
@@ -291,6 +291,11 @@ export default function PilihanGandaGame() {
                   )}
                 </div>
                 {explanation && <p className="text-xs text-muted-foreground">{explanation}</p>}
+                {result === "correct" && (
+                  <p className="text-[11px] text-muted-foreground mt-1">
+                    Dasar {getPointsForQuestion(questionNumber) + (streak >= 3 ? Math.floor(getPointsForQuestion(questionNumber) * 0.5) : 0)}{isDoubleXPActive() ? " ×2" : ""}
+                  </p>
+                )}
                 {result === "wrong" && (
                   <Button size="sm" className="mt-3 gap-1" onClick={fetchQuestion}>
                     <RefreshCw className="w-3 h-3" /> Coba Lagi
