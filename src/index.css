@@ -351,6 +351,12 @@
     min-height: 100vh;
   }
 
+  /* iOS Dark Vibrant: pure black canvas, vibrant accent glow */
+  .dark body {
+    background-image:
+      radial-gradient(ellipse at 0% 0%, hsl(var(--ios-vibrant-blue) / 0.10) 0%, transparent 45%),
+      radial-gradient(ellipse at 100% 100%, hsl(var(--ios-vibrant-pink) / 0.08) 0%, transparent 45%);
+  }
 }
 
 @layer utilities {
