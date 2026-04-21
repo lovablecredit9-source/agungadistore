@@ -1,70 +1,49 @@
 
-# Tambah Fitur Keren ke Streak Shop
+## Tambah Changelog v2.8 — 21 April 2026
 
-Aku akan menambahkan **3 fitur baru yang seru** ke Scratch-Off Lottery & Streak Shop, biar makin variatif dan bikin user balik lagi tiap hari.
+Saya akan menambahkan entri changelog terbaru **v2.8 (21 April 2026)** di tab "Update" pada `src/pages/Index.tsx`, dan menurunkan v2.7 jadi entri biasa (hapus flag `isNew`).
 
-## Fitur 1: 🎰 Combo Multiplier Bar
-Tiap kali user beli kartu scratch berturut-turut **tanpa jeda > 2 menit**, multiplier hadiah naik:
-- 1x → 1.0x (normal)
-- 2x → 1.2x
-- 3x → 1.5x
-- 5x → 2.0x (MAX 🔥)
+### Isi v2.8 (21 entri lengkap)
 
-Bar progress combo ditampilkan di atas grid kartu dengan animasi neon. Reset otomatis kalau idle.
+**🎨 Tema iOS Dark Vibrant baru (5 item)**
+- Tema baru iOS Dark Vibrant — true black canvas + aksen Apple system colors
+- Design tokens iOS global: surface bertingkat L1/L2/L3, hairline divider, radius pill
+- Utility class baru: `ios-card-vibrant`, `ios-surface-1/2/3`, `ios-tint-*`, `ios-grad-bronze/silver/gold/diamond/jackpot`, `ios-btn-filled/tinted/gray`, `ios-pressable`
+- Background gelap dengan dual radial glow ala Apple Music
+- Tipografi SF Pro Display/Text dengan letter-spacing -0.011em
 
-## Fitur 2: 🎁 Daily Free Scratch
-Tiap hari user dapat **1 kartu Bronze GRATIS** (auto-reset jam 00:00 WIB). Tombol khusus berkilau emas dengan badge "FREE TODAY". Disimpan per visitor di tabel `daily_streaks` (kolom baru `free_scratch_date`).
+**🎰 Refactor Scratch-Off Lottery (3 item)**
+- Kartu pakai gradient rarity, badge tinted, modal sheet backdrop-blur xl + spring animation
+- Tombol pill putih ala iOS dengan `ios-pressable` (scale 0.96 saat ditekan)
+- Achievement grid pakai `ios-tint-yellow` untuk unlocked, grayscale untuk locked
 
-## Fitur 3: 🏆 Lucky Streak Achievements
-Sistem milestone untuk pemain scratch:
-- 🎯 **First Win** (menang pertama kali) → +50 koin bonus
-- 💰 **High Roller** (beli 10 kartu total) → +200 koin
-- 👑 **Jackpot Hunter** (dapat 1x JACKPOT) → +500 koin
-- 💎 **Diamond Master** (beli 5 Diamond Scratch) → +2000 koin
+**💰 Rebalance hadiah Scratch-Off (6 item)**
+- Jackpot terasa BESAR tapi LANGKA (~3% chance), sistem Zonk 40-50%
+- Bronze (50): +30/+60/+100, jackpot +200
+- Silver (150): +100/+200/+350, jackpot +600
+- Gold (500): +200/+700/+800/+1000/+1500, jackpot +2000
+- Diamond (1000): +200/+600/+700/+1500/+2500, jackpot +3000, MEGA +5000
+- House edge positif agar ekonomi koin sehat
 
-Tracking pakai kolom JSON `scratch_stats` di `daily_streaks`. Badge muncul dengan animasi celebration saat unlock.
+**🔧 Perbaikan transaksi & bug (4 item)**
+- streak_coins dipotong saat beli, ditambahkan setelah scratch >55%
+- Proteksi double-claim dengan `claimedRef`
+- `setScratching` membedakan kartu berbayar vs gratis (free key terpisah)
+- Combo multiplier diturunkan jadi ringan (1.0 → 1.2x maks)
 
-## Bonus: 📊 Mini Stats Display
-Header lottery menampilkan stats kecil: total kartu dibuka, win rate %, jackpot count.
+**🏆 Tweaks lain (3 item)**
+- Achievement bonus disesuaikan: First Win +10, High Roller +25, Jackpot Hunter +50, Diamond Master +100
+- Modal scratch bisa ditutup dengan tap di luar setelah claim
+- Banner kartu gratis harian dengan shimmer + `ios-grad-jackpot` rainbow
 
----
+### File yang diubah
 
-## Detail Teknis
+1. `src/pages/Index.tsx` (baris 3477-3502)
+   - Tambah objek entry v2.8 di posisi pertama dengan `isNew: true`
+   - Hapus `isNew: true` dari entry v2.7
 
-**File yang diubah:**
-- `src/components/streak/ScratchOffShop.tsx` — tambah combo bar, free scratch button, achievements, stats display
+### Catatan teknis
 
-**Migrasi DB:**
-```sql
-ALTER TABLE daily_streaks 
-  ADD COLUMN IF NOT EXISTS free_scratch_date date,
-  ADD COLUMN IF NOT EXISTS scratch_stats jsonb DEFAULT '{
-    "total_buys": 0,
-    "total_wins": 0,
-    "jackpots": 0,
-    "diamond_buys": 0,
-    "achievements": []
-  }'::jsonb;
-```
-
-**Logika combo:**
-- State `comboCount` + `lastBuyAt` (timestamp)
-- Saat `buyCard`: cek `Date.now() - lastBuyAt < 120000` → increment, else reset ke 1
-- Multiplier diterapkan ke `prizeValue` saat menang
-
-**Logika free scratch:**
-- Saat mount, cek `streak.free_scratch_date` vs hari ini WIB
-- Tombol "🎁 KARTU GRATIS HARI INI" muncul kalau belum klaim
-- Setelah klaim → update `free_scratch_date = today`
-
-**Achievement check:**
-- Setiap kemenangan → update `scratch_stats` JSON
-- Bandingkan dengan threshold → kalau unlock baru, push ke `achievements[]` + tambah bonus koin + tampilkan toast celebration
-
-**UI baru:**
-- Combo bar: gradient progress bar fuchsia→pink dengan label "COMBO x1.5"
-- Free button: card khusus full-width di atas grid, animasi shimmer emas
-- Stats: 3 angka kecil (📦 buys · 🎯 wins · 👑 jackpots) di bawah header
-- Achievement unlock: modal popup dengan confetti + suara (opsional)
-
-Setelah selesai aku akan langsung deploy & user bisa langsung test di tab Streak.
+- Tidak ada perubahan komponen lain — hanya data array changelog
+- Indikator visual baru (titik biru animate-pulse + ring primary) otomatis berlaku karena render sudah pakai flag `isNew`
+- v2.7 tetap ditampilkan dengan styling normal (tanpa highlight)
