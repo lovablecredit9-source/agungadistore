@@ -303,12 +303,13 @@ Deno.serve(async (req) => {
         const gemBase = (bundle as any).cost_gems || 0;
         if (gemBase <= 0) return Response.json({ error: "Pembayaran gem belum tersedia untuk paket ini" }, { status: 400, headers: corsHeaders });
         finalCost = Math.max(1, Math.floor(gemBase * (1 - tierInfo.discount / 100)));
-        const { data: gp } = await admin.from("game_profiles").select("gems").eq("visitor_id", visitorId).maybeSingle();
-        const userGems = (gp as any)?.gems || 0;
+        const { data: totalGems } = await admin.rpc("get_account_gems", { p_visitor_id: visitorId });
+        const userGems = Number(totalGems) || 0;
         if (userGems < finalCost) {
           return Response.json({ error: `Gem tidak cukup. Butuh ${finalCost} 💎, kamu punya ${userGems} 💎.` }, { status: 400, headers: corsHeaders });
         }
-        await admin.from("game_profiles").update({ gems: userGems - finalCost }).eq("visitor_id", visitorId);
+        const { error: dErr } = await admin.rpc("add_account_gems", { p_visitor_id: visitorId, p_amount: -finalCost });
+        if (dErr) return Response.json({ error: dErr.message || "Gagal potong gem" }, { status: 400, headers: corsHeaders });
         await admin.from("gem_transactions").insert({
           visitor_id: visitorId,
           amount: -finalCost,
@@ -377,12 +378,13 @@ Deno.serve(async (req) => {
         const gemBase = (box as any).cost_gems || 0;
         if (gemBase <= 0) return Response.json({ error: "Pembayaran gem belum tersedia untuk box ini" }, { status: 400, headers: corsHeaders });
         finalCost = Math.max(1, Math.floor(gemBase * (1 - tierInfo.discount / 100)));
-        const { data: gp } = await admin.from("game_profiles").select("gems").eq("visitor_id", visitorId).maybeSingle();
-        const userGems = (gp as any)?.gems || 0;
+        const { data: totalGems } = await admin.rpc("get_account_gems", { p_visitor_id: visitorId });
+        const userGems = Number(totalGems) || 0;
         if (userGems < finalCost) {
           return Response.json({ error: `Gem kurang. Butuh ${finalCost} 💎, kamu punya ${userGems} 💎.` }, { status: 400, headers: corsHeaders });
         }
-        await admin.from("game_profiles").update({ gems: userGems - finalCost }).eq("visitor_id", visitorId);
+        const { error: dErr } = await admin.rpc("add_account_gems", { p_visitor_id: visitorId, p_amount: -finalCost });
+        if (dErr) return Response.json({ error: dErr.message || "Gagal potong gem" }, { status: 400, headers: corsHeaders });
         await admin.from("gem_transactions").insert({
           visitor_id: visitorId,
           amount: -finalCost,
@@ -473,12 +475,13 @@ Deno.serve(async (req) => {
         if (gemBase <= 0) return Response.json({ error: "Pembayaran gem belum tersedia untuk item ini" }, { status: 400, headers: corsHeaders });
         const gemAfterSlot = Math.max(1, Math.floor(gemBase * (1 - slot.discount_pct / 100)));
         finalCost = Math.max(1, Math.floor(gemAfterSlot * (1 - tierInfo.discount / 100)));
-        const { data: gp } = await admin.from("game_profiles").select("gems").eq("visitor_id", visitorId).maybeSingle();
-        const userGems = (gp as any)?.gems || 0;
+        const { data: totalGems } = await admin.rpc("get_account_gems", { p_visitor_id: visitorId });
+        const userGems = Number(totalGems) || 0;
         if (userGems < finalCost) {
           return Response.json({ error: `Gem kurang. Butuh ${finalCost} 💎, kamu punya ${userGems} 💎.` }, { status: 400, headers: corsHeaders });
         }
-        await admin.from("game_profiles").update({ gems: userGems - finalCost }).eq("visitor_id", visitorId);
+        const { error: dErr } = await admin.rpc("add_account_gems", { p_visitor_id: visitorId, p_amount: -finalCost });
+        if (dErr) return Response.json({ error: dErr.message || "Gagal potong gem" }, { status: 400, headers: corsHeaders });
         await admin.from("gem_transactions").insert({
           visitor_id: visitorId,
           amount: -finalCost,
