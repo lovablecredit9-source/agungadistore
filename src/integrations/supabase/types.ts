@@ -4964,6 +4964,39 @@ export type Database = {
         }
         Relationships: []
       }
+      streak_membership_daily_claims: {
+        Row: {
+          claim_date: string
+          coins_awarded: number
+          created_at: string
+          id: string
+          membership_id: string | null
+          plan_id: string | null
+          plan_name: string | null
+          visitor_id: string
+        }
+        Insert: {
+          claim_date: string
+          coins_awarded?: number
+          created_at?: string
+          id?: string
+          membership_id?: string | null
+          plan_id?: string | null
+          plan_name?: string | null
+          visitor_id: string
+        }
+        Update: {
+          claim_date?: string
+          coins_awarded?: number
+          created_at?: string
+          id?: string
+          membership_id?: string | null
+          plan_id?: string | null
+          plan_name?: string | null
+          visitor_id?: string
+        }
+        Relationships: []
+      }
       streak_membership_plans: {
         Row: {
           badge_color: string
@@ -4972,6 +5005,7 @@ export type Database = {
           bonus_multiplier: number
           bonus_streak_coins: number
           created_at: string
+          daily_reward_coins: number
           description: string
           duration_days: number
           icon: string
@@ -4992,6 +5026,7 @@ export type Database = {
           bonus_multiplier?: number
           bonus_streak_coins?: number
           created_at?: string
+          daily_reward_coins?: number
           description?: string
           duration_days?: number
           icon?: string
@@ -5012,6 +5047,7 @@ export type Database = {
           bonus_multiplier?: number
           bonus_streak_coins?: number
           created_at?: string
+          daily_reward_coins?: number
           description?: string
           duration_days?: number
           icon?: string
