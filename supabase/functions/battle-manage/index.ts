@@ -64,12 +64,12 @@ Deno.serve(async (req) => {
       if (betGems < 10 || betGems > 1000) {
         return Response.json({ error: "Taruhan Gem 10–1000" }, { status: 400, headers: corsHeaders });
       }
-      const { data: prof } = await admin.from("game_profiles").select("gems").eq("visitor_id", visitorId).maybeSingle();
-      if (!prof || (prof.gems || 0) < betGems) {
-        return Response.json({ error: "Gem tidak cukup" }, { status: 400, headers: corsHeaders });
+      const { data: totalGems } = await admin.rpc("get_account_gems", { p_visitor_id: visitorId });
+      if ((totalGems || 0) < betGems) {
+        return Response.json({ error: `Gem tidak cukup. Butuh ${betGems} 💎, kamu punya ${totalGems || 0} 💎` }, { status: 400, headers: corsHeaders });
       }
-      // Deduct gems
-      await admin.from("game_profiles").update({ gems: (prof.gems || 0) - betGems }).eq("visitor_id", visitorId);
+      const { error: dErr } = await admin.rpc("add_account_gems", { p_visitor_id: visitorId, p_amount: -betGems });
+      if (dErr) return Response.json({ error: dErr.message || "Gagal potong gem" }, { status: 400, headers: corsHeaders });
       await admin.from("gem_transactions").insert({
         visitor_id: visitorId,
         amount: -betGems,
@@ -95,11 +95,12 @@ Deno.serve(async (req) => {
       if (battle.challenger_id === visitorId) {
         return Response.json({ error: "Tidak bisa terima battle sendiri" }, { status: 400, headers: corsHeaders });
       }
-      const { data: prof } = await admin.from("game_profiles").select("gems").eq("visitor_id", visitorId).maybeSingle();
-      if (!prof || (prof.gems || 0) < battle.bet_gems) {
-        return Response.json({ error: "Gem tidak cukup" }, { status: 400, headers: corsHeaders });
+      const { data: totalGems2 } = await admin.rpc("get_account_gems", { p_visitor_id: visitorId });
+      if ((totalGems2 || 0) < battle.bet_gems) {
+        return Response.json({ error: `Gem tidak cukup. Butuh ${battle.bet_gems} 💎, kamu punya ${totalGems2 || 0} 💎` }, { status: 400, headers: corsHeaders });
       }
-      await admin.from("game_profiles").update({ gems: (prof.gems || 0) - battle.bet_gems }).eq("visitor_id", visitorId);
+      const { error: dErr2 } = await admin.rpc("add_account_gems", { p_visitor_id: visitorId, p_amount: -battle.bet_gems });
+      if (dErr2) return Response.json({ error: dErr2.message || "Gagal potong gem" }, { status: 400, headers: corsHeaders });
       await admin.from("gem_transactions").insert({
         visitor_id: visitorId,
         amount: -battle.bet_gems,
@@ -143,8 +144,7 @@ Deno.serve(async (req) => {
         updates.resolved_at = new Date().toISOString();
 
         if (winnerId) {
-          const { data: wp } = await admin.from("game_profiles").select("gems").eq("visitor_id", winnerId).maybeSingle();
-          await admin.from("game_profiles").update({ gems: (wp?.gems || 0) + prize }).eq("visitor_id", winnerId);
+          await admin.rpc("add_account_gems", { p_visitor_id: winnerId, p_amount: prize });
           await admin.from("gem_transactions").insert({
             visitor_id: winnerId,
             amount: prize,
@@ -167,9 +167,9 @@ Deno.serve(async (req) => {
             });
           }
         } else {
-          // Draw — refund
-          await admin.from("game_profiles").update({ gems: battle.bet_gems }).eq("visitor_id", battle.challenger_id);
-          await admin.from("game_profiles").update({ gems: battle.bet_gems }).eq("visitor_id", battle.opponent_id);
+          // Draw — refund both
+          await admin.rpc("add_account_gems", { p_visitor_id: battle.challenger_id, p_amount: battle.bet_gems });
+          await admin.rpc("add_account_gems", { p_visitor_id: battle.opponent_id, p_amount: battle.bet_gems });
         }
       }
 
@@ -183,8 +183,7 @@ Deno.serve(async (req) => {
       if (!battle || battle.challenger_id !== visitorId || battle.status !== "open") {
         return Response.json({ error: "Tidak bisa dibatalkan" }, { status: 400, headers: corsHeaders });
       }
-      const { data: prof } = await admin.from("game_profiles").select("gems").eq("visitor_id", visitorId).maybeSingle();
-      await admin.from("game_profiles").update({ gems: (prof?.gems || 0) + battle.bet_gems }).eq("visitor_id", visitorId);
+      await admin.rpc("add_account_gems", { p_visitor_id: visitorId, p_amount: battle.bet_gems });
       await admin.from("gem_transactions").insert({
         visitor_id: visitorId,
         amount: battle.bet_gems,
