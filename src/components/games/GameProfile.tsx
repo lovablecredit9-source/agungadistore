@@ -9,6 +9,7 @@ import { motion } from "framer-motion";
 import { User, LogIn, LogOut, UserPlus, Search, Trophy, Users, Heart, Edit2, Loader2, Crown, Medal, Award, Eye } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { getVisitorId } from "@/lib/visitor-id";
+import { adjustGameLevelPoints } from "./gameStore";
 
 interface GameProfile {
   visitor_id: string;
@@ -600,6 +601,7 @@ export async function updateGameStats(
   questionsAnswered = 1,
   meta?: { basePoints?: number },
 ) {
+  let trackedPoints = points;
   try {
     const { data } = await supabase.functions.invoke("game-profile", {
       body: {
@@ -612,14 +614,19 @@ export async function updateGameStats(
         basePoints: meta?.basePoints,
       },
     });
-    return typeof data?.awardedPoints === "number" ? data.awardedPoints : points;
+    if (typeof data?.awardedPoints === "number") {
+      trackedPoints = data.awardedPoints;
+      if (data.awardedPoints !== points) {
+        adjustGameLevelPoints(data.awardedPoints - points);
+      }
+    }
   } catch { }
   // Daily mission tracking (silent)
   try {
     const { trackDailyMission } = await import("@/lib/daily-mission");
     trackDailyMission(visitorId, "game_play", 1);
     if (won) trackDailyMission(visitorId, "game_win", 1);
-    if (points > 0) trackDailyMission(visitorId, "game_points", points);
+    if (trackedPoints > 0) trackDailyMission(visitorId, "game_points", trackedPoints);
   } catch { }
-  return points;
+  return trackedPoints;
 }

@@ -8,7 +8,7 @@ import { updateGameStats } from "./GameProfile";
 import { useGameCredits, GameCreditsBadge, BuyCreditsDialog } from "./GameCredits";
 import { useToast } from "@/hooks/use-toast";
 import {
-  loadGameData, awardGamePoints, getPointsForQuestion, adjustGameLevelPoints,
+  loadGameData, awardGamePoints, getPointsForQuestion,
   getLevelFromPoints, getNextLevelThreshold, getCurrentLevelThreshold,
   DIFFICULTIES, type Difficulty, type GameLevel,
 } from "./gameStore";
@@ -98,12 +98,7 @@ export default function KuisGame() {
       const { awardedPoints, data } = awardGamePoints(basePoints);
       setEarnedPoints(awardedPoints);
       setPlayerData(data);
-      updateGameStats(activeVisitorId, "kuis", true, awardedPoints, 1, { basePoints }).then((serverAwardedPoints) => {
-        if (typeof serverAwardedPoints === "number" && serverAwardedPoints !== awardedPoints) {
-          setEarnedPoints(serverAwardedPoints);
-          setPlayerData(adjustGameLevelPoints(serverAwardedPoints - awardedPoints));
-        }
-      });
+      updateGameStats(activeVisitorId, "kuis", true, awardedPoints, 1, { basePoints });
       setTimeout(() => fetchQuestion(), 2000);
     } else {
       setResult("wrong");
