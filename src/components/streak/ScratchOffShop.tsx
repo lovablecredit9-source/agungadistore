@@ -3,7 +3,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { Sparkles, Coins, Gift, Loader2, Crown, Star } from "lucide-react";
+import { Sparkles, Coins, Loader2, Star } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 interface Props {
   visitorId: string;
@@ -90,15 +91,46 @@ export default function ScratchOffShop({ visitorId, onUpdate }: Props) {
     setTotalWon(Number(localStorage.getItem(totalKey) || "0"));
   }, [totalKey]);
 
-  function buyCard(card: Card) {
+  async function buyCard(card: Card) {
+    if (!visitorId) return;
+    if (scratching) return;
     setScratching(card.id);
-    const prize = pickPrize(card);
-    setTimeout(() => {
+    try {
+      // 1. Validasi & potong koin di DB
+      const { data: streak, error: selErr } = await supabase
+        .from("daily_streaks")
+        .select("id, streak_coins")
+        .eq("visitor_id", visitorId)
+        .maybeSingle();
+      if (selErr) throw selErr;
+      if (!streak) {
+        toast({ title: "Belum ada streak", description: "Klaim streak harian dulu untuk dapat koin.", variant: "destructive" });
+        setScratching(null);
+        return;
+      }
+      const balance = streak.streak_coins || 0;
+      if (balance < card.cost) {
+        toast({ title: "Koin kurang", description: `Butuh ${card.cost} koin (kamu punya ${balance})`, variant: "destructive" });
+        setScratching(null);
+        return;
+      }
+      const { error: updErr } = await supabase
+        .from("daily_streaks")
+        .update({ streak_coins: balance - card.cost })
+        .eq("id", streak.id);
+      if (updErr) throw updErr;
+      onUpdate?.();
+
+      // 2. Roll hadiah lalu buka kartu untuk digosok
+      const prize = pickPrize(card);
       setReveal({ card, prize });
-      setScratching(null);
       setScratchPct(0);
       setActivated(false);
-    }, 700);
+    } catch (e) {
+      toast({ title: "Gagal beli kartu", description: e instanceof Error ? e.message : "Coba lagi", variant: "destructive" });
+    } finally {
+      setScratching(null);
+    }
   }
 
   // Initialize scratch canvas when reveal opens
@@ -152,17 +184,30 @@ export default function ScratchOffShop({ visitorId, onUpdate }: Props) {
       setScratchPct(pct);
       if (pct > 55 && !activated) {
         setActivated(true);
-        // Apply prize
-        const newTotal = totalWon + reveal.prize.value;
-        setTotalWon(newTotal);
-        localStorage.setItem(totalKey, String(newTotal));
-        try {
-          const bonusKey = `dcr-bonus-${visitorId}`;
-          const cur = Number(localStorage.getItem(bonusKey) || "0");
-          localStorage.setItem(bonusKey, String(cur + reveal.prize.value));
-        } catch {}
-        toast({ title: "🎉 Hadiah Terbuka!", description: reveal.prize.label });
-        onUpdate?.();
+        // Tambahkan hadiah ke saldo koin DB (atomic-ish: re-fetch saldo terbaru)
+        const prizeValue = reveal.prize.value;
+        (async () => {
+          try {
+            const { data: s } = await supabase
+              .from("daily_streaks")
+              .select("id, streak_coins")
+              .eq("visitor_id", visitorId)
+              .maybeSingle();
+            if (s) {
+              await supabase
+                .from("daily_streaks")
+                .update({ streak_coins: (s.streak_coins || 0) + prizeValue })
+                .eq("id", s.id);
+            }
+            const newTotal = totalWon + prizeValue;
+            setTotalWon(newTotal);
+            localStorage.setItem(totalKey, String(newTotal));
+            toast({ title: "🎉 Hadiah Terbuka!", description: reveal.prize.label });
+            onUpdate?.();
+          } catch (err) {
+            toast({ title: "Gagal mencairkan hadiah", description: err instanceof Error ? err.message : "Coba lagi", variant: "destructive" });
+          }
+        })();
       }
     }
   }
