@@ -8,10 +8,9 @@ import { getVisitorId } from "@/lib/visitor-id";
 import { updateGameStats } from "./GameProfile";
 import { useGameCredits, GameCreditsBadge, BuyCreditsDialog, RevealAnswerButton } from "./GameCredits";
 import PowerUpsBar, { ReviveButton } from "./PowerUpsBar";
-import { applyDoubleXP } from "./gameStore";
 import { useToast } from "@/hooks/use-toast";
 import {
-  loadGameData, addPoints, getPointsForQuestion,
+  loadGameData, awardGamePoints, getPointsForQuestion,
   getNextLevelThreshold, getCurrentLevelThreshold,
   DIFFICULTIES, type Difficulty, type GameLevel,
 } from "./gameStore";
@@ -101,13 +100,12 @@ export default function TebakBarangGame() {
 
     if (g === a || a.includes(g) || g.includes(a)) {
       if (timerRef.current) clearInterval(timerRef.current);
-      const pts = applyDoubleXP(getPointsForQuestion(questionNumber));
+      const { awardedPoints, data } = awardGamePoints(getPointsForQuestion(questionNumber));
       setResult("correct");
       setGameActive(false);
-      setEarnedPoints(pts);
-      const updated = addPoints(pts);
-      setPlayerData(updated);
-      updateGameStats(activeVisitorId, "tebak_barang", true, pts);
+      setEarnedPoints(awardedPoints);
+      setPlayerData(data);
+      updateGameStats(activeVisitorId, "tebak_barang", true, awardedPoints);
       setTimeout(() => startNewGame(), 2000);
     } else {
       const newWrong = wrongCount + 1;

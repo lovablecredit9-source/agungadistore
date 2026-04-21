@@ -8,10 +8,9 @@ import { getVisitorId } from "@/lib/visitor-id";
 import { updateGameStats } from "./GameProfile";
 import { useGameCredits, GameCreditsBadge, BuyCreditsDialog, RevealAnswerButton } from "./GameCredits";
 import PowerUpsBar, { ReviveButton } from "./PowerUpsBar";
-import { applyDoubleXP } from "./gameStore";
 import { useToast } from "@/hooks/use-toast";
 import {
-  loadGameData, addPoints, getPointsForQuestion,
+  loadGameData, awardGamePoints, getPointsForQuestion,
   getNextLevelThreshold, getCurrentLevelThreshold,
   DIFFICULTIES, type Difficulty, type GameLevel,
 } from "./gameStore";
@@ -106,13 +105,12 @@ export default function TebakAngkaGame() {
 
     if (g === targetNumber) {
       if (timerRef.current) clearInterval(timerRef.current);
-      const pts = applyDoubleXP(getPointsForQuestion(questionNumber));
+      const { awardedPoints, data } = awardGamePoints(getPointsForQuestion(questionNumber));
       setResult("correct");
       setGameActive(false);
-      setEarnedPoints(pts);
-      const updated = addPoints(pts);
-      setPlayerData(updated);
-      updateGameStats(activeVisitorId, "tebak_angka", true, pts);
+      setEarnedPoints(awardedPoints);
+      setPlayerData(data);
+      updateGameStats(activeVisitorId, "tebak_angka", true, awardedPoints);
       setTimeout(() => startNewGame(), 2000);
     } else {
       setLastGuessDirection(g < targetNumber ? "higher" : "lower");

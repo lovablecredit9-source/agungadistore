@@ -11,12 +11,11 @@ import {
   Loader2, RefreshCw, Clock, Star, Lightbulb, AlertTriangle, Gift
 } from "lucide-react";
 import {
-  addPoints, getPointsForQuestion, loadGameData, getLevelFromPoints,
+  awardGamePoints, getPointsForQuestion, loadGameData, getLevelFromPoints,
   getNextLevelThreshold, getCurrentLevelThreshold, type GameLevel,
 } from "./gameStore";
 import { useGameCredits, GameCreditsBadge, BuyCreditsDialog, RevealAnswerButton } from "./GameCredits";
 import PowerUpsBar, { ReviveButton } from "./PowerUpsBar";
-import { applyDoubleXP } from "./gameStore";
 
 type Difficulty = "mudah" | "sedang" | "sulit";
 
@@ -52,6 +51,7 @@ export default function TebakGambarGame() {
   const [timeLeft, setTimeLeft] = useState(0);
   const [timerActive, setTimerActive] = useState(false);
   const [playerData, setPlayerData] = useState<GameLevel>(loadGameData());
+  const [earnedPoints, setEarnedPoints] = useState(0);
   const [error, setError] = useState("");
   const [blurLevel, setBlurLevel] = useState(0);
   const [answerRevealed, setAnswerRevealed] = useState(false);
@@ -83,6 +83,7 @@ export default function TebakGambarGame() {
     setWrongCount(0);
     setGuess("");
     setShownHints(0);
+    setEarnedPoints(0);
     setImageData("");
     setAnswer("");
     setHints([]);
@@ -131,11 +132,11 @@ export default function TebakGambarGame() {
       if (data.correct) {
         setResult("correct");
         setTimerActive(false);
-        const pts = applyDoubleXP(getPointsForQuestion(questionNum));
-        setScore(prev => prev + pts);
-        const updated = addPoints(pts);
-        setPlayerData(updated);
-        updateGameStats(activeVisitorId || "", "tebak_gambar", true, pts);
+        const { awardedPoints, data: updatedData } = awardGamePoints(getPointsForQuestion(questionNum));
+        setEarnedPoints(awardedPoints);
+        setScore(prev => prev + awardedPoints);
+        setPlayerData(updatedData);
+        updateGameStats(activeVisitorId || "", "tebak_gambar", true, awardedPoints);
       } else {
         const newWrong = wrongCount + 1;
         setWrongCount(newWrong);
@@ -323,7 +324,7 @@ export default function TebakGambarGame() {
               <CardContent className="p-4 text-center">
                 <Trophy className="w-8 h-8 text-green-500 mx-auto mb-2" />
                 <p className="font-bold text-green-600">Benar! Jawabannya: {answer}</p>
-                <p className="text-xs text-muted-foreground mt-1">+{getPointsForQuestion(questionNum)} poin</p>
+                <p className="text-xs text-muted-foreground mt-1">+{earnedPoints} poin</p>
                 <Button className="mt-3" onClick={nextRound}>
                   <RefreshCw className="w-4 h-4 mr-1" /> Gambar Berikutnya
                 </Button>

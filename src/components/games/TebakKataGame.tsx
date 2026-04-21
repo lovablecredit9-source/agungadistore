@@ -8,10 +8,9 @@ import { getVisitorId } from "@/lib/visitor-id";
 import { updateGameStats } from "./GameProfile";
 import { useGameCredits, GameCreditsBadge, BuyCreditsDialog, RevealAnswerButton } from "./GameCredits";
 import PowerUpsBar, { ReviveButton } from "./PowerUpsBar";
-import { applyDoubleXP } from "./gameStore";
 import { useToast } from "@/hooks/use-toast";
 import {
-  loadGameData, addPoints, getPointsForQuestion,
+  loadGameData, addPoints, awardGamePoints, getPointsForQuestion, isDoubleXPActive,
   getLevelFromPoints, getNextLevelThreshold, getCurrentLevelThreshold,
   DIFFICULTIES, type Difficulty, type GameLevel,
 } from "./gameStore";
@@ -107,13 +106,12 @@ export default function TebakKataGame() {
     const isCorrect = guess.trim().toUpperCase() === word.toUpperCase();
     if (isCorrect) {
       if (timerRef.current) clearInterval(timerRef.current);
-      const pts = applyDoubleXP(getPointsForQuestion(questionNumber));
-      setEarnedPoints(pts);
-      const newData = addPoints(pts);
-      setPlayerData(newData);
+      const { awardedPoints, data } = awardGamePoints(getPointsForQuestion(questionNumber));
+      setEarnedPoints(awardedPoints);
+      setPlayerData(data);
       setResult("correct");
       setGameActive(false);
-      updateGameStats(activeVisitorId, "tebak", true, pts);
+      updateGameStats(activeVisitorId, "tebak", true, awardedPoints);
     } else {
       const newWrong = wrongCount + 1;
       setWrongCount(newWrong);
@@ -410,7 +408,7 @@ export default function TebakKataGame() {
           {/* Question info */}
           <div className="flex items-center justify-between text-[10px] text-muted-foreground">
             <span>Soal #{questionNumber}</span>
-            <span>+{getPointsForQuestion(questionNumber)} poin jika benar</span>
+            <span>+{isDoubleXPActive() ? getPointsForQuestion(questionNumber) * 2 : getPointsForQuestion(questionNumber)} poin jika benar</span>
           </div>
         </>
       )}
