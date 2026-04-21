@@ -75,8 +75,7 @@ async function applyReward(visitorId: string, kind: RewardKind, value: number) {
     if (r) await supa.from("daily_streaks").update({ streak_coins: (r.streak_coins || 0) + value }).eq("id", r.id);
     else await supa.from("daily_streaks").insert({ visitor_id: visitorId, streak_coins: value });
   } else if (kind === "gems") {
-    const { data: r } = await supa.from("game_profiles").select("id, gems").eq("visitor_id", visitorId).maybeSingle();
-    if (r) await supa.from("game_profiles").update({ gems: (r.gems || 0) + value }).eq("id", r.id);
+    await supa.rpc("add_account_gems", { p_visitor_id: visitorId, p_amount: value });
     await supa.from("gem_transactions").insert({ visitor_id: visitorId, amount: value, type: "earn", description: "Season Pass reward" });
   } else if (kind === "credits") {
     const { data: r } = await supa.from("user_game_credits").select("id, credits").eq("visitor_id", visitorId).maybeSingle();
@@ -149,9 +148,10 @@ Deno.serve(async (req) => {
           description: "Season Pass Premium Q2 2026",
         });
       } else if (source === "gems") {
-        const { data: gp } = await supa.from("game_profiles").select("*").eq("visitor_id", visitorId).maybeSingle();
-        if (!gp || (gp.gems || 0) < PRICE_GEMS) throw new Error("Gems tidak cukup");
-        await supa.from("game_profiles").update({ gems: gp.gems - PRICE_GEMS }).eq("id", gp.id);
+        const { data: totalGems } = await supa.rpc("get_account_gems", { p_visitor_id: visitorId });
+        if ((totalGems || 0) < PRICE_GEMS) throw new Error(`Gems tidak cukup. Butuh ${PRICE_GEMS} 💎, kamu punya ${totalGems || 0} 💎`);
+        const { error: dErr } = await supa.rpc("add_account_gems", { p_visitor_id: visitorId, p_amount: -PRICE_GEMS });
+        if (dErr) throw new Error(dErr.message || "Gagal potong gem");
         await supa.from("gem_transactions").insert({
           visitor_id: visitorId, amount: -PRICE_GEMS, type: "spend",
           description: "Season Pass Premium",

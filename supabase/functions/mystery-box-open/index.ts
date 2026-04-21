@@ -83,21 +83,16 @@ Deno.serve(async (req) => {
       }
     }
 
-    // GEM path: deduct gems first
+    // GEM path: deduct gems first (account-aware)
     if (paymentMethod === "gem") {
-      const { data: profile } = await admin
-        .from("game_profiles")
-        .select("id, gems")
-        .eq("visitor_id", visitorId)
-        .maybeSingle();
-
-      if (!profile) {
-        return Response.json({ error: "Profil game tidak ditemukan. Buka Game dulu." }, { status: 400, headers: corsHeaders });
+      const { data: totalGems } = await admin.rpc("get_account_gems", { p_visitor_id: visitorId });
+      if ((totalGems || 0) < GEM_COST) {
+        return Response.json({ error: `Gem tidak cukup. Butuh ${GEM_COST} 💎, kamu punya ${totalGems || 0} 💎` }, { status: 400, headers: corsHeaders });
       }
-      if ((profile.gems || 0) < GEM_COST) {
-        return Response.json({ error: `Gem tidak cukup. Butuh ${GEM_COST} 💎` }, { status: 400, headers: corsHeaders });
+      const { error: dErr } = await admin.rpc("add_account_gems", { p_visitor_id: visitorId, p_amount: -GEM_COST });
+      if (dErr) {
+        return Response.json({ error: dErr.message || "Gagal potong gem" }, { status: 400, headers: corsHeaders });
       }
-      await admin.from("game_profiles").update({ gems: profile.gems - GEM_COST }).eq("id", profile.id);
       await admin.from("gem_transactions").insert({
         visitor_id: visitorId,
         amount: -GEM_COST,
