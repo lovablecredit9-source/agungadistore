@@ -98,7 +98,12 @@ export default function KuisGame() {
       const { awardedPoints, data } = awardGamePoints(basePoints);
       setEarnedPoints(awardedPoints);
       setPlayerData(data);
-      updateGameStats(activeVisitorId, "kuis", true, awardedPoints, 1, { basePoints });
+      updateGameStats(activeVisitorId, "kuis", true, awardedPoints, 1, { basePoints }).then((serverAwardedPoints) => {
+        if (typeof serverAwardedPoints === "number" && serverAwardedPoints !== awardedPoints) {
+          setEarnedPoints(serverAwardedPoints);
+          setPlayerData(loadGameData());
+        }
+      });
       setTimeout(() => fetchQuestion(), 2000);
     } else {
       setResult("wrong");
