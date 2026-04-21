@@ -3464,6 +3464,7 @@ const Index = () => {
           )
         )}
 
+        <div className={tab === "game" ? "" : "hidden"}>
           {userBalance ? (
             <GameTab />
           ) : (
