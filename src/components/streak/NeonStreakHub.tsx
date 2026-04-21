@@ -43,6 +43,7 @@ import CoinRainGame from "./event/CoinRainGame";
 import StreakRoyaleBracket from "./event/StreakRoyaleBracket";
 import MegaShopHub from "./MegaShopHub";
 import MegaEventHub from "./MegaEventHub";
+import StreakFlashSaleHub from "./StreakFlashSaleHub";
 import DailyChallengeRush from "./event/DailyChallengeRush";
 import StreakWishingWell from "./event/StreakWishingWell";
 import ScratchOffShop from "./ScratchOffShop";
@@ -514,6 +515,7 @@ export default function NeonStreakHub({ visitorId, forcedView }: Props) {
 
       {activeView === "event" && (
         <div className="space-y-3">
+          <StreakFlashSaleHub visitorId={visitorId} onUpdate={loadAll} />
           <MegaEventHub visitorId={visitorId} onUpdate={loadAll} />
           <DailyChallengeRush visitorId={visitorId} currentStreak={currentStreak} onUpdate={loadAll} />
           <StreakWishingWell visitorId={visitorId} onUpdate={loadAll} />
@@ -569,6 +571,7 @@ export default function NeonStreakHub({ visitorId, forcedView }: Props) {
 
       {activeView === "shop" && (
         <div className="space-y-3">
+          <StreakFlashSaleHub visitorId={visitorId} onUpdate={loadAll} />
           <MegaShopHub visitorId={visitorId} onUpdate={loadAll} />
           <ScratchOffShop visitorId={visitorId} onUpdate={loadAll} />
           <VIPLoungeShop visitorId={visitorId} onUpdate={loadAll} />

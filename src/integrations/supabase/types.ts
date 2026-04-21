@@ -2656,6 +2656,45 @@ export type Database = {
         }
         Relationships: []
       }
+      mystery_boxes: {
+        Row: {
+          created_at: string
+          id: string
+          is_opened: boolean
+          max_reward: number
+          min_reward: number
+          opened_at: string | null
+          reward_amount: number | null
+          source: string | null
+          tier: string
+          visitor_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_opened?: boolean
+          max_reward?: number
+          min_reward?: number
+          opened_at?: string | null
+          reward_amount?: number | null
+          source?: string | null
+          tier?: string
+          visitor_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_opened?: boolean
+          max_reward?: number
+          min_reward?: number
+          opened_at?: string | null
+          reward_amount?: number | null
+          source?: string | null
+          tier?: string
+          visitor_id?: string
+        }
+        Relationships: []
+      }
       notifications: {
         Row: {
           created_at: string
@@ -3226,6 +3265,39 @@ export type Database = {
           reward_value?: number
           visitor_id?: string
           voucher_code?: string | null
+        }
+        Relationships: []
+      }
+      scratch_off_cards: {
+        Row: {
+          created_at: string
+          id: string
+          is_scratched: boolean
+          reward_amount: number | null
+          scratched_at: string | null
+          source: string | null
+          tier: string
+          visitor_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_scratched?: boolean
+          reward_amount?: number | null
+          scratched_at?: string | null
+          source?: string | null
+          tier?: string
+          visitor_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_scratched?: boolean
+          reward_amount?: number | null
+          scratched_at?: string | null
+          source?: string | null
+          tier?: string
+          visitor_id?: string
         }
         Relationships: []
       }
@@ -4521,6 +4593,125 @@ export type Database = {
           reward_type?: string
           reward_value?: number
           sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      streak_flash_sale_purchases: {
+        Row: {
+          amount_paid: number
+          created_at: string
+          currency: string
+          deal_id: string
+          id: string
+          purchase_date: string
+          reward_payload: Json
+          visitor_id: string
+        }
+        Insert: {
+          amount_paid: number
+          created_at?: string
+          currency: string
+          deal_id: string
+          id?: string
+          purchase_date?: string
+          reward_payload?: Json
+          visitor_id: string
+        }
+        Update: {
+          amount_paid?: number
+          created_at?: string
+          currency?: string
+          deal_id?: string
+          id?: string
+          purchase_date?: string
+          reward_payload?: Json
+          visitor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "streak_flash_sale_purchases_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "streak_flash_sales"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      streak_flash_sales: {
+        Row: {
+          created_at: string
+          description: string | null
+          discount_pct: number | null
+          ends_at: string | null
+          gradient: string | null
+          icon: string | null
+          id: string
+          is_active: boolean
+          is_featured: boolean
+          item_type: string
+          name: string
+          original_price: number | null
+          per_user_daily_limit: number | null
+          price_balance: number | null
+          price_coins: number | null
+          price_gems: number | null
+          rarity: string | null
+          remaining_stock: number | null
+          reward_payload: Json
+          sort_order: number | null
+          starts_at: string
+          total_stock: number | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          discount_pct?: number | null
+          ends_at?: string | null
+          gradient?: string | null
+          icon?: string | null
+          id?: string
+          is_active?: boolean
+          is_featured?: boolean
+          item_type: string
+          name: string
+          original_price?: number | null
+          per_user_daily_limit?: number | null
+          price_balance?: number | null
+          price_coins?: number | null
+          price_gems?: number | null
+          rarity?: string | null
+          remaining_stock?: number | null
+          reward_payload?: Json
+          sort_order?: number | null
+          starts_at?: string
+          total_stock?: number | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          discount_pct?: number | null
+          ends_at?: string | null
+          gradient?: string | null
+          icon?: string | null
+          id?: string
+          is_active?: boolean
+          is_featured?: boolean
+          item_type?: string
+          name?: string
+          original_price?: number | null
+          per_user_daily_limit?: number | null
+          price_balance?: number | null
+          price_coins?: number | null
+          price_gems?: number | null
+          rarity?: string | null
+          remaining_stock?: number | null
+          reward_payload?: Json
+          sort_order?: number | null
+          starts_at?: string
+          total_stock?: number | null
           updated_at?: string
         }
         Relationships: []
@@ -6457,6 +6648,39 @@ export type Database = {
           phone?: string
           updated_at?: string
           username?: string
+          visitor_id?: string
+        }
+        Relationships: []
+      }
+      user_cosmetics: {
+        Row: {
+          acquired_at: string
+          cosmetic_id: string
+          cosmetic_name: string
+          cosmetic_type: string
+          id: string
+          is_equipped: boolean
+          source: string | null
+          visitor_id: string
+        }
+        Insert: {
+          acquired_at?: string
+          cosmetic_id: string
+          cosmetic_name: string
+          cosmetic_type: string
+          id?: string
+          is_equipped?: boolean
+          source?: string | null
+          visitor_id: string
+        }
+        Update: {
+          acquired_at?: string
+          cosmetic_id?: string
+          cosmetic_name?: string
+          cosmetic_type?: string
+          id?: string
+          is_equipped?: boolean
+          source?: string | null
           visitor_id?: string
         }
         Relationships: []
