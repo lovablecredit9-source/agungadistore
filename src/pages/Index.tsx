@@ -4887,48 +4887,98 @@ const Index = () => {
       )}
 
 
-      <nav className="fixed bottom-0 left-0 right-0 z-50">
-        {/* Glassmorphism background */}
-        <div className="absolute inset-0 bg-card/80 backdrop-blur-xl border-t border-white/10 shadow-[0_-8px_32px_rgba(0,0,0,0.12)]" />
-        <div className="relative flex max-w-lg mx-auto overflow-x-auto scrollbar-hide px-1 py-1">
-          {([
-            { key: "beranda" as Tab, icon: Home, label: "Beranda", gradient: "from-blue-500 to-cyan-400" },
-            { key: "musik" as Tab, icon: Music2, label: "Musik", gradient: "from-fuchsia-600 via-purple-600 to-indigo-600" },
-            { key: "produk" as Tab, icon: Package, label: t("nav.products", lang), gradient: "from-orange-500 to-amber-400" },
-            { key: "voucher" as Tab, icon: Ticket, label: t("nav.voucher", lang), gradient: "from-emerald-500 to-green-400" },
-            { key: "saldo" as Tab, icon: Wallet, label: t("nav.balance", lang), gradient: "from-violet-500 to-purple-400" },
-            { key: "likes" as Tab, icon: Heart, label: t("nav.likes", lang), gradient: "from-pink-500 to-rose-400" },
-            { key: "history" as Tab, icon: Clock, label: t("nav.history", lang), gradient: "from-sky-500 to-blue-400" },
-            { key: "tiket" as Tab, icon: AlertCircle, label: t("nav.ticket", lang), gradient: "from-red-500 to-orange-400" },
-            { key: "sponsor" as Tab, icon: Megaphone, label: "Sponsor", gradient: "from-amber-500 to-yellow-400" },
-            { key: "streak" as Tab, icon: CalendarDays, label: "Streak", gradient: "from-orange-600 to-red-500" },
-            { key: "streakevent" as Tab, icon: CalendarDays, label: "Streak Event", gradient: "from-pink-500 to-purple-600" },
-            { key: "streakshop" as Tab, icon: CalendarDays, label: "Streak Shop", gradient: "from-purple-600 to-cyan-600" },
-            { key: "game" as Tab, icon: Gamepad2, label: "Game", gradient: "from-indigo-500 to-violet-400" },
-            { key: "plus" as Tab, icon: Sparkles, label: "Plus", gradient: "from-yellow-500 to-orange-400" },
-            { key: "update" as Tab, icon: RefreshCw, label: "Update", gradient: "from-cyan-500 to-blue-400" },
-            { key: "adminpost" as Tab, icon: FileText, label: "Admin", gradient: "from-slate-500 to-gray-400" },
-          ]).map(({ key, icon: Icon, label, gradient }) => {
-            const active = tab === key;
-            return (
-              <button
-                key={key}
-                onClick={() => setTab(key)}
-                className={`min-w-[56px] flex-shrink-0 flex flex-col items-center py-1.5 text-[10px] transition-all duration-300 relative ${active ? "text-primary font-extrabold" : "text-muted-foreground hover:text-foreground"}`}
-              >
-                {active && (
-                  <div className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-0.5 rounded-full bg-gradient-to-r from-primary to-accent" />
-                )}
-                <div className={`relative p-1.5 rounded-2xl transition-all duration-300 ${active ? `bg-gradient-to-br ${gradient} shadow-lg scale-110` : "hover:bg-muted/50"}`}>
-                  <Icon className={`w-[18px] h-[18px] transition-colors duration-200 ${active ? "text-white" : ""}`} />
-                  {active && (
-                    <div className={`absolute inset-0 rounded-2xl bg-gradient-to-br ${gradient} opacity-30 blur-md -z-10`} />
-                  )}
-                </div>
-                <span className={`mt-0.5 transition-all duration-200 ${active ? "text-[10px]" : "text-[9px]"}`}>{label}</span>
-              </button>
-            );
-          })}
+      {/* === Premium Glass Floating Dock === */}
+      <nav className="fixed bottom-0 left-0 right-0 z-50 pointer-events-none px-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-2">
+        <div className="pointer-events-auto relative max-w-lg mx-auto group/dock">
+          {/* Soft ambient glow under dock */}
+          <div className="absolute -inset-x-6 -bottom-4 h-10 bg-gradient-to-t from-primary/20 via-accent/10 to-transparent blur-2xl opacity-60 pointer-events-none" />
+
+          {/* Glass shell */}
+          <div className="relative rounded-[28px] border border-white/15 dark:border-white/10 bg-white/40 dark:bg-white/[0.06] backdrop-blur-2xl backdrop-saturate-150 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.35),0_8px_24px_-8px_rgba(0,0,0,0.25),inset_0_1px_0_0_rgba(255,255,255,0.35)] overflow-hidden">
+            {/* Top sheen */}
+            <div className="pointer-events-none absolute inset-x-6 top-0 h-px bg-gradient-to-r from-transparent via-white/60 to-transparent" />
+            {/* Inner gradient wash */}
+            <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-white/[0.18] via-transparent to-black/[0.04]" />
+
+            <div className="relative flex overflow-x-auto scrollbar-hide px-2 py-2 gap-0.5 snap-x snap-mandatory">
+              {([
+                { key: "beranda" as Tab, icon: Home, label: "Beranda", gradient: "from-blue-500 to-cyan-400" },
+                { key: "musik" as Tab, icon: Music2, label: "Musik", gradient: "from-fuchsia-600 via-purple-600 to-indigo-600" },
+                { key: "produk" as Tab, icon: Package, label: t("nav.products", lang), gradient: "from-orange-500 to-amber-400" },
+                { key: "voucher" as Tab, icon: Ticket, label: t("nav.voucher", lang), gradient: "from-emerald-500 to-green-400" },
+                { key: "saldo" as Tab, icon: Wallet, label: t("nav.balance", lang), gradient: "from-violet-500 to-purple-400" },
+                { key: "likes" as Tab, icon: Heart, label: t("nav.likes", lang), gradient: "from-pink-500 to-rose-400" },
+                { key: "history" as Tab, icon: Clock, label: t("nav.history", lang), gradient: "from-sky-500 to-blue-400" },
+                { key: "tiket" as Tab, icon: AlertCircle, label: t("nav.ticket", lang), gradient: "from-red-500 to-orange-400" },
+                { key: "sponsor" as Tab, icon: Megaphone, label: "Sponsor", gradient: "from-amber-500 to-yellow-400" },
+                { key: "streak" as Tab, icon: CalendarDays, label: "Streak", gradient: "from-orange-600 to-red-500" },
+                { key: "streakevent" as Tab, icon: CalendarDays, label: "Streak Event", gradient: "from-pink-500 to-purple-600" },
+                { key: "streakshop" as Tab, icon: CalendarDays, label: "Streak Shop", gradient: "from-purple-600 to-cyan-600" },
+                { key: "game" as Tab, icon: Gamepad2, label: "Game", gradient: "from-indigo-500 to-violet-400" },
+                { key: "plus" as Tab, icon: Sparkles, label: "Plus", gradient: "from-yellow-500 to-orange-400" },
+                { key: "update" as Tab, icon: RefreshCw, label: "Update", gradient: "from-cyan-500 to-blue-400" },
+                { key: "adminpost" as Tab, icon: FileText, label: "Admin", gradient: "from-slate-500 to-gray-400" },
+              ]).map(({ key, icon: Icon, label, gradient }) => {
+                const active = tab === key;
+                return (
+                  <button
+                    key={key}
+                    onClick={() => setTab(key)}
+                    aria-label={label}
+                    aria-current={active ? "page" : undefined}
+                    className={`group/item snap-center relative flex-shrink-0 flex flex-col items-center justify-end pt-1.5 pb-1 px-1 rounded-2xl transition-all duration-300 ease-out outline-none focus-visible:ring-2 focus-visible:ring-primary/50 ${
+                      active ? "min-w-[64px]" : "min-w-[52px] hover:min-w-[58px]"
+                    }`}
+                  >
+                    {/* Active pill background (glass + gradient tint) */}
+                    {active && (
+                      <span
+                        aria-hidden
+                        className={`absolute inset-x-1 inset-y-0.5 rounded-2xl bg-gradient-to-br ${gradient} opacity-90 shadow-[0_8px_24px_-8px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.4)] animate-in fade-in zoom-in-95 duration-300`}
+                      />
+                    )}
+                    {/* Active outer glow */}
+                    {active && (
+                      <span aria-hidden className={`absolute inset-x-2 -bottom-1 h-3 rounded-full bg-gradient-to-r ${gradient} blur-md opacity-70`} />
+                    )}
+
+                    {/* Icon with magnify on hover */}
+                    <div
+                      className={`relative z-10 flex items-center justify-center transition-transform duration-300 ease-out ${
+                        active ? "scale-110 -translate-y-0.5" : "group-hover/item:scale-125 group-hover/item:-translate-y-1 group-active/item:scale-95"
+                      }`}
+                    >
+                      <Icon
+                        className={`transition-all duration-300 ${
+                          active ? "w-[20px] h-[20px] text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.35)]" : "w-[19px] h-[19px] text-foreground/70 group-hover/item:text-foreground"
+                        }`}
+                        strokeWidth={active ? 2.4 : 2}
+                      />
+                    </div>
+
+                    {/* Label */}
+                    <span
+                      className={`relative z-10 mt-0.5 leading-none transition-all duration-300 ${
+                        active
+                          ? "text-[10px] font-extrabold text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.4)]"
+                          : "text-[9px] font-medium text-muted-foreground group-hover/item:text-foreground"
+                      }`}
+                    >
+                      {label}
+                    </span>
+
+                    {/* Hover tooltip-ish dot indicator (inactive only) */}
+                    {!active && (
+                      <span
+                        aria-hidden
+                        className="absolute -top-0.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-foreground/0 group-hover/item:bg-foreground/40 transition-colors duration-200"
+                      />
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
         </div>
       </nav>
 
