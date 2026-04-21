@@ -71,11 +71,12 @@ const CARDS: Card[] = [
   },
 ];
 
-const RARITY_BG: Record<string, string> = {
-  common: "border-amber-400/50",
-  rare: "border-slate-300/50",
-  epic: "border-yellow-300/60",
-  legendary: "border-cyan-300/70",
+// iOS Dark Vibrant: pakai class gradient dari index.css + hairline
+const RARITY_GRAD: Record<string, string> = {
+  common: "ios-grad-bronze",
+  rare: "ios-grad-silver",
+  epic: "ios-grad-gold",
+  legendary: "ios-grad-diamond",
 };
 
 interface ScratchStats {
