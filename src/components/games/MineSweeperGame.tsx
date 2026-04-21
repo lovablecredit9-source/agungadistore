@@ -6,6 +6,7 @@ import { Card } from "@/components/ui/card";
 import { Bomb, Gem, Loader2, Coins, RotateCcw, TrendingUp } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useGameCredits } from "./GameCredits";
+import { awardGamePoints } from "./gameStore";
 
 const GRID_SIZE = 9;
 
@@ -55,13 +56,14 @@ export default function MineSweeperGame() {
     if (error || data?.error) return toast({ title: "Gagal", description: data?.error, variant: "destructive" });
 
     if (data.status === "lost") {
+      const { awardedPoints } = awardGamePoints(Math.max(2, bet));
       const newTiles: TileState[] = Array(GRID_SIZE).fill("hidden");
       data.revealed.forEach((t: number) => (newTiles[t] = "safe"));
       data.minePositions.forEach((t: number) => (newTiles[t] = "bomb"));
       setTiles(newTiles);
       setActive(false);
-      setResult(data.payout);
-      toast({ title: "💥 Boom!", description: "Kena bom — taruhan hangus", variant: "destructive" });
+      setResult({ ...data.payout, awardedPoints });
+      toast({ title: "💥 Boom!", description: `Kena bom — +${awardedPoints} poin level`, variant: "destructive" });
       return;
     }
 
@@ -78,11 +80,13 @@ export default function MineSweeperGame() {
     if (error || data?.error) return toast({ title: "Gagal", description: data?.error, variant: "destructive" });
     const newTiles = [...tiles];
     data.minePositions.forEach((t: number) => { if (newTiles[t] === "hidden") newTiles[t] = "bomb"; });
+    const basePoints = Math.max(5, Math.round(potential + multiplier * 10));
+    const { awardedPoints } = awardGamePoints(basePoints);
     setTiles(newTiles);
     setActive(false);
-    setResult(data.payout);
+    setResult({ ...data.payout, awardedPoints });
     fetchCredits();
-    toast({ title: "💰 Cash Out!", description: data.payout.label });
+    toast({ title: "💰 Cash Out!", description: `${data.payout.label} · +${awardedPoints} poin level` });
   };
 
   return (
@@ -161,6 +165,7 @@ export default function MineSweeperGame() {
           className={`p-4 rounded-2xl text-center ${result.type === "none" ? "bg-muted" : "bg-gradient-to-r from-emerald-500 to-cyan-600 text-white"}`}>
           <div className="text-3xl mb-1">{result.type === "none" ? "💥" : "🎉"}</div>
           <div className="font-extrabold">{result.label}</div>
+          {result.awardedPoints ? <div className="text-xs font-black mt-1">+{result.awardedPoints} poin level</div> : null}
           <Button onClick={reset} variant="outline" className="mt-3" size="sm">
             <RotateCcw className="w-3 h-3 mr-1" /> Main Lagi
           </Button>

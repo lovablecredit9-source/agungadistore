@@ -6,6 +6,7 @@ import { Card } from "@/components/ui/card";
 import { Loader2, RotateCcw, Trophy, Copy, Check } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useGameCredits } from "./GameCredits";
+import { awardGamePoints } from "./gameStore";
 
 const GEMS = ["🟥", "🟦", "🟩", "🟨", "🟪", "🟧"];
 const SIZE = 6;
@@ -117,10 +118,13 @@ export default function Match3Game() {
 
   const finishGame = async () => {
     setFinished(true);
+    const basePoints = Math.max(10, Math.floor(score / 25) + comboMax * 5);
+    const { awardedPoints } = awardGamePoints(basePoints);
     const { data } = await supabase.functions.invoke("match3-submit", {
       body: { visitorId, score, moves: MAX_MOVES, comboMax },
     });
-    if (data?.payout) setPayout(data.payout);
+    if (data?.payout) setPayout({ ...data.payout, awardedPoints });
+    else setPayout({ label: "Skor tersimpan", awardedPoints, type: "points" });
   };
 
   const startGame = async () => {
@@ -181,6 +185,7 @@ export default function Match3Game() {
               {payout && (
                 <>
                   <div className="mt-3 font-bold">{payout.label}</div>
+                  {payout.awardedPoints ? <div className="text-xs font-black mt-1">+{payout.awardedPoints} poin level</div> : null}
                   {payout.voucher_code && (
                     <button
                       onClick={() => { navigator.clipboard.writeText(payout.voucher_code); setCopied(true); setTimeout(() => setCopied(false), 2000); }}

@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { getVisitorId } from "@/lib/visitor-id";
 import { useGameCredits, GameCreditsBadge, BuyCreditsDialog } from "./GameCredits";
+import { awardGamePoints } from "./gameStore";
 
 interface Question {
   lyric_snippet: string;
@@ -165,8 +166,8 @@ export default function TebakLaguGame() {
 
     const isCorrect = opt === question.correct_title;
     // Poin berkurang berdasarkan jumlah hint yang dipakai
-    const basePoints = isCorrect ? 10 : 0;
-    const points = isCorrect ? Math.max(2, basePoints - hintUsed * 3) : 0;
+    const basePoints = isCorrect ? Math.max(2, 10 - hintUsed * 3) : 0;
+    const points = isCorrect ? awardGamePoints(basePoints).awardedPoints : 0;
     const newScore = score + points;
     const newCorrect = correctCount + (isCorrect ? 1 : 0);
     const newLives = isCorrect ? lives : Math.max(0, lives - 1);
