@@ -592,10 +592,25 @@ function PlayerProfileCard({ profile, visitorId, onBack, onUpdate }: {
 }
 
 // Helper to update stats after game
-export async function updateGameStats(visitorId: string, gameType: string, won: boolean, points: number, questionsAnswered = 1) {
+export async function updateGameStats(
+  visitorId: string,
+  gameType: string,
+  won: boolean,
+  points: number,
+  questionsAnswered = 1,
+  meta?: { basePoints?: number },
+) {
   try {
     await supabase.functions.invoke("game-profile", {
-      body: { action: "update_stats", visitorId, gameType, won, points, questionsAnswered },
+      body: {
+        action: "update_stats",
+        visitorId,
+        gameType,
+        won,
+        points,
+        questionsAnswered,
+        basePoints: meta?.basePoints,
+      },
     });
   } catch { }
   // Daily mission tracking (silent)
