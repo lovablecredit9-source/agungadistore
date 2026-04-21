@@ -106,12 +106,18 @@ export default function TebakKataGame() {
     const isCorrect = guess.trim().toUpperCase() === word.toUpperCase();
     if (isCorrect) {
       if (timerRef.current) clearInterval(timerRef.current);
-      const { awardedPoints, data } = awardGamePoints(getPointsForQuestion(questionNumber));
+      const basePoints = getPointsForQuestion(questionNumber);
+      const { awardedPoints, data } = awardGamePoints(basePoints);
       setEarnedPoints(awardedPoints);
       setPlayerData(data);
       setResult("correct");
       setGameActive(false);
-      updateGameStats(activeVisitorId, "tebak", true, awardedPoints);
+      updateGameStats(activeVisitorId, "tebak", true, awardedPoints, 1, { basePoints }).then((serverAwardedPoints) => {
+        if (typeof serverAwardedPoints === "number" && serverAwardedPoints !== awardedPoints) {
+          setEarnedPoints(serverAwardedPoints);
+          setPlayerData(loadGameData());
+        }
+      });
     } else {
       const newWrong = wrongCount + 1;
       setWrongCount(newWrong);
