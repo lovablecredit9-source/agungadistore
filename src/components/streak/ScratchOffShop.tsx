@@ -71,11 +71,12 @@ const CARDS: Card[] = [
   },
 ];
 
-const RARITY_BG: Record<string, string> = {
-  common: "border-amber-400/50",
-  rare: "border-slate-300/50",
-  epic: "border-yellow-300/60",
-  legendary: "border-cyan-300/70",
+// iOS Dark Vibrant: pakai class gradient dari index.css + hairline
+const RARITY_GRAD: Record<string, string> = {
+  common: "ios-grad-bronze",
+  rare: "ios-grad-silver",
+  epic: "ios-grad-gold",
+  legendary: "ios-grad-diamond",
 };
 
 interface ScratchStats {
@@ -360,51 +361,55 @@ export default function ScratchOffShop({ visitorId, onUpdate }: Props) {
   const winRate = stats.total_buys > 0 ? Math.round((stats.total_wins / stats.total_buys) * 100) : 0;
 
   return (
-    <div className="rounded-2xl bg-gradient-to-br from-fuchsia-500/15 via-purple-500/15 to-pink-500/15 border-2 border-fuchsia-400/40 p-3 sm:p-4 shadow-2xl">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-2">
+    <div className="ios-card-vibrant p-3 sm:p-4 ios-tap-highlight">
+      {/* Header — iOS large title style */}
+      <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
-          <Sparkles className="h-5 w-5 text-fuchsia-300 animate-pulse" />
-          <h3 className="font-bold text-base sm:text-lg bg-gradient-to-r from-fuchsia-200 via-pink-200 to-purple-200 bg-clip-text text-transparent">
+          <Sparkles className="h-5 w-5" style={{ color: "hsl(var(--ios-vibrant-pink))" }} />
+          <h3 className="font-bold text-base sm:text-lg text-foreground tracking-tight">
             Scratch-Off Lottery
           </h3>
-          <Badge className="bg-fuchsia-500/40 text-fuchsia-100 border-fuchsia-400/60 text-[9px] h-4 animate-pulse">JACKPOT</Badge>
+          <span className="ios-tint-pink text-[9px] font-bold px-1.5 py-0.5 rounded-full uppercase tracking-wider">Jackpot</span>
         </div>
       </div>
 
-      {/* Mini stats */}
-      <div className="grid grid-cols-3 gap-1.5 mb-2">
-        <div className="rounded-lg bg-black/30 border border-white/10 px-2 py-1 text-center">
-          <p className="text-[8px] text-white/60 uppercase tracking-wider">Buys</p>
-          <p className="text-xs font-bold text-white">{stats.total_buys}</p>
+      {/* Mini stats — iOS card row */}
+      <div className="grid grid-cols-3 gap-2 mb-3">
+        <div className="ios-surface-2 rounded-xl px-2 py-2 text-center border border-border/40">
+          <p className="text-[9px] text-muted-foreground uppercase tracking-wider">Buys</p>
+          <p className="text-sm font-bold text-foreground tabular-nums">{stats.total_buys}</p>
         </div>
-        <div className="rounded-lg bg-black/30 border border-emerald-400/30 px-2 py-1 text-center">
-          <p className="text-[8px] text-emerald-300/80 uppercase tracking-wider">Win Rate</p>
-          <p className="text-xs font-bold text-emerald-200">{winRate}%</p>
+        <div className="ios-surface-2 rounded-xl px-2 py-2 text-center border border-border/40">
+          <p className="text-[9px] uppercase tracking-wider" style={{ color: "hsl(var(--ios-vibrant-green))" }}>Win Rate</p>
+          <p className="text-sm font-bold tabular-nums" style={{ color: "hsl(var(--ios-vibrant-green))" }}>{winRate}%</p>
         </div>
-        <div className="rounded-lg bg-black/30 border border-amber-400/30 px-2 py-1 text-center">
-          <p className="text-[8px] text-amber-300/80 uppercase tracking-wider">Jackpot</p>
-          <p className="text-xs font-bold text-amber-200 flex items-center justify-center gap-0.5">
-            <Crown className="h-2.5 w-2.5" />{stats.jackpots}
+        <div className="ios-surface-2 rounded-xl px-2 py-2 text-center border border-border/40">
+          <p className="text-[9px] uppercase tracking-wider" style={{ color: "hsl(var(--ios-vibrant-yellow))" }}>Jackpot</p>
+          <p className="text-sm font-bold tabular-nums flex items-center justify-center gap-0.5" style={{ color: "hsl(var(--ios-vibrant-yellow))" }}>
+            <Crown className="h-3 w-3" />{stats.jackpots}
           </p>
         </div>
       </div>
 
-      {/* Combo bar */}
-      <div className="mb-2 rounded-lg bg-black/40 border border-white/10 p-1.5">
+      {/* Combo bar — iOS style */}
+      <div className="mb-3 ios-surface-2 rounded-xl border border-border/40 p-2">
         <div className="flex items-center justify-between mb-1">
-          <div className="flex items-center gap-1">
-            <Flame className={`h-3 w-3 ${comboCount >= 2 ? "text-orange-400 animate-pulse" : "text-white/40"}`} />
-            <span className="text-[10px] font-bold text-white/80">COMBO</span>
-            <span className={`text-[10px] font-black bg-gradient-to-r ${tier.color} bg-clip-text text-transparent`}>{tier.label}</span>
+          <div className="flex items-center gap-1.5">
+            <Flame
+              className={`h-3.5 w-3.5 ${comboCount >= 2 ? "animate-pulse" : ""}`}
+              style={{ color: comboCount >= 2 ? "hsl(var(--ios-vibrant-orange))" : "hsl(var(--muted-foreground))" }}
+            />
+            <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Combo</span>
+            <span className="text-[11px] font-bold text-foreground">{tier.label}</span>
           </div>
-          <span className="text-[9px] text-white/50">
-            {nextTier ? `${nextTier.min - comboCount} lagi → ${nextTier.label}` : "MAX!"}
+          <span className="text-[10px] text-muted-foreground">
+            {nextTier ? `${nextTier.min - comboCount} lagi → ${nextTier.label}` : "MAX"}
           </span>
         </div>
-        <div className="h-1.5 w-full rounded-full bg-white/10 overflow-hidden">
+        <div className="h-1.5 w-full rounded-full bg-secondary overflow-hidden">
           <motion.div
-            className={`h-full bg-gradient-to-r ${tier.color}`}
+            className="h-full rounded-full"
+            style={{ background: "linear-gradient(90deg, hsl(var(--ios-vibrant-orange)), hsl(var(--ios-vibrant-pink)))" }}
             initial={{ width: 0 }}
             animate={{ width: `${Math.min(100, (comboCount / 5) * 100)}%` }}
             transition={{ duration: 0.4 }}
@@ -412,71 +417,74 @@ export default function ScratchOffShop({ visitorId, onUpdate }: Props) {
         </div>
       </div>
 
-      {/* Free Daily Card */}
+      {/* Free Daily Card — iOS banner */}
       {freeAvailable && (
         <motion.div
           initial={{ scale: 0.95, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
-          className="mb-2 relative overflow-hidden rounded-xl bg-gradient-to-r from-amber-500/30 via-yellow-400/30 to-amber-500/30 border-2 border-amber-300/60 p-2"
+          className="mb-3 relative overflow-hidden rounded-2xl ios-grad-jackpot p-2.5 shadow-lg"
         >
           <motion.div
-            className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent"
+            className="absolute inset-0"
+            style={{ background: "linear-gradient(90deg, transparent, hsl(0 0% 100% / 0.25), transparent)" }}
             animate={{ x: ["-100%", "100%"] }}
-            transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+            transition={{ duration: 2.2, repeat: Infinity, ease: "linear" }}
           />
           <div className="relative flex items-center justify-between gap-2">
             <div className="flex items-center gap-2">
-              <Gift className="h-5 w-5 text-amber-200 animate-bounce" />
+              <Gift className="h-5 w-5 text-white drop-shadow animate-bounce" />
               <div>
-                <p className="text-[11px] font-bold text-amber-100">KARTU GRATIS HARI INI 🎁</p>
-                <p className="text-[9px] text-amber-200/80">Bronze Scratch — reset jam 00:00</p>
+                <p className="text-[11px] font-bold text-white">KARTU GRATIS HARI INI</p>
+                <p className="text-[9px] text-white/85">Bronze Scratch — reset jam 00:00</p>
               </div>
             </div>
             <Button
               size="sm"
               disabled={scratching === "bronze-free"}
               onClick={() => buyCard({ ...CARDS[0] }, true)}
-              className="h-7 text-[10px] bg-amber-400 hover:bg-amber-300 text-amber-900 font-black border border-amber-200"
+              className="h-7 px-3 text-[11px] bg-white text-foreground hover:bg-white/90 font-bold rounded-full ios-pressable"
             >
-              {scratching === "bronze-free" ? <Loader2 className="h-3 w-3 animate-spin" /> : "KLAIM"}
+              {scratching === "bronze-free" ? <Loader2 className="h-3 w-3 animate-spin" /> : "Klaim"}
             </Button>
           </div>
         </motion.div>
       )}
 
-      {/* Cards grid */}
-      <div className="grid grid-cols-2 gap-2">
+      {/* Cards grid — iOS tile cards */}
+      <div className="grid grid-cols-2 gap-2.5">
         {CARDS.map((c) => (
           <motion.div
             key={c.id}
-            whileHover={{ scale: 1.02 }}
-            className={`rounded-xl bg-gradient-to-br ${c.color} bg-opacity-25 border-2 ${RARITY_BG[c.rarity]} p-2.5 text-center relative overflow-hidden`}
+            whileTap={{ scale: 0.97 }}
+            className={`relative overflow-hidden rounded-2xl ${RARITY_GRAD[c.rarity]} p-3 text-center shadow-md ios-tap-highlight`}
           >
-            <div className="absolute -top-3 -right-3 text-5xl opacity-20">{c.emoji}</div>
-            <div className="text-3xl mb-1 relative">{c.emoji}</div>
-            <p className="font-bold text-[11px] text-white truncate">{c.name}</p>
-            <Badge className="bg-black/40 text-white/90 text-[8px] h-3 px-1 my-1 border-0">{c.rarity.toUpperCase()}</Badge>
-            <p className="text-[9px] text-white/80 mb-1.5">Max +{Math.max(...c.prizes.map(p => p.value))} 🪙</p>
+            <div className="absolute -top-4 -right-4 text-6xl opacity-15 select-none">{c.emoji}</div>
+            <div className="text-3xl mb-1 relative drop-shadow">{c.emoji}</div>
+            <p className="font-bold text-[12px] text-white truncate drop-shadow">{c.name}</p>
+            <span className="inline-block bg-black/30 text-white/95 text-[8px] h-4 leading-4 px-1.5 rounded-full my-1 font-semibold uppercase tracking-wider">
+              {c.rarity}
+            </span>
+            <p className="text-[9px] text-white/85 mb-2">Max +{Math.max(...c.prizes.map(p => p.value))} 🪙</p>
             <Button
               size="sm"
               disabled={scratching === c.id}
               onClick={() => buyCard(c)}
-              className="w-full h-7 text-[10px] bg-black/40 hover:bg-black/60 text-amber-200 border border-amber-400/40 font-bold"
+              className="w-full h-7 text-[11px] bg-white/95 hover:bg-white text-foreground font-bold rounded-full ios-pressable border-0"
             >
               {scratching === c.id ? <Loader2 className="h-3 w-3 animate-spin" /> : (
-                <><Coins className="h-3 w-3 mr-0.5" />{c.cost}</>
+                <><Coins className="h-3 w-3 mr-1" />{c.cost}</>
               )}
             </Button>
           </motion.div>
         ))}
       </div>
 
-      {/* Achievement Badges */}
-      <div className="mt-3 rounded-xl bg-black/30 border border-white/10 p-2">
-        <div className="flex items-center gap-1 mb-1.5">
-          <Trophy className="h-3 w-3 text-amber-300" />
-          <p className="text-[10px] font-bold text-white/80 uppercase tracking-wider">Achievement</p>
-          <span className="text-[9px] text-white/50">{stats.achievements.length}/{ACHIEVEMENTS.length}</span>
+      {/* Achievement Badges — iOS list grid */}
+      <div className="mt-3 ios-surface-2 rounded-2xl border border-border/40 p-2.5">
+        <div className="flex items-center gap-1.5 mb-2">
+          <Trophy className="h-3.5 w-3.5" style={{ color: "hsl(var(--ios-vibrant-yellow))" }} />
+          <p className="text-[10px] font-bold text-foreground uppercase tracking-wider">Achievement</p>
+          <span className="text-[10px] text-muted-foreground tabular-nums">{stats.achievements.length}/{ACHIEVEMENTS.length}</span>
         </div>
         <div className="grid grid-cols-4 gap-1.5">
           {ACHIEVEMENTS.map((a) => {
@@ -485,60 +493,75 @@ export default function ScratchOffShop({ visitorId, onUpdate }: Props) {
               <div
                 key={a.id}
                 title={`${a.label} — ${a.desc} (+${a.bonus} koin)`}
-                className={`rounded-lg p-1.5 text-center border ${
+                className={`rounded-xl p-1.5 text-center border transition-all ${
                   unlocked
-                    ? "bg-gradient-to-br from-amber-500/30 to-yellow-500/30 border-amber-300/60"
-                    : "bg-white/5 border-white/10 grayscale opacity-50"
+                    ? "ios-tint-yellow border-transparent"
+                    : "bg-secondary/40 border-border/40 grayscale opacity-50"
                 }`}
               >
                 <div className="text-lg leading-none">{a.emoji}</div>
-                <p className="text-[8px] font-bold text-white/90 mt-0.5 truncate">{a.label}</p>
+                <p className="text-[8px] font-bold mt-0.5 truncate text-foreground">{a.label}</p>
               </div>
             );
           })}
         </div>
       </div>
 
-      {/* Scratch reveal modal */}
+      {/* Scratch reveal modal — iOS sheet */}
       <AnimatePresence>
         {reveal && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4"
+            className="fixed inset-0 z-50 bg-black/70 backdrop-blur-xl flex items-center justify-center p-4"
+            onClick={() => activated && setReveal(null)}
           >
             <motion.div
-              initial={{ scale: 0.8, y: 20 }}
+              initial={{ scale: 0.9, y: 30 }}
               animate={{ scale: 1, y: 0 }}
-              exit={{ scale: 0.8 }}
-              className={`relative max-w-xs w-full rounded-3xl bg-gradient-to-br ${reveal.card.color} border-2 ${RARITY_BG[reveal.card.rarity]} p-5 shadow-2xl`}
+              exit={{ scale: 0.9, opacity: 0 }}
+              transition={{ type: "spring", damping: 22, stiffness: 320 }}
+              onClick={(e) => e.stopPropagation()}
+              className={`relative max-w-xs w-full rounded-3xl ${RARITY_GRAD[reveal.card.rarity]} p-5 shadow-2xl`}
             >
               <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-1.5">
-                  <p className="font-bold text-sm text-white">{reveal.card.emoji} {reveal.card.name}</p>
-                  {reveal.isFree && <Badge className="bg-amber-400 text-amber-900 text-[8px] h-4 border-0">FREE</Badge>}
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <p className="font-bold text-sm text-white drop-shadow">{reveal.card.emoji} {reveal.card.name}</p>
+                  {reveal.isFree && (
+                    <span className="bg-white text-foreground text-[9px] h-4 leading-4 px-1.5 rounded-full font-bold">FREE</span>
+                  )}
                   {reveal.multiplier > 1 && (
-                    <Badge className="bg-gradient-to-r from-orange-500 to-red-500 text-white text-[8px] h-4 border-0 animate-pulse">
+                    <span
+                      className="text-white text-[9px] h-4 leading-4 px-1.5 rounded-full font-bold animate-pulse"
+                      style={{ background: "linear-gradient(90deg, hsl(var(--ios-vibrant-orange)), hsl(var(--ios-vibrant-pink)))" }}
+                    >
                       COMBO {reveal.multiplier}x
-                    </Badge>
+                    </span>
                   )}
                 </div>
-                <Button size="sm" variant="ghost" onClick={() => setReveal(null)} className="h-6 px-2 text-white hover:bg-white/20">✕</Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => setReveal(null)}
+                  className="h-7 w-7 p-0 rounded-full bg-black/30 text-white hover:bg-black/50 ios-pressable"
+                >
+                  ✕
+                </Button>
               </div>
 
-              <div className="relative w-full h-48 rounded-2xl overflow-hidden bg-gradient-to-br from-yellow-200 to-amber-400 shadow-inner">
+              <div className="relative w-full h-48 rounded-2xl overflow-hidden ios-grad-jackpot shadow-inner">
                 <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-3">
                   <motion.div
                     animate={activated ? { scale: [1, 1.3, 1], rotate: [0, 8, -8, 0] } : {}}
                     transition={{ duration: 0.6, repeat: activated ? 3 : 0 }}
-                    className="text-5xl mb-2"
+                    className="text-5xl mb-2 drop-shadow-lg"
                   >
                     {reveal.prize.value >= 1000 ? "👑" : reveal.prize.value >= 500 ? "💎" : "🪙"}
                   </motion.div>
-                  <p className="font-black text-xl text-amber-900">{reveal.prize.label}</p>
+                  <p className="font-black text-xl text-white drop-shadow-lg">{reveal.prize.label}</p>
                   {reveal.multiplier > 1 && (
-                    <p className="font-bold text-sm text-orange-700 mt-1">
+                    <p className="font-bold text-sm text-white/95 mt-1 drop-shadow">
                       = +{Math.round(reveal.prize.value * reveal.multiplier)} koin total!
                     </p>
                   )}
@@ -551,12 +574,15 @@ export default function ScratchOffShop({ visitorId, onUpdate }: Props) {
                 />
               </div>
 
-              <p className="text-[10px] text-center text-white/90 mt-2">
+              <p className="text-[11px] text-center text-white/95 mt-3 font-medium">
                 {activated ? "✨ Hadiah sudah masuk ke saldo koin!" : `Gosok lebih dari 50% untuk klaim · ${Math.round(scratchPct)}%`}
               </p>
 
               {activated && (
-                <Button onClick={() => setReveal(null)} className="w-full mt-3 bg-white/30 hover:bg-white/40 text-white border border-white/40 font-bold">
+                <Button
+                  onClick={() => setReveal(null)}
+                  className="w-full mt-3 bg-white text-foreground hover:bg-white/95 font-bold rounded-full h-10 ios-pressable border-0"
+                >
                   <Star className="h-4 w-4 mr-1" /> Selesai
                 </Button>
               )}
