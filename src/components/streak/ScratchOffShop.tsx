@@ -129,6 +129,7 @@ export default function ScratchOffShop({ visitorId, onUpdate }: Props) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [scratchPct, setScratchPct] = useState(0);
   const [activated, setActivated] = useState(false);
+  const claimedRef = useRef(false);
 
   const [stats, setStats] = useState<ScratchStats>(DEFAULT_STATS);
   const [freeAvailable, setFreeAvailable] = useState(false);
@@ -180,7 +181,8 @@ export default function ScratchOffShop({ visitorId, onUpdate }: Props) {
 
   async function buyCard(card: Card, free = false) {
     if (!visitorId || scratching) return;
-    setScratching(card.id);
+    const scratchKey = free ? `${card.id}-free` : card.id;
+    setScratching(scratchKey);
     try {
       const { data: streak, error: selErr } = await supabase
         .from("daily_streaks")
@@ -237,6 +239,7 @@ export default function ScratchOffShop({ visitorId, onUpdate }: Props) {
       setReveal({ card, prize, multiplier, isFree: free });
       setScratchPct(0);
       setActivated(false);
+      claimedRef.current = false;
     } catch (e) {
       toast({ title: "Gagal beli kartu", description: e instanceof Error ? e.message : "Coba lagi", variant: "destructive" });
     } finally {
@@ -290,7 +293,8 @@ export default function ScratchOffShop({ visitorId, onUpdate }: Props) {
       const total = data.length / (4 * step);
       const pct = (cleared / total) * 100;
       setScratchPct(pct);
-      if (pct > 55 && !activated) {
+      if (pct > 55 && !activated && !claimedRef.current) {
+        claimedRef.current = true;
         setActivated(true);
         const finalPrize = Math.round(reveal.prize.value * reveal.multiplier);
         const isJackpot = !!reveal.prize.isJackpot;
