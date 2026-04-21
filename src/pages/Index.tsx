@@ -4920,11 +4920,11 @@ const Index = () => {
           <div className="absolute -inset-x-6 -bottom-4 h-10 bg-gradient-to-t from-primary/20 via-accent/10 to-transparent blur-2xl opacity-60 pointer-events-none" />
 
           {/* Glass shell */}
-          <div className="relative rounded-[28px] border border-white/15 dark:border-white/10 bg-white/40 dark:bg-white/[0.06] backdrop-blur-2xl backdrop-saturate-150 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.35),0_8px_24px_-8px_rgba(0,0,0,0.25),inset_0_1px_0_0_rgba(255,255,255,0.35)] overflow-hidden">
+          <div className="relative rounded-[28px] border border-white/15 dark:border-white/10 bg-white/40 dark:bg-[hsl(240_6%_8%/0.92)] backdrop-blur-2xl backdrop-saturate-150 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.35),0_8px_24px_-8px_rgba(0,0,0,0.25),inset_0_1px_0_0_rgba(255,255,255,0.35)] overflow-hidden">
             {/* Top sheen */}
-            <div className="pointer-events-none absolute inset-x-6 top-0 h-px bg-gradient-to-r from-transparent via-white/60 to-transparent" />
+            <div className="pointer-events-none absolute inset-x-6 top-0 h-px bg-gradient-to-r from-transparent via-white/60 dark:via-white/20 to-transparent" />
             {/* Inner gradient wash */}
-            <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-white/[0.18] via-transparent to-black/[0.04]" />
+            <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-white/[0.18] via-transparent to-black/[0.04] dark:from-white/[0.04] dark:to-black/20" />
 
             <div className="relative flex overflow-x-auto scrollbar-hide px-2 py-2 gap-0.5 snap-x snap-mandatory">
               {([
@@ -4976,7 +4976,7 @@ const Index = () => {
                     >
                       <Icon
                         className={`transition-all duration-300 ${
-                          active ? "w-[20px] h-[20px] text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.35)]" : "w-[19px] h-[19px] text-foreground/70 group-hover/item:text-foreground"
+                          active ? "w-[20px] h-[20px] text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.35)]" : "w-[19px] h-[19px] text-foreground/70 dark:text-white/75 group-hover/item:text-foreground dark:group-hover/item:text-white"
                         }`}
                         strokeWidth={active ? 2.4 : 2}
                       />
@@ -4987,7 +4987,7 @@ const Index = () => {
                       className={`relative z-10 mt-0.5 leading-none transition-all duration-300 ${
                         active
                           ? "text-[10px] font-extrabold text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.4)]"
-                          : "text-[9px] font-medium text-muted-foreground group-hover/item:text-foreground"
+                          : "text-[9px] font-medium text-muted-foreground dark:text-white/75 group-hover/item:text-foreground dark:group-hover/item:text-white"
                       }`}
                     >
                       {label}
