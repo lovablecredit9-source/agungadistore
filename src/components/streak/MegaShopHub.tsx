@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import StreakLuckyWheelShop from "./StreakLuckyWheelShop";
 import StreakShopExtras from "./StreakShopExtras";
+import MembershipShop from "./MembershipShop";
 import EngagementHub from "@/components/EngagementHub";
 
 interface Props {
@@ -93,6 +94,11 @@ export default function MegaShopHub({ visitorId, onUpdate }: Props) {
       </div>
 
       <StreakShopExtras visitorId={visitorId} onUpdate={() => { load(); onUpdate?.(); }} />
+
+      <div className="h-3" />
+
+      {/* MEMBERSHIP — paket 3 hari, mingguan, bulanan */}
+      <MembershipShop visitorId={visitorId} onUpdate={() => { load(); onUpdate?.(); }} />
 
       <div className="h-3" />
 
