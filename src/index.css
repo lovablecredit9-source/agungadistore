@@ -392,6 +392,57 @@
     -webkit-tap-highlight-color: transparent;
   }
 
+  /* === iOS DARK VIBRANT UTILITIES === */
+  .ios-surface-1 { background: hsl(var(--ios-elevated-1, var(--card))); }
+  .ios-surface-2 { background: hsl(var(--ios-elevated-2, var(--popover))); }
+  .ios-surface-3 { background: hsl(var(--ios-elevated-3, var(--secondary))); }
+
+  .ios-card-vibrant {
+    background: hsl(var(--ios-elevated-1, var(--card)));
+    border-radius: var(--ios-radius-lg);
+    border: 0.5px solid hsl(var(--ios-hairline, var(--border)));
+    box-shadow: 0 1px 0 hsl(0 0% 100% / 0.04) inset, 0 8px 24px -12px hsl(0 0% 0% / 0.6);
+  }
+  .ios-hairline { border-color: hsl(var(--ios-hairline, var(--border))); }
+  .ios-divider > * + * { border-top: 0.5px solid hsl(var(--ios-hairline, var(--border))); }
+
+  .ios-btn-filled {
+    background: hsl(var(--primary));
+    color: hsl(var(--primary-foreground));
+    border-radius: var(--ios-radius-pill);
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+  .ios-btn-tinted {
+    background: hsl(var(--primary) / 0.16);
+    color: hsl(var(--primary));
+    border-radius: var(--ios-radius-pill);
+    font-weight: 600;
+  }
+  .ios-btn-gray {
+    background: hsl(var(--ios-elevated-3, var(--secondary)));
+    color: hsl(var(--foreground));
+    border-radius: var(--ios-radius-pill);
+    font-weight: 600;
+  }
+
+  /* Vibrant tinted chips/badges (gunakan via class) */
+  .ios-tint-blue   { background: hsl(var(--ios-vibrant-blue, var(--primary))   / 0.18); color: hsl(var(--ios-vibrant-blue, var(--primary))); }
+  .ios-tint-pink   { background: hsl(var(--ios-vibrant-pink, var(--accent))    / 0.18); color: hsl(var(--ios-vibrant-pink, var(--accent))); }
+  .ios-tint-purple { background: hsl(var(--ios-vibrant-purple, 270 90% 65%)    / 0.18); color: hsl(var(--ios-vibrant-purple, 270 90% 65%)); }
+  .ios-tint-orange { background: hsl(var(--ios-vibrant-orange, 28 100% 55%)    / 0.18); color: hsl(var(--ios-vibrant-orange, 28 100% 55%)); }
+  .ios-tint-green  { background: hsl(var(--ios-vibrant-green, 142 70% 50%)     / 0.18); color: hsl(var(--ios-vibrant-green, 142 70% 50%)); }
+  .ios-tint-yellow { background: hsl(var(--ios-vibrant-yellow, 48 100% 55%)    / 0.18); color: hsl(var(--ios-vibrant-yellow, 48 100% 55%)); }
+  .ios-tint-teal   { background: hsl(var(--ios-vibrant-teal, 188 95% 55%)      / 0.18); color: hsl(var(--ios-vibrant-teal, 188 95% 55%)); }
+  .ios-tint-indigo { background: hsl(var(--ios-vibrant-indigo, 234 90% 65%)    / 0.18); color: hsl(var(--ios-vibrant-indigo, 234 90% 65%)); }
+
+  /* Vibrant gradient backgrounds (rarity-style) */
+  .ios-grad-bronze   { background: linear-gradient(135deg, hsl(28 100% 55%), hsl(15 90% 50%)); }
+  .ios-grad-silver   { background: linear-gradient(135deg, hsl(220 10% 70%), hsl(220 15% 50%)); }
+  .ios-grad-gold     { background: linear-gradient(135deg, hsl(48 100% 60%), hsl(30 100% 50%)); }
+  .ios-grad-diamond  { background: linear-gradient(135deg, hsl(188 95% 60%), hsl(234 90% 60%) 50%, hsl(270 90% 65%)); }
+  .ios-grad-jackpot  { background: linear-gradient(135deg, hsl(48 100% 55%), hsl(320 90% 62%) 50%, hsl(211 100% 55%)); }
+
   .decorative-dots {
     background-image: radial-gradient(hsl(var(--primary) / 0.08) 1px, transparent 1px);
     background-size: 24px 24px;
