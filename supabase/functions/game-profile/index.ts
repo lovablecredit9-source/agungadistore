@@ -419,6 +419,7 @@ Deno.serve(async (req) => {
 
       return json({
         ...result,
+        awardedPoints: finalPoints,
         isDailyChallenge,
         boosterMultiplier,
         multiplier: boosterMultiplier * dailyMultiplier,
