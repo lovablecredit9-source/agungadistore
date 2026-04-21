@@ -442,7 +442,7 @@ export default function ScratchOffShop({ visitorId, onUpdate }: Props) {
               size="sm"
               disabled={scratching === "bronze-free"}
               onClick={() => buyCard({ ...CARDS[0] }, true)}
-              className="h-7 px-3 text-[11px] bg-white text-foreground hover:bg-white/90 font-bold rounded-full ios-pressable"
+              className="h-7 px-3 text-[11px] bg-white text-neutral-900 hover:bg-white/90 font-bold rounded-full ios-pressable"
             >
               {scratching === "bronze-free" ? <Loader2 className="h-3 w-3 animate-spin" /> : "Klaim"}
             </Button>
