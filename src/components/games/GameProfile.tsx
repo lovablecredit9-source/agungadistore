@@ -601,7 +601,7 @@ export async function updateGameStats(
   meta?: { basePoints?: number },
 ) {
   try {
-    await supabase.functions.invoke("game-profile", {
+    const { data } = await supabase.functions.invoke("game-profile", {
       body: {
         action: "update_stats",
         visitorId,
@@ -612,6 +612,7 @@ export async function updateGameStats(
         basePoints: meta?.basePoints,
       },
     });
+    return typeof data?.awardedPoints === "number" ? data.awardedPoints : points;
   } catch { }
   // Daily mission tracking (silent)
   try {
@@ -620,4 +621,5 @@ export async function updateGameStats(
     if (won) trackDailyMission(visitorId, "game_win", 1);
     if (points > 0) trackDailyMission(visitorId, "game_points", points);
   } catch { }
+  return points;
 }
