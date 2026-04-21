@@ -323,7 +323,10 @@
 
   body {
     @apply bg-background text-foreground;
-    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-family: var(--ios-font);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    letter-spacing: -0.011em;
     background-image: 
       radial-gradient(ellipse at 10% 20%, hsl(var(--primary) / 0.06) 0%, transparent 50%),
       radial-gradient(ellipse at 90% 80%, hsl(var(--accent) / 0.06) 0%, transparent 50%),
