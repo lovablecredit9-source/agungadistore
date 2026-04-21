@@ -581,7 +581,7 @@ export default function ScratchOffShop({ visitorId, onUpdate }: Props) {
               {activated && (
                 <Button
                   onClick={() => setReveal(null)}
-                  className="w-full mt-3 bg-white text-foreground hover:bg-white/95 font-bold rounded-full h-10 ios-pressable border-0"
+                  className="w-full mt-3 bg-white text-neutral-900 hover:bg-white/95 font-bold rounded-full h-10 ios-pressable border-0"
                 >
                   <Star className="h-4 w-4 mr-1" /> Selesai
                 </Button>
