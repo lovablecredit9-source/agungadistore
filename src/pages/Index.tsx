@@ -1558,8 +1558,6 @@ const Index = () => {
               <div className="px-4 py-3 border-t text-center text-[10px] text-muted-foreground">
                 © {new Date().getFullYear()} {STORE_NAME}
               </div>
-              {/* Hidden close button used to programmatically close sheet on item click */}
-              <button data-nav-sheet-close className="hidden" aria-hidden="true" />
             </SheetContent>
           </Sheet>
           <img src={storeQris} alt={STORE_NAME} className="w-11 h-11 rounded-xl object-cover border-2 border-primary-foreground/30 shadow-md" />
