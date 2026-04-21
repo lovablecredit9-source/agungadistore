@@ -717,11 +717,13 @@ export type Database = {
           created_at: string
           current_multiplier: number
           current_streak: number
+          free_scratch_date: string | null
           freeze_count: number
           freeze_used_at: string | null
           id: string
           last_claim_date: string
           longest_streak: number
+          scratch_stats: Json
           streak_coins: number
           total_bonus_points: number
           total_claims: number
@@ -733,11 +735,13 @@ export type Database = {
           created_at?: string
           current_multiplier?: number
           current_streak?: number
+          free_scratch_date?: string | null
           freeze_count?: number
           freeze_used_at?: string | null
           id?: string
           last_claim_date?: string
           longest_streak?: number
+          scratch_stats?: Json
           streak_coins?: number
           total_bonus_points?: number
           total_claims?: number
@@ -749,11 +753,13 @@ export type Database = {
           created_at?: string
           current_multiplier?: number
           current_streak?: number
+          free_scratch_date?: string | null
           freeze_count?: number
           freeze_used_at?: string | null
           id?: string
           last_claim_date?: string
           longest_streak?: number
+          scratch_stats?: Json
           streak_coins?: number
           total_bonus_points?: number
           total_claims?: number
