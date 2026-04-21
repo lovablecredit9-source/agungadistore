@@ -50,6 +50,7 @@ import ProductNavToolbar from "@/components/ProductNavToolbar";
 import LikesTab from "@/components/LikesTab";
 import DailyStreak from "@/components/DailyStreak";
 import NeonStreakHub from "@/components/streak/NeonStreakHub";
+import MembershipShop from "@/components/streak/MembershipShop";
 import HomeBannerSlider from "@/components/HomeBannerSlider";
 import VibrantHeroSection from "@/components/VibrantHeroSection";
 import BalanceAuth from "@/components/BalanceAuth";
@@ -3434,7 +3435,35 @@ const Index = () => {
           )
         )}
 
-        <div className={tab === "game" ? "" : "hidden"}>
+        {tab === "streakmembership" && (
+          userBalance ? (
+            <div className="space-y-3">
+              <div className="rounded-2xl p-4 bg-gradient-to-br from-amber-500/20 via-yellow-500/15 to-orange-500/20 border-2 border-amber-400/40">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center shadow-lg shadow-amber-500/40">
+                    <Crown className="w-6 h-6 text-white" />
+                  </div>
+                  <div className="min-w-0">
+                    <h2 className="text-lg font-black bg-gradient-to-r from-amber-200 via-yellow-100 to-orange-200 bg-clip-text text-transparent">
+                      Membership Streak VIP
+                    </h2>
+                    <p className="text-[11px] text-white/70">Bayar pakai saldo · Klaim hadiah harian otomatis</p>
+                  </div>
+                </div>
+              </div>
+              <MembershipShop key={`mship-${activeBalanceVisitorId}`} visitorId={activeBalanceVisitorId} />
+            </div>
+          ) : (
+            <LoginGate
+              title="Membership Streak VIP"
+              description="Login saldo untuk berlangganan membership streak dan klaim hadiah harian."
+              emoji="👑"
+              gradient="from-amber-500 to-orange-600"
+              onGoToLogin={() => setTab("saldo")}
+            />
+          )
+        )}
+
           {userBalance ? (
             <GameTab />
           ) : (
