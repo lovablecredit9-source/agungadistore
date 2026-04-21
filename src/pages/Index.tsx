@@ -1542,9 +1542,7 @@ const Index = () => {
                       key={key}
                       onClick={() => {
                         setTab(key);
-                        // close sheet by dispatching click on overlay; rely on Sheet auto-close via SheetClose pattern
-                        const closeBtn = document.querySelector<HTMLButtonElement>("[data-nav-sheet-close]");
-                        closeBtn?.click();
+                        setShowNavMenu(false);
                       }}
                       className={`w-full flex items-center gap-3 px-3 py-2.5 mx-2 my-0.5 rounded-xl transition-all ${active ? "bg-muted font-bold text-primary" : "hover:bg-muted/60 text-foreground"}`}
                     >
