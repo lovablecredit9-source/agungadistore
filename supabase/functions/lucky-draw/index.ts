@@ -117,11 +117,14 @@ Deno.serve(async (req) => {
       if (!pkg) return new Response(JSON.stringify({ error: "Paket tidak ditemukan" }), { status: 404, headers: corsHeaders });
 
       if (pkg.cost_currency === "gems") {
-        const { data: prof } = await supabase.from("game_profiles").select("id, gems").eq("visitor_id", visitorId).maybeSingle();
-        if (!prof || (prof.gems || 0) < pkg.cost_amount) {
-          return new Response(JSON.stringify({ error: "Gems tidak cukup" }), { status: 400, headers: corsHeaders });
+        const { data: totalGems } = await supabase.rpc("get_account_gems", { p_visitor_id: visitorId });
+        if ((totalGems || 0) < pkg.cost_amount) {
+          return new Response(JSON.stringify({ error: `Gems tidak cukup. Butuh ${pkg.cost_amount} 💎, kamu punya ${totalGems || 0} 💎` }), { status: 400, headers: corsHeaders });
         }
-        await supabase.from("game_profiles").update({ gems: prof.gems - pkg.cost_amount }).eq("id", prof.id);
+        const { error: deductErr } = await supabase.rpc("add_account_gems", { p_visitor_id: visitorId, p_amount: -pkg.cost_amount });
+        if (deductErr) {
+          return new Response(JSON.stringify({ error: deductErr.message || "Gagal potong gems" }), { status: 400, headers: corsHeaders });
+        }
         await supabase.from("gem_transactions").insert({
           visitor_id: visitorId, amount: -pkg.cost_amount, type: "lucky_draw_buy",
           description: `Beli ${pkg.tickets} tiket Lucky Draw`,
@@ -156,8 +159,7 @@ Deno.serve(async (req) => {
       if (prize.type === "game_balance") {
         await addGameBalance(visitorId, prize.value, prize.label);
       } else if (prize.type === "gems") {
-        const { data: p } = await supabase.from("game_profiles").select("id, gems").eq("visitor_id", visitorId).maybeSingle();
-        if (p) await supabase.from("game_profiles").update({ gems: (p.gems || 0) + prize.value }).eq("id", p.id);
+        await supabase.rpc("add_account_gems", { p_visitor_id: visitorId, p_amount: prize.value });
         await supabase.from("gem_transactions").insert({ visitor_id: visitorId, amount: prize.value, type: "lucky_draw_win", description: prize.label });
       } else if (prize.type === "streak_coins") {
         const { data: s } = await supabase.from("daily_streaks").select("id, streak_coins").eq("visitor_id", visitorId).maybeSingle();

@@ -52,12 +52,13 @@ async function deductInput(admin: any, visitorId: string, type: string, amount: 
   return "Tipe input tidak didukung";
 }
 
-// Deduct gems from game_profiles
+// Deduct gems via account-aware RPC (sums all profiles in same balance account)
 async function deductGems(admin: any, visitorId: string, amount: number, description: string, refId?: string): Promise<string | null> {
-  const { data: prof } = await admin.from("game_profiles").select("gems").eq("visitor_id", visitorId).maybeSingle();
-  const gems = prof?.gems || 0;
+  const { data: totalGems } = await admin.rpc("get_account_gems", { p_visitor_id: visitorId });
+  const gems = totalGems || 0;
   if (gems < amount) return `Gem kurang. Butuh ${amount} 💎, kamu punya ${gems} 💎`;
-  await admin.from("game_profiles").update({ gems: gems - amount }).eq("visitor_id", visitorId);
+  const { error: dErr } = await admin.rpc("add_account_gems", { p_visitor_id: visitorId, p_amount: -amount });
+  if (dErr) return dErr.message || "Gagal potong gems";
   await admin.from("gem_transactions").insert({
     visitor_id: visitorId,
     amount: -amount,
