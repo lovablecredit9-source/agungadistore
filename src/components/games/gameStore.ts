@@ -270,12 +270,19 @@ export function isPointBoosterActive(): boolean {
   return getPointBoosterUntil() > Date.now();
 }
 
+export function setPointBoosterUntil(untilMs: number): number {
+  const key = getBoosterKey();
+  if (!key) return 0;
+  const next = Number.isFinite(untilMs) ? Math.max(0, Math.floor(untilMs)) : 0;
+  try { localStorage.setItem(key, String(next)); } catch {}
+  return next;
+}
+
 export function activatePointBooster(durationMs: number): number {
   const key = getBoosterKey();
   if (!key) return 0;
   const current = getPointBoosterUntil();
   const base = current > Date.now() ? current : Date.now();
   const next = base + durationMs;
-  try { localStorage.setItem(key, String(next)); } catch {}
-  return next;
+  return setPointBoosterUntil(next);
 }
