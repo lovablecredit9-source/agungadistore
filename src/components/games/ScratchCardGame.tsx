@@ -5,6 +5,14 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Sparkles, Gift, Loader2, Copy, Check } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { awardGamePoints } from "./gameStore";
+
+const RARITY_POINTS: Record<string, number> = {
+  common: 10,
+  rare: 20,
+  epic: 35,
+  legendary: 60,
+};
 
 const RARITY_STYLES: Record<string, string> = {
   common: "from-slate-400 to-slate-600",
@@ -51,9 +59,11 @@ export default function ScratchCardGame() {
             setScratching(false);
             return;
           }
-          setClaimed(data.reward);
+          const { awardedPoints } = awardGamePoints(RARITY_POINTS[data.reward?.rarity] || 10);
+          setClaimed({ ...data.reward, awarded_points: awardedPoints });
           setRevealed(true);
           setScratching(false);
+          toast({ title: "🎉 Hadiah terbuka!", description: `+${awardedPoints} poin level` });
         });
     }
   }, [scratchPercent, revealed, scratching, visitorId, toast]);
@@ -88,6 +98,11 @@ export default function ScratchCardGame() {
                 <Gift className="w-16 h-16 mx-auto mb-3 drop-shadow-lg" />
                 <div className="text-[10px] font-bold uppercase tracking-widest opacity-80">{claimed.rarity}</div>
                 <div className="text-2xl font-black mt-1 drop-shadow">{claimed.reward_label}</div>
+                {claimed.awarded_points ? (
+                  <div className="mt-2 text-xs font-black bg-white/20 rounded-full px-3 py-1 inline-flex">
+                    +{claimed.awarded_points} poin level
+                  </div>
+                ) : null}
                 {claimed.voucher_code && (
                   <button
                     onClick={() => { navigator.clipboard.writeText(claimed.voucher_code); setCopied(true); setTimeout(() => setCopied(false), 2000); }}

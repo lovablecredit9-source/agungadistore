@@ -8,6 +8,15 @@ import { useToast } from "@/hooks/use-toast";
 import { ServerLuckCard } from "./ServerLuckCard";
 import { triggerGameBalanceRefresh, useGameBalance, GameBalanceBadge } from "./GameBalance";
 import { triggerGameCreditsRefresh } from "./GameCredits";
+import { awardGamePoints } from "./gameStore";
+
+const DRAW_POINTS: Record<string, number> = {
+  none: 6,
+  common: 12,
+  rare: 24,
+  epic: 40,
+  legendary: 70,
+};
 
 const RARITY_STYLES: Record<string, string> = {
   common: "from-slate-400 to-slate-600",
@@ -72,12 +81,14 @@ export default function LuckyDrawGame() {
     }
     // dramatic delay
     await new Promise(r => setTimeout(r, 1500));
-    setPrize(data.prize);
+    const { awardedPoints } = awardGamePoints(DRAW_POINTS[data.prize?.rarity] || DRAW_POINTS.none);
+    setPrize({ ...data.prize, awardedPoints });
     setDrawing(false);
     refresh();
     // Refresh Saldo IN, kredit, gems lintas-komponen — supaya hadiah langsung terlihat
     triggerGameBalanceRefresh();
     triggerGameCreditsRefresh();
+    toast({ title: data.prize.reward_type === "none" ? "🎲 Undian selesai" : "🎉 Hadiah didapat!", description: `+${awardedPoints} poin level` });
   };
 
   if (!visitorId) {
@@ -121,6 +132,7 @@ export default function LuckyDrawGame() {
             <div className="text-5xl mb-2">{prize.reward_type === "none" ? "😢" : "🎉"}</div>
             <div className="text-[10px] font-bold uppercase tracking-widest opacity-80">{prize.rarity}</div>
             <div className="text-2xl font-black mt-1 text-center drop-shadow">{prize.reward_label}</div>
+            {prize.awardedPoints ? <div className="mt-2 text-xs font-black bg-white/20 rounded-full px-3 py-1">+{prize.awardedPoints} poin level</div> : null}
             {prize.voucher_code && (
               <button onClick={() => { navigator.clipboard.writeText(prize.voucher_code); setCopied(true); setTimeout(() => setCopied(false), 2000); }} className="mt-3 inline-flex items-center gap-1 text-xs bg-white/20 backdrop-blur rounded-full px-3 py-1 font-mono font-bold">
                 {prize.voucher_code} {copied ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
