@@ -388,6 +388,7 @@ export default function MembershipShop({ visitorId, onUpdate }: Props) {
             <span className="text-[9px] font-black text-white uppercase tracking-widest">Premium</span>
           </motion.div>
         </div>
+      </div>
 
       {/* MAIN AREA */}
       <div className="relative grid grid-cols-[1fr_96px] gap-2 p-2.5">
