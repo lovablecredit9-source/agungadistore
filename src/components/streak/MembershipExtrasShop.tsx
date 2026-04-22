@@ -232,9 +232,7 @@ export default function MembershipExtrasShop({ visitorId, kind, onUpdate }: Prop
       <div className="grid grid-cols-1 gap-2">
         {catalog.map((p: any, idx: number) => {
           const isCurrentTier = active?.tier === p.tier;
-          const isStackable = kind === "luckybox";
-          const blocked = !isStackable && !!active;
-          const showActiveBadge = isCurrentTier && !isStackable;
+          // Semua membership stackable — boleh beli ulang kapan saja
           return (
             <motion.div
               key={p.tier}
@@ -242,7 +240,7 @@ export default function MembershipExtrasShop({ visitorId, kind, onUpdate }: Prop
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: idx * 0.05 }}
               whileHover={{ scale: 1.01 }}
-              className={`rounded-xl bg-gradient-to-r ${meta.bg} border ${showActiveBadge ? "border-amber-400/70 shadow-lg shadow-amber-500/30" : meta.border} p-2.5`}
+              className={`rounded-xl bg-gradient-to-r ${meta.bg} border ${isCurrentTier ? "border-amber-400/70 shadow-lg shadow-amber-500/30" : meta.border} p-2.5`}
             >
               <div className="flex items-center gap-2.5">
                 <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${meta.grad} flex items-center justify-center shrink-0 shadow`}>
@@ -251,23 +249,25 @@ export default function MembershipExtrasShop({ visitorId, kind, onUpdate }: Prop
                    <Crown className="w-5 h-5 text-white" />}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="font-bold text-xs text-white truncate">{p.name}</p>
+                  <p className="font-bold text-xs text-white truncate flex items-center gap-1">
+                    <span className="truncate">{p.name}</span>
+                    {isCurrentTier && <Badge className="bg-amber-500/50 text-amber-100 border-0 text-[8px] px-1 py-0 shrink-0">AKTIF</Badge>}
+                  </p>
                   <p className="text-[10px] text-white/70 truncate">
-                    {kind === "diamond" && `Cashback ${p.cashback_percent}% · ${p.duration_days} hari`}
-                    {kind === "boost" && `XP & Poin x${p.multiplier} · ${p.duration_days} hari`}
+                    {kind === "diamond" && `Cashback ${p.cashback_percent}% · ${p.duration_days} hari · 📦 stack`}
+                    {kind === "boost" && `XP & Poin x${p.multiplier} · ${p.duration_days} hari · 📦 stack`}
                     {kind === "luckybox" && `${p.items_per_day} item/hari · ${p.duration_days} hari · 📦 stack`}
-                    {kind === "saver" && `${p.auto_freeze_per_week}x freeze${p.restore_per_week > 0 ? ` + ${p.restore_per_week} restore` : ""} / minggu`}
+                    {kind === "saver" && `${p.auto_freeze_per_week}x freeze${p.restore_per_week > 0 ? ` + ${p.restore_per_week} restore` : ""} / minggu · 📦 stack`}
                   </p>
                 </div>
                 <Button
                   size="sm"
-                  disabled={busy === `b-${p.tier}` || blocked}
+                  disabled={busy === `b-${p.tier}`}
                   onClick={() => purchase(p.tier, `b-${p.tier}`)}
                   className={`h-9 px-2.5 bg-gradient-to-r ${meta.grad} text-white font-bold text-[11px] shrink-0 disabled:opacity-60`}
                 >
                   {busy === `b-${p.tier}` ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> :
-                   showActiveBadge ? <><Check className="w-3 h-3 mr-0.5" /> Aktif</> :
-                   blocked ? "Terkunci" :
+                   isCurrentTier ? `+ Rp${(p.price_idr / 1000).toFixed(0)}K` :
                    `Rp${(p.price_idr / 1000).toFixed(0)}K`}
                 </Button>
               </div>
