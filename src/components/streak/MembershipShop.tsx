@@ -252,12 +252,12 @@ export default function MembershipShop({ visitorId, onUpdate, category = "coin" 
   // Apakah hari ini (index 0) sudah klaim?
   const claimedToday = !!dailyClaim?.claimed_today;
 
-  async function purchase(planId: string, pinValue?: string, source: "auto" | "coins" | "gems" = "auto") {
-    const busyKey = `${planId}-${source}`;
+  async function purchase(planId: string, pinValue?: string) {
+    const busyKey = `${planId}-balance`;
     setBusy(busyKey);
     try {
       const { data, error } = await supabase.functions.invoke("purchase-membership", {
-        body: { action: "purchase", visitorId, planId, paymentSource: source, pin: pinValue },
+        body: { action: "purchase", visitorId, planId, paymentSource: "auto", pin: pinValue },
       });
       if (error || data?.error) {
         if (data?.needPin) {
@@ -290,8 +290,9 @@ export default function MembershipShop({ visitorId, onUpdate, category = "coin" 
   async function claimDaily() {
     setClaimingDaily(true);
     try {
+      const action = isGem ? "daily-gem-claim" : "daily-claim";
       const { data, error } = await supabase.functions.invoke("purchase-membership", {
-        body: { action: "daily-claim", visitorId },
+        body: { action, visitorId },
       });
       if (error || data?.error) {
         toast({ title: "Gagal klaim", description: data?.error || error?.message || "Terjadi kesalahan", variant: "destructive" });
@@ -299,7 +300,9 @@ export default function MembershipShop({ visitorId, onUpdate, category = "coin" 
       }
       toast({
         title: "🎁 Hadiah Harian!",
-        description: `+${data?.coins_awarded?.toLocaleString("id-ID")} Streak Coins`,
+        description: isGem
+          ? `+${data?.gems_awarded?.toLocaleString("id-ID")} 💎 Gem`
+          : `+${data?.coins_awarded?.toLocaleString("id-ID")} Streak Coins`,
       });
       await load();
       onUpdate?.();
