@@ -29,41 +29,43 @@ type Prize = {
   color: string;
 };
 
+// Pool dirombak: Gem dibuat LANGKA (hoki-hokian) & nilainya dikecilkan.
+// Hadiah utama = item power-up (nyawa/hint/freeze). Gem hanya muncul sesekali.
 const PRIZES: Prize[] = [
-  // Common (~50%) — hadiah ringan, qty lebih besar
-  { kind: "auto_hint",     value: 2,  label: "+2 Hint Otomatis",        emoji: "💡", rarity: "common",    weight: 18, color: "#94a3b8" },
-  { kind: "extra_life",    value: 2,  label: "+2 Nyawa Ekstra",          emoji: "❤️", rarity: "common",    weight: 16, color: "#ef4444" },
-  { kind: "time_freeze",   value: 2,  label: "+2 Time Freeze 30s",       emoji: "⏱️", rarity: "common",    weight: 15, color: "#0ea5e9" },
-  // Rare (~28%)
-  { kind: "streak_freeze", value: 2,  label: "+2 Streak Freeze",         emoji: "🛡️", rarity: "rare",      weight: 13, color: "#10b981" },
-  { kind: "auto_hint",     value: 5,  label: "+5 Hint Otomatis",         emoji: "💡", rarity: "rare",      weight: 9,  color: "#06b6d4" },
-  { kind: "extra_life",    value: 5,  label: "+5 Nyawa Ekstra",          emoji: "❤️", rarity: "rare",      weight: 7,  color: "#f43f5e" },
-  // Epic (~14%)
-  { kind: "time_freeze",   value: 8,  label: "+8 Time Freeze",           emoji: "⏱️", rarity: "epic",      weight: 5,  color: "#a855f7" },
-  { kind: "streak_freeze", value: 4,  label: "+4 Streak Freeze",         emoji: "🛡️", rarity: "epic",      weight: 5,  color: "#ec4899" },
-  { kind: "gems",          value: 400, label: "💎 +400 Gem",             emoji: "💎", rarity: "epic",      weight: 4,  color: "#8b5cf6" },
-  // Legendary (~6%) — hadiah besar
-  { kind: "extra_life",    value: 20, label: "🎰 JACKPOT +20 Nyawa",      emoji: "👑", rarity: "legendary", weight: 2.5,color: "#fbbf24" },
-  { kind: "streak_freeze", value: 10, label: "🎰 LEGENDARY +10 Freeze",   emoji: "👑", rarity: "legendary", weight: 1.5,color: "#f59e0b" },
-  { kind: "gems",          value: 1200, label: "💎 LEGENDARY +1.200 Gem", emoji: "💎", rarity: "legendary", weight: 1.5,color: "#facc15" },
-  // Mythic (~1.2%) — pelangi, langka
-  { kind: "gems",          value: 3000, label: "🌈 MYTHIC TREASURE +3.000 Gem", emoji: "🌈", rarity: "mythic", weight: 0.6,  color: "#e879f9" },
-  { kind: "extra_life",    value: 50,   label: "🌈 MYTHIC VAULT +50 Nyawa",     emoji: "🌈", rarity: "mythic", weight: 0.3,  color: "#f0abfc" },
-  // Grand Prize (~0.2%) — ultra rare pelangi
-  { kind: "gems",          value: 8000,  label: "🌈 GRAND PRIZE +8.000 Gem",      emoji: "🌈", rarity: "mythic", weight: 0.12, color: "#22d3ee" },
-  { kind: "gems",          value: 20000, label: "🌈 MEGA JACKPOT +20.000 Gem",    emoji: "🌈", rarity: "mythic", weight: 0.05, color: "#a78bfa" },
-  { kind: "gems",          value: 50000, label: "🌈 ULTRA JACKPOT +50.000 Gem",   emoji: "🌈", rarity: "mythic", weight: 0.02, color: "#f472b6" },
+  // Common (~58%) — hadiah ringan power-up, NO gem
+  { kind: "auto_hint",     value: 2,  label: "+2 Hint Otomatis",        emoji: "💡", rarity: "common",    weight: 22, color: "#94a3b8" },
+  { kind: "extra_life",    value: 2,  label: "+2 Nyawa Ekstra",          emoji: "❤️", rarity: "common",    weight: 20, color: "#ef4444" },
+  { kind: "time_freeze",   value: 2,  label: "+2 Time Freeze 30s",       emoji: "⏱️", rarity: "common",    weight: 16, color: "#0ea5e9" },
+  // Rare (~32%) — power-up qty lebih banyak, NO gem
+  { kind: "streak_freeze", value: 2,  label: "+2 Streak Freeze",         emoji: "🛡️", rarity: "rare",      weight: 14, color: "#10b981" },
+  { kind: "auto_hint",     value: 5,  label: "+5 Hint Otomatis",         emoji: "💡", rarity: "rare",      weight: 10, color: "#06b6d4" },
+  { kind: "extra_life",    value: 5,  label: "+5 Nyawa Ekstra",          emoji: "❤️", rarity: "rare",      weight: 8,  color: "#f43f5e" },
+  // Epic (~9%) — gem mulai muncul tapi kecil & jarang
+  { kind: "time_freeze",   value: 8,  label: "+8 Time Freeze",           emoji: "⏱️", rarity: "epic",      weight: 4,  color: "#a855f7" },
+  { kind: "streak_freeze", value: 4,  label: "+4 Streak Freeze",         emoji: "🛡️", rarity: "epic",      weight: 4,  color: "#ec4899" },
+  { kind: "gems",          value: 100, label: "💎 +100 Gem",             emoji: "💎", rarity: "epic",      weight: 1.2, color: "#8b5cf6" },
+  // Legendary (~2%) — hadiah besar power-up, gem tetap kecil & langka
+  { kind: "extra_life",    value: 20, label: "🎰 JACKPOT +20 Nyawa",      emoji: "👑", rarity: "legendary", weight: 1.0, color: "#fbbf24" },
+  { kind: "streak_freeze", value: 10, label: "🎰 LEGENDARY +10 Freeze",   emoji: "👑", rarity: "legendary", weight: 0.8, color: "#f59e0b" },
+  { kind: "gems",          value: 300, label: "💎 LEGENDARY +300 Gem",    emoji: "👑", rarity: "legendary", weight: 0.4, color: "#facc15" },
+  // Mythic (~0.4%) — pelangi, sangat langka
+  { kind: "extra_life",    value: 50,   label: "🌈 MYTHIC VAULT +50 Nyawa",     emoji: "🌈", rarity: "mythic", weight: 0.25, color: "#f0abfc" },
+  { kind: "gems",          value: 800,  label: "🌈 MYTHIC TREASURE +800 Gem",   emoji: "🌈", rarity: "mythic", weight: 0.12, color: "#e879f9" },
+  // Grand Prize (~0.05%) — ultra rare, hoki banget
+  { kind: "gems",          value: 2500, label: "🌈 GRAND PRIZE +2.500 Gem",     emoji: "🌈", rarity: "mythic", weight: 0.04, color: "#22d3ee" },
+  { kind: "gems",          value: 8000, label: "🌈 MEGA JACKPOT +8.000 Gem",    emoji: "🌈", rarity: "mythic", weight: 0.012, color: "#a78bfa" },
 ];
 
 // === DAILY FREE SPIN — pool hadiah lebih ringan, 100% kasih sesuatu ===
+// Gem juga dibuat lebih jarang & kecil di sini.
 const FREE_PRIZES: Prize[] = [
-  { kind: "auto_hint",     value: 1,  label: "🎁 FREE +1 Hint",          emoji: "💡", rarity: "common", weight: 30, color: "#94a3b8" },
-  { kind: "extra_life",    value: 1,  label: "🎁 FREE +1 Nyawa",         emoji: "❤️", rarity: "common", weight: 28, color: "#ef4444" },
-  { kind: "time_freeze",   value: 1,  label: "🎁 FREE +1 Time Freeze",   emoji: "⏱️", rarity: "common", weight: 22, color: "#0ea5e9" },
+  { kind: "auto_hint",     value: 1,  label: "🎁 FREE +1 Hint",          emoji: "💡", rarity: "common", weight: 32, color: "#94a3b8" },
+  { kind: "extra_life",    value: 1,  label: "🎁 FREE +1 Nyawa",         emoji: "❤️", rarity: "common", weight: 30, color: "#ef4444" },
+  { kind: "time_freeze",   value: 1,  label: "🎁 FREE +1 Time Freeze",   emoji: "⏱️", rarity: "common", weight: 24, color: "#0ea5e9" },
   { kind: "streak_freeze", value: 1,  label: "🎁 FREE +1 Streak Freeze", emoji: "🛡️", rarity: "rare",   weight: 12, color: "#10b981" },
-  { kind: "gems",          value: 50, label: "💎 FREE +50 Gem",          emoji: "💎", rarity: "rare",   weight: 6,  color: "#8b5cf6" },
-  { kind: "gems",          value: 200, label: "💎 FREE BONUS +200 Gem",  emoji: "💎", rarity: "epic",   weight: 1.8, color: "#a855f7" },
-  { kind: "gems",          value: 1000, label: "🌈 FREE LEGENDARY +1.000 Gem", emoji: "🌈", rarity: "legendary", weight: 0.2, color: "#facc15" },
+  { kind: "gems",          value: 25, label: "💎 FREE +25 Gem",          emoji: "💎", rarity: "rare",   weight: 1.5, color: "#8b5cf6" },
+  { kind: "gems",          value: 80, label: "💎 FREE BONUS +80 Gem",    emoji: "💎", rarity: "epic",   weight: 0.4, color: "#a855f7" },
+  { kind: "gems",          value: 300, label: "🌈 FREE LEGENDARY +300 Gem", emoji: "🌈", rarity: "legendary", weight: 0.08, color: "#facc15" },
 ];
 
 function pickFromPool(pool: Prize[]): Prize & { index: number } {
@@ -128,7 +130,7 @@ async function applyPrize(admin: any, visitorId: string, p: Prize) {
     const invMap: Record<string, string> = {
       extra_life: "nyawa",
       auto_hint: "hint",
-      time_freeze: "freeze", // freeze in-game ↔ inventory freeze
+      time_freeze: "freeze",
     };
     const code = invMap[p.kind];
     if (code) await addInventory(admin, visitorId, code, p.value);
@@ -137,7 +139,6 @@ async function applyPrize(admin: any, visitorId: string, p: Prize) {
     if (streak) {
       await admin.from("daily_streaks").update({ freeze_count: (streak.freeze_count || 0) + p.value }).eq("id", streak.id);
     }
-    // Tambah juga ke inventory Power Pack (item_code: freeze)
     await addInventory(admin, visitorId, "freeze", p.value);
   } else if (p.kind === "gems") {
     await admin.rpc("add_account_gems", { p_visitor_id: visitorId, p_amount: p.value });
@@ -168,7 +169,6 @@ Deno.serve(async (req) => {
         .limit(20);
       const { data: gemsData } = await admin.rpc("get_account_gems", { p_visitor_id: visitorId });
 
-      // Cek free spin hari ini
       const { data: freeUsed } = await admin
         .from("luck_royale_nyawa_history")
         .select("id")
@@ -179,7 +179,6 @@ Deno.serve(async (req) => {
         .limit(1);
       const freeSpinAvailable = !freeUsed || freeUsed.length === 0;
 
-      // Hitung lucky streak (rare+ berturut-turut dari history terbaru)
       let luckyStreak = 0;
       const allHistory = history || [];
       for (const h of allHistory) {
@@ -204,7 +203,6 @@ Deno.serve(async (req) => {
       }, { headers: corsHeaders });
     }
 
-    // === FREE DAILY SPIN ===
     if (action === "spin_free") {
       const { data: freeUsed } = await admin
         .from("luck_royale_nyawa_history")
@@ -269,7 +267,6 @@ Deno.serve(async (req) => {
 
       const currency = "gems";
 
-      // Cek saldo gem
       const { data: gemsData } = await admin.rpc("get_account_gems", { p_visitor_id: visitorId });
       const gems = Number(gemsData || 0);
       if (gems < cost) {
@@ -278,14 +275,12 @@ Deno.serve(async (req) => {
         }, { status: 400, headers: corsHeaders });
       }
 
-      // Deduct
       try {
         await admin.rpc("add_account_gems", { p_visitor_id: visitorId, p_amount: -cost });
       } catch (e) {
         return Response.json({ error: "Gagal mengurangi saldo" }, { status: 400, headers: corsHeaders });
       }
 
-      // Hitung lucky streak saat ini
       const { data: histPre } = await admin
         .from("luck_royale_nyawa_history")
         .select("rarity")
@@ -303,7 +298,6 @@ Deno.serve(async (req) => {
       for (let i = 0; i < spinCount; i++) {
         const basePrize = pickPrize();
         const mult = getStreakMultiplier(curStreak);
-        // Bonus hanya berlaku untuk gems & qty numerik > 1
         let finalValue = basePrize.value;
         let bonusApplied = 0;
         if (mult > 1.0) {
@@ -326,12 +320,10 @@ Deno.serve(async (req) => {
           cost_amount: i === 0 ? cost : 0,
         });
 
-        // Update streak counter live
         if (["rare", "epic", "legendary", "mythic"].includes(prize.rarity)) curStreak++;
         else curStreak = 0;
       }
 
-      // Notifikasi ringkas
       const summary = results.map(r => r.label).join(", ");
       await admin.from("notifications").insert({
         visitor_id: visitorId,
