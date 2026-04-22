@@ -76,6 +76,14 @@ export default function LuckRoyaleNyawa() {
   const [luckyStreak, setLuckyStreak] = useState(0);
   const [streakMultiplier, setStreakMultiplier] = useState(1);
   const [bonusPopup, setBonusPopup] = useState<number | null>(null);
+  const [jackpotPopup, setJackpotPopup] = useState<number | null>(null);
+  const [tokenPopup, setTokenPopup] = useState<number | null>(null);
+  const [luckyTokens, setLuckyTokens] = useState(0);
+  const [tokenProgress, setTokenProgress] = useState(0);
+  const [tokenThreshold, setTokenThreshold] = useState(5);
+  const [megaPool, setMegaPool] = useState(5000);
+  const [tokenShop, setTokenShop] = useState<Array<{ code: string; name: string; cost: number; kind: string; value: number; rarity: string; emoji: string }>>([]);
+  const [redeeming, setRedeeming] = useState<string | null>(null);
 
   const fetchData = async () => {
     if (!visitorId) return;
