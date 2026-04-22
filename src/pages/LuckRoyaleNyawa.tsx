@@ -276,6 +276,58 @@ export default function LuckRoyaleNyawa() {
             </TabsList>
 
             <TabsContent value="spin" className="space-y-4 mt-3">
+          {/* 💥 MEGA JACKPOT POOL — community pool banner */}
+          <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-purple-700 via-fuchsia-600 to-pink-600 border-2 border-fuchsia-300/60 p-3 shadow-xl shadow-fuchsia-500/40">
+            <div className="absolute inset-0 opacity-30 animate-pulse" style={{
+              backgroundImage: "radial-gradient(circle at 50% 50%, rgba(255,255,255,0.5), transparent 70%)",
+            }} />
+            <div className="relative flex items-center gap-3">
+              <div className="w-14 h-14 rounded-2xl bg-black/40 ring-2 ring-amber-300/80 flex items-center justify-center shrink-0 animate-pulse">
+                <Gem className="w-8 h-8 text-amber-200" fill="currentColor" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-1.5 mb-0.5">
+                  <Badge className="bg-amber-500 text-black font-black text-[8px]">💥 LIVE</Badge>
+                  <span className="text-[9px] font-black tracking-widest text-amber-100">MEGA JACKPOT POOL</span>
+                </div>
+                <div className="flex items-baseline gap-1">
+                  <span className="text-2xl font-black text-white tabular-nums drop-shadow">{megaPool.toLocaleString()}</span>
+                  <Gem className="w-4 h-4 text-amber-300" fill="currentColor" />
+                </div>
+                <p className="text-[10px] font-bold text-fuchsia-100/90 mt-0.5">
+                  Pecah saat ada Mythic 🌈 — pemenang dapat <span className="text-amber-200 font-black">70%</span> pool!
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* 🎟️ LUCKY TOKEN PROGRESS BANNER */}
+          <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-indigo-700/60 via-blue-700/40 to-cyan-700/60 border-2 border-cyan-400/50 p-3 shadow-lg shadow-cyan-500/30">
+            <div className="absolute inset-0 opacity-20" style={{
+              backgroundImage: "radial-gradient(circle at 80% 20%, rgba(34,211,238,0.6), transparent 60%)",
+            }} />
+            <div className="relative flex items-center gap-3">
+              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 ring-2 ring-amber-300/60 flex items-center justify-center shrink-0">
+                <Award className="w-7 h-7 text-white" fill="currentColor" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center justify-between gap-2 mb-1">
+                  <span className="text-[9px] font-black tracking-widest text-cyan-200">🎟️ LUCKY TOKEN</span>
+                  <span className="text-lg font-black text-amber-300 tabular-nums">{luckyTokens}</span>
+                </div>
+                <div className="bg-black/40 rounded-full h-2 overflow-hidden">
+                  <div
+                    className="h-full bg-gradient-to-r from-amber-400 via-orange-500 to-pink-500 transition-all"
+                    style={{ width: `${Math.min(100, (tokenProgress / tokenThreshold) * 100)}%` }}
+                  />
+                </div>
+                <p className="text-[10px] text-cyan-100/80 mt-0.5">
+                  {tokenProgress}/{tokenThreshold} spin berbayar → +1 Token. Tukar di Token Shop bawah!
+                </p>
+              </div>
+            </div>
+          </div>
+
           {/* 🔥 LUCKY STREAK BANNER (visible if streak >= 3) */}
           {luckyStreak >= 3 && (
             <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-orange-600 via-red-600 to-pink-600 border-2 border-amber-300 p-3 shadow-xl shadow-orange-500/50 animate-pulse">
