@@ -243,7 +243,84 @@ Deno.serve(async (req) => {
       }, { headers: corsHeaders });
     }
 
-    // ---------- PURCHASE (saldo only) ----------
+    // ---------- DAILY GEM CLAIM ----------
+    if (action === "daily-gem-claim") {
+      const today = todayWIB();
+      const { data: existingClaims } = await admin
+        .from("streak_membership_daily_gem_claims")
+        .select("id")
+        .eq("visitor_id", visitorId)
+        .eq("claim_date", today)
+        .limit(1);
+      if ((existingClaims?.length || 0) > 0) {
+        return Response.json({ error: "Sudah klaim gem hari ini", next_unlock: nextUnlockISO() }, { status: 400, headers: corsHeaders });
+      }
+
+      const { data: activeMemberships } = await admin
+        .from("streak_user_memberships")
+        .select("id, plan_id, plan_name")
+        .eq("visitor_id", visitorId)
+        .eq("is_active", true)
+        .gte("expires_at", new Date().toISOString());
+
+      if (!activeMemberships || activeMemberships.length === 0) {
+        return Response.json({ error: "Tidak ada membership aktif" }, { status: 400, headers: corsHeaders });
+      }
+
+      const planIds = activeMemberships.map((m: any) => m.plan_id).filter(Boolean);
+      const { data: planRows } = await admin
+        .from("streak_membership_plans")
+        .select("id, name, bonus_daily_gems")
+        .in("id", planIds);
+
+      let totalGems = 0;
+      let primaryPlanId: string | null = null;
+      let primaryMembershipId: string | null = null;
+      const activePlanNames: string[] = [];
+      for (const m of activeMemberships as any[]) {
+        const pr = planRows?.find((p: any) => p.id === m.plan_id);
+        const reward = pr?.bonus_daily_gems || 0;
+        if (reward > 0) {
+          totalGems += reward;
+          if (!primaryPlanId) primaryPlanId = pr?.id || m.plan_id || null;
+          if (!primaryMembershipId) primaryMembershipId = m.id;
+          const planName = pr?.name || m.plan_name;
+          if (planName) activePlanNames.push(planName);
+        }
+      }
+
+      if (totalGems <= 0) {
+        return Response.json({ error: "Membership aktif tidak punya hadiah gem harian" }, { status: 400, headers: corsHeaders });
+      }
+
+      const uniquePlanNames = Array.from(new Set(activePlanNames));
+      const combinedPlanName = uniquePlanNames.join(" + ") || null;
+
+      try {
+        await admin.rpc("add_account_gems", { p_visitor_id: visitorId, p_amount: totalGems });
+      } catch (e) {
+        return Response.json({ error: "Gagal menambah gem: " + (e instanceof Error ? e.message : String(e)) }, { status: 500, headers: corsHeaders });
+      }
+
+      const { error: insErr } = await admin.from("streak_membership_daily_gem_claims").insert({
+        visitor_id: visitorId,
+        membership_id: uniquePlanNames.length === 1 ? primaryMembershipId : null,
+        plan_id: uniquePlanNames.length === 1 ? primaryPlanId : null,
+        plan_name: combinedPlanName,
+        claim_date: today,
+        gems_awarded: totalGems,
+      });
+      if (insErr) return Response.json({ error: "Gagal menyimpan klaim gem: " + insErr.message }, { status: 500, headers: corsHeaders });
+
+      return Response.json({
+        success: true,
+        gems_awarded: totalGems,
+        plan_name: combinedPlanName,
+        next_unlock: nextUnlockISO(),
+      }, { headers: corsHeaders });
+    }
+
+
     if (!planId) {
       return Response.json({ error: "Paket tidak dipilih" }, { status: 400, headers: corsHeaders });
     }
@@ -260,70 +337,46 @@ Deno.serve(async (req) => {
     let amountPaid = 0;
     let payFromGame = 0, payFromMain = 0;
 
-    if (paymentSource === "coins") {
-      const priceCoins = plan.price_coins || 0;
-      if (priceCoins <= 0) return Response.json({ error: "Paket ini tidak menerima pembayaran koin" }, { status: 400, headers: corsHeaders });
-      const { data: s } = await admin.from("daily_streaks").select("id, streak_coins").eq("visitor_id", visitorId).maybeSingle();
-      const currentCoins = s?.streak_coins || 0;
-      if (currentCoins < priceCoins) return Response.json({ error: `Streak Coins tidak cukup (butuh ${priceCoins.toLocaleString("id-ID")})` }, { status: 400, headers: corsHeaders });
-      if (s) await admin.from("daily_streaks").update({ streak_coins: currentCoins - priceCoins }).eq("id", s.id);
-      methodLabel = "Streak Coins";
-      amountPaid = priceCoins;
-    } else if (paymentSource === "gems") {
-      const priceGems = plan.price_gems || 0;
-      if (priceGems <= 0) return Response.json({ error: "Paket ini tidak menerima pembayaran gem" }, { status: 400, headers: corsHeaders });
-      try {
-        await admin.rpc("add_account_gems", { p_visitor_id: visitorId, p_amount: -priceGems });
-      } catch (e) {
-        const msg = e instanceof Error ? e.message : String(e);
-        if (msg.includes("INSUFFICIENT_GEMS")) {
-          return Response.json({ error: `Gem tidak cukup (butuh ${priceGems.toLocaleString("id-ID")})` }, { status: 400, headers: corsHeaders });
-        }
-        return Response.json({ error: "Gagal memotong gem: " + msg }, { status: 500, headers: corsHeaders });
-      }
-      methodLabel = "Gems";
-      amountPaid = priceGems;
+    // ---------- Pembayaran via SALDO (auto/game/main) ----------
+    // Verify PIN
+    const { data: pinRow } = await admin.from("user_pins").select("pin_hash").eq("visitor_id", visitorId).maybeSingle();
+    if (!pinRow) return Response.json({ error: "PIN belum dibuat", needPin: true }, { status: 200, headers: corsHeaders });
+    if (!pin) return Response.json({ error: "PIN diperlukan", needPin: true }, { status: 200, headers: corsHeaders });
+    const hashHex = await sha256Hex(pin);
+    if (hashHex !== pinRow.pin_hash) return Response.json({ error: "PIN salah", needPin: true }, { status: 200, headers: corsHeaders });
+
+    const price = plan.price_idr || 0;
+    if (price <= 0) return Response.json({ error: "Paket ini tidak menerima pembayaran saldo" }, { status: 400, headers: corsHeaders });
+
+    const { data: gameBal } = await admin.from("game_balance").select("id, amount, total_spent").eq("visitor_id", visitorId).maybeSingle();
+    const { data: balanceRow } = await admin.from("user_balances").select("id, balance").eq("visitor_id", visitorId).maybeSingle();
+    if (!balanceRow && !gameBal) return Response.json({ error: "Akun saldo tidak ditemukan" }, { status: 404, headers: corsHeaders });
+    const gameAmount = gameBal?.amount || 0;
+    const mainAmount = balanceRow?.balance || 0;
+
+    if (paymentSource === "main") {
+      if (mainAmount < price) return Response.json({ error: "Saldo Utama tidak cukup" }, { status: 400, headers: corsHeaders });
+      payFromMain = price; methodLabel = "Saldo Utama";
+    } else if (paymentSource === "game") {
+      if (gameAmount < price) return Response.json({ error: "Saldo IN tidak cukup" }, { status: 400, headers: corsHeaders });
+      payFromGame = price; methodLabel = "Saldo IN";
     } else {
-      // Verify PIN (saldo only)
-      const { data: pinRow } = await admin.from("user_pins").select("pin_hash").eq("visitor_id", visitorId).maybeSingle();
-      if (!pinRow) return Response.json({ error: "PIN belum dibuat", needPin: true }, { status: 200, headers: corsHeaders });
-      if (!pin) return Response.json({ error: "PIN diperlukan", needPin: true }, { status: 200, headers: corsHeaders });
-      const hashHex = await sha256Hex(pin);
-      if (hashHex !== pinRow.pin_hash) return Response.json({ error: "PIN salah", needPin: true }, { status: 200, headers: corsHeaders });
-
-      const price = plan.price_idr || 0;
-      if (price <= 0) return Response.json({ error: "Paket ini tidak menerima pembayaran saldo" }, { status: 400, headers: corsHeaders });
-
-      const { data: gameBal } = await admin.from("game_balance").select("id, amount, total_spent").eq("visitor_id", visitorId).maybeSingle();
-      const { data: balanceRow } = await admin.from("user_balances").select("id, balance").eq("visitor_id", visitorId).maybeSingle();
-      if (!balanceRow && !gameBal) return Response.json({ error: "Akun saldo tidak ditemukan" }, { status: 404, headers: corsHeaders });
-      const gameAmount = gameBal?.amount || 0;
-      const mainAmount = balanceRow?.balance || 0;
-
-      if (paymentSource === "main") {
-        if (mainAmount < price) return Response.json({ error: "Saldo Utama tidak cukup" }, { status: 400, headers: corsHeaders });
-        payFromMain = price; methodLabel = "Saldo Utama";
-      } else if (paymentSource === "game") {
-        if (gameAmount < price) return Response.json({ error: "Saldo IN tidak cukup" }, { status: 400, headers: corsHeaders });
-        payFromGame = price; methodLabel = "Saldo IN";
-      } else {
-        if (gameAmount + mainAmount < price) return Response.json({ error: "Saldo gabungan tidak cukup" }, { status: 400, headers: corsHeaders });
-        payFromGame = Math.min(gameAmount, price);
-        payFromMain = price - payFromGame;
-        methodLabel = payFromGame > 0 && payFromMain > 0 ? "Saldo IN + Utama" : payFromGame > 0 ? "Saldo IN" : "Saldo Utama";
-      }
-
-      if (payFromGame > 0 && gameBal) {
-        await admin.from("game_balance").update({ amount: gameAmount - payFromGame, total_spent: (gameBal.total_spent || 0) + payFromGame }).eq("id", gameBal.id);
-        await admin.from("game_balance_transactions").insert({ visitor_id: visitorId, type: "spend", amount: -payFromGame, description: `Beli Membership ${plan.name}` });
-      }
-      if (payFromMain > 0 && balanceRow) {
-        const { error: balErr } = await admin.from("user_balances").update({ balance: mainAmount - payFromMain }).eq("id", balanceRow.id);
-        if (balErr) return Response.json({ error: "Gagal memotong saldo" }, { status: 500, headers: corsHeaders });
-        await admin.from("balance_transactions").insert({ visitor_id: visitorId, type: "purchase", amount: payFromMain, description: `Beli Membership ${plan.name} [${methodLabel}]` });
-      }
-      amountPaid = price;
+      if (gameAmount + mainAmount < price) return Response.json({ error: "Saldo gabungan tidak cukup" }, { status: 400, headers: corsHeaders });
+      payFromGame = Math.min(gameAmount, price);
+      payFromMain = price - payFromGame;
+      methodLabel = payFromGame > 0 && payFromMain > 0 ? "Saldo IN + Utama" : payFromGame > 0 ? "Saldo IN" : "Saldo Utama";
     }
+
+    if (payFromGame > 0 && gameBal) {
+      await admin.from("game_balance").update({ amount: gameAmount - payFromGame, total_spent: (gameBal.total_spent || 0) + payFromGame }).eq("id", gameBal.id);
+      await admin.from("game_balance_transactions").insert({ visitor_id: visitorId, type: "spend", amount: -payFromGame, description: `Beli Membership ${plan.name}` });
+    }
+    if (payFromMain > 0 && balanceRow) {
+      const { error: balErr } = await admin.from("user_balances").update({ balance: mainAmount - payFromMain }).eq("id", balanceRow.id);
+      if (balErr) return Response.json({ error: "Gagal memotong saldo" }, { status: 500, headers: corsHeaders });
+      await admin.from("balance_transactions").insert({ visitor_id: visitorId, type: "purchase", amount: payFromMain, description: `Beli Membership ${plan.name} [${methodLabel}]` });
+    }
+    amountPaid = price;
 
     // Stack expiry hanya untuk paket yang sama; paket beda jenis aktif paralel
     const { data: existingActive } = await admin
