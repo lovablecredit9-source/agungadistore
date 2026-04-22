@@ -2234,6 +2234,45 @@ export type Database = {
           },
         ]
       }
+      luck_royale_nyawa_history: {
+        Row: {
+          cost_amount: number
+          cost_currency: string
+          created_at: string
+          id: string
+          rarity: string
+          reward_kind: string
+          reward_label: string
+          reward_value: number
+          spin_type: string
+          visitor_id: string
+        }
+        Insert: {
+          cost_amount: number
+          cost_currency: string
+          created_at?: string
+          id?: string
+          rarity?: string
+          reward_kind: string
+          reward_label: string
+          reward_value?: number
+          spin_type: string
+          visitor_id: string
+        }
+        Update: {
+          cost_amount?: number
+          cost_currency?: string
+          created_at?: string
+          id?: string
+          rarity?: string
+          reward_kind?: string
+          reward_label?: string
+          reward_value?: number
+          spin_type?: string
+          visitor_id?: string
+        }
+        Relationships: []
+      }
       lucky_draw_history: {
         Row: {
           created_at: string
