@@ -992,6 +992,35 @@ export default function LuckRoyaleNyawa() {
           </div>
         </div>
       )}
+
+      {/* 💥 MEGA JACKPOT WIN POPUP */}
+      {jackpotPopup !== null && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center pointer-events-none animate-fade-in">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+          <div className="relative bg-gradient-to-br from-purple-700 via-fuchsia-600 to-pink-600 rounded-3xl p-6 shadow-2xl shadow-fuchsia-500/80 ring-4 ring-amber-300/60 animate-pulse max-w-xs mx-4 text-center">
+            <div className="text-5xl mb-2">💥🎰💥</div>
+            <div className="text-[10px] font-black text-amber-200 tracking-widest mb-1">MEGA JACKPOT PECAH!</div>
+            <div className="text-3xl font-black text-white drop-shadow mb-1">+{jackpotPopup.toLocaleString()}</div>
+            <div className="flex items-center justify-center gap-1 text-amber-300 font-black">
+              <Gem className="w-5 h-5" fill="currentColor" /> GEM
+            </div>
+            <p className="text-[10px] text-fuchsia-100/90 mt-2">Selamat, kamu pecahkan pool komunitas!</p>
+          </div>
+        </div>
+      )}
+
+      {/* 🎟️ EARNED TOKEN POPUP */}
+      {tokenPopup !== null && (
+        <div className="fixed top-32 left-1/2 -translate-x-1/2 z-[60] animate-fade-in pointer-events-none">
+          <div className="bg-gradient-to-r from-amber-400 via-orange-500 to-pink-500 rounded-full px-5 py-2.5 shadow-2xl shadow-amber-500/60 ring-4 ring-amber-200/40 flex items-center gap-2">
+            <Award className="w-5 h-5 text-white" fill="currentColor" />
+            <div>
+              <div className="text-[9px] font-black text-white tracking-widest leading-none">LUCKY TOKEN!</div>
+              <div className="text-base font-black text-white leading-tight">+{tokenPopup} 🎟️</div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
