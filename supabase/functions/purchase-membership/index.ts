@@ -348,6 +348,7 @@ Deno.serve(async (req) => {
         gems: plan.bonus_gems,
         freeze: plan.bonus_freeze_count,
         multiplier: plan.bonus_multiplier,
+        instant_daily: instantDailyTopUp,
       },
     }, { headers: corsHeaders });
 
