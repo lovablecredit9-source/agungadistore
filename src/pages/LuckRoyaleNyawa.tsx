@@ -4,12 +4,14 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { getVisitorId } from "@/lib/visitor-id";
 import {
   ArrowLeft, Heart, Lightbulb, Timer, Shield, Gem, Sparkles, Crown,
   Loader2, Trophy, Zap, X,
 } from "lucide-react";
+import FadedWheel from "@/components/streak/FadedWheel";
 
 interface Prize {
   kind: "extra_life" | "auto_hint" | "time_freeze" | "streak_freeze" | "gems" | "coins";
@@ -145,6 +147,17 @@ export default function LuckRoyaleNyawa() {
         </div>
       ) : (
         <div className="px-3 py-4 space-y-4 max-w-md mx-auto">
+          <Tabs defaultValue="spin" className="w-full">
+            <TabsList className="grid w-full grid-cols-2 bg-black/40 border border-amber-500/30">
+              <TabsTrigger value="spin" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-amber-500 data-[state=active]:to-orange-600 data-[state=active]:text-white font-black tracking-wider text-[11px]">
+                🎰 SPIN ROYALE
+              </TabsTrigger>
+              <TabsTrigger value="faded" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-cyan-500 data-[state=active]:to-blue-600 data-[state=active]:text-white font-black tracking-wider text-[11px]">
+                🎡 FADED WHEEL
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="spin" className="space-y-4 mt-3">
           {/* Hero Banner */}
           <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-amber-600/30 via-orange-600/20 to-red-600/30 border-2 border-amber-500/40 p-4">
             <div className="absolute inset-0 opacity-20" style={{
@@ -277,6 +290,12 @@ export default function LuckRoyaleNyawa() {
               </div>
             </div>
           )}
+            </TabsContent>
+
+            <TabsContent value="faded" className="mt-3">
+              <FadedWheel visitorId={visitorId} onGemsChange={(g) => setGems(g)} />
+            </TabsContent>
+          </Tabs>
         </div>
       )}
 
