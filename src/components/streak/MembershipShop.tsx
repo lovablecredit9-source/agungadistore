@@ -185,6 +185,7 @@ export default function MembershipShop({ visitorId, onUpdate }: Props) {
       const bonus = data?.bonus;
       const bonusBits: string[] = [];
       if (bonus?.streak_coins) bonusBits.push(`+${bonus.streak_coins} Koin`);
+      if (bonus?.instant_daily) bonusBits.push(`+${bonus.instant_daily} Hadiah Harian`);
       if (bonus?.gems) bonusBits.push(`+${bonus.gems} Gem`);
       if (bonus?.freeze) bonusBits.push(`+${bonus.freeze} Freeze`);
       toast({
