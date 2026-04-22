@@ -12,6 +12,7 @@ import {
 import StreakLuckyWheelShop from "./StreakLuckyWheelShop";
 import StreakShopExtras from "./StreakShopExtras";
 import MembershipShop from "./MembershipShop";
+import PowerPackShop from "./PowerPackShop";
 import EngagementHub from "@/components/EngagementHub";
 
 interface Props {
@@ -97,14 +98,18 @@ export default function MegaShopHub({ visitorId, onUpdate }: Props) {
 
       <div className="h-3" />
 
-      {/* MEMBERSHIP — Coin & Gem (paket 3 hari, mingguan, bulanan) */}
-      <Tabs defaultValue="coin" className="w-full">
-        <TabsList className="grid grid-cols-2 bg-black/30 border border-purple-400/30 h-auto p-1 mb-2">
-          <TabsTrigger value="coin" className="text-[11px] data-[state=active]:bg-yellow-500/40 px-2 py-1.5 font-black uppercase tracking-wide">
-            🪙 Coin Membership
+      {/* MEMBERSHIP — Coin, Gem, & Power Pack */}
+      <Tabs defaultValue="power" className="w-full">
+        <TabsList className="grid grid-cols-3 bg-black/30 border border-purple-400/30 h-auto p-1 mb-2">
+          <TabsTrigger value="coin" className="text-[10px] data-[state=active]:bg-yellow-500/40 px-1 py-1.5 font-black uppercase tracking-wide">
+            🪙 Coin
           </TabsTrigger>
-          <TabsTrigger value="gem" className="text-[11px] data-[state=active]:bg-cyan-500/40 px-2 py-1.5 font-black uppercase tracking-wide">
-            💎 Gem Membership
+          <TabsTrigger value="gem" className="text-[10px] data-[state=active]:bg-cyan-500/40 px-1 py-1.5 font-black uppercase tracking-wide">
+            💎 Gem
+          </TabsTrigger>
+          <TabsTrigger value="power" className="text-[10px] data-[state=active]:bg-pink-500/40 px-1 py-1.5 font-black uppercase tracking-wide">
+            ⚡ Power
+            <Badge className="ml-1 bg-pink-500 text-white border-0 text-[8px] h-3 px-1 animate-pulse">NEW</Badge>
           </TabsTrigger>
         </TabsList>
         <TabsContent value="coin">
@@ -112,6 +117,9 @@ export default function MegaShopHub({ visitorId, onUpdate }: Props) {
         </TabsContent>
         <TabsContent value="gem">
           <MembershipShop visitorId={visitorId} category="gem" onUpdate={() => { load(); onUpdate?.(); }} />
+        </TabsContent>
+        <TabsContent value="power">
+          <PowerPackShop visitorId={visitorId} onUpdate={() => { load(); onUpdate?.(); }} />
         </TabsContent>
       </Tabs>
 

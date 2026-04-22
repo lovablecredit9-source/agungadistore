@@ -44,6 +44,7 @@ import StreakRoyaleBracket from "./event/StreakRoyaleBracket";
 import MegaShopHub from "./MegaShopHub";
 import MegaEventHub from "./MegaEventHub";
 import StreakFlashSaleHub from "./StreakFlashSaleHub";
+import PowerPackShop from "./PowerPackShop";
 import DailyChallengeRush from "./event/DailyChallengeRush";
 import StreakWishingWell from "./event/StreakWishingWell";
 import ScratchOffShop from "./ScratchOffShop";
@@ -590,6 +591,9 @@ export default function NeonStreakHub({ visitorId, forcedView }: Props) {
 
       {activeView === "main" && (
       <>
+      {/* ⚡ Power Pack showcase — paket reward harian random */}
+      <PowerPackShop visitorId={visitorId} onUpdate={loadAll} compact />
+
       {/* ✨ Combo Multiplier + Pet Companion */}
       <div className="grid grid-cols-1 gap-3">
         <StreakComboMultiplier visitorId={visitorId} currentStreak={currentStreak} />
