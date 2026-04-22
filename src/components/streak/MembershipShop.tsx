@@ -66,7 +66,7 @@ function useCountdown(targetIso?: string | null) {
   return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
 }
 
-// Tema warna berdasar tier
+// Tema warna berdasar tier (warna dasar 1 plan)
 function getTheme(plan?: Plan | null) {
   const days = plan?.duration_days || 0;
   if (days >= 30) {
@@ -77,6 +77,7 @@ function getTheme(plan?: Plan | null) {
       accent: "text-amber-300",
       badge: "bg-amber-500/30 text-amber-100 border-amber-400/60",
       letter: "M",
+      fusionId: "yellow" as const,
     };
   }
   if (days >= 7) {
@@ -87,6 +88,7 @@ function getTheme(plan?: Plan | null) {
       accent: "text-fuchsia-300",
       badge: "bg-fuchsia-500/30 text-fuchsia-100 border-fuchsia-400/60",
       letter: "W",
+      fusionId: "purple" as const,
     };
   }
   return {
@@ -96,7 +98,75 @@ function getTheme(plan?: Plan | null) {
     accent: "text-cyan-300",
     badge: "bg-cyan-500/30 text-cyan-100 border-cyan-400/60",
     letter: "T",
+    fusionId: "blue" as const,
   };
+}
+
+// Tema fusion berdasarkan kombinasi membership AKTIF
+// Biru saja → biru | Biru+Ungu → HIJAU NEON | Biru+Kuning → MERAH API
+// Ungu saja → ungu | Kuning saja → kuning | Ungu+Kuning → ORANGE PLASMA
+// Semua tiga aktif → RAINBOW PRISMATIC
+function getFusionTheme(activePlans: Plan[], fallback: ReturnType<typeof getTheme>) {
+  if (!activePlans || activePlans.length === 0) return { ...fallback, fusion: null as null | "green" | "red" | "orange" | "rainbow" };
+  const ids = new Set(activePlans.map((p) => getTheme(p).fusionId));
+  const hasBlue = ids.has("blue");
+  const hasPurple = ids.has("purple");
+  const hasYellow = ids.has("yellow");
+
+  // Triple fusion → Rainbow prismatic
+  if (hasBlue && hasPurple && hasYellow) {
+    return {
+      glow: "from-cyan-400 via-fuchsia-500 to-amber-400",
+      panel: "from-[#1a1040] via-[#3a0f3a] to-[#3a2a0d]",
+      border: "border-white/70",
+      accent: "text-white",
+      badge: "bg-white/20 text-white border-white/60",
+      letter: "★",
+      fusionId: "blue" as const,
+      fusion: "rainbow" as const,
+    };
+  }
+  // Biru + Ungu → Hijau neon
+  if (hasBlue && hasPurple && !hasYellow) {
+    return {
+      glow: "from-emerald-400 via-green-500 to-lime-400",
+      panel: "from-[#0a2e1a] via-[#0e3a1f] to-[#08220f]",
+      border: "border-emerald-300/70",
+      accent: "text-emerald-300",
+      badge: "bg-emerald-500/30 text-emerald-100 border-emerald-400/60",
+      letter: "G",
+      fusionId: "blue" as const,
+      fusion: "green" as const,
+    };
+  }
+  // Biru + Kuning → Merah api
+  if (hasBlue && hasYellow && !hasPurple) {
+    return {
+      glow: "from-red-500 via-rose-500 to-orange-500",
+      panel: "from-[#3a0d0d] via-[#4a0e1a] to-[#2a0808]",
+      border: "border-red-400/70",
+      accent: "text-red-300",
+      badge: "bg-red-500/30 text-red-100 border-red-400/60",
+      letter: "R",
+      fusionId: "yellow" as const,
+      fusion: "red" as const,
+    };
+  }
+  // Ungu + Kuning → Orange plasma
+  if (hasPurple && hasYellow && !hasBlue) {
+    return {
+      glow: "from-orange-400 via-amber-500 to-pink-500",
+      panel: "from-[#3a1a0d] via-[#4a1d1a] to-[#2a0d08]",
+      border: "border-orange-300/70",
+      accent: "text-orange-300",
+      badge: "bg-orange-500/30 text-orange-100 border-orange-400/60",
+      letter: "O",
+      fusionId: "yellow" as const,
+      fusion: "orange" as const,
+    };
+  }
+  // Single → fallback ke tema plan terpilih
+  return { ...fallback, fusion: null };
 }
 
 export default function MembershipShop({ visitorId, onUpdate }: Props) {
