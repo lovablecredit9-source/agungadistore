@@ -396,11 +396,6 @@ export default function MembershipShop({ visitorId, onUpdate }: Props) {
               <div className="flex flex-col items-center justify-center min-w-[88px]">
                 <div className="relative">
                   <motion.div
-                    animate={{ rotate: 360 }}
-                    transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
-                     className={`absolute -inset-2 rounded-full bg-gradient-to-r ${baseTheme.glow} opacity-30 blur-md`}
-                  />
-                  <motion.div
                     animate={{ scale: [1, 1.05, 1] }}
                     transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
                     className="relative w-16 h-16 flex items-center justify-center"
@@ -543,12 +538,16 @@ export default function MembershipShop({ visitorId, onUpdate }: Props) {
                       rotate: fusion === "rainbow" ? { duration: 6, repeat: Infinity, ease: "linear" } : undefined,
                       scale: { duration: 1.8, repeat: Infinity },
                     } : {}}
-                     className={`relative w-8 h-8 rounded-lg flex items-center justify-center bg-gradient-to-br ${iconTheme.glow} border ${iconTheme.border} shrink-0 shadow-md`}
+                    className="relative w-8 h-8 flex items-center justify-center shrink-0"
                   >
-                    <Crown className="h-4 w-4 text-white drop-shadow" strokeWidth={2.5} />
-                    {(isSel || useFusion) && (
-                       <div className={`absolute -inset-1 rounded-lg bg-gradient-to-br ${iconTheme.glow} ${useFusion ? "opacity-70" : "opacity-40"} blur-md -z-10`} />
-                    )}
+                    <img
+                      src={membershipCardLogo}
+                      alt="MM"
+                      width={32}
+                      height={32}
+                      loading="lazy"
+                      className="w-8 h-8 object-contain drop-shadow"
+                    />
                   </motion.div>
                   <div className="min-w-0 flex-1">
                     <p className={`text-[9px] font-black uppercase truncate leading-tight ${isSel ? "text-white" : "text-white/80"}`}>
