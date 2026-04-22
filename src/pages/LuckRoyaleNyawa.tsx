@@ -290,6 +290,12 @@ export default function LuckRoyaleNyawa() {
               </div>
             </div>
           )}
+            </TabsContent>
+
+            <TabsContent value="faded" className="mt-3">
+              <FadedWheel visitorId={visitorId} onGemsChange={(g) => setGems(g)} />
+            </TabsContent>
+          </Tabs>
         </div>
       )}
 
