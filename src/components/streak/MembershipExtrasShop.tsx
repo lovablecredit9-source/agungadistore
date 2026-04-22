@@ -190,21 +190,20 @@ export default function MembershipExtrasShop({ visitorId, kind, onUpdate }: Prop
                   )}
                 </div>
                 <div className="text-[10px] text-emerald-100/80 bg-black/30 rounded px-2 py-1 space-y-0.5">
-                  <div>🎁 Hari ini: <span className="font-black text-emerald-300">{active.effective_items_today || 0}</span> item siap klaim</div>
-                  {active.pending_items_tomorrow > 0 && (
-                    <div className="text-amber-200">⏰ Menunggu besok: <span className="font-black">+{active.pending_items_tomorrow}</span> item</div>
+                  <div>🎁 Siap diklaim: <span className="font-black text-emerald-300">{active.effective_items_today || 0}</span> item dari <span className="font-bold">{active.claimable_subs_count || 0}</span> paket</div>
+                  {(active.claimed_subs_count || 0) > 0 && (
+                    <div className="text-white/60">✅ Sudah diklaim: {active.claimed_subs_count} paket (besok bisa lagi)</div>
                   )}
                 </div>
                 <Button
                   size="sm"
-                  disabled={data.claimed_today || busy === "claim" || (active.effective_items_today || 0) === 0}
+                  disabled={(active.effective_items_today || 0) === 0 || busy === "claim"}
                   onClick={claimLuckyBox}
                   className={`w-full h-9 bg-gradient-to-r ${meta.grad} text-white font-bold disabled:opacity-50`}
                 >
                   {busy === "claim" ? <Loader2 className="w-4 h-4 animate-spin" /> :
-                   data.claimed_today ? <><Check className="w-4 h-4 mr-1" /> Sudah klaim hari ini</> :
-                   (active.effective_items_today || 0) === 0 ? <><Clock className="w-4 h-4 mr-1" /> Aktif besok</> :
-                   <><Gift className="w-4 h-4 mr-1" /> Klaim {active.effective_items_today} Item Hari Ini</>}
+                   (active.effective_items_today || 0) === 0 ? <><Check className="w-4 h-4 mr-1" /> Semua paket sudah diklaim hari ini</> :
+                   <><Gift className="w-4 h-4 mr-1" /> Klaim {active.effective_items_today} Item Sekarang</>}
                 </Button>
               </div>
             )}
