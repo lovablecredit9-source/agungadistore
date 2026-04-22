@@ -378,6 +378,10 @@ export default function LuckRoyaleNyawa() {
               <FadedWheel visitorId={visitorId} onGemsChange={(g) => setGems(g)} />
             </TabsContent>
 
+            <TabsContent value="diamond" className="mt-3">
+              <DiamondRoyaleInline visitorId={visitorId} onGemsChange={(g) => setGems(g)} />
+            </TabsContent>
+
             <TabsContent value="tips" className="mt-3 space-y-3">
               {(() => {
                 const total = history.length;
