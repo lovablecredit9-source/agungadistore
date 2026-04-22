@@ -10,6 +10,7 @@ import { getVisitorId } from "@/lib/visitor-id";
 import {
   ArrowLeft, Heart, Lightbulb, Timer, Shield, Gem, Sparkles, Crown,
   Loader2, Trophy, Zap, X, Dices, BarChart3, Flame, Star, Award, TrendingUp,
+  Brain, Target, TrendingDown, CheckCircle2, AlertCircle, Rocket,
 } from "lucide-react";
 import FadedWheel from "@/components/streak/FadedWheel";
 
@@ -185,20 +186,24 @@ export default function LuckRoyaleNyawa() {
           })()}
 
           <Tabs defaultValue="spin" className="w-full">
-            <TabsList className="grid w-full grid-cols-4 bg-black/40 border border-amber-500/30 h-auto p-1 gap-1">
-              <TabsTrigger value="spin" className="flex-col gap-0.5 py-1.5 data-[state=active]:bg-gradient-to-br data-[state=active]:from-amber-500 data-[state=active]:to-orange-600 data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-amber-500/40 font-black tracking-wider text-[9px] rounded-md">
+            <TabsList className="grid w-full grid-cols-5 bg-black/40 border border-amber-500/30 h-auto p-1 gap-1">
+              <TabsTrigger value="spin" className="flex-col gap-0.5 py-1.5 data-[state=active]:bg-gradient-to-br data-[state=active]:from-amber-500 data-[state=active]:to-orange-600 data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-amber-500/40 font-black tracking-wider text-[8px] rounded-md">
                 <Dices className="w-3.5 h-3.5" />
                 SPIN
               </TabsTrigger>
-              <TabsTrigger value="faded" className="flex-col gap-0.5 py-1.5 data-[state=active]:bg-gradient-to-br data-[state=active]:from-cyan-500 data-[state=active]:to-blue-600 data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-cyan-500/40 font-black tracking-wider text-[9px] rounded-md">
+              <TabsTrigger value="faded" className="flex-col gap-0.5 py-1.5 data-[state=active]:bg-gradient-to-br data-[state=active]:from-cyan-500 data-[state=active]:to-blue-600 data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-cyan-500/40 font-black tracking-wider text-[8px] rounded-md">
                 <Sparkles className="w-3.5 h-3.5" />
                 FADED
               </TabsTrigger>
-              <TabsTrigger value="stats" className="flex-col gap-0.5 py-1.5 data-[state=active]:bg-gradient-to-br data-[state=active]:from-emerald-500 data-[state=active]:to-teal-600 data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-emerald-500/40 font-black tracking-wider text-[9px] rounded-md">
+              <TabsTrigger value="tips" className="flex-col gap-0.5 py-1.5 data-[state=active]:bg-gradient-to-br data-[state=active]:from-pink-500 data-[state=active]:to-rose-600 data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-pink-500/40 font-black tracking-wider text-[8px] rounded-md">
+                <Brain className="w-3.5 h-3.5" />
+                TIPS
+              </TabsTrigger>
+              <TabsTrigger value="stats" className="flex-col gap-0.5 py-1.5 data-[state=active]:bg-gradient-to-br data-[state=active]:from-emerald-500 data-[state=active]:to-teal-600 data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-emerald-500/40 font-black tracking-wider text-[8px] rounded-md">
                 <BarChart3 className="w-3.5 h-3.5" />
                 STATS
               </TabsTrigger>
-              <TabsTrigger value="top" className="flex-col gap-0.5 py-1.5 data-[state=active]:bg-gradient-to-br data-[state=active]:from-fuchsia-500 data-[state=active]:to-purple-700 data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-fuchsia-500/40 font-black tracking-wider text-[9px] rounded-md">
+              <TabsTrigger value="top" className="flex-col gap-0.5 py-1.5 data-[state=active]:bg-gradient-to-br data-[state=active]:from-fuchsia-500 data-[state=active]:to-purple-700 data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-fuchsia-500/40 font-black tracking-wider text-[8px] rounded-md">
                 <Trophy className="w-3.5 h-3.5" />
                 TOP
               </TabsTrigger>
@@ -366,6 +371,237 @@ export default function LuckRoyaleNyawa() {
 
             <TabsContent value="faded" className="mt-3">
               <FadedWheel visitorId={visitorId} onGemsChange={(g) => setGems(g)} />
+            </TabsContent>
+
+            <TabsContent value="tips" className="mt-3 space-y-3">
+              {(() => {
+                const total = history.length;
+                const mythicCount = history.filter(h => h.rarity === "mythic").length;
+                const legendaryCount = history.filter(h => h.rarity === "legendary").length;
+                const epicCount = history.filter(h => h.rarity === "epic").length;
+                const rareEpicPlus = mythicCount + legendaryCount + epicCount;
+                const rareRate = total > 0 ? (rareEpicPlus / total) * 100 : 0;
+
+                // Hitung spin sejak hadiah langka terakhir (pity tracker)
+                const lastRareIdx = history.findIndex(h => ["mythic", "legendary", "epic"].includes(h.rarity));
+                const spinsSinceRare = lastRareIdx === -1 ? total : lastRareIdx;
+                const pityProgress = Math.min(100, (spinsSinceRare / 30) * 100);
+
+                // Analisis waktu (jam paling sering dapat hadiah langka)
+                const rareHours = history
+                  .filter(h => ["mythic", "legendary", "epic"].includes(h.rarity))
+                  .map(h => new Date(h.created_at).getHours());
+                const hourCounts: Record<number, number> = {};
+                rareHours.forEach(h => { hourCounts[h] = (hourCounts[h] || 0) + 1; });
+                const luckyHour = Object.entries(hourCounts).sort((a, b) => b[1] - a[1])[0];
+
+                // Rekomendasi mode spin
+                const bundle10 = bundles.find(b => b.count === 10);
+                const bundle20 = bundles.find(b => b.count === 20);
+                const recommendedBundle = gems >= (bundle20?.cost || 999999)
+                  ? bundle20
+                  : gems >= (bundle10?.cost || 999999)
+                  ? bundle10
+                  : null;
+
+                // Smart recommendations
+                const recs: Array<{ icon: any; color: string; title: string; desc: string; priority: "high" | "med" | "low" }> = [];
+
+                if (spinsSinceRare >= 20) {
+                  recs.push({
+                    icon: Rocket,
+                    color: "from-red-500 to-orange-600",
+                    title: "🔥 PITY HAMPIR PECAH!",
+                    desc: `Sudah ${spinsSinceRare} spin tanpa Epic+. Peluang hadiah langka SANGAT TINGGI sekarang!`,
+                    priority: "high",
+                  });
+                }
+
+                if (gems < singleCost) {
+                  recs.push({
+                    icon: AlertCircle,
+                    color: "from-amber-500 to-yellow-600",
+                    title: "Gems Tidak Cukup",
+                    desc: `Butuh ${singleCost} gems untuk 1 spin. Top up dulu di Gem Shop atau coba Faded Wheel!`,
+                    priority: "high",
+                  });
+                } else if (recommendedBundle) {
+                  const savings = singleCost * recommendedBundle.count - recommendedBundle.cost;
+                  recs.push({
+                    icon: Target,
+                    color: "from-fuchsia-500 to-purple-600",
+                    title: `Pakai Bundle ${recommendedBundle.label}`,
+                    desc: `Hemat ${savings.toLocaleString()} gems & peluang Mythic 10x lebih besar dengan multi-spin!`,
+                    priority: "high",
+                  });
+                }
+
+                if (total < 5) {
+                  recs.push({
+                    icon: Sparkles,
+                    color: "from-cyan-500 to-blue-600",
+                    title: "Pemula? Mulai Pelan-pelan",
+                    desc: "Coba 1 SPIN dulu untuk merasakan ritme. Setelah 5 spin, baru pertimbangkan bundle!",
+                    priority: "med",
+                  });
+                }
+
+                if (rareRate < 10 && total >= 10) {
+                  recs.push({
+                    icon: TrendingDown,
+                    color: "from-slate-500 to-slate-700",
+                    title: "Luck Rate Rendah",
+                    desc: `Rare rate kamu ${rareRate.toFixed(1)}%. Coba Faded Wheel — sistem 3x3 grid lebih predictable!`,
+                    priority: "med",
+                  });
+                } else if (rareRate >= 20 && total >= 10) {
+                  recs.push({
+                    icon: CheckCircle2,
+                    color: "from-emerald-500 to-green-600",
+                    title: "Lagi Hoki Banget! 🍀",
+                    desc: `Rare rate kamu ${rareRate.toFixed(1)}% — di atas rata-rata. Manfaatkan momen ini dengan multi-spin!`,
+                    priority: "high",
+                  });
+                }
+
+                if (luckyHour && parseInt(luckyHour[1] as any) >= 2) {
+                  const h = parseInt(luckyHour[0]);
+                  recs.push({
+                    icon: Timer,
+                    color: "from-indigo-500 to-purple-600",
+                    title: `Jam Hoki: ${h}:00 WIB`,
+                    desc: `Mayoritas hadiah langka kamu didapat sekitar jam ${h}:00. Spin lagi di jam ini!`,
+                    priority: "low",
+                  });
+                }
+
+                if (mythicCount === 0 && total >= 15) {
+                  recs.push({
+                    icon: Star,
+                    color: "from-pink-500 to-rose-600",
+                    title: "Belum Pernah Mythic",
+                    desc: "Mythic punya peluang ~0.5%. Bundle 125 SPIN paling efektif untuk berburu jackpot 20.000 Gems!",
+                    priority: "med",
+                  });
+                }
+
+                recs.push({
+                  icon: Lightbulb,
+                  color: "from-amber-500 to-orange-600",
+                  title: "Tips Pro",
+                  desc: "Inventory power-up tidak menambah peluang spin. Jangan buang gems untuk yang sudah penuh!",
+                  priority: "low",
+                });
+
+                const sorted = recs.sort((a, b) => {
+                  const order = { high: 0, med: 1, low: 2 };
+                  return order[a.priority] - order[b.priority];
+                });
+
+                return (
+                  <>
+                    {/* Pity Tracker Card */}
+                    <div className="rounded-2xl bg-gradient-to-br from-pink-900/40 via-rose-900/40 to-purple-900/40 border-2 border-pink-500/40 p-3">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Brain className="w-4 h-4 text-pink-300" />
+                        <h3 className="text-xs font-black tracking-widest text-pink-200">| AI REKOMENDASI</h3>
+                      </div>
+                      <div className="bg-black/30 rounded-xl p-3 mb-2">
+                        <div className="flex items-center justify-between mb-1.5">
+                          <span className="text-[10px] font-bold text-pink-200/80 tracking-wider">PITY TRACKER (Epic+)</span>
+                          <span className="text-[10px] font-black text-pink-100 tabular-nums">{spinsSinceRare}/30</span>
+                        </div>
+                        <div className="h-2.5 rounded-full bg-black/50 overflow-hidden">
+                          <div
+                            className="h-full bg-gradient-to-r from-pink-500 via-fuchsia-500 to-rose-500 transition-all duration-500"
+                            style={{ width: `${pityProgress}%` }}
+                          />
+                        </div>
+                        <p className="text-[9px] text-pink-200/60 mt-1">
+                          {spinsSinceRare >= 25
+                            ? "🔥 Hadiah langka HAMPIR PASTI di spin berikutnya!"
+                            : spinsSinceRare >= 15
+                            ? "⚡ Peluang hadiah langka mulai meningkat..."
+                            : "💫 Lanjutkan spin untuk membangun peluang!"}
+                        </p>
+                      </div>
+
+                      {/* Quick Stats */}
+                      <div className="grid grid-cols-3 gap-1.5 mt-2">
+                        <div className="bg-black/40 rounded-lg p-1.5 text-center">
+                          <div className="text-[9px] text-pink-200/60 font-bold">RARE RATE</div>
+                          <div className="text-sm font-black text-pink-100 tabular-nums">{rareRate.toFixed(1)}%</div>
+                        </div>
+                        <div className="bg-black/40 rounded-lg p-1.5 text-center">
+                          <div className="text-[9px] text-pink-200/60 font-bold">SISA GEMS</div>
+                          <div className="text-sm font-black text-cyan-200 tabular-nums">{gems}</div>
+                        </div>
+                        <div className="bg-black/40 rounded-lg p-1.5 text-center">
+                          <div className="text-[9px] text-pink-200/60 font-bold">SPIN BISA</div>
+                          <div className="text-sm font-black text-amber-200 tabular-nums">{Math.floor(gems / singleCost)}</div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Recommendations List */}
+                    <div className="space-y-2">
+                      {sorted.map((r, i) => {
+                        const Icon = r.icon;
+                        return (
+                          <div
+                            key={i}
+                            className={`relative overflow-hidden rounded-xl bg-gradient-to-br ${r.color} p-3 shadow-lg ring-1 ring-white/20`}
+                          >
+                            <div className="absolute inset-0 opacity-20" style={{
+                              backgroundImage: "radial-gradient(circle at top right, white, transparent 60%)",
+                            }} />
+                            <div className="relative flex gap-2.5">
+                              <div className="w-9 h-9 rounded-lg bg-black/30 flex items-center justify-center shrink-0">
+                                <Icon className="w-5 h-5 text-white" />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-1.5 mb-0.5">
+                                  <h4 className="text-xs font-black text-white tracking-wide">{r.title}</h4>
+                                  {r.priority === "high" && (
+                                    <Badge className="bg-red-600/80 text-white text-[7px] font-black px-1 py-0">HOT</Badge>
+                                  )}
+                                </div>
+                                <p className="text-[10px] text-white/90 leading-relaxed">{r.desc}</p>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    {/* Strategy Card */}
+                    <div className="rounded-xl bg-gradient-to-br from-purple-900/50 to-indigo-900/50 border border-purple-500/40 p-3">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Target className="w-4 h-4 text-purple-300" />
+                        <h4 className="text-xs font-black tracking-widest text-purple-200">| STRATEGI OPTIMAL</h4>
+                      </div>
+                      <ul className="space-y-1.5 text-[10px] text-purple-100/90">
+                        <li className="flex gap-2">
+                          <span className="text-amber-300">▸</span>
+                          <span><b className="text-amber-200">Hemat:</b> Bundle 10 spin = hemat ~10% gems</span>
+                        </li>
+                        <li className="flex gap-2">
+                          <span className="text-fuchsia-300">▸</span>
+                          <span><b className="text-fuchsia-200">Jackpot:</b> Bundle 125 spin paling besar peluang Mythic</span>
+                        </li>
+                        <li className="flex gap-2">
+                          <span className="text-cyan-300">▸</span>
+                          <span><b className="text-cyan-200">Free:</b> Faded Wheel sering kasih hadiah tanpa biaya gems</span>
+                        </li>
+                        <li className="flex gap-2">
+                          <span className="text-emerald-300">▸</span>
+                          <span><b className="text-emerald-200">Pity:</b> Setelah 25+ spin tanpa Epic, peluang naik drastis</span>
+                        </li>
+                      </ul>
+                    </div>
+                  </>
+                );
+              })()}
             </TabsContent>
 
             <TabsContent value="stats" className="mt-3 space-y-3">
