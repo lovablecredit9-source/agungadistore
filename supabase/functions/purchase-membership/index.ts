@@ -10,7 +10,7 @@ const requestSchema = z.object({
   visitorId: z.string().trim().min(1),
   action: z.enum(["list", "purchase", "daily-claim"]).default("list"),
   planId: z.string().uuid().optional(),
-  paymentSource: z.enum(["auto", "game", "main"]).default("auto"),
+  paymentSource: z.enum(["auto", "game", "main", "coins", "gems"]).default("auto"),
   pin: z.string().trim().min(1).optional(),
 });
 
