@@ -77,6 +77,7 @@ function rollPrize(pityHard: number, pityRare: number): { prize: Prize; pityBrea
 }
 
 async function applyPrize(admin: any, visitorId: string, prize: Prize) {
+  if (prize.kind === "nothing") return; // zonk - no reward
   if (prize.kind === "gems") {
     await admin.rpc("add_account_gems", { p_visitor_id: visitorId, p_amount: prize.value });
   } else if (prize.kind === "coins") {
