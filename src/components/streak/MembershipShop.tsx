@@ -21,6 +21,7 @@ interface Plan {
   duration_days: number;
   price_idr: number;
   price_coins: number;
+  price_gems: number;
   bonus_multiplier: number;
   bonus_freeze_count: number;
   bonus_streak_coins: number;
@@ -177,6 +178,7 @@ export default function MembershipShop({ visitorId, onUpdate }: Props) {
   const [plans, setPlans] = useState<Plan[]>([]);
   const [active, setActive] = useState<ActiveMembership[]>([]);
   const [coins, setCoins] = useState(0);
+  const [gems, setGems] = useState(0);
   const [gameBalance, setGameBalance] = useState(0);
   const [mainBalance, setMainBalance] = useState(0);
   const [pinDialog, setPinDialog] = useState<{ planId: string } | null>(null);
@@ -195,6 +197,7 @@ export default function MembershipShop({ visitorId, onUpdate }: Props) {
       setPlans(list);
       setActive(data?.active_memberships || []);
       setCoins(data?.user_coins || 0);
+      setGems(data?.user_gems || 0);
       setGameBalance(data?.game_balance || 0);
       setMainBalance(data?.main_balance || 0);
       setDailyClaim(data?.daily_claim || null);
@@ -244,12 +247,12 @@ export default function MembershipShop({ visitorId, onUpdate }: Props) {
   // Apakah hari ini (index 0) sudah klaim?
   const claimedToday = !!dailyClaim?.claimed_today;
 
-  async function purchase(planId: string, pinValue?: string) {
-    const busyKey = `${planId}-balance`;
+  async function purchase(planId: string, pinValue?: string, source: "auto" | "coins" | "gems" = "auto") {
+    const busyKey = `${planId}-${source}`;
     setBusy(busyKey);
     try {
       const { data, error } = await supabase.functions.invoke("purchase-membership", {
-        body: { action: "purchase", visitorId, planId, paymentSource: "auto", pin: pinValue },
+        body: { action: "purchase", visitorId, planId, paymentSource: source, pin: pinValue },
       });
       if (error || data?.error) {
         if (data?.needPin) {
@@ -337,6 +340,9 @@ export default function MembershipShop({ visitorId, onUpdate }: Props) {
         <div className="flex items-center gap-1.5 flex-wrap">
           <Badge className="bg-gradient-to-r from-yellow-500/40 to-amber-500/40 text-yellow-100 border-yellow-400/60 gap-1 text-[10px] h-5 shadow-lg shadow-yellow-500/20">
             <Coins className="h-3 w-3" /> {coins.toLocaleString("id-ID")}
+          </Badge>
+          <Badge className="bg-gradient-to-r from-cyan-500/40 to-sky-500/40 text-cyan-100 border-cyan-400/60 gap-1 text-[10px] h-5 shadow-lg shadow-cyan-500/20">
+            <Gem className="h-3 w-3" /> {gems.toLocaleString("id-ID")}
           </Badge>
           <Badge className="bg-gradient-to-r from-emerald-500/40 to-teal-500/40 text-emerald-100 border-emerald-400/60 gap-1 text-[10px] h-5 shadow-lg shadow-emerald-500/20">
             <Wallet className="h-3 w-3" /> Rp{totalBalance.toLocaleString("id-ID")}
@@ -460,28 +466,56 @@ export default function MembershipShop({ visitorId, onUpdate }: Props) {
               </div>
             </div>
 
-            <motion.div whileTap={{ scale: 0.97 }} className="mt-3 relative">
-              <Button
-                size="lg"
-                disabled={totalBalance < selected.price_idr || busy === `${selected.id}-balance`}
-                onClick={() => purchase(selected.id)}
-                 className={`relative overflow-hidden w-full h-12 text-sm font-black uppercase tracking-widest bg-gradient-to-r ${baseTheme.glow} hover:brightness-110 text-white shadow-[0_8px_25px_-5px_rgba(0,0,0,0.5)] disabled:opacity-50 border border-white/30`}
-              >
-                <motion.div
-                  animate={{ x: ["-150%", "150%"] }}
-                  transition={{ duration: 2.5, repeat: Infinity, ease: "linear" }}
-                  className="absolute inset-y-0 w-1/3 bg-gradient-to-r from-transparent via-white/40 to-transparent skew-x-12"
-                />
-                {busy === `${selected.id}-balance` ? (
-                  <Loader2 className="h-5 w-5 animate-spin relative z-10" />
-                ) : (
-                  <span className="relative z-10 flex items-center gap-2">
-                    <Wallet className="h-4 w-4" />
-                    Rp{selected.price_idr.toLocaleString("id-ID")}
-                  </span>
-                )}
-              </Button>
-            </motion.div>
+            <div className="mt-3 grid grid-cols-3 gap-1.5">
+              {/* Tombol Saldo */}
+              <motion.div whileTap={{ scale: 0.97 }} className="relative">
+                <Button
+                  size="sm"
+                  disabled={totalBalance < selected.price_idr || busy === `${selected.id}-auto`}
+                  onClick={() => purchase(selected.id, undefined, "auto")}
+                  className={`relative overflow-hidden w-full h-11 px-1 text-[10px] font-black uppercase tracking-tight bg-gradient-to-br ${baseTheme.glow} hover:brightness-110 text-white shadow-lg disabled:opacity-40 border border-white/30 flex flex-col items-center justify-center gap-0`}
+                >
+                  {busy === `${selected.id}-auto` ? <Loader2 className="h-4 w-4 animate-spin" /> : (
+                    <>
+                      <Wallet className="h-3 w-3" />
+                      <span className="leading-none">Rp{(selected.price_idr / 1000).toFixed(0)}K</span>
+                    </>
+                  )}
+                </Button>
+              </motion.div>
+              {/* Tombol Coins */}
+              <motion.div whileTap={{ scale: 0.97 }} className="relative">
+                <Button
+                  size="sm"
+                  disabled={!selected.price_coins || coins < selected.price_coins || busy === `${selected.id}-coins`}
+                  onClick={() => purchase(selected.id, undefined, "coins")}
+                  className="relative overflow-hidden w-full h-11 px-1 text-[10px] font-black uppercase tracking-tight bg-gradient-to-br from-yellow-500 via-amber-500 to-orange-500 hover:brightness-110 text-white shadow-lg disabled:opacity-40 border border-white/30 flex flex-col items-center justify-center gap-0"
+                >
+                  {busy === `${selected.id}-coins` ? <Loader2 className="h-4 w-4 animate-spin" /> : (
+                    <>
+                      <Coins className="h-3 w-3" />
+                      <span className="leading-none">{(selected.price_coins || 0).toLocaleString("id-ID")}</span>
+                    </>
+                  )}
+                </Button>
+              </motion.div>
+              {/* Tombol Gems */}
+              <motion.div whileTap={{ scale: 0.97 }} className="relative">
+                <Button
+                  size="sm"
+                  disabled={!selected.price_gems || gems < selected.price_gems || busy === `${selected.id}-gems`}
+                  onClick={() => purchase(selected.id, undefined, "gems")}
+                  className="relative overflow-hidden w-full h-11 px-1 text-[10px] font-black uppercase tracking-tight bg-gradient-to-br from-cyan-500 via-sky-500 to-blue-600 hover:brightness-110 text-white shadow-lg disabled:opacity-40 border border-white/30 flex flex-col items-center justify-center gap-0"
+                >
+                  {busy === `${selected.id}-gems` ? <Loader2 className="h-4 w-4 animate-spin" /> : (
+                    <>
+                      <Gem className="h-3 w-3" />
+                      <span className="leading-none">{(selected.price_gems || 0).toLocaleString("id-ID")}</span>
+                    </>
+                  )}
+                </Button>
+              </motion.div>
+            </div>
 
             {activeForSelected && (
               <motion.div
