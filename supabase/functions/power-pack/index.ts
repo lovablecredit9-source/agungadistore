@@ -141,15 +141,43 @@ Deno.serve(async (req) => {
       }
       await supabase.from("user_balances").update({ balance: bal.balance - pack.price_idr }).eq("id", bal.id);
 
-      // Create subscription
-      const expires = new Date();
-      expires.setDate(expires.getDate() + pack.duration_days);
-      const { data: sub } = await supabase.from("streak_power_pack_subscriptions").insert({
-        visitor_id: visitorId,
-        pack_id: pack.id,
-        pack_name: pack.name,
-        expires_at: expires.toISOString(),
-      }).select().single();
+      // Cek apakah ada subscription aktif untuk pack yang sama → extend (perpanjang) durasinya
+      const nowIso = new Date().toISOString();
+      const { data: existingSub } = await supabase
+        .from("streak_power_pack_subscriptions")
+        .select("*")
+        .eq("visitor_id", visitorId)
+        .eq("pack_id", pack.id)
+        .eq("is_active", true)
+        .gt("expires_at", nowIso)
+        .order("expires_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      let sub: any;
+      if (existingSub) {
+        // Extend dari expires_at lama (stack durasi)
+        const base = new Date(existingSub.expires_at);
+        base.setDate(base.getDate() + pack.duration_days);
+        const { data: updated } = await supabase
+          .from("streak_power_pack_subscriptions")
+          .update({ expires_at: base.toISOString() })
+          .eq("id", existingSub.id)
+          .select()
+          .single();
+        sub = updated;
+      } else {
+        // Buat subscription baru
+        const expires = new Date();
+        expires.setDate(expires.getDate() + pack.duration_days);
+        const { data: created } = await supabase.from("streak_power_pack_subscriptions").insert({
+          visitor_id: visitorId,
+          pack_id: pack.id,
+          pack_name: pack.name,
+          expires_at: expires.toISOString(),
+        }).select().single();
+        sub = created;
+      }
 
       // Instant rewards
       const { data: items } = await supabase.from("streak_power_pack_items").select("*").eq("is_active", true);
@@ -175,7 +203,8 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({
         success: true,
         pack_name: pack.name,
-        expires_at: expires.toISOString(),
+        expires_at: sub.expires_at,
+        extended: !!existingSub,
         instant_items: instantItems.map((i) => ({ code: i.code, name: i.name, icon: i.icon, rarity: i.rarity })),
       }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }

@@ -173,8 +173,16 @@ export default function PowerPackShop({ visitorId, onUpdate, compact = false }: 
       }
       if (data?.instant_items?.length > 0) {
         setReveal({ items: data.instant_items, isInstant: true, packName: data.pack_name });
+        if (data?.extended) {
+          toast({ title: "⏱️ Durasi Diperpanjang!", description: `${data?.pack_name} aktif sampai ${new Date(data.expires_at).toLocaleDateString("id-ID")}` });
+        }
       } else {
-        toast({ title: "🎉 Power Pack Aktif!", description: `${data?.pack_name} siap dimainkan` });
+        toast({
+          title: data?.extended ? "⏱️ Durasi Diperpanjang!" : "🎉 Power Pack Aktif!",
+          description: data?.extended
+            ? `${data?.pack_name} aktif sampai ${new Date(data.expires_at).toLocaleDateString("id-ID")}`
+            : `${data?.pack_name} siap dimainkan`,
+        });
       }
       await load();
       onUpdate?.();
