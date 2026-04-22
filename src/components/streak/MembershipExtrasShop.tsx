@@ -171,8 +171,16 @@ export default function MembershipExtrasShop({ visitorId, kind, onUpdate }: Prop
             {/* Lucky Box — claim button */}
             {kind === "luckybox" && (
               <div className="space-y-2">
-                <div className="text-[11px] text-emerald-200">
-                  Sudah klaim <span className="font-bold">{active.total_days_claimed}</span> hari
+                <div className="flex items-center justify-between text-[11px] text-emerald-200">
+                  <span>Sudah klaim <span className="font-bold">{active.total_days_claimed}</span> hari</span>
+                  {active.stacked_count > 1 && (
+                    <Badge className="bg-emerald-500/40 text-emerald-100 border-emerald-400/50 text-[9px]">
+                      📦 {active.stacked_count} paket stack
+                    </Badge>
+                  )}
+                </div>
+                <div className="text-[10px] text-emerald-100/80 bg-black/30 rounded px-2 py-1">
+                  🎁 Dapat <span className="font-black text-emerald-300">{active.total_items_per_day || 1}</span> item per hari
                 </div>
                 <Button
                   size="sm"
@@ -182,7 +190,7 @@ export default function MembershipExtrasShop({ visitorId, kind, onUpdate }: Prop
                 >
                   {busy === "claim" ? <Loader2 className="w-4 h-4 animate-spin" /> :
                    data.claimed_today ? <><Check className="w-4 h-4 mr-1" /> Sudah klaim hari ini</> :
-                   <><Gift className="w-4 h-4 mr-1" /> Klaim Lucky Box Hari Ini</>}
+                   <><Gift className="w-4 h-4 mr-1" /> Klaim {active.total_items_per_day || 1} Item Hari Ini</>}
                 </Button>
               </div>
             )}
