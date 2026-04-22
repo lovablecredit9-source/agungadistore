@@ -294,13 +294,36 @@ Deno.serve(async (req) => {
     });
     if (insErr) return Response.json({ error: "Gagal menyimpan membership: " + insErr.message }, { status: 500, headers: corsHeaders });
 
-    // Bonus instant
-    if (plan.bonus_streak_coins > 0) {
+    // Jika user sudah klaim hadiah harian hari ini, top-up instan sebesar daily_reward paket baru
+    let instantDailyTopUp = 0;
+    const todayStr = todayWIB();
+    const { data: claimsToday } = await admin
+      .from("streak_membership_daily_claims")
+      .select("id")
+      .eq("visitor_id", visitorId)
+      .eq("claim_date", todayStr)
+      .limit(1);
+    const alreadyClaimedToday = (claimsToday?.length || 0) > 0;
+    if (alreadyClaimedToday && (plan.daily_reward_coins || 0) > 0) {
+      instantDailyTopUp = plan.daily_reward_coins;
+      await admin.from("streak_membership_daily_claims").insert({
+        visitor_id: visitorId,
+        membership_id: null,
+        plan_id: plan.id,
+        plan_name: plan.name,
+        claim_date: todayStr,
+        coins_awarded: instantDailyTopUp,
+      });
+    }
+
+    // Bonus instant (termasuk top-up daily jika berlaku)
+    const totalInstantCoins = (plan.bonus_streak_coins || 0) + instantDailyTopUp;
+    if (totalInstantCoins > 0) {
       const { data: s } = await admin.from("daily_streaks").select("id, streak_coins").eq("visitor_id", visitorId).maybeSingle();
       if (s) {
-        await admin.from("daily_streaks").update({ streak_coins: (s.streak_coins || 0) + plan.bonus_streak_coins }).eq("id", s.id);
+        await admin.from("daily_streaks").update({ streak_coins: (s.streak_coins || 0) + totalInstantCoins }).eq("id", s.id);
       } else {
-        await admin.from("daily_streaks").insert({ visitor_id: visitorId, last_claim_date: todayWIB(), current_streak: 0, longest_streak: 0, total_claims: 0, streak_coins: plan.bonus_streak_coins });
+        await admin.from("daily_streaks").insert({ visitor_id: visitorId, last_claim_date: todayStr, current_streak: 0, longest_streak: 0, total_claims: 0, streak_coins: totalInstantCoins });
       }
     }
     if (plan.bonus_gems > 0) {
