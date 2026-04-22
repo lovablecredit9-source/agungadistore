@@ -396,7 +396,11 @@ export default function PowerPackShop({ visitorId, onUpdate, compact = false }: 
                   <div className="rounded-lg bg-black/40 border border-emerald-400/40 px-2 py-1.5 flex items-center justify-between">
                     <div className="flex items-center gap-1.5">
                       <Check className="h-3 w-3 text-emerald-300" />
-                      <span className="text-[10px] text-emerald-100 font-bold">Aktif</span>
+                      <span className="text-[10px] text-emerald-100 font-bold">
+                        {subs.filter((s) => s.pack_id === selected.id).length > 1
+                          ? `${subs.filter((s) => s.pack_id === selected.id).length}× Aktif (stack)`
+                          : "Aktif"}
+                      </span>
                     </div>
                     <span className="text-[9px] text-white/70">
                       Berakhir {new Date(activeSub.expires_at).toLocaleDateString("id-ID", { day: "numeric", month: "short" })}
@@ -410,6 +414,17 @@ export default function PowerPackShop({ visitorId, onUpdate, compact = false }: 
                     {busy === `claim-${activeSub.id}` ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> :
                      claimedMap[activeSub.id] ? <><Check className="h-3.5 w-3.5 mr-1" />Sudah Klaim Hari Ini</> :
                      <><Gift className="h-3.5 w-3.5 mr-1" />KLAIM HADIAH HARI INI</>}
+                  </Button>
+                  {/* Tombol beli lagi (extend / stack) */}
+                  <Button
+                    disabled={busy === `buy-${selected.id}` || mainBalance < selected.price_idr}
+                    onClick={() => purchase(selected.id)}
+                    variant="outline"
+                    className="w-full h-8 text-[10px] font-bold border-white/30 bg-black/30 text-white hover:bg-white/10 disabled:opacity-50"
+                  >
+                    {busy === `buy-${selected.id}` ? <Loader2 className="h-3 w-3 animate-spin" /> :
+                     mainBalance < selected.price_idr ? <><Lock className="h-3 w-3 mr-1" />Saldo Kurang</> :
+                     <>+ Beli Lagi Rp{selected.price_idr.toLocaleString("id-ID")}</>}
                   </Button>
                 </div>
               ) : (
