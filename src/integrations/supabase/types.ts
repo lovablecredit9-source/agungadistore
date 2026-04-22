@@ -5126,6 +5126,7 @@ export type Database = {
         Row: {
           created_at: string
           duration_days: number
+          effective_from: string | null
           expires_at: string
           id: string
           is_active: boolean
@@ -5137,6 +5138,7 @@ export type Database = {
         Insert: {
           created_at?: string
           duration_days: number
+          effective_from?: string | null
           expires_at: string
           id?: string
           is_active?: boolean
@@ -5148,6 +5150,7 @@ export type Database = {
         Update: {
           created_at?: string
           duration_days?: number
+          effective_from?: string | null
           expires_at?: string
           id?: string
           is_active?: boolean
