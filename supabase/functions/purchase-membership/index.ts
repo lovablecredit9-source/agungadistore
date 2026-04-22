@@ -52,11 +52,13 @@ Deno.serve(async (req) => {
 
     // ---------- LIST ----------
     if (action === "list") {
-      const { data: plans } = await admin
+      let plansQuery = admin
         .from("streak_membership_plans")
         .select("*")
         .eq("is_active", true)
         .order("sort_order", { ascending: true });
+      if (category !== "all") plansQuery = plansQuery.eq("category", category);
+      const { data: plans } = await plansQuery;
 
       const { data: streak } = await admin
         .from("daily_streaks")
@@ -76,7 +78,7 @@ Deno.serve(async (req) => {
       const { data: balanceRow } = await admin.from("user_balances").select("balance").eq("visitor_id", visitorId).maybeSingle();
       const { data: gemsResult } = await admin.rpc("get_account_gems", { p_visitor_id: visitorId });
 
-      // Cek klaim harian
+      // Cek klaim harian KOIN
       const today = todayWIB();
       const { data: todayClaims } = await admin
         .from("streak_membership_daily_claims")
@@ -89,23 +91,42 @@ Deno.serve(async (req) => {
       const claimedCoins = (todayClaims || []).reduce((sum, claim) => sum + (claim.coins_awarded || 0), 0);
       const claimedPlanNames = Array.from(new Set((todayClaims || []).map((claim) => claim.plan_name).filter(Boolean)));
 
-      // Hitung hadiah harian dari semua membership aktif (stack per paket aktif)
+      // Cek klaim harian GEM
+      const { data: todayGemClaims } = await admin
+        .from("streak_membership_daily_gem_claims")
+        .select("id, gems_awarded, plan_name")
+        .eq("visitor_id", visitorId)
+        .eq("claim_date", today)
+        .order("created_at", { ascending: true });
+      const claimedGemToday = (todayGemClaims?.length || 0) > 0;
+      const claimedGems = (todayGemClaims || []).reduce((sum, c) => sum + (c.gems_awarded || 0), 0);
+      const claimedGemPlanNames = Array.from(new Set((todayGemClaims || []).map((c) => c.plan_name).filter(Boolean)));
+
+      // Hitung hadiah harian dari membership AKTIF (per kategori)
       let dailyReward = 0;
+      let dailyGemReward = 0;
       const dailyPlanNames: string[] = [];
+      const dailyGemPlanNames: string[] = [];
       if (activeMemberships && activeMemberships.length > 0) {
         const planIds = activeMemberships.map((m: any) => m.plan_id).filter(Boolean);
         if (planIds.length > 0) {
           const { data: planRows } = await admin
             .from("streak_membership_plans")
-            .select("id, name, daily_reward_coins")
+            .select("id, name, daily_reward_coins, bonus_daily_gems, category")
             .in("id", planIds);
           for (const m of activeMemberships as any[]) {
             const pr = planRows?.find((p: any) => p.id === m.plan_id);
-            const reward = pr?.daily_reward_coins || 0;
-            if (reward > 0) {
-              dailyReward += reward;
-              const planName = pr?.name || m.plan_name;
+            if (!pr) continue;
+            const coinR = pr?.daily_reward_coins || 0;
+            const gemR = pr?.bonus_daily_gems || 0;
+            const planName = pr?.name || m.plan_name;
+            if (coinR > 0) {
+              dailyReward += coinR;
               if (planName) dailyPlanNames.push(planName);
+            }
+            if (gemR > 0) {
+              dailyGemReward += gemR;
+              if (planName) dailyGemPlanNames.push(planName);
             }
           }
         }
@@ -113,6 +134,8 @@ Deno.serve(async (req) => {
 
       const currentPlanLabel = Array.from(new Set(dailyPlanNames)).join(" + ") || null;
       const claimedPlanLabel = claimedPlanNames.join(" + ") || null;
+      const currentGemPlanLabel = Array.from(new Set(dailyGemPlanNames)).join(" + ") || null;
+      const claimedGemPlanLabel = claimedGemPlanNames.join(" + ") || null;
 
       return Response.json({
         plans: plans || [],
@@ -126,6 +149,13 @@ Deno.serve(async (req) => {
           claimed_today: claimedToday,
           coins_today: claimedToday ? claimedCoins : dailyReward,
           plan_name: claimedToday ? claimedPlanLabel : currentPlanLabel,
+          next_unlock: nextUnlockISO(),
+        },
+        daily_gem_claim: {
+          available: !claimedGemToday && dailyGemReward > 0,
+          claimed_today: claimedGemToday,
+          gems_today: claimedGemToday ? claimedGems : dailyGemReward,
+          plan_name: claimedGemToday ? claimedGemPlanLabel : currentGemPlanLabel,
           next_unlock: nextUnlockISO(),
         },
       }, { headers: corsHeaders });
