@@ -111,8 +111,7 @@ export default function LuckRoyaleNyawa() {
         setReelSpinning(false);
         return;
       }
-      // Simulasi animasi spin reel cepat ~600ms
-      await new Promise(r => setTimeout(r, 600));
+      // Tampilkan hadiah langsung (tanpa delay)
       setReelSpinning(false);
       setResults(data.results);
       setGems(data.gems);
