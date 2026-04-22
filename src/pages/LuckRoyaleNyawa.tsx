@@ -72,6 +72,10 @@ export default function LuckRoyaleNyawa() {
   const [bundles, setBundles] = useState<Array<{ count: number; cost: number; label: string; badge?: string }>>([]);
   const [results, setResults] = useState<SpinResult[] | null>(null);
   const [reelSpinning, setReelSpinning] = useState(false);
+  const [freeSpinAvailable, setFreeSpinAvailable] = useState(false);
+  const [luckyStreak, setLuckyStreak] = useState(0);
+  const [streakMultiplier, setStreakMultiplier] = useState(1);
+  const [bonusPopup, setBonusPopup] = useState<number | null>(null);
 
   const fetchData = async () => {
     if (!visitorId) return;
@@ -85,6 +89,9 @@ export default function LuckRoyaleNyawa() {
       setHistory(data.history || []);
       setSingleCost(data.singleCostGems || 50);
       setBundles(data.bundles || []);
+      setFreeSpinAvailable(!!data.freeSpinAvailable);
+      setLuckyStreak(Number(data.luckyStreak || 0));
+      setStreakMultiplier(Number(data.streakMultiplier || 1));
     } catch (e) {
       console.error(e);
     } finally {
@@ -94,7 +101,7 @@ export default function LuckRoyaleNyawa() {
 
   useEffect(() => { fetchData(); }, []);
 
-  const doSpin = async (mode: "single" | "pack", count?: number) => {
+  const doSpin = async (mode: "single" | "pack" | "free", count?: number) => {
     if (!visitorId || spinning) return;
     setSpinning(true);
     setReelSpinning(true);
@@ -102,6 +109,8 @@ export default function LuckRoyaleNyawa() {
       const body: any = { visitorId };
       if (mode === "single") {
         body.action = "spin_single";
+      } else if (mode === "free") {
+        body.action = "spin_free";
       } else {
         body.action = "spin_pack";
         body.count = count;
@@ -113,10 +122,16 @@ export default function LuckRoyaleNyawa() {
         setReelSpinning(false);
         return;
       }
-      // Tampilkan hadiah langsung (tanpa delay)
       setReelSpinning(false);
       setResults(data.results);
       setGems(data.gems);
+      if (typeof data.luckyStreak === "number") setLuckyStreak(data.luckyStreak);
+      if (typeof data.streakMultiplier === "number") setStreakMultiplier(data.streakMultiplier);
+      if (data.totalBonusGems && data.totalBonusGems > 0) {
+        setBonusPopup(data.totalBonusGems);
+        setTimeout(() => setBonusPopup(null), 4000);
+      }
+      if (mode === "free") setFreeSpinAvailable(false);
       // Refresh history
       fetchData();
     } catch (e: any) {
