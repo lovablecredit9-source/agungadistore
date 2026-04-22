@@ -124,15 +124,13 @@ Deno.serve(async (req) => {
         cost = BUNDLE_COST_DIAMOND;
         spinType = "bundle5";
       } else if (action === "spin_pack") {
-        const { count } = await (async () => ({ count: undefined })); // placeholder
-        // Re-read body to get count safely
-        spinCount = 0;
-      }
-
-      // Untuk spin_pack ambil count dari payload
-      if (action === "spin_pack") {
-        const reqClone = (req as any); // already parsed earlier
-        // count sudah ada di payload pertama
+        const pack = BUNDLES.find(b => b.count === Number(requestedCount));
+        if (!pack) {
+          return Response.json({ error: "Paket tidak valid" }, { status: 400, headers: corsHeaders });
+        }
+        spinCount = pack.count;
+        cost = pack.cost;
+        spinType = `pack${pack.count}`;
       }
 
       const currency = "gems";
