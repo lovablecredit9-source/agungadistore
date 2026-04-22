@@ -186,20 +186,24 @@ export default function LuckRoyaleNyawa() {
           })()}
 
           <Tabs defaultValue="spin" className="w-full">
-            <TabsList className="grid w-full grid-cols-4 bg-black/40 border border-amber-500/30 h-auto p-1 gap-1">
-              <TabsTrigger value="spin" className="flex-col gap-0.5 py-1.5 data-[state=active]:bg-gradient-to-br data-[state=active]:from-amber-500 data-[state=active]:to-orange-600 data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-amber-500/40 font-black tracking-wider text-[9px] rounded-md">
+            <TabsList className="grid w-full grid-cols-5 bg-black/40 border border-amber-500/30 h-auto p-1 gap-1">
+              <TabsTrigger value="spin" className="flex-col gap-0.5 py-1.5 data-[state=active]:bg-gradient-to-br data-[state=active]:from-amber-500 data-[state=active]:to-orange-600 data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-amber-500/40 font-black tracking-wider text-[8px] rounded-md">
                 <Dices className="w-3.5 h-3.5" />
                 SPIN
               </TabsTrigger>
-              <TabsTrigger value="faded" className="flex-col gap-0.5 py-1.5 data-[state=active]:bg-gradient-to-br data-[state=active]:from-cyan-500 data-[state=active]:to-blue-600 data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-cyan-500/40 font-black tracking-wider text-[9px] rounded-md">
+              <TabsTrigger value="faded" className="flex-col gap-0.5 py-1.5 data-[state=active]:bg-gradient-to-br data-[state=active]:from-cyan-500 data-[state=active]:to-blue-600 data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-cyan-500/40 font-black tracking-wider text-[8px] rounded-md">
                 <Sparkles className="w-3.5 h-3.5" />
                 FADED
               </TabsTrigger>
-              <TabsTrigger value="stats" className="flex-col gap-0.5 py-1.5 data-[state=active]:bg-gradient-to-br data-[state=active]:from-emerald-500 data-[state=active]:to-teal-600 data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-emerald-500/40 font-black tracking-wider text-[9px] rounded-md">
+              <TabsTrigger value="tips" className="flex-col gap-0.5 py-1.5 data-[state=active]:bg-gradient-to-br data-[state=active]:from-pink-500 data-[state=active]:to-rose-600 data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-pink-500/40 font-black tracking-wider text-[8px] rounded-md">
+                <Brain className="w-3.5 h-3.5" />
+                TIPS
+              </TabsTrigger>
+              <TabsTrigger value="stats" className="flex-col gap-0.5 py-1.5 data-[state=active]:bg-gradient-to-br data-[state=active]:from-emerald-500 data-[state=active]:to-teal-600 data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-emerald-500/40 font-black tracking-wider text-[8px] rounded-md">
                 <BarChart3 className="w-3.5 h-3.5" />
                 STATS
               </TabsTrigger>
-              <TabsTrigger value="top" className="flex-col gap-0.5 py-1.5 data-[state=active]:bg-gradient-to-br data-[state=active]:from-fuchsia-500 data-[state=active]:to-purple-700 data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-fuchsia-500/40 font-black tracking-wider text-[9px] rounded-md">
+              <TabsTrigger value="top" className="flex-col gap-0.5 py-1.5 data-[state=active]:bg-gradient-to-br data-[state=active]:from-fuchsia-500 data-[state=active]:to-purple-700 data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-fuchsia-500/40 font-black tracking-wider text-[8px] rounded-md">
                 <Trophy className="w-3.5 h-3.5" />
                 TOP
               </TabsTrigger>
