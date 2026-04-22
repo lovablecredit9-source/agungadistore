@@ -5,8 +5,8 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const SINGLE_COST = 30;     // gems per single spin
-const MULTI_COST = 270;     // 10 spin: bonus 10% (vs 300)
+const SINGLE_COST = 60;     // gems per single spin
+const MULTI_COST = 500;     // 10 spin: bonus 17% (vs 600)
 const PITY_HARD = 80;       // tiap 80 spin -> jaminan legendary
 const PITY_RARE = 10;       // tiap 10 spin tanpa rare+ -> jaminan rare+
 
