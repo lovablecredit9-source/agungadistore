@@ -563,12 +563,12 @@ export default function MembershipShop({ visitorId, onUpdate, category = "coin" 
                 <div className="flex items-center justify-end gap-0.5 mb-1">
                   {isGem ? (
                     <>
-                      <Gem className="h-2.5 w-2.5 text-cyan-300" />
+                      <img src={gemIcon} alt="Gem" className="h-3 w-3 object-contain" />
                       <span className="text-[9px] font-black text-cyan-200">{p.bonus_gems || 0}</span>
                     </>
                   ) : (
                     <>
-                      <Coins className="h-2.5 w-2.5 text-yellow-300" />
+                      <img src={gemIcon} alt="Gem" className="h-3 w-3 object-contain" />
                       <span className="text-[9px] font-black text-yellow-200">{p.bonus_streak_coins}</span>
                     </>
                   )}
