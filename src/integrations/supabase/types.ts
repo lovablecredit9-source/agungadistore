@@ -4997,13 +4997,48 @@ export type Database = {
         }
         Relationships: []
       }
+      streak_membership_daily_gem_claims: {
+        Row: {
+          claim_date: string
+          created_at: string
+          gems_awarded: number
+          id: string
+          membership_id: string | null
+          plan_id: string | null
+          plan_name: string | null
+          visitor_id: string
+        }
+        Insert: {
+          claim_date: string
+          created_at?: string
+          gems_awarded?: number
+          id?: string
+          membership_id?: string | null
+          plan_id?: string | null
+          plan_name?: string | null
+          visitor_id: string
+        }
+        Update: {
+          claim_date?: string
+          created_at?: string
+          gems_awarded?: number
+          id?: string
+          membership_id?: string | null
+          plan_id?: string | null
+          plan_name?: string | null
+          visitor_id?: string
+        }
+        Relationships: []
+      }
       streak_membership_plans: {
         Row: {
           badge_color: string
+          bonus_daily_gems: number
           bonus_freeze_count: number
           bonus_gems: number
           bonus_multiplier: number
           bonus_streak_coins: number
+          category: string
           created_at: string
           daily_reward_coins: number
           description: string
@@ -5021,10 +5056,12 @@ export type Database = {
         }
         Insert: {
           badge_color?: string
+          bonus_daily_gems?: number
           bonus_freeze_count?: number
           bonus_gems?: number
           bonus_multiplier?: number
           bonus_streak_coins?: number
+          category?: string
           created_at?: string
           daily_reward_coins?: number
           description?: string
@@ -5042,10 +5079,12 @@ export type Database = {
         }
         Update: {
           badge_color?: string
+          bonus_daily_gems?: number
           bonus_freeze_count?: number
           bonus_gems?: number
           bonus_multiplier?: number
           bonus_streak_coins?: number
+          category?: string
           created_at?: string
           daily_reward_coins?: number
           description?: string
