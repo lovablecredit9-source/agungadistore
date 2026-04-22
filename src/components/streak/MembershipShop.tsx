@@ -210,7 +210,14 @@ export default function MembershipShop({ visitorId, onUpdate }: Props) {
   useEffect(() => { if (visitorId) load(); /* eslint-disable-next-line */ }, [visitorId]);
 
   const selected = useMemo(() => plans.find((p) => p.id === selectedPlanId) || plans[0], [plans, selectedPlanId]);
-  const theme = getTheme(selected);
+  const baseTheme = getTheme(selected);
+  // Hitung tema fusion berdasar membership AKTIF user
+  const activePlanObjects = useMemo(
+    () => active.map((m) => plans.find((p) => p.id === m.plan_id)).filter(Boolean) as Plan[],
+    [active, plans]
+  );
+  const theme = useMemo(() => getFusionTheme(activePlanObjects, baseTheme), [activePlanObjects, baseTheme]);
+  const fusion = theme.fusion;
   const totalBalance = gameBalance + mainBalance;
 
   // Gabungan membership aktif untuk hitung sisa hari kalender
