@@ -367,6 +367,118 @@ export default function LuckRoyaleNyawa() {
             <TabsContent value="faded" className="mt-3">
               <FadedWheel visitorId={visitorId} onGemsChange={(g) => setGems(g)} />
             </TabsContent>
+
+            <TabsContent value="stats" className="mt-3 space-y-3">
+              {(() => {
+                const total = history.length || 1;
+                const buckets = ["mythic", "legendary", "epic", "rare", "common"] as const;
+                const counts = buckets.map(b => ({
+                  rarity: b,
+                  count: history.filter(h => h.rarity === b).length,
+                }));
+                const gemsWon = history
+                  .filter(h => h.reward_kind === "gems")
+                  .reduce((s, h) => s + (h.reward_value || 0), 0);
+                const livesWon = history
+                  .filter(h => h.reward_kind === "extra_life")
+                  .reduce((s, h) => s + (h.reward_value || 0), 0);
+                return (
+                  <>
+                    <div className="rounded-2xl bg-gradient-to-br from-emerald-900/40 to-teal-900/40 border border-emerald-500/30 p-3">
+                      <div className="flex items-center gap-2 mb-3">
+                        <TrendingUp className="w-4 h-4 text-emerald-300" />
+                        <h3 className="text-xs font-black tracking-widest text-emerald-200">| RARITY BREAKDOWN</h3>
+                      </div>
+                      <div className="space-y-2">
+                        {counts.map(({ rarity, count }) => {
+                          const style = RARITY_STYLE[rarity];
+                          const pct = Math.round((count / total) * 100);
+                          return (
+                            <div key={rarity}>
+                              <div className="flex items-center justify-between text-[10px] font-bold mb-1">
+                                <span className="tracking-widest">{style.label}</span>
+                                <span className="tabular-nums">{count} ({pct}%)</span>
+                              </div>
+                              <div className="h-2 rounded-full bg-black/40 overflow-hidden">
+                                <div
+                                  className={`h-full bg-gradient-to-r ${style.gradient} transition-all duration-500`}
+                                  style={{ width: `${Math.max(pct, count > 0 ? 4 : 0)}%` }}
+                                />
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="rounded-xl bg-gradient-to-br from-cyan-900/50 to-blue-900/50 border border-cyan-500/40 p-3 text-center">
+                        <Gem className="w-6 h-6 text-cyan-300 mx-auto mb-1" />
+                        <div className="text-[10px] text-cyan-200/70 font-bold tracking-wider">TOTAL GEMS</div>
+                        <div className="text-lg font-black text-cyan-100 tabular-nums">{gemsWon.toLocaleString()}</div>
+                      </div>
+                      <div className="rounded-xl bg-gradient-to-br from-rose-900/50 to-pink-900/50 border border-rose-500/40 p-3 text-center">
+                        <Heart className="w-6 h-6 text-rose-300 mx-auto mb-1" fill="currentColor" />
+                        <div className="text-[10px] text-rose-200/70 font-bold tracking-wider">EXTRA LIFE</div>
+                        <div className="text-lg font-black text-rose-100 tabular-nums">{livesWon}</div>
+                      </div>
+                    </div>
+
+                    <div className="rounded-xl bg-gradient-to-br from-amber-900/40 to-orange-900/40 border border-amber-500/30 p-3 flex items-center gap-3">
+                      <Flame className="w-8 h-8 text-amber-400 shrink-0" />
+                      <div>
+                        <div className="text-[10px] font-black tracking-widest text-amber-200">LUCK SCORE</div>
+                        <div className="text-xl font-black text-amber-100">
+                          {Math.min(100, Math.round((counts[0].count * 50 + counts[1].count * 20 + counts[2].count * 8) / Math.max(total, 1)))}
+                          <span className="text-xs text-amber-300/70">/100</span>
+                        </div>
+                      </div>
+                    </div>
+                  </>
+                );
+              })()}
+            </TabsContent>
+
+            <TabsContent value="top" className="mt-3 space-y-2">
+              <div className="rounded-xl bg-gradient-to-br from-fuchsia-900/40 to-purple-900/40 border border-fuchsia-500/30 p-3 mb-2">
+                <div className="flex items-center gap-2">
+                  <Award className="w-4 h-4 text-fuchsia-300" />
+                  <h3 className="text-xs font-black tracking-widest text-fuchsia-200">| TOP HADIAH LANGKA</h3>
+                </div>
+                <p className="text-[10px] text-fuchsia-200/70 mt-1">Hadiah Mythic, Legendary & Epic dari spin-mu</p>
+              </div>
+
+              {(() => {
+                const top = history
+                  .filter(h => ["mythic", "legendary", "epic"].includes(h.rarity))
+                  .slice(0, 20);
+                if (top.length === 0) {
+                  return (
+                    <div className="rounded-xl bg-black/30 border border-purple-500/20 p-6 text-center">
+                      <Trophy className="w-10 h-10 text-purple-400/50 mx-auto mb-2" />
+                      <p className="text-xs text-purple-200/70 font-bold">Belum ada hadiah langka</p>
+                      <p className="text-[10px] text-purple-300/50 mt-1">Spin sekarang untuk mengincar Mythic!</p>
+                    </div>
+                  );
+                }
+                return top.map((h, idx) => {
+                  const style = RARITY_STYLE[h.rarity] || RARITY_STYLE.common;
+                  return (
+                    <div key={h.id} className={`relative flex items-center gap-3 p-2.5 rounded-xl bg-gradient-to-r ${style.gradient} ring-1 ${style.ring} shadow-md ${style.glow} overflow-hidden`}>
+                      <div className="absolute top-0 left-0 w-8 h-8 rounded-br-xl bg-black/50 flex items-center justify-center text-[10px] font-black text-amber-200">
+                        #{idx + 1}
+                      </div>
+                      <div className="w-10 h-10 text-white shrink-0 ml-6">{getKindIcon(h.reward_kind)}</div>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-xs font-black truncate text-white">{h.reward_label}</div>
+                        <div className="text-[9px] text-white/70">{new Date(h.created_at).toLocaleString("id-ID")}</div>
+                      </div>
+                      <Badge className="bg-black/70 text-[8px] font-black tracking-widest">{style.label}</Badge>
+                    </div>
+                  );
+                });
+              })()}
+            </TabsContent>
           </Tabs>
         </div>
       )}
