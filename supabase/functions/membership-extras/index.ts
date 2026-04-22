@@ -69,6 +69,16 @@ async function deductBalance(supabase: any, visitorId: string, amount: number) {
   await supabase.from("user_balances").update({ balance: bal.balance - amount }).eq("id", bal.id);
 }
 
+// Hitung total items_per_day dari SEMUA sub luckybox aktif (stack)
+function computeLuckyboxTotalItems(activeSubs: any[]) {
+  let total = 0;
+  for (const s of activeSubs) {
+    const plan = LUCKYBOX_PLANS.find((p) => p.tier === s.tier);
+    if (plan) total += plan.items_per_day;
+  }
+  return total;
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   const supabase = createClient(SUPABASE_URL, SERVICE_KEY);
@@ -81,22 +91,37 @@ Deno.serve(async (req) => {
     // ===== LIST =====
     if (action === "list") {
       const now = new Date().toISOString();
-      const [diamond, boost, luckybox, saver] = await Promise.all([
-        supabase.from("streak_diamond_elite_subs").select("*").eq("visitor_id", visitorId).eq("is_active", true).gt("expires_at", now).maybeSingle(),
-        supabase.from("streak_boost_squad_subs").select("*").eq("visitor_id", visitorId).eq("is_active", true).gt("expires_at", now).maybeSingle(),
-        supabase.from("streak_lucky_box_subs").select("*").eq("visitor_id", visitorId).eq("is_active", true).gt("expires_at", now).maybeSingle(),
-        supabase.from("streak_auto_saver_subs").select("*").eq("visitor_id", visitorId).eq("is_active", true).gt("expires_at", now).maybeSingle(),
+      const [diamondAll, boostAll, luckyboxAll, saverAll] = await Promise.all([
+        supabase.from("streak_diamond_elite_subs").select("*").eq("visitor_id", visitorId).eq("is_active", true).gt("expires_at", now).order("expires_at", { ascending: false }),
+        supabase.from("streak_boost_squad_subs").select("*").eq("visitor_id", visitorId).eq("is_active", true).gt("expires_at", now).order("expires_at", { ascending: false }),
+        supabase.from("streak_lucky_box_subs").select("*").eq("visitor_id", visitorId).eq("is_active", true).gt("expires_at", now).order("created_at", { ascending: true }),
+        supabase.from("streak_auto_saver_subs").select("*").eq("visitor_id", visitorId).eq("is_active", true).gt("expires_at", now).order("expires_at", { ascending: false }),
       ]);
 
+      const luckyboxSubs = luckyboxAll.data || [];
+      const totalItemsPerDay = computeLuckyboxTotalItems(luckyboxSubs);
+
+      // claimed_today: cek di SEMUA sub aktif
       let claimedToday = false;
-      if (luckybox.data) {
-        const { data: c } = await supabase
+      let luckyboxPrimary = luckyboxSubs[0] || null;
+      if (luckyboxSubs.length > 0) {
+        const ids = luckyboxSubs.map((s: any) => s.id);
+        const { data: claims } = await supabase
           .from("streak_lucky_box_claims")
-          .select("id")
-          .eq("sub_id", luckybox.data.id)
-          .eq("claim_date", todayWIB())
-          .maybeSingle();
-        claimedToday = !!c;
+          .select("id, sub_id")
+          .in("sub_id", ids)
+          .eq("claim_date", todayWIB());
+        claimedToday = (claims?.length || 0) > 0;
+        // total_days_claimed = jumlahkan dari semua sub
+        const totalDays = luckyboxSubs.reduce((s: number, x: any) => s + (x.total_days_claimed || 0), 0);
+        if (luckyboxPrimary) {
+          luckyboxPrimary = {
+            ...luckyboxPrimary,
+            total_days_claimed: totalDays,
+            stacked_count: luckyboxSubs.length,
+            total_items_per_day: totalItemsPerDay,
+          };
+        }
       }
 
       const { data: gp } = await supabase.from("game_profiles").select("user_balance_id").eq("visitor_id", visitorId).maybeSingle();
@@ -108,7 +133,18 @@ Deno.serve(async (req) => {
 
       return new Response(JSON.stringify({
         catalogs: { diamond: DIAMOND_PLANS, boost: BOOST_PLANS, luckybox: LUCKYBOX_PLANS, saver: SAVER_PLANS },
-        active: { diamond: diamond.data, boost: boost.data, luckybox: luckybox.data, saver: saver.data },
+        active: {
+          diamond: (diamondAll.data || [])[0] || null,
+          boost: (boostAll.data || [])[0] || null,
+          luckybox: luckyboxPrimary,
+          saver: (saverAll.data || [])[0] || null,
+        },
+        active_all: {
+          diamond: diamondAll.data || [],
+          boost: boostAll.data || [],
+          luckybox: luckyboxSubs,
+          saver: saverAll.data || [],
+        },
         claimed_today: claimedToday,
         main_balance: mainBalance,
       }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
@@ -120,6 +156,7 @@ Deno.serve(async (req) => {
       let plan: any = null;
       let table = "";
       let extra: any = {};
+      const now = new Date().toISOString();
 
       if (kind === "diamond") {
         plan = DIAMOND_PLANS.find((p) => p.tier === tier);
@@ -142,12 +179,27 @@ Deno.serve(async (req) => {
       }
       if (!plan) throw new Error("Paket tidak ditemukan");
 
+      // CEGAH BELI ULANG untuk diamond/boost/saver — lucky box BOLEH stack
+      if (kind !== "luckybox") {
+        const { data: existing } = await supabase
+          .from(table)
+          .select("id, tier, expires_at")
+          .eq("visitor_id", visitorId)
+          .eq("is_active", true)
+          .gt("expires_at", now)
+          .maybeSingle();
+        if (existing) {
+          const exp = new Date(existing.expires_at).toLocaleDateString("id-ID");
+          if (existing.tier === tier) {
+            throw new Error(`Kamu sudah punya paket ${plan.name} aktif sampai ${exp}. Tunggu sampai expired ya!`);
+          }
+          throw new Error(`Kamu sudah punya membership ${kind} (tier ${existing.tier?.toUpperCase()}) aktif sampai ${exp}. Tidak bisa beli tier lain bersamaan.`);
+        }
+      }
+
       await deductBalance(supabase, visitorId, plan.price_idr);
       const expires = new Date();
       expires.setDate(expires.getDate() + plan.duration_days);
-
-      // Deactivate older active subs of same kind
-      await supabase.from(table).update({ is_active: false }).eq("visitor_id", visitorId).eq("is_active", true);
 
       const insertData: any = {
         visitor_id: visitorId,
@@ -160,35 +212,48 @@ Deno.serve(async (req) => {
       const { data: sub, error } = await supabase.from(table).insert(insertData).select().single();
       if (error) throw new Error(error.message);
 
-      return new Response(JSON.stringify({
-        success: true,
-        message: `🎉 ${plan.name} aktif sampai ${expires.toLocaleDateString("id-ID")}`,
-        sub,
-      }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      let msg = `🎉 ${plan.name} aktif sampai ${expires.toLocaleDateString("id-ID")}`;
+      if (kind === "luckybox") {
+        // Hitung total stack baru
+        const { data: allSubs } = await supabase
+          .from("streak_lucky_box_subs")
+          .select("tier")
+          .eq("visitor_id", visitorId)
+          .eq("is_active", true)
+          .gt("expires_at", now);
+        const total = computeLuckyboxTotalItems(allSubs || []);
+        msg = `🎉 ${plan.name} aktif! Sekarang dapat ${total} item/hari (${(allSubs || []).length} paket aktif)`;
+      }
+
+      return new Response(JSON.stringify({ success: true, message: msg, sub }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     // ===== LUCKY BOX DAILY CLAIM =====
     if (action === "claim_luckybox") {
-      const { data: sub } = await supabase
+      const now = new Date().toISOString();
+      const { data: subs } = await supabase
         .from("streak_lucky_box_subs")
         .select("*")
         .eq("visitor_id", visitorId)
         .eq("is_active", true)
-        .gt("expires_at", new Date().toISOString())
-        .maybeSingle();
-      if (!sub) throw new Error("Tidak ada langganan Lucky Box aktif");
+        .gt("expires_at", now)
+        .order("created_at", { ascending: true });
 
+      if (!subs || subs.length === 0) throw new Error("Tidak ada langganan Lucky Box aktif");
+
+      const ids = subs.map((s: any) => s.id);
       const { data: existing } = await supabase
         .from("streak_lucky_box_claims")
         .select("id")
-        .eq("sub_id", sub.id)
-        .eq("claim_date", todayWIB())
-        .maybeSingle();
-      if (existing) throw new Error("Sudah klaim hari ini, balik besok!");
+        .in("sub_id", ids)
+        .eq("claim_date", todayWIB());
+      if ((existing?.length || 0) > 0) throw new Error("Sudah klaim hari ini, balik besok!");
 
-      const plan = LUCKYBOX_PLANS.find((p) => p.tier === sub.tier);
-      const itemsPerDay = plan?.items_per_day || 1;
-      const rewards = rollLuckyRewards(itemsPerDay);
+      // Total items dari SEMUA sub aktif
+      const totalItems = computeLuckyboxTotalItems(subs);
+      const rewards = rollLuckyRewards(totalItems);
 
       // Apply rewards
       for (const r of rewards) {
@@ -198,18 +263,24 @@ Deno.serve(async (req) => {
         } else if (r.code === "gem") {
           await supabase.rpc("add_account_gems", { p_visitor_id: visitorId, p_amount: r.qty });
         }
-        // Other items stored as inventory note in claim itself
       }
 
+      // Catat klaim ke sub PERTAMA + update counter semua sub
+      const primarySub = subs[0];
       await supabase.from("streak_lucky_box_claims").insert({
         visitor_id: visitorId,
-        sub_id: sub.id,
+        sub_id: primarySub.id,
         claim_date: todayWIB(),
         rewards,
       });
-      await supabase.from("streak_lucky_box_subs").update({ total_days_claimed: sub.total_days_claimed + 1 }).eq("id", sub.id);
+      // Increment total_days_claimed di setiap sub
+      for (const s of subs) {
+        await supabase.from("streak_lucky_box_subs").update({ total_days_claimed: (s.total_days_claimed || 0) + 1 }).eq("id", s.id);
+      }
 
-      return new Response(JSON.stringify({ success: true, rewards }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      return new Response(JSON.stringify({ success: true, rewards, total_items: totalItems, stacked: subs.length }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     throw new Error("Unknown action");
