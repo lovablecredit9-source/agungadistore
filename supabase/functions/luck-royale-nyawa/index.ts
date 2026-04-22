@@ -5,9 +5,18 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-// Mata uang spin
+// Mata uang spin — semua pakai gem
 const SINGLE_COST_GEMS = 50;       // 1 spin = 50 gem
-const BUNDLE_COST_DIAMOND = 200;   // 5 spin = 200 diamond (lebih hemat dari 5x50)
+// Paket bundle (jumlah spin → biaya gem). Makin banyak makin hemat.
+const BUNDLES: Array<{ count: number; cost: number; label: string; badge?: string }> = [
+  { count: 5,   cost: 200,  label: "5 SPIN" },
+  { count: 10,  cost: 300,  label: "10 SPIN", badge: "HEMAT" },
+  { count: 20,  cost: 400,  label: "20 SPIN", badge: "SUPER HEMAT" },
+  { count: 100, cost: 4000, label: "100 SPIN", badge: "MEGA" },
+  { count: 125, cost: 5000, label: "125 SPIN", badge: "ULTRA" },
+];
+// Backwards compat — bundle 5 lama
+const BUNDLE_COST_DIAMOND = 200;
 
 // Hadiah bobot — fokus 3 item utama: extra_life, auto_hint, time_freeze, streak_freeze
 type Prize = {
