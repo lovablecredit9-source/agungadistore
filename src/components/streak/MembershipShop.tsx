@@ -12,6 +12,7 @@ import membershipCardLogo from "@/assets/membership-card-logo.png";
 interface Props {
   visitorId: string;
   onUpdate?: () => void;
+  category?: "coin" | "gem";
 }
 
 interface Plan {
@@ -26,10 +27,12 @@ interface Plan {
   bonus_freeze_count: number;
   bonus_streak_coins: number;
   bonus_gems: number;
+  bonus_daily_gems?: number;
   daily_reward_coins?: number;
   icon: string;
   badge_color: string;
   is_featured: boolean;
+  category?: "coin" | "gem";
 }
 
 interface ActiveMembership {
