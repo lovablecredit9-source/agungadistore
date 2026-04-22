@@ -174,7 +174,7 @@ function getFusionTheme(activePlans: Plan[], fallback: ReturnType<typeof getThem
   return { ...fallback, fusion: null };
 }
 
-export default function MembershipShop({ visitorId, onUpdate }: Props) {
+export default function MembershipShop({ visitorId, onUpdate, category = "coin" }: Props) {
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState<string | null>(null);
@@ -187,15 +187,17 @@ export default function MembershipShop({ visitorId, onUpdate }: Props) {
   const [pinDialog, setPinDialog] = useState<{ planId: string } | null>(null);
   const [pin, setPin] = useState("");
   const [dailyClaim, setDailyClaim] = useState<DailyClaimInfo | null>(null);
+  const [dailyGemClaim, setDailyGemClaim] = useState<{ available: boolean; claimed_today: boolean; gems_today: number; plan_name: string | null; next_unlock: string } | null>(null);
   const [claimingDaily, setClaimingDaily] = useState(false);
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
 
-  const countdown = useCountdown(dailyClaim?.next_unlock);
+  const isGem = category === "gem";
+  const countdown = useCountdown((isGem ? dailyGemClaim?.next_unlock : dailyClaim?.next_unlock));
 
   async function load() {
     setLoading(true);
     try {
-      const { data } = await supabase.functions.invoke("purchase-membership", { body: { action: "list", visitorId } });
+      const { data } = await supabase.functions.invoke("purchase-membership", { body: { action: "list", visitorId, category } });
       const list: Plan[] = data?.plans || [];
       setPlans(list);
       setActive(data?.active_memberships || []);
@@ -204,8 +206,8 @@ export default function MembershipShop({ visitorId, onUpdate }: Props) {
       setGameBalance(data?.game_balance || 0);
       setMainBalance(data?.main_balance || 0);
       setDailyClaim(data?.daily_claim || null);
-      // Auto pilih paket pertama / featured
-      if (!selectedPlanId && list.length > 0) {
+      setDailyGemClaim(data?.daily_gem_claim || null);
+      if (list.length > 0 && (!selectedPlanId || !list.find((p) => p.id === selectedPlanId))) {
         const featured = list.find((p) => p.is_featured) || list[0];
         setSelectedPlanId(featured.id);
       }
@@ -214,7 +216,7 @@ export default function MembershipShop({ visitorId, onUpdate }: Props) {
     }
   }
 
-  useEffect(() => { if (visitorId) load(); /* eslint-disable-next-line */ }, [visitorId]);
+  useEffect(() => { if (visitorId) load(); /* eslint-disable-next-line */ }, [visitorId, category]);
 
   const selected = useMemo(() => plans.find((p) => p.id === selectedPlanId) || plans[0], [plans, selectedPlanId]);
   const baseTheme = getTheme(selected);
