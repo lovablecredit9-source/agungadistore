@@ -97,8 +97,23 @@ export default function MegaShopHub({ visitorId, onUpdate }: Props) {
 
       <div className="h-3" />
 
-      {/* MEMBERSHIP — paket 3 hari, mingguan, bulanan */}
-      <MembershipShop visitorId={visitorId} onUpdate={() => { load(); onUpdate?.(); }} />
+      {/* MEMBERSHIP — Coin & Gem (paket 3 hari, mingguan, bulanan) */}
+      <Tabs defaultValue="coin" className="w-full">
+        <TabsList className="grid grid-cols-2 bg-black/30 border border-purple-400/30 h-auto p-1 mb-2">
+          <TabsTrigger value="coin" className="text-[11px] data-[state=active]:bg-yellow-500/40 px-2 py-1.5 font-black uppercase tracking-wide">
+            🪙 Coin Membership
+          </TabsTrigger>
+          <TabsTrigger value="gem" className="text-[11px] data-[state=active]:bg-cyan-500/40 px-2 py-1.5 font-black uppercase tracking-wide">
+            💎 Gem Membership
+          </TabsTrigger>
+        </TabsList>
+        <TabsContent value="coin">
+          <MembershipShop visitorId={visitorId} category="coin" onUpdate={() => { load(); onUpdate?.(); }} />
+        </TabsContent>
+        <TabsContent value="gem">
+          <MembershipShop visitorId={visitorId} category="gem" onUpdate={() => { load(); onUpdate?.(); }} />
+        </TabsContent>
+      </Tabs>
 
       <div className="h-3" />
 

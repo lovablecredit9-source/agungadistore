@@ -12,6 +12,7 @@ import membershipCardLogo from "@/assets/membership-card-logo.png";
 interface Props {
   visitorId: string;
   onUpdate?: () => void;
+  category?: "coin" | "gem";
 }
 
 interface Plan {
@@ -26,10 +27,12 @@ interface Plan {
   bonus_freeze_count: number;
   bonus_streak_coins: number;
   bonus_gems: number;
+  bonus_daily_gems?: number;
   daily_reward_coins?: number;
   icon: string;
   badge_color: string;
   is_featured: boolean;
+  category?: "coin" | "gem";
 }
 
 interface ActiveMembership {
@@ -171,7 +174,7 @@ function getFusionTheme(activePlans: Plan[], fallback: ReturnType<typeof getThem
   return { ...fallback, fusion: null };
 }
 
-export default function MembershipShop({ visitorId, onUpdate }: Props) {
+export default function MembershipShop({ visitorId, onUpdate, category = "coin" }: Props) {
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState<string | null>(null);
@@ -184,15 +187,17 @@ export default function MembershipShop({ visitorId, onUpdate }: Props) {
   const [pinDialog, setPinDialog] = useState<{ planId: string } | null>(null);
   const [pin, setPin] = useState("");
   const [dailyClaim, setDailyClaim] = useState<DailyClaimInfo | null>(null);
+  const [dailyGemClaim, setDailyGemClaim] = useState<{ available: boolean; claimed_today: boolean; gems_today: number; plan_name: string | null; next_unlock: string } | null>(null);
   const [claimingDaily, setClaimingDaily] = useState(false);
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
 
-  const countdown = useCountdown(dailyClaim?.next_unlock);
+  const isGem = category === "gem";
+  const countdown = useCountdown((isGem ? dailyGemClaim?.next_unlock : dailyClaim?.next_unlock));
 
   async function load() {
     setLoading(true);
     try {
-      const { data } = await supabase.functions.invoke("purchase-membership", { body: { action: "list", visitorId } });
+      const { data } = await supabase.functions.invoke("purchase-membership", { body: { action: "list", visitorId, category } });
       const list: Plan[] = data?.plans || [];
       setPlans(list);
       setActive(data?.active_memberships || []);
@@ -201,8 +206,8 @@ export default function MembershipShop({ visitorId, onUpdate }: Props) {
       setGameBalance(data?.game_balance || 0);
       setMainBalance(data?.main_balance || 0);
       setDailyClaim(data?.daily_claim || null);
-      // Auto pilih paket pertama / featured
-      if (!selectedPlanId && list.length > 0) {
+      setDailyGemClaim(data?.daily_gem_claim || null);
+      if (list.length > 0 && (!selectedPlanId || !list.find((p) => p.id === selectedPlanId))) {
         const featured = list.find((p) => p.is_featured) || list[0];
         setSelectedPlanId(featured.id);
       }
@@ -211,7 +216,7 @@ export default function MembershipShop({ visitorId, onUpdate }: Props) {
     }
   }
 
-  useEffect(() => { if (visitorId) load(); /* eslint-disable-next-line */ }, [visitorId]);
+  useEffect(() => { if (visitorId) load(); /* eslint-disable-next-line */ }, [visitorId, category]);
 
   const selected = useMemo(() => plans.find((p) => p.id === selectedPlanId) || plans[0], [plans, selectedPlanId]);
   const baseTheme = getTheme(selected);
@@ -230,7 +235,8 @@ export default function MembershipShop({ visitorId, onUpdate }: Props) {
     return active.find((m) => m.plan_id === selected.id) || null;
   }, [active, selected]);
   const activePlanIds = useMemo(() => new Set(active.map((m) => m.plan_id)), [active]);
-  const todayRewardTotal = dailyClaim?.coins_today || 0;
+  const todayRewardTotal = isGem ? (dailyGemClaim?.gems_today || 0) : (dailyClaim?.coins_today || 0);
+  const dailyAvailable = isGem ? !!dailyGemClaim?.available : !!dailyClaim?.available;
 
   // Generate daftar tanggal untuk grid kalender hadiah harian (durasi paket terpilih)
   const calendarDays = useMemo(() => {
@@ -244,15 +250,14 @@ export default function MembershipShop({ visitorId, onUpdate }: Props) {
     });
   }, [selected]);
 
-  // Apakah hari ini (index 0) sudah klaim?
-  const claimedToday = !!dailyClaim?.claimed_today;
+  const claimedToday = isGem ? !!dailyGemClaim?.claimed_today : !!dailyClaim?.claimed_today;
 
-  async function purchase(planId: string, pinValue?: string, source: "auto" | "coins" | "gems" = "auto") {
-    const busyKey = `${planId}-${source}`;
+  async function purchase(planId: string, pinValue?: string) {
+    const busyKey = `${planId}-balance`;
     setBusy(busyKey);
     try {
       const { data, error } = await supabase.functions.invoke("purchase-membership", {
-        body: { action: "purchase", visitorId, planId, paymentSource: source, pin: pinValue },
+        body: { action: "purchase", visitorId, planId, paymentSource: "auto", pin: pinValue },
       });
       if (error || data?.error) {
         if (data?.needPin) {
@@ -285,8 +290,9 @@ export default function MembershipShop({ visitorId, onUpdate }: Props) {
   async function claimDaily() {
     setClaimingDaily(true);
     try {
+      const action = isGem ? "daily-gem-claim" : "daily-claim";
       const { data, error } = await supabase.functions.invoke("purchase-membership", {
-        body: { action: "daily-claim", visitorId },
+        body: { action, visitorId },
       });
       if (error || data?.error) {
         toast({ title: "Gagal klaim", description: data?.error || error?.message || "Terjadi kesalahan", variant: "destructive" });
@@ -294,7 +300,9 @@ export default function MembershipShop({ visitorId, onUpdate }: Props) {
       }
       toast({
         title: "🎁 Hadiah Harian!",
-        description: `+${data?.coins_awarded?.toLocaleString("id-ID")} Streak Coins`,
+        description: isGem
+          ? `+${data?.gems_awarded?.toLocaleString("id-ID")} 💎 Gem`
+          : `+${data?.coins_awarded?.toLocaleString("id-ID")} Streak Coins`,
       });
       await load();
       onUpdate?.();
@@ -466,56 +474,28 @@ export default function MembershipShop({ visitorId, onUpdate }: Props) {
               </div>
             </div>
 
-            <div className="mt-3 grid grid-cols-3 gap-1.5">
-              {/* Tombol Saldo */}
-              <motion.div whileTap={{ scale: 0.97 }} className="relative">
-                <Button
-                  size="sm"
-                  disabled={totalBalance < selected.price_idr || busy === `${selected.id}-auto`}
-                  onClick={() => purchase(selected.id, undefined, "auto")}
-                  className={`relative overflow-hidden w-full h-11 px-1 text-[10px] font-black uppercase tracking-tight bg-gradient-to-br ${baseTheme.glow} hover:brightness-110 text-white shadow-lg disabled:opacity-40 border border-white/30 flex flex-col items-center justify-center gap-0`}
-                >
-                  {busy === `${selected.id}-auto` ? <Loader2 className="h-4 w-4 animate-spin" /> : (
-                    <>
-                      <Wallet className="h-3 w-3" />
-                      <span className="leading-none">Rp{(selected.price_idr / 1000).toFixed(0)}K</span>
-                    </>
-                  )}
-                </Button>
-              </motion.div>
-              {/* Tombol Coins */}
-              <motion.div whileTap={{ scale: 0.97 }} className="relative">
-                <Button
-                  size="sm"
-                  disabled={!selected.price_coins || coins < selected.price_coins || busy === `${selected.id}-coins`}
-                  onClick={() => purchase(selected.id, undefined, "coins")}
-                  className="relative overflow-hidden w-full h-11 px-1 text-[10px] font-black uppercase tracking-tight bg-gradient-to-br from-yellow-500 via-amber-500 to-orange-500 hover:brightness-110 text-white shadow-lg disabled:opacity-40 border border-white/30 flex flex-col items-center justify-center gap-0"
-                >
-                  {busy === `${selected.id}-coins` ? <Loader2 className="h-4 w-4 animate-spin" /> : (
-                    <>
-                      <Coins className="h-3 w-3" />
-                      <span className="leading-none">{(selected.price_coins || 0).toLocaleString("id-ID")}</span>
-                    </>
-                  )}
-                </Button>
-              </motion.div>
-              {/* Tombol Gems */}
-              <motion.div whileTap={{ scale: 0.97 }} className="relative">
-                <Button
-                  size="sm"
-                  disabled={!selected.price_gems || gems < selected.price_gems || busy === `${selected.id}-gems`}
-                  onClick={() => purchase(selected.id, undefined, "gems")}
-                  className="relative overflow-hidden w-full h-11 px-1 text-[10px] font-black uppercase tracking-tight bg-gradient-to-br from-cyan-500 via-sky-500 to-blue-600 hover:brightness-110 text-white shadow-lg disabled:opacity-40 border border-white/30 flex flex-col items-center justify-center gap-0"
-                >
-                  {busy === `${selected.id}-gems` ? <Loader2 className="h-4 w-4 animate-spin" /> : (
-                    <>
-                      <Gem className="h-3 w-3" />
-                      <span className="leading-none">{(selected.price_gems || 0).toLocaleString("id-ID")}</span>
-                    </>
-                  )}
-                </Button>
-              </motion.div>
-            </div>
+            <motion.div whileTap={{ scale: 0.97 }} className="mt-3 relative">
+              <Button
+                size="lg"
+                disabled={totalBalance < selected.price_idr || busy === `${selected.id}-balance`}
+                onClick={() => purchase(selected.id)}
+                className={`relative overflow-hidden w-full h-12 text-sm font-black uppercase tracking-widest bg-gradient-to-r ${baseTheme.glow} hover:brightness-110 text-white shadow-[0_8px_25px_-5px_rgba(0,0,0,0.5)] disabled:opacity-50 border border-white/30`}
+              >
+                <motion.div
+                  animate={{ x: ["-150%", "150%"] }}
+                  transition={{ duration: 2.5, repeat: Infinity, ease: "linear" }}
+                  className="absolute inset-y-0 w-1/3 bg-gradient-to-r from-transparent via-white/40 to-transparent skew-x-12"
+                />
+                {busy === `${selected.id}-balance` ? (
+                  <Loader2 className="h-5 w-5 animate-spin relative z-10" />
+                ) : (
+                  <span className="relative z-10 flex items-center gap-2">
+                    <Wallet className="h-4 w-4" />
+                    Rp{selected.price_idr.toLocaleString("id-ID")}
+                  </span>
+                )}
+              </Button>
+            </motion.div>
 
             {activeForSelected && (
               <motion.div
@@ -626,11 +606,11 @@ export default function MembershipShop({ visitorId, onUpdate }: Props) {
                 </motion.div>
               )}
             </div>
-            {dailyClaim && dailyClaim.coins_today > 0 && !claimedToday && (
+            {todayRewardTotal > 0 && !claimedToday && (
               <motion.div whileTap={{ scale: 0.94 }}>
                 <Button
                   size="sm"
-                  disabled={claimingDaily || !dailyClaim.available}
+                  disabled={claimingDaily || !dailyAvailable}
                   onClick={claimDaily}
                   className="relative overflow-hidden h-8 px-3 text-[11px] font-black uppercase tracking-wider bg-gradient-to-r from-amber-500 via-orange-500 to-pink-500 hover:brightness-110 text-white shadow-lg shadow-orange-500/40 border border-white/20"
                 >
@@ -659,7 +639,8 @@ export default function MembershipShop({ visitorId, onUpdate }: Props) {
             {calendarDays.map((d, idx) => {
               const isToday = idx === 0;
               const isLocked = idx > 0 || (isToday && claimedToday);
-              const reward = isToday ? (todayRewardTotal || selected.daily_reward_coins || 0) : (selected.daily_reward_coins || 0);
+              const dailyDefault = isGem ? (selected.bonus_daily_gems || 0) : (selected.daily_reward_coins || 0);
+              const reward = isToday ? (todayRewardTotal || dailyDefault) : dailyDefault;
               return (
                 <motion.div
                   key={idx}
@@ -698,8 +679,12 @@ export default function MembershipShop({ visitorId, onUpdate }: Props) {
                         transition={{ duration: 1.5, repeat: Infinity }}
                         className="flex flex-col items-center"
                       >
-                        <Coins className="h-4 w-4 text-yellow-300 drop-shadow-[0_0_6px_rgba(252,211,77,0.8)]" />
-                        <span className="text-[9px] font-black text-yellow-200 mt-0.5">+{reward}</span>
+                        {isGem ? (
+                          <Gem className="h-4 w-4 text-cyan-300 drop-shadow-[0_0_6px_rgba(103,232,249,0.8)]" />
+                        ) : (
+                          <Coins className="h-4 w-4 text-yellow-300 drop-shadow-[0_0_6px_rgba(252,211,77,0.8)]" />
+                        )}
+                        <span className={`text-[9px] font-black mt-0.5 ${isGem ? "text-cyan-200" : "text-yellow-200"}`}>+{reward}</span>
                       </motion.div>
                     ) : null}
                     {claimedToday && isToday && (
