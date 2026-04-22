@@ -235,7 +235,8 @@ export default function MembershipShop({ visitorId, onUpdate, category = "coin" 
     return active.find((m) => m.plan_id === selected.id) || null;
   }, [active, selected]);
   const activePlanIds = useMemo(() => new Set(active.map((m) => m.plan_id)), [active]);
-  const todayRewardTotal = dailyClaim?.coins_today || 0;
+  const todayRewardTotal = isGem ? (dailyGemClaim?.gems_today || 0) : (dailyClaim?.coins_today || 0);
+  const dailyAvailable = isGem ? !!dailyGemClaim?.available : !!dailyClaim?.available;
 
   // Generate daftar tanggal untuk grid kalender hadiah harian (durasi paket terpilih)
   const calendarDays = useMemo(() => {
@@ -249,8 +250,7 @@ export default function MembershipShop({ visitorId, onUpdate, category = "coin" 
     });
   }, [selected]);
 
-  // Apakah hari ini (index 0) sudah klaim?
-  const claimedToday = !!dailyClaim?.claimed_today;
+  const claimedToday = isGem ? !!dailyGemClaim?.claimed_today : !!dailyClaim?.claimed_today;
 
   async function purchase(planId: string, pinValue?: string) {
     const busyKey = `${planId}-balance`;
