@@ -63,6 +63,26 @@ function pickPrize(): Prize & { index: number } {
   return { ...PRIZES[0], index: 0 };
 }
 
+// Tambah qty ke streak_power_pack_inventory (inventory yang dipakai PowerPackShop)
+async function addInventory(admin: any, visitorId: string, itemCode: string, qty: number) {
+  const { data: inv } = await admin
+    .from("streak_power_pack_inventory")
+    .select("id, quantity")
+    .eq("visitor_id", visitorId)
+    .eq("item_code", itemCode)
+    .maybeSingle();
+  if (inv) {
+    await admin
+      .from("streak_power_pack_inventory")
+      .update({ quantity: (inv.quantity || 0) + qty })
+      .eq("id", inv.id);
+  } else {
+    await admin
+      .from("streak_power_pack_inventory")
+      .insert({ visitor_id: visitorId, item_code: itemCode, quantity: qty });
+  }
+}
+
 async function applyPrize(admin: any, visitorId: string, p: Prize) {
   if (p.kind === "extra_life" || p.kind === "auto_hint" || p.kind === "time_freeze") {
     const { data: pu } = await admin.from("user_power_ups").select("*").eq("visitor_id", visitorId).maybeSingle();
@@ -77,11 +97,22 @@ async function applyPrize(admin: any, visitorId: string, p: Prize) {
       const cur = (pu[p.kind] as number) || 0;
       await admin.from("user_power_ups").update({ [p.kind]: cur + p.value }).eq("visitor_id", visitorId);
     }
+
+    // Mirror ke inventory Power Pack supaya jumlah ikut bertambah
+    const invMap: Record<string, string> = {
+      extra_life: "nyawa",
+      auto_hint: "hint",
+      time_freeze: "freeze", // freeze in-game ↔ inventory freeze
+    };
+    const code = invMap[p.kind];
+    if (code) await addInventory(admin, visitorId, code, p.value);
   } else if (p.kind === "streak_freeze") {
     const { data: streak } = await admin.from("daily_streaks").select("id, freeze_count").eq("visitor_id", visitorId).maybeSingle();
     if (streak) {
       await admin.from("daily_streaks").update({ freeze_count: (streak.freeze_count || 0) + p.value }).eq("id", streak.id);
     }
+    // Tambah juga ke inventory Power Pack (item_code: freeze)
+    await addInventory(admin, visitorId, "freeze", p.value);
   } else if (p.kind === "gems") {
     await admin.rpc("add_account_gems", { p_visitor_id: visitorId, p_amount: p.value });
   }
