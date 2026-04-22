@@ -12,7 +12,7 @@ const PITY_RARE = 10;       // tiap 10 spin tanpa rare+ -> jaminan rare+
 
 type Rarity = "common" | "rare" | "epic" | "legendary";
 type Prize = {
-  kind: "gems" | "coins" | "freeze" | "title" | "skin";
+  kind: "gems" | "coins" | "freeze" | "title" | "skin" | "nothing";
   label: string;
   value: number;
   rarity: Rarity;
@@ -20,27 +20,40 @@ type Prize = {
   color: string;
 };
 
+// Distribusi berbasis HOKI:
+// - Sering ZONK / hadiah kecil (koin) → bikin tegang
+// - Gems jarang muncul (premium)
+// - Jackpot besar = sangat langka tapi nyata
 const PRIZES: Prize[] = [
-  // Common (~50%) — koin & gem dasar lebih besar
-  { kind: "coins", label: "+2.500 Koin", value: 2500, rarity: "common", weight: 26, color: "#94a3b8" },
-  { kind: "coins", label: "+6.000 Koin", value: 6000, rarity: "common", weight: 18, color: "#64748b" },
-  { kind: "gems",  label: "+50 Gems",   value: 50,   rarity: "common", weight: 8,  color: "#a78bfa" },
-  // Rare (~28%)
-  { kind: "coins",  label: "+15.000 Koin",       value: 15000, rarity: "rare", weight: 14, color: "#06b6d4" },
-  { kind: "freeze", label: "+8 Streak Freeze",   value: 8,     rarity: "rare", weight: 9,  color: "#10b981" },
-  { kind: "gems",   label: "+200 Gems",          value: 200,   rarity: "rare", weight: 6,  color: "#22d3ee" },
-  // Epic (~14%)
-  { kind: "gems",   label: "💎 +500 Gems",        value: 500,   rarity: "epic", weight: 6,  color: "#a855f7" },
-  { kind: "coins",  label: "+40.000 Koin",        value: 40000, rarity: "epic", weight: 5,  color: "#ec4899" },
-  { kind: "freeze", label: "+20 Streak Freeze",   value: 20,    rarity: "epic", weight: 3,  color: "#f472b6" },
-  // Legendary (~7%) — hadiah besar
-  { kind: "gems",   label: "🌟 +1.500 Gems MEGA JACKPOT",  value: 1500,  rarity: "legendary", weight: 2.5, color: "#fbbf24" },
-  { kind: "coins",  label: "🎰 +120.000 Koin LEGENDARY",   value: 120000,rarity: "legendary", weight: 2,   color: "#facc15" },
-  { kind: "title",  label: "👑 Title: Diamond Lord",        value: 1,     rarity: "legendary", weight: 1.5, color: "#fde047" },
-  { kind: "skin",   label: "💎 Skin Avatar Mythic",         value: 1,     rarity: "legendary", weight: 0.7, color: "#fde047" },
-  // Mythic Grand Prize (~0.3%)
-  { kind: "gems",   label: "🌈 +5.000 Gems GRAND PRIZE",   value: 5000,  rarity: "legendary", weight: 0.2, color: "#e879f9" },
-  { kind: "coins",  label: "🌈 +500.000 Koin ULTRA JACKPOT", value: 500000, rarity: "legendary", weight: 0.1, color: "#22d3ee" },
+  // 🎲 ZONK / Sial (~30%) — emang kadang gak dapet apa-apa, namanya juga hoki
+  { kind: "nothing", label: "💨 Zonk! Coba lagi",       value: 0,    rarity: "common", weight: 18, color: "#475569" },
+  { kind: "coins",   label: "+200 Koin (apes)",         value: 200,  rarity: "common", weight: 12, color: "#64748b" },
+
+  // 🪙 Common (~40%) — mostly KOIN kecil-menengah
+  { kind: "coins", label: "+1.000 Koin",  value: 1000,  rarity: "common", weight: 16, color: "#94a3b8" },
+  { kind: "coins", label: "+3.000 Koin",  value: 3000,  rarity: "common", weight: 14, color: "#94a3b8" },
+  { kind: "coins", label: "+8.000 Koin",  value: 8000,  rarity: "common", weight: 10, color: "#64748b" },
+
+  // 💠 Rare (~20%) — koin lumayan + sedikit freeze, gems mulai langka
+  { kind: "coins",  label: "+20.000 Koin",        value: 20000, rarity: "rare", weight: 10, color: "#06b6d4" },
+  { kind: "freeze", label: "+3 Streak Freeze",    value: 3,     rarity: "rare", weight: 5,  color: "#10b981" },
+  { kind: "gems",   label: "✨ +30 Gems (hoki)",  value: 30,    rarity: "rare", weight: 3,  color: "#22d3ee" },
+  { kind: "coins",  label: "+50.000 Koin",        value: 50000, rarity: "rare", weight: 2,  color: "#0ea5e9" },
+
+  // 💎 Epic (~7%) — koin besar dominan, gems sedikit
+  { kind: "coins",  label: "+100.000 Koin",       value: 100000, rarity: "epic", weight: 3, color: "#ec4899" },
+  { kind: "gems",   label: "💎 +100 Gems",         value: 100,    rarity: "epic", weight: 2, color: "#a855f7" },
+  { kind: "freeze", label: "+8 Streak Freeze",    value: 8,      rarity: "epic", weight: 1.5, color: "#f472b6" },
+
+  // 🏆 Legendary (~2.5%) — JACKPOT, butuh hoki dewa
+  { kind: "coins",  label: "🎰 +250.000 Koin LEGENDARY",   value: 250000, rarity: "legendary", weight: 1.2, color: "#facc15" },
+  { kind: "gems",   label: "🌟 +500 Gems JACKPOT",         value: 500,    rarity: "legendary", weight: 0.6, color: "#fbbf24" },
+  { kind: "title",  label: "👑 Title: Diamond Lord",        value: 1,      rarity: "legendary", weight: 0.4, color: "#fde047" },
+  { kind: "skin",   label: "💎 Skin Avatar Mythic",         value: 1,      rarity: "legendary", weight: 0.2, color: "#fde047" },
+
+  // 🌈 Mythic Grand Prize (~0.15%) — hoki manusia sejagat
+  { kind: "coins",  label: "🌈 +1.000.000 Koin ULTRA JACKPOT", value: 1000000, rarity: "legendary", weight: 0.1, color: "#e879f9" },
+  { kind: "gems",   label: "🌈 +2.000 Gems GRAND PRIZE",       value: 2000,    rarity: "legendary", weight: 0.05, color: "#22d3ee" },
 ];
 
 function pickWeighted(pool: Prize[]): Prize {
