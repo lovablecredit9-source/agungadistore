@@ -69,7 +69,21 @@ async function deductBalance(supabase: any, visitorId: string, amount: number) {
   await supabase.from("user_balances").update({ balance: bal.balance - amount }).eq("id", bal.id);
 }
 
-// Hitung total items_per_day dari SEMUA sub luckybox aktif (stack)
+// Hitung total items_per_day dari sub luckybox yang SUDAH efektif hari ini
+// Sub yang baru dibeli setelah klaim → effective_from = besok, jadi tidak terhitung hari ini
+function computeLuckyboxEffectiveItems(activeSubs: any[], today: string) {
+  let total = 0;
+  for (const s of activeSubs) {
+    const eff = s.effective_from || s.created_at?.slice(0, 10) || today;
+    if (eff <= today) {
+      const plan = LUCKYBOX_PLANS.find((p) => p.tier === s.tier);
+      if (plan) total += plan.items_per_day;
+    }
+  }
+  return total;
+}
+
+// Hitung total items_per_day dari SEMUA sub aktif (untuk display total kapasitas)
 function computeLuckyboxTotalItems(activeSubs: any[]) {
   let total = 0;
   for (const s of activeSubs) {
@@ -91,6 +105,7 @@ Deno.serve(async (req) => {
     // ===== LIST =====
     if (action === "list") {
       const now = new Date().toISOString();
+      const today = todayWIB();
       const [diamondAll, boostAll, luckyboxAll, saverAll] = await Promise.all([
         supabase.from("streak_diamond_elite_subs").select("*").eq("visitor_id", visitorId).eq("is_active", true).gt("expires_at", now).order("expires_at", { ascending: false }),
         supabase.from("streak_boost_squad_subs").select("*").eq("visitor_id", visitorId).eq("is_active", true).gt("expires_at", now).order("expires_at", { ascending: false }),
@@ -99,7 +114,8 @@ Deno.serve(async (req) => {
       ]);
 
       const luckyboxSubs = luckyboxAll.data || [];
-      const totalItemsPerDay = computeLuckyboxTotalItems(luckyboxSubs);
+      const totalItemsAll = computeLuckyboxTotalItems(luckyboxSubs);
+      const effectiveItemsToday = computeLuckyboxEffectiveItems(luckyboxSubs, today);
 
       // claimed_today: cek di SEMUA sub aktif
       let claimedToday = false;
@@ -110,18 +126,42 @@ Deno.serve(async (req) => {
           .from("streak_lucky_box_claims")
           .select("id, sub_id")
           .in("sub_id", ids)
-          .eq("claim_date", todayWIB());
+          .eq("claim_date", today);
         claimedToday = (claims?.length || 0) > 0;
-        // total_days_claimed = jumlahkan dari semua sub
         const totalDays = luckyboxSubs.reduce((s: number, x: any) => s + (x.total_days_claimed || 0), 0);
         if (luckyboxPrimary) {
           luckyboxPrimary = {
             ...luckyboxPrimary,
             total_days_claimed: totalDays,
             stacked_count: luckyboxSubs.length,
-            total_items_per_day: totalItemsPerDay,
+            total_items_per_day: totalItemsAll,
+            effective_items_today: effectiveItemsToday,
+            pending_items_tomorrow: totalItemsAll - effectiveItemsToday,
           };
         }
+      }
+
+      // Untuk diamond/boost/saver: aggregate stack info untuk display
+      function aggregateStack(subs: any[], kind: string) {
+        if (!subs || subs.length === 0) return null;
+        const primary = subs[0];
+        const totalDuration = subs.reduce((s, x) => s + (x.duration_days || 0), 0);
+        const latestExpires = subs.reduce((max, x) => x.expires_at > max ? x.expires_at : max, subs[0].expires_at);
+        let extra: any = { stacked_count: subs.length, latest_expires_at: latestExpires };
+        if (kind === "diamond") {
+          extra.total_cashback_earned = subs.reduce((s, x) => s + (x.total_cashback_earned || 0), 0);
+          // Gunakan cashback% tertinggi
+          extra.best_cashback_percent = subs.reduce((m, x) => Math.max(m, x.cashback_percent || 0), 0);
+        } else if (kind === "boost") {
+          // Multiplier tertinggi yang berlaku
+          extra.best_multiplier = subs.reduce((m, x) => Math.max(m, x.multiplier || 1), 1);
+        } else if (kind === "saver") {
+          extra.total_auto_freeze_per_week = subs.reduce((s, x) => s + (x.auto_freeze_per_week || 0), 0);
+          extra.total_restore_per_week = subs.reduce((s, x) => s + (x.restore_per_week || 0), 0);
+          extra.freezes_used_this_week = subs.reduce((s, x) => s + (x.freezes_used_this_week || 0), 0);
+          extra.restores_used_this_week = subs.reduce((s, x) => s + (x.restores_used_this_week || 0), 0);
+        }
+        return { ...primary, ...extra };
       }
 
       const { data: gp } = await supabase.from("game_profiles").select("user_balance_id").eq("visitor_id", visitorId).maybeSingle();
@@ -134,10 +174,10 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({
         catalogs: { diamond: DIAMOND_PLANS, boost: BOOST_PLANS, luckybox: LUCKYBOX_PLANS, saver: SAVER_PLANS },
         active: {
-          diamond: (diamondAll.data || [])[0] || null,
-          boost: (boostAll.data || [])[0] || null,
+          diamond: aggregateStack(diamondAll.data || [], "diamond"),
+          boost: aggregateStack(boostAll.data || [], "boost"),
           luckybox: luckyboxPrimary,
-          saver: (saverAll.data || [])[0] || null,
+          saver: aggregateStack(saverAll.data || [], "saver"),
         },
         active_all: {
           diamond: diamondAll.data || [],
@@ -157,6 +197,7 @@ Deno.serve(async (req) => {
       let table = "";
       let extra: any = {};
       const now = new Date().toISOString();
+      const today = todayWIB();
 
       if (kind === "diamond") {
         plan = DIAMOND_PLANS.find((p) => p.tier === tier);
@@ -179,24 +220,7 @@ Deno.serve(async (req) => {
       }
       if (!plan) throw new Error("Paket tidak ditemukan");
 
-      // CEGAH BELI ULANG untuk diamond/boost/saver — lucky box BOLEH stack
-      if (kind !== "luckybox") {
-        const { data: existing } = await supabase
-          .from(table)
-          .select("id, tier, expires_at")
-          .eq("visitor_id", visitorId)
-          .eq("is_active", true)
-          .gt("expires_at", now)
-          .maybeSingle();
-        if (existing) {
-          const exp = new Date(existing.expires_at).toLocaleDateString("id-ID");
-          if (existing.tier === tier) {
-            throw new Error(`Kamu sudah punya paket ${plan.name} aktif sampai ${exp}. Tunggu sampai expired ya!`);
-          }
-          throw new Error(`Kamu sudah punya membership ${kind} (tier ${existing.tier?.toUpperCase()}) aktif sampai ${exp}. Tidak bisa beli tier lain bersamaan.`);
-        }
-      }
-
+      // SEMUA membership boleh stack/beli ulang
       await deductBalance(supabase, visitorId, plan.price_idr);
       const expires = new Date();
       expires.setDate(expires.getDate() + plan.duration_days);
@@ -209,23 +233,71 @@ Deno.serve(async (req) => {
         expires_at: expires.toISOString(),
         ...extra,
       };
+
+      // Khusus lucky box: cek apakah sudah klaim hari ini
+      // Jika SUDAH klaim → effective_from = besok (item baru baru bisa diklaim besok)
+      // Jika BELUM klaim → effective_from = hari ini (langsung nambah ke klaim hari ini)
+      let effectiveFrom = today;
+      let pendingTomorrow = false;
+      if (kind === "luckybox") {
+        // Cek semua sub aktif user untuk lihat apakah ada klaim hari ini
+        const { data: existingSubs } = await supabase
+          .from("streak_lucky_box_subs")
+          .select("id")
+          .eq("visitor_id", visitorId)
+          .eq("is_active", true)
+          .gt("expires_at", now);
+        const ids = (existingSubs || []).map((s: any) => s.id);
+        if (ids.length > 0) {
+          const { data: claims } = await supabase
+            .from("streak_lucky_box_claims")
+            .select("id")
+            .in("sub_id", ids)
+            .eq("claim_date", today);
+          if ((claims?.length || 0) > 0) {
+            // Sudah klaim → tunda ke besok
+            const tomorrow = new Date(Date.now() + 7 * 60 * 60 * 1000);
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            effectiveFrom = tomorrow.toISOString().slice(0, 10);
+            pendingTomorrow = true;
+          }
+        }
+        insertData.effective_from = effectiveFrom;
+      }
+
       const { data: sub, error } = await supabase.from(table).insert(insertData).select().single();
       if (error) throw new Error(error.message);
 
       let msg = `🎉 ${plan.name} aktif sampai ${expires.toLocaleDateString("id-ID")}`;
       if (kind === "luckybox") {
-        // Hitung total stack baru
         const { data: allSubs } = await supabase
           .from("streak_lucky_box_subs")
-          .select("tier")
+          .select("tier, effective_from, created_at")
           .eq("visitor_id", visitorId)
           .eq("is_active", true)
           .gt("expires_at", now);
-        const total = computeLuckyboxTotalItems(allSubs || []);
-        msg = `🎉 ${plan.name} aktif! Sekarang dapat ${total} item/hari (${(allSubs || []).length} paket aktif)`;
+        const totalAll = computeLuckyboxTotalItems(allSubs || []);
+        const totalToday = computeLuckyboxEffectiveItems(allSubs || [], today);
+        if (pendingTomorrow) {
+          msg = `🎉 ${plan.name} aktif! +${plan.items_per_day} item akan tersedia BESOK (kamu sudah klaim hari ini). Total kapasitas: ${totalAll} item/hari`;
+        } else {
+          msg = `🎉 ${plan.name} aktif! Sekarang dapat ${totalToday} item untuk diklaim hari ini (${(allSubs || []).length} paket aktif)`;
+        }
+      } else if (kind === "diamond" || kind === "boost" || kind === "saver") {
+        // Cek total stack
+        const { data: allSubs } = await supabase
+          .from(table)
+          .select("id")
+          .eq("visitor_id", visitorId)
+          .eq("is_active", true)
+          .gt("expires_at", now);
+        const cnt = (allSubs || []).length;
+        if (cnt > 1) {
+          msg = `🎉 ${plan.name} aktif! Sekarang kamu punya ${cnt} paket ${kind} aktif (stacked)`;
+        }
       }
 
-      return new Response(JSON.stringify({ success: true, message: msg, sub }), {
+      return new Response(JSON.stringify({ success: true, message: msg, sub, pending_tomorrow: pendingTomorrow }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
@@ -233,6 +305,7 @@ Deno.serve(async (req) => {
     // ===== LUCKY BOX DAILY CLAIM =====
     if (action === "claim_luckybox") {
       const now = new Date().toISOString();
+      const today = todayWIB();
       const { data: subs } = await supabase
         .from("streak_lucky_box_subs")
         .select("*")
@@ -248,11 +321,18 @@ Deno.serve(async (req) => {
         .from("streak_lucky_box_claims")
         .select("id")
         .in("sub_id", ids)
-        .eq("claim_date", todayWIB());
+        .eq("claim_date", today);
       if ((existing?.length || 0) > 0) throw new Error("Sudah klaim hari ini, balik besok!");
 
-      // Total items dari SEMUA sub aktif
-      const totalItems = computeLuckyboxTotalItems(subs);
+      // Hanya hitung sub yang SUDAH effective hari ini
+      const effectiveSubs = subs.filter((s: any) => {
+        const eff = s.effective_from || s.created_at?.slice(0, 10) || today;
+        return eff <= today;
+      });
+      if (effectiveSubs.length === 0) {
+        throw new Error("Paket baru kamu baru efektif besok. Sabar yaa!");
+      }
+      const totalItems = computeLuckyboxTotalItems(effectiveSubs);
       const rewards = rollLuckyRewards(totalItems);
 
       // Apply rewards
@@ -265,20 +345,19 @@ Deno.serve(async (req) => {
         }
       }
 
-      // Catat klaim ke sub PERTAMA + update counter semua sub
-      const primarySub = subs[0];
+      const primarySub = effectiveSubs[0];
       await supabase.from("streak_lucky_box_claims").insert({
         visitor_id: visitorId,
         sub_id: primarySub.id,
-        claim_date: todayWIB(),
+        claim_date: today,
         rewards,
       });
-      // Increment total_days_claimed di setiap sub
-      for (const s of subs) {
+      // Increment total_days_claimed di setiap sub yang effective
+      for (const s of effectiveSubs) {
         await supabase.from("streak_lucky_box_subs").update({ total_days_claimed: (s.total_days_claimed || 0) + 1 }).eq("id", s.id);
       }
 
-      return new Response(JSON.stringify({ success: true, rewards, total_items: totalItems, stacked: subs.length }), {
+      return new Response(JSON.stringify({ success: true, rewards, total_items: totalItems, stacked: effectiveSubs.length }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
