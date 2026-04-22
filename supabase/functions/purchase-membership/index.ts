@@ -73,6 +73,7 @@ Deno.serve(async (req) => {
 
       const { data: gameBal } = await admin.from("game_balance").select("amount").eq("visitor_id", visitorId).maybeSingle();
       const { data: balanceRow } = await admin.from("user_balances").select("balance").eq("visitor_id", visitorId).maybeSingle();
+      const { data: gemsResult } = await admin.rpc("get_account_gems", { p_visitor_id: visitorId });
 
       // Cek klaim harian
       const today = todayWIB();
@@ -116,6 +117,7 @@ Deno.serve(async (req) => {
         plans: plans || [],
         active_memberships: activeMemberships || [],
         user_coins: streak?.streak_coins || 0,
+        user_gems: gemsResult || 0,
         game_balance: gameBal?.amount || 0,
         main_balance: balanceRow?.balance || 0,
         daily_claim: {
