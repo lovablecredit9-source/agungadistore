@@ -341,15 +341,53 @@ export default function MembershipShop({ visitorId, onUpdate }: Props) {
             <Wallet className="h-3 w-3" /> Rp{totalBalance.toLocaleString("id-ID")}
           </Badge>
         </div>
-        <motion.div
-          animate={{ boxShadow: ["0 0 0px rgba(168,85,247,0.5)", "0 0 12px rgba(168,85,247,0.8)", "0 0 0px rgba(168,85,247,0.5)"] }}
-          transition={{ duration: 2, repeat: Infinity }}
-          className="flex items-center gap-1 rounded-full bg-gradient-to-r from-purple-500/50 to-fuchsia-500/50 border border-purple-300/60 px-2 py-0.5"
-        >
-          <Crown className="h-3 w-3 text-yellow-200" />
-          <span className="text-[9px] font-black text-white uppercase tracking-widest">Premium</span>
-        </motion.div>
-      </div>
+        <div className="flex items-center gap-1.5">
+          {fusion && (
+            <motion.div
+              initial={{ scale: 0, rotate: -90 }}
+              animate={{
+                scale: [1, 1.08, 1],
+                rotate: fusion === "rainbow" ? [0, 360] : 0,
+              }}
+              transition={{
+                scale: { duration: 1.6, repeat: Infinity },
+                rotate: fusion === "rainbow" ? { duration: 6, repeat: Infinity, ease: "linear" } : undefined,
+              }}
+              className={`flex items-center gap-1 rounded-full border-2 px-2 py-0.5 shadow-lg ${
+                fusion === "green"
+                  ? "bg-gradient-to-r from-emerald-500 via-green-400 to-lime-400 border-emerald-200/80 shadow-emerald-500/60"
+                  : fusion === "red"
+                  ? "bg-gradient-to-r from-red-500 via-rose-500 to-orange-500 border-red-200/80 shadow-red-500/60"
+                  : fusion === "orange"
+                  ? "bg-gradient-to-r from-orange-500 via-amber-400 to-pink-500 border-orange-200/80 shadow-orange-500/60"
+                  : "bg-[conic-gradient(from_0deg,#22d3ee,#a855f7,#fbbf24,#f43f5e,#22d3ee)] border-white/80 shadow-fuchsia-500/60"
+              }`}
+            >
+              <Sparkles className="h-3 w-3 text-white drop-shadow" />
+              <span className="text-[9px] font-black text-white uppercase tracking-widest drop-shadow">
+                {fusion === "green" ? "Hijau Fusion" : fusion === "red" ? "Merah Fusion" : fusion === "orange" ? "Plasma" : "Prismatic"}
+              </span>
+            </motion.div>
+          )}
+          <motion.div
+            animate={{
+              boxShadow: fusion === "green"
+                ? ["0 0 0px rgba(16,185,129,0.5)", "0 0 14px rgba(16,185,129,0.95)", "0 0 0px rgba(16,185,129,0.5)"]
+                : fusion === "red"
+                ? ["0 0 0px rgba(239,68,68,0.5)", "0 0 14px rgba(239,68,68,0.95)", "0 0 0px rgba(239,68,68,0.5)"]
+                : fusion === "orange"
+                ? ["0 0 0px rgba(249,115,22,0.5)", "0 0 14px rgba(249,115,22,0.95)", "0 0 0px rgba(249,115,22,0.5)"]
+                : fusion === "rainbow"
+                ? ["0 0 4px rgba(34,211,238,0.6)", "0 0 16px rgba(168,85,247,0.95)", "0 0 16px rgba(251,191,36,0.95)", "0 0 4px rgba(34,211,238,0.6)"]
+                : ["0 0 0px rgba(168,85,247,0.5)", "0 0 12px rgba(168,85,247,0.8)", "0 0 0px rgba(168,85,247,0.5)"],
+            }}
+            transition={{ duration: 2, repeat: Infinity }}
+            className={`flex items-center gap-1 rounded-full bg-gradient-to-r ${theme.glow} border border-white/60 px-2 py-0.5`}
+          >
+            <Crown className="h-3 w-3 text-white drop-shadow" />
+            <span className="text-[9px] font-black text-white uppercase tracking-widest">Premium</span>
+          </motion.div>
+        </div>
 
       {/* MAIN AREA */}
       <div className="relative grid grid-cols-[1fr_96px] gap-2 p-2.5">
