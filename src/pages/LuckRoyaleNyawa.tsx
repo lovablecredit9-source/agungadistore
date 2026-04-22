@@ -91,14 +91,19 @@ export default function LuckRoyaleNyawa() {
 
   useEffect(() => { fetchData(); }, []);
 
-  const doSpin = async (bundle: boolean) => {
+  const doSpin = async (mode: "single" | "pack", count?: number) => {
     if (!visitorId || spinning) return;
     setSpinning(true);
     setReelSpinning(true);
     try {
-      const { data, error } = await supabase.functions.invoke("luck-royale-nyawa", {
-        body: { visitorId, action: bundle ? "spin_bundle" : "spin_single" },
-      });
+      const body: any = { visitorId };
+      if (mode === "single") {
+        body.action = "spin_single";
+      } else {
+        body.action = "spin_pack";
+        body.count = count;
+      }
+      const { data, error } = await supabase.functions.invoke("luck-royale-nyawa", { body });
       if (error) throw error;
       if (data.error) {
         toast({ title: "Gagal spin", description: data.error, variant: "destructive" });
