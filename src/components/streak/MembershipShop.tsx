@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Coins, Wallet, Snowflake, Gem, Sparkles, Check, Gift, Lock, X } from "lucide-react";
 import membershipCardLogo from "@/assets/membership-card-logo.png";
+import gemIcon from "@/assets/gem-icon.png";
 
 interface Props {
   visitorId: string;
@@ -562,12 +563,12 @@ export default function MembershipShop({ visitorId, onUpdate, category = "coin" 
                 <div className="flex items-center justify-end gap-0.5 mb-1">
                   {isGem ? (
                     <>
-                      <Gem className="h-2.5 w-2.5 text-cyan-300" />
+                      <img src={gemIcon} alt="Gem" className="h-3 w-3 object-contain" />
                       <span className="text-[9px] font-black text-cyan-200">{p.bonus_gems || 0}</span>
                     </>
                   ) : (
                     <>
-                      <Coins className="h-2.5 w-2.5 text-yellow-300" />
+                      <img src={gemIcon} alt="Gem" className="h-3 w-3 object-contain" />
                       <span className="text-[9px] font-black text-yellow-200">{p.bonus_streak_coins}</span>
                     </>
                   )}
@@ -700,9 +701,9 @@ export default function MembershipShop({ visitorId, onUpdate, category = "coin" 
                         className="flex flex-col items-center"
                       >
                         {isGem ? (
-                          <Gem className="h-4 w-4 text-cyan-300 drop-shadow-[0_0_6px_rgba(103,232,249,0.8)]" />
+                          <img src={gemIcon} alt="Gem" className="h-4 w-4 object-contain drop-shadow-[0_0_6px_rgba(103,232,249,0.8)]" />
                         ) : (
-                          <Coins className="h-4 w-4 text-yellow-300 drop-shadow-[0_0_6px_rgba(252,211,77,0.8)]" />
+                          <img src={gemIcon} alt="Gem" className="h-4 w-4 object-contain drop-shadow-[0_0_6px_rgba(252,211,77,0.8)]" />
                         )}
                         <span className={`text-[9px] font-black mt-0.5 ${isGem ? "text-cyan-200" : "text-yellow-200"}`}>+{reward}</span>
                       </motion.div>
