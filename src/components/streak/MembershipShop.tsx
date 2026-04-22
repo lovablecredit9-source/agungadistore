@@ -216,8 +216,8 @@ export default function MembershipShop({ visitorId, onUpdate }: Props) {
     () => active.map((m) => plans.find((p) => p.id === m.plan_id)).filter(Boolean) as Plan[],
     [active, plans]
   );
-  const theme = useMemo(() => getFusionTheme(activePlanObjects, baseTheme), [activePlanObjects, baseTheme]);
-  const fusion = theme.fusion;
+  const fusionTheme = useMemo(() => getFusionTheme(activePlanObjects, baseTheme), [activePlanObjects, baseTheme]);
+  const fusion = fusionTheme.fusion;
   const totalBalance = gameBalance + mainBalance;
 
   // Gabungan membership aktif untuk hitung sisa hari kalender
@@ -318,12 +318,12 @@ export default function MembershipShop({ visitorId, onUpdate }: Props) {
         <motion.div
           animate={{ x: [0, 30, 0], y: [0, -20, 0], scale: [1, 1.1, 1] }}
           transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
-          className={`absolute -top-12 -left-12 w-48 h-48 rounded-full bg-gradient-to-br ${theme.glow} opacity-20 blur-3xl`}
+            className={`absolute -top-12 -left-12 w-48 h-48 rounded-full bg-gradient-to-br ${baseTheme.glow} opacity-20 blur-3xl`}
         />
         <motion.div
           animate={{ x: [0, -25, 0], y: [0, 20, 0], scale: [1, 1.15, 1] }}
           transition={{ duration: 10, repeat: Infinity, ease: "easeInOut", delay: 1 }}
-          className={`absolute -bottom-12 -right-12 w-56 h-56 rounded-full bg-gradient-to-br ${theme.glow} opacity-15 blur-3xl`}
+            className={`absolute -bottom-12 -right-12 w-56 h-56 rounded-full bg-gradient-to-br ${baseTheme.glow} opacity-15 blur-3xl`}
         />
         <div className="absolute inset-0 opacity-[0.04]" style={{
           backgroundImage: "linear-gradient(rgba(255,255,255,0.6) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.6) 1px, transparent 1px)",
@@ -360,7 +360,7 @@ export default function MembershipShop({ visitorId, onUpdate }: Props) {
             animate={{ opacity: 1, x: 0, scale: 1 }}
             exit={{ opacity: 0, x: 10, scale: 0.98 }}
             transition={{ duration: 0.25 }}
-            className={`relative rounded-2xl overflow-hidden border-2 ${theme.border} bg-gradient-to-br ${theme.panel} p-3 shadow-2xl`}
+            className={`relative rounded-2xl overflow-hidden border-2 ${baseTheme.border} bg-gradient-to-br ${baseTheme.panel} p-3 shadow-2xl`}
           >
             <motion.div
               animate={{ x: ["-100%", "200%"] }}
@@ -377,7 +377,7 @@ export default function MembershipShop({ visitorId, onUpdate }: Props) {
                   className="absolute"
                   style={{ left: `${15 + i * 22}%`, top: `${20 + (i % 2) * 40}%` }}
                 >
-                  <Sparkles className={`h-2 w-2 ${theme.accent}`} />
+                  <Sparkles className={`h-2 w-2 ${baseTheme.accent}`} />
                 </motion.div>
               ))}
             </div>
@@ -397,12 +397,12 @@ export default function MembershipShop({ visitorId, onUpdate }: Props) {
                   <motion.div
                     animate={{ rotate: 360 }}
                     transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
-                    className={`absolute -inset-2 rounded-full bg-gradient-to-r ${theme.glow} opacity-30 blur-md`}
+                     className={`absolute -inset-2 rounded-full bg-gradient-to-r ${baseTheme.glow} opacity-30 blur-md`}
                   />
                   <motion.div
                     animate={{ scale: [1, 1.05, 1] }}
                     transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-                    className={`relative w-16 h-16 rounded-2xl flex items-center justify-center border-2 ${theme.border} bg-gradient-to-br ${theme.glow} shadow-[0_8px_30px_rgba(0,0,0,0.5)]`}
+                     className={`relative w-16 h-16 rounded-2xl flex items-center justify-center border-2 ${baseTheme.border} bg-gradient-to-br ${baseTheme.glow} shadow-[0_8px_30px_rgba(0,0,0,0.5)]`}
                   >
                     <Crown className="h-8 w-8 text-white drop-shadow-lg" strokeWidth={2.5} />
                     <div className="absolute -inset-0.5 rounded-2xl bg-gradient-to-br from-white/30 via-transparent to-transparent pointer-events-none" />
@@ -411,7 +411,7 @@ export default function MembershipShop({ visitorId, onUpdate }: Props) {
                 </div>
                 <div className="mt-2 text-center">
                   <p className="text-[9px] font-black text-white/80 uppercase tracking-[0.15em] leading-tight">MEMBER</p>
-                  <p className={`text-[11px] font-black ${theme.accent} uppercase tracking-wider leading-tight drop-shadow-[0_0_8px_currentColor]`}>
+                   <p className={`text-[11px] font-black ${baseTheme.accent} uppercase tracking-wider leading-tight drop-shadow-[0_0_8px_currentColor]`}>
                     {selected.name.replace(/membership/i, "").trim() || `${selected.duration_days}H`}
                   </p>
                 </div>
@@ -447,7 +447,7 @@ export default function MembershipShop({ visitorId, onUpdate }: Props) {
                   </div>
                 </div>
                 <p className="text-[9px] text-white/60 text-center pt-0.5">
-                  Aktif <span className={`${theme.accent} font-black`}>{selected.duration_days} hari</span> setelah bayar
+                   Aktif <span className={`${baseTheme.accent} font-black`}>{selected.duration_days} hari</span> setelah bayar
                 </p>
               </div>
             </div>
@@ -457,7 +457,7 @@ export default function MembershipShop({ visitorId, onUpdate }: Props) {
                 size="lg"
                 disabled={totalBalance < selected.price_idr || busy === `${selected.id}-balance`}
                 onClick={() => purchase(selected.id)}
-                className={`relative overflow-hidden w-full h-12 text-sm font-black uppercase tracking-widest bg-gradient-to-r ${theme.glow} hover:brightness-110 text-white shadow-[0_8px_25px_-5px_rgba(0,0,0,0.5)] disabled:opacity-50 border border-white/30`}
+                 className={`relative overflow-hidden w-full h-12 text-sm font-black uppercase tracking-widest bg-gradient-to-r ${baseTheme.glow} hover:brightness-110 text-white shadow-[0_8px_25px_-5px_rgba(0,0,0,0.5)] disabled:opacity-50 border border-white/30`}
               >
                 <motion.div
                   animate={{ x: ["-150%", "150%"] }}
@@ -493,7 +493,7 @@ export default function MembershipShop({ visitorId, onUpdate }: Props) {
             const baseT = getTheme(p);
             // Jika plan ini termasuk membership AKTIF & ada fusion → pakai fusion theme
             const useFusion = !!fusion && activePlanIds.has(p.id);
-            const t = useFusion ? theme : baseT;
+            const iconTheme = useFusion ? fusionTheme : baseT;
             const isSel = p.id === selected.id;
             const isActivePlan = activePlanIds.has(p.id);
             return (
@@ -506,7 +506,7 @@ export default function MembershipShop({ visitorId, onUpdate }: Props) {
                 onClick={() => setSelectedPlanId(p.id)}
                 className={`relative rounded-xl border-2 transition-all overflow-hidden text-left p-1.5 ${
                   isSel
-                    ? `${t.border} bg-gradient-to-br ${t.panel} shadow-[0_4px_16px_rgba(0,0,0,0.4)] ring-2 ring-white/30`
+                    ? `${baseT.border} bg-gradient-to-br ${baseT.panel} shadow-[0_4px_16px_rgba(0,0,0,0.4)] ring-2 ring-white/30`
                     : "border-white/10 bg-black/40 hover:bg-black/50 hover:border-white/20"
                 }`}
               >
@@ -537,18 +537,18 @@ export default function MembershipShop({ visitorId, onUpdate }: Props) {
                       rotate: fusion === "rainbow" ? { duration: 6, repeat: Infinity, ease: "linear" } : undefined,
                       scale: { duration: 1.8, repeat: Infinity },
                     } : {}}
-                    className={`relative w-8 h-8 rounded-lg flex items-center justify-center bg-gradient-to-br ${t.glow} border ${t.border} shrink-0 shadow-md`}
+                     className={`relative w-8 h-8 rounded-lg flex items-center justify-center bg-gradient-to-br ${iconTheme.glow} border ${iconTheme.border} shrink-0 shadow-md`}
                   >
                     <Crown className="h-4 w-4 text-white drop-shadow" strokeWidth={2.5} />
                     {(isSel || useFusion) && (
-                      <div className={`absolute -inset-1 rounded-lg bg-gradient-to-br ${t.glow} ${useFusion ? "opacity-70" : "opacity-40"} blur-md -z-10`} />
+                       <div className={`absolute -inset-1 rounded-lg bg-gradient-to-br ${iconTheme.glow} ${useFusion ? "opacity-70" : "opacity-40"} blur-md -z-10`} />
                     )}
                   </motion.div>
                   <div className="min-w-0 flex-1">
                     <p className={`text-[9px] font-black uppercase truncate leading-tight ${isSel ? "text-white" : "text-white/80"}`}>
                       {p.name.replace(/membership/i, "").trim() || `${p.duration_days}H`}
                     </p>
-                    <p className={`text-[8px] font-bold leading-tight ${isSel ? t.accent : "text-white/60"}`}>
+                     <p className={`text-[8px] font-bold leading-tight ${isSel ? baseT.accent : "text-white/60"}`}>
                       Rp{(p.price_idr / 1000).toFixed(0)}K
                     </p>
                   </div>
@@ -622,7 +622,7 @@ export default function MembershipShop({ visitorId, onUpdate }: Props) {
                   transition={{ delay: idx * 0.015 }}
                   className={`relative shrink-0 w-[60px] rounded-xl border-2 overflow-hidden ${
                     isToday && !claimedToday
-                      ? `${theme.border} bg-gradient-to-b ${theme.panel} shadow-[0_4px_15px_rgba(168,85,247,0.4)]`
+                      ? `${baseTheme.border} bg-gradient-to-b ${baseTheme.panel} shadow-[0_4px_15px_rgba(168,85,247,0.4)]`
                       : claimedToday && isToday
                       ? "border-emerald-400/60 bg-gradient-to-b from-emerald-900/40 to-emerald-950/40"
                       : "border-white/10 bg-black/40"
@@ -632,11 +632,11 @@ export default function MembershipShop({ visitorId, onUpdate }: Props) {
                     <motion.div
                       animate={{ opacity: [0.3, 0.7, 0.3] }}
                       transition={{ duration: 1.5, repeat: Infinity }}
-                      className={`absolute inset-0 bg-gradient-to-b ${theme.glow} opacity-20 pointer-events-none`}
+                      className={`absolute inset-0 bg-gradient-to-b ${baseTheme.glow} opacity-20 pointer-events-none`}
                     />
                   )}
                   <div className={`relative text-center text-[9px] font-black py-0.5 ${
-                    isToday ? `${theme.accent} bg-black/40` : "text-white/50"
+                    isToday ? `${baseTheme.accent} bg-black/40` : "text-white/50"
                   }`}>
                     {isToday ? "HARI INI" : formatDay(d)}
                   </div>
