@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Crown, Coins, Wallet, Snowflake, Gem, Sparkles, Check, Gift, Lock, X } from "lucide-react";
+import { Loader2, Coins, Wallet, Snowflake, Gem, Sparkles, Check, Gift, Lock, X } from "lucide-react";
 import membershipCardLogo from "@/assets/membership-card-logo.png";
 
 interface Props {
@@ -347,7 +347,14 @@ export default function MembershipShop({ visitorId, onUpdate }: Props) {
           transition={{ duration: 2, repeat: Infinity }}
           className="flex items-center gap-1 rounded-full bg-gradient-to-r from-purple-500/50 to-fuchsia-500/50 border border-purple-300/60 px-2 py-0.5"
         >
-          <Crown className="h-3 w-3 text-yellow-200" />
+          <img
+            src={membershipCardLogo}
+            alt="MM"
+            width={14}
+            height={14}
+            loading="lazy"
+            className="h-3.5 w-3.5 object-contain"
+          />
           <span className="text-[9px] font-black text-white uppercase tracking-widest">Premium</span>
         </motion.div>
       </div>
