@@ -51,6 +51,7 @@ import LikesTab from "@/components/LikesTab";
 import DailyStreak from "@/components/DailyStreak";
 import NeonStreakHub from "@/components/streak/NeonStreakHub";
 import MembershipShop from "@/components/streak/MembershipShop";
+import { Tabs as MembershipTabs, TabsList as MembershipTabsList, TabsTrigger as MembershipTabsTrigger, TabsContent as MembershipTabsContent } from "@/components/ui/tabs";
 import HomeBannerSlider from "@/components/HomeBannerSlider";
 import VibrantHeroSection from "@/components/VibrantHeroSection";
 import BalanceAuth from "@/components/BalanceAuth";
@@ -3451,7 +3452,22 @@ const Index = () => {
                   </div>
                 </div>
               </div>
-              <MembershipShop key={`mship-${activeBalanceVisitorId}`} visitorId={activeBalanceVisitorId} />
+              <MembershipTabs defaultValue="coin" className="w-full">
+                <MembershipTabsList className="grid grid-cols-2 bg-black/30 border border-purple-400/30 h-auto p-1 mb-2 w-full">
+                  <MembershipTabsTrigger value="coin" className="text-[11px] data-[state=active]:bg-yellow-500/40 px-2 py-1.5 font-black uppercase tracking-wide">
+                    🪙 Coin Membership
+                  </MembershipTabsTrigger>
+                  <MembershipTabsTrigger value="gem" className="text-[11px] data-[state=active]:bg-cyan-500/40 px-2 py-1.5 font-black uppercase tracking-wide">
+                    💎 Gem Membership
+                  </MembershipTabsTrigger>
+                </MembershipTabsList>
+                <MembershipTabsContent value="coin">
+                  <MembershipShop key={`mship-coin-${activeBalanceVisitorId}`} visitorId={activeBalanceVisitorId} category="coin" />
+                </MembershipTabsContent>
+                <MembershipTabsContent value="gem">
+                  <MembershipShop key={`mship-gem-${activeBalanceVisitorId}`} visitorId={activeBalanceVisitorId} category="gem" />
+                </MembershipTabsContent>
+              </MembershipTabs>
             </div>
           ) : (
             <LoginGate
