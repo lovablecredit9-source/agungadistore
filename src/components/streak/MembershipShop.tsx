@@ -235,188 +235,294 @@ export default function MembershipShop({ visitorId, onUpdate }: Props) {
   }
 
   return (
-    <div className="rounded-2xl overflow-hidden border-2 border-purple-500/40 bg-gradient-to-br from-[#1a0d2e] via-[#15102e] to-[#0d0820] shadow-2xl">
-      {/* TOP BAR — saldo & info */}
-      <div className="flex items-center justify-between gap-2 px-3 py-2 bg-black/40 border-b border-purple-500/30">
+    <div className="relative rounded-3xl overflow-hidden border-2 border-purple-500/40 bg-gradient-to-br from-[#1a0d2e] via-[#15102e] to-[#0d0820] shadow-[0_20px_60px_-15px_rgba(168,85,247,0.4)]">
+      {/* Animated background orbs */}
+      <div className="pointer-events-none absolute inset-0 overflow-hidden">
+        <motion.div
+          animate={{ x: [0, 30, 0], y: [0, -20, 0], scale: [1, 1.1, 1] }}
+          transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
+          className={`absolute -top-12 -left-12 w-48 h-48 rounded-full bg-gradient-to-br ${theme.glow} opacity-20 blur-3xl`}
+        />
+        <motion.div
+          animate={{ x: [0, -25, 0], y: [0, 20, 0], scale: [1, 1.15, 1] }}
+          transition={{ duration: 10, repeat: Infinity, ease: "easeInOut", delay: 1 }}
+          className={`absolute -bottom-12 -right-12 w-56 h-56 rounded-full bg-gradient-to-br ${theme.glow} opacity-15 blur-3xl`}
+        />
+        <div className="absolute inset-0 opacity-[0.04]" style={{
+          backgroundImage: "linear-gradient(rgba(255,255,255,0.6) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.6) 1px, transparent 1px)",
+          backgroundSize: "20px 20px",
+        }} />
+      </div>
+
+      {/* TOP BAR */}
+      <div className="relative flex items-center justify-between gap-2 px-3 py-2 bg-black/50 backdrop-blur-sm border-b border-purple-500/30">
         <div className="flex items-center gap-1.5 flex-wrap">
-          <Badge className="bg-yellow-500/30 text-yellow-100 border-yellow-400/50 gap-1 text-[10px] h-5">
+          <Badge className="bg-gradient-to-r from-yellow-500/40 to-amber-500/40 text-yellow-100 border-yellow-400/60 gap-1 text-[10px] h-5 shadow-lg shadow-yellow-500/20">
             <Coins className="h-3 w-3" /> {coins.toLocaleString("id-ID")}
           </Badge>
-          <Badge className="bg-emerald-500/30 text-emerald-100 border-emerald-400/50 gap-1 text-[10px] h-5">
+          <Badge className="bg-gradient-to-r from-emerald-500/40 to-teal-500/40 text-emerald-100 border-emerald-400/60 gap-1 text-[10px] h-5 shadow-lg shadow-emerald-500/20">
             <Wallet className="h-3 w-3" /> Rp{totalBalance.toLocaleString("id-ID")}
           </Badge>
         </div>
-        <Badge className="bg-purple-500/40 text-purple-100 border-purple-400/60 text-[10px] h-5 uppercase tracking-wider">
-          Top-Up
-        </Badge>
+        <motion.div
+          animate={{ boxShadow: ["0 0 0px rgba(168,85,247,0.5)", "0 0 12px rgba(168,85,247,0.8)", "0 0 0px rgba(168,85,247,0.5)"] }}
+          transition={{ duration: 2, repeat: Infinity }}
+          className="flex items-center gap-1 rounded-full bg-gradient-to-r from-purple-500/50 to-fuchsia-500/50 border border-purple-300/60 px-2 py-0.5"
+        >
+          <Crown className="h-3 w-3 text-yellow-200" />
+          <span className="text-[9px] font-black text-white uppercase tracking-widest">Premium</span>
+        </motion.div>
       </div>
 
-      {/* MAIN AREA: panel kiri + sidebar kanan */}
-      <div className="grid grid-cols-[1fr_92px] gap-2 p-2.5">
-        {/* PANEL KIRI — paket terpilih */}
+      {/* MAIN AREA */}
+      <div className="relative grid grid-cols-[1fr_96px] gap-2 p-2.5">
         <AnimatePresence mode="wait">
           <motion.div
             key={selected.id}
-            initial={{ opacity: 0, x: -10 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: 10 }}
+            initial={{ opacity: 0, x: -10, scale: 0.98 }}
+            animate={{ opacity: 1, x: 0, scale: 1 }}
+            exit={{ opacity: 0, x: 10, scale: 0.98 }}
             transition={{ duration: 0.25 }}
-            className={`relative rounded-xl overflow-hidden border-2 ${theme.border} bg-gradient-to-br ${theme.panel} p-3`}
+            className={`relative rounded-2xl overflow-hidden border-2 ${theme.border} bg-gradient-to-br ${theme.panel} p-3 shadow-2xl`}
           >
-            {/* Header: judul beli */}
-            <div className="text-center mb-2">
-              <p className="text-[10px] text-white/80">
-                ✦ Beli dalam <span className="font-black text-white">Rp{selected.price_idr.toLocaleString("id-ID")}</span> untuk mendapatkan{" "}
+            <motion.div
+              animate={{ x: ["-100%", "200%"] }}
+              transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
+              className="absolute top-0 left-0 h-px w-1/2 bg-gradient-to-r from-transparent via-white to-transparent"
+            />
+
+            <div className="pointer-events-none absolute inset-0 overflow-hidden">
+              {[...Array(4)].map((_, i) => (
+                <motion.div
+                  key={i}
+                  animate={{ y: [0, -15, 0], opacity: [0.2, 0.8, 0.2], scale: [0.8, 1.2, 0.8] }}
+                  transition={{ duration: 2 + i * 0.3, repeat: Infinity, delay: i * 0.4 }}
+                  className="absolute"
+                  style={{ left: `${15 + i * 22}%`, top: `${20 + (i % 2) * 40}%` }}
+                >
+                  <Sparkles className={`h-2 w-2 ${theme.accent}`} />
+                </motion.div>
+              ))}
+            </div>
+
+            <div className="relative text-center mb-2.5">
+              <p className="text-[10px] text-white/85">
+                <Sparkles className="h-2.5 w-2.5 inline -mt-0.5 text-white/60" /> Beli{" "}
+                <span className="font-black text-white">Rp{selected.price_idr.toLocaleString("id-ID")}</span> dapatkan{" "}
                 <Coins className="h-3 w-3 inline text-yellow-300 -mt-0.5" />{" "}
-                <span className="font-black text-yellow-300">{selected.bonus_streak_coins}</span>
+                <span className="font-black text-yellow-300">{selected.bonus_streak_coins.toLocaleString("id-ID")}</span>
               </p>
             </div>
 
-            {/* Body: badge logo + nama */}
-            <div className="flex items-stretch gap-2.5">
+            <div className="relative flex items-stretch gap-2.5">
               <div className="flex flex-col items-center justify-center min-w-[88px]">
-                <div className={`relative w-16 h-16 rounded-2xl flex items-center justify-center border-2 ${theme.border} bg-gradient-to-br ${theme.glow} shadow-lg`}>
-                  <span className="text-3xl font-black text-white drop-shadow-lg">{theme.letter}</span>
-                  <div className="absolute -inset-1 rounded-2xl bg-gradient-to-br from-white/20 to-transparent pointer-events-none" />
+                <div className="relative">
+                  <motion.div
+                    animate={{ rotate: 360 }}
+                    transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
+                    className={`absolute -inset-2 rounded-full bg-gradient-to-r ${theme.glow} opacity-30 blur-md`}
+                  />
+                  <motion.div
+                    animate={{ scale: [1, 1.05, 1] }}
+                    transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                    className={`relative w-16 h-16 rounded-2xl flex items-center justify-center border-2 ${theme.border} bg-gradient-to-br ${theme.glow} shadow-[0_8px_30px_rgba(0,0,0,0.5)]`}
+                  >
+                    <Crown className="h-8 w-8 text-white drop-shadow-lg" strokeWidth={2.5} />
+                    <div className="absolute -inset-0.5 rounded-2xl bg-gradient-to-br from-white/30 via-transparent to-transparent pointer-events-none" />
+                    <div className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-white/80 blur-[2px]" />
+                  </motion.div>
                 </div>
-                <div className="mt-1.5 text-center">
-                  <p className="text-[10px] font-black text-white uppercase tracking-wide leading-tight">MEMBERSHIP</p>
-                  <p className={`text-[10px] font-black ${theme.accent} uppercase tracking-wide leading-tight`}>
-                    {selected.name.replace(/membership/i, "").trim() || `${selected.duration_days} HARI`}
+                <div className="mt-2 text-center">
+                  <p className="text-[9px] font-black text-white/80 uppercase tracking-[0.15em] leading-tight">MEMBER</p>
+                  <p className={`text-[11px] font-black ${theme.accent} uppercase tracking-wider leading-tight drop-shadow-[0_0_8px_currentColor]`}>
+                    {selected.name.replace(/membership/i, "").trim() || `${selected.duration_days}H`}
                   </p>
                 </div>
               </div>
 
-              {/* Detail hadiah */}
               <div className="flex-1 min-w-0 space-y-1.5">
-                <div className="flex items-center justify-between bg-black/30 rounded-lg px-2 py-1.5 border border-white/10">
-                  <span className="text-[10px] font-bold text-white/80 uppercase">Hadiah Instan</span>
-                  <span className="flex items-center gap-1 text-[11px] font-black text-yellow-300">
+                <div className="flex items-center justify-between bg-gradient-to-r from-yellow-500/10 to-transparent rounded-lg px-2 py-1.5 border border-yellow-400/20">
+                  <span className="text-[10px] font-bold text-white/80 uppercase tracking-wide flex items-center gap-1">
+                    <Sparkles className="h-2.5 w-2.5 text-yellow-300" />Instan
+                  </span>
+                  <span className="flex items-center gap-1 text-[11px] font-black text-yellow-300 drop-shadow-[0_0_6px_rgba(252,211,77,0.6)]">
                     <Coins className="h-3 w-3" />{selected.bonus_streak_coins.toLocaleString("id-ID")}
                   </span>
                 </div>
-                <div className="flex items-center justify-between bg-black/30 rounded-lg px-2 py-1.5 border border-white/10">
-                  <span className="text-[10px] font-bold text-white/80 uppercase">Hadiah Harian</span>
-                  <span className="flex items-center gap-1 text-[11px] font-black text-amber-300">
-                    <Gift className="h-3 w-3" />{(selected.daily_reward_coins || 0).toLocaleString("id-ID")}
+                <div className="flex items-center justify-between bg-gradient-to-r from-amber-500/10 to-transparent rounded-lg px-2 py-1.5 border border-amber-400/20">
+                  <span className="text-[10px] font-bold text-white/80 uppercase tracking-wide flex items-center gap-1">
+                    <Gift className="h-2.5 w-2.5 text-amber-300" />Harian
+                  </span>
+                  <span className="flex items-center gap-1 text-[11px] font-black text-amber-300 drop-shadow-[0_0_6px_rgba(251,191,36,0.6)]">
+                    <Coins className="h-3 w-3" />{(selected.daily_reward_coins || 0).toLocaleString("id-ID")}
                   </span>
                 </div>
-                <div className="flex items-center justify-between bg-black/30 rounded-lg px-2 py-1.5 border border-white/10">
-                  <span className="text-[10px] font-bold text-white/80 uppercase">Bonus</span>
-                  <div className="flex items-center gap-1 text-[10px]">
-                    <Badge className="h-4 px-1 text-[9px] bg-fuchsia-500/30 text-fuchsia-100 border-fuchsia-400/50">x{selected.bonus_multiplier}</Badge>
+                <div className="flex items-center justify-between bg-gradient-to-r from-fuchsia-500/10 to-transparent rounded-lg px-2 py-1.5 border border-fuchsia-400/20">
+                  <span className="text-[10px] font-bold text-white/80 uppercase tracking-wide">Bonus</span>
+                  <div className="flex items-center gap-1">
+                    <Badge className="h-4 px-1 text-[9px] bg-gradient-to-r from-fuchsia-500/40 to-pink-500/40 text-fuchsia-100 border-fuchsia-400/50 font-black shadow-md shadow-fuchsia-500/20">x{selected.bonus_multiplier}</Badge>
                     {selected.bonus_gems > 0 && (
-                      <Badge className="h-4 px-1 text-[9px] bg-cyan-500/30 text-cyan-100 border-cyan-400/50 gap-0.5"><Gem className="h-2.5 w-2.5" />{selected.bonus_gems}</Badge>
+                      <Badge className="h-4 px-1 text-[9px] bg-gradient-to-r from-cyan-500/40 to-sky-500/40 text-cyan-100 border-cyan-400/50 gap-0.5 font-black shadow-md shadow-cyan-500/20"><Gem className="h-2.5 w-2.5" />{selected.bonus_gems}</Badge>
                     )}
                     {selected.bonus_freeze_count > 0 && (
-                      <Badge className="h-4 px-1 text-[9px] bg-sky-500/30 text-sky-100 border-sky-400/50 gap-0.5"><Snowflake className="h-2.5 w-2.5" />{selected.bonus_freeze_count}</Badge>
+                      <Badge className="h-4 px-1 text-[9px] bg-gradient-to-r from-sky-500/40 to-blue-500/40 text-sky-100 border-sky-400/50 gap-0.5 font-black shadow-md shadow-sky-500/20"><Snowflake className="h-2.5 w-2.5" />{selected.bonus_freeze_count}</Badge>
                     )}
                   </div>
                 </div>
                 <p className="text-[9px] text-white/60 text-center pt-0.5">
-                  Efektif selama <span className="text-white font-bold">{selected.duration_days} hari</span> setelah pembelian
+                  Aktif <span className={`${theme.accent} font-black`}>{selected.duration_days} hari</span> setelah bayar
                 </p>
               </div>
             </div>
 
-            {/* Tombol beli besar */}
-            <Button
-              size="lg"
-              disabled={totalBalance < selected.price_idr || busy === `${selected.id}-balance`}
-              onClick={() => purchase(selected.id)}
-              className={`mt-2.5 w-full h-11 text-sm font-black uppercase tracking-wider bg-gradient-to-r ${theme.glow} hover:brightness-110 text-white shadow-lg disabled:opacity-50`}
-            >
-              {busy === `${selected.id}-balance` ? (
-                <Loader2 className="h-5 w-5 animate-spin" />
-              ) : (
-                <><Wallet className="h-4 w-4 mr-2" />RP{selected.price_idr.toLocaleString("id-ID")}</>
-              )}
-            </Button>
+            <motion.div whileTap={{ scale: 0.97 }} className="mt-3 relative">
+              <Button
+                size="lg"
+                disabled={totalBalance < selected.price_idr || busy === `${selected.id}-balance`}
+                onClick={() => purchase(selected.id)}
+                className={`relative overflow-hidden w-full h-12 text-sm font-black uppercase tracking-widest bg-gradient-to-r ${theme.glow} hover:brightness-110 text-white shadow-[0_8px_25px_-5px_rgba(0,0,0,0.5)] disabled:opacity-50 border border-white/30`}
+              >
+                <motion.div
+                  animate={{ x: ["-150%", "150%"] }}
+                  transition={{ duration: 2.5, repeat: Infinity, ease: "linear" }}
+                  className="absolute inset-y-0 w-1/3 bg-gradient-to-r from-transparent via-white/40 to-transparent skew-x-12"
+                />
+                {busy === `${selected.id}-balance` ? (
+                  <Loader2 className="h-5 w-5 animate-spin relative z-10" />
+                ) : (
+                  <span className="relative z-10 flex items-center gap-2">
+                    <Wallet className="h-4 w-4" />
+                    Rp{selected.price_idr.toLocaleString("id-ID")}
+                  </span>
+                )}
+              </Button>
+            </motion.div>
 
             {activeForSelected && (
-              <div className="mt-2 flex items-center justify-center gap-1 text-[10px] text-emerald-300">
-                <Check className="h-3 w-3" />
-                <span className="font-bold">Aktif s.d. {new Date(activeForSelected.expires_at).toLocaleDateString("id-ID", { day: "2-digit", month: "short" })}</span>
-              </div>
+              <motion.div
+                initial={{ opacity: 0, y: 4 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="mt-2 flex items-center justify-center gap-1 text-[10px] text-emerald-300 bg-emerald-500/10 rounded-full py-1 border border-emerald-400/30"
+              >
+                <Check className="h-3 w-3" strokeWidth={3} />
+                <span className="font-black uppercase tracking-wider">Aktif s.d. {new Date(activeForSelected.expires_at).toLocaleDateString("id-ID", { day: "2-digit", month: "short" })}</span>
+              </motion.div>
             )}
           </motion.div>
         </AnimatePresence>
 
-        {/* SIDEBAR KANAN — daftar paket */}
         <div className="flex flex-col gap-1.5">
-          {plans.map((p) => {
+          {plans.map((p, idx) => {
             const t = getTheme(p);
             const isSel = p.id === selected.id;
             const isActivePlan = activePlanIds.has(p.id);
             return (
-              <button
+              <motion.button
                 key={p.id}
+                initial={{ opacity: 0, x: 8 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: idx * 0.05 }}
+                whileTap={{ scale: 0.96 }}
                 onClick={() => setSelectedPlanId(p.id)}
-                className={`relative rounded-lg border-2 transition-all overflow-hidden text-left p-1.5 ${
+                className={`relative rounded-xl border-2 transition-all overflow-hidden text-left p-1.5 ${
                   isSel
-                    ? `${t.border} bg-gradient-to-br ${t.panel} shadow-lg ring-2 ring-white/20`
-                    : "border-white/10 bg-black/30 hover:bg-black/40"
+                    ? `${t.border} bg-gradient-to-br ${t.panel} shadow-[0_4px_16px_rgba(0,0,0,0.4)] ring-2 ring-white/30`
+                    : "border-white/10 bg-black/40 hover:bg-black/50 hover:border-white/20"
                 }`}
               >
-                {isActivePlan && (
-                  <div className="absolute left-1 top-1 rounded-full border border-emerald-400/40 bg-emerald-500/20 px-1 py-0.5 text-[8px] font-black text-emerald-200">
-                    Aktif
-                  </div>
+                {isSel && (
+                  <motion.div
+                    animate={{ x: ["-100%", "200%"] }}
+                    transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+                    className="absolute top-0 left-0 h-px w-1/2 bg-gradient-to-r from-transparent via-white/80 to-transparent"
+                  />
                 )}
-                {/* Reward chip atas */}
+                {isActivePlan && (
+                  <motion.div
+                    animate={{ scale: [1, 1.08, 1] }}
+                    transition={{ duration: 1.5, repeat: Infinity }}
+                    className="absolute -left-0.5 -top-0.5 z-10 rounded-br-lg rounded-tl-lg border border-emerald-400/60 bg-gradient-to-br from-emerald-500/80 to-teal-500/80 px-1 py-0.5 text-[7px] font-black text-white shadow-md"
+                  >
+                    ON
+                  </motion.div>
+                )}
                 <div className="flex items-center justify-end gap-0.5 mb-1">
                   <Coins className="h-2.5 w-2.5 text-yellow-300" />
                   <span className="text-[9px] font-black text-yellow-200">{p.bonus_streak_coins}</span>
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <div className={`w-7 h-7 rounded-md flex items-center justify-center text-xs font-black text-white bg-gradient-to-br ${t.glow} border ${t.border} shrink-0`}>
-                    {t.letter}
+                  <div className={`relative w-8 h-8 rounded-lg flex items-center justify-center bg-gradient-to-br ${t.glow} border ${t.border} shrink-0 shadow-md`}>
+                    <Crown className="h-4 w-4 text-white drop-shadow" strokeWidth={2.5} />
+                    {isSel && (
+                      <div className={`absolute -inset-1 rounded-lg bg-gradient-to-br ${t.glow} opacity-40 blur-md -z-10`} />
+                    )}
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="text-[9px] font-black text-white uppercase truncate leading-tight">{p.name.replace(/membership/i, "").trim() || `${p.duration_days}H`}</p>
-                    <p className="text-[8px] font-bold text-white/70 leading-tight">RP{(p.price_idr / 1000).toFixed(0)}K</p>
+                    <p className={`text-[9px] font-black uppercase truncate leading-tight ${isSel ? "text-white" : "text-white/80"}`}>
+                      {p.name.replace(/membership/i, "").trim() || `${p.duration_days}H`}
+                    </p>
+                    <p className={`text-[8px] font-bold leading-tight ${isSel ? t.accent : "text-white/60"}`}>
+                      Rp{(p.price_idr / 1000).toFixed(0)}K
+                    </p>
                   </div>
                 </div>
-              </button>
+              </motion.button>
             );
           })}
         </div>
       </div>
 
-      {/* HADIAH HARIAN GRID */}
-      <div className="px-2.5 pb-3">
-        <div className="bg-black/40 rounded-xl border border-purple-500/30 p-2.5">
-          <div className="flex items-center justify-between mb-2 flex-wrap gap-1">
+      {/* HADIAH HARIAN */}
+      <div className="relative px-2.5 pb-3">
+        <div className="relative bg-black/50 backdrop-blur-sm rounded-2xl border border-purple-500/30 p-3 overflow-hidden">
+          <div className="absolute -top-8 left-1/2 -translate-x-1/2 w-32 h-16 bg-amber-500/20 blur-2xl rounded-full pointer-events-none" />
+
+          <div className="relative flex items-center justify-between mb-2.5 flex-wrap gap-1">
             <div className="flex items-center gap-1.5 min-w-0">
-              <div className="w-1 h-3 bg-yellow-400 rounded-sm" />
-              <p className="text-[11px] font-black text-white uppercase tracking-wider">Hadiah Harian</p>
+              <motion.div
+                animate={{ scaleY: [1, 1.4, 1] }}
+                transition={{ duration: 1.2, repeat: Infinity }}
+                className="w-1 h-4 bg-gradient-to-b from-yellow-300 to-amber-500 rounded-sm shadow-[0_0_8px_rgba(251,191,36,0.8)]"
+              />
+              <p className="text-[11px] font-black text-white uppercase tracking-widest">Hadiah Harian</p>
               {todayRewardTotal > 0 && (
-                <Badge className="h-5 border-amber-400/40 bg-amber-500/15 text-[9px] text-amber-200">
-                  +{todayRewardTotal.toLocaleString("id-ID")}
-                </Badge>
+                <motion.div animate={{ scale: [1, 1.05, 1] }} transition={{ duration: 2, repeat: Infinity }}>
+                  <Badge className="h-5 border-amber-400/60 bg-gradient-to-r from-amber-500/30 to-yellow-500/30 text-[10px] font-black text-amber-100 shadow-md shadow-amber-500/30">
+                    +{todayRewardTotal.toLocaleString("id-ID")}
+                  </Badge>
+                </motion.div>
               )}
-              <span className="text-[9px] text-white/60">(Refresh setiap hari pada <span className="text-yellow-300 font-bold">00:00</span>)</span>
             </div>
             {dailyClaim && dailyClaim.coins_today > 0 && !claimedToday && (
-              <Button
-                size="sm"
-                disabled={claimingDaily || !dailyClaim.available}
-                onClick={claimDaily}
-                className="h-7 px-2 text-[10px] font-black bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white"
-              >
-                {claimingDaily ? <Loader2 className="h-3 w-3 animate-spin" /> : <><Gift className="h-3 w-3 mr-1" />KLAIM</>}
-              </Button>
+              <motion.div whileTap={{ scale: 0.94 }}>
+                <Button
+                  size="sm"
+                  disabled={claimingDaily || !dailyClaim.available}
+                  onClick={claimDaily}
+                  className="relative overflow-hidden h-8 px-3 text-[11px] font-black uppercase tracking-wider bg-gradient-to-r from-amber-500 via-orange-500 to-pink-500 hover:brightness-110 text-white shadow-lg shadow-orange-500/40 border border-white/20"
+                >
+                  <motion.div
+                    animate={{ x: ["-100%", "150%"] }}
+                    transition={{ duration: 1.8, repeat: Infinity, ease: "linear" }}
+                    className="absolute inset-y-0 w-1/3 bg-gradient-to-r from-transparent via-white/40 to-transparent skew-x-12"
+                  />
+                  {claimingDaily ? <Loader2 className="h-3 w-3 animate-spin relative z-10" /> : <span className="relative z-10 flex items-center gap-1"><Gift className="h-3 w-3" />KLAIM</span>}
+                </Button>
+              </motion.div>
             )}
             {claimedToday && (
-              <Badge className="bg-white/10 text-white/70 border-white/20 text-[10px] gap-1 h-6">
-                <Lock className="h-2.5 w-2.5" />
-                <span className="font-mono tabular-nums">{countdown}</span>
+              <Badge className="bg-emerald-500/20 text-emerald-200 border-emerald-400/40 text-[10px] gap-1 h-7 font-black px-2">
+                <Check className="h-3 w-3" strokeWidth={3} />
+                <span className="font-mono tabular-nums text-[10px]">{countdown}</span>
               </Badge>
             )}
           </div>
 
-          {/* Strip kalender harian (scroll horizontal) */}
-          <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-thin">
+          <p className="relative text-[9px] text-white/50 mb-2 flex items-center gap-1">
+            <Lock className="h-2 w-2" />Reset tiap hari pukul <span className="text-yellow-300 font-black">00:00 WIB</span>
+          </p>
+
+          <div className="relative flex gap-1.5 overflow-x-auto pb-1 scrollbar-thin">
             {calendarDays.map((d, idx) => {
               const isToday = idx === 0;
               const isLocked = idx > 0 || (isToday && claimedToday);
@@ -427,34 +533,45 @@ export default function MembershipShop({ visitorId, onUpdate }: Props) {
                   initial={{ opacity: 0, y: 6 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: idx * 0.015 }}
-                  className={`shrink-0 w-[58px] rounded-lg border-2 overflow-hidden ${
+                  className={`relative shrink-0 w-[60px] rounded-xl border-2 overflow-hidden ${
                     isToday && !claimedToday
-                      ? `${theme.border} bg-gradient-to-b ${theme.panel} shadow-lg`
+                      ? `${theme.border} bg-gradient-to-b ${theme.panel} shadow-[0_4px_15px_rgba(168,85,247,0.4)]`
                       : claimedToday && isToday
-                      ? "border-emerald-400/60 bg-emerald-900/30"
+                      ? "border-emerald-400/60 bg-gradient-to-b from-emerald-900/40 to-emerald-950/40"
                       : "border-white/10 bg-black/40"
                   }`}
                 >
-                  <div className={`text-center text-[9px] font-bold py-0.5 ${
-                    isToday ? `${theme.accent} bg-black/30` : "text-white/50"
+                  {isToday && !claimedToday && (
+                    <motion.div
+                      animate={{ opacity: [0.3, 0.7, 0.3] }}
+                      transition={{ duration: 1.5, repeat: Infinity }}
+                      className={`absolute inset-0 bg-gradient-to-b ${theme.glow} opacity-20 pointer-events-none`}
+                    />
+                  )}
+                  <div className={`relative text-center text-[9px] font-black py-0.5 ${
+                    isToday ? `${theme.accent} bg-black/40` : "text-white/50"
                   }`}>
-                    {formatDay(d)}
+                    {isToday ? "HARI INI" : formatDay(d)}
                   </div>
                   <div className="relative h-12 flex items-center justify-center bg-gradient-to-b from-white/5 to-transparent">
-                    {isLocked ? (
+                    {isLocked && !(claimedToday && isToday) ? (
                       <div className="flex flex-col items-center gap-0.5 opacity-40">
                         <Lock className="h-2.5 w-2.5 text-white/50" strokeWidth={2} />
                         <span className="text-[8px] font-bold text-white/40">+{reward}</span>
                       </div>
-                    ) : (
-                      <div className="flex flex-col items-center">
-                        <Coins className="h-4 w-4 text-yellow-300" />
+                    ) : !isLocked ? (
+                      <motion.div
+                        animate={{ y: [0, -2, 0] }}
+                        transition={{ duration: 1.5, repeat: Infinity }}
+                        className="flex flex-col items-center"
+                      >
+                        <Coins className="h-4 w-4 text-yellow-300 drop-shadow-[0_0_6px_rgba(252,211,77,0.8)]" />
                         <span className="text-[9px] font-black text-yellow-200 mt-0.5">+{reward}</span>
-                      </div>
-                    )}
+                      </motion.div>
+                    ) : null}
                     {claimedToday && isToday && (
-                      <div className="absolute inset-0 flex items-center justify-center bg-emerald-500/20 backdrop-blur-[1px]">
-                        <Check className="h-5 w-5 text-emerald-300" strokeWidth={3} />
+                      <div className="absolute inset-0 flex items-center justify-center bg-emerald-500/30 backdrop-blur-[1px]">
+                        <Check className="h-6 w-6 text-emerald-200 drop-shadow-[0_0_8px_rgba(110,231,183,0.8)]" strokeWidth={3} />
                       </div>
                     )}
                   </div>
@@ -463,10 +580,10 @@ export default function MembershipShop({ visitorId, onUpdate }: Props) {
             })}
           </div>
 
-          <p className="text-[9px] text-center text-white/50 mt-2">
+          <p className="relative text-[9px] text-center text-white/60 mt-2 font-bold">
             {active.length > 0
-              ? <>✨ Membership aktif! Klaim setiap hari sebelum jam <span className="text-yellow-300 font-bold">00:00 WIB</span></>
-              : <>🔒 Beli Membership dulu untuk membuka hadiah harian</>
+              ? <>✨ <span className="text-emerald-300">Member aktif!</span> Klaim sebelum <span className="text-yellow-300">00:00 WIB</span></>
+              : <>🔒 Beli Membership untuk membuka hadiah harian</>
             }
           </p>
         </div>
