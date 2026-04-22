@@ -408,8 +408,17 @@ export default function MembershipShop({ visitorId, onUpdate, category = "coin" 
               <p className="text-[10px] text-white/85">
                 <Sparkles className="h-2.5 w-2.5 inline -mt-0.5 text-white/60" /> Beli{" "}
                 <span className="font-black text-white">Rp{selected.price_idr.toLocaleString("id-ID")}</span> dapatkan{" "}
-                <Coins className="h-3 w-3 inline text-yellow-300 -mt-0.5" />{" "}
-                <span className="font-black text-yellow-300">{selected.bonus_streak_coins.toLocaleString("id-ID")}</span>
+                {isGem ? (
+                  <>
+                    <Gem className="h-3 w-3 inline text-cyan-300 -mt-0.5" />{" "}
+                    <span className="font-black text-cyan-300">{(selected.bonus_gems || 0).toLocaleString("id-ID")}</span>
+                  </>
+                ) : (
+                  <>
+                    <Coins className="h-3 w-3 inline text-yellow-300 -mt-0.5" />{" "}
+                    <span className="font-black text-yellow-300">{selected.bonus_streak_coins.toLocaleString("id-ID")}</span>
+                  </>
+                )}
               </p>
             </div>
 
@@ -440,20 +449,22 @@ export default function MembershipShop({ visitorId, onUpdate, category = "coin" 
               </div>
 
               <div className="flex-1 min-w-0 space-y-1.5">
-                <div className="flex items-center justify-between bg-gradient-to-r from-yellow-500/10 to-transparent rounded-lg px-2 py-1.5 border border-yellow-400/20">
+                <div className={`flex items-center justify-between bg-gradient-to-r ${isGem ? "from-cyan-500/10" : "from-yellow-500/10"} to-transparent rounded-lg px-2 py-1.5 border ${isGem ? "border-cyan-400/20" : "border-yellow-400/20"}`}>
                   <span className="text-[10px] font-bold text-white/80 uppercase tracking-wide flex items-center gap-1">
-                    <Sparkles className="h-2.5 w-2.5 text-yellow-300" />Instan
+                    <Sparkles className={`h-2.5 w-2.5 ${isGem ? "text-cyan-300" : "text-yellow-300"}`} />Instan
                   </span>
-                  <span className="flex items-center gap-1 text-[11px] font-black text-yellow-300 drop-shadow-[0_0_6px_rgba(252,211,77,0.6)]">
-                    <Coins className="h-3 w-3" />{selected.bonus_streak_coins.toLocaleString("id-ID")}
+                  <span className={`flex items-center gap-1 text-[11px] font-black ${isGem ? "text-cyan-300 drop-shadow-[0_0_6px_rgba(103,232,249,0.6)]" : "text-yellow-300 drop-shadow-[0_0_6px_rgba(252,211,77,0.6)]"}`}>
+                    {isGem ? <Gem className="h-3 w-3" /> : <Coins className="h-3 w-3" />}
+                    {(isGem ? (selected.bonus_gems || 0) : selected.bonus_streak_coins).toLocaleString("id-ID")}
                   </span>
                 </div>
-                <div className="flex items-center justify-between bg-gradient-to-r from-amber-500/10 to-transparent rounded-lg px-2 py-1.5 border border-amber-400/20">
+                <div className={`flex items-center justify-between bg-gradient-to-r ${isGem ? "from-sky-500/10" : "from-amber-500/10"} to-transparent rounded-lg px-2 py-1.5 border ${isGem ? "border-sky-400/20" : "border-amber-400/20"}`}>
                   <span className="text-[10px] font-bold text-white/80 uppercase tracking-wide flex items-center gap-1">
-                    <Gift className="h-2.5 w-2.5 text-amber-300" />Harian
+                    <Gift className={`h-2.5 w-2.5 ${isGem ? "text-sky-300" : "text-amber-300"}`} />Harian
                   </span>
-                  <span className="flex items-center gap-1 text-[11px] font-black text-amber-300 drop-shadow-[0_0_6px_rgba(251,191,36,0.6)]">
-                    <Coins className="h-3 w-3" />{(selected.daily_reward_coins || 0).toLocaleString("id-ID")}
+                  <span className={`flex items-center gap-1 text-[11px] font-black ${isGem ? "text-sky-300 drop-shadow-[0_0_6px_rgba(125,211,252,0.6)]" : "text-amber-300 drop-shadow-[0_0_6px_rgba(251,191,36,0.6)]"}`}>
+                    {isGem ? <Gem className="h-3 w-3" /> : <Coins className="h-3 w-3" />}
+                    {(isGem ? (selected.bonus_daily_gems || 0) : (selected.daily_reward_coins || 0)).toLocaleString("id-ID")}
                   </span>
                 </div>
                 <div className="flex items-center justify-between bg-gradient-to-r from-fuchsia-500/10 to-transparent rounded-lg px-2 py-1.5 border border-fuchsia-400/20">
@@ -549,8 +560,17 @@ export default function MembershipShop({ visitorId, onUpdate, category = "coin" 
                   </motion.div>
                 )}
                 <div className="flex items-center justify-end gap-0.5 mb-1">
-                  <Coins className="h-2.5 w-2.5 text-yellow-300" />
-                  <span className="text-[9px] font-black text-yellow-200">{p.bonus_streak_coins}</span>
+                  {isGem ? (
+                    <>
+                      <Gem className="h-2.5 w-2.5 text-cyan-300" />
+                      <span className="text-[9px] font-black text-cyan-200">{p.bonus_gems || 0}</span>
+                    </>
+                  ) : (
+                    <>
+                      <Coins className="h-2.5 w-2.5 text-yellow-300" />
+                      <span className="text-[9px] font-black text-yellow-200">{p.bonus_streak_coins}</span>
+                    </>
+                  )}
                 </div>
                 <div className="flex items-center gap-1.5">
                   <motion.div
