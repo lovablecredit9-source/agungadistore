@@ -490,7 +490,10 @@ export default function MembershipShop({ visitorId, onUpdate }: Props) {
 
         <div className="flex flex-col gap-1.5">
           {plans.map((p, idx) => {
-            const t = getTheme(p);
+            const baseT = getTheme(p);
+            // Jika plan ini termasuk membership AKTIF & ada fusion → pakai fusion theme
+            const useFusion = !!fusion && activePlanIds.has(p.id);
+            const t = useFusion ? theme : baseT;
             const isSel = p.id === selected.id;
             const isActivePlan = activePlanIds.has(p.id);
             return (
@@ -528,12 +531,19 @@ export default function MembershipShop({ visitorId, onUpdate }: Props) {
                   <span className="text-[9px] font-black text-yellow-200">{p.bonus_streak_coins}</span>
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <div className={`relative w-8 h-8 rounded-lg flex items-center justify-center bg-gradient-to-br ${t.glow} border ${t.border} shrink-0 shadow-md`}>
+                  <motion.div
+                    animate={useFusion ? { rotate: fusion === "rainbow" ? [0, 360] : 0, scale: [1, 1.06, 1] } : {}}
+                    transition={useFusion ? {
+                      rotate: fusion === "rainbow" ? { duration: 6, repeat: Infinity, ease: "linear" } : undefined,
+                      scale: { duration: 1.8, repeat: Infinity },
+                    } : {}}
+                    className={`relative w-8 h-8 rounded-lg flex items-center justify-center bg-gradient-to-br ${t.glow} border ${t.border} shrink-0 shadow-md`}
+                  >
                     <Crown className="h-4 w-4 text-white drop-shadow" strokeWidth={2.5} />
-                    {isSel && (
-                      <div className={`absolute -inset-1 rounded-lg bg-gradient-to-br ${t.glow} opacity-40 blur-md -z-10`} />
+                    {(isSel || useFusion) && (
+                      <div className={`absolute -inset-1 rounded-lg bg-gradient-to-br ${t.glow} ${useFusion ? "opacity-70" : "opacity-40"} blur-md -z-10`} />
                     )}
-                  </div>
+                  </motion.div>
                   <div className="min-w-0 flex-1">
                     <p className={`text-[9px] font-black uppercase truncate leading-tight ${isSel ? "text-white" : "text-white/80"}`}>
                       {p.name.replace(/membership/i, "").trim() || `${p.duration_days}H`}
