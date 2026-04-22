@@ -249,6 +249,9 @@ Deno.serve(async (req) => {
         }
       }
 
+      const tokenState = await getLuckyTokens(admin, visitorId);
+      const megaPool = await getMegaPool(admin);
+
       return Response.json({
         history: allHistory,
         gems: gemsData || 0,
@@ -260,6 +263,11 @@ Deno.serve(async (req) => {
         freePrizes: FREE_PRIZES,
         luckyStreak,
         streakMultiplier: getStreakMultiplier(luckyStreak),
+        luckyTokens: tokenState.tokens,
+        luckyTokenProgress: tokenState.spinProgress,
+        luckyTokenThreshold: TOKENS_PER_SPIN_THRESHOLD,
+        megaJackpotPool: megaPool,
+        tokenShop: TOKEN_SHOP,
       }, { headers: corsHeaders });
     }
 
