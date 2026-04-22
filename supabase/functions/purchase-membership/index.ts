@@ -8,9 +8,10 @@ const corsHeaders = {
 
 const requestSchema = z.object({
   visitorId: z.string().trim().min(1),
-  action: z.enum(["list", "purchase", "daily-claim"]).default("list"),
+  action: z.enum(["list", "purchase", "daily-claim", "daily-gem-claim"]).default("list"),
   planId: z.string().uuid().optional(),
-  paymentSource: z.enum(["auto", "game", "main", "coins", "gems"]).default("auto"),
+  paymentSource: z.enum(["auto", "game", "main"]).default("auto"),
+  category: z.enum(["coin", "gem", "all"]).default("all"),
   pin: z.string().trim().min(1).optional(),
 });
 
@@ -44,7 +45,7 @@ Deno.serve(async (req) => {
       return Response.json({ error: parsed.error.issues[0]?.message || "Permintaan tidak valid" }, { status: 400, headers: corsHeaders });
     }
 
-    const { visitorId, action, planId, paymentSource, pin } = parsed.data;
+    const { visitorId, action, planId, paymentSource, pin, category } = parsed.data;
     const admin = createClient(Deno.env.get("SUPABASE_URL") ?? "", Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "", {
       auth: { autoRefreshToken: false, persistSession: false },
     });
