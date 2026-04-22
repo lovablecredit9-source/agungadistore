@@ -153,6 +153,21 @@ export default function LuckRoyaleNyawa() {
         </div>
       ) : (
         <div className="px-3 py-4 space-y-4 max-w-md mx-auto">
+          {/* Quick switch ke Diamond Royale */}
+          <button onClick={() => nav("/diamond-royale")}
+            className="w-full flex items-center justify-between gap-2 p-3 rounded-xl bg-gradient-to-r from-fuchsia-500/15 via-purple-500/15 to-amber-500/15 border border-fuchsia-400/30 hover:border-fuchsia-400/60 transition-all">
+            <div className="flex items-center gap-2.5">
+              <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-fuchsia-500 via-purple-600 to-amber-500 flex items-center justify-center shadow-lg shadow-fuchsia-500/40">
+                <Sparkles className="w-5 h-5 text-white" fill="currentColor" />
+              </div>
+              <div className="text-left">
+                <div className="text-xs font-black text-fuchsia-200">💎 Diamond Royale</div>
+                <div className="text-[10px] text-white/60">Spin premium pakai Gems • Pity 80 = Legendary</div>
+              </div>
+            </div>
+            <div className="text-fuchsia-300 font-black text-xs">→</div>
+          </button>
+
           {/* Quick Stats Bar */}
           {(() => {
             const totalSpins = history.length;
