@@ -164,6 +164,21 @@ export default function DiamondRoyale() {
       </div>
 
       <div className="max-w-md mx-auto px-3 py-4 space-y-4 relative">
+        {/* Quick switch ke Lucky Royale Nyawa */}
+        <button onClick={() => nav("/luck-royale-nyawa")}
+          className="w-full flex items-center justify-between gap-2 p-3 rounded-xl bg-gradient-to-r from-amber-500/15 via-orange-500/15 to-red-500/15 border border-amber-400/30 hover:border-amber-400/60 transition-all">
+          <div className="flex items-center gap-2.5">
+            <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-amber-400 via-orange-500 to-red-600 flex items-center justify-center shadow-lg shadow-amber-500/40">
+              <Crown className="w-5 h-5 text-white" fill="currentColor" />
+            </div>
+            <div className="text-left">
+              <div className="text-xs font-black text-amber-200">Lucky Royale Nyawa</div>
+              <div className="text-[10px] text-white/60">Spin booster nyawa & power-up</div>
+            </div>
+          </div>
+          <div className="text-amber-300 font-black text-xs">→</div>
+        </button>
+
         {/* Hero / Reel */}
         <Card className="relative overflow-hidden p-4 bg-gradient-to-br from-amber-500/10 via-purple-500/10 to-pink-500/10 border-amber-400/30">
           <div className="absolute -top-8 -right-8 w-32 h-32 bg-amber-400/20 rounded-full blur-3xl" />
