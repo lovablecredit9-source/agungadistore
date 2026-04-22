@@ -21,15 +21,16 @@ type Prize = {
 };
 
 const PRIZES: Prize[] = [
-  { kind: "coins", label: "+50 Koin", value: 50, rarity: "common", weight: 35, color: "#94a3b8" },
-  { kind: "coins", label: "+150 Koin", value: 150, rarity: "common", weight: 22, color: "#64748b" },
-  { kind: "coins", label: "+400 Koin", value: 400, rarity: "rare", weight: 15, color: "#06b6d4" },
-  { kind: "freeze", label: "+1 Streak Freeze", value: 1, rarity: "rare", weight: 10, color: "#10b981" },
-  { kind: "gems", label: "+10 Gems", value: 10, rarity: "epic", weight: 7, color: "#a855f7" },
-  { kind: "freeze", label: "+3 Streak Freeze", value: 3, rarity: "epic", weight: 5, color: "#ec4899" },
-  { kind: "title", label: "Title: 💎 Diamond Lord", value: 1, rarity: "epic", weight: 3, color: "#f472b6" },
-  { kind: "gems", label: "+50 Gems", value: 50, rarity: "legendary", weight: 2, color: "#fbbf24" },
-  { kind: "skin", label: "🌟 Skin Avatar Legendary", value: 1, rarity: "legendary", weight: 1, color: "#fde047" },
+  { kind: "coins", label: "+250 Koin", value: 250, rarity: "common", weight: 32, color: "#94a3b8" },
+  { kind: "coins", label: "+600 Koin", value: 600, rarity: "common", weight: 22, color: "#64748b" },
+  { kind: "coins", label: "+1.500 Koin", value: 1500, rarity: "rare", weight: 14, color: "#06b6d4" },
+  { kind: "freeze", label: "+2 Streak Freeze", value: 2, rarity: "rare", weight: 10, color: "#10b981" },
+  { kind: "gems", label: "+50 Gems", value: 50, rarity: "epic", weight: 8, color: "#a855f7" },
+  { kind: "coins", label: "+5.000 Koin", value: 5000, rarity: "epic", weight: 6, color: "#ec4899" },
+  { kind: "freeze", label: "+8 Streak Freeze", value: 8, rarity: "epic", weight: 4, color: "#f472b6" },
+  { kind: "title", label: "Title: 💎 Diamond Lord", value: 1, rarity: "legendary", weight: 2, color: "#fde047" },
+  { kind: "gems", label: "🌟 +250 Gems JACKPOT", value: 250, rarity: "legendary", weight: 1.5, color: "#fbbf24" },
+  { kind: "skin", label: "👑 Skin Avatar Mythic", value: 1, rarity: "legendary", weight: 0.5, color: "#fde047" },
 ];
 
 function pickWeighted(pool: Prize[]): Prize {
