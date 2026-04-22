@@ -18,7 +18,7 @@ interface Prize {
   value: number;
   label: string;
   emoji: string;
-  rarity: "common" | "rare" | "epic" | "legendary";
+  rarity: "common" | "rare" | "epic" | "legendary" | "mythic";
   weight: number;
   color: string;
 }
@@ -42,6 +42,7 @@ const RARITY_STYLE: Record<string, { glow: string; gradient: string; label: stri
   rare: { glow: "shadow-cyan-500/50", gradient: "from-cyan-500 to-blue-600", label: "RARE", ring: "ring-cyan-400/60" },
   epic: { glow: "shadow-purple-500/60", gradient: "from-fuchsia-500 to-purple-700", label: "EPIC", ring: "ring-fuchsia-400/70" },
   legendary: { glow: "shadow-amber-500/70", gradient: "from-amber-400 via-orange-500 to-red-600", label: "LEGENDARY", ring: "ring-amber-400/80" },
+  mythic: { glow: "shadow-fuchsia-500/80", gradient: "from-red-500 via-yellow-400 via-green-400 via-cyan-400 via-blue-500 to-fuchsia-500", label: "MYTHIC", ring: "ring-fuchsia-300/90" },
 };
 
 function getKindIcon(kind: string) {
@@ -110,8 +111,7 @@ export default function LuckRoyaleNyawa() {
         setReelSpinning(false);
         return;
       }
-      // Simulasi animasi spin reel cepat ~600ms
-      await new Promise(r => setTimeout(r, 600));
+      // Tampilkan hadiah langsung (tanpa delay)
       setReelSpinning(false);
       setResults(data.results);
       setGems(data.gems);

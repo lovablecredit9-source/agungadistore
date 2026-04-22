@@ -24,7 +24,7 @@ type Prize = {
   value: number;
   label: string;
   emoji: string;
-  rarity: "common" | "rare" | "epic" | "legendary";
+  rarity: "common" | "rare" | "epic" | "legendary" | "mythic";
   weight: number;
   color: string;
 };
@@ -46,11 +46,13 @@ const PRIZES: Prize[] = [
   { kind: "extra_life",    value: 10, label: "🎰 JACKPOT +10 Nyawa",      emoji: "👑", rarity: "legendary", weight: 2,  color: "#fbbf24" },
   { kind: "streak_freeze", value: 5,  label: "🎰 LEGENDARY +5 Freeze",    emoji: "👑", rarity: "legendary", weight: 1,  color: "#f59e0b" },
   { kind: "gems",          value: 500, label: "💎 LEGENDARY +500 Gem",    emoji: "💎", rarity: "legendary", weight: 1,  color: "#facc15" },
-  // Mythic (~1%) — sangat langka, hadiah mewah
-  { kind: "gems",          value: 1500, label: "🌟 MYTHIC TREASURE +1500 Gem", emoji: "🌟", rarity: "legendary", weight: 0.6, color: "#e879f9" },
-  { kind: "extra_life",    value: 25,  label: "👑 MYTHIC VAULT +25 Nyawa",     emoji: "👑", rarity: "legendary", weight: 0.3, color: "#f0abfc" },
-  // Grand Prize (~0.1%) — ultra rare
-  { kind: "gems",          value: 5000, label: "💠 GRAND PRIZE +5000 Gem",     emoji: "💠", rarity: "legendary", weight: 0.1, color: "#22d3ee" },
+  // Mythic (~0.5%) — pelangi, super langka
+  { kind: "gems",          value: 1500, label: "🌈 MYTHIC TREASURE +1,500 Gem", emoji: "🌈", rarity: "mythic", weight: 0.3,  color: "#e879f9" },
+  { kind: "extra_life",    value: 25,   label: "🌈 MYTHIC VAULT +25 Nyawa",     emoji: "🌈", rarity: "mythic", weight: 0.15, color: "#f0abfc" },
+  // Grand Prize (~0.08%) — ultra rare pelangi
+  { kind: "gems",          value: 5000,  label: "🌈 GRAND PRIZE +5,000 Gem",     emoji: "🌈", rarity: "mythic", weight: 0.05, color: "#22d3ee" },
+  { kind: "gems",          value: 10000, label: "🌈 MEGA JACKPOT +10,000 Gem",   emoji: "🌈", rarity: "mythic", weight: 0.02, color: "#a78bfa" },
+  { kind: "gems",          value: 20000, label: "🌈 ULTRA JACKPOT +20,000 Gem",  emoji: "🌈", rarity: "mythic", weight: 0.01, color: "#f472b6" },
 ];
 
 function pickPrize(): Prize & { index: number } {
