@@ -51,6 +51,7 @@ import LikesTab from "@/components/LikesTab";
 import DailyStreak from "@/components/DailyStreak";
 import NeonStreakHub from "@/components/streak/NeonStreakHub";
 import MembershipShop from "@/components/streak/MembershipShop";
+import PowerPackShop from "@/components/streak/PowerPackShop";
 import { Tabs as MembershipTabs, TabsList as MembershipTabsList, TabsTrigger as MembershipTabsTrigger, TabsContent as MembershipTabsContent } from "@/components/ui/tabs";
 import HomeBannerSlider from "@/components/HomeBannerSlider";
 import VibrantHeroSection from "@/components/VibrantHeroSection";
