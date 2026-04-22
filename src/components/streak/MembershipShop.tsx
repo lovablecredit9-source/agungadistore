@@ -606,11 +606,11 @@ export default function MembershipShop({ visitorId, onUpdate, category = "coin" 
                 </motion.div>
               )}
             </div>
-            {dailyClaim && dailyClaim.coins_today > 0 && !claimedToday && (
+            {todayRewardTotal > 0 && !claimedToday && (
               <motion.div whileTap={{ scale: 0.94 }}>
                 <Button
                   size="sm"
-                  disabled={claimingDaily || !dailyClaim.available}
+                  disabled={claimingDaily || !dailyAvailable}
                   onClick={claimDaily}
                   className="relative overflow-hidden h-8 px-3 text-[11px] font-black uppercase tracking-wider bg-gradient-to-r from-amber-500 via-orange-500 to-pink-500 hover:brightness-110 text-white shadow-lg shadow-orange-500/40 border border-white/20"
                 >
@@ -639,7 +639,8 @@ export default function MembershipShop({ visitorId, onUpdate, category = "coin" 
             {calendarDays.map((d, idx) => {
               const isToday = idx === 0;
               const isLocked = idx > 0 || (isToday && claimedToday);
-              const reward = isToday ? (todayRewardTotal || selected.daily_reward_coins || 0) : (selected.daily_reward_coins || 0);
+              const dailyDefault = isGem ? (selected.bonus_daily_gems || 0) : (selected.daily_reward_coins || 0);
+              const reward = isToday ? (todayRewardTotal || dailyDefault) : dailyDefault;
               return (
                 <motion.div
                   key={idx}
@@ -678,8 +679,12 @@ export default function MembershipShop({ visitorId, onUpdate, category = "coin" 
                         transition={{ duration: 1.5, repeat: Infinity }}
                         className="flex flex-col items-center"
                       >
-                        <Coins className="h-4 w-4 text-yellow-300 drop-shadow-[0_0_6px_rgba(252,211,77,0.8)]" />
-                        <span className="text-[9px] font-black text-yellow-200 mt-0.5">+{reward}</span>
+                        {isGem ? (
+                          <Gem className="h-4 w-4 text-cyan-300 drop-shadow-[0_0_6px_rgba(103,232,249,0.8)]" />
+                        ) : (
+                          <Coins className="h-4 w-4 text-yellow-300 drop-shadow-[0_0_6px_rgba(252,211,77,0.8)]" />
+                        )}
+                        <span className={`text-[9px] font-black mt-0.5 ${isGem ? "text-cyan-200" : "text-yellow-200"}`}>+{reward}</span>
                       </motion.div>
                     ) : null}
                     {claimedToday && isToday && (
