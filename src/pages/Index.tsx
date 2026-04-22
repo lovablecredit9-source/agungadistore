@@ -52,6 +52,8 @@ import DailyStreak from "@/components/DailyStreak";
 import NeonStreakHub from "@/components/streak/NeonStreakHub";
 import MembershipShop from "@/components/streak/MembershipShop";
 import PowerPackShop from "@/components/streak/PowerPackShop";
+import MembershipExtrasShop from "@/components/streak/MembershipExtrasShop";
+import MembershipCarousel from "@/components/streak/MembershipCarousel";
 import { Tabs as MembershipTabs, TabsList as MembershipTabsList, TabsTrigger as MembershipTabsTrigger, TabsContent as MembershipTabsContent } from "@/components/ui/tabs";
 import HomeBannerSlider from "@/components/HomeBannerSlider";
 import VibrantHeroSection from "@/components/VibrantHeroSection";
@@ -3453,29 +3455,7 @@ const Index = () => {
                   </div>
                 </div>
               </div>
-              <MembershipTabs defaultValue="coin" className="w-full">
-                <MembershipTabsList className="grid grid-cols-3 bg-black/30 border border-purple-400/30 h-auto p-1 mb-2 w-full">
-                  <MembershipTabsTrigger value="coin" className="text-[10px] data-[state=active]:bg-yellow-500/40 px-1 py-1.5 font-black uppercase tracking-wide">
-                    🪙 Coin
-                  </MembershipTabsTrigger>
-                  <MembershipTabsTrigger value="gem" className="text-[10px] data-[state=active]:bg-cyan-500/40 px-1 py-1.5 font-black uppercase tracking-wide">
-                    💎 Gem
-                  </MembershipTabsTrigger>
-                  <MembershipTabsTrigger value="power" className="text-[10px] data-[state=active]:bg-pink-500/40 px-1 py-1.5 font-black uppercase tracking-wide relative">
-                    ⚡ Power
-                    <span className="ml-1 inline-flex items-center justify-center bg-pink-500 text-white text-[8px] h-3 px-1 rounded animate-pulse">NEW</span>
-                  </MembershipTabsTrigger>
-                </MembershipTabsList>
-                <MembershipTabsContent value="coin">
-                  <MembershipShop key={`mship-coin-${activeBalanceVisitorId}`} visitorId={activeBalanceVisitorId} category="coin" />
-                </MembershipTabsContent>
-                <MembershipTabsContent value="gem">
-                  <MembershipShop key={`mship-gem-${activeBalanceVisitorId}`} visitorId={activeBalanceVisitorId} category="gem" />
-                </MembershipTabsContent>
-                <MembershipTabsContent value="power">
-                  <PowerPackShop key={`pp-${activeBalanceVisitorId}`} visitorId={activeBalanceVisitorId} />
-                </MembershipTabsContent>
-              </MembershipTabs>
+              <MembershipCarousel visitorId={activeBalanceVisitorId} />
             </div>
           ) : (
             <LoginGate

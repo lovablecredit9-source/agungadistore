@@ -3850,6 +3850,54 @@ export type Database = {
         }
         Relationships: []
       }
+      streak_auto_saver_subs: {
+        Row: {
+          auto_freeze_per_week: number
+          created_at: string
+          duration_days: number
+          expires_at: string
+          freezes_used_this_week: number
+          id: string
+          is_active: boolean
+          price_idr: number
+          restore_per_week: number
+          restores_used_this_week: number
+          tier: string
+          visitor_id: string
+          week_reset_at: string
+        }
+        Insert: {
+          auto_freeze_per_week?: number
+          created_at?: string
+          duration_days: number
+          expires_at: string
+          freezes_used_this_week?: number
+          id?: string
+          is_active?: boolean
+          price_idr: number
+          restore_per_week?: number
+          restores_used_this_week?: number
+          tier: string
+          visitor_id: string
+          week_reset_at?: string
+        }
+        Update: {
+          auto_freeze_per_week?: number
+          created_at?: string
+          duration_days?: number
+          expires_at?: string
+          freezes_used_this_week?: number
+          id?: string
+          is_active?: boolean
+          price_idr?: number
+          restore_per_week?: number
+          restores_used_this_week?: number
+          tier?: string
+          visitor_id?: string
+          week_reset_at?: string
+        }
+        Relationships: []
+      }
       streak_avatar_stages: {
         Row: {
           color_from: string
@@ -4073,6 +4121,42 @@ export type Database = {
           status?: string
           updated_at?: string
           winner_id?: string | null
+        }
+        Relationships: []
+      }
+      streak_boost_squad_subs: {
+        Row: {
+          created_at: string
+          duration_days: number
+          expires_at: string
+          id: string
+          is_active: boolean
+          multiplier: number
+          price_idr: number
+          tier: string
+          visitor_id: string
+        }
+        Insert: {
+          created_at?: string
+          duration_days: number
+          expires_at: string
+          id?: string
+          is_active?: boolean
+          multiplier?: number
+          price_idr: number
+          tier: string
+          visitor_id: string
+        }
+        Update: {
+          created_at?: string
+          duration_days?: number
+          expires_at?: string
+          id?: string
+          is_active?: boolean
+          multiplier?: number
+          price_idr?: number
+          tier?: string
+          visitor_id?: string
         }
         Relationships: []
       }
@@ -4455,6 +4539,45 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      streak_diamond_elite_subs: {
+        Row: {
+          cashback_percent: number
+          created_at: string
+          duration_days: number
+          expires_at: string
+          id: string
+          is_active: boolean
+          price_idr: number
+          tier: string
+          total_cashback_earned: number
+          visitor_id: string
+        }
+        Insert: {
+          cashback_percent?: number
+          created_at?: string
+          duration_days?: number
+          expires_at: string
+          id?: string
+          is_active?: boolean
+          price_idr: number
+          tier?: string
+          total_cashback_earned?: number
+          visitor_id: string
+        }
+        Update: {
+          cashback_percent?: number
+          created_at?: string
+          duration_days?: number
+          expires_at?: string
+          id?: string
+          is_active?: boolean
+          price_idr?: number
+          tier?: string
+          total_cashback_earned?: number
+          visitor_id?: string
+        }
+        Relationships: []
       }
       streak_discount_vouchers: {
         Row: {
@@ -4961,6 +5084,77 @@ export type Database = {
           tier_key?: string
           tier_name?: string
           tier_order?: number
+        }
+        Relationships: []
+      }
+      streak_lucky_box_claims: {
+        Row: {
+          claim_date: string
+          created_at: string
+          id: string
+          rewards: Json
+          sub_id: string
+          visitor_id: string
+        }
+        Insert: {
+          claim_date: string
+          created_at?: string
+          id?: string
+          rewards?: Json
+          sub_id: string
+          visitor_id: string
+        }
+        Update: {
+          claim_date?: string
+          created_at?: string
+          id?: string
+          rewards?: Json
+          sub_id?: string
+          visitor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "streak_lucky_box_claims_sub_id_fkey"
+            columns: ["sub_id"]
+            isOneToOne: false
+            referencedRelation: "streak_lucky_box_subs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      streak_lucky_box_subs: {
+        Row: {
+          created_at: string
+          duration_days: number
+          expires_at: string
+          id: string
+          is_active: boolean
+          price_idr: number
+          tier: string
+          total_days_claimed: number
+          visitor_id: string
+        }
+        Insert: {
+          created_at?: string
+          duration_days: number
+          expires_at: string
+          id?: string
+          is_active?: boolean
+          price_idr: number
+          tier: string
+          total_days_claimed?: number
+          visitor_id: string
+        }
+        Update: {
+          created_at?: string
+          duration_days?: number
+          expires_at?: string
+          id?: string
+          is_active?: boolean
+          price_idr?: number
+          tier?: string
+          total_days_claimed?: number
+          visitor_id?: string
         }
         Relationships: []
       }
