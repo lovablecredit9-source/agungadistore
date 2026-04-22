@@ -66,7 +66,7 @@ function useCountdown(targetIso?: string | null) {
   return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
 }
 
-// Tema warna berdasar tier
+// Tema warna berdasar tier (warna dasar 1 plan)
 function getTheme(plan?: Plan | null) {
   const days = plan?.duration_days || 0;
   if (days >= 30) {
@@ -77,6 +77,7 @@ function getTheme(plan?: Plan | null) {
       accent: "text-amber-300",
       badge: "bg-amber-500/30 text-amber-100 border-amber-400/60",
       letter: "M",
+      fusionId: "yellow" as const,
     };
   }
   if (days >= 7) {
@@ -87,6 +88,7 @@ function getTheme(plan?: Plan | null) {
       accent: "text-fuchsia-300",
       badge: "bg-fuchsia-500/30 text-fuchsia-100 border-fuchsia-400/60",
       letter: "W",
+      fusionId: "purple" as const,
     };
   }
   return {
@@ -96,7 +98,75 @@ function getTheme(plan?: Plan | null) {
     accent: "text-cyan-300",
     badge: "bg-cyan-500/30 text-cyan-100 border-cyan-400/60",
     letter: "T",
+    fusionId: "blue" as const,
   };
+}
+
+// Tema fusion berdasarkan kombinasi membership AKTIF
+// Biru saja → biru | Biru+Ungu → HIJAU NEON | Biru+Kuning → MERAH API
+// Ungu saja → ungu | Kuning saja → kuning | Ungu+Kuning → ORANGE PLASMA
+// Semua tiga aktif → RAINBOW PRISMATIC
+function getFusionTheme(activePlans: Plan[], fallback: ReturnType<typeof getTheme>) {
+  if (!activePlans || activePlans.length === 0) return { ...fallback, fusion: null as null | "green" | "red" | "orange" | "rainbow" };
+  const ids = new Set(activePlans.map((p) => getTheme(p).fusionId));
+  const hasBlue = ids.has("blue");
+  const hasPurple = ids.has("purple");
+  const hasYellow = ids.has("yellow");
+
+  // Triple fusion → Rainbow prismatic
+  if (hasBlue && hasPurple && hasYellow) {
+    return {
+      glow: "from-cyan-400 via-fuchsia-500 to-amber-400",
+      panel: "from-[#1a1040] via-[#3a0f3a] to-[#3a2a0d]",
+      border: "border-white/70",
+      accent: "text-white",
+      badge: "bg-white/20 text-white border-white/60",
+      letter: "★",
+      fusionId: "blue" as const,
+      fusion: "rainbow" as const,
+    };
+  }
+  // Biru + Ungu → Hijau neon
+  if (hasBlue && hasPurple && !hasYellow) {
+    return {
+      glow: "from-emerald-400 via-green-500 to-lime-400",
+      panel: "from-[#0a2e1a] via-[#0e3a1f] to-[#08220f]",
+      border: "border-emerald-300/70",
+      accent: "text-emerald-300",
+      badge: "bg-emerald-500/30 text-emerald-100 border-emerald-400/60",
+      letter: "G",
+      fusionId: "blue" as const,
+      fusion: "green" as const,
+    };
+  }
+  // Biru + Kuning → Merah api
+  if (hasBlue && hasYellow && !hasPurple) {
+    return {
+      glow: "from-red-500 via-rose-500 to-orange-500",
+      panel: "from-[#3a0d0d] via-[#4a0e1a] to-[#2a0808]",
+      border: "border-red-400/70",
+      accent: "text-red-300",
+      badge: "bg-red-500/30 text-red-100 border-red-400/60",
+      letter: "R",
+      fusionId: "yellow" as const,
+      fusion: "red" as const,
+    };
+  }
+  // Ungu + Kuning → Orange plasma
+  if (hasPurple && hasYellow && !hasBlue) {
+    return {
+      glow: "from-orange-400 via-amber-500 to-pink-500",
+      panel: "from-[#3a1a0d] via-[#4a1d1a] to-[#2a0d08]",
+      border: "border-orange-300/70",
+      accent: "text-orange-300",
+      badge: "bg-orange-500/30 text-orange-100 border-orange-400/60",
+      letter: "O",
+      fusionId: "yellow" as const,
+      fusion: "orange" as const,
+    };
+  }
+  // Single → fallback ke tema plan terpilih
+  return { ...fallback, fusion: null };
 }
 
 export default function MembershipShop({ visitorId, onUpdate }: Props) {
@@ -140,7 +210,14 @@ export default function MembershipShop({ visitorId, onUpdate }: Props) {
   useEffect(() => { if (visitorId) load(); /* eslint-disable-next-line */ }, [visitorId]);
 
   const selected = useMemo(() => plans.find((p) => p.id === selectedPlanId) || plans[0], [plans, selectedPlanId]);
-  const theme = getTheme(selected);
+  const baseTheme = getTheme(selected);
+  // Hitung tema fusion berdasar membership AKTIF user
+  const activePlanObjects = useMemo(
+    () => active.map((m) => plans.find((p) => p.id === m.plan_id)).filter(Boolean) as Plan[],
+    [active, plans]
+  );
+  const theme = useMemo(() => getFusionTheme(activePlanObjects, baseTheme), [activePlanObjects, baseTheme]);
+  const fusion = theme.fusion;
   const totalBalance = gameBalance + mainBalance;
 
   // Gabungan membership aktif untuk hitung sisa hari kalender
@@ -264,14 +341,53 @@ export default function MembershipShop({ visitorId, onUpdate }: Props) {
             <Wallet className="h-3 w-3" /> Rp{totalBalance.toLocaleString("id-ID")}
           </Badge>
         </div>
-        <motion.div
-          animate={{ boxShadow: ["0 0 0px rgba(168,85,247,0.5)", "0 0 12px rgba(168,85,247,0.8)", "0 0 0px rgba(168,85,247,0.5)"] }}
-          transition={{ duration: 2, repeat: Infinity }}
-          className="flex items-center gap-1 rounded-full bg-gradient-to-r from-purple-500/50 to-fuchsia-500/50 border border-purple-300/60 px-2 py-0.5"
-        >
-          <Crown className="h-3 w-3 text-yellow-200" />
-          <span className="text-[9px] font-black text-white uppercase tracking-widest">Premium</span>
-        </motion.div>
+        <div className="flex items-center gap-1.5">
+          {fusion && (
+            <motion.div
+              initial={{ scale: 0, rotate: -90 }}
+              animate={{
+                scale: [1, 1.08, 1],
+                rotate: fusion === "rainbow" ? [0, 360] : 0,
+              }}
+              transition={{
+                scale: { duration: 1.6, repeat: Infinity },
+                rotate: fusion === "rainbow" ? { duration: 6, repeat: Infinity, ease: "linear" } : undefined,
+              }}
+              className={`flex items-center gap-1 rounded-full border-2 px-2 py-0.5 shadow-lg ${
+                fusion === "green"
+                  ? "bg-gradient-to-r from-emerald-500 via-green-400 to-lime-400 border-emerald-200/80 shadow-emerald-500/60"
+                  : fusion === "red"
+                  ? "bg-gradient-to-r from-red-500 via-rose-500 to-orange-500 border-red-200/80 shadow-red-500/60"
+                  : fusion === "orange"
+                  ? "bg-gradient-to-r from-orange-500 via-amber-400 to-pink-500 border-orange-200/80 shadow-orange-500/60"
+                  : "bg-[conic-gradient(from_0deg,#22d3ee,#a855f7,#fbbf24,#f43f5e,#22d3ee)] border-white/80 shadow-fuchsia-500/60"
+              }`}
+            >
+              <Sparkles className="h-3 w-3 text-white drop-shadow" />
+              <span className="text-[9px] font-black text-white uppercase tracking-widest drop-shadow">
+                {fusion === "green" ? "Hijau Fusion" : fusion === "red" ? "Merah Fusion" : fusion === "orange" ? "Plasma" : "Prismatic"}
+              </span>
+            </motion.div>
+          )}
+          <motion.div
+            animate={{
+              boxShadow: fusion === "green"
+                ? ["0 0 0px rgba(16,185,129,0.5)", "0 0 14px rgba(16,185,129,0.95)", "0 0 0px rgba(16,185,129,0.5)"]
+                : fusion === "red"
+                ? ["0 0 0px rgba(239,68,68,0.5)", "0 0 14px rgba(239,68,68,0.95)", "0 0 0px rgba(239,68,68,0.5)"]
+                : fusion === "orange"
+                ? ["0 0 0px rgba(249,115,22,0.5)", "0 0 14px rgba(249,115,22,0.95)", "0 0 0px rgba(249,115,22,0.5)"]
+                : fusion === "rainbow"
+                ? ["0 0 4px rgba(34,211,238,0.6)", "0 0 16px rgba(168,85,247,0.95)", "0 0 16px rgba(251,191,36,0.95)", "0 0 4px rgba(34,211,238,0.6)"]
+                : ["0 0 0px rgba(168,85,247,0.5)", "0 0 12px rgba(168,85,247,0.8)", "0 0 0px rgba(168,85,247,0.5)"],
+            }}
+            transition={{ duration: 2, repeat: Infinity }}
+            className={`flex items-center gap-1 rounded-full bg-gradient-to-r ${theme.glow} border border-white/60 px-2 py-0.5`}
+          >
+            <Crown className="h-3 w-3 text-white drop-shadow" />
+            <span className="text-[9px] font-black text-white uppercase tracking-widest">Premium</span>
+          </motion.div>
+        </div>
       </div>
 
       {/* MAIN AREA */}
