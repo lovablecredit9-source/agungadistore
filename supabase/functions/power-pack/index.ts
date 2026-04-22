@@ -203,7 +203,8 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({
         success: true,
         pack_name: pack.name,
-        expires_at: expires.toISOString(),
+        expires_at: sub.expires_at,
+        extended: !!existingSub,
         instant_items: instantItems.map((i) => ({ code: i.code, name: i.name, icon: i.icon, rarity: i.rarity })),
       }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
