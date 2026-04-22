@@ -7,6 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Crown, Coins, Wallet, Snowflake, Gem, Sparkles, Check, Gift, Lock, X } from "lucide-react";
+import membershipCardLogo from "@/assets/membership-card-logo.png";
 
 interface Props {
   visitorId: string;
@@ -402,11 +403,16 @@ export default function MembershipShop({ visitorId, onUpdate }: Props) {
                   <motion.div
                     animate={{ scale: [1, 1.05, 1] }}
                     transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-                     className={`relative w-16 h-16 rounded-2xl flex items-center justify-center border-2 ${baseTheme.border} bg-gradient-to-br ${baseTheme.glow} shadow-[0_8px_30px_rgba(0,0,0,0.5)]`}
+                    className="relative w-16 h-16 flex items-center justify-center"
                   >
-                    <Crown className="h-8 w-8 text-white drop-shadow-lg" strokeWidth={2.5} />
-                    <div className="absolute -inset-0.5 rounded-2xl bg-gradient-to-br from-white/30 via-transparent to-transparent pointer-events-none" />
-                    <div className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-white/80 blur-[2px]" />
+                    <img
+                      src={membershipCardLogo}
+                      alt="Logo Kartu Membership"
+                      width={64}
+                      height={64}
+                      loading="lazy"
+                      className="w-16 h-16 object-contain drop-shadow-[0_4px_12px_rgba(0,0,0,0.5)]"
+                    />
                   </motion.div>
                 </div>
                 <div className="mt-2 text-center">
