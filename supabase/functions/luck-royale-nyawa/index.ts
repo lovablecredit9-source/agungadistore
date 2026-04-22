@@ -83,12 +83,72 @@ function pickPrize(): Prize & { index: number } {
 }
 
 // === LUCKY STREAK MULTIPLIER ===
-// Hitung berapa spin berturut-turut yang dapat rare+ (rare/epic/legendary/mythic)
-// Setiap 3 streak = +10% bonus pada nilai hadiah numerik (gems/nyawa/dll)
 function getStreakMultiplier(streakCount: number): number {
   if (streakCount < 3) return 1.0;
-  const bonus = Math.floor(streakCount / 3) * 0.1; // +10% per 3 streak
-  return Math.min(2.0, 1 + bonus); // cap 2x
+  const bonus = Math.floor(streakCount / 3) * 0.1;
+  return Math.min(2.0, 1 + bonus);
+}
+
+// === LUCKY TOKEN SYSTEM ===
+// Tiap 5 spin berbayar = +1 Lucky Token. Bisa ditukar hadiah pasti.
+const TOKENS_PER_SPIN_THRESHOLD = 5; // 5 paid spin = 1 token
+const TOKEN_SHOP: Array<{ code: string; name: string; cost: number; kind: string; value: number; rarity: string; emoji: string }> = [
+  { code: "tk_hint10",   name: "+10 Hint Otomatis",       cost: 1,  kind: "auto_hint",     value: 10,   rarity: "rare",      emoji: "💡" },
+  { code: "tk_life10",   name: "+10 Nyawa Ekstra",        cost: 1,  kind: "extra_life",    value: 10,   rarity: "rare",      emoji: "❤️" },
+  { code: "tk_freeze8",  name: "+8 Streak Freeze",        cost: 2,  kind: "streak_freeze", value: 8,    rarity: "epic",      emoji: "🛡️" },
+  { code: "tk_gems250",  name: "💎 +250 Gem Pasti",       cost: 3,  kind: "gems",          value: 250,  rarity: "epic",      emoji: "💎" },
+  { code: "tk_gems800",  name: "👑 +800 Gem Legendary",   cost: 8,  kind: "gems",          value: 800,  rarity: "legendary", emoji: "👑" },
+  { code: "tk_mega",     name: "🌈 MEGA +2.500 Gem",      cost: 20, kind: "gems",          value: 2500, rarity: "mythic",    emoji: "🌈" },
+];
+
+async function getLuckyTokens(admin: any, visitorId: string): Promise<{ tokens: number; spinProgress: number }> {
+  const key = `lucky_token_${visitorId}`;
+  const { data } = await admin.from("admin_settings").select("setting_value").eq("setting_key", key).maybeSingle();
+  if (!data) return { tokens: 0, spinProgress: 0 };
+  try {
+    const obj = JSON.parse(data.setting_value);
+    return { tokens: Number(obj.tokens || 0), spinProgress: Number(obj.spinProgress || 0) };
+  } catch {
+    return { tokens: 0, spinProgress: 0 };
+  }
+}
+
+async function setLuckyTokens(admin: any, visitorId: string, tokens: number, spinProgress: number) {
+  const key = `lucky_token_${visitorId}`;
+  const value = JSON.stringify({ tokens, spinProgress });
+  const { data: existing } = await admin.from("admin_settings").select("id").eq("setting_key", key).maybeSingle();
+  if (existing) {
+    await admin.from("admin_settings").update({ setting_value: value }).eq("id", existing.id);
+  } else {
+    await admin.from("admin_settings").insert({ setting_key: key, setting_value: value });
+  }
+}
+
+// === MEGA JACKPOT POOL (komunitas) ===
+// Pool gem global yang naik 5% dari tiap cost spin berbayar.
+// Saat seseorang dapat Mythic → ada 25% chance pool dipecah & dibagikan ke pemain itu.
+const POOL_KEY = "luck_royale_mega_jackpot_pool";
+const POOL_SEED = 5000;
+const POOL_CONTRIBUTION_PCT = 0.05; // 5% dari biaya spin masuk pool
+const POOL_BREAK_CHANCE = 0.25;     // 25% chance pecah saat dapat Mythic
+const POOL_MIN_BREAK = 3000;        // pool minimal sebelum bisa pecah
+
+async function getMegaPool(admin: any): Promise<number> {
+  const { data } = await admin.from("admin_settings").select("setting_value").eq("setting_key", POOL_KEY).maybeSingle();
+  if (!data) {
+    await admin.from("admin_settings").insert({ setting_key: POOL_KEY, setting_value: String(POOL_SEED) });
+    return POOL_SEED;
+  }
+  return Number(data.setting_value || POOL_SEED);
+}
+
+async function setMegaPool(admin: any, value: number) {
+  const { data } = await admin.from("admin_settings").select("id").eq("setting_key", POOL_KEY).maybeSingle();
+  if (data) {
+    await admin.from("admin_settings").update({ setting_value: String(Math.max(POOL_SEED, value)) }).eq("id", data.id);
+  } else {
+    await admin.from("admin_settings").insert({ setting_key: POOL_KEY, setting_value: String(Math.max(POOL_SEED, value)) });
+  }
 }
 
 // Tambah qty ke streak_power_pack_inventory (inventory yang dipakai PowerPackShop)
@@ -154,7 +214,7 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const { visitorId, action, count: requestedCount } = await req.json();
+    const { visitorId, action, count: requestedCount, itemCode } = await req.json();
     if (!visitorId) return Response.json({ error: "visitorId required" }, { status: 400, headers: corsHeaders });
 
     const admin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
@@ -281,6 +341,11 @@ Deno.serve(async (req) => {
         return Response.json({ error: "Gagal mengurangi saldo" }, { status: 400, headers: corsHeaders });
       }
 
+      // === Mega Jackpot Pool: kontribusi 5% dari biaya spin ===
+      let pool = await getMegaPool(admin);
+      pool += Math.floor(cost * POOL_CONTRIBUTION_PCT);
+      await setMegaPool(admin, pool);
+
       const { data: histPre } = await admin
         .from("luck_royale_nyawa_history")
         .select("rarity")
@@ -293,8 +358,9 @@ Deno.serve(async (req) => {
         else break;
       }
 
-      const results: Array<Prize & { index: number; bonusApplied?: number }> = [];
+      const results: Array<Prize & { index: number; bonusApplied?: number; jackpotWon?: number }> = [];
       let totalBonusGems = 0;
+      let jackpotWonTotal = 0;
       for (let i = 0; i < spinCount; i++) {
         const basePrize = pickPrize();
         const mult = getStreakMultiplier(curStreak);
@@ -307,15 +373,29 @@ Deno.serve(async (req) => {
         }
         const prize: Prize = { ...basePrize, value: finalValue };
         await applyPrize(admin, visitorId, prize);
-        results.push({ ...prize, index: basePrize.index, bonusApplied });
 
+        // === MEGA JACKPOT BREAK: kalau Mythic & lolos chance ===
+        let jackpotWon = 0;
+        if (prize.rarity === "mythic" && pool >= POOL_MIN_BREAK && Math.random() < POOL_BREAK_CHANCE) {
+          jackpotWon = Math.floor(pool * 0.7); // pemain dapat 70% pool
+          pool = pool - jackpotWon;
+          await setMegaPool(admin, pool);
+          await admin.rpc("add_account_gems", { p_visitor_id: visitorId, p_amount: jackpotWon });
+          jackpotWonTotal += jackpotWon;
+        }
+
+        results.push({ ...prize, index: basePrize.index, bonusApplied, jackpotWon });
+
+        const labelParts: string[] = [prize.label];
+        if (bonusApplied > 0) labelParts.push(`(+${Math.round((mult - 1) * 100)}% streak)`);
+        if (jackpotWon > 0) labelParts.push(`💥 MEGA JACKPOT +${jackpotWon} Gem!`);
         await admin.from("luck_royale_nyawa_history").insert({
           visitor_id: visitorId,
           spin_type: spinType,
           reward_kind: prize.kind,
-          reward_value: finalValue,
-          reward_label: bonusApplied > 0 ? `${prize.label} (+${Math.round((mult - 1) * 100)}% streak bonus)` : prize.label,
-          rarity: prize.rarity,
+          reward_value: finalValue + jackpotWon,
+          reward_label: labelParts.join(" "),
+          rarity: jackpotWon > 0 ? "mythic" : prize.rarity,
           cost_currency: currency,
           cost_amount: i === 0 ? cost : 0,
         });
@@ -324,15 +404,31 @@ Deno.serve(async (req) => {
         else curStreak = 0;
       }
 
+      // === LUCKY TOKEN: tiap 5 paid spin = +1 token ===
+      const tokenState = await getLuckyTokens(admin, visitorId);
+      let newProgress = tokenState.spinProgress + spinCount;
+      let earnedTokens = 0;
+      while (newProgress >= TOKENS_PER_SPIN_THRESHOLD) {
+        earnedTokens++;
+        newProgress -= TOKENS_PER_SPIN_THRESHOLD;
+      }
+      const newTokens = tokenState.tokens + earnedTokens;
+      await setLuckyTokens(admin, visitorId, newTokens, newProgress);
+
       const summary = results.map(r => r.label).join(", ");
+      const titleExtras: string[] = [];
+      if (totalBonusGems > 0) titleExtras.push(`🔥 +${totalBonusGems} streak`);
+      if (jackpotWonTotal > 0) titleExtras.push(`💥 JACKPOT +${jackpotWonTotal}`);
+      if (earnedTokens > 0) titleExtras.push(`🎟️ +${earnedTokens} Token`);
       await admin.from("notifications").insert({
         visitor_id: visitorId,
-        title: `🎰 Luck Royale Nyawa (${spinCount}x)${totalBonusGems > 0 ? ` 🔥 +${totalBonusGems} BONUS` : ""}`,
+        title: `🎰 Luck Royale (${spinCount}x)${titleExtras.length ? " " + titleExtras.join(" ") : ""}`,
         message: summary.length > 200 ? summary.slice(0, 200) + "..." : summary,
         type: "luck_royale_nyawa",
       });
 
       const { data: gemsAfter } = await admin.rpc("get_account_gems", { p_visitor_id: visitorId });
+      const finalPool = await getMegaPool(admin);
 
       return Response.json({
         success: true,
@@ -342,6 +438,70 @@ Deno.serve(async (req) => {
         luckyStreak: curStreak,
         streakMultiplier: getStreakMultiplier(curStreak),
         totalBonusGems,
+        jackpotWonTotal,
+        megaJackpotPool: finalPool,
+        luckyTokens: newTokens,
+        luckyTokenProgress: newProgress,
+        luckyTokenThreshold: TOKENS_PER_SPIN_THRESHOLD,
+        earnedTokens,
+      }, { headers: corsHeaders });
+    }
+
+    // === REDEEM LUCKY TOKEN ===
+    if (action === "redeem_token") {
+      const item = TOKEN_SHOP.find(i => i.code === itemCode);
+      if (!item) return Response.json({ error: "Item tidak valid" }, { status: 400, headers: corsHeaders });
+
+      const tokenState = await getLuckyTokens(admin, visitorId);
+      if (tokenState.tokens < item.cost) {
+        return Response.json({
+          error: `Butuh ${item.cost} 🎟️ Lucky Token (kamu punya ${tokenState.tokens})`,
+        }, { status: 400, headers: corsHeaders });
+      }
+
+      // Apply prize
+      const prize: Prize = {
+        kind: item.kind as any,
+        value: item.value,
+        label: item.name,
+        emoji: item.emoji,
+        rarity: item.rarity as any,
+        weight: 0,
+        color: "#fbbf24",
+      };
+      await applyPrize(admin, visitorId, prize);
+
+      // Deduct tokens
+      const newTokens = tokenState.tokens - item.cost;
+      await setLuckyTokens(admin, visitorId, newTokens, tokenState.spinProgress);
+
+      // Log to history
+      await admin.from("luck_royale_nyawa_history").insert({
+        visitor_id: visitorId,
+        spin_type: "token_redeem",
+        reward_kind: item.kind,
+        reward_value: item.value,
+        reward_label: `🎟️ TOKEN: ${item.name}`,
+        rarity: item.rarity,
+        cost_currency: "lucky_token",
+        cost_amount: item.cost,
+      });
+
+      await admin.from("notifications").insert({
+        visitor_id: visitorId,
+        title: `🎟️ Lucky Token Ditukar`,
+        message: `Kamu dapat: ${item.name} (sisa ${newTokens} token)`,
+        type: "luck_royale_nyawa",
+      });
+
+      const { data: gemsAfter } = await admin.rpc("get_account_gems", { p_visitor_id: visitorId });
+      return Response.json({
+        success: true,
+        item,
+        gems: gemsAfter || 0,
+        luckyTokens: newTokens,
+        luckyTokenProgress: tokenState.spinProgress,
+        luckyTokenThreshold: TOKENS_PER_SPIN_THRESHOLD,
       }, { headers: corsHeaders });
     }
 

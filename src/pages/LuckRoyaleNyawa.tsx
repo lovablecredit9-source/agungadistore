@@ -76,6 +76,14 @@ export default function LuckRoyaleNyawa() {
   const [luckyStreak, setLuckyStreak] = useState(0);
   const [streakMultiplier, setStreakMultiplier] = useState(1);
   const [bonusPopup, setBonusPopup] = useState<number | null>(null);
+  const [jackpotPopup, setJackpotPopup] = useState<number | null>(null);
+  const [tokenPopup, setTokenPopup] = useState<number | null>(null);
+  const [luckyTokens, setLuckyTokens] = useState(0);
+  const [tokenProgress, setTokenProgress] = useState(0);
+  const [tokenThreshold, setTokenThreshold] = useState(5);
+  const [megaPool, setMegaPool] = useState(5000);
+  const [tokenShop, setTokenShop] = useState<Array<{ code: string; name: string; cost: number; kind: string; value: number; rarity: string; emoji: string }>>([]);
+  const [redeeming, setRedeeming] = useState<string | null>(null);
 
   const fetchData = async () => {
     if (!visitorId) return;
@@ -92,6 +100,11 @@ export default function LuckRoyaleNyawa() {
       setFreeSpinAvailable(!!data.freeSpinAvailable);
       setLuckyStreak(Number(data.luckyStreak || 0));
       setStreakMultiplier(Number(data.streakMultiplier || 1));
+      setLuckyTokens(Number(data.luckyTokens || 0));
+      setTokenProgress(Number(data.luckyTokenProgress || 0));
+      setTokenThreshold(Number(data.luckyTokenThreshold || 5));
+      setMegaPool(Number(data.megaJackpotPool || 5000));
+      setTokenShop(data.tokenShop || []);
     } catch (e) {
       console.error(e);
     } finally {
@@ -131,14 +144,47 @@ export default function LuckRoyaleNyawa() {
         setBonusPopup(data.totalBonusGems);
         setTimeout(() => setBonusPopup(null), 4000);
       }
+      if (data.jackpotWonTotal && data.jackpotWonTotal > 0) {
+        setJackpotPopup(data.jackpotWonTotal);
+        setTimeout(() => setJackpotPopup(null), 6000);
+      }
+      if (data.earnedTokens && data.earnedTokens > 0) {
+        setTokenPopup(data.earnedTokens);
+        setTimeout(() => setTokenPopup(null), 4000);
+      }
+      if (typeof data.luckyTokens === "number") setLuckyTokens(data.luckyTokens);
+      if (typeof data.luckyTokenProgress === "number") setTokenProgress(data.luckyTokenProgress);
+      if (typeof data.megaJackpotPool === "number") setMegaPool(data.megaJackpotPool);
       if (mode === "free") setFreeSpinAvailable(false);
-      // Refresh history
       fetchData();
     } catch (e: any) {
       toast({ title: "Error", description: e.message || "Gagal", variant: "destructive" });
       setReelSpinning(false);
     } finally {
       setSpinning(false);
+    }
+  };
+
+  const redeemToken = async (itemCode: string) => {
+    if (!visitorId || redeeming) return;
+    setRedeeming(itemCode);
+    try {
+      const { data, error } = await supabase.functions.invoke("luck-royale-nyawa", {
+        body: { visitorId, action: "redeem_token", itemCode },
+      });
+      if (error) throw error;
+      if (data.error) {
+        toast({ title: "Gagal tukar", description: data.error, variant: "destructive" });
+        return;
+      }
+      setLuckyTokens(data.luckyTokens);
+      setGems(data.gems);
+      toast({ title: "🎟️ Token Ditukar!", description: `Kamu dapat: ${data.item.name}` });
+      fetchData();
+    } catch (e: any) {
+      toast({ title: "Error", description: e.message || "Gagal", variant: "destructive" });
+    } finally {
+      setRedeeming(null);
     }
   };
 
@@ -230,6 +276,58 @@ export default function LuckRoyaleNyawa() {
             </TabsList>
 
             <TabsContent value="spin" className="space-y-4 mt-3">
+          {/* 💥 MEGA JACKPOT POOL — community pool banner */}
+          <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-purple-700 via-fuchsia-600 to-pink-600 border-2 border-fuchsia-300/60 p-3 shadow-xl shadow-fuchsia-500/40">
+            <div className="absolute inset-0 opacity-30 animate-pulse" style={{
+              backgroundImage: "radial-gradient(circle at 50% 50%, rgba(255,255,255,0.5), transparent 70%)",
+            }} />
+            <div className="relative flex items-center gap-3">
+              <div className="w-14 h-14 rounded-2xl bg-black/40 ring-2 ring-amber-300/80 flex items-center justify-center shrink-0 animate-pulse">
+                <Gem className="w-8 h-8 text-amber-200" fill="currentColor" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-1.5 mb-0.5">
+                  <Badge className="bg-amber-500 text-black font-black text-[8px]">💥 LIVE</Badge>
+                  <span className="text-[9px] font-black tracking-widest text-amber-100">MEGA JACKPOT POOL</span>
+                </div>
+                <div className="flex items-baseline gap-1">
+                  <span className="text-2xl font-black text-white tabular-nums drop-shadow">{megaPool.toLocaleString()}</span>
+                  <Gem className="w-4 h-4 text-amber-300" fill="currentColor" />
+                </div>
+                <p className="text-[10px] font-bold text-fuchsia-100/90 mt-0.5">
+                  Pecah saat ada Mythic 🌈 — pemenang dapat <span className="text-amber-200 font-black">70%</span> pool!
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* 🎟️ LUCKY TOKEN PROGRESS BANNER */}
+          <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-indigo-700/60 via-blue-700/40 to-cyan-700/60 border-2 border-cyan-400/50 p-3 shadow-lg shadow-cyan-500/30">
+            <div className="absolute inset-0 opacity-20" style={{
+              backgroundImage: "radial-gradient(circle at 80% 20%, rgba(34,211,238,0.6), transparent 60%)",
+            }} />
+            <div className="relative flex items-center gap-3">
+              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 ring-2 ring-amber-300/60 flex items-center justify-center shrink-0">
+                <Award className="w-7 h-7 text-white" fill="currentColor" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center justify-between gap-2 mb-1">
+                  <span className="text-[9px] font-black tracking-widest text-cyan-200">🎟️ LUCKY TOKEN</span>
+                  <span className="text-lg font-black text-amber-300 tabular-nums">{luckyTokens}</span>
+                </div>
+                <div className="bg-black/40 rounded-full h-2 overflow-hidden">
+                  <div
+                    className="h-full bg-gradient-to-r from-amber-400 via-orange-500 to-pink-500 transition-all"
+                    style={{ width: `${Math.min(100, (tokenProgress / tokenThreshold) * 100)}%` }}
+                  />
+                </div>
+                <p className="text-[10px] text-cyan-100/80 mt-0.5">
+                  {tokenProgress}/{tokenThreshold} spin berbayar → +1 Token. Tukar di Token Shop bawah!
+                </p>
+              </div>
+            </div>
+          </div>
+
           {/* 🔥 LUCKY STREAK BANNER (visible if streak >= 3) */}
           {luckyStreak >= 3 && (
             <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-orange-600 via-red-600 to-pink-600 border-2 border-amber-300 p-3 shadow-xl shadow-orange-500/50 animate-pulse">
@@ -413,6 +511,49 @@ export default function LuckRoyaleNyawa() {
           <p className="text-center text-[10px] text-purple-200/70">
             Dijamin mendapatkan hadiah setiap spin • Makin banyak makin hemat!
           </p>
+
+          {/* 🎟️ TOKEN SHOP */}
+          {tokenShop.length > 0 && (
+            <div className="rounded-2xl bg-gradient-to-br from-amber-900/40 via-orange-900/30 to-pink-900/40 border-2 border-amber-500/50 p-3">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-1.5">
+                  <Award className="w-4 h-4 text-amber-300" fill="currentColor" />
+                  <h3 className="text-xs font-black tracking-widest text-amber-200">| TOKEN SHOP — HADIAH PASTI</h3>
+                </div>
+                <Badge className="bg-amber-500 text-black font-black text-[8px]">🎟️ {luckyTokens}</Badge>
+              </div>
+              <p className="text-[10px] text-amber-100/80 mb-2.5">
+                Pakai Lucky Token untuk hadiah <span className="font-black text-amber-300">100% pasti</span> — tanpa hoki-hokian!
+              </p>
+              <div className="grid grid-cols-2 gap-2">
+                {tokenShop.map((item) => {
+                  const style = RARITY_STYLE[item.rarity] || RARITY_STYLE.common;
+                  const canAfford = luckyTokens >= item.cost;
+                  return (
+                    <button
+                      key={item.code}
+                      disabled={!canAfford || redeeming === item.code}
+                      onClick={() => redeemToken(item.code)}
+                      className={`relative overflow-hidden rounded-xl bg-gradient-to-br ${style.gradient} ring-2 ${style.ring} p-2.5 text-left active:scale-95 transition disabled:opacity-50 disabled:cursor-not-allowed`}
+                    >
+                      <div className="absolute top-1 right-1 flex items-center gap-0.5 bg-black/60 rounded-full px-1.5 py-0.5">
+                        <Award className="w-2.5 h-2.5 text-amber-300" fill="currentColor" />
+                        <span className="text-[9px] font-black text-amber-200">{item.cost}</span>
+                      </div>
+                      <div className="text-2xl mb-0.5">{item.emoji}</div>
+                      <div className="text-[10px] font-black text-white leading-tight">{item.name}</div>
+                      <div className="text-[8px] font-bold text-white/70 mt-1">{style.label}</div>
+                      {redeeming === item.code && (
+                        <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+                          <Loader2 className="w-5 h-5 animate-spin text-white" />
+                        </div>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
 
           {/* All Prizes List */}
           <div>
@@ -847,6 +988,35 @@ export default function LuckRoyaleNyawa() {
             <div>
               <div className="text-[9px] font-black text-amber-200 tracking-widest leading-none">STREAK BONUS!</div>
               <div className="text-base font-black text-white leading-tight">+{bonusPopup.toLocaleString()} 💎</div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 💥 MEGA JACKPOT WIN POPUP */}
+      {jackpotPopup !== null && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center pointer-events-none animate-fade-in">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+          <div className="relative bg-gradient-to-br from-purple-700 via-fuchsia-600 to-pink-600 rounded-3xl p-6 shadow-2xl shadow-fuchsia-500/80 ring-4 ring-amber-300/60 animate-pulse max-w-xs mx-4 text-center">
+            <div className="text-5xl mb-2">💥🎰💥</div>
+            <div className="text-[10px] font-black text-amber-200 tracking-widest mb-1">MEGA JACKPOT PECAH!</div>
+            <div className="text-3xl font-black text-white drop-shadow mb-1">+{jackpotPopup.toLocaleString()}</div>
+            <div className="flex items-center justify-center gap-1 text-amber-300 font-black">
+              <Gem className="w-5 h-5" fill="currentColor" /> GEM
+            </div>
+            <p className="text-[10px] text-fuchsia-100/90 mt-2">Selamat, kamu pecahkan pool komunitas!</p>
+          </div>
+        </div>
+      )}
+
+      {/* 🎟️ EARNED TOKEN POPUP */}
+      {tokenPopup !== null && (
+        <div className="fixed top-32 left-1/2 -translate-x-1/2 z-[60] animate-fade-in pointer-events-none">
+          <div className="bg-gradient-to-r from-amber-400 via-orange-500 to-pink-500 rounded-full px-5 py-2.5 shadow-2xl shadow-amber-500/60 ring-4 ring-amber-200/40 flex items-center gap-2">
+            <Award className="w-5 h-5 text-white" fill="currentColor" />
+            <div>
+              <div className="text-[9px] font-black text-white tracking-widest leading-none">LUCKY TOKEN!</div>
+              <div className="text-base font-black text-white leading-tight">+{tokenPopup} 🎟️</div>
             </div>
           </div>
         </div>
