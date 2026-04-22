@@ -83,12 +83,72 @@ function pickPrize(): Prize & { index: number } {
 }
 
 // === LUCKY STREAK MULTIPLIER ===
-// Hitung berapa spin berturut-turut yang dapat rare+ (rare/epic/legendary/mythic)
-// Setiap 3 streak = +10% bonus pada nilai hadiah numerik (gems/nyawa/dll)
 function getStreakMultiplier(streakCount: number): number {
   if (streakCount < 3) return 1.0;
-  const bonus = Math.floor(streakCount / 3) * 0.1; // +10% per 3 streak
-  return Math.min(2.0, 1 + bonus); // cap 2x
+  const bonus = Math.floor(streakCount / 3) * 0.1;
+  return Math.min(2.0, 1 + bonus);
+}
+
+// === LUCKY TOKEN SYSTEM ===
+// Tiap 5 spin berbayar = +1 Lucky Token. Bisa ditukar hadiah pasti.
+const TOKENS_PER_SPIN_THRESHOLD = 5; // 5 paid spin = 1 token
+const TOKEN_SHOP: Array<{ code: string; name: string; cost: number; kind: string; value: number; rarity: string; emoji: string }> = [
+  { code: "tk_hint10",   name: "+10 Hint Otomatis",       cost: 1,  kind: "auto_hint",     value: 10,   rarity: "rare",      emoji: "💡" },
+  { code: "tk_life10",   name: "+10 Nyawa Ekstra",        cost: 1,  kind: "extra_life",    value: 10,   rarity: "rare",      emoji: "❤️" },
+  { code: "tk_freeze8",  name: "+8 Streak Freeze",        cost: 2,  kind: "streak_freeze", value: 8,    rarity: "epic",      emoji: "🛡️" },
+  { code: "tk_gems250",  name: "💎 +250 Gem Pasti",       cost: 3,  kind: "gems",          value: 250,  rarity: "epic",      emoji: "💎" },
+  { code: "tk_gems800",  name: "👑 +800 Gem Legendary",   cost: 8,  kind: "gems",          value: 800,  rarity: "legendary", emoji: "👑" },
+  { code: "tk_mega",     name: "🌈 MEGA +2.500 Gem",      cost: 20, kind: "gems",          value: 2500, rarity: "mythic",    emoji: "🌈" },
+];
+
+async function getLuckyTokens(admin: any, visitorId: string): Promise<{ tokens: number; spinProgress: number }> {
+  const key = `lucky_token_${visitorId}`;
+  const { data } = await admin.from("admin_settings").select("setting_value").eq("setting_key", key).maybeSingle();
+  if (!data) return { tokens: 0, spinProgress: 0 };
+  try {
+    const obj = JSON.parse(data.setting_value);
+    return { tokens: Number(obj.tokens || 0), spinProgress: Number(obj.spinProgress || 0) };
+  } catch {
+    return { tokens: 0, spinProgress: 0 };
+  }
+}
+
+async function setLuckyTokens(admin: any, visitorId: string, tokens: number, spinProgress: number) {
+  const key = `lucky_token_${visitorId}`;
+  const value = JSON.stringify({ tokens, spinProgress });
+  const { data: existing } = await admin.from("admin_settings").select("id").eq("setting_key", key).maybeSingle();
+  if (existing) {
+    await admin.from("admin_settings").update({ setting_value: value }).eq("id", existing.id);
+  } else {
+    await admin.from("admin_settings").insert({ setting_key: key, setting_value: value });
+  }
+}
+
+// === MEGA JACKPOT POOL (komunitas) ===
+// Pool gem global yang naik 5% dari tiap cost spin berbayar.
+// Saat seseorang dapat Mythic → ada 25% chance pool dipecah & dibagikan ke pemain itu.
+const POOL_KEY = "luck_royale_mega_jackpot_pool";
+const POOL_SEED = 5000;
+const POOL_CONTRIBUTION_PCT = 0.05; // 5% dari biaya spin masuk pool
+const POOL_BREAK_CHANCE = 0.25;     // 25% chance pecah saat dapat Mythic
+const POOL_MIN_BREAK = 3000;        // pool minimal sebelum bisa pecah
+
+async function getMegaPool(admin: any): Promise<number> {
+  const { data } = await admin.from("admin_settings").select("setting_value").eq("setting_key", POOL_KEY).maybeSingle();
+  if (!data) {
+    await admin.from("admin_settings").insert({ setting_key: POOL_KEY, setting_value: String(POOL_SEED) });
+    return POOL_SEED;
+  }
+  return Number(data.setting_value || POOL_SEED);
+}
+
+async function setMegaPool(admin: any, value: number) {
+  const { data } = await admin.from("admin_settings").select("id").eq("setting_key", POOL_KEY).maybeSingle();
+  if (data) {
+    await admin.from("admin_settings").update({ setting_value: String(Math.max(POOL_SEED, value)) }).eq("id", data.id);
+  } else {
+    await admin.from("admin_settings").insert({ setting_key: POOL_KEY, setting_value: String(Math.max(POOL_SEED, value)) });
+  }
 }
 
 // Tambah qty ke streak_power_pack_inventory (inventory yang dipakai PowerPackShop)
