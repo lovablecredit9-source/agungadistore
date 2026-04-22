@@ -18,7 +18,7 @@ interface Prize {
   value: number;
   label: string;
   emoji: string;
-  rarity: "common" | "rare" | "epic" | "legendary";
+  rarity: "common" | "rare" | "epic" | "legendary" | "mythic";
   weight: number;
   color: string;
 }
