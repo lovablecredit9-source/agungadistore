@@ -838,6 +838,19 @@ export default function LuckRoyaleNyawa() {
           </Card>
         </div>
       )}
+
+      {/* 🔥 Streak Bonus Popup */}
+      {bonusPopup !== null && (
+        <div className="fixed top-20 left-1/2 -translate-x-1/2 z-[60] animate-fade-in pointer-events-none">
+          <div className="bg-gradient-to-r from-orange-500 via-red-500 to-pink-500 rounded-full px-5 py-2.5 shadow-2xl shadow-orange-500/60 ring-4 ring-amber-300/40 flex items-center gap-2 animate-pulse">
+            <FlameIcon className="w-5 h-5 text-amber-200" fill="currentColor" />
+            <div>
+              <div className="text-[9px] font-black text-amber-200 tracking-widest leading-none">STREAK BONUS!</div>
+              <div className="text-base font-black text-white leading-tight">+{bonusPopup.toLocaleString()} 💎</div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
