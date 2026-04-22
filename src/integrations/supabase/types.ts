@@ -804,6 +804,78 @@ export type Database = {
         }
         Relationships: []
       }
+      diamond_royale_history: {
+        Row: {
+          cost_gems: number
+          created_at: string
+          id: string
+          is_pity_break: boolean
+          rarity: string
+          reward_kind: string
+          reward_label: string
+          reward_value: number
+          spin_type: string
+          visitor_id: string
+        }
+        Insert: {
+          cost_gems?: number
+          created_at?: string
+          id?: string
+          is_pity_break?: boolean
+          rarity?: string
+          reward_kind: string
+          reward_label: string
+          reward_value?: number
+          spin_type?: string
+          visitor_id: string
+        }
+        Update: {
+          cost_gems?: number
+          created_at?: string
+          id?: string
+          is_pity_break?: boolean
+          rarity?: string
+          reward_kind?: string
+          reward_label?: string
+          reward_value?: number
+          spin_type?: string
+          visitor_id?: string
+        }
+        Relationships: []
+      }
+      diamond_royale_state: {
+        Row: {
+          created_at: string
+          id: string
+          pity_counter: number
+          rare_pity_counter: number
+          total_legendary: number
+          total_spins: number
+          updated_at: string
+          visitor_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          pity_counter?: number
+          rare_pity_counter?: number
+          total_legendary?: number
+          total_spins?: number
+          updated_at?: string
+          visitor_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          pity_counter?: number
+          rare_pity_counter?: number
+          total_legendary?: number
+          total_spins?: number
+          updated_at?: string
+          visitor_id?: string
+        }
+        Relationships: []
+      }
       discount_vouchers: {
         Row: {
           code: string
