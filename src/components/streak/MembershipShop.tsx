@@ -474,56 +474,28 @@ export default function MembershipShop({ visitorId, onUpdate, category = "coin" 
               </div>
             </div>
 
-            <div className="mt-3 grid grid-cols-3 gap-1.5">
-              {/* Tombol Saldo */}
-              <motion.div whileTap={{ scale: 0.97 }} className="relative">
-                <Button
-                  size="sm"
-                  disabled={totalBalance < selected.price_idr || busy === `${selected.id}-auto`}
-                  onClick={() => purchase(selected.id, undefined, "auto")}
-                  className={`relative overflow-hidden w-full h-11 px-1 text-[10px] font-black uppercase tracking-tight bg-gradient-to-br ${baseTheme.glow} hover:brightness-110 text-white shadow-lg disabled:opacity-40 border border-white/30 flex flex-col items-center justify-center gap-0`}
-                >
-                  {busy === `${selected.id}-auto` ? <Loader2 className="h-4 w-4 animate-spin" /> : (
-                    <>
-                      <Wallet className="h-3 w-3" />
-                      <span className="leading-none">Rp{(selected.price_idr / 1000).toFixed(0)}K</span>
-                    </>
-                  )}
-                </Button>
-              </motion.div>
-              {/* Tombol Coins */}
-              <motion.div whileTap={{ scale: 0.97 }} className="relative">
-                <Button
-                  size="sm"
-                  disabled={!selected.price_coins || coins < selected.price_coins || busy === `${selected.id}-coins`}
-                  onClick={() => purchase(selected.id, undefined, "coins")}
-                  className="relative overflow-hidden w-full h-11 px-1 text-[10px] font-black uppercase tracking-tight bg-gradient-to-br from-yellow-500 via-amber-500 to-orange-500 hover:brightness-110 text-white shadow-lg disabled:opacity-40 border border-white/30 flex flex-col items-center justify-center gap-0"
-                >
-                  {busy === `${selected.id}-coins` ? <Loader2 className="h-4 w-4 animate-spin" /> : (
-                    <>
-                      <Coins className="h-3 w-3" />
-                      <span className="leading-none">{(selected.price_coins || 0).toLocaleString("id-ID")}</span>
-                    </>
-                  )}
-                </Button>
-              </motion.div>
-              {/* Tombol Gems */}
-              <motion.div whileTap={{ scale: 0.97 }} className="relative">
-                <Button
-                  size="sm"
-                  disabled={!selected.price_gems || gems < selected.price_gems || busy === `${selected.id}-gems`}
-                  onClick={() => purchase(selected.id, undefined, "gems")}
-                  className="relative overflow-hidden w-full h-11 px-1 text-[10px] font-black uppercase tracking-tight bg-gradient-to-br from-cyan-500 via-sky-500 to-blue-600 hover:brightness-110 text-white shadow-lg disabled:opacity-40 border border-white/30 flex flex-col items-center justify-center gap-0"
-                >
-                  {busy === `${selected.id}-gems` ? <Loader2 className="h-4 w-4 animate-spin" /> : (
-                    <>
-                      <Gem className="h-3 w-3" />
-                      <span className="leading-none">{(selected.price_gems || 0).toLocaleString("id-ID")}</span>
-                    </>
-                  )}
-                </Button>
-              </motion.div>
-            </div>
+            <motion.div whileTap={{ scale: 0.97 }} className="mt-3 relative">
+              <Button
+                size="lg"
+                disabled={totalBalance < selected.price_idr || busy === `${selected.id}-balance`}
+                onClick={() => purchase(selected.id)}
+                className={`relative overflow-hidden w-full h-12 text-sm font-black uppercase tracking-widest bg-gradient-to-r ${baseTheme.glow} hover:brightness-110 text-white shadow-[0_8px_25px_-5px_rgba(0,0,0,0.5)] disabled:opacity-50 border border-white/30`}
+              >
+                <motion.div
+                  animate={{ x: ["-150%", "150%"] }}
+                  transition={{ duration: 2.5, repeat: Infinity, ease: "linear" }}
+                  className="absolute inset-y-0 w-1/3 bg-gradient-to-r from-transparent via-white/40 to-transparent skew-x-12"
+                />
+                {busy === `${selected.id}-balance` ? (
+                  <Loader2 className="h-5 w-5 animate-spin relative z-10" />
+                ) : (
+                  <span className="relative z-10 flex items-center gap-2">
+                    <Wallet className="h-4 w-4" />
+                    Rp{selected.price_idr.toLocaleString("id-ID")}
+                  </span>
+                )}
+              </Button>
+            </motion.div>
 
             {activeForSelected && (
               <motion.div
