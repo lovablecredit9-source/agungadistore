@@ -156,15 +156,25 @@ export default function MembershipExtrasShop({ visitorId, kind, onUpdate }: Prop
 
             {/* Diamond — show cashback earned */}
             {kind === "diamond" && (
-              <div className="text-[11px] text-cyan-200">
-                Cashback {active.cashback_percent}% · Sudah dapat <span className="font-bold text-amber-300">Rp{active.total_cashback_earned.toLocaleString("id-ID")}</span>
+              <div className="text-[11px] text-cyan-200 space-y-0.5">
+                <div>Cashback {active.best_cashback_percent ?? active.cashback_percent}% · Sudah dapat <span className="font-bold text-amber-300">Rp{(active.total_cashback_earned || 0).toLocaleString("id-ID")}</span></div>
+                {active.stacked_count > 1 && (
+                  <Badge className="bg-cyan-500/40 text-cyan-100 border-cyan-400/50 text-[9px]">
+                    📦 {active.stacked_count} paket stack · berakhir {new Date(active.latest_expires_at).toLocaleDateString("id-ID")}
+                  </Badge>
+                )}
               </div>
             )}
 
             {/* Boost — multiplier */}
             {kind === "boost" && (
-              <div className="text-[11px] text-pink-200">
-                Multiplier <span className="font-black text-pink-100">x{active.multiplier}</span> aktif untuk semua aktivitas streak
+              <div className="text-[11px] text-pink-200 space-y-0.5">
+                <div>Multiplier <span className="font-black text-pink-100">x{active.best_multiplier ?? active.multiplier}</span> aktif untuk semua aktivitas streak</div>
+                {active.stacked_count > 1 && (
+                  <Badge className="bg-pink-500/40 text-pink-100 border-pink-400/50 text-[9px]">
+                    📦 {active.stacked_count} paket stack · berakhir {new Date(active.latest_expires_at).toLocaleDateString("id-ID")}
+                  </Badge>
+                )}
               </div>
             )}
 
