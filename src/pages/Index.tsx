@@ -4982,16 +4982,17 @@ const Index = () => {
                 { key: "streakevent" as Tab, icon: CalendarDays, label: "Streak Event", gradient: "from-pink-500 to-purple-600" },
                 { key: "streakshop" as Tab, icon: CalendarDays, label: "Streak Shop", gradient: "from-purple-600 to-cyan-600" },
                 { key: "streakmembership" as Tab, icon: Crown, label: "M.Streak", gradient: "from-amber-500 via-yellow-500 to-orange-500" },
+                { key: "luckroyale" as any, icon: Crown, label: "L.Royale", gradient: "from-amber-400 via-orange-500 to-red-600", external: "/luck-royale-nyawa" },
                 { key: "game" as Tab, icon: Gamepad2, label: "Game", gradient: "from-indigo-500 to-violet-400" },
                 { key: "plus" as Tab, icon: Sparkles, label: "Plus", gradient: "from-yellow-500 to-orange-400" },
                 { key: "update" as Tab, icon: RefreshCw, label: "Update", gradient: "from-cyan-500 to-blue-400" },
                 { key: "adminpost" as Tab, icon: FileText, label: "Admin", gradient: "from-slate-500 to-gray-400" },
-              ]).map(({ key, icon: Icon, label, gradient }) => {
-                const active = tab === key;
+              ] as Array<{ key: any; icon: any; label: string; gradient: string; external?: string }>).map(({ key, icon: Icon, label, gradient, external }) => {
+                const active = !external && tab === key;
                 return (
                   <button
                     key={key}
-                    onClick={() => setTab(key)}
+                    onClick={() => external ? navigate(external) : setTab(key)}
                     aria-label={label}
                     aria-current={active ? "page" : undefined}
                     className={`group/item snap-center relative flex-shrink-0 flex flex-col items-center justify-end pt-1.5 pb-1 px-1 rounded-2xl transition-all duration-300 ease-out outline-none focus-visible:ring-2 focus-visible:ring-primary/50 ${
