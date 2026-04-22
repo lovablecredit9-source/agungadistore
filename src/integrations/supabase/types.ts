@@ -5595,6 +5595,214 @@ export type Database = {
         }
         Relationships: []
       }
+      streak_power_pack_claims: {
+        Row: {
+          claim_date: string
+          created_at: string
+          id: string
+          is_instant: boolean
+          items_awarded: Json
+          pack_id: string | null
+          subscription_id: string | null
+          visitor_id: string
+        }
+        Insert: {
+          claim_date?: string
+          created_at?: string
+          id?: string
+          is_instant?: boolean
+          items_awarded?: Json
+          pack_id?: string | null
+          subscription_id?: string | null
+          visitor_id: string
+        }
+        Update: {
+          claim_date?: string
+          created_at?: string
+          id?: string
+          is_instant?: boolean
+          items_awarded?: Json
+          pack_id?: string | null
+          subscription_id?: string | null
+          visitor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "streak_power_pack_claims_subscription_id_fkey"
+            columns: ["subscription_id"]
+            isOneToOne: false
+            referencedRelation: "streak_power_pack_subscriptions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      streak_power_pack_inventory: {
+        Row: {
+          id: string
+          item_code: string
+          quantity: number
+          updated_at: string
+          visitor_id: string
+        }
+        Insert: {
+          id?: string
+          item_code: string
+          quantity?: number
+          updated_at?: string
+          visitor_id: string
+        }
+        Update: {
+          id?: string
+          item_code?: string
+          quantity?: number
+          updated_at?: string
+          visitor_id?: string
+        }
+        Relationships: []
+      }
+      streak_power_pack_items: {
+        Row: {
+          code: string
+          created_at: string
+          description: string | null
+          icon: string
+          id: string
+          is_active: boolean
+          name: string
+          rarity: string
+          sort_order: number
+          updated_at: string
+          weight: number
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          description?: string | null
+          icon?: string
+          id?: string
+          is_active?: boolean
+          name: string
+          rarity?: string
+          sort_order?: number
+          updated_at?: string
+          weight?: number
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          description?: string | null
+          icon?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          rarity?: string
+          sort_order?: number
+          updated_at?: string
+          weight?: number
+        }
+        Relationships: []
+      }
+      streak_power_pack_subscriptions: {
+        Row: {
+          created_at: string
+          expires_at: string
+          id: string
+          is_active: boolean
+          pack_id: string
+          pack_name: string
+          starts_at: string
+          visitor_id: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at: string
+          id?: string
+          is_active?: boolean
+          pack_id: string
+          pack_name: string
+          starts_at?: string
+          visitor_id: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string
+          id?: string
+          is_active?: boolean
+          pack_id?: string
+          pack_name?: string
+          starts_at?: string
+          visitor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "streak_power_pack_subscriptions_pack_id_fkey"
+            columns: ["pack_id"]
+            isOneToOne: false
+            referencedRelation: "streak_power_packs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      streak_power_packs: {
+        Row: {
+          badge_color: string
+          created_at: string
+          daily_item_max: number
+          daily_item_min: number
+          description: string | null
+          duration_days: number
+          icon: string
+          id: string
+          instant_full_pack: boolean
+          instant_item_count: number
+          is_active: boolean
+          is_featured: boolean
+          name: string
+          price_idr: number
+          sort_order: number
+          tier: string
+          updated_at: string
+        }
+        Insert: {
+          badge_color?: string
+          created_at?: string
+          daily_item_max?: number
+          daily_item_min?: number
+          description?: string | null
+          duration_days?: number
+          icon?: string
+          id?: string
+          instant_full_pack?: boolean
+          instant_item_count?: number
+          is_active?: boolean
+          is_featured?: boolean
+          name: string
+          price_idr?: number
+          sort_order?: number
+          tier?: string
+          updated_at?: string
+        }
+        Update: {
+          badge_color?: string
+          created_at?: string
+          daily_item_max?: number
+          daily_item_min?: number
+          description?: string | null
+          duration_days?: number
+          icon?: string
+          id?: string
+          instant_full_pack?: boolean
+          instant_item_count?: number
+          is_active?: boolean
+          is_featured?: boolean
+          name?: string
+          price_idr?: number
+          sort_order?: number
+          tier?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       streak_profiles: {
         Row: {
           avatar_url: string | null
