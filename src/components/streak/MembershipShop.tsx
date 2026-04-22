@@ -21,6 +21,7 @@ interface Plan {
   duration_days: number;
   price_idr: number;
   price_coins: number;
+  price_gems: number;
   bonus_multiplier: number;
   bonus_freeze_count: number;
   bonus_streak_coins: number;
@@ -177,6 +178,7 @@ export default function MembershipShop({ visitorId, onUpdate }: Props) {
   const [plans, setPlans] = useState<Plan[]>([]);
   const [active, setActive] = useState<ActiveMembership[]>([]);
   const [coins, setCoins] = useState(0);
+  const [gems, setGems] = useState(0);
   const [gameBalance, setGameBalance] = useState(0);
   const [mainBalance, setMainBalance] = useState(0);
   const [pinDialog, setPinDialog] = useState<{ planId: string } | null>(null);
@@ -195,6 +197,7 @@ export default function MembershipShop({ visitorId, onUpdate }: Props) {
       setPlans(list);
       setActive(data?.active_memberships || []);
       setCoins(data?.user_coins || 0);
+      setGems(data?.user_gems || 0);
       setGameBalance(data?.game_balance || 0);
       setMainBalance(data?.main_balance || 0);
       setDailyClaim(data?.daily_claim || null);
