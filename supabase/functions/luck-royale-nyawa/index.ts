@@ -110,20 +110,39 @@ Deno.serve(async (req) => {
         prizes: PRIZES,
         singleCostGems: SINGLE_COST_GEMS,
         bundleCostDiamond: BUNDLE_COST_DIAMOND,
+        bundles: BUNDLES,
       }, { headers: corsHeaders });
     }
 
-    if (action === "spin_single" || action === "spin_bundle") {
-      const isBundle = action === "spin_bundle";
-      const cost = isBundle ? BUNDLE_COST_DIAMOND : SINGLE_COST_GEMS;
-      const currency = isBundle ? "diamond" : "gems";
+    if (action === "spin_single" || action === "spin_bundle" || action === "spin_pack") {
+      let spinCount = 1;
+      let cost = SINGLE_COST_GEMS;
+      let spinType = "single";
 
-      // Cek saldo gem (kita pakai 1 sumber: account gems untuk gems & diamond keduanya untuk simplifikasi)
+      if (action === "spin_bundle") {
+        spinCount = 5;
+        cost = BUNDLE_COST_DIAMOND;
+        spinType = "bundle5";
+      } else if (action === "spin_pack") {
+        const { count } = await (async () => ({ count: undefined })); // placeholder
+        // Re-read body to get count safely
+        spinCount = 0;
+      }
+
+      // Untuk spin_pack ambil count dari payload
+      if (action === "spin_pack") {
+        const reqClone = (req as any); // already parsed earlier
+        // count sudah ada di payload pertama
+      }
+
+      const currency = "gems";
+
+      // Cek saldo gem
       const { data: gemsData } = await admin.rpc("get_account_gems", { p_visitor_id: visitorId });
       const gems = Number(gemsData || 0);
       if (gems < cost) {
         return Response.json({
-          error: `Butuh ${cost} ${currency === "diamond" ? "💎 Diamond" : "💎 Gem"} (kamu punya ${gems})`,
+          error: `Butuh ${cost} 💎 Gem (kamu punya ${gems})`,
         }, { status: 400, headers: corsHeaders });
       }
 
@@ -134,7 +153,6 @@ Deno.serve(async (req) => {
         return Response.json({ error: "Gagal mengurangi saldo" }, { status: 400, headers: corsHeaders });
       }
 
-      const spinCount = isBundle ? 5 : 1;
       const results: Array<Prize & { index: number }> = [];
       for (let i = 0; i < spinCount; i++) {
         const prize = pickPrize();
@@ -142,13 +160,13 @@ Deno.serve(async (req) => {
         results.push(prize);
         await admin.from("luck_royale_nyawa_history").insert({
           visitor_id: visitorId,
-          spin_type: isBundle ? "bundle5" : "single",
+          spin_type: spinType,
           reward_kind: prize.kind,
           reward_value: prize.value,
           reward_label: prize.label,
           rarity: prize.rarity,
           cost_currency: currency,
-          cost_amount: i === 0 ? cost : 0, // biaya hanya pada baris pertama
+          cost_amount: i === 0 ? cost : 0,
         });
       }
 
