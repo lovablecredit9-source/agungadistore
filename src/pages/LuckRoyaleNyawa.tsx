@@ -100,6 +100,11 @@ export default function LuckRoyaleNyawa() {
       setFreeSpinAvailable(!!data.freeSpinAvailable);
       setLuckyStreak(Number(data.luckyStreak || 0));
       setStreakMultiplier(Number(data.streakMultiplier || 1));
+      setLuckyTokens(Number(data.luckyTokens || 0));
+      setTokenProgress(Number(data.luckyTokenProgress || 0));
+      setTokenThreshold(Number(data.luckyTokenThreshold || 5));
+      setMegaPool(Number(data.megaJackpotPool || 5000));
+      setTokenShop(data.tokenShop || []);
     } catch (e) {
       console.error(e);
     } finally {
