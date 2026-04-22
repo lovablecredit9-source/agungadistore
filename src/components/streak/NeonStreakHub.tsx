@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -422,9 +423,35 @@ export default function NeonStreakHub({ visitorId, forcedView }: Props) {
     : r === "rare" ? "from-blue-400 to-cyan-500"
     : "from-slate-400 to-slate-600";
 
+  const navigate = useNavigate();
   return (
     <div className="space-y-3">
       <BanBanner />
+      {/* Luck Royale Nyawa CTA */}
+      <button
+        onClick={() => navigate("/luck-royale-nyawa")}
+        className="w-full relative overflow-hidden rounded-2xl border-2 border-amber-500/50 bg-gradient-to-r from-amber-600/30 via-orange-600/30 to-red-600/30 p-3 text-left active:scale-[0.98] transition shadow-lg shadow-amber-500/20"
+      >
+        <div className="absolute inset-0 opacity-20" style={{ backgroundImage: "radial-gradient(circle at 70% 50%, rgba(251,191,36,0.6), transparent 60%)" }} />
+        <div className="relative flex items-center gap-3">
+          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-400 via-orange-500 to-red-600 flex items-center justify-center shadow-lg shadow-amber-500/40 ring-2 ring-amber-300/40 shrink-0">
+            <Crown className="w-6 h-6 text-white" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-1.5 mb-0.5">
+              <span className="text-[9px] font-black bg-red-600 text-white px-1.5 py-0.5 rounded">EPIC+</span>
+              <span className="text-[9px] font-black tracking-widest text-amber-300">LUCK ROYALE</span>
+            </div>
+            <div className="text-sm font-black text-white truncate">Nyawa & Hint Shadow Pack</div>
+            <div className="text-[10px] text-amber-100/80 truncate flex items-center gap-2">
+              <Heart className="w-3 h-3" fill="currentColor" /> Nyawa
+              <Lightbulb className="w-3 h-3" fill="currentColor" /> Hint
+              <Shield className="w-3 h-3" fill="currentColor" /> Freeze
+            </div>
+          </div>
+          <div className="text-amber-300 font-black text-xs shrink-0">SPIN →</div>
+        </div>
+      </button>
       <BanLock fallbackLabel={forcedView === "event" ? "Streak Event" : forcedView === "shop" ? "Streak Event Shop" : "fitur streak"}>
       {/* Coins + multiplier neon header */}
       <div className="cyber-card rounded-2xl p-4 relative scanline">
