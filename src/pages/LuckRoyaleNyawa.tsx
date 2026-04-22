@@ -66,7 +66,7 @@ export default function LuckRoyaleNyawa() {
   const [prizes, setPrizes] = useState<Prize[]>([]);
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const [singleCost, setSingleCost] = useState(50);
-  const [bundleCost, setBundleCost] = useState(200);
+  const [bundles, setBundles] = useState<Array<{ count: number; cost: number; label: string; badge?: string }>>([]);
   const [results, setResults] = useState<SpinResult[] | null>(null);
   const [reelSpinning, setReelSpinning] = useState(false);
 
@@ -81,7 +81,7 @@ export default function LuckRoyaleNyawa() {
       setGems(data.gems || 0);
       setHistory(data.history || []);
       setSingleCost(data.singleCostGems || 50);
-      setBundleCost(data.bundleCostDiamond || 200);
+      setBundles(data.bundles || []);
     } catch (e) {
       console.error(e);
     } finally {
@@ -91,14 +91,19 @@ export default function LuckRoyaleNyawa() {
 
   useEffect(() => { fetchData(); }, []);
 
-  const doSpin = async (bundle: boolean) => {
+  const doSpin = async (mode: "single" | "pack", count?: number) => {
     if (!visitorId || spinning) return;
     setSpinning(true);
     setReelSpinning(true);
     try {
-      const { data, error } = await supabase.functions.invoke("luck-royale-nyawa", {
-        body: { visitorId, action: bundle ? "spin_bundle" : "spin_single" },
-      });
+      const body: any = { visitorId };
+      if (mode === "single") {
+        body.action = "spin_single";
+      } else {
+        body.action = "spin_pack";
+        body.count = count;
+      }
+      const { data, error } = await supabase.functions.invoke("luck-royale-nyawa", { body });
       if (error) throw error;
       if (data.error) {
         toast({ title: "Gagal spin", description: data.error, variant: "destructive" });
@@ -226,30 +231,55 @@ export default function LuckRoyaleNyawa() {
           </div>
 
           {/* Spin Buttons */}
-          <div className="grid grid-cols-2 gap-2">
+          <div className="space-y-2">
             <button
               disabled={spinning}
-              onClick={() => doSpin(false)}
-              className="relative overflow-hidden rounded-xl bg-gradient-to-br from-cyan-500 to-blue-700 px-2 py-3 font-black shadow-lg shadow-cyan-500/40 active:scale-95 transition disabled:opacity-50"
+              onClick={() => doSpin("single")}
+              className="w-full relative overflow-hidden rounded-xl bg-gradient-to-br from-cyan-500 to-blue-700 px-3 py-3 font-black shadow-lg shadow-cyan-500/40 active:scale-95 transition disabled:opacity-50 flex items-center justify-between"
             >
-              <div className="text-sm tracking-widest">1 SPIN</div>
-              <div className="flex items-center justify-center gap-1 text-xs mt-0.5">
+              <span className="text-sm tracking-widest">1 SPIN</span>
+              <span className="flex items-center gap-1 text-xs bg-black/30 rounded-full px-2 py-0.5">
                 <Gem className="w-3 h-3" /> {singleCost}
-              </div>
+              </span>
             </button>
-            <button
-              disabled={spinning}
-              onClick={() => doSpin(true)}
-              className="relative overflow-hidden rounded-xl bg-gradient-to-br from-amber-400 via-orange-500 to-amber-600 px-2 py-3 font-black shadow-lg shadow-amber-500/50 active:scale-95 transition disabled:opacity-50"
-            >
-              <div className="text-sm tracking-widest text-white">5 SPIN</div>
-              <div className="flex items-center justify-center gap-1 text-xs mt-0.5 text-white">
-                <Gem className="w-3 h-3" /> {bundleCost}
-              </div>
-            </button>
+
+            <div className="grid grid-cols-2 gap-2">
+              {bundles.map((b) => {
+                const savings = singleCost * b.count - b.cost;
+                const pct = Math.round((savings / (singleCost * b.count)) * 100);
+                const isHighlight = b.count === 20 || b.count === 125;
+                return (
+                  <button
+                    key={b.count}
+                    disabled={spinning}
+                    onClick={() => doSpin("pack", b.count)}
+                    className={`relative overflow-hidden rounded-xl px-2 py-3 font-black shadow-lg active:scale-95 transition disabled:opacity-50 ${
+                      isHighlight
+                        ? "bg-gradient-to-br from-fuchsia-500 via-purple-600 to-indigo-700 shadow-fuchsia-500/50 ring-2 ring-fuchsia-300/60"
+                        : "bg-gradient-to-br from-amber-400 via-orange-500 to-amber-600 shadow-amber-500/40"
+                    }`}
+                  >
+                    {b.badge && (
+                      <span className="absolute top-1 right-1 text-[8px] font-black bg-black/70 text-amber-200 rounded px-1 py-0.5">
+                        {b.badge}
+                      </span>
+                    )}
+                    <div className="text-sm tracking-widest text-white">{b.label}</div>
+                    <div className="flex items-center justify-center gap-1 text-xs mt-0.5 text-white">
+                      <Gem className="w-3 h-3" /> {b.cost.toLocaleString()}
+                    </div>
+                    {savings > 0 && (
+                      <div className="text-[9px] text-amber-100/90 mt-0.5">
+                        Hemat {savings.toLocaleString()} ({pct}%)
+                      </div>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
           </div>
           <p className="text-center text-[10px] text-purple-200/70">
-            Dijamin mendapatkan hadiah setiap spin • Hemat {(singleCost * 5) - bundleCost} gem dengan 5 SPIN
+            Dijamin mendapatkan hadiah setiap spin • Makin banyak makin hemat!
           </p>
 
           {/* All Prizes List */}

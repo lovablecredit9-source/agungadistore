@@ -5,9 +5,18 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-// Mata uang spin
+// Mata uang spin — semua pakai gem
 const SINGLE_COST_GEMS = 50;       // 1 spin = 50 gem
-const BUNDLE_COST_DIAMOND = 200;   // 5 spin = 200 diamond (lebih hemat dari 5x50)
+// Paket bundle (jumlah spin → biaya gem). Makin banyak makin hemat.
+const BUNDLES: Array<{ count: number; cost: number; label: string; badge?: string }> = [
+  { count: 5,   cost: 200,  label: "5 SPIN" },
+  { count: 10,  cost: 300,  label: "10 SPIN", badge: "HEMAT" },
+  { count: 20,  cost: 400,  label: "20 SPIN", badge: "SUPER HEMAT" },
+  { count: 100, cost: 4000, label: "100 SPIN", badge: "MEGA" },
+  { count: 125, cost: 5000, label: "125 SPIN", badge: "ULTRA" },
+];
+// Backwards compat — bundle 5 lama
+const BUNDLE_COST_DIAMOND = 200;
 
 // Hadiah bobot — fokus 3 item utama: extra_life, auto_hint, time_freeze, streak_freeze
 type Prize = {
@@ -82,7 +91,7 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const { visitorId, action } = await req.json();
+    const { visitorId, action, count: requestedCount } = await req.json();
     if (!visitorId) return Response.json({ error: "visitorId required" }, { status: 400, headers: corsHeaders });
 
     const admin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
@@ -101,20 +110,37 @@ Deno.serve(async (req) => {
         prizes: PRIZES,
         singleCostGems: SINGLE_COST_GEMS,
         bundleCostDiamond: BUNDLE_COST_DIAMOND,
+        bundles: BUNDLES,
       }, { headers: corsHeaders });
     }
 
-    if (action === "spin_single" || action === "spin_bundle") {
-      const isBundle = action === "spin_bundle";
-      const cost = isBundle ? BUNDLE_COST_DIAMOND : SINGLE_COST_GEMS;
-      const currency = isBundle ? "diamond" : "gems";
+    if (action === "spin_single" || action === "spin_bundle" || action === "spin_pack") {
+      let spinCount = 1;
+      let cost = SINGLE_COST_GEMS;
+      let spinType = "single";
 
-      // Cek saldo gem (kita pakai 1 sumber: account gems untuk gems & diamond keduanya untuk simplifikasi)
+      if (action === "spin_bundle") {
+        spinCount = 5;
+        cost = BUNDLE_COST_DIAMOND;
+        spinType = "bundle5";
+      } else if (action === "spin_pack") {
+        const pack = BUNDLES.find(b => b.count === Number(requestedCount));
+        if (!pack) {
+          return Response.json({ error: "Paket tidak valid" }, { status: 400, headers: corsHeaders });
+        }
+        spinCount = pack.count;
+        cost = pack.cost;
+        spinType = `pack${pack.count}`;
+      }
+
+      const currency = "gems";
+
+      // Cek saldo gem
       const { data: gemsData } = await admin.rpc("get_account_gems", { p_visitor_id: visitorId });
       const gems = Number(gemsData || 0);
       if (gems < cost) {
         return Response.json({
-          error: `Butuh ${cost} ${currency === "diamond" ? "💎 Diamond" : "💎 Gem"} (kamu punya ${gems})`,
+          error: `Butuh ${cost} 💎 Gem (kamu punya ${gems})`,
         }, { status: 400, headers: corsHeaders });
       }
 
@@ -125,7 +151,6 @@ Deno.serve(async (req) => {
         return Response.json({ error: "Gagal mengurangi saldo" }, { status: 400, headers: corsHeaders });
       }
 
-      const spinCount = isBundle ? 5 : 1;
       const results: Array<Prize & { index: number }> = [];
       for (let i = 0; i < spinCount; i++) {
         const prize = pickPrize();
@@ -133,13 +158,13 @@ Deno.serve(async (req) => {
         results.push(prize);
         await admin.from("luck_royale_nyawa_history").insert({
           visitor_id: visitorId,
-          spin_type: isBundle ? "bundle5" : "single",
+          spin_type: spinType,
           reward_kind: prize.kind,
           reward_value: prize.value,
           reward_label: prize.label,
           rarity: prize.rarity,
           cost_currency: currency,
-          cost_amount: i === 0 ? cost : 0, // biaya hanya pada baris pertama
+          cost_amount: i === 0 ? cost : 0,
         });
       }
 
