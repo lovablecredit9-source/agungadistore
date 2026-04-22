@@ -21,21 +21,27 @@ type Prize = {
 };
 
 const PRIZES: Prize[] = [
-  // Common (60%)
-  { kind: "auto_hint",   value: 1, label: "+1 Hint Otomatis",   emoji: "💡", rarity: "common",    weight: 22, color: "#94a3b8" },
-  { kind: "extra_life",  value: 1, label: "+1 Nyawa Ekstra",     emoji: "❤️", rarity: "common",    weight: 20, color: "#ef4444" },
-  { kind: "time_freeze", value: 1, label: "+1 Time Freeze 30s",  emoji: "⏱️", rarity: "common",    weight: 18, color: "#0ea5e9" },
-  // Rare (28%)
-  { kind: "streak_freeze", value: 1, label: "+1 Streak Freeze",  emoji: "🛡️", rarity: "rare",     weight: 14, color: "#10b981" },
-  { kind: "auto_hint",   value: 3, label: "+3 Hint Otomatis",    emoji: "💡", rarity: "rare",      weight: 8,  color: "#06b6d4" },
-  { kind: "extra_life",  value: 3, label: "+3 Nyawa Ekstra",     emoji: "❤️", rarity: "rare",      weight: 6,  color: "#f43f5e" },
-  // Epic (10%)
-  { kind: "time_freeze", value: 5, label: "+5 Time Freeze",      emoji: "⏱️", rarity: "epic",     weight: 5,  color: "#a855f7" },
-  { kind: "streak_freeze", value: 2, label: "+2 Streak Freeze",  emoji: "🛡️", rarity: "epic",     weight: 3,  color: "#ec4899" },
-  { kind: "gems",        value: 100, label: "+100 Gem",          emoji: "💎", rarity: "epic",      weight: 2,  color: "#8b5cf6" },
-  // Legendary (2%)
-  { kind: "extra_life",  value: 10, label: "🎰 JACKPOT +10 Nyawa", emoji: "👑", rarity: "legendary", weight: 1,  color: "#fbbf24" },
-  { kind: "streak_freeze", value: 5, label: "🎰 LEGENDARY +5 Freeze", emoji: "👑", rarity: "legendary", weight: 1,  color: "#f59e0b" },
+  // Common (~55%) — hadiah ringan, sering muncul
+  { kind: "auto_hint",     value: 1,  label: "+1 Hint Otomatis",        emoji: "💡", rarity: "common",    weight: 20, color: "#94a3b8" },
+  { kind: "extra_life",    value: 1,  label: "+1 Nyawa Ekstra",          emoji: "❤️", rarity: "common",    weight: 18, color: "#ef4444" },
+  { kind: "time_freeze",   value: 1,  label: "+1 Time Freeze 30s",       emoji: "⏱️", rarity: "common",    weight: 17, color: "#0ea5e9" },
+  // Rare (~28%) — sesekali dapat
+  { kind: "streak_freeze", value: 1,  label: "+1 Streak Freeze",         emoji: "🛡️", rarity: "rare",      weight: 13, color: "#10b981" },
+  { kind: "auto_hint",     value: 3,  label: "+3 Hint Otomatis",         emoji: "💡", rarity: "rare",      weight: 9,  color: "#06b6d4" },
+  { kind: "extra_life",    value: 3,  label: "+3 Nyawa Ekstra",          emoji: "❤️", rarity: "rare",      weight: 6,  color: "#f43f5e" },
+  // Epic (~12%) — agak sulit
+  { kind: "time_freeze",   value: 5,  label: "+5 Time Freeze",           emoji: "⏱️", rarity: "epic",      weight: 5,  color: "#a855f7" },
+  { kind: "streak_freeze", value: 2,  label: "+2 Streak Freeze",         emoji: "🛡️", rarity: "epic",      weight: 4,  color: "#ec4899" },
+  { kind: "gems",          value: 150, label: "+150 Gem",                emoji: "💎", rarity: "epic",      weight: 3,  color: "#8b5cf6" },
+  // Legendary (~4%) — jarang, hadiah besar
+  { kind: "extra_life",    value: 10, label: "🎰 JACKPOT +10 Nyawa",      emoji: "👑", rarity: "legendary", weight: 2,  color: "#fbbf24" },
+  { kind: "streak_freeze", value: 5,  label: "🎰 LEGENDARY +5 Freeze",    emoji: "👑", rarity: "legendary", weight: 1,  color: "#f59e0b" },
+  { kind: "gems",          value: 500, label: "💎 LEGENDARY +500 Gem",    emoji: "💎", rarity: "legendary", weight: 1,  color: "#facc15" },
+  // Mythic (~1%) — sangat langka, hadiah mewah
+  { kind: "gems",          value: 1500, label: "🌟 MYTHIC TREASURE +1500 Gem", emoji: "🌟", rarity: "legendary", weight: 0.6, color: "#e879f9" },
+  { kind: "extra_life",    value: 25,  label: "👑 MYTHIC VAULT +25 Nyawa",     emoji: "👑", rarity: "legendary", weight: 0.3, color: "#f0abfc" },
+  // Grand Prize (~0.1%) — ultra rare
+  { kind: "gems",          value: 5000, label: "💠 GRAND PRIZE +5000 Gem",     emoji: "💠", rarity: "legendary", weight: 0.1, color: "#22d3ee" },
 ];
 
 function pickPrize(): Prize & { index: number } {
