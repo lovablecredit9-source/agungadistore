@@ -55,14 +55,38 @@ const PRIZES: Prize[] = [
   { kind: "gems",          value: 50000, label: "🌈 ULTRA JACKPOT +50.000 Gem",   emoji: "🌈", rarity: "mythic", weight: 0.02, color: "#f472b6" },
 ];
 
-function pickPrize(): Prize & { index: number } {
-  const total = PRIZES.reduce((s, p) => s + p.weight, 0);
+// === DAILY FREE SPIN — pool hadiah lebih ringan, 100% kasih sesuatu ===
+const FREE_PRIZES: Prize[] = [
+  { kind: "auto_hint",     value: 1,  label: "🎁 FREE +1 Hint",          emoji: "💡", rarity: "common", weight: 30, color: "#94a3b8" },
+  { kind: "extra_life",    value: 1,  label: "🎁 FREE +1 Nyawa",         emoji: "❤️", rarity: "common", weight: 28, color: "#ef4444" },
+  { kind: "time_freeze",   value: 1,  label: "🎁 FREE +1 Time Freeze",   emoji: "⏱️", rarity: "common", weight: 22, color: "#0ea5e9" },
+  { kind: "streak_freeze", value: 1,  label: "🎁 FREE +1 Streak Freeze", emoji: "🛡️", rarity: "rare",   weight: 12, color: "#10b981" },
+  { kind: "gems",          value: 50, label: "💎 FREE +50 Gem",          emoji: "💎", rarity: "rare",   weight: 6,  color: "#8b5cf6" },
+  { kind: "gems",          value: 200, label: "💎 FREE BONUS +200 Gem",  emoji: "💎", rarity: "epic",   weight: 1.8, color: "#a855f7" },
+  { kind: "gems",          value: 1000, label: "🌈 FREE LEGENDARY +1.000 Gem", emoji: "🌈", rarity: "legendary", weight: 0.2, color: "#facc15" },
+];
+
+function pickFromPool(pool: Prize[]): Prize & { index: number } {
+  const total = pool.reduce((s, p) => s + p.weight, 0);
   let r = Math.random() * total;
-  for (let i = 0; i < PRIZES.length; i++) {
-    r -= PRIZES[i].weight;
-    if (r <= 0) return { ...PRIZES[i], index: i };
+  for (let i = 0; i < pool.length; i++) {
+    r -= pool[i].weight;
+    if (r <= 0) return { ...pool[i], index: i };
   }
-  return { ...PRIZES[0], index: 0 };
+  return { ...pool[0], index: 0 };
+}
+
+function pickPrize(): Prize & { index: number } {
+  return pickFromPool(PRIZES);
+}
+
+// === LUCKY STREAK MULTIPLIER ===
+// Hitung berapa spin berturut-turut yang dapat rare+ (rare/epic/legendary/mythic)
+// Setiap 3 streak = +10% bonus pada nilai hadiah numerik (gems/nyawa/dll)
+function getStreakMultiplier(streakCount: number): number {
+  if (streakCount < 3) return 1.0;
+  const bonus = Math.floor(streakCount / 3) * 0.1; // +10% per 3 streak
+  return Math.min(2.0, 1 + bonus); // cap 2x
 }
 
 // Tambah qty ke streak_power_pack_inventory (inventory yang dipakai PowerPackShop)
@@ -120,6 +144,11 @@ async function applyPrize(admin: any, visitorId: string, p: Prize) {
   }
 }
 
+function getTodayWIB(): string {
+  const wib = new Date(Date.now() + 7 * 3600 * 1000);
+  return wib.toISOString().split("T")[0];
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
@@ -128,6 +157,7 @@ Deno.serve(async (req) => {
     if (!visitorId) return Response.json({ error: "visitorId required" }, { status: 400, headers: corsHeaders });
 
     const admin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+    const today = getTodayWIB();
 
     if (action === "check") {
       const { data: history } = await admin
@@ -137,13 +167,84 @@ Deno.serve(async (req) => {
         .order("created_at", { ascending: false })
         .limit(20);
       const { data: gemsData } = await admin.rpc("get_account_gems", { p_visitor_id: visitorId });
+
+      // Cek free spin hari ini
+      const { data: freeUsed } = await admin
+        .from("luck_royale_nyawa_history")
+        .select("id")
+        .eq("visitor_id", visitorId)
+        .eq("spin_type", "free_daily")
+        .gte("created_at", `${today}T00:00:00+07:00`)
+        .lte("created_at", `${today}T23:59:59+07:00`)
+        .limit(1);
+      const freeSpinAvailable = !freeUsed || freeUsed.length === 0;
+
+      // Hitung lucky streak (rare+ berturut-turut dari history terbaru)
+      let luckyStreak = 0;
+      const allHistory = history || [];
+      for (const h of allHistory) {
+        if (["rare", "epic", "legendary", "mythic"].includes(h.rarity)) {
+          luckyStreak++;
+        } else {
+          break;
+        }
+      }
+
       return Response.json({
-        history: history || [],
+        history: allHistory,
         gems: gemsData || 0,
         prizes: PRIZES,
         singleCostGems: SINGLE_COST_GEMS,
         bundleCostDiamond: BUNDLE_COST_DIAMOND,
         bundles: BUNDLES,
+        freeSpinAvailable,
+        freePrizes: FREE_PRIZES,
+        luckyStreak,
+        streakMultiplier: getStreakMultiplier(luckyStreak),
+      }, { headers: corsHeaders });
+    }
+
+    // === FREE DAILY SPIN ===
+    if (action === "spin_free") {
+      const { data: freeUsed } = await admin
+        .from("luck_royale_nyawa_history")
+        .select("id")
+        .eq("visitor_id", visitorId)
+        .eq("spin_type", "free_daily")
+        .gte("created_at", `${today}T00:00:00+07:00`)
+        .lte("created_at", `${today}T23:59:59+07:00`)
+        .limit(1);
+      if (freeUsed && freeUsed.length > 0) {
+        return Response.json({ error: "Free spin hari ini sudah dipakai. Kembali besok!" }, { status: 400, headers: corsHeaders });
+      }
+
+      const prize = pickFromPool(FREE_PRIZES);
+      await applyPrize(admin, visitorId, prize);
+      await admin.from("luck_royale_nyawa_history").insert({
+        visitor_id: visitorId,
+        spin_type: "free_daily",
+        reward_kind: prize.kind,
+        reward_value: prize.value,
+        reward_label: prize.label,
+        rarity: prize.rarity,
+        cost_currency: "free",
+        cost_amount: 0,
+      });
+
+      await admin.from("notifications").insert({
+        visitor_id: visitorId,
+        title: `🎁 FREE Daily Spin!`,
+        message: `Kamu dapat: ${prize.label}`,
+        type: "luck_royale_nyawa",
+      });
+
+      const { data: gemsAfter } = await admin.rpc("get_account_gems", { p_visitor_id: visitorId });
+      return Response.json({
+        success: true,
+        results: [prize],
+        gems: gemsAfter || 0,
+        prizes: PRIZES,
+        isFree: true,
       }, { headers: corsHeaders });
     }
 
@@ -184,28 +285,57 @@ Deno.serve(async (req) => {
         return Response.json({ error: "Gagal mengurangi saldo" }, { status: 400, headers: corsHeaders });
       }
 
-      const results: Array<Prize & { index: number }> = [];
+      // Hitung lucky streak saat ini
+      const { data: histPre } = await admin
+        .from("luck_royale_nyawa_history")
+        .select("rarity")
+        .eq("visitor_id", visitorId)
+        .order("created_at", { ascending: false })
+        .limit(20);
+      let curStreak = 0;
+      for (const h of histPre || []) {
+        if (["rare", "epic", "legendary", "mythic"].includes(h.rarity)) curStreak++;
+        else break;
+      }
+
+      const results: Array<Prize & { index: number; bonusApplied?: number }> = [];
+      let totalBonusGems = 0;
       for (let i = 0; i < spinCount; i++) {
-        const prize = pickPrize();
+        const basePrize = pickPrize();
+        const mult = getStreakMultiplier(curStreak);
+        // Bonus hanya berlaku untuk gems & qty numerik > 1
+        let finalValue = basePrize.value;
+        let bonusApplied = 0;
+        if (mult > 1.0) {
+          finalValue = Math.round(basePrize.value * mult);
+          bonusApplied = finalValue - basePrize.value;
+          if (basePrize.kind === "gems") totalBonusGems += bonusApplied;
+        }
+        const prize: Prize = { ...basePrize, value: finalValue };
         await applyPrize(admin, visitorId, prize);
-        results.push(prize);
+        results.push({ ...prize, index: basePrize.index, bonusApplied });
+
         await admin.from("luck_royale_nyawa_history").insert({
           visitor_id: visitorId,
           spin_type: spinType,
           reward_kind: prize.kind,
-          reward_value: prize.value,
-          reward_label: prize.label,
+          reward_value: finalValue,
+          reward_label: bonusApplied > 0 ? `${prize.label} (+${Math.round((mult - 1) * 100)}% streak bonus)` : prize.label,
           rarity: prize.rarity,
           cost_currency: currency,
           cost_amount: i === 0 ? cost : 0,
         });
+
+        // Update streak counter live
+        if (["rare", "epic", "legendary", "mythic"].includes(prize.rarity)) curStreak++;
+        else curStreak = 0;
       }
 
       // Notifikasi ringkas
       const summary = results.map(r => r.label).join(", ");
       await admin.from("notifications").insert({
         visitor_id: visitorId,
-        title: `🎰 Luck Royale Nyawa (${spinCount}x)`,
+        title: `🎰 Luck Royale Nyawa (${spinCount}x)${totalBonusGems > 0 ? ` 🔥 +${totalBonusGems} BONUS` : ""}`,
         message: summary.length > 200 ? summary.slice(0, 200) + "..." : summary,
         type: "luck_royale_nyawa",
       });
@@ -217,6 +347,9 @@ Deno.serve(async (req) => {
         results,
         gems: gemsAfter || 0,
         prizes: PRIZES,
+        luckyStreak: curStreak,
+        streakMultiplier: getStreakMultiplier(curStreak),
+        totalBonusGems,
       }, { headers: corsHeaders });
     }
 

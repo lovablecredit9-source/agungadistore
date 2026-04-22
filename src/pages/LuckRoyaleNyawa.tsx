@@ -10,7 +10,7 @@ import { getVisitorId } from "@/lib/visitor-id";
 import {
   ArrowLeft, Heart, Lightbulb, Timer, Shield, Gem, Sparkles, Crown,
   Loader2, Trophy, Zap, X, Dices, BarChart3, Flame, Star, Award, TrendingUp,
-  Brain, Target, TrendingDown, CheckCircle2, AlertCircle, Rocket,
+  Brain, Target, TrendingDown, CheckCircle2, AlertCircle, Rocket, Gift, Flame as FlameIcon,
 } from "lucide-react";
 import FadedWheel from "@/components/streak/FadedWheel";
 import DiamondRoyaleInline from "@/components/streak/DiamondRoyaleInline";
@@ -72,6 +72,10 @@ export default function LuckRoyaleNyawa() {
   const [bundles, setBundles] = useState<Array<{ count: number; cost: number; label: string; badge?: string }>>([]);
   const [results, setResults] = useState<SpinResult[] | null>(null);
   const [reelSpinning, setReelSpinning] = useState(false);
+  const [freeSpinAvailable, setFreeSpinAvailable] = useState(false);
+  const [luckyStreak, setLuckyStreak] = useState(0);
+  const [streakMultiplier, setStreakMultiplier] = useState(1);
+  const [bonusPopup, setBonusPopup] = useState<number | null>(null);
 
   const fetchData = async () => {
     if (!visitorId) return;
@@ -85,6 +89,9 @@ export default function LuckRoyaleNyawa() {
       setHistory(data.history || []);
       setSingleCost(data.singleCostGems || 50);
       setBundles(data.bundles || []);
+      setFreeSpinAvailable(!!data.freeSpinAvailable);
+      setLuckyStreak(Number(data.luckyStreak || 0));
+      setStreakMultiplier(Number(data.streakMultiplier || 1));
     } catch (e) {
       console.error(e);
     } finally {
@@ -94,7 +101,7 @@ export default function LuckRoyaleNyawa() {
 
   useEffect(() => { fetchData(); }, []);
 
-  const doSpin = async (mode: "single" | "pack", count?: number) => {
+  const doSpin = async (mode: "single" | "pack" | "free", count?: number) => {
     if (!visitorId || spinning) return;
     setSpinning(true);
     setReelSpinning(true);
@@ -102,6 +109,8 @@ export default function LuckRoyaleNyawa() {
       const body: any = { visitorId };
       if (mode === "single") {
         body.action = "spin_single";
+      } else if (mode === "free") {
+        body.action = "spin_free";
       } else {
         body.action = "spin_pack";
         body.count = count;
@@ -113,10 +122,16 @@ export default function LuckRoyaleNyawa() {
         setReelSpinning(false);
         return;
       }
-      // Tampilkan hadiah langsung (tanpa delay)
       setReelSpinning(false);
       setResults(data.results);
       setGems(data.gems);
+      if (typeof data.luckyStreak === "number") setLuckyStreak(data.luckyStreak);
+      if (typeof data.streakMultiplier === "number") setStreakMultiplier(data.streakMultiplier);
+      if (data.totalBonusGems && data.totalBonusGems > 0) {
+        setBonusPopup(data.totalBonusGems);
+        setTimeout(() => setBonusPopup(null), 4000);
+      }
+      if (mode === "free") setFreeSpinAvailable(false);
       // Refresh history
       fetchData();
     } catch (e: any) {
@@ -215,6 +230,71 @@ export default function LuckRoyaleNyawa() {
             </TabsList>
 
             <TabsContent value="spin" className="space-y-4 mt-3">
+          {/* 🔥 LUCKY STREAK BANNER (visible if streak >= 3) */}
+          {luckyStreak >= 3 && (
+            <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-orange-600 via-red-600 to-pink-600 border-2 border-amber-300 p-3 shadow-xl shadow-orange-500/50 animate-pulse">
+              <div className="absolute inset-0 opacity-30" style={{
+                backgroundImage: "radial-gradient(circle at 20% 50%, rgba(255,255,255,0.4), transparent 60%)",
+              }} />
+              <div className="relative flex items-center gap-3">
+                <div className="w-12 h-12 rounded-full bg-black/30 flex items-center justify-center ring-2 ring-amber-300">
+                  <FlameIcon className="w-7 h-7 text-amber-200" fill="currentColor" />
+                </div>
+                <div className="flex-1">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[10px] font-black tracking-widest text-amber-200 bg-black/40 px-1.5 py-0.5 rounded">LUCKY STREAK</span>
+                    <span className="text-xl font-black text-white tabular-nums">{luckyStreak}🔥</span>
+                  </div>
+                  <p className="text-[10px] font-bold text-amber-100 mt-0.5">
+                    Bonus hadiah <span className="text-amber-200 font-black">+{Math.round((streakMultiplier - 1) * 100)}%</span> aktif!
+                    Pertahankan dengan dapat Rare+ lagi
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* 🎁 DAILY FREE SPIN CARD */}
+          <div className={`relative overflow-hidden rounded-2xl border-2 p-3 ${
+            freeSpinAvailable
+              ? "bg-gradient-to-br from-emerald-600/40 via-green-600/30 to-cyan-600/40 border-emerald-400/60 shadow-lg shadow-emerald-500/40"
+              : "bg-gradient-to-br from-slate-800/60 to-slate-900/60 border-slate-600/40 opacity-70"
+          }`}>
+            <div className="absolute inset-0 opacity-20" style={{
+              backgroundImage: "radial-gradient(circle at 80% 20%, rgba(16,185,129,0.5), transparent 60%)",
+            }} />
+            <div className="relative flex items-center gap-3">
+              <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 ring-2 ${
+                freeSpinAvailable ? "bg-gradient-to-br from-emerald-400 to-green-600 ring-emerald-300/60 shadow-lg shadow-emerald-500/50 animate-pulse" : "bg-slate-700 ring-slate-500/40"
+              }`}>
+                <Gift className="w-8 h-8 text-white" fill="currentColor" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-1.5 mb-0.5">
+                  <Badge className={freeSpinAvailable ? "bg-amber-500 text-black font-black text-[8px]" : "bg-slate-600 text-[8px]"}>
+                    {freeSpinAvailable ? "🎉 GRATIS!" : "TERPAKAI"}
+                  </Badge>
+                  <span className="text-[9px] font-black tracking-widest text-emerald-200">DAILY FREE SPIN</span>
+                </div>
+                <h4 className="text-sm font-black text-white">Putar Gratis 1× Setiap Hari!</h4>
+                <p className="text-[10px] text-emerald-100/80">
+                  {freeSpinAvailable ? "Klaim hadiahmu sekarang • Reset 00:00 WIB" : "Sudah klaim hari ini, kembali besok"}
+                </p>
+              </div>
+              <button
+                disabled={!freeSpinAvailable || spinning}
+                onClick={() => doSpin("free")}
+                className={`shrink-0 px-3 py-2 rounded-xl font-black text-xs tracking-wider transition active:scale-95 ${
+                  freeSpinAvailable
+                    ? "bg-gradient-to-r from-amber-400 to-orange-500 text-black shadow-lg shadow-amber-500/50 hover:shadow-amber-500/70"
+                    : "bg-slate-700 text-slate-400 cursor-not-allowed"
+                }`}
+              >
+                {freeSpinAvailable ? "PUTAR!" : "✓"}
+              </button>
+            </div>
+          </div>
+
           {/* Hero Banner */}
           <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-amber-600/30 via-orange-600/20 to-red-600/30 border-2 border-amber-500/40 p-4">
             <div className="absolute inset-0 opacity-20" style={{
@@ -756,6 +836,19 @@ export default function LuckRoyaleNyawa() {
               <Zap className="w-4 h-4 mr-1" /> KEREN!
             </Button>
           </Card>
+        </div>
+      )}
+
+      {/* 🔥 Streak Bonus Popup */}
+      {bonusPopup !== null && (
+        <div className="fixed top-20 left-1/2 -translate-x-1/2 z-[60] animate-fade-in pointer-events-none">
+          <div className="bg-gradient-to-r from-orange-500 via-red-500 to-pink-500 rounded-full px-5 py-2.5 shadow-2xl shadow-orange-500/60 ring-4 ring-amber-300/40 flex items-center gap-2 animate-pulse">
+            <FlameIcon className="w-5 h-5 text-amber-200" fill="currentColor" />
+            <div>
+              <div className="text-[9px] font-black text-amber-200 tracking-widest leading-none">STREAK BONUS!</div>
+              <div className="text-base font-black text-white leading-tight">+{bonusPopup.toLocaleString()} 💎</div>
+            </div>
+          </div>
         </div>
       )}
     </div>
