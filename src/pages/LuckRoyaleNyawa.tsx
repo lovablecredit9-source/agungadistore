@@ -144,14 +144,47 @@ export default function LuckRoyaleNyawa() {
         setBonusPopup(data.totalBonusGems);
         setTimeout(() => setBonusPopup(null), 4000);
       }
+      if (data.jackpotWonTotal && data.jackpotWonTotal > 0) {
+        setJackpotPopup(data.jackpotWonTotal);
+        setTimeout(() => setJackpotPopup(null), 6000);
+      }
+      if (data.earnedTokens && data.earnedTokens > 0) {
+        setTokenPopup(data.earnedTokens);
+        setTimeout(() => setTokenPopup(null), 4000);
+      }
+      if (typeof data.luckyTokens === "number") setLuckyTokens(data.luckyTokens);
+      if (typeof data.luckyTokenProgress === "number") setTokenProgress(data.luckyTokenProgress);
+      if (typeof data.megaJackpotPool === "number") setMegaPool(data.megaJackpotPool);
       if (mode === "free") setFreeSpinAvailable(false);
-      // Refresh history
       fetchData();
     } catch (e: any) {
       toast({ title: "Error", description: e.message || "Gagal", variant: "destructive" });
       setReelSpinning(false);
     } finally {
       setSpinning(false);
+    }
+  };
+
+  const redeemToken = async (itemCode: string) => {
+    if (!visitorId || redeeming) return;
+    setRedeeming(itemCode);
+    try {
+      const { data, error } = await supabase.functions.invoke("luck-royale-nyawa", {
+        body: { visitorId, action: "redeem_token", itemCode },
+      });
+      if (error) throw error;
+      if (data.error) {
+        toast({ title: "Gagal tukar", description: data.error, variant: "destructive" });
+        return;
+      }
+      setLuckyTokens(data.luckyTokens);
+      setGems(data.gems);
+      toast({ title: "🎟️ Token Ditukar!", description: `Kamu dapat: ${data.item.name}` });
+      fetchData();
+    } catch (e: any) {
+      toast({ title: "Error", description: e.message || "Gagal", variant: "destructive" });
+    } finally {
+      setRedeeming(null);
     }
   };
 
