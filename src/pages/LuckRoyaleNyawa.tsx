@@ -152,13 +152,55 @@ export default function LuckRoyaleNyawa() {
         </div>
       ) : (
         <div className="px-3 py-4 space-y-4 max-w-md mx-auto">
+          {/* Quick Stats Bar */}
+          {(() => {
+            const totalSpins = history.length;
+            const mythicCount = history.filter(h => h.rarity === "mythic").length;
+            const legendaryCount = history.filter(h => h.rarity === "legendary").length;
+            const epicCount = history.filter(h => h.rarity === "epic").length;
+            return (
+              <div className="grid grid-cols-4 gap-1.5">
+                <div className="rounded-lg bg-gradient-to-br from-slate-800/80 to-slate-900/80 border border-cyan-500/30 p-2 text-center">
+                  <Dices className="w-3.5 h-3.5 text-cyan-300 mx-auto mb-0.5" />
+                  <div className="text-[9px] text-cyan-200/70 font-bold">SPIN</div>
+                  <div className="text-sm font-black text-white tabular-nums">{totalSpins}</div>
+                </div>
+                <div className="rounded-lg bg-gradient-to-br from-fuchsia-900/60 to-purple-900/60 border border-fuchsia-500/40 p-2 text-center">
+                  <Star className="w-3.5 h-3.5 text-fuchsia-300 mx-auto mb-0.5" fill="currentColor" />
+                  <div className="text-[9px] text-fuchsia-200/70 font-bold">MYTHIC</div>
+                  <div className="text-sm font-black text-fuchsia-200 tabular-nums">{mythicCount}</div>
+                </div>
+                <div className="rounded-lg bg-gradient-to-br from-amber-900/60 to-orange-900/60 border border-amber-500/40 p-2 text-center">
+                  <Crown className="w-3.5 h-3.5 text-amber-300 mx-auto mb-0.5" fill="currentColor" />
+                  <div className="text-[9px] text-amber-200/70 font-bold">LEGEND</div>
+                  <div className="text-sm font-black text-amber-200 tabular-nums">{legendaryCount}</div>
+                </div>
+                <div className="rounded-lg bg-gradient-to-br from-purple-900/60 to-indigo-900/60 border border-purple-500/40 p-2 text-center">
+                  <Sparkles className="w-3.5 h-3.5 text-purple-300 mx-auto mb-0.5" />
+                  <div className="text-[9px] text-purple-200/70 font-bold">EPIC</div>
+                  <div className="text-sm font-black text-purple-200 tabular-nums">{epicCount}</div>
+                </div>
+              </div>
+            );
+          })()}
+
           <Tabs defaultValue="spin" className="w-full">
-            <TabsList className="grid w-full grid-cols-2 bg-black/40 border border-amber-500/30">
-              <TabsTrigger value="spin" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-amber-500 data-[state=active]:to-orange-600 data-[state=active]:text-white font-black tracking-wider text-[11px]">
-                🎰 SPIN ROYALE
+            <TabsList className="grid w-full grid-cols-4 bg-black/40 border border-amber-500/30 h-auto p-1 gap-1">
+              <TabsTrigger value="spin" className="flex-col gap-0.5 py-1.5 data-[state=active]:bg-gradient-to-br data-[state=active]:from-amber-500 data-[state=active]:to-orange-600 data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-amber-500/40 font-black tracking-wider text-[9px] rounded-md">
+                <Dices className="w-3.5 h-3.5" />
+                SPIN
               </TabsTrigger>
-              <TabsTrigger value="faded" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-cyan-500 data-[state=active]:to-blue-600 data-[state=active]:text-white font-black tracking-wider text-[11px]">
-                🎡 FADED WHEEL
+              <TabsTrigger value="faded" className="flex-col gap-0.5 py-1.5 data-[state=active]:bg-gradient-to-br data-[state=active]:from-cyan-500 data-[state=active]:to-blue-600 data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-cyan-500/40 font-black tracking-wider text-[9px] rounded-md">
+                <Sparkles className="w-3.5 h-3.5" />
+                FADED
+              </TabsTrigger>
+              <TabsTrigger value="stats" className="flex-col gap-0.5 py-1.5 data-[state=active]:bg-gradient-to-br data-[state=active]:from-emerald-500 data-[state=active]:to-teal-600 data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-emerald-500/40 font-black tracking-wider text-[9px] rounded-md">
+                <BarChart3 className="w-3.5 h-3.5" />
+                STATS
+              </TabsTrigger>
+              <TabsTrigger value="top" className="flex-col gap-0.5 py-1.5 data-[state=active]:bg-gradient-to-br data-[state=active]:from-fuchsia-500 data-[state=active]:to-purple-700 data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-fuchsia-500/40 font-black tracking-wider text-[9px] rounded-md">
+                <Trophy className="w-3.5 h-3.5" />
+                TOP
               </TabsTrigger>
             </TabsList>
 
