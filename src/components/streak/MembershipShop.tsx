@@ -247,12 +247,12 @@ export default function MembershipShop({ visitorId, onUpdate }: Props) {
   // Apakah hari ini (index 0) sudah klaim?
   const claimedToday = !!dailyClaim?.claimed_today;
 
-  async function purchase(planId: string, pinValue?: string) {
-    const busyKey = `${planId}-balance`;
+  async function purchase(planId: string, pinValue?: string, source: "auto" | "coins" | "gems" = "auto") {
+    const busyKey = `${planId}-${source}`;
     setBusy(busyKey);
     try {
       const { data, error } = await supabase.functions.invoke("purchase-membership", {
-        body: { action: "purchase", visitorId, planId, paymentSource: "auto", pin: pinValue },
+        body: { action: "purchase", visitorId, planId, paymentSource: source, pin: pinValue },
       });
       if (error || data?.error) {
         if (data?.needPin) {
