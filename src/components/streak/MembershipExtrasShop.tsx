@@ -179,30 +179,39 @@ export default function MembershipExtrasShop({ visitorId, kind, onUpdate }: Prop
                     </Badge>
                   )}
                 </div>
-                <div className="text-[10px] text-emerald-100/80 bg-black/30 rounded px-2 py-1">
-                  🎁 Dapat <span className="font-black text-emerald-300">{active.total_items_per_day || 1}</span> item per hari
+                <div className="text-[10px] text-emerald-100/80 bg-black/30 rounded px-2 py-1 space-y-0.5">
+                  <div>🎁 Hari ini: <span className="font-black text-emerald-300">{active.effective_items_today || 0}</span> item siap klaim</div>
+                  {active.pending_items_tomorrow > 0 && (
+                    <div className="text-amber-200">⏰ Menunggu besok: <span className="font-black">+{active.pending_items_tomorrow}</span> item</div>
+                  )}
                 </div>
                 <Button
                   size="sm"
-                  disabled={data.claimed_today || busy === "claim"}
+                  disabled={data.claimed_today || busy === "claim" || (active.effective_items_today || 0) === 0}
                   onClick={claimLuckyBox}
                   className={`w-full h-9 bg-gradient-to-r ${meta.grad} text-white font-bold disabled:opacity-50`}
                 >
                   {busy === "claim" ? <Loader2 className="w-4 h-4 animate-spin" /> :
                    data.claimed_today ? <><Check className="w-4 h-4 mr-1" /> Sudah klaim hari ini</> :
-                   <><Gift className="w-4 h-4 mr-1" /> Klaim {active.total_items_per_day || 1} Item Hari Ini</>}
+                   (active.effective_items_today || 0) === 0 ? <><Clock className="w-4 h-4 mr-1" /> Aktif besok</> :
+                   <><Gift className="w-4 h-4 mr-1" /> Klaim {active.effective_items_today} Item Hari Ini</>}
                 </Button>
               </div>
             )}
 
-            {/* Saver — usage */}
+            {/* Saver — usage (stacked totals) */}
             {kind === "saver" && (
               <div className="space-y-1.5">
+                {active.stacked_count > 1 && (
+                  <Badge className="bg-rose-500/40 text-rose-100 border-rose-400/50 text-[9px]">
+                    📦 {active.stacked_count} paket stack
+                  </Badge>
+                )}
                 <div className="flex justify-between text-[10px] text-rose-200">
-                  <span>🧊 Auto-Freeze: {active.freezes_used_this_week}/{active.auto_freeze_per_week}</span>
-                  <span>♻️ Restore: {active.restores_used_this_week}/{active.restore_per_week}</span>
+                  <span>🧊 Auto-Freeze: {active.freezes_used_this_week}/{active.total_auto_freeze_per_week ?? active.auto_freeze_per_week}</span>
+                  <span>♻️ Restore: {active.restores_used_this_week}/{active.total_restore_per_week ?? active.restore_per_week}</span>
                 </div>
-                <Progress value={(active.freezes_used_this_week / Math.max(1, active.auto_freeze_per_week)) * 100} className="h-1" />
+                <Progress value={(active.freezes_used_this_week / Math.max(1, active.total_auto_freeze_per_week ?? active.auto_freeze_per_week)) * 100} className="h-1" />
               </div>
             )}
           </div>
