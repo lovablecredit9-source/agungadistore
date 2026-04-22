@@ -512,6 +512,49 @@ export default function LuckRoyaleNyawa() {
             Dijamin mendapatkan hadiah setiap spin • Makin banyak makin hemat!
           </p>
 
+          {/* 🎟️ TOKEN SHOP */}
+          {tokenShop.length > 0 && (
+            <div className="rounded-2xl bg-gradient-to-br from-amber-900/40 via-orange-900/30 to-pink-900/40 border-2 border-amber-500/50 p-3">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-1.5">
+                  <Award className="w-4 h-4 text-amber-300" fill="currentColor" />
+                  <h3 className="text-xs font-black tracking-widest text-amber-200">| TOKEN SHOP — HADIAH PASTI</h3>
+                </div>
+                <Badge className="bg-amber-500 text-black font-black text-[8px]">🎟️ {luckyTokens}</Badge>
+              </div>
+              <p className="text-[10px] text-amber-100/80 mb-2.5">
+                Pakai Lucky Token untuk hadiah <span className="font-black text-amber-300">100% pasti</span> — tanpa hoki-hokian!
+              </p>
+              <div className="grid grid-cols-2 gap-2">
+                {tokenShop.map((item) => {
+                  const style = RARITY_STYLE[item.rarity] || RARITY_STYLE.common;
+                  const canAfford = luckyTokens >= item.cost;
+                  return (
+                    <button
+                      key={item.code}
+                      disabled={!canAfford || redeeming === item.code}
+                      onClick={() => redeemToken(item.code)}
+                      className={`relative overflow-hidden rounded-xl bg-gradient-to-br ${style.gradient} ring-2 ${style.ring} p-2.5 text-left active:scale-95 transition disabled:opacity-50 disabled:cursor-not-allowed`}
+                    >
+                      <div className="absolute top-1 right-1 flex items-center gap-0.5 bg-black/60 rounded-full px-1.5 py-0.5">
+                        <Award className="w-2.5 h-2.5 text-amber-300" fill="currentColor" />
+                        <span className="text-[9px] font-black text-amber-200">{item.cost}</span>
+                      </div>
+                      <div className="text-2xl mb-0.5">{item.emoji}</div>
+                      <div className="text-[10px] font-black text-white leading-tight">{item.name}</div>
+                      <div className="text-[8px] font-bold text-white/70 mt-1">{style.label}</div>
+                      {redeeming === item.code && (
+                        <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+                          <Loader2 className="w-5 h-5 animate-spin text-white" />
+                        </div>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
           {/* All Prizes List */}
           <div>
             <h3 className="text-xs font-black tracking-widest text-amber-300 mb-2 px-1">| HADIAH LAINNYA</h3>
