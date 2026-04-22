@@ -1550,6 +1550,42 @@ export type Database = {
         }
         Relationships: []
       }
+      faded_wheel_state: {
+        Row: {
+          claimed_indexes: number[]
+          created_at: string
+          current_round: number
+          grid_prizes: Json
+          id: string
+          spins_in_round: number
+          total_spins_lifetime: number
+          updated_at: string
+          visitor_id: string
+        }
+        Insert: {
+          claimed_indexes?: number[]
+          created_at?: string
+          current_round?: number
+          grid_prizes?: Json
+          id?: string
+          spins_in_round?: number
+          total_spins_lifetime?: number
+          updated_at?: string
+          visitor_id: string
+        }
+        Update: {
+          claimed_indexes?: number[]
+          created_at?: string
+          current_round?: number
+          grid_prizes?: Json
+          id?: string
+          spins_in_round?: number
+          total_spins_lifetime?: number
+          updated_at?: string
+          visitor_id?: string
+        }
+        Relationships: []
+      }
       flash_deal_redemptions: {
         Row: {
           cost_paid: number
