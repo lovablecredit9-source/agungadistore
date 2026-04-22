@@ -13,6 +13,7 @@ import {
   Brain, Target, TrendingDown, CheckCircle2, AlertCircle, Rocket,
 } from "lucide-react";
 import FadedWheel from "@/components/streak/FadedWheel";
+import DiamondRoyaleInline from "@/components/streak/DiamondRoyaleInline";
 
 interface Prize {
   kind: "extra_life" | "auto_hint" | "time_freeze" | "streak_freeze" | "gems" | "coins";
@@ -153,21 +154,6 @@ export default function LuckRoyaleNyawa() {
         </div>
       ) : (
         <div className="px-3 py-4 space-y-4 max-w-md mx-auto">
-          {/* Quick switch ke Diamond Royale */}
-          <button onClick={() => nav("/diamond-royale")}
-            className="w-full flex items-center justify-between gap-2 p-3 rounded-xl bg-gradient-to-r from-fuchsia-500/15 via-purple-500/15 to-amber-500/15 border border-fuchsia-400/30 hover:border-fuchsia-400/60 transition-all">
-            <div className="flex items-center gap-2.5">
-              <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-fuchsia-500 via-purple-600 to-amber-500 flex items-center justify-center shadow-lg shadow-fuchsia-500/40">
-                <Sparkles className="w-5 h-5 text-white" fill="currentColor" />
-              </div>
-              <div className="text-left">
-                <div className="text-xs font-black text-fuchsia-200">💎 Diamond Royale</div>
-                <div className="text-[10px] text-white/60">Spin premium pakai Gems • Pity 80 = Legendary</div>
-              </div>
-            </div>
-            <div className="text-fuchsia-300 font-black text-xs">→</div>
-          </button>
-
           {/* Quick Stats Bar */}
           {(() => {
             const totalSpins = history.length;
@@ -201,7 +187,7 @@ export default function LuckRoyaleNyawa() {
           })()}
 
           <Tabs defaultValue="spin" className="w-full">
-            <TabsList className="grid w-full grid-cols-5 bg-black/40 border border-amber-500/30 h-auto p-1 gap-1">
+            <TabsList className="grid w-full grid-cols-6 bg-black/40 border border-amber-500/30 h-auto p-1 gap-1">
               <TabsTrigger value="spin" className="flex-col gap-0.5 py-1.5 data-[state=active]:bg-gradient-to-br data-[state=active]:from-amber-500 data-[state=active]:to-orange-600 data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-amber-500/40 font-black tracking-wider text-[8px] rounded-md">
                 <Dices className="w-3.5 h-3.5" />
                 SPIN
@@ -209,6 +195,10 @@ export default function LuckRoyaleNyawa() {
               <TabsTrigger value="faded" className="flex-col gap-0.5 py-1.5 data-[state=active]:bg-gradient-to-br data-[state=active]:from-cyan-500 data-[state=active]:to-blue-600 data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-cyan-500/40 font-black tracking-wider text-[8px] rounded-md">
                 <Sparkles className="w-3.5 h-3.5" />
                 FADED
+              </TabsTrigger>
+              <TabsTrigger value="diamond" className="flex-col gap-0.5 py-1.5 data-[state=active]:bg-gradient-to-br data-[state=active]:from-fuchsia-500 data-[state=active]:via-purple-600 data-[state=active]:to-amber-500 data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-fuchsia-500/50 font-black tracking-wider text-[8px] rounded-md">
+                <Gem className="w-3.5 h-3.5" />
+                DIAMOND
               </TabsTrigger>
               <TabsTrigger value="tips" className="flex-col gap-0.5 py-1.5 data-[state=active]:bg-gradient-to-br data-[state=active]:from-pink-500 data-[state=active]:to-rose-600 data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-pink-500/40 font-black tracking-wider text-[8px] rounded-md">
                 <Brain className="w-3.5 h-3.5" />
@@ -386,6 +376,10 @@ export default function LuckRoyaleNyawa() {
 
             <TabsContent value="faded" className="mt-3">
               <FadedWheel visitorId={visitorId} onGemsChange={(g) => setGems(g)} />
+            </TabsContent>
+
+            <TabsContent value="diamond" className="mt-3">
+              <DiamondRoyaleInline visitorId={visitorId} onGemsChange={(g) => setGems(g)} />
             </TabsContent>
 
             <TabsContent value="tips" className="mt-3 space-y-3">

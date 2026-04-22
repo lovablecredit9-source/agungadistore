@@ -21,16 +21,17 @@ type Prize = {
 };
 
 const PRIZES: Prize[] = [
-  { kind: "coins", label: "+250 Koin", value: 250, rarity: "common", weight: 32, color: "#94a3b8" },
-  { kind: "coins", label: "+600 Koin", value: 600, rarity: "common", weight: 22, color: "#64748b" },
-  { kind: "coins", label: "+1.500 Koin", value: 1500, rarity: "rare", weight: 14, color: "#06b6d4" },
-  { kind: "freeze", label: "+2 Streak Freeze", value: 2, rarity: "rare", weight: 10, color: "#10b981" },
-  { kind: "gems", label: "+50 Gems", value: 50, rarity: "epic", weight: 8, color: "#a855f7" },
-  { kind: "coins", label: "+5.000 Koin", value: 5000, rarity: "epic", weight: 6, color: "#ec4899" },
-  { kind: "freeze", label: "+8 Streak Freeze", value: 8, rarity: "epic", weight: 4, color: "#f472b6" },
-  { kind: "title", label: "Title: 💎 Diamond Lord", value: 1, rarity: "legendary", weight: 2, color: "#fde047" },
-  { kind: "gems", label: "🌟 +250 Gems JACKPOT", value: 250, rarity: "legendary", weight: 1.5, color: "#fbbf24" },
-  { kind: "skin", label: "👑 Skin Avatar Mythic", value: 1, rarity: "legendary", weight: 0.5, color: "#fde047" },
+  { kind: "coins", label: "+500 Koin", value: 500, rarity: "common", weight: 30, color: "#94a3b8" },
+  { kind: "coins", label: "+1.500 Koin", value: 1500, rarity: "common", weight: 22, color: "#64748b" },
+  { kind: "coins", label: "+5.000 Koin", value: 5000, rarity: "rare", weight: 14, color: "#06b6d4" },
+  { kind: "freeze", label: "+5 Streak Freeze", value: 5, rarity: "rare", weight: 10, color: "#10b981" },
+  { kind: "gems", label: "+150 Gems", value: 150, rarity: "epic", weight: 8, color: "#a855f7" },
+  { kind: "coins", label: "+15.000 Koin", value: 15000, rarity: "epic", weight: 6, color: "#ec4899" },
+  { kind: "freeze", label: "+15 Streak Freeze", value: 15, rarity: "epic", weight: 4, color: "#f472b6" },
+  { kind: "title", label: "👑 Title: Diamond Lord", value: 1, rarity: "legendary", weight: 2.5, color: "#fde047" },
+  { kind: "gems", label: "🌟 +750 Gems MEGA JACKPOT", value: 750, rarity: "legendary", weight: 2, color: "#fbbf24" },
+  { kind: "skin", label: "💎 Skin Avatar Mythic", value: 1, rarity: "legendary", weight: 1, color: "#fde047" },
+  { kind: "coins", label: "🎰 +50.000 Koin GRAND PRIZE", value: 50000, rarity: "legendary", weight: 0.5, color: "#fde047" },
 ];
 
 function pickWeighted(pool: Prize[]): Prize {
