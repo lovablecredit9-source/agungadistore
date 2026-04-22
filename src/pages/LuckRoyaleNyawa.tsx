@@ -66,7 +66,7 @@ export default function LuckRoyaleNyawa() {
   const [prizes, setPrizes] = useState<Prize[]>([]);
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const [singleCost, setSingleCost] = useState(50);
-  const [bundleCost, setBundleCost] = useState(200);
+  const [bundles, setBundles] = useState<Array<{ count: number; cost: number; label: string; badge?: string }>>([]);
   const [results, setResults] = useState<SpinResult[] | null>(null);
   const [reelSpinning, setReelSpinning] = useState(false);
 
@@ -81,7 +81,7 @@ export default function LuckRoyaleNyawa() {
       setGems(data.gems || 0);
       setHistory(data.history || []);
       setSingleCost(data.singleCostGems || 50);
-      setBundleCost(data.bundleCostDiamond || 200);
+      setBundles(data.bundles || []);
     } catch (e) {
       console.error(e);
     } finally {
