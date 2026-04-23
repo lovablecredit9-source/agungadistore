@@ -94,13 +94,16 @@ function getStreakMultiplier(streakCount: number): number {
 const TOKENS_PER_SPIN_THRESHOLD = 5; // 5 paid spin = 1 token
 
 // === TOKEN SHOP ACCESS PASS ===
-// Untuk bisa tukar token di Token Shop, user wajib unlock akses dengan saldo Rp 100.000.
-// Akses aktif selama 30 hari. Setelah expired harus beli lagi.
-const SHOP_ACCESS_PRICE = 100000;       // Rp 100.000
-const SHOP_ACCESS_DAYS = 30;            // berlaku 30 hari
+// FREE tier: bebas diklaim tanpa langganan.
+// PREMIUM tier: wajib akses Rp 100.000 (30 hari).
+// SUPER PREMIUM tier: wajib akses Rp 300.000 (30 hari) — hadiah jauh lebih mantap.
+const SHOP_ACCESS_PRICE = 100000;            // Rp 100.000 (Premium)
+const SHOP_ACCESS_DAYS = 30;                 // berlaku 30 hari
+const SUPER_SHOP_ACCESS_PRICE = 300000;      // Rp 300.000 (Super Premium)
+const SUPER_SHOP_ACCESS_DAYS = 30;           // berlaku 30 hari
 
-// 50 item: 10 Free (1-10 token) + 40 Premium (20-60 token, hadiah jauh lebih MANTAP)
-const TOKEN_SHOP: Array<{ code: string; name: string; cost: number; kind: string; value: number; rarity: string; emoji: string; tier: "free" | "premium" }> = [
+// Item shop: Free (1-10) + Premium (20-60) + Super Premium (70-150, MEGA hadiah)
+const TOKEN_SHOP: Array<{ code: string; name: string; cost: number; kind: string; value: number; rarity: string; emoji: string; tier: "free" | "premium" | "super_premium" }> = [
   // ============ FREE TIER (1-10 token, 10 item) ============
   { code: "tk_hint10",     name: "+10 Hint Otomatis",        cost: 1,   kind: "auto_hint",     value: 10,    rarity: "rare",      emoji: "💡", tier: "free" },
   { code: "tk_life10",     name: "+10 Nyawa Ekstra",         cost: 1,   kind: "extra_life",    value: 10,    rarity: "rare",      emoji: "❤️", tier: "free" },
