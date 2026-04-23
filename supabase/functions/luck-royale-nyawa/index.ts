@@ -94,13 +94,16 @@ function getStreakMultiplier(streakCount: number): number {
 const TOKENS_PER_SPIN_THRESHOLD = 5; // 5 paid spin = 1 token
 
 // === TOKEN SHOP ACCESS PASS ===
-// Untuk bisa tukar token di Token Shop, user wajib unlock akses dengan saldo Rp 100.000.
-// Akses aktif selama 30 hari. Setelah expired harus beli lagi.
-const SHOP_ACCESS_PRICE = 100000;       // Rp 100.000
-const SHOP_ACCESS_DAYS = 30;            // berlaku 30 hari
+// FREE tier: bebas diklaim tanpa langganan.
+// PREMIUM tier: wajib akses Rp 100.000 (30 hari).
+// SUPER PREMIUM tier: wajib akses Rp 300.000 (30 hari) — hadiah jauh lebih mantap.
+const SHOP_ACCESS_PRICE = 100000;            // Rp 100.000 (Premium)
+const SHOP_ACCESS_DAYS = 30;                 // berlaku 30 hari
+const SUPER_SHOP_ACCESS_PRICE = 300000;      // Rp 300.000 (Super Premium)
+const SUPER_SHOP_ACCESS_DAYS = 30;           // berlaku 30 hari
 
-// 50 item: 10 Free (1-10 token) + 40 Premium (20-60 token, hadiah jauh lebih MANTAP)
-const TOKEN_SHOP: Array<{ code: string; name: string; cost: number; kind: string; value: number; rarity: string; emoji: string; tier: "free" | "premium" }> = [
+// Item shop: Free (1-10) + Premium (20-60) + Super Premium (70-150, MEGA hadiah)
+const TOKEN_SHOP: Array<{ code: string; name: string; cost: number; kind: string; value: number; rarity: string; emoji: string; tier: "free" | "premium" | "super_premium" }> = [
   // ============ FREE TIER (1-10 token, 10 item) ============
   { code: "tk_hint10",     name: "+10 Hint Otomatis",        cost: 1,   kind: "auto_hint",     value: 10,    rarity: "rare",      emoji: "💡", tier: "free" },
   { code: "tk_life10",     name: "+10 Nyawa Ekstra",         cost: 1,   kind: "extra_life",    value: 10,    rarity: "rare",      emoji: "❤️", tier: "free" },
@@ -161,6 +164,36 @@ const TOKEN_SHOP: Array<{ code: string; name: string; cost: number; kind: string
   { code: "pk_life2000",    name: "❤️ JACKPOT +2.000 Nyawa",        cost: 60, kind: "extra_life",    value: 2000,   rarity: "mythic",    emoji: "❤️", tier: "premium" },
   { code: "pk_hint2000",    name: "💡 JACKPOT +2.000 Hint",         cost: 60, kind: "auto_hint",     value: 2000,   rarity: "mythic",    emoji: "💡", tier: "premium" },
   { code: "pk_freeze300",   name: "🛡️ JACKPOT +300 Freeze",         cost: 60, kind: "streak_freeze", value: 300,    rarity: "mythic",    emoji: "🛡️", tier: "premium" },
+
+  // ============ SUPER PREMIUM TIER (70-150 token, hadiah MEGA — Rp 300k/bulan) ============
+  // 70-80 token — Tier DIVINE
+  { code: "sp_gem10k",      name: "💎 DIVINE +10.000 Gem",           cost: 70,  kind: "gems",          value: 10000,   rarity: "mythic", emoji: "💎", tier: "super_premium" },
+  { code: "sp_life3000",    name: "❤️ DIVINE +3.000 Nyawa",          cost: 70,  kind: "extra_life",    value: 3000,    rarity: "mythic", emoji: "❤️", tier: "super_premium" },
+  { code: "sp_hint3000",    name: "💡 DIVINE +3.000 Hint",           cost: 70,  kind: "auto_hint",     value: 3000,    rarity: "mythic", emoji: "💡", tier: "super_premium" },
+  { code: "sp_freeze500",   name: "🛡️ DIVINE +500 Freeze",           cost: 75,  kind: "streak_freeze", value: 500,     rarity: "mythic", emoji: "🛡️", tier: "super_premium" },
+  { code: "sp_coins150k",   name: "🪙 DIVINE +150.000 Coin",         cost: 75,  kind: "streak_coins",  value: 150000,  rarity: "mythic", emoji: "🪙", tier: "super_premium" },
+  { code: "sp_gem15k",      name: "💎 DIVINE +15.000 Gem",           cost: 80,  kind: "gems",          value: 15000,   rarity: "mythic", emoji: "💎", tier: "super_premium" },
+
+  // 85-100 token — Tier CELESTIAL
+  { code: "sp_life5000",    name: "❤️ CELESTIAL +5.000 Nyawa",       cost: 85,  kind: "extra_life",    value: 5000,    rarity: "mythic", emoji: "❤️", tier: "super_premium" },
+  { code: "sp_hint5000",    name: "💡 CELESTIAL +5.000 Hint",        cost: 85,  kind: "auto_hint",     value: 5000,    rarity: "mythic", emoji: "💡", tier: "super_premium" },
+  { code: "sp_gem20k",      name: "💎 CELESTIAL +20.000 Gem",        cost: 90,  kind: "gems",          value: 20000,   rarity: "mythic", emoji: "💎", tier: "super_premium" },
+  { code: "sp_coins250k",   name: "🪙 CELESTIAL +250.000 Coin",      cost: 95,  kind: "streak_coins",  value: 250000,  rarity: "mythic", emoji: "🪙", tier: "super_premium" },
+  { code: "sp_freeze1000",  name: "🛡️ CELESTIAL +1.000 Freeze",      cost: 100, kind: "streak_freeze", value: 1000,    rarity: "mythic", emoji: "🛡️", tier: "super_premium" },
+  { code: "sp_gem30k",      name: "💎 CELESTIAL +30.000 Gem",        cost: 100, kind: "gems",          value: 30000,   rarity: "mythic", emoji: "💎", tier: "super_premium" },
+
+  // 110-130 token — Tier COSMIC
+  { code: "sp_life8000",    name: "❤️ COSMIC +8.000 Nyawa",          cost: 110, kind: "extra_life",    value: 8000,    rarity: "mythic", emoji: "❤️", tier: "super_premium" },
+  { code: "sp_hint8000",    name: "💡 COSMIC +8.000 Hint",           cost: 110, kind: "auto_hint",     value: 8000,    rarity: "mythic", emoji: "💡", tier: "super_premium" },
+  { code: "sp_coins500k",   name: "🪙 COSMIC +500.000 Coin",         cost: 120, kind: "streak_coins",  value: 500000,  rarity: "mythic", emoji: "🪙", tier: "super_premium" },
+  { code: "sp_gem50k",      name: "💎 COSMIC +50.000 Gem",           cost: 130, kind: "gems",          value: 50000,   rarity: "mythic", emoji: "💎", tier: "super_premium" },
+
+  // 140-150 token — Tier OMEGA / MEGA JACKPOT
+  { code: "sp_life15k",     name: "❤️ OMEGA +15.000 Nyawa",          cost: 140, kind: "extra_life",    value: 15000,   rarity: "mythic", emoji: "❤️", tier: "super_premium" },
+  { code: "sp_hint15k",     name: "💡 OMEGA +15.000 Hint",           cost: 140, kind: "auto_hint",     value: 15000,   rarity: "mythic", emoji: "💡", tier: "super_premium" },
+  { code: "sp_freeze2000",  name: "🛡️ OMEGA +2.000 Freeze",          cost: 145, kind: "streak_freeze", value: 2000,    rarity: "mythic", emoji: "🛡️", tier: "super_premium" },
+  { code: "sp_coins1m",     name: "🪙 OMEGA +1.000.000 Coin",        cost: 150, kind: "streak_coins",  value: 1000000, rarity: "mythic", emoji: "🪙", tier: "super_premium" },
+  { code: "sp_gem100k",     name: "💎 MEGA JACKPOT +100.000 Gem",    cost: 150, kind: "gems",          value: 100000,  rarity: "mythic", emoji: "💎", tier: "super_premium" },
 ];
 
 // === FREE DAILY TOKEN SHOP — bisa diklaim 1x per hari TANPA bayar token ===
@@ -171,16 +204,17 @@ const FREE_DAILY_SHOP: Array<{ code: string; name: string; kind: string; value: 
   { code: "fd_coins100", name: "🎁 FREE +100 Streak Coin",    kind: "streak_coins",  value: 100,  rarity: "common", emoji: "🪙" },
 ];
 
-// === SHOP ACCESS PASS — helpers (akses 30 hari Rp 100k) ===
-async function getShopAccess(admin: any, visitorId: string): Promise<{ activeUntil: string | null; purchasedAt: string | null }> {
-  const key = `lr_shop_access_${visitorId}`;
+// === SHOP ACCESS PASS — helpers (akses 30 hari) ===
+// tier: "premium" (Rp 100k) atau "super_premium" (Rp 300k)
+async function getShopAccess(admin: any, visitorId: string, tier: "premium" | "super_premium" = "premium"): Promise<{ activeUntil: string | null; purchasedAt: string | null }> {
+  const key = tier === "super_premium" ? `lr_super_shop_access_${visitorId}` : `lr_shop_access_${visitorId}`;
   const { data } = await admin.from("admin_settings").select("setting_value").eq("setting_key", key).maybeSingle();
   if (!data) return { activeUntil: null, purchasedAt: null };
   try { return JSON.parse(data.setting_value); } catch { return { activeUntil: null, purchasedAt: null }; }
 }
 
-async function setShopAccess(admin: any, visitorId: string, state: { activeUntil: string | null; purchasedAt: string | null }) {
-  const key = `lr_shop_access_${visitorId}`;
+async function setShopAccess(admin: any, visitorId: string, state: { activeUntil: string | null; purchasedAt: string | null }, tier: "premium" | "super_premium" = "premium") {
+  const key = tier === "super_premium" ? `lr_super_shop_access_${visitorId}` : `lr_shop_access_${visitorId}`;
   const value = JSON.stringify(state);
   const { data: existing } = await admin.from("admin_settings").select("id").eq("setting_key", key).maybeSingle();
   if (existing) await admin.from("admin_settings").update({ setting_value: value }).eq("id", existing.id);
@@ -327,7 +361,7 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const { visitorId, action, count: requestedCount, itemCode } = await req.json();
+    const { visitorId, action, count: requestedCount, itemCode, tier: requestedTier } = await req.json();
     if (!visitorId) return Response.json({ error: "visitorId required" }, { status: 400, headers: corsHeaders });
 
     const admin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
@@ -365,8 +399,10 @@ Deno.serve(async (req) => {
       const tokenState = await getLuckyTokens(admin, visitorId);
       const megaPool = await getMegaPool(admin);
       const freeDailyState = await getFreeDailyState(admin, visitorId);
-      const shopAccess = await getShopAccess(admin, visitorId);
+      const shopAccess = await getShopAccess(admin, visitorId, "premium");
       const shopAccessActive = isShopAccessActive(shopAccess);
+      const superShopAccess = await getShopAccess(admin, visitorId, "super_premium");
+      const superShopAccessActive = isShopAccessActive(superShopAccess);
 
       // Build free daily shop with status (claimed today?)
       const freeDailyWithStatus = FREE_DAILY_SHOP.map(item => ({
@@ -397,6 +433,13 @@ Deno.serve(async (req) => {
           purchasedAt: shopAccess.purchasedAt,
           price: SHOP_ACCESS_PRICE,
           durationDays: SHOP_ACCESS_DAYS,
+        },
+        superShopAccess: {
+          isActive: superShopAccessActive,
+          activeUntil: superShopAccess.activeUntil,
+          purchasedAt: superShopAccess.purchasedAt,
+          price: SUPER_SHOP_ACCESS_PRICE,
+          durationDays: SUPER_SHOP_ACCESS_DAYS,
         },
       }, { headers: corsHeaders });
     }
@@ -590,13 +633,23 @@ Deno.serve(async (req) => {
       const item = TOKEN_SHOP.find(i => i.code === itemCode);
       if (!item) return Response.json({ error: "Item tidak valid" }, { status: 400, headers: corsHeaders });
 
-      // WAJIB punya akses Token Shop yang aktif
-      const access = await getShopAccess(admin, visitorId);
-      if (!isShopAccessActive(access)) {
-        return Response.json({
-          error: `Akses Token Shop belum aktif. Beli akses Rp ${SHOP_ACCESS_PRICE.toLocaleString("id-ID")} (berlaku ${SHOP_ACCESS_DAYS} hari) untuk bisa tukar token.`,
-        }, { status: 403, headers: corsHeaders });
+      // FREE tier: bebas tanpa akses. Premium & Super Premium: wajib akses tier yang sesuai.
+      if (item.tier === "premium") {
+        const access = await getShopAccess(admin, visitorId, "premium");
+        if (!isShopAccessActive(access)) {
+          return Response.json({
+            error: `Akses Premium belum aktif. Beli akses Rp ${SHOP_ACCESS_PRICE.toLocaleString("id-ID")} (berlaku ${SHOP_ACCESS_DAYS} hari) untuk tukar item Premium.`,
+          }, { status: 403, headers: corsHeaders });
+        }
+      } else if (item.tier === "super_premium") {
+        const superAccess = await getShopAccess(admin, visitorId, "super_premium");
+        if (!isShopAccessActive(superAccess)) {
+          return Response.json({
+            error: `Akses Super Premium belum aktif. Beli akses Rp ${SUPER_SHOP_ACCESS_PRICE.toLocaleString("id-ID")} (berlaku ${SUPER_SHOP_ACCESS_DAYS} hari) untuk tukar item Super Premium.`,
+          }, { status: 403, headers: corsHeaders });
+        }
       }
+      // tier === "free" → langsung lanjut tanpa cek akses
 
       const tokenState = await getLuckyTokens(admin, visitorId);
       if (tokenState.tokens < item.cost) {
@@ -685,19 +738,25 @@ Deno.serve(async (req) => {
       return Response.json({ success: true, item, gems: gemsAfter || 0 }, { headers: corsHeaders });
     }
 
-    // === BUY TOKEN SHOP ACCESS — bayar Rp 100k saldo, akses 30 hari ===
+    // === BUY TOKEN SHOP ACCESS — bayar saldo, akses 30 hari ===
+    // Body opsional: { tier: "premium" | "super_premium" } — default "premium"
     if (action === "buy_shop_access") {
-      const access = await getShopAccess(admin, visitorId);
+      const accessTier: "premium" | "super_premium" = requestedTier === "super_premium" ? "super_premium" : "premium";
+      const price = accessTier === "super_premium" ? SUPER_SHOP_ACCESS_PRICE : SHOP_ACCESS_PRICE;
+      const days = accessTier === "super_premium" ? SUPER_SHOP_ACCESS_DAYS : SHOP_ACCESS_DAYS;
+      const tierLabel = accessTier === "super_premium" ? "Super Premium" : "Premium";
+
+      const access = await getShopAccess(admin, visitorId, accessTier);
       if (isShopAccessActive(access)) {
         return Response.json({
-          error: `Akses kamu masih aktif sampai ${new Date(access.activeUntil!).toLocaleString("id-ID")}`,
+          error: `Akses ${tierLabel} kamu masih aktif sampai ${new Date(access.activeUntil!).toLocaleString("id-ID")}`,
         }, { status: 400, headers: corsHeaders });
       }
 
       // Resolve account balance row
       const { data: ubId } = await admin.rpc("get_active_user_balance_id", { p_visitor_id: visitorId });
       if (!ubId) {
-        return Response.json({ error: "Login akun saldo dulu untuk beli akses Token Shop" }, { status: 400, headers: corsHeaders });
+        return Response.json({ error: `Login akun saldo dulu untuk beli akses ${tierLabel}` }, { status: 400, headers: corsHeaders });
       }
       const { data: balanceRow } = await admin
         .from("user_balances")
@@ -705,50 +764,52 @@ Deno.serve(async (req) => {
         .eq("id", ubId)
         .maybeSingle();
       if (!balanceRow) return Response.json({ error: "Akun saldo tidak ditemukan" }, { status: 400, headers: corsHeaders });
-      if ((balanceRow.balance || 0) < SHOP_ACCESS_PRICE) {
+      if ((balanceRow.balance || 0) < price) {
         return Response.json({
-          error: `Saldo tidak cukup. Butuh Rp ${SHOP_ACCESS_PRICE.toLocaleString("id-ID")} (saldo: Rp ${(balanceRow.balance || 0).toLocaleString("id-ID")})`,
+          error: `Saldo tidak cukup. Butuh Rp ${price.toLocaleString("id-ID")} (saldo: Rp ${(balanceRow.balance || 0).toLocaleString("id-ID")})`,
         }, { status: 400, headers: corsHeaders });
       }
 
       // Potong saldo
-      const newBalance = (balanceRow.balance || 0) - SHOP_ACCESS_PRICE;
+      const newBalance = (balanceRow.balance || 0) - price;
       await admin.from("user_balances").update({ balance: newBalance }).eq("id", balanceRow.id);
 
       // Catat transaksi
       await admin.from("balance_transactions").insert({
         visitor_id: visitorId,
-        amount: -SHOP_ACCESS_PRICE,
+        amount: -price,
         type: "purchase",
-        description: `Akses Token Shop Luck Royale (${SHOP_ACCESS_DAYS} hari)`,
+        description: `Akses ${tierLabel} Token Shop Luck Royale (${days} hari)`,
       });
 
       // Aktifkan akses 30 hari
       const now = new Date();
-      const activeUntil = new Date(now.getTime() + SHOP_ACCESS_DAYS * 86400000);
+      const activeUntil = new Date(now.getTime() + days * 86400000);
       await setShopAccess(admin, visitorId, {
         activeUntil: activeUntil.toISOString(),
         purchasedAt: now.toISOString(),
-      });
+      }, accessTier);
 
       await admin.from("notifications").insert({
         visitor_id: visitorId,
-        title: `🔓 Akses Token Shop Aktif`,
-        message: `Akses ${SHOP_ACCESS_DAYS} hari berhasil dibeli. Berakhir: ${activeUntil.toLocaleString("id-ID")}`,
+        title: `🔓 Akses ${tierLabel} Aktif`,
+        message: `Akses ${days} hari berhasil dibeli. Berakhir: ${activeUntil.toLocaleString("id-ID")}`,
         type: "luck_royale_nyawa",
       });
 
       const { data: gemsAfter } = await admin.rpc("get_account_gems", { p_visitor_id: visitorId });
+      const respKey = accessTier === "super_premium" ? "superShopAccess" : "shopAccess";
       return Response.json({
         success: true,
         balance: newBalance,
         gems: gemsAfter || 0,
-        shopAccess: {
+        tier: accessTier,
+        [respKey]: {
           isActive: true,
           activeUntil: activeUntil.toISOString(),
           purchasedAt: now.toISOString(),
-          price: SHOP_ACCESS_PRICE,
-          durationDays: SHOP_ACCESS_DAYS,
+          price,
+          durationDays: days,
         },
       }, { headers: corsHeaders });
     }
