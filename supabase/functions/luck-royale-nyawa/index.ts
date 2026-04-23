@@ -364,20 +364,9 @@ Deno.serve(async (req) => {
 
       const tokenState = await getLuckyTokens(admin, visitorId);
       const megaPool = await getMegaPool(admin);
-      const premiumState = await getPremiumState(admin, visitorId);
       const freeDailyState = await getFreeDailyState(admin, visitorId);
-
-      // Build premium shop with status (locked/unlocked + cooldown)
-      const nowMs = Date.now();
-      const premiumShopWithStatus = PREMIUM_SHOP.map(item => {
-        const st = premiumState[item.code];
-        const isUnlocked = !!st?.unlockedAt;
-        const lastClaim = st?.lastClaim ? new Date(st.lastClaim).getTime() : 0;
-        const cooldownMs = item.cooldownDays * 86400000;
-        const nextClaimAt = lastClaim + cooldownMs;
-        const canClaim = isUnlocked && nowMs >= nextClaimAt;
-        return { ...item, isUnlocked, canClaim, nextClaimAt: isUnlocked ? nextClaimAt : null };
-      });
+      const shopAccess = await getShopAccess(admin, visitorId);
+      const shopAccessActive = isShopAccessActive(shopAccess);
 
       // Build free daily shop with status (claimed today?)
       const freeDailyWithStatus = FREE_DAILY_SHOP.map(item => ({
@@ -401,9 +390,14 @@ Deno.serve(async (req) => {
         luckyTokenThreshold: TOKENS_PER_SPIN_THRESHOLD,
         megaJackpotPool: megaPool,
         tokenShop: TOKEN_SHOP,
-        tokenBundles: TOKEN_BUNDLES,
         freeDailyShop: freeDailyWithStatus,
-        premiumShop: premiumShopWithStatus,
+        shopAccess: {
+          isActive: shopAccessActive,
+          activeUntil: shopAccess.activeUntil,
+          purchasedAt: shopAccess.purchasedAt,
+          price: SHOP_ACCESS_PRICE,
+          durationDays: SHOP_ACCESS_DAYS,
+        },
       }, { headers: corsHeaders });
     }
 
