@@ -258,9 +258,47 @@ export default function HistoryEnhancer({
               <Badge variant="secondary" className="h-4 min-w-4 px-1 text-[9px]">{activeFiltersCount}</Badge>
             )}
           </Button>
-...
+        </div>
+
+        {/* View switch + Export */}
+        <div className="flex items-center justify-between gap-2">
+          <div className="inline-flex bg-muted rounded-xl p-0.5">
+            <button
+              onClick={() => setView("list")}
+              className={cn(
+                "px-2.5 h-7 rounded-lg text-[11px] font-medium inline-flex items-center gap-1 transition-colors",
+                view === "list" ? "bg-card text-foreground" : "text-muted-foreground"
+              )}
+            >
+              <LayoutList className="w-3 h-3" strokeWidth={1.8} /> List
+            </button>
+            <button
+              onClick={() => setView("timeline")}
+              className={cn(
+                "px-2.5 h-7 rounded-lg text-[11px] font-medium inline-flex items-center gap-1 transition-colors",
+                view === "timeline" ? "bg-card text-foreground" : "text-muted-foreground"
+              )}
+            >
+              <Clock className="w-3 h-3" strokeWidth={1.8} /> Timeline
+            </button>
+          </div>
+
+          <div className="flex items-center gap-1.5">
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              className="h-7 px-2 rounded-lg border-border bg-card text-[10px] font-medium text-foreground gap-1 shadow-none"
+              onClick={() => setShowStatsPanel((v) => !v)}
+            >
+              <BarChart3 className="w-3 h-3" strokeWidth={1.8} /> Statistik
+            </Button>
+            <Popover>
+              <PopoverTrigger asChild>
                 <Button
-                  type="button" size="sm" variant="outline"
+                  type="button"
+                  size="sm"
+                  variant="outline"
                   className="h-7 px-2 rounded-lg border-border bg-card text-[10px] font-medium text-foreground gap-1 shadow-none"
                   disabled={filtered.length === 0}
                 >
@@ -270,15 +308,15 @@ export default function HistoryEnhancer({
               <PopoverContent align="end" className="w-44 p-1.5">
                 <button
                   onClick={exportPDF}
-                  className="w-full flex items-center gap-2 px-2 py-2 rounded-lg hover:bg-muted text-xs font-bold"
+                  className="w-full flex items-center gap-2 px-2 py-2 rounded-lg hover:bg-muted text-xs font-medium"
                 >
-                    <FileText className="w-3.5 h-3.5 text-foreground" /> PDF
+                  <FileText className="w-3.5 h-3.5 text-foreground" /> PDF
                 </button>
                 <button
                   onClick={exportCSV}
-                  className="w-full flex items-center gap-2 px-2 py-2 rounded-lg hover:bg-muted text-xs font-bold"
+                  className="w-full flex items-center gap-2 px-2 py-2 rounded-lg hover:bg-muted text-xs font-medium"
                 >
-                    <FileSpreadsheet className="w-3.5 h-3.5 text-foreground" /> Excel (CSV)
+                  <FileSpreadsheet className="w-3.5 h-3.5 text-foreground" /> Excel (CSV)
                 </button>
               </PopoverContent>
             </Popover>
