@@ -113,9 +113,8 @@ export default function LuckRoyaleNyawa() {
       setTokenThreshold(Number(data.luckyTokenThreshold || 5));
       setMegaPool(Number(data.megaJackpotPool || 5000));
       setTokenShop(data.tokenShop || []);
-      setTokenBundles(data.tokenBundles || []);
       setFreeDailyShop(data.freeDailyShop || []);
-      setPremiumShop(data.premiumShop || []);
+      setShopAccess(data.shopAccess || { isActive: false, activeUntil: null, purchasedAt: null, price: 100000, durationDays: 30 });
     } catch (e) {
       console.error(e);
     } finally {
