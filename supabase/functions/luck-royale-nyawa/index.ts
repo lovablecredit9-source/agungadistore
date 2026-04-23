@@ -633,13 +633,23 @@ Deno.serve(async (req) => {
       const item = TOKEN_SHOP.find(i => i.code === itemCode);
       if (!item) return Response.json({ error: "Item tidak valid" }, { status: 400, headers: corsHeaders });
 
-      // WAJIB punya akses Token Shop yang aktif
-      const access = await getShopAccess(admin, visitorId);
-      if (!isShopAccessActive(access)) {
-        return Response.json({
-          error: `Akses Token Shop belum aktif. Beli akses Rp ${SHOP_ACCESS_PRICE.toLocaleString("id-ID")} (berlaku ${SHOP_ACCESS_DAYS} hari) untuk bisa tukar token.`,
-        }, { status: 403, headers: corsHeaders });
+      // FREE tier: bebas tanpa akses. Premium & Super Premium: wajib akses tier yang sesuai.
+      if (item.tier === "premium") {
+        const access = await getShopAccess(admin, visitorId, "premium");
+        if (!isShopAccessActive(access)) {
+          return Response.json({
+            error: `Akses Premium belum aktif. Beli akses Rp ${SHOP_ACCESS_PRICE.toLocaleString("id-ID")} (berlaku ${SHOP_ACCESS_DAYS} hari) untuk tukar item Premium.`,
+          }, { status: 403, headers: corsHeaders });
+        }
+      } else if (item.tier === "super_premium") {
+        const superAccess = await getShopAccess(admin, visitorId, "super_premium");
+        if (!isShopAccessActive(superAccess)) {
+          return Response.json({
+            error: `Akses Super Premium belum aktif. Beli akses Rp ${SUPER_SHOP_ACCESS_PRICE.toLocaleString("id-ID")} (berlaku ${SUPER_SHOP_ACCESS_DAYS} hari) untuk tukar item Super Premium.`,
+          }, { status: 403, headers: corsHeaders });
+        }
       }
+      // tier === "free" → langsung lanjut tanpa cek akses
 
       const tokenState = await getLuckyTokens(admin, visitorId);
       if (tokenState.tokens < item.cost) {
