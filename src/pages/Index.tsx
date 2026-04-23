@@ -2995,16 +2995,16 @@ const Index = () => {
                           <Lock className="w-4 h-4 text-primary" /> Buat PIN
                         </Button>
                       ) : (
-                        <Button size="sm" variant="outline" className="gap-1.5 font-bold border-primary/30 rounded-xl h-9 text-primary" onClick={() => { if (banned) return; setShowForgotPin(true); }} disabled={banned}>
-                          <KeyRound className="w-4 h-4" /> Reset PIN
+                        <Button size="sm" variant="outline" className="gap-1.5 font-medium border-border rounded-xl h-9 text-foreground bg-card shadow-none" onClick={() => { if (banned) return; setShowForgotPin(true); }} disabled={banned}>
+                          <KeyRound className="w-4 h-4" strokeWidth={1.8} /> Reset PIN
                         </Button>
                       )}
                     </div>
 
                     {hasPin && (
-                      <div className="flex items-center gap-2 bg-accent/10 rounded-xl p-2.5 text-xs text-accent border border-accent/20">
-                        <Lock className="w-3.5 h-3.5 flex-shrink-0" />
-                        <span className="font-bold">PIN aktif</span>
+                      <div className="flex items-center gap-2 rounded-xl border border-border bg-muted/40 p-2.5 text-xs text-foreground">
+                        <Lock className="w-3.5 h-3.5 flex-shrink-0" strokeWidth={1.8} />
+                        <span className="font-medium">PIN aktif</span>
                         <span className="text-muted-foreground text-[11px]">— Pembelian dilindungi PIN</span>
                       </div>
                     )}

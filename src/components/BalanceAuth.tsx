@@ -473,28 +473,28 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser }: BalanceA
     return (
       <div className="space-y-2">
         <div className="grid grid-cols-2 gap-2">
-          <Button size="sm" variant="outline" className="h-10 justify-start gap-2 rounded-xl text-xs font-semibold" onClick={() => { setShowEditProfile(!showEditProfile); resetEditForm(); }} disabled={banned}>
-            <Edit2 className="w-3.5 h-3.5" /> Edit Profil
+          <Button size="sm" variant="outline" className="h-10 justify-start gap-2 rounded-xl border-border bg-card text-xs font-medium text-foreground shadow-none" onClick={() => { setShowEditProfile(!showEditProfile); resetEditForm(); }} disabled={banned}>
+            <Edit2 className="w-3.5 h-3.5" strokeWidth={1.8} /> Edit Profil
           </Button>
-          <Button size="sm" variant="outline" className="h-10 justify-start gap-2 rounded-xl text-xs font-semibold" onClick={() => setShowSwitcher(!showSwitcher)} disabled={banned}>
-            <Users className="w-3.5 h-3.5" /> Ganti Akun
+          <Button size="sm" variant="outline" className="h-10 justify-start gap-2 rounded-xl border-border bg-card text-xs font-medium text-foreground shadow-none" onClick={() => setShowSwitcher(!showSwitcher)} disabled={banned}>
+            <Users className="w-3.5 h-3.5" strokeWidth={1.8} /> Ganti Akun
             {savedAccounts.length > 0 && (
-              <span className="ml-auto rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-semibold text-foreground">
+              <span className="ml-auto rounded-full border border-border bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
                 {savedAccounts.length}/{MAX_SAVED_ACCOUNTS}
               </span>
             )}
           </Button>
-          <Button size="sm" variant="outline" className="h-10 justify-start gap-2 rounded-xl text-xs font-semibold" onClick={handleAddAccount} disabled={banned || savedAccounts.length >= MAX_SAVED_ACCOUNTS}>
-            <Plus className="w-3.5 h-3.5" /> Tambah Akun
+          <Button size="sm" variant="outline" className="h-10 justify-start gap-2 rounded-xl border-border bg-card text-xs font-medium text-foreground shadow-none" onClick={handleAddAccount} disabled={banned || savedAccounts.length >= MAX_SAVED_ACCOUNTS}>
+            <Plus className="w-3.5 h-3.5" strokeWidth={1.8} /> Tambah Akun
           </Button>
-          <Button size="sm" variant="outline" className="h-10 justify-start gap-2 rounded-xl text-xs font-semibold text-destructive" onClick={handleLogout}>
-            <LogOut className="w-3.5 h-3.5" /> Logout
+          <Button size="sm" variant="outline" className="h-10 justify-start gap-2 rounded-xl border-border bg-card text-xs font-medium text-foreground shadow-none" onClick={handleLogout}>
+            <LogOut className="w-3.5 h-3.5" strokeWidth={1.8} /> Logout
           </Button>
-          <Button size="sm" variant="outline" className="h-10 justify-start gap-2 rounded-xl text-xs font-semibold text-destructive" onClick={handleLogoutAll}>
-            <Trash2 className="w-3.5 h-3.5" /> Logout Semua
+          <Button size="sm" variant="outline" className="h-10 justify-start gap-2 rounded-xl border-border bg-card text-xs font-medium text-foreground shadow-none" onClick={handleLogoutAll}>
+            <Trash2 className="w-3.5 h-3.5" strokeWidth={1.8} /> Logout Semua
           </Button>
-          <Button size="sm" variant="outline" className="h-10 justify-start gap-2 rounded-xl text-xs font-semibold" onClick={() => setShowHistory(!showHistory)} disabled={banned}>
-            <Smartphone className="w-3.5 h-3.5" /> Riwayat
+          <Button size="sm" variant="outline" className="h-10 justify-start gap-2 rounded-xl border-border bg-card text-xs font-medium text-foreground shadow-none" onClick={() => setShowHistory(!showHistory)} disabled={banned}>
+            <Smartphone className="w-3.5 h-3.5" strokeWidth={1.8} /> Riwayat
           </Button>
         </div>
 
