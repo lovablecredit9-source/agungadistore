@@ -497,11 +497,11 @@ export default function LuckRoyaleNyawa() {
                     )}
                     <div className="text-sm tracking-widest text-white">{b.label}</div>
                     <div className="flex items-center justify-center gap-1 text-xs mt-0.5 text-white">
-                      <Gem className="w-3 h-3" /> {b.cost.toLocaleString()}
+                      <Gem className="w-3 h-3" /> {formatCompactNumber(b.cost)}
                     </div>
                     {savings > 0 && (
                       <div className="text-[9px] text-amber-100/90 mt-0.5">
-                        Hemat {savings.toLocaleString()} ({pct}%)
+                        Hemat {formatCompactNumber(savings)} ({pct}%)
                       </div>
                     )}
                   </button>
@@ -882,7 +882,7 @@ export default function LuckRoyaleNyawa() {
                       <div className="rounded-xl bg-gradient-to-br from-cyan-900/50 to-blue-900/50 border border-cyan-500/40 p-3 text-center">
                         <Gem className="w-6 h-6 text-cyan-300 mx-auto mb-1" />
                         <div className="text-[10px] text-cyan-200/70 font-bold tracking-wider">TOTAL GEMS</div>
-                        <div className="text-lg font-black text-cyan-100 tabular-nums">{gemsWon.toLocaleString()}</div>
+                        <div className="text-lg font-black text-cyan-100 tabular-nums">{formatCompactNumber(gemsWon)}</div>
                       </div>
                       <div className="rounded-xl bg-gradient-to-br from-rose-900/50 to-pink-900/50 border border-rose-500/40 p-3 text-center">
                         <Heart className="w-6 h-6 text-rose-300 mx-auto mb-1" fill="currentColor" />
