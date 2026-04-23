@@ -194,7 +194,7 @@ const TOKEN_SHOP: Array<{ code: string; name: string; cost: number; kind: string
   { code: "sp_hint15k",     name: "💡 OMEGA +15.000 Hint",           cost: 140, kind: "auto_hint",     value: 15000,   rarity: "mythic", emoji: "💡", tier: "super_premium" },
   { code: "sp_freeze2000",  name: "🛡️ OMEGA +2.000 Freeze",          cost: 145, kind: "streak_freeze", value: 2000,    rarity: "mythic", emoji: "🛡️", tier: "super_premium" },
   { code: "sp_coins1m",     name: "🪙 OMEGA +1.000.000 Coin",        cost: 150, kind: "streak_coins",  value: 1000000, rarity: "mythic", emoji: "🪙", tier: "super_premium" },
-  { code: "sp_gem100k",     name: "💎 MEGA JACKPOT +100.000 Gem",    cost: 150, kind: "gems",          value: 100000,  rarity: "mythic", emoji: "💎", tier: "super_premium" },
+  { code: "sp_gem10k",      name: "💎 MEGA JACKPOT +10.000 Gem",     cost: 150, kind: "gems",          value: 10000,   rarity: "mythic", emoji: "💎", tier: "super_premium" },
 ];
 
 // === FREE DAILY TOKEN SHOP — bisa diklaim 1x per hari TANPA bayar token ===
