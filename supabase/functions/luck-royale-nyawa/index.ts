@@ -130,6 +130,74 @@ const TOKEN_SHOP: Array<{ code: string; name: string; cost: number; kind: string
   { code: "tk_mega2500",   name: "🌈 MEGA +2.500 Gem",        cost: 70,  kind: "gems",          value: 2500,  rarity: "mythic",    emoji: "🌈" },
 ];
 
+// === FREE DAILY TOKEN SHOP — bisa diklaim 1x per hari TANPA bayar token ===
+const FREE_DAILY_SHOP: Array<{ code: string; name: string; kind: string; value: number; rarity: string; emoji: string }> = [
+  { code: "fd_hint3",    name: "🎁 FREE +3 Hint Harian",      kind: "auto_hint",     value: 3,    rarity: "common", emoji: "💡" },
+  { code: "fd_life3",    name: "🎁 FREE +3 Nyawa Harian",     kind: "extra_life",    value: 3,    rarity: "common", emoji: "❤️" },
+  { code: "fd_freeze1",  name: "🎁 FREE +1 Streak Freeze",    kind: "streak_freeze", value: 1,    rarity: "rare",   emoji: "🛡️" },
+  { code: "fd_coins100", name: "🎁 FREE +100 Streak Coin",    kind: "streak_coins",  value: 100,  rarity: "common", emoji: "🪙" },
+];
+
+// === PREMIUM SHOP — harus UNLOCK dulu pakai Gem, baru bisa CLAIM (sekali per minggu) ===
+// Setelah unlock, user bisa klaim hadiah secara periodik (mingguan).
+const PREMIUM_SHOP: Array<{
+  code: string;
+  name: string;
+  unlockCostGems: number;
+  kind: string;
+  value: number;
+  rarity: string;
+  emoji: string;
+  description: string;
+  cooldownDays: number;
+}> = [
+  // Tier 1 — VIP starter (unlock murah, hadiah tetap)
+  { code: "pr_vip_hint",   name: "👑 VIP Hint Pack",        unlockCostGems: 800,  kind: "auto_hint",     value: 50,    rarity: "epic",      emoji: "💡", description: "Klaim +50 Hint setiap minggu", cooldownDays: 7 },
+  { code: "pr_vip_life",   name: "👑 VIP Life Pack",        unlockCostGems: 800,  kind: "extra_life",    value: 50,    rarity: "epic",      emoji: "❤️", description: "Klaim +50 Nyawa setiap minggu", cooldownDays: 7 },
+  { code: "pr_vip_freeze", name: "👑 VIP Freeze Pack",      unlockCostGems: 1000, kind: "streak_freeze", value: 20,    rarity: "epic",      emoji: "🛡️", description: "Klaim +20 Freeze setiap minggu", cooldownDays: 7 },
+  { code: "pr_vip_coins",  name: "👑 VIP Coin Pack",        unlockCostGems: 1200, kind: "streak_coins",  value: 5000,  rarity: "epic",      emoji: "🪙", description: "Klaim +5.000 Coin setiap minggu", cooldownDays: 7 },
+
+  // Tier 2 — Royale (unlock mahal, hadiah BESAR)
+  { code: "pr_royal_hint",  name: "🌟 ROYAL Hint Vault",     unlockCostGems: 3500, kind: "auto_hint",     value: 250,   rarity: "legendary", emoji: "💡", description: "Klaim +250 Hint setiap minggu", cooldownDays: 7 },
+  { code: "pr_royal_life",  name: "🌟 ROYAL Life Vault",     unlockCostGems: 3500, kind: "extra_life",    value: 250,   rarity: "legendary", emoji: "❤️", description: "Klaim +250 Nyawa setiap minggu", cooldownDays: 7 },
+  { code: "pr_royal_coins", name: "🌟 ROYAL Coin Vault",     unlockCostGems: 4500, kind: "streak_coins",  value: 25000, rarity: "legendary", emoji: "🪙", description: "Klaim +25.000 Coin setiap minggu", cooldownDays: 7 },
+
+  // Tier 3 — Mythic (paling mahal, hadiah SUPER)
+  { code: "pr_myth_mega",   name: "🌈 MYTHIC Mega Vault",    unlockCostGems: 12000, kind: "extra_life",    value: 1000,  rarity: "mythic",    emoji: "🌈", description: "Klaim +1.000 Nyawa setiap minggu", cooldownDays: 7 },
+  { code: "pr_myth_gems",   name: "🌈 MYTHIC Gem Vault",     unlockCostGems: 15000, kind: "gems",          value: 1500,  rarity: "mythic",    emoji: "💎", description: "Klaim +1.500 Gem setiap minggu", cooldownDays: 7 },
+];
+
+// Helpers untuk premium unlock & free daily state
+async function getPremiumState(admin: any, visitorId: string): Promise<Record<string, { unlockedAt: string; lastClaim: string | null }>> {
+  const key = `lr_premium_${visitorId}`;
+  const { data } = await admin.from("admin_settings").select("setting_value").eq("setting_key", key).maybeSingle();
+  if (!data) return {};
+  try { return JSON.parse(data.setting_value); } catch { return {}; }
+}
+
+async function setPremiumState(admin: any, visitorId: string, state: Record<string, any>) {
+  const key = `lr_premium_${visitorId}`;
+  const value = JSON.stringify(state);
+  const { data: existing } = await admin.from("admin_settings").select("id").eq("setting_key", key).maybeSingle();
+  if (existing) await admin.from("admin_settings").update({ setting_value: value }).eq("id", existing.id);
+  else await admin.from("admin_settings").insert({ setting_key: key, setting_value: value });
+}
+
+async function getFreeDailyState(admin: any, visitorId: string): Promise<Record<string, string>> {
+  const key = `lr_free_daily_${visitorId}`;
+  const { data } = await admin.from("admin_settings").select("setting_value").eq("setting_key", key).maybeSingle();
+  if (!data) return {};
+  try { return JSON.parse(data.setting_value); } catch { return {}; }
+}
+
+async function setFreeDailyState(admin: any, visitorId: string, state: Record<string, string>) {
+  const key = `lr_free_daily_${visitorId}`;
+  const value = JSON.stringify(state);
+  const { data: existing } = await admin.from("admin_settings").select("id").eq("setting_key", key).maybeSingle();
+  if (existing) await admin.from("admin_settings").update({ setting_value: value }).eq("id", existing.id);
+  else await admin.from("admin_settings").insert({ setting_key: key, setting_value: value });
+}
+
 async function getLuckyTokens(admin: any, visitorId: string): Promise<{ tokens: number; spinProgress: number }> {
   const key = `lucky_token_${visitorId}`;
   const { data } = await admin.from("admin_settings").select("setting_value").eq("setting_key", key).maybeSingle();
