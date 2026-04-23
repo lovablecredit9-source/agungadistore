@@ -123,14 +123,16 @@ export default function StreakShopExtras({ visitorId, onUpdate }: Props) {
   }
 
   return (
-    <div className="rounded-2xl bg-gradient-to-br from-violet-500/15 via-fuchsia-500/15 to-pink-500/15 border-2 border-fuchsia-400/40 p-3 sm:p-4 shadow-2xl">
+    <div className="rounded-xl border border-border bg-card p-3 sm:p-4">
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
-          <Sparkles className="h-5 w-5 text-fuchsia-300 animate-pulse" />
-          <h3 className="font-bold text-base sm:text-lg bg-gradient-to-r from-violet-200 via-fuchsia-100 to-pink-200 bg-clip-text text-transparent">
+          <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center shrink-0">
+            <Sparkles className="h-4 w-4 text-foreground" strokeWidth={1.7} />
+          </div>
+          <h3 className="font-semibold text-base text-foreground">
             Streak Shop Plus
           </h3>
-          <Badge className="bg-fuchsia-500/40 text-fuchsia-100 border-fuchsia-400/60 text-[9px] px-1.5 py-0 h-4">NEW</Badge>
+          <Badge variant="outline" className="text-[9px] px-1.5 py-0 h-4">NEW</Badge>
         </div>
         <div className="flex items-center gap-1.5 text-[10px]">
           <span className="flex items-center gap-0.5 text-amber-300"><Coins className="h-3 w-3" />{userCoins}</span>
