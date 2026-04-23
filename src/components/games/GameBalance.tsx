@@ -59,10 +59,12 @@ export function useGameBalance(visitorId: string | null) {
 
 export function GameBalanceBadge({ amount }: { amount: number }) {
   return (
-    <div className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-emerald-500 to-teal-600 px-3 py-1.5 text-white shadow-md">
-      <Wallet className="w-3.5 h-3.5" />
-      <span className="text-[10px] font-bold uppercase opacity-90">Saldo IN</span>
-      <span className="text-xs font-extrabold">{formatPrice(amount)}</span>
+    <div className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-3 py-1.5 text-foreground">
+      <div className="flex h-6 w-6 items-center justify-center rounded-full bg-muted">
+        <Wallet className="w-3.5 h-3.5" strokeWidth={1.8} />
+      </div>
+      <span className="text-[10px] font-semibold uppercase text-muted-foreground">Saldo IN</span>
+      <span className="text-xs font-semibold tabular-nums">{formatPrice(amount)}</span>
     </div>
   );
 }
