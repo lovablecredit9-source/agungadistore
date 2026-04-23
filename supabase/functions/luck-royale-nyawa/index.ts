@@ -587,12 +587,25 @@ Deno.serve(async (req) => {
       }
 
       // === LUCKY TOKEN: tiap 5 paid spin = +1 token ===
+      // Bundle bonus: paket 20 spin = 5 token total (bonus +1 di atas perhitungan normal)
+      const BUNDLE_TOKEN_OVERRIDE: Record<number, number> = {
+        20: 5,   // 20 spin → 5 token (bukan 4)
+        100: 25, // 100 spin → 25 token (bukan 20)
+        125: 32, // 125 spin → 32 token (bukan 25)
+      };
       const tokenState = await getLuckyTokens(admin, visitorId);
-      let newProgress = tokenState.spinProgress + spinCount;
+      let newProgress = tokenState.spinProgress;
       let earnedTokens = 0;
-      while (newProgress >= TOKENS_PER_SPIN_THRESHOLD) {
-        earnedTokens++;
-        newProgress -= TOKENS_PER_SPIN_THRESHOLD;
+      const overrideTokens = BUNDLE_TOKEN_OVERRIDE[spinCount];
+      if (overrideTokens != null) {
+        // Pakai override langsung; progress sisa tidak berubah
+        earnedTokens = overrideTokens;
+      } else {
+        newProgress += spinCount;
+        while (newProgress >= TOKENS_PER_SPIN_THRESHOLD) {
+          earnedTokens++;
+          newProgress -= TOKENS_PER_SPIN_THRESHOLD;
+        }
       }
       const newTokens = tokenState.tokens + earnedTokens;
       await setLuckyTokens(admin, visitorId, newTokens, newProgress);
