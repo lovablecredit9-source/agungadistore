@@ -349,10 +349,10 @@ export default function MembershipShop({ visitorId, onUpdate, category = "coin" 
       <div className="relative flex items-center justify-between gap-2 px-3 py-2 bg-black/50 backdrop-blur-sm border-b border-purple-500/30">
         <div className="flex items-center gap-1.5 flex-wrap">
           <Badge className="bg-gradient-to-r from-yellow-500/40 to-amber-500/40 text-yellow-100 border-yellow-400/60 gap-1 text-[10px] h-5 shadow-lg shadow-yellow-500/20">
-            <Coins className="h-3 w-3" /> {coins.toLocaleString("id-ID")}
+            <Coins className="h-3 w-3" /> {formatCompactNumber(coins)}
           </Badge>
           <Badge className="bg-gradient-to-r from-cyan-500/40 to-sky-500/40 text-cyan-100 border-cyan-400/60 gap-1 text-[10px] h-5 shadow-lg shadow-cyan-500/20">
-            <Gem className="h-3 w-3" /> {gems.toLocaleString("id-ID")}
+            <Gem className="h-3 w-3" /> {formatCompactNumber(gems)}
           </Badge>
           <Badge className="bg-gradient-to-r from-emerald-500/40 to-teal-500/40 text-emerald-100 border-emerald-400/60 gap-1 text-[10px] h-5 shadow-lg shadow-emerald-500/20">
             <Wallet className="h-3 w-3" /> Rp{totalBalance.toLocaleString("id-ID")}
