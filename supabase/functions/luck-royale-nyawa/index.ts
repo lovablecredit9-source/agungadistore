@@ -399,8 +399,10 @@ Deno.serve(async (req) => {
       const tokenState = await getLuckyTokens(admin, visitorId);
       const megaPool = await getMegaPool(admin);
       const freeDailyState = await getFreeDailyState(admin, visitorId);
-      const shopAccess = await getShopAccess(admin, visitorId);
+      const shopAccess = await getShopAccess(admin, visitorId, "premium");
       const shopAccessActive = isShopAccessActive(shopAccess);
+      const superShopAccess = await getShopAccess(admin, visitorId, "super_premium");
+      const superShopAccessActive = isShopAccessActive(superShopAccess);
 
       // Build free daily shop with status (claimed today?)
       const freeDailyWithStatus = FREE_DAILY_SHOP.map(item => ({
@@ -431,6 +433,13 @@ Deno.serve(async (req) => {
           purchasedAt: shopAccess.purchasedAt,
           price: SHOP_ACCESS_PRICE,
           durationDays: SHOP_ACCESS_DAYS,
+        },
+        superShopAccess: {
+          isActive: superShopAccessActive,
+          activeUntil: superShopAccess.activeUntil,
+          purchasedAt: superShopAccess.purchasedAt,
+          price: SUPER_SHOP_ACCESS_PRICE,
+          durationDays: SUPER_SHOP_ACCESS_DAYS,
         },
       }, { headers: corsHeaders });
     }
