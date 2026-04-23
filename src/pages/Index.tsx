@@ -1514,38 +1514,38 @@ const Index = () => {
               </button>
             </SheetTrigger>
             <SheetContent side="left" className="w-[280px] sm:w-[320px] p-0 flex flex-col">
-              <SheetHeader className="px-4 py-4 border-b bg-gradient-to-r from-primary/10 to-accent/10">
+              <SheetHeader className="px-4 py-4 border-b border-border">
                 <div className="flex items-center gap-3">
                   <img src={storeQris} alt={STORE_NAME} className="w-10 h-10 rounded-lg object-cover border border-border" />
                   <div className="text-left">
-                    <SheetTitle className="text-base font-extrabold">{STORE_NAME}</SheetTitle>
+                    <SheetTitle className="text-base font-semibold tracking-tight">{STORE_NAME}</SheetTitle>
                     <p className="text-[10px] text-muted-foreground">{t("header.tagline", lang)}</p>
                   </div>
                 </div>
               </SheetHeader>
-              <nav className="flex-1 overflow-y-auto py-2">
+              <nav className="flex-1 overflow-y-auto py-1">
                 {([
-                  { key: "beranda" as Tab, icon: Home, label: "Beranda", gradient: "from-blue-500 to-cyan-400" },
-                  { key: "musik" as Tab, icon: Music2, label: "Musik", gradient: "from-fuchsia-600 via-purple-600 to-indigo-600" },
-                  { key: "playlist" as Tab, icon: Music, label: "Playlist", gradient: "from-pink-500 to-rose-400" },
-                  { key: "publik" as Tab, icon: Globe, label: "Publik", gradient: "from-cyan-500 to-sky-400" },
-                  { key: "produk" as Tab, icon: Package, label: t("nav.products", lang), gradient: "from-orange-500 to-amber-400" },
-                  { key: "voucher" as Tab, icon: Ticket, label: t("nav.voucher", lang), gradient: "from-emerald-500 to-green-400" },
-                  { key: "saldo" as Tab, icon: Wallet, label: t("nav.balance", lang), gradient: "from-violet-500 to-purple-400" },
-                  { key: "likes" as Tab, icon: Heart, label: t("nav.likes", lang), gradient: "from-pink-500 to-rose-400" },
-                  { key: "history" as Tab, icon: Clock, label: t("nav.history", lang), gradient: "from-sky-500 to-blue-400" },
-                  { key: "tiket" as Tab, icon: AlertCircle, label: t("nav.ticket", lang), gradient: "from-red-500 to-orange-400" },
-                  { key: "sponsor" as Tab, icon: Megaphone, label: "Sponsor", gradient: "from-amber-500 to-yellow-400" },
-                  { key: "streak" as Tab, icon: CalendarDays, label: "Streak", gradient: "from-orange-600 to-red-500" },
-                  { key: "streakevent" as Tab, icon: CalendarDays, label: "Streak Event", gradient: "from-pink-500 to-purple-600" },
-                  { key: "streakshop" as Tab, icon: CalendarDays, label: "Streak Shop", gradient: "from-purple-600 to-cyan-600" },
-                  { key: "streakmembership" as Tab, icon: Crown, label: "M.Streak", gradient: "from-amber-500 via-yellow-500 to-orange-500" },
-                  { key: "luckroyale" as any, icon: Crown, label: "L.Royale", gradient: "from-amber-400 via-orange-500 to-red-600", external: "/luck-royale-nyawa" },
-                  { key: "game" as Tab, icon: Gamepad2, label: "Game", gradient: "from-indigo-500 to-violet-400" },
-                  { key: "plus" as Tab, icon: Sparkles, label: "Plus", gradient: "from-yellow-500 to-orange-400" },
-                  { key: "update" as Tab, icon: RefreshCw, label: "Update", gradient: "from-cyan-500 to-blue-400" },
-                  { key: "adminpost" as Tab, icon: FileText, label: "Admin", gradient: "from-slate-500 to-gray-400" },
-                ] as Array<{ key: any; icon: any; label: string; gradient: string; external?: string }>).map(({ key, icon: Icon, label, gradient, external }) => {
+                  { key: "beranda" as Tab, icon: Home, label: "Beranda" },
+                  { key: "musik" as Tab, icon: Music2, label: "Musik" },
+                  { key: "playlist" as Tab, icon: Music, label: "Playlist" },
+                  { key: "publik" as Tab, icon: Globe, label: "Publik" },
+                  { key: "produk" as Tab, icon: Package, label: t("nav.products", lang) },
+                  { key: "voucher" as Tab, icon: Ticket, label: t("nav.voucher", lang) },
+                  { key: "saldo" as Tab, icon: Wallet, label: t("nav.balance", lang) },
+                  { key: "likes" as Tab, icon: Heart, label: t("nav.likes", lang) },
+                  { key: "history" as Tab, icon: Clock, label: t("nav.history", lang) },
+                  { key: "tiket" as Tab, icon: AlertCircle, label: t("nav.ticket", lang) },
+                  { key: "sponsor" as Tab, icon: Megaphone, label: "Sponsor" },
+                  { key: "streak" as Tab, icon: CalendarDays, label: "Streak" },
+                  { key: "streakevent" as Tab, icon: CalendarDays, label: "Streak Event" },
+                  { key: "streakshop" as Tab, icon: CalendarDays, label: "Streak Shop" },
+                  { key: "streakmembership" as Tab, icon: Crown, label: "M.Streak" },
+                  { key: "luckroyale" as any, icon: Crown, label: "L.Royale", external: "/luck-royale-nyawa" },
+                  { key: "game" as Tab, icon: Gamepad2, label: "Game" },
+                  { key: "plus" as Tab, icon: Sparkles, label: "Plus" },
+                  { key: "update" as Tab, icon: RefreshCw, label: "Update" },
+                  { key: "adminpost" as Tab, icon: FileText, label: "Admin" },
+                ] as Array<{ key: any; icon: any; label: string; external?: string }>).map(({ key, icon: Icon, label, external }) => {
                   const active = !external && tab === key;
                   return (
                     <button
@@ -1558,18 +1558,16 @@ const Index = () => {
                         }
                         setShowNavMenu(false);
                       }}
-                      className={`w-full flex items-center gap-3 px-3 py-2.5 mx-2 my-0.5 rounded-xl transition-all ${active ? "bg-muted font-bold text-primary" : "hover:bg-muted/60 text-foreground"}`}
+                      className={`relative w-full flex items-center gap-3 px-4 py-2.5 transition-colors ${active ? "bg-muted/60" : "hover:bg-muted/40"}`}
                     >
-                      <div className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 ${active ? `bg-gradient-to-br ${gradient} shadow-md` : "bg-muted"}`}>
-                        <Icon className={`w-[18px] h-[18px] ${active ? "text-white" : "text-muted-foreground"}`} />
-                      </div>
-                      <span className="text-sm flex-1 text-left">{label}</span>
-                      {active && <div className="w-1.5 h-1.5 rounded-full bg-primary" />}
+                      {active && <span className="absolute left-0 top-2 bottom-2 w-[2px] bg-foreground rounded-r" />}
+                      <Icon className="w-[18px] h-[18px] text-foreground flex-shrink-0" strokeWidth={active ? 2.2 : 1.7} />
+                      <span className={`text-sm flex-1 text-left ${active ? "font-semibold text-foreground" : "font-normal text-foreground"}`}>{label}</span>
                     </button>
                   );
                 })}
               </nav>
-              <div className="px-4 py-3 border-t text-center text-[10px] text-muted-foreground">
+              <div className="px-4 py-3 border-t border-border text-center text-[10px] text-muted-foreground">
                 © {new Date().getFullYear()} {STORE_NAME}
               </div>
             </SheetContent>
