@@ -476,7 +476,7 @@ export default function NeonStreakHub({ visitorId, forcedView }: Props) {
               >
                 <Gem className="w-7 h-7 text-cyan-300 drop-shadow-[0_0_8px_rgba(34,211,238,0.8)]" strokeWidth={2.5} />
               </motion.div>
-              <span className="text-2xl font-black tabular-nums truncate bg-gradient-to-r from-cyan-200 via-blue-300 to-purple-400 bg-clip-text text-transparent drop-shadow">{gems.toLocaleString("id-ID")}</span>
+              <span className="text-2xl font-black tabular-nums truncate bg-gradient-to-r from-cyan-200 via-blue-300 to-purple-400 bg-clip-text text-transparent drop-shadow">{formatCompactNumber(gems)}</span>
             </div>
           </div>
           {multiplier > 1 && (
