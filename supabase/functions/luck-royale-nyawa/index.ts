@@ -168,26 +168,26 @@ const TOKEN_SHOP: Array<{ code: string; name: string; cost: number; kind: string
 
   // ============ SUPER PREMIUM TIER (70-150 token, hadiah MEGA — Rp 300k/bulan) ============
   // 70-80 token — Tier DIVINE
-  { code: "sp_gem10k",      name: "💎 DIVINE +10.000 Gem",           cost: 70,  kind: "gems",          value: 10000,   rarity: "mythic", emoji: "💎", tier: "super_premium" },
+  { code: "sp_gem2100",     name: "💎 DIVINE +2.100 Gem",            cost: 70,  kind: "gems",          value: 2100,    rarity: "mythic", emoji: "💎", tier: "super_premium" },
   { code: "sp_life3000",    name: "❤️ DIVINE +3.000 Nyawa",          cost: 70,  kind: "extra_life",    value: 3000,    rarity: "mythic", emoji: "❤️", tier: "super_premium" },
   { code: "sp_hint3000",    name: "💡 DIVINE +3.000 Hint",           cost: 70,  kind: "auto_hint",     value: 3000,    rarity: "mythic", emoji: "💡", tier: "super_premium" },
   { code: "sp_freeze500",   name: "🛡️ DIVINE +500 Freeze",           cost: 75,  kind: "streak_freeze", value: 500,     rarity: "mythic", emoji: "🛡️", tier: "super_premium" },
   { code: "sp_coins150k",   name: "🪙 DIVINE +150.000 Coin",         cost: 75,  kind: "streak_coins",  value: 150000,  rarity: "mythic", emoji: "🪙", tier: "super_premium" },
-  { code: "sp_gem15k",      name: "💎 DIVINE +15.000 Gem",           cost: 80,  kind: "gems",          value: 15000,   rarity: "mythic", emoji: "💎", tier: "super_premium" },
+  { code: "sp_gem2800",     name: "💎 DIVINE +2.800 Gem",            cost: 80,  kind: "gems",          value: 2800,    rarity: "mythic", emoji: "💎", tier: "super_premium" },
 
   // 85-100 token — Tier CELESTIAL
   { code: "sp_life5000",    name: "❤️ CELESTIAL +5.000 Nyawa",       cost: 85,  kind: "extra_life",    value: 5000,    rarity: "mythic", emoji: "❤️", tier: "super_premium" },
   { code: "sp_hint5000",    name: "💡 CELESTIAL +5.000 Hint",        cost: 85,  kind: "auto_hint",     value: 5000,    rarity: "mythic", emoji: "💡", tier: "super_premium" },
-  { code: "sp_gem20k",      name: "💎 CELESTIAL +20.000 Gem",        cost: 90,  kind: "gems",          value: 20000,   rarity: "mythic", emoji: "💎", tier: "super_premium" },
+  { code: "sp_gem3500",     name: "💎 CELESTIAL +3.500 Gem",         cost: 90,  kind: "gems",          value: 3500,    rarity: "mythic", emoji: "💎", tier: "super_premium" },
   { code: "sp_coins250k",   name: "🪙 CELESTIAL +250.000 Coin",      cost: 95,  kind: "streak_coins",  value: 250000,  rarity: "mythic", emoji: "🪙", tier: "super_premium" },
   { code: "sp_freeze1000",  name: "🛡️ CELESTIAL +1.000 Freeze",      cost: 100, kind: "streak_freeze", value: 1000,    rarity: "mythic", emoji: "🛡️", tier: "super_premium" },
-  { code: "sp_gem30k",      name: "💎 CELESTIAL +30.000 Gem",        cost: 100, kind: "gems",          value: 30000,   rarity: "mythic", emoji: "💎", tier: "super_premium" },
+  { code: "sp_gem4500",     name: "💎 CELESTIAL +4.500 Gem",         cost: 100, kind: "gems",          value: 4500,    rarity: "mythic", emoji: "💎", tier: "super_premium" },
 
   // 110-130 token — Tier COSMIC
   { code: "sp_life8000",    name: "❤️ COSMIC +8.000 Nyawa",          cost: 110, kind: "extra_life",    value: 8000,    rarity: "mythic", emoji: "❤️", tier: "super_premium" },
   { code: "sp_hint8000",    name: "💡 COSMIC +8.000 Hint",           cost: 110, kind: "auto_hint",     value: 8000,    rarity: "mythic", emoji: "💡", tier: "super_premium" },
   { code: "sp_coins500k",   name: "🪙 COSMIC +500.000 Coin",         cost: 120, kind: "streak_coins",  value: 500000,  rarity: "mythic", emoji: "🪙", tier: "super_premium" },
-  { code: "sp_gem50k",      name: "💎 COSMIC +50.000 Gem",           cost: 130, kind: "gems",          value: 50000,   rarity: "mythic", emoji: "💎", tier: "super_premium" },
+  { code: "sp_gem6500",     name: "💎 COSMIC +6.500 Gem",            cost: 130, kind: "gems",          value: 6500,    rarity: "mythic", emoji: "💎", tier: "super_premium" },
 
   // 140-150 token — Tier OMEGA / MEGA JACKPOT
   { code: "sp_life15k",     name: "❤️ OMEGA +15.000 Nyawa",          cost: 140, kind: "extra_life",    value: 15000,   rarity: "mythic", emoji: "❤️", tier: "super_premium" },
