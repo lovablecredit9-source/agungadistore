@@ -2397,22 +2397,14 @@ const Index = () => {
         {tab === "history" && (
           <div className="space-y-4 animate-fade-in">
             {/* Hero Header */}
-            <div className="relative overflow-hidden rounded-2xl p-5 glow-border" style={{ background: "linear-gradient(135deg, hsl(200, 80%, 50%) 0%, hsl(210, 75%, 48%) 50%, hsl(220, 70%, 45%) 100%)" }}>
-              <div className="absolute inset-0">
-                <div className="absolute -top-8 -right-8 w-40 h-40 rounded-full bg-white/20 blur-3xl animate-pulse" />
-                <div className="absolute -bottom-8 -left-8 w-28 h-28 rounded-full bg-white/15 blur-2xl animate-pulse" style={{ animationDelay: "1s" }} />
-                <div className="absolute inset-0 shimmer" />
-              </div>
-              <div className="relative z-10 flex items-center gap-4">
-                <div className="relative floating">
-                  <div className="absolute -inset-1 bg-white/30 rounded-2xl blur-md" />
-                  <div className="relative w-14 h-14 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-2xl ring-2 ring-white/30">
-                    <Clock className="w-7 h-7 text-white" />
-                  </div>
+            <div className="rounded-xl border border-border bg-card p-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
+                  <Clock className="w-5 h-5 text-foreground" strokeWidth={1.7} />
                 </div>
-                <div>
-                  <h2 className="text-xl font-extrabold text-white drop-shadow-lg">{t("history.title", lang)}</h2>
-                  <p className="text-white/80 text-xs font-medium mt-0.5">{history.length} riwayat klaim</p>
+                <div className="flex-1 min-w-0">
+                  <h2 className="text-base font-semibold tracking-tight text-foreground">{t("history.title", lang)}</h2>
+                  <p className="text-xs text-muted-foreground mt-0.5">{history.length} riwayat klaim</p>
                 </div>
               </div>
             </div>
