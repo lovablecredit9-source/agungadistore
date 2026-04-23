@@ -588,6 +588,124 @@ export default function LuckRoyaleNyawa() {
             Dijamin mendapatkan hadiah setiap spin • Makin banyak makin hemat!
           </p>
 
+
+          {/* 🎁 FREE DAILY SHOP — gratis 1x per hari */}
+          {freeDailyShop.length > 0 && (
+            <div className="rounded-2xl bg-gradient-to-br from-emerald-900/40 via-green-900/30 to-teal-900/40 border-2 border-emerald-400/50 p-3">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-1.5">
+                  <Gift className="w-4 h-4 text-emerald-300" fill="currentColor" />
+                  <h3 className="text-xs font-black tracking-widest text-emerald-200">| FREE DAILY — GRATIS 1× SEHARI</h3>
+                </div>
+                <Badge className="bg-emerald-500 text-black font-black text-[8px]">🎁 FREE</Badge>
+              </div>
+              <p className="text-[10px] text-emerald-100/80 mb-2.5">
+                Klaim hadiah <span className="font-black text-emerald-300">tanpa biaya</span> — reset tiap hari (jam 00:00 WIB)!
+              </p>
+              <div className="grid grid-cols-2 gap-2">
+                {freeDailyShop.map((item) => {
+                  const style = RARITY_STYLE[item.rarity] || RARITY_STYLE.common;
+                  const claimed = item.claimedToday;
+                  return (
+                    <button
+                      key={item.code}
+                      disabled={claimed || redeeming === item.code}
+                      onClick={() => claimFreeDaily(item.code)}
+                      className={`relative overflow-hidden rounded-xl bg-gradient-to-br ${claimed ? "from-slate-700 to-slate-900 opacity-60" : style.gradient} ring-2 ${claimed ? "ring-slate-500/30" : "ring-emerald-400/60"} p-2.5 text-left active:scale-95 transition disabled:cursor-not-allowed`}
+                    >
+                      <div className="absolute top-1 right-1 bg-black/60 rounded-full px-1.5 py-0.5">
+                        <span className="text-[8px] font-black text-emerald-200">{claimed ? "✓ DONE" : "GRATIS"}</span>
+                      </div>
+                      <div className="text-2xl mb-0.5">{item.emoji}</div>
+                      <div className="text-[10px] font-black text-white leading-tight">{item.name}</div>
+                      <div className="text-[8px] font-bold text-white/70 mt-1">{claimed ? "Kembali besok" : "Tap untuk klaim"}</div>
+                      {redeeming === item.code && (
+                        <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+                          <Loader2 className="w-5 h-5 animate-spin text-white" />
+                        </div>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* 👑 PREMIUM SHOP — unlock pakai Gem, klaim mingguan */}
+          {premiumShop.length > 0 && (
+            <div className="rounded-2xl bg-gradient-to-br from-violet-900/50 via-fuchsia-900/40 to-pink-900/50 border-2 border-fuchsia-400/60 p-3">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-1.5">
+                  <Crown className="w-4 h-4 text-fuchsia-300" fill="currentColor" />
+                  <h3 className="text-xs font-black tracking-widest text-fuchsia-200">| PREMIUM SHOP — UNLOCK & KLAIM</h3>
+                </div>
+                <Badge className="bg-fuchsia-500 text-white font-black text-[8px]">👑 VIP</Badge>
+              </div>
+              <p className="text-[10px] text-fuchsia-100/80 mb-2.5">
+                Bayar Gem <span className="font-black text-fuchsia-300">sekali</span> untuk unlock — klaim hadiah BESAR setiap minggu seumur hidup!
+              </p>
+              <div className="grid grid-cols-1 gap-2">
+                {premiumShop.map((item) => {
+                  const style = RARITY_STYLE[item.rarity] || RARITY_STYLE.common;
+                  const isLoading = redeeming === item.code;
+                  const remainHours = item.nextClaimAt ? Math.max(0, Math.ceil((item.nextClaimAt - Date.now()) / 3600000)) : 0;
+                  return (
+                    <div
+                      key={item.code}
+                      className={`relative overflow-hidden rounded-xl bg-gradient-to-r ${style.gradient} ring-2 ${style.ring} p-3`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="text-3xl shrink-0">{item.emoji}</div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-1.5 mb-0.5">
+                            <span className="text-xs font-black text-white truncate">{item.name}</span>
+                            <Badge className="bg-black/60 text-[8px] font-black shrink-0">{style.label}</Badge>
+                          </div>
+                          <p className="text-[10px] text-white/80 leading-tight">{item.description}</p>
+                        </div>
+                      </div>
+                      <div className="mt-2.5 flex items-center justify-between gap-2">
+                        {!item.isUnlocked ? (
+                          <>
+                            <div className="flex items-center gap-1 bg-black/40 rounded-full px-2 py-1">
+                              <Gem className="w-3 h-3 text-cyan-300" fill="currentColor" />
+                              <span className="text-[10px] font-black text-cyan-200">{formatCompactNumber(item.unlockCostGems)}</span>
+                            </div>
+                            <Button
+                              size="sm"
+                              disabled={isLoading || gems < item.unlockCostGems}
+                              onClick={() => unlockPremium(item.code, item.name, item.unlockCostGems)}
+                              className="h-7 px-3 text-[10px] font-black bg-gradient-to-r from-fuchsia-500 to-pink-600 hover:from-fuchsia-600 hover:to-pink-700 text-white"
+                            >
+                              {isLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : "🔓 UNLOCK"}
+                            </Button>
+                          </>
+                        ) : item.canClaim ? (
+                          <>
+                            <Badge className="bg-emerald-500 text-black font-black text-[9px]">✓ UNLOCKED</Badge>
+                            <Button
+                              size="sm"
+                              disabled={isLoading}
+                              onClick={() => claimPremium(item.code)}
+                              className="h-7 px-3 text-[10px] font-black bg-gradient-to-r from-amber-400 to-orange-500 hover:from-amber-500 hover:to-orange-600 text-black"
+                            >
+                              {isLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : "🎁 CLAIM"}
+                            </Button>
+                          </>
+                        ) : (
+                          <>
+                            <Badge className="bg-emerald-500 text-black font-black text-[9px]">✓ UNLOCKED</Badge>
+                            <Badge className="bg-black/60 text-white font-black text-[9px]">⏳ {remainHours}j lagi</Badge>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
           {/* 🎟️ TOKEN SHOP */}
           {tokenShop.length > 0 && (
             <div className="rounded-2xl bg-gradient-to-br from-amber-900/40 via-orange-900/30 to-pink-900/40 border-2 border-amber-500/50 p-3">
