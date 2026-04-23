@@ -100,7 +100,7 @@ export default function StreakExpansionHub({ visitorId, onUpdate }: Props) {
 
   if (loading) {
     return (
-      <div className="rounded-2xl bg-gradient-to-br from-violet-950/40 via-fuchsia-950/40 to-purple-950/40 border border-fuchsia-400/30 p-6 flex items-center justify-center">
+      <div className="rounded-xl border border-border bg-card p-6 flex items-center justify-center">
         <Loader2 className="h-5 w-5 animate-spin text-fuchsia-300" />
       </div>
     );
@@ -108,7 +108,7 @@ export default function StreakExpansionHub({ visitorId, onUpdate }: Props) {
   if (!data) return null;
 
   return (
-    <div className="rounded-2xl bg-gradient-to-br from-violet-950/60 via-fuchsia-950/40 to-purple-950/60 border-2 border-fuchsia-400/40 p-3 sm:p-4 shadow-2xl">
+    <div className="rounded-xl border border-border bg-card p-3 sm:p-4">
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
           <Sparkles className="h-5 w-5 text-fuchsia-300 animate-pulse" />

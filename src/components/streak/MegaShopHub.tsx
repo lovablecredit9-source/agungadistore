@@ -63,7 +63,7 @@ export default function MegaShopHub({ visitorId, onUpdate }: Props) {
 
   if (loading) {
     return (
-      <div className="rounded-2xl bg-gradient-to-br from-red-500/10 via-amber-500/10 to-yellow-500/10 border border-amber-400/30 p-6 text-center">
+      <div className="rounded-xl border border-border bg-card p-6 text-center">
         <Loader2 className="h-6 w-6 animate-spin mx-auto text-amber-300" />
       </div>
     );
@@ -71,7 +71,7 @@ export default function MegaShopHub({ visitorId, onUpdate }: Props) {
   if (!data) return null;
 
   return (
-    <div className="rounded-2xl bg-gradient-to-br from-red-500/15 via-amber-500/15 to-yellow-500/15 border-2 border-amber-400/40 p-3 sm:p-4 shadow-2xl">
+    <div className="rounded-xl border border-border bg-card p-3 sm:p-4">
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
           <PartyPopper className="h-5 w-5 text-amber-300 animate-bounce" />

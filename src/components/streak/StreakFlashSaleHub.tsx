@@ -118,14 +118,14 @@ export default function StreakFlashSaleHub({ visitorId, onUpdate, compact = fals
 
   if (loading) {
     return (
-      <div className="rounded-2xl bg-gradient-to-br from-orange-500/10 via-red-500/10 to-pink-500/10 border border-orange-400/30 p-6 text-center">
+      <div className="rounded-xl border border-border bg-card p-6 text-center">
         <Loader2 className="h-6 w-6 animate-spin mx-auto text-orange-300" />
       </div>
     );
   }
   if (!data || deals.length === 0) {
     return (
-      <div className="rounded-2xl bg-gradient-to-br from-orange-500/10 to-red-500/10 border border-orange-400/30 p-4 text-center">
+      <div className="rounded-xl border border-border bg-card p-4 text-center">
         <Flame className="h-6 w-6 mx-auto text-orange-300/60 mb-2" />
         <p className="text-xs text-muted-foreground">Belum ada Flash Sale aktif. Pantengin terus ya! ⚡</p>
       </div>
@@ -133,7 +133,7 @@ export default function StreakFlashSaleHub({ visitorId, onUpdate, compact = fals
   }
 
   return (
-    <div className="rounded-2xl bg-gradient-to-br from-orange-500/15 via-red-500/15 to-pink-500/15 border-2 border-orange-400/40 p-3 sm:p-4 shadow-2xl relative overflow-hidden">
+    <div className="rounded-xl border border-border bg-card p-3 sm:p-4 relative overflow-hidden">
       {/* shimmer bg */}
       <motion.div
         className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent pointer-events-none"

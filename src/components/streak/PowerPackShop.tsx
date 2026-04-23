@@ -208,7 +208,7 @@ export default function PowerPackShop({ visitorId, onUpdate, compact = false }: 
 
   if (loading) {
     return (
-      <div className="rounded-2xl bg-gradient-to-br from-purple-900/40 to-indigo-900/40 border border-purple-500/30 p-10 text-center">
+      <div className="rounded-xl border border-border bg-card p-10 text-center">
         <Loader2 className="h-7 w-7 animate-spin mx-auto text-purple-300" />
       </div>
     );
