@@ -462,7 +462,7 @@ export default function NeonStreakHub({ visitorId, forcedView }: Props) {
             <div className="text-[10px] font-black tracking-widest neon-text-cyan uppercase">Streak Coins</div>
             <div className="flex items-center gap-2 mt-1">
               <Coins className="w-7 h-7 icon-3d-coin neon-pulse shrink-0" strokeWidth={2.5} />
-              <span className="text-2xl font-black neon-gradient-text tabular-nums truncate">{coins.toLocaleString("id-ID")}</span>
+              <span className="text-2xl font-black neon-gradient-text tabular-nums truncate">{formatCompactNumber(coins)}</span>
             </div>
           </div>
           <div className="h-12 w-px bg-gradient-to-b from-transparent via-cyan-400/50 to-transparent shrink-0" />
@@ -683,7 +683,7 @@ export default function NeonStreakHub({ visitorId, forcedView }: Props) {
           <div className="flex items-center justify-between p-3 rounded-xl bg-black/40 border border-yellow-500/30">
             <span className="text-xs font-bold text-white/80">Saldo Coins</span>
             <span className="text-xl font-black neon-text-yellow tabular-nums flex items-center gap-1.5">
-              <Coins className="w-5 h-5 icon-3d-coin" strokeWidth={2.5} /> {coins.toLocaleString("id-ID")}
+              <Coins className="w-5 h-5 icon-3d-coin" strokeWidth={2.5} /> {formatCompactNumber(coins)}
             </span>
           </div>
 
@@ -704,7 +704,7 @@ export default function NeonStreakHub({ visitorId, forcedView }: Props) {
                   >
                     <div className="flex items-center gap-1.5 mb-1">
                       <Plus className="w-3.5 h-3.5 text-cyan-300" strokeWidth={3} />
-                      <span className="text-sm font-black text-white tabular-nums">{pkg.coins.toLocaleString("id-ID")}</span>
+                      <span className="text-sm font-black text-white tabular-nums">{formatCompactNumber(pkg.coins)}</span>
                       <Coins className="w-3.5 h-3.5 icon-3d-coin" strokeWidth={2.5} />
                     </div>
                     <div className="text-[10px] font-bold neon-text-yellow tabular-nums">Rp{pkg.price.toLocaleString("id-ID")}</div>
