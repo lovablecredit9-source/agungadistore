@@ -231,6 +231,13 @@ async function applyPrize(admin: any, visitorId: string, p: Prize) {
     await addInventory(admin, visitorId, "freeze", p.value);
   } else if (p.kind === "gems") {
     await admin.rpc("add_account_gems", { p_visitor_id: visitorId, p_amount: p.value });
+  } else if (p.kind === "streak_coins") {
+    const { data: streak } = await admin.from("daily_streaks").select("id, streak_coins").eq("visitor_id", visitorId).maybeSingle();
+    if (streak) {
+      await admin.from("daily_streaks").update({ streak_coins: (streak.streak_coins || 0) + p.value }).eq("id", streak.id);
+    } else {
+      await admin.from("daily_streaks").insert({ visitor_id: visitorId, streak_coins: p.value });
+    }
   }
 }
 
