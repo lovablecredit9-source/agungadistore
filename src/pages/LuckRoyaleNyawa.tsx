@@ -62,7 +62,11 @@ function getKindIcon(kind: string) {
 export default function LuckRoyaleNyawa() {
   const nav = useNavigate();
   const { toast } = useToast();
-  const visitorId = typeof window !== "undefined" ? getVisitorId() : null;
+  // Prioritaskan akun login (balance_visitor_id) supaya gem terbaca dari akun yg sama
+  // di semua domain (preview Lovable maupun custom/published domain).
+  const visitorId = typeof window !== "undefined"
+    ? (localStorage.getItem("balance_visitor_id") || getVisitorId())
+    : null;
 
   const [loading, setLoading] = useState(true);
   const [spinning, setSpinning] = useState(false);
