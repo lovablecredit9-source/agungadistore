@@ -1997,36 +1997,30 @@ const Index = () => {
 
         {tab === "produk" && (
           <div className="space-y-4 animate-fade-in">
-            {/* Hero Header */}
-            <div className="relative overflow-hidden rounded-2xl p-5 glow-border" style={{ background: "linear-gradient(135deg, hsl(220, 80%, 55%) 0%, hsl(260, 70%, 50%) 50%, hsl(200, 80%, 50%) 100%)" }}>
-              <div className="absolute inset-0">
-                <div className="absolute -top-8 -right-8 w-44 h-44 rounded-full bg-white/20 blur-3xl animate-pulse" />
-                <div className="absolute -bottom-8 -left-8 w-32 h-32 rounded-full bg-white/15 blur-2xl animate-pulse" style={{ animationDelay: "1.5s" }} />
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-24 h-24 rounded-full bg-white/10 blur-xl" />
-                <div className="absolute inset-0 shimmer" />
-              </div>
-              <div className="relative z-10 flex items-center gap-4">
-                <div className="relative floating">
-                  <div className="absolute -inset-1 bg-white/30 rounded-2xl blur-md" />
-                  <div className="relative w-14 h-14 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-2xl ring-2 ring-white/30">
-                    <Package className="w-7 h-7 text-white" />
-                  </div>
+            {/* Minimal Header */}
+            <div className="rounded-xl border border-border bg-card p-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center">
+                  <Package className="w-5 h-5 text-foreground" strokeWidth={1.7} />
                 </div>
-                <div>
-                  <h2 className="text-xl font-extrabold text-white tracking-tight drop-shadow-lg">{t("products.title", lang)}</h2>
-                  <p className="text-white/80 text-xs font-medium mt-0.5">{sortedProducts.length} {t("products.items", lang)} tersedia</p>
+                <div className="flex-1 min-w-0">
+                  <h2 className="text-base font-semibold text-foreground tracking-tight">{t("products.title", lang)}</h2>
+                  <p className="text-muted-foreground text-xs mt-0.5">{sortedProducts.length} {t("products.items", lang)} tersedia</p>
                 </div>
               </div>
-              {/* Stats bar */}
-              <div className="relative z-10 flex gap-3 mt-4">
+              {/* Stats row */}
+              <div className="flex items-center gap-4 mt-3 pt-3 border-t border-border">
                 {[
                   { label: "Total", value: sortedProducts.length },
                   { label: "Tersedia", value: sortedProducts.filter(p => p.stock > 0).length },
                   { label: "Garansi", value: sortedProducts.filter(p => p.has_warranty).length },
-                ].map(s => (
-                  <div key={s.label} className="flex-1 bg-white/15 backdrop-blur-md rounded-xl px-3 py-2.5 text-center border border-white/10">
-                    <p className="text-white font-extrabold text-lg leading-none drop-shadow">{s.value}</p>
-                    <p className="text-white/70 text-[10px] font-semibold uppercase tracking-wider">{s.label}</p>
+                ].map((s, i) => (
+                  <div key={s.label} className="flex items-center gap-4">
+                    {i > 0 && <span className="w-px h-6 bg-border" />}
+                    <div>
+                      <p className="text-foreground font-semibold text-sm tabular-nums leading-none">{s.value}</p>
+                      <p className="text-muted-foreground text-[10px] mt-1">{s.label}</p>
+                    </div>
                   </div>
                 ))}
               </div>
