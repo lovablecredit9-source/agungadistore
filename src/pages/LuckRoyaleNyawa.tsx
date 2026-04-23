@@ -112,6 +112,8 @@ export default function LuckRoyaleNyawa() {
       setTokenThreshold(Number(data.luckyTokenThreshold || 5));
       setMegaPool(Number(data.megaJackpotPool || 5000));
       setTokenShop(data.tokenShop || []);
+      setFreeDailyShop(data.freeDailyShop || []);
+      setPremiumShop(data.premiumShop || []);
     } catch (e) {
       console.error(e);
     } finally {
