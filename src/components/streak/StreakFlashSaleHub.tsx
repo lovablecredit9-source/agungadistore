@@ -21,7 +21,7 @@ const RARITY_RING: Record<string, string> = {
   rare: "ring-sky-400/60",
   epic: "ring-fuchsia-400/70",
   legendary: "ring-amber-300/80",
-  mythic: "ring-red-400/90 animate-pulse",
+  mythic: "ring-red-400/90",
 };
 
 const RARITY_LABEL: Record<string, string> = {
@@ -51,7 +51,7 @@ function Countdown({ endsAt }: { endsAt: string | null }) {
   const s = Math.floor((diff % 60000) / 1000);
   const text = d > 0 ? `${d}h ${h}j` : h > 0 ? `${h}j ${m}m` : `${m}m ${s}d`;
   return (
-    <span className={`inline-flex items-center gap-1 ${diff < 3600000 ? "text-red-300 animate-pulse" : "text-amber-200"}`}>
+    <span className={`inline-flex items-center gap-1 ${diff < 3600000 ? "text-red-300" : "text-amber-200"}`}>
       <Clock className="h-3 w-3" /> {text}
     </span>
   );
@@ -146,10 +146,10 @@ export default function StreakFlashSaleHub({ visitorId, onUpdate, compact = fals
           <motion.div animate={{ rotate: [0, 15, -15, 0] }} transition={{ duration: 1.5, repeat: Infinity }}>
             <Zap className="h-5 w-5 text-amber-300 fill-amber-300" />
           </motion.div>
-          <h3 className="font-extrabold text-base sm:text-lg bg-gradient-to-r from-amber-200 via-orange-100 to-red-200 bg-clip-text text-transparent truncate">
+          <h3 className="font-extrabold text-base sm:text-lg text-foreground truncate">
             ⚡ Flash Sale Streak
           </h3>
-          <Badge className="bg-red-500/40 text-red-100 border-red-400/60 text-[9px] px-1.5 py-0 h-4 animate-pulse flex-shrink-0">HOT</Badge>
+          <Badge className="bg-red-500/40 text-red-100 border-red-400/60 text-[9px] px-1.5 py-0 h-4 flex-shrink-0">HOT</Badge>
         </div>
         <div className="flex items-center gap-1.5 text-[10px] flex-shrink-0">
           <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-amber-500/20 text-amber-200 border border-amber-400/40">
@@ -230,7 +230,7 @@ export default function StreakFlashSaleHub({ visitorId, onUpdate, compact = fals
                   <div className="mt-1.5">
                     <div className="flex justify-between text-[8px] text-white/80 mb-0.5">
                       <span>Stok: {deal.remaining_stock}/{deal.total_stock}</span>
-                      {stockLow && <span className="text-red-200 font-bold animate-pulse">HAMPIR HABIS!</span>}
+                      {stockLow && <span className="text-red-200 font-bold">HAMPIR HABIS!</span>}
                     </div>
                     <Progress value={deal.stock_pct} className="h-1 bg-black/30" />
                   </div>

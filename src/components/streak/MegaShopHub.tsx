@@ -75,21 +75,21 @@ export default function MegaShopHub({ visitorId, onUpdate }: Props) {
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
           <PartyPopper className="h-5 w-5 text-amber-300 animate-bounce" />
-          <h3 className="font-bold text-base sm:text-lg bg-gradient-to-r from-amber-200 via-yellow-100 to-red-200 bg-clip-text text-transparent">
+          <h3 className="font-bold text-base sm:text-lg text-foreground">
             Mega Carnival Shop
           </h3>
-          <Badge className="bg-red-500/40 text-red-100 border-red-400/60 text-[9px] px-1.5 py-0 h-4 animate-pulse">FESTIVE</Badge>
+          <Badge className="bg-red-500/40 text-red-100 border-red-400/60 text-[9px] px-1.5 py-0 h-4">FESTIVE</Badge>
         </div>
       </div>
 
       {/* 3 Fitur Live: Flash Sale + Daily Spin + Mystery Box */}
       <div className="mb-3">
         <div className="flex items-center gap-2 mb-2 px-1">
-          <Zap className="h-4 w-4 text-pink-300 animate-pulse" />
-          <h4 className="text-xs font-bold bg-gradient-to-r from-pink-200 via-orange-200 to-yellow-200 bg-clip-text text-transparent uppercase tracking-wider">
+          <Zap className="h-4 w-4 text-pink-300" />
+          <h4 className="text-xs font-bold text-foreground uppercase tracking-wider">
             Live · Flash Sale · Spin · Mystery Box
           </h4>
-          <Badge className="bg-red-500/40 text-red-100 border-red-400/60 text-[9px] px-1.5 py-0 h-4 animate-pulse">HOT</Badge>
+          <Badge className="bg-red-500/40 text-red-100 border-red-400/60 text-[9px] px-1.5 py-0 h-4">HOT</Badge>
         </div>
         <EngagementHub />
       </div>
@@ -109,7 +109,7 @@ export default function MegaShopHub({ visitorId, onUpdate }: Props) {
           </TabsTrigger>
           <TabsTrigger value="power" className="text-[10px] data-[state=active]:bg-pink-500/40 px-1 py-1.5 font-black uppercase tracking-wide">
             ⚡ Power
-            <Badge className="ml-1 bg-pink-500 text-white border-0 text-[8px] h-3 px-1 animate-pulse">NEW</Badge>
+            <Badge className="ml-1 bg-pink-500 text-white border-0 text-[8px] h-3 px-1">NEW</Badge>
           </TabsTrigger>
         </TabsList>
         <TabsContent value="coin">

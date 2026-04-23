@@ -236,10 +236,10 @@ export default function PowerPackShop({ visitorId, onUpdate, compact = false }: 
                 <motion.div animate={{ rotate: [0, 10, -10, 0] }} transition={{ duration: 2, repeat: Infinity }}>
                   <Flame className="h-4 w-4 text-pink-300" />
                 </motion.div>
-                <h3 className="text-sm font-black bg-gradient-to-r from-pink-200 via-fuchsia-200 to-rose-200 bg-clip-text text-transparent uppercase tracking-wider">
+                <h3 className="text-sm font-black text-foreground uppercase tracking-wider">
                   Power Pack
                 </h3>
-                <Badge className="bg-pink-500/40 text-pink-100 border-pink-400/60 text-[9px] h-4 px-1.5 animate-pulse">NEW</Badge>
+                <Badge className="bg-pink-500/40 text-pink-100 border-pink-400/60 text-[9px] h-4 px-1.5">NEW</Badge>
               </div>
               {subs.length > 0 && (
                 <Badge className="bg-emerald-500/30 text-emerald-100 border-emerald-400/60 text-[9px] h-4">
@@ -339,7 +339,7 @@ export default function PowerPackShop({ visitorId, onUpdate, compact = false }: 
               animate={{ opacity: 1, x: 0, scale: 1 }}
               exit={{ opacity: 0, x: 10, scale: 0.98 }}
               transition={{ duration: 0.25 }}
-              className={`relative rounded-2xl overflow-hidden border-2 ${theme.border} bg-gradient-to-br ${theme.panel} p-3 shadow-2xl`}
+              className={`relative rounded-2xl overflow-hidden border-2 ${theme.border} bg-gradient-to-br ${theme.panel} p-3`}
             >
               <motion.div
                 animate={{ x: ["-100%", "200%"] }}
@@ -470,7 +470,7 @@ export default function PowerPackShop({ visitorId, onUpdate, compact = false }: 
                     </Badge>
                   )}
                   {isActive && (
-                    <div className="absolute top-0.5 left-0.5 w-2 h-2 rounded-full bg-emerald-400 animate-pulse shadow shadow-emerald-400" />
+                    <div className="absolute top-0.5 left-0.5 w-2 h-2 rounded-full bg-emerald-400 shadow shadow-emerald-400" />
                   )}
                   <div className="flex items-center gap-1 mb-0.5">
                     <span className="text-base">{p.icon}</span>
@@ -518,7 +518,7 @@ function RevealDialog({ reveal, onClose }: { reveal: { items: any[]; isInstant: 
     <Dialog open={!!reveal} onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="max-w-sm bg-gradient-to-br from-[#1a0820] via-[#2a0d3a] to-[#0d0815] border-2 border-pink-400/60">
         <DialogHeader>
-          <DialogTitle className="text-center bg-gradient-to-r from-pink-200 via-fuchsia-200 to-rose-200 bg-clip-text text-transparent text-lg font-black uppercase tracking-wider">
+          <DialogTitle className="text-center text-foreground text-lg font-black uppercase tracking-wider">
             {reveal?.isInstant ? "🎉 Bonus Pembelian!" : "🎁 Hadiah Harian!"}
           </DialogTitle>
           <p className="text-center text-xs text-white/70">{reveal?.packName}</p>

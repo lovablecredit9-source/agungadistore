@@ -111,8 +111,8 @@ export default function StreakExpansionHub({ visitorId, onUpdate }: Props) {
     <div className="rounded-xl border border-border bg-card p-3 sm:p-4">
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
-          <Sparkles className="h-5 w-5 text-fuchsia-300 animate-pulse" />
-          <h3 className="font-black text-base sm:text-lg bg-gradient-to-r from-fuchsia-200 via-pink-200 to-amber-200 bg-clip-text text-transparent">
+          <Sparkles className="h-5 w-5 text-fuchsia-300" />
+          <h3 className="font-black text-base sm:text-lg text-foreground">
             Streak Expansion
           </h3>
           <Badge className="bg-fuchsia-500/40 text-fuchsia-100 border-fuchsia-400/60 text-[9px] px-1.5 py-0 h-4">NEW</Badge>
@@ -316,7 +316,7 @@ export default function StreakExpansionHub({ visitorId, onUpdate }: Props) {
             className="fixed inset-0 z-[100] bg-black/80 flex items-center justify-center p-4"
             onClick={() => setBoxResult(null)}>
             <motion.div initial={{ scale: 0.5, rotate: -10 }} animate={{ scale: 1, rotate: 0 }}
-              className={`max-w-xs w-full rounded-3xl bg-gradient-to-br ${RARITY[boxResult.reward.rarity] || RARITY.common} border-4 p-5 text-center shadow-2xl`}
+              className={`max-w-xs w-full rounded-3xl bg-gradient-to-br ${RARITY[boxResult.reward.rarity] || RARITY.common} border-4 p-5 text-center`}
               onClick={(e) => e.stopPropagation()}>
               <motion.div animate={{ rotate: [0, 360], scale: [1, 1.3, 1] }} transition={{ duration: 1.2 }} className="text-7xl mb-2">{boxResult.box.icon}</motion.div>
               <p className="text-xs font-bold text-white/80 uppercase tracking-widest mb-1">Selamat!</p>
