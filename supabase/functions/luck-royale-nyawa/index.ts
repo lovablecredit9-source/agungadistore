@@ -93,13 +93,11 @@ function getStreakMultiplier(streakCount: number): number {
 // Tiap 5 spin berbayar = +1 Lucky Token. Bisa ditukar hadiah pasti.
 const TOKENS_PER_SPIN_THRESHOLD = 5; // 5 paid spin = 1 token
 
-// === TOKEN BUNDLE PURCHASES — beli Lucky Token pakai saldo ===
-const TOKEN_BUNDLES: Array<{ code: string; name: string; tokens: number; bonus: number; price: number; badge?: string; emoji: string }> = [
-  { code: "tb_50",    name: "Starter Pack",    tokens: 50,   bonus: 5,    price: 5000,   emoji: "🎟️" },
-  { code: "tb_200",   name: "Value Pack",      tokens: 200,  bonus: 30,   price: 20000,  badge: "HEMAT", emoji: "🎁" },
-  { code: "tb_500",   name: "Pro Pack",        tokens: 500,  bonus: 100,  price: 50000,  badge: "POPULER", emoji: "💼" },
-  { code: "tb_1000",  name: "🔥 MEGA PACK 100K", tokens: 1000, bonus: 200,  price: 100000, badge: "TERBAIK", emoji: "👑" },
-];
+// === TOKEN SHOP ACCESS PASS ===
+// Untuk bisa tukar token di Token Shop, user wajib unlock akses dengan saldo Rp 100.000.
+// Akses aktif selama 30 hari. Setelah expired harus beli lagi.
+const SHOP_ACCESS_PRICE = 100000;       // Rp 100.000
+const SHOP_ACCESS_DAYS = 30;            // berlaku 30 hari
 
 // 50 item: 10 Free (1-10 token) + 40 Premium (20-60 token, hadiah jauh lebih MANTAP)
 const TOKEN_SHOP: Array<{ code: string; name: string; cost: number; kind: string; value: number; rarity: string; emoji: string; tier: "free" | "premium" }> = [
