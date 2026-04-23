@@ -1921,100 +1921,77 @@ const Index = () => {
               </div>
             )}
 
-            {/* Voucher Card - ULTRA PREMIUM */}
-            <Card className="overflow-hidden border-0 shadow-xl hover:shadow-2xl transition-all cursor-pointer hover:-translate-y-1.5 duration-300 glass-card-strong glow-border group" onClick={() => setTab("voucher")}>
-              <div className="bg-gradient-to-r from-primary/20 via-accent/10 to-primary/20 p-[2px] rounded-xl">
-                <CardContent className="p-5 flex items-center gap-4 bg-card/90 backdrop-blur-xl rounded-[10px]">
-                  <div className="relative">
-                    <div className="absolute -inset-2 bg-gradient-to-br from-primary to-accent rounded-2xl blur-lg opacity-40 group-hover:opacity-60 transition-opacity" />
-                    <div className="relative w-14 h-14 rounded-2xl bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-2xl group-hover:scale-110 transition-transform">
-                      <Ticket className="w-7 h-7 text-white" />
-                    </div>
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="font-extrabold text-sm">{t("home.have_voucher", lang)}</h3>
-                    <p className="text-xs text-muted-foreground mt-0.5">{t("home.claim_now", lang)}</p>
-                  </div>
-                  <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
-                    <ChevronRight className="w-4 h-4 text-primary group-hover:translate-x-0.5 transition-transform" />
-                  </div>
-                </CardContent>
+            {/* Voucher Card */}
+            <button onClick={() => setTab("voucher")} className="w-full text-left bg-card border border-border rounded-xl p-4 flex items-center gap-3 hover:bg-muted/40 transition-colors">
+              <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center shrink-0">
+                <Ticket className="w-5 h-5" strokeWidth={1.7} />
               </div>
-            </Card>
+              <div className="flex-1 min-w-0">
+                <h3 className="font-semibold text-sm">{t("home.have_voucher", lang)}</h3>
+                <p className="text-xs text-muted-foreground mt-0.5 truncate">{t("home.claim_now", lang)}</p>
+              </div>
+              <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" strokeWidth={1.7} />
+            </button>
 
-            {/* How To Claim - PREMIUM */}
-            <Card className="border border-border/50 shadow-lg overflow-hidden glass-card">
-              <div className="bg-gradient-to-r from-primary/15 via-accent/10 to-primary/15 px-4 py-3 flex items-center gap-2">
-                <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center">
-                  <HelpCircle className="w-3.5 h-3.5 text-white" />
-                </div>
-                <h3 className="text-sm font-extrabold">Cara Klaim Voucher</h3>
+            {/* How To Claim */}
+            <div className="bg-card border border-border rounded-xl overflow-hidden">
+              <div className="px-4 py-3 border-b border-border flex items-center gap-2">
+                <HelpCircle className="w-4 h-4 text-muted-foreground" strokeWidth={1.7} />
+                <h3 className="text-sm font-semibold">Cara Klaim Voucher</h3>
               </div>
-              <CardContent className="p-4 space-y-4">
+              <div className="p-4 space-y-3.5">
                 {[
-                  { step: "1", icon: <ShoppingBag className="w-4 h-4" />, title: "Beli Produk", desc: "Pilih dan beli produk di tab Produk menggunakan saldo.", color: "from-blue-500 to-indigo-600" },
-                  { step: "2", icon: <Ticket className="w-4 h-4" />, title: "Masukkan Kode Voucher", desc: "Setelah beli, masukkan kode voucher yang didapat di tab Voucher.", color: "from-primary to-accent" },
-                  { step: "3", icon: <CheckCircle2 className="w-4 h-4" />, title: "Klaim & Dapat Akun!", desc: "Klik Klaim dan dapatkan detail akun produkmu.", color: "from-green-500 to-emerald-600" },
+                  { step: "1", icon: <ShoppingBag className="w-4 h-4" strokeWidth={1.7} />, title: "Beli Produk", desc: "Pilih dan beli produk di tab Produk menggunakan saldo." },
+                  { step: "2", icon: <Ticket className="w-4 h-4" strokeWidth={1.7} />, title: "Masukkan Kode Voucher", desc: "Setelah beli, masukkan kode voucher yang didapat di tab Voucher." },
+                  { step: "3", icon: <CheckCircle2 className="w-4 h-4" strokeWidth={1.7} />, title: "Klaim & Dapat Akun", desc: "Klik Klaim dan dapatkan detail akun produkmu." },
                 ].map((item) => (
-                  <div key={item.step} className="flex items-start gap-3.5">
-                    <div className={`w-9 h-9 rounded-xl bg-gradient-to-br ${item.color} flex items-center justify-center shrink-0 text-white shadow-md`}>
-                      {item.icon}
+                  <div key={item.step} className="flex items-start gap-3">
+                    <div className="w-7 h-7 rounded-full bg-muted text-foreground flex items-center justify-center shrink-0 text-xs font-semibold">
+                      {item.step}
                     </div>
-                    <div>
-                      <p className="text-sm font-bold flex items-center gap-1.5">{item.title}</p>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold">{item.title}</p>
                       <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">{item.desc}</p>
                     </div>
                   </div>
                 ))}
-                <Button size="sm" variant="outline" className="w-full gap-1.5 mt-2 rounded-xl h-10 font-bold border-primary/30 hover:bg-primary/5" onClick={() => setTab("voucher")}>
-                  <Ticket className="w-4 h-4" /> Coba Klaim Sekarang
-                </Button>
-              </CardContent>
-            </Card>
-
-            {/* Support Shortcut - ENHANCED */}
-            <Card className="overflow-hidden border-0 shadow-xl hover:shadow-2xl transition-all cursor-pointer hover:-translate-y-1.5 duration-300 glass-card-strong group" onClick={() => setTab("tiket")}>
-              <div className="bg-gradient-to-r from-destructive/20 via-destructive/5 to-destructive/20 p-[2px] rounded-xl">
-                <CardContent className="p-5 flex items-center gap-4 bg-card/90 backdrop-blur-xl rounded-[10px]">
-                  <div className="relative">
-                    <div className="absolute -inset-2 bg-gradient-to-br from-destructive to-destructive/60 rounded-2xl blur-lg opacity-30 group-hover:opacity-50 transition-opacity" />
-                    <div className="relative w-14 h-14 rounded-2xl bg-gradient-to-br from-destructive to-destructive/70 flex items-center justify-center shadow-2xl group-hover:scale-110 transition-transform">
-                      <AlertCircle className="w-7 h-7 text-destructive-foreground" />
-                    </div>
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="font-extrabold text-sm">{t("home.have_issue", lang)}</h3>
-                    <p className="text-xs text-muted-foreground mt-0.5">{t("home.submit_ticket", lang)}</p>
-                  </div>
-                  <div className="w-9 h-9 rounded-full bg-destructive/10 flex items-center justify-center group-hover:bg-destructive/20 transition-colors">
-                    <ChevronRight className="w-4 h-4 text-destructive group-hover:translate-x-0.5 transition-transform" />
-                  </div>
-                </CardContent>
+                <button onClick={() => setTab("voucher")} className="w-full mt-1 h-9 rounded-lg border border-border text-xs font-semibold hover:bg-muted/40 transition-colors flex items-center justify-center gap-1.5">
+                  <Ticket className="w-3.5 h-3.5" strokeWidth={1.7} /> Coba Klaim Sekarang
+                </button>
               </div>
-            </Card>
+            </div>
 
-            {/* Social Links - PREMIUM GRID */}
-            <Card className="overflow-hidden glass-card-strong border-0 shadow-xl">
-              <CardContent className="p-5">
-                <p className="text-xs font-extrabold text-muted-foreground uppercase tracking-widest mb-3.5 flex items-center gap-2">
-                  <Globe className="w-3.5 h-3.5" /> {t("home.follow_us", lang)}
-                </p>
-                <div className="grid grid-cols-2 gap-2.5">
-                  {socialLinks.map((s) => (
-                    <a key={s.id} href={s.url} target="_blank" rel="noopener noreferrer"
-                      className="text-white text-xs font-semibold px-3.5 py-3.5 rounded-xl flex items-center gap-2.5 hover:opacity-90 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 shadow-lg group"
-                      style={{ background: `linear-gradient(135deg, ${s.color_from}, ${s.color_to})` }}>
-                      {s.icon_url ? (
-                        <img src={s.icon_url} alt={s.platform} className="w-6 h-6 object-contain rounded group-hover:scale-110 transition-transform flex-shrink-0" />
-                      ) : (
-                        <span className="w-6 h-6 rounded bg-white/20 flex items-center justify-center text-sm font-bold flex-shrink-0 group-hover:scale-110 transition-transform">{s.platform[0]?.toUpperCase()}</span>
-                      )}
-                      <span className="truncate">{s.label}</span>
-                    </a>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
+            {/* Support Shortcut */}
+            <button onClick={() => setTab("tiket")} className="w-full text-left bg-card border border-border rounded-xl p-4 flex items-center gap-3 hover:bg-muted/40 transition-colors">
+              <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center shrink-0">
+                <AlertCircle className="w-5 h-5" strokeWidth={1.7} />
+              </div>
+              <div className="flex-1 min-w-0">
+                <h3 className="font-semibold text-sm">{t("home.have_issue", lang)}</h3>
+                <p className="text-xs text-muted-foreground mt-0.5 truncate">{t("home.submit_ticket", lang)}</p>
+              </div>
+              <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" strokeWidth={1.7} />
+            </button>
+
+            {/* Social Links */}
+            <div className="bg-card border border-border rounded-xl p-4">
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3 flex items-center gap-1.5">
+                <Globe className="w-3.5 h-3.5" strokeWidth={1.7} /> {t("home.follow_us", lang)}
+              </p>
+              <div className="grid grid-cols-3 gap-2">
+                {socialLinks.map((s) => (
+                  <a key={s.id} href={s.url} target="_blank" rel="noopener noreferrer"
+                    className="flex flex-col items-center gap-1.5 py-3 px-2 rounded-lg border border-border hover:bg-muted/40 transition-colors">
+                    {s.icon_url ? (
+                      <img src={s.icon_url} alt={s.platform} className="w-7 h-7 object-contain rounded" />
+                    ) : (
+                      <span className="w-7 h-7 rounded bg-muted flex items-center justify-center text-xs font-semibold">{s.platform[0]?.toUpperCase()}</span>
+                    )}
+                    <span className="truncate text-[11px] font-medium w-full text-center">{s.label}</span>
+                  </a>
+                ))}
+              </div>
+            </div>
           </div>
         )}
 
