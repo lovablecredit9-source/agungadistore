@@ -1501,16 +1501,16 @@ const Index = () => {
   return (
     <div className={`min-h-screen text-foreground flex flex-col ${resolvedTheme === "custom" ? "bg-transparent" : "bg-background"}`}>
       <InstallPrompt />
-      {/* Header */}
-      <header className="sticky top-0 z-50 bg-gradient-to-r from-primary via-primary/90 to-primary/80 text-primary-foreground px-4 py-3 shadow-xl">
+      {/* Header — flat IG/TikTok style */}
+      <header className="sticky top-0 z-50 bg-background/95 backdrop-blur-md text-foreground px-4 py-2.5 border-b border-border">
         <div className="flex items-center gap-2 max-w-lg mx-auto">
           <Sheet open={showNavMenu} onOpenChange={setShowNavMenu}>
             <SheetTrigger asChild>
               <button
                 aria-label="Buka menu navigasi"
-                className="w-9 h-9 rounded-xl bg-primary-foreground/20 backdrop-blur-sm flex items-center justify-center hover:bg-primary-foreground/30 transition-colors flex-shrink-0"
+                className="w-9 h-9 rounded-full flex items-center justify-center hover:bg-muted transition-colors flex-shrink-0"
               >
-                <Menu className="w-5 h-5" />
+                <Menu className="w-5 h-5" strokeWidth={1.7} />
               </button>
             </SheetTrigger>
             <SheetContent side="left" className="w-[280px] sm:w-[320px] p-0 flex flex-col">
