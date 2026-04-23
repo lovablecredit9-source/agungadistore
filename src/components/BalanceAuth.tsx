@@ -472,38 +472,38 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser }: BalanceA
   if (currentUser) {
     return (
       <div className="space-y-2">
-        <div className="flex items-center gap-2 flex-wrap">
-          <Button size="sm" variant="outline" className="gap-1.5 text-xs font-bold" onClick={() => { setShowEditProfile(!showEditProfile); resetEditForm(); }} disabled={banned}>
+        <div className="grid grid-cols-2 gap-2">
+          <Button size="sm" variant="outline" className="h-10 justify-start gap-2 rounded-xl text-xs font-semibold" onClick={() => { setShowEditProfile(!showEditProfile); resetEditForm(); }} disabled={banned}>
             <Edit2 className="w-3.5 h-3.5" /> Edit Profil
           </Button>
-          <Button size="sm" variant="outline" className="gap-1.5 text-xs font-bold" onClick={() => setShowSwitcher(!showSwitcher)} disabled={banned}>
+          <Button size="sm" variant="outline" className="h-10 justify-start gap-2 rounded-xl text-xs font-semibold" onClick={() => setShowSwitcher(!showSwitcher)} disabled={banned}>
             <Users className="w-3.5 h-3.5" /> Ganti Akun
             {savedAccounts.length > 0 && (
-              <span className="ml-0.5 px-1.5 py-0.5 rounded-full bg-primary/15 text-primary text-[10px] font-bold">
+              <span className="ml-auto rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-semibold text-foreground">
                 {savedAccounts.length}/{MAX_SAVED_ACCOUNTS}
               </span>
             )}
           </Button>
-          <Button size="sm" variant="outline" className="gap-1.5 text-xs font-bold" onClick={handleAddAccount} disabled={banned || savedAccounts.length >= MAX_SAVED_ACCOUNTS}>
+          <Button size="sm" variant="outline" className="h-10 justify-start gap-2 rounded-xl text-xs font-semibold" onClick={handleAddAccount} disabled={banned || savedAccounts.length >= MAX_SAVED_ACCOUNTS}>
             <Plus className="w-3.5 h-3.5" /> Tambah Akun
           </Button>
-          <Button size="sm" variant="outline" className="gap-1.5 text-xs font-bold text-destructive border-destructive/30" onClick={handleLogout}>
+          <Button size="sm" variant="outline" className="h-10 justify-start gap-2 rounded-xl text-xs font-semibold text-destructive" onClick={handleLogout}>
             <LogOut className="w-3.5 h-3.5" /> Logout
           </Button>
-          <Button size="sm" variant="outline" className="gap-1.5 text-xs font-bold text-destructive border-destructive/30" onClick={handleLogoutAll}>
+          <Button size="sm" variant="outline" className="h-10 justify-start gap-2 rounded-xl text-xs font-semibold text-destructive" onClick={handleLogoutAll}>
             <Trash2 className="w-3.5 h-3.5" /> Logout Semua
           </Button>
-          <Button size="sm" variant="ghost" className="gap-1.5 text-xs font-bold" onClick={() => setShowHistory(!showHistory)} disabled={banned}>
+          <Button size="sm" variant="outline" className="h-10 justify-start gap-2 rounded-xl text-xs font-semibold" onClick={() => setShowHistory(!showHistory)} disabled={banned}>
             <Smartphone className="w-3.5 h-3.5" /> Riwayat
           </Button>
         </div>
 
         {showSwitcher && !banned && (
-          <Card className="border border-primary/20">
+          <Card className="border border-border bg-card shadow-none">
             <CardContent className="p-3 space-y-2">
               <div className="flex items-center justify-between">
-                <h4 className="text-xs font-bold flex items-center gap-1.5">
-                  <ArrowRightLeft className="w-3.5 h-3.5 text-primary" /> Akun Tersimpan ({savedAccounts.length}/{MAX_SAVED_ACCOUNTS})
+                <h4 className="text-xs font-semibold flex items-center gap-1.5">
+                  <ArrowRightLeft className="w-3.5 h-3.5 text-foreground" /> Akun Tersimpan ({savedAccounts.length}/{MAX_SAVED_ACCOUNTS})
                 </h4>
                 <Button size="sm" variant="ghost" className="h-6 px-2 text-[11px]" onClick={() => setShowSwitcher(false)}>
                   <X className="w-3 h-3" />
@@ -525,11 +525,11 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser }: BalanceA
                         disabled={isSwitching}
                         onClick={() => handleQuickSwitch(acc)}
                         className={`w-full flex items-center gap-2 p-2 rounded-lg border text-left transition-colors ${
-                          isActive ? "bg-primary/10 border-primary/40" : "bg-muted/40 border-transparent hover:bg-muted"
+                          isActive ? "bg-muted border-border" : "bg-background border-border hover:bg-muted/50"
                         }`}
                       >
-                        <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs ${
-                          isActive ? "bg-primary text-primary-foreground" : "bg-gradient-to-br from-primary/70 to-accent/70 text-primary-foreground"
+                        <div className={`w-8 h-8 rounded-full flex items-center justify-center font-semibold text-xs ${
+                          isActive ? "bg-foreground text-background" : "bg-muted text-foreground"
                         }`}>
                           {acc.username.slice(0, 2).toUpperCase()}
                         </div>
@@ -540,7 +540,7 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser }: BalanceA
                           </p>
                         </div>
                         {isActive ? (
-                          <span className="text-[10px] font-bold text-primary">Aktif</span>
+                          <span className="text-[10px] font-semibold text-foreground">Aktif</span>
                         ) : isSwitching ? (
                           <span className="text-[10px] text-muted-foreground">Beralih...</span>
                         ) : (
@@ -568,12 +568,12 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser }: BalanceA
                   <Plus className="w-3.5 h-3.5" /> Tambah Akun ({savedAccounts.length}/{MAX_SAVED_ACCOUNTS})
                 </Button>
               ) : (
-                <div className="text-[10px] text-amber-600 dark:text-amber-400 text-center py-1.5 px-2 rounded bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900">
-                  ⚠️ Slot penuh ({MAX_SAVED_ACCOUNTS}/{MAX_SAVED_ACCOUNTS}). Hapus salah satu akun untuk menambah baru.
+                <div className="text-[10px] text-muted-foreground text-center py-2 px-2 rounded-xl bg-muted/50 border border-border">
+                  Slot penuh ({MAX_SAVED_ACCOUNTS}/{MAX_SAVED_ACCOUNTS}). Hapus salah satu akun untuk menambah baru.
                 </div>
               )}
               <p className="text-[10px] text-muted-foreground leading-relaxed">
-                💡 Klik akun untuk beralih cepat tanpa input sandi. <strong>Logout Semua</strong> akan menghapus semua akun tersimpan dari perangkat.
+                Klik akun untuk beralih cepat tanpa input sandi. <strong>Logout Semua</strong> akan menghapus semua akun tersimpan dari perangkat.
               </p>
             </CardContent>
           </Card>

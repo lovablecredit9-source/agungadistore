@@ -3088,16 +3088,16 @@ const Index = () => {
                   <div className="flex items-center gap-1.5">
                     {balanceTransactions.length > 0 && (
                       <Button
-                        variant={smartSaldo ? "default" : "outline"}
+                        variant="outline"
                         size="sm"
-                        className={`gap-1 text-xs h-7 rounded-full ${smartSaldo ? "bg-gradient-to-r from-primary to-accent text-primary-foreground" : ""}`}
+                        className="gap-1 text-xs h-7 rounded-full font-medium"
                         onClick={() => setSmartSaldo(v => !v)}
                       >
                         <Sparkles className="w-3 h-3" /> {smartSaldo ? "Pintar ✓" : "Pintar"}
                       </Button>
                     )}
                     {balanceTransactions.length > 0 && (
-                      <Button variant="outline" size="sm" className="gap-1 text-xs h-7" onClick={() => setShowTxExport(!showTxExport)}>
+                      <Button variant="outline" size="sm" className="gap-1 text-xs h-7 rounded-full" onClick={() => setShowTxExport(!showTxExport)}>
                         <Download className="w-3 h-3" /> {showTxExport ? "Tutup" : "Ekspor"}
                       </Button>
                     )}

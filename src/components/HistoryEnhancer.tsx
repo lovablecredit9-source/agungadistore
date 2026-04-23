@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import {
   Search, Filter, Download, FileText, FileSpreadsheet, BarChart3,
   Calendar as CalendarIcon, X, TrendingUp, TrendingDown, ChevronDown,
-  LayoutList, Clock, Sparkles, ArrowDownUp,
+  LayoutList, Clock, BarChart2, ArrowDownUp,
 } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -229,7 +229,7 @@ export default function HistoryEnhancer({
   return (
     <div className="space-y-3">
       {/* === Toolbar === */}
-      <div className="bg-card rounded-2xl border border-border/60 shadow-sm p-3 space-y-2.5">
+      <div className="bg-card rounded-2xl border border-border/60 p-3 space-y-2.5">
         {/* Search + Toggles */}
         <div className="flex items-center gap-2">
           <div className="relative flex-1">
@@ -292,8 +292,8 @@ export default function HistoryEnhancer({
             <Popover>
               <PopoverTrigger asChild>
                 <Button
-                  type="button" size="sm"
-                  className="h-7 px-2 rounded-lg text-[10px] font-bold gap-1 bg-gradient-to-r from-primary to-primary/80 text-primary-foreground"
+                  type="button" size="sm" variant="outline"
+                  className="h-7 px-2 rounded-lg text-[10px] font-semibold gap-1"
                   disabled={filtered.length === 0}
                 >
                   <Download className="w-3 h-3" /> Export
@@ -304,13 +304,13 @@ export default function HistoryEnhancer({
                   onClick={exportPDF}
                   className="w-full flex items-center gap-2 px-2 py-2 rounded-lg hover:bg-muted text-xs font-bold"
                 >
-                  <FileText className="w-3.5 h-3.5 text-rose-500" /> PDF
+                    <FileText className="w-3.5 h-3.5 text-foreground" /> PDF
                 </button>
                 <button
                   onClick={exportCSV}
                   className="w-full flex items-center gap-2 px-2 py-2 rounded-lg hover:bg-muted text-xs font-bold"
                 >
-                  <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600" /> Excel (CSV)
+                    <FileSpreadsheet className="w-3.5 h-3.5 text-foreground" /> Excel (CSV)
                 </button>
               </PopoverContent>
             </Popover>
@@ -339,7 +339,7 @@ export default function HistoryEnhancer({
                     <button
                       key={q.label}
                       onClick={() => quickRange(q.days)}
-                      className="text-[10px] font-bold px-2 py-1 rounded-full bg-muted hover:bg-primary/10 hover:text-primary transition-colors"
+                    className="text-[10px] font-semibold px-2 py-1 rounded-full bg-muted hover:bg-muted/80 transition-colors"
                     >
                       {q.label}
                     </button>
@@ -347,7 +347,7 @@ export default function HistoryEnhancer({
                   {(dateFrom || dateTo) && (
                     <button
                       onClick={() => { setDateFrom(undefined); setDateTo(undefined); }}
-                      className="text-[10px] font-bold px-2 py-1 rounded-full bg-rose-500/10 text-rose-600 hover:bg-rose-500/20 inline-flex items-center gap-1"
+                      className="text-[10px] font-semibold px-2 py-1 rounded-full bg-muted text-foreground hover:bg-muted/80 inline-flex items-center gap-1"
                     >
                       <X className="w-3 h-3" /> Tanggal
                     </button>
@@ -409,7 +409,7 @@ export default function HistoryEnhancer({
                 </div>
 
                 {activeFiltersCount > 0 && (
-                  <Button onClick={clearFilters} variant="ghost" size="sm" className="h-7 text-[11px] font-bold w-full gap-1 text-rose-600 hover:bg-rose-500/10">
+                  <Button onClick={clearFilters} variant="ghost" size="sm" className="h-7 text-[11px] font-semibold w-full gap-1 text-foreground hover:bg-muted">
                     <X className="w-3 h-3" /> Reset semua filter
                   </Button>
                 )}
@@ -427,28 +427,28 @@ export default function HistoryEnhancer({
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -8 }}
           >
-            <Card className="border border-border/60 shadow-sm bg-card">
+            <Card className="border border-border/60 bg-card shadow-none">
               <CardContent className="p-3 space-y-3">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-1.5">
-                    <Sparkles className="w-3.5 h-3.5 text-primary" />
-                    <p className="text-[11px] font-extrabold text-foreground">Statistik 14 Hari Terakhir</p>
+                    <BarChart2 className="w-3.5 h-3.5 text-foreground" />
+                    <p className="text-[11px] font-semibold text-foreground">Statistik 14 Hari Terakhir</p>
                   </div>
-                  <Badge variant="outline" className="text-[9px] font-bold">{stats.count} item</Badge>
+                  <Badge variant="outline" className="text-[9px] font-semibold">{stats.count} item</Badge>
                 </div>
 
                 <div className="grid grid-cols-3 gap-2">
-                  <div className="bg-gradient-to-br from-primary/15 to-primary/5 border border-primary/20 rounded-xl p-2 text-center">
-                    <p className="text-[9px] font-bold text-muted-foreground uppercase">Total</p>
-                    <p className="text-base font-extrabold text-primary leading-none mt-1"><CountUp value={stats.count} /></p>
+                  <div className="rounded-xl border border-border bg-muted/40 p-2 text-center">
+                    <p className="text-[9px] font-semibold text-muted-foreground uppercase">Total</p>
+                    <p className="text-base font-semibold text-foreground leading-none mt-1"><CountUp value={stats.count} /></p>
                   </div>
-                  <div className="bg-gradient-to-br from-emerald-500/15 to-emerald-500/5 border border-emerald-500/20 rounded-xl p-2 text-center">
-                    <p className="text-[9px] font-bold text-muted-foreground uppercase inline-flex items-center gap-0.5"><TrendingUp className="w-2.5 h-2.5" /> Masuk</p>
-                    <p className="text-[10px] font-extrabold text-emerald-600 leading-tight mt-1">{formatAmount(stats.totalIn)}</p>
+                  <div className="rounded-xl border border-border bg-muted/40 p-2 text-center">
+                    <p className="text-[9px] font-semibold text-muted-foreground uppercase inline-flex items-center gap-0.5"><TrendingUp className="w-2.5 h-2.5" /> Masuk</p>
+                    <p className="text-[10px] font-semibold text-foreground leading-tight mt-1">{formatAmount(stats.totalIn)}</p>
                   </div>
-                  <div className="bg-gradient-to-br from-rose-500/15 to-rose-500/5 border border-rose-500/20 rounded-xl p-2 text-center">
-                    <p className="text-[9px] font-bold text-muted-foreground uppercase inline-flex items-center gap-0.5"><TrendingDown className="w-2.5 h-2.5" /> Keluar</p>
-                    <p className="text-[10px] font-extrabold text-rose-600 leading-tight mt-1">{formatAmount(stats.totalOut)}</p>
+                  <div className="rounded-xl border border-border bg-muted/40 p-2 text-center">
+                    <p className="text-[9px] font-semibold text-muted-foreground uppercase inline-flex items-center gap-0.5"><TrendingDown className="w-2.5 h-2.5" /> Keluar</p>
+                    <p className="text-[10px] font-semibold text-foreground leading-tight mt-1">{formatAmount(stats.totalOut)}</p>
                   </div>
                 </div>
 
@@ -467,13 +467,13 @@ export default function HistoryEnhancer({
                               <motion.div
                                 initial={{ height: 0 }} animate={{ height: `${inH}%` }}
                                 transition={{ duration: 0.4, delay: i * 0.02 }}
-                                className="w-1/2 bg-emerald-500/80 rounded-t min-h-[1px]"
+                                className="w-1/2 bg-foreground rounded-t min-h-[1px] opacity-70"
                                 title={`Masuk: ${formatAmount(d.in)}`}
                               />
                               <motion.div
                                 initial={{ height: 0 }} animate={{ height: `${outH}%` }}
                                 transition={{ duration: 0.4, delay: i * 0.02 + 0.05 }}
-                                className="w-1/2 bg-rose-500/80 rounded-t min-h-[1px]"
+                                className="w-1/2 bg-muted-foreground rounded-t min-h-[1px] opacity-60"
                                 title={`Keluar: ${formatAmount(d.out)}`}
                               />
                             </>
@@ -481,7 +481,7 @@ export default function HistoryEnhancer({
                             <motion.div
                               initial={{ height: 0 }} animate={{ height: `${h}%` }}
                               transition={{ duration: 0.4, delay: i * 0.02 }}
-                              className="w-full bg-gradient-to-t from-primary to-primary/60 rounded-t min-h-[1px]"
+                                className="w-full bg-foreground/70 rounded-t min-h-[1px]"
                               title={`${d.count} item`}
                             />
                           )}
@@ -505,7 +505,7 @@ export default function HistoryEnhancer({
             : `${filtered.length} dari ${items.length} riwayat`}
         </p>
         {sort !== "newest" && (
-          <span className="text-[9px] font-bold text-primary inline-flex items-center gap-1">
+          <span className="text-[9px] font-semibold text-foreground inline-flex items-center gap-1">
             <ArrowDownUp className="w-2.5 h-2.5" />
             {sort === "oldest" ? "Terlama" : sort === "amount_high" ? "Nominal ↓" : "Nominal ↑"}
           </span>

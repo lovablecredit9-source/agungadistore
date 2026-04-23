@@ -5,7 +5,7 @@ import { getVisitorId } from "@/lib/visitor-id";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Wallet, Key, CalendarDays, HardDrive, Loader2, Lock, Infinity, Sparkles, Package } from "lucide-react";
+import { Wallet, Key, CalendarDays, HardDrive, Loader2, Lock, Infinity, Layers3, Package } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useGameCredits, GameCreditsBadge } from "@/components/games/GameCredits";
 import { useGameBalance, GameBalanceBadge } from "@/components/games/GameBalance";
@@ -231,7 +231,7 @@ export default function PlusTab() {
     <div className="space-y-4">
       <BanBanner />
       <h2 className="text-lg font-semibold flex items-center gap-2 tracking-tight">
-        <Sparkles className="w-5 h-5 text-foreground" strokeWidth={1.7} /> Plus
+        <Layers3 className="w-5 h-5 text-foreground" strokeWidth={1.7} /> Plus
       </h2>
       <BanLock fallbackLabel="Plus / Streak Shop">
 
@@ -257,14 +257,14 @@ export default function PlusTab() {
         <GameCreditsBadge credits={credits} isUnlimited={isUnlimited} unlimitedUntil={unlimitedUntil} />
         <GameBalanceBadge amount={gameBalance} />
       </div>
-      <p className="text-[10px] text-muted-foreground -mt-2 px-1">
-        💡 <strong>Saldo IN</strong> hanya bisa dipakai untuk Game, Streak, dan Storage — tidak untuk produk.
+      <p className="text-[11px] text-muted-foreground px-1 leading-relaxed">
+        <strong>Saldo IN</strong> dipakai untuk Game, Streak, dan Storage, bukan untuk pembelian produk.
       </p>
 
       {flashSaleEnd && new Date(flashSaleEnd) > new Date() && (
-        <div className="bg-gradient-to-r from-yellow-500/20 to-orange-500/20 border border-yellow-500/30 rounded-lg p-2 text-center">
-          <p className="text-xs font-bold text-yellow-600 flex items-center justify-center gap-1">
-            🔥 FLASH SALE! Berakhir {new Date(flashSaleEnd).toLocaleString("id-ID")}
+        <div className="rounded-xl border border-border bg-muted/40 p-3 text-center">
+          <p className="text-xs font-semibold text-foreground">
+            Promo aktif sampai {new Date(flashSaleEnd).toLocaleString("id-ID")}
           </p>
         </div>
       )}
@@ -273,7 +273,7 @@ export default function PlusTab() {
       {bundlePackages.length > 0 && (
         <SectionCard
           title="Paket Bundel"
-          icon={<Package className="w-4 h-4 text-purple-500" />}
+          icon={<Package className="w-4 h-4 text-foreground" strokeWidth={1.8} />}
           description="Hemat lebih banyak dengan paket kombo"
           needPin={bundleNeedPin}
           pin={bundlePin}
@@ -295,7 +295,7 @@ export default function PlusTab() {
                 price={pkg.price}
                 buying={bundleBuying === pkg.id}
                 anyBuying={!!bundleBuying}
-                icon={<Package className="w-4 h-4 text-purple-500" />}
+                icon={<Package className="w-4 h-4 text-foreground" strokeWidth={1.8} />}
                 onClick={() => handleBuyBundle(pkg.id)}
               />
             );
@@ -306,7 +306,7 @@ export default function PlusTab() {
       {/* KREDIT GAME */}
       <SectionCard
         title="Kredit Game"
-        icon={<Key className="w-4 h-4 text-accent" />}
+        icon={<Key className="w-4 h-4 text-foreground" strokeWidth={1.8} />}
         description="1 kredit = 1x lihat kunci jawaban"
         needPin={creditNeedPin}
         pin={creditPin}
@@ -324,7 +324,7 @@ export default function PlusTab() {
             originalPrice={pkg.originalPrice}
             buying={creditBuying === pkg.id}
             anyBuying={!!creditBuying}
-            icon={pkg.is_unlimited ? <Infinity className="w-4 h-4 text-purple-500" /> : <Key className="w-4 h-4 text-accent" />}
+            icon={pkg.is_unlimited ? <Infinity className="w-4 h-4 text-foreground" strokeWidth={1.8} /> : <Key className="w-4 h-4 text-foreground" strokeWidth={1.8} />}
             onClick={() => handleBuyCredit(pkg.id)}
           />
         ))}
@@ -333,7 +333,7 @@ export default function PlusTab() {
       {/* STREAK */}
       <SectionCard
         title="Paket Streak"
-        icon={<CalendarDays className="w-4 h-4 text-orange-500" />}
+        icon={<CalendarDays className="w-4 h-4 text-foreground" strokeWidth={1.8} />}
         description="Auto-klaim streak harian"
         needPin={streakNeedPin}
         pin={streakPin}
@@ -351,7 +351,7 @@ export default function PlusTab() {
             originalPrice={pkg.originalPrice}
             buying={streakBuying === pkg.id}
             anyBuying={!!streakBuying}
-            icon={<CalendarDays className="w-4 h-4 text-orange-500" />}
+            icon={<CalendarDays className="w-4 h-4 text-foreground" strokeWidth={1.8} />}
             onClick={() => handleBuyStreak(pkg.id)}
           />
         ))}
@@ -360,7 +360,7 @@ export default function PlusTab() {
       {/* STORAGE */}
       <SectionCard
         title="Paket Storage Musik"
-        icon={<HardDrive className="w-4 h-4 text-blue-500" />}
+        icon={<HardDrive className="w-4 h-4 text-foreground" strokeWidth={1.8} />}
         description="Tambah ruang penyimpanan musik"
         needPin={storageNeedPin}
         pin={storagePin}
@@ -377,7 +377,7 @@ export default function PlusTab() {
             price={pkg.price}
             buying={storageBuying === pkg.id}
             anyBuying={!!storageBuying}
-            icon={<HardDrive className="w-4 h-4 text-blue-500" />}
+            icon={<HardDrive className="w-4 h-4 text-foreground" strokeWidth={1.8} />}
             onClick={() => handleBuyStorage(pkg.id)}
           />
         ))}
@@ -393,11 +393,16 @@ function SectionCard({ title, icon, description, children, needPin, pin, setPin,
   onConfirmPin: () => void; onCancelPin: () => void;
 }) {
   return (
-    <Card>
+    <Card className="border border-border bg-card shadow-none">
       <CardContent className="p-4 space-y-3">
-        <div>
-          <h3 className="font-bold text-sm flex items-center gap-2">{icon} {title}</h3>
-          <p className="text-[11px] text-muted-foreground">{description}</p>
+        <div className="flex items-start gap-3">
+          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-muted">
+            {icon}
+          </div>
+          <div>
+            <h3 className="font-semibold text-sm flex items-center gap-2">{title}</h3>
+            <p className="text-[11px] text-muted-foreground">{description}</p>
+          </div>
         </div>
         {needPin && selectedPkg ? (
           <div className="space-y-2">
@@ -422,19 +427,19 @@ function PackageButton({ label, price, originalPrice, buying, anyBuying, icon, o
   const hasPromo = originalPrice && originalPrice !== price;
   return (
     <motion.div whileTap={{ scale: 0.97 }}>
-      <Button variant="outline" className="w-full justify-between h-auto py-3" disabled={anyBuying} onClick={onClick}>
+      <Button variant="outline" className="w-full justify-between h-auto rounded-xl border-border bg-background py-3 shadow-none" disabled={anyBuying} onClick={onClick}>
         <div className="flex items-center gap-2">
-          {icon}
-          <span className="font-bold text-sm text-left">{label}</span>
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-muted">{icon}</div>
+          <span className="font-semibold text-sm text-left">{label}</span>
         </div>
         <div className="flex items-center gap-2">
           {hasPromo ? (
             <div className="text-right">
               <span className="text-[10px] text-muted-foreground line-through block">{formatPrice(originalPrice!)}</span>
-              <span className="text-xs font-bold text-green-600">{formatPrice(price)}</span>
+              <span className="text-xs font-semibold text-foreground">{formatPrice(price)}</span>
             </div>
           ) : (
-            <span className="text-xs text-muted-foreground">{formatPrice(price)}</span>
+            <span className="text-xs font-medium text-muted-foreground">{formatPrice(price)}</span>
           )}
           {buying && <Loader2 className="w-3 h-3 animate-spin" />}
         </div>
