@@ -621,58 +621,82 @@ export default function LuckRoyaleNyawa() {
             </div>
           )}
 
-          {/* 🔓 AKSES TOKEN SHOP — wajib unlock dengan saldo Rp 100k (berlaku 30 hari) */}
+          {/* 🔓 AKSES PREMIUM (Rp 100k/bln) & SUPER PREMIUM (Rp 300k/bln) */}
           {tokenShop.length > 0 && (
-            <div className={`rounded-2xl border-2 p-3 ${shopAccess.isActive ? "bg-gradient-to-br from-emerald-900/50 via-teal-900/40 to-cyan-900/50 border-emerald-400/60" : "bg-gradient-to-br from-rose-900/50 via-red-900/40 to-orange-900/50 border-rose-400/60"}`}>
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-1.5">
-                  <Crown className={`w-4 h-4 ${shopAccess.isActive ? "text-emerald-300" : "text-rose-300"}`} fill="currentColor" />
-                  <h3 className={`text-xs font-black tracking-widest ${shopAccess.isActive ? "text-emerald-200" : "text-rose-200"}`}>
-                    {shopAccess.isActive ? "| AKSES TOKEN SHOP AKTIF" : "| AKSES TOKEN SHOP TERKUNCI"}
-                  </h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              {/* Premium */}
+              <div className={`rounded-2xl border-2 p-3 ${shopAccess.isActive ? "bg-gradient-to-br from-emerald-900/50 via-teal-900/40 to-cyan-900/50 border-emerald-400/60" : "bg-gradient-to-br from-rose-900/50 via-red-900/40 to-orange-900/50 border-rose-400/60"}`}>
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-1.5">
+                    <Crown className={`w-4 h-4 ${shopAccess.isActive ? "text-emerald-300" : "text-rose-300"}`} fill="currentColor" />
+                    <h3 className={`text-[11px] font-black tracking-widest ${shopAccess.isActive ? "text-emerald-200" : "text-rose-200"}`}>
+                      | PREMIUM {shopAccess.isActive ? "AKTIF" : "LOCKED"}
+                    </h3>
+                  </div>
+                  <Badge className={`${shopAccess.isActive ? "bg-emerald-500" : "bg-rose-500"} text-white font-black text-[8px]`}>
+                    {shopAccess.isActive ? "✓" : "🔒"}
+                  </Badge>
                 </div>
-                <Badge className={`${shopAccess.isActive ? "bg-emerald-500" : "bg-rose-500"} text-white font-black text-[8px]`}>
-                  {shopAccess.isActive ? "✓ AKTIF" : "🔒 LOCKED"}
-                </Badge>
-              </div>
-              {shopAccess.isActive ? (
-                <>
-                  <p className="text-[10px] text-emerald-100/90 mb-1">
-                    Akses kamu aktif sampai{" "}
-                    <span className="font-black text-emerald-200">
-                      {shopAccess.activeUntil ? new Date(shopAccess.activeUntil).toLocaleString("id-ID", { dateStyle: "medium", timeStyle: "short" }) : "-"}
-                    </span>
+                {shopAccess.isActive ? (
+                  <p className="text-[10px] text-emerald-100/90">
+                    Aktif sampai <span className="font-black text-emerald-200">{shopAccess.activeUntil ? new Date(shopAccess.activeUntil).toLocaleDateString("id-ID") : "-"}</span>
+                    {shopAccess.activeUntil && <> · ⏳ <span className="font-black">{Math.max(0, Math.ceil((new Date(shopAccess.activeUntil).getTime() - Date.now()) / 86400000))} hari</span></>}
                   </p>
-                  {shopAccess.activeUntil && (
-                    <p className="text-[10px] text-emerald-100/70">
-                      ⏳ Sisa: <span className="font-black">{Math.max(0, Math.ceil((new Date(shopAccess.activeUntil).getTime() - Date.now()) / 86400000))} hari</span>
+                ) : (
+                  <>
+                    <p className="text-[10px] text-rose-100/90 mb-2">
+                      Tukar Lucky Token tier <span className="font-black">Premium</span> (20-60). Hadiah MANTAP. Berlaku <span className="font-black">{shopAccess.durationDays} hari</span>.
                     </p>
-                  )}
-                </>
-              ) : (
-                <>
-                  <p className="text-[10px] text-rose-100/90 mb-2">
-                    Untuk bisa tukar Lucky Token jadi hadiah <span className="font-black text-rose-200">PASTI</span>, kamu wajib beli akses Token Shop. Berlaku <span className="font-black">{shopAccess.durationDays} hari</span>.
+                    <Button
+                      disabled={redeeming === "__shop_access__"}
+                      onClick={() => buyShopAccess("premium")}
+                      className="w-full h-9 text-[11px] font-black bg-gradient-to-r from-amber-400 via-orange-500 to-red-600 hover:from-amber-500 hover:via-orange-600 hover:to-red-700 text-white shadow-lg shadow-orange-500/40"
+                    >
+                      {redeeming === "__shop_access__" ? <Loader2 className="w-4 h-4 animate-spin" /> : <>🔓 Rp {shopAccess.price.toLocaleString("id-ID")} / {shopAccess.durationDays} HARI</>}
+                    </Button>
+                  </>
+                )}
+              </div>
+
+              {/* Super Premium */}
+              <div className={`rounded-2xl border-2 p-3 ${superShopAccess.isActive ? "bg-gradient-to-br from-fuchsia-900/60 via-purple-900/50 to-amber-900/40 border-fuchsia-400/70" : "bg-gradient-to-br from-purple-900/50 via-fuchsia-900/40 to-rose-900/50 border-purple-400/60"}`}>
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-1.5">
+                    <Crown className={`w-4 h-4 ${superShopAccess.isActive ? "text-amber-300" : "text-fuchsia-300"}`} fill="currentColor" />
+                    <h3 className={`text-[11px] font-black tracking-widest ${superShopAccess.isActive ? "text-amber-200" : "text-fuchsia-200"}`}>
+                      | SUPER {superShopAccess.isActive ? "AKTIF" : "LOCKED"}
+                    </h3>
+                  </div>
+                  <Badge className={`${superShopAccess.isActive ? "bg-amber-500" : "bg-fuchsia-600"} text-white font-black text-[8px]`}>
+                    {superShopAccess.isActive ? "✓ DIVINE" : "👑 MEGA"}
+                  </Badge>
+                </div>
+                {superShopAccess.isActive ? (
+                  <p className="text-[10px] text-amber-100/90">
+                    Aktif sampai <span className="font-black text-amber-200">{superShopAccess.activeUntil ? new Date(superShopAccess.activeUntil).toLocaleDateString("id-ID") : "-"}</span>
+                    {superShopAccess.activeUntil && <> · ⏳ <span className="font-black">{Math.max(0, Math.ceil((new Date(superShopAccess.activeUntil).getTime() - Date.now()) / 86400000))} hari</span></>}
                   </p>
-                  <Button
-                    disabled={redeeming === "__shop_access__"}
-                    onClick={buyShopAccess}
-                    className="w-full h-9 text-xs font-black bg-gradient-to-r from-amber-400 via-orange-500 to-red-600 hover:from-amber-500 hover:via-orange-600 hover:to-red-700 text-white shadow-lg shadow-orange-500/40"
-                  >
-                    {redeeming === "__shop_access__" ? (
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                    ) : (
-                      <>🔓 BELI AKSES — Rp {shopAccess.price.toLocaleString("id-ID")} / {shopAccess.durationDays} HARI</>
-                    )}
-                  </Button>
-                </>
-              )}
+                ) : (
+                  <>
+                    <p className="text-[10px] text-fuchsia-100/90 mb-2">
+                      Tier <span className="font-black text-amber-300">SUPER PREMIUM</span> (70-150) — hadiah MEGA: 100k Gem, 1jt Coin, 15k Nyawa! Berlaku <span className="font-black">{superShopAccess.durationDays} hari</span>.
+                    </p>
+                    <Button
+                      disabled={redeeming === "__super_shop_access__"}
+                      onClick={() => buyShopAccess("super_premium")}
+                      className="w-full h-9 text-[11px] font-black bg-gradient-to-r from-fuchsia-500 via-purple-600 to-amber-500 hover:from-fuchsia-600 hover:via-purple-700 hover:to-amber-600 text-white shadow-lg shadow-fuchsia-500/40"
+                    >
+                      {redeeming === "__super_shop_access__" ? <Loader2 className="w-4 h-4 animate-spin" /> : <>👑 Rp {superShopAccess.price.toLocaleString("id-ID")} / {superShopAccess.durationDays} HARI</>}
+                    </Button>
+                  </>
+                )}
+              </div>
             </div>
           )}
 
-          {/* 🎟️ TOKEN SHOP — Tier Free / Premium (hanya bisa dipakai jika akses aktif) */}
+          {/* 🎟️ TOKEN SHOP — 3 tier (Free bebas, Premium & Super Premium butuh akses) */}
           {tokenShop.length > 0 && (
-            <div className={`rounded-2xl bg-gradient-to-br from-amber-900/40 via-orange-900/30 to-pink-900/40 border-2 border-amber-500/50 p-3 ${!shopAccess.isActive ? "opacity-70" : ""}`}>
+            <div className="rounded-2xl bg-gradient-to-br from-amber-900/40 via-orange-900/30 to-pink-900/40 border-2 border-amber-500/50 p-3">
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-1.5">
                   <Award className="w-4 h-4 text-amber-300" fill="currentColor" />
@@ -681,38 +705,55 @@ export default function LuckRoyaleNyawa() {
                 <Badge className="bg-amber-500 text-black font-black text-[8px]">🎟️ {luckyTokens}</Badge>
               </div>
               <p className="text-[10px] text-amber-100/80 mb-2">
-                Pakai Lucky Token untuk hadiah <span className="font-black text-amber-300">100% pasti</span>. Tier Premium = hadiah jauh lebih MANTAP!
+                <span className="font-black text-emerald-300">FREE</span> bebas tukar tanpa langganan. <span className="font-black text-fuchsia-300">PREMIUM</span> & <span className="font-black text-amber-300">SUPER</span> butuh akses bulanan.
               </p>
 
-              {!shopAccess.isActive && (
-                <div className="mb-2 rounded-lg bg-rose-950/60 border border-rose-500/40 p-2 text-center">
-                  <p className="text-[10px] font-black text-rose-200">
-                    🔒 Akses belum aktif — beli akses Rp {shopAccess.price.toLocaleString("id-ID")} di atas untuk bisa tukar token
-                  </p>
-                </div>
-              )}
-
-              {/* Tier toggle */}
-              <div className="grid grid-cols-2 gap-1.5 mb-2.5 bg-black/40 rounded-lg p-1">
+              {/* 3-tier toggle */}
+              <div className="grid grid-cols-3 gap-1 mb-2.5 bg-black/40 rounded-lg p-1">
                 <button
                   onClick={() => setShopTier("free")}
-                  className={`py-1.5 rounded-md text-[10px] font-black tracking-wider transition ${shopTier === "free" ? "bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-lg shadow-cyan-500/40" : "text-cyan-200/60"}`}
+                  className={`py-1.5 rounded-md text-[9px] font-black tracking-wider transition ${shopTier === "free" ? "bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-lg shadow-emerald-500/40" : "text-emerald-200/60"}`}
                 >
-                  🎁 FREE TIER (1-10)
+                  🎁 FREE
                 </button>
                 <button
                   onClick={() => setShopTier("premium")}
-                  className={`py-1.5 rounded-md text-[10px] font-black tracking-wider transition ${shopTier === "premium" ? "bg-gradient-to-r from-fuchsia-500 via-purple-600 to-amber-500 text-white shadow-lg shadow-fuchsia-500/40" : "text-fuchsia-200/60"}`}
+                  className={`py-1.5 rounded-md text-[9px] font-black tracking-wider transition ${shopTier === "premium" ? "bg-gradient-to-r from-fuchsia-500 via-purple-600 to-amber-500 text-white shadow-lg shadow-fuchsia-500/40" : "text-fuchsia-200/60"}`}
                 >
-                  👑 PREMIUM (20-60)
+                  👑 PREMIUM
+                </button>
+                <button
+                  onClick={() => setShopTier("super_premium")}
+                  className={`py-1.5 rounded-md text-[9px] font-black tracking-wider transition ${shopTier === "super_premium" ? "bg-gradient-to-r from-amber-400 via-orange-500 to-rose-600 text-white shadow-lg shadow-amber-500/50" : "text-amber-200/60"}`}
+                >
+                  💎 SUPER
                 </button>
               </div>
+
+              {/* Per-tier locked banner */}
+              {shopTier === "premium" && !shopAccess.isActive && (
+                <div className="mb-2 rounded-lg bg-rose-950/60 border border-rose-500/40 p-2 text-center">
+                  <p className="text-[10px] font-black text-rose-200">
+                    🔒 Akses Premium belum aktif — beli Rp {shopAccess.price.toLocaleString("id-ID")} di atas
+                  </p>
+                </div>
+              )}
+              {shopTier === "super_premium" && !superShopAccess.isActive && (
+                <div className="mb-2 rounded-lg bg-fuchsia-950/60 border border-fuchsia-500/40 p-2 text-center">
+                  <p className="text-[10px] font-black text-fuchsia-200">
+                    🔒 Akses Super Premium belum aktif — beli Rp {superShopAccess.price.toLocaleString("id-ID")} di atas
+                  </p>
+                </div>
+              )}
 
               <div className="grid grid-cols-2 gap-2">
                 {tokenShop.filter(item => (item.tier || "free") === shopTier).map((item) => {
                   const style = RARITY_STYLE[item.rarity] || RARITY_STYLE.common;
                   const canAfford = luckyTokens >= item.cost;
-                  const disabled = !shopAccess.isActive || !canAfford || redeeming === item.code;
+                  const tierLocked =
+                    (item.tier === "premium" && !shopAccess.isActive) ||
+                    (item.tier === "super_premium" && !superShopAccess.isActive);
+                  const disabled = tierLocked || !canAfford || redeeming === item.code;
                   return (
                     <button
                       key={item.code}
@@ -727,7 +768,7 @@ export default function LuckRoyaleNyawa() {
                       <div className="text-2xl mb-0.5">{item.emoji}</div>
                       <div className="text-[10px] font-black text-white leading-tight">{item.name}</div>
                       <div className="text-[8px] font-bold text-white/70 mt-1">{style.label}</div>
-                      {!shopAccess.isActive && (
+                      {tierLocked && (
                         <div className="absolute inset-0 bg-black/70 flex items-center justify-center">
                           <span className="text-lg">🔒</span>
                         </div>
@@ -742,7 +783,9 @@ export default function LuckRoyaleNyawa() {
                 })}
               </div>
               <p className="text-[9px] text-amber-100/60 mt-2 text-center">
-                {shopTier === "free" ? "10 item Free Tier" : "40 item Premium Tier — hadiah MANTAP"}
+                {shopTier === "free" && "10 item FREE — bisa diklaim tanpa langganan"}
+                {shopTier === "premium" && "40 item Premium — hadiah MANTAP (Rp 100k/bln)"}
+                {shopTier === "super_premium" && "20 item SUPER PREMIUM — hadiah MEGA DIVINE (Rp 300k/bln)"}
               </p>
             </div>
           )}
