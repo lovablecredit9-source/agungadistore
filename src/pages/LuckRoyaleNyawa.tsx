@@ -222,25 +222,29 @@ export default function LuckRoyaleNyawa() {
     }
   };
 
-  const buyShopAccess = async () => {
+  const buyShopAccess = async (tier: "premium" | "super_premium" = "premium") => {
     if (!visitorId || redeeming) return;
+    const access = tier === "super_premium" ? superShopAccess : shopAccess;
+    const tierLabel = tier === "super_premium" ? "Super Premium" : "Premium";
     if (!confirm(
-      `Beli Akses Token Shop?\n\nHarga: Rp ${shopAccess.price.toLocaleString("id-ID")} (potong saldo)\nBerlaku: ${shopAccess.durationDays} hari\n\nSetelah aktif, kamu bisa tukar Lucky Token dengan hadiah PASTI di Token Shop.`
+      `Beli Akses ${tierLabel}?\n\nHarga: Rp ${access.price.toLocaleString("id-ID")} (potong saldo)\nBerlaku: ${access.durationDays} hari\n\nSetelah aktif, kamu bisa tukar Lucky Token dengan hadiah ${tier === "super_premium" ? "MEGA " : ""}PASTI di tier ${tierLabel}.`
     )) return;
-    setRedeeming("__shop_access__");
+    const key = tier === "super_premium" ? "__super_shop_access__" : "__shop_access__";
+    setRedeeming(key);
     try {
       const { data, error } = await supabase.functions.invoke("luck-royale-nyawa", {
-        body: { visitorId, action: "buy_shop_access" },
+        body: { visitorId, action: "buy_shop_access", tier },
       });
       if (error) throw error;
       if (data.error) {
         toast({ title: "Gagal beli akses", description: data.error, variant: "destructive" });
         return;
       }
-      setShopAccess(data.shopAccess);
+      if (tier === "super_premium" && data.superShopAccess) setSuperShopAccess(data.superShopAccess);
+      else if (data.shopAccess) setShopAccess(data.shopAccess);
       toast({
-        title: "🔓 Akses Token Shop Aktif!",
-        description: `Berlaku ${shopAccess.durationDays} hari — sisa saldo Rp ${data.balance.toLocaleString("id-ID")}`,
+        title: `🔓 Akses ${tierLabel} Aktif!`,
+        description: `Berlaku ${access.durationDays} hari — sisa saldo Rp ${data.balance.toLocaleString("id-ID")}`,
       });
       fetchData();
     } catch (e: any) {
