@@ -88,9 +88,8 @@ export default function LuckRoyaleNyawa() {
   const [tokenThreshold, setTokenThreshold] = useState(5);
   const [megaPool, setMegaPool] = useState(5000);
   const [tokenShop, setTokenShop] = useState<Array<{ code: string; name: string; cost: number; kind: string; value: number; rarity: string; emoji: string; tier?: "free" | "premium" }>>([]);
-  const [tokenBundles, setTokenBundles] = useState<Array<{ code: string; name: string; tokens: number; bonus: number; price: number; badge?: string; emoji: string }>>([]);
   const [freeDailyShop, setFreeDailyShop] = useState<Array<{ code: string; name: string; kind: string; value: number; rarity: string; emoji: string; claimedToday: boolean }>>([]);
-  const [premiumShop, setPremiumShop] = useState<Array<{ code: string; name: string; unlockCostGems: number; kind: string; value: number; rarity: string; emoji: string; description: string; cooldownDays: number; isUnlocked: boolean; canClaim: boolean; nextClaimAt: number | null }>>([]);
+  const [shopAccess, setShopAccess] = useState<{ isActive: boolean; activeUntil: string | null; purchasedAt: string | null; price: number; durationDays: number }>({ isActive: false, activeUntil: null, purchasedAt: null, price: 100000, durationDays: 30 });
   const [redeeming, setRedeeming] = useState<string | null>(null);
   const [shopTier, setShopTier] = useState<"free" | "premium">("free");
 
@@ -114,9 +113,8 @@ export default function LuckRoyaleNyawa() {
       setTokenThreshold(Number(data.luckyTokenThreshold || 5));
       setMegaPool(Number(data.megaJackpotPool || 5000));
       setTokenShop(data.tokenShop || []);
-      setTokenBundles(data.tokenBundles || []);
       setFreeDailyShop(data.freeDailyShop || []);
-      setPremiumShop(data.premiumShop || []);
+      setShopAccess(data.shopAccess || { isActive: false, activeUntil: null, purchasedAt: null, price: 100000, durationDays: 30 });
     } catch (e) {
       console.error(e);
     } finally {
@@ -222,67 +220,26 @@ export default function LuckRoyaleNyawa() {
     }
   };
 
-  const unlockPremium = async (itemCode: string, name: string, cost: number) => {
+  const buyShopAccess = async () => {
     if (!visitorId || redeeming) return;
-    if (!confirm(`Unlock ${name}?\n\nBiaya: ${cost} 💎 Gem (sekali bayar, akses selamanya)\nKlaim hadiah setiap minggu setelah unlock.`)) return;
-    setRedeeming(itemCode);
+    if (!confirm(
+      `Beli Akses Token Shop?\n\nHarga: Rp ${shopAccess.price.toLocaleString("id-ID")} (potong saldo)\nBerlaku: ${shopAccess.durationDays} hari\n\nSetelah aktif, kamu bisa tukar Lucky Token dengan hadiah PASTI di Token Shop.`
+    )) return;
+    setRedeeming("__shop_access__");
     try {
       const { data, error } = await supabase.functions.invoke("luck-royale-nyawa", {
-        body: { visitorId, action: "unlock_premium", itemCode },
+        body: { visitorId, action: "buy_shop_access" },
       });
       if (error) throw error;
       if (data.error) {
-        toast({ title: "Gagal unlock", description: data.error, variant: "destructive" });
+        toast({ title: "Gagal beli akses", description: data.error, variant: "destructive" });
         return;
       }
-      setGems(data.gems);
-      toast({ title: "👑 Premium Unlocked!", description: `${name} berhasil dibuka — klaim hadiah pertama sekarang!` });
-      fetchData();
-    } catch (e: any) {
-      toast({ title: "Error", description: e.message || "Gagal", variant: "destructive" });
-    } finally {
-      setRedeeming(null);
-    }
-  };
-
-  const claimPremium = async (itemCode: string) => {
-    if (!visitorId || redeeming) return;
-    setRedeeming(itemCode);
-    try {
-      const { data, error } = await supabase.functions.invoke("luck-royale-nyawa", {
-        body: { visitorId, action: "claim_premium", itemCode },
+      setShopAccess(data.shopAccess);
+      toast({
+        title: "🔓 Akses Token Shop Aktif!",
+        description: `Berlaku ${shopAccess.durationDays} hari — sisa saldo Rp ${data.balance.toLocaleString("id-ID")}`,
       });
-      if (error) throw error;
-      if (data.error) {
-        toast({ title: "Gagal klaim", description: data.error, variant: "destructive" });
-        return;
-      }
-      setGems(data.gems);
-      toast({ title: "👑 Premium Klaim!", description: `Kamu dapat: ${data.item.name}` });
-      fetchData();
-    } catch (e: any) {
-      toast({ title: "Error", description: e.message || "Gagal", variant: "destructive" });
-    } finally {
-      setRedeeming(null);
-    }
-  };
-
-  const buyTokens = async (bundleCode: string, bundleName: string, price: number, totalTokens: number) => {
-    if (!visitorId || redeeming) return;
-    if (!confirm(`Beli ${bundleName}?\n\nHarga: Rp ${price.toLocaleString("id-ID")} (potong saldo)\nDapat: ${totalTokens} Lucky Token`)) return;
-    setRedeeming(bundleCode);
-    try {
-      const { data, error } = await supabase.functions.invoke("luck-royale-nyawa", {
-        body: { visitorId, action: "buy_tokens_with_balance", itemCode: bundleCode },
-      });
-      if (error) throw error;
-      if (data.error) {
-        toast({ title: "Gagal beli token", description: data.error, variant: "destructive" });
-        return;
-      }
-      setLuckyTokens(data.luckyTokens);
-      setGems(data.gems);
-      toast({ title: `🎟️ +${data.addedTokens} Lucky Token!`, description: `${bundleName} berhasil dibeli — sisa saldo Rp ${data.balance.toLocaleString("id-ID")}` });
       fetchData();
     } catch (e: any) {
       toast({ title: "Error", description: e.message || "Gagal", variant: "destructive" });
@@ -658,132 +615,58 @@ export default function LuckRoyaleNyawa() {
             </div>
           )}
 
-          {/* 👑 PREMIUM SHOP — unlock pakai Gem, klaim mingguan */}
-          {premiumShop.length > 0 && (
-            <div className="rounded-2xl bg-gradient-to-br from-violet-900/50 via-fuchsia-900/40 to-pink-900/50 border-2 border-fuchsia-400/60 p-3">
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-1.5">
-                  <Crown className="w-4 h-4 text-fuchsia-300" fill="currentColor" />
-                  <h3 className="text-xs font-black tracking-widest text-fuchsia-200">| PREMIUM SHOP — UNLOCK & KLAIM</h3>
-                </div>
-                <Badge className="bg-fuchsia-500 text-white font-black text-[8px]">👑 VIP</Badge>
-              </div>
-              <p className="text-[10px] text-fuchsia-100/80 mb-2.5">
-                Bayar Gem <span className="font-black text-fuchsia-300">sekali</span> untuk unlock — klaim hadiah BESAR setiap minggu seumur hidup!
-              </p>
-              <div className="grid grid-cols-1 gap-2">
-                {premiumShop.map((item) => {
-                  const style = RARITY_STYLE[item.rarity] || RARITY_STYLE.common;
-                  const isLoading = redeeming === item.code;
-                  const remainHours = item.nextClaimAt ? Math.max(0, Math.ceil((item.nextClaimAt - Date.now()) / 3600000)) : 0;
-                  return (
-                    <div
-                      key={item.code}
-                      className={`relative overflow-hidden rounded-xl bg-gradient-to-r ${style.gradient} ring-2 ${style.ring} p-3`}
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="text-3xl shrink-0">{item.emoji}</div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-1.5 mb-0.5">
-                            <span className="text-xs font-black text-white truncate">{item.name}</span>
-                            <Badge className="bg-black/60 text-[8px] font-black shrink-0">{style.label}</Badge>
-                          </div>
-                          <p className="text-[10px] text-white/80 leading-tight">{item.description}</p>
-                        </div>
-                      </div>
-                      <div className="mt-2.5 flex items-center justify-between gap-2">
-                        {!item.isUnlocked ? (
-                          <>
-                            <div className="flex items-center gap-1 bg-black/40 rounded-full px-2 py-1">
-                              <Gem className="w-3 h-3 text-cyan-300" fill="currentColor" />
-                              <span className="text-[10px] font-black text-cyan-200">{formatCompactNumber(item.unlockCostGems)}</span>
-                            </div>
-                            <Button
-                              size="sm"
-                              disabled={isLoading || gems < item.unlockCostGems}
-                              onClick={() => unlockPremium(item.code, item.name, item.unlockCostGems)}
-                              className="h-7 px-3 text-[10px] font-black bg-gradient-to-r from-fuchsia-500 to-pink-600 hover:from-fuchsia-600 hover:to-pink-700 text-white"
-                            >
-                              {isLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : "🔓 UNLOCK"}
-                            </Button>
-                          </>
-                        ) : item.canClaim ? (
-                          <>
-                            <Badge className="bg-emerald-500 text-black font-black text-[9px]">✓ UNLOCKED</Badge>
-                            <Button
-                              size="sm"
-                              disabled={isLoading}
-                              onClick={() => claimPremium(item.code)}
-                              className="h-7 px-3 text-[10px] font-black bg-gradient-to-r from-amber-400 to-orange-500 hover:from-amber-500 hover:to-orange-600 text-black"
-                            >
-                              {isLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : "🎁 CLAIM"}
-                            </Button>
-                          </>
-                        ) : (
-                          <>
-                            <Badge className="bg-emerald-500 text-black font-black text-[9px]">✓ UNLOCKED</Badge>
-                            <Badge className="bg-black/60 text-white font-black text-[9px]">⏳ {remainHours}j lagi</Badge>
-                          </>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
-          {/* 💰 BELI LUCKY TOKEN dengan Saldo */}
-          {tokenBundles.length > 0 && (
-            <div className="rounded-2xl bg-gradient-to-br from-emerald-900/40 via-teal-900/30 to-cyan-900/40 border-2 border-emerald-500/50 p-3">
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-1.5">
-                  <Rocket className="w-4 h-4 text-emerald-300" />
-                  <h3 className="text-xs font-black tracking-widest text-emerald-200">| BELI LUCKY TOKEN — POTONG SALDO</h3>
-                </div>
-                <Badge className="bg-emerald-500 text-black font-black text-[8px]">💰 SALDO</Badge>
-              </div>
-              <p className="text-[10px] text-emerald-100/80 mb-2.5">
-                Beli token instan — tukar di shop bawah untuk hadiah <span className="font-black text-emerald-300">PASTI</span> tanpa hoki-hokian!
-              </p>
-              <div className="grid grid-cols-2 gap-2">
-                {tokenBundles.map((b) => {
-                  const isMega = b.code === "tb_1000";
-                  return (
-                    <button
-                      key={b.code}
-                      disabled={redeeming === b.code}
-                      onClick={() => buyTokens(b.code, b.name, b.price, b.tokens + b.bonus)}
-                      className={`relative overflow-hidden rounded-xl bg-gradient-to-br ${isMega ? "from-amber-500 via-orange-600 to-red-600 ring-2 ring-amber-300/80" : "from-emerald-600 to-teal-700 ring-2 ring-emerald-400/60"} p-2.5 text-left active:scale-95 transition disabled:opacity-50`}
-                    >
-                      {b.badge && (
-                        <div className={`absolute top-1 right-1 ${isMega ? "bg-yellow-300 text-red-900" : "bg-emerald-300 text-emerald-900"} text-[8px] font-black px-1.5 py-0.5 rounded-full animate-pulse`}>
-                          {b.badge}
-                        </div>
-                      )}
-                      <div className="text-2xl mb-0.5">{b.emoji}</div>
-                      <div className="text-[10px] font-black text-white leading-tight">{b.name}</div>
-                      <div className="text-[11px] font-black text-yellow-200 mt-1 tabular-nums">
-                        🎟️ {b.tokens} <span className="text-[9px] text-yellow-100/90">+ {b.bonus} bonus</span>
-                      </div>
-                      <div className="text-[9px] font-bold text-white/90 mt-0.5 bg-black/30 inline-block px-1.5 py-0.5 rounded">
-                        Rp {b.price.toLocaleString("id-ID")}
-                      </div>
-                      {redeeming === b.code && (
-                        <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
-                          <Loader2 className="w-5 h-5 animate-spin text-white" />
-                        </div>
-                      )}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
-          {/* 🎟️ TOKEN SHOP — Tier Free / Premium */}
+          {/* 🔓 AKSES TOKEN SHOP — wajib unlock dengan saldo Rp 100k (berlaku 30 hari) */}
           {tokenShop.length > 0 && (
-            <div className="rounded-2xl bg-gradient-to-br from-amber-900/40 via-orange-900/30 to-pink-900/40 border-2 border-amber-500/50 p-3">
+            <div className={`rounded-2xl border-2 p-3 ${shopAccess.isActive ? "bg-gradient-to-br from-emerald-900/50 via-teal-900/40 to-cyan-900/50 border-emerald-400/60" : "bg-gradient-to-br from-rose-900/50 via-red-900/40 to-orange-900/50 border-rose-400/60"}`}>
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-1.5">
+                  <Crown className={`w-4 h-4 ${shopAccess.isActive ? "text-emerald-300" : "text-rose-300"}`} fill="currentColor" />
+                  <h3 className={`text-xs font-black tracking-widest ${shopAccess.isActive ? "text-emerald-200" : "text-rose-200"}`}>
+                    {shopAccess.isActive ? "| AKSES TOKEN SHOP AKTIF" : "| AKSES TOKEN SHOP TERKUNCI"}
+                  </h3>
+                </div>
+                <Badge className={`${shopAccess.isActive ? "bg-emerald-500" : "bg-rose-500"} text-white font-black text-[8px]`}>
+                  {shopAccess.isActive ? "✓ AKTIF" : "🔒 LOCKED"}
+                </Badge>
+              </div>
+              {shopAccess.isActive ? (
+                <>
+                  <p className="text-[10px] text-emerald-100/90 mb-1">
+                    Akses kamu aktif sampai{" "}
+                    <span className="font-black text-emerald-200">
+                      {shopAccess.activeUntil ? new Date(shopAccess.activeUntil).toLocaleString("id-ID", { dateStyle: "medium", timeStyle: "short" }) : "-"}
+                    </span>
+                  </p>
+                  {shopAccess.activeUntil && (
+                    <p className="text-[10px] text-emerald-100/70">
+                      ⏳ Sisa: <span className="font-black">{Math.max(0, Math.ceil((new Date(shopAccess.activeUntil).getTime() - Date.now()) / 86400000))} hari</span>
+                    </p>
+                  )}
+                </>
+              ) : (
+                <>
+                  <p className="text-[10px] text-rose-100/90 mb-2">
+                    Untuk bisa tukar Lucky Token jadi hadiah <span className="font-black text-rose-200">PASTI</span>, kamu wajib beli akses Token Shop. Berlaku <span className="font-black">{shopAccess.durationDays} hari</span>.
+                  </p>
+                  <Button
+                    disabled={redeeming === "__shop_access__"}
+                    onClick={buyShopAccess}
+                    className="w-full h-9 text-xs font-black bg-gradient-to-r from-amber-400 via-orange-500 to-red-600 hover:from-amber-500 hover:via-orange-600 hover:to-red-700 text-white shadow-lg shadow-orange-500/40"
+                  >
+                    {redeeming === "__shop_access__" ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <>🔓 BELI AKSES — Rp {shopAccess.price.toLocaleString("id-ID")} / {shopAccess.durationDays} HARI</>
+                    )}
+                  </Button>
+                </>
+              )}
+            </div>
+          )}
+
+          {/* 🎟️ TOKEN SHOP — Tier Free / Premium (hanya bisa dipakai jika akses aktif) */}
+          {tokenShop.length > 0 && (
+            <div className={`rounded-2xl bg-gradient-to-br from-amber-900/40 via-orange-900/30 to-pink-900/40 border-2 border-amber-500/50 p-3 ${!shopAccess.isActive ? "opacity-70" : ""}`}>
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-1.5">
                   <Award className="w-4 h-4 text-amber-300" fill="currentColor" />
@@ -794,6 +677,14 @@ export default function LuckRoyaleNyawa() {
               <p className="text-[10px] text-amber-100/80 mb-2">
                 Pakai Lucky Token untuk hadiah <span className="font-black text-amber-300">100% pasti</span>. Tier Premium = hadiah jauh lebih MANTAP!
               </p>
+
+              {!shopAccess.isActive && (
+                <div className="mb-2 rounded-lg bg-rose-950/60 border border-rose-500/40 p-2 text-center">
+                  <p className="text-[10px] font-black text-rose-200">
+                    🔒 Akses belum aktif — beli akses Rp {shopAccess.price.toLocaleString("id-ID")} di atas untuk bisa tukar token
+                  </p>
+                </div>
+              )}
 
               {/* Tier toggle */}
               <div className="grid grid-cols-2 gap-1.5 mb-2.5 bg-black/40 rounded-lg p-1">
@@ -815,10 +706,11 @@ export default function LuckRoyaleNyawa() {
                 {tokenShop.filter(item => (item.tier || "free") === shopTier).map((item) => {
                   const style = RARITY_STYLE[item.rarity] || RARITY_STYLE.common;
                   const canAfford = luckyTokens >= item.cost;
+                  const disabled = !shopAccess.isActive || !canAfford || redeeming === item.code;
                   return (
                     <button
                       key={item.code}
-                      disabled={!canAfford || redeeming === item.code}
+                      disabled={disabled}
                       onClick={() => redeemToken(item.code)}
                       className={`relative overflow-hidden rounded-xl bg-gradient-to-br ${style.gradient} ring-2 ${style.ring} p-2.5 text-left active:scale-95 transition disabled:opacity-50 disabled:cursor-not-allowed`}
                     >
@@ -829,6 +721,11 @@ export default function LuckRoyaleNyawa() {
                       <div className="text-2xl mb-0.5">{item.emoji}</div>
                       <div className="text-[10px] font-black text-white leading-tight">{item.name}</div>
                       <div className="text-[8px] font-bold text-white/70 mt-1">{style.label}</div>
+                      {!shopAccess.isActive && (
+                        <div className="absolute inset-0 bg-black/70 flex items-center justify-center">
+                          <span className="text-lg">🔒</span>
+                        </div>
+                      )}
                       {redeeming === item.code && (
                         <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
                           <Loader2 className="w-5 h-5 animate-spin text-white" />
