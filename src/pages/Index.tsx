@@ -5010,8 +5010,8 @@ const Index = () => {
       )}
 
       {/* Floating Help Button */}
-      <button onClick={() => setShowHelp(true)} className="fixed bottom-20 right-4 z-50 w-12 h-12 rounded-full bg-primary text-primary-foreground shadow-xl flex items-center justify-center hover:scale-110 transition-transform">
-        <HelpCircle className="w-6 h-6" />
+      <button onClick={() => setShowHelp(true)} aria-label="Bantuan" className="fixed bottom-20 right-4 z-50 w-10 h-10 rounded-full bg-card border border-border text-foreground shadow-sm flex items-center justify-center hover:bg-muted transition-colors">
+        <HelpCircle className="w-5 h-5" strokeWidth={1.7} />
       </button>
 
       {/* PIN Setup Modal */}
