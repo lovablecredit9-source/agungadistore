@@ -3426,18 +3426,14 @@ const Index = () => {
         {tab === "update" && (
           <div className="space-y-4 animate-fade-in">
             {/* Hero Header */}
-            <div className="relative overflow-hidden rounded-2xl p-5" style={{ background: "linear-gradient(135deg, hsl(190, 80%, 45%) 0%, hsl(210, 70%, 50%) 100%)" }}>
-              <div className="absolute inset-0 opacity-15">
-                <div className="absolute -top-8 -right-8 w-40 h-40 rounded-full bg-white/30 blur-3xl animate-pulse" />
-                <div className="absolute -bottom-8 -left-8 w-28 h-28 rounded-full bg-white/20 blur-2xl" />
-              </div>
-              <div className="relative z-10 flex items-center gap-4">
-                <div className="w-14 h-14 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-lg ring-2 ring-white/20">
-                  <RefreshCw className="w-7 h-7 text-white" />
+            <div className="rounded-xl border border-border bg-card p-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
+                  <RefreshCw className="w-5 h-5 text-foreground" strokeWidth={1.7} />
                 </div>
-                <div>
-                  <h2 className="text-xl font-extrabold text-white tracking-tight">Update Web</h2>
-                  <p className="text-white/70 text-xs font-medium mt-0.5">Fitur tambahan terbaru tanggal 19 April 2026</p>
+                <div className="flex-1 min-w-0">
+                  <h2 className="text-base font-semibold tracking-tight text-foreground">Update Web</h2>
+                  <p className="text-xs text-muted-foreground mt-0.5">Fitur tambahan terbaru tanggal 19 April 2026</p>
                 </div>
               </div>
             </div>
