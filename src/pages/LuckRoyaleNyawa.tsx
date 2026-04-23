@@ -988,7 +988,7 @@ export default function LuckRoyaleNyawa() {
             <FlameIcon className="w-5 h-5 text-amber-200" fill="currentColor" />
             <div>
               <div className="text-[9px] font-black text-amber-200 tracking-widest leading-none">STREAK BONUS!</div>
-              <div className="text-base font-black text-white leading-tight">+{bonusPopup.toLocaleString()} 💎</div>
+              <div className="text-base font-black text-white leading-tight">+{formatCompactNumber(bonusPopup)} 💎</div>
             </div>
           </div>
         </div>
@@ -1001,7 +1001,7 @@ export default function LuckRoyaleNyawa() {
           <div className="relative bg-gradient-to-br from-purple-700 via-fuchsia-600 to-pink-600 rounded-3xl p-6 shadow-2xl shadow-fuchsia-500/80 ring-4 ring-amber-300/60 animate-pulse max-w-xs mx-4 text-center">
             <div className="text-5xl mb-2">💥🎰💥</div>
             <div className="text-[10px] font-black text-amber-200 tracking-widest mb-1">MEGA JACKPOT PECAH!</div>
-            <div className="text-3xl font-black text-white drop-shadow mb-1">+{jackpotPopup.toLocaleString()}</div>
+            <div className="text-3xl font-black text-white drop-shadow mb-1">+{formatCompactNumber(jackpotPopup)}</div>
             <div className="flex items-center justify-center gap-1 text-amber-300 font-black">
               <Gem className="w-5 h-5" fill="currentColor" /> GEM
             </div>
