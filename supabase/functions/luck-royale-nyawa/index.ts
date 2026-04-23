@@ -92,42 +92,77 @@ function getStreakMultiplier(streakCount: number): number {
 // === LUCKY TOKEN SYSTEM ===
 // Tiap 5 spin berbayar = +1 Lucky Token. Bisa ditukar hadiah pasti.
 const TOKENS_PER_SPIN_THRESHOLD = 5; // 5 paid spin = 1 token
-const TOKEN_SHOP: Array<{ code: string; name: string; cost: number; kind: string; value: number; rarity: string; emoji: string }> = [
-  // === MURAH (1-3 token) — banyak hint / nyawa / streak ===
-  { code: "tk_hint10",     name: "+10 Hint Otomatis",        cost: 1,   kind: "auto_hint",     value: 10,    rarity: "rare",      emoji: "💡" },
-  { code: "tk_life10",     name: "+10 Nyawa Ekstra",         cost: 1,   kind: "extra_life",    value: 10,    rarity: "rare",      emoji: "❤️" },
-  { code: "tk_freeze5",    name: "+5 Streak Freeze",         cost: 1,   kind: "streak_freeze", value: 5,     rarity: "rare",      emoji: "🛡️" },
-  { code: "tk_coins500",   name: "🪙 +500 Streak Coin",       cost: 1,   kind: "streak_coins",  value: 500,   rarity: "rare",      emoji: "🪙" },
-  { code: "tk_hint30",     name: "+30 Hint Otomatis",        cost: 2,   kind: "auto_hint",     value: 30,    rarity: "epic",      emoji: "💡" },
-  { code: "tk_life30",     name: "+30 Nyawa Ekstra",         cost: 2,   kind: "extra_life",    value: 30,    rarity: "epic",      emoji: "❤️" },
-  { code: "tk_freeze12",   name: "+12 Streak Freeze",        cost: 2,   kind: "streak_freeze", value: 12,    rarity: "epic",      emoji: "🛡️" },
-  { code: "tk_coins1500",  name: "🪙 +1.500 Streak Coin",     cost: 3,   kind: "streak_coins",  value: 1500,  rarity: "epic",      emoji: "🪙" },
 
-  // === MENENGAH (5-15 token) — bundle besar streak/nyawa/hint + coin ===
-  { code: "tk_hint80",     name: "+80 Hint Otomatis",        cost: 5,   kind: "auto_hint",     value: 80,    rarity: "epic",      emoji: "💡" },
-  { code: "tk_life80",     name: "+80 Nyawa Ekstra",         cost: 5,   kind: "extra_life",    value: 80,    rarity: "epic",      emoji: "❤️" },
-  { code: "tk_freeze30",   name: "+30 Streak Freeze",        cost: 7,   kind: "streak_freeze", value: 30,    rarity: "legendary", emoji: "🛡️" },
-  { code: "tk_coins5000",  name: "🪙 +5.000 Streak Coin",     cost: 10,  kind: "streak_coins",  value: 5000,  rarity: "legendary", emoji: "🪙" },
+// === TOKEN BUNDLE PURCHASES — beli Lucky Token pakai saldo ===
+const TOKEN_BUNDLES: Array<{ code: string; name: string; tokens: number; bonus: number; price: number; badge?: string; emoji: string }> = [
+  { code: "tb_50",    name: "Starter Pack",    tokens: 50,   bonus: 5,    price: 5000,   emoji: "🎟️" },
+  { code: "tb_200",   name: "Value Pack",      tokens: 200,  bonus: 30,   price: 20000,  badge: "HEMAT", emoji: "🎁" },
+  { code: "tb_500",   name: "Pro Pack",        tokens: 500,  bonus: 100,  price: 50000,  badge: "POPULER", emoji: "💼" },
+  { code: "tb_1000",  name: "🔥 MEGA PACK 100K", tokens: 1000, bonus: 200,  price: 100000, badge: "TERBAIK", emoji: "👑" },
+];
 
-  // === BESAR (20-70 token) — paket BANYAK item, ini tier 70-100 yang user mau ===
-  { code: "tk_hint200",    name: "💡 MEGA +200 Hint",         cost: 25,  kind: "auto_hint",     value: 200,   rarity: "legendary", emoji: "💡" },
-  { code: "tk_life200",    name: "❤️ MEGA +200 Nyawa",        cost: 25,  kind: "extra_life",    value: 200,   rarity: "legendary", emoji: "❤️" },
-  { code: "tk_freeze80",   name: "🛡️ MEGA +80 Freeze",        cost: 40,  kind: "streak_freeze", value: 80,    rarity: "legendary", emoji: "🛡️" },
-  { code: "tk_coins15k",   name: "🪙 +15.000 Streak Coin",    cost: 50,  kind: "streak_coins",  value: 15000, rarity: "legendary", emoji: "🪙" },
-  { code: "tk_hint500",    name: "💡 ULTRA +500 Hint",        cost: 70,  kind: "auto_hint",     value: 500,   rarity: "mythic",    emoji: "💡" },
-  { code: "tk_life500",    name: "❤️ ULTRA +500 Nyawa",       cost: 70,  kind: "extra_life",    value: 500,   rarity: "mythic",    emoji: "❤️" },
+// 50 item: 10 Free (1-10 token) + 40 Premium (20-60 token, hadiah jauh lebih MANTAP)
+const TOKEN_SHOP: Array<{ code: string; name: string; cost: number; kind: string; value: number; rarity: string; emoji: string; tier: "free" | "premium" }> = [
+  // ============ FREE TIER (1-10 token, 10 item) ============
+  { code: "tk_hint10",     name: "+10 Hint Otomatis",        cost: 1,   kind: "auto_hint",     value: 10,    rarity: "rare",      emoji: "💡", tier: "free" },
+  { code: "tk_life10",     name: "+10 Nyawa Ekstra",         cost: 1,   kind: "extra_life",    value: 10,    rarity: "rare",      emoji: "❤️", tier: "free" },
+  { code: "tk_freeze5",    name: "+5 Streak Freeze",         cost: 2,   kind: "streak_freeze", value: 5,     rarity: "rare",      emoji: "🛡️", tier: "free" },
+  { code: "tk_coins500",   name: "🪙 +500 Streak Coin",       cost: 2,   kind: "streak_coins",  value: 500,   rarity: "rare",      emoji: "🪙", tier: "free" },
+  { code: "tk_hint30",     name: "+30 Hint Otomatis",        cost: 3,   kind: "auto_hint",     value: 30,    rarity: "epic",      emoji: "💡", tier: "free" },
+  { code: "tk_life30",     name: "+30 Nyawa Ekstra",         cost: 4,   kind: "extra_life",    value: 30,    rarity: "epic",      emoji: "❤️", tier: "free" },
+  { code: "tk_freeze12",   name: "+12 Streak Freeze",        cost: 5,   kind: "streak_freeze", value: 12,    rarity: "epic",      emoji: "🛡️", tier: "free" },
+  { code: "tk_coins1500",  name: "🪙 +1.500 Streak Coin",     cost: 6,   kind: "streak_coins",  value: 1500,  rarity: "epic",      emoji: "🪙", tier: "free" },
+  { code: "tk_hint80",     name: "+80 Hint Otomatis",        cost: 8,   kind: "auto_hint",     value: 80,    rarity: "epic",      emoji: "💡", tier: "free" },
+  { code: "tk_gems100",    name: "💎 +100 Gem",               cost: 10,  kind: "gems",          value: 100,   rarity: "epic",      emoji: "💎", tier: "free" },
 
-  // === SUPER (100-200 token) — paket gabungan terbesar (sesuai 100-200 token = lumayan gede) ===
-  { code: "tk_coins50k",   name: "🪙 ULTRA +50.000 Coin",     cost: 100, kind: "streak_coins",  value: 50000, rarity: "mythic",    emoji: "🪙" },
-  { code: "tk_freeze200",  name: "🛡️ ULTRA +200 Freeze",      cost: 100, kind: "streak_freeze", value: 200,   rarity: "mythic",    emoji: "🛡️" },
-  { code: "tk_hint1000",   name: "💡 GOD +1.000 Hint",        cost: 150, kind: "auto_hint",     value: 1000,  rarity: "mythic",    emoji: "💡" },
-  { code: "tk_life1000",   name: "❤️ GOD +1.000 Nyawa",       cost: 150, kind: "extra_life",    value: 1000,  rarity: "mythic",    emoji: "❤️" },
-  { code: "tk_coins150k",  name: "🪙 GOD +150.000 Coin",      cost: 200, kind: "streak_coins",  value: 150000,rarity: "mythic",    emoji: "🪙" },
+  // ============ PREMIUM TIER (20-60 token, 40 item — HADIAH MANTAP) ============
+  // 20-25 token — Gem Premium besar
+  { code: "pk_gem500",      name: "💎 +500 Gem Premium",            cost: 20, kind: "gems",          value: 500,    rarity: "legendary", emoji: "💎", tier: "premium" },
+  { code: "pk_gem700",      name: "💎 +700 Gem Premium",            cost: 22, kind: "gems",          value: 700,    rarity: "legendary", emoji: "💎", tier: "premium" },
+  { code: "pk_gem1000",     name: "💎 +1.000 Gem Premium",          cost: 25, kind: "gems",          value: 1000,   rarity: "legendary", emoji: "💎", tier: "premium" },
+  { code: "pk_life200",     name: "❤️ MEGA +200 Nyawa",             cost: 20, kind: "extra_life",    value: 200,    rarity: "legendary", emoji: "❤️", tier: "premium" },
+  { code: "pk_hint200",     name: "💡 MEGA +200 Hint",              cost: 20, kind: "auto_hint",     value: 200,    rarity: "legendary", emoji: "💡", tier: "premium" },
+  { code: "pk_freeze50",    name: "🛡️ MEGA +50 Streak Freeze",      cost: 22, kind: "streak_freeze", value: 50,     rarity: "legendary", emoji: "🛡️", tier: "premium" },
+  { code: "pk_coins10k",    name: "🪙 PREMIUM +10.000 Coin",        cost: 22, kind: "streak_coins",  value: 10000,  rarity: "legendary", emoji: "🪙", tier: "premium" },
+  { code: "pk_coins15k",    name: "🪙 PREMIUM +15.000 Coin",        cost: 25, kind: "streak_coins",  value: 15000,  rarity: "legendary", emoji: "🪙", tier: "premium" },
 
-  // === GEM (di bawah, sedikit & mahal sesuai permintaan user) ===
-  { code: "tk_gems250",    name: "💎 +250 Gem Pasti",         cost: 8,   kind: "gems",          value: 250,   rarity: "legendary", emoji: "💎" },
-  { code: "tk_gems800",    name: "👑 +800 Gem Legendary",     cost: 25,  kind: "gems",          value: 800,   rarity: "legendary", emoji: "👑" },
-  { code: "tk_mega2500",   name: "🌈 MEGA +2.500 Gem",        cost: 70,  kind: "gems",          value: 2500,  rarity: "mythic",    emoji: "🌈" },
+  // 28-32 token — Bundle borongan
+  { code: "pk_bundle_a",    name: "🎁 BUNDLE: +100 Nyawa & +100 Hint", cost: 28, kind: "extra_life", value: 100,   rarity: "legendary", emoji: "🎁", tier: "premium" },
+  { code: "pk_bundle_a2",   name: "🎁 BUNDLE: +100 Hint & +30 Freeze", cost: 28, kind: "auto_hint",  value: 100,   rarity: "legendary", emoji: "🎁", tier: "premium" },
+  { code: "pk_gem1500",     name: "💎 +1.500 Gem Premium",          cost: 30, kind: "gems",          value: 1500,   rarity: "legendary", emoji: "💎", tier: "premium" },
+  { code: "pk_life300",     name: "❤️ ULTRA +300 Nyawa",            cost: 30, kind: "extra_life",    value: 300,    rarity: "legendary", emoji: "❤️", tier: "premium" },
+  { code: "pk_hint300",     name: "💡 ULTRA +300 Hint",             cost: 30, kind: "auto_hint",     value: 300,    rarity: "legendary", emoji: "💡", tier: "premium" },
+  { code: "pk_coins25k",    name: "🪙 ULTRA +25.000 Coin",          cost: 32, kind: "streak_coins",  value: 25000,  rarity: "legendary", emoji: "🪙", tier: "premium" },
+
+  // 35-40 token — Tier ULTRA
+  { code: "pk_gem2000",     name: "💎 ULTRA +2.000 Gem",            cost: 35, kind: "gems",          value: 2000,   rarity: "mythic",    emoji: "💎", tier: "premium" },
+  { code: "pk_life500",     name: "❤️ ULTRA +500 Nyawa",            cost: 35, kind: "extra_life",    value: 500,    rarity: "mythic",    emoji: "❤️", tier: "premium" },
+  { code: "pk_hint500",     name: "💡 ULTRA +500 Hint",             cost: 35, kind: "auto_hint",     value: 500,    rarity: "mythic",    emoji: "💡", tier: "premium" },
+  { code: "pk_freeze100",   name: "🛡️ ULTRA +100 Freeze",           cost: 38, kind: "streak_freeze", value: 100,    rarity: "mythic",    emoji: "🛡️", tier: "premium" },
+  { code: "pk_coins40k",    name: "🪙 ULTRA +40.000 Coin",          cost: 40, kind: "streak_coins",  value: 40000,  rarity: "mythic",    emoji: "🪙", tier: "premium" },
+  { code: "pk_gem2500",     name: "💎 MEGA +2.500 Gem",             cost: 40, kind: "gems",          value: 2500,   rarity: "mythic",    emoji: "💎", tier: "premium" },
+
+  // 42-50 token — Tier MEGA
+  { code: "pk_life700",     name: "❤️ MEGA +700 Nyawa",             cost: 42, kind: "extra_life",    value: 700,    rarity: "mythic",    emoji: "❤️", tier: "premium" },
+  { code: "pk_hint700",     name: "💡 MEGA +700 Hint",              cost: 42, kind: "auto_hint",     value: 700,    rarity: "mythic",    emoji: "💡", tier: "premium" },
+  { code: "pk_gem3000",     name: "💎 MEGA +3.000 Gem",             cost: 45, kind: "gems",          value: 3000,   rarity: "mythic",    emoji: "💎", tier: "premium" },
+  { code: "pk_coins60k",    name: "🪙 MEGA +60.000 Coin",           cost: 45, kind: "streak_coins",  value: 60000,  rarity: "mythic",    emoji: "🪙", tier: "premium" },
+  { code: "pk_freeze150",   name: "🛡️ MEGA +150 Freeze",            cost: 48, kind: "streak_freeze", value: 150,    rarity: "mythic",    emoji: "🛡️", tier: "premium" },
+  { code: "pk_life1000",    name: "❤️ GOD +1.000 Nyawa",            cost: 50, kind: "extra_life",    value: 1000,   rarity: "mythic",    emoji: "❤️", tier: "premium" },
+  { code: "pk_hint1000",    name: "💡 GOD +1.000 Hint",             cost: 50, kind: "auto_hint",     value: 1000,   rarity: "mythic",    emoji: "💡", tier: "premium" },
+  { code: "pk_gem4000",     name: "💎 GOD +4.000 Gem",              cost: 50, kind: "gems",          value: 4000,   rarity: "mythic",    emoji: "💎", tier: "premium" },
+
+  // 52-60 token — Tier GOD/JACKPOT
+  { code: "pk_coins80k",    name: "🪙 GOD +80.000 Coin",            cost: 52, kind: "streak_coins",  value: 80000,  rarity: "mythic",    emoji: "🪙", tier: "premium" },
+  { code: "pk_freeze200",   name: "🛡️ GOD +200 Freeze",             cost: 55, kind: "streak_freeze", value: 200,    rarity: "mythic",    emoji: "🛡️", tier: "premium" },
+  { code: "pk_gem5000",     name: "💎 GOD +5.000 Gem",              cost: 55, kind: "gems",          value: 5000,   rarity: "mythic",    emoji: "💎", tier: "premium" },
+  { code: "pk_life1500",    name: "❤️ GOD +1.500 Nyawa",            cost: 56, kind: "extra_life",    value: 1500,   rarity: "mythic",    emoji: "❤️", tier: "premium" },
+  { code: "pk_hint1500",    name: "💡 GOD +1.500 Hint",             cost: 56, kind: "auto_hint",     value: 1500,   rarity: "mythic",    emoji: "💡", tier: "premium" },
+  { code: "pk_coins100k",   name: "🪙 GOD +100.000 Coin",           cost: 58, kind: "streak_coins",  value: 100000, rarity: "mythic",    emoji: "🪙", tier: "premium" },
+  { code: "pk_gem6000",     name: "💎 JACKPOT +6.000 Gem",          cost: 60, kind: "gems",          value: 6000,   rarity: "mythic",    emoji: "💎", tier: "premium" },
+  { code: "pk_life2000",    name: "❤️ JACKPOT +2.000 Nyawa",        cost: 60, kind: "extra_life",    value: 2000,   rarity: "mythic",    emoji: "❤️", tier: "premium" },
+  { code: "pk_hint2000",    name: "💡 JACKPOT +2.000 Hint",         cost: 60, kind: "auto_hint",     value: 2000,   rarity: "mythic",    emoji: "💡", tier: "premium" },
+  { code: "pk_freeze300",   name: "🛡️ JACKPOT +300 Freeze",         cost: 60, kind: "streak_freeze", value: 300,    rarity: "mythic",    emoji: "🛡️", tier: "premium" },
 ];
 
 // === FREE DAILY TOKEN SHOP — bisa diklaim 1x per hari TANPA bayar token ===
