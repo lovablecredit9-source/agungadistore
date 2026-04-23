@@ -1574,10 +1574,10 @@ const Index = () => {
               </div>
             </SheetContent>
           </Sheet>
-          <img src={storeQris} alt={STORE_NAME} className="w-11 h-11 rounded-xl object-cover border-2 border-primary-foreground/30 shadow-md" />
+          <img src={storeQris} alt={STORE_NAME} className="w-9 h-9 rounded-full object-cover border border-border" />
           <div className="flex-1 min-w-0">
-            <h1 className="text-lg font-extrabold tracking-tight truncate">{STORE_NAME}</h1>
-            <p className="text-[10px] opacity-80 leading-tight truncate">{t("header.tagline", lang)}</p>
+            <h1 className="text-[15px] font-bold tracking-tight truncate text-foreground">{STORE_NAME}</h1>
+            <p className="text-[10px] text-muted-foreground leading-tight truncate">{t("header.tagline", lang)}</p>
           </div>
           <div className="flex items-center gap-1.5">
             <DropdownMenu>
