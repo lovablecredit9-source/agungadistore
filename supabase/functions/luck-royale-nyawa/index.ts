@@ -741,12 +741,7 @@ Deno.serve(async (req) => {
     // === BUY TOKEN SHOP ACCESS — bayar saldo, akses 30 hari ===
     // Body opsional: { tier: "premium" | "super_premium" } — default "premium"
     if (action === "buy_shop_access") {
-      const body = await Promise.resolve((globalThis as any).__lr_body__).catch(() => null);
-      // tier dibaca dari request asli (sudah di-destructure di atas) — fallback "premium"
-      const tier: "premium" | "super_premium" = ((body && body.tier) || (arguments as any)[0]?.tier || "premium");
-      // (kita pakai variable `tier` dari closure di bawah ini)
-      // NOTE: tier sebenarnya di-baca lewat req.json() di awal — kita ambil dari requestedCount fallback bila tidak tersedia.
-      const accessTier: "premium" | "super_premium" = (typeof itemCode === "string" && itemCode === "super_premium") ? "super_premium" : "premium";
+      const accessTier: "premium" | "super_premium" = requestedTier === "super_premium" ? "super_premium" : "premium";
       const price = accessTier === "super_premium" ? SUPER_SHOP_ACCESS_PRICE : SHOP_ACCESS_PRICE;
       const days = accessTier === "super_premium" ? SUPER_SHOP_ACCESS_DAYS : SHOP_ACCESS_DAYS;
       const tierLabel = accessTier === "super_premium" ? "Super Premium" : "Premium";
