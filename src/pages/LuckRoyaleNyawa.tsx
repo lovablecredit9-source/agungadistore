@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { getVisitorId } from "@/lib/visitor-id";
+import { formatCompactNumber } from "@/lib/utils";
 import {
   ArrowLeft, Heart, Lightbulb, Timer, Shield, Gem, Sparkles, Crown,
   Loader2, Trophy, Zap, X, Dices, BarChart3, Flame, Star, Award, TrendingUp,
@@ -204,7 +205,7 @@ export default function LuckRoyaleNyawa() {
           </div>
           <div className="flex items-center gap-1 bg-gradient-to-r from-cyan-500/20 to-purple-500/20 border border-cyan-400/30 rounded-full px-2.5 py-1">
             <Gem className="w-3.5 h-3.5 text-cyan-300" />
-            <span className="font-bold text-xs tabular-nums">{gems.toLocaleString()}</span>
+            <span className="font-bold text-xs tabular-nums">{formatCompactNumber(gems)}</span>
           </div>
         </div>
       </div>
@@ -291,7 +292,7 @@ export default function LuckRoyaleNyawa() {
                   <span className="text-[9px] font-black tracking-widest text-amber-100">MEGA JACKPOT POOL</span>
                 </div>
                 <div className="flex items-baseline gap-1">
-                  <span className="text-2xl font-black text-white tabular-nums drop-shadow">{megaPool.toLocaleString()}</span>
+                  <span className="text-2xl font-black text-white tabular-nums drop-shadow">{formatCompactNumber(megaPool)}</span>
                   <Gem className="w-4 h-4 text-amber-300" fill="currentColor" />
                 </div>
                 <p className="text-[10px] font-bold text-fuchsia-100/90 mt-0.5">
@@ -496,11 +497,11 @@ export default function LuckRoyaleNyawa() {
                     )}
                     <div className="text-sm tracking-widest text-white">{b.label}</div>
                     <div className="flex items-center justify-center gap-1 text-xs mt-0.5 text-white">
-                      <Gem className="w-3 h-3" /> {b.cost.toLocaleString()}
+                      <Gem className="w-3 h-3" /> {formatCompactNumber(b.cost)}
                     </div>
                     {savings > 0 && (
                       <div className="text-[9px] text-amber-100/90 mt-0.5">
-                        Hemat {savings.toLocaleString()} ({pct}%)
+                        Hemat {formatCompactNumber(savings)} ({pct}%)
                       </div>
                     )}
                   </button>
@@ -881,7 +882,7 @@ export default function LuckRoyaleNyawa() {
                       <div className="rounded-xl bg-gradient-to-br from-cyan-900/50 to-blue-900/50 border border-cyan-500/40 p-3 text-center">
                         <Gem className="w-6 h-6 text-cyan-300 mx-auto mb-1" />
                         <div className="text-[10px] text-cyan-200/70 font-bold tracking-wider">TOTAL GEMS</div>
-                        <div className="text-lg font-black text-cyan-100 tabular-nums">{gemsWon.toLocaleString()}</div>
+                        <div className="text-lg font-black text-cyan-100 tabular-nums">{formatCompactNumber(gemsWon)}</div>
                       </div>
                       <div className="rounded-xl bg-gradient-to-br from-rose-900/50 to-pink-900/50 border border-rose-500/40 p-3 text-center">
                         <Heart className="w-6 h-6 text-rose-300 mx-auto mb-1" fill="currentColor" />
@@ -987,7 +988,7 @@ export default function LuckRoyaleNyawa() {
             <FlameIcon className="w-5 h-5 text-amber-200" fill="currentColor" />
             <div>
               <div className="text-[9px] font-black text-amber-200 tracking-widest leading-none">STREAK BONUS!</div>
-              <div className="text-base font-black text-white leading-tight">+{bonusPopup.toLocaleString()} 💎</div>
+              <div className="text-base font-black text-white leading-tight">+{formatCompactNumber(bonusPopup)} 💎</div>
             </div>
           </div>
         </div>
@@ -1000,7 +1001,7 @@ export default function LuckRoyaleNyawa() {
           <div className="relative bg-gradient-to-br from-purple-700 via-fuchsia-600 to-pink-600 rounded-3xl p-6 shadow-2xl shadow-fuchsia-500/80 ring-4 ring-amber-300/60 animate-pulse max-w-xs mx-4 text-center">
             <div className="text-5xl mb-2">💥🎰💥</div>
             <div className="text-[10px] font-black text-amber-200 tracking-widest mb-1">MEGA JACKPOT PECAH!</div>
-            <div className="text-3xl font-black text-white drop-shadow mb-1">+{jackpotPopup.toLocaleString()}</div>
+            <div className="text-3xl font-black text-white drop-shadow mb-1">+{formatCompactNumber(jackpotPopup)}</div>
             <div className="flex items-center justify-center gap-1 text-amber-300 font-black">
               <Gem className="w-5 h-5" fill="currentColor" /> GEM
             </div>

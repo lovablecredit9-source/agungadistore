@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
 import { getVisitorId } from "@/lib/visitor-id";
+import { formatCompactNumber } from "@/lib/utils";
 import {
   ArrowLeft, Gem, Sparkles, Crown, Loader2, Trophy, Shield, Coins,
   Star, Award, Flame, Lock, Zap, Diamond,
@@ -158,7 +159,7 @@ export default function DiamondRoyale() {
           </div>
           <div className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-gradient-to-r from-purple-600/40 to-fuchsia-600/40 border border-fuchsia-400/40">
             <Gem className="w-3.5 h-3.5 text-fuchsia-300" fill="currentColor" />
-            <span className="text-xs font-black text-white">{gems.toLocaleString()}</span>
+            <span className="text-xs font-black text-white">{formatCompactNumber(gems)}</span>
           </div>
         </div>
       </div>

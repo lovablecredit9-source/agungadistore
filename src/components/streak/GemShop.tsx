@@ -6,6 +6,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Input } from "@/components/ui/input";
 import { Gem, Loader2, Sparkles, Crown, Plus, Minus, Lock, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { formatCompactNumber } from "@/lib/utils";
 
 interface Props { visitorId: string; onUpdate?: () => void; }
 interface GemPackage {
@@ -109,7 +110,7 @@ export default function GemShop({ visitorId: visitorIdProp, onUpdate }: Props) {
             </div>
             <div>
               <p className="text-[10px] font-bold text-cyan-300 uppercase tracking-wider">Gem Premium</p>
-              <p className="text-2xl font-black text-white">{myGems.toLocaleString("id-ID")} 💎</p>
+              <p className="text-2xl font-black text-white">{formatCompactNumber(myGems)} 💎</p>
             </div>
           </div>
           <Button
@@ -135,7 +136,7 @@ export default function GemShop({ visitorId: visitorIdProp, onUpdate }: Props) {
             <div className="space-y-3">
               <div className="rounded-lg bg-cyan-500/10 border border-cyan-500/30 p-3 text-center">
                 <p className="text-xs text-cyan-300 font-bold">Saldo Gem Kamu</p>
-                <p className="text-3xl font-black text-white">{myGems.toLocaleString("id-ID")} 💎</p>
+                <p className="text-3xl font-black text-white">{formatCompactNumber(myGems)} 💎</p>
               </div>
               {packages.map((p) => {
                 const total = p.gems + (p.bonus_gems || 0);
@@ -169,10 +170,10 @@ export default function GemShop({ visitorId: visitorIdProp, onUpdate }: Props) {
                         <div className="min-w-0">
                           <p className="text-sm font-black text-white truncate">{p.name}</p>
                           <p className="text-xs text-cyan-300 font-bold">
-                            {p.gems.toLocaleString("id-ID")} 💎
+                            {formatCompactNumber(p.gems)} 💎
                             {p.bonus_gems > 0 && <span className="text-yellow-400"> +{p.bonus_gems}</span>}
                           </p>
-                          <p className="text-[10px] text-white/60">Total: {(total * q).toLocaleString("id-ID")} 💎</p>
+                          <p className="text-[10px] text-white/60">Total: {formatCompactNumber(total * q)} 💎</p>
                         </div>
                       </div>
                       <div className="flex flex-col items-end gap-2 shrink-0">

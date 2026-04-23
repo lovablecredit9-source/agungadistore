@@ -8,6 +8,7 @@ import { Gift, Loader2, Sparkles, ShoppingBag, Trophy, Coins, Target, Lock, Zap,
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { trackDailyMission } from "@/lib/daily-mission";
+import { formatCompactNumber } from "@/lib/utils";
 import { EmojiIcon } from "./emojiToIcon";
 import { Input } from "@/components/ui/input";
 import SpinWheel from "./SpinWheel";
@@ -461,7 +462,7 @@ export default function NeonStreakHub({ visitorId, forcedView }: Props) {
             <div className="text-[10px] font-black tracking-widest neon-text-cyan uppercase">Streak Coins</div>
             <div className="flex items-center gap-2 mt-1">
               <Coins className="w-7 h-7 icon-3d-coin neon-pulse shrink-0" strokeWidth={2.5} />
-              <span className="text-2xl font-black neon-gradient-text tabular-nums truncate">{coins.toLocaleString("id-ID")}</span>
+              <span className="text-2xl font-black neon-gradient-text tabular-nums truncate">{formatCompactNumber(coins)}</span>
             </div>
           </div>
           <div className="h-12 w-px bg-gradient-to-b from-transparent via-cyan-400/50 to-transparent shrink-0" />
@@ -475,7 +476,7 @@ export default function NeonStreakHub({ visitorId, forcedView }: Props) {
               >
                 <Gem className="w-7 h-7 text-cyan-300 drop-shadow-[0_0_8px_rgba(34,211,238,0.8)]" strokeWidth={2.5} />
               </motion.div>
-              <span className="text-2xl font-black tabular-nums truncate bg-gradient-to-r from-cyan-200 via-blue-300 to-purple-400 bg-clip-text text-transparent drop-shadow">{gems.toLocaleString("id-ID")}</span>
+              <span className="text-2xl font-black tabular-nums truncate bg-gradient-to-r from-cyan-200 via-blue-300 to-purple-400 bg-clip-text text-transparent drop-shadow">{formatCompactNumber(gems)}</span>
             </div>
           </div>
           {multiplier > 1 && (
@@ -682,7 +683,7 @@ export default function NeonStreakHub({ visitorId, forcedView }: Props) {
           <div className="flex items-center justify-between p-3 rounded-xl bg-black/40 border border-yellow-500/30">
             <span className="text-xs font-bold text-white/80">Saldo Coins</span>
             <span className="text-xl font-black neon-text-yellow tabular-nums flex items-center gap-1.5">
-              <Coins className="w-5 h-5 icon-3d-coin" strokeWidth={2.5} /> {coins.toLocaleString("id-ID")}
+              <Coins className="w-5 h-5 icon-3d-coin" strokeWidth={2.5} /> {formatCompactNumber(coins)}
             </span>
           </div>
 
@@ -703,7 +704,7 @@ export default function NeonStreakHub({ visitorId, forcedView }: Props) {
                   >
                     <div className="flex items-center gap-1.5 mb-1">
                       <Plus className="w-3.5 h-3.5 text-cyan-300" strokeWidth={3} />
-                      <span className="text-sm font-black text-white tabular-nums">{pkg.coins.toLocaleString("id-ID")}</span>
+                      <span className="text-sm font-black text-white tabular-nums">{formatCompactNumber(pkg.coins)}</span>
                       <Coins className="w-3.5 h-3.5 icon-3d-coin" strokeWidth={2.5} />
                     </div>
                     <div className="text-[10px] font-bold neon-text-yellow tabular-nums">Rp{pkg.price.toLocaleString("id-ID")}</div>

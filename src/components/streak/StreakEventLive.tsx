@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Flame, Zap, Trophy, Sparkles, Clock, Users, TrendingUp, Star, Loader2, Crown, Medal, Award, Target, Gift, Rocket, Coins, Gem } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { formatCompactNumber } from "@/lib/utils";
 
 interface Props {
   visitorId: string;
@@ -305,7 +306,7 @@ export default function StreakEventLive({ visitorId, currentStreak, totalClaims,
               <span className="text-[9px] font-black text-cyan-100 uppercase tracking-widest">Streak Gem 💎</span>
             </div>
             <div className="text-xl font-black text-cyan-50 tabular-nums relative drop-shadow-[0_0_8px_rgba(34,211,238,0.5)]">
-              {gems.toLocaleString("id-ID")}
+              {formatCompactNumber(gems)}
             </div>
             <div className="text-[9px] text-cyan-200/80 mt-0.5 font-bold relative">Diamond premium · upgrade tier</div>
           </motion.div>
