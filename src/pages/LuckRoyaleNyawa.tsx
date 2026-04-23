@@ -88,9 +88,8 @@ export default function LuckRoyaleNyawa() {
   const [tokenThreshold, setTokenThreshold] = useState(5);
   const [megaPool, setMegaPool] = useState(5000);
   const [tokenShop, setTokenShop] = useState<Array<{ code: string; name: string; cost: number; kind: string; value: number; rarity: string; emoji: string; tier?: "free" | "premium" }>>([]);
-  const [tokenBundles, setTokenBundles] = useState<Array<{ code: string; name: string; tokens: number; bonus: number; price: number; badge?: string; emoji: string }>>([]);
   const [freeDailyShop, setFreeDailyShop] = useState<Array<{ code: string; name: string; kind: string; value: number; rarity: string; emoji: string; claimedToday: boolean }>>([]);
-  const [premiumShop, setPremiumShop] = useState<Array<{ code: string; name: string; unlockCostGems: number; kind: string; value: number; rarity: string; emoji: string; description: string; cooldownDays: number; isUnlocked: boolean; canClaim: boolean; nextClaimAt: number | null }>>([]);
+  const [shopAccess, setShopAccess] = useState<{ isActive: boolean; activeUntil: string | null; purchasedAt: string | null; price: number; durationDays: number }>({ isActive: false, activeUntil: null, purchasedAt: null, price: 100000, durationDays: 30 });
   const [redeeming, setRedeeming] = useState<string | null>(null);
   const [shopTier, setShopTier] = useState<"free" | "premium">("free");
 
