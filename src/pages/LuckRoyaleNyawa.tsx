@@ -733,7 +733,55 @@ export default function LuckRoyaleNyawa() {
             </div>
           )}
 
-          {/* 🎟️ TOKEN SHOP */}
+          {/* 💰 BELI LUCKY TOKEN dengan Saldo */}
+          {tokenBundles.length > 0 && (
+            <div className="rounded-2xl bg-gradient-to-br from-emerald-900/40 via-teal-900/30 to-cyan-900/40 border-2 border-emerald-500/50 p-3">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-1.5">
+                  <Rocket className="w-4 h-4 text-emerald-300" />
+                  <h3 className="text-xs font-black tracking-widest text-emerald-200">| BELI LUCKY TOKEN — POTONG SALDO</h3>
+                </div>
+                <Badge className="bg-emerald-500 text-black font-black text-[8px]">💰 SALDO</Badge>
+              </div>
+              <p className="text-[10px] text-emerald-100/80 mb-2.5">
+                Beli token instan — tukar di shop bawah untuk hadiah <span className="font-black text-emerald-300">PASTI</span> tanpa hoki-hokian!
+              </p>
+              <div className="grid grid-cols-2 gap-2">
+                {tokenBundles.map((b) => {
+                  const isMega = b.code === "tb_1000";
+                  return (
+                    <button
+                      key={b.code}
+                      disabled={redeeming === b.code}
+                      onClick={() => buyTokens(b.code, b.name, b.price, b.tokens + b.bonus)}
+                      className={`relative overflow-hidden rounded-xl bg-gradient-to-br ${isMega ? "from-amber-500 via-orange-600 to-red-600 ring-2 ring-amber-300/80" : "from-emerald-600 to-teal-700 ring-2 ring-emerald-400/60"} p-2.5 text-left active:scale-95 transition disabled:opacity-50`}
+                    >
+                      {b.badge && (
+                        <div className={`absolute top-1 right-1 ${isMega ? "bg-yellow-300 text-red-900" : "bg-emerald-300 text-emerald-900"} text-[8px] font-black px-1.5 py-0.5 rounded-full animate-pulse`}>
+                          {b.badge}
+                        </div>
+                      )}
+                      <div className="text-2xl mb-0.5">{b.emoji}</div>
+                      <div className="text-[10px] font-black text-white leading-tight">{b.name}</div>
+                      <div className="text-[11px] font-black text-yellow-200 mt-1 tabular-nums">
+                        🎟️ {b.tokens} <span className="text-[9px] text-yellow-100/90">+ {b.bonus} bonus</span>
+                      </div>
+                      <div className="text-[9px] font-bold text-white/90 mt-0.5 bg-black/30 inline-block px-1.5 py-0.5 rounded">
+                        Rp {b.price.toLocaleString("id-ID")}
+                      </div>
+                      {redeeming === b.code && (
+                        <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+                          <Loader2 className="w-5 h-5 animate-spin text-white" />
+                        </div>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* 🎟️ TOKEN SHOP — Tier Free / Premium */}
           {tokenShop.length > 0 && (
             <div className="rounded-2xl bg-gradient-to-br from-amber-900/40 via-orange-900/30 to-pink-900/40 border-2 border-amber-500/50 p-3">
               <div className="flex items-center justify-between mb-2">
@@ -743,11 +791,28 @@ export default function LuckRoyaleNyawa() {
                 </div>
                 <Badge className="bg-amber-500 text-black font-black text-[8px]">🎟️ {luckyTokens}</Badge>
               </div>
-              <p className="text-[10px] text-amber-100/80 mb-2.5">
-                Pakai Lucky Token untuk hadiah <span className="font-black text-amber-300">100% pasti</span> — tanpa hoki-hokian!
+              <p className="text-[10px] text-amber-100/80 mb-2">
+                Pakai Lucky Token untuk hadiah <span className="font-black text-amber-300">100% pasti</span>. Tier Premium = hadiah jauh lebih MANTAP!
               </p>
+
+              {/* Tier toggle */}
+              <div className="grid grid-cols-2 gap-1.5 mb-2.5 bg-black/40 rounded-lg p-1">
+                <button
+                  onClick={() => setShopTier("free")}
+                  className={`py-1.5 rounded-md text-[10px] font-black tracking-wider transition ${shopTier === "free" ? "bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-lg shadow-cyan-500/40" : "text-cyan-200/60"}`}
+                >
+                  🎁 FREE TIER (1-10)
+                </button>
+                <button
+                  onClick={() => setShopTier("premium")}
+                  className={`py-1.5 rounded-md text-[10px] font-black tracking-wider transition ${shopTier === "premium" ? "bg-gradient-to-r from-fuchsia-500 via-purple-600 to-amber-500 text-white shadow-lg shadow-fuchsia-500/40" : "text-fuchsia-200/60"}`}
+                >
+                  👑 PREMIUM (20-60)
+                </button>
+              </div>
+
               <div className="grid grid-cols-2 gap-2">
-                {tokenShop.map((item) => {
+                {tokenShop.filter(item => (item.tier || "free") === shopTier).map((item) => {
                   const style = RARITY_STYLE[item.rarity] || RARITY_STYLE.common;
                   const canAfford = luckyTokens >= item.cost;
                   return (
@@ -773,6 +838,9 @@ export default function LuckRoyaleNyawa() {
                   );
                 })}
               </div>
+              <p className="text-[9px] text-amber-100/60 mt-2 text-center">
+                {shopTier === "free" ? "10 item Free Tier" : "40 item Premium Tier — hadiah MANTAP"}
+              </p>
             </div>
           )}
 
