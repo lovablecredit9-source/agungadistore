@@ -3615,17 +3615,14 @@ const Index = () => {
         {tab === "adminpost" && (
           <div className="space-y-4 animate-fade-in">
             {/* Hero Header */}
-            <div className="relative overflow-hidden rounded-2xl p-5" style={{ background: "linear-gradient(135deg, hsl(240, 40%, 45%) 0%, hsl(260, 50%, 40%) 100%)" }}>
-              <div className="absolute inset-0 opacity-10">
-                <div className="absolute -top-8 -right-8 w-32 h-32 rounded-full bg-white/30 blur-2xl" />
-              </div>
-              <div className="relative z-10 flex items-center gap-4">
-                <div className="w-14 h-14 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-lg">
-                  <FileText className="w-7 h-7 text-white" />
+            <div className="rounded-xl border border-border bg-card p-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
+                  <FileText className="w-5 h-5 text-foreground" strokeWidth={1.7} />
                 </div>
-                <div>
-                  <h2 className="text-xl font-extrabold text-white">Postingan Admin</h2>
-                  <p className="text-white/70 text-xs font-medium mt-0.5">{adminPosts.length} pengumuman resmi</p>
+                <div className="flex-1 min-w-0">
+                  <h2 className="text-base font-semibold tracking-tight text-foreground">Postingan Admin</h2>
+                  <p className="text-xs text-muted-foreground mt-0.5">{adminPosts.length} pengumuman resmi</p>
                 </div>
               </div>
             </div>
