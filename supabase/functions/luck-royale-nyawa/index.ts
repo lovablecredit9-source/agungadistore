@@ -204,16 +204,17 @@ const FREE_DAILY_SHOP: Array<{ code: string; name: string; kind: string; value: 
   { code: "fd_coins100", name: "🎁 FREE +100 Streak Coin",    kind: "streak_coins",  value: 100,  rarity: "common", emoji: "🪙" },
 ];
 
-// === SHOP ACCESS PASS — helpers (akses 30 hari Rp 100k) ===
-async function getShopAccess(admin: any, visitorId: string): Promise<{ activeUntil: string | null; purchasedAt: string | null }> {
-  const key = `lr_shop_access_${visitorId}`;
+// === SHOP ACCESS PASS — helpers (akses 30 hari) ===
+// tier: "premium" (Rp 100k) atau "super_premium" (Rp 300k)
+async function getShopAccess(admin: any, visitorId: string, tier: "premium" | "super_premium" = "premium"): Promise<{ activeUntil: string | null; purchasedAt: string | null }> {
+  const key = tier === "super_premium" ? `lr_super_shop_access_${visitorId}` : `lr_shop_access_${visitorId}`;
   const { data } = await admin.from("admin_settings").select("setting_value").eq("setting_key", key).maybeSingle();
   if (!data) return { activeUntil: null, purchasedAt: null };
   try { return JSON.parse(data.setting_value); } catch { return { activeUntil: null, purchasedAt: null }; }
 }
 
-async function setShopAccess(admin: any, visitorId: string, state: { activeUntil: string | null; purchasedAt: string | null }) {
-  const key = `lr_shop_access_${visitorId}`;
+async function setShopAccess(admin: any, visitorId: string, state: { activeUntil: string | null; purchasedAt: string | null }, tier: "premium" | "super_premium" = "premium") {
+  const key = tier === "super_premium" ? `lr_super_shop_access_${visitorId}` : `lr_shop_access_${visitorId}`;
   const value = JSON.stringify(state);
   const { data: existing } = await admin.from("admin_settings").select("id").eq("setting_key", key).maybeSingle();
   if (existing) await admin.from("admin_settings").update({ setting_value: value }).eq("id", existing.id);
