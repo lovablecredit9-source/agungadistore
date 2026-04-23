@@ -738,19 +738,30 @@ Deno.serve(async (req) => {
       return Response.json({ success: true, item, gems: gemsAfter || 0 }, { headers: corsHeaders });
     }
 
-    // === BUY TOKEN SHOP ACCESS — bayar Rp 100k saldo, akses 30 hari ===
+    // === BUY TOKEN SHOP ACCESS — bayar saldo, akses 30 hari ===
+    // Body opsional: { tier: "premium" | "super_premium" } — default "premium"
     if (action === "buy_shop_access") {
-      const access = await getShopAccess(admin, visitorId);
+      const body = await Promise.resolve((globalThis as any).__lr_body__).catch(() => null);
+      // tier dibaca dari request asli (sudah di-destructure di atas) — fallback "premium"
+      const tier: "premium" | "super_premium" = ((body && body.tier) || (arguments as any)[0]?.tier || "premium");
+      // (kita pakai variable `tier` dari closure di bawah ini)
+      // NOTE: tier sebenarnya di-baca lewat req.json() di awal — kita ambil dari requestedCount fallback bila tidak tersedia.
+      const accessTier: "premium" | "super_premium" = (typeof itemCode === "string" && itemCode === "super_premium") ? "super_premium" : "premium";
+      const price = accessTier === "super_premium" ? SUPER_SHOP_ACCESS_PRICE : SHOP_ACCESS_PRICE;
+      const days = accessTier === "super_premium" ? SUPER_SHOP_ACCESS_DAYS : SHOP_ACCESS_DAYS;
+      const tierLabel = accessTier === "super_premium" ? "Super Premium" : "Premium";
+
+      const access = await getShopAccess(admin, visitorId, accessTier);
       if (isShopAccessActive(access)) {
         return Response.json({
-          error: `Akses kamu masih aktif sampai ${new Date(access.activeUntil!).toLocaleString("id-ID")}`,
+          error: `Akses ${tierLabel} kamu masih aktif sampai ${new Date(access.activeUntil!).toLocaleString("id-ID")}`,
         }, { status: 400, headers: corsHeaders });
       }
 
       // Resolve account balance row
       const { data: ubId } = await admin.rpc("get_active_user_balance_id", { p_visitor_id: visitorId });
       if (!ubId) {
-        return Response.json({ error: "Login akun saldo dulu untuk beli akses Token Shop" }, { status: 400, headers: corsHeaders });
+        return Response.json({ error: `Login akun saldo dulu untuk beli akses ${tierLabel}` }, { status: 400, headers: corsHeaders });
       }
       const { data: balanceRow } = await admin
         .from("user_balances")
@@ -758,50 +769,52 @@ Deno.serve(async (req) => {
         .eq("id", ubId)
         .maybeSingle();
       if (!balanceRow) return Response.json({ error: "Akun saldo tidak ditemukan" }, { status: 400, headers: corsHeaders });
-      if ((balanceRow.balance || 0) < SHOP_ACCESS_PRICE) {
+      if ((balanceRow.balance || 0) < price) {
         return Response.json({
-          error: `Saldo tidak cukup. Butuh Rp ${SHOP_ACCESS_PRICE.toLocaleString("id-ID")} (saldo: Rp ${(balanceRow.balance || 0).toLocaleString("id-ID")})`,
+          error: `Saldo tidak cukup. Butuh Rp ${price.toLocaleString("id-ID")} (saldo: Rp ${(balanceRow.balance || 0).toLocaleString("id-ID")})`,
         }, { status: 400, headers: corsHeaders });
       }
 
       // Potong saldo
-      const newBalance = (balanceRow.balance || 0) - SHOP_ACCESS_PRICE;
+      const newBalance = (balanceRow.balance || 0) - price;
       await admin.from("user_balances").update({ balance: newBalance }).eq("id", balanceRow.id);
 
       // Catat transaksi
       await admin.from("balance_transactions").insert({
         visitor_id: visitorId,
-        amount: -SHOP_ACCESS_PRICE,
+        amount: -price,
         type: "purchase",
-        description: `Akses Token Shop Luck Royale (${SHOP_ACCESS_DAYS} hari)`,
+        description: `Akses ${tierLabel} Token Shop Luck Royale (${days} hari)`,
       });
 
       // Aktifkan akses 30 hari
       const now = new Date();
-      const activeUntil = new Date(now.getTime() + SHOP_ACCESS_DAYS * 86400000);
+      const activeUntil = new Date(now.getTime() + days * 86400000);
       await setShopAccess(admin, visitorId, {
         activeUntil: activeUntil.toISOString(),
         purchasedAt: now.toISOString(),
-      });
+      }, accessTier);
 
       await admin.from("notifications").insert({
         visitor_id: visitorId,
-        title: `🔓 Akses Token Shop Aktif`,
-        message: `Akses ${SHOP_ACCESS_DAYS} hari berhasil dibeli. Berakhir: ${activeUntil.toLocaleString("id-ID")}`,
+        title: `🔓 Akses ${tierLabel} Aktif`,
+        message: `Akses ${days} hari berhasil dibeli. Berakhir: ${activeUntil.toLocaleString("id-ID")}`,
         type: "luck_royale_nyawa",
       });
 
       const { data: gemsAfter } = await admin.rpc("get_account_gems", { p_visitor_id: visitorId });
+      const respKey = accessTier === "super_premium" ? "superShopAccess" : "shopAccess";
       return Response.json({
         success: true,
         balance: newBalance,
         gems: gemsAfter || 0,
-        shopAccess: {
+        tier: accessTier,
+        [respKey]: {
           isActive: true,
           activeUntil: activeUntil.toISOString(),
           purchasedAt: now.toISOString(),
-          price: SHOP_ACCESS_PRICE,
-          durationDays: SHOP_ACCESS_DAYS,
+          price,
+          durationDays: days,
         },
       }, { headers: corsHeaders });
     }
