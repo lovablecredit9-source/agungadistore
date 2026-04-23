@@ -1582,8 +1582,8 @@ const Index = () => {
           <div className="flex items-center gap-1.5">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <button className="w-9 h-9 rounded-xl bg-primary-foreground/20 backdrop-blur-sm flex items-center justify-center hover:bg-primary-foreground/30 transition-colors" title="Tema">
-                  {resolvedTheme === "dark" ? <Moon className="w-4 h-4" /> : resolvedTheme === "gold" ? <Crown className="w-4 h-4" /> : resolvedTheme === "diamond" ? <Diamond className="w-4 h-4" /> : resolvedTheme === "silver" ? <Gem className="w-4 h-4" /> : resolvedTheme === "platinum" ? <Sparkles className="w-4 h-4" /> : resolvedTheme === "purple" ? <Palette className="w-4 h-4" /> : resolvedTheme === "custom" ? <ImageIcon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
+                <button className="w-9 h-9 rounded-full flex items-center justify-center hover:bg-muted transition-colors text-foreground" title="Tema">
+                  {resolvedTheme === "dark" ? <Moon className="w-[18px] h-[18px]" strokeWidth={1.7} /> : resolvedTheme === "gold" ? <Crown className="w-[18px] h-[18px]" strokeWidth={1.7} /> : resolvedTheme === "diamond" ? <Diamond className="w-[18px] h-[18px]" strokeWidth={1.7} /> : resolvedTheme === "silver" ? <Gem className="w-[18px] h-[18px]" strokeWidth={1.7} /> : resolvedTheme === "platinum" ? <Sparkles className="w-[18px] h-[18px]" strokeWidth={1.7} /> : resolvedTheme === "purple" ? <Palette className="w-[18px] h-[18px]" strokeWidth={1.7} /> : resolvedTheme === "custom" ? <ImageIcon className="w-[18px] h-[18px]" strokeWidth={1.7} /> : <Sun className="w-[18px] h-[18px]" strokeWidth={1.7} />}
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="min-w-[160px]">
