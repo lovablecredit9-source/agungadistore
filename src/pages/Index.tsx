@@ -1684,43 +1684,29 @@ const Index = () => {
               </div>
             )}
 
-            {/* Welcome Header - PREMIUM */}
-            <div className="relative overflow-hidden rounded-3xl p-6 glow-border" style={{ background: "linear-gradient(135deg, hsl(250, 85%, 50%) 0%, hsl(280, 75%, 45%) 25%, hsl(320, 70%, 45%) 50%, hsl(200, 80%, 45%) 75%, hsl(160, 70%, 40%) 100%)" }}>
-              <div className="absolute inset-0">
-                <div className="absolute -top-12 -right-12 w-56 h-56 rounded-full bg-white/15 blur-[60px] animate-pulse" />
-                <div className="absolute -bottom-16 -left-16 w-48 h-48 rounded-full bg-white/10 blur-[50px] animate-pulse" style={{ animationDelay: "1s" }} />
-                <div className="absolute top-1/3 right-1/4 w-32 h-32 rounded-full bg-yellow-300/10 blur-[40px] animate-pulse" style={{ animationDelay: "2s" }} />
-                <div className="absolute bottom-1/4 left-1/3 w-24 h-24 rounded-full bg-cyan-300/10 blur-[30px] animate-pulse" style={{ animationDelay: "1.5s" }} />
-                <div className="absolute inset-0 shimmer" />
-                {/* Decorative particles */}
-                <div className="absolute top-4 right-8 w-2 h-2 rounded-full bg-white/40 floating" />
-                <div className="absolute top-12 right-16 w-1.5 h-1.5 rounded-full bg-white/30 floating" style={{ animationDelay: "1s" }} />
-                <div className="absolute bottom-8 left-12 w-1 h-1 rounded-full bg-white/30 floating" style={{ animationDelay: "2s" }} />
-                <div className="absolute top-6 left-1/2 w-1.5 h-1.5 rounded-full bg-yellow-300/40 floating" style={{ animationDelay: "0.5s" }} />
-              </div>
-              <div className="relative z-10 flex items-center gap-4">
-                <div className="relative floating">
-                  <div className="absolute -inset-2 bg-white/25 rounded-2xl blur-lg" />
-                  <div className="absolute -inset-1 bg-gradient-to-br from-white/40 to-transparent rounded-2xl" />
-                  <img src={storeQris} alt={STORE_NAME} className="relative w-[72px] h-[72px] rounded-2xl object-cover shadow-2xl border-2 border-white/50 ring-2 ring-white/20 ring-offset-2 ring-offset-transparent" />
-                </div>
-                <div>
-                  <p className="text-white/90 text-xs font-semibold tracking-wide flex items-center gap-1.5">
-                    {new Date().getHours() < 12 ? "☀️ Selamat Pagi" : new Date().getHours() < 18 ? "🌤️ Selamat Siang" : "🌙 Selamat Malam"}
+            {/* Welcome Header — flat IG/TikTok style */}
+            <div className="rounded-2xl bg-card border border-border p-4">
+              <div className="flex items-center gap-3">
+                <img src={storeQris} alt={STORE_NAME} className="w-14 h-14 rounded-xl object-cover border border-border" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-[11px] text-muted-foreground font-medium">
+                    {new Date().getHours() < 12 ? "Selamat Pagi" : new Date().getHours() < 18 ? "Selamat Siang" : "Selamat Malam"}
                   </p>
-                  <h2 className="text-[26px] font-black text-white leading-tight drop-shadow-lg tracking-tight">{STORE_NAME}</h2>
-                  <p className="text-white/75 text-[11px] font-medium mt-0.5 tracking-widest uppercase">{t("header.tagline", lang)}</p>
-                  <LiveClock />
+                  <h2 className="text-[18px] font-bold text-foreground leading-tight truncate">{STORE_NAME}</h2>
+                  <p className="text-[10px] text-muted-foreground mt-0.5 truncate">{t("header.tagline", lang)}</p>
                 </div>
               </div>
-              <div className="relative z-10 flex gap-2 mt-5">
+              <div className="mt-3 pt-3 border-t border-border">
+                <LiveClock />
+              </div>
+              <div className="flex gap-2 mt-3">
                 <a href={`${SOCIAL_LINKS.whatsapp}?text=${encodeURIComponent("Halo, saya mau order di Agung Adi Store")}`} target="_blank" rel="noopener noreferrer" className="flex-1">
-                  <Button size="sm" className="w-full bg-white/15 hover:bg-white/25 text-white border border-white/25 backdrop-blur-xl gap-1.5 text-xs font-bold shadow-xl hover:shadow-2xl transition-all hover:scale-[1.02] rounded-xl h-10">
-                    <MessageCircle className="w-4 h-4" /> {t("home.contact_wa", lang)}
+                  <Button size="sm" variant="outline" className="w-full gap-1.5 text-xs font-semibold rounded-lg h-9">
+                    <MessageCircle className="w-4 h-4" strokeWidth={1.8} /> {t("home.contact_wa", lang)}
                   </Button>
                 </a>
-                <Button size="sm" className="flex-1 bg-white text-primary hover:bg-white/95 gap-1.5 text-xs font-extrabold shadow-xl hover:shadow-2xl transition-all hover:scale-[1.02] rounded-xl h-10" onClick={() => setTab("voucher")}>
-                  <Ticket className="w-4 h-4" /> {t("home.claim_voucher", lang)}
+                <Button size="sm" className="flex-1 gap-1.5 text-xs font-semibold rounded-lg h-9" onClick={() => setTab("voucher")}>
+                  <Ticket className="w-4 h-4" strokeWidth={1.8} /> {t("home.claim_voucher", lang)}
                 </Button>
               </div>
             </div>
