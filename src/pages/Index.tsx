@@ -1819,68 +1819,50 @@ const Index = () => {
               ]}
             />
 
-            {/* Streak & Game Side by Side - MORE PREMIUM */}
+            {/* Streak & Game Side by Side - minimalist */}
             <div className="grid grid-cols-2 gap-3">
-              {/* Streak Card */}
-              <div
+              <button
                 onClick={() => setTab("streak")}
-                className="relative overflow-hidden rounded-2xl cursor-pointer transition-all hover:shadow-2xl hover:-translate-y-2 active:scale-[0.97] duration-300 card-shine group"
-                style={{ background: "linear-gradient(145deg, #ff8c00, #ff4500, #dc2626)" }}
+                className="rounded-xl border border-border bg-card p-3 text-left transition-colors hover:bg-muted/40 active:scale-[0.99]"
               >
-                <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
-                <div className="absolute inset-0 opacity-20">
-                  {[...Array(6)].map((_, i) => (
-                    <div key={i} className="absolute rounded-full animate-pulse" style={{
-                      width: 16 + i * 10, height: 16 + i * 10,
-                      background: "radial-gradient(circle, rgba(255,220,0,0.7), transparent 70%)",
-                      top: `${5 + i * 15}%`, right: `${3 + i * 7}%`,
-                      animationDelay: `${i * 0.3}s`,
-                    }} />
-                  ))}
-                </div>
-                <div className="relative z-10 p-4 text-center">
-                  <div className="text-5xl mb-2 floating group-hover:scale-110 transition-transform">🔥</div>
-                  <h3 className="text-white font-black text-sm leading-tight drop-shadow-lg">Daily Streak</h3>
-                  <p className="text-white/75 text-[10px] mt-1 leading-snug font-medium">Klaim setiap hari!</p>
-                  <div className="mt-3 bg-white/20 backdrop-blur-md rounded-full px-4 py-2 inline-flex items-center gap-1.5 shadow-xl border border-white/20 group-hover:bg-white/30 transition-colors">
-                    <span className="text-white text-[11px] font-extrabold">Klaim →</span>
+                <div className="flex items-center gap-2.5">
+                  <div className="w-9 h-9 rounded-lg bg-muted flex items-center justify-center shrink-0">
+                    <Flame className="w-4.5 h-4.5 text-foreground" strokeWidth={1.7} />
+                  </div>
+                  <div className="min-w-0">
+                    <h3 className="text-sm font-semibold text-foreground leading-tight">Daily Streak</h3>
+                    <p className="text-[11px] text-muted-foreground mt-0.5">Klaim harian</p>
                   </div>
                 </div>
-              </div>
+              </button>
 
-              {/* Game Card */}
-              <div
+              <button
                 onClick={() => setTab("game")}
-                className="relative overflow-hidden rounded-2xl cursor-pointer transition-all hover:shadow-2xl hover:-translate-y-2 active:scale-[0.97] duration-300 card-shine group"
-                style={{ background: "linear-gradient(145deg, #8b5cf6, #6d28d9, #4c1d95)" }}
+                className="rounded-xl border border-border bg-card p-3 text-left transition-colors hover:bg-muted/40 active:scale-[0.99]"
               >
-                <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
-                <div className="absolute inset-0 opacity-15">
-                  <div className="absolute top-2 right-3 text-4xl floating" style={{ animationDelay: "0.5s" }}>🎮</div>
-                  <div className="absolute bottom-2 left-3 text-2xl floating" style={{ animationDelay: "1.5s" }}>🎲</div>
-                </div>
-                <div className="relative z-10 p-4 text-center">
-                  <div className="text-5xl mb-2 floating group-hover:scale-110 transition-transform" style={{ animationDelay: "0.3s" }}>🎮</div>
-                  <h3 className="text-white font-black text-sm leading-tight drop-shadow-lg">Game AI</h3>
-                  <p className="text-white/75 text-[10px] mt-1 leading-snug font-medium">11 game menantang!</p>
-                  <div className="mt-3 bg-white/20 backdrop-blur-md rounded-full px-4 py-2 inline-flex items-center gap-1.5 shadow-xl border border-white/20 group-hover:bg-white/30 transition-colors">
-                    <span className="text-white text-[11px] font-extrabold">Main →</span>
+                <div className="flex items-center gap-2.5">
+                  <div className="w-9 h-9 rounded-lg bg-muted flex items-center justify-center shrink-0">
+                    <Gamepad2 className="w-4.5 h-4.5 text-foreground" strokeWidth={1.7} />
+                  </div>
+                  <div className="min-w-0">
+                    <h3 className="text-sm font-semibold text-foreground leading-tight">Game</h3>
+                    <p className="text-[11px] text-muted-foreground mt-0.5">11 permainan</p>
                   </div>
                 </div>
-              </div>
+              </button>
             </div>
 
-            {/* Stats Bar - GLASSMORPHISM */}
+            {/* Stats Bar - minimalist */}
             <div className="grid grid-cols-3 gap-2.5">
               {[
-                { value: `${products.length}+`, label: "Produk", icon: "🛍️", gradient: "from-blue-500/15 to-indigo-500/5" },
-                { value: `${homeSponsors.length}`, label: "Sponsor", icon: "📢", gradient: "from-amber-500/15 to-orange-500/5" },
-                { value: "11", label: "Game", icon: "🎮", gradient: "from-violet-500/15 to-purple-500/5" },
-              ].map((stat) => (
-                <div key={stat.label} className={`glass-card-strong rounded-2xl p-4 text-center hover:border-primary/30 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl bg-gradient-to-br ${stat.gradient} group cursor-pointer`}>
-                  <span className="text-2xl group-hover:scale-110 inline-block transition-transform">{stat.icon}</span>
-                  <p className="text-xl font-black text-foreground mt-1">{stat.value}</p>
-                  <p className="text-[9px] text-muted-foreground font-bold uppercase tracking-widest">{stat.label}</p>
+                { value: `${products.length}+`, label: "Produk", Icon: Package },
+                { value: `${homeSponsors.length}`, label: "Sponsor", Icon: Megaphone },
+                { value: "11", label: "Game", Icon: Gamepad2 },
+              ].map(({ value, label, Icon }) => (
+                <div key={label} className="rounded-xl border border-border bg-card p-3 text-center">
+                  <Icon className="w-4 h-4 text-muted-foreground mx-auto" strokeWidth={1.7} />
+                  <p className="text-base font-semibold text-foreground mt-1.5">{value}</p>
+                  <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-wide mt-0.5">{label}</p>
                 </div>
               ))}
             </div>
