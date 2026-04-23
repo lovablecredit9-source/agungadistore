@@ -301,7 +301,7 @@ export default function WhatsAppChat({
             <div key={m.id}>
               {showDate && (
                 <div className="flex justify-center my-3">
-                  <span className="text-[10px] font-semibold px-2.5 py-1 rounded-full bg-background/80 backdrop-blur-md border border-border/50 text-muted-foreground shadow-sm">
+                  <span className="text-[10px] font-medium px-2.5 py-1 rounded-full border border-border bg-muted text-muted-foreground">
                     {dateLabel(m.created_at)}
                   </span>
                 </div>
@@ -309,12 +309,12 @@ export default function WhatsAppChat({
               <div className={`flex ${mine ? "justify-end" : "justify-start"} ${groupedWithPrev ? "mt-0.5" : "mt-1.5"} animate-fade-in`}>
                 <div className="relative group max-w-[82%]">
                   <div
-                    className={`relative px-3 py-2 shadow-md transition-all ${
+                    className={`relative px-3 py-2 border transition-colors ${
                       mine
-                        ? `bg-gradient-to-br from-primary to-primary/85 text-primary-foreground ${
+                        ? `border-foreground bg-foreground text-background ${
                             groupedWithPrev ? "rounded-2xl rounded-br-md" : "rounded-2xl rounded-br-sm"
                           }`
-                        : `bg-card/95 backdrop-blur-sm border border-border/60 ${
+                        : `border-border bg-card ${
                             groupedWithPrev ? "rounded-2xl rounded-bl-md" : "rounded-2xl rounded-bl-sm"
                           }`
                     } ${m.is_deleted ? "italic opacity-70" : ""}`}
@@ -328,7 +328,7 @@ export default function WhatsAppChat({
                   {replied && !m.is_deleted && (
                     <div
                       className={`mb-1 border-l-2 pl-2 py-1 rounded text-[11px] ${
-                        mine ? "border-primary-foreground/60 bg-primary-foreground/10" : "border-primary bg-primary/10"
+                        mine ? "border-background/40 bg-background/10" : "border-border bg-muted/60"
                       }`}
                     >
                       <p className="font-semibold opacity-80">
@@ -376,8 +376,8 @@ export default function WhatsAppChat({
                       <button
                         key={emo}
                         onClick={() => toggleReaction(m, emo)}
-                        className={`text-[11px] px-1.5 py-0.5 rounded-full border bg-background shadow-sm flex items-center gap-0.5 ${
-                          isMine ? "border-primary" : "border-border"
+                        className={`text-[11px] px-1.5 py-0.5 rounded-full border bg-card flex items-center gap-0.5 ${
+                          isMine ? "border-foreground" : "border-border"
                         }`}
                       >
                         <span>{emo}</span>
@@ -409,7 +409,7 @@ export default function WhatsAppChat({
                     {mine && (
                       <button
                         onClick={() => softDelete(m)}
-                        className="w-6 h-6 rounded-full bg-background border border-destructive/40 text-destructive shadow flex items-center justify-center hover:bg-destructive/10"
+                      className="w-6 h-6 rounded-full bg-background border border-border text-muted-foreground flex items-center justify-center hover:bg-muted"
                         aria-label="Delete"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
@@ -421,7 +421,7 @@ export default function WhatsAppChat({
                 {/* Emoji picker popover */}
                 {emojiFor === m.id && (
                   <div
-                    className={`absolute z-20 -top-10 ${mine ? "right-0" : "left-0"} bg-background border border-border rounded-full shadow-lg px-1.5 py-1 flex gap-0.5`}
+                    className={`absolute z-20 -top-10 ${mine ? "right-0" : "left-0"} bg-card border border-border rounded-full px-1.5 py-1 flex gap-0.5`}
                   >
                     {EMOJIS.map((e) => (
                       <button
@@ -448,10 +448,10 @@ export default function WhatsAppChat({
 
         {otherTyping && (
           <div className="flex justify-start animate-fade-in">
-            <div className="bg-card/95 backdrop-blur-sm border border-border/60 rounded-2xl rounded-bl-sm px-3.5 py-2.5 flex items-center gap-1 shadow-md">
-              <span className="w-1.5 h-1.5 rounded-full bg-primary/70 animate-bounce" style={{ animationDelay: "0ms" }} />
-              <span className="w-1.5 h-1.5 rounded-full bg-primary/70 animate-bounce" style={{ animationDelay: "120ms" }} />
-              <span className="w-1.5 h-1.5 rounded-full bg-primary/70 animate-bounce" style={{ animationDelay: "240ms" }} />
+            <div className="bg-card border border-border rounded-2xl rounded-bl-sm px-3.5 py-2.5 flex items-center gap-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground/70 animate-bounce" style={{ animationDelay: "0ms" }} />
+              <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground/70 animate-bounce" style={{ animationDelay: "120ms" }} />
+              <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground/70 animate-bounce" style={{ animationDelay: "240ms" }} />
             </div>
           </div>
         )}
@@ -464,10 +464,10 @@ export default function WhatsAppChat({
       ) : (
         <div className="border-t border-border/60 bg-background/95 backdrop-blur-md p-2.5 space-y-2">
           {replyTo && (
-            <div className="flex items-start gap-2 bg-primary/5 border-l-[3px] border-primary rounded-lg px-2.5 py-2 text-[11px] animate-fade-in">
-              <Reply className="w-3.5 h-3.5 text-primary mt-0.5 shrink-0" />
+            <div className="flex items-start gap-2 rounded-lg border border-border bg-muted/50 px-2.5 py-2 text-[11px] animate-fade-in">
+              <Reply className="w-3.5 h-3.5 text-muted-foreground mt-0.5 shrink-0" />
               <div className="flex-1 min-w-0">
-                <p className="font-semibold text-primary">
+                <p className="font-semibold text-foreground">
                   Membalas {replyTo.sender_type === viewerType ? "diri sendiri" : incomingLabel || "pesan"}
                 </p>
                 <p className="truncate opacity-80">
@@ -480,7 +480,7 @@ export default function WhatsAppChat({
             </div>
           )}
           <div className="flex items-center gap-2">
-            <label className="w-10 h-10 rounded-full bg-muted/70 hover:bg-muted flex items-center justify-center cursor-pointer shrink-0 transition-all hover:scale-105 active:scale-95">
+            <label className="w-10 h-10 rounded-xl border border-border bg-card hover:bg-muted/50 flex items-center justify-center cursor-pointer shrink-0 transition-colors">
               <ImagePlus className="w-[18px] h-[18px] text-muted-foreground" />
               <input
                 type="file"
@@ -504,14 +504,14 @@ export default function WhatsAppChat({
                   }
                 }}
                 onBlur={() => pushTyping(false)}
-                className="rounded-full bg-muted/60 border-border/60 focus-visible:ring-primary/40 pl-4 pr-4 h-10"
+                className="h-10 rounded-xl border-border bg-card pl-4 pr-4 focus-visible:ring-ring"
               />
             </div>
             <Button
               size="icon"
               onClick={sendMessage}
               disabled={!draft.trim()}
-              className="shrink-0 rounded-full h-10 w-10 bg-gradient-to-br from-primary to-primary/80 shadow-md hover:shadow-lg hover:scale-105 active:scale-95 transition-all disabled:opacity-50 disabled:scale-100"
+              className="h-10 w-10 shrink-0 rounded-xl bg-foreground text-background transition-colors hover:bg-foreground/90 disabled:opacity-50"
             >
               <Send className="w-[18px] h-[18px]" />
             </Button>
