@@ -21,16 +21,17 @@ const LiveClock = () => {
   const seconds = String(now.getSeconds()).padStart(2, "0");
 
   return (
-    <div className="flex items-center gap-2 mt-1.5">
-      <div className="flex items-center gap-1 bg-white/15 backdrop-blur-sm rounded-lg px-2 py-0.5 border border-white/20">
-        <Clock className="w-3 h-3 text-white/80" />
-        <span className="text-white text-[11px] font-bold tabular-nums tracking-wider">
-          {hours}:{minutes}<span className="animate-pulse">:</span>{seconds}
+    <div className="flex items-center gap-3 text-muted-foreground">
+      <div className="flex items-center gap-1.5">
+        <Clock className="w-3.5 h-3.5" strokeWidth={1.7} />
+        <span className="text-[11px] font-medium tabular-nums text-foreground">
+          {hours}:{minutes}:{seconds}
         </span>
       </div>
-      <div className="flex items-center gap-1 bg-white/15 backdrop-blur-sm rounded-lg px-2 py-0.5 border border-white/20">
-        <CalendarDays className="w-3 h-3 text-white/80" />
-        <span className="text-white text-[11px] font-bold">
+      <span className="w-px h-3.5 bg-border" />
+      <div className="flex items-center gap-1.5">
+        <CalendarDays className="w-3.5 h-3.5" strokeWidth={1.7} />
+        <span className="text-[11px] font-medium text-foreground">
           {day}, {date} {month} {year}
         </span>
       </div>
