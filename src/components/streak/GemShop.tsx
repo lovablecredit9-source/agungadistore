@@ -6,6 +6,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Input } from "@/components/ui/input";
 import { Gem, Loader2, Sparkles, Crown, Plus, Minus, Lock, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { formatCompactNumber } from "@/lib/utils";
 
 interface Props { visitorId: string; onUpdate?: () => void; }
 interface GemPackage {

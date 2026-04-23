@@ -9,6 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Loader2, Coins, Wallet, Snowflake, Gem, Sparkles, Check, Gift, Lock, X } from "lucide-react";
 import membershipCardLogo from "@/assets/membership-card-logo.png";
 import gemIcon from "@/assets/gem-icon.png";
+import { formatCompactNumber } from "@/lib/utils";
 
 interface Props {
   visitorId: string;

@@ -8,6 +8,7 @@ import { Gift, Loader2, Sparkles, ShoppingBag, Trophy, Coins, Target, Lock, Zap,
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { trackDailyMission } from "@/lib/daily-mission";
+import { formatCompactNumber } from "@/lib/utils";
 import { EmojiIcon } from "./emojiToIcon";
 import { Input } from "@/components/ui/input";
 import SpinWheel from "./SpinWheel";
