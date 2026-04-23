@@ -1725,31 +1725,28 @@ const Index = () => {
               </div>
             </div>
 
-            {/* Quick Action Grid - ENHANCED */}
-            <div className="grid grid-cols-4 gap-2.5">
+            {/* Quick Action Grid - IG/TikTok flat style */}
+            <div className="grid grid-cols-4 gap-2">
               {[
-                { icon: <Package className="w-5 h-5" />, label: "Produk", tab: "produk" as Tab, gradient: "from-blue-500 to-indigo-600", shadow: "shadow-blue-500/30", badge: `${products.length}` },
-                { icon: <Wallet className="w-5 h-5" />, label: "Saldo", tab: "saldo" as Tab, gradient: "from-emerald-500 to-teal-600", shadow: "shadow-emerald-500/30" },
-                { icon: <Gamepad2 className="w-5 h-5" />, label: "Game", tab: "game" as Tab, gradient: "from-violet-500 to-purple-600", shadow: "shadow-violet-500/30", badge: "11" },
-                { icon: <Music className="w-5 h-5" />, label: "Musik", tab: "playlist" as Tab, gradient: "from-pink-500 to-rose-600", shadow: "shadow-pink-500/30" },
+                { icon: <Package className="w-6 h-6" strokeWidth={1.7} />, label: "Produk", tab: "produk" as Tab, badge: `${products.length}` },
+                { icon: <Wallet className="w-6 h-6" strokeWidth={1.7} />, label: "Saldo", tab: "saldo" as Tab },
+                { icon: <Gamepad2 className="w-6 h-6" strokeWidth={1.7} />, label: "Game", tab: "game" as Tab, badge: "11" },
+                { icon: <Music className="w-6 h-6" strokeWidth={1.7} />, label: "Musik", tab: "playlist" as Tab },
               ].map((item) => (
                 <button
                   key={item.label}
                   onClick={() => setTab(item.tab)}
-                  className="relative flex flex-col items-center gap-1.5 p-3.5 rounded-2xl glass-card-strong hover:border-primary/30 hover:shadow-xl transition-all duration-300 hover:-translate-y-1.5 active:scale-95 group overflow-hidden"
+                  className="relative flex flex-col items-center gap-1.5 py-3 rounded-xl hover:bg-muted/40 active:bg-muted/60 transition-colors"
                 >
-                  <div className="absolute inset-0 bg-gradient-to-br from-primary/3 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                  <div className="relative">
-                    <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${item.gradient} flex items-center justify-center text-white shadow-lg ${item.shadow} group-hover:scale-110 group-hover:shadow-xl transition-all duration-300`}>
-                      {item.icon}
-                    </div>
+                  <div className="relative text-foreground">
+                    {item.icon}
                     {item.badge && (
-                      <span className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] rounded-full bg-destructive text-destructive-foreground text-[9px] font-bold flex items-center justify-center px-1 shadow-sm">
+                      <span className="absolute -top-1.5 -right-2 min-w-[16px] h-[16px] rounded-full bg-destructive text-destructive-foreground text-[9px] font-semibold flex items-center justify-center px-1">
                         {item.badge}
                       </span>
                     )}
                   </div>
-                  <span className="text-[11px] font-bold text-foreground relative z-10">{item.label}</span>
+                  <span className="text-[11px] font-medium text-foreground">{item.label}</span>
                 </button>
               ))}
             </div>
