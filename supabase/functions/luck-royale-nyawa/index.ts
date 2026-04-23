@@ -130,6 +130,74 @@ const TOKEN_SHOP: Array<{ code: string; name: string; cost: number; kind: string
   { code: "tk_mega2500",   name: "🌈 MEGA +2.500 Gem",        cost: 70,  kind: "gems",          value: 2500,  rarity: "mythic",    emoji: "🌈" },
 ];
 
+// === FREE DAILY TOKEN SHOP — bisa diklaim 1x per hari TANPA bayar token ===
+const FREE_DAILY_SHOP: Array<{ code: string; name: string; kind: string; value: number; rarity: string; emoji: string }> = [
+  { code: "fd_hint3",    name: "🎁 FREE +3 Hint Harian",      kind: "auto_hint",     value: 3,    rarity: "common", emoji: "💡" },
+  { code: "fd_life3",    name: "🎁 FREE +3 Nyawa Harian",     kind: "extra_life",    value: 3,    rarity: "common", emoji: "❤️" },
+  { code: "fd_freeze1",  name: "🎁 FREE +1 Streak Freeze",    kind: "streak_freeze", value: 1,    rarity: "rare",   emoji: "🛡️" },
+  { code: "fd_coins100", name: "🎁 FREE +100 Streak Coin",    kind: "streak_coins",  value: 100,  rarity: "common", emoji: "🪙" },
+];
+
+// === PREMIUM SHOP — harus UNLOCK dulu pakai Gem, baru bisa CLAIM (sekali per minggu) ===
+// Setelah unlock, user bisa klaim hadiah secara periodik (mingguan).
+const PREMIUM_SHOP: Array<{
+  code: string;
+  name: string;
+  unlockCostGems: number;
+  kind: string;
+  value: number;
+  rarity: string;
+  emoji: string;
+  description: string;
+  cooldownDays: number;
+}> = [
+  // Tier 1 — VIP starter (unlock murah, hadiah tetap)
+  { code: "pr_vip_hint",   name: "👑 VIP Hint Pack",        unlockCostGems: 800,  kind: "auto_hint",     value: 50,    rarity: "epic",      emoji: "💡", description: "Klaim +50 Hint setiap minggu", cooldownDays: 7 },
+  { code: "pr_vip_life",   name: "👑 VIP Life Pack",        unlockCostGems: 800,  kind: "extra_life",    value: 50,    rarity: "epic",      emoji: "❤️", description: "Klaim +50 Nyawa setiap minggu", cooldownDays: 7 },
+  { code: "pr_vip_freeze", name: "👑 VIP Freeze Pack",      unlockCostGems: 1000, kind: "streak_freeze", value: 20,    rarity: "epic",      emoji: "🛡️", description: "Klaim +20 Freeze setiap minggu", cooldownDays: 7 },
+  { code: "pr_vip_coins",  name: "👑 VIP Coin Pack",        unlockCostGems: 1200, kind: "streak_coins",  value: 5000,  rarity: "epic",      emoji: "🪙", description: "Klaim +5.000 Coin setiap minggu", cooldownDays: 7 },
+
+  // Tier 2 — Royale (unlock mahal, hadiah BESAR)
+  { code: "pr_royal_hint",  name: "🌟 ROYAL Hint Vault",     unlockCostGems: 3500, kind: "auto_hint",     value: 250,   rarity: "legendary", emoji: "💡", description: "Klaim +250 Hint setiap minggu", cooldownDays: 7 },
+  { code: "pr_royal_life",  name: "🌟 ROYAL Life Vault",     unlockCostGems: 3500, kind: "extra_life",    value: 250,   rarity: "legendary", emoji: "❤️", description: "Klaim +250 Nyawa setiap minggu", cooldownDays: 7 },
+  { code: "pr_royal_coins", name: "🌟 ROYAL Coin Vault",     unlockCostGems: 4500, kind: "streak_coins",  value: 25000, rarity: "legendary", emoji: "🪙", description: "Klaim +25.000 Coin setiap minggu", cooldownDays: 7 },
+
+  // Tier 3 — Mythic (paling mahal, hadiah SUPER)
+  { code: "pr_myth_mega",   name: "🌈 MYTHIC Mega Vault",    unlockCostGems: 12000, kind: "extra_life",    value: 1000,  rarity: "mythic",    emoji: "🌈", description: "Klaim +1.000 Nyawa setiap minggu", cooldownDays: 7 },
+  { code: "pr_myth_gems",   name: "🌈 MYTHIC Gem Vault",     unlockCostGems: 15000, kind: "gems",          value: 1500,  rarity: "mythic",    emoji: "💎", description: "Klaim +1.500 Gem setiap minggu", cooldownDays: 7 },
+];
+
+// Helpers untuk premium unlock & free daily state
+async function getPremiumState(admin: any, visitorId: string): Promise<Record<string, { unlockedAt: string; lastClaim: string | null }>> {
+  const key = `lr_premium_${visitorId}`;
+  const { data } = await admin.from("admin_settings").select("setting_value").eq("setting_key", key).maybeSingle();
+  if (!data) return {};
+  try { return JSON.parse(data.setting_value); } catch { return {}; }
+}
+
+async function setPremiumState(admin: any, visitorId: string, state: Record<string, any>) {
+  const key = `lr_premium_${visitorId}`;
+  const value = JSON.stringify(state);
+  const { data: existing } = await admin.from("admin_settings").select("id").eq("setting_key", key).maybeSingle();
+  if (existing) await admin.from("admin_settings").update({ setting_value: value }).eq("id", existing.id);
+  else await admin.from("admin_settings").insert({ setting_key: key, setting_value: value });
+}
+
+async function getFreeDailyState(admin: any, visitorId: string): Promise<Record<string, string>> {
+  const key = `lr_free_daily_${visitorId}`;
+  const { data } = await admin.from("admin_settings").select("setting_value").eq("setting_key", key).maybeSingle();
+  if (!data) return {};
+  try { return JSON.parse(data.setting_value); } catch { return {}; }
+}
+
+async function setFreeDailyState(admin: any, visitorId: string, state: Record<string, string>) {
+  const key = `lr_free_daily_${visitorId}`;
+  const value = JSON.stringify(state);
+  const { data: existing } = await admin.from("admin_settings").select("id").eq("setting_key", key).maybeSingle();
+  if (existing) await admin.from("admin_settings").update({ setting_value: value }).eq("id", existing.id);
+  else await admin.from("admin_settings").insert({ setting_key: key, setting_value: value });
+}
+
 async function getLuckyTokens(admin: any, visitorId: string): Promise<{ tokens: number; spinProgress: number }> {
   const key = `lucky_token_${visitorId}`;
   const { data } = await admin.from("admin_settings").select("setting_value").eq("setting_key", key).maybeSingle();
@@ -287,6 +355,26 @@ Deno.serve(async (req) => {
 
       const tokenState = await getLuckyTokens(admin, visitorId);
       const megaPool = await getMegaPool(admin);
+      const premiumState = await getPremiumState(admin, visitorId);
+      const freeDailyState = await getFreeDailyState(admin, visitorId);
+
+      // Build premium shop with status (locked/unlocked + cooldown)
+      const nowMs = Date.now();
+      const premiumShopWithStatus = PREMIUM_SHOP.map(item => {
+        const st = premiumState[item.code];
+        const isUnlocked = !!st?.unlockedAt;
+        const lastClaim = st?.lastClaim ? new Date(st.lastClaim).getTime() : 0;
+        const cooldownMs = item.cooldownDays * 86400000;
+        const nextClaimAt = lastClaim + cooldownMs;
+        const canClaim = isUnlocked && nowMs >= nextClaimAt;
+        return { ...item, isUnlocked, canClaim, nextClaimAt: isUnlocked ? nextClaimAt : null };
+      });
+
+      // Build free daily shop with status (claimed today?)
+      const freeDailyWithStatus = FREE_DAILY_SHOP.map(item => ({
+        ...item,
+        claimedToday: freeDailyState[item.code] === today,
+      }));
 
       return Response.json({
         history: allHistory,
@@ -304,6 +392,8 @@ Deno.serve(async (req) => {
         luckyTokenThreshold: TOKENS_PER_SPIN_THRESHOLD,
         megaJackpotPool: megaPool,
         tokenShop: TOKEN_SHOP,
+        freeDailyShop: freeDailyWithStatus,
+        premiumShop: premiumShopWithStatus,
       }, { headers: corsHeaders });
     }
 
@@ -547,6 +637,116 @@ Deno.serve(async (req) => {
         luckyTokenProgress: tokenState.spinProgress,
         luckyTokenThreshold: TOKENS_PER_SPIN_THRESHOLD,
       }, { headers: corsHeaders });
+    }
+
+    // === FREE DAILY CLAIM (gratis 1x per hari per item) ===
+    if (action === "claim_free_daily") {
+      const item = FREE_DAILY_SHOP.find(i => i.code === itemCode);
+      if (!item) return Response.json({ error: "Item tidak valid" }, { status: 400, headers: corsHeaders });
+
+      const state = await getFreeDailyState(admin, visitorId);
+      if (state[item.code] === today) {
+        return Response.json({ error: "Sudah diklaim hari ini. Kembali besok!" }, { status: 400, headers: corsHeaders });
+      }
+
+      const prize: Prize = {
+        kind: item.kind as any, value: item.value, label: item.name,
+        emoji: item.emoji, rarity: item.rarity as any, weight: 0, color: "#10b981",
+      };
+      await applyPrize(admin, visitorId, prize);
+
+      state[item.code] = today;
+      await setFreeDailyState(admin, visitorId, state);
+
+      await admin.from("luck_royale_nyawa_history").insert({
+        visitor_id: visitorId,
+        spin_type: "free_daily_claim",
+        reward_kind: item.kind,
+        reward_value: item.value,
+        reward_label: `🎁 FREE: ${item.name}`,
+        rarity: item.rarity,
+        cost_currency: "free",
+        cost_amount: 0,
+      });
+
+      const { data: gemsAfter } = await admin.rpc("get_account_gems", { p_visitor_id: visitorId });
+      return Response.json({ success: true, item, gems: gemsAfter || 0 }, { headers: corsHeaders });
+    }
+
+    // === UNLOCK PREMIUM (bayar gem 1x untuk membuka akses) ===
+    if (action === "unlock_premium") {
+      const item = PREMIUM_SHOP.find(i => i.code === itemCode);
+      if (!item) return Response.json({ error: "Item tidak valid" }, { status: 400, headers: corsHeaders });
+
+      const state = await getPremiumState(admin, visitorId);
+      if (state[item.code]?.unlockedAt) {
+        return Response.json({ error: "Sudah unlock sebelumnya" }, { status: 400, headers: corsHeaders });
+      }
+
+      const { data: gemsData } = await admin.rpc("get_account_gems", { p_visitor_id: visitorId });
+      const gems = Number(gemsData || 0);
+      if (gems < item.unlockCostGems) {
+        return Response.json({
+          error: `Butuh ${item.unlockCostGems} 💎 Gem untuk unlock (kamu punya ${gems})`,
+        }, { status: 400, headers: corsHeaders });
+      }
+
+      await admin.rpc("add_account_gems", { p_visitor_id: visitorId, p_amount: -item.unlockCostGems });
+      state[item.code] = { unlockedAt: new Date().toISOString(), lastClaim: null };
+      await setPremiumState(admin, visitorId, state);
+
+      await admin.from("notifications").insert({
+        visitor_id: visitorId,
+        title: `👑 Premium Shop Unlocked`,
+        message: `${item.name} terbuka — klaim hadiah pertama sekarang!`,
+        type: "luck_royale_nyawa",
+      });
+
+      const { data: gemsAfter } = await admin.rpc("get_account_gems", { p_visitor_id: visitorId });
+      return Response.json({ success: true, gems: gemsAfter || 0 }, { headers: corsHeaders });
+    }
+
+    // === CLAIM PREMIUM (setelah unlock, klaim periodik) ===
+    if (action === "claim_premium") {
+      const item = PREMIUM_SHOP.find(i => i.code === itemCode);
+      if (!item) return Response.json({ error: "Item tidak valid" }, { status: 400, headers: corsHeaders });
+
+      const state = await getPremiumState(admin, visitorId);
+      const st = state[item.code];
+      if (!st?.unlockedAt) {
+        return Response.json({ error: "Item belum di-unlock" }, { status: 400, headers: corsHeaders });
+      }
+
+      const lastClaim = st.lastClaim ? new Date(st.lastClaim).getTime() : 0;
+      const cooldownMs = item.cooldownDays * 86400000;
+      const now = Date.now();
+      if (now < lastClaim + cooldownMs) {
+        const remainHours = Math.ceil((lastClaim + cooldownMs - now) / 3600000);
+        return Response.json({ error: `Tunggu ${remainHours} jam lagi untuk klaim berikutnya` }, { status: 400, headers: corsHeaders });
+      }
+
+      const prize: Prize = {
+        kind: item.kind as any, value: item.value, label: item.name,
+        emoji: item.emoji, rarity: item.rarity as any, weight: 0, color: "#fbbf24",
+      };
+      await applyPrize(admin, visitorId, prize);
+
+      state[item.code] = { ...st, lastClaim: new Date().toISOString() };
+      await setPremiumState(admin, visitorId, state);
+
+      await admin.from("luck_royale_nyawa_history").insert({
+        visitor_id: visitorId,
+        spin_type: "premium_claim",
+        reward_kind: item.kind,
+        reward_value: item.value,
+        reward_label: `👑 PREMIUM: ${item.name}`,
+        rarity: item.rarity,
+        cost_currency: "premium",
+        cost_amount: 0,
+      });
+
+      const { data: gemsAfter } = await admin.rpc("get_account_gems", { p_visitor_id: visitorId });
+      return Response.json({ success: true, item, gems: gemsAfter || 0 }, { headers: corsHeaders });
     }
 
     return Response.json({ error: "Unknown action" }, { status: 400, headers: corsHeaders });
