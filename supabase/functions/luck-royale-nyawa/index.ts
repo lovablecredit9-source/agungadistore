@@ -590,6 +590,14 @@ Deno.serve(async (req) => {
       const item = TOKEN_SHOP.find(i => i.code === itemCode);
       if (!item) return Response.json({ error: "Item tidak valid" }, { status: 400, headers: corsHeaders });
 
+      // WAJIB punya akses Token Shop yang aktif
+      const access = await getShopAccess(admin, visitorId);
+      if (!isShopAccessActive(access)) {
+        return Response.json({
+          error: `Akses Token Shop belum aktif. Beli akses Rp ${SHOP_ACCESS_PRICE.toLocaleString("id-ID")} (berlaku ${SHOP_ACCESS_DAYS} hari) untuk bisa tukar token.`,
+        }, { status: 403, headers: corsHeaders });
+      }
+
       const tokenState = await getLuckyTokens(admin, visitorId);
       if (tokenState.tokens < item.cost) {
         return Response.json({
