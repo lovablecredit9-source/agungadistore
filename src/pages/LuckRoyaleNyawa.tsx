@@ -116,6 +116,7 @@ export default function LuckRoyaleNyawa() {
       setTokenShop(data.tokenShop || []);
       setFreeDailyShop(data.freeDailyShop || []);
       setShopAccess(data.shopAccess || { isActive: false, activeUntil: null, purchasedAt: null, price: 100000, durationDays: 30 });
+      setSuperShopAccess(data.superShopAccess || { isActive: false, activeUntil: null, purchasedAt: null, price: 300000, durationDays: 30 });
     } catch (e) {
       console.error(e);
     } finally {
