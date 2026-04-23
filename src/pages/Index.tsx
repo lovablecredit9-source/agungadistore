@@ -2745,25 +2745,17 @@ const Index = () => {
             {ticketView === "create" && (
               <div className="space-y-4 animate-fade-in">
                 {/* Hero Header */}
-                <div className="relative overflow-hidden rounded-2xl p-5 glow-border" style={{ background: "linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--accent)) 100%)" }}>
-                  <div className="absolute inset-0">
-                    <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full bg-white/20 blur-3xl animate-pulse" />
-                    <div className="absolute -bottom-8 -left-8 w-28 h-28 rounded-full bg-white/15 blur-2xl animate-pulse" style={{ animationDelay: "1.2s" }} />
-                    <div className="absolute inset-0 shimmer" />
-                  </div>
-                  <div className="relative z-10 flex items-center gap-3">
-                    <Button variant="ghost" size="icon" onClick={() => setTicketView("list")} className="text-white hover:bg-white/20 hover:text-white shrink-0 -ml-2">
-                      <ChevronLeft className="w-5 h-5" />
+                <div className="rounded-xl border border-border bg-card p-4">
+                  <div className="flex items-center gap-3">
+                    <Button variant="ghost" size="icon" onClick={() => setTicketView("list")} className="shrink-0 -ml-2 h-9 w-9">
+                      <ChevronLeft className="w-5 h-5" strokeWidth={1.7} />
                     </Button>
-                    <div className="relative floating">
-                      <div className="absolute -inset-1 bg-white/30 rounded-2xl blur-md" />
-                      <div className="relative w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-2xl ring-2 ring-white/30">
-                        <Send className="w-6 h-6 text-white" />
-                      </div>
+                    <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
+                      <Send className="w-5 h-5 text-foreground" strokeWidth={1.7} />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <h2 className="text-lg font-extrabold text-white drop-shadow-lg">Buat Tiket Baru</h2>
-                      <p className="text-white/80 text-[11px] font-medium mt-0.5">Ceritakan kendala kamu, kami siap bantu ✨</p>
+                      <h2 className="text-base font-semibold tracking-tight text-foreground">Buat Tiket Baru</h2>
+                      <p className="text-[11px] text-muted-foreground mt-0.5">Ceritakan kendala kamu, kami siap bantu</p>
                     </div>
                   </div>
                 </div>
