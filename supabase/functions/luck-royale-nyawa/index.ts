@@ -685,91 +685,19 @@ Deno.serve(async (req) => {
       return Response.json({ success: true, item, gems: gemsAfter || 0 }, { headers: corsHeaders });
     }
 
-    // === UNLOCK PREMIUM (bayar gem 1x untuk membuka akses) ===
-    if (action === "unlock_premium") {
-      const item = PREMIUM_SHOP.find(i => i.code === itemCode);
-      if (!item) return Response.json({ error: "Item tidak valid" }, { status: 400, headers: corsHeaders });
-
-      const state = await getPremiumState(admin, visitorId);
-      if (state[item.code]?.unlockedAt) {
-        return Response.json({ error: "Sudah unlock sebelumnya" }, { status: 400, headers: corsHeaders });
-      }
-
-      const { data: gemsData } = await admin.rpc("get_account_gems", { p_visitor_id: visitorId });
-      const gems = Number(gemsData || 0);
-      if (gems < item.unlockCostGems) {
+    // === BUY TOKEN SHOP ACCESS — bayar Rp 100k saldo, akses 30 hari ===
+    if (action === "buy_shop_access") {
+      const access = await getShopAccess(admin, visitorId);
+      if (isShopAccessActive(access)) {
         return Response.json({
-          error: `Butuh ${item.unlockCostGems} 💎 Gem untuk unlock (kamu punya ${gems})`,
+          error: `Akses kamu masih aktif sampai ${new Date(access.activeUntil!).toLocaleString("id-ID")}`,
         }, { status: 400, headers: corsHeaders });
       }
 
-      await admin.rpc("add_account_gems", { p_visitor_id: visitorId, p_amount: -item.unlockCostGems });
-      state[item.code] = { unlockedAt: new Date().toISOString(), lastClaim: null };
-      await setPremiumState(admin, visitorId, state);
-
-      await admin.from("notifications").insert({
-        visitor_id: visitorId,
-        title: `👑 Premium Shop Unlocked`,
-        message: `${item.name} terbuka — klaim hadiah pertama sekarang!`,
-        type: "luck_royale_nyawa",
-      });
-
-      const { data: gemsAfter } = await admin.rpc("get_account_gems", { p_visitor_id: visitorId });
-      return Response.json({ success: true, gems: gemsAfter || 0 }, { headers: corsHeaders });
-    }
-
-    // === CLAIM PREMIUM (setelah unlock, klaim periodik) ===
-    if (action === "claim_premium") {
-      const item = PREMIUM_SHOP.find(i => i.code === itemCode);
-      if (!item) return Response.json({ error: "Item tidak valid" }, { status: 400, headers: corsHeaders });
-
-      const state = await getPremiumState(admin, visitorId);
-      const st = state[item.code];
-      if (!st?.unlockedAt) {
-        return Response.json({ error: "Item belum di-unlock" }, { status: 400, headers: corsHeaders });
-      }
-
-      const lastClaim = st.lastClaim ? new Date(st.lastClaim).getTime() : 0;
-      const cooldownMs = item.cooldownDays * 86400000;
-      const now = Date.now();
-      if (now < lastClaim + cooldownMs) {
-        const remainHours = Math.ceil((lastClaim + cooldownMs - now) / 3600000);
-        return Response.json({ error: `Tunggu ${remainHours} jam lagi untuk klaim berikutnya` }, { status: 400, headers: corsHeaders });
-      }
-
-      const prize: Prize = {
-        kind: item.kind as any, value: item.value, label: item.name,
-        emoji: item.emoji, rarity: item.rarity as any, weight: 0, color: "#fbbf24",
-      };
-      await applyPrize(admin, visitorId, prize);
-
-      state[item.code] = { ...st, lastClaim: new Date().toISOString() };
-      await setPremiumState(admin, visitorId, state);
-
-      await admin.from("luck_royale_nyawa_history").insert({
-        visitor_id: visitorId,
-        spin_type: "premium_claim",
-        reward_kind: item.kind,
-        reward_value: item.value,
-        reward_label: `👑 PREMIUM: ${item.name}`,
-        rarity: item.rarity,
-        cost_currency: "premium",
-        cost_amount: 0,
-      });
-
-      const { data: gemsAfter } = await admin.rpc("get_account_gems", { p_visitor_id: visitorId });
-      return Response.json({ success: true, item, gems: gemsAfter || 0 }, { headers: corsHeaders });
-    }
-
-    // === BUY TOKENS WITH BALANCE — beli Lucky Token pakai saldo Rupiah ===
-    if (action === "buy_tokens_with_balance") {
-      const bundle = TOKEN_BUNDLES.find(b => b.code === itemCode);
-      if (!bundle) return Response.json({ error: "Paket tidak valid" }, { status: 400, headers: corsHeaders });
-
-      // Resolve account balance row dari visitor saat ini
+      // Resolve account balance row
       const { data: ubId } = await admin.rpc("get_active_user_balance_id", { p_visitor_id: visitorId });
       if (!ubId) {
-        return Response.json({ error: "Login akun saldo dulu untuk beli paket token" }, { status: 400, headers: corsHeaders });
+        return Response.json({ error: "Login akun saldo dulu untuk beli akses Token Shop" }, { status: 400, headers: corsHeaders });
       }
       const { data: balanceRow } = await admin
         .from("user_balances")
@@ -777,45 +705,51 @@ Deno.serve(async (req) => {
         .eq("id", ubId)
         .maybeSingle();
       if (!balanceRow) return Response.json({ error: "Akun saldo tidak ditemukan" }, { status: 400, headers: corsHeaders });
-      if ((balanceRow.balance || 0) < bundle.price) {
+      if ((balanceRow.balance || 0) < SHOP_ACCESS_PRICE) {
         return Response.json({
-          error: `Saldo tidak cukup. Butuh Rp ${bundle.price.toLocaleString("id-ID")} (saldo: Rp ${(balanceRow.balance || 0).toLocaleString("id-ID")})`,
+          error: `Saldo tidak cukup. Butuh Rp ${SHOP_ACCESS_PRICE.toLocaleString("id-ID")} (saldo: Rp ${(balanceRow.balance || 0).toLocaleString("id-ID")})`,
         }, { status: 400, headers: corsHeaders });
       }
 
       // Potong saldo
-      const newBalance = (balanceRow.balance || 0) - bundle.price;
+      const newBalance = (balanceRow.balance || 0) - SHOP_ACCESS_PRICE;
       await admin.from("user_balances").update({ balance: newBalance }).eq("id", balanceRow.id);
 
-      // Catat transaksi saldo
+      // Catat transaksi
       await admin.from("balance_transactions").insert({
         visitor_id: visitorId,
-        amount: -bundle.price,
+        amount: -SHOP_ACCESS_PRICE,
         type: "purchase",
-        description: `Beli Lucky Token: ${bundle.name} (+${bundle.tokens + bundle.bonus} token)`,
+        description: `Akses Token Shop Luck Royale (${SHOP_ACCESS_DAYS} hari)`,
       });
 
-      // Tambah token ke pemain
-      const totalAdd = bundle.tokens + bundle.bonus;
-      const tokenState = await getLuckyTokens(admin, visitorId);
-      const newTokens = tokenState.tokens + totalAdd;
-      await setLuckyTokens(admin, visitorId, newTokens, tokenState.spinProgress);
+      // Aktifkan akses 30 hari
+      const now = new Date();
+      const activeUntil = new Date(now.getTime() + SHOP_ACCESS_DAYS * 86400000);
+      await setShopAccess(admin, visitorId, {
+        activeUntil: activeUntil.toISOString(),
+        purchasedAt: now.toISOString(),
+      });
 
       await admin.from("notifications").insert({
         visitor_id: visitorId,
-        title: `🎟️ ${totalAdd} Lucky Token Diterima`,
-        message: `${bundle.name}: ${bundle.tokens} + ${bundle.bonus} bonus token berhasil ditambahkan!`,
+        title: `🔓 Akses Token Shop Aktif`,
+        message: `Akses ${SHOP_ACCESS_DAYS} hari berhasil dibeli. Berakhir: ${activeUntil.toLocaleString("id-ID")}`,
         type: "luck_royale_nyawa",
       });
 
       const { data: gemsAfter } = await admin.rpc("get_account_gems", { p_visitor_id: visitorId });
       return Response.json({
         success: true,
-        bundle,
-        addedTokens: totalAdd,
-        luckyTokens: newTokens,
         balance: newBalance,
         gems: gemsAfter || 0,
+        shopAccess: {
+          isActive: true,
+          activeUntil: activeUntil.toISOString(),
+          purchasedAt: now.toISOString(),
+          price: SHOP_ACCESS_PRICE,
+          durationDays: SHOP_ACCESS_DAYS,
+        },
       }, { headers: corsHeaders });
     }
 
