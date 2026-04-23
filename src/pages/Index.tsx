@@ -2187,22 +2187,14 @@ const Index = () => {
           return (
           <div className="space-y-4 animate-fade-in">
             {/* Hero Header */}
-            <div className="relative overflow-hidden rounded-2xl p-5 glow-border" style={{ background: "linear-gradient(135deg, hsl(160, 70%, 42%) 0%, hsl(180, 60%, 40%) 50%, hsl(140, 60%, 35%) 100%)" }}>
-              <div className="absolute inset-0">
-                <div className="absolute -top-8 -right-8 w-40 h-40 rounded-full bg-white/20 blur-3xl animate-pulse" />
-                <div className="absolute -bottom-8 -left-8 w-28 h-28 rounded-full bg-white/15 blur-2xl animate-pulse" style={{ animationDelay: "1s" }} />
-                <div className="absolute inset-0 shimmer" />
-              </div>
-              <div className="relative z-10 flex items-center gap-4">
-                <div className="relative floating">
-                  <div className="absolute -inset-1 bg-white/30 rounded-2xl blur-md" />
-                  <div className="relative w-14 h-14 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-2xl ring-2 ring-white/30">
-                    <Ticket className="w-7 h-7 text-white" />
-                  </div>
+            <div className="rounded-xl border border-border bg-card p-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
+                  <Ticket className="w-5 h-5 text-foreground" strokeWidth={1.7} />
                 </div>
-                <div>
-                  <h2 className="text-xl font-extrabold text-white drop-shadow-lg">{t("voucher.title", lang)}</h2>
-                  <p className="text-white/80 text-xs font-medium mt-0.5">Klaim kode voucher produkmu</p>
+                <div className="flex-1 min-w-0">
+                  <h2 className="text-base font-semibold tracking-tight text-foreground">{t("voucher.title", lang)}</h2>
+                  <p className="text-xs text-muted-foreground mt-0.5">Klaim kode voucher produkmu</p>
                 </div>
               </div>
             </div>
@@ -2405,22 +2397,14 @@ const Index = () => {
         {tab === "history" && (
           <div className="space-y-4 animate-fade-in">
             {/* Hero Header */}
-            <div className="relative overflow-hidden rounded-2xl p-5 glow-border" style={{ background: "linear-gradient(135deg, hsl(200, 80%, 50%) 0%, hsl(210, 75%, 48%) 50%, hsl(220, 70%, 45%) 100%)" }}>
-              <div className="absolute inset-0">
-                <div className="absolute -top-8 -right-8 w-40 h-40 rounded-full bg-white/20 blur-3xl animate-pulse" />
-                <div className="absolute -bottom-8 -left-8 w-28 h-28 rounded-full bg-white/15 blur-2xl animate-pulse" style={{ animationDelay: "1s" }} />
-                <div className="absolute inset-0 shimmer" />
-              </div>
-              <div className="relative z-10 flex items-center gap-4">
-                <div className="relative floating">
-                  <div className="absolute -inset-1 bg-white/30 rounded-2xl blur-md" />
-                  <div className="relative w-14 h-14 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-2xl ring-2 ring-white/30">
-                    <Clock className="w-7 h-7 text-white" />
-                  </div>
+            <div className="rounded-xl border border-border bg-card p-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
+                  <Clock className="w-5 h-5 text-foreground" strokeWidth={1.7} />
                 </div>
-                <div>
-                  <h2 className="text-xl font-extrabold text-white drop-shadow-lg">{t("history.title", lang)}</h2>
-                  <p className="text-white/80 text-xs font-medium mt-0.5">{history.length} riwayat klaim</p>
+                <div className="flex-1 min-w-0">
+                  <h2 className="text-base font-semibold tracking-tight text-foreground">{t("history.title", lang)}</h2>
+                  <p className="text-xs text-muted-foreground mt-0.5">{history.length} riwayat klaim</p>
                 </div>
               </div>
             </div>
@@ -2637,26 +2621,20 @@ const Index = () => {
             {ticketView === "list" && (
               <>
                 {/* Hero Header */}
-                <div className="relative overflow-hidden rounded-2xl p-5 glow-border" style={{ background: "linear-gradient(135deg, hsl(0, 70%, 55%) 0%, hsl(10, 75%, 52%) 50%, hsl(20, 80%, 50%) 100%)" }}>
-                  <div className="absolute inset-0">
-                    <div className="absolute -top-8 -right-8 w-40 h-40 rounded-full bg-white/20 blur-3xl animate-pulse" />
-                    <div className="absolute -bottom-8 -left-8 w-28 h-28 rounded-full bg-white/15 blur-2xl animate-pulse" style={{ animationDelay: "1s" }} />
-                    <div className="absolute inset-0 shimmer" />
-                  </div>
-                  <div className="relative z-10 flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                      <div className="relative floating">
-                        <div className="absolute -inset-1 bg-white/30 rounded-2xl blur-md" />
-                        <div className="relative w-14 h-14 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-2xl ring-2 ring-white/30">
-                          <AlertCircle className="w-7 h-7 text-white" />
-                        </div>
+                <div className="rounded-xl border border-border bg-card p-4">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-3 flex-1 min-w-0">
+                      <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
+                        <AlertCircle className="w-5 h-5 text-foreground" strokeWidth={1.7} />
                       </div>
-                      <div>
-                        <h2 className="text-xl font-extrabold text-white drop-shadow-lg">{t("ticket.title", lang)}</h2>
-                        <p className="text-white/80 text-xs font-medium mt-0.5">{tickets.length} tiket dibuat</p>
+                      <div className="flex-1 min-w-0">
+                        <h2 className="text-base font-semibold tracking-tight text-foreground">{t("ticket.title", lang)}</h2>
+                        <p className="text-xs text-muted-foreground mt-0.5">{tickets.length} tiket dibuat</p>
                       </div>
                     </div>
-                    <Button size="sm" onClick={() => setTicketView("create")} className="bg-white/25 hover:bg-white/35 text-white border border-white/30 backdrop-blur-md gap-1 font-bold shadow-lg hover:shadow-xl transition-all"><Send className="w-3 h-3" /> Buat</Button>
+                    <Button size="sm" variant="outline" onClick={() => setTicketView("create")} className="gap-1.5 rounded-full text-xs font-medium">
+                      <Send className="w-3.5 h-3.5" strokeWidth={1.8} /> Buat
+                    </Button>
                   </div>
                 </div>
 
@@ -2767,25 +2745,17 @@ const Index = () => {
             {ticketView === "create" && (
               <div className="space-y-4 animate-fade-in">
                 {/* Hero Header */}
-                <div className="relative overflow-hidden rounded-2xl p-5 glow-border" style={{ background: "linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--accent)) 100%)" }}>
-                  <div className="absolute inset-0">
-                    <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full bg-white/20 blur-3xl animate-pulse" />
-                    <div className="absolute -bottom-8 -left-8 w-28 h-28 rounded-full bg-white/15 blur-2xl animate-pulse" style={{ animationDelay: "1.2s" }} />
-                    <div className="absolute inset-0 shimmer" />
-                  </div>
-                  <div className="relative z-10 flex items-center gap-3">
-                    <Button variant="ghost" size="icon" onClick={() => setTicketView("list")} className="text-white hover:bg-white/20 hover:text-white shrink-0 -ml-2">
-                      <ChevronLeft className="w-5 h-5" />
+                <div className="rounded-xl border border-border bg-card p-4">
+                  <div className="flex items-center gap-3">
+                    <Button variant="ghost" size="icon" onClick={() => setTicketView("list")} className="shrink-0 -ml-2 h-9 w-9">
+                      <ChevronLeft className="w-5 h-5" strokeWidth={1.7} />
                     </Button>
-                    <div className="relative floating">
-                      <div className="absolute -inset-1 bg-white/30 rounded-2xl blur-md" />
-                      <div className="relative w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-2xl ring-2 ring-white/30">
-                        <Send className="w-6 h-6 text-white" />
-                      </div>
+                    <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
+                      <Send className="w-5 h-5 text-foreground" strokeWidth={1.7} />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <h2 className="text-lg font-extrabold text-white drop-shadow-lg">Buat Tiket Baru</h2>
-                      <p className="text-white/80 text-[11px] font-medium mt-0.5">Ceritakan kendala kamu, kami siap bantu ✨</p>
+                      <h2 className="text-base font-semibold tracking-tight text-foreground">Buat Tiket Baru</h2>
+                      <p className="text-[11px] text-muted-foreground mt-0.5">Ceritakan kendala kamu, kami siap bantu</p>
                     </div>
                   </div>
                 </div>
@@ -3456,18 +3426,14 @@ const Index = () => {
         {tab === "update" && (
           <div className="space-y-4 animate-fade-in">
             {/* Hero Header */}
-            <div className="relative overflow-hidden rounded-2xl p-5" style={{ background: "linear-gradient(135deg, hsl(190, 80%, 45%) 0%, hsl(210, 70%, 50%) 100%)" }}>
-              <div className="absolute inset-0 opacity-15">
-                <div className="absolute -top-8 -right-8 w-40 h-40 rounded-full bg-white/30 blur-3xl animate-pulse" />
-                <div className="absolute -bottom-8 -left-8 w-28 h-28 rounded-full bg-white/20 blur-2xl" />
-              </div>
-              <div className="relative z-10 flex items-center gap-4">
-                <div className="w-14 h-14 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-lg ring-2 ring-white/20">
-                  <RefreshCw className="w-7 h-7 text-white" />
+            <div className="rounded-xl border border-border bg-card p-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
+                  <RefreshCw className="w-5 h-5 text-foreground" strokeWidth={1.7} />
                 </div>
-                <div>
-                  <h2 className="text-xl font-extrabold text-white tracking-tight">Update Web</h2>
-                  <p className="text-white/70 text-xs font-medium mt-0.5">Fitur tambahan terbaru tanggal 19 April 2026</p>
+                <div className="flex-1 min-w-0">
+                  <h2 className="text-base font-semibold tracking-tight text-foreground">Update Web</h2>
+                  <p className="text-xs text-muted-foreground mt-0.5">Fitur tambahan terbaru tanggal 19 April 2026</p>
                 </div>
               </div>
             </div>
@@ -3649,17 +3615,14 @@ const Index = () => {
         {tab === "adminpost" && (
           <div className="space-y-4 animate-fade-in">
             {/* Hero Header */}
-            <div className="relative overflow-hidden rounded-2xl p-5" style={{ background: "linear-gradient(135deg, hsl(240, 40%, 45%) 0%, hsl(260, 50%, 40%) 100%)" }}>
-              <div className="absolute inset-0 opacity-10">
-                <div className="absolute -top-8 -right-8 w-32 h-32 rounded-full bg-white/30 blur-2xl" />
-              </div>
-              <div className="relative z-10 flex items-center gap-4">
-                <div className="w-14 h-14 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-lg">
-                  <FileText className="w-7 h-7 text-white" />
+            <div className="rounded-xl border border-border bg-card p-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
+                  <FileText className="w-5 h-5 text-foreground" strokeWidth={1.7} />
                 </div>
-                <div>
-                  <h2 className="text-xl font-extrabold text-white">Postingan Admin</h2>
-                  <p className="text-white/70 text-xs font-medium mt-0.5">{adminPosts.length} pengumuman resmi</p>
+                <div className="flex-1 min-w-0">
+                  <h2 className="text-base font-semibold tracking-tight text-foreground">Postingan Admin</h2>
+                  <p className="text-xs text-muted-foreground mt-0.5">{adminPosts.length} pengumuman resmi</p>
                 </div>
               </div>
             </div>
@@ -5047,8 +5010,8 @@ const Index = () => {
       )}
 
       {/* Floating Help Button */}
-      <button onClick={() => setShowHelp(true)} className="fixed bottom-20 right-4 z-50 w-12 h-12 rounded-full bg-primary text-primary-foreground shadow-xl flex items-center justify-center hover:scale-110 transition-transform">
-        <HelpCircle className="w-6 h-6" />
+      <button onClick={() => setShowHelp(true)} aria-label="Bantuan" className="fixed bottom-20 right-4 z-50 w-10 h-10 rounded-full bg-card border border-border text-foreground shadow-sm flex items-center justify-center hover:bg-muted transition-colors">
+        <HelpCircle className="w-5 h-5" strokeWidth={1.7} />
       </button>
 
       {/* PIN Setup Modal */}

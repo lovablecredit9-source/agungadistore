@@ -150,40 +150,32 @@ export default function LikesTab({
 
   return (
     <div className="space-y-4 animate-fade-in">
-      {/* Hero Header */}
-      <div className="relative overflow-hidden rounded-2xl p-5" style={{ background: "linear-gradient(135deg, hsl(340, 80%, 55%) 0%, hsl(360, 70%, 50%) 100%)" }}>
-        <div className="absolute inset-0 opacity-15">
-          <div className="absolute -top-8 -right-8 w-40 h-40 rounded-full bg-white/30 blur-3xl animate-pulse" />
-          <div className="absolute -bottom-8 -left-8 w-28 h-28 rounded-full bg-white/20 blur-2xl" />
-        </div>
-        <div className="relative z-10 flex items-center gap-4">
-          <div className="relative">
-            <div className="absolute inset-0 bg-white/40 rounded-2xl blur-xl animate-pulse" />
-            <div className="relative w-14 h-14 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-lg ring-2 ring-white/20">
-              <Heart className="w-7 h-7 text-white animate-pulse" style={{ animationDuration: "1.5s" }} />
-            </div>
+      {/* Header — flat IG/TikTok style */}
+      <div className="rounded-xl border border-border bg-card p-4">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
+            <Heart className="w-5 h-5 text-foreground" strokeWidth={1.7} />
           </div>
           <div className="flex-1 min-w-0">
-            <h2 className="text-xl font-extrabold text-white tracking-tight drop-shadow-lg">{t("likes.title", lang)}</h2>
-            <p className="text-white/80 text-xs font-medium mt-0.5">{totalLiked} item · {visibleCount} tampil</p>
+            <h2 className="text-base font-semibold tracking-tight text-foreground">{t("likes.title", lang)}</h2>
+            <p className="text-xs text-muted-foreground mt-0.5">{totalLiked} item · {visibleCount} tampil</p>
           </div>
         </div>
-        {/* Stats */}
-        <div className="relative z-10 flex gap-2 mt-4">
-          <div className="flex-1 bg-white/15 backdrop-blur-md rounded-xl px-2 py-2 text-center border border-white/10">
-            <Package className="w-3.5 h-3.5 text-white/80 mx-auto mb-0.5" />
-            <p className="text-white font-extrabold text-base leading-none">{likedProductsRaw.length}</p>
-            <p className="text-white/70 text-[9px] font-medium mt-0.5">Produk</p>
+        {/* Stats row — minimal */}
+        <div className="flex items-center gap-4 mt-3 pt-3 border-t border-border">
+          <div className="flex-1 text-center">
+            <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Produk</p>
+            <p className="text-sm font-semibold text-foreground tabular-nums mt-0.5">{likedProductsRaw.length}</p>
           </div>
-          <div className="flex-1 bg-white/15 backdrop-blur-md rounded-xl px-2 py-2 text-center border border-white/10">
-            <Megaphone className="w-3.5 h-3.5 text-white/80 mx-auto mb-0.5" />
-            <p className="text-white font-extrabold text-base leading-none">{likedSponsors.length}</p>
-            <p className="text-white/70 text-[9px] font-medium mt-0.5">Sponsor</p>
+          <div className="w-px h-7 bg-border" />
+          <div className="flex-1 text-center">
+            <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Sponsor</p>
+            <p className="text-sm font-semibold text-foreground tabular-nums mt-0.5">{likedSponsors.length}</p>
           </div>
-          <div className="flex-1 bg-white/15 backdrop-blur-md rounded-xl px-2 py-2 text-center border border-white/10">
-            <Sparkles className="w-3.5 h-3.5 text-white/80 mx-auto mb-0.5" />
-            <p className="text-white font-extrabold text-base leading-none">{categories.length - 1}</p>
-            <p className="text-white/70 text-[9px] font-medium mt-0.5">Kategori</p>
+          <div className="w-px h-7 bg-border" />
+          <div className="flex-1 text-center">
+            <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Kategori</p>
+            <p className="text-sm font-semibold text-foreground tabular-nums mt-0.5">{categories.length - 1}</p>
           </div>
         </div>
       </div>

@@ -21,40 +21,34 @@ const TABS: { key: MusicSubTab; label: string; icon: typeof Music2; gradient: st
 export default function MusicHub({ subTab, onSubTabChange, onPlayExternal, playlistSlot }: MusicHubProps) {
   return (
     <div className="space-y-4 animate-fade-in">
-      {/* Hero Header */}
-      <div className="relative overflow-hidden rounded-3xl p-5 bg-gradient-to-br from-fuchsia-600 via-purple-600 to-indigo-600 shadow-2xl">
-        <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-3xl -translate-y-12 translate-x-12" />
-        <div className="absolute bottom-0 left-0 w-24 h-24 bg-pink-300/20 rounded-full blur-2xl translate-y-8 -translate-x-8" />
-        <div className="relative flex items-center gap-3">
-          <div className="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center border border-white/30 shadow-lg">
-            <Music2 className="w-6 h-6 text-white" />
+      {/* Header — flat IG/TikTok style */}
+      <div className="rounded-xl border border-border bg-card p-4">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
+            <Music2 className="w-5 h-5 text-foreground" strokeWidth={1.7} />
           </div>
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-1.5">
-              <h2 className="text-lg font-extrabold text-white drop-shadow">Pusat Musik</h2>
-              <Sparkles className="w-4 h-4 text-yellow-300" />
-            </div>
-            <p className="text-[11px] text-white/80 truncate">{TABS.find((t) => t.key === subTab)?.desc}</p>
+            <h2 className="text-base font-semibold tracking-tight text-foreground">Pusat Musik</h2>
+            <p className="text-xs text-muted-foreground mt-0.5 truncate">{TABS.find((t) => t.key === subTab)?.desc}</p>
           </div>
         </div>
       </div>
 
-      {/* Sub-tab pills */}
-      <div className="flex gap-2 overflow-x-auto scrollbar-hide -mx-1 px-1 pb-1">
-        {TABS.map(({ key, label, icon: Icon, gradient }) => {
+      {/* Segmented tabs — underline indicator */}
+      <div className="flex border-b border-border">
+        {TABS.map(({ key, label, icon: Icon }) => {
           const isActive = subTab === key;
           return (
             <button
               key={key}
               onClick={() => onSubTabChange(key)}
-              className={`flex-shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-2xl text-xs font-bold transition-all duration-300 ${
-                isActive
-                  ? `bg-gradient-to-r ${gradient} text-white shadow-lg scale-105`
-                  : "bg-card/60 backdrop-blur-sm text-muted-foreground border border-border hover:text-foreground hover:scale-[1.02]"
-              }`}
+              className="relative flex-1 py-2.5"
             >
-              <Icon className="w-4 h-4" />
-              {label}
+              <span className={`flex items-center justify-center gap-1.5 text-xs transition-colors ${isActive ? "text-foreground font-semibold" : "text-muted-foreground font-normal"}`}>
+                <Icon className="w-4 h-4" strokeWidth={isActive ? 2.2 : 1.7} />
+                {label}
+              </span>
+              {isActive && <span className="absolute bottom-0 left-0 right-0 h-[2px] bg-foreground" />}
             </button>
           );
         })}
