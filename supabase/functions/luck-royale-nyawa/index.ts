@@ -639,6 +639,116 @@ Deno.serve(async (req) => {
       }, { headers: corsHeaders });
     }
 
+    // === FREE DAILY CLAIM (gratis 1x per hari per item) ===
+    if (action === "claim_free_daily") {
+      const item = FREE_DAILY_SHOP.find(i => i.code === itemCode);
+      if (!item) return Response.json({ error: "Item tidak valid" }, { status: 400, headers: corsHeaders });
+
+      const state = await getFreeDailyState(admin, visitorId);
+      if (state[item.code] === today) {
+        return Response.json({ error: "Sudah diklaim hari ini. Kembali besok!" }, { status: 400, headers: corsHeaders });
+      }
+
+      const prize: Prize = {
+        kind: item.kind as any, value: item.value, label: item.name,
+        emoji: item.emoji, rarity: item.rarity as any, weight: 0, color: "#10b981",
+      };
+      await applyPrize(admin, visitorId, prize);
+
+      state[item.code] = today;
+      await setFreeDailyState(admin, visitorId, state);
+
+      await admin.from("luck_royale_nyawa_history").insert({
+        visitor_id: visitorId,
+        spin_type: "free_daily_claim",
+        reward_kind: item.kind,
+        reward_value: item.value,
+        reward_label: `🎁 FREE: ${item.name}`,
+        rarity: item.rarity,
+        cost_currency: "free",
+        cost_amount: 0,
+      });
+
+      const { data: gemsAfter } = await admin.rpc("get_account_gems", { p_visitor_id: visitorId });
+      return Response.json({ success: true, item, gems: gemsAfter || 0 }, { headers: corsHeaders });
+    }
+
+    // === UNLOCK PREMIUM (bayar gem 1x untuk membuka akses) ===
+    if (action === "unlock_premium") {
+      const item = PREMIUM_SHOP.find(i => i.code === itemCode);
+      if (!item) return Response.json({ error: "Item tidak valid" }, { status: 400, headers: corsHeaders });
+
+      const state = await getPremiumState(admin, visitorId);
+      if (state[item.code]?.unlockedAt) {
+        return Response.json({ error: "Sudah unlock sebelumnya" }, { status: 400, headers: corsHeaders });
+      }
+
+      const { data: gemsData } = await admin.rpc("get_account_gems", { p_visitor_id: visitorId });
+      const gems = Number(gemsData || 0);
+      if (gems < item.unlockCostGems) {
+        return Response.json({
+          error: `Butuh ${item.unlockCostGems} 💎 Gem untuk unlock (kamu punya ${gems})`,
+        }, { status: 400, headers: corsHeaders });
+      }
+
+      await admin.rpc("add_account_gems", { p_visitor_id: visitorId, p_amount: -item.unlockCostGems });
+      state[item.code] = { unlockedAt: new Date().toISOString(), lastClaim: null };
+      await setPremiumState(admin, visitorId, state);
+
+      await admin.from("notifications").insert({
+        visitor_id: visitorId,
+        title: `👑 Premium Shop Unlocked`,
+        message: `${item.name} terbuka — klaim hadiah pertama sekarang!`,
+        type: "luck_royale_nyawa",
+      });
+
+      const { data: gemsAfter } = await admin.rpc("get_account_gems", { p_visitor_id: visitorId });
+      return Response.json({ success: true, gems: gemsAfter || 0 }, { headers: corsHeaders });
+    }
+
+    // === CLAIM PREMIUM (setelah unlock, klaim periodik) ===
+    if (action === "claim_premium") {
+      const item = PREMIUM_SHOP.find(i => i.code === itemCode);
+      if (!item) return Response.json({ error: "Item tidak valid" }, { status: 400, headers: corsHeaders });
+
+      const state = await getPremiumState(admin, visitorId);
+      const st = state[item.code];
+      if (!st?.unlockedAt) {
+        return Response.json({ error: "Item belum di-unlock" }, { status: 400, headers: corsHeaders });
+      }
+
+      const lastClaim = st.lastClaim ? new Date(st.lastClaim).getTime() : 0;
+      const cooldownMs = item.cooldownDays * 86400000;
+      const now = Date.now();
+      if (now < lastClaim + cooldownMs) {
+        const remainHours = Math.ceil((lastClaim + cooldownMs - now) / 3600000);
+        return Response.json({ error: `Tunggu ${remainHours} jam lagi untuk klaim berikutnya` }, { status: 400, headers: corsHeaders });
+      }
+
+      const prize: Prize = {
+        kind: item.kind as any, value: item.value, label: item.name,
+        emoji: item.emoji, rarity: item.rarity as any, weight: 0, color: "#fbbf24",
+      };
+      await applyPrize(admin, visitorId, prize);
+
+      state[item.code] = { ...st, lastClaim: new Date().toISOString() };
+      await setPremiumState(admin, visitorId, state);
+
+      await admin.from("luck_royale_nyawa_history").insert({
+        visitor_id: visitorId,
+        spin_type: "premium_claim",
+        reward_kind: item.kind,
+        reward_value: item.value,
+        reward_label: `👑 PREMIUM: ${item.name}`,
+        rarity: item.rarity,
+        cost_currency: "premium",
+        cost_amount: 0,
+      });
+
+      const { data: gemsAfter } = await admin.rpc("get_account_gems", { p_visitor_id: visitorId });
+      return Response.json({ success: true, item, gems: gemsAfter || 0 }, { headers: corsHeaders });
+    }
+
     return Response.json({ error: "Unknown action" }, { status: 400, headers: corsHeaders });
   } catch (e) {
     return Response.json({ error: e instanceof Error ? e.message : "Error" }, { status: 500, headers: corsHeaders });
