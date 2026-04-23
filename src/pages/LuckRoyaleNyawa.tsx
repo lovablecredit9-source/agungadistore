@@ -267,6 +267,30 @@ export default function LuckRoyaleNyawa() {
     }
   };
 
+  const buyTokens = async (bundleCode: string, bundleName: string, price: number, totalTokens: number) => {
+    if (!visitorId || redeeming) return;
+    if (!confirm(`Beli ${bundleName}?\n\nHarga: Rp ${price.toLocaleString("id-ID")} (potong saldo)\nDapat: ${totalTokens} Lucky Token`)) return;
+    setRedeeming(bundleCode);
+    try {
+      const { data, error } = await supabase.functions.invoke("luck-royale-nyawa", {
+        body: { visitorId, action: "buy_tokens_with_balance", itemCode: bundleCode },
+      });
+      if (error) throw error;
+      if (data.error) {
+        toast({ title: "Gagal beli token", description: data.error, variant: "destructive" });
+        return;
+      }
+      setLuckyTokens(data.luckyTokens);
+      setGems(data.gems);
+      toast({ title: `🎟️ +${data.addedTokens} Lucky Token!`, description: `${bundleName} berhasil dibeli — sisa saldo Rp ${data.balance.toLocaleString("id-ID")}` });
+      fetchData();
+    } catch (e: any) {
+      toast({ title: "Error", description: e.message || "Gagal", variant: "destructive" });
+    } finally {
+      setRedeeming(null);
+    }
+  };
+
   const featured = prizes.filter(p => ["extra_life", "auto_hint", "time_freeze", "streak_freeze"].includes(p.kind));
 
   return (
