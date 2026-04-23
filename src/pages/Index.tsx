@@ -3882,7 +3882,7 @@ const Index = () => {
             <div className="overflow-y-auto px-5 pb-5 space-y-4 text-sm text-muted-foreground">
 
               {/* Tentang Aplikasi */}
-              <div className="rounded-xl bg-primary/5 border border-primary/20 p-3 space-y-1.5">
+              <div className="rounded-xl border border-border bg-card p-3 space-y-1.5">
                 <p className="font-bold text-foreground text-xs uppercase tracking-wider">📱 Tentang Aplikasi</p>
                 <div className="space-y-1 text-[13px]">
                   <p><strong>{STORE_NAME}</strong> adalah platform digital terpercaya untuk pembelian akun premium, voucher, dan produk digital lainnya.</p>
@@ -3897,7 +3897,7 @@ const Index = () => {
               </div>
 
               {/* Cara Order */}
-              <div className="rounded-xl bg-accent/10 border border-accent/20 p-3 space-y-1.5">
+              <div className="rounded-xl border border-border bg-card p-3 space-y-1.5">
                 <p className="font-bold text-foreground text-xs uppercase tracking-wider">🛒 Cara Order Produk</p>
                 <ol className="list-decimal list-inside space-y-0.5 text-[13px]">
                   <li>Buka tab <strong>Produk</strong>, pilih produk yang diinginkan</li>
@@ -3917,7 +3917,7 @@ const Index = () => {
               </div>
 
               {/* Cara Klaim Voucher */}
-              <div className="rounded-xl bg-muted/60 border border-border p-3 space-y-1.5">
+              <div className="rounded-xl border border-border bg-card p-3 space-y-1.5">
                 <p className="font-bold text-foreground text-xs uppercase tracking-wider">🎫 Cara Klaim Voucher</p>
                 <ol className="list-decimal list-inside space-y-0.5 text-[13px]">
                   <li>Buka tab <strong>Voucher</strong></li>
@@ -3937,7 +3937,7 @@ const Index = () => {
               </div>
 
               {/* Fitur Saldo */}
-              <div className="rounded-xl bg-muted/60 border border-border p-3 space-y-1.5">
+              <div className="rounded-xl border border-border bg-card p-3 space-y-1.5">
                 <p className="font-bold text-foreground text-xs uppercase tracking-wider">💰 Fitur Saldo</p>
                 <ul className="list-disc list-inside space-y-0.5 text-[13px]">
                   <li>Daftar akun saldo di tab <strong>Saldo</strong> (gratis)</li>
@@ -3958,7 +3958,7 @@ const Index = () => {
               </div>
 
               {/* Fitur Deposit */}
-              <div className="rounded-xl bg-muted/60 border border-border p-3 space-y-1.5">
+              <div className="rounded-xl border border-border bg-card p-3 space-y-1.5">
                 <p className="font-bold text-foreground text-xs uppercase tracking-wider">💳 Cara Deposit Saldo</p>
                 <ol className="list-decimal list-inside space-y-0.5 text-[13px]">
                   <li>Buka tab <strong>Saldo</strong>, klik tombol <strong>Deposit</strong></li>
@@ -3980,7 +3980,7 @@ const Index = () => {
               </div>
 
               {/* Fitur Musik */}
-              <div className="rounded-xl bg-muted/60 border border-border p-3 space-y-1.5">
+              <div className="rounded-xl border border-border bg-card p-3 space-y-1.5">
                 <p className="font-bold text-foreground text-xs uppercase tracking-wider">🎵 Fitur Musik</p>
                 <ul className="list-disc list-inside space-y-0.5 text-[13px]">
                   <li>Dengarkan musik gratis dari koleksi admin</li>
@@ -4000,7 +4000,7 @@ const Index = () => {
               </div>
 
               {/* Fitur Like */}
-              <div className="rounded-xl bg-muted/60 border border-border p-3 space-y-1.5">
+              <div className="rounded-xl border border-border bg-card p-3 space-y-1.5">
                 <p className="font-bold text-foreground text-xs uppercase tracking-wider">❤️ Fitur Suka / Like</p>
                 <ul className="list-disc list-inside space-y-0.5 text-[13px]">
                   <li>Tekan ikon hati di produk untuk menyimpannya</li>
@@ -4010,7 +4010,7 @@ const Index = () => {
               </div>
 
               {/* Tiket & Chat */}
-              <div className="rounded-xl bg-muted/60 border border-border p-3 space-y-1.5">
+              <div className="rounded-xl border border-border bg-card p-3 space-y-1.5">
                 <p className="font-bold text-foreground text-xs uppercase tracking-wider">🎧 Dukungan & Bantuan</p>
                 <ul className="list-disc list-inside space-y-0.5 text-[13px]">
                   <li><strong>Tiket Keluhan:</strong> buat tiket di tab Tiket untuk masalah serius</li>
@@ -4043,7 +4043,7 @@ const Index = () => {
               </div>
 
               {/* Cara Buat Tiket */}
-              <div className="rounded-xl bg-accent/10 border border-accent/20 p-3 space-y-1.5">
+              <div className="rounded-xl border border-border bg-card p-3 space-y-1.5">
                 <p className="font-bold text-foreground text-xs uppercase tracking-wider">📋 Cara Membuat Tiket</p>
                 <ol className="list-decimal list-inside space-y-0.5 text-[13px]">
                   <li>Buka tab <strong>Tiket</strong> di navigasi bawah</li>
@@ -4069,7 +4069,7 @@ const Index = () => {
               </div>
 
               {/* Keranjang Belanja */}
-              <div className="rounded-xl bg-muted/60 border border-border p-3 space-y-1.5">
+              <div className="rounded-xl border border-border bg-card p-3 space-y-1.5">
                 <p className="font-bold text-foreground text-xs uppercase tracking-wider">🛒 Keranjang Belanja</p>
                 <ul className="list-disc list-inside space-y-0.5 text-[13px]">
                   <li>Tambah beberapa produk sekaligus ke keranjang</li>
@@ -4082,7 +4082,7 @@ const Index = () => {
               </div>
 
               {/* Upload Musik Publik */}
-              <div className="rounded-xl bg-muted/60 border border-border p-3 space-y-1.5">
+              <div className="rounded-xl border border-border bg-card p-3 space-y-1.5">
                 <p className="font-bold text-foreground text-xs uppercase tracking-wider">🎤 Musik Publik (Upload Lagu)</p>
                 <ul className="list-disc list-inside space-y-0.5 text-[13px]">
                   <li>Upload lagu karyamu sendiri agar bisa didengar semua orang</li>
@@ -4105,7 +4105,7 @@ const Index = () => {
               </div>
 
               {/* Profil Musik */}
-              <div className="rounded-xl bg-muted/60 border border-border p-3 space-y-1.5">
+              <div className="rounded-xl border border-border bg-card p-3 space-y-1.5">
                 <p className="font-bold text-foreground text-xs uppercase tracking-wider">👤 Profil Musik</p>
                 <ul className="list-disc list-inside space-y-0.5 text-[13px]">
                   <li>Buat profil musik dengan <strong>username</strong> unik</li>
@@ -4118,7 +4118,7 @@ const Index = () => {
               </div>
 
               {/* Info Perangkat */}
-              <div className="rounded-xl bg-muted/60 border border-border p-3 space-y-1.5">
+              <div className="rounded-xl border border-border bg-card p-3 space-y-1.5">
                 <p className="font-bold text-foreground text-xs uppercase tracking-wider">📱 Info Perangkat & Visitor ID</p>
                 <ul className="list-disc list-inside space-y-0.5 text-[13px]">
                   <li><strong>Visitor ID</strong> adalah identitas unik perangkat Anda</li>
@@ -4139,7 +4139,7 @@ const Index = () => {
               </div>
 
               {/* Multi-bahasa */}
-              <div className="rounded-xl bg-primary/5 border border-primary/20 p-3 space-y-1.5">
+              <div className="rounded-xl border border-border bg-card p-3 space-y-1.5">
                 <p className="font-bold text-foreground text-xs uppercase tracking-wider">🌍 Multi-Bahasa</p>
                 <div className="space-y-1 text-[13px]">
                   <p>Aplikasi mendukung <strong>{LANGUAGES.length}+ bahasa</strong> dari seluruh dunia:</p>
@@ -4156,7 +4156,7 @@ const Index = () => {
               </div>
 
               {/* PWA & Offline */}
-              <div className="rounded-xl bg-muted/60 border border-border p-3 space-y-1.5">
+              <div className="rounded-xl border border-border bg-card p-3 space-y-1.5">
                 <p className="font-bold text-foreground text-xs uppercase tracking-wider">📲 Install & Offline</p>
                 <ul className="list-disc list-inside space-y-0.5 text-[13px]">
                   <li>Instal aplikasi ke homescreen HP tanpa app store</li>
@@ -4168,7 +4168,7 @@ const Index = () => {
               </div>
 
               {/* Tema & Tampilan */}
-              <div className="rounded-xl bg-muted/60 border border-border p-3 space-y-1.5">
+              <div className="rounded-xl border border-border bg-card p-3 space-y-1.5">
                 <p className="font-bold text-foreground text-xs uppercase tracking-wider">🎨 Tema & Tampilan</p>
                 <ul className="list-disc list-inside space-y-0.5 text-[13px]">
                   <li>☀️ <strong>Mode Terang</strong> — tampilan bersih dan cerah</li>
@@ -4179,7 +4179,7 @@ const Index = () => {
               </div>
 
               {/* Keamanan */}
-              <div className="rounded-xl bg-muted/60 border border-border p-3 space-y-1.5">
+              <div className="rounded-xl border border-border bg-card p-3 space-y-1.5">
                 <p className="font-bold text-foreground text-xs uppercase tracking-wider">🛡️ Keamanan Akun</p>
                 <ul className="list-disc list-inside space-y-0.5 text-[13px]">
                   <li>Identifikasi unik menggunakan <strong>Visitor ID</strong></li>
@@ -4191,7 +4191,7 @@ const Index = () => {
               </div>
 
               {/* Sponsor / Iklan Produk */}
-              <div className="rounded-xl bg-muted/60 border border-border p-3 space-y-1.5">
+              <div className="rounded-xl border border-border bg-card p-3 space-y-1.5">
                 <p className="font-bold text-foreground text-xs uppercase tracking-wider">🏪 Sponsor / Iklan Produk</p>
                 <div className="space-y-1 text-[13px]">
                   <p><strong>Sponsor</strong> adalah fitur iklan produk dari penjual pihak ketiga yang ditampilkan di platform. Admin hanya menyediakan tempat iklan.</p>
@@ -4206,7 +4206,7 @@ const Index = () => {
               </div>
 
               {/* Cara Rekber */}
-              <div className="rounded-xl bg-muted/60 border border-border p-3 space-y-1.5">
+              <div className="rounded-xl border border-border bg-card p-3 space-y-1.5">
                 <p className="font-bold text-foreground text-xs uppercase tracking-wider">🔄 Cara Rekber (Rekening Bersama)</p>
                 <div className="space-y-1 text-[13px]">
                   <p><strong>Rekber</strong> adalah layanan perantara transaksi melalui admin untuk memastikan keamanan pembeli dan penjual.</p>
@@ -4230,7 +4230,7 @@ const Index = () => {
               </div>
 
               {/* Keamanan Transaksi Sponsor */}
-              <div className="rounded-xl bg-destructive/5 border border-destructive/20 p-3 space-y-1.5">
+              <div className="rounded-xl border border-border bg-card p-3 space-y-1.5">
                 <p className="font-bold text-foreground text-xs uppercase tracking-wider">⚠️ Keamanan Transaksi Sponsor</p>
                 <div className="space-y-1 text-[13px]">
                   <p className="font-semibold text-foreground">🛡️ Tips agar tidak tertipu:</p>
@@ -4268,7 +4268,7 @@ const Index = () => {
               </div>
 
               {/* Notifikasi */}
-              <div className="rounded-xl bg-muted/60 border border-border p-3 space-y-1.5">
+              <div className="rounded-xl border border-border bg-card p-3 space-y-1.5">
                 <p className="font-bold text-foreground text-xs uppercase tracking-wider">🔔 Sistem Notifikasi</p>
                 <ul className="list-disc list-inside space-y-0.5 text-[13px]">
                   <li>Notifikasi real-time untuk setiap aktivitas akun</li>
@@ -4281,7 +4281,7 @@ const Index = () => {
               </div>
 
               {/* Game */}
-              <div className="rounded-xl bg-muted/60 border border-border p-3 space-y-1.5">
+              <div className="rounded-xl border border-border bg-card p-3 space-y-1.5">
                 <p className="font-bold text-foreground text-xs uppercase tracking-wider">🎮 Game AI</p>
                 <ul className="list-disc list-inside space-y-0.5 text-[13px]">
                   <li><strong>8 game seru</strong> melawan AI: Suit, Tebak Kata, Tebak Gambar, Teka-Teki, Tebak Angka, Tebak Barang, Ular Tangga, Ludo King</li>
@@ -4296,7 +4296,7 @@ const Index = () => {
               </div>
 
               {/* FAQ */}
-              <div className="rounded-xl bg-accent/10 border border-accent/20 p-3 space-y-2">
+              <div className="rounded-xl border border-border bg-card p-3 space-y-2">
                 <p className="font-bold text-foreground text-xs uppercase tracking-wider">❓ FAQ (Pertanyaan Umum)</p>
                 <div className="space-y-2 text-[13px]">
                   <div>
@@ -4387,7 +4387,7 @@ const Index = () => {
               </div>
 
               {/* Kontak */}
-              <div className="rounded-xl bg-muted/60 border border-border p-3 space-y-1.5">
+              <div className="rounded-xl border border-border bg-card p-3 space-y-1.5">
                 <p className="font-bold text-foreground text-xs uppercase tracking-wider">📞 Kontak Admin</p>
                 <ul className="list-disc list-inside space-y-0.5 text-[13px]">
                   <li>WhatsApp: <strong>{WA_NUMBER}</strong></li>
@@ -4406,7 +4406,7 @@ const Index = () => {
               </div>
 
               {/* Kebijakan Privasi */}
-              <div className="rounded-xl bg-muted/60 border border-border p-3 space-y-1.5">
+              <div className="rounded-xl border border-border bg-card p-3 space-y-1.5">
                 <p className="font-bold text-foreground text-xs uppercase tracking-wider">🔒 Kebijakan Privasi</p>
                 <div className="space-y-1.5 text-[13px]">
                   <p>{STORE_NAME} menghormati privasi pengguna. Berikut ketentuan kami:</p>
@@ -4422,7 +4422,7 @@ const Index = () => {
               </div>
 
               {/* Syarat & Ketentuan */}
-              <div className="rounded-xl bg-muted/60 border border-border p-3 space-y-1.5">
+              <div className="rounded-xl border border-border bg-card p-3 space-y-1.5">
                 <p className="font-bold text-foreground text-xs uppercase tracking-wider">📋 Syarat & Ketentuan</p>
                 <ul className="list-disc list-inside space-y-0.5 text-[13px]">
                   <li>Pengguna bertanggung jawab atas keamanan akun saldo masing-masing</li>
@@ -4435,7 +4435,7 @@ const Index = () => {
               </div>
 
               {/* Changelog */}
-              <div className="rounded-xl bg-primary/5 border border-primary/20 p-3 space-y-1.5">
+              <div className="rounded-xl border border-border bg-card p-3 space-y-1.5">
                 <p className="font-bold text-foreground text-xs uppercase tracking-wider">📝 Changelog v2.0</p>
                 <div className="space-y-1 text-[13px]">
                   <p className="font-semibold text-foreground text-xs">April 2026</p>
