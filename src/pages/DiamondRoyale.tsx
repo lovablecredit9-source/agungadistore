@@ -159,7 +159,7 @@ export default function DiamondRoyale() {
           </div>
           <div className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-gradient-to-r from-purple-600/40 to-fuchsia-600/40 border border-fuchsia-400/40">
             <Gem className="w-3.5 h-3.5 text-fuchsia-300" fill="currentColor" />
-            <span className="text-xs font-black text-white">{gems.toLocaleString()}</span>
+            <span className="text-xs font-black text-white">{formatCompactNumber(gems)}</span>
           </div>
         </div>
       </div>

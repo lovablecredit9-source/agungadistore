@@ -205,7 +205,7 @@ export default function LuckRoyaleNyawa() {
           </div>
           <div className="flex items-center gap-1 bg-gradient-to-r from-cyan-500/20 to-purple-500/20 border border-cyan-400/30 rounded-full px-2.5 py-1">
             <Gem className="w-3.5 h-3.5 text-cyan-300" />
-            <span className="font-bold text-xs tabular-nums">{gems.toLocaleString()}</span>
+            <span className="font-bold text-xs tabular-nums">{formatCompactNumber(gems)}</span>
           </div>
         </div>
       </div>
@@ -292,7 +292,7 @@ export default function LuckRoyaleNyawa() {
                   <span className="text-[9px] font-black tracking-widest text-amber-100">MEGA JACKPOT POOL</span>
                 </div>
                 <div className="flex items-baseline gap-1">
-                  <span className="text-2xl font-black text-white tabular-nums drop-shadow">{megaPool.toLocaleString()}</span>
+                  <span className="text-2xl font-black text-white tabular-nums drop-shadow">{formatCompactNumber(megaPool)}</span>
                   <Gem className="w-4 h-4 text-amber-300" fill="currentColor" />
                 </div>
                 <p className="text-[10px] font-bold text-fuchsia-100/90 mt-0.5">
