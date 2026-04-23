@@ -292,8 +292,8 @@ export default function HistoryEnhancer({
             <Popover>
               <PopoverTrigger asChild>
                 <Button
-                  type="button" size="sm"
-                className="h-7 px-2 rounded-lg text-[10px] font-semibold gap-1"
+                  type="button" size="sm" variant="outline"
+                  className="h-7 px-2 rounded-lg text-[10px] font-semibold gap-1"
                   disabled={filtered.length === 0}
                 >
                   <Download className="w-3 h-3" /> Export
@@ -409,7 +409,7 @@ export default function HistoryEnhancer({
                 </div>
 
                 {activeFiltersCount > 0 && (
-                  <Button onClick={clearFilters} variant="ghost" size="sm" className="h-7 text-[11px] font-bold w-full gap-1 text-rose-600 hover:bg-rose-500/10">
+                  <Button onClick={clearFilters} variant="ghost" size="sm" className="h-7 text-[11px] font-semibold w-full gap-1 text-foreground hover:bg-muted">
                     <X className="w-3 h-3" /> Reset semua filter
                   </Button>
                 )}
@@ -467,13 +467,13 @@ export default function HistoryEnhancer({
                               <motion.div
                                 initial={{ height: 0 }} animate={{ height: `${inH}%` }}
                                 transition={{ duration: 0.4, delay: i * 0.02 }}
-                                className="w-1/2 bg-emerald-500/80 rounded-t min-h-[1px]"
+                                className="w-1/2 bg-foreground rounded-t min-h-[1px] opacity-70"
                                 title={`Masuk: ${formatAmount(d.in)}`}
                               />
                               <motion.div
                                 initial={{ height: 0 }} animate={{ height: `${outH}%` }}
                                 transition={{ duration: 0.4, delay: i * 0.02 + 0.05 }}
-                                className="w-1/2 bg-rose-500/80 rounded-t min-h-[1px]"
+                                className="w-1/2 bg-muted-foreground rounded-t min-h-[1px] opacity-60"
                                 title={`Keluar: ${formatAmount(d.out)}`}
                               />
                             </>
@@ -505,7 +505,7 @@ export default function HistoryEnhancer({
             : `${filtered.length} dari ${items.length} riwayat`}
         </p>
         {sort !== "newest" && (
-          <span className="text-[9px] font-bold text-primary inline-flex items-center gap-1">
+          <span className="text-[9px] font-semibold text-foreground inline-flex items-center gap-1">
             <ArrowDownUp className="w-2.5 h-2.5" />
             {sort === "oldest" ? "Terlama" : sort === "amount_high" ? "Nominal ↓" : "Nominal ↑"}
           </span>
