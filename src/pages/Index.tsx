@@ -3680,36 +3680,36 @@ const Index = () => {
         const imgs = getProductImages(selectedProduct.id);
         return (
           <div className="fixed inset-0 z-[60] bg-black/60 backdrop-blur-sm flex items-end justify-center" onClick={() => openProduct(null)}>
-            <div className="bg-card w-full max-w-lg rounded-t-3xl max-h-[85vh] overflow-y-auto animate-in slide-in-from-bottom duration-300" onClick={e => e.stopPropagation()}>
+            <div className="bg-card w-full max-w-lg rounded-t-3xl border-t border-border max-h-[85vh] overflow-y-auto animate-in slide-in-from-bottom duration-300" onClick={e => e.stopPropagation()}>
               {imgs.length > 0 && <ImageCarousel images={imgs} className="w-full h-56" />}
               <div className="p-5 space-y-4">
                 <div className="flex items-start justify-between">
                   <div>
                     <h2 className="text-xl font-extrabold">{selectedProduct.title}</h2>
                     <div className="flex gap-1.5 mt-1 flex-wrap">
-                      {selectedProduct.category && <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">{selectedProduct.category}</span>}
-                      {selectedProduct.has_warranty && <span className="text-xs bg-accent/10 text-accent px-2 py-0.5 rounded-full"><Shield className="w-3 h-3 inline mr-0.5" />Garansi</span>}
+                      {selectedProduct.category && <span className="rounded-full border border-border bg-muted px-2 py-0.5 text-xs text-foreground">{selectedProduct.category}</span>}
+                      {selectedProduct.has_warranty && <span className="rounded-full border border-border bg-muted px-2 py-0.5 text-xs text-foreground"><Shield className="mr-0.5 inline w-3 h-3" />Garansi</span>}
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
                     <button onClick={() => toggleLike(selectedProduct.id)}>
-                      <Heart className={`w-6 h-6 ${likedIds.has(selectedProduct.id) ? "fill-destructive text-destructive" : "text-muted-foreground"}`} />
+                      <Heart className={`w-6 h-6 ${likedIds.has(selectedProduct.id) ? "fill-foreground text-foreground" : "text-muted-foreground"}`} />
                     </button>
                     <button onClick={() => openProduct(null)} className="w-8 h-8 rounded-full bg-muted flex items-center justify-center"><X className="w-4 h-4" /></button>
                   </div>
                 </div>
-                <p className="text-2xl font-extrabold text-primary">{formatPrice(selectedProduct.price)}</p>
+                <p className="text-2xl font-extrabold text-foreground">{formatPrice(selectedProduct.price)}</p>
                 {/* Wholesale prices */}
                 {(() => {
                   const tiers = getProductWholesaleTiers(selectedProduct.id);
                   if (tiers.length === 0) return null;
                   return (
-                    <div className="bg-accent/5 border border-accent/20 rounded-lg p-2.5 space-y-1">
-                      <p className="text-[10px] font-bold text-accent uppercase tracking-wider">💰 Harga Grosir</p>
+                    <div className="space-y-1 rounded-lg border border-border bg-muted/40 p-2.5">
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-foreground">Harga Grosir</p>
                       {tiers.map((t: any, i: number) => (
                         <div key={i} className="flex justify-between text-xs">
                           <span className="text-muted-foreground">Beli ≥{t.min_quantity} pcs</span>
-                          <span className="font-bold text-accent">{formatPrice(t.price_per_item)} /pcs</span>
+                          <span className="font-bold text-foreground">{formatPrice(t.price_per_item)} /pcs</span>
                         </div>
                       ))}
                     </div>
@@ -3717,8 +3717,8 @@ const Index = () => {
                 })()}
                 {selectedProduct.description && <p className="text-sm text-muted-foreground leading-relaxed">{selectedProduct.description}</p>}
                 <div className="flex items-center gap-2 flex-wrap">
-                  <span className={`text-xs px-3 py-1.5 rounded-full font-medium ${selectedProduct.stock > 0 ? 'bg-accent/10 text-accent' : 'bg-destructive/10 text-destructive'}`}>
-                    {selectedProduct.stock > 0 ? `✓ Stok: ${selectedProduct.stock}` : '✗ Habis'}
+                  <span className="rounded-full border border-border bg-muted px-3 py-1.5 text-xs font-medium text-foreground">
+                    {selectedProduct.stock > 0 ? `Stok: ${selectedProduct.stock}` : 'Stok habis'}
                   </span>
                   <span className="text-xs px-3 py-1.5 rounded-full font-medium bg-muted text-muted-foreground flex items-center gap-1">
                     <CalendarDays className="w-3.5 h-3.5" /> {new Date(selectedProduct.created_at).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" })}
@@ -3727,21 +3727,21 @@ const Index = () => {
 
                 {/* Four buttons: Cart + Chat + Beli Saldo + WhatsApp */}
                 <div className="grid grid-cols-4 gap-2">
-                  <Button className="h-11 bg-gradient-to-r from-secondary to-secondary/80 text-secondary-foreground font-bold gap-1 rounded-xl text-xs"
+                  <Button variant="outline" className="h-11 rounded-xl border-border bg-card text-xs font-medium text-foreground shadow-none"
                     disabled={selectedProduct.stock <= 0}
                     onClick={() => { addToCart(selectedProduct); }}>
                     <ShoppingCart className="w-4 h-4" /> Keranjang
                   </Button>
-                  <Button className="h-11 bg-gradient-to-r from-primary to-primary/80 font-bold gap-1 rounded-xl text-xs"
+                  <Button variant="outline" className="h-11 rounded-xl border-border bg-card text-xs font-medium text-foreground shadow-none"
                     onClick={() => openProductChat(selectedProduct)}>
                     <MessageCircle className="w-4 h-4" /> Chat
                   </Button>
-                  <Button className="h-11 bg-gradient-to-r from-primary to-accent text-primary-foreground font-bold gap-1 rounded-xl text-xs"
+                  <Button className="h-11 rounded-xl bg-foreground text-background text-xs font-medium shadow-none hover:bg-foreground/90"
                     disabled={!userBalance || userBalance.balance < selectedProduct.price || selectedProduct.stock <= 0}
                     onClick={() => { setBuyProduct(selectedProduct); setBuyQuantity(1); setShowBuySaldo(true); }}>
                     <Wallet className="w-4 h-4" /> Saldo
                   </Button>
-                  <Button className="h-11 bg-gradient-to-r from-accent to-accent/80 text-accent-foreground font-bold gap-1 rounded-xl text-xs"
+                  <Button variant="outline" className="h-11 rounded-xl border-border bg-card text-xs font-medium text-foreground shadow-none"
                     onClick={() => setShowWaForm(true)}>
                     <ShoppingBag className="w-4 h-4" /> WA
                   </Button>
@@ -3777,21 +3777,21 @@ const Index = () => {
 
       {/* WhatsApp Form Modal */}
       {showWaForm && selectedProduct && (
-        <div className="fixed inset-0 z-[70] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setShowWaForm(false)}>
-          <div className="bg-card w-full max-w-sm rounded-2xl p-5 space-y-4 animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
+          <div className="fixed inset-0 z-[70] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setShowWaForm(false)}>
+            <div className="w-full max-w-sm space-y-4 rounded-2xl border border-border bg-card p-5 animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between">
               <h3 className="font-extrabold text-lg">Beli via WhatsApp</h3>
               <button onClick={() => setShowWaForm(false)} className="w-8 h-8 rounded-full bg-muted flex items-center justify-center"><X className="w-4 h-4" /></button>
             </div>
-            <div className="bg-primary/5 border border-primary/20 rounded-lg p-3">
-              <p className="font-bold text-sm">{selectedProduct.title}</p>
-              <p className="text-primary font-extrabold">{formatPrice(selectedProduct.price)}</p>
+            <div className="rounded-lg border border-border bg-muted/40 p-3">
+              <p className="text-sm font-bold">{selectedProduct.title}</p>
+              <p className="font-extrabold text-foreground">{formatPrice(selectedProduct.price)}</p>
             </div>
             <div className="space-y-3">
               <Input placeholder="Username / Nama" value={waUsername} onChange={e => setWaUsername(e.target.value)} />
               <Input placeholder="No HP" value={waPhone} onChange={e => setWaPhone(e.target.value)} />
               <Textarea placeholder="Keterangan tambahan (opsional)" value={waDesc} onChange={e => setWaDesc(e.target.value)} rows={2} />
-              <Button className="w-full bg-gradient-to-r from-accent to-accent/80 text-accent-foreground font-bold gap-2" onClick={sendWhatsApp}>
+              <Button className="w-full gap-2 bg-foreground font-medium text-background shadow-none hover:bg-foreground/90" onClick={sendWhatsApp}>
                 <MessageCircle className="w-4 h-4" /> Kirim ke WhatsApp
               </Button>
             </div>
@@ -3802,11 +3802,13 @@ const Index = () => {
       {/* Product Chat Modal */}
       {showProductChat && productChatProduct && productChat && (
         <div className="fixed inset-0 z-[70] bg-black/60 backdrop-blur-sm flex items-end justify-center" onClick={() => setShowProductChat(false)}>
-          <div className="bg-card w-full max-w-lg rounded-t-3xl max-h-[85vh] flex flex-col animate-in slide-in-from-bottom duration-300" onClick={e => e.stopPropagation()}>
+          <div className="bg-card w-full max-w-lg rounded-t-3xl border-t border-border max-h-[85vh] flex flex-col animate-in slide-in-from-bottom duration-300" onClick={e => e.stopPropagation()}>
             {/* Chat Header */}
-            <div className="border-b border-border p-4 flex items-center gap-3">
+            <div className="flex items-center gap-3 border-b border-border p-4">
               <button onClick={() => setShowProductChat(false)}><ChevronLeft className="w-5 h-5" /></button>
-              <img src={storeQris} className="w-9 h-9 rounded-full object-cover" alt="" />
+              <div className="flex h-9 w-9 items-center justify-center rounded-full border border-border bg-muted text-sm font-semibold text-foreground">
+                A
+              </div>
               <div className="flex-1">
                 <p className="font-bold text-sm">{STORE_NAME}</p>
                 <p className="text-[10px] text-muted-foreground">{t("chat.reply_time", lang)}</p>
