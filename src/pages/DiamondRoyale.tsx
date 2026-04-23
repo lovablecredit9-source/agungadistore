@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
 import { getVisitorId } from "@/lib/visitor-id";
+import { formatCompactNumber } from "@/lib/utils";
 import {
   ArrowLeft, Gem, Sparkles, Crown, Loader2, Trophy, Shield, Coins,
   Star, Award, Flame, Lock, Zap, Diamond,

@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { getVisitorId } from "@/lib/visitor-id";
+import { formatCompactNumber } from "@/lib/utils";
 import {
   ArrowLeft, Heart, Lightbulb, Timer, Shield, Gem, Sparkles, Crown,
   Loader2, Trophy, Zap, X, Dices, BarChart3, Flame, Star, Award, TrendingUp,
