@@ -197,6 +197,73 @@ export default function LuckRoyaleNyawa() {
     }
   };
 
+  const claimFreeDaily = async (itemCode: string) => {
+    if (!visitorId || redeeming) return;
+    setRedeeming(itemCode);
+    try {
+      const { data, error } = await supabase.functions.invoke("luck-royale-nyawa", {
+        body: { visitorId, action: "claim_free_daily", itemCode },
+      });
+      if (error) throw error;
+      if (data.error) {
+        toast({ title: "Gagal klaim", description: data.error, variant: "destructive" });
+        return;
+      }
+      setGems(data.gems);
+      toast({ title: "🎁 Hadiah Gratis Diklaim!", description: `Kamu dapat: ${data.item.name}` });
+      fetchData();
+    } catch (e: any) {
+      toast({ title: "Error", description: e.message || "Gagal", variant: "destructive" });
+    } finally {
+      setRedeeming(null);
+    }
+  };
+
+  const unlockPremium = async (itemCode: string, name: string, cost: number) => {
+    if (!visitorId || redeeming) return;
+    if (!confirm(`Unlock ${name}?\n\nBiaya: ${cost} 💎 Gem (sekali bayar, akses selamanya)\nKlaim hadiah setiap minggu setelah unlock.`)) return;
+    setRedeeming(itemCode);
+    try {
+      const { data, error } = await supabase.functions.invoke("luck-royale-nyawa", {
+        body: { visitorId, action: "unlock_premium", itemCode },
+      });
+      if (error) throw error;
+      if (data.error) {
+        toast({ title: "Gagal unlock", description: data.error, variant: "destructive" });
+        return;
+      }
+      setGems(data.gems);
+      toast({ title: "👑 Premium Unlocked!", description: `${name} berhasil dibuka — klaim hadiah pertama sekarang!` });
+      fetchData();
+    } catch (e: any) {
+      toast({ title: "Error", description: e.message || "Gagal", variant: "destructive" });
+    } finally {
+      setRedeeming(null);
+    }
+  };
+
+  const claimPremium = async (itemCode: string) => {
+    if (!visitorId || redeeming) return;
+    setRedeeming(itemCode);
+    try {
+      const { data, error } = await supabase.functions.invoke("luck-royale-nyawa", {
+        body: { visitorId, action: "claim_premium", itemCode },
+      });
+      if (error) throw error;
+      if (data.error) {
+        toast({ title: "Gagal klaim", description: data.error, variant: "destructive" });
+        return;
+      }
+      setGems(data.gems);
+      toast({ title: "👑 Premium Klaim!", description: `Kamu dapat: ${data.item.name}` });
+      fetchData();
+    } catch (e: any) {
+      toast({ title: "Error", description: e.message || "Gagal", variant: "destructive" });
+    } finally {
+      setRedeeming(null);
+    }
+  };
+
   const featured = prizes.filter(p => ["extra_life", "auto_hint", "time_freeze", "streak_freeze"].includes(p.kind));
 
   return (
