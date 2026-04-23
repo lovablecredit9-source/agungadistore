@@ -785,6 +785,64 @@ Deno.serve(async (req) => {
       return Response.json({ success: true, item, gems: gemsAfter || 0 }, { headers: corsHeaders });
     }
 
+    // === BUY TOKENS WITH BALANCE — beli Lucky Token pakai saldo Rupiah ===
+    if (action === "buy_tokens_with_balance") {
+      const bundle = TOKEN_BUNDLES.find(b => b.code === itemCode);
+      if (!bundle) return Response.json({ error: "Paket tidak valid" }, { status: 400, headers: corsHeaders });
+
+      // Resolve account balance row dari visitor saat ini
+      const { data: ubId } = await admin.rpc("get_active_user_balance_id", { p_visitor_id: visitorId });
+      if (!ubId) {
+        return Response.json({ error: "Login akun saldo dulu untuk beli paket token" }, { status: 400, headers: corsHeaders });
+      }
+      const { data: balanceRow } = await admin
+        .from("user_balances")
+        .select("id, balance, username")
+        .eq("id", ubId)
+        .maybeSingle();
+      if (!balanceRow) return Response.json({ error: "Akun saldo tidak ditemukan" }, { status: 400, headers: corsHeaders });
+      if ((balanceRow.balance || 0) < bundle.price) {
+        return Response.json({
+          error: `Saldo tidak cukup. Butuh Rp ${bundle.price.toLocaleString("id-ID")} (saldo: Rp ${(balanceRow.balance || 0).toLocaleString("id-ID")})`,
+        }, { status: 400, headers: corsHeaders });
+      }
+
+      // Potong saldo
+      const newBalance = (balanceRow.balance || 0) - bundle.price;
+      await admin.from("user_balances").update({ balance: newBalance }).eq("id", balanceRow.id);
+
+      // Catat transaksi saldo
+      await admin.from("balance_transactions").insert({
+        visitor_id: visitorId,
+        amount: -bundle.price,
+        type: "purchase",
+        description: `Beli Lucky Token: ${bundle.name} (+${bundle.tokens + bundle.bonus} token)`,
+      });
+
+      // Tambah token ke pemain
+      const totalAdd = bundle.tokens + bundle.bonus;
+      const tokenState = await getLuckyTokens(admin, visitorId);
+      const newTokens = tokenState.tokens + totalAdd;
+      await setLuckyTokens(admin, visitorId, newTokens, tokenState.spinProgress);
+
+      await admin.from("notifications").insert({
+        visitor_id: visitorId,
+        title: `🎟️ ${totalAdd} Lucky Token Diterima`,
+        message: `${bundle.name}: ${bundle.tokens} + ${bundle.bonus} bonus token berhasil ditambahkan!`,
+        type: "luck_royale_nyawa",
+      });
+
+      const { data: gemsAfter } = await admin.rpc("get_account_gems", { p_visitor_id: visitorId });
+      return Response.json({
+        success: true,
+        bundle,
+        addedTokens: totalAdd,
+        luckyTokens: newTokens,
+        balance: newBalance,
+        gems: gemsAfter || 0,
+      }, { headers: corsHeaders });
+    }
+
     return Response.json({ error: "Unknown action" }, { status: 400, headers: corsHeaders });
   } catch (e) {
     return Response.json({ error: e instanceof Error ? e.message : "Error" }, { status: 500, headers: corsHeaders });
