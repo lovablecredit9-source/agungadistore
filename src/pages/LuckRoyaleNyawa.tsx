@@ -220,67 +220,26 @@ export default function LuckRoyaleNyawa() {
     }
   };
 
-  const unlockPremium = async (itemCode: string, name: string, cost: number) => {
+  const buyShopAccess = async () => {
     if (!visitorId || redeeming) return;
-    if (!confirm(`Unlock ${name}?\n\nBiaya: ${cost} 💎 Gem (sekali bayar, akses selamanya)\nKlaim hadiah setiap minggu setelah unlock.`)) return;
-    setRedeeming(itemCode);
+    if (!confirm(
+      `Beli Akses Token Shop?\n\nHarga: Rp ${shopAccess.price.toLocaleString("id-ID")} (potong saldo)\nBerlaku: ${shopAccess.durationDays} hari\n\nSetelah aktif, kamu bisa tukar Lucky Token dengan hadiah PASTI di Token Shop.`
+    )) return;
+    setRedeeming("__shop_access__");
     try {
       const { data, error } = await supabase.functions.invoke("luck-royale-nyawa", {
-        body: { visitorId, action: "unlock_premium", itemCode },
+        body: { visitorId, action: "buy_shop_access" },
       });
       if (error) throw error;
       if (data.error) {
-        toast({ title: "Gagal unlock", description: data.error, variant: "destructive" });
+        toast({ title: "Gagal beli akses", description: data.error, variant: "destructive" });
         return;
       }
-      setGems(data.gems);
-      toast({ title: "👑 Premium Unlocked!", description: `${name} berhasil dibuka — klaim hadiah pertama sekarang!` });
-      fetchData();
-    } catch (e: any) {
-      toast({ title: "Error", description: e.message || "Gagal", variant: "destructive" });
-    } finally {
-      setRedeeming(null);
-    }
-  };
-
-  const claimPremium = async (itemCode: string) => {
-    if (!visitorId || redeeming) return;
-    setRedeeming(itemCode);
-    try {
-      const { data, error } = await supabase.functions.invoke("luck-royale-nyawa", {
-        body: { visitorId, action: "claim_premium", itemCode },
+      setShopAccess(data.shopAccess);
+      toast({
+        title: "🔓 Akses Token Shop Aktif!",
+        description: `Berlaku ${shopAccess.durationDays} hari — sisa saldo Rp ${data.balance.toLocaleString("id-ID")}`,
       });
-      if (error) throw error;
-      if (data.error) {
-        toast({ title: "Gagal klaim", description: data.error, variant: "destructive" });
-        return;
-      }
-      setGems(data.gems);
-      toast({ title: "👑 Premium Klaim!", description: `Kamu dapat: ${data.item.name}` });
-      fetchData();
-    } catch (e: any) {
-      toast({ title: "Error", description: e.message || "Gagal", variant: "destructive" });
-    } finally {
-      setRedeeming(null);
-    }
-  };
-
-  const buyTokens = async (bundleCode: string, bundleName: string, price: number, totalTokens: number) => {
-    if (!visitorId || redeeming) return;
-    if (!confirm(`Beli ${bundleName}?\n\nHarga: Rp ${price.toLocaleString("id-ID")} (potong saldo)\nDapat: ${totalTokens} Lucky Token`)) return;
-    setRedeeming(bundleCode);
-    try {
-      const { data, error } = await supabase.functions.invoke("luck-royale-nyawa", {
-        body: { visitorId, action: "buy_tokens_with_balance", itemCode: bundleCode },
-      });
-      if (error) throw error;
-      if (data.error) {
-        toast({ title: "Gagal beli token", description: data.error, variant: "destructive" });
-        return;
-      }
-      setLuckyTokens(data.luckyTokens);
-      setGems(data.gems);
-      toast({ title: `🎟️ +${data.addedTokens} Lucky Token!`, description: `${bundleName} berhasil dibeli — sisa saldo Rp ${data.balance.toLocaleString("id-ID")}` });
       fetchData();
     } catch (e: any) {
       toast({ title: "Error", description: e.message || "Gagal", variant: "destructive" });
