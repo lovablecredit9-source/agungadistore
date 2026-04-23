@@ -230,30 +230,28 @@ export default function PlusTab() {
   return (
     <div className="space-y-4">
       <BanBanner />
-      <h2 className="text-lg font-extrabold flex items-center gap-2">
-        <Sparkles className="w-5 h-5 text-primary" /> Plus
+      <h2 className="text-lg font-semibold flex items-center gap-2 tracking-tight">
+        <Sparkles className="w-5 h-5 text-foreground" strokeWidth={1.7} /> Plus
       </h2>
       <BanLock fallbackLabel="Plus / Streak Shop">
 
-      <Card className="border-2 border-primary/20 bg-gradient-to-br from-primary/5 to-accent/5">
-        <CardContent className="p-4">
-          {userBalance ? (
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs text-muted-foreground font-medium">Hai, {userBalance.username}</p>
-                <p className="text-2xl font-extrabold text-primary">{formatPrice(userBalance.balance)}</p>
-              </div>
-              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-lg">
-                <Wallet className="w-6 h-6 text-primary-foreground" />
-              </div>
+      <div className="rounded-xl border border-border bg-card p-4">
+        {userBalance ? (
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs text-muted-foreground font-medium">Hai, {userBalance.username}</p>
+              <p className="text-2xl font-bold text-foreground tabular-nums">{formatPrice(userBalance.balance)}</p>
             </div>
-          ) : (
-            <div className="text-center py-2">
-              <p className="text-sm text-muted-foreground">Login ke tab <strong>Saldo</strong> untuk melihat saldo & membeli</p>
+            <div className="w-11 h-11 rounded-xl bg-muted flex items-center justify-center">
+              <Wallet className="w-5 h-5 text-foreground" strokeWidth={1.7} />
             </div>
-          )}
-        </CardContent>
-      </Card>
+          </div>
+        ) : (
+          <div className="text-center py-2">
+            <p className="text-sm text-muted-foreground">Login ke tab <strong>Saldo</strong> untuk melihat saldo & membeli</p>
+          </div>
+        )}
+      </div>
 
       <div className="flex items-center gap-2 flex-wrap">
         <GameCreditsBadge credits={credits} isUnlimited={isUnlimited} unlimitedUntil={unlimitedUntil} />

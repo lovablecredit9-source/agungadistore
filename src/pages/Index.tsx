@@ -2214,52 +2214,42 @@ const Index = () => {
             {voucherSection === "claim" && (
               <>
                 {/* Info: Harus beli dulu */}
-                <Card className="border-0 shadow-lg overflow-hidden">
-                  <div className="bg-gradient-to-r from-amber-500 to-orange-500 p-0.5" />
-                  <CardContent className="p-3.5 flex items-start gap-3 bg-gradient-to-r from-amber-500/5 to-orange-500/5">
-                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center shrink-0 shadow-lg ring-2 ring-amber-500/20">
-                      <ShoppingBag className="w-5 h-5 text-white" />
-                    </div>
-                    <div>
-                      <p className="text-xs font-extrabold text-amber-700 dark:text-amber-400">Cara Mendapatkan Voucher</p>
-                      <p className="text-[11px] text-muted-foreground mt-0.5">Beli produk terlebih dahulu di tab <span className="font-bold text-primary cursor-pointer" onClick={() => setTab("produk")}>Produk</span> atau gunakan <span className="font-bold text-primary cursor-pointer" onClick={() => setTab("saldo")}>Saldo</span>, lalu kode voucher akan diberikan setelah pembayaran berhasil.</p>
-                    </div>
-                  </CardContent>
-                </Card>
+                <div className="rounded-xl border border-border bg-card p-3.5 flex items-start gap-3">
+                  <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center shrink-0">
+                    <ShoppingBag className="w-5 h-5 text-foreground" strokeWidth={1.7} />
+                  </div>
+                  <div>
+                    <p className="text-xs font-semibold text-foreground">Cara Mendapatkan Voucher</p>
+                    <p className="text-[11px] text-muted-foreground mt-0.5">Beli produk terlebih dahulu di tab <span className="font-medium text-foreground underline cursor-pointer" onClick={() => setTab("produk")}>Produk</span> atau gunakan <span className="font-medium text-foreground underline cursor-pointer" onClick={() => setTab("saldo")}>Saldo</span>, lalu kode voucher akan diberikan setelah pembayaran berhasil.</p>
+                  </div>
+                </div>
 
-                <Card className="border-0 shadow-2xl overflow-hidden glass-card-strong glow-border">
-                  <div className="h-1.5 bg-gradient-to-r from-primary via-accent to-primary shimmer" />
-                  <CardContent className="p-5 space-y-4">
+                <div className="rounded-xl border border-border bg-card overflow-hidden">
+                  <div className="p-5 space-y-4">
                     <div className="text-center">
-                      <div className="relative w-18 h-18 mx-auto mb-3">
-                        <div className="absolute inset-0 bg-gradient-to-br from-primary to-accent rounded-2xl blur-lg opacity-30 animate-pulse" />
-                        <div className="relative w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-accent flex items-center justify-center mx-auto shadow-xl ring-2 ring-primary/20">
-                          <Ticket className="w-8 h-8 text-primary-foreground" />
-                        </div>
+                      <div className="w-14 h-14 mx-auto mb-3 rounded-xl bg-muted flex items-center justify-center">
+                        <Ticket className="w-7 h-7 text-foreground" strokeWidth={1.7} />
                       </div>
-                      <p className="text-sm font-extrabold">Masukkan Kode Voucher</p>
-                      <p className="text-xs text-muted-foreground mt-0.5">Pisahkan dengan <span className="font-mono font-bold text-primary bg-primary/10 px-1.5 py-0.5 rounded">|</span> atau Enter untuk banyak kode</p>
+                      <p className="text-sm font-semibold">Masukkan Kode Voucher</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">Pisahkan dengan <span className="font-mono font-medium text-foreground bg-muted px-1.5 py-0.5 rounded">|</span> atau Enter untuk banyak kode</p>
                     </div>
                     <div className="space-y-3">
-                      <div className="relative group">
-                        <div className="absolute -inset-0.5 bg-gradient-to-r from-primary/30 to-accent/30 rounded-xl blur opacity-0 group-focus-within:opacity-100 transition-opacity" />
-                        <Textarea placeholder="KODE1 | KODE2 | KODE3" value={tokenInput} onChange={(e) => setTokenInput(e.target.value.toUpperCase())}
-                          className="relative font-mono text-center text-sm tracking-wider uppercase border-2 border-primary/20 focus:border-primary min-h-[60px] bg-card" rows={2} />
-                      </div>
+                      <Textarea placeholder="KODE1 | KODE2 | KODE3" value={tokenInput} onChange={(e) => setTokenInput(e.target.value.toUpperCase())}
+                        className="font-mono text-center text-sm tracking-wider uppercase border border-border focus:border-foreground min-h-[60px] bg-background" rows={2} />
                       {parseCodes(tokenInput).length > 0 && (
-                        <div className="flex items-center justify-center gap-2 bg-primary/5 rounded-lg p-2">
-                          <div className="w-5 h-5 rounded-full bg-primary/20 flex items-center justify-center">
-                            <span className="text-[10px] font-extrabold text-primary">{parseCodes(tokenInput).length}</span>
+                        <div className="flex items-center justify-center gap-2 bg-muted/60 rounded-lg p-2">
+                          <div className="w-5 h-5 rounded-full bg-foreground/10 flex items-center justify-center">
+                            <span className="text-[10px] font-semibold text-foreground">{parseCodes(tokenInput).length}</span>
                           </div>
                           <span className="text-xs text-muted-foreground font-medium">kode terdeteksi</span>
                         </div>
                       )}
-                      <Button onClick={handleClaim} disabled={claiming || !tokenInput.trim()} className="w-full h-12 bg-gradient-to-r from-primary to-accent shadow-xl font-extrabold text-base gap-2 rounded-xl hover:shadow-2xl transition-all hover:scale-[1.02]">
-                        {claiming ? <span className="animate-pulse">Memproses...</span> : <><CheckCircle2 className="w-5 h-5" /> Klaim Sekarang</>}
+                      <Button onClick={handleClaim} disabled={claiming || !tokenInput.trim()} className="w-full h-11 font-semibold text-sm gap-2 rounded-xl">
+                        {claiming ? <span className="animate-pulse">Memproses...</span> : <><CheckCircle2 className="w-4 h-4" strokeWidth={2} /> Klaim Sekarang</>}
                       </Button>
                     </div>
-                  </CardContent>
-                </Card>
+                  </div>
+                </div>
 
                 {claimResults.length > 0 && (
                   <div className="space-y-3">
@@ -2363,31 +2353,28 @@ const Index = () => {
             )}
 
             {voucherSection === "tips" && (
-              <Card className="border-0 shadow-lg overflow-hidden">
-                <div className="h-1 bg-gradient-to-r from-violet-500 to-fuchsia-500" />
-                <CardContent className="p-4 space-y-3">
-                  <div className="flex items-center gap-2">
-                    <Sparkles className="w-4 h-4 text-violet-500" />
-                    <p className="text-xs font-extrabold">Tips & Trik Klaim Voucher</p>
-                  </div>
-                  {[
-                    { icon: Zap, title: "Klaim Massal", desc: "Pisahkan kode dengan tanda | atau Enter untuk klaim banyak voucher sekaligus.", color: "from-amber-500 to-orange-500" },
-                    { icon: Shield, title: "Aman & Terpercaya", desc: "Setiap kode hanya berlaku sekali pakai. Jangan bagikan ke siapapun.", color: "from-emerald-500 to-teal-500" },
-                    { icon: Gift, title: "Cek Histori", desc: "Semua klaim tersimpan di tab Riwayat lengkap dengan detail akun.", color: "from-sky-500 to-blue-500" },
-                    { icon: Award, title: "Beli Produk Dulu", desc: "Voucher hanya didapat setelah pembelian produk berhasil.", color: "from-violet-500 to-fuchsia-500" },
-                  ].map((tip, i) => (
-                    <div key={i} className="flex items-start gap-3 p-3 rounded-xl bg-muted/40 border border-border/50">
-                      <div className={`w-9 h-9 rounded-xl bg-gradient-to-br ${tip.color} flex items-center justify-center shrink-0 shadow-md`}>
-                        <tip.icon className="w-4 h-4 text-white" />
-                      </div>
-                      <div className="min-w-0">
-                        <p className="text-xs font-extrabold">{tip.title}</p>
-                        <p className="text-[11px] text-muted-foreground mt-0.5 leading-relaxed">{tip.desc}</p>
-                      </div>
+              <div className="rounded-xl border border-border bg-card p-4 space-y-3">
+                <div className="flex items-center gap-2">
+                  <Lightbulb className="w-4 h-4 text-foreground" strokeWidth={1.7} />
+                  <p className="text-xs font-semibold">Tips & Trik Klaim Voucher</p>
+                </div>
+                {[
+                  { icon: Zap, title: "Klaim Massal", desc: "Pisahkan kode dengan tanda | atau Enter untuk klaim banyak voucher sekaligus." },
+                  { icon: Shield, title: "Aman & Terpercaya", desc: "Setiap kode hanya berlaku sekali pakai. Jangan bagikan ke siapapun." },
+                  { icon: Gift, title: "Cek Histori", desc: "Semua klaim tersimpan di tab Riwayat lengkap dengan detail akun." },
+                  { icon: Award, title: "Beli Produk Dulu", desc: "Voucher hanya didapat setelah pembelian produk berhasil." },
+                ].map((tip, i) => (
+                  <div key={i} className="flex items-start gap-3 p-3 rounded-xl bg-muted/40 border border-border">
+                    <div className="w-9 h-9 rounded-lg bg-muted flex items-center justify-center shrink-0">
+                      <tip.icon className="w-4 h-4 text-foreground" strokeWidth={1.7} />
                     </div>
-                  ))}
-                </CardContent>
-              </Card>
+                    <div className="min-w-0">
+                      <p className="text-xs font-semibold">{tip.title}</p>
+                      <p className="text-[11px] text-muted-foreground mt-0.5 leading-relaxed">{tip.desc}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
             )}
           </div>
           );
@@ -2448,9 +2435,9 @@ const Index = () => {
                     size="sm"
                     variant={smartHistory ? "default" : "outline"}
                     onClick={() => setSmartHistory(v => !v)}
-                    className={`gap-1 rounded-full text-xs font-bold ${smartHistory ? "bg-gradient-to-r from-primary to-accent text-primary-foreground" : ""}`}
+                    className="gap-1 rounded-full text-xs font-medium"
                   >
-                    <Sparkles className="w-3 h-3" /> {smartHistory ? "Mode Pintar ✓" : "Mode Pintar"}
+                    <Lightbulb className="w-3 h-3" strokeWidth={1.8} /> {smartHistory ? "Mode Pintar ✓" : "Mode Pintar"}
                   </Button>
                   <Button size="sm" variant="outline" onClick={downloadHistoryPDF} className="gap-1 rounded-full border-primary/30 text-primary hover:bg-primary/10 text-xs font-bold">
                     <Download className="w-3 h-3" /> PDF
@@ -2642,15 +2629,15 @@ const Index = () => {
                 {tickets.length > 0 && (
                   <div className="flex items-center justify-between gap-2 px-1">
                     <div className="text-[11px] text-muted-foreground">
-                      {smartTickets ? "✨ Mode Pintar aktif — timeline, filter & rating" : "Tampilan klasik"}
+                      {smartTickets ? "Mode Pintar aktif — timeline, filter & rating" : "Tampilan klasik"}
                     </div>
                     <Button
                       size="sm"
                       variant={smartTickets ? "default" : "outline"}
                       onClick={() => setSmartTickets(v => !v)}
-                      className={`gap-1 rounded-full text-xs font-bold ${smartTickets ? "bg-gradient-to-r from-primary to-accent text-primary-foreground" : ""}`}
+                      className="gap-1 rounded-full text-xs font-medium"
                     >
-                      <Sparkles className="w-3 h-3" /> {smartTickets ? "Mode Pintar ✓" : "Mode Pintar"}
+                      <Lightbulb className="w-3 h-3" strokeWidth={1.8} /> {smartTickets ? "Mode Pintar ✓" : "Mode Pintar"}
                     </Button>
                   </div>
                 )}
@@ -3441,7 +3428,7 @@ const Index = () => {
             {/* Timeline */}
             <div className="relative">
               {/* Vertical line */}
-              <div className="absolute left-5 top-0 bottom-0 w-0.5 bg-gradient-to-b from-primary via-accent to-muted" />
+              <div className="absolute left-5 top-0 bottom-0 w-px bg-border" />
               
               {[
                 {
@@ -3569,46 +3556,40 @@ const Index = () => {
               ].map((entry, i) => (
                 <div key={i} className="relative pl-12 pb-4">
                   {/* Timeline dot */}
-                  <div className={`absolute left-3 top-1 w-5 h-5 rounded-full border-2 border-background shadow-md flex items-center justify-center ${entry.isNew ? 'bg-gradient-to-br from-primary to-accent' : (entry as any).isLaunch ? 'bg-gradient-to-br from-accent to-accent/80' : 'bg-muted'}`}>
-                    {entry.isNew && <div className="w-2 h-2 rounded-full bg-white animate-pulse" />}
-                  </div>
+                  <div className={`absolute left-3 top-1.5 w-3 h-3 rounded-full border-2 border-background ${entry.isNew ? 'bg-foreground' : 'bg-muted-foreground/40'}`} />
                   
-                  <Card className={`border-0 shadow-lg overflow-hidden ${entry.isNew ? 'ring-2 ring-primary/20' : ''}`}>
-                    {entry.isNew && <div className="h-1 bg-gradient-to-r from-primary via-accent to-primary" />}
-                    <CardContent className={`p-4 space-y-2 ${entry.isNew ? 'bg-gradient-to-br from-primary/5 to-accent/5' : ''}`}>
+                  <div className={`rounded-xl border bg-card overflow-hidden ${entry.isNew ? 'border-foreground/30' : 'border-border'}`}>
+                    <div className="p-4 space-y-2">
                       <div className="flex items-center justify-between">
-                        <span className={`text-xs font-extrabold uppercase tracking-wider ${entry.isNew ? 'bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent' : 'text-foreground'}`}>
-                          {entry.isNew ? '🆕' : (entry as any).isLaunch ? '🚀' : '🔄'} {entry.date}
+                        <span className="text-xs font-semibold tracking-wide text-foreground">
+                          {entry.date}
                         </span>
-                        <span className={`text-[10px] px-2.5 py-1 rounded-full font-extrabold ${entry.isNew ? 'bg-primary/15 text-primary border border-primary/20' : (entry as any).isLaunch ? 'bg-accent/15 text-accent border border-accent/20' : 'bg-muted text-muted-foreground'}`}>{entry.version}</span>
+                        <span className={`text-[10px] px-2 py-0.5 rounded-md font-medium ${entry.isNew ? 'bg-foreground text-background' : 'bg-muted text-muted-foreground'}`}>{entry.version}</span>
                       </div>
                       <ul className="text-[12px] space-y-1.5 text-muted-foreground">
                         {entry.items.map((item, j) => (
                           <li key={j} className="leading-relaxed">{item}</li>
                         ))}
                       </ul>
-                    </CardContent>
-                  </Card>
+                    </div>
+                  </div>
                 </div>
               ))}
             </div>
 
             {/* Copyright */}
-            <Card className="border-0 shadow-lg overflow-hidden">
-              <div className="h-1 bg-gradient-to-r from-primary via-accent to-primary" />
-              <CardContent className="p-4 text-center space-y-2">
-                <p className="text-xs font-extrabold text-foreground">© 2026 {STORE_NAME}</p>
-                <p className="text-[11px] text-muted-foreground">Murah & Terpercaya — Semua hak dilindungi.</p>
-                <div className="flex items-center justify-center gap-2 mt-2 flex-wrap">
-                  {socialLinks.map(s => (
-                    <a key={s.id} href={s.url} target="_blank" rel="noopener noreferrer" className="text-[10px] font-bold px-3 py-1.5 rounded-full bg-primary/10 text-primary hover:bg-primary/20 transition-colors border border-primary/10 flex items-center gap-1">
-                      {s.icon_url && <img src={s.icon_url} alt={s.platform} className="w-3 h-3 object-contain" />}
-                      {s.platform}
-                    </a>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
+            <div className="rounded-xl border border-border bg-card p-4 text-center space-y-2">
+              <p className="text-xs font-semibold text-foreground">© 2026 {STORE_NAME}</p>
+              <p className="text-[11px] text-muted-foreground">Murah & Terpercaya — Semua hak dilindungi.</p>
+              <div className="flex items-center justify-center gap-2 mt-2 flex-wrap">
+                {socialLinks.map(s => (
+                  <a key={s.id} href={s.url} target="_blank" rel="noopener noreferrer" className="text-[10px] font-medium px-3 py-1.5 rounded-full bg-muted text-foreground hover:bg-muted/70 transition-colors border border-border flex items-center gap-1">
+                    {s.icon_url && <img src={s.icon_url} alt={s.platform} className="w-3 h-3 object-contain" />}
+                    {s.platform}
+                  </a>
+                ))}
+              </div>
+            </div>
           </div>
         )}
 

@@ -427,38 +427,34 @@ export function TicketEnhancer({ tickets, categoryLabels, onOpen, onReopen, onDu
   return (
     <div className="space-y-4">
       {/* HERO STATS — Live tracker */}
-      <div className="relative overflow-hidden rounded-2xl p-4 text-white" style={{ background: "linear-gradient(135deg, hsl(220, 90%, 56%) 0%, hsl(280, 80%, 55%) 50%, hsl(330, 85%, 58%) 100%)" }}>
-        <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full bg-white/20 blur-3xl animate-pulse" />
-        <div className="absolute -bottom-10 -left-10 w-40 h-40 rounded-full bg-white/15 blur-3xl animate-pulse" style={{ animationDelay: "1s" }} />
-        <div className="relative z-10">
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-2">
-              <Sparkles className="w-5 h-5" />
-              <h3 className="font-extrabold text-base">Tiket Cerdas</h3>
-            </div>
-            <Badge className="bg-white/25 text-white border-white/30 hover:bg-white/30 backdrop-blur">{stats.rate}% selesai</Badge>
+      <div className="rounded-xl border border-border bg-card p-4">
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2">
+            <Activity className="w-4 h-4 text-foreground" strokeWidth={1.7} />
+            <h3 className="font-semibold text-sm text-foreground tracking-tight">Ringkasan Tiket</h3>
           </div>
-          <div className="grid grid-cols-5 gap-1.5">
-            <StatChip icon={Inbox} label="Total" value={stats.total} />
-            <StatChip icon={Activity} label="Aktif" value={stats.open} />
-            <StatChip icon={CheckCircle2} label="Tutup" value={stats.closed} />
-            <StatChip icon={Zap} label="Avg" value={fmtAvg(stats.avgMin)} />
-            <StatChip icon={Flame} label="Urgent" value={stats.critical} highlight={stats.critical > 0} />
+          <span className="text-[11px] font-medium text-muted-foreground tabular-nums">{stats.rate}% selesai</span>
+        </div>
+        <div className="grid grid-cols-5 gap-1.5">
+          <StatChip icon={Inbox} label="Total" value={stats.total} />
+          <StatChip icon={Activity} label="Aktif" value={stats.open} />
+          <StatChip icon={CheckCircle2} label="Tutup" value={stats.closed} />
+          <StatChip icon={Zap} label="Avg" value={fmtAvg(stats.avgMin)} />
+          <StatChip icon={Flame} label="Urgent" value={stats.critical} highlight={stats.critical > 0} />
+        </div>
+        {/* Resolution bar */}
+        <div className="mt-3">
+          <div className="flex items-center justify-between text-[10px] font-medium text-muted-foreground mb-1">
+            <span className="flex items-center gap-1"><TrendingUp className="w-3 h-3" strokeWidth={1.8} /> Tingkat Penyelesaian</span>
+            <span className="tabular-nums">{stats.closed}/{stats.total}</span>
           </div>
-          {/* Resolution bar */}
-          <div className="mt-3">
-            <div className="flex items-center justify-between text-[10px] font-bold opacity-90 mb-1">
-              <span className="flex items-center gap-1"><TrendingUp className="w-3 h-3" /> Tingkat Penyelesaian</span>
-              <span>{stats.closed}/{stats.total}</span>
-            </div>
-            <div className="h-2 bg-white/20 rounded-full overflow-hidden">
-              <motion.div
-                initial={{ width: 0 }}
-                animate={{ width: `${stats.rate}%` }}
-                transition={{ duration: 1, ease: "easeOut" }}
-                className="h-full bg-gradient-to-r from-emerald-300 to-cyan-300 rounded-full shadow-lg"
-              />
-            </div>
+          <div className="h-1 bg-muted rounded-full overflow-hidden">
+            <motion.div
+              initial={{ width: 0 }}
+              animate={{ width: `${stats.rate}%` }}
+              transition={{ duration: 1, ease: "easeOut" }}
+              className="h-full bg-foreground rounded-full"
+            />
           </div>
         </div>
       </div>
