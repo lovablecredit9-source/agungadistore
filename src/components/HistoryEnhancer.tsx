@@ -247,56 +247,24 @@ export default function HistoryEnhancer({
             )}
           </div>
           <Button
-            type="button" size="sm" variant={showFilters ? "default" : "outline"}
-            className="h-9 px-2.5 rounded-xl text-xs font-bold gap-1"
+            type="button"
+            size="sm"
+            variant="outline"
+            className="h-9 px-2.5 rounded-xl border-border bg-card text-xs font-medium text-foreground gap-1 shadow-none"
             onClick={() => setShowFilters((v) => !v)}
           >
-            <Filter className="w-3.5 h-3.5" />
+            <Filter className="w-3.5 h-3.5" strokeWidth={1.8} />
             {activeFiltersCount > 0 && (
               <Badge variant="secondary" className="h-4 min-w-4 px-1 text-[9px]">{activeFiltersCount}</Badge>
             )}
           </Button>
-        </div>
-
-        {/* View switch + Export */}
-        <div className="flex items-center justify-between gap-2">
-          <div className="inline-flex bg-muted rounded-xl p-0.5">
-            <button
-              onClick={() => setView("list")}
-              className={cn(
-                "px-2.5 h-7 rounded-lg text-[11px] font-bold inline-flex items-center gap-1 transition-colors",
-                view === "list" ? "bg-card shadow-sm text-foreground" : "text-muted-foreground"
-              )}
-            >
-              <LayoutList className="w-3 h-3" /> List
-            </button>
-            <button
-              onClick={() => setView("timeline")}
-              className={cn(
-                "px-2.5 h-7 rounded-lg text-[11px] font-bold inline-flex items-center gap-1 transition-colors",
-                view === "timeline" ? "bg-card shadow-sm text-foreground" : "text-muted-foreground"
-              )}
-            >
-              <Clock className="w-3 h-3" /> Timeline
-            </button>
-          </div>
-
-          <div className="flex items-center gap-1.5">
-            <Button
-              type="button" size="sm" variant="outline"
-              className="h-7 px-2 rounded-lg text-[10px] font-bold gap-1"
-              onClick={() => setShowStatsPanel((v) => !v)}
-            >
-              <BarChart3 className="w-3 h-3" /> Statistik
-            </Button>
-            <Popover>
-              <PopoverTrigger asChild>
+...
                 <Button
                   type="button" size="sm" variant="outline"
-                  className="h-7 px-2 rounded-lg text-[10px] font-semibold gap-1"
+                  className="h-7 px-2 rounded-lg border-border bg-card text-[10px] font-medium text-foreground gap-1 shadow-none"
                   disabled={filtered.length === 0}
                 >
-                  <Download className="w-3 h-3" /> Export
+                  <Download className="w-3 h-3" strokeWidth={1.8} /> Export
                 </Button>
               </PopoverTrigger>
               <PopoverContent align="end" className="w-44 p-1.5">
