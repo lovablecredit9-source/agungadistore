@@ -355,6 +355,26 @@ Deno.serve(async (req) => {
 
       const tokenState = await getLuckyTokens(admin, visitorId);
       const megaPool = await getMegaPool(admin);
+      const premiumState = await getPremiumState(admin, visitorId);
+      const freeDailyState = await getFreeDailyState(admin, visitorId);
+
+      // Build premium shop with status (locked/unlocked + cooldown)
+      const nowMs = Date.now();
+      const premiumShopWithStatus = PREMIUM_SHOP.map(item => {
+        const st = premiumState[item.code];
+        const isUnlocked = !!st?.unlockedAt;
+        const lastClaim = st?.lastClaim ? new Date(st.lastClaim).getTime() : 0;
+        const cooldownMs = item.cooldownDays * 86400000;
+        const nextClaimAt = lastClaim + cooldownMs;
+        const canClaim = isUnlocked && nowMs >= nextClaimAt;
+        return { ...item, isUnlocked, canClaim, nextClaimAt: isUnlocked ? nextClaimAt : null };
+      });
+
+      // Build free daily shop with status (claimed today?)
+      const freeDailyWithStatus = FREE_DAILY_SHOP.map(item => ({
+        ...item,
+        claimedToday: freeDailyState[item.code] === today,
+      }));
 
       return Response.json({
         history: allHistory,
@@ -372,6 +392,8 @@ Deno.serve(async (req) => {
         luckyTokenThreshold: TOKENS_PER_SPIN_THRESHOLD,
         megaJackpotPool: megaPool,
         tokenShop: TOKEN_SHOP,
+        freeDailyShop: freeDailyWithStatus,
+        premiumShop: premiumShopWithStatus,
       }, { headers: corsHeaders });
     }
 
