@@ -427,6 +427,7 @@ Deno.serve(async (req) => {
         luckyTokenThreshold: TOKENS_PER_SPIN_THRESHOLD,
         megaJackpotPool: megaPool,
         tokenShop: TOKEN_SHOP,
+        tokenBundles: TOKEN_BUNDLES,
         freeDailyShop: freeDailyWithStatus,
         premiumShop: premiumShopWithStatus,
       }, { headers: corsHeaders });
