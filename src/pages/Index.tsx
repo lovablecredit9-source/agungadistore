@@ -1699,15 +1699,25 @@ const Index = () => {
               <div className="mt-3 pt-3 border-t border-border">
                 <LiveClock />
               </div>
-              <div className="flex gap-2 mt-3">
-                <a href={`${SOCIAL_LINKS.whatsapp}?text=${encodeURIComponent("Halo, saya mau order di Agung Adi Store")}`} target="_blank" rel="noopener noreferrer" className="flex-1">
-                  <Button size="sm" variant="outline" className="w-full gap-1.5 text-xs font-semibold rounded-lg h-9">
-                    <MessageCircle className="w-4 h-4" strokeWidth={1.8} /> {t("home.contact_wa", lang)}
-                  </Button>
+              <div className="flex items-center gap-4 mt-3 pt-3 border-t border-border">
+                <a
+                  href={`${SOCIAL_LINKS.whatsapp}?text=${encodeURIComponent("Halo, saya mau order di Agung Adi Store")}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-1.5 text-xs font-medium text-foreground hover:text-primary transition-colors"
+                >
+                  <MessageCircle className="w-4 h-4" strokeWidth={1.7} />
+                  {t("home.contact_wa", lang)}
                 </a>
-                <Button size="sm" className="flex-1 gap-1.5 text-xs font-semibold rounded-lg h-9" onClick={() => setTab("voucher")}>
-                  <Ticket className="w-4 h-4" strokeWidth={1.8} /> {t("home.claim_voucher", lang)}
-                </Button>
+                <span className="w-px h-3.5 bg-border" />
+                <button
+                  type="button"
+                  onClick={() => setTab("voucher")}
+                  className="flex items-center gap-1.5 text-xs font-medium text-foreground hover:text-primary transition-colors"
+                >
+                  <Ticket className="w-4 h-4" strokeWidth={1.7} />
+                  {t("home.claim_voucher", lang)}
+                </button>
               </div>
             </div>
 
