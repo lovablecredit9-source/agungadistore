@@ -62,9 +62,15 @@ import gameMemoryImg from "@/assets/game-memory.png";
 import gameSnakeImg from "@/assets/game-snake.png";
 import game2048Img from "@/assets/game-2048.png";
 import gamePlinkoImg from "@/assets/game-plinko.png";
-type GameMode = "menu" | "suit" | "tebak" | "tebak_gambar" | "teka_teki" | "tebak_angka" | "tebak_barang" | "ular_tangga" | "ludo" | "kuis" | "teka_teki_v2" | "pilihan_ganda" | "scratch" | "slot" | "match3" | "lucky_draw" | "mine" | "tebak_lagu" | "memory" | "snake" | "g2048" | "plinko";
+import gameTetrisImg from "@/assets/game-tetris.png";
+import gameBubbleImg from "@/assets/game-bubble.png";
+import gameFlappyImg from "@/assets/game-flappy.png";
+type GameMode = "menu" | "suit" | "tebak" | "tebak_gambar" | "teka_teki" | "tebak_angka" | "tebak_barang" | "ular_tangga" | "ludo" | "kuis" | "teka_teki_v2" | "pilihan_ganda" | "scratch" | "slot" | "match3" | "lucky_draw" | "mine" | "tebak_lagu" | "memory" | "snake" | "g2048" | "plinko" | "tetris" | "bubble" | "flappy";
 
 const GAMES: { mode: GameMode; title: string; desc: string; image: string; gradient: string }[] = [
+  { mode: "tetris", title: "Tetris Neon", desc: "Susun blok klasik bergaya neon", image: gameTetrisImg, gradient: "from-fuchsia-500 to-cyan-500" },
+  { mode: "bubble", title: "Bubble Shooter", desc: "Tembak & cocokkan 3 warna", image: gameBubbleImg, gradient: "from-rose-500 to-orange-500" },
+  { mode: "flappy", title: "Flappy Bird", desc: "Lompati pipa, raih skor!", image: gameFlappyImg, gradient: "from-sky-500 to-emerald-500" },
   { mode: "g2048", title: "2048", desc: "Gabung tile, raih 2048!", image: game2048Img, gradient: "from-amber-500 to-orange-600" },
   { mode: "plinko", title: "Plinko", desc: "Drop bola, menang multiplier", image: gamePlinkoImg, gradient: "from-purple-500 to-pink-600" },
   { mode: "memory", title: "Memory Flip", desc: "Cocokkan pasangan kartu", image: gameMemoryImg, gradient: "from-indigo-500 to-pink-600" },
@@ -110,6 +116,9 @@ const GAME_COMPONENTS: Record<string, React.ComponentType> = {
   snake: SnakeNeonGame,
   g2048: Game2048,
   plinko: PlinkoGame,
+  tetris: TetrisNeonGame,
+  bubble: BubbleShooterGame,
+  flappy: FlappyBirdGame,
 };
 
 export default function GameTab() {
