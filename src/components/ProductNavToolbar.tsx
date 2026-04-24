@@ -281,7 +281,6 @@ export default function ProductNavToolbar({
               <p className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground mb-1.5">Rentang Harga</p>
               <div className="flex items-center gap-2">
                 <Input type="number" inputMode="numeric" placeholder="Min" value={value.minPrice} onChange={e => onChange({ minPrice: e.target.value })} className="h-9 text-xs" />
-                <span className="text-muted-foreground">—</span>
                 <Input type="number" inputMode="numeric" placeholder="Max" value={value.maxPrice} onChange={e => onChange({ maxPrice: e.target.value })} className="h-9 text-xs" />
               </div>
               <div className="flex flex-wrap gap-1 mt-2">
