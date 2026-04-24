@@ -13,7 +13,7 @@ import {
   Heart, Send, ImagePlus, AlertCircle, History, Wallet, ArrowUpCircle, ArrowDownCircle,
   Bell, Check, CheckCheck, Globe, Edit2, ShoppingCart, Plus, Minus, Trash2,
   Moon, Sun, Lock, Tag, Music, Music2, Megaphone, Diamond, Image as ImageIcon, Gem, Sparkles, Palette, CalendarDays, Gamepad2, RefreshCw,
-  Eye, LayoutGrid, Rows3, Flame, SlidersHorizontal, Zap, TrendingUp, Award, Activity, Inbox, User, Phone, Gift, Menu, Lightbulb
+  Eye, LayoutGrid, Rows3, Flame, SlidersHorizontal, Zap, TrendingUp, Award, Activity, Inbox, User, Phone, Gift, Menu, Lightbulb, MessageSquare
 } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import CountUp from "@/components/CountUp";
@@ -1730,6 +1730,14 @@ const Index = () => {
                 { icon: <Gamepad2 className="w-6 h-6" strokeWidth={1.7} />, label: "Game", tab: "game" as Tab, badge: "11" },
                 { icon: <Flame className="w-6 h-6" strokeWidth={1.7} />, label: "Streak", tab: "streak" as Tab },
                 { icon: <Gem className="w-6 h-6" strokeWidth={1.7} />, label: "Plus", tab: "plus" as Tab },
+                { icon: <Megaphone className="w-6 h-6" strokeWidth={1.7} />, label: "Sponsor", tab: "sponsor" as Tab },
+                { icon: <MessageSquare className="w-6 h-6" strokeWidth={1.7} />, label: "Tiket", tab: "tiket" as Tab },
+                { icon: <Globe className="w-6 h-6" strokeWidth={1.7} />, label: "Publik", tab: "publik" as Tab },
+                { icon: <History className="w-6 h-6" strokeWidth={1.7} />, label: "Riwayat", tab: "history" as Tab },
+                { icon: <CalendarDays className="w-6 h-6" strokeWidth={1.7} />, label: "Event", tab: "streakevent" as Tab },
+                { icon: <ShoppingBag className="w-6 h-6" strokeWidth={1.7} />, label: "S.Shop", tab: "streakshop" as Tab },
+                { icon: <Crown className="w-6 h-6" strokeWidth={1.7} />, label: "Member", tab: "streakmembership" as Tab },
+                { icon: <RefreshCw className="w-6 h-6" strokeWidth={1.7} />, label: "Update", tab: "update" as Tab },
               ].map((item) => (
                 <button
                   key={item.label}
