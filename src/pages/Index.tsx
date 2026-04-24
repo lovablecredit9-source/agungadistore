@@ -1738,10 +1738,12 @@ const Index = () => {
                 { icon: <ShoppingBag className="w-6 h-6" strokeWidth={1.7} />, label: "S.Shop", tab: "streakshop" as Tab },
                 { icon: <Crown className="w-6 h-6" strokeWidth={1.7} />, label: "Member", tab: "streakmembership" as Tab },
                 { icon: <RefreshCw className="w-6 h-6" strokeWidth={1.7} />, label: "Update", tab: "update" as Tab },
-              ].map((item) => (
+                { icon: <Crown className="w-6 h-6" strokeWidth={1.7} />, label: "L.Royale", external: "/luck-royale-nyawa" },
+                { icon: <Gem className="w-6 h-6" strokeWidth={1.7} />, label: "D.Royale", external: "/diamond-royale" },
+              ].map((item: any) => (
                 <button
                   key={item.label}
-                  onClick={() => setTab(item.tab)}
+                  onClick={() => item.external ? navigate(item.external) : setTab(item.tab)}
                   className="relative flex flex-col items-center gap-1.5 py-3 rounded-xl hover:bg-muted/40 active:bg-muted/60 transition-colors"
                 >
                   <div className="relative text-foreground">
