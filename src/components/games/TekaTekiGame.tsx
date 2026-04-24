@@ -240,7 +240,7 @@ export default function TekaTekiGame() {
               ))}
               {revealedHints < hints.length && gameActive && (
                 <p className="text-[10px] text-muted-foreground text-center italic">
-                  Sisa {hints.length - revealedHints} petunjuk — pakai tombol <b>Hint</b> di atas (power-up)
+                  Sisa {hints.length - revealedHints} petunjuk - pakai tombol <b>Hint</b> di atas (power-up)
                 </p>
               )}
             </div>
@@ -248,7 +248,7 @@ export default function TekaTekiGame() {
 
           {/* Wrong count */}
           {wrongCount > 0 && gameActive && (
-            <p className="text-xs text-muted-foreground text-center">Salah: {wrongCount}/{MAX_WRONG} — Sisa {MAX_WRONG - wrongCount} kesempatan!</p>
+            <p className="text-xs text-muted-foreground text-center">Salah: {wrongCount}/{MAX_WRONG} - Sisa {MAX_WRONG - wrongCount} kesempatan!</p>
           )}
 
           {/* Answer revealed - still need to submit */}

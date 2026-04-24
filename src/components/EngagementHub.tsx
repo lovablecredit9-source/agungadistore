@@ -175,7 +175,7 @@ export default function EngagementHub() {
       });
       const data = await r.json();
       if (data.error) { toast({ title: "Gagal", description: data.error, variant: "destructive" }); return; }
-      toast({ title: "🎉 Berhasil!", description: `${sale.title} — bayar ${data.cost_paid} ${paymentMethod === "gem" ? "💎" : "🪙"}` });
+      toast({ title: "🎉 Berhasil!", description: `${sale.title} - bayar ${data.cost_paid} ${paymentMethod === "gem" ? "💎" : "🪙"}` });
       fetchAll();
     } catch (e) {
       toast({ title: "Error", description: "Gagal beli", variant: "destructive" });
@@ -360,7 +360,7 @@ export default function EngagementHub() {
         {/* MYSTERY BOX TAB */}
         {tab === "mystery" && (
           <div className="space-y-3">
-            <p className="text-[11px] text-center text-muted-foreground">📦 Mystery Box drop tiap 6 jam — buka 1x per drop!</p>
+            <p className="text-[11px] text-center text-muted-foreground">📦 Mystery Box drop tiap 6 jam - buka 1x per drop!</p>
             {drops.map(d => {
               const startsAt = new Date(d.starts_at).getTime();
               const endsAt = new Date(d.ends_at).getTime();

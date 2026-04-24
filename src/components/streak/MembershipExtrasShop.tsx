@@ -154,7 +154,7 @@ export default function MembershipExtrasShop({ visitorId, kind, onUpdate }: Prop
               </span>
             </div>
 
-            {/* Diamond — show cashback earned */}
+            {/* Diamond - show cashback earned */}
             {kind === "diamond" && (
               <div className="text-[11px] text-cyan-200 space-y-0.5">
                 <div>Cashback {active.best_cashback_percent ?? active.cashback_percent}% · Sudah dapat <span className="font-bold text-amber-300">Rp{(active.total_cashback_earned || 0).toLocaleString("id-ID")}</span></div>
@@ -166,7 +166,7 @@ export default function MembershipExtrasShop({ visitorId, kind, onUpdate }: Prop
               </div>
             )}
 
-            {/* Boost — multiplier */}
+            {/* Boost - multiplier */}
             {kind === "boost" && (
               <div className="text-[11px] text-pink-200 space-y-0.5">
                 <div>Multiplier <span className="font-black text-pink-100">x{active.best_multiplier ?? active.multiplier}</span> aktif untuk semua aktivitas streak</div>
@@ -178,7 +178,7 @@ export default function MembershipExtrasShop({ visitorId, kind, onUpdate }: Prop
               </div>
             )}
 
-            {/* Lucky Box — claim button */}
+            {/* Lucky Box - claim button */}
             {kind === "luckybox" && (
               <div className="space-y-2">
                 <div className="flex items-center justify-between text-[11px] text-emerald-200">
@@ -208,7 +208,7 @@ export default function MembershipExtrasShop({ visitorId, kind, onUpdate }: Prop
               </div>
             )}
 
-            {/* Saver — usage (stacked totals) */}
+            {/* Saver - usage (stacked totals) */}
             {kind === "saver" && (
               <div className="space-y-1.5">
                 {active.stacked_count > 1 && (

@@ -662,7 +662,7 @@ const AdminMusicTab = () => {
       <Dialog open={manageSongsOpen} onOpenChange={setManageSongsOpen}>
         <DialogContent className="max-w-sm max-h-[80vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="text-sm">Kelola Lagu — {managingPlaylist?.name}</DialogTitle>
+            <DialogTitle className="text-sm">Kelola Lagu - {managingPlaylist?.name}</DialogTitle>
           </DialogHeader>
           <div className="space-y-1">
             {songs.length === 0 ? (
@@ -726,7 +726,7 @@ const AdminMusicTab = () => {
       <Dialog open={lyricsDialogOpen} onOpenChange={setLyricsDialogOpen}>
         <DialogContent className="max-w-sm max-h-[85vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="text-sm flex items-center gap-2"><Type className="w-4 h-4" /> Lirik — {lyricsSong?.title}</DialogTitle>
+            <DialogTitle className="text-sm flex items-center gap-2"><Type className="w-4 h-4" /> Lirik - {lyricsSong?.title}</DialogTitle>
           </DialogHeader>
           <div className="space-y-2">
             <p className="text-[11px] text-muted-foreground">Ambil lirik langsung dari file audio, atau paste lirik untuk membuat timestamp, atau upload file LRC.</p>

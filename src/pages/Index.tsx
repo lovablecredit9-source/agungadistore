@@ -1189,7 +1189,7 @@ const Index = () => {
     doc.text(STORE_NAME, pageW / 2, 38, { align: "center" });
     doc.setFontSize(9);
     doc.setFont("helvetica", "normal");
-    doc.text(`Riwayat Klaim Voucher — ${new Date().toLocaleString("id-ID")}`, pageW / 2, 43, { align: "center" });
+    doc.text(`Riwayat Klaim Voucher - ${new Date().toLocaleString("id-ID")}`, pageW / 2, 43, { align: "center" });
 
     let y = 54;
     doc.setTextColor(0, 0, 0);
@@ -1234,7 +1234,7 @@ const Index = () => {
       doc.setFontSize(7);
       doc.setTextColor(150, 150, 150);
       doc.text("Harap simpan bukti ini. Jika ada masalah hubungi admin.", pageW / 2, pageH - 15, { align: "center" });
-      doc.text(`${STORE_NAME} — WA: ${WA_NUMBER}`, pageW / 2, pageH - 10, { align: "center" });
+      doc.text(`${STORE_NAME} - WA: ${WA_NUMBER}`, pageW / 2, pageH - 10, { align: "center" });
     }
     doc.save("riwayat-klaim-agung-adi-store.pdf");
     toast({ title: "PDF berhasil didownload! 📄" });
@@ -1251,7 +1251,7 @@ const Index = () => {
       h.fields.forEach(f => { txt += `${f.field_name}: ${f.field_value}\n`; });
       txt += "-".repeat(40) + "\n\n";
     });
-    txt += `\n${STORE_NAME} — WA: ${WA_NUMBER}\nHarap simpan bukti ini. Jika ada masalah hubungi admin.\n`;
+    txt += `\n${STORE_NAME} - WA: ${WA_NUMBER}\nHarap simpan bukti ini. Jika ada masalah hubungi admin.\n`;
     const blob = new Blob([txt], { type: "text/plain" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a"); a.href = url; a.download = "riwayat-klaim-agung-adi-store.txt"; a.click();
@@ -1501,7 +1501,7 @@ const Index = () => {
   return (
     <div className={`min-h-screen text-foreground flex flex-col ${resolvedTheme === "custom" ? "bg-transparent" : "bg-background"}`}>
       <InstallPrompt />
-      {/* Header — flat IG/TikTok style */}
+      {/* Header - flat IG/TikTok style */}
       <header className="sticky top-0 z-50 bg-background/95 backdrop-blur-md text-foreground px-4 py-2.5 border-b border-border">
         <div className="flex items-center gap-2 max-w-lg mx-auto">
           <Sheet open={showNavMenu} onOpenChange={setShowNavMenu}>
@@ -1682,7 +1682,7 @@ const Index = () => {
               </div>
             )}
 
-            {/* Welcome Header — flat IG/TikTok style */}
+            {/* Welcome Header - flat IG/TikTok style */}
             <div className="rounded-2xl bg-card border border-border p-4">
               <div className="flex items-center gap-3">
                 <img src={storeQris} alt={STORE_NAME} className="w-14 h-14 rounded-xl object-cover border border-border" />
@@ -2613,7 +2613,7 @@ const Index = () => {
                 {tickets.length > 0 && (
                   <div className="flex items-center justify-between gap-2 px-1">
                     <div className="text-[11px] text-muted-foreground">
-                      {smartTickets ? "Mode Pintar aktif — timeline, filter & rating" : "Tampilan klasik"}
+                      {smartTickets ? "Mode Pintar aktif - timeline, filter & rating" : "Tampilan klasik"}
                     </div>
                     <Button
                       size="sm"
@@ -2737,7 +2737,7 @@ const Index = () => {
                     <div className="flex items-center gap-1.5 mb-2">
                       <Sparkles className="w-3.5 h-3.5 text-primary" />
                       <span className="text-[11px] font-bold uppercase tracking-wider text-primary">Template Cepat</span>
-                      <span className="text-[10px] text-muted-foreground">— tap untuk isi otomatis</span>
+                      <span className="text-[10px] text-muted-foreground">- tap untuk isi otomatis</span>
                     </div>
                     <div className="flex gap-1.5 overflow-x-auto pb-1 -mx-1 px-1 snap-x" style={{ scrollbarWidth: "none" }}>
                       {TICKET_TEMPLATES.map(tpl => (
@@ -2938,7 +2938,7 @@ const Index = () => {
             ) : (
               <>
                 <div className={banned ? "pointer-events-none select-none opacity-60" : ""}>
-                {/* === Wallet Dashboard — clean minimal hero === */}
+                {/* === Wallet Dashboard - clean minimal hero === */}
                 <WalletDashboard
                   username={userBalance.username}
                   balance={userBalance.balance}
@@ -2952,7 +2952,7 @@ const Index = () => {
                 />
 
 
-                {/* Account Actions Card — minimal clean */}
+                {/* Account Actions Card - minimal clean */}
                 <Card className="border border-border/60 shadow-sm bg-card">
                   <CardContent className="p-4 space-y-3">
                     <div className="flex items-center justify-between">
@@ -2989,7 +2989,7 @@ const Index = () => {
                       <div className="flex items-center gap-2 rounded-xl border border-border bg-muted/40 p-2.5 text-xs text-foreground">
                         <Lock className="w-3.5 h-3.5 flex-shrink-0" strokeWidth={1.8} />
                         <span className="font-medium">PIN aktif</span>
-                        <span className="text-muted-foreground text-[11px]">— Pembelian dilindungi PIN</span>
+                        <span className="text-muted-foreground text-[11px]">- Pembelian dilindungi PIN</span>
                       </div>
                     )}
                   </CardContent>
@@ -3153,7 +3153,7 @@ const Index = () => {
                           doc.setTextColor(150, 150, 150);
                           doc.text(`Halaman ${idx + 1} dari ${totalPages}`, pageW / 2, pageH - 20, { align: "center" });
                           doc.text("Harap simpan bukti ini. Jika ada masalah hubungi admin.", pageW / 2, pageH - 15, { align: "center" });
-                          doc.text(`${STORE_NAME} — WA: ${WA_NUMBER}`, pageW / 2, pageH - 10, { align: "center" });
+                          doc.text(`${STORE_NAME} - WA: ${WA_NUMBER}`, pageW / 2, pageH - 10, { align: "center" });
                         });
                         doc.save("riwayat-transaksi-saldo.pdf");
                         toast({ title: `${selected.length} transaksi berhasil diekspor!` });
@@ -3418,12 +3418,12 @@ const Index = () => {
                 {
                   date: "21 April 2026", version: "v2.8", isNew: true,
                   items: [
-                    "🎨 Tema baru iOS Dark Vibrant — true black canvas + aksen Apple system colors (Blue/Pink/Purple/Orange/Green/Yellow/Teal/Indigo)",
+                    "🎨 Tema baru iOS Dark Vibrant - true black canvas + aksen Apple system colors (Blue/Pink/Purple/Orange/Green/Yellow/Teal/Indigo)",
                     "🎨 Design tokens iOS global di index.css: surface bertingkat L1/L2/L3, hairline divider, radius pill, blur bar",
                     "🎨 Utility class baru: ios-card-vibrant, ios-surface-1/2/3, ios-tint-*, ios-grad-bronze/silver/gold/diamond/jackpot, ios-btn-filled/tinted/gray, ios-pressable",
                     "🎨 Background gelap dengan dual radial glow (Blue di pojok atas, Pink di pojok bawah) ala Apple Music",
                     "🎨 Tipografi pakai SF Pro Display/Text dengan letter-spacing -0.011em untuk look Apple yang khas",
-                    "🎰 Scratch-Off Lottery dirombak total dengan gaya iOS Vibrant — kartu pakai gradient rarity, badge tinted, modal sheet dengan backdrop-blur xl + spring animation",
+                    "🎰 Scratch-Off Lottery dirombak total dengan gaya iOS Vibrant - kartu pakai gradient rarity, badge tinted, modal sheet dengan backdrop-blur xl + spring animation",
                     "🎰 Tombol pill putih ala iOS pada modal scratch dengan ios-pressable (scale 0.96 saat ditekan)",
                     "🎰 Achievement grid pakai ios-tint-yellow untuk yang unlocked, grayscale untuk locked",
                     "💰 Rebalance hadiah Scratch-Off: jackpot sekarang TERASA besar tapi tetap LANGKA (~3% chance)",
@@ -3433,7 +3433,7 @@ const Index = () => {
                     "💰 Diamond (1000 koin): hadiah +200/+600/+700/+1500/+2500, jackpot +3000, MEGA JACKPOT +5000 koin",
                     "💰 Sistem Zonk diperkenalkan (40-50% peluang) agar ekonomi koin tetap sehat & house edge positif",
                     "🔧 Perbaikan transaksi Scratch-Off: streak_coins dipotong saat beli kartu, ditambahkan setelah scratch >55%",
-                    "🔧 Proteksi double-claim dengan claimedRef — mencegah saldo kredit ganda dari satu sesi gosok",
+                    "🔧 Proteksi double-claim dengan claimedRef - mencegah saldo kredit ganda dari satu sesi gosok",
                     "🔧 setScratching state diperbaiki untuk membedakan kartu berbayar vs kartu gratis (free key terpisah)",
                     "🔧 Combo multiplier diturunkan jadi ringan (1.0 → 1.05 → 1.1 → 1.2x) agar tidak menggandakan jackpot besar",
                     "🏆 Achievement bonus disesuaikan: First Win +10, High Roller +25, Jackpot Hunter +50, Diamond Master +100 koin",
@@ -3444,14 +3444,14 @@ const Index = () => {
                 {
                   date: "19 April 2026", version: "v2.7",
                   items: [
-                    "💎 Isolasi Gem per akun balance — tiap login akun saldo gem beda (akun A 220 ≠ akun B 220)",
+                    "💎 Isolasi Gem per akun balance - tiap login akun saldo gem beda (akun A 220 ≠ akun B 220)",
                     "💎 Migrasi otomatis: semua gem lama dari device dipindah ke akun balance pertama yang login",
                     "💎 Sinkronisasi gem real-time saat ganti akun balance (trigger login + remount komponen)",
                     "💎 Sumber gem terpusat di akun (account-level) bukan lagi di visitor_id/device",
                     "🛒 Mystery Box harian (gacha) di Streak Shop Extras dengan rarity Common→Legendary",
-                    "🛒 Auction House — lelang barang langka per jam dengan bidding antar user",
+                    "🛒 Auction House - lelang barang langka per jam dengan bidding antar user",
                     "🛒 Loyalty Tier system: Bronze → Silver → Gold → Platinum → Diamond dengan reward tier-up",
-                    "🛒 Referral Vault — reward bertingkat untuk undang teman aktif",
+                    "🛒 Referral Vault - reward bertingkat untuk undang teman aktif",
                     "🎰 Lucky Wheel Shop di MegaShopHub: jackpot, sistem pity 50 spin, free spin harian",
                     "🎰 Lucky Wheel mendukung 4 mata uang: free / coins / gems / saldo (wajib PIN)",
                     "🍀 Server Luck booster tier x2 / x6 / x8 / x10 / x20 untuk Slot Machine & Lucky Draw",
@@ -3479,7 +3479,7 @@ const Index = () => {
                 {
                   date: "12 April 2026", version: "v2.5",
                   items: [
-                    "✨ Tab Update Web baru — riwayat pembaruan aplikasi",
+                    "✨ Tab Update Web baru - riwayat pembaruan aplikasi",
                     "✨ Bot WhatsApp diperlengkap: 40+ perintah (User & Admin)",
                     "✨ Pusat Bantuan diperluas dengan FAQ & panduan lengkap",
                     "🔧 Perbaikan bug riwayat transaksi & data stale saat ganti akun",
@@ -3564,7 +3564,7 @@ const Index = () => {
             {/* Copyright */}
             <div className="rounded-xl border border-border bg-card p-4 text-center space-y-2">
               <p className="text-xs font-semibold text-foreground">© 2026 {STORE_NAME}</p>
-              <p className="text-[11px] text-muted-foreground">Murah & Terpercaya — Semua hak dilindungi.</p>
+              <p className="text-[11px] text-muted-foreground">Murah & Terpercaya - Semua hak dilindungi.</p>
               <div className="flex items-center justify-center gap-2 mt-2 flex-wrap">
                 {socialLinks.map(s => (
                   <a key={s.id} href={s.url} target="_blank" rel="noopener noreferrer" className="text-[10px] font-medium px-3 py-1.5 rounded-full bg-muted text-foreground hover:bg-muted/70 transition-colors border border-border flex items-center gap-1">
@@ -3879,7 +3879,7 @@ const Index = () => {
             <div className="flex items-center justify-between p-5 pb-3 shrink-0">
               <div>
                 <h3 className="font-extrabold text-lg">{t("help.title", lang)}</h3>
-                <p className="text-[11px] text-muted-foreground">Web v2.0 — April 2026 — {STORE_NAME}</p>
+                <p className="text-[11px] text-muted-foreground">Web v2.0 - April 2026 - {STORE_NAME}</p>
               </div>
               <button onClick={() => setShowHelp(false)} className="w-8 h-8 rounded-full bg-muted flex items-center justify-center"><X className="w-4 h-4" /></button>
             </div>
@@ -3893,7 +3893,7 @@ const Index = () => {
                   <ul className="list-disc list-inside space-y-0.5">
                     <li>Didirikan untuk memberikan kemudahan transaksi digital</li>
                     <li>Mendukung <strong>{LANGUAGES.length}+ bahasa</strong> dari seluruh dunia</li>
-                    <li>Tersedia sebagai PWA (Progressive Web App) — bisa diinstal di HP</li>
+                    <li>Tersedia sebagai PWA (Progressive Web App) - bisa diinstal di HP</li>
                     <li>Mode gelap, terang, dan emas untuk kenyamanan visual</li>
                     <li>Tersedia offline untuk akses kapan saja</li>
                   </ul>
@@ -3989,7 +3989,7 @@ const Index = () => {
                 <ul className="list-disc list-inside space-y-0.5 text-[13px]">
                   <li>Dengarkan musik gratis dari koleksi admin</li>
                   <li>Buat <strong>playlist pribadi</strong> sesuai selera</li>
-                  <li>Fitur <strong>lirik sinkron</strong> — lirik berjalan sesuai lagu</li>
+                  <li>Fitur <strong>lirik sinkron</strong> - lirik berjalan sesuai lagu</li>
                   <li>Simpan musik untuk didengar <strong>offline</strong></li>
                   <li>Upgrade penyimpanan dengan <strong>voucher musik</strong></li>
                 </ul>
@@ -3998,7 +3998,7 @@ const Index = () => {
                   <ul className="list-disc list-inside space-y-0.5">
                     <li>Default: <strong>100 MB</strong> gratis</li>
                     <li>Tambah kapasitas dengan <strong>voucher kapasitas</strong></li>
-                    <li>Kuota bersifat <strong>akumulatif</strong> — terus bertambah</li>
+                    <li>Kuota bersifat <strong>akumulatif</strong> - terus bertambah</li>
                   </ul>
                 </div>
               </div>
@@ -4031,17 +4031,17 @@ const Index = () => {
                 <div className="mt-2 p-2 bg-muted/40 rounded-lg text-[12px]">
                   <p className="font-semibold text-foreground">📝 Kategori Tiket yang Tersedia:</p>
                   <ul className="list-disc list-inside space-y-0.5">
-                    <li><strong>Akun/Login</strong> — masalah login, visitor ID hilang</li>
-                    <li><strong>Voucher</strong> — kode tidak bisa diklaim, voucher expired</li>
-                    <li><strong>Saldo/Deposit</strong> — deposit belum masuk, saldo berkurang</li>
-                    <li><strong>Sponsor</strong> — produk sponsor bermasalah</li>
-                    <li><strong>Lapor Penipu</strong> — laporkan penjual/pembeli yang menipu</li>
-                    <li><strong>Lagu/Musik</strong> — lagu error, tidak bisa diputar</li>
-                    <li><strong>Refund</strong> — permintaan pengembalian dana</li>
-                    <li><strong>Garansi</strong> — klaim garansi produk</li>
-                    <li><strong>PIN/Keamanan</strong> — lupa PIN, akun dicurigai dibobol</li>
-                    <li><strong>Bug/Error</strong> — error tampilan atau fitur tidak berfungsi</li>
-                    <li><strong>Saran</strong> — ide atau masukan untuk pengembangan</li>
+                    <li><strong>Akun/Login</strong> - masalah login, visitor ID hilang</li>
+                    <li><strong>Voucher</strong> - kode tidak bisa diklaim, voucher expired</li>
+                    <li><strong>Saldo/Deposit</strong> - deposit belum masuk, saldo berkurang</li>
+                    <li><strong>Sponsor</strong> - produk sponsor bermasalah</li>
+                    <li><strong>Lapor Penipu</strong> - laporkan penjual/pembeli yang menipu</li>
+                    <li><strong>Lagu/Musik</strong> - lagu error, tidak bisa diputar</li>
+                    <li><strong>Refund</strong> - permintaan pengembalian dana</li>
+                    <li><strong>Garansi</strong> - klaim garansi produk</li>
+                    <li><strong>PIN/Keamanan</strong> - lupa PIN, akun dicurigai dibobol</li>
+                    <li><strong>Bug/Error</strong> - error tampilan atau fitur tidak berfungsi</li>
+                    <li><strong>Saran</strong> - ide atau masukan untuk pengembangan</li>
                   </ul>
                 </div>
               </div>
@@ -4058,7 +4058,7 @@ const Index = () => {
                   <li>Lampirkan <strong>screenshot bukti</strong> jika ada (sangat disarankan!)</li>
                   <li>Klik <strong>Kirim Tiket</strong></li>
                   <li>Anda akan langsung masuk ke <strong>ruang chat</strong> tiket</li>
-                  <li>Tunggu balasan admin — biasanya <strong>5-30 menit</strong></li>
+                  <li>Tunggu balasan admin - biasanya <strong>5-30 menit</strong></li>
                 </ol>
                 <div className="mt-2 p-2 bg-muted/40 rounded-lg text-[12px]">
                   <p className="font-semibold text-foreground">💡 Tips Membuat Tiket Efektif:</p>
@@ -4066,7 +4066,7 @@ const Index = () => {
                     <li>Pilih kategori yang <strong>tepat</strong> agar admin langsung paham</li>
                     <li>Sertakan <strong>detail spesifik</strong>: waktu kejadian, nama produk, nominal</li>
                     <li>Lampirkan screenshot yang <strong>jelas dan lengkap</strong></li>
-                    <li>Jangan buat tiket duplikat — cukup satu tiket per masalah</li>
+                    <li>Jangan buat tiket duplikat - cukup satu tiket per masalah</li>
                     <li>Respon balasan admin agar proses lebih cepat</li>
                   </ul>
                 </div>
@@ -4175,10 +4175,10 @@ const Index = () => {
               <div className="rounded-xl border border-border bg-card p-3 space-y-1.5">
                 <p className="font-bold text-foreground text-xs uppercase tracking-wider">🎨 Tema & Tampilan</p>
                 <ul className="list-disc list-inside space-y-0.5 text-[13px]">
-                  <li>☀️ <strong>Mode Terang</strong> — tampilan bersih dan cerah</li>
-                  <li>🌙 <strong>Mode Gelap</strong> — nyaman di malam hari</li>
-                  <li>👑 <strong>Mode Emas</strong> — tampilan premium eksklusif</li>
-                  <li>📱 <strong>Mode Perangkat</strong> — mengikuti pengaturan HP</li>
+                  <li>☀️ <strong>Mode Terang</strong> - tampilan bersih dan cerah</li>
+                  <li>🌙 <strong>Mode Gelap</strong> - nyaman di malam hari</li>
+                  <li>👑 <strong>Mode Emas</strong> - tampilan premium eksklusif</li>
+                  <li>📱 <strong>Mode Perangkat</strong> - mengikuti pengaturan HP</li>
                 </ul>
               </div>
 
@@ -4189,7 +4189,7 @@ const Index = () => {
                   <li>Identifikasi unik menggunakan <strong>Visitor ID</strong></li>
                   <li>Transaksi dilindungi dengan <strong>PIN 6 digit</strong></li>
                   <li>Reset PIN tersedia melalui admin</li>
-                  <li>Tidak perlu email atau password — lebih simpel</li>
+                  <li>Tidak perlu email atau password - lebih simpel</li>
                   <li>Data terenkripsi di server</li>
                 </ul>
               </div>
@@ -4204,7 +4204,7 @@ const Index = () => {
                     <li><strong>Cara membeli dengan aman:</strong> Selalu gunakan layanan <strong>Rekber (Rekening Bersama)</strong> via Admin WA untuk menghindari penipuan.</li>
                     <li><strong>Cara menggunakan rekber:</strong> Klik tombol "Mohon Rekber Admin (WA)" pada halaman sponsor, pesan otomatis akan terkirim ke admin.</li>
                     <li><strong>Cara melaporkan penjual bermasalah:</strong> Buat tiket di tab Tiket atau hubungi admin WA 085769302532 dengan bukti screenshot.</li>
-                    <li><strong>Produk admin vs produk sponsor:</strong> Produk admin dijual langsung dan dijamin. Produk sponsor dijual oleh pihak ketiga — admin tidak bertanggung jawab atas kualitas produk sponsor.</li>
+                    <li><strong>Produk admin vs produk sponsor:</strong> Produk admin dijual langsung dan dijamin. Produk sponsor dijual oleh pihak ketiga - admin tidak bertanggung jawab atas kualitas produk sponsor.</li>
                   </ul>
                 </div>
               </div>
@@ -4215,7 +4215,7 @@ const Index = () => {
                 <div className="space-y-1 text-[13px]">
                   <p><strong>Rekber</strong> adalah layanan perantara transaksi melalui admin untuk memastikan keamanan pembeli dan penjual.</p>
                   <ol className="list-decimal list-inside space-y-0.5">
-                    <li><strong>Pembeli</strong> klik tombol "Mohon Rekber Admin (WA)" di halaman sponsor — detail produk otomatis terkirim.</li>
+                    <li><strong>Pembeli</strong> klik tombol "Mohon Rekber Admin (WA)" di halaman sponsor - detail produk otomatis terkirim.</li>
                     <li><strong>Admin</strong> menghubungi penjual untuk konfirmasi ketersediaan produk.</li>
                     <li><strong>Pembeli</strong> mengirimkan uang ke admin (bukan langsung ke penjual).</li>
                     <li><strong>Penjual</strong> mengirimkan produk ke pembeli. Pembeli mengecek produk.</li>
@@ -4290,7 +4290,7 @@ const Index = () => {
                 <ul className="list-disc list-inside space-y-0.5 text-[13px]">
                   <li><strong>8 game seru</strong> melawan AI: Suit, Tebak Kata, Tebak Gambar, Teka-Teki, Tebak Angka, Tebak Barang, Ular Tangga, Ludo King</li>
                   <li>Setiap game <strong>gratis dimainkan</strong> tanpa batasan harian</li>
-                  <li>Sistem <strong>kredit game</strong> — beli kredit atau paket <strong>Premium unlimited</strong></li>
+                  <li>Sistem <strong>kredit game</strong> - beli kredit atau paket <strong>Premium unlimited</strong></li>
                   <li>Premium memberikan akses <strong>tanpa batas</strong> hingga tanggal kedaluwarsa</li>
                   <li>Game tebakan punya <strong>3 nyawa</strong> (maksimal 3 kesalahan per ronde)</li>
                   <li>Game papan (Ular Tangga & Ludo) punya <strong>animasi bidak</strong> dan giliran AI otomatis</li>
@@ -4533,14 +4533,14 @@ const Index = () => {
             <Button className="w-full h-11 bg-gradient-to-r from-primary to-accent text-primary-foreground font-bold gap-2"
               disabled={!userBalance || userBalance.balance < totalPrice}
               onClick={() => attemptBuy(buyProduct, buyQuantity)}>
-              <Wallet className="w-5 h-5" /> Beli {buyQuantity}x — {formatPrice(totalPrice)}
+              <Wallet className="w-5 h-5" /> Beli {buyQuantity}x - {formatPrice(totalPrice)}
             </Button>
           </div>
         </div>
         );
       })()}
 
-      {/* Quick View Modal — preview cepat tanpa buka detail */}
+      {/* Quick View Modal - preview cepat tanpa buka detail */}
       {quickViewProduct && (() => {
         const p = quickViewProduct;
         const imgs = getProductImages(p.id);
@@ -4818,7 +4818,7 @@ const Index = () => {
                 </div>
                 <Input type="number" placeholder={t("deposit.amount", lang)} value={depositAmount} onChange={e => setDepositAmount(e.target.value)} />
 
-                {/* Visual bonus badge (display only — no actual bonus applied) */}
+                {/* Visual bonus badge (display only - no actual bonus applied) */}
                 {(() => {
                   const amt = parseInt(depositAmount) || 0;
                   if (amt < 50000) return null;
@@ -4965,7 +4965,7 @@ const Index = () => {
                     <Button key={item.product.id} className="w-full bg-gradient-to-r from-primary to-accent text-primary-foreground font-bold gap-2 text-xs"
                       disabled={!userBalance || userBalance.balance < itemTotal || item.product.stock < item.quantity}
                       onClick={() => { setBuyProduct(item.product); setBuyQuantity(item.quantity); setShowBuySaldo(true); setShowCart(false); }}>
-                      <Wallet className="w-4 h-4" /> Beli {item.quantity}x {item.product.title} — {formatPrice(itemTotal)}
+                      <Wallet className="w-4 h-4" /> Beli {item.quantity}x {item.product.title} - {formatPrice(itemTotal)}
                     </Button>
                     );
                   })}

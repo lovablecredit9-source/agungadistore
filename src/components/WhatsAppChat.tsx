@@ -387,7 +387,7 @@ export default function WhatsAppChat({
                   </div>
                 )}
 
-                {/* Action toolbar — visible on hover/tap */}
+                {/* Action toolbar - visible on hover/tap */}
                 {!m.is_deleted && (
                   <div
                     className={`absolute -top-3 ${mine ? "right-1" : "left-1"} flex gap-1 opacity-0 group-hover:opacity-100 group-active:opacity-100 transition-opacity`}

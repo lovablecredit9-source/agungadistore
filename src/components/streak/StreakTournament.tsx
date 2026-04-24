@@ -122,7 +122,7 @@ export default function StreakTournament({ visitorId }: Props) {
                 <div className="rounded-lg bg-cyan-500/10 border border-cyan-500/30 p-2 flex items-center justify-between">
                   <p className="text-xs text-cyan-300 font-black">📊 Posisi Kamu</p>
                   <div className="text-right">
-                    <p className="text-sm font-black text-white">#{myRank || "—"} • {myEntry.total_points} poin</p>
+                    <p className="text-sm font-black text-white">#{myRank || "-"} • {myEntry.total_points} poin</p>
                     <p className="text-[10px] text-white/60">{myEntry.total_wins}W</p>
                   </div>
                 </div>

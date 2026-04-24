@@ -128,7 +128,7 @@ export default function MembershipCarousel({ visitorId }: Props) {
         </div>
       </div>
 
-      {/* CONTENT — swipe on mobile */}
+      {/* CONTENT - swipe on mobile */}
       <div
         onTouchStart={(e) => setTouchStart(e.touches[0].clientX)}
         onTouchEnd={(e) => {

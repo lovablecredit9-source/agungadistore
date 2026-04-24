@@ -712,7 +712,7 @@ export default function AdminSponsorTab() {
       doc.setPage(i);
       doc.setFontSize(7);
       doc.setTextColor(150, 150, 150);
-      doc.text(`${STORE_TITLE} — Halaman ${i}/${pageCount}`, doc.internal.pageSize.width / 2, doc.internal.pageSize.height - 8, { align: "center" });
+      doc.text(`${STORE_TITLE} - Halaman ${i}/${pageCount}`, doc.internal.pageSize.width / 2, doc.internal.pageSize.height - 8, { align: "center" });
     }
 
     doc.save(`sponsor-report-${Date.now()}.pdf`);
@@ -879,7 +879,7 @@ export default function AdminSponsorTab() {
                     <span className="text-xs font-bold">{actionLabels[h.action] || h.action}</span>
                     <span className="text-[10px] text-muted-foreground">{formatDateTime(h.created_at)}</span>
                   </div>
-                  {sp && <p className="text-[10px] font-medium">#{sp.sponsor_number} — {sp.title}</p>}
+                  {sp && <p className="text-[10px] font-medium">#{sp.sponsor_number} - {sp.title}</p>}
                   {!sp && <p className="text-[10px] text-muted-foreground">Sponsor ID: {h.sponsor_id.slice(0, 8)}...</p>}
                   {h.details && <p className="text-[10px] text-muted-foreground truncate">{h.details}</p>}
                 </div>
@@ -920,7 +920,7 @@ ${STORE_TITLE}`;
                   </div>
                   {sp && (
                     <div className="space-y-1">
-                      <p className="text-xs font-bold">#{sp.sponsor_number} — {sp.title}</p>
+                      <p className="text-xs font-bold">#{sp.sponsor_number} - {sp.title}</p>
                       <p className="text-[10px] text-muted-foreground">Penjual: {sp.seller_name}</p>
                       {sp.category && <span className="inline-block text-[10px] bg-primary/10 text-primary px-2 py-0.5 rounded-full">{sp.category}</span>}
                     </div>

@@ -244,7 +244,7 @@ export default function LuckRoyaleNyawa() {
       else if (data.shopAccess) setShopAccess(data.shopAccess);
       toast({
         title: `🔓 Akses ${tierLabel} Aktif!`,
-        description: `Berlaku ${access.durationDays} hari — sisa saldo Rp ${data.balance.toLocaleString("id-ID")}`,
+        description: `Berlaku ${access.durationDays} hari - sisa saldo Rp ${data.balance.toLocaleString("id-ID")}`,
       });
       fetchData();
     } catch (e: any) {
@@ -342,7 +342,7 @@ export default function LuckRoyaleNyawa() {
             </TabsList>
 
             <TabsContent value="spin" className="space-y-4 mt-3">
-          {/* 💥 MEGA JACKPOT POOL — community pool banner */}
+          {/* 💥 MEGA JACKPOT POOL - community pool banner */}
           <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-purple-700 via-fuchsia-600 to-pink-600 border-2 border-fuchsia-300/60 p-3 shadow-xl shadow-fuchsia-500/40">
             <div className="absolute inset-0 opacity-30 animate-pulse" style={{
               backgroundImage: "radial-gradient(circle at 50% 50%, rgba(255,255,255,0.5), transparent 70%)",
@@ -361,7 +361,7 @@ export default function LuckRoyaleNyawa() {
                   <Gem className="w-4 h-4 text-amber-300" fill="currentColor" />
                 </div>
                 <p className="text-[10px] font-bold text-fuchsia-100/90 mt-0.5">
-                  Pecah saat ada Mythic 🌈 — pemenang dapat <span className="text-amber-200 font-black">70%</span> pool!
+                  Pecah saat ada Mythic 🌈 - pemenang dapat <span className="text-amber-200 font-black">70%</span> pool!
                 </p>
               </div>
             </div>
@@ -579,18 +579,18 @@ export default function LuckRoyaleNyawa() {
           </p>
 
 
-          {/* 🎁 FREE DAILY SHOP — gratis 1x per hari */}
+          {/* 🎁 FREE DAILY SHOP - gratis 1x per hari */}
           {freeDailyShop.length > 0 && (
             <div className="rounded-2xl bg-gradient-to-br from-emerald-900/40 via-green-900/30 to-teal-900/40 border-2 border-emerald-400/50 p-3">
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-1.5">
                   <Gift className="w-4 h-4 text-emerald-300" fill="currentColor" />
-                  <h3 className="text-xs font-black tracking-widest text-emerald-200">| FREE DAILY — GRATIS 1× SEHARI</h3>
+                  <h3 className="text-xs font-black tracking-widest text-emerald-200">| FREE DAILY - GRATIS 1× SEHARI</h3>
                 </div>
                 <Badge className="bg-emerald-500 text-black font-black text-[8px]">🎁 FREE</Badge>
               </div>
               <p className="text-[10px] text-emerald-100/80 mb-2.5">
-                Klaim hadiah <span className="font-black text-emerald-300">tanpa biaya</span> — reset tiap hari (jam 00:00 WIB)!
+                Klaim hadiah <span className="font-black text-emerald-300">tanpa biaya</span> - reset tiap hari (jam 00:00 WIB)!
               </p>
               <div className="grid grid-cols-2 gap-2">
                 {freeDailyShop.map((item) => {
@@ -679,7 +679,7 @@ export default function LuckRoyaleNyawa() {
                 ) : (
                   <>
                     <p className="text-[10px] text-fuchsia-100/90 mb-2">
-                      Tier <span className="font-black text-amber-300">SUPER PREMIUM</span> (70-150) — hadiah MEGA: 100k Gem, 1jt Coin, 15k Nyawa! Berlaku <span className="font-black">{superShopAccess.durationDays} hari</span>.
+                      Tier <span className="font-black text-amber-300">SUPER PREMIUM</span> (70-150) - hadiah MEGA: 100k Gem, 1jt Coin, 15k Nyawa! Berlaku <span className="font-black">{superShopAccess.durationDays} hari</span>.
                     </p>
                     <Button
                       disabled={redeeming === "__super_shop_access__"}
@@ -694,13 +694,13 @@ export default function LuckRoyaleNyawa() {
             </div>
           )}
 
-          {/* 🎟️ TOKEN SHOP — 3 tier (Free bebas, Premium & Super Premium butuh akses) */}
+          {/* 🎟️ TOKEN SHOP - 3 tier (Free bebas, Premium & Super Premium butuh akses) */}
           {tokenShop.length > 0 && (
             <div className="rounded-2xl bg-gradient-to-br from-amber-900/40 via-orange-900/30 to-pink-900/40 border-2 border-amber-500/50 p-3">
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-1.5">
                   <Award className="w-4 h-4 text-amber-300" fill="currentColor" />
-                  <h3 className="text-xs font-black tracking-widest text-amber-200">| TOKEN SHOP — HADIAH PASTI</h3>
+                  <h3 className="text-xs font-black tracking-widest text-amber-200">| TOKEN SHOP - HADIAH PASTI</h3>
                 </div>
                 <Badge className="bg-amber-500 text-black font-black text-[8px]">🎟️ {luckyTokens}</Badge>
               </div>
@@ -734,14 +734,14 @@ export default function LuckRoyaleNyawa() {
               {shopTier === "premium" && !shopAccess.isActive && (
                 <div className="mb-2 rounded-lg bg-rose-950/60 border border-rose-500/40 p-2 text-center">
                   <p className="text-[10px] font-black text-rose-200">
-                    🔒 Akses Premium belum aktif — beli Rp {shopAccess.price.toLocaleString("id-ID")} di atas
+                    🔒 Akses Premium belum aktif - beli Rp {shopAccess.price.toLocaleString("id-ID")} di atas
                   </p>
                 </div>
               )}
               {shopTier === "super_premium" && !superShopAccess.isActive && (
                 <div className="mb-2 rounded-lg bg-fuchsia-950/60 border border-fuchsia-500/40 p-2 text-center">
                   <p className="text-[10px] font-black text-fuchsia-200">
-                    🔒 Akses Super Premium belum aktif — beli Rp {superShopAccess.price.toLocaleString("id-ID")} di atas
+                    🔒 Akses Super Premium belum aktif - beli Rp {superShopAccess.price.toLocaleString("id-ID")} di atas
                   </p>
                 </div>
               )}
@@ -783,9 +783,9 @@ export default function LuckRoyaleNyawa() {
                 })}
               </div>
               <p className="text-[9px] text-amber-100/60 mt-2 text-center">
-                {shopTier === "free" && "10 item FREE — bisa diklaim tanpa langganan"}
-                {shopTier === "premium" && "40 item Premium — hadiah MANTAP (Rp 100k/bln)"}
-                {shopTier === "super_premium" && "20 item SUPER PREMIUM — hadiah MEGA DIVINE (Rp 300k/bln)"}
+                {shopTier === "free" && "10 item FREE - bisa diklaim tanpa langganan"}
+                {shopTier === "premium" && "40 item Premium - hadiah MANTAP (Rp 100k/bln)"}
+                {shopTier === "super_premium" && "20 item SUPER PREMIUM - hadiah MEGA DIVINE (Rp 300k/bln)"}
               </p>
             </div>
           )}
@@ -916,7 +916,7 @@ export default function LuckRoyaleNyawa() {
                     icon: TrendingDown,
                     color: "from-slate-500 to-slate-700",
                     title: "Luck Rate Rendah",
-                    desc: `Rare rate kamu ${rareRate.toFixed(1)}%. Coba Faded Wheel — sistem 3x3 grid lebih predictable!`,
+                    desc: `Rare rate kamu ${rareRate.toFixed(1)}%. Coba Faded Wheel - sistem 3x3 grid lebih predictable!`,
                     priority: "med",
                   });
                 } else if (rareRate >= 20 && total >= 10) {
@@ -924,7 +924,7 @@ export default function LuckRoyaleNyawa() {
                     icon: CheckCircle2,
                     color: "from-emerald-500 to-green-600",
                     title: "Lagi Hoki Banget! 🍀",
-                    desc: `Rare rate kamu ${rareRate.toFixed(1)}% — di atas rata-rata. Manfaatkan momen ini dengan multi-spin!`,
+                    desc: `Rare rate kamu ${rareRate.toFixed(1)}% - di atas rata-rata. Manfaatkan momen ini dengan multi-spin!`,
                     priority: "high",
                   });
                 }

@@ -36,7 +36,7 @@ export default function VoucherNavigation({
 
   return (
     <div className="space-y-3">
-      {/* === Stats Strip — flat === */}
+      {/* === Stats Strip - flat === */}
       <div className="grid grid-cols-3 gap-2">
         <div className="bg-card border border-border rounded-xl p-3 text-center">
           <p className="text-[9px] font-medium text-muted-foreground uppercase tracking-wider">Total</p>
@@ -52,7 +52,7 @@ export default function VoucherNavigation({
         </div>
       </div>
 
-      {/* === Quick Actions — outline icons === */}
+      {/* === Quick Actions - outline icons === */}
       <div className="grid grid-cols-4 gap-1 bg-card border border-border rounded-xl p-2">
         {quickActions.map((a) => (
           <button
@@ -67,7 +67,7 @@ export default function VoucherNavigation({
         ))}
       </div>
 
-      {/* === Segmented Tabs — underline indicator === */}
+      {/* === Segmented Tabs - underline indicator === */}
       <div className="flex border-b border-border">
         {tabs.map((tb) => {
           const isActive = active === tb.id;

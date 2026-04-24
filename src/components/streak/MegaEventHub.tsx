@@ -124,7 +124,7 @@ export default function MegaEventHub({ visitorId, displayName = "Pemain", onUpda
                 <p className={`text-[8px] font-bold ${isToday ? "text-black" : "text-white/70"}`}>
                   {["Min", "Sen", "Sel", "Rab", "Kam", "Jum", "Sab"][d]}
                 </p>
-                <div className="text-base">{evt?.event_icon || "—"}</div>
+                <div className="text-base">{evt?.event_icon || "-"}</div>
               </div>
             );
           })}

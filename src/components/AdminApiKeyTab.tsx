@@ -210,7 +210,7 @@ ${"```"}
 6. Jika pilih pairing, masukkan nomor WA (08xxx / 628xxx) lalu tekan Enter
 7. Tunggu sampai bot menulis **KODE PAIRING AKTIF** dan baris **RAW** di console / terminal
 8. Di HP, buka WhatsApp > Linked Devices > Link with phone number lalu masukkan **RAW code** itu secara manual tanpa spasi/strip
-9. Tidak ada notif/chat otomatis ke WhatsApp — kodenya hanya tampil di terminal
+9. Tidak ada notif/chat otomatis ke WhatsApp - kodenya hanya tampil di terminal
 10. Jika gagal / expired, bot akan reset sesi pairing dan membuat kode baru
 11. Untuk bot sewaan, QR child bot akan otomatis dibuat ulang jika koneksi awal gagal
 12. Batas generate QR: 6x per subscription (anti-spam)
@@ -223,7 +223,7 @@ Bot mendukung **2 mode login**:
 - Kode pairing tidak dikirim lewat chat / notif WhatsApp
 - Setelah nomor dimasukkan, kamu tetap harus buka menu Linked Devices di HP sendiri
 - Gunakan baris **RAW** saat input di WhatsApp, jangan yang pakai strip
-- Kode pairing berlaku sekitar 20 detik — segera masukkan
+- Kode pairing berlaku sekitar 20 detik - segera masukkan
 - Sesi tersimpan di folder auth_session/
 - Bot hanya menjaga satu kode aktif per sesi agar kode tidak tertimpa update koneksi
 - Bot otomatis hapus sesi stale saat pairing untuk koneksi bersih
@@ -237,8 +237,8 @@ node index.js
 ${"```"}
 
 ## 📌 Konfigurasi
-- API_KEY — API Key dari dashboard admin
-- ADMIN_NUMBERS — Daftar nomor admin (nomor pertama otomatis jadi default pairing)
+- API_KEY - API Key dari dashboard admin
+- ADMIN_NUMBERS - Daftar nomor admin (nomor pertama otomatis jadi default pairing)
 
 ## 📱 Perintah
 Kirim !menu / .menu / /menu di chat untuk melihat semua perintah.
@@ -408,7 +408,7 @@ node index.js
                 <SelectContent>
                   {activeKeys.map(k => (
                     <SelectItem key={k.id} value={k.id} className="text-xs">
-                      {k.key_name} — {k.api_key.substring(0, 10)}...
+                      {k.key_name} - {k.api_key.substring(0, 10)}...
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -491,7 +491,7 @@ node index.js
           </Button>
 
           <p className="text-[10px] text-muted-foreground text-center">
-            📲 Jalankan <code className="bg-muted px-1 rounded">npm install</code> lalu <code className="bg-muted px-1 rounded">node index.js</code> — pilih 2, masukkan nomor, lalu input baris RAW code di WhatsApp &gt; Linked Devices
+            📲 Jalankan <code className="bg-muted px-1 rounded">npm install</code> lalu <code className="bg-muted px-1 rounded">node index.js</code> - pilih 2, masukkan nomor, lalu input baris RAW code di WhatsApp &gt; Linked Devices
           </p>
         </CardContent>
       </Card>
@@ -556,14 +556,14 @@ node index.js`}
                     <li>Jangan tutup terminal saat bot jalan</li>
                     <li>Untuk background: install <code className="bg-muted px-1 rounded">pm2</code> lalu <code className="bg-muted px-1 rounded">pm2 start index.js</code></li>
                     <li>Saat bot jalan, pilih 1 untuk scan QR atau 2 untuk pairing nomor</li>
-                     <li>Kode pairing muncul di terminal — pakai baris RAW dan masukkan dalam 20 detik, bukan lewat notif/chat WA</li>
+                     <li>Kode pairing muncul di terminal - pakai baris RAW dan masukkan dalam 20 detik, bukan lewat notif/chat WA</li>
                      <li>Setelah input nomor di panel, WhatsApp tidak kirim notif otomatis; kamu harus buka menu Linked Devices sendiri</li>
                      <li>Bot sekarang menjaga satu kode aktif per sesi supaya kode tidak ketimpa dan ditolak WhatsApp</li>
                      <li>Bot otomatis hapus sesi lama saat pairing agar koneksi bersih</li>
                     <li>Sesi error? Hapus folder <code className="bg-muted px-1 rounded">auth_session</code> lalu jalankan ulang</li>
                     <li>Gunakan nomor WA cadangan untuk testing</li>
                     <li>Pastikan koneksi internet stabil</li>
-                    <li>Bot menggunakan Baileys — tidak perlu Chrome/Puppeteer</li>
+                    <li>Bot menggunakan Baileys - tidak perlu Chrome/Puppeteer</li>
                   </ul>
                 </CardContent>
               </Card>
@@ -583,53 +583,53 @@ node index.js`}
                 <CardContent className="p-2">
                   <p className="text-[11px] font-bold text-blue-700 mb-1">📌 Perintah USER ({45} perintah):</p>
                   <div className="grid grid-cols-2 gap-1 text-[10px]">
-                    <span><code>!menu</code>/<code>.menu</code>/<code>/menu</code> — Menu bantuan</span>
-                    <span><code>!login</code> — Login akun</span>
-                    <span><code>!logout</code> — Logout akun</span>
-                    <span><code>!saldoku</code> — Cek saldo</span>
-                    <span><code>!profilku</code> — Profil lengkap</span>
-                    <span><code>!riwayat</code> — Riwayat transaksi</span>
-                    <span><code>!detailtrx</code> — Detail transaksi</span>
-                    <span><code>!gameku</code> — Stats game</span>
-                    <span><code>!kreditku</code> — Kredit game</span>
-                    <span><code>!streakku</code> — Status streak</span>
-                    <span><code>!notifku</code> — Notifikasi</span>
-                    <span><code>!beli [nama]</code> — Beli produk</span>
-                    <span><code>!belistreak</code> — Beli streak</span>
-                    <span><code>!belikredit</code> — Beli kredit</span>
-                    <span><code>!belistorage</code> — Beli storage</span>
-                    <span><code>!belibundle</code> — Beli bundle</span>
-                    <span><code>!buatpin</code> — Buat PIN</span>
-                    <span><code>!grosir [nama]</code> — Harga grosir</span>
-                    <span><code>!flashsale</code> — Info flash sale</span>
-                    <span><code>!produk</code> — Daftar produk</span>
-                    <span><code>!cari [kata]</code> — Cari produk</span>
-                    <span><code>!sponsor</code> — Sponsor aktif</span>
-                    <span><code>!lagu</code> — Daftar lagu</span>
-                    <span><code>!carilagu [kata]</code> — Cari lagu</span>
-                    <span><code>!download [judul]</code> — Download lagu</span>
-                    <span><code>!artis</code> — Daftar artis</span>
-                    <span><code>!playlist</code> — Daftar playlist</span>
-                    <span><code>!publik</code> — Lagu publik</span>
-                    <span><code>!info</code> — Statistik toko</span>
-                    <span><code>!ceksaldo [nama]</code> — Cek saldo</span>
-                    <span><code>!cekgame [nama]</code> — Stats game</span>
-                    <span><code>!paket</code> — Paket tersedia</span>
-                    <span><code>!cekvoucher</code> — Voucher aktif</span>
-                    <span><code>!promo</code> — Promo aktif</span>
-                    <span><code>!kategori</code> — Kategori</span>
-                    <span><code>!harga [min] [max]</code> — Filter</span>
-                    <span><code>!random</code> — Produk random</span>
-                    <span><code>!top</code> — Terpopuler</span>
-                    <span><code>!detailproduk</code> — Detail produk</span>
-                    <span><code>!detailsponsor</code> — Detail sponsor</span>
-                    <span><code>!detailartis</code> — Detail artis</span>
-                    <span><code>!lb</code> — Leaderboard</span>
-                    <span><code>!bantuan</code> — FAQ</span>
-                    <span><code>!syarat</code> — S&K</span>
-                    <span><code>!waktu</code> — Waktu server</span>
-                    <span><code>!versi</code> — Info bot</span>
-                    <span><code>!ping</code> — Status bot</span>
+                    <span><code>!menu</code>/<code>.menu</code>/<code>/menu</code> - Menu bantuan</span>
+                    <span><code>!login</code> - Login akun</span>
+                    <span><code>!logout</code> - Logout akun</span>
+                    <span><code>!saldoku</code> - Cek saldo</span>
+                    <span><code>!profilku</code> - Profil lengkap</span>
+                    <span><code>!riwayat</code> - Riwayat transaksi</span>
+                    <span><code>!detailtrx</code> - Detail transaksi</span>
+                    <span><code>!gameku</code> - Stats game</span>
+                    <span><code>!kreditku</code> - Kredit game</span>
+                    <span><code>!streakku</code> - Status streak</span>
+                    <span><code>!notifku</code> - Notifikasi</span>
+                    <span><code>!beli [nama]</code> - Beli produk</span>
+                    <span><code>!belistreak</code> - Beli streak</span>
+                    <span><code>!belikredit</code> - Beli kredit</span>
+                    <span><code>!belistorage</code> - Beli storage</span>
+                    <span><code>!belibundle</code> - Beli bundle</span>
+                    <span><code>!buatpin</code> - Buat PIN</span>
+                    <span><code>!grosir [nama]</code> - Harga grosir</span>
+                    <span><code>!flashsale</code> - Info flash sale</span>
+                    <span><code>!produk</code> - Daftar produk</span>
+                    <span><code>!cari [kata]</code> - Cari produk</span>
+                    <span><code>!sponsor</code> - Sponsor aktif</span>
+                    <span><code>!lagu</code> - Daftar lagu</span>
+                    <span><code>!carilagu [kata]</code> - Cari lagu</span>
+                    <span><code>!download [judul]</code> - Download lagu</span>
+                    <span><code>!artis</code> - Daftar artis</span>
+                    <span><code>!playlist</code> - Daftar playlist</span>
+                    <span><code>!publik</code> - Lagu publik</span>
+                    <span><code>!info</code> - Statistik toko</span>
+                    <span><code>!ceksaldo [nama]</code> - Cek saldo</span>
+                    <span><code>!cekgame [nama]</code> - Stats game</span>
+                    <span><code>!paket</code> - Paket tersedia</span>
+                    <span><code>!cekvoucher</code> - Voucher aktif</span>
+                    <span><code>!promo</code> - Promo aktif</span>
+                    <span><code>!kategori</code> - Kategori</span>
+                    <span><code>!harga [min] [max]</code> - Filter</span>
+                    <span><code>!random</code> - Produk random</span>
+                    <span><code>!top</code> - Terpopuler</span>
+                    <span><code>!detailproduk</code> - Detail produk</span>
+                    <span><code>!detailsponsor</code> - Detail sponsor</span>
+                    <span><code>!detailartis</code> - Detail artis</span>
+                    <span><code>!lb</code> - Leaderboard</span>
+                    <span><code>!bantuan</code> - FAQ</span>
+                    <span><code>!syarat</code> - S&K</span>
+                    <span><code>!waktu</code> - Waktu server</span>
+                    <span><code>!versi</code> - Info bot</span>
+                    <span><code>!ping</code> - Status bot</span>
                   </div>
                 </CardContent>
               </Card>
@@ -638,54 +638,54 @@ node index.js`}
                 <CardContent className="p-2">
                   <p className="text-[11px] font-bold text-red-700 mb-1">🔐 Perintah ADMIN ({52} perintah):</p>
                   <div className="grid grid-cols-2 gap-1 text-[10px]">
-                    <span><code>!admin</code> — Menu admin</span>
-                    <span><code>!saldo</code> — Semua saldo</span>
-                    <span><code>!tambahsaldo</code> — Tambah saldo</span>
-                    <span><code>!kurangsaldo</code> — Kurangi saldo</span>
-                    <span><code>!resetsaldo</code> — Reset saldo</span>
-                    <span><code>!setsaldo</code> — Set saldo</span>
-                    <span><code>!deposit</code> — Riwayat deposit</span>
-                    <span><code>!setdeposit</code> — Ubah status</span>
-                    <span><code>!rekapdeposit</code> — Rekap deposit</span>
-                    <span><code>!token</code> — Daftar token</span>
-                    <span><code>!tokendetail</code> — Detail token</span>
-                    <span><code>!game [vid]</code> — Stats game</span>
-                    <span><code>!kredit [vid]</code> — Kredit game</span>
-                    <span><code>!setkredit</code> — Set kredit</span>
-                    <span><code>!resetkredit</code> — Reset kredit</span>
-                    <span><code>!resetgame</code> — Reset game stats</span>
-                    <span><code>!leaderboardadmin</code> — LB detail</span>
-                    <span><code>!streak [vid]</code> — Status streak</span>
-                    <span><code>!resetstreak</code> — Reset streak</span>
-                    <span><code>!setstreak</code> — Set streak</span>
-                    <span><code>!streaksub</code> — Langganan streak</span>
-                    <span><code>!storage [vid]</code> — Storage</span>
-                    <span><code>!resetstorage</code> — Reset storage</span>
-                    <span><code>!profil [vid]</code> — Profil game</span>
-                    <span><code>!stok [id] [n]</code> — Stok produk</span>
-                    <span><code>!produkdetail</code> — Detail produk</span>
-                    <span><code>!sponsordetail</code> — Detail sponsor</span>
-                    <span><code>!stoksponsor</code> — Stok sponsor</span>
-                    <span><code>!user [nama]</code> — Cari user</span>
-                    <span><code>!alluser</code> — Semua user</span>
-                    <span><code>!topuser</code> — Top user saldo</span>
-                    <span><code>!detailuser</code> — Detail lengkap</span>
-                    <span><code>!loginhistory</code> — Riwayat login</span>
-                    <span><code>!transaksi</code> — Riwayat trx</span>
-                    <span><code>!musikprofil</code> — Profil musik</span>
-                    <span><code>!follow</code> — Stats follow</span>
-                    <span><code>!tiket</code> — Tiket support</span>
-                    <span><code>!settiket</code> — Status tiket</span>
-                    <span><code>!tiketdetail</code> — Detail tiket</span>
-                    <span><code>!chat</code> — Chat produk</span>
-                    <span><code>!notif [isi]</code> — Kirim notif</span>
-                    <span><code>!broadcast</code> — Broadcast</span>
-                    <span><code>!hapusnotif</code> — Hapus notif</span>
-                    <span><code>!likes</code> — Stats likes</span>
-                    <span><code>!dashboard</code> — Dashboard</span>
-                    <span><code>!report</code> — Laporan harian</span>
-                    <span><code>!aktivitas</code> — Aktivitas baru</span>
-                    <span><code>!backup</code> — Info backup</span>
+                    <span><code>!admin</code> - Menu admin</span>
+                    <span><code>!saldo</code> - Semua saldo</span>
+                    <span><code>!tambahsaldo</code> - Tambah saldo</span>
+                    <span><code>!kurangsaldo</code> - Kurangi saldo</span>
+                    <span><code>!resetsaldo</code> - Reset saldo</span>
+                    <span><code>!setsaldo</code> - Set saldo</span>
+                    <span><code>!deposit</code> - Riwayat deposit</span>
+                    <span><code>!setdeposit</code> - Ubah status</span>
+                    <span><code>!rekapdeposit</code> - Rekap deposit</span>
+                    <span><code>!token</code> - Daftar token</span>
+                    <span><code>!tokendetail</code> - Detail token</span>
+                    <span><code>!game [vid]</code> - Stats game</span>
+                    <span><code>!kredit [vid]</code> - Kredit game</span>
+                    <span><code>!setkredit</code> - Set kredit</span>
+                    <span><code>!resetkredit</code> - Reset kredit</span>
+                    <span><code>!resetgame</code> - Reset game stats</span>
+                    <span><code>!leaderboardadmin</code> - LB detail</span>
+                    <span><code>!streak [vid]</code> - Status streak</span>
+                    <span><code>!resetstreak</code> - Reset streak</span>
+                    <span><code>!setstreak</code> - Set streak</span>
+                    <span><code>!streaksub</code> - Langganan streak</span>
+                    <span><code>!storage [vid]</code> - Storage</span>
+                    <span><code>!resetstorage</code> - Reset storage</span>
+                    <span><code>!profil [vid]</code> - Profil game</span>
+                    <span><code>!stok [id] [n]</code> - Stok produk</span>
+                    <span><code>!produkdetail</code> - Detail produk</span>
+                    <span><code>!sponsordetail</code> - Detail sponsor</span>
+                    <span><code>!stoksponsor</code> - Stok sponsor</span>
+                    <span><code>!user [nama]</code> - Cari user</span>
+                    <span><code>!alluser</code> - Semua user</span>
+                    <span><code>!topuser</code> - Top user saldo</span>
+                    <span><code>!detailuser</code> - Detail lengkap</span>
+                    <span><code>!loginhistory</code> - Riwayat login</span>
+                    <span><code>!transaksi</code> - Riwayat trx</span>
+                    <span><code>!musikprofil</code> - Profil musik</span>
+                    <span><code>!follow</code> - Stats follow</span>
+                    <span><code>!tiket</code> - Tiket support</span>
+                    <span><code>!settiket</code> - Status tiket</span>
+                    <span><code>!tiketdetail</code> - Detail tiket</span>
+                    <span><code>!chat</code> - Chat produk</span>
+                    <span><code>!notif [isi]</code> - Kirim notif</span>
+                    <span><code>!broadcast</code> - Broadcast</span>
+                    <span><code>!hapusnotif</code> - Hapus notif</span>
+                    <span><code>!likes</code> - Stats likes</span>
+                    <span><code>!dashboard</code> - Dashboard</span>
+                    <span><code>!report</code> - Laporan harian</span>
+                    <span><code>!aktivitas</code> - Aktivitas baru</span>
+                    <span><code>!backup</code> - Info backup</span>
                   </div>
                 </CardContent>
               </Card>

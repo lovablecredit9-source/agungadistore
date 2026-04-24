@@ -63,7 +63,7 @@ export default function MineSweeperGame() {
       setTiles(newTiles);
       setActive(false);
       setResult({ ...data.payout, awardedPoints });
-      toast({ title: "💥 Boom!", description: `Kena bom — +${awardedPoints} poin level`, variant: "destructive" });
+      toast({ title: "💥 Boom!", description: `Kena bom - +${awardedPoints} poin level`, variant: "destructive" });
       return;
     }
 

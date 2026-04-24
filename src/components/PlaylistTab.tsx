@@ -956,7 +956,7 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer, onPlayE
         <Card className="border-destructive/30 bg-destructive/5">
           <CardContent className="p-3 flex items-center gap-2 text-xs text-destructive">
             <WifiOff className="w-4 h-4 shrink-0" />
-            <span>Mode offline — hanya lagu tersimpan offline yang bisa diputar.</span>
+            <span>Mode offline - hanya lagu tersimpan offline yang bisa diputar.</span>
           </CardContent>
         </Card>
       )}
@@ -1163,7 +1163,7 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer, onPlayE
       {currentSong && (
         <Card className="border-primary/20 overflow-hidden">
           <CardContent className="p-4 space-y-1">
-            <p className="text-[11px] font-bold text-muted-foreground flex items-center gap-1.5 mb-2"><Type className="w-3.5 h-3.5" /> Lirik — {currentSong.title}</p>
+            <p className="text-[11px] font-bold text-muted-foreground flex items-center gap-1.5 mb-2"><Type className="w-3.5 h-3.5" /> Lirik - {currentSong.title}</p>
             {currentSongLyrics.length > 0 ? (
               <>
                 <div ref={lyricsContainerRef} className="max-h-48 overflow-y-auto space-y-0.5 scroll-smooth">
@@ -1200,7 +1200,7 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer, onPlayE
                   )}
                 </div>
                 <p className="text-[10px] text-muted-foreground text-center pt-2 flex items-center justify-center gap-1">
-                  <Copyright className="w-3 h-3" /> {currentSong.artist} — Hak cipta dilindungi
+                  <Copyright className="w-3 h-3" /> {currentSong.artist} - Hak cipta dilindungi
                 </p>
               </>
             ) : (
@@ -1611,7 +1611,7 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer, onPlayE
       <Dialog open={manageUserSongsOpen} onOpenChange={setManageUserSongsOpen}>
         <DialogContent className="max-w-sm max-h-[80vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="text-sm">Kelola Lagu — {managingUserPl?.name}</DialogTitle>
+            <DialogTitle className="text-sm">Kelola Lagu - {managingUserPl?.name}</DialogTitle>
           </DialogHeader>
           <div className="space-y-1">
             {songs.map(song => (

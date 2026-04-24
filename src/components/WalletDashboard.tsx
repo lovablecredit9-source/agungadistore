@@ -82,7 +82,7 @@ export default function WalletDashboard({
   return (
     <div className="space-y-3">
       <BanBanner />
-      {/* === Hero Saldo Card — minimal clean white === */}
+      {/* === Hero Saldo Card - minimal clean white === */}
       <motion.div
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
@@ -195,7 +195,7 @@ export default function WalletDashboard({
 
             {chart.totalIn === 0 && chart.totalOut === 0 && (
               <p className="text-[10px] text-center text-muted-foreground mt-2 italic">
-                Belum ada aktivitas — yuk mulai transaksi!
+                Belum ada aktivitas - yuk mulai transaksi!
               </p>
             )}
           </CardContent>

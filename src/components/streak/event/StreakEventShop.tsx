@@ -528,7 +528,7 @@ export default function StreakEventShop({ visitorId, onUpdate }: Props) {
         </TabsContent>
       </Tabs>
 
-      {/* SHOP EXTRAS — Flash Deals, Gacha, VIP, Login Calendar, Achievement Elite */}
+      {/* SHOP EXTRAS - Flash Deals, Gacha, VIP, Login Calendar, Achievement Elite */}
       <div className="pt-2 mt-2 border-t border-white/10">
         <div className="flex items-center gap-2 mb-2 px-1">
           <Sparkles className="h-4 w-4 text-amber-300" />

@@ -120,7 +120,7 @@ export default function PowerUpsBar({ onUseHint, onUseTimeFreeze, compact, enabl
                   ? "bg-muted-foreground/40 hover:bg-muted-foreground/50"
                   : `bg-gradient-to-r ${it.color} hover:shadow-md hover:scale-105 ring-1 ring-white/20`
               } ${!enabled ? "opacity-50 cursor-not-allowed" : ""}`}
-              title={empty ? `${it.label} habis — beli di Streak Shop` : `Pakai ${it.label}`}
+              title={empty ? `${it.label} habis - beli di Streak Shop` : `Pakai ${it.label}`}
             >
               <it.Icon className={`w-3.5 h-3.5 ${empty ? "" : "fill-white/30"}`} strokeWidth={2.5} />
               <span>{it.label}</span>

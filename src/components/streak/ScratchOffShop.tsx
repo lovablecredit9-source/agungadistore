@@ -362,7 +362,7 @@ export default function ScratchOffShop({ visitorId, onUpdate }: Props) {
 
   return (
     <div className="ios-card-vibrant p-3 sm:p-4 ios-tap-highlight">
-      {/* Header — iOS large title style */}
+      {/* Header - iOS large title style */}
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
           <Sparkles className="h-5 w-5" style={{ color: "hsl(var(--ios-vibrant-pink))" }} />
@@ -373,7 +373,7 @@ export default function ScratchOffShop({ visitorId, onUpdate }: Props) {
         </div>
       </div>
 
-      {/* Mini stats — iOS card row */}
+      {/* Mini stats - iOS card row */}
       <div className="grid grid-cols-3 gap-2 mb-3">
         <div className="ios-surface-2 rounded-xl px-2 py-2 text-center border border-border/40">
           <p className="text-[9px] text-muted-foreground uppercase tracking-wider">Buys</p>
@@ -391,7 +391,7 @@ export default function ScratchOffShop({ visitorId, onUpdate }: Props) {
         </div>
       </div>
 
-      {/* Combo bar — iOS style */}
+      {/* Combo bar - iOS style */}
       <div className="mb-3 ios-surface-2 rounded-xl border border-border/40 p-2">
         <div className="flex items-center justify-between mb-1">
           <div className="flex items-center gap-1.5">
@@ -417,7 +417,7 @@ export default function ScratchOffShop({ visitorId, onUpdate }: Props) {
         </div>
       </div>
 
-      {/* Free Daily Card — iOS banner */}
+      {/* Free Daily Card - iOS banner */}
       {freeAvailable && (
         <motion.div
           initial={{ scale: 0.95, opacity: 0 }}
@@ -435,7 +435,7 @@ export default function ScratchOffShop({ visitorId, onUpdate }: Props) {
               <Gift className="h-5 w-5 text-white drop-shadow animate-bounce" />
               <div>
                 <p className="text-[11px] font-bold text-white">KARTU GRATIS HARI INI</p>
-                <p className="text-[9px] text-white/85">Bronze Scratch — reset jam 00:00</p>
+                <p className="text-[9px] text-white/85">Bronze Scratch - reset jam 00:00</p>
               </div>
             </div>
             <Button
@@ -450,7 +450,7 @@ export default function ScratchOffShop({ visitorId, onUpdate }: Props) {
         </motion.div>
       )}
 
-      {/* Cards grid — iOS tile cards */}
+      {/* Cards grid - iOS tile cards */}
       <div className="grid grid-cols-2 gap-2.5">
         {CARDS.map((c) => (
           <motion.div
@@ -479,7 +479,7 @@ export default function ScratchOffShop({ visitorId, onUpdate }: Props) {
         ))}
       </div>
 
-      {/* Achievement Badges — iOS list grid */}
+      {/* Achievement Badges - iOS list grid */}
       <div className="mt-3 ios-surface-2 rounded-2xl border border-border/40 p-2.5">
         <div className="flex items-center gap-1.5 mb-2">
           <Trophy className="h-3.5 w-3.5" style={{ color: "hsl(var(--ios-vibrant-yellow))" }} />
@@ -492,7 +492,7 @@ export default function ScratchOffShop({ visitorId, onUpdate }: Props) {
             return (
               <div
                 key={a.id}
-                title={`${a.label} — ${a.desc} (+${a.bonus} koin)`}
+                title={`${a.label} - ${a.desc} (+${a.bonus} koin)`}
                 className={`rounded-xl p-1.5 text-center border transition-all ${
                   unlocked
                     ? "ios-tint-yellow border-transparent"
@@ -507,7 +507,7 @@ export default function ScratchOffShop({ visitorId, onUpdate }: Props) {
         </div>
       </div>
 
-      {/* Scratch reveal modal — iOS sheet */}
+      {/* Scratch reveal modal - iOS sheet */}
       <AnimatePresence>
         {reveal && (
           <motion.div

@@ -146,7 +146,7 @@ export default function GameClanSystem({ visitorId }: Props) {
                 <div className="flex items-center justify-between">
                   <div>
                     <div className="text-2xl font-black text-white">{myClan.name} <span className="text-cyan-300 text-sm">[{myClan.tag}]</span></div>
-                    <div className="text-[11px] text-white/70 italic">"{myClan.motto || "—"}"</div>
+                    <div className="text-[11px] text-white/70 italic">"{myClan.motto || "-"}"</div>
                   </div>
                   <div className="text-center">
                     <Crown className="w-6 h-6 text-yellow-300 mx-auto" />

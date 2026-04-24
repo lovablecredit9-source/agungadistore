@@ -150,7 +150,7 @@ export default function LikesTab({
 
   return (
     <div className="space-y-4 animate-fade-in">
-      {/* Header — flat IG/TikTok style */}
+      {/* Header - flat IG/TikTok style */}
       <div className="rounded-xl border border-border bg-card p-4">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
@@ -161,7 +161,7 @@ export default function LikesTab({
             <p className="text-xs text-muted-foreground mt-0.5">{totalLiked} item · {visibleCount} tampil</p>
           </div>
         </div>
-        {/* Stats row — minimal */}
+        {/* Stats row - minimal */}
         <div className="flex items-center gap-4 mt-3 pt-3 border-t border-border">
           <div className="flex-1 text-center">
             <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Produk</p>

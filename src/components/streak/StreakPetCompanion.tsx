@@ -68,7 +68,7 @@ export default function StreakPetCompanion({ visitorId, currentStreak }: Props) 
               onClick={() => { setTempName(petName); setEditing(true); }}
               className="font-extrabold text-white text-base drop-shadow text-left truncate w-full"
             >
-              {petName} <span className="text-[11px] font-bold opacity-80">— {stage.name}</span>
+              {petName} <span className="text-[11px] font-bold opacity-80">- {stage.name}</span>
             </button>
           )}
           {nextStage && (

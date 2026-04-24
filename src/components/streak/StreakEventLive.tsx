@@ -213,7 +213,7 @@ export default function StreakEventLive({ visitorId, currentStreak, totalClaims,
           )}
         </AnimatePresence>
 
-        {/* TIER BADGE — your rank */}
+        {/* TIER BADGE - your rank */}
         <motion.div
           className={`p-3 rounded-xl bg-gradient-to-r ${currentTier.color} relative overflow-hidden`}
           animate={{ boxShadow: ["0 0 0px rgba(255,255,255,0)", "0 0 20px rgba(255,255,255,0.3)", "0 0 0px rgba(255,255,255,0)"] }}
@@ -267,7 +267,7 @@ export default function StreakEventLive({ visitorId, currentStreak, totalClaims,
           <div className="text-[9px] text-yellow-200/70 mt-1">Pool naik tiap pemain klaim · dibagi rata Top 10</div>
         </div>
 
-        {/* MY WALLET — Streak Coin & Gem (Diamond) */}
+        {/* MY WALLET - Streak Coin & Gem (Diamond) */}
         <div className="grid grid-cols-2 gap-2">
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}

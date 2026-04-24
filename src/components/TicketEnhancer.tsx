@@ -234,7 +234,7 @@ export function TicketEnhancer({ tickets, categoryLabels, onOpen, onReopen, onDu
   }, [tickets]);
 
   function fmtAvg(min: number): string {
-    if (!min) return "—";
+    if (!min) return "-";
     if (min < 60) return `${min}m`;
     const h = Math.floor(min / 60);
     if (h < 24) return `${h}j`;
@@ -426,7 +426,7 @@ export function TicketEnhancer({ tickets, categoryLabels, onOpen, onReopen, onDu
 
   return (
     <div className="space-y-4">
-      {/* HERO STATS — Live tracker */}
+      {/* HERO STATS - Live tracker */}
       <div className="rounded-xl border border-border bg-card p-4">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">

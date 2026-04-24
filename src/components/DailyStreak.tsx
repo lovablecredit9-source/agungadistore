@@ -975,7 +975,7 @@ export default function DailyStreak({ visitorId }: DailyStreakProps) {
           <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-2 flex items-center gap-2 mb-1">
             <Zap className="w-4 h-4 text-yellow-500 animate-pulse" />
             <div>
-              <p className="text-[10px] font-bold text-yellow-600 flex items-center gap-1"><Flame className="w-3 h-3 icon-3d-flame" strokeWidth={2.5} /> Flash Sale Aktif{flashSaleLabel ? ` — ${flashSaleLabel}` : ""}!</p>
+              <p className="text-[10px] font-bold text-yellow-600 flex items-center gap-1"><Flame className="w-3 h-3 icon-3d-flame" strokeWidth={2.5} /> Flash Sale Aktif{flashSaleLabel ? ` - ${flashSaleLabel}` : ""}!</p>
               <p className="text-[9px] text-muted-foreground">Harga spesial berlaku sampai {new Date(flashSaleEnd).toLocaleString("id-ID")}</p>
             </div>
           </div>

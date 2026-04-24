@@ -606,7 +606,7 @@ export default function NeonStreakHub({ visitorId, forcedView }: Props) {
 
       {activeView === "main" && (
       <>
-      {/* ⚡ Power Pack showcase — paket reward harian random */}
+      {/* ⚡ Power Pack showcase - paket reward harian random */}
       <PowerPackShop visitorId={visitorId} onUpdate={loadAll} compact />
 
       {/* ✨ Combo Multiplier + Pet Companion */}

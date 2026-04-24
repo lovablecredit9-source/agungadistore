@@ -41,7 +41,7 @@ function classifyCharging(watts: number): string {
 }
 
 function formatTimeToFull(currentLevel: number, ratePerMinute: number): string {
-  if (ratePerMinute <= 0 || currentLevel >= 100) return "—";
+  if (ratePerMinute <= 0 || currentLevel >= 100) return "-";
   const remaining = 100 - currentLevel;
   const minutes = Math.round(remaining / ratePerMinute);
   if (minutes < 1) return "< 1 menit";
@@ -266,7 +266,7 @@ const DeviceInfoCard = () => {
             iconClass={data.batteryCharging ? "text-green-500" : "text-muted-foreground"} colSpan />
 
           {data.batteryCharging && (
-            <Row icon={Timer} label="Penuh dalam" value={data.estimatedTimeToFull || "—"}
+            <Row icon={Timer} label="Penuh dalam" value={data.estimatedTimeToFull || "-"}
               iconClass="text-green-500" className="text-green-600" colSpan />
           )}
 
