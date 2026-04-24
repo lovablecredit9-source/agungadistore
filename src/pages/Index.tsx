@@ -3416,8 +3416,15 @@ const Index = () => {
               
               {[
                 {
-                  date: "21 April 2026", version: "v2.8", isNew: true,
+                  date: "24 April 2026", version: "v2.8", isNew: true,
                   items: [
+                    "🎮 4 Game baru ditambahkan ke tab Game: Memory Flip, Snake Neon, 2048, dan Plinko - semua client-side, ramah mobile",
+                    "🎮 Memory Flip - cocokkan pasangan kartu, makin cepat selesai makin besar reward poin",
+                    "🐍 Snake Neon - ular grafis neon dengan swipe controls, makin panjang ular makin tinggi skor",
+                    "🧩 2048 - geser ubin angka, gabungkan jadi 2048, swipe gesture full mobile-friendly",
+                    "🎪 Plinko - jatuhkan bola di papan paku, hadiah random dengan visual seru",
+                    "🎮 Reward poin otomatis terintegrasi via gameStore.ts (awardGamePoints)",
+                    "🎮 4 ikon game 3D baru (game-memory, game-snake, game-2048, game-plinko)",
                     "🎨 Tema baru iOS Dark Vibrant - true black canvas + aksen Apple system colors (Blue/Pink/Purple/Orange/Green/Yellow/Teal/Indigo)",
                     "🎨 Design tokens iOS global di index.css: surface bertingkat L1/L2/L3, hairline divider, radius pill, blur bar",
                     "🎨 Utility class baru: ios-card-vibrant, ios-surface-1/2/3, ios-tint-*, ios-grad-bronze/silver/gold/diamond/jackpot, ios-btn-filled/tinted/gray, ios-pressable",
@@ -4440,22 +4447,31 @@ const Index = () => {
 
               {/* Changelog */}
               <div className="rounded-xl border border-border bg-card p-3 space-y-1.5">
-                <p className="font-bold text-foreground text-xs uppercase tracking-wider">📝 Changelog v2.0</p>
+                <p className="font-bold text-foreground text-xs uppercase tracking-wider">📝 Changelog v2.8</p>
                 <div className="space-y-1 text-[13px]">
-                  <p className="font-semibold text-foreground text-xs">April 2026</p>
+                  <p className="font-semibold text-foreground text-xs">24 April 2026 - Update Terbaru</p>
                   <ul className="list-disc list-inside space-y-0.5">
-                    <li>🆕 Hero Beranda baru: gradient ungu→magenta + 4 Quick Action (Flash Sale, Grosir, Baru Datang, Premium)</li>
-                    <li>🆕 Badge "100% Trusted Store" + mini stats live (Produk, Sponsor, Support 24/7)</li>
-                    <li>✨ Dukungan {LANGUAGES.length}+ bahasa dengan bendera negara</li>
-                    <li>✨ Fitur musik: streaming, playlist, lirik sinkron</li>
-                    <li>✨ Voucher musik (kapasitas & diskon)</li>
-                    <li>✨ Sistem deposit QRIS & E-Wallet</li>
-                    <li>✨ Chat produk real-time dengan gambar</li>
-                    <li>✨ Sistem notifikasi lengkap</li>
-                    <li>✨ Tema emas premium</li>
-                    <li>✨ PWA + dukungan offline</li>
-                    <li>✨ Keranjang belanja multi-produk</li>
-                    <li>✨ Pusat Bantuan komprehensif</li>
+                    <li>🎮 <strong>4 Game baru:</strong> Memory Flip, Snake Neon, 2048, Plinko - semua mobile-friendly</li>
+                    <li>🎨 Tema iOS Dark Vibrant - true black + aksen Apple system colors</li>
+                    <li>🎰 Scratch-Off Lottery dirombak total (Bronze/Silver/Gold/Diamond)</li>
+                    <li>💰 Rebalance hadiah: jackpot terasa BESAR tapi LANGKA (~3% chance)</li>
+                    <li>🏆 Achievement bonus baru: First Win, High Roller, Jackpot Hunter, Diamond Master</li>
+                    <li>🔧 Proteksi double-claim & combo multiplier ringan (1.0 → 1.2x)</li>
+                  </ul>
+                  <p className="font-semibold text-foreground text-xs pt-2">Fitur Lengkap App</p>
+                  <ul className="list-disc list-inside space-y-0.5">
+                    <li>🎮 <strong>15+ Game:</strong> Tebak Kata, Tebak Lagu, Suit, Ular Tangga, Ludo, Match-3, Slot Machine, Lucky Draw, Plinko, 2048, Memory Flip, Snake Neon, Mine Sweeper, Scratch Card, dll</li>
+                    <li>🔥 <strong>Streak System:</strong> Daily Streak, Boosters, Power Hour, Mission Chain, Tournament, PvP Battle, Clan System, Season Pass</li>
+                    <li>🛒 <strong>Streak Shop:</strong> Mystery Box, Auction House, Lucky Wheel, Flash Deals, Loyalty Tier (Bronze→Diamond), VIP Lounge</li>
+                    <li>💎 <strong>Gem & Saldo:</strong> Gem Shop, Diamond Royale, Luck Royale Nyawa, deposit QRIS/E-Wallet, PIN 6-digit</li>
+                    <li>🎵 <strong>Musik:</strong> Streaming, playlist, lirik sinkron AI, voucher musik, upload publik/pribadi, artist directory</li>
+                    <li>🛍️ <strong>Belanja:</strong> Keranjang multi-produk, harga grosir, Flash Sale, voucher diskon, chat produk real-time</li>
+                    <li>🎁 <strong>Sponsor:</strong> Iklan pihak ketiga dengan Rekber Admin (Escrow) via WhatsApp</li>
+                    <li>🌍 <strong>Multi-bahasa:</strong> {LANGUAGES.length}+ bahasa dengan auto-translate runtime</li>
+                    <li>📱 <strong>PWA + APK:</strong> Install di Chrome, build native via Capacitor, dukungan offline</li>
+                    <li>🤖 <strong>WhatsApp Bot:</strong> 40+ perintah (User & Admin), deposit interaktif, support tiket</li>
+                    <li>🔔 <strong>Real-time:</strong> Saldo, transaksi, notifikasi, chat - semua sinkron tanpa refresh</li>
+                    <li>🛡️ <strong>Keamanan:</strong> Hash SHA-256, PIN 6-digit, isolasi sesi per akun, device tracking</li>
                   </ul>
                 </div>
               </div>
