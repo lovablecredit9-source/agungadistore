@@ -30,6 +30,9 @@ import FlappyBirdGame from "@/components/games/FlappyBirdGame";
 import BrickBreakerGame from "@/components/games/BrickBreakerGame";
 import CatchStarGame from "@/components/games/CatchStarGame";
 import ColorReflexGame from "@/components/games/ColorReflexGame";
+import WhackAMoleGame from "@/components/games/WhackAMoleGame";
+import TapBeatGame from "@/components/games/TapBeatGame";
+import SkyJumperGame from "@/components/games/SkyJumperGame";
 import WeeklyLeaderboard from "@/components/WeeklyLeaderboard";
 import FlashSaleBanner from "@/components/FlashSaleBanner";
 import { useGameCredits, GameCreditsBadge, BuyCreditsDialog } from "@/components/games/GameCredits";
@@ -71,9 +74,15 @@ import gameFlappyImg from "@/assets/game-flappy.png";
 import gameBrickImg from "@/assets/game-brick.png";
 import gameCatchImg from "@/assets/game-catch.png";
 import gameReflexImg from "@/assets/game-reflex.png";
-type GameMode = "menu" | "suit" | "tebak" | "tebak_gambar" | "teka_teki" | "tebak_angka" | "tebak_barang" | "ular_tangga" | "ludo" | "kuis" | "teka_teki_v2" | "pilihan_ganda" | "scratch" | "slot" | "match3" | "lucky_draw" | "mine" | "tebak_lagu" | "memory" | "snake" | "g2048" | "plinko" | "tetris" | "bubble" | "flappy" | "brick" | "catch" | "reflex";
+import gameMoleImg from "@/assets/game-mole.png";
+import gameBeatImg from "@/assets/game-beat.png";
+import gameJumpImg from "@/assets/game-jump.png";
+type GameMode = "menu" | "suit" | "tebak" | "tebak_gambar" | "teka_teki" | "tebak_angka" | "tebak_barang" | "ular_tangga" | "ludo" | "kuis" | "teka_teki_v2" | "pilihan_ganda" | "scratch" | "slot" | "match3" | "lucky_draw" | "mine" | "tebak_lagu" | "memory" | "snake" | "g2048" | "plinko" | "tetris" | "bubble" | "flappy" | "brick" | "catch" | "reflex" | "mole" | "beat" | "jump";
 
 const GAMES: { mode: GameMode; title: string; desc: string; image: string; gradient: string }[] = [
+  { mode: "mole", title: "Whack-a-Mole", desc: "Pukul tikus, hindari bom 🔨", image: gameMoleImg, gradient: "from-emerald-500 to-lime-600" },
+  { mode: "beat", title: "Tap Tap Beat", desc: "Rhythm tap 4 lane 🎵", image: gameBeatImg, gradient: "from-fuchsia-500 to-purple-600" },
+  { mode: "jump", title: "Sky Jumper", desc: "Lompat setinggi mungkin 🚀", image: gameJumpImg, gradient: "from-blue-500 to-indigo-700" },
   { mode: "brick", title: "Brick Breaker", desc: "Pecahkan semua bata!", image: gameBrickImg, gradient: "from-pink-500 to-violet-600" },
   { mode: "catch", title: "Catch Star", desc: "Tangkap bintang & permata", image: gameCatchImg, gradient: "from-amber-400 to-orange-600" },
   { mode: "reflex", title: "Color Reflex", desc: "Tes refleks warna ⚡", image: gameReflexImg, gradient: "from-emerald-500 to-cyan-600" },
@@ -131,6 +140,9 @@ const GAME_COMPONENTS: Record<string, React.ComponentType> = {
   brick: BrickBreakerGame,
   catch: CatchStarGame,
   reflex: ColorReflexGame,
+  mole: WhackAMoleGame,
+  beat: TapBeatGame,
+  jump: SkyJumperGame,
 };
 
 export default function GameTab() {
