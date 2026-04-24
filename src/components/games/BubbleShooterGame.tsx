@@ -103,21 +103,22 @@ export default function BubbleShooterGame() {
       floating.forEach(([cr, cc]) => { ng[cr][cc] = null; });
       gained += floating.length * 20;
     }
+    const ns = shots - 1;
+    const empty = ng.every(row => row.every(v => v === null));
+    let bonus = 0;
+    if (empty) {
+      bonus = ns * 50;
+      toast({ title: "Bersih! 🎉", description: `Bonus +${bonus} dari sisa peluru` });
+    }
+    const finalScore = score + gained + bonus;
+
     setGrid(ng);
-    setScore(s => s + gained);
+    setScore(finalScore);
     setCurrent(next);
     setNext(Math.floor(Math.random() * COLORS.length));
-    const ns = shots - 1;
     setShots(ns);
 
-    // win check: all empty
-    const empty = ng.every(row => row.every(v => v === null));
-    if (empty) {
-      const bonus = ns * 50;
-      setScore(s => s + bonus);
-      setOver(true);
-      toast({ title: "Bersih! 🎉", description: `Bonus +${bonus} dari sisa peluru` });
-    } else if (ns <= 0) {
+    if (empty || ns <= 0) {
       setOver(true);
     }
   };
