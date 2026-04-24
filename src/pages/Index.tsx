@@ -1730,6 +1730,14 @@ const Index = () => {
                 { icon: <Gamepad2 className="w-6 h-6" strokeWidth={1.7} />, label: "Game", tab: "game" as Tab, badge: "11" },
                 { icon: <Flame className="w-6 h-6" strokeWidth={1.7} />, label: "Streak", tab: "streak" as Tab },
                 { icon: <Gem className="w-6 h-6" strokeWidth={1.7} />, label: "Plus", tab: "plus" as Tab },
+                { icon: <Megaphone className="w-6 h-6" strokeWidth={1.7} />, label: "Sponsor", tab: "sponsor" as Tab },
+                { icon: <MessageSquare className="w-6 h-6" strokeWidth={1.7} />, label: "Tiket", tab: "tiket" as Tab },
+                { icon: <Globe className="w-6 h-6" strokeWidth={1.7} />, label: "Publik", tab: "publik" as Tab },
+                { icon: <History className="w-6 h-6" strokeWidth={1.7} />, label: "Riwayat", tab: "history" as Tab },
+                { icon: <CalendarDays className="w-6 h-6" strokeWidth={1.7} />, label: "Event", tab: "streakevent" as Tab },
+                { icon: <ShoppingBag className="w-6 h-6" strokeWidth={1.7} />, label: "S.Shop", tab: "streakshop" as Tab },
+                { icon: <Crown className="w-6 h-6" strokeWidth={1.7} />, label: "Member", tab: "streakmembership" as Tab },
+                { icon: <RefreshCw className="w-6 h-6" strokeWidth={1.7} />, label: "Update", tab: "update" as Tab },
               ].map((item) => (
                 <button
                   key={item.label}
