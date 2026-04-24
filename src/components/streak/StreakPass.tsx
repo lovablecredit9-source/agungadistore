@@ -206,7 +206,7 @@ export default function StreakPass({ visitorId, onUpdate }: Props) {
                     {freeClaimed && <Check className="w-3 h-3 text-green-300 shrink-0" strokeWidth={3} />}
                   </button>
                 ) : (
-                  <div className="text-[9px] text-white/40 text-center py-2">—</div>
+                  <div className="py-2" aria-hidden="true" />
                 )}
               </div>
 
