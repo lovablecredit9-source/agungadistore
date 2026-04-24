@@ -1542,7 +1542,7 @@ const Index = () => {
                   { key: "streakmembership" as Tab, icon: Crown, label: "M.Streak" },
                   { key: "luckroyale" as any, icon: Crown, label: "L.Royale", external: "/luck-royale-nyawa" },
                   { key: "game" as Tab, icon: Gamepad2, label: "Game" },
-                  { key: "plus" as Tab, icon: Sparkles, label: "Plus" },
+                  { key: "plus" as Tab, icon: Gem, label: "Plus" },
                   { key: "update" as Tab, icon: RefreshCw, label: "Update" },
                   { key: "adminpost" as Tab, icon: FileText, label: "Admin" },
                 ] as Array<{ key: any; icon: any; label: string; external?: string }>).map(({ key, icon: Icon, label, external }) => {
@@ -1729,7 +1729,7 @@ const Index = () => {
                 { icon: <Heart className="w-6 h-6" strokeWidth={1.7} />, label: "Suka", tab: "likes" as Tab },
                 { icon: <Gamepad2 className="w-6 h-6" strokeWidth={1.7} />, label: "Game", tab: "game" as Tab, badge: "11" },
                 { icon: <Flame className="w-6 h-6" strokeWidth={1.7} />, label: "Streak", tab: "streak" as Tab },
-                { icon: <Sparkles className="w-6 h-6" strokeWidth={1.7} />, label: "Plus", tab: "plus" as Tab },
+                { icon: <Gem className="w-6 h-6" strokeWidth={1.7} />, label: "Plus", tab: "plus" as Tab },
               ].map((item) => (
                 <button
                   key={item.label}
@@ -4856,7 +4856,7 @@ const Index = () => {
               { key: "streakmembership" as Tab, icon: Crown, label: "M.Streak" },
               { key: "luckroyale" as any, icon: Crown, label: "L.Royale", external: "/luck-royale-nyawa" },
               { key: "game" as Tab, icon: Gamepad2, label: "Game" },
-              { key: "plus" as Tab, icon: Sparkles, label: "Plus" },
+              { key: "plus" as Tab, icon: Gem, label: "Plus" },
               { key: "update" as Tab, icon: RefreshCw, label: "Update" },
               { key: "adminpost" as Tab, icon: FileText, label: "Admin" },
             ] as Array<{ key: any; icon: any; label: string; external?: string }>).map(({ key, icon: Icon, label, external }) => {
