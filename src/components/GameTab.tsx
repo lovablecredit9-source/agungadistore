@@ -20,6 +20,10 @@ import Match3Game from "@/components/games/Match3Game";
 import LuckyDrawGame from "@/components/games/LuckyDrawGame";
 import MineSweeperGame from "@/components/games/MineSweeperGame";
 import TebakLaguGame from "@/components/games/TebakLaguGame";
+import MemoryFlipGame from "@/components/games/MemoryFlipGame";
+import SnakeNeonGame from "@/components/games/SnakeNeonGame";
+import Game2048 from "@/components/games/Game2048";
+import PlinkoGame from "@/components/games/PlinkoGame";
 import WeeklyLeaderboard from "@/components/WeeklyLeaderboard";
 import FlashSaleBanner from "@/components/FlashSaleBanner";
 import { useGameCredits, GameCreditsBadge, BuyCreditsDialog } from "@/components/games/GameCredits";
@@ -51,9 +55,17 @@ import gameMatch3Img from "@/assets/game-match3.png";
 import gameLuckyDrawImg from "@/assets/game-lucky-draw.png";
 import gameMineImg from "@/assets/game-mine.png";
 import gameTebakLaguImg from "@/assets/game-tebak-lagu.png";
-type GameMode = "menu" | "suit" | "tebak" | "tebak_gambar" | "teka_teki" | "tebak_angka" | "tebak_barang" | "ular_tangga" | "ludo" | "kuis" | "teka_teki_v2" | "pilihan_ganda" | "scratch" | "slot" | "match3" | "lucky_draw" | "mine" | "tebak_lagu";
+import gameMemoryImg from "@/assets/game-memory.png";
+import gameSnakeImg from "@/assets/game-snake.png";
+import game2048Img from "@/assets/game-2048.png";
+import gamePlinkoImg from "@/assets/game-plinko.png";
+type GameMode = "menu" | "suit" | "tebak" | "tebak_gambar" | "teka_teki" | "tebak_angka" | "tebak_barang" | "ular_tangga" | "ludo" | "kuis" | "teka_teki_v2" | "pilihan_ganda" | "scratch" | "slot" | "match3" | "lucky_draw" | "mine" | "tebak_lagu" | "memory" | "snake" | "g2048" | "plinko";
 
 const GAMES: { mode: GameMode; title: string; desc: string; image: string; gradient: string }[] = [
+  { mode: "g2048", title: "2048", desc: "Gabung tile, raih 2048!", image: game2048Img, gradient: "from-amber-500 to-orange-600" },
+  { mode: "plinko", title: "Plinko", desc: "Drop bola, menang multiplier", image: gamePlinkoImg, gradient: "from-purple-500 to-pink-600" },
+  { mode: "memory", title: "Memory Flip", desc: "Cocokkan pasangan kartu", image: gameMemoryImg, gradient: "from-indigo-500 to-pink-600" },
+  { mode: "snake", title: "Snake Neon", desc: "Ular klasik bergaya neon", image: gameSnakeImg, gradient: "from-cyan-500 to-fuchsia-600" },
   { mode: "scratch", title: "Scratch Card", desc: "Gosok hadiah harian", image: gameScratchImg, gradient: "from-violet-500 to-fuchsia-600" },
   { mode: "slot", title: "Slot 3-Reel", desc: "Spin & menang JACKPOT", image: gameSlotImg, gradient: "from-red-500 to-rose-600" },
   { mode: "mine", title: "Mine Sweeper", desc: "Cari bom, cash out!", image: gameMineImg, gradient: "from-cyan-500 to-blue-700" },
@@ -91,6 +103,10 @@ const GAME_COMPONENTS: Record<string, React.ComponentType> = {
   lucky_draw: LuckyDrawGame,
   mine: MineSweeperGame,
   tebak_lagu: TebakLaguGame,
+  memory: MemoryFlipGame,
+  snake: SnakeNeonGame,
+  g2048: Game2048,
+  plinko: PlinkoGame,
 };
 
 export default function GameTab() {
