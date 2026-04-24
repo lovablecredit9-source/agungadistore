@@ -179,9 +179,9 @@ export default function FlappyBirdGame() {
   useEffect(() => {
     if (!over) return;
     if (score > best) { setBest(score); localStorage.setItem("flappy_best", String(score)); }
-    const earned = Math.max(1, score * 2);
-    awardGamePoints("flappy", earned, true).catch(() => {});
-    toast({ title: "Game Over", description: `Skor ${score} · +${earned} poin` });
+    const base = Math.max(1, score * 2);
+    const { awardedPoints } = awardGamePoints(base);
+    toast({ title: "Game Over", description: `Skor ${score} · +${awardedPoints} poin` });
   }, [over]);
 
   // keyboard

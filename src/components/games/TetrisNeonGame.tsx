@@ -186,9 +186,9 @@ export default function TetrisNeonGame() {
       setBest(score);
       localStorage.setItem("tetris_best", String(score));
     }
-    const earned = Math.max(1, Math.floor(score / 100));
-    awardGamePoints("tetris", earned, true).catch(() => {});
-    toast({ title: "Game Over", description: `Skor ${score} · +${earned} poin` });
+    const base = Math.max(1, Math.floor(score / 100));
+    const { awardedPoints } = awardGamePoints(base);
+    toast({ title: "Game Over", description: `Skor ${score} · +${awardedPoints} poin` });
   }, [over]);
 
   // render board with active piece

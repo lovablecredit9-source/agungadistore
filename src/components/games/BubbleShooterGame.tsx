@@ -125,9 +125,9 @@ export default function BubbleShooterGame() {
   useEffect(() => {
     if (!over) return;
     if (score > best) { setBest(score); localStorage.setItem("bubble_best", String(score)); }
-    const earned = Math.max(1, Math.floor(score / 80));
-    awardGamePoints("bubble", earned, true).catch(() => {});
-    toast({ title: "Selesai", description: `Skor ${score} · +${earned} poin` });
+    const base = Math.max(1, Math.floor(score / 80));
+    const { awardedPoints } = awardGamePoints(base);
+    toast({ title: "Selesai", description: `Skor ${score} · +${awardedPoints} poin` });
   }, [over]);
 
   return (
