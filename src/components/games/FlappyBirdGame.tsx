@@ -215,8 +215,7 @@ export default function FlappyBirdGame() {
           ref={canvasRef}
           width={W}
           height={H}
-          onClick={flap}
-          onTouchStart={(e) => { e.preventDefault(); flap(); }}
+          onPointerDown={(e) => { e.preventDefault(); flap(); }}
           className="rounded-lg border border-border w-full touch-none cursor-pointer"
           style={{ background: "#7dd3fc" }}
         />
