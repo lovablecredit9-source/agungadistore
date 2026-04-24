@@ -216,7 +216,7 @@ export default function TebakAngkaGame() {
         <GameCreditsBadge credits={credits} isUnlimited={isUnlimited} />
       </div>
 
-      {/* 🎮 Power-ups dari Streak Shop — Hint & Freeze */}
+      {/* 🎮 Power-ups dari Streak Shop - Hint & Freeze */}
       {gameActive && (
         <PowerUpsBar
           enabled={gameActive}
@@ -261,7 +261,7 @@ export default function TebakAngkaGame() {
               ))}
               {revealedHints < hints.length && gameActive && (
                 <p className="text-[10px] text-muted-foreground text-center italic">
-                  Sisa {hints.length - revealedHints} petunjuk — pakai tombol <b>Hint</b> di atas (power-up)
+                  Sisa {hints.length - revealedHints} petunjuk - pakai tombol <b>Hint</b> di atas (power-up)
                 </p>
               )}
             </div>

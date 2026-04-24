@@ -345,7 +345,7 @@ export default function TekaTekiV2Game() {
               ))}
               {revealedHints < hints.length && gameActive && (
                 <p className="text-[10px] text-muted-foreground text-center italic">
-                  Sisa {hints.length - revealedHints} petunjuk — pakai tombol <b>Hint</b> di atas (power-up)
+                  Sisa {hints.length - revealedHints} petunjuk - pakai tombol <b>Hint</b> di atas (power-up)
                 </p>
               )}
             </div>

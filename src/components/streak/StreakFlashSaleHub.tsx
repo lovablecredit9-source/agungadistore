@@ -283,7 +283,7 @@ export default function StreakFlashSaleHub({ visitorId, onUpdate, compact = fals
 
       {compact && deals.length > 3 && (
         <div className="relative mt-2 text-center text-[10px] text-amber-200/80">
-          +{deals.length - 3} flash sale lainnya — buka tab Shop
+          +{deals.length - 3} flash sale lainnya - buka tab Shop
         </div>
       )}
     </div>

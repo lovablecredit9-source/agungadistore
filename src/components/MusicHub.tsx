@@ -21,7 +21,7 @@ const TABS: { key: MusicSubTab; label: string; icon: typeof Music2; gradient: st
 export default function MusicHub({ subTab, onSubTabChange, onPlayExternal, playlistSlot }: MusicHubProps) {
   return (
     <div className="space-y-4 animate-fade-in">
-      {/* Header — flat IG/TikTok style */}
+      {/* Header - flat IG/TikTok style */}
       <div className="rounded-xl border border-border bg-card p-4">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
@@ -34,7 +34,7 @@ export default function MusicHub({ subTab, onSubTabChange, onPlayExternal, playl
         </div>
       </div>
 
-      {/* Segmented tabs — underline indicator */}
+      {/* Segmented tabs - underline indicator */}
       <div className="flex border-b border-border">
         {TABS.map(({ key, label, icon: Icon }) => {
           const isActive = subTab === key;

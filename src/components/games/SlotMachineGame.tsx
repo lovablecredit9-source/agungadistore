@@ -151,7 +151,7 @@ export default function SlotMachineGame() {
         let r3 = SYMBOLS[Math.floor(Math.random() * SYMBOLS.length)];
         if (r1 === r2 && r2 === r3) r2 = SYMBOLS[(SYMBOLS.indexOf(r2) + 1) % SYMBOLS.length];
         finalReels = [r1, r2, r3];
-        payout = { type: "none", label: "Belum hoki — coba lagi! (mode latihan)" };
+        payout = { type: "none", label: "Belum hoki - coba lagi! (mode latihan)" };
       }
       setReels(finalReels);
       setResult(payout);
@@ -247,11 +247,11 @@ export default function SlotMachineGame() {
 
       {freeMode && (
         <div className="text-[11px] text-center bg-emerald-500/10 border border-emerald-500/30 text-emerald-700 dark:text-emerald-300 rounded-lg px-3 py-2 font-medium">
-          🎮 Mode latihan offline — putar bebas tanpa biaya. Hadiah hanya simulasi & <b>tidak masuk ke akun</b> (kredit/saldo/storage tetap).
+          🎮 Mode latihan offline - putar bebas tanpa biaya. Hadiah hanya simulasi & <b>tidak masuk ke akun</b> (kredit/saldo/storage tetap).
         </div>
       )}
 
-      {/* Tier Selector — scrollable horizontal di mobile */}
+      {/* Tier Selector - scrollable horizontal di mobile */}
       <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1 snap-x snap-mandatory">
         {TIERS.map(t => (
           <button

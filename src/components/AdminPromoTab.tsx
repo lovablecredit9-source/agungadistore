@@ -324,7 +324,7 @@ export default function AdminPromoTab() {
           {renderPackageList(
             creditPkgs, "credit_packages", "credit",
             item => item.label || "",
-            item => item.is_unlimited ? `Unlimited ${item.unlimited_days} hari — Rp${item.price.toLocaleString("id-ID")}` : `${item.credits} kredit — Rp${item.price.toLocaleString("id-ID")}`,
+            item => item.is_unlimited ? `Unlimited ${item.unlimited_days} hari - Rp${item.price.toLocaleString("id-ID")}` : `${item.credits} kredit - Rp${item.price.toLocaleString("id-ID")}`,
           )}
           {renderAddForm("credit", "credit_packages", creditPkgs.length > 0 ? Math.max(...creditPkgs.map(p => p.sort_order)) : 0)}
         </CardContent>
@@ -342,7 +342,7 @@ export default function AdminPromoTab() {
           {renderPackageList(
             streakPkgs, "streak_packages", "streak",
             item => item.name || "",
-            item => `${item.days} hari — Rp${item.price.toLocaleString("id-ID")}`,
+            item => `${item.days} hari - Rp${item.price.toLocaleString("id-ID")}`,
           )}
           {renderAddForm("streak", "streak_packages", streakPkgs.length > 0 ? Math.max(...streakPkgs.map(p => p.sort_order)) : 0)}
         </CardContent>
@@ -360,7 +360,7 @@ export default function AdminPromoTab() {
           {renderPackageList(
             storagePkgs, "storage_packages", "storage",
             item => item.name || "",
-            item => `${(item.storage_mb || 0) >= 1024 ? `${((item.storage_mb || 0) / 1024).toFixed(0)}GB` : `${item.storage_mb}MB`} — Rp${item.price.toLocaleString("id-ID")}`,
+            item => `${(item.storage_mb || 0) >= 1024 ? `${((item.storage_mb || 0) / 1024).toFixed(0)}GB` : `${item.storage_mb}MB`} - Rp${item.price.toLocaleString("id-ID")}`,
           )}
           {renderAddForm("storage", "storage_packages", storagePkgs.length > 0 ? Math.max(...storagePkgs.map(p => p.sort_order)) : 0)}
         </CardContent>
@@ -409,7 +409,7 @@ export default function AdminPromoTab() {
                     <div>
                       <p className="text-sm font-medium">{item.name}</p>
                       <p className="text-xs text-muted-foreground">
-                        {item.credits > 0 ? `${item.credits} kredit` : ''}{item.streak_days > 0 ? ` + ${item.streak_days} hari streak` : ''}{item.storage_mb > 0 ? ` + ${(item.storage_mb / 1024).toFixed(0)}GB` : ''} — Rp{item.price.toLocaleString("id-ID")}
+                        {item.credits > 0 ? `${item.credits} kredit` : ''}{item.streak_days > 0 ? ` + ${item.streak_days} hari streak` : ''}{item.storage_mb > 0 ? ` + ${(item.storage_mb / 1024).toFixed(0)}GB` : ''} - Rp{item.price.toLocaleString("id-ID")}
                       </p>
                     </div>
                     <div className="flex items-center gap-1">

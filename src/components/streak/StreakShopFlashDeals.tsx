@@ -52,7 +52,7 @@ function getRewardInfo(type: string, value: number): RewardInfo {
       return {
         label: "Streak Freeze",
         icon: "❄️",
-        desc: "Lindungi streak harian kalau lupa klaim — streak gak putus!",
+        desc: "Lindungi streak harian kalau lupa klaim - streak gak putus!",
         items: [{ icon: "❄️", text: `${value}× Streak Freeze (otomatis aktif kalau skip 1 hari)` }],
       };
     case "double_xp":
@@ -79,7 +79,7 @@ function getRewardInfo(type: string, value: number): RewardInfo {
       return {
         label: "VIP Power Pack",
         icon: "👑",
-        desc: "Paket lengkap premium — semua power-up sekaligus.",
+        desc: "Paket lengkap premium - semua power-up sekaligus.",
         items: [
           { icon: "💡", text: "+10 Hint Otomatis" },
           { icon: "❤️", text: "+5 Nyawa Ekstra" },

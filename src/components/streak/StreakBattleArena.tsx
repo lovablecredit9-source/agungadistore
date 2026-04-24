@@ -282,7 +282,7 @@ export default function StreakBattleArena({ visitorId, onUpdate }: Props) {
                       <p className="text-[10px] text-white/50 leading-relaxed">
                         Buat tantangan di atas, lalu <b>bagikan link aplikasi</b> ke teman
                         agar mereka bisa terima battle kamu. Battle akan kedaluwarsa dalam 1 jam
-                        — kalau tidak ada yang terima, Gem otomatis dikembalikan.
+                        - kalau tidak ada yang terima, Gem otomatis dikembalikan.
                       </p>
                       <Button
                         size="sm"

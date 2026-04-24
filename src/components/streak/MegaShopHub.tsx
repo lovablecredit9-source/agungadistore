@@ -98,7 +98,7 @@ export default function MegaShopHub({ visitorId, onUpdate }: Props) {
 
       <div className="h-3" />
 
-      {/* MEMBERSHIP — Coin, Gem, & Power Pack */}
+      {/* MEMBERSHIP - Coin, Gem, & Power Pack */}
       <Tabs defaultValue="power" className="w-full">
         <TabsList className="grid grid-cols-3 bg-black/30 border border-purple-400/30 h-auto p-1 mb-2">
           <TabsTrigger value="coin" className="text-[10px] data-[state=active]:bg-yellow-500/40 px-1 py-1.5 font-black uppercase tracking-wide">

@@ -48,7 +48,7 @@ function shouldSkipText(text: string) {
   if (trimmed === STORE_NAME || trimmed === WA_NUMBER || trimmed === YOUTUBE_NAME) return true;
   if (trimmed.startsWith("http") || trimmed.startsWith("www.")) return true;
   if (trimmed.startsWith("@")) return true;
-  if (/^[\d\s()[\]{}+\-–—.,:;/%!?*&|<>='"`~]+$/.test(trimmed)) return true;
+  if (/^[\d\s()[\]{}+\-–-.,:;/%!?*&|<>='"`~]+$/.test(trimmed)) return true;
   if (/^[A-Z0-9_-]{4,}$/.test(trimmed) && !/[a-z]/.test(trimmed)) return true;
 
   return false;

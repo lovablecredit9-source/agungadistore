@@ -146,7 +146,7 @@ export default function GamePvPBattle({ visitorId }: Props) {
           <Swords className="w-9 h-9 icon-3d-zap" strokeWidth={2.5} />
           <div className="flex-1 min-w-0">
             <div className="text-[10px] font-black tracking-widest neon-text-pink uppercase">PvP Battle Real-time</div>
-            <div className="font-extrabold text-white text-sm">Suit 1v1 — Best of 5 (60s/ronde)</div>
+            <div className="font-extrabold text-white text-sm">Suit 1v1 - Best of 5 (60s/ronde)</div>
             <div className="text-[10px] text-white/70">Quick Match atau Private Room</div>
           </div>
           <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-gradient-to-r from-pink-500 to-purple-600 text-white">PLAY</span>
@@ -188,7 +188,7 @@ export default function GamePvPBattle({ visitorId }: Props) {
                 <Button onClick={createPrivate} disabled={busy} className="w-full bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-black h-11">
                   {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <><KeyRound className="w-4 h-4 mr-1.5" /> BUAT ROOM PRIBADI</>}
                 </Button>
-                <div className="text-[10px] text-white/60 text-center">— atau —</div>
+                <div className="text-[10px] text-white/60 text-center">- atau -</div>
                 <div className="space-y-2">
                   <Input value={code} onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
                     placeholder="Masukkan 6-digit kode" className="text-center text-lg font-black tracking-widest bg-black/40 border-pink-500/30 text-white" />

@@ -337,7 +337,7 @@ export default function StreakShopExtras({ visitorId, onUpdate }: Props) {
           <div className="rounded-xl bg-gradient-to-br from-emerald-500/20 to-teal-500/20 border-2 border-emerald-400/50 p-3">
             <p className="text-[10px] text-emerald-200/80 mb-1">Kode referral kamu:</p>
             <div className="flex items-center gap-1.5 mb-2">
-              <code className="flex-1 bg-black/40 rounded px-2 py-1.5 text-sm font-bold text-emerald-100 tracking-wider text-center">{myRef.referral_code || "—"}</code>
+              <code className="flex-1 bg-black/40 rounded px-2 py-1.5 text-sm font-bold text-emerald-100 tracking-wider text-center">{myRef.referral_code || "-"}</code>
               <Button size="sm" variant="outline" onClick={copyCode} className="h-8 px-2 border-emerald-400/50 text-emerald-100">
                 {copied ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
               </Button>

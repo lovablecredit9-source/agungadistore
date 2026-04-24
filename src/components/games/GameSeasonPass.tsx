@@ -82,7 +82,7 @@ export default function GameSeasonPass({ visitorId }: Props) {
         <div className="relative flex items-center gap-3">
           <Crown className="w-9 h-9 text-yellow-300 drop-shadow-lg" strokeWidth={2.5} />
           <div className="flex-1 min-w-0">
-            <div className="text-[10px] font-black tracking-widest text-white/90 uppercase">Season Pass — Q2 2026</div>
+            <div className="text-[10px] font-black tracking-widest text-white/90 uppercase">Season Pass - Q2 2026</div>
             <div className="font-extrabold text-white text-sm">Tier {currentLvl}/30 • {xp.toLocaleString("id-ID")} XP</div>
             <div className="text-[10px] text-white/80">🎰 Slot reward: koin·gems·kredit·storage·nyawa</div>
           </div>
@@ -115,7 +115,7 @@ export default function GameSeasonPass({ visitorId }: Props) {
           )}
           {isPremium && (
             <div className="rounded-lg bg-emerald-500/20 border border-emerald-400/40 p-2 text-center">
-              <span className="text-xs font-black text-emerald-300">✓ PREMIUM AKTIF — via {pass?.premium_source?.toUpperCase()}</span>
+              <span className="text-xs font-black text-emerald-300">✓ PREMIUM AKTIF - via {pass?.premium_source?.toUpperCase()}</span>
             </div>
           )}
 
@@ -200,7 +200,7 @@ export default function GameSeasonPass({ visitorId }: Props) {
               <Wallet className="w-6 h-6 text-cyan-300" />
               <div className="flex-1">
                 <div className="text-sm font-black text-white">Bayar pakai Saldo</div>
-                <div className="text-[10px] text-white/70">Rp 25.000 — perlu PIN</div>
+                <div className="text-[10px] text-white/70">Rp 25.000 - perlu PIN</div>
               </div>
               {busy === "buy_balance" && <Loader2 className="w-4 h-4 animate-spin text-white" />}
             </div>

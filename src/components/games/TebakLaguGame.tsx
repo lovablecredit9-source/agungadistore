@@ -550,7 +550,7 @@ export default function TebakLaguGame() {
             >
               <div className="text-[10px] font-black text-pink-300 uppercase tracking-wider mb-1">Lagu ini adalah</div>
               <div className="text-base font-black text-white">{question.correct_title}</div>
-              <div className="text-xs text-pink-200">— {question.correct_artist}</div>
+              <div className="text-xs text-pink-200">- {question.correct_artist}</div>
             </motion.div>
           )}
 

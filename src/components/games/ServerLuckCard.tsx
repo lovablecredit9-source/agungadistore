@@ -40,7 +40,7 @@ export function useServerLuck(visitorId: string | null) {
 }
 
 function formatRemaining(ms: number) {
-  if (ms <= 0) return "—";
+  if (ms <= 0) return "-";
   const totalSec = Math.floor(ms / 1000);
   const h = Math.floor(totalSec / 3600);
   const m = Math.floor((totalSec % 3600) / 60);
