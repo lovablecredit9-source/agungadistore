@@ -27,6 +27,9 @@ import PlinkoGame from "@/components/games/PlinkoGame";
 import TetrisNeonGame from "@/components/games/TetrisNeonGame";
 import BubbleShooterGame from "@/components/games/BubbleShooterGame";
 import FlappyBirdGame from "@/components/games/FlappyBirdGame";
+import BrickBreakerGame from "@/components/games/BrickBreakerGame";
+import CatchStarGame from "@/components/games/CatchStarGame";
+import ColorReflexGame from "@/components/games/ColorReflexGame";
 import WeeklyLeaderboard from "@/components/WeeklyLeaderboard";
 import FlashSaleBanner from "@/components/FlashSaleBanner";
 import { useGameCredits, GameCreditsBadge, BuyCreditsDialog } from "@/components/games/GameCredits";
@@ -65,9 +68,15 @@ import gamePlinkoImg from "@/assets/game-plinko.png";
 import gameTetrisImg from "@/assets/game-tetris.png";
 import gameBubbleImg from "@/assets/game-bubble.png";
 import gameFlappyImg from "@/assets/game-flappy.png";
-type GameMode = "menu" | "suit" | "tebak" | "tebak_gambar" | "teka_teki" | "tebak_angka" | "tebak_barang" | "ular_tangga" | "ludo" | "kuis" | "teka_teki_v2" | "pilihan_ganda" | "scratch" | "slot" | "match3" | "lucky_draw" | "mine" | "tebak_lagu" | "memory" | "snake" | "g2048" | "plinko" | "tetris" | "bubble" | "flappy";
+import gameBrickImg from "@/assets/game-brick.png";
+import gameCatchImg from "@/assets/game-catch.png";
+import gameReflexImg from "@/assets/game-reflex.png";
+type GameMode = "menu" | "suit" | "tebak" | "tebak_gambar" | "teka_teki" | "tebak_angka" | "tebak_barang" | "ular_tangga" | "ludo" | "kuis" | "teka_teki_v2" | "pilihan_ganda" | "scratch" | "slot" | "match3" | "lucky_draw" | "mine" | "tebak_lagu" | "memory" | "snake" | "g2048" | "plinko" | "tetris" | "bubble" | "flappy" | "brick" | "catch" | "reflex";
 
 const GAMES: { mode: GameMode; title: string; desc: string; image: string; gradient: string }[] = [
+  { mode: "brick", title: "Brick Breaker", desc: "Pecahkan semua bata!", image: gameBrickImg, gradient: "from-pink-500 to-violet-600" },
+  { mode: "catch", title: "Catch Star", desc: "Tangkap bintang & permata", image: gameCatchImg, gradient: "from-amber-400 to-orange-600" },
+  { mode: "reflex", title: "Color Reflex", desc: "Tes refleks warna ⚡", image: gameReflexImg, gradient: "from-emerald-500 to-cyan-600" },
   { mode: "tetris", title: "Tetris Neon", desc: "Susun blok klasik bergaya neon", image: gameTetrisImg, gradient: "from-fuchsia-500 to-cyan-500" },
   { mode: "bubble", title: "Bubble Shooter", desc: "Tembak & cocokkan 3 warna", image: gameBubbleImg, gradient: "from-rose-500 to-orange-500" },
   { mode: "flappy", title: "Flappy Bird", desc: "Lompati pipa, raih skor!", image: gameFlappyImg, gradient: "from-sky-500 to-emerald-500" },
@@ -119,6 +128,9 @@ const GAME_COMPONENTS: Record<string, React.ComponentType> = {
   tetris: TetrisNeonGame,
   bubble: BubbleShooterGame,
   flappy: FlappyBirdGame,
+  brick: BrickBreakerGame,
+  catch: CatchStarGame,
+  reflex: ColorReflexGame,
 };
 
 export default function GameTab() {
