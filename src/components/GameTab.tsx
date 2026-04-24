@@ -81,9 +81,29 @@ import gameReflexImg from "@/assets/game-reflex.png";
 import gameMoleImg from "@/assets/game-mole.png";
 import gameBeatImg from "@/assets/game-beat.png";
 import gameJumpImg from "@/assets/game-jump.png";
-type GameMode = "menu" | "suit" | "tebak" | "tebak_gambar" | "teka_teki" | "tebak_angka" | "tebak_barang" | "ular_tangga" | "ludo" | "kuis" | "teka_teki_v2" | "pilihan_ganda" | "scratch" | "slot" | "match3" | "lucky_draw" | "mine" | "tebak_lagu" | "memory" | "snake" | "g2048" | "plinko" | "tetris" | "bubble" | "flappy" | "brick" | "catch" | "reflex" | "mole" | "beat" | "jump";
+import gamePianoImg from "@/assets/game-piano.png";
+import gameTowerImg from "@/assets/game-tower.png";
+import gameHoopImg from "@/assets/game-hoop.png";
+import gameCarImg from "@/assets/game-car.png";
+import gameNinjaImg from "@/assets/game-ninja.png";
+import gameArrowImg from "@/assets/game-arrow.png";
+import gameFishImg from "@/assets/game-fish.png";
+import gameChickenImg from "@/assets/game-chicken.png";
+import gameWheelImg from "@/assets/game-wheel.png";
+import gameBalloonImg from "@/assets/game-balloon.png";
+type GameMode = "menu" | "suit" | "tebak" | "tebak_gambar" | "teka_teki" | "tebak_angka" | "tebak_barang" | "ular_tangga" | "ludo" | "kuis" | "teka_teki_v2" | "pilihan_ganda" | "scratch" | "slot" | "match3" | "lucky_draw" | "mine" | "tebak_lagu" | "memory" | "snake" | "g2048" | "plinko" | "tetris" | "bubble" | "flappy" | "brick" | "catch" | "reflex" | "mole" | "beat" | "jump" | "piano" | "tower" | "hoop" | "racer" | "ninja" | "simon" | "fish" | "chicken" | "spin" | "balloon";
 
 const GAMES: { mode: GameMode; title: string; desc: string; image: string; gradient: string }[] = [
+  { mode: "piano", title: "Piano Tiles", desc: "Tap tile hitam, jangan miss 🎹", image: gamePianoImg, gradient: "from-violet-500 to-fuchsia-700" },
+  { mode: "tower", title: "Block Stacker", desc: "Susun balok setinggi mungkin 🧱", image: gameTowerImg, gradient: "from-orange-500 to-rose-700" },
+  { mode: "hoop", title: "Hoop Shot", desc: "Lempar bola masuk ring 🏀", image: gameHoopImg, gradient: "from-amber-500 to-red-600" },
+  { mode: "racer", title: "Lane Racer", desc: "Hindari mobil, ambil koin 🚗", image: gameCarImg, gradient: "from-red-500 to-rose-700" },
+  { mode: "ninja", title: "Ninja Slice", desc: "Potong buah hindari bom 🥷", image: gameNinjaImg, gradient: "from-zinc-700 to-red-700" },
+  { mode: "simon", title: "Simon Says", desc: "Ingat urutan warna 🎯", image: gameArrowImg, gradient: "from-indigo-500 to-purple-700" },
+  { mode: "fish", title: "Fishing Master", desc: "Tap pas zona hijau 🎣", image: gameFishImg, gradient: "from-cyan-500 to-blue-700" },
+  { mode: "chicken", title: "Crossy Chicken", desc: "Seberangi jalan! 🐔", image: gameChickenImg, gradient: "from-amber-500 to-yellow-600" },
+  { mode: "spin", title: "Spin & Win", desc: "Putar roda hoki 🎡", image: gameWheelImg, gradient: "from-fuchsia-500 to-pink-700" },
+  { mode: "balloon", title: "Balloon Pop", desc: "Pop balon, hindari bom 🎈", image: gameBalloonImg, gradient: "from-pink-500 to-rose-700" },
   { mode: "mole", title: "Whack-a-Mole", desc: "Pukul tikus, hindari bom 🔨", image: gameMoleImg, gradient: "from-emerald-500 to-lime-600" },
   { mode: "beat", title: "Tap Tap Beat", desc: "Rhythm tap 4 lane 🎵", image: gameBeatImg, gradient: "from-fuchsia-500 to-purple-600" },
   { mode: "jump", title: "Sky Jumper", desc: "Lompat setinggi mungkin 🚀", image: gameJumpImg, gradient: "from-blue-500 to-indigo-700" },
@@ -147,6 +167,16 @@ const GAME_COMPONENTS: Record<string, React.ComponentType> = {
   mole: WhackAMoleGame,
   beat: TapBeatGame,
   jump: SkyJumperGame,
+  piano: PianoTilesGame,
+  tower: BlockStackerGame,
+  hoop: HoopShotGame,
+  racer: LaneRacerGame,
+  ninja: NinjaSliceGame,
+  simon: SimonSaysGame,
+  fish: FishingGame,
+  chicken: CrossyChickenGame,
+  spin: SpinWinGame,
+  balloon: BalloonPopGame,
 };
 
 export default function GameTab() {
