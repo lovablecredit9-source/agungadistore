@@ -33,6 +33,10 @@ import ColorReflexGame from "@/components/games/ColorReflexGame";
 import WhackAMoleGame from "@/components/games/WhackAMoleGame";
 import TapBeatGame from "@/components/games/TapBeatGame";
 import SkyJumperGame from "@/components/games/SkyJumperGame";
+import {
+  PianoTilesGame, BlockStackerGame, HoopShotGame, LaneRacerGame, NinjaSliceGame,
+  SimonSaysGame, FishingGame, CrossyChickenGame, SpinWinGame, BalloonPopGame,
+} from "@/components/games/MiniGamesPack";
 import WeeklyLeaderboard from "@/components/WeeklyLeaderboard";
 import FlashSaleBanner from "@/components/FlashSaleBanner";
 import { useGameCredits, GameCreditsBadge, BuyCreditsDialog } from "@/components/games/GameCredits";
