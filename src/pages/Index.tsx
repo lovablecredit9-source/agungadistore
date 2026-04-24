@@ -1739,7 +1739,7 @@ const Index = () => {
                 { icon: <Crown className="w-6 h-6" strokeWidth={1.7} />, label: "Member", tab: "streakmembership" as Tab },
                 { icon: <RefreshCw className="w-6 h-6" strokeWidth={1.7} />, label: "Update", tab: "update" as Tab },
                 { icon: <Crown className="w-6 h-6" strokeWidth={1.7} />, label: "L.Royale", external: "/luck-royale-nyawa" },
-                { icon: <Gem className="w-6 h-6" strokeWidth={1.7} />, label: "D.Royale", external: "/diamond-royale" },
+                { icon: <FileText className="w-6 h-6" strokeWidth={1.7} />, label: "Admin", tab: "adminpost" as Tab },
               ].map((item: any) => (
                 <button
                   key={item.label}
