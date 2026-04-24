@@ -1722,10 +1722,14 @@ const Index = () => {
             {/* Quick Action Grid - IG/TikTok flat style */}
             <div className="grid grid-cols-4 gap-2">
               {[
-                { icon: <Package className="w-6 h-6" strokeWidth={1.7} />, label: "Produk", tab: "produk" as Tab, badge: `${products.length}` },
-                { icon: <Wallet className="w-6 h-6" strokeWidth={1.7} />, label: "Saldo", tab: "saldo" as Tab },
-                { icon: <Gamepad2 className="w-6 h-6" strokeWidth={1.7} />, label: "Game", tab: "game" as Tab, badge: "11" },
                 { icon: <Music className="w-6 h-6" strokeWidth={1.7} />, label: "Musik", tab: "playlist" as Tab },
+                { icon: <Package className="w-6 h-6" strokeWidth={1.7} />, label: "Produk", tab: "produk" as Tab, badge: `${products.length}` },
+                { icon: <Ticket className="w-6 h-6" strokeWidth={1.7} />, label: "Voucher", tab: "voucher" as Tab },
+                { icon: <Wallet className="w-6 h-6" strokeWidth={1.7} />, label: "Saldo", tab: "saldo" as Tab },
+                { icon: <Heart className="w-6 h-6" strokeWidth={1.7} />, label: "Suka", tab: "likes" as Tab },
+                { icon: <Gamepad2 className="w-6 h-6" strokeWidth={1.7} />, label: "Game", tab: "game" as Tab, badge: "11" },
+                { icon: <Flame className="w-6 h-6" strokeWidth={1.7} />, label: "Streak", tab: "streak" as Tab },
+                { icon: <Sparkles className="w-6 h-6" strokeWidth={1.7} />, label: "Plus", tab: "plus" as Tab },
               ].map((item) => (
                 <button
                   key={item.label}
