@@ -150,32 +150,44 @@ export default function LikesTab({
 
   return (
     <div className="space-y-4 animate-fade-in">
-      {/* Header - flat IG/TikTok style */}
-      <div className="rounded-xl border border-border bg-card p-4">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
-            <Heart className="w-5 h-5 text-foreground" strokeWidth={1.7} />
+      {/* Premium Aurora Header */}
+      <div className="relative rounded-2xl p-[1.5px] overflow-hidden"
+        style={{
+          background: "linear-gradient(135deg, hsl(var(--neon-pink)/0.85), hsl(var(--neon-purple)/0.85) 50%, hsl(var(--neon-cyan)/0.85))",
+          backgroundSize: "300% 300%",
+          animation: "aurora-shift 9s ease infinite",
+        }}
+      >
+        <div className="relative rounded-[14px] bg-background/85 backdrop-blur-xl p-4 overflow-hidden">
+          <div className="pointer-events-none absolute -top-8 -left-6 w-32 h-32 rounded-full blur-3xl opacity-40" style={{ background: "hsl(var(--neon-pink)/0.6)" }} />
+          <div className="pointer-events-none absolute -bottom-10 -right-6 w-36 h-36 rounded-full blur-3xl opacity-30" style={{ background: "hsl(var(--neon-purple)/0.6)" }} />
+
+          <div className="relative flex items-center gap-3">
+            <div className="relative">
+              <div className="absolute inset-0 rounded-2xl blur-xl opacity-70" style={{ background: "linear-gradient(135deg, hsl(var(--neon-pink)), hsl(var(--neon-purple)))" }} />
+              <div className="relative w-11 h-11 rounded-2xl flex items-center justify-center shadow-lg" style={{ background: "linear-gradient(135deg, hsl(var(--neon-pink)), hsl(var(--neon-purple)))" }}>
+                <Heart className="w-5 h-5 text-white fill-white drop-shadow-[0_0_6px_rgba(255,255,255,0.8)]" />
+              </div>
+            </div>
+            <div className="flex-1 min-w-0">
+              <h2 className="text-base font-extrabold tracking-tight bg-clip-text text-transparent" style={{ backgroundImage: "linear-gradient(135deg, hsl(var(--neon-pink)), hsl(var(--neon-cyan)))" }}>
+                {t("likes.title", lang)}
+              </h2>
+              <p className="text-[10px] text-muted-foreground mt-0.5 font-semibold">{totalLiked} item · {visibleCount} tampil · Premium</p>
+            </div>
           </div>
-          <div className="flex-1 min-w-0">
-            <h2 className="text-base font-semibold tracking-tight text-foreground">{t("likes.title", lang)}</h2>
-            <p className="text-xs text-muted-foreground mt-0.5">{totalLiked} item · {visibleCount} tampil</p>
-          </div>
-        </div>
-        {/* Stats row - minimal */}
-        <div className="flex items-center gap-4 mt-3 pt-3 border-t border-border">
-          <div className="flex-1 text-center">
-            <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Produk</p>
-            <p className="text-sm font-semibold text-foreground tabular-nums mt-0.5">{likedProductsRaw.length}</p>
-          </div>
-          <div className="w-px h-7 bg-border" />
-          <div className="flex-1 text-center">
-            <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Sponsor</p>
-            <p className="text-sm font-semibold text-foreground tabular-nums mt-0.5">{likedSponsors.length}</p>
-          </div>
-          <div className="w-px h-7 bg-border" />
-          <div className="flex-1 text-center">
-            <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Kategori</p>
-            <p className="text-sm font-semibold text-foreground tabular-nums mt-0.5">{categories.length - 1}</p>
+
+          <div className="relative grid grid-cols-3 gap-2 mt-3 pt-3 border-t border-white/5">
+            {[
+              { val: likedProductsRaw.length, label: "Produk", color: "var(--neon-cyan)" },
+              { val: likedSponsors.length, label: "Sponsor", color: "var(--neon-pink)" },
+              { val: categories.length - 1, label: "Kategori", color: "var(--neon-yellow)" },
+            ].map((s, i) => (
+              <div key={i} className="rounded-xl bg-background/60 backdrop-blur-sm px-2 py-1.5 text-center border" style={{ borderColor: `hsl(${s.color}/0.25)` }}>
+                <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-wider">{s.label}</p>
+                <p className="text-sm font-extrabold tabular-nums mt-0.5" style={{ color: `hsl(${s.color})`, textShadow: `0 0 8px hsl(${s.color}/0.5)` }}>{s.val}</p>
+              </div>
+            ))}
           </div>
         </div>
       </div>
