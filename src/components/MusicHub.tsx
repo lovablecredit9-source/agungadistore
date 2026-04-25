@@ -66,11 +66,115 @@ const TABS: {
   },
 ];
 
-export default function MusicHub({ subTab, onSubTabChange, onPlayExternal, playlistSlot }: MusicHubProps) {
+export default function MusicHub({ subTab, onSubTabChange, onPlayExternal, playlistSlot, playbackState, onTogglePlay, onOpenFullPlayer }: MusicHubProps) {
   const active = TABS.find((t) => t.key === subTab)!;
+  const nowSong = playbackState?.song ?? null;
+  const isPlaying = !!playbackState?.isPlaying;
+  const progressPct = playbackState && playbackState.duration > 0
+    ? Math.min(100, (playbackState.currentTime / playbackState.duration) * 100)
+    : 0;
 
   return (
     <div className="space-y-3 animate-fade-in">
+      {/* NOW PLAYING BAR — muncul saat ada lagu aktif */}
+      <AnimatePresence>
+        {nowSong && (
+          <motion.div
+            initial={{ opacity: 0, y: -12, scale: 0.96 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -12, scale: 0.96 }}
+            transition={{ type: "spring", stiffness: 300, damping: 24 }}
+            className="relative overflow-hidden rounded-2xl border border-fuchsia-500/40 bg-gradient-to-r from-fuchsia-950/95 via-purple-950/95 to-indigo-950/95 backdrop-blur-xl shadow-[0_8px_30px_-8px_rgba(217,70,239,0.6)]"
+          >
+            <motion.div
+              animate={{ x: ["-100%", "200%"] }}
+              transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
+              className="absolute inset-y-0 w-1/3 bg-gradient-to-r from-transparent via-pink-400/20 to-transparent skew-x-12 pointer-events-none"
+            />
+            <div className="absolute top-0 inset-x-0 h-0.5 bg-white/10">
+              <motion.div
+                animate={{ width: `${progressPct}%` }}
+                transition={{ duration: 0.4, ease: "linear" }}
+                className="h-full bg-gradient-to-r from-pink-400 via-fuchsia-400 to-purple-400 shadow-[0_0_8px_rgba(236,72,153,0.8)]"
+              />
+            </div>
+            <button
+              onClick={() => onOpenFullPlayer?.()}
+              className="relative w-full flex items-center gap-3 p-2.5 text-left"
+            >
+              <div className="relative flex-shrink-0">
+                <motion.div
+                  animate={isPlaying ? { rotate: 360 } : { rotate: 0 }}
+                  transition={isPlaying ? { duration: 6, repeat: Infinity, ease: "linear" } : { duration: 0.3 }}
+                  className="w-12 h-12 rounded-full overflow-hidden border-2 border-white/30 bg-black shadow-[0_0_15px_rgba(217,70,239,0.5)] relative"
+                >
+                  {nowSong.cover_url ? (
+                    <img src={nowSong.cover_url} alt="" className="w-full h-full object-cover" />
+                  ) : (
+                    <div className="w-full h-full bg-gradient-to-br from-fuchsia-500 to-purple-600 flex items-center justify-center">
+                      <Music2 className="w-5 h-5 text-white" />
+                    </div>
+                  )}
+                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                    <div className="w-2 h-2 rounded-full bg-black border border-white/40" />
+                  </div>
+                </motion.div>
+                {isPlaying && (
+                  <motion.div
+                    animate={{ scale: [1, 1.4], opacity: [0.6, 0] }}
+                    transition={{ duration: 1.5, repeat: Infinity }}
+                    className="absolute inset-0 rounded-full border-2 border-pink-400 pointer-events-none"
+                  />
+                )}
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-1.5 mb-0.5">
+                  <motion.span
+                    animate={{ opacity: isPlaying ? [1, 0.4, 1] : 1 }}
+                    transition={{ duration: 1.2, repeat: Infinity }}
+                    className="px-1.5 py-0.5 rounded-md bg-pink-500/30 border border-pink-400/50 text-[8px] font-black text-pink-100 uppercase tracking-wider flex items-center gap-0.5"
+                  >
+                    <span className={`w-1 h-1 rounded-full ${isPlaying ? "bg-green-400" : "bg-amber-400"}`} />
+                    {isPlaying ? "Playing" : "Paused"}
+                  </motion.span>
+                  {isPlaying && (
+                    <div className="flex items-end gap-[2px] h-3">
+                      {[0.5, 0.9, 0.4, 0.8].map((h, i) => (
+                        <motion.div
+                          key={i}
+                          animate={{ scaleY: [h, 1, h * 0.5, h] }}
+                          transition={{ duration: 0.6 + i * 0.1, repeat: Infinity, ease: "easeInOut", delay: i * 0.05 }}
+                          style={{ transformOrigin: "bottom" }}
+                          className="w-[2px] h-full bg-gradient-to-t from-pink-400 to-fuchsia-300 rounded-full"
+                        />
+                      ))}
+                    </div>
+                  )}
+                </div>
+                <p className="text-xs font-bold text-white truncate leading-tight">{nowSong.title}</p>
+                <p className="text-[10px] text-white/70 truncate">{nowSong.artist}</p>
+              </div>
+              <div className="flex items-center gap-1 flex-shrink-0">
+                <motion.span
+                  whileTap={{ scale: 0.85 }}
+                  onClick={(e) => { e.stopPropagation(); onTogglePlay?.(); }}
+                  className="w-10 h-10 rounded-full bg-gradient-to-br from-pink-500 to-fuchsia-600 flex items-center justify-center shadow-lg shadow-pink-500/50 cursor-pointer"
+                >
+                  {isPlaying ? (
+                    <Pause className="w-4 h-4 text-white" fill="currentColor" />
+                  ) : (
+                    <Play className="w-4 h-4 text-white ml-0.5" fill="currentColor" />
+                  )}
+                </motion.span>
+                <span className="w-7 h-7 rounded-full bg-white/10 flex items-center justify-center">
+                  <ChevronUp className="w-3.5 h-3.5 text-white/80" />
+                </span>
+              </div>
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* HERO — Vinyl + neon + waveform */}
       <div className="relative overflow-hidden rounded-3xl border border-white/10 shadow-2xl">
         {/* Animated gradient bg */}
