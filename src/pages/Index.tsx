@@ -3433,35 +3433,51 @@ const Index = () => {
                     />
                   );
                 })()}
-                {!banned && !smartSaldo && balanceTransactions.map(tx => (
-                  <Card key={tx.id} className="cursor-pointer transition-all hover:shadow-lg" onClick={() => setSelectedTransaction(tx)}>
-                    <CardContent className="p-3 flex items-center gap-3">
-                      {showTxExport && (
-                        <Checkbox
-                          checked={selectedTxIds.has(tx.id)}
-                          onCheckedChange={(checked) => {
-                            const next = new Set(selectedTxIds);
-                            if (checked) next.add(tx.id); else next.delete(tx.id);
-                            setSelectedTxIds(next);
-                          }}
-                          onClick={(e) => e.stopPropagation()}
-                        />
-                      )}
-                      <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${tx.type === "topup" ? "bg-accent/10" : "bg-destructive/10"}`}>
-                        {tx.type === "topup" ? <ArrowUpCircle className="w-5 h-5 text-accent" /> : <ArrowDownCircle className="w-5 h-5 text-destructive" />}
+                {!banned && !smartSaldo && balanceTransactions.map(tx => {
+                  const isTopup = tx.type === "topup";
+                  const accent = isTopup
+                    ? { color: "from-emerald-500 to-green-500", glow: "16,185,129", icon: <ArrowUpCircle className="w-5 h-5 text-white" strokeWidth={2.4} /> }
+                    : { color: "from-rose-500 to-red-500", glow: "244,63,94", icon: <ArrowDownCircle className="w-5 h-5 text-white" strokeWidth={2.4} /> };
+                  return (
+                    <button
+                      key={tx.id}
+                      onClick={() => setSelectedTransaction(tx)}
+                      className="group relative w-full text-left rounded-2xl p-[1.5px] overflow-hidden hover:scale-[1.01] active:scale-[0.99] transition-transform"
+                      style={{ background: `linear-gradient(135deg, rgba(${accent.glow},0.5), rgba(${accent.glow},0.15), rgba(${accent.glow},0.5))` }}
+                    >
+                      <div className="relative rounded-[14px] bg-card/95 backdrop-blur-xl p-3 flex items-center gap-3 overflow-hidden">
+                        <div className="pointer-events-none absolute -top-8 -right-8 w-24 h-24 rounded-full opacity-20 blur-2xl" style={{ background: `rgba(${accent.glow},1)` }} />
+                        {showTxExport && (
+                          <div onClick={(e) => e.stopPropagation()} className="relative">
+                            <Checkbox
+                              checked={selectedTxIds.has(tx.id)}
+                              onCheckedChange={(checked) => {
+                                const next = new Set(selectedTxIds);
+                                if (checked) next.add(tx.id); else next.delete(tx.id);
+                                setSelectedTxIds(next);
+                              }}
+                            />
+                          </div>
+                        )}
+                        <div className="relative shrink-0">
+                          <div className={`absolute inset-0 rounded-xl bg-gradient-to-br ${accent.color} blur-md opacity-50`} />
+                          <div className={`relative w-10 h-10 rounded-xl bg-gradient-to-br ${accent.color} flex items-center justify-center shadow-lg`}>
+                            {accent.icon}
+                          </div>
+                        </div>
+                        <div className="flex-1 min-w-0 relative">
+                          <p className="font-extrabold text-sm text-foreground">{isTopup ? t("balance.topup", lang) : t("balance.purchase", lang)}</p>
+                          {tx.trx_id && <p className="text-[10px] text-muted-foreground font-mono truncate">🆔 {tx.trx_id}</p>}
+                          <p className="text-[10px] text-muted-foreground truncate">📝 {tx.description || "-"}</p>
+                          <p className="text-[10px] text-muted-foreground">⏱️ {new Date(tx.created_at).toLocaleString("id-ID")}</p>
+                        </div>
+                        <span className={`relative shrink-0 font-extrabold text-sm bg-gradient-to-r ${accent.color} bg-clip-text text-transparent tabular-nums`}>
+                          {isTopup ? "+" : "-"}{formatPrice(tx.amount)}
+                        </span>
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="font-bold text-sm">{tx.type === "topup" ? t("balance.topup", lang) : t("balance.purchase", lang)}</p>
-                        {tx.trx_id && <p className="text-[10px] text-muted-foreground font-mono">ID: {tx.trx_id}</p>}
-                        <p className="text-[10px] text-muted-foreground truncate">{tx.description || "-"}</p>
-                        <p className="text-[10px] text-muted-foreground">{new Date(tx.created_at).toLocaleString("id-ID")}</p>
-                      </div>
-                      <span className={`font-bold text-sm ${tx.type === "topup" ? "text-accent" : "text-destructive"}`}>
-                        {tx.type === "topup" ? "+" : "-"}{formatPrice(tx.amount)}
-                      </span>
-                    </CardContent>
-                  </Card>
-                ))}
+                    </button>
+                  );
+                })}
 
                 {/* Transaction Detail Popup */}
                 {!banned && selectedTransaction && (
