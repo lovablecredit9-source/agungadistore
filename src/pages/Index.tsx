@@ -3656,36 +3656,102 @@ const Index = () => {
       </main>
 
       {/* Mini Player - shown when music is playing and not on playlist tab */}
-      {playbackState.song && tab !== "playlist" && (
-        <div
-          className="fixed bottom-[56px] left-0 right-0 z-50 bg-card/95 backdrop-blur-md border-t border-primary/20 shadow-2xl cursor-pointer"
-          onClick={() => openFullPlayerRef.current?.()}
-        >
-          <div className="max-w-lg mx-auto flex items-center gap-4 px-4 py-3">
-            <div className="w-14 h-14 rounded-xl bg-primary/10 flex items-center justify-center shrink-0 overflow-hidden">
-              {playbackState.song.cover_url ? (
-                <img src={playbackState.song.cover_url} alt="" className="w-full h-full object-cover" />
-              ) : (
-                <Music className="w-6 h-6 text-primary" />
-              )}
+      {playbackState.song && tab !== "playlist" && (() => {
+        const mpProgress = playbackState.duration > 0
+          ? Math.min(100, (playbackState.currentTime / playbackState.duration) * 100)
+          : 0;
+        const mpPlaying = playbackState.isPlaying;
+        return (
+          <div
+            className="fixed bottom-[56px] left-0 right-0 z-50 cursor-pointer animate-fade-in"
+            onClick={() => openFullPlayerRef.current?.()}
+          >
+            <div className="max-w-lg mx-auto px-2 pb-1">
+              <div className="relative overflow-hidden rounded-2xl border border-fuchsia-500/40 bg-gradient-to-r from-fuchsia-950/95 via-purple-950/95 to-indigo-950/95 backdrop-blur-xl shadow-[0_12px_36px_-8px_rgba(217,70,239,0.7)]">
+                {/* Shine sweep */}
+                <div
+                  className="absolute inset-y-0 w-1/3 bg-gradient-to-r from-transparent via-pink-400/20 to-transparent skew-x-12 pointer-events-none"
+                  style={{ animation: "shine-sweep 4s linear infinite" }}
+                />
+                {/* Progress bar */}
+                <div className="absolute top-0 inset-x-0 h-0.5 bg-white/10">
+                  <div
+                    className="h-full bg-gradient-to-r from-pink-400 via-fuchsia-400 to-purple-400 shadow-[0_0_8px_rgba(236,72,153,0.8)] transition-all duration-300"
+                    style={{ width: `${mpProgress}%` }}
+                  />
+                </div>
+
+                <div className="relative flex items-center gap-3 px-3 py-2.5">
+                  {/* Vinyl-style cover */}
+                  <div className="relative shrink-0">
+                    <div
+                      className="w-12 h-12 rounded-full overflow-hidden border-2 border-white/30 bg-black shadow-[0_0_14px_rgba(217,70,239,0.6)] relative"
+                      style={mpPlaying ? { animation: "spin 6s linear infinite" } : undefined}
+                    >
+                      {playbackState.song.cover_url ? (
+                        <img src={playbackState.song.cover_url} alt="" className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="w-full h-full bg-gradient-to-br from-fuchsia-500 to-purple-600 flex items-center justify-center">
+                          <Music className="w-5 h-5 text-white" />
+                        </div>
+                      )}
+                      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                        <div className="w-2.5 h-2.5 rounded-full bg-black border border-white/40" />
+                      </div>
+                    </div>
+                    {mpPlaying && (
+                      <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-green-400 border-2 border-purple-950 animate-pulse" />
+                    )}
+                  </div>
+
+                  {/* Title + status */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-1.5 mb-0.5">
+                      <span className="px-1.5 py-0.5 rounded bg-pink-500/30 border border-pink-400/50 text-[9px] font-black text-pink-100 uppercase tracking-wider">
+                        {mpPlaying ? "Playing" : "Paused"}
+                      </span>
+                      {mpPlaying && (
+                        <div className="flex items-end gap-[2px] h-3">
+                          {[0.5, 0.9, 0.4, 0.8].map((h, i) => (
+                            <span
+                              key={i}
+                              className="w-[2px] bg-gradient-to-t from-pink-400 to-fuchsia-200 rounded-full"
+                              style={{
+                                height: "100%",
+                                transformOrigin: "bottom",
+                                animation: `eq-bounce ${0.6 + i * 0.1}s ease-in-out ${i * 0.05}s infinite`,
+                              }}
+                            />
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                    <p className="text-sm font-bold text-white truncate leading-tight">{playbackState.song.title}</p>
+                    <p className="text-[11px] text-white/70 truncate">{playbackState.song.artist}</p>
+                  </div>
+
+                  {/* Play/Pause + chevron */}
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <button
+                      onClick={(e) => { e.stopPropagation(); togglePlayRef.current?.(); }}
+                      className="w-11 h-11 rounded-full bg-gradient-to-br from-pink-500 to-fuchsia-600 text-white flex items-center justify-center shadow-lg shadow-pink-500/50 active:scale-95 transition-transform"
+                    >
+                      {mpPlaying ? (
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16" /><rect x="14" y="4" width="4" height="16" /></svg>
+                      ) : (
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><polygon points="5,3 19,12 5,21" /></svg>
+                      )}
+                    </button>
+                    <span className="w-7 h-7 rounded-full bg-white/10 flex items-center justify-center">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-white/80"><polyline points="18 15 12 9 6 15" /></svg>
+                    </span>
+                  </div>
+                </div>
+              </div>
             </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-bold truncate">{playbackState.song.title}</p>
-              <p className="text-xs text-muted-foreground truncate mt-0.5">{playbackState.song.artist}</p>
-            </div>
-            <button
-              onClick={(e) => { e.stopPropagation(); togglePlayRef.current?.(); }}
-              className="w-12 h-12 rounded-full bg-primary text-primary-foreground flex items-center justify-center shrink-0 shadow-lg shadow-primary/30"
-            >
-              {playbackState.isPlaying ? (
-                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16" /><rect x="14" y="4" width="4" height="16" /></svg>
-              ) : (
-                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><polygon points="5,3 19,12 5,21" /></svg>
-              )}
-            </button>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* Product Detail Modal */}
       {selectedProduct && (() => {
