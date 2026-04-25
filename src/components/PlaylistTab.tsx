@@ -1053,15 +1053,30 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer, onPlayE
               </div>
 
               {/* Progress slider with neon track */}
-              <div className="space-y-1" onClick={e => e.stopPropagation()}>
-                <div className="relative h-1 rounded-full bg-white/10 overflow-hidden">
+              <div className="space-y-1.5" onClick={e => e.stopPropagation()}>
+                <div className="relative h-1.5 rounded-full bg-white/10 overflow-hidden">
                   <div
                     className="absolute inset-y-0 left-0 bg-gradient-to-r from-pink-400 via-fuchsia-400 to-purple-400 shadow-[0_0_8px_rgba(236,72,153,0.8)] transition-all duration-300"
                     style={{ width: `${npProgress}%` }}
                   />
+                  {/* glowing playhead */}
+                  <div
+                    className="absolute top-1/2 -translate-y-1/2 w-2.5 h-2.5 rounded-full bg-white shadow-[0_0_10px_rgba(236,72,153,0.95)] transition-all duration-300"
+                    style={{ left: `calc(${npProgress}% - 5px)` }}
+                  />
                 </div>
-                <Slider value={[currentTime]} max={duration || 100} step={1} onValueChange={seek} className="cursor-pointer -mt-2" />
-                <div className="flex justify-between text-[10px] text-white/60 font-medium"><span>{formatTime(currentTime)}</span><span>{formatTime(duration)}</span></div>
+                <Slider value={[currentTime]} max={duration || 100} step={1} onValueChange={seek} className="cursor-pointer -mt-2 opacity-0 h-3" />
+                <div className="flex items-center justify-between gap-2 text-[11px] font-mono font-bold">
+                  <span className="px-2 py-0.5 rounded-md bg-pink-500/20 border border-pink-400/40 text-pink-100 shadow-[0_0_8px_rgba(236,72,153,0.4)] tabular-nums">
+                    {formatTime(currentTime)}
+                  </span>
+                  <span className="text-[10px] text-white/50 tabular-nums">
+                    -{formatTime(Math.max(0, (duration || 0) - currentTime))}
+                  </span>
+                  <span className="px-2 py-0.5 rounded-md bg-white/10 border border-white/20 text-white/80 tabular-nums">
+                    {formatTime(duration)}
+                  </span>
+                </div>
               </div>
 
               {/* Controls */}
