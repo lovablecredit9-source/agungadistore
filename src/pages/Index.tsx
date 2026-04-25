@@ -3185,43 +3185,86 @@ const Index = () => {
                 <div className={banned ? "pointer-events-none select-none opacity-60" : ""}>
                 {deposits.length > 0 && (
                   <>
-                    <h3 className="font-bold text-sm flex items-center gap-1.5"><History className="w-4 h-4" /> {t("deposit.history", lang)}</h3>
-                    <div className="grid grid-cols-3 gap-2">
-                      <select className="rounded-md border border-input bg-background px-2 py-2 text-[11px]" value={depositHistoryMethodFilter} onChange={e => setDepositHistoryMethodFilter(e.target.value as DepositMethodFilter)}>
-                        <option value="all">Semua Metode</option>
-                        <option value="qris">QRIS</option>
-                        <option value="ewallet">E-Wallet</option>
-                      </select>
-                      <select className="rounded-md border border-input bg-background px-2 py-2 text-[11px]" value={depositHistoryStatusFilter} onChange={e => setDepositHistoryStatusFilter(e.target.value as DepositStatusFilter)}>
-                        <option value="all">Semua Status</option>
-                        <option value="pending">Belum Konfirmasi</option>
-                        <option value="approved">Disetujui</option>
-                        <option value="rejected">Ditolak</option>
-                        <option value="cancelled">Dibatalkan</option>
-                      </select>
-                      <select className="rounded-md border border-input bg-background px-2 py-2 text-[11px]" value={depositHistorySort} onChange={e => setDepositHistorySort(e.target.value as "newest" | "oldest")}>
-                        <option value="newest">Terbaru</option>
-                        <option value="oldest">Terlama</option>
-                      </select>
+                    {/* Deposit History Header - Aurora Premium */}
+                    <div
+                      className="relative rounded-2xl p-[1.5px] aurora-shift overflow-hidden"
+                      style={{ background: "linear-gradient(135deg, hsl(150 80% 50%/0.6), hsl(190 95% 55%/0.6), hsl(150 80% 50%/0.6))", backgroundSize: "300% 300%" }}
+                    >
+                      <div className="relative rounded-[14px] bg-card/95 backdrop-blur-xl p-3 overflow-hidden">
+                        <div className="pointer-events-none absolute -top-10 -right-10 w-32 h-32 rounded-full bg-emerald-500/15 blur-3xl" />
+                        <div className="relative flex items-center justify-between mb-3">
+                          <div className="flex items-center gap-2">
+                            <div className="relative">
+                              <div className="absolute inset-0 rounded-lg bg-gradient-to-br from-emerald-500 to-cyan-500 blur-md opacity-60" />
+                              <div className="relative w-7 h-7 rounded-lg bg-gradient-to-br from-emerald-500 to-cyan-500 flex items-center justify-center shadow-lg">
+                                <History className="w-3.5 h-3.5 text-white" strokeWidth={2.4} />
+                              </div>
+                            </div>
+                            <h3 className="text-xs font-extrabold uppercase tracking-wider bg-gradient-to-r from-emerald-500 to-cyan-500 bg-clip-text text-transparent">📜 {t("deposit.history", lang)}</h3>
+                          </div>
+                          <span className="px-2 py-0.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-500 text-[9px] font-extrabold">{filteredDeposits.length}</span>
+                        </div>
+                        <div className="relative grid grid-cols-3 gap-2">
+                          <select className="rounded-xl border border-cyan-400/30 bg-cyan-400/5 px-2 py-2 text-[11px] font-bold text-foreground focus:border-cyan-400 focus:outline-none transition-colors" value={depositHistoryMethodFilter} onChange={e => setDepositHistoryMethodFilter(e.target.value as DepositMethodFilter)}>
+                            <option value="all">Semua Metode</option>
+                            <option value="qris">QRIS</option>
+                            <option value="ewallet">E-Wallet</option>
+                          </select>
+                          <select className="rounded-xl border border-purple-500/30 bg-purple-500/5 px-2 py-2 text-[11px] font-bold text-foreground focus:border-purple-500 focus:outline-none transition-colors" value={depositHistoryStatusFilter} onChange={e => setDepositHistoryStatusFilter(e.target.value as DepositStatusFilter)}>
+                            <option value="all">Semua Status</option>
+                            <option value="pending">Belum Konfirmasi</option>
+                            <option value="approved">Disetujui</option>
+                            <option value="rejected">Ditolak</option>
+                            <option value="cancelled">Dibatalkan</option>
+                          </select>
+                          <select className="rounded-xl border border-emerald-500/30 bg-emerald-500/5 px-2 py-2 text-[11px] font-bold text-foreground focus:border-emerald-500 focus:outline-none transition-colors" value={depositHistorySort} onChange={e => setDepositHistorySort(e.target.value as "newest" | "oldest")}>
+                            <option value="newest">Terbaru</option>
+                            <option value="oldest">Terlama</option>
+                          </select>
+                        </div>
+                      </div>
                     </div>
-                    {!banned && filteredDeposits.map(dep => (
-                      <Card key={dep.id} className="cursor-pointer transition-all hover:shadow-lg" onClick={() => setSelectedDeposit(dep)}>
-                        <CardContent className="p-3 flex items-center gap-3">
-                          <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${dep.status === "approved" ? "bg-accent/10" : dep.status === "rejected" ? "bg-destructive/10" : "bg-muted"}`}>
-                            {dep.status === "approved" ? <CheckCircle2 className="w-5 h-5 text-accent" /> : dep.status === "rejected" ? <X className="w-5 h-5 text-destructive" /> : <Clock className="w-5 h-5 text-muted-foreground" />}
+
+                    {!banned && filteredDeposits.map(dep => {
+                      const isApproved = dep.status === "approved";
+                      const isRejected = dep.status === "rejected";
+                      const accent = isApproved
+                        ? { color: "from-emerald-500 to-green-500", glow: "16,185,129", icon: <CheckCircle2 className="w-5 h-5 text-white" strokeWidth={2.4} /> }
+                        : isRejected
+                        ? { color: "from-rose-500 to-red-500", glow: "244,63,94", icon: <X className="w-5 h-5 text-white" strokeWidth={2.4} /> }
+                        : { color: "from-amber-500 to-orange-500", glow: "245,158,11", icon: <Clock className="w-5 h-5 text-white" strokeWidth={2.4} /> };
+                      return (
+                        <button
+                          key={dep.id}
+                          onClick={() => setSelectedDeposit(dep)}
+                          className="group relative w-full text-left rounded-2xl p-[1.5px] overflow-hidden hover:scale-[1.01] active:scale-[0.99] transition-transform"
+                          style={{ background: `linear-gradient(135deg, rgba(${accent.glow},0.5), rgba(${accent.glow},0.2), rgba(${accent.glow},0.5))` }}
+                        >
+                          <div className="relative rounded-[14px] bg-card/95 backdrop-blur-xl p-3 flex items-center gap-3 overflow-hidden">
+                            <div className="pointer-events-none absolute -top-8 -right-8 w-24 h-24 rounded-full opacity-20 blur-2xl" style={{ background: `rgba(${accent.glow},1)` }} />
+                            <div className="relative shrink-0">
+                              <div className={`absolute inset-0 rounded-xl bg-gradient-to-br ${accent.color} blur-md opacity-50`} />
+                              <div className={`relative w-10 h-10 rounded-xl bg-gradient-to-br ${accent.color} flex items-center justify-center shadow-lg`}>
+                                {accent.icon}
+                              </div>
+                            </div>
+                            <div className="flex-1 min-w-0 relative">
+                              <p className={`font-extrabold text-sm bg-gradient-to-r ${accent.color} bg-clip-text text-transparent`}>{formatPrice(dep.amount)}</p>
+                              <p className="text-[10px] text-muted-foreground font-mono truncate">🆔 {dep.trx_id}</p>
+                              <p className="text-[10px] text-muted-foreground">💳 {dep.payment_method.toUpperCase()} • {new Date(dep.created_at).toLocaleString("id-ID")}</p>
+                            </div>
+                            <span className={`relative shrink-0 text-[10px] px-2.5 py-1 rounded-full font-extrabold bg-gradient-to-r ${accent.color} text-white shadow-lg`}>
+                              {getDepositStatusLabel(dep.status, lang)}
+                            </span>
                           </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="font-bold text-sm">{formatPrice(dep.amount)}</p>
-                            <p className="text-[10px] text-muted-foreground font-mono">ID: {dep.trx_id}</p>
-                            <p className="text-[10px] text-muted-foreground">{dep.payment_method.toUpperCase()} • {new Date(dep.created_at).toLocaleString("id-ID")}</p>
-                          </div>
-                          <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${dep.status === "approved" ? "bg-accent/10 text-accent" : dep.status === "rejected" ? "bg-destructive/10 text-destructive" : "bg-muted text-muted-foreground"}`}>
-                            {getDepositStatusLabel(dep.status, lang)}
-                          </span>
-                        </CardContent>
-                      </Card>
-                    ))}
-                    {filteredDeposits.length === 0 && <p className="text-center text-sm text-muted-foreground py-4">Tidak ada deposit sesuai filter.</p>}
+                        </button>
+                      );
+                    })}
+                    {filteredDeposits.length === 0 && (
+                      <div className="text-center py-6 rounded-2xl border border-dashed border-border/60 bg-muted/20">
+                        <p className="text-sm text-muted-foreground">📭 Tidak ada deposit sesuai filter.</p>
+                      </div>
+                    )}
                   </>
                 )}
 
