@@ -1685,81 +1685,117 @@ const Index = () => {
               </div>
             )}
 
-            {/* Welcome Header - flat IG/TikTok style */}
-            <div className="rounded-2xl bg-card border border-border p-4">
-              <div className="flex items-center gap-3">
-                <img src={storeQris} alt={STORE_NAME} className="w-14 h-14 rounded-xl object-cover border border-border" />
-                <div className="flex-1 min-w-0">
-                  <p className="text-[11px] text-muted-foreground font-medium">
-                    {new Date().getHours() < 12 ? "Selamat Pagi" : new Date().getHours() < 18 ? "Selamat Siang" : "Selamat Malam"}
-                  </p>
-                  <h2 className="text-[18px] font-bold text-foreground leading-tight truncate">{STORE_NAME}</h2>
-                  <p className="text-[10px] text-muted-foreground mt-0.5 truncate">{t("header.tagline", lang)}</p>
+            {/* Welcome Header - Aurora Neon Premium */}
+            <div className="relative rounded-3xl overflow-hidden p-[1.5px] aurora-shift" style={{ background: "linear-gradient(135deg, hsl(var(--primary)/0.6), hsl(280 90% 65%/0.6), hsl(190 95% 55%/0.6), hsl(var(--primary)/0.6))", backgroundSize: "300% 300%" }}>
+              <div className="relative rounded-[22px] bg-card/95 backdrop-blur-xl p-4 overflow-hidden">
+                {/* Decorative glow blobs */}
+                <div className="pointer-events-none absolute -top-12 -right-12 w-40 h-40 rounded-full bg-primary/20 blur-3xl" />
+                <div className="pointer-events-none absolute -bottom-12 -left-12 w-40 h-40 rounded-full bg-purple-500/20 blur-3xl" />
+                <div className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-32 h-32 rounded-full bg-cyan-400/10 blur-2xl" />
+
+                <div className="relative flex items-center gap-3">
+                  <div className="relative">
+                    <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-primary via-purple-500 to-cyan-400 blur-md opacity-70 animate-pulse" />
+                    <img src={storeQris} alt={STORE_NAME} className="relative w-16 h-16 rounded-2xl object-cover border-2 border-white/20 shadow-2xl" />
+                    <span className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-green-500 border-2 border-card animate-pulse" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-[10px] uppercase tracking-[0.18em] font-bold bg-gradient-to-r from-primary via-purple-500 to-cyan-400 bg-clip-text text-transparent">
+                        {new Date().getHours() < 12 ? "✨ Pagi" : new Date().getHours() < 18 ? "☀️ Siang" : "🌙 Malam"}
+                      </span>
+                      <span className="px-1.5 py-0.5 rounded-full bg-green-500/15 border border-green-500/30 text-green-500 text-[8px] font-bold">LIVE</span>
+                    </div>
+                    <h2 className="text-[19px] font-extrabold leading-tight truncate bg-gradient-to-r from-foreground via-primary to-foreground bg-clip-text text-transparent">{STORE_NAME}</h2>
+                    <p className="text-[10px] text-muted-foreground mt-0.5 truncate flex items-center gap-1">
+                      <span className="text-yellow-500">⭐</span> {t("header.tagline", lang)}
+                    </p>
+                  </div>
                 </div>
-              </div>
-              <div className="mt-3 pt-3 border-t border-border">
-                <LiveClock />
-              </div>
-              <div className="flex items-center gap-4 mt-3 pt-3 border-t border-border">
-                <a
-                  href={`${SOCIAL_LINKS.whatsapp}?text=${encodeURIComponent("Halo, saya mau order di Agung Adi Store")}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-1.5 text-xs font-medium text-foreground hover:text-primary transition-colors"
-                >
-                  <MessageCircle className="w-4 h-4" strokeWidth={1.7} />
-                  {t("home.contact_wa", lang)}
-                </a>
-                <span className="w-px h-3.5 bg-border" />
-                <button
-                  type="button"
-                  onClick={() => setTab("voucher")}
-                  className="flex items-center gap-1.5 text-xs font-medium text-foreground hover:text-primary transition-colors"
-                >
-                  <Ticket className="w-4 h-4" strokeWidth={1.7} />
-                  {t("home.claim_voucher", lang)}
-                </button>
+
+                <div className="relative mt-3 pt-3 border-t border-white/10">
+                  <LiveClock />
+                </div>
+
+                <div className="relative grid grid-cols-2 gap-2 mt-3 pt-3 border-t border-white/10">
+                  <a
+                    href={`${SOCIAL_LINKS.whatsapp}?text=${encodeURIComponent("Halo, saya mau order di Agung Adi Store")}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="relative overflow-hidden flex items-center justify-center gap-1.5 text-xs font-bold rounded-xl py-2.5 bg-gradient-to-r from-green-500/15 to-emerald-500/15 border border-green-500/30 text-green-500 hover:scale-[1.02] transition-transform shine-sweep"
+                  >
+                    <MessageCircle className="w-3.5 h-3.5" strokeWidth={2.2} />
+                    <span className="truncate">{t("home.contact_wa", lang)}</span>
+                  </a>
+                  <button
+                    type="button"
+                    onClick={() => setTab("voucher")}
+                    className="relative overflow-hidden flex items-center justify-center gap-1.5 text-xs font-bold rounded-xl py-2.5 bg-gradient-to-r from-primary/15 to-purple-500/15 border border-primary/30 text-primary hover:scale-[1.02] transition-transform shine-sweep"
+                  >
+                    <Ticket className="w-3.5 h-3.5" strokeWidth={2.2} />
+                    <span className="truncate">{t("home.claim_voucher", lang)}</span>
+                  </button>
+                </div>
               </div>
             </div>
 
-            {/* Quick Action Grid - IG/TikTok flat style */}
-            <div className="grid grid-cols-4 gap-2">
-              {[
-                { icon: <Music className="w-6 h-6" strokeWidth={1.7} />, label: "Musik", tab: "playlist" as Tab },
-                { icon: <Package className="w-6 h-6" strokeWidth={1.7} />, label: "Produk", tab: "produk" as Tab, badge: `${products.length}` },
-                { icon: <Ticket className="w-6 h-6" strokeWidth={1.7} />, label: "Voucher", tab: "voucher" as Tab },
-                { icon: <Wallet className="w-6 h-6" strokeWidth={1.7} />, label: "Saldo", tab: "saldo" as Tab },
-                { icon: <Heart className="w-6 h-6" strokeWidth={1.7} />, label: "Suka", tab: "likes" as Tab },
-                { icon: <Gamepad2 className="w-6 h-6" strokeWidth={1.7} />, label: "Game", tab: "game" as Tab, badge: "11" },
-                { icon: <Flame className="w-6 h-6" strokeWidth={1.7} />, label: "Streak", tab: "streak" as Tab },
-                { icon: <Gem className="w-6 h-6" strokeWidth={1.7} />, label: "Plus", tab: "plus" as Tab },
-                { icon: <Megaphone className="w-6 h-6" strokeWidth={1.7} />, label: "Sponsor", tab: "sponsor" as Tab },
-                { icon: <MessageSquare className="w-6 h-6" strokeWidth={1.7} />, label: "Tiket", tab: "tiket" as Tab },
-                { icon: <Globe className="w-6 h-6" strokeWidth={1.7} />, label: "Publik", tab: "publik" as Tab },
-                { icon: <History className="w-6 h-6" strokeWidth={1.7} />, label: "Riwayat", tab: "history" as Tab },
-                { icon: <CalendarDays className="w-6 h-6" strokeWidth={1.7} />, label: "Event", tab: "streakevent" as Tab },
-                { icon: <ShoppingBag className="w-6 h-6" strokeWidth={1.7} />, label: "S.Shop", tab: "streakshop" as Tab },
-                { icon: <Crown className="w-6 h-6" strokeWidth={1.7} />, label: "Member", tab: "streakmembership" as Tab },
-                { icon: <RefreshCw className="w-6 h-6" strokeWidth={1.7} />, label: "Update", tab: "update" as Tab },
-                { icon: <Crown className="w-6 h-6" strokeWidth={1.7} />, label: "L.Royale", external: "/luck-royale-nyawa" },
-                { icon: <FileText className="w-6 h-6" strokeWidth={1.7} />, label: "Admin", tab: "adminpost" as Tab },
-              ].map((item: any) => (
-                <button
-                  key={item.label}
-                  onClick={() => item.external ? navigate(item.external) : setTab(item.tab)}
-                  className="relative flex flex-col items-center gap-1.5 py-3 rounded-xl hover:bg-muted/40 active:bg-muted/60 transition-colors"
-                >
-                  <div className="relative text-foreground">
-                    {item.icon}
-                    {item.badge && (
-                      <span className="absolute -top-1.5 -right-2 min-w-[16px] h-[16px] rounded-full bg-destructive text-destructive-foreground text-[9px] font-semibold flex items-center justify-center px-1">
-                        {item.badge}
-                      </span>
-                    )}
-                  </div>
-                  <span className="text-[11px] font-medium text-foreground">{item.label}</span>
-                </button>
-              ))}
+            {/* Quick Action Grid - Aurora Neon Premium */}
+            <div className="relative rounded-3xl overflow-hidden p-[1.5px] aurora-shift" style={{ background: "linear-gradient(135deg, hsl(190 95% 55%/0.5), hsl(280 90% 65%/0.5), hsl(330 90% 60%/0.5), hsl(45 95% 55%/0.5), hsl(150 80% 50%/0.5))", backgroundSize: "400% 400%" }}>
+              <div className="relative rounded-[22px] bg-card/95 backdrop-blur-xl p-3 overflow-hidden">
+                <div className="pointer-events-none absolute -top-16 right-1/4 w-40 h-40 rounded-full bg-purple-500/15 blur-3xl" />
+                <div className="pointer-events-none absolute -bottom-16 left-1/4 w-40 h-40 rounded-full bg-cyan-400/15 blur-3xl" />
+
+                <div className="relative flex items-center justify-between mb-2 px-1">
+                  <h3 className="text-xs font-extrabold uppercase tracking-[0.15em] bg-gradient-to-r from-cyan-400 via-purple-500 to-pink-500 bg-clip-text text-transparent">⚡ Quick Access</h3>
+                  <span className="text-[9px] text-muted-foreground font-semibold">18 Menu</span>
+                </div>
+
+                <div className="relative grid grid-cols-4 gap-1.5">
+                  {([
+                    { icon: <Music className="w-5 h-5" strokeWidth={1.9} />, label: "Musik", tab: "playlist" as Tab, color: "from-pink-500 to-rose-500", glow: "236,72,153" },
+                    { icon: <Package className="w-5 h-5" strokeWidth={1.9} />, label: "Produk", tab: "produk" as Tab, badge: `${products.length}`, color: "from-cyan-400 to-blue-500", glow: "34,211,238" },
+                    { icon: <Ticket className="w-5 h-5" strokeWidth={1.9} />, label: "Voucher", tab: "voucher" as Tab, color: "from-purple-500 to-violet-600", glow: "168,85,247" },
+                    { icon: <Wallet className="w-5 h-5" strokeWidth={1.9} />, label: "Saldo", tab: "saldo" as Tab, color: "from-emerald-500 to-green-500", glow: "16,185,129" },
+                    { icon: <Heart className="w-5 h-5" strokeWidth={1.9} />, label: "Suka", tab: "likes" as Tab, color: "from-rose-500 to-pink-500", glow: "244,63,94" },
+                    { icon: <Gamepad2 className="w-5 h-5" strokeWidth={1.9} />, label: "Game", tab: "game" as Tab, badge: "11", color: "from-yellow-400 to-orange-500", glow: "250,204,21" },
+                    { icon: <Flame className="w-5 h-5" strokeWidth={1.9} />, label: "Streak", tab: "streak" as Tab, color: "from-orange-500 to-red-500", glow: "249,115,22" },
+                    { icon: <Gem className="w-5 h-5" strokeWidth={1.9} />, label: "Plus", tab: "plus" as Tab, color: "from-indigo-500 to-purple-500", glow: "99,102,241" },
+                    { icon: <Megaphone className="w-5 h-5" strokeWidth={1.9} />, label: "Sponsor", tab: "sponsor" as Tab, color: "from-amber-500 to-yellow-500", glow: "245,158,11" },
+                    { icon: <MessageSquare className="w-5 h-5" strokeWidth={1.9} />, label: "Tiket", tab: "tiket" as Tab, color: "from-blue-500 to-cyan-500", glow: "59,130,246" },
+                    { icon: <Globe className="w-5 h-5" strokeWidth={1.9} />, label: "Publik", tab: "publik" as Tab, color: "from-teal-500 to-cyan-500", glow: "20,184,166" },
+                    { icon: <History className="w-5 h-5" strokeWidth={1.9} />, label: "Riwayat", tab: "history" as Tab, color: "from-slate-500 to-zinc-500", glow: "100,116,139" },
+                    { icon: <CalendarDays className="w-5 h-5" strokeWidth={1.9} />, label: "Event", tab: "streakevent" as Tab, color: "from-fuchsia-500 to-pink-500", glow: "217,70,239" },
+                    { icon: <ShoppingBag className="w-5 h-5" strokeWidth={1.9} />, label: "S.Shop", tab: "streakshop" as Tab, color: "from-lime-500 to-green-500", glow: "132,204,22" },
+                    { icon: <Crown className="w-5 h-5" strokeWidth={1.9} />, label: "Member", tab: "streakmembership" as Tab, color: "from-yellow-500 to-amber-500", glow: "234,179,8" },
+                    { icon: <RefreshCw className="w-5 h-5" strokeWidth={1.9} />, label: "Update", tab: "update" as Tab, color: "from-sky-500 to-blue-500", glow: "14,165,233" },
+                    { icon: <Crown className="w-5 h-5" strokeWidth={1.9} />, label: "L.Royale", external: "/luck-royale-nyawa", color: "from-violet-500 to-fuchsia-500", glow: "139,92,246" },
+                    { icon: <FileText className="w-5 h-5" strokeWidth={1.9} />, label: "Admin", tab: "adminpost" as Tab, color: "from-red-500 to-rose-500", glow: "239,68,68" },
+                  ] as any[]).map((item) => (
+                    <button
+                      key={item.label}
+                      onClick={() => item.external ? navigate(item.external) : setTab(item.tab)}
+                      className="group relative flex flex-col items-center gap-1.5 py-2.5 rounded-xl bg-white/[0.03] border border-white/10 hover:border-white/30 hover:bg-white/[0.08] active:scale-95 transition-all duration-200 overflow-hidden"
+                      style={{ boxShadow: `0 0 0 0 rgba(${item.glow}, 0)` }}
+                      onMouseEnter={(e) => { e.currentTarget.style.boxShadow = `0 0 20px -2px rgba(${item.glow}, 0.5)`; }}
+                      onMouseLeave={(e) => { e.currentTarget.style.boxShadow = `0 0 0 0 rgba(${item.glow}, 0)`; }}
+                    >
+                      <div className={`absolute inset-0 bg-gradient-to-br ${item.color} opacity-0 group-hover:opacity-10 transition-opacity`} />
+                      <div className="relative">
+                        <div className={`absolute inset-0 bg-gradient-to-br ${item.color} blur-md opacity-0 group-hover:opacity-60 transition-opacity scale-150`} />
+                        <div className={`relative w-9 h-9 rounded-xl bg-gradient-to-br ${item.color} flex items-center justify-center text-white shadow-lg`}>
+                          {item.icon}
+                        </div>
+                        {item.badge && (
+                          <span className="absolute -top-1 -right-1 min-w-[16px] h-[16px] rounded-full bg-gradient-to-r from-red-500 to-pink-500 text-white text-[9px] font-bold flex items-center justify-center px-1 shadow-lg ring-2 ring-card">
+                            {item.badge}
+                          </span>
+                        )}
+                      </div>
+                      <span className="relative text-[10px] font-bold text-foreground">{item.label}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
             </div>
 
             {/* Hero Promo Slider */}
