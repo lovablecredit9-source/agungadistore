@@ -3268,25 +3268,46 @@ const Index = () => {
                   </>
                 )}
 
-                {/* Transaction History */}
-                <div className="flex items-center justify-between gap-2 flex-wrap">
-                  <h3 className="font-bold text-sm flex items-center gap-1.5"><History className="w-4 h-4" /> {t("balance.transaction_history", lang)}</h3>
-                  <div className="flex items-center gap-1.5">
-                    {balanceTransactions.length > 0 && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="gap-1 text-xs h-7 rounded-full font-medium"
-                        onClick={() => setSmartSaldo(v => !v)}
-                      >
-                        <Sparkles className="w-3 h-3" /> {smartSaldo ? "Pintar ✓" : "Pintar"}
-                      </Button>
-                    )}
-                    {balanceTransactions.length > 0 && (
-                      <Button variant="outline" size="sm" className="gap-1 text-xs h-7 rounded-full" onClick={() => setShowTxExport(!showTxExport)}>
-                        <Download className="w-3 h-3" /> {showTxExport ? "Tutup" : "Ekspor"}
-                      </Button>
-                    )}
+                {/* Transaction History - Aurora Premium Header */}
+                <div
+                  className="relative rounded-2xl p-[1.5px] aurora-shift overflow-hidden"
+                  style={{ background: "linear-gradient(135deg, hsl(280 90% 65%/0.6), hsl(330 90% 60%/0.6), hsl(190 95% 55%/0.6), hsl(280 90% 65%/0.6))", backgroundSize: "300% 300%" }}
+                >
+                  <div className="relative rounded-[14px] bg-card/95 backdrop-blur-xl p-3 overflow-hidden">
+                    <div className="pointer-events-none absolute -top-10 -right-10 w-32 h-32 rounded-full bg-purple-500/15 blur-3xl" />
+                    <div className="pointer-events-none absolute -bottom-10 -left-10 w-32 h-32 rounded-full bg-pink-500/15 blur-3xl" />
+                    <div className="relative flex items-center justify-between gap-2 flex-wrap">
+                      <div className="flex items-center gap-2">
+                        <div className="relative">
+                          <div className="absolute inset-0 rounded-lg bg-gradient-to-br from-purple-500 via-pink-500 to-cyan-400 blur-md opacity-60" />
+                          <div className="relative w-7 h-7 rounded-lg bg-gradient-to-br from-purple-500 via-pink-500 to-cyan-400 flex items-center justify-center shadow-lg">
+                            <History className="w-3.5 h-3.5 text-white" strokeWidth={2.4} />
+                          </div>
+                        </div>
+                        <h3 className="text-xs font-extrabold uppercase tracking-wider bg-gradient-to-r from-purple-500 via-pink-500 to-cyan-400 bg-clip-text text-transparent">💸 {t("balance.transaction_history", lang)}</h3>
+                        {balanceTransactions.length > 0 && (
+                          <span className="px-2 py-0.5 rounded-full bg-purple-500/15 border border-purple-500/30 text-purple-500 text-[9px] font-extrabold">{balanceTransactions.length}</span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        {balanceTransactions.length > 0 && (
+                          <button
+                            onClick={() => setSmartSaldo(v => !v)}
+                            className={`flex items-center gap-1 text-[11px] h-7 px-2.5 rounded-full font-extrabold transition-all ${smartSaldo ? "bg-gradient-to-r from-yellow-400 to-amber-500 text-white shadow-lg" : "bg-yellow-400/15 border border-yellow-400/30 text-yellow-500"}`}
+                          >
+                            <Sparkles className="w-3 h-3" /> {smartSaldo ? "Pintar ✓" : "Pintar"}
+                          </button>
+                        )}
+                        {balanceTransactions.length > 0 && (
+                          <button
+                            onClick={() => setShowTxExport(!showTxExport)}
+                            className={`flex items-center gap-1 text-[11px] h-7 px-2.5 rounded-full font-extrabold transition-all ${showTxExport ? "bg-gradient-to-r from-cyan-400 to-blue-500 text-white shadow-lg" : "bg-cyan-400/15 border border-cyan-400/30 text-cyan-500"}`}
+                          >
+                            <Download className="w-3 h-3" /> {showTxExport ? "Tutup" : "Ekspor"}
+                          </button>
+                        )}
+                      </div>
+                    </div>
                   </div>
                 </div>
 
