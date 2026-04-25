@@ -1965,75 +1965,140 @@ const Index = () => {
               </div>
             )}
 
-            {/* Voucher Card */}
-            <button onClick={() => setTab("voucher")} className="w-full text-left bg-card border border-border rounded-xl p-4 flex items-center gap-3 hover:bg-muted/40 transition-colors">
-              <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center shrink-0">
-                <Ticket className="w-5 h-5" strokeWidth={1.7} />
+            {/* Voucher Card - Aurora */}
+            <button
+              onClick={() => setTab("voucher")}
+              className="group relative w-full text-left rounded-2xl p-[1.5px] aurora-shift overflow-hidden active:scale-[0.99] transition-transform"
+              style={{ background: "linear-gradient(135deg, hsl(280 90% 65%/0.6), hsl(330 90% 60%/0.6), hsl(280 90% 65%/0.6))", backgroundSize: "300% 300%" }}
+            >
+              <div className="relative rounded-[14px] bg-card/95 backdrop-blur-xl p-4 flex items-center gap-3 overflow-hidden shine-sweep">
+                <div className="pointer-events-none absolute -top-8 -right-8 w-24 h-24 rounded-full bg-purple-500/20 blur-2xl" />
+                <div className="relative">
+                  <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 blur-md opacity-60" />
+                  <div className="relative w-11 h-11 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center shadow-lg shrink-0">
+                    <Ticket className="w-5 h-5 text-white" strokeWidth={2.2} />
+                  </div>
+                </div>
+                <div className="flex-1 min-w-0 relative">
+                  <h3 className="font-extrabold text-sm bg-gradient-to-r from-purple-500 to-pink-500 bg-clip-text text-transparent">{t("home.have_voucher", lang)}</h3>
+                  <p className="text-xs text-muted-foreground mt-0.5 truncate">{t("home.claim_now", lang)}</p>
+                </div>
+                <ChevronRight className="relative w-4 h-4 text-purple-500 shrink-0 group-hover:translate-x-1 transition-transform" strokeWidth={2.2} />
               </div>
-              <div className="flex-1 min-w-0">
-                <h3 className="font-semibold text-sm">{t("home.have_voucher", lang)}</h3>
-                <p className="text-xs text-muted-foreground mt-0.5 truncate">{t("home.claim_now", lang)}</p>
-              </div>
-              <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" strokeWidth={1.7} />
             </button>
 
-            {/* How To Claim */}
-            <div className="bg-card border border-border rounded-xl overflow-hidden">
-              <div className="px-4 py-3 border-b border-border flex items-center gap-2">
-                <HelpCircle className="w-4 h-4 text-muted-foreground" strokeWidth={1.7} />
-                <h3 className="text-sm font-semibold">Cara Klaim Voucher</h3>
-              </div>
-              <div className="p-4 space-y-3.5">
-                {[
-                  { step: "1", icon: <ShoppingBag className="w-4 h-4" strokeWidth={1.7} />, title: "Beli Produk", desc: "Pilih dan beli produk di tab Produk menggunakan saldo." },
-                  { step: "2", icon: <Ticket className="w-4 h-4" strokeWidth={1.7} />, title: "Masukkan Kode Voucher", desc: "Setelah beli, masukkan kode voucher yang didapat di tab Voucher." },
-                  { step: "3", icon: <CheckCircle2 className="w-4 h-4" strokeWidth={1.7} />, title: "Klaim & Dapat Akun", desc: "Klik Klaim dan dapatkan detail akun produkmu." },
-                ].map((item) => (
-                  <div key={item.step} className="flex items-start gap-3">
-                    <div className="w-7 h-7 rounded-full bg-muted text-foreground flex items-center justify-center shrink-0 text-xs font-semibold">
-                      {item.step}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold">{item.title}</p>
-                      <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">{item.desc}</p>
-                    </div>
+            {/* How To Claim - Aurora Premium */}
+            <div
+              className="relative rounded-2xl p-[1.5px] aurora-shift overflow-hidden"
+              style={{ background: "linear-gradient(135deg, hsl(190 95% 55%/0.5), hsl(280 90% 65%/0.5), hsl(150 80% 50%/0.5), hsl(190 95% 55%/0.5))", backgroundSize: "300% 300%" }}
+            >
+              <div className="relative rounded-[14px] bg-card/95 backdrop-blur-xl overflow-hidden">
+                <div className="pointer-events-none absolute -top-12 -right-12 w-40 h-40 rounded-full bg-cyan-400/15 blur-3xl" />
+                <div className="pointer-events-none absolute -bottom-12 -left-12 w-40 h-40 rounded-full bg-purple-500/15 blur-3xl" />
+
+                <div className="relative px-4 py-3 border-b border-white/10 flex items-center gap-2">
+                  <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-cyan-400 to-purple-500 flex items-center justify-center shadow-lg">
+                    <HelpCircle className="w-3.5 h-3.5 text-white" strokeWidth={2.2} />
                   </div>
-                ))}
-                <button onClick={() => setTab("voucher")} className="w-full mt-1 h-9 rounded-lg border border-border text-xs font-semibold hover:bg-muted/40 transition-colors flex items-center justify-center gap-1.5">
-                  <Ticket className="w-3.5 h-3.5" strokeWidth={1.7} /> Coba Klaim Sekarang
-                </button>
+                  <h3 className="text-sm font-extrabold bg-gradient-to-r from-cyan-400 via-purple-500 to-pink-500 bg-clip-text text-transparent">📚 Cara Klaim Voucher</h3>
+                </div>
+                <div className="relative p-4 space-y-3">
+                  {[
+                    { step: "1", icon: <ShoppingBag className="w-4 h-4" strokeWidth={2.2} />, title: "Beli Produk", desc: "Pilih dan beli produk di tab Produk menggunakan saldo.", color: "from-cyan-400 to-blue-500", glow: "34,211,238" },
+                    { step: "2", icon: <Ticket className="w-4 h-4" strokeWidth={2.2} />, title: "Masukkan Kode Voucher", desc: "Setelah beli, masukkan kode voucher yang didapat di tab Voucher.", color: "from-purple-500 to-pink-500", glow: "168,85,247" },
+                    { step: "3", icon: <CheckCircle2 className="w-4 h-4" strokeWidth={2.2} />, title: "Klaim & Dapat Akun", desc: "Klik Klaim dan dapatkan detail akun produkmu.", color: "from-emerald-500 to-green-500", glow: "16,185,129" },
+                  ].map((item) => (
+                    <div key={item.step} className="flex items-start gap-3 relative">
+                      <div className="relative shrink-0">
+                        <div className={`absolute inset-0 rounded-xl bg-gradient-to-br ${item.color} blur-md opacity-50`} />
+                        <div className={`relative w-9 h-9 rounded-xl bg-gradient-to-br ${item.color} text-white flex items-center justify-center text-xs font-extrabold shadow-lg`}>
+                          {item.step}
+                        </div>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className={`text-sm font-extrabold bg-gradient-to-r ${item.color} bg-clip-text text-transparent`}>{item.title}</p>
+                        <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">{item.desc}</p>
+                      </div>
+                    </div>
+                  ))}
+                  <button
+                    onClick={() => setTab("voucher")}
+                    className="relative w-full mt-2 h-10 rounded-xl bg-gradient-to-r from-cyan-400 via-purple-500 to-pink-500 text-white text-xs font-extrabold transition-all hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-1.5 shadow-lg overflow-hidden shine-sweep"
+                  >
+                    <Ticket className="w-3.5 h-3.5" strokeWidth={2.5} /> ✨ Coba Klaim Sekarang
+                  </button>
+                </div>
               </div>
             </div>
 
-            {/* Support Shortcut */}
-            <button onClick={() => setTab("tiket")} className="w-full text-left bg-card border border-border rounded-xl p-4 flex items-center gap-3 hover:bg-muted/40 transition-colors">
-              <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center shrink-0">
-                <AlertCircle className="w-5 h-5" strokeWidth={1.7} />
+            {/* Support Shortcut - Aurora */}
+            <button
+              onClick={() => setTab("tiket")}
+              className="group relative w-full text-left rounded-2xl p-[1.5px] aurora-shift overflow-hidden active:scale-[0.99] transition-transform"
+              style={{ background: "linear-gradient(135deg, hsl(0 90% 60%/0.6), hsl(20 90% 55%/0.6), hsl(0 90% 60%/0.6))", backgroundSize: "300% 300%" }}
+            >
+              <div className="relative rounded-[14px] bg-card/95 backdrop-blur-xl p-4 flex items-center gap-3 overflow-hidden shine-sweep">
+                <div className="pointer-events-none absolute -top-8 -right-8 w-24 h-24 rounded-full bg-red-500/20 blur-2xl" />
+                <div className="relative">
+                  <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-red-500 to-orange-500 blur-md opacity-60" />
+                  <div className="relative w-11 h-11 rounded-xl bg-gradient-to-br from-red-500 to-orange-500 flex items-center justify-center shadow-lg shrink-0">
+                    <AlertCircle className="w-5 h-5 text-white" strokeWidth={2.2} />
+                  </div>
+                </div>
+                <div className="flex-1 min-w-0 relative">
+                  <h3 className="font-extrabold text-sm bg-gradient-to-r from-red-500 to-orange-500 bg-clip-text text-transparent">{t("home.have_issue", lang)}</h3>
+                  <p className="text-xs text-muted-foreground mt-0.5 truncate">{t("home.submit_ticket", lang)}</p>
+                </div>
+                <ChevronRight className="relative w-4 h-4 text-red-500 shrink-0 group-hover:translate-x-1 transition-transform" strokeWidth={2.2} />
               </div>
-              <div className="flex-1 min-w-0">
-                <h3 className="font-semibold text-sm">{t("home.have_issue", lang)}</h3>
-                <p className="text-xs text-muted-foreground mt-0.5 truncate">{t("home.submit_ticket", lang)}</p>
-              </div>
-              <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" strokeWidth={1.7} />
             </button>
 
-            {/* Social Links */}
-            <div className="bg-card border border-border rounded-xl p-4">
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3 flex items-center gap-1.5">
-                <Globe className="w-3.5 h-3.5" strokeWidth={1.7} /> {t("home.follow_us", lang)}
-              </p>
-              <div className="grid grid-cols-3 gap-2">
-                {socialLinks.map((s) => (
-                  <a key={s.id} href={s.url} target="_blank" rel="noopener noreferrer"
-                    className="flex flex-col items-center gap-1.5 py-3 px-2 rounded-lg border border-border hover:bg-muted/40 transition-colors">
-                    {s.icon_url ? (
-                      <img src={s.icon_url} alt={s.platform} className="w-7 h-7 object-contain rounded" />
-                    ) : (
-                      <span className="w-7 h-7 rounded bg-muted flex items-center justify-center text-xs font-semibold">{s.platform[0]?.toUpperCase()}</span>
-                    )}
-                    <span className="truncate text-[11px] font-medium w-full text-center">{s.label}</span>
-                  </a>
-                ))}
+            {/* Social Links - Aurora Premium */}
+            <div
+              className="relative rounded-2xl p-[1.5px] aurora-shift overflow-hidden"
+              style={{ background: "linear-gradient(135deg, hsl(150 80% 50%/0.5), hsl(190 95% 55%/0.5), hsl(280 90% 65%/0.5), hsl(150 80% 50%/0.5))", backgroundSize: "300% 300%" }}
+            >
+              <div className="relative rounded-[14px] bg-card/95 backdrop-blur-xl p-4 overflow-hidden">
+                <div className="pointer-events-none absolute -top-12 right-0 w-32 h-32 rounded-full bg-emerald-500/15 blur-3xl" />
+                <div className="pointer-events-none absolute -bottom-12 left-0 w-32 h-32 rounded-full bg-cyan-400/15 blur-3xl" />
+
+                <div className="relative flex items-center justify-between mb-3">
+                  <p className="text-xs font-extrabold uppercase tracking-[0.15em] flex items-center gap-1.5 bg-gradient-to-r from-emerald-500 via-cyan-400 to-purple-500 bg-clip-text text-transparent">
+                    <Globe className="w-3.5 h-3.5 text-emerald-500" strokeWidth={2.2} /> {t("home.follow_us", lang)}
+                  </p>
+                  <span className="px-2 py-0.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-500 text-[9px] font-bold">{socialLinks.length} Akun</span>
+                </div>
+                <div className="relative grid grid-cols-3 gap-2">
+                  {socialLinks.map((s, i) => {
+                    const palette = [
+                      { color: "from-pink-500 to-rose-500", glow: "236,72,153" },
+                      { color: "from-cyan-400 to-blue-500", glow: "34,211,238" },
+                      { color: "from-purple-500 to-violet-600", glow: "168,85,247" },
+                      { color: "from-emerald-500 to-green-500", glow: "16,185,129" },
+                      { color: "from-yellow-400 to-orange-500", glow: "250,204,21" },
+                    ][i % 5];
+                    return (
+                      <a
+                        key={s.id}
+                        href={s.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="group relative flex flex-col items-center gap-1.5 py-3 px-2 rounded-xl bg-white/[0.03] border border-white/10 hover:border-white/30 hover:bg-white/[0.08] transition-all overflow-hidden active:scale-95"
+                      >
+                        <div className={`absolute inset-0 bg-gradient-to-br ${palette.color} opacity-0 group-hover:opacity-10 transition-opacity`} />
+                        <div className="relative">
+                          <div className={`absolute inset-0 bg-gradient-to-br ${palette.color} blur-md opacity-0 group-hover:opacity-50 transition-opacity scale-150`} />
+                          {s.icon_url ? (
+                            <img src={s.icon_url} alt={s.platform} className="relative w-8 h-8 object-contain rounded-lg" />
+                          ) : (
+                            <span className={`relative w-8 h-8 rounded-lg bg-gradient-to-br ${palette.color} flex items-center justify-center text-xs font-extrabold text-white shadow-lg`}>{s.platform[0]?.toUpperCase()}</span>
+                          )}
+                        </div>
+                        <span className="relative truncate text-[10px] font-bold w-full text-center text-foreground">{s.label}</span>
+                      </a>
+                    );
+                  })}
+                </div>
               </div>
             </div>
           </div>
