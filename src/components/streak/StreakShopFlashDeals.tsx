@@ -268,9 +268,58 @@ export default function StreakShopFlashDeals({ visitorId, onUpdate }: Props) {
           </div>
         )}
 
+        {/* Filter bar */}
+        {(() => {
+          const counts = {
+            all: deals.length,
+            free: deals.filter(d => !d.requires_premium).length,
+            premium: deals.filter(d => d.requires_premium).length,
+            cheap: deals.filter(d => Math.floor(d.original_cost * (1 - d.discount_pct / 100)) <= 500).length,
+            best: deals.filter(d => d.discount_pct >= 55).length,
+          };
+          const tabs: { key: FilterKey; label: string; icon: any }[] = [
+            { key: "all", label: `Semua (${counts.all})`, icon: Sparkles },
+            { key: "best", label: `Terhemat (${counts.best})`, icon: TrendingUp },
+            { key: "cheap", label: `Murah (${counts.cheap})`, icon: ZapIcon },
+            { key: "free", label: `Reguler (${counts.free})`, icon: Tag },
+            { key: "premium", label: `Premium (${counts.premium})`, icon: Crown },
+          ];
+          return (
+            <div className="mb-3 -mx-1 px-1 flex gap-1.5 overflow-x-auto scrollbar-hide">
+              {tabs.map(t => {
+                const active = filter === t.key;
+                const Icon = t.icon;
+                return (
+                  <button
+                    key={t.key}
+                    onClick={() => setFilter(t.key)}
+                    className={`flex items-center gap-1 px-2.5 py-1.5 rounded-full text-[10px] font-black whitespace-nowrap transition-all border ${
+                      active
+                        ? "bg-gradient-to-r from-orange-500 to-red-500 text-white border-orange-300 shadow-[0_0_12px_rgba(249,115,22,0.6)]"
+                        : "bg-black/40 text-orange-200/80 border-orange-400/20 hover:bg-black/60"
+                    }`}
+                  >
+                    <Icon className="w-3 h-3" strokeWidth={2.8} />
+                    {t.label}
+                  </button>
+                );
+              })}
+            </div>
+          );
+        })()}
+
         <div className="grid grid-cols-2 gap-2">
-          <AnimatePresence>
-            {deals.map((deal, i) => {
+          <AnimatePresence mode="popLayout">
+            {deals
+              .filter(d => {
+                if (filter === "all") return true;
+                if (filter === "free") return !d.requires_premium;
+                if (filter === "premium") return d.requires_premium;
+                if (filter === "cheap") return Math.floor(d.original_cost * (1 - d.discount_pct / 100)) <= 500;
+                if (filter === "best") return d.discount_pct >= 55;
+                return true;
+              })
+              .map((deal, i) => {
               const finalPrice = Math.floor(deal.original_cost * (1 - deal.discount_pct / 100));
               const locked = !deal.can_purchase;
               return (
