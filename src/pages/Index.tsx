@@ -1658,6 +1658,9 @@ const Index = () => {
             onSubTabChange={setMusicSubTab}
             onPlayExternal={(song) => playExternalRef.current?.(song)}
             playlistSlot={null /* PlaylistTab is mounted persistently below */}
+            playbackState={playbackState}
+            onTogglePlay={() => togglePlayRef.current?.()}
+            onOpenFullPlayer={() => openFullPlayerRef.current?.()}
           />
         )}
 
