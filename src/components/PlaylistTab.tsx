@@ -978,58 +978,129 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer, onPlayE
       {/* Device Info */}
       <DeviceInfoCard />
 
-      {/* Now Playing */}
-      {currentSong && (
-        <Card className="overflow-hidden border-primary/20 bg-gradient-to-br from-primary/5 to-accent/5 cursor-pointer" onClick={() => setShowFullPlayer(true)}>
-          <CardContent className="p-4 space-y-3">
-            <div className="flex items-center gap-3">
-              <div className="w-14 h-14 rounded-xl bg-primary/10 flex items-center justify-center overflow-hidden shrink-0">
-                {currentSong.cover_url ? <img src={currentSong.cover_url} alt="" className="w-full h-full object-cover" /> : <Music className="w-6 h-6 text-primary" />}
+      {/* Now Playing — Neon Glass Player */}
+      {currentSong && (() => {
+        const npProgress = duration > 0 ? Math.min(100, (currentTime / duration) * 100) : 0;
+        return (
+          <Card
+            className="relative overflow-hidden border-fuchsia-500/40 bg-gradient-to-br from-fuchsia-950/95 via-purple-950/95 to-indigo-950/95 backdrop-blur-xl shadow-[0_12px_36px_-8px_rgba(217,70,239,0.7)] cursor-pointer"
+            onClick={() => setShowFullPlayer(true)}
+          >
+            {/* Shine sweep */}
+            <div
+              className="absolute inset-y-0 w-1/3 bg-gradient-to-r from-transparent via-pink-400/20 to-transparent skew-x-12 pointer-events-none"
+              style={{ animation: "shine-sweep 4s linear infinite" }}
+            />
+            {/* Animated mesh blobs */}
+            <div className="absolute -top-10 -right-8 w-32 h-32 bg-fuchsia-500/30 rounded-full blur-3xl pointer-events-none" />
+            <div className="absolute -bottom-10 -left-8 w-32 h-32 bg-indigo-500/30 rounded-full blur-3xl pointer-events-none" />
+
+            <CardContent className="relative p-4 space-y-3">
+              <div className="flex items-center gap-3">
+                {/* Vinyl-style cover */}
+                <div className="relative shrink-0">
+                  <div
+                    className="w-16 h-16 rounded-full overflow-hidden border-2 border-white/30 bg-black shadow-[0_0_18px_rgba(217,70,239,0.6)] relative"
+                    style={isPlaying ? { animation: "spin 6s linear infinite" } : undefined}
+                  >
+                    {currentSong.cover_url ? (
+                      <img src={currentSong.cover_url} alt="" className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="w-full h-full bg-gradient-to-br from-fuchsia-500 to-purple-600 flex items-center justify-center">
+                        <Music className="w-6 h-6 text-white" />
+                      </div>
+                    )}
+                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                      <div className="w-3 h-3 rounded-full bg-black border border-white/40" />
+                    </div>
+                  </div>
+                  {isPlaying && (
+                    <span className="absolute -top-0.5 -right-0.5 w-3 h-3 rounded-full bg-green-400 border-2 border-purple-950 animate-pulse" />
+                  )}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-1.5 mb-1">
+                    <span className="px-1.5 py-0.5 rounded bg-pink-500/30 border border-pink-400/50 text-[9px] font-black text-pink-100 uppercase tracking-wider">
+                      {isPlaying ? "Playing" : "Paused"}
+                    </span>
+                    {isPlaying && (
+                      <div className="flex items-end gap-[2px] h-3">
+                        {[0.5, 0.9, 0.4, 0.8].map((h, i) => (
+                          <span
+                            key={i}
+                            className="w-[2px] h-full bg-gradient-to-t from-pink-400 to-fuchsia-200 rounded-full"
+                            style={{
+                              transformOrigin: "bottom",
+                              animation: `eq-bounce ${0.6 + i * 0.1}s ease-in-out ${i * 0.05}s infinite`,
+                            }}
+                          />
+                        ))}
+                      </div>
+                    )}
+                    {cachedIds.has(currentSong.id) && (
+                      <span className="text-[9px] font-bold text-emerald-300 bg-emerald-500/20 border border-emerald-400/40 px-1.5 py-0.5 rounded">OFFLINE</span>
+                    )}
+                  </div>
+                  <p className="font-bold text-sm text-white truncate leading-tight">{currentSong.title}</p>
+                  <p className="text-xs text-white/70 truncate mt-0.5">{currentSong.artist}</p>
+                  {currentSongDateLabel && (
+                    <p className="mt-1 flex items-center gap-1 text-[10px] text-white/50">
+                      <Clock className="w-3 h-3" /> {currentSongDateLabel}
+                    </p>
+                  )}
+                </div>
+                <ChevronDown className="w-5 h-5 text-white/60 rotate-180 shrink-0" />
               </div>
-              <div className="flex-1 min-w-0">
-                <p className="font-bold text-sm truncate">{currentSong.title}</p>
-                <p className="text-xs text-muted-foreground truncate">{currentSong.artist}{cachedIds.has(currentSong.id) && <span className="ml-1 text-accent">• Offline</span>}</p>
-                {currentSongDateLabel && (
-                  <p className="mt-1 flex items-center gap-1 text-[11px] text-muted-foreground">
-                    <Clock className="w-3.5 h-3.5" /> {currentSongDateLabel}
-                  </p>
-                )}
+
+              {/* Progress slider with neon track */}
+              <div className="space-y-1" onClick={e => e.stopPropagation()}>
+                <div className="relative h-1 rounded-full bg-white/10 overflow-hidden">
+                  <div
+                    className="absolute inset-y-0 left-0 bg-gradient-to-r from-pink-400 via-fuchsia-400 to-purple-400 shadow-[0_0_8px_rgba(236,72,153,0.8)] transition-all duration-300"
+                    style={{ width: `${npProgress}%` }}
+                  />
+                </div>
+                <Slider value={[currentTime]} max={duration || 100} step={1} onValueChange={seek} className="cursor-pointer -mt-2" />
+                <div className="flex justify-between text-[10px] text-white/60 font-medium"><span>{formatTime(currentTime)}</span><span>{formatTime(duration)}</span></div>
               </div>
-              <ChevronDown className="w-5 h-5 text-muted-foreground rotate-180 shrink-0" />
-            </div>
-            <div className="space-y-1" onClick={e => e.stopPropagation()}>
-              <Slider value={[currentTime]} max={duration || 100} step={1} onValueChange={seek} className="cursor-pointer" />
-              <div className="flex justify-between text-[10px] text-muted-foreground"><span>{formatTime(currentTime)}</span><span>{formatTime(duration)}</span></div>
-            </div>
-            <div className="flex items-center justify-center gap-2" onClick={e => e.stopPropagation()}>
-              <button onClick={() => setShuffle(!shuffle)} className={`p-2 rounded-full transition-colors ${shuffle ? "text-primary bg-primary/10" : "text-muted-foreground hover:text-foreground"}`}><Shuffle className="w-4 h-4" /></button>
-              <button onClick={playPrev} className="p-2 rounded-full text-foreground hover:bg-muted transition-colors"><SkipBack className="w-5 h-5" /></button>
-              <button onClick={togglePlay} className="w-12 h-12 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-lg hover:scale-105 transition-transform">
-                {isPlaying ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5 ml-0.5" />}
-              </button>
-              <button onClick={playNext} className="p-2 rounded-full text-foreground hover:bg-muted transition-colors"><SkipForward className="w-5 h-5" /></button>
-              <button onClick={() => setRepeat(!repeat)} className={`p-2 rounded-full transition-colors ${repeat ? "text-primary bg-primary/10" : "text-muted-foreground hover:text-foreground"}`}><Repeat className="w-4 h-4" /></button>
-            </div>
-            <div className="flex items-center gap-2" onClick={e => e.stopPropagation()}>
-              <button onClick={toggleMute} className="text-muted-foreground hover:text-foreground">{muted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}</button>
-              <Slider value={[muted ? 0 : volume]} max={1} step={0.01} onValueChange={changeVolume} className="flex-1 cursor-pointer" />
-              <button onClick={async () => {
-                if (!currentSong) return;
-                const shareUrl = `${window.location.origin}/?song=${currentSong.id}`;
-                const shareData = { title: currentSong.title, text: `🎵 ${currentSong.title} - ${currentSong.artist}`, url: shareUrl };
-                try {
-                  if (navigator.share) { await navigator.share(shareData); }
-                  else { await navigator.clipboard.writeText(shareUrl); toast({ title: "Link disalin!" }); }
-                } catch {}
-              }} className="text-muted-foreground hover:text-foreground"><Share2 className="w-4 h-4" /></button>
-            </div>
-            <div className="flex items-center justify-center gap-1.5 pt-1 text-[11px] font-semibold text-primary">
-              <Type className="w-3.5 h-3.5" />
-              {currentSongLyrics.length > 0 ? "Ketuk untuk lihat lirik fullscreen" : "Lirik untuk lagu ini belum tersedia"}
-            </div>
-          </CardContent>
-        </Card>
-      )}
+
+              {/* Controls */}
+              <div className="flex items-center justify-center gap-2" onClick={e => e.stopPropagation()}>
+                <button onClick={() => setShuffle(!shuffle)} className={`p-2 rounded-full transition-colors ${shuffle ? "text-pink-300 bg-pink-500/20" : "text-white/50 hover:text-white"}`}><Shuffle className="w-4 h-4" /></button>
+                <button onClick={playPrev} className="p-2 rounded-full text-white hover:bg-white/10 transition-colors"><SkipBack className="w-5 h-5" /></button>
+                <button
+                  onClick={togglePlay}
+                  className="w-12 h-12 rounded-full bg-gradient-to-br from-pink-500 to-fuchsia-600 text-white flex items-center justify-center shadow-lg shadow-pink-500/50 hover:scale-105 active:scale-95 transition-transform"
+                >
+                  {isPlaying ? <Pause className="w-5 h-5" fill="currentColor" /> : <Play className="w-5 h-5 ml-0.5" fill="currentColor" />}
+                </button>
+                <button onClick={playNext} className="p-2 rounded-full text-white hover:bg-white/10 transition-colors"><SkipForward className="w-5 h-5" /></button>
+                <button onClick={() => setRepeat(!repeat)} className={`p-2 rounded-full transition-colors ${repeat ? "text-pink-300 bg-pink-500/20" : "text-white/50 hover:text-white"}`}><Repeat className="w-4 h-4" /></button>
+              </div>
+
+              {/* Volume + share */}
+              <div className="flex items-center gap-2" onClick={e => e.stopPropagation()}>
+                <button onClick={toggleMute} className="text-white/60 hover:text-white">{muted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}</button>
+                <Slider value={[muted ? 0 : volume]} max={1} step={0.01} onValueChange={changeVolume} className="flex-1 cursor-pointer" />
+                <button onClick={async () => {
+                  if (!currentSong) return;
+                  const shareUrl = `${window.location.origin}/?song=${currentSong.id}`;
+                  const shareData = { title: currentSong.title, text: `🎵 ${currentSong.title} - ${currentSong.artist}`, url: shareUrl };
+                  try {
+                    if (navigator.share) { await navigator.share(shareData); }
+                    else { await navigator.clipboard.writeText(shareUrl); toast({ title: "Link disalin!" }); }
+                  } catch {}
+                }} className="text-white/60 hover:text-white"><Share2 className="w-4 h-4" /></button>
+              </div>
+
+              <div className="flex items-center justify-center gap-1.5 pt-1 text-[11px] font-semibold text-pink-200">
+                <Type className="w-3.5 h-3.5" />
+                {currentSongLyrics.length > 0 ? "Ketuk untuk lihat lirik fullscreen" : "Lirik untuk lagu ini belum tersedia"}
+              </div>
+            </CardContent>
+          </Card>
+        );
+      })()}
 
       {/* ===== FULLSCREEN PLAYER (Portal to avoid hidden parent) ===== */}
       {showFullPlayer && currentSong && createPortal(
