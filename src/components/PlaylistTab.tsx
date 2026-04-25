@@ -876,35 +876,106 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer, onPlayE
   }
 
   const renderSongList = (songList: Song[]) => (
-    <div className="space-y-2">
+    <div className="space-y-2.5">
       {songList.map((song, i) => {
         const isCached = cachedIds.has(song.id);
+        const isActive = currentIndex === i && currentSong?.id === song.id;
+        const isLiked = likedSongIds.has(song.id);
         return (
-          <Card key={song.id} className={`overflow-hidden transition-all cursor-pointer hover:shadow-md ${currentIndex === i && currentSong?.id === song.id ? "border-primary/40 bg-primary/5" : ""}`}>
-            <CardContent className="p-3 flex items-center gap-3">
-              <button onClick={() => playSong(i)} className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0 hover:bg-primary/20 transition-colors relative overflow-hidden">
-                {song.cover_url ? <img src={song.cover_url} alt="" className="w-full h-full object-cover absolute inset-0" /> : currentIndex === i && isPlaying ? <Pause className="w-4 h-4 text-primary" /> : <Play className="w-4 h-4 text-primary ml-0.5" />}
+          <Card
+            key={song.id}
+            className={`group relative overflow-hidden transition-all duration-300 cursor-pointer border ${
+              isActive
+                ? "border-fuchsia-500/50 bg-gradient-to-br from-fuchsia-500/15 via-purple-500/10 to-indigo-500/15 shadow-[0_0_24px_-6px_hsl(300_90%_60%/0.5)]"
+                : "border-border/60 bg-gradient-to-br from-background to-muted/30 hover:border-fuchsia-500/30 hover:shadow-[0_4px_18px_-6px_hsl(300_90%_60%/0.35)]"
+            }`}
+          >
+            {/* Neon accent bar */}
+            <div className={`absolute left-0 top-0 bottom-0 w-1 ${isActive ? "bg-gradient-to-b from-pink-500 via-fuchsia-500 to-indigo-500 shadow-[0_0_8px_hsl(300_90%_60%)]" : "bg-transparent group-hover:bg-gradient-to-b group-hover:from-pink-500/40 group-hover:to-indigo-500/40"} transition-all`} />
+            {/* Shine sweep on active */}
+            {isActive && (
+              <div className="pointer-events-none absolute inset-0 overflow-hidden">
+                <div className="absolute -inset-x-1 -top-1 h-full opacity-40" style={{ background: "linear-gradient(110deg, transparent 30%, hsl(0 0% 100% / 0.15) 50%, transparent 70%)", animation: "shine-sweep 3s linear infinite" }} />
+              </div>
+            )}
+            <CardContent className="p-3 flex items-center gap-3 relative">
+              <button
+                onClick={() => playSong(i)}
+                className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 transition-all relative overflow-hidden ${
+                  isActive
+                    ? "bg-gradient-to-br from-pink-500 via-fuchsia-500 to-indigo-500 shadow-[0_0_18px_-2px_hsl(300_90%_60%/0.7)] ring-2 ring-fuchsia-400/40"
+                    : "bg-gradient-to-br from-fuchsia-500/20 via-purple-500/15 to-indigo-500/20 hover:from-fuchsia-500/40 hover:to-indigo-500/40 ring-1 ring-fuchsia-500/20"
+                }`}
+              >
+                {song.cover_url ? (
+                  <img
+                    src={song.cover_url}
+                    alt=""
+                    className={`w-full h-full object-cover absolute inset-0 ${isActive && isPlaying ? "animate-[spin_8s_linear_infinite]" : ""}`}
+                  />
+                ) : isActive && isPlaying ? (
+                  <Pause className={`w-5 h-5 ${isActive ? "text-white drop-shadow-[0_0_6px_rgba(255,255,255,0.8)]" : "text-fuchsia-400"}`} />
+                ) : (
+                  <Play className={`w-5 h-5 ml-0.5 ${isActive ? "text-white drop-shadow-[0_0_6px_rgba(255,255,255,0.8)]" : "text-fuchsia-400"}`} />
+                )}
                 {song.cover_url && (
-                  <div className="absolute inset-0 bg-black/30 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
-                    {currentIndex === i && isPlaying ? <Pause className="w-4 h-4 text-white" /> : <Play className="w-4 h-4 text-white ml-0.5" />}
+                  <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
+                    {isActive && isPlaying ? <Pause className="w-5 h-5 text-white" /> : <Play className="w-5 h-5 text-white ml-0.5" />}
                   </div>
                 )}
-                {isCached && <span className="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-accent flex items-center justify-center z-10"><CheckCircle2 className="w-2.5 h-2.5 text-accent-foreground" /></span>}
+                {/* Equalizer overlay when active+playing */}
+                {isActive && isPlaying && !song.cover_url && (
+                  <div className="absolute inset-0 flex items-end justify-center gap-0.5 pb-1.5 pointer-events-none">
+                    {[0, 1, 2].map(b => (
+                      <span key={b} className="w-0.5 bg-white/90 rounded-full" style={{ height: "10px", animation: `eq-bounce 0.8s ease-in-out ${b * 0.15}s infinite` }} />
+                    ))}
+                  </div>
+                )}
+                {isCached && (
+                  <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-emerald-500 flex items-center justify-center z-10 ring-2 ring-background shadow-[0_0_8px_hsl(160_84%_50%/0.6)]">
+                    <CheckCircle2 className="w-2.5 h-2.5 text-white" />
+                  </span>
+                )}
               </button>
               <div className="flex-1 min-w-0" onClick={() => playSong(i)}>
-                <p className="font-bold text-sm truncate">{song.title}</p>
-                <p className="text-[11px] text-muted-foreground truncate">{song.artist}{song.file_size > 0 ? ` • ${formatSize(song.file_size)}` : ""}{isCached && <span className="text-accent font-semibold"> • Offline</span>}</p>
-                <p className="text-[10px] text-muted-foreground truncate">
+                <p className={`font-bold text-sm truncate ${isActive ? "bg-gradient-to-r from-pink-400 via-fuchsia-400 to-indigo-400 bg-clip-text text-transparent" : "text-foreground"}`}>
+                  {song.title}
+                </p>
+                <p className="text-[11px] text-muted-foreground truncate flex items-center gap-1">
+                  <span className="font-medium">{song.artist}</span>
+                  {song.file_size > 0 && (
+                    <>
+                      <span className="text-fuchsia-500/60">•</span>
+                      <span>{formatSize(song.file_size)}</span>
+                    </>
+                  )}
+                  {isCached && (
+                    <>
+                      <span className="text-emerald-500/60">•</span>
+                      <span className="text-emerald-500 font-semibold">Offline</span>
+                    </>
+                  )}
+                </p>
+                <p className="text-[10px] text-muted-foreground/80 truncate mt-0.5">
                   {song.release_date ? `Dirilis ${formatSongDate(song.release_date)}` : `Diunggah ${formatDate(song.created_at)}`}
                 </p>
               </div>
-              <button onClick={(e) => toggleLikeSong(song.id, e)} className="shrink-0 p-1">
-                <Heart className={`w-4 h-4 transition-colors ${likedSongIds.has(song.id) ? "fill-destructive text-destructive" : "text-muted-foreground hover:text-destructive"}`} />
+              <button
+                onClick={(e) => toggleLikeSong(song.id, e)}
+                className={`shrink-0 p-1.5 rounded-full transition-all ${isLiked ? "bg-pink-500/15 hover:bg-pink-500/25" : "hover:bg-muted"}`}
+              >
+                <Heart className={`w-4 h-4 transition-all ${isLiked ? "fill-pink-500 text-pink-500 drop-shadow-[0_0_6px_hsl(330_90%_60%/0.6)]" : "text-muted-foreground hover:text-pink-500"}`} />
               </button>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button size="sm" variant="ghost" className="shrink-0 h-8 w-8 p-0" onClick={(e) => e.stopPropagation()} disabled={downloading === song.id}>
-                    {downloading === song.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="shrink-0 h-8 w-8 p-0 rounded-full hover:bg-fuchsia-500/15 hover:text-fuchsia-500 transition-colors"
+                    onClick={(e) => e.stopPropagation()}
+                    disabled={downloading === song.id}
+                  >
+                    {downloading === song.id ? <Loader2 className="w-4 h-4 animate-spin text-fuchsia-500" /> : <Download className="w-4 h-4" />}
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="min-w-[180px]">
