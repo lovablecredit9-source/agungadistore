@@ -1064,6 +1064,22 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer, onPlayE
               )}
             </div>
 
+            {/* Animated Equalizer Bar */}
+            <div className="w-full flex items-center justify-center gap-1 h-8 mt-2 mb-1">
+              {[0.4, 0.8, 0.5, 0.95, 0.6, 0.85, 0.45, 0.75, 0.55].map((h, i) => (
+                <div
+                  key={i}
+                  className="w-1.5 rounded-full bg-gradient-to-t from-primary/60 via-primary to-primary/80 shadow-[0_0_8px_hsl(var(--primary)/0.6)]"
+                  style={{
+                    height: `${h * 100}%`,
+                    animation: isPlaying ? `eq-bounce 0.${6 + i}s ease-in-out ${i * 0.07}s infinite alternate` : "none",
+                    transformOrigin: "center",
+                    opacity: isPlaying ? 1 : 0.35,
+                  }}
+                />
+              ))}
+            </div>
+
             {/* Song Info */}
             <div className="w-full mt-2 mb-4">
               <div className="flex items-start justify-between gap-2">
