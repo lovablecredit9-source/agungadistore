@@ -392,22 +392,47 @@ const MusicPublicTab = ({ onPlaySong }: MusicPublicTabProps) => {
         </div>
       </div>
 
-      {/* Sub-navigation */}
-      <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-hide">
-        {[
-          { key: "explore" as SubTab, label: "Jelajahi", icon: Globe },
-          { key: "upload" as SubTab, label: "Upload", icon: Upload },
-          { key: "my-songs" as SubTab, label: "Laguku", icon: Music },
-          { key: "profile" as SubTab, label: "Profil", icon: User },
-        ].map(tab => (
-          <Button key={tab.key} variant={subTab === tab.key ? "default" : "ghost"} size="sm"
-            onClick={() => { if (tab.key === "upload" && !myProfile) { setShowProfileSetup(true); return; } setSubTab(tab.key); }}
-            className={`gap-1.5 text-xs whitespace-nowrap rounded-xl transition-all ${
-              subTab === tab.key ? "shadow-md" : "hover:bg-muted/80"
-            }`}>
-            <tab.icon className="w-3.5 h-3.5" /> {tab.label}
-          </Button>
-        ))}
+      {/* Premium Aurora Sub-Navigation */}
+      <div className="relative rounded-2xl p-[1.5px] overflow-hidden"
+        style={{
+          background: "linear-gradient(120deg, hsl(var(--neon-cyan)/0.7), hsl(var(--neon-purple)/0.7) 50%, hsl(var(--neon-pink)/0.7))",
+          backgroundSize: "300% 300%",
+          animation: "aurora-shift 8s ease infinite",
+        }}
+      >
+        <div className="relative rounded-[14px] bg-background/85 backdrop-blur-xl p-1.5 overflow-x-auto scrollbar-hide">
+          <div className="pointer-events-none absolute -top-6 left-1/4 w-24 h-24 rounded-full blur-3xl opacity-40" style={{ background: "hsl(var(--neon-cyan)/0.6)" }} />
+          <div className="pointer-events-none absolute -bottom-8 right-1/4 w-24 h-24 rounded-full blur-3xl opacity-30" style={{ background: "hsl(var(--neon-pink)/0.6)" }} />
+          <div className="relative grid grid-cols-4 gap-1.5">
+            {([
+              { key: "explore" as SubTab, label: "Jelajahi", icon: Globe, color: "var(--neon-cyan)" },
+              { key: "upload" as SubTab, label: "Upload", icon: Upload, color: "var(--neon-purple)" },
+              { key: "my-songs" as SubTab, label: "Laguku", icon: Music, color: "var(--neon-pink)" },
+              { key: "profile" as SubTab, label: "Profil", icon: User, color: "var(--neon-yellow)" },
+            ]).map(({ key, label, icon: Icon, color }) => {
+              const active = subTab === key;
+              return (
+                <button
+                  key={key}
+                  onClick={() => { if (key === "upload" && !myProfile) { setShowProfileSetup(true); return; } setSubTab(key); }}
+                  className={`relative flex flex-col items-center justify-center gap-0.5 py-2 rounded-xl text-[11px] font-bold transition-all duration-300 overflow-hidden ${
+                    active ? "text-white scale-[1.04]" : "text-muted-foreground hover:text-foreground hover:bg-white/5"
+                  }`}
+                  style={active ? {
+                    background: `linear-gradient(135deg, hsl(${color}/0.95), hsl(${color}/0.6))`,
+                    boxShadow: `0 0 18px hsl(${color}/0.5), 0 4px 14px hsl(${color}/0.3), inset 0 1px 0 hsl(0 0% 100%/0.2)`,
+                  } : undefined}
+                >
+                  {active && (
+                    <span className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/30 to-transparent" style={{ animation: "shine-sweep 2.6s ease-in-out infinite" }} />
+                  )}
+                  <Icon className={`w-4 h-4 relative ${active ? "drop-shadow-[0_0_4px_rgba(255,255,255,0.7)]" : ""}`} />
+                  <span className="relative tracking-wide">{label}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
       </div>
 
       {/* Explore Tab */}
