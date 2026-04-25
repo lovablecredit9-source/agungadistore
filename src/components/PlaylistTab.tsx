@@ -1589,30 +1589,87 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer, onPlayE
       {/* ===== STORAGE VIEW ===== */}
       {activeView === "storage" && (
         <div className="space-y-4">
-          <Card className={`border-primary/20 ${isAtLimit ? "border-destructive/50" : isNearLimit ? "border-yellow-500/50" : ""}`}>
-            <CardContent className="p-4 space-y-3">
-              <div className="flex items-center justify-between mb-1">
-                <div className="flex items-center gap-1.5"><HardDrive className="w-4 h-4 text-primary" /><span className="text-xs font-bold">Penyimpanan Offline</span></div>
-                <div className={`flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full ${hasSubs ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"}`}>
-                  {hasSubs ? <Crown className="w-3 h-3" /> : <Globe className="w-3 h-3" />}
-                  {hasSubs ? formatStorageSize(maxBytes) : "Free 2GB"}
+          <div className="relative rounded-2xl p-[1.5px] shadow-[0_18px_50px_-15px_rgba(217,70,239,0.7)]"
+            style={{
+              background: isAtLimit
+                ? "linear-gradient(120deg, #ef4444, #f97316, #ef4444)"
+                : isNearLimit
+                  ? "linear-gradient(120deg, #f59e0b, #eab308, #f59e0b)"
+                  : "linear-gradient(120deg, #ec4899, #a855f7, #6366f1, #06b6d4, #ec4899)",
+              backgroundSize: "300% 300%",
+              animation: "aurora-shift 8s ease infinite",
+            }}
+          >
+            <div className="relative overflow-hidden rounded-[14px] bg-gradient-to-br from-[#1a0b2e]/95 via-[#2a0f47]/95 to-[#0f0a3d]/95 backdrop-blur-xl">
+              {/* Glow blobs */}
+              <div className="pointer-events-none absolute -top-10 -left-10 w-40 h-40 rounded-full bg-fuchsia-500/25 blur-3xl" />
+              <div className="pointer-events-none absolute -bottom-12 -right-8 w-44 h-44 rounded-full bg-indigo-500/25 blur-3xl" />
+              <div className="absolute inset-y-0 w-1/3 bg-gradient-to-r from-transparent via-white/10 to-transparent skew-x-12 pointer-events-none"
+                style={{ animation: "shine-sweep 6s linear infinite" }} />
+
+              <div className="relative p-4 space-y-3">
+                {/* Header */}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="relative">
+                      <span className="absolute inset-0 rounded-lg bg-pink-500/40 blur-md" />
+                      <div className="relative w-9 h-9 rounded-lg bg-gradient-to-br from-pink-500 to-fuchsia-600 flex items-center justify-center shadow-[0_0_12px_rgba(236,72,153,0.7)]">
+                        <HardDrive className="w-4 h-4 text-white" />
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-[9px] uppercase tracking-[0.2em] text-fuchsia-300/80 font-bold">Cloud Storage</div>
+                      <div className="text-sm font-black text-white drop-shadow-[0_1px_4px_rgba(236,72,153,0.5)]">Penyimpanan Offline</div>
+                    </div>
+                  </div>
+                  <div className={`flex items-center gap-1 text-[10px] font-black px-2.5 py-1 rounded-full border ${hasSubs ? "bg-gradient-to-r from-amber-500/30 to-yellow-500/30 border-amber-400/60 text-amber-100 shadow-[0_0_10px_rgba(245,158,11,0.5)]" : "bg-white/10 border-white/20 text-white/80"}`}>
+                    {hasSubs ? <Crown className="w-3 h-3" /> : <Globe className="w-3 h-3" />}
+                    {hasSubs ? formatStorageSize(maxBytes) : "Free 2GB"}
+                  </div>
                 </div>
+
+                {/* Stat cards */}
+                <div className="grid grid-cols-3 gap-2">
+                  <div className="rounded-xl bg-gradient-to-br from-pink-500/15 to-fuchsia-500/5 p-2.5 border border-pink-400/20 text-center backdrop-blur-sm">
+                    <p className="text-[9px] uppercase tracking-wider text-pink-200/70 font-bold">Total</p>
+                    <p className="text-lg font-black text-white tabular-nums">{songs.length}</p>
+                  </div>
+                  <div className="rounded-xl bg-gradient-to-br from-emerald-500/15 to-teal-500/5 p-2.5 border border-emerald-400/20 text-center backdrop-blur-sm">
+                    <p className="text-[9px] uppercase tracking-wider text-emerald-200/70 font-bold flex items-center justify-center gap-0.5"><CheckCircle2 className="w-2.5 h-2.5" /> Offline</p>
+                    <p className="text-lg font-black text-emerald-300 tabular-nums">{cachedCount}</p>
+                  </div>
+                  <div className={`rounded-xl bg-gradient-to-br ${isAtLimit ? "from-red-500/20 to-rose-500/10 border-red-400/30" : isNearLimit ? "from-amber-500/20 to-yellow-500/10 border-amber-400/30" : "from-cyan-500/15 to-blue-500/5 border-cyan-400/20"} p-2.5 border text-center backdrop-blur-sm`}>
+                    <p className="text-[9px] uppercase tracking-wider text-white/70 font-bold flex items-center justify-center gap-0.5"><HardDrive className="w-2.5 h-2.5" /> Pakai</p>
+                    <p className={`text-sm font-black tabular-nums ${isAtLimit ? "text-red-300" : isNearLimit ? "text-amber-300" : "text-cyan-200"}`}>{formatStorageSize(downloadedStorage)}</p>
+                  </div>
+                </div>
+
+                {/* Progress with glow + percent badge */}
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between text-[10px] font-bold">
+                    <span className="text-white/70">{formatStorageSize(downloadedStorage)} / {formatStorageSize(maxBytes)}</span>
+                    <span className={`px-1.5 py-0.5 rounded-full tabular-nums ${isAtLimit ? "bg-red-500/30 text-red-100 border border-red-400/40" : isNearLimit ? "bg-amber-500/30 text-amber-100 border border-amber-400/40" : "bg-fuchsia-500/30 text-fuchsia-100 border border-fuchsia-400/40"}`}>
+                      {Math.round(storagePercent)}%
+                    </span>
+                  </div>
+                  <div className="relative h-2.5 rounded-full bg-white/10 overflow-hidden border border-white/10">
+                    <div
+                      className={`h-full transition-all duration-500 ${isAtLimit ? "bg-gradient-to-r from-red-400 to-rose-500 shadow-[0_0_10px_rgba(239,68,68,0.7)]" : isNearLimit ? "bg-gradient-to-r from-amber-400 to-yellow-500 shadow-[0_0_10px_rgba(245,158,11,0.7)]" : "bg-gradient-to-r from-pink-400 via-fuchsia-400 to-cyan-300 shadow-[0_0_10px_rgba(236,72,153,0.7)]"}`}
+                      style={{ width: `${storagePercent}%` }}
+                    >
+                      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent"
+                        style={{ animation: "shine-sweep 2.5s linear infinite" }} />
+                    </div>
+                  </div>
+                </div>
+
+                <Button size="sm" className="w-full gap-2 text-xs font-bold bg-gradient-to-r from-pink-500 via-fuchsia-500 to-purple-600 hover:from-pink-400 hover:to-purple-500 text-white border-0 shadow-[0_8px_24px_-4px_rgba(236,72,153,0.6)]" onClick={() => setUpgradeOpen(true)}>
+                  <Zap className="w-3.5 h-3.5" />
+                  {hasSubs ? "Tambah / Upgrade Penyimpanan" : "✨ Upgrade Penyimpanan"}
+                </Button>
               </div>
-              <div className="grid grid-cols-3 gap-2">
-                <div className="rounded-xl bg-background/70 p-2.5 border border-border/60 text-center"><p className="text-[10px] text-muted-foreground">Total</p><p className="text-sm font-extrabold">{songs.length}</p></div>
-                <div className="rounded-xl bg-background/70 p-2.5 border border-border/60 text-center"><p className="text-[10px] text-muted-foreground flex items-center justify-center gap-0.5"><CheckCircle2 className="w-3 h-3 text-accent" /> Offline</p><p className="text-sm font-extrabold text-accent">{cachedCount}</p></div>
-                <div className="rounded-xl bg-background/70 p-2.5 border border-border/60 text-center"><p className="text-[10px] text-muted-foreground flex items-center justify-center gap-0.5"><HardDrive className="w-3 h-3" /> Terpakai</p><p className={`text-sm font-extrabold ${isAtLimit ? "text-destructive" : isNearLimit ? "text-yellow-600" : ""}`}>{formatStorageSize(downloadedStorage)}</p></div>
-              </div>
-              <div className="space-y-1">
-                <Progress value={storagePercent} className={`h-2 ${isAtLimit ? "[&>div]:bg-destructive" : isNearLimit ? "[&>div]:bg-yellow-500" : ""}`} />
-                <div className="flex justify-between text-[10px] text-muted-foreground"><span>{formatStorageSize(downloadedStorage)}</span><span>{formatStorageSize(maxBytes)}</span></div>
-              </div>
-              <Button variant="outline" size="sm" className="w-full gap-2 text-xs border-primary/30 hover:bg-primary/10" onClick={() => setUpgradeOpen(true)}>
-                <Zap className="w-3.5 h-3.5 text-primary" />
-                {hasSubs ? "Tambah / Upgrade Penyimpanan" : "Upgrade Penyimpanan"}
-              </Button>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
 
           {/* Redeem Storage Voucher */}
           <Card className="border-primary/20">
