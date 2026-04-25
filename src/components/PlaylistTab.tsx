@@ -1589,30 +1589,87 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer, onPlayE
       {/* ===== STORAGE VIEW ===== */}
       {activeView === "storage" && (
         <div className="space-y-4">
-          <Card className={`border-primary/20 ${isAtLimit ? "border-destructive/50" : isNearLimit ? "border-yellow-500/50" : ""}`}>
-            <CardContent className="p-4 space-y-3">
-              <div className="flex items-center justify-between mb-1">
-                <div className="flex items-center gap-1.5"><HardDrive className="w-4 h-4 text-primary" /><span className="text-xs font-bold">Penyimpanan Offline</span></div>
-                <div className={`flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full ${hasSubs ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"}`}>
-                  {hasSubs ? <Crown className="w-3 h-3" /> : <Globe className="w-3 h-3" />}
-                  {hasSubs ? formatStorageSize(maxBytes) : "Free 2GB"}
+          <div className="relative rounded-2xl p-[1.5px] shadow-[0_18px_50px_-15px_rgba(217,70,239,0.7)]"
+            style={{
+              background: isAtLimit
+                ? "linear-gradient(120deg, #ef4444, #f97316, #ef4444)"
+                : isNearLimit
+                  ? "linear-gradient(120deg, #f59e0b, #eab308, #f59e0b)"
+                  : "linear-gradient(120deg, #ec4899, #a855f7, #6366f1, #06b6d4, #ec4899)",
+              backgroundSize: "300% 300%",
+              animation: "aurora-shift 8s ease infinite",
+            }}
+          >
+            <div className="relative overflow-hidden rounded-[14px] bg-gradient-to-br from-[#1a0b2e]/95 via-[#2a0f47]/95 to-[#0f0a3d]/95 backdrop-blur-xl">
+              {/* Glow blobs */}
+              <div className="pointer-events-none absolute -top-10 -left-10 w-40 h-40 rounded-full bg-fuchsia-500/25 blur-3xl" />
+              <div className="pointer-events-none absolute -bottom-12 -right-8 w-44 h-44 rounded-full bg-indigo-500/25 blur-3xl" />
+              <div className="absolute inset-y-0 w-1/3 bg-gradient-to-r from-transparent via-white/10 to-transparent skew-x-12 pointer-events-none"
+                style={{ animation: "shine-sweep 6s linear infinite" }} />
+
+              <div className="relative p-4 space-y-3">
+                {/* Header */}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="relative">
+                      <span className="absolute inset-0 rounded-lg bg-pink-500/40 blur-md" />
+                      <div className="relative w-9 h-9 rounded-lg bg-gradient-to-br from-pink-500 to-fuchsia-600 flex items-center justify-center shadow-[0_0_12px_rgba(236,72,153,0.7)]">
+                        <HardDrive className="w-4 h-4 text-white" />
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-[9px] uppercase tracking-[0.2em] text-fuchsia-300/80 font-bold">Cloud Storage</div>
+                      <div className="text-sm font-black text-white drop-shadow-[0_1px_4px_rgba(236,72,153,0.5)]">Penyimpanan Offline</div>
+                    </div>
+                  </div>
+                  <div className={`flex items-center gap-1 text-[10px] font-black px-2.5 py-1 rounded-full border ${hasSubs ? "bg-gradient-to-r from-amber-500/30 to-yellow-500/30 border-amber-400/60 text-amber-100 shadow-[0_0_10px_rgba(245,158,11,0.5)]" : "bg-white/10 border-white/20 text-white/80"}`}>
+                    {hasSubs ? <Crown className="w-3 h-3" /> : <Globe className="w-3 h-3" />}
+                    {hasSubs ? formatStorageSize(maxBytes) : "Free 2GB"}
+                  </div>
                 </div>
+
+                {/* Stat cards */}
+                <div className="grid grid-cols-3 gap-2">
+                  <div className="rounded-xl bg-gradient-to-br from-pink-500/15 to-fuchsia-500/5 p-2.5 border border-pink-400/20 text-center backdrop-blur-sm">
+                    <p className="text-[9px] uppercase tracking-wider text-pink-200/70 font-bold">Total</p>
+                    <p className="text-lg font-black text-white tabular-nums">{songs.length}</p>
+                  </div>
+                  <div className="rounded-xl bg-gradient-to-br from-emerald-500/15 to-teal-500/5 p-2.5 border border-emerald-400/20 text-center backdrop-blur-sm">
+                    <p className="text-[9px] uppercase tracking-wider text-emerald-200/70 font-bold flex items-center justify-center gap-0.5"><CheckCircle2 className="w-2.5 h-2.5" /> Offline</p>
+                    <p className="text-lg font-black text-emerald-300 tabular-nums">{cachedCount}</p>
+                  </div>
+                  <div className={`rounded-xl bg-gradient-to-br ${isAtLimit ? "from-red-500/20 to-rose-500/10 border-red-400/30" : isNearLimit ? "from-amber-500/20 to-yellow-500/10 border-amber-400/30" : "from-cyan-500/15 to-blue-500/5 border-cyan-400/20"} p-2.5 border text-center backdrop-blur-sm`}>
+                    <p className="text-[9px] uppercase tracking-wider text-white/70 font-bold flex items-center justify-center gap-0.5"><HardDrive className="w-2.5 h-2.5" /> Pakai</p>
+                    <p className={`text-sm font-black tabular-nums ${isAtLimit ? "text-red-300" : isNearLimit ? "text-amber-300" : "text-cyan-200"}`}>{formatStorageSize(downloadedStorage)}</p>
+                  </div>
+                </div>
+
+                {/* Progress with glow + percent badge */}
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between text-[10px] font-bold">
+                    <span className="text-white/70">{formatStorageSize(downloadedStorage)} / {formatStorageSize(maxBytes)}</span>
+                    <span className={`px-1.5 py-0.5 rounded-full tabular-nums ${isAtLimit ? "bg-red-500/30 text-red-100 border border-red-400/40" : isNearLimit ? "bg-amber-500/30 text-amber-100 border border-amber-400/40" : "bg-fuchsia-500/30 text-fuchsia-100 border border-fuchsia-400/40"}`}>
+                      {Math.round(storagePercent)}%
+                    </span>
+                  </div>
+                  <div className="relative h-2.5 rounded-full bg-white/10 overflow-hidden border border-white/10">
+                    <div
+                      className={`h-full transition-all duration-500 ${isAtLimit ? "bg-gradient-to-r from-red-400 to-rose-500 shadow-[0_0_10px_rgba(239,68,68,0.7)]" : isNearLimit ? "bg-gradient-to-r from-amber-400 to-yellow-500 shadow-[0_0_10px_rgba(245,158,11,0.7)]" : "bg-gradient-to-r from-pink-400 via-fuchsia-400 to-cyan-300 shadow-[0_0_10px_rgba(236,72,153,0.7)]"}`}
+                      style={{ width: `${storagePercent}%` }}
+                    >
+                      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent"
+                        style={{ animation: "shine-sweep 2.5s linear infinite" }} />
+                    </div>
+                  </div>
+                </div>
+
+                <Button size="sm" className="w-full gap-2 text-xs font-bold bg-gradient-to-r from-pink-500 via-fuchsia-500 to-purple-600 hover:from-pink-400 hover:to-purple-500 text-white border-0 shadow-[0_8px_24px_-4px_rgba(236,72,153,0.6)]" onClick={() => setUpgradeOpen(true)}>
+                  <Zap className="w-3.5 h-3.5" />
+                  {hasSubs ? "Tambah / Upgrade Penyimpanan" : "✨ Upgrade Penyimpanan"}
+                </Button>
               </div>
-              <div className="grid grid-cols-3 gap-2">
-                <div className="rounded-xl bg-background/70 p-2.5 border border-border/60 text-center"><p className="text-[10px] text-muted-foreground">Total</p><p className="text-sm font-extrabold">{songs.length}</p></div>
-                <div className="rounded-xl bg-background/70 p-2.5 border border-border/60 text-center"><p className="text-[10px] text-muted-foreground flex items-center justify-center gap-0.5"><CheckCircle2 className="w-3 h-3 text-accent" /> Offline</p><p className="text-sm font-extrabold text-accent">{cachedCount}</p></div>
-                <div className="rounded-xl bg-background/70 p-2.5 border border-border/60 text-center"><p className="text-[10px] text-muted-foreground flex items-center justify-center gap-0.5"><HardDrive className="w-3 h-3" /> Terpakai</p><p className={`text-sm font-extrabold ${isAtLimit ? "text-destructive" : isNearLimit ? "text-yellow-600" : ""}`}>{formatStorageSize(downloadedStorage)}</p></div>
-              </div>
-              <div className="space-y-1">
-                <Progress value={storagePercent} className={`h-2 ${isAtLimit ? "[&>div]:bg-destructive" : isNearLimit ? "[&>div]:bg-yellow-500" : ""}`} />
-                <div className="flex justify-between text-[10px] text-muted-foreground"><span>{formatStorageSize(downloadedStorage)}</span><span>{formatStorageSize(maxBytes)}</span></div>
-              </div>
-              <Button variant="outline" size="sm" className="w-full gap-2 text-xs border-primary/30 hover:bg-primary/10" onClick={() => setUpgradeOpen(true)}>
-                <Zap className="w-3.5 h-3.5 text-primary" />
-                {hasSubs ? "Tambah / Upgrade Penyimpanan" : "Upgrade Penyimpanan"}
-              </Button>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
 
           {/* Redeem Storage Voucher */}
           <Card className="border-primary/20">
@@ -1982,11 +2039,130 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer, onPlayE
                 <li>Keluhan, pertanyaan, atau masukan dapat disampaikan melalui fitur bantuan yang tersedia di aplikasi.</li>
                 <li>Permintaan evaluasi konten atau pelaporan hak cipta akan diproses sesuai antrean dukungan.</li>
                 <li>Waktu respons dapat berbeda tergantung volume permintaan dan kompleksitas masalah.</li>
+                <li>Tim dukungan dapat meminta verifikasi identitas perangkat sebelum memproses permintaan tertentu.</li>
+                <li>Saluran resmi dukungan hanya melalui WhatsApp dan fitur tiket di aplikasi.</li>
+              </ul>
+            </div>
+            <div>
+              <p className="font-bold text-foreground text-sm mb-1">🎧 Kualitas Audio & Streaming</p>
+              <ul className="list-disc pl-4 space-y-1">
+                <li>Bitrate audio dapat menyesuaikan secara otomatis berdasarkan kondisi jaringan dan dukungan perangkat.</li>
+                <li>Beberapa lagu mungkin tersedia dalam kualitas standar saja, tergantung sumber katalog.</li>
+                <li>Pemutaran latar belakang (background play) tergantung kebijakan browser/sistem operasi pengguna.</li>
+                <li>Pemutar musik dapat berhenti otomatis bila perangkat memasuki mode hemat daya.</li>
+                <li>Mode pesawat akan menonaktifkan streaming, namun lagu offline tetap dapat diputar.</li>
+                <li>Volume normalization dan equalizer bawaan perangkat dapat memengaruhi kualitas suara akhir.</li>
+              </ul>
+            </div>
+            <div>
+              <p className="font-bold text-foreground text-sm mb-1">🌐 Konektivitas & Sinkronisasi</p>
+              <ul className="list-disc pl-4 space-y-1">
+                <li>Status koneksi (online/offline) dipantau secara realtime untuk menyesuaikan pengalaman pemutaran.</li>
+                <li>Sinkronisasi suka, riwayat, dan playlist memerlukan koneksi internet aktif.</li>
+                <li>Saat offline, perubahan suka/playlist akan disinkronkan kembali setelah perangkat online.</li>
+                <li>Konflik sinkronisasi antar perangkat akan mengikuti data terakhir yang berhasil disimpan ke server.</li>
+                <li>Aplikasi tidak menjamin sinkronisasi sempurna pada koneksi yang sangat lambat atau terputus-putus.</li>
+              </ul>
+            </div>
+            <div>
+              <p className="font-bold text-foreground text-sm mb-1">📤 Unggah Lagu Publik (Khusus Musik Publik)</p>
+              <ul className="list-disc pl-4 space-y-1">
+                <li>Pengguna hanya boleh mengunggah lagu yang dimiliki secara sah atau memiliki izin dari pemegang hak cipta.</li>
+                <li>Konten publik akan melalui proses moderasi otomatis (auto-check) sebelum tampil ke pengguna lain.</li>
+                <li>Admin berhak menolak, menghapus, atau memprivatkan unggahan tanpa pemberitahuan.</li>
+                <li>Lagu pribadi tidak akan ditampilkan ke pengguna lain dan hanya dapat diakses oleh pengunggah.</li>
+                <li>Konten yang melanggar hukum, mengandung SARA, kekerasan, atau pornografi akan dihapus permanen.</li>
+                <li>Pengunggah bertanggung jawab penuh atas seluruh konsekuensi hukum dari materi yang diunggah.</li>
+                <li>Ukuran file, format audio, dan durasi lagu mengikuti batasan teknis yang berlaku.</li>
+              </ul>
+            </div>
+            <div>
+              <p className="font-bold text-foreground text-sm mb-1">🎤 Lirik & Transkripsi Otomatis</p>
+              <ul className="list-disc pl-4 space-y-1">
+                <li>Lirik dapat dihasilkan otomatis menggunakan teknologi AI (transkripsi) dan tidak selalu 100% akurat.</li>
+                <li>Sinkronisasi timestamp lirik bersifat estimasi dan dapat meleset beberapa detik.</li>
+                <li>Lirik bahasa daerah, dialek, atau pelafalan tidak baku berpotensi menghasilkan akurasi lebih rendah.</li>
+                <li>Pengguna tidak diperkenankan menyalin atau mendistribusikan lirik di luar konteks pemutaran aplikasi.</li>
+                <li>Lirik yang salah dapat dilaporkan melalui fitur dukungan untuk koreksi manual.</li>
+              </ul>
+            </div>
+            <div>
+              <p className="font-bold text-foreground text-sm mb-1">❤️ Like, Riwayat & Preferensi</p>
+              <ul className="list-disc pl-4 space-y-1">
+                <li>Tombol Like menyimpan lagu favorit pengguna dan memperkuat sinyal rekomendasi.</li>
+                <li>Riwayat putar disimpan secara lokal/akun untuk membantu personalisasi.</li>
+                <li>Pengguna dapat membatalkan Like kapan saja, namun jejak riwayat dapat tetap memengaruhi rekomendasi sementara waktu.</li>
+                <li>Manipulasi otomatis (bot) terhadap Like dapat menyebabkan reset preferensi atau pemblokiran fitur.</li>
+              </ul>
+            </div>
+            <div>
+              <p className="font-bold text-foreground text-sm mb-1">💳 Pembayaran & Saldo</p>
+              <ul className="list-disc pl-4 space-y-1">
+                <li>Pembelian paket penyimpanan menggunakan saldo internal aplikasi yang telah terverifikasi.</li>
+                <li>Saldo yang sudah digunakan untuk paket aktif tidak dapat dikembalikan dalam bentuk dana atau saldo.</li>
+                <li>Riwayat transaksi paket dapat dilihat melalui menu riwayat pengguna.</li>
+                <li>Pembelian otomatis terkonfirmasi tanpa konfirmasi tambahan; pastikan keputusan sebelum menekan tombol bayar.</li>
+                <li>Aplikasi tidak menyimpan data kartu pembayaran pihak ketiga di sisi klien.</li>
+              </ul>
+            </div>
+            <div>
+              <p className="font-bold text-foreground text-sm mb-1">🎟️ Voucher & Kode Promo Penyimpanan</p>
+              <ul className="list-disc pl-4 space-y-1">
+                <li>Setiap kode voucher hanya dapat diklaim satu kali per akun/perangkat sesuai kebijakan admin.</li>
+                <li>Voucher dapat memiliki masa berlaku terbatas dan akan otomatis kedaluwarsa setelah tanggal habis.</li>
+                <li>Penyimpanan tambahan dari voucher diakumulasi ke kuota total selama masih aktif.</li>
+                <li>Voucher tidak dapat ditukar dengan saldo, uang tunai, atau dipindahtangankan.</li>
+                <li>Admin berhak membatalkan voucher yang diperoleh secara tidak sah atau melalui eksploitasi sistem.</li>
+              </ul>
+            </div>
+            <div>
+              <p className="font-bold text-foreground text-sm mb-1">⏏️ Penghapusan Konten Offline</p>
+              <ul className="list-disc pl-4 space-y-1">
+                <li>Pengguna dapat menghapus lagu offline kapan saja melalui menu penyimpanan.</li>
+                <li>Membersihkan cache browser akan menghapus seluruh data offline secara permanen.</li>
+                <li>Penghapusan instalasi aplikasi (PWA/Native) dapat menghapus seluruh penyimpanan offline.</li>
+                <li>Lagu yang ditarik admin dari katalog akan dihapus otomatis dari penyimpanan offline pada sinkronisasi berikutnya.</li>
+              </ul>
+            </div>
+            <div>
+              <p className="font-bold text-foreground text-sm mb-1">🛡️ Keamanan Akun & Perangkat</p>
+              <ul className="list-disc pl-4 space-y-1">
+                <li>Pengguna wajib menjaga kerahasiaan kata sandi, PIN, dan token reset yang dikirim via WhatsApp.</li>
+                <li>Aktivitas mencurigakan dapat memicu pemblokiran sementara untuk perlindungan akun.</li>
+                <li>Login dari perangkat baru dapat memerlukan verifikasi tambahan.</li>
+                <li>Aplikasi tidak meminta password atau OTP melalui telepon atau pihak selain saluran resmi.</li>
+                <li>Segera laporkan ke admin bila mendeteksi penggunaan tidak sah atas akun Anda.</li>
+              </ul>
+            </div>
+            <div>
+              <p className="font-bold text-foreground text-sm mb-1">👶 Konten untuk Anak & Pengguna Usia Sensitif</p>
+              <ul className="list-disc pl-4 space-y-1">
+                <li>Sebagian lagu mungkin mengandung lirik dewasa; pengawasan orang tua direkomendasikan.</li>
+                <li>Aplikasi tidak menyediakan filter konten otomatis berdasarkan usia.</li>
+                <li>Orang tua/wali bertanggung jawab mengatur akses anak terhadap konten musik.</li>
+              </ul>
+            </div>
+            <div>
+              <p className="font-bold text-foreground text-sm mb-1">⚖️ Ketentuan Hukum & Yurisdiksi</p>
+              <ul className="list-disc pl-4 space-y-1">
+                <li>Syarat & ketentuan ini tunduk pada hukum yang berlaku di Republik Indonesia.</li>
+                <li>Setiap perselisihan akan diselesaikan secara musyawarah terlebih dahulu sebelum jalur hukum.</li>
+                <li>Bila terjadi perubahan regulasi, aplikasi berhak memperbarui ketentuan tanpa pemberitahuan personal.</li>
+                <li>Penggunaan layanan secara berkelanjutan dianggap sebagai persetujuan atas perubahan T&C.</li>
+              </ul>
+            </div>
+            <div>
+              <p className="font-bold text-foreground text-sm mb-1">🔄 Pembaruan Layanan</p>
+              <ul className="list-disc pl-4 space-y-1">
+                <li>Fitur baru dapat ditambahkan, diubah, atau dihapus sewaktu-waktu untuk peningkatan layanan.</li>
+                <li>Pembaruan aplikasi dapat memengaruhi kompatibilitas dengan versi cache offline sebelumnya.</li>
+                <li>Pengguna disarankan menggunakan versi aplikasi terbaru untuk pengalaman optimal.</li>
+                <li>Admin dapat melakukan reset/migrasi data dengan pemberitahuan minimal di tab pembaruan.</li>
               </ul>
             </div>
             <div className="pt-2 border-t border-border">
               <p className="text-[10px] text-center text-muted-foreground">Dengan menggunakan fitur playlist, Anda dianggap telah membaca dan menyetujui seluruh syarat & ketentuan di atas.</p>
-              <p className="text-[10px] text-center text-muted-foreground mt-1">Terakhir diperbarui: April 2026</p>
+              <p className="text-[10px] text-center text-muted-foreground mt-1">Terakhir diperbarui: April 2026 • Versi 2.0</p>
             </div>
           </div>
           <DialogFooter>
