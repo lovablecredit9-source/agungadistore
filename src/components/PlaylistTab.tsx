@@ -2039,11 +2039,130 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer, onPlayE
                 <li>Keluhan, pertanyaan, atau masukan dapat disampaikan melalui fitur bantuan yang tersedia di aplikasi.</li>
                 <li>Permintaan evaluasi konten atau pelaporan hak cipta akan diproses sesuai antrean dukungan.</li>
                 <li>Waktu respons dapat berbeda tergantung volume permintaan dan kompleksitas masalah.</li>
+                <li>Tim dukungan dapat meminta verifikasi identitas perangkat sebelum memproses permintaan tertentu.</li>
+                <li>Saluran resmi dukungan hanya melalui WhatsApp dan fitur tiket di aplikasi.</li>
+              </ul>
+            </div>
+            <div>
+              <p className="font-bold text-foreground text-sm mb-1">🎧 Kualitas Audio & Streaming</p>
+              <ul className="list-disc pl-4 space-y-1">
+                <li>Bitrate audio dapat menyesuaikan secara otomatis berdasarkan kondisi jaringan dan dukungan perangkat.</li>
+                <li>Beberapa lagu mungkin tersedia dalam kualitas standar saja, tergantung sumber katalog.</li>
+                <li>Pemutaran latar belakang (background play) tergantung kebijakan browser/sistem operasi pengguna.</li>
+                <li>Pemutar musik dapat berhenti otomatis bila perangkat memasuki mode hemat daya.</li>
+                <li>Mode pesawat akan menonaktifkan streaming, namun lagu offline tetap dapat diputar.</li>
+                <li>Volume normalization dan equalizer bawaan perangkat dapat memengaruhi kualitas suara akhir.</li>
+              </ul>
+            </div>
+            <div>
+              <p className="font-bold text-foreground text-sm mb-1">🌐 Konektivitas & Sinkronisasi</p>
+              <ul className="list-disc pl-4 space-y-1">
+                <li>Status koneksi (online/offline) dipantau secara realtime untuk menyesuaikan pengalaman pemutaran.</li>
+                <li>Sinkronisasi suka, riwayat, dan playlist memerlukan koneksi internet aktif.</li>
+                <li>Saat offline, perubahan suka/playlist akan disinkronkan kembali setelah perangkat online.</li>
+                <li>Konflik sinkronisasi antar perangkat akan mengikuti data terakhir yang berhasil disimpan ke server.</li>
+                <li>Aplikasi tidak menjamin sinkronisasi sempurna pada koneksi yang sangat lambat atau terputus-putus.</li>
+              </ul>
+            </div>
+            <div>
+              <p className="font-bold text-foreground text-sm mb-1">📤 Unggah Lagu Publik (Khusus Musik Publik)</p>
+              <ul className="list-disc pl-4 space-y-1">
+                <li>Pengguna hanya boleh mengunggah lagu yang dimiliki secara sah atau memiliki izin dari pemegang hak cipta.</li>
+                <li>Konten publik akan melalui proses moderasi otomatis (auto-check) sebelum tampil ke pengguna lain.</li>
+                <li>Admin berhak menolak, menghapus, atau memprivatkan unggahan tanpa pemberitahuan.</li>
+                <li>Lagu pribadi tidak akan ditampilkan ke pengguna lain dan hanya dapat diakses oleh pengunggah.</li>
+                <li>Konten yang melanggar hukum, mengandung SARA, kekerasan, atau pornografi akan dihapus permanen.</li>
+                <li>Pengunggah bertanggung jawab penuh atas seluruh konsekuensi hukum dari materi yang diunggah.</li>
+                <li>Ukuran file, format audio, dan durasi lagu mengikuti batasan teknis yang berlaku.</li>
+              </ul>
+            </div>
+            <div>
+              <p className="font-bold text-foreground text-sm mb-1">🎤 Lirik & Transkripsi Otomatis</p>
+              <ul className="list-disc pl-4 space-y-1">
+                <li>Lirik dapat dihasilkan otomatis menggunakan teknologi AI (transkripsi) dan tidak selalu 100% akurat.</li>
+                <li>Sinkronisasi timestamp lirik bersifat estimasi dan dapat meleset beberapa detik.</li>
+                <li>Lirik bahasa daerah, dialek, atau pelafalan tidak baku berpotensi menghasilkan akurasi lebih rendah.</li>
+                <li>Pengguna tidak diperkenankan menyalin atau mendistribusikan lirik di luar konteks pemutaran aplikasi.</li>
+                <li>Lirik yang salah dapat dilaporkan melalui fitur dukungan untuk koreksi manual.</li>
+              </ul>
+            </div>
+            <div>
+              <p className="font-bold text-foreground text-sm mb-1">❤️ Like, Riwayat & Preferensi</p>
+              <ul className="list-disc pl-4 space-y-1">
+                <li>Tombol Like menyimpan lagu favorit pengguna dan memperkuat sinyal rekomendasi.</li>
+                <li>Riwayat putar disimpan secara lokal/akun untuk membantu personalisasi.</li>
+                <li>Pengguna dapat membatalkan Like kapan saja, namun jejak riwayat dapat tetap memengaruhi rekomendasi sementara waktu.</li>
+                <li>Manipulasi otomatis (bot) terhadap Like dapat menyebabkan reset preferensi atau pemblokiran fitur.</li>
+              </ul>
+            </div>
+            <div>
+              <p className="font-bold text-foreground text-sm mb-1">💳 Pembayaran & Saldo</p>
+              <ul className="list-disc pl-4 space-y-1">
+                <li>Pembelian paket penyimpanan menggunakan saldo internal aplikasi yang telah terverifikasi.</li>
+                <li>Saldo yang sudah digunakan untuk paket aktif tidak dapat dikembalikan dalam bentuk dana atau saldo.</li>
+                <li>Riwayat transaksi paket dapat dilihat melalui menu riwayat pengguna.</li>
+                <li>Pembelian otomatis terkonfirmasi tanpa konfirmasi tambahan; pastikan keputusan sebelum menekan tombol bayar.</li>
+                <li>Aplikasi tidak menyimpan data kartu pembayaran pihak ketiga di sisi klien.</li>
+              </ul>
+            </div>
+            <div>
+              <p className="font-bold text-foreground text-sm mb-1">🎟️ Voucher & Kode Promo Penyimpanan</p>
+              <ul className="list-disc pl-4 space-y-1">
+                <li>Setiap kode voucher hanya dapat diklaim satu kali per akun/perangkat sesuai kebijakan admin.</li>
+                <li>Voucher dapat memiliki masa berlaku terbatas dan akan otomatis kedaluwarsa setelah tanggal habis.</li>
+                <li>Penyimpanan tambahan dari voucher diakumulasi ke kuota total selama masih aktif.</li>
+                <li>Voucher tidak dapat ditukar dengan saldo, uang tunai, atau dipindahtangankan.</li>
+                <li>Admin berhak membatalkan voucher yang diperoleh secara tidak sah atau melalui eksploitasi sistem.</li>
+              </ul>
+            </div>
+            <div>
+              <p className="font-bold text-foreground text-sm mb-1">⏏️ Penghapusan Konten Offline</p>
+              <ul className="list-disc pl-4 space-y-1">
+                <li>Pengguna dapat menghapus lagu offline kapan saja melalui menu penyimpanan.</li>
+                <li>Membersihkan cache browser akan menghapus seluruh data offline secara permanen.</li>
+                <li>Penghapusan instalasi aplikasi (PWA/Native) dapat menghapus seluruh penyimpanan offline.</li>
+                <li>Lagu yang ditarik admin dari katalog akan dihapus otomatis dari penyimpanan offline pada sinkronisasi berikutnya.</li>
+              </ul>
+            </div>
+            <div>
+              <p className="font-bold text-foreground text-sm mb-1">🛡️ Keamanan Akun & Perangkat</p>
+              <ul className="list-disc pl-4 space-y-1">
+                <li>Pengguna wajib menjaga kerahasiaan kata sandi, PIN, dan token reset yang dikirim via WhatsApp.</li>
+                <li>Aktivitas mencurigakan dapat memicu pemblokiran sementara untuk perlindungan akun.</li>
+                <li>Login dari perangkat baru dapat memerlukan verifikasi tambahan.</li>
+                <li>Aplikasi tidak meminta password atau OTP melalui telepon atau pihak selain saluran resmi.</li>
+                <li>Segera laporkan ke admin bila mendeteksi penggunaan tidak sah atas akun Anda.</li>
+              </ul>
+            </div>
+            <div>
+              <p className="font-bold text-foreground text-sm mb-1">👶 Konten untuk Anak & Pengguna Usia Sensitif</p>
+              <ul className="list-disc pl-4 space-y-1">
+                <li>Sebagian lagu mungkin mengandung lirik dewasa; pengawasan orang tua direkomendasikan.</li>
+                <li>Aplikasi tidak menyediakan filter konten otomatis berdasarkan usia.</li>
+                <li>Orang tua/wali bertanggung jawab mengatur akses anak terhadap konten musik.</li>
+              </ul>
+            </div>
+            <div>
+              <p className="font-bold text-foreground text-sm mb-1">⚖️ Ketentuan Hukum & Yurisdiksi</p>
+              <ul className="list-disc pl-4 space-y-1">
+                <li>Syarat & ketentuan ini tunduk pada hukum yang berlaku di Republik Indonesia.</li>
+                <li>Setiap perselisihan akan diselesaikan secara musyawarah terlebih dahulu sebelum jalur hukum.</li>
+                <li>Bila terjadi perubahan regulasi, aplikasi berhak memperbarui ketentuan tanpa pemberitahuan personal.</li>
+                <li>Penggunaan layanan secara berkelanjutan dianggap sebagai persetujuan atas perubahan T&C.</li>
+              </ul>
+            </div>
+            <div>
+              <p className="font-bold text-foreground text-sm mb-1">🔄 Pembaruan Layanan</p>
+              <ul className="list-disc pl-4 space-y-1">
+                <li>Fitur baru dapat ditambahkan, diubah, atau dihapus sewaktu-waktu untuk peningkatan layanan.</li>
+                <li>Pembaruan aplikasi dapat memengaruhi kompatibilitas dengan versi cache offline sebelumnya.</li>
+                <li>Pengguna disarankan menggunakan versi aplikasi terbaru untuk pengalaman optimal.</li>
+                <li>Admin dapat melakukan reset/migrasi data dengan pemberitahuan minimal di tab pembaruan.</li>
               </ul>
             </div>
             <div className="pt-2 border-t border-border">
               <p className="text-[10px] text-center text-muted-foreground">Dengan menggunakan fitur playlist, Anda dianggap telah membaca dan menyetujui seluruh syarat & ketentuan di atas.</p>
-              <p className="text-[10px] text-center text-muted-foreground mt-1">Terakhir diperbarui: April 2026</p>
+              <p className="text-[10px] text-center text-muted-foreground mt-1">Terakhir diperbarui: April 2026 • Versi 2.0</p>
             </div>
           </div>
           <DialogFooter>
