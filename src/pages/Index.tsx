@@ -2297,15 +2297,47 @@ const Index = () => {
 
           return (
           <div className="space-y-4 animate-fade-in">
-            {/* Hero Header */}
-            <div className="rounded-xl border border-border bg-card p-4">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
-                  <Ticket className="w-5 h-5 text-foreground" strokeWidth={1.7} />
+            {/* Hero Header - Aurora Premium */}
+            <div
+              className="relative rounded-3xl p-[1.5px] aurora-shift overflow-hidden"
+              style={{ background: "linear-gradient(135deg, hsl(330 90% 60%/0.7), hsl(280 90% 65%/0.7), hsl(45 95% 55%/0.7), hsl(330 90% 60%/0.7))", backgroundSize: "300% 300%" }}
+            >
+              <div className="relative rounded-[22px] bg-card/95 backdrop-blur-xl p-4 overflow-hidden">
+                <div className="pointer-events-none absolute -top-16 -right-16 w-48 h-48 rounded-full bg-pink-500/20 blur-3xl" />
+                <div className="pointer-events-none absolute -bottom-16 -left-16 w-48 h-48 rounded-full bg-purple-500/20 blur-3xl" />
+                <div className="pointer-events-none absolute top-1/2 right-1/3 w-32 h-32 rounded-full bg-yellow-400/10 blur-2xl" />
+
+                <div className="relative flex items-center gap-3">
+                  <div className="relative shrink-0">
+                    <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-pink-500 via-purple-500 to-yellow-400 blur-md opacity-70 animate-pulse" />
+                    <div className="relative w-12 h-12 rounded-2xl bg-gradient-to-br from-pink-500 via-purple-500 to-yellow-400 flex items-center justify-center shadow-2xl">
+                      <Ticket className="w-6 h-6 text-white" strokeWidth={2.2} />
+                    </div>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-[10px] uppercase tracking-[0.18em] font-extrabold bg-gradient-to-r from-pink-500 via-purple-500 to-yellow-400 bg-clip-text text-transparent">🎟️ Pusat Voucher</span>
+                      <span className="px-1.5 py-0.5 rounded-full bg-green-500/15 border border-green-500/30 text-green-500 text-[8px] font-bold">LIVE</span>
+                    </div>
+                    <h2 className="text-lg font-extrabold tracking-tight bg-gradient-to-r from-foreground via-pink-500 to-foreground bg-clip-text text-transparent leading-tight">{t("voucher.title", lang)}</h2>
+                    <p className="text-[11px] text-muted-foreground mt-0.5">✨ Klaim kode voucher produkmu</p>
+                  </div>
                 </div>
-                <div className="flex-1 min-w-0">
-                  <h2 className="text-base font-semibold tracking-tight text-foreground">{t("voucher.title", lang)}</h2>
-                  <p className="text-xs text-muted-foreground mt-0.5">Klaim kode voucher produkmu</p>
+
+                <div className="relative grid grid-cols-3 gap-2 mt-3 pt-3 border-t border-white/10">
+                  {[
+                    { label: "Total", value: history.length, color: "from-pink-500 to-rose-500", glow: "236,72,153" },
+                    { label: "Hari Ini", value: todayCount, color: "from-purple-500 to-violet-600", glow: "168,85,247" },
+                    { label: "Pending", value: pendingCount, color: "from-yellow-400 to-amber-500", glow: "250,204,21" },
+                  ].map((s) => (
+                    <div key={s.label} className="relative rounded-xl p-[1px] overflow-hidden" style={{ background: `linear-gradient(135deg, rgba(${s.glow},0.5), rgba(${s.glow},0.15))` }}>
+                      <div className="relative rounded-[10px] bg-card/95 backdrop-blur-xl p-2 text-center overflow-hidden">
+                        <div className="pointer-events-none absolute inset-0 opacity-15" style={{ background: `radial-gradient(circle at center, rgba(${s.glow},0.6) 0%, transparent 70%)` }} />
+                        <p className={`relative text-lg font-extrabold bg-gradient-to-r ${s.color} bg-clip-text text-transparent tabular-nums leading-none`}>{s.value}</p>
+                        <p className="relative text-[9px] text-muted-foreground font-bold uppercase tracking-wider mt-1">{s.label}</p>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
             </div>
@@ -2324,40 +2356,70 @@ const Index = () => {
 
             {voucherSection === "claim" && (
               <>
-                {/* Info: Harus beli dulu */}
-                <div className="rounded-xl border border-border bg-card p-3.5 flex items-start gap-3">
-                  <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center shrink-0">
-                    <ShoppingBag className="w-5 h-5 text-foreground" strokeWidth={1.7} />
-                  </div>
-                  <div>
-                    <p className="text-xs font-semibold text-foreground">Cara Mendapatkan Voucher</p>
-                    <p className="text-[11px] text-muted-foreground mt-0.5">Beli produk terlebih dahulu di tab <span className="font-medium text-foreground underline cursor-pointer" onClick={() => setTab("produk")}>Produk</span> atau gunakan <span className="font-medium text-foreground underline cursor-pointer" onClick={() => setTab("saldo")}>Saldo</span>, lalu kode voucher akan diberikan setelah pembayaran berhasil.</p>
+                {/* Info: Harus beli dulu - Aurora */}
+                <div
+                  className="relative rounded-2xl p-[1.5px] aurora-shift overflow-hidden"
+                  style={{ background: "linear-gradient(135deg, hsl(190 95% 55%/0.5), hsl(280 90% 65%/0.5), hsl(190 95% 55%/0.5))", backgroundSize: "300% 300%" }}
+                >
+                  <div className="relative rounded-[14px] bg-card/95 backdrop-blur-xl p-3.5 flex items-start gap-3 overflow-hidden">
+                    <div className="pointer-events-none absolute -top-10 -right-10 w-32 h-32 rounded-full bg-cyan-400/15 blur-3xl" />
+                    <div className="relative shrink-0">
+                      <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-cyan-400 to-purple-500 blur-md opacity-50" />
+                      <div className="relative w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-400 to-purple-500 flex items-center justify-center shadow-lg">
+                        <ShoppingBag className="w-5 h-5 text-white" strokeWidth={2.2} />
+                      </div>
+                    </div>
+                    <div className="relative">
+                      <p className="text-xs font-extrabold bg-gradient-to-r from-cyan-400 to-purple-500 bg-clip-text text-transparent">💡 Cara Mendapatkan Voucher</p>
+                      <p className="text-[11px] text-muted-foreground mt-0.5 leading-relaxed">Beli produk terlebih dahulu di tab <span className="font-extrabold text-cyan-500 underline cursor-pointer" onClick={() => setTab("produk")}>Produk</span> atau gunakan <span className="font-extrabold text-purple-500 underline cursor-pointer" onClick={() => setTab("saldo")}>Saldo</span>, lalu kode voucher akan diberikan setelah pembayaran berhasil.</p>
+                    </div>
                   </div>
                 </div>
 
-                <div className="rounded-xl border border-border bg-card overflow-hidden">
-                  <div className="p-5 space-y-4">
-                    <div className="text-center">
-                      <div className="w-14 h-14 mx-auto mb-3 rounded-xl bg-muted flex items-center justify-center">
-                        <Ticket className="w-7 h-7 text-foreground" strokeWidth={1.7} />
-                      </div>
-                      <p className="text-sm font-semibold">Masukkan Kode Voucher</p>
-                      <p className="text-xs text-muted-foreground mt-0.5">Pisahkan dengan <span className="font-mono font-medium text-foreground bg-muted px-1.5 py-0.5 rounded">|</span> atau Enter untuk banyak kode</p>
-                    </div>
-                    <div className="space-y-3">
-                      <Textarea placeholder="KODE1 | KODE2 | KODE3" value={tokenInput} onChange={(e) => setTokenInput(e.target.value.toUpperCase())}
-                        className="font-mono text-center text-sm tracking-wider uppercase border border-border focus:border-foreground min-h-[60px] bg-background" rows={2} />
-                      {parseCodes(tokenInput).length > 0 && (
-                        <div className="flex items-center justify-center gap-2 bg-muted/60 rounded-lg p-2">
-                          <div className="w-5 h-5 rounded-full bg-foreground/10 flex items-center justify-center">
-                            <span className="text-[10px] font-semibold text-foreground">{parseCodes(tokenInput).length}</span>
+                {/* Claim Form - Aurora Premium */}
+                <div
+                  className="relative rounded-3xl p-[1.5px] aurora-shift overflow-hidden"
+                  style={{ background: "linear-gradient(135deg, hsl(280 90% 65%/0.6), hsl(330 90% 60%/0.6), hsl(45 95% 55%/0.6), hsl(150 80% 50%/0.6), hsl(280 90% 65%/0.6))", backgroundSize: "400% 400%" }}
+                >
+                  <div className="relative rounded-[22px] bg-card/95 backdrop-blur-xl overflow-hidden">
+                    <div className="pointer-events-none absolute -top-16 -right-16 w-48 h-48 rounded-full bg-purple-500/15 blur-3xl" />
+                    <div className="pointer-events-none absolute -bottom-16 -left-16 w-48 h-48 rounded-full bg-pink-500/15 blur-3xl" />
+
+                    <div className="relative p-5 space-y-4">
+                      <div className="text-center">
+                        <div className="relative w-16 h-16 mx-auto mb-3">
+                          <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-purple-500 via-pink-500 to-yellow-400 blur-lg opacity-60 animate-pulse" />
+                          <div className="relative w-16 h-16 rounded-2xl bg-gradient-to-br from-purple-500 via-pink-500 to-yellow-400 flex items-center justify-center shadow-2xl">
+                            <Ticket className="w-8 h-8 text-white" strokeWidth={2.2} />
                           </div>
-                          <span className="text-xs text-muted-foreground font-medium">kode terdeteksi</span>
                         </div>
-                      )}
-                      <Button onClick={handleClaim} disabled={claiming || !tokenInput.trim()} className="w-full h-11 font-semibold text-sm gap-2 rounded-xl">
-                        {claiming ? <span className="animate-pulse">Memproses...</span> : <><CheckCircle2 className="w-4 h-4" strokeWidth={2} /> Klaim Sekarang</>}
-                      </Button>
+                        <p className="text-base font-extrabold bg-gradient-to-r from-purple-500 via-pink-500 to-yellow-400 bg-clip-text text-transparent">✨ Masukkan Kode Voucher</p>
+                        <p className="text-[11px] text-muted-foreground mt-1">Pisahkan dengan <span className="font-mono font-extrabold text-purple-500 bg-purple-500/15 px-1.5 py-0.5 rounded border border-purple-500/30">|</span> atau Enter untuk banyak kode</p>
+                      </div>
+                      <div className="space-y-3">
+                        <Textarea
+                          placeholder="KODE1 | KODE2 | KODE3"
+                          value={tokenInput}
+                          onChange={(e) => setTokenInput(e.target.value.toUpperCase())}
+                          className="font-mono text-center text-sm tracking-wider uppercase border-2 border-purple-500/30 focus:border-purple-500 min-h-[60px] bg-purple-500/5 rounded-xl"
+                          rows={2}
+                        />
+                        {parseCodes(tokenInput).length > 0 && (
+                          <div className="flex items-center justify-center gap-2 rounded-xl p-2.5 bg-gradient-to-r from-emerald-500/10 to-green-500/10 border border-emerald-500/30">
+                            <div className="w-6 h-6 rounded-full bg-gradient-to-br from-emerald-500 to-green-500 flex items-center justify-center shadow-lg">
+                              <span className="text-[10px] font-extrabold text-white">{parseCodes(tokenInput).length}</span>
+                            </div>
+                            <span className="text-xs text-emerald-500 font-extrabold">✅ kode terdeteksi</span>
+                          </div>
+                        )}
+                        <button
+                          onClick={handleClaim}
+                          disabled={claiming || !tokenInput.trim()}
+                          className="relative w-full h-12 font-extrabold text-sm rounded-xl bg-gradient-to-r from-purple-500 via-pink-500 to-yellow-400 text-white shadow-2xl hover:scale-[1.02] active:scale-[0.98] transition-transform disabled:opacity-50 disabled:cursor-not-allowed overflow-hidden shine-sweep flex items-center justify-center gap-2"
+                        >
+                          {claiming ? <span className="animate-pulse">⏳ Memproses...</span> : <><CheckCircle2 className="w-5 h-5" strokeWidth={2.5} /> 🎉 Klaim Sekarang</>}
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </div>
