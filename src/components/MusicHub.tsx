@@ -1,7 +1,8 @@
-import { Music2, Globe, Users, Sparkles, Headphones, Radio, Mic2, Disc3, Flame } from "lucide-react";
+import { Music2, Globe, Users, Sparkles, Headphones, Radio, Mic2, Disc3, Flame, Play, Pause, ChevronUp } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import MusicPublicTab from "@/components/MusicPublicTab";
 import ArtistTab from "@/components/ArtistTab";
+import type { PlaybackState } from "@/components/PlaylistTab";
 
 export type MusicSubTab = "playlist" | "publik" | "artist";
 
@@ -10,6 +11,9 @@ interface MusicHubProps {
   onSubTabChange: (s: MusicSubTab) => void;
   onPlayExternal?: (song: { id: string; title: string; artist: string; file_url: string; cover_url: string | null }) => void;
   playlistSlot: React.ReactNode;
+  playbackState?: PlaybackState;
+  onTogglePlay?: () => void;
+  onOpenFullPlayer?: () => void;
 }
 
 const TABS: {
