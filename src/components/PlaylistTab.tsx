@@ -1428,57 +1428,154 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer, onPlayE
         </Card>
       )}
 
-      {/* ===== REKOMENDASI UNTUKMU ===== */}
+      {/* ===== REKOMENDASI UNTUKMU - Premium Aurora ===== */}
       {activeView === "playlist" && !viewingPlaylist && (
-        <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <p className="text-xs font-bold text-muted-foreground flex items-center gap-1.5">
-              <Sparkles className="w-3.5 h-3.5 text-primary" /> Rekomendasi Untukmu
-            </p>
-            <Button variant="ghost" size="sm" className="h-6 text-[10px] gap-1 text-primary" onClick={fetchAiRecommendations} disabled={loadingRecs}>
-              {loadingRecs ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
-              {loadingRecs ? "Memuat..." : "Refresh"}
-            </Button>
-          </div>
-          {loadingRecs && recommendedSongs.length === 0 ? (
-            <div className="flex items-center justify-center py-6 text-muted-foreground">
-              <Loader2 className="w-5 h-5 animate-spin mr-2" />
-              <span className="text-xs">Sedang menyiapkan rekomendasi lagu...</span>
+        <div className="relative rounded-2xl p-[1.5px] overflow-hidden"
+          style={{
+            background: "linear-gradient(135deg, hsl(var(--neon-purple)/0.85), hsl(var(--neon-pink)/0.85) 50%, hsl(var(--neon-cyan)/0.85))",
+            backgroundSize: "300% 300%",
+            animation: "aurora-shift 9s ease infinite",
+          }}
+        >
+          <div className="relative rounded-[14px] bg-background/85 backdrop-blur-xl p-3.5 overflow-hidden">
+            {/* Glow blobs */}
+            <div className="pointer-events-none absolute -top-10 -left-8 w-32 h-32 rounded-full blur-3xl opacity-40" style={{ background: "hsl(var(--neon-purple)/0.6)" }} />
+            <div className="pointer-events-none absolute -bottom-10 -right-8 w-36 h-36 rounded-full blur-3xl opacity-30" style={{ background: "hsl(var(--neon-pink)/0.6)" }} />
+
+            {/* Header */}
+            <div className="relative flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <div className="relative">
+                  <div className="absolute inset-0 rounded-xl blur-md opacity-70" style={{ background: "linear-gradient(135deg, hsl(var(--neon-purple)), hsl(var(--neon-pink)))" }} />
+                  <div className="relative w-8 h-8 rounded-xl flex items-center justify-center shadow-lg" style={{ background: "linear-gradient(135deg, hsl(var(--neon-purple)), hsl(var(--neon-pink)))" }}>
+                    <Sparkles className="w-4 h-4 text-white drop-shadow-[0_0_4px_rgba(255,255,255,0.8)]" />
+                  </div>
+                </div>
+                <div>
+                  <p className="text-xs font-extrabold tracking-tight bg-clip-text text-transparent leading-tight"
+                    style={{ backgroundImage: "linear-gradient(135deg, hsl(var(--neon-pink)), hsl(var(--neon-cyan)))" }}>
+                    Rekomendasi Untukmu
+                  </p>
+                  <p className="text-[9px] text-muted-foreground font-semibold flex items-center gap-1">
+                    <span className="inline-flex w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: "hsl(var(--neon-cyan))", boxShadow: "0 0 6px hsl(var(--neon-cyan))" }} />
+                    AI Powered · Personal
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={fetchAiRecommendations}
+                disabled={loadingRecs}
+                className="relative h-7 px-2.5 rounded-full text-[10px] font-bold text-white flex items-center gap-1 transition-all hover:scale-105 active:scale-95 disabled:opacity-60 overflow-hidden"
+                style={{
+                  background: "linear-gradient(135deg, hsl(var(--neon-purple)), hsl(var(--neon-pink)))",
+                  boxShadow: "0 0 12px hsl(var(--neon-pink)/0.5), 0 2px 8px hsl(var(--neon-purple)/0.3)",
+                }}
+              >
+                {!loadingRecs && (
+                  <span className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/30 to-transparent" style={{ animation: "shine-sweep 3s ease-in-out infinite" }} />
+                )}
+                {loadingRecs ? <Loader2 className="w-3 h-3 animate-spin relative" /> : <Sparkles className="w-3 h-3 relative drop-shadow-[0_0_3px_rgba(255,255,255,0.8)]" />}
+                <span className="relative">{loadingRecs ? "Memuat..." : "Refresh"}</span>
+              </button>
             </div>
-          ) : recommendedSongs.length > 0 ? (
-            <div className="flex gap-2 overflow-x-auto pb-2 -mx-1 px-1">
-              {recommendedSongs.map((song) => (
-                <Card key={song.id} className="min-w-[140px] max-w-[140px] shrink-0 overflow-hidden cursor-pointer hover:shadow-md transition-all" onClick={() => {
-                  const idx = songs.findIndex(s => s.id === song.id);
-                  if (idx >= 0) playSong(idx);
-                }}>
-                  <CardContent className="p-2 space-y-1.5">
-                    <div className="w-full aspect-square rounded-lg bg-primary/10 overflow-hidden relative">
-                      {song.cover_url ? <img src={song.cover_url} alt={song.title} className="w-full h-full object-cover" loading="lazy" /> : <div className="w-full h-full flex items-center justify-center"><Music className="w-8 h-8 text-primary/40" /></div>}
-                      <div className="absolute top-1 left-1 w-5 h-5 rounded-full bg-primary/80 flex items-center justify-center">
-                        <Sparkles className="w-3 h-3 text-primary-foreground" />
+
+            {/* Content */}
+            {loadingRecs && recommendedSongs.length === 0 ? (
+              <div className="relative flex flex-col items-center justify-center py-8 gap-2">
+                <div className="relative w-12 h-12">
+                  <div className="absolute inset-0 rounded-full blur-xl opacity-60" style={{ background: "hsl(var(--neon-pink)/0.6)" }} />
+                  <div className="relative w-12 h-12 rounded-full flex items-center justify-center" style={{ background: "linear-gradient(135deg, hsl(var(--neon-purple)/0.3), hsl(var(--neon-pink)/0.3))" }}>
+                    <Loader2 className="w-6 h-6 animate-spin" style={{ color: "hsl(var(--neon-pink))" }} />
+                  </div>
+                </div>
+                <span className="text-[11px] font-semibold text-muted-foreground">Menyiapkan kurasi pribadimu...</span>
+              </div>
+            ) : recommendedSongs.length > 0 ? (
+              <div className="relative flex gap-2.5 overflow-x-auto pb-2 -mx-1 px-1 scrollbar-hide snap-x snap-mandatory">
+                {recommendedSongs.map((song, i) => {
+                  const palette = ["var(--neon-pink)", "var(--neon-cyan)", "var(--neon-purple)", "var(--neon-yellow)", "var(--neon-green)"];
+                  const color = palette[i % palette.length];
+                  const isLiked = likedSongIds.has(song.id);
+                  const isPlaying = currentSong?.id === song.id;
+                  return (
+                    <div
+                      key={song.id}
+                      className="relative min-w-[148px] max-w-[148px] shrink-0 rounded-2xl p-[1px] overflow-hidden cursor-pointer transition-all hover:scale-[1.04] hover:-translate-y-0.5 group snap-start"
+                      style={{ background: `linear-gradient(135deg, hsl(${color}/0.7), hsl(${color}/0.15))` }}
+                      onClick={() => {
+                        const idx = songs.findIndex(s => s.id === song.id);
+                        if (idx >= 0) playSong(idx);
+                      }}
+                    >
+                      <div className="relative rounded-[15px] bg-background/85 backdrop-blur-xl p-2 space-y-1.5 overflow-hidden h-full">
+                        <div className="pointer-events-none absolute -top-6 -right-6 w-16 h-16 rounded-full blur-2xl opacity-40 group-hover:opacity-70 transition-opacity" style={{ background: `hsl(${color}/0.6)` }} />
+
+                        <div className="relative w-full aspect-square rounded-xl overflow-hidden ring-1" style={{ boxShadow: `0 0 12px hsl(${color}/0.4)`, background: `linear-gradient(135deg, hsl(${color}/0.2), hsl(${color}/0.05))` }}>
+                          {song.cover_url ? (
+                            <img src={song.cover_url} alt={song.title} className="w-full h-full object-cover transition-transform group-hover:scale-110" loading="lazy" />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center">
+                              <Music className="w-9 h-9" style={{ color: `hsl(${color}/0.6)` }} />
+                            </div>
+                          )}
+
+                          {/* AI badge */}
+                          <div className="absolute top-1 left-1 px-1.5 h-5 rounded-full flex items-center gap-0.5 backdrop-blur-md" style={{ background: `hsl(${color}/0.85)`, boxShadow: `0 0 6px hsl(${color}/0.6)` }}>
+                            <Sparkles className="w-2.5 h-2.5 text-white drop-shadow-[0_0_3px_rgba(255,255,255,0.9)]" />
+                            <span className="text-[8px] font-extrabold text-white tracking-wider">AI</span>
+                          </div>
+
+                          {/* Like button */}
+                          <button
+                            onClick={(e) => toggleLikeSong(song.id, e)}
+                            className="absolute top-1 right-1 w-6 h-6 rounded-full bg-background/80 backdrop-blur-md flex items-center justify-center hover:scale-110 transition-transform"
+                            style={isLiked ? { boxShadow: "0 0 8px hsl(var(--neon-pink)/0.6)" } : undefined}
+                          >
+                            <Heart className={`w-3.5 h-3.5 transition-all ${isLiked ? "fill-current scale-110" : "text-muted-foreground"}`} style={isLiked ? { color: "hsl(var(--neon-pink))" } : undefined} />
+                          </button>
+
+                          {/* Playing indicator overlay */}
+                          {isPlaying && (
+                            <div className="absolute inset-x-0 bottom-0 h-7 bg-gradient-to-t from-black/80 to-transparent flex items-end justify-center pb-1 gap-0.5">
+                              {[0, 1, 2].map(b => (
+                                <span key={b} className="w-1 rounded-full" style={{
+                                  background: `hsl(${color})`,
+                                  boxShadow: `0 0 4px hsl(${color})`,
+                                  height: "10px",
+                                  animation: `wave-bounce 0.9s ease-in-out ${b * 0.15}s infinite`,
+                                  transformOrigin: "bottom",
+                                }} />
+                              ))}
+                            </div>
+                          )}
+                        </div>
+
+                        <p className="relative text-[11px] font-bold truncate leading-tight">{song.title}</p>
+                        <p className="relative text-[9px] text-muted-foreground truncate font-semibold -mt-0.5">{song.artist}</p>
                       </div>
-                      <button onClick={(e) => toggleLikeSong(song.id, e)} className="absolute top-1 right-1 w-6 h-6 rounded-full bg-background/80 flex items-center justify-center">
-                        <Heart className={`w-3.5 h-3.5 transition-colors ${likedSongIds.has(song.id) ? "fill-destructive text-destructive" : "text-muted-foreground"}`} />
-                      </button>
                     </div>
-                    <p className="text-xs font-bold truncate">{song.title}</p>
-                    <p className="text-[10px] text-muted-foreground truncate">{song.artist}</p>
-                  </CardContent>
-                </Card>
-              ))}
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="relative rounded-xl border border-dashed border-white/10 bg-background/40 backdrop-blur-sm p-5 text-center">
+                <div className="w-10 h-10 rounded-2xl mx-auto mb-2 flex items-center justify-center" style={{ background: "linear-gradient(135deg, hsl(var(--neon-purple)/0.2), hsl(var(--neon-pink)/0.2))" }}>
+                  <Sparkles className="w-5 h-5" style={{ color: "hsl(var(--neon-pink))" }} />
+                </div>
+                <p className="text-[11px] font-semibold text-muted-foreground">Belum ada rekomendasi.</p>
+                <p className="text-[10px] text-muted-foreground/70 mt-0.5">Tekan tombol Refresh untuk mulai kurasi.</p>
+              </div>
+            )}
+
+            {/* Footer hint */}
+            <div className="relative flex items-center justify-center gap-1.5 mt-2 pt-2 border-t border-white/5">
+              <Sparkles className="w-2.5 h-2.5" style={{ color: "hsl(var(--neon-cyan))" }} />
+              <p className="text-[9px] text-muted-foreground font-semibold tracking-wide">
+                Dipilih otomatis dari selera & katalog tersedia
+              </p>
+              <Sparkles className="w-2.5 h-2.5" style={{ color: "hsl(var(--neon-pink))" }} />
             </div>
-          ) : (
-            <Card className="border-dashed">
-              <CardContent className="p-4 text-center">
-                <Sparkles className="w-8 h-8 text-muted-foreground/30 mx-auto mb-2" />
-                <p className="text-[11px] text-muted-foreground">Belum ada rekomendasi, coba tekan Refresh.</p>
-              </CardContent>
-            </Card>
-          )}
-          <p className="text-[10px] text-muted-foreground text-center flex items-center justify-center gap-1">
-            <Sparkles className="w-3 h-3" /> Dipilih otomatis dari selera dan katalog lagu yang tersedia
-          </p>
+          </div>
         </div>
       )}
 
