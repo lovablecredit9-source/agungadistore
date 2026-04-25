@@ -1064,20 +1064,22 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer, onPlayE
               )}
             </div>
 
-            {/* Animated Equalizer Bar */}
-            <div className="w-full flex items-center justify-center gap-1 h-8 mt-2 mb-1">
-              {[0.4, 0.8, 0.5, 0.95, 0.6, 0.85, 0.45, 0.75, 0.55].map((h, i) => (
-                <div
-                  key={i}
-                  className="w-1.5 rounded-full bg-gradient-to-t from-primary/60 via-primary to-primary/80 shadow-[0_0_8px_hsl(var(--primary)/0.6)]"
-                  style={{
-                    height: `${h * 100}%`,
-                    animation: isPlaying ? `eq-bounce 0.${6 + i}s ease-in-out ${i * 0.07}s infinite alternate` : "none",
-                    transformOrigin: "center",
-                    opacity: isPlaying ? 1 : 0.35,
-                  }}
-                />
-              ))}
+            {/* Audio Visualizer Bar Musik */}
+            <div className="w-full rounded-2xl bg-gradient-to-r from-primary/10 via-primary/5 to-primary/10 backdrop-blur-sm border border-primary/20 p-3 mt-3 mb-1 shadow-[0_0_24px_hsl(var(--primary)/0.25)]">
+              <div className="flex items-end justify-center gap-[3px] h-14">
+                {[0.3, 0.55, 0.75, 0.45, 0.9, 0.6, 0.85, 0.4, 0.95, 0.5, 0.7, 0.35, 0.8, 0.55, 0.65, 0.45, 0.85, 0.5, 0.75, 0.4].map((h, i) => (
+                  <div
+                    key={i}
+                    className="w-1.5 rounded-full bg-gradient-to-t from-primary via-primary/90 to-primary/70 shadow-[0_0_6px_hsl(var(--primary)/0.7)]"
+                    style={{
+                      height: `${h * 100}%`,
+                      animation: isPlaying ? `eq-bounce 0.${5 + (i % 5)}s ease-in-out ${i * 0.05}s infinite alternate` : "none",
+                      transformOrigin: "bottom",
+                      opacity: isPlaying ? 1 : 0.3,
+                    }}
+                  />
+                ))}
+              </div>
             </div>
 
             {/* Song Info */}
