@@ -240,6 +240,7 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer, onPlayE
   const [songs, setSongs] = useState<Song[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentIndex, setCurrentIndex] = useState<number>(-1);
+  const [externalSong, setExternalSong] = useState<Song | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
@@ -524,7 +525,7 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer, onPlayE
     setActiveSubs(getActiveSubscriptions());
   }
 
-  const currentSong = currentIndex >= 0 ? displaySongs[currentIndex] : null;
+  const currentSong = currentIndex >= 0 ? displaySongs[currentIndex] : externalSong;
 
   // Report playback state to parent
   useEffect(() => {
@@ -538,11 +539,23 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer, onPlayE
     if (onPlayExternal) onPlayExternal.current = (song) => {
       // Play an external song (from publik tab) through the main audio system
       if (audioRef.current) audioRef.current.pause();
+      const songForPlayback: Song = {
+        id: song.id,
+        title: song.title,
+        artist: song.artist,
+        file_url: song.file_url,
+        cover_url: song.cover_url,
+        duration: 0,
+        file_size: 0,
+        release_date: null,
+        created_at: '',
+      };
       const audio = new Audio(song.file_url);
       audioRef.current = audio;
       audio.volume = muted ? 0 : volume;
       audio.play().catch(() => {});
       setCurrentIndex(-1);
+      setExternalSong(songForPlayback);
       setIsPlaying(true);
       setCurrentTime(0);
       audio.addEventListener("timeupdate", () => {
@@ -563,7 +576,7 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer, onPlayE
         navigator.mediaSession.setActionHandler("pause", () => { audioRef.current?.pause(); setIsPlaying(false); });
       }
       // Report to parent
-      onPlaybackChange?.({ song: { id: song.id, title: song.title, artist: song.artist, file_url: song.file_url, cover_url: song.cover_url, duration: 0, file_size: 0, created_at: '' } as Song, isPlaying: true, currentTime: 0, duration: 0 });
+      onPlaybackChange?.({ song: songForPlayback, isPlaying: true, currentTime: 0, duration: 0 });
     };
   });
 
@@ -608,6 +621,7 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer, onPlayE
     audioRef.current = audio;
     audio.volume = muted ? 0 : volume;
     audio.play().catch(() => {});
+    setExternalSong(null);
     setCurrentIndex(index);
     setIsPlaying(true);
     setCurrentTime(0);
