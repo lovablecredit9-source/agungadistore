@@ -115,10 +115,45 @@ const ArtistTab = ({ onPlaySong }: ArtistTabProps) => {
   }
 
   return (
-    <div className="space-y-3">
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-        <Input placeholder="Cari artis..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9" />
+    <div className="space-y-4 animate-fade-in">
+      {/* Premium Aurora Header */}
+      <div className="relative rounded-2xl p-[1.5px] overflow-hidden"
+        style={{
+          background: "linear-gradient(135deg, hsl(var(--neon-green)/0.85), hsl(var(--neon-cyan)/0.85) 50%, hsl(var(--neon-purple)/0.85))",
+          backgroundSize: "300% 300%",
+          animation: "aurora-shift 9s ease infinite",
+        }}
+      >
+        <div className="relative rounded-[14px] bg-background/85 backdrop-blur-xl p-4 overflow-hidden">
+          <div className="pointer-events-none absolute -top-8 -left-6 w-32 h-32 rounded-full blur-3xl opacity-40" style={{ background: "hsl(var(--neon-green)/0.6)" }} />
+          <div className="pointer-events-none absolute -bottom-10 -right-6 w-36 h-36 rounded-full blur-3xl opacity-30" style={{ background: "hsl(var(--neon-purple)/0.6)" }} />
+
+          <div className="relative flex items-center gap-3 mb-3">
+            <div className="relative">
+              <div className="absolute inset-0 rounded-2xl blur-xl opacity-70" style={{ background: "linear-gradient(135deg, hsl(var(--neon-cyan)), hsl(var(--neon-purple)))" }} />
+              <div className="relative w-11 h-11 rounded-2xl flex items-center justify-center shadow-lg" style={{ background: "linear-gradient(135deg, hsl(var(--neon-green)), hsl(var(--neon-cyan)) 50%, hsl(var(--neon-purple)))" }}>
+                <User className="w-5 h-5 text-white drop-shadow-[0_0_6px_rgba(255,255,255,0.8)]" />
+              </div>
+            </div>
+            <div className="flex-1 min-w-0">
+              <h2 className="text-base font-extrabold tracking-tight bg-clip-text text-transparent" style={{ backgroundImage: "linear-gradient(135deg, hsl(var(--neon-cyan)), hsl(var(--neon-green)))" }}>
+                Direktori Artist
+              </h2>
+              <p className="text-[10px] text-muted-foreground font-semibold mt-0.5">{filteredArtists.length + unregisteredArtists.length} artis · {songs.length} lagu</p>
+            </div>
+          </div>
+
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              placeholder="Cari artis..."
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              className="pl-9 h-10 rounded-xl bg-background/70 backdrop-blur-sm border-white/10 focus-visible:ring-1"
+              style={{ boxShadow: "0 0 0 1px hsl(var(--neon-cyan)/0.2)" }}
+            />
+          </div>
+        </div>
       </div>
 
       {loading ? (
@@ -126,44 +161,66 @@ const ArtistTab = ({ onPlaySong }: ArtistTabProps) => {
       ) : (
         <>
           {filteredArtists.length === 0 && unregisteredArtists.length === 0 && (
-            <p className="text-sm text-center text-muted-foreground py-4">Tidak ada artis ditemukan</p>
+            <p className="text-sm text-center text-muted-foreground py-8">Tidak ada artis ditemukan</p>
           )}
 
-          <div className="grid grid-cols-2 gap-2">
-            {filteredArtists.map(artist => (
-              <Card key={artist.id} className="cursor-pointer hover:shadow-md transition" onClick={() => openArtist(artist)}>
-                <CardContent className="p-3 text-center">
-                  {artist.photo_url ? (
-                    <img src={artist.photo_url} alt="" className="w-14 h-14 rounded-full object-cover mx-auto mb-2" />
-                  ) : (
-                    <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-2">
-                      <User className="w-6 h-6 text-primary" />
+          <div className="grid grid-cols-2 gap-2.5">
+            {filteredArtists.map((artist, i) => {
+              const palette = ["var(--neon-pink)", "var(--neon-cyan)", "var(--neon-purple)", "var(--neon-yellow)", "var(--neon-green)"];
+              const color = palette[i % palette.length];
+              const songCount = songs.filter(s => s.artist.toLowerCase() === artist.name.toLowerCase()).length;
+              return (
+                <div key={artist.id} className="relative rounded-2xl p-[1px] overflow-hidden cursor-pointer transition-all hover:scale-[1.02] hover:-translate-y-0.5 group"
+                  style={{ background: `linear-gradient(135deg, hsl(${color}/0.7), hsl(${color}/0.15))` }}
+                  onClick={() => openArtist(artist)}
+                >
+                  <div className="relative rounded-[15px] bg-background/85 backdrop-blur-xl p-3 text-center overflow-hidden h-full">
+                    <div className="pointer-events-none absolute -top-6 -right-6 w-20 h-20 rounded-full blur-2xl opacity-50 group-hover:opacity-80 transition-opacity" style={{ background: `hsl(${color}/0.5)` }} />
+                    <div className="relative">
+                      {artist.photo_url ? (
+                        <img src={artist.photo_url} alt="" className="w-16 h-16 rounded-full object-cover mx-auto mb-2 ring-2" style={{ boxShadow: `0 0 14px hsl(${color}/0.6)` }} />
+                      ) : (
+                        <div className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-2" style={{ background: `linear-gradient(135deg, hsl(${color}/0.4), hsl(${color}/0.1))`, boxShadow: `0 0 14px hsl(${color}/0.5)` }}>
+                          <User className="w-7 h-7" style={{ color: `hsl(${color})` }} />
+                        </div>
+                      )}
+                      <div className="font-bold text-sm truncate">{artist.name}</div>
+                      {artist.genre && <div className="text-[10px] text-muted-foreground truncate font-semibold">{artist.genre}</div>}
+                      <div className="inline-flex items-center gap-1 text-[10px] font-bold mt-1.5 px-2 py-0.5 rounded-full" style={{ background: `hsl(${color}/0.15)`, color: `hsl(${color})` }}>
+                        <Music className="w-2.5 h-2.5" /> {songCount} lagu
+                      </div>
                     </div>
-                  )}
-                  <div className="font-medium text-sm truncate">{artist.name}</div>
-                  {artist.genre && <div className="text-xs text-muted-foreground truncate">{artist.genre}</div>}
-                  <div className="text-xs text-muted-foreground">
-                    {songs.filter(s => s.artist.toLowerCase() === artist.name.toLowerCase()).length} lagu
                   </div>
-                </CardContent>
-              </Card>
-            ))}
+                </div>
+              );
+            })}
 
-            {/* Unregistered artists from songs */}
-            {unregisteredArtists.map(ua => (
-              <Card key={ua.name} className="cursor-pointer hover:shadow-md transition" onClick={() => {
-                setSelectedArtist({ id: "", name: ua.name, bio: "", photo_url: null, genre: "" });
-                setArtistSongs(songs.filter(s => s.artist.toLowerCase() === ua.name));
-              }}>
-                <CardContent className="p-3 text-center">
-                  <div className="w-14 h-14 rounded-full bg-muted flex items-center justify-center mx-auto mb-2">
-                    <Music className="w-6 h-6 text-muted-foreground" />
+            {unregisteredArtists.map((ua, i) => {
+              const palette = ["var(--neon-cyan)", "var(--neon-pink)", "var(--neon-purple)", "var(--neon-green)"];
+              const color = palette[(filteredArtists.length + i) % palette.length];
+              return (
+                <div key={ua.name} className="relative rounded-2xl p-[1px] overflow-hidden cursor-pointer transition-all hover:scale-[1.02] hover:-translate-y-0.5 group"
+                  style={{ background: `linear-gradient(135deg, hsl(${color}/0.5), hsl(${color}/0.1))` }}
+                  onClick={() => {
+                    setSelectedArtist({ id: "", name: ua.name, bio: "", photo_url: null, genre: "" });
+                    setArtistSongs(songs.filter(s => s.artist.toLowerCase() === ua.name));
+                  }}
+                >
+                  <div className="relative rounded-[15px] bg-background/85 backdrop-blur-xl p-3 text-center overflow-hidden h-full">
+                    <div className="pointer-events-none absolute -top-6 -right-6 w-20 h-20 rounded-full blur-2xl opacity-40 group-hover:opacity-70 transition-opacity" style={{ background: `hsl(${color}/0.5)` }} />
+                    <div className="relative">
+                      <div className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-2" style={{ background: `linear-gradient(135deg, hsl(${color}/0.3), hsl(${color}/0.08))`, boxShadow: `0 0 12px hsl(${color}/0.4)` }}>
+                        <Music className="w-6 h-6" style={{ color: `hsl(${color})` }} />
+                      </div>
+                      <div className="font-bold text-sm truncate capitalize">{ua.name}</div>
+                      <div className="inline-flex items-center gap-1 text-[10px] font-bold mt-1.5 px-2 py-0.5 rounded-full" style={{ background: `hsl(${color}/0.15)`, color: `hsl(${color})` }}>
+                        <Music className="w-2.5 h-2.5" /> {ua.songCount} lagu
+                      </div>
+                    </div>
                   </div>
-                  <div className="font-medium text-sm truncate capitalize">{ua.name}</div>
-                  <div className="text-xs text-muted-foreground">{ua.songCount} lagu</div>
-                </CardContent>
-              </Card>
-            ))}
+                </div>
+              );
+            })}
           </div>
         </>
       )}

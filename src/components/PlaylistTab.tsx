@@ -1015,26 +1015,53 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer, onPlayE
         </div>
       </div>
 
-      {/* Tab Buttons - Row 1 */}
-      <div className="flex gap-1.5">
-        <Button variant={activeView === "playlist" ? "default" : "outline"} size="sm" className="flex-1 gap-1 text-[10px] px-1.5" onClick={() => { setActiveView("playlist"); setViewingPlaylist(null); }}>
-          <Music className="w-3 h-3" /> Semua
-        </Button>
-        <Button variant={activeView === "liked" ? "default" : "outline"} size="sm" className="flex-1 gap-1 text-[10px] px-1.5" onClick={() => { setActiveView("liked"); setViewingPlaylist(null); }}>
-          <Heart className="w-3 h-3" /> Suka
-        </Button>
-        <Button variant={activeView === "myplaylists" ? "default" : "outline"} size="sm" className="flex-1 gap-1 text-[10px] px-1.5" onClick={() => { setActiveView("myplaylists"); setViewingPlaylist(null); }}>
-          <ListMusic className="w-3 h-3" /> Playlist
-        </Button>
-        <Button variant={activeView === "storage" ? "default" : "outline"} size="sm" className="flex-1 gap-1 text-[10px] px-1.5" onClick={() => setActiveView("storage")}>
-          <HardDrive className="w-3 h-3" /> Storage
-        </Button>
-      </div>
-      {/* Tab Buttons - Row 2 */}
-      <div className="flex gap-1.5">
-        <Button variant={activeView === "artist" ? "default" : "outline"} size="sm" className="flex-1 gap-1 text-[10px] px-1.5" onClick={() => setActiveView("artist")}>
-          <Mic2 className="w-3 h-3" /> Artist
-        </Button>
+      {/* Premium Aurora Sub-Nav */}
+      <div className="relative rounded-2xl p-[1.5px] overflow-hidden"
+        style={{
+          background: "linear-gradient(120deg, hsl(var(--neon-purple)/0.7), hsl(var(--neon-pink)/0.7) 35%, hsl(var(--neon-cyan)/0.7) 70%, hsl(var(--neon-purple)/0.7))",
+          backgroundSize: "300% 300%",
+          animation: "aurora-shift 8s ease infinite",
+        }}
+      >
+        <div className="relative rounded-[14px] bg-background/85 backdrop-blur-xl p-1.5 overflow-x-auto scrollbar-hide">
+          {/* glow blobs */}
+          <div className="pointer-events-none absolute -top-6 -left-4 w-24 h-24 rounded-full blur-3xl opacity-40" style={{ background: "hsl(var(--neon-purple)/0.6)" }} />
+          <div className="pointer-events-none absolute -bottom-8 right-0 w-28 h-28 rounded-full blur-3xl opacity-30" style={{ background: "hsl(var(--neon-pink)/0.6)" }} />
+
+          <div className="relative flex gap-1.5 min-w-max sm:min-w-0">
+            {([
+              { key: "playlist", label: "Semua", icon: Music, color: "var(--neon-cyan)", action: () => { setActiveView("playlist"); setViewingPlaylist(null); } },
+              { key: "liked", label: "Suka", icon: Heart, color: "var(--neon-pink)", action: () => { setActiveView("liked"); setViewingPlaylist(null); } },
+              { key: "myplaylists", label: "Playlist", icon: ListMusic, color: "var(--neon-purple)", action: () => { setActiveView("myplaylists"); setViewingPlaylist(null); } },
+              { key: "storage", label: "Storage", icon: HardDrive, color: "var(--neon-yellow)", action: () => setActiveView("storage") },
+              { key: "artist", label: "Artist", icon: Mic2, color: "var(--neon-green)", action: () => setActiveView("artist") },
+            ] as const).map(({ key, label, icon: Icon, color, action }) => {
+              const active = activeView === key;
+              return (
+                <button
+                  key={key}
+                  onClick={action}
+                  className={`relative flex-1 min-w-[64px] flex flex-col items-center justify-center gap-0.5 py-2 px-2 rounded-xl text-[10px] font-bold transition-all duration-300 overflow-hidden group ${
+                    active ? "text-white scale-[1.04]" : "text-muted-foreground hover:text-foreground hover:bg-white/5"
+                  }`}
+                  style={active ? {
+                    background: `linear-gradient(135deg, hsl(${color}/0.95), hsl(${color}/0.65))`,
+                    boxShadow: `0 0 18px hsl(${color}/0.5), 0 4px 14px hsl(${color}/0.3), inset 0 1px 0 hsl(0 0% 100%/0.2)`,
+                  } : undefined}
+                >
+                  {active && (
+                    <span className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/30 to-transparent" style={{ animation: "shine-sweep 2.6s ease-in-out infinite" }} />
+                  )}
+                  <Icon className={`w-3.5 h-3.5 relative ${active ? "drop-shadow-[0_0_4px_rgba(255,255,255,0.7)]" : ""}`} />
+                  <span className="relative tracking-wide">{label}</span>
+                  {active && (
+                    <span className="absolute -bottom-0.5 left-1/2 -translate-x-1/2 w-6 h-[2px] rounded-full bg-white/80" />
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </div>
       </div>
 
       {!isOnline && (
