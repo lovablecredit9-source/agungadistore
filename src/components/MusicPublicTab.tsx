@@ -359,34 +359,55 @@ const MusicPublicTab = ({ onPlaySong }: MusicPublicTabProps) => {
 
   return (
     <div className="space-y-4">
-      {/* Hero Header */}
-      <div className="relative overflow-hidden rounded-2xl border border-border glass-card-strong p-5">
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/8 via-accent/5 to-transparent" />
-        <div className="absolute top-2 right-2 opacity-[0.06]">
-          <Music className="w-24 h-24 text-primary" />
-        </div>
-        <div className="relative z-10">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-lg">
-              <Globe className="w-5 h-5 text-white" />
-            </div>
-            <div>
-              <h2 className="font-extrabold text-lg leading-tight">Musik Publik</h2>
-              <p className="text-[10px] text-muted-foreground">Komunitas musik terbuka</p>
-            </div>
+      {/* Premium Aurora Hero Header */}
+      <div className="relative rounded-2xl p-[1.5px] overflow-hidden"
+        style={{
+          background: "linear-gradient(135deg, hsl(var(--neon-purple)/0.85), hsl(var(--neon-pink)/0.85) 50%, hsl(var(--neon-cyan)/0.85))",
+          backgroundSize: "300% 300%",
+          animation: "aurora-shift 9s ease infinite",
+        }}
+      >
+        <div className="relative rounded-[14px] bg-background/85 backdrop-blur-xl p-5 overflow-hidden">
+          {/* Decorative blobs */}
+          <div className="pointer-events-none absolute -top-10 -left-8 w-40 h-40 rounded-full blur-3xl opacity-40" style={{ background: "hsl(var(--neon-purple)/0.6)" }} />
+          <div className="pointer-events-none absolute -bottom-10 -right-8 w-44 h-44 rounded-full blur-3xl opacity-30" style={{ background: "hsl(var(--neon-cyan)/0.6)" }} />
+          <div className="pointer-events-none absolute top-2 right-2 opacity-[0.07]">
+            <Music className="w-28 h-28" />
           </div>
-          <div className="grid grid-cols-3 gap-2">
-            <div className="bg-background/60 rounded-xl px-3 py-2 text-center backdrop-blur-sm">
-              <p className="text-sm font-extrabold text-primary">{publicSongs.length}</p>
-              <p className="text-[9px] text-muted-foreground">Lagu</p>
+
+          <div className="relative z-10">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="relative">
+                <div className="absolute inset-0 rounded-2xl blur-xl opacity-70" style={{ background: "linear-gradient(135deg, hsl(var(--neon-purple)), hsl(var(--neon-pink)))" }} />
+                <div className="relative w-12 h-12 rounded-2xl flex items-center justify-center shadow-lg" style={{ background: "linear-gradient(135deg, hsl(var(--neon-purple)), hsl(var(--neon-pink)) 50%, hsl(var(--neon-cyan)))" }}>
+                  <Globe className="w-5 h-5 text-white drop-shadow-[0_0_6px_rgba(255,255,255,0.8)]" />
+                </div>
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <h2 className="font-extrabold text-lg leading-tight tracking-tight bg-clip-text text-transparent" style={{ backgroundImage: "linear-gradient(135deg, hsl(var(--neon-cyan)), hsl(var(--neon-pink)))" }}>
+                    Musik Publik
+                  </h2>
+                  <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[8px] font-bold text-white" style={{ background: "hsl(var(--neon-pink)/0.85)", boxShadow: "0 0 8px hsl(var(--neon-pink)/0.6)" }}>
+                    <span className="w-1 h-1 rounded-full bg-white animate-pulse" /> LIVE
+                  </span>
+                </div>
+                <p className="text-[10px] text-muted-foreground mt-0.5">Komunitas musik premium · Aurora Edition</p>
+              </div>
             </div>
-            <div className="bg-background/60 rounded-xl px-3 py-2 text-center backdrop-blur-sm">
-              <p className="text-sm font-extrabold text-accent">{profiles.length}</p>
-              <p className="text-[9px] text-muted-foreground">Pengguna</p>
-            </div>
-            <div className="bg-background/60 rounded-xl px-3 py-2 text-center backdrop-blur-sm">
-              <p className="text-sm font-extrabold text-foreground">{mySongs.length}</p>
-              <p className="text-[9px] text-muted-foreground">Laguku</p>
+            <div className="grid grid-cols-3 gap-2">
+              {[
+                { val: publicSongs.length, label: "Lagu", color: "var(--neon-cyan)" },
+                { val: profiles.length, label: "Pengguna", color: "var(--neon-purple)" },
+                { val: mySongs.length, label: "Laguku", color: "var(--neon-pink)" },
+              ].map((s, i) => (
+                <div key={i} className="relative rounded-xl p-[1px] overflow-hidden" style={{ background: `linear-gradient(135deg, hsl(${s.color}/0.6), transparent)` }}>
+                  <div className="rounded-[10px] bg-background/80 backdrop-blur-sm px-3 py-2 text-center">
+                    <p className="text-base font-extrabold tabular-nums" style={{ color: `hsl(${s.color})`, textShadow: `0 0 10px hsl(${s.color}/0.6)` }}>{s.val}</p>
+                    <p className="text-[9px] text-muted-foreground font-semibold uppercase tracking-wider mt-0.5">{s.label}</p>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         </div>
