@@ -84,7 +84,7 @@ export default function MusicHub({ subTab, onSubTabChange, onPlayExternal, playl
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -12, scale: 0.96 }}
             transition={{ type: "spring", stiffness: 300, damping: 24 }}
-            className="relative overflow-hidden rounded-2xl border border-fuchsia-500/40 bg-gradient-to-r from-fuchsia-950/95 via-purple-950/95 to-indigo-950/95 backdrop-blur-xl shadow-[0_8px_30px_-8px_rgba(217,70,239,0.6)]"
+            className="relative overflow-hidden rounded-3xl border border-fuchsia-500/40 bg-gradient-to-r from-fuchsia-950/95 via-purple-950/95 to-indigo-950/95 backdrop-blur-xl shadow-[0_12px_36px_-8px_rgba(217,70,239,0.7)]"
           >
             <motion.div
               animate={{ x: ["-100%", "200%"] }}
@@ -100,13 +100,13 @@ export default function MusicHub({ subTab, onSubTabChange, onPlayExternal, playl
             </div>
             <button
               onClick={() => onOpenFullPlayer?.()}
-              className="relative w-full flex items-center gap-3 p-2.5 text-left"
+              className="relative w-full flex items-center gap-4 p-4 text-left"
             >
               <div className="relative flex-shrink-0">
                 <motion.div
                   animate={isPlaying ? { rotate: 360 } : { rotate: 0 }}
                   transition={isPlaying ? { duration: 6, repeat: Infinity, ease: "linear" } : { duration: 0.3 }}
-                  className="w-12 h-12 rounded-full overflow-hidden border-2 border-white/30 bg-black shadow-[0_0_15px_rgba(217,70,239,0.5)] relative"
+                  className="w-16 h-16 rounded-full overflow-hidden border-2 border-white/30 bg-black shadow-[0_0_18px_rgba(217,70,239,0.6)] relative"
                 >
                   {nowSong.cover_url ? (
                     <img src={nowSong.cover_url} alt="" className="w-full h-full object-cover" />
@@ -116,7 +116,7 @@ export default function MusicHub({ subTab, onSubTabChange, onPlayExternal, playl
                     </div>
                   )}
                   <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                    <div className="w-2 h-2 rounded-full bg-black border border-white/40" />
+                    <div className="w-3 h-3 rounded-full bg-black border border-white/40" />
                   </div>
                 </motion.div>
                 {isPlaying && (
@@ -132,42 +132,42 @@ export default function MusicHub({ subTab, onSubTabChange, onPlayExternal, playl
                   <motion.span
                     animate={{ opacity: isPlaying ? [1, 0.4, 1] : 1 }}
                     transition={{ duration: 1.2, repeat: Infinity }}
-                    className="px-1.5 py-0.5 rounded-md bg-pink-500/30 border border-pink-400/50 text-[8px] font-black text-pink-100 uppercase tracking-wider flex items-center gap-0.5"
+                    className="px-2 py-0.5 rounded-md bg-pink-500/30 border border-pink-400/50 text-[10px] font-black text-pink-100 uppercase tracking-wider flex items-center gap-1"
                   >
                     <span className={`w-1 h-1 rounded-full ${isPlaying ? "bg-green-400" : "bg-amber-400"}`} />
                     {isPlaying ? "Playing" : "Paused"}
                   </motion.span>
                   {isPlaying && (
-                    <div className="flex items-end gap-[2px] h-3">
+                    <div className="flex items-end gap-[3px] h-4">
                       {[0.5, 0.9, 0.4, 0.8].map((h, i) => (
                         <motion.div
                           key={i}
                           animate={{ scaleY: [h, 1, h * 0.5, h] }}
                           transition={{ duration: 0.6 + i * 0.1, repeat: Infinity, ease: "easeInOut", delay: i * 0.05 }}
                           style={{ transformOrigin: "bottom" }}
-                          className="w-[2px] h-full bg-gradient-to-t from-pink-400 to-fuchsia-300 rounded-full"
+                          className="w-[3px] h-full bg-gradient-to-t from-pink-400 to-fuchsia-300 rounded-full"
                         />
                       ))}
                     </div>
                   )}
                 </div>
-                <p className="text-xs font-bold text-white truncate leading-tight">{nowSong.title}</p>
-                <p className="text-[10px] text-white/70 truncate">{nowSong.artist}</p>
+                <p className="text-sm font-bold text-white truncate leading-tight">{nowSong.title}</p>
+                <p className="text-xs text-white/70 truncate mt-0.5">{nowSong.artist}</p>
               </div>
               <div className="flex items-center gap-1 flex-shrink-0">
                 <motion.span
                   whileTap={{ scale: 0.85 }}
                   onClick={(e) => { e.stopPropagation(); onTogglePlay?.(); }}
-                  className="w-10 h-10 rounded-full bg-gradient-to-br from-pink-500 to-fuchsia-600 flex items-center justify-center shadow-lg shadow-pink-500/50 cursor-pointer"
+                   className="w-12 h-12 rounded-full bg-gradient-to-br from-pink-500 to-fuchsia-600 flex items-center justify-center shadow-lg shadow-pink-500/50 cursor-pointer"
                 >
                   {isPlaying ? (
-                    <Pause className="w-4 h-4 text-white" fill="currentColor" />
+                    <Pause className="w-5 h-5 text-white" fill="currentColor" />
                   ) : (
-                    <Play className="w-4 h-4 text-white ml-0.5" fill="currentColor" />
+                    <Play className="w-5 h-5 text-white ml-0.5" fill="currentColor" />
                   )}
                 </motion.span>
-                <span className="w-7 h-7 rounded-full bg-white/10 flex items-center justify-center">
-                  <ChevronUp className="w-3.5 h-3.5 text-white/80" />
+                <span className="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center">
+                  <ChevronUp className="w-4 h-4 text-white/80" />
                 </span>
               </div>
             </button>
