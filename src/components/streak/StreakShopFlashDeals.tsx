@@ -1,10 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Flame, Clock, Tag, ShoppingBag, Crown, Lock, Loader2, Check, Info, X } from "lucide-react";
+import { Flame, Clock, Tag, ShoppingBag, Crown, Lock, Loader2, Check, Info, X, Sparkles, Zap as ZapIcon, TrendingUp } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { syncPowerUpsFromServer } from "@/components/games/gameStore";
+
+type FilterKey = "all" | "free" | "premium" | "cheap" | "best";
 
 interface Deal {
   id: string;
@@ -107,6 +109,7 @@ export default function StreakShopFlashDeals({ visitorId, onUpdate }: Props) {
   const [buying, setBuying] = useState<string | null>(null);
   const [infoDeal, setInfoDeal] = useState<Deal | null>(null);
   const [payMethod, setPayMethod] = useState<Record<string, "coin" | "gem">>({});
+  const [filter, setFilter] = useState<FilterKey>("all");
 
   const refreshGemBalance = async () => {
     if (!visitorId) return 0;
@@ -265,23 +268,88 @@ export default function StreakShopFlashDeals({ visitorId, onUpdate }: Props) {
           </div>
         )}
 
+        {/* Filter bar */}
+        {(() => {
+          const counts = {
+            all: deals.length,
+            free: deals.filter(d => !d.requires_premium).length,
+            premium: deals.filter(d => d.requires_premium).length,
+            cheap: deals.filter(d => Math.floor(d.original_cost * (1 - d.discount_pct / 100)) <= 500).length,
+            best: deals.filter(d => d.discount_pct >= 55).length,
+          };
+          const tabs: { key: FilterKey; label: string; icon: any }[] = [
+            { key: "all", label: `Semua (${counts.all})`, icon: Sparkles },
+            { key: "best", label: `Terhemat (${counts.best})`, icon: TrendingUp },
+            { key: "cheap", label: `Murah (${counts.cheap})`, icon: ZapIcon },
+            { key: "free", label: `Reguler (${counts.free})`, icon: Tag },
+            { key: "premium", label: `Premium (${counts.premium})`, icon: Crown },
+          ];
+          return (
+            <div className="mb-3 -mx-1 px-1 flex gap-1.5 overflow-x-auto scrollbar-hide">
+              {tabs.map(t => {
+                const active = filter === t.key;
+                const Icon = t.icon;
+                return (
+                  <button
+                    key={t.key}
+                    onClick={() => setFilter(t.key)}
+                    className={`flex items-center gap-1 px-2.5 py-1.5 rounded-full text-[10px] font-black whitespace-nowrap transition-all border ${
+                      active
+                        ? "bg-gradient-to-r from-orange-500 to-red-500 text-white border-orange-300 shadow-[0_0_12px_rgba(249,115,22,0.6)]"
+                        : "bg-black/40 text-orange-200/80 border-orange-400/20 hover:bg-black/60"
+                    }`}
+                  >
+                    <Icon className="w-3 h-3" strokeWidth={2.8} />
+                    {t.label}
+                  </button>
+                );
+              })}
+            </div>
+          );
+        })()}
+
         <div className="grid grid-cols-2 gap-2">
-          <AnimatePresence>
-            {deals.map((deal, i) => {
+          <AnimatePresence mode="popLayout">
+            {deals
+              .filter(d => {
+                if (filter === "all") return true;
+                if (filter === "free") return !d.requires_premium;
+                if (filter === "premium") return d.requires_premium;
+                if (filter === "cheap") return Math.floor(d.original_cost * (1 - d.discount_pct / 100)) <= 500;
+                if (filter === "best") return d.discount_pct >= 55;
+                return true;
+              })
+              .map((deal, i) => {
               const finalPrice = Math.floor(deal.original_cost * (1 - deal.discount_pct / 100));
               const locked = !deal.can_purchase;
               return (
                 <motion.div
                   key={deal.id}
+                  layout
                   initial={{ opacity: 0, scale: 0.9 }}
                   animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: i * 0.08 }}
+                  exit={{ opacity: 0, scale: 0.85 }}
+                  transition={{ delay: i * 0.04 }}
                   className={`relative overflow-hidden rounded-xl p-2.5 bg-gradient-to-br ${deal.gradient} border ${
-                    deal.claimed_today ? "border-green-400/60 ring-1 ring-green-400/40" : "border-white/20"
+                    deal.claimed_today
+                      ? "border-green-400/60 ring-1 ring-green-400/40"
+                      : deal.requires_premium
+                      ? "border-yellow-300/60 ring-1 ring-yellow-300/40 shadow-[0_0_14px_rgba(250,204,21,0.25)]"
+                      : "border-white/20"
                   }`}
                 >
+                  {/* shimmer */}
+                  {!deal.claimed_today && (
+                    <motion.div
+                      aria-hidden
+                      initial={{ x: "-120%" }}
+                      animate={{ x: "120%" }}
+                      transition={{ duration: 2.4, repeat: Infinity, repeatDelay: 3 + (i % 3), ease: "easeInOut" }}
+                      className="absolute inset-y-0 w-1/3 bg-gradient-to-r from-transparent via-white/20 to-transparent skew-x-12 pointer-events-none"
+                    />
+                  )}
                   {deal.badge && (
-                    <div className="absolute top-1 right-1 px-1.5 py-0.5 rounded-full bg-black/50 backdrop-blur">
+                    <div className="absolute top-1 right-1 px-1.5 py-0.5 rounded-full bg-black/60 backdrop-blur z-10">
                       <span className="text-[8px] font-black text-white">{deal.badge}</span>
                     </div>
                   )}
