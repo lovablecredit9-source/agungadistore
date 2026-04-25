@@ -1860,50 +1860,73 @@ const Index = () => {
               ]}
             />
 
-            {/* Streak & Game Side by Side - minimalist */}
+            {/* Streak & Game Side by Side - Aurora Premium */}
             <div className="grid grid-cols-2 gap-3">
               <button
                 onClick={() => setTab("streak")}
-                className="rounded-xl border border-border bg-card p-3 text-left transition-colors hover:bg-muted/40 active:scale-[0.99]"
+                className="group relative overflow-hidden rounded-2xl p-[1.5px] aurora-shift active:scale-[0.98] transition-transform"
+                style={{ background: "linear-gradient(135deg, hsl(20 90% 55%/0.7), hsl(0 90% 60%/0.7), hsl(45 95% 55%/0.7), hsl(20 90% 55%/0.7))", backgroundSize: "300% 300%" }}
               >
-                <div className="flex items-center gap-2.5">
-                  <div className="w-9 h-9 rounded-lg bg-muted flex items-center justify-center shrink-0">
-                    <Flame className="w-4.5 h-4.5 text-foreground" strokeWidth={1.7} />
-                  </div>
-                  <div className="min-w-0">
-                    <h3 className="text-sm font-semibold text-foreground leading-tight">Daily Streak</h3>
-                    <p className="text-[11px] text-muted-foreground mt-0.5">Klaim harian</p>
+                <div className="relative rounded-[15px] bg-card/95 backdrop-blur-xl p-3 text-left overflow-hidden">
+                  <div className="pointer-events-none absolute -top-6 -right-6 w-20 h-20 rounded-full bg-orange-500/20 blur-2xl" />
+                  <div className="relative flex items-center gap-2.5">
+                    <div className="relative">
+                      <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-orange-500 to-red-500 blur-md opacity-60 group-hover:opacity-100 transition-opacity" />
+                      <div className="relative w-10 h-10 rounded-xl bg-gradient-to-br from-orange-500 to-red-500 flex items-center justify-center shadow-lg">
+                        <Flame className="w-5 h-5 text-white" strokeWidth={2.2} />
+                      </div>
+                    </div>
+                    <div className="min-w-0">
+                      <h3 className="text-sm font-extrabold text-foreground leading-tight">Daily Streak</h3>
+                      <p className="text-[10px] text-orange-500 font-bold mt-0.5">🔥 Klaim harian</p>
+                    </div>
                   </div>
                 </div>
               </button>
 
               <button
                 onClick={() => setTab("game")}
-                className="rounded-xl border border-border bg-card p-3 text-left transition-colors hover:bg-muted/40 active:scale-[0.99]"
+                className="group relative overflow-hidden rounded-2xl p-[1.5px] aurora-shift active:scale-[0.98] transition-transform"
+                style={{ background: "linear-gradient(135deg, hsl(280 90% 65%/0.7), hsl(330 90% 60%/0.7), hsl(190 95% 55%/0.7), hsl(280 90% 65%/0.7))", backgroundSize: "300% 300%" }}
               >
-                <div className="flex items-center gap-2.5">
-                  <div className="w-9 h-9 rounded-lg bg-muted flex items-center justify-center shrink-0">
-                    <Gamepad2 className="w-4.5 h-4.5 text-foreground" strokeWidth={1.7} />
-                  </div>
-                  <div className="min-w-0">
-                    <h3 className="text-sm font-semibold text-foreground leading-tight">Game</h3>
-                    <p className="text-[11px] text-muted-foreground mt-0.5">11 permainan</p>
+                <div className="relative rounded-[15px] bg-card/95 backdrop-blur-xl p-3 text-left overflow-hidden">
+                  <div className="pointer-events-none absolute -top-6 -right-6 w-20 h-20 rounded-full bg-purple-500/20 blur-2xl" />
+                  <div className="relative flex items-center gap-2.5">
+                    <div className="relative">
+                      <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 blur-md opacity-60 group-hover:opacity-100 transition-opacity" />
+                      <div className="relative w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center shadow-lg">
+                        <Gamepad2 className="w-5 h-5 text-white" strokeWidth={2.2} />
+                      </div>
+                    </div>
+                    <div className="min-w-0">
+                      <h3 className="text-sm font-extrabold text-foreground leading-tight">Game AI</h3>
+                      <p className="text-[10px] text-purple-500 font-bold mt-0.5">🎮 11 permainan</p>
+                    </div>
                   </div>
                 </div>
               </button>
             </div>
 
-            {/* Stats Bar - minimalist */}
+            {/* Stats Bar - Aurora Premium */}
             <div className="grid grid-cols-3 gap-2.5">
               {[
-                { value: `${products.length}+`, label: "Produk", Icon: Package },
-                { value: `${homeSponsors.length}`, label: "Sponsor", Icon: Megaphone },
-                { value: "11", label: "Game", Icon: Gamepad2 },
-              ].map(({ value, label, Icon }) => (
-                <div key={label} className="rounded-xl border border-border bg-card p-3 text-center">
-                  <Icon className="w-4 h-4 text-muted-foreground mx-auto" strokeWidth={1.7} />
-                  <p className="text-base font-semibold text-foreground mt-1.5">{value}</p>
-                  <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-wide mt-0.5">{label}</p>
+                { value: `${products.length}+`, label: "Produk", Icon: Package, color: "from-cyan-400 to-blue-500", glow: "34,211,238" },
+                { value: `${homeSponsors.length}`, label: "Sponsor", Icon: Megaphone, color: "from-amber-500 to-yellow-500", glow: "245,158,11" },
+                { value: "11", label: "Game", Icon: Gamepad2, color: "from-purple-500 to-pink-500", glow: "168,85,247" },
+              ].map(({ value, label, Icon, color, glow }) => (
+                <div
+                  key={label}
+                  className="relative overflow-hidden rounded-2xl p-[1.5px]"
+                  style={{ background: `linear-gradient(135deg, rgba(${glow}, 0.6), rgba(${glow}, 0.2), rgba(${glow}, 0.6))` }}
+                >
+                  <div className="relative rounded-[14px] bg-card/95 backdrop-blur-xl p-3 text-center overflow-hidden">
+                    <div className="pointer-events-none absolute inset-0 opacity-20" style={{ background: `radial-gradient(circle at center, rgba(${glow}, 0.4) 0%, transparent 70%)` }} />
+                    <div className={`relative w-8 h-8 mx-auto rounded-xl bg-gradient-to-br ${color} flex items-center justify-center shadow-lg`}>
+                      <Icon className="w-4 h-4 text-white" strokeWidth={2.2} />
+                    </div>
+                    <p className={`relative text-lg font-extrabold mt-1.5 bg-gradient-to-r ${color} bg-clip-text text-transparent tabular-nums`}>{value}</p>
+                    <p className="relative text-[9px] text-muted-foreground font-bold uppercase tracking-wider">{label}</p>
+                  </div>
                 </div>
               ))}
             </div>
