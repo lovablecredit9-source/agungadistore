@@ -1685,81 +1685,117 @@ const Index = () => {
               </div>
             )}
 
-            {/* Welcome Header - flat IG/TikTok style */}
-            <div className="rounded-2xl bg-card border border-border p-4">
-              <div className="flex items-center gap-3">
-                <img src={storeQris} alt={STORE_NAME} className="w-14 h-14 rounded-xl object-cover border border-border" />
-                <div className="flex-1 min-w-0">
-                  <p className="text-[11px] text-muted-foreground font-medium">
-                    {new Date().getHours() < 12 ? "Selamat Pagi" : new Date().getHours() < 18 ? "Selamat Siang" : "Selamat Malam"}
-                  </p>
-                  <h2 className="text-[18px] font-bold text-foreground leading-tight truncate">{STORE_NAME}</h2>
-                  <p className="text-[10px] text-muted-foreground mt-0.5 truncate">{t("header.tagline", lang)}</p>
+            {/* Welcome Header - Aurora Neon Premium */}
+            <div className="relative rounded-3xl overflow-hidden p-[1.5px] aurora-shift" style={{ background: "linear-gradient(135deg, hsl(var(--primary)/0.6), hsl(280 90% 65%/0.6), hsl(190 95% 55%/0.6), hsl(var(--primary)/0.6))", backgroundSize: "300% 300%" }}>
+              <div className="relative rounded-[22px] bg-card/95 backdrop-blur-xl p-4 overflow-hidden">
+                {/* Decorative glow blobs */}
+                <div className="pointer-events-none absolute -top-12 -right-12 w-40 h-40 rounded-full bg-primary/20 blur-3xl" />
+                <div className="pointer-events-none absolute -bottom-12 -left-12 w-40 h-40 rounded-full bg-purple-500/20 blur-3xl" />
+                <div className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-32 h-32 rounded-full bg-cyan-400/10 blur-2xl" />
+
+                <div className="relative flex items-center gap-3">
+                  <div className="relative">
+                    <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-primary via-purple-500 to-cyan-400 blur-md opacity-70 animate-pulse" />
+                    <img src={storeQris} alt={STORE_NAME} className="relative w-16 h-16 rounded-2xl object-cover border-2 border-white/20 shadow-2xl" />
+                    <span className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-green-500 border-2 border-card animate-pulse" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-[10px] uppercase tracking-[0.18em] font-bold bg-gradient-to-r from-primary via-purple-500 to-cyan-400 bg-clip-text text-transparent">
+                        {new Date().getHours() < 12 ? "✨ Pagi" : new Date().getHours() < 18 ? "☀️ Siang" : "🌙 Malam"}
+                      </span>
+                      <span className="px-1.5 py-0.5 rounded-full bg-green-500/15 border border-green-500/30 text-green-500 text-[8px] font-bold">LIVE</span>
+                    </div>
+                    <h2 className="text-[19px] font-extrabold leading-tight truncate bg-gradient-to-r from-foreground via-primary to-foreground bg-clip-text text-transparent">{STORE_NAME}</h2>
+                    <p className="text-[10px] text-muted-foreground mt-0.5 truncate flex items-center gap-1">
+                      <span className="text-yellow-500">⭐</span> {t("header.tagline", lang)}
+                    </p>
+                  </div>
                 </div>
-              </div>
-              <div className="mt-3 pt-3 border-t border-border">
-                <LiveClock />
-              </div>
-              <div className="flex items-center gap-4 mt-3 pt-3 border-t border-border">
-                <a
-                  href={`${SOCIAL_LINKS.whatsapp}?text=${encodeURIComponent("Halo, saya mau order di Agung Adi Store")}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-1.5 text-xs font-medium text-foreground hover:text-primary transition-colors"
-                >
-                  <MessageCircle className="w-4 h-4" strokeWidth={1.7} />
-                  {t("home.contact_wa", lang)}
-                </a>
-                <span className="w-px h-3.5 bg-border" />
-                <button
-                  type="button"
-                  onClick={() => setTab("voucher")}
-                  className="flex items-center gap-1.5 text-xs font-medium text-foreground hover:text-primary transition-colors"
-                >
-                  <Ticket className="w-4 h-4" strokeWidth={1.7} />
-                  {t("home.claim_voucher", lang)}
-                </button>
+
+                <div className="relative mt-3 pt-3 border-t border-white/10">
+                  <LiveClock />
+                </div>
+
+                <div className="relative grid grid-cols-2 gap-2 mt-3 pt-3 border-t border-white/10">
+                  <a
+                    href={`${SOCIAL_LINKS.whatsapp}?text=${encodeURIComponent("Halo, saya mau order di Agung Adi Store")}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="relative overflow-hidden flex items-center justify-center gap-1.5 text-xs font-bold rounded-xl py-2.5 bg-gradient-to-r from-green-500/15 to-emerald-500/15 border border-green-500/30 text-green-500 hover:scale-[1.02] transition-transform shine-sweep"
+                  >
+                    <MessageCircle className="w-3.5 h-3.5" strokeWidth={2.2} />
+                    <span className="truncate">{t("home.contact_wa", lang)}</span>
+                  </a>
+                  <button
+                    type="button"
+                    onClick={() => setTab("voucher")}
+                    className="relative overflow-hidden flex items-center justify-center gap-1.5 text-xs font-bold rounded-xl py-2.5 bg-gradient-to-r from-primary/15 to-purple-500/15 border border-primary/30 text-primary hover:scale-[1.02] transition-transform shine-sweep"
+                  >
+                    <Ticket className="w-3.5 h-3.5" strokeWidth={2.2} />
+                    <span className="truncate">{t("home.claim_voucher", lang)}</span>
+                  </button>
+                </div>
               </div>
             </div>
 
-            {/* Quick Action Grid - IG/TikTok flat style */}
-            <div className="grid grid-cols-4 gap-2">
-              {[
-                { icon: <Music className="w-6 h-6" strokeWidth={1.7} />, label: "Musik", tab: "playlist" as Tab },
-                { icon: <Package className="w-6 h-6" strokeWidth={1.7} />, label: "Produk", tab: "produk" as Tab, badge: `${products.length}` },
-                { icon: <Ticket className="w-6 h-6" strokeWidth={1.7} />, label: "Voucher", tab: "voucher" as Tab },
-                { icon: <Wallet className="w-6 h-6" strokeWidth={1.7} />, label: "Saldo", tab: "saldo" as Tab },
-                { icon: <Heart className="w-6 h-6" strokeWidth={1.7} />, label: "Suka", tab: "likes" as Tab },
-                { icon: <Gamepad2 className="w-6 h-6" strokeWidth={1.7} />, label: "Game", tab: "game" as Tab, badge: "11" },
-                { icon: <Flame className="w-6 h-6" strokeWidth={1.7} />, label: "Streak", tab: "streak" as Tab },
-                { icon: <Gem className="w-6 h-6" strokeWidth={1.7} />, label: "Plus", tab: "plus" as Tab },
-                { icon: <Megaphone className="w-6 h-6" strokeWidth={1.7} />, label: "Sponsor", tab: "sponsor" as Tab },
-                { icon: <MessageSquare className="w-6 h-6" strokeWidth={1.7} />, label: "Tiket", tab: "tiket" as Tab },
-                { icon: <Globe className="w-6 h-6" strokeWidth={1.7} />, label: "Publik", tab: "publik" as Tab },
-                { icon: <History className="w-6 h-6" strokeWidth={1.7} />, label: "Riwayat", tab: "history" as Tab },
-                { icon: <CalendarDays className="w-6 h-6" strokeWidth={1.7} />, label: "Event", tab: "streakevent" as Tab },
-                { icon: <ShoppingBag className="w-6 h-6" strokeWidth={1.7} />, label: "S.Shop", tab: "streakshop" as Tab },
-                { icon: <Crown className="w-6 h-6" strokeWidth={1.7} />, label: "Member", tab: "streakmembership" as Tab },
-                { icon: <RefreshCw className="w-6 h-6" strokeWidth={1.7} />, label: "Update", tab: "update" as Tab },
-                { icon: <Crown className="w-6 h-6" strokeWidth={1.7} />, label: "L.Royale", external: "/luck-royale-nyawa" },
-                { icon: <FileText className="w-6 h-6" strokeWidth={1.7} />, label: "Admin", tab: "adminpost" as Tab },
-              ].map((item: any) => (
-                <button
-                  key={item.label}
-                  onClick={() => item.external ? navigate(item.external) : setTab(item.tab)}
-                  className="relative flex flex-col items-center gap-1.5 py-3 rounded-xl hover:bg-muted/40 active:bg-muted/60 transition-colors"
-                >
-                  <div className="relative text-foreground">
-                    {item.icon}
-                    {item.badge && (
-                      <span className="absolute -top-1.5 -right-2 min-w-[16px] h-[16px] rounded-full bg-destructive text-destructive-foreground text-[9px] font-semibold flex items-center justify-center px-1">
-                        {item.badge}
-                      </span>
-                    )}
-                  </div>
-                  <span className="text-[11px] font-medium text-foreground">{item.label}</span>
-                </button>
-              ))}
+            {/* Quick Action Grid - Aurora Neon Premium */}
+            <div className="relative rounded-3xl overflow-hidden p-[1.5px] aurora-shift" style={{ background: "linear-gradient(135deg, hsl(190 95% 55%/0.5), hsl(280 90% 65%/0.5), hsl(330 90% 60%/0.5), hsl(45 95% 55%/0.5), hsl(150 80% 50%/0.5))", backgroundSize: "400% 400%" }}>
+              <div className="relative rounded-[22px] bg-card/95 backdrop-blur-xl p-3 overflow-hidden">
+                <div className="pointer-events-none absolute -top-16 right-1/4 w-40 h-40 rounded-full bg-purple-500/15 blur-3xl" />
+                <div className="pointer-events-none absolute -bottom-16 left-1/4 w-40 h-40 rounded-full bg-cyan-400/15 blur-3xl" />
+
+                <div className="relative flex items-center justify-between mb-2 px-1">
+                  <h3 className="text-xs font-extrabold uppercase tracking-[0.15em] bg-gradient-to-r from-cyan-400 via-purple-500 to-pink-500 bg-clip-text text-transparent">⚡ Quick Access</h3>
+                  <span className="text-[9px] text-muted-foreground font-semibold">18 Menu</span>
+                </div>
+
+                <div className="relative grid grid-cols-4 gap-1.5">
+                  {([
+                    { icon: <Music className="w-5 h-5" strokeWidth={1.9} />, label: "Musik", tab: "playlist" as Tab, color: "from-pink-500 to-rose-500", glow: "236,72,153" },
+                    { icon: <Package className="w-5 h-5" strokeWidth={1.9} />, label: "Produk", tab: "produk" as Tab, badge: `${products.length}`, color: "from-cyan-400 to-blue-500", glow: "34,211,238" },
+                    { icon: <Ticket className="w-5 h-5" strokeWidth={1.9} />, label: "Voucher", tab: "voucher" as Tab, color: "from-purple-500 to-violet-600", glow: "168,85,247" },
+                    { icon: <Wallet className="w-5 h-5" strokeWidth={1.9} />, label: "Saldo", tab: "saldo" as Tab, color: "from-emerald-500 to-green-500", glow: "16,185,129" },
+                    { icon: <Heart className="w-5 h-5" strokeWidth={1.9} />, label: "Suka", tab: "likes" as Tab, color: "from-rose-500 to-pink-500", glow: "244,63,94" },
+                    { icon: <Gamepad2 className="w-5 h-5" strokeWidth={1.9} />, label: "Game", tab: "game" as Tab, badge: "11", color: "from-yellow-400 to-orange-500", glow: "250,204,21" },
+                    { icon: <Flame className="w-5 h-5" strokeWidth={1.9} />, label: "Streak", tab: "streak" as Tab, color: "from-orange-500 to-red-500", glow: "249,115,22" },
+                    { icon: <Gem className="w-5 h-5" strokeWidth={1.9} />, label: "Plus", tab: "plus" as Tab, color: "from-indigo-500 to-purple-500", glow: "99,102,241" },
+                    { icon: <Megaphone className="w-5 h-5" strokeWidth={1.9} />, label: "Sponsor", tab: "sponsor" as Tab, color: "from-amber-500 to-yellow-500", glow: "245,158,11" },
+                    { icon: <MessageSquare className="w-5 h-5" strokeWidth={1.9} />, label: "Tiket", tab: "tiket" as Tab, color: "from-blue-500 to-cyan-500", glow: "59,130,246" },
+                    { icon: <Globe className="w-5 h-5" strokeWidth={1.9} />, label: "Publik", tab: "publik" as Tab, color: "from-teal-500 to-cyan-500", glow: "20,184,166" },
+                    { icon: <History className="w-5 h-5" strokeWidth={1.9} />, label: "Riwayat", tab: "history" as Tab, color: "from-slate-500 to-zinc-500", glow: "100,116,139" },
+                    { icon: <CalendarDays className="w-5 h-5" strokeWidth={1.9} />, label: "Event", tab: "streakevent" as Tab, color: "from-fuchsia-500 to-pink-500", glow: "217,70,239" },
+                    { icon: <ShoppingBag className="w-5 h-5" strokeWidth={1.9} />, label: "S.Shop", tab: "streakshop" as Tab, color: "from-lime-500 to-green-500", glow: "132,204,22" },
+                    { icon: <Crown className="w-5 h-5" strokeWidth={1.9} />, label: "Member", tab: "streakmembership" as Tab, color: "from-yellow-500 to-amber-500", glow: "234,179,8" },
+                    { icon: <RefreshCw className="w-5 h-5" strokeWidth={1.9} />, label: "Update", tab: "update" as Tab, color: "from-sky-500 to-blue-500", glow: "14,165,233" },
+                    { icon: <Crown className="w-5 h-5" strokeWidth={1.9} />, label: "L.Royale", external: "/luck-royale-nyawa", color: "from-violet-500 to-fuchsia-500", glow: "139,92,246" },
+                    { icon: <FileText className="w-5 h-5" strokeWidth={1.9} />, label: "Admin", tab: "adminpost" as Tab, color: "from-red-500 to-rose-500", glow: "239,68,68" },
+                  ] as any[]).map((item) => (
+                    <button
+                      key={item.label}
+                      onClick={() => item.external ? navigate(item.external) : setTab(item.tab)}
+                      className="group relative flex flex-col items-center gap-1.5 py-2.5 rounded-xl bg-white/[0.03] border border-white/10 hover:border-white/30 hover:bg-white/[0.08] active:scale-95 transition-all duration-200 overflow-hidden"
+                      style={{ boxShadow: `0 0 0 0 rgba(${item.glow}, 0)` }}
+                      onMouseEnter={(e) => { e.currentTarget.style.boxShadow = `0 0 20px -2px rgba(${item.glow}, 0.5)`; }}
+                      onMouseLeave={(e) => { e.currentTarget.style.boxShadow = `0 0 0 0 rgba(${item.glow}, 0)`; }}
+                    >
+                      <div className={`absolute inset-0 bg-gradient-to-br ${item.color} opacity-0 group-hover:opacity-10 transition-opacity`} />
+                      <div className="relative">
+                        <div className={`absolute inset-0 bg-gradient-to-br ${item.color} blur-md opacity-0 group-hover:opacity-60 transition-opacity scale-150`} />
+                        <div className={`relative w-9 h-9 rounded-xl bg-gradient-to-br ${item.color} flex items-center justify-center text-white shadow-lg`}>
+                          {item.icon}
+                        </div>
+                        {item.badge && (
+                          <span className="absolute -top-1 -right-1 min-w-[16px] h-[16px] rounded-full bg-gradient-to-r from-red-500 to-pink-500 text-white text-[9px] font-bold flex items-center justify-center px-1 shadow-lg ring-2 ring-card">
+                            {item.badge}
+                          </span>
+                        )}
+                      </div>
+                      <span className="relative text-[10px] font-bold text-foreground">{item.label}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
             </div>
 
             {/* Hero Promo Slider */}
@@ -1824,50 +1860,73 @@ const Index = () => {
               ]}
             />
 
-            {/* Streak & Game Side by Side - minimalist */}
+            {/* Streak & Game Side by Side - Aurora Premium */}
             <div className="grid grid-cols-2 gap-3">
               <button
                 onClick={() => setTab("streak")}
-                className="rounded-xl border border-border bg-card p-3 text-left transition-colors hover:bg-muted/40 active:scale-[0.99]"
+                className="group relative overflow-hidden rounded-2xl p-[1.5px] aurora-shift active:scale-[0.98] transition-transform"
+                style={{ background: "linear-gradient(135deg, hsl(20 90% 55%/0.7), hsl(0 90% 60%/0.7), hsl(45 95% 55%/0.7), hsl(20 90% 55%/0.7))", backgroundSize: "300% 300%" }}
               >
-                <div className="flex items-center gap-2.5">
-                  <div className="w-9 h-9 rounded-lg bg-muted flex items-center justify-center shrink-0">
-                    <Flame className="w-4.5 h-4.5 text-foreground" strokeWidth={1.7} />
-                  </div>
-                  <div className="min-w-0">
-                    <h3 className="text-sm font-semibold text-foreground leading-tight">Daily Streak</h3>
-                    <p className="text-[11px] text-muted-foreground mt-0.5">Klaim harian</p>
+                <div className="relative rounded-[15px] bg-card/95 backdrop-blur-xl p-3 text-left overflow-hidden">
+                  <div className="pointer-events-none absolute -top-6 -right-6 w-20 h-20 rounded-full bg-orange-500/20 blur-2xl" />
+                  <div className="relative flex items-center gap-2.5">
+                    <div className="relative">
+                      <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-orange-500 to-red-500 blur-md opacity-60 group-hover:opacity-100 transition-opacity" />
+                      <div className="relative w-10 h-10 rounded-xl bg-gradient-to-br from-orange-500 to-red-500 flex items-center justify-center shadow-lg">
+                        <Flame className="w-5 h-5 text-white" strokeWidth={2.2} />
+                      </div>
+                    </div>
+                    <div className="min-w-0">
+                      <h3 className="text-sm font-extrabold text-foreground leading-tight">Daily Streak</h3>
+                      <p className="text-[10px] text-orange-500 font-bold mt-0.5">🔥 Klaim harian</p>
+                    </div>
                   </div>
                 </div>
               </button>
 
               <button
                 onClick={() => setTab("game")}
-                className="rounded-xl border border-border bg-card p-3 text-left transition-colors hover:bg-muted/40 active:scale-[0.99]"
+                className="group relative overflow-hidden rounded-2xl p-[1.5px] aurora-shift active:scale-[0.98] transition-transform"
+                style={{ background: "linear-gradient(135deg, hsl(280 90% 65%/0.7), hsl(330 90% 60%/0.7), hsl(190 95% 55%/0.7), hsl(280 90% 65%/0.7))", backgroundSize: "300% 300%" }}
               >
-                <div className="flex items-center gap-2.5">
-                  <div className="w-9 h-9 rounded-lg bg-muted flex items-center justify-center shrink-0">
-                    <Gamepad2 className="w-4.5 h-4.5 text-foreground" strokeWidth={1.7} />
-                  </div>
-                  <div className="min-w-0">
-                    <h3 className="text-sm font-semibold text-foreground leading-tight">Game</h3>
-                    <p className="text-[11px] text-muted-foreground mt-0.5">11 permainan</p>
+                <div className="relative rounded-[15px] bg-card/95 backdrop-blur-xl p-3 text-left overflow-hidden">
+                  <div className="pointer-events-none absolute -top-6 -right-6 w-20 h-20 rounded-full bg-purple-500/20 blur-2xl" />
+                  <div className="relative flex items-center gap-2.5">
+                    <div className="relative">
+                      <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 blur-md opacity-60 group-hover:opacity-100 transition-opacity" />
+                      <div className="relative w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center shadow-lg">
+                        <Gamepad2 className="w-5 h-5 text-white" strokeWidth={2.2} />
+                      </div>
+                    </div>
+                    <div className="min-w-0">
+                      <h3 className="text-sm font-extrabold text-foreground leading-tight">Game AI</h3>
+                      <p className="text-[10px] text-purple-500 font-bold mt-0.5">🎮 11 permainan</p>
+                    </div>
                   </div>
                 </div>
               </button>
             </div>
 
-            {/* Stats Bar - minimalist */}
+            {/* Stats Bar - Aurora Premium */}
             <div className="grid grid-cols-3 gap-2.5">
               {[
-                { value: `${products.length}+`, label: "Produk", Icon: Package },
-                { value: `${homeSponsors.length}`, label: "Sponsor", Icon: Megaphone },
-                { value: "11", label: "Game", Icon: Gamepad2 },
-              ].map(({ value, label, Icon }) => (
-                <div key={label} className="rounded-xl border border-border bg-card p-3 text-center">
-                  <Icon className="w-4 h-4 text-muted-foreground mx-auto" strokeWidth={1.7} />
-                  <p className="text-base font-semibold text-foreground mt-1.5">{value}</p>
-                  <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-wide mt-0.5">{label}</p>
+                { value: `${products.length}+`, label: "Produk", Icon: Package, color: "from-cyan-400 to-blue-500", glow: "34,211,238" },
+                { value: `${homeSponsors.length}`, label: "Sponsor", Icon: Megaphone, color: "from-amber-500 to-yellow-500", glow: "245,158,11" },
+                { value: "11", label: "Game", Icon: Gamepad2, color: "from-purple-500 to-pink-500", glow: "168,85,247" },
+              ].map(({ value, label, Icon, color, glow }) => (
+                <div
+                  key={label}
+                  className="relative overflow-hidden rounded-2xl p-[1.5px]"
+                  style={{ background: `linear-gradient(135deg, rgba(${glow}, 0.6), rgba(${glow}, 0.2), rgba(${glow}, 0.6))` }}
+                >
+                  <div className="relative rounded-[14px] bg-card/95 backdrop-blur-xl p-3 text-center overflow-hidden">
+                    <div className="pointer-events-none absolute inset-0 opacity-20" style={{ background: `radial-gradient(circle at center, rgba(${glow}, 0.4) 0%, transparent 70%)` }} />
+                    <div className={`relative w-8 h-8 mx-auto rounded-xl bg-gradient-to-br ${color} flex items-center justify-center shadow-lg`}>
+                      <Icon className="w-4 h-4 text-white" strokeWidth={2.2} />
+                    </div>
+                    <p className={`relative text-lg font-extrabold mt-1.5 bg-gradient-to-r ${color} bg-clip-text text-transparent tabular-nums`}>{value}</p>
+                    <p className="relative text-[9px] text-muted-foreground font-bold uppercase tracking-wider">{label}</p>
+                  </div>
                 </div>
               ))}
             </div>
@@ -1906,75 +1965,140 @@ const Index = () => {
               </div>
             )}
 
-            {/* Voucher Card */}
-            <button onClick={() => setTab("voucher")} className="w-full text-left bg-card border border-border rounded-xl p-4 flex items-center gap-3 hover:bg-muted/40 transition-colors">
-              <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center shrink-0">
-                <Ticket className="w-5 h-5" strokeWidth={1.7} />
+            {/* Voucher Card - Aurora */}
+            <button
+              onClick={() => setTab("voucher")}
+              className="group relative w-full text-left rounded-2xl p-[1.5px] aurora-shift overflow-hidden active:scale-[0.99] transition-transform"
+              style={{ background: "linear-gradient(135deg, hsl(280 90% 65%/0.6), hsl(330 90% 60%/0.6), hsl(280 90% 65%/0.6))", backgroundSize: "300% 300%" }}
+            >
+              <div className="relative rounded-[14px] bg-card/95 backdrop-blur-xl p-4 flex items-center gap-3 overflow-hidden shine-sweep">
+                <div className="pointer-events-none absolute -top-8 -right-8 w-24 h-24 rounded-full bg-purple-500/20 blur-2xl" />
+                <div className="relative">
+                  <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 blur-md opacity-60" />
+                  <div className="relative w-11 h-11 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center shadow-lg shrink-0">
+                    <Ticket className="w-5 h-5 text-white" strokeWidth={2.2} />
+                  </div>
+                </div>
+                <div className="flex-1 min-w-0 relative">
+                  <h3 className="font-extrabold text-sm bg-gradient-to-r from-purple-500 to-pink-500 bg-clip-text text-transparent">{t("home.have_voucher", lang)}</h3>
+                  <p className="text-xs text-muted-foreground mt-0.5 truncate">{t("home.claim_now", lang)}</p>
+                </div>
+                <ChevronRight className="relative w-4 h-4 text-purple-500 shrink-0 group-hover:translate-x-1 transition-transform" strokeWidth={2.2} />
               </div>
-              <div className="flex-1 min-w-0">
-                <h3 className="font-semibold text-sm">{t("home.have_voucher", lang)}</h3>
-                <p className="text-xs text-muted-foreground mt-0.5 truncate">{t("home.claim_now", lang)}</p>
-              </div>
-              <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" strokeWidth={1.7} />
             </button>
 
-            {/* How To Claim */}
-            <div className="bg-card border border-border rounded-xl overflow-hidden">
-              <div className="px-4 py-3 border-b border-border flex items-center gap-2">
-                <HelpCircle className="w-4 h-4 text-muted-foreground" strokeWidth={1.7} />
-                <h3 className="text-sm font-semibold">Cara Klaim Voucher</h3>
-              </div>
-              <div className="p-4 space-y-3.5">
-                {[
-                  { step: "1", icon: <ShoppingBag className="w-4 h-4" strokeWidth={1.7} />, title: "Beli Produk", desc: "Pilih dan beli produk di tab Produk menggunakan saldo." },
-                  { step: "2", icon: <Ticket className="w-4 h-4" strokeWidth={1.7} />, title: "Masukkan Kode Voucher", desc: "Setelah beli, masukkan kode voucher yang didapat di tab Voucher." },
-                  { step: "3", icon: <CheckCircle2 className="w-4 h-4" strokeWidth={1.7} />, title: "Klaim & Dapat Akun", desc: "Klik Klaim dan dapatkan detail akun produkmu." },
-                ].map((item) => (
-                  <div key={item.step} className="flex items-start gap-3">
-                    <div className="w-7 h-7 rounded-full bg-muted text-foreground flex items-center justify-center shrink-0 text-xs font-semibold">
-                      {item.step}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold">{item.title}</p>
-                      <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">{item.desc}</p>
-                    </div>
+            {/* How To Claim - Aurora Premium */}
+            <div
+              className="relative rounded-2xl p-[1.5px] aurora-shift overflow-hidden"
+              style={{ background: "linear-gradient(135deg, hsl(190 95% 55%/0.5), hsl(280 90% 65%/0.5), hsl(150 80% 50%/0.5), hsl(190 95% 55%/0.5))", backgroundSize: "300% 300%" }}
+            >
+              <div className="relative rounded-[14px] bg-card/95 backdrop-blur-xl overflow-hidden">
+                <div className="pointer-events-none absolute -top-12 -right-12 w-40 h-40 rounded-full bg-cyan-400/15 blur-3xl" />
+                <div className="pointer-events-none absolute -bottom-12 -left-12 w-40 h-40 rounded-full bg-purple-500/15 blur-3xl" />
+
+                <div className="relative px-4 py-3 border-b border-white/10 flex items-center gap-2">
+                  <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-cyan-400 to-purple-500 flex items-center justify-center shadow-lg">
+                    <HelpCircle className="w-3.5 h-3.5 text-white" strokeWidth={2.2} />
                   </div>
-                ))}
-                <button onClick={() => setTab("voucher")} className="w-full mt-1 h-9 rounded-lg border border-border text-xs font-semibold hover:bg-muted/40 transition-colors flex items-center justify-center gap-1.5">
-                  <Ticket className="w-3.5 h-3.5" strokeWidth={1.7} /> Coba Klaim Sekarang
-                </button>
+                  <h3 className="text-sm font-extrabold bg-gradient-to-r from-cyan-400 via-purple-500 to-pink-500 bg-clip-text text-transparent">📚 Cara Klaim Voucher</h3>
+                </div>
+                <div className="relative p-4 space-y-3">
+                  {[
+                    { step: "1", icon: <ShoppingBag className="w-4 h-4" strokeWidth={2.2} />, title: "Beli Produk", desc: "Pilih dan beli produk di tab Produk menggunakan saldo.", color: "from-cyan-400 to-blue-500", glow: "34,211,238" },
+                    { step: "2", icon: <Ticket className="w-4 h-4" strokeWidth={2.2} />, title: "Masukkan Kode Voucher", desc: "Setelah beli, masukkan kode voucher yang didapat di tab Voucher.", color: "from-purple-500 to-pink-500", glow: "168,85,247" },
+                    { step: "3", icon: <CheckCircle2 className="w-4 h-4" strokeWidth={2.2} />, title: "Klaim & Dapat Akun", desc: "Klik Klaim dan dapatkan detail akun produkmu.", color: "from-emerald-500 to-green-500", glow: "16,185,129" },
+                  ].map((item) => (
+                    <div key={item.step} className="flex items-start gap-3 relative">
+                      <div className="relative shrink-0">
+                        <div className={`absolute inset-0 rounded-xl bg-gradient-to-br ${item.color} blur-md opacity-50`} />
+                        <div className={`relative w-9 h-9 rounded-xl bg-gradient-to-br ${item.color} text-white flex items-center justify-center text-xs font-extrabold shadow-lg`}>
+                          {item.step}
+                        </div>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className={`text-sm font-extrabold bg-gradient-to-r ${item.color} bg-clip-text text-transparent`}>{item.title}</p>
+                        <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">{item.desc}</p>
+                      </div>
+                    </div>
+                  ))}
+                  <button
+                    onClick={() => setTab("voucher")}
+                    className="relative w-full mt-2 h-10 rounded-xl bg-gradient-to-r from-cyan-400 via-purple-500 to-pink-500 text-white text-xs font-extrabold transition-all hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-1.5 shadow-lg overflow-hidden shine-sweep"
+                  >
+                    <Ticket className="w-3.5 h-3.5" strokeWidth={2.5} /> ✨ Coba Klaim Sekarang
+                  </button>
+                </div>
               </div>
             </div>
 
-            {/* Support Shortcut */}
-            <button onClick={() => setTab("tiket")} className="w-full text-left bg-card border border-border rounded-xl p-4 flex items-center gap-3 hover:bg-muted/40 transition-colors">
-              <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center shrink-0">
-                <AlertCircle className="w-5 h-5" strokeWidth={1.7} />
+            {/* Support Shortcut - Aurora */}
+            <button
+              onClick={() => setTab("tiket")}
+              className="group relative w-full text-left rounded-2xl p-[1.5px] aurora-shift overflow-hidden active:scale-[0.99] transition-transform"
+              style={{ background: "linear-gradient(135deg, hsl(0 90% 60%/0.6), hsl(20 90% 55%/0.6), hsl(0 90% 60%/0.6))", backgroundSize: "300% 300%" }}
+            >
+              <div className="relative rounded-[14px] bg-card/95 backdrop-blur-xl p-4 flex items-center gap-3 overflow-hidden shine-sweep">
+                <div className="pointer-events-none absolute -top-8 -right-8 w-24 h-24 rounded-full bg-red-500/20 blur-2xl" />
+                <div className="relative">
+                  <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-red-500 to-orange-500 blur-md opacity-60" />
+                  <div className="relative w-11 h-11 rounded-xl bg-gradient-to-br from-red-500 to-orange-500 flex items-center justify-center shadow-lg shrink-0">
+                    <AlertCircle className="w-5 h-5 text-white" strokeWidth={2.2} />
+                  </div>
+                </div>
+                <div className="flex-1 min-w-0 relative">
+                  <h3 className="font-extrabold text-sm bg-gradient-to-r from-red-500 to-orange-500 bg-clip-text text-transparent">{t("home.have_issue", lang)}</h3>
+                  <p className="text-xs text-muted-foreground mt-0.5 truncate">{t("home.submit_ticket", lang)}</p>
+                </div>
+                <ChevronRight className="relative w-4 h-4 text-red-500 shrink-0 group-hover:translate-x-1 transition-transform" strokeWidth={2.2} />
               </div>
-              <div className="flex-1 min-w-0">
-                <h3 className="font-semibold text-sm">{t("home.have_issue", lang)}</h3>
-                <p className="text-xs text-muted-foreground mt-0.5 truncate">{t("home.submit_ticket", lang)}</p>
-              </div>
-              <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" strokeWidth={1.7} />
             </button>
 
-            {/* Social Links */}
-            <div className="bg-card border border-border rounded-xl p-4">
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3 flex items-center gap-1.5">
-                <Globe className="w-3.5 h-3.5" strokeWidth={1.7} /> {t("home.follow_us", lang)}
-              </p>
-              <div className="grid grid-cols-3 gap-2">
-                {socialLinks.map((s) => (
-                  <a key={s.id} href={s.url} target="_blank" rel="noopener noreferrer"
-                    className="flex flex-col items-center gap-1.5 py-3 px-2 rounded-lg border border-border hover:bg-muted/40 transition-colors">
-                    {s.icon_url ? (
-                      <img src={s.icon_url} alt={s.platform} className="w-7 h-7 object-contain rounded" />
-                    ) : (
-                      <span className="w-7 h-7 rounded bg-muted flex items-center justify-center text-xs font-semibold">{s.platform[0]?.toUpperCase()}</span>
-                    )}
-                    <span className="truncate text-[11px] font-medium w-full text-center">{s.label}</span>
-                  </a>
-                ))}
+            {/* Social Links - Aurora Premium */}
+            <div
+              className="relative rounded-2xl p-[1.5px] aurora-shift overflow-hidden"
+              style={{ background: "linear-gradient(135deg, hsl(150 80% 50%/0.5), hsl(190 95% 55%/0.5), hsl(280 90% 65%/0.5), hsl(150 80% 50%/0.5))", backgroundSize: "300% 300%" }}
+            >
+              <div className="relative rounded-[14px] bg-card/95 backdrop-blur-xl p-4 overflow-hidden">
+                <div className="pointer-events-none absolute -top-12 right-0 w-32 h-32 rounded-full bg-emerald-500/15 blur-3xl" />
+                <div className="pointer-events-none absolute -bottom-12 left-0 w-32 h-32 rounded-full bg-cyan-400/15 blur-3xl" />
+
+                <div className="relative flex items-center justify-between mb-3">
+                  <p className="text-xs font-extrabold uppercase tracking-[0.15em] flex items-center gap-1.5 bg-gradient-to-r from-emerald-500 via-cyan-400 to-purple-500 bg-clip-text text-transparent">
+                    <Globe className="w-3.5 h-3.5 text-emerald-500" strokeWidth={2.2} /> {t("home.follow_us", lang)}
+                  </p>
+                  <span className="px-2 py-0.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-500 text-[9px] font-bold">{socialLinks.length} Akun</span>
+                </div>
+                <div className="relative grid grid-cols-3 gap-2">
+                  {socialLinks.map((s, i) => {
+                    const palette = [
+                      { color: "from-pink-500 to-rose-500", glow: "236,72,153" },
+                      { color: "from-cyan-400 to-blue-500", glow: "34,211,238" },
+                      { color: "from-purple-500 to-violet-600", glow: "168,85,247" },
+                      { color: "from-emerald-500 to-green-500", glow: "16,185,129" },
+                      { color: "from-yellow-400 to-orange-500", glow: "250,204,21" },
+                    ][i % 5];
+                    return (
+                      <a
+                        key={s.id}
+                        href={s.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="group relative flex flex-col items-center gap-1.5 py-3 px-2 rounded-xl bg-white/[0.03] border border-white/10 hover:border-white/30 hover:bg-white/[0.08] transition-all overflow-hidden active:scale-95"
+                      >
+                        <div className={`absolute inset-0 bg-gradient-to-br ${palette.color} opacity-0 group-hover:opacity-10 transition-opacity`} />
+                        <div className="relative">
+                          <div className={`absolute inset-0 bg-gradient-to-br ${palette.color} blur-md opacity-0 group-hover:opacity-50 transition-opacity scale-150`} />
+                          {s.icon_url ? (
+                            <img src={s.icon_url} alt={s.platform} className="relative w-8 h-8 object-contain rounded-lg" />
+                          ) : (
+                            <span className={`relative w-8 h-8 rounded-lg bg-gradient-to-br ${palette.color} flex items-center justify-center text-xs font-extrabold text-white shadow-lg`}>{s.platform[0]?.toUpperCase()}</span>
+                          )}
+                        </div>
+                        <span className="relative truncate text-[10px] font-bold w-full text-center text-foreground">{s.label}</span>
+                      </a>
+                    );
+                  })}
+                </div>
               </div>
             </div>
           </div>
