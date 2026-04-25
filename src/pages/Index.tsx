@@ -3079,48 +3079,80 @@ const Index = () => {
                 />
 
 
-                {/* Account Actions Card - minimal clean */}
-                <Card className="border border-border/60 shadow-sm bg-card">
-                  <CardContent className="p-4 space-y-3">
-                    <div className="flex items-center justify-between">
-                      <div className="min-w-0">
-                        <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Akun</p>
-                        <p className="text-sm font-extrabold text-foreground truncate">{userBalance.username}</p>
-                        <p className="text-[10px] text-muted-foreground">{userBalance.phone}</p>
+                {/* Account Actions Card - Aurora Premium */}
+                <div
+                  className="relative rounded-2xl p-[1.5px] aurora-shift overflow-hidden"
+                  style={{ background: "linear-gradient(135deg, hsl(190 95% 55%/0.6), hsl(280 90% 65%/0.6), hsl(150 80% 50%/0.6), hsl(190 95% 55%/0.6))", backgroundSize: "300% 300%" }}
+                >
+                  <div className="relative rounded-[14px] bg-card/95 backdrop-blur-xl p-4 space-y-3 overflow-hidden">
+                    <div className="pointer-events-none absolute -top-12 -right-12 w-36 h-36 rounded-full bg-cyan-400/15 blur-3xl" />
+                    <div className="pointer-events-none absolute -bottom-12 -left-12 w-36 h-36 rounded-full bg-purple-500/15 blur-3xl" />
+
+                    <div className="relative flex items-center justify-between gap-2">
+                      <div className="min-w-0 flex items-center gap-2.5">
+                        <div className="relative shrink-0">
+                          <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-cyan-400 to-purple-500 blur-md opacity-60" />
+                          <div className="relative w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-400 to-purple-500 flex items-center justify-center shadow-lg text-white text-sm font-extrabold">
+                            {userBalance.username[0]?.toUpperCase()}
+                          </div>
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-[10px] font-extrabold uppercase tracking-widest bg-gradient-to-r from-cyan-400 to-purple-500 bg-clip-text text-transparent">👤 Akun</p>
+                          <p className="text-sm font-extrabold text-foreground truncate">{userBalance.username}</p>
+                          <p className="text-[10px] text-muted-foreground truncate">📱 {userBalance.phone}</p>
+                        </div>
                       </div>
-                      <Button size="sm" className="bg-gradient-to-r from-accent to-accent/80 text-accent-foreground gap-1.5 font-bold rounded-xl h-9 shadow-sm"
+                      <Button
+                        size="sm"
+                        className="relative bg-gradient-to-r from-emerald-500 to-green-500 text-white gap-1.5 font-extrabold rounded-xl h-9 shadow-lg hover:scale-[1.03] active:scale-[0.97] transition-transform shine-sweep overflow-hidden shrink-0"
                         onClick={() => { if (banned) return; setShowDepositModal(true); setDepositStep("method"); }}
-                        disabled={banned}>
+                        disabled={banned}
+                      >
                         <ArrowUpCircle className="w-4 h-4" /> {t("deposit.btn", lang)}
                       </Button>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-2">
-                      <Button size="sm" variant="outline" className="gap-1.5 font-bold rounded-xl h-9 border border-border/60"
+                    <div className="relative grid grid-cols-2 gap-2">
+                      <button
                         onClick={() => { if (banned) return; setProfileUsername(userBalance.username); setProfilePhone(userBalance.phone); setShowProfileModal(true); }}
-                        disabled={banned}>
-                        <Edit2 className="w-4 h-4" /> Edit Profil
-                      </Button>
+                        disabled={banned}
+                        className="group relative flex items-center justify-center gap-1.5 h-10 rounded-xl bg-gradient-to-r from-cyan-400/15 to-blue-500/15 border border-cyan-400/30 text-xs font-extrabold text-cyan-500 hover:scale-[1.02] active:scale-[0.98] transition-transform overflow-hidden disabled:opacity-50"
+                      >
+                        <Edit2 className="w-4 h-4" strokeWidth={2.2} /> Edit Profil
+                      </button>
                       {!hasPin ? (
-                        <Button size="sm" variant="outline" className="gap-1.5 font-bold border-primary/30 rounded-xl h-9" onClick={() => { if (banned) return; setShowPinSetup(true); }} disabled={banned}>
-                          <Lock className="w-4 h-4 text-primary" /> Buat PIN
-                        </Button>
+                        <button
+                          onClick={() => { if (banned) return; setShowPinSetup(true); }}
+                          disabled={banned}
+                          className="group relative flex items-center justify-center gap-1.5 h-10 rounded-xl bg-gradient-to-r from-purple-500/15 to-pink-500/15 border border-purple-500/30 text-xs font-extrabold text-purple-500 hover:scale-[1.02] active:scale-[0.98] transition-transform overflow-hidden shine-sweep disabled:opacity-50"
+                        >
+                          <Lock className="w-4 h-4" strokeWidth={2.2} /> Buat PIN
+                        </button>
                       ) : (
-                        <Button size="sm" variant="outline" className="gap-1.5 font-medium border-border rounded-xl h-9 text-foreground bg-card shadow-none" onClick={() => { if (banned) return; setShowForgotPin(true); }} disabled={banned}>
-                          <KeyRound className="w-4 h-4" strokeWidth={1.8} /> Reset PIN
-                        </Button>
+                        <button
+                          onClick={() => { if (banned) return; setShowForgotPin(true); }}
+                          disabled={banned}
+                          className="group relative flex items-center justify-center gap-1.5 h-10 rounded-xl bg-gradient-to-r from-amber-500/15 to-orange-500/15 border border-amber-500/30 text-xs font-extrabold text-amber-500 hover:scale-[1.02] active:scale-[0.98] transition-transform overflow-hidden disabled:opacity-50"
+                        >
+                          <KeyRound className="w-4 h-4" strokeWidth={2.2} /> Reset PIN
+                        </button>
                       )}
                     </div>
 
                     {hasPin && (
-                      <div className="flex items-center gap-2 rounded-xl border border-border bg-muted/40 p-2.5 text-xs text-foreground">
-                        <Lock className="w-3.5 h-3.5 flex-shrink-0" strokeWidth={1.8} />
-                        <span className="font-medium">PIN aktif</span>
-                        <span className="text-muted-foreground text-[11px]">- Pembelian dilindungi PIN</span>
+                      <div className="relative flex items-center gap-2 rounded-xl border border-emerald-500/30 bg-gradient-to-r from-emerald-500/10 to-green-500/10 p-2.5 text-xs">
+                        <div className="relative shrink-0">
+                          <div className="absolute inset-0 rounded-lg bg-emerald-500 blur-sm opacity-50 animate-pulse" />
+                          <div className="relative w-6 h-6 rounded-lg bg-gradient-to-br from-emerald-500 to-green-500 flex items-center justify-center shadow-lg">
+                            <Lock className="w-3 h-3 text-white" strokeWidth={2.4} />
+                          </div>
+                        </div>
+                        <span className="font-extrabold text-emerald-500">PIN Aktif</span>
+                        <span className="text-muted-foreground text-[11px]">• Pembelian dilindungi PIN 🔒</span>
                       </div>
                     )}
-                  </CardContent>
-                </Card>
+                  </div>
+                </div>
                 </div>
 
                 {/* Auth: Logout, Switch Account, Login History */}
