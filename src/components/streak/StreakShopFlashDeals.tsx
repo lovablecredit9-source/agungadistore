@@ -1,10 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Flame, Clock, Tag, ShoppingBag, Crown, Lock, Loader2, Check, Info, X } from "lucide-react";
+import { Flame, Clock, Tag, ShoppingBag, Crown, Lock, Loader2, Check, Info, X, Sparkles, Zap as ZapIcon, TrendingUp } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { syncPowerUpsFromServer } from "@/components/games/gameStore";
+
+type FilterKey = "all" | "free" | "premium" | "cheap" | "best";
 
 interface Deal {
   id: string;
@@ -107,6 +109,7 @@ export default function StreakShopFlashDeals({ visitorId, onUpdate }: Props) {
   const [buying, setBuying] = useState<string | null>(null);
   const [infoDeal, setInfoDeal] = useState<Deal | null>(null);
   const [payMethod, setPayMethod] = useState<Record<string, "coin" | "gem">>({});
+  const [filter, setFilter] = useState<FilterKey>("all");
 
   const refreshGemBalance = async () => {
     if (!visitorId) return 0;
