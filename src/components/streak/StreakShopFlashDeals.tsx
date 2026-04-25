@@ -325,15 +325,31 @@ export default function StreakShopFlashDeals({ visitorId, onUpdate }: Props) {
               return (
                 <motion.div
                   key={deal.id}
+                  layout
                   initial={{ opacity: 0, scale: 0.9 }}
                   animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: i * 0.08 }}
+                  exit={{ opacity: 0, scale: 0.85 }}
+                  transition={{ delay: i * 0.04 }}
                   className={`relative overflow-hidden rounded-xl p-2.5 bg-gradient-to-br ${deal.gradient} border ${
-                    deal.claimed_today ? "border-green-400/60 ring-1 ring-green-400/40" : "border-white/20"
+                    deal.claimed_today
+                      ? "border-green-400/60 ring-1 ring-green-400/40"
+                      : deal.requires_premium
+                      ? "border-yellow-300/60 ring-1 ring-yellow-300/40 shadow-[0_0_14px_rgba(250,204,21,0.25)]"
+                      : "border-white/20"
                   }`}
                 >
+                  {/* shimmer */}
+                  {!deal.claimed_today && (
+                    <motion.div
+                      aria-hidden
+                      initial={{ x: "-120%" }}
+                      animate={{ x: "120%" }}
+                      transition={{ duration: 2.4, repeat: Infinity, repeatDelay: 3 + (i % 3), ease: "easeInOut" }}
+                      className="absolute inset-y-0 w-1/3 bg-gradient-to-r from-transparent via-white/20 to-transparent skew-x-12 pointer-events-none"
+                    />
+                  )}
                   {deal.badge && (
-                    <div className="absolute top-1 right-1 px-1.5 py-0.5 rounded-full bg-black/50 backdrop-blur">
+                    <div className="absolute top-1 right-1 px-1.5 py-0.5 rounded-full bg-black/60 backdrop-blur z-10">
                       <span className="text-[8px] font-black text-white">{deal.badge}</span>
                     </div>
                   )}
