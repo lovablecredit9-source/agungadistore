@@ -1657,8 +1657,55 @@ const Index = () => {
                 <span className="absolute top-1 right-1 bg-destructive text-destructive-foreground text-[9px] font-semibold min-w-[16px] h-[16px] rounded-full flex items-center justify-center px-1 border border-background">{unreadCount > 99 ? "99+" : unreadCount}</span>
               )}
             </button>
-            <a href={`${SOCIAL_LINKS.whatsapp}?text=${encodeURIComponent("Halo, saya mau tanya di Agung Adi Store")}`} target="_blank" rel="noopener noreferrer" className="w-9 h-9 rounded-full flex items-center justify-center hover:bg-muted transition-colors text-foreground">
-              <MessageCircle className="w-[18px] h-[18px]" strokeWidth={1.7} />
+            <a
+              href={`${SOCIAL_LINKS.whatsapp}?text=${encodeURIComponent("Halo, saya mau tanya di Agung Adi Store")}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Chat WhatsApp"
+              className="group relative w-9 h-9 rounded-full flex items-center justify-center hover:bg-muted transition-colors text-foreground"
+            >
+              {/* Glow halo */}
+              <span className="absolute inset-0 rounded-full bg-emerald-400/0 group-hover:bg-emerald-400/15 blur-md transition-all" />
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+                className="relative w-[20px] h-[20px] drop-shadow-[0_0_4px_rgba(16,185,129,0.4)] group-hover:scale-110 transition-transform"
+              >
+                <defs>
+                  <linearGradient id="chatGradFront" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0%" stopColor="hsl(var(--primary))" />
+                    <stop offset="100%" stopColor="hsl(var(--accent))" />
+                  </linearGradient>
+                  <linearGradient id="chatGradBack" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0%" stopColor="hsl(var(--accent))" stopOpacity="0.7" />
+                    <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity="0.5" />
+                  </linearGradient>
+                </defs>
+                {/* Back bubble */}
+                <path
+                  d="M10 7h9a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2h-1.5L15 19.5V17h-5a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2Z"
+                  fill="url(#chatGradBack)"
+                  stroke="url(#chatGradBack)"
+                  strokeWidth="0.5"
+                />
+                {/* Front bubble */}
+                <path
+                  d="M5 4h10a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2h-6.5L5 16.5V14a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z"
+                  fill="url(#chatGradFront)"
+                />
+                {/* Lines inside front bubble */}
+                <line x1="6.5" y1="7.5" x2="13" y2="7.5" stroke="white" strokeWidth="1.4" strokeLinecap="round" opacity="0.95" />
+                <line x1="6.5" y1="10.5" x2="11" y2="10.5" stroke="white" strokeWidth="1.4" strokeLinecap="round" opacity="0.95" />
+                {/* Dots inside back bubble */}
+                <circle cx="13" cy="12.2" r="0.7" fill="white" opacity="0.9" />
+                <circle cx="15.2" cy="12.2" r="0.7" fill="white" opacity="0.9" />
+                <circle cx="17.4" cy="12.2" r="0.7" fill="white" opacity="0.9" />
+              </svg>
+              {/* Pulse online dot */}
+              <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-emerald-400 border border-background shadow-[0_0_6px_rgba(16,185,129,0.8)]">
+                <span className="absolute inset-0 rounded-full bg-emerald-400 animate-ping opacity-75" />
+              </span>
             </a>
           </div>
         </div>
