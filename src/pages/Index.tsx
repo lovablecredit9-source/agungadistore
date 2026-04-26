@@ -1748,8 +1748,31 @@ const Index = () => {
               </div>
             )}
 
-            {/* Welcome Header - Aurora Neon Premium */}
-            <div className="relative rounded-3xl overflow-hidden p-[1.5px] aurora-shift" style={{ background: "linear-gradient(135deg, hsl(var(--primary)/0.6), hsl(280 90% 65%/0.6), hsl(190 95% 55%/0.6), hsl(var(--primary)/0.6))", backgroundSize: "300% 300%" }}>
+            {/* Welcome Header - Aurora Neon Premium + Maksimalis Confetti */}
+            <div className="relative">
+              {/* Confetti emoji rain di belakang card */}
+              <div className="pointer-events-none absolute inset-0 overflow-hidden rounded-3xl">
+                {["🎉","✨","💎","🎵","🔥","⭐","🎮","💰","🎁","🚀","💫","🎊"].map((emoji, i) => (
+                  <span
+                    key={i}
+                    className="confetti-piece"
+                    style={{
+                      left: `${(i * 8.3) % 100}%`,
+                      animationDelay: `${(i * 0.35) % 4}s`,
+                      animationDuration: `${3 + (i % 3)}s`,
+                    }}
+                  >
+                    {emoji}
+                  </span>
+                ))}
+              </div>
+
+              {/* Sticker emoji floating di sudut */}
+              <div className="pointer-events-none absolute -top-3 -left-2 text-3xl animate-sticker z-10 drop-shadow-[0_4px_8px_rgba(236,72,153,0.6)]">🌈</div>
+              <div className="pointer-events-none absolute -top-2 -right-3 text-2xl animate-sticker z-10 drop-shadow-[0_4px_8px_rgba(250,204,21,0.7)]" style={{ animationDelay: "0.8s" }}>⚡</div>
+              <div className="pointer-events-none absolute -bottom-2 -right-2 text-2xl animate-sticker z-10 drop-shadow-[0_4px_8px_rgba(34,211,238,0.7)]" style={{ animationDelay: "1.4s" }}>💎</div>
+
+              <div className="relative rounded-3xl overflow-hidden p-[2px] aurora-shift" style={{ background: "linear-gradient(135deg, #ec4899, #a855f7, #06b6d4, #f59e0b, #10b981, #ec4899)", backgroundSize: "400% 400%" }}>
               <div className="relative rounded-[22px] bg-card/95 backdrop-blur-xl p-4 overflow-hidden">
                 {/* Decorative glow blobs */}
                 <div className="pointer-events-none absolute -top-12 -right-12 w-40 h-40 rounded-full bg-primary/20 blur-3xl" />
@@ -1800,6 +1823,27 @@ const Index = () => {
                   </button>
                 </div>
               </div>
+              </div>
+            </div>
+
+            {/* Marquee Ticker Warna-warni */}
+            <div className="relative rounded-2xl overflow-hidden bg-gradient-to-r from-pink-500 via-fuchsia-500 via-purple-500 via-cyan-400 to-emerald-500 p-[2px] aurora-shift" style={{ backgroundSize: "300% 100%" }}>
+              <div className="relative rounded-[14px] bg-card/95 backdrop-blur-xl py-2 overflow-hidden">
+                <div className="flex whitespace-nowrap" style={{ animation: "marquee-x 22s linear infinite" }}>
+                  {[...Array(2)].map((_, k) => (
+                    <div key={k} className="flex items-center gap-6 px-4 text-xs font-bold shrink-0">
+                      <span className="text-pink-500">🎉 PROMO HARIAN</span>
+                      <span className="text-cyan-400">💎 VOUCHER GRATIS</span>
+                      <span className="text-yellow-500">⭐ TERPERCAYA</span>
+                      <span className="text-emerald-500">💰 SALDO INSTAN</span>
+                      <span className="text-fuchsia-500">🎵 MUSIK GRATIS</span>
+                      <span className="text-orange-500">🔥 GAME SERU</span>
+                      <span className="text-violet-500">🎮 11 GAME AI</span>
+                      <span className="text-rose-500">❤️ ADMIN RAMAH</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
 
             {/* Quick Action Grid - Aurora Neon Premium */}
@@ -1843,7 +1887,7 @@ const Index = () => {
                       onMouseLeave={(e) => { e.currentTarget.style.boxShadow = `0 0 0 0 rgba(${item.glow}, 0)`; }}
                     >
                       <div className={`absolute inset-0 bg-gradient-to-br ${item.color} opacity-0 group-hover:opacity-10 transition-opacity`} />
-                      <div className="relative">
+                      <div className="relative animate-wiggle">
                         <div className={`absolute inset-0 bg-gradient-to-br ${item.color} blur-md opacity-0 group-hover:opacity-60 transition-opacity scale-150`} />
                         <div className={`relative w-9 h-9 rounded-xl bg-gradient-to-br ${item.color} flex items-center justify-center text-white shadow-lg`}>
                           {item.icon}
