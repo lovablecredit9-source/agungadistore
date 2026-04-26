@@ -2095,7 +2095,7 @@ const Index = () => {
               {[
                 { value: `${products.length}+`, label: "Produk", Icon: Package, color: "from-cyan-400 to-blue-500", glow: "34,211,238" },
                 { value: `${homeSponsors.length}`, label: "Sponsor", Icon: Megaphone, color: "from-amber-500 to-yellow-500", glow: "245,158,11" },
-                { value: "11", label: "Game", Icon: Gamepad2, color: "from-purple-500 to-pink-500", glow: "168,85,247" },
+                { value: "40", label: "Game", Icon: Gamepad2, color: "from-purple-500 to-pink-500", glow: "168,85,247" },
               ].map(({ value, label, Icon, color, glow }) => (
                 <div
                   key={label}
