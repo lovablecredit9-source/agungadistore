@@ -2251,21 +2251,26 @@ const Index = () => {
             {/* Product list/grid */}
             {!productsLoading && sortedProducts.length > 0 && (
               <div className={productViewMode === "grid" ? "grid grid-cols-2 gap-3" : productViewMode === "compact" ? "space-y-2 [&_.aspect-square]:aspect-[3/1] [&_img]:max-h-24" : "space-y-4"}>
-                {sortedProducts.map((p) => {
+                {sortedProducts.map((p, idx) => {
                   const imgs = getProductImages(p.id);
                   const badges = getProductBadges(p);
                   const isGrid = productViewMode === "grid";
                   const inStock = p.stock > 0;
                   const isNew = (Date.now() - new Date(p.created_at).getTime()) < 7 * 24 * 60 * 60 * 1000;
+                  const isHot = (productLikeCounts[p.id] || 0) >= 5;
                   return (
                     <div
                       key={p.id}
-                      className="relative rounded-2xl p-[2px] aurora-shift overflow-hidden cursor-pointer group transition-all duration-500 hover:-translate-y-2 hover:scale-[1.02]"
-                      style={{ background: inStock
-                        ? "linear-gradient(135deg, hsl(190 95% 55%/0.8), hsl(280 90% 65%/0.7), hsl(330 90% 60%/0.8), hsl(45 95% 55%/0.7), hsl(190 95% 55%/0.8))"
-                        : "linear-gradient(135deg, hsl(0 0% 50%/0.4), hsl(0 70% 50%/0.5), hsl(0 0% 50%/0.4))",
+                      className="relative rounded-2xl p-[2px] aurora-shift overflow-hidden cursor-pointer group transition-all duration-500 hover:-translate-y-2 hover:scale-[1.02] animate-fade-in"
+                      style={{
+                        animationDelay: `${Math.min(idx, 12) * 60}ms`,
+                        animationFillMode: "both",
+                        background: inStock
+                          ? "linear-gradient(135deg, hsl(190 95% 55%/0.8), hsl(280 90% 65%/0.7), hsl(330 90% 60%/0.8), hsl(45 95% 55%/0.7), hsl(190 95% 55%/0.8))"
+                          : "linear-gradient(135deg, hsl(0 0% 50%/0.4), hsl(0 70% 50%/0.5), hsl(0 0% 50%/0.4))",
                         backgroundSize: "300% 300%",
-                        boxShadow: inStock ? "0 8px 32px -8px rgba(34,211,238,0.4), 0 4px 16px -4px rgba(168,85,247,0.3)" : "0 4px 16px -4px rgba(0,0,0,0.3)" }}
+                        boxShadow: inStock ? "0 8px 32px -8px rgba(34,211,238,0.4), 0 4px 16px -4px rgba(168,85,247,0.3)" : "0 4px 16px -4px rgba(0,0,0,0.3)",
+                      }}
                       onClick={() => openProduct(p)}
                     >
                       <Card className="overflow-hidden border-0 shadow-xl bg-gradient-to-br from-slate-900/95 via-slate-950/95 to-slate-900/95 backdrop-blur-xl rounded-[14px] card-shine relative">
@@ -2274,7 +2279,37 @@ const Index = () => {
                       {/* Inner neon glow on hover */}
                       <div className="absolute -inset-0.5 bg-gradient-to-br from-cyan-500/0 via-purple-500/0 to-pink-500/0 group-hover:from-cyan-500/30 group-hover:via-purple-500/20 group-hover:to-pink-500/30 rounded-[14px] blur-md opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none -z-10" />
 
-                      {/* Corner ribbon for warranty */}
+                      {/* Floating sparkle particles on hover */}
+                      <div className="pointer-events-none absolute inset-0 overflow-hidden opacity-0 group-hover:opacity-100 transition-opacity duration-500 z-10">
+                        {[...Array(6)].map((_, i) => (
+                          <span
+                            key={i}
+                            className="absolute w-1 h-1 rounded-full bg-white"
+                            style={{
+                              top: `${15 + (i * 13) % 70}%`,
+                              left: `${(i * 17) % 90}%`,
+                              boxShadow: "0 0 6px rgba(255,255,255,0.9), 0 0 12px rgba(34,211,238,0.7)",
+                              animation: `float-up ${1.6 + (i % 3) * 0.4}s ease-in-out ${i * 0.15}s infinite`,
+                            }}
+                          />
+                        ))}
+                      </div>
+
+                      {/* HOT badge for popular items */}
+                      {isHot && inStock && (
+                        <div className="absolute -top-1 -left-1 z-30 pointer-events-none">
+                          <div className="relative">
+                            <div className="absolute inset-0 rounded-br-2xl bg-gradient-to-br from-rose-500 to-orange-500 blur-md opacity-80 animate-pulse" />
+                            <div className="relative rounded-br-2xl rounded-tl-[14px] bg-gradient-to-br from-rose-500 via-red-500 to-orange-500 px-2 py-1 border-r border-b border-white/40 shadow-[0_0_14px_rgba(244,63,94,0.7)]">
+                              <span className="text-[9px] font-black text-white tracking-wider drop-shadow-[0_1px_2px_rgba(0,0,0,0.6)] flex items-center gap-0.5">
+                                🔥 HOT
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+
                       {p.has_warranty && (
                         <div className="absolute top-0 right-0 z-20 overflow-hidden w-16 h-16 pointer-events-none">
                           <div className="absolute top-2 -right-6 rotate-45 bg-gradient-to-r from-amber-400 via-yellow-500 to-amber-600 text-black text-[8px] font-black px-6 py-0.5 shadow-[0_2px_8px_rgba(251,191,36,0.6)] tracking-wider">
