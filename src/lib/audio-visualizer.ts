@@ -29,7 +29,7 @@ let dataArray: Uint8Array | null = null;
 
 function tick() {
   if (state.analyser && dataArray) {
-    state.analyser.getByteFrequencyData(dataArray);
+    state.analyser.getByteFrequencyData(dataArray as Uint8Array<ArrayBuffer>);
     subscribers.forEach((cb) => cb());
   }
   rafId = requestAnimationFrame(tick);
