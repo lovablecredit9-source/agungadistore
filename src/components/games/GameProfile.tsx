@@ -271,18 +271,18 @@ function ProfileView({ profile, visitorId, onUpdate }: { profile: GameProfile | 
 
       {/* Win Rate progress */}
       {(totalWins + totalLosses) > 0 && (
-        <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-slate-900 to-purple-950 p-3 border border-fuchsia-500/30">
+        <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-amber-300 via-pink-400 to-cyan-400 p-3 border border-white/50 shadow-lg shadow-pink-500/30">
           <div className="flex items-center justify-between mb-1.5">
-            <span className="text-[11px] font-bold text-white flex items-center gap-1">
-              <Zap className="w-3 h-3 text-yellow-300" /> Win Rate
+            <span className="text-[11px] font-black text-violet-950 flex items-center gap-1 drop-shadow-sm">
+              <Zap className="w-3 h-3 text-yellow-100 fill-yellow-100" /> Win Rate
             </span>
-            <span className="text-sm font-black bg-gradient-to-r from-emerald-300 to-cyan-300 bg-clip-text text-transparent">
+            <span className="text-sm font-black text-violet-950 drop-shadow-sm">
               {Math.round((totalWins / (totalWins + totalLosses)) * 100)}%
             </span>
           </div>
-          <div className="h-2 rounded-full bg-white/10 overflow-hidden">
+          <div className="h-2 rounded-full bg-white/35 overflow-hidden">
             <div
-              className="h-full game-border-rainbow rounded-full"
+              className="h-full bg-white rounded-full shadow-lg shadow-white/60"
               style={{ width: `${Math.round((totalWins / (totalWins + totalLosses)) * 100)}%` }}
             />
           </div>
