@@ -2237,21 +2237,20 @@ const Index = () => {
             </button>
 
             {/* Social Links - Aurora Premium */}
-            <div
-              className="relative rounded-2xl p-[1.5px] aurora-shift overflow-hidden"
-              style={{ background: "linear-gradient(135deg, hsl(150 80% 50%/0.5), hsl(190 95% 55%/0.5), hsl(280 90% 65%/0.5), hsl(150 80% 50%/0.5))", backgroundSize: "300% 300%" }}
-            >
-              <div className="relative rounded-[14px] bg-card/95 backdrop-blur-xl p-4 overflow-hidden">
-                <div className="pointer-events-none absolute -top-12 right-0 w-32 h-32 rounded-full bg-emerald-500/15 blur-3xl" />
-                <div className="pointer-events-none absolute -bottom-12 left-0 w-32 h-32 rounded-full bg-cyan-400/15 blur-3xl" />
+            {/* Ikuti Kami - iOS Style Frosted Card */}
+            <div className="relative rounded-[24px] bg-background/50 backdrop-blur-2xl backdrop-saturate-150 border border-white/15 shadow-[0_18px_50px_-12px_rgba(0,0,0,0.45),inset_0_1px_0_0_rgba(255,255,255,0.18)] overflow-hidden">
+              <div className="pointer-events-none absolute -top-16 right-0 w-40 h-40 rounded-full bg-emerald-500/10 blur-3xl" />
+              <div className="pointer-events-none absolute -bottom-16 left-0 w-40 h-40 rounded-full bg-cyan-400/10 blur-3xl" />
 
-                <div className="relative flex items-center justify-between mb-3">
-                  <p className="text-xs font-extrabold uppercase tracking-[0.15em] flex items-center gap-1.5 bg-gradient-to-r from-emerald-500 via-cyan-400 to-purple-500 bg-clip-text text-transparent">
+              <div className="relative p-3.5">
+                <div className="flex items-center justify-between mb-3 px-1">
+                  <h3 className="text-[13px] font-bold tracking-tight text-foreground flex items-center gap-1.5">
                     <Globe className="w-3.5 h-3.5 text-emerald-500" strokeWidth={2.2} /> {t("home.follow_us", lang)}
-                  </p>
-                  <span className="px-2 py-0.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-500 text-[9px] font-bold">{socialLinks.length} Akun</span>
+                  </h3>
+                  <span className="text-[10px] text-muted-foreground font-medium">{socialLinks.length} Akun</span>
                 </div>
-                <div className="relative grid grid-cols-3 gap-2">
+
+                <div className="grid grid-cols-3 gap-2">
                   {socialLinks.map((s, i) => {
                     const palette = [
                       { color: "from-pink-500 to-rose-500", glow: "236,72,153" },
@@ -2266,18 +2265,31 @@ const Index = () => {
                         href={s.url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="group relative flex flex-col items-center gap-1.5 py-3 px-2 rounded-xl bg-white/[0.03] border border-white/10 hover:border-white/30 hover:bg-white/[0.08] transition-all overflow-hidden active:scale-95"
+                        className="group relative flex flex-col items-center gap-1.5 py-3 px-2 rounded-2xl bg-white/[0.04] hover:bg-white/[0.08] active:scale-[0.92] transition-all duration-200 ease-out"
+                        style={{ boxShadow: "inset 0 1px 0 0 rgba(255,255,255,0.06)" }}
                       >
-                        <div className={`absolute inset-0 bg-gradient-to-br ${palette.color} opacity-0 group-hover:opacity-10 transition-opacity`} />
                         <div className="relative">
-                          <div className={`absolute inset-0 bg-gradient-to-br ${palette.color} blur-md opacity-0 group-hover:opacity-50 transition-opacity scale-150`} />
+                          <div
+                            className="absolute inset-0 rounded-2xl blur-md opacity-60 group-hover:opacity-90 transition-opacity"
+                            style={{ background: `rgba(${palette.glow}, 0.45)` }}
+                          />
                           {s.icon_url ? (
-                            <img src={s.icon_url} alt={s.platform} className="relative w-8 h-8 object-contain rounded-lg" />
+                            <div
+                              className="relative w-10 h-10 rounded-2xl bg-white/10 flex items-center justify-center overflow-hidden"
+                              style={{ boxShadow: `0 6px 16px -4px rgba(${palette.glow}, 0.55), inset 0 1px 0 0 rgba(255,255,255,0.25)` }}
+                            >
+                              <img src={s.icon_url} alt={s.platform} className="w-7 h-7 object-contain" />
+                            </div>
                           ) : (
-                            <span className={`relative w-8 h-8 rounded-lg bg-gradient-to-br ${palette.color} flex items-center justify-center text-xs font-extrabold text-white shadow-lg`}>{s.platform[0]?.toUpperCase()}</span>
+                            <div
+                              className={`relative w-10 h-10 rounded-2xl bg-gradient-to-br ${palette.color} flex items-center justify-center text-sm font-bold text-white transition-transform duration-200 group-active:scale-95`}
+                              style={{ boxShadow: `0 6px 16px -4px rgba(${palette.glow}, 0.55), inset 0 1px 0 0 rgba(255,255,255,0.25)` }}
+                            >
+                              {s.platform[0]?.toUpperCase()}
+                            </div>
                           )}
                         </div>
-                        <span className="relative truncate text-[10px] font-bold w-full text-center text-foreground">{s.label}</span>
+                        <span className="truncate text-[10.5px] font-semibold w-full text-center text-foreground/85 tracking-tight">{s.label}</span>
                       </a>
                     );
                   })}
