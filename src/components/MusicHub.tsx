@@ -552,9 +552,124 @@ export default function MusicHub({ subTab, onSubTabChange, onPlayExternal, playl
             );
           })}
         </div>
+
+        {/* MOOD RESULTS — daftar lagu sesuai mood */}
+        <div className="relative mt-3 pt-3 border-t border-purple-500/20">
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-1.5">
+              <motion.div
+                animate={{ scale: [1, 1.15, 1] }}
+                transition={{ duration: 1.4, repeat: Infinity }}
+                className={`w-1.5 h-1.5 rounded-full bg-gradient-to-r ${activeMood.gradient}`}
+                style={{ boxShadow: `0 0 8px rgba(${activeMood.glow},0.9)` }}
+              />
+              <span className="text-[10px] font-black uppercase tracking-wider text-foreground">
+                {moodIsFallback ? "Rekomendasi acak" : `Lagu ${activeMood.label}`}
+              </span>
+              <span className="text-[9px] font-bold text-muted-foreground">({moodSongs.length})</span>
+            </div>
+            {moodSongs.length > 0 && (
+              <motion.button
+                onClick={playRandomMood}
+                whileTap={{ scale: 0.9 }}
+                className={`flex items-center gap-1 px-2 py-1 rounded-lg bg-gradient-to-r ${activeMood.gradient} text-white text-[9px] font-black shadow-lg`}
+                style={{ boxShadow: `0 4px 12px -2px rgba(${activeMood.glow},0.6)` }}
+              >
+                <Shuffle className="w-2.5 h-2.5" strokeWidth={3} />
+                ACAK PUTAR
+              </motion.button>
+            )}
+          </div>
+
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={mood}
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -6 }}
+              transition={{ duration: 0.25 }}
+              className="space-y-1.5 max-h-64 overflow-y-auto pr-1"
+            >
+              {loadingMood && (
+                <div className="text-center py-6 text-[11px] text-muted-foreground font-semibold">Memuat lagu…</div>
+              )}
+              {!loadingMood && allSongs.length === 0 && (
+                <div className="text-center py-6 px-3 rounded-xl bg-muted/30 border border-dashed border-muted-foreground/20">
+                  <Music2 className="w-6 h-6 mx-auto text-muted-foreground/60 mb-1.5" />
+                  <p className="text-[11px] font-bold text-muted-foreground">Belum ada lagu di playlist</p>
+                  <p className="text-[9px] text-muted-foreground/70 mt-0.5">Admin perlu menambahkan lagu</p>
+                </div>
+              )}
+              {!loadingMood && moodIsFallback && (
+                <div className="px-2.5 py-1.5 rounded-lg bg-amber-500/10 border border-amber-500/30 text-[9px] font-bold text-amber-300 mb-1">
+                  💡 Tidak ada lagu cocok mood "{activeMood.label}". Menampilkan rekomendasi acak.
+                </div>
+              )}
+              {!loadingMood && moodSongs.map((song, i) => {
+                const isNow = nowSong?.id === song.id;
+                return (
+                  <motion.button
+                    key={song.id}
+                    initial={{ opacity: 0, x: -8 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: i * 0.03 }}
+                    whileTap={{ scale: 0.97 }}
+                    onClick={() => {
+                      onPlayExternal?.(song);
+                      if (subTab !== "playlist") onSubTabChange("playlist");
+                    }}
+                    className={`relative w-full flex items-center gap-2.5 p-1.5 rounded-xl border transition-all overflow-hidden group ${
+                      isNow
+                        ? `bg-gradient-to-r ${activeMood.gradient} border-white/30 shadow-lg`
+                        : "bg-card/60 border-border/50 hover:border-white/20 hover:bg-card/90"
+                    }`}
+                    style={isNow ? { boxShadow: `0 4px 14px -2px rgba(${activeMood.glow},0.5)` } : undefined}
+                  >
+                    <div className="relative w-9 h-9 rounded-lg overflow-hidden bg-black/40 flex-shrink-0 border border-white/10">
+                      {song.cover_url ? (
+                        <img src={song.cover_url} alt="" className="w-full h-full object-cover" loading="lazy" />
+                      ) : (
+                        <div className={`w-full h-full bg-gradient-to-br ${activeMood.gradient} flex items-center justify-center`}>
+                          <Music2 className="w-4 h-4 text-white/80" />
+                        </div>
+                      )}
+                      {isNow && isPlaying && (
+                        <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+                          <div className="flex items-end gap-[2px] h-3">
+                            {[0.6, 0.9, 0.4].map((h, k) => (
+                              <motion.div
+                                key={k}
+                                animate={{ scaleY: [h, 1, h * 0.5, h] }}
+                                transition={{ duration: 0.6 + k * 0.1, repeat: Infinity, ease: "easeInOut" }}
+                                style={{ transformOrigin: "bottom" }}
+                                className="w-[2px] h-full bg-white rounded-full"
+                              />
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0 text-left">
+                      <p className={`text-[11px] font-bold truncate leading-tight ${isNow ? "text-white" : "text-foreground"}`}>{song.title}</p>
+                      <p className={`text-[9px] truncate mt-0.5 ${isNow ? "text-white/80" : "text-muted-foreground"}`}>{song.artist}</p>
+                    </div>
+                    <div className={`w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 transition-all ${
+                      isNow ? "bg-white/20" : `bg-gradient-to-br ${activeMood.gradient} opacity-80 group-hover:opacity-100 group-hover:scale-110`
+                    }`}>
+                      {isNow && isPlaying ? (
+                        <Pause className="w-3 h-3 text-white" fill="currentColor" />
+                      ) : (
+                        <Play className="w-3 h-3 text-white ml-0.5" fill="currentColor" />
+                      )}
+                    </div>
+                  </motion.button>
+                );
+              })}
+            </motion.div>
+          </AnimatePresence>
+        </div>
       </div>
 
-      {/* TRENDING TICKER — marquee scrolling tags */}
       <div className="relative overflow-hidden rounded-xl border border-amber-500/30 bg-gradient-to-r from-amber-950/40 via-orange-950/40 to-red-950/40 backdrop-blur-md py-2 shadow-[0_4px_16px_-4px_rgba(245,158,11,0.4)]">
         <div className="absolute left-0 inset-y-0 z-10 w-12 bg-gradient-to-r from-background to-transparent pointer-events-none" />
         <div className="absolute right-0 inset-y-0 z-10 w-12 bg-gradient-to-l from-background to-transparent pointer-events-none" />
