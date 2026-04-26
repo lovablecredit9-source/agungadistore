@@ -2662,20 +2662,56 @@ const Index = () => {
 
         {tab === "history" && (
           <div className="space-y-4 animate-fade-in">
-            {/* Hero Header */}
-            <div className="rounded-xl border border-border bg-card p-4">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
-                  <Clock className="w-5 h-5 text-foreground" strokeWidth={1.7} />
+            {/* Hero Header - Aurora Premium */}
+            <div
+              className="relative rounded-3xl p-[2px] aurora-shift overflow-hidden shadow-[0_8px_40px_-10px_rgba(168,85,247,0.5)]"
+              style={{ background: "linear-gradient(135deg, hsl(280 90% 65%), hsl(220 90% 60%), hsl(190 95% 55%), hsl(330 90% 60%), hsl(280 90% 65%))", backgroundSize: "400% 400%" }}
+            >
+              <div className="relative rounded-[22px] bg-gradient-to-br from-slate-950/95 via-slate-900/95 to-slate-950/95 backdrop-blur-xl p-4 overflow-hidden">
+                <div className="pointer-events-none absolute inset-0 opacity-60">
+                  <div className="absolute -top-20 -right-20 w-56 h-56 rounded-full bg-purple-500/30 blur-3xl animate-pulse" />
+                  <div className="absolute -bottom-20 -left-20 w-56 h-56 rounded-full bg-cyan-500/30 blur-3xl animate-pulse" style={{ animationDelay: "1s" }} />
                 </div>
-                <div className="flex-1 min-w-0">
-                  <h2 className="text-base font-semibold tracking-tight text-foreground">{t("history.title", lang)}</h2>
-                  <p className="text-xs text-muted-foreground mt-0.5">{history.length} riwayat klaim</p>
+                <div className="pointer-events-none absolute inset-0 overflow-hidden">
+                  {[...Array(5)].map((_, i) => (
+                    <div
+                      key={i}
+                      className="absolute w-1 h-1 rounded-full bg-white/60"
+                      style={{
+                        top: `${20 + (i * 17) % 60}%`,
+                        left: `${(i * 21) % 90}%`,
+                        animation: `float-up ${3 + (i % 3)}s ease-in-out ${i * 0.5}s infinite`,
+                        boxShadow: "0 0 6px rgba(255,255,255,0.8)",
+                      }}
+                    />
+                  ))}
+                </div>
+                <div className="pointer-events-none absolute inset-0 shine-sweep opacity-40" />
+
+                <div className="relative flex items-center gap-3">
+                  <div className="relative shrink-0">
+                    <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-purple-400 via-pink-500 to-cyan-500 blur-lg opacity-80 animate-pulse" />
+                    <div className="absolute -inset-1 rounded-2xl bg-gradient-to-br from-purple-400 via-pink-500 to-cyan-500 opacity-50 animate-spin" style={{ animationDuration: "8s" }} />
+                    <div className="relative w-14 h-14 rounded-2xl bg-gradient-to-br from-purple-500 via-fuchsia-500 to-pink-500 flex items-center justify-center shadow-[0_0_30px_rgba(168,85,247,0.7),inset_0_2px_8px_rgba(255,255,255,0.3)] border border-white/30">
+                      <Clock className="w-7 h-7 text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]" strokeWidth={2.2} />
+                    </div>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h2 className="text-xl font-black tracking-tight bg-gradient-to-r from-purple-200 via-pink-200 to-cyan-200 bg-clip-text text-transparent drop-shadow-[0_2px_8px_rgba(168,85,247,0.4)]">{t("history.title", lang)}</h2>
+                      <span className="inline-flex items-center gap-1 text-[9px] font-black px-2 py-0.5 rounded-full bg-gradient-to-r from-emerald-400 to-cyan-400 text-black shadow-[0_0_15px_rgba(16,185,129,0.7)] border border-white/30">
+                        <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse shadow-[0_0_4px_white]" /> LIVE
+                      </span>
+                    </div>
+                    <p className="text-purple-100/80 text-[11px] mt-1 font-semibold flex items-center gap-1">
+                      <Sparkles className="w-3 h-3 text-yellow-300" /> {history.length} klaim voucher tercatat
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>
 
-            {/* Stats Summary */}
+            {/* Stats Summary - Aurora 3D */}
             {history.length > 0 && (() => {
               const now = new Date();
               const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
@@ -2684,58 +2720,75 @@ const Index = () => {
               const weekCount = history.filter(h => new Date(h.claimed_at) >= weekAgo).length;
               return (
                 <div className="grid grid-cols-3 gap-2">
-                  <div className="bg-gradient-to-br from-primary/15 to-primary/5 border border-primary/20 rounded-xl p-2.5 text-center">
-                    <Award className="w-4 h-4 text-primary mx-auto mb-1" />
-                    <p className="text-[9px] font-bold text-muted-foreground uppercase">Total</p>
-                    <p className="text-base font-extrabold text-primary leading-none mt-0.5"><CountUp value={history.length} /></p>
-                  </div>
-                  <div className="bg-gradient-to-br from-accent/15 to-accent/5 border border-accent/20 rounded-xl p-2.5 text-center">
-                    <CalendarDays className="w-4 h-4 text-accent mx-auto mb-1" />
-                    <p className="text-[9px] font-bold text-muted-foreground uppercase">Hari Ini</p>
-                    <p className="text-base font-extrabold text-accent leading-none mt-0.5"><CountUp value={todayCount} /></p>
-                  </div>
-                  <div className="bg-gradient-to-br from-fuchsia-500/15 to-pink-500/5 border border-fuchsia-500/20 rounded-xl p-2.5 text-center">
-                    <TrendingUp className="w-4 h-4 text-fuchsia-500 mx-auto mb-1" />
-                    <p className="text-[9px] font-bold text-muted-foreground uppercase">7 Hari</p>
-                    <p className="text-base font-extrabold text-fuchsia-500 leading-none mt-0.5"><CountUp value={weekCount} /></p>
-                  </div>
+                  {[
+                    { label: "Total", value: history.length, icon: Award, from: "from-cyan-500/30", to: "to-blue-600/20", border: "border-cyan-300/40", text: "text-cyan-200", glow: "rgba(34,211,238,0.5)" },
+                    { label: "Hari Ini", value: todayCount, icon: CalendarDays, from: "from-emerald-500/30", to: "to-green-600/20", border: "border-emerald-300/40", text: "text-emerald-200", glow: "rgba(16,185,129,0.5)" },
+                    { label: "7 Hari", value: weekCount, icon: TrendingUp, from: "from-fuchsia-500/30", to: "to-pink-600/20", border: "border-fuchsia-300/40", text: "text-fuchsia-200", glow: "rgba(217,70,239,0.5)" },
+                  ].map((s) => {
+                    const Icon = s.icon;
+                    return (
+                      <div
+                        key={s.label}
+                        className={`relative rounded-xl p-2.5 bg-gradient-to-br ${s.from} ${s.to} border ${s.border} backdrop-blur-md overflow-hidden hover:scale-105 transition-transform duration-300 group/stat`}
+                        style={{ boxShadow: `0 4px 20px -4px ${s.glow}, inset 0 1px 0 rgba(255,255,255,0.15)` }}
+                      >
+                        <div className="absolute -top-6 -right-6 w-14 h-14 rounded-full opacity-40 blur-xl group-hover/stat:opacity-70 transition" style={{ background: s.glow }} />
+                        <Icon className={`w-4 h-4 ${s.text} mb-1 drop-shadow-[0_0_4px_currentColor]`} />
+                        <p className={`text-xl font-black tabular-nums leading-none ${s.text} drop-shadow-[0_2px_4px_rgba(0,0,0,0.4)]`}><CountUp value={s.value} /></p>
+                        <p className="text-white/70 text-[9px] font-bold uppercase tracking-wider mt-1">{s.label}</p>
+                      </div>
+                    );
+                  })}
                 </div>
               );
             })()}
 
             {history.length > 0 && (
-              <div className="flex items-center justify-between bg-card/80 backdrop-blur-sm rounded-xl p-3 border border-border/50 shadow-sm gap-2 flex-wrap">
-                <Button size="sm" variant="outline" onClick={toggleSelectAll} className="gap-1.5 text-xs rounded-lg font-bold">
-                  <Checkbox checked={history.length > 0 && selectedHistoryIds.size === history.length} className="pointer-events-none" />
-                  Pilih Semua ({selectedHistoryIds.size}/{history.length})
-                </Button>
-                <div className="flex items-center gap-2">
-                  <Button
-                    size="sm"
-                    variant={smartHistory ? "default" : "outline"}
-                    onClick={() => setSmartHistory(v => !v)}
-                    className="gap-1 rounded-full text-xs font-medium"
-                  >
-                    <Lightbulb className="w-3 h-3" strokeWidth={1.8} /> {smartHistory ? "Mode Pintar ✓" : "Mode Pintar"}
+              <div
+                className="relative rounded-2xl p-[1.5px] aurora-shift overflow-hidden"
+                style={{ background: "linear-gradient(135deg, hsl(190 95% 55%/0.6), hsl(280 90% 65%/0.6), hsl(330 90% 60%/0.6), hsl(190 95% 55%/0.6))", backgroundSize: "300% 300%" }}
+              >
+                <div className="rounded-[14px] bg-gradient-to-br from-slate-950/90 to-slate-900/90 backdrop-blur-xl p-3 flex items-center justify-between gap-2 flex-wrap">
+                  <Button size="sm" variant="outline" onClick={toggleSelectAll} className="gap-1.5 text-xs rounded-lg font-bold bg-slate-800/60 border-cyan-400/30 text-cyan-200 hover:bg-cyan-500/20">
+                    <Checkbox checked={history.length > 0 && selectedHistoryIds.size === history.length} className="pointer-events-none" />
+                    Pilih Semua ({selectedHistoryIds.size}/{history.length})
                   </Button>
-                  <Button size="sm" variant="outline" onClick={downloadHistoryPDF} className="gap-1 rounded-full border-primary/30 text-primary hover:bg-primary/10 text-xs font-bold">
-                    <Download className="w-3 h-3" /> PDF
-                  </Button>
-                  <Button size="sm" variant="outline" onClick={downloadHistoryTXT} className="gap-1 rounded-full border-accent/30 text-accent hover:bg-accent/10 text-xs font-bold">
-                    <FileText className="w-3 h-3" /> TXT
-                  </Button>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      size="sm"
+                      onClick={() => setSmartHistory(v => !v)}
+                      className={`gap-1 rounded-full text-xs font-bold border ${smartHistory ? "bg-gradient-to-r from-amber-400 to-orange-500 text-black border-amber-300 shadow-[0_0_12px_rgba(251,191,36,0.5)]" : "bg-slate-800/60 text-amber-200 border-amber-400/30 hover:bg-amber-500/20"}`}
+                    >
+                      <Lightbulb className="w-3 h-3" strokeWidth={2.2} /> {smartHistory ? "Pintar ✓" : "Pintar"}
+                    </Button>
+                    <Button size="sm" onClick={downloadHistoryPDF} className="gap-1 rounded-full bg-gradient-to-r from-rose-500/80 to-red-500/80 hover:from-rose-500 hover:to-red-500 text-white text-xs font-black border border-rose-300/40 shadow-[0_0_12px_rgba(244,63,94,0.4)]">
+                      <Download className="w-3 h-3" /> PDF
+                    </Button>
+                    <Button size="sm" onClick={downloadHistoryTXT} className="gap-1 rounded-full bg-gradient-to-r from-emerald-500/80 to-cyan-500/80 hover:from-emerald-500 hover:to-cyan-500 text-white text-xs font-black border border-emerald-300/40 shadow-[0_0_12px_rgba(16,185,129,0.4)]">
+                      <FileText className="w-3 h-3" /> TXT
+                    </Button>
+                  </div>
                 </div>
               </div>
             )}
 
             {history.length === 0 && (
-              <div className="text-center py-20 text-muted-foreground">
-                <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-blue-500/10 to-cyan-500/10 flex items-center justify-center mx-auto mb-4">
-                  <Clock className="w-10 h-10 opacity-30" />
+              <div
+                className="relative rounded-3xl p-[2px] aurora-shift overflow-hidden"
+                style={{ background: "linear-gradient(135deg, hsl(280 90% 65%/0.5), hsl(190 95% 55%/0.5), hsl(280 90% 65%/0.5))", backgroundSize: "300% 300%" }}
+              >
+                <div className="rounded-[22px] bg-gradient-to-br from-slate-950/95 to-slate-900/95 backdrop-blur-xl text-center py-16 px-6 relative overflow-hidden">
+                  <div className="pointer-events-none absolute -top-16 -right-16 w-40 h-40 rounded-full bg-purple-500/20 blur-3xl" />
+                  <div className="pointer-events-none absolute -bottom-16 -left-16 w-40 h-40 rounded-full bg-cyan-500/20 blur-3xl" />
+                  <div className="relative w-24 h-24 rounded-3xl bg-gradient-to-br from-purple-500/30 via-fuchsia-500/20 to-cyan-500/30 flex items-center justify-center mx-auto mb-4 border border-white/20 shadow-[0_0_40px_rgba(168,85,247,0.4)]">
+                    <Clock className="w-12 h-12 text-purple-200/60" />
+                  </div>
+                  <p className="relative text-base font-black bg-gradient-to-r from-purple-200 to-cyan-200 bg-clip-text text-transparent">Belum ada riwayat klaim</p>
+                  <p className="relative text-xs text-slate-400 mt-1.5">Klaim voucher untuk melihat riwayat di sini</p>
+                  <Button size="sm" className="relative mt-4 gap-1.5 rounded-xl font-black bg-gradient-to-r from-purple-500 via-fuchsia-500 to-pink-500 text-white shadow-[0_4px_20px_rgba(168,85,247,0.5)] hover:scale-105 transition-transform border border-white/20" onClick={() => setTab("voucher")}>
+                    <Ticket className="w-4 h-4" /> Klaim Voucher
+                  </Button>
                 </div>
-                <p className="text-sm font-bold">Belum ada riwayat klaim.</p>
-                <p className="text-xs text-muted-foreground mt-1">Klaim voucher untuk melihat riwayat</p>
-                <Button size="sm" variant="outline" className="mt-4 gap-1.5 rounded-xl font-bold" onClick={() => setTab("voucher")}><Ticket className="w-4 h-4" /> Klaim Voucher</Button>
               </div>
             )}
 
@@ -2805,62 +2858,92 @@ const Index = () => {
                   const deviceSummary = h.device_info ? getDeviceSummary(h.device_info) : "Tidak diketahui";
                   const globalIdx = (historyPage - 1) * HISTORY_PER_PAGE + idx;
                   return (
-                    <Card key={`${h.id}-${globalIdx}`} className="overflow-hidden hover:shadow-2xl transition-all duration-300 border-0 shadow-lg glass-card hover:-translate-y-1 card-shine">
-                      <div className="bg-gradient-to-r from-primary/15 to-accent/10 px-4 py-2.5 flex items-center justify-between border-b border-border/30">
-                        <div className="flex items-center gap-2.5">
-                          <Checkbox checked={selectedHistoryIds.has(h.id)} onCheckedChange={() => toggleHistorySelect(h.id)} />
-                          <span className="text-xs font-extrabold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">#{globalIdx + 1}</span>
+                    <div
+                      key={`${h.id}-${globalIdx}`}
+                      className="relative rounded-2xl p-[1.5px] aurora-shift overflow-hidden group transition-all duration-500 hover:-translate-y-1.5 hover:scale-[1.01]"
+                      style={{ background: "linear-gradient(135deg, hsl(280 90% 65%/0.7), hsl(220 90% 60%/0.6), hsl(190 95% 55%/0.7), hsl(330 90% 60%/0.6), hsl(280 90% 65%/0.7))", backgroundSize: "300% 300%", boxShadow: "0 8px 28px -10px rgba(168,85,247,0.4)" }}
+                    >
+                      <Card className="overflow-hidden border-0 shadow-xl bg-gradient-to-br from-slate-900/95 via-slate-950/95 to-slate-900/95 backdrop-blur-xl rounded-[14px] card-shine relative">
+                        {/* Hover glow */}
+                        <div className="absolute -inset-0.5 bg-gradient-to-br from-purple-500/0 via-cyan-500/0 to-pink-500/0 group-hover:from-purple-500/20 group-hover:via-cyan-500/15 group-hover:to-pink-500/20 rounded-[14px] blur-md opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none -z-10" />
+
+                        <div className="relative bg-gradient-to-r from-purple-500/20 via-fuchsia-500/15 to-cyan-500/20 px-4 py-2.5 flex items-center justify-between border-b border-white/10 overflow-hidden">
+                          <div className="absolute inset-0 shine-sweep opacity-30 pointer-events-none" />
+                          <div className="relative flex items-center gap-2.5">
+                            <Checkbox checked={selectedHistoryIds.has(h.id)} onCheckedChange={() => toggleHistorySelect(h.id)} className="border-cyan-300/50 data-[state=checked]:bg-cyan-500 data-[state=checked]:border-cyan-500" />
+                            <span className="text-xs font-black bg-gradient-to-r from-cyan-300 via-pink-300 to-purple-300 bg-clip-text text-transparent drop-shadow">#{globalIdx + 1}</span>
+                            <span className="inline-flex items-center gap-0.5 text-[8px] font-black px-1.5 py-0.5 rounded-full bg-gradient-to-r from-emerald-400 to-cyan-400 text-black shadow-[0_0_8px_rgba(16,185,129,0.5)]">
+                              <CheckCircle2 className="w-2.5 h-2.5" /> CLAIMED
+                            </span>
+                          </div>
+                          <span className="relative text-[10px] font-mono font-bold text-cyan-200 bg-slate-950/60 backdrop-blur-sm px-2.5 py-1 rounded-full border border-cyan-400/30 shadow-[0_0_8px_rgba(34,211,238,0.3)]">{h.token_code}</span>
                         </div>
-                        <span className="text-[10px] font-mono text-muted-foreground bg-background/80 backdrop-blur-sm px-2.5 py-1 rounded-full border border-border/50">{h.token_code}</span>
-                      </div>
-                      <CardContent className="p-4 space-y-2.5">
-                        <div className="flex items-center gap-3">
-                          {h.product_image ? (
-                            <img src={h.product_image} className="w-11 h-11 rounded-xl object-cover ring-2 ring-border/50 shadow-sm" alt="" />
-                          ) : (
-                            <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-md ring-2 ring-primary/20">
-                              <Crown className="w-5 h-5 text-primary-foreground" />
+                        <CardContent className="p-4 space-y-2.5">
+                          <div className="flex items-center gap-3">
+                            {h.product_image ? (
+                              <div className="relative shrink-0">
+                                <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 blur-md opacity-50" />
+                                <img src={h.product_image} className="relative w-12 h-12 rounded-xl object-cover ring-2 ring-purple-400/40 shadow-[0_0_12px_rgba(168,85,247,0.4)]" alt="" />
+                              </div>
+                            ) : (
+                              <div className="relative shrink-0">
+                                <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 blur-md opacity-60 animate-pulse" />
+                                <div className="relative w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500 via-fuchsia-500 to-pink-500 flex items-center justify-center shadow-[0_0_15px_rgba(168,85,247,0.6),inset_0_1px_4px_rgba(255,255,255,0.3)] ring-2 ring-white/20">
+                                  <Crown className="w-6 h-6 text-white drop-shadow" />
+                                </div>
+                              </div>
+                            )}
+                            <div className="flex-1 min-w-0">
+                              <h3 className="font-black text-sm text-white group-hover:bg-gradient-to-r group-hover:from-cyan-300 group-hover:to-pink-300 group-hover:bg-clip-text group-hover:text-transparent transition-all line-clamp-1">{h.product_title}</h3>
+                              <p className="text-[10px] text-slate-400 flex items-center gap-1 mt-0.5"><Clock className="w-2.5 h-2.5" /> {new Date(h.claimed_at).toLocaleString("id-ID")}</p>
+                            </div>
+                          </div>
+                          <div className="flex items-start gap-2 text-xs text-cyan-100/80 bg-gradient-to-br from-cyan-500/10 to-blue-500/5 rounded-xl p-2.5 border border-cyan-400/20 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]">
+                            <Smartphone className="w-3.5 h-3.5 shrink-0 mt-0.5 text-cyan-300 drop-shadow-[0_0_4px_rgba(34,211,238,0.6)]" />
+                            <span className="leading-relaxed break-words font-medium">{deviceSummary}</span>
+                          </div>
+                          {h.fields.length > 0 && (
+                            <div className="relative bg-gradient-to-br from-slate-900/80 to-slate-950/80 border border-purple-400/30 rounded-xl p-3 space-y-1 shadow-[inset_0_2px_8px_rgba(0,0,0,0.3),0_0_15px_rgba(168,85,247,0.15)] overflow-hidden">
+                              <div className="absolute -top-8 -right-8 w-20 h-20 rounded-full bg-purple-500/20 blur-2xl pointer-events-none" />
+                              <p className="relative text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5 bg-gradient-to-r from-purple-300 via-pink-300 to-cyan-300 bg-clip-text text-transparent">
+                                <Shield className="w-3 h-3 text-purple-300" /> Detail Akun Premium
+                              </p>
+                              {h.fields.map((f, i) => {
+                                const fid = `h-${h.id}-${i}`;
+                                const copied = copiedField === fid;
+                                return (
+                                  <div key={i} className="relative flex items-center justify-between py-1.5 border-b border-white/5 last:border-0">
+                                    <span className="text-xs text-slate-400 font-semibold">{f.field_name}</span>
+                                    <div className="flex items-center gap-1.5">
+                                      <span className="text-xs font-mono font-black text-white max-w-[120px] truncate drop-shadow">{f.field_value}</span>
+                                      <button
+                                        onClick={() => copyText(f.field_value, fid)}
+                                        className={`text-[10px] font-black px-2 py-0.5 rounded-md transition-all border ${copied ? 'bg-gradient-to-r from-emerald-400 to-cyan-400 text-black border-emerald-300 shadow-[0_0_10px_rgba(16,185,129,0.6)] scale-110' : 'bg-gradient-to-r from-cyan-500/30 to-purple-500/30 text-cyan-200 border-cyan-400/40 hover:scale-105 hover:shadow-[0_0_8px_rgba(34,211,238,0.4)]'}`}
+                                      >
+                                        {copied ? '✓ OK' : (<><Copy className="w-2.5 h-2.5 inline mr-0.5" />Salin</>)}
+                                      </button>
+                                    </div>
+                                  </div>
+                                );
+                              })}
                             </div>
                           )}
-                          <div>
-                            <h3 className="font-bold text-sm">{h.product_title}</h3>
-                            <p className="text-[10px] text-muted-foreground">{new Date(h.claimed_at).toLocaleString("id-ID")}</p>
-                          </div>
-                        </div>
-                        <div className="flex items-start gap-3 text-xs text-muted-foreground bg-muted/30 rounded-xl p-2.5 border border-border/30">
-                          <Smartphone className="w-3.5 h-3.5 shrink-0 mt-0.5" />
-                          <span className="leading-relaxed break-words">{deviceSummary}</span>
-                        </div>
-                        {h.fields.length > 0 && (
-                          <div className="bg-gradient-to-br from-background to-muted/30 border border-border/50 rounded-xl p-3 space-y-2 shadow-inner">
-                            <p className="text-[10px] font-extrabold text-primary uppercase tracking-wider flex items-center gap-1"><Shield className="w-3 h-3" /> Detail Akun</p>
-                            {h.fields.map((f, i) => {
-                              const fid = `h-${h.id}-${i}`;
-                              return (
-                                <div key={i} className="flex items-center justify-between py-1.5 border-b border-border/20 last:border-0">
-                                  <span className="text-xs text-muted-foreground">{f.field_name}</span>
-                                  <div className="flex items-center gap-1.5">
-                                    <span className="text-xs font-mono font-bold max-w-[120px] truncate">{f.field_value}</span>
-                                    <button onClick={() => copyText(f.field_value, fid)}
-                                      className={`text-[10px] font-bold px-2 py-0.5 rounded-md transition-all ${copiedField === fid ? 'bg-accent/20 text-accent' : 'bg-primary/10 text-primary hover:bg-primary/20'}`}>
-                                      {copiedField === fid ? '✓' : 'Salin'}
-                                    </button>
-                                  </div>
-                                </div>
-                              );
-                            })}
-                          </div>
-                        )}
-                      </CardContent>
-                    </Card>
+                        </CardContent>
+                      </Card>
+                    </div>
                   );
                 })}
 
                 {totalHistoryPages > 1 && (
-                  <div className="flex items-center justify-center gap-3 bg-card/80 backdrop-blur-sm rounded-xl p-3 border border-border/50">
-                    <Button variant="outline" size="icon" className="rounded-full" disabled={historyPage <= 1} onClick={() => setHistoryPage(p => p - 1)}><ChevronLeft className="w-4 h-4" /></Button>
-                    <span className="text-sm font-bold text-muted-foreground">{historyPage} / {totalHistoryPages}</span>
-                    <Button variant="outline" size="icon" className="rounded-full" disabled={historyPage >= totalHistoryPages} onClick={() => setHistoryPage(p => p + 1)}><ChevronRight className="w-4 h-4" /></Button>
+                  <div
+                    className="relative rounded-2xl p-[1.5px] aurora-shift overflow-hidden"
+                    style={{ background: "linear-gradient(135deg, hsl(280 90% 65%/0.5), hsl(190 95% 55%/0.5), hsl(280 90% 65%/0.5))", backgroundSize: "300% 300%" }}
+                  >
+                    <div className="rounded-[14px] bg-gradient-to-br from-slate-950/90 to-slate-900/90 backdrop-blur-xl flex items-center justify-center gap-3 p-3">
+                      <Button size="icon" className="rounded-full bg-slate-800/60 border border-cyan-400/30 text-cyan-200 hover:bg-cyan-500/20 disabled:opacity-30" disabled={historyPage <= 1} onClick={() => setHistoryPage(p => p - 1)}><ChevronLeft className="w-4 h-4" /></Button>
+                      <span className="text-sm font-black tabular-nums bg-gradient-to-r from-cyan-300 to-purple-300 bg-clip-text text-transparent">{historyPage} / {totalHistoryPages}</span>
+                      <Button size="icon" className="rounded-full bg-slate-800/60 border border-purple-400/30 text-purple-200 hover:bg-purple-500/20 disabled:opacity-30" disabled={historyPage >= totalHistoryPages} onClick={() => setHistoryPage(p => p + 1)}><ChevronRight className="w-4 h-4" /></Button>
+                    </div>
                   </div>
                 )}
               </>
