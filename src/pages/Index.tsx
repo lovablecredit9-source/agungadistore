@@ -4202,27 +4202,97 @@ const Index = () => {
 
         {tab === "update" && (
           <div className="space-y-4 animate-fade-in">
-            {/* Hero Header */}
-            <div className="rounded-xl border border-border bg-card p-4">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
-                  <RefreshCw className="w-5 h-5 text-foreground" strokeWidth={1.7} />
+            {/* === MAXIMALIST HERO HEADER === */}
+            <div className="relative rounded-2xl overflow-hidden p-[2px] update-aurora-bg shadow-[0_10px_40px_-10px_rgba(236,72,153,0.5)]">
+              <div className="relative rounded-2xl bg-gradient-to-br from-background via-background to-background/95 p-5 overflow-hidden">
+                {/* Floating emojis bg */}
+                <div className="absolute inset-0 pointer-events-none overflow-hidden">
+                  {['🚀','✨','🎉','💎','⚡','🔥','🌈','⭐'].map((e, i) => (
+                    <span
+                      key={i}
+                      className="absolute text-2xl opacity-20 float-emoji"
+                      style={{
+                        left: `${(i * 13) % 100}%`,
+                        top: `${(i * 23) % 80}%`,
+                        animationDelay: `${i * 0.3}s`,
+                      }}
+                    >{e}</span>
+                  ))}
                 </div>
-                <div className="flex-1 min-w-0">
-                  <h2 className="text-base font-semibold tracking-tight text-foreground">Update Web</h2>
-                  <p className="text-xs text-muted-foreground mt-0.5">Fitur tambahan terbaru tanggal 19 April 2026</p>
+                <div className="relative flex items-center gap-3">
+                  <div className="w-14 h-14 rounded-2xl update-aurora-bg flex items-center justify-center flex-shrink-0 shadow-lg">
+                    <RefreshCw className="w-7 h-7 text-white animate-spin" style={{ animationDuration: '4s' }} strokeWidth={2.4} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h2 className="text-xl font-extrabold tracking-tight bg-gradient-to-r from-pink-500 via-fuchsia-500 to-cyan-500 bg-clip-text text-transparent">
+                        Update Web
+                      </h2>
+                      <span className="text-[9px] font-black px-2 py-0.5 rounded-full bg-gradient-to-r from-amber-400 to-pink-500 text-white shadow new-badge-bounce">
+                        🆕 LIVE
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-muted-foreground mt-0.5 font-medium">
+                      Riwayat semua pembaruan & fitur baru aplikasi
+                    </p>
+                  </div>
+                </div>
+
+                {/* Stats grid colorful */}
+                <div className="relative grid grid-cols-3 gap-2 mt-4">
+                  {[
+                    { label: 'Versi', value: '10', icon: '🏷️', grad: 'from-pink-500 to-rose-500' },
+                    { label: 'Update', value: '120+', icon: '⚡', grad: 'from-cyan-500 to-blue-500' },
+                    { label: 'Bulan', value: '1', icon: '📅', grad: 'from-amber-400 to-orange-500' },
+                  ].map((s, i) => (
+                    <div
+                      key={s.label}
+                      className={`stat-pop rounded-xl p-2.5 bg-gradient-to-br ${s.grad} text-white shadow-md text-center`}
+                      style={{ animationDelay: `${i * 0.1}s` }}
+                    >
+                      <div className="text-lg leading-none">{s.icon}</div>
+                      <div className="text-base font-extrabold leading-none mt-1">{s.value}</div>
+                      <div className="text-[9px] font-semibold opacity-90 uppercase tracking-wider mt-0.5">{s.label}</div>
+                    </div>
+                  ))}
                 </div>
               </div>
             </div>
 
-            {/* Timeline */}
+            {/* Marquee ticker */}
+            <div className="rounded-xl overflow-hidden border-2 border-fuchsia-400/40 bg-gradient-to-r from-pink-500/10 via-fuchsia-500/10 to-cyan-500/10 backdrop-blur">
+              <div className="flex whitespace-nowrap" style={{ animation: 'marquee-x 22s linear infinite' }}>
+                {[...Array(2)].flatMap((_, k) => ['🎉 Update terbaru', '✨ Fitur baru tiap minggu', '🚀 Performa makin ngebut', '💎 UI makin keren', '🔥 Bug fix harian', '🌈 Tema baru tiap rilis'].map((t, i) => (
+                  <span key={`${k}-${i}`} className="inline-flex items-center gap-2 px-4 py-2 text-[11px] font-bold text-foreground">
+                    {t} <span className="text-pink-500">●</span>
+                  </span>
+                )))}
+              </div>
+            </div>
+
+            {/* === TIMELINE MAXIMALIST === */}
             <div className="relative">
-              {/* Vertical line */}
-              <div className="absolute left-5 top-0 bottom-0 w-px bg-border" />
+              {/* Vertical animated line */}
+              <div className="absolute left-[22px] top-2 bottom-0 w-[3px] rounded-full timeline-line-flow opacity-60" />
               
               {[
                 {
-                  date: "24 April 2026", version: "v2.8", isNew: true,
+                  date: "26 April 2026", version: "v2.9", isNew: true,
+                  items: [
+                    "🌈 Beranda Maximalist Colorful - tema warna-warni penuh energi & playful",
+                    "🎨 Quick Access buttons dengan animasi gerak: float, bounce, conic gradient border + particle sparkles",
+                    "📊 Live Stats Dashboard baru di beranda - 4 kartu (Lagu, Game, Hadiah, Instan) dengan pop-in animation",
+                    "🎉 Welcome header confetti emoji + sticker mascot floating (🌈⚡💎)",
+                    "🏷️ Marquee ticker promosi horizontal di antara hero & quick access",
+                    "✨ Multi-color gradient borders dengan aurora-shift animation",
+                    "🎯 Achievement chips ribbon (Trusted #1, Premium, Hot Deals) di dashboard",
+                    "💫 Tab Update dirombak total - hero aurora, stats colorful, timeline animated dengan dot pulse",
+                    "🎁 Version badge dengan shine animation untuk versi terbaru",
+                    "📱 Floating emoji background di hero Update untuk vibe playful",
+                  ]
+                },
+                {
+                  date: "24 April 2026", version: "v2.8",
                   items: [
                     "🎮 4 Game baru ditambahkan ke tab Game: Memory Flip, Snake Neon, 2048, dan Plinko - semua client-side, ramah mobile",
                     "🎮 Memory Flip - cocokkan pasangan kartu, makin cepat selesai makin besar reward poin",
@@ -4350,41 +4420,88 @@ const Index = () => {
                     "🚀 Multi-bahasa otomatis (195 negara) via Gemini AI",
                   ]
                 },
-              ].map((entry, i) => (
-                <div key={i} className="relative pl-12 pb-4">
-                  {/* Timeline dot */}
-                  <div className={`absolute left-3 top-1.5 w-3 h-3 rounded-full border-2 border-background ${entry.isNew ? 'bg-foreground' : 'bg-muted-foreground/40'}`} />
+              ].map((entry, i) => {
+                const palettes = [
+                  { ring: 'from-pink-500 to-fuchsia-500', dot: 'bg-pink-500', tint: 'from-pink-500/15 to-fuchsia-500/5', border: 'border-pink-400/40', text: 'text-pink-500' },
+                  { ring: 'from-cyan-500 to-blue-500', dot: 'bg-cyan-500', tint: 'from-cyan-500/15 to-blue-500/5', border: 'border-cyan-400/40', text: 'text-cyan-500' },
+                  { ring: 'from-emerald-500 to-teal-500', dot: 'bg-emerald-500', tint: 'from-emerald-500/15 to-teal-500/5', border: 'border-emerald-400/40', text: 'text-emerald-500' },
+                  { ring: 'from-amber-400 to-orange-500', dot: 'bg-amber-500', tint: 'from-amber-400/15 to-orange-500/5', border: 'border-amber-400/40', text: 'text-amber-500' },
+                  { ring: 'from-violet-500 to-purple-500', dot: 'bg-violet-500', tint: 'from-violet-500/15 to-purple-500/5', border: 'border-violet-400/40', text: 'text-violet-500' },
+                ];
+                const p = palettes[i % palettes.length];
+                return (
+                <div key={i} className="relative pl-14 pb-5 update-card-rise" style={{ animationDelay: `${Math.min(i * 0.06, 0.4)}s` }}>
+                  {/* Timeline dot maximalist */}
+                  <div className={`absolute left-[14px] top-3 w-5 h-5 rounded-full bg-gradient-to-br ${p.ring} border-[3px] border-background shadow-lg ${entry.isNew ? 'timeline-dot-pulse' : ''} flex items-center justify-center`}>
+                    {entry.isNew && <span className="w-1.5 h-1.5 rounded-full bg-white" />}
+                  </div>
                   
-                  <div className={`rounded-xl border bg-card overflow-hidden ${entry.isNew ? 'border-foreground/30' : 'border-border'}`}>
-                    <div className="p-4 space-y-2">
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs font-semibold tracking-wide text-foreground">
-                          {entry.date}
-                        </span>
-                        <span className={`text-[10px] px-2 py-0.5 rounded-md font-medium ${entry.isNew ? 'bg-foreground text-background' : 'bg-muted text-muted-foreground'}`}>{entry.version}</span>
+                  <div className={`relative rounded-2xl border-2 ${entry.isNew ? 'border-pink-400/60' : p.border} overflow-hidden shadow-md ${entry.isNew ? 'shadow-pink-500/30' : ''}`}>
+                    <div className={`relative bg-gradient-to-br ${p.tint} bg-card backdrop-blur`}>
+                      {/* Header strip */}
+                      <div className={`flex items-center justify-between px-4 py-2.5 bg-gradient-to-r ${p.ring} text-white`}>
+                        <div className="flex items-center gap-2">
+                          <span className="text-[10px] font-bold uppercase tracking-wider opacity-90">📅</span>
+                          <span className="text-xs font-extrabold tracking-wide">{entry.date}</span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          {entry.isNew && (
+                            <span className="text-[8px] font-black px-1.5 py-0.5 rounded-full bg-white text-pink-600 new-badge-bounce">
+                              BARU
+                            </span>
+                          )}
+                          {(entry as any).isLaunch && (
+                            <span className="text-[8px] font-black px-1.5 py-0.5 rounded-full bg-yellow-300 text-amber-900">
+                              🚀 LAUNCH
+                            </span>
+                          )}
+                          <span className={`text-[10px] px-2 py-0.5 rounded-md font-black bg-white ${p.text} shadow`}>
+                            {entry.version}
+                          </span>
+                        </div>
                       </div>
-                      <ul className="text-[12px] space-y-1.5 text-muted-foreground">
-                        {entry.items.map((item, j) => (
-                          <li key={j} className="leading-relaxed">{item}</li>
-                        ))}
-                      </ul>
+                      {/* Items */}
+                      <div className="p-3.5">
+                        <ul className="text-[12px] space-y-2 text-foreground/85">
+                          {entry.items.map((item, j) => (
+                            <li key={j} className="leading-relaxed flex gap-2 items-start">
+                              <span className={`mt-1.5 w-1.5 h-1.5 rounded-full ${p.dot} flex-shrink-0`} />
+                              <span className="flex-1">{item}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                      {/* Footer count chip */}
+                      <div className="px-3.5 pb-3 flex items-center justify-between">
+                        <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full bg-gradient-to-r ${p.ring} text-white shadow-sm`}>
+                          ✨ {entry.items.length} pembaruan
+                        </span>
+                        <span className="text-[9px] font-medium text-muted-foreground">#{String(i + 1).padStart(2, '0')}</span>
+                      </div>
                     </div>
                   </div>
                 </div>
-              ))}
+                );
+              })}
             </div>
 
-            {/* Copyright */}
-            <div className="rounded-xl border border-border bg-card p-4 text-center space-y-2">
-              <p className="text-xs font-semibold text-foreground">© 2026 {STORE_NAME}</p>
-              <p className="text-[11px] text-muted-foreground">Murah & Terpercaya - Semua hak dilindungi.</p>
-              <div className="flex items-center justify-center gap-2 mt-2 flex-wrap">
-                {socialLinks.map(s => (
-                  <a key={s.id} href={s.url} target="_blank" rel="noopener noreferrer" className="text-[10px] font-medium px-3 py-1.5 rounded-full bg-muted text-foreground hover:bg-muted/70 transition-colors border border-border flex items-center gap-1">
-                    {s.icon_url && <img src={s.icon_url} alt={s.platform} className="w-3 h-3 object-contain" />}
-                    {s.platform}
-                  </a>
-                ))}
+            {/* Copyright maximalist */}
+            <div className="relative rounded-2xl overflow-hidden p-[2px] update-aurora-bg">
+              <div className="rounded-2xl bg-card p-4 text-center space-y-2">
+                <div className="flex items-center justify-center gap-2">
+                  <span className="text-2xl float-emoji">💖</span>
+                  <p className="text-sm font-extrabold bg-gradient-to-r from-pink-500 via-fuchsia-500 to-cyan-500 bg-clip-text text-transparent">© 2026 {STORE_NAME}</p>
+                  <span className="text-2xl float-emoji" style={{ animationDelay: '0.5s' }}>✨</span>
+                </div>
+                <p className="text-[11px] text-muted-foreground font-medium">Murah & Terpercaya - Semua hak dilindungi.</p>
+                <div className="flex items-center justify-center gap-2 mt-2 flex-wrap">
+                  {socialLinks.map(s => (
+                    <a key={s.id} href={s.url} target="_blank" rel="noopener noreferrer" className="text-[10px] font-bold px-3 py-1.5 rounded-full bg-gradient-to-r from-pink-500/15 to-cyan-500/15 text-foreground hover:from-pink-500/30 hover:to-cyan-500/30 transition-all border-2 border-fuchsia-400/30 flex items-center gap-1 hover:scale-105">
+                      {s.icon_url && <img src={s.icon_url} alt={s.platform} className="w-3 h-3 object-contain" />}
+                      {s.platform}
+                    </a>
+                  ))}
+                </div>
               </div>
             </div>
           </div>

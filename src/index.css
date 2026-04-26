@@ -839,3 +839,64 @@
 }
 .quick-action-bounce { animation: qa-bounce 2.4s ease-in-out infinite; }
 
+
+/* === UPDATE TAB MAXIMALIST ANIMATIONS === */
+@keyframes update-aurora {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+.update-aurora-bg {
+  background: linear-gradient(120deg, #ec4899, #8b5cf6, #06b6d4, #10b981, #f59e0b, #ec4899);
+  background-size: 300% 300%;
+  animation: update-aurora 8s ease infinite;
+}
+
+@keyframes timeline-pulse-dot {
+  0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(236,72,153,0.7); }
+  50% { transform: scale(1.15); box-shadow: 0 0 0 10px rgba(236,72,153,0); }
+}
+.timeline-dot-pulse { animation: timeline-pulse-dot 1.8s ease-in-out infinite; }
+
+@keyframes update-card-rise {
+  from { opacity: 0; transform: translateY(20px) scale(0.96); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+.update-card-rise { animation: update-card-rise 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both; }
+
+@keyframes version-shine {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.version-badge-shine {
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.6), transparent), linear-gradient(135deg, #ec4899, #8b5cf6);
+  background-size: 200% 100%, 100% 100%;
+  animation: version-shine 2.5s linear infinite;
+}
+
+@keyframes float-emoji {
+  0%, 100% { transform: translateY(0) rotate(0); }
+  50% { transform: translateY(-8px) rotate(5deg); }
+}
+.float-emoji { animation: float-emoji 3s ease-in-out infinite; }
+
+@keyframes new-badge-bounce {
+  0%, 100% { transform: scale(1) rotate(-3deg); }
+  50% { transform: scale(1.08) rotate(3deg); }
+}
+.new-badge-bounce { animation: new-badge-bounce 1.2s ease-in-out infinite; }
+
+@keyframes stat-pop {
+  from { opacity: 0; transform: scale(0.5) rotate(-10deg); }
+  to { opacity: 1; transform: scale(1) rotate(0); }
+}
+.stat-pop { animation: stat-pop 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) both; }
+
+@keyframes timeline-line-flow {
+  0% { background-position: 0% 0%; }
+  100% { background-position: 0% 200%; }
+}
+.timeline-line-flow {
+  background: linear-gradient(180deg, #ec4899, #8b5cf6, #06b6d4, #10b981, #f59e0b, #ec4899);
+  background-size: 100% 200%;
+  animation: timeline-line-flow 6s linear infinite;
+}
