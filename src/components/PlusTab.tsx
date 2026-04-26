@@ -5,7 +5,7 @@ import { getVisitorId } from "@/lib/visitor-id";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Wallet, Key, CalendarDays, HardDrive, Loader2, Lock, Infinity, Layers3, Package } from "lucide-react";
+import { Wallet, Key, CalendarDays, HardDrive, Loader2, Lock, Infinity, Layers3, Package, Sparkles, Zap, Crown, Gift, Star, TrendingUp } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useGameCredits, GameCreditsBadge } from "@/components/games/GameCredits";
 import { useGameBalance, GameBalanceBadge } from "@/components/games/GameBalance";
