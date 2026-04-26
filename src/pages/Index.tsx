@@ -3312,24 +3312,32 @@ const Index = () => {
 
                 {tickets.length > 0 && !smartTickets && (
                   <>
-                    {/* Stats Summary - Aurora 3D */}
+                    {/* Stats Summary - iOS Style */}
                     {(() => {
                       const openCount = tickets.filter(t => t.status === "open").length;
                       const closedCount = tickets.filter(t => t.status !== "open").length;
                       return (
                         <div className="grid grid-cols-3 gap-2">
                           {[
-                            { label: "Total", value: tickets.length, icon: Inbox, from: "from-orange-500/30", to: "to-amber-600/20", border: "border-orange-300/40", text: "text-orange-200", glow: "rgba(251,146,60,0.5)" },
-                            { label: "Terbuka", value: openCount, icon: Activity, from: "from-cyan-500/30", to: "to-blue-600/20", border: "border-cyan-300/40", text: "text-cyan-200", glow: "rgba(34,211,238,0.5)" },
-                            { label: "Selesai", value: closedCount, icon: CheckCircle2, from: "from-emerald-500/30", to: "to-green-600/20", border: "border-emerald-300/40", text: "text-emerald-200", glow: "rgba(16,185,129,0.5)" },
+                            { label: "Total", value: tickets.length, icon: Inbox, accent: "from-orange-500 to-amber-500", glow: "251,146,60" },
+                            { label: "Terbuka", value: openCount, icon: Activity, accent: "from-cyan-500 to-blue-500", glow: "34,211,238" },
+                            { label: "Selesai", value: closedCount, icon: CheckCircle2, accent: "from-emerald-500 to-green-500", glow: "16,185,129" },
                           ].map((s) => {
                             const Icon = s.icon;
                             return (
-                              <div key={s.label} className={`relative rounded-xl p-2.5 bg-gradient-to-br ${s.from} ${s.to} border ${s.border} backdrop-blur-md overflow-hidden hover:scale-105 transition-transform duration-300 group/stat`} style={{ boxShadow: `0 4px 20px -4px ${s.glow}, inset 0 1px 0 rgba(255,255,255,0.15)` }}>
-                                <div className="absolute -top-6 -right-6 w-14 h-14 rounded-full opacity-40 blur-xl group-hover/stat:opacity-70 transition" style={{ background: s.glow }} />
-                                <Icon className={`w-4 h-4 ${s.text} mb-1 drop-shadow-[0_0_4px_currentColor]`} />
-                                <p className={`text-xl font-black tabular-nums leading-none ${s.text} drop-shadow-[0_2px_4px_rgba(0,0,0,0.4)]`}><CountUp value={s.value} /></p>
-                                <p className="text-white/70 text-[9px] font-bold uppercase tracking-wider mt-1">{s.label}</p>
+                              <div
+                                key={s.label}
+                                className="relative overflow-hidden rounded-2xl p-3 bg-background/50 backdrop-blur-2xl backdrop-saturate-150 border border-white/15"
+                                style={{ boxShadow: `0 8px 24px -8px rgba(${s.glow},0.25), inset 0 1px 0 0 rgba(255,255,255,0.12)` }}
+                              >
+                                <div
+                                  className={`relative w-7 h-7 rounded-xl bg-gradient-to-br ${s.accent} flex items-center justify-center text-white mb-1.5`}
+                                  style={{ boxShadow: `0 4px 12px -2px rgba(${s.glow},0.5), inset 0 1px 0 0 rgba(255,255,255,0.25)` }}
+                                >
+                                  <Icon className="w-3.5 h-3.5" strokeWidth={2.4} />
+                                </div>
+                                <p className="text-[20px] font-bold tabular-nums leading-none text-foreground tracking-tight"><CountUp value={s.value} /></p>
+                                <p className="text-muted-foreground text-[11px] font-medium mt-1">{s.label}</p>
                               </div>
                             );
                           })}
@@ -3340,48 +3348,45 @@ const Index = () => {
                     {tickets.map(t => {
                       const catInfo = TICKET_CATEGORIES.find(c => c.value === (t as any).category) || TICKET_CATEGORIES[TICKET_CATEGORIES.length - 1];
                       const isOpen = t.status === "open";
+                      const accentGlow = isOpen ? "251,146,60" : "16,185,129";
                       return (
-                      <div
-                        key={t.id}
-                        className="relative rounded-2xl p-[1.5px] aurora-shift overflow-hidden cursor-pointer group transition-all duration-500 hover:-translate-y-1.5 hover:scale-[1.01]"
-                        style={{ background: isOpen
-                          ? "linear-gradient(135deg, hsl(15 90% 55%/0.7), hsl(45 95% 55%/0.6), hsl(330 90% 60%/0.7), hsl(15 90% 55%/0.7))"
-                          : "linear-gradient(135deg, hsl(160 70% 45%/0.5), hsl(190 95% 55%/0.5), hsl(160 70% 45%/0.5))",
-                          backgroundSize: "300% 300%",
-                          boxShadow: isOpen ? "0 8px 28px -10px rgba(251,146,60,0.4)" : "0 8px 28px -10px rgba(16,185,129,0.3)" }}
-                        onClick={() => { setActiveTicket(t); setTicketView("chat"); }}
-                      >
-                        <Card className="overflow-hidden border-0 shadow-xl bg-gradient-to-br from-slate-900/95 via-slate-950/95 to-slate-900/95 backdrop-blur-xl rounded-[14px] card-shine relative">
-                          <div className="absolute -inset-0.5 bg-gradient-to-br from-orange-500/0 via-pink-500/0 to-purple-500/0 group-hover:from-orange-500/20 group-hover:via-pink-500/15 group-hover:to-purple-500/20 rounded-[14px] blur-md opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none -z-10" />
-                          <CardContent className="p-4 relative">
+                        <div
+                          key={t.id}
+                          onClick={() => { setActiveTicket(t); setTicketView("chat"); }}
+                          className="relative overflow-hidden rounded-2xl bg-background/50 backdrop-blur-2xl backdrop-saturate-150 border border-white/15 cursor-pointer active:scale-[0.99] hover:bg-white/[0.04] transition-all duration-200"
+                          style={{ boxShadow: `0 8px 24px -10px rgba(${accentGlow},0.3), inset 0 1px 0 0 rgba(255,255,255,0.12)` }}
+                        >
+                          <div className="p-3.5">
                             <div className="flex items-center justify-between mb-2">
-                              <div className="flex items-center gap-2">
-                                <div className={`relative shrink-0 w-8 h-8 rounded-lg flex items-center justify-center border ${isOpen ? "bg-gradient-to-br from-orange-500/40 to-pink-500/30 border-orange-400/40 shadow-[0_0_10px_rgba(251,146,60,0.4)]" : "bg-gradient-to-br from-emerald-500/40 to-cyan-500/30 border-emerald-400/40 shadow-[0_0_10px_rgba(16,185,129,0.4)]"}`}>
-                                  <AlertCircle className={`w-4 h-4 ${isOpen ? "text-orange-200" : "text-emerald-200"}`} />
+                              <div className="flex items-center gap-2.5">
+                                <div
+                                  className={`relative shrink-0 w-9 h-9 rounded-xl bg-gradient-to-br ${isOpen ? "from-orange-500 to-pink-500" : "from-emerald-500 to-cyan-500"} flex items-center justify-center text-white`}
+                                  style={{ boxShadow: `0 4px 12px -2px rgba(${accentGlow},0.5), inset 0 1px 0 0 rgba(255,255,255,0.25)` }}
+                                >
+                                  <AlertCircle className="w-4 h-4" strokeWidth={2.4} />
                                 </div>
-                                <span className="font-black text-sm bg-gradient-to-r from-orange-300 via-pink-300 to-purple-300 bg-clip-text text-transparent">Tiket #{t.ticket_number}</span>
+                                <span className="font-semibold text-[14px] text-foreground tracking-tight">Tiket #{t.ticket_number}</span>
                               </div>
-                              <span className={`text-[10px] px-2 py-0.5 rounded-full font-black border backdrop-blur-sm ${isOpen ? "bg-gradient-to-r from-orange-500/30 to-amber-500/20 text-orange-200 border-orange-400/40 shadow-[0_0_8px_rgba(251,146,60,0.3)]" : "bg-gradient-to-r from-emerald-500/30 to-cyan-500/20 text-emerald-200 border-emerald-400/40"} flex items-center gap-1`}>
-                                {isOpen ? <><span className="w-1.5 h-1.5 rounded-full bg-orange-400 animate-pulse" /> Terbuka</> : <><CheckCircle2 className="w-2.5 h-2.5" /> Ditutup</>}
+                              <span className={`text-[10.5px] px-2 py-0.5 rounded-full font-semibold flex items-center gap-1 ${isOpen ? "bg-orange-500/15 text-orange-500 border border-orange-500/25" : "bg-emerald-500/15 text-emerald-500 border border-emerald-500/25"}`}>
+                                {isOpen ? <><span className="w-1.5 h-1.5 rounded-full bg-orange-500 animate-pulse" /> Terbuka</> : <><CheckCircle2 className="w-2.5 h-2.5" /> Ditutup</>}
                               </span>
                             </div>
                             <div className="flex items-center gap-1.5 mb-2 flex-wrap">
-                              <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full font-black bg-gradient-to-r from-purple-500/30 to-fuchsia-500/20 text-purple-200 border border-purple-400/40 shadow-[0_0_8px_rgba(168,85,247,0.3)]">
+                              <span className="inline-flex items-center gap-1 text-[10.5px] px-2 py-0.5 rounded-full font-medium bg-white/[0.06] text-foreground/80 border border-white/10">
                                 <Tag className="w-2.5 h-2.5" /> {catInfo.label}
                               </span>
                             </div>
-                            <p className="text-xs text-slate-300 line-clamp-2 leading-relaxed group-hover:text-white transition-colors">{t.description}</p>
-                            <div className="flex items-center justify-between mt-2 pt-2 border-t border-white/5">
-                              <p className="text-[10px] text-slate-400 flex items-center gap-1">
+                            <p className="text-[12.5px] text-muted-foreground line-clamp-2 leading-relaxed">{t.description}</p>
+                            <div className="flex items-center justify-between mt-2.5 pt-2.5 border-t border-white/[0.06]">
+                              <p className="text-[10.5px] text-muted-foreground flex items-center gap-1">
                                 <Clock className="w-2.5 h-2.5" /> {new Date(t.created_at).toLocaleString("id-ID")}
                               </p>
-                              <span className="text-[10px] font-black text-cyan-300 group-hover:text-cyan-200 transition-colors flex items-center gap-0.5">
-                                Buka <ChevronRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
+                              <span className="text-[11px] font-semibold text-foreground/80 flex items-center gap-0.5">
+                                Buka <ChevronRight className="w-3 h-3" />
                               </span>
                             </div>
-                          </CardContent>
-                        </Card>
-                      </div>
+                          </div>
+                        </div>
                       );
                     })}
                   </>
