@@ -1934,28 +1934,71 @@ const Index = () => {
                     { icon: <RefreshCw className="w-5 h-5" strokeWidth={1.9} />, label: "Update", tab: "update" as Tab, color: "from-sky-500 to-blue-500", glow: "14,165,233" },
                     { icon: <Crown className="w-5 h-5" strokeWidth={1.9} />, label: "L.Royale", external: "/luck-royale-nyawa", color: "from-violet-500 to-fuchsia-500", glow: "139,92,246" },
                     { icon: <FileText className="w-5 h-5" strokeWidth={1.9} />, label: "Admin", tab: "adminpost" as Tab, color: "from-red-500 to-rose-500", glow: "239,68,68" },
-                  ] as any[]).map((item) => (
+                  ] as any[]).map((item, idx) => (
                     <button
                       key={item.label}
                       onClick={() => item.external ? navigate(item.external) : setTab(item.tab)}
-                      className="group relative flex flex-col items-center gap-1.5 py-2.5 rounded-xl bg-white/[0.03] border border-white/10 hover:border-white/30 hover:bg-white/[0.08] active:scale-95 transition-all duration-200 overflow-hidden"
-                      style={{ boxShadow: `0 0 0 0 rgba(${item.glow}, 0)` }}
-                      onMouseEnter={(e) => { e.currentTarget.style.boxShadow = `0 0 20px -2px rgba(${item.glow}, 0.5)`; }}
+                      className="group relative flex flex-col items-center gap-1.5 py-2.5 rounded-xl bg-white/[0.03] border border-white/10 hover:border-white/40 hover:bg-white/[0.08] active:scale-90 transition-all duration-300 overflow-hidden quick-action-float"
+                      style={{
+                        animationDelay: `${(idx % 8) * 0.15}s`,
+                        boxShadow: `0 0 0 0 rgba(${item.glow}, 0)`,
+                      }}
+                      onMouseEnter={(e) => { e.currentTarget.style.boxShadow = `0 0 24px -2px rgba(${item.glow}, 0.7), 0 0 40px -8px rgba(${item.glow}, 0.4)`; }}
                       onMouseLeave={(e) => { e.currentTarget.style.boxShadow = `0 0 0 0 rgba(${item.glow}, 0)`; }}
                     >
-                      <div className={`absolute inset-0 bg-gradient-to-br ${item.color} opacity-0 group-hover:opacity-10 transition-opacity`} />
-                      <div className="relative animate-wiggle">
-                        <div className={`absolute inset-0 bg-gradient-to-br ${item.color} blur-md opacity-0 group-hover:opacity-60 transition-opacity scale-150`} />
-                        <div className={`relative w-9 h-9 rounded-xl bg-gradient-to-br ${item.color} flex items-center justify-center text-white shadow-lg`}>
+                      {/* Conic rotating gradient on hover */}
+                      <div
+                        className="absolute inset-0 opacity-0 group-hover:opacity-60 transition-opacity duration-500 pointer-events-none rounded-xl"
+                        style={{
+                          background: `conic-gradient(from 0deg, transparent, rgba(${item.glow},0.6), transparent 60%, rgba(${item.glow},0.4), transparent)`,
+                          animation: "spin-slow 3s linear infinite",
+                        }}
+                      />
+                      {/* Background gradient on hover */}
+                      <div className={`absolute inset-0 bg-gradient-to-br ${item.color} opacity-0 group-hover:opacity-20 transition-opacity duration-300`} />
+
+                      {/* Sparkle particles per button */}
+                      <div className="pointer-events-none absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                        {[0, 1, 2].map((k) => (
+                          <span
+                            key={`qa-spk-${k}`}
+                            className="absolute w-1 h-1 rounded-full bg-white"
+                            style={{
+                              top: `${20 + k * 25}%`,
+                              left: `${15 + k * 30}%`,
+                              boxShadow: `0 0 6px rgba(${item.glow},1), 0 0 10px rgba(255,255,255,0.8)`,
+                              animation: `float-up 1.8s ease-out ${k * 0.3}s infinite`,
+                            }}
+                          />
+                        ))}
+                      </div>
+
+                      {/* Icon stack */}
+                      <div className="relative">
+                        {/* Pulsing ring on hover */}
+                        <div
+                          className="absolute inset-0 rounded-xl border-2 opacity-0 group-hover:opacity-100"
+                          style={{
+                            borderColor: `rgba(${item.glow}, 0.7)`,
+                            animation: "pulse-ring 1.4s ease-out infinite",
+                          }}
+                        />
+                        {/* Soft glow */}
+                        <div className={`absolute inset-0 bg-gradient-to-br ${item.color} blur-lg opacity-50 group-hover:opacity-100 transition-opacity duration-300 scale-125`} />
+                        {/* Icon box - idle bounce, spin + scale on hover */}
+                        <div
+                          className={`relative w-9 h-9 rounded-xl bg-gradient-to-br ${item.color} flex items-center justify-center text-white shadow-xl transition-transform duration-500 group-hover:rotate-[360deg] group-hover:scale-110 quick-action-bounce`}
+                          style={{ animationDelay: `${(idx % 8) * 0.18}s` }}
+                        >
                           {item.icon}
                         </div>
                         {item.badge && (
-                          <span className="absolute -top-1 -right-1 min-w-[16px] h-[16px] rounded-full bg-gradient-to-r from-red-500 to-pink-500 text-white text-[9px] font-bold flex items-center justify-center px-1 shadow-lg ring-2 ring-card">
+                          <span className="absolute -top-1 -right-1 min-w-[16px] h-[16px] rounded-full bg-gradient-to-r from-red-500 to-pink-500 text-white text-[9px] font-black flex items-center justify-center px-1 shadow-lg ring-2 ring-card animate-bounce">
                             {item.badge}
                           </span>
                         )}
                       </div>
-                      <span className="relative text-[10px] font-bold text-foreground">{item.label}</span>
+                      <span className="relative text-[10px] font-black text-foreground group-hover:scale-110 group-hover:tracking-wide transition-all duration-300">{item.label}</span>
                     </button>
                   ))}
                 </div>
