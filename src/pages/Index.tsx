@@ -2384,7 +2384,10 @@ const Index = () => {
                       )}
                       <CardContent className={`space-y-2 ${isGrid ? "p-3" : "p-4 space-y-3"}`}>
                         <div className="flex items-start justify-between gap-2">
-                          <h3 className={`font-black flex-1 text-white group-hover:bg-gradient-to-r group-hover:from-cyan-300 group-hover:to-pink-300 group-hover:bg-clip-text group-hover:text-transparent transition-all line-clamp-2 ${isGrid ? "text-xs" : "text-base"}`}>{p.title}</h3>
+                          <h3 className={`font-black flex-1 text-white group-hover:bg-gradient-to-r group-hover:from-cyan-300 group-hover:to-pink-300 group-hover:bg-clip-text group-hover:text-transparent transition-all line-clamp-2 ${isGrid ? "text-xs" : "text-base"}`}>
+                            <span className="inline">{p.title}</span>
+                            <VerifiedBadge size={isGrid ? "xs" : "sm"} className="ml-1 -mt-0.5" />
+                          </h3>
                           {imgs.length === 0 && (
                             <button onClick={(e) => toggleLike(p.id, e)} className="flex items-center gap-1 shrink-0">
                               <Heart className={`w-4 h-4 transition-all ${likedIds.has(p.id) ? "fill-pink-500 text-pink-500" : "text-muted-foreground"}`} />
@@ -4406,7 +4409,10 @@ const Index = () => {
               <div className="p-5 space-y-4">
                 <div className="flex items-start justify-between">
                   <div>
-                    <h2 className="text-xl font-extrabold">{selectedProduct.title}</h2>
+                    <h2 className="text-xl font-extrabold flex items-center gap-1.5 flex-wrap">
+                      <span>{selectedProduct.title}</span>
+                      <VerifiedBadge size="md" />
+                    </h2>
                     <div className="flex gap-1.5 mt-1 flex-wrap">
                       {selectedProduct.category && <span className="rounded-full border border-border bg-muted px-2 py-0.5 text-xs text-foreground">{selectedProduct.category}</span>}
                       {selectedProduct.has_warranty && <span className="rounded-full border border-border bg-muted px-2 py-0.5 text-xs text-foreground"><Shield className="mr-0.5 inline w-3 h-3" />Garansi</span>}
@@ -4517,7 +4523,10 @@ const Index = () => {
                                 )}
                               </div>
                               <div className="p-1.5 space-y-0.5">
-                                <p className="text-[10px] font-bold text-foreground line-clamp-1 leading-tight">{p.title}</p>
+                                <p className="text-[10px] font-bold text-foreground line-clamp-1 leading-tight">
+                                  {p.title}
+                                  <VerifiedBadge size="xs" className="ml-0.5" />
+                                </p>
                                 <p className="text-[10px] font-extrabold text-primary leading-tight">{formatPrice(p.price)}</p>
                               </div>
                             </button>
@@ -4559,7 +4568,10 @@ const Index = () => {
               <button onClick={() => setShowWaForm(false)} className="w-8 h-8 rounded-full bg-muted flex items-center justify-center"><X className="w-4 h-4" /></button>
             </div>
             <div className="rounded-lg border border-border bg-muted/40 p-3">
-              <p className="text-sm font-bold">{selectedProduct.title}</p>
+              <p className="text-sm font-bold flex items-center gap-1 flex-wrap">
+                <span>{selectedProduct.title}</span>
+                <VerifiedBadge size="sm" />
+              </p>
               <p className="font-extrabold text-foreground">{formatPrice(selectedProduct.price)}</p>
             </div>
             <div className="space-y-3">
@@ -5267,7 +5279,10 @@ const Index = () => {
               <button onClick={() => { setShowBuySaldo(false); setBuyProduct(null); setBuyQuantity(1); setDiscountCode(""); setDiscountInfo(null); }} className="w-8 h-8 rounded-full bg-muted flex items-center justify-center"><X className="w-4 h-4" /></button>
             </div>
             <div className="bg-primary/5 border border-primary/20 rounded-lg p-3 space-y-1">
-              <p className="font-bold text-sm">{buyProduct.title}</p>
+              <p className="font-bold text-sm flex items-center gap-1 flex-wrap">
+                <span>{buyProduct.title}</span>
+                <VerifiedBadge size="sm" />
+              </p>
               {isWholesale ? (
                 <div>
                   <p className="text-muted-foreground text-xs line-through">{formatPrice(buyProduct.price)} / pcs</p>
@@ -5358,7 +5373,10 @@ const Index = () => {
                 <div className="absolute bottom-3 left-3 right-3 flex items-end justify-between gap-3">
                   <div className="flex-1 min-w-0">
                     {p.category && <span className="text-[10px] font-bold bg-background/80 backdrop-blur-md px-2 py-0.5 rounded-full inline-block mb-1">{p.category}</span>}
-                    <h3 className="text-white font-extrabold text-lg drop-shadow-lg line-clamp-2">{p.title}</h3>
+                    <h3 className="text-white font-extrabold text-lg drop-shadow-lg line-clamp-2">
+                      {p.title}
+                      <VerifiedBadge size="sm" className="ml-1" />
+                    </h3>
                   </div>
                   <span className="text-sm font-extrabold bg-gradient-to-r from-primary to-primary/80 text-primary-foreground px-3 py-1.5 rounded-full shadow-xl shrink-0">{formatPrice(p.price)}</span>
                 </div>
@@ -5711,7 +5729,10 @@ const Index = () => {
                         <CardContent className="p-3 flex items-center gap-3">
                           {imgs.length > 0 && <img src={imgs[0]} className="w-14 h-14 rounded-xl object-cover" alt="" />}
                           <div className="flex-1 min-w-0">
-                            <p className="font-bold text-sm truncate">{item.product.title}</p>
+                            <p className="font-bold text-sm truncate flex items-center gap-1">
+                              <span className="truncate">{item.product.title}</span>
+                              <VerifiedBadge size="xs" />
+                            </p>
                             {(() => {
                               const wp = getWholesalePrice(item.product.id, item.quantity, item.product.price);
                               return wp < item.product.price ? (
