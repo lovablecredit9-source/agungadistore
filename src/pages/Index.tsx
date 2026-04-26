@@ -2106,32 +2106,52 @@ const Index = () => {
 
         {tab === "produk" && (
           <div className="space-y-4 animate-fade-in">
-            {/* Minimal Header */}
-            <div className="rounded-xl border border-border bg-card p-4">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center">
-                  <Package className="w-5 h-5 text-foreground" strokeWidth={1.7} />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <h2 className="text-base font-semibold text-foreground tracking-tight">{t("products.title", lang)}</h2>
-                  <p className="text-muted-foreground text-xs mt-0.5">{sortedProducts.length} {t("products.items", lang)} tersedia</p>
-                </div>
-              </div>
-              {/* Stats row */}
-              <div className="flex items-center gap-4 mt-3 pt-3 border-t border-border">
-                {[
-                  { label: "Total", value: sortedProducts.length },
-                  { label: "Tersedia", value: sortedProducts.filter(p => p.stock > 0).length },
-                  { label: "Garansi", value: sortedProducts.filter(p => p.has_warranty).length },
-                ].map((s, i) => (
-                  <div key={s.label} className="flex items-center gap-4">
-                    {i > 0 && <span className="w-px h-6 bg-border" />}
-                    <div>
-                      <p className="text-foreground font-semibold text-sm tabular-nums leading-none">{s.value}</p>
-                      <p className="text-muted-foreground text-[10px] mt-1">{s.label}</p>
+            {/* Hero Header - Aurora Premium */}
+            <div
+              className="relative rounded-3xl p-[1.5px] aurora-shift overflow-hidden"
+              style={{ background: "linear-gradient(135deg, hsl(190 95% 55%/0.75), hsl(220 90% 60%/0.7), hsl(280 90% 65%/0.7), hsl(190 95% 55%/0.75))", backgroundSize: "300% 300%" }}
+            >
+              <div className="relative rounded-[22px] bg-card/95 backdrop-blur-xl p-4 overflow-hidden">
+                <div className="pointer-events-none absolute -top-16 -right-16 w-48 h-48 rounded-full bg-cyan-500/20 blur-3xl" />
+                <div className="pointer-events-none absolute -bottom-16 -left-16 w-48 h-48 rounded-full bg-purple-500/20 blur-3xl" />
+                <div className="pointer-events-none absolute top-1/2 left-1/2 w-32 h-32 rounded-full bg-blue-400/10 blur-2xl" />
+
+                <div className="relative flex items-center gap-3">
+                  <div className="relative shrink-0">
+                    <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-cyan-400 to-purple-500 blur-md opacity-60 animate-pulse" />
+                    <div className="relative w-12 h-12 rounded-2xl bg-gradient-to-br from-cyan-400 via-blue-500 to-purple-500 flex items-center justify-center shadow-[0_0_20px_rgba(34,211,238,0.5)]">
+                      <Package className="w-6 h-6 text-white drop-shadow-lg" strokeWidth={2} />
                     </div>
                   </div>
-                ))}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <h2 className="text-lg font-black tracking-tight bg-gradient-to-r from-cyan-300 via-blue-300 to-purple-300 bg-clip-text text-transparent">{t("products.title", lang)}</h2>
+                      <span className="inline-flex items-center gap-1 text-[9px] font-black px-1.5 py-0.5 rounded-full bg-gradient-to-r from-emerald-400 to-cyan-400 text-black shadow-[0_0_10px_rgba(16,185,129,0.5)]">
+                        <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" /> LIVE
+                      </span>
+                    </div>
+                    <p className="text-muted-foreground text-[11px] mt-0.5 font-medium">✨ {sortedProducts.length} {t("products.items", lang)} siap diklaim</p>
+                  </div>
+                </div>
+
+                {/* Premium Stats Grid */}
+                <div className="relative grid grid-cols-3 gap-2 mt-4">
+                  {[
+                    { label: "Total", value: sortedProducts.length, color: "cyan", from: "from-cyan-500/20", border: "border-cyan-400/30", text: "text-cyan-300", glow: "rgba(34,211,238,0.3)" },
+                    { label: "Tersedia", value: sortedProducts.filter(p => p.stock > 0).length, color: "emerald", from: "from-emerald-500/20", border: "border-emerald-400/30", text: "text-emerald-300", glow: "rgba(16,185,129,0.3)" },
+                    { label: "Garansi", value: sortedProducts.filter(p => p.has_warranty).length, color: "purple", from: "from-purple-500/20", border: "border-purple-400/30", text: "text-purple-300", glow: "rgba(168,85,247,0.3)" },
+                  ].map((s) => (
+                    <div
+                      key={s.label}
+                      className={`relative rounded-xl p-2.5 bg-gradient-to-br ${s.from} to-transparent border ${s.border} backdrop-blur-sm overflow-hidden`}
+                      style={{ boxShadow: `0 0 12px ${s.glow}` }}
+                    >
+                      <div className="absolute -top-4 -right-4 w-10 h-10 rounded-full opacity-30 blur-xl" style={{ background: s.glow }} />
+                      <p className={`text-lg font-black tabular-nums leading-none ${s.text} drop-shadow`}>{s.value}</p>
+                      <p className="text-muted-foreground text-[9px] font-semibold uppercase tracking-wider mt-1">{s.label}</p>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
 
@@ -2198,30 +2218,40 @@ const Index = () => {
                   const imgs = getProductImages(p.id);
                   const badges = getProductBadges(p);
                   const isGrid = productViewMode === "grid";
+                  const inStock = p.stock > 0;
                   return (
-                    <Card key={p.id} className="overflow-hidden hover:shadow-2xl transition-all duration-300 hover:-translate-y-1.5 border-0 shadow-lg glass-card cursor-pointer group card-shine relative" onClick={() => openProduct(p)}>
-                      {/* Premium glow accent on hover */}
-                      <div className="absolute -inset-0.5 bg-gradient-to-br from-primary/0 via-accent/0 to-primary/0 group-hover:from-primary/20 group-hover:via-accent/10 group-hover:to-primary/20 rounded-lg blur opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none -z-10" />
+                    <div
+                      key={p.id}
+                      className="relative rounded-2xl p-[1.5px] aurora-shift overflow-hidden cursor-pointer group transition-transform duration-300 hover:-translate-y-1.5"
+                      style={{ background: inStock
+                        ? "linear-gradient(135deg, hsl(190 95% 55%/0.6), hsl(280 90% 65%/0.55), hsl(330 90% 60%/0.6), hsl(190 95% 55%/0.6))"
+                        : "linear-gradient(135deg, hsl(0 0% 50%/0.4), hsl(0 70% 50%/0.4), hsl(0 0% 50%/0.4))",
+                        backgroundSize: "300% 300%" }}
+                      onClick={() => openProduct(p)}
+                    >
+                      <Card className="overflow-hidden border-0 shadow-lg bg-card/95 backdrop-blur-xl rounded-[14px] card-shine relative">
+                      {/* Inner neon glow on hover */}
+                      <div className="absolute -inset-0.5 bg-gradient-to-br from-cyan-500/0 via-purple-500/0 to-pink-500/0 group-hover:from-cyan-500/20 group-hover:via-purple-500/15 group-hover:to-pink-500/20 rounded-[14px] blur-md opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none -z-10" />
 
                       {imgs.length > 0 && (
                         <div className={`relative overflow-hidden ${isGrid ? "aspect-square" : ""}`}>
                           <ImageCarousel images={imgs} />
-                          <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent pointer-events-none" />
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent pointer-events-none" />
 
                           {/* Dynamic badges (top-left, stacked) */}
                           {badges.length > 0 && (
                             <div className="absolute top-2 left-2 flex flex-col gap-1 max-w-[60%]">
                               {badges.map((b, i) => (
-                                <span key={i} className={`text-[9px] font-extrabold px-2 py-0.5 rounded-full shadow-lg backdrop-blur-sm ${b.className} animate-fade-in`} style={{ animationDelay: `${i * 80}ms` }}>
+                                <span key={i} className={`text-[9px] font-extrabold px-2 py-0.5 rounded-full shadow-[0_0_10px_rgba(0,0,0,0.4)] backdrop-blur-md ${b.className} animate-fade-in`} style={{ animationDelay: `${i * 80}ms` }}>
                                   {b.label}
                                 </span>
                               ))}
                             </div>
                           )}
 
-                          {/* Price badge top-right */}
+                          {/* Price badge top-right - neon */}
                           <div className="absolute top-2 right-2">
-                            <span className={`font-extrabold bg-gradient-to-r from-primary to-primary/80 text-primary-foreground rounded-full shadow-lg backdrop-blur-sm ${isGrid ? "text-[10px] px-2 py-1" : "text-xs px-3 py-1.5"}`}>{formatPrice(p.price)}</span>
+                            <span className={`font-black bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-500 text-white rounded-full shadow-[0_0_15px_rgba(34,211,238,0.6)] backdrop-blur-sm border border-white/30 ${isGrid ? "text-[10px] px-2 py-1" : "text-xs px-3 py-1.5"}`}>{formatPrice(p.price)}</span>
                           </div>
 
                           {/* Action buttons bottom-right */}
@@ -2280,7 +2310,8 @@ const Index = () => {
                           </div>
                         </div>
                       </CardContent>
-                    </Card>
+                      </Card>
+                    </div>
                   );
                 })}
               </div>
