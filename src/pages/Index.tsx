@@ -1935,7 +1935,7 @@ const Index = () => {
                     { icon: <Ticket className="w-5 h-5" strokeWidth={1.9} />, label: "Voucher", tab: "voucher" as Tab, color: "from-purple-500 to-violet-600", glow: "168,85,247" },
                     { icon: <Wallet className="w-5 h-5" strokeWidth={1.9} />, label: "Saldo", tab: "saldo" as Tab, color: "from-emerald-500 to-green-500", glow: "16,185,129" },
                     { icon: <Heart className="w-5 h-5" strokeWidth={1.9} />, label: "Suka", tab: "likes" as Tab, color: "from-rose-500 to-pink-500", glow: "244,63,94" },
-                    { icon: <Gamepad2 className="w-5 h-5" strokeWidth={1.9} />, label: "Game", tab: "game" as Tab, badge: "11", color: "from-yellow-400 to-orange-500", glow: "250,204,21" },
+                    { icon: <Gamepad2 className="w-5 h-5" strokeWidth={1.9} />, label: "Game", tab: "game" as Tab, badge: "40", color: "from-yellow-400 to-orange-500", glow: "250,204,21" },
                     { icon: <Flame className="w-5 h-5" strokeWidth={1.9} />, label: "Streak", tab: "streak" as Tab, color: "from-orange-500 to-red-500", glow: "249,115,22" },
                     { icon: <Gem className="w-5 h-5" strokeWidth={1.9} />, label: "Plus", tab: "plus" as Tab, color: "from-indigo-500 to-purple-500", glow: "99,102,241" },
                     { icon: <Megaphone className="w-5 h-5" strokeWidth={1.9} />, label: "Sponsor", tab: "sponsor" as Tab, color: "from-amber-500 to-yellow-500", glow: "245,158,11" },
