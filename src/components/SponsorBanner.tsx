@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Megaphone, Clock, User, Phone, ChevronLeft, ChevronRight, X, Search, Filter, ArrowUpDown, Heart, Share2, ExternalLink, Eye, AlertTriangle, Shield, CalendarDays } from "lucide-react";
+import { Megaphone, Clock, User, Phone, ChevronLeft, ChevronRight, X, Search, Filter, ArrowUpDown, Heart, Share2, ExternalLink, Eye, AlertTriangle, Shield, CalendarDays, ImagePlus } from "lucide-react";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
@@ -208,31 +208,57 @@ export default function SponsorBanner({ likedSponsorIds = new Set(), onToggleLik
   return (
     <>
       <div className="relative">
-        {/* Hero Header */}
-        <div className="relative overflow-hidden rounded-2xl border border-border glass-card-strong p-4 mb-3">
-          <div className="absolute inset-0 bg-gradient-to-br from-primary/8 via-accent/5 to-transparent" />
-          <div className="absolute top-1 right-1 opacity-[0.05]">
-            <Megaphone className="w-20 h-20 text-primary" />
-          </div>
-          <div className="relative z-10 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-lg">
-                <Megaphone className="w-5 h-5 text-white" />
-              </div>
-              <div>
-                <h2 className="font-extrabold text-base leading-tight">Sponsor</h2>
-                <p className="text-[10px] text-muted-foreground">{filtered.length} iklan aktif</p>
-              </div>
+        {/* Hero Header - Aurora Premium */}
+        <div
+          className="relative rounded-3xl p-[2px] overflow-hidden mb-3 shadow-[0_8px_40px_-10px_rgba(217,70,239,0.5)]"
+          style={{ background: "linear-gradient(135deg, hsl(330 90% 60%), hsl(280 90% 65%), hsl(45 95% 55%), hsl(15 90% 55%), hsl(330 90% 60%))", backgroundSize: "400% 400%", animation: "aurora-shift 8s ease infinite" }}
+        >
+          <div className="relative rounded-[22px] bg-gradient-to-br from-slate-950/95 via-slate-900/95 to-slate-950/95 backdrop-blur-xl p-4 overflow-hidden">
+            <div className="pointer-events-none absolute inset-0 opacity-60">
+              <div className="absolute -top-20 -right-20 w-56 h-56 rounded-full bg-fuchsia-500/30 blur-3xl animate-pulse" />
+              <div className="absolute -bottom-20 -left-20 w-56 h-56 rounded-full bg-amber-500/30 blur-3xl animate-pulse" style={{ animationDelay: "1s" }} />
             </div>
-            <div className="flex items-center gap-1.5">
-              <button onClick={() => setShowSearch(v => !v)} className="w-8 h-8 rounded-full bg-background/60 hover:bg-background flex items-center justify-center transition-colors backdrop-blur-sm">
-                <Search className="w-3.5 h-3.5 text-muted-foreground" />
-              </button>
-              {filtered.length > 1 && (
-                <span className="text-[10px] text-muted-foreground bg-background/60 px-2 py-1 rounded-full backdrop-blur-sm font-medium">
-                  {(current % filtered.length) + 1}/{filtered.length}
-                </span>
-              )}
+            <div className="pointer-events-none absolute inset-0 overflow-hidden">
+              {[...Array(5)].map((_, i) => (
+                <div key={i} className="absolute w-1 h-1 rounded-full bg-white/60" style={{ top: `${20 + (i * 17) % 60}%`, left: `${(i * 21) % 90}%`, animation: `float-up ${3 + (i % 3)}s ease-in-out ${i * 0.5}s infinite`, boxShadow: "0 0 6px rgba(255,255,255,0.8)" }} />
+              ))}
+            </div>
+            <div className="pointer-events-none absolute inset-0" style={{ background: "linear-gradient(115deg, transparent 30%, rgba(255,255,255,0.1) 50%, transparent 70%)", animation: "shine-sweep 6s ease-in-out infinite" }} />
+
+            <div className="relative z-10 flex items-center justify-between gap-3">
+              <div className="flex items-center gap-3 flex-1 min-w-0">
+                <div className="relative shrink-0">
+                  <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-fuchsia-400 via-pink-500 to-amber-500 blur-lg opacity-80 animate-pulse" />
+                  <div className="absolute -inset-1 rounded-2xl bg-gradient-to-br from-fuchsia-400 via-pink-500 to-amber-500 opacity-50 animate-spin" style={{ animationDuration: "8s" }} />
+                  <div className="relative w-14 h-14 rounded-2xl bg-gradient-to-br from-fuchsia-500 via-pink-500 to-amber-500 flex items-center justify-center shadow-[0_0_30px_rgba(217,70,239,0.7),inset_0_2px_8px_rgba(255,255,255,0.3)] border border-white/30">
+                    <Megaphone className="w-7 h-7 text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]" strokeWidth={2.2} />
+                  </div>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h2 className="text-xl font-black tracking-tight bg-gradient-to-r from-fuchsia-200 via-pink-200 to-amber-200 bg-clip-text text-transparent drop-shadow-[0_2px_8px_rgba(217,70,239,0.4)]">Sponsor</h2>
+                    <span className="inline-flex items-center gap-1 text-[9px] font-black px-2 py-0.5 rounded-full bg-gradient-to-r from-emerald-400 to-cyan-400 text-black shadow-[0_0_15px_rgba(16,185,129,0.7)] border border-white/30">
+                      <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" /> LIVE
+                    </span>
+                    <span className="inline-flex items-center gap-0.5 text-[9px] font-black px-2 py-0.5 rounded-full bg-gradient-to-r from-amber-400 via-orange-500 to-red-500 text-white shadow-[0_0_15px_rgba(251,146,60,0.6)] border border-white/30 animate-pulse">
+                      🔥 IKLAN
+                    </span>
+                  </div>
+                  <p className="text-fuchsia-100/80 text-[11px] mt-1 font-semibold flex items-center gap-1">
+                    <Megaphone className="w-3 h-3 text-amber-300" /> {filtered.length} iklan aktif premium
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-1.5 shrink-0">
+                <button onClick={() => setShowSearch(v => !v)} className="w-9 h-9 rounded-full bg-gradient-to-br from-cyan-500/30 to-purple-500/30 hover:from-cyan-500/50 hover:to-purple-500/50 flex items-center justify-center transition-all backdrop-blur-sm border border-cyan-300/40 shadow-[0_0_10px_rgba(34,211,238,0.3)] hover:scale-110">
+                  <Search className="w-4 h-4 text-cyan-200" />
+                </button>
+                {filtered.length > 1 && (
+                  <span className="text-[10px] font-black text-amber-200 bg-gradient-to-br from-amber-500/30 to-orange-500/20 px-2.5 py-1.5 rounded-full backdrop-blur-sm border border-amber-300/40 shadow-[0_0_10px_rgba(251,191,36,0.3)] tabular-nums">
+                    {(current % filtered.length) + 1}/{filtered.length}
+                  </span>
+                )}
+              </div>
             </div>
           </div>
         </div>
@@ -274,88 +300,127 @@ export default function SponsorBanner({ likedSponsorIds = new Set(), onToggleLik
           </div>
         )}
         {sponsor && (
-        <Card
-          className="overflow-hidden border-primary/20 glass-card cursor-pointer hover:shadow-xl hover:scale-[1.01] transition-all duration-300 card-shine"
+        <div
+          className="relative rounded-2xl p-[2px] overflow-hidden cursor-pointer group transition-all duration-500 hover:-translate-y-1.5 hover:scale-[1.01]"
+          style={{ background: sponsor.stock > 0
+            ? "linear-gradient(135deg, hsl(330 90% 60%/0.8), hsl(280 90% 65%/0.7), hsl(45 95% 55%/0.7), hsl(15 90% 55%/0.8), hsl(330 90% 60%/0.8))"
+            : "linear-gradient(135deg, hsl(0 0% 50%/0.4), hsl(0 70% 50%/0.5), hsl(0 0% 50%/0.4))",
+            backgroundSize: "300% 300%",
+            animation: "aurora-shift 7s ease infinite",
+            boxShadow: sponsor.stock > 0 ? "0 8px 32px -8px rgba(217,70,239,0.45), 0 4px 16px -4px rgba(251,146,60,0.3)" : "0 4px 16px -4px rgba(0,0,0,0.3)" }}
           onClick={() => { setSelectedSponsor(sponsor); setImgIdx(0); }}
         >
+          <Card className="overflow-hidden border-0 shadow-xl bg-gradient-to-br from-slate-900/95 via-slate-950/95 to-slate-900/95 backdrop-blur-xl rounded-[14px] card-shine relative">
+            <div className="pointer-events-none absolute inset-0 bg-gradient-to-tr from-transparent via-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
+            <div className="absolute -inset-0.5 bg-gradient-to-br from-fuchsia-500/0 via-amber-500/0 to-pink-500/0 group-hover:from-fuchsia-500/30 group-hover:via-amber-500/20 group-hover:to-pink-500/30 rounded-[14px] blur-md opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none -z-10" />
+
+            {/* Corner ribbon - sponsor */}
+            <div className="absolute top-0 left-0 z-20 overflow-hidden w-20 h-20 pointer-events-none">
+              <div className="absolute top-3 -left-7 -rotate-45 bg-gradient-to-r from-fuchsia-500 via-pink-500 to-amber-500 text-white text-[8px] font-black px-7 py-0.5 shadow-[0_2px_8px_rgba(217,70,239,0.7)] tracking-wider border-y border-white/30">
+                ★ PROMOSI
+              </div>
+            </div>
+
           {displayImage && (
             <div className="relative">
-              <img src={displayImage} alt={sponsor.title} className="w-full h-36 object-cover" />
-              <div className="absolute top-2 left-2">
-                <Badge variant="secondary" className="text-[10px] font-mono font-bold shadow-md">#{sponsor.sponsor_number}</Badge>
+              <img src={displayImage} alt={sponsor.title} className="w-full h-40 object-cover" />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent pointer-events-none" />
+              {/* Scan line effect */}
+              <div className="pointer-events-none absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                <div className="absolute inset-x-0 h-px bg-gradient-to-r from-transparent via-fuchsia-300 to-transparent shadow-[0_0_8px_rgba(217,70,239,0.8)]" style={{ top: "50%", animation: "float-up 2s ease-in-out infinite" }} />
               </div>
-              <div className="absolute top-2 right-2">
-                <Badge className="bg-primary/90 text-primary-foreground text-[10px] font-bold shadow-md">
+
+              <div className="absolute top-2 left-2 z-10" style={{ marginLeft: "60px" }}>
+                <span className="text-[10px] font-mono font-black bg-slate-950/70 text-cyan-200 px-2 py-1 rounded-full backdrop-blur-md border border-cyan-400/40 shadow-[0_0_10px_rgba(34,211,238,0.4)]">#{sponsor.sponsor_number}</span>
+              </div>
+              <div className="absolute top-2 right-2 z-10">
+                <span className="inline-flex items-center text-[10px] font-black bg-gradient-to-r from-rose-500 to-red-500 text-white px-2 py-1 rounded-full shadow-[0_0_15px_rgba(244,63,94,0.6)] backdrop-blur-sm border border-white/30 animate-pulse">
                   <Clock className="w-3 h-3 mr-1" />{timeRemaining(sponsor.expires_at)}
-                </Badge>
+                </span>
               </div>
               {sponsor.price > 0 && (
-                <div className="absolute bottom-2 left-2">
-                  <Badge className="bg-accent text-accent-foreground text-xs font-extrabold shadow-md">
-                    {formatPrice(sponsor.price)}
-                  </Badge>
+                <div className="absolute bottom-2 left-2 z-10">
+                  <div className="relative">
+                    <div className="absolute inset-0 rounded-full bg-gradient-to-r from-amber-400 via-orange-500 to-pink-500 blur-md opacity-70 animate-pulse" />
+                    <span className="relative inline-block text-xs font-black bg-gradient-to-r from-amber-300 via-white to-pink-200 text-slate-900 px-3 py-1.5 rounded-full shadow-[0_0_20px_rgba(251,146,60,0.8),inset_0_1px_2px_rgba(255,255,255,0.5)] backdrop-blur-sm border-2 border-white/50">
+                      {formatPrice(sponsor.price)}
+                    </span>
+                  </div>
                 </div>
               )}
               {currentImages.length > 1 && (
-                <div className="absolute bottom-2 right-2">
-                  <Badge variant="secondary" className="text-[10px]">{currentImages.length} foto</Badge>
+                <div className="absolute bottom-2 right-2 z-10">
+                  <span className="inline-flex items-center gap-0.5 text-[10px] font-black bg-slate-950/70 text-purple-200 px-2 py-1 rounded-full backdrop-blur-md border border-purple-400/40 shadow-[0_0_10px_rgba(168,85,247,0.4)]">
+                    <ImagePlus className="w-2.5 h-2.5" /> {currentImages.length}
+                  </span>
                 </div>
               )}
             </div>
           )}
-          <CardContent className="p-3 space-y-1.5">
-            <div className="flex items-start justify-between">
-              <h4 className="font-extrabold text-sm leading-tight flex-1">{sponsor.title}</h4>
+          <CardContent className="p-3 space-y-2">
+            <div className="flex items-start justify-between gap-2">
+              <h4 className="font-black text-sm leading-tight flex-1 text-white group-hover:bg-gradient-to-r group-hover:from-fuchsia-300 group-hover:to-amber-300 group-hover:bg-clip-text group-hover:text-transparent transition-all">{sponsor.title}</h4>
               {onToggleLikeSponsor && (
-                <button onClick={(e) => { e.stopPropagation(); onToggleLikeSponsor(sponsor.id, e); }} className="ml-2 shrink-0 flex items-center gap-1">
-                  <Heart className={`w-5 h-5 ${likedSponsorIds.has(sponsor.id) ? "fill-destructive text-destructive" : "text-muted-foreground"}`} />
-                  {(sponsorLikeCounts[sponsor.id] || 0) > 0 && <span className="text-[10px] font-bold text-muted-foreground">{sponsorLikeCounts[sponsor.id]}</span>}
+                <button onClick={(e) => { e.stopPropagation(); onToggleLikeSponsor(sponsor.id, e); }} className={`shrink-0 flex items-center gap-1 rounded-full p-1.5 transition-all hover:scale-110 ${likedSponsorIds.has(sponsor.id) ? "bg-pink-500/20 shadow-[0_0_10px_rgba(236,72,153,0.5)]" : "hover:bg-pink-500/10"}`}>
+                  <Heart className={`w-5 h-5 transition-all ${likedSponsorIds.has(sponsor.id) ? "fill-pink-400 text-pink-400 drop-shadow-[0_0_4px_rgb(236,72,153)]" : "text-slate-400"}`} />
+                  {(sponsorLikeCounts[sponsor.id] || 0) > 0 && <span className="text-[10px] font-black text-pink-300">{sponsorLikeCounts[sponsor.id]}</span>}
                 </button>
               )}
             </div>
-            {sponsor.description && (
-              <p className="text-xs text-muted-foreground line-clamp-2">{sponsor.description}</p>
-            )}
-            <div className="flex items-center gap-3 text-[10px] text-muted-foreground flex-wrap">
-              <span className="flex items-center gap-1"><User className="w-3 h-3" />{sponsor.seller_name}</span>
-              <span className="flex items-center gap-1"><Eye className="w-3 h-3" />{sponsor.view_count || 0}x dilihat</span>
-              <span className="flex items-center gap-1"><CalendarDays className="w-3 h-3" />{new Date(sponsor.created_at).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" })}</span>
+            {/* Star rating */}
+            <div className="flex items-center gap-1">
+              <div className="flex items-center gap-0.5">
+                {[...Array(5)].map((_, i) => (
+                  <span key={i} className="text-[10px] text-amber-400 drop-shadow-[0_0_3px_rgba(251,191,36,0.6)]">★</span>
+                ))}
+              </div>
+              <span className="text-[9px] font-bold text-amber-300/80">5.0</span>
+              <span className="text-[9px] text-slate-500">• Verified</span>
             </div>
-            <div className="flex items-center gap-2 pt-0.5">
-              <Badge variant={sponsor.stock > 0 ? "secondary" : "destructive"} className="text-[10px] font-bold">
-                Stok: {sponsor.stock > 0 ? sponsor.stock : "Habis"}
-              </Badge>
-              <Badge variant={sponsor.has_warranty ? "secondary" : "outline"} className="text-[10px] font-bold">
+            {sponsor.description && (
+              <p className="text-xs text-slate-300/90 line-clamp-2 leading-relaxed">{sponsor.description}</p>
+            )}
+            <div className="flex items-center gap-2 text-[10px] flex-wrap">
+              <span className="flex items-center gap-1 text-cyan-200 bg-cyan-500/10 px-2 py-0.5 rounded-full border border-cyan-400/30"><User className="w-2.5 h-2.5" />{sponsor.seller_name}</span>
+              <span className="flex items-center gap-1 text-purple-200 bg-purple-500/10 px-2 py-0.5 rounded-full border border-purple-400/30"><Eye className="w-2.5 h-2.5" />{sponsor.view_count || 0}</span>
+              <span className="flex items-center gap-1 text-slate-400 bg-slate-800/50 px-2 py-0.5 rounded-full border border-slate-700/50"><CalendarDays className="w-2.5 h-2.5" />{new Date(sponsor.created_at).toLocaleDateString("id-ID", { day: "numeric", month: "short" })}</span>
+            </div>
+            <div className="flex items-center gap-2 pt-0.5 flex-wrap">
+              <span className={`text-[10px] px-2 py-0.5 rounded-full font-black flex items-center gap-1 backdrop-blur-sm border ${sponsor.stock > 0 ? 'bg-gradient-to-r from-emerald-500/30 to-green-500/20 text-emerald-200 border-emerald-400/40 shadow-[0_0_8px_rgba(16,185,129,0.3)]' : 'bg-gradient-to-r from-rose-500/30 to-red-500/20 text-rose-200 border-rose-400/40'}`}>
+                {sponsor.stock > 0 ? <><span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" /> Stok {sponsor.stock}</> : '✗ Habis'}
+              </span>
+              <span className={`text-[10px] px-2 py-0.5 rounded-full font-black backdrop-blur-sm border ${sponsor.has_warranty ? 'bg-gradient-to-r from-amber-500/30 to-yellow-500/20 text-amber-200 border-amber-400/40 shadow-[0_0_8px_rgba(251,191,36,0.3)]' : 'bg-slate-800/50 text-slate-400 border-slate-700/50'}`}>
                 {sponsor.has_warranty
-                  ? `Garansi ${sponsor.warranty_duration_value} ${sponsor.warranty_duration_type === "hours" ? "Jam" : sponsor.warranty_duration_type === "days" ? "Hari" : "Bulan"}`
+                  ? `🛡️ ${sponsor.warranty_duration_value} ${sponsor.warranty_duration_type === "hours" ? "Jam" : sponsor.warranty_duration_type === "days" ? "Hari" : "Bulan"}`
                   : "Tanpa Garansi"}
-              </Badge>
+              </span>
             </div>
             {/* Share + Social buttons preview */}
             <div className="flex items-center gap-1.5 pt-1">
               <button
                 onClick={(e) => { e.stopPropagation(); shareSponsor(sponsor); }}
-                className="flex items-center gap-1 text-[10px] font-bold text-primary bg-primary/10 hover:bg-primary/20 px-2 py-1 rounded-full transition-colors"
+                className="flex items-center gap-1 text-[10px] font-black text-cyan-100 bg-gradient-to-r from-cyan-500/30 to-blue-500/30 hover:from-cyan-500/50 hover:to-blue-500/50 px-2.5 py-1 rounded-full transition-all border border-cyan-400/40 shadow-[0_0_8px_rgba(34,211,238,0.3)] hover:scale-105"
               >
                 <Share2 className="w-3 h-3" /> Bagikan
               </button>
               {socialLinks.length > 0 && (
                 <div className="flex flex-wrap gap-1">
                   {socialLinks.slice(0, 2).map(([key, config]) => (
-                    <Badge key={key} variant="secondary" className="text-[9px] font-medium">{config.label}</Badge>
+                    <span key={key} className="text-[9px] font-bold text-purple-200 bg-purple-500/20 border border-purple-400/30 px-2 py-0.5 rounded-full">{config.label}</span>
                   ))}
-                  {socialLinks.length > 2 && <Badge variant="secondary" className="text-[9px]">+{socialLinks.length - 2}</Badge>}
+                  {socialLinks.length > 2 && <span className="text-[9px] font-bold text-fuchsia-200 bg-fuchsia-500/20 border border-fuchsia-400/30 px-2 py-0.5 rounded-full">+{socialLinks.length - 2}</span>}
                 </div>
               )}
             </div>
           </CardContent>
-        </Card>
+          </Card>
+        </div>
         )}
         {filtered.length > 1 && (
-          <div className="flex justify-center gap-1 mt-2">
+          <div className="flex justify-center gap-1.5 mt-3">
             {filtered.map((_, i) => (
               <button key={i} onClick={() => setCurrent(i)}
-                className={`w-1.5 h-1.5 rounded-full transition-all ${i === current % filtered.length ? "bg-primary w-4" : "bg-muted-foreground/30"}`} />
+                className={`h-1.5 rounded-full transition-all ${i === current % filtered.length ? "w-6 bg-gradient-to-r from-fuchsia-400 via-pink-400 to-amber-400 shadow-[0_0_8px_rgba(217,70,239,0.6)]" : "w-1.5 bg-slate-600/60 hover:bg-slate-400/60"}`} />
             ))}
           </div>
         )}

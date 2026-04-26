@@ -2969,49 +2969,85 @@ const Index = () => {
           <div className="space-y-4 animate-fade-in">
             {ticketView === "list" && (
               <>
-                {/* Hero Header */}
-                <div className="rounded-xl border border-border bg-card p-4">
-                  <div className="flex items-center justify-between gap-3">
-                    <div className="flex items-center gap-3 flex-1 min-w-0">
-                      <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
-                        <AlertCircle className="w-5 h-5 text-foreground" strokeWidth={1.7} />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <h2 className="text-base font-semibold tracking-tight text-foreground">{t("ticket.title", lang)}</h2>
-                        <p className="text-xs text-muted-foreground mt-0.5">{tickets.length} tiket dibuat</p>
-                      </div>
+                {/* Hero Header - Aurora Premium */}
+                <div
+                  className="relative rounded-3xl p-[2px] aurora-shift overflow-hidden shadow-[0_8px_40px_-10px_rgba(251,146,60,0.5)]"
+                  style={{ background: "linear-gradient(135deg, hsl(15 90% 55%), hsl(45 95% 55%), hsl(330 90% 60%), hsl(280 90% 65%), hsl(15 90% 55%))", backgroundSize: "400% 400%" }}
+                >
+                  <div className="relative rounded-[22px] bg-gradient-to-br from-slate-950/95 via-slate-900/95 to-slate-950/95 backdrop-blur-xl p-4 overflow-hidden">
+                    <div className="pointer-events-none absolute inset-0 opacity-60">
+                      <div className="absolute -top-20 -right-20 w-56 h-56 rounded-full bg-orange-500/30 blur-3xl animate-pulse" />
+                      <div className="absolute -bottom-20 -left-20 w-56 h-56 rounded-full bg-pink-500/30 blur-3xl animate-pulse" style={{ animationDelay: "1s" }} />
                     </div>
-                    <Button size="sm" variant="outline" onClick={() => setTicketView("create")} className="gap-1.5 rounded-full text-xs font-medium">
-                      <Send className="w-3.5 h-3.5" strokeWidth={1.8} /> Buat
-                    </Button>
+                    <div className="pointer-events-none absolute inset-0 overflow-hidden">
+                      {[...Array(5)].map((_, i) => (
+                        <div key={i} className="absolute w-1 h-1 rounded-full bg-white/60" style={{ top: `${20 + (i * 17) % 60}%`, left: `${(i * 21) % 90}%`, animation: `float-up ${3 + (i % 3)}s ease-in-out ${i * 0.5}s infinite`, boxShadow: "0 0 6px rgba(255,255,255,0.8)" }} />
+                      ))}
+                    </div>
+                    <div className="pointer-events-none absolute inset-0 shine-sweep opacity-40" />
+
+                    <div className="relative flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-3 flex-1 min-w-0">
+                        <div className="relative shrink-0">
+                          <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-orange-400 via-amber-500 to-pink-500 blur-lg opacity-80 animate-pulse" />
+                          <div className="absolute -inset-1 rounded-2xl bg-gradient-to-br from-orange-400 via-amber-500 to-pink-500 opacity-50 animate-spin" style={{ animationDuration: "8s" }} />
+                          <div className="relative w-14 h-14 rounded-2xl bg-gradient-to-br from-orange-500 via-amber-500 to-pink-500 flex items-center justify-center shadow-[0_0_30px_rgba(251,146,60,0.7),inset_0_2px_8px_rgba(255,255,255,0.3)] border border-white/30">
+                            <AlertCircle className="w-7 h-7 text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]" strokeWidth={2.2} />
+                          </div>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <h2 className="text-xl font-black tracking-tight bg-gradient-to-r from-orange-200 via-amber-200 to-pink-200 bg-clip-text text-transparent drop-shadow-[0_2px_8px_rgba(251,146,60,0.4)]">{t("ticket.title", lang)}</h2>
+                            <span className="inline-flex items-center gap-1 text-[9px] font-black px-2 py-0.5 rounded-full bg-gradient-to-r from-emerald-400 to-cyan-400 text-black shadow-[0_0_15px_rgba(16,185,129,0.7)] border border-white/30">
+                              <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" /> 24/7
+                            </span>
+                          </div>
+                          <p className="text-orange-100/80 text-[11px] mt-1 font-semibold flex items-center gap-1">
+                            <Sparkles className="w-3 h-3 text-yellow-300" /> {tickets.length} tiket dukungan
+                          </p>
+                        </div>
+                      </div>
+                      <Button size="sm" onClick={() => setTicketView("create")} className="relative overflow-hidden gap-1.5 rounded-full text-xs font-black bg-gradient-to-r from-orange-500 via-amber-500 to-pink-500 text-white shadow-[0_4px_20px_rgba(251,146,60,0.5)] hover:scale-105 transition-transform border border-white/30">
+                        <span className="absolute inset-0 shine-sweep opacity-60" />
+                        <Send className="relative w-3.5 h-3.5" strokeWidth={2.2} /> <span className="relative">Buat</span>
+                      </Button>
+                    </div>
                   </div>
                 </div>
 
                 {/* Smart Mode Toggle */}
                 {tickets.length > 0 && (
                   <div className="flex items-center justify-between gap-2 px-1">
-                    <div className="text-[11px] text-muted-foreground">
-                      {smartTickets ? "Mode Pintar aktif - timeline, filter & rating" : "Tampilan klasik"}
+                    <div className="text-[11px] text-slate-400 font-medium">
+                      {smartTickets ? "🧠 Mode Pintar — timeline & filter" : "📋 Tampilan klasik"}
                     </div>
                     <Button
                       size="sm"
-                      variant={smartTickets ? "default" : "outline"}
                       onClick={() => setSmartTickets(v => !v)}
-                      className="gap-1 rounded-full text-xs font-medium"
+                      className={`gap-1 rounded-full text-xs font-bold border ${smartTickets ? "bg-gradient-to-r from-amber-400 to-orange-500 text-black border-amber-300 shadow-[0_0_12px_rgba(251,191,36,0.5)]" : "bg-slate-800/60 text-amber-200 border-amber-400/30 hover:bg-amber-500/20"}`}
                     >
-                      <Lightbulb className="w-3 h-3" strokeWidth={1.8} /> {smartTickets ? "Mode Pintar ✓" : "Mode Pintar"}
+                      <Lightbulb className="w-3 h-3" strokeWidth={2.2} /> {smartTickets ? "Pintar ✓" : "Pintar"}
                     </Button>
                   </div>
                 )}
 
                 {tickets.length === 0 && (
-                  <div className="text-center py-16 text-muted-foreground">
-                    <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-orange-500/10 to-red-500/10 flex items-center justify-center mx-auto mb-4 floating">
-                      <Inbox className="w-10 h-10 opacity-40" />
+                  <div
+                    className="relative rounded-3xl p-[2px] aurora-shift overflow-hidden"
+                    style={{ background: "linear-gradient(135deg, hsl(15 90% 55%/0.5), hsl(45 95% 55%/0.5), hsl(330 90% 60%/0.5), hsl(15 90% 55%/0.5))", backgroundSize: "300% 300%" }}
+                  >
+                    <div className="rounded-[22px] bg-gradient-to-br from-slate-950/95 to-slate-900/95 backdrop-blur-xl text-center py-16 px-6 relative overflow-hidden">
+                      <div className="pointer-events-none absolute -top-16 -right-16 w-40 h-40 rounded-full bg-orange-500/20 blur-3xl" />
+                      <div className="pointer-events-none absolute -bottom-16 -left-16 w-40 h-40 rounded-full bg-pink-500/20 blur-3xl" />
+                      <div className="relative w-24 h-24 rounded-3xl bg-gradient-to-br from-orange-500/30 via-amber-500/20 to-pink-500/30 flex items-center justify-center mx-auto mb-4 border border-white/20 shadow-[0_0_40px_rgba(251,146,60,0.4)] floating">
+                        <Inbox className="w-12 h-12 text-orange-200/70" />
+                      </div>
+                      <p className="relative text-base font-black bg-gradient-to-r from-orange-200 to-pink-200 bg-clip-text text-transparent">Belum ada tiket</p>
+                      <p className="relative text-xs text-slate-400 mt-1.5">Hubungi kami jika ada kendala</p>
+                      <Button size="sm" className="relative mt-4 gap-1.5 rounded-xl font-black bg-gradient-to-r from-orange-500 via-amber-500 to-pink-500 text-white shadow-[0_4px_20px_rgba(251,146,60,0.5)] hover:scale-105 transition-transform border border-white/20" onClick={() => setTicketView("create")}>
+                        <Send className="w-4 h-4" /> Ajukan Keluhan
+                      </Button>
                     </div>
-                    <p className="text-sm font-bold">Belum ada tiket.</p>
-                    <p className="text-xs text-muted-foreground mt-1">Hubungi kami jika ada kendala</p>
-                    <Button size="sm" variant="outline" className="mt-4 gap-1.5 rounded-xl font-bold" onClick={() => setTicketView("create")}><Send className="w-4 h-4" /> Ajukan Keluhan</Button>
                   </div>
                 )}
 
@@ -3041,49 +3077,76 @@ const Index = () => {
 
                 {tickets.length > 0 && !smartTickets && (
                   <>
-                    {/* Stats Summary */}
+                    {/* Stats Summary - Aurora 3D */}
                     {(() => {
                       const openCount = tickets.filter(t => t.status === "open").length;
                       const closedCount = tickets.filter(t => t.status !== "open").length;
                       return (
                         <div className="grid grid-cols-3 gap-2">
-                          <div className="bg-gradient-to-br from-orange-500/15 to-red-500/5 border border-orange-500/20 rounded-xl p-2.5 text-center">
-                            <Inbox className="w-4 h-4 text-orange-500 mx-auto mb-1" />
-                            <p className="text-[9px] font-bold text-muted-foreground uppercase">Total</p>
-                            <p className="text-base font-extrabold text-orange-500 leading-none mt-0.5"><CountUp value={tickets.length} /></p>
-                          </div>
-                          <div className="bg-gradient-to-br from-accent/15 to-accent/5 border border-accent/20 rounded-xl p-2.5 text-center">
-                            <Activity className="w-4 h-4 text-accent mx-auto mb-1" />
-                            <p className="text-[9px] font-bold text-muted-foreground uppercase">Terbuka</p>
-                            <p className="text-base font-extrabold text-accent leading-none mt-0.5"><CountUp value={openCount} /></p>
-                          </div>
-                          <div className="bg-gradient-to-br from-muted to-muted/30 border border-border rounded-xl p-2.5 text-center">
-                            <CheckCircle2 className="w-4 h-4 text-muted-foreground mx-auto mb-1" />
-                            <p className="text-[9px] font-bold text-muted-foreground uppercase">Selesai</p>
-                            <p className="text-base font-extrabold text-muted-foreground leading-none mt-0.5"><CountUp value={closedCount} /></p>
-                          </div>
+                          {[
+                            { label: "Total", value: tickets.length, icon: Inbox, from: "from-orange-500/30", to: "to-amber-600/20", border: "border-orange-300/40", text: "text-orange-200", glow: "rgba(251,146,60,0.5)" },
+                            { label: "Terbuka", value: openCount, icon: Activity, from: "from-cyan-500/30", to: "to-blue-600/20", border: "border-cyan-300/40", text: "text-cyan-200", glow: "rgba(34,211,238,0.5)" },
+                            { label: "Selesai", value: closedCount, icon: CheckCircle2, from: "from-emerald-500/30", to: "to-green-600/20", border: "border-emerald-300/40", text: "text-emerald-200", glow: "rgba(16,185,129,0.5)" },
+                          ].map((s) => {
+                            const Icon = s.icon;
+                            return (
+                              <div key={s.label} className={`relative rounded-xl p-2.5 bg-gradient-to-br ${s.from} ${s.to} border ${s.border} backdrop-blur-md overflow-hidden hover:scale-105 transition-transform duration-300 group/stat`} style={{ boxShadow: `0 4px 20px -4px ${s.glow}, inset 0 1px 0 rgba(255,255,255,0.15)` }}>
+                                <div className="absolute -top-6 -right-6 w-14 h-14 rounded-full opacity-40 blur-xl group-hover/stat:opacity-70 transition" style={{ background: s.glow }} />
+                                <Icon className={`w-4 h-4 ${s.text} mb-1 drop-shadow-[0_0_4px_currentColor]`} />
+                                <p className={`text-xl font-black tabular-nums leading-none ${s.text} drop-shadow-[0_2px_4px_rgba(0,0,0,0.4)]`}><CountUp value={s.value} /></p>
+                                <p className="text-white/70 text-[9px] font-bold uppercase tracking-wider mt-1">{s.label}</p>
+                              </div>
+                            );
+                          })}
                         </div>
                       );
                     })()}
 
                     {tickets.map(t => {
                       const catInfo = TICKET_CATEGORIES.find(c => c.value === (t as any).category) || TICKET_CATEGORIES[TICKET_CATEGORIES.length - 1];
+                      const isOpen = t.status === "open";
                       return (
-                      <Card key={t.id} className="cursor-pointer hover:shadow-lg transition-all" onClick={() => { setActiveTicket(t); setTicketView("chat"); }}>
-                        <CardContent className="p-4">
-                          <div className="flex items-center justify-between mb-1">
-                            <span className="font-bold text-sm text-primary">Tiket #{t.ticket_number}</span>
-                            <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${t.status === "open" ? "bg-accent/10 text-accent" : "bg-muted text-muted-foreground"}`}>
-                              {t.status === "open" ? "Terbuka" : "Ditutup"}
-                            </span>
-                          </div>
-                          <div className="flex items-center gap-1.5 mb-1">
-                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-primary/10 text-primary font-medium">{catInfo.label}</span>
-                          </div>
-                          <p className="text-xs text-muted-foreground line-clamp-1">{t.description}</p>
-                          <p className="text-[10px] text-muted-foreground mt-1">{new Date(t.created_at).toLocaleString("id-ID")}</p>
-                        </CardContent>
-                      </Card>
+                      <div
+                        key={t.id}
+                        className="relative rounded-2xl p-[1.5px] aurora-shift overflow-hidden cursor-pointer group transition-all duration-500 hover:-translate-y-1.5 hover:scale-[1.01]"
+                        style={{ background: isOpen
+                          ? "linear-gradient(135deg, hsl(15 90% 55%/0.7), hsl(45 95% 55%/0.6), hsl(330 90% 60%/0.7), hsl(15 90% 55%/0.7))"
+                          : "linear-gradient(135deg, hsl(160 70% 45%/0.5), hsl(190 95% 55%/0.5), hsl(160 70% 45%/0.5))",
+                          backgroundSize: "300% 300%",
+                          boxShadow: isOpen ? "0 8px 28px -10px rgba(251,146,60,0.4)" : "0 8px 28px -10px rgba(16,185,129,0.3)" }}
+                        onClick={() => { setActiveTicket(t); setTicketView("chat"); }}
+                      >
+                        <Card className="overflow-hidden border-0 shadow-xl bg-gradient-to-br from-slate-900/95 via-slate-950/95 to-slate-900/95 backdrop-blur-xl rounded-[14px] card-shine relative">
+                          <div className="absolute -inset-0.5 bg-gradient-to-br from-orange-500/0 via-pink-500/0 to-purple-500/0 group-hover:from-orange-500/20 group-hover:via-pink-500/15 group-hover:to-purple-500/20 rounded-[14px] blur-md opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none -z-10" />
+                          <CardContent className="p-4 relative">
+                            <div className="flex items-center justify-between mb-2">
+                              <div className="flex items-center gap-2">
+                                <div className={`relative shrink-0 w-8 h-8 rounded-lg flex items-center justify-center border ${isOpen ? "bg-gradient-to-br from-orange-500/40 to-pink-500/30 border-orange-400/40 shadow-[0_0_10px_rgba(251,146,60,0.4)]" : "bg-gradient-to-br from-emerald-500/40 to-cyan-500/30 border-emerald-400/40 shadow-[0_0_10px_rgba(16,185,129,0.4)]"}`}>
+                                  <AlertCircle className={`w-4 h-4 ${isOpen ? "text-orange-200" : "text-emerald-200"}`} />
+                                </div>
+                                <span className="font-black text-sm bg-gradient-to-r from-orange-300 via-pink-300 to-purple-300 bg-clip-text text-transparent">Tiket #{t.ticket_number}</span>
+                              </div>
+                              <span className={`text-[10px] px-2 py-0.5 rounded-full font-black border backdrop-blur-sm ${isOpen ? "bg-gradient-to-r from-orange-500/30 to-amber-500/20 text-orange-200 border-orange-400/40 shadow-[0_0_8px_rgba(251,146,60,0.3)]" : "bg-gradient-to-r from-emerald-500/30 to-cyan-500/20 text-emerald-200 border-emerald-400/40"} flex items-center gap-1`}>
+                                {isOpen ? <><span className="w-1.5 h-1.5 rounded-full bg-orange-400 animate-pulse" /> Terbuka</> : <><CheckCircle2 className="w-2.5 h-2.5" /> Ditutup</>}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-1.5 mb-2 flex-wrap">
+                              <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full font-black bg-gradient-to-r from-purple-500/30 to-fuchsia-500/20 text-purple-200 border border-purple-400/40 shadow-[0_0_8px_rgba(168,85,247,0.3)]">
+                                <Tag className="w-2.5 h-2.5" /> {catInfo.label}
+                              </span>
+                            </div>
+                            <p className="text-xs text-slate-300 line-clamp-2 leading-relaxed group-hover:text-white transition-colors">{t.description}</p>
+                            <div className="flex items-center justify-between mt-2 pt-2 border-t border-white/5">
+                              <p className="text-[10px] text-slate-400 flex items-center gap-1">
+                                <Clock className="w-2.5 h-2.5" /> {new Date(t.created_at).toLocaleString("id-ID")}
+                              </p>
+                              <span className="text-[10px] font-black text-cyan-300 group-hover:text-cyan-200 transition-colors flex items-center gap-0.5">
+                                Buka <ChevronRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
+                              </span>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      </div>
                       );
                     })}
                   </>
