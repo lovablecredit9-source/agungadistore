@@ -1,13 +1,16 @@
-import { useEffect, useRef, useState } from "react";
-
 /**
  * Singleton Web Audio context + analyser shared across the app.
  * Connects once to a given HTMLAudioElement and exposes frequency data.
  *
- * NOTE: HTMLMediaElement can only be connected to ONE MediaElementSource
- * per AudioContext for its entire lifetime. We track which element is
- * already wired and reuse the analyser.
+ * Performance notes:
+ * - We DO NOT use React state per frame. Instead, components register a
+ *   render callback that mutates DOM directly (style.height) on each tick.
+ *   This avoids hundreds of re-renders per second when many equalizer
+ *   instances are mounted (e.g. song lists).
+ * - A single rAF loop drives ALL subscribers at ~30fps.
  */
+
+import { useEffect, useRef } from "react";
 
 type AudioVizState = {
   ctx: AudioContext | null;
@@ -23,16 +26,56 @@ const state: AudioVizState = {
   element: null,
 };
 
-const subscribers = new Set<() => void>();
+type Subscriber = (bands: Float32Array) => void;
+const subscribers = new Map<Subscriber, number>(); // callback -> bandCount
+
 let rafId: number | null = null;
+let lastTick = 0;
+const TICK_INTERVAL = 50; // ms — ~20fps, smooth enough, very cheap
 let dataArray: Uint8Array | null = null;
 
-function tick() {
+function computeBands(bandCount: number, out: Float32Array, time: number) {
+  const data = dataArray;
+  if (data && data.length > 0 && state.analyser) {
+    const usable = Math.min(data.length, 24);
+    const step = usable / bandCount;
+    for (let i = 0; i < bandCount; i++) {
+      const start = Math.floor(i * step);
+      const end = Math.max(start + 1, Math.floor((i + 1) * step));
+      let sum = 0;
+      for (let j = start; j < end; j++) sum += data[j];
+      const avg = sum / (end - start);
+      out[i] = Math.min(1, avg / 200);
+    }
+    return;
+  }
+  // Synthetic fallback
+  const t = (time / 1000) * 6;
+  for (let i = 0; i < bandCount; i++) {
+    const a = Math.sin(t * 1.3 + i * 0.9);
+    const b = Math.sin(t * 2.1 + i * 1.7 + 1.2);
+    const c = Math.sin(t * 0.7 + i * 0.4);
+    const raw = (a + b * 0.7 + c * 0.5) / 2.2;
+    const v = 0.25 + 0.75 * (0.5 + 0.5 * raw);
+    out[i] = Math.max(0.1, Math.min(1, v));
+  }
+}
+
+function tick(time: number) {
+  rafId = requestAnimationFrame(tick);
+  if (time - lastTick < TICK_INTERVAL) return;
+  lastTick = time;
+
   if (state.analyser && dataArray) {
     state.analyser.getByteFrequencyData(dataArray as Uint8Array<ArrayBuffer>);
-    subscribers.forEach((cb) => cb());
   }
-  rafId = requestAnimationFrame(tick);
+  if (subscribers.size === 0) return;
+
+  subscribers.forEach((bandCount, cb) => {
+    const buf = new Float32Array(bandCount);
+    computeBands(bandCount, buf, time);
+    cb(buf);
+  });
 }
 
 function ensureLoop() {
@@ -41,7 +84,7 @@ function ensureLoop() {
 
 export function attachAudioVisualizer(audio: HTMLAudioElement | null) {
   if (!audio) return;
-  if (state.element === audio && state.analyser) return; // already wired
+  if (state.element === audio && state.analyser) return;
 
   try {
     if (!state.ctx) {
@@ -55,15 +98,10 @@ export function attachAudioVisualizer(audio: HTMLAudioElement | null) {
       state.ctx.resume().catch(() => {});
     }
 
-    // Audio elements created dynamically need crossOrigin to feed the analyser
-    // when source is on a different origin. Best-effort.
     if (!audio.crossOrigin) {
       try { audio.crossOrigin = "anonymous"; } catch { /* noop */ }
     }
 
-    // We can't disconnect & re-create source for the same element,
-    // so if a different element comes in we just leave the old one (it's GC'd
-    // when the audio element is dropped).
     const src = state.ctx.createMediaElementSource(audio);
     const analyser = state.ctx.createAnalyser();
     analyser.fftSize = 64;
@@ -77,77 +115,57 @@ export function attachAudioVisualizer(audio: HTMLAudioElement | null) {
     dataArray = new Uint8Array(analyser.frequencyBinCount);
     ensureLoop();
   } catch {
-    // Most common failure: cross-origin without CORS headers, or element already
-    // attached to another context. Fall back silently — visualizer will use
-    // synthetic animation.
+    // silent fallback
   }
 }
 
-export function getFrequencyData(): Uint8Array | null {
-  return dataArray;
+/**
+ * Subscribe to frequency band updates without triggering React re-renders.
+ * The callback receives a Float32Array of length `bandCount` with values 0..1.
+ */
+export function subscribeBands(bandCount: number, cb: Subscriber): () => void {
+  subscribers.set(cb, bandCount);
+  ensureLoop();
+  return () => {
+    subscribers.delete(cb);
+  };
 }
 
 /**
- * Hook that returns a snapshot of frequency bands (length = bandCount),
- * normalized 0..1. Works whether or not the analyser is actually wired
- * (falls back to a synthetic pulse so the UI still feels alive).
+ * Hook variant: receives a ref to a container; mutates child <span> heights
+ * directly each frame. Zero React re-renders during animation.
  */
-export function useAudioBands(bandCount: number, isPlaying: boolean): number[] {
-  const [bands, setBands] = useState<number[]>(() => new Array(bandCount).fill(0));
-
+export function useAudioBandsDOM(
+  containerRef: React.RefObject<HTMLElement>,
+  bandCount: number,
+  isPlaying: boolean,
+  maxHeight: number
+) {
   useEffect(() => {
-    let alive = true;
+    if (!isPlaying) {
+      // collapse bars to a low resting state
+      const el = containerRef.current;
+      if (el) {
+        const children = el.children;
+        for (let i = 0; i < children.length; i++) {
+          (children[i] as HTMLElement).style.height = `2px`;
+        }
+      }
+      return;
+    }
 
-    const update = () => {
-      if (!alive) return;
-      const data = getFrequencyData();
-      if (data && data.length > 0 && isPlaying) {
-        // Use lower-mid frequencies (more visually pleasing for music)
-        const usable = Math.min(data.length, 24);
-        const next: number[] = [];
-        const step = usable / bandCount;
-        for (let i = 0; i < bandCount; i++) {
-          const start = Math.floor(i * step);
-          const end = Math.max(start + 1, Math.floor((i + 1) * step));
-          let sum = 0;
-          for (let j = start; j < end; j++) sum += data[j];
-          const avg = sum / (end - start);
-          next.push(Math.min(1, avg / 200));
-        }
-        setBands(next);
-      } else if (isPlaying) {
-        // Fallback synthetic — uses real time so all instances animate at the
-        // SAME speed regardless of how often update() is called.
-        const t = performance.now() / 1000 * 6; // ~6 rad/s base speed
-        const next: number[] = [];
-        for (let i = 0; i < bandCount; i++) {
-          const a = Math.sin(t * 1.3 + i * 0.9);
-          const b = Math.sin(t * 2.1 + i * 1.7 + 1.2);
-          const c = Math.sin(t * 0.7 + i * 0.4);
-          const raw = (a + b * 0.7 + c * 0.5) / 2.2;
-          const v = 0.25 + 0.75 * (0.5 + 0.5 * raw);
-          const jitter = (Math.random() - 0.5) * 0.15;
-          next.push(Math.max(0.1, Math.min(1, v + jitter)));
-        }
-        setBands(next);
-      } else {
-        setBands((prev) => prev.map((v) => v * 0.6));
+    const apply = (bands: Float32Array) => {
+      const el = containerRef.current;
+      if (!el) return;
+      const children = el.children;
+      const n = Math.min(children.length, bands.length);
+      for (let i = 0; i < n; i++) {
+        const h = Math.max(2, Math.round(bands[i] * maxHeight));
+        (children[i] as HTMLElement).style.height = `${h}px`;
       }
     };
 
-    subscribers.add(update);
-    ensureLoop();
-
-    // Drive synthetic animation at a steady ~30fps for instances without
-    // analyser data — independent of the rAF subscriber loop.
-    const id = window.setInterval(update, 33);
-
-    return () => {
-      alive = false;
-      subscribers.delete(update);
-      window.clearInterval(id);
-    };
-  }, [bandCount, isPlaying]);
-
-  return bands;
+    const unsub = subscribeBands(bandCount, apply);
+    return unsub;
+  }, [containerRef, bandCount, isPlaying, maxHeight]);
 }
