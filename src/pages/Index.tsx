@@ -6015,36 +6015,34 @@ const Index = () => {
                   onClick={() => external ? navigate(external) : setTab(key)}
                   aria-label={label}
                   aria-current={active ? "page" : undefined}
-                  className="group shrink-0 flex flex-col items-center justify-center gap-1 min-w-[64px] px-2 py-1.5 outline-none focus-visible:bg-muted/50 active:scale-95 transition-all relative"
+                  className={`group shrink-0 flex flex-col items-center justify-center gap-0.5 px-3 py-1.5 rounded-2xl outline-none active:scale-90 transition-all duration-300 relative ${active ? "bg-white/10" : "hover:bg-white/5"}`}
+                  style={active ? { boxShadow: `inset 0 0 0 1px rgba(${glow}, 0.35), 0 4px 16px -4px rgba(${glow}, 0.4)` } : undefined}
                 >
-                  {/* Top accent bar - semua tab punya warna */}
-                  <span
-                    className={`pointer-events-none absolute inset-x-2 top-0 h-[2px] rounded-full bg-gradient-to-r ${grad} transition-opacity ${active ? "opacity-100" : "opacity-60 group-hover:opacity-100"}`}
-                  />
-                  {/* Icon container with glow */}
+                  {/* Icon */}
                   <span className="relative">
-                    {/* Glow halo */}
+                    {active && (
+                      <span
+                        className="absolute inset-0 rounded-full blur-lg opacity-70 animate-pulse"
+                        style={{ background: `rgba(${glow}, 0.55)` }}
+                      />
+                    )}
                     <span
-                      className={`absolute inset-0 rounded-2xl blur-md transition-opacity ${active ? "opacity-85 animate-pulse" : "opacity-45 group-hover:opacity-75"}`}
-                      style={{ background: `rgba(${glow}, 0.55)` }}
-                    />
-                    <span
-                      className={`relative w-[28px] h-[28px] rounded-2xl flex items-center justify-center shadow-lg bg-gradient-to-br ${grad} transition-transform group-hover:-translate-y-0.5 ${active ? "scale-110" : "scale-100"} ${isSaldo ? "aurora-shift" : ""}`}
+                      className={`relative w-7 h-7 rounded-xl flex items-center justify-center transition-all duration-300 ${active ? `bg-gradient-to-br ${grad} shadow-md` : "bg-transparent"} ${isSaldo ? "aurora-shift" : ""}`}
                       style={isSaldo ? { backgroundSize: "300% 300%" } : undefined}
                     >
                       <Icon
-                        className="w-[15px] h-[15px] text-primary-foreground drop-shadow"
-                        strokeWidth={2.4}
+                        className={`w-[17px] h-[17px] transition-colors ${active ? "text-white drop-shadow" : "text-foreground/70 group-hover:text-foreground"}`}
+                        strokeWidth={active ? 2.6 : 2.2}
                         fill={Icon === Heart && active ? "currentColor" : "none"}
                       />
                     </span>
-                    {isSaldo && (
-                      <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-primary ring-2 ring-background animate-pulse" />
+                    {isSaldo && !active && (
+                      <span className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 rounded-full bg-primary ring-2 ring-background animate-pulse" />
                     )}
                   </span>
-                  {/* Label */}
+                  {/* Label - selalu tampil tapi lebih menonjol saat aktif */}
                   <span
-                    className={`text-[10px] leading-none transition-all bg-clip-text text-transparent bg-gradient-to-r ${grad} ${active || isSaldo ? "font-extrabold scale-105" : "font-bold opacity-85 group-hover:opacity-100"} ${isSaldo ? "uppercase tracking-wider" : ""}`}
+                    className={`text-[9.5px] leading-none transition-all ${active ? `font-bold bg-clip-text text-transparent bg-gradient-to-r ${grad}` : "font-medium text-foreground/60 group-hover:text-foreground/90"}`}
                   >
                     {label}
                   </span>
