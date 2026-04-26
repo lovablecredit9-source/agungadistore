@@ -86,6 +86,24 @@ export default function MusicHub({ subTab, onSubTabChange, onPlayExternal, playl
     ? Math.min(100, (playbackState.currentTime / playbackState.duration) * 100)
     : 0;
 
+  const [mood, setMood] = useState<string>("chill");
+  const [listenTime, setListenTime] = useState<number>(0);
+
+  useEffect(() => {
+    if (!isPlaying) return;
+    const t = setInterval(() => setListenTime((s) => s + 1), 1000);
+    return () => clearInterval(t);
+  }, [isPlaying]);
+
+  const fmtTime = (s: number) => {
+    const h = Math.floor(s / 3600);
+    const m = Math.floor((s % 3600) / 60);
+    const sec = s % 60;
+    if (h > 0) return `${h}j ${m}m`;
+    if (m > 0) return `${m}m ${sec}d`;
+    return `${sec}d`;
+  };
+
   return (
     <div className="space-y-3 animate-fade-in">
       {/* NOW PLAYING BAR — muncul saat ada lagu aktif */}
