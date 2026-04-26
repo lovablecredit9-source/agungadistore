@@ -26,6 +26,7 @@ const App = () => (
         <AutoTranslate />
         <NetworkStatus />
         <BrowserRouter>
+          <GlobalMenuDrawer />
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/beranda" element={<Index />} />
