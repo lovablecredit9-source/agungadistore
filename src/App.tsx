@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/lib/theme";
 import AutoTranslate from "@/components/AutoTranslate";
 import NetworkStatus from "@/components/NetworkStatus";
+import GlobalMenuDrawer from "@/components/GlobalMenuDrawer";
 import Index from "./pages/Index.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import AdminLogin from "./pages/AdminLogin.tsx";
@@ -25,6 +26,7 @@ const App = () => (
         <AutoTranslate />
         <NetworkStatus />
         <BrowserRouter>
+          <GlobalMenuDrawer />
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/beranda" element={<Index />} />
