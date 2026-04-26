@@ -4420,28 +4420,69 @@ const Index = () => {
                     "🚀 Multi-bahasa otomatis (195 negara) via Gemini AI",
                   ]
                 },
-              ].map((entry, i) => (
-                <div key={i} className="relative pl-12 pb-4">
-                  {/* Timeline dot */}
-                  <div className={`absolute left-3 top-1.5 w-3 h-3 rounded-full border-2 border-background ${entry.isNew ? 'bg-foreground' : 'bg-muted-foreground/40'}`} />
+              ].map((entry, i) => {
+                const palettes = [
+                  { ring: 'from-pink-500 to-fuchsia-500', dot: 'bg-pink-500', tint: 'from-pink-500/15 to-fuchsia-500/5', border: 'border-pink-400/40', text: 'text-pink-500' },
+                  { ring: 'from-cyan-500 to-blue-500', dot: 'bg-cyan-500', tint: 'from-cyan-500/15 to-blue-500/5', border: 'border-cyan-400/40', text: 'text-cyan-500' },
+                  { ring: 'from-emerald-500 to-teal-500', dot: 'bg-emerald-500', tint: 'from-emerald-500/15 to-teal-500/5', border: 'border-emerald-400/40', text: 'text-emerald-500' },
+                  { ring: 'from-amber-400 to-orange-500', dot: 'bg-amber-500', tint: 'from-amber-400/15 to-orange-500/5', border: 'border-amber-400/40', text: 'text-amber-500' },
+                  { ring: 'from-violet-500 to-purple-500', dot: 'bg-violet-500', tint: 'from-violet-500/15 to-purple-500/5', border: 'border-violet-400/40', text: 'text-violet-500' },
+                ];
+                const p = palettes[i % palettes.length];
+                return (
+                <div key={i} className="relative pl-14 pb-5 update-card-rise" style={{ animationDelay: `${Math.min(i * 0.06, 0.4)}s` }}>
+                  {/* Timeline dot maximalist */}
+                  <div className={`absolute left-[14px] top-3 w-5 h-5 rounded-full bg-gradient-to-br ${p.ring} border-[3px] border-background shadow-lg ${entry.isNew ? 'timeline-dot-pulse' : ''} flex items-center justify-center`}>
+                    {entry.isNew && <span className="w-1.5 h-1.5 rounded-full bg-white" />}
+                  </div>
                   
-                  <div className={`rounded-xl border bg-card overflow-hidden ${entry.isNew ? 'border-foreground/30' : 'border-border'}`}>
-                    <div className="p-4 space-y-2">
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs font-semibold tracking-wide text-foreground">
-                          {entry.date}
-                        </span>
-                        <span className={`text-[10px] px-2 py-0.5 rounded-md font-medium ${entry.isNew ? 'bg-foreground text-background' : 'bg-muted text-muted-foreground'}`}>{entry.version}</span>
+                  <div className={`relative rounded-2xl border-2 ${entry.isNew ? 'border-pink-400/60' : p.border} overflow-hidden shadow-md ${entry.isNew ? 'shadow-pink-500/30' : ''}`}>
+                    <div className={`relative bg-gradient-to-br ${p.tint} bg-card backdrop-blur`}>
+                      {/* Header strip */}
+                      <div className={`flex items-center justify-between px-4 py-2.5 bg-gradient-to-r ${p.ring} text-white`}>
+                        <div className="flex items-center gap-2">
+                          <span className="text-[10px] font-bold uppercase tracking-wider opacity-90">📅</span>
+                          <span className="text-xs font-extrabold tracking-wide">{entry.date}</span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          {entry.isNew && (
+                            <span className="text-[8px] font-black px-1.5 py-0.5 rounded-full bg-white text-pink-600 new-badge-bounce">
+                              BARU
+                            </span>
+                          )}
+                          {(entry as any).isLaunch && (
+                            <span className="text-[8px] font-black px-1.5 py-0.5 rounded-full bg-yellow-300 text-amber-900">
+                              🚀 LAUNCH
+                            </span>
+                          )}
+                          <span className={`text-[10px] px-2 py-0.5 rounded-md font-black bg-white ${p.text} shadow`}>
+                            {entry.version}
+                          </span>
+                        </div>
                       </div>
-                      <ul className="text-[12px] space-y-1.5 text-muted-foreground">
-                        {entry.items.map((item, j) => (
-                          <li key={j} className="leading-relaxed">{item}</li>
-                        ))}
-                      </ul>
+                      {/* Items */}
+                      <div className="p-3.5">
+                        <ul className="text-[12px] space-y-2 text-foreground/85">
+                          {entry.items.map((item, j) => (
+                            <li key={j} className="leading-relaxed flex gap-2 items-start">
+                              <span className={`mt-1.5 w-1.5 h-1.5 rounded-full ${p.dot} flex-shrink-0`} />
+                              <span className="flex-1">{item}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                      {/* Footer count chip */}
+                      <div className="px-3.5 pb-3 flex items-center justify-between">
+                        <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full bg-gradient-to-r ${p.ring} text-white shadow-sm`}>
+                          ✨ {entry.items.length} pembaruan
+                        </span>
+                        <span className="text-[9px] font-medium text-muted-foreground">#{String(i + 1).padStart(2, '0')}</span>
+                      </div>
                     </div>
                   </div>
                 </div>
-              ))}
+                );
+              })}
             </div>
 
             {/* Copyright */}
