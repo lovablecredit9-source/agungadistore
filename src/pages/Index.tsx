@@ -2248,96 +2248,142 @@ const Index = () => {
                   const badges = getProductBadges(p);
                   const isGrid = productViewMode === "grid";
                   const inStock = p.stock > 0;
+                  const isNew = (Date.now() - new Date(p.created_at).getTime()) < 7 * 24 * 60 * 60 * 1000;
                   return (
                     <div
                       key={p.id}
-                      className="relative rounded-2xl p-[1.5px] aurora-shift overflow-hidden cursor-pointer group transition-transform duration-300 hover:-translate-y-1.5"
+                      className="relative rounded-2xl p-[2px] aurora-shift overflow-hidden cursor-pointer group transition-all duration-500 hover:-translate-y-2 hover:scale-[1.02]"
                       style={{ background: inStock
-                        ? "linear-gradient(135deg, hsl(190 95% 55%/0.6), hsl(280 90% 65%/0.55), hsl(330 90% 60%/0.6), hsl(190 95% 55%/0.6))"
-                        : "linear-gradient(135deg, hsl(0 0% 50%/0.4), hsl(0 70% 50%/0.4), hsl(0 0% 50%/0.4))",
-                        backgroundSize: "300% 300%" }}
+                        ? "linear-gradient(135deg, hsl(190 95% 55%/0.8), hsl(280 90% 65%/0.7), hsl(330 90% 60%/0.8), hsl(45 95% 55%/0.7), hsl(190 95% 55%/0.8))"
+                        : "linear-gradient(135deg, hsl(0 0% 50%/0.4), hsl(0 70% 50%/0.5), hsl(0 0% 50%/0.4))",
+                        backgroundSize: "300% 300%",
+                        boxShadow: inStock ? "0 8px 32px -8px rgba(34,211,238,0.4), 0 4px 16px -4px rgba(168,85,247,0.3)" : "0 4px 16px -4px rgba(0,0,0,0.3)" }}
                       onClick={() => openProduct(p)}
                     >
-                      <Card className="overflow-hidden border-0 shadow-lg bg-card/95 backdrop-blur-xl rounded-[14px] card-shine relative">
+                      <Card className="overflow-hidden border-0 shadow-xl bg-gradient-to-br from-slate-900/95 via-slate-950/95 to-slate-900/95 backdrop-blur-xl rounded-[14px] card-shine relative">
+                      {/* Holographic shimmer overlay */}
+                      <div className="pointer-events-none absolute inset-0 bg-gradient-to-tr from-transparent via-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
                       {/* Inner neon glow on hover */}
-                      <div className="absolute -inset-0.5 bg-gradient-to-br from-cyan-500/0 via-purple-500/0 to-pink-500/0 group-hover:from-cyan-500/20 group-hover:via-purple-500/15 group-hover:to-pink-500/20 rounded-[14px] blur-md opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none -z-10" />
+                      <div className="absolute -inset-0.5 bg-gradient-to-br from-cyan-500/0 via-purple-500/0 to-pink-500/0 group-hover:from-cyan-500/30 group-hover:via-purple-500/20 group-hover:to-pink-500/30 rounded-[14px] blur-md opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none -z-10" />
+
+                      {/* Corner ribbon for warranty */}
+                      {p.has_warranty && (
+                        <div className="absolute top-0 right-0 z-20 overflow-hidden w-16 h-16 pointer-events-none">
+                          <div className="absolute top-2 -right-6 rotate-45 bg-gradient-to-r from-amber-400 via-yellow-500 to-amber-600 text-black text-[8px] font-black px-6 py-0.5 shadow-[0_2px_8px_rgba(251,191,36,0.6)] tracking-wider">
+                            ✓ GARANSI
+                          </div>
+                        </div>
+                      )}
 
                       {imgs.length > 0 && (
                         <div className={`relative overflow-hidden ${isGrid ? "aspect-square" : ""}`}>
                           <ImageCarousel images={imgs} />
-                          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent pointer-events-none" />
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent pointer-events-none" />
+                          {/* Scan line effect on hover */}
+                          <div className="pointer-events-none absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                            <div className="absolute inset-x-0 h-px bg-gradient-to-r from-transparent via-cyan-300 to-transparent shadow-[0_0_8px_rgba(34,211,238,0.8)] animate-[float-up_2s_ease-in-out_infinite]" style={{ top: "50%" }} />
+                          </div>
 
                           {/* Dynamic badges (top-left, stacked) */}
-                          {badges.length > 0 && (
-                            <div className="absolute top-2 left-2 flex flex-col gap-1 max-w-[60%]">
+                          {(badges.length > 0 || isNew) && (
+                            <div className="absolute top-2 left-2 flex flex-col gap-1 max-w-[60%] z-10">
+                              {isNew && (
+                                <span className="inline-flex items-center gap-0.5 text-[9px] font-black px-2 py-0.5 rounded-full bg-gradient-to-r from-pink-500 via-fuchsia-500 to-purple-500 text-white shadow-[0_0_12px_rgba(236,72,153,0.7)] border border-white/40 animate-pulse">
+                                  ✨ NEW
+                                </span>
+                              )}
                               {badges.map((b, i) => (
-                                <span key={i} className={`text-[9px] font-extrabold px-2 py-0.5 rounded-full shadow-[0_0_10px_rgba(0,0,0,0.4)] backdrop-blur-md ${b.className} animate-fade-in`} style={{ animationDelay: `${i * 80}ms` }}>
+                                <span key={i} className={`text-[9px] font-extrabold px-2 py-0.5 rounded-full shadow-[0_2px_10px_rgba(0,0,0,0.5)] backdrop-blur-md border border-white/20 ${b.className} animate-fade-in`} style={{ animationDelay: `${i * 80}ms` }}>
                                   {b.label}
                                 </span>
                               ))}
                             </div>
                           )}
 
-                          {/* Price badge top-right - neon */}
-                          <div className="absolute top-2 right-2">
-                            <span className={`font-black bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-500 text-white rounded-full shadow-[0_0_15px_rgba(34,211,238,0.6)] backdrop-blur-sm border border-white/30 ${isGrid ? "text-[10px] px-2 py-1" : "text-xs px-3 py-1.5"}`}>{formatPrice(p.price)}</span>
+                          {/* Price badge top-right - holographic neon */}
+                          <div className="absolute top-2 right-2 z-10" style={{ marginRight: p.has_warranty ? "0" : "0" }}>
+                            <div className="relative">
+                              <div className="absolute inset-0 rounded-full bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-500 blur-md opacity-70 animate-pulse" />
+                              <span className={`relative inline-block font-black bg-gradient-to-r from-cyan-300 via-white to-purple-200 text-slate-900 rounded-full shadow-[0_0_20px_rgba(34,211,238,0.8),inset_0_1px_2px_rgba(255,255,255,0.5)] backdrop-blur-sm border-2 border-white/50 ${isGrid ? "text-[10px] px-2.5 py-1" : "text-xs px-3 py-1.5"}`}>{formatPrice(p.price)}</span>
+                            </div>
                           </div>
 
                           {/* Action buttons bottom-right */}
-                          <div className="absolute bottom-2 right-2 flex gap-1.5">
+                          <div className="absolute bottom-2 right-2 flex gap-1.5 z-10">
                             <button onClick={(e) => { e.stopPropagation(); setQuickViewProduct(p); }}
-                              className="rounded-full bg-background/80 backdrop-blur-md p-2 shadow-md hover:bg-background hover:scale-110 transition-all"
+                              className="rounded-full bg-cyan-500/80 backdrop-blur-md p-2 shadow-[0_0_12px_rgba(34,211,238,0.6)] hover:bg-cyan-400 hover:scale-110 hover:rotate-12 transition-all border border-white/30"
                               aria-label="Quick view">
-                              <Eye className="w-3.5 h-3.5 text-foreground" />
+                              <Eye className="w-3.5 h-3.5 text-white drop-shadow" />
                             </button>
                             <button onClick={(e) => toggleLike(p.id, e)}
-                              className="rounded-full bg-background/80 backdrop-blur-md p-2 shadow-md hover:bg-background hover:scale-110 transition-all"
+                              className={`rounded-full backdrop-blur-md p-2 shadow-lg hover:scale-110 transition-all border border-white/30 ${likedIds.has(p.id) ? "bg-pink-500/90 shadow-[0_0_12px_rgba(236,72,153,0.7)]" : "bg-slate-800/80 hover:bg-pink-500/80"}`}
                               aria-label="Like">
-                              <Heart className={`w-3.5 h-3.5 transition-all ${likedIds.has(p.id) ? "fill-destructive text-destructive scale-110" : "text-muted-foreground"}`} />
+                              <Heart className={`w-3.5 h-3.5 transition-all ${likedIds.has(p.id) ? "fill-white text-white scale-110" : "text-white"}`} />
                             </button>
                           </div>
 
                           {p.category && !isGrid && (
-                            <div className="absolute bottom-2 left-2">
-                              <span className="text-[10px] font-bold bg-background/80 backdrop-blur-md px-2.5 py-1 rounded-full shadow-sm">{p.category}</span>
+                            <div className="absolute bottom-2 left-2 z-10">
+                              <span className="inline-flex items-center gap-1 text-[10px] font-black bg-gradient-to-r from-purple-500/90 to-pink-500/90 text-white backdrop-blur-md px-2.5 py-1 rounded-full shadow-[0_0_10px_rgba(168,85,247,0.5)] border border-white/30">
+                                <Sparkles className="w-2.5 h-2.5" /> {p.category}
+                              </span>
                             </div>
                           )}
                           {(productLikeCounts[p.id] || 0) > 0 && (
-                            <div className="absolute bottom-2 left-2 flex items-center gap-1 bg-background/80 backdrop-blur-md px-2 py-0.5 rounded-full shadow-sm" style={isGrid || !p.category ? {} : { display: "none" }}>
-                              <Heart className="w-3 h-3 fill-destructive text-destructive" />
-                              <span className="text-[10px] font-bold">{productLikeCounts[p.id]}</span>
+                            <div className="absolute bottom-2 left-2 flex items-center gap-1 bg-gradient-to-r from-rose-500/90 to-pink-500/90 backdrop-blur-md px-2 py-0.5 rounded-full shadow-[0_0_10px_rgba(244,63,94,0.5)] border border-white/30 z-10" style={isGrid || !p.category ? {} : { display: "none" }}>
+                              <Heart className="w-3 h-3 fill-white text-white" />
+                              <span className="text-[10px] font-black text-white">{productLikeCounts[p.id]}</span>
                             </div>
                           )}
                         </div>
                       )}
                       <CardContent className={`space-y-2 ${isGrid ? "p-3" : "p-4 space-y-3"}`}>
                         <div className="flex items-start justify-between gap-2">
-                          <h3 className={`font-bold flex-1 group-hover:text-primary transition-colors line-clamp-2 ${isGrid ? "text-xs" : "text-base"}`}>{p.title}</h3>
+                          <h3 className={`font-black flex-1 text-white group-hover:bg-gradient-to-r group-hover:from-cyan-300 group-hover:to-pink-300 group-hover:bg-clip-text group-hover:text-transparent transition-all line-clamp-2 ${isGrid ? "text-xs" : "text-base"}`}>{p.title}</h3>
                           {imgs.length === 0 && (
                             <button onClick={(e) => toggleLike(p.id, e)} className="flex items-center gap-1 shrink-0">
-                              <Heart className={`w-4 h-4 transition-all ${likedIds.has(p.id) ? "fill-destructive text-destructive" : "text-muted-foreground"}`} />
+                              <Heart className={`w-4 h-4 transition-all ${likedIds.has(p.id) ? "fill-pink-500 text-pink-500" : "text-muted-foreground"}`} />
                             </button>
                           )}
                         </div>
-                        {p.description && !isGrid && <p className="text-xs text-muted-foreground line-clamp-2">{p.description}</p>}
+                        {/* Star rating row */}
+                        <div className="flex items-center gap-1">
+                          <div className="flex items-center gap-0.5">
+                            {[...Array(5)].map((_, i) => (
+                              <Star key={i} className="w-3 h-3 fill-amber-400 text-amber-400 drop-shadow-[0_0_3px_rgba(251,191,36,0.5)]" />
+                            ))}
+                          </div>
+                          <span className="text-[9px] font-bold text-amber-300/80">5.0</span>
+                          <span className="text-[9px] text-muted-foreground">• Terverifikasi</span>
+                        </div>
+                        {p.description && !isGrid && <p className="text-xs text-slate-300/80 line-clamp-2 leading-relaxed">{p.description}</p>}
                         <div className="flex items-center justify-between flex-wrap gap-1.5">
-                          {imgs.length === 0 && <span className={`font-extrabold text-primary ${isGrid ? "text-xs" : "text-sm"}`}>{formatPrice(p.price)}</span>}
+                          {imgs.length === 0 && <span className={`font-black bg-gradient-to-r from-cyan-300 to-purple-300 bg-clip-text text-transparent ${isGrid ? "text-xs" : "text-sm"}`}>{formatPrice(p.price)}</span>}
                           <div className={`flex items-center gap-1.5 flex-wrap ${isGrid ? "text-[9px]" : ""}`}>
-                            <span className={`px-2 py-0.5 rounded-full font-bold flex items-center gap-1 ${isGrid ? "text-[9px]" : "text-[10px] px-2.5 py-1"} ${p.stock > 0 ? 'bg-gradient-to-r from-accent/15 to-accent/5 text-accent border border-accent/20' : 'bg-gradient-to-r from-destructive/15 to-destructive/5 text-destructive border border-destructive/20'}`}>
-                              {p.stock > 0 ? `✓ ${p.stock}` : '✗ Habis'}
+                            <span className={`px-2 py-0.5 rounded-full font-black flex items-center gap-1 backdrop-blur-sm ${isGrid ? "text-[9px]" : "text-[10px] px-2.5 py-1"} ${inStock ? 'bg-gradient-to-r from-emerald-500/30 to-green-500/20 text-emerald-200 border border-emerald-400/40 shadow-[0_0_8px_rgba(16,185,129,0.3)]' : 'bg-gradient-to-r from-rose-500/30 to-red-500/20 text-rose-200 border border-rose-400/40'}`}>
+                              {inStock ? <><span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_4px_rgb(52,211,153)]" /> {p.stock} stok</> : '✗ Habis'}
                             </span>
-                            {p.has_warranty && !isGrid && (
-                              <span className="text-[10px] px-2 py-1 rounded-full font-bold bg-gradient-to-r from-primary/15 to-primary/5 text-primary border border-primary/20">
-                                <Shield className="w-3 h-3 inline mr-0.5" />Garansi
-                              </span>
-                            )}
                             {!isGrid && (
-                              <span className="text-[10px] px-2 py-1 rounded-full font-medium bg-muted text-muted-foreground flex items-center gap-1">
-                                <CalendarDays className="w-3 h-3" /> {new Date(p.created_at).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" })}
+                              <span className="text-[10px] px-2 py-1 rounded-full font-bold bg-slate-800/60 text-slate-300 flex items-center gap-1 border border-slate-700/50">
+                                <CalendarDays className="w-3 h-3" /> {new Date(p.created_at).toLocaleDateString("id-ID", { day: "numeric", month: "short" })}
                               </span>
                             )}
                           </div>
                         </div>
+                        {/* Premium CTA button */}
+                        {inStock && (
+                          <button
+                            onClick={(e) => { e.stopPropagation(); openProduct(p); }}
+                            className={`relative w-full overflow-hidden rounded-lg font-black text-white shadow-[0_4px_15px_rgba(34,211,238,0.4)] hover:shadow-[0_6px_20px_rgba(168,85,247,0.6)] transition-all hover:scale-[1.02] active:scale-[0.98] group/btn ${isGrid ? "h-7 text-[10px]" : "h-9 text-xs"}`}
+                            style={{ background: "linear-gradient(135deg, hsl(190 95% 50%), hsl(220 90% 55%), hsl(280 90% 60%), hsl(330 90% 55%))", backgroundSize: "200% 200%" }}
+                          >
+                            <span className="absolute inset-0 shine-sweep opacity-60" />
+                            <span className="relative flex items-center justify-center gap-1.5">
+                              <ShoppingBag className={`${isGrid ? "w-3 h-3" : "w-3.5 h-3.5"} group-hover/btn:rotate-12 transition-transform`} />
+                              Beli Sekarang
+                            </span>
+                          </button>
+                        )}
                       </CardContent>
                       </Card>
                     </div>
