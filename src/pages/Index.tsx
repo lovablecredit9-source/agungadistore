@@ -1639,6 +1639,18 @@ const Index = () => {
               }}
             />
             <LanguageSelector currentLang={lang} onSelect={setLang} />
+            <button
+              onClick={() => setShowCart(true)}
+              aria-label="Buka keranjang"
+              className="relative w-9 h-9 rounded-full flex items-center justify-center hover:bg-muted transition-colors text-foreground"
+            >
+              <ShoppingCart className="w-[18px] h-[18px]" strokeWidth={1.7} />
+              {cartCount > 0 && (
+                <span className="absolute -top-0.5 -right-0.5 bg-accent text-accent-foreground text-[9px] font-bold min-w-[16px] h-[16px] rounded-full flex items-center justify-center px-1 border border-background animate-in zoom-in-50">
+                  {cartCount > 99 ? "99+" : cartCount}
+                </span>
+              )}
+            </button>
             <button onClick={() => setShowNotifPanel(!showNotifPanel)} className="relative w-9 h-9 rounded-full flex items-center justify-center hover:bg-muted transition-colors text-foreground">
               <Bell className="w-[18px] h-[18px]" strokeWidth={1.7} />
               {unreadCount > 0 && (
@@ -5700,13 +5712,7 @@ const Index = () => {
         </div>
       </nav>
 
-      {/* Floating Cart Button */}
-      {cartCount > 0 && (
-        <button onClick={() => setShowCart(true)} className="fixed bottom-20 right-[4.5rem] z-50 w-12 h-12 rounded-full bg-accent text-accent-foreground shadow-xl flex items-center justify-center hover:scale-110 transition-transform">
-          <ShoppingCart className="w-6 h-6" />
-          <span className="absolute -top-1 -right-1 w-5 h-5 bg-destructive text-destructive-foreground text-[10px] font-bold rounded-full flex items-center justify-center">{cartCount}</span>
-        </button>
-      )}
+      {/* Floating cart button moved into header (always visible next to language selector) */}
 
       {/* Cart Modal */}
       {showCart && (
