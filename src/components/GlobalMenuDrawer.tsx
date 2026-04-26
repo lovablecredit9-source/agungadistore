@@ -354,14 +354,14 @@ export default function GlobalMenuDrawer() {
         </SheetContent>
       </Sheet>
 
-      {/* Section dialog (empty placeholder content) */}
+      {/* Section dialog with rich content */}
       <Dialog open={!!active} onOpenChange={(v) => !v && setActive(null)}>
         <DialogContent className="max-w-md p-0 overflow-hidden border-0 bg-transparent shadow-none">
           {active && (
-            <div className="rounded-2xl overflow-hidden bg-background border border-border/60 shadow-2xl">
+            <div className="rounded-2xl overflow-hidden bg-background border border-border/60 shadow-2xl flex flex-col max-h-[85vh]">
               <div
                 className={cn(
-                  "h-24 relative bg-gradient-to-br",
+                  "h-24 relative bg-gradient-to-br flex-shrink-0",
                   active.gradient
                 )}
               >
@@ -384,24 +384,50 @@ export default function GlobalMenuDrawer() {
                 </div>
               </div>
 
-              <div className="px-5 py-5 space-y-4">
-                <DialogHeader className="space-y-1 text-left">
-                  <p className="text-xs text-muted-foreground">
-                    {active.subtitle}
-                  </p>
-                </DialogHeader>
+              <ScrollArea className="flex-1 min-h-0">
+                <div className="px-5 py-5 space-y-4">
+                  <DialogHeader className="space-y-1 text-left">
+                    <p className="text-xs text-muted-foreground">
+                      {active.subtitle}
+                    </p>
+                  </DialogHeader>
 
-                {/* Empty content scaffold */}
-                <div className="rounded-xl border border-dashed border-border/70 bg-muted/30 p-4 text-center space-y-2">
-                  <div className="text-2xl">📝</div>
-                  <p className="text-sm font-semibold">Konten belum tersedia</p>
-                  <p className="text-[11px] text-muted-foreground leading-relaxed">
-                    Bagian ini sengaja dikosongkan. Konten {active.title.toLowerCase()}{" "}
-                    dapat ditambahkan kemudian melalui dashboard admin atau diisi
-                    langsung di sini.
+                  <div className="space-y-3">
+                    {active.blocks.map((block, idx) => (
+                      <div
+                        key={idx}
+                        className={cn(
+                          "rounded-xl p-[1px] bg-gradient-to-r",
+                          active.gradient,
+                          "opacity-90"
+                        )}
+                      >
+                        <div className="rounded-[11px] bg-card p-3.5 space-y-2">
+                          <h3 className="text-sm font-bold leading-tight">
+                            {block.heading}
+                          </h3>
+                          <p className="text-[12px] text-muted-foreground leading-relaxed">
+                            {block.body}
+                          </p>
+                          {block.bullets && (
+                            <ul className="list-disc pl-5 space-y-1 text-[12px] text-muted-foreground leading-relaxed">
+                              {block.bullets.map((b, i) => (
+                                <li key={i}>{b}</li>
+                              ))}
+                            </ul>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <p className="text-[10px] text-center text-muted-foreground pt-1">
+                    Terakhir diperbarui: {new Date().toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" })}
                   </p>
                 </div>
+              </ScrollArea>
 
+              <div className="p-4 border-t border-border/60 bg-background flex-shrink-0">
                 <Button
                   onClick={() => setActive(null)}
                   className={cn(
