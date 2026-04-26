@@ -47,6 +47,7 @@ import InstallPrompt from "@/components/InstallPrompt";
 import MusicPublicTab from "@/components/MusicPublicTab";
 import SponsorBanner from "@/components/SponsorBanner";
 import ProductNavToolbar from "@/components/ProductNavToolbar";
+import ProductHypeStreakBar from "@/components/ProductHypeStreakBar";
 import LikesTab from "@/components/LikesTab";
 import DailyStreak from "@/components/DailyStreak";
 import NeonStreakHub from "@/components/streak/NeonStreakHub";
