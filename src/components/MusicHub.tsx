@@ -576,7 +576,7 @@ export default function MusicHub({ subTab, onSubTabChange, onPlayExternal, playl
                 style={{ boxShadow: `0 0 8px rgba(${activeMood.glow},0.9)` }}
               />
               <span className="text-[10px] font-black uppercase tracking-wider text-foreground">
-                {moodIsFallback ? "Rekomendasi acak" : `Lagu ${activeMood.label}`}
+                {`Lagu ${activeMood.label}`}
               </span>
               <span className="text-[9px] font-bold text-muted-foreground">({moodSongs.length})</span>
             </div>
@@ -587,8 +587,8 @@ export default function MusicHub({ subTab, onSubTabChange, onPlayExternal, playl
                 className={`flex items-center gap-1 px-2 py-1 rounded-lg bg-gradient-to-r ${activeMood.gradient} text-white text-[9px] font-black shadow-lg`}
                 style={{ boxShadow: `0 4px 12px -2px rgba(${activeMood.glow},0.6)` }}
               >
-                <Shuffle className="w-2.5 h-2.5" strokeWidth={3} />
-                ACAK PUTAR
+                <Play className="w-2.5 h-2.5" strokeWidth={3} fill="currentColor" />
+                PUTAR COCOK
               </motion.button>
             )}
           </div>
@@ -613,8 +613,8 @@ export default function MusicHub({ subTab, onSubTabChange, onPlayExternal, playl
                 </div>
               )}
               {!loadingMood && moodIsFallback && (
-                <div className="px-2.5 py-1.5 rounded-lg bg-amber-500/10 border border-amber-500/30 text-[9px] font-bold text-amber-300 mb-1">
-                  💡 Tidak ada lagu cocok mood "{activeMood.label}". Menampilkan rekomendasi acak.
+                <div className="px-2.5 py-2 rounded-lg bg-amber-500/10 border border-amber-500/30 text-[9px] font-bold text-amber-300 mb-1 leading-relaxed">
+                  Belum ada lagu yang cocok untuk mood "{activeMood.label}". Tambahkan judul/artis dengan kata seperti {activeMood.keywords.slice(0, 4).join(", ")}.
                 </div>
               )}
               {!loadingMood && moodSongs.map((song, i) => {
