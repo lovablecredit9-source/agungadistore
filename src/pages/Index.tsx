@@ -2251,16 +2251,19 @@ const Index = () => {
             {/* Product list/grid */}
             {!productsLoading && sortedProducts.length > 0 && (
               <div className={productViewMode === "grid" ? "grid grid-cols-2 gap-3" : productViewMode === "compact" ? "space-y-2 [&_.aspect-square]:aspect-[3/1] [&_img]:max-h-24" : "space-y-4"}>
-                {sortedProducts.map((p) => {
+                {sortedProducts.map((p, idx) => {
                   const imgs = getProductImages(p.id);
                   const badges = getProductBadges(p);
                   const isGrid = productViewMode === "grid";
                   const inStock = p.stock > 0;
                   const isNew = (Date.now() - new Date(p.created_at).getTime()) < 7 * 24 * 60 * 60 * 1000;
+                  const isHot = (productLikeCounts[p.id] || 0) >= 5;
                   return (
                     <div
                       key={p.id}
-                      className="relative rounded-2xl p-[2px] aurora-shift overflow-hidden cursor-pointer group transition-all duration-500 hover:-translate-y-2 hover:scale-[1.02]"
+                      className="relative rounded-2xl p-[2px] aurora-shift overflow-hidden cursor-pointer group transition-all duration-500 hover:-translate-y-2 hover:scale-[1.02] animate-fade-in"
+                      style={{ animationDelay: `${Math.min(idx, 12) * 60}ms`, animationFillMode: "both" } as React.CSSProperties}
+                      data-extra-style={undefined}
                       style={{ background: inStock
                         ? "linear-gradient(135deg, hsl(190 95% 55%/0.8), hsl(280 90% 65%/0.7), hsl(330 90% 60%/0.8), hsl(45 95% 55%/0.7), hsl(190 95% 55%/0.8))"
                         : "linear-gradient(135deg, hsl(0 0% 50%/0.4), hsl(0 70% 50%/0.5), hsl(0 0% 50%/0.4))",
