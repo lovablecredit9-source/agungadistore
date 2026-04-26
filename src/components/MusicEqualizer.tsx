@@ -1,4 +1,5 @@
-import { useAudioBands } from "@/lib/audio-visualizer";
+import { useRef } from "react";
+import { useAudioBandsDOM } from "@/lib/audio-visualizer";
 import { cn } from "@/lib/utils";
 
 interface MusicEqualizerProps {
@@ -14,25 +15,24 @@ interface MusicEqualizerProps {
   barWidth?: number;
 }
 
-// Rainbow palette — repeats if more bars than colors
 const RAINBOW = [
-  "#ec4899", // pink
-  "#f59e0b", // amber
-  "#facc15", // yellow
-  "#22c55e", // green
-  "#06b6d4", // cyan
-  "#6366f1", // indigo
-  "#a855f7", // purple
+  "#ec4899",
+  "#f59e0b",
+  "#facc15",
+  "#22c55e",
+  "#06b6d4",
+  "#6366f1",
+  "#a855f7",
 ];
 
-const GLOW: Record<number, string> = {};
 function glowFor(color: string) {
   return `0 0 6px ${color}cc, 0 0 12px ${color}66`;
 }
 
 /**
  * Real-time audio-reactive equalizer bars.
- * Falls back to a smooth synthetic animation if Web Audio isn't connected.
+ * Uses direct DOM mutation (no React re-renders during animation) for
+ * smooth 20fps animation even when many instances are mounted.
  */
 export default function MusicEqualizer({
   isPlaying,
@@ -43,7 +43,8 @@ export default function MusicEqualizer({
   variant = "neon",
   barWidth = 2,
 }: MusicEqualizerProps) {
-  const bands = useAudioBands(bars, isPlaying);
+  const containerRef = useRef<HTMLDivElement>(null);
+  useAudioBandsDOM(containerRef, bars, isPlaying, height);
 
   const baseColorClass =
     variant === "white"
@@ -52,29 +53,32 @@ export default function MusicEqualizer({
       ? "bg-primary"
       : variant === "neon"
       ? "bg-gradient-to-t from-pink-400 via-fuchsia-400 to-indigo-400"
-      : ""; // rainbow uses inline color per bar
+      : "";
+
+  const indices = Array.from({ length: bars }, (_, i) => i);
 
   return (
     <div
+      ref={containerRef}
       className={cn("flex items-end justify-center gap-[2px]", className)}
       style={{ height }}
       aria-hidden="true"
     >
-      {bands.map((v, i) => {
-        const h = Math.max(2, Math.round(v * height));
+      {indices.map((i) => {
         const color = variant === "rainbow" ? RAINBOW[i % RAINBOW.length] : null;
         return (
           <span
             key={i}
             className={cn(
-              "rounded-full transition-[height] duration-75 ease-out",
+              "rounded-full",
               baseColorClass,
               variant === "neon" && isPlaying && "shadow-[0_0_6px_rgba(236,72,153,0.7)]",
               barClassName
             )}
             style={{
-              height: `${h}px`,
+              height: `2px`,
               width: `${barWidth}px`,
+              willChange: "height",
               background: color
                 ? `linear-gradient(to top, ${color}, ${RAINBOW[(i + 2) % RAINBOW.length]})`
                 : undefined,
