@@ -734,3 +734,8 @@
   0% { transform: rotate(0deg) translateX(28px) rotate(0deg); }
   100% { transform: rotate(360deg) translateX(28px) rotate(-360deg); }
 }
+
+@keyframes float-up {
+  0%, 100% { transform: translateY(0); opacity: 0.6; }
+  50% { transform: translateY(-10px); opacity: 1; }
+}
