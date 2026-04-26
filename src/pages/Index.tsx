@@ -2858,62 +2858,92 @@ const Index = () => {
                   const deviceSummary = h.device_info ? getDeviceSummary(h.device_info) : "Tidak diketahui";
                   const globalIdx = (historyPage - 1) * HISTORY_PER_PAGE + idx;
                   return (
-                    <Card key={`${h.id}-${globalIdx}`} className="overflow-hidden hover:shadow-2xl transition-all duration-300 border-0 shadow-lg glass-card hover:-translate-y-1 card-shine">
-                      <div className="bg-gradient-to-r from-primary/15 to-accent/10 px-4 py-2.5 flex items-center justify-between border-b border-border/30">
-                        <div className="flex items-center gap-2.5">
-                          <Checkbox checked={selectedHistoryIds.has(h.id)} onCheckedChange={() => toggleHistorySelect(h.id)} />
-                          <span className="text-xs font-extrabold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">#{globalIdx + 1}</span>
+                    <div
+                      key={`${h.id}-${globalIdx}`}
+                      className="relative rounded-2xl p-[1.5px] aurora-shift overflow-hidden group transition-all duration-500 hover:-translate-y-1.5 hover:scale-[1.01]"
+                      style={{ background: "linear-gradient(135deg, hsl(280 90% 65%/0.7), hsl(220 90% 60%/0.6), hsl(190 95% 55%/0.7), hsl(330 90% 60%/0.6), hsl(280 90% 65%/0.7))", backgroundSize: "300% 300%", boxShadow: "0 8px 28px -10px rgba(168,85,247,0.4)" }}
+                    >
+                      <Card className="overflow-hidden border-0 shadow-xl bg-gradient-to-br from-slate-900/95 via-slate-950/95 to-slate-900/95 backdrop-blur-xl rounded-[14px] card-shine relative">
+                        {/* Hover glow */}
+                        <div className="absolute -inset-0.5 bg-gradient-to-br from-purple-500/0 via-cyan-500/0 to-pink-500/0 group-hover:from-purple-500/20 group-hover:via-cyan-500/15 group-hover:to-pink-500/20 rounded-[14px] blur-md opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none -z-10" />
+
+                        <div className="relative bg-gradient-to-r from-purple-500/20 via-fuchsia-500/15 to-cyan-500/20 px-4 py-2.5 flex items-center justify-between border-b border-white/10 overflow-hidden">
+                          <div className="absolute inset-0 shine-sweep opacity-30 pointer-events-none" />
+                          <div className="relative flex items-center gap-2.5">
+                            <Checkbox checked={selectedHistoryIds.has(h.id)} onCheckedChange={() => toggleHistorySelect(h.id)} className="border-cyan-300/50 data-[state=checked]:bg-cyan-500 data-[state=checked]:border-cyan-500" />
+                            <span className="text-xs font-black bg-gradient-to-r from-cyan-300 via-pink-300 to-purple-300 bg-clip-text text-transparent drop-shadow">#{globalIdx + 1}</span>
+                            <span className="inline-flex items-center gap-0.5 text-[8px] font-black px-1.5 py-0.5 rounded-full bg-gradient-to-r from-emerald-400 to-cyan-400 text-black shadow-[0_0_8px_rgba(16,185,129,0.5)]">
+                              <CheckCircle2 className="w-2.5 h-2.5" /> CLAIMED
+                            </span>
+                          </div>
+                          <span className="relative text-[10px] font-mono font-bold text-cyan-200 bg-slate-950/60 backdrop-blur-sm px-2.5 py-1 rounded-full border border-cyan-400/30 shadow-[0_0_8px_rgba(34,211,238,0.3)]">{h.token_code}</span>
                         </div>
-                        <span className="text-[10px] font-mono text-muted-foreground bg-background/80 backdrop-blur-sm px-2.5 py-1 rounded-full border border-border/50">{h.token_code}</span>
-                      </div>
-                      <CardContent className="p-4 space-y-2.5">
-                        <div className="flex items-center gap-3">
-                          {h.product_image ? (
-                            <img src={h.product_image} className="w-11 h-11 rounded-xl object-cover ring-2 ring-border/50 shadow-sm" alt="" />
-                          ) : (
-                            <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-md ring-2 ring-primary/20">
-                              <Crown className="w-5 h-5 text-primary-foreground" />
+                        <CardContent className="p-4 space-y-2.5">
+                          <div className="flex items-center gap-3">
+                            {h.product_image ? (
+                              <div className="relative shrink-0">
+                                <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 blur-md opacity-50" />
+                                <img src={h.product_image} className="relative w-12 h-12 rounded-xl object-cover ring-2 ring-purple-400/40 shadow-[0_0_12px_rgba(168,85,247,0.4)]" alt="" />
+                              </div>
+                            ) : (
+                              <div className="relative shrink-0">
+                                <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 blur-md opacity-60 animate-pulse" />
+                                <div className="relative w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500 via-fuchsia-500 to-pink-500 flex items-center justify-center shadow-[0_0_15px_rgba(168,85,247,0.6),inset_0_1px_4px_rgba(255,255,255,0.3)] ring-2 ring-white/20">
+                                  <Crown className="w-6 h-6 text-white drop-shadow" />
+                                </div>
+                              </div>
+                            )}
+                            <div className="flex-1 min-w-0">
+                              <h3 className="font-black text-sm text-white group-hover:bg-gradient-to-r group-hover:from-cyan-300 group-hover:to-pink-300 group-hover:bg-clip-text group-hover:text-transparent transition-all line-clamp-1">{h.product_title}</h3>
+                              <p className="text-[10px] text-slate-400 flex items-center gap-1 mt-0.5"><Clock className="w-2.5 h-2.5" /> {new Date(h.claimed_at).toLocaleString("id-ID")}</p>
+                            </div>
+                          </div>
+                          <div className="flex items-start gap-2 text-xs text-cyan-100/80 bg-gradient-to-br from-cyan-500/10 to-blue-500/5 rounded-xl p-2.5 border border-cyan-400/20 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]">
+                            <Smartphone className="w-3.5 h-3.5 shrink-0 mt-0.5 text-cyan-300 drop-shadow-[0_0_4px_rgba(34,211,238,0.6)]" />
+                            <span className="leading-relaxed break-words font-medium">{deviceSummary}</span>
+                          </div>
+                          {h.fields.length > 0 && (
+                            <div className="relative bg-gradient-to-br from-slate-900/80 to-slate-950/80 border border-purple-400/30 rounded-xl p-3 space-y-1 shadow-[inset_0_2px_8px_rgba(0,0,0,0.3),0_0_15px_rgba(168,85,247,0.15)] overflow-hidden">
+                              <div className="absolute -top-8 -right-8 w-20 h-20 rounded-full bg-purple-500/20 blur-2xl pointer-events-none" />
+                              <p className="relative text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5 bg-gradient-to-r from-purple-300 via-pink-300 to-cyan-300 bg-clip-text text-transparent">
+                                <Shield className="w-3 h-3 text-purple-300" /> Detail Akun Premium
+                              </p>
+                              {h.fields.map((f, i) => {
+                                const fid = `h-${h.id}-${i}`;
+                                const copied = copiedField === fid;
+                                return (
+                                  <div key={i} className="relative flex items-center justify-between py-1.5 border-b border-white/5 last:border-0">
+                                    <span className="text-xs text-slate-400 font-semibold">{f.field_name}</span>
+                                    <div className="flex items-center gap-1.5">
+                                      <span className="text-xs font-mono font-black text-white max-w-[120px] truncate drop-shadow">{f.field_value}</span>
+                                      <button
+                                        onClick={() => copyText(f.field_value, fid)}
+                                        className={`text-[10px] font-black px-2 py-0.5 rounded-md transition-all border ${copied ? 'bg-gradient-to-r from-emerald-400 to-cyan-400 text-black border-emerald-300 shadow-[0_0_10px_rgba(16,185,129,0.6)] scale-110' : 'bg-gradient-to-r from-cyan-500/30 to-purple-500/30 text-cyan-200 border-cyan-400/40 hover:scale-105 hover:shadow-[0_0_8px_rgba(34,211,238,0.4)]'}`}
+                                      >
+                                        {copied ? '✓ OK' : (<><Copy className="w-2.5 h-2.5 inline mr-0.5" />Salin</>)}
+                                      </button>
+                                    </div>
+                                  </div>
+                                );
+                              })}
                             </div>
                           )}
-                          <div>
-                            <h3 className="font-bold text-sm">{h.product_title}</h3>
-                            <p className="text-[10px] text-muted-foreground">{new Date(h.claimed_at).toLocaleString("id-ID")}</p>
-                          </div>
-                        </div>
-                        <div className="flex items-start gap-3 text-xs text-muted-foreground bg-muted/30 rounded-xl p-2.5 border border-border/30">
-                          <Smartphone className="w-3.5 h-3.5 shrink-0 mt-0.5" />
-                          <span className="leading-relaxed break-words">{deviceSummary}</span>
-                        </div>
-                        {h.fields.length > 0 && (
-                          <div className="bg-gradient-to-br from-background to-muted/30 border border-border/50 rounded-xl p-3 space-y-2 shadow-inner">
-                            <p className="text-[10px] font-extrabold text-primary uppercase tracking-wider flex items-center gap-1"><Shield className="w-3 h-3" /> Detail Akun</p>
-                            {h.fields.map((f, i) => {
-                              const fid = `h-${h.id}-${i}`;
-                              return (
-                                <div key={i} className="flex items-center justify-between py-1.5 border-b border-border/20 last:border-0">
-                                  <span className="text-xs text-muted-foreground">{f.field_name}</span>
-                                  <div className="flex items-center gap-1.5">
-                                    <span className="text-xs font-mono font-bold max-w-[120px] truncate">{f.field_value}</span>
-                                    <button onClick={() => copyText(f.field_value, fid)}
-                                      className={`text-[10px] font-bold px-2 py-0.5 rounded-md transition-all ${copiedField === fid ? 'bg-accent/20 text-accent' : 'bg-primary/10 text-primary hover:bg-primary/20'}`}>
-                                      {copiedField === fid ? '✓' : 'Salin'}
-                                    </button>
-                                  </div>
-                                </div>
-                              );
-                            })}
-                          </div>
-                        )}
-                      </CardContent>
-                    </Card>
+                        </CardContent>
+                      </Card>
+                    </div>
                   );
                 })}
 
                 {totalHistoryPages > 1 && (
-                  <div className="flex items-center justify-center gap-3 bg-card/80 backdrop-blur-sm rounded-xl p-3 border border-border/50">
-                    <Button variant="outline" size="icon" className="rounded-full" disabled={historyPage <= 1} onClick={() => setHistoryPage(p => p - 1)}><ChevronLeft className="w-4 h-4" /></Button>
-                    <span className="text-sm font-bold text-muted-foreground">{historyPage} / {totalHistoryPages}</span>
-                    <Button variant="outline" size="icon" className="rounded-full" disabled={historyPage >= totalHistoryPages} onClick={() => setHistoryPage(p => p + 1)}><ChevronRight className="w-4 h-4" /></Button>
+                  <div
+                    className="relative rounded-2xl p-[1.5px] aurora-shift overflow-hidden"
+                    style={{ background: "linear-gradient(135deg, hsl(280 90% 65%/0.5), hsl(190 95% 55%/0.5), hsl(280 90% 65%/0.5))", backgroundSize: "300% 300%" }}
+                  >
+                    <div className="rounded-[14px] bg-gradient-to-br from-slate-950/90 to-slate-900/90 backdrop-blur-xl flex items-center justify-center gap-3 p-3">
+                      <Button size="icon" className="rounded-full bg-slate-800/60 border border-cyan-400/30 text-cyan-200 hover:bg-cyan-500/20 disabled:opacity-30" disabled={historyPage <= 1} onClick={() => setHistoryPage(p => p - 1)}><ChevronLeft className="w-4 h-4" /></Button>
+                      <span className="text-sm font-black tabular-nums bg-gradient-to-r from-cyan-300 to-purple-300 bg-clip-text text-transparent">{historyPage} / {totalHistoryPages}</span>
+                      <Button size="icon" className="rounded-full bg-slate-800/60 border border-purple-400/30 text-purple-200 hover:bg-purple-500/20 disabled:opacity-30" disabled={historyPage >= totalHistoryPages} onClick={() => setHistoryPage(p => p + 1)}><ChevronRight className="w-4 h-4" /></Button>
+                    </div>
                   </div>
                 )}
               </>
