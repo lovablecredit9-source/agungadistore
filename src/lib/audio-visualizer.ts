@@ -94,7 +94,6 @@ export function getFrequencyData(): Uint8Array | null {
  */
 export function useAudioBands(bandCount: number, isPlaying: boolean): number[] {
   const [bands, setBands] = useState<number[]>(() => new Array(bandCount).fill(0));
-  const tRef = useRef(0);
 
   useEffect(() => {
     let alive = true;
@@ -102,7 +101,7 @@ export function useAudioBands(bandCount: number, isPlaying: boolean): number[] {
     const update = () => {
       if (!alive) return;
       const data = getFrequencyData();
-      if (data && data.length > 0) {
+      if (data && data.length > 0 && isPlaying) {
         // Use lower-mid frequencies (more visually pleasing for music)
         const usable = Math.min(data.length, 24);
         const next: number[] = [];
@@ -113,23 +112,20 @@ export function useAudioBands(bandCount: number, isPlaying: boolean): number[] {
           let sum = 0;
           for (let j = start; j < end; j++) sum += data[j];
           const avg = sum / (end - start);
-          next.push(isPlaying ? Math.min(1, avg / 200) : 0);
+          next.push(Math.min(1, avg / 200));
         }
         setBands(next);
       } else if (isPlaying) {
-        // Fallback synthetic animation — multi-frequency, more "musical" feel
-        tRef.current += 0.18;
-        const t = tRef.current;
+        // Fallback synthetic — uses real time so all instances animate at the
+        // SAME speed regardless of how often update() is called.
+        const t = performance.now() / 1000 * 6; // ~6 rad/s base speed
         const next: number[] = [];
         for (let i = 0; i < bandCount; i++) {
-          // Combine 3 sine waves at different freqs/phases for organic motion
           const a = Math.sin(t * 1.3 + i * 0.9);
           const b = Math.sin(t * 2.1 + i * 1.7 + 1.2);
           const c = Math.sin(t * 0.7 + i * 0.4);
-          // Normalize to 0..1 with bias toward upper range
           const raw = (a + b * 0.7 + c * 0.5) / 2.2;
           const v = 0.25 + 0.75 * (0.5 + 0.5 * raw);
-          // Add small randomness for sparkle
           const jitter = (Math.random() - 0.5) * 0.15;
           next.push(Math.max(0.1, Math.min(1, v + jitter)));
         }
@@ -142,8 +138,9 @@ export function useAudioBands(bandCount: number, isPlaying: boolean): number[] {
     subscribers.add(update);
     ensureLoop();
 
-    // Also poll on a slow interval as a safety net for the synthetic path
-    const id = window.setInterval(update, 80);
+    // Drive synthetic animation at a steady ~30fps for instances without
+    // analyser data — independent of the rAF subscriber loop.
+    const id = window.setInterval(update, 33);
 
     return () => {
       alive = false;
