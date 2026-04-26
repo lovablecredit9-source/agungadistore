@@ -18,6 +18,12 @@ import { cn } from "@/lib/utils";
 
 type SectionKey = "terms" | "api" | "about" | "privacy";
 
+interface ContentBlock {
+  heading: string;
+  body: string;
+  bullets?: string[];
+}
+
 interface SectionDef {
   key: SectionKey;
   title: string;
@@ -27,6 +33,8 @@ interface SectionDef {
   gradient: string;
   /** soft tint for icon bg */
   tint: string;
+  /** rich content blocks */
+  blocks: ContentBlock[];
 }
 
 const SECTIONS: SectionDef[] = [
