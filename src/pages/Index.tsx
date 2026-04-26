@@ -2262,13 +2262,15 @@ const Index = () => {
                     <div
                       key={p.id}
                       className="relative rounded-2xl p-[2px] aurora-shift overflow-hidden cursor-pointer group transition-all duration-500 hover:-translate-y-2 hover:scale-[1.02] animate-fade-in"
-                      style={{ animationDelay: `${Math.min(idx, 12) * 60}ms`, animationFillMode: "both" } as React.CSSProperties}
-                      data-extra-style={undefined}
-                      style={{ background: inStock
-                        ? "linear-gradient(135deg, hsl(190 95% 55%/0.8), hsl(280 90% 65%/0.7), hsl(330 90% 60%/0.8), hsl(45 95% 55%/0.7), hsl(190 95% 55%/0.8))"
-                        : "linear-gradient(135deg, hsl(0 0% 50%/0.4), hsl(0 70% 50%/0.5), hsl(0 0% 50%/0.4))",
+                      style={{
+                        animationDelay: `${Math.min(idx, 12) * 60}ms`,
+                        animationFillMode: "both",
+                        background: inStock
+                          ? "linear-gradient(135deg, hsl(190 95% 55%/0.8), hsl(280 90% 65%/0.7), hsl(330 90% 60%/0.8), hsl(45 95% 55%/0.7), hsl(190 95% 55%/0.8))"
+                          : "linear-gradient(135deg, hsl(0 0% 50%/0.4), hsl(0 70% 50%/0.5), hsl(0 0% 50%/0.4))",
                         backgroundSize: "300% 300%",
-                        boxShadow: inStock ? "0 8px 32px -8px rgba(34,211,238,0.4), 0 4px 16px -4px rgba(168,85,247,0.3)" : "0 4px 16px -4px rgba(0,0,0,0.3)" }}
+                        boxShadow: inStock ? "0 8px 32px -8px rgba(34,211,238,0.4), 0 4px 16px -4px rgba(168,85,247,0.3)" : "0 4px 16px -4px rgba(0,0,0,0.3)",
+                      }}
                       onClick={() => openProduct(p)}
                     >
                       <Card className="overflow-hidden border-0 shadow-xl bg-gradient-to-br from-slate-900/95 via-slate-950/95 to-slate-900/95 backdrop-blur-xl rounded-[14px] card-shine relative">
