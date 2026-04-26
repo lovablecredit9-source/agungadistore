@@ -113,10 +113,24 @@ export function GameProfileDialog({ profile, onUpdate, visitorId }: {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <button className="flex items-center gap-1.5 bg-accent/20 border border-accent/30 rounded-lg px-2 py-1 text-xs hover:bg-accent/30 transition-colors">
-          <User className="w-3 h-3 text-accent" />
-          <span className="font-bold truncate max-w-[80px]">{profile?.display_name || "Profil"}</span>
-          {profile?.is_guest && <span className="text-[9px] text-muted-foreground bg-muted px-1 rounded">Guest</span>}
+        <button className="group relative flex items-center gap-1.5 rounded-full p-[1.5px] overflow-hidden quick-action-float">
+          <span className="absolute inset-0 game-border-rainbow rounded-full" />
+          <span className="relative flex items-center gap-1.5 bg-slate-900/90 backdrop-blur rounded-full px-2.5 py-1 text-xs">
+            <span className="relative w-5 h-5 rounded-full bg-gradient-to-br from-fuchsia-500 via-violet-500 to-cyan-500 flex items-center justify-center shadow-md shadow-fuchsia-500/40">
+              <span className="text-[10px] font-black text-white drop-shadow">
+                {(profile?.display_name || "P").charAt(0).toUpperCase()}
+              </span>
+              <Sparkles className="absolute -top-1 -right-1 w-2.5 h-2.5 text-yellow-300 quick-action-bounce" />
+            </span>
+            <span className="font-black truncate max-w-[80px] bg-gradient-to-r from-pink-300 via-yellow-200 to-cyan-300 bg-clip-text text-transparent">
+              {profile?.display_name || "Profil"}
+            </span>
+            {profile?.is_guest && (
+              <span className="text-[8px] font-black text-yellow-950 bg-gradient-to-r from-yellow-300 to-amber-400 px-1.5 py-0.5 rounded-full shadow-sm">
+                GUEST
+              </span>
+            )}
+          </span>
         </button>
       </DialogTrigger>
       <DialogContent className="max-w-sm max-h-[85vh] overflow-y-auto p-0">
