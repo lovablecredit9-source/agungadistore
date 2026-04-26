@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Wallet } from "lucide-react";
+import { Wallet, Sparkles } from "lucide-react";
+import CountUp from "@/components/CountUp";
 
 function formatPrice(n: number) {
   return new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", minimumFractionDigits: 0 }).format(n);
@@ -58,13 +59,34 @@ export function useGameBalance(visitorId: string | null) {
 }
 
 export function GameBalanceBadge({ amount }: { amount: number }) {
+  const isHot = amount > 0;
   return (
-    <div className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-3 py-1.5 text-foreground">
-      <div className="flex h-6 w-6 items-center justify-center rounded-full bg-muted">
-        <Wallet className="w-3.5 h-3.5" strokeWidth={1.8} />
+    <div
+      className="relative inline-flex items-center gap-2 rounded-full p-[1.5px] aurora-shift overflow-hidden"
+      style={{
+        background: isHot
+          ? "linear-gradient(135deg, hsl(45 95% 55%/0.95), hsl(330 90% 60%/0.95), hsl(280 90% 65%/0.95), hsl(45 95% 55%/0.95))"
+          : "linear-gradient(135deg, hsl(150 60% 45%/0.6), hsl(190 80% 50%/0.6), hsl(150 60% 45%/0.6))",
+        backgroundSize: "300% 300%",
+      }}
+    >
+      <div className="relative flex items-center gap-2 rounded-full bg-card/95 backdrop-blur-md pl-1 pr-3 py-1">
+        <div className="relative">
+          {isHot && (
+            <div className="absolute inset-0 rounded-full bg-gradient-to-br from-yellow-400 via-pink-500 to-purple-500 blur-md opacity-70 animate-pulse" />
+          )}
+          <div className={`relative flex h-6 w-6 items-center justify-center rounded-full shadow-lg ${isHot ? "bg-gradient-to-br from-yellow-400 via-pink-500 to-purple-500" : "bg-gradient-to-br from-emerald-500 to-cyan-500"}`}>
+            <Wallet className="w-3.5 h-3.5 text-white" strokeWidth={2.4} />
+          </div>
+        </div>
+        <span className={`text-[10px] font-extrabold uppercase tracking-wider bg-clip-text text-transparent ${isHot ? "bg-gradient-to-r from-yellow-500 via-pink-500 to-purple-500" : "bg-gradient-to-r from-emerald-500 to-cyan-500"}`}>
+          Saldo IN
+        </span>
+        <span className={`text-xs font-extrabold tabular-nums bg-clip-text text-transparent ${isHot ? "bg-gradient-to-r from-amber-500 via-rose-500 to-fuchsia-500" : "bg-gradient-to-r from-emerald-600 to-cyan-600"}`}>
+          <CountUp value={amount} format={(n) => formatPrice(n)} />
+        </span>
+        {isHot && <Sparkles className="w-3 h-3 text-yellow-500 animate-pulse" />}
       </div>
-      <span className="text-[10px] font-semibold uppercase text-muted-foreground">Saldo IN</span>
-      <span className="text-xs font-semibold tabular-nums">{formatPrice(amount)}</span>
     </div>
   );
 }
