@@ -248,7 +248,7 @@ Deno.serve(async (req) => {
 
     const cost = TIER_COSTS[tier];
 
-    // Cek kredit & status unlimited (sumber kebenaran: unlimited_until > now())
+    // Cek status unlimited (per visitor row tetap relevan untuk paket unlimited)
     const { data: gc } = await supabase
       .from("user_game_credits")
       .select("id, credits, unlimited_until")
@@ -256,7 +256,10 @@ Deno.serve(async (req) => {
       .maybeSingle();
 
     const unlimitedActive = !!(gc?.unlimited_until && new Date(gc.unlimited_until).getTime() > Date.now());
-    const currentCredits = gc?.credits || 0;
+
+    // Sumber kebenaran kredit: total per akun (mendukung multi-visitor / akun balance)
+    const { data: accountCreditsRaw } = await supabase.rpc("get_account_credits", { p_visitor_id: visitorId });
+    const currentCredits: number = Number(accountCreditsRaw) || 0;
 
     if (!unlimitedActive && currentCredits < cost) {
       return new Response(
@@ -270,16 +273,11 @@ Deno.serve(async (req) => {
     const reels = spinThreeReels(tier, luck);
     const payout = calculatePayout(tier, reels);
 
-    // Atomic update kredit: kurangi biaya + tambahkan hadiah game_credits sekaligus (mencegah race condition)
+    // Update kredit via RPC akun (atomic, multi-visitor aware)
     if (!unlimitedActive || payout.type === "game_credits") {
       const creditDelta = (unlimitedActive ? 0 : -cost) + (payout.type === "game_credits" ? payout.value : 0);
-      if (creditDelta !== 0 || !unlimitedActive) {
-        const newCredits = Math.max(0, currentCredits + creditDelta);
-        if (gc) {
-          await supabase.from("user_game_credits").update({ credits: newCredits, updated_at: new Date().toISOString() }).eq("id", gc.id);
-        } else {
-          await supabase.from("user_game_credits").insert({ visitor_id: visitorId, credits: newCredits });
-        }
+      if (creditDelta !== 0) {
+        await supabase.rpc("add_account_credits", { p_visitor_id: visitorId, p_amount: creditDelta });
       }
     }
 
