@@ -1527,29 +1527,29 @@ const Index = () => {
                   </div>
                 </div>
               </SheetHeader>
-              <nav className="flex-1 overflow-y-auto py-1">
+              <nav className="flex-1 overflow-y-auto py-2 px-2 space-y-1">
                 {([
-                  { key: "beranda" as Tab, icon: Home, label: "Beranda" },
-                  { key: "musik" as Tab, icon: Music2, label: "Musik" },
-                  { key: "playlist" as Tab, icon: Music, label: "Playlist" },
-                  { key: "publik" as Tab, icon: Globe, label: "Publik" },
-                  { key: "produk" as Tab, icon: Package, label: t("nav.products", lang) },
-                  { key: "voucher" as Tab, icon: Ticket, label: t("nav.voucher", lang) },
-                  { key: "saldo" as Tab, icon: Wallet, label: t("nav.balance", lang) },
-                  { key: "likes" as Tab, icon: Heart, label: t("nav.likes", lang) },
-                  { key: "history" as Tab, icon: Clock, label: t("nav.history", lang) },
-                  { key: "tiket" as Tab, icon: AlertCircle, label: t("nav.ticket", lang) },
-                  { key: "sponsor" as Tab, icon: Megaphone, label: "Sponsor" },
-                  { key: "streak" as Tab, icon: CalendarDays, label: "Streak" },
-                  { key: "streakevent" as Tab, icon: CalendarDays, label: "Streak Event" },
-                  { key: "streakshop" as Tab, icon: CalendarDays, label: "Streak Shop" },
-                  { key: "streakmembership" as Tab, icon: Crown, label: "M.Streak" },
-                  { key: "luckroyale" as any, icon: Crown, label: "L.Royale", external: "/luck-royale-nyawa" },
-                  { key: "game" as Tab, icon: Gamepad2, label: "Game" },
-                  { key: "plus" as Tab, icon: Gem, label: "Plus" },
-                  { key: "update" as Tab, icon: RefreshCw, label: "Update" },
-                  { key: "adminpost" as Tab, icon: FileText, label: "Admin" },
-                ] as Array<{ key: any; icon: any; label: string; external?: string }>).map(({ key, icon: Icon, label, external }) => {
+                  { key: "beranda" as Tab, icon: Home, label: "Beranda", grad: "from-orange-400 via-pink-500 to-rose-500", glow: "244,114,182" },
+                  { key: "musik" as Tab, icon: Music2, label: "Musik", grad: "from-fuchsia-500 via-purple-500 to-indigo-500", glow: "168,85,247" },
+                  { key: "playlist" as Tab, icon: Music, label: "Playlist", grad: "from-purple-400 via-violet-500 to-indigo-600", glow: "139,92,246" },
+                  { key: "publik" as Tab, icon: Globe, label: "Publik", grad: "from-blue-400 via-sky-500 to-cyan-500", glow: "14,165,233" },
+                  { key: "produk" as Tab, icon: Package, label: t("nav.products", lang), grad: "from-amber-400 via-orange-500 to-red-500", glow: "251,146,60" },
+                  { key: "voucher" as Tab, icon: Ticket, label: t("nav.voucher", lang), grad: "from-yellow-400 via-amber-500 to-orange-500", glow: "245,158,11" },
+                  { key: "saldo" as Tab, icon: Wallet, label: t("nav.balance", lang), grad: "from-emerald-400 via-cyan-500 to-purple-500", glow: "16,185,129" },
+                  { key: "likes" as Tab, icon: Heart, label: t("nav.likes", lang), grad: "from-rose-400 via-pink-500 to-red-500", glow: "244,63,94" },
+                  { key: "history" as Tab, icon: Clock, label: t("nav.history", lang), grad: "from-sky-400 via-blue-500 to-indigo-500", glow: "59,130,246" },
+                  { key: "tiket" as Tab, icon: AlertCircle, label: t("nav.ticket", lang), grad: "from-lime-400 via-green-500 to-emerald-500", glow: "34,197,94" },
+                  { key: "sponsor" as Tab, icon: Megaphone, label: "Sponsor", grad: "from-cyan-400 via-teal-500 to-emerald-500", glow: "20,184,166" },
+                  { key: "streak" as Tab, icon: CalendarDays, label: "Streak", grad: "from-orange-400 via-red-500 to-pink-600", glow: "239,68,68" },
+                  { key: "streakevent" as Tab, icon: CalendarDays, label: "Streak Event", grad: "from-pink-400 via-fuchsia-500 to-purple-600", glow: "217,70,239" },
+                  { key: "streakshop" as Tab, icon: CalendarDays, label: "Streak Shop", grad: "from-teal-400 via-emerald-500 to-green-600", glow: "16,185,129" },
+                  { key: "streakmembership" as Tab, icon: Crown, label: "M.Streak", grad: "from-yellow-300 via-amber-400 to-orange-500", glow: "250,204,21" },
+                  { key: "luckroyale" as any, icon: Crown, label: "L.Royale", external: "/luck-royale-nyawa", grad: "from-amber-300 via-yellow-400 to-orange-500", glow: "234,179,8" },
+                  { key: "game" as Tab, icon: Gamepad2, label: "Game", grad: "from-violet-500 via-purple-500 to-fuchsia-500", glow: "139,92,246" },
+                  { key: "plus" as Tab, icon: Gem, label: "Plus", grad: "from-cyan-300 via-sky-400 to-blue-500", glow: "56,189,248" },
+                  { key: "update" as Tab, icon: RefreshCw, label: "Update", grad: "from-emerald-300 via-teal-400 to-cyan-500", glow: "45,212,191" },
+                  { key: "adminpost" as Tab, icon: FileText, label: "Admin", grad: "from-slate-400 via-zinc-500 to-gray-600", glow: "148,163,184" },
+                ] as Array<{ key: any; icon: any; label: string; external?: string; grad: string; glow: string }>).map(({ key, icon: Icon, label, external, grad, glow }) => {
                   const active = !external && tab === key;
                   return (
                     <button
@@ -1562,11 +1562,25 @@ const Index = () => {
                         }
                         setShowNavMenu(false);
                       }}
-                      className={`relative w-full flex items-center gap-3 px-4 py-2.5 transition-colors ${active ? "bg-muted/60" : "hover:bg-muted/40"}`}
+                      className={`group relative w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all overflow-hidden ${active ? "shadow-md" : "hover:bg-muted/50 active:scale-[0.98]"}`}
+                      style={active ? { background: `rgba(${glow}, 0.12)` } : undefined}
                     >
-                      {active && <span className="absolute left-0 top-2 bottom-2 w-[2px] bg-foreground rounded-r" />}
-                      <Icon className="w-[18px] h-[18px] text-foreground flex-shrink-0" strokeWidth={active ? 2.2 : 1.7} />
-                      <span className={`text-sm flex-1 text-left ${active ? "font-semibold text-foreground" : "font-normal text-foreground"}`}>{label}</span>
+                      {/* Active accent bar */}
+                      {active && (
+                        <span className={`absolute left-0 top-1.5 bottom-1.5 w-[3px] rounded-r-full bg-gradient-to-b ${grad}`} />
+                      )}
+                      {/* Icon pill */}
+                      <span className="relative shrink-0">
+                        <span
+                          className={`absolute inset-0 rounded-xl blur-md transition-opacity ${active ? "opacity-70" : "opacity-0 group-hover:opacity-40"}`}
+                          style={{ background: `rgba(${glow}, 0.5)` }}
+                        />
+                        <span className={`relative w-8 h-8 rounded-xl flex items-center justify-center bg-gradient-to-br ${grad} ${active ? "shadow-md" : "opacity-80 group-hover:opacity-100"}`}>
+                          <Icon className="w-[16px] h-[16px] text-white drop-shadow" strokeWidth={2.2} />
+                        </span>
+                      </span>
+                      <span className={`text-sm flex-1 text-left transition-all ${active ? `font-extrabold bg-clip-text text-transparent bg-gradient-to-r ${grad}` : "font-medium text-foreground group-hover:font-semibold"}`}>{label}</span>
+                      {active && <ChevronRight className={`w-3.5 h-3.5 bg-clip-text text-transparent bg-gradient-to-r ${grad}`} style={{ color: `rgb(${glow})` }} />}
                     </button>
                   );
                 })}
