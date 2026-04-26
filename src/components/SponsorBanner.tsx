@@ -208,31 +208,57 @@ export default function SponsorBanner({ likedSponsorIds = new Set(), onToggleLik
   return (
     <>
       <div className="relative">
-        {/* Hero Header */}
-        <div className="relative overflow-hidden rounded-2xl border border-border glass-card-strong p-4 mb-3">
-          <div className="absolute inset-0 bg-gradient-to-br from-primary/8 via-accent/5 to-transparent" />
-          <div className="absolute top-1 right-1 opacity-[0.05]">
-            <Megaphone className="w-20 h-20 text-primary" />
-          </div>
-          <div className="relative z-10 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-lg">
-                <Megaphone className="w-5 h-5 text-white" />
-              </div>
-              <div>
-                <h2 className="font-extrabold text-base leading-tight">Sponsor</h2>
-                <p className="text-[10px] text-muted-foreground">{filtered.length} iklan aktif</p>
-              </div>
+        {/* Hero Header - Aurora Premium */}
+        <div
+          className="relative rounded-3xl p-[2px] overflow-hidden mb-3 shadow-[0_8px_40px_-10px_rgba(217,70,239,0.5)]"
+          style={{ background: "linear-gradient(135deg, hsl(330 90% 60%), hsl(280 90% 65%), hsl(45 95% 55%), hsl(15 90% 55%), hsl(330 90% 60%))", backgroundSize: "400% 400%", animation: "aurora-shift 8s ease infinite" }}
+        >
+          <div className="relative rounded-[22px] bg-gradient-to-br from-slate-950/95 via-slate-900/95 to-slate-950/95 backdrop-blur-xl p-4 overflow-hidden">
+            <div className="pointer-events-none absolute inset-0 opacity-60">
+              <div className="absolute -top-20 -right-20 w-56 h-56 rounded-full bg-fuchsia-500/30 blur-3xl animate-pulse" />
+              <div className="absolute -bottom-20 -left-20 w-56 h-56 rounded-full bg-amber-500/30 blur-3xl animate-pulse" style={{ animationDelay: "1s" }} />
             </div>
-            <div className="flex items-center gap-1.5">
-              <button onClick={() => setShowSearch(v => !v)} className="w-8 h-8 rounded-full bg-background/60 hover:bg-background flex items-center justify-center transition-colors backdrop-blur-sm">
-                <Search className="w-3.5 h-3.5 text-muted-foreground" />
-              </button>
-              {filtered.length > 1 && (
-                <span className="text-[10px] text-muted-foreground bg-background/60 px-2 py-1 rounded-full backdrop-blur-sm font-medium">
-                  {(current % filtered.length) + 1}/{filtered.length}
-                </span>
-              )}
+            <div className="pointer-events-none absolute inset-0 overflow-hidden">
+              {[...Array(5)].map((_, i) => (
+                <div key={i} className="absolute w-1 h-1 rounded-full bg-white/60" style={{ top: `${20 + (i * 17) % 60}%`, left: `${(i * 21) % 90}%`, animation: `float-up ${3 + (i % 3)}s ease-in-out ${i * 0.5}s infinite`, boxShadow: "0 0 6px rgba(255,255,255,0.8)" }} />
+              ))}
+            </div>
+            <div className="pointer-events-none absolute inset-0" style={{ background: "linear-gradient(115deg, transparent 30%, rgba(255,255,255,0.1) 50%, transparent 70%)", animation: "shine-sweep 6s ease-in-out infinite" }} />
+
+            <div className="relative z-10 flex items-center justify-between gap-3">
+              <div className="flex items-center gap-3 flex-1 min-w-0">
+                <div className="relative shrink-0">
+                  <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-fuchsia-400 via-pink-500 to-amber-500 blur-lg opacity-80 animate-pulse" />
+                  <div className="absolute -inset-1 rounded-2xl bg-gradient-to-br from-fuchsia-400 via-pink-500 to-amber-500 opacity-50 animate-spin" style={{ animationDuration: "8s" }} />
+                  <div className="relative w-14 h-14 rounded-2xl bg-gradient-to-br from-fuchsia-500 via-pink-500 to-amber-500 flex items-center justify-center shadow-[0_0_30px_rgba(217,70,239,0.7),inset_0_2px_8px_rgba(255,255,255,0.3)] border border-white/30">
+                    <Megaphone className="w-7 h-7 text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]" strokeWidth={2.2} />
+                  </div>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h2 className="text-xl font-black tracking-tight bg-gradient-to-r from-fuchsia-200 via-pink-200 to-amber-200 bg-clip-text text-transparent drop-shadow-[0_2px_8px_rgba(217,70,239,0.4)]">Sponsor</h2>
+                    <span className="inline-flex items-center gap-1 text-[9px] font-black px-2 py-0.5 rounded-full bg-gradient-to-r from-emerald-400 to-cyan-400 text-black shadow-[0_0_15px_rgba(16,185,129,0.7)] border border-white/30">
+                      <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" /> LIVE
+                    </span>
+                    <span className="inline-flex items-center gap-0.5 text-[9px] font-black px-2 py-0.5 rounded-full bg-gradient-to-r from-amber-400 via-orange-500 to-red-500 text-white shadow-[0_0_15px_rgba(251,146,60,0.6)] border border-white/30 animate-pulse">
+                      🔥 IKLAN
+                    </span>
+                  </div>
+                  <p className="text-fuchsia-100/80 text-[11px] mt-1 font-semibold flex items-center gap-1">
+                    <Megaphone className="w-3 h-3 text-amber-300" /> {filtered.length} iklan aktif premium
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-1.5 shrink-0">
+                <button onClick={() => setShowSearch(v => !v)} className="w-9 h-9 rounded-full bg-gradient-to-br from-cyan-500/30 to-purple-500/30 hover:from-cyan-500/50 hover:to-purple-500/50 flex items-center justify-center transition-all backdrop-blur-sm border border-cyan-300/40 shadow-[0_0_10px_rgba(34,211,238,0.3)] hover:scale-110">
+                  <Search className="w-4 h-4 text-cyan-200" />
+                </button>
+                {filtered.length > 1 && (
+                  <span className="text-[10px] font-black text-amber-200 bg-gradient-to-br from-amber-500/30 to-orange-500/20 px-2.5 py-1.5 rounded-full backdrop-blur-sm border border-amber-300/40 shadow-[0_0_10px_rgba(251,191,36,0.3)] tabular-nums">
+                    {(current % filtered.length) + 1}/{filtered.length}
+                  </span>
+                )}
+              </div>
             </div>
           </div>
         </div>
