@@ -454,63 +454,133 @@ export default function PlusTab() {
   );
 }
 
-function SectionCard({ title, icon, description, children, needPin, pin, setPin, buying, selectedPkg, onConfirmPin, onCancelPin }: {
+function SectionCard({ title, icon, description, children, gradient = "from-primary to-primary", glowColor = "168,85,247", emoji = "✨", needPin, pin, setPin, buying, selectedPkg, onConfirmPin, onCancelPin }: {
   title: string; icon: React.ReactNode; description: string; children: React.ReactNode;
+  gradient?: string; glowColor?: string; emoji?: string;
   needPin: boolean; pin: string; setPin: (v: string) => void; buying: string | null; selectedPkg: string | null;
   onConfirmPin: () => void; onCancelPin: () => void;
 }) {
   return (
-    <Card className="border border-border bg-card shadow-none">
-      <CardContent className="p-4 space-y-3">
-        <div className="flex items-start gap-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-muted">
-            {icon}
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true }}
+      transition={{ duration: 0.5, ease: "easeOut" }}
+      className="relative group"
+    >
+      {/* Glow halo */}
+      <div
+        className="absolute -inset-0.5 rounded-3xl opacity-50 blur-xl group-hover:opacity-90 transition-opacity duration-500"
+        style={{ background: `linear-gradient(135deg, rgba(${glowColor},0.4), rgba(${glowColor},0.1))` }}
+      />
+      <Card className={`relative overflow-hidden border-2 border-white/10 bg-gradient-to-br from-card via-card to-card/80 backdrop-blur shadow-[0_8px_32px_rgba(0,0,0,0.12)] rounded-3xl`}>
+        {/* Decorative corner blob */}
+        <div
+          className={`absolute -top-12 -right-12 w-32 h-32 rounded-full bg-gradient-to-br ${gradient} opacity-20 blur-2xl animate-blob`}
+        />
+        <div className="absolute top-2 right-3 text-2xl opacity-70 animate-sticker pointer-events-none">{emoji}</div>
+
+        <CardContent className="relative p-4 space-y-3">
+          <div className="flex items-start gap-3">
+            <div className={`flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br ${gradient} shadow-[0_4px_20px_rgba(0,0,0,0.2)] quick-action-float`}>
+              {icon}
+            </div>
+            <div className="flex-1 min-w-0">
+              <h3 className={`font-black text-base bg-gradient-to-r ${gradient} bg-clip-text text-transparent tracking-tight`}>
+                {title}
+              </h3>
+              <p className="text-[11px] text-muted-foreground font-medium">{description}</p>
+            </div>
           </div>
-          <div>
-            <h3 className="font-semibold text-sm flex items-center gap-2">{title}</h3>
-            <p className="text-[11px] text-muted-foreground">{description}</p>
-          </div>
-        </div>
-        {needPin && selectedPkg ? (
-          <div className="space-y-2">
-            <p className="text-sm font-bold flex items-center gap-1"><Lock className="w-4 h-4" /> Masukkan PIN</p>
-            <Input type="password" maxLength={6} placeholder="PIN 6 digit" value={pin} onChange={e => setPin(e.target.value.replace(/\D/g, ""))} />
-            <Button className="w-full" disabled={pin.length !== 6 || !!buying} onClick={onConfirmPin}>
-              {buying ? <Loader2 className="w-4 h-4 animate-spin" /> : "Konfirmasi"}
-            </Button>
-            <Button variant="ghost" className="w-full text-xs" onClick={onCancelPin}>Batal</Button>
-          </div>
-        ) : (
-          <div className="grid gap-2">{children}</div>
-        )}
-      </CardContent>
-    </Card>
+
+          {needPin && selectedPkg ? (
+            <div className="space-y-2 rounded-2xl bg-gradient-to-br from-amber-500/10 to-rose-500/10 border border-amber-500/30 p-3">
+              <p className="text-sm font-black flex items-center gap-1 text-amber-500">
+                <Lock className="w-4 h-4" /> Masukkan PIN
+              </p>
+              <Input
+                type="password"
+                maxLength={6}
+                placeholder="PIN 6 digit"
+                value={pin}
+                onChange={e => setPin(e.target.value.replace(/\D/g, ""))}
+                className="rounded-xl border-2 border-amber-500/30 focus-visible:ring-amber-500 text-center font-mono text-lg tracking-[0.5em]"
+              />
+              <Button
+                className={`w-full rounded-xl bg-gradient-to-r ${gradient} text-white font-bold shadow-lg`}
+                disabled={pin.length !== 6 || !!buying}
+                onClick={onConfirmPin}
+              >
+                {buying ? <Loader2 className="w-4 h-4 animate-spin" /> : "Konfirmasi"}
+              </Button>
+              <Button variant="ghost" className="w-full text-xs" onClick={onCancelPin}>Batal</Button>
+            </div>
+          ) : (
+            <div className="grid gap-2">{children}</div>
+          )}
+        </CardContent>
+      </Card>
+    </motion.div>
   );
 }
 
-function PackageButton({ label, price, originalPrice, buying, anyBuying, icon, onClick }: {
+function PackageButton({ label, price, originalPrice, buying, anyBuying, icon, onClick, accentGradient = "from-violet-500 to-cyan-500", featured = false, index = 0 }: {
   label: string; price: number; originalPrice?: number; buying: boolean; anyBuying: boolean; icon: React.ReactNode; onClick: () => void;
+  accentGradient?: string; featured?: boolean; index?: number;
 }) {
   const hasPromo = originalPrice && originalPrice !== price;
   return (
-    <motion.div whileTap={{ scale: 0.97 }}>
-      <Button variant="outline" className="w-full justify-between h-auto rounded-xl border-border bg-background py-3 shadow-none" disabled={anyBuying} onClick={onClick}>
-        <div className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-muted">{icon}</div>
-          <span className="font-semibold text-sm text-left">{label}</span>
+    <motion.div
+      initial={{ opacity: 0, x: -20 }}
+      animate={{ opacity: 1, x: 0 }}
+      transition={{ delay: index * 0.05, duration: 0.3 }}
+      whileTap={{ scale: 0.97 }}
+      whileHover={{ scale: 1.02, y: -2 }}
+      className="relative group/btn"
+    >
+      {featured && (
+        <div className="absolute -top-2 -right-2 z-10 px-2 py-0.5 rounded-full bg-gradient-to-r from-amber-400 to-rose-500 text-[9px] font-black text-white shadow-lg animate-sticker flex items-center gap-0.5">
+          <Star className="w-2.5 h-2.5 fill-white" /> HOT
         </div>
-        <div className="flex items-center gap-2">
+      )}
+      <button
+        type="button"
+        disabled={anyBuying}
+        onClick={onClick}
+        className={`relative w-full flex items-center justify-between gap-3 rounded-2xl p-3 overflow-hidden border-2 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed
+          ${featured
+            ? "border-amber-400/50 bg-gradient-to-r from-amber-500/10 via-rose-500/10 to-pink-500/10 shadow-[0_4px_20px_rgba(251,191,36,0.25)]"
+            : "border-white/10 bg-gradient-to-r from-background via-card to-background hover:border-white/30"}
+        `}
+      >
+        {/* Shimmer overlay on hover */}
+        <div className="absolute inset-0 opacity-0 group-hover/btn:opacity-100 transition-opacity">
+          <div className="absolute inset-0 animate-shimmer-bar" />
+        </div>
+
+        <div className="relative flex items-center gap-3 min-w-0 flex-1">
+          <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br ${accentGradient} shadow-[0_3px_12px_rgba(0,0,0,0.2)] quick-action-bounce`}>
+            {icon}
+          </div>
+          <span className="font-bold text-sm text-left text-foreground truncate">{label}</span>
+        </div>
+
+        <div className="relative flex items-center gap-2 shrink-0">
           {hasPromo ? (
             <div className="text-right">
               <span className="text-[10px] text-muted-foreground line-through block">{formatPrice(originalPrice!)}</span>
-              <span className="text-xs font-semibold text-foreground">{formatPrice(price)}</span>
+              <span className={`text-sm font-black bg-gradient-to-r ${accentGradient} bg-clip-text text-transparent`}>
+                {formatPrice(price)}
+              </span>
             </div>
           ) : (
-            <span className="text-xs font-medium text-muted-foreground">{formatPrice(price)}</span>
+            <span className={`text-sm font-black bg-gradient-to-r ${accentGradient} bg-clip-text text-transparent`}>
+              {formatPrice(price)}
+            </span>
           )}
-          {buying && <Loader2 className="w-3 h-3 animate-spin" />}
+          {buying && <Loader2 className="w-4 h-4 animate-spin text-foreground" />}
         </div>
-      </Button>
+      </button>
     </motion.div>
   );
 }
