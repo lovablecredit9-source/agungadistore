@@ -14,6 +14,8 @@ import {
 import MusicPublicTab from "@/components/MusicPublicTab";
 import ArtistTab from "@/components/ArtistTab";
 import AudioDeviceDetector from "@/components/AudioDeviceDetector";
+import MusicEqualizer from "@/components/MusicEqualizer";
+import { attachAudioVisualizer } from "@/lib/audio-visualizer";
 import { useToast } from "@/hooks/use-toast";
 import { Slider } from "@/components/ui/slider";
 import {
@@ -553,6 +555,7 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer, onPlayE
       const audio = new Audio(song.file_url);
       audioRef.current = audio;
       audio.volume = muted ? 0 : volume;
+      attachAudioVisualizer(audio);
       audio.play().catch(() => {});
       setCurrentIndex(-1);
       setExternalSong(songForPlayback);
@@ -620,6 +623,7 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer, onPlayE
     const audio = new Audio(audioUrl);
     audioRef.current = audio;
     audio.volume = muted ? 0 : volume;
+    attachAudioVisualizer(audio);
     audio.play().catch(() => {});
     setExternalSong(null);
     setCurrentIndex(index);
@@ -923,12 +927,10 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer, onPlayE
                     {isActive && isPlaying ? <Pause className="w-5 h-5 text-white" /> : <Play className="w-5 h-5 text-white ml-0.5" />}
                   </div>
                 )}
-                {/* Equalizer overlay when active+playing */}
+                {/* Real-time audio equalizer when active+playing */}
                 {isActive && isPlaying && !song.cover_url && (
-                  <div className="absolute inset-0 flex items-end justify-center gap-0.5 pb-1.5 pointer-events-none">
-                    {[0, 1, 2].map(b => (
-                      <span key={b} className="w-0.5 bg-white/90 rounded-full" style={{ height: "10px", animation: `eq-bounce 0.8s ease-in-out ${b * 0.15}s infinite` }} />
-                    ))}
+                  <div className="absolute inset-0 flex items-end justify-center pb-1.5 pointer-events-none">
+                    <MusicEqualizer isPlaying={isPlaying} bars={4} height={14} variant="white" />
                   </div>
                 )}
                 {isCached && (
