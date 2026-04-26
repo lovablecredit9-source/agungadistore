@@ -2106,49 +2106,78 @@ const Index = () => {
 
         {tab === "produk" && (
           <div className="space-y-4 animate-fade-in">
-            {/* Hero Header - Aurora Premium */}
+            {/* Hero Header - Holographic Aurora Premium */}
             <div
-              className="relative rounded-3xl p-[1.5px] aurora-shift overflow-hidden"
-              style={{ background: "linear-gradient(135deg, hsl(190 95% 55%/0.75), hsl(220 90% 60%/0.7), hsl(280 90% 65%/0.7), hsl(190 95% 55%/0.75))", backgroundSize: "300% 300%" }}
+              className="relative rounded-3xl p-[2px] aurora-shift overflow-hidden shadow-[0_8px_40px_-10px_rgba(34,211,238,0.5)]"
+              style={{ background: "linear-gradient(135deg, hsl(190 95% 55%), hsl(220 90% 60%), hsl(280 90% 65%), hsl(330 90% 60%), hsl(45 95% 55%), hsl(190 95% 55%))", backgroundSize: "400% 400%" }}
             >
-              <div className="relative rounded-[22px] bg-card/95 backdrop-blur-xl p-4 overflow-hidden">
-                <div className="pointer-events-none absolute -top-16 -right-16 w-48 h-48 rounded-full bg-cyan-500/20 blur-3xl" />
-                <div className="pointer-events-none absolute -bottom-16 -left-16 w-48 h-48 rounded-full bg-purple-500/20 blur-3xl" />
-                <div className="pointer-events-none absolute top-1/2 left-1/2 w-32 h-32 rounded-full bg-blue-400/10 blur-2xl" />
+              <div className="relative rounded-[22px] bg-gradient-to-br from-slate-950/95 via-slate-900/95 to-slate-950/95 backdrop-blur-xl p-4 overflow-hidden">
+                {/* Animated mesh gradient background */}
+                <div className="pointer-events-none absolute inset-0 opacity-60">
+                  <div className="absolute -top-20 -right-20 w-56 h-56 rounded-full bg-cyan-500/30 blur-3xl animate-pulse" />
+                  <div className="absolute -bottom-20 -left-20 w-56 h-56 rounded-full bg-purple-500/30 blur-3xl animate-pulse" style={{ animationDelay: "1s" }} />
+                  <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-40 h-40 rounded-full bg-pink-500/20 blur-2xl animate-pulse" style={{ animationDelay: "0.5s" }} />
+                </div>
+                {/* Floating particles */}
+                <div className="pointer-events-none absolute inset-0 overflow-hidden">
+                  {[...Array(6)].map((_, i) => (
+                    <div
+                      key={i}
+                      className="absolute w-1 h-1 rounded-full bg-white/60"
+                      style={{
+                        top: `${15 + (i * 13) % 70}%`,
+                        left: `${(i * 17) % 90}%`,
+                        animation: `float-up ${3 + (i % 3)}s ease-in-out ${i * 0.4}s infinite`,
+                        boxShadow: "0 0 6px rgba(255,255,255,0.8)",
+                      }}
+                    />
+                  ))}
+                </div>
+                {/* Shine sweep overlay */}
+                <div className="pointer-events-none absolute inset-0 shine-sweep opacity-40" />
 
                 <div className="relative flex items-center gap-3">
                   <div className="relative shrink-0">
-                    <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-cyan-400 to-purple-500 blur-md opacity-60 animate-pulse" />
-                    <div className="relative w-12 h-12 rounded-2xl bg-gradient-to-br from-cyan-400 via-blue-500 to-purple-500 flex items-center justify-center shadow-[0_0_20px_rgba(34,211,238,0.5)]">
-                      <Package className="w-6 h-6 text-white drop-shadow-lg" strokeWidth={2} />
+                    <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-cyan-400 via-purple-500 to-pink-500 blur-lg opacity-80 animate-pulse" />
+                    <div className="absolute -inset-1 rounded-2xl bg-gradient-to-br from-cyan-400 via-purple-500 to-pink-500 opacity-50 animate-spin" style={{ animationDuration: "8s" }} />
+                    <div className="relative w-14 h-14 rounded-2xl bg-gradient-to-br from-cyan-400 via-blue-500 to-purple-500 flex items-center justify-center shadow-[0_0_30px_rgba(34,211,238,0.7),inset_0_2px_8px_rgba(255,255,255,0.3)] border border-white/30">
+                      <Package className="w-7 h-7 text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]" strokeWidth={2.2} />
                     </div>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <h2 className="text-lg font-black tracking-tight bg-gradient-to-r from-cyan-300 via-blue-300 to-purple-300 bg-clip-text text-transparent">{t("products.title", lang)}</h2>
-                      <span className="inline-flex items-center gap-1 text-[9px] font-black px-1.5 py-0.5 rounded-full bg-gradient-to-r from-emerald-400 to-cyan-400 text-black shadow-[0_0_10px_rgba(16,185,129,0.5)]">
-                        <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" /> LIVE
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h2 className="text-xl font-black tracking-tight bg-gradient-to-r from-cyan-300 via-pink-200 to-purple-300 bg-clip-text text-transparent drop-shadow-[0_2px_8px_rgba(34,211,238,0.4)]">{t("products.title", lang)}</h2>
+                      <span className="inline-flex items-center gap-1 text-[9px] font-black px-2 py-0.5 rounded-full bg-gradient-to-r from-emerald-400 to-cyan-400 text-black shadow-[0_0_15px_rgba(16,185,129,0.7)] border border-white/30">
+                        <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse shadow-[0_0_4px_white]" /> LIVE
+                      </span>
+                      <span className="inline-flex items-center gap-0.5 text-[9px] font-black px-2 py-0.5 rounded-full bg-gradient-to-r from-amber-400 via-orange-500 to-red-500 text-white shadow-[0_0_15px_rgba(251,146,60,0.6)] border border-white/30 animate-pulse">
+                        🔥 HOT
                       </span>
                     </div>
-                    <p className="text-muted-foreground text-[11px] mt-0.5 font-medium">✨ {sortedProducts.length} {t("products.items", lang)} siap diklaim</p>
+                    <p className="text-cyan-100/80 text-[11px] mt-1 font-semibold flex items-center gap-1">
+                      <Sparkles className="w-3 h-3 text-yellow-300" /> {sortedProducts.length} {t("products.items", lang)} siap diklaim instant
+                    </p>
                   </div>
                 </div>
 
-                {/* Premium Stats Grid */}
+                {/* Premium Stats Grid - 3D Cards */}
                 <div className="relative grid grid-cols-3 gap-2 mt-4">
                   {[
-                    { label: "Total", value: sortedProducts.length, color: "cyan", from: "from-cyan-500/20", border: "border-cyan-400/30", text: "text-cyan-300", glow: "rgba(34,211,238,0.3)" },
-                    { label: "Tersedia", value: sortedProducts.filter(p => p.stock > 0).length, color: "emerald", from: "from-emerald-500/20", border: "border-emerald-400/30", text: "text-emerald-300", glow: "rgba(16,185,129,0.3)" },
-                    { label: "Garansi", value: sortedProducts.filter(p => p.has_warranty).length, color: "purple", from: "from-purple-500/20", border: "border-purple-400/30", text: "text-purple-300", glow: "rgba(168,85,247,0.3)" },
+                    { label: "Total", value: sortedProducts.length, from: "from-cyan-500/30", to: "to-blue-600/20", border: "border-cyan-300/40", text: "text-cyan-200", glow: "rgba(34,211,238,0.5)", icon: "📦" },
+                    { label: "Tersedia", value: sortedProducts.filter(p => p.stock > 0).length, from: "from-emerald-500/30", to: "to-green-600/20", border: "border-emerald-300/40", text: "text-emerald-200", glow: "rgba(16,185,129,0.5)", icon: "✨" },
+                    { label: "Garansi", value: sortedProducts.filter(p => p.has_warranty).length, from: "from-purple-500/30", to: "to-pink-600/20", border: "border-purple-300/40", text: "text-purple-200", glow: "rgba(168,85,247,0.5)", icon: "🛡️" },
                   ].map((s) => (
                     <div
                       key={s.label}
-                      className={`relative rounded-xl p-2.5 bg-gradient-to-br ${s.from} to-transparent border ${s.border} backdrop-blur-sm overflow-hidden`}
-                      style={{ boxShadow: `0 0 12px ${s.glow}` }}
+                      className={`relative rounded-xl p-2.5 bg-gradient-to-br ${s.from} ${s.to} border ${s.border} backdrop-blur-md overflow-hidden hover:scale-105 transition-transform duration-300 group/stat`}
+                      style={{ boxShadow: `0 4px 20px -4px ${s.glow}, inset 0 1px 0 rgba(255,255,255,0.15)` }}
                     >
-                      <div className="absolute -top-4 -right-4 w-10 h-10 rounded-full opacity-30 blur-xl" style={{ background: s.glow }} />
-                      <p className={`text-lg font-black tabular-nums leading-none ${s.text} drop-shadow`}>{s.value}</p>
-                      <p className="text-muted-foreground text-[9px] font-semibold uppercase tracking-wider mt-1">{s.label}</p>
+                      <div className="absolute -top-6 -right-6 w-14 h-14 rounded-full opacity-40 blur-xl group-hover/stat:opacity-70 transition" style={{ background: s.glow }} />
+                      <div className="relative flex items-center justify-between">
+                        <p className={`text-2xl font-black tabular-nums leading-none ${s.text} drop-shadow-[0_2px_4px_rgba(0,0,0,0.4)]`}>{s.value}</p>
+                        <span className="text-base opacity-60 group-hover/stat:opacity-100 group-hover/stat:scale-125 transition-transform">{s.icon}</span>
+                      </div>
+                      <p className="text-white/70 text-[9px] font-bold uppercase tracking-wider mt-1.5">{s.label}</p>
                     </div>
                   ))}
                 </div>
