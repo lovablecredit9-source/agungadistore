@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Wallet } from "lucide-react";
+import { Wallet, Sparkles } from "lucide-react";
+import CountUp from "@/components/CountUp";
 
 function formatPrice(n: number) {
   return new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", minimumFractionDigits: 0 }).format(n);
