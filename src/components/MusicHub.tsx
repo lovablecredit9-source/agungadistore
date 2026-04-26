@@ -91,12 +91,56 @@ export default function MusicHub({ subTab, onSubTabChange, onPlayExternal, playl
 
   const [mood, setMood] = useState<string>("chill");
   const [listenTime, setListenTime] = useState<number>(0);
+  const [allSongs, setAllSongs] = useState<MoodSong[]>([]);
+  const [loadingMood, setLoadingMood] = useState(false);
 
   useEffect(() => {
     if (!isPlaying) return;
     const t = setInterval(() => setListenTime((s) => s + 1), 1000);
     return () => clearInterval(t);
   }, [isPlaying]);
+
+  // Load semua lagu sekali (untuk filter mood)
+  useEffect(() => {
+    let mounted = true;
+    setLoadingMood(true);
+    supabase
+      .from("playlist_songs")
+      .select("id, title, artist, file_url, cover_url")
+      .order("created_at", { ascending: false })
+      .then(({ data }) => {
+        if (mounted) {
+          setAllSongs((data || []) as MoodSong[]);
+          setLoadingMood(false);
+        }
+      });
+    return () => { mounted = false; };
+  }, []);
+
+  const activeMood = MOODS.find((m) => m.key === mood)!;
+  const moodSongs: MoodSong[] = (() => {
+    if (allSongs.length === 0) return [];
+    const matched = allSongs.filter((s) => {
+      const text = `${s.title} ${s.artist}`.toLowerCase();
+      return activeMood.keywords.some((kw) => text.includes(kw));
+    });
+    // Fallback: kalau tidak ada yg cocok, kasih random 6 lagu agar tetap bisa dengar
+    if (matched.length === 0) {
+      return [...allSongs].sort(() => Math.random() - 0.5).slice(0, 6);
+    }
+    return matched.slice(0, 8);
+  })();
+  const moodIsFallback = moodSongs.length > 0 && allSongs.length > 0 && !allSongs.some((s) => {
+    const text = `${s.title} ${s.artist}`.toLowerCase();
+    return activeMood.keywords.some((kw) => text.includes(kw));
+  });
+
+  const playRandomMood = () => {
+    if (moodSongs.length === 0) return;
+    const pick = moodSongs[Math.floor(Math.random() * moodSongs.length)];
+    onPlayExternal?.(pick);
+    if (subTab !== "playlist") onSubTabChange("playlist");
+  };
 
   const fmtTime = (s: number) => {
     const h = Math.floor(s / 3600);
