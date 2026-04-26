@@ -15,6 +15,7 @@ import {
   Moon, Sun, Lock, Tag, Music, Music2, Megaphone, Diamond, Image as ImageIcon, Gem, Sparkles, Palette, CalendarDays, Gamepad2, RefreshCw,
   Eye, LayoutGrid, Rows3, Flame, SlidersHorizontal, Zap, TrendingUp, Award, Activity, Inbox, User, Phone, Gift, Menu, Lightbulb, MessageSquare, Star
 } from "lucide-react";
+import { VerifiedBadge } from "@/components/VerifiedBadge";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import CountUp from "@/components/CountUp";
 import { useTheme } from "@/lib/theme";
