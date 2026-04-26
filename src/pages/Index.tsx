@@ -1887,7 +1887,7 @@ const Index = () => {
                       onMouseLeave={(e) => { e.currentTarget.style.boxShadow = `0 0 0 0 rgba(${item.glow}, 0)`; }}
                     >
                       <div className={`absolute inset-0 bg-gradient-to-br ${item.color} opacity-0 group-hover:opacity-10 transition-opacity`} />
-                      <div className="relative">
+                      <div className="relative animate-wiggle">
                         <div className={`absolute inset-0 bg-gradient-to-br ${item.color} blur-md opacity-0 group-hover:opacity-60 transition-opacity scale-150`} />
                         <div className={`relative w-9 h-9 rounded-xl bg-gradient-to-br ${item.color} flex items-center justify-center text-white shadow-lg`}>
                           {item.icon}
