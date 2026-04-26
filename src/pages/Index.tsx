@@ -4473,6 +4473,60 @@ const Index = () => {
                   <p className="text-[10px] text-muted-foreground text-center">Buat akun saldo untuk beli pakai saldo. <button className="underline text-primary" onClick={() => { openProduct(null); setTab("saldo"); }}>Daftar →</button></p>
                 )}
 
+                {/* Produk Lainnya */}
+                {(() => {
+                  const others = products.filter(p => p.id !== selectedProduct.id);
+                  const sameCat = selectedProduct.category
+                    ? others.filter(p => p.category === selectedProduct.category)
+                    : [];
+                  const rest = others.filter(p => !sameCat.includes(p));
+                  const shuffled = [...sameCat, ...rest].slice(0, 30).sort(() => Math.random() - 0.5).slice(0, 6);
+                  if (shuffled.length === 0) return null;
+                  return (
+                    <div className="border-t border-border pt-4 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <p className="text-xs font-bold text-foreground uppercase tracking-wider flex items-center gap-1.5">
+                          <Sparkles className="w-3.5 h-3.5 text-primary" /> Produk Lainnya
+                        </p>
+                        <span className="text-[10px] text-muted-foreground">{shuffled.length} pilihan</span>
+                      </div>
+                      <div className="grid grid-cols-3 gap-2">
+                        {shuffled.map((p, idx) => {
+                          const pImgs = getProductImages(p.id);
+                          const cover = pImgs[0]?.image_url;
+                          return (
+                            <button
+                              key={p.id}
+                              onClick={() => openProduct(p)}
+                              className="group relative overflow-hidden rounded-xl border border-border bg-muted/40 hover:border-primary/60 transition-all hover:scale-[1.03] animate-fade-in text-left"
+                              style={{ animationDelay: `${idx * 50}ms` }}
+                            >
+                              <div className="aspect-square w-full overflow-hidden bg-muted">
+                                {cover ? (
+                                  <img src={cover} alt={p.title} loading="lazy" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300" />
+                                ) : (
+                                  <div className="w-full h-full flex items-center justify-center text-muted-foreground">
+                                    <ShoppingBag className="w-6 h-6" />
+                                  </div>
+                                )}
+                                {p.stock <= 0 && (
+                                  <div className="absolute inset-0 bg-background/70 flex items-center justify-center">
+                                    <span className="text-[9px] font-bold text-destructive uppercase">Habis</span>
+                                  </div>
+                                )}
+                              </div>
+                              <div className="p-1.5 space-y-0.5">
+                                <p className="text-[10px] font-bold text-foreground line-clamp-1 leading-tight">{p.title}</p>
+                                <p className="text-[10px] font-extrabold text-primary leading-tight">{formatPrice(p.price)}</p>
+                              </div>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })()}
+
                 <div className="border-t border-border pt-4 space-y-2">
                   <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Hubungi Kami</p>
                   <div className="space-y-1.5">
