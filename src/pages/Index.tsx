@@ -4202,27 +4202,97 @@ const Index = () => {
 
         {tab === "update" && (
           <div className="space-y-4 animate-fade-in">
-            {/* Hero Header */}
-            <div className="rounded-xl border border-border bg-card p-4">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
-                  <RefreshCw className="w-5 h-5 text-foreground" strokeWidth={1.7} />
+            {/* === MAXIMALIST HERO HEADER === */}
+            <div className="relative rounded-2xl overflow-hidden p-[2px] update-aurora-bg shadow-[0_10px_40px_-10px_rgba(236,72,153,0.5)]">
+              <div className="relative rounded-2xl bg-gradient-to-br from-background via-background to-background/95 p-5 overflow-hidden">
+                {/* Floating emojis bg */}
+                <div className="absolute inset-0 pointer-events-none overflow-hidden">
+                  {['🚀','✨','🎉','💎','⚡','🔥','🌈','⭐'].map((e, i) => (
+                    <span
+                      key={i}
+                      className="absolute text-2xl opacity-20 float-emoji"
+                      style={{
+                        left: `${(i * 13) % 100}%`,
+                        top: `${(i * 23) % 80}%`,
+                        animationDelay: `${i * 0.3}s`,
+                      }}
+                    >{e}</span>
+                  ))}
                 </div>
-                <div className="flex-1 min-w-0">
-                  <h2 className="text-base font-semibold tracking-tight text-foreground">Update Web</h2>
-                  <p className="text-xs text-muted-foreground mt-0.5">Fitur tambahan terbaru tanggal 19 April 2026</p>
+                <div className="relative flex items-center gap-3">
+                  <div className="w-14 h-14 rounded-2xl update-aurora-bg flex items-center justify-center flex-shrink-0 shadow-lg">
+                    <RefreshCw className="w-7 h-7 text-white animate-spin" style={{ animationDuration: '4s' }} strokeWidth={2.4} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h2 className="text-xl font-extrabold tracking-tight bg-gradient-to-r from-pink-500 via-fuchsia-500 to-cyan-500 bg-clip-text text-transparent">
+                        Update Web
+                      </h2>
+                      <span className="text-[9px] font-black px-2 py-0.5 rounded-full bg-gradient-to-r from-amber-400 to-pink-500 text-white shadow new-badge-bounce">
+                        🆕 LIVE
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-muted-foreground mt-0.5 font-medium">
+                      Riwayat semua pembaruan & fitur baru aplikasi
+                    </p>
+                  </div>
+                </div>
+
+                {/* Stats grid colorful */}
+                <div className="relative grid grid-cols-3 gap-2 mt-4">
+                  {[
+                    { label: 'Versi', value: '10', icon: '🏷️', grad: 'from-pink-500 to-rose-500' },
+                    { label: 'Update', value: '120+', icon: '⚡', grad: 'from-cyan-500 to-blue-500' },
+                    { label: 'Bulan', value: '1', icon: '📅', grad: 'from-amber-400 to-orange-500' },
+                  ].map((s, i) => (
+                    <div
+                      key={s.label}
+                      className={`stat-pop rounded-xl p-2.5 bg-gradient-to-br ${s.grad} text-white shadow-md text-center`}
+                      style={{ animationDelay: `${i * 0.1}s` }}
+                    >
+                      <div className="text-lg leading-none">{s.icon}</div>
+                      <div className="text-base font-extrabold leading-none mt-1">{s.value}</div>
+                      <div className="text-[9px] font-semibold opacity-90 uppercase tracking-wider mt-0.5">{s.label}</div>
+                    </div>
+                  ))}
                 </div>
               </div>
             </div>
 
-            {/* Timeline */}
+            {/* Marquee ticker */}
+            <div className="rounded-xl overflow-hidden border-2 border-fuchsia-400/40 bg-gradient-to-r from-pink-500/10 via-fuchsia-500/10 to-cyan-500/10 backdrop-blur">
+              <div className="flex whitespace-nowrap" style={{ animation: 'marquee-x 22s linear infinite' }}>
+                {[...Array(2)].flatMap((_, k) => ['🎉 Update terbaru', '✨ Fitur baru tiap minggu', '🚀 Performa makin ngebut', '💎 UI makin keren', '🔥 Bug fix harian', '🌈 Tema baru tiap rilis'].map((t, i) => (
+                  <span key={`${k}-${i}`} className="inline-flex items-center gap-2 px-4 py-2 text-[11px] font-bold text-foreground">
+                    {t} <span className="text-pink-500">●</span>
+                  </span>
+                )))}
+              </div>
+            </div>
+
+            {/* === TIMELINE MAXIMALIST === */}
             <div className="relative">
-              {/* Vertical line */}
-              <div className="absolute left-5 top-0 bottom-0 w-px bg-border" />
+              {/* Vertical animated line */}
+              <div className="absolute left-[22px] top-2 bottom-0 w-[3px] rounded-full timeline-line-flow opacity-60" />
               
               {[
                 {
-                  date: "24 April 2026", version: "v2.8", isNew: true,
+                  date: "26 April 2026", version: "v2.9", isNew: true,
+                  items: [
+                    "🌈 Beranda Maximalist Colorful - tema warna-warni penuh energi & playful",
+                    "🎨 Quick Access buttons dengan animasi gerak: float, bounce, conic gradient border + particle sparkles",
+                    "📊 Live Stats Dashboard baru di beranda - 4 kartu (Lagu, Game, Hadiah, Instan) dengan pop-in animation",
+                    "🎉 Welcome header confetti emoji + sticker mascot floating (🌈⚡💎)",
+                    "🏷️ Marquee ticker promosi horizontal di antara hero & quick access",
+                    "✨ Multi-color gradient borders dengan aurora-shift animation",
+                    "🎯 Achievement chips ribbon (Trusted #1, Premium, Hot Deals) di dashboard",
+                    "💫 Tab Update dirombak total - hero aurora, stats colorful, timeline animated dengan dot pulse",
+                    "🎁 Version badge dengan shine animation untuk versi terbaru",
+                    "📱 Floating emoji background di hero Update untuk vibe playful",
+                  ]
+                },
+                {
+                  date: "24 April 2026", version: "v2.8",
                   items: [
                     "🎮 4 Game baru ditambahkan ke tab Game: Memory Flip, Snake Neon, 2048, dan Plinko - semua client-side, ramah mobile",
                     "🎮 Memory Flip - cocokkan pasangan kartu, makin cepat selesai makin besar reward poin",
