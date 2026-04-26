@@ -930,7 +930,7 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer, onPlayE
                 {/* Real-time audio equalizer when active+playing */}
                 {isActive && isPlaying && !song.cover_url && (
                   <div className="absolute inset-0 flex items-end justify-center pb-1.5 pointer-events-none">
-                    <MusicEqualizer isPlaying={isPlaying} bars={4} height={14} variant="white" />
+                    <MusicEqualizer isPlaying={isPlaying} bars={5} height={16} variant="rainbow" barWidth={3} />
                   </div>
                 )}
                 {isCached && (
