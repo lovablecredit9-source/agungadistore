@@ -1884,7 +1884,7 @@ const Index = () => {
                 <div className="relative grid grid-cols-4 gap-1.5">
                   {[
                     { emoji: "🎵", label: "Lagu", value: "200+", grad: "from-pink-500/30 to-rose-500/15", border: "border-pink-400/50", text: "text-pink-200", glow: "rgba(236,72,153,0.5)" },
-                    { emoji: "🎮", label: "Game", value: "11", grad: "from-violet-500/30 to-purple-500/15", border: "border-violet-400/50", text: "text-violet-200", glow: "rgba(168,85,247,0.5)" },
+                    { emoji: "🎮", label: "Game", value: "40", grad: "from-violet-500/30 to-purple-500/15", border: "border-violet-400/50", text: "text-violet-200", glow: "rgba(168,85,247,0.5)" },
                     { emoji: "🎁", label: "Hadiah", value: "∞", grad: "from-amber-500/30 to-yellow-500/15", border: "border-amber-400/50", text: "text-amber-200", glow: "rgba(250,204,21,0.5)" },
                     { emoji: "⚡", label: "Instan", value: "24/7", grad: "from-cyan-500/30 to-teal-500/15", border: "border-cyan-400/50", text: "text-cyan-200", glow: "rgba(34,211,238,0.5)" },
                   ].map((s, i) => (
