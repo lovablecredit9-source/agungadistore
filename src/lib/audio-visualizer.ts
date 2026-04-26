@@ -117,12 +117,21 @@ export function useAudioBands(bandCount: number, isPlaying: boolean): number[] {
         }
         setBands(next);
       } else if (isPlaying) {
-        // Fallback synthetic animation
-        tRef.current += 0.12;
+        // Fallback synthetic animation — multi-frequency, more "musical" feel
+        tRef.current += 0.18;
+        const t = tRef.current;
         const next: number[] = [];
         for (let i = 0; i < bandCount; i++) {
-          const v = 0.35 + 0.45 * Math.abs(Math.sin(tRef.current + i * 0.7));
-          next.push(v);
+          // Combine 3 sine waves at different freqs/phases for organic motion
+          const a = Math.sin(t * 1.3 + i * 0.9);
+          const b = Math.sin(t * 2.1 + i * 1.7 + 1.2);
+          const c = Math.sin(t * 0.7 + i * 0.4);
+          // Normalize to 0..1 with bias toward upper range
+          const raw = (a + b * 0.7 + c * 0.5) / 2.2;
+          const v = 0.25 + 0.75 * (0.5 + 0.5 * raw);
+          // Add small randomness for sparkle
+          const jitter = (Math.random() - 0.5) * 0.15;
+          next.push(Math.max(0.1, Math.min(1, v + jitter)));
         }
         setBands(next);
       } else {
