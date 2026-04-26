@@ -47,7 +47,7 @@ import InstallPrompt from "@/components/InstallPrompt";
 import MusicPublicTab from "@/components/MusicPublicTab";
 import SponsorBanner from "@/components/SponsorBanner";
 import ProductNavToolbar from "@/components/ProductNavToolbar";
-import ProductHypeStreakBar from "@/components/ProductHypeStreakBar";
+import ProductShowcaseBar from "@/components/ProductShowcaseBar";
 import LikesTab from "@/components/LikesTab";
 import DailyStreak from "@/components/DailyStreak";
 import NeonStreakHub from "@/components/streak/NeonStreakHub";
@@ -2185,11 +2185,12 @@ const Index = () => {
               </div>
             </div>
 
-            {/* Streak-powered hype + bonus bar */}
-            <ProductHypeStreakBar
-              visitorId={activeBalanceVisitorId || visitorId}
-              totalProducts={sortedProducts.length}
-              inStockProducts={sortedProducts.filter(p => p.stock > 0).length}
+            {/* Live product showcase bar */}
+            <ProductShowcaseBar
+              totalProducts={products.length}
+              inStockProducts={products.filter(p => p.stock > 0).length}
+              newProducts={products.filter(p => (Date.now() - new Date(p.created_at).getTime()) < 7 * 24 * 60 * 60 * 1000).length}
+              topCategory={(Object.entries(productCategoryCounts).filter(([k]) => k !== "Semua").sort((a, b) => b[1] - a[1])[0]?.[0]) || null}
             />
 
             {/* Advanced Product Navigation Toolbar */}
