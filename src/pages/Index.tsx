@@ -4485,17 +4485,23 @@ const Index = () => {
               })}
             </div>
 
-            {/* Copyright */}
-            <div className="rounded-xl border border-border bg-card p-4 text-center space-y-2">
-              <p className="text-xs font-semibold text-foreground">© 2026 {STORE_NAME}</p>
-              <p className="text-[11px] text-muted-foreground">Murah & Terpercaya - Semua hak dilindungi.</p>
-              <div className="flex items-center justify-center gap-2 mt-2 flex-wrap">
-                {socialLinks.map(s => (
-                  <a key={s.id} href={s.url} target="_blank" rel="noopener noreferrer" className="text-[10px] font-medium px-3 py-1.5 rounded-full bg-muted text-foreground hover:bg-muted/70 transition-colors border border-border flex items-center gap-1">
-                    {s.icon_url && <img src={s.icon_url} alt={s.platform} className="w-3 h-3 object-contain" />}
-                    {s.platform}
-                  </a>
-                ))}
+            {/* Copyright maximalist */}
+            <div className="relative rounded-2xl overflow-hidden p-[2px] update-aurora-bg">
+              <div className="rounded-2xl bg-card p-4 text-center space-y-2">
+                <div className="flex items-center justify-center gap-2">
+                  <span className="text-2xl float-emoji">💖</span>
+                  <p className="text-sm font-extrabold bg-gradient-to-r from-pink-500 via-fuchsia-500 to-cyan-500 bg-clip-text text-transparent">© 2026 {STORE_NAME}</p>
+                  <span className="text-2xl float-emoji" style={{ animationDelay: '0.5s' }}>✨</span>
+                </div>
+                <p className="text-[11px] text-muted-foreground font-medium">Murah & Terpercaya - Semua hak dilindungi.</p>
+                <div className="flex items-center justify-center gap-2 mt-2 flex-wrap">
+                  {socialLinks.map(s => (
+                    <a key={s.id} href={s.url} target="_blank" rel="noopener noreferrer" className="text-[10px] font-bold px-3 py-1.5 rounded-full bg-gradient-to-r from-pink-500/15 to-cyan-500/15 text-foreground hover:from-pink-500/30 hover:to-cyan-500/30 transition-all border-2 border-fuchsia-400/30 flex items-center gap-1 hover:scale-105">
+                      {s.icon_url && <img src={s.icon_url} alt={s.platform} className="w-3 h-3 object-contain" />}
+                      {s.platform}
+                    </a>
+                  ))}
+                </div>
               </div>
             </div>
           </div>
