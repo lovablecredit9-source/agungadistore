@@ -5,7 +5,7 @@ import { getVisitorId } from "@/lib/visitor-id";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Wallet, Key, CalendarDays, HardDrive, Loader2, Lock, Infinity, Layers3, Package } from "lucide-react";
+import { Wallet, Key, CalendarDays, HardDrive, Loader2, Lock, Infinity, Layers3, Package, Sparkles, Zap, Crown, Gift, Star, TrendingUp } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useGameCredits, GameCreditsBadge } from "@/components/games/GameCredits";
 import { useGameBalance, GameBalanceBadge } from "@/components/games/GameBalance";
@@ -228,44 +228,90 @@ export default function PlusTab() {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-5 relative">
       <BanBanner />
-      <h2 className="text-lg font-semibold flex items-center gap-2 tracking-tight">
-        <Layers3 className="w-5 h-5 text-foreground" strokeWidth={1.7} /> Plus
-      </h2>
-      <BanLock fallbackLabel="Plus / Streak Shop">
 
-      <div className="rounded-xl border border-border bg-card p-4">
-        {userBalance ? (
-          <div className="flex items-center justify-between">
+      {/* === MAXIMALIST HERO === */}
+      <div className="relative overflow-hidden rounded-3xl p-[2px] update-aurora-bg animate-neon-border">
+        <div className="relative rounded-3xl bg-background/85 backdrop-blur-xl p-5 overflow-hidden">
+          {/* Floating background blobs */}
+          <div className="absolute -top-10 -left-10 w-32 h-32 rounded-full bg-pink-500/30 blur-3xl animate-blob" />
+          <div className="absolute -bottom-10 -right-10 w-32 h-32 rounded-full bg-cyan-500/30 blur-3xl animate-blob" style={{ animationDelay: "2s" }} />
+          <div className="absolute top-1/2 left-1/2 w-24 h-24 rounded-full bg-amber-400/20 blur-3xl animate-blob" style={{ animationDelay: "4s" }} />
+
+          {/* Floating emojis */}
+          <div className="absolute top-2 right-4 text-2xl animate-sticker">✨</div>
+          <div className="absolute bottom-3 left-3 text-xl animate-sticker" style={{ animationDelay: "1s" }}>💎</div>
+          <div className="absolute top-1/2 right-10 text-lg animate-sticker" style={{ animationDelay: "1.5s" }}>🚀</div>
+
+          <div className="relative flex items-center gap-3 mb-4">
+            <div className="relative">
+              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-pink-500 via-violet-500 to-cyan-500 flex items-center justify-center shadow-[0_0_25px_rgba(168,85,247,0.6)] animate-tilt">
+                <Layers3 className="w-6 h-6 text-white" strokeWidth={2} />
+              </div>
+              <div className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-amber-400 animate-ping" />
+            </div>
             <div>
-              <p className="text-xs text-muted-foreground font-medium">Hai, {userBalance.username}</p>
-              <p className="text-2xl font-bold text-foreground tabular-nums">{formatPrice(userBalance.balance)}</p>
-            </div>
-            <div className="w-11 h-11 rounded-xl bg-muted flex items-center justify-center">
-              <Wallet className="w-5 h-5 text-foreground" strokeWidth={1.7} />
+              <h2 className="text-2xl font-black bg-gradient-to-r from-pink-500 via-violet-500 to-cyan-500 bg-clip-text text-transparent animate-rainbow-text tracking-tight">
+                Plus Hub
+              </h2>
+              <p className="text-[11px] text-muted-foreground font-semibold flex items-center gap-1">
+                <Sparkles className="w-3 h-3 text-amber-400" /> Pusat upgrade premium
+              </p>
             </div>
           </div>
-        ) : (
-          <div className="text-center py-2">
-            <p className="text-sm text-muted-foreground">Login ke tab <strong>Saldo</strong> untuk melihat saldo & membeli</p>
-          </div>
-        )}
+
+          {userBalance ? (
+            <div className="relative rounded-2xl bg-gradient-to-br from-violet-600/20 via-pink-500/20 to-amber-400/20 border border-white/20 p-4 overflow-hidden">
+              <div className="absolute inset-0 animate-shimmer-bar pointer-events-none" />
+              <div className="relative flex items-center justify-between">
+                <div>
+                  <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest flex items-center gap-1">
+                    <Crown className="w-3 h-3 text-amber-400" /> Hai, {userBalance.username}
+                  </p>
+                  <p className="text-3xl font-black tabular-nums bg-gradient-to-r from-emerald-400 via-cyan-400 to-violet-500 bg-clip-text text-transparent animate-count-glow">
+                    {formatPrice(userBalance.balance)}
+                  </p>
+                </div>
+                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-500 to-cyan-500 flex items-center justify-center shadow-[0_0_20px_rgba(16,185,129,0.5)] quick-action-float">
+                  <Wallet className="w-7 h-7 text-white" strokeWidth={2} />
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="rounded-2xl bg-gradient-to-r from-pink-500/15 to-violet-500/15 border border-pink-500/30 p-4 text-center">
+              <p className="text-sm font-semibold text-foreground">🔐 Login ke tab <strong className="text-pink-500">Saldo</strong> untuk mulai</p>
+            </div>
+          )}
+        </div>
       </div>
 
-      <div className="flex items-center gap-2 flex-wrap">
+      <BanLock fallbackLabel="Plus / Streak Shop">
+
+      {/* === BADGES === */}
+      <div className="flex items-center gap-2 flex-wrap animate-pop-in">
         <GameCreditsBadge credits={credits} isUnlimited={isUnlimited} unlimitedUntil={unlimitedUntil} />
         <GameBalanceBadge amount={gameBalance} />
       </div>
-      <p className="text-[11px] text-muted-foreground px-1 leading-relaxed">
-        <strong>Saldo IN</strong> dipakai untuk Game, Streak, dan Storage, bukan untuk pembelian produk.
-      </p>
 
+      <div className="rounded-2xl bg-gradient-to-r from-amber-500/10 via-pink-500/10 to-violet-500/10 border border-amber-500/30 p-3">
+        <p className="text-[11px] text-foreground font-medium leading-relaxed flex items-start gap-2">
+          <Zap className="w-4 h-4 text-amber-400 shrink-0 mt-0.5 animate-sticker" />
+          <span><strong className="text-amber-500">Saldo IN</strong> dipakai untuk Game, Streak, dan Storage — bukan pembelian produk.</span>
+        </p>
+      </div>
+
+      {/* === FLASH SALE BANNER === */}
       {flashSaleEnd && new Date(flashSaleEnd) > new Date() && (
-        <div className="rounded-xl border border-border bg-muted/40 p-3 text-center">
-          <p className="text-xs font-semibold text-foreground">
-            Promo aktif sampai {new Date(flashSaleEnd).toLocaleString("id-ID")}
-          </p>
+        <div className="relative overflow-hidden rounded-2xl p-[2px] update-aurora-bg animate-neon-border">
+          <div className="relative rounded-2xl bg-background/90 backdrop-blur p-3 text-center overflow-hidden">
+            <div className="absolute inset-0 animate-shimmer-bar pointer-events-none" />
+            <p className="relative text-sm font-black bg-gradient-to-r from-pink-500 via-amber-400 to-rose-500 bg-clip-text text-transparent flex items-center justify-center gap-2">
+              <span className="text-lg animate-sticker">🔥</span>
+              FLASH SALE sampai {new Date(flashSaleEnd).toLocaleString("id-ID")}
+              <span className="text-lg animate-sticker">⚡</span>
+            </p>
+          </div>
         </div>
       )}
 
@@ -273,8 +319,11 @@ export default function PlusTab() {
       {bundlePackages.length > 0 && (
         <SectionCard
           title="Paket Bundel"
-          icon={<Package className="w-4 h-4 text-foreground" strokeWidth={1.8} />}
+          icon={<Package className="w-5 h-5 text-white" strokeWidth={2.2} />}
           description="Hemat lebih banyak dengan paket kombo"
+          gradient="from-pink-500 via-rose-500 to-amber-500"
+          glowColor="236,72,153"
+          emoji="🎁"
           needPin={bundleNeedPin}
           pin={bundlePin}
           setPin={setBundlePin}
@@ -283,7 +332,7 @@ export default function PlusTab() {
           onConfirmPin={() => handleBuyBundle(bundleSelectedPkg!, bundlePin)}
           onCancelPin={() => { setBundleNeedPin(false); setBundlePin(""); setBundleSelectedPkg(null); }}
         >
-          {bundlePackages.map(pkg => {
+          {bundlePackages.map((pkg, i) => {
             const parts: string[] = [];
             if (pkg.credits > 0) parts.push(`${pkg.credits} Kredit`);
             if (pkg.streak_days > 0) parts.push(`${pkg.streak_days} Hari Streak`);
@@ -291,11 +340,13 @@ export default function PlusTab() {
             return (
               <PackageButton
                 key={pkg.id}
+                index={i}
                 label={parts.join(" + ")}
                 price={pkg.price}
                 buying={bundleBuying === pkg.id}
                 anyBuying={!!bundleBuying}
-                icon={<Package className="w-4 h-4 text-foreground" strokeWidth={1.8} />}
+                icon={<Gift className="w-4 h-4 text-white" strokeWidth={2.2} />}
+                accentGradient="from-pink-500 to-amber-500"
                 onClick={() => handleBuyBundle(pkg.id)}
               />
             );
@@ -306,8 +357,11 @@ export default function PlusTab() {
       {/* KREDIT GAME */}
       <SectionCard
         title="Kredit Game"
-        icon={<Key className="w-4 h-4 text-foreground" strokeWidth={1.8} />}
+        icon={<Key className="w-5 h-5 text-white" strokeWidth={2.2} />}
         description="1 kredit = 1x lihat kunci jawaban"
+        gradient="from-cyan-500 via-blue-500 to-violet-500"
+        glowColor="34,211,238"
+        emoji="🔑"
         needPin={creditNeedPin}
         pin={creditPin}
         setPin={setCreditPin}
@@ -316,15 +370,18 @@ export default function PlusTab() {
         onConfirmPin={() => handleBuyCredit(creditSelectedPkg!, creditPin)}
         onCancelPin={() => { setCreditNeedPin(false); setCreditPin(""); setCreditSelectedPkg(null); }}
       >
-        {creditPackages.map(pkg => (
+        {creditPackages.map((pkg, i) => (
           <PackageButton
             key={pkg.id}
+            index={i}
             label={pkg.label}
             price={pkg.price}
             originalPrice={pkg.originalPrice}
             buying={creditBuying === pkg.id}
             anyBuying={!!creditBuying}
-            icon={pkg.is_unlimited ? <Infinity className="w-4 h-4 text-foreground" strokeWidth={1.8} /> : <Key className="w-4 h-4 text-foreground" strokeWidth={1.8} />}
+            icon={pkg.is_unlimited ? <Infinity className="w-4 h-4 text-white" strokeWidth={2.2} /> : <Key className="w-4 h-4 text-white" strokeWidth={2.2} />}
+            accentGradient={pkg.is_unlimited ? "from-amber-400 to-rose-500" : "from-cyan-500 to-violet-500"}
+            featured={pkg.is_unlimited}
             onClick={() => handleBuyCredit(pkg.id)}
           />
         ))}
@@ -333,8 +390,11 @@ export default function PlusTab() {
       {/* STREAK */}
       <SectionCard
         title="Paket Streak"
-        icon={<CalendarDays className="w-4 h-4 text-foreground" strokeWidth={1.8} />}
+        icon={<CalendarDays className="w-5 h-5 text-white" strokeWidth={2.2} />}
         description="Auto-klaim streak harian"
+        gradient="from-emerald-500 via-teal-500 to-cyan-500"
+        glowColor="16,185,129"
+        emoji="🔥"
         needPin={streakNeedPin}
         pin={streakPin}
         setPin={setStreakPin}
@@ -343,15 +403,17 @@ export default function PlusTab() {
         onConfirmPin={() => handleBuyStreak(streakSelectedPkg!, streakPin)}
         onCancelPin={() => { setStreakNeedPin(false); setStreakPin(""); setStreakSelectedPkg(null); }}
       >
-        {streakPackages.map(pkg => (
+        {streakPackages.map((pkg, i) => (
           <PackageButton
             key={pkg.id}
+            index={i}
             label={`${pkg.name} (${pkg.days} hari)`}
             price={pkg.price}
             originalPrice={pkg.originalPrice}
             buying={streakBuying === pkg.id}
             anyBuying={!!streakBuying}
-            icon={<CalendarDays className="w-4 h-4 text-foreground" strokeWidth={1.8} />}
+            icon={<CalendarDays className="w-4 h-4 text-white" strokeWidth={2.2} />}
+            accentGradient="from-emerald-500 to-cyan-500"
             onClick={() => handleBuyStreak(pkg.id)}
           />
         ))}
@@ -360,8 +422,11 @@ export default function PlusTab() {
       {/* STORAGE */}
       <SectionCard
         title="Paket Storage Musik"
-        icon={<HardDrive className="w-4 h-4 text-foreground" strokeWidth={1.8} />}
+        icon={<HardDrive className="w-5 h-5 text-white" strokeWidth={2.2} />}
         description="Tambah ruang penyimpanan musik"
+        gradient="from-violet-500 via-purple-500 to-fuchsia-500"
+        glowColor="168,85,247"
+        emoji="💾"
         needPin={storageNeedPin}
         pin={storagePin}
         setPin={setStoragePin}
@@ -370,14 +435,16 @@ export default function PlusTab() {
         onConfirmPin={() => handleBuyStorage(storageSelectedPkg!, storagePin)}
         onCancelPin={() => { setStorageNeedPin(false); setStoragePin(""); setStorageSelectedPkg(null); }}
       >
-        {storagePackages.map(pkg => (
+        {storagePackages.map((pkg, i) => (
           <PackageButton
             key={pkg.id}
+            index={i}
             label={`${pkg.name} (${pkg.storage_mb >= 1024 ? `${(pkg.storage_mb/1024).toFixed(0)} GB` : `${pkg.storage_mb} MB`} • 30 hari)`}
             price={pkg.price}
             buying={storageBuying === pkg.id}
             anyBuying={!!storageBuying}
-            icon={<HardDrive className="w-4 h-4 text-foreground" strokeWidth={1.8} />}
+            icon={<HardDrive className="w-4 h-4 text-white" strokeWidth={2.2} />}
+            accentGradient="from-violet-500 to-fuchsia-500"
             onClick={() => handleBuyStorage(pkg.id)}
           />
         ))}
@@ -387,63 +454,133 @@ export default function PlusTab() {
   );
 }
 
-function SectionCard({ title, icon, description, children, needPin, pin, setPin, buying, selectedPkg, onConfirmPin, onCancelPin }: {
+function SectionCard({ title, icon, description, children, gradient = "from-primary to-primary", glowColor = "168,85,247", emoji = "✨", needPin, pin, setPin, buying, selectedPkg, onConfirmPin, onCancelPin }: {
   title: string; icon: React.ReactNode; description: string; children: React.ReactNode;
+  gradient?: string; glowColor?: string; emoji?: string;
   needPin: boolean; pin: string; setPin: (v: string) => void; buying: string | null; selectedPkg: string | null;
   onConfirmPin: () => void; onCancelPin: () => void;
 }) {
   return (
-    <Card className="border border-border bg-card shadow-none">
-      <CardContent className="p-4 space-y-3">
-        <div className="flex items-start gap-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-muted">
-            {icon}
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true }}
+      transition={{ duration: 0.5, ease: "easeOut" }}
+      className="relative group"
+    >
+      {/* Glow halo */}
+      <div
+        className="absolute -inset-0.5 rounded-3xl opacity-50 blur-xl group-hover:opacity-90 transition-opacity duration-500"
+        style={{ background: `linear-gradient(135deg, rgba(${glowColor},0.4), rgba(${glowColor},0.1))` }}
+      />
+      <Card className={`relative overflow-hidden border-2 border-white/10 bg-gradient-to-br from-card via-card to-card/80 backdrop-blur shadow-[0_8px_32px_rgba(0,0,0,0.12)] rounded-3xl`}>
+        {/* Decorative corner blob */}
+        <div
+          className={`absolute -top-12 -right-12 w-32 h-32 rounded-full bg-gradient-to-br ${gradient} opacity-20 blur-2xl animate-blob`}
+        />
+        <div className="absolute top-2 right-3 text-2xl opacity-70 animate-sticker pointer-events-none">{emoji}</div>
+
+        <CardContent className="relative p-4 space-y-3">
+          <div className="flex items-start gap-3">
+            <div className={`flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br ${gradient} shadow-[0_4px_20px_rgba(0,0,0,0.2)] quick-action-float`}>
+              {icon}
+            </div>
+            <div className="flex-1 min-w-0">
+              <h3 className={`font-black text-base bg-gradient-to-r ${gradient} bg-clip-text text-transparent tracking-tight`}>
+                {title}
+              </h3>
+              <p className="text-[11px] text-muted-foreground font-medium">{description}</p>
+            </div>
           </div>
-          <div>
-            <h3 className="font-semibold text-sm flex items-center gap-2">{title}</h3>
-            <p className="text-[11px] text-muted-foreground">{description}</p>
-          </div>
-        </div>
-        {needPin && selectedPkg ? (
-          <div className="space-y-2">
-            <p className="text-sm font-bold flex items-center gap-1"><Lock className="w-4 h-4" /> Masukkan PIN</p>
-            <Input type="password" maxLength={6} placeholder="PIN 6 digit" value={pin} onChange={e => setPin(e.target.value.replace(/\D/g, ""))} />
-            <Button className="w-full" disabled={pin.length !== 6 || !!buying} onClick={onConfirmPin}>
-              {buying ? <Loader2 className="w-4 h-4 animate-spin" /> : "Konfirmasi"}
-            </Button>
-            <Button variant="ghost" className="w-full text-xs" onClick={onCancelPin}>Batal</Button>
-          </div>
-        ) : (
-          <div className="grid gap-2">{children}</div>
-        )}
-      </CardContent>
-    </Card>
+
+          {needPin && selectedPkg ? (
+            <div className="space-y-2 rounded-2xl bg-gradient-to-br from-amber-500/10 to-rose-500/10 border border-amber-500/30 p-3">
+              <p className="text-sm font-black flex items-center gap-1 text-amber-500">
+                <Lock className="w-4 h-4" /> Masukkan PIN
+              </p>
+              <Input
+                type="password"
+                maxLength={6}
+                placeholder="PIN 6 digit"
+                value={pin}
+                onChange={e => setPin(e.target.value.replace(/\D/g, ""))}
+                className="rounded-xl border-2 border-amber-500/30 focus-visible:ring-amber-500 text-center font-mono text-lg tracking-[0.5em]"
+              />
+              <Button
+                className={`w-full rounded-xl bg-gradient-to-r ${gradient} text-white font-bold shadow-lg`}
+                disabled={pin.length !== 6 || !!buying}
+                onClick={onConfirmPin}
+              >
+                {buying ? <Loader2 className="w-4 h-4 animate-spin" /> : "Konfirmasi"}
+              </Button>
+              <Button variant="ghost" className="w-full text-xs" onClick={onCancelPin}>Batal</Button>
+            </div>
+          ) : (
+            <div className="grid gap-2">{children}</div>
+          )}
+        </CardContent>
+      </Card>
+    </motion.div>
   );
 }
 
-function PackageButton({ label, price, originalPrice, buying, anyBuying, icon, onClick }: {
+function PackageButton({ label, price, originalPrice, buying, anyBuying, icon, onClick, accentGradient = "from-violet-500 to-cyan-500", featured = false, index = 0 }: {
   label: string; price: number; originalPrice?: number; buying: boolean; anyBuying: boolean; icon: React.ReactNode; onClick: () => void;
+  accentGradient?: string; featured?: boolean; index?: number;
 }) {
   const hasPromo = originalPrice && originalPrice !== price;
   return (
-    <motion.div whileTap={{ scale: 0.97 }}>
-      <Button variant="outline" className="w-full justify-between h-auto rounded-xl border-border bg-background py-3 shadow-none" disabled={anyBuying} onClick={onClick}>
-        <div className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-muted">{icon}</div>
-          <span className="font-semibold text-sm text-left">{label}</span>
+    <motion.div
+      initial={{ opacity: 0, x: -20 }}
+      animate={{ opacity: 1, x: 0 }}
+      transition={{ delay: index * 0.05, duration: 0.3 }}
+      whileTap={{ scale: 0.97 }}
+      whileHover={{ scale: 1.02, y: -2 }}
+      className="relative group/btn"
+    >
+      {featured && (
+        <div className="absolute -top-2 -right-2 z-10 px-2 py-0.5 rounded-full bg-gradient-to-r from-amber-400 to-rose-500 text-[9px] font-black text-white shadow-lg animate-sticker flex items-center gap-0.5">
+          <Star className="w-2.5 h-2.5 fill-white" /> HOT
         </div>
-        <div className="flex items-center gap-2">
+      )}
+      <button
+        type="button"
+        disabled={anyBuying}
+        onClick={onClick}
+        className={`relative w-full flex items-center justify-between gap-3 rounded-2xl p-3 overflow-hidden border-2 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed
+          ${featured
+            ? "border-amber-400/50 bg-gradient-to-r from-amber-500/10 via-rose-500/10 to-pink-500/10 shadow-[0_4px_20px_rgba(251,191,36,0.25)]"
+            : "border-white/10 bg-gradient-to-r from-background via-card to-background hover:border-white/30"}
+        `}
+      >
+        {/* Shimmer overlay on hover */}
+        <div className="absolute inset-0 opacity-0 group-hover/btn:opacity-100 transition-opacity">
+          <div className="absolute inset-0 animate-shimmer-bar" />
+        </div>
+
+        <div className="relative flex items-center gap-3 min-w-0 flex-1">
+          <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br ${accentGradient} shadow-[0_3px_12px_rgba(0,0,0,0.2)] quick-action-bounce`}>
+            {icon}
+          </div>
+          <span className="font-bold text-sm text-left text-foreground truncate">{label}</span>
+        </div>
+
+        <div className="relative flex items-center gap-2 shrink-0">
           {hasPromo ? (
             <div className="text-right">
               <span className="text-[10px] text-muted-foreground line-through block">{formatPrice(originalPrice!)}</span>
-              <span className="text-xs font-semibold text-foreground">{formatPrice(price)}</span>
+              <span className={`text-sm font-black bg-gradient-to-r ${accentGradient} bg-clip-text text-transparent`}>
+                {formatPrice(price)}
+              </span>
             </div>
           ) : (
-            <span className="text-xs font-medium text-muted-foreground">{formatPrice(price)}</span>
+            <span className={`text-sm font-black bg-gradient-to-r ${accentGradient} bg-clip-text text-transparent`}>
+              {formatPrice(price)}
+            </span>
           )}
-          {buying && <Loader2 className="w-3 h-3 animate-spin" />}
+          {buying && <Loader2 className="w-4 h-4 animate-spin text-foreground" />}
         </div>
-      </Button>
+      </button>
     </motion.div>
   );
 }
