@@ -5969,29 +5969,29 @@ const Index = () => {
 
 
       {/* === Minimal Bottom Nav (IG/TikTok style) === */}
-      <nav className="fixed bottom-0 left-0 right-0 z-50 bg-background border-t border-border pb-[env(safe-area-inset-bottom)]">
+      <nav className="fixed bottom-0 left-0 right-0 z-50 bg-background/85 backdrop-blur-xl border-t border-border pb-[env(safe-area-inset-bottom)]">
         <div className="max-w-lg mx-auto">
           <div className="flex overflow-x-auto scrollbar-hide">
             {([
-              { key: "beranda" as Tab, icon: Home, label: "Beranda" },
-              { key: "musik" as Tab, icon: Music2, label: "Musik" },
-              { key: "produk" as Tab, icon: Package, label: t("nav.products", lang) },
-              { key: "voucher" as Tab, icon: Ticket, label: t("nav.voucher", lang) },
-              { key: "saldo" as Tab, icon: Wallet, label: t("nav.balance", lang) },
-              { key: "likes" as Tab, icon: Heart, label: t("nav.likes", lang) },
-              { key: "history" as Tab, icon: Clock, label: t("nav.history", lang) },
-              { key: "tiket" as Tab, icon: AlertCircle, label: t("nav.ticket", lang) },
-              { key: "sponsor" as Tab, icon: Megaphone, label: "Sponsor" },
-              { key: "streak" as Tab, icon: CalendarDays, label: "Streak" },
-              { key: "streakevent" as Tab, icon: CalendarDays, label: "Event" },
-              { key: "streakshop" as Tab, icon: CalendarDays, label: "Shop" },
-              { key: "streakmembership" as Tab, icon: Crown, label: "M.Streak" },
-              { key: "luckroyale" as any, icon: Crown, label: "L.Royale", external: "/luck-royale-nyawa" },
-              { key: "game" as Tab, icon: Gamepad2, label: "Game" },
-              { key: "plus" as Tab, icon: Gem, label: "Plus" },
-              { key: "update" as Tab, icon: RefreshCw, label: "Update" },
-              { key: "adminpost" as Tab, icon: FileText, label: "Admin" },
-            ] as Array<{ key: any; icon: any; label: string; external?: string }>).map(({ key, icon: Icon, label, external }) => {
+              { key: "beranda" as Tab, icon: Home, label: "Beranda", grad: "from-orange-400 via-pink-500 to-rose-500", glow: "244,114,182" },
+              { key: "musik" as Tab, icon: Music2, label: "Musik", grad: "from-fuchsia-500 via-purple-500 to-indigo-500", glow: "168,85,247" },
+              { key: "produk" as Tab, icon: Package, label: t("nav.products", lang), grad: "from-amber-400 via-orange-500 to-red-500", glow: "251,146,60" },
+              { key: "voucher" as Tab, icon: Ticket, label: t("nav.voucher", lang), grad: "from-yellow-400 via-amber-500 to-orange-500", glow: "245,158,11" },
+              { key: "saldo" as Tab, icon: Wallet, label: t("nav.balance", lang), grad: "from-emerald-400 via-cyan-500 to-purple-500", glow: "16,185,129" },
+              { key: "likes" as Tab, icon: Heart, label: t("nav.likes", lang), grad: "from-rose-400 via-pink-500 to-red-500", glow: "244,63,94" },
+              { key: "history" as Tab, icon: Clock, label: t("nav.history", lang), grad: "from-sky-400 via-blue-500 to-indigo-500", glow: "59,130,246" },
+              { key: "tiket" as Tab, icon: AlertCircle, label: t("nav.ticket", lang), grad: "from-lime-400 via-green-500 to-emerald-500", glow: "34,197,94" },
+              { key: "sponsor" as Tab, icon: Megaphone, label: "Sponsor", grad: "from-cyan-400 via-teal-500 to-emerald-500", glow: "20,184,166" },
+              { key: "streak" as Tab, icon: CalendarDays, label: "Streak", grad: "from-orange-400 via-red-500 to-pink-600", glow: "239,68,68" },
+              { key: "streakevent" as Tab, icon: CalendarDays, label: "Event", grad: "from-pink-400 via-fuchsia-500 to-purple-600", glow: "217,70,239" },
+              { key: "streakshop" as Tab, icon: CalendarDays, label: "Shop", grad: "from-teal-400 via-emerald-500 to-green-600", glow: "16,185,129" },
+              { key: "streakmembership" as Tab, icon: Crown, label: "M.Streak", grad: "from-yellow-300 via-amber-400 to-orange-500", glow: "250,204,21" },
+              { key: "luckroyale" as any, icon: Crown, label: "L.Royale", external: "/luck-royale-nyawa", grad: "from-amber-300 via-yellow-400 to-orange-500", glow: "234,179,8" },
+              { key: "game" as Tab, icon: Gamepad2, label: "Game", grad: "from-violet-500 via-purple-500 to-fuchsia-500", glow: "139,92,246" },
+              { key: "plus" as Tab, icon: Gem, label: "Plus", grad: "from-cyan-300 via-sky-400 to-blue-500", glow: "56,189,248" },
+              { key: "update" as Tab, icon: RefreshCw, label: "Update", grad: "from-emerald-300 via-teal-400 to-cyan-500", glow: "45,212,191" },
+              { key: "adminpost" as Tab, icon: FileText, label: "Admin", grad: "from-slate-400 via-zinc-500 to-gray-600", glow: "148,163,184" },
+            ] as Array<{ key: any; icon: any; label: string; external?: string; grad: string; glow: string }>).map(({ key, icon: Icon, label, external, grad, glow }) => {
               const active = !external && tab === key;
               const isSaldo = key === "saldo";
               return (
@@ -6000,51 +6000,53 @@ const Index = () => {
                   onClick={() => external ? navigate(external) : setTab(key)}
                   aria-label={label}
                   aria-current={active ? "page" : undefined}
-                  className={`shrink-0 flex flex-col items-center justify-center gap-0.5 min-w-[60px] px-2 py-2 outline-none focus-visible:bg-muted/50 active:bg-muted/40 transition-all relative ${isSaldo ? "group" : ""}`}
+                  className="group shrink-0 flex flex-col items-center justify-center gap-0.5 min-w-[60px] px-2 py-2 outline-none focus-visible:bg-muted/50 active:scale-95 transition-all relative"
                 >
-                  {isSaldo && (
+                  {/* Top accent bar - active or saldo always */}
+                  <span
+                    className={`pointer-events-none absolute inset-x-2 top-0 h-[2px] rounded-full bg-gradient-to-r ${grad} transition-opacity ${active || isSaldo ? "opacity-100" : "opacity-0"}`}
+                  />
+                  {/* Icon container with glow */}
+                  <span className="relative">
+                    {/* Glow halo */}
                     <span
-                      className="pointer-events-none absolute inset-x-1 top-0 h-0.5 rounded-full aurora-shift"
-                      style={{
-                        background: "linear-gradient(90deg, hsl(150 80% 50%), hsl(190 95% 55%), hsl(280 90% 65%), hsl(330 90% 60%), hsl(45 95% 55%), hsl(150 80% 50%))",
-                        backgroundSize: "300% 100%",
-                        opacity: active ? 1 : 0.55,
-                      }}
+                      className={`absolute inset-0 rounded-full blur-md transition-opacity ${active ? "opacity-80 animate-pulse" : isSaldo ? "opacity-50" : "opacity-0 group-hover:opacity-40"}`}
+                      style={{ background: `rgba(${glow}, 0.55)` }}
                     />
-                  )}
-                  {isSaldo ? (
-                    <span className="relative">
+                    {isSaldo ? (
                       <span
-                        className={`absolute inset-0 rounded-full blur-md transition-opacity ${active ? "opacity-90 animate-pulse" : "opacity-50 group-hover:opacity-75"}`}
-                        style={{ background: "linear-gradient(135deg, hsl(150 80% 50%), hsl(190 95% 55%), hsl(280 90% 65%), hsl(45 95% 55%))" }}
-                      />
-                      <span
-                        className="relative w-[26px] h-[26px] rounded-full flex items-center justify-center shadow-lg aurora-shift"
-                        style={{
-                          background: "linear-gradient(135deg, hsl(150 80% 50%), hsl(190 95% 55%), hsl(280 90% 65%), hsl(45 95% 55%), hsl(150 80% 50%))",
-                          backgroundSize: "300% 300%",
-                        }}
+                        className={`relative w-[26px] h-[26px] rounded-full flex items-center justify-center shadow-lg bg-gradient-to-br ${grad} aurora-shift`}
+                        style={{ backgroundSize: "300% 300%" }}
                       >
                         <Wallet className="w-3.5 h-3.5 text-white drop-shadow" strokeWidth={2.4} />
                       </span>
+                    ) : active ? (
+                      <span className={`relative w-[26px] h-[26px] rounded-full flex items-center justify-center shadow-md bg-gradient-to-br ${grad}`}>
+                        <Icon
+                          className="w-[15px] h-[15px] text-white drop-shadow"
+                          strokeWidth={2.4}
+                          fill={Icon === Heart ? "currentColor" : "none"}
+                        />
+                      </span>
+                    ) : (
+                      <Icon
+                        className="relative w-[22px] h-[22px] text-muted-foreground group-hover:text-foreground transition-colors"
+                        strokeWidth={1.8}
+                        fill={Icon === Heart ? "none" : "none"}
+                      />
+                    )}
+                    {isSaldo && (
                       <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-emerald-400 ring-2 ring-background animate-pulse" />
-                    </span>
-                  ) : (
-                    <Icon
-                      className={`w-[22px] h-[22px] transition-colors ${
-                        active ? "text-foreground" : "text-muted-foreground"
-                      }`}
-                      strokeWidth={active ? 2.2 : 1.7}
-                      fill={active && (Icon === Heart) ? "currentColor" : "none"}
-                    />
-                  )}
+                    )}
+                  </span>
+                  {/* Label */}
                   <span
                     className={`text-[10px] leading-none transition-all ${
                       isSaldo
-                        ? `font-extrabold uppercase tracking-wider bg-clip-text text-transparent bg-gradient-to-r from-emerald-500 via-cyan-500 to-purple-500 ${active ? "scale-105" : ""}`
+                        ? `font-extrabold uppercase tracking-wider bg-clip-text text-transparent bg-gradient-to-r ${grad} ${active ? "scale-105" : ""}`
                         : active
-                          ? "font-semibold text-foreground"
-                          : "font-normal text-muted-foreground"
+                          ? `font-bold bg-clip-text text-transparent bg-gradient-to-r ${grad} scale-105`
+                          : "font-normal text-muted-foreground group-hover:text-foreground"
                     }`}
                   >
                     {label}
