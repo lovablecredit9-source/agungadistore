@@ -5993,24 +5993,58 @@ const Index = () => {
               { key: "adminpost" as Tab, icon: FileText, label: "Admin" },
             ] as Array<{ key: any; icon: any; label: string; external?: string }>).map(({ key, icon: Icon, label, external }) => {
               const active = !external && tab === key;
+              const isSaldo = key === "saldo";
               return (
                 <button
                   key={key}
                   onClick={() => external ? navigate(external) : setTab(key)}
                   aria-label={label}
                   aria-current={active ? "page" : undefined}
-                  className="shrink-0 flex flex-col items-center justify-center gap-0.5 min-w-[60px] px-2 py-2 outline-none focus-visible:bg-muted/50 active:bg-muted/40 transition-colors"
+                  className={`shrink-0 flex flex-col items-center justify-center gap-0.5 min-w-[60px] px-2 py-2 outline-none focus-visible:bg-muted/50 active:bg-muted/40 transition-all relative ${isSaldo ? "group" : ""}`}
                 >
-                  <Icon
-                    className={`w-[22px] h-[22px] transition-colors ${
-                      active ? "text-foreground" : "text-muted-foreground"
-                    }`}
-                    strokeWidth={active ? 2.2 : 1.7}
-                    fill={active && (Icon === Heart) ? "currentColor" : "none"}
-                  />
+                  {isSaldo && (
+                    <span
+                      className="pointer-events-none absolute inset-x-1 top-0 h-0.5 rounded-full aurora-shift"
+                      style={{
+                        background: "linear-gradient(90deg, hsl(150 80% 50%), hsl(190 95% 55%), hsl(280 90% 65%), hsl(330 90% 60%), hsl(45 95% 55%), hsl(150 80% 50%))",
+                        backgroundSize: "300% 100%",
+                        opacity: active ? 1 : 0.55,
+                      }}
+                    />
+                  )}
+                  {isSaldo ? (
+                    <span className="relative">
+                      <span
+                        className={`absolute inset-0 rounded-full blur-md transition-opacity ${active ? "opacity-90 animate-pulse" : "opacity-50 group-hover:opacity-75"}`}
+                        style={{ background: "linear-gradient(135deg, hsl(150 80% 50%), hsl(190 95% 55%), hsl(280 90% 65%), hsl(45 95% 55%))" }}
+                      />
+                      <span
+                        className="relative w-[26px] h-[26px] rounded-full flex items-center justify-center shadow-lg aurora-shift"
+                        style={{
+                          background: "linear-gradient(135deg, hsl(150 80% 50%), hsl(190 95% 55%), hsl(280 90% 65%), hsl(45 95% 55%), hsl(150 80% 50%))",
+                          backgroundSize: "300% 300%",
+                        }}
+                      >
+                        <Wallet className="w-3.5 h-3.5 text-white drop-shadow" strokeWidth={2.4} />
+                      </span>
+                      <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-emerald-400 ring-2 ring-background animate-pulse" />
+                    </span>
+                  ) : (
+                    <Icon
+                      className={`w-[22px] h-[22px] transition-colors ${
+                        active ? "text-foreground" : "text-muted-foreground"
+                      }`}
+                      strokeWidth={active ? 2.2 : 1.7}
+                      fill={active && (Icon === Heart) ? "currentColor" : "none"}
+                    />
+                  )}
                   <span
-                    className={`text-[10px] leading-none transition-colors ${
-                      active ? "font-semibold text-foreground" : "font-normal text-muted-foreground"
+                    className={`text-[10px] leading-none transition-all ${
+                      isSaldo
+                        ? `font-extrabold uppercase tracking-wider bg-clip-text text-transparent bg-gradient-to-r from-emerald-500 via-cyan-500 to-purple-500 ${active ? "scale-105" : ""}`
+                        : active
+                          ? "font-semibold text-foreground"
+                          : "font-normal text-muted-foreground"
                     }`}
                   >
                     {label}
