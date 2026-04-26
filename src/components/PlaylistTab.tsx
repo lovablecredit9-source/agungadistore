@@ -1245,14 +1245,13 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer, onPlayE
               )}
             </div>
 
-            {/* Audio Visualizer Bar Musik */}
-            <div className="w-full rounded-2xl bg-gradient-to-r from-primary/10 via-primary/5 to-primary/10 backdrop-blur-sm border border-primary/20 p-3 mt-3 mb-1 shadow-[0_0_24px_hsl(var(--primary)/0.25)]">
+            {/* Audio Visualizer Bar Musik — pixel/LED style */}
+            <div className="w-full rounded-2xl bg-[#0b0a1f] border border-primary/20 p-3 mt-3 mb-1 shadow-[0_0_24px_hsl(var(--primary)/0.25)] overflow-hidden">
               <MusicEqualizer
                 isPlaying={isPlaying}
-                bars={28}
-                height={56}
-                barWidth={5}
-                variant="rainbow"
+                bars={40}
+                height={72}
+                variant="pixel"
                 className="w-full"
               />
             </div>
