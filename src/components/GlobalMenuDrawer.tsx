@@ -647,15 +647,6 @@ export default function GlobalMenuDrawer() {
           <div className="relative h-36 overflow-hidden bg-gradient-to-br from-fuchsia-500 via-pink-500 to-amber-400">
             <div className="absolute -top-12 -left-10 w-44 h-44 rounded-full bg-white/25 blur-3xl" />
             <div className="absolute -bottom-14 -right-10 w-48 h-48 rounded-full bg-cyan-300/40 blur-3xl" />
-            <div className="absolute top-3 right-3">
-              <button
-                onClick={() => setOpen(false)}
-                aria-label="Tutup"
-                className="h-8 w-8 rounded-full bg-white/25 hover:bg-white/35 backdrop-blur flex items-center justify-center text-white"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
             <div className="relative h-full flex flex-col justify-end p-5 text-white">
               <div className="flex items-center gap-2 text-xs font-semibold opacity-90">
                 <Sparkles className="h-3.5 w-3.5" />
