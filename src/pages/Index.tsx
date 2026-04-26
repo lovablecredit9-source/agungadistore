@@ -4578,129 +4578,69 @@ const Index = () => {
         const titleLong = (playbackState.song.title || "").length > 22;
         return (
           <div
-            className="fixed bottom-[56px] left-0 right-0 z-50 cursor-pointer animate-fade-in"
+            className="fixed left-0 right-0 z-50 cursor-pointer animate-fade-in"
+            style={{ bottom: "calc(env(safe-area-inset-bottom) + 84px)" }}
             onClick={() => openFullPlayerRef.current?.()}
           >
-            <div className="max-w-lg mx-auto px-2 pb-1">
-              <div className="relative rounded-2xl p-[1.5px] shadow-[0_18px_50px_-10px_rgba(217,70,239,0.85)]"
-                style={{
-                  background: "linear-gradient(120deg, #ec4899, #a855f7, #6366f1, #06b6d4, #ec4899)",
-                  backgroundSize: "300% 300%",
-                  animation: "aurora-shift 8s ease infinite",
-                }}
-              >
-                <div className="relative overflow-hidden rounded-[14px] bg-gradient-to-r from-[#1a0b2e]/95 via-[#2a0f47]/95 to-[#0f0a3d]/95 backdrop-blur-xl">
-                  {/* Aurora glow blobs */}
-                  <div className="pointer-events-none absolute -top-8 -left-6 w-32 h-32 rounded-full bg-fuchsia-500/30 blur-3xl" />
-                  <div className="pointer-events-none absolute -bottom-10 right-0 w-36 h-36 rounded-full bg-indigo-500/30 blur-3xl" />
-                  <div className="pointer-events-none absolute top-0 left-1/2 -translate-x-1/2 w-24 h-24 rounded-full bg-cyan-400/15 blur-2xl" />
+            <div className="max-w-lg mx-auto px-3">
+              <div className="relative overflow-hidden rounded-[20px] bg-background/60 backdrop-blur-2xl backdrop-saturate-150 border border-white/15 shadow-[0_18px_50px_-12px_rgba(0,0,0,0.55),inset_0_1px_0_0_rgba(255,255,255,0.18)]">
+                {/* Subtle ambient glow from cover */}
+                <div className="pointer-events-none absolute -top-10 -left-6 w-32 h-32 rounded-full bg-fuchsia-500/15 blur-3xl" />
+                <div className="pointer-events-none absolute -bottom-10 right-0 w-32 h-32 rounded-full bg-indigo-500/15 blur-3xl" />
 
-                  {/* Shine sweep */}
+                {/* Top thin progress bar (iOS style) */}
+                <div className="absolute top-0 inset-x-0 h-[2px] bg-white/10">
                   <div
-                    className="absolute inset-y-0 w-1/3 bg-gradient-to-r from-transparent via-white/15 to-transparent skew-x-12 pointer-events-none"
-                    style={{ animation: "shine-sweep 4s linear infinite" }}
+                    className="h-full bg-foreground/80 transition-all duration-300"
+                    style={{ width: `${mpProgress}%` }}
                   />
+                </div>
 
-                  {/* Top progress bar (glowing playhead) */}
-                  <div className="absolute top-0 inset-x-0 h-[3px] bg-white/10">
+                <div className="relative flex items-center gap-3 px-3 py-2.5">
+                  {/* Square rounded cover (iOS style) */}
+                  <div className="relative shrink-0">
                     <div
-                      className="relative h-full bg-gradient-to-r from-pink-400 via-fuchsia-400 to-cyan-300 shadow-[0_0_10px_rgba(236,72,153,0.9)] transition-all duration-300"
-                      style={{ width: `${mpProgress}%` }}
+                      className="w-12 h-12 rounded-xl overflow-hidden bg-black/40"
+                      style={{ boxShadow: "0 6px 16px -4px rgba(0,0,0,0.5), inset 0 1px 0 0 rgba(255,255,255,0.15)" }}
                     >
-                      <span className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 w-2.5 h-2.5 rounded-full bg-white shadow-[0_0_10px_rgba(255,255,255,0.95)]" />
+                      {playbackState.song.cover_url ? (
+                        <img src={playbackState.song.cover_url} alt="" className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="w-full h-full bg-gradient-to-br from-fuchsia-500 to-purple-600 flex items-center justify-center">
+                          <Music className="w-5 h-5 text-white" />
+                        </div>
+                      )}
                     </div>
                   </div>
 
-                  <div className="relative flex items-center gap-3 px-3 pt-3 pb-2.5">
-                    {/* Vinyl-style cover with orbit dot */}
-                    <div className="relative shrink-0 w-14 h-14">
-                      {mpPlaying && (
-                        <span className="pointer-events-none absolute inset-0 rounded-full border border-pink-400/60"
-                          style={{ animation: "pulse-ring 1.8s ease-out infinite" }} />
-                      )}
-                      <div
-                        className="w-14 h-14 rounded-full overflow-hidden border-2 border-white/40 bg-black shadow-[0_0_18px_rgba(217,70,239,0.7)] relative"
-                        style={mpPlaying ? { animation: "spin 6s linear infinite" } : undefined}
-                      >
-                        {playbackState.song.cover_url ? (
-                          <img src={playbackState.song.cover_url} alt="" className="w-full h-full object-cover" />
-                        ) : (
-                          <div className="w-full h-full bg-gradient-to-br from-fuchsia-500 to-purple-600 flex items-center justify-center">
-                            <Music className="w-5 h-5 text-white" />
-                          </div>
-                        )}
-                        {/* Vinyl rings */}
-                        <div className="absolute inset-1 rounded-full border border-white/10" />
-                        <div className="absolute inset-3 rounded-full border border-white/10" />
-                        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                          <div className="w-3 h-3 rounded-full bg-black border border-white/50 shadow-inner" />
+                  {/* Title + artist */}
+                  <div className="flex-1 min-w-0">
+                    <div className="overflow-hidden">
+                      {titleLong && mpPlaying ? (
+                        <div className="whitespace-nowrap" style={{ animation: "marquee-x 12s linear infinite" }}>
+                          <span className="text-[14px] font-semibold text-foreground inline-block pr-8 tracking-tight">{playbackState.song.title}</span>
+                          <span className="text-[14px] font-semibold text-foreground inline-block pr-8 tracking-tight">{playbackState.song.title}</span>
                         </div>
-                      </div>
-                      {mpPlaying && (
-                        <span className="absolute -top-0.5 -right-0.5 w-3 h-3 rounded-full bg-emerald-400 border-2 border-[#1a0b2e] shadow-[0_0_8px_rgba(52,211,153,0.9)] animate-pulse" />
+                      ) : (
+                        <p className="text-[14px] font-semibold text-foreground truncate leading-tight tracking-tight">{playbackState.song.title}</p>
                       )}
                     </div>
+                    <p className="text-[12px] text-muted-foreground truncate leading-tight mt-0.5">{playbackState.song.artist}</p>
+                  </div>
 
-                    {/* Title + status + waveform */}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-1.5 mb-1">
-                        <span className="px-1.5 py-0.5 rounded bg-gradient-to-r from-pink-500/40 to-fuchsia-500/40 border border-pink-300/60 text-[9px] font-black text-pink-50 uppercase tracking-wider shadow-[0_0_8px_rgba(236,72,153,0.5)]">
-                          {mpPlaying ? "♪ Live" : "Paused"}
-                        </span>
-                        {mpPlaying && (
-                          <div className="flex items-end gap-[2px] h-3">
-                            {[0.5, 0.9, 0.4, 0.8, 0.6].map((h, i) => (
-                              <span
-                                key={i}
-                                className="w-[2px] bg-gradient-to-t from-cyan-300 via-fuchsia-300 to-pink-200 rounded-full"
-                                style={{
-                                  height: "100%",
-                                  transformOrigin: "bottom",
-                                  animation: `wave-bounce ${0.55 + i * 0.08}s ease-in-out ${i * 0.06}s infinite`,
-                                }}
-                              />
-                            ))}
-                          </div>
-                        )}
-                        <span className="ml-auto text-[10px] font-mono tabular-nums text-white/80 bg-white/10 px-1.5 py-0.5 rounded border border-white/15">
-                          {fmtTime(playbackState.currentTime)} <span className="text-white/40">/</span> {fmtTime(playbackState.duration)}
-                        </span>
-                      </div>
-
-                      {/* Title with marquee if long */}
-                      <div className="overflow-hidden">
-                        {titleLong && mpPlaying ? (
-                          <div className="whitespace-nowrap" style={{ animation: "marquee-x 12s linear infinite" }}>
-                            <span className="text-sm font-bold text-white inline-block pr-8">{playbackState.song.title}</span>
-                            <span className="text-sm font-bold text-white inline-block pr-8">{playbackState.song.title}</span>
-                          </div>
-                        ) : (
-                          <p className="text-sm font-bold text-white truncate leading-tight drop-shadow-[0_1px_4px_rgba(236,72,153,0.5)]">{playbackState.song.title}</p>
-                        )}
-                      </div>
-                      <p className="text-[11px] text-fuchsia-200/80 truncate">{playbackState.song.artist}</p>
-                    </div>
-
-                    {/* Play/Pause */}
-                    <div className="flex items-center gap-1.5 shrink-0">
-                      <button
-                        onClick={(e) => { e.stopPropagation(); togglePlayRef.current?.(); }}
-                        className="relative w-12 h-12 rounded-full bg-gradient-to-br from-pink-400 via-fuchsia-500 to-purple-600 text-white flex items-center justify-center shadow-[0_8px_24px_-4px_rgba(236,72,153,0.8)] active:scale-95 transition-transform"
-                      >
-                        {mpPlaying && (
-                          <span className="absolute inset-0 rounded-full border-2 border-pink-300/70"
-                            style={{ animation: "pulse-ring 1.6s ease-out infinite" }} />
-                        )}
-                        {mpPlaying ? (
-                          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16" rx="1" /><rect x="14" y="4" width="4" height="16" rx="1" /></svg>
-                        ) : (
-                          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><polygon points="5,3 19,12 5,21" /></svg>
-                        )}
-                      </button>
-                      <span className="w-7 h-7 rounded-full bg-white/10 border border-white/15 flex items-center justify-center backdrop-blur">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-white/80"><polyline points="18 15 12 9 6 15" /></svg>
-                      </span>
-                    </div>
+                  {/* Controls (iOS style: minimal, monochrome) */}
+                  <div className="flex items-center gap-1 shrink-0">
+                    <button
+                      onClick={(e) => { e.stopPropagation(); togglePlayRef.current?.(); }}
+                      className="w-10 h-10 rounded-full flex items-center justify-center text-foreground active:scale-90 transition-transform hover:bg-white/10"
+                      aria-label={mpPlaying ? "Pause" : "Play"}
+                    >
+                      {mpPlaying ? (
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16" rx="1.2" /><rect x="14" y="4" width="4" height="16" rx="1.2" /></svg>
+                      ) : (
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><polygon points="5,3 19,12 5,21" /></svg>
+                      )}
+                    </button>
                   </div>
                 </div>
               </div>
