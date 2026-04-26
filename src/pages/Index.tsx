@@ -5982,10 +5982,11 @@ const Index = () => {
       )}
 
 
-      {/* === Colorful Bottom Nav (all tabs highlighted) === */}
-      <nav className="fixed bottom-0 left-0 right-0 z-50 bg-background/90 backdrop-blur-2xl border-t border-border shadow-[0_-12px_40px_-18px_hsl(var(--foreground)/0.35)] pb-[env(safe-area-inset-bottom)]">
-        <div className="max-w-lg mx-auto">
-          <div className="flex overflow-x-auto scrollbar-hide px-1.5 py-1">
+      {/* === iOS-style Floating Bottom Nav === */}
+      <nav className="fixed left-0 right-0 z-50 px-3 pointer-events-none" style={{ bottom: "calc(env(safe-area-inset-bottom) + 10px)" }}>
+        <div className="max-w-lg mx-auto pointer-events-auto">
+          <div className="rounded-[28px] bg-background/60 backdrop-blur-2xl backdrop-saturate-150 border border-white/15 shadow-[0_18px_50px_-12px_rgba(0,0,0,0.45),inset_0_1px_0_0_rgba(255,255,255,0.18)] overflow-hidden">
+          <div className="flex overflow-x-auto scrollbar-hide px-2 py-2">
             {([
               { key: "beranda" as Tab, icon: Home, label: "Beranda", grad: "from-orange-400 via-pink-500 to-rose-500", glow: "244,114,182" },
               { key: "musik" as Tab, icon: Music2, label: "Musik", grad: "from-fuchsia-500 via-purple-500 to-indigo-500", glow: "168,85,247" },
