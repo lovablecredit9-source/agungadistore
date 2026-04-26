@@ -159,7 +159,7 @@ const SECTIONS: SectionDef[] = [
       },
       {
         heading: "15. Force Majeure",
-        body: "Kewajiban kami dapat ditangguhkan apabila terjadi keadaan kahar di luar kendali wajar, termasuk namun tidak terbatas pada: bencana alam, perang, kerusuhan, pandemi, gangguan infrastruktur cloud (downtime Supabase/Lovable), atau perubahan regulasi mendadak.",
+        body: "Kewajiban kami dapat ditangguhkan apabila terjadi keadaan kahar di luar kendali wajar, termasuk namun tidak terbatas pada: bencana alam, perang, kerusuhan, pandemi, gangguan infrastruktur cloud (downtime penyedia layanan), atau perubahan regulasi mendadak.",
       },
       {
         heading: "16. Perubahan Layanan & Harga",
@@ -194,7 +194,7 @@ const SECTIONS: SectionDef[] = [
     blocks: [
       {
         heading: "Ringkasan Arsitektur",
-        body: "Agung Adi Store adalah aplikasi web Single Page Application (SPA) berbasis React 18 + Vite + TypeScript dengan Tailwind CSS sebagai framework styling. Backend ditenagai Lovable Cloud (PostgreSQL terkelola + Edge Functions Deno) dengan kapabilitas realtime, auth, storage, dan serverless function. Aplikasi juga dibungkus Capacitor untuk distribusi APK Android dan mendukung instalasi PWA pada Chrome/Edge mobile.",
+        body: "Agung Adi Store adalah aplikasi web Single Page Application (SPA) berbasis React 18 + Vite + TypeScript dengan Tailwind CSS sebagai framework styling. Backend ditenagai cloud terkelola (PostgreSQL + Edge Functions Deno) dengan kapabilitas realtime, auth, storage, dan serverless function. Aplikasi juga dibungkus Capacitor untuk distribusi APK Android dan mendukung instalasi PWA pada Chrome/Edge mobile.",
       },
       {
         heading: "Tumpukan Teknologi",
@@ -202,16 +202,16 @@ const SECTIONS: SectionDef[] = [
         bullets: [
           "Frontend: React 18, Vite 5, TypeScript 5, Tailwind CSS v3, shadcn/ui.",
           "State & Data: TanStack Query, React Context, localStorage isolasi per visitor.",
-          "Backend: Lovable Cloud (PostgreSQL 15 + Row Level Security).",
+          "Backend: Cloud terkelola (PostgreSQL 15 + Row Level Security).",
           "Edge Runtime: Deno 1.x dengan Web API standar (fetch, crypto).",
-          "AI: Lovable AI Gateway (Gemini, GPT-5 family, image generation).",
+          "AI: AI Gateway (Gemini, GPT-5 family, image generation).",
           "Realtime: Postgres logical replication + WebSocket.",
           "Mobile: Capacitor 6 (Android), PWA dengan service worker.",
         ],
       },
       {
         heading: "Base URL & Konvensi",
-        body: "Seluruh permintaan menggunakan base URL backend Lovable Cloud yang dikonfigurasi via variabel lingkungan `VITE_SUPABASE_URL`. Klien resmi adalah Supabase JS SDK yang sudah di-bundle di `src/integrations/supabase/client.ts` (jangan diubah manual).",
+        body: "Seluruh permintaan menggunakan base URL backend cloud yang dikonfigurasi via variabel lingkungan `VITE_SUPABASE_URL`. Klien resmi adalah JS SDK yang sudah di-bundle di `src/integrations/supabase/client.ts` (jangan diubah manual).",
         bullets: [
           "REST: `<BASE_URL>/rest/v1/<table>`",
           "RPC: `<BASE_URL>/rest/v1/rpc/<function>`",
@@ -240,7 +240,7 @@ const SECTIONS: SectionDef[] = [
           "POST `/functions/v1/transcribe-lyrics` — transkripsi lirik via OpenAI Whisper.",
           "POST `/functions/v1/translate` — terjemahan runtime untuk 195 bahasa.",
           "POST `/functions/v1/streak-reminder` — penjadwalan & rekomendasi reminder pintar.",
-          "POST `/functions/v1/ai-chat` — proxy ke Lovable AI Gateway untuk chatbot game.",
+          "POST `/functions/v1/ai-chat` — proxy ke AI Gateway untuk chatbot game.",
           "POST `/functions/v1/process-purchase` — pemrosesan transaksi saldo dengan validasi stok.",
         ],
       },
@@ -420,8 +420,8 @@ const SECTIONS: SectionDef[] = [
         body: "Aplikasi dibangun di atas tumpukan teknologi modern:",
         bullets: [
           "Frontend: React 18 + Vite + TypeScript + Tailwind CSS.",
-          "Backend: Lovable Cloud (PostgreSQL + Edge Functions Deno).",
-          "AI: Lovable AI Gateway (Gemini, GPT-5).",
+          "Backend: Cloud terkelola (PostgreSQL + Edge Functions Deno).",
+          "AI: AI Gateway (Gemini, GPT-5).",
           "Mobile: Capacitor 6 untuk Android, PWA untuk iOS/Web.",
           "Realtime: WebSocket via Postgres logical replication.",
         ],
@@ -495,7 +495,7 @@ const SECTIONS: SectionDef[] = [
       },
       {
         heading: "6. Penyimpanan & Lokasi Data",
-        body: "Data disimpan di server cloud terkelola Lovable Cloud (infrastruktur berbasis Supabase) dengan lokasi data center yang dipilih untuk performa & kepatuhan terbaik. Cadangan data dilakukan otomatis secara berkala.",
+        body: "Data disimpan di server cloud terkelola dengan lokasi data center yang dipilih untuk performa & kepatuhan terbaik. Cadangan data dilakukan otomatis secara berkala.",
         bullets: [
           "Database: PostgreSQL 15 dengan enkripsi at-rest.",
           "Komunikasi: HTTPS/TLS 1.2+ untuk semua transmisi.",
@@ -519,7 +519,7 @@ const SECTIONS: SectionDef[] = [
         heading: "8. Berbagi Data dengan Pihak Ketiga",
         body: "Kami TIDAK MENJUAL data pribadi Anda kepada pihak manapun untuk tujuan iklan. Data hanya dibagikan dalam kondisi terbatas:",
         bullets: [
-          "Penyedia infrastruktur (Lovable Cloud/Supabase) untuk hosting.",
+          "Penyedia infrastruktur cloud untuk hosting.",
           "Layanan pengiriman pesan (WhatsApp Business API) untuk notifikasi.",
           "Penyedia AI (OpenAI, Google) untuk fitur transkripsi lirik & terjemahan — data dianonimkan.",
           "Otoritas hukum bila diwajibkan oleh peraturan perundang-undangan.",
