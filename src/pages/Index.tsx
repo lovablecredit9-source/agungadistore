@@ -1846,6 +1846,63 @@ const Index = () => {
               </div>
             </div>
 
+            {/* Live Stats Dashboard - Maksimalis Neon Glow */}
+            <div className="relative rounded-3xl p-[2px] overflow-hidden" style={{ background: "linear-gradient(135deg, #ec4899, #a855f7, #06b6d4, #10b981, #f59e0b, #ec4899)", backgroundSize: "400% 400%", animation: "aurora-shift 6s ease infinite, neon-border-flow 4s ease-in-out infinite" }}>
+              <div className="relative rounded-[22px] bg-gradient-to-br from-slate-950 via-purple-950/40 to-slate-950 p-3 overflow-hidden">
+                <div className="pointer-events-none absolute -top-10 -left-10 w-32 h-32 rounded-full bg-pink-500/30 blur-3xl animate-blob" />
+                <div className="pointer-events-none absolute -bottom-10 -right-10 w-32 h-32 rounded-full bg-cyan-500/30 blur-3xl animate-blob" style={{ animationDelay: "2s" }} />
+                <div className="pointer-events-none absolute top-1/2 left-1/2 w-24 h-24 rounded-full bg-amber-500/20 blur-3xl animate-blob" style={{ animationDelay: "4s" }} />
+                {[...Array(8)].map((_, i) => (
+                  <div key={`spk-${i}`} className="pointer-events-none absolute w-1 h-1 rounded-full bg-white animate-ping" style={{ top: `${15 + (i * 11) % 70}%`, left: `${(i * 13) % 95}%`, animationDelay: `${i * 0.3}s`, boxShadow: "0 0 8px rgba(255,255,255,0.9)" }} />
+                ))}
+
+                <div className="relative flex items-center justify-between mb-2.5">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-base animate-wiggle inline-block">🚀</span>
+                    <h3 className="text-xs font-black uppercase tracking-[0.18em] bg-gradient-to-r from-pink-300 via-cyan-300 to-amber-300 bg-clip-text text-transparent animate-count-glow">Live Dashboard</h3>
+                  </div>
+                  <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-400/40">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                    <span className="text-[9px] font-black text-emerald-300 uppercase">Realtime</span>
+                  </div>
+                </div>
+
+                <div className="relative grid grid-cols-4 gap-1.5">
+                  {[
+                    { emoji: "🎵", label: "Lagu", value: "200+", grad: "from-pink-500/30 to-rose-500/15", border: "border-pink-400/50", text: "text-pink-200", glow: "rgba(236,72,153,0.5)" },
+                    { emoji: "🎮", label: "Game", value: "11", grad: "from-violet-500/30 to-purple-500/15", border: "border-violet-400/50", text: "text-violet-200", glow: "rgba(168,85,247,0.5)" },
+                    { emoji: "🎁", label: "Hadiah", value: "∞", grad: "from-amber-500/30 to-yellow-500/15", border: "border-amber-400/50", text: "text-amber-200", glow: "rgba(250,204,21,0.5)" },
+                    { emoji: "⚡", label: "Instan", value: "24/7", grad: "from-cyan-500/30 to-teal-500/15", border: "border-cyan-400/50", text: "text-cyan-200", glow: "rgba(34,211,238,0.5)" },
+                  ].map((s, i) => (
+                    <div key={`stat-${i}`} className={`relative rounded-xl p-2 bg-gradient-to-br ${s.grad} border ${s.border} overflow-hidden animate-pop-in`} style={{ animationDelay: `${i * 0.1}s`, boxShadow: `0 4px 16px -4px ${s.glow}` }}>
+                      <div className="absolute inset-0 animate-shimmer-bar opacity-40 pointer-events-none" />
+                      <div className="relative text-center">
+                        <div className="text-xl mb-0.5 animate-wiggle inline-block" style={{ animationDelay: `${i * 0.2}s`, filter: `drop-shadow(0 2px 4px ${s.glow})` }}>{s.emoji}</div>
+                        <p className={`text-[8px] font-black ${s.text} uppercase tracking-wider leading-none`}>{s.label}</p>
+                        <p className="text-sm font-black text-white tabular-nums leading-tight mt-0.5 drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)]">{s.value}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="relative mt-2.5 flex items-center gap-1.5 overflow-x-auto scrollbar-hide pb-0.5">
+                  {[
+                    { icon: "🏆", text: "Trusted #1", grad: "from-amber-400 to-orange-500" },
+                    { icon: "💎", text: "Premium", grad: "from-cyan-400 to-blue-500" },
+                    { icon: "🔥", text: "Hot Deals", grad: "from-rose-500 to-pink-500" },
+                    { icon: "⭐", text: "5-Star", grad: "from-yellow-400 to-amber-500" },
+                    { icon: "🎯", text: "Akurat", grad: "from-emerald-400 to-teal-500" },
+                    { icon: "💖", text: "Loved", grad: "from-fuchsia-500 to-purple-500" },
+                  ].map((b, i) => (
+                    <div key={`chip-${i}`} className={`shrink-0 inline-flex items-center gap-1 px-2 py-1 rounded-full bg-gradient-to-r ${b.grad} border border-white/30 animate-pop-in`} style={{ animationDelay: `${0.4 + i * 0.08}s`, boxShadow: "0 4px 12px -2px rgba(0,0,0,0.3)" }}>
+                      <span className="text-[10px]">{b.icon}</span>
+                      <span className="text-[9px] font-black text-white whitespace-nowrap drop-shadow">{b.text}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
             {/* Quick Action Grid - Aurora Neon Premium */}
             <div className="relative rounded-3xl overflow-hidden p-[1.5px] aurora-shift" style={{ background: "linear-gradient(135deg, hsl(190 95% 55%/0.5), hsl(280 90% 65%/0.5), hsl(330 90% 60%/0.5), hsl(45 95% 55%/0.5), hsl(150 80% 50%/0.5))", backgroundSize: "400% 400%" }}>
               <div className="relative rounded-[22px] bg-card/95 backdrop-blur-xl p-3 overflow-hidden">
