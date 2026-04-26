@@ -4493,7 +4493,7 @@ const Index = () => {
                       <div className="grid grid-cols-3 gap-2">
                         {shuffled.map((p, idx) => {
                           const pImgs = getProductImages(p.id);
-                          const cover = pImgs[0]?.image_url;
+                          const cover = pImgs[0];
                           return (
                             <button
                               key={p.id}
