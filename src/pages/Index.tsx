@@ -2106,32 +2106,52 @@ const Index = () => {
 
         {tab === "produk" && (
           <div className="space-y-4 animate-fade-in">
-            {/* Minimal Header */}
-            <div className="rounded-xl border border-border bg-card p-4">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center">
-                  <Package className="w-5 h-5 text-foreground" strokeWidth={1.7} />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <h2 className="text-base font-semibold text-foreground tracking-tight">{t("products.title", lang)}</h2>
-                  <p className="text-muted-foreground text-xs mt-0.5">{sortedProducts.length} {t("products.items", lang)} tersedia</p>
-                </div>
-              </div>
-              {/* Stats row */}
-              <div className="flex items-center gap-4 mt-3 pt-3 border-t border-border">
-                {[
-                  { label: "Total", value: sortedProducts.length },
-                  { label: "Tersedia", value: sortedProducts.filter(p => p.stock > 0).length },
-                  { label: "Garansi", value: sortedProducts.filter(p => p.has_warranty).length },
-                ].map((s, i) => (
-                  <div key={s.label} className="flex items-center gap-4">
-                    {i > 0 && <span className="w-px h-6 bg-border" />}
-                    <div>
-                      <p className="text-foreground font-semibold text-sm tabular-nums leading-none">{s.value}</p>
-                      <p className="text-muted-foreground text-[10px] mt-1">{s.label}</p>
+            {/* Hero Header - Aurora Premium */}
+            <div
+              className="relative rounded-3xl p-[1.5px] aurora-shift overflow-hidden"
+              style={{ background: "linear-gradient(135deg, hsl(190 95% 55%/0.75), hsl(220 90% 60%/0.7), hsl(280 90% 65%/0.7), hsl(190 95% 55%/0.75))", backgroundSize: "300% 300%" }}
+            >
+              <div className="relative rounded-[22px] bg-card/95 backdrop-blur-xl p-4 overflow-hidden">
+                <div className="pointer-events-none absolute -top-16 -right-16 w-48 h-48 rounded-full bg-cyan-500/20 blur-3xl" />
+                <div className="pointer-events-none absolute -bottom-16 -left-16 w-48 h-48 rounded-full bg-purple-500/20 blur-3xl" />
+                <div className="pointer-events-none absolute top-1/2 left-1/2 w-32 h-32 rounded-full bg-blue-400/10 blur-2xl" />
+
+                <div className="relative flex items-center gap-3">
+                  <div className="relative shrink-0">
+                    <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-cyan-400 to-purple-500 blur-md opacity-60 animate-pulse" />
+                    <div className="relative w-12 h-12 rounded-2xl bg-gradient-to-br from-cyan-400 via-blue-500 to-purple-500 flex items-center justify-center shadow-[0_0_20px_rgba(34,211,238,0.5)]">
+                      <Package className="w-6 h-6 text-white drop-shadow-lg" strokeWidth={2} />
                     </div>
                   </div>
-                ))}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <h2 className="text-lg font-black tracking-tight bg-gradient-to-r from-cyan-300 via-blue-300 to-purple-300 bg-clip-text text-transparent">{t("products.title", lang)}</h2>
+                      <span className="inline-flex items-center gap-1 text-[9px] font-black px-1.5 py-0.5 rounded-full bg-gradient-to-r from-emerald-400 to-cyan-400 text-black shadow-[0_0_10px_rgba(16,185,129,0.5)]">
+                        <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" /> LIVE
+                      </span>
+                    </div>
+                    <p className="text-muted-foreground text-[11px] mt-0.5 font-medium">✨ {sortedProducts.length} {t("products.items", lang)} siap diklaim</p>
+                  </div>
+                </div>
+
+                {/* Premium Stats Grid */}
+                <div className="relative grid grid-cols-3 gap-2 mt-4">
+                  {[
+                    { label: "Total", value: sortedProducts.length, color: "cyan", from: "from-cyan-500/20", border: "border-cyan-400/30", text: "text-cyan-300", glow: "rgba(34,211,238,0.3)" },
+                    { label: "Tersedia", value: sortedProducts.filter(p => p.stock > 0).length, color: "emerald", from: "from-emerald-500/20", border: "border-emerald-400/30", text: "text-emerald-300", glow: "rgba(16,185,129,0.3)" },
+                    { label: "Garansi", value: sortedProducts.filter(p => p.has_warranty).length, color: "purple", from: "from-purple-500/20", border: "border-purple-400/30", text: "text-purple-300", glow: "rgba(168,85,247,0.3)" },
+                  ].map((s) => (
+                    <div
+                      key={s.label}
+                      className={`relative rounded-xl p-2.5 bg-gradient-to-br ${s.from} to-transparent border ${s.border} backdrop-blur-sm overflow-hidden`}
+                      style={{ boxShadow: `0 0 12px ${s.glow}` }}
+                    >
+                      <div className="absolute -top-4 -right-4 w-10 h-10 rounded-full opacity-30 blur-xl" style={{ background: s.glow }} />
+                      <p className={`text-lg font-black tabular-nums leading-none ${s.text} drop-shadow`}>{s.value}</p>
+                      <p className="text-muted-foreground text-[9px] font-semibold uppercase tracking-wider mt-1">{s.label}</p>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
 
