@@ -2662,20 +2662,56 @@ const Index = () => {
 
         {tab === "history" && (
           <div className="space-y-4 animate-fade-in">
-            {/* Hero Header */}
-            <div className="rounded-xl border border-border bg-card p-4">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
-                  <Clock className="w-5 h-5 text-foreground" strokeWidth={1.7} />
+            {/* Hero Header - Aurora Premium */}
+            <div
+              className="relative rounded-3xl p-[2px] aurora-shift overflow-hidden shadow-[0_8px_40px_-10px_rgba(168,85,247,0.5)]"
+              style={{ background: "linear-gradient(135deg, hsl(280 90% 65%), hsl(220 90% 60%), hsl(190 95% 55%), hsl(330 90% 60%), hsl(280 90% 65%))", backgroundSize: "400% 400%" }}
+            >
+              <div className="relative rounded-[22px] bg-gradient-to-br from-slate-950/95 via-slate-900/95 to-slate-950/95 backdrop-blur-xl p-4 overflow-hidden">
+                <div className="pointer-events-none absolute inset-0 opacity-60">
+                  <div className="absolute -top-20 -right-20 w-56 h-56 rounded-full bg-purple-500/30 blur-3xl animate-pulse" />
+                  <div className="absolute -bottom-20 -left-20 w-56 h-56 rounded-full bg-cyan-500/30 blur-3xl animate-pulse" style={{ animationDelay: "1s" }} />
                 </div>
-                <div className="flex-1 min-w-0">
-                  <h2 className="text-base font-semibold tracking-tight text-foreground">{t("history.title", lang)}</h2>
-                  <p className="text-xs text-muted-foreground mt-0.5">{history.length} riwayat klaim</p>
+                <div className="pointer-events-none absolute inset-0 overflow-hidden">
+                  {[...Array(5)].map((_, i) => (
+                    <div
+                      key={i}
+                      className="absolute w-1 h-1 rounded-full bg-white/60"
+                      style={{
+                        top: `${20 + (i * 17) % 60}%`,
+                        left: `${(i * 21) % 90}%`,
+                        animation: `float-up ${3 + (i % 3)}s ease-in-out ${i * 0.5}s infinite`,
+                        boxShadow: "0 0 6px rgba(255,255,255,0.8)",
+                      }}
+                    />
+                  ))}
+                </div>
+                <div className="pointer-events-none absolute inset-0 shine-sweep opacity-40" />
+
+                <div className="relative flex items-center gap-3">
+                  <div className="relative shrink-0">
+                    <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-purple-400 via-pink-500 to-cyan-500 blur-lg opacity-80 animate-pulse" />
+                    <div className="absolute -inset-1 rounded-2xl bg-gradient-to-br from-purple-400 via-pink-500 to-cyan-500 opacity-50 animate-spin" style={{ animationDuration: "8s" }} />
+                    <div className="relative w-14 h-14 rounded-2xl bg-gradient-to-br from-purple-500 via-fuchsia-500 to-pink-500 flex items-center justify-center shadow-[0_0_30px_rgba(168,85,247,0.7),inset_0_2px_8px_rgba(255,255,255,0.3)] border border-white/30">
+                      <Clock className="w-7 h-7 text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]" strokeWidth={2.2} />
+                    </div>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h2 className="text-xl font-black tracking-tight bg-gradient-to-r from-purple-200 via-pink-200 to-cyan-200 bg-clip-text text-transparent drop-shadow-[0_2px_8px_rgba(168,85,247,0.4)]">{t("history.title", lang)}</h2>
+                      <span className="inline-flex items-center gap-1 text-[9px] font-black px-2 py-0.5 rounded-full bg-gradient-to-r from-emerald-400 to-cyan-400 text-black shadow-[0_0_15px_rgba(16,185,129,0.7)] border border-white/30">
+                        <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse shadow-[0_0_4px_white]" /> LIVE
+                      </span>
+                    </div>
+                    <p className="text-purple-100/80 text-[11px] mt-1 font-semibold flex items-center gap-1">
+                      <Sparkles className="w-3 h-3 text-yellow-300" /> {history.length} klaim voucher tercatat
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>
 
-            {/* Stats Summary */}
+            {/* Stats Summary - Aurora 3D */}
             {history.length > 0 && (() => {
               const now = new Date();
               const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
@@ -2684,58 +2720,75 @@ const Index = () => {
               const weekCount = history.filter(h => new Date(h.claimed_at) >= weekAgo).length;
               return (
                 <div className="grid grid-cols-3 gap-2">
-                  <div className="bg-gradient-to-br from-primary/15 to-primary/5 border border-primary/20 rounded-xl p-2.5 text-center">
-                    <Award className="w-4 h-4 text-primary mx-auto mb-1" />
-                    <p className="text-[9px] font-bold text-muted-foreground uppercase">Total</p>
-                    <p className="text-base font-extrabold text-primary leading-none mt-0.5"><CountUp value={history.length} /></p>
-                  </div>
-                  <div className="bg-gradient-to-br from-accent/15 to-accent/5 border border-accent/20 rounded-xl p-2.5 text-center">
-                    <CalendarDays className="w-4 h-4 text-accent mx-auto mb-1" />
-                    <p className="text-[9px] font-bold text-muted-foreground uppercase">Hari Ini</p>
-                    <p className="text-base font-extrabold text-accent leading-none mt-0.5"><CountUp value={todayCount} /></p>
-                  </div>
-                  <div className="bg-gradient-to-br from-fuchsia-500/15 to-pink-500/5 border border-fuchsia-500/20 rounded-xl p-2.5 text-center">
-                    <TrendingUp className="w-4 h-4 text-fuchsia-500 mx-auto mb-1" />
-                    <p className="text-[9px] font-bold text-muted-foreground uppercase">7 Hari</p>
-                    <p className="text-base font-extrabold text-fuchsia-500 leading-none mt-0.5"><CountUp value={weekCount} /></p>
-                  </div>
+                  {[
+                    { label: "Total", value: history.length, icon: Award, from: "from-cyan-500/30", to: "to-blue-600/20", border: "border-cyan-300/40", text: "text-cyan-200", glow: "rgba(34,211,238,0.5)" },
+                    { label: "Hari Ini", value: todayCount, icon: CalendarDays, from: "from-emerald-500/30", to: "to-green-600/20", border: "border-emerald-300/40", text: "text-emerald-200", glow: "rgba(16,185,129,0.5)" },
+                    { label: "7 Hari", value: weekCount, icon: TrendingUp, from: "from-fuchsia-500/30", to: "to-pink-600/20", border: "border-fuchsia-300/40", text: "text-fuchsia-200", glow: "rgba(217,70,239,0.5)" },
+                  ].map((s) => {
+                    const Icon = s.icon;
+                    return (
+                      <div
+                        key={s.label}
+                        className={`relative rounded-xl p-2.5 bg-gradient-to-br ${s.from} ${s.to} border ${s.border} backdrop-blur-md overflow-hidden hover:scale-105 transition-transform duration-300 group/stat`}
+                        style={{ boxShadow: `0 4px 20px -4px ${s.glow}, inset 0 1px 0 rgba(255,255,255,0.15)` }}
+                      >
+                        <div className="absolute -top-6 -right-6 w-14 h-14 rounded-full opacity-40 blur-xl group-hover/stat:opacity-70 transition" style={{ background: s.glow }} />
+                        <Icon className={`w-4 h-4 ${s.text} mb-1 drop-shadow-[0_0_4px_currentColor]`} />
+                        <p className={`text-xl font-black tabular-nums leading-none ${s.text} drop-shadow-[0_2px_4px_rgba(0,0,0,0.4)]`}><CountUp value={s.value} /></p>
+                        <p className="text-white/70 text-[9px] font-bold uppercase tracking-wider mt-1">{s.label}</p>
+                      </div>
+                    );
+                  })}
                 </div>
               );
             })()}
 
             {history.length > 0 && (
-              <div className="flex items-center justify-between bg-card/80 backdrop-blur-sm rounded-xl p-3 border border-border/50 shadow-sm gap-2 flex-wrap">
-                <Button size="sm" variant="outline" onClick={toggleSelectAll} className="gap-1.5 text-xs rounded-lg font-bold">
-                  <Checkbox checked={history.length > 0 && selectedHistoryIds.size === history.length} className="pointer-events-none" />
-                  Pilih Semua ({selectedHistoryIds.size}/{history.length})
-                </Button>
-                <div className="flex items-center gap-2">
-                  <Button
-                    size="sm"
-                    variant={smartHistory ? "default" : "outline"}
-                    onClick={() => setSmartHistory(v => !v)}
-                    className="gap-1 rounded-full text-xs font-medium"
-                  >
-                    <Lightbulb className="w-3 h-3" strokeWidth={1.8} /> {smartHistory ? "Mode Pintar ✓" : "Mode Pintar"}
+              <div
+                className="relative rounded-2xl p-[1.5px] aurora-shift overflow-hidden"
+                style={{ background: "linear-gradient(135deg, hsl(190 95% 55%/0.6), hsl(280 90% 65%/0.6), hsl(330 90% 60%/0.6), hsl(190 95% 55%/0.6))", backgroundSize: "300% 300%" }}
+              >
+                <div className="rounded-[14px] bg-gradient-to-br from-slate-950/90 to-slate-900/90 backdrop-blur-xl p-3 flex items-center justify-between gap-2 flex-wrap">
+                  <Button size="sm" variant="outline" onClick={toggleSelectAll} className="gap-1.5 text-xs rounded-lg font-bold bg-slate-800/60 border-cyan-400/30 text-cyan-200 hover:bg-cyan-500/20">
+                    <Checkbox checked={history.length > 0 && selectedHistoryIds.size === history.length} className="pointer-events-none" />
+                    Pilih Semua ({selectedHistoryIds.size}/{history.length})
                   </Button>
-                  <Button size="sm" variant="outline" onClick={downloadHistoryPDF} className="gap-1 rounded-full border-primary/30 text-primary hover:bg-primary/10 text-xs font-bold">
-                    <Download className="w-3 h-3" /> PDF
-                  </Button>
-                  <Button size="sm" variant="outline" onClick={downloadHistoryTXT} className="gap-1 rounded-full border-accent/30 text-accent hover:bg-accent/10 text-xs font-bold">
-                    <FileText className="w-3 h-3" /> TXT
-                  </Button>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      size="sm"
+                      onClick={() => setSmartHistory(v => !v)}
+                      className={`gap-1 rounded-full text-xs font-bold border ${smartHistory ? "bg-gradient-to-r from-amber-400 to-orange-500 text-black border-amber-300 shadow-[0_0_12px_rgba(251,191,36,0.5)]" : "bg-slate-800/60 text-amber-200 border-amber-400/30 hover:bg-amber-500/20"}`}
+                    >
+                      <Lightbulb className="w-3 h-3" strokeWidth={2.2} /> {smartHistory ? "Pintar ✓" : "Pintar"}
+                    </Button>
+                    <Button size="sm" onClick={downloadHistoryPDF} className="gap-1 rounded-full bg-gradient-to-r from-rose-500/80 to-red-500/80 hover:from-rose-500 hover:to-red-500 text-white text-xs font-black border border-rose-300/40 shadow-[0_0_12px_rgba(244,63,94,0.4)]">
+                      <Download className="w-3 h-3" /> PDF
+                    </Button>
+                    <Button size="sm" onClick={downloadHistoryTXT} className="gap-1 rounded-full bg-gradient-to-r from-emerald-500/80 to-cyan-500/80 hover:from-emerald-500 hover:to-cyan-500 text-white text-xs font-black border border-emerald-300/40 shadow-[0_0_12px_rgba(16,185,129,0.4)]">
+                      <FileText className="w-3 h-3" /> TXT
+                    </Button>
+                  </div>
                 </div>
               </div>
             )}
 
             {history.length === 0 && (
-              <div className="text-center py-20 text-muted-foreground">
-                <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-blue-500/10 to-cyan-500/10 flex items-center justify-center mx-auto mb-4">
-                  <Clock className="w-10 h-10 opacity-30" />
+              <div
+                className="relative rounded-3xl p-[2px] aurora-shift overflow-hidden"
+                style={{ background: "linear-gradient(135deg, hsl(280 90% 65%/0.5), hsl(190 95% 55%/0.5), hsl(280 90% 65%/0.5))", backgroundSize: "300% 300%" }}
+              >
+                <div className="rounded-[22px] bg-gradient-to-br from-slate-950/95 to-slate-900/95 backdrop-blur-xl text-center py-16 px-6 relative overflow-hidden">
+                  <div className="pointer-events-none absolute -top-16 -right-16 w-40 h-40 rounded-full bg-purple-500/20 blur-3xl" />
+                  <div className="pointer-events-none absolute -bottom-16 -left-16 w-40 h-40 rounded-full bg-cyan-500/20 blur-3xl" />
+                  <div className="relative w-24 h-24 rounded-3xl bg-gradient-to-br from-purple-500/30 via-fuchsia-500/20 to-cyan-500/30 flex items-center justify-center mx-auto mb-4 border border-white/20 shadow-[0_0_40px_rgba(168,85,247,0.4)]">
+                    <Clock className="w-12 h-12 text-purple-200/60" />
+                  </div>
+                  <p className="relative text-base font-black bg-gradient-to-r from-purple-200 to-cyan-200 bg-clip-text text-transparent">Belum ada riwayat klaim</p>
+                  <p className="relative text-xs text-slate-400 mt-1.5">Klaim voucher untuk melihat riwayat di sini</p>
+                  <Button size="sm" className="relative mt-4 gap-1.5 rounded-xl font-black bg-gradient-to-r from-purple-500 via-fuchsia-500 to-pink-500 text-white shadow-[0_4px_20px_rgba(168,85,247,0.5)] hover:scale-105 transition-transform border border-white/20" onClick={() => setTab("voucher")}>
+                    <Ticket className="w-4 h-4" /> Klaim Voucher
+                  </Button>
                 </div>
-                <p className="text-sm font-bold">Belum ada riwayat klaim.</p>
-                <p className="text-xs text-muted-foreground mt-1">Klaim voucher untuk melihat riwayat</p>
-                <Button size="sm" variant="outline" className="mt-4 gap-1.5 rounded-xl font-bold" onClick={() => setTab("voucher")}><Ticket className="w-4 h-4" /> Klaim Voucher</Button>
               </div>
             )}
 
