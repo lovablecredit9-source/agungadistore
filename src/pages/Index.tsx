@@ -2185,6 +2185,13 @@ const Index = () => {
               </div>
             </div>
 
+            {/* Streak-powered hype + bonus bar */}
+            <ProductHypeStreakBar
+              visitorId={activeBalanceVisitorId || visitorId}
+              totalProducts={sortedProducts.length}
+              inStockProducts={sortedProducts.filter(p => p.stock > 0).length}
+            />
+
             {/* Advanced Product Navigation Toolbar */}
             <ProductNavToolbar
               value={{
