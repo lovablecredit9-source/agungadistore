@@ -1,17 +1,20 @@
-import { Music2, Globe, Users, Sparkles, Headphones, Radio, Mic2, Disc3, Flame, Play, Pause, ChevronUp, TrendingUp, Heart, Crown, Zap, Moon, Sun, Cloud, Coffee, Dumbbell, PartyPopper, Volume2, Award } from "lucide-react";
+import { Music2, Globe, Users, Sparkles, Headphones, Radio, Mic2, Disc3, Flame, Play, Pause, ChevronUp, TrendingUp, Heart, Crown, Zap, Moon, Sun, Cloud, Coffee, Dumbbell, PartyPopper, Volume2, Award, Shuffle } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import MusicPublicTab from "@/components/MusicPublicTab";
 import ArtistTab from "@/components/ArtistTab";
 import type { PlaybackState } from "@/components/PlaylistTab";
 
-const MOODS = [
-  { key: "chill", label: "Chill", icon: Cloud, gradient: "from-sky-400 to-blue-500", glow: "56,189,248" },
-  { key: "party", label: "Pesta", icon: PartyPopper, gradient: "from-fuchsia-500 to-pink-500", glow: "236,72,153" },
-  { key: "focus", label: "Fokus", icon: Coffee, gradient: "from-amber-500 to-orange-600", glow: "249,115,22" },
-  { key: "workout", label: "Gym", icon: Dumbbell, gradient: "from-red-500 to-rose-600", glow: "239,68,68" },
-  { key: "sleep", label: "Tidur", icon: Moon, gradient: "from-indigo-500 to-purple-600", glow: "139,92,246" },
-  { key: "morning", label: "Pagi", icon: Sun, gradient: "from-yellow-400 to-amber-500", glow: "245,158,11" },
+interface MoodSong { id: string; title: string; artist: string; file_url: string; cover_url: string | null; }
+
+const MOODS: { key: string; label: string; icon: typeof Cloud; gradient: string; glow: string; keywords: string[] }[] = [
+  { key: "chill", label: "Chill", icon: Cloud, gradient: "from-sky-400 to-blue-500", glow: "56,189,248", keywords: ["chill", "santai", "lo-fi", "lofi", "relax", "acoustic", "akustik", "slow"] },
+  { key: "party", label: "Pesta", icon: PartyPopper, gradient: "from-fuchsia-500 to-pink-500", glow: "236,72,153", keywords: ["party", "pesta", "dj", "remix", "dance", "edm", "club", "house"] },
+  { key: "focus", label: "Fokus", icon: Coffee, gradient: "from-amber-500 to-orange-600", glow: "249,115,22", keywords: ["focus", "fokus", "study", "instrumental", "piano", "classic", "klasik", "ambient"] },
+  { key: "workout", label: "Gym", icon: Dumbbell, gradient: "from-red-500 to-rose-600", glow: "239,68,68", keywords: ["workout", "gym", "rock", "metal", "energy", "pump", "hip hop", "rap"] },
+  { key: "sleep", label: "Tidur", icon: Moon, gradient: "from-indigo-500 to-purple-600", glow: "139,92,246", keywords: ["sleep", "tidur", "night", "malam", "lullaby", "soft", "calm", "tenang"] },
+  { key: "morning", label: "Pagi", icon: Sun, gradient: "from-yellow-400 to-amber-500", glow: "245,158,11", keywords: ["morning", "pagi", "happy", "sunshine", "pop", "fresh", "bright", "ceria"] },
 ];
 
 const TRENDING_TAGS = ["🔥 Pop Indo", "🎤 Dangdut Remix", "💎 Lo-Fi Beats", "⚡ EDM Drop", "🎸 Rock Klasik", "🌙 City Pop", "✨ K-Pop Hits", "🎺 Jazz Smooth"];
@@ -88,12 +91,56 @@ export default function MusicHub({ subTab, onSubTabChange, onPlayExternal, playl
 
   const [mood, setMood] = useState<string>("chill");
   const [listenTime, setListenTime] = useState<number>(0);
+  const [allSongs, setAllSongs] = useState<MoodSong[]>([]);
+  const [loadingMood, setLoadingMood] = useState(false);
 
   useEffect(() => {
     if (!isPlaying) return;
     const t = setInterval(() => setListenTime((s) => s + 1), 1000);
     return () => clearInterval(t);
   }, [isPlaying]);
+
+  // Load semua lagu sekali (untuk filter mood)
+  useEffect(() => {
+    let mounted = true;
+    setLoadingMood(true);
+    supabase
+      .from("playlist_songs")
+      .select("id, title, artist, file_url, cover_url")
+      .order("created_at", { ascending: false })
+      .then(({ data }) => {
+        if (mounted) {
+          setAllSongs((data || []) as MoodSong[]);
+          setLoadingMood(false);
+        }
+      });
+    return () => { mounted = false; };
+  }, []);
+
+  const activeMood = MOODS.find((m) => m.key === mood)!;
+  const moodSongs: MoodSong[] = (() => {
+    if (allSongs.length === 0) return [];
+    const matched = allSongs.filter((s) => {
+      const text = `${s.title} ${s.artist}`.toLowerCase();
+      return activeMood.keywords.some((kw) => text.includes(kw));
+    });
+    // Fallback: kalau tidak ada yg cocok, kasih random 6 lagu agar tetap bisa dengar
+    if (matched.length === 0) {
+      return [...allSongs].sort(() => Math.random() - 0.5).slice(0, 6);
+    }
+    return matched.slice(0, 8);
+  })();
+  const moodIsFallback = moodSongs.length > 0 && allSongs.length > 0 && !allSongs.some((s) => {
+    const text = `${s.title} ${s.artist}`.toLowerCase();
+    return activeMood.keywords.some((kw) => text.includes(kw));
+  });
+
+  const playRandomMood = () => {
+    if (moodSongs.length === 0) return;
+    const pick = moodSongs[Math.floor(Math.random() * moodSongs.length)];
+    onPlayExternal?.(pick);
+    if (subTab !== "playlist") onSubTabChange("playlist");
+  };
 
   const fmtTime = (s: number) => {
     const h = Math.floor(s / 3600);
@@ -505,9 +552,124 @@ export default function MusicHub({ subTab, onSubTabChange, onPlayExternal, playl
             );
           })}
         </div>
+
+        {/* MOOD RESULTS — daftar lagu sesuai mood */}
+        <div className="relative mt-3 pt-3 border-t border-purple-500/20">
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-1.5">
+              <motion.div
+                animate={{ scale: [1, 1.15, 1] }}
+                transition={{ duration: 1.4, repeat: Infinity }}
+                className={`w-1.5 h-1.5 rounded-full bg-gradient-to-r ${activeMood.gradient}`}
+                style={{ boxShadow: `0 0 8px rgba(${activeMood.glow},0.9)` }}
+              />
+              <span className="text-[10px] font-black uppercase tracking-wider text-foreground">
+                {moodIsFallback ? "Rekomendasi acak" : `Lagu ${activeMood.label}`}
+              </span>
+              <span className="text-[9px] font-bold text-muted-foreground">({moodSongs.length})</span>
+            </div>
+            {moodSongs.length > 0 && (
+              <motion.button
+                onClick={playRandomMood}
+                whileTap={{ scale: 0.9 }}
+                className={`flex items-center gap-1 px-2 py-1 rounded-lg bg-gradient-to-r ${activeMood.gradient} text-white text-[9px] font-black shadow-lg`}
+                style={{ boxShadow: `0 4px 12px -2px rgba(${activeMood.glow},0.6)` }}
+              >
+                <Shuffle className="w-2.5 h-2.5" strokeWidth={3} />
+                ACAK PUTAR
+              </motion.button>
+            )}
+          </div>
+
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={mood}
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -6 }}
+              transition={{ duration: 0.25 }}
+              className="space-y-1.5 max-h-64 overflow-y-auto pr-1"
+            >
+              {loadingMood && (
+                <div className="text-center py-6 text-[11px] text-muted-foreground font-semibold">Memuat lagu…</div>
+              )}
+              {!loadingMood && allSongs.length === 0 && (
+                <div className="text-center py-6 px-3 rounded-xl bg-muted/30 border border-dashed border-muted-foreground/20">
+                  <Music2 className="w-6 h-6 mx-auto text-muted-foreground/60 mb-1.5" />
+                  <p className="text-[11px] font-bold text-muted-foreground">Belum ada lagu di playlist</p>
+                  <p className="text-[9px] text-muted-foreground/70 mt-0.5">Admin perlu menambahkan lagu</p>
+                </div>
+              )}
+              {!loadingMood && moodIsFallback && (
+                <div className="px-2.5 py-1.5 rounded-lg bg-amber-500/10 border border-amber-500/30 text-[9px] font-bold text-amber-300 mb-1">
+                  💡 Tidak ada lagu cocok mood "{activeMood.label}". Menampilkan rekomendasi acak.
+                </div>
+              )}
+              {!loadingMood && moodSongs.map((song, i) => {
+                const isNow = nowSong?.id === song.id;
+                return (
+                  <motion.button
+                    key={song.id}
+                    initial={{ opacity: 0, x: -8 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: i * 0.03 }}
+                    whileTap={{ scale: 0.97 }}
+                    onClick={() => {
+                      onPlayExternal?.(song);
+                      if (subTab !== "playlist") onSubTabChange("playlist");
+                    }}
+                    className={`relative w-full flex items-center gap-2.5 p-1.5 rounded-xl border transition-all overflow-hidden group ${
+                      isNow
+                        ? `bg-gradient-to-r ${activeMood.gradient} border-white/30 shadow-lg`
+                        : "bg-card/60 border-border/50 hover:border-white/20 hover:bg-card/90"
+                    }`}
+                    style={isNow ? { boxShadow: `0 4px 14px -2px rgba(${activeMood.glow},0.5)` } : undefined}
+                  >
+                    <div className="relative w-9 h-9 rounded-lg overflow-hidden bg-black/40 flex-shrink-0 border border-white/10">
+                      {song.cover_url ? (
+                        <img src={song.cover_url} alt="" className="w-full h-full object-cover" loading="lazy" />
+                      ) : (
+                        <div className={`w-full h-full bg-gradient-to-br ${activeMood.gradient} flex items-center justify-center`}>
+                          <Music2 className="w-4 h-4 text-white/80" />
+                        </div>
+                      )}
+                      {isNow && isPlaying && (
+                        <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+                          <div className="flex items-end gap-[2px] h-3">
+                            {[0.6, 0.9, 0.4].map((h, k) => (
+                              <motion.div
+                                key={k}
+                                animate={{ scaleY: [h, 1, h * 0.5, h] }}
+                                transition={{ duration: 0.6 + k * 0.1, repeat: Infinity, ease: "easeInOut" }}
+                                style={{ transformOrigin: "bottom" }}
+                                className="w-[2px] h-full bg-white rounded-full"
+                              />
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0 text-left">
+                      <p className={`text-[11px] font-bold truncate leading-tight ${isNow ? "text-white" : "text-foreground"}`}>{song.title}</p>
+                      <p className={`text-[9px] truncate mt-0.5 ${isNow ? "text-white/80" : "text-muted-foreground"}`}>{song.artist}</p>
+                    </div>
+                    <div className={`w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 transition-all ${
+                      isNow ? "bg-white/20" : `bg-gradient-to-br ${activeMood.gradient} opacity-80 group-hover:opacity-100 group-hover:scale-110`
+                    }`}>
+                      {isNow && isPlaying ? (
+                        <Pause className="w-3 h-3 text-white" fill="currentColor" />
+                      ) : (
+                        <Play className="w-3 h-3 text-white ml-0.5" fill="currentColor" />
+                      )}
+                    </div>
+                  </motion.button>
+                );
+              })}
+            </motion.div>
+          </AnimatePresence>
+        </div>
       </div>
 
-      {/* TRENDING TICKER — marquee scrolling tags */}
       <div className="relative overflow-hidden rounded-xl border border-amber-500/30 bg-gradient-to-r from-amber-950/40 via-orange-950/40 to-red-950/40 backdrop-blur-md py-2 shadow-[0_4px_16px_-4px_rgba(245,158,11,0.4)]">
         <div className="absolute left-0 inset-y-0 z-10 w-12 bg-gradient-to-r from-background to-transparent pointer-events-none" />
         <div className="absolute right-0 inset-y-0 z-10 w-12 bg-gradient-to-l from-background to-transparent pointer-events-none" />
