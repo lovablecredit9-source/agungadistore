@@ -3254,12 +3254,18 @@ const Index = () => {
                     <div className="text-[11px] text-slate-400 font-medium">
                       {smartTickets ? "🧠 Mode Pintar — timeline & filter" : "📋 Tampilan klasik"}
                     </div>
+                {/* Smart Mode Toggle - iOS Segmented */}
+                {tickets.length > 0 && (
+                  <div className="flex items-center justify-between gap-2 px-1">
+                    <div className="text-[12px] text-muted-foreground font-medium">
+                      {smartTickets ? "Mode Pintar" : "Tampilan klasik"}
+                    </div>
                     <Button
                       size="sm"
                       onClick={() => setSmartTickets(v => !v)}
-                      className={`gap-1 rounded-full text-xs font-bold border ${smartTickets ? "bg-gradient-to-r from-amber-400 to-orange-500 text-black border-amber-300 shadow-[0_0_12px_rgba(251,191,36,0.5)]" : "bg-slate-800/60 text-amber-200 border-amber-400/30 hover:bg-amber-500/20"}`}
+                      className={`gap-1 rounded-full text-[12px] font-semibold transition-all active:scale-95 ${smartTickets ? "bg-foreground text-background hover:bg-foreground/90" : "bg-white/10 text-foreground hover:bg-white/15 border border-white/15"}`}
                     >
-                      <Lightbulb className="w-3 h-3" strokeWidth={2.2} /> {smartTickets ? "Pintar ✓" : "Pintar"}
+                      <Lightbulb className="w-3 h-3" strokeWidth={2.2} /> Pintar
                     </Button>
                   </div>
                 )}
