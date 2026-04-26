@@ -5982,10 +5982,10 @@ const Index = () => {
       )}
 
 
-      {/* === Minimal Bottom Nav (IG/TikTok style) === */}
-      <nav className="fixed bottom-0 left-0 right-0 z-50 bg-background/85 backdrop-blur-xl border-t border-border pb-[env(safe-area-inset-bottom)]">
+      {/* === Colorful Bottom Nav (all tabs highlighted) === */}
+      <nav className="fixed bottom-0 left-0 right-0 z-50 bg-background/90 backdrop-blur-2xl border-t border-border shadow-[0_-12px_40px_-18px_hsl(var(--foreground)/0.35)] pb-[env(safe-area-inset-bottom)]">
         <div className="max-w-lg mx-auto">
-          <div className="flex overflow-x-auto scrollbar-hide">
+          <div className="flex overflow-x-auto scrollbar-hide px-1.5 py-1">
             {([
               { key: "beranda" as Tab, icon: Home, label: "Beranda", grad: "from-orange-400 via-pink-500 to-rose-500", glow: "244,114,182" },
               { key: "musik" as Tab, icon: Music2, label: "Musik", grad: "from-fuchsia-500 via-purple-500 to-indigo-500", glow: "168,85,247" },
@@ -6014,54 +6014,36 @@ const Index = () => {
                   onClick={() => external ? navigate(external) : setTab(key)}
                   aria-label={label}
                   aria-current={active ? "page" : undefined}
-                  className="group shrink-0 flex flex-col items-center justify-center gap-0.5 min-w-[60px] px-2 py-2 outline-none focus-visible:bg-muted/50 active:scale-95 transition-all relative"
+                  className="group shrink-0 flex flex-col items-center justify-center gap-1 min-w-[64px] px-2 py-1.5 outline-none focus-visible:bg-muted/50 active:scale-95 transition-all relative"
                 >
-                  {/* Top accent bar - active or saldo always */}
+                  {/* Top accent bar - semua tab punya warna */}
                   <span
-                    className={`pointer-events-none absolute inset-x-2 top-0 h-[2px] rounded-full bg-gradient-to-r ${grad} transition-opacity ${active || isSaldo ? "opacity-100" : "opacity-0"}`}
+                    className={`pointer-events-none absolute inset-x-2 top-0 h-[2px] rounded-full bg-gradient-to-r ${grad} transition-opacity ${active ? "opacity-100" : "opacity-60 group-hover:opacity-100"}`}
                   />
                   {/* Icon container with glow */}
                   <span className="relative">
                     {/* Glow halo */}
                     <span
-                      className={`absolute inset-0 rounded-full blur-md transition-opacity ${active ? "opacity-80 animate-pulse" : isSaldo ? "opacity-50" : "opacity-0 group-hover:opacity-40"}`}
+                      className={`absolute inset-0 rounded-2xl blur-md transition-opacity ${active ? "opacity-85 animate-pulse" : "opacity-45 group-hover:opacity-75"}`}
                       style={{ background: `rgba(${glow}, 0.55)` }}
                     />
-                    {isSaldo ? (
-                      <span
-                        className={`relative w-[26px] h-[26px] rounded-full flex items-center justify-center shadow-lg bg-gradient-to-br ${grad} aurora-shift`}
-                        style={{ backgroundSize: "300% 300%" }}
-                      >
-                        <Wallet className="w-3.5 h-3.5 text-white drop-shadow" strokeWidth={2.4} />
-                      </span>
-                    ) : active ? (
-                      <span className={`relative w-[26px] h-[26px] rounded-full flex items-center justify-center shadow-md bg-gradient-to-br ${grad}`}>
-                        <Icon
-                          className="w-[15px] h-[15px] text-white drop-shadow"
-                          strokeWidth={2.4}
-                          fill={Icon === Heart ? "currentColor" : "none"}
-                        />
-                      </span>
-                    ) : (
+                    <span
+                      className={`relative w-[28px] h-[28px] rounded-2xl flex items-center justify-center shadow-lg bg-gradient-to-br ${grad} transition-transform group-hover:-translate-y-0.5 ${active ? "scale-110" : "scale-100"} ${isSaldo ? "aurora-shift" : ""}`}
+                      style={isSaldo ? { backgroundSize: "300% 300%" } : undefined}
+                    >
                       <Icon
-                        className="relative w-[22px] h-[22px] text-muted-foreground group-hover:text-foreground transition-colors"
-                        strokeWidth={1.8}
-                        fill={Icon === Heart ? "none" : "none"}
+                        className="w-[15px] h-[15px] text-primary-foreground drop-shadow"
+                        strokeWidth={2.4}
+                        fill={Icon === Heart && active ? "currentColor" : "none"}
                       />
-                    )}
+                    </span>
                     {isSaldo && (
-                      <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-emerald-400 ring-2 ring-background animate-pulse" />
+                      <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-primary ring-2 ring-background animate-pulse" />
                     )}
                   </span>
                   {/* Label */}
                   <span
-                    className={`text-[10px] leading-none transition-all ${
-                      isSaldo
-                        ? `font-extrabold uppercase tracking-wider bg-clip-text text-transparent bg-gradient-to-r ${grad} ${active ? "scale-105" : ""}`
-                        : active
-                          ? `font-bold bg-clip-text text-transparent bg-gradient-to-r ${grad} scale-105`
-                          : "font-normal text-muted-foreground group-hover:text-foreground"
-                    }`}
+                    className={`text-[10px] leading-none transition-all bg-clip-text text-transparent bg-gradient-to-r ${grad} ${active || isSaldo ? "font-extrabold scale-105" : "font-bold opacity-85 group-hover:opacity-100"} ${isSaldo ? "uppercase tracking-wider" : ""}`}
                   >
                     {label}
                   </span>
