@@ -3210,50 +3210,44 @@ const Index = () => {
           <div className="space-y-4 animate-fade-in">
             {ticketView === "list" && (
               <>
-                {/* Hero Header - Aurora Premium */}
-                <div
-                  className="relative rounded-3xl p-[2px] aurora-shift overflow-hidden shadow-[0_8px_40px_-10px_rgba(251,146,60,0.5)]"
-                  style={{ background: "linear-gradient(135deg, hsl(15 90% 55%), hsl(45 95% 55%), hsl(330 90% 60%), hsl(280 90% 65%), hsl(15 90% 55%))", backgroundSize: "400% 400%" }}
-                >
-                  <div className="relative rounded-[22px] bg-gradient-to-br from-slate-950/95 via-slate-900/95 to-slate-950/95 backdrop-blur-xl p-4 overflow-hidden">
-                    <div className="pointer-events-none absolute inset-0 opacity-60">
-                      <div className="absolute -top-20 -right-20 w-56 h-56 rounded-full bg-orange-500/30 blur-3xl animate-pulse" />
-                      <div className="absolute -bottom-20 -left-20 w-56 h-56 rounded-full bg-pink-500/30 blur-3xl animate-pulse" style={{ animationDelay: "1s" }} />
-                    </div>
-                    <div className="pointer-events-none absolute inset-0 overflow-hidden">
-                      {[...Array(5)].map((_, i) => (
-                        <div key={i} className="absolute w-1 h-1 rounded-full bg-white/60" style={{ top: `${20 + (i * 17) % 60}%`, left: `${(i * 21) % 90}%`, animation: `float-up ${3 + (i % 3)}s ease-in-out ${i * 0.5}s infinite`, boxShadow: "0 0 6px rgba(255,255,255,0.8)" }} />
-                      ))}
-                    </div>
-                    <div className="pointer-events-none absolute inset-0 shine-sweep opacity-40" />
+                {/* Hero Header - iOS Style Frosted */}
+                <div className="relative overflow-hidden rounded-[24px] bg-background/50 backdrop-blur-2xl backdrop-saturate-150 border border-white/15 shadow-[0_18px_50px_-12px_rgba(0,0,0,0.45),inset_0_1px_0_0_rgba(255,255,255,0.18)]">
+                  <div className="pointer-events-none absolute -top-16 -right-16 w-48 h-48 rounded-full bg-orange-500/12 blur-3xl" />
+                  <div className="pointer-events-none absolute -bottom-16 -left-16 w-48 h-48 rounded-full bg-pink-500/12 blur-3xl" />
 
-                    <div className="relative flex items-center justify-between gap-3">
-                      <div className="flex items-center gap-3 flex-1 min-w-0">
-                        <div className="relative shrink-0">
-                          <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-orange-400 via-amber-500 to-pink-500 blur-lg opacity-80 animate-pulse" />
-                          <div className="absolute -inset-1 rounded-2xl bg-gradient-to-br from-orange-400 via-amber-500 to-pink-500 opacity-50 animate-spin" style={{ animationDuration: "8s" }} />
-                          <div className="relative w-14 h-14 rounded-2xl bg-gradient-to-br from-orange-500 via-amber-500 to-pink-500 flex items-center justify-center shadow-[0_0_30px_rgba(251,146,60,0.7),inset_0_2px_8px_rgba(255,255,255,0.3)] border border-white/30">
-                            <AlertCircle className="w-7 h-7 text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]" strokeWidth={2.2} />
-                          </div>
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <h2 className="text-xl font-black tracking-tight bg-gradient-to-r from-orange-200 via-amber-200 to-pink-200 bg-clip-text text-transparent drop-shadow-[0_2px_8px_rgba(251,146,60,0.4)]">{t("ticket.title", lang)}</h2>
-                            <span className="inline-flex items-center gap-1 text-[9px] font-black px-2 py-0.5 rounded-full bg-gradient-to-r from-emerald-400 to-cyan-400 text-black shadow-[0_0_15px_rgba(16,185,129,0.7)] border border-white/30">
-                              <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" /> 24/7
-                            </span>
-                          </div>
-                          <p className="text-orange-100/80 text-[11px] mt-1 font-semibold flex items-center gap-1">
-                            <Sparkles className="w-3 h-3 text-yellow-300" /> {tickets.length} tiket dukungan
-                          </p>
+                  <div className="relative flex items-center justify-between gap-3 p-4">
+                    <div className="flex items-center gap-3 flex-1 min-w-0">
+                      <div className="relative shrink-0">
+                        <div
+                          className="absolute inset-0 rounded-2xl blur-md opacity-60"
+                          style={{ background: "rgba(251,146,60,0.5)" }}
+                        />
+                        <div
+                          className="relative w-12 h-12 rounded-2xl bg-gradient-to-br from-orange-500 via-amber-500 to-pink-500 flex items-center justify-center text-white"
+                          style={{ boxShadow: "0 8px 20px -4px rgba(251,146,60,0.55), inset 0 1px 0 0 rgba(255,255,255,0.25)" }}
+                        >
+                          <AlertCircle className="w-6 h-6" strokeWidth={2.2} />
                         </div>
                       </div>
-                      <Button size="sm" onClick={() => setTicketView("create")} className="relative overflow-hidden gap-1.5 rounded-full text-xs font-black bg-gradient-to-r from-orange-500 via-amber-500 to-pink-500 text-white shadow-[0_4px_20px_rgba(251,146,60,0.5)] hover:scale-105 transition-transform border border-white/30">
-                        <span className="absolute inset-0 shine-sweep opacity-60" />
-                        <Send className="relative w-3.5 h-3.5" strokeWidth={2.2} /> <span className="relative">Buat</span>
-                      </Button>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <h2 className="text-[17px] font-bold tracking-tight text-foreground">{t("ticket.title", lang)}</h2>
+                          <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-500 border border-emerald-500/30">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" /> 24/7
+                          </span>
+                        </div>
+                        <p className="text-muted-foreground text-[12px] mt-0.5 font-medium">{tickets.length} tiket dukungan</p>
+                      </div>
                     </div>
+                    <Button
+                      size="sm"
+                      onClick={() => setTicketView("create")}
+                      className="gap-1.5 rounded-full text-xs font-semibold bg-foreground text-background hover:bg-foreground/90 active:scale-95 transition-transform shadow-md"
+                    >
+                      <Send className="w-3.5 h-3.5" strokeWidth={2.2} /> Buat
+                    </Button>
                   </div>
+                </div>
                 </div>
 
                 {/* Smart Mode Toggle */}
