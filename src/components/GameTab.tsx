@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
-import { Gamepad2, ArrowLeft } from "lucide-react";
+import { Gamepad2, ArrowLeft, Sparkles, Trophy, Flame, Star, Crown, Rocket } from "lucide-react";
 import { BanBanner, BanLock } from "@/components/BanBanner";
 import SuitGame from "@/components/games/SuitGame";
 import TebakKataGame from "@/components/games/TebakKataGame";
