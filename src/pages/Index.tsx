@@ -1504,6 +1504,7 @@ const Index = () => {
   return (
     <div className={`min-h-screen text-foreground flex flex-col ${resolvedTheme === "custom" ? "bg-transparent" : "bg-background"}`}>
       <InstallPrompt />
+      <WelcomePopup />
       {/* Header - flat IG/TikTok style */}
       <header className="sticky top-0 z-50 bg-background/95 backdrop-blur-md text-foreground px-4 py-2.5 border-b border-border">
         <div className="flex items-center gap-2 max-w-lg mx-auto">
