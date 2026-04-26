@@ -1124,18 +1124,13 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer, onPlayE
                       {isPlaying ? "Playing" : "Paused"}
                     </span>
                     {isPlaying && (
-                      <div className="flex items-end gap-[2px] h-3">
-                        {[0.5, 0.9, 0.4, 0.8].map((h, i) => (
-                          <span
-                            key={i}
-                            className="w-[2px] h-full bg-gradient-to-t from-pink-400 to-fuchsia-200 rounded-full"
-                            style={{
-                              transformOrigin: "bottom",
-                              animation: `eq-bounce ${0.6 + i * 0.1}s ease-in-out ${i * 0.05}s infinite`,
-                            }}
-                          />
-                        ))}
-                      </div>
+                      <MusicEqualizer
+                        isPlaying={isPlaying}
+                        bars={5}
+                        height={12}
+                        barWidth={2}
+                        variant="rainbow"
+                      />
                     )}
                     {cachedIds.has(currentSong.id) && (
                       <span className="text-[9px] font-bold text-emerald-300 bg-emerald-500/20 border border-emerald-400/40 px-1.5 py-0.5 rounded">OFFLINE</span>
