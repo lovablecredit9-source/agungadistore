@@ -1,23 +1,41 @@
-import { Music2, Globe, Users, Sparkles, Headphones, Radio, Mic2, Disc3, Flame, Play, Pause, ChevronUp, TrendingUp, Heart, Crown, Zap, Moon, Sun, Cloud, Coffee, Dumbbell, PartyPopper, Volume2, Award, Shuffle } from "lucide-react";
+import { Music2, Globe, Users, Sparkles, Headphones, Radio, Mic2, Disc3, Flame, Play, Pause, ChevronUp, TrendingUp, Heart, Crown, Zap, Moon, Sun, Cloud, Coffee, Dumbbell, PartyPopper, Volume2, Award } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import MusicPublicTab from "@/components/MusicPublicTab";
 import ArtistTab from "@/components/ArtistTab";
 import type { PlaybackState } from "@/components/PlaylistTab";
 
-interface MoodSong { id: string; title: string; artist: string; file_url: string; cover_url: string | null; }
+interface MoodSong { id: string; title: string; artist: string; file_url: string; cover_url: string | null; created_at?: string | null; duration?: number | null; }
 
 const MOODS: { key: string; label: string; icon: typeof Cloud; gradient: string; glow: string; keywords: string[] }[] = [
-  { key: "chill", label: "Chill", icon: Cloud, gradient: "from-sky-400 to-blue-500", glow: "56,189,248", keywords: ["chill", "santai", "lo-fi", "lofi", "relax", "acoustic", "akustik", "slow"] },
-  { key: "party", label: "Pesta", icon: PartyPopper, gradient: "from-fuchsia-500 to-pink-500", glow: "236,72,153", keywords: ["party", "pesta", "dj", "remix", "dance", "edm", "club", "house"] },
-  { key: "focus", label: "Fokus", icon: Coffee, gradient: "from-amber-500 to-orange-600", glow: "249,115,22", keywords: ["focus", "fokus", "study", "instrumental", "piano", "classic", "klasik", "ambient"] },
-  { key: "workout", label: "Gym", icon: Dumbbell, gradient: "from-red-500 to-rose-600", glow: "239,68,68", keywords: ["workout", "gym", "rock", "metal", "energy", "pump", "hip hop", "rap"] },
-  { key: "sleep", label: "Tidur", icon: Moon, gradient: "from-indigo-500 to-purple-600", glow: "139,92,246", keywords: ["sleep", "tidur", "night", "malam", "lullaby", "soft", "calm", "tenang"] },
-  { key: "morning", label: "Pagi", icon: Sun, gradient: "from-yellow-400 to-amber-500", glow: "245,158,11", keywords: ["morning", "pagi", "happy", "sunshine", "pop", "fresh", "bright", "ceria"] },
+  { key: "chill", label: "Chill", icon: Cloud, gradient: "from-sky-400 to-blue-500", glow: "56,189,248", keywords: ["chill", "santai", "lo-fi", "lofi", "relax", "acoustic", "akustik", "slow", "galau", "sendu", "rindu", "senja", "hujan", "indie", "jazz", "mellow", "melow"] },
+  { key: "party", label: "Pesta", icon: PartyPopper, gradient: "from-fuchsia-500 to-pink-500", glow: "236,72,153", keywords: ["party", "pesta", "dj", "remix", "dance", "edm", "club", "house", "dangdut", "koplo", "jedag", "bass", "disco", "funkot", "beat"] },
+  { key: "focus", label: "Fokus", icon: Coffee, gradient: "from-amber-500 to-orange-600", glow: "249,115,22", keywords: ["focus", "fokus", "study", "belajar", "instrumental", "piano", "classic", "klasik", "ambient", "lofi", "lo-fi", "jazz", "acoustic"] },
+  { key: "workout", label: "Gym", icon: Dumbbell, gradient: "from-red-500 to-rose-600", glow: "239,68,68", keywords: ["workout", "gym", "rock", "metal", "energy", "energi", "pump", "hip hop", "hiphop", "rap", "trap", "semangat", "power", "speed"] },
+  { key: "sleep", label: "Tidur", icon: Moon, gradient: "from-indigo-500 to-purple-600", glow: "139,92,246", keywords: ["sleep", "tidur", "night", "malam", "lullaby", "soft", "calm", "tenang", "piano", "rain", "hujan", "slow", "acoustic", "akustik"] },
+  { key: "morning", label: "Pagi", icon: Sun, gradient: "from-yellow-400 to-amber-500", glow: "245,158,11", keywords: ["morning", "pagi", "happy", "sunshine", "pop", "fresh", "bright", "ceria", "upbeat", "semangat", "reggae", "kopi"] },
 ];
 
 const TRENDING_TAGS = ["🔥 Pop Indo", "🎤 Dangdut Remix", "💎 Lo-Fi Beats", "⚡ EDM Drop", "🎸 Rock Klasik", "🌙 City Pop", "✨ K-Pop Hits", "🎺 Jazz Smooth"];
+
+const normalizeMusicText = (value: string) =>
+  value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+
+const getSongMoodScore = (song: MoodSong, activeMood: typeof MOODS[number]) => {
+  const text = normalizeMusicText(`${song.title} ${song.artist}`);
+  return activeMood.keywords.reduce((score, keyword) => {
+    const normalizedKeyword = normalizeMusicText(keyword);
+    if (!text.includes(normalizedKeyword)) return score;
+    return score + (normalizedKeyword.length > 4 ? 12 : 8);
+  }, 0);
+};
+
+const sortByFreshness = (a: MoodSong, b: MoodSong) => {
+  const dateA = a.created_at ? new Date(a.created_at).getTime() : 0;
+  const dateB = b.created_at ? new Date(b.created_at).getTime() : 0;
+  return dateB - dateA || a.title.localeCompare(b.title) || a.artist.localeCompare(b.artist);
+};
 
 export type MusicSubTab = "playlist" | "publik" | "artist";
 
