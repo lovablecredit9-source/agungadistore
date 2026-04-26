@@ -224,76 +224,161 @@ export default function GameTab() {
       <BanBanner />
       <BanLock fallbackLabel="game">
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-        <div className="flex items-center justify-between mb-2">
-          <h2 className="font-extrabold text-xl flex items-center gap-2">
-            <Gamepad2 className="w-6 h-6 text-primary" /> Game
-          </h2>
-          <GameProfileDialog profile={profile} onUpdate={fetchProfile} visitorId={gameVisitorId} />
+        {/* 🎮 Maximalist Hero Header */}
+        <div className="relative overflow-hidden rounded-3xl p-[2px] mb-4 game-hero-pulse">
+          <div className="absolute inset-0 game-border-rainbow opacity-90" />
+          <div className="relative rounded-[22px] update-aurora-bg p-4 overflow-hidden">
+            {/* Floating background emojis */}
+            <div className="absolute top-2 right-3 text-3xl float-emoji opacity-70" style={{ animationDelay: "0s" }}>🎮</div>
+            <div className="absolute bottom-2 left-4 text-2xl float-emoji opacity-60" style={{ animationDelay: "0.8s" }}>🕹️</div>
+            <div className="absolute top-1/2 left-1/2 text-2xl float-emoji opacity-50" style={{ animationDelay: "1.4s" }}>🏆</div>
+            <div className="absolute top-3 left-1/3 text-xl float-emoji opacity-50" style={{ animationDelay: "2s" }}>⚡</div>
+
+            <div className="relative flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2">
+                <div className="relative">
+                  <div className="absolute inset-0 bg-yellow-300/40 blur-md rounded-full" />
+                  <Gamepad2 className="relative w-7 h-7 text-white drop-shadow-[0_2px_8px_rgba(255,255,0,0.8)] quick-action-bounce" />
+                </div>
+                <h2 className="font-black text-xl text-white drop-shadow-lg tracking-tight">
+                  GAME <span className="bg-gradient-to-r from-yellow-300 via-pink-300 to-cyan-300 bg-clip-text text-transparent">HUB</span>
+                </h2>
+                <Sparkles className="w-4 h-4 text-yellow-300 quick-action-bounce" />
+              </div>
+              <GameProfileDialog profile={profile} onUpdate={fetchProfile} visitorId={gameVisitorId} />
+            </div>
+
+            <div className="relative flex items-center gap-2 flex-wrap">
+              <GameCreditsBadge credits={credits} isUnlimited={isUnlimited} unlimitedUntil={unlimitedUntil} />
+              <GameBalanceBadge amount={gameBalance} />
+              <BuyCreditsDialog visitorId={visitorId} onPurchased={fetchCredits} />
+            </div>
+            <p className="relative text-[10px] text-white/90 mt-2 font-medium drop-shadow">
+              💡 <strong className="text-yellow-200">Saldo IN</strong> hanya untuk Game/Streak/Storage.
+            </p>
+          </div>
         </div>
-        <div className="flex items-center gap-2 mb-1 flex-wrap">
-          <GameCreditsBadge credits={credits} isUnlimited={isUnlimited} unlimitedUntil={unlimitedUntil} />
-          <GameBalanceBadge amount={gameBalance} />
-          <BuyCreditsDialog visitorId={visitorId} onPurchased={fetchCredits} />
-        </div>
-        <p className="text-[10px] text-muted-foreground mb-3 px-1">
-          💡 <strong>Saldo IN</strong> hanya untuk Game/Streak/Storage, bukan produk.
-        </p>
 
         {/* Hero level pemain + booster x2 */}
         <div className="mb-4">
           <GameLevelHero visitorId={visitorId} />
         </div>
 
-        {/* Hero Banner */}
-        <div className="rounded-xl border border-border bg-card p-4 mb-4">
-          <h3 className="font-semibold text-foreground text-base leading-tight tracking-tight">{GAMES.length} game siap dimainkan</h3>
-          <p className="text-muted-foreground text-xs mt-1">Kumpulkan poin & naik leaderboard.</p>
-          <div className="flex flex-wrap gap-1.5 mt-2.5">
-            {["Suit", "Tebak Kata", "Puzzle Huruf", "Kuis", "Ular Tangga", "Ludo"].map(name => (
-              <span key={name} className="text-[10px] font-medium bg-muted text-foreground rounded-full px-2 py-0.5 border border-border">{name}</span>
-            ))}
-            <span className="text-[10px] font-medium bg-muted text-foreground rounded-full px-2 py-0.5 border border-border">+{GAMES.length - 6} lainnya</span>
+        {/* 📊 Hero Banner — Maximalist */}
+        <div className="relative overflow-hidden rounded-2xl p-[2px] mb-4">
+          <div className="absolute inset-0 bg-gradient-to-r from-fuchsia-500 via-violet-500 to-cyan-500 game-border-rainbow" />
+          <div className="relative rounded-[14px] bg-gradient-to-br from-slate-900 via-purple-950 to-slate-900 p-4 overflow-hidden">
+            <div className="absolute -top-6 -right-6 w-24 h-24 bg-pink-500/30 rounded-full blur-2xl" />
+            <div className="absolute -bottom-6 -left-6 w-24 h-24 bg-cyan-500/30 rounded-full blur-2xl" />
+
+            <div className="relative flex items-center gap-3 mb-2">
+              <div className="relative w-12 h-12 rounded-2xl bg-gradient-to-br from-yellow-400 via-orange-500 to-rose-600 flex items-center justify-center shadow-xl shadow-orange-500/40">
+                <Rocket className="w-6 h-6 text-white drop-shadow quick-action-bounce" />
+                <div className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-yellow-300 border-2 border-orange-600 game-chip-bounce" />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-black text-white text-base leading-tight">
+                  <span className="bg-gradient-to-r from-yellow-300 to-pink-300 bg-clip-text text-transparent animate-count-glow">{GAMES.length}</span>
+                  {" "}game siap dimainkan
+                </h3>
+                <p className="text-white/70 text-[11px] mt-0.5 flex items-center gap-1">
+                  <Trophy className="w-3 h-3 text-yellow-300" /> Kumpulkan poin & naik leaderboard
+                </p>
+              </div>
+            </div>
+            <div className="relative flex flex-wrap gap-1.5 mt-3">
+              {[
+                { name: "🥊 Suit", c: "from-orange-500 to-red-600" },
+                { name: "🔤 Tebak Kata", c: "from-blue-500 to-indigo-600" },
+                { name: "🧩 Puzzle", c: "from-teal-500 to-cyan-600" },
+                { name: "❓ Kuis", c: "from-emerald-500 to-green-600" },
+                { name: "🐍 Ular Tangga", c: "from-lime-500 to-emerald-600" },
+                { name: "🎲 Ludo", c: "from-pink-500 to-rose-600" },
+              ].map((tag, i) => (
+                <span
+                  key={tag.name}
+                  className={`text-[10px] font-bold text-white rounded-full px-2.5 py-1 bg-gradient-to-r ${tag.c} shadow-md game-chip-bounce`}
+                  style={{ animationDelay: `${i * 0.15}s` }}
+                >
+                  {tag.name}
+                </span>
+              ))}
+              <span className="text-[10px] font-bold rounded-full px-2.5 py-1 bg-white/15 backdrop-blur text-white border border-white/30">
+                +{GAMES.length - 6} lainnya ✨
+              </span>
+            </div>
           </div>
         </div>
 
+        {/* 🎯 Game Grid — Maximalist */}
         <div className="grid grid-cols-2 gap-3">
           {GAMES.map((game, i) => {
             const isDaily = game.mode === dailyGame;
             return (
               <motion.div
                 key={game.mode}
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: i * 0.05 }}
-                whileTap={{ scale: 0.95 }}
+                initial={{ opacity: 0, scale: 0.85, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                transition={{ delay: i * 0.04, type: "spring", stiffness: 260, damping: 20 }}
+                whileTap={{ scale: 0.92 }}
+                whileHover={{ scale: 1.04, y: -4 }}
                 className="flex"
               >
                 <button
                   onClick={() => setMode(game.mode)}
-                  className={`relative w-full overflow-hidden rounded-2xl bg-gradient-to-br ${game.gradient} p-3 text-left shadow-lg hover:shadow-xl transition-all flex flex-col h-[140px]`}
+                  className={`group relative w-full overflow-hidden rounded-2xl bg-gradient-to-br ${game.gradient} p-3 text-left shadow-lg flex flex-col h-[150px] game-card-float`}
+                  style={{
+                    animationDelay: `${i * 0.1}s`,
+                    boxShadow: "0 8px 20px -4px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.25)",
+                  }}
                 >
+                  {/* Animated gradient overlay on hover */}
+                  <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 bg-gradient-to-tr from-white/0 via-white/20 to-white/0" />
+
+                  {/* Shine sweep */}
+                  <div className="absolute inset-0 overflow-hidden pointer-events-none">
+                    <div className="absolute top-0 left-0 h-full w-1/3 bg-gradient-to-r from-transparent via-white/40 to-transparent game-shine-sweep" style={{ animationDelay: `${i * 0.3}s` }} />
+                  </div>
+
+                  {/* Floating sparkle dots */}
+                  <div className="absolute top-2 left-2 w-1.5 h-1.5 rounded-full bg-white/70 quick-action-bounce" style={{ animationDelay: `${i * 0.2}s` }} />
+                  <div className="absolute bottom-12 right-2 w-1 h-1 rounded-full bg-white/60 quick-action-bounce" style={{ animationDelay: `${i * 0.2 + 0.5}s` }} />
+
+                  {/* Daily 2X badge */}
                   {isDaily && (
-                    <div className="absolute top-1.5 right-1.5 z-20 flex items-center gap-1 bg-yellow-400 text-yellow-950 text-[9px] font-black px-1.5 py-0.5 rounded-full shadow-lg animate-pulse">
-                      <Zap className="w-2.5 h-2.5 fill-current" /> 2X
+                    <div className="absolute top-1.5 right-1.5 z-20 flex items-center gap-1 bg-gradient-to-r from-yellow-300 to-amber-500 text-yellow-950 text-[9px] font-black px-2 py-0.5 rounded-full shadow-lg game-daily-glow">
+                      <Flame className="w-2.5 h-2.5 fill-current" /> 2X
                     </div>
                   )}
-                  <div className="flex items-center justify-center flex-1">
+
+                  {/* Icon container with glow */}
+                  <div className="relative flex items-center justify-center flex-1 z-10">
+                    <div className="absolute w-16 h-16 rounded-full bg-white/20 blur-xl group-hover:bg-white/40 transition-all" />
                     <img
                       src={game.image}
                       alt={game.title}
                       loading="lazy"
-                      className="w-14 h-14 object-contain drop-shadow-lg"
+                      className="relative w-14 h-14 object-contain drop-shadow-[0_4px_8px_rgba(0,0,0,0.4)] game-icon-wiggle"
                     />
                   </div>
-                  <div className="mt-auto">
-                    <h3 className="font-extrabold text-sm text-white leading-tight drop-shadow truncate">{game.title}</h3>
-                    <p className="text-[10px] text-white/80 leading-snug mt-0.5 truncate">{game.desc}</p>
+
+                  {/* Title with gradient text */}
+                  <div className="relative mt-auto z-10">
+                    <h3 className="font-black text-sm text-white leading-tight drop-shadow-md truncate flex items-center gap-1">
+                      {game.title}
+                      {isDaily && <Star className="w-3 h-3 text-yellow-300 fill-yellow-300" />}
+                    </h3>
+                    <p className="text-[10px] text-white/85 leading-snug mt-0.5 truncate font-medium">{game.desc}</p>
                   </div>
+
+                  {/* Bottom accent bar */}
+                  <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-white/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                 </button>
               </motion.div>
             );
           })}
         </div>
+
 
         <div className="mt-4 space-y-3">
           <FlashSaleBanner />
