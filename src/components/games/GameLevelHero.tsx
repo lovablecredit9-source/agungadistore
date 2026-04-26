@@ -44,65 +44,70 @@ export default function GameLevelHero({ visitorId }: Props) {
   const remaining = boosterActive ? boosterUntil - now : 0;
 
   return (
-    <div className="rounded-xl border border-border bg-card p-4">
-      <div className="flex items-start justify-between gap-2 mb-3">
+    <div className="relative overflow-hidden rounded-2xl p-[2px] game-hero-pulse">
+      <div className="absolute inset-0 game-border-rainbow opacity-90" />
+      <div className="relative overflow-hidden rounded-[14px] update-aurora-bg p-4 text-white shadow-xl shadow-primary/25">
+        <div className="absolute -right-8 -top-8 h-24 w-24 rounded-full bg-white/25 blur-2xl" />
+        <div className="absolute -left-8 bottom-0 h-24 w-24 rounded-full bg-yellow-200/30 blur-2xl" />
+      <div className="relative flex items-start justify-between gap-2 mb-3">
         <div>
-          <p className="text-[10px] font-medium uppercase tracking-widest text-muted-foreground">Profil Pemain</p>
-          <h3 className="font-bold text-2xl text-foreground leading-none mt-1 flex items-center gap-2 tracking-tight">
-            <Star className="w-5 h-5 text-foreground" strokeWidth={1.7} />
+          <p className="text-[10px] font-black uppercase tracking-widest text-white/85 drop-shadow">Profil Pemain</p>
+          <h3 className="font-black text-2xl leading-none mt-1 flex items-center gap-2 tracking-tight drop-shadow-lg">
+            <Star className="w-5 h-5 text-yellow-200 fill-yellow-200 quick-action-bounce" strokeWidth={1.7} />
             Level {data.level}
           </h3>
         </div>
         <div className="text-right">
-          <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Total Poin</p>
-          <p className="font-bold text-xl text-foreground tabular-nums mt-1">{data.totalPoints.toLocaleString("id-ID")}</p>
+          <p className="text-[10px] font-black uppercase tracking-wider text-white/85 drop-shadow">Total Poin</p>
+          <p className="font-black text-xl tabular-nums mt-1 drop-shadow-lg">{data.totalPoints.toLocaleString("id-ID")}</p>
         </div>
       </div>
 
-      <div className="space-y-1 mb-3">
-        <div className="flex items-center justify-between text-[10px] font-medium text-muted-foreground tabular-nums">
+      <div className="relative space-y-1 mb-3">
+        <div className="flex items-center justify-between text-[10px] font-black text-white/85 tabular-nums drop-shadow">
           <span>{progressed} / {range} XP</span>
           <span>Lv.{data.level + 1} · {Math.max(0, nextThreshold - data.totalPoints)} pts lagi</span>
         </div>
-        <div className="h-1 bg-muted rounded-full overflow-hidden">
+        <div className="h-2 bg-white/25 rounded-full overflow-hidden shadow-inner">
           <div
-            className="h-full bg-foreground transition-all duration-500"
+            className="h-full bg-gradient-to-r from-yellow-200 via-white to-cyan-200 transition-all duration-500 rounded-full shadow-lg shadow-white/40"
             style={{ width: `${pct}%` }}
           />
         </div>
       </div>
 
-      <div className="grid grid-cols-3 gap-2 mb-3">
-        <div className="bg-muted/60 rounded-lg px-2 py-2 text-center border border-border">
-          <Trophy className="w-3.5 h-3.5 text-foreground mx-auto" strokeWidth={1.7} />
-          <p className="text-[9px] text-muted-foreground font-medium uppercase mt-1">Menang</p>
-          <p className="text-sm font-bold text-foreground tabular-nums">{data.gamesWon}</p>
+      <div className="relative grid grid-cols-3 gap-2 mb-3">
+        <div className="bg-white/20 rounded-xl px-2 py-2 text-center border border-white/30 backdrop-blur shadow-lg">
+          <Trophy className="w-3.5 h-3.5 text-yellow-200 mx-auto" strokeWidth={1.7} />
+          <p className="text-[9px] text-white/80 font-black uppercase mt-1">Menang</p>
+          <p className="text-sm font-black tabular-nums drop-shadow">{data.gamesWon}</p>
         </div>
-        <div className="bg-muted/60 rounded-lg px-2 py-2 text-center border border-border">
-          <Flame className="w-3.5 h-3.5 text-foreground mx-auto" strokeWidth={1.7} />
-          <p className="text-[9px] text-muted-foreground font-medium uppercase mt-1">Win Rate</p>
-          <p className="text-sm font-bold text-foreground tabular-nums">{winRate}%</p>
+        <div className="bg-white/20 rounded-xl px-2 py-2 text-center border border-white/30 backdrop-blur shadow-lg">
+          <Flame className="w-3.5 h-3.5 text-orange-200 mx-auto" strokeWidth={1.7} />
+          <p className="text-[9px] text-white/80 font-black uppercase mt-1">Win Rate</p>
+          <p className="text-sm font-black tabular-nums drop-shadow">{winRate}%</p>
         </div>
-        <div className="bg-muted/60 rounded-lg px-2 py-2 text-center border border-border">
-          <Gem className="w-3.5 h-3.5 text-foreground mx-auto" strokeWidth={1.7} />
-          <p className="text-[9px] text-muted-foreground font-medium uppercase mt-1">Main</p>
-          <p className="text-sm font-bold text-foreground tabular-nums">{data.gamesPlayed}</p>
+        <div className="bg-white/20 rounded-xl px-2 py-2 text-center border border-white/30 backdrop-blur shadow-lg">
+          <Gem className="w-3.5 h-3.5 text-cyan-100 mx-auto" strokeWidth={1.7} />
+          <p className="text-[9px] text-white/80 font-black uppercase mt-1">Main</p>
+          <p className="text-sm font-black tabular-nums drop-shadow">{data.gamesPlayed}</p>
         </div>
       </div>
 
-      <div className="flex items-center gap-2">
+      <div className="relative flex items-center gap-2">
         {boosterActive ? (
-          <div className="flex-1 flex items-center gap-1.5 bg-muted text-foreground rounded-lg px-2.5 py-1.5 border border-border">
+          <div className="flex-1 flex items-center gap-1.5 bg-white/25 text-white rounded-xl px-2.5 py-1.5 border border-white/35 backdrop-blur">
             <Zap className="w-3.5 h-3.5" strokeWidth={1.8} />
             <span className="text-[11px] font-semibold">x2 POIN AKTIF</span>
-            <span className="ml-auto text-[10px] font-medium tabular-nums text-muted-foreground">{fmtRemaining(remaining)}</span>
+            <span className="ml-auto text-[10px] font-black tabular-nums text-white/85">{fmtRemaining(remaining)}</span>
           </div>
         ) : (
-          <p className="flex-1 text-[10px] text-muted-foreground font-medium">
+          <p className="flex-1 text-[10px] text-white/85 font-black drop-shadow">
             Aktifkan booster x2 poin untuk semua game
           </p>
         )}
         <BuyBoosterDialog visitorId={visitorId} />
+      </div>
       </div>
     </div>
   );
