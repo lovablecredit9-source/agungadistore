@@ -739,3 +739,43 @@
   0%, 100% { transform: translateY(0); opacity: 0.6; }
   50% { transform: translateY(-10px); opacity: 1; }
 }
+
+/* ===== Maksimalis Warna-warni ===== */
+@keyframes wiggle {
+  0%, 100% { transform: rotate(0deg); }
+  25% { transform: rotate(-8deg); }
+  75% { transform: rotate(8deg); }
+}
+.animate-wiggle:hover { animation: wiggle 0.5s ease-in-out; }
+
+@keyframes confetti-fall {
+  0% { transform: translateY(-20px) rotate(0deg); opacity: 0; }
+  10% { opacity: 1; }
+  100% { transform: translateY(120px) rotate(360deg); opacity: 0; }
+}
+.confetti-piece {
+  position: absolute;
+  font-size: 14px;
+  animation: confetti-fall 4s linear infinite;
+  pointer-events: none;
+}
+
+@keyframes rainbow-text {
+  0%, 100% { filter: hue-rotate(0deg); }
+  50% { filter: hue-rotate(180deg); }
+}
+.animate-rainbow-text { animation: rainbow-text 6s linear infinite; }
+
+@keyframes sticker-pop {
+  0%, 100% { transform: scale(1) rotate(-12deg); }
+  50% { transform: scale(1.15) rotate(8deg); }
+}
+.animate-sticker { animation: sticker-pop 2.5s ease-in-out infinite; }
+
+@keyframes blob-drift {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33% { transform: translate(20px, -15px) scale(1.1); }
+  66% { transform: translate(-15px, 10px) scale(0.95); }
+}
+.animate-blob { animation: blob-drift 8s ease-in-out infinite; }
+
