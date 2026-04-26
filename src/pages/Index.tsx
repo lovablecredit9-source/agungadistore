@@ -3248,12 +3248,6 @@ const Index = () => {
                     </Button>
                   </div>
                 </div>
-                {/* Smart Mode Toggle */}
-                {tickets.length > 0 && (
-                  <div className="flex items-center justify-between gap-2 px-1">
-                    <div className="text-[11px] text-slate-400 font-medium">
-                      {smartTickets ? "🧠 Mode Pintar — timeline & filter" : "📋 Tampilan klasik"}
-                    </div>
                 {/* Smart Mode Toggle - iOS Segmented */}
                 {tickets.length > 0 && (
                   <div className="flex items-center justify-between gap-2 px-1">
