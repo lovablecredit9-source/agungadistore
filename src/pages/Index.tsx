@@ -2218,30 +2218,40 @@ const Index = () => {
                   const imgs = getProductImages(p.id);
                   const badges = getProductBadges(p);
                   const isGrid = productViewMode === "grid";
+                  const inStock = p.stock > 0;
                   return (
-                    <Card key={p.id} className="overflow-hidden hover:shadow-2xl transition-all duration-300 hover:-translate-y-1.5 border-0 shadow-lg glass-card cursor-pointer group card-shine relative" onClick={() => openProduct(p)}>
-                      {/* Premium glow accent on hover */}
-                      <div className="absolute -inset-0.5 bg-gradient-to-br from-primary/0 via-accent/0 to-primary/0 group-hover:from-primary/20 group-hover:via-accent/10 group-hover:to-primary/20 rounded-lg blur opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none -z-10" />
+                    <div
+                      key={p.id}
+                      className="relative rounded-2xl p-[1.5px] aurora-shift overflow-hidden cursor-pointer group transition-transform duration-300 hover:-translate-y-1.5"
+                      style={{ background: inStock
+                        ? "linear-gradient(135deg, hsl(190 95% 55%/0.6), hsl(280 90% 65%/0.55), hsl(330 90% 60%/0.6), hsl(190 95% 55%/0.6))"
+                        : "linear-gradient(135deg, hsl(0 0% 50%/0.4), hsl(0 70% 50%/0.4), hsl(0 0% 50%/0.4))",
+                        backgroundSize: "300% 300%" }}
+                      onClick={() => openProduct(p)}
+                    >
+                      <Card className="overflow-hidden border-0 shadow-lg bg-card/95 backdrop-blur-xl rounded-[14px] card-shine relative">
+                      {/* Inner neon glow on hover */}
+                      <div className="absolute -inset-0.5 bg-gradient-to-br from-cyan-500/0 via-purple-500/0 to-pink-500/0 group-hover:from-cyan-500/20 group-hover:via-purple-500/15 group-hover:to-pink-500/20 rounded-[14px] blur-md opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none -z-10" />
 
                       {imgs.length > 0 && (
                         <div className={`relative overflow-hidden ${isGrid ? "aspect-square" : ""}`}>
                           <ImageCarousel images={imgs} />
-                          <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent pointer-events-none" />
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent pointer-events-none" />
 
                           {/* Dynamic badges (top-left, stacked) */}
                           {badges.length > 0 && (
                             <div className="absolute top-2 left-2 flex flex-col gap-1 max-w-[60%]">
                               {badges.map((b, i) => (
-                                <span key={i} className={`text-[9px] font-extrabold px-2 py-0.5 rounded-full shadow-lg backdrop-blur-sm ${b.className} animate-fade-in`} style={{ animationDelay: `${i * 80}ms` }}>
+                                <span key={i} className={`text-[9px] font-extrabold px-2 py-0.5 rounded-full shadow-[0_0_10px_rgba(0,0,0,0.4)] backdrop-blur-md ${b.className} animate-fade-in`} style={{ animationDelay: `${i * 80}ms` }}>
                                   {b.label}
                                 </span>
                               ))}
                             </div>
                           )}
 
-                          {/* Price badge top-right */}
+                          {/* Price badge top-right - neon */}
                           <div className="absolute top-2 right-2">
-                            <span className={`font-extrabold bg-gradient-to-r from-primary to-primary/80 text-primary-foreground rounded-full shadow-lg backdrop-blur-sm ${isGrid ? "text-[10px] px-2 py-1" : "text-xs px-3 py-1.5"}`}>{formatPrice(p.price)}</span>
+                            <span className={`font-black bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-500 text-white rounded-full shadow-[0_0_15px_rgba(34,211,238,0.6)] backdrop-blur-sm border border-white/30 ${isGrid ? "text-[10px] px-2 py-1" : "text-xs px-3 py-1.5"}`}>{formatPrice(p.price)}</span>
                           </div>
 
                           {/* Action buttons bottom-right */}
