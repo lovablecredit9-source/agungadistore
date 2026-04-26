@@ -6,7 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { motion } from "framer-motion";
-import { User, LogIn, LogOut, UserPlus, Search, Trophy, Users, Heart, Edit2, Loader2, Crown, Medal, Award, Eye } from "lucide-react";
+import { User, LogIn, LogOut, UserPlus, Search, Trophy, Users, Heart, Edit2, Loader2, Crown, Medal, Award, Eye, Sparkles, Star, Flame, Zap, Target } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { getVisitorId } from "@/lib/visitor-id";
 import { adjustGameLevelPoints } from "./gameStore";
@@ -113,10 +113,24 @@ export function GameProfileDialog({ profile, onUpdate, visitorId }: {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <button className="flex items-center gap-1.5 bg-accent/20 border border-accent/30 rounded-lg px-2 py-1 text-xs hover:bg-accent/30 transition-colors">
-          <User className="w-3 h-3 text-accent" />
-          <span className="font-bold truncate max-w-[80px]">{profile?.display_name || "Profil"}</span>
-          {profile?.is_guest && <span className="text-[9px] text-muted-foreground bg-muted px-1 rounded">Guest</span>}
+        <button className="group relative flex items-center gap-1.5 rounded-full p-[1.5px] overflow-hidden quick-action-float">
+          <span className="absolute inset-0 game-border-rainbow rounded-full" />
+          <span className="relative flex items-center gap-1.5 bg-slate-900/90 backdrop-blur rounded-full px-2.5 py-1 text-xs">
+            <span className="relative w-5 h-5 rounded-full bg-gradient-to-br from-fuchsia-500 via-violet-500 to-cyan-500 flex items-center justify-center shadow-md shadow-fuchsia-500/40">
+              <span className="text-[10px] font-black text-white drop-shadow">
+                {(profile?.display_name || "P").charAt(0).toUpperCase()}
+              </span>
+              <Sparkles className="absolute -top-1 -right-1 w-2.5 h-2.5 text-yellow-300 quick-action-bounce" />
+            </span>
+            <span className="font-black truncate max-w-[80px] bg-gradient-to-r from-pink-300 via-yellow-200 to-cyan-300 bg-clip-text text-transparent">
+              {profile?.display_name || "Profil"}
+            </span>
+            {profile?.is_guest && (
+              <span className="text-[8px] font-black text-yellow-950 bg-gradient-to-r from-yellow-300 to-amber-400 px-1.5 py-0.5 rounded-full shadow-sm">
+                GUEST
+              </span>
+            )}
+          </span>
         </button>
       </DialogTrigger>
       <DialogContent className="max-w-sm max-h-[85vh] overflow-y-auto p-0">
@@ -173,58 +187,142 @@ function ProfileView({ profile, visitorId, onUpdate }: { profile: GameProfile | 
 
   return (
     <div className="space-y-3 mt-2">
-      <div className="text-center">
-        <div className="w-16 h-16 rounded-full bg-gradient-to-br from-primary to-accent mx-auto flex items-center justify-center text-2xl font-bold text-primary-foreground">
-          {profile.display_name.charAt(0).toUpperCase()}
+      {/* 🌈 Hero Profile Card */}
+      <div className="relative overflow-hidden rounded-2xl p-[2px] game-hero-pulse">
+        <div className="absolute inset-0 game-border-rainbow" />
+        <div className="relative rounded-[14px] update-aurora-bg p-4 text-center overflow-hidden">
+          {/* Floating bg emojis */}
+          <div className="absolute top-2 left-3 text-lg float-emoji opacity-60" style={{ animationDelay: "0s" }}>🎮</div>
+          <div className="absolute top-3 right-3 text-lg float-emoji opacity-60" style={{ animationDelay: "0.7s" }}>⭐</div>
+          <div className="absolute bottom-2 left-4 text-base float-emoji opacity-50" style={{ animationDelay: "1.2s" }}>🏆</div>
+          <div className="absolute bottom-3 right-4 text-base float-emoji opacity-50" style={{ animationDelay: "1.8s" }}>✨</div>
+
+          {/* Avatar with rainbow ring */}
+          <div className="relative inline-block">
+            <div className="absolute -inset-1 rounded-full game-border-rainbow opacity-90 blur-[2px]" />
+            <div className="relative w-20 h-20 rounded-full bg-gradient-to-br from-fuchsia-500 via-violet-500 to-cyan-500 mx-auto flex items-center justify-center text-3xl font-black text-white shadow-2xl shadow-fuchsia-500/50 quick-action-float">
+              {profile.display_name.charAt(0).toUpperCase()}
+              <Crown className="absolute -top-2 -right-1 w-5 h-5 text-yellow-300 fill-yellow-300 drop-shadow-lg quick-action-bounce" />
+            </div>
+          </div>
+
+          <h3 className="font-black text-xl mt-2 bg-gradient-to-r from-yellow-300 via-pink-300 to-cyan-300 bg-clip-text text-transparent drop-shadow">
+            {profile.display_name}
+          </h3>
+          {profile.description && (
+            <p className="text-xs text-white/80 mt-0.5 px-2 line-clamp-2">{profile.description}</p>
+          )}
+          <div className="flex justify-center gap-2 mt-2">
+            {profile.is_guest ? (
+              <span className="text-[10px] font-black text-yellow-950 bg-gradient-to-r from-yellow-300 to-amber-400 px-2 py-0.5 rounded-full shadow game-chip-bounce">
+                👤 GUEST
+              </span>
+            ) : (
+              <span className="text-[10px] font-black text-emerald-50 bg-gradient-to-r from-emerald-500 to-cyan-500 px-2 py-0.5 rounded-full shadow game-chip-bounce">
+                ✓ TERVERIFIKASI
+              </span>
+            )}
+            <span className="text-[10px] font-black text-white bg-gradient-to-r from-fuchsia-500 to-violet-600 px-2 py-0.5 rounded-full shadow game-chip-bounce" style={{ animationDelay: "0.3s" }}>
+              <Star className="w-2.5 h-2.5 inline fill-current" /> PRO PLAYER
+            </span>
+          </div>
         </div>
-        <h3 className="font-extrabold text-lg mt-2">{profile.display_name}</h3>
-        {profile.description && <p className="text-xs text-muted-foreground">{profile.description}</p>}
-        {profile.is_guest && <span className="text-[10px] bg-muted text-muted-foreground px-2 py-0.5 rounded-full">Guest</span>}
       </div>
 
-      <div className="flex justify-center gap-6 text-center">
-        <div>
-          <p className="font-extrabold text-lg">{profile.followers || 0}</p>
-          <p className="text-[10px] text-muted-foreground">Follower</p>
-        </div>
-        <div>
-          <p className="font-extrabold text-lg">{profile.following || 0}</p>
-          <p className="text-[10px] text-muted-foreground">Following</p>
-        </div>
-        <div>
-          <p className="font-extrabold text-lg">{totalPoints}</p>
-          <p className="text-[10px] text-muted-foreground">Poin</p>
-        </div>
+      {/* 📊 Social Stats — 3 colorful cards */}
+      <div className="grid grid-cols-3 gap-2">
+        {[
+          { label: "Follower", value: profile.followers || 0, icon: Users, grad: "from-pink-500 to-rose-600", glow: "shadow-pink-500/40" },
+          { label: "Following", value: profile.following || 0, icon: Heart, grad: "from-violet-500 to-fuchsia-600", glow: "shadow-violet-500/40" },
+          { label: "Poin", value: totalPoints, icon: Sparkles, grad: "from-amber-400 to-orange-600", glow: "shadow-amber-500/40" },
+        ].map((s, i) => (
+          <div
+            key={s.label}
+            className={`relative rounded-xl p-2.5 bg-gradient-to-br ${s.grad} text-white shadow-lg ${s.glow} stat-pop overflow-hidden`}
+            style={{ animationDelay: `${i * 0.1}s` }}
+          >
+            <div className="absolute -top-2 -right-2 w-10 h-10 rounded-full bg-white/15 blur-xl" />
+            <s.icon className="w-3.5 h-3.5 mb-0.5 opacity-90 quick-action-bounce" style={{ animationDelay: `${i * 0.2}s` }} />
+            <p className="font-black text-lg leading-none drop-shadow">{s.value}</p>
+            <p className="text-[9px] font-bold opacity-90 uppercase tracking-wider">{s.label}</p>
+          </div>
+        ))}
       </div>
 
-      <div className="grid grid-cols-3 gap-2 text-center">
-        <div className="bg-green-500/10 rounded-lg p-2">
-          <p className="font-bold text-green-600 text-sm">{totalWins}</p>
-          <p className="text-[10px] text-muted-foreground">Menang</p>
-        </div>
-        <div className="bg-red-500/10 rounded-lg p-2">
-          <p className="font-bold text-red-600 text-sm">{totalLosses}</p>
-          <p className="text-[10px] text-muted-foreground">Kalah</p>
-        </div>
-        <div className="bg-blue-500/10 rounded-lg p-2">
-          <p className="font-bold text-blue-600 text-sm">{totalQuestions}</p>
-          <p className="text-[10px] text-muted-foreground">Soal</p>
-        </div>
+      {/* 🎯 Game Stats — W/L/Q with icons */}
+      <div className="grid grid-cols-3 gap-2">
+        {[
+          { label: "Menang", value: totalWins, icon: Trophy, grad: "from-emerald-500 to-green-600", glow: "shadow-emerald-500/40" },
+          { label: "Kalah", value: totalLosses, icon: Flame, grad: "from-rose-500 to-red-600", glow: "shadow-rose-500/40" },
+          { label: "Soal", value: totalQuestions, icon: Target, grad: "from-cyan-500 to-blue-600", glow: "shadow-cyan-500/40" },
+        ].map((s, i) => (
+          <div
+            key={s.label}
+            className={`relative rounded-xl p-2.5 bg-gradient-to-br ${s.grad} text-white shadow-lg ${s.glow} stat-pop overflow-hidden`}
+            style={{ animationDelay: `${(i + 3) * 0.1}s` }}
+          >
+            <div className="absolute -bottom-2 -left-2 w-10 h-10 rounded-full bg-white/15 blur-xl" />
+            <s.icon className="w-3.5 h-3.5 mb-0.5 opacity-90 quick-action-bounce" style={{ animationDelay: `${(i + 3) * 0.2}s` }} />
+            <p className="font-black text-lg leading-none drop-shadow">{s.value}</p>
+            <p className="text-[9px] font-bold opacity-90 uppercase tracking-wider">{s.label}</p>
+          </div>
+        ))}
       </div>
+
+      {/* Win Rate progress */}
+      {(totalWins + totalLosses) > 0 && (
+        <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-slate-900 to-purple-950 p-3 border border-fuchsia-500/30">
+          <div className="flex items-center justify-between mb-1.5">
+            <span className="text-[11px] font-bold text-white flex items-center gap-1">
+              <Zap className="w-3 h-3 text-yellow-300" /> Win Rate
+            </span>
+            <span className="text-sm font-black bg-gradient-to-r from-emerald-300 to-cyan-300 bg-clip-text text-transparent">
+              {Math.round((totalWins / (totalWins + totalLosses)) * 100)}%
+            </span>
+          </div>
+          <div className="h-2 rounded-full bg-white/10 overflow-hidden">
+            <div
+              className="h-full game-border-rainbow rounded-full"
+              style={{ width: `${Math.round((totalWins / (totalWins + totalLosses)) * 100)}%` }}
+            />
+          </div>
+        </div>
+      )}
 
       {profile.stats && profile.stats.length > 0 && (
-        <div className="space-y-1">
-          <h4 className="font-bold text-xs text-muted-foreground">Statistik per Game</h4>
-          {profile.stats.map(st => (
-            <div key={st.game_type} className="flex items-center justify-between bg-muted/50 rounded-lg px-2 py-1.5 text-xs">
-              <span className="font-semibold">{GAME_LABELS[st.game_type] || st.game_type}</span>
-              <div className="flex gap-2 text-[10px]">
-                <span className="text-green-600">{st.wins}W</span>
-                <span className="text-red-600">{st.losses}L</span>
-                <span className="text-blue-600">{st.points}pts</span>
+        <div className="space-y-1.5">
+          <h4 className="font-black text-xs flex items-center gap-1.5 px-1">
+            <Sparkles className="w-3.5 h-3.5 text-fuchsia-500" />
+            <span className="bg-gradient-to-r from-fuchsia-600 to-cyan-600 bg-clip-text text-transparent uppercase tracking-wider">
+              Statistik per Game
+            </span>
+          </h4>
+          {profile.stats.map((st, i) => {
+            const palette = [
+              "from-pink-500/20 to-rose-500/20 border-pink-500/40",
+              "from-cyan-500/20 to-blue-500/20 border-cyan-500/40",
+              "from-emerald-500/20 to-green-500/20 border-emerald-500/40",
+              "from-amber-500/20 to-orange-500/20 border-amber-500/40",
+              "from-violet-500/20 to-fuchsia-500/20 border-violet-500/40",
+            ];
+            const c = palette[i % palette.length];
+            return (
+              <div
+                key={st.game_type}
+                className={`flex items-center justify-between rounded-xl px-3 py-2 text-xs bg-gradient-to-r ${c} border backdrop-blur`}
+              >
+                <span className="font-black flex items-center gap-1.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-current opacity-70" />
+                  {GAME_LABELS[st.game_type] || st.game_type}
+                </span>
+                <div className="flex gap-1.5 text-[10px] font-black">
+                  <span className="px-1.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-700 dark:text-emerald-300">{st.wins}W</span>
+                  <span className="px-1.5 py-0.5 rounded-full bg-rose-500/20 text-rose-700 dark:text-rose-300">{st.losses}L</span>
+                  <span className="px-1.5 py-0.5 rounded-full bg-amber-500/20 text-amber-700 dark:text-amber-300">{st.points}pts</span>
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>
