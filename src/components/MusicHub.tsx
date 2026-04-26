@@ -124,7 +124,7 @@ export default function MusicHub({ subTab, onSubTabChange, onPlayExternal, playl
     setLoadingMood(true);
     supabase
       .from("playlist_songs")
-      .select("id, title, artist, file_url, cover_url")
+      .select("id, title, artist, file_url, cover_url, created_at, duration")
       .order("created_at", { ascending: false })
       .then(({ data }) => {
         if (mounted) {
@@ -136,26 +136,20 @@ export default function MusicHub({ subTab, onSubTabChange, onPlayExternal, playl
   }, []);
 
   const activeMood = MOODS.find((m) => m.key === mood)!;
-  const moodSongs: MoodSong[] = (() => {
+  const moodMatches = useMemo(() => {
     if (allSongs.length === 0) return [];
-    const matched = allSongs.filter((s) => {
-      const text = `${s.title} ${s.artist}`.toLowerCase();
-      return activeMood.keywords.some((kw) => text.includes(kw));
-    });
-    // Fallback: kalau tidak ada yg cocok, kasih random 6 lagu agar tetap bisa dengar
-    if (matched.length === 0) {
-      return [...allSongs].sort(() => Math.random() - 0.5).slice(0, 6);
-    }
-    return matched.slice(0, 8);
-  })();
-  const moodIsFallback = moodSongs.length > 0 && allSongs.length > 0 && !allSongs.some((s) => {
-    const text = `${s.title} ${s.artist}`.toLowerCase();
-    return activeMood.keywords.some((kw) => text.includes(kw));
-  });
+    return allSongs
+      .map((song) => ({ song, score: getSongMoodScore(song, activeMood) }))
+      .filter((item) => item.score > 0)
+      .sort((a, b) => b.score - a.score || sortByFreshness(a.song, b.song));
+  }, [allSongs, activeMood]);
+  const moodSongs = moodMatches.map((item) => item.song).slice(0, 8);
+  const moodIsFallback = allSongs.length > 0 && moodSongs.length === 0;
 
   const playRandomMood = () => {
     if (moodSongs.length === 0) return;
-    const pick = moodSongs[Math.floor(Math.random() * moodSongs.length)];
+    const currentIndex = nowSong ? moodSongs.findIndex((song) => song.id === nowSong.id) : -1;
+    const pick = moodSongs[currentIndex >= 0 && currentIndex < moodSongs.length - 1 ? currentIndex + 1 : 0];
     onPlayExternal?.(pick);
     if (subTab !== "playlist") onSubTabChange("playlist");
   };
