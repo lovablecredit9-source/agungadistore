@@ -115,14 +115,14 @@ export function GameProfileDialog({ profile, onUpdate, visitorId }: {
       <DialogTrigger asChild>
         <button className="group relative flex items-center gap-1.5 rounded-full p-[1.5px] overflow-hidden quick-action-float">
           <span className="absolute inset-0 game-border-rainbow rounded-full" />
-          <span className="relative flex items-center gap-1.5 bg-slate-900/90 backdrop-blur rounded-full px-2.5 py-1 text-xs">
+          <span className="relative flex items-center gap-1.5 bg-gradient-to-r from-amber-300 via-pink-300 to-cyan-300 backdrop-blur rounded-full px-2.5 py-1 text-xs shadow-lg shadow-pink-500/25">
             <span className="relative w-5 h-5 rounded-full bg-gradient-to-br from-fuchsia-500 via-violet-500 to-cyan-500 flex items-center justify-center shadow-md shadow-fuchsia-500/40">
               <span className="text-[10px] font-black text-white drop-shadow">
                 {(profile?.display_name || "P").charAt(0).toUpperCase()}
               </span>
               <Sparkles className="absolute -top-1 -right-1 w-2.5 h-2.5 text-yellow-300 quick-action-bounce" />
             </span>
-            <span className="font-black truncate max-w-[80px] bg-gradient-to-r from-pink-300 via-yellow-200 to-cyan-300 bg-clip-text text-transparent">
+            <span className="font-black truncate max-w-[80px] text-violet-950 drop-shadow-sm">
               {profile?.display_name || "Profil"}
             </span>
             {profile?.is_guest && (
@@ -133,19 +133,19 @@ export function GameProfileDialog({ profile, onUpdate, visitorId }: {
           </span>
         </button>
       </DialogTrigger>
-      <DialogContent className="max-w-sm max-h-[85vh] overflow-y-auto p-0">
-        <DialogHeader className="p-4 pb-0">
-          <DialogTitle className="flex items-center gap-2 text-base">
-            <User className="w-5 h-5 text-primary" /> Profil Game
+      <DialogContent className="max-w-sm max-h-[85vh] overflow-y-auto p-0 border-0 bg-gradient-to-br from-amber-50 via-pink-50 to-cyan-50 text-violet-950 shadow-2xl shadow-pink-500/30">
+        <DialogHeader className="p-4 pb-0 bg-gradient-to-r from-amber-200/80 via-pink-200/80 to-cyan-200/80">
+          <DialogTitle className="flex items-center gap-2 text-base font-black">
+            <User className="w-5 h-5 text-fuchsia-600" /> Profil Game
           </DialogTitle>
         </DialogHeader>
 
-        <Tabs value={tab} onValueChange={setTab} className="w-full">
-          <TabsList className="w-full grid grid-cols-4 mx-4" style={{ width: "calc(100% - 2rem)" }}>
-            <TabsTrigger value="profile" className="text-xs gap-1"><User className="w-3 h-3" /> Profil</TabsTrigger>
-            <TabsTrigger value="leaderboard" className="text-xs gap-1"><Trophy className="w-3 h-3" /> Top</TabsTrigger>
-            <TabsTrigger value="search" className="text-xs gap-1"><Search className="w-3 h-3" /> Cari</TabsTrigger>
-            <TabsTrigger value="auth" className="text-xs gap-1">
+        <Tabs value={tab} onValueChange={setTab} className="w-full bg-gradient-to-b from-pink-50/80 to-cyan-50/80">
+          <TabsList className="w-full grid grid-cols-4 mx-4 bg-white/70 border border-pink-200 shadow-inner" style={{ width: "calc(100% - 2rem)" }}>
+            <TabsTrigger value="profile" className="text-xs gap-1 font-black data-[state=active]:bg-gradient-to-r data-[state=active]:from-pink-500 data-[state=active]:to-cyan-500 data-[state=active]:text-white"><User className="w-3 h-3" /> Profil</TabsTrigger>
+            <TabsTrigger value="leaderboard" className="text-xs gap-1 font-black data-[state=active]:bg-gradient-to-r data-[state=active]:from-amber-400 data-[state=active]:to-orange-500 data-[state=active]:text-white"><Trophy className="w-3 h-3" /> Top</TabsTrigger>
+            <TabsTrigger value="search" className="text-xs gap-1 font-black data-[state=active]:bg-gradient-to-r data-[state=active]:from-cyan-500 data-[state=active]:to-blue-500 data-[state=active]:text-white"><Search className="w-3 h-3" /> Cari</TabsTrigger>
+            <TabsTrigger value="auth" className="text-xs gap-1 font-black data-[state=active]:bg-gradient-to-r data-[state=active]:from-violet-500 data-[state=active]:to-fuchsia-500 data-[state=active]:text-white">
               {profile?.is_guest ? <LogIn className="w-3 h-3" /> : <Edit2 className="w-3 h-3" />}
               {profile?.is_guest ? "Login" : "Edit"}
             </TabsTrigger>
@@ -271,18 +271,18 @@ function ProfileView({ profile, visitorId, onUpdate }: { profile: GameProfile | 
 
       {/* Win Rate progress */}
       {(totalWins + totalLosses) > 0 && (
-        <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-slate-900 to-purple-950 p-3 border border-fuchsia-500/30">
+        <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-amber-300 via-pink-400 to-cyan-400 p-3 border border-white/50 shadow-lg shadow-pink-500/30">
           <div className="flex items-center justify-between mb-1.5">
-            <span className="text-[11px] font-bold text-white flex items-center gap-1">
-              <Zap className="w-3 h-3 text-yellow-300" /> Win Rate
+            <span className="text-[11px] font-black text-violet-950 flex items-center gap-1 drop-shadow-sm">
+              <Zap className="w-3 h-3 text-yellow-100 fill-yellow-100" /> Win Rate
             </span>
-            <span className="text-sm font-black bg-gradient-to-r from-emerald-300 to-cyan-300 bg-clip-text text-transparent">
+            <span className="text-sm font-black text-violet-950 drop-shadow-sm">
               {Math.round((totalWins / (totalWins + totalLosses)) * 100)}%
             </span>
           </div>
-          <div className="h-2 rounded-full bg-white/10 overflow-hidden">
+          <div className="h-2 rounded-full bg-white/35 overflow-hidden">
             <div
-              className="h-full game-border-rainbow rounded-full"
+              className="h-full bg-white rounded-full shadow-lg shadow-white/60"
               style={{ width: `${Math.round((totalWins / (totalWins + totalLosses)) * 100)}%` }}
             />
           </div>
