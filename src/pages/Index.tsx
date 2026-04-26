@@ -3265,22 +3265,24 @@ const Index = () => {
                 )}
 
                 {tickets.length === 0 && (
-                  <div
-                    className="relative rounded-3xl p-[2px] aurora-shift overflow-hidden"
-                    style={{ background: "linear-gradient(135deg, hsl(15 90% 55%/0.5), hsl(45 95% 55%/0.5), hsl(330 90% 60%/0.5), hsl(15 90% 55%/0.5))", backgroundSize: "300% 300%" }}
-                  >
-                    <div className="rounded-[22px] bg-gradient-to-br from-slate-950/95 to-slate-900/95 backdrop-blur-xl text-center py-16 px-6 relative overflow-hidden">
-                      <div className="pointer-events-none absolute -top-16 -right-16 w-40 h-40 rounded-full bg-orange-500/20 blur-3xl" />
-                      <div className="pointer-events-none absolute -bottom-16 -left-16 w-40 h-40 rounded-full bg-pink-500/20 blur-3xl" />
-                      <div className="relative w-24 h-24 rounded-3xl bg-gradient-to-br from-orange-500/30 via-amber-500/20 to-pink-500/30 flex items-center justify-center mx-auto mb-4 border border-white/20 shadow-[0_0_40px_rgba(251,146,60,0.4)] floating">
-                        <Inbox className="w-12 h-12 text-orange-200/70" />
-                      </div>
-                      <p className="relative text-base font-black bg-gradient-to-r from-orange-200 to-pink-200 bg-clip-text text-transparent">Belum ada tiket</p>
-                      <p className="relative text-xs text-slate-400 mt-1.5">Hubungi kami jika ada kendala</p>
-                      <Button size="sm" className="relative mt-4 gap-1.5 rounded-xl font-black bg-gradient-to-r from-orange-500 via-amber-500 to-pink-500 text-white shadow-[0_4px_20px_rgba(251,146,60,0.5)] hover:scale-105 transition-transform border border-white/20" onClick={() => setTicketView("create")}>
-                        <Send className="w-4 h-4" /> Ajukan Keluhan
-                      </Button>
+                  <div className="relative overflow-hidden rounded-[24px] bg-background/50 backdrop-blur-2xl backdrop-saturate-150 border border-white/15 shadow-[0_18px_50px_-12px_rgba(0,0,0,0.45),inset_0_1px_0_0_rgba(255,255,255,0.18)] text-center py-14 px-6">
+                    <div className="pointer-events-none absolute -top-16 -right-16 w-40 h-40 rounded-full bg-orange-500/10 blur-3xl" />
+                    <div className="pointer-events-none absolute -bottom-16 -left-16 w-40 h-40 rounded-full bg-pink-500/10 blur-3xl" />
+                    <div
+                      className="relative w-20 h-20 rounded-3xl bg-gradient-to-br from-orange-500/30 via-amber-500/20 to-pink-500/30 flex items-center justify-center mx-auto mb-4"
+                      style={{ boxShadow: "0 10px 30px -8px rgba(251,146,60,0.4), inset 0 1px 0 0 rgba(255,255,255,0.25)" }}
+                    >
+                      <Inbox className="w-10 h-10 text-orange-300/80" />
                     </div>
+                    <p className="relative text-[15px] font-semibold text-foreground tracking-tight">Belum ada tiket</p>
+                    <p className="relative text-[12px] text-muted-foreground mt-1">Hubungi kami jika ada kendala</p>
+                    <Button
+                      size="sm"
+                      className="relative mt-4 gap-1.5 rounded-full font-semibold bg-foreground text-background hover:bg-foreground/90 active:scale-95 transition-transform shadow-md"
+                      onClick={() => setTicketView("create")}
+                    >
+                      <Send className="w-4 h-4" /> Ajukan Keluhan
+                    </Button>
                   </div>
                 )}
 
