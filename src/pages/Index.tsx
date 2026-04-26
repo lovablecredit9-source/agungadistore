@@ -1823,6 +1823,27 @@ const Index = () => {
                   </button>
                 </div>
               </div>
+              </div>
+            </div>
+
+            {/* Marquee Ticker Warna-warni */}
+            <div className="relative rounded-2xl overflow-hidden bg-gradient-to-r from-pink-500 via-fuchsia-500 via-purple-500 via-cyan-400 to-emerald-500 p-[2px] aurora-shift" style={{ backgroundSize: "300% 100%" }}>
+              <div className="relative rounded-[14px] bg-card/95 backdrop-blur-xl py-2 overflow-hidden">
+                <div className="flex whitespace-nowrap" style={{ animation: "marquee-x 22s linear infinite" }}>
+                  {[...Array(2)].map((_, k) => (
+                    <div key={k} className="flex items-center gap-6 px-4 text-xs font-bold shrink-0">
+                      <span className="text-pink-500">🎉 PROMO HARIAN</span>
+                      <span className="text-cyan-400">💎 VOUCHER GRATIS</span>
+                      <span className="text-yellow-500">⭐ TERPERCAYA</span>
+                      <span className="text-emerald-500">💰 SALDO INSTAN</span>
+                      <span className="text-fuchsia-500">🎵 MUSIK GRATIS</span>
+                      <span className="text-orange-500">🔥 GAME SERU</span>
+                      <span className="text-violet-500">🎮 11 GAME AI</span>
+                      <span className="text-rose-500">❤️ ADMIN RAMAH</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
 
             {/* Quick Action Grid - Aurora Neon Premium */}
