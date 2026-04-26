@@ -1,8 +1,20 @@
-import { Music2, Globe, Users, Sparkles, Headphones, Radio, Mic2, Disc3, Flame, Play, Pause, ChevronUp } from "lucide-react";
+import { Music2, Globe, Users, Sparkles, Headphones, Radio, Mic2, Disc3, Flame, Play, Pause, ChevronUp, TrendingUp, Heart, Crown, Zap, Moon, Sun, Cloud, Coffee, Dumbbell, PartyPopper, Volume2, Award } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useState, useEffect } from "react";
 import MusicPublicTab from "@/components/MusicPublicTab";
 import ArtistTab from "@/components/ArtistTab";
 import type { PlaybackState } from "@/components/PlaylistTab";
+
+const MOODS = [
+  { key: "chill", label: "Chill", icon: Cloud, gradient: "from-sky-400 to-blue-500", glow: "56,189,248" },
+  { key: "party", label: "Pesta", icon: PartyPopper, gradient: "from-fuchsia-500 to-pink-500", glow: "236,72,153" },
+  { key: "focus", label: "Fokus", icon: Coffee, gradient: "from-amber-500 to-orange-600", glow: "249,115,22" },
+  { key: "workout", label: "Gym", icon: Dumbbell, gradient: "from-red-500 to-rose-600", glow: "239,68,68" },
+  { key: "sleep", label: "Tidur", icon: Moon, gradient: "from-indigo-500 to-purple-600", glow: "139,92,246" },
+  { key: "morning", label: "Pagi", icon: Sun, gradient: "from-yellow-400 to-amber-500", glow: "245,158,11" },
+];
+
+const TRENDING_TAGS = ["🔥 Pop Indo", "🎤 Dangdut Remix", "💎 Lo-Fi Beats", "⚡ EDM Drop", "🎸 Rock Klasik", "🌙 City Pop", "✨ K-Pop Hits", "🎺 Jazz Smooth"];
 
 export type MusicSubTab = "playlist" | "publik" | "artist";
 
@@ -73,6 +85,24 @@ export default function MusicHub({ subTab, onSubTabChange, onPlayExternal, playl
   const progressPct = playbackState && playbackState.duration > 0
     ? Math.min(100, (playbackState.currentTime / playbackState.duration) * 100)
     : 0;
+
+  const [mood, setMood] = useState<string>("chill");
+  const [listenTime, setListenTime] = useState<number>(0);
+
+  useEffect(() => {
+    if (!isPlaying) return;
+    const t = setInterval(() => setListenTime((s) => s + 1), 1000);
+    return () => clearInterval(t);
+  }, [isPlaying]);
+
+  const fmtTime = (s: number) => {
+    const h = Math.floor(s / 3600);
+    const m = Math.floor((s % 3600) / 60);
+    const sec = s % 60;
+    if (h > 0) return `${h}j ${m}m`;
+    if (m > 0) return `${m}m ${sec}d`;
+    return `${sec}d`;
+  };
 
   return (
     <div className="space-y-3 animate-fade-in">
@@ -393,6 +423,117 @@ export default function MusicHub({ subTab, onSubTabChange, onPlayExternal, playl
             );
           })}
         </div>
+      </div>
+
+      {/* MUSIC STATS BAR — 4 mini stat cards */}
+      <div className="grid grid-cols-4 gap-2">
+        {[
+          { icon: Volume2, label: "Sesi", value: fmtTime(listenTime), color: "from-cyan-400 to-blue-500", glow: "59,130,246" },
+          { icon: TrendingUp, label: "Trending", value: "127", color: "from-fuchsia-500 to-pink-500", glow: "236,72,153" },
+          { icon: Heart, label: "Liked", value: "∞", color: "from-rose-400 to-red-500", glow: "239,68,68" },
+          { icon: Crown, label: "Top", value: "HD", color: "from-amber-400 to-orange-500", glow: "245,158,11" },
+        ].map((s, i) => (
+          <motion.div
+            key={s.label}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: i * 0.05, type: "spring", stiffness: 220 }}
+            whileHover={{ y: -3, scale: 1.04 }}
+            whileTap={{ scale: 0.96 }}
+            className="relative overflow-hidden rounded-2xl border border-white/10 bg-card/80 backdrop-blur-md p-2 cursor-pointer"
+            style={{ boxShadow: `0 4px 14px -4px rgba(${s.glow},0.35)` }}
+          >
+            <div className={`absolute inset-0 bg-gradient-to-br ${s.color} opacity-10`} />
+            <div className={`absolute -top-4 -right-4 w-12 h-12 rounded-full bg-gradient-to-br ${s.color} opacity-30 blur-xl`} />
+            <div className="relative flex flex-col items-center gap-0.5">
+              <div className={`w-6 h-6 rounded-lg bg-gradient-to-br ${s.color} flex items-center justify-center shadow-lg`}>
+                <s.icon className="w-3.5 h-3.5 text-white" strokeWidth={2.5} />
+              </div>
+              <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-wide mt-0.5">{s.label}</span>
+              <span className="text-xs font-black text-foreground tabular-nums">{s.value}</span>
+            </div>
+          </motion.div>
+        ))}
+      </div>
+
+      {/* MOOD SELECTOR — pilih suasana */}
+      <div className="relative overflow-hidden rounded-2xl border border-purple-500/20 bg-gradient-to-br from-purple-950/50 via-card to-fuchsia-950/40 p-3 backdrop-blur-md shadow-lg">
+        <div className="absolute -top-8 -right-8 w-24 h-24 rounded-full bg-purple-500/20 blur-2xl" />
+        <div className="relative flex items-center gap-1.5 mb-2">
+          <motion.div
+            animate={{ rotate: [0, 360] }}
+            transition={{ duration: 12, repeat: Infinity, ease: "linear" }}
+            className="w-5 h-5 rounded-full bg-gradient-to-br from-fuchsia-500 to-purple-600 flex items-center justify-center shadow-[0_0_12px_rgba(217,70,239,0.6)]"
+          >
+            <Sparkles className="w-3 h-3 text-white" fill="currentColor" />
+          </motion.div>
+          <h3 className="text-xs font-black text-foreground tracking-tight">Pilih Mood Musikmu</h3>
+          <motion.span
+            animate={{ opacity: [1, 0.5, 1] }}
+            transition={{ duration: 1.5, repeat: Infinity }}
+            className="ml-auto px-1.5 py-0.5 rounded-md bg-fuchsia-500/20 border border-fuchsia-400/40 text-[8px] font-black text-fuchsia-300 uppercase tracking-wider"
+          >
+            ✨ Smart
+          </motion.span>
+        </div>
+        <div className="relative grid grid-cols-6 gap-1.5">
+          {MOODS.map((m, i) => {
+            const active = mood === m.key;
+            return (
+              <motion.button
+                key={m.key}
+                onClick={() => setMood(m.key)}
+                initial={{ opacity: 0, scale: 0.5 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: i * 0.04, type: "spring", stiffness: 260 }}
+                whileTap={{ scale: 0.88 }}
+                className="relative flex flex-col items-center gap-1 py-1.5 rounded-xl transition-all overflow-hidden"
+              >
+                {active && (
+                  <motion.div
+                    layoutId="mood-active"
+                    className={`absolute inset-0 bg-gradient-to-br ${m.gradient} rounded-xl`}
+                    style={{ boxShadow: `0 4px 14px -2px rgba(${m.glow},0.65)` }}
+                    transition={{ type: "spring", stiffness: 380, damping: 28 }}
+                  />
+                )}
+                <div className={`relative w-7 h-7 rounded-full flex items-center justify-center transition-all ${active ? "bg-white/25 backdrop-blur" : "bg-muted/40"}`}>
+                  <m.icon className={`w-3.5 h-3.5 ${active ? "text-white" : "text-muted-foreground"}`} strokeWidth={active ? 2.6 : 2} />
+                </div>
+                <span className={`relative text-[9px] font-extrabold tracking-tight ${active ? "text-white drop-shadow" : "text-muted-foreground"}`}>{m.label}</span>
+              </motion.button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* TRENDING TICKER — marquee scrolling tags */}
+      <div className="relative overflow-hidden rounded-xl border border-amber-500/30 bg-gradient-to-r from-amber-950/40 via-orange-950/40 to-red-950/40 backdrop-blur-md py-2 shadow-[0_4px_16px_-4px_rgba(245,158,11,0.4)]">
+        <div className="absolute left-0 inset-y-0 z-10 w-12 bg-gradient-to-r from-background to-transparent pointer-events-none" />
+        <div className="absolute right-0 inset-y-0 z-10 w-12 bg-gradient-to-l from-background to-transparent pointer-events-none" />
+        <div className="absolute left-2 top-1/2 -translate-y-1/2 z-20 flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-gradient-to-r from-amber-500 to-orange-500 shadow-lg">
+          <motion.div
+            animate={{ scale: [1, 1.3, 1] }}
+            transition={{ duration: 1, repeat: Infinity }}
+          >
+            <Zap className="w-2.5 h-2.5 text-white" fill="currentColor" />
+          </motion.div>
+          <span className="text-[9px] font-black text-white tracking-wider">HOT</span>
+        </div>
+        <motion.div
+          animate={{ x: ["0%", "-50%"] }}
+          transition={{ duration: 25, repeat: Infinity, ease: "linear" }}
+          className="flex items-center gap-3 whitespace-nowrap pl-16"
+        >
+          {[...TRENDING_TAGS, ...TRENDING_TAGS].map((tag, i) => (
+            <span
+              key={i}
+              className="text-[11px] font-bold text-amber-100 px-2.5 py-1 rounded-lg bg-white/5 border border-amber-400/20 hover:bg-white/10 transition-colors"
+            >
+              {tag}
+            </span>
+          ))}
+        </motion.div>
       </div>
 
       {/* Content */}
