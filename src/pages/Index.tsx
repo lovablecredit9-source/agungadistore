@@ -3789,23 +3789,24 @@ const Index = () => {
                         <button
                           key={dep.id}
                           onClick={() => setSelectedDeposit(dep)}
-                          className="group relative w-full text-left rounded-2xl p-[1.5px] overflow-hidden hover:scale-[1.01] active:scale-[0.99] transition-transform"
-                          style={{ background: `linear-gradient(135deg, rgba(${accent.glow},0.5), rgba(${accent.glow},0.2), rgba(${accent.glow},0.5))` }}
+                          className="relative w-full text-left overflow-hidden rounded-2xl bg-background/50 backdrop-blur-2xl backdrop-saturate-150 border border-white/15 active:scale-[0.99] hover:bg-white/[0.04] transition-all duration-200"
+                          style={{ boxShadow: `0 8px 24px -10px rgba(${accent.glow},0.3), inset 0 1px 0 0 rgba(255,255,255,0.12)` }}
                         >
-                          <div className="relative rounded-[14px] bg-card/95 backdrop-blur-xl p-3 flex items-center gap-3 overflow-hidden">
-                            <div className="pointer-events-none absolute -top-8 -right-8 w-24 h-24 rounded-full opacity-20 blur-2xl" style={{ background: `rgba(${accent.glow},1)` }} />
-                            <div className="relative shrink-0">
-                              <div className={`absolute inset-0 rounded-xl bg-gradient-to-br ${accent.color} blur-md opacity-50`} />
-                              <div className={`relative w-10 h-10 rounded-xl bg-gradient-to-br ${accent.color} flex items-center justify-center shadow-lg`}>
-                                {accent.icon}
-                              </div>
+                          <div className="relative p-3 flex items-center gap-3">
+                            <div className="pointer-events-none absolute -top-8 -right-8 w-24 h-24 rounded-full opacity-15 blur-2xl" style={{ background: `rgba(${accent.glow},1)` }} />
+                            <div
+                              className={`relative shrink-0 w-10 h-10 rounded-2xl bg-gradient-to-br ${accent.color} flex items-center justify-center text-white`}
+                              style={{ boxShadow: `0 6px 16px -4px rgba(${accent.glow},0.55), inset 0 1px 0 0 rgba(255,255,255,0.25)` }}
+                            >
+                              {accent.icon}
                             </div>
                             <div className="flex-1 min-w-0 relative">
-                              <p className={`font-extrabold text-sm bg-gradient-to-r ${accent.color} bg-clip-text text-transparent`}>{formatPrice(dep.amount)}</p>
-                              <p className="text-[10px] text-muted-foreground font-mono truncate">🆔 {dep.trx_id}</p>
-                              <p className="text-[10px] text-muted-foreground">💳 {dep.payment_method.toUpperCase()} • {new Date(dep.created_at).toLocaleString("id-ID")}</p>
+                              <p className="font-semibold text-[14px] text-foreground tracking-tight">{formatPrice(dep.amount)}</p>
+                              <p className="text-[10.5px] text-muted-foreground font-mono truncate">{dep.trx_id}</p>
+                              <p className="text-[10.5px] text-muted-foreground">{dep.payment_method.toUpperCase()} • {new Date(dep.created_at).toLocaleString("id-ID")}</p>
                             </div>
-                            <span className={`relative shrink-0 text-[10px] px-2.5 py-1 rounded-full font-extrabold bg-gradient-to-r ${accent.color} text-white shadow-lg`}>
+                            <span className={`relative shrink-0 text-[10px] px-2.5 py-1 rounded-full font-semibold bg-gradient-to-r ${accent.color} text-white`}
+                              style={{ boxShadow: `0 4px 10px -2px rgba(${accent.glow},0.4)` }}>
                               {getDepositStatusLabel(dep.status, lang)}
                             </span>
                           </div>
