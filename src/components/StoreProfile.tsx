@@ -13,6 +13,7 @@ interface Product {
   price: number;
   image_url: string | null;
   sold_count?: number;
+  category?: string | null;
   [key: string]: any;
 }
 
@@ -49,7 +50,13 @@ export const StoreProfileModal = ({
   const [isFollowing, setIsFollowing] = useState(false);
   const [followLoading, setFollowLoading] = useState(false);
   const [recentFollowers, setRecentFollowers] = useState<string[]>([]);
+  const [selectedCat, setSelectedCat] = useState<string>("Semua");
   const { toast } = useToast();
+
+  const categories = ["Semua", ...Array.from(new Set(products.map(p => p.category || "Lainnya")))];
+  const filteredProducts = selectedCat === "Semua"
+    ? products
+    : products.filter(p => (p.category || "Lainnya") === selectedCat);
 
   const fetchFollowers = async () => {
     const { data, count } = await supabase
@@ -241,14 +248,38 @@ export const StoreProfileModal = ({
               <div className="flex items-center justify-between mb-2">
                 <h3 className="text-xs font-black flex items-center gap-1.5">
                   <StoreIcon className="w-4 h-4 text-violet-500" />
-                  Semua Produk ({products.length})
+                  Semua Produk ({filteredProducts.length})
                 </h3>
               </div>
-              {products.length === 0 ? (
+
+              {/* Filter chip kategori */}
+              {categories.length > 1 && (
+                <div className="flex gap-1.5 overflow-x-auto pb-2 mb-2 -mx-1 px-1 scrollbar-hide">
+                  {categories.map((cat) => {
+                    const active = selectedCat === cat;
+                    const count = cat === "Semua" ? products.length : products.filter(p => (p.category || "Lainnya") === cat).length;
+                    return (
+                      <button
+                        key={cat}
+                        onClick={() => setSelectedCat(cat)}
+                        className={`shrink-0 px-3 py-1.5 rounded-full text-[10px] font-black transition active:scale-95 border ${
+                          active
+                            ? "bg-gradient-to-r from-violet-500 to-pink-500 text-white border-transparent shadow-md"
+                            : "bg-muted/60 text-foreground border-border/50 hover:bg-muted"
+                        }`}
+                      >
+                        {cat} <span className={active ? "opacity-80" : "text-muted-foreground"}>({count})</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+
+              {filteredProducts.length === 0 ? (
                 <p className="text-xs text-muted-foreground text-center py-6">Belum ada produk</p>
               ) : (
                 <div className="grid grid-cols-2 gap-2">
-                  {products.slice(0, 12).map((p) => (
+                  {filteredProducts.slice(0, 12).map((p) => (
                     <button
                       key={p.id}
                       onClick={() => { setOpen(false); onProductClick?.(p.id); }}
