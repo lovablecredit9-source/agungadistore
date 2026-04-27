@@ -4,6 +4,7 @@ import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { ShieldCheck, Star, Sparkles, Users, Calendar, Package, BadgeCheck, Heart, Crown, X, Store as StoreIcon } from "lucide-react";
+import storeQris from "@/assets/store-qris.jpg";
 
 interface Product {
   id: string;
@@ -67,7 +68,12 @@ export const StoreProfile = ({ products, userBalance, onLoginRequired, onProduct
       .channel("store-followers-rt")
       .on("postgres_changes", { event: "*", schema: "public", table: "store_followers" }, () => fetchFollowers())
       .subscribe();
-    return () => { supabase.removeChannel(ch); };
+    const openHandler = () => setOpen(true);
+    window.addEventListener("open-store-profile", openHandler);
+    return () => {
+      supabase.removeChannel(ch);
+      window.removeEventListener("open-store-profile", openHandler);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userBalance?.id]);
 
@@ -112,7 +118,7 @@ export const StoreProfile = ({ products, userBalance, onLoginRequired, onProduct
           <div className="relative shrink-0">
             <div className="w-16 h-16 rounded-2xl p-[2px]" style={{ background: "linear-gradient(135deg,#f59e0b,#ec4899)" }}>
               <div className="w-full h-full rounded-[14px] bg-card flex items-center justify-center overflow-hidden">
-                <img src="/icons/icon-192.png" alt="Agung Adi Store" className="w-full h-full object-cover" />
+                <img src={storeQris} alt="Agung Adi Store" className="w-full h-full object-cover" />
               </div>
             </div>
             <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center ring-2 ring-card">
@@ -176,7 +182,7 @@ export const StoreProfile = ({ products, userBalance, onLoginRequired, onProduct
               <div className="flex items-end gap-3">
                 <div className="w-24 h-24 rounded-3xl p-[3px] shadow-2xl" style={{ background: "linear-gradient(135deg,#f59e0b,#ec4899,#8b5cf6)" }}>
                   <div className="w-full h-full rounded-[20px] bg-card overflow-hidden">
-                    <img src="/icons/icon-192.png" alt="Agung Adi Store" className="w-full h-full object-cover" />
+                    <img src={storeQris} alt="Agung Adi Store" className="w-full h-full object-cover" />
                   </div>
                 </div>
                 <div className="flex-1 mb-1">
@@ -306,5 +312,69 @@ export const StoreProfile = ({ products, userBalance, onLoginRequired, onProduct
         </DialogContent>
       </Dialog>
     </>
+  );
+};
+
+// Mini card untuk dipakai di dalam Product Detail (membuka modal StoreProfile global)
+export const StoreMiniCard = ({ productCount = 0 }: { productCount?: number }) => {
+  const [followers, setFollowers] = useState(0);
+  useEffect(() => {
+    let mounted = true;
+    const load = async () => {
+      const { count } = await supabase.from("store_followers" as any).select("id", { count: "exact", head: true });
+      if (mounted) setFollowers(count || 0);
+    };
+    load();
+    const ch = supabase
+      .channel("store-mini-rt")
+      .on("postgres_changes", { event: "*", schema: "public", table: "store_followers" }, () => load())
+      .subscribe();
+    return () => { mounted = false; supabase.removeChannel(ch); };
+  }, []);
+
+  return (
+    <div
+      onClick={() => window.dispatchEvent(new Event("open-store-profile"))}
+      className="relative overflow-hidden rounded-2xl p-[1.5px] cursor-pointer active:scale-[0.98] transition-transform animate-fade-in"
+      style={{ background: "linear-gradient(135deg,#f59e0b,#ec4899,#8b5cf6,#06b6d4)" }}
+    >
+      <div className="relative bg-card rounded-[14px] p-3 flex items-center gap-3">
+        <div className="relative shrink-0">
+          <div className="w-12 h-12 rounded-xl p-[2px]" style={{ background: "linear-gradient(135deg,#f59e0b,#ec4899)" }}>
+            <div className="w-full h-full rounded-[10px] bg-card overflow-hidden">
+              <img src={storeQris} alt="Agung Adi Store" className="w-full h-full object-cover" />
+            </div>
+          </div>
+          <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center ring-2 ring-card">
+            <BadgeCheck className="w-3 h-3 text-white" strokeWidth={3} />
+          </div>
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-1 flex-wrap">
+            <p className="text-xs font-black bg-gradient-to-r from-amber-500 via-pink-500 to-violet-500 bg-clip-text text-transparent truncate">Agung Adi Store</p>
+            <span className="inline-flex items-center gap-0.5 px-1 py-0.5 rounded-full bg-gradient-to-r from-emerald-500 to-green-500 text-white text-[8px] font-black">
+              <ShieldCheck className="w-2 h-2" strokeWidth={3} />AMANAH
+            </span>
+          </div>
+          <div className="flex items-center gap-1.5 mt-0.5">
+            <span className="inline-flex items-center gap-0.5 text-[9px] font-bold text-amber-500">
+              <Star className="w-2.5 h-2.5 fill-amber-400 text-amber-400" />5.0
+            </span>
+            <span className="text-[9px] text-muted-foreground">·</span>
+            <span className="inline-flex items-center gap-0.5 text-[9px] font-bold text-pink-500">
+              <Users className="w-2.5 h-2.5" />{followers.toLocaleString("id-ID")}
+            </span>
+            <span className="text-[9px] text-muted-foreground">·</span>
+            <span className="text-[9px] font-bold text-cyan-500">{productCount} produk</span>
+          </div>
+        </div>
+        <button
+          onClick={(e) => { e.stopPropagation(); window.dispatchEvent(new Event("open-store-profile")); }}
+          className="shrink-0 px-2.5 py-1.5 rounded-lg bg-gradient-to-r from-violet-500 to-pink-500 text-white text-[10px] font-black shadow-md active:scale-95 transition"
+        >
+          Kunjungi
+        </button>
+      </div>
+    </div>
   );
 };
