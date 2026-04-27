@@ -268,7 +268,7 @@ export const StoreProfileModal = ({
                         const count = cat === "Semua" ? products.length : products.filter(p => (p.category || "Lainnya") === cat).length;
                         return (
                           <SelectItem key={cat} value={cat} className="text-xs font-semibold">
-                            {cat} ({count})
+                            {`${cat} (${count})`}
                           </SelectItem>
                         );
                       })}
