@@ -22,7 +22,7 @@ interface StoreProfileProps {
   onProductClick?: (id: string) => void;
 }
 
-const STORE_JOIN_DATE = "2024-04-06"; // Tanggal bergabung toko (6 April 2024)
+const STORE_JOIN_DATE = "2026-04-06"; // Tanggal bergabung toko (6 April 2026)
 const STORE_RATING = 5.0;
 
 const formatJoinDate = (iso: string) => {
@@ -341,7 +341,12 @@ export const StoreProfile = ({ products, userBalance }: StoreProfileProps) => {
 };
 
 // Mini card untuk dipakai di dalam Product Detail (membuka modal StoreProfile global)
-export const StoreMiniCard = ({ productCount = 0 }: { productCount?: number }) => {
+interface StoreMiniCardProps {
+  productCount?: number;
+  onVisit?: () => void;
+}
+
+export const StoreMiniCard = ({ productCount = 0, onVisit }: StoreMiniCardProps) => {
   const [followers, setFollowers] = useState(0);
   useEffect(() => {
     let mounted = true;
@@ -357,9 +362,17 @@ export const StoreMiniCard = ({ productCount = 0 }: { productCount?: number }) =
     return () => { mounted = false; supabase.removeChannel(ch); };
   }, []);
 
+  const visitStore = () => {
+    if (onVisit) {
+      onVisit();
+      return;
+    }
+    window.dispatchEvent(new Event("open-store-profile"));
+  };
+
   return (
     <div
-      onClick={() => window.dispatchEvent(new Event("open-store-profile"))}
+      onClick={visitStore}
       className="relative overflow-hidden rounded-2xl p-[1.5px] cursor-pointer active:scale-[0.98] transition-transform animate-fade-in"
       style={{ background: "linear-gradient(135deg,#f59e0b,#ec4899,#8b5cf6,#06b6d4)" }}
     >
@@ -394,7 +407,7 @@ export const StoreMiniCard = ({ productCount = 0 }: { productCount?: number }) =
           </div>
         </div>
         <button
-          onClick={(e) => { e.stopPropagation(); window.dispatchEvent(new Event("open-store-profile")); }}
+          onClick={(e) => { e.stopPropagation(); visitStore(); }}
           className="shrink-0 px-2.5 py-1.5 rounded-lg bg-gradient-to-r from-violet-500 to-pink-500 text-white text-[10px] font-black shadow-md active:scale-95 transition"
         >
           Kunjungi
