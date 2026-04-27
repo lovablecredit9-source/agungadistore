@@ -105,6 +105,7 @@ interface Product {
   image_url: string | null;
   category: string | null;
   has_warranty: boolean;
+  sold_count?: number;
   created_at: string;
 }
 
@@ -2604,6 +2605,11 @@ const Index = () => {
                             <span className={`px-2 py-0.5 rounded-full font-black flex items-center gap-1 backdrop-blur-sm ${isGrid ? "text-[9px]" : "text-[10px] px-2.5 py-1"} ${inStock ? 'bg-gradient-to-r from-emerald-500/30 to-green-500/20 text-emerald-200 border border-emerald-400/40 shadow-[0_0_8px_rgba(16,185,129,0.3)]' : 'bg-gradient-to-r from-rose-500/30 to-red-500/20 text-rose-200 border border-rose-400/40'}`}>
                               {inStock ? <><span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_4px_rgb(52,211,153)]" /> {p.stock} stok</> : '✗ Habis'}
                             </span>
+                            {(p.sold_count ?? 0) > 0 && (
+                              <span className={`px-2 py-0.5 rounded-full font-black flex items-center gap-1 backdrop-blur-sm bg-gradient-to-r from-orange-500/30 to-amber-500/20 text-orange-200 border border-orange-400/40 shadow-[0_0_8px_rgba(251,146,60,0.3)] ${isGrid ? "text-[9px]" : "text-[10px] px-2.5 py-1"}`}>
+                                🔥 {p.sold_count} terjual
+                              </span>
+                            )}
                             {!isGrid && (
                               <span className="text-[10px] px-2 py-1 rounded-full font-bold bg-slate-800/60 text-slate-300 flex items-center gap-1 border border-slate-700/50">
                                 <CalendarDays className="w-3 h-3" /> {new Date(p.created_at).toLocaleDateString("id-ID", { day: "numeric", month: "short" })}
