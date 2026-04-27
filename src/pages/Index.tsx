@@ -3740,39 +3740,36 @@ const Index = () => {
                 <div className={banned ? "pointer-events-none select-none opacity-60" : ""}>
                 {deposits.length > 0 && (
                   <>
-                    {/* Deposit History Header - Aurora Premium */}
-                    <div
-                      className="relative rounded-2xl p-[1.5px] aurora-shift overflow-hidden"
-                      style={{ background: "linear-gradient(135deg, hsl(150 80% 50%/0.6), hsl(190 95% 55%/0.6), hsl(150 80% 50%/0.6))", backgroundSize: "300% 300%" }}
-                    >
-                      <div className="relative rounded-[14px] bg-card/95 backdrop-blur-xl p-3 overflow-hidden">
-                        <div className="pointer-events-none absolute -top-10 -right-10 w-32 h-32 rounded-full bg-emerald-500/15 blur-3xl" />
-                        <div className="relative flex items-center justify-between mb-3">
+                    {/* Deposit History Header - iOS Frosted */}
+                    <div className="relative overflow-hidden rounded-[20px] bg-background/50 backdrop-blur-2xl backdrop-saturate-150 border border-white/15 shadow-[0_12px_30px_-12px_rgba(0,0,0,0.4),inset_0_1px_0_0_rgba(255,255,255,0.15)]">
+                      <div className="pointer-events-none absolute -top-12 -right-12 w-32 h-32 rounded-full bg-emerald-500/10 blur-3xl" />
+                      <div className="relative p-3.5">
+                        <div className="flex items-center justify-between mb-3">
                           <div className="flex items-center gap-2">
-                            <div className="relative">
-                              <div className="absolute inset-0 rounded-lg bg-gradient-to-br from-emerald-500 to-cyan-500 blur-md opacity-60" />
-                              <div className="relative w-7 h-7 rounded-lg bg-gradient-to-br from-emerald-500 to-cyan-500 flex items-center justify-center shadow-lg">
-                                <History className="w-3.5 h-3.5 text-white" strokeWidth={2.4} />
-                              </div>
+                            <div
+                              className="relative w-7 h-7 rounded-xl bg-gradient-to-br from-emerald-500 to-cyan-500 flex items-center justify-center text-white"
+                              style={{ boxShadow: "0 4px 10px -2px rgba(16,185,129,0.5), inset 0 1px 0 0 rgba(255,255,255,0.25)" }}
+                            >
+                              <History className="w-3.5 h-3.5" strokeWidth={2.4} />
                             </div>
-                            <h3 className="text-xs font-extrabold uppercase tracking-wider bg-gradient-to-r from-emerald-500 to-cyan-500 bg-clip-text text-transparent">📜 {t("deposit.history", lang)}</h3>
+                            <h3 className="text-[13px] font-bold tracking-tight text-foreground">{t("deposit.history", lang)}</h3>
                           </div>
-                          <span className="px-2 py-0.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-500 text-[9px] font-extrabold">{filteredDeposits.length}</span>
+                          <span className="px-2 py-0.5 rounded-full bg-emerald-500/15 border border-emerald-500/25 text-emerald-500 text-[10px] font-semibold">{filteredDeposits.length}</span>
                         </div>
-                        <div className="relative grid grid-cols-3 gap-2">
-                          <select className="rounded-xl border border-cyan-400/30 bg-cyan-400/5 px-2 py-2 text-[11px] font-bold text-foreground focus:border-cyan-400 focus:outline-none transition-colors" value={depositHistoryMethodFilter} onChange={e => setDepositHistoryMethodFilter(e.target.value as DepositMethodFilter)}>
+                        <div className="grid grid-cols-3 gap-2">
+                          <select className="rounded-xl bg-white/[0.06] border border-white/10 px-2 py-2 text-[11px] font-medium text-foreground focus:border-cyan-400/50 focus:outline-none transition-colors" value={depositHistoryMethodFilter} onChange={e => setDepositHistoryMethodFilter(e.target.value as DepositMethodFilter)}>
                             <option value="all">Semua Metode</option>
                             <option value="qris">QRIS</option>
                             <option value="ewallet">E-Wallet</option>
                           </select>
-                          <select className="rounded-xl border border-purple-500/30 bg-purple-500/5 px-2 py-2 text-[11px] font-bold text-foreground focus:border-purple-500 focus:outline-none transition-colors" value={depositHistoryStatusFilter} onChange={e => setDepositHistoryStatusFilter(e.target.value as DepositStatusFilter)}>
+                          <select className="rounded-xl bg-white/[0.06] border border-white/10 px-2 py-2 text-[11px] font-medium text-foreground focus:border-purple-400/50 focus:outline-none transition-colors" value={depositHistoryStatusFilter} onChange={e => setDepositHistoryStatusFilter(e.target.value as DepositStatusFilter)}>
                             <option value="all">Semua Status</option>
                             <option value="pending">Belum Konfirmasi</option>
                             <option value="approved">Disetujui</option>
                             <option value="rejected">Ditolak</option>
                             <option value="cancelled">Dibatalkan</option>
                           </select>
-                          <select className="rounded-xl border border-emerald-500/30 bg-emerald-500/5 px-2 py-2 text-[11px] font-bold text-foreground focus:border-emerald-500 focus:outline-none transition-colors" value={depositHistorySort} onChange={e => setDepositHistorySort(e.target.value as "newest" | "oldest")}>
+                          <select className="rounded-xl bg-white/[0.06] border border-white/10 px-2 py-2 text-[11px] font-medium text-foreground focus:border-emerald-400/50 focus:outline-none transition-colors" value={depositHistorySort} onChange={e => setDepositHistorySort(e.target.value as "newest" | "oldest")}>
                             <option value="newest">Terbaru</option>
                             <option value="oldest">Terlama</option>
                           </select>
