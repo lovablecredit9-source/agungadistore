@@ -359,6 +359,8 @@ const Index = () => {
   const [productMaxPrice, setProductMaxPrice] = useState("");
   const [productsLoading, setProductsLoading] = useState(true);
   const [quickViewProduct, setQuickViewProduct] = useState<Product | null>(null);
+  const [zoomImage, setZoomImage] = useState<string | null>(null);
+  const [zoomScale, setZoomScale] = useState(1);
   const [selectedHistoryIds, setSelectedHistoryIds] = useState<Set<string>>(new Set());
   const [historyPage, setHistoryPage] = useState(1);
   const HISTORY_PER_PAGE = 5;
@@ -2568,11 +2570,6 @@ const Index = () => {
                               aria-label="Quick view">
                               <Eye className="w-3.5 h-3.5 text-white drop-shadow" />
                             </button>
-                            <button onClick={(e) => shareProduct(p, e)}
-                              className="rounded-full bg-gradient-to-br from-violet-500/90 to-indigo-500/90 backdrop-blur-md p-2 shadow-[0_0_12px_rgba(139,92,246,0.6)] hover:scale-110 hover:rotate-12 transition-all border border-white/30"
-                              aria-label="Bagikan produk">
-                              <Share2 className="w-3.5 h-3.5 text-white drop-shadow" />
-                            </button>
                             <button onClick={(e) => toggleLike(p.id, e)}
                               className={`rounded-full backdrop-blur-md p-2 shadow-lg hover:scale-110 transition-all border border-white/30 ${likedIds.has(p.id) ? "bg-pink-500/90 shadow-[0_0_12px_rgba(236,72,153,0.7)]" : "bg-slate-800/80 hover:bg-pink-500/80"}`}
                               aria-label="Like">
@@ -2636,20 +2633,32 @@ const Index = () => {
                             )}
                           </div>
                         </div>
-                        {/* Premium CTA button */}
-                        {inStock && (
+                        {/* Premium CTA + Share row */}
+                        <div className="flex items-stretch gap-1.5">
+                          {inStock && (
+                            <button
+                              onClick={(e) => { e.stopPropagation(); openProduct(p); }}
+                              className={`relative flex-1 overflow-hidden rounded-lg font-black text-white shadow-[0_4px_15px_rgba(34,211,238,0.4)] hover:shadow-[0_6px_20px_rgba(168,85,247,0.6)] transition-all hover:scale-[1.02] active:scale-[0.98] group/btn ${isGrid ? "h-7 text-[10px]" : "h-9 text-xs"}`}
+                              style={{ background: "linear-gradient(135deg, hsl(190 95% 50%), hsl(220 90% 55%), hsl(280 90% 60%), hsl(330 90% 55%))", backgroundSize: "200% 200%" }}
+                            >
+                              <span className="absolute inset-0 shine-sweep opacity-60" />
+                              <span className="relative flex items-center justify-center gap-1.5">
+                                <ShoppingBag className={`${isGrid ? "w-3 h-3" : "w-3.5 h-3.5"} group-hover/btn:rotate-12 transition-transform`} />
+                                Beli Sekarang
+                              </span>
+                            </button>
+                          )}
                           <button
-                            onClick={(e) => { e.stopPropagation(); openProduct(p); }}
-                            className={`relative w-full overflow-hidden rounded-lg font-black text-white shadow-[0_4px_15px_rgba(34,211,238,0.4)] hover:shadow-[0_6px_20px_rgba(168,85,247,0.6)] transition-all hover:scale-[1.02] active:scale-[0.98] group/btn ${isGrid ? "h-7 text-[10px]" : "h-9 text-xs"}`}
-                            style={{ background: "linear-gradient(135deg, hsl(190 95% 50%), hsl(220 90% 55%), hsl(280 90% 60%), hsl(330 90% 55%))", backgroundSize: "200% 200%" }}
+                            onClick={(e) => shareProduct(p, e)}
+                            aria-label="Bagikan produk"
+                            className={`relative ${inStock ? "" : "flex-1"} overflow-hidden rounded-lg font-black text-white shadow-[0_4px_15px_rgba(139,92,246,0.4)] hover:shadow-[0_6px_20px_rgba(139,92,246,0.6)] transition-all hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-1.5 ${isGrid ? "h-7 text-[10px] px-2.5" : "h-9 text-xs px-3"}`}
+                            style={{ background: "linear-gradient(135deg, hsl(260 85% 55%), hsl(290 85% 55%), hsl(220 85% 55%))", backgroundSize: "200% 200%" }}
                           >
                             <span className="absolute inset-0 shine-sweep opacity-60" />
-                            <span className="relative flex items-center justify-center gap-1.5">
-                              <ShoppingBag className={`${isGrid ? "w-3 h-3" : "w-3.5 h-3.5"} group-hover/btn:rotate-12 transition-transform`} />
-                              Beli Sekarang
-                            </span>
+                            <Share2 className={`${isGrid ? "w-3 h-3" : "w-3.5 h-3.5"} relative`} />
+                            {!inStock && <span className="relative">Bagikan</span>}
                           </button>
-                        )}
+                        </div>
                       </CardContent>
                       </Card>
                     </div>
@@ -2923,7 +2932,75 @@ const Index = () => {
             )}
           </div>
           );
-        })()}
+      })()}
+
+      {/* Image Zoom Lightbox */}
+      {zoomImage && (
+        <div
+          className="fixed inset-0 z-[95] bg-black/95 backdrop-blur-xl flex items-center justify-center animate-fade-in select-none"
+          onClick={() => { setZoomImage(null); setZoomScale(1); }}
+        >
+          {/* Top bar */}
+          <div className="absolute top-0 left-0 right-0 flex items-center justify-between p-4 z-10 bg-gradient-to-b from-black/70 to-transparent">
+            <span className="inline-flex items-center gap-1.5 text-[11px] font-bold text-white/90 px-3 py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/20">
+              <Search className="w-3.5 h-3.5" /> Zoom {Math.round(zoomScale * 100)}%
+            </span>
+            <button
+              onClick={(e) => { e.stopPropagation(); setZoomImage(null); setZoomScale(1); }}
+              className="w-10 h-10 rounded-full bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center text-white hover:bg-white/20 active:scale-95 transition-all"
+              aria-label="Tutup zoom"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+
+          {/* Zoomable image */}
+          <div className="w-full h-full overflow-auto flex items-center justify-center p-4" onClick={(e) => e.stopPropagation()}>
+            <img
+              src={zoomImage}
+              alt="Zoom"
+              onClick={() => setZoomScale((s) => (s >= 3 ? 1 : s + 0.5))}
+              className="max-w-none transition-transform duration-300 ease-out cursor-zoom-in shadow-2xl rounded-lg"
+              style={{
+                transform: `scale(${zoomScale})`,
+                transformOrigin: "center center",
+                maxHeight: zoomScale === 1 ? "85vh" : "none",
+                maxWidth: zoomScale === 1 ? "95vw" : "none",
+              }}
+              draggable={false}
+            />
+          </div>
+
+          {/* Bottom controls */}
+          <div className="absolute bottom-0 left-0 right-0 p-4 z-10 bg-gradient-to-t from-black/80 to-transparent">
+            <div className="flex items-center justify-center gap-2">
+              <button
+                onClick={(e) => { e.stopPropagation(); setZoomScale((s) => Math.max(1, s - 0.5)); }}
+                disabled={zoomScale <= 1}
+                className="w-11 h-11 rounded-full bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center text-white hover:bg-white/20 active:scale-95 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                aria-label="Perkecil"
+              >
+                <Minus className="w-5 h-5" />
+              </button>
+              <button
+                onClick={(e) => { e.stopPropagation(); setZoomScale(1); }}
+                className="px-4 h-11 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-white text-xs font-bold hover:bg-white/20 active:scale-95 transition-all"
+              >
+                Reset
+              </button>
+              <button
+                onClick={(e) => { e.stopPropagation(); setZoomScale((s) => Math.min(4, s + 0.5)); }}
+                disabled={zoomScale >= 4}
+                className="w-11 h-11 rounded-full bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center text-white hover:bg-white/20 active:scale-95 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                aria-label="Perbesar"
+              >
+                <Plus className="w-5 h-5" />
+              </button>
+            </div>
+            <p className="text-center text-[10px] text-white/60 mt-2 font-medium">Tap gambar untuk zoom • Tap luar untuk tutup</p>
+          </div>
+        </div>
+      )}
 
 
         {tab === "history" && (
@@ -5628,10 +5705,18 @@ const Index = () => {
             <div className="bg-card w-full max-w-sm rounded-3xl overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200 max-h-[88vh] flex flex-col" onClick={e => e.stopPropagation()}>
               <div className="relative">
                 {imgs.length > 0 ? (
-                  <div className="relative aspect-square overflow-hidden bg-muted">
-                    <img src={imgs[0]} alt={p.title} className="w-full h-full object-cover" />
+                  <button
+                    type="button"
+                    onClick={(e) => { e.stopPropagation(); setZoomScale(1); setZoomImage(imgs[0]); }}
+                    className="relative aspect-square overflow-hidden bg-muted w-full block group/zoom cursor-zoom-in"
+                    aria-label="Perbesar gambar"
+                  >
+                    <img src={imgs[0]} alt={p.title} className="w-full h-full object-cover transition-transform duration-300 group-hover/zoom:scale-105" />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-                  </div>
+                    <span className="absolute top-3 left-3 inline-flex items-center gap-1 text-[10px] font-extrabold bg-black/60 backdrop-blur-md text-white px-2 py-1 rounded-full border border-white/20 shadow-lg opacity-90">
+                      <Search className="w-3 h-3" /> Klik untuk zoom
+                    </span>
+                  </button>
                 ) : (
                   <div className="aspect-square bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center">
                     <Package className="w-20 h-20 text-primary/40" />
