@@ -4846,6 +4846,8 @@ const Index = () => {
                     <button onClick={() => openProduct(null)} className="w-9 h-9 rounded-full bg-muted flex items-center justify-center active:scale-95 transition-transform"><X className="w-4 h-4" /></button>
                   </div>
                 </div>
+                {/* Profil Toko Mini */}
+                <StoreMiniCard productCount={products.length} />
                 {/* Premium price card with shimmer */}
                 <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-violet-500/15 via-fuchsia-500/10 to-amber-400/15 border border-white/15 p-4 animate-fade-in">
                   <div className="pointer-events-none absolute -top-10 -right-10 w-32 h-32 rounded-full bg-fuchsia-400/30 blur-3xl animate-pulse" />
