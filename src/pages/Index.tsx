@@ -2631,20 +2631,32 @@ const Index = () => {
                             )}
                           </div>
                         </div>
-                        {/* Premium CTA button */}
-                        {inStock && (
+                        {/* Premium CTA + Share row */}
+                        <div className="flex items-stretch gap-1.5">
+                          {inStock && (
+                            <button
+                              onClick={(e) => { e.stopPropagation(); openProduct(p); }}
+                              className={`relative flex-1 overflow-hidden rounded-lg font-black text-white shadow-[0_4px_15px_rgba(34,211,238,0.4)] hover:shadow-[0_6px_20px_rgba(168,85,247,0.6)] transition-all hover:scale-[1.02] active:scale-[0.98] group/btn ${isGrid ? "h-7 text-[10px]" : "h-9 text-xs"}`}
+                              style={{ background: "linear-gradient(135deg, hsl(190 95% 50%), hsl(220 90% 55%), hsl(280 90% 60%), hsl(330 90% 55%))", backgroundSize: "200% 200%" }}
+                            >
+                              <span className="absolute inset-0 shine-sweep opacity-60" />
+                              <span className="relative flex items-center justify-center gap-1.5">
+                                <ShoppingBag className={`${isGrid ? "w-3 h-3" : "w-3.5 h-3.5"} group-hover/btn:rotate-12 transition-transform`} />
+                                Beli Sekarang
+                              </span>
+                            </button>
+                          )}
                           <button
-                            onClick={(e) => { e.stopPropagation(); openProduct(p); }}
-                            className={`relative w-full overflow-hidden rounded-lg font-black text-white shadow-[0_4px_15px_rgba(34,211,238,0.4)] hover:shadow-[0_6px_20px_rgba(168,85,247,0.6)] transition-all hover:scale-[1.02] active:scale-[0.98] group/btn ${isGrid ? "h-7 text-[10px]" : "h-9 text-xs"}`}
-                            style={{ background: "linear-gradient(135deg, hsl(190 95% 50%), hsl(220 90% 55%), hsl(280 90% 60%), hsl(330 90% 55%))", backgroundSize: "200% 200%" }}
+                            onClick={(e) => shareProduct(p, e)}
+                            aria-label="Bagikan produk"
+                            className={`relative ${inStock ? "" : "flex-1"} overflow-hidden rounded-lg font-black text-white shadow-[0_4px_15px_rgba(139,92,246,0.4)] hover:shadow-[0_6px_20px_rgba(139,92,246,0.6)] transition-all hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-1.5 ${isGrid ? "h-7 text-[10px] px-2.5" : "h-9 text-xs px-3"}`}
+                            style={{ background: "linear-gradient(135deg, hsl(260 85% 55%), hsl(290 85% 55%), hsl(220 85% 55%))", backgroundSize: "200% 200%" }}
                           >
                             <span className="absolute inset-0 shine-sweep opacity-60" />
-                            <span className="relative flex items-center justify-center gap-1.5">
-                              <ShoppingBag className={`${isGrid ? "w-3 h-3" : "w-3.5 h-3.5"} group-hover/btn:rotate-12 transition-transform`} />
-                              Beli Sekarang
-                            </span>
+                            <Share2 className={`${isGrid ? "w-3 h-3" : "w-3.5 h-3.5"} relative`} />
+                            {!inStock && <span className="relative">Bagikan</span>}
                           </button>
-                        )}
+                        </div>
                       </CardContent>
                       </Card>
                     </div>
