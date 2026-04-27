@@ -4763,7 +4763,22 @@ const Index = () => {
         return (
           <div className="fixed inset-0 z-[60] bg-black/60 backdrop-blur-sm flex items-end justify-center" onClick={() => openProduct(null)}>
             <div className="bg-card w-full max-w-lg rounded-t-3xl border-t border-border max-h-[85vh] overflow-y-auto animate-in slide-in-from-bottom duration-300" onClick={e => e.stopPropagation()}>
-              {imgs.length > 0 && <ImageCarousel images={imgs} className="w-full h-56" />}
+              {imgs.length > 0 && (
+                <div className="relative group/zoom">
+                  <ImageCarousel images={imgs} className="w-full h-56" />
+                  {/* Zoom buttons overlay - one per image area, top-right floating */}
+                  <button
+                    onClick={(e) => { e.stopPropagation(); setZoomImage(imgs[0]); setZoomScale(1); }}
+                    className="absolute top-3 right-3 z-10 px-3 py-1.5 rounded-full bg-black/60 backdrop-blur-md text-white text-[11px] font-semibold flex items-center gap-1.5 border border-white/20 shadow-lg active:scale-95 transition-transform"
+                    aria-label="Perbesar gambar">
+                    <Search className="w-3.5 h-3.5" /> Perbesar
+                  </button>
+                  {/* Quick tap hint at bottom */}
+                  <div className="absolute bottom-3 left-1/2 -translate-x-1/2 px-2.5 py-1 rounded-full bg-black/50 backdrop-blur-md text-white/90 text-[10px] font-medium flex items-center gap-1 pointer-events-none border border-white/10">
+                    <Search className="w-3 h-3" /> Klik "Perbesar" untuk zoom
+                  </div>
+                </div>
+              )}
               <div className="p-5 space-y-4">
                 <div className="flex items-start justify-between">
                   <div>
@@ -4777,10 +4792,16 @@ const Index = () => {
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    <button onClick={() => toggleLike(selectedProduct.id)}>
-                      <Heart className={`w-6 h-6 ${likedIds.has(selectedProduct.id) ? "fill-foreground text-foreground" : "text-muted-foreground"}`} />
+                    <button
+                      onClick={(e) => shareProduct(selectedProduct, e)}
+                      className="w-9 h-9 rounded-full bg-gradient-to-br from-violet-500 to-indigo-500 flex items-center justify-center shadow-md active:scale-95 transition-transform"
+                      aria-label="Bagikan produk">
+                      <Share2 className="w-4 h-4 text-white" />
                     </button>
-                    <button onClick={() => openProduct(null)} className="w-8 h-8 rounded-full bg-muted flex items-center justify-center"><X className="w-4 h-4" /></button>
+                    <button onClick={() => toggleLike(selectedProduct.id)} className="w-9 h-9 rounded-full bg-muted flex items-center justify-center active:scale-95 transition-transform">
+                      <Heart className={`w-5 h-5 ${likedIds.has(selectedProduct.id) ? "fill-rose-500 text-rose-500" : "text-muted-foreground"}`} />
+                    </button>
+                    <button onClick={() => openProduct(null)} className="w-9 h-9 rounded-full bg-muted flex items-center justify-center active:scale-95 transition-transform"><X className="w-4 h-4" /></button>
                   </div>
                 </div>
                 <p className="text-2xl font-extrabold text-foreground">{formatPrice(selectedProduct.price)}</p>
