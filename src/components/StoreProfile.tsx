@@ -116,7 +116,7 @@ export const StoreProfileModal = ({
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogContent className="max-w-md p-0 overflow-hidden bg-transparent border-0 shadow-none [&>button]:hidden">
+      <DialogContent className="z-[90] max-w-md p-0 overflow-hidden bg-transparent border-0 shadow-none [&>button]:hidden">
         <div className="relative rounded-3xl overflow-hidden bg-background max-h-[90vh] overflow-y-auto">
           {/* Banner */}
           <div className="relative h-32 overflow-hidden" style={{ background: "linear-gradient(135deg,#f59e0b,#ec4899 40%,#8b5cf6 70%,#06b6d4)" }}>
