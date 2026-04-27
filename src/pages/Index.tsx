@@ -4854,7 +4854,7 @@ const Index = () => {
                   </div>
                 </div>
                 {/* Profil Toko Mini */}
-                <StoreMiniCard productCount={products.length} />
+                <StoreMiniCard productCount={products.length} onVisit={() => { openProduct(null); window.setTimeout(() => window.dispatchEvent(new Event("open-store-profile")), 0); }} />
                 {/* Premium price card with shimmer */}
                 <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-violet-500/15 via-fuchsia-500/10 to-amber-400/15 border border-white/15 p-4 animate-fade-in">
                   <div className="pointer-events-none absolute -top-10 -right-10 w-32 h-32 rounded-full bg-fuchsia-400/30 blur-3xl animate-pulse" />
