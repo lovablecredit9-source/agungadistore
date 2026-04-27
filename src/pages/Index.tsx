@@ -3821,40 +3821,37 @@ const Index = () => {
                   </>
                 )}
 
-                {/* Transaction History - Aurora Premium Header */}
-                <div
-                  className="relative rounded-2xl p-[1.5px] aurora-shift overflow-hidden"
-                  style={{ background: "linear-gradient(135deg, hsl(280 90% 65%/0.6), hsl(330 90% 60%/0.6), hsl(190 95% 55%/0.6), hsl(280 90% 65%/0.6))", backgroundSize: "300% 300%" }}
-                >
-                  <div className="relative rounded-[14px] bg-card/95 backdrop-blur-xl p-3 overflow-hidden">
-                    <div className="pointer-events-none absolute -top-10 -right-10 w-32 h-32 rounded-full bg-purple-500/15 blur-3xl" />
-                    <div className="pointer-events-none absolute -bottom-10 -left-10 w-32 h-32 rounded-full bg-pink-500/15 blur-3xl" />
-                    <div className="relative flex items-center justify-between gap-2 flex-wrap">
+                {/* Transaction History - iOS Frosted Header */}
+                <div className="relative overflow-hidden rounded-[20px] bg-background/50 backdrop-blur-2xl backdrop-saturate-150 border border-white/15 shadow-[0_12px_30px_-12px_rgba(0,0,0,0.4),inset_0_1px_0_0_rgba(255,255,255,0.15)]">
+                  <div className="pointer-events-none absolute -top-12 -right-12 w-32 h-32 rounded-full bg-purple-500/10 blur-3xl" />
+                  <div className="pointer-events-none absolute -bottom-12 -left-12 w-32 h-32 rounded-full bg-pink-500/10 blur-3xl" />
+                  <div className="relative p-3.5">
+                    <div className="flex items-center justify-between gap-2 flex-wrap">
                       <div className="flex items-center gap-2">
-                        <div className="relative">
-                          <div className="absolute inset-0 rounded-lg bg-gradient-to-br from-purple-500 via-pink-500 to-cyan-400 blur-md opacity-60" />
-                          <div className="relative w-7 h-7 rounded-lg bg-gradient-to-br from-purple-500 via-pink-500 to-cyan-400 flex items-center justify-center shadow-lg">
-                            <History className="w-3.5 h-3.5 text-white" strokeWidth={2.4} />
-                          </div>
+                        <div
+                          className="relative w-7 h-7 rounded-xl bg-gradient-to-br from-purple-500 via-pink-500 to-cyan-400 flex items-center justify-center text-white"
+                          style={{ boxShadow: "0 4px 10px -2px rgba(168,85,247,0.5), inset 0 1px 0 0 rgba(255,255,255,0.25)" }}
+                        >
+                          <History className="w-3.5 h-3.5" strokeWidth={2.4} />
                         </div>
-                        <h3 className="text-xs font-extrabold uppercase tracking-wider bg-gradient-to-r from-purple-500 via-pink-500 to-cyan-400 bg-clip-text text-transparent">💸 {t("balance.transaction_history", lang)}</h3>
+                        <h3 className="text-[13px] font-bold tracking-tight text-foreground">{t("balance.transaction_history", lang)}</h3>
                         {balanceTransactions.length > 0 && (
-                          <span className="px-2 py-0.5 rounded-full bg-purple-500/15 border border-purple-500/30 text-purple-500 text-[9px] font-extrabold">{balanceTransactions.length}</span>
+                          <span className="px-2 py-0.5 rounded-full bg-purple-500/15 border border-purple-500/25 text-purple-400 text-[10px] font-semibold">{balanceTransactions.length}</span>
                         )}
                       </div>
                       <div className="flex items-center gap-1.5">
                         {balanceTransactions.length > 0 && (
                           <button
                             onClick={() => setSmartSaldo(v => !v)}
-                            className={`flex items-center gap-1 text-[11px] h-7 px-2.5 rounded-full font-extrabold transition-all ${smartSaldo ? "bg-gradient-to-r from-yellow-400 to-amber-500 text-white shadow-lg" : "bg-yellow-400/15 border border-yellow-400/30 text-yellow-500"}`}
+                            className={`flex items-center gap-1 text-[11px] h-7 px-2.5 rounded-full font-semibold transition-all active:scale-95 ${smartSaldo ? "bg-foreground text-background" : "bg-white/[0.08] text-foreground border border-white/10 hover:bg-white/[0.12]"}`}
                           >
-                            <Sparkles className="w-3 h-3" /> {smartSaldo ? "Pintar ✓" : "Pintar"}
+                            <Sparkles className="w-3 h-3" /> Pintar
                           </button>
                         )}
                         {balanceTransactions.length > 0 && (
                           <button
                             onClick={() => setShowTxExport(!showTxExport)}
-                            className={`flex items-center gap-1 text-[11px] h-7 px-2.5 rounded-full font-extrabold transition-all ${showTxExport ? "bg-gradient-to-r from-cyan-400 to-blue-500 text-white shadow-lg" : "bg-cyan-400/15 border border-cyan-400/30 text-cyan-500"}`}
+                            className={`flex items-center gap-1 text-[11px] h-7 px-2.5 rounded-full font-semibold transition-all active:scale-95 ${showTxExport ? "bg-foreground text-background" : "bg-white/[0.08] text-foreground border border-white/10 hover:bg-white/[0.12]"}`}
                           >
                             <Download className="w-3 h-3" /> {showTxExport ? "Tutup" : "Ekspor"}
                           </button>
