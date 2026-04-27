@@ -73,7 +73,7 @@ import VoucherNavigation from "@/components/VoucherNavigation";
 import HistoryEnhancer, { type HistoryItem } from "@/components/HistoryEnhancer";
 import { TicketEnhancer, TICKET_TEMPLATES } from "@/components/TicketEnhancer";
 import { useAccountBan } from "@/hooks/useAccountBan";
-import { StoreProfile } from "@/components/StoreProfile";
+import { StoreProfile, StoreMiniCard } from "@/components/StoreProfile";
 
 type Tab = "musik" | "beranda" | "produk" | "voucher" | "history" | "likes" | "tiket" | "saldo" | "playlist" | "publik" | "sponsor" | "streak" | "streakevent" | "streakshop" | "streakmembership" | "adminpost" | "game" | "plus" | "update";
 
