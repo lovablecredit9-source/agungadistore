@@ -68,7 +68,12 @@ export const StoreProfile = ({ products, userBalance, onLoginRequired, onProduct
       .channel("store-followers-rt")
       .on("postgres_changes", { event: "*", schema: "public", table: "store_followers" }, () => fetchFollowers())
       .subscribe();
-    return () => { supabase.removeChannel(ch); };
+    const openHandler = () => setOpen(true);
+    window.addEventListener("open-store-profile", openHandler);
+    return () => {
+      supabase.removeChannel(ch);
+      window.removeEventListener("open-store-profile", openHandler);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userBalance?.id]);
 
