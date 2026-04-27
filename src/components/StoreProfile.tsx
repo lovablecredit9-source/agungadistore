@@ -22,7 +22,7 @@ interface StoreProfileProps {
   onProductClick?: (id: string) => void;
 }
 
-const STORE_JOIN_DATE = "2024-01-15"; // Tanggal bergabung toko
+const STORE_JOIN_DATE = "2024-04-06"; // Tanggal bergabung toko (6 April 2024)
 const STORE_RATING = 5.0;
 
 const formatJoinDate = (iso: string) => {
