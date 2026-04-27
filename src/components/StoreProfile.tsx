@@ -113,7 +113,7 @@ export const StoreProfile = ({ products, userBalance, onLoginRequired, onProduct
           <div className="relative shrink-0">
             <div className="w-16 h-16 rounded-2xl p-[2px]" style={{ background: "linear-gradient(135deg,#f59e0b,#ec4899)" }}>
               <div className="w-full h-full rounded-[14px] bg-card flex items-center justify-center overflow-hidden">
-                <img src="/icons/icon-192.png" alt="Agung Adi Store" className="w-full h-full object-cover" />
+                <img src={storeQris} alt="Agung Adi Store" className="w-full h-full object-cover" />
               </div>
             </div>
             <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center ring-2 ring-card">
