@@ -1523,6 +1523,13 @@ const Index = () => {
     <div className={`min-h-screen text-foreground flex flex-col ${resolvedTheme === "custom" ? "bg-transparent" : "bg-background"}`}>
       <InstallPrompt />
       <WelcomePopup />
+      {/* Modal Profil Toko global — selalu mounted, bisa dibuka dari mana saja via event "open-store-profile" */}
+      <StoreProfileModal
+        products={products}
+        userBalance={userBalance}
+        onLoginRequired={() => setTab("saldo")}
+        onProductClick={(id) => { const p = products.find(x => x.id === id); if (p) { setTab("produk"); setSelectedProduct(p); } }}
+      />
       {/* Header - flat IG/TikTok style */}
       <header className="sticky top-0 z-50 bg-background/95 backdrop-blur-md text-foreground px-4 py-2.5 border-b border-border">
         <div className="flex items-center gap-2 max-w-lg mx-auto">
