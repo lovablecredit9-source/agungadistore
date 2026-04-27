@@ -13,6 +13,7 @@ interface Product {
   price: number;
   image_url: string | null;
   sold_count?: number;
+  category?: string | null;
   [key: string]: any;
 }
 
