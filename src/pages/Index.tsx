@@ -5637,10 +5637,18 @@ const Index = () => {
             <div className="bg-card w-full max-w-sm rounded-3xl overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200 max-h-[88vh] flex flex-col" onClick={e => e.stopPropagation()}>
               <div className="relative">
                 {imgs.length > 0 ? (
-                  <div className="relative aspect-square overflow-hidden bg-muted">
-                    <img src={imgs[0]} alt={p.title} className="w-full h-full object-cover" />
+                  <button
+                    type="button"
+                    onClick={(e) => { e.stopPropagation(); setZoomScale(1); setZoomImage(imgs[0]); }}
+                    className="relative aspect-square overflow-hidden bg-muted w-full block group/zoom cursor-zoom-in"
+                    aria-label="Perbesar gambar"
+                  >
+                    <img src={imgs[0]} alt={p.title} className="w-full h-full object-cover transition-transform duration-300 group-hover/zoom:scale-105" />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-                  </div>
+                    <span className="absolute top-3 left-3 inline-flex items-center gap-1 text-[10px] font-extrabold bg-black/60 backdrop-blur-md text-white px-2 py-1 rounded-full border border-white/20 shadow-lg opacity-90">
+                      <Search className="w-3 h-3" /> Klik untuk zoom
+                    </span>
+                  </button>
                 ) : (
                   <div className="aspect-square bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center">
                     <Package className="w-20 h-20 text-primary/40" />
