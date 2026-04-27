@@ -2568,11 +2568,6 @@ const Index = () => {
                               aria-label="Quick view">
                               <Eye className="w-3.5 h-3.5 text-white drop-shadow" />
                             </button>
-                            <button onClick={(e) => shareProduct(p, e)}
-                              className="rounded-full bg-gradient-to-br from-violet-500/90 to-indigo-500/90 backdrop-blur-md p-2 shadow-[0_0_12px_rgba(139,92,246,0.6)] hover:scale-110 hover:rotate-12 transition-all border border-white/30"
-                              aria-label="Bagikan produk">
-                              <Share2 className="w-3.5 h-3.5 text-white drop-shadow" />
-                            </button>
                             <button onClick={(e) => toggleLike(p.id, e)}
                               className={`rounded-full backdrop-blur-md p-2 shadow-lg hover:scale-110 transition-all border border-white/30 ${likedIds.has(p.id) ? "bg-pink-500/90 shadow-[0_0_12px_rgba(236,72,153,0.7)]" : "bg-slate-800/80 hover:bg-pink-500/80"}`}
                               aria-label="Like">
