@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { ShieldCheck, Star, Sparkles, Users, Calendar, Package, BadgeCheck, UserPlus, Crown, X, Store as StoreIcon, MessageCircle, ListFilter } from "lucide-react";
 import { WA_NUMBER } from "@/lib/social-links";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import storeQris from "@/assets/store-qris.jpg";
 
 interface Product {
@@ -255,25 +254,19 @@ export const StoreProfileModal = ({
 
               {/* Filter dropdown kategori */}
               {categories.length > 1 && (
-                <div className="mb-2">
-                  <Select value={selectedCat} onValueChange={setSelectedCat}>
-                    <SelectTrigger className="h-9 text-xs font-bold rounded-full bg-gradient-to-r from-violet-500/10 to-pink-500/10 border-violet-500/30">
-                      <div className="flex items-center gap-1.5">
-                        <ListFilter className="w-3.5 h-3.5 text-violet-500" />
-                        <SelectValue />
-                      </div>
-                    </SelectTrigger>
-                    <SelectContent>
-                      {categories.map((cat) => {
-                        const count = cat === "Semua" ? products.length : products.filter(p => (p.category || "Lainnya") === cat).length;
-                        return (
-                          <SelectItem key={cat} value={cat} className="text-xs font-semibold">
-                            {`${cat} (${count})`}
-                          </SelectItem>
-                        );
-                      })}
-                    </SelectContent>
-                  </Select>
+                <div className="relative mb-2">
+                  <ListFilter className="pointer-events-none absolute left-3 top-1/2 z-10 h-3.5 w-3.5 -translate-y-1/2 text-violet-500" />
+                  <select
+                    value={selectedCat}
+                    onChange={(e) => setSelectedCat(e.target.value)}
+                    className="h-9 w-full appearance-none rounded-full border border-violet-500/30 bg-card px-8 pr-10 text-xs font-bold text-foreground outline-none active:scale-[0.99]"
+                  >
+                    {categories.map((cat) => {
+                      const count = cat === "Semua" ? products.length : products.filter(p => (p.category || "Lainnya") === cat).length;
+                      return <option key={cat} value={cat}>{`${cat} (${count})`}</option>;
+                    })}
+                  </select>
+                  <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">▼</span>
                 </div>
               )}
 
