@@ -3857,6 +3857,30 @@ export type Database = {
         }
         Relationships: []
       }
+      store_followers: {
+        Row: {
+          created_at: string
+          id: string
+          user_balance_id: string
+          username: string | null
+          visitor_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          user_balance_id: string
+          username?: string | null
+          visitor_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          user_balance_id?: string
+          username?: string | null
+          visitor_id?: string | null
+        }
+        Relationships: []
+      }
       streak_active_boosters: {
         Row: {
           booster_type: string
