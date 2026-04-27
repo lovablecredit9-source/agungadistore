@@ -219,6 +219,20 @@ Deno.serve(async (request) => {
       return Response.json({ error: "Gagal mencatat pembelian" }, { status: 500, headers: corsHeaders });
     }
 
+    // Update product sold_count (total terjual)
+    {
+      const { data: prodRow } = await admin
+        .from("products")
+        .select("sold_count")
+        .eq("id", product.id)
+        .maybeSingle();
+      const currentSold = (prodRow as any)?.sold_count ?? 0;
+      await admin
+        .from("products")
+        .update({ sold_count: currentSold + quantity })
+        .eq("id", product.id);
+    }
+
     // Update voucher used_count (in correct table)
     if (discountVoucherId && voucherSource) {
       const { data: vData } = await admin.from(voucherSource).select("used_count").eq("id", discountVoucherId).single();
