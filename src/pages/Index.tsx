@@ -5003,40 +5003,47 @@ const Index = () => {
                     <div className="flex-1 h-px bg-gradient-to-r from-border to-transparent" />
                   </div>
 
-                  {/* Social grid */}
+                  {/* Social grid - data dari admin */}
                   <div className="grid grid-cols-2 gap-2">
-                    {[
-                      { label: "WhatsApp", sub: WA_NUMBER, href: SOCIAL_LINKS.whatsapp, grad: "from-emerald-500 to-green-600", glow: "16,185,129", icon: "💬" },
-                      { label: "YouTube", sub: YOUTUBE_NAME, href: SOCIAL_LINKS.youtube, grad: "from-red-500 to-rose-600", glow: "239,68,68", icon: "▶" },
-                      { label: "Instagram", sub: "@agungadi57", href: SOCIAL_LINKS.instagram, grad: "from-fuchsia-500 via-pink-500 to-orange-500", glow: "236,72,153", icon: "📷" },
-                      { label: "TikTok", sub: "@pphitampro9", href: SOCIAL_LINKS.tiktok, grad: "from-slate-900 via-rose-500 to-cyan-500", glow: "6,182,212", icon: "🎵" },
-                      { label: "Twitter / X", sub: "@agungadi981", href: SOCIAL_LINKS.twitter, grad: "from-sky-500 to-blue-600", glow: "14,165,233", icon: "𝕏" },
-                    ].map((s, i) => (
-                      <a
-                        key={s.label}
-                        href={s.href}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        style={{ animationDelay: `${i * 70}ms`, boxShadow: `0 4px 14px -4px rgba(${s.glow},0.35)` }}
-                        className={`group relative overflow-hidden rounded-xl p-2.5 bg-gradient-to-br ${s.grad} animate-fade-in transition-all duration-300 hover:scale-[1.04] active:scale-95 hover:shadow-[0_8px_24px_-6px_rgba(0,0,0,0.4)] ${s.label === "Twitter / X" ? "col-span-2" : ""}`}
-                      >
-                        {/* Shimmer */}
-                        <div className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-700 bg-gradient-to-r from-transparent via-white/30 to-transparent" />
-                        {/* Aurora blob */}
-                        <div className="absolute -top-4 -right-4 w-16 h-16 rounded-full bg-white/20 blur-2xl group-hover:bg-white/40 transition-colors" />
+                    {socialLinks.length === 0 ? (
+                      <p className="col-span-2 text-center text-[10px] text-muted-foreground py-4">Belum ada sosial media</p>
+                    ) : socialLinks.map((s, i) => {
+                      const isLast = i === socialLinks.length - 1 && socialLinks.length % 2 === 1;
+                      return (
+                        <a
+                          key={s.id}
+                          href={s.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          style={{
+                            animationDelay: `${i * 70}ms`,
+                            background: `linear-gradient(135deg, ${s.color_from}, ${s.color_to})`,
+                            boxShadow: `0 4px 14px -4px ${s.color_from}59`,
+                          }}
+                          className={`group relative overflow-hidden rounded-xl p-2.5 animate-fade-in transition-all duration-300 hover:scale-[1.04] active:scale-95 hover:shadow-[0_8px_24px_-6px_rgba(0,0,0,0.4)] ${isLast ? "col-span-2" : ""}`}
+                        >
+                          {/* Shimmer */}
+                          <div className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-700 bg-gradient-to-r from-transparent via-white/30 to-transparent" />
+                          {/* Aurora blob */}
+                          <div className="absolute -top-4 -right-4 w-16 h-16 rounded-full bg-white/20 blur-2xl group-hover:bg-white/40 transition-colors" />
 
-                        <div className="relative flex items-center gap-2.5">
-                          <div className="w-8 h-8 rounded-lg bg-white/25 backdrop-blur-sm flex items-center justify-center text-base shadow-inner group-hover:rotate-6 transition-transform duration-300">
-                            <span className="drop-shadow">{s.icon}</span>
+                          <div className="relative flex items-center gap-2.5">
+                            <div className="w-8 h-8 rounded-lg bg-white/25 backdrop-blur-sm flex items-center justify-center overflow-hidden shadow-inner group-hover:rotate-6 transition-transform duration-300">
+                              {s.icon_url ? (
+                                <img src={s.icon_url} alt={s.platform} className="w-6 h-6 object-contain drop-shadow" />
+                              ) : (
+                                <span className="text-white text-sm font-black drop-shadow">{s.platform[0]?.toUpperCase()}</span>
+                              )}
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <p className="text-[11px] font-black text-white leading-tight tracking-tight drop-shadow capitalize">{s.platform}</p>
+                              <p className="text-[10px] text-white/85 truncate font-medium">{s.label}</p>
+                            </div>
+                            <ExternalLink className="w-3 h-3 text-white/80 group-hover:text-white group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
                           </div>
-                          <div className="min-w-0 flex-1">
-                            <p className="text-[11px] font-black text-white leading-tight tracking-tight drop-shadow">{s.label}</p>
-                            <p className="text-[10px] text-white/85 truncate font-medium">{s.sub}</p>
-                          </div>
-                          <ExternalLink className="w-3 h-3 text-white/80 group-hover:text-white group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
-                        </div>
-                      </a>
-                    ))}
+                        </a>
+                      );
+                    })}
                   </div>
 
                   {/* Footer pill */}
