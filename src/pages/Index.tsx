@@ -1076,6 +1076,20 @@ const Index = () => {
     }
   }
 
+  async function shareProduct(p: Product, e?: React.MouseEvent) {
+    e?.stopPropagation();
+    const url = `${window.location.origin}/?produk=${p.id}`;
+    const text = `🛍️ ${p.title}\n💰 ${formatPrice(p.price)}\n${p.description ? `\n${p.description}\n` : ""}\n👉 Cek di Agung Adi Store:\n${url}`;
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: p.title, text, url });
+      } else {
+        await navigator.clipboard.writeText(text);
+        toast({ title: "Link disalin! 🔗", description: "Tempel di mana saja untuk berbagi produk ini." });
+      }
+    } catch {}
+  }
+
   async function toggleLikeSponsor(sponsorId: string, e?: React.MouseEvent) {
     e?.stopPropagation();
     if (likedSponsorIds.has(sponsorId)) {
