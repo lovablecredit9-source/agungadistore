@@ -2932,7 +2932,75 @@ const Index = () => {
             )}
           </div>
           );
-        })()}
+      })()}
+
+      {/* Image Zoom Lightbox */}
+      {zoomImage && (
+        <div
+          className="fixed inset-0 z-[95] bg-black/95 backdrop-blur-xl flex items-center justify-center animate-fade-in select-none"
+          onClick={() => { setZoomImage(null); setZoomScale(1); }}
+        >
+          {/* Top bar */}
+          <div className="absolute top-0 left-0 right-0 flex items-center justify-between p-4 z-10 bg-gradient-to-b from-black/70 to-transparent">
+            <span className="inline-flex items-center gap-1.5 text-[11px] font-bold text-white/90 px-3 py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/20">
+              <Search className="w-3.5 h-3.5" /> Zoom {Math.round(zoomScale * 100)}%
+            </span>
+            <button
+              onClick={(e) => { e.stopPropagation(); setZoomImage(null); setZoomScale(1); }}
+              className="w-10 h-10 rounded-full bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center text-white hover:bg-white/20 active:scale-95 transition-all"
+              aria-label="Tutup zoom"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+
+          {/* Zoomable image */}
+          <div className="w-full h-full overflow-auto flex items-center justify-center p-4" onClick={(e) => e.stopPropagation()}>
+            <img
+              src={zoomImage}
+              alt="Zoom"
+              onClick={() => setZoomScale((s) => (s >= 3 ? 1 : s + 0.5))}
+              className="max-w-none transition-transform duration-300 ease-out cursor-zoom-in shadow-2xl rounded-lg"
+              style={{
+                transform: `scale(${zoomScale})`,
+                transformOrigin: "center center",
+                maxHeight: zoomScale === 1 ? "85vh" : "none",
+                maxWidth: zoomScale === 1 ? "95vw" : "none",
+              }}
+              draggable={false}
+            />
+          </div>
+
+          {/* Bottom controls */}
+          <div className="absolute bottom-0 left-0 right-0 p-4 z-10 bg-gradient-to-t from-black/80 to-transparent">
+            <div className="flex items-center justify-center gap-2">
+              <button
+                onClick={(e) => { e.stopPropagation(); setZoomScale((s) => Math.max(1, s - 0.5)); }}
+                disabled={zoomScale <= 1}
+                className="w-11 h-11 rounded-full bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center text-white hover:bg-white/20 active:scale-95 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                aria-label="Perkecil"
+              >
+                <Minus className="w-5 h-5" />
+              </button>
+              <button
+                onClick={(e) => { e.stopPropagation(); setZoomScale(1); }}
+                className="px-4 h-11 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-white text-xs font-bold hover:bg-white/20 active:scale-95 transition-all"
+              >
+                Reset
+              </button>
+              <button
+                onClick={(e) => { e.stopPropagation(); setZoomScale((s) => Math.min(4, s + 0.5)); }}
+                disabled={zoomScale >= 4}
+                className="w-11 h-11 rounded-full bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center text-white hover:bg-white/20 active:scale-95 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                aria-label="Perbesar"
+              >
+                <Plus className="w-5 h-5" />
+              </button>
+            </div>
+            <p className="text-center text-[10px] text-white/60 mt-2 font-medium">Tap gambar untuk zoom • Tap luar untuk tutup</p>
+          </div>
+        </div>
+      )}
 
 
         {tab === "history" && (
