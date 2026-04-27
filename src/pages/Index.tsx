@@ -13,7 +13,7 @@ import {
   Heart, Send, ImagePlus, AlertCircle, History, Wallet, ArrowUpCircle, ArrowDownCircle,
   Bell, Check, CheckCheck, Globe, Edit2, ShoppingCart, Plus, Minus, Trash2,
   Moon, Sun, Lock, Tag, Music, Music2, Megaphone, Diamond, Image as ImageIcon, Gem, Sparkles, Palette, CalendarDays, Gamepad2, RefreshCw,
-  Eye, LayoutGrid, Rows3, Flame, SlidersHorizontal, Zap, TrendingUp, Award, Activity, Inbox, User, Phone, Gift, Menu, Lightbulb, MessageSquare, Star
+  Eye, LayoutGrid, Rows3, Flame, SlidersHorizontal, Zap, TrendingUp, Award, Activity, Inbox, User, Phone, Gift, Menu, Lightbulb, MessageSquare, Star, Share2
 } from "lucide-react";
 import { VerifiedBadge } from "@/components/VerifiedBadge";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
@@ -1074,6 +1074,20 @@ const Index = () => {
       setLikedIds(prev => new Set(prev).add(productId));
       setProductLikeCounts(prev => ({ ...prev, [productId]: (prev[productId] || 0) + 1 }));
     }
+  }
+
+  async function shareProduct(p: Product, e?: React.MouseEvent) {
+    e?.stopPropagation();
+    const url = `${window.location.origin}/?produk=${p.id}`;
+    const text = `🛍️ ${p.title}\n💰 ${formatPrice(p.price)}\n${p.description ? `\n${p.description}\n` : ""}\n👉 Cek di Agung Adi Store:\n${url}`;
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: p.title, text, url });
+      } else {
+        await navigator.clipboard.writeText(text);
+        toast({ title: "Link disalin! 🔗", description: "Tempel di mana saja untuk berbagi produk ini." });
+      }
+    } catch {}
   }
 
   async function toggleLikeSponsor(sponsorId: string, e?: React.MouseEvent) {
@@ -2553,6 +2567,11 @@ const Index = () => {
                               className="rounded-full bg-cyan-500/80 backdrop-blur-md p-2 shadow-[0_0_12px_rgba(34,211,238,0.6)] hover:bg-cyan-400 hover:scale-110 hover:rotate-12 transition-all border border-white/30"
                               aria-label="Quick view">
                               <Eye className="w-3.5 h-3.5 text-white drop-shadow" />
+                            </button>
+                            <button onClick={(e) => shareProduct(p, e)}
+                              className="rounded-full bg-gradient-to-br from-violet-500/90 to-indigo-500/90 backdrop-blur-md p-2 shadow-[0_0_12px_rgba(139,92,246,0.6)] hover:scale-110 hover:rotate-12 transition-all border border-white/30"
+                              aria-label="Bagikan produk">
+                              <Share2 className="w-3.5 h-3.5 text-white drop-shadow" />
                             </button>
                             <button onClick={(e) => toggleLike(p.id, e)}
                               className={`rounded-full backdrop-blur-md p-2 shadow-lg hover:scale-110 transition-all border border-white/30 ${likedIds.has(p.id) ? "bg-pink-500/90 shadow-[0_0_12px_rgba(236,72,153,0.7)]" : "bg-slate-800/80 hover:bg-pink-500/80"}`}
