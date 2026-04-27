@@ -4985,20 +4985,65 @@ const Index = () => {
                   );
                 })()}
 
-                <div className="border-t border-border pt-4 space-y-2">
-                  <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Hubungi Kami</p>
-                  <div className="space-y-1.5">
+                <div className="relative pt-5 mt-2">
+                  {/* Top divider with gradient */}
+                  <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-primary/40 to-transparent" />
+
+                  {/* Header */}
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className="relative">
+                      <div className="absolute inset-0 rounded-lg bg-gradient-to-br from-fuchsia-500 to-cyan-500 blur-md opacity-60 animate-pulse" />
+                      <div className="relative w-7 h-7 rounded-lg bg-gradient-to-br from-fuchsia-500 via-violet-500 to-cyan-500 flex items-center justify-center shadow-lg">
+                        <Sparkles className="w-3.5 h-3.5 text-white" strokeWidth={2.5} />
+                      </div>
+                    </div>
+                    <p className="text-[11px] font-black uppercase tracking-[0.2em] bg-gradient-to-r from-fuchsia-500 via-violet-500 to-cyan-500 bg-clip-text text-transparent">
+                      Hubungi Kami
+                    </p>
+                    <div className="flex-1 h-px bg-gradient-to-r from-border to-transparent" />
+                  </div>
+
+                  {/* Social grid */}
+                  <div className="grid grid-cols-2 gap-2">
                     {[
-                      { label: `WA: ${WA_NUMBER}`, href: SOCIAL_LINKS.whatsapp },
-                      { label: `YouTube: ${YOUTUBE_NAME}`, href: SOCIAL_LINKS.youtube },
-                      { label: "Twitter: @agungadi981", href: SOCIAL_LINKS.twitter },
-                      { label: "Instagram: @agungadi57", href: SOCIAL_LINKS.instagram },
-                      { label: "TikTok: @pphitampro9", href: SOCIAL_LINKS.tiktok },
-                    ].map(s => (
-                      <a key={s.label} href={s.href} target="_blank" rel="noopener noreferrer" className="text-xs text-primary hover:underline flex items-center gap-1.5">
-                        <ExternalLink className="w-3 h-3" /> {s.label}
+                      { label: "WhatsApp", sub: WA_NUMBER, href: SOCIAL_LINKS.whatsapp, grad: "from-emerald-500 to-green-600", glow: "16,185,129", icon: "💬" },
+                      { label: "YouTube", sub: YOUTUBE_NAME, href: SOCIAL_LINKS.youtube, grad: "from-red-500 to-rose-600", glow: "239,68,68", icon: "▶" },
+                      { label: "Instagram", sub: "@agungadi57", href: SOCIAL_LINKS.instagram, grad: "from-fuchsia-500 via-pink-500 to-orange-500", glow: "236,72,153", icon: "📷" },
+                      { label: "TikTok", sub: "@pphitampro9", href: SOCIAL_LINKS.tiktok, grad: "from-slate-900 via-rose-500 to-cyan-500", glow: "6,182,212", icon: "🎵" },
+                      { label: "Twitter / X", sub: "@agungadi981", href: SOCIAL_LINKS.twitter, grad: "from-sky-500 to-blue-600", glow: "14,165,233", icon: "𝕏" },
+                    ].map((s, i) => (
+                      <a
+                        key={s.label}
+                        href={s.href}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{ animationDelay: `${i * 70}ms`, boxShadow: `0 4px 14px -4px rgba(${s.glow},0.35)` }}
+                        className={`group relative overflow-hidden rounded-xl p-2.5 bg-gradient-to-br ${s.grad} animate-fade-in transition-all duration-300 hover:scale-[1.04] active:scale-95 hover:shadow-[0_8px_24px_-6px_rgba(0,0,0,0.4)] ${s.label === "Twitter / X" ? "col-span-2" : ""}`}
+                      >
+                        {/* Shimmer */}
+                        <div className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-700 bg-gradient-to-r from-transparent via-white/30 to-transparent" />
+                        {/* Aurora blob */}
+                        <div className="absolute -top-4 -right-4 w-16 h-16 rounded-full bg-white/20 blur-2xl group-hover:bg-white/40 transition-colors" />
+
+                        <div className="relative flex items-center gap-2.5">
+                          <div className="w-8 h-8 rounded-lg bg-white/25 backdrop-blur-sm flex items-center justify-center text-base shadow-inner group-hover:rotate-6 transition-transform duration-300">
+                            <span className="drop-shadow">{s.icon}</span>
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <p className="text-[11px] font-black text-white leading-tight tracking-tight drop-shadow">{s.label}</p>
+                            <p className="text-[10px] text-white/85 truncate font-medium">{s.sub}</p>
+                          </div>
+                          <ExternalLink className="w-3 h-3 text-white/80 group-hover:text-white group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+                        </div>
                       </a>
                     ))}
+                  </div>
+
+                  {/* Footer pill */}
+                  <div className="mt-3 flex items-center justify-center gap-1.5 text-[10px] font-bold text-muted-foreground">
+                    <span className="w-1 h-1 rounded-full bg-emerald-500 animate-pulse" />
+                    Online · Respon cepat 24/7
+                    <span className="w-1 h-1 rounded-full bg-emerald-500 animate-pulse" />
                   </div>
                 </div>
               </div>
