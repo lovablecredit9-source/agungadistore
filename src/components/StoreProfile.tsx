@@ -177,7 +177,7 @@ export const StoreProfile = ({ products, userBalance, onLoginRequired, onProduct
               <div className="flex items-end gap-3">
                 <div className="w-24 h-24 rounded-3xl p-[3px] shadow-2xl" style={{ background: "linear-gradient(135deg,#f59e0b,#ec4899,#8b5cf6)" }}>
                   <div className="w-full h-full rounded-[20px] bg-card overflow-hidden">
-                    <img src="/icons/icon-192.png" alt="Agung Adi Store" className="w-full h-full object-cover" />
+                    <img src={storeQris} alt="Agung Adi Store" className="w-full h-full object-cover" />
                   </div>
                 </div>
                 <div className="flex-1 mb-1">
