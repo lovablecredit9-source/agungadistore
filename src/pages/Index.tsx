@@ -359,6 +359,8 @@ const Index = () => {
   const [productMaxPrice, setProductMaxPrice] = useState("");
   const [productsLoading, setProductsLoading] = useState(true);
   const [quickViewProduct, setQuickViewProduct] = useState<Product | null>(null);
+  const [zoomImage, setZoomImage] = useState<string | null>(null);
+  const [zoomScale, setZoomScale] = useState(1);
   const [selectedHistoryIds, setSelectedHistoryIds] = useState<Set<string>>(new Set());
   const [historyPage, setHistoryPage] = useState(1);
   const HISTORY_PER_PAGE = 5;
