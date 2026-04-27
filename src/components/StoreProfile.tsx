@@ -142,11 +142,11 @@ export const StoreProfileModal = ({
                   <img src={storeQris} alt="Agung Adi Store" className="w-full h-full object-cover" />
                 </div>
               </div>
-              <div className="flex-1 mb-1">
+              <div className="flex-1 mb-1 space-y-1.5">
                 <Button
                   onClick={handleToggleFollow}
                   disabled={followLoading}
-                  className={`w-full h-10 rounded-2xl font-black text-xs shadow-lg active:scale-95 transition ${
+                  className={`w-full h-9 rounded-2xl font-black text-xs shadow-lg active:scale-95 transition ${
                     isFollowing
                       ? "bg-muted text-foreground hover:bg-muted/80"
                       : "bg-gradient-to-r from-pink-500 via-violet-500 to-cyan-500 text-white hover:opacity-90"
@@ -155,8 +155,14 @@ export const StoreProfileModal = ({
                   {followLoading ? "..." : isFollowing ? (
                     <><BadgeCheck className="w-4 h-4 mr-1" />Mengikuti</>
                   ) : (
-                    <><Heart className="w-4 h-4 mr-1 fill-current" />Ikuti Toko</>
+                    <><UserPlus className="w-4 h-4 mr-1" strokeWidth={3} />Ikuti +</>
                   )}
+                </Button>
+                <Button
+                  onClick={() => window.open(`https://wa.me/62${WA_NUMBER.replace(/^0/, "")}`, "_blank")}
+                  className="w-full h-9 rounded-2xl font-black text-xs shadow-lg active:scale-95 transition bg-gradient-to-r from-emerald-500 to-green-600 text-white hover:opacity-90"
+                >
+                  <MessageCircle className="w-4 h-4 mr-1" strokeWidth={2.5} />Chat
                 </Button>
               </div>
             </div>
