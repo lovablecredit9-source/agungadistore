@@ -1761,6 +1761,14 @@ const Index = () => {
 
         {tab === "beranda" && (
           <div className="space-y-5 animate-fade-in">
+            {/* Profil Toko Agung Adi Store */}
+            <StoreProfile
+              products={products}
+              userBalance={userBalance}
+              onLoginRequired={() => setTab("saldo")}
+              onProductClick={(id) => { setTab("produk"); setSelectedProductId(id); }}
+            />
+
             {/* Info: Geser navigasi */}
             {!navInfoDismissed && (
               <div className="relative flex items-center gap-3 rounded-xl bg-primary/10 border border-primary/20 px-4 py-3">
