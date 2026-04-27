@@ -50,7 +50,13 @@ export const StoreProfileModal = ({
   const [isFollowing, setIsFollowing] = useState(false);
   const [followLoading, setFollowLoading] = useState(false);
   const [recentFollowers, setRecentFollowers] = useState<string[]>([]);
+  const [selectedCat, setSelectedCat] = useState<string>("Semua");
   const { toast } = useToast();
+
+  const categories = ["Semua", ...Array.from(new Set(products.map(p => p.category || "Lainnya")))];
+  const filteredProducts = selectedCat === "Semua"
+    ? products
+    : products.filter(p => (p.category || "Lainnya") === selectedCat);
 
   const fetchFollowers = async () => {
     const { data, count } = await supabase
