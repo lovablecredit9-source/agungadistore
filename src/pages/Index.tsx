@@ -1766,7 +1766,7 @@ const Index = () => {
               products={products}
               userBalance={userBalance}
               onLoginRequired={() => setTab("saldo")}
-              onProductClick={(id) => { setTab("produk"); setSelectedProductId(id); }}
+              onProductClick={(id) => { const p = products.find(x => x.id === id); if (p) { setTab("produk"); setSelectedProduct(p); } }}
             />
 
             {/* Info: Geser navigasi */}

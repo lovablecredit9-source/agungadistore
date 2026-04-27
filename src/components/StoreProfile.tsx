@@ -10,7 +10,8 @@ interface Product {
   title: string;
   price: number;
   image_url: string | null;
-  sold_count: number;
+  sold_count?: number;
+  [key: string]: any;
 }
 
 interface StoreProfileProps {
