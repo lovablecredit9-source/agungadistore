@@ -2253,63 +2253,96 @@ const Index = () => {
               </div>
             </button>
 
-            {/* Social Links - Aurora Premium */}
-            {/* Ikuti Kami - iOS Style Frosted Card */}
-            <div className="relative rounded-[24px] bg-background/50 backdrop-blur-2xl backdrop-saturate-150 border border-white/15 shadow-[0_18px_50px_-12px_rgba(0,0,0,0.45),inset_0_1px_0_0_rgba(255,255,255,0.18)] overflow-hidden">
-              <div className="pointer-events-none absolute -top-16 right-0 w-40 h-40 rounded-full bg-emerald-500/10 blur-3xl" />
-              <div className="pointer-events-none absolute -bottom-16 left-0 w-40 h-40 rounded-full bg-cyan-400/10 blur-3xl" />
+            {/* Ikuti Kami - Premium Animated Card */}
+            <div className="relative rounded-[28px] overflow-hidden p-[1.5px] bg-gradient-to-br from-pink-500/60 via-violet-500/60 to-cyan-400/60 shadow-[0_20px_60px_-15px_rgba(168,85,247,0.5)] animate-fade-in">
+              <div className="relative rounded-[26px] bg-gradient-to-br from-slate-950/95 via-slate-900/95 to-slate-950/95 backdrop-blur-2xl overflow-hidden">
+                {/* Animated aurora blobs */}
+                <div className="pointer-events-none absolute -top-20 -right-10 w-48 h-48 rounded-full bg-pink-500/25 blur-3xl animate-pulse" />
+                <div className="pointer-events-none absolute -bottom-20 -left-10 w-48 h-48 rounded-full bg-cyan-400/25 blur-3xl animate-pulse" style={{ animationDelay: "1.2s" }} />
+                <div className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-56 h-56 rounded-full bg-violet-500/15 blur-3xl animate-pulse" style={{ animationDelay: "0.6s" }} />
+                {/* Shimmer line */}
+                <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/40 to-transparent" />
 
-              <div className="relative p-3.5">
-                <div className="flex items-center justify-between mb-3 px-1">
-                  <h3 className="text-[13px] font-bold tracking-tight text-foreground flex items-center gap-1.5">
-                    <Globe className="w-3.5 h-3.5 text-emerald-500" strokeWidth={2.2} /> {t("home.follow_us", lang)}
-                  </h3>
-                  <span className="text-[10px] text-muted-foreground font-medium">{socialLinks.length} Akun</span>
-                </div>
-
-                <div className="grid grid-cols-3 gap-2">
-                  {socialLinks.map((s, i) => {
-                    const palette = [
-                      { color: "from-pink-500 to-rose-500", glow: "236,72,153" },
-                      { color: "from-cyan-400 to-blue-500", glow: "34,211,238" },
-                      { color: "from-purple-500 to-violet-600", glow: "168,85,247" },
-                      { color: "from-emerald-500 to-green-500", glow: "16,185,129" },
-                      { color: "from-yellow-400 to-orange-500", glow: "250,204,21" },
-                    ][i % 5];
-                    return (
-                      <a
-                        key={s.id}
-                        href={s.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="group relative flex flex-col items-center gap-1.5 py-3 px-2 rounded-2xl bg-white/[0.04] hover:bg-white/[0.08] active:scale-[0.92] transition-all duration-200 ease-out"
-                        style={{ boxShadow: "inset 0 1px 0 0 rgba(255,255,255,0.06)" }}
-                      >
-                        <div className="relative">
-                          <div
-                            className="absolute inset-0 rounded-2xl blur-md opacity-60 group-hover:opacity-90 transition-opacity"
-                            style={{ background: `rgba(${palette.glow}, 0.45)` }}
-                          />
-                          {s.icon_url ? (
-                            <div
-                              className="relative w-10 h-10 rounded-2xl bg-white/10 flex items-center justify-center overflow-hidden"
-                              style={{ boxShadow: `0 6px 16px -4px rgba(${palette.glow}, 0.55), inset 0 1px 0 0 rgba(255,255,255,0.25)` }}
-                            >
-                              <img src={s.icon_url} alt={s.platform} className="w-7 h-7 object-contain" />
-                            </div>
-                          ) : (
-                            <div
-                              className={`relative w-10 h-10 rounded-2xl bg-gradient-to-br ${palette.color} flex items-center justify-center text-sm font-bold text-white transition-transform duration-200 group-active:scale-95`}
-                              style={{ boxShadow: `0 6px 16px -4px rgba(${palette.glow}, 0.55), inset 0 1px 0 0 rgba(255,255,255,0.25)` }}
-                            >
-                              {s.platform[0]?.toUpperCase()}
-                            </div>
-                          )}
+                <div className="relative p-4">
+                  {/* Header */}
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-2.5">
+                      <div className="relative">
+                        <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-pink-500 to-violet-500 blur-md opacity-70 animate-pulse" />
+                        <div className="relative w-9 h-9 rounded-2xl bg-gradient-to-br from-pink-500 via-fuchsia-500 to-violet-500 flex items-center justify-center shadow-lg" style={{ boxShadow: "inset 0 1px 0 rgba(255,255,255,0.3), 0 8px 20px -5px rgba(236,72,153,0.6)" }}>
+                          <Globe className="w-4.5 h-4.5 text-white" strokeWidth={2.5} />
                         </div>
-                        <span className="truncate text-[10.5px] font-semibold w-full text-center text-foreground/85 tracking-tight">{s.label}</span>
-                      </a>
-                    );
-                  })}
+                      </div>
+                      <div>
+                        <h3 className="text-[14px] font-black tracking-tight bg-gradient-to-r from-pink-300 via-fuchsia-200 to-violet-300 bg-clip-text text-transparent">{t("home.follow_us", lang)}</h3>
+                        <p className="text-[10px] text-white/60 font-medium">Connect • Engage • Win</p>
+                      </div>
+                    </div>
+                    <div className="px-2.5 py-1 rounded-full bg-white/10 border border-white/15 flex items-center gap-1.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                      <span className="text-[10px] text-white/85 font-bold">{socialLinks.length} Aktif</span>
+                    </div>
+                  </div>
+
+                  {/* Social grid */}
+                  <div className="grid grid-cols-3 gap-2.5">
+                    {socialLinks.map((s, i) => {
+                      const palette = [
+                        { color: "from-pink-500 to-rose-500", glow: "236,72,153", ring: "rgba(236,72,153,0.6)" },
+                        { color: "from-cyan-400 to-blue-500", glow: "34,211,238", ring: "rgba(34,211,238,0.6)" },
+                        { color: "from-purple-500 to-violet-600", glow: "168,85,247", ring: "rgba(168,85,247,0.6)" },
+                        { color: "from-emerald-500 to-green-500", glow: "16,185,129", ring: "rgba(16,185,129,0.6)" },
+                        { color: "from-yellow-400 to-orange-500", glow: "250,204,21", ring: "rgba(250,204,21,0.6)" },
+                      ][i % 5];
+                      return (
+                        <a
+                          key={s.id}
+                          href={s.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="group relative flex flex-col items-center gap-2 py-3.5 px-2 rounded-2xl bg-white/[0.05] hover:bg-white/[0.1] active:scale-[0.92] transition-all duration-200 ease-out overflow-hidden animate-fade-in"
+                          style={{ boxShadow: "inset 0 1px 0 0 rgba(255,255,255,0.08)", animationDelay: `${i * 60}ms` }}
+                        >
+                          {/* Hover glow background */}
+                          <div className="pointer-events-none absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300" style={{ background: `radial-gradient(circle at center, rgba(${palette.glow},0.18), transparent 70%)` }} />
+                          {/* Shimmer */}
+                          <div className="pointer-events-none absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 bg-gradient-to-r from-transparent via-white/15 to-transparent" />
+
+                          <div className="relative">
+                            {/* Glow ring */}
+                            <div className="absolute inset-0 rounded-2xl blur-lg opacity-50 group-hover:opacity-90 transition-opacity duration-300 group-hover:animate-pulse" style={{ background: `rgba(${palette.glow}, 0.55)` }} />
+                            {s.icon_url ? (
+                              <div
+                                className="relative w-11 h-11 rounded-2xl bg-white/15 flex items-center justify-center overflow-hidden group-hover:scale-110 group-hover:rotate-[-4deg] transition-transform duration-300 ease-out"
+                                style={{ boxShadow: `0 8px 20px -4px ${palette.ring}, inset 0 1px 0 0 rgba(255,255,255,0.3)` }}
+                              >
+                                <img src={s.icon_url} alt={s.platform} className="w-7 h-7 object-contain group-hover:scale-110 transition-transform" />
+                              </div>
+                            ) : (
+                              <div
+                                className={`relative w-11 h-11 rounded-2xl bg-gradient-to-br ${palette.color} flex items-center justify-center text-base font-black text-white group-hover:scale-110 group-hover:rotate-[-4deg] transition-transform duration-300 ease-out`}
+                                style={{ boxShadow: `0 8px 20px -4px ${palette.ring}, inset 0 1px 0 0 rgba(255,255,255,0.3)` }}
+                              >
+                                {s.platform[0]?.toUpperCase()}
+                              </div>
+                            )}
+                            {/* Sparkle */}
+                            <div className="pointer-events-none absolute -top-1 -right-1 w-2 h-2 rounded-full bg-white opacity-0 group-hover:opacity-100 transition-opacity">
+                              <div className="absolute inset-0 rounded-full bg-white animate-ping" />
+                            </div>
+                          </div>
+                          <span className="truncate text-[10.5px] font-bold w-full text-center text-white/90 tracking-tight relative">{s.label}</span>
+                        </a>
+                      );
+                    })}
+                  </div>
+
+                  {/* Bottom CTA pill */}
+                  <div className="mt-3 flex items-center justify-center gap-1.5 px-3 py-2 rounded-full bg-gradient-to-r from-pink-500/15 via-violet-500/15 to-cyan-400/15 border border-white/10">
+                    <Sparkles className="w-3 h-3 text-amber-300 animate-pulse" />
+                    <span className="text-[10px] font-semibold text-white/80 tracking-wide">Tap untuk follow & dapatkan info update</span>
+                    <Sparkles className="w-3 h-3 text-amber-300 animate-pulse" style={{ animationDelay: "0.5s" }} />
+                  </div>
                 </div>
               </div>
             </div>
@@ -4804,53 +4837,89 @@ const Index = () => {
                     <button onClick={() => openProduct(null)} className="w-9 h-9 rounded-full bg-muted flex items-center justify-center active:scale-95 transition-transform"><X className="w-4 h-4" /></button>
                   </div>
                 </div>
-                <p className="text-2xl font-extrabold text-foreground">{formatPrice(selectedProduct.price)}</p>
+                {/* Premium price card with shimmer */}
+                <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-violet-500/15 via-fuchsia-500/10 to-amber-400/15 border border-white/15 p-4 animate-fade-in">
+                  <div className="pointer-events-none absolute -top-10 -right-10 w-32 h-32 rounded-full bg-fuchsia-400/30 blur-3xl animate-pulse" />
+                  <div className="pointer-events-none absolute -bottom-10 -left-10 w-32 h-32 rounded-full bg-violet-500/30 blur-3xl animate-pulse" style={{ animationDelay: "1s" }} />
+                  <div className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/10 to-transparent animate-[shimmer_3s_ease-in-out_infinite]" style={{ animation: "shimmer 3s ease-in-out infinite" }} />
+                  <style>{`@keyframes shimmer { 0% { transform: translateX(-100%); } 100% { transform: translateX(200%); } }`}</style>
+                  <div className="relative flex items-end justify-between">
+                    <div>
+                      <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-foreground/70 flex items-center gap-1"><Sparkles className="w-3 h-3 text-amber-400" /> Harga Terbaik</p>
+                      <p className="text-3xl font-black text-foreground tracking-tight mt-0.5 bg-gradient-to-br from-foreground to-foreground/70 bg-clip-text">{formatPrice(selectedProduct.price)}</p>
+                    </div>
+                    <div className="flex flex-col items-end gap-1">
+                      <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-400/40 text-[9px] font-bold text-emerald-300 uppercase tracking-wider flex items-center gap-1">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" /> Live
+                      </span>
+                      <span className="text-[9px] text-foreground/60 font-medium">100% Original</span>
+                    </div>
+                  </div>
+                </div>
                 {/* Wholesale prices */}
                 {(() => {
                   const tiers = getProductWholesaleTiers(selectedProduct.id);
                   if (tiers.length === 0) return null;
                   return (
-                    <div className="space-y-1 rounded-lg border border-border bg-muted/40 p-2.5">
-                      <p className="text-[10px] font-bold uppercase tracking-wider text-foreground">Harga Grosir</p>
+                    <div className="space-y-1.5 rounded-2xl border border-amber-400/30 bg-gradient-to-br from-amber-500/10 to-orange-500/5 p-3 animate-fade-in">
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-amber-400 flex items-center gap-1"><TrendingUp className="w-3 h-3" /> Harga Grosir</p>
                       {tiers.map((t: any, i: number) => (
-                        <div key={i} className="flex justify-between text-xs">
+                        <div key={i} className="flex justify-between text-xs items-center">
                           <span className="text-muted-foreground">Beli ≥{t.min_quantity} pcs</span>
-                          <span className="font-bold text-foreground">{formatPrice(t.price_per_item)} /pcs</span>
+                          <span className="font-bold text-amber-300">{formatPrice(t.price_per_item)} /pcs</span>
                         </div>
                       ))}
                     </div>
                   );
                 })()}
-                {selectedProduct.description && <p className="text-sm text-muted-foreground leading-relaxed">{selectedProduct.description}</p>}
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className="rounded-full border border-border bg-muted px-3 py-1.5 text-xs font-medium text-foreground">
-                    {selectedProduct.stock > 0 ? `Stok: ${selectedProduct.stock}` : 'Stok habis'}
+                {selectedProduct.description && (
+                  <div className="rounded-2xl bg-muted/40 border border-border/50 p-3 animate-fade-in">
+                    <p className="text-sm text-foreground/80 leading-relaxed">{selectedProduct.description}</p>
+                  </div>
+                )}
+                <div className="flex items-center gap-2 flex-wrap animate-fade-in">
+                  <span className={`rounded-full px-3 py-1.5 text-[11px] font-bold flex items-center gap-1.5 border ${selectedProduct.stock > 0 ? 'bg-emerald-500/15 border-emerald-400/40 text-emerald-300' : 'bg-rose-500/15 border-rose-400/40 text-rose-300'}`}>
+                    <span className={`w-1.5 h-1.5 rounded-full ${selectedProduct.stock > 0 ? 'bg-emerald-400' : 'bg-rose-400'} animate-pulse`} />
+                    {selectedProduct.stock > 0 ? `${selectedProduct.stock} stok tersedia` : 'Stok habis'}
                   </span>
-                  <span className="text-xs px-3 py-1.5 rounded-full font-medium bg-muted text-muted-foreground flex items-center gap-1">
-                    <CalendarDays className="w-3.5 h-3.5" /> {new Date(selectedProduct.created_at).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" })}
+                  <span className="text-[11px] px-3 py-1.5 rounded-full font-semibold bg-violet-500/15 border border-violet-400/40 text-violet-300 flex items-center gap-1.5">
+                    <CalendarDays className="w-3 h-3" /> {new Date(selectedProduct.created_at).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" })}
                   </span>
                 </div>
 
-                {/* Four buttons: Cart + Chat + Beli Saldo + WhatsApp */}
-                <div className="grid grid-cols-4 gap-2">
-                  <Button variant="outline" className="h-11 rounded-xl border-border bg-card text-xs font-medium text-foreground shadow-none"
+                {/* Premium action buttons - 4 grid with gradients */}
+                <div className="grid grid-cols-4 gap-2 animate-fade-in">
+                  <button
                     disabled={selectedProduct.stock <= 0}
-                    onClick={() => { addToCart(selectedProduct); }}>
-                    <ShoppingCart className="w-4 h-4" /> Keranjang
-                  </Button>
-                  <Button variant="outline" className="h-11 rounded-xl border-border bg-card text-xs font-medium text-foreground shadow-none"
-                    onClick={() => openProductChat(selectedProduct)}>
-                    <MessageCircle className="w-4 h-4" /> Chat
-                  </Button>
-                  <Button className="h-11 rounded-xl bg-foreground text-background text-xs font-medium shadow-none hover:bg-foreground/90"
+                    onClick={() => { addToCart(selectedProduct); }}
+                    className="group relative overflow-hidden h-14 rounded-2xl bg-gradient-to-br from-blue-500/20 to-cyan-500/20 border border-blue-400/30 disabled:opacity-40 disabled:pointer-events-none active:scale-95 transition-all flex flex-col items-center justify-center gap-0.5">
+                    <div className="absolute inset-0 bg-gradient-to-br from-blue-500/0 to-cyan-500/0 group-hover:from-blue-500/30 group-hover:to-cyan-500/30 transition-colors" />
+                    <ShoppingCart className="w-4 h-4 text-blue-300 relative" />
+                    <span className="text-[10px] font-bold text-foreground relative">Keranjang</span>
+                  </button>
+                  <button
+                    onClick={() => openProductChat(selectedProduct)}
+                    className="group relative overflow-hidden h-14 rounded-2xl bg-gradient-to-br from-purple-500/20 to-pink-500/20 border border-purple-400/30 active:scale-95 transition-all flex flex-col items-center justify-center gap-0.5">
+                    <div className="absolute inset-0 bg-gradient-to-br from-purple-500/0 to-pink-500/0 group-hover:from-purple-500/30 group-hover:to-pink-500/30 transition-colors" />
+                    <MessageCircle className="w-4 h-4 text-purple-300 relative" />
+                    <span className="text-[10px] font-bold text-foreground relative">Chat</span>
+                  </button>
+                  <button
                     disabled={!userBalance || userBalance.balance < selectedProduct.price || selectedProduct.stock <= 0}
-                    onClick={() => { setBuyProduct(selectedProduct); setBuyQuantity(1); setShowBuySaldo(true); }}>
-                    <Wallet className="w-4 h-4" /> Saldo
-                  </Button>
-                  <Button variant="outline" className="h-11 rounded-xl border-border bg-card text-xs font-medium text-foreground shadow-none"
-                    onClick={() => setShowWaForm(true)}>
-                    <ShoppingBag className="w-4 h-4" /> WA
-                  </Button>
+                    onClick={() => { setBuyProduct(selectedProduct); setBuyQuantity(1); setShowBuySaldo(true); }}
+                    className="group relative overflow-hidden h-14 rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 disabled:opacity-40 disabled:pointer-events-none active:scale-95 transition-all flex flex-col items-center justify-center gap-0.5 shadow-lg shadow-orange-500/30">
+                    <div className="absolute inset-0 bg-gradient-to-br from-white/0 to-white/0 group-hover:from-white/20 group-hover:to-transparent transition-colors" />
+                    <div className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-700 bg-gradient-to-r from-transparent via-white/30 to-transparent" />
+                    <Wallet className="w-4 h-4 text-white relative" />
+                    <span className="text-[10px] font-extrabold text-white relative">Saldo</span>
+                  </button>
+                  <button
+                    onClick={() => setShowWaForm(true)}
+                    className="group relative overflow-hidden h-14 rounded-2xl bg-gradient-to-br from-emerald-500/20 to-green-500/20 border border-emerald-400/30 active:scale-95 transition-all flex flex-col items-center justify-center gap-0.5">
+                    <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/0 to-green-500/0 group-hover:from-emerald-500/30 group-hover:to-green-500/30 transition-colors" />
+                    <ShoppingBag className="w-4 h-4 text-emerald-300 relative" />
+                    <span className="text-[10px] font-bold text-foreground relative">WhatsApp</span>
+                  </button>
                 </div>
                 {userBalance && userBalance.balance < selectedProduct.price && (
                   <p className="text-[10px] text-destructive text-center">Saldo tidak cukup. <button className="underline text-primary" onClick={() => { openProduct(null); setTab("saldo"); }}>Deposit saldo →</button></p>
