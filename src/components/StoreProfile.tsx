@@ -26,9 +26,12 @@ const STORE_JOIN_DATE = "2024-04-06"; // Tanggal bergabung toko (6 April 2024)
 const STORE_RATING = 5.0;
 
 const formatJoinDate = (iso: string) => {
-  const d = new Date(iso);
+  // Parse YYYY-MM-DD secara eksplisit untuk hindari timezone shift
+  const m = iso.match(/^(\d{4})-(\d{2})-(\d{2})$/);
   const months = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
-  return `${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()}`;
+  if (!m) return iso;
+  const [, y, mo, d] = m;
+  return `${parseInt(d)} ${months[parseInt(mo) - 1]} ${y}`;
 };
 
 const formatPrice = (n: number) => "Rp " + n.toLocaleString("id-ID");
