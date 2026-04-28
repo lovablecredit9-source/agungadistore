@@ -44,7 +44,7 @@ export const useResponseRate = (): ResponseRate => {
     };
 
     const ch = supabase
-      .channel("response-rate-rt")
+      .channel(`response-rate-rt-${Math.random().toString(36).slice(2)}`)
       .on("postgres_changes", { event: "*", schema: "public", table: "product_chat_messages" }, debounced)
       .on("postgres_changes", { event: "*", schema: "public", table: "ticket_messages" }, debounced)
       .on("postgres_changes", { event: "*", schema: "public", table: "product_chats" }, debounced)
