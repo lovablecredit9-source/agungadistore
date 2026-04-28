@@ -70,35 +70,35 @@
     --sidebar-ring: 217.2 91.2% 59.8%;
   }
 
-  /* === iOS Dark Vibrant — true black, vibrant accents (Apple Music / Photos style) === */
+  /* === iOS Dark Vibrant — colorful glass canvas, not flat black === */
   .dark {
-    --background: 0 0% 0%;            /* true black */
-    --foreground: 0 0% 100%;
+    --background: 248 46% 11%;
+    --foreground: 210 40% 98%;
 
-    --card: 240 5% 8%;                /* L1 elevated surface */
-    --card-foreground: 0 0% 100%;
+    --card: 250 42% 16%;
+    --card-foreground: 210 40% 98%;
 
-    --popover: 240 5% 11%;
-    --popover-foreground: 0 0% 100%;
+    --popover: 252 40% 18%;
+    --popover-foreground: 210 40% 98%;
 
-    --primary: 211 100% 55%;          /* iOS systemBlue */
+    --primary: 189 100% 56%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 240 4% 14%;
-    --secondary-foreground: 0 0% 95%;
+    --secondary: 270 44% 22%;
+    --secondary-foreground: 210 40% 96%;
 
-    --muted: 240 4% 12%;
-    --muted-foreground: 240 5% 62%;
+    --muted: 244 34% 20%;
+    --muted-foreground: 218 25% 76%;
 
-    --accent: 320 90% 62%;            /* iOS systemPink vibrant */
+    --accent: 327 100% 64%;
     --accent-foreground: 0 0% 100%;
 
     --destructive: 4 90% 60%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 240 4% 16%;
-    --input: 240 4% 14%;
-    --ring: 211 100% 55%;
+    --border: 255 35% 28%;
+    --input: 255 36% 24%;
+    --ring: 189 100% 56%;
 
     --success: 142 70% 50%;
     --success-foreground: 0 0% 100%;
@@ -113,10 +113,10 @@
     --ios-vibrant-indigo: 234 90% 65%;
     --ios-vibrant-yellow: 48 100% 55%;
     --ios-vibrant-red: 4 90% 60%;
-    --ios-elevated-1: 240 5% 8%;
-    --ios-elevated-2: 240 5% 11%;
-    --ios-elevated-3: 240 5% 14%;
-    --ios-hairline: 240 5% 18%;
+    --ios-elevated-1: 250 42% 16%;
+    --ios-elevated-2: 252 40% 18%;
+    --ios-elevated-3: 270 44% 22%;
+    --ios-hairline: 255 35% 28%;
   }
 
   .gold {
@@ -351,11 +351,14 @@
     min-height: 100vh;
   }
 
-  /* iOS Dark Vibrant: pure black canvas, vibrant accent glow */
+  /* iOS Dark Vibrant: colorful layered canvas */
   .dark body {
+    background-color: hsl(var(--background));
     background-image:
-      radial-gradient(ellipse at 0% 0%, hsl(var(--ios-vibrant-blue) / 0.10) 0%, transparent 45%),
-      radial-gradient(ellipse at 100% 100%, hsl(var(--ios-vibrant-pink) / 0.08) 0%, transparent 45%);
+      radial-gradient(ellipse at 8% 0%, hsl(var(--ios-vibrant-cyan, 188 95% 55%) / 0.34) 0%, transparent 42%),
+      radial-gradient(ellipse at 92% 12%, hsl(var(--ios-vibrant-pink) / 0.26) 0%, transparent 38%),
+      radial-gradient(ellipse at 15% 88%, hsl(var(--ios-vibrant-green) / 0.18) 0%, transparent 36%),
+      linear-gradient(135deg, hsl(248 46% 11%) 0%, hsl(278 48% 15%) 48%, hsl(206 58% 13%) 100%);
   }
 }
 
