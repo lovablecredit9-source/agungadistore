@@ -365,23 +365,42 @@ export const StoreProfileModal = ({
                 </h3>
               </div>
 
-              {/* Filter dropdown kategori */}
-              {categories.length > 1 && (
-                <div className="relative mb-2">
-                  <ListFilter className="pointer-events-none absolute left-3 top-1/2 z-10 h-3.5 w-3.5 -translate-y-1/2 text-violet-500" />
+              {/* Filter dropdown kategori + sort */}
+              <div className="grid grid-cols-2 gap-1.5 mb-2">
+                {categories.length > 1 ? (
+                  <div className="relative">
+                    <ListFilter className="pointer-events-none absolute left-2.5 top-1/2 z-10 h-3.5 w-3.5 -translate-y-1/2 text-violet-500" />
+                    <select
+                      value={selectedCat}
+                      onChange={(e) => setSelectedCat(e.target.value)}
+                      className="h-9 w-full appearance-none rounded-full border border-violet-500/30 bg-card pl-7 pr-6 text-[11px] font-bold text-foreground outline-none active:scale-[0.99] truncate"
+                    >
+                      {categories.map((cat) => {
+                        const count = cat === "Semua" ? products.length : products.filter(p => (p.category || "Lainnya") === cat).length;
+                        return <option key={cat} value={cat}>{`${cat} (${count})`}</option>;
+                      })}
+                    </select>
+                    <span className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-[9px] text-muted-foreground">▼</span>
+                  </div>
+                ) : <div />}
+
+                <div className="relative">
+                  <ArrowUpDown className="pointer-events-none absolute left-2.5 top-1/2 z-10 h-3.5 w-3.5 -translate-y-1/2 text-pink-500" />
                   <select
-                    value={selectedCat}
-                    onChange={(e) => setSelectedCat(e.target.value)}
-                    className="h-9 w-full appearance-none rounded-full border border-violet-500/30 bg-card px-8 pr-10 text-xs font-bold text-foreground outline-none active:scale-[0.99]"
+                    value={sortMode}
+                    onChange={(e) => setSortMode(e.target.value as SortMode)}
+                    className="h-9 w-full appearance-none rounded-full border border-pink-500/30 bg-card pl-7 pr-6 text-[11px] font-bold text-foreground outline-none active:scale-[0.99] truncate"
                   >
-                    {categories.map((cat) => {
-                      const count = cat === "Semua" ? products.length : products.filter(p => (p.category || "Lainnya") === cat).length;
-                      return <option key={cat} value={cat}>{`${cat} (${count})`}</option>;
-                    })}
+                    <option value="default">Urutkan</option>
+                    <option value="cheapest">💰 Termurah</option>
+                    <option value="expensive">💎 Termahal</option>
+                    <option value="bestseller">🔥 Terlaris</option>
+                    <option value="popular">❤️ Populer</option>
+                    <option value="newest">✨ Terbaru</option>
                   </select>
-                  <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">▼</span>
+                  <span className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-[9px] text-muted-foreground">▼</span>
                 </div>
-              )}
+              </div>
 
               {filteredProducts.length === 0 ? (
                 <p className="text-xs text-muted-foreground text-center py-6">Belum ada produk</p>
