@@ -8140,6 +8140,14 @@ export type Database = {
         Args: { p_visitor_id: string }
         Returns: string
       }
+      get_admin_response_rate: {
+        Args: never
+        Returns: {
+          rate: number
+          replied_chats: number
+          total_chats: number
+        }[]
+      }
       get_my_notifications: {
         Args: { p_limit?: number; p_visitor_id: string }
         Returns: {
