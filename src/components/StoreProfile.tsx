@@ -253,12 +253,20 @@ export const StoreProfileModal = ({
                     <><UserPlus className="w-4 h-4 mr-1" strokeWidth={3} />Ikuti +</>
                   )}
                 </Button>
-                <Button
-                  onClick={() => window.open(`https://wa.me/62${WA_NUMBER.replace(/^0/, "")}`, "_blank")}
-                  className="w-full h-9 rounded-2xl font-black text-xs shadow-lg active:scale-95 transition bg-gradient-to-r from-emerald-500 to-green-600 text-white hover:opacity-90"
-                >
-                  <MessageCircle className="w-4 h-4 mr-1" strokeWidth={2.5} />Chat
-                </Button>
+                <div className="grid grid-cols-2 gap-1.5">
+                  <Button
+                    onClick={() => window.open(`https://wa.me/62${WA_NUMBER.replace(/^0/, "")}`, "_blank")}
+                    className="h-9 rounded-2xl font-black text-xs shadow-lg active:scale-95 transition bg-gradient-to-r from-emerald-500 to-green-600 text-white hover:opacity-90 px-2"
+                  >
+                    <MessageCircle className="w-4 h-4 mr-1" strokeWidth={2.5} />Chat
+                  </Button>
+                  <Button
+                    onClick={handleShare}
+                    className="h-9 rounded-2xl font-black text-xs shadow-lg active:scale-95 transition bg-gradient-to-r from-blue-500 to-cyan-500 text-white hover:opacity-90 px-2"
+                  >
+                    <Share2 className="w-4 h-4 mr-1" strokeWidth={2.5} />Share
+                  </Button>
+                </div>
               </div>
             </div>
 
