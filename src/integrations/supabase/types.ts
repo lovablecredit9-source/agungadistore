@@ -8169,6 +8169,10 @@ export type Database = {
         Args: { p_ids: string[]; p_visitor_id: string }
         Returns: undefined
       }
+      recalc_product_stock: {
+        Args: { p_product_id: string }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never
