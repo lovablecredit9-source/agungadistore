@@ -297,9 +297,14 @@ export const StoreProfileModal = ({
                   {followLoading ? "..." : isFollowing ? (
                     <><BadgeCheck className="w-4 h-4 mr-1" />Mengikuti</>
                   ) : (
-                    <><UserPlus className="w-4 h-4 mr-1" strokeWidth={3} />Ikuti +</>
+                    <><UserPlus className="w-4 h-4 mr-1" strokeWidth={3} />Ikuti + 🎁</>
                   )}
                 </Button>
+                {!isFollowing && (
+                  <p className="text-[9px] font-bold text-pink-500 dark:text-pink-400 text-center leading-tight">
+                    🎁 Dapat voucher Rp 1.000 (30 hari)
+                  </p>
+                )}
                 <div className="grid grid-cols-2 gap-1.5">
                   <Button
                     onClick={handleChat}
