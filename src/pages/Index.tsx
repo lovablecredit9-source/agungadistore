@@ -4437,7 +4437,19 @@ const Index = () => {
               
               {[
                 {
-                  date: "26 April 2026", version: "v2.9", isNew: true,
+                  date: "28 April 2026", version: "v3.0", isNew: true, isLaunch: true,
+                  items: [
+                    "💬 Badge Response Rate Admin - persentase respon admin (chat produk + tiket support) ditampilkan dinamis di profil toko",
+                    "📊 Rumus rasio sederhana semua waktu: (chat dibalas / total chat user) × 100% - update real-time via Supabase",
+                    "💚 Ikon MessageCircle hijau dengan fill-current menggantikan ikon petir - lebih jelas merepresentasikan chat & komunikasi",
+                    "🏪 Halaman Toko Full-Screen - klik 'Kunjungi Toko' kini buka tampilan profil toko penuh layar (100dvh) tanpa modal sempit",
+                    "📦 Halaman Produk Full-Screen - detail produk kini full-page layout dengan slide-in animation dari bawah, lebih imersif",
+                    "✨ Override Radix Dialog dengan !w-screen !h-[100dvh] !inset-0 !rounded-none untuk pengalaman native app",
+                    "🔄 Realtime sync response rate - badge auto-update saat ada chat baru atau balasan admin",
+                  ]
+                },
+                {
+                  date: "26 April 2026", version: "v2.9",
                   items: [
                     "🌈 Beranda Maximalist Colorful - tema warna-warni penuh energi & playful",
                     "🎨 Quick Access buttons dengan animasi gerak: float, bounce, conic gradient border + particle sparkles",
