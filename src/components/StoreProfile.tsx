@@ -72,12 +72,31 @@ export const StoreProfileModal = ({
   const [followLoading, setFollowLoading] = useState(false);
   const [recentFollowers, setRecentFollowers] = useState<string[]>([]);
   const [selectedCat, setSelectedCat] = useState<string>("Semua");
+  const [sortMode, setSortMode] = useState<SortMode>("default");
+  const [adminLastActive, setAdminLastActive] = useState<string | null>(null);
+  const [, setNowTick] = useState(0);
+  const [likeCounts, setLikeCounts] = useState<Record<string, number>>({});
   const { toast } = useToast();
 
+  const isAdminOnline = adminLastActive
+    ? Date.now() - new Date(adminLastActive).getTime() < ONLINE_THRESHOLD_MS
+    : false;
+
   const categories = ["Semua", ...Array.from(new Set(products.map(p => p.category || "Lainnya")))];
-  const filteredProducts = selectedCat === "Semua"
+  const baseFiltered = selectedCat === "Semua"
     ? products
     : products.filter(p => (p.category || "Lainnya") === selectedCat);
+
+  const filteredProducts = [...baseFiltered].sort((a, b) => {
+    switch (sortMode) {
+      case "cheapest": return (a.price || 0) - (b.price || 0);
+      case "expensive": return (b.price || 0) - (a.price || 0);
+      case "bestseller": return (b.sold_count || 0) - (a.sold_count || 0);
+      case "popular": return (likeCounts[b.id] || 0) - (likeCounts[a.id] || 0);
+      case "newest": return new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime();
+      default: return 0;
+    }
+  });
 
   const fetchFollowers = async () => {
     const { data, count } = await supabase
@@ -98,6 +117,27 @@ export const StoreProfileModal = ({
     } else {
       setIsFollowing(false);
     }
+  };
+
+  const fetchAdminStatus = async () => {
+    const { data } = await supabase
+      .from("admin_settings")
+      .select("setting_value, updated_at")
+      .eq("setting_key", "admin_last_active")
+      .maybeSingle();
+    setAdminLastActive((data as any)?.setting_value || (data as any)?.updated_at || null);
+  };
+
+  const fetchLikeCounts = async () => {
+    if (!products.length) return;
+    const ids = products.map(p => p.id);
+    const { data } = await supabase
+      .from("liked_products" as any)
+      .select("product_id")
+      .in("product_id", ids);
+    const counts: Record<string, number> = {};
+    (data as any[] || []).forEach(r => { counts[r.product_id] = (counts[r.product_id] || 0) + 1; });
+    setLikeCounts(counts);
   };
 
   useEffect(() => {
