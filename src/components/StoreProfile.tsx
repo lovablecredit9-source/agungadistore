@@ -88,6 +88,7 @@ export const StoreProfileModal = ({
   const [showSortPicker, setShowSortPicker] = useState(false);
   const [followVoucher, setFollowVoucher] = useState<FollowVoucher | null>(null);
   const { toast } = useToast();
+  const responseRate = useResponseRate();
 
   const isAdminOnline = adminLastActive
     ? Date.now() - new Date(adminLastActive).getTime() < ONLINE_THRESHOLD_MS
