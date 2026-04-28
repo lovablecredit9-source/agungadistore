@@ -363,13 +363,6 @@ export const StoreProfileModal = ({
               <p className="text-[11px] text-muted-foreground">Bergabung sejak <strong className="text-foreground">{formatJoinDate(STORE_JOIN_DATE)}</strong></p>
             </div>
 
-            {/* Total pengikut — angka saja, tanpa profil */}
-            <div className="mt-3 flex items-center gap-2 px-3 py-2 rounded-xl bg-gradient-to-r from-pink-500/10 to-violet-500/10 border border-pink-500/30">
-              <Users className="w-4 h-4 text-pink-500" />
-              <p className="text-[11px] text-muted-foreground">
-                Total pengikut: <strong className="text-pink-600 dark:text-pink-400">{followersCount.toLocaleString("id-ID")}</strong>
-              </p>
-            </div>
 
             {/* Produk toko */}
             <div className="mt-4 mb-5">
