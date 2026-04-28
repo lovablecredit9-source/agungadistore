@@ -535,9 +535,18 @@ export const StoreProfileModal = ({
                         <h3 className="text-xs font-black flex items-center gap-1.5 min-w-0">
                           <StoreIcon className="w-4 h-4 text-violet-500 shrink-0" />
                           <span className="truncate">
-                            Semua Produk ({filteredProducts.length})
+                            {selectedCat === "Semua" ? "Semua Produk" : selectedCat} ({filteredProducts.length})
                           </span>
                         </h3>
+                        {selectedCat !== "Semua" && (
+                          <button
+                            type="button"
+                            onClick={() => setSelectedCat("Semua")}
+                            className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-violet-500/10 border border-violet-500/30 text-violet-600 dark:text-violet-400 text-[10px] font-black active:scale-95 transition shrink-0"
+                          >
+                            <X className="w-3 h-3" /> Reset
+                          </button>
+                        )}
                       </div>
 
                       {/* Sub-tabs urutan: Populer, Terbaru, Terlaris, Harga */}
