@@ -38,6 +38,27 @@ const formatJoinDate = (iso: string) => {
 
 const formatPrice = (n: number) => "Rp " + n.toLocaleString("id-ID");
 
+// Format relative time bahasa Indonesia
+const formatRelativeTime = (iso: string | null): string => {
+  if (!iso) return "lama tidak aktif";
+  const diff = Date.now() - new Date(iso).getTime();
+  const sec = Math.floor(diff / 1000);
+  if (sec < 60) return "baru saja";
+  const min = Math.floor(sec / 60);
+  if (min < 60) return `${min} menit lalu`;
+  const h = Math.floor(min / 60);
+  if (h < 24) return `${h} jam lalu`;
+  const d = Math.floor(h / 24);
+  if (d < 30) return `${d} hari lalu`;
+  const mo = Math.floor(d / 30);
+  if (mo < 12) return `${mo} bulan lalu`;
+  return `${Math.floor(mo / 12)} tahun lalu`;
+};
+
+const ONLINE_THRESHOLD_MS = 2 * 60 * 1000; // 2 menit
+
+type SortMode = "default" | "cheapest" | "expensive" | "bestseller" | "popular" | "newest";
+
 // ============== MODAL GLOBAL — selalu mounted di Index level (di luar tab) ==============
 export const StoreProfileModal = ({
   products,
