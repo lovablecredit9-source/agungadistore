@@ -740,9 +740,11 @@ const Index = () => {
     const interval = setInterval(check, 15000);
     const onFocus = () => check();
     window.addEventListener("focus", onFocus);
+    window.addEventListener("refresh-notifications", check);
     return () => {
       clearInterval(interval);
       window.removeEventListener("focus", onFocus);
+      window.removeEventListener("refresh-notifications", check);
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ticketView, showProductChat, activeBalanceVisitorId]);
