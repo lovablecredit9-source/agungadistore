@@ -6305,10 +6305,8 @@ const Index = () => {
       {/* === Apple Minimal Premium Bottom Nav === */}
       <nav className="fixed left-0 right-0 z-50 px-3 pointer-events-none" style={{ bottom: "calc(env(safe-area-inset-bottom) + 10px)" }}>
         <div className="max-w-lg mx-auto pointer-events-auto">
-          <div className="relative rounded-[28px] border border-border/70 bg-background/80 backdrop-blur-2xl backdrop-saturate-200 shadow-[0_1px_0_hsl(var(--foreground)/0.06)_inset,0_22px_46px_-20px_hsl(var(--foreground)/0.45)] overflow-hidden">
-            <div className="pointer-events-none absolute inset-y-0 left-0 w-7 bg-gradient-to-r from-background/95 to-transparent z-10" />
-            <div className="pointer-events-none absolute inset-y-0 right-0 w-7 bg-gradient-to-l from-background/95 to-transparent z-10" />
-            <div className="flex overflow-x-auto scrollbar-hide px-1.5 py-1.5 gap-1 snap-x snap-mandatory">
+          <div className="rounded-[26px] bg-background/70 backdrop-blur-2xl backdrop-saturate-200 border border-foreground/[0.08] shadow-[0_1px_0_0_rgba(255,255,255,0.06)_inset,0_-1px_0_0_rgba(0,0,0,0.04)_inset,0_20px_40px_-18px_rgba(0,0,0,0.35),0_8px_24px_-12px_rgba(0,0,0,0.25)] overflow-hidden">
+            <div className="flex overflow-x-auto scrollbar-hide px-1.5 py-1.5 gap-0.5">
               {([
                 { key: "beranda" as Tab, icon: Home, label: "Beranda" },
                 { key: "musik" as Tab, icon: Music2, label: "Musik" },
@@ -6337,11 +6335,11 @@ const Index = () => {
                     onClick={() => external ? navigate(external) : setTab(key)}
                     aria-label={label}
                     aria-current={active ? "page" : undefined}
-                    className={`group relative shrink-0 snap-center flex flex-col items-center justify-center gap-1 min-w-[58px] px-2.5 py-2 rounded-[21px] outline-none transition-all duration-300 ease-out ${active ? "bg-primary/10 text-primary scale-100 shadow-[0_12px_28px_-20px_hsl(var(--primary)/0.95)] ring-1 ring-primary/15" : "text-muted-foreground hover:bg-muted/85 hover:text-foreground active:scale-[0.94]"}`}
+                    className={`group shrink-0 flex flex-col items-center justify-center gap-1 px-3 py-1.5 rounded-2xl outline-none transition-all duration-300 ease-out relative ${active ? "bg-foreground/[0.08] scale-100" : "hover:bg-foreground/[0.04] active:scale-[0.94]"}`}
                   >
-                    <span className={`relative w-7 h-7 rounded-2xl flex items-center justify-center transition-all duration-300 ${active ? "bg-primary text-primary-foreground shadow-sm" : "bg-muted/60 group-hover:bg-background"}`}>
+                    <span className="relative w-7 h-7 rounded-xl flex items-center justify-center">
                       <Icon
-                        className={`transition-all duration-300 ease-out ${active ? "w-[18px] h-[18px]" : "w-[16px] h-[16px]"}`}
+                        className={`transition-all duration-300 ease-out ${active ? "w-[19px] h-[19px] text-foreground" : "w-[17px] h-[17px] text-foreground/55 group-hover:text-foreground/85"}`}
                         strokeWidth={active ? 2.4 : 1.9}
                         fill={Icon === Heart && active ? "currentColor" : "none"}
                       />
@@ -6350,12 +6348,12 @@ const Index = () => {
                       )}
                     </span>
                     <span
-                      className={`max-w-[52px] truncate text-[9.5px] leading-none tracking-normal transition-all duration-200 ${active ? "font-bold" : "font-semibold"}`}
+                      className={`text-[9.5px] leading-none tracking-[-0.005em] transition-all duration-200 ${active ? "font-semibold text-foreground" : "font-medium text-foreground/55 group-hover:text-foreground/80"}`}
                     >
                       {label}
                     </span>
                     {active && (
-                      <span className="absolute bottom-1 left-1/2 -translate-x-1/2 w-4 h-0.5 rounded-full bg-primary" />
+                      <span className="absolute bottom-0.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-foreground/80" />
                     )}
                   </button>
                 );
