@@ -774,7 +774,7 @@ const Index = () => {
     return () => { supabase.removeChannel(ch); };
   }, [userBalance?.visitor_id]);
 
-  const [wholesalePrices, setWholesalePrices] = useState<any[]>([]);
+
 
   async function fetchProducts() {
     setProductsLoading(true);
