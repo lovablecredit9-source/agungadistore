@@ -775,6 +775,11 @@ export const StoreMiniCard = ({ productCount = 0, onVisit }: StoreMiniCardProps)
             <span className="inline-flex items-center gap-0.5 px-1 py-0.5 rounded-full bg-gradient-to-r from-emerald-500 to-green-500 text-white text-[8px] font-black">
               <ShieldCheck className="w-2 h-2" strokeWidth={3} />AMANAH
             </span>
+            {!responseRate.loading && (
+              <span className={`inline-flex items-center gap-0.5 px-1 py-0.5 rounded-full bg-gradient-to-r ${getResponseColor(responseRate.rate)} text-white text-[8px] font-black`}>
+                <Zap className="w-2 h-2" strokeWidth={3} />{responseRate.rate}%
+              </span>
+            )}
           </div>
           <div className="flex items-center gap-1.5 mt-0.5">
             <span className="inline-flex items-center gap-0.5 text-[9px] font-bold text-amber-500">
