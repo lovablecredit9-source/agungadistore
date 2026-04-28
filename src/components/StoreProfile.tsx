@@ -3,9 +3,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { ShieldCheck, Star, Sparkles, Users, Calendar, Package, BadgeCheck, UserPlus, Crown, X, Store as StoreIcon, MessageCircle, ListFilter, Share2, Circle, ArrowUpDown, Heart, Flame, Clock, Gift, Copy } from "lucide-react";
+import { ShieldCheck, Star, Sparkles, Users, Calendar, Package, BadgeCheck, UserPlus, Crown, X, Store as StoreIcon, MessageCircle, ListFilter, Share2, Circle, ArrowUpDown, Heart, Flame, Clock, Gift, Copy, Zap } from "lucide-react";
 import { WA_NUMBER } from "@/lib/social-links";
 import storeQris from "@/assets/store-qris.jpg";
+import { useResponseRate, getResponseTextColor, getResponseColor } from "@/hooks/useResponseRate";
 
 interface Product {
   id: string;
