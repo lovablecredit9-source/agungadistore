@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { ShieldCheck, Star, Sparkles, Users, Calendar, Package, BadgeCheck, UserPlus, Crown, X, Store as StoreIcon, MessageCircle, ListFilter, Share2, Circle, ArrowUpDown, Heart, Flame, Clock } from "lucide-react";
+import { ShieldCheck, Star, Sparkles, Users, Calendar, Package, BadgeCheck, UserPlus, Crown, X, Store as StoreIcon, MessageCircle, ListFilter, Share2, Circle, ArrowUpDown, Heart, Flame, Clock, Gift, Copy } from "lucide-react";
 import { WA_NUMBER } from "@/lib/social-links";
 import storeQris from "@/assets/store-qris.jpg";
 
@@ -59,6 +59,13 @@ const ONLINE_THRESHOLD_MS = 2 * 60 * 1000; // 2 menit
 
 type SortMode = "default" | "cheapest" | "expensive" | "bestseller" | "popular" | "newest";
 
+type FollowVoucher = {
+  code: string;
+  discount_amount: number;
+  expires_at: string | null;
+  already_claimed?: boolean;
+};
+
 // ============== MODAL GLOBAL — selalu mounted di Index level (di luar tab) ==============
 export const StoreProfileModal = ({
   products,
@@ -78,6 +85,7 @@ export const StoreProfileModal = ({
   const [likeCounts, setLikeCounts] = useState<Record<string, number>>({});
   const [showCatPicker, setShowCatPicker] = useState(false);
   const [showSortPicker, setShowSortPicker] = useState(false);
+  const [followVoucher, setFollowVoucher] = useState<FollowVoucher | null>(null);
   const { toast } = useToast();
 
   const isAdminOnline = adminLastActive
@@ -210,6 +218,54 @@ export const StoreProfileModal = ({
     window.dispatchEvent(new Event("open-store-chat"));
   };
 
+  const copyFollowVoucher = async (code: string) => {
+    try {
+      await navigator.clipboard.writeText(code);
+    } catch {
+      const ta = document.createElement("textarea");
+      ta.value = code;
+      ta.style.position = "fixed";
+      ta.style.opacity = "0";
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand("copy");
+      document.body.removeChild(ta);
+    }
+    toast({ title: "Kode voucher disalin", description: code });
+  };
+
+  const claimFollowVoucher = async (showClaimedNotice = false) => {
+    if (!userBalance) return null;
+    const { data, error } = await supabase.rpc("generate_follow_voucher" as any, {
+      p_visitor_id: userBalance.visitor_id,
+    });
+    if (error) throw error;
+    const v: any = Array.isArray(data) ? data[0] : data;
+    if (v?.code) {
+      const voucher = {
+        code: v.code,
+        discount_amount: Number(v.discount_amount || 1000),
+        expires_at: v.expires_at || null,
+        already_claimed: !!v.already_claimed,
+      };
+      setFollowVoucher(voucher);
+      await copyFollowVoucher(voucher.code);
+      toast({
+        title: v.already_claimed && showClaimedNotice ? "🎁 Voucher follow kamu" : "🎁 Voucher Diskon Rp 1.000!",
+        description: `Kode: ${voucher.code} — sudah disalin. Pakai saat checkout produk.`,
+        duration: 10000,
+      });
+      window.dispatchEvent(new Event("refresh-notifications"));
+      return voucher;
+    }
+    if (v?.already_claimed) {
+      toast({ title: "Voucher follow sudah pernah dipakai", description: "Hadiah ini hanya berlaku 1 kali untuk 1 akun." });
+      setFollowVoucher(null);
+      return null;
+    }
+    return null;
+  };
+
   const handleToggleFollow = async () => {
     if (!userBalance) {
       toast({ title: "Login diperlukan", description: "Silakan login akun saldo dulu untuk mengikuti toko.", variant: "destructive" });
@@ -223,35 +279,21 @@ export const StoreProfileModal = ({
         await supabase.from("store_followers" as any).delete().eq("user_balance_id", userBalance.id);
         toast({ title: "Berhenti mengikuti", description: "Kamu sudah tidak mengikuti toko." });
       } else {
-        await supabase.from("store_followers" as any).insert({
+        const { error: followError } = await supabase.from("store_followers" as any).insert({
           user_balance_id: userBalance.id,
           visitor_id: userBalance.visitor_id,
           username: userBalance.username,
         });
+        if (followError && followError.code !== "23505") throw followError;
 
         // 🎁 Voucher diskon Rp 1.000 — hanya 1x per akun seumur hidup
         try {
-          const { data: voucherData } = await supabase.rpc("generate_follow_voucher" as any, {
-            p_visitor_id: userBalance.visitor_id,
-          });
-          const v: any = Array.isArray(voucherData) ? voucherData[0] : voucherData;
-          if (v?.already_claimed) {
-            toast({
-              title: "🎉 Berhasil mengikuti!",
-              description: "Voucher follow hanya bisa diklaim sekali per akun. Terima kasih sudah kembali!",
-            });
-          } else if (v?.code) {
-            try { await navigator.clipboard.writeText(v.code); } catch {}
-            toast({
-              title: "🎁 Voucher Diskon Rp 1.000!",
-              description: `Kode: ${v.code} sudah disalin & dikirim ke notifikasi. Berlaku 30 hari, sekali pakai.`,
-              duration: 10000,
-            });
-          } else {
+          const voucher = await claimFollowVoucher(true);
+          if (!voucher) {
             toast({ title: "🎉 Berhasil mengikuti!", description: "Terima kasih sudah mengikuti Agung Adi Store." });
           }
-        } catch {
-          toast({ title: "🎉 Berhasil mengikuti!", description: "Terima kasih sudah mengikuti Agung Adi Store." });
+        } catch (voucherError: any) {
+          toast({ title: "Voucher gagal dibuat", description: voucherError?.message || "Coba tekan tombol cek voucher.", variant: "destructive" });
         }
       }
       await fetchFollowers();
@@ -265,6 +307,8 @@ export const StoreProfileModal = ({
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogContent className="z-[90] max-w-md p-0 overflow-hidden bg-transparent border-0 shadow-none [&>button]:hidden">
+        <DialogTitle className="sr-only">Profil Agung Adi Store</DialogTitle>
+        <DialogDescription className="sr-only">Profil toko, tombol ikuti, voucher follow, chat, share, dan daftar produk.</DialogDescription>
         <div className="relative rounded-3xl overflow-hidden bg-background max-h-[90vh] overflow-y-auto">
           {/* Banner */}
           <div className="relative h-32 overflow-hidden" style={{ background: "linear-gradient(135deg,#f59e0b,#ec4899 40%,#8b5cf6 70%,#06b6d4)" }}>
@@ -309,6 +353,31 @@ export const StoreProfileModal = ({
                   <p className="text-[9px] font-bold text-pink-500 dark:text-pink-400 text-center leading-tight">
                     🎁 Dapat voucher Rp 1.000 (30 hari)
                   </p>
+                )}
+                {followVoucher?.code && (
+                  <div className="rounded-2xl border border-pink-500/30 bg-pink-500/10 p-2 text-center">
+                    <p className="text-[9px] font-black text-pink-600 dark:text-pink-400 flex items-center justify-center gap-1">
+                      <Gift className="w-3 h-3" /> Voucher kamu
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => copyFollowVoucher(followVoucher.code)}
+                      className="mt-1 inline-flex max-w-full items-center justify-center gap-1 rounded-xl bg-card px-2 py-1 text-[11px] font-black text-foreground border border-border active:scale-95"
+                    >
+                      <Copy className="w-3 h-3 text-pink-500" />
+                      <span className="truncate">{followVoucher.code}</span>
+                    </button>
+                  </div>
+                )}
+                {isFollowing && !followVoucher?.code && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => claimFollowVoucher(true)}
+                    className="w-full h-8 rounded-2xl text-[10px] font-black border-pink-500/30 text-pink-600 dark:text-pink-400"
+                  >
+                    <Gift className="w-3.5 h-3.5 mr-1" /> Cek Voucher Follow
+                  </Button>
                 )}
                 <div className="grid grid-cols-2 gap-1.5">
                   <Button
