@@ -648,6 +648,7 @@ export const StoreProfileModal = ({
 // ============== HEADER CARD di Beranda — hanya tampilan, klik dispatch event global ==============
 export const StoreProfile = ({ products, userBalance }: StoreProfileProps) => {
   const [followersCount, setFollowersCount] = useState(0);
+  const responseRate = useResponseRate();
 
   useEffect(() => {
     const load = async () => {
