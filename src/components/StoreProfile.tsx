@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { ShieldCheck, Star, Sparkles, Users, Calendar, Package, BadgeCheck, UserPlus, Crown, X, Store as StoreIcon, MessageCircle, ListFilter, Share2, Circle, ArrowUpDown, Heart, Flame, Clock } from "lucide-react";
+import { ShieldCheck, Star, Sparkles, Users, Calendar, Package, BadgeCheck, UserPlus, Crown, X, Store as StoreIcon, MessageCircle, ListFilter, Share2, Circle, ArrowUpDown, Heart, Flame, Clock, Gift, Copy } from "lucide-react";
 import { WA_NUMBER } from "@/lib/social-links";
 import storeQris from "@/assets/store-qris.jpg";
 
@@ -59,6 +59,13 @@ const ONLINE_THRESHOLD_MS = 2 * 60 * 1000; // 2 menit
 
 type SortMode = "default" | "cheapest" | "expensive" | "bestseller" | "popular" | "newest";
 
+type FollowVoucher = {
+  code: string;
+  discount_amount: number;
+  expires_at: string | null;
+  already_claimed?: boolean;
+};
+
 // ============== MODAL GLOBAL — selalu mounted di Index level (di luar tab) ==============
 export const StoreProfileModal = ({
   products,
@@ -78,6 +85,7 @@ export const StoreProfileModal = ({
   const [likeCounts, setLikeCounts] = useState<Record<string, number>>({});
   const [showCatPicker, setShowCatPicker] = useState(false);
   const [showSortPicker, setShowSortPicker] = useState(false);
+  const [followVoucher, setFollowVoucher] = useState<FollowVoucher | null>(null);
   const { toast } = useToast();
 
   const isAdminOnline = adminLastActive
