@@ -308,7 +308,7 @@ export const StoreProfileModal = ({
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogContent className="z-[90] max-w-none w-screen h-[100dvh] p-0 overflow-hidden bg-transparent border-0 shadow-none rounded-none translate-x-0 translate-y-0 left-0 top-0 [&>button]:hidden sm:rounded-none">
+      <DialogContent className="z-[90] !max-w-none !w-screen !h-[100dvh] p-0 overflow-hidden bg-transparent border-0 shadow-none !rounded-none !left-0 !top-0 !translate-x-0 !translate-y-0 [&>button]:hidden">
         <DialogTitle className="sr-only">Profil Agung Adi Store</DialogTitle>
         <DialogDescription className="sr-only">Profil toko, tombol ikuti, voucher follow, chat, share, dan daftar produk.</DialogDescription>
         <div className="relative h-[100dvh] w-full overflow-hidden bg-background overflow-y-auto">
