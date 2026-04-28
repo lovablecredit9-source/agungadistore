@@ -376,42 +376,120 @@ export const StoreProfileModal = ({
                 </h3>
               </div>
 
-              {/* Filter dropdown kategori + sort */}
-              <div className="grid grid-cols-2 gap-1.5 mb-2">
-                {categories.length > 1 ? (
-                  <div className="relative">
-                    <ListFilter className="pointer-events-none absolute left-2.5 top-1/2 z-10 h-3.5 w-3.5 -translate-y-1/2 text-violet-500" />
-                    <select
-                      value={selectedCat}
-                      onChange={(e) => setSelectedCat(e.target.value)}
-                      className="h-9 w-full appearance-none rounded-full border border-violet-500/30 bg-card pl-7 pr-6 text-[11px] font-bold text-foreground outline-none active:scale-[0.99] truncate"
-                    >
-                      {categories.map((cat) => {
-                        const count = cat === "Semua" ? products.length : products.filter(p => (p.category || "Lainnya") === cat).length;
-                        return <option key={cat} value={cat}>{`${cat} (${count})`}</option>;
-                      })}
-                    </select>
-                    <span className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-[9px] text-muted-foreground">▼</span>
-                  </div>
-                ) : <div />}
+              {/* Filter & Urutkan — pakai tombol + popup in-app (bukan native select) */}
+              {(() => {
+                const sortLabels: Record<SortMode, string> = {
+                  default: "Urutkan",
+                  cheapest: "💰 Termurah",
+                  expensive: "💎 Termahal",
+                  bestseller: "🔥 Terlaris",
+                  popular: "❤️ Populer",
+                  newest: "✨ Terbaru",
+                };
+                const catCount = (cat: string) =>
+                  cat === "Semua" ? products.length : products.filter(p => (p.category || "Lainnya") === cat).length;
+                return (
+                  <div className="grid grid-cols-2 gap-1.5 mb-2">
+                    {categories.length > 1 ? (
+                      <button
+                        type="button"
+                        onClick={() => setShowCatPicker(true)}
+                        className="h-9 w-full inline-flex items-center justify-center gap-1.5 rounded-full border border-violet-500/30 bg-card px-3 text-[11px] font-bold text-foreground active:scale-[0.97] transition truncate"
+                      >
+                        <ListFilter className="h-3.5 w-3.5 text-violet-500 shrink-0" />
+                        <span className="truncate">{selectedCat} ({catCount(selectedCat)})</span>
+                      </button>
+                    ) : <div />}
 
-                <div className="relative">
-                  <ArrowUpDown className="pointer-events-none absolute left-2.5 top-1/2 z-10 h-3.5 w-3.5 -translate-y-1/2 text-pink-500" />
-                  <select
-                    value={sortMode}
-                    onChange={(e) => setSortMode(e.target.value as SortMode)}
-                    className="h-9 w-full appearance-none rounded-full border border-pink-500/30 bg-card pl-7 pr-6 text-[11px] font-bold text-foreground outline-none active:scale-[0.99] truncate"
-                  >
-                    <option value="default">Urutkan</option>
-                    <option value="cheapest">💰 Termurah</option>
-                    <option value="expensive">💎 Termahal</option>
-                    <option value="bestseller">🔥 Terlaris</option>
-                    <option value="popular">❤️ Populer</option>
-                    <option value="newest">✨ Terbaru</option>
-                  </select>
-                  <span className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-[9px] text-muted-foreground">▼</span>
-                </div>
-              </div>
+                    <button
+                      type="button"
+                      onClick={() => setShowSortPicker(true)}
+                      className="h-9 w-full inline-flex items-center justify-center gap-1.5 rounded-full border border-pink-500/30 bg-card px-3 text-[11px] font-bold text-foreground active:scale-[0.97] transition truncate"
+                    >
+                      <ArrowUpDown className="h-3.5 w-3.5 text-pink-500 shrink-0" />
+                      <span className="truncate">{sortLabels[sortMode]}</span>
+                    </button>
+
+                    {/* Popup pilih kategori (in-app) */}
+                    {showCatPicker && (
+                      <div
+                        className="fixed inset-0 z-[110] bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-3"
+                        onClick={() => setShowCatPicker(false)}
+                      >
+                        <div
+                          className="bg-card w-full max-w-sm rounded-3xl p-4 max-h-[70vh] overflow-y-auto animate-in slide-in-from-bottom duration-200"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <div className="flex items-center justify-between mb-3">
+                            <p className="text-sm font-black flex items-center gap-1.5">
+                              <ListFilter className="w-4 h-4 text-violet-500" /> Pilih Kategori
+                            </p>
+                            <button onClick={() => setShowCatPicker(false)} className="w-8 h-8 rounded-full bg-muted flex items-center justify-center active:scale-90">
+                              <X className="w-4 h-4" />
+                            </button>
+                          </div>
+                          <div className="space-y-1.5">
+                            {categories.map((cat) => (
+                              <button
+                                key={cat}
+                                onClick={() => { setSelectedCat(cat); setShowCatPicker(false); }}
+                                className={`w-full flex items-center justify-between gap-2 px-3 py-2.5 rounded-xl text-xs font-bold transition active:scale-[0.98] ${
+                                  selectedCat === cat
+                                    ? "bg-gradient-to-r from-violet-500 to-pink-500 text-white shadow-md"
+                                    : "bg-muted/50 text-foreground hover:bg-muted"
+                                }`}
+                              >
+                                <span className="truncate">{cat}</span>
+                                <span className={`text-[10px] font-black px-2 py-0.5 rounded-full ${
+                                  selectedCat === cat ? "bg-white/20" : "bg-card"
+                                }`}>{catCount(cat)}</span>
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Popup pilih urutan (in-app) */}
+                    {showSortPicker && (
+                      <div
+                        className="fixed inset-0 z-[110] bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-3"
+                        onClick={() => setShowSortPicker(false)}
+                      >
+                        <div
+                          className="bg-card w-full max-w-sm rounded-3xl p-4 animate-in slide-in-from-bottom duration-200"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <div className="flex items-center justify-between mb-3">
+                            <p className="text-sm font-black flex items-center gap-1.5">
+                              <ArrowUpDown className="w-4 h-4 text-pink-500" /> Urutkan Produk
+                            </p>
+                            <button onClick={() => setShowSortPicker(false)} className="w-8 h-8 rounded-full bg-muted flex items-center justify-center active:scale-90">
+                              <X className="w-4 h-4" />
+                            </button>
+                          </div>
+                          <div className="space-y-1.5">
+                            {(Object.keys(sortLabels) as SortMode[]).map((mode) => (
+                              <button
+                                key={mode}
+                                onClick={() => { setSortMode(mode); setShowSortPicker(false); }}
+                                className={`w-full text-left px-3 py-2.5 rounded-xl text-xs font-bold transition active:scale-[0.98] ${
+                                  sortMode === mode
+                                    ? "bg-gradient-to-r from-pink-500 to-violet-500 text-white shadow-md"
+                                    : "bg-muted/50 text-foreground hover:bg-muted"
+                                }`}
+                              >
+                                {sortLabels[mode]}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
+
 
               {filteredProducts.length === 0 ? (
                 <p className="text-xs text-muted-foreground text-center py-6">Belum ada produk</p>
