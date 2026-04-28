@@ -308,10 +308,10 @@ export const StoreProfileModal = ({
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogContent className="z-[90] max-w-md p-0 overflow-hidden bg-transparent border-0 shadow-none [&>button]:hidden">
+      <DialogContent className="z-[90] !max-w-none !w-screen !h-[100dvh] p-0 overflow-hidden bg-transparent border-0 shadow-none !rounded-none !left-0 !top-0 !translate-x-0 !translate-y-0 [&>button]:hidden">
         <DialogTitle className="sr-only">Profil Agung Adi Store</DialogTitle>
         <DialogDescription className="sr-only">Profil toko, tombol ikuti, voucher follow, chat, share, dan daftar produk.</DialogDescription>
-        <div className="relative rounded-3xl overflow-hidden bg-background max-h-[90vh] overflow-y-auto">
+        <div className="relative h-[100dvh] w-full overflow-hidden bg-background overflow-y-auto">
           {/* Banner */}
           <div className="relative h-32 overflow-hidden" style={{ background: "linear-gradient(135deg,#f59e0b,#ec4899 40%,#8b5cf6 70%,#06b6d4)" }}>
             <div className="absolute inset-0 opacity-40" style={{ background: "radial-gradient(circle at 30% 20%,rgba(255,255,255,.5),transparent 60%)" }} />

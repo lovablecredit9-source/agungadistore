@@ -4825,8 +4825,8 @@ const Index = () => {
       {selectedProduct && (() => {
         const imgs = getProductImages(selectedProduct.id);
         return (
-          <div className="fixed inset-0 z-[60] bg-black/60 backdrop-blur-sm flex items-end justify-center" onClick={() => openProduct(null)}>
-            <div className="bg-card w-full max-w-lg rounded-t-3xl border-t border-border max-h-[85vh] overflow-y-auto animate-in slide-in-from-bottom duration-300" onClick={e => e.stopPropagation()}>
+          <div className="fixed inset-0 z-[60] bg-background flex flex-col animate-in fade-in duration-200" onClick={() => openProduct(null)}>
+            <div className="bg-background w-full h-[100dvh] overflow-y-auto animate-in slide-in-from-bottom duration-300" onClick={e => e.stopPropagation()}>
               {imgs.length > 0 && (
                 <div className="relative group/zoom">
                   <ImageCarousel images={imgs} className="w-full h-56" />
