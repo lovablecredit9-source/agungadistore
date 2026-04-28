@@ -729,6 +729,7 @@ interface StoreMiniCardProps {
 
 export const StoreMiniCard = ({ productCount = 0, onVisit }: StoreMiniCardProps) => {
   const [followers, setFollowers] = useState(0);
+  const responseRate = useResponseRate();
   useEffect(() => {
     let mounted = true;
     const load = async () => {
