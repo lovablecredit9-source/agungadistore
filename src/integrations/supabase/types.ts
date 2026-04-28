@@ -8114,6 +8114,7 @@ export type Database = {
       generate_follow_voucher: {
         Args: { p_visitor_id: string }
         Returns: {
+          already_claimed: boolean
           code: string
           discount_amount: number
           expires_at: string

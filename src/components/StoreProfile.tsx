@@ -229,18 +229,23 @@ export const StoreProfileModal = ({
           username: userBalance.username,
         });
 
-        // 🎁 Generate voucher diskon Rp 1.000 (berlaku 30 hari, sekali pakai)
+        // 🎁 Voucher diskon Rp 1.000 — hanya 1x per akun seumur hidup
         try {
           const { data: voucherData } = await supabase.rpc("generate_follow_voucher" as any, {
             p_visitor_id: userBalance.visitor_id,
           });
-          const v = Array.isArray(voucherData) ? voucherData[0] : voucherData;
-          if (v?.code) {
+          const v: any = Array.isArray(voucherData) ? voucherData[0] : voucherData;
+          if (v?.already_claimed) {
+            toast({
+              title: "🎉 Berhasil mengikuti!",
+              description: "Voucher follow hanya bisa diklaim sekali per akun. Terima kasih sudah kembali!",
+            });
+          } else if (v?.code) {
             try { await navigator.clipboard.writeText(v.code); } catch {}
             toast({
-              title: "🎉 Voucher Diskon Rp 1.000!",
-              description: `Kode: ${v.code} (sudah disalin). Berlaku 30 hari, pakai saat checkout produk.`,
-              duration: 8000,
+              title: "🎁 Voucher Diskon Rp 1.000!",
+              description: `Kode: ${v.code} sudah disalin & dikirim ke notifikasi. Berlaku 30 hari, sekali pakai.`,
+              duration: 10000,
             });
           } else {
             toast({ title: "🎉 Berhasil mengikuti!", description: "Terima kasih sudah mengikuti Agung Adi Store." });
