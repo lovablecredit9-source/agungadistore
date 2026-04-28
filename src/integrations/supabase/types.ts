@@ -887,6 +887,7 @@ export type Database = {
           max_uses: number
           source: string | null
           used_count: number
+          user_balance_id: string | null
           visitor_id: string | null
         }
         Insert: {
@@ -899,6 +900,7 @@ export type Database = {
           max_uses?: number
           source?: string | null
           used_count?: number
+          user_balance_id?: string | null
           visitor_id?: string | null
         }
         Update: {
@@ -911,6 +913,7 @@ export type Database = {
           max_uses?: number
           source?: string | null
           used_count?: number
+          user_balance_id?: string | null
           visitor_id?: string | null
         }
         Relationships: []
