@@ -535,41 +535,45 @@ export const StoreProfileModal = ({
                         <h3 className="text-xs font-black flex items-center gap-1.5 min-w-0">
                           <StoreIcon className="w-4 h-4 text-violet-500 shrink-0" />
                           <span className="truncate">
-                            {selectedCat === "Semua" ? "Semua Produk" : selectedCat} ({filteredProducts.length})
+                            Semua Produk ({filteredProducts.length})
                           </span>
                         </h3>
-                        {selectedCat !== "Semua" && (
-                          <button
-                            type="button"
-                            onClick={() => setSelectedCat("Semua")}
-                            className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-violet-500/10 border border-violet-500/30 text-violet-600 dark:text-violet-400 text-[10px] font-black active:scale-95 transition shrink-0"
-                          >
-                            <X className="w-3 h-3" /> Reset
-                          </button>
-                        )}
                       </div>
 
-                      <div className="grid grid-cols-2 gap-1.5 mb-2">
-                        {categories.length > 1 ? (
-                          <button
-                            type="button"
-                            onClick={() => setShowCatPicker(true)}
-                            className="h-9 w-full inline-flex items-center justify-center gap-1.5 rounded-full border border-violet-500/30 bg-card px-3 text-[11px] font-bold text-foreground active:scale-[0.97] transition truncate"
-                          >
-                            <ListFilter className="h-3.5 w-3.5 text-violet-500 shrink-0" />
-                            <span className="truncate">{selectedCat} ({catCount(selectedCat)})</span>
-                          </button>
-                        ) : <div />}
-
-                        <button
-                          type="button"
-                          onClick={() => setShowSortPicker(true)}
-                          className="h-9 w-full inline-flex items-center justify-center gap-1.5 rounded-full border border-pink-500/30 bg-card px-3 text-[11px] font-bold text-foreground active:scale-[0.97] transition truncate"
-                        >
-                          <ArrowUpDown className="h-3.5 w-3.5 text-pink-500 shrink-0" />
-                          <span className="truncate">{sortLabels[sortMode]}</span>
-                        </button>
-                      </div>
+                      {/* Sub-tabs urutan: Populer, Terbaru, Terlaris, Harga */}
+                      {(() => {
+                        const subTabs: { key: SortMode; label: string; emoji: string; color: string }[] = [
+                          { key: "popular",    label: "Populer",  emoji: "❤️", color: "from-pink-500 to-rose-500" },
+                          { key: "newest",     label: "Terbaru",  emoji: "✨", color: "from-cyan-500 to-blue-500" },
+                          { key: "bestseller", label: "Terlaris", emoji: "🔥", color: "from-orange-500 to-amber-500" },
+                          { key: "cheapest",   label: "Termurah", emoji: "💰", color: "from-emerald-500 to-teal-500" },
+                          { key: "expensive",  label: "Termahal", emoji: "💎", color: "from-violet-500 to-indigo-500" },
+                        ];
+                        return (
+                          <div className="-mx-1 px-1 mb-3 overflow-x-auto scrollbar-none">
+                            <div className="inline-flex items-center gap-1.5 min-w-full">
+                              {subTabs.map((t) => {
+                                const active = sortMode === t.key;
+                                return (
+                                  <button
+                                    key={t.key}
+                                    type="button"
+                                    onClick={() => setSortMode(t.key)}
+                                    className={`shrink-0 h-8 inline-flex items-center gap-1 px-3 rounded-full text-[11px] font-black transition active:scale-95 border ${
+                                      active
+                                        ? `bg-gradient-to-r ${t.color} text-white border-transparent shadow-md`
+                                        : "bg-card text-foreground border-border/60 hover:border-violet-500/40"
+                                    }`}
+                                  >
+                                    <span className="text-[12px] leading-none">{t.emoji}</span>
+                                    <span>{t.label}</span>
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        );
+                      })()}
 
                       {filteredProducts.length === 0 ? (
                         <p className="text-xs text-muted-foreground text-center py-6">Belum ada produk</p>
