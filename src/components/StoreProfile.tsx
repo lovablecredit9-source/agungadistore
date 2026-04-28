@@ -357,25 +357,13 @@ export const StoreProfileModal = ({
               <p className="text-[11px] text-muted-foreground">Bergabung sejak <strong className="text-foreground">{formatJoinDate(STORE_JOIN_DATE)}</strong></p>
             </div>
 
-            {/* Pengikut terbaru */}
-            {recentFollowers.length > 0 && (
-              <div className="mt-3">
-                <p className="text-[10px] font-black text-muted-foreground uppercase tracking-wider mb-1.5">Diikuti oleh</p>
-                <div className="flex flex-wrap gap-1">
-                  {recentFollowers.slice(0, 6).map((u, i) => (
-                    <span key={i} className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-gradient-to-r from-pink-500/10 to-violet-500/10 border border-pink-500/30 text-[10px] font-bold">
-                      <span className="w-4 h-4 rounded-full bg-gradient-to-br from-pink-500 to-violet-500 text-white text-[8px] font-black flex items-center justify-center">{u[0]?.toUpperCase()}</span>
-                      {u}
-                    </span>
-                  ))}
-                  {followersCount > 6 && (
-                    <span className="inline-flex items-center px-2 py-1 rounded-full bg-muted text-[10px] font-bold text-muted-foreground">
-                      +{followersCount - 6} lainnya
-                    </span>
-                  )}
-                </div>
-              </div>
-            )}
+            {/* Total pengikut — angka saja, tanpa profil */}
+            <div className="mt-3 flex items-center gap-2 px-3 py-2 rounded-xl bg-gradient-to-r from-pink-500/10 to-violet-500/10 border border-pink-500/30">
+              <Users className="w-4 h-4 text-pink-500" />
+              <p className="text-[11px] text-muted-foreground">
+                Total pengikut: <strong className="text-pink-600 dark:text-pink-400">{followersCount.toLocaleString("id-ID")}</strong>
+              </p>
+            </div>
 
             {/* Produk toko */}
             <div className="mt-4 mb-5">
