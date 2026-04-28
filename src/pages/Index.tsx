@@ -4787,7 +4787,7 @@ const Index = () => {
                         <div className="absolute top-3 left-3 inline-flex items-center gap-1 text-[10px] font-bold tracking-wider uppercase text-white px-2.5 py-1 rounded-full bg-black/50 backdrop-blur-md ring-1 ring-white/20">
                           <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
                           Terbaru
-                        </span>
+                        </div>
                       )}
                     </div>
                   )}
