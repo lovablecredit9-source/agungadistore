@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { ShieldCheck, Star, Sparkles, Users, Calendar, Package, BadgeCheck, UserPlus, Crown, X, Store as StoreIcon, MessageCircle, ListFilter, Share2, Circle, ArrowUpDown, Heart, Flame, Clock, Gift, Copy, Zap } from "lucide-react";
 import { WA_NUMBER } from "@/lib/social-links";
@@ -478,16 +479,8 @@ export const StoreProfileModal = ({
             </div>
 
 
-            {/* Produk toko */}
+            {/* Produk toko — Tabs: Produk & Kategori */}
             <div className="mt-4 mb-5">
-              <div className="flex items-center justify-between mb-2">
-                <h3 className="text-xs font-black flex items-center gap-1.5">
-                  <StoreIcon className="w-4 h-4 text-violet-500" />
-                  Semua Produk ({filteredProducts.length})
-                </h3>
-              </div>
-
-              {/* Filter & Urutkan — pakai tombol + popup in-app (bukan native select) */}
               {(() => {
                 const sortLabels: Record<SortMode, string> = {
                   default: "Urutkan",
@@ -499,144 +492,174 @@ export const StoreProfileModal = ({
                 };
                 const catCount = (cat: string) =>
                   cat === "Semua" ? products.length : products.filter(p => (p.category || "Lainnya") === cat).length;
+
+                const catGradients = [
+                  "from-violet-500/15 to-pink-500/15 border-violet-500/30",
+                  "from-amber-500/15 to-orange-500/15 border-amber-500/30",
+                  "from-emerald-500/15 to-teal-500/15 border-emerald-500/30",
+                  "from-cyan-500/15 to-blue-500/15 border-cyan-500/30",
+                  "from-pink-500/15 to-rose-500/15 border-pink-500/30",
+                  "from-indigo-500/15 to-violet-500/15 border-indigo-500/30",
+                ];
+                const catIconColors = [
+                  "text-violet-500",
+                  "text-amber-500",
+                  "text-emerald-500",
+                  "text-cyan-500",
+                  "text-pink-500",
+                  "text-indigo-500",
+                ];
+
                 return (
-                  <div className="grid grid-cols-2 gap-1.5 mb-2">
-                    {categories.length > 1 ? (
-                      <button
-                        type="button"
-                        onClick={() => setShowCatPicker(true)}
-                        className="h-9 w-full inline-flex items-center justify-center gap-1.5 rounded-full border border-violet-500/30 bg-card px-3 text-[11px] font-bold text-foreground active:scale-[0.97] transition truncate"
+                  <Tabs defaultValue="produk" className="w-full">
+                    <TabsList className="w-full h-10 grid grid-cols-2 rounded-2xl bg-muted/60 p-1">
+                      <TabsTrigger
+                        value="produk"
+                        className="rounded-xl text-xs font-black gap-1.5 data-[state=active]:bg-gradient-to-r data-[state=active]:from-violet-500 data-[state=active]:to-pink-500 data-[state=active]:text-white data-[state=active]:shadow-md"
                       >
-                        <ListFilter className="h-3.5 w-3.5 text-violet-500 shrink-0" />
-                        <span className="truncate">{selectedCat} ({catCount(selectedCat)})</span>
-                      </button>
-                    ) : <div />}
-
-                    <button
-                      type="button"
-                      onClick={() => setShowSortPicker(true)}
-                      className="h-9 w-full inline-flex items-center justify-center gap-1.5 rounded-full border border-pink-500/30 bg-card px-3 text-[11px] font-bold text-foreground active:scale-[0.97] transition truncate"
-                    >
-                      <ArrowUpDown className="h-3.5 w-3.5 text-pink-500 shrink-0" />
-                      <span className="truncate">{sortLabels[sortMode]}</span>
-                    </button>
-
-                    {/* Popup pilih kategori (in-app) */}
-                    {showCatPicker && (
-                      <div
-                        className="fixed inset-0 z-[110] bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-3"
-                        onClick={() => setShowCatPicker(false)}
+                        <Package className="w-3.5 h-3.5" />
+                        Produk ({products.length})
+                      </TabsTrigger>
+                      <TabsTrigger
+                        value="kategori"
+                        className="rounded-xl text-xs font-black gap-1.5 data-[state=active]:bg-gradient-to-r data-[state=active]:from-amber-500 data-[state=active]:to-pink-500 data-[state=active]:text-white data-[state=active]:shadow-md"
                       >
-                        <div
-                          className="bg-card w-full max-w-sm rounded-3xl p-4 max-h-[70vh] overflow-y-auto animate-in slide-in-from-bottom duration-200"
-                          onClick={(e) => e.stopPropagation()}
+                        <ListFilter className="w-3.5 h-3.5" />
+                        Kategori ({Math.max(0, categories.length - 1)})
+                      </TabsTrigger>
+                    </TabsList>
+
+                    {/* TAB PRODUK */}
+                    <TabsContent value="produk" className="mt-3">
+                      <div className="flex items-center justify-between mb-2 gap-2">
+                        <h3 className="text-xs font-black flex items-center gap-1.5 min-w-0">
+                          <StoreIcon className="w-4 h-4 text-violet-500 shrink-0" />
+                          <span className="truncate">
+                            {selectedCat === "Semua" ? "Semua Produk" : selectedCat} ({filteredProducts.length})
+                          </span>
+                        </h3>
+                        {selectedCat !== "Semua" && (
+                          <button
+                            type="button"
+                            onClick={() => setSelectedCat("Semua")}
+                            className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-violet-500/10 border border-violet-500/30 text-violet-600 dark:text-violet-400 text-[10px] font-black active:scale-95 transition shrink-0"
+                          >
+                            <X className="w-3 h-3" /> Reset
+                          </button>
+                        )}
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-1.5 mb-2">
+                        {categories.length > 1 ? (
+                          <button
+                            type="button"
+                            onClick={() => setShowCatPicker(true)}
+                            className="h-9 w-full inline-flex items-center justify-center gap-1.5 rounded-full border border-violet-500/30 bg-card px-3 text-[11px] font-bold text-foreground active:scale-[0.97] transition truncate"
+                          >
+                            <ListFilter className="h-3.5 w-3.5 text-violet-500 shrink-0" />
+                            <span className="truncate">{selectedCat} ({catCount(selectedCat)})</span>
+                          </button>
+                        ) : <div />}
+
+                        <button
+                          type="button"
+                          onClick={() => setShowSortPicker(true)}
+                          className="h-9 w-full inline-flex items-center justify-center gap-1.5 rounded-full border border-pink-500/30 bg-card px-3 text-[11px] font-bold text-foreground active:scale-[0.97] transition truncate"
                         >
-                          <div className="flex items-center justify-between mb-3">
-                            <p className="text-sm font-black flex items-center gap-1.5">
-                              <ListFilter className="w-4 h-4 text-violet-500" /> Pilih Kategori
-                            </p>
-                            <button onClick={() => setShowCatPicker(false)} className="w-8 h-8 rounded-full bg-muted flex items-center justify-center active:scale-90">
-                              <X className="w-4 h-4" />
+                          <ArrowUpDown className="h-3.5 w-3.5 text-pink-500 shrink-0" />
+                          <span className="truncate">{sortLabels[sortMode]}</span>
+                        </button>
+                      </div>
+
+                      {filteredProducts.length === 0 ? (
+                        <p className="text-xs text-muted-foreground text-center py-6">Belum ada produk</p>
+                      ) : (
+                        <div className="grid grid-cols-2 gap-2">
+                          {filteredProducts.slice(0, 12).map((p) => (
+                            <button
+                              key={p.id}
+                              onClick={() => { setOpen(false); onProductClick?.(p.id); }}
+                              className="group text-left rounded-2xl bg-card border border-border/50 overflow-hidden active:scale-95 transition hover:border-violet-500/50 hover:shadow-lg"
+                            >
+                              <div className="aspect-square bg-muted relative overflow-hidden">
+                                {p.image_url ? (
+                                  <img src={p.image_url} alt={p.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300" />
+                                ) : (
+                                  <div className="w-full h-full flex items-center justify-center text-muted-foreground"><Package className="w-8 h-8" /></div>
+                                )}
+                                {(p.sold_count ?? 0) > 0 && (
+                                  <span className="absolute top-1 left-1 inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-orange-500/90 text-white text-[8px] font-black backdrop-blur-sm">
+                                    <Flame className="w-2 h-2" />{p.sold_count}
+                                  </span>
+                                )}
+                                {(likeCounts[p.id] || 0) > 0 && (
+                                  <span className="absolute top-1 right-1 inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-pink-500/90 text-white text-[8px] font-black backdrop-blur-sm">
+                                    <Heart className="w-2 h-2 fill-white" />{likeCounts[p.id]}
+                                  </span>
+                                )}
+                              </div>
+                              <div className="p-1.5">
+                                <p className="text-[10px] font-bold line-clamp-1">{p.title}</p>
+                                <p className="text-[10px] font-black text-violet-500 mt-0.5">{formatPrice(p.price)}</p>
+                              </div>
                             </button>
-                          </div>
-                          <div className="space-y-1.5">
-                            {categories.map((cat) => (
+                          ))}
+                        </div>
+                      )}
+                    </TabsContent>
+
+                    {/* TAB KATEGORI */}
+                    <TabsContent value="kategori" className="mt-3">
+                      <h3 className="text-xs font-black flex items-center gap-1.5 mb-2">
+                        <ListFilter className="w-4 h-4 text-amber-500" />
+                        Daftar Kategori
+                      </h3>
+                      {categories.length <= 1 ? (
+                        <p className="text-xs text-muted-foreground text-center py-6">Belum ada kategori</p>
+                      ) : (
+                        <div className="grid grid-cols-2 gap-2">
+                          {categories.map((cat, idx) => {
+                            const grad = catGradients[idx % catGradients.length];
+                            const iconColor = catIconColors[idx % catIconColors.length];
+                            const count = catCount(cat);
+                            const isActive = selectedCat === cat;
+                            return (
                               <button
                                 key={cat}
-                                onClick={() => { setSelectedCat(cat); setShowCatPicker(false); }}
-                                className={`w-full flex items-center justify-between gap-2 px-3 py-2.5 rounded-xl text-xs font-bold transition active:scale-[0.98] ${
-                                  selectedCat === cat
-                                    ? "bg-gradient-to-r from-violet-500 to-pink-500 text-white shadow-md"
-                                    : "bg-muted/50 text-foreground hover:bg-muted"
+                                type="button"
+                                onClick={() => {
+                                  setSelectedCat(cat);
+                                  const trigger = document.querySelector<HTMLButtonElement>('[role="tab"][data-state][value="produk"], [role="tab"][value="produk"]');
+                                  // Fallback: cari tombol tab dengan teks "Produk"
+                                  const triggers = Array.from(document.querySelectorAll<HTMLButtonElement>('[role="tab"]'));
+                                  const target = trigger || triggers.find(t => t.textContent?.trim().startsWith("Produk"));
+                                  target?.click();
+                                }}
+                                className={`relative rounded-2xl p-3 border bg-gradient-to-br ${grad} text-left active:scale-95 transition hover:shadow-lg ${
+                                  isActive ? "ring-2 ring-violet-500 ring-offset-2 ring-offset-background" : ""
                                 }`}
                               >
-                                <span className="truncate">{cat}</span>
-                                <span className={`text-[10px] font-black px-2 py-0.5 rounded-full ${
-                                  selectedCat === cat ? "bg-white/20" : "bg-card"
-                                }`}>{catCount(cat)}</span>
+                                <div className="flex items-center justify-between mb-1.5">
+                                  <Package className={`w-4 h-4 ${iconColor}`} strokeWidth={2.5} />
+                                  <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-card/80 text-foreground border border-border/50">
+                                    {count}
+                                  </span>
+                                </div>
+                                <p className="text-xs font-black line-clamp-2 leading-tight text-foreground">
+                                  {cat}
+                                </p>
+                                <p className={`text-[9px] font-bold mt-0.5 ${iconColor}`}>
+                                  {count} produk
+                                </p>
                               </button>
-                            ))}
-                          </div>
+                            );
+                          })}
                         </div>
-                      </div>
-                    )}
-
-                    {/* Popup pilih urutan (in-app) */}
-                    {showSortPicker && (
-                      <div
-                        className="fixed inset-0 z-[110] bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-3"
-                        onClick={() => setShowSortPicker(false)}
-                      >
-                        <div
-                          className="bg-card w-full max-w-sm rounded-3xl p-4 animate-in slide-in-from-bottom duration-200"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          <div className="flex items-center justify-between mb-3">
-                            <p className="text-sm font-black flex items-center gap-1.5">
-                              <ArrowUpDown className="w-4 h-4 text-pink-500" /> Urutkan Produk
-                            </p>
-                            <button onClick={() => setShowSortPicker(false)} className="w-8 h-8 rounded-full bg-muted flex items-center justify-center active:scale-90">
-                              <X className="w-4 h-4" />
-                            </button>
-                          </div>
-                          <div className="space-y-1.5">
-                            {(Object.keys(sortLabels) as SortMode[]).map((mode) => (
-                              <button
-                                key={mode}
-                                onClick={() => { setSortMode(mode); setShowSortPicker(false); }}
-                                className={`w-full text-left px-3 py-2.5 rounded-xl text-xs font-bold transition active:scale-[0.98] ${
-                                  sortMode === mode
-                                    ? "bg-gradient-to-r from-pink-500 to-violet-500 text-white shadow-md"
-                                    : "bg-muted/50 text-foreground hover:bg-muted"
-                                }`}
-                              >
-                                {sortLabels[mode]}
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                  </div>
+                      )}
+                    </TabsContent>
+                  </Tabs>
                 );
               })()}
-
-
-              {filteredProducts.length === 0 ? (
-                <p className="text-xs text-muted-foreground text-center py-6">Belum ada produk</p>
-              ) : (
-                <div className="grid grid-cols-2 gap-2">
-                  {filteredProducts.slice(0, 12).map((p) => (
-                    <button
-                      key={p.id}
-                      onClick={() => { setOpen(false); onProductClick?.(p.id); }}
-                      className="group text-left rounded-2xl bg-card border border-border/50 overflow-hidden active:scale-95 transition hover:border-violet-500/50 hover:shadow-lg"
-                    >
-                      <div className="aspect-square bg-muted relative overflow-hidden">
-                        {p.image_url ? (
-                          <img src={p.image_url} alt={p.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300" />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center text-muted-foreground"><Package className="w-8 h-8" /></div>
-                        )}
-                        {(p.sold_count ?? 0) > 0 && (
-                          <span className="absolute top-1 left-1 inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-orange-500/90 text-white text-[8px] font-black backdrop-blur-sm">
-                            <Flame className="w-2 h-2" />{p.sold_count}
-                          </span>
-                        )}
-                        {(likeCounts[p.id] || 0) > 0 && (
-                          <span className="absolute top-1 right-1 inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-pink-500/90 text-white text-[8px] font-black backdrop-blur-sm">
-                            <Heart className="w-2 h-2 fill-white" />{likeCounts[p.id]}
-                          </span>
-                        )}
-                      </div>
-                      <div className="p-1.5">
-                        <p className="text-[10px] font-bold line-clamp-1">{p.title}</p>
-                        <p className="text-[10px] font-black text-violet-500 mt-0.5">{formatPrice(p.price)}</p>
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              )}
             </div>
           </div>
         </div>
@@ -678,9 +701,6 @@ export const StoreProfile = ({ products, userBalance }: StoreProfileProps) => {
             <div className="w-full h-full rounded-[14px] bg-card flex items-center justify-center overflow-hidden">
               <img src={storeQris} alt="Agung Adi Store" className="w-full h-full object-cover" />
             </div>
-          </div>
-          <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center ring-2 ring-card">
-            <BadgeCheck className="w-4 h-4 text-white" strokeWidth={3} />
           </div>
         </div>
 
