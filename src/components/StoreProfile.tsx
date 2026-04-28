@@ -168,18 +168,44 @@ export const StoreProfileModal = ({
   const handleShare = async () => {
     const url = window.location.origin;
     const text = `🏪 Agung Adi Store — Murah & Terpercaya\nBelanja voucher & produk digital di sini: ${url}`;
+    // Selalu copy clipboard dulu (paling reliable, terutama di iframe/PWA)
+    let copied = false;
+    try {
+      await navigator.clipboard.writeText(`${text}`);
+      copied = true;
+    } catch {
+      try {
+        const ta = document.createElement("textarea");
+        ta.value = text;
+        ta.style.position = "fixed";
+        ta.style.opacity = "0";
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand("copy");
+        document.body.removeChild(ta);
+        copied = true;
+      } catch {}
+    }
+    // Coba Web Share API (silent fail kalau diblokir)
     try {
       if (navigator.share) {
         await navigator.share({ title: "Agung Adi Store", text, url });
-      } else {
-        await navigator.clipboard.writeText(url);
-        toast({ title: "Link disalin!", description: "Tautan toko berhasil disalin ke clipboard." });
+        return;
       }
-    } catch (e: any) {
-      if (e?.name !== "AbortError") {
-        toast({ title: "Gagal berbagi", description: e?.message || "Coba lagi.", variant: "destructive" });
-      }
+    } catch {
+      // diabaikan — clipboard sudah handle fallback
     }
+    if (copied) {
+      toast({ title: "✅ Link disalin!", description: "Tautan toko berhasil disalin ke clipboard." });
+    } else {
+      toast({ title: "Gagal berbagi", description: "Coba salin manual: " + url, variant: "destructive" });
+    }
+  };
+
+  const handleChat = () => {
+    setOpen(false);
+    // Buka chat toko in-app (product chat dengan produk pertama sebagai konteks)
+    window.dispatchEvent(new Event("open-store-chat"));
   };
 
   const handleToggleFollow = async () => {
