@@ -335,19 +335,14 @@ export const StoreProfileModal = ({
               </div>
             </div>
 
-            {/* Stat grid */}
-            <div className="grid grid-cols-3 gap-2 mt-4">
+            {/* Stat grid — Rating & Produk (Pengikut dihilangkan, hanya angka total) */}
+            <div className="grid grid-cols-2 gap-2 mt-4">
               <div className="rounded-2xl p-3 bg-gradient-to-br from-amber-500/10 to-orange-500/10 border border-amber-500/30 text-center">
                 <div className="flex items-center justify-center gap-0.5 mb-0.5">
                   <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
                 </div>
                 <p className="text-base font-black text-amber-600 dark:text-amber-400 leading-none">{STORE_RATING.toFixed(1)}</p>
                 <p className="text-[9px] text-muted-foreground font-bold mt-0.5">Rating</p>
-              </div>
-              <div className="rounded-2xl p-3 bg-gradient-to-br from-pink-500/10 to-violet-500/10 border border-pink-500/30 text-center">
-                <Users className="w-4 h-4 mx-auto text-pink-500 mb-0.5" />
-                <p className="text-base font-black text-pink-600 dark:text-pink-400 leading-none">{followersCount.toLocaleString("id-ID")}</p>
-                <p className="text-[9px] text-muted-foreground font-bold mt-0.5">Pengikut</p>
               </div>
               <div className="rounded-2xl p-3 bg-gradient-to-br from-cyan-500/10 to-blue-500/10 border border-cyan-500/30 text-center">
                 <Package className="w-4 h-4 mx-auto text-cyan-500 mb-0.5" />
