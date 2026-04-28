@@ -1089,35 +1089,35 @@ const AdminDashboard = () => {
         </div>
       </header>
 
-      {/* Tab Navigation */}
-      <div className="sticky top-[60px] z-40 bg-card/95 backdrop-blur-xl border-b border-border/50 shadow-sm">
-        <div className="flex max-w-lg mx-auto overflow-x-auto scrollbar-hide px-1 py-1">
+      {/* === Apple Minimal Premium Tab Navigation === */}
+      <div className="sticky top-[60px] z-40 bg-background/75 backdrop-blur-2xl backdrop-saturate-200 border-b border-foreground/[0.06] shadow-[0_1px_0_0_rgba(0,0,0,0.02)]">
+        <div className="flex max-w-lg mx-auto overflow-x-auto scrollbar-hide px-2 py-2 gap-0.5">
           {([
-            { key: "products" as AdminTab, icon: Package, label: "Produk", gradient: "from-blue-500 to-cyan-400" },
-            { key: "tokens" as AdminTab, icon: Ticket, label: "Token", gradient: "from-emerald-500 to-green-400" },
-            { key: "claims" as AdminTab, icon: Clock, label: "Klaim", gradient: "from-orange-500 to-amber-400" },
-            { key: "saldo" as AdminTab, icon: Wallet, label: "Saldo", gradient: "from-violet-500 to-purple-400" },
-            { key: "deposit" as AdminTab, icon: ArrowUpCircle, label: "Deposit", gradient: "from-teal-500 to-emerald-400" },
-            { key: "diskon" as AdminTab, icon: Tag, label: "Diskon", gradient: "from-pink-500 to-rose-400" },
-            { key: "pin" as AdminTab, icon: Lock, label: "PIN", gradient: "from-red-500 to-orange-400" },
-            { key: "tickets" as AdminTab, icon: AlertCircle, label: "Tiket", gradient: "from-amber-500 to-yellow-400" },
-            { key: "chats" as AdminTab, icon: MessageCircle, label: "Chat", gradient: "from-sky-500 to-blue-400" },
-            { key: "notif" as AdminTab, icon: Bell, label: "Notif", gradient: "from-fuchsia-500 to-pink-400" },
-            { key: "settings" as AdminTab, icon: Edit2, label: "Setting", gradient: "from-slate-500 to-gray-400" },
-            { key: "musik" as AdminTab, icon: Music, label: "Musik", gradient: "from-purple-500 to-violet-400" },
-            { key: "vmusik" as AdminTab, icon: HardDrive, label: "V.Musik", gradient: "from-indigo-500 to-blue-400" },
-            { key: "sponsor" as AdminTab, icon: Megaphone, label: "Sponsor", gradient: "from-yellow-500 to-orange-400" },
-            { key: "apikey" as AdminTab, icon: Key, label: "API", gradient: "from-gray-500 to-zinc-400" },
-            { key: "postingan" as AdminTab, icon: FileText, label: "Post", gradient: "from-cyan-500 to-teal-400" },
-            { key: "promo" as AdminTab, icon: Tag, label: "Promo", gradient: "from-rose-500 to-red-400" },
-            { key: "sosmed" as AdminTab, icon: Globe, label: "Sosmed", gradient: "from-emerald-500 to-teal-400" },
-            { key: "wheel" as AdminTab, icon: Tag, label: "Wheel", gradient: "from-pink-500 to-fuchsia-400" },
-            { key: "shopstreak" as AdminTab, icon: Tag, label: "🛒 Shop", gradient: "from-orange-500 to-pink-400" },
-            { key: "eventstreak" as AdminTab, icon: Tag, label: "✨ Event", gradient: "from-purple-500 to-fuchsia-400" },
-            { key: "flashsale" as AdminTab, icon: Tag, label: "⚡ Flash", gradient: "from-orange-500 to-red-500" },
-            { key: "membership" as AdminTab, icon: Shield, label: "👑 Member", gradient: "from-yellow-500 to-amber-400" },
-            { key: "banned" as AdminTab, icon: Lock, label: "🚫 Banned", gradient: "from-red-600 to-rose-500" },
-          ]).map(({ key, icon: Icon, label, gradient }) => {
+            { key: "products" as AdminTab, icon: Package, label: "Produk" },
+            { key: "tokens" as AdminTab, icon: Ticket, label: "Token" },
+            { key: "claims" as AdminTab, icon: Clock, label: "Klaim" },
+            { key: "saldo" as AdminTab, icon: Wallet, label: "Saldo" },
+            { key: "deposit" as AdminTab, icon: ArrowUpCircle, label: "Deposit" },
+            { key: "diskon" as AdminTab, icon: Tag, label: "Diskon" },
+            { key: "pin" as AdminTab, icon: Lock, label: "PIN" },
+            { key: "tickets" as AdminTab, icon: AlertCircle, label: "Tiket" },
+            { key: "chats" as AdminTab, icon: MessageCircle, label: "Chat" },
+            { key: "notif" as AdminTab, icon: Bell, label: "Notif" },
+            { key: "settings" as AdminTab, icon: Edit2, label: "Setting" },
+            { key: "musik" as AdminTab, icon: Music, label: "Musik" },
+            { key: "vmusik" as AdminTab, icon: HardDrive, label: "V.Musik" },
+            { key: "sponsor" as AdminTab, icon: Megaphone, label: "Sponsor" },
+            { key: "apikey" as AdminTab, icon: Key, label: "API" },
+            { key: "postingan" as AdminTab, icon: FileText, label: "Post" },
+            { key: "promo" as AdminTab, icon: Tag, label: "Promo" },
+            { key: "sosmed" as AdminTab, icon: Globe, label: "Sosmed" },
+            { key: "wheel" as AdminTab, icon: Tag, label: "Wheel" },
+            { key: "shopstreak" as AdminTab, icon: Tag, label: "Shop" },
+            { key: "eventstreak" as AdminTab, icon: Tag, label: "Event" },
+            { key: "flashsale" as AdminTab, icon: Tag, label: "Flash" },
+            { key: "membership" as AdminTab, icon: Shield, label: "Member" },
+            { key: "banned" as AdminTab, icon: Lock, label: "Banned" },
+          ]).map(({ key, icon: Icon, label }) => {
             const active = tab === key;
             const badgeCount = key === "tickets" ? allTickets.filter(t => t.status === "open").length
               : key === "chats" ? allChats.filter(c => c.status === "open").length
@@ -1126,21 +1126,24 @@ const AdminDashboard = () => {
               <button
                 key={key}
                 onClick={() => setTab(key)}
-                className={`min-w-[52px] flex-shrink-0 flex flex-col items-center py-1.5 text-[9px] transition-all duration-300 relative ${active ? "font-extrabold" : "text-muted-foreground hover:text-foreground"}`}
+                aria-current={active ? "page" : undefined}
+                className={`group shrink-0 flex flex-col items-center justify-center gap-1 min-w-[58px] px-2.5 py-1.5 rounded-2xl outline-none transition-all duration-300 ease-out relative ${active ? "bg-foreground/[0.08]" : "hover:bg-foreground/[0.04] active:scale-[0.94]"}`}
               >
-                {active && (
-                  <div className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-0.5 rounded-full bg-gradient-to-r from-primary to-accent" />
-                )}
-                <div className={`relative p-1.5 rounded-xl transition-all duration-300 ${active ? `bg-gradient-to-br ${gradient} shadow-lg scale-110` : "hover:bg-muted/50"}`}>
-                  <Icon className={`w-[16px] h-[16px] transition-colors duration-200 ${active ? "text-white" : ""}`} />
+                <span className="relative w-7 h-7 rounded-xl flex items-center justify-center">
+                  <Icon
+                    className={`transition-all duration-300 ease-out ${active ? "w-[18px] h-[18px] text-foreground" : "w-4 h-4 text-foreground/55 group-hover:text-foreground/85"}`}
+                    strokeWidth={active ? 2.4 : 1.9}
+                  />
                   {badgeCount > 0 && (
-                    <span className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground text-[8px] font-bold min-w-[14px] h-[14px] rounded-full flex items-center justify-center px-0.5">{badgeCount}</span>
+                    <span className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground text-[8px] font-bold min-w-[14px] h-[14px] rounded-full flex items-center justify-center px-0.5 ring-2 ring-background">{badgeCount}</span>
                   )}
-                  {active && (
-                    <div className={`absolute inset-0 rounded-xl bg-gradient-to-br ${gradient} opacity-30 blur-md -z-10`} />
-                  )}
-                </div>
-                <span className={`mt-0.5 transition-all duration-200 ${active ? "text-[9px] text-foreground" : "text-[8px]"}`}>{label}</span>
+                </span>
+                <span className={`text-[9.5px] leading-none tracking-[-0.005em] transition-all duration-200 ${active ? "font-semibold text-foreground" : "font-medium text-foreground/55 group-hover:text-foreground/80"}`}>
+                  {label}
+                </span>
+                {active && (
+                  <span className="absolute bottom-0.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-foreground/80" />
+                )}
               </button>
             );
           })}
