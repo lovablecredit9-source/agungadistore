@@ -142,18 +142,45 @@ export const StoreProfileModal = ({
 
   useEffect(() => {
     fetchFollowers();
+    fetchAdminStatus();
+    fetchLikeCounts();
     const ch = supabase
       .channel("store-profile-modal-rt")
       .on("postgres_changes", { event: "*", schema: "public", table: "store_followers" }, () => fetchFollowers())
+      .on("postgres_changes", { event: "*", schema: "public", table: "admin_settings", filter: "setting_key=eq.admin_last_active" }, () => fetchAdminStatus())
+      .on("postgres_changes", { event: "*", schema: "public", table: "liked_products" }, () => fetchLikeCounts())
       .subscribe();
     const openHandler = () => setOpen(true);
     window.addEventListener("open-store-profile", openHandler);
+    // Refresh status admin & relative time tiap 30 detik
+    const tick = setInterval(() => {
+      setNowTick(t => t + 1);
+      if (open) fetchAdminStatus();
+    }, 30000);
     return () => {
       supabase.removeChannel(ch);
       window.removeEventListener("open-store-profile", openHandler);
+      clearInterval(tick);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [userBalance?.id]);
+  }, [userBalance?.id, open, products.length]);
+
+  const handleShare = async () => {
+    const url = window.location.origin;
+    const text = `🏪 Agung Adi Store — Murah & Terpercaya\nBelanja voucher & produk digital di sini: ${url}`;
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: "Agung Adi Store", text, url });
+      } else {
+        await navigator.clipboard.writeText(url);
+        toast({ title: "Link disalin!", description: "Tautan toko berhasil disalin ke clipboard." });
+      }
+    } catch (e: any) {
+      if (e?.name !== "AbortError") {
+        toast({ title: "Gagal berbagi", description: e?.message || "Coba lagi.", variant: "destructive" });
+      }
+    }
+  };
 
   const handleToggleFollow = async () => {
     if (!userBalance) {
