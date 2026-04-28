@@ -3,9 +3,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { ShieldCheck, Star, Sparkles, Users, Calendar, Package, BadgeCheck, UserPlus, Crown, X, Store as StoreIcon, MessageCircle, ListFilter, Share2, Circle, ArrowUpDown, Heart, Flame, Clock, Gift, Copy } from "lucide-react";
+import { ShieldCheck, Star, Sparkles, Users, Calendar, Package, BadgeCheck, UserPlus, Crown, X, Store as StoreIcon, MessageCircle, ListFilter, Share2, Circle, ArrowUpDown, Heart, Flame, Clock, Gift, Copy, Zap } from "lucide-react";
 import { WA_NUMBER } from "@/lib/social-links";
 import storeQris from "@/assets/store-qris.jpg";
+import { useResponseRate, getResponseTextColor, getResponseColor } from "@/hooks/useResponseRate";
 
 interface Product {
   id: string;
@@ -87,6 +88,7 @@ export const StoreProfileModal = ({
   const [showSortPicker, setShowSortPicker] = useState(false);
   const [followVoucher, setFollowVoucher] = useState<FollowVoucher | null>(null);
   const { toast } = useToast();
+  const responseRate = useResponseRate();
 
   const isAdminOnline = adminLastActive
     ? Date.now() - new Date(adminLastActive).getTime() < ONLINE_THRESHOLD_MS
@@ -439,14 +441,20 @@ export const StoreProfileModal = ({
               </div>
             </div>
 
-            {/* Stat grid — Rating & Produk (Pengikut dihilangkan, hanya angka total) */}
-            <div className="grid grid-cols-2 gap-2 mt-4">
+            {/* Stat grid — Rating, Respon Admin, Produk */}
+            <div className="grid grid-cols-3 gap-2 mt-4">
               <div className="rounded-2xl p-3 bg-gradient-to-br from-amber-500/10 to-orange-500/10 border border-amber-500/30 text-center">
-                <div className="flex items-center justify-center gap-0.5 mb-0.5">
-                  <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
-                </div>
+                <Star className="w-4 h-4 mx-auto fill-amber-400 text-amber-400 mb-0.5" />
                 <p className="text-base font-black text-amber-600 dark:text-amber-400 leading-none">{STORE_RATING.toFixed(1)}</p>
                 <p className="text-[9px] text-muted-foreground font-bold mt-0.5">Rating</p>
+              </div>
+              <div className={`rounded-2xl p-3 bg-gradient-to-br ${getResponseColor(responseRate.rate)} bg-opacity-10 border text-center relative overflow-hidden`} style={{ borderColor: 'hsl(var(--border))' }}>
+                <div className={`absolute inset-0 opacity-10 bg-gradient-to-br ${getResponseColor(responseRate.rate)}`} />
+                <Zap className={`w-4 h-4 mx-auto mb-0.5 relative ${getResponseTextColor(responseRate.rate)}`} />
+                <p className={`text-base font-black leading-none relative ${getResponseTextColor(responseRate.rate)}`}>
+                  {responseRate.loading ? '…' : `${responseRate.rate}%`}
+                </p>
+                <p className="text-[9px] text-muted-foreground font-bold mt-0.5 relative">Respon</p>
               </div>
               <div className="rounded-2xl p-3 bg-gradient-to-br from-cyan-500/10 to-blue-500/10 border border-cyan-500/30 text-center">
                 <Package className="w-4 h-4 mx-auto text-cyan-500 mb-0.5" />
@@ -454,6 +462,14 @@ export const StoreProfileModal = ({
                 <p className="text-[9px] text-muted-foreground font-bold mt-0.5">Produk</p>
               </div>
             </div>
+
+            {/* Detail respon */}
+            {!responseRate.loading && responseRate.total > 0 && (
+              <div className="mt-2 px-3 py-1.5 rounded-lg bg-muted/30 text-[10px] text-muted-foreground text-center">
+                <MessageCircle className="w-3 h-3 inline mr-1" />
+                Admin membalas <strong className="text-foreground">{responseRate.replied}</strong> dari <strong className="text-foreground">{responseRate.total}</strong> chat masuk
+              </div>
+            )}
 
             {/* Bergabung */}
             <div className="mt-3 flex items-center gap-2 px-3 py-2 rounded-xl bg-muted/40 border border-border/50">
@@ -632,6 +648,7 @@ export const StoreProfileModal = ({
 // ============== HEADER CARD di Beranda — hanya tampilan, klik dispatch event global ==============
 export const StoreProfile = ({ products, userBalance }: StoreProfileProps) => {
   const [followersCount, setFollowersCount] = useState(0);
+  const responseRate = useResponseRate();
 
   useEffect(() => {
     const load = async () => {
@@ -673,6 +690,11 @@ export const StoreProfile = ({ products, userBalance }: StoreProfileProps) => {
             <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-gradient-to-r from-emerald-500 to-green-500 text-white text-[9px] font-black">
               <ShieldCheck className="w-2.5 h-2.5" strokeWidth={3} />AMANAH
             </span>
+            {!responseRate.loading && (
+              <span className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-gradient-to-r ${getResponseColor(responseRate.rate)} text-white text-[9px] font-black`}>
+                <Zap className="w-2.5 h-2.5" strokeWidth={3} />{responseRate.rate}%
+              </span>
+            )}
           </div>
           <div className="flex items-center gap-2 mt-1 flex-wrap">
             <span className="inline-flex items-center gap-0.5 text-[10px] font-bold text-amber-500">
@@ -707,6 +729,7 @@ interface StoreMiniCardProps {
 
 export const StoreMiniCard = ({ productCount = 0, onVisit }: StoreMiniCardProps) => {
   const [followers, setFollowers] = useState(0);
+  const responseRate = useResponseRate();
   useEffect(() => {
     let mounted = true;
     const load = async () => {
@@ -752,6 +775,11 @@ export const StoreMiniCard = ({ productCount = 0, onVisit }: StoreMiniCardProps)
             <span className="inline-flex items-center gap-0.5 px-1 py-0.5 rounded-full bg-gradient-to-r from-emerald-500 to-green-500 text-white text-[8px] font-black">
               <ShieldCheck className="w-2 h-2" strokeWidth={3} />AMANAH
             </span>
+            {!responseRate.loading && (
+              <span className={`inline-flex items-center gap-0.5 px-1 py-0.5 rounded-full bg-gradient-to-r ${getResponseColor(responseRate.rate)} text-white text-[8px] font-black`}>
+                <Zap className="w-2 h-2" strokeWidth={3} />{responseRate.rate}%
+              </span>
+            )}
           </div>
           <div className="flex items-center gap-1.5 mt-0.5">
             <span className="inline-flex items-center gap-0.5 text-[9px] font-bold text-amber-500">
