@@ -4944,7 +4944,7 @@ const Index = () => {
                     <div className="absolute inset-0 bg-gradient-to-br from-white/0 to-white/0 group-hover:from-white/20 group-hover:to-transparent transition-colors" />
                     <div className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-700 bg-gradient-to-r from-transparent via-white/30 to-transparent" />
                     <Wallet className="w-4 h-4 text-white relative" />
-                    <span className="text-[10px] font-extrabold text-white relative">Saldo</span>
+                    <span className="text-[10px] font-extrabold text-white relative">Beli Sekarang</span>
                   </button>
                   <button
                     onClick={() => setShowWaForm(true)}
