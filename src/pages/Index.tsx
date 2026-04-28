@@ -1401,6 +1401,18 @@ const Index = () => {
     }
   }
 
+  // Listener: buka chat toko (general) — pakai produk pertama sebagai konteks
+  useEffect(() => {
+    const handler = () => {
+      const first = products[0];
+      if (first) openProductChat(first);
+      else toast({ title: "Belum ada produk", description: "Silakan coba lagi nanti.", variant: "destructive" });
+    };
+    window.addEventListener("open-store-chat", handler);
+    return () => window.removeEventListener("open-store-chat", handler);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [products]);
+
   async function loadProductChatMessages(chatId: string) {
     const { data } = await supabase.from("product_chat_messages").select("*").eq("chat_id", chatId).order("created_at");
     if (data) setProductChatMessages(data as unknown as ProductChatMessage[]);

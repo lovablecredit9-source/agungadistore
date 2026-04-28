@@ -76,6 +76,8 @@ export const StoreProfileModal = ({
   const [adminLastActive, setAdminLastActive] = useState<string | null>(null);
   const [, setNowTick] = useState(0);
   const [likeCounts, setLikeCounts] = useState<Record<string, number>>({});
+  const [showCatPicker, setShowCatPicker] = useState(false);
+  const [showSortPicker, setShowSortPicker] = useState(false);
   const { toast } = useToast();
 
   const isAdminOnline = adminLastActive
@@ -168,18 +170,44 @@ export const StoreProfileModal = ({
   const handleShare = async () => {
     const url = window.location.origin;
     const text = `🏪 Agung Adi Store — Murah & Terpercaya\nBelanja voucher & produk digital di sini: ${url}`;
+    // Selalu copy clipboard dulu (paling reliable, terutama di iframe/PWA)
+    let copied = false;
+    try {
+      await navigator.clipboard.writeText(`${text}`);
+      copied = true;
+    } catch {
+      try {
+        const ta = document.createElement("textarea");
+        ta.value = text;
+        ta.style.position = "fixed";
+        ta.style.opacity = "0";
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand("copy");
+        document.body.removeChild(ta);
+        copied = true;
+      } catch {}
+    }
+    // Coba Web Share API (silent fail kalau diblokir)
     try {
       if (navigator.share) {
         await navigator.share({ title: "Agung Adi Store", text, url });
-      } else {
-        await navigator.clipboard.writeText(url);
-        toast({ title: "Link disalin!", description: "Tautan toko berhasil disalin ke clipboard." });
+        return;
       }
-    } catch (e: any) {
-      if (e?.name !== "AbortError") {
-        toast({ title: "Gagal berbagi", description: e?.message || "Coba lagi.", variant: "destructive" });
-      }
+    } catch {
+      // diabaikan — clipboard sudah handle fallback
     }
+    if (copied) {
+      toast({ title: "✅ Link disalin!", description: "Tautan toko berhasil disalin ke clipboard." });
+    } else {
+      toast({ title: "Gagal berbagi", description: "Coba salin manual: " + url, variant: "destructive" });
+    }
+  };
+
+  const handleChat = () => {
+    setOpen(false);
+    // Buka chat toko in-app (product chat dengan produk pertama sebagai konteks)
+    window.dispatchEvent(new Event("open-store-chat"));
   };
 
   const handleToggleFollow = async () => {
@@ -255,7 +283,7 @@ export const StoreProfileModal = ({
                 </Button>
                 <div className="grid grid-cols-2 gap-1.5">
                   <Button
-                    onClick={() => window.open(`https://wa.me/62${WA_NUMBER.replace(/^0/, "")}`, "_blank")}
+                    onClick={handleChat}
                     className="h-9 rounded-2xl font-black text-xs shadow-lg active:scale-95 transition bg-gradient-to-r from-emerald-500 to-green-600 text-white hover:opacity-90 px-2"
                   >
                     <MessageCircle className="w-4 h-4 mr-1" strokeWidth={2.5} />Chat
@@ -309,19 +337,14 @@ export const StoreProfileModal = ({
               </div>
             </div>
 
-            {/* Stat grid */}
-            <div className="grid grid-cols-3 gap-2 mt-4">
+            {/* Stat grid — Rating & Produk (Pengikut dihilangkan, hanya angka total) */}
+            <div className="grid grid-cols-2 gap-2 mt-4">
               <div className="rounded-2xl p-3 bg-gradient-to-br from-amber-500/10 to-orange-500/10 border border-amber-500/30 text-center">
                 <div className="flex items-center justify-center gap-0.5 mb-0.5">
                   <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
                 </div>
                 <p className="text-base font-black text-amber-600 dark:text-amber-400 leading-none">{STORE_RATING.toFixed(1)}</p>
                 <p className="text-[9px] text-muted-foreground font-bold mt-0.5">Rating</p>
-              </div>
-              <div className="rounded-2xl p-3 bg-gradient-to-br from-pink-500/10 to-violet-500/10 border border-pink-500/30 text-center">
-                <Users className="w-4 h-4 mx-auto text-pink-500 mb-0.5" />
-                <p className="text-base font-black text-pink-600 dark:text-pink-400 leading-none">{followersCount.toLocaleString("id-ID")}</p>
-                <p className="text-[9px] text-muted-foreground font-bold mt-0.5">Pengikut</p>
               </div>
               <div className="rounded-2xl p-3 bg-gradient-to-br from-cyan-500/10 to-blue-500/10 border border-cyan-500/30 text-center">
                 <Package className="w-4 h-4 mx-auto text-cyan-500 mb-0.5" />
@@ -336,25 +359,13 @@ export const StoreProfileModal = ({
               <p className="text-[11px] text-muted-foreground">Bergabung sejak <strong className="text-foreground">{formatJoinDate(STORE_JOIN_DATE)}</strong></p>
             </div>
 
-            {/* Pengikut terbaru */}
-            {recentFollowers.length > 0 && (
-              <div className="mt-3">
-                <p className="text-[10px] font-black text-muted-foreground uppercase tracking-wider mb-1.5">Diikuti oleh</p>
-                <div className="flex flex-wrap gap-1">
-                  {recentFollowers.slice(0, 6).map((u, i) => (
-                    <span key={i} className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-gradient-to-r from-pink-500/10 to-violet-500/10 border border-pink-500/30 text-[10px] font-bold">
-                      <span className="w-4 h-4 rounded-full bg-gradient-to-br from-pink-500 to-violet-500 text-white text-[8px] font-black flex items-center justify-center">{u[0]?.toUpperCase()}</span>
-                      {u}
-                    </span>
-                  ))}
-                  {followersCount > 6 && (
-                    <span className="inline-flex items-center px-2 py-1 rounded-full bg-muted text-[10px] font-bold text-muted-foreground">
-                      +{followersCount - 6} lainnya
-                    </span>
-                  )}
-                </div>
-              </div>
-            )}
+            {/* Total pengikut — angka saja, tanpa profil */}
+            <div className="mt-3 flex items-center gap-2 px-3 py-2 rounded-xl bg-gradient-to-r from-pink-500/10 to-violet-500/10 border border-pink-500/30">
+              <Users className="w-4 h-4 text-pink-500" />
+              <p className="text-[11px] text-muted-foreground">
+                Total pengikut: <strong className="text-pink-600 dark:text-pink-400">{followersCount.toLocaleString("id-ID")}</strong>
+              </p>
+            </div>
 
             {/* Produk toko */}
             <div className="mt-4 mb-5">
@@ -365,42 +376,120 @@ export const StoreProfileModal = ({
                 </h3>
               </div>
 
-              {/* Filter dropdown kategori + sort */}
-              <div className="grid grid-cols-2 gap-1.5 mb-2">
-                {categories.length > 1 ? (
-                  <div className="relative">
-                    <ListFilter className="pointer-events-none absolute left-2.5 top-1/2 z-10 h-3.5 w-3.5 -translate-y-1/2 text-violet-500" />
-                    <select
-                      value={selectedCat}
-                      onChange={(e) => setSelectedCat(e.target.value)}
-                      className="h-9 w-full appearance-none rounded-full border border-violet-500/30 bg-card pl-7 pr-6 text-[11px] font-bold text-foreground outline-none active:scale-[0.99] truncate"
-                    >
-                      {categories.map((cat) => {
-                        const count = cat === "Semua" ? products.length : products.filter(p => (p.category || "Lainnya") === cat).length;
-                        return <option key={cat} value={cat}>{`${cat} (${count})`}</option>;
-                      })}
-                    </select>
-                    <span className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-[9px] text-muted-foreground">▼</span>
-                  </div>
-                ) : <div />}
+              {/* Filter & Urutkan — pakai tombol + popup in-app (bukan native select) */}
+              {(() => {
+                const sortLabels: Record<SortMode, string> = {
+                  default: "Urutkan",
+                  cheapest: "💰 Termurah",
+                  expensive: "💎 Termahal",
+                  bestseller: "🔥 Terlaris",
+                  popular: "❤️ Populer",
+                  newest: "✨ Terbaru",
+                };
+                const catCount = (cat: string) =>
+                  cat === "Semua" ? products.length : products.filter(p => (p.category || "Lainnya") === cat).length;
+                return (
+                  <div className="grid grid-cols-2 gap-1.5 mb-2">
+                    {categories.length > 1 ? (
+                      <button
+                        type="button"
+                        onClick={() => setShowCatPicker(true)}
+                        className="h-9 w-full inline-flex items-center justify-center gap-1.5 rounded-full border border-violet-500/30 bg-card px-3 text-[11px] font-bold text-foreground active:scale-[0.97] transition truncate"
+                      >
+                        <ListFilter className="h-3.5 w-3.5 text-violet-500 shrink-0" />
+                        <span className="truncate">{selectedCat} ({catCount(selectedCat)})</span>
+                      </button>
+                    ) : <div />}
 
-                <div className="relative">
-                  <ArrowUpDown className="pointer-events-none absolute left-2.5 top-1/2 z-10 h-3.5 w-3.5 -translate-y-1/2 text-pink-500" />
-                  <select
-                    value={sortMode}
-                    onChange={(e) => setSortMode(e.target.value as SortMode)}
-                    className="h-9 w-full appearance-none rounded-full border border-pink-500/30 bg-card pl-7 pr-6 text-[11px] font-bold text-foreground outline-none active:scale-[0.99] truncate"
-                  >
-                    <option value="default">Urutkan</option>
-                    <option value="cheapest">💰 Termurah</option>
-                    <option value="expensive">💎 Termahal</option>
-                    <option value="bestseller">🔥 Terlaris</option>
-                    <option value="popular">❤️ Populer</option>
-                    <option value="newest">✨ Terbaru</option>
-                  </select>
-                  <span className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-[9px] text-muted-foreground">▼</span>
-                </div>
-              </div>
+                    <button
+                      type="button"
+                      onClick={() => setShowSortPicker(true)}
+                      className="h-9 w-full inline-flex items-center justify-center gap-1.5 rounded-full border border-pink-500/30 bg-card px-3 text-[11px] font-bold text-foreground active:scale-[0.97] transition truncate"
+                    >
+                      <ArrowUpDown className="h-3.5 w-3.5 text-pink-500 shrink-0" />
+                      <span className="truncate">{sortLabels[sortMode]}</span>
+                    </button>
+
+                    {/* Popup pilih kategori (in-app) */}
+                    {showCatPicker && (
+                      <div
+                        className="fixed inset-0 z-[110] bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-3"
+                        onClick={() => setShowCatPicker(false)}
+                      >
+                        <div
+                          className="bg-card w-full max-w-sm rounded-3xl p-4 max-h-[70vh] overflow-y-auto animate-in slide-in-from-bottom duration-200"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <div className="flex items-center justify-between mb-3">
+                            <p className="text-sm font-black flex items-center gap-1.5">
+                              <ListFilter className="w-4 h-4 text-violet-500" /> Pilih Kategori
+                            </p>
+                            <button onClick={() => setShowCatPicker(false)} className="w-8 h-8 rounded-full bg-muted flex items-center justify-center active:scale-90">
+                              <X className="w-4 h-4" />
+                            </button>
+                          </div>
+                          <div className="space-y-1.5">
+                            {categories.map((cat) => (
+                              <button
+                                key={cat}
+                                onClick={() => { setSelectedCat(cat); setShowCatPicker(false); }}
+                                className={`w-full flex items-center justify-between gap-2 px-3 py-2.5 rounded-xl text-xs font-bold transition active:scale-[0.98] ${
+                                  selectedCat === cat
+                                    ? "bg-gradient-to-r from-violet-500 to-pink-500 text-white shadow-md"
+                                    : "bg-muted/50 text-foreground hover:bg-muted"
+                                }`}
+                              >
+                                <span className="truncate">{cat}</span>
+                                <span className={`text-[10px] font-black px-2 py-0.5 rounded-full ${
+                                  selectedCat === cat ? "bg-white/20" : "bg-card"
+                                }`}>{catCount(cat)}</span>
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Popup pilih urutan (in-app) */}
+                    {showSortPicker && (
+                      <div
+                        className="fixed inset-0 z-[110] bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-3"
+                        onClick={() => setShowSortPicker(false)}
+                      >
+                        <div
+                          className="bg-card w-full max-w-sm rounded-3xl p-4 animate-in slide-in-from-bottom duration-200"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <div className="flex items-center justify-between mb-3">
+                            <p className="text-sm font-black flex items-center gap-1.5">
+                              <ArrowUpDown className="w-4 h-4 text-pink-500" /> Urutkan Produk
+                            </p>
+                            <button onClick={() => setShowSortPicker(false)} className="w-8 h-8 rounded-full bg-muted flex items-center justify-center active:scale-90">
+                              <X className="w-4 h-4" />
+                            </button>
+                          </div>
+                          <div className="space-y-1.5">
+                            {(Object.keys(sortLabels) as SortMode[]).map((mode) => (
+                              <button
+                                key={mode}
+                                onClick={() => { setSortMode(mode); setShowSortPicker(false); }}
+                                className={`w-full text-left px-3 py-2.5 rounded-xl text-xs font-bold transition active:scale-[0.98] ${
+                                  sortMode === mode
+                                    ? "bg-gradient-to-r from-pink-500 to-violet-500 text-white shadow-md"
+                                    : "bg-muted/50 text-foreground hover:bg-muted"
+                                }`}
+                              >
+                                {sortLabels[mode]}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
+
 
               {filteredProducts.length === 0 ? (
                 <p className="text-xs text-muted-foreground text-center py-6">Belum ada produk</p>
