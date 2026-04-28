@@ -450,7 +450,7 @@ export const StoreProfileModal = ({
               </div>
               <div className={`rounded-2xl p-3 bg-gradient-to-br ${getResponseColor(responseRate.rate)} bg-opacity-10 border text-center relative overflow-hidden`} style={{ borderColor: 'hsl(var(--border))' }}>
                 <div className={`absolute inset-0 opacity-10 bg-gradient-to-br ${getResponseColor(responseRate.rate)}`} />
-                <Zap className={`w-4 h-4 mx-auto mb-0.5 relative ${getResponseTextColor(responseRate.rate)}`} />
+                <MessageCircle className={`w-4 h-4 mx-auto mb-0.5 relative ${getResponseTextColor(responseRate.rate)}`} />
                 <p className={`text-base font-black leading-none relative ${getResponseTextColor(responseRate.rate)}`}>
                   {responseRate.loading ? '…' : `${responseRate.rate}%`}
                 </p>
@@ -692,7 +692,7 @@ export const StoreProfile = ({ products, userBalance }: StoreProfileProps) => {
             </span>
             {!responseRate.loading && (
               <span className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-gradient-to-r ${getResponseColor(responseRate.rate)} text-white text-[9px] font-black`}>
-                <Zap className="w-2.5 h-2.5" strokeWidth={3} />{responseRate.rate}%
+                <MessageCircle className="w-2.5 h-2.5" strokeWidth={3} />{responseRate.rate}%
               </span>
             )}
           </div>
@@ -777,7 +777,7 @@ export const StoreMiniCard = ({ productCount = 0, onVisit }: StoreMiniCardProps)
             </span>
             {!responseRate.loading && (
               <span className={`inline-flex items-center gap-0.5 px-1 py-0.5 rounded-full bg-gradient-to-r ${getResponseColor(responseRate.rate)} text-white text-[8px] font-black`}>
-                <Zap className="w-2 h-2" strokeWidth={3} />{responseRate.rate}%
+                <MessageCircle className="w-2 h-2" strokeWidth={3} />{responseRate.rate}%
               </span>
             )}
           </div>
