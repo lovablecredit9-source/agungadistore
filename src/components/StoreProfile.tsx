@@ -290,6 +290,23 @@ export const StoreProfileModal = ({
               <p className="text-xs text-muted-foreground mt-2 leading-relaxed">
                 Toko resmi <strong>Agung Adi Store</strong> — menjual voucher, akun, dan produk digital terpercaya dengan harga termurah dan respon WhatsApp 24/7.
               </p>
+
+              {/* Status Online Admin */}
+              <div className={`mt-2 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-[10px] font-black ${
+                isAdminOnline
+                  ? "bg-emerald-500/10 border-emerald-500/40 text-emerald-600 dark:text-emerald-400"
+                  : "bg-muted/60 border-border text-muted-foreground"
+              }`}>
+                <span className="relative flex w-2 h-2">
+                  {isAdminOnline && <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />}
+                  <Circle className={`w-2 h-2 ${isAdminOnline ? "fill-emerald-500 text-emerald-500" : "fill-muted-foreground/60 text-muted-foreground/60"}`} />
+                </span>
+                {isAdminOnline ? (
+                  <>Admin Online sekarang</>
+                ) : (
+                  <><Clock className="w-2.5 h-2.5" />Terakhir aktif {formatRelativeTime(adminLastActive)}</>
+                )}
+              </div>
             </div>
 
             {/* Stat grid */}
