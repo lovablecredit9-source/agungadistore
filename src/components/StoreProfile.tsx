@@ -76,6 +76,8 @@ export const StoreProfileModal = ({
   const [adminLastActive, setAdminLastActive] = useState<string | null>(null);
   const [, setNowTick] = useState(0);
   const [likeCounts, setLikeCounts] = useState<Record<string, number>>({});
+  const [showCatPicker, setShowCatPicker] = useState(false);
+  const [showSortPicker, setShowSortPicker] = useState(false);
   const { toast } = useToast();
 
   const isAdminOnline = adminLastActive
