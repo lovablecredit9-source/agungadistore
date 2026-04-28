@@ -281,7 +281,7 @@ export const StoreProfileModal = ({
                 </Button>
                 <div className="grid grid-cols-2 gap-1.5">
                   <Button
-                    onClick={() => window.open(`https://wa.me/62${WA_NUMBER.replace(/^0/, "")}`, "_blank")}
+                    onClick={handleChat}
                     className="h-9 rounded-2xl font-black text-xs shadow-lg active:scale-95 transition bg-gradient-to-r from-emerald-500 to-green-600 text-white hover:opacity-90 px-2"
                   >
                     <MessageCircle className="w-4 h-4 mr-1" strokeWidth={2.5} />Chat
