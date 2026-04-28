@@ -351,11 +351,14 @@
     min-height: 100vh;
   }
 
-  /* iOS Dark Vibrant: pure black canvas, vibrant accent glow */
+  /* iOS Dark Vibrant: colorful layered canvas */
   .dark body {
+    background-color: hsl(var(--background));
     background-image:
-      radial-gradient(ellipse at 0% 0%, hsl(var(--ios-vibrant-blue) / 0.10) 0%, transparent 45%),
-      radial-gradient(ellipse at 100% 100%, hsl(var(--ios-vibrant-pink) / 0.08) 0%, transparent 45%);
+      radial-gradient(ellipse at 8% 0%, hsl(var(--ios-vibrant-cyan, 188 95% 55%) / 0.34) 0%, transparent 42%),
+      radial-gradient(ellipse at 92% 12%, hsl(var(--ios-vibrant-pink) / 0.26) 0%, transparent 38%),
+      radial-gradient(ellipse at 15% 88%, hsl(var(--ios-vibrant-green) / 0.18) 0%, transparent 36%),
+      linear-gradient(135deg, hsl(248 46% 11%) 0%, hsl(278 48% 15%) 48%, hsl(206 58% 13%) 100%);
   }
 }
 
