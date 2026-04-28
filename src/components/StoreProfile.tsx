@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { ShieldCheck, Star, Sparkles, Users, Calendar, Package, BadgeCheck, UserPlus, Crown, X, Store as StoreIcon, MessageCircle, ListFilter } from "lucide-react";
+import { ShieldCheck, Star, Sparkles, Users, Calendar, Package, BadgeCheck, UserPlus, Crown, X, Store as StoreIcon, MessageCircle, ListFilter, Share2, Circle, ArrowUpDown, Heart, Flame, Clock } from "lucide-react";
 import { WA_NUMBER } from "@/lib/social-links";
 import storeQris from "@/assets/store-qris.jpg";
 
@@ -38,6 +38,27 @@ const formatJoinDate = (iso: string) => {
 
 const formatPrice = (n: number) => "Rp " + n.toLocaleString("id-ID");
 
+// Format relative time bahasa Indonesia
+const formatRelativeTime = (iso: string | null): string => {
+  if (!iso) return "lama tidak aktif";
+  const diff = Date.now() - new Date(iso).getTime();
+  const sec = Math.floor(diff / 1000);
+  if (sec < 60) return "baru saja";
+  const min = Math.floor(sec / 60);
+  if (min < 60) return `${min} menit lalu`;
+  const h = Math.floor(min / 60);
+  if (h < 24) return `${h} jam lalu`;
+  const d = Math.floor(h / 24);
+  if (d < 30) return `${d} hari lalu`;
+  const mo = Math.floor(d / 30);
+  if (mo < 12) return `${mo} bulan lalu`;
+  return `${Math.floor(mo / 12)} tahun lalu`;
+};
+
+const ONLINE_THRESHOLD_MS = 2 * 60 * 1000; // 2 menit
+
+type SortMode = "default" | "cheapest" | "expensive" | "bestseller" | "popular" | "newest";
+
 // ============== MODAL GLOBAL — selalu mounted di Index level (di luar tab) ==============
 export const StoreProfileModal = ({
   products,
@@ -51,12 +72,31 @@ export const StoreProfileModal = ({
   const [followLoading, setFollowLoading] = useState(false);
   const [recentFollowers, setRecentFollowers] = useState<string[]>([]);
   const [selectedCat, setSelectedCat] = useState<string>("Semua");
+  const [sortMode, setSortMode] = useState<SortMode>("default");
+  const [adminLastActive, setAdminLastActive] = useState<string | null>(null);
+  const [, setNowTick] = useState(0);
+  const [likeCounts, setLikeCounts] = useState<Record<string, number>>({});
   const { toast } = useToast();
 
+  const isAdminOnline = adminLastActive
+    ? Date.now() - new Date(adminLastActive).getTime() < ONLINE_THRESHOLD_MS
+    : false;
+
   const categories = ["Semua", ...Array.from(new Set(products.map(p => p.category || "Lainnya")))];
-  const filteredProducts = selectedCat === "Semua"
+  const baseFiltered = selectedCat === "Semua"
     ? products
     : products.filter(p => (p.category || "Lainnya") === selectedCat);
+
+  const filteredProducts = [...baseFiltered].sort((a, b) => {
+    switch (sortMode) {
+      case "cheapest": return (a.price || 0) - (b.price || 0);
+      case "expensive": return (b.price || 0) - (a.price || 0);
+      case "bestseller": return (b.sold_count || 0) - (a.sold_count || 0);
+      case "popular": return (likeCounts[b.id] || 0) - (likeCounts[a.id] || 0);
+      case "newest": return new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime();
+      default: return 0;
+    }
+  });
 
   const fetchFollowers = async () => {
     const { data, count } = await supabase
@@ -79,20 +119,68 @@ export const StoreProfileModal = ({
     }
   };
 
+  const fetchAdminStatus = async () => {
+    const { data } = await supabase
+      .from("admin_settings")
+      .select("setting_value, updated_at")
+      .eq("setting_key", "admin_last_active")
+      .maybeSingle();
+    setAdminLastActive((data as any)?.setting_value || (data as any)?.updated_at || null);
+  };
+
+  const fetchLikeCounts = async () => {
+    if (!products.length) return;
+    const ids = products.map(p => p.id);
+    const { data } = await supabase
+      .from("liked_products" as any)
+      .select("product_id")
+      .in("product_id", ids);
+    const counts: Record<string, number> = {};
+    (data as any[] || []).forEach(r => { counts[r.product_id] = (counts[r.product_id] || 0) + 1; });
+    setLikeCounts(counts);
+  };
+
   useEffect(() => {
     fetchFollowers();
+    fetchAdminStatus();
+    fetchLikeCounts();
     const ch = supabase
       .channel("store-profile-modal-rt")
       .on("postgres_changes", { event: "*", schema: "public", table: "store_followers" }, () => fetchFollowers())
+      .on("postgres_changes", { event: "*", schema: "public", table: "admin_settings", filter: "setting_key=eq.admin_last_active" }, () => fetchAdminStatus())
+      .on("postgres_changes", { event: "*", schema: "public", table: "liked_products" }, () => fetchLikeCounts())
       .subscribe();
     const openHandler = () => setOpen(true);
     window.addEventListener("open-store-profile", openHandler);
+    // Refresh status admin & relative time tiap 30 detik
+    const tick = setInterval(() => {
+      setNowTick(t => t + 1);
+      if (open) fetchAdminStatus();
+    }, 30000);
     return () => {
       supabase.removeChannel(ch);
       window.removeEventListener("open-store-profile", openHandler);
+      clearInterval(tick);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [userBalance?.id]);
+  }, [userBalance?.id, open, products.length]);
+
+  const handleShare = async () => {
+    const url = window.location.origin;
+    const text = `🏪 Agung Adi Store — Murah & Terpercaya\nBelanja voucher & produk digital di sini: ${url}`;
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: "Agung Adi Store", text, url });
+      } else {
+        await navigator.clipboard.writeText(url);
+        toast({ title: "Link disalin!", description: "Tautan toko berhasil disalin ke clipboard." });
+      }
+    } catch (e: any) {
+      if (e?.name !== "AbortError") {
+        toast({ title: "Gagal berbagi", description: e?.message || "Coba lagi.", variant: "destructive" });
+      }
+    }
+  };
 
   const handleToggleFollow = async () => {
     if (!userBalance) {
@@ -165,12 +253,20 @@ export const StoreProfileModal = ({
                     <><UserPlus className="w-4 h-4 mr-1" strokeWidth={3} />Ikuti +</>
                   )}
                 </Button>
-                <Button
-                  onClick={() => window.open(`https://wa.me/62${WA_NUMBER.replace(/^0/, "")}`, "_blank")}
-                  className="w-full h-9 rounded-2xl font-black text-xs shadow-lg active:scale-95 transition bg-gradient-to-r from-emerald-500 to-green-600 text-white hover:opacity-90"
-                >
-                  <MessageCircle className="w-4 h-4 mr-1" strokeWidth={2.5} />Chat
-                </Button>
+                <div className="grid grid-cols-2 gap-1.5">
+                  <Button
+                    onClick={() => window.open(`https://wa.me/62${WA_NUMBER.replace(/^0/, "")}`, "_blank")}
+                    className="h-9 rounded-2xl font-black text-xs shadow-lg active:scale-95 transition bg-gradient-to-r from-emerald-500 to-green-600 text-white hover:opacity-90 px-2"
+                  >
+                    <MessageCircle className="w-4 h-4 mr-1" strokeWidth={2.5} />Chat
+                  </Button>
+                  <Button
+                    onClick={handleShare}
+                    className="h-9 rounded-2xl font-black text-xs shadow-lg active:scale-95 transition bg-gradient-to-r from-blue-500 to-cyan-500 text-white hover:opacity-90 px-2"
+                  >
+                    <Share2 className="w-4 h-4 mr-1" strokeWidth={2.5} />Share
+                  </Button>
+                </div>
               </div>
             </div>
 
@@ -194,6 +290,23 @@ export const StoreProfileModal = ({
               <p className="text-xs text-muted-foreground mt-2 leading-relaxed">
                 Toko resmi <strong>Agung Adi Store</strong> — menjual voucher, akun, dan produk digital terpercaya dengan harga termurah dan respon WhatsApp 24/7.
               </p>
+
+              {/* Status Online Admin */}
+              <div className={`mt-2 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-[10px] font-black ${
+                isAdminOnline
+                  ? "bg-emerald-500/10 border-emerald-500/40 text-emerald-600 dark:text-emerald-400"
+                  : "bg-muted/60 border-border text-muted-foreground"
+              }`}>
+                <span className="relative flex w-2 h-2">
+                  {isAdminOnline && <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />}
+                  <Circle className={`w-2 h-2 ${isAdminOnline ? "fill-emerald-500 text-emerald-500" : "fill-muted-foreground/60 text-muted-foreground/60"}`} />
+                </span>
+                {isAdminOnline ? (
+                  <>Admin Online sekarang</>
+                ) : (
+                  <><Clock className="w-2.5 h-2.5" />Terakhir aktif {formatRelativeTime(adminLastActive)}</>
+                )}
+              </div>
             </div>
 
             {/* Stat grid */}
@@ -252,23 +365,42 @@ export const StoreProfileModal = ({
                 </h3>
               </div>
 
-              {/* Filter dropdown kategori */}
-              {categories.length > 1 && (
-                <div className="relative mb-2">
-                  <ListFilter className="pointer-events-none absolute left-3 top-1/2 z-10 h-3.5 w-3.5 -translate-y-1/2 text-violet-500" />
+              {/* Filter dropdown kategori + sort */}
+              <div className="grid grid-cols-2 gap-1.5 mb-2">
+                {categories.length > 1 ? (
+                  <div className="relative">
+                    <ListFilter className="pointer-events-none absolute left-2.5 top-1/2 z-10 h-3.5 w-3.5 -translate-y-1/2 text-violet-500" />
+                    <select
+                      value={selectedCat}
+                      onChange={(e) => setSelectedCat(e.target.value)}
+                      className="h-9 w-full appearance-none rounded-full border border-violet-500/30 bg-card pl-7 pr-6 text-[11px] font-bold text-foreground outline-none active:scale-[0.99] truncate"
+                    >
+                      {categories.map((cat) => {
+                        const count = cat === "Semua" ? products.length : products.filter(p => (p.category || "Lainnya") === cat).length;
+                        return <option key={cat} value={cat}>{`${cat} (${count})`}</option>;
+                      })}
+                    </select>
+                    <span className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-[9px] text-muted-foreground">▼</span>
+                  </div>
+                ) : <div />}
+
+                <div className="relative">
+                  <ArrowUpDown className="pointer-events-none absolute left-2.5 top-1/2 z-10 h-3.5 w-3.5 -translate-y-1/2 text-pink-500" />
                   <select
-                    value={selectedCat}
-                    onChange={(e) => setSelectedCat(e.target.value)}
-                    className="h-9 w-full appearance-none rounded-full border border-violet-500/30 bg-card px-8 pr-10 text-xs font-bold text-foreground outline-none active:scale-[0.99]"
+                    value={sortMode}
+                    onChange={(e) => setSortMode(e.target.value as SortMode)}
+                    className="h-9 w-full appearance-none rounded-full border border-pink-500/30 bg-card pl-7 pr-6 text-[11px] font-bold text-foreground outline-none active:scale-[0.99] truncate"
                   >
-                    {categories.map((cat) => {
-                      const count = cat === "Semua" ? products.length : products.filter(p => (p.category || "Lainnya") === cat).length;
-                      return <option key={cat} value={cat}>{`${cat} (${count})`}</option>;
-                    })}
+                    <option value="default">Urutkan</option>
+                    <option value="cheapest">💰 Termurah</option>
+                    <option value="expensive">💎 Termahal</option>
+                    <option value="bestseller">🔥 Terlaris</option>
+                    <option value="popular">❤️ Populer</option>
+                    <option value="newest">✨ Terbaru</option>
                   </select>
-                  <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">▼</span>
+                  <span className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-[9px] text-muted-foreground">▼</span>
                 </div>
-              )}
+              </div>
 
               {filteredProducts.length === 0 ? (
                 <p className="text-xs text-muted-foreground text-center py-6">Belum ada produk</p>
@@ -285,6 +417,16 @@ export const StoreProfileModal = ({
                           <img src={p.image_url} alt={p.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300" />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center text-muted-foreground"><Package className="w-8 h-8" /></div>
+                        )}
+                        {(p.sold_count ?? 0) > 0 && (
+                          <span className="absolute top-1 left-1 inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-orange-500/90 text-white text-[8px] font-black backdrop-blur-sm">
+                            <Flame className="w-2 h-2" />{p.sold_count}
+                          </span>
+                        )}
+                        {(likeCounts[p.id] || 0) > 0 && (
+                          <span className="absolute top-1 right-1 inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-pink-500/90 text-white text-[8px] font-black backdrop-blur-sm">
+                            <Heart className="w-2 h-2 fill-white" />{likeCounts[p.id]}
+                          </span>
                         )}
                       </div>
                       <div className="p-1.5">

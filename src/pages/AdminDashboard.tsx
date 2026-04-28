@@ -280,6 +280,23 @@ const AdminDashboard = () => {
     fetchAdminSettings();
     fetchDiscountVouchers();
     fetchMusicVouchers();
+
+    // Heartbeat: update status admin online setiap 30 detik
+    const sendHeartbeat = async () => {
+      const nowIso = new Date().toISOString();
+      await supabase.from("admin_settings").upsert(
+        { setting_key: "admin_last_active", setting_value: nowIso, updated_at: nowIso },
+        { onConflict: "setting_key" }
+      );
+    };
+    sendHeartbeat();
+    const hb = setInterval(sendHeartbeat, 30000);
+    const onVisible = () => { if (document.visibilityState === "visible") sendHeartbeat(); };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => {
+      clearInterval(hb);
+      document.removeEventListener("visibilitychange", onVisible);
+    };
   }, []);
 
   async function fetchDiscountVouchers() {
