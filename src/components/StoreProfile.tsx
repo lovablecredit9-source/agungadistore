@@ -307,6 +307,8 @@ export const StoreProfileModal = ({
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogContent className="z-[90] max-w-md p-0 overflow-hidden bg-transparent border-0 shadow-none [&>button]:hidden">
+        <DialogTitle className="sr-only">Profil Agung Adi Store</DialogTitle>
+        <DialogDescription className="sr-only">Profil toko, tombol ikuti, voucher follow, chat, share, dan daftar produk.</DialogDescription>
         <div className="relative rounded-3xl overflow-hidden bg-background max-h-[90vh] overflow-y-auto">
           {/* Banner */}
           <div className="relative h-32 overflow-hidden" style={{ background: "linear-gradient(135deg,#f59e0b,#ec4899 40%,#8b5cf6 70%,#06b6d4)" }}>
@@ -351,6 +353,31 @@ export const StoreProfileModal = ({
                   <p className="text-[9px] font-bold text-pink-500 dark:text-pink-400 text-center leading-tight">
                     🎁 Dapat voucher Rp 1.000 (30 hari)
                   </p>
+                )}
+                {followVoucher?.code && (
+                  <div className="rounded-2xl border border-pink-500/30 bg-pink-500/10 p-2 text-center">
+                    <p className="text-[9px] font-black text-pink-600 dark:text-pink-400 flex items-center justify-center gap-1">
+                      <Gift className="w-3 h-3" /> Voucher kamu
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => copyFollowVoucher(followVoucher.code)}
+                      className="mt-1 inline-flex max-w-full items-center justify-center gap-1 rounded-xl bg-card px-2 py-1 text-[11px] font-black text-foreground border border-border active:scale-95"
+                    >
+                      <Copy className="w-3 h-3 text-pink-500" />
+                      <span className="truncate">{followVoucher.code}</span>
+                    </button>
+                  </div>
+                )}
+                {isFollowing && !followVoucher?.code && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => claimFollowVoucher(true)}
+                    className="w-full h-8 rounded-2xl text-[10px] font-black border-pink-500/30 text-pink-600 dark:text-pink-400"
+                  >
+                    <Gift className="w-3.5 h-3.5 mr-1" /> Cek Voucher Follow
+                  </Button>
                 )}
                 <div className="grid grid-cols-2 gap-1.5">
                   <Button
