@@ -418,6 +418,16 @@ export const StoreProfileModal = ({
                         ) : (
                           <div className="w-full h-full flex items-center justify-center text-muted-foreground"><Package className="w-8 h-8" /></div>
                         )}
+                        {(p.sold_count ?? 0) > 0 && (
+                          <span className="absolute top-1 left-1 inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-orange-500/90 text-white text-[8px] font-black backdrop-blur-sm">
+                            <Flame className="w-2 h-2" />{p.sold_count}
+                          </span>
+                        )}
+                        {(likeCounts[p.id] || 0) > 0 && (
+                          <span className="absolute top-1 right-1 inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-pink-500/90 text-white text-[8px] font-black backdrop-blur-sm">
+                            <Heart className="w-2 h-2 fill-white" />{likeCounts[p.id]}
+                          </span>
+                        )}
                       </div>
                       <div className="p-1.5">
                         <p className="text-[10px] font-bold line-clamp-1">{p.title}</p>
