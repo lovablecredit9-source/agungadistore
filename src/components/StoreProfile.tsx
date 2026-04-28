@@ -228,7 +228,26 @@ export const StoreProfileModal = ({
           visitor_id: userBalance.visitor_id,
           username: userBalance.username,
         });
-        toast({ title: "🎉 Berhasil mengikuti!", description: "Terima kasih sudah mengikuti Agung Adi Store." });
+
+        // 🎁 Generate voucher diskon Rp 1.000 (berlaku 30 hari, sekali pakai)
+        try {
+          const { data: voucherData } = await supabase.rpc("generate_follow_voucher" as any, {
+            p_visitor_id: userBalance.visitor_id,
+          });
+          const v = Array.isArray(voucherData) ? voucherData[0] : voucherData;
+          if (v?.code) {
+            try { await navigator.clipboard.writeText(v.code); } catch {}
+            toast({
+              title: "🎉 Voucher Diskon Rp 1.000!",
+              description: `Kode: ${v.code} (sudah disalin). Berlaku 30 hari, pakai saat checkout produk.`,
+              duration: 8000,
+            });
+          } else {
+            toast({ title: "🎉 Berhasil mengikuti!", description: "Terima kasih sudah mengikuti Agung Adi Store." });
+          }
+        } catch {
+          toast({ title: "🎉 Berhasil mengikuti!", description: "Terima kasih sudah mengikuti Agung Adi Store." });
+        }
       }
       await fetchFollowers();
     } catch (e: any) {
