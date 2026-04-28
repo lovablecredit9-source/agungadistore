@@ -1090,8 +1090,11 @@ const AdminDashboard = () => {
       </header>
 
       {/* === Apple Minimal Premium Tab Navigation === */}
-      <div className="sticky top-[60px] z-40 bg-background/75 backdrop-blur-2xl backdrop-saturate-200 border-b border-foreground/[0.06] shadow-[0_1px_0_0_rgba(0,0,0,0.02)]">
-        <div className="flex max-w-lg mx-auto overflow-x-auto scrollbar-hide px-2 py-2 gap-0.5">
+      <div className="sticky top-[60px] z-40 border-b border-border/70 bg-background/80 backdrop-blur-2xl backdrop-saturate-200 shadow-[0_12px_34px_-30px_hsl(var(--foreground)/0.45)]">
+        <div className="relative max-w-lg mx-auto px-2 py-2">
+          <div className="pointer-events-none absolute inset-y-0 left-0 w-8 bg-gradient-to-r from-background to-transparent z-10" />
+          <div className="pointer-events-none absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-background to-transparent z-10" />
+          <div className="flex overflow-x-auto scrollbar-hide gap-1 rounded-[24px] border border-border/70 bg-card/55 p-1 shadow-[inset_0_1px_0_hsl(var(--foreground)/0.06)] snap-x snap-mandatory">
           {([
             { key: "products" as AdminTab, icon: Package, label: "Produk" },
             { key: "tokens" as AdminTab, icon: Ticket, label: "Token" },
@@ -1127,26 +1130,27 @@ const AdminDashboard = () => {
                 key={key}
                 onClick={() => setTab(key)}
                 aria-current={active ? "page" : undefined}
-                className={`group shrink-0 flex flex-col items-center justify-center gap-1 min-w-[58px] px-2.5 py-1.5 rounded-2xl outline-none transition-all duration-300 ease-out relative ${active ? "bg-foreground/[0.08]" : "hover:bg-foreground/[0.04] active:scale-[0.94]"}`}
+                className={`group relative shrink-0 snap-center flex flex-col items-center justify-center gap-1 min-w-[62px] px-2.5 py-2 rounded-[20px] outline-none transition-all duration-300 ease-out ${active ? "bg-primary/10 text-primary shadow-[0_10px_26px_-18px_hsl(var(--primary)/0.9),inset_0_1px_0_hsl(var(--primary-foreground)/0.16)] ring-1 ring-primary/15" : "text-muted-foreground hover:bg-muted/80 hover:text-foreground active:scale-[0.94]"}`}
               >
-                <span className="relative w-7 h-7 rounded-xl flex items-center justify-center">
+                <span className={`relative w-7 h-7 rounded-2xl flex items-center justify-center transition-all duration-300 ${active ? "bg-primary text-primary-foreground shadow-sm" : "bg-muted/60 group-hover:bg-background"}`}>
                   <Icon
-                    className={`transition-all duration-300 ease-out ${active ? "w-[18px] h-[18px] text-foreground" : "w-4 h-4 text-foreground/55 group-hover:text-foreground/85"}`}
+                    className={`transition-all duration-300 ease-out ${active ? "w-[17px] h-[17px]" : "w-4 h-4"}`}
                     strokeWidth={active ? 2.4 : 1.9}
                   />
                   {badgeCount > 0 && (
                     <span className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground text-[8px] font-bold min-w-[14px] h-[14px] rounded-full flex items-center justify-center px-0.5 ring-2 ring-background">{badgeCount}</span>
                   )}
                 </span>
-                <span className={`text-[9.5px] leading-none tracking-[-0.005em] transition-all duration-200 ${active ? "font-semibold text-foreground" : "font-medium text-foreground/55 group-hover:text-foreground/80"}`}>
+                <span className={`max-w-[54px] truncate text-[9.5px] leading-none tracking-normal transition-all duration-200 ${active ? "font-bold" : "font-semibold"}`}>
                   {label}
                 </span>
                 {active && (
-                  <span className="absolute bottom-0.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-foreground/80" />
+                  <span className="absolute bottom-1 left-1/2 -translate-x-1/2 w-4 h-0.5 rounded-full bg-primary" />
                 )}
               </button>
             );
           })}
+          </div>
         </div>
       </div>
 
