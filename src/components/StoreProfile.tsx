@@ -441,14 +441,20 @@ export const StoreProfileModal = ({
               </div>
             </div>
 
-            {/* Stat grid — Rating & Produk (Pengikut dihilangkan, hanya angka total) */}
-            <div className="grid grid-cols-2 gap-2 mt-4">
+            {/* Stat grid — Rating, Respon Admin, Produk */}
+            <div className="grid grid-cols-3 gap-2 mt-4">
               <div className="rounded-2xl p-3 bg-gradient-to-br from-amber-500/10 to-orange-500/10 border border-amber-500/30 text-center">
-                <div className="flex items-center justify-center gap-0.5 mb-0.5">
-                  <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
-                </div>
+                <Star className="w-4 h-4 mx-auto fill-amber-400 text-amber-400 mb-0.5" />
                 <p className="text-base font-black text-amber-600 dark:text-amber-400 leading-none">{STORE_RATING.toFixed(1)}</p>
                 <p className="text-[9px] text-muted-foreground font-bold mt-0.5">Rating</p>
+              </div>
+              <div className={`rounded-2xl p-3 bg-gradient-to-br ${getResponseColor(responseRate.rate)} bg-opacity-10 border text-center relative overflow-hidden`} style={{ borderColor: 'hsl(var(--border))' }}>
+                <div className={`absolute inset-0 opacity-10 bg-gradient-to-br ${getResponseColor(responseRate.rate)}`} />
+                <Zap className={`w-4 h-4 mx-auto mb-0.5 relative ${getResponseTextColor(responseRate.rate)}`} />
+                <p className={`text-base font-black leading-none relative ${getResponseTextColor(responseRate.rate)}`}>
+                  {responseRate.loading ? '…' : `${responseRate.rate}%`}
+                </p>
+                <p className="text-[9px] text-muted-foreground font-bold mt-0.5 relative">Respon</p>
               </div>
               <div className="rounded-2xl p-3 bg-gradient-to-br from-cyan-500/10 to-blue-500/10 border border-cyan-500/30 text-center">
                 <Package className="w-4 h-4 mx-auto text-cyan-500 mb-0.5" />
@@ -456,6 +462,14 @@ export const StoreProfileModal = ({
                 <p className="text-[9px] text-muted-foreground font-bold mt-0.5">Produk</p>
               </div>
             </div>
+
+            {/* Detail respon */}
+            {!responseRate.loading && responseRate.total > 0 && (
+              <div className="mt-2 px-3 py-1.5 rounded-lg bg-muted/30 text-[10px] text-muted-foreground text-center">
+                <MessageCircle className="w-3 h-3 inline mr-1" />
+                Admin membalas <strong className="text-foreground">{responseRate.replied}</strong> dari <strong className="text-foreground">{responseRate.total}</strong> chat masuk
+              </div>
+            )}
 
             {/* Bergabung */}
             <div className="mt-3 flex items-center gap-2 px-3 py-2 rounded-xl bg-muted/40 border border-border/50">
