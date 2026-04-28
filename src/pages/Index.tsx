@@ -2162,37 +2162,76 @@ const Index = () => {
               ))}
             </div>
 
-            {/* Admin Posts Preview */}
+            {/* Admin Posts Preview — Apple Minimal Premium */}
             {adminPosts.length > 0 && (
               <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <h3 className="font-extrabold text-sm flex items-center gap-2">
-                    <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center">
-                      <FileText className="w-3.5 h-3.5 text-white" />
+                <div className="flex items-center justify-between px-0.5">
+                  <div className="flex items-center gap-2.5">
+                    <div className="relative">
+                      <div className="absolute inset-0 rounded-[10px] bg-primary/30 blur-md" />
+                      <div className="relative w-7 h-7 rounded-[10px] bg-gradient-to-br from-foreground to-foreground/70 flex items-center justify-center shadow-[0_4px_14px_-4px_hsl(var(--foreground)/0.4)]">
+                        <FileText className="w-3.5 h-3.5 text-background" strokeWidth={2.4} />
+                      </div>
                     </div>
-                    Postingan Admin
-                  </h3>
-                  <button onClick={() => setTab("adminpost")} className="text-xs text-primary font-bold hover:underline flex items-center gap-1">
-                    Lihat Semua <ChevronRight className="w-3 h-3" />
+                    <div className="flex flex-col">
+                      <h3 className="font-bold text-[13px] tracking-tight leading-tight">Postingan Admin</h3>
+                      <span className="text-[10px] text-muted-foreground font-medium leading-tight">Pengumuman resmi</span>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setTab("adminpost")}
+                    className="text-[11px] font-semibold text-foreground/80 hover:text-foreground flex items-center gap-0.5 px-2.5 py-1.5 rounded-full bg-foreground/[0.06] hover:bg-foreground/[0.1] transition-all active:scale-95"
+                  >
+                    Semua <ChevronRight className="w-3 h-3" strokeWidth={2.5} />
                   </button>
                 </div>
-                {adminPosts.slice(0, 2).map(post => (
-                  <Card key={post.id} className="overflow-hidden glass-card hover:shadow-xl transition-all cursor-pointer hover:-translate-y-1 duration-300 border-border/50 group" onClick={() => setTab("adminpost")}>
-                    <CardContent className="p-3.5 flex items-center gap-3.5">
-                      {post.image_url && (
-                        <img src={post.image_url} alt={post.title} className="w-16 h-16 rounded-xl object-cover shrink-0 shadow-md group-hover:scale-105 transition-transform" />
-                      )}
-                      <div className="min-w-0 flex-1">
-                        <h4 className="font-bold text-sm truncate">{post.title}</h4>
-                        {post.content && <p className="text-[11px] text-muted-foreground line-clamp-1 mt-0.5">{post.content}</p>}
-                        <p className="text-[10px] text-muted-foreground mt-1 flex items-center gap-1">
-                          <CalendarDays className="w-3 h-3" />
-                          {new Date(post.created_at).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" })}
-                        </p>
+                <div className="space-y-2.5">
+                  {adminPosts.slice(0, 2).map((post, idx) => (
+                    <button
+                      key={post.id}
+                      onClick={() => setTab("adminpost")}
+                      className="group relative w-full text-left overflow-hidden rounded-[18px] bg-background/60 backdrop-blur-2xl backdrop-saturate-150 border border-foreground/[0.08] shadow-[0_2px_10px_-2px_rgba(0,0,0,0.06),0_8px_24px_-12px_rgba(0,0,0,0.12)] hover:shadow-[0_4px_14px_-2px_rgba(0,0,0,0.08),0_18px_40px_-12px_rgba(0,0,0,0.18)] hover:-translate-y-0.5 active:scale-[0.99] transition-all duration-300"
+                    >
+                      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-foreground/15 to-transparent" />
+                      <div className="p-3 flex items-center gap-3">
+                        {post.image_url ? (
+                          <div className="relative shrink-0">
+                            <div className="absolute -inset-0.5 rounded-[14px] bg-gradient-to-br from-foreground/10 to-transparent blur-sm" />
+                            <img
+                              src={post.image_url}
+                              alt={post.title}
+                              className="relative w-[58px] h-[58px] rounded-[14px] object-cover ring-1 ring-foreground/10 group-hover:scale-[1.04] transition-transform duration-500"
+                            />
+                          </div>
+                        ) : (
+                          <div className="relative shrink-0 w-[58px] h-[58px] rounded-[14px] bg-gradient-to-br from-foreground/[0.08] to-foreground/[0.03] ring-1 ring-foreground/10 flex items-center justify-center">
+                            <FileText className="w-5 h-5 text-foreground/50" strokeWidth={2} />
+                          </div>
+                        )}
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-1.5 mb-0.5">
+                            <span className="inline-flex items-center gap-1 text-[9px] font-bold tracking-wider uppercase text-foreground/70 px-1.5 py-0.5 rounded-md bg-foreground/[0.06] ring-1 ring-foreground/[0.06]">
+                              <span className="w-1 h-1 rounded-full bg-emerald-500 shadow-[0_0_6px_hsl(142_76%_45%)]" />
+                              Resmi
+                            </span>
+                            {idx === 0 && (
+                              <span className="text-[9px] font-bold tracking-wider uppercase text-amber-600 dark:text-amber-400">Baru</span>
+                            )}
+                          </div>
+                          <h4 className="font-semibold text-[13.5px] tracking-tight truncate leading-snug">{post.title}</h4>
+                          {post.content && (
+                            <p className="text-[11px] text-muted-foreground line-clamp-1 mt-0.5 leading-snug">{post.content}</p>
+                          )}
+                          <p className="text-[10px] text-muted-foreground/80 mt-1 flex items-center gap-1 font-medium">
+                            <CalendarDays className="w-2.5 h-2.5" strokeWidth={2.2} />
+                            {new Date(post.created_at).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" })}
+                          </p>
+                        </div>
+                        <ChevronRight className="w-4 h-4 text-foreground/30 group-hover:text-foreground/70 group-hover:translate-x-0.5 transition-all shrink-0" strokeWidth={2.2} />
                       </div>
-                    </CardContent>
-                  </Card>
-                ))}
+                    </button>
+                  ))}
+                </div>
               </div>
             )}
 
@@ -4680,69 +4719,133 @@ const Index = () => {
         )}
 
         {tab === "adminpost" && (
-          <div className="space-y-4 animate-fade-in">
-            {/* Hero Header */}
-            <div className="rounded-xl border border-border bg-card p-4">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
-                  <FileText className="w-5 h-5 text-foreground" strokeWidth={1.7} />
+          <div className="space-y-5 animate-fade-in">
+            {/* Hero Header — Apple Minimal Premium */}
+            <div className="relative overflow-hidden rounded-[22px] bg-background/70 backdrop-blur-2xl backdrop-saturate-150 border border-foreground/[0.08] shadow-[0_2px_10px_-2px_rgba(0,0,0,0.06),0_18px_50px_-18px_rgba(0,0,0,0.2)]">
+              <div className="pointer-events-none absolute -top-16 -right-10 w-48 h-48 rounded-full bg-foreground/[0.05] blur-3xl" />
+              <div className="pointer-events-none absolute -bottom-20 -left-10 w-48 h-48 rounded-full bg-primary/[0.06] blur-3xl" />
+              <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-foreground/15 to-transparent" />
+              <div className="relative p-5 flex items-center gap-4">
+                <div className="relative shrink-0">
+                  <div className="absolute inset-0 rounded-2xl bg-foreground/20 blur-xl" />
+                  <div className="relative w-12 h-12 rounded-2xl bg-gradient-to-br from-foreground to-foreground/70 flex items-center justify-center shadow-[0_8px_24px_-8px_hsl(var(--foreground)/0.5),inset_0_1px_0_0_rgba(255,255,255,0.15)]">
+                    <FileText className="w-5 h-5 text-background" strokeWidth={2.3} />
+                  </div>
                 </div>
                 <div className="flex-1 min-w-0">
-                  <h2 className="text-base font-semibold tracking-tight text-foreground">Postingan Admin</h2>
-                  <p className="text-xs text-muted-foreground mt-0.5">{adminPosts.length} pengumuman resmi</p>
+                  <div className="flex items-center gap-1.5">
+                    <h2 className="text-[17px] font-bold tracking-tight text-foreground leading-tight">Postingan Admin</h2>
+                    <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-blue-500 shrink-0">
+                      <svg viewBox="0 0 16 16" fill="none" className="w-2.5 h-2.5 text-white"><path d="M3 8.5L6 11.5L13 4.5" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1.5 mt-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_hsl(142_76%_45%)] animate-pulse" />
+                    <p className="text-[11.5px] text-muted-foreground font-medium tracking-tight">{adminPosts.length} pengumuman resmi terverifikasi</p>
+                  </div>
                 </div>
               </div>
             </div>
+
             {adminPosts.length === 0 && (
-              <div className="text-center py-16 text-muted-foreground">
-                <FileText className="w-16 h-16 mx-auto mb-3 opacity-20" />
-                <p className="text-sm font-medium">Belum ada postingan.</p>
+              <div className="relative overflow-hidden rounded-[22px] bg-background/60 backdrop-blur-2xl border border-foreground/[0.08] py-16 text-center">
+                <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-foreground/[0.02] to-transparent" />
+                <div className="relative w-16 h-16 mx-auto mb-3 rounded-2xl bg-foreground/[0.06] flex items-center justify-center">
+                  <FileText className="w-7 h-7 text-foreground/40" strokeWidth={1.8} />
+                </div>
+                <p className="text-sm font-semibold text-foreground/80 tracking-tight">Belum ada postingan</p>
+                <p className="text-[11px] text-muted-foreground mt-1">Pengumuman dari admin akan muncul di sini</p>
               </div>
             )}
-            {adminPosts.map(post => (
-              <Card key={post.id} className="overflow-hidden hover:shadow-lg transition-all">
-                {post.image_url && (
-                  <img src={post.image_url} alt={post.title} className="w-full h-48 object-cover" />
-                )}
-                <CardContent className="p-4 space-y-2">
-                  <h3 className="font-bold text-base">{post.title}</h3>
-                  {post.content && <p className="text-xs text-muted-foreground whitespace-pre-line">{post.content}</p>}
-                  {post.link_url && (
-                    <a href={post.link_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs text-primary font-medium hover:underline">
-                      <ExternalLink className="w-3 h-3" /> Buka Link
-                    </a>
-                  )}
-                  {[
-                    { val: post.whatsapp, label: "WhatsApp", href: post.whatsapp?.startsWith("http") ? post.whatsapp : `https://wa.me/62${(post.whatsapp || "").replace(/^0/, "")}` },
-                    { val: post.instagram, label: "Instagram", href: post.instagram?.startsWith("http") ? post.instagram : `https://instagram.com/${post.instagram}` },
-                    { val: post.tiktok, label: "TikTok", href: post.tiktok?.startsWith("http") ? post.tiktok : `https://tiktok.com/@${post.tiktok}` },
-                    { val: post.youtube, label: "YouTube", href: post.youtube?.startsWith("http") ? post.youtube : `https://youtube.com/@${post.youtube}` },
-                    { val: post.twitter, label: "X/Twitter", href: post.twitter?.startsWith("http") ? post.twitter : `https://twitter.com/${post.twitter}` },
-                    { val: post.facebook, label: "Facebook", href: post.facebook?.startsWith("http") ? post.facebook : `https://facebook.com/${post.facebook}` },
-                  ].filter(s => s.val).length > 0 && (
-                    <div className="flex flex-wrap gap-1.5 pt-1">
-                      {[
-                        { val: post.whatsapp, label: "WhatsApp", href: post.whatsapp?.startsWith("http") ? post.whatsapp : `https://wa.me/62${(post.whatsapp || "").replace(/^0/, "")}` },
-                        { val: post.instagram, label: "Instagram", href: post.instagram?.startsWith("http") ? post.instagram : `https://instagram.com/${post.instagram}` },
-                        { val: post.tiktok, label: "TikTok", href: post.tiktok?.startsWith("http") ? post.tiktok : `https://tiktok.com/@${post.tiktok}` },
-                        { val: post.youtube, label: "YouTube", href: post.youtube?.startsWith("http") ? post.youtube : `https://youtube.com/@${post.youtube}` },
-                        { val: post.twitter, label: "X/Twitter", href: post.twitter?.startsWith("http") ? post.twitter : `https://twitter.com/${post.twitter}` },
-                        { val: post.facebook, label: "Facebook", href: post.facebook?.startsWith("http") ? post.facebook : `https://facebook.com/${post.facebook}` },
-                      ].filter(s => s.val).map(s => (
-                        <a key={s.label} href={s.href} target="_blank" rel="noopener noreferrer"
-                          className="text-[10px] font-bold px-2.5 py-1 rounded-full bg-primary/10 text-primary hover:bg-primary/20 transition-colors">
-                          {s.label}
-                        </a>
-                      ))}
+
+            {adminPosts.map((post, idx) => {
+              const socials = [
+                { val: post.whatsapp, label: "WhatsApp", href: post.whatsapp?.startsWith("http") ? post.whatsapp : `https://wa.me/62${(post.whatsapp || "").replace(/^0/, "")}` },
+                { val: post.instagram, label: "Instagram", href: post.instagram?.startsWith("http") ? post.instagram : `https://instagram.com/${post.instagram}` },
+                { val: post.tiktok, label: "TikTok", href: post.tiktok?.startsWith("http") ? post.tiktok : `https://tiktok.com/@${post.tiktok}` },
+                { val: post.youtube, label: "YouTube", href: post.youtube?.startsWith("http") ? post.youtube : `https://youtube.com/@${post.youtube}` },
+                { val: post.twitter, label: "X/Twitter", href: post.twitter?.startsWith("http") ? post.twitter : `https://twitter.com/${post.twitter}` },
+                { val: post.facebook, label: "Facebook", href: post.facebook?.startsWith("http") ? post.facebook : `https://facebook.com/${post.facebook}` },
+              ].filter(s => s.val);
+
+              return (
+                <article
+                  key={post.id}
+                  className="group relative overflow-hidden rounded-[22px] bg-background/70 backdrop-blur-2xl backdrop-saturate-150 border border-foreground/[0.08] shadow-[0_2px_10px_-2px_rgba(0,0,0,0.06),0_18px_50px_-18px_rgba(0,0,0,0.2)] hover:shadow-[0_4px_14px_-2px_rgba(0,0,0,0.08),0_28px_60px_-18px_rgba(0,0,0,0.28)] transition-all duration-500"
+                >
+                  <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-foreground/15 to-transparent z-10" />
+
+                  {post.image_url && (
+                    <div className="relative overflow-hidden">
+                      <img
+                        src={post.image_url}
+                        alt={post.title}
+                        className="w-full h-52 object-cover group-hover:scale-[1.03] transition-transform duration-700"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-background/40 via-transparent to-transparent" />
+                      {idx === 0 && (
+                        <div className="absolute top-3 left-3 inline-flex items-center gap-1 text-[10px] font-bold tracking-wider uppercase text-white px-2.5 py-1 rounded-full bg-black/50 backdrop-blur-md ring-1 ring-white/20">
+                          <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
+                          Terbaru
+                        </span>
+                      )}
                     </div>
                   )}
-                  <p className="text-[10px] text-muted-foreground pt-1">
-                    <CalendarDays className="w-3 h-3 inline mr-1" />
-                    {new Date(post.created_at).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" })}
-                  </p>
-                </CardContent>
-              </Card>
-            ))}
+
+                  <div className="p-5 space-y-3">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-1.5 mb-2">
+                          <span className="inline-flex items-center gap-1 text-[9.5px] font-bold tracking-wider uppercase text-foreground/70 px-2 py-0.5 rounded-md bg-foreground/[0.06] ring-1 ring-foreground/[0.06]">
+                            <span className="w-1 h-1 rounded-full bg-emerald-500 shadow-[0_0_6px_hsl(142_76%_45%)]" />
+                            Resmi
+                          </span>
+                          <span className="text-[10px] text-muted-foreground font-medium flex items-center gap-1">
+                            <CalendarDays className="w-2.5 h-2.5" strokeWidth={2.2} />
+                            {new Date(post.created_at).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" })}
+                          </span>
+                        </div>
+                        <h3 className="font-bold text-[17px] tracking-tight leading-snug text-foreground">{post.title}</h3>
+                      </div>
+                    </div>
+
+                    {post.content && (
+                      <p className="text-[12.5px] text-muted-foreground whitespace-pre-line leading-relaxed">{post.content}</p>
+                    )}
+
+                    {post.link_url && (
+                      <a
+                        href={post.link_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 text-[11.5px] font-semibold text-foreground bg-foreground/[0.06] hover:bg-foreground/[0.1] px-3 py-1.5 rounded-full ring-1 ring-foreground/[0.08] transition-all active:scale-95"
+                      >
+                        <ExternalLink className="w-3 h-3" strokeWidth={2.4} /> Buka Tautan
+                      </a>
+                    )}
+
+                    {socials.length > 0 && (
+                      <div className="pt-2 border-t border-foreground/[0.06]">
+                        <p className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground mb-2">Hubungi via</p>
+                        <div className="flex flex-wrap gap-1.5">
+                          {socials.map(s => (
+                            <a
+                              key={s.label}
+                              href={s.href}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-[10.5px] font-semibold px-3 py-1.5 rounded-full bg-foreground/[0.06] text-foreground/80 hover:bg-foreground hover:text-background ring-1 ring-foreground/[0.06] transition-all active:scale-95"
+                            >
+                              {s.label}
+                            </a>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </article>
+              );
+            })}
           </div>
         )}
       </main>
