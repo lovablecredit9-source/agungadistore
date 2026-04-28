@@ -303,6 +303,10 @@ export const StoreProfileModal = ({
               <div className="flex items-center gap-1.5 flex-wrap">
                 <h2 className="text-lg font-black bg-gradient-to-r from-amber-500 via-pink-500 to-violet-500 bg-clip-text text-transparent">Agung Adi Store</h2>
                 <BadgeCheck className="w-5 h-5 text-blue-500 fill-blue-500/20" strokeWidth={2.5} />
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-pink-500/10 border border-pink-500/30 text-pink-600 dark:text-pink-400 text-[10px] font-black">
+                  <Users className="w-3 h-3" strokeWidth={3} />
+                  {followersCount.toLocaleString("id-ID")}
+                </span>
               </div>
               <div className="flex items-center gap-1.5 flex-wrap mt-1.5">
                 <span className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[10px] font-black border border-emerald-500/30">
@@ -359,13 +363,6 @@ export const StoreProfileModal = ({
               <p className="text-[11px] text-muted-foreground">Bergabung sejak <strong className="text-foreground">{formatJoinDate(STORE_JOIN_DATE)}</strong></p>
             </div>
 
-            {/* Total pengikut — angka saja, tanpa profil */}
-            <div className="mt-3 flex items-center gap-2 px-3 py-2 rounded-xl bg-gradient-to-r from-pink-500/10 to-violet-500/10 border border-pink-500/30">
-              <Users className="w-4 h-4 text-pink-500" />
-              <p className="text-[11px] text-muted-foreground">
-                Total pengikut: <strong className="text-pink-600 dark:text-pink-400">{followersCount.toLocaleString("id-ID")}</strong>
-              </p>
-            </div>
 
             {/* Produk toko */}
             <div className="mt-4 mb-5">
