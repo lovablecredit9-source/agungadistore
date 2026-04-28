@@ -885,7 +885,9 @@ export type Database = {
           id: string
           is_active: boolean
           max_uses: number
+          source: string | null
           used_count: number
+          visitor_id: string | null
         }
         Insert: {
           code: string
@@ -895,7 +897,9 @@ export type Database = {
           id?: string
           is_active?: boolean
           max_uses?: number
+          source?: string | null
           used_count?: number
+          visitor_id?: string | null
         }
         Update: {
           code?: string
@@ -905,7 +909,9 @@ export type Database = {
           id?: string
           is_active?: boolean
           max_uses?: number
+          source?: string | null
           used_count?: number
+          visitor_id?: string | null
         }
         Relationships: []
       }
@@ -8104,6 +8110,14 @@ export type Database = {
           p_visitor_id: string
         }
         Returns: string
+      }
+      generate_follow_voucher: {
+        Args: { p_visitor_id: string }
+        Returns: {
+          code: string
+          discount_amount: number
+          expires_at: string
+        }[]
       }
       get_account_ban_info: {
         Args: { p_visitor_id: string }
