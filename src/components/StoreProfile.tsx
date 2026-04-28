@@ -661,6 +661,48 @@ export const StoreProfileModal = ({
                 );
               })()}
             </div>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
+// ============== HEADER CARD di Beranda — hanya tampilan, klik dispatch event global ==============
+export const StoreProfile = ({ products, userBalance }: StoreProfileProps) => {
+  const [followersCount, setFollowersCount] = useState(0);
+  const responseRate = useResponseRate();
+
+  useEffect(() => {
+    const load = async () => {
+      const { count } = await supabase.from("store_followers" as any).select("id", { count: "exact", head: true });
+      setFollowersCount(count || 0);
+    };
+    load();
+    const ch = supabase
+      .channel("store-header-rt")
+      .on("postgres_changes", { event: "*", schema: "public", table: "store_followers" }, () => load())
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, []);
+
+  const openProfile = () => window.dispatchEvent(new Event("open-store-profile"));
+
+  return (
+    <div
+      onClick={openProfile}
+      className="relative overflow-hidden rounded-3xl p-[2px] cursor-pointer active:scale-[0.98] transition-transform"
+      style={{ background: "linear-gradient(135deg,#f59e0b,#ec4899,#8b5cf6,#06b6d4)" }}
+    >
+      <div className="absolute inset-0 opacity-30 animate-pulse" style={{ background: "radial-gradient(circle at 20% 30%,rgba(236,72,153,.4),transparent 60%),radial-gradient(circle at 80% 70%,rgba(6,182,212,.4),transparent 60%)" }} />
+      <div className="relative bg-card/95 backdrop-blur-2xl rounded-[22px] p-4 flex items-center gap-3">
+        <div className="relative shrink-0">
+          <div className="w-16 h-16 rounded-2xl p-[2px]" style={{ background: "linear-gradient(135deg,#f59e0b,#ec4899)" }}>
+            <div className="w-full h-full rounded-[14px] bg-card flex items-center justify-center overflow-hidden">
+              <img src={storeQris} alt="Agung Adi Store" className="w-full h-full object-cover" />
+            </div>
+          </div>
+        </div>
 
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1.5 flex-wrap">
