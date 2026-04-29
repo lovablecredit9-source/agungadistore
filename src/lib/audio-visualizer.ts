@@ -77,7 +77,7 @@ function loadSettings(): AudioFxSettings {
 }
 
 function saveSettings(s: AudioFxSettings) {
-  try { localStorage.setItem(LS_KEY, JSON.stringify(s)); } catch {}
+  try { localStorage.setItem(LS_KEY, JSON.stringify(s)); } catch { void 0; }
 }
 
 // ---------- State ----------
@@ -257,7 +257,7 @@ function buildGraph(ctx: AudioContext, audio: HTMLAudioElement): Graph {
 function rebuildChannelRouting(g: Graph, fx: AudioFxSettings) {
   try {
     g.splitter.disconnect();
-  } catch {}
+  } catch { void 0; }
   const balance = Math.max(-1, Math.min(1, fx.balance));
   if (fx.mono) {
     g.splitter.connect(g.merger, 0, 0);
@@ -300,7 +300,7 @@ function applyRateToElement(audio: HTMLAudioElement, fx: AudioFxSettings) {
     if ("preservesPitch" in a) a.preservesPitch = fx.preservePitch;
     if ("mozPreservesPitch" in a) a.mozPreservesPitch = fx.preservePitch;
     if ("webkitPreservesPitch" in a) a.webkitPreservesPitch = fx.preservePitch;
-  } catch {}
+  } catch { void 0; }
 }
 
 // ---------- Public API ----------
