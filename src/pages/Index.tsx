@@ -2707,13 +2707,29 @@ const Index = () => {
                             </div>
                           )}
 
-                          {/* Price badge top-right - holographic neon */}
-                          <div className="absolute top-2 right-2 z-10" style={{ marginRight: p.has_warranty ? "0" : "0" }}>
-                            <div className="relative">
-                              <div className="absolute inset-0 rounded-full bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-500 blur-md opacity-70 animate-pulse" />
-                              <span className={`relative inline-block font-black bg-gradient-to-r from-cyan-300 via-white to-purple-200 text-slate-900 rounded-full shadow-[0_0_20px_rgba(34,211,238,0.8),inset_0_1px_2px_rgba(255,255,255,0.5)] backdrop-blur-sm border-2 border-white/50 ${isGrid ? "text-[10px] px-2.5 py-1" : "text-xs px-3 py-1.5"}`}>{formatPrice(p.price)}</span>
-                            </div>
-                          </div>
+                          {/* Price badge top-right - holographic neon (with flash sale support) */}
+                          {(() => {
+                            const flashEff = getActiveFlashSaleForProduct(p.id);
+                            const flashPrice = flashEff ? getFlashUnitPrice(flashEff, p.price) : p.price;
+                            return (
+                              <div className="absolute top-2 right-2 z-10">
+                                <div className="relative flex flex-col items-end gap-1">
+                                  {flashEff && (
+                                    <span className={`inline-flex items-center gap-0.5 font-black px-2 py-0.5 rounded-full bg-gradient-to-r from-red-500 via-orange-500 to-yellow-500 text-white shadow-[0_0_12px_rgba(239,68,68,0.8)] border border-white/40 animate-pulse ${isGrid ? "text-[8px]" : "text-[9px]"}`}>
+                                      ⚡ FLASH
+                                    </span>
+                                  )}
+                                  <div className="relative">
+                                    <div className={`absolute inset-0 rounded-full blur-md opacity-70 animate-pulse ${flashEff ? "bg-gradient-to-r from-red-400 via-orange-500 to-yellow-500" : "bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-500"}`} />
+                                    <span className={`relative inline-block font-black ${flashEff ? "bg-gradient-to-r from-yellow-200 via-white to-orange-200 text-red-700 shadow-[0_0_20px_rgba(239,68,68,0.8),inset_0_1px_2px_rgba(255,255,255,0.5)]" : "bg-gradient-to-r from-cyan-300 via-white to-purple-200 text-slate-900 shadow-[0_0_20px_rgba(34,211,238,0.8),inset_0_1px_2px_rgba(255,255,255,0.5)]"} rounded-full backdrop-blur-sm border-2 border-white/50 ${isGrid ? "text-[10px] px-2.5 py-1" : "text-xs px-3 py-1.5"}`}>{formatPrice(flashPrice)}</span>
+                                  </div>
+                                  {flashEff && (
+                                    <span className={`inline-block font-bold line-through text-white/80 bg-black/40 px-1.5 py-0.5 rounded-full ${isGrid ? "text-[8px]" : "text-[9px]"}`}>{formatPrice(p.price)}</span>
+                                  )}
+                                </div>
+                              </div>
+                            );
+                          })()}
 
                           {/* Action buttons bottom-right */}
                           <div className="absolute bottom-2 right-2 flex gap-1.5 z-10">
