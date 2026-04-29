@@ -20,11 +20,20 @@ interface Props {
 type ModalType = "comments" | "leaderboard" | "wrapped" | "quests" | "moodRadio" | "recommend" | "lyrics" | "level" | null;
 
 const LEVEL_INFO: Record<string, { color: string; gradient: string; icon: typeof Trophy; minSec: number; nextSec: number; label: string }> = {
-  Bronze: { color: "from-amber-700 to-orange-800", gradient: "from-amber-600/30 to-orange-700/30", icon: Award, minSec: 0, nextSec: 7200, label: "🥉 Bronze" },
-  Silver: { color: "from-slate-300 to-slate-500", gradient: "from-slate-300/30 to-slate-500/30", icon: Star, minSec: 7200, nextSec: 36000, label: "🥈 Silver" },
-  Gold: { color: "from-yellow-400 to-amber-500", gradient: "from-yellow-400/30 to-amber-500/30", icon: Crown, minSec: 36000, nextSec: 144000, label: "🥇 Gold" },
-  Platinum: { color: "from-cyan-300 to-blue-400", gradient: "from-cyan-300/30 to-blue-400/30", icon: Trophy, minSec: 144000, nextSec: 360000, label: "💎 Platinum" },
-  Diamond: { color: "from-fuchsia-400 to-purple-500", gradient: "from-fuchsia-400/30 to-purple-500/30", icon: Sparkles, minSec: 360000, nextSec: 360000, label: "💠 Diamond" },
+  Bronze:             { color: "from-amber-700 to-orange-800",   gradient: "from-amber-600/30 to-orange-700/30",   icon: Award,      minSec: 0,         nextSec: 600,        label: "🥉 Bronze" },
+  Silver:             { color: "from-slate-300 to-slate-500",    gradient: "from-slate-300/30 to-slate-500/30",    icon: Star,       minSec: 600,       nextSec: 1800,       label: "🥈 Silver" },
+  Gold:               { color: "from-yellow-400 to-amber-500",   gradient: "from-yellow-400/30 to-amber-500/30",   icon: Crown,      minSec: 1800,      nextSec: 3600,       label: "🥇 Gold" },
+  Platinum:           { color: "from-cyan-300 to-blue-400",      gradient: "from-cyan-300/30 to-blue-400/30",      icon: Trophy,     minSec: 3600,      nextSec: 7200,       label: "💎 Platinum" },
+  Diamond:            { color: "from-fuchsia-400 to-purple-500", gradient: "from-fuchsia-400/30 to-purple-500/30", icon: Sparkles,   minSec: 7200,      nextSec: 18000,      label: "💠 Diamond" },
+  Master:             { color: "from-rose-400 to-red-600",       gradient: "from-rose-400/30 to-red-600/30",       icon: Trophy,     minSec: 18000,     nextSec: 43200,      label: "🏆 Master" },
+  "Master Pro":       { color: "from-red-500 to-orange-600",     gradient: "from-red-500/30 to-orange-600/30",     icon: Crown,      minSec: 43200,     nextSec: 86400,      label: "👑 Master Pro" },
+  Legenda:            { color: "from-indigo-400 to-purple-600",  gradient: "from-indigo-400/30 to-purple-600/30",  icon: Sparkles,   minSec: 86400,     nextSec: 172800,     label: "🌟 Legenda" },
+  "Legenda Pro":      { color: "from-violet-500 to-fuchsia-600", gradient: "from-violet-500/30 to-fuchsia-600/30", icon: Sparkles,   minSec: 172800,    nextSec: 432000,     label: "✨ Legenda Pro" },
+  Warrior:            { color: "from-emerald-500 to-teal-700",   gradient: "from-emerald-500/30 to-teal-700/30",   icon: Award,      minSec: 432000,    nextSec: 1036800,    label: "⚔️ Warrior" },
+  "Grand Master":     { color: "from-amber-300 to-yellow-600",   gradient: "from-amber-300/30 to-yellow-600/30",   icon: Crown,      minSec: 1036800,   nextSec: 2592000,    label: "🏵️ Grand Master" },
+  "Ninja Master":     { color: "from-zinc-700 to-black",         gradient: "from-zinc-700/30 to-black/30",         icon: Zap,        minSec: 2592000,   nextSec: 5184000,    label: "🥷 Ninja Master" },
+  "Legend Immortal":  { color: "from-pink-400 to-rose-600",      gradient: "from-pink-400/30 to-rose-600/30",      icon: Sparkles,   minSec: 5184000,   nextSec: 12960000,   label: "💖 Legend Immortal" },
+  "Legend Pro Immortal": { color: "from-yellow-300 via-pink-400 to-purple-500", gradient: "from-yellow-300/30 via-pink-400/30 to-purple-500/30", icon: Crown, minSec: 12960000, nextSec: 31536000, label: "👑✨ Legend Pro Immortal" },
 };
 
 const REACTIONS = ["❤️", "🔥", "😍", "🎵", "👏", "😢"];
@@ -306,7 +315,7 @@ export default function MusicMegaHub({ visitorId, playbackState, onPlaySong }: P
   const visualizerRef = useRef<HTMLDivElement>(null);
   useAudioBandsDOM(visualizerRef as any, 32, isPlaying, 40);
 
-  const lvl = LEVEL_INFO[level?.level || "Bronze"];
+  const lvl = LEVEL_INFO[level?.level || "Bronze"] || LEVEL_INFO.Bronze;
   const totalSec = level?.total_seconds || 0;
   const xpProgress = lvl.nextSec > lvl.minSec
     ? Math.min(100, ((totalSec - lvl.minSec) / (lvl.nextSec - lvl.minSec)) * 100)
