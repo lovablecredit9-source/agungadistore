@@ -1259,6 +1259,23 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer, onPlayE
         );
       })()}
 
+      {/* ===== AUDIO FX SETTINGS MODAL ===== */}
+      <AudioFxSettings
+        open={showFxSettings}
+        onClose={() => setShowFxSettings(false)}
+        crossfade={{ seconds: crossfadeSec, onChange: setCrossfadeSec }}
+        abLoop={{
+          enabled: abLoopEnabled,
+          a: abLoopA,
+          b: abLoopB,
+          currentTime,
+          onSetA: () => { setAbLoopA(currentTime); toast({ title: `Set A: ${formatTime(currentTime)}` }); },
+          onSetB: () => { setAbLoopB(currentTime); toast({ title: `Set B: ${formatTime(currentTime)}` }); },
+          onClear: () => { setAbLoopA(null); setAbLoopB(null); setAbLoopEnabled(false); },
+          onToggle: (v) => setAbLoopEnabled(v),
+        }}
+      />
+
       {/* ===== FULLSCREEN PLAYER (Portal to avoid hidden parent) ===== */}
       {showFullPlayer && currentSong && createPortal(
         <div className="fixed inset-0 z-[100] flex flex-col overflow-hidden bg-background">
