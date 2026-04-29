@@ -127,70 +127,69 @@ export default function StorePremiumTab({ visitorId, onLoginRequired }: Props) {
 
   return (
     <div className="space-y-3">
-      {/* Header status */}
-      {premium.isPremium ? (
-        <div className="relative rounded-2xl overflow-hidden p-[2px] bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-500 shadow-lg shadow-amber-500/30">
-          <div className="absolute right-2 top-2 z-10 rounded-full bg-green-500 px-2 py-0.5 text-[9px] font-black text-white shadow-md">
-            ✓ SUDAH AKTIF
-          </div>
-          <div className="rounded-[14px] bg-card/95 p-3 backdrop-blur-xl">
-            <div className="flex items-center gap-2 pr-20">
-              <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-amber-500/15 ring-2 ring-amber-400/60">
-                <Crown className="w-6 h-6 text-amber-500 fill-amber-400 drop-shadow" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-black bg-gradient-to-r from-amber-600 to-yellow-500 bg-clip-text text-transparent">Membership Premium 👑</p>
-                <p className="text-[10px] text-muted-foreground truncate">{premium.planName} · sisa {premium.daysLeft} hari</p>
-              </div>
+      {/* Header status — selalu tampil */}
+      <div className={`relative rounded-2xl overflow-hidden p-[2px] shadow-lg ${premium.isPremium ? "bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-500 shadow-amber-500/30" : "bg-gradient-to-r from-slate-300 to-slate-400 dark:from-slate-700 dark:to-slate-600"}`}>
+        <div className={`absolute right-2 top-2 z-10 rounded-full px-2 py-0.5 text-[9px] font-black text-white shadow-md ${premium.isPremium ? "bg-green-500" : "bg-slate-500"}`}>
+          {premium.isPremium ? "✓ AKTIF SEKARANG" : "BELUM AKTIF"}
+        </div>
+        <div className="rounded-[14px] bg-card/95 p-3 backdrop-blur-xl">
+          <div className="flex items-center gap-2 pr-24">
+            <div className={`grid h-10 w-10 shrink-0 place-items-center rounded-full ring-2 ${premium.isPremium ? "bg-amber-500/15 ring-amber-400/60" : "bg-muted ring-border"}`}>
+              <Crown className={`w-6 h-6 ${premium.isPremium ? "text-amber-500 fill-amber-400 drop-shadow" : "text-muted-foreground"}`} />
             </div>
-            <div className="mt-2 grid grid-cols-2 gap-1.5 text-[9px]">
-              <div className="flex items-center gap-1 rounded-lg bg-amber-500/10 border border-amber-500/30 px-1.5 py-1"><Gift className="w-2.5 h-2.5 text-amber-500" /><span className="font-bold">Voucher Rp 2k/hari</span></div>
-              <div className="flex items-center gap-1 rounded-lg bg-purple-500/10 border border-purple-500/30 px-1.5 py-1"><MessageCircle className="w-2.5 h-2.5 text-purple-500" /><span className="font-bold">Chat Prioritas</span></div>
-              <div className="flex items-center gap-1 rounded-lg bg-pink-500/10 border border-pink-500/30 px-1.5 py-1"><Sparkles className="w-2.5 h-2.5 text-pink-500" /><span className="font-bold">Tampilan Premium</span></div>
-              <div className="flex items-center gap-1 rounded-lg bg-cyan-500/10 border border-cyan-500/30 px-1.5 py-1"><Crown className="w-2.5 h-2.5 text-cyan-500" /><span className="font-bold">Badge 👑</span></div>
+            <div className="flex-1 min-w-0">
+              <p className={`text-sm font-black ${premium.isPremium ? "bg-gradient-to-r from-amber-600 to-yellow-500 bg-clip-text text-transparent" : ""}`}>
+                {premium.isPremium ? "Membership Premium 👑" : "Membership Premium"}
+              </p>
+              <p className="text-[10px] text-muted-foreground truncate">
+                {premium.isPremium ? `${premium.planName} · sisa ${premium.daysLeft} hari` : "Belum berlangganan — pilih paket di bawah"}
+              </p>
             </div>
           </div>
-        </div>
-      ) : (
-        <div className="rounded-2xl bg-gradient-to-br from-amber-500/10 via-yellow-500/10 to-orange-500/10 border border-amber-500/30 p-3">
-          <div className="flex items-center gap-2 mb-1">
-            <Crown className="w-5 h-5 text-amber-500" />
-            <p className="text-sm font-black">Jadi Member Premium Toko</p>
+          <div className="mt-2 grid grid-cols-2 gap-1.5 text-[9px]">
+            <div className="flex items-center gap-1 rounded-lg bg-amber-500/10 border border-amber-500/30 px-1.5 py-1"><Gift className="w-2.5 h-2.5 text-amber-500" /><span className="font-bold">Voucher Rp 2k/hari</span></div>
+            <div className="flex items-center gap-1 rounded-lg bg-purple-500/10 border border-purple-500/30 px-1.5 py-1"><MessageCircle className="w-2.5 h-2.5 text-purple-500" /><span className="font-bold">Chat Prioritas</span></div>
+            <div className="flex items-center gap-1 rounded-lg bg-pink-500/10 border border-pink-500/30 px-1.5 py-1"><Sparkles className="w-2.5 h-2.5 text-pink-500" /><span className="font-bold">Tampilan Premium</span></div>
+            <div className="flex items-center gap-1 rounded-lg bg-cyan-500/10 border border-cyan-500/30 px-1.5 py-1"><Crown className="w-2.5 h-2.5 text-cyan-500" /><span className="font-bold">Badge 👑</span></div>
           </div>
-          <p className="text-[10px] text-muted-foreground">Klaim voucher diskon Rp 2.000 setiap hari, chat prioritas, badge 👑 di profil & tampilan eksklusif.</p>
         </div>
-      )}
+      </div>
 
-      {/* Klaim harian (hanya member) */}
-      {premium.isPremium && (
-        <div className="rounded-2xl border-2 border-dashed border-amber-500/50 bg-gradient-to-br from-amber-500/15 via-yellow-500/15 to-orange-500/15 p-3 shadow-lg shadow-amber-500/10">
-          <div className="flex items-center justify-between gap-2 mb-2">
-            <div className="flex items-center gap-2 min-w-0">
-              <Gift className="w-4 h-4 text-amber-600 dark:text-amber-400" />
-              <p className="text-xs font-black text-amber-700 dark:text-amber-300">Voucher Harian Rp 2.000</p>
-            </div>
-            <span className="rounded-full bg-green-500 px-2 py-0.5 text-[8px] font-black text-white">AKTIF</span>
+      {/* Klaim harian — selalu tampil, disabled bila belum aktif */}
+      <div className={`rounded-2xl border-2 border-dashed p-3 shadow-lg ${premium.isPremium ? "border-amber-500/50 bg-gradient-to-br from-amber-500/15 via-yellow-500/15 to-orange-500/15 shadow-amber-500/10" : "border-border bg-muted/30 shadow-none"}`}>
+        <div className="flex items-center justify-between gap-2 mb-2">
+          <div className="flex items-center gap-2 min-w-0">
+            <Gift className={`w-4 h-4 ${premium.isPremium ? "text-amber-600 dark:text-amber-400" : "text-muted-foreground"}`} />
+            <p className={`text-xs font-black ${premium.isPremium ? "text-amber-700 dark:text-amber-300" : "text-muted-foreground"}`}>Voucher Harian Rp 2.000</p>
           </div>
-          {claimedToday ? (
-            <div className="space-y-2">
-              <div className="flex items-center gap-2 rounded-lg bg-green-500/10 border border-green-500/30 px-2 py-1.5">
-                <Check className="w-3.5 h-3.5 text-green-600" />
-                <span className="text-[10px] font-bold text-green-700 dark:text-green-400 flex-1">Sudah diklaim hari ini</span>
-              </div>
-              <div className="flex items-center gap-1.5 rounded-lg bg-card border px-2 py-1.5">
-                <code className="text-[11px] font-mono font-black flex-1 truncate">{claimedToday.code}</code>
-                <Button size="sm" variant="outline" className="h-6 px-2" onClick={() => copy(claimedToday.code)}><Copy className="w-3 h-3" /></Button>
-              </div>
-              <p className="text-[9px] text-muted-foreground flex items-center gap-1"><Clock className="w-2.5 h-2.5" /> Besok kamu bisa klaim lagi</p>
-            </div>
-          ) : (
-            <Button onClick={handleClaim} disabled={claiming} size="lg" className="w-full h-14 bg-gradient-to-r from-amber-500 via-yellow-500 to-amber-500 text-white font-black text-sm shadow-lg shadow-amber-500/40 ring-2 ring-amber-300 animate-pulse hover:animate-none">
-              <Gift className="w-5 h-5 mr-2" />
-              {claiming ? "Mengklaim..." : "KLAIM VOUCHER Rp 2.000"}
-            </Button>
-          )}
+          <span className={`rounded-full px-2 py-0.5 text-[8px] font-black text-white ${premium.isPremium ? "bg-green-500" : "bg-slate-500"}`}>
+            {premium.isPremium ? "AKTIF" : "TERKUNCI"}
+          </span>
         </div>
-      )}
+        {!premium.isPremium ? (
+          <Button disabled size="lg" className="w-full h-14 bg-muted text-muted-foreground font-black text-sm cursor-not-allowed">
+            <Crown className="w-5 h-5 mr-2" />
+            Aktifkan Membership untuk Klaim
+          </Button>
+        ) : claimedToday ? (
+          <div className="space-y-2">
+            <div className="flex items-center gap-2 rounded-lg bg-green-500/10 border border-green-500/30 px-2 py-1.5">
+              <Check className="w-3.5 h-3.5 text-green-600" />
+              <span className="text-[10px] font-bold text-green-700 dark:text-green-400 flex-1">Sudah diklaim hari ini</span>
+            </div>
+            <div className="flex items-center gap-1.5 rounded-lg bg-card border px-2 py-1.5">
+              <code className="text-[11px] font-mono font-black flex-1 truncate">{claimedToday.code}</code>
+              <Button size="sm" variant="outline" className="h-6 px-2" onClick={() => copy(claimedToday.code)}><Copy className="w-3 h-3" /></Button>
+            </div>
+            <p className="text-[9px] text-muted-foreground flex items-center gap-1"><Clock className="w-2.5 h-2.5" /> Besok kamu bisa klaim lagi</p>
+          </div>
+        ) : (
+          <Button onClick={handleClaim} disabled={claiming} size="lg" className="w-full h-14 bg-gradient-to-r from-amber-500 via-yellow-500 to-amber-500 text-white font-black text-sm shadow-lg shadow-amber-500/40 ring-2 ring-amber-300 animate-pulse hover:animate-none">
+            <Gift className="w-5 h-5 mr-2" />
+            {claiming ? "Mengklaim..." : "KLAIM VOUCHER Rp 2.000"}
+          </Button>
+        )}
+      </div>
 
       {/* Daftar paket */}
       <div className="space-y-2">
