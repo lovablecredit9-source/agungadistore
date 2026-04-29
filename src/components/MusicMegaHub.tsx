@@ -283,14 +283,20 @@ export default function MusicMegaHub({ visitorId, playbackState, onPlaySong }: P
     if (!currentSong) return;
     const url = `${window.location.origin}/?play=${currentSong.id}`;
     const text = `🎵 Lagi dengar "${(currentSong as any).title}" — ${(currentSong as any).artist}\n${url}`;
+    let shared = false;
     try {
       if (navigator.share) {
         await navigator.share({ title: (currentSong as any).title, text, url });
+        shared = true;
       } else {
         await navigator.clipboard.writeText(text);
         toast({ title: "Disalin", description: "Link lagu disalin ke clipboard." });
+        shared = true;
       }
     } catch { /* user cancelled */ }
+    if (shared && visitorId) {
+      try { await supabase.rpc("bump_music_share_quest", { p_visitor_id: visitorId }); } catch { /* noop */ }
+    }
   };
 
   // Lyric sync
