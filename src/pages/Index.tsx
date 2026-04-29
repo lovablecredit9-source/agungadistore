@@ -2002,7 +2002,6 @@ const Index = () => {
                 <div className="relative mt-2.5 flex items-center gap-1.5 overflow-x-auto scrollbar-hide pb-0.5">
                   {[
                     { icon: "🏆", text: "Trusted #1", grad: "from-amber-400 to-orange-500" },
-                    { icon: "💎", text: "Premium", grad: "from-cyan-400 to-blue-500" },
                     { icon: "🔥", text: "Hot Deals", grad: "from-rose-500 to-pink-500" },
                     { icon: "⭐", text: "5-Star", grad: "from-yellow-400 to-amber-500" },
                     { icon: "🎯", text: "Akurat", grad: "from-emerald-400 to-teal-500" },
