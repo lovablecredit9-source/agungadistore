@@ -29,6 +29,7 @@ const App = () => (
           <GlobalMenuDrawer />
           <Routes>
             <Route path="/" element={<Index />} />
+            <Route path="/index" element={<Index />} />
             <Route path="/beranda" element={<Index />} />
             <Route path="/musik" element={<Index />} />
             <Route path="/produk" element={<Index />} />

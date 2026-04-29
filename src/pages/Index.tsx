@@ -16,8 +16,6 @@ import {
   Eye, LayoutGrid, Rows3, Flame, SlidersHorizontal, Zap, TrendingUp, Award, Activity, Inbox, User, Phone, Gift, Menu, Lightbulb, MessageSquare, Star, Share2
 } from "lucide-react";
 import { VerifiedBadge } from "@/components/VerifiedBadge";
-import PremiumBadge from "@/components/PremiumBadge";
-import { useStorePremium } from "@/hooks/useStorePremium";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import CountUp from "@/components/CountUp";
 import { useTheme } from "@/lib/theme";
@@ -423,7 +421,6 @@ const Index = () => {
 
   // Saldo
   const [userBalance, setUserBalance] = useState<UserBalance | null>(null);
-  const storePremium = useStorePremium(userBalance?.visitor_id ?? null);
   const [balanceTransactions, setBalanceTransactions] = useState<BalanceTransaction[]>([]);
   const [selectedTransaction, setSelectedTransaction] = useState<BalanceTransaction | null>(null);
   const [selectedTxIds, setSelectedTxIds] = useState<Set<string>>(new Set());
@@ -3994,8 +3991,7 @@ const Index = () => {
                         <div className="min-w-0">
                           <p className="text-[10.5px] text-muted-foreground font-medium">Akun</p>
                           <p className="text-[14px] font-semibold text-foreground truncate tracking-tight flex items-center gap-1">
-                            {userBalance.username}{storePremium.isPremium && " Premium"}
-                            {storePremium.isPremium && <PremiumBadge size="xs" showText={false} />}
+                            {userBalance.username}
                           </p>
                           <p className="text-[11px] text-muted-foreground truncate">{userBalance.phone}</p>
                         </div>
