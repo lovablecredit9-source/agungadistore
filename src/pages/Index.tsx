@@ -5412,9 +5412,7 @@ const Index = () => {
             {/* Chat Header */}
             <div className="flex items-center gap-3 border-b border-border p-4">
               <button onClick={() => setShowProductChat(false)}><ChevronLeft className="w-5 h-5" /></button>
-              <div className="flex h-9 w-9 items-center justify-center rounded-full border border-border bg-muted text-sm font-semibold text-foreground">
-                A
-              </div>
+              <img src={storeQris} alt={STORE_NAME} className="h-9 w-9 rounded-full object-cover border border-border" />
               <div className="flex-1">
                 <p className="font-bold text-sm">{STORE_NAME}</p>
                 <p className="text-[10px] text-muted-foreground">{t("chat.reply_time", lang)}</p>
