@@ -63,6 +63,7 @@ const DEFAULT_FX: AudioFxSettings = {
   surround: 0,
   rate: 1,
   preservePitch: true,
+  karaokeOnly: false,
 };
 
 const LS_KEY = "audio_fx_settings_v1";
