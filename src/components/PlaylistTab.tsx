@@ -320,6 +320,8 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer, onPlayE
     try { return Number(localStorage.getItem("audio_crossfade_sec") || "0") || 0; } catch { return 0; }
   });
   useEffect(() => { try { localStorage.setItem("audio_crossfade_sec", String(crossfadeSec)); } catch {} }, [crossfadeSec]);
+  const crossfadeRef = useRef(crossfadeSec);
+  useEffect(() => { crossfadeRef.current = crossfadeSec; }, [crossfadeSec]);
   const [abLoopEnabled, setAbLoopEnabled] = useState(false);
   const [abLoopA, setAbLoopA] = useState<number | null>(null);
   const [abLoopB, setAbLoopB] = useState<number | null>(null);
