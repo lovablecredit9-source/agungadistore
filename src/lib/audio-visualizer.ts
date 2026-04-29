@@ -5,7 +5,7 @@
  *   MediaElementSource
  *     -> EQ band 1..5 (BiquadFilter peaking)
  *     -> Bass Boost (lowshelf)
- *     -> ChannelSplitter -> Merger (Mono/Stereo/L-source/R-source)
+ *     -> ChannelSplitter -> Merger (Mono/Stereo/Karaoke center-cut routing)
  *     -> StereoPanner (Balance L/R for partial balance only)
  *     -> Convolver wet/dry mix (3D Surround)
  *     -> Master Gain
@@ -320,11 +320,10 @@ function buildGraph(ctx: AudioContext, audio: HTMLAudioElement): Graph {
 }
 
 /**
- * Karaoke channel-swap router.
+ * Karaoke center-cut router.
  *   balance = 0  → stereo passthrough (L→L, R→R)
- *   balance = -1 → L speaker = L source only (instrumental side),
- *                  R speaker = L+R sum (full music + vocal)
- *   balance = +1 → mirrored: L speaker = L+R, R speaker = R only
+ *   balance = -1 → L speaker = vocal-reduced (L-R), R speaker = original mono (L+R)
+ *   balance = +1 → mirrored: L speaker = original mono (L+R), R speaker = vocal-reduced (R-L)
  *   In between we crossfade smoothly.
  *   mono → both speakers get L+R sum.
  */
@@ -347,21 +346,21 @@ function rebuildChannelRouting(g: Graph, fx: AudioFxSettings) {
   }
 
   const k = Math.abs(balance);
-  // Cross gain: amount of opposite-channel bleed sent to one side.
-  // At k=1 the "full" side gets L+R (cross = 1), the "isolated" side gets only its own (cross = 0).
+  const full = 0.5 * k;
 
   if (balance < 0) {
-    // L speaker isolates L source; R speaker mixes L+R.
+    // Left side becomes karaoke/instrumental via center cancellation: L - R.
+    // Right side keeps the full song as mono: (L + R) / 2.
     lToOutL.gain.setTargetAtTime(1, t, 0.03);
-    rToOutL.gain.setTargetAtTime(0, t, 0.03);          // no cross into L
-    rToOutR.gain.setTargetAtTime(1, t, 0.03);
-    lToOutR.gain.setTargetAtTime(k, t, 0.03);          // bleed L into R as we go further left
+    rToOutL.gain.setTargetAtTime(-k, t, 0.03);
+    lToOutR.gain.setTargetAtTime(full, t, 0.03);
+    rToOutR.gain.setTargetAtTime(1 - full, t, 0.03);
   } else if (balance > 0) {
-    // R speaker isolates R source; L speaker mixes L+R.
+    // Mirrored: left keeps full song, right becomes karaoke/instrumental via R - L.
+    lToOutL.gain.setTargetAtTime(1 - full, t, 0.03);
+    rToOutL.gain.setTargetAtTime(full, t, 0.03);
+    lToOutR.gain.setTargetAtTime(-k, t, 0.03);
     rToOutR.gain.setTargetAtTime(1, t, 0.03);
-    lToOutR.gain.setTargetAtTime(0, t, 0.03);
-    lToOutL.gain.setTargetAtTime(1, t, 0.03);
-    rToOutL.gain.setTargetAtTime(k, t, 0.03);
   } else {
     // Pure stereo passthrough.
     lToOutL.gain.setTargetAtTime(1, t, 0.03);
