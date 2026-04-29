@@ -5,8 +5,8 @@
  *   MediaElementSource
  *     -> EQ band 1..5 (BiquadFilter peaking)
  *     -> Bass Boost (lowshelf)
- *     -> ChannelSplitter -> Merger (for Mono/Stereo)
- *     -> StereoPanner (Balance L/R)
+ *     -> ChannelSplitter -> Merger (Mono/Stereo/L-source/R-source)
+ *     -> StereoPanner (Balance L/R for partial balance only)
  *     -> Convolver wet/dry mix (3D Surround)
  *     -> Master Gain
  *     -> Analyser (visualizer tap)
@@ -77,7 +77,7 @@ function loadSettings(): AudioFxSettings {
 }
 
 function saveSettings(s: AudioFxSettings) {
-  try { localStorage.setItem(LS_KEY, JSON.stringify(s)); } catch {}
+  try { localStorage.setItem(LS_KEY, JSON.stringify(s)); } catch { void 0; }
 }
 
 // ---------- State ----------
@@ -254,13 +254,20 @@ function buildGraph(ctx: AudioContext, audio: HTMLAudioElement): Graph {
   return { source, eqNodes, bass, splitter, merger, panner, convolver, wetGain, dryGain, master, analyser };
 }
 
-function rebuildMonoRouting(g: Graph, mono: boolean) {
+function rebuildChannelRouting(g: Graph, fx: AudioFxSettings) {
   try {
     g.splitter.disconnect();
-  } catch {}
-  if (mono) {
+  } catch { void 0; }
+  const balance = Math.max(-1, Math.min(1, fx.balance));
+  if (fx.mono) {
     g.splitter.connect(g.merger, 0, 0);
     g.splitter.connect(g.merger, 0, 1);
+    g.splitter.connect(g.merger, 1, 0);
+    g.splitter.connect(g.merger, 1, 1);
+  } else if (balance <= -0.95) {
+    g.splitter.connect(g.merger, 0, 0);
+    g.splitter.connect(g.merger, 0, 1);
+  } else if (balance >= 0.95) {
     g.splitter.connect(g.merger, 1, 0);
     g.splitter.connect(g.merger, 1, 1);
   } else {
@@ -276,11 +283,13 @@ function applyFxToGraph(g: Graph, fx: AudioFxSettings) {
     g.eqNodes[i].gain.setTargetAtTime(fx.eq[i] ?? 0, t, 0.05);
   }
   g.bass.gain.setTargetAtTime(fx.bassBoost, t, 0.05);
-  g.panner.pan.setTargetAtTime(Math.max(-1, Math.min(1, fx.balance)), t, 0.05);
+  const balance = Math.max(-1, Math.min(1, fx.balance));
+  const pan = Math.abs(balance) >= 0.95 ? 0 : balance;
+  g.panner.pan.setTargetAtTime(pan, t, 0.05);
   const wet = Math.max(0, Math.min(1, fx.surround));
   g.wetGain.gain.setTargetAtTime(wet * 0.6, t, 0.05);
   g.dryGain.gain.setTargetAtTime(1 - wet * 0.4, t, 0.05);
-  rebuildMonoRouting(g, fx.mono);
+  rebuildChannelRouting(g, fx);
 }
 
 function applyRateToElement(audio: HTMLAudioElement, fx: AudioFxSettings) {
@@ -291,7 +300,7 @@ function applyRateToElement(audio: HTMLAudioElement, fx: AudioFxSettings) {
     if ("preservesPitch" in a) a.preservesPitch = fx.preservePitch;
     if ("mozPreservesPitch" in a) a.mozPreservesPitch = fx.preservePitch;
     if ("webkitPreservesPitch" in a) a.webkitPreservesPitch = fx.preservePitch;
-  } catch {}
+  } catch { void 0; }
 }
 
 // ---------- Public API ----------
@@ -316,14 +325,14 @@ export function attachAudioVisualizer(audio: HTMLAudioElement | null) {
     }
 
     if (!audio.crossOrigin) {
-      try { audio.crossOrigin = "anonymous"; } catch {}
+      try { audio.crossOrigin = "anonymous"; } catch { void 0; }
     }
 
     // Disconnect previous graph if attached to a different element
     if (state.graph && state.element !== audio) {
-      try { state.graph.source.disconnect(); } catch {}
-      try { state.graph.master.disconnect(); } catch {}
-      try { state.graph.analyser.disconnect(); } catch {}
+      try { state.graph.source.disconnect(); } catch { void 0; }
+      try { state.graph.master.disconnect(); } catch { void 0; }
+      try { state.graph.analyser.disconnect(); } catch { void 0; }
       state.graph = null;
     }
 
@@ -355,7 +364,7 @@ export function setAudioFx(patch: Partial<AudioFxSettings>) {
   saveSettings(next);
   if (state.graph) applyFxToGraph(state.graph, next);
   if (state.element) applyRateToElement(state.element, next);
-  fxSubscribers.forEach((cb) => { try { cb(next); } catch {} });
+  fxSubscribers.forEach((cb) => { try { cb(next); } catch { void 0; } });
 }
 
 export function resetAudioFx() {
