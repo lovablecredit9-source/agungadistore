@@ -88,6 +88,7 @@ export const StoreProfileModal = ({
   const [showCatPicker, setShowCatPicker] = useState(false);
   const [showSortPicker, setShowSortPicker] = useState(false);
   const [followVoucher, setFollowVoucher] = useState<FollowVoucher | null>(null);
+  const [flashSales, setFlashSales] = useState<any[]>([]);
   const { toast } = useToast();
   const responseRate = useResponseRate();
 
