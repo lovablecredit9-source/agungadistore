@@ -441,7 +441,38 @@ const Index = () => {
   const [showCart, setShowCart] = useState(false);
   const [navInfoDismissed, setNavInfoDismissed] = useState(() => !!localStorage.getItem("nav_swipe_info_dismissed"));
   const [wholesalePrices, setWholesalePrices] = useState<any[]>([]);
-  const cartTotal = cart.reduce((sum, item) => sum + getWholesalePrice(item.product.id, item.quantity, item.product.price) * item.quantity, 0);
+  const [activeFlashSales, setActiveFlashSales] = useState<any[]>([]);
+  const [flashTick, setFlashTick] = useState(0);
+  function getActiveFlashSaleForProduct(productId: string) {
+    const now = Date.now() + flashTick * 0; // tie to flashTick for re-eval
+    return activeFlashSales.find((s) => {
+      if (!s.is_active || s.product_id !== productId) return false;
+      const start = new Date(s.starts_at).getTime();
+      const end = new Date(s.ends_at).getTime();
+      if (start > now || end <= now) return false;
+      const remaining = (s.quota || 0) === 0 ? Infinity : Math.max(0, (s.quota || 0) - (s.sold || 0));
+      return remaining > 0;
+    });
+  }
+  function getFlashUnitPrice(flash: any, basePrice: number) {
+    if (!flash) return basePrice;
+    if (flash.mode === "discount_percent") {
+      return Math.max(0, Math.round(basePrice * (1 - (flash.discount_percent || 0) / 100)));
+    }
+    return flash.flash_price ?? basePrice;
+  }
+  function getEffectivePrice(productId: string, basePrice: number, quantity: number = 1) {
+    const flash = getActiveFlashSaleForProduct(productId);
+    const flashRemaining = flash ? (flash.quota === 0 ? Infinity : Math.max(0, flash.quota - (flash.sold || 0))) : 0;
+    if (flash && quantity <= flashRemaining) {
+      return { price: getFlashUnitPrice(flash, basePrice), isFlash: true, flash };
+    }
+    return { price: getWholesalePrice(productId, quantity, basePrice), isFlash: false, flash: null as any };
+  }
+  const cartTotal = cart.reduce((sum, item) => {
+    const eff = getEffectivePrice(item.product.id, item.product.price, item.quantity);
+    return sum + eff.price * item.quantity;
+  }, 0);
   const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
 
   // PIN
@@ -555,6 +586,24 @@ const Index = () => {
 
   useEffect(() => {
     fetchProducts();
+    fetchActiveFlashSales();
+    const ch = supabase
+      .channel("store_flash_sales_idx")
+      .on("postgres_changes", { event: "*", schema: "public", table: "store_flash_sales" }, () => fetchActiveFlashSales())
+      .subscribe();
+    const tick = setInterval(() => setFlashTick((t) => (t + 1) % 1000000), 1000);
+    return () => { supabase.removeChannel(ch); clearInterval(tick); };
+  }, []);
+
+  async function fetchActiveFlashSales() {
+    const { data } = await supabase
+      .from("store_flash_sales")
+      .select("*")
+      .eq("is_active", true);
+    setActiveFlashSales((data as any[]) || []);
+  }
+
+  useEffect(() => {
     loadHistory();
     fetchLikes();
     fetchAdminPosts();
@@ -2658,13 +2707,29 @@ const Index = () => {
                             </div>
                           )}
 
-                          {/* Price badge top-right - holographic neon */}
-                          <div className="absolute top-2 right-2 z-10" style={{ marginRight: p.has_warranty ? "0" : "0" }}>
-                            <div className="relative">
-                              <div className="absolute inset-0 rounded-full bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-500 blur-md opacity-70 animate-pulse" />
-                              <span className={`relative inline-block font-black bg-gradient-to-r from-cyan-300 via-white to-purple-200 text-slate-900 rounded-full shadow-[0_0_20px_rgba(34,211,238,0.8),inset_0_1px_2px_rgba(255,255,255,0.5)] backdrop-blur-sm border-2 border-white/50 ${isGrid ? "text-[10px] px-2.5 py-1" : "text-xs px-3 py-1.5"}`}>{formatPrice(p.price)}</span>
-                            </div>
-                          </div>
+                          {/* Price badge top-right - holographic neon (with flash sale support) */}
+                          {(() => {
+                            const flashEff = getActiveFlashSaleForProduct(p.id);
+                            const flashPrice = flashEff ? getFlashUnitPrice(flashEff, p.price) : p.price;
+                            return (
+                              <div className="absolute top-2 right-2 z-10">
+                                <div className="relative flex flex-col items-end gap-1">
+                                  {flashEff && (
+                                    <span className={`inline-flex items-center gap-0.5 font-black px-2 py-0.5 rounded-full bg-gradient-to-r from-red-500 via-orange-500 to-yellow-500 text-white shadow-[0_0_12px_rgba(239,68,68,0.8)] border border-white/40 animate-pulse ${isGrid ? "text-[8px]" : "text-[9px]"}`}>
+                                      ⚡ FLASH
+                                    </span>
+                                  )}
+                                  <div className="relative">
+                                    <div className={`absolute inset-0 rounded-full blur-md opacity-70 animate-pulse ${flashEff ? "bg-gradient-to-r from-red-400 via-orange-500 to-yellow-500" : "bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-500"}`} />
+                                    <span className={`relative inline-block font-black ${flashEff ? "bg-gradient-to-r from-yellow-200 via-white to-orange-200 text-red-700 shadow-[0_0_20px_rgba(239,68,68,0.8),inset_0_1px_2px_rgba(255,255,255,0.5)]" : "bg-gradient-to-r from-cyan-300 via-white to-purple-200 text-slate-900 shadow-[0_0_20px_rgba(34,211,238,0.8),inset_0_1px_2px_rgba(255,255,255,0.5)]"} rounded-full backdrop-blur-sm border-2 border-white/50 ${isGrid ? "text-[10px] px-2.5 py-1" : "text-xs px-3 py-1.5"}`}>{formatPrice(flashPrice)}</span>
+                                  </div>
+                                  {flashEff && (
+                                    <span className={`inline-block font-bold line-through text-white/80 bg-black/40 px-1.5 py-0.5 rounded-full ${isGrid ? "text-[8px]" : "text-[9px]"}`}>{formatPrice(p.price)}</span>
+                                  )}
+                                </div>
+                              </div>
+                            );
+                          })()}
 
                           {/* Action buttons bottom-right */}
                           <div className="absolute bottom-2 right-2 flex gap-1.5 z-10">
@@ -2719,7 +2784,15 @@ const Index = () => {
                         </div>
                         {p.description && !isGrid && <p className="text-xs text-slate-300/80 line-clamp-2 leading-relaxed">{p.description}</p>}
                         <div className="flex items-center justify-between flex-wrap gap-1.5">
-                          {imgs.length === 0 && <span className={`font-black bg-gradient-to-r from-cyan-300 to-purple-300 bg-clip-text text-transparent ${isGrid ? "text-xs" : "text-sm"}`}>{formatPrice(p.price)}</span>}
+                         {imgs.length === 0 && (() => {
+                           const fEff = getActiveFlashSaleForProduct(p.id);
+                           const fPrice = fEff ? getFlashUnitPrice(fEff, p.price) : p.price;
+                           return (
+                             <span className={`font-black ${fEff ? "text-red-500" : "bg-gradient-to-r from-cyan-300 to-purple-300 bg-clip-text text-transparent"} ${isGrid ? "text-xs" : "text-sm"}`}>
+                               {formatPrice(fPrice)}{fEff && <span className="text-[10px] font-bold line-through text-muted-foreground ml-1">{formatPrice(p.price)}</span>}
+                             </span>
+                           );
+                         })()}
                           <div className={`flex items-center gap-1.5 flex-wrap ${isGrid ? "text-[9px]" : ""}`}>
                             <span className={`px-2 py-0.5 rounded-full font-black flex items-center gap-1 backdrop-blur-sm ${isGrid ? "text-[9px]" : "text-[10px] px-2.5 py-1"} ${inStock ? 'bg-gradient-to-r from-emerald-500/30 to-green-500/20 text-emerald-200 border border-emerald-400/40 shadow-[0_0_8px_rgba(16,185,129,0.3)]' : 'bg-gradient-to-r from-rose-500/30 to-red-500/20 text-rose-200 border border-rose-400/40'}`}>
                               {inStock ? <><span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_4px_rgb(52,211,153)]" /> {p.stock} stok</> : '✗ Habis'}
@@ -5037,18 +5110,53 @@ const Index = () => {
                   <div className="pointer-events-none absolute -bottom-10 -left-10 w-32 h-32 rounded-full bg-violet-500/30 blur-3xl animate-pulse" style={{ animationDelay: "1s" }} />
                   <div className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/10 to-transparent animate-[shimmer_3s_ease-in-out_infinite]" style={{ animation: "shimmer 3s ease-in-out infinite" }} />
                   <style>{`@keyframes shimmer { 0% { transform: translateX(-100%); } 100% { transform: translateX(200%); } }`}</style>
-                  <div className="relative flex items-end justify-between">
-                    <div>
-                      <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-foreground/70 flex items-center gap-1"><Sparkles className="w-3 h-3 text-amber-400" /> Harga Terbaik</p>
-                      <p className="text-3xl font-black text-foreground tracking-tight mt-0.5 bg-gradient-to-br from-foreground to-foreground/70 bg-clip-text">{formatPrice(selectedProduct.price)}</p>
-                    </div>
-                    <div className="flex flex-col items-end gap-1">
-                      <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-400/40 text-[9px] font-bold text-emerald-300 uppercase tracking-wider flex items-center gap-1">
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" /> Live
-                      </span>
-                      <span className="text-[9px] text-foreground/60 font-medium">100% Original</span>
-                    </div>
-                  </div>
+                  {(() => {
+                    const flashEff = getActiveFlashSaleForProduct(selectedProduct.id);
+                    const flashPrice = flashEff ? getFlashUnitPrice(flashEff, selectedProduct.price) : selectedProduct.price;
+                    const remainSec = flashEff ? Math.max(0, Math.floor((new Date(flashEff.ends_at).getTime() - Date.now()) / 1000)) : 0;
+                    const hh = String(Math.floor(remainSec / 3600)).padStart(2, "0");
+                    const mm = String(Math.floor((remainSec % 3600) / 60)).padStart(2, "0");
+                    const ss = String(remainSec % 60).padStart(2, "0");
+                    const flashRemainQty = flashEff ? (flashEff.quota === 0 ? null : Math.max(0, flashEff.quota - (flashEff.sold || 0))) : null;
+                    return (
+                      <div className="relative flex items-end justify-between">
+                        <div>
+                          <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-foreground/70 flex items-center gap-1">
+                            {flashEff ? <><span className="text-red-500">⚡</span> Flash Sale</> : <><Sparkles className="w-3 h-3 text-amber-400" /> Harga Terbaik</>}
+                          </p>
+                          <p className={`text-3xl font-black tracking-tight mt-0.5 ${flashEff ? "text-red-500" : "text-foreground bg-gradient-to-br from-foreground to-foreground/70 bg-clip-text"}`}>{formatPrice(flashPrice)}</p>
+                          {flashEff && (
+                            <div className="flex items-center gap-2 mt-1">
+                              <span className="text-xs line-through text-muted-foreground font-semibold">{formatPrice(selectedProduct.price)}</span>
+                              {flashEff.mode === "discount_percent" && (
+                                <span className="px-1.5 py-0.5 rounded-md bg-red-500 text-white text-[10px] font-black">-{flashEff.discount_percent}%</span>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex flex-col items-end gap-1">
+                          {flashEff ? (
+                            <>
+                              <span className="px-2 py-0.5 rounded-full bg-red-500/20 border border-red-400/40 text-[9px] font-bold text-red-400 uppercase tracking-wider flex items-center gap-1">
+                                <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" /> LIVE
+                              </span>
+                              <span className="font-mono text-[11px] font-black text-red-400 bg-black/40 px-2 py-0.5 rounded">{hh}:{mm}:{ss}</span>
+                              {flashRemainQty !== null && (
+                                <span className="text-[9px] text-foreground/70 font-bold">Sisa kuota: {flashRemainQty}</span>
+                              )}
+                            </>
+                          ) : (
+                            <>
+                              <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-400/40 text-[9px] font-bold text-emerald-300 uppercase tracking-wider flex items-center gap-1">
+                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" /> Live
+                              </span>
+                              <span className="text-[9px] text-foreground/60 font-medium">100% Original</span>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })()}
                 </div>
                 {/* Wholesale prices */}
                 {(() => {
@@ -5098,24 +5206,29 @@ const Index = () => {
                     <MessageCircle className="w-4 h-4 text-purple-300 relative" />
                     <span className="text-[10px] font-bold text-foreground relative">Chat</span>
                   </button>
-                  <button
-                    disabled={!userBalance || userBalance.balance < selectedProduct.price || selectedProduct.stock <= 0}
-                    onClick={() => { setBuyProduct(selectedProduct); setBuyQuantity(1); setShowBuySaldo(true); }}
-                    className="group relative overflow-hidden h-14 rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 disabled:opacity-40 disabled:pointer-events-none active:scale-95 transition-all flex flex-col items-center justify-center gap-0.5 shadow-lg shadow-orange-500/30">
-                    <div className="absolute inset-0 bg-gradient-to-br from-white/0 to-white/0 group-hover:from-white/20 group-hover:to-transparent transition-colors" />
-                    <div className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-700 bg-gradient-to-r from-transparent via-white/30 to-transparent" />
-                    <Wallet className="w-4 h-4 text-white relative" />
-                    <span className="text-[10px] font-extrabold text-white relative">Beli Sekarang</span>
-                  </button>
-                  <button
-                    onClick={() => setShowWaForm(true)}
-                    className="group relative overflow-hidden h-14 rounded-2xl bg-gradient-to-br from-emerald-500/20 to-green-500/20 border border-emerald-400/30 active:scale-95 transition-all flex flex-col items-center justify-center gap-0.5">
-                    <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/0 to-green-500/0 group-hover:from-emerald-500/30 group-hover:to-green-500/30 transition-colors" />
-                    <ShoppingBag className="w-4 h-4 text-emerald-300 relative" />
-                    <span className="text-[10px] font-bold text-foreground relative">WhatsApp</span>
-                  </button>
+                  {(() => {
+                    const effPrice = getEffectivePrice(selectedProduct.id, selectedProduct.price, 1).price;
+                    return <>
+                      <button
+                        disabled={!userBalance || userBalance.balance < effPrice || selectedProduct.stock <= 0}
+                        onClick={() => { setBuyProduct(selectedProduct); setBuyQuantity(1); setShowBuySaldo(true); }}
+                        className="group relative overflow-hidden h-14 rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 disabled:opacity-40 disabled:pointer-events-none active:scale-95 transition-all flex flex-col items-center justify-center gap-0.5 shadow-lg shadow-orange-500/30">
+                        <div className="absolute inset-0 bg-gradient-to-br from-white/0 to-white/0 group-hover:from-white/20 group-hover:to-transparent transition-colors" />
+                        <div className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-700 bg-gradient-to-r from-transparent via-white/30 to-transparent" />
+                        <Wallet className="w-4 h-4 text-white relative" />
+                        <span className="text-[10px] font-extrabold text-white relative">Beli Sekarang</span>
+                      </button>
+                      <button
+                        onClick={() => setShowWaForm(true)}
+                        className="group relative overflow-hidden h-14 rounded-2xl bg-gradient-to-br from-emerald-500/20 to-green-500/20 border border-emerald-400/30 active:scale-95 transition-all flex flex-col items-center justify-center gap-0.5">
+                        <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/0 to-green-500/0 group-hover:from-emerald-500/30 group-hover:to-green-500/30 transition-colors" />
+                        <ShoppingBag className="w-4 h-4 text-emerald-300 relative" />
+                        <span className="text-[10px] font-bold text-foreground relative">WhatsApp</span>
+                      </button>
+                    </>;
+                  })()}
                 </div>
-                {userBalance && userBalance.balance < selectedProduct.price && (
+                {userBalance && userBalance.balance < getEffectivePrice(selectedProduct.id, selectedProduct.price, 1).price && (
                   <p className="text-[10px] text-destructive text-center">Saldo tidak cukup. <button className="underline text-primary" onClick={() => { openProduct(null); setTab("saldo"); }}>Deposit saldo →</button></p>
                 )}
                 {!userBalance && (
