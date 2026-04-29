@@ -576,6 +576,11 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer, onPlayE
       setCurrentTime(0);
       audio.addEventListener("timeupdate", () => {
         setCurrentTime(audio.currentTime);
+        // A-B loop
+        const ab = abRef.current;
+        if (ab.enabled && ab.a != null && ab.b != null && ab.b > ab.a && audio.currentTime >= ab.b) {
+          audio.currentTime = ab.a;
+        }
         if ("mediaSession" in navigator && "setPositionState" in navigator.mediaSession) {
           try { navigator.mediaSession.setPositionState({ duration: audio.duration || 0, playbackRate: audio.playbackRate, position: audio.currentTime }); } catch {}
         }
