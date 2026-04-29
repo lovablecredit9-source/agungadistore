@@ -3767,11 +3767,42 @@ const Index = () => {
 
             {ticketView === "chat" && activeTicket && (
               <>
-                <div className="flex items-center gap-2">
-                  <Button variant="ghost" size="icon" onClick={() => { setTicketView("list"); setActiveTicket(null); }}><ChevronLeft className="w-5 h-5" /></Button>
-                  <div className="flex-1">
-                    <h2 className="text-sm font-extrabold">Tiket #{activeTicket.ticket_number}</h2>
-                    <p className="text-[10px] text-muted-foreground">{activeTicket.status === "open" ? "🟢 Terbuka" : "🔴 Ditutup"}</p>
+                {/* === Header keren: gradient + glass === */}
+                <div className="relative overflow-hidden rounded-[22px] border border-white/15 bg-gradient-to-br from-violet-600/25 via-fuchsia-500/15 to-cyan-500/20 backdrop-blur-2xl backdrop-saturate-150 shadow-[0_18px_40px_-12px_rgba(0,0,0,0.45),inset_0_1px_0_0_rgba(255,255,255,0.18)]">
+                  <div className="pointer-events-none absolute -top-12 -right-10 w-36 h-36 rounded-full bg-fuchsia-400/25 blur-3xl" />
+                  <div className="pointer-events-none absolute -bottom-12 -left-10 w-36 h-36 rounded-full bg-cyan-400/25 blur-3xl" />
+                  <div className="relative flex items-center gap-2 p-3">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="rounded-full bg-white/10 hover:bg-white/20 text-foreground h-9 w-9 shrink-0 backdrop-blur-md"
+                      onClick={() => { setTicketView("list"); setActiveTicket(null); }}
+                    >
+                      <ChevronLeft className="w-5 h-5" />
+                    </Button>
+                    <div className="relative shrink-0">
+                      <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-violet-500 to-cyan-500 blur-md opacity-60" />
+                      <div
+                        className="relative w-11 h-11 rounded-2xl bg-gradient-to-br from-violet-500 via-fuchsia-500 to-cyan-500 flex items-center justify-center text-white"
+                        style={{ boxShadow: "0 8px 20px -4px rgba(168,85,247,0.55), inset 0 1px 0 0 rgba(255,255,255,0.3)" }}
+                      >
+                        <MessageCircle className="w-5 h-5" strokeWidth={2.4} />
+                      </div>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-1.5">
+                        <h2 className="text-[14px] font-extrabold tracking-tight truncate">Tiket #{activeTicket.ticket_number}</h2>
+                        <span className={`shrink-0 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9px] font-black border ${
+                          activeTicket.status === "open"
+                            ? "bg-emerald-500/15 text-emerald-500 border-emerald-500/30"
+                            : "bg-rose-500/15 text-rose-500 border-rose-500/30"
+                        }`}>
+                          <span className={`w-1.5 h-1.5 rounded-full ${activeTicket.status === "open" ? "bg-emerald-500 animate-pulse" : "bg-rose-500"}`} />
+                          {activeTicket.status === "open" ? "Terbuka" : "Ditutup"}
+                        </span>
+                      </div>
+                      <p className="text-[10.5px] text-muted-foreground truncate">Chat dengan {STORE_NAME}</p>
+                    </div>
                   </div>
                 </div>
 
@@ -3790,22 +3821,37 @@ const Index = () => {
                       </Button>
                     </div>
                   }
-                  className="bg-muted/30 rounded-xl border border-border h-[55vh]"
+                  className="bg-gradient-to-b from-background/40 to-background/10 backdrop-blur-xl rounded-2xl border border-white/10 shadow-[0_12px_30px_-12px_rgba(0,0,0,0.4),inset_0_1px_0_0_rgba(255,255,255,0.08)] h-[55vh]"
                   scrollClassName="max-h-full"
                   headerSlot={
-                    <div className="bg-primary/5 border border-primary/20 rounded-lg p-3 text-xs space-y-1">
-                      {activeTicket.category && (
-                        <p><strong>Kategori:</strong> {TICKET_CATEGORIES.find(c => c.value === activeTicket.category)?.label || activeTicket.category}</p>
-                      )}
-                      <p><strong>Nama:</strong> {activeTicket.name}</p>
-                      <p><strong>HP:</strong> {activeTicket.phone}</p>
-                      <p><strong>Masalah:</strong> {activeTicket.description}</p>
-                      {activeTicket.screenshot_url && (
-                        <div className="mt-2">
-                          <p className="font-bold mb-1">📸 Screenshot:</p>
-                          <img src={activeTicket.screenshot_url} alt="Screenshot bukti" className="max-w-full rounded-lg border" />
+                    <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-violet-500/10 via-fuchsia-500/5 to-cyan-500/10 backdrop-blur-xl p-3 text-[11.5px] space-y-1.5">
+                      <div className="pointer-events-none absolute -top-10 -right-10 w-28 h-28 rounded-full bg-violet-500/15 blur-3xl" />
+                      <div className="relative space-y-1.5">
+                        {activeTicket.category && (
+                          <div className="flex items-start gap-2">
+                            <span className="shrink-0 px-1.5 py-0.5 rounded-md bg-violet-500/15 text-violet-500 font-black text-[9px] uppercase tracking-wider">Kategori</span>
+                            <span className="font-semibold text-foreground">{TICKET_CATEGORIES.find(c => c.value === activeTicket.category)?.label || activeTicket.category}</span>
+                          </div>
+                        )}
+                        <div className="flex items-start gap-2">
+                          <span className="shrink-0 px-1.5 py-0.5 rounded-md bg-cyan-500/15 text-cyan-500 font-black text-[9px] uppercase tracking-wider">Nama</span>
+                          <span className="font-semibold text-foreground truncate">{activeTicket.name}</span>
                         </div>
-                      )}
+                        <div className="flex items-start gap-2">
+                          <span className="shrink-0 px-1.5 py-0.5 rounded-md bg-emerald-500/15 text-emerald-500 font-black text-[9px] uppercase tracking-wider">HP</span>
+                          <span className="font-semibold text-foreground">{activeTicket.phone}</span>
+                        </div>
+                        <div className="flex items-start gap-2">
+                          <span className="shrink-0 px-1.5 py-0.5 rounded-md bg-fuchsia-500/15 text-fuchsia-500 font-black text-[9px] uppercase tracking-wider">Masalah</span>
+                          <span className="text-foreground/90 leading-snug">{activeTicket.description}</span>
+                        </div>
+                        {activeTicket.screenshot_url && (
+                          <div className="mt-2 pt-2 border-t border-white/10">
+                            <p className="font-black mb-1.5 text-[10px] flex items-center gap-1 text-amber-500">📸 Screenshot Bukti</p>
+                            <img src={activeTicket.screenshot_url} alt="Screenshot bukti" className="max-w-full rounded-xl border border-white/15 shadow-lg" />
+                          </div>
+                        )}
+                      </div>
                     </div>
                   }
                 />
