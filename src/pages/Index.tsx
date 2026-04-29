@@ -443,13 +443,35 @@ const Index = () => {
   const [wholesalePrices, setWholesalePrices] = useState<any[]>([]);
   const [activeFlashSales, setActiveFlashSales] = useState<any[]>([]);
   const [flashTick, setFlashTick] = useState(0);
-  const cartTotal = cart.reduce((sum, item) => {
-    const flash = getActiveFlashSaleForProduct(item.product.id);
-    const flashRemaining = flash ? (flash.quota === 0 ? Infinity : Math.max(0, flash.quota - (flash.sold || 0))) : 0;
-    if (flash && item.quantity <= flashRemaining) {
-      return sum + getFlashUnitPrice(flash, item.product.price) * item.quantity;
+  function getActiveFlashSaleForProduct(productId: string) {
+    const now = Date.now() + flashTick * 0; // tie to flashTick for re-eval
+    return activeFlashSales.find((s) => {
+      if (!s.is_active || s.product_id !== productId) return false;
+      const start = new Date(s.starts_at).getTime();
+      const end = new Date(s.ends_at).getTime();
+      if (start > now || end <= now) return false;
+      const remaining = (s.quota || 0) === 0 ? Infinity : Math.max(0, (s.quota || 0) - (s.sold || 0));
+      return remaining > 0;
+    });
+  }
+  function getFlashUnitPrice(flash: any, basePrice: number) {
+    if (!flash) return basePrice;
+    if (flash.mode === "discount_percent") {
+      return Math.max(0, Math.round(basePrice * (1 - (flash.discount_percent || 0) / 100)));
     }
-    return sum + getWholesalePrice(item.product.id, item.quantity, item.product.price) * item.quantity;
+    return flash.flash_price ?? basePrice;
+  }
+  function getEffectivePrice(productId: string, basePrice: number, quantity: number = 1) {
+    const flash = getActiveFlashSaleForProduct(productId);
+    const flashRemaining = flash ? (flash.quota === 0 ? Infinity : Math.max(0, flash.quota - (flash.sold || 0))) : 0;
+    if (flash && quantity <= flashRemaining) {
+      return { price: getFlashUnitPrice(flash, basePrice), isFlash: true, flash };
+    }
+    return { price: getWholesalePrice(productId, quantity, basePrice), isFlash: false, flash: null as any };
+  }
+  const cartTotal = cart.reduce((sum, item) => {
+    const eff = getEffectivePrice(item.product.id, item.product.price, item.quantity);
+    return sum + eff.price * item.quantity;
   }, 0);
   const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
 
