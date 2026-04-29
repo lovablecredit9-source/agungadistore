@@ -72,21 +72,22 @@ export default function MusicMegaHub({ visitorId, playbackState, onPlaySong }: P
   const currentSongId = currentSong?.id;
   const currentSongType: "playlist" | "public" = (currentSong as any)?.source === "public" ? "public" : "playlist";
 
-  // Load level
+  // Load level (sinkron dengan AKUN SALDO — total dari semua perangkat di akun yang sama)
   const loadLevel = async () => {
     if (!visitorId) return;
-    const { data } = await supabase.from("music_listener_xp").select("level,total_seconds").eq("visitor_id", visitorId).maybeSingle();
-    setLevel(data || { level: "Bronze", total_seconds: 0 });
+    const { data } = await supabase.rpc("get_account_music_xp", { p_visitor_id: visitorId });
+    const row = Array.isArray(data) ? data[0] : data;
+    setLevel(row ? { level: row.level, total_seconds: Number(row.total_seconds) } : { level: "Bronze", total_seconds: 0 });
   };
 
   useEffect(() => { loadLevel(); }, [visitorId]);
 
-  // Realtime XP updates
+  // Realtime XP updates → cukup refresh akun (bukan langsung set), supaya total akun ikut akumulasi
   useEffect(() => {
     if (!visitorId) return;
     const ch = supabase.channel(`xp-${visitorId}`)
-      .on("postgres_changes", { event: "*", schema: "public", table: "music_listener_xp", filter: `visitor_id=eq.${visitorId}` },
-        (payload) => { if (payload.new) setLevel(payload.new as any); })
+      .on("postgres_changes", { event: "*", schema: "public", table: "music_listener_xp" },
+        () => { loadLevel(); })
       .subscribe();
     return () => { supabase.removeChannel(ch); };
   }, [visitorId]);
