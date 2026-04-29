@@ -314,6 +314,14 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer, onPlayE
   const fullPlayerLyricsRef = useRef<HTMLDivElement>(null);
   const [showFullPlayer, setShowFullPlayer] = useState(false);
 
+  // Listen for global "open audio fx" event so other tabs (e.g. MusicMegaHub) can open it
+  useEffect(() => {
+    const handler = () => setShowFxSettings(true);
+    window.addEventListener("open-audio-fx", handler);
+    return () => window.removeEventListener("open-audio-fx", handler);
+  }, []);
+
+
   // Audio FX & extras
   const [showFxSettings, setShowFxSettings] = useState(false);
   const [crossfadeSec, setCrossfadeSec] = useState<number>(() => {
