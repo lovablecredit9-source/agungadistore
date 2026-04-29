@@ -551,12 +551,12 @@ export const StoreProfileModal = ({
 
                       {/* Sub-tabs urutan: Populer, Terbaru, Terlaris, Harga */}
                       {(() => {
-                        const subTabs: { key: SortMode; label: string; emoji: string; color: string }[] = [
-                          { key: "popular",    label: "Populer",  emoji: "❤️", color: "from-pink-500 to-rose-500" },
-                          { key: "newest",     label: "Terbaru",  emoji: "✨", color: "from-cyan-500 to-blue-500" },
-                          { key: "bestseller", label: "Terlaris", emoji: "🔥", color: "from-orange-500 to-amber-500" },
-                          { key: "cheapest",   label: "Termurah", emoji: "💰", color: "from-emerald-500 to-teal-500" },
-                          { key: "expensive",  label: "Termahal", emoji: "💎", color: "from-violet-500 to-indigo-500" },
+                        const subTabs: { key: SortMode; label: string; color: string }[] = [
+                          { key: "popular",    label: "Populer",  color: "from-pink-500 to-rose-500" },
+                          { key: "newest",     label: "Terbaru",  color: "from-cyan-500 to-blue-500" },
+                          { key: "bestseller", label: "Terlaris", color: "from-orange-500 to-amber-500" },
+                          { key: "cheapest",   label: "Termurah", color: "from-emerald-500 to-teal-500" },
+                          { key: "expensive",  label: "Termahal", color: "from-violet-500 to-indigo-500" },
                         ];
                         return (
                           <div className="-mx-1 px-1 mb-3 overflow-x-auto scrollbar-none">
