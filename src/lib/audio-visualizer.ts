@@ -88,6 +88,18 @@ type Graph = {
   bass: BiquadFilterNode;
   splitter: ChannelSplitterNode;
   merger: ChannelMergerNode;
+  // Karaoke side-channel nodes
+  lGain: GainNode;       // L source passthrough
+  rGain: GainNode;       // R source passthrough
+  rInvGain: GainNode;    // -R for (L - R) = side/instrumental
+  lInvGain: GainNode;    // -L for (R - L) inversion when needed
+  vocalLGain: GainNode;  // L contribution to vocal (center) bus
+  vocalRGain: GainNode;  // R contribution to vocal (center) bus
+  vocalBus: GainNode;    // (L + R) center sum
+  instLBus: GainNode;    // (L - R) instrumental bus
+  instRBus: GainNode;    // (R - L) instrumental bus (mirror)
+  outLGain: GainNode;    // final left output mix
+  outRGain: GainNode;    // final right output mix
   panner: StereoPannerNode;
   convolver: ConvolverNode;
   wetGain: GainNode;
