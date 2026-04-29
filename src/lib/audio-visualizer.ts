@@ -5,8 +5,8 @@
  *   MediaElementSource
  *     -> EQ band 1..5 (BiquadFilter peaking)
  *     -> Bass Boost (lowshelf)
- *     -> ChannelSplitter -> Merger (for Mono/Stereo)
- *     -> StereoPanner (Balance L/R)
+ *     -> ChannelSplitter -> Merger (Mono/Stereo/L-source/R-source)
+ *     -> StereoPanner (Balance L/R for partial balance only)
  *     -> Convolver wet/dry mix (3D Surround)
  *     -> Master Gain
  *     -> Analyser (visualizer tap)
@@ -254,13 +254,20 @@ function buildGraph(ctx: AudioContext, audio: HTMLAudioElement): Graph {
   return { source, eqNodes, bass, splitter, merger, panner, convolver, wetGain, dryGain, master, analyser };
 }
 
-function rebuildMonoRouting(g: Graph, mono: boolean) {
+function rebuildChannelRouting(g: Graph, fx: AudioFxSettings) {
   try {
     g.splitter.disconnect();
   } catch {}
-  if (mono) {
+  const balance = Math.max(-1, Math.min(1, fx.balance));
+  if (fx.mono) {
     g.splitter.connect(g.merger, 0, 0);
     g.splitter.connect(g.merger, 0, 1);
+    g.splitter.connect(g.merger, 1, 0);
+    g.splitter.connect(g.merger, 1, 1);
+  } else if (balance <= -0.95) {
+    g.splitter.connect(g.merger, 0, 0);
+    g.splitter.connect(g.merger, 0, 1);
+  } else if (balance >= 0.95) {
     g.splitter.connect(g.merger, 1, 0);
     g.splitter.connect(g.merger, 1, 1);
   } else {
@@ -276,11 +283,13 @@ function applyFxToGraph(g: Graph, fx: AudioFxSettings) {
     g.eqNodes[i].gain.setTargetAtTime(fx.eq[i] ?? 0, t, 0.05);
   }
   g.bass.gain.setTargetAtTime(fx.bassBoost, t, 0.05);
-  g.panner.pan.setTargetAtTime(Math.max(-1, Math.min(1, fx.balance)), t, 0.05);
+  const balance = Math.max(-1, Math.min(1, fx.balance));
+  const pan = Math.abs(balance) >= 0.95 ? 0 : balance;
+  g.panner.pan.setTargetAtTime(pan, t, 0.05);
   const wet = Math.max(0, Math.min(1, fx.surround));
   g.wetGain.gain.setTargetAtTime(wet * 0.6, t, 0.05);
   g.dryGain.gain.setTargetAtTime(1 - wet * 0.4, t, 0.05);
-  rebuildMonoRouting(g, fx.mono);
+  rebuildChannelRouting(g, fx);
 }
 
 function applyRateToElement(audio: HTMLAudioElement, fx: AudioFxSettings) {
