@@ -95,6 +95,7 @@ export const StoreProfileModal = ({
   const [flashSales, setFlashSales] = useState<any[]>([]);
   const { toast } = useToast();
   const responseRate = useResponseRate();
+  const myPremium = useStorePremium(activeVisitorId ?? userBalance?.visitor_id ?? null);
 
   const isAdminOnline = adminLastActive
     ? Date.now() - new Date(adminLastActive).getTime() < ONLINE_THRESHOLD_MS
