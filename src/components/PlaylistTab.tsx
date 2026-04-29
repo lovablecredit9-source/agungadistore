@@ -314,6 +314,18 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer, onPlayE
   const fullPlayerLyricsRef = useRef<HTMLDivElement>(null);
   const [showFullPlayer, setShowFullPlayer] = useState(false);
 
+  // Audio FX & extras
+  const [showFxSettings, setShowFxSettings] = useState(false);
+  const [crossfadeSec, setCrossfadeSec] = useState<number>(() => {
+    try { return Number(localStorage.getItem("audio_crossfade_sec") || "0") || 0; } catch { return 0; }
+  });
+  useEffect(() => { try { localStorage.setItem("audio_crossfade_sec", String(crossfadeSec)); } catch {} }, [crossfadeSec]);
+  const [abLoopEnabled, setAbLoopEnabled] = useState(false);
+  const [abLoopA, setAbLoopA] = useState<number | null>(null);
+  const [abLoopB, setAbLoopB] = useState<number | null>(null);
+  const abRef = useRef({ enabled: false, a: null as number | null, b: null as number | null });
+  useEffect(() => { abRef.current = { enabled: abLoopEnabled, a: abLoopA, b: abLoopB }; }, [abLoopEnabled, abLoopA, abLoopB]);
+
   const buildFallbackRecommendationIds = useCallback((songList: Song[], likedIds: Set<string>) => {
     const likedArtists = new Set(
       songList
