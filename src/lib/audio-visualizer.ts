@@ -407,31 +407,11 @@ export function useAudioBandsDOM(
 
 /** React hook to read & update FX settings reactively. */
 export function useAudioFx() {
-  const ref = useRef(getAudioFx());
-  // Force re-render when FX change
+  const [fx, setFxState] = useState<AudioFxSettings>(() => getAudioFx());
   useEffect(() => {
-    const unsub = subscribeAudioFx(() => {
-      ref.current = getAudioFx();
-      // bump state via micro setState replacement
-      forceRerender({});
-    });
+    const unsub = subscribeAudioFx((s) => setFxState({ ...s, eq: [...s.eq] as AudioFxSettings["eq"] }));
     return unsub;
   }, []);
-  // Tiny local state for re-render trigger
-  const [, forceRerender] = useStateShim<object>({});
-  return {
-    fx: ref.current,
-    setFx: setAudioFx,
-    reset: resetAudioFx,
-  };
+  return { fx, setFx: setAudioFx, reset: resetAudioFx };
 }
 
-// Minimal useState shim to avoid importing React in hook body twice
-function useStateShim<T>(init: T): [T, (v: T) => void] {
-  const r = useRef(init);
-  const [, set] = useStateNative<number>(0);
-  return [r.current, (v: T) => { r.current = v; set((n) => n + 1); }];
-}
-
-// Lazy import useState natively
-import { useState as useStateNative } from "react";
