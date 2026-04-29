@@ -78,7 +78,7 @@ export default function AdminProductFlashSaleTab() {
     setLoading(true);
     try {
       const [prodRes, saleRes] = await Promise.all([
-        supabase.from("products").select("id, title, price, image_url, short_id").order("title"),
+        supabase.from("products").select("id, title, price, image_url").order("title"),
         supabase.from("store_flash_sales").select("*").order("created_at", { ascending: false }),
       ]);
       const prods = (prodRes.data || []) as Product[];
