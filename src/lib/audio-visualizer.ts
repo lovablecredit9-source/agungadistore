@@ -339,6 +339,16 @@ function rebuildChannelRouting(g: Graph, fx: AudioFxSettings) {
   const rToOutL = g.vocalLGain;   // R → L (cross)
   const lToOutR = g.vocalRGain;   // L → R (cross)
 
+  if (fx.karaokeOnly) {
+    // Both speakers receive (L - R): center-cancelled instrumental.
+    // L out = L - R, R out = L - R (mirrored to keep stereo image symmetric).
+    lToOutL.gain.setTargetAtTime(1, t, 0.03);
+    rToOutL.gain.setTargetAtTime(-1, t, 0.03);
+    lToOutR.gain.setTargetAtTime(1, t, 0.03);
+    rToOutR.gain.setTargetAtTime(-1, t, 0.03);
+    return;
+  }
+
   if (fx.mono) {
     // Both speakers receive L+R at half gain to avoid clipping.
     lToOutL.gain.setTargetAtTime(0.5, t, 0.03);
