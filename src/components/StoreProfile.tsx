@@ -704,6 +704,130 @@ export const StoreProfileModal = ({
                         </div>
                       )}
                     </TabsContent>
+
+                    {/* TAB FLASH SALE */}
+                    <TabsContent value="flashsale" className="mt-3">
+                      <h3 className="text-xs font-black flex items-center gap-1.5 mb-2">
+                        <Zap className="w-4 h-4 text-orange-500" fill="currentColor" />
+                        Flash Sale Berlangsung
+                      </h3>
+                      {(() => {
+                        const now = Date.now();
+                        const productMap = new Map(products.map((p) => [p.id, p]));
+                        const live = flashSales
+                          .map((s) => ({ ...s, product: productMap.get(s.product_id) }))
+                          .filter((s) =>
+                            s.product &&
+                            new Date(s.starts_at).getTime() <= now &&
+                            new Date(s.ends_at).getTime() > now &&
+                            (s.quota === 0 || s.sold < s.quota)
+                          );
+                        const upcoming = flashSales
+                          .map((s) => ({ ...s, product: productMap.get(s.product_id) }))
+                          .filter((s) => s.product && new Date(s.starts_at).getTime() > now);
+
+                        if (live.length === 0 && upcoming.length === 0) {
+                          return (
+                            <div className="rounded-2xl border border-dashed border-border/60 bg-muted/30 py-8 text-center">
+                              <Zap className="w-8 h-8 text-muted-foreground/50 mx-auto mb-2" />
+                              <p className="text-xs text-muted-foreground">Belum ada flash sale aktif</p>
+                              <p className="text-[10px] text-muted-foreground/70 mt-0.5">Cek lagi nanti ya 🔥</p>
+                            </div>
+                          );
+                        }
+
+                        const renderCard = (s: any, isLive: boolean) => {
+                          const target = new Date(isLive ? s.ends_at : s.starts_at).getTime();
+                          const diff = Math.max(0, target - now);
+                          const hours = Math.floor(diff / 3600000);
+                          const minutes = Math.floor((diff % 3600000) / 60000);
+                          const seconds = Math.floor((diff % 60000) / 1000);
+                          const days = Math.floor(hours / 24);
+                          const orig = s.product.price as number;
+                          const flashPrice =
+                            s.mode === "discount_percent"
+                              ? Math.max(0, Math.round(orig * (1 - (s.discount_percent || 0) / 100)))
+                              : (s.flash_price ?? 0);
+                          const pct = s.quota > 0 ? Math.min(100, (s.sold / s.quota) * 100) : 0;
+                          const discountLabel =
+                            s.mode === "discount_percent"
+                              ? `-${s.discount_percent}%`
+                              : `Hemat ${Math.round(((orig - flashPrice) / Math.max(1, orig)) * 100)}%`;
+
+                          return (
+                            <button
+                              key={s.id}
+                              onClick={() => { setOpen(false); onProductClick?.(s.product_id); }}
+                              className="group text-left rounded-2xl bg-card border border-orange-500/30 overflow-hidden active:scale-95 transition hover:shadow-lg hover:border-orange-500/60 relative"
+                            >
+                              {isLive && (
+                                <div className="absolute top-1.5 left-1.5 z-10 inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-red-500 text-white text-[8px] font-black backdrop-blur-sm shadow">
+                                  <span className="w-1 h-1 rounded-full bg-white animate-pulse" />
+                                  LIVE
+                                </div>
+                              )}
+                              <span className="absolute top-1.5 right-1.5 z-10 px-1.5 py-0.5 rounded-full bg-gradient-to-r from-orange-500 to-red-500 text-white text-[9px] font-black shadow">
+                                {discountLabel}
+                              </span>
+                              <div className="aspect-square bg-muted relative overflow-hidden">
+                                {s.product.image_url ? (
+                                  <img src={s.product.image_url} alt={s.product.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300" />
+                                ) : (
+                                  <div className="w-full h-full flex items-center justify-center text-muted-foreground"><Package className="w-8 h-8" /></div>
+                                )}
+                              </div>
+                              <div className="p-1.5 space-y-1">
+                                <p className="text-[10px] font-bold line-clamp-1">{s.product.title}</p>
+                                <div className="flex items-baseline gap-1">
+                                  <p className="text-[11px] font-black text-red-500">{formatPrice(flashPrice)}</p>
+                                  <p className="text-[9px] line-through text-muted-foreground">{formatPrice(orig)}</p>
+                                </div>
+                                {s.quota > 0 && (
+                                  <div>
+                                    <div className="h-1 rounded-full bg-muted overflow-hidden">
+                                      <div className="h-full bg-gradient-to-r from-orange-500 to-red-500" style={{ width: `${pct}%` }} />
+                                    </div>
+                                    <p className="text-[8px] font-bold text-orange-500 mt-0.5">
+                                      Sisa {Math.max(0, s.quota - s.sold)}/{s.quota}
+                                    </p>
+                                  </div>
+                                )}
+                                <div className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-orange-500/10 border border-orange-500/30">
+                                  <Clock className="w-2.5 h-2.5 text-orange-500" />
+                                  <span className="text-[9px] font-black text-orange-500 tabular-nums">
+                                    {isLive ? (
+                                      days > 0
+                                        ? `${days}h ${hours % 24}j`
+                                        : `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`
+                                    ) : (
+                                      `Mulai dlm ${days > 0 ? `${days}h` : `${hours}j ${minutes}m`}`
+                                    )}
+                                  </span>
+                                </div>
+                              </div>
+                            </button>
+                          );
+                        };
+
+                        return (
+                          <div className="space-y-3">
+                            {live.length > 0 && (
+                              <div className="grid grid-cols-2 gap-2">
+                                {live.map((s) => renderCard(s, true))}
+                              </div>
+                            )}
+                            {upcoming.length > 0 && (
+                              <div>
+                                <h4 className="text-[10px] font-black text-muted-foreground mb-1.5 uppercase tracking-wider">Akan Datang</h4>
+                                <div className="grid grid-cols-2 gap-2">
+                                  {upcoming.map((s) => renderCard(s, false))}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })()}
+                    </TabsContent>
                   </Tabs>
                 );
               })()}
