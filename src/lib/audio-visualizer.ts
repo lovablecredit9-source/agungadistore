@@ -325,14 +325,14 @@ export function attachAudioVisualizer(audio: HTMLAudioElement | null) {
     }
 
     if (!audio.crossOrigin) {
-      try { audio.crossOrigin = "anonymous"; } catch {}
+      try { audio.crossOrigin = "anonymous"; } catch { void 0; }
     }
 
     // Disconnect previous graph if attached to a different element
     if (state.graph && state.element !== audio) {
-      try { state.graph.source.disconnect(); } catch {}
-      try { state.graph.master.disconnect(); } catch {}
-      try { state.graph.analyser.disconnect(); } catch {}
+      try { state.graph.source.disconnect(); } catch { void 0; }
+      try { state.graph.master.disconnect(); } catch { void 0; }
+      try { state.graph.analyser.disconnect(); } catch { void 0; }
       state.graph = null;
     }
 
@@ -364,7 +364,7 @@ export function setAudioFx(patch: Partial<AudioFxSettings>) {
   saveSettings(next);
   if (state.graph) applyFxToGraph(state.graph, next);
   if (state.element) applyRateToElement(state.element, next);
-  fxSubscribers.forEach((cb) => { try { cb(next); } catch {} });
+  fxSubscribers.forEach((cb) => { try { cb(next); } catch { void 0; } });
 }
 
 export function resetAudioFx() {
