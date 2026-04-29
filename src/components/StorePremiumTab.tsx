@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
@@ -220,28 +219,42 @@ export default function StorePremiumTab({ visitorId, onLoginRequired }: Props) {
         {plans.length === 0 && <p className="text-center text-[11px] text-muted-foreground py-4">Belum ada paket tersedia</p>}
       </div>
 
-      {/* PIN dialog */}
-      <Dialog open={!!pinDialog} onOpenChange={(o) => !o && setPinDialog(null)}>
-        <DialogContent className="z-[120] max-w-sm">
-          <DialogTitle className="flex items-center gap-2"><Crown className="w-5 h-5 text-amber-500" /> Konfirmasi Pembelian</DialogTitle>
-          <DialogDescription>
-            {pinDialog && <>Bayar <b>{formatPrice(pinDialog.price)}</b> dari saldo untuk <b>{pinDialog.name}</b>.</>}
-          </DialogDescription>
-          <div className="space-y-2">
-            <Label className="text-xs">Masukkan PIN 6 digit</Label>
-            <Input type="password" inputMode="numeric" maxLength={6} value={pin} onChange={(e) => setPin(e.target.value.replace(/\D/g, ""))} placeholder="••••••" className="text-center tracking-[0.5em] text-lg font-black" />
-            <Button onClick={submitPurchase} disabled={loading || pin.length !== 6} className="w-full bg-gradient-to-r from-amber-500 to-yellow-500 text-white font-black">
-              {loading ? "Memproses..." : "Bayar Sekarang"}
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+      {/* PIN dialog dibuat sebagai overlay sendiri agar input tidak bentrok dengan modal toko parent */}
+      {pinDialog && (
+        <div className="fixed inset-0 z-[150] flex items-center justify-center bg-background/80 backdrop-blur-sm p-4" onMouseDown={() => !loading && setPinDialog(null)}>
+          <form
+            className="w-full max-w-sm rounded-2xl border bg-card p-4 shadow-2xl space-y-3"
+            onMouseDown={(e) => e.stopPropagation()}
+            onSubmit={(e) => { e.preventDefault(); submitPurchase(); }}
+          >
+            <div className="space-y-1">
+              <h3 className="flex items-center gap-2 text-base font-black"><Crown className="w-5 h-5 text-amber-500" /> Konfirmasi Pembelian</h3>
+              <p className="text-xs text-muted-foreground">
+                Bayar <b>{formatPrice(pinDialog.price)}</b> dari saldo untuk <b>{pinDialog.name}</b>.
+              </p>
+            </div>
+            <div className="space-y-2">
+              <Label className="text-xs">Masukkan PIN 6 digit</Label>
+              <Input autoFocus type="password" inputMode="numeric" maxLength={6} value={pin} onChange={(e) => setPin(e.target.value.replace(/\D/g, ""))} placeholder="••••••" className="text-center tracking-[0.5em] text-lg font-black" />
+              <Button type="submit" disabled={loading || pin.length !== 6} className="w-full bg-gradient-to-r from-amber-500 to-yellow-500 text-white font-black">
+                {loading ? "Memproses..." : "Bayar Sekarang"}
+              </Button>
+              <Button type="button" variant="outline" disabled={loading} onClick={() => setPinDialog(null)} className="w-full font-bold">
+                Batal
+              </Button>
+            </div>
+          </form>
+        </div>
+      )}
 
       {/* Voucher klaim popup */}
-      <Dialog open={!!showVoucher} onOpenChange={(o) => !o && setShowVoucher(null)}>
-        <DialogContent className="z-[120] max-w-sm">
-          <DialogTitle className="flex items-center gap-2 text-amber-600"><Gift className="w-5 h-5" /> Voucher Berhasil Diklaim!</DialogTitle>
-          <DialogDescription>Voucher diskon Rp 2.000 berlaku 24 jam. Pakai saat checkout produk.</DialogDescription>
+      {showVoucher && (
+        <div className="fixed inset-0 z-[150] flex items-center justify-center bg-background/80 backdrop-blur-sm p-4" onMouseDown={() => setShowVoucher(null)}>
+          <div className="w-full max-w-sm rounded-2xl border bg-card p-4 shadow-2xl space-y-3" onMouseDown={(e) => e.stopPropagation()}>
+            <div className="space-y-1">
+              <h3 className="flex items-center gap-2 text-base font-black text-amber-600"><Gift className="w-5 h-5" /> Voucher Berhasil Diklaim!</h3>
+              <p className="text-xs text-muted-foreground">Voucher diskon Rp 2.000 berlaku 24 jam. Pakai saat checkout produk.</p>
+            </div>
           {showVoucher && (
             <div className="space-y-2">
               <div className="rounded-xl bg-gradient-to-br from-amber-100 to-yellow-100 dark:from-amber-950/30 dark:to-yellow-950/30 border-2 border-dashed border-amber-500 p-3 text-center">
@@ -251,8 +264,9 @@ export default function StorePremiumTab({ visitorId, onLoginRequired }: Props) {
               <Button onClick={() => copy(showVoucher.code)} className="w-full"><Copy className="w-3.5 h-3.5 mr-1.5" /> Salin Kode</Button>
             </div>
           )}
-        </DialogContent>
-      </Dialog>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
