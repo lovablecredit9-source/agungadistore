@@ -574,7 +574,6 @@ export const StoreProfileModal = ({
                                         : "bg-card text-foreground border-border/60 hover:border-violet-500/40"
                                     }`}
                                   >
-                                    <span className="text-[12px] leading-none">{t.emoji}</span>
                                     <span>{t.label}</span>
                                   </button>
                                 );
