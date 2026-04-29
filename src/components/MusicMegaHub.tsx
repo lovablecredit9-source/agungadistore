@@ -660,7 +660,7 @@ export default function MusicMegaHub({ visitorId, playbackState, onPlaySong }: P
                             </div>
                             <div className="flex items-center justify-between gap-2">
                               <span className="text-[10px] text-muted-foreground tabular-nums">
-                                {q.quest_type === "listen_seconds" ? `${fmtDuration(q.current_value)}/${fmtDuration(q.target_value)}` : `${q.current_value}/${q.target_value}`}
+                                {isTimeQuest ? `${fmtDuration(q.current_value)}/${fmtDuration(q.target_value)}` : `${q.current_value}/${q.target_value}`}
                               </span>
                               {q.is_claimed ? (
                                 <span className="text-[10px] font-black text-emerald-400">✓ Sudah klaim</span>
