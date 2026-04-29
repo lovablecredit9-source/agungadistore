@@ -31,6 +31,8 @@ import AdminStreakFlashSaleTab from "@/components/AdminStreakFlashSaleTab";
 import AdminMembershipTab from "@/components/AdminMembershipTab";
 import AdminBannedTab from "@/components/AdminBannedTab";
 import WhatsAppChat from "@/components/WhatsAppChat";
+import PremiumBadgeAsync from "@/components/PremiumBadgeAsync";
+import AdminStorePremiumTab from "@/components/AdminStorePremiumTab";
 
 interface Product {
   id: string;
@@ -1516,7 +1518,7 @@ const AdminDashboard = () => {
                       <CardContent className="p-3 flex items-center gap-3">
                         {prodImgs.length > 0 && <img src={prodImgs[0]} className="w-10 h-10 rounded-lg object-cover" alt="" />}
                         <div className="flex-1 min-w-0">
-                          <p className="font-bold text-sm truncate">{prod?.title || "Produk"}</p>
+                          <p className="font-bold text-sm truncate flex items-center gap-1">{prod?.title || "Produk"} <PremiumBadgeAsync visitorId={ch.visitor_id} /></p>
                           <p className="text-[10px] text-muted-foreground">ID: {ch.visitor_id.slice(0, 8)}...</p>
                           <p className="text-[10px] text-muted-foreground">{new Date(ch.created_at).toLocaleString("id-ID")}</p>
                         </div>
@@ -1533,7 +1535,7 @@ const AdminDashboard = () => {
                 <div className="flex items-center gap-2">
                   <Button variant="ghost" size="icon" onClick={() => setActiveChat(null)}><ChevronLeft className="w-5 h-5" /></Button>
                   <div className="flex-1">
-                    <h2 className="text-sm font-extrabold">{products.find(p => p.id === activeChat.product_id)?.title || "Chat"}</h2>
+                    <h2 className="text-sm font-extrabold flex items-center gap-1">{products.find(p => p.id === activeChat.product_id)?.title || "Chat"} <PremiumBadgeAsync visitorId={activeChat.visitor_id} size="sm" /></h2>
                     <p className="text-[10px] text-muted-foreground">Pengunjung: {activeChat.visitor_id.slice(0, 8)}...</p>
                   </div>
                 </div>
