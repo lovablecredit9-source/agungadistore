@@ -315,7 +315,7 @@ export default function MusicMegaHub({ visitorId, playbackState, onPlaySong }: P
   const visualizerRef = useRef<HTMLDivElement>(null);
   useAudioBandsDOM(visualizerRef as any, 32, isPlaying, 40);
 
-  const lvl = LEVEL_INFO[level?.level || "Bronze"];
+  const lvl = LEVEL_INFO[level?.level || "Bronze"] || LEVEL_INFO.Bronze;
   const totalSec = level?.total_seconds || 0;
   const xpProgress = lvl.nextSec > lvl.minSec
     ? Math.min(100, ((totalSec - lvl.minSec) / (lvl.nextSec - lvl.minSec)) * 100)
