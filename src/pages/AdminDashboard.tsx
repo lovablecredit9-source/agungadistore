@@ -134,7 +134,7 @@ interface UserBalance {
   created_at: string;
 }
 
-type AdminTab = "products" | "tokens" | "claims" | "tickets" | "chats" | "saldo" | "notif" | "deposit" | "settings" | "diskon" | "pin" | "musik" | "vmusik" | "sponsor" | "apikey" | "postingan" | "promo" | "sosmed" | "wheel" | "shopstreak" | "eventstreak" | "flashsale" | "prodflash" | "membership" | "banned";
+type AdminTab = "products" | "tokens" | "claims" | "tickets" | "chats" | "saldo" | "notif" | "deposit" | "settings" | "diskon" | "pin" | "musik" | "vmusik" | "sponsor" | "apikey" | "postingan" | "promo" | "sosmed" | "wheel" | "shopstreak" | "eventstreak" | "flashsale" | "prodflash" | "membership" | "banned" | "storeprem";
 type ClaimDateFilter = "all" | "today" | "yesterday" | "lastmonth" | "custom";
 type DepositStatusFilter = "all" | "pending" | "approved" | "rejected" | "cancelled";
 type DepositMethodFilter = "all" | "qris" | "ewallet";
@@ -1123,6 +1123,7 @@ const AdminDashboard = () => {
             { key: "flashsale" as AdminTab, icon: Tag, label: "Flash" },
             { key: "prodflash" as AdminTab, icon: Zap, label: "F.Produk" },
             { key: "membership" as AdminTab, icon: Shield, label: "Member" },
+            { key: "storeprem" as AdminTab, icon: Crown, label: "PremToko" },
             { key: "banned" as AdminTab, icon: Lock, label: "Banned" },
           ]).map(({ key, icon: Icon, label }) => {
             const active = tab === key;
@@ -1986,6 +1987,7 @@ const AdminDashboard = () => {
         {tab === "flashsale" && <AdminStreakFlashSaleTab />}
         {tab === "prodflash" && <AdminProductFlashSaleTab />}
         {tab === "membership" && <AdminMembershipTab />}
+        {tab === "storeprem" && <AdminStorePremiumTab />}
         {tab === "banned" && <AdminBannedTab />}
       </main>
     </div>
