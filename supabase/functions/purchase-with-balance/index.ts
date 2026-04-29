@@ -268,6 +268,14 @@ Deno.serve(async (request) => {
         .eq("id", product.id);
     }
 
+    // Increment flash sale sold counter (so quota decrements live)
+    if (activeFlashRow && flashUnitsUsed > 0) {
+      await admin
+        .from("store_flash_sales")
+        .update({ sold: (activeFlashRow.sold || 0) + flashUnitsUsed })
+        .eq("id", activeFlashRow.id);
+    }
+
     // Update voucher used_count (in correct table)
     if (discountVoucherId && voucherSource) {
       const { data: vData } = await admin.from(voucherSource).select("used_count").eq("id", discountVoucherId).single();
