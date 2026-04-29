@@ -5417,8 +5417,8 @@ const Index = () => {
                 <div className="flex items-center gap-1.5 flex-wrap">
                   <p className="font-bold text-sm truncate">{STORE_NAME}</p>
                   {storePremium.isPremium && (
-                    <span className="inline-flex items-center gap-1 rounded-full border border-zinc-400/70 bg-gradient-to-r from-zinc-300 via-slate-100 to-zinc-400 px-2 py-0.5 text-[11px] font-bold text-zinc-800 shadow-md">
-                      👑 Prioritas
+                    <span className="inline-flex items-center rounded-full border border-zinc-400/70 bg-gradient-to-r from-zinc-300 via-slate-100 to-zinc-400 px-2.5 py-0.5 text-[11px] font-extrabold tracking-[0.25em] text-zinc-800 shadow-md">
+                      PRIORITAS
                     </span>
                   )}
                 </div>
