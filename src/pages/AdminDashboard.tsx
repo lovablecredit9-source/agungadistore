@@ -1976,6 +1976,7 @@ const AdminDashboard = () => {
         {tab === "shopstreak" && <AdminStreakShopTab />}
         {tab === "eventstreak" && <AdminStreakEventTab />}
         {tab === "flashsale" && <AdminStreakFlashSaleTab />}
+        {tab === "prodflash" && <AdminProductFlashSaleTab />}
         {tab === "membership" && <AdminMembershipTab />}
         {tab === "banned" && <AdminBannedTab />}
       </main>
