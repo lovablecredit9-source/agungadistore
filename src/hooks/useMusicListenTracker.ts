@@ -13,14 +13,19 @@ export function useMusicListenTracker(playbackState: PlaybackState | undefined, 
   const lastSongIdRef = useRef<string | null>(null);
   const lastTickRef = useRef<number>(Date.now());
   const lastSongInfoRef = useRef<{ id: string; title: string; artist: string; type: string } | null>(null);
+  const flushingRef = useRef(false);
 
   // Flush helper
   const flush = async (force = false) => {
-    const acc = accumulatedRef.current;
+    if (flushingRef.current) return;
+    const acc = Math.floor(accumulatedRef.current);
     const info = lastSongInfoRef.current;
     if (!info || !visitorId) { if (force) accumulatedRef.current = 0; return; }
-    if (acc < (force ? 5 : 15)) return;
+    if (acc < (force ? 3 : 15)) return;
+    flushingRef.current = true;
+    accumulatedRef.current = Math.max(0, accumulatedRef.current - acc);
     try {
+      await supabase.rpc("ensure_music_daily_quests", { p_visitor_id: visitorId });
       await supabase.rpc("log_song_listen", {
         p_visitor_id: visitorId,
         p_song_id: info.id,
@@ -29,8 +34,14 @@ export function useMusicListenTracker(playbackState: PlaybackState | undefined, 
         p_song_artist: info.artist,
         p_seconds: Math.round(acc),
       });
-    } catch { /* silent */ }
-    accumulatedRef.current = 0;
+      window.dispatchEvent(new CustomEvent("music-listen-logged", {
+        detail: { visitorId, songId: info.id, songType: info.type, seconds: acc },
+      }));
+    } catch {
+      accumulatedRef.current += acc;
+    } finally {
+      flushingRef.current = false;
+    }
   };
 
   useEffect(() => {
@@ -53,17 +64,16 @@ export function useMusicListenTracker(playbackState: PlaybackState | undefined, 
         lastSongInfoRef.current = null;
       }
       lastTickRef.current = Date.now();
-      return;
     }
 
-    if (!isPlaying) { lastTickRef.current = Date.now(); return; }
+    if (!song || !isPlaying) { lastTickRef.current = Date.now(); return; }
 
     // Tick: add elapsed seconds while playing
     const interval = setInterval(() => {
       const now = Date.now();
       const elapsed = (now - lastTickRef.current) / 1000;
       lastTickRef.current = now;
-      if (elapsed > 0 && elapsed < 30) accumulatedRef.current += elapsed;
+      if (elapsed > 0 && elapsed < 45) accumulatedRef.current += elapsed;
       if (accumulatedRef.current >= 15) flush(false);
     }, 5000);
 
@@ -71,7 +81,7 @@ export function useMusicListenTracker(playbackState: PlaybackState | undefined, 
       clearInterval(interval);
       const now = Date.now();
       const elapsed = (now - lastTickRef.current) / 1000;
-      if (elapsed > 0 && elapsed < 30) accumulatedRef.current += elapsed;
+      if (elapsed > 0 && elapsed < 45) accumulatedRef.current += elapsed;
       lastTickRef.current = now;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps

@@ -32,6 +32,7 @@ const fmtDuration = (s: number) => {
   const h = Math.floor(s / 3600);
   const m = Math.floor((s % 3600) / 60);
   if (h > 0) return `${h}j ${m}m`;
+  if (m === 0 && s > 0) return `${Math.floor(s)}d`;
   return `${m}m`;
 };
 
@@ -80,12 +81,30 @@ export default function MusicMegaHub({ visitorId, playbackState, onPlaySong }: P
     return () => { supabase.removeChannel(ch); };
   }, [visitorId]);
 
-  // Periodic level refresh (every 60s)
+  // Refresh saat tracker berhasil menyimpan dengar lagu
+  useEffect(() => {
+    const refresh = () => {
+      loadLevel();
+      if (modal === "quests") loadQuests();
+      if (modal === "leaderboard" && currentSongId) {
+        supabase.rpc("get_song_top_fans", { p_song_id: currentSongId, p_song_type: currentSongType, p_limit: 10 })
+          .then(({ data }) => setTopFans(data || []));
+      }
+      if (modal === "wrapped") {
+        supabase.rpc("get_music_wrapped", { p_visitor_id: visitorId, p_days: 1 })
+          .then(({ data }) => setWrapped(data?.[0] || null));
+      }
+    };
+    window.addEventListener("music-listen-logged", refresh);
+    return () => window.removeEventListener("music-listen-logged", refresh);
+  }, [visitorId, modal, currentSongId, currentSongType]);
+
+  // Periodic level refresh while playing
   useEffect(() => {
     if (!visitorId) return;
-    const t = setInterval(loadLevel, 60000);
+    const t = setInterval(loadLevel, isPlaying ? 10000 : 60000);
     return () => clearInterval(t);
-  }, [visitorId]);
+  }, [visitorId, isPlaying]);
 
   // Load all songs (for AI)
   useEffect(() => {
