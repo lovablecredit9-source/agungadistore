@@ -1,0 +1,69 @@
+CREATE OR REPLACE FUNCTION public.is_store_premium(p_visitor_id text)
+RETURNS boolean
+LANGUAGE plpgsql
+STABLE SECURITY DEFINER
+SET search_path TO 'public'
+AS $function$
+DECLARE
+  v_ub_id UUID;
+  v_active BOOLEAN := false;
+BEGIN
+  SELECT blh.user_balance_id INTO v_ub_id
+  FROM public.balance_login_history blh
+  WHERE blh.visitor_id = p_visitor_id
+  ORDER BY blh.logged_in_at DESC
+  LIMIT 1;
+
+  SELECT EXISTS(
+    SELECT 1
+    FROM public.store_premium_subscriptions s
+    WHERE s.is_active = true
+      AND s.expires_at > now()
+      AND (
+        s.visitor_id = p_visitor_id
+        OR (v_ub_id IS NOT NULL AND s.user_balance_id = v_ub_id)
+      )
+  ) INTO v_active;
+
+  RETURN v_active;
+END;
+$function$;
+
+CREATE OR REPLACE FUNCTION public.get_store_premium_info(p_visitor_id text)
+RETURNS TABLE(is_premium boolean, plan_name text, expires_at timestamp with time zone, days_left integer)
+LANGUAGE plpgsql
+STABLE SECURITY DEFINER
+SET search_path TO 'public'
+AS $function$
+DECLARE
+  v_ub_id UUID;
+  v_sub RECORD;
+BEGIN
+  SELECT blh.user_balance_id INTO v_ub_id
+  FROM public.balance_login_history blh
+  WHERE blh.visitor_id = p_visitor_id
+  ORDER BY blh.logged_in_at DESC
+  LIMIT 1;
+
+  SELECT s.plan_name, s.expires_at INTO v_sub
+  FROM public.store_premium_subscriptions s
+  WHERE s.is_active = true
+    AND s.expires_at > now()
+    AND (
+      s.visitor_id = p_visitor_id
+      OR (v_ub_id IS NOT NULL AND s.user_balance_id = v_ub_id)
+    )
+  ORDER BY s.expires_at DESC
+  LIMIT 1;
+
+  IF v_sub.expires_at IS NULL THEN
+    RETURN QUERY SELECT false, NULL::TEXT, NULL::TIMESTAMPTZ, 0;
+  ELSE
+    RETURN QUERY SELECT
+      true,
+      v_sub.plan_name::TEXT,
+      v_sub.expires_at::TIMESTAMPTZ,
+      GREATEST(0, CEIL(EXTRACT(EPOCH FROM (v_sub.expires_at - now())) / 86400)::INTEGER);
+  END IF;
+END;
+$function$;
