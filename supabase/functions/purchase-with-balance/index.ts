@@ -104,6 +104,41 @@ Deno.serve(async (request) => {
       }
     }
 
+    // Check active flash sale (overrides wholesale & normal price if active + quota available)
+    const nowIso = new Date().toISOString();
+    const { data: activeFlash } = await admin
+      .from("store_flash_sales")
+      .select("*")
+      .eq("product_id", productId)
+      .eq("is_active", true)
+      .lte("starts_at", nowIso)
+      .gt("ends_at", nowIso)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    let activeFlashRow: any = null;
+    let flashUnitsUsed = 0;
+    if (activeFlash) {
+      const remaining = (activeFlash.quota || 0) === 0
+        ? Number.MAX_SAFE_INTEGER
+        : Math.max(0, (activeFlash.quota || 0) - (activeFlash.sold || 0));
+      if (remaining > 0) {
+        const flashPrice = activeFlash.mode === "discount_percent"
+          ? Math.max(0, Math.round(product.price * (1 - (activeFlash.discount_percent || 0) / 100)))
+          : (activeFlash.flash_price ?? product.price);
+        flashUnitsUsed = Math.min(remaining, quantity);
+        // Use flash price for the flash-eligible portion; remainder uses unitPrice
+        // For simplicity: only allow purchase qty <= remaining flash quota at flash price.
+        // If user wants more than remaining, fail with informative error.
+        if (quantity > remaining) {
+          return Response.json({ error: `Kuota Flash Sale tinggal ${remaining}. Kurangi jumlah pembelian.` }, { status: 400, headers: corsHeaders });
+        }
+        unitPrice = flashPrice;
+        activeFlashRow = activeFlash;
+      }
+    }
+
     let totalPrice = unitPrice * quantity;
     let discountAmount = 0;
     let discountVoucherId: string | null = null;
