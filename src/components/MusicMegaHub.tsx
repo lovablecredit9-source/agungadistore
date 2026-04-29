@@ -642,8 +642,14 @@ export default function MusicMegaHub({ visitorId, playbackState, onPlaySong }: P
                           share_song: `Bagikan ${q.target_value} lagu`,
                           react_songs: `Beri ${q.target_value} reaksi (emoji)`,
                           unique_artists: `Dengar ${q.target_value} artis berbeda`,
+                          unique_songs: `Putar ${q.target_value} lagu berbeda`,
+                          finish_songs: `Selesaikan ${q.target_value} lagu (≥1 menit)`,
+                          replay_liked: `Dengar ${q.target_value} lagu yang sudah di-like`,
+                          open_artist_tab: `Buka tab Artist ${q.target_value}x`,
+                          play_playlist: `Putar ${q.target_value} playlist`,
+                          listen_marathon: `Marathon ${Math.floor(q.target_value / 60)} menit hari ini`,
                         };
-                        const isTimeQuest = q.quest_type === "listen_seconds" || q.quest_type === "listen_long";
+                        const isTimeQuest = q.quest_type === "listen_seconds" || q.quest_type === "listen_long" || q.quest_type === "listen_marathon";
                         return (
                           <div key={q.id} className="rounded-2xl bg-muted/30 border border-border p-3">
                             <div className="flex items-center justify-between mb-1.5">

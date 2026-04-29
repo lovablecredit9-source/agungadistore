@@ -36,6 +36,10 @@ const ArtistTab = ({ onPlaySong }: ArtistTabProps) => {
 
   useEffect(() => {
     loadData();
+    try {
+      const vid = localStorage.getItem("visitor_id");
+      if (vid) supabase.rpc("bump_music_quest_event" as any, { p_visitor_id: vid, p_quest_type: "open_artist_tab" });
+    } catch { /* noop */ }
   }, []);
 
   const loadData = async () => {
