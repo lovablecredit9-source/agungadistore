@@ -2784,7 +2784,15 @@ const Index = () => {
                         </div>
                         {p.description && !isGrid && <p className="text-xs text-slate-300/80 line-clamp-2 leading-relaxed">{p.description}</p>}
                         <div className="flex items-center justify-between flex-wrap gap-1.5">
-                          {imgs.length === 0 && <span className={`font-black bg-gradient-to-r from-cyan-300 to-purple-300 bg-clip-text text-transparent ${isGrid ? "text-xs" : "text-sm"}`}>{formatPrice(p.price)}</span>}
+                         {imgs.length === 0 && (() => {
+                           const fEff = getActiveFlashSaleForProduct(p.id);
+                           const fPrice = fEff ? getFlashUnitPrice(fEff, p.price) : p.price;
+                           return (
+                             <span className={`font-black ${fEff ? "text-red-500" : "bg-gradient-to-r from-cyan-300 to-purple-300 bg-clip-text text-transparent"} ${isGrid ? "text-xs" : "text-sm"}`}>
+                               {formatPrice(fPrice)}{fEff && <span className="text-[10px] font-bold line-through text-muted-foreground ml-1">{formatPrice(p.price)}</span>}
+                             </span>
+                           );
+                         })()}
                           <div className={`flex items-center gap-1.5 flex-wrap ${isGrid ? "text-[9px]" : ""}`}>
                             <span className={`px-2 py-0.5 rounded-full font-black flex items-center gap-1 backdrop-blur-sm ${isGrid ? "text-[9px]" : "text-[10px] px-2.5 py-1"} ${inStock ? 'bg-gradient-to-r from-emerald-500/30 to-green-500/20 text-emerald-200 border border-emerald-400/40 shadow-[0_0_8px_rgba(16,185,129,0.3)]' : 'bg-gradient-to-r from-rose-500/30 to-red-500/20 text-rose-200 border border-rose-400/40'}`}>
                               {inStock ? <><span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_4px_rgb(52,211,153)]" /> {p.stock} stok</> : '✗ Habis'}
