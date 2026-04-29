@@ -11,7 +11,7 @@ import {
   Plus, Trash2, LogOut, Package, Ticket, Copy, Image, Edit2, X,
   Smartphone, Clock, ChevronLeft, ChevronRight, Search, Send,
   MessageCircle, AlertCircle, ImagePlus, Shield, Wallet, Users, ArrowUpCircle,
-  Bell, Check, Tag, Lock, Key, Music, Upload, Loader2, HardDrive, Megaphone, FileText, Globe, Zap
+  Bell, Check, Tag, Lock, Key, Music, Upload, Loader2, HardDrive, Megaphone, FileText, Globe, Zap, Crown
 } from "lucide-react";
 import { generateVoucherCode } from "@/lib/voucher-code";
 import { getDeviceSummary } from "@/lib/device-info";
@@ -31,6 +31,8 @@ import AdminStreakFlashSaleTab from "@/components/AdminStreakFlashSaleTab";
 import AdminMembershipTab from "@/components/AdminMembershipTab";
 import AdminBannedTab from "@/components/AdminBannedTab";
 import WhatsAppChat from "@/components/WhatsAppChat";
+import PremiumBadgeAsync from "@/components/PremiumBadgeAsync";
+import AdminStorePremiumTab from "@/components/AdminStorePremiumTab";
 
 interface Product {
   id: string;
@@ -132,7 +134,7 @@ interface UserBalance {
   created_at: string;
 }
 
-type AdminTab = "products" | "tokens" | "claims" | "tickets" | "chats" | "saldo" | "notif" | "deposit" | "settings" | "diskon" | "pin" | "musik" | "vmusik" | "sponsor" | "apikey" | "postingan" | "promo" | "sosmed" | "wheel" | "shopstreak" | "eventstreak" | "flashsale" | "prodflash" | "membership" | "banned";
+type AdminTab = "products" | "tokens" | "claims" | "tickets" | "chats" | "saldo" | "notif" | "deposit" | "settings" | "diskon" | "pin" | "musik" | "vmusik" | "sponsor" | "apikey" | "postingan" | "promo" | "sosmed" | "wheel" | "shopstreak" | "eventstreak" | "flashsale" | "prodflash" | "membership" | "banned" | "storeprem";
 type ClaimDateFilter = "all" | "today" | "yesterday" | "lastmonth" | "custom";
 type DepositStatusFilter = "all" | "pending" | "approved" | "rejected" | "cancelled";
 type DepositMethodFilter = "all" | "qris" | "ewallet";
@@ -1121,6 +1123,7 @@ const AdminDashboard = () => {
             { key: "flashsale" as AdminTab, icon: Tag, label: "Flash" },
             { key: "prodflash" as AdminTab, icon: Zap, label: "F.Produk" },
             { key: "membership" as AdminTab, icon: Shield, label: "Member" },
+            { key: "storeprem" as AdminTab, icon: Crown, label: "PremToko" },
             { key: "banned" as AdminTab, icon: Lock, label: "Banned" },
           ]).map(({ key, icon: Icon, label }) => {
             const active = tab === key;
@@ -1447,7 +1450,13 @@ const AdminDashboard = () => {
                   <Card key={t.id} className="cursor-pointer hover:shadow-lg transition-all" onClick={() => setActiveTicket(t)}>
                     <CardContent className="p-4 space-y-2">
                       <div className="flex items-center justify-between">
-                        <span className="font-bold text-sm text-primary">Tiket #{t.ticket_number}</span>
+                        <span className="font-bold text-sm text-primary flex items-center gap-1">
+                          Tiket #{t.ticket_number}
+                          {(() => {
+                            const u = userBalances.find(x => x.phone === t.phone);
+                            return u ? <PremiumBadgeAsync visitorId={u.visitor_id} /> : null;
+                          })()}
+                        </span>
                         <div className="flex items-center gap-2">
                           <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${t.status === "open" ? "bg-accent/10 text-accent" : "bg-muted text-muted-foreground"}`}>
                             {t.status === "open" ? "Terbuka" : "Ditutup"}
@@ -1516,7 +1525,7 @@ const AdminDashboard = () => {
                       <CardContent className="p-3 flex items-center gap-3">
                         {prodImgs.length > 0 && <img src={prodImgs[0]} className="w-10 h-10 rounded-lg object-cover" alt="" />}
                         <div className="flex-1 min-w-0">
-                          <p className="font-bold text-sm truncate">{prod?.title || "Produk"}</p>
+                          <p className="font-bold text-sm truncate flex items-center gap-1">{prod?.title || "Produk"} <PremiumBadgeAsync visitorId={ch.visitor_id} /></p>
                           <p className="text-[10px] text-muted-foreground">ID: {ch.visitor_id.slice(0, 8)}...</p>
                           <p className="text-[10px] text-muted-foreground">{new Date(ch.created_at).toLocaleString("id-ID")}</p>
                         </div>
@@ -1533,7 +1542,7 @@ const AdminDashboard = () => {
                 <div className="flex items-center gap-2">
                   <Button variant="ghost" size="icon" onClick={() => setActiveChat(null)}><ChevronLeft className="w-5 h-5" /></Button>
                   <div className="flex-1">
-                    <h2 className="text-sm font-extrabold">{products.find(p => p.id === activeChat.product_id)?.title || "Chat"}</h2>
+                    <h2 className="text-sm font-extrabold flex items-center gap-1">{products.find(p => p.id === activeChat.product_id)?.title || "Chat"} <PremiumBadgeAsync visitorId={activeChat.visitor_id} size="sm" /></h2>
                     <p className="text-[10px] text-muted-foreground">Pengunjung: {activeChat.visitor_id.slice(0, 8)}...</p>
                   </div>
                 </div>
@@ -1978,6 +1987,7 @@ const AdminDashboard = () => {
         {tab === "flashsale" && <AdminStreakFlashSaleTab />}
         {tab === "prodflash" && <AdminProductFlashSaleTab />}
         {tab === "membership" && <AdminMembershipTab />}
+        {tab === "storeprem" && <AdminStorePremiumTab />}
         {tab === "banned" && <AdminBannedTab />}
       </main>
     </div>

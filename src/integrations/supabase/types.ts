@@ -3943,6 +3943,119 @@ export type Database = {
         }
         Relationships: []
       }
+      store_premium_plans: {
+        Row: {
+          created_at: string
+          description: string | null
+          duration_days: number
+          id: string
+          is_active: boolean
+          name: string
+          price: number
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          duration_days: number
+          id?: string
+          is_active?: boolean
+          name: string
+          price: number
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          duration_days?: number
+          id?: string
+          is_active?: boolean
+          name?: string
+          price?: number
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      store_premium_subscriptions: {
+        Row: {
+          created_at: string
+          duration_days: number
+          expires_at: string
+          id: string
+          is_active: boolean
+          plan_id: string | null
+          plan_name: string
+          price_paid: number
+          starts_at: string
+          user_balance_id: string | null
+          visitor_id: string
+        }
+        Insert: {
+          created_at?: string
+          duration_days: number
+          expires_at: string
+          id?: string
+          is_active?: boolean
+          plan_id?: string | null
+          plan_name: string
+          price_paid: number
+          starts_at?: string
+          user_balance_id?: string | null
+          visitor_id: string
+        }
+        Update: {
+          created_at?: string
+          duration_days?: number
+          expires_at?: string
+          id?: string
+          is_active?: boolean
+          plan_id?: string | null
+          plan_name?: string
+          price_paid?: number
+          starts_at?: string
+          user_balance_id?: string | null
+          visitor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "store_premium_subscriptions_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "store_premium_plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      store_premium_voucher_claims: {
+        Row: {
+          claim_date: string
+          created_at: string
+          id: string
+          user_balance_id: string | null
+          visitor_id: string
+          voucher_code: string
+        }
+        Insert: {
+          claim_date: string
+          created_at?: string
+          id?: string
+          user_balance_id?: string | null
+          visitor_id: string
+          voucher_code: string
+        }
+        Update: {
+          claim_date?: string
+          created_at?: string
+          id?: string
+          user_balance_id?: string | null
+          visitor_id?: string
+          voucher_code?: string
+        }
+        Relationships: []
+      }
       streak_active_boosters: {
         Row: {
           booster_type: string
@@ -8157,6 +8270,15 @@ export type Database = {
         Args: { p_amount: number; p_visitor_id: string }
         Returns: number
       }
+      claim_daily_premium_voucher: {
+        Args: { p_visitor_id: string }
+        Returns: {
+          expires_at: string
+          message: string
+          success: boolean
+          voucher_code: string
+        }[]
+      }
       create_notification: {
         Args: {
           p_message: string
@@ -8220,12 +8342,22 @@ export type Database = {
           isSetofReturn: true
         }
       }
+      get_store_premium_info: {
+        Args: { p_visitor_id: string }
+        Returns: {
+          days_left: number
+          expires_at: string
+          is_premium: boolean
+          plan_name: string
+        }[]
+      }
       increment_sponsor_views: {
         Args: { sponsor_id: string }
         Returns: undefined
       }
       is_account_banned: { Args: { p_visitor_id: string }; Returns: boolean }
       is_admin_user: { Args: never; Returns: boolean }
+      is_store_premium: { Args: { p_visitor_id: string }; Returns: boolean }
       mark_notifications_read: {
         Args: { p_ids: string[]; p_visitor_id: string }
         Returns: undefined

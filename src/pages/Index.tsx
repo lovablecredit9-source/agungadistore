@@ -16,6 +16,8 @@ import {
   Eye, LayoutGrid, Rows3, Flame, SlidersHorizontal, Zap, TrendingUp, Award, Activity, Inbox, User, Phone, Gift, Menu, Lightbulb, MessageSquare, Star, Share2
 } from "lucide-react";
 import { VerifiedBadge } from "@/components/VerifiedBadge";
+import PremiumBadge from "@/components/PremiumBadge";
+import { useStorePremium } from "@/hooks/useStorePremium";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import CountUp from "@/components/CountUp";
 import { useTheme } from "@/lib/theme";
@@ -421,6 +423,7 @@ const Index = () => {
 
   // Saldo
   const [userBalance, setUserBalance] = useState<UserBalance | null>(null);
+  const storePremium = useStorePremium(userBalance?.visitor_id ?? null);
   const [balanceTransactions, setBalanceTransactions] = useState<BalanceTransaction[]>([]);
   const [selectedTransaction, setSelectedTransaction] = useState<BalanceTransaction | null>(null);
   const [selectedTxIds, setSelectedTxIds] = useState<Set<string>>(new Set());
@@ -1903,7 +1906,12 @@ const Index = () => {
                       </span>
                       <span className="px-1.5 py-0.5 rounded-full bg-green-500/15 border border-green-500/30 text-green-500 text-[8px] font-bold">LIVE</span>
                     </div>
-                    <h2 className="text-[19px] font-extrabold leading-tight truncate bg-gradient-to-r from-foreground via-primary to-foreground bg-clip-text text-transparent">{STORE_NAME}</h2>
+                    <h2 className="text-[19px] font-extrabold leading-tight truncate bg-gradient-to-r from-foreground via-primary to-foreground bg-clip-text text-transparent">
+                      {STORE_NAME}{storePremium.isPremium && " Premium"}
+                    </h2>
+                    {storePremium.isPremium && (
+                      <div className="mt-0.5"><PremiumBadge size="xs" /></div>
+                    )}
                     <p className="text-[10px] text-muted-foreground mt-0.5 truncate flex items-center gap-1">
                       <span className="text-yellow-500">⭐</span> {t("header.tagline", lang)}
                     </p>
@@ -3987,7 +3995,10 @@ const Index = () => {
                         </div>
                         <div className="min-w-0">
                           <p className="text-[10.5px] text-muted-foreground font-medium">Akun</p>
-                          <p className="text-[14px] font-semibold text-foreground truncate tracking-tight">{userBalance.username}</p>
+                          <p className="text-[14px] font-semibold text-foreground truncate tracking-tight flex items-center gap-1">
+                            {userBalance.username}{storePremium.isPremium && " Premium"}
+                            {storePremium.isPremium && <PremiumBadge size="xs" showText={false} />}
+                          </p>
                           <p className="text-[11px] text-muted-foreground truncate">{userBalance.phone}</p>
                         </div>
                       </div>
