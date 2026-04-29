@@ -154,6 +154,15 @@ export const StoreProfileModal = ({
     setLikeCounts(counts);
   };
 
+  const fetchFlashSales = async () => {
+    const { data } = await supabase
+      .from("store_flash_sales")
+      .select("*")
+      .eq("is_active", true)
+      .order("ends_at", { ascending: true });
+    setFlashSales((data as any[]) || []);
+  };
+
   useEffect(() => {
     fetchFollowers();
     fetchAdminStatus();
