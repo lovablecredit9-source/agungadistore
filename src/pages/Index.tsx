@@ -3995,7 +3995,10 @@ const Index = () => {
                         </div>
                         <div className="min-w-0">
                           <p className="text-[10.5px] text-muted-foreground font-medium">Akun</p>
-                          <p className="text-[14px] font-semibold text-foreground truncate tracking-tight">{userBalance.username}</p>
+                          <p className="text-[14px] font-semibold text-foreground truncate tracking-tight flex items-center gap-1">
+                            {userBalance.username}{storePremium.isPremium && " Premium"}
+                            {storePremium.isPremium && <PremiumBadge size="xs" showText={false} />}
+                          </p>
                           <p className="text-[11px] text-muted-foreground truncate">{userBalance.phone}</p>
                         </div>
                       </div>
