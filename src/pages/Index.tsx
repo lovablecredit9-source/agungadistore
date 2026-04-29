@@ -5407,8 +5407,8 @@ const Index = () => {
 
       {/* Product Chat Modal */}
       {showProductChat && productChatProduct && productChat && (
-        <div className="fixed inset-0 z-[70] bg-black/60 backdrop-blur-sm flex items-end justify-center" onClick={() => setShowProductChat(false)}>
-          <div className="bg-card w-full max-w-lg rounded-t-3xl border-t border-border max-h-[85vh] flex flex-col animate-in slide-in-from-bottom duration-300" onClick={e => e.stopPropagation()}>
+        <div className="fixed inset-0 z-[70] bg-background flex flex-col animate-in fade-in duration-200">
+          <div className="bg-card w-full h-full flex flex-col" onClick={e => e.stopPropagation()}>
             {/* Chat Header */}
             <div className="flex items-center gap-3 border-b border-border p-4">
               <button onClick={() => setShowProductChat(false)}><ChevronLeft className="w-5 h-5" /></button>
@@ -5436,7 +5436,7 @@ const Index = () => {
               viewerType="user"
               viewerId={visitorId}
               incomingLabel={STORE_NAME}
-              className="flex-1 min-h-[300px] max-h-[60vh]"
+              className="flex-1 min-h-0"
               scrollClassName="max-h-full"
             />
           </div>
