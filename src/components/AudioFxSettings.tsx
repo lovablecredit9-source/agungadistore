@@ -104,21 +104,21 @@ export default function AudioFxSettings({ open, onClose, abLoop, crossfade }: Pr
               {tab === "audio" && (
                 <>
                   {/* Balance L/R */}
-                  <Card icon={<Headphones className="w-4 h-4" />} title="Karaoke Swap L / R">
+                  <Card icon={<Headphones className="w-4 h-4" />} title="Karaoke Channel">
                     <div className="flex items-center justify-between text-[11px] text-white/70 font-mono mb-1">
-                      <span>{fx.balance < 0 ? `🎸 ${Math.round(-fx.balance * 100)}%` : "🎸 L"}</span>
+                      <span>L</span>
                       <span className="text-white font-bold">
                         {fx.balance === 0
                           ? "Stereo Normal"
                           : fx.balance <= -0.95
-                          ? "L=Musik · R=Vokal"
+                          ? "L=Musik · R=Musik+Suara"
                           : fx.balance >= 0.95
-                          ? "L=Vokal · R=Musik"
+                          ? "L=Musik+Suara · R=Musik"
                           : fx.balance < 0
                           ? "← Karaoke L"
                           : "Karaoke R →"}
                       </span>
-                      <span>{fx.balance > 0 ? `🎤 ${Math.round(fx.balance * 100)}%` : "🎤 R"}</span>
+                      <span>R</span>
                     </div>
                     <Slider
                       value={[fx.balance]}
@@ -126,11 +126,11 @@ export default function AudioFxSettings({ open, onClose, abLoop, crossfade }: Pr
                       onValueChange={(v) => setFx({ balance: v[0] })}
                     />
                     <div className="flex justify-between mt-2">
-                      <button onClick={() => setFx({ balance: -1 })} className="text-[10px] px-2 py-0.5 rounded-full bg-white/10 text-white/80 hover:bg-white/20">🎸L · 🎤R</button>
+                      <button onClick={() => setFx({ balance: -1 })} className="text-[10px] px-2 py-0.5 rounded-full bg-white/10 text-white/80 hover:bg-white/20">L Musik</button>
                       <button onClick={() => setFx({ balance: 0 })} className="text-[10px] px-2 py-0.5 rounded-full bg-white/10 text-white/80 hover:bg-white/20">Normal</button>
-                      <button onClick={() => setFx({ balance: 1 })} className="text-[10px] px-2 py-0.5 rounded-full bg-white/10 text-white/80 hover:bg-white/20">🎤L · 🎸R</button>
+                      <button onClick={() => setFx({ balance: 1 })} className="text-[10px] px-2 py-0.5 rounded-full bg-white/10 text-white/80 hover:bg-white/20">R Musik</button>
                     </div>
-                    <p className="text-[10px] text-white/50 mt-2">Geser kiri: musik di kiri, vokal di kanan. Geser kanan: dibalik. Hasil tergantung mixing lagu aslinya.</p>
+                    <p className="text-[10px] text-white/50 mt-2">Geser kiri: kiri jadi musik (channel L lagu), kanan keluar musik+suara. Geser kanan: dibalik. Tidak ada speaker yang mati.</p>
                   </Card>
 
                   {/* Mono / Stereo */}
