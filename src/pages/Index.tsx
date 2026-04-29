@@ -5413,8 +5413,15 @@ const Index = () => {
             <div className="flex items-center gap-3 border-b border-border p-4">
               <button onClick={() => setShowProductChat(false)}><ChevronLeft className="w-5 h-5" /></button>
               <img src={storeQris} alt={STORE_NAME} className="h-9 w-9 rounded-full object-cover border border-border" />
-              <div className="flex-1">
-                <p className="font-bold text-sm">{STORE_NAME}</p>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <p className="font-bold text-sm truncate">{STORE_NAME}</p>
+                  {storePremium.isPremium && (
+                    <span className="inline-flex items-center gap-0.5 rounded-full border border-zinc-300/60 bg-gradient-to-r from-zinc-200 via-slate-100 to-zinc-300 px-1.5 py-0.5 text-[9px] font-bold text-zinc-700 shadow-sm">
+                      ⚡ Prioritas
+                    </span>
+                  )}
+                </div>
                 <p className="text-[10px] text-muted-foreground">{t("chat.reply_time", lang)}</p>
               </div>
               <button onClick={() => { setShowChatHistory(true); setShowProductChat(false); }}>
