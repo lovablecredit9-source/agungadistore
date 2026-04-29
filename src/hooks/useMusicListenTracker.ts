@@ -19,7 +19,7 @@ export function useMusicListenTracker(playbackState: PlaybackState | undefined, 
     const acc = accumulatedRef.current;
     const info = lastSongInfoRef.current;
     if (!info || !visitorId) { if (force) accumulatedRef.current = 0; return; }
-    if (acc < (force ? 5 : 30)) return;
+    if (acc < (force ? 5 : 15)) return;
     try {
       await supabase.rpc("log_song_listen", {
         p_visitor_id: visitorId,
@@ -63,15 +63,15 @@ export function useMusicListenTracker(playbackState: PlaybackState | undefined, 
       const now = Date.now();
       const elapsed = (now - lastTickRef.current) / 1000;
       lastTickRef.current = now;
-      if (elapsed > 0 && elapsed < 5) accumulatedRef.current += elapsed;
-      if (accumulatedRef.current >= 30) flush(false);
+      if (elapsed > 0 && elapsed < 30) accumulatedRef.current += elapsed;
+      if (accumulatedRef.current >= 15) flush(false);
     }, 5000);
 
     return () => {
       clearInterval(interval);
       const now = Date.now();
       const elapsed = (now - lastTickRef.current) / 1000;
-      if (elapsed > 0 && elapsed < 10) accumulatedRef.current += elapsed;
+      if (elapsed > 0 && elapsed < 30) accumulatedRef.current += elapsed;
       lastTickRef.current = now;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
