@@ -11,7 +11,7 @@ import {
   Plus, Trash2, LogOut, Package, Ticket, Copy, Image, Edit2, X,
   Smartphone, Clock, ChevronLeft, ChevronRight, Search, Send,
   MessageCircle, AlertCircle, ImagePlus, Shield, Wallet, Users, ArrowUpCircle,
-  Bell, Check, Tag, Lock, Key, Music, Upload, Loader2, HardDrive, Megaphone, FileText, Globe
+  Bell, Check, Tag, Lock, Key, Music, Upload, Loader2, HardDrive, Megaphone, FileText, Globe, Zap
 } from "lucide-react";
 import { generateVoucherCode } from "@/lib/voucher-code";
 import { getDeviceSummary } from "@/lib/device-info";
@@ -22,6 +22,7 @@ import AdminSponsorTab from "@/components/AdminSponsorTab";
 import AdminApiKeyTab from "@/components/AdminApiKeyTab";
 import AdminPostsTab from "@/components/AdminPostsTab";
 import AdminPromoTab from "@/components/AdminPromoTab";
+import AdminProductFlashSaleTab from "@/components/AdminProductFlashSaleTab";
 import AdminSocialLinksTab from "@/components/AdminSocialLinksTab";
 import AdminLuckyWheelTab from "@/components/AdminLuckyWheelTab";
 import AdminStreakShopTab from "@/components/AdminStreakShopTab";
@@ -131,7 +132,7 @@ interface UserBalance {
   created_at: string;
 }
 
-type AdminTab = "products" | "tokens" | "claims" | "tickets" | "chats" | "saldo" | "notif" | "deposit" | "settings" | "diskon" | "pin" | "musik" | "vmusik" | "sponsor" | "apikey" | "postingan" | "promo" | "sosmed" | "wheel" | "shopstreak" | "eventstreak" | "flashsale" | "membership" | "banned";
+type AdminTab = "products" | "tokens" | "claims" | "tickets" | "chats" | "saldo" | "notif" | "deposit" | "settings" | "diskon" | "pin" | "musik" | "vmusik" | "sponsor" | "apikey" | "postingan" | "promo" | "sosmed" | "wheel" | "shopstreak" | "eventstreak" | "flashsale" | "prodflash" | "membership" | "banned";
 type ClaimDateFilter = "all" | "today" | "yesterday" | "lastmonth" | "custom";
 type DepositStatusFilter = "all" | "pending" | "approved" | "rejected" | "cancelled";
 type DepositMethodFilter = "all" | "qris" | "ewallet";
@@ -1118,6 +1119,7 @@ const AdminDashboard = () => {
             { key: "shopstreak" as AdminTab, icon: Tag, label: "Shop" },
             { key: "eventstreak" as AdminTab, icon: Tag, label: "Event" },
             { key: "flashsale" as AdminTab, icon: Tag, label: "Flash" },
+            { key: "prodflash" as AdminTab, icon: Zap, label: "F.Produk" },
             { key: "membership" as AdminTab, icon: Shield, label: "Member" },
             { key: "banned" as AdminTab, icon: Lock, label: "Banned" },
           ]).map(({ key, icon: Icon, label }) => {
@@ -1974,6 +1976,7 @@ const AdminDashboard = () => {
         {tab === "shopstreak" && <AdminStreakShopTab />}
         {tab === "eventstreak" && <AdminStreakEventTab />}
         {tab === "flashsale" && <AdminStreakFlashSaleTab />}
+        {tab === "prodflash" && <AdminProductFlashSaleTab />}
         {tab === "membership" && <AdminMembershipTab />}
         {tab === "banned" && <AdminBannedTab />}
       </main>

@@ -3866,6 +3866,59 @@ export type Database = {
         }
         Relationships: []
       }
+      store_flash_sales: {
+        Row: {
+          created_at: string
+          discount_percent: number | null
+          ends_at: string
+          flash_price: number | null
+          id: string
+          is_active: boolean
+          mode: Database["public"]["Enums"]["flash_sale_mode"]
+          product_id: string
+          quota: number
+          sold: number
+          starts_at: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          discount_percent?: number | null
+          ends_at: string
+          flash_price?: number | null
+          id?: string
+          is_active?: boolean
+          mode?: Database["public"]["Enums"]["flash_sale_mode"]
+          product_id: string
+          quota?: number
+          sold?: number
+          starts_at?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          discount_percent?: number | null
+          ends_at?: string
+          flash_price?: number | null
+          id?: string
+          is_active?: boolean
+          mode?: Database["public"]["Enums"]["flash_sale_mode"]
+          product_id?: string
+          quota?: number
+          sold?: number
+          starts_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "store_flash_sales_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       store_followers: {
         Row: {
           created_at: string
@@ -8183,7 +8236,7 @@ export type Database = {
       }
     }
     Enums: {
-      [_ in never]: never
+      flash_sale_mode: "discount_percent" | "fixed_price"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -8310,6 +8363,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      flash_sale_mode: ["discount_percent", "fixed_price"],
+    },
   },
 } as const
