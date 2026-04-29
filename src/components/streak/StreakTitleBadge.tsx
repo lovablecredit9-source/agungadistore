@@ -237,28 +237,116 @@ function getIconAnim(fx: FxKind) {
   }
 }
 
+/** Map shape -> clip-path + extra padding for tail/notch room */
+function getShapeStyle(shape: ShapeKind): { clip?: string; extraPad?: string; rounded: string } {
+  switch (shape) {
+    case "notched":
+      return {
+        rounded: "rounded-md",
+        clip: "polygon(8% 0, 92% 0, 100% 50%, 92% 100%, 8% 100%, 0 50%)",
+      };
+    case "ribbon":
+      return {
+        rounded: "rounded-sm",
+        clip: "polygon(0 0, 100% 0, 94% 50%, 100% 100%, 0 100%, 6% 50%)",
+      };
+    case "hex":
+      return {
+        rounded: "rounded-md",
+        clip: "polygon(12% 0, 88% 0, 100% 50%, 88% 100%, 12% 100%, 0 50%)",
+      };
+    case "shield":
+      return {
+        rounded: "rounded-b-2xl rounded-t-md",
+        clip: "polygon(0 0, 100% 0, 100% 70%, 50% 100%, 0 70%)",
+        extraPad: "pb-3",
+      };
+    case "starburst":
+      return {
+        rounded: "rounded-md",
+        clip:
+          "polygon(50% 0%, 61% 18%, 83% 12%, 79% 33%, 100% 50%, 79% 67%, 83% 88%, 61% 82%, 50% 100%, 39% 82%, 17% 88%, 21% 67%, 0% 50%, 21% 33%, 17% 12%, 39% 18%)",
+        extraPad: "px-6 py-3",
+      };
+    default:
+      return { rounded: "rounded-full" };
+  }
+}
+
+/** Floating orbit dots for higher tiers. */
+function OrbitDots({ palette }: { palette?: string[] }) {
+  const colors = palette && palette.length > 0 ? palette : ["#ffffff"];
+  return (
+    <>
+      {[0, 1, 2].map((i) => (
+        <motion.span
+          key={i}
+          className="pointer-events-none absolute top-1/2 left-1/2 h-1.5 w-1.5 rounded-full"
+          style={{
+            background: colors[i % colors.length],
+            boxShadow: `0 0 8px 2px ${colors[i % colors.length]}`,
+            transformOrigin: "0 0",
+          }}
+          animate={{ rotate: 360 }}
+          transition={{ duration: 4 + i, repeat: Infinity, ease: "linear", delay: i * 0.4 }}
+          initial={{ rotate: i * 120 }}
+        >
+          <span
+            className="absolute block h-1.5 w-1.5 rounded-full"
+            style={{ transform: "translate(28px, -3px)", background: "inherit", boxShadow: "inherit" }}
+          />
+        </motion.span>
+      ))}
+    </>
+  );
+}
+
 export default function StreakTitleBadge({ currentStreak, longestStreak, size = "md" }: Props) {
   const tier = getStreakTitle(longestStreak);
   const next = getNextStreakTitle(longestStreak);
   const Icon = tier.Icon;
   const iconAnim = getIconAnim(tier.fx);
+  const shapeStyle = getShapeStyle(tier.shape);
 
   const sizes = {
-    sm: { pad: "px-2.5 py-1", text: "text-xs", icon: "w-3 h-3" },
-    md: { pad: "px-3 py-1.5", text: "text-sm", icon: "w-4 h-4" },
-    lg: { pad: "px-4 py-2", text: "text-base", icon: "w-5 h-5" },
+    sm: { pad: "px-3 py-1", text: "text-xs", icon: "w-3 h-3" },
+    md: { pad: "px-4 py-1.5", text: "text-sm", icon: "w-4 h-4" },
+    lg: { pad: "px-5 py-2", text: "text-base", icon: "w-5 h-5" },
   }[size];
 
   // High tiers get an extra outer ring wrap for bling
   const isHigh = ["crown", "diamond", "mythic", "phoenix"].includes(tier.fx);
+  const hasOrbit = ["mythic", "phoenix", "diamond"].includes(tier.fx);
+
+  // Animated gradient background using palette (color-shift effect, not just static)
+  const animatedBg =
+    tier.palette && tier.palette.length > 1
+      ? `linear-gradient(110deg, ${tier.palette.join(", ")})`
+      : undefined;
 
   const badge = (
     <motion.div
       initial={{ scale: 0.9, opacity: 0 }}
       animate={{ scale: 1, opacity: 1 }}
-      whileHover={{ scale: 1.05 }}
-      className={`relative inline-flex items-center gap-1.5 rounded-full overflow-hidden ${sizes.pad} bg-gradient-to-r ${tier.gradient} text-white font-bold shadow-lg ${tier.glow} ${sizes.text} ring-1 ${tier.ring}`}
+      whileHover={{ scale: 1.06 }}
+      style={{
+        clipPath: shapeStyle.clip,
+        backgroundImage: animatedBg,
+        backgroundSize: animatedBg ? "300% 300%" : undefined,
+      }}
+      className={`relative inline-flex items-center gap-1.5 overflow-hidden ${shapeStyle.rounded} ${sizes.pad} ${shapeStyle.extraPad ?? ""} ${
+        animatedBg ? "" : `bg-gradient-to-r ${tier.gradient}`
+      } text-white font-bold shadow-lg ${tier.glow} ${sizes.text} ${shapeStyle.clip ? "" : `ring-1 ${tier.ring}`}`}
     >
+      {/* animated color shift */}
+      {animatedBg && (
+        <motion.span
+          className="pointer-events-none absolute inset-0"
+          style={{ backgroundImage: animatedBg, backgroundSize: "300% 300%" }}
+          animate={{ backgroundPosition: ["0% 50%", "100% 50%", "0% 50%"] }}
+          transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
+        />
+      )}
       <TierFX fx={tier.fx} />
       <motion.span className="relative z-10 inline-flex" {...iconAnim}>
         <Icon className={`${sizes.icon} drop-shadow`} />
@@ -273,29 +361,34 @@ export default function StreakTitleBadge({ currentStreak, longestStreak, size = 
       animate={{ opacity: 1, y: 0 }}
       className="inline-flex flex-col items-center gap-1"
     >
-      {isHigh ? (
-        <div className="relative p-[2px] rounded-full">
-          <motion.span
-            className="absolute inset-0 rounded-full"
-            style={{
-              background:
-                tier.fx === "phoenix"
-                  ? "conic-gradient(from 0deg, #fde047, #fb923c, #ef4444, #fde047)"
-                  : tier.fx === "mythic"
-                  ? "conic-gradient(from 0deg, #f0abfc, #818cf8, #22d3ee, #f0abfc)"
-                  : tier.fx === "diamond"
-                  ? "conic-gradient(from 0deg, #a5f3fc, #ffffff, #38bdf8, #a5f3fc)"
-                  : "conic-gradient(from 0deg, #fda4af, #fbbf24, #f43f5e, #fda4af)",
-              filter: "blur(2px)",
-            }}
-            animate={{ rotate: 360 }}
-            transition={{ duration: tier.fx === "phoenix" ? 4 : 6, repeat: Infinity, ease: "linear" }}
-          />
-          <div className="relative">{badge}</div>
-        </div>
-      ) : (
-        badge
-      )}
+      <div className="relative">
+        {hasOrbit && <OrbitDots palette={tier.palette} />}
+        {isHigh ? (
+          <div className="relative p-[2px]">
+            <motion.span
+              className="absolute inset-0"
+              style={{
+                clipPath: shapeStyle.clip,
+                borderRadius: shapeStyle.clip ? undefined : 9999,
+                background:
+                  tier.fx === "phoenix"
+                    ? "conic-gradient(from 0deg, #fde047, #fb923c, #ef4444, #fde047)"
+                    : tier.fx === "mythic"
+                    ? "conic-gradient(from 0deg, #f0abfc, #818cf8, #22d3ee, #f0abfc)"
+                    : tier.fx === "diamond"
+                    ? "conic-gradient(from 0deg, #a5f3fc, #ffffff, #38bdf8, #a5f3fc)"
+                    : "conic-gradient(from 0deg, #fda4af, #fbbf24, #f43f5e, #fda4af)",
+                filter: "blur(2px)",
+              }}
+              animate={{ rotate: 360 }}
+              transition={{ duration: tier.fx === "phoenix" ? 4 : 6, repeat: Infinity, ease: "linear" }}
+            />
+            <div className="relative">{badge}</div>
+          </div>
+        ) : (
+          badge
+        )}
+      </div>
       {next && size !== "sm" && (
         <p className="text-[10px] text-muted-foreground">
           Streak {next.min - longestStreak} hari lagi → <span className="font-semibold">{next.title}</span>
@@ -304,3 +397,4 @@ export default function StreakTitleBadge({ currentStreak, longestStreak, size = 
     </motion.div>
   );
 }
+
