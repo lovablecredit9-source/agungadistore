@@ -6085,9 +6085,11 @@ const Index = () => {
 
       {/* Buy with Saldo Confirmation Modal */}
       {showBuySaldo && buyProduct && (() => {
-        const wholesaleUnitPrice = getWholesalePrice(buyProduct.id, buyQuantity, buyProduct.price);
-        const isWholesale = wholesaleUnitPrice < buyProduct.price;
-        const basePrice = wholesaleUnitPrice * buyQuantity;
+        const eff = getEffectivePrice(buyProduct.id, buyProduct.price, buyQuantity);
+        const unitPrice = eff.price;
+        const isFlash = eff.isFlash;
+        const isWholesale = !isFlash && unitPrice < buyProduct.price;
+        const basePrice = unitPrice * buyQuantity;
         const discount = discountInfo ? Math.min(discountInfo.amount, basePrice) : 0;
         const totalPrice = basePrice - discount;
         return (
@@ -6102,10 +6104,15 @@ const Index = () => {
                 <span>{buyProduct.title}</span>
                 <VerifiedBadge size="sm" />
               </p>
-              {isWholesale ? (
+              {isFlash ? (
                 <div>
                   <p className="text-muted-foreground text-xs line-through">{formatPrice(buyProduct.price)} / pcs</p>
-                  <p className="text-accent font-extrabold text-lg">{formatPrice(wholesaleUnitPrice)} / pcs <span className="text-xs font-medium bg-accent/10 px-1.5 py-0.5 rounded-full ml-1">Grosir</span></p>
+                  <p className="text-red-500 font-extrabold text-lg">{formatPrice(unitPrice)} / pcs <span className="text-xs font-medium bg-red-500/10 text-red-500 px-1.5 py-0.5 rounded-full ml-1">⚡ Flash Sale</span></p>
+                </div>
+              ) : isWholesale ? (
+                <div>
+                  <p className="text-muted-foreground text-xs line-through">{formatPrice(buyProduct.price)} / pcs</p>
+                  <p className="text-accent font-extrabold text-lg">{formatPrice(unitPrice)} / pcs <span className="text-xs font-medium bg-accent/10 px-1.5 py-0.5 rounded-full ml-1">Grosir</span></p>
                 </div>
               ) : (
                 <p className="text-primary font-extrabold text-lg">{formatPrice(buyProduct.price)} / pcs</p>
@@ -6562,11 +6569,12 @@ const Index = () => {
                               <VerifiedBadge size="xs" />
                             </p>
                             {(() => {
-                              const wp = getWholesalePrice(item.product.id, item.quantity, item.product.price);
+                              const eff = getEffectivePrice(item.product.id, item.product.price, item.quantity);
+                              const wp = eff.price;
                               return wp < item.product.price ? (
                                 <div>
                                   <span className="text-muted-foreground text-xs line-through mr-1">{formatPrice(item.product.price)}</span>
-                                  <span className="text-accent font-extrabold text-sm">{formatPrice(wp)}</span>
+                                  <span className={`font-extrabold text-sm ${eff.isFlash ? "text-red-500" : "text-accent"}`}>{formatPrice(wp)}{eff.isFlash ? " ⚡" : ""}</span>
                                 </div>
                               ) : (
                                 <p className="text-primary font-extrabold text-sm">{formatPrice(item.product.price)}</p>
@@ -6590,7 +6598,8 @@ const Index = () => {
                   </div>
                   <p className="text-[10px] text-muted-foreground text-center">Pilih item untuk checkout langsung dengan saldo</p>
                   {cart.map(item => {
-                    const wp = getWholesalePrice(item.product.id, item.quantity, item.product.price);
+                    const eff = getEffectivePrice(item.product.id, item.product.price, item.quantity);
+                    const wp = eff.price;
                     const itemTotal = wp * item.quantity;
                     return (
                     <Button key={item.product.id} className="w-full bg-gradient-to-r from-primary to-accent text-primary-foreground font-bold gap-2 text-xs"
