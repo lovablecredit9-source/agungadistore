@@ -25,15 +25,15 @@ interface TitleTier {
 }
 
 const TIERS: TitleTier[] = [
-  { min: 0, title: "Pendatang Baru", Icon: Sparkles, gradient: "from-slate-400 to-slate-600", glow: "shadow-slate-500/30", ring: "ring-slate-300/30", fx: "soft" },
-  { min: 3, title: "Pemula Api", Icon: Flame, gradient: "from-orange-400 via-red-500 to-rose-500", glow: "shadow-orange-500/50", ring: "ring-orange-300/40", fx: "ember" },
-  { min: 7, title: "Pejuang Harian", Icon: Award, gradient: "from-amber-300 via-orange-500 to-yellow-500", glow: "shadow-amber-500/50", ring: "ring-amber-300/50", fx: "sun" },
-  { min: 14, title: "Petarung Konsisten", Icon: Star, gradient: "from-blue-400 via-indigo-500 to-violet-600", glow: "shadow-indigo-500/50", ring: "ring-blue-300/50", fx: "shine" },
-  { min: 30, title: "Master Streak", Icon: Trophy, gradient: "from-purple-400 via-fuchsia-500 to-pink-600", glow: "shadow-fuchsia-500/50", ring: "ring-purple-300/50", fx: "royal" },
-  { min: 60, title: "Legenda Hidup", Icon: Crown, gradient: "from-rose-500 via-red-600 to-amber-500", glow: "shadow-rose-500/60", ring: "ring-rose-300/60", fx: "crown" },
-  { min: 100, title: "Diamond Soul", Icon: Gem, gradient: "from-cyan-300 via-sky-400 to-indigo-500", glow: "shadow-cyan-400/60", ring: "ring-cyan-200/60", fx: "diamond" },
-  { min: 150, title: "Mythic Champion", Icon: Crown, gradient: "from-fuchsia-500 via-purple-600 to-indigo-700", glow: "shadow-fuchsia-500/70", ring: "ring-fuchsia-300/60", fx: "mythic" },
-  { min: 365, title: "Immortal", Icon: Sparkles, gradient: "from-yellow-300 via-amber-500 to-rose-600", glow: "shadow-yellow-500/70", ring: "ring-yellow-200/70", fx: "phoenix" },
+  { min: 0, title: "Pendatang Baru", Icon: Sparkles, gradient: "from-slate-400 to-slate-600", glow: "shadow-slate-500/30", ring: "ring-slate-300/30", fx: "soft", shape: "pill" },
+  { min: 3, title: "Pemula Api", Icon: Flame, gradient: "from-orange-400 via-red-500 to-rose-500", glow: "shadow-orange-500/50", ring: "ring-orange-300/40", fx: "ember", shape: "notched", palette: ["#fb923c", "#ef4444", "#f59e0b", "#fb923c"] },
+  { min: 7, title: "Pejuang Harian", Icon: Award, gradient: "from-amber-300 via-orange-500 to-yellow-500", glow: "shadow-amber-500/50", ring: "ring-amber-300/50", fx: "sun", shape: "ribbon", palette: ["#fde047", "#fb923c", "#f59e0b", "#fde047"] },
+  { min: 14, title: "Petarung Konsisten", Icon: Star, gradient: "from-blue-400 via-indigo-500 to-violet-600", glow: "shadow-indigo-500/50", ring: "ring-blue-300/50", fx: "shine", shape: "shield", palette: ["#60a5fa", "#6366f1", "#8b5cf6", "#60a5fa"] },
+  { min: 30, title: "Master Streak", Icon: Trophy, gradient: "from-purple-400 via-fuchsia-500 to-pink-600", glow: "shadow-fuchsia-500/50", ring: "ring-purple-300/50", fx: "royal", shape: "hex", palette: ["#c084fc", "#e879f9", "#ec4899", "#c084fc"] },
+  { min: 60, title: "Legenda Hidup", Icon: Crown, gradient: "from-rose-500 via-red-600 to-amber-500", glow: "shadow-rose-500/60", ring: "ring-rose-300/60", fx: "crown", shape: "ribbon", palette: ["#f43f5e", "#dc2626", "#f59e0b", "#f43f5e"] },
+  { min: 100, title: "Diamond Soul", Icon: Gem, gradient: "from-cyan-300 via-sky-400 to-indigo-500", glow: "shadow-cyan-400/60", ring: "ring-cyan-200/60", fx: "diamond", shape: "hex", palette: ["#67e8f9", "#38bdf8", "#6366f1", "#67e8f9"] },
+  { min: 150, title: "Mythic Champion", Icon: Crown, gradient: "from-fuchsia-500 via-purple-600 to-indigo-700", glow: "shadow-fuchsia-500/70", ring: "ring-fuchsia-300/60", fx: "mythic", shape: "starburst", palette: ["#e879f9", "#a855f7", "#6366f1", "#22d3ee", "#e879f9"] },
+  { min: 365, title: "Immortal", Icon: Sparkles, gradient: "from-yellow-300 via-amber-500 to-rose-600", glow: "shadow-yellow-500/70", ring: "ring-yellow-200/70", fx: "phoenix", shape: "starburst", palette: ["#fde047", "#fb923c", "#ef4444", "#f59e0b", "#fde047"] },
 ];
 
 export function getStreakTitle(streak: number): TitleTier {
