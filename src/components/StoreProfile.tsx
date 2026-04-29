@@ -95,6 +95,7 @@ export const StoreProfileModal = ({
   const [flashSales, setFlashSales] = useState<any[]>([]);
   const { toast } = useToast();
   const responseRate = useResponseRate();
+  const myPremium = useStorePremium(activeVisitorId ?? userBalance?.visitor_id ?? null);
 
   const isAdminOnline = adminLastActive
     ? Date.now() - new Date(adminLastActive).getTime() < ONLINE_THRESHOLD_MS
@@ -566,10 +567,17 @@ export const StoreProfileModal = ({
                           </TabsTrigger>
                           <TabsTrigger
                             value="premium"
-                            className="rounded-xl text-[10px] font-black gap-0.5 px-1 data-[state=active]:bg-gradient-to-r data-[state=active]:from-amber-500 data-[state=active]:to-yellow-500 data-[state=active]:text-white data-[state=active]:shadow-md"
+                            className={`relative rounded-xl text-[10px] font-black gap-0.5 px-1 ${
+                              myPremium.isPremium
+                                ? "bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-500 text-amber-950 shadow-[0_0_12px_rgba(251,191,36,0.6)] ring-1 ring-amber-300 animate-pulse data-[state=active]:from-amber-500 data-[state=active]:to-yellow-500 data-[state=active]:text-white"
+                                : "data-[state=active]:bg-gradient-to-r data-[state=active]:from-amber-500 data-[state=active]:to-yellow-500 data-[state=active]:text-white data-[state=active]:shadow-md"
+                            }`}
                           >
-                            <Crown className="w-3 h-3 shrink-0" />
-                            <span className="truncate">Premium</span>
+                            <Crown className={`w-3 h-3 shrink-0 ${myPremium.isPremium ? "fill-amber-600" : ""}`} />
+                            <span className="truncate">{myPremium.isPremium ? "Aktif" : "Premium"}</span>
+                            {myPremium.isPremium && (
+                              <span className="absolute -top-1 -right-1 text-[8px]">👑</span>
+                            )}
                           </TabsTrigger>
                         </TabsList>
                       );
