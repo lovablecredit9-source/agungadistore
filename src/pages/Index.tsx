@@ -16,7 +16,6 @@ import {
   Eye, LayoutGrid, Rows3, Flame, SlidersHorizontal, Zap, TrendingUp, Award, Activity, Inbox, User, Phone, Gift, Menu, Lightbulb, MessageSquare, Star, Share2
 } from "lucide-react";
 import { VerifiedBadge } from "@/components/VerifiedBadge";
-import { useStorePremium } from "@/hooks/useStorePremium";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import CountUp from "@/components/CountUp";
 import { useTheme } from "@/lib/theme";
@@ -422,7 +421,6 @@ const Index = () => {
 
   // Saldo
   const [userBalance, setUserBalance] = useState<UserBalance | null>(null);
-  const storePremium = useStorePremium(userBalance?.visitor_id ?? null);
   const [balanceTransactions, setBalanceTransactions] = useState<BalanceTransaction[]>([]);
   const [selectedTransaction, setSelectedTransaction] = useState<BalanceTransaction | null>(null);
   const [selectedTxIds, setSelectedTxIds] = useState<Set<string>>(new Set());
