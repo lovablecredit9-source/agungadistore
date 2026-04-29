@@ -1906,7 +1906,12 @@ const Index = () => {
                       </span>
                       <span className="px-1.5 py-0.5 rounded-full bg-green-500/15 border border-green-500/30 text-green-500 text-[8px] font-bold">LIVE</span>
                     </div>
-                    <h2 className="text-[19px] font-extrabold leading-tight truncate bg-gradient-to-r from-foreground via-primary to-foreground bg-clip-text text-transparent">{STORE_NAME}</h2>
+                    <h2 className="text-[19px] font-extrabold leading-tight truncate bg-gradient-to-r from-foreground via-primary to-foreground bg-clip-text text-transparent">
+                      {STORE_NAME}{storePremium.isPremium && " Premium"}
+                    </h2>
+                    {storePremium.isPremium && (
+                      <div className="mt-0.5"><PremiumBadge size="xs" /></div>
+                    )}
                     <p className="text-[10px] text-muted-foreground mt-0.5 truncate flex items-center gap-1">
                       <span className="text-yellow-500">⭐</span> {t("header.tagline", lang)}
                     </p>
