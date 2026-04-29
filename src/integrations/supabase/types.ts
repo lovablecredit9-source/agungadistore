@@ -8426,6 +8426,10 @@ export type Database = {
         Args: { p_amount: number; p_visitor_id: string }
         Returns: number
       }
+      bump_music_share_quest: {
+        Args: { p_visitor_id: string }
+        Returns: undefined
+      }
       claim_daily_premium_voucher: {
         Args: { p_visitor_id: string }
         Returns: {
@@ -8496,6 +8500,13 @@ export type Database = {
       }
       get_account_credits: { Args: { p_visitor_id: string }; Returns: number }
       get_account_gems: { Args: { p_visitor_id: string }; Returns: number }
+      get_account_music_xp: {
+        Args: { p_visitor_id: string }
+        Returns: {
+          level: string
+          total_seconds: number
+        }[]
+      }
       get_active_user_balance_id: {
         Args: { p_visitor_id: string }
         Returns: string
@@ -8542,6 +8553,16 @@ export type Database = {
       get_song_top_fans: {
         Args: { p_limit?: number; p_song_id: string; p_song_type?: string }
         Returns: {
+          display_name: string
+          rank: number
+          total_seconds: number
+          visitor_id: string
+        }[]
+      }
+      get_song_top_fans_account: {
+        Args: { p_limit?: number; p_song_id: string; p_song_type?: string }
+        Returns: {
+          account_key: string
           display_name: string
           rank: number
           total_seconds: number
