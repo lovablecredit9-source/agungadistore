@@ -1825,15 +1825,24 @@ const Index = () => {
       {/* Content */}
       <main className="flex-1 max-w-lg mx-auto w-full px-4 py-4 pb-24">
         {tab === "musik" && (
-          <MusicHub
-            subTab={musicSubTab}
-            onSubTabChange={setMusicSubTab}
-            onPlayExternal={(song) => playExternalRef.current?.(song)}
-            playlistSlot={null /* PlaylistTab is mounted persistently below */}
-            playbackState={playbackState}
-            onTogglePlay={() => togglePlayRef.current?.()}
-            onOpenFullPlayer={() => openFullPlayerRef.current?.()}
-          />
+          <>
+            <MusicHub
+              subTab={musicSubTab}
+              onSubTabChange={setMusicSubTab}
+              onPlayExternal={(song) => playExternalRef.current?.(song)}
+              playlistSlot={null /* PlaylistTab is mounted persistently below */}
+              playbackState={playbackState}
+              onTogglePlay={() => togglePlayRef.current?.()}
+              onOpenFullPlayer={() => openFullPlayerRef.current?.()}
+            />
+            <div className="mt-3">
+              <MusicMegaHub
+                visitorId={visitorId}
+                playbackState={playbackState}
+                onPlaySong={(song) => playExternalRef.current?.(song)}
+              />
+            </div>
+          </>
         )}
 
         {tab === "beranda" && (
