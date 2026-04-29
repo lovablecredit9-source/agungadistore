@@ -390,6 +390,9 @@ const Index = () => {
   const [sponsorLikeCounts, setSponsorLikeCounts] = useState<Record<string, number>>({});
   const visitorId = getVisitorId();
 
+  // Track listening time → XP, quest, leaderboard
+  useMusicListenTracker(playbackState, visitorId);
+
   // Admin posts
   const [adminPosts, setAdminPosts] = useState<any[]>([]);
 
