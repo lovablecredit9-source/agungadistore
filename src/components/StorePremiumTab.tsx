@@ -222,7 +222,7 @@ export default function StorePremiumTab({ visitorId, onLoginRequired }: Props) {
 
       {/* PIN dialog */}
       <Dialog open={!!pinDialog} onOpenChange={(o) => !o && setPinDialog(null)}>
-        <DialogContent className="max-w-sm">
+        <DialogContent className="z-[120] max-w-sm">
           <DialogTitle className="flex items-center gap-2"><Crown className="w-5 h-5 text-amber-500" /> Konfirmasi Pembelian</DialogTitle>
           <DialogDescription>
             {pinDialog && <>Bayar <b>{formatPrice(pinDialog.price)}</b> dari saldo untuk <b>{pinDialog.name}</b>.</>}
@@ -239,7 +239,7 @@ export default function StorePremiumTab({ visitorId, onLoginRequired }: Props) {
 
       {/* Voucher klaim popup */}
       <Dialog open={!!showVoucher} onOpenChange={(o) => !o && setShowVoucher(null)}>
-        <DialogContent className="max-w-sm">
+        <DialogContent className="z-[120] max-w-sm">
           <DialogTitle className="flex items-center gap-2 text-amber-600"><Gift className="w-5 h-5" /> Voucher Berhasil Diklaim!</DialogTitle>
           <DialogDescription>Voucher diskon Rp 2.000 berlaku 24 jam. Pakai saat checkout produk.</DialogDescription>
           {showVoucher && (
