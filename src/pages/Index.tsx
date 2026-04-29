@@ -6569,11 +6569,12 @@ const Index = () => {
                               <VerifiedBadge size="xs" />
                             </p>
                             {(() => {
-                              const wp = getWholesalePrice(item.product.id, item.quantity, item.product.price);
+                              const eff = getEffectivePrice(item.product.id, item.product.price, item.quantity);
+                              const wp = eff.price;
                               return wp < item.product.price ? (
                                 <div>
                                   <span className="text-muted-foreground text-xs line-through mr-1">{formatPrice(item.product.price)}</span>
-                                  <span className="text-accent font-extrabold text-sm">{formatPrice(wp)}</span>
+                                  <span className={`font-extrabold text-sm ${eff.isFlash ? "text-red-500" : "text-accent"}`}>{formatPrice(wp)}{eff.isFlash ? " ⚡" : ""}</span>
                                 </div>
                               ) : (
                                 <p className="text-primary font-extrabold text-sm">{formatPrice(item.product.price)}</p>
