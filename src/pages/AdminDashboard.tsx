@@ -1119,6 +1119,7 @@ const AdminDashboard = () => {
             { key: "shopstreak" as AdminTab, icon: Tag, label: "Shop" },
             { key: "eventstreak" as AdminTab, icon: Tag, label: "Event" },
             { key: "flashsale" as AdminTab, icon: Tag, label: "Flash" },
+            { key: "prodflash" as AdminTab, icon: Zap, label: "F.Produk" },
             { key: "membership" as AdminTab, icon: Shield, label: "Member" },
             { key: "banned" as AdminTab, icon: Lock, label: "Banned" },
           ]).map(({ key, icon: Icon, label }) => {
