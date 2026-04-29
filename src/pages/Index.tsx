@@ -6085,9 +6085,11 @@ const Index = () => {
 
       {/* Buy with Saldo Confirmation Modal */}
       {showBuySaldo && buyProduct && (() => {
-        const wholesaleUnitPrice = getWholesalePrice(buyProduct.id, buyQuantity, buyProduct.price);
-        const isWholesale = wholesaleUnitPrice < buyProduct.price;
-        const basePrice = wholesaleUnitPrice * buyQuantity;
+        const eff = getEffectivePrice(buyProduct.id, buyProduct.price, buyQuantity);
+        const unitPrice = eff.price;
+        const isFlash = eff.isFlash;
+        const isWholesale = !isFlash && unitPrice < buyProduct.price;
+        const basePrice = unitPrice * buyQuantity;
         const discount = discountInfo ? Math.min(discountInfo.amount, basePrice) : 0;
         const totalPrice = basePrice - discount;
         return (
@@ -6102,10 +6104,15 @@ const Index = () => {
                 <span>{buyProduct.title}</span>
                 <VerifiedBadge size="sm" />
               </p>
-              {isWholesale ? (
+              {isFlash ? (
                 <div>
                   <p className="text-muted-foreground text-xs line-through">{formatPrice(buyProduct.price)} / pcs</p>
-                  <p className="text-accent font-extrabold text-lg">{formatPrice(wholesaleUnitPrice)} / pcs <span className="text-xs font-medium bg-accent/10 px-1.5 py-0.5 rounded-full ml-1">Grosir</span></p>
+                  <p className="text-red-500 font-extrabold text-lg">{formatPrice(unitPrice)} / pcs <span className="text-xs font-medium bg-red-500/10 text-red-500 px-1.5 py-0.5 rounded-full ml-1">⚡ Flash Sale</span></p>
+                </div>
+              ) : isWholesale ? (
+                <div>
+                  <p className="text-muted-foreground text-xs line-through">{formatPrice(buyProduct.price)} / pcs</p>
+                  <p className="text-accent font-extrabold text-lg">{formatPrice(unitPrice)} / pcs <span className="text-xs font-medium bg-accent/10 px-1.5 py-0.5 rounded-full ml-1">Grosir</span></p>
                 </div>
               ) : (
                 <p className="text-primary font-extrabold text-lg">{formatPrice(buyProduct.price)} / pcs</p>
