@@ -837,6 +837,14 @@ export const StoreProfileModal = ({
                         );
                       })()}
                     </TabsContent>
+
+                    {/* TAB PREMIUM */}
+                    <TabsContent value="premium" className="mt-3">
+                      <StorePremiumTab
+                        visitorId={userBalance?.visitor_id ?? null}
+                        onLoginRequired={onLoginRequired}
+                      />
+                    </TabsContent>
                   </Tabs>
                 );
               })()}
