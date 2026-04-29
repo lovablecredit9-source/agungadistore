@@ -61,7 +61,10 @@ export default function StorePremiumTab({ visitorId, onLoginRequired }: Props) {
   useEffect(() => { loadClaimToday(); }, [visitorId, premium.isPremium]);
 
   const handleBuy = async (plan: Plan) => {
-    if (!visitorId) return onLoginRequired();
+    if (!visitorId) {
+      toast({ title: "Login saldo dulu", description: "Masuk ke akun saldo sebelum membeli membership.", variant: "destructive" });
+      return onLoginRequired();
+    }
     setPin("");
     setPinDialog(plan);
   };
@@ -74,7 +77,16 @@ export default function StorePremiumTab({ visitorId, onLoginRequired }: Props) {
       const { data, error } = await supabase.functions.invoke("purchase-store-premium", {
         body: { visitorId, planId: pinDialog.id, pin },
       });
-      if (error) throw error;
+      if (error) {
+        let message = error.message ?? "Pembelian gagal diproses";
+        try {
+          const ctx = (error as any).context;
+          const payload = ctx ? await ctx.clone().json() : null;
+          message = payload?.error ?? message;
+        } catch {}
+        toast({ title: "Gagal", description: message, variant: "destructive" });
+        return;
+      }
       if ((data as any)?.error) {
         toast({ title: "Gagal", description: (data as any).error, variant: "destructive" });
         return;
@@ -210,7 +222,7 @@ export default function StorePremiumTab({ visitorId, onLoginRequired }: Props) {
 
       {/* PIN dialog */}
       <Dialog open={!!pinDialog} onOpenChange={(o) => !o && setPinDialog(null)}>
-        <DialogContent className="max-w-sm">
+        <DialogContent className="z-[120] max-w-sm">
           <DialogTitle className="flex items-center gap-2"><Crown className="w-5 h-5 text-amber-500" /> Konfirmasi Pembelian</DialogTitle>
           <DialogDescription>
             {pinDialog && <>Bayar <b>{formatPrice(pinDialog.price)}</b> dari saldo untuk <b>{pinDialog.name}</b>.</>}
@@ -227,7 +239,7 @@ export default function StorePremiumTab({ visitorId, onLoginRequired }: Props) {
 
       {/* Voucher klaim popup */}
       <Dialog open={!!showVoucher} onOpenChange={(o) => !o && setShowVoucher(null)}>
-        <DialogContent className="max-w-sm">
+        <DialogContent className="z-[120] max-w-sm">
           <DialogTitle className="flex items-center gap-2 text-amber-600"><Gift className="w-5 h-5" /> Voucher Berhasil Diklaim!</DialogTitle>
           <DialogDescription>Voucher diskon Rp 2.000 berlaku 24 jam. Pakai saat checkout produk.</DialogDescription>
           {showVoucher && (

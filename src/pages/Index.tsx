@@ -1594,6 +1594,7 @@ const Index = () => {
       <StoreProfileModal
         products={products}
         userBalance={userBalance}
+        activeVisitorId={userBalance ? activeBalanceVisitorId : null}
         onLoginRequired={() => setTab("saldo")}
         onProductClick={(id) => { const p = products.find(x => x.id === id); if (p) { setTab("produk"); setSelectedProduct(p); } }}
       />
