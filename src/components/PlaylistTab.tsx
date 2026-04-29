@@ -657,9 +657,10 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer, onPlayE
         audio.currentTime = ab.a;
       }
       // Crossfade: trigger next song slightly early with fade-out
-      if (crossfadeSec > 0 && audio.duration && !ab.enabled) {
+      const xf = crossfadeRef.current;
+      if (xf > 0 && audio.duration && !ab.enabled) {
         const remaining = audio.duration - audio.currentTime;
-        if (remaining <= crossfadeSec && remaining > 0 && !(audio as HTMLAudioElement & { __xfading?: boolean }).__xfading) {
+        if (remaining <= xf && remaining > 0 && !(audio as HTMLAudioElement & { __xfading?: boolean }).__xfading) {
           (audio as HTMLAudioElement & { __xfading?: boolean }).__xfading = true;
           // Smooth volume ramp
           const startVol = audio.volume;
