@@ -586,6 +586,24 @@ const Index = () => {
 
   useEffect(() => {
     fetchProducts();
+    fetchActiveFlashSales();
+    const ch = supabase
+      .channel("store_flash_sales_idx")
+      .on("postgres_changes", { event: "*", schema: "public", table: "store_flash_sales" }, () => fetchActiveFlashSales())
+      .subscribe();
+    const tick = setInterval(() => setFlashTick((t) => (t + 1) % 1000000), 1000);
+    return () => { supabase.removeChannel(ch); clearInterval(tick); };
+  }, []);
+
+  async function fetchActiveFlashSales() {
+    const { data } = await supabase
+      .from("store_flash_sales")
+      .select("*")
+      .eq("is_active", true);
+    setActiveFlashSales((data as any[]) || []);
+  }
+
+  useEffect(() => {
     loadHistory();
     fetchLikes();
     fetchAdminPosts();
