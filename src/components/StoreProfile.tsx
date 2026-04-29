@@ -527,22 +527,42 @@ export const StoreProfileModal = ({
 
                 return (
                   <Tabs defaultValue="produk" className="w-full">
-                    <TabsList className="w-full h-10 grid grid-cols-2 rounded-2xl bg-muted/60 p-1">
-                      <TabsTrigger
-                        value="produk"
-                        className="rounded-xl text-xs font-black gap-1.5 data-[state=active]:bg-gradient-to-r data-[state=active]:from-violet-500 data-[state=active]:to-pink-500 data-[state=active]:text-white data-[state=active]:shadow-md"
-                      >
-                        <Package className="w-3.5 h-3.5" />
-                        Produk ({products.length})
-                      </TabsTrigger>
-                      <TabsTrigger
-                        value="kategori"
-                        className="rounded-xl text-xs font-black gap-1.5 data-[state=active]:bg-gradient-to-r data-[state=active]:from-amber-500 data-[state=active]:to-pink-500 data-[state=active]:text-white data-[state=active]:shadow-md"
-                      >
-                        <ListFilter className="w-3.5 h-3.5" />
-                        Kategori ({Math.max(0, categories.length - 1)})
-                      </TabsTrigger>
-                    </TabsList>
+                    {(() => {
+                      const now = Date.now();
+                      const liveCount = flashSales.filter((s) =>
+                        new Date(s.starts_at).getTime() <= now &&
+                        new Date(s.ends_at).getTime() > now &&
+                        (s.quota === 0 || s.sold < s.quota)
+                      ).length;
+                      return (
+                        <TabsList className="w-full h-10 grid grid-cols-3 rounded-2xl bg-muted/60 p-1">
+                          <TabsTrigger
+                            value="produk"
+                            className="rounded-xl text-[11px] font-black gap-1 data-[state=active]:bg-gradient-to-r data-[state=active]:from-violet-500 data-[state=active]:to-pink-500 data-[state=active]:text-white data-[state=active]:shadow-md"
+                          >
+                            <Package className="w-3.5 h-3.5" />
+                            <span className="truncate">Produk ({products.length})</span>
+                          </TabsTrigger>
+                          <TabsTrigger
+                            value="kategori"
+                            className="rounded-xl text-[11px] font-black gap-1 data-[state=active]:bg-gradient-to-r data-[state=active]:from-amber-500 data-[state=active]:to-pink-500 data-[state=active]:text-white data-[state=active]:shadow-md"
+                          >
+                            <ListFilter className="w-3.5 h-3.5" />
+                            <span className="truncate">Kategori ({Math.max(0, categories.length - 1)})</span>
+                          </TabsTrigger>
+                          <TabsTrigger
+                            value="flashsale"
+                            className="relative rounded-xl text-[11px] font-black gap-1 data-[state=active]:bg-gradient-to-r data-[state=active]:from-orange-500 data-[state=active]:to-red-500 data-[state=active]:text-white data-[state=active]:shadow-md"
+                          >
+                            <Zap className="w-3.5 h-3.5" />
+                            <span className="truncate">Flash ({liveCount})</span>
+                            {liveCount > 0 && (
+                              <span className="absolute top-0.5 right-0.5 w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
+                            )}
+                          </TabsTrigger>
+                        </TabsList>
+                      );
+                    })()}
 
                     {/* TAB PRODUK */}
                     <TabsContent value="produk" className="mt-3">
