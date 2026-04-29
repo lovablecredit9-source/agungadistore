@@ -9,6 +9,7 @@ import {
 import type { PlaybackState } from "@/components/PlaylistTab";
 import { useToast } from "@/hooks/use-toast";
 import { useAudioBandsDOM } from "@/lib/audio-visualizer";
+import PlayfulHero3D from "@/components/PlayfulHero3D";
 
 interface Props {
   visitorId: string;
