@@ -19,7 +19,7 @@ export function useMusicListenTracker(playbackState: PlaybackState | undefined, 
     const acc = accumulatedRef.current;
     const info = lastSongInfoRef.current;
     if (!info || !visitorId) { if (force) accumulatedRef.current = 0; return; }
-    if (acc < (force ? 5 : 30)) return;
+    if (acc < (force ? 3 : 15)) return;
     try {
       await supabase.rpc("log_song_listen", {
         p_visitor_id: visitorId,
