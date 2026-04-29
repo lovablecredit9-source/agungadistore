@@ -443,7 +443,14 @@ const Index = () => {
   const [wholesalePrices, setWholesalePrices] = useState<any[]>([]);
   const [activeFlashSales, setActiveFlashSales] = useState<any[]>([]);
   const [flashTick, setFlashTick] = useState(0);
-  const cartTotal = cart.reduce((sum, item) => sum + getWholesalePrice(item.product.id, item.quantity, item.product.price) * item.quantity, 0);
+  const cartTotal = cart.reduce((sum, item) => {
+    const flash = getActiveFlashSaleForProduct(item.product.id);
+    const flashRemaining = flash ? (flash.quota === 0 ? Infinity : Math.max(0, flash.quota - (flash.sold || 0))) : 0;
+    if (flash && item.quantity <= flashRemaining) {
+      return sum + getFlashUnitPrice(flash, item.product.price) * item.quantity;
+    }
+    return sum + getWholesalePrice(item.product.id, item.quantity, item.product.price) * item.quantity;
+  }, 0);
   const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
 
   // PIN
