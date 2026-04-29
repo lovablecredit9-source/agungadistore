@@ -36,6 +36,8 @@ export type AudioFxSettings = {
   rate: number;
   // Pitch preserve when changing rate
   preservePitch: boolean;
+  // Karaoke-only mode: both speakers get vocal-cancelled (L-R) signal with bass restored from (L+R) low-pass
+  karaokeOnly?: boolean;
 };
 
 export const EQ_FREQS = [60, 250, 1000, 4000, 12000] as const;
