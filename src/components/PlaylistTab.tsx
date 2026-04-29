@@ -1351,8 +1351,14 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer, onPlayE
 
             {/* Bottom actions */}
             <div className="flex items-center justify-between w-full mb-4 px-2">
-              <button className={`p-2 rounded-full transition-colors ${currentSongLyrics.length > 0 ? "text-primary" : "text-muted-foreground"}`}>
-                <Sparkles className="w-5 h-5" />
+              <button
+                onClick={() => setShowFxSettings(true)}
+                className="p-2 rounded-full text-foreground/80 hover:text-foreground hover:bg-white/10 transition-colors relative"
+                aria-label="Audio Settings"
+                title="Audio Settings (EQ, Balance L/R, Bass, dll)"
+              >
+                <Sliders className="w-5 h-5" />
+                <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-fuchsia-400 animate-pulse" />
               </button>
               <div className="flex items-center gap-4">
                 <button className="p-2 text-muted-foreground hover:text-foreground rounded-full transition-colors" onClick={async () => {
