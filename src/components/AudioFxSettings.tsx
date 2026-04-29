@@ -105,7 +105,20 @@ export default function AudioFxSettings({ open, onClose, abLoop, crossfade }: Pr
                 <>
                   {/* Balance L/R */}
                   <Card icon={<Headphones className="w-4 h-4" />} title="Karaoke Vocal Cut">
-                    <div className="flex items-center justify-between text-[11px] text-white/70 font-mono mb-1">
+                    {/* Karaoke Only — both speakers instrumental */}
+                    <button
+                      onClick={() => setFx({ karaokeOnly: !fx.karaokeOnly, balance: 0, mono: false })}
+                      className={`w-full mb-3 px-3 py-2 rounded-lg text-xs font-bold transition-all ${
+                        fx.karaokeOnly
+                          ? "bg-gradient-to-r from-pink-500 to-purple-600 text-white shadow-lg"
+                          : "bg-white/10 text-white/80 hover:bg-white/20"
+                      }`}
+                    >
+                      {fx.karaokeOnly ? "🎤 KARAOKE AKTIF — Musik Saja (L+R)" : "🎤 Karaoke (Musik Saja di L & R)"}
+                    </button>
+                    <p className="text-[10px] text-white/50 mb-3">Mode ini menghapus vokal tengah di kedua speaker. Bass mungkin sedikit berkurang. Sisa vokal tergantung mixing lagu (vokal stereo/reverb tidak bisa hilang 100%).</p>
+
+                    <div className={`flex items-center justify-between text-[11px] text-white/70 font-mono mb-1 ${fx.karaokeOnly ? "opacity-40 pointer-events-none" : ""}`}>
                       <span>L</span>
                       <span className="text-white font-bold">
                         {fx.balance === 0
@@ -120,17 +133,19 @@ export default function AudioFxSettings({ open, onClose, abLoop, crossfade }: Pr
                       </span>
                       <span>R</span>
                     </div>
-                    <Slider
-                      value={[fx.balance]}
-                      min={-1} max={1} step={0.05}
-                      onValueChange={(v) => setFx({ balance: v[0] })}
-                    />
-                    <div className="flex justify-between mt-2">
-                      <button onClick={() => setFx({ balance: -1 })} className="text-[10px] px-2 py-0.5 rounded-full bg-white/10 text-white/80 hover:bg-white/20">Karaoke L</button>
-                      <button onClick={() => setFx({ balance: 0 })} className="text-[10px] px-2 py-0.5 rounded-full bg-white/10 text-white/80 hover:bg-white/20">Normal</button>
-                      <button onClick={() => setFx({ balance: 1 })} className="text-[10px] px-2 py-0.5 rounded-full bg-white/10 text-white/80 hover:bg-white/20">Karaoke R</button>
+                    <div className={fx.karaokeOnly ? "opacity-40 pointer-events-none" : ""}>
+                      <Slider
+                        value={[fx.balance]}
+                        min={-1} max={1} step={0.05}
+                        onValueChange={(v) => setFx({ balance: v[0] })}
+                      />
+                      <div className="flex justify-between mt-2">
+                        <button onClick={() => setFx({ balance: -1 })} className="text-[10px] px-2 py-0.5 rounded-full bg-white/10 text-white/80 hover:bg-white/20">Karaoke L</button>
+                        <button onClick={() => setFx({ balance: 0 })} className="text-[10px] px-2 py-0.5 rounded-full bg-white/10 text-white/80 hover:bg-white/20">Normal</button>
+                        <button onClick={() => setFx({ balance: 1 })} className="text-[10px] px-2 py-0.5 rounded-full bg-white/10 text-white/80 hover:bg-white/20">Karaoke R</button>
+                      </div>
+                      <p className="text-[10px] text-white/50 mt-2">Geser kiri: vokal tengah dicancel di kiri, kanan tetap musik+suara. Geser kanan: dibalik.</p>
                     </div>
-                    <p className="text-[10px] text-white/50 mt-2">Geser kiri: vokal tengah dicancel di kiri, kanan tetap musik+suara. Geser kanan: dibalik. Efek tergantung mixing stereo lagu.</p>
                   </Card>
 
                   {/* Mono / Stereo */}

@@ -36,6 +36,8 @@ export type AudioFxSettings = {
   rate: number;
   // Pitch preserve when changing rate
   preservePitch: boolean;
+  // Karaoke-only mode: both speakers get vocal-cancelled (L-R) signal with bass restored from (L+R) low-pass
+  karaokeOnly?: boolean;
 };
 
 export const EQ_FREQS = [60, 250, 1000, 4000, 12000] as const;
@@ -61,6 +63,7 @@ const DEFAULT_FX: AudioFxSettings = {
   surround: 0,
   rate: 1,
   preservePitch: true,
+  karaokeOnly: false,
 };
 
 const LS_KEY = "audio_fx_settings_v1";
@@ -335,6 +338,16 @@ function rebuildChannelRouting(g: Graph, fx: AudioFxSettings) {
   const rToOutR = g.instRBus;     // R → R
   const rToOutL = g.vocalLGain;   // R → L (cross)
   const lToOutR = g.vocalRGain;   // L → R (cross)
+
+  if (fx.karaokeOnly) {
+    // Both speakers receive (L - R): center-cancelled instrumental.
+    // L out = L - R, R out = L - R (mirrored to keep stereo image symmetric).
+    lToOutL.gain.setTargetAtTime(1, t, 0.03);
+    rToOutL.gain.setTargetAtTime(-1, t, 0.03);
+    lToOutR.gain.setTargetAtTime(1, t, 0.03);
+    rToOutR.gain.setTargetAtTime(-1, t, 0.03);
+    return;
+  }
 
   if (fx.mono) {
     // Both speakers receive L+R at half gain to avoid clipping.
