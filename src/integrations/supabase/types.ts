@@ -8426,6 +8426,10 @@ export type Database = {
         Args: { p_amount: number; p_visitor_id: string }
         Returns: number
       }
+      bump_music_quest_event: {
+        Args: { p_quest_type: string; p_visitor_id: string }
+        Returns: undefined
+      }
       bump_music_share_quest: {
         Args: { p_visitor_id: string }
         Returns: undefined
