@@ -17,7 +17,6 @@ interface Product {
   title: string;
   price: number;
   image_url: string | null;
-  short_id?: number | null;
 }
 
 interface FlashSale {
