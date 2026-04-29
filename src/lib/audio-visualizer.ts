@@ -431,9 +431,8 @@ function applyFxToGraph(g: Graph, fx: AudioFxSettings) {
     g.eqNodes[i].gain.setTargetAtTime(fx.eq[i] ?? 0, t, 0.05);
   }
   g.bass.gain.setTargetAtTime(fx.bassBoost, t, 0.05);
-  const balance = Math.max(-1, Math.min(1, fx.balance));
-  const pan = Math.abs(balance) >= 0.95 ? 0 : balance;
-  g.panner.pan.setTargetAtTime(pan, t, 0.05);
+  // Balance is now handled inside rebuildChannelRouting (karaoke split). Keep panner centered.
+  g.panner.pan.setTargetAtTime(0, t, 0.05);
   const wet = Math.max(0, Math.min(1, fx.surround));
   g.wetGain.gain.setTargetAtTime(wet * 0.6, t, 0.05);
   g.dryGain.gain.setTargetAtTime(1 - wet * 0.4, t, 0.05);
