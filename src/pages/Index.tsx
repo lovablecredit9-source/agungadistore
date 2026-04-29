@@ -44,6 +44,8 @@ import { useLang, t, type Lang } from "@/lib/i18n";
 import { z } from "zod";
 import PlaylistTab, { type PlaybackState } from "@/components/PlaylistTab";
 import MusicHub, { type MusicSubTab } from "@/components/MusicHub";
+import MusicMegaHub from "@/components/MusicMegaHub";
+import { useMusicListenTracker } from "@/hooks/useMusicListenTracker";
 import LanguageSelector from "@/components/LanguageSelector";
 import { LANGUAGES } from "@/lib/languages";
 import InstallPrompt from "@/components/InstallPrompt";
@@ -387,6 +389,9 @@ const Index = () => {
   const [productLikeCounts, setProductLikeCounts] = useState<Record<string, number>>({});
   const [sponsorLikeCounts, setSponsorLikeCounts] = useState<Record<string, number>>({});
   const visitorId = getVisitorId();
+
+  // Track listening time → XP, quest, leaderboard
+  useMusicListenTracker(playbackState, visitorId);
 
   // Admin posts
   const [adminPosts, setAdminPosts] = useState<any[]>([]);
@@ -1823,15 +1828,24 @@ const Index = () => {
       {/* Content */}
       <main className="flex-1 max-w-lg mx-auto w-full px-4 py-4 pb-24">
         {tab === "musik" && (
-          <MusicHub
-            subTab={musicSubTab}
-            onSubTabChange={setMusicSubTab}
-            onPlayExternal={(song) => playExternalRef.current?.(song)}
-            playlistSlot={null /* PlaylistTab is mounted persistently below */}
-            playbackState={playbackState}
-            onTogglePlay={() => togglePlayRef.current?.()}
-            onOpenFullPlayer={() => openFullPlayerRef.current?.()}
-          />
+          <>
+            <MusicHub
+              subTab={musicSubTab}
+              onSubTabChange={setMusicSubTab}
+              onPlayExternal={(song) => playExternalRef.current?.(song)}
+              playlistSlot={null /* PlaylistTab is mounted persistently below */}
+              playbackState={playbackState}
+              onTogglePlay={() => togglePlayRef.current?.()}
+              onOpenFullPlayer={() => openFullPlayerRef.current?.()}
+            />
+            <div className="mt-3">
+              <MusicMegaHub
+                visitorId={visitorId}
+                playbackState={playbackState}
+                onPlaySong={(song) => playExternalRef.current?.(song)}
+              />
+            </div>
+          </>
         )}
 
         {tab === "beranda" && (
