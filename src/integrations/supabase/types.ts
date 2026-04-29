@@ -2600,6 +2600,45 @@ export type Database = {
         }
         Relationships: []
       }
+      music_daily_quests: {
+        Row: {
+          created_at: string
+          current_value: number
+          id: string
+          is_claimed: boolean
+          is_completed: boolean
+          quest_date: string
+          quest_type: string
+          reward_coins: number
+          target_value: number
+          visitor_id: string
+        }
+        Insert: {
+          created_at?: string
+          current_value?: number
+          id?: string
+          is_claimed?: boolean
+          is_completed?: boolean
+          quest_date?: string
+          quest_type: string
+          reward_coins?: number
+          target_value: number
+          visitor_id: string
+        }
+        Update: {
+          created_at?: string
+          current_value?: number
+          id?: string
+          is_claimed?: boolean
+          is_completed?: boolean
+          quest_date?: string
+          quest_type?: string
+          reward_coins?: number
+          target_value?: number
+          visitor_id?: string
+        }
+        Relationships: []
+      }
       music_discount_vouchers: {
         Row: {
           code: string
@@ -2630,6 +2669,27 @@ export type Database = {
           is_active?: boolean
           max_uses?: number
           used_count?: number
+        }
+        Relationships: []
+      }
+      music_listener_xp: {
+        Row: {
+          level: string
+          total_seconds: number
+          updated_at: string
+          visitor_id: string
+        }
+        Insert: {
+          level?: string
+          total_seconds?: number
+          updated_at?: string
+          visitor_id: string
+        }
+        Update: {
+          level?: string
+          total_seconds?: number
+          updated_at?: string
+          visitor_id?: string
         }
         Relationships: []
       }
@@ -3604,6 +3664,75 @@ export type Database = {
         }
         Relationships: []
       }
+      song_comments: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          display_name: string
+          id: string
+          message: string
+          song_id: string
+          song_type: string
+          updated_at: string
+          visitor_id: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          display_name?: string
+          id?: string
+          message: string
+          song_id: string
+          song_type?: string
+          updated_at?: string
+          visitor_id: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          display_name?: string
+          id?: string
+          message?: string
+          song_id?: string
+          song_type?: string
+          updated_at?: string
+          visitor_id?: string
+        }
+        Relationships: []
+      }
+      song_listening_log: {
+        Row: {
+          id: string
+          listened_at: string
+          seconds: number
+          song_artist: string | null
+          song_id: string
+          song_title: string | null
+          song_type: string
+          visitor_id: string
+        }
+        Insert: {
+          id?: string
+          listened_at?: string
+          seconds?: number
+          song_artist?: string | null
+          song_id: string
+          song_title?: string | null
+          song_type?: string
+          visitor_id: string
+        }
+        Update: {
+          id?: string
+          listened_at?: string
+          seconds?: number
+          song_artist?: string | null
+          song_id?: string
+          song_title?: string | null
+          song_type?: string
+          visitor_id?: string
+        }
+        Relationships: []
+      }
       song_lyrics: {
         Row: {
           created_at: string
@@ -3638,6 +3767,33 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      song_reactions: {
+        Row: {
+          created_at: string
+          emoji: string
+          id: string
+          song_id: string
+          song_type: string
+          visitor_id: string
+        }
+        Insert: {
+          created_at?: string
+          emoji: string
+          id?: string
+          song_id: string
+          song_type?: string
+          visitor_id: string
+        }
+        Update: {
+          created_at?: string
+          emoji?: string
+          id?: string
+          song_id?: string
+          song_type?: string
+          visitor_id?: string
+        }
+        Relationships: []
       }
       spin_wheel_history: {
         Row: {
@@ -8279,6 +8435,14 @@ export type Database = {
           voucher_code: string
         }[]
       }
+      claim_music_quest: {
+        Args: { p_quest_id: string; p_visitor_id: string }
+        Returns: {
+          coins_added: number
+          message: string
+          success: boolean
+        }[]
+      }
       create_notification: {
         Args: {
           p_message: string
@@ -8288,6 +8452,27 @@ export type Database = {
           p_visitor_id: string
         }
         Returns: string
+      }
+      ensure_music_daily_quests: {
+        Args: { p_visitor_id: string }
+        Returns: {
+          created_at: string
+          current_value: number
+          id: string
+          is_claimed: boolean
+          is_completed: boolean
+          quest_date: string
+          quest_type: string
+          reward_coins: number
+          target_value: number
+          visitor_id: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "music_daily_quests"
+          isOneToOne: false
+          isSetofReturn: true
+        }
       }
       generate_follow_voucher: {
         Args: { p_visitor_id: string }
@@ -8323,6 +8508,18 @@ export type Database = {
           total_chats: number
         }[]
       }
+      get_music_wrapped: {
+        Args: { p_days?: number; p_visitor_id: string }
+        Returns: {
+          top_artist: string
+          top_artist_seconds: number
+          top_song_artist: string
+          top_song_seconds: number
+          top_song_title: string
+          total_seconds: number
+          unique_songs: number
+        }[]
+      }
       get_my_notifications: {
         Args: { p_limit?: number; p_visitor_id: string }
         Returns: {
@@ -8342,6 +8539,15 @@ export type Database = {
           isSetofReturn: true
         }
       }
+      get_song_top_fans: {
+        Args: { p_limit?: number; p_song_id: string; p_song_type?: string }
+        Returns: {
+          display_name: string
+          rank: number
+          total_seconds: number
+          visitor_id: string
+        }[]
+      }
       get_store_premium_info: {
         Args: { p_visitor_id: string }
         Returns: {
@@ -8358,6 +8564,17 @@ export type Database = {
       is_account_banned: { Args: { p_visitor_id: string }; Returns: boolean }
       is_admin_user: { Args: never; Returns: boolean }
       is_store_premium: { Args: { p_visitor_id: string }; Returns: boolean }
+      log_song_listen: {
+        Args: {
+          p_seconds: number
+          p_song_artist: string
+          p_song_id: string
+          p_song_title: string
+          p_song_type: string
+          p_visitor_id: string
+        }
+        Returns: undefined
+      }
       mark_notifications_read: {
         Args: { p_ids: string[]; p_visitor_id: string }
         Returns: undefined
