@@ -44,7 +44,7 @@ export function useStorePremium(visitorId: string | null | undefined) {
   useEffect(() => {
     if (!visitorId) return;
     const ch = supabase
-      .channel(`premium-${visitorId}`)
+      .channel(`premium-${visitorId}-${Math.random().toString(36).slice(2, 10)}`)
       .on("postgres_changes", { event: "*", schema: "public", table: "store_premium_subscriptions" }, () => refresh())
       .subscribe();
     return () => { supabase.removeChannel(ch); };
