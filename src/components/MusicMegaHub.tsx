@@ -98,7 +98,7 @@ export default function MusicMegaHub({ visitorId, playbackState, onPlaySong }: P
       loadLevel();
       if (modal === "quests") loadQuests();
       if (modal === "leaderboard" && currentSongId) {
-        supabase.rpc("get_song_top_fans", { p_song_id: currentSongId, p_song_type: currentSongType, p_limit: 10 })
+        supabase.rpc("get_song_top_fans_account", { p_song_id: currentSongId, p_song_type: currentSongType, p_limit: 10 })
           .then(({ data }) => setTopFans(data || []));
       }
       if (modal === "wrapped") {
