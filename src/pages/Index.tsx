@@ -2103,6 +2103,18 @@ const Index = () => {
               </div>
             </div>
 
+            {/* Playful 3D Hero */}
+            <PlayfulHero3D
+              title={`Selamat datang di ${STORE_NAME}!`}
+              subtitle="Murah & Terpercaya • Belanja, Musik, Game seru semua di sini ✨"
+              emoji="🛍️"
+              gradient="from-fuchsia-500 via-pink-500 to-orange-400"
+              ctaLabel="Mulai Jelajah"
+              onClick={() => setTab("produk")}
+              variant="shop"
+              height={190}
+            />
+
             {/* Hero Promo Slider */}
             <HomeBannerSlider
               banners={[
