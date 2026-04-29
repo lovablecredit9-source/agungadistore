@@ -9,6 +9,8 @@ interface Props {
 
 type FxKind = "soft" | "ember" | "sun" | "shine" | "royal" | "crown" | "diamond" | "mythic" | "phoenix";
 
+type ShapeKind = "pill" | "notched" | "ribbon" | "hex" | "shield" | "starburst";
+
 interface TitleTier {
   min: number;
   title: string;
@@ -17,6 +19,9 @@ interface TitleTier {
   glow: string;
   ring: string;
   fx: FxKind;
+  shape: ShapeKind;
+  /** Optional palette for animated hue cycling (CSS colors). */
+  palette?: string[];
 }
 
 const TIERS: TitleTier[] = [
