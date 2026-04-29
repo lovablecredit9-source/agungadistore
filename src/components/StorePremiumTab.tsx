@@ -176,9 +176,9 @@ export default function StorePremiumTab({ visitorId, onLoginRequired }: Props) {
               <p className="text-[9px] text-muted-foreground flex items-center gap-1"><Clock className="w-2.5 h-2.5" /> Besok kamu bisa klaim lagi</p>
             </div>
           ) : (
-            <Button onClick={handleClaim} disabled={claiming} className="w-full bg-gradient-to-r from-amber-500 to-yellow-500 text-white font-black shadow-md">
-              <Gift className="w-3.5 h-3.5 mr-1.5" />
-              {claiming ? "Mengklaim..." : "Klaim Voucher Hari Ini"}
+            <Button onClick={handleClaim} disabled={claiming} size="lg" className="w-full h-12 bg-gradient-to-r from-amber-500 via-yellow-500 to-amber-500 text-white font-black text-sm shadow-lg shadow-amber-500/40 ring-2 ring-amber-300 animate-pulse hover:animate-none">
+              <Gift className="w-5 h-5 mr-2" />
+              {claiming ? "Mengklaim..." : "🎁 KLAIM Rp 2.000 SEKARANG"}
             </Button>
           )}
         </div>
