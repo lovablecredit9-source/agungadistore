@@ -44,6 +44,8 @@ import { useLang, t, type Lang } from "@/lib/i18n";
 import { z } from "zod";
 import PlaylistTab, { type PlaybackState } from "@/components/PlaylistTab";
 import MusicHub, { type MusicSubTab } from "@/components/MusicHub";
+import MusicMegaHub from "@/components/MusicMegaHub";
+import { useMusicListenTracker } from "@/hooks/useMusicListenTracker";
 import LanguageSelector from "@/components/LanguageSelector";
 import { LANGUAGES } from "@/lib/languages";
 import InstallPrompt from "@/components/InstallPrompt";
