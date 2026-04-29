@@ -5206,24 +5206,29 @@ const Index = () => {
                     <MessageCircle className="w-4 h-4 text-purple-300 relative" />
                     <span className="text-[10px] font-bold text-foreground relative">Chat</span>
                   </button>
-                  <button
-                    disabled={!userBalance || userBalance.balance < selectedProduct.price || selectedProduct.stock <= 0}
-                    onClick={() => { setBuyProduct(selectedProduct); setBuyQuantity(1); setShowBuySaldo(true); }}
-                    className="group relative overflow-hidden h-14 rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 disabled:opacity-40 disabled:pointer-events-none active:scale-95 transition-all flex flex-col items-center justify-center gap-0.5 shadow-lg shadow-orange-500/30">
-                    <div className="absolute inset-0 bg-gradient-to-br from-white/0 to-white/0 group-hover:from-white/20 group-hover:to-transparent transition-colors" />
-                    <div className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-700 bg-gradient-to-r from-transparent via-white/30 to-transparent" />
-                    <Wallet className="w-4 h-4 text-white relative" />
-                    <span className="text-[10px] font-extrabold text-white relative">Beli Sekarang</span>
-                  </button>
-                  <button
-                    onClick={() => setShowWaForm(true)}
-                    className="group relative overflow-hidden h-14 rounded-2xl bg-gradient-to-br from-emerald-500/20 to-green-500/20 border border-emerald-400/30 active:scale-95 transition-all flex flex-col items-center justify-center gap-0.5">
-                    <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/0 to-green-500/0 group-hover:from-emerald-500/30 group-hover:to-green-500/30 transition-colors" />
-                    <ShoppingBag className="w-4 h-4 text-emerald-300 relative" />
-                    <span className="text-[10px] font-bold text-foreground relative">WhatsApp</span>
-                  </button>
+                  {(() => {
+                    const effPrice = getEffectivePrice(selectedProduct.id, selectedProduct.price, 1).price;
+                    return <>
+                      <button
+                        disabled={!userBalance || userBalance.balance < effPrice || selectedProduct.stock <= 0}
+                        onClick={() => { setBuyProduct(selectedProduct); setBuyQuantity(1); setShowBuySaldo(true); }}
+                        className="group relative overflow-hidden h-14 rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 disabled:opacity-40 disabled:pointer-events-none active:scale-95 transition-all flex flex-col items-center justify-center gap-0.5 shadow-lg shadow-orange-500/30">
+                        <div className="absolute inset-0 bg-gradient-to-br from-white/0 to-white/0 group-hover:from-white/20 group-hover:to-transparent transition-colors" />
+                        <div className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-700 bg-gradient-to-r from-transparent via-white/30 to-transparent" />
+                        <Wallet className="w-4 h-4 text-white relative" />
+                        <span className="text-[10px] font-extrabold text-white relative">Beli Sekarang</span>
+                      </button>
+                      <button
+                        onClick={() => setShowWaForm(true)}
+                        className="group relative overflow-hidden h-14 rounded-2xl bg-gradient-to-br from-emerald-500/20 to-green-500/20 border border-emerald-400/30 active:scale-95 transition-all flex flex-col items-center justify-center gap-0.5">
+                        <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/0 to-green-500/0 group-hover:from-emerald-500/30 group-hover:to-green-500/30 transition-colors" />
+                        <ShoppingBag className="w-4 h-4 text-emerald-300 relative" />
+                        <span className="text-[10px] font-bold text-foreground relative">WhatsApp</span>
+                      </button>
+                    </>;
+                  })()}
                 </div>
-                {userBalance && userBalance.balance < selectedProduct.price && (
+                {userBalance && userBalance.balance < getEffectivePrice(selectedProduct.id, selectedProduct.price, 1).price && (
                   <p className="text-[10px] text-destructive text-center">Saldo tidak cukup. <button className="underline text-primary" onClick={() => { openProduct(null); setTab("saldo"); }}>Deposit saldo →</button></p>
                 )}
                 {!userBalance && (
