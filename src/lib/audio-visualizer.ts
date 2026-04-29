@@ -16,7 +16,7 @@
  * element is currently attached.
  */
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 // ---------- Types ----------
 
