@@ -5445,8 +5445,8 @@ const Index = () => {
 
       {/* Product Chat History Modal */}
       {showChatHistory && (
-        <div className="fixed inset-0 z-[70] bg-black/60 backdrop-blur-sm flex items-end justify-center" onClick={() => setShowChatHistory(false)}>
-          <div className="bg-card w-full max-w-lg rounded-t-3xl max-h-[85vh] overflow-y-auto animate-in slide-in-from-bottom duration-300 p-5 space-y-4" onClick={e => e.stopPropagation()}>
+        <div className="fixed inset-0 z-[70] bg-background flex flex-col animate-in fade-in duration-200">
+          <div className="bg-card w-full h-full overflow-y-auto p-5 space-y-4" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between">
               <h3 className="font-extrabold text-lg">Riwayat Chat</h3>
               <button onClick={() => setShowChatHistory(false)} className="w-8 h-8 rounded-full bg-muted flex items-center justify-center"><X className="w-4 h-4" /></button>
