@@ -9,6 +9,7 @@ import {
 import type { PlaybackState } from "@/components/PlaylistTab";
 import { useToast } from "@/hooks/use-toast";
 import { useAudioBandsDOM } from "@/lib/audio-visualizer";
+import PlayfulHero3D from "@/components/PlayfulHero3D";
 
 interface Props {
   visitorId: string;
@@ -324,6 +325,17 @@ export default function MusicMegaHub({ visitorId, playbackState, onPlaySong }: P
 
   return (
     <div className="space-y-3">
+      {/* Playful 3D Music Hero */}
+      <PlayfulHero3D
+        title="Music Mega Hub 🎶"
+        subtitle="Naik level, selesaikan quest, & dengarkan radio AI buatmu!"
+        emoji="🎧"
+        gradient="from-violet-600 via-fuchsia-500 to-pink-500"
+        ctaLabel={level ? `Level: ${lvl.label}` : "Mulai Dengar"}
+        variant="music"
+        height={180}
+      />
+
       {/* LEVEL CARD + Visualizer */}
       <motion.div
         initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
