@@ -72,21 +72,22 @@ export default function MusicMegaHub({ visitorId, playbackState, onPlaySong }: P
   const currentSongId = currentSong?.id;
   const currentSongType: "playlist" | "public" = (currentSong as any)?.source === "public" ? "public" : "playlist";
 
-  // Load level
+  // Load level (sinkron dengan AKUN SALDO — total dari semua perangkat di akun yang sama)
   const loadLevel = async () => {
     if (!visitorId) return;
-    const { data } = await supabase.from("music_listener_xp").select("level,total_seconds").eq("visitor_id", visitorId).maybeSingle();
-    setLevel(data || { level: "Bronze", total_seconds: 0 });
+    const { data } = await supabase.rpc("get_account_music_xp", { p_visitor_id: visitorId });
+    const row = Array.isArray(data) ? data[0] : data;
+    setLevel(row ? { level: row.level, total_seconds: Number(row.total_seconds) } : { level: "Bronze", total_seconds: 0 });
   };
 
   useEffect(() => { loadLevel(); }, [visitorId]);
 
-  // Realtime XP updates
+  // Realtime XP updates → cukup refresh akun (bukan langsung set), supaya total akun ikut akumulasi
   useEffect(() => {
     if (!visitorId) return;
     const ch = supabase.channel(`xp-${visitorId}`)
-      .on("postgres_changes", { event: "*", schema: "public", table: "music_listener_xp", filter: `visitor_id=eq.${visitorId}` },
-        (payload) => { if (payload.new) setLevel(payload.new as any); })
+      .on("postgres_changes", { event: "*", schema: "public", table: "music_listener_xp" },
+        () => { loadLevel(); })
       .subscribe();
     return () => { supabase.removeChannel(ch); };
   }, [visitorId]);
@@ -97,7 +98,7 @@ export default function MusicMegaHub({ visitorId, playbackState, onPlaySong }: P
       loadLevel();
       if (modal === "quests") loadQuests();
       if (modal === "leaderboard" && currentSongId) {
-        supabase.rpc("get_song_top_fans", { p_song_id: currentSongId, p_song_type: currentSongType, p_limit: 10 })
+        supabase.rpc("get_song_top_fans_account", { p_song_id: currentSongId, p_song_type: currentSongType, p_limit: 10 })
           .then(({ data }) => setTopFans(data || []));
       }
       if (modal === "wrapped") {
@@ -143,10 +144,10 @@ export default function MusicMegaHub({ visitorId, playbackState, onPlaySong }: P
 
   useEffect(() => { if (modal === "comments" && currentSongId) loadComments(); }, [modal, currentSongId]);
 
-  // Load top fans
+  // Load top fans (per akun saldo)
   useEffect(() => {
     if (modal !== "leaderboard" || !currentSongId) return;
-    supabase.rpc("get_song_top_fans", { p_song_id: currentSongId, p_song_type: currentSongType, p_limit: 10 })
+    supabase.rpc("get_song_top_fans_account", { p_song_id: currentSongId, p_song_type: currentSongType, p_limit: 10 })
       .then(({ data }) => setTopFans(data || []));
   }, [modal, currentSongId, currentSongType]);
 
@@ -282,14 +283,20 @@ export default function MusicMegaHub({ visitorId, playbackState, onPlaySong }: P
     if (!currentSong) return;
     const url = `${window.location.origin}/?play=${currentSong.id}`;
     const text = `🎵 Lagi dengar "${(currentSong as any).title}" — ${(currentSong as any).artist}\n${url}`;
+    let shared = false;
     try {
       if (navigator.share) {
         await navigator.share({ title: (currentSong as any).title, text, url });
+        shared = true;
       } else {
         await navigator.clipboard.writeText(text);
         toast({ title: "Disalin", description: "Link lagu disalin ke clipboard." });
+        shared = true;
       }
     } catch { /* user cancelled */ }
+    if (shared && visitorId) {
+      try { await supabase.rpc("bump_music_share_quest", { p_visitor_id: visitorId }); } catch { /* noop */ }
+    }
   };
 
   // Lyric sync
@@ -628,9 +635,15 @@ export default function MusicMegaHub({ visitorId, playbackState, onPlaySong }: P
                         const pct = Math.min(100, (q.current_value / q.target_value) * 100);
                         const titles: Record<string, string> = {
                           listen_seconds: `Dengar musik ${Math.floor(q.target_value / 60)} menit`,
+                          listen_long: `Maraton dengar ${Math.floor(q.target_value / 60)} menit hari ini`,
                           like_songs: `Like ${q.target_value} lagu`,
                           comment_song: `Komentar di ${q.target_value} lagu`,
+                          comment_extra: `Komentar di ${q.target_value} lagu berbeda`,
+                          share_song: `Bagikan ${q.target_value} lagu`,
+                          react_songs: `Beri ${q.target_value} reaksi (emoji)`,
+                          unique_artists: `Dengar ${q.target_value} artis berbeda`,
                         };
+                        const isTimeQuest = q.quest_type === "listen_seconds" || q.quest_type === "listen_long";
                         return (
                           <div key={q.id} className="rounded-2xl bg-muted/30 border border-border p-3">
                             <div className="flex items-center justify-between mb-1.5">
@@ -647,7 +660,7 @@ export default function MusicMegaHub({ visitorId, playbackState, onPlaySong }: P
                             </div>
                             <div className="flex items-center justify-between gap-2">
                               <span className="text-[10px] text-muted-foreground tabular-nums">
-                                {q.quest_type === "listen_seconds" ? `${fmtDuration(q.current_value)}/${fmtDuration(q.target_value)}` : `${q.current_value}/${q.target_value}`}
+                                {isTimeQuest ? `${fmtDuration(q.current_value)}/${fmtDuration(q.target_value)}` : `${q.current_value}/${q.target_value}`}
                               </span>
                               {q.is_claimed ? (
                                 <span className="text-[10px] font-black text-emerald-400">✓ Sudah klaim</span>
