@@ -649,6 +649,32 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer, onPlayE
     setCurrentTime(0);
     audio.addEventListener("timeupdate", () => {
       setCurrentTime(audio.currentTime);
+      // A-B loop
+      const ab = abRef.current;
+      if (ab.enabled && ab.a != null && ab.b != null && ab.b > ab.a && audio.currentTime >= ab.b) {
+        audio.currentTime = ab.a;
+      }
+      // Crossfade: trigger next song slightly early with fade-out
+      if (crossfadeSec > 0 && audio.duration && !ab.enabled) {
+        const remaining = audio.duration - audio.currentTime;
+        if (remaining <= crossfadeSec && remaining > 0 && !(audio as HTMLAudioElement & { __xfading?: boolean }).__xfading) {
+          (audio as HTMLAudioElement & { __xfading?: boolean }).__xfading = true;
+          // Smooth volume ramp
+          const startVol = audio.volume;
+          const steps = 10;
+          let i = 0;
+          const interval = setInterval(() => {
+            i++;
+            if (!audioRef.current || audioRef.current !== audio) { clearInterval(interval); return; }
+            audio.volume = Math.max(0, startVol * (1 - i / steps));
+            if (i >= steps) clearInterval(interval);
+          }, (remaining * 1000) / steps);
+          // Trigger next a bit early
+          setTimeout(() => {
+            if (audioRef.current === audio) playNextFrom(index, songList);
+          }, Math.max(0, (remaining - 0.3) * 1000));
+        }
+      }
       if ("mediaSession" in navigator && "setPositionState" in navigator.mediaSession) {
         try {
           navigator.mediaSession.setPositionState({
