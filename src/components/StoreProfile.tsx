@@ -167,17 +167,21 @@ export const StoreProfileModal = ({
     fetchFollowers();
     fetchAdminStatus();
     fetchLikeCounts();
+    fetchFlashSales();
     const ch = supabase
       .channel("store-profile-modal-rt")
       .on("postgres_changes", { event: "*", schema: "public", table: "store_followers" }, () => fetchFollowers())
       .on("postgres_changes", { event: "*", schema: "public", table: "admin_settings", filter: "setting_key=eq.admin_last_active" }, () => fetchAdminStatus())
       .on("postgres_changes", { event: "*", schema: "public", table: "liked_products" }, () => fetchLikeCounts())
+      .on("postgres_changes", { event: "*", schema: "public", table: "store_flash_sales" }, () => fetchFlashSales())
       .subscribe();
     const openHandler = () => setOpen(true);
     window.addEventListener("open-store-profile", openHandler);
-    // Refresh status admin & relative time tiap 30 detik
+    // Refresh status admin, relative time, dan tick countdown tiap 1 detik (untuk flash sale timer)
     const tick = setInterval(() => {
       setNowTick(t => t + 1);
+    }, 1000);
+    const adminTick = setInterval(() => {
       if (open) fetchAdminStatus();
     }, 30000);
     return () => {
