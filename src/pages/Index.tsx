@@ -6598,7 +6598,8 @@ const Index = () => {
                   </div>
                   <p className="text-[10px] text-muted-foreground text-center">Pilih item untuk checkout langsung dengan saldo</p>
                   {cart.map(item => {
-                    const wp = getWholesalePrice(item.product.id, item.quantity, item.product.price);
+                    const eff = getEffectivePrice(item.product.id, item.product.price, item.quantity);
+                    const wp = eff.price;
                     const itemTotal = wp * item.quantity;
                     return (
                     <Button key={item.product.id} className="w-full bg-gradient-to-r from-primary to-accent text-primary-foreground font-bold gap-2 text-xs"
