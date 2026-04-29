@@ -8,6 +8,8 @@ import { ShieldCheck, Star, Sparkles, Users, Calendar, Package, BadgeCheck, User
 import { WA_NUMBER } from "@/lib/social-links";
 import storeQris from "@/assets/store-qris.jpg";
 import { useResponseRate, getResponseTextColor, getResponseColor } from "@/hooks/useResponseRate";
+import StorePremiumTab from "@/components/StorePremiumTab";
+import { useStorePremium } from "@/hooks/useStorePremium";
 
 interface Product {
   id: string;
@@ -535,30 +537,37 @@ export const StoreProfileModal = ({
                         (s.quota === 0 || s.sold < s.quota)
                       ).length;
                       return (
-                        <TabsList className="w-full h-10 grid grid-cols-3 rounded-2xl bg-muted/60 p-1">
+                        <TabsList className="w-full h-10 grid grid-cols-4 rounded-2xl bg-muted/60 p-1 gap-0.5">
                           <TabsTrigger
                             value="produk"
-                            className="rounded-xl text-[11px] font-black gap-1 data-[state=active]:bg-gradient-to-r data-[state=active]:from-violet-500 data-[state=active]:to-pink-500 data-[state=active]:text-white data-[state=active]:shadow-md"
+                            className="rounded-xl text-[10px] font-black gap-0.5 px-1 data-[state=active]:bg-gradient-to-r data-[state=active]:from-violet-500 data-[state=active]:to-pink-500 data-[state=active]:text-white data-[state=active]:shadow-md"
                           >
-                            <Package className="w-3.5 h-3.5" />
-                            <span className="truncate">Produk ({products.length})</span>
+                            <Package className="w-3 h-3 shrink-0" />
+                            <span className="truncate">Produk</span>
                           </TabsTrigger>
                           <TabsTrigger
                             value="kategori"
-                            className="rounded-xl text-[11px] font-black gap-1 data-[state=active]:bg-gradient-to-r data-[state=active]:from-amber-500 data-[state=active]:to-pink-500 data-[state=active]:text-white data-[state=active]:shadow-md"
+                            className="rounded-xl text-[10px] font-black gap-0.5 px-1 data-[state=active]:bg-gradient-to-r data-[state=active]:from-amber-500 data-[state=active]:to-pink-500 data-[state=active]:text-white data-[state=active]:shadow-md"
                           >
-                            <ListFilter className="w-3.5 h-3.5" />
-                            <span className="truncate">Kategori ({Math.max(0, categories.length - 1)})</span>
+                            <ListFilter className="w-3 h-3 shrink-0" />
+                            <span className="truncate">Kategori</span>
                           </TabsTrigger>
                           <TabsTrigger
                             value="flashsale"
-                            className="relative rounded-xl text-[11px] font-black gap-1 data-[state=active]:bg-gradient-to-r data-[state=active]:from-orange-500 data-[state=active]:to-red-500 data-[state=active]:text-white data-[state=active]:shadow-md"
+                            className="relative rounded-xl text-[10px] font-black gap-0.5 px-1 data-[state=active]:bg-gradient-to-r data-[state=active]:from-orange-500 data-[state=active]:to-red-500 data-[state=active]:text-white data-[state=active]:shadow-md"
                           >
-                            <Zap className="w-3.5 h-3.5" />
-                            <span className="truncate">Flash ({liveCount})</span>
+                            <Zap className="w-3 h-3 shrink-0" />
+                            <span className="truncate">Flash</span>
                             {liveCount > 0 && (
                               <span className="absolute top-0.5 right-0.5 w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
                             )}
+                          </TabsTrigger>
+                          <TabsTrigger
+                            value="premium"
+                            className="rounded-xl text-[10px] font-black gap-0.5 px-1 data-[state=active]:bg-gradient-to-r data-[state=active]:from-amber-500 data-[state=active]:to-yellow-500 data-[state=active]:text-white data-[state=active]:shadow-md"
+                          >
+                            <Crown className="w-3 h-3 shrink-0" />
+                            <span className="truncate">Premium</span>
                           </TabsTrigger>
                         </TabsList>
                       );
