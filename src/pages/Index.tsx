@@ -5110,18 +5110,53 @@ const Index = () => {
                   <div className="pointer-events-none absolute -bottom-10 -left-10 w-32 h-32 rounded-full bg-violet-500/30 blur-3xl animate-pulse" style={{ animationDelay: "1s" }} />
                   <div className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/10 to-transparent animate-[shimmer_3s_ease-in-out_infinite]" style={{ animation: "shimmer 3s ease-in-out infinite" }} />
                   <style>{`@keyframes shimmer { 0% { transform: translateX(-100%); } 100% { transform: translateX(200%); } }`}</style>
-                  <div className="relative flex items-end justify-between">
-                    <div>
-                      <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-foreground/70 flex items-center gap-1"><Sparkles className="w-3 h-3 text-amber-400" /> Harga Terbaik</p>
-                      <p className="text-3xl font-black text-foreground tracking-tight mt-0.5 bg-gradient-to-br from-foreground to-foreground/70 bg-clip-text">{formatPrice(selectedProduct.price)}</p>
-                    </div>
-                    <div className="flex flex-col items-end gap-1">
-                      <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-400/40 text-[9px] font-bold text-emerald-300 uppercase tracking-wider flex items-center gap-1">
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" /> Live
-                      </span>
-                      <span className="text-[9px] text-foreground/60 font-medium">100% Original</span>
-                    </div>
-                  </div>
+                  {(() => {
+                    const flashEff = getActiveFlashSaleForProduct(selectedProduct.id);
+                    const flashPrice = flashEff ? getFlashUnitPrice(flashEff, selectedProduct.price) : selectedProduct.price;
+                    const remainSec = flashEff ? Math.max(0, Math.floor((new Date(flashEff.ends_at).getTime() - Date.now()) / 1000)) : 0;
+                    const hh = String(Math.floor(remainSec / 3600)).padStart(2, "0");
+                    const mm = String(Math.floor((remainSec % 3600) / 60)).padStart(2, "0");
+                    const ss = String(remainSec % 60).padStart(2, "0");
+                    const flashRemainQty = flashEff ? (flashEff.quota === 0 ? null : Math.max(0, flashEff.quota - (flashEff.sold || 0))) : null;
+                    return (
+                      <div className="relative flex items-end justify-between">
+                        <div>
+                          <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-foreground/70 flex items-center gap-1">
+                            {flashEff ? <><span className="text-red-500">⚡</span> Flash Sale</> : <><Sparkles className="w-3 h-3 text-amber-400" /> Harga Terbaik</>}
+                          </p>
+                          <p className={`text-3xl font-black tracking-tight mt-0.5 ${flashEff ? "text-red-500" : "text-foreground bg-gradient-to-br from-foreground to-foreground/70 bg-clip-text"}`}>{formatPrice(flashPrice)}</p>
+                          {flashEff && (
+                            <div className="flex items-center gap-2 mt-1">
+                              <span className="text-xs line-through text-muted-foreground font-semibold">{formatPrice(selectedProduct.price)}</span>
+                              {flashEff.mode === "discount_percent" && (
+                                <span className="px-1.5 py-0.5 rounded-md bg-red-500 text-white text-[10px] font-black">-{flashEff.discount_percent}%</span>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex flex-col items-end gap-1">
+                          {flashEff ? (
+                            <>
+                              <span className="px-2 py-0.5 rounded-full bg-red-500/20 border border-red-400/40 text-[9px] font-bold text-red-400 uppercase tracking-wider flex items-center gap-1">
+                                <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" /> LIVE
+                              </span>
+                              <span className="font-mono text-[11px] font-black text-red-400 bg-black/40 px-2 py-0.5 rounded">{hh}:{mm}:{ss}</span>
+                              {flashRemainQty !== null && (
+                                <span className="text-[9px] text-foreground/70 font-bold">Sisa kuota: {flashRemainQty}</span>
+                              )}
+                            </>
+                          ) : (
+                            <>
+                              <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-400/40 text-[9px] font-bold text-emerald-300 uppercase tracking-wider flex items-center gap-1">
+                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" /> Live
+                              </span>
+                              <span className="text-[9px] text-foreground/60 font-medium">100% Original</span>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })()}
                 </div>
                 {/* Wholesale prices */}
                 {(() => {
