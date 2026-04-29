@@ -144,10 +144,10 @@ export default function MusicMegaHub({ visitorId, playbackState, onPlaySong }: P
 
   useEffect(() => { if (modal === "comments" && currentSongId) loadComments(); }, [modal, currentSongId]);
 
-  // Load top fans
+  // Load top fans (per akun saldo)
   useEffect(() => {
     if (modal !== "leaderboard" || !currentSongId) return;
-    supabase.rpc("get_song_top_fans", { p_song_id: currentSongId, p_song_type: currentSongType, p_limit: 10 })
+    supabase.rpc("get_song_top_fans_account", { p_song_id: currentSongId, p_song_type: currentSongType, p_limit: 10 })
       .then(({ data }) => setTopFans(data || []));
   }, [modal, currentSongId, currentSongType]);
 
