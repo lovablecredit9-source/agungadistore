@@ -1449,7 +1449,13 @@ const AdminDashboard = () => {
                   <Card key={t.id} className="cursor-pointer hover:shadow-lg transition-all" onClick={() => setActiveTicket(t)}>
                     <CardContent className="p-4 space-y-2">
                       <div className="flex items-center justify-between">
-                        <span className="font-bold text-sm text-primary">Tiket #{t.ticket_number}</span>
+                        <span className="font-bold text-sm text-primary flex items-center gap-1">
+                          Tiket #{t.ticket_number}
+                          {(() => {
+                            const u = userBalances.find(x => x.phone === t.phone);
+                            return u ? <PremiumBadgeAsync visitorId={u.visitor_id} /> : null;
+                          })()}
+                        </span>
                         <div className="flex items-center gap-2">
                           <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${t.status === "open" ? "bg-accent/10 text-accent" : "bg-muted text-muted-foreground"}`}>
                             {t.status === "open" ? "Terbuka" : "Ditutup"}
