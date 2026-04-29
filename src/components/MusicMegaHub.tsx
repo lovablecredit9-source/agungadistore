@@ -635,9 +635,15 @@ export default function MusicMegaHub({ visitorId, playbackState, onPlaySong }: P
                         const pct = Math.min(100, (q.current_value / q.target_value) * 100);
                         const titles: Record<string, string> = {
                           listen_seconds: `Dengar musik ${Math.floor(q.target_value / 60)} menit`,
+                          listen_long: `Maraton dengar ${Math.floor(q.target_value / 60)} menit hari ini`,
                           like_songs: `Like ${q.target_value} lagu`,
                           comment_song: `Komentar di ${q.target_value} lagu`,
+                          comment_extra: `Komentar di ${q.target_value} lagu berbeda`,
+                          share_song: `Bagikan ${q.target_value} lagu`,
+                          react_songs: `Beri ${q.target_value} reaksi (emoji)`,
+                          unique_artists: `Dengar ${q.target_value} artis berbeda`,
                         };
+                        const isTimeQuest = q.quest_type === "listen_seconds" || q.quest_type === "listen_long";
                         return (
                           <div key={q.id} className="rounded-2xl bg-muted/30 border border-border p-3">
                             <div className="flex items-center justify-between mb-1.5">
