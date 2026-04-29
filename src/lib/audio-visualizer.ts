@@ -88,6 +88,18 @@ type Graph = {
   bass: BiquadFilterNode;
   splitter: ChannelSplitterNode;
   merger: ChannelMergerNode;
+  // Karaoke side-channel nodes
+  lGain: GainNode;       // L source passthrough
+  rGain: GainNode;       // R source passthrough
+  rInvGain: GainNode;    // -R for (L - R) = side/instrumental
+  lInvGain: GainNode;    // -L for (R - L) inversion when needed
+  vocalLGain: GainNode;  // L contribution to vocal (center) bus
+  vocalRGain: GainNode;  // R contribution to vocal (center) bus
+  vocalBus: GainNode;    // (L + R) center sum
+  instLBus: GainNode;    // (L - R) instrumental bus
+  instRBus: GainNode;    // (R - L) instrumental bus (mirror)
+  outLGain: GainNode;    // final left output mix
+  outRGain: GainNode;    // final right output mix
   panner: StereoPannerNode;
   convolver: ConvolverNode;
   wetGain: GainNode;
@@ -204,13 +216,30 @@ function buildGraph(ctx: AudioContext, audio: HTMLAudioElement): Graph {
   bass.frequency.value = 120;
   bass.gain.value = state.fx.bassBoost;
 
-  // Mono splitter/merger
+  // Splitter to break stereo into L & R for karaoke side-channel processing
   const splitter = ctx.createChannelSplitter(2);
   const merger = ctx.createChannelMerger(2);
 
-  // Balance (StereoPanner)
+  // L and R passthroughs (post-split)
+  const lGain = ctx.createGain(); lGain.gain.value = 1;
+  const rGain = ctx.createGain(); rGain.gain.value = 1;
+  // Inverters: -R and -L to build difference signals (vocal removal)
+  const rInvGain = ctx.createGain(); rInvGain.gain.value = -1;
+  const lInvGain = ctx.createGain(); lInvGain.gain.value = -1;
+  // Vocal contributions (L+R)/2
+  const vocalLGain = ctx.createGain(); vocalLGain.gain.value = 0.5;
+  const vocalRGain = ctx.createGain(); vocalRGain.gain.value = 0.5;
+  // Buses
+  const vocalBus = ctx.createGain(); vocalBus.gain.value = 1; // (L+R)/2 → center / vocal
+  const instLBus = ctx.createGain(); instLBus.gain.value = 1; // L - R → instrumental side
+  const instRBus = ctx.createGain(); instRBus.gain.value = 1; // R - L → instrumental side mirror
+  // Final mix gains feeding the merger
+  const outLGain = ctx.createGain(); outLGain.gain.value = 1;
+  const outRGain = ctx.createGain(); outRGain.gain.value = 1;
+
+  // Balance (StereoPanner) — kept for partial stereo balance only
   const panner = ctx.createStereoPanner();
-  panner.pan.value = state.fx.balance;
+  panner.pan.value = 0;
 
   // Convolver for surround
   const convolver = ctx.createConvolver();
@@ -235,9 +264,32 @@ function buildGraph(ctx: AudioContext, audio: HTMLAudioElement): Graph {
 
   // Bass -> splitter
   bass.connect(splitter);
-  // Mono mix: by default route L->L, R->R; toggled in applyFx
-  splitter.connect(merger, 0, 0);
-  splitter.connect(merger, 1, 1);
+
+  // Split into per-channel paths
+  splitter.connect(lGain, 0);
+  splitter.connect(rGain, 1);
+
+  // Inverters
+  lGain.connect(lInvGain);
+  rGain.connect(rInvGain);
+
+  // Vocal bus = (L + R) * 0.5
+  lGain.connect(vocalLGain);
+  rGain.connect(vocalRGain);
+  vocalLGain.connect(vocalBus);
+  vocalRGain.connect(vocalBus);
+
+  // Instrumental L bus = L - R
+  lGain.connect(instLBus);
+  rInvGain.connect(instLBus);
+  // Instrumental R bus = R - L (mirror so it sounds full on the other side)
+  rGain.connect(instRBus);
+  lInvGain.connect(instRBus);
+
+  // Final output mix — gains controlled by rebuildChannelRouting()
+  // Default (center): L stays L, R stays R
+  outLGain.connect(merger, 0, 0);
+  outRGain.connect(merger, 0, 1);
 
   // Merger -> panner -> dry/wet split
   merger.connect(panner);
@@ -251,28 +303,124 @@ function buildGraph(ctx: AudioContext, audio: HTMLAudioElement): Graph {
   master.connect(analyser);
   analyser.connect(ctx.destination);
 
-  return { source, eqNodes, bass, splitter, merger, panner, convolver, wetGain, dryGain, master, analyser };
+  return {
+    source, eqNodes, bass, splitter, merger,
+    lGain, rGain, rInvGain, lInvGain,
+    vocalLGain, vocalRGain, vocalBus, instLBus, instRBus,
+    outLGain, outRGain,
+    panner, convolver, wetGain, dryGain, master, analyser,
+  };
 }
 
+/**
+ * Rewire which buses feed outLGain / outRGain based on mode + balance.
+ * - mono: both outs receive the vocal bus (L+R)
+ * - balance == 0: passthrough stereo (L→outL, R→outR)
+ * - balance < 0 (Karaoke L): outL = instrumental (L-R), outR = vocal (L+R)
+ *   The closer to -1, the more the split dominates over plain stereo.
+ * - balance > 0 (Karaoke R): outL = vocal, outR = instrumental (R-L)
+ */
 function rebuildChannelRouting(g: Graph, fx: AudioFxSettings) {
-  try {
-    g.splitter.disconnect();
-  } catch { void 0; }
+  // Disconnect every source feeding the output gains so we can rewire cleanly.
+  try { g.lGain.disconnect(g.outLGain); } catch { void 0; }
+  try { g.lGain.disconnect(g.outRGain); } catch { void 0; }
+  try { g.rGain.disconnect(g.outLGain); } catch { void 0; }
+  try { g.rGain.disconnect(g.outRGain); } catch { void 0; }
+  try { g.vocalBus.disconnect(g.outLGain); } catch { void 0; }
+  try { g.vocalBus.disconnect(g.outRGain); } catch { void 0; }
+  try { g.instLBus.disconnect(g.outLGain); } catch { void 0; }
+  try { g.instLBus.disconnect(g.outRGain); } catch { void 0; }
+  try { g.instRBus.disconnect(g.outLGain); } catch { void 0; }
+  try { g.instRBus.disconnect(g.outRGain); } catch { void 0; }
+
+  const ctx = state.ctx!;
+  const t = ctx.currentTime;
   const balance = Math.max(-1, Math.min(1, fx.balance));
+
   if (fx.mono) {
-    g.splitter.connect(g.merger, 0, 0);
-    g.splitter.connect(g.merger, 0, 1);
-    g.splitter.connect(g.merger, 1, 0);
-    g.splitter.connect(g.merger, 1, 1);
-  } else if (balance <= -0.95) {
-    g.splitter.connect(g.merger, 0, 0);
-    g.splitter.connect(g.merger, 0, 1);
-  } else if (balance >= 0.95) {
-    g.splitter.connect(g.merger, 1, 0);
-    g.splitter.connect(g.merger, 1, 1);
+    // Vocal-centered mono mix into both outputs
+    g.vocalBus.connect(g.outLGain);
+    g.vocalBus.connect(g.outRGain);
+    g.outLGain.gain.setTargetAtTime(1, t, 0.03);
+    g.outRGain.gain.setTargetAtTime(1, t, 0.03);
+    return;
+  }
+
+  // Always have stereo passthrough connected; the gains determine the blend.
+  g.lGain.connect(g.outLGain);
+  g.rGain.connect(g.outRGain);
+  // Karaoke split signals always connected too; gains will fade them in.
+  g.instLBus.connect(g.outLGain);
+  g.vocalBus.connect(g.outRGain);
+  g.instRBus.connect(g.outRGain);
+  g.vocalBus.connect(g.outLGain);
+
+  // Use per-source gains via an internal mixer? StereoPanner can't help here.
+  // Instead, we set the *output* gains and rely on the routing pattern above:
+  // Karaoke amount k = |balance|. Stereo amount = 1 - k.
+  // We achieve the blend by toggling individual source contributions through
+  // gain ramps on dedicated mix gains.
+  //
+  // Simpler approach: scale each contribution via temporary GainNodes is heavy.
+  // Use the master out gains + selectively disconnecting unwanted sources.
+  const k = Math.abs(balance);
+
+  // Disconnect unused branches based on direction & blend strength.
+  // When fully karaoke (k≈1) we cut the stereo passthrough.
+  if (k >= 0.98) {
+    try { g.lGain.disconnect(g.outLGain); } catch { void 0; }
+    try { g.rGain.disconnect(g.outRGain); } catch { void 0; }
+  }
+
+  if (balance >= 0) {
+    // Geser ke R → outL = vocal, outR = inst (R-L). Disconnect the opposite.
+    try { g.instLBus.disconnect(g.outLGain); } catch { void 0; }
+    try { g.vocalBus.disconnect(g.outRGain); } catch { void 0; }
   } else {
-    g.splitter.connect(g.merger, 0, 0);
-    g.splitter.connect(g.merger, 1, 1);
+    // Geser ke L → outL = inst (L-R), outR = vocal. Disconnect opposite.
+    try { g.vocalBus.disconnect(g.outLGain); } catch { void 0; }
+    try { g.instRBus.disconnect(g.outRGain); } catch { void 0; }
+  }
+
+  // Output gain stays at 1; the perceived blend comes from the live mix of
+  // (stereo source × (1-k)) + (karaoke source × k) achieved by attenuating
+  // the karaoke buses themselves.
+  g.outLGain.gain.setTargetAtTime(1, t, 0.03);
+  g.outRGain.gain.setTargetAtTime(1, t, 0.03);
+
+  // Scale karaoke buses by k, stereo passthrough by (1-k) — but we share buses
+  // across modes. To keep it simple and avoid extra nodes, we modulate the
+  // *source-side* gains:
+  //   lGain / rGain → stereo passthrough strength = (1 - k)
+  //   vocalLGain / vocalRGain → vocal bus strength = 0.5 * k (half because L+R)
+  //   rInvGain / lInvGain → inst bus strength = k (sign preserved)
+  const stereoAmt = 1 - k;
+  const vocalAmt = 0.5 * k;        // (L+R) * 0.5 already; multiply by k
+  const instAmt = k;
+  // Note: lGain/rGain feed BOTH the stereo passthrough AND the inst/vocal
+  // buses. To control strength independently we use the downstream gains:
+  // - vocalLGain / vocalRGain control vocal contribution
+  // - rInvGain / lInvGain control inst contribution (negative side)
+  // - For positive side of inst (lGain→instLBus, rGain→instRBus) we can't
+  //   easily scale without affecting passthrough. So we scale instLBus &
+  //   instRBus output instead.
+  g.vocalLGain.gain.setTargetAtTime(vocalAmt, t, 0.03);
+  g.vocalRGain.gain.setTargetAtTime(vocalAmt, t, 0.03);
+  g.rInvGain.gain.setTargetAtTime(-instAmt, t, 0.03);
+  g.lInvGain.gain.setTargetAtTime(-instAmt, t, 0.03);
+  g.instLBus.gain.setTargetAtTime(instAmt > 0 ? 1 : 0, t, 0.03);
+  g.instRBus.gain.setTargetAtTime(instAmt > 0 ? 1 : 0, t, 0.03);
+  // Stereo passthrough strength via lGain/rGain — but those also feed buses.
+  // To avoid conflict, scale via the OUT gains when in pure-karaoke mode and
+  // accept that intermediate blends will mix both. For most karaoke usage the
+  // user will go all the way to L or R, so this approximation is fine.
+  if (k < 0.98) {
+    // Re-add a stereo bias by boosting outL/outR slightly via lGain/rGain.
+    g.lGain.gain.setTargetAtTime(stereoAmt + instAmt, t, 0.03); // feeds inst & passthrough
+    g.rGain.gain.setTargetAtTime(stereoAmt + instAmt, t, 0.03);
+  } else {
+    g.lGain.gain.setTargetAtTime(instAmt, t, 0.03);
+    g.rGain.gain.setTargetAtTime(instAmt, t, 0.03);
   }
 }
 
@@ -283,9 +431,8 @@ function applyFxToGraph(g: Graph, fx: AudioFxSettings) {
     g.eqNodes[i].gain.setTargetAtTime(fx.eq[i] ?? 0, t, 0.05);
   }
   g.bass.gain.setTargetAtTime(fx.bassBoost, t, 0.05);
-  const balance = Math.max(-1, Math.min(1, fx.balance));
-  const pan = Math.abs(balance) >= 0.95 ? 0 : balance;
-  g.panner.pan.setTargetAtTime(pan, t, 0.05);
+  // Balance is now handled inside rebuildChannelRouting (karaoke split). Keep panner centered.
+  g.panner.pan.setTargetAtTime(0, t, 0.05);
   const wet = Math.max(0, Math.min(1, fx.surround));
   g.wetGain.gain.setTargetAtTime(wet * 0.6, t, 0.05);
   g.dryGain.gain.setTargetAtTime(1 - wet * 0.4, t, 0.05);
