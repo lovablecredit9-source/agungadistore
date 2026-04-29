@@ -180,11 +180,13 @@ export default function MusicMegaHub({ visitorId, playbackState, onPlaySong }: P
     });
     setPosting(false);
     if (error) { toast({ title: "Gagal komen", description: error.message, variant: "destructive" }); return; }
-    // Quest progress
+    // Quest progress (WIB date)
+    const wibDate = new Date(Date.now() + 7 * 3600 * 1000).toISOString().slice(0, 10);
+    await supabase.rpc("ensure_music_daily_quests", { p_visitor_id: visitorId });
     await supabase.from("music_daily_quests")
       .update({ current_value: 1, is_completed: true })
       .eq("visitor_id", visitorId).eq("quest_type", "comment_song")
-      .eq("quest_date", new Date(Date.now() + 7 * 3600 * 1000).toISOString().slice(0, 10));
+      .eq("quest_date", wibDate);
     setNewComment("");
     loadComments();
   };
