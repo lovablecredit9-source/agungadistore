@@ -24,6 +24,7 @@ interface Product {
 interface StoreProfileProps {
   products: Product[];
   userBalance: { id: string; visitor_id: string; username: string } | null;
+  activeVisitorId?: string | null;
   onLoginRequired: () => void;
   onProductClick?: (id: string) => void;
 }
@@ -74,6 +75,7 @@ type FollowVoucher = {
 export const StoreProfileModal = ({
   products,
   userBalance,
+  activeVisitorId,
   onLoginRequired,
   onProductClick,
 }: StoreProfileProps) => {
@@ -841,7 +843,7 @@ export const StoreProfileModal = ({
                     {/* TAB PREMIUM */}
                     <TabsContent value="premium" className="mt-3">
                       <StorePremiumTab
-                        visitorId={userBalance?.visitor_id ?? null}
+                        visitorId={activeVisitorId ?? userBalance?.visitor_id ?? null}
                         onLoginRequired={onLoginRequired}
                       />
                     </TabsContent>
