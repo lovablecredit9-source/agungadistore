@@ -188,6 +188,7 @@ export const StoreProfileModal = ({
       supabase.removeChannel(ch);
       window.removeEventListener("open-store-profile", openHandler);
       clearInterval(tick);
+      clearInterval(adminTick);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userBalance?.id, open, products.length]);
