@@ -574,9 +574,9 @@ export const StoreProfileModal = ({
                             }`}
                           >
                             <Crown className={`w-3 h-3 shrink-0 ${myPremium.isPremium ? "fill-amber-600" : ""}`} />
-                            <span className="truncate">{myPremium.isPremium ? "Aktif" : "Premium"}</span>
+                            <span className="truncate">Membership</span>
                             {myPremium.isPremium && (
-                              <span className="absolute -top-1 -right-1 text-[8px]">👑</span>
+                              <span className="absolute -top-1 -right-1 rounded-full bg-green-500 px-1 text-[7px] leading-3 text-white shadow-sm">ON</span>
                             )}
                           </TabsTrigger>
                         </TabsList>

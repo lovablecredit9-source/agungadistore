@@ -129,12 +129,17 @@ export default function StorePremiumTab({ visitorId, onLoginRequired }: Props) {
     <div className="space-y-3">
       {/* Header status */}
       {premium.isPremium ? (
-        <div className="relative rounded-2xl overflow-hidden p-[2px] bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-500 shadow-lg">
+        <div className="relative rounded-2xl overflow-hidden p-[2px] bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-500 shadow-lg shadow-amber-500/30">
+          <div className="absolute right-2 top-2 z-10 rounded-full bg-green-500 px-2 py-0.5 text-[9px] font-black text-white shadow-md">
+            ✓ SUDAH AKTIF
+          </div>
           <div className="rounded-[14px] bg-card/95 p-3 backdrop-blur-xl">
-            <div className="flex items-center gap-2">
-              <Crown className="w-6 h-6 text-amber-500 fill-amber-400 drop-shadow" />
+            <div className="flex items-center gap-2 pr-20">
+              <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-amber-500/15 ring-2 ring-amber-400/60">
+                <Crown className="w-6 h-6 text-amber-500 fill-amber-400 drop-shadow" />
+              </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-black bg-gradient-to-r from-amber-600 to-yellow-500 bg-clip-text text-transparent">Anda Member Premium 👑</p>
+                <p className="text-sm font-black bg-gradient-to-r from-amber-600 to-yellow-500 bg-clip-text text-transparent">Membership Premium 👑</p>
                 <p className="text-[10px] text-muted-foreground truncate">{premium.planName} · sisa {premium.daysLeft} hari</p>
               </div>
             </div>
@@ -158,10 +163,13 @@ export default function StorePremiumTab({ visitorId, onLoginRequired }: Props) {
 
       {/* Klaim harian (hanya member) */}
       {premium.isPremium && (
-        <div className="rounded-2xl border-2 border-dashed border-amber-500/50 bg-gradient-to-br from-amber-50 to-yellow-50 dark:from-amber-950/20 dark:to-yellow-950/20 p-3">
-          <div className="flex items-center gap-2 mb-2">
-            <Gift className="w-4 h-4 text-amber-600 dark:text-amber-400" />
-            <p className="text-xs font-black text-amber-700 dark:text-amber-300">Voucher Harian Rp 2.000</p>
+        <div className="rounded-2xl border-2 border-dashed border-amber-500/50 bg-gradient-to-br from-amber-500/15 via-yellow-500/15 to-orange-500/15 p-3 shadow-lg shadow-amber-500/10">
+          <div className="flex items-center justify-between gap-2 mb-2">
+            <div className="flex items-center gap-2 min-w-0">
+              <Gift className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+              <p className="text-xs font-black text-amber-700 dark:text-amber-300">Voucher Harian Rp 2.000</p>
+            </div>
+            <span className="rounded-full bg-green-500 px-2 py-0.5 text-[8px] font-black text-white">AKTIF</span>
           </div>
           {claimedToday ? (
             <div className="space-y-2">
@@ -176,9 +184,9 @@ export default function StorePremiumTab({ visitorId, onLoginRequired }: Props) {
               <p className="text-[9px] text-muted-foreground flex items-center gap-1"><Clock className="w-2.5 h-2.5" /> Besok kamu bisa klaim lagi</p>
             </div>
           ) : (
-            <Button onClick={handleClaim} disabled={claiming} size="lg" className="w-full h-12 bg-gradient-to-r from-amber-500 via-yellow-500 to-amber-500 text-white font-black text-sm shadow-lg shadow-amber-500/40 ring-2 ring-amber-300 animate-pulse hover:animate-none">
+            <Button onClick={handleClaim} disabled={claiming} size="lg" className="w-full h-14 bg-gradient-to-r from-amber-500 via-yellow-500 to-amber-500 text-white font-black text-sm shadow-lg shadow-amber-500/40 ring-2 ring-amber-300 animate-pulse hover:animate-none">
               <Gift className="w-5 h-5 mr-2" />
-              {claiming ? "Mengklaim..." : "🎁 KLAIM Rp 2.000 SEKARANG"}
+              {claiming ? "Mengklaim..." : "KLAIM VOUCHER Rp 2.000"}
             </Button>
           )}
         </div>
