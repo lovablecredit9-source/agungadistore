@@ -61,7 +61,10 @@ export default function StorePremiumTab({ visitorId, onLoginRequired }: Props) {
   useEffect(() => { loadClaimToday(); }, [visitorId, premium.isPremium]);
 
   const handleBuy = async (plan: Plan) => {
-    if (!visitorId) return onLoginRequired();
+    if (!visitorId) {
+      toast({ title: "Login saldo dulu", description: "Masuk ke akun saldo sebelum membeli membership.", variant: "destructive" });
+      return onLoginRequired();
+    }
     setPin("");
     setPinDialog(plan);
   };
@@ -74,7 +77,16 @@ export default function StorePremiumTab({ visitorId, onLoginRequired }: Props) {
       const { data, error } = await supabase.functions.invoke("purchase-store-premium", {
         body: { visitorId, planId: pinDialog.id, pin },
       });
-      if (error) throw error;
+      if (error) {
+        let message = error.message ?? "Pembelian gagal diproses";
+        try {
+          const ctx = (error as any).context;
+          const payload = ctx ? await ctx.clone().json() : null;
+          message = payload?.error ?? message;
+        } catch {}
+        toast({ title: "Gagal", description: message, variant: "destructive" });
+        return;
+      }
       if ((data as any)?.error) {
         toast({ title: "Gagal", description: (data as any).error, variant: "destructive" });
         return;
