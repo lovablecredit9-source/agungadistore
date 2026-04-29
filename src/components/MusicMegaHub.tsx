@@ -336,6 +336,26 @@ export default function MusicMegaHub({ visitorId, playbackState, onPlaySong }: P
         height={180}
       />
 
+      {/* AUDIO STUDIO QUICK LAUNCH */}
+      <motion.button
+        initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
+        onClick={() => window.dispatchEvent(new CustomEvent("open-audio-fx"))}
+        className="w-full relative overflow-hidden rounded-2xl border border-white/15 bg-gradient-to-r from-cyan-600/30 via-fuchsia-600/30 to-amber-500/30 backdrop-blur-md p-3.5 shadow-xl text-left active:scale-[0.98] transition-transform"
+      >
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.2),transparent_60%)]" />
+        <div className="relative flex items-center gap-3">
+          <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-cyan-400 to-fuchsia-500 flex items-center justify-center shadow-lg ring-2 ring-white/30">
+            <BarChart3 className="w-5 h-5 text-white" strokeWidth={2.5} />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-[11px] uppercase tracking-wider font-bold text-cyan-200">🎚️ Audio Studio</p>
+            <p className="text-sm font-extrabold text-white truncate">Equalizer · Balance L/R · Bass · Pitch</p>
+            <p className="text-[10.5px] text-white/70">EQ 5-band, Surround 3D, Crossfade, Loop A-B & lainnya</p>
+          </div>
+          <ChevronRight className="w-5 h-5 text-white/80" />
+        </div>
+      </motion.button>
+
       {/* LEVEL CARD + Visualizer */}
       <motion.div
         initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}

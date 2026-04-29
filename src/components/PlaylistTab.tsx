@@ -9,13 +9,14 @@ import {
   Music, Play, Pause, SkipBack, SkipForward, Download, Volume2, VolumeX,
   Repeat, Shuffle, Loader2, HardDrive, Globe, CheckCircle2, Trash2,
   WifiOff, Wifi, Crown, Zap, Clock, ListMusic, Plus, Edit2, Check, Lock, Heart,
-  FileText, Copyright, Type, ChevronDown, Share2, Timer, Sparkles, List, Ticket, Tag, Users, Mic2
+  FileText, Copyright, Type, ChevronDown, Share2, Timer, Sparkles, List, Ticket, Tag, Users, Mic2, Sliders
 } from "lucide-react";
 import MusicPublicTab from "@/components/MusicPublicTab";
 import ArtistTab from "@/components/ArtistTab";
 import AudioDeviceDetector from "@/components/AudioDeviceDetector";
 import MusicEqualizer from "@/components/MusicEqualizer";
 import { attachAudioVisualizer } from "@/lib/audio-visualizer";
+import AudioFxSettings from "@/components/AudioFxSettings";
 import { useToast } from "@/hooks/use-toast";
 import { Slider } from "@/components/ui/slider";
 import {
@@ -313,6 +314,28 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer, onPlayE
   const fullPlayerLyricsRef = useRef<HTMLDivElement>(null);
   const [showFullPlayer, setShowFullPlayer] = useState(false);
 
+  // Listen for global "open audio fx" event so other tabs (e.g. MusicMegaHub) can open it
+  useEffect(() => {
+    const handler = () => setShowFxSettings(true);
+    window.addEventListener("open-audio-fx", handler);
+    return () => window.removeEventListener("open-audio-fx", handler);
+  }, []);
+
+
+  // Audio FX & extras
+  const [showFxSettings, setShowFxSettings] = useState(false);
+  const [crossfadeSec, setCrossfadeSec] = useState<number>(() => {
+    try { return Number(localStorage.getItem("audio_crossfade_sec") || "0") || 0; } catch { return 0; }
+  });
+  useEffect(() => { try { localStorage.setItem("audio_crossfade_sec", String(crossfadeSec)); } catch {} }, [crossfadeSec]);
+  const crossfadeRef = useRef(crossfadeSec);
+  useEffect(() => { crossfadeRef.current = crossfadeSec; }, [crossfadeSec]);
+  const [abLoopEnabled, setAbLoopEnabled] = useState(false);
+  const [abLoopA, setAbLoopA] = useState<number | null>(null);
+  const [abLoopB, setAbLoopB] = useState<number | null>(null);
+  const abRef = useRef({ enabled: false, a: null as number | null, b: null as number | null });
+  useEffect(() => { abRef.current = { enabled: abLoopEnabled, a: abLoopA, b: abLoopB }; }, [abLoopEnabled, abLoopA, abLoopB]);
+
   const buildFallbackRecommendationIds = useCallback((songList: Song[], likedIds: Set<string>) => {
     const likedArtists = new Set(
       songList
@@ -563,6 +586,11 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer, onPlayE
       setCurrentTime(0);
       audio.addEventListener("timeupdate", () => {
         setCurrentTime(audio.currentTime);
+        // A-B loop
+        const ab = abRef.current;
+        if (ab.enabled && ab.a != null && ab.b != null && ab.b > ab.a && audio.currentTime >= ab.b) {
+          audio.currentTime = ab.a;
+        }
         if ("mediaSession" in navigator && "setPositionState" in navigator.mediaSession) {
           try { navigator.mediaSession.setPositionState({ duration: audio.duration || 0, playbackRate: audio.playbackRate, position: audio.currentTime }); } catch {}
         }
@@ -631,6 +659,33 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer, onPlayE
     setCurrentTime(0);
     audio.addEventListener("timeupdate", () => {
       setCurrentTime(audio.currentTime);
+      // A-B loop
+      const ab = abRef.current;
+      if (ab.enabled && ab.a != null && ab.b != null && ab.b > ab.a && audio.currentTime >= ab.b) {
+        audio.currentTime = ab.a;
+      }
+      // Crossfade: trigger next song slightly early with fade-out
+      const xf = crossfadeRef.current;
+      if (xf > 0 && audio.duration && !ab.enabled) {
+        const remaining = audio.duration - audio.currentTime;
+        if (remaining <= xf && remaining > 0 && !(audio as HTMLAudioElement & { __xfading?: boolean }).__xfading) {
+          (audio as HTMLAudioElement & { __xfading?: boolean }).__xfading = true;
+          // Smooth volume ramp
+          const startVol = audio.volume;
+          const steps = 10;
+          let i = 0;
+          const interval = setInterval(() => {
+            i++;
+            if (!audioRef.current || audioRef.current !== audio) { clearInterval(interval); return; }
+            audio.volume = Math.max(0, startVol * (1 - i / steps));
+            if (i >= steps) clearInterval(interval);
+          }, (remaining * 1000) / steps);
+          // Trigger next a bit early
+          setTimeout(() => {
+            if (audioRef.current === audio) playNextFrom(index, songList);
+          }, Math.max(0, (remaining - 0.3) * 1000));
+        }
+      }
       if ("mediaSession" in navigator && "setPositionState" in navigator.mediaSession) {
         try {
           navigator.mediaSession.setPositionState({
@@ -1212,6 +1267,23 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer, onPlayE
         );
       })()}
 
+      {/* ===== AUDIO FX SETTINGS MODAL ===== */}
+      <AudioFxSettings
+        open={showFxSettings}
+        onClose={() => setShowFxSettings(false)}
+        crossfade={{ seconds: crossfadeSec, onChange: setCrossfadeSec }}
+        abLoop={{
+          enabled: abLoopEnabled,
+          a: abLoopA,
+          b: abLoopB,
+          currentTime,
+          onSetA: () => { setAbLoopA(currentTime); toast({ title: `Set A: ${formatTime(currentTime)}` }); },
+          onSetB: () => { setAbLoopB(currentTime); toast({ title: `Set B: ${formatTime(currentTime)}` }); },
+          onClear: () => { setAbLoopA(null); setAbLoopB(null); setAbLoopEnabled(false); },
+          onToggle: (v) => setAbLoopEnabled(v),
+        }}
+      />
+
       {/* ===== FULLSCREEN PLAYER (Portal to avoid hidden parent) ===== */}
       {showFullPlayer && currentSong && createPortal(
         <div className="fixed inset-0 z-[100] flex flex-col overflow-hidden bg-background">
@@ -1304,8 +1376,14 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer, onPlayE
 
             {/* Bottom actions */}
             <div className="flex items-center justify-between w-full mb-4 px-2">
-              <button className={`p-2 rounded-full transition-colors ${currentSongLyrics.length > 0 ? "text-primary" : "text-muted-foreground"}`}>
-                <Sparkles className="w-5 h-5" />
+              <button
+                onClick={() => setShowFxSettings(true)}
+                className="p-2 rounded-full text-foreground/80 hover:text-foreground hover:bg-white/10 transition-colors relative"
+                aria-label="Audio Settings"
+                title="Audio Settings (EQ, Balance L/R, Bass, dll)"
+              >
+                <Sliders className="w-5 h-5" />
+                <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-fuchsia-400 animate-pulse" />
               </button>
               <div className="flex items-center gap-4">
                 <button className="p-2 text-muted-foreground hover:text-foreground rounded-full transition-colors" onClick={async () => {
