@@ -720,6 +720,40 @@ export default function LuckRoyaleNyawa() {
                   </>
                 )}
               </div>
+
+              {/* ULTRA — Rp 500k/bln */}
+              <div className={`sm:col-span-2 rounded-2xl border-2 p-3 ${ultraShopAccess.isActive ? "bg-gradient-to-br from-cyan-900/50 via-emerald-900/40 to-amber-900/40 border-cyan-300/70" : "bg-gradient-to-br from-cyan-950/60 via-emerald-950/50 to-amber-950/50 border-cyan-400/50"}`}>
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-1.5">
+                    <Crown className={`w-4 h-4 ${ultraShopAccess.isActive ? "text-cyan-200" : "text-cyan-300"}`} fill="currentColor" />
+                    <h3 className={`text-[11px] font-black tracking-widest ${ultraShopAccess.isActive ? "text-cyan-100" : "text-cyan-200"}`}>
+                      | ULTRA {ultraShopAccess.isActive ? "AKTIF" : "LOCKED"}
+                    </h3>
+                  </div>
+                  <Badge className={`${ultraShopAccess.isActive ? "bg-gradient-to-r from-cyan-400 via-emerald-400 to-amber-400" : "bg-cyan-700"} text-white font-black text-[8px]`}>
+                    {ultraShopAccess.isActive ? "✦ GOD-TIER" : "💠 GOD-TIER"}
+                  </Badge>
+                </div>
+                {ultraShopAccess.isActive ? (
+                  <p className="text-[10px] text-cyan-100/90">
+                    Aktif sampai <span className="font-black text-cyan-100">{ultraShopAccess.activeUntil ? new Date(ultraShopAccess.activeUntil).toLocaleDateString("id-ID") : "-"}</span>
+                    {ultraShopAccess.activeUntil && <> · ⏳ <span className="font-black">{Math.max(0, Math.ceil((new Date(ultraShopAccess.activeUntil).getTime() - Date.now()) / 86400000))} hari</span></>}
+                  </p>
+                ) : (
+                  <>
+                    <p className="text-[10px] text-cyan-100/90 mb-2">
+                      Tier <span className="font-black text-amber-200">ULTRA</span> (160-300) — hadiah PALING DAHSYAT: <span className="font-black">100k Gem</span>, <span className="font-black">10jt Coin</span>, <span className="font-black">100k Nyawa</span>! Berlaku <span className="font-black">{ultraShopAccess.durationDays} hari</span>.
+                    </p>
+                    <Button
+                      disabled={redeeming === "__ultra_shop_access__"}
+                      onClick={() => buyShopAccess("ultra")}
+                      className="w-full h-9 text-[11px] font-black bg-gradient-to-r from-cyan-400 via-emerald-500 to-amber-500 hover:from-cyan-500 hover:via-emerald-600 hover:to-amber-600 text-white shadow-lg shadow-cyan-500/40"
+                    >
+                      {redeeming === "__ultra_shop_access__" ? <Loader2 className="w-4 h-4 animate-spin" /> : <>💠 Rp {ultraShopAccess.price.toLocaleString("id-ID")} / {ultraShopAccess.durationDays} HARI</>}
+                    </Button>
+                  </>
+                )}
+              </div>
             </div>
           )}
 
