@@ -610,11 +610,6 @@ Deno.serve(async (req) => {
         return Response.json({ error: "Gagal mengurangi saldo" }, { status: 400, headers: corsHeaders });
       }
 
-      // === Mega Jackpot Pool: kontribusi 5% dari biaya spin ===
-      let pool = await getMegaPool(admin);
-      pool += Math.floor(cost * POOL_CONTRIBUTION_PCT);
-      await setMegaPool(admin, pool);
-
       const { data: histPre } = await admin
         .from("luck_royale_nyawa_history")
         .select("rarity")
@@ -627,9 +622,8 @@ Deno.serve(async (req) => {
         else break;
       }
 
-      const results: Array<Prize & { index: number; bonusApplied?: number; jackpotWon?: number }> = [];
+      const results: Array<Prize & { index: number; bonusApplied?: number }> = [];
       let totalBonusGems = 0;
-      let jackpotWonTotal = 0;
       for (let i = 0; i < spinCount; i++) {
         const basePrize = pickPrize();
         const mult = getStreakMultiplier(curStreak);
@@ -643,28 +637,17 @@ Deno.serve(async (req) => {
         const prize: Prize = { ...basePrize, value: finalValue };
         await applyPrize(admin, visitorId, prize);
 
-        // === MEGA JACKPOT BREAK: kalau Mythic & lolos chance ===
-        let jackpotWon = 0;
-        if (prize.rarity === "mythic" && pool >= POOL_MIN_BREAK && Math.random() < POOL_BREAK_CHANCE) {
-          jackpotWon = Math.floor(pool * 0.7); // pemain dapat 70% pool
-          pool = pool - jackpotWon;
-          await setMegaPool(admin, pool);
-          await admin.rpc("add_account_gems", { p_visitor_id: visitorId, p_amount: jackpotWon });
-          jackpotWonTotal += jackpotWon;
-        }
-
-        results.push({ ...prize, index: basePrize.index, bonusApplied, jackpotWon });
+        results.push({ ...prize, index: basePrize.index, bonusApplied });
 
         const labelParts: string[] = [prize.label];
         if (bonusApplied > 0) labelParts.push(`(+${Math.round((mult - 1) * 100)}% streak)`);
-        if (jackpotWon > 0) labelParts.push(`💥 MEGA JACKPOT +${jackpotWon} Gem!`);
         await admin.from("luck_royale_nyawa_history").insert({
           visitor_id: visitorId,
           spin_type: spinType,
           reward_kind: prize.kind,
-          reward_value: finalValue + jackpotWon,
+          reward_value: finalValue,
           reward_label: labelParts.join(" "),
-          rarity: jackpotWon > 0 ? "mythic" : prize.rarity,
+          rarity: prize.rarity,
           cost_currency: currency,
           cost_amount: i === 0 ? cost : 0,
         });
@@ -701,7 +684,6 @@ Deno.serve(async (req) => {
       const summary = results.map(r => r.label).join(", ");
       const titleExtras: string[] = [];
       if (totalBonusGems > 0) titleExtras.push(`🔥 +${totalBonusGems} streak`);
-      if (jackpotWonTotal > 0) titleExtras.push(`💥 JACKPOT +${jackpotWonTotal}`);
       if (earnedTokens > 0) titleExtras.push(`🎟️ +${earnedTokens} Token`);
       await admin.from("notifications").insert({
         visitor_id: visitorId,
@@ -711,8 +693,6 @@ Deno.serve(async (req) => {
       });
 
       const { data: gemsAfter } = await admin.rpc("get_account_gems", { p_visitor_id: visitorId });
-      const finalPool = await getMegaPool(admin);
-
       return Response.json({
         success: true,
         results,
@@ -721,8 +701,6 @@ Deno.serve(async (req) => {
         luckyStreak: curStreak,
         streakMultiplier: getStreakMultiplier(curStreak),
         totalBonusGems,
-        jackpotWonTotal,
-        megaJackpotPool: finalPool,
         luckyTokens: newTokens,
         luckyTokenProgress: newProgress,
         luckyTokenThreshold: TOKENS_PER_SPIN_THRESHOLD,

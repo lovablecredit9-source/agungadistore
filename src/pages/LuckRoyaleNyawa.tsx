@@ -85,12 +85,10 @@ export default function LuckRoyaleNyawa() {
   const [luckyStreak, setLuckyStreak] = useState(0);
   const [streakMultiplier, setStreakMultiplier] = useState(1);
   const [bonusPopup, setBonusPopup] = useState<number | null>(null);
-  const [jackpotPopup, setJackpotPopup] = useState<number | null>(null);
   const [tokenPopup, setTokenPopup] = useState<number | null>(null);
   const [luckyTokens, setLuckyTokens] = useState(0);
   const [tokenProgress, setTokenProgress] = useState(0);
   const [tokenThreshold, setTokenThreshold] = useState(5);
-  const [megaPool, setMegaPool] = useState(5000);
   // ⚠️ Popup peringatan menang/kalah — wajib di-acknowledge sebelum spin pertama
   const [warningOpen, setWarningOpen] = useState(false);
   const [warningAck, setWarningAck] = useState(false);
@@ -121,7 +119,6 @@ export default function LuckRoyaleNyawa() {
       setLuckyTokens(Number(data.luckyTokens || 0));
       setTokenProgress(Number(data.luckyTokenProgress || 0));
       setTokenThreshold(Number(data.luckyTokenThreshold || 5));
-      setMegaPool(Number(data.megaJackpotPool || 5000));
       setTokenShop(data.tokenShop || []);
       setFreeDailyShop(data.freeDailyShop || []);
       setShopAccess(data.shopAccess || { isActive: false, activeUntil: null, purchasedAt: null, price: 100000, durationDays: 30 });
@@ -176,17 +173,12 @@ export default function LuckRoyaleNyawa() {
         setBonusPopup(data.totalBonusGems);
         setTimeout(() => setBonusPopup(null), 4000);
       }
-      if (data.jackpotWonTotal && data.jackpotWonTotal > 0) {
-        setJackpotPopup(data.jackpotWonTotal);
-        setTimeout(() => setJackpotPopup(null), 6000);
-      }
       if (data.earnedTokens && data.earnedTokens > 0) {
         setTokenPopup(data.earnedTokens);
         setTimeout(() => setTokenPopup(null), 4000);
       }
       if (typeof data.luckyTokens === "number") setLuckyTokens(data.luckyTokens);
       if (typeof data.luckyTokenProgress === "number") setTokenProgress(data.luckyTokenProgress);
-      if (typeof data.megaJackpotPool === "number") setMegaPool(data.megaJackpotPool);
       if (mode === "free") setFreeSpinAvailable(false);
       fetchData();
     } catch (e: any) {
@@ -379,51 +371,28 @@ export default function LuckRoyaleNyawa() {
             </TabsList>
 
             <TabsContent value="spin" className="space-y-4 mt-3">
-          {/* 💥 MEGA JACKPOT POOL - community pool banner */}
-          <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-purple-700 via-fuchsia-600 to-pink-600 border-2 border-fuchsia-300/60 p-3 shadow-xl shadow-fuchsia-500/40">
-            <div className="absolute inset-0 opacity-30 animate-pulse" style={{
-              backgroundImage: "radial-gradient(circle at 50% 50%, rgba(255,255,255,0.5), transparent 70%)",
-            }} />
-            <div className="relative flex items-center gap-3">
-              <div className="w-14 h-14 rounded-2xl bg-black/40 ring-2 ring-amber-300/80 flex items-center justify-center shrink-0 animate-pulse">
-                <Gem className="w-8 h-8 text-amber-200" fill="currentColor" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-1.5 mb-0.5">
-                  <Badge className="bg-amber-500 text-black font-black text-[8px]">💥 LIVE</Badge>
-                  <span className="text-[9px] font-black tracking-widest text-amber-100">MEGA JACKPOT POOL</span>
-                </div>
-                <div className="flex items-baseline gap-1">
-                  <span className="text-2xl font-black text-white tabular-nums drop-shadow">{formatCompactNumber(megaPool)}</span>
-                  <Gem className="w-4 h-4 text-amber-300" fill="currentColor" />
-                </div>
-                <p className="text-[10px] font-bold text-fuchsia-100/90 mt-0.5">
-                  Pecah saat ada Mythic 🌈 - pemenang dapat <span className="text-amber-200 font-black">70%</span> pool!
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* 👑 JACKPOT UTAMA - hardest spin prize */}
+          {/* 👑 Hadiah normal - tidak ikut pool Mega/Combo */}
           <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-amber-400 via-yellow-300 to-fuchsia-500 border-2 border-yellow-200 p-3 shadow-xl shadow-yellow-400/40">
             <div className="absolute inset-0 opacity-30 animate-pulse" style={{
               backgroundImage: "linear-gradient(120deg, transparent 20%, rgba(255,255,255,0.7) 50%, transparent 80%)",
             }} />
             <div className="relative flex items-center gap-3 text-black">
               <div className="w-14 h-14 rounded-2xl bg-black/80 ring-2 ring-white/80 flex items-center justify-center shrink-0 animate-pulse">
-                <Crown className="w-8 h-8 text-yellow-200" fill="currentColor" />
+                <Heart className="w-8 h-8 text-rose-300" fill="currentColor" />
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-1.5 mb-0.5">
-                  <Badge className="bg-black text-yellow-200 font-black text-[8px]">PALING SULIT</Badge>
-                  <span className="text-[9px] font-black tracking-widest">JACKPOT UTAMA SPIN</span>
+                  <Badge className="bg-black text-yellow-200 font-black text-[8px]">NORMAL</Badge>
+                  <span className="text-[9px] font-black tracking-widest">HADIAH SPIN NYAWA</span>
                 </div>
-                <div className="flex items-baseline gap-1">
-                  <span className="text-2xl font-black tabular-nums drop-shadow">25.000</span>
-                  <Coins className="w-4 h-4" fill="currentColor" />
+                <div className="flex items-center gap-2 text-lg font-black drop-shadow">
+                  <Heart className="w-5 h-5" fill="currentColor" />
+                  <Lightbulb className="w-5 h-5" fill="currentColor" />
+                  <Timer className="w-5 h-5" />
+                  <Shield className="w-5 h-5" fill="currentColor" />
                 </div>
                 <p className="text-[10px] font-black mt-0.5">
-                  Hadiah normal fokus ke nyawa, hint, time freeze, dan streak freeze — peluang tetap tergantung hoki.
+                  Spin normal hanya nyawa, hint, time freeze, dan streak freeze — bukan hadiah Mega.
                 </p>
               </div>
             </div>
@@ -1140,7 +1109,7 @@ export default function LuckRoyaleNyawa() {
                     icon: Star,
                     color: "from-pink-500 to-rose-600",
                     title: "Belum Pernah Mythic",
-                    desc: "Mythic punya peluang tipis. Bundle 125 SPIN paling efektif untuk berburu Jackpot Utama 10.000 Gems!",
+                    desc: "Mythic punya peluang tipis. Bundle 125 SPIN paling efektif untuk berburu bonus nyawa, hint, dan freeze.",
                     priority: "med",
                   });
                 }
@@ -1423,22 +1392,6 @@ export default function LuckRoyaleNyawa() {
         </div>
       )}
 
-      {/* 💥 MEGA JACKPOT WIN POPUP */}
-      {jackpotPopup !== null && (
-        <div className="fixed inset-0 z-[70] flex items-center justify-center pointer-events-none animate-fade-in">
-          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
-          <div className="relative bg-gradient-to-br from-purple-700 via-fuchsia-600 to-pink-600 rounded-3xl p-6 shadow-2xl shadow-fuchsia-500/80 ring-4 ring-amber-300/60 animate-pulse max-w-xs mx-4 text-center">
-            <div className="text-5xl mb-2">💥🎰💥</div>
-            <div className="text-[10px] font-black text-amber-200 tracking-widest mb-1">MEGA JACKPOT PECAH!</div>
-            <div className="text-3xl font-black text-white drop-shadow mb-1">+{formatCompactNumber(jackpotPopup)}</div>
-            <div className="flex items-center justify-center gap-1 text-amber-300 font-black">
-              <Gem className="w-5 h-5" fill="currentColor" /> GEM
-            </div>
-            <p className="text-[10px] text-fuchsia-100/90 mt-2">Selamat, kamu pecahkan pool komunitas!</p>
-          </div>
-        </div>
-      )}
-
       {/* 🎟️ EARNED TOKEN POPUP */}
       {tokenPopup !== null && (
         <div className="fixed top-32 left-1/2 -translate-x-1/2 z-[60] animate-fade-in pointer-events-none">
@@ -1480,7 +1433,7 @@ export default function LuckRoyaleNyawa() {
               <div className="space-y-2 text-[12px] leading-relaxed text-amber-50/95">
                 <div className="flex gap-2 bg-black/30 rounded-lg p-2.5 border border-amber-500/30">
                   <Sparkles className="w-4 h-4 text-amber-300 shrink-0 mt-0.5" />
-                  <p>Luck Royale adalah <b>permainan keberuntungan</b>. Hadiah bisa berupa <b>koin streak, nyawa, hint, freeze, atau gem</b> sesuai peluang masing-masing.</p>
+                  <p>Luck Royale normal adalah <b>permainan keberuntungan</b>. Hadiah bisa berupa <b>nyawa, hint, time freeze, atau streak freeze</b> sesuai peluang masing-masing.</p>
                 </div>
                 <div className="flex gap-2 bg-black/30 rounded-lg p-2.5 border border-rose-500/30">
                   <X className="w-4 h-4 text-rose-300 shrink-0 mt-0.5" />
