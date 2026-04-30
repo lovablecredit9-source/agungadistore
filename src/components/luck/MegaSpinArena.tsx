@@ -63,8 +63,8 @@ const COMBO_TIERS = [1, 2, 3, 5];
 const PITY_THRESHOLD = 30;
 
 const COSTS = {
-  combo: 30,
-  mega: 250, // 10x dengan diskon
+  combo: 10,
+  mega: 75, // 10x lebih murah agar tidak terasa rugi
 };
 
 function rollPrize(pool: MiniPrize[]): MiniPrize {
