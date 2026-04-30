@@ -641,6 +641,7 @@ Deno.serve(async (req) => {
         20: 5,   // 20 spin → 5 token (bukan 4)
         100: 25, // 100 spin → 25 token (bukan 20)
         125: 32, // 125 spin → 32 token (bukan 25)
+        200: 55, // 200 spin → 55 token (bonus besar GOD PACK)
       };
       const tokenState = await getLuckyTokens(admin, visitorId);
       let newProgress = tokenState.spinProgress;
