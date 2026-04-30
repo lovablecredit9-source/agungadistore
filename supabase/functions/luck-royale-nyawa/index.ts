@@ -399,7 +399,8 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const { visitorId, action, count: requestedCount, itemCode, tier: requestedTier } = await req.json();
+    const body = await req.json();
+    const { visitorId, action, count: requestedCount, itemCode, tier: requestedTier } = body;
     if (!visitorId) return Response.json({ error: "visitorId required" }, { status: 400, headers: corsHeaders });
 
     const admin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
@@ -535,7 +536,7 @@ Deno.serve(async (req) => {
     }
 
     if (action === "mega_arena_award") {
-      const { prize, costGems = 0, multiplier = 1 } = await req.json().catch(() => ({}));
+      const { prize, costGems = 0, multiplier = 1 } = body;
       const allowedKinds = new Set(["extra_life", "auto_hint", "time_freeze", "streak_freeze", "streak_coins", "gems"]);
       const kind = String(prize?.kind || "");
       const baseValue = Math.max(1, Math.min(100000, Number(prize?.value) || 0));
