@@ -121,8 +121,13 @@ function pickFromPool(pool: Prize[]): Prize & { index: number } {
   return { ...pool[0], index: 0 };
 }
 
-function pickPrize(): Prize & { index: number } {
-  return pickFromPool(PRIZES);
+function pickPrize(luckyHourActive = false): Prize & { index: number } {
+  const first = pickFromPool(PRIZES);
+  // Lucky Hour: jika hasil common, reroll sekali (≈ +50% peluang dapat rare+)
+  if (luckyHourActive && first.rarity === "common") {
+    return pickFromPool(PRIZES);
+  }
+  return first;
 }
 
 // === LUCKY STREAK MULTIPLIER ===
