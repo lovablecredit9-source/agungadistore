@@ -21,7 +21,7 @@ const BUNDLE_COST_DIAMOND = 200;
 
 // Hadiah bobot NORMAL Luck Royale Nyawa — jangan dicampur dengan pool Mega/Combo.
 type Prize = {
-  kind: "extra_life" | "auto_hint" | "time_freeze" | "streak_freeze" | "streak_coins" | "gems";
+  kind: "extra_life" | "auto_hint" | "time_freeze" | "streak_freeze" | "streak_coins" | "gems" | "game_credits" | "game_balance";
   value: number;
   label: string;
   emoji: string;
@@ -86,6 +86,27 @@ const PRIZES: Prize[] = [
   { kind: "streak_coins",  value: 50000, label: "🪙 +50.000 Streak Coin",   emoji: "🪙", rarity: "mythic",    weight: 0.3,   color: "#fde68a" },
   { kind: "streak_coins",  value: 150000,label: "👑 +150.000 Streak JACKPOT", emoji: "🪙", rarity: "mythic",  weight: 0.05,  color: "#fef08a" },
 
+  // === KREDIT GAME (Kunci Jawaban) ===
+  { kind: "game_credits",  value: 1,     label: "🔑 +1 Kredit Game",        emoji: "🔑", rarity: "rare",      weight: 8,     color: "#22d3ee" },
+  { kind: "game_credits",  value: 3,     label: "🔑 +3 Kredit Game",        emoji: "🔑", rarity: "rare",      weight: 5,     color: "#06b6d4" },
+  { kind: "game_credits",  value: 5,     label: "🔑 +5 Kredit Game",        emoji: "🔑", rarity: "epic",      weight: 3,     color: "#a855f7" },
+  { kind: "game_credits",  value: 10,    label: "🔑 +10 Kredit Game",       emoji: "🔑", rarity: "epic",      weight: 1.5,   color: "#a855f7" },
+  { kind: "game_credits",  value: 25,    label: "🔑 +25 Kredit Game",       emoji: "🔑", rarity: "legendary", weight: 0.7,   color: "#fbbf24" },
+  { kind: "game_credits",  value: 50,    label: "🔑 +50 Kredit Game",       emoji: "🔑", rarity: "legendary", weight: 0.3,   color: "#facc15" },
+  { kind: "game_credits",  value: 100,   label: "🌟 +100 Kredit Game",      emoji: "🔑", rarity: "mythic",    weight: 0.12,  color: "#f0abfc" },
+  { kind: "game_credits",  value: 250,   label: "👑 +250 Kredit JACKPOT",   emoji: "🔑", rarity: "mythic",    weight: 0.025, color: "#fef08a" },
+
+  // === SALDO IN (Saldo dalam game) — nominal Rupiah ===
+  { kind: "game_balance",  value: 500,   label: "💵 +Rp 500 Saldo IN",      emoji: "💵", rarity: "rare",      weight: 6,     color: "#34d399" },
+  { kind: "game_balance",  value: 1000,  label: "💵 +Rp 1.000 Saldo IN",    emoji: "💵", rarity: "rare",      weight: 4,     color: "#10b981" },
+  { kind: "game_balance",  value: 2500,  label: "💵 +Rp 2.500 Saldo IN",    emoji: "💵", rarity: "epic",      weight: 2.2,   color: "#059669" },
+  { kind: "game_balance",  value: 5000,  label: "💵 +Rp 5.000 Saldo IN",    emoji: "💵", rarity: "epic",      weight: 1.2,   color: "#a855f7" },
+  { kind: "game_balance",  value: 10000, label: "💸 +Rp 10.000 Saldo IN",   emoji: "💵", rarity: "legendary", weight: 0.6,   color: "#fbbf24" },
+  { kind: "game_balance",  value: 25000, label: "💸 +Rp 25.000 Saldo IN",   emoji: "💵", rarity: "legendary", weight: 0.25,  color: "#facc15" },
+  { kind: "game_balance",  value: 50000, label: "🌟 +Rp 50.000 Saldo IN",   emoji: "💵", rarity: "mythic",    weight: 0.08,  color: "#f0abfc" },
+  { kind: "game_balance",  value: 100000,label: "👑 +Rp 100.000 Saldo IN",  emoji: "💵", rarity: "mythic",    weight: 0.02,  color: "#fef08a" },
+  { kind: "game_balance",  value: 250000,label: "👑 +Rp 250.000 JACKPOT",   emoji: "💵", rarity: "mythic",    weight: 0.005, color: "#fef08a" },
+
   // === MEGA JACKPOT (PALING SUSAH SEKALI — super rare) ===
   { kind: "gems",          value: 25000, label: "🔥 +25.000 Gem MEGA",     emoji: "💎", rarity: "mythic",    weight: 0.008, color: "#fef08a" },
   { kind: "gems",          value: 50000, label: "👑 +50.000 GEM JACKPOT",  emoji: "💎", rarity: "mythic",    weight: 0.002, color: "#fef08a" },
@@ -119,6 +140,11 @@ const FREE_PRIZES: Prize[] = [
   { kind: "extra_life",    value: 3,  label: "🎁 FREE +3 Nyawa",         emoji: "❤️", rarity: "epic",   weight: 1.0, color: "#f43f5e" },
   { kind: "streak_coins",  value: 50, label: "🎁 FREE +50 Streak Coin",  emoji: "🪙", rarity: "common", weight: 18,  color: "#f59e0b" },
   { kind: "streak_coins",  value: 150,label: "🎁 FREE +150 Streak Coin", emoji: "🪙", rarity: "rare",   weight: 6,   color: "#fb923c" },
+  // Kredit Game & Saldo IN versi free (kecil)
+  { kind: "game_credits",  value: 1,  label: "🎁 FREE +1 Kredit Game",   emoji: "🔑", rarity: "rare",   weight: 5,   color: "#22d3ee" },
+  { kind: "game_credits",  value: 2,  label: "🎁 FREE +2 Kredit Game",   emoji: "🔑", rarity: "epic",   weight: 1.2, color: "#a855f7" },
+  { kind: "game_balance",  value: 200,label: "🎁 FREE +Rp 200 Saldo IN", emoji: "💵", rarity: "rare",   weight: 4,   color: "#34d399" },
+  { kind: "game_balance",  value: 500,label: "🎁 FREE +Rp 500 Saldo IN", emoji: "💵", rarity: "epic",   weight: 1.0, color: "#10b981" },
 ];
 
 function pickFromPool(pool: Prize[]): Prize & { index: number } {
@@ -444,6 +470,36 @@ async function applyPrize(admin: any, visitorId: string, p: Prize) {
       await admin.from("daily_streaks").update({ streak_coins: (streak.streak_coins || 0) + p.value }).eq("id", streak.id);
     } else {
       await admin.from("daily_streaks").insert({ visitor_id: visitorId, streak_coins: p.value });
+    }
+  } else if (p.kind === "game_credits") {
+    // Tambah kredit game (kunci jawaban) ke akun aktif via RPC akumulatif
+    try {
+      await admin.rpc("add_account_credits", { p_visitor_id: visitorId, p_amount: p.value });
+    } catch (_) {
+      // Fallback: upsert langsung ke baris visitor
+      const { data: row } = await admin.from("user_game_credits").select("id, credits").eq("visitor_id", visitorId).maybeSingle();
+      if (row) {
+        await admin.from("user_game_credits").update({ credits: (row.credits || 0) + p.value, updated_at: new Date().toISOString() }).eq("id", row.id);
+      } else {
+        await admin.from("user_game_credits").insert({ visitor_id: visitorId, credits: p.value });
+      }
+    }
+  } else if (p.kind === "game_balance") {
+    // Tambah Saldo IN (game_balance) — nominal dalam Rupiah
+    const { data: row } = await admin.from("game_balance").select("id, amount, total_earned").eq("visitor_id", visitorId).maybeSingle();
+    if (row) {
+      await admin.from("game_balance").update({
+        amount: (row.amount || 0) + p.value,
+        total_earned: (row.total_earned || 0) + p.value,
+        updated_at: new Date().toISOString(),
+      }).eq("id", row.id);
+    } else {
+      await admin.from("game_balance").insert({
+        visitor_id: visitorId,
+        amount: p.value,
+        total_earned: p.value,
+        total_spent: 0,
+      });
     }
   }
 }
