@@ -5,7 +5,7 @@ import { useToast } from "@/hooks/use-toast";
 import { formatCompactNumber } from "@/lib/utils";
 import {
   Rocket, Flame, Disc3, Trophy, Gem, Sparkles, Zap, Heart, Coins,
-  Lightbulb, Timer, Shield, Loader2, X, Crown,
+  Lightbulb, Timer, Shield, Loader2, X, Crown, Info, History, ChevronDown, ChevronUp, Trash2,
 } from "lucide-react";
 
 /**
@@ -36,16 +36,20 @@ interface Props {
 }
 
 const FALLBACK_POOL: MiniPrize[] = [
-  { kind: "auto_hint", value: 2, label: "Hint", emoji: "💡", rarity: "common", weight: 24 },
-  { kind: "extra_life", value: 2, label: "Nyawa", emoji: "❤️", rarity: "common", weight: 22 },
-  { kind: "time_freeze", value: 2, label: "Time Freeze", emoji: "⏱️", rarity: "common", weight: 16 },
-  { kind: "streak_coins", value: 100, label: "Koin Streak", emoji: "🪙", rarity: "rare", weight: 14 },
-  { kind: "streak_freeze", value: 2, label: "Streak Freeze", emoji: "🛡️", rarity: "rare", weight: 10 },
-  { kind: "auto_hint", value: 8, label: "Hint", emoji: "💡", rarity: "epic", weight: 5 },
-  { kind: "extra_life", value: 8, label: "Nyawa", emoji: "❤️", rarity: "epic", weight: 5 },
-  { kind: "streak_coins", value: 1000, label: "Koin Streak", emoji: "🪙", rarity: "legendary", weight: 2 },
-  { kind: "gems", value: 100, label: "Gem", emoji: "💎", rarity: "legendary", weight: 0.8 },
-  { kind: "streak_coins", value: 5000, label: "JACKPOT Koin", emoji: "👑", rarity: "mythic", weight: 0.2 },
+  { kind: "auto_hint", value: 2, label: "Hint", emoji: "💡", rarity: "common", weight: 22 },
+  { kind: "extra_life", value: 2, label: "Nyawa", emoji: "❤️", rarity: "common", weight: 20 },
+  { kind: "time_freeze", value: 2, label: "Time Freeze", emoji: "⏱️", rarity: "common", weight: 14 },
+  { kind: "gems", value: 5, label: "Gem", emoji: "💎", rarity: "common", weight: 10 },
+  { kind: "streak_coins", value: 100, label: "Koin Streak", emoji: "🪙", rarity: "rare", weight: 12 },
+  { kind: "streak_freeze", value: 2, label: "Streak Freeze", emoji: "🛡️", rarity: "rare", weight: 8 },
+  { kind: "gems", value: 15, label: "Gem", emoji: "💎", rarity: "rare", weight: 6 },
+  { kind: "auto_hint", value: 8, label: "Hint", emoji: "💡", rarity: "epic", weight: 4 },
+  { kind: "extra_life", value: 8, label: "Nyawa", emoji: "❤️", rarity: "epic", weight: 4 },
+  { kind: "gems", value: 40, label: "Gem", emoji: "💎", rarity: "epic", weight: 2.5 },
+  { kind: "streak_coins", value: 1000, label: "Koin Streak", emoji: "🪙", rarity: "legendary", weight: 1.8 },
+  { kind: "gems", value: 100, label: "Gem", emoji: "💎", rarity: "legendary", weight: 1 },
+  { kind: "streak_coins", value: 5000, label: "JACKPOT Koin", emoji: "👑", rarity: "mythic", weight: 0.18 },
+  { kind: "gems", value: 300, label: "MEGA Gem", emoji: "💎", rarity: "mythic", weight: 0.12 },
 ];
 
 const BONUS_WHEEL = [
@@ -139,6 +143,35 @@ export default function MegaSpinArena({ visitorId, gems, setGems }: Props) {
   const [bonusWon, setBonusWon] = useState<typeof BONUS_WHEEL[number] | null>(null);
   const wheelRef = useRef<HTMLDivElement>(null);
 
+  // === Info & Riwayat ===
+  type SpinHistoryEntry = {
+    id: string;
+    at: number;
+    source: "combo" | "mega" | "bonus";
+    prize: { kind: string; label: string; emoji: string; rarity: Rarity; value: number };
+    awarded: number;
+    multiplier?: number;
+  };
+  const [showInfo, setShowInfo] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
+  const [history, setHistory] = useState<SpinHistoryEntry[]>(() => {
+    try {
+      const v = localStorage.getItem("mega_spin_history");
+      return v ? (JSON.parse(v) as SpinHistoryEntry[]) : [];
+    } catch { return []; }
+  });
+  const pushHistory = (entries: SpinHistoryEntry[]) => {
+    setHistory((prev) => {
+      const next = [...entries, ...prev].slice(0, 100);
+      try { localStorage.setItem("mega_spin_history", JSON.stringify(next)); } catch {}
+      return next;
+    });
+  };
+  const clearHistory = () => {
+    setHistory([]);
+    try { localStorage.removeItem("mega_spin_history"); } catch {}
+  };
+
   // Sinkron pool dari edge function existing (biar reward sama feel-nya)
   useEffect(() => {
     let mounted = true;
@@ -224,6 +257,14 @@ export default function MegaSpinArena({ visitorId, gems, setGems }: Props) {
     }
 
     setComboResult({ prize, mult, awarded });
+    pushHistory([{
+      id: `${Date.now()}-c`,
+      at: Date.now(),
+      source: "combo",
+      prize: { kind: prize.kind, label: prize.label, emoji: prize.emoji, rarity: prize.rarity, value: prize.value },
+      awarded,
+      multiplier: mult,
+    }]);
 
     if (isMiss) {
       if (comboStreak > 0) {
@@ -297,6 +338,14 @@ export default function MegaSpinArena({ visitorId, gems, setGems }: Props) {
     }
     await refreshGems();
 
+    pushHistory(results.map((p, i) => ({
+      id: `${Date.now()}-m-${i}`,
+      at: Date.now() + i,
+      source: "mega" as const,
+      prize: { kind: p.kind, label: p.label, emoji: p.emoji, rarity: p.rarity, value: p.value },
+      awarded: p.value,
+    })));
+
     const jackpots = results.filter(isJackpot).length;
     if (jackpots > 0) {
       toast({ title: `🎉 MEGA SPIN — ${jackpots} JACKPOT!`, description: `10 hadiah masuk akun.` });
@@ -321,8 +370,16 @@ export default function MegaSpinArena({ visitorId, gems, setGems }: Props) {
     await new Promise((r) => setTimeout(r, 4200));
     const won = BONUS_WHEEL[idx];
     setBonusWon(won);
-    await awardPrize(visitorId, { ...won, rarity: won.kind === "gems" ? "legendary" : "rare", weight: 1 } as MiniPrize);
+    const rarity: Rarity = won.kind === "gems" ? "legendary" : "rare";
+    await awardPrize(visitorId, { ...won, rarity, weight: 1 } as MiniPrize);
     await refreshGems();
+    pushHistory([{
+      id: `${Date.now()}-b`,
+      at: Date.now(),
+      source: "bonus",
+      prize: { kind: won.kind, label: won.label, emoji: won.emoji, rarity, value: won.value },
+      awarded: won.value,
+    }]);
     setBonusSpinning(false);
   };
 
@@ -479,6 +536,111 @@ export default function MegaSpinArena({ visitorId, gems, setGems }: Props) {
             <Rocket className="w-4 h-4" /> MEGA SPIN x10 · {COSTS.mega}💎
           </>}
         </Button>
+      </div>
+
+      {/* INFO HADIAH LENGKAP */}
+      <div className="rounded-xl bg-black/40 border border-amber-500/30 mb-2 overflow-hidden">
+        <button
+          onClick={() => setShowInfo((v) => !v)}
+          className="w-full flex items-center justify-between px-3 py-2 text-amber-200 hover:bg-amber-500/5"
+        >
+          <span className="flex items-center gap-1.5 text-[11px] font-bold">
+            <Info className="w-3.5 h-3.5" /> Info Hadiah Lengkap ({pool.length} item)
+          </span>
+          {showInfo ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+        </button>
+        {showInfo && (
+          <div className="p-2 space-y-1 max-h-64 overflow-y-auto">
+            {(() => {
+              const total = pool.reduce((s, p) => s + p.weight, 0);
+              const sorted = [...pool].sort((a, b) => b.weight - a.weight);
+              return sorted.map((p, i) => {
+                const pct = total > 0 ? (p.weight / total) * 100 : 0;
+                return (
+                  <div
+                    key={i}
+                    className={`flex items-center gap-2 rounded-lg p-1.5 bg-gradient-to-r ${rarityGrad(p.rarity)} ${rarityRing(p.rarity)}`}
+                  >
+                    <div className="text-lg">{p.emoji}</div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-[10px] font-bold text-white/90 truncate">
+                        +{p.value} {p.label}
+                      </div>
+                      <div className="text-[9px] uppercase tracking-wider opacity-80 font-bold">{p.rarity}</div>
+                    </div>
+                    <div className="text-[10px] font-black tabular-nums bg-black/40 px-1.5 py-0.5 rounded">
+                      {pct.toFixed(pct < 1 ? 2 : 1)}%
+                    </div>
+                  </div>
+                );
+              });
+            })()}
+            <div className="text-[9px] text-amber-200/60 mt-1 px-1">
+              Persentase = peluang muncul per 1 spin (Combo & tiap reel Mega). Mega Spin x10 menjamin jackpot setelah {PITY_THRESHOLD} spin.
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* RIWAYAT SPIN */}
+      <div className="rounded-xl bg-black/40 border border-fuchsia-500/30 mb-2 overflow-hidden">
+        <button
+          onClick={() => setShowHistory((v) => !v)}
+          className="w-full flex items-center justify-between px-3 py-2 text-fuchsia-200 hover:bg-fuchsia-500/5"
+        >
+          <span className="flex items-center gap-1.5 text-[11px] font-bold">
+            <History className="w-3.5 h-3.5" /> Riwayat Spin ({history.length})
+          </span>
+          {showHistory ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+        </button>
+        {showHistory && (
+          <div className="p-2">
+            {history.length === 0 ? (
+              <div className="text-[10px] text-fuchsia-200/60 text-center py-3">
+                Belum ada riwayat spin. Coba Combo atau Mega Spin!
+              </div>
+            ) : (
+              <>
+                <div className="flex justify-end mb-1">
+                  <button
+                    onClick={clearHistory}
+                    className="flex items-center gap-1 text-[10px] text-rose-300 hover:text-rose-200 px-2 py-1 rounded bg-rose-500/10 border border-rose-500/30"
+                  >
+                    <Trash2 className="w-3 h-3" /> Bersihkan
+                  </button>
+                </div>
+                <div className="space-y-1 max-h-64 overflow-y-auto">
+                  {history.map((h) => {
+                    const d = new Date(h.at);
+                    const time = d.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" });
+                    const date = d.toLocaleDateString("id-ID", { day: "2-digit", month: "short" });
+                    const tag = h.source === "mega" ? "MEGA" : h.source === "combo" ? "COMBO" : "BONUS";
+                    return (
+                      <div
+                        key={h.id}
+                        className={`flex items-center gap-2 rounded-lg p-1.5 bg-gradient-to-r ${rarityGrad(h.prize.rarity)} ${rarityRing(h.prize.rarity)}`}
+                      >
+                        <div className="text-lg">{h.prize.emoji}</div>
+                        <div className="flex-1 min-w-0">
+                          <div className="text-[10px] font-black text-white truncate">
+                            +{h.awarded} {h.prize.label}
+                            {h.multiplier && h.multiplier > 1 ? <span className="ml-1 opacity-90">(x{h.multiplier})</span> : null}
+                          </div>
+                          <div className="text-[9px] opacity-80 font-bold">
+                            {tag} · {date} {time}
+                          </div>
+                        </div>
+                        <div className="text-[9px] uppercase tracking-wider font-bold bg-black/40 px-1.5 py-0.5 rounded">
+                          {h.prize.rarity}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </>
+            )}
+          </div>
+        )}
       </div>
 
       {/* BONUS WHEEL MODAL */}
