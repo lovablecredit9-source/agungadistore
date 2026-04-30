@@ -200,6 +200,34 @@ const TOKEN_SHOP: Array<{ code: string; name: string; cost: number; kind: string
   { code: "sp_freeze2000",  name: "🛡️ OMEGA +2.000 Freeze",          cost: 145, kind: "streak_freeze", value: 2000,    rarity: "mythic", emoji: "🛡️", tier: "super_premium" },
   { code: "sp_coins1m",     name: "🪙 OMEGA +1.000.000 Coin",        cost: 150, kind: "streak_coins",  value: 1000000, rarity: "mythic", emoji: "🪙", tier: "super_premium" },
   { code: "sp_gem10k",      name: "💎 MEGA JACKPOT +10.000 Gem",     cost: 150, kind: "gems",          value: 10000,   rarity: "mythic", emoji: "💎", tier: "super_premium" },
+
+  // ============ ULTRA TIER (160-300 token, hadiah PALING DAHSYAT — Rp 500k/bln) ============
+  // === ABSOLUTE ===
+  { code: "ul_gem15k",      name: "💎 ABSOLUTE +15.000 Gem",         cost: 160, kind: "gems",          value: 15000,    rarity: "mythic", emoji: "💎", tier: "ultra" },
+  { code: "ul_life20k",     name: "❤️ ABSOLUTE +20.000 Nyawa",       cost: 160, kind: "extra_life",    value: 20000,    rarity: "mythic", emoji: "❤️", tier: "ultra" },
+  { code: "ul_hint20k",     name: "💡 ABSOLUTE +20.000 Hint",        cost: 165, kind: "auto_hint",     value: 20000,    rarity: "mythic", emoji: "💡", tier: "ultra" },
+  { code: "ul_freeze3000",  name: "🛡️ ABSOLUTE +3.000 Freeze",       cost: 170, kind: "streak_freeze", value: 3000,     rarity: "mythic", emoji: "🛡️", tier: "ultra" },
+  { code: "ul_coins2m",     name: "🪙 ABSOLUTE +2.000.000 Coin",     cost: 175, kind: "streak_coins",  value: 2000000,  rarity: "mythic", emoji: "🪙", tier: "ultra" },
+
+  // === ETERNAL ===
+  { code: "ul_gem25k",      name: "💎 ETERNAL +25.000 Gem",          cost: 190, kind: "gems",          value: 25000,    rarity: "mythic", emoji: "💎", tier: "ultra" },
+  { code: "ul_life35k",     name: "❤️ ETERNAL +35.000 Nyawa",        cost: 200, kind: "extra_life",    value: 35000,    rarity: "mythic", emoji: "❤️", tier: "ultra" },
+  { code: "ul_hint35k",     name: "💡 ETERNAL +35.000 Hint",         cost: 200, kind: "auto_hint",     value: 35000,    rarity: "mythic", emoji: "💡", tier: "ultra" },
+  { code: "ul_coins5m",     name: "🪙 ETERNAL +5.000.000 Coin",      cost: 220, kind: "streak_coins",  value: 5000000,  rarity: "mythic", emoji: "🪙", tier: "ultra" },
+  { code: "ul_freeze5000",  name: "🛡️ ETERNAL +5.000 Freeze",        cost: 225, kind: "streak_freeze", value: 5000,     rarity: "mythic", emoji: "🛡️", tier: "ultra" },
+
+  // === INFINITY ===
+  { code: "ul_gem40k",      name: "💎 INFINITY +40.000 Gem",         cost: 240, kind: "gems",          value: 40000,    rarity: "mythic", emoji: "💎", tier: "ultra" },
+  { code: "ul_life60k",     name: "❤️ INFINITY +60.000 Nyawa",       cost: 250, kind: "extra_life",    value: 60000,    rarity: "mythic", emoji: "❤️", tier: "ultra" },
+  { code: "ul_hint60k",     name: "💡 INFINITY +60.000 Hint",        cost: 250, kind: "auto_hint",     value: 60000,    rarity: "mythic", emoji: "💡", tier: "ultra" },
+  { code: "ul_coins10m",    name: "🪙 INFINITY +10.000.000 Coin",    cost: 265, kind: "streak_coins",  value: 10000000, rarity: "mythic", emoji: "🪙", tier: "ultra" },
+
+  // === GODLIKE ULTRA JACKPOT ===
+  { code: "ul_gem60k",      name: "💎 GODLIKE +60.000 Gem",          cost: 280, kind: "gems",          value: 60000,    rarity: "mythic", emoji: "💎", tier: "ultra" },
+  { code: "ul_life100k",    name: "❤️ GODLIKE +100.000 Nyawa",       cost: 285, kind: "extra_life",    value: 100000,   rarity: "mythic", emoji: "❤️", tier: "ultra" },
+  { code: "ul_hint100k",    name: "💡 GODLIKE +100.000 Hint",        cost: 285, kind: "auto_hint",     value: 100000,   rarity: "mythic", emoji: "💡", tier: "ultra" },
+  { code: "ul_freeze10k",   name: "🛡️ GODLIKE +10.000 Freeze",       cost: 290, kind: "streak_freeze", value: 10000,    rarity: "mythic", emoji: "🛡️", tier: "ultra" },
+  { code: "ul_gem100k",     name: "👑 ULTRA JACKPOT +100.000 Gem",   cost: 300, kind: "gems",          value: 100000,   rarity: "mythic", emoji: "👑", tier: "ultra" },
 ];
 
 // === FREE DAILY TOKEN SHOP — bisa diklaim 1x per hari TANPA bayar token ===
