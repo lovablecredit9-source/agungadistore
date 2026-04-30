@@ -121,8 +121,13 @@ function pickFromPool(pool: Prize[]): Prize & { index: number } {
   return { ...pool[0], index: 0 };
 }
 
-function pickPrize(): Prize & { index: number } {
-  return pickFromPool(PRIZES);
+function pickPrize(luckyHourActive = false): Prize & { index: number } {
+  const first = pickFromPool(PRIZES);
+  // Lucky Hour: jika hasil common, reroll sekali (≈ +50% peluang dapat rare+)
+  if (luckyHourActive && first.rarity === "common") {
+    return pickFromPool(PRIZES);
+  }
+  return first;
 }
 
 // === LUCKY STREAK MULTIPLIER ===
@@ -438,6 +443,55 @@ function getTodayWIB(): string {
   return wib.toISOString().split("T")[0];
 }
 
+function getNowWIB(): { date: string; hour: number; minute: number; second: number; ms: number } {
+  const wib = new Date(Date.now() + 7 * 3600 * 1000);
+  return {
+    date: wib.toISOString().split("T")[0],
+    hour: wib.getUTCHours(),
+    minute: wib.getUTCMinutes(),
+    second: wib.getUTCSeconds(),
+    ms: wib.getUTCMilliseconds(),
+  };
+}
+
+// === LUCKY HOUR (1 jam acak per hari, 8-22 WIB) ===
+// Selama Lucky Hour aktif, peluang dapat hadiah rare+ naik via 1x reroll
+// jika hasil pertama common.
+const LUCKY_HOUR_KEY_PREFIX = "luck_royale_nyawa_lucky_hour:";
+const LUCKY_HOUR_MIN = 8;
+const LUCKY_HOUR_MAX = 22; // inclusive
+
+async function getLuckyHourForDate(admin: any, date: string): Promise<number> {
+  const key = LUCKY_HOUR_KEY_PREFIX + date;
+  const { data } = await admin.from("admin_settings").select("setting_value").eq("setting_key", key).maybeSingle();
+  if (data?.setting_value != null) {
+    const h = Number(data.setting_value);
+    if (Number.isFinite(h) && h >= 0 && h <= 23) return h;
+  }
+  const range = LUCKY_HOUR_MAX - LUCKY_HOUR_MIN + 1;
+  const hour = LUCKY_HOUR_MIN + Math.floor(Math.random() * range);
+  await admin.from("admin_settings").insert({ setting_key: key, setting_value: String(hour) });
+  return hour;
+}
+
+async function isLuckyHourActive(admin: any): Promise<{ active: boolean; hour: number; date: string; nextActiveAt: string }> {
+  const now = getNowWIB();
+  const hour = await getLuckyHourForDate(admin, now.date);
+  const active = now.hour === hour;
+  // Hitung waktu mulai berikutnya (string ISO WIB +07:00)
+  let nextDate = now.date;
+  let nextHour = hour;
+  if (now.hour >= hour) {
+    // sudah lewat untuk hari ini → besok pakai jadwal baru (preview perkiraan = hour yang sama; UI tinggal countdown ke jam jadwal hari ini selesai)
+    const tomorrow = new Date(Date.now() + 7 * 3600 * 1000 + 24 * 3600 * 1000);
+    nextDate = tomorrow.toISOString().split("T")[0];
+    const t = await getLuckyHourForDate(admin, nextDate);
+    nextHour = t;
+  }
+  const nextActiveAt = `${nextDate}T${String(nextHour).padStart(2, "0")}:00:00+07:00`;
+  return { active, hour, date: now.date, nextActiveAt };
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
@@ -487,6 +541,7 @@ Deno.serve(async (req) => {
       const superShopAccessActive = isShopAccessActive(superShopAccess);
       const ultraShopAccess = await getShopAccess(admin, visitorId, "ultra");
       const ultraShopAccessActive = isShopAccessActive(ultraShopAccess);
+      const luckyHour = await isLuckyHourActive(admin);
 
       // Build free daily shop with status (claimed today?)
       const freeDailyWithStatus = FREE_DAILY_SHOP.map(item => ({
@@ -532,6 +587,14 @@ Deno.serve(async (req) => {
           purchasedAt: ultraShopAccess.purchasedAt,
           price: ULTRA_SHOP_ACCESS_PRICE,
           durationDays: ULTRA_SHOP_ACCESS_DAYS,
+        },
+        luckyHour: {
+          active: luckyHour.active,
+          hour: luckyHour.hour,
+          date: luckyHour.date,
+          nextActiveAt: luckyHour.nextActiveAt,
+          rangeStart: LUCKY_HOUR_MIN,
+          rangeEnd: LUCKY_HOUR_MAX,
         },
       }, { headers: corsHeaders });
     }
@@ -661,11 +724,14 @@ Deno.serve(async (req) => {
         else break;
       }
 
+      const luckyHourState = await isLuckyHourActive(admin);
+      const luckyHourActive = luckyHourState.active;
+
       const results: Array<Prize & { index: number; bonusApplied?: number; jackpotWon?: number }> = [];
       let totalBonusGems = 0;
       let jackpotWonTotal = 0;
       for (let i = 0; i < spinCount; i++) {
-        const basePrize = pickPrize();
+        const basePrize = pickPrize(luckyHourActive);
         const mult = getStreakMultiplier(curStreak);
         let finalValue = basePrize.value;
         let bonusApplied = 0;
@@ -761,6 +827,8 @@ Deno.serve(async (req) => {
         luckyTokenProgress: newProgress,
         luckyTokenThreshold: TOKENS_PER_SPIN_THRESHOLD,
         earnedTokens,
+        luckyHourActive,
+        luckyHour: luckyHourActive ? luckyHourState.hour : luckyHourState.hour,
       }, { headers: corsHeaders });
     }
 

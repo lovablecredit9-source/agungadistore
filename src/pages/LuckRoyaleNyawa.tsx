@@ -102,6 +102,9 @@ export default function LuckRoyaleNyawa() {
   const [ultraShopAccess, setUltraShopAccess] = useState<{ isActive: boolean; activeUntil: string | null; purchasedAt: string | null; price: number; durationDays: number }>({ isActive: false, activeUntil: null, purchasedAt: null, price: 500000, durationDays: 30 });
   const [redeeming, setRedeeming] = useState<string | null>(null);
   const [shopTier, setShopTier] = useState<"free" | "premium" | "super_premium" | "ultra">("free");
+  const [luckyHour, setLuckyHour] = useState<{ active: boolean; hour: number; date: string; nextActiveAt: string } | null>(null);
+  const [nowTick, setNowTick] = useState(Date.now());
+  useEffect(() => { const t = setInterval(() => setNowTick(Date.now()), 1000); return () => clearInterval(t); }, []);
 
   const fetchData = async () => {
     if (!visitorId) return;
@@ -127,6 +130,7 @@ export default function LuckRoyaleNyawa() {
       setShopAccess(data.shopAccess || { isActive: false, activeUntil: null, purchasedAt: null, price: 100000, durationDays: 30 });
       setSuperShopAccess(data.superShopAccess || { isActive: false, activeUntil: null, purchasedAt: null, price: 300000, durationDays: 30 });
       setUltraShopAccess(data.ultraShopAccess || { isActive: false, activeUntil: null, purchasedAt: null, price: 500000, durationDays: 30 });
+      if (data.luckyHour) setLuckyHour(data.luckyHour);
     } catch (e) {
       console.error(e);
     } finally {
@@ -456,6 +460,53 @@ export default function LuckRoyaleNyawa() {
               </div>
             </div>
           </div>
+
+          {/* 🍀 JAM HOKI / LUCKY HOUR BANNER */}
+          {luckyHour && (() => {
+            const targetMs = new Date(luckyHour.nextActiveAt).getTime();
+            const diff = Math.max(0, targetMs - nowTick);
+            const h = Math.floor(diff / 3600000);
+            const m = Math.floor((diff % 3600000) / 60000);
+            const s = Math.floor((diff % 60000) / 1000);
+            const pad = (n: number) => String(n).padStart(2, "0");
+            const fmtH = (n: number) => `${pad(n)}:00 WIB`;
+            return luckyHour.active ? (
+              <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 border-2 border-emerald-200 p-3 shadow-xl shadow-emerald-500/50 animate-pulse">
+                <div className="absolute inset-0 opacity-30" style={{
+                  backgroundImage: "radial-gradient(circle at 80% 30%, rgba(255,255,255,0.5), transparent 60%)",
+                }} />
+                <div className="relative flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-full bg-black/30 flex items-center justify-center ring-2 ring-emerald-200 text-2xl">
+                    🍀
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <span className="text-[10px] font-black tracking-widest text-emerald-50 bg-black/40 px-1.5 py-0.5 rounded">JAM HOKI AKTIF</span>
+                      <span className="text-[10px] font-bold text-white tabular-nums">{fmtH(luckyHour.hour)}</span>
+                    </div>
+                    <p className="text-[10px] font-bold text-emerald-50 mt-0.5">
+                      Peluang dapat <span className="text-yellow-100 font-black">Rare+</span> naik dikit selama 1 jam ini. Mantap!
+                    </p>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-slate-700 via-slate-800 to-slate-900 border border-emerald-500/30 p-2.5">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-full bg-emerald-500/20 flex items-center justify-center text-base">🍀</div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <span className="text-[9px] font-black tracking-widest text-emerald-300">JAM HOKI</span>
+                      <span className="text-[9px] font-bold text-white">→ {fmtH(luckyHour.hour)}</span>
+                    </div>
+                    <p className="text-[9px] text-slate-300 mt-0.5">
+                      Mulai dalam <span className="font-black text-emerald-300 tabular-nums">{pad(h)}:{pad(m)}:{pad(s)}</span> · 1 jam acak per hari
+                    </p>
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
 
           {/* 🔥 LUCKY STREAK BANNER (visible if streak >= 3) */}
           {luckyStreak >= 3 && (
