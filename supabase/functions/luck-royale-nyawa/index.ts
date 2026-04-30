@@ -33,23 +33,54 @@ type Prize = {
 // Pool NORMAL Luck Royale sesuai tampilan utama: Gem tetap ada sampai 10K,
 // bersama Nyawa, Hint, Time Freeze, dan Streak Freeze. Jangan dicampur dengan Mega/Combo.
 const PRIZES: Prize[] = [
-  { kind: "auto_hint",     value: 2,     label: "+2 Hint Otomatis",        emoji: "💡", rarity: "common",    weight: 20,   color: "#94a3b8" },
-  { kind: "extra_life",    value: 2,     label: "+2 Nyawa Ekstra",         emoji: "❤️", rarity: "common",    weight: 20,   color: "#ef4444" },
-  { kind: "time_freeze",   value: 2,     label: "+2 Freeze 30s",           emoji: "⏱️", rarity: "common",    weight: 16,   color: "#0ea5e9" },
-  { kind: "streak_freeze", value: 2,     label: "+2 Streak Freeze",        emoji: "🛡️", rarity: "rare",      weight: 12,   color: "#10b981" },
-  { kind: "auto_hint",     value: 5,     label: "+5 Hint Otomatis",        emoji: "💡", rarity: "rare",      weight: 9,    color: "#06b6d4" },
-  { kind: "extra_life",    value: 5,     label: "+5 Nyawa Ekstra",         emoji: "❤️", rarity: "rare",      weight: 9,    color: "#f43f5e" },
-  { kind: "time_freeze",   value: 8,     label: "+8 Freeze 30s",           emoji: "⏱️", rarity: "epic",      weight: 5,    color: "#a855f7" },
-  { kind: "streak_freeze", value: 4,     label: "+4 Streak Freeze",        emoji: "🛡️", rarity: "epic",      weight: 5,    color: "#ec4899" },
-  { kind: "gems",          value: 100,   label: "💎 +100 Gem",             emoji: "💎", rarity: "epic",      weight: 3.5,  color: "#8b5cf6" },
-  { kind: "extra_life",    value: 20,    label: "❤️ +20 Nyawa",            emoji: "❤️", rarity: "legendary", weight: 2.5,  color: "#fbbf24" },
-  { kind: "streak_freeze", value: 10,    label: "🛡️ +10 Streak Freeze",    emoji: "🛡️", rarity: "legendary", weight: 2,    color: "#f59e0b" },
-  { kind: "gems",          value: 300,   label: "💎 +300 Gem",             emoji: "💎", rarity: "legendary", weight: 1.6,  color: "#facc15" },
-  { kind: "extra_life",    value: 50,    label: "🌈 +50 Nyawa",            emoji: "❤️", rarity: "mythic",    weight: 0.8,  color: "#f0abfc" },
-  { kind: "gems",          value: 800,   label: "💎 +800 Gem",             emoji: "💎", rarity: "mythic",    weight: 0.45, color: "#fde68a" },
-  { kind: "gems",          value: 2500,  label: "💎 +2.500 Gem",           emoji: "💎", rarity: "mythic",    weight: 0.16, color: "#fde68a" },
-  { kind: "gems",          value: 8000,  label: "💎 +8.000 Gem",           emoji: "💎", rarity: "mythic",    weight: 0.05, color: "#fde68a" },
-  { kind: "gems",          value: 10000, label: "👑 +10.000 Gem JACKPOT",  emoji: "💎", rarity: "mythic",    weight: 0.025, color: "#fef08a" },
+  // === COMMON (sering keluar) ===
+  { kind: "auto_hint",     value: 2,     label: "+2 Hint Otomatis",        emoji: "💡", rarity: "common",    weight: 22,    color: "#94a3b8" },
+  { kind: "extra_life",    value: 2,     label: "+2 Nyawa Ekstra",         emoji: "❤️", rarity: "common",    weight: 22,    color: "#ef4444" },
+  { kind: "time_freeze",   value: 2,     label: "+2 Freeze 30s",           emoji: "⏱️", rarity: "common",    weight: 16,    color: "#0ea5e9" },
+  { kind: "auto_hint",     value: 3,     label: "+3 Hint Otomatis",        emoji: "💡", rarity: "common",    weight: 14,    color: "#94a3b8" },
+  { kind: "extra_life",    value: 3,     label: "+3 Nyawa Ekstra",         emoji: "❤️", rarity: "common",    weight: 14,    color: "#ef4444" },
+
+  // === RARE ===
+  { kind: "streak_freeze", value: 2,     label: "+2 Streak Freeze",        emoji: "🛡️", rarity: "rare",      weight: 12,    color: "#10b981" },
+  { kind: "auto_hint",     value: 5,     label: "+5 Hint Otomatis",        emoji: "💡", rarity: "rare",      weight: 10,    color: "#06b6d4" },
+  { kind: "extra_life",    value: 5,     label: "+5 Nyawa Ekstra",         emoji: "❤️", rarity: "rare",      weight: 10,    color: "#f43f5e" },
+  { kind: "auto_hint",     value: 8,     label: "+8 Hint Otomatis",        emoji: "💡", rarity: "rare",      weight: 7,     color: "#06b6d4" },
+  { kind: "extra_life",    value: 8,     label: "+8 Nyawa Ekstra",         emoji: "❤️", rarity: "rare",      weight: 7,     color: "#f43f5e" },
+  { kind: "time_freeze",   value: 5,     label: "+5 Freeze 30s",           emoji: "⏱️", rarity: "rare",      weight: 7,     color: "#0ea5e9" },
+
+  // === EPIC ===
+  { kind: "auto_hint",     value: 12,    label: "💡 +12 Hint",             emoji: "💡", rarity: "epic",      weight: 5,     color: "#a855f7" },
+  { kind: "extra_life",    value: 12,    label: "❤️ +12 Nyawa",            emoji: "❤️", rarity: "epic",      weight: 5,     color: "#a855f7" },
+  { kind: "time_freeze",   value: 8,     label: "+8 Freeze 30s",           emoji: "⏱️", rarity: "epic",      weight: 4.5,   color: "#a855f7" },
+  { kind: "streak_freeze", value: 4,     label: "+4 Streak Freeze",        emoji: "🛡️", rarity: "epic",      weight: 4.5,   color: "#ec4899" },
+  { kind: "gems",          value: 100,   label: "💎 +100 Gem",             emoji: "💎", rarity: "epic",      weight: 3.5,   color: "#8b5cf6" },
+  { kind: "auto_hint",     value: 20,    label: "💡 +20 Hint",             emoji: "💡", rarity: "epic",      weight: 2.8,   color: "#a855f7" },
+  { kind: "extra_life",    value: 20,    label: "❤️ +20 Nyawa",            emoji: "❤️", rarity: "epic",      weight: 2.8,   color: "#a855f7" },
+
+  // === LEGENDARY (susah) ===
+  { kind: "extra_life",    value: 35,    label: "❤️ +35 Nyawa",            emoji: "❤️", rarity: "legendary", weight: 2,     color: "#fbbf24" },
+  { kind: "auto_hint",     value: 35,    label: "💡 +35 Hint",             emoji: "💡", rarity: "legendary", weight: 2,     color: "#fbbf24" },
+  { kind: "streak_freeze", value: 10,    label: "🛡️ +10 Streak Freeze",    emoji: "🛡️", rarity: "legendary", weight: 1.8,   color: "#f59e0b" },
+  { kind: "gems",          value: 300,   label: "💎 +300 Gem",             emoji: "💎", rarity: "legendary", weight: 1.5,   color: "#facc15" },
+  { kind: "extra_life",    value: 50,    label: "❤️ +50 Nyawa",            emoji: "❤️", rarity: "legendary", weight: 1.2,   color: "#fbbf24" },
+  { kind: "auto_hint",     value: 50,    label: "💡 +50 Hint",             emoji: "💡", rarity: "legendary", weight: 1.2,   color: "#fbbf24" },
+  { kind: "gems",          value: 500,   label: "💎 +500 Gem",             emoji: "💎", rarity: "legendary", weight: 0.9,   color: "#facc15" },
+
+  // === MYTHIC (sangat susah) ===
+  { kind: "extra_life",    value: 80,    label: "🌈 +80 Nyawa",            emoji: "❤️", rarity: "mythic",    weight: 0.7,   color: "#f0abfc" },
+  { kind: "auto_hint",     value: 80,    label: "🌈 +80 Hint",             emoji: "💡", rarity: "mythic",    weight: 0.7,   color: "#f0abfc" },
+  { kind: "extra_life",    value: 150,   label: "🌟 +150 Nyawa",           emoji: "❤️", rarity: "mythic",    weight: 0.4,   color: "#f0abfc" },
+  { kind: "auto_hint",     value: 150,   label: "🌟 +150 Hint",            emoji: "💡", rarity: "mythic",    weight: 0.4,   color: "#f0abfc" },
+  { kind: "gems",          value: 800,   label: "💎 +800 Gem",             emoji: "💎", rarity: "mythic",    weight: 0.4,   color: "#fde68a" },
+  { kind: "gems",          value: 2500,  label: "💎 +2.500 Gem",           emoji: "💎", rarity: "mythic",    weight: 0.15,  color: "#fde68a" },
+  { kind: "extra_life",    value: 300,   label: "👑 +300 Nyawa GOD",       emoji: "❤️", rarity: "mythic",    weight: 0.12,  color: "#fef08a" },
+  { kind: "auto_hint",     value: 300,   label: "👑 +300 Hint GOD",        emoji: "💡", rarity: "mythic",    weight: 0.12,  color: "#fef08a" },
+  { kind: "gems",          value: 8000,  label: "💎 +8.000 Gem",           emoji: "💎", rarity: "mythic",    weight: 0.05,  color: "#fde68a" },
+  { kind: "gems",          value: 10000, label: "👑 +10.000 Gem",          emoji: "💎", rarity: "mythic",    weight: 0.025, color: "#fef08a" },
+
+  // === MEGA JACKPOT (PALING SUSAH SEKALI — super rare) ===
+  { kind: "gems",          value: 25000, label: "🔥 +25.000 Gem MEGA",     emoji: "💎", rarity: "mythic",    weight: 0.008, color: "#fef08a" },
+  { kind: "gems",          value: 50000, label: "👑 +50.000 GEM JACKPOT",  emoji: "💎", rarity: "mythic",    weight: 0.002, color: "#fef08a" },
 ];
 
 // Pool khusus MEGA/COMBO: boleh punya koin dan gem, tidak dipakai oleh Spin normal.
