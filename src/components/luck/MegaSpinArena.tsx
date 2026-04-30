@@ -5,7 +5,7 @@ import { useToast } from "@/hooks/use-toast";
 import { formatCompactNumber } from "@/lib/utils";
 import {
   Rocket, Flame, Disc3, Trophy, Gem, Sparkles, Zap, Heart, Coins,
-  Lightbulb, Timer, Shield, Loader2, X, Crown,
+  Lightbulb, Timer, Shield, Loader2, X, Crown, Info, History, ChevronDown, ChevronUp, Trash2,
 } from "lucide-react";
 
 /**
