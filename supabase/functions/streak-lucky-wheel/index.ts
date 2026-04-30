@@ -29,6 +29,18 @@ function pickSegment(segments: any[], forceJackpot: boolean) {
   return segments[0];
 }
 
+async function addDailyStreakReward(admin: any, visitorId: string, column: "streak_coins" | "freeze_count", amount: number) {
+  const { data: ds } = await admin.from("daily_streaks").select(`id, ${column}`).eq("visitor_id", visitorId).maybeSingle();
+  if (ds) await admin.from("daily_streaks").update({ [column]: (ds[column] || 0) + amount }).eq("id", ds.id);
+  else await admin.from("daily_streaks").insert({ visitor_id: visitorId, [column]: amount });
+}
+
+async function addPowerUpReward(admin: any, visitorId: string, column: "extra_life" | "auto_hint" | "time_freeze", amount: number) {
+  const { data: power } = await admin.from("user_power_ups").select(`id, ${column}`).eq("visitor_id", visitorId).maybeSingle();
+  if (power) await admin.from("user_power_ups").update({ [column]: (power[column] || 0) + amount }).eq("id", power.id);
+  else await admin.from("user_power_ups").insert({ visitor_id: visitorId, [column]: amount });
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
   try {
@@ -142,17 +154,15 @@ Deno.serve(async (req) => {
       if (prof?.display_name) displayName = prof.display_name;
 
       // ---- Apply reward ----
-      if (winning.reward_type === "streak_coins") {
-        const { data: ds } = await admin.from("daily_streaks").select("id, streak_coins").eq("visitor_id", visitorId).maybeSingle();
-        if (ds) await admin.from("daily_streaks").update({ streak_coins: (ds.streak_coins || 0) + winning.reward_value }).eq("id", ds.id);
-        else await admin.from("daily_streaks").insert({ visitor_id: visitorId, streak_coins: winning.reward_value });
+      if (winning.reward_type === "streak_coins" || winning.reward_type === "coins") {
+        await addDailyStreakReward(admin, visitorId, "streak_coins", winning.reward_value);
       } else if (winning.reward_type === "gems") {
         await admin.rpc("add_account_gems", { p_visitor_id: visitorId, p_amount: winning.reward_value });
         await admin.from("gem_transactions").insert({ visitor_id: visitorId, type: "earn", amount: winning.reward_value, description: "Lucky Wheel Win" });
-      } else if (winning.reward_type === "freeze_token") {
-        const { data: ds } = await admin.from("daily_streaks").select("id, freeze_count").eq("visitor_id", visitorId).maybeSingle();
-        if (ds) await admin.from("daily_streaks").update({ freeze_count: (ds.freeze_count || 0) + winning.reward_value }).eq("id", ds.id);
-        else await admin.from("daily_streaks").insert({ visitor_id: visitorId, freeze_count: winning.reward_value });
+      } else if (winning.reward_type === "freeze_token" || winning.reward_type === "streak_freeze") {
+        await addDailyStreakReward(admin, visitorId, "freeze_count", winning.reward_value);
+      } else if (["extra_life", "auto_hint", "time_freeze"].includes(winning.reward_type)) {
+        await addPowerUpReward(admin, visitorId, winning.reward_type, winning.reward_value);
       } else if (winning.reward_type === "balance") {
         const { data: bal } = await admin.from("user_balances").select("id, balance").eq("visitor_id", visitorId).maybeSingle();
         if (bal) {
