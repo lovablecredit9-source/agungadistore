@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import FadedWheel from "@/components/streak/FadedWheel";
 import DiamondRoyaleInline from "@/components/streak/DiamondRoyaleInline";
+import MegaSpinArena from "@/components/luck/MegaSpinArena";
 
 interface Prize {
   kind: "extra_life" | "auto_hint" | "time_freeze" | "streak_freeze" | "gems" | "coins";
