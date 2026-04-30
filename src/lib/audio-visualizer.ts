@@ -280,6 +280,16 @@ function buildGraph(ctx: AudioContext, audio: HTMLAudioElement): Graph {
   const master = ctx.createGain();
   master.gain.value = 1;
 
+  // Compressor + makeup gain for safe loudness boost
+  const compressor = ctx.createDynamicsCompressor();
+  compressor.threshold.value = -24;
+  compressor.knee.value = 30;
+  compressor.ratio.value = 12;
+  compressor.attack.value = 0.003;
+  compressor.release.value = 0.25;
+  const makeup = ctx.createGain();
+  makeup.gain.value = state.fx.loudness ?? 1;
+
   const analyser = ctx.createAnalyser();
   analyser.fftSize = 64;
   analyser.smoothingTimeConstant = 0.75;
