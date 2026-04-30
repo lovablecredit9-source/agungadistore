@@ -423,7 +423,7 @@ export default function LuckRoyaleNyawa() {
                   <Coins className="w-4 h-4" fill="currentColor" />
                 </div>
                 <p className="text-[10px] font-black mt-0.5">
-                  Hadiah besar bisa berupa koin, nyawa, hint, freeze, atau gem — peluang tetap tergantung hoki.
+                  Hadiah normal fokus ke nyawa, hint, time freeze, dan streak freeze — peluang tetap tergantung hoki.
                 </p>
               </div>
             </div>
@@ -545,7 +545,7 @@ export default function LuckRoyaleNyawa() {
                 JACKPOT<br />SHADOW VAULT
               </h2>
               <p className="text-[11px] text-amber-50/90 mt-1.5 font-semibold">
-                🪙 Koin • ❤️ Nyawa • 💡 Hint • 🛡️ Freeze • 💎 Gem — semua bisa kena!
+                ❤️ Nyawa • 💡 Hint • ⏱️ Time Freeze • 🛡️ Streak Freeze — Spin normal tetap normal!
               </p>
             </div>
           </div>
@@ -654,7 +654,7 @@ export default function LuckRoyaleNyawa() {
                   PUTAR & MENANGKAN
                 </p>
                 <p className="text-center text-[10px] text-purple-200/90 mt-1 font-semibold">
-                  🪙 Koin • ❤️ Nyawa • 💡 Hint • 🛡️ Freeze • 💎 Gem
+                  ❤️ Nyawa • 💡 Hint • ⏱️ Time Freeze • 🛡️ Freeze
                 </p>
                 {/* Mini featured strip */}
                 <div className="flex items-center gap-1.5 mt-3">
