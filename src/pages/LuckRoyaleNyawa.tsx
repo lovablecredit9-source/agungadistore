@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 import FadedWheel from "@/components/streak/FadedWheel";
 import DiamondRoyaleInline from "@/components/streak/DiamondRoyaleInline";
-import MegaSpinArena from "@/components/luck/MegaSpinArena";
+
 
 interface Prize {
   kind: "extra_life" | "auto_hint" | "time_freeze" | "streak_freeze" | "gems" | "coins";
@@ -341,9 +341,6 @@ export default function LuckRoyaleNyawa() {
               </div>
             );
           })()}
-
-          {/* 🔥 MEGA SPIN ARENA — fitur spin baru: Combo Streak, Mega x10 cinematic, Bonus Wheel, Pity */}
-          <MegaSpinArena visitorId={visitorId} gems={gems} setGems={setGems} />
 
           <Tabs defaultValue="spin" className="w-full">
             <TabsList className="grid w-full grid-cols-6 bg-black/40 border border-amber-500/30 h-auto p-1 gap-1">
