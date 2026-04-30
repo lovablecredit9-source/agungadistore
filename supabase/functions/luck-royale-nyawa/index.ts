@@ -69,6 +69,8 @@ const PRIZES: Prize[] = [
   { kind: "extra_life",    value: 50,    label: "❤️ +50 Nyawa",            emoji: "❤️", rarity: "legendary", weight: 1.2,   color: "#fbbf24" },
   { kind: "auto_hint",     value: 50,    label: "💡 +50 Hint",             emoji: "💡", rarity: "legendary", weight: 1.2,   color: "#fbbf24" },
   { kind: "gems",          value: 500,   label: "💎 +500 Gem",             emoji: "💎", rarity: "legendary", weight: 0.9,   color: "#facc15" },
+  { kind: "streak_coins",  value: 8000,  label: "🪙 +8.000 Streak Coin",    emoji: "🪙", rarity: "legendary", weight: 1.5,   color: "#fbbf24" },
+  { kind: "streak_coins",  value: 20000, label: "🪙 +20.000 Streak Coin",   emoji: "🪙", rarity: "legendary", weight: 0.8,   color: "#fbbf24" },
 
   // === MYTHIC (sangat susah) ===
   { kind: "extra_life",    value: 80,    label: "🌈 +80 Nyawa",            emoji: "❤️", rarity: "mythic",    weight: 0.7,   color: "#f0abfc" },
