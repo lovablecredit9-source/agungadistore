@@ -1414,6 +1414,77 @@ export default function LuckRoyaleNyawa() {
           </div>
         </div>
       )}
+
+      {/* ⚠️ POPUP PERINGATAN MENANG/KALAH — Luck Royale */}
+      {warningOpen && (
+        <div className="fixed inset-0 z-[80] bg-black/85 backdrop-blur-md flex items-center justify-center p-4 animate-fade-in">
+          <div className="relative w-full max-w-sm rounded-2xl overflow-hidden border-2 border-amber-400/60 shadow-2xl shadow-amber-500/40 animate-scale-in">
+            {/* Gradient bg */}
+            <div className="absolute inset-0 bg-gradient-to-br from-rose-900 via-orange-900 to-amber-900" />
+            <div className="absolute inset-0 opacity-50" style={{
+              backgroundImage: "radial-gradient(circle at 30% 20%, rgba(251,191,36,0.5), transparent 55%), radial-gradient(circle at 80% 80%, rgba(244,63,94,0.4), transparent 55%)",
+            }} />
+            <div className="relative p-5 text-white">
+              {/* Header icon */}
+              <div className="flex flex-col items-center text-center mb-3">
+                <div className="relative mb-2">
+                  <div className="absolute inset-0 rounded-full bg-amber-400/40 blur-xl scale-150 animate-pulse" />
+                  <div className="relative w-16 h-16 rounded-full bg-gradient-to-br from-amber-400 via-orange-500 to-rose-600 flex items-center justify-center shadow-2xl shadow-amber-500/60 ring-4 ring-amber-300/40">
+                    <AlertCircle className="w-9 h-9 text-white drop-shadow" />
+                  </div>
+                </div>
+                <Badge className="bg-rose-600 text-white font-black text-[10px] tracking-widest mb-1">⚠️ PERINGATAN</Badge>
+                <h3 className="text-xl font-black tracking-tight bg-gradient-to-r from-yellow-100 via-amber-300 to-orange-400 bg-clip-text text-transparent">
+                  Menang Kalah Tergantung Hoki
+                </h3>
+              </div>
+
+              {/* Body */}
+              <div className="space-y-2 text-[12px] leading-relaxed text-amber-50/95">
+                <div className="flex gap-2 bg-black/30 rounded-lg p-2.5 border border-amber-500/30">
+                  <Sparkles className="w-4 h-4 text-amber-300 shrink-0 mt-0.5" />
+                  <p>Luck Royale adalah <b>permainan keberuntungan</b>. Hadiah yang kamu dapat <b>murni acak</b> sesuai hoki masing-masing.</p>
+                </div>
+                <div className="flex gap-2 bg-black/30 rounded-lg p-2.5 border border-rose-500/30">
+                  <X className="w-4 h-4 text-rose-300 shrink-0 mt-0.5" />
+                  <p><b>Gem TIDAK akan dikembalikan</b> jika kamu tidak mendapat hadiah yang diinginkan.</p>
+                </div>
+                <div className="flex gap-2 bg-black/30 rounded-lg p-2.5 border border-emerald-500/30">
+                  <Heart className="w-4 h-4 text-emerald-300 shrink-0 mt-0.5" fill="currentColor" />
+                  <p>Kalau kamu merasa <b>dirugikan</b>, lebih baik <b>tidak perlu spin</b>. Fitur ini hanya untuk <b>keseruan</b>.</p>
+                </div>
+              </div>
+
+              {/* Buttons */}
+              <div className="grid grid-cols-2 gap-2 mt-4">
+                <button
+                  onClick={() => { setWarningOpen(false); setPendingSpin(null); }}
+                  className="rounded-xl bg-slate-700/80 hover:bg-slate-600 active:scale-95 transition px-3 py-2.5 font-black text-xs tracking-wider text-white border border-white/10"
+                >
+                  BATAL
+                </button>
+                <button
+                  onClick={() => {
+                    if (typeof window !== "undefined") localStorage.setItem("luck_royale_warning_ack", "1");
+                    setWarningAck(true);
+                    setWarningOpen(false);
+                    const p = pendingSpin;
+                    setPendingSpin(null);
+                    if (p) setTimeout(() => doSpin(p.mode, p.count), 50);
+                  }}
+                  className="rounded-xl bg-gradient-to-br from-amber-400 via-orange-500 to-rose-600 hover:brightness-110 active:scale-95 transition px-3 py-2.5 font-black text-xs tracking-wider text-white shadow-lg shadow-amber-500/50 ring-1 ring-amber-300/50"
+                >
+                  SAYA MENGERTI
+                </button>
+              </div>
+              <p className="text-center text-[9px] text-amber-200/70 mt-2 font-semibold tracking-wider">
+                Dengan klik SAYA MENGERTI, kamu setuju & tidak akan klaim refund.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
+
   );
 }
