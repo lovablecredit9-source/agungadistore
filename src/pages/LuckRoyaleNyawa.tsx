@@ -137,6 +137,8 @@ export default function LuckRoyaleNyawa() {
       setSuperShopAccess(data.superShopAccess || { isActive: false, activeUntil: null, purchasedAt: null, price: 300000, durationDays: 30 });
       setUltraShopAccess(data.ultraShopAccess || { isActive: false, activeUntil: null, purchasedAt: null, price: 500000, durationDays: 30 });
       if (data.luckyHour) setLuckyHour(data.luckyHour);
+      if (Array.isArray(data.luckyHourPackages)) setLhPackages(data.luckyHourPackages);
+      setLhFirstUsed(!!data.luckyHourFirstDiscountUsed);
     } catch (e) {
       console.error(e);
     } finally {
