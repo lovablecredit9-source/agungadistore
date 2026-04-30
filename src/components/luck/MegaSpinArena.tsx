@@ -36,16 +36,20 @@ interface Props {
 }
 
 const FALLBACK_POOL: MiniPrize[] = [
-  { kind: "auto_hint", value: 2, label: "Hint", emoji: "💡", rarity: "common", weight: 24 },
-  { kind: "extra_life", value: 2, label: "Nyawa", emoji: "❤️", rarity: "common", weight: 22 },
-  { kind: "time_freeze", value: 2, label: "Time Freeze", emoji: "⏱️", rarity: "common", weight: 16 },
-  { kind: "streak_coins", value: 100, label: "Koin Streak", emoji: "🪙", rarity: "rare", weight: 14 },
-  { kind: "streak_freeze", value: 2, label: "Streak Freeze", emoji: "🛡️", rarity: "rare", weight: 10 },
-  { kind: "auto_hint", value: 8, label: "Hint", emoji: "💡", rarity: "epic", weight: 5 },
-  { kind: "extra_life", value: 8, label: "Nyawa", emoji: "❤️", rarity: "epic", weight: 5 },
-  { kind: "streak_coins", value: 1000, label: "Koin Streak", emoji: "🪙", rarity: "legendary", weight: 2 },
-  { kind: "gems", value: 100, label: "Gem", emoji: "💎", rarity: "legendary", weight: 0.8 },
-  { kind: "streak_coins", value: 5000, label: "JACKPOT Koin", emoji: "👑", rarity: "mythic", weight: 0.2 },
+  { kind: "auto_hint", value: 2, label: "Hint", emoji: "💡", rarity: "common", weight: 22 },
+  { kind: "extra_life", value: 2, label: "Nyawa", emoji: "❤️", rarity: "common", weight: 20 },
+  { kind: "time_freeze", value: 2, label: "Time Freeze", emoji: "⏱️", rarity: "common", weight: 14 },
+  { kind: "gems", value: 5, label: "Gem", emoji: "💎", rarity: "common", weight: 10 },
+  { kind: "streak_coins", value: 100, label: "Koin Streak", emoji: "🪙", rarity: "rare", weight: 12 },
+  { kind: "streak_freeze", value: 2, label: "Streak Freeze", emoji: "🛡️", rarity: "rare", weight: 8 },
+  { kind: "gems", value: 15, label: "Gem", emoji: "💎", rarity: "rare", weight: 6 },
+  { kind: "auto_hint", value: 8, label: "Hint", emoji: "💡", rarity: "epic", weight: 4 },
+  { kind: "extra_life", value: 8, label: "Nyawa", emoji: "❤️", rarity: "epic", weight: 4 },
+  { kind: "gems", value: 40, label: "Gem", emoji: "💎", rarity: "epic", weight: 2.5 },
+  { kind: "streak_coins", value: 1000, label: "Koin Streak", emoji: "🪙", rarity: "legendary", weight: 1.8 },
+  { kind: "gems", value: 100, label: "Gem", emoji: "💎", rarity: "legendary", weight: 1 },
+  { kind: "streak_coins", value: 5000, label: "JACKPOT Koin", emoji: "👑", rarity: "mythic", weight: 0.18 },
+  { kind: "gems", value: 300, label: "MEGA Gem", emoji: "💎", rarity: "mythic", weight: 0.12 },
 ];
 
 const BONUS_WHEEL = [
