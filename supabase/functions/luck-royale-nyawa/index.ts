@@ -879,7 +879,10 @@ Deno.serve(async (req) => {
       });
 
       const { data: gemsAfter } = await admin.rpc("get_account_gems", { p_visitor_id: visitorId });
-      const respKey = accessTier === "super_premium" ? "superShopAccess" : "shopAccess";
+      const respKey =
+        accessTier === "ultra" ? "ultraShopAccess"
+        : accessTier === "super_premium" ? "superShopAccess"
+        : "shopAccess";
       return Response.json({
         success: true,
         balance: newBalance,
