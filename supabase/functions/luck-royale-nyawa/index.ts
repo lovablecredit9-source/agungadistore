@@ -810,10 +810,22 @@ Deno.serve(async (req) => {
     // === BUY TOKEN SHOP ACCESS — bayar saldo, akses 30 hari ===
     // Body opsional: { tier: "premium" | "super_premium" } — default "premium"
     if (action === "buy_shop_access") {
-      const accessTier: "premium" | "super_premium" = requestedTier === "super_premium" ? "super_premium" : "premium";
-      const price = accessTier === "super_premium" ? SUPER_SHOP_ACCESS_PRICE : SHOP_ACCESS_PRICE;
-      const days = accessTier === "super_premium" ? SUPER_SHOP_ACCESS_DAYS : SHOP_ACCESS_DAYS;
-      const tierLabel = accessTier === "super_premium" ? "Super Premium" : "Premium";
+      const accessTier: AccessTier =
+        requestedTier === "ultra" ? "ultra"
+        : requestedTier === "super_premium" ? "super_premium"
+        : "premium";
+      const price =
+        accessTier === "ultra" ? ULTRA_SHOP_ACCESS_PRICE
+        : accessTier === "super_premium" ? SUPER_SHOP_ACCESS_PRICE
+        : SHOP_ACCESS_PRICE;
+      const days =
+        accessTier === "ultra" ? ULTRA_SHOP_ACCESS_DAYS
+        : accessTier === "super_premium" ? SUPER_SHOP_ACCESS_DAYS
+        : SHOP_ACCESS_DAYS;
+      const tierLabel =
+        accessTier === "ultra" ? "Ultra"
+        : accessTier === "super_premium" ? "Super Premium"
+        : "Premium";
 
       const access = await getShopAccess(admin, visitorId, accessTier);
       if (isShopAccessActive(access)) {
