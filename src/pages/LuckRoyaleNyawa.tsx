@@ -224,14 +224,15 @@ export default function LuckRoyaleNyawa() {
     }
   };
 
-  const buyShopAccess = async (tier: "premium" | "super_premium" = "premium") => {
+  const buyShopAccess = async (tier: "premium" | "super_premium" | "ultra" = "premium") => {
     if (!visitorId || redeeming) return;
-    const access = tier === "super_premium" ? superShopAccess : shopAccess;
-    const tierLabel = tier === "super_premium" ? "Super Premium" : "Premium";
+    const access = tier === "ultra" ? ultraShopAccess : tier === "super_premium" ? superShopAccess : shopAccess;
+    const tierLabel = tier === "ultra" ? "Ultra" : tier === "super_premium" ? "Super Premium" : "Premium";
+    const flavor = tier === "ultra" ? "GOD-TIER " : tier === "super_premium" ? "MEGA " : "";
     if (!confirm(
-      `Beli Akses ${tierLabel}?\n\nHarga: Rp ${access.price.toLocaleString("id-ID")} (potong saldo)\nBerlaku: ${access.durationDays} hari\n\nSetelah aktif, kamu bisa tukar Lucky Token dengan hadiah ${tier === "super_premium" ? "MEGA " : ""}PASTI di tier ${tierLabel}.`
+      `Beli Akses ${tierLabel}?\n\nHarga: Rp ${access.price.toLocaleString("id-ID")} (potong saldo)\nBerlaku: ${access.durationDays} hari\n\nSetelah aktif, kamu bisa tukar Lucky Token dengan hadiah ${flavor}PASTI di tier ${tierLabel}.`
     )) return;
-    const key = tier === "super_premium" ? "__super_shop_access__" : "__shop_access__";
+    const key = tier === "ultra" ? "__ultra_shop_access__" : tier === "super_premium" ? "__super_shop_access__" : "__shop_access__";
     setRedeeming(key);
     try {
       const { data, error } = await supabase.functions.invoke("luck-royale-nyawa", {
@@ -242,7 +243,8 @@ export default function LuckRoyaleNyawa() {
         toast({ title: "Gagal beli akses", description: data.error, variant: "destructive" });
         return;
       }
-      if (tier === "super_premium" && data.superShopAccess) setSuperShopAccess(data.superShopAccess);
+      if (tier === "ultra" && data.ultraShopAccess) setUltraShopAccess(data.ultraShopAccess);
+      else if (tier === "super_premium" && data.superShopAccess) setSuperShopAccess(data.superShopAccess);
       else if (data.shopAccess) setShopAccess(data.shopAccess);
       toast({
         title: `🔓 Akses ${tierLabel} Aktif!`,
