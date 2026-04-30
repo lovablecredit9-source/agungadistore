@@ -87,6 +87,10 @@ export default function LuckRoyaleNyawa() {
   const [tokenProgress, setTokenProgress] = useState(0);
   const [tokenThreshold, setTokenThreshold] = useState(5);
   const [megaPool, setMegaPool] = useState(5000);
+  // ⚠️ Popup peringatan menang/kalah — wajib di-acknowledge sebelum spin pertama
+  const [warningOpen, setWarningOpen] = useState(false);
+  const [warningAck, setWarningAck] = useState(false);
+  const [pendingSpin, setPendingSpin] = useState<{ mode: "single" | "pack" | "free"; count?: number } | null>(null);
   const [tokenShop, setTokenShop] = useState<Array<{ code: string; name: string; cost: number; kind: string; value: number; rarity: string; emoji: string; tier?: "free" | "premium" | "super_premium" | "ultra" }>>([]);
   const [freeDailyShop, setFreeDailyShop] = useState<Array<{ code: string; name: string; kind: string; value: number; rarity: string; emoji: string; claimedToday: boolean }>>([]);
   const [shopAccess, setShopAccess] = useState<{ isActive: boolean; activeUntil: string | null; purchasedAt: string | null; price: number; durationDays: number }>({ isActive: false, activeUntil: null, purchasedAt: null, price: 100000, durationDays: 30 });
