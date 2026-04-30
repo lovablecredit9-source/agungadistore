@@ -87,12 +87,13 @@ export default function LuckRoyaleNyawa() {
   const [tokenProgress, setTokenProgress] = useState(0);
   const [tokenThreshold, setTokenThreshold] = useState(5);
   const [megaPool, setMegaPool] = useState(5000);
-  const [tokenShop, setTokenShop] = useState<Array<{ code: string; name: string; cost: number; kind: string; value: number; rarity: string; emoji: string; tier?: "free" | "premium" | "super_premium" }>>([]);
+  const [tokenShop, setTokenShop] = useState<Array<{ code: string; name: string; cost: number; kind: string; value: number; rarity: string; emoji: string; tier?: "free" | "premium" | "super_premium" | "ultra" }>>([]);
   const [freeDailyShop, setFreeDailyShop] = useState<Array<{ code: string; name: string; kind: string; value: number; rarity: string; emoji: string; claimedToday: boolean }>>([]);
   const [shopAccess, setShopAccess] = useState<{ isActive: boolean; activeUntil: string | null; purchasedAt: string | null; price: number; durationDays: number }>({ isActive: false, activeUntil: null, purchasedAt: null, price: 100000, durationDays: 30 });
   const [superShopAccess, setSuperShopAccess] = useState<{ isActive: boolean; activeUntil: string | null; purchasedAt: string | null; price: number; durationDays: number }>({ isActive: false, activeUntil: null, purchasedAt: null, price: 300000, durationDays: 30 });
+  const [ultraShopAccess, setUltraShopAccess] = useState<{ isActive: boolean; activeUntil: string | null; purchasedAt: string | null; price: number; durationDays: number }>({ isActive: false, activeUntil: null, purchasedAt: null, price: 500000, durationDays: 30 });
   const [redeeming, setRedeeming] = useState<string | null>(null);
-  const [shopTier, setShopTier] = useState<"free" | "premium" | "super_premium">("free");
+  const [shopTier, setShopTier] = useState<"free" | "premium" | "super_premium" | "ultra">("free");
 
   const fetchData = async () => {
     if (!visitorId) return;
@@ -117,6 +118,7 @@ export default function LuckRoyaleNyawa() {
       setFreeDailyShop(data.freeDailyShop || []);
       setShopAccess(data.shopAccess || { isActive: false, activeUntil: null, purchasedAt: null, price: 100000, durationDays: 30 });
       setSuperShopAccess(data.superShopAccess || { isActive: false, activeUntil: null, purchasedAt: null, price: 300000, durationDays: 30 });
+      setUltraShopAccess(data.ultraShopAccess || { isActive: false, activeUntil: null, purchasedAt: null, price: 500000, durationDays: 30 });
     } catch (e) {
       console.error(e);
     } finally {
@@ -222,14 +224,15 @@ export default function LuckRoyaleNyawa() {
     }
   };
 
-  const buyShopAccess = async (tier: "premium" | "super_premium" = "premium") => {
+  const buyShopAccess = async (tier: "premium" | "super_premium" | "ultra" = "premium") => {
     if (!visitorId || redeeming) return;
-    const access = tier === "super_premium" ? superShopAccess : shopAccess;
-    const tierLabel = tier === "super_premium" ? "Super Premium" : "Premium";
+    const access = tier === "ultra" ? ultraShopAccess : tier === "super_premium" ? superShopAccess : shopAccess;
+    const tierLabel = tier === "ultra" ? "Ultra" : tier === "super_premium" ? "Super Premium" : "Premium";
+    const flavor = tier === "ultra" ? "GOD-TIER " : tier === "super_premium" ? "MEGA " : "";
     if (!confirm(
-      `Beli Akses ${tierLabel}?\n\nHarga: Rp ${access.price.toLocaleString("id-ID")} (potong saldo)\nBerlaku: ${access.durationDays} hari\n\nSetelah aktif, kamu bisa tukar Lucky Token dengan hadiah ${tier === "super_premium" ? "MEGA " : ""}PASTI di tier ${tierLabel}.`
+      `Beli Akses ${tierLabel}?\n\nHarga: Rp ${access.price.toLocaleString("id-ID")} (potong saldo)\nBerlaku: ${access.durationDays} hari\n\nSetelah aktif, kamu bisa tukar Lucky Token dengan hadiah ${flavor}PASTI di tier ${tierLabel}.`
     )) return;
-    const key = tier === "super_premium" ? "__super_shop_access__" : "__shop_access__";
+    const key = tier === "ultra" ? "__ultra_shop_access__" : tier === "super_premium" ? "__super_shop_access__" : "__shop_access__";
     setRedeeming(key);
     try {
       const { data, error } = await supabase.functions.invoke("luck-royale-nyawa", {
@@ -240,7 +243,8 @@ export default function LuckRoyaleNyawa() {
         toast({ title: "Gagal beli akses", description: data.error, variant: "destructive" });
         return;
       }
-      if (tier === "super_premium" && data.superShopAccess) setSuperShopAccess(data.superShopAccess);
+      if (tier === "ultra" && data.ultraShopAccess) setUltraShopAccess(data.ultraShopAccess);
+      else if (tier === "super_premium" && data.superShopAccess) setSuperShopAccess(data.superShopAccess);
       else if (data.shopAccess) setShopAccess(data.shopAccess);
       toast({
         title: `🔓 Akses ${tierLabel} Aktif!`,
@@ -716,10 +720,44 @@ export default function LuckRoyaleNyawa() {
                   </>
                 )}
               </div>
+
+              {/* ULTRA — Rp 500k/bln */}
+              <div className={`sm:col-span-2 rounded-2xl border-2 p-3 ${ultraShopAccess.isActive ? "bg-gradient-to-br from-cyan-900/50 via-emerald-900/40 to-amber-900/40 border-cyan-300/70" : "bg-gradient-to-br from-cyan-950/60 via-emerald-950/50 to-amber-950/50 border-cyan-400/50"}`}>
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-1.5">
+                    <Crown className={`w-4 h-4 ${ultraShopAccess.isActive ? "text-cyan-200" : "text-cyan-300"}`} fill="currentColor" />
+                    <h3 className={`text-[11px] font-black tracking-widest ${ultraShopAccess.isActive ? "text-cyan-100" : "text-cyan-200"}`}>
+                      | ULTRA {ultraShopAccess.isActive ? "AKTIF" : "LOCKED"}
+                    </h3>
+                  </div>
+                  <Badge className={`${ultraShopAccess.isActive ? "bg-gradient-to-r from-cyan-400 via-emerald-400 to-amber-400" : "bg-cyan-700"} text-white font-black text-[8px]`}>
+                    {ultraShopAccess.isActive ? "✦ GOD-TIER" : "💠 GOD-TIER"}
+                  </Badge>
+                </div>
+                {ultraShopAccess.isActive ? (
+                  <p className="text-[10px] text-cyan-100/90">
+                    Aktif sampai <span className="font-black text-cyan-100">{ultraShopAccess.activeUntil ? new Date(ultraShopAccess.activeUntil).toLocaleDateString("id-ID") : "-"}</span>
+                    {ultraShopAccess.activeUntil && <> · ⏳ <span className="font-black">{Math.max(0, Math.ceil((new Date(ultraShopAccess.activeUntil).getTime() - Date.now()) / 86400000))} hari</span></>}
+                  </p>
+                ) : (
+                  <>
+                    <p className="text-[10px] text-cyan-100/90 mb-2">
+                      Tier <span className="font-black text-amber-200">ULTRA</span> (160-300) — hadiah PALING DAHSYAT: <span className="font-black">100k Gem</span>, <span className="font-black">10jt Coin</span>, <span className="font-black">100k Nyawa</span>! Berlaku <span className="font-black">{ultraShopAccess.durationDays} hari</span>.
+                    </p>
+                    <Button
+                      disabled={redeeming === "__ultra_shop_access__"}
+                      onClick={() => buyShopAccess("ultra")}
+                      className="w-full h-9 text-[11px] font-black bg-gradient-to-r from-cyan-400 via-emerald-500 to-amber-500 hover:from-cyan-500 hover:via-emerald-600 hover:to-amber-600 text-white shadow-lg shadow-cyan-500/40"
+                    >
+                      {redeeming === "__ultra_shop_access__" ? <Loader2 className="w-4 h-4 animate-spin" /> : <>💠 Rp {ultraShopAccess.price.toLocaleString("id-ID")} / {ultraShopAccess.durationDays} HARI</>}
+                    </Button>
+                  </>
+                )}
+              </div>
             </div>
           )}
 
-          {/* 🎟️ TOKEN SHOP - 3 tier (Free bebas, Premium & Super Premium butuh akses) */}
+          {/* 🎟️ TOKEN SHOP - 4 tier (Free / Premium / Super / Ultra) */}
           {tokenShop.length > 0 && (
             <div className="rounded-2xl bg-gradient-to-br from-amber-900/40 via-orange-900/30 to-pink-900/40 border-2 border-amber-500/50 p-3">
               <div className="flex items-center justify-between mb-2">
@@ -730,11 +768,11 @@ export default function LuckRoyaleNyawa() {
                 <Badge className="bg-amber-500 text-black font-black text-[8px]">🎟️ {luckyTokens}</Badge>
               </div>
               <p className="text-[10px] text-amber-100/80 mb-2">
-                <span className="font-black text-emerald-300">FREE</span> bebas tukar tanpa langganan. <span className="font-black text-fuchsia-300">PREMIUM</span> & <span className="font-black text-amber-300">SUPER</span> butuh akses bulanan.
+                <span className="font-black text-emerald-300">FREE</span> bebas tukar. <span className="font-black text-fuchsia-300">PREMIUM</span>, <span className="font-black text-amber-300">SUPER</span> & <span className="font-black text-cyan-300">ULTRA</span> butuh akses bulanan.
               </p>
 
-              {/* 3-tier toggle */}
-              <div className="grid grid-cols-3 gap-1 mb-2.5 bg-black/40 rounded-lg p-1">
+              {/* 4-tier toggle */}
+              <div className="grid grid-cols-4 gap-1 mb-2.5 bg-black/40 rounded-lg p-1">
                 <button
                   onClick={() => setShopTier("free")}
                   className={`py-1.5 rounded-md text-[9px] font-black tracking-wider transition ${shopTier === "free" ? "bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-lg shadow-emerald-500/40" : "text-emerald-200/60"}`}
@@ -753,6 +791,12 @@ export default function LuckRoyaleNyawa() {
                 >
                   💎 SUPER
                 </button>
+                <button
+                  onClick={() => setShopTier("ultra")}
+                  className={`py-1.5 rounded-md text-[9px] font-black tracking-wider transition ${shopTier === "ultra" ? "bg-gradient-to-r from-cyan-400 via-emerald-500 to-amber-500 text-white shadow-lg shadow-cyan-500/50" : "text-cyan-200/60"}`}
+                >
+                  💠 ULTRA
+                </button>
               </div>
 
               {/* Per-tier locked banner */}
@@ -770,6 +814,13 @@ export default function LuckRoyaleNyawa() {
                   </p>
                 </div>
               )}
+              {shopTier === "ultra" && !ultraShopAccess.isActive && (
+                <div className="mb-2 rounded-lg bg-cyan-950/60 border border-cyan-400/50 p-2 text-center">
+                  <p className="text-[10px] font-black text-cyan-200">
+                    🔒 Akses Ultra belum aktif - beli Rp {ultraShopAccess.price.toLocaleString("id-ID")} di atas
+                  </p>
+                </div>
+              )}
 
               <div className="grid grid-cols-2 gap-2">
                 {tokenShop.filter(item => (item.tier || "free") === shopTier).map((item) => {
@@ -777,7 +828,8 @@ export default function LuckRoyaleNyawa() {
                   const canAfford = luckyTokens >= item.cost;
                   const tierLocked =
                     (item.tier === "premium" && !shopAccess.isActive) ||
-                    (item.tier === "super_premium" && !superShopAccess.isActive);
+                    (item.tier === "super_premium" && !superShopAccess.isActive) ||
+                    (item.tier === "ultra" && !ultraShopAccess.isActive);
                   const disabled = tierLocked || !canAfford || redeeming === item.code;
                   return (
                     <button
@@ -811,6 +863,7 @@ export default function LuckRoyaleNyawa() {
                 {shopTier === "free" && "10 item FREE - bisa diklaim tanpa langganan"}
                 {shopTier === "premium" && "40 item Premium - hadiah MANTAP (Rp 100k/bln)"}
                 {shopTier === "super_premium" && "20 item SUPER PREMIUM - hadiah MEGA DIVINE (Rp 300k/bln)"}
+                {shopTier === "ultra" && "20 item ULTRA - hadiah PALING DAHSYAT GOD-TIER (Rp 500k/bln)"}
               </p>
             </div>
           )}

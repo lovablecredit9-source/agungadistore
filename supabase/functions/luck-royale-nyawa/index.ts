@@ -99,13 +99,16 @@ const TOKENS_PER_SPIN_THRESHOLD = 5; // 5 paid spin = 1 token
 // FREE tier: bebas diklaim tanpa langganan.
 // PREMIUM tier: wajib akses Rp 100.000 (30 hari).
 // SUPER PREMIUM tier: wajib akses Rp 300.000 (30 hari) — hadiah jauh lebih mantap.
+// ULTRA tier: wajib akses Rp 500.000 (30 hari) — hadiah PALING DAHSYAT.
 const SHOP_ACCESS_PRICE = 100000;            // Rp 100.000 (Premium)
 const SHOP_ACCESS_DAYS = 30;                 // berlaku 30 hari
 const SUPER_SHOP_ACCESS_PRICE = 300000;      // Rp 300.000 (Super Premium)
 const SUPER_SHOP_ACCESS_DAYS = 30;           // berlaku 30 hari
+const ULTRA_SHOP_ACCESS_PRICE = 500000;      // Rp 500.000 (Ultra)
+const ULTRA_SHOP_ACCESS_DAYS = 30;           // berlaku 30 hari
 
-// Item shop: Free (1-10) + Premium (20-60) + Super Premium (70-150, MEGA hadiah)
-const TOKEN_SHOP: Array<{ code: string; name: string; cost: number; kind: string; value: number; rarity: string; emoji: string; tier: "free" | "premium" | "super_premium" }> = [
+// Item shop: Free (1-10) + Premium (20-60) + Super Premium (70-150) + Ultra (160-300, GOD-tier)
+const TOKEN_SHOP: Array<{ code: string; name: string; cost: number; kind: string; value: number; rarity: string; emoji: string; tier: "free" | "premium" | "super_premium" | "ultra" }> = [
   // ============ FREE TIER (1-10 token, 10 item) ============
   { code: "tk_hint10",     name: "+10 Hint Otomatis",        cost: 1,   kind: "auto_hint",     value: 10,    rarity: "rare",      emoji: "💡", tier: "free" },
   { code: "tk_life10",     name: "+10 Nyawa Ekstra",         cost: 1,   kind: "extra_life",    value: 10,    rarity: "rare",      emoji: "❤️", tier: "free" },
@@ -197,6 +200,34 @@ const TOKEN_SHOP: Array<{ code: string; name: string; cost: number; kind: string
   { code: "sp_freeze2000",  name: "🛡️ OMEGA +2.000 Freeze",          cost: 145, kind: "streak_freeze", value: 2000,    rarity: "mythic", emoji: "🛡️", tier: "super_premium" },
   { code: "sp_coins1m",     name: "🪙 OMEGA +1.000.000 Coin",        cost: 150, kind: "streak_coins",  value: 1000000, rarity: "mythic", emoji: "🪙", tier: "super_premium" },
   { code: "sp_gem10k",      name: "💎 MEGA JACKPOT +10.000 Gem",     cost: 150, kind: "gems",          value: 10000,   rarity: "mythic", emoji: "💎", tier: "super_premium" },
+
+  // ============ ULTRA TIER (160-300 token, hadiah PALING DAHSYAT — Rp 500k/bln) ============
+  // === ABSOLUTE ===
+  { code: "ul_gem15k",      name: "💎 ABSOLUTE +15.000 Gem",         cost: 160, kind: "gems",          value: 15000,    rarity: "mythic", emoji: "💎", tier: "ultra" },
+  { code: "ul_life20k",     name: "❤️ ABSOLUTE +20.000 Nyawa",       cost: 160, kind: "extra_life",    value: 20000,    rarity: "mythic", emoji: "❤️", tier: "ultra" },
+  { code: "ul_hint20k",     name: "💡 ABSOLUTE +20.000 Hint",        cost: 165, kind: "auto_hint",     value: 20000,    rarity: "mythic", emoji: "💡", tier: "ultra" },
+  { code: "ul_freeze3000",  name: "🛡️ ABSOLUTE +3.000 Freeze",       cost: 170, kind: "streak_freeze", value: 3000,     rarity: "mythic", emoji: "🛡️", tier: "ultra" },
+  { code: "ul_coins2m",     name: "🪙 ABSOLUTE +2.000.000 Coin",     cost: 175, kind: "streak_coins",  value: 2000000,  rarity: "mythic", emoji: "🪙", tier: "ultra" },
+
+  // === ETERNAL ===
+  { code: "ul_gem25k",      name: "💎 ETERNAL +25.000 Gem",          cost: 190, kind: "gems",          value: 25000,    rarity: "mythic", emoji: "💎", tier: "ultra" },
+  { code: "ul_life35k",     name: "❤️ ETERNAL +35.000 Nyawa",        cost: 200, kind: "extra_life",    value: 35000,    rarity: "mythic", emoji: "❤️", tier: "ultra" },
+  { code: "ul_hint35k",     name: "💡 ETERNAL +35.000 Hint",         cost: 200, kind: "auto_hint",     value: 35000,    rarity: "mythic", emoji: "💡", tier: "ultra" },
+  { code: "ul_coins5m",     name: "🪙 ETERNAL +5.000.000 Coin",      cost: 220, kind: "streak_coins",  value: 5000000,  rarity: "mythic", emoji: "🪙", tier: "ultra" },
+  { code: "ul_freeze5000",  name: "🛡️ ETERNAL +5.000 Freeze",        cost: 225, kind: "streak_freeze", value: 5000,     rarity: "mythic", emoji: "🛡️", tier: "ultra" },
+
+  // === INFINITY ===
+  { code: "ul_gem40k",      name: "💎 INFINITY +40.000 Gem",         cost: 240, kind: "gems",          value: 40000,    rarity: "mythic", emoji: "💎", tier: "ultra" },
+  { code: "ul_life60k",     name: "❤️ INFINITY +60.000 Nyawa",       cost: 250, kind: "extra_life",    value: 60000,    rarity: "mythic", emoji: "❤️", tier: "ultra" },
+  { code: "ul_hint60k",     name: "💡 INFINITY +60.000 Hint",        cost: 250, kind: "auto_hint",     value: 60000,    rarity: "mythic", emoji: "💡", tier: "ultra" },
+  { code: "ul_coins10m",    name: "🪙 INFINITY +10.000.000 Coin",    cost: 265, kind: "streak_coins",  value: 10000000, rarity: "mythic", emoji: "🪙", tier: "ultra" },
+
+  // === GODLIKE ULTRA JACKPOT ===
+  { code: "ul_gem60k",      name: "💎 GODLIKE +60.000 Gem",          cost: 280, kind: "gems",          value: 60000,    rarity: "mythic", emoji: "💎", tier: "ultra" },
+  { code: "ul_life100k",    name: "❤️ GODLIKE +100.000 Nyawa",       cost: 285, kind: "extra_life",    value: 100000,   rarity: "mythic", emoji: "❤️", tier: "ultra" },
+  { code: "ul_hint100k",    name: "💡 GODLIKE +100.000 Hint",        cost: 285, kind: "auto_hint",     value: 100000,   rarity: "mythic", emoji: "💡", tier: "ultra" },
+  { code: "ul_freeze10k",   name: "🛡️ GODLIKE +10.000 Freeze",       cost: 290, kind: "streak_freeze", value: 10000,    rarity: "mythic", emoji: "🛡️", tier: "ultra" },
+  { code: "ul_gem100k",     name: "👑 ULTRA JACKPOT +100.000 Gem",   cost: 300, kind: "gems",          value: 100000,   rarity: "mythic", emoji: "👑", tier: "ultra" },
 ];
 
 // === FREE DAILY TOKEN SHOP — bisa diklaim 1x per hari TANPA bayar token ===
@@ -208,16 +239,22 @@ const FREE_DAILY_SHOP: Array<{ code: string; name: string; kind: string; value: 
 ];
 
 // === SHOP ACCESS PASS — helpers (akses 30 hari) ===
-// tier: "premium" (Rp 100k) atau "super_premium" (Rp 300k)
-async function getShopAccess(admin: any, visitorId: string, tier: "premium" | "super_premium" = "premium"): Promise<{ activeUntil: string | null; purchasedAt: string | null }> {
-  const key = tier === "super_premium" ? `lr_super_shop_access_${visitorId}` : `lr_shop_access_${visitorId}`;
+// tier: "premium" (Rp 100k), "super_premium" (Rp 300k), atau "ultra" (Rp 500k)
+type AccessTier = "premium" | "super_premium" | "ultra";
+function shopAccessKey(visitorId: string, tier: AccessTier): string {
+  if (tier === "ultra") return `lr_ultra_shop_access_${visitorId}`;
+  if (tier === "super_premium") return `lr_super_shop_access_${visitorId}`;
+  return `lr_shop_access_${visitorId}`;
+}
+async function getShopAccess(admin: any, visitorId: string, tier: AccessTier = "premium"): Promise<{ activeUntil: string | null; purchasedAt: string | null }> {
+  const key = shopAccessKey(visitorId, tier);
   const { data } = await admin.from("admin_settings").select("setting_value").eq("setting_key", key).maybeSingle();
   if (!data) return { activeUntil: null, purchasedAt: null };
   try { return JSON.parse(data.setting_value); } catch { return { activeUntil: null, purchasedAt: null }; }
 }
 
-async function setShopAccess(admin: any, visitorId: string, state: { activeUntil: string | null; purchasedAt: string | null }, tier: "premium" | "super_premium" = "premium") {
-  const key = tier === "super_premium" ? `lr_super_shop_access_${visitorId}` : `lr_shop_access_${visitorId}`;
+async function setShopAccess(admin: any, visitorId: string, state: { activeUntil: string | null; purchasedAt: string | null }, tier: AccessTier = "premium") {
+  const key = shopAccessKey(visitorId, tier);
   const value = JSON.stringify(state);
   const { data: existing } = await admin.from("admin_settings").select("id").eq("setting_key", key).maybeSingle();
   if (existing) await admin.from("admin_settings").update({ setting_value: value }).eq("id", existing.id);
@@ -406,6 +443,8 @@ Deno.serve(async (req) => {
       const shopAccessActive = isShopAccessActive(shopAccess);
       const superShopAccess = await getShopAccess(admin, visitorId, "super_premium");
       const superShopAccessActive = isShopAccessActive(superShopAccess);
+      const ultraShopAccess = await getShopAccess(admin, visitorId, "ultra");
+      const ultraShopAccessActive = isShopAccessActive(ultraShopAccess);
 
       // Build free daily shop with status (claimed today?)
       const freeDailyWithStatus = FREE_DAILY_SHOP.map(item => ({
@@ -443,6 +482,13 @@ Deno.serve(async (req) => {
           purchasedAt: superShopAccess.purchasedAt,
           price: SUPER_SHOP_ACCESS_PRICE,
           durationDays: SUPER_SHOP_ACCESS_DAYS,
+        },
+        ultraShopAccess: {
+          isActive: ultraShopAccessActive,
+          activeUntil: ultraShopAccess.activeUntil,
+          purchasedAt: ultraShopAccess.purchasedAt,
+          price: ULTRA_SHOP_ACCESS_PRICE,
+          durationDays: ULTRA_SHOP_ACCESS_DAYS,
         },
       }, { headers: corsHeaders });
     }
@@ -664,6 +710,13 @@ Deno.serve(async (req) => {
             error: `Akses Super Premium belum aktif. Beli akses Rp ${SUPER_SHOP_ACCESS_PRICE.toLocaleString("id-ID")} (berlaku ${SUPER_SHOP_ACCESS_DAYS} hari) untuk tukar item Super Premium.`,
           }, { status: 403, headers: corsHeaders });
         }
+      } else if (item.tier === "ultra") {
+        const ultraAccess = await getShopAccess(admin, visitorId, "ultra");
+        if (!isShopAccessActive(ultraAccess)) {
+          return Response.json({
+            error: `Akses Ultra belum aktif. Beli akses Rp ${ULTRA_SHOP_ACCESS_PRICE.toLocaleString("id-ID")} (berlaku ${ULTRA_SHOP_ACCESS_DAYS} hari) untuk tukar item Ultra.`,
+          }, { status: 403, headers: corsHeaders });
+        }
       }
       // tier === "free" → langsung lanjut tanpa cek akses
 
@@ -757,10 +810,22 @@ Deno.serve(async (req) => {
     // === BUY TOKEN SHOP ACCESS — bayar saldo, akses 30 hari ===
     // Body opsional: { tier: "premium" | "super_premium" } — default "premium"
     if (action === "buy_shop_access") {
-      const accessTier: "premium" | "super_premium" = requestedTier === "super_premium" ? "super_premium" : "premium";
-      const price = accessTier === "super_premium" ? SUPER_SHOP_ACCESS_PRICE : SHOP_ACCESS_PRICE;
-      const days = accessTier === "super_premium" ? SUPER_SHOP_ACCESS_DAYS : SHOP_ACCESS_DAYS;
-      const tierLabel = accessTier === "super_premium" ? "Super Premium" : "Premium";
+      const accessTier: AccessTier =
+        requestedTier === "ultra" ? "ultra"
+        : requestedTier === "super_premium" ? "super_premium"
+        : "premium";
+      const price =
+        accessTier === "ultra" ? ULTRA_SHOP_ACCESS_PRICE
+        : accessTier === "super_premium" ? SUPER_SHOP_ACCESS_PRICE
+        : SHOP_ACCESS_PRICE;
+      const days =
+        accessTier === "ultra" ? ULTRA_SHOP_ACCESS_DAYS
+        : accessTier === "super_premium" ? SUPER_SHOP_ACCESS_DAYS
+        : SHOP_ACCESS_DAYS;
+      const tierLabel =
+        accessTier === "ultra" ? "Ultra"
+        : accessTier === "super_premium" ? "Super Premium"
+        : "Premium";
 
       const access = await getShopAccess(admin, visitorId, accessTier);
       if (isShopAccessActive(access)) {
@@ -814,7 +879,10 @@ Deno.serve(async (req) => {
       });
 
       const { data: gemsAfter } = await admin.rpc("get_account_gems", { p_visitor_id: visitorId });
-      const respKey = accessTier === "super_premium" ? "superShopAccess" : "shopAccess";
+      const respKey =
+        accessTier === "ultra" ? "ultraShopAccess"
+        : accessTier === "super_premium" ? "superShopAccess"
+        : "shopAccess";
       return Response.json({
         success: true,
         balance: newBalance,
