@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Sliders, RotateCcw, Headphones, Zap, Music, Repeat, Gauge, Sparkles } from "lucide-react";
+import { X, Sliders, RotateCcw, Headphones, Zap, Music, Repeat, Gauge, Sparkles, Volume2 } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
@@ -213,6 +213,38 @@ export default function AudioFxSettings({ open, onClose, abLoop, crossfade }: Pr
                       min={0} max={12} step={1}
                       onValueChange={(v) => setFx({ bassBoost: v[0] })}
                     />
+                  </Card>
+
+                  {/* Loudness Booster */}
+                  <Card icon={<Volume2 className="w-4 h-4" />} title={`Volume Booster · ${fmt(fx.loudness ?? 1, 2)}x`}>
+                    <Slider
+                      value={[fx.loudness ?? 1]}
+                      min={1} max={4} step={0.1}
+                      onValueChange={(v) => setFx({ loudness: v[0] })}
+                    />
+                    <div className="flex justify-between mt-2">
+                      {[1, 1.5, 2, 2.5, 3, 4].map((r) => (
+                        <button
+                          key={r}
+                          onClick={() => setFx({ loudness: r })}
+                          className={`text-[10px] px-2 py-0.5 rounded-full font-semibold ${
+                            Math.abs((fx.loudness ?? 1) - r) < 0.05
+                              ? "bg-fuchsia-500 text-white"
+                              : "bg-white/10 text-white/80 hover:bg-white/20"
+                          }`}
+                        >
+                          {r}x
+                        </button>
+                      ))}
+                    </div>
+                    <div className="flex items-center justify-between mt-3 pt-3 border-t border-white/10">
+                      <div>
+                        <p className="text-white text-xs font-semibold">Anti-Pecah (Compressor)</p>
+                        <p className="text-[10px] text-white/60">Auto aktif kalau booster &gt; 1x</p>
+                      </div>
+                      <Switch checked={fx.compressor ?? false} onCheckedChange={(v) => setFx({ compressor: v })} />
+                    </div>
+                    <p className="text-[10px] text-white/50 mt-2">Bikin speaker lebih kencang dari maksimal HP. Pakai compressor biar suara nggak pecah.</p>
                   </Card>
 
                   {/* 3D Surround */}

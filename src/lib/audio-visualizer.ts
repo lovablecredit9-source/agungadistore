@@ -38,6 +38,10 @@ export type AudioFxSettings = {
   preservePitch: boolean;
   // Karaoke-only mode: both speakers get vocal-cancelled (L-R) signal with bass restored from (L+R) low-pass
   karaokeOnly?: boolean;
+  // Loudness / volume booster (1x = normal, up to 4x). Auto-engages compressor at >1.
+  loudness?: number;
+  // Hard compressor toggle for extra-loud safe limit.
+  compressor?: boolean;
 };
 
 export const EQ_FREQS = [60, 250, 1000, 4000, 12000] as const;
@@ -52,6 +56,17 @@ export const EQ_PRESETS: Record<string, [number, number, number, number, number]
   "Treble Boost":[0, 0, 0, 5, 8],
   Vocal:       [-2, -1, 4, 3, -1],
   Dance:       [5, 3, 0, 3, 5],
+  Loud:        [6, 4, 3, 4, 6],
+  "Super Loud":[10, 7, 5, 7, 10],
+  "Mega Bass": [12, 8, 0, 2, 4],
+  Club:        [8, 5, 2, 5, 9],
+  "Hip Hop":   [9, 6, 1, 3, 6],
+  EDM:         [7, 4, 0, 5, 8],
+  Acoustic:    [4, 3, 2, 4, 5],
+  Cinematic:   [10, 5, -1, 4, 8],
+  Latin:       [6, 3, 0, 4, 7],
+  Metal:       [7, 5, 4, 5, 7],
+  "Speaker Pecah":[12, 9, 6, 9, 12],
 };
 
 const DEFAULT_FX: AudioFxSettings = {
@@ -64,6 +79,8 @@ const DEFAULT_FX: AudioFxSettings = {
   rate: 1,
   preservePitch: true,
   karaokeOnly: false,
+  loudness: 1,
+  compressor: false,
 };
 
 const LS_KEY = "audio_fx_settings_v1";
@@ -108,6 +125,8 @@ type Graph = {
   wetGain: GainNode;
   dryGain: GainNode;
   master: GainNode;
+  compressor: DynamicsCompressorNode;
+  makeup: GainNode;
   analyser: AnalyserNode;
 };
 
@@ -261,6 +280,16 @@ function buildGraph(ctx: AudioContext, audio: HTMLAudioElement): Graph {
   const master = ctx.createGain();
   master.gain.value = 1;
 
+  // Compressor + makeup gain for safe loudness boost
+  const compressor = ctx.createDynamicsCompressor();
+  compressor.threshold.value = -24;
+  compressor.knee.value = 30;
+  compressor.ratio.value = 12;
+  compressor.attack.value = 0.003;
+  compressor.release.value = 0.25;
+  const makeup = ctx.createGain();
+  makeup.gain.value = state.fx.loudness ?? 1;
+
   const analyser = ctx.createAnalyser();
   analyser.fftSize = 64;
   analyser.smoothingTimeConstant = 0.75;
@@ -296,10 +325,13 @@ function buildGraph(ctx: AudioContext, audio: HTMLAudioElement): Graph {
   panner.connect(convolver);
   convolver.connect(wetGain);
 
-  // Sum -> master -> analyser -> destination
+  // Sum -> master -> [compressor?] -> makeup -> analyser -> destination
   dryGain.connect(master);
   wetGain.connect(master);
-  master.connect(analyser);
+  // Connect through compressor + makeup gain so loudness boost is safe from clipping
+  master.connect(compressor);
+  compressor.connect(makeup);
+  makeup.connect(analyser);
   analyser.connect(ctx.destination);
 
   // Stash the routing gains on the graph using legacy slots so the Graph type
@@ -318,7 +350,9 @@ function buildGraph(ctx: AudioContext, audio: HTMLAudioElement): Graph {
     instLBus: lToOutL,     // L source → L output
     instRBus: rToOutR,     // R source → R output
     outLGain, outRGain,
-    panner, convolver, wetGain, dryGain, master, analyser,
+    panner, convolver, wetGain, dryGain, master,
+    compressor, makeup,
+    analyser,
   };
 }
 
@@ -395,6 +429,16 @@ function applyFxToGraph(g: Graph, fx: AudioFxSettings) {
   const wet = Math.max(0, Math.min(1, fx.surround));
   g.wetGain.gain.setTargetAtTime(wet * 0.6, t, 0.05);
   g.dryGain.gain.setTargetAtTime(1 - wet * 0.4, t, 0.05);
+
+  // Loudness booster (1x..4x). Auto-engage compressor when loudness > 1 OR user toggled.
+  const loud = Math.max(1, Math.min(4, fx.loudness ?? 1));
+  const useComp = (fx.compressor ?? false) || loud > 1.01;
+  g.makeup.gain.setTargetAtTime(loud, t, 0.05);
+  // When compressor is "off", relax it so it acts mostly transparent.
+  g.compressor.threshold.setTargetAtTime(useComp ? -24 : -6, t, 0.05);
+  g.compressor.ratio.setTargetAtTime(useComp ? 12 : 2, t, 0.05);
+  g.compressor.knee.setTargetAtTime(useComp ? 30 : 6, t, 0.05);
+
   rebuildChannelRouting(g, fx);
 }
 
