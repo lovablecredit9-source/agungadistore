@@ -21,7 +21,7 @@ const BUNDLE_COST_DIAMOND = 200;
 
 // Hadiah bobot NORMAL Luck Royale Nyawa — jangan dicampur dengan pool Mega/Combo.
 type Prize = {
-  kind: "extra_life" | "auto_hint" | "time_freeze" | "streak_freeze" | "streak_coins" | "gems";
+  kind: "extra_life" | "auto_hint" | "time_freeze" | "streak_freeze" | "streak_coins" | "gems" | "game_credits" | "game_balance";
   value: number;
   label: string;
   emoji: string;
