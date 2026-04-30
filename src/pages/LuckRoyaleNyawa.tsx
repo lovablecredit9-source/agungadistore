@@ -1141,7 +1141,7 @@ export default function LuckRoyaleNyawa() {
                     icon: Star,
                     color: "from-pink-500 to-rose-600",
                     title: "Belum Pernah Mythic",
-                    desc: "Mythic punya peluang tipis. Bundle 125 SPIN paling efektif untuk berburu Jackpot Utama 10.000 Gems!",
+                    desc: "Mythic punya peluang super tipis. Bundle besar paling efektif untuk berburu MEGA JACKPOT 50.000 Gems!",
                     priority: "med",
                   });
                 }
