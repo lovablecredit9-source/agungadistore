@@ -1665,6 +1665,91 @@ export default function LuckRoyaleNyawa() {
           </div>
         </div>
       )}
+
+      {/* 💸 MODAL PIN — Beli Jam Hoki */}
+      {lhPinOpen && lhSelectedPkg && (
+        <div className="fixed inset-0 z-[90] bg-black/85 backdrop-blur-md flex items-center justify-center p-4 animate-fade-in">
+          <div className="relative w-full max-w-sm rounded-2xl overflow-hidden border-2 border-emerald-400/60 shadow-2xl shadow-emerald-500/40 animate-scale-in bg-gradient-to-br from-emerald-950 via-slate-900 to-emerald-950">
+            <div className="p-5 text-white">
+              <div className="text-center mb-3">
+                <div className="text-3xl mb-1">🍀</div>
+                <h3 className="text-lg font-black tracking-tight text-emerald-200">Beli Jam Hoki</h3>
+                <p className="text-[11px] text-slate-300 mt-1">
+                  Paket <b className="text-white">{lhSelectedPkg.label}</b>
+                </p>
+                <p className="text-[18px] font-black text-amber-300 mt-1">
+                  Rp {lhSelectedPkg.effectivePrice.toLocaleString("id-ID")}
+                </p>
+                {lhSelectedPkg.usingFirstDiscount && (
+                  <p className="text-[10px] text-amber-200 mt-0.5">
+                    🎉 Diskon pembelian pertama (sekali seumur hidup)
+                  </p>
+                )}
+              </div>
+
+              <label className="block text-[11px] font-bold text-slate-300 mb-1.5">Masukkan PIN 6 digit</label>
+              <input
+                type="password"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                maxLength={6}
+                value={lhPin}
+                onChange={(e) => setLhPin(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                placeholder="••••••"
+                className="w-full text-center text-2xl tracking-[0.5em] font-black bg-black/40 border border-emerald-500/40 rounded-xl px-3 py-3 text-white focus:outline-none focus:border-emerald-300"
+                autoFocus
+              />
+
+              <div className="grid grid-cols-2 gap-2 mt-4">
+                <button
+                  disabled={!!buyingLh}
+                  onClick={() => { setLhPinOpen(false); setLhSelectedPkg(null); setLhPin(""); }}
+                  className="rounded-xl bg-slate-700/80 hover:bg-slate-600 active:scale-95 transition px-3 py-2.5 font-black text-xs tracking-wider text-white border border-white/10 disabled:opacity-50"
+                >
+                  BATAL
+                </button>
+                <button
+                  disabled={!!buyingLh || lhPin.length !== 6}
+                  onClick={async () => {
+                    if (!visitorId || !lhSelectedPkg) return;
+                    setBuyingLh(lhSelectedPkg.code);
+                    try {
+                      const { data, error } = await supabase.functions.invoke("luck-royale-nyawa", {
+                        body: { visitorId, action: "buy_lucky_hour", itemCode: lhSelectedPkg.code, pin: lhPin },
+                      });
+                      if (error) throw error;
+                      if (data?.error) {
+                        toast({ title: "Gagal beli", description: data.error, variant: "destructive" });
+                        if (!data.needPin) { setLhPinOpen(false); setLhSelectedPkg(null); }
+                        setLhPin("");
+                        return;
+                      }
+                      toast({
+                        title: "🍀 Jam Hoki Aktif!",
+                        description: `Aktif sampai ${new Date(data.boostedUntil).toLocaleString("id-ID", { timeZone: "Asia/Jakarta" })} WIB`,
+                      });
+                      setLhPinOpen(false);
+                      setLhSelectedPkg(null);
+                      setLhPin("");
+                      fetchData();
+                    } catch (e: any) {
+                      toast({ title: "Error", description: e.message || "Gagal", variant: "destructive" });
+                    } finally {
+                      setBuyingLh(null);
+                    }
+                  }}
+                  className="rounded-xl bg-gradient-to-br from-emerald-400 via-teal-500 to-cyan-600 hover:brightness-110 active:scale-95 transition px-3 py-2.5 font-black text-xs tracking-wider text-white shadow-lg shadow-emerald-500/50 ring-1 ring-emerald-300/50 disabled:opacity-50"
+                >
+                  {buyingLh ? "MEMPROSES..." : "BAYAR"}
+                </button>
+              </div>
+              <p className="text-center text-[9px] text-emerald-200/70 mt-2 font-semibold tracking-wider">
+                Saldo dipotong otomatis. Durasi akumulatif dengan boost yang masih aktif.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
 
   );
