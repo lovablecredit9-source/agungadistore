@@ -258,7 +258,17 @@ export default function LuckRoyaleNyawa() {
     }
   };
 
-  const featured = prizes.filter(p => ["extra_life", "auto_hint", "time_freeze", "streak_freeze"].includes(p.kind));
+  // 🏆 Hadiah Utama: tampilkan hadiah PALING JACKPOT dulu (mythic → legendary → epic),
+  // bukan power-up common. Player harus lihat "wow factor" sebelum spin.
+  const RARITY_RANK: Record<string, number> = { mythic: 5, legendary: 4, epic: 3, rare: 2, common: 1 };
+  const featured = [...prizes]
+    .sort((a, b) => {
+      const ra = RARITY_RANK[a.rarity] || 0;
+      const rb = RARITY_RANK[b.rarity] || 0;
+      if (rb !== ra) return rb - ra;
+      // tie-breaker: nilai hadiah lebih besar di depan
+      return (b.value || 0) - (a.value || 0);
+    });
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#0b0820] via-[#1a0e3d] to-[#0b0820] text-white">
