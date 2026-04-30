@@ -239,16 +239,22 @@ const FREE_DAILY_SHOP: Array<{ code: string; name: string; kind: string; value: 
 ];
 
 // === SHOP ACCESS PASS — helpers (akses 30 hari) ===
-// tier: "premium" (Rp 100k) atau "super_premium" (Rp 300k)
-async function getShopAccess(admin: any, visitorId: string, tier: "premium" | "super_premium" = "premium"): Promise<{ activeUntil: string | null; purchasedAt: string | null }> {
-  const key = tier === "super_premium" ? `lr_super_shop_access_${visitorId}` : `lr_shop_access_${visitorId}`;
+// tier: "premium" (Rp 100k), "super_premium" (Rp 300k), atau "ultra" (Rp 500k)
+type AccessTier = "premium" | "super_premium" | "ultra";
+function shopAccessKey(visitorId: string, tier: AccessTier): string {
+  if (tier === "ultra") return `lr_ultra_shop_access_${visitorId}`;
+  if (tier === "super_premium") return `lr_super_shop_access_${visitorId}`;
+  return `lr_shop_access_${visitorId}`;
+}
+async function getShopAccess(admin: any, visitorId: string, tier: AccessTier = "premium"): Promise<{ activeUntil: string | null; purchasedAt: string | null }> {
+  const key = shopAccessKey(visitorId, tier);
   const { data } = await admin.from("admin_settings").select("setting_value").eq("setting_key", key).maybeSingle();
   if (!data) return { activeUntil: null, purchasedAt: null };
   try { return JSON.parse(data.setting_value); } catch { return { activeUntil: null, purchasedAt: null }; }
 }
 
-async function setShopAccess(admin: any, visitorId: string, state: { activeUntil: string | null; purchasedAt: string | null }, tier: "premium" | "super_premium" = "premium") {
-  const key = tier === "super_premium" ? `lr_super_shop_access_${visitorId}` : `lr_shop_access_${visitorId}`;
+async function setShopAccess(admin: any, visitorId: string, state: { activeUntil: string | null; purchasedAt: string | null }, tier: AccessTier = "premium") {
+  const key = shopAccessKey(visitorId, tier);
   const value = JSON.stringify(state);
   const { data: existing } = await admin.from("admin_settings").select("id").eq("setting_key", key).maybeSingle();
   if (existing) await admin.from("admin_settings").update({ setting_value: value }).eq("id", existing.id);
