@@ -101,17 +101,12 @@ function isJackpot(p: MiniPrize) {
   return p.rarity === "mythic" || p.rarity === "legendary";
 }
 
-async function awardPrize(visitorId: string, p: { kind: string; value: number }) {
-  try {
-    if (p.kind === "gems") {
-      await supabase.rpc("add_account_gems", { p_visitor_id: visitorId, p_amount: p.value });
-    } else if (p.kind === "credits") {
-      await supabase.rpc("add_account_credits", { p_visitor_id: visitorId, p_amount: p.value });
-    }
-    // coins/lives/dll diabaikan dari sini (UI-only) supaya tidak collide dgn sistem existing.
-  } catch (e) {
-    console.error("award fail", e);
-  }
+async function awardPrize(visitorId: string, p: MiniPrize, costGems = 0, multiplier = 1) {
+  const { data, error } = await supabase.functions.invoke("luck-royale-nyawa", {
+    body: { visitorId, action: "mega_arena_award", prize: p, costGems, multiplier },
+  });
+  if (error || data?.error) throw new Error(data?.error || error?.message || "Gagal klaim hadiah");
+  return Number(data?.gems || 0);
 }
 
 export default function MegaSpinArena({ visitorId, gems, setGems }: Props) {
@@ -154,9 +149,9 @@ export default function MegaSpinArena({ visitorId, gems, setGems }: Props) {
         if (!mounted) return;
         const prizes = (data?.prizes || []) as any[];
         if (Array.isArray(prizes) && prizes.length > 0) {
-          // hanya ambil kind yang bisa di-award via RPC (gems/credits) + rarity utuh
+          // ambil semua hadiah yang bisa diklaim server: koin/nyawa/hint/freeze/gem.
           const filtered = prizes
-            .filter((p) => p && (p.kind === "gems" || p.kind === "credits"))
+            .filter((p) => p && ["extra_life", "auto_hint", "time_freeze", "streak_freeze", "streak_coins", "gems"].includes(p.kind))
             .map((p) => ({
               kind: p.kind,
               value: Number(p.value) || 1,
