@@ -58,6 +58,8 @@ const PRIZES: Prize[] = [
   { kind: "gems",          value: 100,   label: "💎 +100 Gem",             emoji: "💎", rarity: "epic",      weight: 3.5,   color: "#8b5cf6" },
   { kind: "auto_hint",     value: 20,    label: "💡 +20 Hint",             emoji: "💡", rarity: "epic",      weight: 2.8,   color: "#a855f7" },
   { kind: "extra_life",    value: 20,    label: "❤️ +20 Nyawa",            emoji: "❤️", rarity: "epic",      weight: 2.8,   color: "#a855f7" },
+  { kind: "streak_coins",  value: 1500,  label: "🪙 +1.500 Streak Coin",    emoji: "🪙", rarity: "epic",      weight: 4,     color: "#fb923c" },
+  { kind: "streak_coins",  value: 3000,  label: "🪙 +3.000 Streak Coin",    emoji: "🪙", rarity: "epic",      weight: 2.5,   color: "#fb923c" },
 
   // === LEGENDARY (susah) ===
   { kind: "extra_life",    value: 35,    label: "❤️ +35 Nyawa",            emoji: "❤️", rarity: "legendary", weight: 2,     color: "#fbbf24" },
