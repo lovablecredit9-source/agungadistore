@@ -257,6 +257,14 @@ export default function MegaSpinArena({ visitorId, gems, setGems }: Props) {
     }
 
     setComboResult({ prize, mult, awarded });
+    pushHistory([{
+      id: `${Date.now()}-c`,
+      at: Date.now(),
+      source: "combo",
+      prize: { kind: prize.kind, label: prize.label, emoji: prize.emoji, rarity: prize.rarity, value: prize.value },
+      awarded,
+      multiplier: mult,
+    }]);
 
     if (isMiss) {
       if (comboStreak > 0) {
