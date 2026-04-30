@@ -117,6 +117,8 @@ const FREE_PRIZES: Prize[] = [
   { kind: "streak_freeze", value: 1,  label: "🎁 FREE +1 Streak Freeze", emoji: "🛡️", rarity: "rare",   weight: 12, color: "#10b981" },
   { kind: "auto_hint",     value: 3,  label: "🎁 FREE +3 Hint",          emoji: "💡", rarity: "epic",   weight: 1.2, color: "#a855f7" },
   { kind: "extra_life",    value: 3,  label: "🎁 FREE +3 Nyawa",         emoji: "❤️", rarity: "epic",   weight: 1.0, color: "#f43f5e" },
+  { kind: "streak_coins",  value: 50, label: "🎁 FREE +50 Streak Coin",  emoji: "🪙", rarity: "common", weight: 18,  color: "#f59e0b" },
+  { kind: "streak_coins",  value: 150,label: "🎁 FREE +150 Streak Coin", emoji: "🪙", rarity: "rare",   weight: 6,   color: "#fb923c" },
 ];
 
 function pickFromPool(pool: Prize[]): Prize & { index: number } {
