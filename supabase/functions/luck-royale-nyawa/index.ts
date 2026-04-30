@@ -588,6 +588,14 @@ Deno.serve(async (req) => {
           price: ULTRA_SHOP_ACCESS_PRICE,
           durationDays: ULTRA_SHOP_ACCESS_DAYS,
         },
+        luckyHour: {
+          active: luckyHour.active,
+          hour: luckyHour.hour,
+          date: luckyHour.date,
+          nextActiveAt: luckyHour.nextActiveAt,
+          rangeStart: LUCKY_HOUR_MIN,
+          rangeEnd: LUCKY_HOUR_MAX,
+        },
       }, { headers: corsHeaders });
     }
 
