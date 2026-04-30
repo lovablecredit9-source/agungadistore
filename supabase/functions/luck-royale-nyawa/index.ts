@@ -724,11 +724,14 @@ Deno.serve(async (req) => {
         else break;
       }
 
+      const luckyHourState = await isLuckyHourActive(admin);
+      const luckyHourActive = luckyHourState.active;
+
       const results: Array<Prize & { index: number; bonusApplied?: number; jackpotWon?: number }> = [];
       let totalBonusGems = 0;
       let jackpotWonTotal = 0;
       for (let i = 0; i < spinCount; i++) {
-        const basePrize = pickPrize();
+        const basePrize = pickPrize(luckyHourActive);
         const mult = getStreakMultiplier(curStreak);
         let finalValue = basePrize.value;
         let bonusApplied = 0;
