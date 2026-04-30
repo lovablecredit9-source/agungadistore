@@ -1118,7 +1118,7 @@ export default function LuckRoyaleNyawa() {
                 })}
               </div>
               <p className="text-[9px] text-amber-100/60 mt-2 text-center">
-                {shopTier === "free" && "10 item FREE - bisa diklaim tanpa langganan"}
+                {shopTier === "free" && "26 item FREE - bisa diklaim tanpa langganan"}
                 {shopTier === "premium" && "40 item Premium - hadiah MANTAP (Rp 100k/bln)"}
                 {shopTier === "super_premium" && "20 item SUPER PREMIUM - hadiah MEGA DIVINE (Rp 300k/bln)"}
                 {shopTier === "ultra" && "20 item ULTRA - hadiah PALING DAHSYAT GOD-TIER (Rp 500k/bln)"}
