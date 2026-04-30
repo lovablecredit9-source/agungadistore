@@ -798,7 +798,7 @@ Deno.serve(async (req) => {
         else break;
       }
 
-      const luckyHourState = await isLuckyHourActive(admin);
+      const luckyHourState = await isLuckyHourActive(admin, visitorId);
       const luckyHourActive = luckyHourState.active;
 
       const results: Array<Prize & { index: number; bonusApplied?: number; jackpotWon?: number }> = [];
