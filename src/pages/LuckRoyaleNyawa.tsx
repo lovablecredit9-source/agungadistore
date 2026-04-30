@@ -757,7 +757,7 @@ export default function LuckRoyaleNyawa() {
             </div>
           )}
 
-          {/* 🎟️ TOKEN SHOP - 3 tier (Free bebas, Premium & Super Premium butuh akses) */}
+          {/* 🎟️ TOKEN SHOP - 4 tier (Free / Premium / Super / Ultra) */}
           {tokenShop.length > 0 && (
             <div className="rounded-2xl bg-gradient-to-br from-amber-900/40 via-orange-900/30 to-pink-900/40 border-2 border-amber-500/50 p-3">
               <div className="flex items-center justify-between mb-2">
@@ -768,11 +768,11 @@ export default function LuckRoyaleNyawa() {
                 <Badge className="bg-amber-500 text-black font-black text-[8px]">🎟️ {luckyTokens}</Badge>
               </div>
               <p className="text-[10px] text-amber-100/80 mb-2">
-                <span className="font-black text-emerald-300">FREE</span> bebas tukar tanpa langganan. <span className="font-black text-fuchsia-300">PREMIUM</span> & <span className="font-black text-amber-300">SUPER</span> butuh akses bulanan.
+                <span className="font-black text-emerald-300">FREE</span> bebas tukar. <span className="font-black text-fuchsia-300">PREMIUM</span>, <span className="font-black text-amber-300">SUPER</span> & <span className="font-black text-cyan-300">ULTRA</span> butuh akses bulanan.
               </p>
 
-              {/* 3-tier toggle */}
-              <div className="grid grid-cols-3 gap-1 mb-2.5 bg-black/40 rounded-lg p-1">
+              {/* 4-tier toggle */}
+              <div className="grid grid-cols-4 gap-1 mb-2.5 bg-black/40 rounded-lg p-1">
                 <button
                   onClick={() => setShopTier("free")}
                   className={`py-1.5 rounded-md text-[9px] font-black tracking-wider transition ${shopTier === "free" ? "bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-lg shadow-emerald-500/40" : "text-emerald-200/60"}`}
@@ -791,6 +791,12 @@ export default function LuckRoyaleNyawa() {
                 >
                   💎 SUPER
                 </button>
+                <button
+                  onClick={() => setShopTier("ultra")}
+                  className={`py-1.5 rounded-md text-[9px] font-black tracking-wider transition ${shopTier === "ultra" ? "bg-gradient-to-r from-cyan-400 via-emerald-500 to-amber-500 text-white shadow-lg shadow-cyan-500/50" : "text-cyan-200/60"}`}
+                >
+                  💠 ULTRA
+                </button>
               </div>
 
               {/* Per-tier locked banner */}
@@ -808,6 +814,13 @@ export default function LuckRoyaleNyawa() {
                   </p>
                 </div>
               )}
+              {shopTier === "ultra" && !ultraShopAccess.isActive && (
+                <div className="mb-2 rounded-lg bg-cyan-950/60 border border-cyan-400/50 p-2 text-center">
+                  <p className="text-[10px] font-black text-cyan-200">
+                    🔒 Akses Ultra belum aktif - beli Rp {ultraShopAccess.price.toLocaleString("id-ID")} di atas
+                  </p>
+                </div>
+              )}
 
               <div className="grid grid-cols-2 gap-2">
                 {tokenShop.filter(item => (item.tier || "free") === shopTier).map((item) => {
@@ -815,7 +828,8 @@ export default function LuckRoyaleNyawa() {
                   const canAfford = luckyTokens >= item.cost;
                   const tierLocked =
                     (item.tier === "premium" && !shopAccess.isActive) ||
-                    (item.tier === "super_premium" && !superShopAccess.isActive);
+                    (item.tier === "super_premium" && !superShopAccess.isActive) ||
+                    (item.tier === "ultra" && !ultraShopAccess.isActive);
                   const disabled = tierLocked || !canAfford || redeeming === item.code;
                   return (
                     <button
@@ -849,6 +863,7 @@ export default function LuckRoyaleNyawa() {
                 {shopTier === "free" && "10 item FREE - bisa diklaim tanpa langganan"}
                 {shopTier === "premium" && "40 item Premium - hadiah MANTAP (Rp 100k/bln)"}
                 {shopTier === "super_premium" && "20 item SUPER PREMIUM - hadiah MEGA DIVINE (Rp 300k/bln)"}
+                {shopTier === "ultra" && "20 item ULTRA - hadiah PALING DAHSYAT GOD-TIER (Rp 500k/bln)"}
               </p>
             </div>
           )}
