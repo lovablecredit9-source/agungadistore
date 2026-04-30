@@ -140,6 +140,11 @@ const FREE_PRIZES: Prize[] = [
   { kind: "extra_life",    value: 3,  label: "🎁 FREE +3 Nyawa",         emoji: "❤️", rarity: "epic",   weight: 1.0, color: "#f43f5e" },
   { kind: "streak_coins",  value: 50, label: "🎁 FREE +50 Streak Coin",  emoji: "🪙", rarity: "common", weight: 18,  color: "#f59e0b" },
   { kind: "streak_coins",  value: 150,label: "🎁 FREE +150 Streak Coin", emoji: "🪙", rarity: "rare",   weight: 6,   color: "#fb923c" },
+  // Kredit Game & Saldo IN versi free (kecil)
+  { kind: "game_credits",  value: 1,  label: "🎁 FREE +1 Kredit Game",   emoji: "🔑", rarity: "rare",   weight: 5,   color: "#22d3ee" },
+  { kind: "game_credits",  value: 2,  label: "🎁 FREE +2 Kredit Game",   emoji: "🔑", rarity: "epic",   weight: 1.2, color: "#a855f7" },
+  { kind: "game_balance",  value: 200,label: "🎁 FREE +Rp 200 Saldo IN", emoji: "💵", rarity: "rare",   weight: 4,   color: "#34d399" },
+  { kind: "game_balance",  value: 500,label: "🎁 FREE +Rp 500 Saldo IN", emoji: "💵", rarity: "epic",   weight: 1.0, color: "#10b981" },
 ];
 
 function pickFromPool(pool: Prize[]): Prize & { index: number } {
