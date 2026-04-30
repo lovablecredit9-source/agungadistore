@@ -223,6 +223,33 @@ export default function StreakLuckyWheelShop({ visitorId, onUpdate }: Props) {
           </div>
         )}
 
+        {/* Reward Info */}
+        {segments.length > 0 && (
+          <div className="rounded-lg bg-black/30 border border-white/10 p-2 space-y-2">
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-[10px] font-black text-cyan-100 uppercase tracking-wider flex items-center gap-1">
+                <Gift className="h-3 w-3" /> Info Hadiah
+              </span>
+              <span className="text-[9px] font-bold text-white/60">Peluang ikut bobot segmen</span>
+            </div>
+            <div className="grid grid-cols-2 gap-1.5">
+              {segments.map((seg) => {
+                const totalWeight = segments.reduce((sum, s) => sum + (s.weight || 1), 0);
+                const chance = totalWeight ? Math.round(((seg.weight || 1) / totalWeight) * 100) : 0;
+                return (
+                  <div key={seg.id} className={`flex items-center justify-between gap-1 rounded-md px-2 py-1 text-[9px] ${seg.is_jackpot ? "bg-yellow-500/20 text-yellow-100 border border-yellow-400/30" : "bg-white/5 text-white/80"}`}>
+                    <span className="min-w-0 flex items-center gap-1 truncate">
+                      <span>{seg.icon}</span>
+                      <span className="truncate">{formatRewardValue(seg.reward_type, seg.reward_value)}</span>
+                    </span>
+                    <span className="shrink-0 font-black tabular-nums text-white/70">{chance}%</span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
         {/* Live Jackpot Ticker */}
         {data.recentJackpots && data.recentJackpots.length > 0 && (
           <div className="overflow-hidden rounded-lg bg-black/40 border border-yellow-400/30 py-1">
@@ -405,7 +432,7 @@ export default function StreakLuckyWheelShop({ visitorId, onUpdate }: Props) {
                 <div key={i} className={`flex items-center justify-between text-[10px] px-1.5 py-1 rounded ${s.is_jackpot ? "bg-yellow-500/20 text-yellow-100" : "bg-white/5 text-white/80"}`}>
                   <span className="truncate flex items-center gap-1">
                     {s.is_jackpot && <Crown className="h-2.5 w-2.5 text-yellow-300" />}
-                    {s.reward_label}
+                    {rewardIcon(s.reward_type)} {s.reward_label}
                   </span>
                   <span className="text-[9px] opacity-60">{new Date(s.created_at).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })}</span>
                 </div>
