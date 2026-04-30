@@ -443,6 +443,8 @@ Deno.serve(async (req) => {
       const shopAccessActive = isShopAccessActive(shopAccess);
       const superShopAccess = await getShopAccess(admin, visitorId, "super_premium");
       const superShopAccessActive = isShopAccessActive(superShopAccess);
+      const ultraShopAccess = await getShopAccess(admin, visitorId, "ultra");
+      const ultraShopAccessActive = isShopAccessActive(ultraShopAccess);
 
       // Build free daily shop with status (claimed today?)
       const freeDailyWithStatus = FREE_DAILY_SHOP.map(item => ({
