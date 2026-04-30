@@ -498,37 +498,60 @@ export default function LuckRoyaleNyawa() {
             </div>
           </div>
 
-          {/* Hero Banner */}
-          <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-amber-600/30 via-orange-600/20 to-red-600/30 border-2 border-amber-500/40 p-4">
-            <div className="absolute inset-0 opacity-20" style={{
-              backgroundImage: "radial-gradient(circle at 50% 50%, rgba(251,191,36,0.4), transparent 60%)",
+          {/* ✨ Hero Banner — premium animated */}
+          <div className="relative overflow-hidden rounded-2xl border-2 border-amber-400/50 p-4 shadow-2xl shadow-amber-500/30">
+            {/* Animated aurora background */}
+            <div className="absolute inset-0 bg-gradient-to-br from-fuchsia-700 via-amber-600 to-rose-700" />
+            <div className="absolute inset-0 opacity-60 animate-pulse" style={{
+              backgroundImage: "radial-gradient(circle at 20% 30%, rgba(251,191,36,0.6), transparent 50%), radial-gradient(circle at 80% 70%, rgba(236,72,153,0.5), transparent 55%)",
             }} />
+            {/* Sparkle dots */}
+            <div className="absolute inset-0 opacity-50 pointer-events-none" style={{
+              backgroundImage: "radial-gradient(circle, white 1px, transparent 1.5px)",
+              backgroundSize: "22px 22px",
+              maskImage: "radial-gradient(ellipse at center, black, transparent 80%)",
+            }} />
+            {/* Diagonal shine */}
+            <div className="absolute -inset-x-10 -top-10 h-24 rotate-12 bg-gradient-to-r from-transparent via-white/30 to-transparent blur-2xl animate-pulse" />
             <div className="relative">
-              <div className="flex items-center gap-2 mb-1">
-                <Badge className="bg-red-600 text-white font-black text-[10px]">EPIC+</Badge>
-                <span className="text-[10px] font-bold tracking-widest text-amber-300">LUCK ROYALE</span>
+              <div className="flex items-center gap-2 mb-1.5">
+                <Badge className="bg-gradient-to-r from-rose-600 via-fuchsia-600 to-purple-700 text-white font-black text-[10px] shadow-lg shadow-fuchsia-500/50 ring-1 ring-white/30">🔥 MYTHIC+</Badge>
+                <span className="text-[10px] font-black tracking-[0.25em] text-amber-100 drop-shadow">LUCK ROYALE</span>
               </div>
-              <h2 className="text-2xl font-black tracking-tight bg-gradient-to-br from-amber-200 via-amber-400 to-orange-500 bg-clip-text text-transparent">
-                NYAWA & HINT<br />SHADOW PACK
+              <h2 className="text-[26px] leading-none font-black tracking-tight bg-gradient-to-br from-yellow-100 via-amber-300 to-orange-500 bg-clip-text text-transparent drop-shadow-[0_2px_8px_rgba(251,191,36,0.6)]">
+                JACKPOT<br />SHADOW VAULT
               </h2>
-              <p className="text-xs text-amber-100/80 mt-1">Dapatkan Nyawa, Hint, & Streak Freeze!</p>
+              <p className="text-[11px] text-amber-50/90 mt-1.5 font-semibold">
+                💎 Gem • ❤️ Nyawa • 💡 Hint • 🛡️ Freeze — semua bisa kena!
+              </p>
             </div>
           </div>
 
-          {/* Hadiah Utama */}
+          {/* 🏆 Hadiah Utama — showcase TOP rarity */}
           <div>
             <div className="flex items-center justify-between mb-2 px-1">
-              <h3 className="text-xs font-black tracking-widest text-amber-300">| HADIAH UTAMA</h3>
+              <h3 className="text-[11px] font-black tracking-widest text-amber-300 flex items-center gap-1">
+                <Trophy className="w-3 h-3" /> HADIAH UTAMA
+              </h3>
+              <span className="text-[9px] font-bold text-fuchsia-300/80 tracking-wider">⭐ TOP REWARDS</span>
             </div>
             <div className="grid grid-cols-4 gap-2">
               {featured.slice(0, 4).map((p, i) => {
                 const style = RARITY_STYLE[p.rarity];
                 return (
-                  <div key={i} className={`relative aspect-square rounded-lg bg-gradient-to-br ${style.gradient} ring-2 ${style.ring} shadow-lg ${style.glow} flex items-center justify-center overflow-hidden`}>
-                    <div className="absolute inset-0 opacity-20" style={{ backgroundImage: "radial-gradient(circle, white, transparent 70%)" }} />
-                    <div className="w-7 h-7 text-white relative z-10">{getKindIcon(p.kind)}</div>
+                  <div key={i} className={`relative aspect-square rounded-xl bg-gradient-to-br ${style.gradient} ring-2 ${style.ring} shadow-xl ${style.glow} flex items-center justify-center overflow-hidden group`}>
+                    {/* shimmer */}
+                    <div className="absolute -inset-1 bg-gradient-to-r from-transparent via-white/40 to-transparent rotate-12 translate-x-[-150%] group-hover:translate-x-[150%] transition-transform duration-1000" />
+                    <div className="absolute inset-0 opacity-30" style={{ backgroundImage: "radial-gradient(circle at 30% 30%, white, transparent 70%)" }} />
+                    {/* Rarity tag */}
+                    <span className="absolute top-0.5 left-0.5 text-[7px] font-black bg-black/70 text-white px-1 py-0.5 rounded leading-none tracking-wider">
+                      {style.label}
+                    </span>
+                    <div className="w-7 h-7 text-white relative z-10 drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)]">{getKindIcon(p.kind)}</div>
                     <div className="absolute bottom-0.5 left-0.5 right-0.5 text-center">
-                      <div className="text-[8px] font-black bg-black/70 rounded px-0.5 truncate">{p.label.split(" ").slice(0, 2).join(" ")}</div>
+                      <div className="text-[8px] font-black bg-black/80 rounded px-0.5 truncate text-amber-100">
+                        {p.label.replace(/[👑💎🌈🎰❤️💡⏱️🛡️🪙🎁]/g, "").trim().split(" ").slice(0, 2).join(" ")}
+                      </div>
                     </div>
                   </div>
                 );
@@ -536,19 +559,32 @@ export default function LuckRoyaleNyawa() {
             </div>
           </div>
 
-          {/* Reel / Wheel Display */}
-          <div className="relative aspect-square rounded-2xl bg-gradient-to-br from-purple-900/60 via-indigo-900/60 to-purple-900/60 border-2 border-purple-500/40 overflow-hidden">
-            <div className="absolute inset-0" style={{
-              backgroundImage: "radial-gradient(circle at center, rgba(168,85,247,0.3), transparent 70%)",
+          {/* 🎰 Reel / Wheel Display — premium vault */}
+          <div className="relative aspect-square rounded-2xl overflow-hidden border-2 border-amber-400/50 shadow-2xl shadow-purple-900/60">
+            {/* Layered cosmic background */}
+            <div className="absolute inset-0 bg-gradient-to-br from-indigo-950 via-purple-950 to-slate-950" />
+            <div className="absolute inset-0 opacity-70" style={{
+              backgroundImage: "radial-gradient(circle at 50% 50%, rgba(168,85,247,0.5), transparent 65%), radial-gradient(circle at 20% 80%, rgba(251,191,36,0.3), transparent 55%), radial-gradient(circle at 80% 20%, rgba(236,72,153,0.3), transparent 55%)",
             }} />
+            {/* Star field */}
+            <div className="absolute inset-0 opacity-40 pointer-events-none" style={{
+              backgroundImage: "radial-gradient(circle, white 0.5px, transparent 1px)",
+              backgroundSize: "16px 16px",
+            }} />
+            {/* Rotating glow ring */}
+            {!reelSpinning && (
+              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                <div className="w-[80%] h-[80%] rounded-full border border-amber-400/20 animate-[spin_8s_linear_infinite]" style={{ borderStyle: "dashed" }} />
+              </div>
+            )}
             {reelSpinning ? (
               <div className="absolute inset-0 flex items-center justify-center">
-                <div className="grid grid-cols-3 gap-2 animate-pulse">
+                <div className="grid grid-cols-3 gap-2">
                   {[0, 1, 2, 3, 4, 5, 6, 7, 8].map(i => {
                     const p = prizes[i % prizes.length];
                     return (
-                      <div key={i} className={`w-12 h-12 rounded-lg bg-gradient-to-br ${RARITY_STYLE[p?.rarity || "common"].gradient} flex items-center justify-center animate-spin`} style={{ animationDuration: `${0.3 + (i % 3) * 0.2}s` }}>
-                        <span className="text-xl">{p?.emoji}</span>
+                      <div key={i} className={`w-12 h-12 rounded-lg bg-gradient-to-br ${RARITY_STYLE[p?.rarity || "common"].gradient} ring-2 ${RARITY_STYLE[p?.rarity || "common"].ring} shadow-lg ${RARITY_STYLE[p?.rarity || "common"].glow} flex items-center justify-center animate-spin`} style={{ animationDuration: `${0.3 + (i % 3) * 0.2}s` }}>
+                        <span className="text-xl drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">{p?.emoji}</span>
                       </div>
                     );
                   })}
@@ -556,11 +592,30 @@ export default function LuckRoyaleNyawa() {
               </div>
             ) : (
               <div className="absolute inset-0 flex flex-col items-center justify-center p-4">
-                <div className="w-20 h-20 rounded-full bg-gradient-to-br from-amber-400 via-orange-500 to-red-600 flex items-center justify-center shadow-2xl shadow-amber-500/50 mb-3 ring-4 ring-amber-400/40">
-                  <Trophy className="w-10 h-10 text-white" />
+                {/* Glowing trophy orb */}
+                <div className="relative mb-3">
+                  <div className="absolute inset-0 rounded-full bg-amber-400/40 blur-2xl scale-150 animate-pulse" />
+                  <div className="relative w-24 h-24 rounded-full bg-gradient-to-br from-yellow-300 via-amber-500 to-orange-700 flex items-center justify-center shadow-2xl shadow-amber-500/70 ring-4 ring-amber-300/50 animate-[pulse_2.5s_ease-in-out_infinite]">
+                    <Trophy className="w-12 h-12 text-white drop-shadow-[0_2px_6px_rgba(0,0,0,0.6)]" />
+                  </div>
+                  {/* Sparkle accents */}
+                  <Sparkles className="absolute -top-1 -right-1 w-5 h-5 text-yellow-200 animate-pulse" />
+                  <Sparkles className="absolute -bottom-1 -left-1 w-4 h-4 text-fuchsia-300 animate-pulse" style={{ animationDelay: "0.5s" }} />
                 </div>
-                <p className="text-center text-xs font-bold text-amber-200 tracking-wide">SPIN UNTUK MEMBUKA HADIAH</p>
-                <p className="text-center text-[10px] text-purple-200/80 mt-1">Nyawa • Hint • Time Freeze • Streak Freeze</p>
+                <p className="text-center text-sm font-black text-amber-200 tracking-widest drop-shadow">
+                  PUTAR & MENANGKAN
+                </p>
+                <p className="text-center text-[10px] text-purple-200/90 mt-1 font-semibold">
+                  💎 Gem • ❤️ Nyawa • 💡 Hint • 🛡️ Freeze
+                </p>
+                {/* Mini featured strip */}
+                <div className="flex items-center gap-1.5 mt-3">
+                  {featured.slice(0, 5).map((p, i) => (
+                    <div key={i} className={`w-7 h-7 rounded-md bg-gradient-to-br ${RARITY_STYLE[p.rarity].gradient} ring-1 ${RARITY_STYLE[p.rarity].ring} flex items-center justify-center text-sm shadow-md`}>
+                      {p.emoji}
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
           </div>
