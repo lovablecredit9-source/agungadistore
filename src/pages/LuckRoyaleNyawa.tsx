@@ -139,6 +139,12 @@ export default function LuckRoyaleNyawa() {
 
   const doSpin = async (mode: "single" | "pack" | "free", count?: number) => {
     if (!visitorId || spinning) return;
+    // ⚠️ Tahan spin pertama sampai user setuju peringatan menang/kalah
+    if (!warningAck) {
+      setPendingSpin({ mode, count });
+      setWarningOpen(true);
+      return;
+    }
     setSpinning(true);
     setReelSpinning(true);
     try {
