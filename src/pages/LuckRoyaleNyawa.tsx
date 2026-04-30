@@ -478,6 +478,19 @@ export default function LuckRoyaleNyawa() {
             const s = Math.floor((diff % 60000) / 1000);
             const pad = (n: number) => String(n).padStart(2, "0");
             const fmtH = (n: number) => `${pad(n)}:00 WIB`;
+
+            // Sisa waktu boost (jika dibeli)
+            const boostedMs = luckyHour.boostedUntil ? new Date(luckyHour.boostedUntil).getTime() : 0;
+            const boostDiff = Math.max(0, boostedMs - nowTick);
+            const bd = Math.floor(boostDiff / 86400000);
+            const bh = Math.floor((boostDiff % 86400000) / 3600000);
+            const bm = Math.floor((boostDiff % 3600000) / 60000);
+            const bs = Math.floor((boostDiff % 60000) / 1000);
+            const boostLabel = bd > 0
+              ? `${bd}h ${pad(bh)}:${pad(bm)}:${pad(bs)}`
+              : `${pad(bh)}:${pad(bm)}:${pad(bs)}`;
+            const isPurchased = luckyHour.source === "purchased";
+
             return luckyHour.active ? (
               <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 border-2 border-emerald-200 p-3 shadow-xl shadow-emerald-500/50 animate-pulse">
                 <div className="absolute inset-0 opacity-30" style={{
@@ -489,11 +502,15 @@ export default function LuckRoyaleNyawa() {
                   </div>
                   <div className="flex-1">
                     <div className="flex items-center gap-1.5 flex-wrap">
-                      <span className="text-[10px] font-black tracking-widest text-emerald-50 bg-black/40 px-1.5 py-0.5 rounded">JAM HOKI AKTIF</span>
-                      <span className="text-[10px] font-bold text-white tabular-nums">{fmtH(luckyHour.hour)}</span>
+                      <span className="text-[10px] font-black tracking-widest text-emerald-50 bg-black/40 px-1.5 py-0.5 rounded">
+                        JAM HOKI AKTIF{isPurchased ? " · BELI" : ""}
+                      </span>
+                      <span className="text-[10px] font-bold text-white tabular-nums">
+                        {isPurchased ? `Sisa ${boostLabel}` : fmtH(luckyHour.hour)}
+                      </span>
                     </div>
                     <p className="text-[10px] font-bold text-emerald-50 mt-0.5">
-                      Peluang dapat <span className="text-yellow-100 font-black">Rare+</span> naik dikit selama 1 jam ini. Mantap!
+                      Peluang dapat <span className="text-yellow-100 font-black">Rare+</span> naik selama hoki berjalan. Mantap!
                     </p>
                   </div>
                 </div>
@@ -515,6 +532,74 @@ export default function LuckRoyaleNyawa() {
               </div>
             );
           })()}
+
+          {/* 💸 BELI JAM HOKI — bayar saldo + PIN */}
+          {lhPackages.length > 0 && (
+            <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-950 via-slate-900 to-emerald-950 border border-emerald-500/40 p-3 shadow-lg shadow-emerald-900/40">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  <span className="text-lg">💸</span>
+                  <div>
+                    <h3 className="text-xs font-black text-emerald-200 tracking-wide">BELI JAM HOKI</h3>
+                    <p className="text-[9px] text-slate-400">Perpanjang durasi hoki · bayar saldo + PIN</p>
+                  </div>
+                </div>
+                {!lhFirstUsed && (
+                  <span className="text-[9px] font-black px-2 py-0.5 rounded-full bg-amber-500 text-amber-950 animate-pulse">
+                    DISKON PERTAMA
+                  </span>
+                )}
+              </div>
+              <div className="grid grid-cols-2 gap-1.5">
+                {lhPackages.map(pkg => {
+                  const usingDiscount = pkg.isFirstDiscountAvailable;
+                  return (
+                    <button
+                      key={pkg.code}
+                      disabled={!!buyingLh}
+                      onClick={() => {
+                        setLhSelectedPkg({
+                          code: pkg.code,
+                          label: pkg.label,
+                          effectivePrice: pkg.effectivePrice,
+                          usingFirstDiscount: usingDiscount,
+                        });
+                        setLhPin("");
+                        setLhPinOpen(true);
+                      }}
+                      className="relative text-left p-2 rounded-xl bg-gradient-to-br from-emerald-600/30 to-teal-700/30 border border-emerald-500/40 hover:border-emerald-300 active:scale-95 transition disabled:opacity-50"
+                    >
+                      {pkg.badge && (
+                        <span className="absolute -top-1 -right-1 text-[8px] font-black px-1.5 py-0.5 rounded-full bg-amber-400 text-amber-950 shadow">
+                          {pkg.badge}
+                        </span>
+                      )}
+                      <div className="text-[11px] font-black text-white">{pkg.label}</div>
+                      <div className="mt-0.5 flex items-baseline gap-1 flex-wrap">
+                        {usingDiscount ? (
+                          <>
+                            <span className="text-[11px] font-black text-amber-300">
+                              Rp {pkg.effectivePrice.toLocaleString("id-ID")}
+                            </span>
+                            <span className="text-[8px] text-slate-400 line-through">
+                              Rp {pkg.price.toLocaleString("id-ID")}
+                            </span>
+                          </>
+                        ) : (
+                          <span className="text-[11px] font-black text-emerald-200">
+                            Rp {pkg.effectivePrice.toLocaleString("id-ID")}
+                          </span>
+                        )}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+              <p className="text-[9px] text-slate-400 mt-2 leading-snug">
+                ✨ Durasi <b>akumulatif</b> — beli lagi memperpanjang sisa waktu hoki yang aktif. Free random 1 jam/hari tetap berjalan.
+              </p>
+            </div>
+          )}
 
           {/* 🔥 LUCKY STREAK BANNER (visible if streak >= 3) */}
           {luckyStreak >= 3 && (
