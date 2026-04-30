@@ -1114,6 +1114,82 @@ Deno.serve(async (req) => {
       }, { headers: corsHeaders });
     }
 
+    // === BUY LUCKY HOUR — bayar saldo + PIN, perpanjang/aktifkan Jam Hoki ===
+    if (action === "buy_lucky_hour") {
+      const pkgCode = String(itemCode || "");
+      const pkg = LUCKY_HOUR_PACKAGES.find(p => p.code === pkgCode);
+      if (!pkg) return Response.json({ error: "Paket Jam Hoki tidak dikenal" }, { status: 400, headers: corsHeaders });
+
+      const pin = (body as any).pin as string | undefined;
+
+      // Verifikasi PIN (wajib)
+      const { data: pinRow } = await admin.from("user_pins").select("pin_hash").eq("visitor_id", visitorId).maybeSingle();
+      if (!pinRow) return Response.json({ error: "PIN belum dibuat. Buat PIN dulu di menu Profil.", needPin: true }, { status: 200, headers: corsHeaders });
+      if (!pin) return Response.json({ error: "Masukkan PIN 6 digit", needPin: true }, { status: 200, headers: corsHeaders });
+      const hashBuffer = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(pin));
+      const hashHex = Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, "0")).join("");
+      if (hashHex !== pinRow.pin_hash) return Response.json({ error: "PIN salah", needPin: true }, { status: 200, headers: corsHeaders });
+
+      // Cek diskon pembelian pertama
+      const firstUsed = await getFirstPurchaseUsed(admin, visitorId);
+      const usingFirstDiscount = !firstUsed && pkg.firstPrice != null;
+      const price = usingFirstDiscount ? (pkg.firstPrice as number) : pkg.price;
+
+      // Resolve akun saldo
+      const { data: ubId } = await admin.rpc("get_active_user_balance_id", { p_visitor_id: visitorId });
+      if (!ubId) return Response.json({ error: "Login akun saldo dulu untuk beli Jam Hoki" }, { status: 400, headers: corsHeaders });
+
+      const { data: balanceRow } = await admin
+        .from("user_balances")
+        .select("id, balance, username")
+        .eq("id", ubId)
+        .maybeSingle();
+      if (!balanceRow) return Response.json({ error: "Akun saldo tidak ditemukan" }, { status: 400, headers: corsHeaders });
+      if ((balanceRow.balance || 0) < price) {
+        return Response.json({
+          error: `Saldo tidak cukup. Butuh Rp ${price.toLocaleString("id-ID")} (saldo: Rp ${(balanceRow.balance || 0).toLocaleString("id-ID")})`,
+        }, { status: 400, headers: corsHeaders });
+      }
+
+      // Potong saldo
+      const newBalance = (balanceRow.balance || 0) - price;
+      await admin.from("user_balances").update({ balance: newBalance }).eq("id", balanceRow.id);
+
+      await admin.from("balance_transactions").insert({
+        visitor_id: visitorId,
+        amount: -price,
+        type: "purchase",
+        description: `Beli Jam Hoki Luck Royale (${pkg.label})${usingFirstDiscount ? " — DISKON PERTAMA" : ""}`,
+      });
+
+      // Akumulasi durasi: kalau masih ada sisa boost, tambahkan dari sisa itu;
+      // kalau tidak, mulai dari sekarang.
+      const existing = await getBoostedUntil(admin, visitorId);
+      const baseMs = existing ? Date.parse(existing) : Date.now();
+      const newUntilMs = baseMs + pkg.hours * 3600 * 1000;
+      const newUntilIso = new Date(newUntilMs).toISOString();
+      await setBoostedUntil(admin, visitorId, newUntilIso);
+
+      // Tandai diskon pertama terpakai
+      if (usingFirstDiscount) await setFirstPurchaseUsed(admin, visitorId);
+
+      await admin.from("notifications").insert({
+        visitor_id: visitorId,
+        title: "🍀 Jam Hoki Aktif!",
+        message: `Kamu beli ${pkg.label} Jam Hoki seharga Rp ${price.toLocaleString("id-ID")}${usingFirstDiscount ? " (diskon pertama)" : ""}. Aktif sampai ${new Date(newUntilMs).toLocaleString("id-ID", { timeZone: "Asia/Jakarta" })} WIB.`,
+        type: "luck_royale_nyawa",
+      });
+
+      return Response.json({
+        success: true,
+        balance: newBalance,
+        package: pkg,
+        priceCharged: price,
+        usedFirstDiscount: usingFirstDiscount,
+        boostedUntil: newUntilIso,
+      }, { headers: corsHeaders });
+    }
+
     return Response.json({ error: "Unknown action" }, { status: 400, headers: corsHeaders });
   } catch (e) {
     return Response.json({ error: e instanceof Error ? e.message : "Error" }, { status: 500, headers: corsHeaders });
