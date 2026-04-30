@@ -7,7 +7,7 @@ import { Progress } from "@/components/ui/progress";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Sparkles, Gem, Coins, Wallet, Gift, Trophy, Zap, Lock, Crown, History } from "lucide-react";
+import { Loader2, Sparkles, Gem, Coins, Wallet, Gift, Trophy, Zap, Lock, Crown, History, Heart, Lightbulb, Shield, Timer } from "lucide-react";
 
 interface Segment {
   id: string;
@@ -39,6 +39,33 @@ interface Tier {
 interface Props {
   visitorId: string;
   onUpdate?: () => void;
+}
+
+const rewardLabels: Record<string, string> = {
+  streak_coins: "Koin Streak",
+  coins: "Koin Streak",
+  gems: "Gem",
+  freeze_token: "Freeze Streak",
+  streak_freeze: "Freeze Streak",
+  extra_life: "Nyawa",
+  auto_hint: "Hint",
+  time_freeze: "Time Freeze",
+  balance: "Saldo",
+};
+
+function rewardIcon(type: string) {
+  if (type === "gems") return <Gem className="h-3 w-3" />;
+  if (type === "extra_life") return <Heart className="h-3 w-3" />;
+  if (type === "auto_hint") return <Lightbulb className="h-3 w-3" />;
+  if (type === "time_freeze") return <Timer className="h-3 w-3" />;
+  if (type === "freeze_token" || type === "streak_freeze") return <Shield className="h-3 w-3" />;
+  if (type === "balance") return <Wallet className="h-3 w-3" />;
+  return <Coins className="h-3 w-3" />;
+}
+
+function formatRewardValue(type: string, value: number) {
+  if (type === "balance") return `Rp${value.toLocaleString("id-ID")}`;
+  return `+${value.toLocaleString("id-ID")} ${rewardLabels[type] || "Hadiah"}`;
 }
 
 export default function StreakLuckyWheelShop({ visitorId, onUpdate }: Props) {
@@ -193,6 +220,33 @@ export default function StreakLuckyWheelShop({ visitorId, onUpdate }: Props) {
         {currentTier && (
           <div className={`rounded-lg bg-gradient-to-r ${currentTier.color_class} p-2 text-white text-center`}>
             <p className="text-[11px] font-bold leading-tight">{currentTier.description}</p>
+          </div>
+        )}
+
+        {/* Reward Info */}
+        {segments.length > 0 && (
+          <div className="rounded-lg bg-black/30 border border-white/10 p-2 space-y-2">
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-[10px] font-black text-cyan-100 uppercase tracking-wider flex items-center gap-1">
+                <Gift className="h-3 w-3" /> Info Hadiah
+              </span>
+              <span className="text-[9px] font-bold text-white/60">Peluang ikut bobot segmen</span>
+            </div>
+            <div className="grid grid-cols-2 gap-1.5">
+              {segments.map((seg) => {
+                const totalWeight = segments.reduce((sum, s) => sum + (s.weight || 1), 0);
+                const chance = totalWeight ? Math.round(((seg.weight || 1) / totalWeight) * 100) : 0;
+                return (
+                  <div key={seg.id} className={`flex items-center justify-between gap-1 rounded-md px-2 py-1 text-[9px] ${seg.is_jackpot ? "bg-yellow-500/20 text-yellow-100 border border-yellow-400/30" : "bg-white/5 text-white/80"}`}>
+                    <span className="min-w-0 flex items-center gap-1 truncate">
+                      <span>{seg.icon}</span>
+                      <span className="truncate">{formatRewardValue(seg.reward_type, seg.reward_value)}</span>
+                    </span>
+                    <span className="shrink-0 font-black tabular-nums text-white/70">{chance}%</span>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         )}
 
@@ -378,7 +432,7 @@ export default function StreakLuckyWheelShop({ visitorId, onUpdate }: Props) {
                 <div key={i} className={`flex items-center justify-between text-[10px] px-1.5 py-1 rounded ${s.is_jackpot ? "bg-yellow-500/20 text-yellow-100" : "bg-white/5 text-white/80"}`}>
                   <span className="truncate flex items-center gap-1">
                     {s.is_jackpot && <Crown className="h-2.5 w-2.5 text-yellow-300" />}
-                    {s.reward_label}
+                    {rewardIcon(s.reward_type)} {s.reward_label}
                   </span>
                   <span className="text-[9px] opacity-60">{new Date(s.created_at).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })}</span>
                 </div>

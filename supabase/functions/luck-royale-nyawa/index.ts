@@ -21,7 +21,7 @@ const BUNDLE_COST_DIAMOND = 200;
 
 // Hadiah bobot — fokus 3 item utama: extra_life, auto_hint, time_freeze, streak_freeze
 type Prize = {
-  kind: "extra_life" | "auto_hint" | "time_freeze" | "streak_freeze" | "gems" | "coins";
+  kind: "extra_life" | "auto_hint" | "time_freeze" | "streak_freeze" | "streak_coins" | "gems";
   value: number;
   label: string;
   emoji: string;
@@ -30,33 +30,30 @@ type Prize = {
   color: string;
 };
 
-// Pool dirombak: Gem dibuat LANGKA (hoki-hokian) & nilainya dikecilkan.
-// Hadiah utama = item power-up (nyawa/hint/freeze). Gem hanya muncul sesekali.
+// Pool seimbang: hadiah utama bukan cuma gem, tapi nyawa/hint/freeze/koin streak juga sering keluar.
+// Gem tetap ada sebagai hadiah hoki, tetapi tidak mendominasi tampilan maupun hasil spin.
 const PRIZES: Prize[] = [
-  // Common (~58%) — hadiah ringan power-up, NO gem
-  { kind: "auto_hint",     value: 2,  label: "+2 Hint Otomatis",        emoji: "💡", rarity: "common",    weight: 22, color: "#94a3b8" },
-  { kind: "extra_life",    value: 2,  label: "+2 Nyawa Ekstra",          emoji: "❤️", rarity: "common",    weight: 20, color: "#ef4444" },
-  { kind: "time_freeze",   value: 2,  label: "+2 Time Freeze 30s",       emoji: "⏱️", rarity: "common",    weight: 16, color: "#0ea5e9" },
-  // Rare (~32%) — power-up qty lebih banyak, NO gem
-  { kind: "streak_freeze", value: 2,  label: "+2 Streak Freeze",         emoji: "🛡️", rarity: "rare",      weight: 14, color: "#10b981" },
-  { kind: "auto_hint",     value: 5,  label: "+5 Hint Otomatis",         emoji: "💡", rarity: "rare",      weight: 10, color: "#06b6d4" },
-  { kind: "extra_life",    value: 5,  label: "+5 Nyawa Ekstra",          emoji: "❤️", rarity: "rare",      weight: 8,  color: "#f43f5e" },
-  // Epic (~9%) — gem mulai muncul tapi kecil & jarang
-  { kind: "time_freeze",   value: 8,  label: "+8 Time Freeze",           emoji: "⏱️", rarity: "epic",      weight: 4,  color: "#a855f7" },
-  { kind: "streak_freeze", value: 4,  label: "+4 Streak Freeze",         emoji: "🛡️", rarity: "epic",      weight: 4,  color: "#ec4899" },
-  { kind: "gems",          value: 100, label: "💎 +100 Gem",             emoji: "💎", rarity: "epic",      weight: 1.2, color: "#8b5cf6" },
-  // Legendary (~2%) — hadiah besar power-up, gem tetap kecil & langka
-  { kind: "extra_life",    value: 20, label: "🎰 JACKPOT +20 Nyawa",      emoji: "👑", rarity: "legendary", weight: 1.0, color: "#fbbf24" },
-  { kind: "streak_freeze", value: 10, label: "🎰 LEGENDARY +10 Freeze",   emoji: "👑", rarity: "legendary", weight: 0.8, color: "#f59e0b" },
-  { kind: "gems",          value: 300, label: "💎 LEGENDARY +300 Gem",    emoji: "👑", rarity: "legendary", weight: 0.4, color: "#facc15" },
-  // Mythic (~0.4%) — pelangi, sangat langka
+  { kind: "auto_hint",     value: 2,    label: "+2 Hint Otomatis",             emoji: "💡", rarity: "common",    weight: 20, color: "#94a3b8" },
+  { kind: "extra_life",    value: 2,    label: "+2 Nyawa Ekstra",              emoji: "❤️", rarity: "common",    weight: 19, color: "#ef4444" },
+  { kind: "time_freeze",   value: 2,    label: "+2 Time Freeze 30s",           emoji: "⏱️", rarity: "common",    weight: 15, color: "#0ea5e9" },
+  { kind: "streak_coins",  value: 75,   label: "🪙 +75 Streak Coin",            emoji: "🪙", rarity: "common",    weight: 14, color: "#f59e0b" },
+  { kind: "streak_freeze", value: 2,    label: "+2 Streak Freeze",             emoji: "🛡️", rarity: "rare",      weight: 11, color: "#10b981" },
+  { kind: "auto_hint",     value: 5,    label: "+5 Hint Otomatis",             emoji: "💡", rarity: "rare",      weight: 9,  color: "#06b6d4" },
+  { kind: "extra_life",    value: 5,    label: "+5 Nyawa Ekstra",              emoji: "❤️", rarity: "rare",      weight: 8,  color: "#f43f5e" },
+  { kind: "streak_coins",  value: 250,  label: "🪙 +250 Streak Coin",           emoji: "🪙", rarity: "rare",      weight: 7,  color: "#fbbf24" },
+  { kind: "time_freeze",   value: 8,    label: "+8 Time Freeze",               emoji: "⏱️", rarity: "epic",      weight: 4,  color: "#a855f7" },
+  { kind: "streak_freeze", value: 4,    label: "+4 Streak Freeze",             emoji: "🛡️", rarity: "epic",      weight: 4,  color: "#ec4899" },
+  { kind: "streak_coins",  value: 750,  label: "🎰 EPIC +750 Streak Coin",      emoji: "🪙", rarity: "epic",      weight: 2.4, color: "#facc15" },
+  { kind: "gems",          value: 100,  label: "💎 EPIC +100 Gem",              emoji: "💎", rarity: "epic",      weight: 1.0, color: "#8b5cf6" },
+  { kind: "extra_life",    value: 20,   label: "🎰 JACKPOT +20 Nyawa",          emoji: "👑", rarity: "legendary", weight: 1.0, color: "#fbbf24" },
+  { kind: "streak_freeze", value: 10,   label: "🎰 LEGENDARY +10 Freeze",       emoji: "👑", rarity: "legendary", weight: 0.8, color: "#f59e0b" },
+  { kind: "streak_coins",  value: 2500, label: "👑 LEGENDARY +2.500 Coin",      emoji: "👑", rarity: "legendary", weight: 0.7, color: "#fde047" },
+  { kind: "gems",          value: 300,  label: "💎 LEGENDARY +300 Gem",         emoji: "👑", rarity: "legendary", weight: 0.25, color: "#facc15" },
   { kind: "extra_life",    value: 50,   label: "🌈 MYTHIC VAULT +50 Nyawa",     emoji: "🌈", rarity: "mythic", weight: 0.25, color: "#f0abfc" },
-  { kind: "gems",          value: 800,  label: "🌈 MYTHIC TREASURE +800 Gem",   emoji: "🌈", rarity: "mythic", weight: 0.12, color: "#e879f9" },
-  // Grand Prize (~0.05%) — ultra rare, hoki banget
-  { kind: "gems",          value: 2500, label: "🌈 GRAND PRIZE +2.500 Gem",     emoji: "🌈", rarity: "mythic", weight: 0.04, color: "#22d3ee" },
-  { kind: "gems",          value: 8000, label: "🌈 MEGA JACKPOT +8.000 Gem",    emoji: "🌈", rarity: "mythic", weight: 0.012, color: "#a78bfa" },
-  // Jackpot utama spin — paling sulit didapat, murni hoki
-  { kind: "gems",          value: 10000, label: "👑 JACKPOT UTAMA +10.000 Gem", emoji: "👑", rarity: "mythic", weight: 0.004, color: "#fef08a" },
+  { kind: "streak_coins",  value: 7500, label: "🌈 MYTHIC +7.500 Streak Coin",  emoji: "🌈", rarity: "mythic", weight: 0.16, color: "#fde68a" },
+  { kind: "auto_hint",     value: 100,  label: "🌈 MYTHIC +100 Hint",           emoji: "🌈", rarity: "mythic", weight: 0.12, color: "#67e8f9" },
+  { kind: "gems",          value: 800,  label: "🌈 MYTHIC +800 Gem",            emoji: "🌈", rarity: "mythic", weight: 0.08, color: "#e879f9" },
+  { kind: "streak_coins",  value: 25000,label: "👑 JACKPOT UTAMA +25.000 Coin", emoji: "👑", rarity: "mythic", weight: 0.03, color: "#fef08a" },
 ];
 
 // === DAILY FREE SPIN — pool hadiah lebih ringan, 100% kasih sesuatu ===

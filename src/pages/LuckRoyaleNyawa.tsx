@@ -9,7 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { getVisitorId } from "@/lib/visitor-id";
 import { formatCompactNumber } from "@/lib/utils";
 import {
-  ArrowLeft, Heart, Lightbulb, Timer, Shield, Gem, Sparkles, Crown,
+  ArrowLeft, Heart, Lightbulb, Timer, Shield, Gem, Coins, Sparkles, Crown,
   Loader2, Trophy, Zap, X, Dices, BarChart3, Flame, Star, Award, TrendingUp,
   Brain, Target, TrendingDown, CheckCircle2, AlertCircle, Rocket, Gift, Flame as FlameIcon,
 } from "lucide-react";
@@ -19,7 +19,7 @@ import DiamondRoyaleInline from "@/components/streak/DiamondRoyaleInline";
 
 
 interface Prize {
-  kind: "extra_life" | "auto_hint" | "time_freeze" | "streak_freeze" | "gems" | "coins";
+  kind: "extra_life" | "auto_hint" | "time_freeze" | "streak_freeze" | "streak_coins" | "gems" | "coins";
   value: number;
   label: string;
   emoji: string;
@@ -57,6 +57,8 @@ function getKindIcon(kind: string) {
     case "time_freeze": return <Timer className="w-full h-full" />;
     case "streak_freeze": return <Shield className="w-full h-full" fill="currentColor" />;
     case "gems": return <Gem className="w-full h-full" fill="currentColor" />;
+    case "streak_coins":
+    case "coins": return <Coins className="w-full h-full" fill="currentColor" />;
     default: return <Sparkles className="w-full h-full" />;
   }
 }
@@ -285,6 +287,7 @@ export default function LuckRoyaleNyawa() {
       // tie-breaker: nilai hadiah lebih besar di depan
       return (b.value || 0) - (a.value || 0);
     });
+  const totalPrizeWeight = prizes.reduce((sum, p) => sum + (Number(p.weight) || 0), 0);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#0b0820] via-[#1a0e3d] to-[#0b0820] text-white">
@@ -416,11 +419,11 @@ export default function LuckRoyaleNyawa() {
                   <span className="text-[9px] font-black tracking-widest">JACKPOT UTAMA SPIN</span>
                 </div>
                 <div className="flex items-baseline gap-1">
-                  <span className="text-2xl font-black tabular-nums drop-shadow">10.000</span>
-                  <Gem className="w-4 h-4" fill="currentColor" />
+                  <span className="text-2xl font-black tabular-nums drop-shadow">25.000</span>
+                  <Coins className="w-4 h-4" fill="currentColor" />
                 </div>
                 <p className="text-[10px] font-black mt-0.5">
-                  Muncul di pool Mythic spin — peluang super tipis, murni hoki.
+                  Hadiah besar bisa berupa koin, nyawa, hint, freeze, atau gem — peluang tetap tergantung hoki.
                 </p>
               </div>
             </div>
@@ -542,7 +545,7 @@ export default function LuckRoyaleNyawa() {
                 JACKPOT<br />SHADOW VAULT
               </h2>
               <p className="text-[11px] text-amber-50/90 mt-1.5 font-semibold">
-                💎 Gem • ❤️ Nyawa • 💡 Hint • 🛡️ Freeze — semua bisa kena!
+                🪙 Koin • ❤️ Nyawa • 💡 Hint • 🛡️ Freeze • 💎 Gem — semua bisa kena!
               </p>
             </div>
           </div>
@@ -573,6 +576,31 @@ export default function LuckRoyaleNyawa() {
                         {p.label.replace(/[👑💎🌈🎰❤️💡⏱️🛡️🪙🎁]/g, "").trim().split(" ").slice(0, 2).join(" ")}
                       </div>
                     </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* 📊 Info peluang hadiah */}
+          <div className="rounded-2xl bg-black/35 border border-cyan-400/25 p-3 space-y-2">
+            <div className="flex items-center justify-between gap-2">
+              <h3 className="text-[11px] font-black tracking-widest text-cyan-200 flex items-center gap-1">
+                <BarChart3 className="w-3 h-3" /> INFO HADIAH
+              </h3>
+              <span className="text-[9px] font-bold text-white/60">Semakin kecil %, semakin langka</span>
+            </div>
+            <div className="grid grid-cols-2 gap-1.5">
+              {prizes.map((p, i) => {
+                const style = RARITY_STYLE[p.rarity] || RARITY_STYLE.common;
+                const chance = totalPrizeWeight ? ((Number(p.weight) || 0) / totalPrizeWeight) * 100 : 0;
+                return (
+                  <div key={`${p.kind}-${p.value}-${i}`} className={`flex items-center justify-between gap-1 rounded-lg bg-gradient-to-r ${style.gradient} px-2 py-1 ring-1 ${style.ring}`}>
+                    <span className="min-w-0 flex items-center gap-1 text-[9px] font-black text-white truncate">
+                      <span>{p.emoji}</span>
+                      <span className="truncate">{p.label.replace(/[👑💎🌈🎰❤️💡⏱️🛡️🪙🎁]/g, "").trim()}</span>
+                    </span>
+                    <span className="shrink-0 text-[9px] font-black text-amber-100 tabular-nums">{chance < 0.1 ? "<0.1" : chance.toFixed(1)}%</span>
                   </div>
                 );
               })}
@@ -626,7 +654,7 @@ export default function LuckRoyaleNyawa() {
                   PUTAR & MENANGKAN
                 </p>
                 <p className="text-center text-[10px] text-purple-200/90 mt-1 font-semibold">
-                  💎 Gem • ❤️ Nyawa • 💡 Hint • 🛡️ Freeze
+                  🪙 Koin • ❤️ Nyawa • 💡 Hint • 🛡️ Freeze • 💎 Gem
                 </p>
                 {/* Mini featured strip */}
                 <div className="flex items-center gap-1.5 mt-3">
@@ -1452,7 +1480,7 @@ export default function LuckRoyaleNyawa() {
               <div className="space-y-2 text-[12px] leading-relaxed text-amber-50/95">
                 <div className="flex gap-2 bg-black/30 rounded-lg p-2.5 border border-amber-500/30">
                   <Sparkles className="w-4 h-4 text-amber-300 shrink-0 mt-0.5" />
-                  <p>Luck Royale adalah <b>permainan keberuntungan</b>. Hadiah yang kamu dapat <b>murni acak</b> sesuai hoki masing-masing.</p>
+                  <p>Luck Royale adalah <b>permainan keberuntungan</b>. Hadiah bisa berupa <b>koin streak, nyawa, hint, freeze, atau gem</b> sesuai peluang masing-masing.</p>
                 </div>
                 <div className="flex gap-2 bg-black/30 rounded-lg p-2.5 border border-rose-500/30">
                   <X className="w-4 h-4 text-rose-300 shrink-0 mt-0.5" />
