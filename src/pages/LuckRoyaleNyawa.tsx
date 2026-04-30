@@ -19,7 +19,7 @@ import DiamondRoyaleInline from "@/components/streak/DiamondRoyaleInline";
 
 
 interface Prize {
-  kind: "extra_life" | "auto_hint" | "time_freeze" | "streak_freeze" | "gems" | "coins";
+  kind: "extra_life" | "auto_hint" | "time_freeze" | "streak_freeze" | "streak_coins" | "gems" | "coins";
   value: number;
   label: string;
   emoji: string;
@@ -57,6 +57,8 @@ function getKindIcon(kind: string) {
     case "time_freeze": return <Timer className="w-full h-full" />;
     case "streak_freeze": return <Shield className="w-full h-full" fill="currentColor" />;
     case "gems": return <Gem className="w-full h-full" fill="currentColor" />;
+    case "streak_coins":
+    case "coins": return <Coins className="w-full h-full" fill="currentColor" />;
     default: return <Sparkles className="w-full h-full" />;
   }
 }
@@ -285,6 +287,7 @@ export default function LuckRoyaleNyawa() {
       // tie-breaker: nilai hadiah lebih besar di depan
       return (b.value || 0) - (a.value || 0);
     });
+  const totalPrizeWeight = prizes.reduce((sum, p) => sum + (Number(p.weight) || 0), 0);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#0b0820] via-[#1a0e3d] to-[#0b0820] text-white">
