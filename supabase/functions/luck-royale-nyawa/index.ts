@@ -83,6 +83,8 @@ const PRIZES: Prize[] = [
   { kind: "auto_hint",     value: 300,   label: "👑 +300 Hint GOD",        emoji: "💡", rarity: "mythic",    weight: 0.12,  color: "#fef08a" },
   { kind: "gems",          value: 8000,  label: "💎 +8.000 Gem",           emoji: "💎", rarity: "mythic",    weight: 0.05,  color: "#fde68a" },
   { kind: "gems",          value: 10000, label: "👑 +10.000 Gem",          emoji: "💎", rarity: "mythic",    weight: 0.025, color: "#fef08a" },
+  { kind: "streak_coins",  value: 50000, label: "🪙 +50.000 Streak Coin",   emoji: "🪙", rarity: "mythic",    weight: 0.3,   color: "#fde68a" },
+  { kind: "streak_coins",  value: 150000,label: "👑 +150.000 Streak JACKPOT", emoji: "🪙", rarity: "mythic",  weight: 0.05,  color: "#fef08a" },
 
   // === MEGA JACKPOT (PALING SUSAH SEKALI — super rare) ===
   { kind: "gems",          value: 25000, label: "🔥 +25.000 Gem MEGA",     emoji: "💎", rarity: "mythic",    weight: 0.008, color: "#fef08a" },
