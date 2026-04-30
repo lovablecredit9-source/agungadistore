@@ -625,9 +625,8 @@ Deno.serve(async (req) => {
         else break;
       }
 
-      const results: Array<Prize & { index: number; bonusApplied?: number; jackpotWon?: number }> = [];
+      const results: Array<Prize & { index: number; bonusApplied?: number }> = [];
       let totalBonusGems = 0;
-      let jackpotWonTotal = 0;
       for (let i = 0; i < spinCount; i++) {
         const basePrize = pickPrize();
         const mult = getStreakMultiplier(curStreak);
@@ -641,9 +640,7 @@ Deno.serve(async (req) => {
         const prize: Prize = { ...basePrize, value: finalValue };
         await applyPrize(admin, visitorId, prize);
 
-        let jackpotWon = 0;
-
-        results.push({ ...prize, index: basePrize.index, bonusApplied, jackpotWon });
+        results.push({ ...prize, index: basePrize.index, bonusApplied });
 
         const labelParts: string[] = [prize.label];
         if (bonusApplied > 0) labelParts.push(`(+${Math.round((mult - 1) * 100)}% streak)`);
@@ -690,7 +687,6 @@ Deno.serve(async (req) => {
       const summary = results.map(r => r.label).join(", ");
       const titleExtras: string[] = [];
       if (totalBonusGems > 0) titleExtras.push(`🔥 +${totalBonusGems} streak`);
-      if (jackpotWonTotal > 0) titleExtras.push(`💥 JACKPOT +${jackpotWonTotal}`);
       if (earnedTokens > 0) titleExtras.push(`🎟️ +${earnedTokens} Token`);
       await admin.from("notifications").insert({
         visitor_id: visitorId,
@@ -710,7 +706,6 @@ Deno.serve(async (req) => {
         luckyStreak: curStreak,
         streakMultiplier: getStreakMultiplier(curStreak),
         totalBonusGems,
-        jackpotWonTotal,
         megaJackpotPool: finalPool,
         luckyTokens: newTokens,
         luckyTokenProgress: newProgress,
