@@ -89,6 +89,14 @@ const TIER_THEME: Record<string, { glow: string; panel: string; border: string; 
     chip: "bg-pink-500/30 text-pink-100 border-pink-400/60",
     label: "PREMIUM",
   },
+  super_pro: {
+    glow: "from-cyan-300 via-emerald-400 to-amber-400",
+    panel: "from-[#0d2a3a] via-[#0f3a2e] to-[#2a1f08]",
+    border: "border-cyan-300/70",
+    accent: "text-cyan-200",
+    chip: "bg-gradient-to-r from-cyan-400/40 via-emerald-400/40 to-amber-400/40 text-white border-cyan-200/70",
+    label: "SUPER PRO",
+  },
 };
 
 function ItemIcon({ code, className }: { code: string; className?: string }) {
