@@ -132,15 +132,14 @@ export default function LuckRoyaleNyawa() {
 
   useEffect(() => { fetchData(); }, []);
   useEffect(() => {
-    if (typeof window !== "undefined" && localStorage.getItem("luck_royale_warning_ack") === "1") {
-      setWarningAck(true);
-    }
+    // Tampilkan otomatis setiap masuk halaman Luck Royale, bukan hanya saat tombol spin ditekan.
+    setWarningOpen(true);
   }, []);
 
-  const doSpin = async (mode: "single" | "pack" | "free", count?: number) => {
+  const doSpin = async (mode: "single" | "pack" | "free", count?: number, skipWarning = false) => {
     if (!visitorId || spinning) return;
     // ⚠️ Tahan spin pertama sampai user setuju peringatan menang/kalah
-    if (!warningAck) {
+    if (!skipWarning && !warningAck) {
       setPendingSpin({ mode, count });
       setWarningOpen(true);
       return;
@@ -1465,12 +1464,11 @@ export default function LuckRoyaleNyawa() {
                 </button>
                 <button
                   onClick={() => {
-                    if (typeof window !== "undefined") localStorage.setItem("luck_royale_warning_ack", "1");
                     setWarningAck(true);
                     setWarningOpen(false);
                     const p = pendingSpin;
                     setPendingSpin(null);
-                    if (p) setTimeout(() => doSpin(p.mode, p.count), 50);
+                    if (p) setTimeout(() => doSpin(p.mode, p.count, true), 50);
                   }}
                   className="rounded-xl bg-gradient-to-br from-amber-400 via-orange-500 to-rose-600 hover:brightness-110 active:scale-95 transition px-3 py-2.5 font-black text-xs tracking-wider text-white shadow-lg shadow-amber-500/50 ring-1 ring-amber-300/50"
                 >
