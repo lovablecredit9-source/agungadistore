@@ -325,10 +325,13 @@ function buildGraph(ctx: AudioContext, audio: HTMLAudioElement): Graph {
   panner.connect(convolver);
   convolver.connect(wetGain);
 
-  // Sum -> master -> analyser -> destination
+  // Sum -> master -> [compressor?] -> makeup -> analyser -> destination
   dryGain.connect(master);
   wetGain.connect(master);
-  master.connect(analyser);
+  // Connect through compressor + makeup gain so loudness boost is safe from clipping
+  master.connect(compressor);
+  compressor.connect(makeup);
+  makeup.connect(analyser);
   analyser.connect(ctx.destination);
 
   // Stash the routing gains on the graph using legacy slots so the Graph type
@@ -347,7 +350,9 @@ function buildGraph(ctx: AudioContext, audio: HTMLAudioElement): Graph {
     instLBus: lToOutL,     // L source → L output
     instRBus: rToOutR,     // R source → R output
     outLGain, outRGain,
-    panner, convolver, wetGain, dryGain, master, analyser,
+    panner, convolver, wetGain, dryGain, master,
+    compressor, makeup,
+    analyser,
   };
 }
 
