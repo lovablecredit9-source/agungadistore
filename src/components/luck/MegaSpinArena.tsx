@@ -172,7 +172,8 @@ export default function MegaSpinArena({ visitorId, gems, setGems }: Props) {
     try { localStorage.removeItem("mega_spin_history"); } catch {}
   };
 
-  // Sinkron pool dari edge function existing (biar reward sama feel-nya)
+  // Sinkron pool khusus Mega/Combo dari edge function.
+  // Jangan pakai `data.prizes` karena itu milik Spin normal Luck Royale Nyawa.
   useEffect(() => {
     let mounted = true;
     if (!visitorId) return;
@@ -180,9 +181,9 @@ export default function MegaSpinArena({ visitorId, gems, setGems }: Props) {
       .invoke("luck-royale-nyawa", { body: { visitorId, action: "check" } })
       .then(({ data }) => {
         if (!mounted) return;
-        const prizes = (data?.prizes || []) as any[];
+        const prizes = (data?.megaArenaPrizes || []) as any[];
         if (Array.isArray(prizes) && prizes.length > 0) {
-          // ambil semua hadiah yang bisa diklaim server: koin/nyawa/hint/freeze/gem.
+          // ambil hadiah Mega/Combo yang bisa diklaim server: koin/nyawa/hint/freeze/gem.
           const filtered = prizes
             .filter((p) => p && ["extra_life", "auto_hint", "time_freeze", "streak_freeze", "streak_coins", "gems"].includes(p.kind))
             .map((p) => ({
