@@ -483,6 +483,13 @@ Deno.serve(async (req) => {
           price: SUPER_SHOP_ACCESS_PRICE,
           durationDays: SUPER_SHOP_ACCESS_DAYS,
         },
+        ultraShopAccess: {
+          isActive: ultraShopAccessActive,
+          activeUntil: ultraShopAccess.activeUntil,
+          purchasedAt: ultraShopAccess.purchasedAt,
+          price: ULTRA_SHOP_ACCESS_PRICE,
+          durationDays: ULTRA_SHOP_ACCESS_DAYS,
+        },
       }, { headers: corsHeaders });
     }
 
