@@ -54,6 +54,8 @@ const PRIZES: Prize[] = [
   // Grand Prize (~0.05%) — ultra rare, hoki banget
   { kind: "gems",          value: 2500, label: "🌈 GRAND PRIZE +2.500 Gem",     emoji: "🌈", rarity: "mythic", weight: 0.04, color: "#22d3ee" },
   { kind: "gems",          value: 8000, label: "🌈 MEGA JACKPOT +8.000 Gem",    emoji: "🌈", rarity: "mythic", weight: 0.012, color: "#a78bfa" },
+  // Jackpot utama spin — paling sulit didapat, murni hoki
+  { kind: "gems",          value: 10000, label: "👑 JACKPOT UTAMA +10.000 Gem", emoji: "👑", rarity: "mythic", weight: 0.004, color: "#fef08a" },
 ];
 
 // === DAILY FREE SPIN — pool hadiah lebih ringan, 100% kasih sesuatu ===

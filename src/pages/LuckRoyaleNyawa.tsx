@@ -367,6 +367,31 @@ export default function LuckRoyaleNyawa() {
             </div>
           </div>
 
+          {/* 👑 JACKPOT UTAMA - hardest spin prize */}
+          <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-amber-400 via-yellow-300 to-fuchsia-500 border-2 border-yellow-200 p-3 shadow-xl shadow-yellow-400/40">
+            <div className="absolute inset-0 opacity-30 animate-pulse" style={{
+              backgroundImage: "linear-gradient(120deg, transparent 20%, rgba(255,255,255,0.7) 50%, transparent 80%)",
+            }} />
+            <div className="relative flex items-center gap-3 text-black">
+              <div className="w-14 h-14 rounded-2xl bg-black/80 ring-2 ring-white/80 flex items-center justify-center shrink-0 animate-pulse">
+                <Crown className="w-8 h-8 text-yellow-200" fill="currentColor" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-1.5 mb-0.5">
+                  <Badge className="bg-black text-yellow-200 font-black text-[8px]">PALING SULIT</Badge>
+                  <span className="text-[9px] font-black tracking-widest">JACKPOT UTAMA SPIN</span>
+                </div>
+                <div className="flex items-baseline gap-1">
+                  <span className="text-2xl font-black tabular-nums drop-shadow">10.000</span>
+                  <Gem className="w-4 h-4" fill="currentColor" />
+                </div>
+                <p className="text-[10px] font-black mt-0.5">
+                  Muncul di pool Mythic spin — peluang super tipis, murni hoki.
+                </p>
+              </div>
+            </div>
+          </div>
+
           {/* 🎟️ LUCKY TOKEN PROGRESS BANNER */}
           <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-indigo-700/60 via-blue-700/40 to-cyan-700/60 border-2 border-cyan-400/50 p-3 shadow-lg shadow-cyan-500/30">
             <div className="absolute inset-0 opacity-20" style={{
@@ -945,7 +970,7 @@ export default function LuckRoyaleNyawa() {
                     icon: Star,
                     color: "from-pink-500 to-rose-600",
                     title: "Belum Pernah Mythic",
-                    desc: "Mythic punya peluang ~0.5%. Bundle 125 SPIN paling efektif untuk berburu jackpot 20.000 Gems!",
+                    desc: "Mythic punya peluang tipis. Bundle 125 SPIN paling efektif untuk berburu Jackpot Utama 10.000 Gems!",
                     priority: "med",
                   });
                 }
