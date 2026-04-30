@@ -484,22 +484,76 @@ async function getLuckyHourForDate(admin: any, date: string): Promise<number> {
   return hour;
 }
 
-async function isLuckyHourActive(admin: any): Promise<{ active: boolean; hour: number; date: string; nextActiveAt: string }> {
+// === PAKET BELI JAM HOKI ===
+// Diskon Rp 20.000 untuk pembelian "1 jam" pertama kali (sekali seumur hidup per visitor).
+const LUCKY_HOUR_PACKAGES: Array<{ code: string; hours: number; price: number; firstPrice?: number; label: string; badge?: string }> = [
+  { code: "lh_1h",   hours: 1,    price: 50000,  firstPrice: 20000, label: "1 Jam",     badge: "PERTAMA 20RB" },
+  { code: "lh_5h",   hours: 5,    price: 100000, label: "5 Jam",     badge: "HEMAT" },
+  { code: "lh_1d",   hours: 24,   price: 200000, label: "1 Hari",    badge: "POPULER" },
+  { code: "lh_2d",   hours: 48,   price: 250000, label: "2 Hari",    badge: "SUPER HEMAT" },
+  { code: "lh_1w",   hours: 168,  price: 500000, label: "1 Minggu",  badge: "MEGA HEMAT" },
+];
+
+const LH_EXT_PREFIX = "lrn_lh_ext:"; // value = ISO expiry timestamp
+const LH_FIRST_PREFIX = "lrn_lh_first_used:"; // value = "1" jika sudah pakai diskon pertama
+
+async function getBoostedUntil(admin: any, visitorId: string): Promise<string | null> {
+  const { data } = await admin.from("admin_settings").select("setting_value").eq("setting_key", LH_EXT_PREFIX + visitorId).maybeSingle();
+  const v = data?.setting_value;
+  if (!v) return null;
+  const t = Date.parse(v);
+  if (!Number.isFinite(t) || t <= Date.now()) return null;
+  return new Date(t).toISOString();
+}
+
+async function setBoostedUntil(admin: any, visitorId: string, iso: string): Promise<void> {
+  const key = LH_EXT_PREFIX + visitorId;
+  const { data: existing } = await admin.from("admin_settings").select("id").eq("setting_key", key).maybeSingle();
+  if (existing?.id) {
+    await admin.from("admin_settings").update({ setting_value: iso }).eq("id", existing.id);
+  } else {
+    await admin.from("admin_settings").insert({ setting_key: key, setting_value: iso });
+  }
+}
+
+async function getFirstPurchaseUsed(admin: any, visitorId: string): Promise<boolean> {
+  const { data } = await admin.from("admin_settings").select("setting_value").eq("setting_key", LH_FIRST_PREFIX + visitorId).maybeSingle();
+  return data?.setting_value === "1";
+}
+
+async function setFirstPurchaseUsed(admin: any, visitorId: string): Promise<void> {
+  const key = LH_FIRST_PREFIX + visitorId;
+  const { data: existing } = await admin.from("admin_settings").select("id").eq("setting_key", key).maybeSingle();
+  if (existing?.id) {
+    await admin.from("admin_settings").update({ setting_value: "1" }).eq("id", existing.id);
+  } else {
+    await admin.from("admin_settings").insert({ setting_key: key, setting_value: "1" });
+  }
+}
+
+async function isLuckyHourActive(admin: any, visitorId?: string): Promise<{ active: boolean; hour: number; date: string; nextActiveAt: string; boostedUntil: string | null; source: "free" | "purchased" | null }> {
   const now = getNowWIB();
   const hour = await getLuckyHourForDate(admin, now.date);
-  const active = now.hour === hour;
-  // Hitung waktu mulai berikutnya (string ISO WIB +07:00)
+  const freeActive = now.hour === hour;
+
+  let boostedUntil: string | null = null;
+  if (visitorId) boostedUntil = await getBoostedUntil(admin, visitorId);
+  const purchasedActive = !!boostedUntil && Date.parse(boostedUntil) > Date.now();
+
+  const active = freeActive || purchasedActive;
+  const source: "free" | "purchased" | null = active ? (freeActive ? "free" : "purchased") : null;
+
+  // Hitung waktu mulai berikutnya (string ISO WIB +07:00) untuk jam free
   let nextDate = now.date;
   let nextHour = hour;
   if (now.hour >= hour) {
-    // sudah lewat untuk hari ini → besok pakai jadwal baru (preview perkiraan = hour yang sama; UI tinggal countdown ke jam jadwal hari ini selesai)
     const tomorrow = new Date(Date.now() + 7 * 3600 * 1000 + 24 * 3600 * 1000);
     nextDate = tomorrow.toISOString().split("T")[0];
     const t = await getLuckyHourForDate(admin, nextDate);
     nextHour = t;
   }
   const nextActiveAt = `${nextDate}T${String(nextHour).padStart(2, "0")}:00:00+07:00`;
-  return { active, hour, date: now.date, nextActiveAt };
+  return { active, hour, date: now.date, nextActiveAt, boostedUntil, source };
 }
 
 Deno.serve(async (req) => {
@@ -551,7 +605,8 @@ Deno.serve(async (req) => {
       const superShopAccessActive = isShopAccessActive(superShopAccess);
       const ultraShopAccess = await getShopAccess(admin, visitorId, "ultra");
       const ultraShopAccessActive = isShopAccessActive(ultraShopAccess);
-      const luckyHour = await isLuckyHourActive(admin);
+      const luckyHour = await isLuckyHourActive(admin, visitorId);
+      const lhFirstUsed = await getFirstPurchaseUsed(admin, visitorId);
 
       // Build free daily shop with status (claimed today?)
       const freeDailyWithStatus = FREE_DAILY_SHOP.map(item => ({
@@ -605,7 +660,16 @@ Deno.serve(async (req) => {
           nextActiveAt: luckyHour.nextActiveAt,
           rangeStart: LUCKY_HOUR_MIN,
           rangeEnd: LUCKY_HOUR_MAX,
+          boostedUntil: luckyHour.boostedUntil,
+          source: luckyHour.source,
         },
+        luckyHourPackages: LUCKY_HOUR_PACKAGES.map(p => ({
+          ...p,
+          // Harga efektif: jika belum pernah klaim diskon pertama dan paket punya firstPrice → tampilkan firstPrice
+          effectivePrice: (!lhFirstUsed && p.firstPrice != null) ? p.firstPrice : p.price,
+          isFirstDiscountAvailable: !lhFirstUsed && p.firstPrice != null,
+        })),
+        luckyHourFirstDiscountUsed: lhFirstUsed,
       }, { headers: corsHeaders });
     }
 
@@ -734,7 +798,7 @@ Deno.serve(async (req) => {
         else break;
       }
 
-      const luckyHourState = await isLuckyHourActive(admin);
+      const luckyHourState = await isLuckyHourActive(admin, visitorId);
       const luckyHourActive = luckyHourState.active;
 
       const results: Array<Prize & { index: number; bonusApplied?: number; jackpotWon?: number }> = [];
@@ -1047,6 +1111,82 @@ Deno.serve(async (req) => {
           price,
           durationDays: days,
         },
+      }, { headers: corsHeaders });
+    }
+
+    // === BUY LUCKY HOUR — bayar saldo + PIN, perpanjang/aktifkan Jam Hoki ===
+    if (action === "buy_lucky_hour") {
+      const pkgCode = String(itemCode || "");
+      const pkg = LUCKY_HOUR_PACKAGES.find(p => p.code === pkgCode);
+      if (!pkg) return Response.json({ error: "Paket Jam Hoki tidak dikenal" }, { status: 400, headers: corsHeaders });
+
+      const pin = (body as any).pin as string | undefined;
+
+      // Verifikasi PIN (wajib)
+      const { data: pinRow } = await admin.from("user_pins").select("pin_hash").eq("visitor_id", visitorId).maybeSingle();
+      if (!pinRow) return Response.json({ error: "PIN belum dibuat. Buat PIN dulu di menu Profil.", needPin: true }, { status: 200, headers: corsHeaders });
+      if (!pin) return Response.json({ error: "Masukkan PIN 6 digit", needPin: true }, { status: 200, headers: corsHeaders });
+      const hashBuffer = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(pin));
+      const hashHex = Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, "0")).join("");
+      if (hashHex !== pinRow.pin_hash) return Response.json({ error: "PIN salah", needPin: true }, { status: 200, headers: corsHeaders });
+
+      // Cek diskon pembelian pertama
+      const firstUsed = await getFirstPurchaseUsed(admin, visitorId);
+      const usingFirstDiscount = !firstUsed && pkg.firstPrice != null;
+      const price = usingFirstDiscount ? (pkg.firstPrice as number) : pkg.price;
+
+      // Resolve akun saldo
+      const { data: ubId } = await admin.rpc("get_active_user_balance_id", { p_visitor_id: visitorId });
+      if (!ubId) return Response.json({ error: "Login akun saldo dulu untuk beli Jam Hoki" }, { status: 400, headers: corsHeaders });
+
+      const { data: balanceRow } = await admin
+        .from("user_balances")
+        .select("id, balance, username")
+        .eq("id", ubId)
+        .maybeSingle();
+      if (!balanceRow) return Response.json({ error: "Akun saldo tidak ditemukan" }, { status: 400, headers: corsHeaders });
+      if ((balanceRow.balance || 0) < price) {
+        return Response.json({
+          error: `Saldo tidak cukup. Butuh Rp ${price.toLocaleString("id-ID")} (saldo: Rp ${(balanceRow.balance || 0).toLocaleString("id-ID")})`,
+        }, { status: 400, headers: corsHeaders });
+      }
+
+      // Potong saldo
+      const newBalance = (balanceRow.balance || 0) - price;
+      await admin.from("user_balances").update({ balance: newBalance }).eq("id", balanceRow.id);
+
+      await admin.from("balance_transactions").insert({
+        visitor_id: visitorId,
+        amount: -price,
+        type: "purchase",
+        description: `Beli Jam Hoki Luck Royale (${pkg.label})${usingFirstDiscount ? " — DISKON PERTAMA" : ""}`,
+      });
+
+      // Akumulasi durasi: kalau masih ada sisa boost, tambahkan dari sisa itu;
+      // kalau tidak, mulai dari sekarang.
+      const existing = await getBoostedUntil(admin, visitorId);
+      const baseMs = existing ? Date.parse(existing) : Date.now();
+      const newUntilMs = baseMs + pkg.hours * 3600 * 1000;
+      const newUntilIso = new Date(newUntilMs).toISOString();
+      await setBoostedUntil(admin, visitorId, newUntilIso);
+
+      // Tandai diskon pertama terpakai
+      if (usingFirstDiscount) await setFirstPurchaseUsed(admin, visitorId);
+
+      await admin.from("notifications").insert({
+        visitor_id: visitorId,
+        title: "🍀 Jam Hoki Aktif!",
+        message: `Kamu beli ${pkg.label} Jam Hoki seharga Rp ${price.toLocaleString("id-ID")}${usingFirstDiscount ? " (diskon pertama)" : ""}. Aktif sampai ${new Date(newUntilMs).toLocaleString("id-ID", { timeZone: "Asia/Jakarta" })} WIB.`,
+        type: "luck_royale_nyawa",
+      });
+
+      return Response.json({
+        success: true,
+        balance: newBalance,
+        package: pkg,
+        priceCharged: price,
+        usedFirstDiscount: usingFirstDiscount,
+        boostedUntil: newUntilIso,
       }, { headers: corsHeaders });
     }
 
