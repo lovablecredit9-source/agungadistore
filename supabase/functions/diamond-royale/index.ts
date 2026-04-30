@@ -54,6 +54,9 @@ const PRIZES: Prize[] = [
   // 🌈 Mythic Grand Prize (~0.15%) — hoki manusia sejagat
   { kind: "coins",  label: "🌈 +1.000.000 Koin ULTRA JACKPOT", value: 1000000, rarity: "legendary", weight: 0.1, color: "#e879f9" },
   { kind: "gems",   label: "🌈 +2.000 Gems GRAND PRIZE",       value: 2000,    rarity: "legendary", weight: 0.05, color: "#22d3ee" },
+
+  // 👑 ULTRA MYTHIC — Jackpot Utama, paling sulit didapat (~0.015%)
+  { kind: "gems",   label: "👑 +10.000 Gems MEGA JACKPOT UTAMA", value: 10000, rarity: "legendary", weight: 0.015, color: "#fef08a" },
 ];
 
 function pickWeighted(pool: Prize[]): Prize {
