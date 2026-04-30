@@ -9,7 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { getVisitorId } from "@/lib/visitor-id";
 import { formatCompactNumber } from "@/lib/utils";
 import {
-  ArrowLeft, Heart, Lightbulb, Timer, Shield, Gem, Sparkles, Crown,
+  ArrowLeft, Heart, Lightbulb, Timer, Shield, Gem, Coins, Sparkles, Crown,
   Loader2, Trophy, Zap, X, Dices, BarChart3, Flame, Star, Award, TrendingUp,
   Brain, Target, TrendingDown, CheckCircle2, AlertCircle, Rocket, Gift, Flame as FlameIcon,
 } from "lucide-react";
