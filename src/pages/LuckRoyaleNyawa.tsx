@@ -131,6 +131,11 @@ export default function LuckRoyaleNyawa() {
   };
 
   useEffect(() => { fetchData(); }, []);
+  useEffect(() => {
+    if (typeof window !== "undefined" && localStorage.getItem("luck_royale_warning_ack") === "1") {
+      setWarningAck(true);
+    }
+  }, []);
 
   const doSpin = async (mode: "single" | "pack" | "free", count?: number) => {
     if (!visitorId || spinning) return;
