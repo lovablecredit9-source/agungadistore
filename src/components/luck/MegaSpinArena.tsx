@@ -217,7 +217,7 @@ export default function MegaSpinArena({ visitorId, gems, setGems }: Props) {
     const mult = isMiss ? 1 : comboMult;
     const awarded = prize.value * mult;
 
-    await awardPrize(visitorId, { kind: prize.kind, value: awarded });
+    await awardPrize(visitorId, prize, 0, mult);
     await refreshGems();
 
     setComboResult({ prize, mult, awarded });
@@ -279,7 +279,7 @@ export default function MegaSpinArena({ visitorId, gems, setGems }: Props) {
 
     // Award semuanya
     for (const p of results) {
-      await awardPrize(visitorId, { kind: p.kind, value: p.value });
+      await awardPrize(visitorId, p);
     }
     await refreshGems();
 
@@ -307,7 +307,7 @@ export default function MegaSpinArena({ visitorId, gems, setGems }: Props) {
     await new Promise((r) => setTimeout(r, 4200));
     const won = BONUS_WHEEL[idx];
     setBonusWon(won);
-    await awardPrize(visitorId, { kind: won.kind, value: won.value });
+    await awardPrize(visitorId, { ...won, rarity: won.kind === "gems" ? "legendary" : "rare", weight: 1 } as MiniPrize);
     await refreshGems();
     setBonusSpinning(false);
   };
