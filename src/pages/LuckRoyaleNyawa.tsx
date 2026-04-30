@@ -419,11 +419,11 @@ export default function LuckRoyaleNyawa() {
                   <span className="text-[9px] font-black tracking-widest">JACKPOT UTAMA SPIN</span>
                 </div>
                 <div className="flex items-baseline gap-1">
-                  <span className="text-2xl font-black tabular-nums drop-shadow">25.000</span>
-                  <Coins className="w-4 h-4" fill="currentColor" />
+                  <span className="text-2xl font-black tabular-nums drop-shadow">10.000</span>
+                  <Gem className="w-4 h-4" fill="currentColor" />
                 </div>
                 <p className="text-[10px] font-black mt-0.5">
-                  Hadiah normal fokus ke nyawa, hint, time freeze, dan streak freeze — peluang tetap tergantung hoki.
+                  Muncul di pool Mythic spin — peluang super tipis, murni hoki.
                 </p>
               </div>
             </div>
@@ -545,7 +545,7 @@ export default function LuckRoyaleNyawa() {
                 JACKPOT<br />SHADOW VAULT
               </h2>
               <p className="text-[11px] text-amber-50/90 mt-1.5 font-semibold">
-                ❤️ Nyawa • 💡 Hint • ⏱️ Time Freeze • 🛡️ Streak Freeze — Spin normal tetap normal!
+                💎 Gem • ❤️ Nyawa • 💡 Hint • 🛡️ Freeze — semua bisa kena!
               </p>
             </div>
           </div>
@@ -654,7 +654,7 @@ export default function LuckRoyaleNyawa() {
                   PUTAR & MENANGKAN
                 </p>
                 <p className="text-center text-[10px] text-purple-200/90 mt-1 font-semibold">
-                  ❤️ Nyawa • 💡 Hint • ⏱️ Time Freeze • 🛡️ Freeze
+                  💎 Gem • ❤️ Nyawa • 💡 Hint • 🛡️ Freeze
                 </p>
                 {/* Mini featured strip */}
                 <div className="flex items-center gap-1.5 mt-3">
@@ -1480,7 +1480,7 @@ export default function LuckRoyaleNyawa() {
               <div className="space-y-2 text-[12px] leading-relaxed text-amber-50/95">
                 <div className="flex gap-2 bg-black/30 rounded-lg p-2.5 border border-amber-500/30">
                   <Sparkles className="w-4 h-4 text-amber-300 shrink-0 mt-0.5" />
-                  <p>Luck Royale adalah <b>permainan keberuntungan</b>. Hadiah bisa berupa <b>koin streak, nyawa, hint, freeze, atau gem</b> sesuai peluang masing-masing.</p>
+                  <p>Luck Royale adalah <b>permainan keberuntungan</b>. Hadiah bisa berupa <b>gem, nyawa, hint, atau freeze</b> sesuai peluang masing-masing.</p>
                 </div>
                 <div className="flex gap-2 bg-black/30 rounded-lg p-2.5 border border-rose-500/30">
                   <X className="w-4 h-4 text-rose-300 shrink-0 mt-0.5" />
