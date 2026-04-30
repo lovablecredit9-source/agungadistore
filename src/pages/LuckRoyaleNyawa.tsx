@@ -102,6 +102,9 @@ export default function LuckRoyaleNyawa() {
   const [ultraShopAccess, setUltraShopAccess] = useState<{ isActive: boolean; activeUntil: string | null; purchasedAt: string | null; price: number; durationDays: number }>({ isActive: false, activeUntil: null, purchasedAt: null, price: 500000, durationDays: 30 });
   const [redeeming, setRedeeming] = useState<string | null>(null);
   const [shopTier, setShopTier] = useState<"free" | "premium" | "super_premium" | "ultra">("free");
+  const [luckyHour, setLuckyHour] = useState<{ active: boolean; hour: number; date: string; nextActiveAt: string } | null>(null);
+  const [nowTick, setNowTick] = useState(Date.now());
+  useEffect(() => { const t = setInterval(() => setNowTick(Date.now()), 1000); return () => clearInterval(t); }, []);
 
   const fetchData = async () => {
     if (!visitorId) return;
