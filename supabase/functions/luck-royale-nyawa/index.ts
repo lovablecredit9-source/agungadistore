@@ -827,6 +827,8 @@ Deno.serve(async (req) => {
         luckyTokenProgress: newProgress,
         luckyTokenThreshold: TOKENS_PER_SPIN_THRESHOLD,
         earnedTokens,
+        luckyHourActive,
+        luckyHour: luckyHourActive ? luckyHourState.hour : luckyHourState.hour,
       }, { headers: corsHeaders });
     }
 
