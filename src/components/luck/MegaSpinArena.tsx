@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { formatCompactNumber } from "@/lib/utils";
 import {
-  Rocket, Flame, Disc3, Trophy, Gem, Sparkles, Zap, Heart,
+  Rocket, Flame, Disc3, Trophy, Gem, Sparkles, Zap, Heart, Coins,
   Lightbulb, Timer, Shield, Loader2, X, Crown,
 } from "lucide-react";
 
@@ -36,24 +36,27 @@ interface Props {
 }
 
 const FALLBACK_POOL: MiniPrize[] = [
-  { kind: "coins", value: 5, label: "Koin", emoji: "🪙", rarity: "common", weight: 40 },
-  { kind: "coins", value: 15, label: "Koin", emoji: "🪙", rarity: "common", weight: 25 },
-  { kind: "credits", value: 1, label: "Kredit", emoji: "🎮", rarity: "rare", weight: 18 },
-  { kind: "gems", value: 5, label: "Gems", emoji: "💎", rarity: "rare", weight: 10 },
-  { kind: "gems", value: 25, label: "Gems", emoji: "💎", rarity: "epic", weight: 5 },
-  { kind: "gems", value: 100, label: "Gems", emoji: "💎", rarity: "legendary", weight: 1.5 },
-  { kind: "gems", value: 500, label: "JACKPOT", emoji: "👑", rarity: "mythic", weight: 0.5 },
+  { kind: "auto_hint", value: 2, label: "Hint", emoji: "💡", rarity: "common", weight: 24 },
+  { kind: "extra_life", value: 2, label: "Nyawa", emoji: "❤️", rarity: "common", weight: 22 },
+  { kind: "time_freeze", value: 2, label: "Time Freeze", emoji: "⏱️", rarity: "common", weight: 16 },
+  { kind: "streak_coins", value: 100, label: "Koin Streak", emoji: "🪙", rarity: "rare", weight: 14 },
+  { kind: "streak_freeze", value: 2, label: "Streak Freeze", emoji: "🛡️", rarity: "rare", weight: 10 },
+  { kind: "auto_hint", value: 8, label: "Hint", emoji: "💡", rarity: "epic", weight: 5 },
+  { kind: "extra_life", value: 8, label: "Nyawa", emoji: "❤️", rarity: "epic", weight: 5 },
+  { kind: "streak_coins", value: 1000, label: "Koin Streak", emoji: "🪙", rarity: "legendary", weight: 2 },
+  { kind: "gems", value: 100, label: "Gem", emoji: "💎", rarity: "legendary", weight: 0.8 },
+  { kind: "streak_coins", value: 5000, label: "JACKPOT Koin", emoji: "👑", rarity: "mythic", weight: 0.2 },
 ];
 
 const BONUS_WHEEL = [
-  { label: "+10 Gems", emoji: "💎", kind: "gems", value: 10, color: "from-cyan-500 to-blue-600" },
-  { label: "+3 Kredit", emoji: "🎮", kind: "credits", value: 3, color: "from-fuchsia-500 to-purple-600" },
-  { label: "+50 Gems", emoji: "💎", kind: "gems", value: 50, color: "from-amber-400 to-orange-500" },
-  { label: "+1 Kredit", emoji: "🎮", kind: "credits", value: 1, color: "from-emerald-500 to-teal-600" },
-  { label: "+25 Gems", emoji: "💎", kind: "gems", value: 25, color: "from-pink-500 to-rose-600" },
-  { label: "+200 Gems", emoji: "👑", kind: "gems", value: 200, color: "from-yellow-300 via-amber-500 to-red-600" },
-  { label: "+5 Kredit", emoji: "🎮", kind: "credits", value: 5, color: "from-violet-500 to-indigo-600" },
-  { label: "+15 Gems", emoji: "💎", kind: "gems", value: 15, color: "from-sky-400 to-cyan-600" },
+  { label: "+5 Hint", emoji: "💡", kind: "auto_hint", value: 5, color: "from-cyan-500 to-blue-600" },
+  { label: "+5 Nyawa", emoji: "❤️", kind: "extra_life", value: 5, color: "from-fuchsia-500 to-purple-600" },
+  { label: "+500 Koin", emoji: "🪙", kind: "streak_coins", value: 500, color: "from-amber-400 to-orange-500" },
+  { label: "+2 Freeze", emoji: "🛡️", kind: "streak_freeze", value: 2, color: "from-emerald-500 to-teal-600" },
+  { label: "+3 Time", emoji: "⏱️", kind: "time_freeze", value: 3, color: "from-pink-500 to-rose-600" },
+  { label: "+2.000 Koin", emoji: "👑", kind: "streak_coins", value: 2000, color: "from-yellow-300 via-amber-500 to-red-600" },
+  { label: "+50 Gem", emoji: "💎", kind: "gems", value: 50, color: "from-violet-500 to-indigo-600" },
+  { label: "+10 Hint", emoji: "💡", kind: "auto_hint", value: 10, color: "from-sky-400 to-cyan-600" },
 ];
 
 const COMBO_TIERS = [1, 2, 3, 5];
