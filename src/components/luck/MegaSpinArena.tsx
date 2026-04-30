@@ -370,8 +370,16 @@ export default function MegaSpinArena({ visitorId, gems, setGems }: Props) {
     await new Promise((r) => setTimeout(r, 4200));
     const won = BONUS_WHEEL[idx];
     setBonusWon(won);
-    await awardPrize(visitorId, { ...won, rarity: won.kind === "gems" ? "legendary" : "rare", weight: 1 } as MiniPrize);
+    const rarity: Rarity = won.kind === "gems" ? "legendary" : "rare";
+    await awardPrize(visitorId, { ...won, rarity, weight: 1 } as MiniPrize);
     await refreshGems();
+    pushHistory([{
+      id: `${Date.now()}-b`,
+      at: Date.now(),
+      source: "bonus",
+      prize: { kind: won.kind, label: won.label, emoji: won.emoji, rarity, value: won.value },
+      awarded: won.value,
+    }]);
     setBonusSpinning(false);
   };
 
