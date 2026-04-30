@@ -191,17 +191,40 @@ const ULTRA_SHOP_ACCESS_DAYS = 30;           // berlaku 30 hari
 
 // Item shop: Free (1-10) + Premium (20-60) + Super Premium (70-150) + Ultra (160-300, GOD-tier)
 const TOKEN_SHOP: Array<{ code: string; name: string; cost: number; kind: string; value: number; rarity: string; emoji: string; tier: "free" | "premium" | "super_premium" | "ultra" }> = [
-  // ============ FREE TIER (1-10 token, 10 item) ============
+  // ============ FREE TIER (1-15 token, 26 item — bebas tukar tanpa langganan) ============
+  // Cost rendah (1-3)
   { code: "tk_hint10",     name: "+10 Hint Otomatis",        cost: 1,   kind: "auto_hint",     value: 10,    rarity: "rare",      emoji: "💡", tier: "free" },
   { code: "tk_life10",     name: "+10 Nyawa Ekstra",         cost: 1,   kind: "extra_life",    value: 10,    rarity: "rare",      emoji: "❤️", tier: "free" },
+  { code: "tk_tfreeze3",   name: "+3 Time Freeze",           cost: 1,   kind: "time_freeze",   value: 3,     rarity: "rare",      emoji: "⏱️", tier: "free" },
+  { code: "tk_coins250",   name: "🪙 +250 Streak Coin",       cost: 1,   kind: "streak_coins",  value: 250,   rarity: "rare",      emoji: "🪙", tier: "free" },
   { code: "tk_freeze5",    name: "+5 Streak Freeze",         cost: 2,   kind: "streak_freeze", value: 5,     rarity: "rare",      emoji: "🛡️", tier: "free" },
   { code: "tk_coins500",   name: "🪙 +500 Streak Coin",       cost: 2,   kind: "streak_coins",  value: 500,   rarity: "rare",      emoji: "🪙", tier: "free" },
+  { code: "tk_hint20",     name: "+20 Hint Otomatis",        cost: 2,   kind: "auto_hint",     value: 20,    rarity: "rare",      emoji: "💡", tier: "free" },
+  { code: "tk_life20",     name: "+20 Nyawa Ekstra",         cost: 2,   kind: "extra_life",    value: 20,    rarity: "rare",      emoji: "❤️", tier: "free" },
+  { code: "tk_credits50",  name: "🎮 +50 Game Credits",       cost: 2,   kind: "game_credits",  value: 50,    rarity: "rare",      emoji: "🎮", tier: "free" },
+  { code: "tk_tfreeze8",   name: "+8 Time Freeze",           cost: 3,   kind: "time_freeze",   value: 8,     rarity: "epic",      emoji: "⏱️", tier: "free" },
   { code: "tk_hint30",     name: "+30 Hint Otomatis",        cost: 3,   kind: "auto_hint",     value: 30,    rarity: "epic",      emoji: "💡", tier: "free" },
+
+  // Cost menengah (4-7)
   { code: "tk_life30",     name: "+30 Nyawa Ekstra",         cost: 4,   kind: "extra_life",    value: 30,    rarity: "epic",      emoji: "❤️", tier: "free" },
+  { code: "tk_credits120", name: "🎮 +120 Game Credits",      cost: 4,   kind: "game_credits",  value: 120,   rarity: "epic",      emoji: "🎮", tier: "free" },
+  { code: "tk_gems30",     name: "💎 +30 Gem",                cost: 4,   kind: "gems",          value: 30,    rarity: "epic",      emoji: "💎", tier: "free" },
   { code: "tk_freeze12",   name: "+12 Streak Freeze",        cost: 5,   kind: "streak_freeze", value: 12,    rarity: "epic",      emoji: "🛡️", tier: "free" },
+  { code: "tk_bundle_a",   name: "🎁 +20 Hint & +20 Nyawa",  cost: 5,   kind: "auto_hint",     value: 20,    rarity: "epic",      emoji: "🎁", tier: "free" },
   { code: "tk_coins1500",  name: "🪙 +1.500 Streak Coin",     cost: 6,   kind: "streak_coins",  value: 1500,  rarity: "epic",      emoji: "🪙", tier: "free" },
+  { code: "tk_tfreeze20",  name: "+20 Time Freeze",          cost: 6,   kind: "time_freeze",   value: 20,    rarity: "epic",      emoji: "⏱️", tier: "free" },
+  { code: "tk_gems60",     name: "💎 +60 Gem",                cost: 6,   kind: "gems",          value: 60,    rarity: "epic",      emoji: "💎", tier: "free" },
+  { code: "tk_credits250", name: "🎮 +250 Game Credits",      cost: 7,   kind: "game_credits",  value: 250,   rarity: "epic",      emoji: "🎮", tier: "free" },
+
+  // Cost tinggi (8-15) — masih FREE
   { code: "tk_hint80",     name: "+80 Hint Otomatis",        cost: 8,   kind: "auto_hint",     value: 80,    rarity: "epic",      emoji: "💡", tier: "free" },
+  { code: "tk_life80",     name: "+80 Nyawa Ekstra",         cost: 8,   kind: "extra_life",    value: 80,    rarity: "epic",      emoji: "❤️", tier: "free" },
+  { code: "tk_freeze25",   name: "+25 Streak Freeze",        cost: 9,   kind: "streak_freeze", value: 25,    rarity: "epic",      emoji: "🛡️", tier: "free" },
   { code: "tk_gems100",    name: "💎 +100 Gem",               cost: 10,  kind: "gems",          value: 100,   rarity: "epic",      emoji: "💎", tier: "free" },
+  { code: "tk_coins3000",  name: "🪙 +3.000 Streak Coin",     cost: 10,  kind: "streak_coins",  value: 3000,  rarity: "epic",      emoji: "🪙", tier: "free" },
+  { code: "tk_credits500", name: "🎮 +500 Game Credits",      cost: 12,  kind: "game_credits",  value: 500,   rarity: "epic",      emoji: "🎮", tier: "free" },
+  { code: "tk_mega_bundle",name: "🎁 MEGA: +50 Hint & +50 Nyawa & +5 Freeze", cost: 14, kind: "auto_hint", value: 50, rarity: "legendary", emoji: "🎁", tier: "free" },
+  { code: "tk_gems150",    name: "💎 +150 Gem",               cost: 15,  kind: "gems",          value: 150,   rarity: "legendary", emoji: "💎", tier: "free" },
 
   // ============ PREMIUM TIER (20-60 token, 40 item — HADIAH MANTAP) ============
   // Rasio Gem Premium: ~10 gem per token (30 token = 300 gem, makin tinggi makin hemat)
