@@ -469,6 +469,7 @@ Deno.serve(async (req) => {
         bundles: BUNDLES,
         freeSpinAvailable,
         freePrizes: FREE_PRIZES,
+        megaArenaPrizes: MEGA_ARENA_PRIZES,
         luckyStreak,
         streakMultiplier: getStreakMultiplier(luckyStreak),
         luckyTokens: tokenState.tokens,
