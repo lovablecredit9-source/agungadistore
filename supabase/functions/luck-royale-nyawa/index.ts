@@ -99,13 +99,16 @@ const TOKENS_PER_SPIN_THRESHOLD = 5; // 5 paid spin = 1 token
 // FREE tier: bebas diklaim tanpa langganan.
 // PREMIUM tier: wajib akses Rp 100.000 (30 hari).
 // SUPER PREMIUM tier: wajib akses Rp 300.000 (30 hari) — hadiah jauh lebih mantap.
+// ULTRA tier: wajib akses Rp 500.000 (30 hari) — hadiah PALING DAHSYAT.
 const SHOP_ACCESS_PRICE = 100000;            // Rp 100.000 (Premium)
 const SHOP_ACCESS_DAYS = 30;                 // berlaku 30 hari
 const SUPER_SHOP_ACCESS_PRICE = 300000;      // Rp 300.000 (Super Premium)
 const SUPER_SHOP_ACCESS_DAYS = 30;           // berlaku 30 hari
+const ULTRA_SHOP_ACCESS_PRICE = 500000;      // Rp 500.000 (Ultra)
+const ULTRA_SHOP_ACCESS_DAYS = 30;           // berlaku 30 hari
 
-// Item shop: Free (1-10) + Premium (20-60) + Super Premium (70-150, MEGA hadiah)
-const TOKEN_SHOP: Array<{ code: string; name: string; cost: number; kind: string; value: number; rarity: string; emoji: string; tier: "free" | "premium" | "super_premium" }> = [
+// Item shop: Free (1-10) + Premium (20-60) + Super Premium (70-150) + Ultra (160-300, GOD-tier)
+const TOKEN_SHOP: Array<{ code: string; name: string; cost: number; kind: string; value: number; rarity: string; emoji: string; tier: "free" | "premium" | "super_premium" | "ultra" }> = [
   // ============ FREE TIER (1-10 token, 10 item) ============
   { code: "tk_hint10",     name: "+10 Hint Otomatis",        cost: 1,   kind: "auto_hint",     value: 10,    rarity: "rare",      emoji: "💡", tier: "free" },
   { code: "tk_life10",     name: "+10 Nyawa Ekstra",         cost: 1,   kind: "extra_life",    value: 10,    rarity: "rare",      emoji: "❤️", tier: "free" },
