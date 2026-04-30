@@ -47,6 +47,8 @@ const PRIZES: Prize[] = [
   { kind: "auto_hint",     value: 8,     label: "+8 Hint Otomatis",        emoji: "💡", rarity: "rare",      weight: 7,     color: "#06b6d4" },
   { kind: "extra_life",    value: 8,     label: "+8 Nyawa Ekstra",         emoji: "❤️", rarity: "rare",      weight: 7,     color: "#f43f5e" },
   { kind: "time_freeze",   value: 5,     label: "+5 Freeze 30s",           emoji: "⏱️", rarity: "rare",      weight: 7,     color: "#0ea5e9" },
+  { kind: "streak_coins",  value: 200,   label: "🪙 +200 Streak Coin",      emoji: "🪙", rarity: "rare",      weight: 10,    color: "#f59e0b" },
+  { kind: "streak_coins",  value: 500,   label: "🪙 +500 Streak Coin",      emoji: "🪙", rarity: "rare",      weight: 7,     color: "#f59e0b" },
 
   // === EPIC ===
   { kind: "auto_hint",     value: 12,    label: "💡 +12 Hint",             emoji: "💡", rarity: "epic",      weight: 5,     color: "#a855f7" },
@@ -56,6 +58,8 @@ const PRIZES: Prize[] = [
   { kind: "gems",          value: 100,   label: "💎 +100 Gem",             emoji: "💎", rarity: "epic",      weight: 3.5,   color: "#8b5cf6" },
   { kind: "auto_hint",     value: 20,    label: "💡 +20 Hint",             emoji: "💡", rarity: "epic",      weight: 2.8,   color: "#a855f7" },
   { kind: "extra_life",    value: 20,    label: "❤️ +20 Nyawa",            emoji: "❤️", rarity: "epic",      weight: 2.8,   color: "#a855f7" },
+  { kind: "streak_coins",  value: 1500,  label: "🪙 +1.500 Streak Coin",    emoji: "🪙", rarity: "epic",      weight: 4,     color: "#fb923c" },
+  { kind: "streak_coins",  value: 3000,  label: "🪙 +3.000 Streak Coin",    emoji: "🪙", rarity: "epic",      weight: 2.5,   color: "#fb923c" },
 
   // === LEGENDARY (susah) ===
   { kind: "extra_life",    value: 35,    label: "❤️ +35 Nyawa",            emoji: "❤️", rarity: "legendary", weight: 2,     color: "#fbbf24" },
@@ -65,6 +69,8 @@ const PRIZES: Prize[] = [
   { kind: "extra_life",    value: 50,    label: "❤️ +50 Nyawa",            emoji: "❤️", rarity: "legendary", weight: 1.2,   color: "#fbbf24" },
   { kind: "auto_hint",     value: 50,    label: "💡 +50 Hint",             emoji: "💡", rarity: "legendary", weight: 1.2,   color: "#fbbf24" },
   { kind: "gems",          value: 500,   label: "💎 +500 Gem",             emoji: "💎", rarity: "legendary", weight: 0.9,   color: "#facc15" },
+  { kind: "streak_coins",  value: 8000,  label: "🪙 +8.000 Streak Coin",    emoji: "🪙", rarity: "legendary", weight: 1.5,   color: "#fbbf24" },
+  { kind: "streak_coins",  value: 20000, label: "🪙 +20.000 Streak Coin",   emoji: "🪙", rarity: "legendary", weight: 0.8,   color: "#fbbf24" },
 
   // === MYTHIC (sangat susah) ===
   { kind: "extra_life",    value: 80,    label: "🌈 +80 Nyawa",            emoji: "❤️", rarity: "mythic",    weight: 0.7,   color: "#f0abfc" },
@@ -77,6 +83,8 @@ const PRIZES: Prize[] = [
   { kind: "auto_hint",     value: 300,   label: "👑 +300 Hint GOD",        emoji: "💡", rarity: "mythic",    weight: 0.12,  color: "#fef08a" },
   { kind: "gems",          value: 8000,  label: "💎 +8.000 Gem",           emoji: "💎", rarity: "mythic",    weight: 0.05,  color: "#fde68a" },
   { kind: "gems",          value: 10000, label: "👑 +10.000 Gem",          emoji: "💎", rarity: "mythic",    weight: 0.025, color: "#fef08a" },
+  { kind: "streak_coins",  value: 50000, label: "🪙 +50.000 Streak Coin",   emoji: "🪙", rarity: "mythic",    weight: 0.3,   color: "#fde68a" },
+  { kind: "streak_coins",  value: 150000,label: "👑 +150.000 Streak JACKPOT", emoji: "🪙", rarity: "mythic",  weight: 0.05,  color: "#fef08a" },
 
   // === MEGA JACKPOT (PALING SUSAH SEKALI — super rare) ===
   { kind: "gems",          value: 25000, label: "🔥 +25.000 Gem MEGA",     emoji: "💎", rarity: "mythic",    weight: 0.008, color: "#fef08a" },
@@ -109,6 +117,8 @@ const FREE_PRIZES: Prize[] = [
   { kind: "streak_freeze", value: 1,  label: "🎁 FREE +1 Streak Freeze", emoji: "🛡️", rarity: "rare",   weight: 12, color: "#10b981" },
   { kind: "auto_hint",     value: 3,  label: "🎁 FREE +3 Hint",          emoji: "💡", rarity: "epic",   weight: 1.2, color: "#a855f7" },
   { kind: "extra_life",    value: 3,  label: "🎁 FREE +3 Nyawa",         emoji: "❤️", rarity: "epic",   weight: 1.0, color: "#f43f5e" },
+  { kind: "streak_coins",  value: 50, label: "🎁 FREE +50 Streak Coin",  emoji: "🪙", rarity: "common", weight: 18,  color: "#f59e0b" },
+  { kind: "streak_coins",  value: 150,label: "🎁 FREE +150 Streak Coin", emoji: "🪙", rarity: "rare",   weight: 6,   color: "#fb923c" },
 ];
 
 function pickFromPool(pool: Prize[]): Prize & { index: number } {
