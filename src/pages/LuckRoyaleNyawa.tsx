@@ -415,15 +415,16 @@ export default function LuckRoyaleNyawa() {
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-1.5 mb-0.5">
-                  <Badge className="bg-black text-yellow-200 font-black text-[8px]">PALING SULIT</Badge>
-                  <span className="text-[9px] font-black tracking-widest">JACKPOT UTAMA SPIN</span>
+                  <Badge className="bg-black text-yellow-200 font-black text-[8px]">PALING SULIT SEKALI</Badge>
+                  <span className="text-[9px] font-black tracking-widest">MEGA JACKPOT SPIN</span>
                 </div>
                 <div className="flex items-baseline gap-1">
-                  <span className="text-2xl font-black tabular-nums drop-shadow">10.000</span>
+                  <span className="text-2xl font-black tabular-nums drop-shadow">50.000</span>
                   <Gem className="w-4 h-4" fill="currentColor" />
+                  <span className="text-[9px] font-black ml-1">+ 25K • 10K • 8K • Nyawa/Hint GOD 300</span>
                 </div>
                 <p className="text-[10px] font-black mt-0.5">
-                  Muncul di pool Mythic spin — peluang super tipis, murni hoki.
+                  Pool Mythic super langka — 50.000 Gem peluang ~0.002%, butuh hoki dewa!
                 </p>
               </div>
             </div>
