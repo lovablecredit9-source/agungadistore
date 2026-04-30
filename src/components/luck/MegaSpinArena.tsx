@@ -206,9 +206,6 @@ export default function MegaSpinArena({ visitorId, gems, setGems }: Props) {
     if (busy || !visitorId) return;
     setBusy("combo");
     setComboResult(null);
-    const ok = await chargeGems(COSTS.combo);
-    if (!ok) { setBusy(null); return; }
-
     // animasi singkat
     await new Promise((r) => setTimeout(r, 600));
 
@@ -217,8 +214,14 @@ export default function MegaSpinArena({ visitorId, gems, setGems }: Props) {
     const mult = isMiss ? 1 : comboMult;
     const awarded = prize.value * mult;
 
-    await awardPrize(visitorId, prize, 0, mult);
-    await refreshGems();
+    try {
+      const gemsAfter = await awardPrize(visitorId, prize, COSTS.combo, mult);
+      setGems(gemsAfter);
+    } catch (e: any) {
+      toast({ title: "Gagal", description: e.message || "Hadiah gagal diproses", variant: "destructive" });
+      setBusy(null);
+      return;
+    }
 
     setComboResult({ prize, mult, awarded });
 
@@ -244,8 +247,11 @@ export default function MegaSpinArena({ visitorId, gems, setGems }: Props) {
     setMegaReveal(0);
     setMegaSlowmo(false);
 
-    const ok = await chargeGems(COSTS.mega);
-    if (!ok) { setBusy(null); return; }
+    if (gems < COSTS.mega) {
+      toast({ title: "Gems kurang", description: `Butuh ${COSTS.mega}💎 (kamu punya ${gems}).`, variant: "destructive" });
+      setBusy(null);
+      return;
+    }
 
     // Roll 10x dengan pity injection
     const results: MiniPrize[] = [];
@@ -278,8 +284,16 @@ export default function MegaSpinArena({ visitorId, gems, setGems }: Props) {
     setMegaSlowmo(false);
 
     // Award semuanya
-    for (const p of results) {
-      await awardPrize(visitorId, p);
+    for (let i = 0; i < results.length; i++) {
+      const p = results[i];
+      try {
+        const gemsAfter = await awardPrize(visitorId, p, i === 0 ? COSTS.mega : 0);
+        setGems(gemsAfter);
+      } catch (e: any) {
+        toast({ title: "Gagal", description: e.message || "Hadiah gagal diproses", variant: "destructive" });
+        setBusy(null);
+        return;
+      }
     }
     await refreshGems();
 
