@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Sliders, RotateCcw, Headphones, Zap, Music, Repeat, Gauge, Sparkles } from "lucide-react";
+import { X, Sliders, RotateCcw, Headphones, Zap, Music, Repeat, Gauge, Sparkles, Volume2 } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
