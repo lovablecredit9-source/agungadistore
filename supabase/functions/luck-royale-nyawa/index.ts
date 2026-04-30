@@ -660,7 +660,16 @@ Deno.serve(async (req) => {
           nextActiveAt: luckyHour.nextActiveAt,
           rangeStart: LUCKY_HOUR_MIN,
           rangeEnd: LUCKY_HOUR_MAX,
+          boostedUntil: luckyHour.boostedUntil,
+          source: luckyHour.source,
         },
+        luckyHourPackages: LUCKY_HOUR_PACKAGES.map(p => ({
+          ...p,
+          // Harga efektif: jika belum pernah klaim diskon pertama dan paket punya firstPrice → tampilkan firstPrice
+          effectivePrice: (!lhFirstUsed && p.firstPrice != null) ? p.firstPrice : p.price,
+          isFirstDiscountAvailable: !lhFirstUsed && p.firstPrice != null,
+        })),
+        luckyHourFirstDiscountUsed: lhFirstUsed,
       }, { headers: corsHeaders });
     }
 
