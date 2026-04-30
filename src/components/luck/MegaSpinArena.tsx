@@ -394,6 +394,7 @@ export default function MegaSpinArena({ visitorId, gems, setGems }: Props) {
           {comboStreak < COMBO_TIERS.length - 1 && (
             <> · Berikutnya: x{nextComboMult} (jika tidak MISS)</>
           )}
+          <br />Hadiah utama: koin streak, nyawa, hint, freeze. Gem hanya bonus langka.
         </div>
 
         {comboResult && (
@@ -430,7 +431,13 @@ export default function MegaSpinArena({ visitorId, gems, setGems }: Props) {
           </div>
         </div>
         <div className="text-[10px] text-amber-200/70 mb-2">
-          10 spin sekaligus · slow-motion saat jackpot · trigger Bonus Wheel
+          10 spin sekaligus · biaya lebih murah · hadiah masuk akun semua
+        </div>
+
+        <div className="grid grid-cols-5 gap-1 mb-2 text-[9px] font-black text-center">
+          {["🪙 Koin", "❤️ Nyawa", "💡 Hint", "🛡️ Freeze", "💎 Gem"].map((x) => (
+            <div key={x} className="rounded-md bg-black/30 border border-amber-400/20 px-1 py-1 text-amber-100 truncate">{x}</div>
+          ))}
         </div>
 
         {/* Grid 10 hasil */}
