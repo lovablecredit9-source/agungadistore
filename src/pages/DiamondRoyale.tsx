@@ -11,10 +11,8 @@ import { getVisitorId } from "@/lib/visitor-id";
 import { formatCompactNumber } from "@/lib/utils";
 import {
   ArrowLeft, Gem, Sparkles, Crown, Loader2, Trophy, Shield, Coins,
-  Star, Award, Flame, Lock, Zap, Diamond, Rocket,
+  Star, Award, Flame, Lock, Zap, Diamond,
 } from "lucide-react";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import MegaSpinArena from "@/components/luck/MegaSpinArena";
 
 interface Prize {
   kind: "gems" | "coins" | "freeze" | "title" | "skin";
@@ -167,17 +165,6 @@ export default function DiamondRoyale() {
       </div>
 
       <div className="max-w-md mx-auto px-3 py-4 space-y-4 relative">
-        <Tabs defaultValue="royale" className="w-full">
-          <TabsList className="grid w-full grid-cols-2 bg-black/40 border border-amber-500/30 h-auto p-1 gap-1">
-            <TabsTrigger value="royale" className="flex items-center gap-1.5 py-2 data-[state=active]:bg-gradient-to-br data-[state=active]:from-amber-500 data-[state=active]:to-orange-600 data-[state=active]:text-black font-black text-xs rounded-md">
-              <Diamond className="w-3.5 h-3.5" fill="currentColor" /> ROYALE
-            </TabsTrigger>
-            <TabsTrigger value="mega" className="flex items-center gap-1.5 py-2 data-[state=active]:bg-gradient-to-br data-[state=active]:from-fuchsia-600 data-[state=active]:to-purple-700 data-[state=active]:text-white font-black text-xs rounded-md">
-              <Rocket className="w-3.5 h-3.5" /> MEGA ARENA
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="royale" className="space-y-4 mt-3">
         {/* Hero / Reel */}
         <Card className="relative overflow-hidden p-4 bg-gradient-to-br from-amber-500/10 via-purple-500/10 to-pink-500/10 border-amber-400/30">
           <div className="absolute -top-8 -right-8 w-32 h-32 bg-amber-400/20 rounded-full blur-3xl" />
@@ -357,13 +344,6 @@ export default function DiamondRoyale() {
         )}
 
         <div className="h-8" />
-          </TabsContent>
-
-          <TabsContent value="mega" className="mt-3">
-            <MegaSpinArena visitorId={visitorId} gems={gems} setGems={setGems} />
-            <div className="h-8" />
-          </TabsContent>
-        </Tabs>
       </div>
     </div>
   );
