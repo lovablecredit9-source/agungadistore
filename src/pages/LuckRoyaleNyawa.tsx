@@ -87,12 +87,13 @@ export default function LuckRoyaleNyawa() {
   const [tokenProgress, setTokenProgress] = useState(0);
   const [tokenThreshold, setTokenThreshold] = useState(5);
   const [megaPool, setMegaPool] = useState(5000);
-  const [tokenShop, setTokenShop] = useState<Array<{ code: string; name: string; cost: number; kind: string; value: number; rarity: string; emoji: string; tier?: "free" | "premium" | "super_premium" }>>([]);
+  const [tokenShop, setTokenShop] = useState<Array<{ code: string; name: string; cost: number; kind: string; value: number; rarity: string; emoji: string; tier?: "free" | "premium" | "super_premium" | "ultra" }>>([]);
   const [freeDailyShop, setFreeDailyShop] = useState<Array<{ code: string; name: string; kind: string; value: number; rarity: string; emoji: string; claimedToday: boolean }>>([]);
   const [shopAccess, setShopAccess] = useState<{ isActive: boolean; activeUntil: string | null; purchasedAt: string | null; price: number; durationDays: number }>({ isActive: false, activeUntil: null, purchasedAt: null, price: 100000, durationDays: 30 });
   const [superShopAccess, setSuperShopAccess] = useState<{ isActive: boolean; activeUntil: string | null; purchasedAt: string | null; price: number; durationDays: number }>({ isActive: false, activeUntil: null, purchasedAt: null, price: 300000, durationDays: 30 });
+  const [ultraShopAccess, setUltraShopAccess] = useState<{ isActive: boolean; activeUntil: string | null; purchasedAt: string | null; price: number; durationDays: number }>({ isActive: false, activeUntil: null, purchasedAt: null, price: 500000, durationDays: 30 });
   const [redeeming, setRedeeming] = useState<string | null>(null);
-  const [shopTier, setShopTier] = useState<"free" | "premium" | "super_premium">("free");
+  const [shopTier, setShopTier] = useState<"free" | "premium" | "super_premium" | "ultra">("free");
 
   const fetchData = async () => {
     if (!visitorId) return;
