@@ -379,51 +379,28 @@ export default function LuckRoyaleNyawa() {
             </TabsList>
 
             <TabsContent value="spin" className="space-y-4 mt-3">
-          {/* 💥 MEGA JACKPOT POOL - community pool banner */}
-          <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-purple-700 via-fuchsia-600 to-pink-600 border-2 border-fuchsia-300/60 p-3 shadow-xl shadow-fuchsia-500/40">
-            <div className="absolute inset-0 opacity-30 animate-pulse" style={{
-              backgroundImage: "radial-gradient(circle at 50% 50%, rgba(255,255,255,0.5), transparent 70%)",
-            }} />
-            <div className="relative flex items-center gap-3">
-              <div className="w-14 h-14 rounded-2xl bg-black/40 ring-2 ring-amber-300/80 flex items-center justify-center shrink-0 animate-pulse">
-                <Gem className="w-8 h-8 text-amber-200" fill="currentColor" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-1.5 mb-0.5">
-                  <Badge className="bg-amber-500 text-black font-black text-[8px]">💥 LIVE</Badge>
-                  <span className="text-[9px] font-black tracking-widest text-amber-100">MEGA JACKPOT POOL</span>
-                </div>
-                <div className="flex items-baseline gap-1">
-                  <span className="text-2xl font-black text-white tabular-nums drop-shadow">{formatCompactNumber(megaPool)}</span>
-                  <Gem className="w-4 h-4 text-amber-300" fill="currentColor" />
-                </div>
-                <p className="text-[10px] font-bold text-fuchsia-100/90 mt-0.5">
-                  Pecah saat ada Mythic 🌈 - pemenang dapat <span className="text-amber-200 font-black">70%</span> pool!
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* 👑 JACKPOT UTAMA - hardest spin prize */}
+          {/* 👑 Hadiah normal - tidak ikut pool Mega/Combo */}
           <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-amber-400 via-yellow-300 to-fuchsia-500 border-2 border-yellow-200 p-3 shadow-xl shadow-yellow-400/40">
             <div className="absolute inset-0 opacity-30 animate-pulse" style={{
               backgroundImage: "linear-gradient(120deg, transparent 20%, rgba(255,255,255,0.7) 50%, transparent 80%)",
             }} />
             <div className="relative flex items-center gap-3 text-black">
               <div className="w-14 h-14 rounded-2xl bg-black/80 ring-2 ring-white/80 flex items-center justify-center shrink-0 animate-pulse">
-                <Crown className="w-8 h-8 text-yellow-200" fill="currentColor" />
+                <Heart className="w-8 h-8 text-rose-300" fill="currentColor" />
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-1.5 mb-0.5">
-                  <Badge className="bg-black text-yellow-200 font-black text-[8px]">PALING SULIT</Badge>
-                  <span className="text-[9px] font-black tracking-widest">JACKPOT UTAMA SPIN</span>
+                  <Badge className="bg-black text-yellow-200 font-black text-[8px]">NORMAL</Badge>
+                  <span className="text-[9px] font-black tracking-widest">HADIAH SPIN NYAWA</span>
                 </div>
-                <div className="flex items-baseline gap-1">
-                  <span className="text-2xl font-black tabular-nums drop-shadow">25.000</span>
-                  <Coins className="w-4 h-4" fill="currentColor" />
+                <div className="flex items-center gap-2 text-lg font-black drop-shadow">
+                  <Heart className="w-5 h-5" fill="currentColor" />
+                  <Lightbulb className="w-5 h-5" fill="currentColor" />
+                  <Timer className="w-5 h-5" />
+                  <Shield className="w-5 h-5" fill="currentColor" />
                 </div>
                 <p className="text-[10px] font-black mt-0.5">
-                  Hadiah normal fokus ke nyawa, hint, time freeze, dan streak freeze — peluang tetap tergantung hoki.
+                  Spin normal hanya nyawa, hint, time freeze, dan streak freeze — bukan hadiah Mega.
                 </p>
               </div>
             </div>
