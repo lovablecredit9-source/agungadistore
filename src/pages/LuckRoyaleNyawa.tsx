@@ -1001,6 +1001,10 @@ export default function LuckRoyaleNyawa() {
               <DiamondRoyaleInline visitorId={visitorId} onGemsChange={(g) => setGems(g)} />
             </TabsContent>
 
+            <TabsContent value="mega" className="mt-3">
+              <MegaSpinArena visitorId={visitorId} gems={gems} setGems={setGems} />
+            </TabsContent>
+
             <TabsContent value="tips" className="mt-3 space-y-3">
               {(() => {
                 const total = history.length;
