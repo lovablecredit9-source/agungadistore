@@ -338,6 +338,14 @@ export default function MegaSpinArena({ visitorId, gems, setGems }: Props) {
     }
     await refreshGems();
 
+    pushHistory(results.map((p, i) => ({
+      id: `${Date.now()}-m-${i}`,
+      at: Date.now() + i,
+      source: "mega" as const,
+      prize: { kind: p.kind, label: p.label, emoji: p.emoji, rarity: p.rarity, value: p.value },
+      awarded: p.value,
+    })));
+
     const jackpots = results.filter(isJackpot).length;
     if (jackpots > 0) {
       toast({ title: `🎉 MEGA SPIN — ${jackpots} JACKPOT!`, description: `10 hadiah masuk akun.` });
