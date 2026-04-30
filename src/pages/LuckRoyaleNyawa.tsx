@@ -1480,7 +1480,7 @@ export default function LuckRoyaleNyawa() {
               <div className="space-y-2 text-[12px] leading-relaxed text-amber-50/95">
                 <div className="flex gap-2 bg-black/30 rounded-lg p-2.5 border border-amber-500/30">
                   <Sparkles className="w-4 h-4 text-amber-300 shrink-0 mt-0.5" />
-                  <p>Luck Royale adalah <b>permainan keberuntungan</b>. Hadiah yang kamu dapat <b>murni acak</b> sesuai hoki masing-masing.</p>
+                  <p>Luck Royale adalah <b>permainan keberuntungan</b>. Hadiah bisa berupa <b>koin streak, nyawa, hint, freeze, atau gem</b> sesuai peluang masing-masing.</p>
                 </div>
                 <div className="flex gap-2 bg-black/30 rounded-lg p-2.5 border border-rose-500/30">
                   <X className="w-4 h-4 text-rose-300 shrink-0 mt-0.5" />
