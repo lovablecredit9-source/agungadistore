@@ -429,6 +429,16 @@ function applyFxToGraph(g: Graph, fx: AudioFxSettings) {
   const wet = Math.max(0, Math.min(1, fx.surround));
   g.wetGain.gain.setTargetAtTime(wet * 0.6, t, 0.05);
   g.dryGain.gain.setTargetAtTime(1 - wet * 0.4, t, 0.05);
+
+  // Loudness booster (1x..4x). Auto-engage compressor when loudness > 1 OR user toggled.
+  const loud = Math.max(1, Math.min(4, fx.loudness ?? 1));
+  const useComp = (fx.compressor ?? false) || loud > 1.01;
+  g.makeup.gain.setTargetAtTime(loud, t, 0.05);
+  // When compressor is "off", relax it so it acts mostly transparent.
+  g.compressor.threshold.setTargetAtTime(useComp ? -24 : -6, t, 0.05);
+  g.compressor.ratio.setTargetAtTime(useComp ? 12 : 2, t, 0.05);
+  g.compressor.knee.setTargetAtTime(useComp ? 30 : 6, t, 0.05);
+
   rebuildChannelRouting(g, fx);
 }
 
