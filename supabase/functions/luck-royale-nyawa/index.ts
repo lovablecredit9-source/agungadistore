@@ -534,6 +534,36 @@ Deno.serve(async (req) => {
       }, { headers: corsHeaders });
     }
 
+    if (action === "mega_arena_award") {
+      const { prize, costGems = 0, multiplier = 1 } = await req.json().catch(() => ({}));
+      const allowedKinds = new Set(["extra_life", "auto_hint", "time_freeze", "streak_freeze", "streak_coins", "gems"]);
+      const kind = String(prize?.kind || "");
+      const baseValue = Math.max(1, Math.min(100000, Number(prize?.value) || 0));
+      const mult = Math.max(1, Math.min(5, Number(multiplier) || 1));
+      const value = baseValue * mult;
+      if (!allowedKinds.has(kind)) return Response.json({ error: "Hadiah tidak valid" }, { status: 400, headers: corsHeaders });
+
+      if (costGems > 0) {
+        const { data: haveGems } = await admin.rpc("get_account_gems", { p_visitor_id: visitorId });
+        if ((Number(haveGems) || 0) < costGems) return Response.json({ error: `Butuh ${costGems} gem` }, { status: 400, headers: corsHeaders });
+        await admin.rpc("add_account_gems", { p_visitor_id: visitorId, p_amount: -costGems });
+      }
+
+      await applyPrize(admin, visitorId, { ...prize, kind, value } as Prize);
+      await admin.from("luck_royale_nyawa_history").insert({
+        visitor_id: visitorId,
+        spin_type: "mega_arena",
+        reward_kind: kind,
+        reward_value: value,
+        reward_label: String(prize?.label || kind),
+        rarity: String(prize?.rarity || "common"),
+        cost_currency: costGems > 0 ? "gems" : "free",
+        cost_amount: Math.max(0, Number(costGems) || 0),
+      });
+      const { data: gemsAfter } = await admin.rpc("get_account_gems", { p_visitor_id: visitorId });
+      return Response.json({ success: true, gems: gemsAfter || 0, awarded: { kind, value } }, { headers: corsHeaders });
+    }
+
     if (action === "spin_single" || action === "spin_bundle" || action === "spin_pack") {
       let spinCount = 1;
       let cost = SINGLE_COST_GEMS;
