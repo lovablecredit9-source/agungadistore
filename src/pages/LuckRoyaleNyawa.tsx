@@ -419,11 +419,11 @@ export default function LuckRoyaleNyawa() {
                   <span className="text-[9px] font-black tracking-widest">JACKPOT UTAMA SPIN</span>
                 </div>
                 <div className="flex items-baseline gap-1">
-                  <span className="text-2xl font-black tabular-nums drop-shadow">10.000</span>
-                  <Gem className="w-4 h-4" fill="currentColor" />
+                  <span className="text-2xl font-black tabular-nums drop-shadow">25.000</span>
+                  <Coins className="w-4 h-4" fill="currentColor" />
                 </div>
                 <p className="text-[10px] font-black mt-0.5">
-                  Muncul di pool Mythic spin — peluang super tipis, murni hoki.
+                  Hadiah besar bisa berupa koin, nyawa, hint, freeze, atau gem — peluang tetap tergantung hoki.
                 </p>
               </div>
             </div>
@@ -545,7 +545,7 @@ export default function LuckRoyaleNyawa() {
                 JACKPOT<br />SHADOW VAULT
               </h2>
               <p className="text-[11px] text-amber-50/90 mt-1.5 font-semibold">
-                💎 Gem • ❤️ Nyawa • 💡 Hint • 🛡️ Freeze — semua bisa kena!
+                🪙 Koin • ❤️ Nyawa • 💡 Hint • 🛡️ Freeze • 💎 Gem — semua bisa kena!
               </p>
             </div>
           </div>
@@ -576,6 +576,31 @@ export default function LuckRoyaleNyawa() {
                         {p.label.replace(/[👑💎🌈🎰❤️💡⏱️🛡️🪙🎁]/g, "").trim().split(" ").slice(0, 2).join(" ")}
                       </div>
                     </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* 📊 Info peluang hadiah */}
+          <div className="rounded-2xl bg-black/35 border border-cyan-400/25 p-3 space-y-2">
+            <div className="flex items-center justify-between gap-2">
+              <h3 className="text-[11px] font-black tracking-widest text-cyan-200 flex items-center gap-1">
+                <BarChart3 className="w-3 h-3" /> INFO HADIAH
+              </h3>
+              <span className="text-[9px] font-bold text-white/60">Semakin kecil %, semakin langka</span>
+            </div>
+            <div className="grid grid-cols-2 gap-1.5">
+              {prizes.map((p, i) => {
+                const style = RARITY_STYLE[p.rarity] || RARITY_STYLE.common;
+                const chance = totalPrizeWeight ? ((Number(p.weight) || 0) / totalPrizeWeight) * 100 : 0;
+                return (
+                  <div key={`${p.kind}-${p.value}-${i}`} className={`flex items-center justify-between gap-1 rounded-lg bg-gradient-to-r ${style.gradient} px-2 py-1 ring-1 ${style.ring}`}>
+                    <span className="min-w-0 flex items-center gap-1 text-[9px] font-black text-white truncate">
+                      <span>{p.emoji}</span>
+                      <span className="truncate">{p.label.replace(/[👑💎🌈🎰❤️💡⏱️🛡️🪙🎁]/g, "").trim()}</span>
+                    </span>
+                    <span className="shrink-0 text-[9px] font-black text-amber-100 tabular-nums">{chance < 0.1 ? "<0.1" : chance.toFixed(1)}%</span>
                   </div>
                 );
               })}
@@ -629,7 +654,7 @@ export default function LuckRoyaleNyawa() {
                   PUTAR & MENANGKAN
                 </p>
                 <p className="text-center text-[10px] text-purple-200/90 mt-1 font-semibold">
-                  💎 Gem • ❤️ Nyawa • 💡 Hint • 🛡️ Freeze
+                  🪙 Koin • ❤️ Nyawa • 💡 Hint • 🛡️ Freeze • 💎 Gem
                 </p>
                 {/* Mini featured strip */}
                 <div className="flex items-center gap-1.5 mt-3">
