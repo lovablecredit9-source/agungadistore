@@ -610,9 +610,6 @@ Deno.serve(async (req) => {
         return Response.json({ error: "Gagal mengurangi saldo" }, { status: 400, headers: corsHeaders });
       }
 
-      // Spin normal tidak ikut sistem Mega Jackpot Pool.
-      let pool = await getMegaPool(admin);
-
       const { data: histPre } = await admin
         .from("luck_royale_nyawa_history")
         .select("rarity")
@@ -696,8 +693,6 @@ Deno.serve(async (req) => {
       });
 
       const { data: gemsAfter } = await admin.rpc("get_account_gems", { p_visitor_id: visitorId });
-      const finalPool = await getMegaPool(admin);
-
       return Response.json({
         success: true,
         results,
@@ -706,7 +701,6 @@ Deno.serve(async (req) => {
         luckyStreak: curStreak,
         streakMultiplier: getStreakMultiplier(curStreak),
         totalBonusGems,
-        megaJackpotPool: finalPool,
         luckyTokens: newTokens,
         luckyTokenProgress: newProgress,
         luckyTokenThreshold: TOKENS_PER_SPIN_THRESHOLD,
