@@ -610,10 +610,8 @@ Deno.serve(async (req) => {
         return Response.json({ error: "Gagal mengurangi saldo" }, { status: 400, headers: corsHeaders });
       }
 
-      // === Mega Jackpot Pool: kontribusi 5% dari biaya spin ===
+      // Spin normal tidak ikut sistem Mega Jackpot Pool.
       let pool = await getMegaPool(admin);
-      pool += Math.floor(cost * POOL_CONTRIBUTION_PCT);
-      await setMegaPool(admin, pool);
 
       const { data: histPre } = await admin
         .from("luck_royale_nyawa_history")
@@ -643,21 +641,12 @@ Deno.serve(async (req) => {
         const prize: Prize = { ...basePrize, value: finalValue };
         await applyPrize(admin, visitorId, prize);
 
-        // === MEGA JACKPOT BREAK: kalau Mythic & lolos chance ===
         let jackpotWon = 0;
-        if (prize.rarity === "mythic" && pool >= POOL_MIN_BREAK && Math.random() < POOL_BREAK_CHANCE) {
-          jackpotWon = Math.floor(pool * 0.7); // pemain dapat 70% pool
-          pool = pool - jackpotWon;
-          await setMegaPool(admin, pool);
-          await admin.rpc("add_account_gems", { p_visitor_id: visitorId, p_amount: jackpotWon });
-          jackpotWonTotal += jackpotWon;
-        }
 
         results.push({ ...prize, index: basePrize.index, bonusApplied, jackpotWon });
 
         const labelParts: string[] = [prize.label];
         if (bonusApplied > 0) labelParts.push(`(+${Math.round((mult - 1) * 100)}% streak)`);
-        if (jackpotWon > 0) labelParts.push(`💥 MEGA JACKPOT +${jackpotWon} Gem!`);
         await admin.from("luck_royale_nyawa_history").insert({
           visitor_id: visitorId,
           spin_type: spinType,
