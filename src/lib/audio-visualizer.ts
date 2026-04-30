@@ -125,6 +125,8 @@ type Graph = {
   wetGain: GainNode;
   dryGain: GainNode;
   master: GainNode;
+  compressor: DynamicsCompressorNode;
+  makeup: GainNode;
   analyser: AnalyserNode;
 };
 
