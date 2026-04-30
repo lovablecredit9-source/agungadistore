@@ -7,7 +7,7 @@ import { Progress } from "@/components/ui/progress";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Sparkles, Gem, Coins, Wallet, Gift, Trophy, Zap, Lock, Crown, History } from "lucide-react";
+import { Loader2, Sparkles, Gem, Coins, Wallet, Gift, Trophy, Zap, Lock, Crown, History, Heart, Lightbulb, Shield, Timer } from "lucide-react";
 
 interface Segment {
   id: string;
@@ -39,6 +39,33 @@ interface Tier {
 interface Props {
   visitorId: string;
   onUpdate?: () => void;
+}
+
+const rewardLabels: Record<string, string> = {
+  streak_coins: "Koin Streak",
+  coins: "Koin Streak",
+  gems: "Gem",
+  freeze_token: "Freeze Streak",
+  streak_freeze: "Freeze Streak",
+  extra_life: "Nyawa",
+  auto_hint: "Hint",
+  time_freeze: "Time Freeze",
+  balance: "Saldo",
+};
+
+function rewardIcon(type: string) {
+  if (type === "gems") return <Gem className="h-3 w-3" />;
+  if (type === "extra_life") return <Heart className="h-3 w-3" />;
+  if (type === "auto_hint") return <Lightbulb className="h-3 w-3" />;
+  if (type === "time_freeze") return <Timer className="h-3 w-3" />;
+  if (type === "freeze_token" || type === "streak_freeze") return <Shield className="h-3 w-3" />;
+  if (type === "balance") return <Wallet className="h-3 w-3" />;
+  return <Coins className="h-3 w-3" />;
+}
+
+function formatRewardValue(type: string, value: number) {
+  if (type === "balance") return `Rp${value.toLocaleString("id-ID")}`;
+  return `+${value.toLocaleString("id-ID")} ${rewardLabels[type] || "Hadiah"}`;
 }
 
 export default function StreakLuckyWheelShop({ visitorId, onUpdate }: Props) {
