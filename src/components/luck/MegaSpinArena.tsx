@@ -143,6 +143,35 @@ export default function MegaSpinArena({ visitorId, gems, setGems }: Props) {
   const [bonusWon, setBonusWon] = useState<typeof BONUS_WHEEL[number] | null>(null);
   const wheelRef = useRef<HTMLDivElement>(null);
 
+  // === Info & Riwayat ===
+  type SpinHistoryEntry = {
+    id: string;
+    at: number;
+    source: "combo" | "mega" | "bonus";
+    prize: { kind: string; label: string; emoji: string; rarity: Rarity; value: number };
+    awarded: number;
+    multiplier?: number;
+  };
+  const [showInfo, setShowInfo] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
+  const [history, setHistory] = useState<SpinHistoryEntry[]>(() => {
+    try {
+      const v = localStorage.getItem("mega_spin_history");
+      return v ? (JSON.parse(v) as SpinHistoryEntry[]) : [];
+    } catch { return []; }
+  });
+  const pushHistory = (entries: SpinHistoryEntry[]) => {
+    setHistory((prev) => {
+      const next = [...entries, ...prev].slice(0, 100);
+      try { localStorage.setItem("mega_spin_history", JSON.stringify(next)); } catch {}
+      return next;
+    });
+  };
+  const clearHistory = () => {
+    setHistory([]);
+    try { localStorage.removeItem("mega_spin_history"); } catch {}
+  };
+
   // Sinkron pool dari edge function existing (biar reward sama feel-nya)
   useEffect(() => {
     let mounted = true;
