@@ -710,6 +710,13 @@ Deno.serve(async (req) => {
             error: `Akses Super Premium belum aktif. Beli akses Rp ${SUPER_SHOP_ACCESS_PRICE.toLocaleString("id-ID")} (berlaku ${SUPER_SHOP_ACCESS_DAYS} hari) untuk tukar item Super Premium.`,
           }, { status: 403, headers: corsHeaders });
         }
+      } else if (item.tier === "ultra") {
+        const ultraAccess = await getShopAccess(admin, visitorId, "ultra");
+        if (!isShopAccessActive(ultraAccess)) {
+          return Response.json({
+            error: `Akses Ultra belum aktif. Beli akses Rp ${ULTRA_SHOP_ACCESS_PRICE.toLocaleString("id-ID")} (berlaku ${ULTRA_SHOP_ACCESS_DAYS} hari) untuk tukar item Ultra.`,
+          }, { status: 403, headers: corsHeaders });
+        }
       }
       // tier === "free" → langsung lanjut tanpa cek akses
 
