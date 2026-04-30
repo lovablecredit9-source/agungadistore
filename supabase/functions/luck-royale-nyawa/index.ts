@@ -471,6 +471,36 @@ async function applyPrize(admin: any, visitorId: string, p: Prize) {
     } else {
       await admin.from("daily_streaks").insert({ visitor_id: visitorId, streak_coins: p.value });
     }
+  } else if (p.kind === "game_credits") {
+    // Tambah kredit game (kunci jawaban) ke akun aktif via RPC akumulatif
+    try {
+      await admin.rpc("add_account_credits", { p_visitor_id: visitorId, p_amount: p.value });
+    } catch (_) {
+      // Fallback: upsert langsung ke baris visitor
+      const { data: row } = await admin.from("user_game_credits").select("id, credits").eq("visitor_id", visitorId).maybeSingle();
+      if (row) {
+        await admin.from("user_game_credits").update({ credits: (row.credits || 0) + p.value, updated_at: new Date().toISOString() }).eq("id", row.id);
+      } else {
+        await admin.from("user_game_credits").insert({ visitor_id: visitorId, credits: p.value });
+      }
+    }
+  } else if (p.kind === "game_balance") {
+    // Tambah Saldo IN (game_balance) — nominal dalam Rupiah
+    const { data: row } = await admin.from("game_balance").select("id, amount, total_earned").eq("visitor_id", visitorId).maybeSingle();
+    if (row) {
+      await admin.from("game_balance").update({
+        amount: (row.amount || 0) + p.value,
+        total_earned: (row.total_earned || 0) + p.value,
+        updated_at: new Date().toISOString(),
+      }).eq("id", row.id);
+    } else {
+      await admin.from("game_balance").insert({
+        visitor_id: visitorId,
+        amount: p.value,
+        total_earned: p.value,
+        total_spent: 0,
+      });
+    }
   }
 }
 
