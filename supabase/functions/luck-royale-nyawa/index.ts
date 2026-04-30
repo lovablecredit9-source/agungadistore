@@ -651,9 +651,9 @@ Deno.serve(async (req) => {
           visitor_id: visitorId,
           spin_type: spinType,
           reward_kind: prize.kind,
-          reward_value: finalValue + jackpotWon,
+          reward_value: finalValue,
           reward_label: labelParts.join(" "),
-          rarity: jackpotWon > 0 ? "mythic" : prize.rarity,
+          rarity: prize.rarity,
           cost_currency: currency,
           cost_amount: i === 0 ? cost : 0,
         });
