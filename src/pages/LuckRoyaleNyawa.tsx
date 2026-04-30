@@ -85,12 +85,10 @@ export default function LuckRoyaleNyawa() {
   const [luckyStreak, setLuckyStreak] = useState(0);
   const [streakMultiplier, setStreakMultiplier] = useState(1);
   const [bonusPopup, setBonusPopup] = useState<number | null>(null);
-  const [jackpotPopup, setJackpotPopup] = useState<number | null>(null);
   const [tokenPopup, setTokenPopup] = useState<number | null>(null);
   const [luckyTokens, setLuckyTokens] = useState(0);
   const [tokenProgress, setTokenProgress] = useState(0);
   const [tokenThreshold, setTokenThreshold] = useState(5);
-  const [megaPool, setMegaPool] = useState(5000);
   // ⚠️ Popup peringatan menang/kalah — wajib di-acknowledge sebelum spin pertama
   const [warningOpen, setWarningOpen] = useState(false);
   const [warningAck, setWarningAck] = useState(false);
@@ -121,7 +119,6 @@ export default function LuckRoyaleNyawa() {
       setLuckyTokens(Number(data.luckyTokens || 0));
       setTokenProgress(Number(data.luckyTokenProgress || 0));
       setTokenThreshold(Number(data.luckyTokenThreshold || 5));
-      setMegaPool(Number(data.megaJackpotPool || 5000));
       setTokenShop(data.tokenShop || []);
       setFreeDailyShop(data.freeDailyShop || []);
       setShopAccess(data.shopAccess || { isActive: false, activeUntil: null, purchasedAt: null, price: 100000, durationDays: 30 });
@@ -176,17 +173,12 @@ export default function LuckRoyaleNyawa() {
         setBonusPopup(data.totalBonusGems);
         setTimeout(() => setBonusPopup(null), 4000);
       }
-      if (data.jackpotWonTotal && data.jackpotWonTotal > 0) {
-        setJackpotPopup(data.jackpotWonTotal);
-        setTimeout(() => setJackpotPopup(null), 6000);
-      }
       if (data.earnedTokens && data.earnedTokens > 0) {
         setTokenPopup(data.earnedTokens);
         setTimeout(() => setTokenPopup(null), 4000);
       }
       if (typeof data.luckyTokens === "number") setLuckyTokens(data.luckyTokens);
       if (typeof data.luckyTokenProgress === "number") setTokenProgress(data.luckyTokenProgress);
-      if (typeof data.megaJackpotPool === "number") setMegaPool(data.megaJackpotPool);
       if (mode === "free") setFreeSpinAvailable(false);
       fetchData();
     } catch (e: any) {
