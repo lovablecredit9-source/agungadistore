@@ -114,6 +114,33 @@ export default function LuckRoyaleNyawa() {
   const [nowTick, setNowTick] = useState(Date.now());
   useEffect(() => { const t = setInterval(() => setNowTick(Date.now()), 1000); return () => clearInterval(t); }, []);
 
+  // Reveal hadiah satu per satu - kecepatan adaptif berdasarkan jumlah
+  useEffect(() => {
+    if (!results || results.length === 0) {
+      setRevealDone(true);
+      return;
+    }
+    setRevealCount(0);
+    setRevealDone(false);
+    const total = results.length;
+    // Total durasi target ~ 1.5s (singel) sampai ~6s (500 spin) — makin banyak makin cepat per item
+    const totalDurationMs = total <= 1 ? 250 : total <= 10 ? 1200 : total <= 50 ? 2500 : total <= 150 ? 4000 : 6000;
+    // Berapa item dibuka per tick — naikkan untuk pack besar agar tidak lag
+    const itemsPerTick = total <= 20 ? 1 : total <= 100 ? 2 : total <= 250 ? 5 : 10;
+    const ticks = Math.ceil(total / itemsPerTick);
+    const tickMs = Math.max(16, Math.floor(totalDurationMs / ticks));
+    let current = 0;
+    const interval = setInterval(() => {
+      current = Math.min(total, current + itemsPerTick);
+      setRevealCount(current);
+      if (current >= total) {
+        clearInterval(interval);
+        setRevealDone(true);
+      }
+    }, tickMs);
+    return () => clearInterval(interval);
+  }, [results]);
+
   // Leaderboard state & loader
   const [lbLoading, setLbLoading] = useState(false);
   const [lbLoaded, setLbLoaded] = useState(false);
