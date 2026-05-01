@@ -1339,12 +1339,14 @@ export default function LuckRoyaleNyawa() {
                   );
                 })}
               </div>
-              <p className="text-[9px] text-amber-100/60 mt-2 text-center">
-                {shopTier === "free" && "26 item FREE - bisa diklaim tanpa langganan"}
-                {shopTier === "premium" && "40 item Premium - hadiah MANTAP (Rp 100k/bln)"}
-                {shopTier === "super_premium" && "20 item SUPER PREMIUM - hadiah MEGA DIVINE (Rp 300k/bln)"}
-                {shopTier === "ultra" && "20 item ULTRA - hadiah PALING DAHSYAT GOD-TIER (Rp 500k/bln)"}
-              </p>
+                <p className="text-[9px] text-orange-100/70 mt-2 text-center font-semibold tracking-wider">
+                  {shopTier === "free" && "26 ITEM FREE — bisa diklaim tanpa langganan"}
+                  {shopTier === "premium" && "40 ITEM PREMIUM — hadiah MANTAP (Rp 100k/bln)"}
+                  {shopTier === "super_premium" && "20 ITEM SUPER — hadiah MEGA DIVINE (Rp 300k/bln)"}
+                  {shopTier === "ultra" && "20 ITEM ULTRA — hadiah PALING DAHSYAT GOD-TIER (Rp 500k/bln)"}
+                </p>
+                </div>
+              </div>
             </div>
           )}
 
