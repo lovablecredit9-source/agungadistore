@@ -366,7 +366,7 @@ export default function LuckRoyaleNyawa() {
       setNpPin("");
       toast({
         title: "👑 Nyawa Premium Aktif!",
-        description: `Pool MANTAP JIWA aktif 24 jam - sisa saldo Rp ${(data.balance || 0).toLocaleString("id-ID")}`,
+        description: `Pool MANTAP JIWA + Premium Spin aktif 30 hari - sisa saldo Rp ${(data.balance || 0).toLocaleString("id-ID")}`,
       });
       fetchData();
     } catch (e: any) {
@@ -503,7 +503,7 @@ export default function LuckRoyaleNyawa() {
               />
             </TabsContent>
             <TabsContent value="normal" className="space-y-4 mt-0">
-          {/* 👑 NYAWA PREMIUM PASS — Rp 50k / 24 jam */}
+          {/* 👑 NYAWA PREMIUM PASS — Rp 50k / 30 hari */}
           <div data-nyawa-premium-card className={`relative overflow-hidden rounded-2xl border-2 p-3 shadow-xl ${nyawaPremium.isActive ? "bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 border-emerald-300/70 shadow-emerald-500/40" : "bg-gradient-to-r from-rose-600 via-fuchsia-600 to-amber-500 border-amber-300/70 shadow-fuchsia-500/40"}`}>
             <div className="absolute inset-0 opacity-25 animate-pulse" style={{
               backgroundImage: "linear-gradient(120deg, transparent 30%, rgba(255,255,255,0.6) 50%, transparent 70%)",
@@ -528,10 +528,10 @@ export default function LuckRoyaleNyawa() {
                   <>
                     <div className="flex items-baseline gap-1">
                       <span className="text-xl font-black text-white drop-shadow">Rp 50.000</span>
-                      <span className="text-[9px] font-black text-amber-100">/ 24 jam</span>
+                      <span className="text-[9px] font-black text-amber-100">/ 30 hari</span>
                     </div>
                     <p className="text-[10px] font-bold text-white/95 mt-0.5">
-                      Pool spin LEBIH MANTAP — banyak Epic+, peluang Mythic 5×! Bayar saldo + PIN.
+                      Pool spin LEBIH MANTAP + akses Premium Spin (1-1.000 spin) selama 30 hari! Bayar saldo + PIN.
                     </p>
                   </>
                 )}
@@ -2101,9 +2101,9 @@ export default function LuckRoyaleNyawa() {
               <div className="text-center mb-3">
                 <div className="text-3xl mb-1">👑</div>
                 <h3 className="text-lg font-black tracking-tight text-amber-200">Beli Nyawa Premium</h3>
-                <p className="text-[11px] text-slate-300 mt-1">Pool hadiah <b className="text-white">MANTAP JIWA</b> selama 24 jam</p>
+                <p className="text-[11px] text-slate-300 mt-1">Pool hadiah <b className="text-white">MANTAP JIWA</b> + akses <b className="text-fuchsia-200">Premium Spin</b> selama <b className="text-amber-200">30 hari</b></p>
                 <p className="text-[18px] font-black text-amber-300 mt-1">Rp 50.000</p>
-                <p className="text-[10px] text-amber-100/80 mt-1">Banyak Epic+, peluang Mythic 5×, hadiah lebih besar.</p>
+                <p className="text-[10px] text-amber-100/80 mt-1">Banyak Epic+, peluang Mythic 5×, akses paket Premium Spin (1 - 1.000 spin) + Mega Jackpot.</p>
               </div>
               <label className="block text-[11px] font-bold text-slate-300 mb-1.5">Masukkan PIN 6 digit</label>
               <input

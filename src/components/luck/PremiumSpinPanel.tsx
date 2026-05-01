@@ -2,62 +2,36 @@ import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { Crown, Gem, Loader2, Sparkles, Gift, Flame } from "lucide-react";
+import { Crown, Gem, Loader2, Sparkles, Gift, Flame, Copy } from "lucide-react";
 
 /**
  * 👑 PREMIUM SPIN PANEL
- * - 200 gem / spin
- * - Hadiah 5x lipat (server multiplier=5) + jackpot besar
+ * - Wajib Nyawa Premium aktif (Rp 50.000 / 30 hari)
  * - 2 free premium spin / hari (reset 00:00 WIB)
+ * - Paket spin gem dengan diskon volume:
+ *   1=100, 5=300, 10=500, 20=800, 50=2k, 100=3k, 200=5k, 500=8k, 1000=15k
+ * - Pool variatif: hint, nyawa, time freeze, streak coin, kredit game, saldo IN, gem
+ *   + Mega Jackpot (50.000 koin / Rp 50.000 saldo / 2.000 gem / 100 kredit)
  */
 
 type Rarity = "common" | "rare" | "epic" | "legendary" | "mythic";
 
-interface PremiumPrize {
-  kind: string;
-  value: number;
-  label: string;
-  emoji: string;
-  rarity: Rarity;
-  weight: number;
-}
-
-const PREMIUM_POOL: PremiumPrize[] = [
-  // Common ringan
-  { kind: "auto_hint", value: 5, label: "Hint", emoji: "💡", rarity: "common", weight: 18 },
-  { kind: "extra_life", value: 5, label: "Nyawa", emoji: "❤️", rarity: "common", weight: 16 },
-  { kind: "time_freeze", value: 5, label: "Time Freeze", emoji: "⏱️", rarity: "common", weight: 12 },
-  { kind: "gems", value: 25, label: "Gem", emoji: "💎", rarity: "common", weight: 10 },
-  // Rare
-  { kind: "streak_coins", value: 500, label: "Koin Streak", emoji: "🪙", rarity: "rare", weight: 14 },
-  { kind: "streak_freeze", value: 5, label: "Streak Freeze", emoji: "🛡️", rarity: "rare", weight: 9 },
-  { kind: "gems", value: 75, label: "Gem", emoji: "💎", rarity: "rare", weight: 7 },
-  // Epic
-  { kind: "auto_hint", value: 25, label: "Hint", emoji: "💡", rarity: "epic", weight: 5 },
-  { kind: "extra_life", value: 25, label: "Nyawa", emoji: "❤️", rarity: "epic", weight: 5 },
-  { kind: "gems", value: 200, label: "Gem", emoji: "💎", rarity: "epic", weight: 3.5 },
-  // Legendary
-  { kind: "streak_coins", value: 5000, label: "Koin Streak", emoji: "🪙", rarity: "legendary", weight: 2.2 },
-  { kind: "gems", value: 500, label: "Gem", emoji: "💎", rarity: "legendary", weight: 1.4 },
-  // Mythic — JACKPOT BESAR (5x lipat dari arena normal)
-  { kind: "streak_coins", value: 25000, label: "MEGA JACKPOT Koin", emoji: "👑", rarity: "mythic", weight: 0.35 },
-  { kind: "gems", value: 1500, label: "ULTRA Gem", emoji: "💎", rarity: "mythic", weight: 0.2 },
+interface PremiumPack { count: number; cost: number; badge?: string; perSpin: number; }
+const PACKS: PremiumPack[] = [
+  { count: 1,    cost: 100,   perSpin: 100 },
+  { count: 5,    cost: 300,   perSpin: 60,  badge: "HEMAT 40%" },
+  { count: 10,   cost: 500,   perSpin: 50,  badge: "HEMAT 50%" },
+  { count: 20,   cost: 800,   perSpin: 40,  badge: "HEMAT 60%" },
+  { count: 50,   cost: 2000,  perSpin: 40,  badge: "POPULER" },
+  { count: 100,  cost: 3000,  perSpin: 30,  badge: "HEMAT 70%" },
+  { count: 200,  cost: 5000,  perSpin: 25,  badge: "HEMAT 75%" },
+  { count: 500,  cost: 8000,  perSpin: 16,  badge: "MEGA" },
+  { count: 1000, cost: 15000, perSpin: 15,  badge: "ULTRA 🔥" },
 ];
 
-const PREMIUM_COST = 200;
 const FREE_PER_DAY = 2;
 
-function rollPrize(pool: PremiumPrize[]): PremiumPrize {
-  const total = pool.reduce((s, p) => s + p.weight, 0);
-  let r = Math.random() * total;
-  for (const p of pool) {
-    r -= p.weight;
-    if (r <= 0) return p;
-  }
-  return pool[0];
-}
-
-function rarityGrad(r: Rarity) {
+function rarityGrad(r: string) {
   switch (r) {
     case "mythic": return "from-fuchsia-600 via-pink-500 to-amber-400";
     case "legendary": return "from-amber-400 via-orange-500 to-red-600";
@@ -66,8 +40,7 @@ function rarityGrad(r: Rarity) {
     default: return "from-slate-600 to-slate-800";
   }
 }
-
-function rarityRing(r: Rarity) {
+function rarityRing(r: string) {
   switch (r) {
     case "mythic": return "ring-2 ring-fuchsia-400 shadow-[0_0_18px_rgba(232,121,249,0.55)]";
     case "legendary": return "ring-2 ring-amber-400 shadow-[0_0_14px_rgba(251,191,36,0.5)]";
@@ -77,23 +50,15 @@ function rarityRing(r: Rarity) {
   }
 }
 
-// Tanggal WIB (UTC+7) sebagai key harian
 function todayWIB(): string {
   const now = new Date();
   const wib = new Date(now.getTime() + (now.getTimezoneOffset() + 7 * 60) * 60000);
   return wib.toISOString().slice(0, 10);
 }
-
 const FREE_KEY_PREFIX = "premium_spin_free_";
-
 function getFreeUsedToday(): number {
-  try {
-    const k = FREE_KEY_PREFIX + todayWIB();
-    const v = localStorage.getItem(k);
-    return v ? parseInt(v) || 0 : 0;
-  } catch { return 0; }
+  try { const v = localStorage.getItem(FREE_KEY_PREFIX + todayWIB()); return v ? parseInt(v) || 0 : 0; } catch { return 0; }
 }
-
 function bumpFreeUsed(): number {
   const used = getFreeUsedToday() + 1;
   try { localStorage.setItem(FREE_KEY_PREFIX + todayWIB(), String(used)); } catch {}
@@ -109,14 +74,17 @@ interface Props {
   price?: number;
 }
 
+interface SpinResult { kind: string; value: number; label: string; emoji: string; rarity: string; color: string; }
+
 export default function PremiumSpinPanel({ visitorId, gems, setGems, isUnlocked, expiresAt, price = 50000 }: Props) {
   const { toast } = useToast();
   const [busy, setBusy] = useState(false);
   const [freeUsed, setFreeUsed] = useState(getFreeUsedToday());
-  const [lastResult, setLastResult] = useState<{ prize: PremiumPrize; awarded: number; isFree: boolean } | null>(null);
+  const [results, setResults] = useState<SpinResult[]>([]);
   const [reelSpinning, setReelSpinning] = useState(false);
+  const [selectedPack, setSelectedPack] = useState<number>(1);
+  const [showResultsModal, setShowResultsModal] = useState(false);
 
-  // Refresh free counter saat hari berganti
   useEffect(() => {
     const id = setInterval(() => {
       const u = getFreeUsedToday();
@@ -126,71 +94,87 @@ export default function PremiumSpinPanel({ visitorId, gems, setGems, isUnlocked,
   }, []);
 
   const freeRemaining = Math.max(0, FREE_PER_DAY - freeUsed);
+  const activePack = PACKS.find((p) => p.count === selectedPack) || PACKS[0];
 
-  const refreshGems = async () => {
-    if (!visitorId) return;
-    const { data } = await supabase.rpc("get_account_gems", { p_visitor_id: visitorId });
-    if (typeof data === "number") setGems(data);
+  const goBuyAccess = () => {
+    // Pindah ke tab "normal" (sub-tab Spin) lalu scroll ke kartu Nyawa Premium
+    const tabsRoot = document.querySelector('[data-spin-subtabs]');
+    const normalTab = tabsRoot?.querySelector<HTMLElement>('button[value="normal"], [role="tab"][data-state]:first-child');
+    // Fallback: cari tombol bertuliskan NORMAL
+    let triggered = false;
+    if (normalTab) { normalTab.click(); triggered = true; }
+    if (!triggered) {
+      const allTabs = Array.from(document.querySelectorAll<HTMLElement>('[role="tab"]'));
+      const t = allTabs.find((el) => /normal/i.test(el.textContent || ""));
+      if (t) t.click();
+    }
+    setTimeout(() => {
+      const card = document.querySelector('[data-nyawa-premium-card]');
+      if (card) card.scrollIntoView({ behavior: "smooth", block: "center" });
+      else {
+        // fallback scroll ke atas halaman
+        window.scrollTo({ top: 0, behavior: "smooth" });
+        toast({ title: "Buka tab NORMAL", description: "Cari kartu 'Nyawa Premium' lalu klik BAYAR." });
+      }
+    }, 250);
   };
 
   const doSpin = async (useFree: boolean) => {
     if (busy || !visitorId) return;
     if (!isUnlocked) {
-      toast({ title: "🔒 Premium belum aktif", description: `Beli akses Premium Rp ${price.toLocaleString("id-ID")} dulu di tab NORMAL (kartu Nyawa Premium).`, variant: "destructive" });
+      toast({ title: "🔒 Premium belum aktif", description: `Beli akses Premium Rp ${price.toLocaleString("id-ID")} (30 hari) dulu.`, variant: "destructive" });
       return;
     }
     if (useFree && freeRemaining <= 0) {
-      toast({ title: "Free spin habis", description: `Sudah pakai ${FREE_PER_DAY}x premium spin gratis hari ini. Reset 00:00 WIB.`, variant: "destructive" });
+      toast({ title: "Free spin habis", description: `Sudah pakai ${FREE_PER_DAY}x premium free spin hari ini. Reset 00:00 WIB.`, variant: "destructive" });
       return;
     }
-    if (!useFree && gems < PREMIUM_COST) {
-      toast({ title: "Gem kurang", description: `Butuh ${PREMIUM_COST}💎 (kamu punya ${gems}).`, variant: "destructive" });
+    const count = useFree ? 1 : activePack.count;
+    const cost = useFree ? 0 : activePack.cost;
+    if (!useFree && gems < cost) {
+      toast({ title: "Gem kurang", description: `Butuh ${cost.toLocaleString("id-ID")}💎 (kamu punya ${gems.toLocaleString("id-ID")}).`, variant: "destructive" });
       return;
     }
 
     setBusy(true);
     setReelSpinning(true);
-    setLastResult(null);
+    setResults([]);
+    setShowResultsModal(false);
 
-    // Animasi pseudo "spin"
-    await new Promise((r) => setTimeout(r, 900));
-
-    const prize = rollPrize(PREMIUM_POOL);
-    const multiplier = 5; // hadiah 5x lipat
-    const awarded = prize.value * multiplier;
+    await new Promise((r) => setTimeout(r, count > 1 ? 1200 : 800));
 
     try {
-      const costGems = useFree ? 0 : PREMIUM_COST;
       const { data, error } = await supabase.functions.invoke("luck-royale-nyawa", {
-        body: { visitorId, action: "mega_arena_award", prize, costGems, multiplier },
+        body: { visitorId, action: "premium_spin_batch", count, useFree },
       });
       if (error || (data as any)?.error) {
-        throw new Error((data as any)?.error || error?.message || "Gagal proses hadiah");
+        throw new Error((data as any)?.error || error?.message || "Gagal proses spin");
       }
-      if (typeof (data as any)?.gems === "number") setGems(Number((data as any).gems));
-      else await refreshGems();
+      const payload = data as { gems?: number; results?: SpinResult[] };
+      if (typeof payload?.gems === "number") setGems(payload.gems);
+      const list = payload?.results || [];
+      setResults(list);
+      if (list.length > 1) setShowResultsModal(true);
+
+      if (useFree) {
+        const u = bumpFreeUsed();
+        setFreeUsed(u);
+      }
+
+      const best = [...list].sort((a, b) => rarityRank(b.rarity) - rarityRank(a.rarity))[0];
+      if (best && (best.rarity === "mythic" || best.rarity === "legendary")) {
+        toast({ title: `🎉 ${best.rarity.toUpperCase()}!`, description: `${best.label}` });
+      } else if (count === 1 && best) {
+        toast({ title: useFree ? "✨ Free Premium Spin" : "✨ Premium Spin", description: best.label });
+      } else if (count > 1) {
+        toast({ title: `🎰 ${count}x Premium Spin selesai`, description: `Lihat semua hadiah di pop-up.` });
+      }
     } catch (e: any) {
       toast({ title: "Gagal Premium Spin", description: e.message || "Terjadi kesalahan", variant: "destructive" });
-      setBusy(false);
+    } finally {
       setReelSpinning(false);
-      return;
+      setBusy(false);
     }
-
-    if (useFree) {
-      const u = bumpFreeUsed();
-      setFreeUsed(u);
-    }
-
-    setReelSpinning(false);
-    setLastResult({ prize, awarded, isFree: useFree });
-
-    if (prize.rarity === "mythic" || prize.rarity === "legendary") {
-      toast({ title: `🎉 ${prize.rarity.toUpperCase()}!`, description: `+${awarded} ${prize.label}` });
-    } else {
-      toast({ title: useFree ? "✨ Free Premium Spin" : "✨ Premium Spin", description: `+${awarded} ${prize.label}` });
-    }
-
-    setBusy(false);
   };
 
   return (
@@ -204,7 +188,7 @@ export default function PremiumSpinPanel({ visitorId, gems, setGems, isUnlocked,
           </h2>
         </div>
         <div className="text-[10px] font-bold text-fuchsia-200/90 px-2 py-0.5 rounded-full bg-fuchsia-500/15 border border-fuchsia-500/40">
-          5× HADIAH
+          MEGA JACKPOT
         </div>
       </div>
 
@@ -215,9 +199,9 @@ export default function PremiumSpinPanel({ visitorId, gems, setGems, isUnlocked,
             <Crown className="w-4 h-4 text-emerald-200" fill="currentColor" />
           </div>
           <div className="flex-1 min-w-0">
-            <div className="text-[11px] font-black text-emerald-100 tracking-wide">PREMIUM AKTIF ✨</div>
+            <div className="text-[11px] font-black text-emerald-100 tracking-wide">PREMIUM AKTIF ✨ (30 HARI)</div>
             <div className="text-[9px] text-emerald-200/80 truncate">
-              {expiresAt ? `Berakhir: ${new Date(expiresAt).toLocaleString("id-ID", { timeZone: "Asia/Jakarta", hour: "2-digit", minute: "2-digit", day: "2-digit", month: "short" })} WIB` : "Akses penuh aktif"}
+              {expiresAt ? `Berakhir: ${new Date(expiresAt).toLocaleString("id-ID", { timeZone: "Asia/Jakarta", hour: "2-digit", minute: "2-digit", day: "2-digit", month: "short", year: "2-digit" })} WIB` : "Akses penuh aktif"}
             </div>
           </div>
         </div>
@@ -228,26 +212,18 @@ export default function PremiumSpinPanel({ visitorId, gems, setGems, isUnlocked,
             <div className="flex-1 min-w-0">
               <div className="text-[12px] font-black text-rose-100 tracking-wide">PREMIUM TERKUNCI</div>
               <div className="text-[10px] text-rose-200/90">
-                Wajib beli akses Rp <span className="font-black">{price.toLocaleString("id-ID")}</span> / 24 jam dulu
+                Wajib beli akses Rp <span className="font-black">{price.toLocaleString("id-ID")}</span> / <span className="font-black">30 hari</span> dulu
               </div>
             </div>
           </div>
           <Button
-            onClick={() => {
-              // Pindah ke tab Normal, lalu scroll ke kartu Nyawa Premium
-              const normalTab = document.querySelector<HTMLElement>('[role="tab"][value="normal"]');
-              if (normalTab) normalTab.click();
-              setTimeout(() => {
-                const card = document.querySelector('[data-nyawa-premium-card]');
-                if (card) card.scrollIntoView({ behavior: "smooth", block: "center" });
-              }, 200);
-            }}
+            onClick={goBuyAccess}
             className="w-full h-10 bg-gradient-to-r from-amber-400 via-orange-500 to-red-600 hover:from-amber-500 hover:via-orange-600 hover:to-red-700 text-white font-black text-[12px] tracking-wider"
           >
-            🔓 BELI AKSES Rp {price.toLocaleString("id-ID")}
+            🔓 BELI AKSES Rp {price.toLocaleString("id-ID")} / 30 HARI
           </Button>
           <div className="text-[9px] text-rose-200/70 text-center mt-1.5">
-            Setelah aktif: 2× free spin/hari + bisa spin gem dengan hadiah 5× lipat
+            Setelah aktif: 2× free spin/hari + akses semua paket spin gem (1 sampai 1.000 spin)
           </div>
         </div>
       )}
@@ -260,18 +236,26 @@ export default function PremiumSpinPanel({ visitorId, gems, setGems, isUnlocked,
               <Loader2 className="w-10 h-10 text-fuchsia-300 animate-spin" />
               <div className="text-[11px] font-black tracking-widest text-fuchsia-200">MEMUTAR...</div>
             </div>
-          ) : lastResult ? (
-            <div className={`text-center px-4 py-3 rounded-xl bg-gradient-to-br ${rarityGrad(lastResult.prize.rarity)} ${rarityRing(lastResult.prize.rarity)} animate-scale-in`}>
-              <div className="text-5xl mb-1 drop-shadow">{lastResult.prize.emoji}</div>
-              <div className="text-[9px] uppercase tracking-widest font-black opacity-80 text-white">{lastResult.prize.rarity}</div>
-              <div className="text-base font-black text-white drop-shadow">+{lastResult.awarded} {lastResult.prize.label}</div>
-              <div className="text-[10px] text-white/80 font-bold mt-0.5">x5 Multiplier{lastResult.isFree ? " · 🎁 FREE" : ""}</div>
+          ) : results.length === 1 ? (
+            <div className={`text-center px-4 py-3 rounded-xl bg-gradient-to-br ${rarityGrad(results[0].rarity)} ${rarityRing(results[0].rarity)} animate-scale-in`}>
+              <div className="text-5xl mb-1 drop-shadow">{results[0].emoji}</div>
+              <div className="text-[9px] uppercase tracking-widest font-black opacity-80 text-white">{results[0].rarity}</div>
+              <div className="text-base font-black text-white drop-shadow">{results[0].label}</div>
+            </div>
+          ) : results.length > 1 ? (
+            <div className="text-center px-4">
+              <div className="text-4xl mb-1">🎰</div>
+              <div className="text-xs font-black tracking-widest text-fuchsia-100">{results.length}× SPIN SELESAI</div>
+              <button
+                onClick={() => setShowResultsModal(true)}
+                className="mt-2 text-[10px] font-bold text-amber-200 underline"
+              >Lihat semua hadiah →</button>
             </div>
           ) : (
             <div className="text-center px-4">
               <Sparkles className="w-10 h-10 text-fuchsia-300 mx-auto mb-1" />
               <div className="text-xs font-black tracking-widest text-fuchsia-100">JACKPOT MEGA</div>
-              <div className="text-[10px] text-fuchsia-200/70 mt-0.5">Sampai +25.000 Koin · 1.500 Gem</div>
+              <div className="text-[10px] text-fuchsia-200/70 mt-0.5">+50.000 Koin · Rp 50k Saldo · 2.000 Gem · 100 Kredit</div>
             </div>
           )}
         </div>
@@ -282,7 +266,7 @@ export default function PremiumSpinPanel({ visitorId, gems, setGems, isUnlocked,
         disabled={busy || !isUnlocked || freeRemaining <= 0}
         onClick={() => doSpin(true)}
         className={`w-full relative overflow-hidden rounded-xl px-3 py-3 font-black active:scale-95 transition disabled:opacity-50 flex items-center justify-between ${
-          freeRemaining > 0
+          freeRemaining > 0 && isUnlocked
             ? "bg-gradient-to-r from-emerald-500 via-green-500 to-teal-600 text-white shadow-lg shadow-emerald-500/40 ring-2 ring-emerald-300/50 animate-pulse"
             : "bg-slate-700 text-slate-300"
         }`}
@@ -296,40 +280,94 @@ export default function PremiumSpinPanel({ visitorId, gems, setGems, isUnlocked,
         </span>
       </button>
 
-      {/* Paid Spin */}
+      {/* Pack Selector */}
+      <div className="rounded-xl bg-black/40 border border-fuchsia-500/30 p-2">
+        <div className="text-[10px] font-black tracking-widest text-fuchsia-200/80 mb-2 px-1">PILIH PAKET SPIN</div>
+        <div className="grid grid-cols-3 gap-1.5">
+          {PACKS.map((p) => {
+            const sel = selectedPack === p.count;
+            return (
+              <button
+                key={p.count}
+                onClick={() => setSelectedPack(p.count)}
+                className={`relative rounded-lg p-1.5 text-left transition ${
+                  sel
+                    ? "bg-gradient-to-br from-fuchsia-600 to-purple-700 ring-2 ring-amber-300 shadow-lg shadow-fuchsia-500/50"
+                    : "bg-slate-800/60 hover:bg-slate-700/70 ring-1 ring-fuchsia-500/20"
+                }`}
+              >
+                {p.badge && (
+                  <div className="absolute -top-1 -right-1 text-[7px] font-black bg-amber-400 text-black rounded px-1 py-0.5 shadow">
+                    {p.badge}
+                  </div>
+                )}
+                <div className="text-[12px] font-black text-white">{p.count}× SPIN</div>
+                <div className="flex items-center gap-0.5 mt-0.5">
+                  <Gem className="w-2.5 h-2.5 text-cyan-300" />
+                  <span className="text-[10px] font-bold text-cyan-200">{p.cost.toLocaleString("id-ID")}</span>
+                </div>
+                <div className="text-[8px] text-white/60 font-semibold mt-0.5">{p.perSpin}💎/spin</div>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Buy Selected Pack */}
       <button
-        disabled={busy || !isUnlocked || gems < PREMIUM_COST}
+        disabled={busy || !isUnlocked || gems < activePack.cost}
         onClick={() => doSpin(false)}
         className="w-full relative overflow-hidden rounded-xl bg-gradient-to-br from-fuchsia-600 via-purple-600 to-amber-500 px-3 py-4 font-black shadow-lg shadow-fuchsia-500/50 active:scale-95 transition disabled:opacity-50 flex items-center justify-between text-white ring-2 ring-amber-300/50"
       >
         <span className="flex items-center gap-2 text-base tracking-widest">
           <Flame className="w-5 h-5" />
-          PREMIUM SPIN
+          SPIN {activePack.count}×
         </span>
         <span className="flex items-center gap-1 text-sm bg-black/40 rounded-full px-2.5 py-1">
-          <Gem className="w-3.5 h-3.5" /> {PREMIUM_COST}
+          <Gem className="w-3.5 h-3.5" /> {activePack.cost.toLocaleString("id-ID")}
         </span>
       </button>
 
       <p className="text-center text-[10px] text-fuchsia-200/70">
-        Hadiah <span className="font-black text-fuchsia-200">5× lipat</span> · Mahal tapi worth it · Free 2× per hari (reset 00:00 WIB)
+        Pool: 💡Hint · ❤️Nyawa · ⏱️Time Freeze · 🪙Koin Streak · 🔑Kredit Game · 💵Saldo IN · 💎Gem · 👑MEGA JACKPOT
       </p>
 
-      {/* Pool Preview */}
-      <div className="rounded-xl bg-black/30 border border-fuchsia-500/20 p-2">
-        <div className="text-[10px] font-black tracking-widest text-fuchsia-200/80 mb-1.5">JACKPOT UTAMA (5×)</div>
-        <div className="grid grid-cols-2 gap-1.5">
-          {PREMIUM_POOL.filter((p) => p.rarity === "mythic" || p.rarity === "legendary").map((p, i) => (
-            <div key={i} className={`rounded-lg p-1.5 bg-gradient-to-r ${rarityGrad(p.rarity)} ${rarityRing(p.rarity)} flex items-center gap-1.5`}>
-              <div className="text-base">{p.emoji}</div>
-              <div className="min-w-0">
-                <div className="text-[10px] font-black text-white truncate">+{(p.value * 5).toLocaleString("id-ID")}</div>
-                <div className="text-[8px] uppercase tracking-wider opacity-80 font-bold text-white">{p.rarity}</div>
+      {/* Results Modal (multi-spin) */}
+      {showResultsModal && results.length > 1 && (
+        <div className="fixed inset-0 z-[100] bg-black/85 backdrop-blur-md flex items-center justify-center p-4 animate-fade-in">
+          <div className="relative w-full max-w-md rounded-2xl overflow-hidden border-2 border-fuchsia-400/60 shadow-2xl shadow-fuchsia-500/40 bg-gradient-to-br from-[#1a0420] via-[#2a0840] to-[#1a0420]">
+            <div className="p-4">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-base font-black text-fuchsia-200 tracking-wide">🎰 {results.length}× HASIL SPIN</h3>
+                <button onClick={() => setShowResultsModal(false)} className="text-fuchsia-300 hover:text-white text-xl">×</button>
               </div>
+              <div className="max-h-[50vh] overflow-y-auto space-y-1.5 pr-1">
+                {results.map((r, i) => (
+                  <div key={i} className={`rounded-lg p-2 bg-gradient-to-r ${rarityGrad(r.rarity)} ${rarityRing(r.rarity)} flex items-center gap-2`}>
+                    <div className="text-2xl">{r.emoji}</div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-[11px] font-black text-white truncate">{r.label}</div>
+                      <div className="text-[8px] uppercase tracking-wider opacity-80 font-bold text-white">{r.rarity}</div>
+                    </div>
+                    <div className="text-[9px] font-bold text-white/70">#{i + 1}</div>
+                  </div>
+                ))}
+              </div>
+              {/* Summary */}
+              <div className="mt-3 grid grid-cols-2 gap-1 text-[9px] text-fuchsia-100/90">
+                {Object.entries(summarize(results)).map(([k, v]) => (
+                  <div key={k} className="bg-black/30 rounded px-2 py-1 border border-fuchsia-500/20">
+                    <span className="font-black text-fuchsia-200">{k}:</span> {v}
+                  </div>
+                ))}
+              </div>
+              <Button onClick={() => setShowResultsModal(false)} className="mt-3 w-full bg-gradient-to-r from-fuchsia-600 to-amber-500 text-white font-black">
+                TUTUP
+              </Button>
             </div>
-          ))}
+          </div>
         </div>
-      </div>
+      )}
 
       <style>{`
         @keyframes scaleIn {
@@ -338,7 +376,36 @@ export default function PremiumSpinPanel({ visitorId, gems, setGems, isUnlocked,
           100% { transform: scale(1); opacity: 1; }
         }
         .animate-scale-in { animation: scaleIn 0.4s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .animate-fade-in { animation: fadeIn 0.2s ease-out; }
       `}</style>
     </div>
   );
+}
+
+function rarityRank(r: string): number {
+  return ({ common: 0, rare: 1, epic: 2, legendary: 3, mythic: 4 } as Record<string, number>)[r] ?? 0;
+}
+
+function summarize(list: SpinResult[]): Record<string, string> {
+  const sum: Record<string, number> = {};
+  const labelMap: Record<string, string> = {
+    auto_hint: "💡 Hint",
+    extra_life: "❤️ Nyawa",
+    time_freeze: "⏱️ Time Freeze",
+    streak_freeze: "🛡️ Streak Freeze",
+    streak_coins: "🪙 Koin Streak",
+    gems: "💎 Gem",
+    game_credits: "🔑 Kredit",
+    game_balance: "💵 Saldo IN",
+  };
+  for (const r of list) {
+    sum[r.kind] = (sum[r.kind] || 0) + r.value;
+  }
+  const out: Record<string, string> = {};
+  for (const [k, v] of Object.entries(sum)) {
+    const isMoney = k === "game_balance";
+    out[labelMap[k] || k] = isMoney ? `+Rp ${v.toLocaleString("id-ID")}` : `+${v.toLocaleString("id-ID")}`;
+  }
+  return out;
 }
