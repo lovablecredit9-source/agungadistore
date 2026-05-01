@@ -76,6 +76,23 @@ function rarityRing(r: string) {
     default: return "ring-1 ring-slate-500/40";
   }
 }
+function getKindIcon(kind: string) {
+  switch (kind) {
+    case "extra_life": return <Heart className="w-full h-full" fill="currentColor" />;
+    case "auto_hint": return <Lightbulb className="w-full h-full" fill="currentColor" />;
+    case "time_freeze": return <Timer className="w-full h-full" />;
+    case "streak_freeze": return <Shield className="w-full h-full" fill="currentColor" />;
+    case "gems": return <Gem className="w-full h-full" fill="currentColor" />;
+    case "streak_coins": return <Coins className="w-full h-full" fill="currentColor" />;
+    case "game_credits": return <KeyRound className="w-full h-full" />;
+    case "game_balance": return <WalletCards className="w-full h-full" />;
+    case "lucky_token": return <Ticket className="w-full h-full" />;
+    default: return <Sparkles className="w-full h-full" />;
+  }
+}
+function rarityLabel(r: string) {
+  return ({ common: "COMMON", rare: "RARE", epic: "EPIC", legendary: "LEGENDARY", mythic: "MYTHIC" } as Record<string, string>)[r] || String(r).toUpperCase();
+}
 
 function todayWIB(): string {
   const now = new Date();
