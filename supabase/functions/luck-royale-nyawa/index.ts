@@ -1351,13 +1351,74 @@ Deno.serve(async (req) => {
       }, { headers: corsHeaders });
     }
 
+    // === BUY NYAWA PREMIUM — Rp 50.000 / 1 hari, hadiah pool MANTAP JIWA ===
+    if (action === "buy_nyawa_premium") {
+      const pin = (body as any).pin as string | undefined;
+      const { data: pinRow } = await admin.from("user_pins").select("pin_hash").eq("visitor_id", visitorId).maybeSingle();
+      if (!pinRow) return Response.json({ error: "PIN belum dibuat. Buat PIN dulu di menu Profil.", needPin: true }, { status: 200, headers: corsHeaders });
+      if (!pin) return Response.json({ error: "Masukkan PIN 6 digit", needPin: true }, { status: 200, headers: corsHeaders });
+      const hashBuffer = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(pin));
+      const hashHex = Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, "0")).join("");
+      if (hashHex !== pinRow.pin_hash) return Response.json({ error: "PIN salah", needPin: true }, { status: 200, headers: corsHeaders });
+
+      const { data: ubId } = await admin.rpc("get_active_user_balance_id", { p_visitor_id: visitorId });
+      if (!ubId) return Response.json({ error: "Login akun saldo dulu untuk beli Nyawa Premium" }, { status: 400, headers: corsHeaders });
+      const { data: balanceRow } = await admin.from("user_balances").select("id, balance, username").eq("id", ubId).maybeSingle();
+      if (!balanceRow) return Response.json({ error: "Akun saldo tidak ditemukan" }, { status: 400, headers: corsHeaders });
+      if ((balanceRow.balance || 0) < NYAWA_PREMIUM_PRICE) {
+        return Response.json({ error: `Saldo tidak cukup. Butuh Rp ${NYAWA_PREMIUM_PRICE.toLocaleString("id-ID")} (saldo: Rp ${(balanceRow.balance || 0).toLocaleString("id-ID")})` }, { status: 400, headers: corsHeaders });
+      }
+
+      // Akumulasi: kalau masih aktif, perpanjang dari sisa
+      const existing = await getNyawaPremium(admin, visitorId);
+      const baseMs = existing.activeUntil && new Date(existing.activeUntil).getTime() > Date.now()
+        ? new Date(existing.activeUntil).getTime()
+        : Date.now();
+      const newUntilIso = new Date(baseMs + NYAWA_PREMIUM_HOURS * 3600 * 1000).toISOString();
+
+      await admin.from("user_balances").update({ balance: (balanceRow.balance || 0) - NYAWA_PREMIUM_PRICE }).eq("id", balanceRow.id);
+      await admin.from("balance_transactions").insert({
+        visitor_id: visitorId,
+        amount: -NYAWA_PREMIUM_PRICE,
+        type: "purchase",
+        description: `Nyawa Premium Luck Royale (${NYAWA_PREMIUM_HOURS} jam)`,
+      });
+      await setNyawaPremium(admin, visitorId, { activeUntil: newUntilIso, purchasedAt: new Date().toISOString() });
+      await admin.from("notifications").insert({
+        visitor_id: visitorId,
+        title: "👑 Nyawa Premium Aktif!",
+        message: `Pool hadiah MANTAP JIWA aktif sampai ${new Date(newUntilIso).toLocaleString("id-ID", { timeZone: "Asia/Jakarta" })} WIB. Spin sekarang!`,
+        type: "luck_royale_nyawa",
+      });
+
+      return Response.json({
+        success: true,
+        balance: (balanceRow.balance || 0) - NYAWA_PREMIUM_PRICE,
+        nyawaPremium: {
+          isActive: true,
+          activeUntil: newUntilIso,
+          purchasedAt: new Date().toISOString(),
+          price: NYAWA_PREMIUM_PRICE,
+          durationHours: NYAWA_PREMIUM_HOURS,
+        },
+      }, { headers: corsHeaders });
+    }
+
     if (action === "leaderboard") {
-      // Ambil seluruh history (batasi 5000 entri terbaru utk performa)
-      const { data: rows } = await admin
-        .from("luck_royale_nyawa_history")
-        .select("visitor_id, spin_type, rarity, reward_kind, reward_value, reward_label, created_at")
-        .order("created_at", { ascending: false })
-        .limit(5000);
+      // Ambil SELURUH history via paginasi agar total spin & jackpot AKURAT
+      const all: Array<{ visitor_id: string; rarity: string; reward_label: string | null; created_at: string }> = [];
+      const PAGE = 1000;
+      for (let from = 0; from < 200000; from += PAGE) {
+        const { data: page } = await admin
+          .from("luck_royale_nyawa_history")
+          .select("visitor_id, rarity, reward_label, created_at")
+          .order("created_at", { ascending: false })
+          .range(from, from + PAGE - 1);
+        if (!page || page.length === 0) break;
+        all.push(...(page as any));
+        if (page.length < PAGE) break;
+      }
+      const rows = all;
 
       const all = rows || [];
       const visitorIds = Array.from(new Set(all.map(r => r.visitor_id))).filter(Boolean);
