@@ -238,18 +238,28 @@ function pickFromPool(pool: Prize[]): Prize & { index: number } {
 // kadang nggak. Weight dibuat rata supaya tier rare/epic sering, legend/mythic tetap susah
 // tapi proporsinya konsisten.
 const PREMIUM_PRIZES: Prize[] = [
-  // === RARE (sering keluar — base konsisten) ===
-  { kind: "streak_freeze", value: 3,     label: "+3 Streak Freeze",         emoji: "🛡️", rarity: "rare",      weight: 12,    color: "#10b981" },
-  { kind: "auto_hint",     value: 6,     label: "+6 Hint Otomatis",         emoji: "💡", rarity: "rare",      weight: 11,    color: "#06b6d4" },
-  { kind: "extra_life",    value: 6,     label: "+6 Nyawa Ekstra",          emoji: "❤️", rarity: "rare",      weight: 11,    color: "#f43f5e" },
-  { kind: "auto_hint",     value: 10,    label: "+10 Hint Otomatis",        emoji: "💡", rarity: "rare",      weight: 8,     color: "#06b6d4" },
-  { kind: "extra_life",    value: 10,    label: "+10 Nyawa Ekstra",         emoji: "❤️", rarity: "rare",      weight: 8,     color: "#f43f5e" },
-  { kind: "time_freeze",   value: 6,     label: "+6 Freeze 30s",            emoji: "⏱️", rarity: "rare",      weight: 8,     color: "#0ea5e9" },
-  { kind: "streak_coins",  value: 300,   label: "🪙 +300 Streak Coin",       emoji: "🪙", rarity: "rare",      weight: 10,    color: "#f59e0b" },
-  { kind: "streak_coins",  value: 600,   label: "🪙 +600 Streak Coin",       emoji: "🪙", rarity: "rare",      weight: 8,     color: "#f59e0b" },
-  // GEM rare: dikit lebih tinggi dari normal (normal tidak punya gem rare)
-  { kind: "gems",          value: 60,    label: "💎 +60 Gem PREMIUM",        emoji: "💎", rarity: "rare",      weight: 7,     color: "#8b5cf6" },
-  { kind: "gems",          value: 100,   label: "💎 +100 Gem PREMIUM",       emoji: "💎", rarity: "rare",      weight: 5,     color: "#8b5cf6" },
+  // === COMMON (hadiah kecil — supaya tidak hoki terus, kadang dapat sedikit) ===
+  { kind: "auto_hint",     value: 2,     label: "+2 Hint Otomatis",         emoji: "💡", rarity: "common",    weight: 22,    color: "#94a3b8" },
+  { kind: "extra_life",    value: 2,     label: "+2 Nyawa Ekstra",          emoji: "❤️", rarity: "common",    weight: 22,    color: "#ef4444" },
+  { kind: "time_freeze",   value: 2,     label: "+2 Freeze 30s",            emoji: "⏱️", rarity: "common",    weight: 16,    color: "#0ea5e9" },
+  { kind: "auto_hint",     value: 3,     label: "+3 Hint Otomatis",         emoji: "💡", rarity: "common",    weight: 14,    color: "#94a3b8" },
+  { kind: "extra_life",    value: 3,     label: "+3 Nyawa Ekstra",          emoji: "❤️", rarity: "common",    weight: 14,    color: "#ef4444" },
+  { kind: "streak_coins",  value: 100,   label: "🪙 +100 Streak Coin",       emoji: "🪙", rarity: "common",    weight: 14,    color: "#f59e0b" },
+  { kind: "gems",          value: 15,    label: "💎 +15 Gem",                emoji: "💎", rarity: "common",    weight: 10,    color: "#8b5cf6" },
+  { kind: "gems",          value: 25,    label: "💎 +25 Gem",                emoji: "💎", rarity: "common",    weight: 8,     color: "#8b5cf6" },
+
+  // === RARE (lumayan — base konsisten) ===
+  { kind: "streak_freeze", value: 3,     label: "+3 Streak Freeze",         emoji: "🛡️", rarity: "rare",      weight: 8,     color: "#10b981" },
+  { kind: "auto_hint",     value: 6,     label: "+6 Hint Otomatis",         emoji: "💡", rarity: "rare",      weight: 7,     color: "#06b6d4" },
+  { kind: "extra_life",    value: 6,     label: "+6 Nyawa Ekstra",          emoji: "❤️", rarity: "rare",      weight: 7,     color: "#f43f5e" },
+  { kind: "auto_hint",     value: 10,    label: "+10 Hint Otomatis",        emoji: "💡", rarity: "rare",      weight: 5,     color: "#06b6d4" },
+  { kind: "extra_life",    value: 10,    label: "+10 Nyawa Ekstra",         emoji: "❤️", rarity: "rare",      weight: 5,     color: "#f43f5e" },
+  { kind: "time_freeze",   value: 6,     label: "+6 Freeze 30s",            emoji: "⏱️", rarity: "rare",      weight: 5,     color: "#0ea5e9" },
+  { kind: "streak_coins",  value: 300,   label: "🪙 +300 Streak Coin",       emoji: "🪙", rarity: "rare",      weight: 6,     color: "#f59e0b" },
+  { kind: "streak_coins",  value: 600,   label: "🪙 +600 Streak Coin",       emoji: "🪙", rarity: "rare",      weight: 4,     color: "#f59e0b" },
+  // GEM rare
+  { kind: "gems",          value: 60,    label: "💎 +60 Gem PREMIUM",        emoji: "💎", rarity: "rare",      weight: 4,     color: "#8b5cf6" },
+  { kind: "gems",          value: 100,   label: "💎 +100 Gem PREMIUM",       emoji: "💎", rarity: "rare",      weight: 3,     color: "#8b5cf6" },
   { kind: "lucky_token" as any, value: 1, label: "🎟️ +1 Lucky Token",        emoji: "🎟️", rarity: "rare",      weight: 3,     color: "#22d3ee" },
 
   // === EPIC ===
@@ -284,17 +294,17 @@ const PREMIUM_PRIZES: Prize[] = [
   { kind: "extra_life",    value: 180,   label: "🌟 +180 Nyawa",            emoji: "❤️", rarity: "mythic",    weight: 0.4,   color: "#f0abfc" },
   { kind: "auto_hint",     value: 180,   label: "🌟 +180 Hint",             emoji: "💡", rarity: "mythic",    weight: 0.4,   color: "#f0abfc" },
   // GEM mythic: di atas normal (normal: 800/2.500) tapi tidak ekstrim
-  { kind: "gems",          value: 1200,  label: "💎 +1.200 Gem PREMIUM",     emoji: "💎", rarity: "mythic",    weight: 0.4,   color: "#fde68a" },
-  { kind: "gems",          value: 2000,  label: "💎 +2.000 Gem PREMIUM",     emoji: "💎", rarity: "mythic",    weight: 0.2,   color: "#fde68a" },
+  { kind: "gems",          value: 1200,  label: "💎 +1.200 Gem PREMIUM",     emoji: "💎", rarity: "mythic",    weight: 0.15,  color: "#fde68a" },
+  { kind: "gems",          value: 2000,  label: "💎 +2.000 Gem PREMIUM",     emoji: "💎", rarity: "mythic",    weight: 0.05,  color: "#fde68a" },
   { kind: "streak_coins",  value: 60000, label: "🪙 +60.000 Streak Coin",    emoji: "🪙", rarity: "mythic",    weight: 0.3,   color: "#fde68a" },
 ];
 
 function pickPrize(luckyHourActive = false, premiumActive = false): Prize & { index: number } {
   if (premiumActive) {
-    // Pool MANTAP — tetap reroll common (tidak ada common di pool premium, jadi efektif tidak terjadi)
+    // Pool premium konsisten: kadang dapat hadiah kecil (common), kadang lumayan, jarang besar
     const first = pickFromPool(PREMIUM_PRIZES);
-    if (luckyHourActive && first.rarity === "rare") {
-      // Lucky Hour bonus: reroll rare → kemungkinan epic+
+    // Lucky Hour: hanya reroll kalau hasil common (sama seperti normal)
+    if (luckyHourActive && first.rarity === "common") {
       return pickFromPool(PREMIUM_PRIZES);
     }
     return first;
