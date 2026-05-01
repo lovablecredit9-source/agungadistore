@@ -221,7 +221,7 @@ export default function PremiumSpinPanel({ visitorId, gems, setGems, isUnlocked,
       if (typeof payload?.gems === "number") setGems(payload.gems);
       const list = payload?.results || [];
       setResults(list);
-      if (list.length > 1) setShowResultsModal(true);
+      if (list.length > 0) setShowResultsModal(true);
 
       if (useFree) {
         const u = bumpFreeUsed();
@@ -514,7 +514,7 @@ export default function PremiumSpinPanel({ visitorId, gems, setGems, isUnlocked,
       </div>
 
       {/* Results Modal (multi-spin) */}
-      {showResultsModal && results.length > 1 && (
+      {showResultsModal && results.length > 0 && (
         <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-md flex items-center justify-center p-4 animate-fade-in">
           <div className="relative max-w-md w-full bg-gradient-to-br from-[#1a0e3d] to-[#0b0820] border-2 border-amber-500/50 rounded-2xl p-5 shadow-2xl shadow-amber-500/30 animate-scale-in">
             <button onClick={() => setShowResultsModal(false)} className="absolute top-2 right-2 text-white/60 hover:text-white">
