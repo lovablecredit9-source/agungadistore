@@ -227,27 +227,20 @@ function pickFromPool(pool: Prize[]): Prize & { index: number } {
   return { ...pool[0], index: 0 };
 }
 
-// === PREMIUM PRIZES — pool MANTAP JIWA untuk Nyawa Premium (Rp 50k/hari) ===
-// Struktur sama seperti NORMAL tapi semua nilai jauh lebih besar & weight gem dinaikan
-// supaya gem terasa nyata (sering muncul). Tidak ada common, semua minimal RARE.
-// PREMIUM_PRIZES: mirror struktur NORMAL (PRIZES) supaya konsisten,
-// tapi value GEM sedikit lebih tinggi dari normal & ada bonus 1 lucky token tipis.
-// Item lain (nyawa/hint/coin/freeze/kredit/saldo) NILAI = normal — tidak digedein lagi.
-// PREMIUM_PRIZES: konsisten "lumayan" — value tiap item = NORMAL +sedikit (≈ +20-40%),
-// gem dinaikan tipis. Tidak ada jackpot ekstrim supaya hasil merata, tidak kadang besar
-// kadang nggak. Weight dibuat rata supaya tier rare/epic sering, legend/mythic tetap susah
-// tapi proporsinya konsisten.
+// === PREMIUM PRIZES — premium tetap mantap, tapi jackpot gem TIDAK gacor ===
+// Target: batch besar (500/1000 spin) terasa normal: kadang dapat total gem kecil/sedang,
+// kadang tidak banyak gem, sedangkan jackpot 20K/50K hanya super hoki dan sangat jarang.
 const PREMIUM_PRIZES: Prize[] = [
-  // === COMMON (hadiah kecil — supaya tidak hoki terus, kadang dapat sedikit) ===
+  // === COMMON (sering keluar — hadiah kecil, mayoritas bukan gem) ===
   { kind: "auto_hint",     value: 2,     label: "+2 Hint Otomatis",         emoji: "💡", rarity: "common",    weight: 22,    color: "#94a3b8" },
   { kind: "extra_life",    value: 2,     label: "+2 Nyawa Ekstra",          emoji: "❤️", rarity: "common",    weight: 22,    color: "#ef4444" },
-  { kind: "time_freeze",   value: 2,     label: "+2 Freeze 30s",            emoji: "⏱️", rarity: "common",    weight: 16,    color: "#0ea5e9" },
-  { kind: "auto_hint",     value: 3,     label: "+3 Hint Otomatis",         emoji: "💡", rarity: "common",    weight: 14,    color: "#94a3b8" },
-  { kind: "extra_life",    value: 3,     label: "+3 Nyawa Ekstra",          emoji: "❤️", rarity: "common",    weight: 14,    color: "#ef4444" },
-  { kind: "streak_coins",  value: 100,   label: "🪙 +100 Streak Coin",       emoji: "🪙", rarity: "common",    weight: 14,    color: "#f59e0b" },
-  { kind: "gems",          value: 50,    label: "💎 +50 Gem",                emoji: "💎", rarity: "common",    weight: 10,    color: "#8b5cf6" },
-  { kind: "gems",          value: 100,   label: "💎 +100 Gem",               emoji: "💎", rarity: "common",    weight: 8,     color: "#8b5cf6" },
-  { kind: "gems",          value: 200,   label: "💎 +200 Gem",               emoji: "💎", rarity: "common",    weight: 5,     color: "#8b5cf6" },
+  { kind: "time_freeze",   value: 2,     label: "+2 Freeze 30s",            emoji: "⏱️", rarity: "common",    weight: 18,    color: "#0ea5e9" },
+  { kind: "auto_hint",     value: 3,     label: "+3 Hint Otomatis",         emoji: "💡", rarity: "common",    weight: 16,    color: "#94a3b8" },
+  { kind: "extra_life",    value: 3,     label: "+3 Nyawa Ekstra",          emoji: "❤️", rarity: "common",    weight: 16,    color: "#ef4444" },
+  { kind: "streak_coins",  value: 100,   label: "🪙 +100 Streak Coin",       emoji: "🪙", rarity: "common",    weight: 22,    color: "#f59e0b" },
+  { kind: "gems",          value: 20,    label: "💎 +20 Gem",                emoji: "💎", rarity: "common",    weight: 3,     color: "#8b5cf6" },
+  { kind: "gems",          value: 50,    label: "💎 +50 Gem",                emoji: "💎", rarity: "common",    weight: 2,     color: "#8b5cf6" },
+  { kind: "gems",          value: 100,   label: "💎 +100 Gem",               emoji: "💎", rarity: "common",    weight: 1,     color: "#8b5cf6" },
 
   // === RARE (lumayan — base konsisten) ===
   { kind: "streak_freeze", value: 3,     label: "+3 Streak Freeze",         emoji: "🛡️", rarity: "rare",      weight: 8,     color: "#10b981" },
@@ -258,10 +251,10 @@ const PREMIUM_PRIZES: Prize[] = [
   { kind: "time_freeze",   value: 6,     label: "+6 Freeze 30s",            emoji: "⏱️", rarity: "rare",      weight: 5,     color: "#0ea5e9" },
   { kind: "streak_coins",  value: 300,   label: "🪙 +300 Streak Coin",       emoji: "🪙", rarity: "rare",      weight: 6,     color: "#f59e0b" },
   { kind: "streak_coins",  value: 600,   label: "🪙 +600 Streak Coin",       emoji: "🪙", rarity: "rare",      weight: 4,     color: "#f59e0b" },
-  // GEM rare
-  { kind: "gems",          value: 500,   label: "💎 +500 Gem PREMIUM",       emoji: "💎", rarity: "rare",      weight: 4,     color: "#8b5cf6" },
-  { kind: "gems",          value: 1000,  label: "💎 +1.000 Gem PREMIUM",     emoji: "💎", rarity: "rare",      weight: 2.5,   color: "#8b5cf6" },
-  { kind: "gems",          value: 1500,  label: "💎 +1.500 Gem PREMIUM",     emoji: "💎", rarity: "rare",      weight: 1.5,   color: "#8b5cf6" },
+  // GEM rare: lumayan, tapi tidak sering
+  { kind: "gems",          value: 300,   label: "💎 +300 Gem PREMIUM",       emoji: "💎", rarity: "rare",      weight: 0.7,   color: "#8b5cf6" },
+  { kind: "gems",          value: 600,   label: "💎 +600 Gem PREMIUM",       emoji: "💎", rarity: "rare",      weight: 0.35,  color: "#8b5cf6" },
+  { kind: "gems",          value: 1000,  label: "💎 +1.000 Gem PREMIUM",     emoji: "💎", rarity: "rare",      weight: 0.18,  color: "#8b5cf6" },
   { kind: "lucky_token" as any, value: 1, label: "🎟️ +1 Lucky Token",        emoji: "🎟️", rarity: "rare",      weight: 3,     color: "#22d3ee" },
 
   // === EPIC ===
@@ -269,10 +262,9 @@ const PREMIUM_PRIZES: Prize[] = [
   { kind: "extra_life",    value: 15,    label: "❤️ +15 Nyawa",             emoji: "❤️", rarity: "epic",      weight: 5,     color: "#a855f7" },
   { kind: "time_freeze",   value: 10,    label: "+10 Freeze 30s",           emoji: "⏱️", rarity: "epic",      weight: 4.5,   color: "#a855f7" },
   { kind: "streak_freeze", value: 5,     label: "+5 Streak Freeze",         emoji: "🛡️", rarity: "epic",      weight: 4.5,   color: "#ec4899" },
-  // GEM epic
-  { kind: "gems",          value: 2000,  label: "💎 +2.000 Gem PREMIUM",     emoji: "💎", rarity: "epic",      weight: 2.5,   color: "#8b5cf6" },
-  { kind: "gems",          value: 3500,  label: "💎 +3.500 Gem PREMIUM",     emoji: "💎", rarity: "epic",      weight: 1.5,   color: "#8b5cf6" },
-  { kind: "gems",          value: 5000,  label: "💎 +5.000 Gem PREMIUM",     emoji: "💎", rarity: "epic",      weight: 0.8,   color: "#8b5cf6" },
+  // GEM epic: hadiah mantap yang kadang muncul di batch besar
+  { kind: "gems",          value: 2000,  label: "💎 +2.000 Gem PREMIUM",     emoji: "💎", rarity: "epic",      weight: 0.14,  color: "#8b5cf6" },
+  { kind: "gems",          value: 5000,  label: "💎 +5.000 Gem PREMIUM",     emoji: "💎", rarity: "epic",      weight: 0.055, color: "#8b5cf6" },
   { kind: "auto_hint",     value: 25,    label: "💡 +25 Hint",              emoji: "💡", rarity: "epic",      weight: 3,     color: "#a855f7" },
   { kind: "extra_life",    value: 25,    label: "❤️ +25 Nyawa",             emoji: "❤️", rarity: "epic",      weight: 3,     color: "#a855f7" },
   { kind: "streak_coins",  value: 2000,  label: "🪙 +2.000 Streak Coin",     emoji: "🪙", rarity: "epic",      weight: 4,     color: "#fb923c" },
@@ -282,11 +274,10 @@ const PREMIUM_PRIZES: Prize[] = [
   { kind: "extra_life",    value: 40,    label: "❤️ +40 Nyawa",             emoji: "❤️", rarity: "legendary", weight: 2,     color: "#fbbf24" },
   { kind: "auto_hint",     value: 40,    label: "💡 +40 Hint",              emoji: "💡", rarity: "legendary", weight: 2,     color: "#fbbf24" },
   { kind: "streak_freeze", value: 12,    label: "🛡️ +12 Streak Freeze",     emoji: "🛡️", rarity: "legendary", weight: 1.8,   color: "#f59e0b" },
-  // GEM legend
-  { kind: "gems",          value: 8000,  label: "💎 +8.000 Gem PREMIUM",     emoji: "💎", rarity: "legendary", weight: 0.9,   color: "#facc15" },
+  // GEM legend: 12K sulit, cocok untuk hoki batch besar
   { kind: "extra_life",    value: 60,    label: "❤️ +60 Nyawa",             emoji: "❤️", rarity: "legendary", weight: 1.2,   color: "#fbbf24" },
   { kind: "auto_hint",     value: 60,    label: "💡 +60 Hint",              emoji: "💡", rarity: "legendary", weight: 1.2,   color: "#fbbf24" },
-  { kind: "gems",          value: 12000, label: "💎 +12.000 Gem PREMIUM",    emoji: "💎", rarity: "legendary", weight: 0.5,   color: "#facc15" },
+  { kind: "gems",          value: 12000, label: "💎 +12.000 Gem PREMIUM",    emoji: "💎", rarity: "legendary", weight: 0.018, color: "#facc15" },
   { kind: "streak_coins",  value: 10000, label: "🪙 +10.000 Streak Coin",    emoji: "🪙", rarity: "legendary", weight: 1.5,   color: "#fbbf24" },
   { kind: "streak_coins",  value: 22000, label: "🪙 +22.000 Streak Coin",    emoji: "🪙", rarity: "legendary", weight: 0.8,   color: "#fbbf24" },
   { kind: "lucky_token" as any, value: 2, label: "🎟️ +2 Lucky Token",        emoji: "🎟️", rarity: "legendary", weight: 0.8,   color: "#fbbf24" },
@@ -296,10 +287,9 @@ const PREMIUM_PRIZES: Prize[] = [
   { kind: "auto_hint",     value: 100,   label: "🌈 +100 Hint",             emoji: "💡", rarity: "mythic",    weight: 0.7,   color: "#f0abfc" },
   { kind: "extra_life",    value: 180,   label: "🌟 +180 Nyawa",            emoji: "❤️", rarity: "mythic",    weight: 0.4,   color: "#f0abfc" },
   { kind: "auto_hint",     value: 180,   label: "🌟 +180 Hint",             emoji: "💡", rarity: "mythic",    weight: 0.4,   color: "#f0abfc" },
-  // GEM mythic: jackpot susah (20k-50k), peluang sangat tipis
-  { kind: "gems",          value: 20000, label: "💎 +20.000 Gem JACKPOT",    emoji: "💎", rarity: "mythic",    weight: 0.08,  color: "#fde68a" },
-  { kind: "gems",          value: 35000, label: "👑 +35.000 Gem JACKPOT",    emoji: "💎", rarity: "mythic",    weight: 0.025, color: "#fef08a" },
-  { kind: "gems",          value: 50000, label: "👑 +50.000 GEM JACKPOT",    emoji: "💎", rarity: "mythic",    weight: 0.008, color: "#fef08a" },
+  // GEM mythic: jackpot besar super jarang, bukan hasil rutin batch 1000
+  { kind: "gems",          value: 20000, label: "💎 +20.000 Gem JACKPOT",    emoji: "💎", rarity: "mythic",    weight: 0.004, color: "#fde68a" },
+  { kind: "gems",          value: 50000, label: "👑 +50.000 GEM JACKPOT",    emoji: "💎", rarity: "mythic",    weight: 0.001, color: "#fef08a" },
   { kind: "streak_coins",  value: 60000, label: "🪙 +60.000 Streak Coin",    emoji: "🪙", rarity: "mythic",    weight: 0.3,   color: "#fde68a" },
 ];
 
@@ -1024,8 +1014,8 @@ Deno.serve(async (req) => {
         await admin.rpc("add_account_gems", { p_visitor_id: visitorId, p_amount: -cost });
       }
 
-      // Premium WAJIB pakai pool premium besar, bukan pool normal kecil.
-      // Server Luck aktif: reroll sekali jika masih RARE agar peluang EPIC+ makin gacor.
+      // Premium WAJIB pakai pool premium, tapi tetap dikontrol agar jackpot gem tidak gacor.
+      // Server Luck hanya bantu hasil common sekali, bukan menaikkan rare/jackpot terus.
       const luckActive = await isServerLuckActive(admin, visitorId);
       const totalWeight = PREMIUM_PRIZES.reduce((s, p) => s + p.weight, 0);
       const rollOne = (): Prize => {
@@ -1035,7 +1025,7 @@ Deno.serve(async (req) => {
       };
       const rollPremiumOne = (): Prize => {
         const first = rollOne();
-        return luckActive && first.rarity === "rare" ? rollOne() : first;
+        return luckActive && first.rarity === "common" ? rollOne() : first;
       };
 
       // 1) Roll semua hasil di memory dulu (cepat, tanpa I/O)
