@@ -112,6 +112,26 @@ export default function LuckRoyaleNyawa() {
   const [nowTick, setNowTick] = useState(Date.now());
   useEffect(() => { const t = setInterval(() => setNowTick(Date.now()), 1000); return () => clearInterval(t); }, []);
 
+  // Leaderboard state & loader
+  const [lbLoading, setLbLoading] = useState(false);
+  const [lbLoaded, setLbLoaded] = useState(false);
+  const [topSpinners, setTopSpinners] = useState<Array<{ name: string; total: number; jackpots: number }>>([]);
+  const [topJackpots, setTopJackpots] = useState<Array<{ name: string; count: number; latestLabel: string; latestAt: string }>>([]);
+  const [lbInner, setLbInner] = useState<"spin" | "jackpot">("spin");
+  const fetchLeaderboard = async () => {
+    setLbLoading(true);
+    try {
+      const { data } = await supabase.functions.invoke("luck-royale-nyawa", {
+        body: { visitorId, action: "leaderboard" },
+      });
+      if (data?.success) {
+        setTopSpinners(data.topSpinners || []);
+        setTopJackpots(data.topJackpots || []);
+        setLbLoaded(true);
+      }
+    } finally { setLbLoading(false); }
+  };
+
   const fetchData = async () => {
     if (!visitorId) return;
     try {
@@ -358,8 +378,8 @@ export default function LuckRoyaleNyawa() {
             );
           })()}
 
-          <Tabs defaultValue="spin" className="w-full">
-            <TabsList className="grid w-full grid-cols-7 bg-black/40 border border-amber-500/30 h-auto p-1 gap-1">
+          <Tabs defaultValue="spin" className="w-full" onValueChange={(v) => { if (v === "papan" && !lbLoaded) fetchLeaderboard(); }}>
+            <TabsList className="grid w-full grid-cols-8 bg-black/40 border border-amber-500/30 h-auto p-1 gap-1">
               <TabsTrigger value="spin" className="flex-col gap-0.5 py-1.5 data-[state=active]:bg-gradient-to-br data-[state=active]:from-amber-500 data-[state=active]:to-orange-600 data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-amber-500/40 font-black tracking-wider text-[8px] rounded-md">
                 <Dices className="w-3.5 h-3.5" />
                 SPIN
@@ -387,6 +407,10 @@ export default function LuckRoyaleNyawa() {
               <TabsTrigger value="top" className="flex-col gap-0.5 py-1.5 data-[state=active]:bg-gradient-to-br data-[state=active]:from-fuchsia-500 data-[state=active]:to-purple-700 data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-fuchsia-500/40 font-black tracking-wider text-[8px] rounded-md">
                 <Trophy className="w-3.5 h-3.5" />
                 TOP
+              </TabsTrigger>
+              <TabsTrigger value="papan" className="flex-col gap-0.5 py-1.5 data-[state=active]:bg-gradient-to-br data-[state=active]:from-yellow-400 data-[state=active]:via-amber-500 data-[state=active]:to-orange-600 data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-amber-500/50 font-black tracking-wider text-[8px] rounded-md">
+                <Crown className="w-3.5 h-3.5" />
+                PAPAN
               </TabsTrigger>
             </TabsList>
 
@@ -1519,6 +1543,134 @@ export default function LuckRoyaleNyawa() {
                   );
                 });
               })()}
+            </TabsContent>
+
+            <TabsContent value="papan" className="mt-3 space-y-3">
+              <div className="rounded-2xl bg-gradient-to-br from-amber-900/50 via-orange-900/40 to-rose-900/40 border-2 border-amber-400/50 p-3 shadow-xl shadow-amber-500/20">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    <Crown className="w-5 h-5 text-amber-300" fill="currentColor" />
+                    <h3 className="text-xs font-black tracking-widest text-amber-200">| PAPAN PERINGKAT</h3>
+                  </div>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    disabled={lbLoading}
+                    onClick={fetchLeaderboard}
+                    className="h-6 px-2 text-[9px] font-black text-amber-200 hover:bg-amber-500/20"
+                  >
+                    {lbLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : "🔄 REFRESH"}
+                  </Button>
+                </div>
+                <p className="text-[10px] text-amber-100/70 mb-2">
+                  Username sengaja disamarkan demi privasi (cth: <span className="font-black">Agu***</span>).
+                </p>
+
+                {/* Inner toggle */}
+                <div className="grid grid-cols-2 gap-1 bg-black/40 rounded-lg p-1 mb-3">
+                  <button
+                    onClick={() => setLbInner("spin")}
+                    className={`py-1.5 rounded-md text-[10px] font-black tracking-wider transition ${lbInner === "spin" ? "bg-gradient-to-r from-amber-500 to-orange-600 text-white shadow-lg" : "text-amber-200/60"}`}
+                  >
+                    🎰 TOTAL SPIN
+                  </button>
+                  <button
+                    onClick={() => setLbInner("jackpot")}
+                    className={`py-1.5 rounded-md text-[10px] font-black tracking-wider transition ${lbInner === "jackpot" ? "bg-gradient-to-r from-fuchsia-500 to-purple-700 text-white shadow-lg" : "text-fuchsia-200/60"}`}
+                  >
+                    💎 HADIAH JACKPOT
+                  </button>
+                </div>
+
+                {lbLoading && !lbLoaded ? (
+                  <div className="flex items-center justify-center py-10">
+                    <Loader2 className="w-6 h-6 animate-spin text-amber-300" />
+                  </div>
+                ) : lbInner === "spin" ? (
+                  topSpinners.length === 0 ? (
+                    <div className="rounded-xl bg-black/30 border border-amber-500/20 p-6 text-center">
+                      <Trophy className="w-10 h-10 text-amber-400/50 mx-auto mb-2" />
+                      <p className="text-xs text-amber-200/70 font-bold">Belum ada data spin</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-1.5">
+                      {topSpinners.map((u, idx) => {
+                        const isTop3 = idx < 3;
+                        const medal = ["🥇", "🥈", "🥉"][idx];
+                        const grad = idx === 0
+                          ? "from-yellow-400 via-amber-500 to-orange-500"
+                          : idx === 1
+                          ? "from-slate-300 via-slate-400 to-slate-500"
+                          : idx === 2
+                          ? "from-orange-400 via-amber-600 to-yellow-700"
+                          : "from-slate-700 to-slate-800";
+                        return (
+                          <div
+                            key={`s-${idx}`}
+                            className={`flex items-center gap-2 p-2 rounded-xl bg-gradient-to-r ${grad} ${isTop3 ? "ring-2 ring-amber-300/50 shadow-md" : "ring-1 ring-white/10"}`}
+                          >
+                            <div className="w-7 text-center text-sm font-black text-white">
+                              {medal || `#${idx + 1}`}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="text-xs font-black text-white truncate">{u.name}</div>
+                              <div className="text-[9px] text-white/80 font-bold">
+                                💎 {u.jackpots} hadiah langka
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              <div className="text-base font-black text-white leading-none">{u.total.toLocaleString("id-ID")}</div>
+                              <div className="text-[8px] font-black text-white/80 tracking-widest">SPIN</div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )
+                ) : (
+                  topJackpots.length === 0 ? (
+                    <div className="rounded-xl bg-black/30 border border-fuchsia-500/20 p-6 text-center">
+                      <Sparkles className="w-10 h-10 text-fuchsia-400/50 mx-auto mb-2" />
+                      <p className="text-xs text-fuchsia-200/70 font-bold">Belum ada hadiah jackpot</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-1.5">
+                      {topJackpots.map((u, idx) => {
+                        const medal = ["🥇", "🥈", "🥉"][idx];
+                        const grad = idx === 0
+                          ? "from-fuchsia-500 via-purple-600 to-pink-600"
+                          : idx === 1
+                          ? "from-purple-600 to-indigo-700"
+                          : idx === 2
+                          ? "from-violet-600 to-purple-800"
+                          : "from-slate-700 to-slate-800";
+                        return (
+                          <div
+                            key={`j-${idx}`}
+                            className={`flex items-center gap-2 p-2 rounded-xl bg-gradient-to-r ${grad} ${idx < 3 ? "ring-2 ring-fuchsia-300/50 shadow-md shadow-fuchsia-500/20" : "ring-1 ring-white/10"}`}
+                          >
+                            <div className="w-7 text-center text-sm font-black text-white">
+                              {medal || `#${idx + 1}`}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="text-xs font-black text-white truncate">{u.name}</div>
+                              <div className="text-[9px] text-white/80 font-bold truncate">{u.latestLabel}</div>
+                            </div>
+                            <div className="text-right">
+                              <div className="text-base font-black text-white leading-none">{u.count}</div>
+                              <div className="text-[8px] font-black text-white/80 tracking-widest">JACKPOT</div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )
+                )}
+
+                <p className="text-[9px] text-amber-100/50 text-center mt-3">
+                  Diperbarui dari 5.000 spin terbaru komunitas.
+                </p>
+              </div>
             </TabsContent>
           </Tabs>
         </div>
