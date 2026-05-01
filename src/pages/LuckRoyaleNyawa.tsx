@@ -2070,6 +2070,53 @@ export default function LuckRoyaleNyawa() {
           </div>
         </div>
       )}
+
+      {npPinOpen && (
+        <div className="fixed inset-0 z-[90] bg-black/85 backdrop-blur-md flex items-center justify-center p-4 animate-fade-in">
+          <div className="relative w-full max-w-sm rounded-2xl overflow-hidden border-2 border-amber-400/60 shadow-2xl shadow-amber-500/40 animate-scale-in bg-gradient-to-br from-rose-950 via-slate-900 to-amber-950">
+            <div className="p-5 text-white">
+              <div className="text-center mb-3">
+                <div className="text-3xl mb-1">👑</div>
+                <h3 className="text-lg font-black tracking-tight text-amber-200">Beli Nyawa Premium</h3>
+                <p className="text-[11px] text-slate-300 mt-1">Pool hadiah <b className="text-white">MANTAP JIWA</b> selama 24 jam</p>
+                <p className="text-[18px] font-black text-amber-300 mt-1">Rp 50.000</p>
+                <p className="text-[10px] text-amber-100/80 mt-1">Banyak Epic+, peluang Mythic 5×, hadiah lebih besar.</p>
+              </div>
+              <label className="block text-[11px] font-bold text-slate-300 mb-1.5">Masukkan PIN 6 digit</label>
+              <input
+                type="password"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                maxLength={6}
+                value={npPin}
+                onChange={(e) => setNpPin(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                placeholder="••••••"
+                className="w-full text-center text-2xl tracking-[0.5em] font-black bg-black/40 border border-amber-500/40 rounded-xl px-3 py-3 text-white focus:outline-none focus:border-amber-300"
+                autoFocus
+              />
+              <div className="grid grid-cols-2 gap-2 mt-4">
+                <button
+                  disabled={npBuying}
+                  onClick={() => { setNpPinOpen(false); setNpPin(""); }}
+                  className="rounded-xl bg-slate-700/80 hover:bg-slate-600 active:scale-95 transition px-3 py-2.5 font-black text-xs tracking-wider text-white border border-white/10 disabled:opacity-50"
+                >
+                  BATAL
+                </button>
+                <button
+                  disabled={npBuying || npPin.length !== 6}
+                  onClick={buyNyawaPremium}
+                  className="rounded-xl bg-gradient-to-br from-amber-400 via-orange-500 to-rose-600 hover:brightness-110 active:scale-95 transition px-3 py-2.5 font-black text-xs tracking-wider text-white shadow-lg shadow-amber-500/50 ring-1 ring-amber-300/50 disabled:opacity-50"
+                >
+                  {npBuying ? "MEMPROSES..." : "BAYAR"}
+                </button>
+              </div>
+              <p className="text-center text-[9px] text-amber-200/70 mt-2 font-semibold tracking-wider">
+                Saldo dipotong otomatis. Durasi akumulatif jika masih aktif.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
 
   );
