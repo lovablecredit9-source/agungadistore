@@ -950,12 +950,14 @@ Deno.serve(async (req) => {
 
       const luckyHourState = await isLuckyHourActive(admin, visitorId);
       const luckyHourActive = luckyHourState.active;
+      const nyawaPremiumState = await getNyawaPremium(admin, visitorId);
+      const nyawaPremiumActive = isNyawaPremiumActive(nyawaPremiumState);
 
       const results: Array<Prize & { index: number; bonusApplied?: number; jackpotWon?: number }> = [];
       let totalBonusGems = 0;
       let jackpotWonTotal = 0;
       for (let i = 0; i < spinCount; i++) {
-        const basePrize = pickPrize(luckyHourActive);
+        const basePrize = pickPrize(luckyHourActive, nyawaPremiumActive);
         const mult = getStreakMultiplier(curStreak);
         let finalValue = basePrize.value;
         let bonusApplied = 0;
