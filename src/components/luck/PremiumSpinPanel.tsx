@@ -1,8 +1,8 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { Crown, Gem, Loader2, Sparkles, Gift, Flame, Copy } from "lucide-react";
+import { Crown, Gem, Loader2, Sparkles, Gift, Flame, Heart, Lightbulb, Timer, Shield, Coins, KeyRound, WalletCards, Ticket, X, Zap } from "lucide-react";
 
 /**
  * 👑 PREMIUM SPIN PANEL
@@ -32,41 +32,35 @@ const PACKS: PremiumPack[] = [
 const FREE_PER_DAY = 2;
 
 const PRIZE_POOL: { rarity: Rarity; chance: string; prizes: { emoji: string; label: string }[] }[] = [
-  { rarity: "mythic", chance: "~0.5%", prizes: [
-    { emoji: "🪙", label: "50.000 Koin Streak" },
-    { emoji: "💵", label: "Rp 50.000 Saldo" },
-    { emoji: "💎", label: "2.000 Gem" },
-    { emoji: "🔑", label: "100 Kredit Game" },
+  { rarity: "mythic", chance: "JACKPOT", prizes: [
+    { emoji: "💎", label: "8.000–100.000 Gem" },
+    { emoji: "💵", label: "Rp 150.000 Saldo" },
+    { emoji: "❤️", label: "500–1.500 Nyawa" },
+    { emoji: "🎟️", label: "6 Lucky Token" },
   ]},
-  { rarity: "legendary", chance: "~3%", prizes: [
-    { emoji: "💵", label: "Rp 10.000 Saldo" },
-    { emoji: "💎", label: "500 Gem" },
-    { emoji: "🔑", label: "30 Kredit Game" },
-    { emoji: "🪙", label: "10.000 Koin" },
+  { rarity: "legendary", chance: "TINGGI", prizes: [
+    { emoji: "💎", label: "2.500–6.000 Gem" },
+    { emoji: "💵", label: "Rp 30.000 Saldo" },
+    { emoji: "❤️", label: "120 Nyawa" },
+    { emoji: "🎟️", label: "3 Lucky Token" },
   ]},
-  { rarity: "epic", chance: "~10%", prizes: [
-    { emoji: "💎", label: "100 Gem" },
-    { emoji: "🔑", label: "10 Kredit Game" },
-    { emoji: "🪙", label: "2.500 Koin" },
-    { emoji: "❤️", label: "5 Nyawa Extra" },
+  { rarity: "epic", chance: "SERING", prizes: [
+    { emoji: "💎", label: "800–1.800 Gem" },
+    { emoji: "🔑", label: "15 Kredit Game" },
+    { emoji: "🪙", label: "8.000 Koin" },
+    { emoji: "🎟️", label: "2 Lucky Token" },
   ]},
-  { rarity: "rare", chance: "~25%", prizes: [
-    { emoji: "💎", label: "25 Gem" },
-    { emoji: "❤️", label: "2 Nyawa" },
-    { emoji: "⏱️", label: "Time Freeze" },
-    { emoji: "🛡️", label: "Streak Freeze" },
-  ]},
-  { rarity: "common", chance: "~61.5%", prizes: [
-    { emoji: "💡", label: "Auto Hint" },
-    { emoji: "🪙", label: "100-500 Koin" },
-    { emoji: "❤️", label: "1 Nyawa" },
-    { emoji: "💎", label: "5-10 Gem" },
+  { rarity: "rare", chance: "MINIMAL", prizes: [
+    { emoji: "💎", label: "200–500 Gem" },
+    { emoji: "❤️", label: "15 Nyawa" },
+    { emoji: "🛡️", label: "6 Streak Freeze" },
+    { emoji: "🎟️", label: "1 Lucky Token" },
   ]},
 ];
 
 function rarityGrad(r: string) {
   switch (r) {
-    case "mythic": return "from-fuchsia-600 via-pink-500 to-amber-400";
+    case "mythic": return "from-red-500 via-yellow-400 via-green-400 via-cyan-400 via-blue-500 to-fuchsia-500";
     case "legendary": return "from-amber-400 via-orange-500 to-red-600";
     case "epic": return "from-fuchsia-500 to-purple-700";
     case "rare": return "from-cyan-500 to-blue-600";
@@ -75,12 +69,29 @@ function rarityGrad(r: string) {
 }
 function rarityRing(r: string) {
   switch (r) {
-    case "mythic": return "ring-2 ring-fuchsia-400 shadow-[0_0_18px_rgba(232,121,249,0.55)]";
-    case "legendary": return "ring-2 ring-amber-400 shadow-[0_0_14px_rgba(251,191,36,0.5)]";
-    case "epic": return "ring-2 ring-purple-400 shadow-[0_0_10px_rgba(192,132,252,0.4)]";
-    case "rare": return "ring-2 ring-cyan-400 shadow-[0_0_8px_rgba(34,211,238,0.35)]";
+    case "mythic": return "ring-2 ring-fuchsia-300/90 shadow-[0_0_18px_rgba(232,121,249,0.55)]";
+    case "legendary": return "ring-2 ring-amber-400/80 shadow-[0_0_14px_rgba(251,191,36,0.5)]";
+    case "epic": return "ring-2 ring-fuchsia-400/70 shadow-[0_0_10px_rgba(192,132,252,0.4)]";
+    case "rare": return "ring-2 ring-cyan-400/60 shadow-[0_0_8px_rgba(34,211,238,0.35)]";
     default: return "ring-1 ring-slate-500/40";
   }
+}
+function getKindIcon(kind: string) {
+  switch (kind) {
+    case "extra_life": return <Heart className="w-full h-full" fill="currentColor" />;
+    case "auto_hint": return <Lightbulb className="w-full h-full" fill="currentColor" />;
+    case "time_freeze": return <Timer className="w-full h-full" />;
+    case "streak_freeze": return <Shield className="w-full h-full" fill="currentColor" />;
+    case "gems": return <Gem className="w-full h-full" fill="currentColor" />;
+    case "streak_coins": return <Coins className="w-full h-full" fill="currentColor" />;
+    case "game_credits": return <KeyRound className="w-full h-full" />;
+    case "game_balance": return <WalletCards className="w-full h-full" />;
+    case "lucky_token": return <Ticket className="w-full h-full" />;
+    default: return <Sparkles className="w-full h-full" />;
+  }
+}
+function rarityLabel(r: string) {
+  return ({ common: "COMMON", rare: "RARE", epic: "EPIC", legendary: "LEGENDARY", mythic: "MYTHIC" } as Record<string, string>)[r] || String(r).toUpperCase();
 }
 
 function todayWIB(): string {
@@ -210,7 +221,7 @@ export default function PremiumSpinPanel({ visitorId, gems, setGems, isUnlocked,
       if (typeof payload?.gems === "number") setGems(payload.gems);
       const list = payload?.results || [];
       setResults(list);
-      if (list.length > 1) setShowResultsModal(true);
+      if (list.length > 0) setShowResultsModal(true);
 
       if (useFree) {
         const u = bumpFreeUsed();
@@ -503,38 +514,45 @@ export default function PremiumSpinPanel({ visitorId, gems, setGems, isUnlocked,
       </div>
 
       {/* Results Modal (multi-spin) */}
-      {showResultsModal && results.length > 1 && (
-        <div className="fixed inset-0 z-[100] bg-black/85 backdrop-blur-md flex items-center justify-center p-4 animate-fade-in">
-          <div className="relative w-full max-w-md rounded-2xl overflow-hidden border-2 border-fuchsia-400/60 shadow-2xl shadow-fuchsia-500/40 bg-gradient-to-br from-[#1a0420] via-[#2a0840] to-[#1a0420]">
-            <div className="p-4">
-              <div className="flex items-center justify-between mb-3">
-                <h3 className="text-base font-black text-fuchsia-200 tracking-wide">🎰 {results.length}× HASIL SPIN</h3>
-                <button onClick={() => setShowResultsModal(false)} className="text-fuchsia-300 hover:text-white text-xl">×</button>
+      {showResultsModal && results.length > 0 && (
+        <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-md flex items-center justify-center p-4 animate-fade-in">
+          <div className="relative max-w-md w-full bg-gradient-to-br from-[#1a0e3d] to-[#0b0820] border-2 border-amber-500/50 rounded-2xl p-5 shadow-2xl shadow-amber-500/30 animate-scale-in">
+            <button onClick={() => setShowResultsModal(false)} className="absolute top-2 right-2 text-white/60 hover:text-white">
+              <X className="w-5 h-5" />
+            </button>
+            <div className="text-center mb-3">
+              <Sparkles className="w-8 h-8 text-amber-400 mx-auto mb-1 animate-pulse" />
+              <h3 className="text-xl font-black bg-gradient-to-r from-amber-300 to-orange-500 bg-clip-text text-transparent">SELAMAT!</h3>
+              <p className="text-xs text-purple-200 mt-1">
+                <span className="font-black text-amber-300">{results.length}</span> / {results.length} hadiah dibuka
+              </p>
+              <div className="mt-2 flex items-center justify-center flex-wrap gap-1">
+                {(["mythic", "legendary", "epic", "rare", "common"] as const).map((r) => {
+                  const c = results.filter((x) => x.rarity === r).length;
+                  if (c === 0) return null;
+                  return <span key={r} className={`text-[8px] font-black px-1.5 py-0.5 rounded-full bg-gradient-to-r ${rarityGrad(r)} text-white ring-1 ring-white/30`}>{rarityLabel(r)} ×{c}</span>;
+                })}
               </div>
-              <div className="max-h-[50vh] overflow-y-auto space-y-1.5 pr-1">
-                {results.map((r, i) => (
-                  <div key={i} className={`rounded-lg p-2 bg-gradient-to-r ${rarityGrad(r.rarity)} ${rarityRing(r.rarity)} flex items-center gap-2`}>
-                    <div className="text-2xl">{r.emoji}</div>
-                    <div className="flex-1 min-w-0">
-                      <div className="text-[11px] font-black text-white truncate">{r.label}</div>
-                      <div className="text-[8px] uppercase tracking-wider opacity-80 font-bold text-white">{r.rarity}</div>
-                    </div>
-                    <div className="text-[9px] font-bold text-white/70">#{i + 1}</div>
-                  </div>
-                ))}
-              </div>
-              {/* Summary */}
-              <div className="mt-3 grid grid-cols-2 gap-1 text-[9px] text-fuchsia-100/90">
-                {Object.entries(summarize(results)).map(([k, v]) => (
-                  <div key={k} className="bg-black/30 rounded px-2 py-1 border border-fuchsia-500/20">
-                    <span className="font-black text-fuchsia-200">{k}:</span> {v}
-                  </div>
-                ))}
-              </div>
-              <Button onClick={() => setShowResultsModal(false)} className="mt-3 w-full bg-gradient-to-r from-fuchsia-600 to-amber-500 text-white font-black">
-                TUTUP
-              </Button>
             </div>
+            <div className={`grid gap-1.5 max-h-[55vh] overflow-y-auto ${results.length > 50 ? "grid-cols-4" : results.length > 20 ? "grid-cols-3" : "grid-cols-2"}`}>
+              {results.map((r, i) => (
+                <div key={i} className={`relative rounded-lg bg-gradient-to-br ${rarityGrad(r.rarity)} ${rarityRing(r.rarity)} shadow-lg p-2 flex flex-col items-center text-center`}>
+                  <span className="absolute top-0.5 right-0.5 bg-black/70 text-[7px] font-black px-1 py-0 rounded text-white">{rarityLabel(r.rarity)}</span>
+                  <div className={`text-white mb-0.5 ${results.length > 50 ? "w-6 h-6" : "w-9 h-9"}`}>{getKindIcon(r.kind)}</div>
+                  <div className={`font-black leading-tight text-white drop-shadow ${results.length > 50 ? "text-[8px]" : "text-[10px]"}`}>{r.label}</div>
+                </div>
+              ))}
+            </div>
+            <div className="grid grid-cols-2 gap-2 mt-4 text-[9px] text-fuchsia-100/90">
+              {Object.entries(summarize(results)).map(([k, v]) => (
+                <div key={k} className="bg-black/30 rounded px-2 py-1 border border-fuchsia-500/20">
+                  <span className="font-black text-fuchsia-200">{k}:</span> {v}
+                </div>
+              ))}
+            </div>
+            <Button onClick={() => setShowResultsModal(false)} className="mt-4 w-full bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 font-black tracking-wider">
+              <Zap className="w-4 h-4 mr-1" /> KEREN!
+            </Button>
           </div>
         </div>
       )}
@@ -568,6 +586,7 @@ function summarize(list: SpinResult[]): Record<string, string> {
     gems: "💎 Gem",
     game_credits: "🔑 Kredit",
     game_balance: "💵 Saldo IN",
+    lucky_token: "🎟️ Lucky Token",
   };
   for (const r of list) {
     sum[r.kind] = (sum[r.kind] || 0) + r.value;
