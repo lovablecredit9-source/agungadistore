@@ -84,6 +84,9 @@ export default function PremiumSpinPanel({ visitorId, gems, setGems, isUnlocked,
   const [reelSpinning, setReelSpinning] = useState(false);
   const [selectedPack, setSelectedPack] = useState<number>(1);
   const [showResultsModal, setShowResultsModal] = useState(false);
+  const [history, setHistory] = useState<any[]>([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
+  const [historyLimit, setHistoryLimit] = useState(20);
 
   useEffect(() => {
     const id = setInterval(() => {
@@ -92,6 +95,25 @@ export default function PremiumSpinPanel({ visitorId, gems, setGems, isUnlocked,
     }, 30000);
     return () => clearInterval(id);
   }, []);
+
+  const loadHistory = async () => {
+    if (!visitorId) return;
+    setHistoryLoading(true);
+    try {
+      const { data } = await supabase
+        .from("luck_royale_nyawa_history")
+        .select("id, spin_type, reward_kind, reward_value, reward_label, rarity, cost_currency, cost_amount, created_at")
+        .eq("visitor_id", visitorId)
+        .like("spin_type", "premium%")
+        .order("created_at", { ascending: false })
+        .limit(historyLimit);
+      setHistory(data || []);
+    } finally {
+      setHistoryLoading(false);
+    }
+  };
+
+  useEffect(() => { loadHistory(); /* eslint-disable-next-line */ }, [visitorId, historyLimit, results.length]);
 
   const freeRemaining = Math.max(0, FREE_PER_DAY - freeUsed);
   const activePack = PACKS.find((p) => p.count === selectedPack) || PACKS[0];
