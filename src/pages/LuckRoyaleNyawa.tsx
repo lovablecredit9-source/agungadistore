@@ -1214,58 +1214,69 @@ export default function LuckRoyaleNyawa() {
 
           {/* 🎟️ TOKEN SHOP - 4 tier (Free / Premium / Super / Ultra) */}
           {tokenShop.length > 0 && (
-            <div className="rounded-2xl bg-gradient-to-br from-amber-900/40 via-orange-900/30 to-pink-900/40 border-2 border-amber-500/50 p-3">
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-1.5">
-                  <Award className="w-4 h-4 text-amber-300" fill="currentColor" />
-                  <h3 className="text-xs font-black tracking-widest text-amber-200">| TOKEN SHOP - HADIAH PASTI</h3>
-                </div>
-                <Badge className="bg-amber-500 text-black font-black text-[8px]">🎟️ {luckyTokens}</Badge>
-              </div>
-              <p className="text-[10px] text-amber-100/80 mb-2">
-                <span className="font-black text-emerald-300">FREE</span> bebas tukar. <span className="font-black text-fuchsia-300">PREMIUM</span>, <span className="font-black text-amber-300">SUPER</span> & <span className="font-black text-cyan-300">ULTRA</span> butuh akses bulanan.
-              </p>
+            <div className="relative rounded-2xl p-[2px] battle-ember-pulse">
+              <div className="absolute inset-0 battle-border-flow opacity-80 rounded-2xl" />
+              <div className="relative rounded-[14px] battle-card p-3 overflow-hidden">
+                <div className="absolute inset-0 battle-hex-grid opacity-25 pointer-events-none" />
+                <div className="absolute inset-0 battle-scanline opacity-40 pointer-events-none" />
+                <div className="absolute top-0 left-0 w-5 h-5 border-t-2 border-l-2 border-orange-400" />
+                <div className="absolute top-0 right-0 w-5 h-5 border-t-2 border-r-2 border-red-500" />
+                <div className="absolute bottom-0 left-0 w-5 h-5 border-b-2 border-l-2 border-red-500" />
+                <div className="absolute bottom-0 right-0 w-5 h-5 border-b-2 border-r-2 border-orange-400" />
 
-              {/* 4-tier toggle */}
-              <div className="grid grid-cols-4 gap-1 mb-2.5 bg-black/40 rounded-lg p-1">
-                <button
-                  onClick={() => setShopTier("free")}
-                  className={`py-1.5 rounded-md text-[9px] font-black tracking-wider transition ${shopTier === "free" ? "bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-lg shadow-emerald-500/40" : "text-emerald-200/60"}`}
-                >
-                  🎁 FREE
-                </button>
-                <button
-                  onClick={() => setShopTier("premium")}
-                  className={`py-1.5 rounded-md text-[9px] font-black tracking-wider transition ${shopTier === "premium" ? "bg-gradient-to-r from-fuchsia-500 via-purple-600 to-amber-500 text-white shadow-lg shadow-fuchsia-500/40" : "text-fuchsia-200/60"}`}
-                >
-                  👑 PREMIUM
-                </button>
-                <button
-                  onClick={() => setShopTier("super_premium")}
-                  className={`py-1.5 rounded-md text-[9px] font-black tracking-wider transition ${shopTier === "super_premium" ? "bg-gradient-to-r from-amber-400 via-orange-500 to-rose-600 text-white shadow-lg shadow-amber-500/50" : "text-amber-200/60"}`}
-                >
-                  💎 SUPER
-                </button>
-                <button
-                  onClick={() => setShopTier("ultra")}
-                  className={`py-1.5 rounded-md text-[9px] font-black tracking-wider transition ${shopTier === "ultra" ? "bg-gradient-to-r from-cyan-400 via-emerald-500 to-amber-500 text-white shadow-lg shadow-cyan-500/50" : "text-cyan-200/60"}`}
-                >
-                  💠 ULTRA
-                </button>
-              </div>
-
-              {/* 👑 Premium Shop Unlock 7-day banner */}
-              {effectivePremiumShopUnlock.isActive && effectivePremiumShopUnlock.activeUntil && (
-                <div className="mb-2 rounded-lg bg-gradient-to-r from-amber-600/30 via-fuchsia-600/30 to-purple-600/30 border-2 border-amber-400/60 p-2 flex items-center gap-2">
-                  <span className="text-base">🔓</span>
-                  <div className="flex-1 min-w-0">
-                    <div className="text-[10px] font-black text-amber-100 tracking-wide">PREMIUM UNLOCK AKTIF — SEMUA TIER TERBUKA</div>
-                    <div className="text-[9px] text-amber-200/85 truncate">
-                      Sampai {new Date(effectivePremiumShopUnlock.activeUntil).toLocaleString("id-ID", { timeZone: "Asia/Jakarta", hour: "2-digit", minute: "2-digit", day: "2-digit", month: "short", year: "2-digit" })} WIB · {effectivePremiumShopUnlock.durationDays} hari dari Nyawa Premium
+                <div className="relative">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-1.5">
+                      <Award className="w-4 h-4 text-orange-300 drop-shadow-[0_0_6px_rgba(249,115,22,0.8)]" fill="currentColor" />
+                      <h3 className="text-xs font-black tracking-[0.2em] battle-title-gradient">TOKEN ARSENAL</h3>
                     </div>
+                    <Badge className="bg-gradient-to-r from-orange-500 to-red-600 text-white font-black text-[9px] rounded-sm shadow-lg shadow-orange-500/50">🎟️ {luckyTokens}</Badge>
                   </div>
-                </div>
-              )}
+                  <p className="text-[10px] text-orange-100/80 mb-2 font-semibold">
+                    <span className="font-black text-emerald-300">FREE</span> bebas tukar · <span className="font-black text-amber-300">PREMIUM</span>, <span className="font-black text-orange-300">SUPER</span> & <span className="font-black text-red-300">ULTRA</span> butuh akses bulanan.
+                  </p>
+
+                  {/* 4-tier toggle — battle clipped */}
+                  <div className="grid grid-cols-4 gap-1 mb-2.5 bg-black/60 rounded-md p-1 border border-orange-500/30">
+                    <button
+                      onClick={() => setShopTier("free")}
+                      className={`py-1.5 battle-tier-chip text-[9px] font-black tracking-wider transition ${shopTier === "free" ? "bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-lg shadow-emerald-500/50" : "bg-black/40 text-emerald-200/60 hover:text-emerald-100"}`}
+                    >
+                      🎁 FREE
+                    </button>
+                    <button
+                      onClick={() => setShopTier("premium")}
+                      className={`py-1.5 battle-tier-chip text-[9px] font-black tracking-wider transition ${shopTier === "premium" ? "bg-gradient-to-r from-amber-500 via-orange-500 to-red-500 text-white shadow-lg shadow-orange-500/60" : "bg-black/40 text-amber-200/60 hover:text-amber-100"}`}
+                    >
+                      👑 PREMIUM
+                    </button>
+                    <button
+                      onClick={() => setShopTier("super_premium")}
+                      className={`py-1.5 battle-tier-chip text-[9px] font-black tracking-wider transition ${shopTier === "super_premium" ? "bg-gradient-to-r from-orange-500 via-red-500 to-rose-600 text-white shadow-lg shadow-red-500/60" : "bg-black/40 text-orange-200/60 hover:text-orange-100"}`}
+                    >
+                      💎 SUPER
+                    </button>
+                    <button
+                      onClick={() => setShopTier("ultra")}
+                      className={`py-1.5 battle-tier-chip text-[9px] font-black tracking-wider transition ${shopTier === "ultra" ? "bg-gradient-to-r from-red-600 via-rose-600 to-amber-500 text-white shadow-lg shadow-rose-500/60" : "bg-black/40 text-red-200/60 hover:text-red-100"}`}
+                    >
+                      💠 ULTRA
+                    </button>
+                  </div>
+
+                  {/* 👑 Premium Shop Unlock 7-day banner */}
+                  {effectivePremiumShopUnlock.isActive && effectivePremiumShopUnlock.activeUntil && (
+                    <div className="mb-2 relative rounded-md border-2 border-orange-400/70 p-2 flex items-center gap-2 overflow-hidden">
+                      <div className="absolute inset-0 battle-banner-shine" />
+                      <span className="relative text-base drop-shadow-[0_0_6px_rgba(249,115,22,0.8)]">🔓</span>
+                      <div className="relative flex-1 min-w-0">
+                        <div className="text-[10px] font-black text-amber-100 tracking-wider">PREMIUM UNLOCK · SEMUA TIER TERBUKA</div>
+                        <div className="text-[9px] text-amber-200/95 truncate font-semibold">
+                          Sampai {new Date(effectivePremiumShopUnlock.activeUntil).toLocaleString("id-ID", { timeZone: "Asia/Jakarta", hour: "2-digit", minute: "2-digit", day: "2-digit", month: "short", year: "2-digit" })} WIB · {effectivePremiumShopUnlock.durationDays} hari dari Nyawa Premium
+                        </div>
+                      </div>
+                    </div>
+                  )}
 
               {/* Per-tier locked banner (disembunyikan jika premium unlock aktif) */}
               {!effectivePremiumShopUnlock.isActive && shopTier === "premium" && !shopAccess.isActive && (
