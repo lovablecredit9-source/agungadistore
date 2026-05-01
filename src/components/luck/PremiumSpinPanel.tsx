@@ -515,37 +515,44 @@ export default function PremiumSpinPanel({ visitorId, gems, setGems, isUnlocked,
 
       {/* Results Modal (multi-spin) */}
       {showResultsModal && results.length > 1 && (
-        <div className="fixed inset-0 z-[100] bg-black/85 backdrop-blur-md flex items-center justify-center p-4 animate-fade-in">
-          <div className="relative w-full max-w-md rounded-2xl overflow-hidden border-2 border-fuchsia-400/60 shadow-2xl shadow-fuchsia-500/40 bg-gradient-to-br from-[#1a0420] via-[#2a0840] to-[#1a0420]">
-            <div className="p-4">
-              <div className="flex items-center justify-between mb-3">
-                <h3 className="text-base font-black text-fuchsia-200 tracking-wide">🎰 {results.length}× HASIL SPIN</h3>
-                <button onClick={() => setShowResultsModal(false)} className="text-fuchsia-300 hover:text-white text-xl">×</button>
+        <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-md flex items-center justify-center p-4 animate-fade-in">
+          <div className="relative max-w-md w-full bg-gradient-to-br from-[#1a0e3d] to-[#0b0820] border-2 border-amber-500/50 rounded-2xl p-5 shadow-2xl shadow-amber-500/30 animate-scale-in">
+            <button onClick={() => setShowResultsModal(false)} className="absolute top-2 right-2 text-white/60 hover:text-white">
+              <X className="w-5 h-5" />
+            </button>
+            <div className="text-center mb-3">
+              <Sparkles className="w-8 h-8 text-amber-400 mx-auto mb-1 animate-pulse" />
+              <h3 className="text-xl font-black bg-gradient-to-r from-amber-300 to-orange-500 bg-clip-text text-transparent">SELAMAT!</h3>
+              <p className="text-xs text-purple-200 mt-1">
+                <span className="font-black text-amber-300">{results.length}</span> / {results.length} hadiah dibuka
+              </p>
+              <div className="mt-2 flex items-center justify-center flex-wrap gap-1">
+                {(["mythic", "legendary", "epic", "rare", "common"] as const).map((r) => {
+                  const c = results.filter((x) => x.rarity === r).length;
+                  if (c === 0) return null;
+                  return <span key={r} className={`text-[8px] font-black px-1.5 py-0.5 rounded-full bg-gradient-to-r ${rarityGrad(r)} text-white ring-1 ring-white/30`}>{rarityLabel(r)} ×{c}</span>;
+                })}
               </div>
-              <div className="max-h-[50vh] overflow-y-auto space-y-1.5 pr-1">
-                {results.map((r, i) => (
-                  <div key={i} className={`rounded-lg p-2 bg-gradient-to-r ${rarityGrad(r.rarity)} ${rarityRing(r.rarity)} flex items-center gap-2`}>
-                    <div className="text-2xl">{r.emoji}</div>
-                    <div className="flex-1 min-w-0">
-                      <div className="text-[11px] font-black text-white truncate">{r.label}</div>
-                      <div className="text-[8px] uppercase tracking-wider opacity-80 font-bold text-white">{r.rarity}</div>
-                    </div>
-                    <div className="text-[9px] font-bold text-white/70">#{i + 1}</div>
-                  </div>
-                ))}
-              </div>
-              {/* Summary */}
-              <div className="mt-3 grid grid-cols-2 gap-1 text-[9px] text-fuchsia-100/90">
-                {Object.entries(summarize(results)).map(([k, v]) => (
-                  <div key={k} className="bg-black/30 rounded px-2 py-1 border border-fuchsia-500/20">
-                    <span className="font-black text-fuchsia-200">{k}:</span> {v}
-                  </div>
-                ))}
-              </div>
-              <Button onClick={() => setShowResultsModal(false)} className="mt-3 w-full bg-gradient-to-r from-fuchsia-600 to-amber-500 text-white font-black">
-                TUTUP
-              </Button>
             </div>
+            <div className={`grid gap-1.5 max-h-[55vh] overflow-y-auto ${results.length > 50 ? "grid-cols-4" : results.length > 20 ? "grid-cols-3" : "grid-cols-2"}`}>
+              {results.map((r, i) => (
+                <div key={i} className={`relative rounded-lg bg-gradient-to-br ${rarityGrad(r.rarity)} ${rarityRing(r.rarity)} shadow-lg p-2 flex flex-col items-center text-center`}>
+                  <span className="absolute top-0.5 right-0.5 bg-black/70 text-[7px] font-black px-1 py-0 rounded text-white">{rarityLabel(r.rarity)}</span>
+                  <div className={`text-white mb-0.5 ${results.length > 50 ? "w-6 h-6" : "w-9 h-9"}`}>{getKindIcon(r.kind)}</div>
+                  <div className={`font-black leading-tight text-white drop-shadow ${results.length > 50 ? "text-[8px]" : "text-[10px]"}`}>{r.label}</div>
+                </div>
+              ))}
+            </div>
+            <div className="grid grid-cols-2 gap-2 mt-4 text-[9px] text-fuchsia-100/90">
+              {Object.entries(summarize(results)).map(([k, v]) => (
+                <div key={k} className="bg-black/30 rounded px-2 py-1 border border-fuchsia-500/20">
+                  <span className="font-black text-fuchsia-200">{k}:</span> {v}
+                </div>
+              ))}
+            </div>
+            <Button onClick={() => setShowResultsModal(false)} className="mt-4 w-full bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 font-black tracking-wider">
+              <Zap className="w-4 h-4 mr-1" /> KEREN!
+            </Button>
           </div>
         </div>
       )}
