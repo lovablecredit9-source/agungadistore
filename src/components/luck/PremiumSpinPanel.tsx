@@ -60,7 +60,7 @@ const PRIZE_POOL: { rarity: Rarity; chance: string; prizes: { emoji: string; lab
 
 function rarityGrad(r: string) {
   switch (r) {
-    case "mythic": return "from-fuchsia-600 via-pink-500 to-amber-400";
+    case "mythic": return "from-red-500 via-yellow-400 via-green-400 via-cyan-400 via-blue-500 to-fuchsia-500";
     case "legendary": return "from-amber-400 via-orange-500 to-red-600";
     case "epic": return "from-fuchsia-500 to-purple-700";
     case "rare": return "from-cyan-500 to-blue-600";
@@ -69,10 +69,10 @@ function rarityGrad(r: string) {
 }
 function rarityRing(r: string) {
   switch (r) {
-    case "mythic": return "ring-2 ring-fuchsia-400 shadow-[0_0_18px_rgba(232,121,249,0.55)]";
-    case "legendary": return "ring-2 ring-amber-400 shadow-[0_0_14px_rgba(251,191,36,0.5)]";
-    case "epic": return "ring-2 ring-purple-400 shadow-[0_0_10px_rgba(192,132,252,0.4)]";
-    case "rare": return "ring-2 ring-cyan-400 shadow-[0_0_8px_rgba(34,211,238,0.35)]";
+    case "mythic": return "ring-2 ring-fuchsia-300/90 shadow-[0_0_18px_rgba(232,121,249,0.55)]";
+    case "legendary": return "ring-2 ring-amber-400/80 shadow-[0_0_14px_rgba(251,191,36,0.5)]";
+    case "epic": return "ring-2 ring-fuchsia-400/70 shadow-[0_0_10px_rgba(192,132,252,0.4)]";
+    case "rare": return "ring-2 ring-cyan-400/60 shadow-[0_0_8px_rgba(34,211,238,0.35)]";
     default: return "ring-1 ring-slate-500/40";
   }
 }
