@@ -120,6 +120,17 @@ export default function LuckRoyaleNyawa() {
   const [nowTick, setNowTick] = useState(Date.now());
   useEffect(() => { const t = setInterval(() => setNowTick(Date.now()), 1000); return () => clearInterval(t); }, []);
 
+  const effectivePremiumShopUnlock = (() => {
+    if (premiumShopUnlock.isActive) return premiumShopUnlock;
+    if (!nyawaPremium.isActive || !nyawaPremium.purchasedAt) return premiumShopUnlock;
+    const grantedAtMs = new Date(nyawaPremium.purchasedAt).getTime();
+    if (!Number.isFinite(grantedAtMs)) return premiumShopUnlock;
+    const activeUntil = new Date(grantedAtMs + 7 * 24 * 60 * 60 * 1000).toISOString();
+    return new Date(activeUntil).getTime() > nowTick
+      ? { isActive: true, activeUntil, grantedAt: nyawaPremium.purchasedAt, durationDays: 7 }
+      : premiumShopUnlock;
+  })();
+
   // Reveal hadiah satu per satu - kecepatan adaptif berdasarkan jumlah
   useEffect(() => {
     if (!results || results.length === 0) {
