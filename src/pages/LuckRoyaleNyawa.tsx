@@ -378,7 +378,7 @@ export default function LuckRoyaleNyawa() {
             );
           })()}
 
-          <Tabs defaultValue="spin" className="w-full">
+          <Tabs defaultValue="spin" className="w-full" onValueChange={(v) => { if (v === "papan" && !lbLoaded) fetchLeaderboard(); }}>
             <TabsList className="grid w-full grid-cols-8 bg-black/40 border border-amber-500/30 h-auto p-1 gap-1">
               <TabsTrigger value="spin" className="flex-col gap-0.5 py-1.5 data-[state=active]:bg-gradient-to-br data-[state=active]:from-amber-500 data-[state=active]:to-orange-600 data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-amber-500/40 font-black tracking-wider text-[8px] rounded-md">
                 <Dices className="w-3.5 h-3.5" />
