@@ -822,6 +822,13 @@ Deno.serve(async (req) => {
           isFirstDiscountAvailable: !lhFirstUsed && p.firstPrice != null,
         })),
         luckyHourFirstDiscountUsed: lhFirstUsed,
+        nyawaPremium: {
+          isActive: nyawaPremiumActive,
+          activeUntil: nyawaPremiumState.activeUntil,
+          purchasedAt: nyawaPremiumState.purchasedAt,
+          price: NYAWA_PREMIUM_PRICE,
+          durationHours: NYAWA_PREMIUM_HOURS,
+        },
       }, { headers: corsHeaders });
     }
 
