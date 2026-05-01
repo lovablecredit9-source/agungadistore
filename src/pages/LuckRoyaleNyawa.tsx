@@ -202,6 +202,8 @@ export default function LuckRoyaleNyawa() {
         return;
       }
       setReelSpinning(false);
+      setRevealCount(0);
+      setRevealDone(false);
       setResults(data.results);
       setGems(data.gems);
       if (typeof data.luckyStreak === "number") setLuckyStreak(data.luckyStreak);
