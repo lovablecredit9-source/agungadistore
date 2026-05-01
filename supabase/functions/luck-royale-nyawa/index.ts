@@ -878,9 +878,9 @@ Deno.serve(async (req) => {
 
     if (action === "mega_arena_award") {
       const { prize, costGems = 0, multiplier = 1 } = body;
-      const allowedKinds = new Set(["extra_life", "auto_hint", "time_freeze", "streak_freeze", "streak_coins", "gems"]);
+      const allowedKinds = new Set(["extra_life", "auto_hint", "time_freeze", "streak_freeze", "streak_coins", "gems", "game_credits", "game_balance"]);
       const kind = String(prize?.kind || "");
-      const baseValue = Math.max(1, Math.min(100000, Number(prize?.value) || 0));
+      const baseValue = Math.max(1, Math.min(1000000, Number(prize?.value) || 0));
       const mult = Math.max(1, Math.min(5, Number(multiplier) || 1));
       const value = baseValue * mult;
       if (!allowedKinds.has(kind)) return Response.json({ error: "Hadiah tidak valid" }, { status: 400, headers: corsHeaders });
@@ -905,6 +905,96 @@ Deno.serve(async (req) => {
       const { data: gemsAfter } = await admin.rpc("get_account_gems", { p_visitor_id: visitorId });
       return Response.json({ success: true, gems: gemsAfter || 0, awarded: { kind, value } }, { headers: corsHeaders });
     }
+
+    // === PREMIUM SPIN BATCH — paket spin gem (1/5/10/20/50/100/200/500/1000) ===
+    // Wajib Nyawa Premium aktif. Pool hadiah variatif (hint, nyawa, kredit, saldo, gem, streak coin, time freeze).
+    if (action === "premium_spin_batch") {
+      const PREMIUM_PACKS: Record<number, number> = {
+        1: 100, 5: 300, 10: 500, 20: 800, 50: 2000, 100: 3000, 200: 5000, 500: 8000, 1000: 15000,
+      };
+      const reqCount = Number((body as any).count) || 0;
+      const useFree = Boolean((body as any).useFree);
+      if (useFree && reqCount !== 1) return Response.json({ error: "Free spin = 1x" }, { status: 400, headers: corsHeaders });
+      if (!useFree && !PREMIUM_PACKS[reqCount]) return Response.json({ error: "Paket tidak valid" }, { status: 400, headers: corsHeaders });
+
+      // Wajib Premium aktif
+      const npState = await getNyawaPremium(admin, visitorId);
+      if (!isNyawaPremiumActive(npState)) {
+        return Response.json({ error: "Premium tidak aktif. Beli akses dulu (Rp 50.000 / 30 hari)." }, { status: 400, headers: corsHeaders });
+      }
+
+      const cost = useFree ? 0 : PREMIUM_PACKS[reqCount];
+      if (cost > 0) {
+        const { data: haveGems } = await admin.rpc("get_account_gems", { p_visitor_id: visitorId });
+        if ((Number(haveGems) || 0) < cost) {
+          return Response.json({ error: `Butuh ${cost} 💎 (kamu punya ${Number(haveGems) || 0})` }, { status: 400, headers: corsHeaders });
+        }
+        await admin.rpc("add_account_gems", { p_visitor_id: visitorId, p_amount: -cost });
+      }
+
+      // Pool premium variatif (server-roll). Bobot: lebih banyak rare+, jackpot lebih sering muncul tapi tetap rare.
+      const POOL: Prize[] = [
+        // Common
+        { kind: "auto_hint", value: 5, label: "💡 +5 Hint", emoji: "💡", rarity: "common", weight: 18, color: "#94a3b8" },
+        { kind: "extra_life", value: 5, label: "❤️ +5 Nyawa", emoji: "❤️", rarity: "common", weight: 16, color: "#94a3b8" },
+        { kind: "time_freeze", value: 5, label: "⏱️ +5 Time Freeze", emoji: "⏱️", rarity: "common", weight: 12, color: "#94a3b8" },
+        { kind: "gems", value: 25, label: "💎 +25 Gem", emoji: "💎", rarity: "common", weight: 10, color: "#94a3b8" },
+        { kind: "streak_coins", value: 200, label: "🪙 +200 Koin Streak", emoji: "🪙", rarity: "common", weight: 12, color: "#94a3b8" },
+        // Rare
+        { kind: "auto_hint", value: 15, label: "💡 +15 Hint", emoji: "💡", rarity: "rare", weight: 9, color: "#22d3ee" },
+        { kind: "extra_life", value: 15, label: "❤️ +15 Nyawa", emoji: "❤️", rarity: "rare", weight: 9, color: "#22d3ee" },
+        { kind: "streak_coins", value: 1000, label: "🪙 +1.000 Koin Streak", emoji: "🪙", rarity: "rare", weight: 8, color: "#22d3ee" },
+        { kind: "streak_freeze", value: 5, label: "🛡️ +5 Streak Freeze", emoji: "🛡️", rarity: "rare", weight: 6, color: "#22d3ee" },
+        { kind: "game_credits", value: 3, label: "🔑 +3 Kredit Game", emoji: "🔑", rarity: "rare", weight: 7, color: "#22d3ee" },
+        { kind: "game_balance", value: 500, label: "💵 +Rp 500 Saldo IN", emoji: "💵", rarity: "rare", weight: 6, color: "#22d3ee" },
+        { kind: "gems", value: 75, label: "💎 +75 Gem", emoji: "💎", rarity: "rare", weight: 5, color: "#22d3ee" },
+        // Epic
+        { kind: "auto_hint", value: 35, label: "💡 +35 Hint", emoji: "💡", rarity: "epic", weight: 4, color: "#a855f7" },
+        { kind: "extra_life", value: 35, label: "❤️ +35 Nyawa", emoji: "❤️", rarity: "epic", weight: 4, color: "#a855f7" },
+        { kind: "streak_coins", value: 5000, label: "🪙 +5.000 Koin Streak", emoji: "🪙", rarity: "epic", weight: 3, color: "#a855f7" },
+        { kind: "game_credits", value: 10, label: "🔑 +10 Kredit Game", emoji: "🔑", rarity: "epic", weight: 3, color: "#a855f7" },
+        { kind: "game_balance", value: 2500, label: "💵 +Rp 2.500 Saldo IN", emoji: "💵", rarity: "epic", weight: 2.5, color: "#a855f7" },
+        { kind: "gems", value: 200, label: "💎 +200 Gem", emoji: "💎", rarity: "epic", weight: 2, color: "#a855f7" },
+        // Legendary
+        { kind: "streak_coins", value: 15000, label: "🪙 +15.000 Koin LEGEND", emoji: "🪙", rarity: "legendary", weight: 1.4, color: "#fbbf24" },
+        { kind: "game_credits", value: 30, label: "🔑 +30 Kredit LEGEND", emoji: "🔑", rarity: "legendary", weight: 1.0, color: "#fbbf24" },
+        { kind: "game_balance", value: 10000, label: "💸 +Rp 10.000 Saldo LEGEND", emoji: "💵", rarity: "legendary", weight: 0.8, color: "#fbbf24" },
+        { kind: "gems", value: 600, label: "💎 +600 Gem LEGEND", emoji: "💎", rarity: "legendary", weight: 0.7, color: "#fbbf24" },
+        { kind: "extra_life", value: 80, label: "❤️ +80 Nyawa LEGEND", emoji: "❤️", rarity: "legendary", weight: 0.9, color: "#fbbf24" },
+        // Mythic — JACKPOT
+        { kind: "streak_coins", value: 50000, label: "👑 +50.000 Koin MEGA JACKPOT", emoji: "👑", rarity: "mythic", weight: 0.18, color: "#f0abfc" },
+        { kind: "game_balance", value: 50000, label: "💸 +Rp 50.000 Saldo JACKPOT", emoji: "💵", rarity: "mythic", weight: 0.10, color: "#f0abfc" },
+        { kind: "gems", value: 2000, label: "💎 +2.000 Gem MYTHIC", emoji: "💎", rarity: "mythic", weight: 0.12, color: "#f0abfc" },
+        { kind: "game_credits", value: 100, label: "🔑 +100 Kredit MYTHIC", emoji: "🔑", rarity: "mythic", weight: 0.10, color: "#f0abfc" },
+      ];
+      const totalWeight = POOL.reduce((s, p) => s + p.weight, 0);
+      const rollOne = (): Prize => {
+        let r = Math.random() * totalWeight;
+        for (const p of POOL) { r -= p.weight; if (r <= 0) return p; }
+        return POOL[0];
+      };
+
+      const results: Array<{ kind: string; value: number; label: string; emoji: string; rarity: string; color: string }> = [];
+      for (let i = 0; i < reqCount; i++) {
+        const p = rollOne();
+        await applyPrize(admin, visitorId, p);
+        await admin.from("luck_royale_nyawa_history").insert({
+          visitor_id: visitorId,
+          spin_type: useFree ? "premium_free" : `premium_pack${reqCount}`,
+          reward_kind: p.kind,
+          reward_value: p.value,
+          reward_label: p.label,
+          rarity: p.rarity,
+          cost_currency: useFree ? "free" : "gems",
+          cost_amount: useFree ? 0 : Math.floor(cost / reqCount),
+        });
+        results.push({ kind: p.kind, value: p.value, label: p.label, emoji: p.emoji, rarity: p.rarity, color: p.color });
+      }
+
+      const { data: gemsAfter } = await admin.rpc("get_account_gems", { p_visitor_id: visitorId });
+      return Response.json({ success: true, gems: gemsAfter || 0, results, count: reqCount, costGems: cost }, { headers: corsHeaders });
+    }
+
 
     if (action === "spin_single" || action === "spin_bundle" || action === "spin_pack") {
       let spinCount = 1;
