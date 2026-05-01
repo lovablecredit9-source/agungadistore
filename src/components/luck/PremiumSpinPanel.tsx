@@ -279,7 +279,7 @@ export default function PremiumSpinPanel({ visitorId, gems, setGems, isUnlocked,
 
       {/* Free Spin */}
       <button
-        disabled={busy || freeRemaining <= 0}
+        disabled={busy || !isUnlocked || freeRemaining <= 0}
         onClick={() => doSpin(true)}
         className={`w-full relative overflow-hidden rounded-xl px-3 py-3 font-black active:scale-95 transition disabled:opacity-50 flex items-center justify-between ${
           freeRemaining > 0
