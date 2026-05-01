@@ -493,11 +493,18 @@ export default function LuckRoyaleNyawa() {
               </TabsTrigger>
             </TabsList>
             <TabsContent value="premium" className="space-y-4 mt-0">
-              <PremiumSpinPanel visitorId={visitorId} gems={gems} setGems={setGems} />
+              <PremiumSpinPanel
+                visitorId={visitorId}
+                gems={gems}
+                setGems={setGems}
+                isUnlocked={nyawaPremium.isActive}
+                expiresAt={nyawaPremium.activeUntil}
+                price={nyawaPremium.price}
+              />
             </TabsContent>
             <TabsContent value="normal" className="space-y-4 mt-0">
           {/* 👑 NYAWA PREMIUM PASS — Rp 50k / 24 jam */}
-          <div className={`relative overflow-hidden rounded-2xl border-2 p-3 shadow-xl ${nyawaPremium.isActive ? "bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 border-emerald-300/70 shadow-emerald-500/40" : "bg-gradient-to-r from-rose-600 via-fuchsia-600 to-amber-500 border-amber-300/70 shadow-fuchsia-500/40"}`}>
+          <div data-nyawa-premium-card className={`relative overflow-hidden rounded-2xl border-2 p-3 shadow-xl ${nyawaPremium.isActive ? "bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 border-emerald-300/70 shadow-emerald-500/40" : "bg-gradient-to-r from-rose-600 via-fuchsia-600 to-amber-500 border-amber-300/70 shadow-fuchsia-500/40"}`}>
             <div className="absolute inset-0 opacity-25 animate-pulse" style={{
               backgroundImage: "linear-gradient(120deg, transparent 30%, rgba(255,255,255,0.6) 50%, transparent 70%)",
             }} />
