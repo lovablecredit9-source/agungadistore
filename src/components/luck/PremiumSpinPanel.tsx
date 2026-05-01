@@ -298,7 +298,7 @@ export default function PremiumSpinPanel({ visitorId, gems, setGems, isUnlocked,
 
       {/* Paid Spin */}
       <button
-        disabled={busy || gems < PREMIUM_COST}
+        disabled={busy || !isUnlocked || gems < PREMIUM_COST}
         onClick={() => doSpin(false)}
         className="w-full relative overflow-hidden rounded-xl bg-gradient-to-br from-fuchsia-600 via-purple-600 to-amber-500 px-3 py-4 font-black shadow-lg shadow-fuchsia-500/50 active:scale-95 transition disabled:opacity-50 flex items-center justify-between text-white ring-2 ring-amber-300/50"
       >
