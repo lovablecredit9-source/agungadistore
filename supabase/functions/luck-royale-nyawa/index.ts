@@ -757,6 +757,8 @@ Deno.serve(async (req) => {
       const ultraShopAccessActive = isShopAccessActive(ultraShopAccess);
       const luckyHour = await isLuckyHourActive(admin, visitorId);
       const lhFirstUsed = await getFirstPurchaseUsed(admin, visitorId);
+      const nyawaPremiumState = await getNyawaPremium(admin, visitorId);
+      const nyawaPremiumActive = isNyawaPremiumActive(nyawaPremiumState);
 
       // Build free daily shop with status (claimed today?)
       const freeDailyWithStatus = FREE_DAILY_SHOP.map(item => ({
