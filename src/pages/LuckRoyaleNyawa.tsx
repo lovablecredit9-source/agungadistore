@@ -110,6 +110,7 @@ export default function LuckRoyaleNyawa() {
   const [npBuying, setNpBuying] = useState(false);
   const [redeeming, setRedeeming] = useState<string | null>(null);
   const [shopTier, setShopTier] = useState<"free" | "premium" | "super_premium" | "ultra">("free");
+  const [spinSubtab, setSpinSubtab] = useState<"normal" | "premium">("normal");
   const [luckyHour, setLuckyHour] = useState<{ active: boolean; hour: number; date: string; nextActiveAt: string; boostedUntil?: string | null; source?: "free" | "purchased" | null } | null>(null);
   const [lhPackages, setLhPackages] = useState<Array<{ code: string; hours: number; price: number; firstPrice?: number; effectivePrice: number; isFirstDiscountAvailable: boolean; label: string; badge?: string }>>([]);
   const [lhFirstUsed, setLhFirstUsed] = useState(false);
@@ -376,6 +377,7 @@ export default function LuckRoyaleNyawa() {
       }
       if (data.nyawaPremium) setNyawaPremium(data.nyawaPremium);
       if (data.premiumShopUnlock) setPremiumShopUnlock(data.premiumShopUnlock);
+      if (data.nyawaPremium?.isActive) setSpinSubtab("premium");
       setNpPinOpen(false);
       setNpPin("");
       toast({
