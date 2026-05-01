@@ -18,10 +18,11 @@ const BUNDLES: Array<{ count: number; cost: number; label: string; badge?: strin
   { count: 500, cost: 15000, label: "500 SPIN", badge: "ULTIMATE" },
 ];
 
-// === NYAWA PREMIUM PASS — Rp 50.000 / 1 hari ===
-// Saat aktif: pool spin pakai PREMIUM_PRIZES (bobot rare+ jauh lebih besar, hadiah lebih mantap).
+// === NYAWA PREMIUM PASS — Rp 50.000 / 30 hari ===
+// Saat aktif: pool spin pakai PREMIUM_PRIZES (bobot rare+ jauh lebih besar, hadiah lebih mantap)
+// + akses Premium Spin (gem) dengan pool jackpot variatif.
 const NYAWA_PREMIUM_PRICE = 50000;
-const NYAWA_PREMIUM_HOURS = 24;
+const NYAWA_PREMIUM_HOURS = 720; // 30 hari
 function nyawaPremiumKey(visitorId: string) { return `lr_nyawa_premium_${visitorId}`; }
 async function getNyawaPremium(admin: any, visitorId: string): Promise<{ activeUntil: string | null; purchasedAt: string | null }> {
   const { data } = await admin.from("admin_settings").select("setting_value").eq("setting_key", nyawaPremiumKey(visitorId)).maybeSingle();
