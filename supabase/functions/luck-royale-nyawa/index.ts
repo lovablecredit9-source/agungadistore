@@ -1077,16 +1077,32 @@ Deno.serve(async (req) => {
         await admin.from("luck_royale_nyawa_history").insert(historyRows.slice(i, i + CHUNK));
       }
 
-      // 4) Tambahkan Lucky Token jika ada
-      let newTokenTotal = 0;
-      if (tokenGain > 0) {
-        const ts = await getLuckyTokens(admin, visitorId);
-        newTokenTotal = ts.tokens + tokenGain;
-        await setLuckyTokens(admin, visitorId, newTokenTotal, ts.spinProgress);
-      } else {
-        const ts = await getLuckyTokens(admin, visitorId);
-        newTokenTotal = ts.tokens;
+      // 4) Tambahkan Lucky Token — DISAMAKAN dengan Normal Spin:
+      //    Tiap 5 paid spin = +1 token. Bundle override (20→5, 100→25, 125→32, 200→55).
+      //    Free spin tidak menghasilkan token otomatis. Token dari pool (jika ada) ditambahkan terpisah.
+      const PREMIUM_BUNDLE_TOKEN_OVERRIDE: Record<number, number> = {
+        20: 5, 100: 25, 125: 32, 200: 55,
+      };
+      const ts = await getLuckyTokens(admin, visitorId);
+      let newProgress = ts.spinProgress;
+      let autoTokens = 0;
+      if (!useFree) {
+        const overrideTokens = PREMIUM_BUNDLE_TOKEN_OVERRIDE[reqCount];
+        if (overrideTokens != null) {
+          autoTokens = overrideTokens;
+        } else {
+          newProgress += reqCount;
+          while (newProgress >= TOKENS_PER_SPIN_THRESHOLD) {
+            autoTokens++;
+            newProgress -= TOKENS_PER_SPIN_THRESHOLD;
+          }
+        }
       }
+      const totalTokenAdd = autoTokens + tokenGain;
+      const newTokenTotal = ts.tokens + totalTokenAdd;
+      await setLuckyTokens(admin, visitorId, newTokenTotal, newProgress);
+      // Sertakan token otomatis ke field tokenGain agar UI menampilkan total perolehan
+      const tokenGainTotal = totalTokenAdd;
 
       const { data: gemsAfter } = await admin.rpc("get_account_gems", { p_visitor_id: visitorId });
       return Response.json({
