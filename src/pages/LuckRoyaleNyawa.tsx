@@ -366,7 +366,7 @@ export default function LuckRoyaleNyawa() {
       setNpPin("");
       toast({
         title: "👑 Nyawa Premium Aktif!",
-        description: `Pool MANTAP JIWA aktif 24 jam - sisa saldo Rp ${(data.balance || 0).toLocaleString("id-ID")}`,
+        description: `Pool MANTAP JIWA + Premium Spin aktif 30 hari - sisa saldo Rp ${(data.balance || 0).toLocaleString("id-ID")}`,
       });
       fetchData();
     } catch (e: any) {
