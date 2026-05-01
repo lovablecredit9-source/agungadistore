@@ -974,21 +974,40 @@ Deno.serve(async (req) => {
         return POOL[0];
       };
 
+      // 1) Roll semua hasil di memory dulu (cepat, tanpa I/O)
       const results: Array<{ kind: string; value: number; label: string; emoji: string; rarity: string; color: string }> = [];
+      const aggByKind = new Map<string, { kind: string; value: number; sample: Prize }>();
       for (let i = 0; i < reqCount; i++) {
         const p = rollOne();
-        await applyPrize(admin, visitorId, p);
-        await admin.from("luck_royale_nyawa_history").insert({
-          visitor_id: visitorId,
-          spin_type: useFree ? "premium_free" : `premium_pack${reqCount}`,
-          reward_kind: p.kind,
-          reward_value: p.value,
-          reward_label: p.label,
-          rarity: p.rarity,
-          cost_currency: useFree ? "free" : "gems",
-          cost_amount: useFree ? 0 : Math.floor(cost / reqCount),
-        });
         results.push({ kind: p.kind, value: p.value, label: p.label, emoji: p.emoji, rarity: p.rarity, color: p.color });
+        const cur = aggByKind.get(p.kind);
+        if (cur) cur.value += p.value;
+        else aggByKind.set(p.kind, { kind: p.kind, value: p.value, sample: p });
+      }
+
+      // 2) Apply hadiah secara teragregasi (1 RPC per kind, bukan per spin)
+      for (const a of aggByKind.values()) {
+        const aggregated: Prize = { ...a.sample, value: a.value };
+        await applyPrize(admin, visitorId, aggregated);
+      }
+
+      // 3) Batch insert history dalam 1 query
+      const perSpinCost = useFree ? 0 : Math.floor(cost / reqCount);
+      const spinTypeStr = useFree ? "premium_free" : `premium_pack${reqCount}`;
+      const historyRows = results.map((p) => ({
+        visitor_id: visitorId,
+        spin_type: spinTypeStr,
+        reward_kind: p.kind,
+        reward_value: p.value,
+        reward_label: p.label,
+        rarity: p.rarity,
+        cost_currency: useFree ? "free" : "gems",
+        cost_amount: perSpinCost,
+      }));
+      // Insert dalam chunk untuk hindari payload terlalu besar (max 200/chunk)
+      const CHUNK = 200;
+      for (let i = 0; i < historyRows.length; i += CHUNK) {
+        await admin.from("luck_royale_nyawa_history").insert(historyRows.slice(i, i + CHUNK));
       }
 
       const { data: gemsAfter } = await admin.rpc("get_account_gems", { p_visitor_id: visitorId });
