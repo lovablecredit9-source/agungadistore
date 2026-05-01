@@ -104,6 +104,7 @@ export default function LuckRoyaleNyawa() {
   const [superShopAccess, setSuperShopAccess] = useState<{ isActive: boolean; activeUntil: string | null; purchasedAt: string | null; price: number; durationDays: number }>({ isActive: false, activeUntil: null, purchasedAt: null, price: 300000, durationDays: 30 });
   const [ultraShopAccess, setUltraShopAccess] = useState<{ isActive: boolean; activeUntil: string | null; purchasedAt: string | null; price: number; durationDays: number }>({ isActive: false, activeUntil: null, purchasedAt: null, price: 500000, durationDays: 30 });
   const [nyawaPremium, setNyawaPremium] = useState<{ isActive: boolean; activeUntil: string | null; purchasedAt: string | null; price: number; durationHours: number }>({ isActive: false, activeUntil: null, purchasedAt: null, price: 50000, durationHours: 24 });
+  const [premiumShopUnlock, setPremiumShopUnlock] = useState<{ isActive: boolean; activeUntil: string | null; grantedAt: string | null; durationDays: number }>({ isActive: false, activeUntil: null, grantedAt: null, durationDays: 7 });
   const [npPinOpen, setNpPinOpen] = useState(false);
   const [npPin, setNpPin] = useState("");
   const [npBuying, setNpBuying] = useState(false);
