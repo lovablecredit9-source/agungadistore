@@ -2101,9 +2101,9 @@ export default function LuckRoyaleNyawa() {
               <div className="text-center mb-3">
                 <div className="text-3xl mb-1">👑</div>
                 <h3 className="text-lg font-black tracking-tight text-amber-200">Beli Nyawa Premium</h3>
-                <p className="text-[11px] text-slate-300 mt-1">Pool hadiah <b className="text-white">MANTAP JIWA</b> selama 24 jam</p>
+                <p className="text-[11px] text-slate-300 mt-1">Pool hadiah <b className="text-white">MANTAP JIWA</b> + akses <b className="text-fuchsia-200">Premium Spin</b> selama <b className="text-amber-200">30 hari</b></p>
                 <p className="text-[18px] font-black text-amber-300 mt-1">Rp 50.000</p>
-                <p className="text-[10px] text-amber-100/80 mt-1">Banyak Epic+, peluang Mythic 5×, hadiah lebih besar.</p>
+                <p className="text-[10px] text-amber-100/80 mt-1">Banyak Epic+, peluang Mythic 5×, akses paket Premium Spin (1 - 1.000 spin) + Mega Jackpot.</p>
               </div>
               <label className="block text-[11px] font-bold text-slate-300 mb-1.5">Masukkan PIN 6 digit</label>
               <input
