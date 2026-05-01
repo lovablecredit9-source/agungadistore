@@ -15,6 +15,7 @@ const BUNDLES: Array<{ count: number; cost: number; label: string; badge?: strin
   { count: 100, cost: 4000, label: "100 SPIN", badge: "MEGA" },
   { count: 125, cost: 5000, label: "125 SPIN", badge: "ULTRA" },
   { count: 200, cost: 7000, label: "200 SPIN", badge: "GOD PACK" },
+  { count: 500, cost: 15000, label: "500 SPIN", badge: "ULTIMATE" },
 ];
 // Backwards compat — bundle 5 lama
 const BUNDLE_COST_DIAMOND = 200;
