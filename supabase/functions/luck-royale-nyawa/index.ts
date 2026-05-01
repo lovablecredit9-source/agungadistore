@@ -179,7 +179,56 @@ function pickFromPool(pool: Prize[]): Prize & { index: number } {
   return { ...pool[0], index: 0 };
 }
 
-function pickPrize(luckyHourActive = false): Prize & { index: number } {
+// === PREMIUM PRIZES — pool MANTAP JIWA untuk Nyawa Premium (Rp 50k/hari) ===
+// Hadiah lebih besar, tidak ada common, weight rare+ tinggi.
+const PREMIUM_PRIZES: Prize[] = [
+  // === RARE (banyak) ===
+  { kind: "extra_life",    value: 10,    label: "❤️ +10 Nyawa PREMIUM",       emoji: "❤️", rarity: "rare",      weight: 18,    color: "#f43f5e" },
+  { kind: "auto_hint",     value: 10,    label: "💡 +10 Hint PREMIUM",        emoji: "💡", rarity: "rare",      weight: 18,    color: "#06b6d4" },
+  { kind: "time_freeze",   value: 8,     label: "⏱️ +8 Freeze PREMIUM",       emoji: "⏱️", rarity: "rare",      weight: 12,    color: "#0ea5e9" },
+  { kind: "streak_freeze", value: 5,     label: "🛡️ +5 Streak Freeze",        emoji: "🛡️", rarity: "rare",      weight: 12,    color: "#10b981" },
+  { kind: "streak_coins",  value: 1500,  label: "🪙 +1.500 Coin PREMIUM",     emoji: "🪙", rarity: "rare",      weight: 14,    color: "#f59e0b" },
+  { kind: "gems",          value: 75,    label: "💎 +75 Gem PREMIUM",         emoji: "💎", rarity: "rare",      weight: 10,    color: "#8b5cf6" },
+  // === EPIC (banyak) ===
+  { kind: "extra_life",    value: 30,    label: "❤️ +30 Nyawa EPIC",          emoji: "❤️", rarity: "epic",      weight: 12,    color: "#a855f7" },
+  { kind: "auto_hint",     value: 30,    label: "💡 +30 Hint EPIC",           emoji: "💡", rarity: "epic",      weight: 12,    color: "#a855f7" },
+  { kind: "streak_freeze", value: 8,     label: "🛡️ +8 Streak Freeze EPIC",   emoji: "🛡️", rarity: "epic",      weight: 8,     color: "#ec4899" },
+  { kind: "gems",          value: 200,   label: "💎 +200 Gem EPIC",           emoji: "💎", rarity: "epic",      weight: 10,    color: "#8b5cf6" },
+  { kind: "streak_coins",  value: 5000,  label: "🪙 +5.000 Coin EPIC",        emoji: "🪙", rarity: "epic",      weight: 8,     color: "#fb923c" },
+  { kind: "game_credits",  value: 10,    label: "🔑 +10 Kredit EPIC",         emoji: "🔑", rarity: "epic",      weight: 6,     color: "#a855f7" },
+  { kind: "game_balance",  value: 5000,  label: "💵 +Rp 5.000 Saldo EPIC",    emoji: "💵", rarity: "epic",      weight: 5,     color: "#a855f7" },
+  // === LEGENDARY (lumayan sering) ===
+  { kind: "extra_life",    value: 100,   label: "❤️ +100 Nyawa LEGEND",       emoji: "❤️", rarity: "legendary", weight: 6,     color: "#fbbf24" },
+  { kind: "auto_hint",     value: 100,   label: "💡 +100 Hint LEGEND",        emoji: "💡", rarity: "legendary", weight: 6,     color: "#fbbf24" },
+  { kind: "gems",          value: 600,   label: "💎 +600 Gem LEGEND",         emoji: "💎", rarity: "legendary", weight: 5,     color: "#facc15" },
+  { kind: "streak_coins",  value: 25000, label: "🪙 +25.000 Coin LEGEND",     emoji: "🪙", rarity: "legendary", weight: 4,     color: "#fbbf24" },
+  { kind: "streak_freeze", value: 20,    label: "🛡️ +20 Freeze LEGEND",       emoji: "🛡️", rarity: "legendary", weight: 3,     color: "#f59e0b" },
+  { kind: "game_credits",  value: 50,    label: "🔑 +50 Kredit LEGEND",       emoji: "🔑", rarity: "legendary", weight: 3,     color: "#fbbf24" },
+  { kind: "game_balance",  value: 20000, label: "💸 +Rp 20.000 Saldo LEGEND", emoji: "💵", rarity: "legendary", weight: 2.5,   color: "#fbbf24" },
+  { kind: "gems",          value: 1500,  label: "💎 +1.500 Gem LEGEND",       emoji: "💎", rarity: "legendary", weight: 2,     color: "#facc15" },
+  // === MYTHIC (tetap susah tapi sering muncul vs normal) ===
+  { kind: "extra_life",    value: 300,   label: "🌟 +300 Nyawa MYTHIC",       emoji: "❤️", rarity: "mythic",    weight: 1.8,   color: "#f0abfc" },
+  { kind: "auto_hint",     value: 300,   label: "🌟 +300 Hint MYTHIC",        emoji: "💡", rarity: "mythic",    weight: 1.8,   color: "#f0abfc" },
+  { kind: "gems",          value: 3000,  label: "💎 +3.000 Gem MYTHIC",       emoji: "💎", rarity: "mythic",    weight: 1.2,   color: "#fde68a" },
+  { kind: "extra_life",    value: 800,   label: "👑 +800 Nyawa GOD",          emoji: "❤️", rarity: "mythic",    weight: 0.6,   color: "#fef08a" },
+  { kind: "auto_hint",     value: 800,   label: "👑 +800 Hint GOD",           emoji: "💡", rarity: "mythic",    weight: 0.6,   color: "#fef08a" },
+  { kind: "gems",          value: 10000, label: "💎 +10.000 Gem MYTHIC",      emoji: "💎", rarity: "mythic",    weight: 0.4,   color: "#fde68a" },
+  { kind: "streak_coins",  value: 200000,label: "👑 +200.000 Coin JACKPOT",   emoji: "🪙", rarity: "mythic",    weight: 0.3,   color: "#fef08a" },
+  { kind: "game_credits",  value: 250,   label: "🌟 +250 Kredit MYTHIC",      emoji: "🔑", rarity: "mythic",    weight: 0.3,   color: "#f0abfc" },
+  { kind: "game_balance",  value: 100000,label: "👑 +Rp 100.000 Saldo GOD",   emoji: "💵", rarity: "mythic",    weight: 0.15,  color: "#fef08a" },
+  { kind: "gems",          value: 50000, label: "👑 +50.000 GEM JACKPOT",     emoji: "💎", rarity: "mythic",    weight: 0.05,  color: "#fef08a" },
+];
+
+function pickPrize(luckyHourActive = false, premiumActive = false): Prize & { index: number } {
+  if (premiumActive) {
+    // Pool MANTAP — tetap reroll common (tidak ada common di pool premium, jadi efektif tidak terjadi)
+    const first = pickFromPool(PREMIUM_PRIZES);
+    if (luckyHourActive && first.rarity === "rare") {
+      // Lucky Hour bonus: reroll rare → kemungkinan epic+
+      return pickFromPool(PREMIUM_PRIZES);
+    }
+    return first;
+  }
   const first = pickFromPool(PRIZES);
   // Lucky Hour: jika hasil common, reroll sekali (≈ +50% peluang dapat rare+)
   if (luckyHourActive && first.rarity === "common") {
