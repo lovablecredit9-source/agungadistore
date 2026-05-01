@@ -42,6 +42,36 @@ function isNyawaPremiumActive(state: { activeUntil: string | null }): boolean {
 // Backwards compat — bundle 5 lama
 const BUNDLE_COST_DIAMOND = 200;
 
+// === PREMIUM TOKEN SHOP UNLOCK — auto 7 hari saat beli Nyawa Premium ===
+// Membuka SEMUA tier di Token Shop (premium/super_premium/ultra) tanpa harus beli akses tier.
+const PREMIUM_SHOP_UNLOCK_DAYS = 7;
+function premiumShopUnlockKey(v: string) { return `lr_premium_shop_unlock_${v}`; }
+async function getPremiumShopUnlock(admin: any, visitorId: string): Promise<{ activeUntil: string | null; grantedAt: string | null }> {
+  const { data } = await admin.from("admin_settings").select("setting_value").eq("setting_key", premiumShopUnlockKey(visitorId)).maybeSingle();
+  if (!data) return { activeUntil: null, grantedAt: null };
+  try { return JSON.parse(data.setting_value); } catch { return { activeUntil: null, grantedAt: null }; }
+}
+async function setPremiumShopUnlock(admin: any, visitorId: string, state: { activeUntil: string | null; grantedAt: string | null }) {
+  const value = JSON.stringify(state);
+  const { data: existing } = await admin.from("admin_settings").select("id").eq("setting_key", premiumShopUnlockKey(visitorId)).maybeSingle();
+  if (existing) await admin.from("admin_settings").update({ setting_value: value }).eq("id", existing.id);
+  else await admin.from("admin_settings").insert({ setting_key: premiumShopUnlockKey(visitorId), setting_value: value });
+}
+function isPremiumShopUnlockActive(state: { activeUntil: string | null }): boolean {
+  if (!state.activeUntil) return false;
+  return new Date(state.activeUntil).getTime() > Date.now();
+}
+
+// Cek apakah Server Luck booster sedang aktif (untuk Premium Spin pool selection)
+async function isServerLuckActive(admin: any, visitorId: string): Promise<boolean> {
+  try {
+    const { data } = await admin.from("server_luck_boosters").select("active_until, active_tier").eq("visitor_id", visitorId).maybeSingle();
+    if (!data || !data.active_until) return false;
+    if (Number(data.active_tier || 1) < 2) return false;
+    return new Date(data.active_until).getTime() > Date.now();
+  } catch { return false; }
+}
+
 // Hadiah bobot NORMAL Luck Royale Nyawa — jangan dicampur dengan pool Mega/Combo.
 type Prize = {
   kind: "extra_life" | "auto_hint" | "time_freeze" | "streak_freeze" | "streak_coins" | "gems" | "game_credits" | "game_balance";
