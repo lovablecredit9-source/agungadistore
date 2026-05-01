@@ -364,6 +364,7 @@ export default function LuckRoyaleNyawa() {
         return;
       }
       if (data.nyawaPremium) setNyawaPremium(data.nyawaPremium);
+      if (data.premiumShopUnlock) setPremiumShopUnlock(data.premiumShopUnlock);
       setNpPinOpen(false);
       setNpPin("");
       toast({
