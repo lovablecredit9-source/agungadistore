@@ -1,8 +1,8 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { Crown, Gem, Loader2, Sparkles, Gift, Flame, Copy } from "lucide-react";
+import { Crown, Gem, Loader2, Sparkles, Gift, Flame, Heart, Lightbulb, Timer, Shield, Coins, KeyRound, WalletCards, Ticket, X, Zap } from "lucide-react";
 
 /**
  * 👑 PREMIUM SPIN PANEL
@@ -32,35 +32,29 @@ const PACKS: PremiumPack[] = [
 const FREE_PER_DAY = 2;
 
 const PRIZE_POOL: { rarity: Rarity; chance: string; prizes: { emoji: string; label: string }[] }[] = [
-  { rarity: "mythic", chance: "~0.5%", prizes: [
-    { emoji: "🪙", label: "50.000 Koin Streak" },
-    { emoji: "💵", label: "Rp 50.000 Saldo" },
-    { emoji: "💎", label: "2.000 Gem" },
-    { emoji: "🔑", label: "100 Kredit Game" },
+  { rarity: "mythic", chance: "JACKPOT", prizes: [
+    { emoji: "💎", label: "8.000–100.000 Gem" },
+    { emoji: "💵", label: "Rp 150.000 Saldo" },
+    { emoji: "❤️", label: "500–1.500 Nyawa" },
+    { emoji: "🎟️", label: "6 Lucky Token" },
   ]},
-  { rarity: "legendary", chance: "~3%", prizes: [
-    { emoji: "💵", label: "Rp 10.000 Saldo" },
-    { emoji: "💎", label: "500 Gem" },
-    { emoji: "🔑", label: "30 Kredit Game" },
-    { emoji: "🪙", label: "10.000 Koin" },
+  { rarity: "legendary", chance: "TINGGI", prizes: [
+    { emoji: "💎", label: "2.500–6.000 Gem" },
+    { emoji: "💵", label: "Rp 30.000 Saldo" },
+    { emoji: "❤️", label: "120 Nyawa" },
+    { emoji: "🎟️", label: "3 Lucky Token" },
   ]},
-  { rarity: "epic", chance: "~10%", prizes: [
-    { emoji: "💎", label: "100 Gem" },
-    { emoji: "🔑", label: "10 Kredit Game" },
-    { emoji: "🪙", label: "2.500 Koin" },
-    { emoji: "❤️", label: "5 Nyawa Extra" },
+  { rarity: "epic", chance: "SERING", prizes: [
+    { emoji: "💎", label: "800–1.800 Gem" },
+    { emoji: "🔑", label: "15 Kredit Game" },
+    { emoji: "🪙", label: "8.000 Koin" },
+    { emoji: "🎟️", label: "2 Lucky Token" },
   ]},
-  { rarity: "rare", chance: "~25%", prizes: [
-    { emoji: "💎", label: "25 Gem" },
-    { emoji: "❤️", label: "2 Nyawa" },
-    { emoji: "⏱️", label: "Time Freeze" },
-    { emoji: "🛡️", label: "Streak Freeze" },
-  ]},
-  { rarity: "common", chance: "~61.5%", prizes: [
-    { emoji: "💡", label: "Auto Hint" },
-    { emoji: "🪙", label: "100-500 Koin" },
-    { emoji: "❤️", label: "1 Nyawa" },
-    { emoji: "💎", label: "5-10 Gem" },
+  { rarity: "rare", chance: "MINIMAL", prizes: [
+    { emoji: "💎", label: "200–500 Gem" },
+    { emoji: "❤️", label: "15 Nyawa" },
+    { emoji: "🛡️", label: "6 Streak Freeze" },
+    { emoji: "🎟️", label: "1 Lucky Token" },
   ]},
 ];
 
