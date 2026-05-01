@@ -14,6 +14,7 @@ import {
   Brain, Target, TrendingDown, CheckCircle2, AlertCircle, Rocket, Gift, Flame as FlameIcon,
 } from "lucide-react";
 import MegaSpinArena from "@/components/luck/MegaSpinArena";
+import PremiumSpinPanel from "@/components/luck/PremiumSpinPanel";
 import FadedWheel from "@/components/streak/FadedWheel";
 import DiamondRoyaleInline from "@/components/streak/DiamondRoyaleInline";
 
@@ -482,6 +483,19 @@ export default function LuckRoyaleNyawa() {
             </TabsList>
 
             <TabsContent value="spin" className="space-y-4 mt-3">
+          <Tabs defaultValue="normal" className="w-full">
+            <TabsList className="grid w-full grid-cols-2 bg-black/40 border border-fuchsia-500/30 h-auto p-1 gap-1 mb-3">
+              <TabsTrigger value="normal" className="py-2 data-[state=active]:bg-gradient-to-br data-[state=active]:from-cyan-500 data-[state=active]:to-blue-700 data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-cyan-500/40 font-black tracking-wider text-[11px] rounded-md">
+                ⚡ NORMAL
+              </TabsTrigger>
+              <TabsTrigger value="premium" className="py-2 data-[state=active]:bg-gradient-to-br data-[state=active]:from-fuchsia-600 data-[state=active]:via-purple-600 data-[state=active]:to-amber-500 data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-fuchsia-500/50 font-black tracking-wider text-[11px] rounded-md">
+                👑 PREMIUM
+              </TabsTrigger>
+            </TabsList>
+            <TabsContent value="premium" className="space-y-4 mt-0">
+              <PremiumSpinPanel visitorId={visitorId} gems={gems} setGems={setGems} />
+            </TabsContent>
+            <TabsContent value="normal" className="space-y-4 mt-0">
           {/* 👑 NYAWA PREMIUM PASS — Rp 50k / 24 jam */}
           <div className={`relative overflow-hidden rounded-2xl border-2 p-3 shadow-xl ${nyawaPremium.isActive ? "bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 border-emerald-300/70 shadow-emerald-500/40" : "bg-gradient-to-r from-rose-600 via-fuchsia-600 to-amber-500 border-amber-300/70 shadow-fuchsia-500/40"}`}>
             <div className="absolute inset-0 opacity-25 animate-pulse" style={{
@@ -1300,6 +1314,8 @@ export default function LuckRoyaleNyawa() {
               </div>
             </div>
           )}
+            </TabsContent>
+          </Tabs>
             </TabsContent>
 
             <TabsContent value="faded" className="mt-3">
