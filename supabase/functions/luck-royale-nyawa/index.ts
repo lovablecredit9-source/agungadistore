@@ -860,6 +860,15 @@ Deno.serve(async (req) => {
           price: NYAWA_PREMIUM_PRICE,
           durationHours: NYAWA_PREMIUM_HOURS,
         },
+        premiumShopUnlock: await (async () => {
+          const u = await getPremiumShopUnlock(admin, visitorId);
+          return {
+            isActive: isPremiumShopUnlockActive(u),
+            activeUntil: u.activeUntil,
+            grantedAt: u.grantedAt,
+            durationDays: PREMIUM_SHOP_UNLOCK_DAYS,
+          };
+        })(),
       }, { headers: corsHeaders });
     }
 
