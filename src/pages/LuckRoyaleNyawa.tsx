@@ -849,32 +849,46 @@ export default function LuckRoyaleNyawa() {
             </div>
           </div>
 
-          {/* ✨ Hero Banner — premium animated */}
-          <div className="relative overflow-hidden rounded-2xl border-2 border-amber-400/50 p-4 shadow-2xl shadow-amber-500/30">
-            {/* Animated aurora background */}
-            <div className="absolute inset-0 bg-gradient-to-br from-fuchsia-700 via-amber-600 to-rose-700" />
-            <div className="absolute inset-0 opacity-60 animate-pulse" style={{
-              backgroundImage: "radial-gradient(circle at 20% 30%, rgba(251,191,36,0.6), transparent 50%), radial-gradient(circle at 80% 70%, rgba(236,72,153,0.5), transparent 55%)",
-            }} />
-            {/* Sparkle dots */}
-            <div className="absolute inset-0 opacity-50 pointer-events-none" style={{
-              backgroundImage: "radial-gradient(circle, white 1px, transparent 1.5px)",
-              backgroundSize: "22px 22px",
-              maskImage: "radial-gradient(ellipse at center, black, transparent 80%)",
-            }} />
-            {/* Diagonal shine */}
-            <div className="absolute -inset-x-10 -top-10 h-24 rotate-12 bg-gradient-to-r from-transparent via-white/30 to-transparent blur-2xl animate-pulse" />
-            <div className="relative">
-              <div className="flex items-center gap-2 mb-1.5">
-                <Badge className="bg-gradient-to-r from-rose-600 via-fuchsia-600 to-purple-700 text-white font-black text-[10px] shadow-lg shadow-fuchsia-500/50 ring-1 ring-white/30">🔥 MYTHIC+</Badge>
-                <span className="text-[10px] font-black tracking-[0.25em] text-amber-100 drop-shadow">LUCK ROYALE</span>
+          {/* 🔥 Hero Banner — Esports Battle */}
+          <div className="relative overflow-hidden rounded-2xl p-[2px] battle-ember-pulse">
+            <div className="absolute inset-0 battle-border-flow opacity-90 rounded-2xl" />
+            <div className="relative rounded-[14px] overflow-hidden p-4" style={{
+              background: "linear-gradient(135deg, #1a0505 0%, #3a0a0a 40%, #5a1505 70%, #2a0808 100%)",
+            }}>
+              {/* Hex grid + scanline overlays */}
+              <div className="absolute inset-0 battle-hex-grid opacity-40" />
+              <div className="absolute inset-0 battle-scanline opacity-60" />
+              {/* Ember radial glow */}
+              <div className="absolute inset-0" style={{
+                backgroundImage: "radial-gradient(circle at 15% 20%, rgba(249,115,22,0.55), transparent 50%), radial-gradient(circle at 85% 80%, rgba(239,68,68,0.45), transparent 55%)",
+              }} />
+              {/* Diagonal slash sweep */}
+              <div className="absolute inset-y-0 -inset-x-10 overflow-hidden pointer-events-none">
+                <div className="absolute inset-y-0 w-1/3 battle-slash" />
               </div>
-              <h2 className="text-[26px] leading-none font-black tracking-tight bg-gradient-to-br from-yellow-100 via-amber-300 to-orange-500 bg-clip-text text-transparent drop-shadow-[0_2px_8px_rgba(251,191,36,0.6)]">
-                JACKPOT<br />SHADOW VAULT
-              </h2>
-              <p className="text-[11px] text-amber-50/90 mt-1.5 font-semibold">
-                💎 Gem • ❤️ Nyawa • 💡 Hint • 🛡️ Freeze — semua bisa kena!
-              </p>
+              {/* Sharp corner accents */}
+              <div className="absolute top-0 left-0 w-6 h-6 border-t-2 border-l-2 border-orange-400" />
+              <div className="absolute top-0 right-0 w-6 h-6 border-t-2 border-r-2 border-red-500" />
+              <div className="absolute bottom-0 left-0 w-6 h-6 border-b-2 border-l-2 border-red-500" />
+              <div className="absolute bottom-0 right-0 w-6 h-6 border-b-2 border-r-2 border-orange-400" />
+
+              <div className="relative">
+                <div className="flex items-center gap-2 mb-1.5">
+                  <Badge className="bg-gradient-to-r from-red-600 via-orange-500 to-amber-500 text-white font-black text-[10px] shadow-lg shadow-red-600/60 ring-1 ring-orange-300/40 rounded-sm px-2">
+                    🔥 BATTLE MODE
+                  </Badge>
+                  <span className="text-[10px] font-black tracking-[0.3em] text-orange-200 drop-shadow">LUCK ROYALE</span>
+                </div>
+                <h2 className="text-[28px] leading-[0.95] font-black tracking-tight battle-title-gradient uppercase">
+                  Jackpot<br />Shadow Vault
+                </h2>
+                <div className="mt-2 flex items-center gap-1.5">
+                  <div className="h-[2px] w-8 bg-gradient-to-r from-orange-500 to-transparent" />
+                  <p className="text-[11px] text-amber-100/95 font-black tracking-wider">
+                    💎 GEM · ❤️ NYAWA · 💡 HINT · 🛡️ FREEZE
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
 
