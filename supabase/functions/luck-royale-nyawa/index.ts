@@ -252,9 +252,10 @@ const PREMIUM_PRIZES: Prize[] = [
   { kind: "time_freeze",   value: 6,     label: "+6 Freeze 30s",            emoji: "⏱️", rarity: "rare",      weight: 5,     color: "#0ea5e9" },
   { kind: "streak_coins",  value: 300,   label: "🪙 +300 Streak Coin",       emoji: "🪙", rarity: "rare",      weight: 6,     color: "#f59e0b" },
   { kind: "streak_coins",  value: 600,   label: "🪙 +600 Streak Coin",       emoji: "🪙", rarity: "rare",      weight: 4,     color: "#f59e0b" },
-  // GEM rare: cuma bonus kecil, bukan sumber profit utama
-  { kind: "gems",          value: 100,   label: "💎 +100 Gem PREMIUM",       emoji: "💎", rarity: "rare",      weight: 0.28,  color: "#8b5cf6" },
-  { kind: "gems",          value: 300,   label: "💎 +300 Gem PREMIUM",       emoji: "💎", rarity: "rare",      weight: 0.12,  color: "#8b5cf6" },
+  // GEM rare — lumayan, kadang-kadang
+  { kind: "gems",          value: 500,   label: "💎 +500 Gem PREMIUM",       emoji: "💎", rarity: "rare",      weight: 0.6,   color: "#8b5cf6" },
+  { kind: "gems",          value: 1000,  label: "💎 +1.000 Gem PREMIUM",     emoji: "💎", rarity: "rare",      weight: 0.25,  color: "#8b5cf6" },
+  { kind: "gems",          value: 2000,  label: "💎 +2.000 Gem PREMIUM",     emoji: "💎", rarity: "rare",      weight: 0.10,  color: "#8b5cf6" },
   { kind: "lucky_token" as any, value: 1, label: "🎟️ +1 Lucky Token",        emoji: "🎟️", rarity: "rare",      weight: 3,     color: "#22d3ee" },
 
   // === EPIC ===
