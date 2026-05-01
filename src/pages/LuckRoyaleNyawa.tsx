@@ -493,7 +493,14 @@ export default function LuckRoyaleNyawa() {
               </TabsTrigger>
             </TabsList>
             <TabsContent value="premium" className="space-y-4 mt-0">
-              <PremiumSpinPanel visitorId={visitorId} gems={gems} setGems={setGems} />
+              <PremiumSpinPanel
+                visitorId={visitorId}
+                gems={gems}
+                setGems={setGems}
+                isUnlocked={nyawaPremium.isActive}
+                expiresAt={nyawaPremium.activeUntil}
+                price={nyawaPremium.price}
+              />
             </TabsContent>
             <TabsContent value="normal" className="space-y-4 mt-0">
           {/* 👑 NYAWA PREMIUM PASS — Rp 50k / 24 jam */}
