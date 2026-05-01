@@ -1382,13 +1382,13 @@ Deno.serve(async (req) => {
         visitor_id: visitorId,
         amount: -NYAWA_PREMIUM_PRICE,
         type: "purchase",
-        description: `Nyawa Premium Luck Royale (${NYAWA_PREMIUM_HOURS} jam)`,
+        description: `Nyawa Premium Luck Royale (30 hari)`,
       });
       await setNyawaPremium(admin, visitorId, { activeUntil: newUntilIso, purchasedAt: new Date().toISOString() });
       await admin.from("notifications").insert({
         visitor_id: visitorId,
         title: "👑 Nyawa Premium Aktif!",
-        message: `Pool hadiah MANTAP JIWA aktif sampai ${new Date(newUntilIso).toLocaleString("id-ID", { timeZone: "Asia/Jakarta" })} WIB. Spin sekarang!`,
+        message: `Pool hadiah MANTAP JIWA + Premium Spin aktif sampai ${new Date(newUntilIso).toLocaleString("id-ID", { timeZone: "Asia/Jakarta" })} WIB. Spin sekarang!`,
         type: "luck_royale_nyawa",
       });
 
