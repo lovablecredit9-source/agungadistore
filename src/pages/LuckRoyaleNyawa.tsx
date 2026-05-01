@@ -438,7 +438,7 @@ export default function LuckRoyaleNyawa() {
           <Loader2 className="w-8 h-8 animate-spin text-amber-400" />
         </div>
       ) : (
-        <div className="px-3 py-4 space-y-4 max-w-md mx-auto">
+        <div className="px-3 py-4 space-y-4 max-w-md mx-auto relative z-10">
           {/* Quick Stats Bar */}
           {(() => {
             const totalSpins = history.length;
@@ -447,25 +447,25 @@ export default function LuckRoyaleNyawa() {
             const epicCount = history.filter(h => h.rarity === "epic").length;
             return (
               <div className="grid grid-cols-4 gap-1.5">
-                <div className="rounded-lg bg-gradient-to-br from-slate-800/80 to-slate-900/80 border border-cyan-500/30 p-2 text-center">
-                  <Dices className="w-3.5 h-3.5 text-cyan-300 mx-auto mb-0.5" />
-                  <div className="text-[9px] text-cyan-200/70 font-bold">SPIN</div>
+                <div className="battle-stat-tile rounded-lg p-2 text-center">
+                  <Dices className="w-3.5 h-3.5 text-orange-300 mx-auto mb-0.5 drop-shadow-[0_0_4px_rgba(249,115,22,0.8)]" />
+                  <div className="text-[9px] text-orange-200/80 font-black tracking-wider">SPIN</div>
                   <div className="text-sm font-black text-white tabular-nums">{totalSpins}</div>
                 </div>
-                <div className="rounded-lg bg-gradient-to-br from-fuchsia-900/60 to-purple-900/60 border border-fuchsia-500/40 p-2 text-center">
-                  <Star className="w-3.5 h-3.5 text-fuchsia-300 mx-auto mb-0.5" fill="currentColor" />
-                  <div className="text-[9px] text-fuchsia-200/70 font-bold">MYTHIC</div>
-                  <div className="text-sm font-black text-fuchsia-200 tabular-nums">{mythicCount}</div>
+                <div className="battle-stat-tile rounded-lg p-2 text-center" style={{ borderColor: "rgba(244,63,94,0.45)" }}>
+                  <Star className="w-3.5 h-3.5 text-rose-300 mx-auto mb-0.5 drop-shadow-[0_0_4px_rgba(244,63,94,0.8)]" fill="currentColor" />
+                  <div className="text-[9px] text-rose-200/80 font-black tracking-wider">MYTHIC</div>
+                  <div className="text-sm font-black text-rose-100 tabular-nums">{mythicCount}</div>
                 </div>
-                <div className="rounded-lg bg-gradient-to-br from-amber-900/60 to-orange-900/60 border border-amber-500/40 p-2 text-center">
-                  <Crown className="w-3.5 h-3.5 text-amber-300 mx-auto mb-0.5" fill="currentColor" />
-                  <div className="text-[9px] text-amber-200/70 font-bold">LEGEND</div>
-                  <div className="text-sm font-black text-amber-200 tabular-nums">{legendaryCount}</div>
+                <div className="battle-stat-tile rounded-lg p-2 text-center" style={{ borderColor: "rgba(245,158,11,0.5)" }}>
+                  <Crown className="w-3.5 h-3.5 text-amber-300 mx-auto mb-0.5 drop-shadow-[0_0_4px_rgba(245,158,11,0.8)]" fill="currentColor" />
+                  <div className="text-[9px] text-amber-200/80 font-black tracking-wider">LEGEND</div>
+                  <div className="text-sm font-black text-amber-100 tabular-nums">{legendaryCount}</div>
                 </div>
-                <div className="rounded-lg bg-gradient-to-br from-purple-900/60 to-indigo-900/60 border border-purple-500/40 p-2 text-center">
-                  <Sparkles className="w-3.5 h-3.5 text-purple-300 mx-auto mb-0.5" />
-                  <div className="text-[9px] text-purple-200/70 font-bold">EPIC</div>
-                  <div className="text-sm font-black text-purple-200 tabular-nums">{epicCount}</div>
+                <div className="battle-stat-tile rounded-lg p-2 text-center" style={{ borderColor: "rgba(239,68,68,0.45)" }}>
+                  <Sparkles className="w-3.5 h-3.5 text-red-300 mx-auto mb-0.5 drop-shadow-[0_0_4px_rgba(239,68,68,0.8)]" />
+                  <div className="text-[9px] text-red-200/80 font-black tracking-wider">EPIC</div>
+                  <div className="text-sm font-black text-red-100 tabular-nums">{epicCount}</div>
                 </div>
               </div>
             );
