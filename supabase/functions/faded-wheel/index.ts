@@ -5,52 +5,87 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-// 9 hadiah grid: Mix Nyawa/Hint/Freeze + Jackpot Gem
-type FadedPrize = {
-  kind: "extra_life" | "auto_hint" | "time_freeze" | "streak_freeze" | "gems";
+// === MYSTERY BOX SYSTEM ===
+// Spin → buka 1 box (random index dari 9). Hadiah ditentukan SAAT KLAIM (random dari pool).
+// Setelah 9 box terbuka & diklaim semua → grid reset jadi 9 box baru.
+type BoxPrize = {
+  kind: "extra_life" | "auto_hint" | "time_freeze" | "streak_freeze" | "gems" | "game_credits" | "game_balance";
   value: number;
   label: string;
   emoji: string;
   rarity: "common" | "rare" | "epic" | "legendary";
+  weight: number;
 };
 
-const GRID_TEMPLATE: FadedPrize[] = [
-  { kind: "extra_life",    value: 1,   label: "Nyawa x1",      emoji: "❤️", rarity: "common" },
-  { kind: "auto_hint",     value: 2,   label: "Hint x2",       emoji: "💡", rarity: "common" },
-  { kind: "time_freeze",   value: 2,   label: "Freeze 30s x2", emoji: "⏱️", rarity: "common" },
-  { kind: "streak_freeze", value: 1,   label: "S.Freeze x1",   emoji: "🛡️", rarity: "rare" },
-  { kind: "extra_life",    value: 3,   label: "Nyawa x3",      emoji: "❤️", rarity: "rare" },
-  { kind: "auto_hint",     value: 5,   label: "Hint x5",       emoji: "💡", rarity: "rare" },
-  { kind: "time_freeze",   value: 10,  label: "Freeze x10",    emoji: "⏱️", rarity: "epic" },
-  { kind: "streak_freeze", value: 5,   label: "S.Freeze x5",   emoji: "🛡️", rarity: "epic" },
-  { kind: "gems",          value: 100, label: "JACKPOT 💎100", emoji: "👑", rarity: "legendary" },
+// Pool hadiah Mystery Box — variatif: gem/hint/nyawa/kredit/saldo/freeze
+// Range normal sesuai permintaan user, jackpot besar tetap ada tapi sangat jarang
+const BOX_PRIZE_POOL: BoxPrize[] = [
+  // === COMMON (sering) ===
+  { kind: "auto_hint",     value: 50,    label: "💡 +50 Hint",            emoji: "💡", rarity: "common",    weight: 14 },
+  { kind: "auto_hint",     value: 100,   label: "💡 +100 Hint",           emoji: "💡", rarity: "common",    weight: 10 },
+  { kind: "extra_life",    value: 50,    label: "❤️ +50 Nyawa",           emoji: "❤️", rarity: "common",    weight: 14 },
+  { kind: "extra_life",    value: 100,   label: "❤️ +100 Nyawa",          emoji: "❤️", rarity: "common",    weight: 10 },
+  { kind: "extra_life",    value: 200,   label: "❤️ +200 Nyawa",          emoji: "❤️", rarity: "common",    weight: 6 },
+  { kind: "time_freeze",   value: 5,     label: "⏱️ +5 Freeze",           emoji: "⏱️", rarity: "common",    weight: 12 },
+  { kind: "time_freeze",   value: 10,    label: "⏱️ +10 Freeze",          emoji: "⏱️", rarity: "common",    weight: 8 },
+  { kind: "time_freeze",   value: 20,    label: "⏱️ +20 Freeze",          emoji: "⏱️", rarity: "common",    weight: 4 },
+  { kind: "streak_freeze", value: 5,     label: "🛡️ +5 Streak Freeze",    emoji: "🛡️", rarity: "common",    weight: 8 },
+  { kind: "streak_freeze", value: 10,    label: "🛡️ +10 Streak Freeze",   emoji: "🛡️", rarity: "common",    weight: 5 },
+  { kind: "streak_freeze", value: 20,    label: "🛡️ +20 Streak Freeze",   emoji: "🛡️", rarity: "common",    weight: 2.5 },
+  { kind: "gems",          value: 100,   label: "💎 +100 Gem",            emoji: "💎", rarity: "common",    weight: 6 },
+  { kind: "gems",          value: 200,   label: "💎 +200 Gem",            emoji: "💎", rarity: "common",    weight: 4 },
+  { kind: "game_credits",  value: 50,    label: "🔑 +50 Kredit",          emoji: "🔑", rarity: "common",    weight: 6 },
+  { kind: "game_credits",  value: 100,   label: "🔑 +100 Kredit",         emoji: "🔑", rarity: "common",    weight: 4 },
+  { kind: "game_credits",  value: 200,   label: "🔑 +200 Kredit",         emoji: "🔑", rarity: "common",    weight: 2 },
+  { kind: "game_balance",  value: 100,   label: "💵 +Rp 100 Saldo IN",    emoji: "💵", rarity: "common",    weight: 6 },
+  { kind: "game_balance",  value: 200,   label: "💵 +Rp 200 Saldo IN",    emoji: "💵", rarity: "common",    weight: 4 },
+
+  // === RARE (lumayan) ===
+  { kind: "gems",          value: 500,   label: "💎 +500 Gem",            emoji: "💎", rarity: "rare",      weight: 1.8 },
+  { kind: "auto_hint",     value: 300,   label: "💡 +300 Hint",           emoji: "💡", rarity: "rare",      weight: 1.5 },
+  { kind: "extra_life",    value: 400,   label: "❤️ +400 Nyawa",          emoji: "❤️", rarity: "rare",      weight: 1.5 },
+  { kind: "game_credits",  value: 500,   label: "🔑 +500 Kredit",         emoji: "🔑", rarity: "rare",      weight: 1.2 },
+  { kind: "game_balance",  value: 500,   label: "💵 +Rp 500 Saldo IN",    emoji: "💵", rarity: "rare",      weight: 1.2 },
+  { kind: "time_freeze",   value: 40,    label: "⏱️ +40 Freeze",          emoji: "⏱️", rarity: "rare",      weight: 1.0 },
+  { kind: "streak_freeze", value: 40,    label: "🛡️ +40 Streak Freeze",   emoji: "🛡️", rarity: "rare",      weight: 0.8 },
+
+  // === EPIC (jarang) ===
+  { kind: "gems",          value: 1000,  label: "💎 +1.000 Gem",          emoji: "💎", rarity: "epic",      weight: 0.6 },
+  { kind: "gems",          value: 2000,  label: "💎 +2.000 Gem",          emoji: "💎", rarity: "epic",      weight: 0.25 },
+  { kind: "game_credits",  value: 1000,  label: "🔑 +1.000 Kredit",       emoji: "🔑", rarity: "epic",      weight: 0.4 },
+  { kind: "game_balance",  value: 1000,  label: "💵 +Rp 1.000 Saldo IN",  emoji: "💵", rarity: "epic",      weight: 0.4 },
+  { kind: "game_balance",  value: 2500,  label: "💵 +Rp 2.500 Saldo IN",  emoji: "💵", rarity: "epic",      weight: 0.18 },
+
+  // === LEGENDARY (sangat jarang — JACKPOT) ===
+  { kind: "gems",          value: 5000,  label: "🔥 +5.000 GEM JACKPOT",  emoji: "💎", rarity: "legendary", weight: 0.06 },
+  { kind: "gems",          value: 10000, label: "👑 +10.000 GEM MEGA",    emoji: "💎", rarity: "legendary", weight: 0.012 },
+  { kind: "game_credits",  value: 5000,  label: "🔥 +5.000 Kredit JACKPOT", emoji: "🔑", rarity: "legendary", weight: 0.04 },
+  { kind: "game_balance",  value: 10000, label: "👑 +Rp 10.000 JACKPOT",  emoji: "💵", rarity: "legendary", weight: 0.025 },
+  { kind: "game_balance",  value: 25000, label: "👑 +Rp 25.000 MEGA",     emoji: "💵", rarity: "legendary", weight: 0.005 },
 ];
 
-// Bonus tambahan berdasarkan jumlah spin di ronde saat ini (mirip Free Fire 8x/7x/6x)
+function rollPrize(): BoxPrize {
+  const tw = BOX_PRIZE_POOL.reduce((s, p) => s + p.weight, 0);
+  let r = Math.random() * tw;
+  for (const p of BOX_PRIZE_POOL) {
+    r -= p.weight;
+    if (r <= 0) return p;
+  }
+  return BOX_PRIZE_POOL[0];
+}
+
+// Bonus tambahan berdasarkan jumlah box dibuka di ronde saat ini
 const BONUS_THRESHOLDS = [
-  { spins: 3, bonus: { kind: "auto_hint", value: 2, label: "Bonus +2 Hint", rarity: "rare" } },
-  { spins: 5, bonus: { kind: "streak_freeze", value: 1, label: "Bonus +1 Streak Freeze", rarity: "epic" } },
-  { spins: 7, bonus: { kind: "extra_life", value: 5, label: "Bonus +5 Nyawa", rarity: "epic" } },
-  { spins: 9, bonus: { kind: "gems", value: 50, label: "Bonus +50 Gem", rarity: "legendary" } },
+  { spins: 3, bonus: { kind: "auto_hint", value: 50, label: "Bonus +50 Hint", rarity: "rare" } },
+  { spins: 5, bonus: { kind: "streak_freeze", value: 5, label: "Bonus +5 Streak Freeze", rarity: "epic" } },
+  { spins: 7, bonus: { kind: "extra_life", value: 200, label: "Bonus +200 Nyawa", rarity: "epic" } },
+  { spins: 9, bonus: { kind: "gems", value: 500, label: "Bonus +500 Gem", rarity: "legendary" } },
 ];
 
-// Harga naik tiap spin: 50, 75, 100, 150, 200, 300, 400, 500, 700
+// Harga naik tiap box dibuka: 50, 75, 100, 150, 200, 300, 400, 500, 700
 const SPIN_COSTS = [50, 75, 100, 150, 200, 300, 400, 500, 700];
 
-function shuffle<T>(arr: T[]): T[] {
-  const a = [...arr];
-  for (let i = a.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [a[i], a[j]] = [a[j], a[i]];
-  }
-  return a;
-}
-
-function freshGrid(): FadedPrize[] {
-  return shuffle(GRID_TEMPLATE);
-}
-
-async function applyPrize(admin: any, visitorId: string, p: FadedPrize) {
+async function applyPrize(admin: any, visitorId: string, p: { kind: string; value: number }) {
   if (p.kind === "extra_life" || p.kind === "auto_hint" || p.kind === "time_freeze") {
     const { data: pu } = await admin.from("user_power_ups").select("*").eq("visitor_id", visitorId).maybeSingle();
     if (!pu) {
@@ -68,9 +103,21 @@ async function applyPrize(admin: any, visitorId: string, p: FadedPrize) {
     const { data: streak } = await admin.from("daily_streaks").select("id, freeze_count").eq("visitor_id", visitorId).maybeSingle();
     if (streak) {
       await admin.from("daily_streaks").update({ freeze_count: (streak.freeze_count || 0) + p.value }).eq("id", streak.id);
+    } else {
+      await admin.from("daily_streaks").insert({ visitor_id: visitorId, freeze_count: p.value });
     }
   } else if (p.kind === "gems") {
     await admin.rpc("add_account_gems", { p_visitor_id: visitorId, p_amount: p.value });
+  } else if (p.kind === "game_credits") {
+    await admin.rpc("add_account_credits", { p_visitor_id: visitorId, p_amount: p.value });
+  } else if (p.kind === "game_balance") {
+    // Tambah ke game_profiles.balance (saldo IN game)
+    const { data: gp } = await admin.from("game_profiles").select("id, balance").eq("visitor_id", visitorId).maybeSingle();
+    if (gp) {
+      await admin.from("game_profiles").update({ balance: (gp.balance || 0) + p.value }).eq("id", gp.id);
+    } else {
+      await admin.from("game_profiles").insert({ visitor_id: visitorId, display_name: "Anonim", balance: p.value });
+    }
   }
 }
 
@@ -78,7 +125,7 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const { visitorId, action, prizeIndex } = await req.json();
+    const { visitorId, action, boxIndex } = await req.json();
     if (!visitorId) return Response.json({ error: "visitorId required" }, { status: 400, headers: corsHeaders });
 
     const admin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
@@ -86,11 +133,11 @@ Deno.serve(async (req) => {
     // Ambil/buat state
     let { data: state } = await admin.from("faded_wheel_state").select("*").eq("visitor_id", visitorId).maybeSingle();
     if (!state) {
-      const newGrid = freshGrid();
       const { data: created } = await admin.from("faded_wheel_state").insert({
         visitor_id: visitorId,
-        grid_prizes: newGrid,
+        grid_prizes: [],
         claimed_indexes: [],
+        pending_claims: [],
         spins_in_round: 0,
         total_spins_lifetime: 0,
         current_round: 1,
@@ -101,12 +148,17 @@ Deno.serve(async (req) => {
     const { data: gemsData } = await admin.rpc("get_account_gems", { p_visitor_id: visitorId });
     const gems = Number(gemsData || 0);
 
+    const claimed: number[] = state.claimed_indexes || [];
+    const pending: Array<{ index: number }> = state.pending_claims || [];
+    const occupiedIndexes = new Set([...claimed, ...pending.map((p) => p.index)]);
+    const totalOpened = claimed.length + pending.length;
+    const nextCost = SPIN_COSTS[Math.min(totalOpened, SPIN_COSTS.length - 1)];
+
     if (action === "check") {
-      const claimed = state.claimed_indexes || [];
-      const nextCost = SPIN_COSTS[Math.min(claimed.length, SPIN_COSTS.length - 1)];
       return Response.json({
-        grid: state.grid_prizes,
+        gridSize: 9,
         claimedIndexes: claimed,
+        pendingClaims: pending,
         spinsInRound: state.spins_in_round,
         totalSpinsLifetime: state.total_spins_lifetime,
         currentRound: state.current_round,
@@ -118,71 +170,102 @@ Deno.serve(async (req) => {
     }
 
     if (action === "spin") {
-      const claimed: number[] = state.claimed_indexes || [];
-      const grid: FadedPrize[] = state.grid_prizes || [];
-      const available = grid.map((_, i) => i).filter(i => !claimed.includes(i));
+      const available = Array.from({ length: 9 }, (_, i) => i).filter((i) => !occupiedIndexes.has(i));
       if (available.length === 0) {
-        return Response.json({ error: "Grid kosong, reset dulu!" }, { status: 400, headers: corsHeaders });
+        return Response.json({ error: "Semua box sudah dibuka. Klaim dulu yang pending!" }, { status: 400, headers: corsHeaders });
       }
 
-      const cost = SPIN_COSTS[Math.min(claimed.length, SPIN_COSTS.length - 1)];
-      if (gems < cost) {
-        return Response.json({ error: `Butuh ${cost} 💎 Gem (kamu punya ${gems})` }, { status: 400, headers: corsHeaders });
+      if (gems < nextCost) {
+        return Response.json({ error: `Butuh ${nextCost} 💎 Gem (kamu punya ${gems})` }, { status: 400, headers: corsHeaders });
       }
 
-      // Pilih hadiah random dari yang tersedia (atau dari prizeIndex jika diberikan dan masih tersedia)
+      // Pilih box random (atau pakai boxIndex jika valid)
       let pickedIndex: number;
-      if (typeof prizeIndex === "number" && available.includes(prizeIndex)) {
-        pickedIndex = prizeIndex;
+      if (typeof boxIndex === "number" && available.includes(boxIndex)) {
+        pickedIndex = boxIndex;
       } else {
         pickedIndex = available[Math.floor(Math.random() * available.length)];
       }
 
       // Kurangi gem
       try {
-        await admin.rpc("add_account_gems", { p_visitor_id: visitorId, p_amount: -cost });
+        await admin.rpc("add_account_gems", { p_visitor_id: visitorId, p_amount: -nextCost });
       } catch {
-        return Response.json({ error: "Gagal kurangi saldo" }, { status: 400, headers: corsHeaders });
+        return Response.json({ error: "Gagal kurangi saldo gem" }, { status: 400, headers: corsHeaders });
       }
 
-      const prize = grid[pickedIndex];
-      await applyPrize(admin, visitorId, prize);
-
-      const newClaimed = [...claimed, pickedIndex];
+      // Tambah ke pending_claims (hadiah BELUM di-roll, akan di-roll saat klaim)
+      const newPending = [...pending, { index: pickedIndex }];
       const newSpinsInRound = state.spins_in_round + 1;
       const newTotalSpins = state.total_spins_lifetime + 1;
 
-      // Cek bonus threshold
-      const bonusUnlocked = BONUS_THRESHOLDS.find(b => b.spins === newSpinsInRound);
+      await admin.from("faded_wheel_state").update({
+        pending_claims: newPending,
+        spins_in_round: newSpinsInRound,
+        total_spins_lifetime: newTotalSpins,
+      }).eq("id", state.id);
+
+      const { data: gemsAfter } = await admin.rpc("get_account_gems", { p_visitor_id: visitorId });
+      const totalOpenedAfter = claimed.length + newPending.length;
+      const nextCostAfter = SPIN_COSTS[Math.min(totalOpenedAfter, SPIN_COSTS.length - 1)];
+
+      return Response.json({
+        success: true,
+        boxIndex: pickedIndex,
+        pendingClaims: newPending,
+        gems: gemsAfter || 0,
+        nextCost: nextCostAfter,
+        spinsInRound: newSpinsInRound,
+        totalSpinsLifetime: newTotalSpins,
+      }, { headers: corsHeaders });
+    }
+
+    if (action === "claim") {
+      if (typeof boxIndex !== "number") {
+        return Response.json({ error: "boxIndex required" }, { status: 400, headers: corsHeaders });
+      }
+      const idx = pending.findIndex((p) => p.index === boxIndex);
+      if (idx === -1) {
+        return Response.json({ error: "Box ini tidak siap diklaim" }, { status: 400, headers: corsHeaders });
+      }
+
+      // Roll random prize SEKARANG
+      const prize = rollPrize();
+      await applyPrize(admin, visitorId, prize);
+
+      const newPending = pending.filter((_, i) => i !== idx);
+      const newClaimed = [...claimed, boxIndex];
+
+      // Cek bonus threshold (berdasarkan total box yang sudah diklaim di ronde ini)
+      const claimedCountInRound = newClaimed.length;
+      const bonusUnlocked = BONUS_THRESHOLDS.find((b) => b.spins === claimedCountInRound);
       if (bonusUnlocked) {
-        await applyPrize(admin, visitorId, bonusUnlocked.bonus as any);
+        await applyPrize(admin, visitorId, bonusUnlocked.bonus);
       }
 
       // Catat history
       await admin.from("luck_royale_nyawa_history").insert({
         visitor_id: visitorId,
-        spin_type: "faded_wheel",
+        spin_type: "mystery_box",
         reward_kind: prize.kind,
         reward_value: prize.value,
         reward_label: prize.label,
         rarity: prize.rarity,
         cost_currency: "gems",
-        cost_amount: cost,
+        cost_amount: 0, // gem sudah dikurangi saat spin
       });
 
-      // Auto-reset grid jika sudah penuh
+      // Auto-reset jika 9 box sudah diklaim semua
       let resetTriggered = false;
       let updatedState: any = {
         claimed_indexes: newClaimed,
-        spins_in_round: newSpinsInRound,
-        total_spins_lifetime: newTotalSpins,
+        pending_claims: newPending,
       };
-      if (newClaimed.length >= grid.length) {
+      if (newClaimed.length >= 9 && newPending.length === 0) {
         updatedState = {
-          grid_prizes: freshGrid(),
           claimed_indexes: [],
+          pending_claims: [],
           spins_in_round: 0,
-          total_spins_lifetime: newTotalSpins,
           current_round: state.current_round + 1,
         };
         resetTriggered = true;
@@ -191,38 +274,37 @@ Deno.serve(async (req) => {
       await admin.from("faded_wheel_state").update(updatedState).eq("id", state.id);
 
       const { data: gemsAfter } = await admin.rpc("get_account_gems", { p_visitor_id: visitorId });
-      const nextCost = SPIN_COSTS[Math.min((updatedState.claimed_indexes || []).length, SPIN_COSTS.length - 1)];
+      const finalClaimed: number[] = updatedState.claimed_indexes || newClaimed;
+      const finalPending: any[] = updatedState.pending_claims || newPending;
+      const totalOpenedAfter = finalClaimed.length + finalPending.length;
+      const nextCostAfter = SPIN_COSTS[Math.min(totalOpenedAfter, SPIN_COSTS.length - 1)];
 
       await admin.from("notifications").insert({
         visitor_id: visitorId,
-        title: `🎡 Faded Wheel: ${prize.label}`,
+        title: `🎁 Mystery Box: ${prize.label}`,
         message: bonusUnlocked ? `+ Bonus: ${bonusUnlocked.bonus.label}` : `Sisa gem: ${gemsAfter || 0}`,
-        type: "faded_wheel",
+        type: "mystery_box",
       });
 
       return Response.json({
         success: true,
         prize,
-        prizeIndex: pickedIndex,
+        boxIndex,
         bonus: bonusUnlocked ? bonusUnlocked.bonus : null,
         resetTriggered,
         gems: gemsAfter || 0,
-        nextCost,
-        newState: {
-          grid: updatedState.grid_prizes || grid,
-          claimedIndexes: updatedState.claimed_indexes,
-          spinsInRound: updatedState.spins_in_round,
-          totalSpinsLifetime: newTotalSpins,
-          currentRound: updatedState.current_round || state.current_round,
-        },
+        nextCost: nextCostAfter,
+        claimedIndexes: finalClaimed,
+        pendingClaims: finalPending,
+        currentRound: updatedState.current_round || state.current_round,
+        spinsInRound: updatedState.spins_in_round !== undefined ? updatedState.spins_in_round : state.spins_in_round,
       }, { headers: corsHeaders });
     }
 
     if (action === "reset") {
-      // Reset manual ronde (opsional, kembali ke spin_in_round 0)
       await admin.from("faded_wheel_state").update({
-        grid_prizes: freshGrid(),
         claimed_indexes: [],
+        pending_claims: [],
         spins_in_round: 0,
         current_round: state.current_round + 1,
       }).eq("id", state.id);
