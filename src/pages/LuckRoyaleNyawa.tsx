@@ -344,7 +344,36 @@ export default function LuckRoyaleNyawa() {
     }
   };
 
-  // 🏆 Hadiah Utama: tampilkan hadiah PALING JACKPOT dulu (mythic → legendary → epic),
+  const buyNyawaPremium = async () => {
+    if (!visitorId || npBuying) return;
+    if (!npPin || npPin.length !== 6) {
+      toast({ title: "PIN salah", description: "Masukkan 6 digit PIN", variant: "destructive" });
+      return;
+    }
+    setNpBuying(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("luck-royale-nyawa", {
+        body: { visitorId, action: "buy_nyawa_premium", pin: npPin },
+      });
+      if (error) throw error;
+      if (data.error) {
+        toast({ title: "Gagal", description: data.error, variant: "destructive" });
+        return;
+      }
+      if (data.nyawaPremium) setNyawaPremium(data.nyawaPremium);
+      setNpPinOpen(false);
+      setNpPin("");
+      toast({
+        title: "👑 Nyawa Premium Aktif!",
+        description: `Pool MANTAP JIWA aktif 24 jam - sisa saldo Rp ${(data.balance || 0).toLocaleString("id-ID")}`,
+      });
+      fetchData();
+    } catch (e: any) {
+      toast({ title: "Error", description: e.message || "Gagal", variant: "destructive" });
+    } finally {
+      setNpBuying(false);
+    }
+  };
   // bukan power-up common. Player harus lihat "wow factor" sebelum spin.
   const RARITY_RANK: Record<string, number> = { mythic: 5, legendary: 4, epic: 3, rare: 2, common: 1 };
   const featured = [...prizes]
