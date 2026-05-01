@@ -1089,7 +1089,7 @@ Deno.serve(async (req) => {
         luckyTokenProgress: newProgress,
         luckyTokenThreshold: TOKENS_PER_SPIN_THRESHOLD,
         luckActive,
-        poolMode: luckActive ? "lucky" : "normal",
+        poolMode: luckActive ? "premium_lucky" : "premium",
       }, { headers: corsHeaders });
     }
 
