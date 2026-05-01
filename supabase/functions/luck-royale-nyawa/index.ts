@@ -1578,10 +1578,19 @@ Deno.serve(async (req) => {
         description: `Nyawa Premium Luck Royale (30 hari)`,
       });
       await setNyawaPremium(admin, visitorId, { activeUntil: newUntilIso, purchasedAt: new Date().toISOString() });
+
+      // Grant / perpanjang Premium Token Shop Unlock 7 hari (akumulasi)
+      const existingUnlock = await getPremiumShopUnlock(admin, visitorId);
+      const unlockBaseMs = existingUnlock.activeUntil && new Date(existingUnlock.activeUntil).getTime() > Date.now()
+        ? new Date(existingUnlock.activeUntil).getTime()
+        : Date.now();
+      const unlockUntilIso = new Date(unlockBaseMs + PREMIUM_SHOP_UNLOCK_DAYS * 24 * 3600 * 1000).toISOString();
+      await setPremiumShopUnlock(admin, visitorId, { activeUntil: unlockUntilIso, grantedAt: new Date().toISOString() });
+
       await admin.from("notifications").insert({
         visitor_id: visitorId,
         title: "👑 Nyawa Premium Aktif!",
-        message: `Pool hadiah MANTAP JIWA + Premium Spin aktif sampai ${new Date(newUntilIso).toLocaleString("id-ID", { timeZone: "Asia/Jakarta" })} WIB. Spin sekarang!`,
+        message: `Premium Spin (30 hari) + Token Shop SEMUA tier (${PREMIUM_SHOP_UNLOCK_DAYS} hari) aktif sampai ${new Date(unlockUntilIso).toLocaleString("id-ID", { timeZone: "Asia/Jakarta" })} WIB.`,
         type: "luck_royale_nyawa",
       });
 
@@ -1594,6 +1603,12 @@ Deno.serve(async (req) => {
           purchasedAt: new Date().toISOString(),
           price: NYAWA_PREMIUM_PRICE,
           durationHours: NYAWA_PREMIUM_HOURS,
+        },
+        premiumShopUnlock: {
+          isActive: true,
+          activeUntil: unlockUntilIso,
+          grantedAt: new Date().toISOString(),
+          durationDays: PREMIUM_SHOP_UNLOCK_DAYS,
         },
       }, { headers: corsHeaders });
     }
