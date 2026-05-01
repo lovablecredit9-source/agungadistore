@@ -406,20 +406,29 @@ export default function LuckRoyaleNyawa() {
   const totalPrizeWeight = prizes.reduce((sum, p) => sum + (Number(p.weight) || 0), 0);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[#0b0820] via-[#1a0e3d] to-[#0b0820] text-white">
+    <div className="min-h-screen battle-bg text-white relative overflow-x-hidden">
+      {/* Subtle hex + scanline overlay */}
+      <div className="pointer-events-none fixed inset-0 battle-hex-grid opacity-40" />
+      <div className="pointer-events-none fixed inset-0 battle-scanline opacity-50" />
+      <div className="pointer-events-none fixed inset-0 battle-sparks opacity-30" />
+
       {/* Header */}
-      <div className="sticky top-0 z-30 backdrop-blur-md bg-black/40 border-b border-amber-500/30">
-        <div className="flex items-center justify-between px-3 py-2.5">
-          <Button variant="ghost" size="sm" className="text-white hover:bg-white/10" onClick={() => nav(-1)}>
+      <div className="sticky top-0 z-30 backdrop-blur-xl bg-black/70 border-b-2 border-orange-500/50 relative">
+        <div className="absolute inset-x-0 -bottom-[2px] h-[2px] battle-border-flow opacity-90" />
+        <div className="flex items-center justify-between px-3 py-2.5 relative">
+          <Button variant="ghost" size="sm" className="text-white hover:bg-orange-500/20 border border-orange-500/30" onClick={() => nav(-1)}>
             <ArrowLeft className="w-5 h-5" />
           </Button>
           <div className="flex items-center gap-2">
-            <Crown className="w-5 h-5 text-amber-400" />
-            <h1 className="font-black text-sm tracking-widest text-amber-300">LUCK ROYALE</h1>
+            <div className="relative">
+              <Crown className="w-5 h-5 text-orange-400 drop-shadow-[0_0_8px_rgba(249,115,22,0.8)]" fill="currentColor" />
+              <span className="absolute inset-0 rounded-full battle-shockwave" />
+            </div>
+            <h1 className="font-black text-sm tracking-[0.25em] battle-title-gradient">LUCK ROYALE</h1>
           </div>
-          <div className="flex items-center gap-1 bg-gradient-to-r from-cyan-500/20 to-purple-500/20 border border-cyan-400/30 rounded-full px-2.5 py-1">
-            <Gem className="w-3.5 h-3.5 text-cyan-300" />
-            <span className="font-bold text-xs tabular-nums">{formatCompactNumber(gems)}</span>
+          <div className="relative flex items-center gap-1 bg-gradient-to-r from-orange-600/30 to-red-600/30 border border-orange-400/50 rounded-md px-2.5 py-1 battle-tier-chip">
+            <Gem className="w-3.5 h-3.5 text-amber-200 drop-shadow-[0_0_4px_rgba(245,158,11,0.8)]" />
+            <span className="font-black text-xs tabular-nums text-amber-100">{formatCompactNumber(gems)}</span>
           </div>
         </div>
       </div>
