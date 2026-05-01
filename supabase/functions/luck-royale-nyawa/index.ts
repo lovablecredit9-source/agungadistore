@@ -17,6 +17,27 @@ const BUNDLES: Array<{ count: number; cost: number; label: string; badge?: strin
   { count: 200, cost: 7000, label: "200 SPIN", badge: "GOD PACK" },
   { count: 500, cost: 15000, label: "500 SPIN", badge: "ULTIMATE" },
 ];
+
+// === NYAWA PREMIUM PASS — Rp 50.000 / 1 hari ===
+// Saat aktif: pool spin pakai PREMIUM_PRIZES (bobot rare+ jauh lebih besar, hadiah lebih mantap).
+const NYAWA_PREMIUM_PRICE = 50000;
+const NYAWA_PREMIUM_HOURS = 24;
+function nyawaPremiumKey(visitorId: string) { return `lr_nyawa_premium_${visitorId}`; }
+async function getNyawaPremium(admin: any, visitorId: string): Promise<{ activeUntil: string | null; purchasedAt: string | null }> {
+  const { data } = await admin.from("admin_settings").select("setting_value").eq("setting_key", nyawaPremiumKey(visitorId)).maybeSingle();
+  if (!data) return { activeUntil: null, purchasedAt: null };
+  try { return JSON.parse(data.setting_value); } catch { return { activeUntil: null, purchasedAt: null }; }
+}
+async function setNyawaPremium(admin: any, visitorId: string, state: { activeUntil: string | null; purchasedAt: string | null }) {
+  const value = JSON.stringify(state);
+  const { data: existing } = await admin.from("admin_settings").select("id").eq("setting_key", nyawaPremiumKey(visitorId)).maybeSingle();
+  if (existing) await admin.from("admin_settings").update({ setting_value: value }).eq("id", existing.id);
+  else await admin.from("admin_settings").insert({ setting_key: nyawaPremiumKey(visitorId), setting_value: value });
+}
+function isNyawaPremiumActive(state: { activeUntil: string | null }): boolean {
+  if (!state.activeUntil) return false;
+  return new Date(state.activeUntil).getTime() > Date.now();
+}
 // Backwards compat — bundle 5 lama
 const BUNDLE_COST_DIAMOND = 200;
 
