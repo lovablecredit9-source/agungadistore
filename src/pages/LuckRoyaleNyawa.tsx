@@ -528,10 +528,10 @@ export default function LuckRoyaleNyawa() {
                   <>
                     <div className="flex items-baseline gap-1">
                       <span className="text-xl font-black text-white drop-shadow">Rp 50.000</span>
-                      <span className="text-[9px] font-black text-amber-100">/ 24 jam</span>
+                      <span className="text-[9px] font-black text-amber-100">/ 30 hari</span>
                     </div>
                     <p className="text-[10px] font-bold text-white/95 mt-0.5">
-                      Pool spin LEBIH MANTAP — banyak Epic+, peluang Mythic 5×! Bayar saldo + PIN.
+                      Pool spin LEBIH MANTAP + akses Premium Spin (1-1.000 spin) selama 30 hari! Bayar saldo + PIN.
                     </p>
                   </>
                 )}
