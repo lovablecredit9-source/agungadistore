@@ -263,8 +263,8 @@ const PREMIUM_PRIZES: Prize[] = [
   { kind: "extra_life",    value: 15,    label: "❤️ +15 Nyawa",             emoji: "❤️", rarity: "epic",      weight: 5,     color: "#a855f7" },
   { kind: "time_freeze",   value: 10,    label: "+10 Freeze 30s",           emoji: "⏱️", rarity: "epic",      weight: 4.5,   color: "#a855f7" },
   { kind: "streak_freeze", value: 5,     label: "+5 Streak Freeze",         emoji: "🛡️", rarity: "epic",      weight: 4.5,   color: "#ec4899" },
-  // GEM epic: sangat jarang, tetap wajar
-  { kind: "gems",          value: 500,   label: "💎 +500 Gem PREMIUM",       emoji: "💎", rarity: "epic",      weight: 0.04,  color: "#8b5cf6" },
+  // GEM epic — jarang, hadiah cukup besar
+  { kind: "gems",          value: 5000,  label: "💎 +5.000 Gem PREMIUM",     emoji: "💎", rarity: "epic",      weight: 0.04,  color: "#8b5cf6" },
   { kind: "auto_hint",     value: 25,    label: "💡 +25 Hint",              emoji: "💡", rarity: "epic",      weight: 3,     color: "#a855f7" },
   { kind: "extra_life",    value: 25,    label: "❤️ +25 Nyawa",             emoji: "❤️", rarity: "epic",      weight: 3,     color: "#a855f7" },
   { kind: "streak_coins",  value: 2000,  label: "🪙 +2.000 Streak Coin",     emoji: "🪙", rarity: "epic",      weight: 4,     color: "#fb923c" },
