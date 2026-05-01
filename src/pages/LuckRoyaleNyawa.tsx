@@ -80,6 +80,8 @@ export default function LuckRoyaleNyawa() {
   const [singleCost, setSingleCost] = useState(50);
   const [bundles, setBundles] = useState<Array<{ count: number; cost: number; label: string; badge?: string }>>([]);
   const [results, setResults] = useState<SpinResult[] | null>(null);
+  const [revealCount, setRevealCount] = useState(0);
+  const [revealDone, setRevealDone] = useState(false);
   const [reelSpinning, setReelSpinning] = useState(false);
   const [freeSpinAvailable, setFreeSpinAvailable] = useState(false);
   const [luckyStreak, setLuckyStreak] = useState(0);
