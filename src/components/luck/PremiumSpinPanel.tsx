@@ -31,6 +31,39 @@ const PACKS: PremiumPack[] = [
 
 const FREE_PER_DAY = 2;
 
+const PRIZE_POOL: { rarity: Rarity; chance: string; prizes: { emoji: string; label: string }[] }[] = [
+  { rarity: "mythic", chance: "~0.5%", prizes: [
+    { emoji: "🪙", label: "50.000 Koin Streak" },
+    { emoji: "💵", label: "Rp 50.000 Saldo" },
+    { emoji: "💎", label: "2.000 Gem" },
+    { emoji: "🔑", label: "100 Kredit Game" },
+  ]},
+  { rarity: "legendary", chance: "~3%", prizes: [
+    { emoji: "💵", label: "Rp 10.000 Saldo" },
+    { emoji: "💎", label: "500 Gem" },
+    { emoji: "🔑", label: "30 Kredit Game" },
+    { emoji: "🪙", label: "10.000 Koin" },
+  ]},
+  { rarity: "epic", chance: "~10%", prizes: [
+    { emoji: "💎", label: "100 Gem" },
+    { emoji: "🔑", label: "10 Kredit Game" },
+    { emoji: "🪙", label: "2.500 Koin" },
+    { emoji: "❤️", label: "5 Nyawa Extra" },
+  ]},
+  { rarity: "rare", chance: "~25%", prizes: [
+    { emoji: "💎", label: "25 Gem" },
+    { emoji: "❤️", label: "2 Nyawa" },
+    { emoji: "⏱️", label: "Time Freeze" },
+    { emoji: "🛡️", label: "Streak Freeze" },
+  ]},
+  { rarity: "common", chance: "~61.5%", prizes: [
+    { emoji: "💡", label: "Auto Hint" },
+    { emoji: "🪙", label: "100-500 Koin" },
+    { emoji: "❤️", label: "1 Nyawa" },
+    { emoji: "💎", label: "5-10 Gem" },
+  ]},
+];
+
 function rarityGrad(r: string) {
   switch (r) {
     case "mythic": return "from-fuchsia-600 via-pink-500 to-amber-400";
@@ -350,9 +383,34 @@ export default function PremiumSpinPanel({ visitorId, gems, setGems, isUnlocked,
         </span>
       </button>
 
-      <p className="text-center text-[10px] text-fuchsia-200/70">
-        Pool: 💡Hint · ❤️Nyawa · ⏱️Time Freeze · 🪙Koin Streak · 🔑Kredit Game · 💵Saldo IN · 💎Gem · 👑MEGA JACKPOT
-      </p>
+      {/* Daftar Hadiah Pool */}
+      <div className="rounded-xl bg-black/40 border border-fuchsia-500/30 p-2.5">
+        <div className="flex items-center gap-1.5 mb-2">
+          <Gift className="w-3.5 h-3.5 text-amber-300" />
+          <h3 className="text-[11px] font-black tracking-widest text-amber-200">DAFTAR HADIAH PREMIUM</h3>
+        </div>
+        <div className="space-y-1.5">
+          {PRIZE_POOL.map((group) => (
+            <div key={group.rarity} className={`rounded-lg p-2 bg-gradient-to-r ${rarityGrad(group.rarity)} ${rarityRing(group.rarity)}`}>
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-[9px] uppercase tracking-widest font-black text-white/95">{group.rarity}</span>
+                <span className="text-[8px] font-bold text-white/70 bg-black/30 px-1.5 py-0.5 rounded">{group.chance}</span>
+              </div>
+              <div className="grid grid-cols-2 gap-1">
+                {group.prizes.map((p, i) => (
+                  <div key={i} className="flex items-center gap-1 text-[10px] font-bold text-white bg-black/20 rounded px-1.5 py-1">
+                    <span className="text-sm">{p.emoji}</span>
+                    <span className="truncate">{p.label}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+        <p className="text-center text-[9px] text-fuchsia-200/60 mt-2">
+          Persentase peluang dapat berubah sewaktu-waktu untuk menjaga keseimbangan game.
+        </p>
+      </div>
 
       {/* Riwayat Spin Premium */}
       <div className="rounded-xl bg-black/40 border border-fuchsia-500/30 p-2.5">
