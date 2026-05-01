@@ -1707,36 +1707,92 @@ export default function LuckRoyaleNyawa() {
         </div>
       )}
 
-      {/* Result Modal */}
-      {results && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 animate-fade-in">
-          <Card className="relative max-w-sm w-full bg-gradient-to-br from-[#1a0e3d] to-[#0b0820] border-2 border-amber-500/50 p-5 shadow-2xl shadow-amber-500/30 animate-scale-in">
-            <button onClick={() => setResults(null)} className="absolute top-2 right-2 text-white/60 hover:text-white">
-              <X className="w-5 h-5" />
-            </button>
-            <div className="text-center mb-3">
-              <Sparkles className="w-8 h-8 text-amber-400 mx-auto mb-1" />
-              <h3 className="text-xl font-black bg-gradient-to-r from-amber-300 to-orange-500 bg-clip-text text-transparent">SELAMAT!</h3>
-              <p className="text-xs text-purple-200 mt-1">Kamu mendapatkan {results.length} hadiah</p>
-            </div>
-            <div className="grid grid-cols-2 gap-2 max-h-80 overflow-y-auto">
-              {results.map((r, i) => {
-                const style = RARITY_STYLE[r.rarity];
-                return (
-                  <div key={i} className={`relative rounded-xl bg-gradient-to-br ${style.gradient} ring-2 ${style.ring} shadow-lg ${style.glow} p-3 flex flex-col items-center text-center`}>
-                    <Badge className="absolute top-1 right-1 bg-black/70 text-[8px] font-black px-1 py-0">{style.label}</Badge>
-                    <div className="w-10 h-10 text-white mb-1">{getKindIcon(r.kind)}</div>
-                    <div className="text-[10px] font-black leading-tight">{r.label}</div>
+      {/* Result Modal — reveal hadiah satu per satu */}
+      {results && (() => {
+        const total = results.length;
+        const shown = Math.min(revealCount, total);
+        const visible = results.slice(0, shown);
+        // Counter rarity yg sudah tampil
+        const rarityCount: Record<string, number> = {};
+        visible.forEach(v => { rarityCount[v.rarity] = (rarityCount[v.rarity] || 0) + 1; });
+        // Auto-scroll ke item terbaru via ref index
+        return (
+          <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 animate-fade-in">
+            <Card className="relative max-w-md w-full bg-gradient-to-br from-[#1a0e3d] to-[#0b0820] border-2 border-amber-500/50 p-5 shadow-2xl shadow-amber-500/30 animate-scale-in">
+              <button onClick={() => setResults(null)} className="absolute top-2 right-2 text-white/60 hover:text-white">
+                <X className="w-5 h-5" />
+              </button>
+              <div className="text-center mb-3">
+                <Sparkles className="w-8 h-8 text-amber-400 mx-auto mb-1 animate-pulse" />
+                <h3 className="text-xl font-black bg-gradient-to-r from-amber-300 to-orange-500 bg-clip-text text-transparent">
+                  {revealDone ? "SELAMAT!" : "MEMBUKA HADIAH..."}
+                </h3>
+                <p className="text-xs text-purple-200 mt-1">
+                  <span className="font-black text-amber-300">{shown}</span> / {total} hadiah dibuka
+                </p>
+                {!revealDone && (
+                  <div className="mt-2 h-1.5 w-full bg-black/40 rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-gradient-to-r from-amber-400 via-orange-500 to-pink-500 transition-all duration-100"
+                      style={{ width: `${(shown / total) * 100}%` }}
+                    />
                   </div>
-                );
-              })}
-            </div>
-            <Button onClick={() => setResults(null)} className="w-full mt-4 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 font-black tracking-wider">
-              <Zap className="w-4 h-4 mr-1" /> KEREN!
-            </Button>
-          </Card>
-        </div>
-      )}
+                )}
+                {/* Live rarity counter — terlihat keren saat 500 spin */}
+                {total >= 20 && (
+                  <div className="mt-2 flex items-center justify-center flex-wrap gap-1">
+                    {(["mythic","legendary","epic","rare","common"] as const).map(r => {
+                      const c = rarityCount[r] || 0;
+                      if (c === 0) return null;
+                      const s = RARITY_STYLE[r];
+                      return (
+                        <Badge key={r} className={`text-[8px] font-black px-1.5 py-0 bg-gradient-to-r ${s.gradient} text-white ring-1 ${s.ring}`}>
+                          {s.label} ×{c}
+                        </Badge>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+              <div className={`grid gap-1.5 max-h-[55vh] overflow-y-auto ${total > 50 ? "grid-cols-4" : total > 20 ? "grid-cols-3" : "grid-cols-2"}`}>
+                {visible.map((r, i) => {
+                  const style = RARITY_STYLE[r.rarity];
+                  const isLatest = i === shown - 1 && !revealDone;
+                  const isRare = ["mythic","legendary","epic"].includes(r.rarity);
+                  return (
+                    <div
+                      key={i}
+                      className={`relative rounded-lg bg-gradient-to-br ${style.gradient} ring-2 ${style.ring} shadow-lg ${style.glow} p-2 flex flex-col items-center text-center ${isLatest ? "animate-scale-in" : ""} ${isRare && isLatest ? "animate-pulse" : ""}`}
+                    >
+                      <Badge className="absolute top-0.5 right-0.5 bg-black/70 text-[7px] font-black px-1 py-0">{style.label}</Badge>
+                      <div className={`text-white mb-0.5 ${total > 50 ? "w-6 h-6" : "w-9 h-9"}`}>{getKindIcon(r.kind)}</div>
+                      <div className={`font-black leading-tight ${total > 50 ? "text-[8px]" : "text-[10px]"}`}>{r.label}</div>
+                    </div>
+                  );
+                })}
+              </div>
+              <div className="grid grid-cols-2 gap-2 mt-4">
+                {!revealDone ? (
+                  <Button
+                    onClick={() => { setRevealCount(total); setRevealDone(true); }}
+                    variant="outline"
+                    className="bg-black/40 border-amber-500/40 text-amber-200 hover:bg-amber-500/20 font-black tracking-wider"
+                  >
+                    ⏩ SKIP
+                  </Button>
+                ) : <div />}
+                <Button
+                  onClick={() => setResults(null)}
+                  disabled={!revealDone}
+                  className="bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 font-black tracking-wider disabled:opacity-50"
+                >
+                  <Zap className="w-4 h-4 mr-1" /> KEREN!
+                </Button>
+              </div>
+            </Card>
+          </div>
+        );
+      })()}
 
       {/* 🔥 Streak Bonus Popup */}
       {bonusPopup !== null && (
