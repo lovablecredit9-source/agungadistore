@@ -105,6 +105,7 @@ interface Props {
   isUnlocked: boolean;
   expiresAt?: string | null;
   price?: number;
+  shopUnlock?: { isActive: boolean; activeUntil: string | null; grantedAt: string | null; durationDays: number };
 }
 
 interface SpinResult { kind: string; value: number; label: string; emoji: string; rarity: string; color: string; }
