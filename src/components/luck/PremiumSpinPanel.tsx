@@ -354,6 +354,73 @@ export default function PremiumSpinPanel({ visitorId, gems, setGems, isUnlocked,
         Pool: 💡Hint · ❤️Nyawa · ⏱️Time Freeze · 🪙Koin Streak · 🔑Kredit Game · 💵Saldo IN · 💎Gem · 👑MEGA JACKPOT
       </p>
 
+      {/* Riwayat Spin Premium */}
+      <div className="rounded-xl bg-black/40 border border-fuchsia-500/30 p-2.5">
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center gap-1.5">
+            <Sparkles className="w-3.5 h-3.5 text-fuchsia-300" />
+            <h3 className="text-[11px] font-black tracking-widest text-fuchsia-200">RIWAYAT SPIN PREMIUM</h3>
+          </div>
+          <button
+            onClick={loadHistory}
+            disabled={historyLoading}
+            className="text-[9px] font-bold text-fuchsia-300 hover:text-amber-200 disabled:opacity-50"
+          >
+            {historyLoading ? "..." : "↻ Refresh"}
+          </button>
+        </div>
+        {history.length === 0 ? (
+          <div className="text-center py-4 text-[10px] text-fuchsia-200/50">
+            {historyLoading ? "Memuat..." : "Belum ada riwayat spin premium"}
+          </div>
+        ) : (
+          <>
+            <div className="space-y-1 max-h-64 overflow-y-auto pr-1">
+              {history.map((h) => {
+                const date = new Date(h.created_at);
+                const timeStr = date.toLocaleString("id-ID", {
+                  timeZone: "Asia/Jakarta",
+                  day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit",
+                });
+                const isFree = h.cost_currency === "free";
+                return (
+                  <div
+                    key={h.id}
+                    className={`flex items-center gap-2 rounded-lg p-1.5 bg-gradient-to-r ${rarityGrad(h.rarity)} ${rarityRing(h.rarity)}`}
+                  >
+                    <div className="flex-1 min-w-0">
+                      <div className="text-[10px] font-black text-white truncate">{h.reward_label}</div>
+                      <div className="flex items-center gap-1.5 text-[8px] text-white/80 mt-0.5">
+                        <span className="uppercase font-bold tracking-wider">{h.rarity}</span>
+                        <span>·</span>
+                        <span>{timeStr} WIB</span>
+                      </div>
+                    </div>
+                    <div className="text-right shrink-0">
+                      {isFree ? (
+                        <span className="text-[8px] font-black bg-emerald-500/30 text-emerald-100 px-1.5 py-0.5 rounded">FREE</span>
+                      ) : (
+                        <span className="flex items-center gap-0.5 text-[9px] font-bold text-cyan-100 bg-black/30 rounded px-1.5 py-0.5">
+                          <Gem className="w-2.5 h-2.5" />{h.cost_amount}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            {history.length >= historyLimit && (
+              <button
+                onClick={() => setHistoryLimit((n) => n + 30)}
+                className="w-full mt-2 text-[10px] font-bold text-fuchsia-200 bg-fuchsia-500/10 hover:bg-fuchsia-500/20 border border-fuchsia-500/30 rounded-lg py-1.5"
+              >
+                Muat lebih banyak ↓
+              </button>
+            )}
+          </>
+        )}
+      </div>
+
       {/* Results Modal (multi-spin) */}
       {showResultsModal && results.length > 1 && (
         <div className="fixed inset-0 z-[100] bg-black/85 backdrop-blur-md flex items-center justify-center p-4 animate-fade-in">
