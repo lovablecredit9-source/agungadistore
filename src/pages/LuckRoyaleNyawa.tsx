@@ -388,6 +388,10 @@ export default function LuckRoyaleNyawa() {
                 <Trophy className="w-3.5 h-3.5" />
                 TOP
               </TabsTrigger>
+              <TabsTrigger value="papan" className="flex-col gap-0.5 py-1.5 data-[state=active]:bg-gradient-to-br data-[state=active]:from-yellow-400 data-[state=active]:via-amber-500 data-[state=active]:to-orange-600 data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-amber-500/50 font-black tracking-wider text-[8px] rounded-md">
+                <Crown className="w-3.5 h-3.5" />
+                PAPAN
+              </TabsTrigger>
             </TabsList>
 
             <TabsContent value="spin" className="space-y-4 mt-3">
