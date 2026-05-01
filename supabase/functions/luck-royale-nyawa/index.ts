@@ -17,6 +17,27 @@ const BUNDLES: Array<{ count: number; cost: number; label: string; badge?: strin
   { count: 200, cost: 7000, label: "200 SPIN", badge: "GOD PACK" },
   { count: 500, cost: 15000, label: "500 SPIN", badge: "ULTIMATE" },
 ];
+
+// === NYAWA PREMIUM PASS — Rp 50.000 / 1 hari ===
+// Saat aktif: pool spin pakai PREMIUM_PRIZES (bobot rare+ jauh lebih besar, hadiah lebih mantap).
+const NYAWA_PREMIUM_PRICE = 50000;
+const NYAWA_PREMIUM_HOURS = 24;
+function nyawaPremiumKey(visitorId: string) { return `lr_nyawa_premium_${visitorId}`; }
+async function getNyawaPremium(admin: any, visitorId: string): Promise<{ activeUntil: string | null; purchasedAt: string | null }> {
+  const { data } = await admin.from("admin_settings").select("setting_value").eq("setting_key", nyawaPremiumKey(visitorId)).maybeSingle();
+  if (!data) return { activeUntil: null, purchasedAt: null };
+  try { return JSON.parse(data.setting_value); } catch { return { activeUntil: null, purchasedAt: null }; }
+}
+async function setNyawaPremium(admin: any, visitorId: string, state: { activeUntil: string | null; purchasedAt: string | null }) {
+  const value = JSON.stringify(state);
+  const { data: existing } = await admin.from("admin_settings").select("id").eq("setting_key", nyawaPremiumKey(visitorId)).maybeSingle();
+  if (existing) await admin.from("admin_settings").update({ setting_value: value }).eq("id", existing.id);
+  else await admin.from("admin_settings").insert({ setting_key: nyawaPremiumKey(visitorId), setting_value: value });
+}
+function isNyawaPremiumActive(state: { activeUntil: string | null }): boolean {
+  if (!state.activeUntil) return false;
+  return new Date(state.activeUntil).getTime() > Date.now();
+}
 // Backwards compat — bundle 5 lama
 const BUNDLE_COST_DIAMOND = 200;
 
@@ -158,7 +179,56 @@ function pickFromPool(pool: Prize[]): Prize & { index: number } {
   return { ...pool[0], index: 0 };
 }
 
-function pickPrize(luckyHourActive = false): Prize & { index: number } {
+// === PREMIUM PRIZES — pool MANTAP JIWA untuk Nyawa Premium (Rp 50k/hari) ===
+// Hadiah lebih besar, tidak ada common, weight rare+ tinggi.
+const PREMIUM_PRIZES: Prize[] = [
+  // === RARE (banyak) ===
+  { kind: "extra_life",    value: 10,    label: "❤️ +10 Nyawa PREMIUM",       emoji: "❤️", rarity: "rare",      weight: 18,    color: "#f43f5e" },
+  { kind: "auto_hint",     value: 10,    label: "💡 +10 Hint PREMIUM",        emoji: "💡", rarity: "rare",      weight: 18,    color: "#06b6d4" },
+  { kind: "time_freeze",   value: 8,     label: "⏱️ +8 Freeze PREMIUM",       emoji: "⏱️", rarity: "rare",      weight: 12,    color: "#0ea5e9" },
+  { kind: "streak_freeze", value: 5,     label: "🛡️ +5 Streak Freeze",        emoji: "🛡️", rarity: "rare",      weight: 12,    color: "#10b981" },
+  { kind: "streak_coins",  value: 1500,  label: "🪙 +1.500 Coin PREMIUM",     emoji: "🪙", rarity: "rare",      weight: 14,    color: "#f59e0b" },
+  { kind: "gems",          value: 75,    label: "💎 +75 Gem PREMIUM",         emoji: "💎", rarity: "rare",      weight: 10,    color: "#8b5cf6" },
+  // === EPIC (banyak) ===
+  { kind: "extra_life",    value: 30,    label: "❤️ +30 Nyawa EPIC",          emoji: "❤️", rarity: "epic",      weight: 12,    color: "#a855f7" },
+  { kind: "auto_hint",     value: 30,    label: "💡 +30 Hint EPIC",           emoji: "💡", rarity: "epic",      weight: 12,    color: "#a855f7" },
+  { kind: "streak_freeze", value: 8,     label: "🛡️ +8 Streak Freeze EPIC",   emoji: "🛡️", rarity: "epic",      weight: 8,     color: "#ec4899" },
+  { kind: "gems",          value: 200,   label: "💎 +200 Gem EPIC",           emoji: "💎", rarity: "epic",      weight: 10,    color: "#8b5cf6" },
+  { kind: "streak_coins",  value: 5000,  label: "🪙 +5.000 Coin EPIC",        emoji: "🪙", rarity: "epic",      weight: 8,     color: "#fb923c" },
+  { kind: "game_credits",  value: 10,    label: "🔑 +10 Kredit EPIC",         emoji: "🔑", rarity: "epic",      weight: 6,     color: "#a855f7" },
+  { kind: "game_balance",  value: 5000,  label: "💵 +Rp 5.000 Saldo EPIC",    emoji: "💵", rarity: "epic",      weight: 5,     color: "#a855f7" },
+  // === LEGENDARY (lumayan sering) ===
+  { kind: "extra_life",    value: 100,   label: "❤️ +100 Nyawa LEGEND",       emoji: "❤️", rarity: "legendary", weight: 6,     color: "#fbbf24" },
+  { kind: "auto_hint",     value: 100,   label: "💡 +100 Hint LEGEND",        emoji: "💡", rarity: "legendary", weight: 6,     color: "#fbbf24" },
+  { kind: "gems",          value: 600,   label: "💎 +600 Gem LEGEND",         emoji: "💎", rarity: "legendary", weight: 5,     color: "#facc15" },
+  { kind: "streak_coins",  value: 25000, label: "🪙 +25.000 Coin LEGEND",     emoji: "🪙", rarity: "legendary", weight: 4,     color: "#fbbf24" },
+  { kind: "streak_freeze", value: 20,    label: "🛡️ +20 Freeze LEGEND",       emoji: "🛡️", rarity: "legendary", weight: 3,     color: "#f59e0b" },
+  { kind: "game_credits",  value: 50,    label: "🔑 +50 Kredit LEGEND",       emoji: "🔑", rarity: "legendary", weight: 3,     color: "#fbbf24" },
+  { kind: "game_balance",  value: 20000, label: "💸 +Rp 20.000 Saldo LEGEND", emoji: "💵", rarity: "legendary", weight: 2.5,   color: "#fbbf24" },
+  { kind: "gems",          value: 1500,  label: "💎 +1.500 Gem LEGEND",       emoji: "💎", rarity: "legendary", weight: 2,     color: "#facc15" },
+  // === MYTHIC (tetap susah tapi sering muncul vs normal) ===
+  { kind: "extra_life",    value: 300,   label: "🌟 +300 Nyawa MYTHIC",       emoji: "❤️", rarity: "mythic",    weight: 1.8,   color: "#f0abfc" },
+  { kind: "auto_hint",     value: 300,   label: "🌟 +300 Hint MYTHIC",        emoji: "💡", rarity: "mythic",    weight: 1.8,   color: "#f0abfc" },
+  { kind: "gems",          value: 3000,  label: "💎 +3.000 Gem MYTHIC",       emoji: "💎", rarity: "mythic",    weight: 1.2,   color: "#fde68a" },
+  { kind: "extra_life",    value: 800,   label: "👑 +800 Nyawa GOD",          emoji: "❤️", rarity: "mythic",    weight: 0.6,   color: "#fef08a" },
+  { kind: "auto_hint",     value: 800,   label: "👑 +800 Hint GOD",           emoji: "💡", rarity: "mythic",    weight: 0.6,   color: "#fef08a" },
+  { kind: "gems",          value: 10000, label: "💎 +10.000 Gem MYTHIC",      emoji: "💎", rarity: "mythic",    weight: 0.4,   color: "#fde68a" },
+  { kind: "streak_coins",  value: 200000,label: "👑 +200.000 Coin JACKPOT",   emoji: "🪙", rarity: "mythic",    weight: 0.3,   color: "#fef08a" },
+  { kind: "game_credits",  value: 250,   label: "🌟 +250 Kredit MYTHIC",      emoji: "🔑", rarity: "mythic",    weight: 0.3,   color: "#f0abfc" },
+  { kind: "game_balance",  value: 100000,label: "👑 +Rp 100.000 Saldo GOD",   emoji: "💵", rarity: "mythic",    weight: 0.15,  color: "#fef08a" },
+  { kind: "gems",          value: 50000, label: "👑 +50.000 GEM JACKPOT",     emoji: "💎", rarity: "mythic",    weight: 0.05,  color: "#fef08a" },
+];
+
+function pickPrize(luckyHourActive = false, premiumActive = false): Prize & { index: number } {
+  if (premiumActive) {
+    // Pool MANTAP — tetap reroll common (tidak ada common di pool premium, jadi efektif tidak terjadi)
+    const first = pickFromPool(PREMIUM_PRIZES);
+    if (luckyHourActive && first.rarity === "rare") {
+      // Lucky Hour bonus: reroll rare → kemungkinan epic+
+      return pickFromPool(PREMIUM_PRIZES);
+    }
+    return first;
+  }
   const first = pickFromPool(PRIZES);
   // Lucky Hour: jika hasil common, reroll sekali (≈ +50% peluang dapat rare+)
   if (luckyHourActive && first.rarity === "common") {
@@ -687,6 +757,8 @@ Deno.serve(async (req) => {
       const ultraShopAccessActive = isShopAccessActive(ultraShopAccess);
       const luckyHour = await isLuckyHourActive(admin, visitorId);
       const lhFirstUsed = await getFirstPurchaseUsed(admin, visitorId);
+      const nyawaPremiumState = await getNyawaPremium(admin, visitorId);
+      const nyawaPremiumActive = isNyawaPremiumActive(nyawaPremiumState);
 
       // Build free daily shop with status (claimed today?)
       const freeDailyWithStatus = FREE_DAILY_SHOP.map(item => ({
@@ -750,6 +822,13 @@ Deno.serve(async (req) => {
           isFirstDiscountAvailable: !lhFirstUsed && p.firstPrice != null,
         })),
         luckyHourFirstDiscountUsed: lhFirstUsed,
+        nyawaPremium: {
+          isActive: nyawaPremiumActive,
+          activeUntil: nyawaPremiumState.activeUntil,
+          purchasedAt: nyawaPremiumState.purchasedAt,
+          price: NYAWA_PREMIUM_PRICE,
+          durationHours: NYAWA_PREMIUM_HOURS,
+        },
       }, { headers: corsHeaders });
     }
 
@@ -880,12 +959,14 @@ Deno.serve(async (req) => {
 
       const luckyHourState = await isLuckyHourActive(admin, visitorId);
       const luckyHourActive = luckyHourState.active;
+      const nyawaPremiumState = await getNyawaPremium(admin, visitorId);
+      const nyawaPremiumActive = isNyawaPremiumActive(nyawaPremiumState);
 
       const results: Array<Prize & { index: number; bonusApplied?: number; jackpotWon?: number }> = [];
       let totalBonusGems = 0;
       let jackpotWonTotal = 0;
       for (let i = 0; i < spinCount; i++) {
-        const basePrize = pickPrize(luckyHourActive);
+        const basePrize = pickPrize(luckyHourActive, nyawaPremiumActive);
         const mult = getStreakMultiplier(curStreak);
         let finalValue = basePrize.value;
         let bonusApplied = 0;
@@ -1270,15 +1351,76 @@ Deno.serve(async (req) => {
       }, { headers: corsHeaders });
     }
 
-    if (action === "leaderboard") {
-      // Ambil seluruh history (batasi 5000 entri terbaru utk performa)
-      const { data: rows } = await admin
-        .from("luck_royale_nyawa_history")
-        .select("visitor_id, spin_type, rarity, reward_kind, reward_value, reward_label, created_at")
-        .order("created_at", { ascending: false })
-        .limit(5000);
+    // === BUY NYAWA PREMIUM — Rp 50.000 / 1 hari, hadiah pool MANTAP JIWA ===
+    if (action === "buy_nyawa_premium") {
+      const pin = (body as any).pin as string | undefined;
+      const { data: pinRow } = await admin.from("user_pins").select("pin_hash").eq("visitor_id", visitorId).maybeSingle();
+      if (!pinRow) return Response.json({ error: "PIN belum dibuat. Buat PIN dulu di menu Profil.", needPin: true }, { status: 200, headers: corsHeaders });
+      if (!pin) return Response.json({ error: "Masukkan PIN 6 digit", needPin: true }, { status: 200, headers: corsHeaders });
+      const hashBuffer = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(pin));
+      const hashHex = Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, "0")).join("");
+      if (hashHex !== pinRow.pin_hash) return Response.json({ error: "PIN salah", needPin: true }, { status: 200, headers: corsHeaders });
 
-      const all = rows || [];
+      const { data: ubId } = await admin.rpc("get_active_user_balance_id", { p_visitor_id: visitorId });
+      if (!ubId) return Response.json({ error: "Login akun saldo dulu untuk beli Nyawa Premium" }, { status: 400, headers: corsHeaders });
+      const { data: balanceRow } = await admin.from("user_balances").select("id, balance, username").eq("id", ubId).maybeSingle();
+      if (!balanceRow) return Response.json({ error: "Akun saldo tidak ditemukan" }, { status: 400, headers: corsHeaders });
+      if ((balanceRow.balance || 0) < NYAWA_PREMIUM_PRICE) {
+        return Response.json({ error: `Saldo tidak cukup. Butuh Rp ${NYAWA_PREMIUM_PRICE.toLocaleString("id-ID")} (saldo: Rp ${(balanceRow.balance || 0).toLocaleString("id-ID")})` }, { status: 400, headers: corsHeaders });
+      }
+
+      // Akumulasi: kalau masih aktif, perpanjang dari sisa
+      const existing = await getNyawaPremium(admin, visitorId);
+      const baseMs = existing.activeUntil && new Date(existing.activeUntil).getTime() > Date.now()
+        ? new Date(existing.activeUntil).getTime()
+        : Date.now();
+      const newUntilIso = new Date(baseMs + NYAWA_PREMIUM_HOURS * 3600 * 1000).toISOString();
+
+      await admin.from("user_balances").update({ balance: (balanceRow.balance || 0) - NYAWA_PREMIUM_PRICE }).eq("id", balanceRow.id);
+      await admin.from("balance_transactions").insert({
+        visitor_id: visitorId,
+        amount: -NYAWA_PREMIUM_PRICE,
+        type: "purchase",
+        description: `Nyawa Premium Luck Royale (${NYAWA_PREMIUM_HOURS} jam)`,
+      });
+      await setNyawaPremium(admin, visitorId, { activeUntil: newUntilIso, purchasedAt: new Date().toISOString() });
+      await admin.from("notifications").insert({
+        visitor_id: visitorId,
+        title: "👑 Nyawa Premium Aktif!",
+        message: `Pool hadiah MANTAP JIWA aktif sampai ${new Date(newUntilIso).toLocaleString("id-ID", { timeZone: "Asia/Jakarta" })} WIB. Spin sekarang!`,
+        type: "luck_royale_nyawa",
+      });
+
+      return Response.json({
+        success: true,
+        balance: (balanceRow.balance || 0) - NYAWA_PREMIUM_PRICE,
+        nyawaPremium: {
+          isActive: true,
+          activeUntil: newUntilIso,
+          purchasedAt: new Date().toISOString(),
+          price: NYAWA_PREMIUM_PRICE,
+          durationHours: NYAWA_PREMIUM_HOURS,
+        },
+      }, { headers: corsHeaders });
+    }
+
+    if (action === "leaderboard") {
+      // Ambil SELURUH history via paginasi agar total spin & jackpot AKURAT
+      const all: Array<{ visitor_id: string; rarity: string; reward_label: string | null; created_at: string }> = [];
+      const PAGE = 1000;
+      for (let from = 0; from < 200000; from += PAGE) {
+        const { data: page } = await admin
+          .from("luck_royale_nyawa_history")
+          .select("visitor_id, rarity, reward_label, created_at")
+          .order("created_at", { ascending: false })
+          .range(from, from + PAGE - 1);
+        if (!page || page.length === 0) break;
+        all.push(...(page as any));
+        if (page.length < PAGE) break;
+      }
+      const rows = all;
+
+      // (rows == all entries)
       const visitorIds = Array.from(new Set(all.map(r => r.visitor_id))).filter(Boolean);
 
       // Map visitor_id -> user_balance_id (akun aktif terakhir)

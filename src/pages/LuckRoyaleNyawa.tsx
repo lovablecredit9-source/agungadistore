@@ -102,6 +102,10 @@ export default function LuckRoyaleNyawa() {
   const [shopAccess, setShopAccess] = useState<{ isActive: boolean; activeUntil: string | null; purchasedAt: string | null; price: number; durationDays: number }>({ isActive: false, activeUntil: null, purchasedAt: null, price: 100000, durationDays: 30 });
   const [superShopAccess, setSuperShopAccess] = useState<{ isActive: boolean; activeUntil: string | null; purchasedAt: string | null; price: number; durationDays: number }>({ isActive: false, activeUntil: null, purchasedAt: null, price: 300000, durationDays: 30 });
   const [ultraShopAccess, setUltraShopAccess] = useState<{ isActive: boolean; activeUntil: string | null; purchasedAt: string | null; price: number; durationDays: number }>({ isActive: false, activeUntil: null, purchasedAt: null, price: 500000, durationDays: 30 });
+  const [nyawaPremium, setNyawaPremium] = useState<{ isActive: boolean; activeUntil: string | null; purchasedAt: string | null; price: number; durationHours: number }>({ isActive: false, activeUntil: null, purchasedAt: null, price: 50000, durationHours: 24 });
+  const [npPinOpen, setNpPinOpen] = useState(false);
+  const [npPin, setNpPin] = useState("");
+  const [npBuying, setNpBuying] = useState(false);
   const [redeeming, setRedeeming] = useState<string | null>(null);
   const [shopTier, setShopTier] = useState<"free" | "premium" | "super_premium" | "ultra">("free");
   const [luckyHour, setLuckyHour] = useState<{ active: boolean; hour: number; date: string; nextActiveAt: string; boostedUntil?: string | null; source?: "free" | "purchased" | null } | null>(null);
@@ -123,10 +127,10 @@ export default function LuckRoyaleNyawa() {
     setRevealCount(0);
     setRevealDone(false);
     const total = results.length;
-    // Total durasi target ~ 1.5s (singel) sampai ~6s (500 spin) — makin banyak makin cepat per item
-    const totalDurationMs = total <= 1 ? 250 : total <= 10 ? 1200 : total <= 50 ? 2500 : total <= 150 ? 4000 : 6000;
-    // Berapa item dibuka per tick — naikkan untuk pack besar agar tidak lag
-    const itemsPerTick = total <= 20 ? 1 : total <= 100 ? 2 : total <= 250 ? 5 : 10;
+    // CEPAT: total durasi maks 2.5s walau 500 spin. Untuk pack besar, batch besar per tick.
+    const totalDurationMs = total <= 1 ? 200 : total <= 10 ? 700 : total <= 50 ? 1200 : total <= 150 ? 1800 : total <= 300 ? 2200 : 2500;
+    // Items per tick agresif untuk pack besar (frame ~16ms target)
+    const itemsPerTick = total <= 10 ? 1 : total <= 50 ? 2 : total <= 100 ? 5 : total <= 200 ? 10 : total <= 350 ? 20 : 35;
     const ticks = Math.ceil(total / itemsPerTick);
     const tickMs = Math.max(16, Math.floor(totalDurationMs / ticks));
     let current = 0;
@@ -185,6 +189,7 @@ export default function LuckRoyaleNyawa() {
       setShopAccess(data.shopAccess || { isActive: false, activeUntil: null, purchasedAt: null, price: 100000, durationDays: 30 });
       setSuperShopAccess(data.superShopAccess || { isActive: false, activeUntil: null, purchasedAt: null, price: 300000, durationDays: 30 });
       setUltraShopAccess(data.ultraShopAccess || { isActive: false, activeUntil: null, purchasedAt: null, price: 500000, durationDays: 30 });
+      if (data.nyawaPremium) setNyawaPremium(data.nyawaPremium);
       if (data.luckyHour) setLuckyHour(data.luckyHour);
       if (Array.isArray(data.luckyHourPackages)) setLhPackages(data.luckyHourPackages);
       setLhFirstUsed(!!data.luckyHourFirstDiscountUsed);
@@ -339,6 +344,37 @@ export default function LuckRoyaleNyawa() {
     }
   };
 
+  const buyNyawaPremium = async () => {
+    if (!visitorId || npBuying) return;
+    if (!npPin || npPin.length !== 6) {
+      toast({ title: "PIN salah", description: "Masukkan 6 digit PIN", variant: "destructive" });
+      return;
+    }
+    setNpBuying(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("luck-royale-nyawa", {
+        body: { visitorId, action: "buy_nyawa_premium", pin: npPin },
+      });
+      if (error) throw error;
+      if (data.error) {
+        toast({ title: "Gagal", description: data.error, variant: "destructive" });
+        return;
+      }
+      if (data.nyawaPremium) setNyawaPremium(data.nyawaPremium);
+      setNpPinOpen(false);
+      setNpPin("");
+      toast({
+        title: "👑 Nyawa Premium Aktif!",
+        description: `Pool MANTAP JIWA aktif 24 jam - sisa saldo Rp ${(data.balance || 0).toLocaleString("id-ID")}`,
+      });
+      fetchData();
+    } catch (e: any) {
+      toast({ title: "Error", description: e.message || "Gagal", variant: "destructive" });
+    } finally {
+      setNpBuying(false);
+    }
+  };
+
   // 🏆 Hadiah Utama: tampilkan hadiah PALING JACKPOT dulu (mythic → legendary → epic),
   // bukan power-up common. Player harus lihat "wow factor" sebelum spin.
   const RARITY_RANK: Record<string, number> = { mythic: 5, legendary: 4, epic: 3, rare: 2, common: 1 };
@@ -446,6 +482,51 @@ export default function LuckRoyaleNyawa() {
             </TabsList>
 
             <TabsContent value="spin" className="space-y-4 mt-3">
+          {/* 👑 NYAWA PREMIUM PASS — Rp 50k / 24 jam */}
+          <div className={`relative overflow-hidden rounded-2xl border-2 p-3 shadow-xl ${nyawaPremium.isActive ? "bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 border-emerald-300/70 shadow-emerald-500/40" : "bg-gradient-to-r from-rose-600 via-fuchsia-600 to-amber-500 border-amber-300/70 shadow-fuchsia-500/40"}`}>
+            <div className="absolute inset-0 opacity-25 animate-pulse" style={{
+              backgroundImage: "linear-gradient(120deg, transparent 30%, rgba(255,255,255,0.6) 50%, transparent 70%)",
+            }} />
+            <div className="relative flex items-center gap-3">
+              <div className="w-14 h-14 rounded-2xl bg-black/40 ring-2 ring-white/70 flex items-center justify-center shrink-0 animate-pulse">
+                <Crown className="w-8 h-8 text-amber-200" fill="currentColor" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-1.5 mb-0.5 flex-wrap">
+                  <Badge className="bg-black text-amber-200 font-black text-[8px]">👑 PREMIUM</Badge>
+                  <span className="text-[9px] font-black tracking-widest text-white">NYAWA PREMIUM • 24 JAM</span>
+                </div>
+                {nyawaPremium.isActive ? (
+                  <>
+                    <div className="text-base font-black text-white drop-shadow">AKTIF — Pool MANTAP JIWA 🔥</div>
+                    <p className="text-[10px] font-bold text-emerald-100/95 mt-0.5">
+                      Berakhir: {nyawaPremium.activeUntil ? new Date(nyawaPremium.activeUntil).toLocaleString("id-ID", { timeZone: "Asia/Jakarta", hour: "2-digit", minute: "2-digit", day: "2-digit", month: "short" }) : "-"} WIB
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <div className="flex items-baseline gap-1">
+                      <span className="text-xl font-black text-white drop-shadow">Rp 50.000</span>
+                      <span className="text-[9px] font-black text-amber-100">/ 24 jam</span>
+                    </div>
+                    <p className="text-[10px] font-bold text-white/95 mt-0.5">
+                      Pool spin LEBIH MANTAP — banyak Epic+, peluang Mythic 5×! Bayar saldo + PIN.
+                    </p>
+                  </>
+                )}
+              </div>
+              {!nyawaPremium.isActive && (
+                <Button
+                  size="sm"
+                  onClick={() => setNpPinOpen(true)}
+                  className="shrink-0 bg-black text-amber-200 hover:bg-black/90 font-black text-[10px] h-9 px-3 rounded-xl shadow-lg"
+                >
+                  BELI
+                </Button>
+              )}
+            </div>
+          </div>
+
           {/* 💥 MEGA JACKPOT POOL - community pool banner */}
           <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-purple-700 via-fuchsia-600 to-pink-600 border-2 border-fuchsia-300/60 p-3 shadow-xl shadow-fuchsia-500/40">
             <div className="absolute inset-0 opacity-30 animate-pulse" style={{
@@ -1984,6 +2065,53 @@ export default function LuckRoyaleNyawa() {
               </div>
               <p className="text-center text-[9px] text-emerald-200/70 mt-2 font-semibold tracking-wider">
                 Saldo dipotong otomatis. Durasi akumulatif dengan boost yang masih aktif.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {npPinOpen && (
+        <div className="fixed inset-0 z-[90] bg-black/85 backdrop-blur-md flex items-center justify-center p-4 animate-fade-in">
+          <div className="relative w-full max-w-sm rounded-2xl overflow-hidden border-2 border-amber-400/60 shadow-2xl shadow-amber-500/40 animate-scale-in bg-gradient-to-br from-rose-950 via-slate-900 to-amber-950">
+            <div className="p-5 text-white">
+              <div className="text-center mb-3">
+                <div className="text-3xl mb-1">👑</div>
+                <h3 className="text-lg font-black tracking-tight text-amber-200">Beli Nyawa Premium</h3>
+                <p className="text-[11px] text-slate-300 mt-1">Pool hadiah <b className="text-white">MANTAP JIWA</b> selama 24 jam</p>
+                <p className="text-[18px] font-black text-amber-300 mt-1">Rp 50.000</p>
+                <p className="text-[10px] text-amber-100/80 mt-1">Banyak Epic+, peluang Mythic 5×, hadiah lebih besar.</p>
+              </div>
+              <label className="block text-[11px] font-bold text-slate-300 mb-1.5">Masukkan PIN 6 digit</label>
+              <input
+                type="password"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                maxLength={6}
+                value={npPin}
+                onChange={(e) => setNpPin(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                placeholder="••••••"
+                className="w-full text-center text-2xl tracking-[0.5em] font-black bg-black/40 border border-amber-500/40 rounded-xl px-3 py-3 text-white focus:outline-none focus:border-amber-300"
+                autoFocus
+              />
+              <div className="grid grid-cols-2 gap-2 mt-4">
+                <button
+                  disabled={npBuying}
+                  onClick={() => { setNpPinOpen(false); setNpPin(""); }}
+                  className="rounded-xl bg-slate-700/80 hover:bg-slate-600 active:scale-95 transition px-3 py-2.5 font-black text-xs tracking-wider text-white border border-white/10 disabled:opacity-50"
+                >
+                  BATAL
+                </button>
+                <button
+                  disabled={npBuying || npPin.length !== 6}
+                  onClick={buyNyawaPremium}
+                  className="rounded-xl bg-gradient-to-br from-amber-400 via-orange-500 to-rose-600 hover:brightness-110 active:scale-95 transition px-3 py-2.5 font-black text-xs tracking-wider text-white shadow-lg shadow-amber-500/50 ring-1 ring-amber-300/50 disabled:opacity-50"
+                >
+                  {npBuying ? "MEMPROSES..." : "BAYAR"}
+                </button>
+              </div>
+              <p className="text-center text-[9px] text-amber-200/70 mt-2 font-semibold tracking-wider">
+                Saldo dipotong otomatis. Durasi akumulatif jika masih aktif.
               </p>
             </div>
           </div>
