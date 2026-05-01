@@ -233,57 +233,60 @@ function pickFromPool(pool: Prize[]): Prize & { index: number } {
 // PREMIUM_PRIZES: mirror struktur NORMAL (PRIZES) supaya konsisten,
 // tapi value GEM sedikit lebih tinggi dari normal & ada bonus 1 lucky token tipis.
 // Item lain (nyawa/hint/coin/freeze/kredit/saldo) NILAI = normal — tidak digedein lagi.
+// PREMIUM_PRIZES: konsisten "lumayan" — value tiap item = NORMAL +sedikit (≈ +20-40%),
+// gem dinaikan tipis. Tidak ada jackpot ekstrim supaya hasil merata, tidak kadang besar
+// kadang nggak. Weight dibuat rata supaya tier rare/epic sering, legend/mythic tetap susah
+// tapi proporsinya konsisten.
 const PREMIUM_PRIZES: Prize[] = [
-  // === RARE ===
-  { kind: "streak_freeze", value: 2,     label: "+2 Streak Freeze",         emoji: "🛡️", rarity: "rare",      weight: 12,    color: "#10b981" },
-  { kind: "auto_hint",     value: 5,     label: "+5 Hint Otomatis",         emoji: "💡", rarity: "rare",      weight: 10,    color: "#06b6d4" },
-  { kind: "extra_life",    value: 5,     label: "+5 Nyawa Ekstra",          emoji: "❤️", rarity: "rare",      weight: 10,    color: "#f43f5e" },
-  { kind: "auto_hint",     value: 8,     label: "+8 Hint Otomatis",         emoji: "💡", rarity: "rare",      weight: 7,     color: "#06b6d4" },
-  { kind: "extra_life",    value: 8,     label: "+8 Nyawa Ekstra",          emoji: "❤️", rarity: "rare",      weight: 7,     color: "#f43f5e" },
-  { kind: "time_freeze",   value: 5,     label: "+5 Freeze 30s",            emoji: "⏱️", rarity: "rare",      weight: 7,     color: "#0ea5e9" },
-  { kind: "streak_coins",  value: 200,   label: "🪙 +200 Streak Coin",       emoji: "🪙", rarity: "rare",      weight: 10,    color: "#f59e0b" },
-  { kind: "streak_coins",  value: 500,   label: "🪙 +500 Streak Coin",       emoji: "🪙", rarity: "rare",      weight: 7,     color: "#f59e0b" },
-  // GEM rare: dikit lebih tinggi dari normal (normal tidak punya gem rare → kasih kecil)
-  { kind: "gems",          value: 50,    label: "💎 +50 Gem PREMIUM",        emoji: "💎", rarity: "rare",      weight: 6,     color: "#8b5cf6" },
+  // === RARE (sering keluar — base konsisten) ===
+  { kind: "streak_freeze", value: 3,     label: "+3 Streak Freeze",         emoji: "🛡️", rarity: "rare",      weight: 12,    color: "#10b981" },
+  { kind: "auto_hint",     value: 6,     label: "+6 Hint Otomatis",         emoji: "💡", rarity: "rare",      weight: 11,    color: "#06b6d4" },
+  { kind: "extra_life",    value: 6,     label: "+6 Nyawa Ekstra",          emoji: "❤️", rarity: "rare",      weight: 11,    color: "#f43f5e" },
+  { kind: "auto_hint",     value: 10,    label: "+10 Hint Otomatis",        emoji: "💡", rarity: "rare",      weight: 8,     color: "#06b6d4" },
+  { kind: "extra_life",    value: 10,    label: "+10 Nyawa Ekstra",         emoji: "❤️", rarity: "rare",      weight: 8,     color: "#f43f5e" },
+  { kind: "time_freeze",   value: 6,     label: "+6 Freeze 30s",            emoji: "⏱️", rarity: "rare",      weight: 8,     color: "#0ea5e9" },
+  { kind: "streak_coins",  value: 300,   label: "🪙 +300 Streak Coin",       emoji: "🪙", rarity: "rare",      weight: 10,    color: "#f59e0b" },
+  { kind: "streak_coins",  value: 600,   label: "🪙 +600 Streak Coin",       emoji: "🪙", rarity: "rare",      weight: 8,     color: "#f59e0b" },
+  // GEM rare: dikit lebih tinggi dari normal (normal tidak punya gem rare)
+  { kind: "gems",          value: 60,    label: "💎 +60 Gem PREMIUM",        emoji: "💎", rarity: "rare",      weight: 7,     color: "#8b5cf6" },
+  { kind: "gems",          value: 100,   label: "💎 +100 Gem PREMIUM",       emoji: "💎", rarity: "rare",      weight: 5,     color: "#8b5cf6" },
   { kind: "lucky_token" as any, value: 1, label: "🎟️ +1 Lucky Token",        emoji: "🎟️", rarity: "rare",      weight: 3,     color: "#22d3ee" },
 
   // === EPIC ===
-  { kind: "auto_hint",     value: 12,    label: "💡 +12 Hint",              emoji: "💡", rarity: "epic",      weight: 5,     color: "#a855f7" },
-  { kind: "extra_life",    value: 12,    label: "❤️ +12 Nyawa",             emoji: "❤️", rarity: "epic",      weight: 5,     color: "#a855f7" },
-  { kind: "time_freeze",   value: 8,     label: "+8 Freeze 30s",            emoji: "⏱️", rarity: "epic",      weight: 4.5,   color: "#a855f7" },
-  { kind: "streak_freeze", value: 4,     label: "+4 Streak Freeze",         emoji: "🛡️", rarity: "epic",      weight: 4.5,   color: "#ec4899" },
+  { kind: "auto_hint",     value: 15,    label: "💡 +15 Hint",              emoji: "💡", rarity: "epic",      weight: 5,     color: "#a855f7" },
+  { kind: "extra_life",    value: 15,    label: "❤️ +15 Nyawa",             emoji: "❤️", rarity: "epic",      weight: 5,     color: "#a855f7" },
+  { kind: "time_freeze",   value: 10,    label: "+10 Freeze 30s",           emoji: "⏱️", rarity: "epic",      weight: 4.5,   color: "#a855f7" },
+  { kind: "streak_freeze", value: 5,     label: "+5 Streak Freeze",         emoji: "🛡️", rarity: "epic",      weight: 4.5,   color: "#ec4899" },
   // GEM epic: sedikit di atas normal (normal: 100)
-  { kind: "gems",          value: 150,   label: "💎 +150 Gem PREMIUM",       emoji: "💎", rarity: "epic",      weight: 4,     color: "#8b5cf6" },
-  { kind: "auto_hint",     value: 20,    label: "💡 +20 Hint",              emoji: "💡", rarity: "epic",      weight: 2.8,   color: "#a855f7" },
-  { kind: "extra_life",    value: 20,    label: "❤️ +20 Nyawa",             emoji: "❤️", rarity: "epic",      weight: 2.8,   color: "#a855f7" },
-  { kind: "streak_coins",  value: 1500,  label: "🪙 +1.500 Streak Coin",     emoji: "🪙", rarity: "epic",      weight: 4,     color: "#fb923c" },
-  { kind: "streak_coins",  value: 3000,  label: "🪙 +3.000 Streak Coin",     emoji: "🪙", rarity: "epic",      weight: 2.5,   color: "#fb923c" },
+  { kind: "gems",          value: 180,   label: "💎 +180 Gem PREMIUM",       emoji: "💎", rarity: "epic",      weight: 4.5,   color: "#8b5cf6" },
+  { kind: "gems",          value: 250,   label: "💎 +250 Gem PREMIUM",       emoji: "💎", rarity: "epic",      weight: 3,     color: "#8b5cf6" },
+  { kind: "auto_hint",     value: 25,    label: "💡 +25 Hint",              emoji: "💡", rarity: "epic",      weight: 3,     color: "#a855f7" },
+  { kind: "extra_life",    value: 25,    label: "❤️ +25 Nyawa",             emoji: "❤️", rarity: "epic",      weight: 3,     color: "#a855f7" },
+  { kind: "streak_coins",  value: 2000,  label: "🪙 +2.000 Streak Coin",     emoji: "🪙", rarity: "epic",      weight: 4,     color: "#fb923c" },
+  { kind: "streak_coins",  value: 3500,  label: "🪙 +3.500 Streak Coin",     emoji: "🪙", rarity: "epic",      weight: 2.5,   color: "#fb923c" },
 
   // === LEGENDARY ===
-  { kind: "extra_life",    value: 35,    label: "❤️ +35 Nyawa",             emoji: "❤️", rarity: "legendary", weight: 2,     color: "#fbbf24" },
-  { kind: "auto_hint",     value: 35,    label: "💡 +35 Hint",              emoji: "💡", rarity: "legendary", weight: 2,     color: "#fbbf24" },
-  { kind: "streak_freeze", value: 10,    label: "🛡️ +10 Streak Freeze",     emoji: "🛡️", rarity: "legendary", weight: 1.8,   color: "#f59e0b" },
+  { kind: "extra_life",    value: 40,    label: "❤️ +40 Nyawa",             emoji: "❤️", rarity: "legendary", weight: 2,     color: "#fbbf24" },
+  { kind: "auto_hint",     value: 40,    label: "💡 +40 Hint",              emoji: "💡", rarity: "legendary", weight: 2,     color: "#fbbf24" },
+  { kind: "streak_freeze", value: 12,    label: "🛡️ +12 Streak Freeze",     emoji: "🛡️", rarity: "legendary", weight: 1.8,   color: "#f59e0b" },
   // GEM legend: sedikit di atas normal (normal: 300/500)
-  { kind: "gems",          value: 400,   label: "💎 +400 Gem PREMIUM",       emoji: "💎", rarity: "legendary", weight: 1.6,   color: "#facc15" },
-  { kind: "extra_life",    value: 50,    label: "❤️ +50 Nyawa",             emoji: "❤️", rarity: "legendary", weight: 1.2,   color: "#fbbf24" },
-  { kind: "auto_hint",     value: 50,    label: "💡 +50 Hint",              emoji: "💡", rarity: "legendary", weight: 1.2,   color: "#fbbf24" },
-  { kind: "gems",          value: 700,   label: "💎 +700 Gem PREMIUM",       emoji: "💎", rarity: "legendary", weight: 0.9,   color: "#facc15" },
-  { kind: "streak_coins",  value: 8000,  label: "🪙 +8.000 Streak Coin",     emoji: "🪙", rarity: "legendary", weight: 1.5,   color: "#fbbf24" },
-  { kind: "streak_coins",  value: 20000, label: "🪙 +20.000 Streak Coin",    emoji: "🪙", rarity: "legendary", weight: 0.8,   color: "#fbbf24" },
+  { kind: "gems",          value: 450,   label: "💎 +450 Gem PREMIUM",       emoji: "💎", rarity: "legendary", weight: 1.6,   color: "#facc15" },
+  { kind: "extra_life",    value: 60,    label: "❤️ +60 Nyawa",             emoji: "❤️", rarity: "legendary", weight: 1.2,   color: "#fbbf24" },
+  { kind: "auto_hint",     value: 60,    label: "💡 +60 Hint",              emoji: "💡", rarity: "legendary", weight: 1.2,   color: "#fbbf24" },
+  { kind: "gems",          value: 750,   label: "💎 +750 Gem PREMIUM",       emoji: "💎", rarity: "legendary", weight: 1,     color: "#facc15" },
+  { kind: "streak_coins",  value: 10000, label: "🪙 +10.000 Streak Coin",    emoji: "🪙", rarity: "legendary", weight: 1.5,   color: "#fbbf24" },
+  { kind: "streak_coins",  value: 22000, label: "🪙 +22.000 Streak Coin",    emoji: "🪙", rarity: "legendary", weight: 0.8,   color: "#fbbf24" },
   { kind: "lucky_token" as any, value: 2, label: "🎟️ +2 Lucky Token",        emoji: "🎟️", rarity: "legendary", weight: 0.8,   color: "#fbbf24" },
 
-  // === MYTHIC ===
-  { kind: "extra_life",    value: 80,    label: "🌈 +80 Nyawa",             emoji: "❤️", rarity: "mythic",    weight: 0.7,   color: "#f0abfc" },
-  { kind: "auto_hint",     value: 80,    label: "🌈 +80 Hint",              emoji: "💡", rarity: "mythic",    weight: 0.7,   color: "#f0abfc" },
-  { kind: "extra_life",    value: 150,   label: "🌟 +150 Nyawa",            emoji: "❤️", rarity: "mythic",    weight: 0.4,   color: "#f0abfc" },
-  { kind: "auto_hint",     value: 150,   label: "🌟 +150 Hint",             emoji: "💡", rarity: "mythic",    weight: 0.4,   color: "#f0abfc" },
-  // GEM mythic: sedikit di atas normal (normal: 800/2.500)
-  { kind: "gems",          value: 1000,  label: "💎 +1.000 Gem PREMIUM",     emoji: "💎", rarity: "mythic",    weight: 0.4,   color: "#fde68a" },
-  { kind: "gems",          value: 3000,  label: "💎 +3.000 Gem PREMIUM",     emoji: "💎", rarity: "mythic",    weight: 0.15,  color: "#fde68a" },
-  { kind: "extra_life",    value: 300,   label: "👑 +300 Nyawa GOD",         emoji: "❤️", rarity: "mythic",    weight: 0.12,  color: "#fef08a" },
-  { kind: "auto_hint",     value: 300,   label: "👑 +300 Hint GOD",          emoji: "💡", rarity: "mythic",    weight: 0.12,  color: "#fef08a" },
-  { kind: "streak_coins",  value: 50000, label: "🪙 +50.000 Streak Coin",    emoji: "🪙", rarity: "mythic",    weight: 0.3,   color: "#fde68a" },
-  { kind: "streak_coins",  value: 150000,label: "👑 +150.000 Streak JACKPOT",emoji: "🪙", rarity: "mythic",    weight: 0.05,  color: "#fef08a" },
+  // === MYTHIC (susah tapi konsisten — tanpa jackpot ekstrim) ===
+  { kind: "extra_life",    value: 100,   label: "🌈 +100 Nyawa",            emoji: "❤️", rarity: "mythic",    weight: 0.7,   color: "#f0abfc" },
+  { kind: "auto_hint",     value: 100,   label: "🌈 +100 Hint",             emoji: "💡", rarity: "mythic",    weight: 0.7,   color: "#f0abfc" },
+  { kind: "extra_life",    value: 180,   label: "🌟 +180 Nyawa",            emoji: "❤️", rarity: "mythic",    weight: 0.4,   color: "#f0abfc" },
+  { kind: "auto_hint",     value: 180,   label: "🌟 +180 Hint",             emoji: "💡", rarity: "mythic",    weight: 0.4,   color: "#f0abfc" },
+  // GEM mythic: di atas normal (normal: 800/2.500) tapi tidak ekstrim
+  { kind: "gems",          value: 1200,  label: "💎 +1.200 Gem PREMIUM",     emoji: "💎", rarity: "mythic",    weight: 0.4,   color: "#fde68a" },
+  { kind: "gems",          value: 2000,  label: "💎 +2.000 Gem PREMIUM",     emoji: "💎", rarity: "mythic",    weight: 0.2,   color: "#fde68a" },
+  { kind: "streak_coins",  value: 60000, label: "🪙 +60.000 Streak Coin",    emoji: "🪙", rarity: "mythic",    weight: 0.3,   color: "#fde68a" },
 ];
 
 function pickPrize(luckyHourActive = false, premiumActive = false): Prize & { index: number } {
