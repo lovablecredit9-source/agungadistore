@@ -1095,24 +1095,16 @@ Deno.serve(async (req) => {
       }
 
       // 4) Tambahkan Lucky Token — DISAMAKAN dengan Normal Spin:
-      //    Tiap 5 paid spin = +1 token. Bundle override (20→5, 100→25, 125→32, 200→55).
+      //    Tiap 5 paid spin = +1 token (5→1, 10→2, 20→4, 100→20, dst).
       //    Free spin tidak menghasilkan token otomatis. Token dari pool (jika ada) ditambahkan terpisah.
-      const PREMIUM_BUNDLE_TOKEN_OVERRIDE: Record<number, number> = {
-        20: 5, 100: 25, 125: 32, 200: 55,
-      };
       const ts = await getLuckyTokens(admin, visitorId);
       let newProgress = ts.spinProgress;
       let autoTokens = 0;
       if (!useFree) {
-        const overrideTokens = PREMIUM_BUNDLE_TOKEN_OVERRIDE[reqCount];
-        if (overrideTokens != null) {
-          autoTokens = overrideTokens;
-        } else {
-          newProgress += reqCount;
-          while (newProgress >= TOKENS_PER_SPIN_THRESHOLD) {
-            autoTokens++;
-            newProgress -= TOKENS_PER_SPIN_THRESHOLD;
-          }
+        newProgress += reqCount;
+        while (newProgress >= TOKENS_PER_SPIN_THRESHOLD) {
+          autoTokens++;
+          newProgress -= TOKENS_PER_SPIN_THRESHOLD;
         }
       }
       const totalTokenAdd = autoTokens + tokenGain;
