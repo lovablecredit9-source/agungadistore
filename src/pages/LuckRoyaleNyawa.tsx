@@ -406,20 +406,29 @@ export default function LuckRoyaleNyawa() {
   const totalPrizeWeight = prizes.reduce((sum, p) => sum + (Number(p.weight) || 0), 0);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[#0b0820] via-[#1a0e3d] to-[#0b0820] text-white">
+    <div className="min-h-screen battle-bg text-white relative overflow-x-hidden">
+      {/* Subtle hex + scanline overlay */}
+      <div className="pointer-events-none fixed inset-0 battle-hex-grid opacity-40" />
+      <div className="pointer-events-none fixed inset-0 battle-scanline opacity-50" />
+      <div className="pointer-events-none fixed inset-0 battle-sparks opacity-30" />
+
       {/* Header */}
-      <div className="sticky top-0 z-30 backdrop-blur-md bg-black/40 border-b border-amber-500/30">
-        <div className="flex items-center justify-between px-3 py-2.5">
-          <Button variant="ghost" size="sm" className="text-white hover:bg-white/10" onClick={() => nav(-1)}>
+      <div className="sticky top-0 z-30 backdrop-blur-xl bg-black/70 border-b-2 border-orange-500/50 relative">
+        <div className="absolute inset-x-0 -bottom-[2px] h-[2px] battle-border-flow opacity-90" />
+        <div className="flex items-center justify-between px-3 py-2.5 relative">
+          <Button variant="ghost" size="sm" className="text-white hover:bg-orange-500/20 border border-orange-500/30" onClick={() => nav(-1)}>
             <ArrowLeft className="w-5 h-5" />
           </Button>
           <div className="flex items-center gap-2">
-            <Crown className="w-5 h-5 text-amber-400" />
-            <h1 className="font-black text-sm tracking-widest text-amber-300">LUCK ROYALE</h1>
+            <div className="relative">
+              <Crown className="w-5 h-5 text-orange-400 drop-shadow-[0_0_8px_rgba(249,115,22,0.8)]" fill="currentColor" />
+              <span className="absolute inset-0 rounded-full battle-shockwave" />
+            </div>
+            <h1 className="font-black text-sm tracking-[0.25em] battle-title-gradient">LUCK ROYALE</h1>
           </div>
-          <div className="flex items-center gap-1 bg-gradient-to-r from-cyan-500/20 to-purple-500/20 border border-cyan-400/30 rounded-full px-2.5 py-1">
-            <Gem className="w-3.5 h-3.5 text-cyan-300" />
-            <span className="font-bold text-xs tabular-nums">{formatCompactNumber(gems)}</span>
+          <div className="relative flex items-center gap-1 bg-gradient-to-r from-orange-600/30 to-red-600/30 border border-orange-400/50 rounded-md px-2.5 py-1 battle-tier-chip">
+            <Gem className="w-3.5 h-3.5 text-amber-200 drop-shadow-[0_0_4px_rgba(245,158,11,0.8)]" />
+            <span className="font-black text-xs tabular-nums text-amber-100">{formatCompactNumber(gems)}</span>
           </div>
         </div>
       </div>
@@ -429,7 +438,7 @@ export default function LuckRoyaleNyawa() {
           <Loader2 className="w-8 h-8 animate-spin text-amber-400" />
         </div>
       ) : (
-        <div className="px-3 py-4 space-y-4 max-w-md mx-auto">
+        <div className="px-3 py-4 space-y-4 max-w-md mx-auto relative z-10">
           {/* Quick Stats Bar */}
           {(() => {
             const totalSpins = history.length;
@@ -438,32 +447,32 @@ export default function LuckRoyaleNyawa() {
             const epicCount = history.filter(h => h.rarity === "epic").length;
             return (
               <div className="grid grid-cols-4 gap-1.5">
-                <div className="rounded-lg bg-gradient-to-br from-slate-800/80 to-slate-900/80 border border-cyan-500/30 p-2 text-center">
-                  <Dices className="w-3.5 h-3.5 text-cyan-300 mx-auto mb-0.5" />
-                  <div className="text-[9px] text-cyan-200/70 font-bold">SPIN</div>
+                <div className="battle-stat-tile rounded-lg p-2 text-center">
+                  <Dices className="w-3.5 h-3.5 text-orange-300 mx-auto mb-0.5 drop-shadow-[0_0_4px_rgba(249,115,22,0.8)]" />
+                  <div className="text-[9px] text-orange-200/80 font-black tracking-wider">SPIN</div>
                   <div className="text-sm font-black text-white tabular-nums">{totalSpins}</div>
                 </div>
-                <div className="rounded-lg bg-gradient-to-br from-fuchsia-900/60 to-purple-900/60 border border-fuchsia-500/40 p-2 text-center">
-                  <Star className="w-3.5 h-3.5 text-fuchsia-300 mx-auto mb-0.5" fill="currentColor" />
-                  <div className="text-[9px] text-fuchsia-200/70 font-bold">MYTHIC</div>
-                  <div className="text-sm font-black text-fuchsia-200 tabular-nums">{mythicCount}</div>
+                <div className="battle-stat-tile rounded-lg p-2 text-center" style={{ borderColor: "rgba(244,63,94,0.45)" }}>
+                  <Star className="w-3.5 h-3.5 text-rose-300 mx-auto mb-0.5 drop-shadow-[0_0_4px_rgba(244,63,94,0.8)]" fill="currentColor" />
+                  <div className="text-[9px] text-rose-200/80 font-black tracking-wider">MYTHIC</div>
+                  <div className="text-sm font-black text-rose-100 tabular-nums">{mythicCount}</div>
                 </div>
-                <div className="rounded-lg bg-gradient-to-br from-amber-900/60 to-orange-900/60 border border-amber-500/40 p-2 text-center">
-                  <Crown className="w-3.5 h-3.5 text-amber-300 mx-auto mb-0.5" fill="currentColor" />
-                  <div className="text-[9px] text-amber-200/70 font-bold">LEGEND</div>
-                  <div className="text-sm font-black text-amber-200 tabular-nums">{legendaryCount}</div>
+                <div className="battle-stat-tile rounded-lg p-2 text-center" style={{ borderColor: "rgba(245,158,11,0.5)" }}>
+                  <Crown className="w-3.5 h-3.5 text-amber-300 mx-auto mb-0.5 drop-shadow-[0_0_4px_rgba(245,158,11,0.8)]" fill="currentColor" />
+                  <div className="text-[9px] text-amber-200/80 font-black tracking-wider">LEGEND</div>
+                  <div className="text-sm font-black text-amber-100 tabular-nums">{legendaryCount}</div>
                 </div>
-                <div className="rounded-lg bg-gradient-to-br from-purple-900/60 to-indigo-900/60 border border-purple-500/40 p-2 text-center">
-                  <Sparkles className="w-3.5 h-3.5 text-purple-300 mx-auto mb-0.5" />
-                  <div className="text-[9px] text-purple-200/70 font-bold">EPIC</div>
-                  <div className="text-sm font-black text-purple-200 tabular-nums">{epicCount}</div>
+                <div className="battle-stat-tile rounded-lg p-2 text-center" style={{ borderColor: "rgba(239,68,68,0.45)" }}>
+                  <Sparkles className="w-3.5 h-3.5 text-red-300 mx-auto mb-0.5 drop-shadow-[0_0_4px_rgba(239,68,68,0.8)]" />
+                  <div className="text-[9px] text-red-200/80 font-black tracking-wider">EPIC</div>
+                  <div className="text-sm font-black text-red-100 tabular-nums">{epicCount}</div>
                 </div>
               </div>
             );
           })()}
 
           <Tabs defaultValue="spin" className="w-full" onValueChange={(v) => { if (v === "papan" && !lbLoaded) fetchLeaderboard(); }}>
-            <TabsList className="grid w-full grid-cols-8 bg-black/40 border border-amber-500/30 h-auto p-1 gap-1">
+            <TabsList className="grid w-full grid-cols-8 bg-black/70 border-2 border-orange-500/40 h-auto p-1 gap-1 shadow-[0_0_20px_rgba(249,115,22,0.25)]">
               <TabsTrigger value="spin" className="flex-col gap-0.5 py-1.5 data-[state=active]:bg-gradient-to-br data-[state=active]:from-amber-500 data-[state=active]:to-orange-600 data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-amber-500/40 font-black tracking-wider text-[8px] rounded-md">
                 <Dices className="w-3.5 h-3.5" />
                 SPIN
@@ -840,32 +849,46 @@ export default function LuckRoyaleNyawa() {
             </div>
           </div>
 
-          {/* ✨ Hero Banner — premium animated */}
-          <div className="relative overflow-hidden rounded-2xl border-2 border-amber-400/50 p-4 shadow-2xl shadow-amber-500/30">
-            {/* Animated aurora background */}
-            <div className="absolute inset-0 bg-gradient-to-br from-fuchsia-700 via-amber-600 to-rose-700" />
-            <div className="absolute inset-0 opacity-60 animate-pulse" style={{
-              backgroundImage: "radial-gradient(circle at 20% 30%, rgba(251,191,36,0.6), transparent 50%), radial-gradient(circle at 80% 70%, rgba(236,72,153,0.5), transparent 55%)",
-            }} />
-            {/* Sparkle dots */}
-            <div className="absolute inset-0 opacity-50 pointer-events-none" style={{
-              backgroundImage: "radial-gradient(circle, white 1px, transparent 1.5px)",
-              backgroundSize: "22px 22px",
-              maskImage: "radial-gradient(ellipse at center, black, transparent 80%)",
-            }} />
-            {/* Diagonal shine */}
-            <div className="absolute -inset-x-10 -top-10 h-24 rotate-12 bg-gradient-to-r from-transparent via-white/30 to-transparent blur-2xl animate-pulse" />
-            <div className="relative">
-              <div className="flex items-center gap-2 mb-1.5">
-                <Badge className="bg-gradient-to-r from-rose-600 via-fuchsia-600 to-purple-700 text-white font-black text-[10px] shadow-lg shadow-fuchsia-500/50 ring-1 ring-white/30">🔥 MYTHIC+</Badge>
-                <span className="text-[10px] font-black tracking-[0.25em] text-amber-100 drop-shadow">LUCK ROYALE</span>
+          {/* 🔥 Hero Banner — Esports Battle */}
+          <div className="relative overflow-hidden rounded-2xl p-[2px] battle-ember-pulse">
+            <div className="absolute inset-0 battle-border-flow opacity-90 rounded-2xl" />
+            <div className="relative rounded-[14px] overflow-hidden p-4" style={{
+              background: "linear-gradient(135deg, #1a0505 0%, #3a0a0a 40%, #5a1505 70%, #2a0808 100%)",
+            }}>
+              {/* Hex grid + scanline overlays */}
+              <div className="absolute inset-0 battle-hex-grid opacity-40" />
+              <div className="absolute inset-0 battle-scanline opacity-60" />
+              {/* Ember radial glow */}
+              <div className="absolute inset-0" style={{
+                backgroundImage: "radial-gradient(circle at 15% 20%, rgba(249,115,22,0.55), transparent 50%), radial-gradient(circle at 85% 80%, rgba(239,68,68,0.45), transparent 55%)",
+              }} />
+              {/* Diagonal slash sweep */}
+              <div className="absolute inset-y-0 -inset-x-10 overflow-hidden pointer-events-none">
+                <div className="absolute inset-y-0 w-1/3 battle-slash" />
               </div>
-              <h2 className="text-[26px] leading-none font-black tracking-tight bg-gradient-to-br from-yellow-100 via-amber-300 to-orange-500 bg-clip-text text-transparent drop-shadow-[0_2px_8px_rgba(251,191,36,0.6)]">
-                JACKPOT<br />SHADOW VAULT
-              </h2>
-              <p className="text-[11px] text-amber-50/90 mt-1.5 font-semibold">
-                💎 Gem • ❤️ Nyawa • 💡 Hint • 🛡️ Freeze — semua bisa kena!
-              </p>
+              {/* Sharp corner accents */}
+              <div className="absolute top-0 left-0 w-6 h-6 border-t-2 border-l-2 border-orange-400" />
+              <div className="absolute top-0 right-0 w-6 h-6 border-t-2 border-r-2 border-red-500" />
+              <div className="absolute bottom-0 left-0 w-6 h-6 border-b-2 border-l-2 border-red-500" />
+              <div className="absolute bottom-0 right-0 w-6 h-6 border-b-2 border-r-2 border-orange-400" />
+
+              <div className="relative">
+                <div className="flex items-center gap-2 mb-1.5">
+                  <Badge className="bg-gradient-to-r from-red-600 via-orange-500 to-amber-500 text-white font-black text-[10px] shadow-lg shadow-red-600/60 ring-1 ring-orange-300/40 rounded-sm px-2">
+                    🔥 BATTLE MODE
+                  </Badge>
+                  <span className="text-[10px] font-black tracking-[0.3em] text-orange-200 drop-shadow">LUCK ROYALE</span>
+                </div>
+                <h2 className="text-[28px] leading-[0.95] font-black tracking-tight battle-title-gradient uppercase">
+                  Jackpot<br />Shadow Vault
+                </h2>
+                <div className="mt-2 flex items-center gap-1.5">
+                  <div className="h-[2px] w-8 bg-gradient-to-r from-orange-500 to-transparent" />
+                  <p className="text-[11px] text-amber-100/95 font-black tracking-wider">
+                    💎 GEM · ❤️ NYAWA · 💡 HINT · 🛡️ FREEZE
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -1191,58 +1214,69 @@ export default function LuckRoyaleNyawa() {
 
           {/* 🎟️ TOKEN SHOP - 4 tier (Free / Premium / Super / Ultra) */}
           {tokenShop.length > 0 && (
-            <div className="rounded-2xl bg-gradient-to-br from-amber-900/40 via-orange-900/30 to-pink-900/40 border-2 border-amber-500/50 p-3">
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-1.5">
-                  <Award className="w-4 h-4 text-amber-300" fill="currentColor" />
-                  <h3 className="text-xs font-black tracking-widest text-amber-200">| TOKEN SHOP - HADIAH PASTI</h3>
-                </div>
-                <Badge className="bg-amber-500 text-black font-black text-[8px]">🎟️ {luckyTokens}</Badge>
-              </div>
-              <p className="text-[10px] text-amber-100/80 mb-2">
-                <span className="font-black text-emerald-300">FREE</span> bebas tukar. <span className="font-black text-fuchsia-300">PREMIUM</span>, <span className="font-black text-amber-300">SUPER</span> & <span className="font-black text-cyan-300">ULTRA</span> butuh akses bulanan.
-              </p>
+            <div className="relative rounded-2xl p-[2px] battle-ember-pulse">
+              <div className="absolute inset-0 battle-border-flow opacity-80 rounded-2xl" />
+              <div className="relative rounded-[14px] battle-card p-3 overflow-hidden">
+                <div className="absolute inset-0 battle-hex-grid opacity-25 pointer-events-none" />
+                <div className="absolute inset-0 battle-scanline opacity-40 pointer-events-none" />
+                <div className="absolute top-0 left-0 w-5 h-5 border-t-2 border-l-2 border-orange-400" />
+                <div className="absolute top-0 right-0 w-5 h-5 border-t-2 border-r-2 border-red-500" />
+                <div className="absolute bottom-0 left-0 w-5 h-5 border-b-2 border-l-2 border-red-500" />
+                <div className="absolute bottom-0 right-0 w-5 h-5 border-b-2 border-r-2 border-orange-400" />
 
-              {/* 4-tier toggle */}
-              <div className="grid grid-cols-4 gap-1 mb-2.5 bg-black/40 rounded-lg p-1">
-                <button
-                  onClick={() => setShopTier("free")}
-                  className={`py-1.5 rounded-md text-[9px] font-black tracking-wider transition ${shopTier === "free" ? "bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-lg shadow-emerald-500/40" : "text-emerald-200/60"}`}
-                >
-                  🎁 FREE
-                </button>
-                <button
-                  onClick={() => setShopTier("premium")}
-                  className={`py-1.5 rounded-md text-[9px] font-black tracking-wider transition ${shopTier === "premium" ? "bg-gradient-to-r from-fuchsia-500 via-purple-600 to-amber-500 text-white shadow-lg shadow-fuchsia-500/40" : "text-fuchsia-200/60"}`}
-                >
-                  👑 PREMIUM
-                </button>
-                <button
-                  onClick={() => setShopTier("super_premium")}
-                  className={`py-1.5 rounded-md text-[9px] font-black tracking-wider transition ${shopTier === "super_premium" ? "bg-gradient-to-r from-amber-400 via-orange-500 to-rose-600 text-white shadow-lg shadow-amber-500/50" : "text-amber-200/60"}`}
-                >
-                  💎 SUPER
-                </button>
-                <button
-                  onClick={() => setShopTier("ultra")}
-                  className={`py-1.5 rounded-md text-[9px] font-black tracking-wider transition ${shopTier === "ultra" ? "bg-gradient-to-r from-cyan-400 via-emerald-500 to-amber-500 text-white shadow-lg shadow-cyan-500/50" : "text-cyan-200/60"}`}
-                >
-                  💠 ULTRA
-                </button>
-              </div>
-
-              {/* 👑 Premium Shop Unlock 7-day banner */}
-              {effectivePremiumShopUnlock.isActive && effectivePremiumShopUnlock.activeUntil && (
-                <div className="mb-2 rounded-lg bg-gradient-to-r from-amber-600/30 via-fuchsia-600/30 to-purple-600/30 border-2 border-amber-400/60 p-2 flex items-center gap-2">
-                  <span className="text-base">🔓</span>
-                  <div className="flex-1 min-w-0">
-                    <div className="text-[10px] font-black text-amber-100 tracking-wide">PREMIUM UNLOCK AKTIF — SEMUA TIER TERBUKA</div>
-                    <div className="text-[9px] text-amber-200/85 truncate">
-                      Sampai {new Date(effectivePremiumShopUnlock.activeUntil).toLocaleString("id-ID", { timeZone: "Asia/Jakarta", hour: "2-digit", minute: "2-digit", day: "2-digit", month: "short", year: "2-digit" })} WIB · {effectivePremiumShopUnlock.durationDays} hari dari Nyawa Premium
+                <div className="relative">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-1.5">
+                      <Award className="w-4 h-4 text-orange-300 drop-shadow-[0_0_6px_rgba(249,115,22,0.8)]" fill="currentColor" />
+                      <h3 className="text-xs font-black tracking-[0.2em] battle-title-gradient">TOKEN ARSENAL</h3>
                     </div>
+                    <Badge className="bg-gradient-to-r from-orange-500 to-red-600 text-white font-black text-[9px] rounded-sm shadow-lg shadow-orange-500/50">🎟️ {luckyTokens}</Badge>
                   </div>
-                </div>
-              )}
+                  <p className="text-[10px] text-orange-100/80 mb-2 font-semibold">
+                    <span className="font-black text-emerald-300">FREE</span> bebas tukar · <span className="font-black text-amber-300">PREMIUM</span>, <span className="font-black text-orange-300">SUPER</span> & <span className="font-black text-red-300">ULTRA</span> butuh akses bulanan.
+                  </p>
+
+                  {/* 4-tier toggle — battle clipped */}
+                  <div className="grid grid-cols-4 gap-1 mb-2.5 bg-black/60 rounded-md p-1 border border-orange-500/30">
+                    <button
+                      onClick={() => setShopTier("free")}
+                      className={`py-1.5 battle-tier-chip text-[9px] font-black tracking-wider transition ${shopTier === "free" ? "bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-lg shadow-emerald-500/50" : "bg-black/40 text-emerald-200/60 hover:text-emerald-100"}`}
+                    >
+                      🎁 FREE
+                    </button>
+                    <button
+                      onClick={() => setShopTier("premium")}
+                      className={`py-1.5 battle-tier-chip text-[9px] font-black tracking-wider transition ${shopTier === "premium" ? "bg-gradient-to-r from-amber-500 via-orange-500 to-red-500 text-white shadow-lg shadow-orange-500/60" : "bg-black/40 text-amber-200/60 hover:text-amber-100"}`}
+                    >
+                      👑 PREMIUM
+                    </button>
+                    <button
+                      onClick={() => setShopTier("super_premium")}
+                      className={`py-1.5 battle-tier-chip text-[9px] font-black tracking-wider transition ${shopTier === "super_premium" ? "bg-gradient-to-r from-orange-500 via-red-500 to-rose-600 text-white shadow-lg shadow-red-500/60" : "bg-black/40 text-orange-200/60 hover:text-orange-100"}`}
+                    >
+                      💎 SUPER
+                    </button>
+                    <button
+                      onClick={() => setShopTier("ultra")}
+                      className={`py-1.5 battle-tier-chip text-[9px] font-black tracking-wider transition ${shopTier === "ultra" ? "bg-gradient-to-r from-red-600 via-rose-600 to-amber-500 text-white shadow-lg shadow-rose-500/60" : "bg-black/40 text-red-200/60 hover:text-red-100"}`}
+                    >
+                      💠 ULTRA
+                    </button>
+                  </div>
+
+                  {/* 👑 Premium Shop Unlock 7-day banner */}
+                  {effectivePremiumShopUnlock.isActive && effectivePremiumShopUnlock.activeUntil && (
+                    <div className="mb-2 relative rounded-md border-2 border-orange-400/70 p-2 flex items-center gap-2 overflow-hidden">
+                      <div className="absolute inset-0 battle-banner-shine" />
+                      <span className="relative text-base drop-shadow-[0_0_6px_rgba(249,115,22,0.8)]">🔓</span>
+                      <div className="relative flex-1 min-w-0">
+                        <div className="text-[10px] font-black text-amber-100 tracking-wider">PREMIUM UNLOCK · SEMUA TIER TERBUKA</div>
+                        <div className="text-[9px] text-amber-200/95 truncate font-semibold">
+                          Sampai {new Date(effectivePremiumShopUnlock.activeUntil).toLocaleString("id-ID", { timeZone: "Asia/Jakarta", hour: "2-digit", minute: "2-digit", day: "2-digit", month: "short", year: "2-digit" })} WIB · {effectivePremiumShopUnlock.durationDays} hari dari Nyawa Premium
+                        </div>
+                      </div>
+                    </div>
+                  )}
 
               {/* Per-tier locked banner (disembunyikan jika premium unlock aktif) */}
               {!effectivePremiumShopUnlock.isActive && shopTier === "premium" && !shopAccess.isActive && (
@@ -1305,12 +1339,14 @@ export default function LuckRoyaleNyawa() {
                   );
                 })}
               </div>
-              <p className="text-[9px] text-amber-100/60 mt-2 text-center">
-                {shopTier === "free" && "26 item FREE - bisa diklaim tanpa langganan"}
-                {shopTier === "premium" && "40 item Premium - hadiah MANTAP (Rp 100k/bln)"}
-                {shopTier === "super_premium" && "20 item SUPER PREMIUM - hadiah MEGA DIVINE (Rp 300k/bln)"}
-                {shopTier === "ultra" && "20 item ULTRA - hadiah PALING DAHSYAT GOD-TIER (Rp 500k/bln)"}
-              </p>
+                <p className="text-[9px] text-orange-100/70 mt-2 text-center font-semibold tracking-wider">
+                  {shopTier === "free" && "26 ITEM FREE — bisa diklaim tanpa langganan"}
+                  {shopTier === "premium" && "40 ITEM PREMIUM — hadiah MANTAP (Rp 100k/bln)"}
+                  {shopTier === "super_premium" && "20 ITEM SUPER — hadiah MEGA DIVINE (Rp 300k/bln)"}
+                  {shopTier === "ultra" && "20 ITEM ULTRA — hadiah PALING DAHSYAT GOD-TIER (Rp 500k/bln)"}
+                </p>
+                </div>
+              </div>
             </div>
           )}
 

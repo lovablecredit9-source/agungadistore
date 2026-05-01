@@ -963,3 +963,146 @@
   50% { transform: translateY(-2px); }
 }
 .game-chip-bounce { animation: game-chip-bounce 2s ease-in-out infinite; }
+
+/* ============================================================
+   ESPORTS BATTLE THEME — Lucky Royale Nyawa
+   Merah-orange agresif, garis tajam, ember glow, shockwave
+   ============================================================ */
+
+/* Background utama page — gradien gelap dengan warm undertone */
+.battle-bg {
+  background:
+    radial-gradient(ellipse at 20% 0%, rgba(239, 68, 68, 0.22), transparent 55%),
+    radial-gradient(ellipse at 80% 10%, rgba(249, 115, 22, 0.18), transparent 55%),
+    radial-gradient(ellipse at 50% 100%, rgba(220, 38, 38, 0.18), transparent 60%),
+    linear-gradient(180deg, #0a0405 0%, #150607 35%, #0a0405 100%);
+}
+
+/* Hex grid overlay tipis untuk vibe esports arena */
+.battle-hex-grid {
+  background-image:
+    linear-gradient(60deg, rgba(255, 87, 34, 0.07) 25%, transparent 25.5%, transparent 50%, rgba(255, 87, 34, 0.07) 50.5%, rgba(255, 87, 34, 0.07) 75%, transparent 75.5%);
+  background-size: 18px 32px;
+}
+
+/* Scanline merah agresif */
+.battle-scanline {
+  background-image: repeating-linear-gradient(
+    0deg,
+    rgba(239, 68, 68, 0.06) 0px,
+    rgba(239, 68, 68, 0.06) 1px,
+    transparent 1px,
+    transparent 4px
+  );
+}
+
+/* Animated border merah-orange-amber */
+@keyframes battle-border-flow {
+  0%   { background-position: 0% 50%; }
+  100% { background-position: 200% 50%; }
+}
+.battle-border-flow {
+  background: linear-gradient(90deg, #f97316, #ef4444, #f59e0b, #ef4444, #f97316);
+  background-size: 200% 200%;
+  animation: battle-border-flow 3s linear infinite;
+}
+
+/* Ember pulse — glow merah-orange yang berdetak */
+@keyframes battle-ember-pulse {
+  0%, 100% {
+    box-shadow:
+      0 0 14px rgba(239, 68, 68, 0.55),
+      0 0 32px rgba(249, 115, 22, 0.35),
+      inset 0 0 12px rgba(245, 158, 11, 0.15);
+  }
+  50% {
+    box-shadow:
+      0 0 24px rgba(239, 68, 68, 0.85),
+      0 0 56px rgba(249, 115, 22, 0.55),
+      inset 0 0 18px rgba(245, 158, 11, 0.25);
+  }
+}
+.battle-ember-pulse { animation: battle-ember-pulse 2.4s ease-in-out infinite; }
+
+/* Shockwave ring */
+@keyframes battle-shockwave {
+  0%   { transform: scale(0.85); opacity: 0.85; }
+  100% { transform: scale(1.6);  opacity: 0; }
+}
+.battle-shockwave {
+  border: 2px solid rgba(249, 115, 22, 0.7);
+  animation: battle-shockwave 1.8s ease-out infinite;
+}
+
+/* Diagonal slash sweep */
+@keyframes battle-slash {
+  0%   { transform: translateX(-120%) skewX(-20deg); }
+  100% { transform: translateX(220%)  skewX(-20deg); }
+}
+.battle-slash {
+  background: linear-gradient(90deg, transparent, rgba(255, 200, 100, 0.45), transparent);
+  animation: battle-slash 3.5s ease-in-out infinite;
+}
+
+/* Title gradient teks */
+.battle-title-gradient {
+  background: linear-gradient(180deg, #fff7ed 0%, #fde68a 35%, #fb923c 70%, #ef4444 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  text-shadow: 0 2px 24px rgba(239, 68, 68, 0.4);
+  filter: drop-shadow(0 2px 6px rgba(220, 38, 38, 0.5));
+}
+
+/* Tab triggers — sharp clipped corners */
+.battle-tab-clip { clip-path: polygon(8% 0, 100% 0, 92% 100%, 0% 100%); }
+
+/* Card surface — gelap + glass + border merah */
+.battle-card {
+  background: linear-gradient(180deg, rgba(20, 8, 8, 0.85), rgba(10, 4, 4, 0.92));
+  border: 1px solid rgba(239, 68, 68, 0.35);
+  box-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.5),
+    0 12px 28px -8px rgba(239, 68, 68, 0.35),
+    inset 0 1px 0 rgba(255, 200, 100, 0.08);
+}
+
+/* Stat tile — agresif corner-cut */
+.battle-stat-tile {
+  background: linear-gradient(180deg, rgba(30, 10, 10, 0.9), rgba(15, 5, 5, 0.95));
+  border: 1px solid rgba(249, 115, 22, 0.35);
+  position: relative;
+  overflow: hidden;
+}
+.battle-stat-tile::before {
+  content: "";
+  position: absolute;
+  top: 0; right: 0;
+  width: 16px; height: 16px;
+  background: linear-gradient(135deg, transparent 50%, rgba(249, 115, 22, 0.6) 50%);
+}
+
+/* Token shop tier button — clipped esports style */
+.battle-tier-chip {
+  clip-path: polygon(10% 0, 100% 0, 90% 100%, 0 100%);
+}
+
+/* Premium unlock banner — animated */
+@keyframes battle-banner-shine {
+  0%, 100% { background-position: 0% 50%; }
+  50%      { background-position: 100% 50%; }
+}
+.battle-banner-shine {
+  background: linear-gradient(90deg, rgba(245, 158, 11, 0.35), rgba(239, 68, 68, 0.45), rgba(249, 115, 22, 0.35), rgba(239, 68, 68, 0.45), rgba(245, 158, 11, 0.35));
+  background-size: 300% 100%;
+  animation: battle-banner-shine 4s ease-in-out infinite;
+}
+
+/* Spark dust */
+.battle-sparks {
+  background-image:
+    radial-gradient(circle at 10% 20%, rgba(253, 186, 116, 0.6) 0.5px, transparent 1px),
+    radial-gradient(circle at 80% 60%, rgba(252, 165, 165, 0.5) 0.5px, transparent 1px),
+    radial-gradient(circle at 40% 80%, rgba(254, 215, 170, 0.55) 0.5px, transparent 1px);
+  background-size: 60px 60px, 80px 80px, 100px 100px;
+}
