@@ -301,10 +301,10 @@ const PREMIUM_PRIZES: Prize[] = [
 
 function pickPrize(luckyHourActive = false, premiumActive = false): Prize & { index: number } {
   if (premiumActive) {
-    // Pool MANTAP — tetap reroll common (tidak ada common di pool premium, jadi efektif tidak terjadi)
+    // Pool premium konsisten: kadang dapat hadiah kecil (common), kadang lumayan, jarang besar
     const first = pickFromPool(PREMIUM_PRIZES);
-    if (luckyHourActive && first.rarity === "rare") {
-      // Lucky Hour bonus: reroll rare → kemungkinan epic+
+    // Lucky Hour: hanya reroll kalau hasil common (sama seperti normal)
+    if (luckyHourActive && first.rarity === "common") {
       return pickFromPool(PREMIUM_PRIZES);
     }
     return first;
