@@ -1014,8 +1014,8 @@ Deno.serve(async (req) => {
         await admin.rpc("add_account_gems", { p_visitor_id: visitorId, p_amount: -cost });
       }
 
-      // Premium WAJIB pakai pool premium besar, bukan pool normal kecil.
-      // Server Luck aktif: reroll sekali jika masih RARE agar peluang EPIC+ makin gacor.
+      // Premium WAJIB pakai pool premium, tapi tetap dikontrol agar jackpot gem tidak gacor.
+      // Server Luck hanya bantu hasil common sekali, bukan menaikkan rare/jackpot terus.
       const luckActive = await isServerLuckActive(admin, visitorId);
       const totalWeight = PREMIUM_PRIZES.reduce((s, p) => s + p.weight, 0);
       const rollOne = (): Prize => {
@@ -1025,7 +1025,7 @@ Deno.serve(async (req) => {
       };
       const rollPremiumOne = (): Prize => {
         const first = rollOne();
-        return luckActive && first.rarity === "rare" ? rollOne() : first;
+        return luckActive && first.rarity === "common" ? rollOne() : first;
       };
 
       // 1) Roll semua hasil di memory dulu (cepat, tanpa I/O)
