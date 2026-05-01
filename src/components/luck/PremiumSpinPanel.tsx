@@ -586,6 +586,7 @@ function summarize(list: SpinResult[]): Record<string, string> {
     gems: "💎 Gem",
     game_credits: "🔑 Kredit",
     game_balance: "💵 Saldo IN",
+    lucky_token: "🎟️ Lucky Token",
   };
   for (const r of list) {
     sum[r.kind] = (sum[r.kind] || 0) + r.value;
