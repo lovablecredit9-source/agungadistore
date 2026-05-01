@@ -105,11 +105,12 @@ interface Props {
   isUnlocked: boolean;
   expiresAt?: string | null;
   price?: number;
+  shopUnlock?: { isActive: boolean; activeUntil: string | null; grantedAt: string | null; durationDays: number };
 }
 
 interface SpinResult { kind: string; value: number; label: string; emoji: string; rarity: string; color: string; }
 
-export default function PremiumSpinPanel({ visitorId, gems, setGems, isUnlocked, expiresAt, price = 50000 }: Props) {
+export default function PremiumSpinPanel({ visitorId, gems, setGems, isUnlocked, expiresAt, price = 50000, shopUnlock }: Props) {
   const { toast } = useToast();
   const [busy, setBusy] = useState(false);
   const [freeUsed, setFreeUsed] = useState(getFreeUsedToday());
@@ -249,15 +250,31 @@ export default function PremiumSpinPanel({ visitorId, gems, setGems, isUnlocked,
 
       {/* Status Banner: Locked vs Active */}
       {isUnlocked ? (
-        <div className="rounded-xl bg-gradient-to-r from-emerald-600/30 via-teal-600/30 to-cyan-600/30 border-2 border-emerald-400/60 px-3 py-2 flex items-center gap-2">
-          <div className="w-8 h-8 rounded-full bg-emerald-500/30 flex items-center justify-center">
-            <Crown className="w-4 h-4 text-emerald-200" fill="currentColor" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <div className="text-[11px] font-black text-emerald-100 tracking-wide">PREMIUM AKTIF ✨ (30 HARI)</div>
-            <div className="text-[9px] text-emerald-200/80 truncate">
-              {expiresAt ? `Berakhir: ${new Date(expiresAt).toLocaleString("id-ID", { timeZone: "Asia/Jakarta", hour: "2-digit", minute: "2-digit", day: "2-digit", month: "short", year: "2-digit" })} WIB` : "Akses penuh aktif"}
+        <div className="space-y-2">
+          <div className="rounded-xl bg-gradient-to-r from-emerald-600/30 via-teal-600/30 to-cyan-600/30 border-2 border-emerald-400/60 px-3 py-2 flex items-center gap-2">
+            <div className="w-8 h-8 rounded-full bg-emerald-500/30 flex items-center justify-center">
+              <Crown className="w-4 h-4 text-emerald-200" fill="currentColor" />
             </div>
+            <div className="flex-1 min-w-0">
+              <div className="text-[11px] font-black text-emerald-100 tracking-wide">PREMIUM AKTIF ✨ (30 HARI)</div>
+              <div className="text-[9px] text-emerald-200/80 truncate">
+                {expiresAt ? `Berakhir: ${new Date(expiresAt).toLocaleString("id-ID", { timeZone: "Asia/Jakarta", hour: "2-digit", minute: "2-digit", day: "2-digit", month: "short", year: "2-digit" })} WIB` : "Akses penuh aktif"}
+              </div>
+            </div>
+          </div>
+          {shopUnlock?.isActive && shopUnlock.activeUntil && (
+            <div className="rounded-xl bg-gradient-to-r from-amber-600/25 via-orange-600/25 to-fuchsia-600/25 border-2 border-amber-400/60 px-3 py-2 flex items-center gap-2">
+              <div className="w-8 h-8 rounded-full bg-amber-500/30 flex items-center justify-center text-base">🎟️</div>
+              <div className="flex-1 min-w-0">
+                <div className="text-[11px] font-black text-amber-100 tracking-wide">TOKEN SHOP UNLOCK 🔓 (SEMUA TIER)</div>
+                <div className="text-[9px] text-amber-200/85 truncate">
+                  Aktif sampai {new Date(shopUnlock.activeUntil).toLocaleString("id-ID", { timeZone: "Asia/Jakarta", hour: "2-digit", minute: "2-digit", day: "2-digit", month: "short", year: "2-digit" })} WIB · {shopUnlock.durationDays} hari
+                </div>
+              </div>
+            </div>
+          )}
+          <div className="rounded-xl bg-gradient-to-r from-cyan-600/20 to-blue-600/20 border border-cyan-400/40 px-3 py-2 text-[10px] text-cyan-100 leading-snug">
+            🎯 <span className="font-black">Hadiah dinamis:</span> jika <span className="font-black">Server Luck (jam hoki)</span> aktif → hadiah lumayan + sering dapat 🎟️ Token. Jika tidak → sama seperti spin normal (lumayan dikit, gem dibatasi).
           </div>
         </div>
       ) : (

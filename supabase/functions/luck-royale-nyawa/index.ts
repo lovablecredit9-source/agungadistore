@@ -42,6 +42,36 @@ function isNyawaPremiumActive(state: { activeUntil: string | null }): boolean {
 // Backwards compat — bundle 5 lama
 const BUNDLE_COST_DIAMOND = 200;
 
+// === PREMIUM TOKEN SHOP UNLOCK — auto 7 hari saat beli Nyawa Premium ===
+// Membuka SEMUA tier di Token Shop (premium/super_premium/ultra) tanpa harus beli akses tier.
+const PREMIUM_SHOP_UNLOCK_DAYS = 7;
+function premiumShopUnlockKey(v: string) { return `lr_premium_shop_unlock_${v}`; }
+async function getPremiumShopUnlock(admin: any, visitorId: string): Promise<{ activeUntil: string | null; grantedAt: string | null }> {
+  const { data } = await admin.from("admin_settings").select("setting_value").eq("setting_key", premiumShopUnlockKey(visitorId)).maybeSingle();
+  if (!data) return { activeUntil: null, grantedAt: null };
+  try { return JSON.parse(data.setting_value); } catch { return { activeUntil: null, grantedAt: null }; }
+}
+async function setPremiumShopUnlock(admin: any, visitorId: string, state: { activeUntil: string | null; grantedAt: string | null }) {
+  const value = JSON.stringify(state);
+  const { data: existing } = await admin.from("admin_settings").select("id").eq("setting_key", premiumShopUnlockKey(visitorId)).maybeSingle();
+  if (existing) await admin.from("admin_settings").update({ setting_value: value }).eq("id", existing.id);
+  else await admin.from("admin_settings").insert({ setting_key: premiumShopUnlockKey(visitorId), setting_value: value });
+}
+function isPremiumShopUnlockActive(state: { activeUntil: string | null }): boolean {
+  if (!state.activeUntil) return false;
+  return new Date(state.activeUntil).getTime() > Date.now();
+}
+
+// Cek apakah Server Luck booster sedang aktif (untuk Premium Spin pool selection)
+async function isServerLuckActive(admin: any, visitorId: string): Promise<boolean> {
+  try {
+    const { data } = await admin.from("server_luck_boosters").select("active_until, active_tier").eq("visitor_id", visitorId).maybeSingle();
+    if (!data || !data.active_until) return false;
+    if (Number(data.active_tier || 1) < 2) return false;
+    return new Date(data.active_until).getTime() > Date.now();
+  } catch { return false; }
+}
+
 // Hadiah bobot NORMAL Luck Royale Nyawa — jangan dicampur dengan pool Mega/Combo.
 type Prize = {
   kind: "extra_life" | "auto_hint" | "time_freeze" | "streak_freeze" | "streak_coins" | "gems" | "game_credits" | "game_balance";
@@ -830,6 +860,15 @@ Deno.serve(async (req) => {
           price: NYAWA_PREMIUM_PRICE,
           durationHours: NYAWA_PREMIUM_HOURS,
         },
+        premiumShopUnlock: await (async () => {
+          const u = await getPremiumShopUnlock(admin, visitorId);
+          return {
+            isActive: isPremiumShopUnlockActive(u),
+            activeUntil: u.activeUntil,
+            grantedAt: u.grantedAt,
+            durationDays: PREMIUM_SHOP_UNLOCK_DAYS,
+          };
+        })(),
       }, { headers: corsHeaders });
     }
 
@@ -932,41 +971,64 @@ Deno.serve(async (req) => {
         await admin.rpc("add_account_gems", { p_visitor_id: visitorId, p_amount: -cost });
       }
 
-      // Pool premium variatif (server-roll). Bobot: lebih banyak rare+, jackpot lebih sering muncul tapi tetap rare.
-      const POOL: Prize[] = [
-        // Common
-        { kind: "auto_hint", value: 5, label: "💡 +5 Hint", emoji: "💡", rarity: "common", weight: 18, color: "#94a3b8" },
-        { kind: "extra_life", value: 5, label: "❤️ +5 Nyawa", emoji: "❤️", rarity: "common", weight: 16, color: "#94a3b8" },
-        { kind: "time_freeze", value: 5, label: "⏱️ +5 Time Freeze", emoji: "⏱️", rarity: "common", weight: 12, color: "#94a3b8" },
-        { kind: "gems", value: 25, label: "💎 +25 Gem", emoji: "💎", rarity: "common", weight: 10, color: "#94a3b8" },
-        { kind: "streak_coins", value: 200, label: "🪙 +200 Koin Streak", emoji: "🪙", rarity: "common", weight: 12, color: "#94a3b8" },
-        // Rare
-        { kind: "auto_hint", value: 15, label: "💡 +15 Hint", emoji: "💡", rarity: "rare", weight: 9, color: "#22d3ee" },
-        { kind: "extra_life", value: 15, label: "❤️ +15 Nyawa", emoji: "❤️", rarity: "rare", weight: 9, color: "#22d3ee" },
-        { kind: "streak_coins", value: 1000, label: "🪙 +1.000 Koin Streak", emoji: "🪙", rarity: "rare", weight: 8, color: "#22d3ee" },
-        { kind: "streak_freeze", value: 5, label: "🛡️ +5 Streak Freeze", emoji: "🛡️", rarity: "rare", weight: 6, color: "#22d3ee" },
-        { kind: "game_credits", value: 3, label: "🔑 +3 Kredit Game", emoji: "🔑", rarity: "rare", weight: 7, color: "#22d3ee" },
-        { kind: "game_balance", value: 500, label: "💵 +Rp 500 Saldo IN", emoji: "💵", rarity: "rare", weight: 6, color: "#22d3ee" },
-        { kind: "gems", value: 75, label: "💎 +75 Gem", emoji: "💎", rarity: "rare", weight: 5, color: "#22d3ee" },
-        // Epic
-        { kind: "auto_hint", value: 35, label: "💡 +35 Hint", emoji: "💡", rarity: "epic", weight: 4, color: "#a855f7" },
-        { kind: "extra_life", value: 35, label: "❤️ +35 Nyawa", emoji: "❤️", rarity: "epic", weight: 4, color: "#a855f7" },
-        { kind: "streak_coins", value: 5000, label: "🪙 +5.000 Koin Streak", emoji: "🪙", rarity: "epic", weight: 3, color: "#a855f7" },
-        { kind: "game_credits", value: 10, label: "🔑 +10 Kredit Game", emoji: "🔑", rarity: "epic", weight: 3, color: "#a855f7" },
-        { kind: "game_balance", value: 2500, label: "💵 +Rp 2.500 Saldo IN", emoji: "💵", rarity: "epic", weight: 2.5, color: "#a855f7" },
-        { kind: "gems", value: 200, label: "💎 +200 Gem", emoji: "💎", rarity: "epic", weight: 2, color: "#a855f7" },
-        // Legendary
-        { kind: "streak_coins", value: 15000, label: "🪙 +15.000 Koin LEGEND", emoji: "🪙", rarity: "legendary", weight: 1.4, color: "#fbbf24" },
-        { kind: "game_credits", value: 30, label: "🔑 +30 Kredit LEGEND", emoji: "🔑", rarity: "legendary", weight: 1.0, color: "#fbbf24" },
-        { kind: "game_balance", value: 10000, label: "💸 +Rp 10.000 Saldo LEGEND", emoji: "💵", rarity: "legendary", weight: 0.8, color: "#fbbf24" },
-        { kind: "gems", value: 600, label: "💎 +600 Gem LEGEND", emoji: "💎", rarity: "legendary", weight: 0.7, color: "#fbbf24" },
-        { kind: "extra_life", value: 80, label: "❤️ +80 Nyawa LEGEND", emoji: "❤️", rarity: "legendary", weight: 0.9, color: "#fbbf24" },
-        // Mythic — JACKPOT
-        { kind: "streak_coins", value: 50000, label: "👑 +50.000 Koin MEGA JACKPOT", emoji: "👑", rarity: "mythic", weight: 0.18, color: "#f0abfc" },
-        { kind: "game_balance", value: 50000, label: "💸 +Rp 50.000 Saldo JACKPOT", emoji: "💵", rarity: "mythic", weight: 0.10, color: "#f0abfc" },
-        { kind: "gems", value: 2000, label: "💎 +2.000 Gem MYTHIC", emoji: "💎", rarity: "mythic", weight: 0.12, color: "#f0abfc" },
-        { kind: "game_credits", value: 100, label: "🔑 +100 Kredit MYTHIC", emoji: "🔑", rarity: "mythic", weight: 0.10, color: "#f0abfc" },
+      // Cek server luck — menentukan pool
+      const luckActive = await isServerLuckActive(admin, visitorId);
+
+      // POOL NORMAL (server luck OFF) — sama seperti spin normal, hanya tipis bonus.
+      // Hadiah lumayan dikit; gem dibatasi kecil. Tidak ada mythic mega jackpot.
+      const POOL_NORMAL: Prize[] = [
+        // Common (66%)
+        { kind: "auto_hint",   value: 3,   label: "💡 +3 Hint",            emoji: "💡", rarity: "common", weight: 22, color: "#94a3b8" },
+        { kind: "extra_life",  value: 3,   label: "❤️ +3 Nyawa",           emoji: "❤️", rarity: "common", weight: 20, color: "#94a3b8" },
+        { kind: "time_freeze", value: 3,   label: "⏱️ +3 Time Freeze",     emoji: "⏱️", rarity: "common", weight: 14, color: "#94a3b8" },
+        { kind: "streak_coins",value: 100, label: "🪙 +100 Koin Streak",   emoji: "🪙", rarity: "common", weight: 10, color: "#94a3b8" },
+        // Rare (28%)
+        { kind: "auto_hint",   value: 8,   label: "💡 +8 Hint",            emoji: "💡", rarity: "rare",   weight: 8,  color: "#22d3ee" },
+        { kind: "extra_life",  value: 8,   label: "❤️ +8 Nyawa",           emoji: "❤️", rarity: "rare",   weight: 8,  color: "#22d3ee" },
+        { kind: "streak_freeze", value: 2, label: "🛡️ +2 Streak Freeze",   emoji: "🛡️", rarity: "rare",   weight: 5,  color: "#22d3ee" },
+        { kind: "streak_coins",value: 400, label: "🪙 +400 Koin",          emoji: "🪙", rarity: "rare",   weight: 5,  color: "#22d3ee" },
+        { kind: "lucky_token" as any, value: 1, label: "🎟️ +1 Lucky Token", emoji: "🎟️", rarity: "rare", weight: 2,  color: "#22d3ee" },
+        // Epic (5.5%) — kecil, lumayan
+        { kind: "auto_hint",   value: 15,  label: "💡 +15 Hint",           emoji: "💡", rarity: "epic",   weight: 2,  color: "#a855f7" },
+        { kind: "extra_life",  value: 15,  label: "❤️ +15 Nyawa",          emoji: "❤️", rarity: "epic",   weight: 2,  color: "#a855f7" },
+        { kind: "game_credits",value: 2,   label: "🔑 +2 Kredit",          emoji: "🔑", rarity: "epic",   weight: 1.5,color: "#a855f7" },
+        // Legendary (0.5%) — sangat jarang
+        { kind: "game_balance",value: 1000,label: "💵 +Rp 1.000 Saldo",    emoji: "💵", rarity: "legendary", weight: 0.4, color: "#fbbf24" },
+        { kind: "lucky_token" as any, value: 2, label: "🎟️ +2 Lucky Token LEGEND", emoji: "🎟️", rarity: "legendary", weight: 0.1, color: "#fbbf24" },
       ];
+
+      // POOL HOKI (server luck ON) — premium dapat lumayan, gem dikit, lebih banyak token & saldo.
+      const POOL_LUCKY: Prize[] = [
+        // Common (45%)
+        { kind: "auto_hint",   value: 5,   label: "💡 +5 Hint",            emoji: "💡", rarity: "common", weight: 14, color: "#94a3b8" },
+        { kind: "extra_life",  value: 5,   label: "❤️ +5 Nyawa",           emoji: "❤️", rarity: "common", weight: 14, color: "#94a3b8" },
+        { kind: "time_freeze", value: 5,   label: "⏱️ +5 Time Freeze",     emoji: "⏱️", rarity: "common", weight: 9,  color: "#94a3b8" },
+        { kind: "streak_coins",value: 200, label: "🪙 +200 Koin Streak",   emoji: "🪙", rarity: "common", weight: 8,  color: "#94a3b8" },
+        // Rare (35%)
+        { kind: "auto_hint",   value: 12,  label: "💡 +12 Hint",           emoji: "💡", rarity: "rare",   weight: 7,  color: "#22d3ee" },
+        { kind: "extra_life",  value: 12,  label: "❤️ +12 Nyawa",          emoji: "❤️", rarity: "rare",   weight: 7,  color: "#22d3ee" },
+        { kind: "streak_freeze", value: 3, label: "🛡️ +3 Streak Freeze",   emoji: "🛡️", rarity: "rare",   weight: 5,  color: "#22d3ee" },
+        { kind: "streak_coins",value: 800, label: "🪙 +800 Koin",          emoji: "🪙", rarity: "rare",   weight: 6,  color: "#22d3ee" },
+        { kind: "lucky_token" as any, value: 1, label: "🎟️ +1 Lucky Token", emoji: "🎟️", rarity: "rare", weight: 8,  color: "#22d3ee" },
+        { kind: "gems",        value: 30,  label: "💎 +30 Gem",            emoji: "💎", rarity: "rare",   weight: 2,  color: "#22d3ee" },
+        // Epic (15%) — lumayan
+        { kind: "auto_hint",   value: 25,  label: "💡 +25 Hint",           emoji: "💡", rarity: "epic",   weight: 3,  color: "#a855f7" },
+        { kind: "extra_life",  value: 25,  label: "❤️ +25 Nyawa",          emoji: "❤️", rarity: "epic",   weight: 3,  color: "#a855f7" },
+        { kind: "game_credits",value: 5,   label: "🔑 +5 Kredit",          emoji: "🔑", rarity: "epic",   weight: 3,  color: "#a855f7" },
+        { kind: "lucky_token" as any, value: 2, label: "🎟️ +2 Lucky Token", emoji: "🎟️", rarity: "epic", weight: 4,  color: "#a855f7" },
+        { kind: "streak_coins",value: 2500,label: "🪙 +2.500 Koin",        emoji: "🪙", rarity: "epic",   weight: 2,  color: "#a855f7" },
+        // Legendary (4%)
+        { kind: "game_credits",value: 15,  label: "🔑 +15 Kredit LEGEND",  emoji: "🔑", rarity: "legendary", weight: 1.2, color: "#fbbf24" },
+        { kind: "game_balance",value: 5000,label: "💵 +Rp 5.000 Saldo LEGEND", emoji: "💵", rarity: "legendary", weight: 1.0, color: "#fbbf24" },
+        { kind: "lucky_token" as any, value: 3, label: "🎟️ +3 Lucky Token LEGEND", emoji: "🎟️", rarity: "legendary", weight: 1.3, color: "#fbbf24" },
+        { kind: "streak_coins",value: 8000,label: "🪙 +8.000 Koin LEGEND", emoji: "🪙", rarity: "legendary", weight: 0.8, color: "#fbbf24" },
+        // Mythic (~1%) — JACKPOT, tipis
+        { kind: "game_balance",value: 25000, label: "👑 +Rp 25.000 Saldo JACKPOT", emoji: "💵", rarity: "mythic", weight: 0.25, color: "#f0abfc" },
+        { kind: "lucky_token" as any, value: 5, label: "👑 +5 Lucky Token MYTHIC", emoji: "🎟️", rarity: "mythic", weight: 0.30, color: "#f0abfc" },
+        { kind: "game_credits",value: 50,   label: "👑 +50 Kredit MYTHIC", emoji: "🔑", rarity: "mythic", weight: 0.20, color: "#f0abfc" },
+      ];
+
+      const POOL: Prize[] = luckActive ? POOL_LUCKY : POOL_NORMAL;
       const totalWeight = POOL.reduce((s, p) => s + p.weight, 0);
       const rollOne = (): Prize => {
         let r = Math.random() * totalWeight;
@@ -977,15 +1039,20 @@ Deno.serve(async (req) => {
       // 1) Roll semua hasil di memory dulu (cepat, tanpa I/O)
       const results: Array<{ kind: string; value: number; label: string; emoji: string; rarity: string; color: string }> = [];
       const aggByKind = new Map<string, { kind: string; value: number; sample: Prize }>();
+      let tokenGain = 0;
       for (let i = 0; i < reqCount; i++) {
         const p = rollOne();
         results.push({ kind: p.kind, value: p.value, label: p.label, emoji: p.emoji, rarity: p.rarity, color: p.color });
+        if ((p.kind as any) === "lucky_token") {
+          tokenGain += p.value;
+          continue;
+        }
         const cur = aggByKind.get(p.kind);
         if (cur) cur.value += p.value;
         else aggByKind.set(p.kind, { kind: p.kind, value: p.value, sample: p });
       }
 
-      // 2) Apply hadiah secara teragregasi (1 RPC per kind, bukan per spin)
+      // 2) Apply hadiah teragregasi (1 RPC per kind)
       for (const a of aggByKind.values()) {
         const aggregated: Prize = { ...a.sample, value: a.value };
         await applyPrize(admin, visitorId, aggregated);
@@ -1010,8 +1077,29 @@ Deno.serve(async (req) => {
         await admin.from("luck_royale_nyawa_history").insert(historyRows.slice(i, i + CHUNK));
       }
 
+      // 4) Tambahkan Lucky Token jika ada
+      let newTokenTotal = 0;
+      if (tokenGain > 0) {
+        const ts = await getLuckyTokens(admin, visitorId);
+        newTokenTotal = ts.tokens + tokenGain;
+        await setLuckyTokens(admin, visitorId, newTokenTotal, ts.spinProgress);
+      } else {
+        const ts = await getLuckyTokens(admin, visitorId);
+        newTokenTotal = ts.tokens;
+      }
+
       const { data: gemsAfter } = await admin.rpc("get_account_gems", { p_visitor_id: visitorId });
-      return Response.json({ success: true, gems: gemsAfter || 0, results, count: reqCount, costGems: cost }, { headers: corsHeaders });
+      return Response.json({
+        success: true,
+        gems: gemsAfter || 0,
+        results,
+        count: reqCount,
+        costGems: cost,
+        luckyTokens: newTokenTotal,
+        tokenGain,
+        luckActive,
+        poolMode: luckActive ? "lucky" : "normal",
+      }, { headers: corsHeaders });
     }
 
 
@@ -1182,30 +1270,35 @@ Deno.serve(async (req) => {
       const item = TOKEN_SHOP.find(i => i.code === itemCode);
       if (!item) return Response.json({ error: "Item tidak valid" }, { status: 400, headers: corsHeaders });
 
-      // FREE tier: bebas tanpa akses. Premium & Super Premium: wajib akses tier yang sesuai.
-      if (item.tier === "premium") {
-        const access = await getShopAccess(admin, visitorId, "premium");
-        if (!isShopAccessActive(access)) {
-          return Response.json({
-            error: `Akses Premium belum aktif. Beli akses Rp ${SHOP_ACCESS_PRICE.toLocaleString("id-ID")} (berlaku ${SHOP_ACCESS_DAYS} hari) untuk tukar item Premium.`,
-          }, { status: 403, headers: corsHeaders });
-        }
-      } else if (item.tier === "super_premium") {
-        const superAccess = await getShopAccess(admin, visitorId, "super_premium");
-        if (!isShopAccessActive(superAccess)) {
-          return Response.json({
-            error: `Akses Super Premium belum aktif. Beli akses Rp ${SUPER_SHOP_ACCESS_PRICE.toLocaleString("id-ID")} (berlaku ${SUPER_SHOP_ACCESS_DAYS} hari) untuk tukar item Super Premium.`,
-          }, { status: 403, headers: corsHeaders });
-        }
-      } else if (item.tier === "ultra") {
-        const ultraAccess = await getShopAccess(admin, visitorId, "ultra");
-        if (!isShopAccessActive(ultraAccess)) {
-          return Response.json({
-            error: `Akses Ultra belum aktif. Beli akses Rp ${ULTRA_SHOP_ACCESS_PRICE.toLocaleString("id-ID")} (berlaku ${ULTRA_SHOP_ACCESS_DAYS} hari) untuk tukar item Ultra.`,
-          }, { status: 403, headers: corsHeaders });
+      // FREE tier: bebas. Tier lain: cek akses tier ATAU Premium Shop Unlock 7 hari.
+      const premiumUnlockState = await getPremiumShopUnlock(admin, visitorId);
+      const premiumUnlockOn = isPremiumShopUnlockActive(premiumUnlockState);
+
+      if (!premiumUnlockOn) {
+        if (item.tier === "premium") {
+          const access = await getShopAccess(admin, visitorId, "premium");
+          if (!isShopAccessActive(access)) {
+            return Response.json({
+              error: `Akses Premium belum aktif. Beli akses Rp ${SHOP_ACCESS_PRICE.toLocaleString("id-ID")} (berlaku ${SHOP_ACCESS_DAYS} hari) atau aktifkan Nyawa Premium (Rp 50.000) untuk unlock SEMUA tier 7 hari.`,
+            }, { status: 403, headers: corsHeaders });
+          }
+        } else if (item.tier === "super_premium") {
+          const superAccess = await getShopAccess(admin, visitorId, "super_premium");
+          if (!isShopAccessActive(superAccess)) {
+            return Response.json({
+              error: `Akses Super Premium belum aktif. Beli akses Rp ${SUPER_SHOP_ACCESS_PRICE.toLocaleString("id-ID")} (berlaku ${SUPER_SHOP_ACCESS_DAYS} hari) atau aktifkan Nyawa Premium (Rp 50.000) untuk unlock SEMUA tier 7 hari.`,
+            }, { status: 403, headers: corsHeaders });
+          }
+        } else if (item.tier === "ultra") {
+          const ultraAccess = await getShopAccess(admin, visitorId, "ultra");
+          if (!isShopAccessActive(ultraAccess)) {
+            return Response.json({
+              error: `Akses Ultra belum aktif. Beli akses Rp ${ULTRA_SHOP_ACCESS_PRICE.toLocaleString("id-ID")} (berlaku ${ULTRA_SHOP_ACCESS_DAYS} hari) atau aktifkan Nyawa Premium (Rp 50.000) untuk unlock SEMUA tier 7 hari.`,
+            }, { status: 403, headers: corsHeaders });
+          }
         }
       }
-      // tier === "free" → langsung lanjut tanpa cek akses
+      // tier === "free" → langsung lanjut
 
       const tokenState = await getLuckyTokens(admin, visitorId);
       if (tokenState.tokens < item.cost) {
@@ -1494,10 +1587,19 @@ Deno.serve(async (req) => {
         description: `Nyawa Premium Luck Royale (30 hari)`,
       });
       await setNyawaPremium(admin, visitorId, { activeUntil: newUntilIso, purchasedAt: new Date().toISOString() });
+
+      // Grant / perpanjang Premium Token Shop Unlock 7 hari (akumulasi)
+      const existingUnlock = await getPremiumShopUnlock(admin, visitorId);
+      const unlockBaseMs = existingUnlock.activeUntil && new Date(existingUnlock.activeUntil).getTime() > Date.now()
+        ? new Date(existingUnlock.activeUntil).getTime()
+        : Date.now();
+      const unlockUntilIso = new Date(unlockBaseMs + PREMIUM_SHOP_UNLOCK_DAYS * 24 * 3600 * 1000).toISOString();
+      await setPremiumShopUnlock(admin, visitorId, { activeUntil: unlockUntilIso, grantedAt: new Date().toISOString() });
+
       await admin.from("notifications").insert({
         visitor_id: visitorId,
         title: "👑 Nyawa Premium Aktif!",
-        message: `Pool hadiah MANTAP JIWA + Premium Spin aktif sampai ${new Date(newUntilIso).toLocaleString("id-ID", { timeZone: "Asia/Jakarta" })} WIB. Spin sekarang!`,
+        message: `Premium Spin (30 hari) + Token Shop SEMUA tier (${PREMIUM_SHOP_UNLOCK_DAYS} hari) aktif sampai ${new Date(unlockUntilIso).toLocaleString("id-ID", { timeZone: "Asia/Jakarta" })} WIB.`,
         type: "luck_royale_nyawa",
       });
 
@@ -1510,6 +1612,12 @@ Deno.serve(async (req) => {
           purchasedAt: new Date().toISOString(),
           price: NYAWA_PREMIUM_PRICE,
           durationHours: NYAWA_PREMIUM_HOURS,
+        },
+        premiumShopUnlock: {
+          isActive: true,
+          activeUntil: unlockUntilIso,
+          grantedAt: new Date().toISOString(),
+          durationDays: PREMIUM_SHOP_UNLOCK_DAYS,
         },
       }, { headers: corsHeaders });
     }
