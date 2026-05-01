@@ -1638,6 +1638,7 @@ export type Database = {
           current_round: number
           grid_prizes: Json
           id: string
+          pending_claims: Json
           spins_in_round: number
           total_spins_lifetime: number
           updated_at: string
@@ -1649,6 +1650,7 @@ export type Database = {
           current_round?: number
           grid_prizes?: Json
           id?: string
+          pending_claims?: Json
           spins_in_round?: number
           total_spins_lifetime?: number
           updated_at?: string
@@ -1660,6 +1662,7 @@ export type Database = {
           current_round?: number
           grid_prizes?: Json
           id?: string
+          pending_claims?: Json
           spins_in_round?: number
           total_spins_lifetime?: number
           updated_at?: string
