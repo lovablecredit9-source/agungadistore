@@ -374,6 +374,8 @@ export default function LuckRoyaleNyawa() {
       setNpBuying(false);
     }
   };
+
+  // 🏆 Hadiah Utama: tampilkan hadiah PALING JACKPOT dulu (mythic → legendary → epic),
   // bukan power-up common. Player harus lihat "wow factor" sebelum spin.
   const RARITY_RANK: Record<string, number> = { mythic: 5, legendary: 4, epic: 3, rare: 2, common: 1 };
   const featured = [...prizes]
