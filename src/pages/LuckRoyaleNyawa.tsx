@@ -514,7 +514,7 @@ export default function LuckRoyaleNyawa() {
                 isUnlocked={nyawaPremium.isActive}
                 expiresAt={nyawaPremium.activeUntil}
                 price={nyawaPremium.price}
-                shopUnlock={premiumShopUnlock}
+                shopUnlock={effectivePremiumShopUnlock}
               />
             </TabsContent>
             <TabsContent value="normal" className="space-y-4 mt-0">
@@ -1230,34 +1230,34 @@ export default function LuckRoyaleNyawa() {
               </div>
 
               {/* 👑 Premium Shop Unlock 7-day banner */}
-              {premiumShopUnlock.isActive && premiumShopUnlock.activeUntil && (
+              {effectivePremiumShopUnlock.isActive && effectivePremiumShopUnlock.activeUntil && (
                 <div className="mb-2 rounded-lg bg-gradient-to-r from-amber-600/30 via-fuchsia-600/30 to-purple-600/30 border-2 border-amber-400/60 p-2 flex items-center gap-2">
                   <span className="text-base">🔓</span>
                   <div className="flex-1 min-w-0">
                     <div className="text-[10px] font-black text-amber-100 tracking-wide">PREMIUM UNLOCK AKTIF — SEMUA TIER TERBUKA</div>
                     <div className="text-[9px] text-amber-200/85 truncate">
-                      Sampai {new Date(premiumShopUnlock.activeUntil).toLocaleString("id-ID", { timeZone: "Asia/Jakarta", hour: "2-digit", minute: "2-digit", day: "2-digit", month: "short", year: "2-digit" })} WIB · {premiumShopUnlock.durationDays} hari dari Nyawa Premium
+                      Sampai {new Date(effectivePremiumShopUnlock.activeUntil).toLocaleString("id-ID", { timeZone: "Asia/Jakarta", hour: "2-digit", minute: "2-digit", day: "2-digit", month: "short", year: "2-digit" })} WIB · {effectivePremiumShopUnlock.durationDays} hari dari Nyawa Premium
                     </div>
                   </div>
                 </div>
               )}
 
               {/* Per-tier locked banner (disembunyikan jika premium unlock aktif) */}
-              {!premiumShopUnlock.isActive && shopTier === "premium" && !shopAccess.isActive && (
+              {!effectivePremiumShopUnlock.isActive && shopTier === "premium" && !shopAccess.isActive && (
                 <div className="mb-2 rounded-lg bg-rose-950/60 border border-rose-500/40 p-2 text-center">
                   <p className="text-[10px] font-black text-rose-200">
                     🔒 Akses Premium belum aktif - beli Rp {shopAccess.price.toLocaleString("id-ID")} di atas, atau beli Nyawa Premium Rp 50.000 untuk unlock 7 hari semua tier
                   </p>
                 </div>
               )}
-              {!premiumShopUnlock.isActive && shopTier === "super_premium" && !superShopAccess.isActive && (
+              {!effectivePremiumShopUnlock.isActive && shopTier === "super_premium" && !superShopAccess.isActive && (
                 <div className="mb-2 rounded-lg bg-fuchsia-950/60 border border-fuchsia-500/40 p-2 text-center">
                   <p className="text-[10px] font-black text-fuchsia-200">
                     🔒 Akses Super Premium belum aktif - beli Rp {superShopAccess.price.toLocaleString("id-ID")} di atas, atau Nyawa Premium Rp 50.000 untuk unlock 7 hari
                   </p>
                 </div>
               )}
-              {!premiumShopUnlock.isActive && shopTier === "ultra" && !ultraShopAccess.isActive && (
+              {!effectivePremiumShopUnlock.isActive && shopTier === "ultra" && !ultraShopAccess.isActive && (
                 <div className="mb-2 rounded-lg bg-cyan-950/60 border border-cyan-400/50 p-2 text-center">
                   <p className="text-[10px] font-black text-cyan-200">
                     🔒 Akses Ultra belum aktif - beli Rp {ultraShopAccess.price.toLocaleString("id-ID")} di atas, atau Nyawa Premium Rp 50.000 untuk unlock 7 hari
@@ -1269,7 +1269,7 @@ export default function LuckRoyaleNyawa() {
                 {tokenShop.filter(item => (item.tier || "free") === shopTier).map((item) => {
                   const style = RARITY_STYLE[item.rarity] || RARITY_STYLE.common;
                   const canAfford = luckyTokens >= item.cost;
-                  const tierLocked = !premiumShopUnlock.isActive && (
+                  const tierLocked = !effectivePremiumShopUnlock.isActive && (
                     (item.tier === "premium" && !shopAccess.isActive) ||
                     (item.tier === "super_premium" && !superShopAccess.isActive) ||
                     (item.tier === "ultra" && !ultraShopAccess.isActive)
