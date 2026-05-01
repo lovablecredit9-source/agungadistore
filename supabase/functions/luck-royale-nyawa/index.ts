@@ -238,8 +238,10 @@ const PREMIUM_PRIZES: Prize[] = [
   { kind: "auto_hint",     value: 3,     label: "+3 Hint Otomatis",         emoji: "💡", rarity: "common",    weight: 16,    color: "#94a3b8" },
   { kind: "extra_life",    value: 3,     label: "+3 Nyawa Ekstra",          emoji: "❤️", rarity: "common",    weight: 16,    color: "#ef4444" },
   { kind: "streak_coins",  value: 100,   label: "🪙 +100 Streak Coin",       emoji: "🪙", rarity: "common",    weight: 22,    color: "#f59e0b" },
-  { kind: "gems",          value: 10,    label: "💎 +10 Gem",                emoji: "💎", rarity: "common",    weight: 1.2,   color: "#8b5cf6" },
-  { kind: "gems",          value: 25,    label: "💎 +25 Gem",                emoji: "💎", rarity: "common",    weight: 0.8,   color: "#8b5cf6" },
+  // GEM common — sering keluar tapi nominal kecil (sumber gem konsisten)
+  { kind: "gems",          value: 50,    label: "💎 +50 Gem",                emoji: "💎", rarity: "common",    weight: 4,     color: "#8b5cf6" },
+  { kind: "gems",          value: 100,   label: "💎 +100 Gem",               emoji: "💎", rarity: "common",    weight: 2.5,   color: "#8b5cf6" },
+  { kind: "gems",          value: 200,   label: "💎 +200 Gem",               emoji: "💎", rarity: "common",    weight: 1.2,   color: "#8b5cf6" },
 
   // === RARE (lumayan — base konsisten) ===
   { kind: "streak_freeze", value: 3,     label: "+3 Streak Freeze",         emoji: "🛡️", rarity: "rare",      weight: 8,     color: "#10b981" },
