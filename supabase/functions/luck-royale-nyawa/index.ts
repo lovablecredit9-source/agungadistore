@@ -62,6 +62,23 @@ function isPremiumShopUnlockActive(state: { activeUntil: string | null }): boole
   return new Date(state.activeUntil).getTime() > Date.now();
 }
 
+async function resolvePremiumShopUnlock(admin: any, visitorId: string): Promise<{ activeUntil: string | null; grantedAt: string | null }> {
+  const current = await getPremiumShopUnlock(admin, visitorId);
+  if (isPremiumShopUnlockActive(current)) return current;
+
+  const premium = await getNyawaPremium(admin, visitorId);
+  if (!isNyawaPremiumActive(premium)) return current;
+
+  let baseMs = premium.purchasedAt ? new Date(premium.purchasedAt).getTime() : Date.now();
+  if (!Number.isFinite(baseMs)) baseMs = Date.now();
+  const repairedUntil = new Date(baseMs + PREMIUM_SHOP_UNLOCK_DAYS * 24 * 3600 * 1000).toISOString();
+  if (new Date(repairedUntil).getTime() <= Date.now()) return current;
+
+  const repaired = { activeUntil: repairedUntil, grantedAt: current.grantedAt || premium.purchasedAt || new Date().toISOString() };
+  await setPremiumShopUnlock(admin, visitorId, repaired);
+  return repaired;
+}
+
 // Cek apakah Server Luck booster sedang aktif (untuk Premium Spin pool selection)
 async function isServerLuckActive(admin: any, visitorId: string): Promise<boolean> {
   try {
@@ -861,7 +878,7 @@ Deno.serve(async (req) => {
           durationHours: NYAWA_PREMIUM_HOURS,
         },
         premiumShopUnlock: await (async () => {
-          const u = await getPremiumShopUnlock(admin, visitorId);
+          const u = await resolvePremiumShopUnlock(admin, visitorId);
           return {
             isActive: isPremiumShopUnlockActive(u),
             activeUntil: u.activeUntil,
@@ -1289,7 +1306,7 @@ Deno.serve(async (req) => {
       if (!item) return Response.json({ error: "Item tidak valid" }, { status: 400, headers: corsHeaders });
 
       // FREE tier: bebas. Tier lain: cek akses tier ATAU Premium Shop Unlock 7 hari.
-      const premiumUnlockState = await getPremiumShopUnlock(admin, visitorId);
+      const premiumUnlockState = await resolvePremiumShopUnlock(admin, visitorId);
       const premiumUnlockOn = isPremiumShopUnlockActive(premiumUnlockState);
 
       if (!premiumUnlockOn) {
