@@ -503,6 +503,7 @@ export default function LuckRoyaleNyawa() {
                 isUnlocked={nyawaPremium.isActive}
                 expiresAt={nyawaPremium.activeUntil}
                 price={nyawaPremium.price}
+                shopUnlock={premiumShopUnlock}
               />
             </TabsContent>
             <TabsContent value="normal" className="space-y-4 mt-0">
