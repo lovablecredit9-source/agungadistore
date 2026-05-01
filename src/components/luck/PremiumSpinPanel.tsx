@@ -31,6 +31,39 @@ const PACKS: PremiumPack[] = [
 
 const FREE_PER_DAY = 2;
 
+const PRIZE_POOL: { rarity: Rarity; chance: string; prizes: { emoji: string; label: string }[] }[] = [
+  { rarity: "mythic", chance: "~0.5%", prizes: [
+    { emoji: "🪙", label: "50.000 Koin Streak" },
+    { emoji: "💵", label: "Rp 50.000 Saldo" },
+    { emoji: "💎", label: "2.000 Gem" },
+    { emoji: "🔑", label: "100 Kredit Game" },
+  ]},
+  { rarity: "legendary", chance: "~3%", prizes: [
+    { emoji: "💵", label: "Rp 10.000 Saldo" },
+    { emoji: "💎", label: "500 Gem" },
+    { emoji: "🔑", label: "30 Kredit Game" },
+    { emoji: "🪙", label: "10.000 Koin" },
+  ]},
+  { rarity: "epic", chance: "~10%", prizes: [
+    { emoji: "💎", label: "100 Gem" },
+    { emoji: "🔑", label: "10 Kredit Game" },
+    { emoji: "🪙", label: "2.500 Koin" },
+    { emoji: "❤️", label: "5 Nyawa Extra" },
+  ]},
+  { rarity: "rare", chance: "~25%", prizes: [
+    { emoji: "💎", label: "25 Gem" },
+    { emoji: "❤️", label: "2 Nyawa" },
+    { emoji: "⏱️", label: "Time Freeze" },
+    { emoji: "🛡️", label: "Streak Freeze" },
+  ]},
+  { rarity: "common", chance: "~61.5%", prizes: [
+    { emoji: "💡", label: "Auto Hint" },
+    { emoji: "🪙", label: "100-500 Koin" },
+    { emoji: "❤️", label: "1 Nyawa" },
+    { emoji: "💎", label: "5-10 Gem" },
+  ]},
+];
+
 function rarityGrad(r: string) {
   switch (r) {
     case "mythic": return "from-fuchsia-600 via-pink-500 to-amber-400";
