@@ -1420,7 +1420,7 @@ Deno.serve(async (req) => {
       }
       const rows = all;
 
-      const all = rows || [];
+      const allRows = rows;
       const visitorIds = Array.from(new Set(all.map(r => r.visitor_id))).filter(Boolean);
 
       // Map visitor_id -> user_balance_id (akun aktif terakhir)
