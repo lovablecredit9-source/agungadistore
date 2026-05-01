@@ -135,6 +135,10 @@ export default function PremiumSpinPanel({ visitorId, gems, setGems, isUnlocked,
 
   const doSpin = async (useFree: boolean) => {
     if (busy || !visitorId) return;
+    if (!isUnlocked) {
+      toast({ title: "🔒 Premium belum aktif", description: `Beli akses Premium Rp ${price.toLocaleString("id-ID")} dulu di tab NORMAL (kartu Nyawa Premium).`, variant: "destructive" });
+      return;
+    }
     if (useFree && freeRemaining <= 0) {
       toast({ title: "Free spin habis", description: `Sudah pakai ${FREE_PER_DAY}x premium spin gratis hari ini. Reset 00:00 WIB.`, variant: "destructive" });
       return;
