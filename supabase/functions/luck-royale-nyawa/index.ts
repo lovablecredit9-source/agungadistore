@@ -1269,6 +1269,97 @@ Deno.serve(async (req) => {
       }, { headers: corsHeaders });
     }
 
+    if (action === "leaderboard") {
+      // Ambil seluruh history (batasi 5000 entri terbaru utk performa)
+      const { data: rows } = await admin
+        .from("luck_royale_nyawa_history")
+        .select("visitor_id, spin_type, rarity, reward_kind, reward_value, reward_label, created_at")
+        .order("created_at", { ascending: false })
+        .limit(5000);
+
+      const all = rows || [];
+      const visitorIds = Array.from(new Set(all.map(r => r.visitor_id))).filter(Boolean);
+
+      // Map visitor_id -> user_balance_id (akun aktif terakhir)
+      const ubMap = new Map<string, string | null>();
+      if (visitorIds.length) {
+        const { data: blh } = await admin
+          .from("balance_login_history")
+          .select("visitor_id, user_balance_id, logged_in_at")
+          .in("visitor_id", visitorIds)
+          .order("logged_in_at", { ascending: false });
+        (blh || []).forEach(r => {
+          if (!ubMap.has(r.visitor_id)) ubMap.set(r.visitor_id, r.user_balance_id);
+        });
+      }
+
+      // Ambil username dari user_balances
+      const ubIds = Array.from(new Set(Array.from(ubMap.values()).filter(Boolean) as string[]));
+      const usernameMap = new Map<string, string>();
+      if (ubIds.length) {
+        const { data: ubs } = await admin
+          .from("user_balances")
+          .select("id, username")
+          .in("id", ubIds);
+        (ubs || []).forEach(u => usernameMap.set(u.id, u.username || "Anonim"));
+      }
+
+      const accountKey = (vid: string) => {
+        const ub = ubMap.get(vid);
+        return ub ? `ub:${ub}` : `v:${vid}`;
+      };
+      const accountName = (vid: string) => {
+        const ub = ubMap.get(vid);
+        if (ub) return usernameMap.get(ub) || "Anonim";
+        return "Tamu";
+      };
+      // Mask username (sembunyikan tengah)
+      const maskName = (name: string) => {
+        if (!name || name.length <= 3) return name + "***";
+        const visible = Math.min(3, Math.ceil(name.length / 2));
+        return name.slice(0, visible) + "***";
+      };
+
+      // Top spinner — total spin (exclude free_daily? Tidak, semua dihitung)
+      const spinAgg = new Map<string, { name: string; total: number; jackpots: number }>();
+      // Top jackpot — Mythic & Legendary
+      const jackpotAgg = new Map<string, { name: string; count: number; latestLabel: string; latestAt: string }>();
+
+      for (const r of all) {
+        const key = accountKey(r.visitor_id);
+        const nm = maskName(accountName(r.visitor_id));
+
+        const s = spinAgg.get(key) || { name: nm, total: 0, jackpots: 0 };
+        s.total += 1;
+        if (r.rarity === "mythic" || r.rarity === "legendary") s.jackpots += 1;
+        spinAgg.set(key, s);
+
+        if (r.rarity === "mythic" || r.rarity === "legendary") {
+          const j = jackpotAgg.get(key) || { name: nm, count: 0, latestLabel: r.reward_label || "", latestAt: r.created_at };
+          j.count += 1;
+          if (Date.parse(r.created_at) > Date.parse(j.latestAt)) {
+            j.latestLabel = r.reward_label || j.latestLabel;
+            j.latestAt = r.created_at;
+          }
+          jackpotAgg.set(key, j);
+        }
+      }
+
+      const topSpinners = Array.from(spinAgg.values())
+        .sort((a, b) => b.total - a.total)
+        .slice(0, 30);
+      const topJackpots = Array.from(jackpotAgg.values())
+        .sort((a, b) => b.count - a.count || Date.parse(b.latestAt) - Date.parse(a.latestAt))
+        .slice(0, 30);
+
+      return Response.json({
+        success: true,
+        topSpinners,
+        topJackpots,
+        totalEntriesScanned: all.length,
+      }, { headers: corsHeaders });
+    }
+
     return Response.json({ error: "Unknown action" }, { status: 400, headers: corsHeaders });
   } catch (e) {
     return Response.json({ error: e instanceof Error ? e.message : "Error" }, { status: 500, headers: corsHeaders });
