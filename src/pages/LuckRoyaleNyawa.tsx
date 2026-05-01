@@ -102,6 +102,10 @@ export default function LuckRoyaleNyawa() {
   const [shopAccess, setShopAccess] = useState<{ isActive: boolean; activeUntil: string | null; purchasedAt: string | null; price: number; durationDays: number }>({ isActive: false, activeUntil: null, purchasedAt: null, price: 100000, durationDays: 30 });
   const [superShopAccess, setSuperShopAccess] = useState<{ isActive: boolean; activeUntil: string | null; purchasedAt: string | null; price: number; durationDays: number }>({ isActive: false, activeUntil: null, purchasedAt: null, price: 300000, durationDays: 30 });
   const [ultraShopAccess, setUltraShopAccess] = useState<{ isActive: boolean; activeUntil: string | null; purchasedAt: string | null; price: number; durationDays: number }>({ isActive: false, activeUntil: null, purchasedAt: null, price: 500000, durationDays: 30 });
+  const [nyawaPremium, setNyawaPremium] = useState<{ isActive: boolean; activeUntil: string | null; purchasedAt: string | null; price: number; durationHours: number }>({ isActive: false, activeUntil: null, purchasedAt: null, price: 50000, durationHours: 24 });
+  const [npPinOpen, setNpPinOpen] = useState(false);
+  const [npPin, setNpPin] = useState("");
+  const [npBuying, setNpBuying] = useState(false);
   const [redeeming, setRedeeming] = useState<string | null>(null);
   const [shopTier, setShopTier] = useState<"free" | "premium" | "super_premium" | "ultra">("free");
   const [luckyHour, setLuckyHour] = useState<{ active: boolean; hour: number; date: string; nextActiveAt: string; boostedUntil?: string | null; source?: "free" | "purchased" | null } | null>(null);
