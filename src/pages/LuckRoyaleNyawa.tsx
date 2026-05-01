@@ -482,6 +482,51 @@ export default function LuckRoyaleNyawa() {
             </TabsList>
 
             <TabsContent value="spin" className="space-y-4 mt-3">
+          {/* 👑 NYAWA PREMIUM PASS — Rp 50k / 24 jam */}
+          <div className={`relative overflow-hidden rounded-2xl border-2 p-3 shadow-xl ${nyawaPremium.isActive ? "bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 border-emerald-300/70 shadow-emerald-500/40" : "bg-gradient-to-r from-rose-600 via-fuchsia-600 to-amber-500 border-amber-300/70 shadow-fuchsia-500/40"}`}>
+            <div className="absolute inset-0 opacity-25 animate-pulse" style={{
+              backgroundImage: "linear-gradient(120deg, transparent 30%, rgba(255,255,255,0.6) 50%, transparent 70%)",
+            }} />
+            <div className="relative flex items-center gap-3">
+              <div className="w-14 h-14 rounded-2xl bg-black/40 ring-2 ring-white/70 flex items-center justify-center shrink-0 animate-pulse">
+                <Crown className="w-8 h-8 text-amber-200" fill="currentColor" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-1.5 mb-0.5 flex-wrap">
+                  <Badge className="bg-black text-amber-200 font-black text-[8px]">👑 PREMIUM</Badge>
+                  <span className="text-[9px] font-black tracking-widest text-white">NYAWA PREMIUM • 24 JAM</span>
+                </div>
+                {nyawaPremium.isActive ? (
+                  <>
+                    <div className="text-base font-black text-white drop-shadow">AKTIF — Pool MANTAP JIWA 🔥</div>
+                    <p className="text-[10px] font-bold text-emerald-100/95 mt-0.5">
+                      Berakhir: {nyawaPremium.activeUntil ? new Date(nyawaPremium.activeUntil).toLocaleString("id-ID", { timeZone: "Asia/Jakarta", hour: "2-digit", minute: "2-digit", day: "2-digit", month: "short" }) : "-"} WIB
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <div className="flex items-baseline gap-1">
+                      <span className="text-xl font-black text-white drop-shadow">Rp 50.000</span>
+                      <span className="text-[9px] font-black text-amber-100">/ 24 jam</span>
+                    </div>
+                    <p className="text-[10px] font-bold text-white/95 mt-0.5">
+                      Pool spin LEBIH MANTAP — banyak Epic+, peluang Mythic 5×! Bayar saldo + PIN.
+                    </p>
+                  </>
+                )}
+              </div>
+              {!nyawaPremium.isActive && (
+                <Button
+                  size="sm"
+                  onClick={() => setNpPinOpen(true)}
+                  className="shrink-0 bg-black text-amber-200 hover:bg-black/90 font-black text-[10px] h-9 px-3 rounded-xl shadow-lg"
+                >
+                  BELI
+                </Button>
+              )}
+            </div>
+          </div>
+
           {/* 💥 MEGA JACKPOT POOL - community pool banner */}
           <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-purple-700 via-fuchsia-600 to-pink-600 border-2 border-fuchsia-300/60 p-3 shadow-xl shadow-fuchsia-500/40">
             <div className="absolute inset-0 opacity-30 animate-pulse" style={{
