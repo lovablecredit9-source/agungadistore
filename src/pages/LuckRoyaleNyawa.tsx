@@ -14,6 +14,7 @@ import {
   Brain, Target, TrendingDown, CheckCircle2, AlertCircle, Rocket, Gift, Flame as FlameIcon,
 } from "lucide-react";
 import MegaSpinArena from "@/components/luck/MegaSpinArena";
+import PremiumSpinPanel from "@/components/luck/PremiumSpinPanel";
 import FadedWheel from "@/components/streak/FadedWheel";
 import DiamondRoyaleInline from "@/components/streak/DiamondRoyaleInline";
 
