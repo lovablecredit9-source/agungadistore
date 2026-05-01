@@ -104,9 +104,12 @@ interface Props {
   visitorId: string | null;
   gems: number;
   setGems: (n: number) => void;
+  isUnlocked: boolean;
+  expiresAt?: string | null;
+  price?: number;
 }
 
-export default function PremiumSpinPanel({ visitorId, gems, setGems }: Props) {
+export default function PremiumSpinPanel({ visitorId, gems, setGems, isUnlocked, expiresAt, price = 50000 }: Props) {
   const { toast } = useToast();
   const [busy, setBusy] = useState(false);
   const [freeUsed, setFreeUsed] = useState(getFreeUsedToday());
