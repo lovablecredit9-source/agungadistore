@@ -1068,8 +1068,29 @@ Deno.serve(async (req) => {
         await admin.from("luck_royale_nyawa_history").insert(historyRows.slice(i, i + CHUNK));
       }
 
+      // 4) Tambahkan Lucky Token jika ada
+      let newTokenTotal = 0;
+      if (tokenGain > 0) {
+        const ts = await getLuckyTokens(admin, visitorId);
+        newTokenTotal = ts.tokens + tokenGain;
+        await setLuckyTokens(admin, visitorId, newTokenTotal, ts.spinProgress);
+      } else {
+        const ts = await getLuckyTokens(admin, visitorId);
+        newTokenTotal = ts.tokens;
+      }
+
       const { data: gemsAfter } = await admin.rpc("get_account_gems", { p_visitor_id: visitorId });
-      return Response.json({ success: true, gems: gemsAfter || 0, results, count: reqCount, costGems: cost }, { headers: corsHeaders });
+      return Response.json({
+        success: true,
+        gems: gemsAfter || 0,
+        results,
+        count: reqCount,
+        costGems: cost,
+        luckyTokens: newTokenTotal,
+        tokenGain,
+        luckActive,
+        poolMode: luckActive ? "lucky" : "normal",
+      }, { headers: corsHeaders });
     }
 
 
