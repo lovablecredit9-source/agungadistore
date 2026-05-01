@@ -878,7 +878,7 @@ Deno.serve(async (req) => {
           durationHours: NYAWA_PREMIUM_HOURS,
         },
         premiumShopUnlock: await (async () => {
-          const u = await getPremiumShopUnlock(admin, visitorId);
+          const u = await resolvePremiumShopUnlock(admin, visitorId);
           return {
             isActive: isPremiumShopUnlockActive(u),
             activeUntil: u.activeUntil,
@@ -1306,7 +1306,7 @@ Deno.serve(async (req) => {
       if (!item) return Response.json({ error: "Item tidak valid" }, { status: 400, headers: corsHeaders });
 
       // FREE tier: bebas. Tier lain: cek akses tier ATAU Premium Shop Unlock 7 hari.
-      const premiumUnlockState = await getPremiumShopUnlock(admin, visitorId);
+      const premiumUnlockState = await resolvePremiumShopUnlock(admin, visitorId);
       const premiumUnlockOn = isPremiumShopUnlockActive(premiumUnlockState);
 
       if (!premiumUnlockOn) {
