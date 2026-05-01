@@ -112,6 +112,26 @@ export default function LuckRoyaleNyawa() {
   const [nowTick, setNowTick] = useState(Date.now());
   useEffect(() => { const t = setInterval(() => setNowTick(Date.now()), 1000); return () => clearInterval(t); }, []);
 
+  // Leaderboard state & loader
+  const [lbLoading, setLbLoading] = useState(false);
+  const [lbLoaded, setLbLoaded] = useState(false);
+  const [topSpinners, setTopSpinners] = useState<Array<{ name: string; total: number; jackpots: number }>>([]);
+  const [topJackpots, setTopJackpots] = useState<Array<{ name: string; count: number; latestLabel: string; latestAt: string }>>([]);
+  const [lbInner, setLbInner] = useState<"spin" | "jackpot">("spin");
+  const fetchLeaderboard = async () => {
+    setLbLoading(true);
+    try {
+      const { data } = await supabase.functions.invoke("luck-royale-nyawa", {
+        body: { visitorId, action: "leaderboard" },
+      });
+      if (data?.success) {
+        setTopSpinners(data.topSpinners || []);
+        setTopJackpots(data.topJackpots || []);
+        setLbLoaded(true);
+      }
+    } finally { setLbLoading(false); }
+  };
+
   const fetchData = async () => {
     if (!visitorId) return;
     try {
