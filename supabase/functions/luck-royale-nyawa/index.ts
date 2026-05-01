@@ -1261,30 +1261,35 @@ Deno.serve(async (req) => {
       const item = TOKEN_SHOP.find(i => i.code === itemCode);
       if (!item) return Response.json({ error: "Item tidak valid" }, { status: 400, headers: corsHeaders });
 
-      // FREE tier: bebas tanpa akses. Premium & Super Premium: wajib akses tier yang sesuai.
-      if (item.tier === "premium") {
-        const access = await getShopAccess(admin, visitorId, "premium");
-        if (!isShopAccessActive(access)) {
-          return Response.json({
-            error: `Akses Premium belum aktif. Beli akses Rp ${SHOP_ACCESS_PRICE.toLocaleString("id-ID")} (berlaku ${SHOP_ACCESS_DAYS} hari) untuk tukar item Premium.`,
-          }, { status: 403, headers: corsHeaders });
-        }
-      } else if (item.tier === "super_premium") {
-        const superAccess = await getShopAccess(admin, visitorId, "super_premium");
-        if (!isShopAccessActive(superAccess)) {
-          return Response.json({
-            error: `Akses Super Premium belum aktif. Beli akses Rp ${SUPER_SHOP_ACCESS_PRICE.toLocaleString("id-ID")} (berlaku ${SUPER_SHOP_ACCESS_DAYS} hari) untuk tukar item Super Premium.`,
-          }, { status: 403, headers: corsHeaders });
-        }
-      } else if (item.tier === "ultra") {
-        const ultraAccess = await getShopAccess(admin, visitorId, "ultra");
-        if (!isShopAccessActive(ultraAccess)) {
-          return Response.json({
-            error: `Akses Ultra belum aktif. Beli akses Rp ${ULTRA_SHOP_ACCESS_PRICE.toLocaleString("id-ID")} (berlaku ${ULTRA_SHOP_ACCESS_DAYS} hari) untuk tukar item Ultra.`,
-          }, { status: 403, headers: corsHeaders });
+      // FREE tier: bebas. Tier lain: cek akses tier ATAU Premium Shop Unlock 7 hari.
+      const premiumUnlockState = await getPremiumShopUnlock(admin, visitorId);
+      const premiumUnlockOn = isPremiumShopUnlockActive(premiumUnlockState);
+
+      if (!premiumUnlockOn) {
+        if (item.tier === "premium") {
+          const access = await getShopAccess(admin, visitorId, "premium");
+          if (!isShopAccessActive(access)) {
+            return Response.json({
+              error: `Akses Premium belum aktif. Beli akses Rp ${SHOP_ACCESS_PRICE.toLocaleString("id-ID")} (berlaku ${SHOP_ACCESS_DAYS} hari) atau aktifkan Nyawa Premium (Rp 50.000) untuk unlock SEMUA tier 7 hari.`,
+            }, { status: 403, headers: corsHeaders });
+          }
+        } else if (item.tier === "super_premium") {
+          const superAccess = await getShopAccess(admin, visitorId, "super_premium");
+          if (!isShopAccessActive(superAccess)) {
+            return Response.json({
+              error: `Akses Super Premium belum aktif. Beli akses Rp ${SUPER_SHOP_ACCESS_PRICE.toLocaleString("id-ID")} (berlaku ${SUPER_SHOP_ACCESS_DAYS} hari) atau aktifkan Nyawa Premium (Rp 50.000) untuk unlock SEMUA tier 7 hari.`,
+            }, { status: 403, headers: corsHeaders });
+          }
+        } else if (item.tier === "ultra") {
+          const ultraAccess = await getShopAccess(admin, visitorId, "ultra");
+          if (!isShopAccessActive(ultraAccess)) {
+            return Response.json({
+              error: `Akses Ultra belum aktif. Beli akses Rp ${ULTRA_SHOP_ACCESS_PRICE.toLocaleString("id-ID")} (berlaku ${ULTRA_SHOP_ACCESS_DAYS} hari) atau aktifkan Nyawa Premium (Rp 50.000) untuk unlock SEMUA tier 7 hari.`,
+            }, { status: 403, headers: corsHeaders });
+          }
         }
       }
-      // tier === "free" → langsung lanjut tanpa cek akses
+      // tier === "free" → langsung lanjut
 
       const tokenState = await getLuckyTokens(admin, visitorId);
       if (tokenState.tokens < item.cost) {
