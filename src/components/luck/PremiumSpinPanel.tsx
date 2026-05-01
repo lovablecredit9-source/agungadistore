@@ -208,6 +208,50 @@ export default function PremiumSpinPanel({ visitorId, gems, setGems, isUnlocked,
         </div>
       </div>
 
+      {/* Status Banner: Locked vs Active */}
+      {isUnlocked ? (
+        <div className="rounded-xl bg-gradient-to-r from-emerald-600/30 via-teal-600/30 to-cyan-600/30 border-2 border-emerald-400/60 px-3 py-2 flex items-center gap-2">
+          <div className="w-8 h-8 rounded-full bg-emerald-500/30 flex items-center justify-center">
+            <Crown className="w-4 h-4 text-emerald-200" fill="currentColor" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="text-[11px] font-black text-emerald-100 tracking-wide">PREMIUM AKTIF ✨</div>
+            <div className="text-[9px] text-emerald-200/80 truncate">
+              {expiresAt ? `Berakhir: ${new Date(expiresAt).toLocaleString("id-ID", { timeZone: "Asia/Jakarta", hour: "2-digit", minute: "2-digit", day: "2-digit", month: "short" })} WIB` : "Akses penuh aktif"}
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div className="rounded-xl bg-gradient-to-r from-rose-700/40 via-red-700/40 to-orange-700/40 border-2 border-rose-400/60 p-3">
+          <div className="flex items-center gap-2 mb-2">
+            <div className="w-9 h-9 rounded-full bg-rose-500/30 flex items-center justify-center text-lg">🔒</div>
+            <div className="flex-1 min-w-0">
+              <div className="text-[12px] font-black text-rose-100 tracking-wide">PREMIUM TERKUNCI</div>
+              <div className="text-[10px] text-rose-200/90">
+                Wajib beli akses Rp <span className="font-black">{price.toLocaleString("id-ID")}</span> / 24 jam dulu
+              </div>
+            </div>
+          </div>
+          <Button
+            onClick={() => {
+              // Pindah ke tab Normal, lalu scroll ke kartu Nyawa Premium
+              const normalTab = document.querySelector<HTMLElement>('[role="tab"][value="normal"]');
+              if (normalTab) normalTab.click();
+              setTimeout(() => {
+                const card = document.querySelector('[data-nyawa-premium-card]');
+                if (card) card.scrollIntoView({ behavior: "smooth", block: "center" });
+              }, 200);
+            }}
+            className="w-full h-10 bg-gradient-to-r from-amber-400 via-orange-500 to-red-600 hover:from-amber-500 hover:via-orange-600 hover:to-red-700 text-white font-black text-[12px] tracking-wider"
+          >
+            🔓 BELI AKSES Rp {price.toLocaleString("id-ID")}
+          </Button>
+          <div className="text-[9px] text-rose-200/70 text-center mt-1.5">
+            Setelah aktif: 2× free spin/hari + bisa spin gem dengan hadiah 5× lipat
+          </div>
+        </div>
+      )}
+
       {/* Showcase */}
       <div className="relative rounded-xl bg-black/40 border border-fuchsia-500/30 overflow-hidden">
         <div className="aspect-[16/9] flex items-center justify-center bg-gradient-to-br from-fuchsia-900/40 via-purple-900/30 to-amber-900/30">
