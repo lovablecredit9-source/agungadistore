@@ -1199,9 +1199,6 @@ Deno.serve(async (req) => {
       }, { headers: corsHeaders });
     }
 
-      await bumpMilestoneSpin(admin, visitorId, 1);
-
-
     if (action === "spin_single" || action === "spin_bundle" || action === "spin_pack") {
       let spinCount = 1;
       let cost = SINGLE_COST_GEMS;
