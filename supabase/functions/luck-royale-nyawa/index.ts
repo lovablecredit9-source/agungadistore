@@ -1089,6 +1089,29 @@ Deno.serve(async (req) => {
       // Sertakan token otomatis ke field tokenGain agar UI menampilkan total perolehan
       const tokenGainTotal = totalTokenAdd;
 
+      // 5) Tambah counter milestone harian (semua premium spin: free + paid)
+      try {
+        const dayWib = new Date(Date.now() + 7 * 3600_000).toISOString().slice(0, 10);
+        const { data: row } = await admin
+          .from("premium_spin_daily_milestones")
+          .select("id, spin_count, claimed_milestones")
+          .eq("visitor_id", visitorId)
+          .eq("day_wib", dayWib)
+          .maybeSingle();
+        if (row) {
+          const newCount = Math.min(20, (row.spin_count || 0) + reqCount);
+          await admin.from("premium_spin_daily_milestones")
+            .update({ spin_count: newCount }).eq("id", row.id);
+        } else {
+          await admin.from("premium_spin_daily_milestones").insert({
+            visitor_id: visitorId,
+            day_wib: dayWib,
+            spin_count: Math.min(20, reqCount),
+            claimed_milestones: [],
+          });
+        }
+      } catch (_e) { /* milestone non-blocking */ }
+
       const { data: gemsAfter } = await admin.rpc("get_account_gems", { p_visitor_id: visitorId });
       return Response.json({
         success: true,
@@ -1102,6 +1125,72 @@ Deno.serve(async (req) => {
         luckyTokenThreshold: TOKENS_PER_SPIN_THRESHOLD,
         luckActive,
         poolMode: luckActive ? "premium_lucky" : "premium",
+      }, { headers: corsHeaders });
+    }
+
+    // ============= MILESTONE HADIAH GEM HARIAN PREMIUM SPIN =============
+    if (action === "milestone_status") {
+      const dayWib = new Date(Date.now() + 7 * 3600_000).toISOString().slice(0, 10);
+      const { data: row } = await admin
+        .from("premium_spin_daily_milestones")
+        .select("spin_count, claimed_milestones")
+        .eq("visitor_id", visitorId)
+        .eq("day_wib", dayWib)
+        .maybeSingle();
+      return Response.json({
+        spinCount: row?.spin_count || 0,
+        claimed: row?.claimed_milestones || [],
+        milestones: [
+          { spins: 2, gems: 50 },
+          { spins: 5, gems: 200 },
+          { spins: 10, gems: 500 },
+          { spins: 20, gems: 1500 },
+        ],
+        cap: 20,
+        dayWib,
+      }, { headers: corsHeaders });
+    }
+
+    if (action === "milestone_claim") {
+      const milestoneSpins = Number((body as any).milestone) || 0;
+      const REWARDS: Record<number, number> = { 2: 50, 5: 200, 10: 500, 20: 1500 };
+      if (!REWARDS[milestoneSpins]) {
+        return Response.json({ error: "Milestone tidak valid" }, { status: 400, headers: corsHeaders });
+      }
+      const dayWib = new Date(Date.now() + 7 * 3600_000).toISOString().slice(0, 10);
+      const { data: row } = await admin
+        .from("premium_spin_daily_milestones")
+        .select("id, spin_count, claimed_milestones")
+        .eq("visitor_id", visitorId)
+        .eq("day_wib", dayWib)
+        .maybeSingle();
+      const spinCount = row?.spin_count || 0;
+      const claimed: number[] = row?.claimed_milestones || [];
+      if (spinCount < milestoneSpins) {
+        return Response.json({ error: `Butuh ${milestoneSpins} spin (kamu baru ${spinCount})` }, { status: 400, headers: corsHeaders });
+      }
+      if (claimed.includes(milestoneSpins)) {
+        return Response.json({ error: "Milestone ini sudah diklaim hari ini" }, { status: 400, headers: corsHeaders });
+      }
+      const gemReward = REWARDS[milestoneSpins];
+      const newClaimed = [...claimed, milestoneSpins].sort((a, b) => a - b);
+      if (row) {
+        await admin.from("premium_spin_daily_milestones")
+          .update({ claimed_milestones: newClaimed }).eq("id", row.id);
+      } else {
+        await admin.from("premium_spin_daily_milestones").insert({
+          visitor_id: visitorId, day_wib: dayWib, spin_count: spinCount, claimed_milestones: newClaimed,
+        });
+      }
+      await admin.rpc("add_account_gems", { p_visitor_id: visitorId, p_amount: gemReward });
+      const { data: gemsAfter } = await admin.rpc("get_account_gems", { p_visitor_id: visitorId });
+      return Response.json({
+        success: true,
+        gems: gemsAfter || 0,
+        gemReward,
+        milestone: milestoneSpins,
+        claimed: newClaimed,
+        spinCount,
       }, { headers: corsHeaders });
     }
 

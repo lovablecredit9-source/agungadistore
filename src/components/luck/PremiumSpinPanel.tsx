@@ -132,6 +132,41 @@ export default function PremiumSpinPanel({ visitorId, gems, setGems, isUnlocked,
   const [history, setHistory] = useState<any[]>([]);
   const [historyLoading, setHistoryLoading] = useState(false);
   const [historyLimit, setHistoryLimit] = useState(20);
+  const [milestone, setMilestone] = useState<{ spinCount: number; claimed: number[]; cap: number } | null>(null);
+  const [claimingMs, setClaimingMs] = useState<number | null>(null);
+  const MILESTONES: { spins: number; gems: number }[] = [
+    { spins: 2, gems: 50 },
+    { spins: 5, gems: 200 },
+    { spins: 10, gems: 500 },
+    { spins: 20, gems: 1500 },
+  ];
+
+  const loadMilestone = async () => {
+    if (!visitorId) return;
+    try {
+      const { data } = await supabase.functions.invoke("luck-royale-nyawa", { body: { visitorId, action: "milestone_status" } });
+      if (data && !data.error) {
+        setMilestone({ spinCount: data.spinCount || 0, claimed: data.claimed || [], cap: data.cap || 20 });
+      }
+    } catch { /* noop */ }
+  };
+
+  const claimMilestone = async (spins: number) => {
+    if (!visitorId || claimingMs !== null) return;
+    setClaimingMs(spins);
+    try {
+      const { data, error } = await supabase.functions.invoke("luck-royale-nyawa", { body: { visitorId, action: "milestone_claim", milestone: spins } });
+      if (error || data?.error) {
+        toast({ title: "Gagal klaim", description: data?.error || error?.message || "Coba lagi", variant: "destructive" });
+        return;
+      }
+      if (typeof data.gems === "number") setGems(data.gems);
+      setMilestone((m) => m ? { ...m, claimed: data.claimed || [] } : m);
+      toast({ title: "🎁 Hadiah Milestone!", description: `+${data.gemReward} 💎 berhasil ditambahkan` });
+    } finally {
+      setClaimingMs(null);
+    }
+  };
 
   useEffect(() => {
     const id = setInterval(() => {
@@ -159,6 +194,7 @@ export default function PremiumSpinPanel({ visitorId, gems, setGems, isUnlocked,
   };
 
   useEffect(() => { loadHistory(); /* eslint-disable-next-line */ }, [visitorId, historyLimit, results.length]);
+  useEffect(() => { loadMilestone(); /* eslint-disable-next-line */ }, [visitorId, results.length]);
 
   const freeRemaining = Math.max(0, FREE_PER_DAY - freeUsed);
   const activePack = PACKS.find((p) => p.count === selectedPack) || PACKS[0];
@@ -362,6 +398,73 @@ export default function PremiumSpinPanel({ visitorId, gems, setGems, isUnlocked,
           {freeRemaining}/{FREE_PER_DAY} hari ini
         </span>
       </button>
+
+      {/* MILESTONE GEM HARIAN */}
+      {isUnlocked && milestone && (
+        <div className="rounded-xl bg-gradient-to-br from-amber-900/40 via-orange-900/30 to-fuchsia-900/40 border-2 border-amber-400/50 p-3 space-y-2">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-1.5">
+              <Gift className="w-4 h-4 text-amber-300" />
+              <span className="text-[11px] font-black tracking-widest bg-gradient-to-r from-amber-200 to-fuchsia-200 bg-clip-text text-transparent">
+                HADIAH MILESTONE HARIAN
+              </span>
+            </div>
+            <span className="text-[9px] font-black bg-black/40 text-amber-200 px-2 py-0.5 rounded-full">
+              {Math.min(milestone.spinCount, milestone.cap)}/{milestone.cap} spin
+            </span>
+          </div>
+
+          {/* Progress bar */}
+          <div className="relative h-2 bg-black/50 rounded-full overflow-hidden">
+            <div
+              className="absolute inset-y-0 left-0 bg-gradient-to-r from-amber-400 via-orange-500 to-fuchsia-500 transition-all"
+              style={{ width: `${Math.min(100, (milestone.spinCount / milestone.cap) * 100)}%` }}
+            />
+          </div>
+
+          <div className="grid grid-cols-4 gap-1.5">
+            {MILESTONES.map((m) => {
+              const reached = milestone.spinCount >= m.spins;
+              const claimed = milestone.claimed.includes(m.spins);
+              const claimable = reached && !claimed;
+              return (
+                <button
+                  key={m.spins}
+                  disabled={!claimable || claimingMs !== null}
+                  onClick={() => claimMilestone(m.spins)}
+                  className={`relative rounded-lg p-2 text-center transition active:scale-95 disabled:active:scale-100 ${
+                    claimed
+                      ? "bg-emerald-700/30 ring-1 ring-emerald-400/40 opacity-70"
+                      : claimable
+                        ? "bg-gradient-to-br from-amber-500 to-fuchsia-600 ring-2 ring-amber-300 shadow-lg shadow-amber-500/40 animate-pulse"
+                        : reached
+                          ? "bg-slate-700/60 ring-1 ring-slate-500/30"
+                          : "bg-slate-800/60 ring-1 ring-slate-600/30 opacity-60"
+                  }`}
+                >
+                  <div className="text-[9px] font-black text-white/80 tracking-wider">{m.spins} SPIN</div>
+                  <div className="flex items-center justify-center gap-0.5 mt-0.5">
+                    <Gem className="w-3 h-3 text-cyan-200" />
+                    <span className="text-[11px] font-black text-white">{m.gems}</span>
+                  </div>
+                  {claimed ? (
+                    <div className="text-[8px] font-black text-emerald-300 mt-0.5">✓ DIKLAIM</div>
+                  ) : claimable ? (
+                    <div className="text-[8px] font-black text-amber-100 mt-0.5">
+                      {claimingMs === m.spins ? "..." : "KLAIM!"}
+                    </div>
+                  ) : (
+                    <div className="text-[8px] font-bold text-white/50 mt-0.5">🔒 belum</div>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+          <p className="text-[9px] text-amber-200/70 text-center leading-snug">
+            Klaim manual setiap milestone tercapai. Hitungan spin & status klaim direset 00:00 WIB.
+          </p>
+        </div>
+      )}
 
       {/* Pack Selector */}
       <div className="rounded-xl bg-black/40 border border-fuchsia-500/30 p-2">
