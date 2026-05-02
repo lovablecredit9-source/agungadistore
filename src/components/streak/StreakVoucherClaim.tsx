@@ -1,0 +1,144 @@
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { toast } from "@/hooks/use-toast";
+import { Ticket, Gift, Sparkles } from "lucide-react";
+import { getVisitorId } from "@/lib/visitor-id";
+
+const REWARD_LABELS: Record<string, string> = {
+  gems: "💎 Gem",
+  streak_coins: "🪙 Koin Streak",
+  credits: "🎮 Kredit",
+  hints: "💡 Hint",
+  streak_freeze: "🧊 Streak Freeze",
+  time_freeze: "⏱️ Time Freeze",
+  extra_life: "❤️ Extra Life",
+};
+
+interface PublicVoucher {
+  id: string;
+  code: string;
+  name: string;
+  description: string | null;
+  reward_type: string;
+  reward_amount: number;
+  max_claims: number;
+  current_claims: number;
+  expires_at: string;
+}
+
+export default function StreakVoucherClaim() {
+  const [code, setCode] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [vouchers, setVouchers] = useState<PublicVoucher[]>([]);
+  const [claimedIds, setClaimedIds] = useState<Set<string>>(new Set());
+  const visitorId = getVisitorId();
+
+  const load = async () => {
+    const nowIso = new Date().toISOString();
+    const { data } = await supabase
+      .from("streak_vouchers")
+      .select("id, code, name, description, reward_type, reward_amount, max_claims, current_claims, expires_at, is_active, starts_at")
+      .eq("is_active", true)
+      .gt("expires_at", nowIso)
+      .order("expires_at", { ascending: true });
+    setVouchers((data || []).filter((v: any) => v.current_claims < v.max_claims && new Date(v.starts_at) <= new Date()) as PublicVoucher[]);
+
+    const { data: claims } = await supabase.from("streak_voucher_claims").select("voucher_id").eq("visitor_id", visitorId);
+    setClaimedIds(new Set((claims || []).map((c: any) => c.voucher_id)));
+  };
+
+  useEffect(() => {
+    load();
+    const ch = supabase.channel("streak-vouchers-public")
+      .on("postgres_changes", { event: "*", schema: "public", table: "streak_vouchers" }, () => load())
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, [visitorId]);
+
+  const claim = async (voucherCode: string) => {
+    if (!voucherCode.trim()) {
+      toast({ title: "Masukkan kode voucher", variant: "destructive" });
+      return;
+    }
+    setSubmitting(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("claim-streak-voucher", {
+        body: { visitorId, code: voucherCode.trim() },
+      });
+      if (error || (data as any)?.error) {
+        toast({ title: "Gagal klaim", description: (data as any)?.error || error?.message, variant: "destructive" });
+        return;
+      }
+      toast({ title: "🎉 Voucher diklaim!", description: (data as any).reward_label });
+      setCode("");
+      load();
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="space-y-3">
+      <Card className="border-primary/30 bg-gradient-to-br from-primary/10 to-accent/5">
+        <CardContent className="p-4 space-y-3">
+          <div className="flex items-center gap-2">
+            <Ticket className="w-5 h-5 text-primary" />
+            <h3 className="font-bold">Tukar Kode Streak Voucher</h3>
+          </div>
+          <p className="text-xs text-muted-foreground">Masukkan kode dari admin untuk dapat Gem, Koin Streak, Kredit, Hint, Streak Freeze, atau Time Freeze gratis.</p>
+          <div className="flex gap-2">
+            <Input
+              placeholder="STR-XXXXXXXX"
+              value={code}
+              onChange={(e) => setCode(e.target.value.toUpperCase())}
+              className="font-mono"
+            />
+            <Button onClick={() => claim(code)} disabled={submitting}>
+              <Gift className="w-4 h-4 mr-1" />Klaim
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {vouchers.length > 0 && (
+        <div className="space-y-2">
+          <div className="flex items-center gap-2 px-1">
+            <Sparkles className="w-4 h-4 text-accent" />
+            <h4 className="text-sm font-bold">Voucher Aktif</h4>
+          </div>
+          {vouchers.map(v => {
+            const claimed = claimedIds.has(v.id);
+            const remaining = v.max_claims - v.current_claims;
+            return (
+              <Card key={v.id} className={claimed ? "opacity-60" : ""}>
+                <CardContent className="p-3 space-y-2">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex-1 min-w-0">
+                      <div className="font-semibold text-sm truncate">{v.name}</div>
+                      <div className="text-[10px] font-mono text-muted-foreground">{v.code}</div>
+                    </div>
+                    <span className="px-2 py-0.5 rounded text-xs bg-primary/10 text-primary whitespace-nowrap">
+                      {REWARD_LABELS[v.reward_type] || v.reward_type} ×{v.reward_amount}
+                    </span>
+                  </div>
+                  {v.description && <p className="text-xs text-muted-foreground">{v.description}</p>}
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="text-[10px] text-muted-foreground">
+                      Sisa kuota: <b>{remaining}</b> · Exp: {new Date(v.expires_at).toLocaleDateString("id-ID")}
+                    </div>
+                    <Button size="sm" disabled={claimed || submitting} onClick={() => claim(v.code)}>
+                      {claimed ? "Sudah diklaim" : "Klaim"}
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
