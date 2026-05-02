@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { Crown, Gem, Loader2, Sparkles, Gift, Flame, Heart, Lightbulb, Timer, Shield, Coins, KeyRound, WalletCards, Ticket, X, Zap } from "lucide-react";
+import PremiumMilestonePanel from "./PremiumMilestonePanel";
 
 /**
  * 👑 PREMIUM SPIN PANEL
