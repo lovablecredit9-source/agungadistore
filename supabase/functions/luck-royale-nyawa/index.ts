@@ -1089,28 +1089,8 @@ Deno.serve(async (req) => {
       // Sertakan token otomatis ke field tokenGain agar UI menampilkan total perolehan
       const tokenGainTotal = totalTokenAdd;
 
-      // 5) Tambah counter milestone harian (semua premium spin: free + paid)
-      try {
-        const dayWib = new Date(Date.now() + 7 * 3600_000).toISOString().slice(0, 10);
-        const { data: row } = await admin
-          .from("premium_spin_daily_milestones")
-          .select("id, spin_count, claimed_milestones")
-          .eq("visitor_id", visitorId)
-          .eq("day_wib", dayWib)
-          .maybeSingle();
-        if (row) {
-          const newCount = Math.min(20, (row.spin_count || 0) + reqCount);
-          await admin.from("premium_spin_daily_milestones")
-            .update({ spin_count: newCount }).eq("id", row.id);
-        } else {
-          await admin.from("premium_spin_daily_milestones").insert({
-            visitor_id: visitorId,
-            day_wib: dayWib,
-            spin_count: Math.min(20, reqCount),
-            claimed_milestones: [],
-          });
-        }
-      } catch (_e) { /* milestone non-blocking */ }
+      // 5) Tambah counter milestone harian (semua spin Luck Royale: normal + premium + free)
+      await bumpMilestoneSpin(admin, visitorId, reqCount);
 
       const { data: gemsAfter } = await admin.rpc("get_account_gems", { p_visitor_id: visitorId });
       return Response.json({
