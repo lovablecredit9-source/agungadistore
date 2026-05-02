@@ -8,7 +8,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "@/hooks/use-toast";
-import { Ticket, Trash2, Copy, Plus } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Ticket, Trash2, Copy, Plus, Pencil, RotateCcw, Eraser } from "lucide-react";
+import AdminUserResetPanel from "./AdminUserResetPanel";
 
 type RewardType = "gems" | "streak_coins" | "credits" | "hints" | "streak_freeze" | "time_freeze" | "extra_life";
 
@@ -46,6 +48,7 @@ function genCode() {
 export default function AdminStreakVoucherTab() {
   const [vouchers, setVouchers] = useState<Voucher[]>([]);
   const [loading, setLoading] = useState(true);
+  const [editing, setEditing] = useState<Voucher | null>(null);
   const [form, setForm] = useState({
     code: genCode(),
     name: "",
@@ -108,8 +111,48 @@ export default function AdminStreakVoucherTab() {
     toast({ title: "Kode disalin", description: code });
   };
 
+  const resetClaims = async (v: Voucher) => {
+    if (!confirm(`Reset jumlah klaim "${v.name}" ke 0? Catatan klaim user TIDAK dihapus.`)) return;
+    await supabase.from("streak_vouchers").update({ current_claims: 0 }).eq("id", v.id);
+    toast({ title: "✅ Counter klaim direset" });
+    load();
+  };
+
+  const clearHistory = async (v: Voucher) => {
+    if (!confirm(`Hapus SEMUA history klaim user untuk "${v.name}"? User bisa klaim ulang & counter direset ke 0.`)) return;
+    await supabase.from("streak_voucher_claims").delete().eq("voucher_id", v.id);
+    await supabase.from("streak_vouchers").update({ current_claims: 0 }).eq("id", v.id);
+    toast({ title: "🧹 History klaim dihapus" });
+    load();
+  };
+
+  const saveEdit = async () => {
+    if (!editing) return;
+    if (!editing.name.trim() || editing.reward_amount < 1 || editing.max_claims < 1) {
+      toast({ title: "Lengkapi semua field", variant: "destructive" });
+      return;
+    }
+    const { error } = await supabase.from("streak_vouchers").update({
+      name: editing.name.trim(),
+      description: editing.description ?? "",
+      reward_type: editing.reward_type,
+      reward_amount: editing.reward_amount,
+      max_claims: editing.max_claims,
+      expires_at: editing.expires_at,
+      is_active: editing.is_active,
+    }).eq("id", editing.id);
+    if (error) {
+      toast({ title: "Gagal simpan", description: error.message, variant: "destructive" });
+      return;
+    }
+    toast({ title: "✅ Voucher diperbarui" });
+    setEditing(null);
+    load();
+  };
+
   return (
     <div className="space-y-4">
+      <AdminUserResetPanel />
       <Card>
         <CardContent className="p-4 space-y-3">
           <div className="flex items-center gap-2">
@@ -193,11 +236,84 @@ export default function AdminStreakVoucherTab() {
                   </span>
                   {full && <span className="px-2 py-0.5 rounded bg-destructive/10 text-destructive">Kuota habis</span>}
                 </div>
+                <div className="flex flex-wrap gap-1.5 pt-1 border-t">
+                  <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => setEditing(v)}>
+                    <Pencil className="w-3 h-3 mr-1" />Edit
+                  </Button>
+                  <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => resetClaims(v)}>
+                    <RotateCcw className="w-3 h-3 mr-1" />Reset Counter
+                  </Button>
+                  <Button size="sm" variant="outline" className="h-7 text-xs text-destructive" onClick={() => clearHistory(v)}>
+                    <Eraser className="w-3 h-3 mr-1" />Hapus History Klaim
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           );
         })}
       </div>
+
+      {/* Edit Dialog */}
+      <Dialog open={!!editing} onOpenChange={(o) => !o && setEditing(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Edit Voucher</DialogTitle>
+          </DialogHeader>
+          {editing && (
+            <div className="space-y-3">
+              <div>
+                <Label>Nama</Label>
+                <Input value={editing.name} onChange={(e) => setEditing({ ...editing, name: e.target.value })} />
+              </div>
+              <div>
+                <Label>Deskripsi</Label>
+                <Textarea rows={2} value={editing.description ?? ""} onChange={(e) => setEditing({ ...editing, description: e.target.value })} />
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <Label>Jenis Hadiah</Label>
+                  <Select value={editing.reward_type} onValueChange={(val) => setEditing({ ...editing, reward_type: val as RewardType })}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {(Object.keys(REWARD_LABELS) as RewardType[]).map(k => (
+                        <SelectItem key={k} value={k}>{REWARD_LABELS[k]}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>Jumlah</Label>
+                  <Input type="number" min={1} value={editing.reward_amount} onChange={(e) => setEditing({ ...editing, reward_amount: Math.max(1, Number(e.target.value) || 0) })} />
+                </div>
+                <div>
+                  <Label>Kuota Max</Label>
+                  <Input type="number" min={1} value={editing.max_claims} onChange={(e) => setEditing({ ...editing, max_claims: Math.max(1, Number(e.target.value) || 0) })} />
+                </div>
+                <div>
+                  <Label>Sudah Klaim</Label>
+                  <Input type="number" value={editing.current_claims} disabled />
+                </div>
+              </div>
+              <div>
+                <Label>Berakhir pada</Label>
+                <Input
+                  type="datetime-local"
+                  value={editing.expires_at ? new Date(new Date(editing.expires_at).getTime() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16) : ""}
+                  onChange={(e) => setEditing({ ...editing, expires_at: new Date(e.target.value).toISOString() })}
+                />
+              </div>
+              <div className="flex items-center justify-between">
+                <Label>Aktif</Label>
+                <Switch checked={editing.is_active} onCheckedChange={(v) => setEditing({ ...editing, is_active: v })} />
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditing(null)}>Batal</Button>
+            <Button onClick={saveEdit}>Simpan</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
