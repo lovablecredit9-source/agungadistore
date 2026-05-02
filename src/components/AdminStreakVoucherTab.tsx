@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { toast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Ticket, Trash2, Copy, Plus, Pencil, RotateCcw, Eraser } from "lucide-react";
+import { Ticket, Trash2, Copy, Plus, Pencil, RotateCcw, Eraser, Share2, Target } from "lucide-react";
 import AdminUserResetPanel from "./AdminUserResetPanel";
 
 type RewardType = "gems" | "streak_coins" | "credits" | "hints" | "streak_freeze" | "time_freeze" | "extra_life" | "saldo";
@@ -120,6 +120,16 @@ export default function AdminStreakVoucherTab() {
     toast({ title: "Kode disalin", description: code });
   };
 
+  const shareVoucher = async (v: Voucher) => {
+    const reward = `${REWARD_LABELS[v.reward_type]} ×${v.reward_amount}`;
+    const text = `🎁 *Streak Voucher Gratis!*\n\n${v.name}\n${v.description || ""}\n\nHadiah: ${reward}\nKode: *${v.code}*\nBerlaku sampai: ${new Date(v.expires_at).toLocaleString("id-ID")}\n\nKlaim di Agung Adi Store ➜ Streak ➜ Tukar Kode`;
+    if (navigator.share) {
+      try { await navigator.share({ title: v.name, text }); return; } catch {}
+    }
+    const wa = `https://wa.me/?text=${encodeURIComponent(text)}`;
+    window.open(wa, "_blank");
+  };
+
   const resetClaims = async (v: Voucher) => {
     if (!confirm(`Reset jumlah klaim "${v.name}" ke 0? Catatan klaim user TIDAK dihapus.`)) return;
     await supabase.from("streak_vouchers").update({ current_claims: 0 }).eq("id", v.id);
@@ -206,6 +216,20 @@ export default function AdminStreakVoucherTab() {
             <div>
               <Label>Durasi (jam)</Label>
               <Input type="number" min={1} value={form.duration_hours} onChange={(e) => setForm({ ...form, duration_hours: Math.max(1, Number(e.target.value) || 0) })} />
+            </div>
+            <div className="col-span-2 space-y-2 rounded-lg border border-dashed p-2">
+              <div className="flex items-center gap-1.5 text-xs font-bold text-primary">
+                <Target className="w-3.5 h-3.5" /> Target khusus (opsional)
+              </div>
+              <p className="text-[10px] text-muted-foreground">Kosongkan = voucher publik. Isi untuk batasi penerima.</p>
+              <div>
+                <Label className="text-xs">Visitor IDs (pisah koma/baris)</Label>
+                <Textarea rows={2} placeholder="visitor1, visitor2" value={form.target_visitor_ids} onChange={(e) => setForm({ ...form, target_visitor_ids: e.target.value })} className="text-xs font-mono" />
+              </div>
+              <div>
+                <Label className="text-xs">User Balance IDs (UUID, pisah koma/baris)</Label>
+                <Textarea rows={2} placeholder="uuid-1, uuid-2" value={form.target_user_balance_ids} onChange={(e) => setForm({ ...form, target_user_balance_ids: e.target.value })} className="text-xs font-mono" />
+              </div>
             </div>
             <div className="col-span-2 flex items-center justify-between">
               <Label>Aktifkan voucher</Label>
