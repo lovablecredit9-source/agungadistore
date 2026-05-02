@@ -9,10 +9,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { toast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Ticket, Trash2, Copy, Plus, Pencil, RotateCcw, Eraser } from "lucide-react";
+import { Ticket, Trash2, Copy, Plus, Pencil, RotateCcw, Eraser, Share2, Target } from "lucide-react";
 import AdminUserResetPanel from "./AdminUserResetPanel";
 
-type RewardType = "gems" | "streak_coins" | "credits" | "hints" | "streak_freeze" | "time_freeze" | "extra_life";
+type RewardType = "gems" | "streak_coins" | "credits" | "hints" | "streak_freeze" | "time_freeze" | "extra_life" | "saldo";
 
 const REWARD_LABELS: Record<RewardType, string> = {
   gems: "💎 Gem",
@@ -22,6 +22,7 @@ const REWARD_LABELS: Record<RewardType, string> = {
   streak_freeze: "🧊 Streak Freeze",
   time_freeze: "⏱️ Time Freeze",
   extra_life: "❤️ Extra Life",
+  saldo: "💰 Saldo (Rp)",
 };
 
 interface Voucher {
@@ -36,6 +37,8 @@ interface Voucher {
   starts_at: string;
   expires_at: string;
   is_active: boolean;
+  target_visitor_ids: string[];
+  target_user_balance_ids: string[];
 }
 
 function genCode() {
@@ -58,6 +61,8 @@ export default function AdminStreakVoucherTab() {
     max_claims: 10,
     duration_hours: 24,
     is_active: true,
+    target_visitor_ids: "",
+    target_user_balance_ids: "",
   });
 
   const load = async () => {
@@ -75,6 +80,8 @@ export default function AdminStreakVoucherTab() {
       return;
     }
     const expires = new Date(Date.now() + form.duration_hours * 3600 * 1000);
+    const targetVisitors = form.target_visitor_ids.split(/[\s,;\n]+/).map(s => s.trim()).filter(Boolean);
+    const targetUbs = form.target_user_balance_ids.split(/[\s,;\n]+/).map(s => s.trim()).filter(Boolean);
     const { error } = await supabase.from("streak_vouchers").insert({
       code: form.code.toUpperCase().trim(),
       name: form.name.trim(),
@@ -85,13 +92,15 @@ export default function AdminStreakVoucherTab() {
       starts_at: new Date().toISOString(),
       expires_at: expires.toISOString(),
       is_active: form.is_active,
-    });
+      target_visitor_ids: targetVisitors,
+      target_user_balance_ids: targetUbs,
+    } as any);
     if (error) {
       toast({ title: "Gagal buat voucher", description: error.message, variant: "destructive" });
       return;
     }
     toast({ title: "✅ Voucher dibuat", description: `Kode: ${form.code}` });
-    setForm({ ...form, code: genCode(), name: "", description: "", reward_amount: 100, max_claims: 10 });
+    setForm({ ...form, code: genCode(), name: "", description: "", reward_amount: 100, max_claims: 10, target_visitor_ids: "", target_user_balance_ids: "" });
     load();
   };
 
@@ -109,6 +118,16 @@ export default function AdminStreakVoucherTab() {
   const copyCode = (code: string) => {
     navigator.clipboard.writeText(code);
     toast({ title: "Kode disalin", description: code });
+  };
+
+  const shareVoucher = async (v: Voucher) => {
+    const reward = `${REWARD_LABELS[v.reward_type]} ×${v.reward_amount}`;
+    const text = `🎁 *Streak Voucher Gratis!*\n\n${v.name}\n${v.description || ""}\n\nHadiah: ${reward}\nKode: *${v.code}*\nBerlaku sampai: ${new Date(v.expires_at).toLocaleString("id-ID")}\n\nKlaim di Agung Adi Store ➜ Streak ➜ Tukar Kode`;
+    if (navigator.share) {
+      try { await navigator.share({ title: v.name, text }); return; } catch {}
+    }
+    const wa = `https://wa.me/?text=${encodeURIComponent(text)}`;
+    window.open(wa, "_blank");
   };
 
   const resetClaims = async (v: Voucher) => {
@@ -198,6 +217,20 @@ export default function AdminStreakVoucherTab() {
               <Label>Durasi (jam)</Label>
               <Input type="number" min={1} value={form.duration_hours} onChange={(e) => setForm({ ...form, duration_hours: Math.max(1, Number(e.target.value) || 0) })} />
             </div>
+            <div className="col-span-2 space-y-2 rounded-lg border border-dashed p-2">
+              <div className="flex items-center gap-1.5 text-xs font-bold text-primary">
+                <Target className="w-3.5 h-3.5" /> Target khusus (opsional)
+              </div>
+              <p className="text-[10px] text-muted-foreground">Kosongkan = voucher publik. Isi untuk batasi penerima.</p>
+              <div>
+                <Label className="text-xs">Visitor IDs (pisah koma/baris)</Label>
+                <Textarea rows={2} placeholder="visitor1, visitor2" value={form.target_visitor_ids} onChange={(e) => setForm({ ...form, target_visitor_ids: e.target.value })} className="text-xs font-mono" />
+              </div>
+              <div>
+                <Label className="text-xs">User Balance IDs (UUID, pisah koma/baris)</Label>
+                <Textarea rows={2} placeholder="uuid-1, uuid-2" value={form.target_user_balance_ids} onChange={(e) => setForm({ ...form, target_user_balance_ids: e.target.value })} className="text-xs font-mono" />
+              </div>
+            </div>
             <div className="col-span-2 flex items-center justify-between">
               <Label>Aktifkan voucher</Label>
               <Switch checked={form.is_active} onCheckedChange={(v) => setForm({ ...form, is_active: v })} />
@@ -235,10 +268,18 @@ export default function AdminStreakVoucherTab() {
                     {expired ? "Kedaluwarsa" : `Exp: ${new Date(v.expires_at).toLocaleString("id-ID")}`}
                   </span>
                   {full && <span className="px-2 py-0.5 rounded bg-destructive/10 text-destructive">Kuota habis</span>}
+                  {((v.target_visitor_ids?.length || 0) + (v.target_user_balance_ids?.length || 0)) > 0 && (
+                    <span className="px-2 py-0.5 rounded bg-purple-500/10 text-purple-600 inline-flex items-center gap-1">
+                      <Target className="w-3 h-3" />Target {(v.target_visitor_ids?.length || 0) + (v.target_user_balance_ids?.length || 0)} akun
+                    </span>
+                  )}
                 </div>
                 <div className="flex flex-wrap gap-1.5 pt-1 border-t">
                   <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => setEditing(v)}>
                     <Pencil className="w-3 h-3 mr-1" />Edit
+                  </Button>
+                  <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => shareVoucher(v)}>
+                    <Share2 className="w-3 h-3 mr-1" />Bagikan
                   </Button>
                   <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => resetClaims(v)}>
                     <RotateCcw className="w-3 h-3 mr-1" />Reset Counter
