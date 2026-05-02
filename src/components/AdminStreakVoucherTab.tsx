@@ -12,7 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Ticket, Trash2, Copy, Plus, Pencil, RotateCcw, Eraser } from "lucide-react";
 import AdminUserResetPanel from "./AdminUserResetPanel";
 
-type RewardType = "gems" | "streak_coins" | "credits" | "hints" | "streak_freeze" | "time_freeze" | "extra_life";
+type RewardType = "gems" | "streak_coins" | "credits" | "hints" | "streak_freeze" | "time_freeze" | "extra_life" | "saldo";
 
 const REWARD_LABELS: Record<RewardType, string> = {
   gems: "💎 Gem",
@@ -22,6 +22,7 @@ const REWARD_LABELS: Record<RewardType, string> = {
   streak_freeze: "🧊 Streak Freeze",
   time_freeze: "⏱️ Time Freeze",
   extra_life: "❤️ Extra Life",
+  saldo: "💰 Saldo (Rp)",
 };
 
 interface Voucher {
@@ -36,6 +37,8 @@ interface Voucher {
   starts_at: string;
   expires_at: string;
   is_active: boolean;
+  target_visitor_ids: string[];
+  target_user_balance_ids: string[];
 }
 
 function genCode() {
@@ -58,6 +61,8 @@ export default function AdminStreakVoucherTab() {
     max_claims: 10,
     duration_hours: 24,
     is_active: true,
+    target_visitor_ids: "",
+    target_user_balance_ids: "",
   });
 
   const load = async () => {
@@ -75,6 +80,8 @@ export default function AdminStreakVoucherTab() {
       return;
     }
     const expires = new Date(Date.now() + form.duration_hours * 3600 * 1000);
+    const targetVisitors = form.target_visitor_ids.split(/[\s,;\n]+/).map(s => s.trim()).filter(Boolean);
+    const targetUbs = form.target_user_balance_ids.split(/[\s,;\n]+/).map(s => s.trim()).filter(Boolean);
     const { error } = await supabase.from("streak_vouchers").insert({
       code: form.code.toUpperCase().trim(),
       name: form.name.trim(),
@@ -85,13 +92,15 @@ export default function AdminStreakVoucherTab() {
       starts_at: new Date().toISOString(),
       expires_at: expires.toISOString(),
       is_active: form.is_active,
-    });
+      target_visitor_ids: targetVisitors,
+      target_user_balance_ids: targetUbs,
+    } as any);
     if (error) {
       toast({ title: "Gagal buat voucher", description: error.message, variant: "destructive" });
       return;
     }
     toast({ title: "✅ Voucher dibuat", description: `Kode: ${form.code}` });
-    setForm({ ...form, code: genCode(), name: "", description: "", reward_amount: 100, max_claims: 10 });
+    setForm({ ...form, code: genCode(), name: "", description: "", reward_amount: 100, max_claims: 10, target_visitor_ids: "", target_user_balance_ids: "" });
     load();
   };
 
