@@ -10,6 +10,7 @@ import { Switch } from "@/components/ui/switch";
 import { toast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Ticket, Trash2, Copy, Plus, Pencil, RotateCcw, Eraser } from "lucide-react";
+import AdminUserResetPanel from "./AdminUserResetPanel";
 
 type RewardType = "gems" | "streak_coins" | "credits" | "hints" | "streak_freeze" | "time_freeze" | "extra_life";
 
