@@ -505,9 +505,10 @@ export default function NeonStreakHub({ visitorId, forcedView }: Props) {
 
       {/* View tabs (only when not forced via top-level navigation) */}
       {!forcedView && (
-        <div className="grid grid-cols-3 gap-1 p-1 rounded-xl bg-black/40 border border-purple-500/30">
+        <div className="grid grid-cols-4 gap-1 p-1 rounded-xl bg-black/40 border border-purple-500/30">
           {[
             { id: "main", label: "Utama", Icon: Target, cls: "icon-3d-target" },
+            { id: "shop", label: "Voucher", Icon: Ticket, cls: "" },
             { id: "leaderboard", label: "Rank", Icon: Trophy, cls: "icon-3d-trophy" },
             { id: "calendar", label: "Cal", Icon: Calendar, cls: "icon-3d-target" },
           ].map(t => (
