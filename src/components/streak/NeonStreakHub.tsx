@@ -87,7 +87,7 @@ function parseTitleIcon(title: string): { Icon: any | null; cls: string; text: s
 
 interface Props {
   visitorId: string;
-  forcedView?: "main" | "event" | "shop";
+  forcedView?: "main" | "event" | "shop" | "voucher";
 }
 
 interface ShopItem {
@@ -139,7 +139,7 @@ export default function NeonStreakHub({ visitorId, forcedView }: Props) {
   const [longestStreak, setLongestStreak] = useState(0);
   const [totalClaims, setTotalClaims] = useState(0);
   const [celebrate, setCelebrate] = useState<{ show: boolean; msg: string }>({ show: false, msg: "" });
-  const [activeView, setActiveView] = useState<"main" | "event" | "shop" | "leaderboard" | "calendar">(forcedView || "main");
+  const [activeView, setActiveView] = useState<"main" | "event" | "shop" | "voucher" | "leaderboard" | "calendar">(forcedView || "main");
   useEffect(() => { if (forcedView) setActiveView(forcedView); }, [forcedView]);
 
   const POWER_UPS = [
@@ -480,7 +480,7 @@ export default function NeonStreakHub({ visitorId, forcedView }: Props) {
         </div>
       </div>
 
-      {activeView !== "shop" && (
+      {activeView !== "shop" && activeView !== "voucher" && (
         <>
           {/* Title kosmetik berdasar streak */}
           <div className="flex justify-center">
@@ -505,10 +505,11 @@ export default function NeonStreakHub({ visitorId, forcedView }: Props) {
 
       {/* View tabs (only when not forced via top-level navigation) */}
       {!forcedView && (
-        <div className="grid grid-cols-4 gap-1 p-1 rounded-xl bg-black/40 border border-purple-500/30">
+        <div className="grid grid-cols-5 gap-1 p-1 rounded-xl bg-black/40 border border-purple-500/30">
           {[
             { id: "main", label: "Utama", Icon: Target, cls: "icon-3d-target" },
-            { id: "shop", label: "Voucher", Icon: Ticket, cls: "" },
+            { id: "shop", label: "Shop", Icon: ShoppingBag, cls: "" },
+            { id: "voucher", label: "Voucher", Icon: Ticket, cls: "" },
             { id: "leaderboard", label: "Rank", Icon: Trophy, cls: "icon-3d-trophy" },
             { id: "calendar", label: "Cal", Icon: Calendar, cls: "icon-3d-target" },
           ].map(t => (
@@ -587,9 +588,20 @@ export default function NeonStreakHub({ visitorId, forcedView }: Props) {
         </div>
       )}
 
+      {activeView === "voucher" && (
+        <div className="space-y-3">
+          <div className="text-center py-2">
+            <h2 className="text-lg font-black bg-gradient-to-r from-pink-400 to-purple-400 bg-clip-text text-transparent flex items-center justify-center gap-2">
+              <Ticket className="w-5 h-5 text-pink-400" /> Streak Voucher
+            </h2>
+            <p className="text-[10px] text-white/60 mt-1">Tukar kode dari admin untuk hadiah Gem, Koin, Kredit, Hint & Freeze</p>
+          </div>
+          <StreakVoucherClaim />
+        </div>
+      )}
+
       {activeView === "shop" && (
         <div className="space-y-3">
-          <StreakVoucherClaim />
           <StreakFlashSaleHub visitorId={visitorId} onUpdate={loadAll} />
           <MegaShopHub visitorId={visitorId} onUpdate={loadAll} />
           <ScratchOffShop visitorId={visitorId} onUpdate={loadAll} />
