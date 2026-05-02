@@ -7142,6 +7142,95 @@ export type Database = {
           },
         ]
       }
+      streak_voucher_claims: {
+        Row: {
+          claimed_at: string
+          id: string
+          reward_amount: number
+          reward_type: string
+          user_balance_id: string | null
+          visitor_id: string
+          voucher_code: string
+          voucher_id: string
+        }
+        Insert: {
+          claimed_at?: string
+          id?: string
+          reward_amount: number
+          reward_type: string
+          user_balance_id?: string | null
+          visitor_id: string
+          voucher_code: string
+          voucher_id: string
+        }
+        Update: {
+          claimed_at?: string
+          id?: string
+          reward_amount?: number
+          reward_type?: string
+          user_balance_id?: string | null
+          visitor_id?: string
+          voucher_code?: string
+          voucher_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "streak_voucher_claims_voucher_id_fkey"
+            columns: ["voucher_id"]
+            isOneToOne: false
+            referencedRelation: "streak_vouchers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      streak_vouchers: {
+        Row: {
+          code: string
+          created_at: string
+          current_claims: number
+          description: string | null
+          expires_at: string
+          id: string
+          is_active: boolean
+          max_claims: number
+          name: string
+          reward_amount: number
+          reward_type: string
+          starts_at: string
+          updated_at: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          current_claims?: number
+          description?: string | null
+          expires_at: string
+          id?: string
+          is_active?: boolean
+          max_claims?: number
+          name: string
+          reward_amount: number
+          reward_type: string
+          starts_at?: string
+          updated_at?: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          current_claims?: number
+          description?: string | null
+          expires_at?: string
+          id?: string
+          is_active?: boolean
+          max_claims?: number
+          name?: string
+          reward_amount?: number
+          reward_type?: string
+          starts_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       streak_wheel_pity: {
         Row: {
           free_spin_used_date: string | null
