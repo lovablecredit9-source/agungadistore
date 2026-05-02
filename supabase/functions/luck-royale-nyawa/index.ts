@@ -1334,6 +1334,9 @@ Deno.serve(async (req) => {
       if (totalBonusGems > 0) titleExtras.push(`🔥 +${totalBonusGems} streak`);
       if (jackpotWonTotal > 0) titleExtras.push(`💥 JACKPOT +${jackpotWonTotal}`);
       if (earnedTokens > 0) titleExtras.push(`🎟️ +${earnedTokens} Token`);
+      // Counter milestone harian — semua spin Luck Royale terhitung (normal/bundle/pack)
+      await bumpMilestoneSpin(admin, visitorId, spinCount);
+
       await admin.from("notifications").insert({
         visitor_id: visitorId,
         title: `🎰 Luck Royale (${spinCount}x)${titleExtras.length ? " " + titleExtras.join(" ") : ""}`,
