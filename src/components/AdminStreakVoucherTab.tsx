@@ -110,6 +110,45 @@ export default function AdminStreakVoucherTab() {
     toast({ title: "Kode disalin", description: code });
   };
 
+  const resetClaims = async (v: Voucher) => {
+    if (!confirm(`Reset jumlah klaim "${v.name}" ke 0? Catatan klaim user TIDAK dihapus.`)) return;
+    await supabase.from("streak_vouchers").update({ current_claims: 0 }).eq("id", v.id);
+    toast({ title: "✅ Counter klaim direset" });
+    load();
+  };
+
+  const clearHistory = async (v: Voucher) => {
+    if (!confirm(`Hapus SEMUA history klaim user untuk "${v.name}"? User bisa klaim ulang & counter direset ke 0.`)) return;
+    await supabase.from("streak_voucher_claims").delete().eq("voucher_id", v.id);
+    await supabase.from("streak_vouchers").update({ current_claims: 0 }).eq("id", v.id);
+    toast({ title: "🧹 History klaim dihapus" });
+    load();
+  };
+
+  const saveEdit = async () => {
+    if (!editing) return;
+    if (!editing.name.trim() || editing.reward_amount < 1 || editing.max_claims < 1) {
+      toast({ title: "Lengkapi semua field", variant: "destructive" });
+      return;
+    }
+    const { error } = await supabase.from("streak_vouchers").update({
+      name: editing.name.trim(),
+      description: editing.description ?? "",
+      reward_type: editing.reward_type,
+      reward_amount: editing.reward_amount,
+      max_claims: editing.max_claims,
+      expires_at: editing.expires_at,
+      is_active: editing.is_active,
+    }).eq("id", editing.id);
+    if (error) {
+      toast({ title: "Gagal simpan", description: error.message, variant: "destructive" });
+      return;
+    }
+    toast({ title: "✅ Voucher diperbarui" });
+    setEditing(null);
+    load();
+  };
+
   return (
     <div className="space-y-4">
       <Card>
