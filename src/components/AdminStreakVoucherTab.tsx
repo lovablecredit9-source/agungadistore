@@ -268,10 +268,18 @@ export default function AdminStreakVoucherTab() {
                     {expired ? "Kedaluwarsa" : `Exp: ${new Date(v.expires_at).toLocaleString("id-ID")}`}
                   </span>
                   {full && <span className="px-2 py-0.5 rounded bg-destructive/10 text-destructive">Kuota habis</span>}
+                  {((v.target_visitor_ids?.length || 0) + (v.target_user_balance_ids?.length || 0)) > 0 && (
+                    <span className="px-2 py-0.5 rounded bg-purple-500/10 text-purple-600 inline-flex items-center gap-1">
+                      <Target className="w-3 h-3" />Target {(v.target_visitor_ids?.length || 0) + (v.target_user_balance_ids?.length || 0)} akun
+                    </span>
+                  )}
                 </div>
                 <div className="flex flex-wrap gap-1.5 pt-1 border-t">
                   <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => setEditing(v)}>
                     <Pencil className="w-3 h-3 mr-1" />Edit
+                  </Button>
+                  <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => shareVoucher(v)}>
+                    <Share2 className="w-3 h-3 mr-1" />Bagikan
                   </Button>
                   <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => resetClaims(v)}>
                     <RotateCcw className="w-3 h-3 mr-1" />Reset Counter
