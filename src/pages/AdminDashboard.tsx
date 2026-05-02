@@ -34,6 +34,7 @@ import AdminBannedTab from "@/components/AdminBannedTab";
 import WhatsAppChat from "@/components/WhatsAppChat";
 import PremiumBadgeAsync from "@/components/PremiumBadgeAsync";
 import AdminStorePremiumTab from "@/components/AdminStorePremiumTab";
+import AdminUserResetPanel from "@/components/AdminUserResetPanel";
 
 interface Product {
   id: string;
@@ -135,7 +136,7 @@ interface UserBalance {
   created_at: string;
 }
 
-type AdminTab = "products" | "tokens" | "claims" | "tickets" | "chats" | "saldo" | "notif" | "deposit" | "settings" | "diskon" | "pin" | "musik" | "vmusik" | "sponsor" | "apikey" | "postingan" | "promo" | "sosmed" | "wheel" | "shopstreak" | "eventstreak" | "flashsale" | "prodflash" | "membership" | "banned" | "storeprem" | "strvoucher";
+type AdminTab = "products" | "tokens" | "claims" | "tickets" | "chats" | "saldo" | "notif" | "deposit" | "settings" | "diskon" | "pin" | "musik" | "vmusik" | "sponsor" | "apikey" | "postingan" | "promo" | "sosmed" | "wheel" | "shopstreak" | "eventstreak" | "flashsale" | "prodflash" | "membership" | "banned" | "storeprem" | "strvoucher" | "userreset";
 type ClaimDateFilter = "all" | "today" | "yesterday" | "lastmonth" | "custom";
 type DepositStatusFilter = "all" | "pending" | "approved" | "rejected" | "cancelled";
 type DepositMethodFilter = "all" | "qris" | "ewallet";
@@ -1127,6 +1128,7 @@ const AdminDashboard = () => {
             { key: "membership" as AdminTab, icon: Shield, label: "Member" },
             { key: "storeprem" as AdminTab, icon: Crown, label: "PremToko" },
             { key: "banned" as AdminTab, icon: Lock, label: "Banned" },
+            { key: "userreset" as AdminTab, icon: Users, label: "Reset User" },
           ]).map(({ key, icon: Icon, label }) => {
             const active = tab === key;
             const badgeCount = key === "tickets" ? allTickets.filter(t => t.status === "open").length
@@ -1992,6 +1994,7 @@ const AdminDashboard = () => {
         {tab === "membership" && <AdminMembershipTab />}
         {tab === "storeprem" && <AdminStorePremiumTab />}
         {tab === "banned" && <AdminBannedTab />}
+        {tab === "userreset" && <AdminUserResetPanel />}
       </main>
     </div>
   );
