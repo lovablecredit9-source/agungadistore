@@ -12,6 +12,7 @@ import {
   ArrowLeft, Heart, Lightbulb, Timer, Shield, Gem, Coins, Sparkles, Crown,
   Loader2, Trophy, Zap, X, Dices, BarChart3, Flame, Star, Award, TrendingUp,
   Brain, Target, TrendingDown, CheckCircle2, AlertCircle, Rocket, Gift, Flame as FlameIcon,
+  Package,
 } from "lucide-react";
 import MegaSpinArena from "@/components/luck/MegaSpinArena";
 import PremiumSpinPanel from "@/components/luck/PremiumSpinPanel";
@@ -477,9 +478,9 @@ export default function LuckRoyaleNyawa() {
                 <Dices className="w-3.5 h-3.5" />
                 SPIN
               </TabsTrigger>
-              <TabsTrigger value="faded" className="flex-col gap-0.5 py-1.5 data-[state=active]:bg-gradient-to-br data-[state=active]:from-cyan-500 data-[state=active]:to-blue-600 data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-cyan-500/40 font-black tracking-wider text-[8px] rounded-md">
-                <Sparkles className="w-3.5 h-3.5" />
-                FADED
+              <TabsTrigger value="faded" className="flex-col gap-0.5 py-1.5 data-[state=active]:bg-gradient-to-br data-[state=active]:from-fuchsia-500 data-[state=active]:to-purple-600 data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-fuchsia-500/40 font-black tracking-wider text-[8px] rounded-md">
+                <Package className="w-3.5 h-3.5" />
+                MYSTERY
               </TabsTrigger>
               <TabsTrigger value="diamond" className="flex-col gap-0.5 py-1.5 data-[state=active]:bg-gradient-to-br data-[state=active]:from-fuchsia-500 data-[state=active]:via-purple-600 data-[state=active]:to-amber-500 data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-fuchsia-500/50 font-black tracking-wider text-[8px] rounded-md">
                 <Gem className="w-3.5 h-3.5" />
@@ -1453,7 +1454,7 @@ export default function LuckRoyaleNyawa() {
                     icon: AlertCircle,
                     color: "from-amber-500 to-yellow-600",
                     title: "Gems Tidak Cukup",
-                    desc: `Butuh ${singleCost} gems untuk 1 spin. Top up dulu di Gem Shop atau coba Faded Wheel!`,
+                    desc: `Butuh ${singleCost} gems untuk 1 spin. Top up dulu di Gem Shop atau coba Mystery Box!`,
                     priority: "high",
                   });
                 } else if (recommendedBundle) {
@@ -1482,7 +1483,7 @@ export default function LuckRoyaleNyawa() {
                     icon: TrendingDown,
                     color: "from-slate-500 to-slate-700",
                     title: "Luck Rate Rendah",
-                    desc: `Rare rate kamu ${rareRate.toFixed(1)}%. Coba Faded Wheel - sistem 3x3 grid lebih predictable!`,
+                    desc: `Rare rate kamu ${rareRate.toFixed(1)}%. Coba Mystery Box - tiap spin buka box & klaim hadiah random!`,
                     priority: "med",
                   });
                 } else if (rareRate >= 20 && total >= 10) {
@@ -1622,7 +1623,7 @@ export default function LuckRoyaleNyawa() {
                         </li>
                         <li className="flex gap-2">
                           <span className="text-cyan-300">▸</span>
-                          <span><b className="text-cyan-200">Free:</b> Faded Wheel sering kasih hadiah tanpa biaya gems</span>
+                          <span><b className="text-cyan-200">Mystery:</b> Mystery Box buka kotak random — kadang dapat jackpot besar!</span>
                         </li>
                         <li className="flex gap-2">
                           <span className="text-emerald-300">▸</span>
