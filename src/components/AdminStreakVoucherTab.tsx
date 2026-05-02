@@ -47,6 +47,7 @@ function genCode() {
 export default function AdminStreakVoucherTab() {
   const [vouchers, setVouchers] = useState<Voucher[]>([]);
   const [loading, setLoading] = useState(true);
+  const [editing, setEditing] = useState<Voucher | null>(null);
   const [form, setForm] = useState({
     code: genCode(),
     name: "",
