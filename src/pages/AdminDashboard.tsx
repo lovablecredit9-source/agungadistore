@@ -1129,7 +1129,7 @@ const AdminDashboard = () => {
             { key: "membership" as AdminTab, icon: Shield, label: "Member" },
             { key: "storeprem" as AdminTab, icon: Crown, label: "PremToko" },
             { key: "banned" as AdminTab, icon: Lock, label: "Banned" },
-            { key: "userreset" as AdminTab, icon: Users, label: "Reset User" },
+            
           ]).map(({ key, icon: Icon, label }) => {
             const active = tab === key;
             const badgeCount = key === "tickets" ? allTickets.filter(t => t.status === "open").length
