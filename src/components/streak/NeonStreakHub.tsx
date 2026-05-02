@@ -45,6 +45,7 @@ import CoinRainGame from "./event/CoinRainGame";
 import StreakRoyaleBracket from "./event/StreakRoyaleBracket";
 import MegaShopHub from "./MegaShopHub";
 import MegaEventHub from "./MegaEventHub";
+import StreakVoucherClaim from "./StreakVoucherClaim";
 import StreakFlashSaleHub from "./StreakFlashSaleHub";
 import PowerPackShop from "./PowerPackShop";
 import DailyChallengeRush from "./event/DailyChallengeRush";
