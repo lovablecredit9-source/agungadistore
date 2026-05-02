@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import MegaSpinArena from "@/components/luck/MegaSpinArena";
 import PremiumSpinPanel from "@/components/luck/PremiumSpinPanel";
+import PremiumMilestonePanel from "@/components/luck/PremiumMilestonePanel";
 import FadedWheel from "@/components/streak/FadedWheel";
 import DiamondRoyaleInline from "@/components/streak/DiamondRoyaleInline";
 
