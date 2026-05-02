@@ -967,6 +967,8 @@ Deno.serve(async (req) => {
         cost_amount: 0,
       });
 
+      await bumpMilestoneSpin(admin, visitorId, 1);
+
       await admin.from("notifications").insert({
         visitor_id: visitorId,
         title: `🎁 FREE Daily Spin!`,
