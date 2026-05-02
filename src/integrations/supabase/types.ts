@@ -7197,6 +7197,8 @@ export type Database = {
           reward_amount: number
           reward_type: string
           starts_at: string
+          target_user_balance_ids: string[]
+          target_visitor_ids: string[]
           updated_at: string
         }
         Insert: {
@@ -7212,6 +7214,8 @@ export type Database = {
           reward_amount: number
           reward_type: string
           starts_at?: string
+          target_user_balance_ids?: string[]
+          target_visitor_ids?: string[]
           updated_at?: string
         }
         Update: {
@@ -7227,6 +7231,8 @@ export type Database = {
           reward_amount?: number
           reward_type?: string
           starts_at?: string
+          target_user_balance_ids?: string[]
+          target_visitor_ids?: string[]
           updated_at?: string
         }
         Relationships: []
