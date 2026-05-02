@@ -3141,6 +3141,36 @@ export type Database = {
         }
         Relationships: []
       }
+      premium_spin_daily_milestones: {
+        Row: {
+          claimed_milestones: number[]
+          created_at: string
+          day_wib: string
+          id: string
+          spin_count: number
+          updated_at: string
+          visitor_id: string
+        }
+        Insert: {
+          claimed_milestones?: number[]
+          created_at?: string
+          day_wib: string
+          id?: string
+          spin_count?: number
+          updated_at?: string
+          visitor_id: string
+        }
+        Update: {
+          claimed_milestones?: number[]
+          created_at?: string
+          day_wib?: string
+          id?: string
+          spin_count?: number
+          updated_at?: string
+          visitor_id?: string
+        }
+        Relationships: []
+      }
       product_chat_messages: {
         Row: {
           chat_id: string
