@@ -6548,6 +6548,7 @@ const Index = () => {
                 { key: "streakshop" as Tab, icon: CalendarDays, label: "Shop" },
                 { key: "streakmembership" as Tab, icon: Crown, label: "Membership Streak" },
                 { key: "luckroyale" as any, icon: Crown, label: "Lucky Royale", external: "/luck-royale-nyawa" },
+                { key: "streakvoucher" as Tab, icon: Ticket, label: "Streak Voucher" },
                 { key: "game" as Tab, icon: Gamepad2, label: "Game" },
                 { key: "plus" as Tab, icon: Gem, label: "Plus" },
                 { key: "update" as Tab, icon: RefreshCw, label: "Update" },
