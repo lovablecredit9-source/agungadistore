@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import MegaSpinArena from "@/components/luck/MegaSpinArena";
 import PremiumSpinPanel from "@/components/luck/PremiumSpinPanel";
+import PremiumMilestonePanel from "@/components/luck/PremiumMilestonePanel";
 import FadedWheel from "@/components/streak/FadedWheel";
 import DiamondRoyaleInline from "@/components/streak/DiamondRoyaleInline";
 
@@ -530,6 +531,8 @@ export default function LuckRoyaleNyawa() {
               />
             </TabsContent>
             <TabsContent value="normal" className="space-y-4 mt-0">
+          {/* 🎁 MILESTONE PREMIUM SPIN — terlihat juga di tab Normal supaya bisa diklaim dari sini */}
+          <PremiumMilestonePanel visitorId={visitorId} gems={gems} setGems={setGems} />
           {/* 👑 NYAWA PREMIUM PASS — Rp 50k / 30 hari */}
           <div data-nyawa-premium-card className={`relative overflow-hidden rounded-2xl border-2 p-3 shadow-xl ${nyawaPremium.isActive ? "bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 border-emerald-300/70 shadow-emerald-500/40" : "bg-gradient-to-r from-rose-600 via-fuchsia-600 to-amber-500 border-amber-300/70 shadow-fuchsia-500/40"}`}>
             <div className="absolute inset-0 opacity-25 animate-pulse" style={{
