@@ -26,6 +26,7 @@ import AdminProductFlashSaleTab from "@/components/AdminProductFlashSaleTab";
 import AdminSocialLinksTab from "@/components/AdminSocialLinksTab";
 import AdminLuckyWheelTab from "@/components/AdminLuckyWheelTab";
 import AdminStreakShopTab from "@/components/AdminStreakShopTab";
+import AdminStreakVoucherTab from "@/components/AdminStreakVoucherTab";
 import AdminStreakEventTab from "@/components/AdminStreakEventTab";
 import AdminStreakFlashSaleTab from "@/components/AdminStreakFlashSaleTab";
 import AdminMembershipTab from "@/components/AdminMembershipTab";
@@ -134,7 +135,7 @@ interface UserBalance {
   created_at: string;
 }
 
-type AdminTab = "products" | "tokens" | "claims" | "tickets" | "chats" | "saldo" | "notif" | "deposit" | "settings" | "diskon" | "pin" | "musik" | "vmusik" | "sponsor" | "apikey" | "postingan" | "promo" | "sosmed" | "wheel" | "shopstreak" | "eventstreak" | "flashsale" | "prodflash" | "membership" | "banned" | "storeprem";
+type AdminTab = "products" | "tokens" | "claims" | "tickets" | "chats" | "saldo" | "notif" | "deposit" | "settings" | "diskon" | "pin" | "musik" | "vmusik" | "sponsor" | "apikey" | "postingan" | "promo" | "sosmed" | "wheel" | "shopstreak" | "eventstreak" | "flashsale" | "prodflash" | "membership" | "banned" | "storeprem" | "strvoucher";
 type ClaimDateFilter = "all" | "today" | "yesterday" | "lastmonth" | "custom";
 type DepositStatusFilter = "all" | "pending" | "approved" | "rejected" | "cancelled";
 type DepositMethodFilter = "all" | "qris" | "ewallet";
@@ -1119,6 +1120,7 @@ const AdminDashboard = () => {
             { key: "sosmed" as AdminTab, icon: Globe, label: "Sosmed" },
             { key: "wheel" as AdminTab, icon: Tag, label: "Wheel" },
             { key: "shopstreak" as AdminTab, icon: Tag, label: "Shop" },
+            { key: "strvoucher" as AdminTab, icon: Tag, label: "Voucher" },
             { key: "eventstreak" as AdminTab, icon: Tag, label: "Event" },
             { key: "flashsale" as AdminTab, icon: Tag, label: "Flash" },
             { key: "prodflash" as AdminTab, icon: Zap, label: "F.Produk" },
@@ -1983,6 +1985,7 @@ const AdminDashboard = () => {
         {tab === "sosmed" && <AdminSocialLinksTab />}
         {tab === "wheel" && <AdminLuckyWheelTab />}
         {tab === "shopstreak" && <AdminStreakShopTab />}
+        {tab === "strvoucher" && <AdminStreakVoucherTab />}
         {tab === "eventstreak" && <AdminStreakEventTab />}
         {tab === "flashsale" && <AdminStreakFlashSaleTab />}
         {tab === "prodflash" && <AdminProductFlashSaleTab />}
