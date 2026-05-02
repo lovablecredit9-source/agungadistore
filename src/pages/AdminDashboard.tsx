@@ -1985,6 +1985,7 @@ const AdminDashboard = () => {
         {tab === "sosmed" && <AdminSocialLinksTab />}
         {tab === "wheel" && <AdminLuckyWheelTab />}
         {tab === "shopstreak" && <AdminStreakShopTab />}
+        {tab === "strvoucher" && <AdminStreakVoucherTab />}
         {tab === "eventstreak" && <AdminStreakEventTab />}
         {tab === "flashsale" && <AdminStreakFlashSaleTab />}
         {tab === "prodflash" && <AdminProductFlashSaleTab />}
