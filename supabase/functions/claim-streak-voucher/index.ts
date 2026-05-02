@@ -42,6 +42,11 @@ Deno.serve(async (req) => {
       return Response.json({ error: "Kuota voucher sudah habis" }, { status: 200, headers: corsHeaders });
     }
 
+    // Cek target khusus (jika diisi admin)
+    const targetVisitors: string[] = Array.isArray(voucher.target_visitor_ids) ? voucher.target_visitor_ids : [];
+    const targetUbs: string[] = Array.isArray(voucher.target_user_balance_ids) ? voucher.target_user_balance_ids : [];
+    const hasTarget = targetVisitors.length > 0 || targetUbs.length > 0;
+
     // Get user_balance_id (akun saldo aktif)
     const { data: blh } = await admin
       .from("balance_login_history")
@@ -51,6 +56,20 @@ Deno.serve(async (req) => {
       .limit(1)
       .maybeSingle();
     const ubId = blh?.user_balance_id ?? null;
+
+    // Validasi target khusus
+    if (hasTarget) {
+      const visitorOk = targetVisitors.includes(visitorId);
+      const ubOk = ubId && targetUbs.includes(ubId);
+      if (!visitorOk && !ubOk) {
+        return Response.json({ error: "Voucher ini khusus untuk akun tertentu, kamu tidak dalam daftar penerima" }, { status: 200, headers: corsHeaders });
+      }
+    }
+
+    // Reward 'saldo' wajib login akun
+    if (voucher.reward_type === "saldo" && !ubId) {
+      return Response.json({ error: "Voucher saldo memerlukan login akun saldo terlebih dahulu" }, { status: 200, headers: corsHeaders });
+    }
 
     // Cek sudah pernah klaim? (per visitor_id ATAU per akun saldo)
     // Ini mencegah user logout-login akun lain di device sama untuk klaim ulang
@@ -183,6 +202,22 @@ Deno.serve(async (req) => {
             await admin.from("user_power_ups").insert({ visitor_id: visitorId, time_freeze: amount });
           }
           rewardLabel = `+${amount} ⏱️ Time Freeze`;
+          break;
+        }
+        case "saldo": {
+          // Tambah saldo ke akun
+          const { data: ub } = await admin.from("user_balances").select("id, balance").eq("id", ubId!).maybeSingle();
+          if (!ub) throw new Error("Akun saldo tidak ditemukan");
+          const newBalance = (ub.balance || 0) + amount;
+          await admin.from("user_balances").update({ balance: newBalance }).eq("id", ub.id);
+          await admin.from("balance_transactions").insert({
+            user_balance_id: ub.id,
+            visitor_id: visitorId,
+            type: "deposit",
+            amount,
+            description: `Klaim voucher ${voucher.code}: +Rp ${amount.toLocaleString("id-ID")}`,
+          });
+          rewardLabel = `+Rp ${amount.toLocaleString("id-ID")} Saldo`;
           break;
         }
         case "extra_life": {
