@@ -80,7 +80,7 @@ import { TicketEnhancer, TICKET_TEMPLATES } from "@/components/TicketEnhancer";
 import { useAccountBan } from "@/hooks/useAccountBan";
 import { StoreProfile, StoreMiniCard, StoreProfileModal } from "@/components/StoreProfile";
 
-type Tab = "musik" | "beranda" | "produk" | "voucher" | "history" | "likes" | "tiket" | "saldo" | "playlist" | "publik" | "sponsor" | "streak" | "streakevent" | "streakshop" | "streakmembership" | "adminpost" | "game" | "plus" | "update";
+type Tab = "musik" | "beranda" | "produk" | "voucher" | "history" | "likes" | "tiket" | "saldo" | "playlist" | "publik" | "sponsor" | "streak" | "streakevent" | "streakshop" | "streakvoucher" | "streakmembership" | "adminpost" | "game" | "plus" | "update";
 
 interface UserBalance {
   id: string;
@@ -308,6 +308,7 @@ const TAB_PATHS: Record<string, Tab> = {
   "/streak": "streak",
   "/streak-event": "streakevent",
   "/streak-shop": "streakshop",
+  "/streak-voucher": "streakvoucher",
   "/streak-membership": "streakmembership",
   "/admin-post": "adminpost",
   "/game": "game",
@@ -1644,6 +1645,7 @@ const Index = () => {
                   { key: "streakshop" as Tab, icon: CalendarDays, label: "Streak Shop", grad: "from-teal-400 via-emerald-500 to-green-600", glow: "16,185,129" },
                   { key: "streakmembership" as Tab, icon: Crown, label: "Membership Streak", grad: "from-yellow-300 via-amber-400 to-orange-500", glow: "250,204,21" },
                   { key: "luckroyale" as any, icon: Crown, label: "Lucky Royale", external: "/luck-royale-nyawa", grad: "from-amber-300 via-yellow-400 to-orange-500", glow: "234,179,8" },
+                  { key: "streakvoucher" as Tab, icon: Ticket, label: "Streak Voucher", grad: "from-pink-400 via-fuchsia-500 to-purple-600", glow: "217,70,239" },
                   { key: "game" as Tab, icon: Gamepad2, label: "Game", grad: "from-violet-500 via-purple-500 to-fuchsia-500", glow: "139,92,246" },
                   { key: "plus" as Tab, icon: Gem, label: "Plus", grad: "from-cyan-300 via-sky-400 to-blue-500", glow: "56,189,248" },
                   { key: "update" as Tab, icon: RefreshCw, label: "Update", grad: "from-emerald-300 via-teal-400 to-cyan-500", glow: "45,212,191" },
@@ -4505,6 +4507,20 @@ const Index = () => {
               description="Login saldo untuk akses shop event dan reward streak."
               emoji="🛒"
               gradient="from-fuchsia-500 to-rose-600"
+              onGoToLogin={() => setTab("saldo")}
+            />
+          )
+        )}
+
+        {tab === "streakvoucher" && (
+          userBalance ? (
+            <NeonStreakHub key={`voucher-${activeBalanceVisitorId}`} visitorId={activeBalanceVisitorId} forcedView="voucher" />
+          ) : (
+            <LoginGate
+              title="Streak Voucher"
+              description="Login saldo untuk klaim kode voucher streak (Gem, Koin, Kredit, Hint, Freeze)."
+              emoji="🎟️"
+              gradient="from-pink-500 to-purple-600"
               onGoToLogin={() => setTab("saldo")}
             />
           )
