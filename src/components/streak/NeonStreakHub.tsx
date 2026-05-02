@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Gift, Loader2, Sparkles, ShoppingBag, Trophy, Coins, Target, Lock, Zap, Check, Rocket, Gamepad2, Flame, Crown, Star, Gem, Box, Calendar, Award, Medal, Wallet, Plus, History, Heart, Lightbulb, Clock, Shield } from "lucide-react";
+import { Gift, Loader2, Sparkles, ShoppingBag, Trophy, Coins, Target, Lock, Zap, Check, Rocket, Gamepad2, Flame, Crown, Star, Gem, Box, Calendar, Award, Medal, Wallet, Plus, History, Heart, Lightbulb, Clock, Shield, Ticket } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { trackDailyMission } from "@/lib/daily-mission";
@@ -505,9 +505,10 @@ export default function NeonStreakHub({ visitorId, forcedView }: Props) {
 
       {/* View tabs (only when not forced via top-level navigation) */}
       {!forcedView && (
-        <div className="grid grid-cols-3 gap-1 p-1 rounded-xl bg-black/40 border border-purple-500/30">
+        <div className="grid grid-cols-4 gap-1 p-1 rounded-xl bg-black/40 border border-purple-500/30">
           {[
             { id: "main", label: "Utama", Icon: Target, cls: "icon-3d-target" },
+            { id: "shop", label: "Voucher", Icon: Ticket, cls: "" },
             { id: "leaderboard", label: "Rank", Icon: Trophy, cls: "icon-3d-trophy" },
             { id: "calendar", label: "Cal", Icon: Calendar, cls: "icon-3d-target" },
           ].map(t => (
