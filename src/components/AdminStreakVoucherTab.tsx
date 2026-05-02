@@ -234,11 +234,84 @@ export default function AdminStreakVoucherTab() {
                   </span>
                   {full && <span className="px-2 py-0.5 rounded bg-destructive/10 text-destructive">Kuota habis</span>}
                 </div>
+                <div className="flex flex-wrap gap-1.5 pt-1 border-t">
+                  <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => setEditing(v)}>
+                    <Pencil className="w-3 h-3 mr-1" />Edit
+                  </Button>
+                  <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => resetClaims(v)}>
+                    <RotateCcw className="w-3 h-3 mr-1" />Reset Counter
+                  </Button>
+                  <Button size="sm" variant="outline" className="h-7 text-xs text-destructive" onClick={() => clearHistory(v)}>
+                    <Eraser className="w-3 h-3 mr-1" />Hapus History Klaim
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           );
         })}
       </div>
+
+      {/* Edit Dialog */}
+      <Dialog open={!!editing} onOpenChange={(o) => !o && setEditing(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Edit Voucher</DialogTitle>
+          </DialogHeader>
+          {editing && (
+            <div className="space-y-3">
+              <div>
+                <Label>Nama</Label>
+                <Input value={editing.name} onChange={(e) => setEditing({ ...editing, name: e.target.value })} />
+              </div>
+              <div>
+                <Label>Deskripsi</Label>
+                <Textarea rows={2} value={editing.description ?? ""} onChange={(e) => setEditing({ ...editing, description: e.target.value })} />
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <Label>Jenis Hadiah</Label>
+                  <Select value={editing.reward_type} onValueChange={(val) => setEditing({ ...editing, reward_type: val as RewardType })}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {(Object.keys(REWARD_LABELS) as RewardType[]).map(k => (
+                        <SelectItem key={k} value={k}>{REWARD_LABELS[k]}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>Jumlah</Label>
+                  <Input type="number" min={1} value={editing.reward_amount} onChange={(e) => setEditing({ ...editing, reward_amount: Math.max(1, Number(e.target.value) || 0) })} />
+                </div>
+                <div>
+                  <Label>Kuota Max</Label>
+                  <Input type="number" min={1} value={editing.max_claims} onChange={(e) => setEditing({ ...editing, max_claims: Math.max(1, Number(e.target.value) || 0) })} />
+                </div>
+                <div>
+                  <Label>Sudah Klaim</Label>
+                  <Input type="number" value={editing.current_claims} disabled />
+                </div>
+              </div>
+              <div>
+                <Label>Berakhir pada</Label>
+                <Input
+                  type="datetime-local"
+                  value={editing.expires_at ? new Date(new Date(editing.expires_at).getTime() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16) : ""}
+                  onChange={(e) => setEditing({ ...editing, expires_at: new Date(e.target.value).toISOString() })}
+                />
+              </div>
+              <div className="flex items-center justify-between">
+                <Label>Aktif</Label>
+                <Switch checked={editing.is_active} onCheckedChange={(v) => setEditing({ ...editing, is_active: v })} />
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditing(null)}>Batal</Button>
+            <Button onClick={saveEdit}>Simpan</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
