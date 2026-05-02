@@ -588,6 +588,7 @@ export default function NeonStreakHub({ visitorId, forcedView }: Props) {
 
       {activeView === "shop" && (
         <div className="space-y-3">
+          <StreakVoucherClaim />
           <StreakFlashSaleHub visitorId={visitorId} onUpdate={loadAll} />
           <MegaShopHub visitorId={visitorId} onUpdate={loadAll} />
           <ScratchOffShop visitorId={visitorId} onUpdate={loadAll} />
