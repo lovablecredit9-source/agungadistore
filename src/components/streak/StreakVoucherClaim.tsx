@@ -4,7 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "@/hooks/use-toast";
-import { Ticket, Gift, Sparkles } from "lucide-react";
+import { Ticket, Gift, History } from "lucide-react";
 import { getVisitorId } from "@/lib/visitor-id";
 
 const REWARD_LABELS: Record<string, string> = {
@@ -17,43 +17,42 @@ const REWARD_LABELS: Record<string, string> = {
   extra_life: "❤️ Extra Life",
 };
 
-interface PublicVoucher {
+interface ClaimHistory {
   id: string;
-  code: string;
-  name: string;
-  description: string | null;
+  voucher_code: string;
   reward_type: string;
   reward_amount: number;
-  max_claims: number;
-  current_claims: number;
-  expires_at: string;
+  claimed_at: string;
+  voucher_name?: string | null;
 }
 
 export default function StreakVoucherClaim() {
   const [code, setCode] = useState("");
   const [submitting, setSubmitting] = useState(false);
-  const [vouchers, setVouchers] = useState<PublicVoucher[]>([]);
-  const [claimedIds, setClaimedIds] = useState<Set<string>>(new Set());
+  const [history, setHistory] = useState<ClaimHistory[]>([]);
   const visitorId = getVisitorId();
 
   const load = async () => {
-    const nowIso = new Date().toISOString();
-    const { data } = await supabase
-      .from("streak_vouchers")
-      .select("id, code, name, description, reward_type, reward_amount, max_claims, current_claims, expires_at, is_active, starts_at")
-      .eq("is_active", true)
-      .gt("expires_at", nowIso)
-      .order("expires_at", { ascending: true });
-    setVouchers((data || []).filter((v: any) => v.current_claims < v.max_claims && new Date(v.starts_at) <= new Date()) as PublicVoucher[]);
-
-    const { data: claims } = await supabase.from("streak_voucher_claims").select("voucher_id").eq("visitor_id", visitorId);
-    setClaimedIds(new Set((claims || []).map((c: any) => c.voucher_id)));
+    const { data: claims } = await supabase
+      .from("streak_voucher_claims")
+      .select("id, voucher_code, reward_type, reward_amount, claimed_at, streak_vouchers(name)")
+      .eq("visitor_id", visitorId)
+      .order("claimed_at", { ascending: false })
+      .limit(50);
+    setHistory((claims || []).map((c: any) => ({
+      id: c.id,
+      voucher_code: c.voucher_code,
+      reward_type: c.reward_type,
+      reward_amount: c.reward_amount,
+      claimed_at: c.claimed_at,
+      voucher_name: c.streak_vouchers?.name,
+    })));
   };
 
   useEffect(() => {
     load();
-    const ch = supabase.channel("streak-vouchers-public")
-      .on("postgres_changes", { event: "*", schema: "public", table: "streak_vouchers" }, () => load())
+    const ch = supabase.channel("streak-voucher-claims-self")
+      .on("postgres_changes", { event: "*", schema: "public", table: "streak_voucher_claims", filter: `visitor_id=eq.${visitorId}` }, () => load())
       .subscribe();
     return () => { supabase.removeChannel(ch); };
   }, [visitorId]);
@@ -123,42 +122,38 @@ export default function StreakVoucherClaim() {
         </CardContent>
       </Card>
 
-      {vouchers.length > 0 && (
-        <div className="space-y-2">
-          <div className="flex items-center gap-2 px-1">
-            <Sparkles className="w-4 h-4 text-accent" />
-            <h4 className="text-sm font-bold">Voucher Aktif</h4>
-          </div>
-          {vouchers.map(v => {
-            const claimed = claimedIds.has(v.id);
-            const remaining = v.max_claims - v.current_claims;
-            return (
-              <Card key={v.id} className={claimed ? "opacity-60" : ""}>
-                <CardContent className="p-3 space-y-2">
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex-1 min-w-0">
-                      <div className="font-semibold text-sm truncate">{v.name}</div>
-                      <div className="text-[10px] font-mono text-muted-foreground">{v.code}</div>
-                    </div>
-                    <span className="px-2 py-0.5 rounded text-xs bg-primary/10 text-primary whitespace-nowrap">
-                      {REWARD_LABELS[v.reward_type] || v.reward_type} ×{v.reward_amount}
-                    </span>
-                  </div>
-                  {v.description && <p className="text-xs text-muted-foreground">{v.description}</p>}
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="text-[10px] text-muted-foreground">
-                      Sisa kuota: <b>{remaining}</b> · Exp: {new Date(v.expires_at).toLocaleDateString("id-ID")}
-                    </div>
-                    <Button size="sm" disabled={claimed || submitting} onClick={() => claim(v.code)}>
-                      {claimed ? "Sudah diklaim" : "Klaim"}
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            );
-          })}
+      <div className="space-y-2">
+        <div className="flex items-center gap-2 px-1">
+          <History className="w-4 h-4 text-accent" />
+          <h4 className="text-sm font-bold">Riwayat Voucher</h4>
         </div>
-      )}
+        {history.length === 0 ? (
+          <Card>
+            <CardContent className="p-4 text-center text-xs text-muted-foreground">
+              Belum ada voucher yang diklaim.
+            </CardContent>
+          </Card>
+        ) : (
+          history.map(h => (
+            <Card key={h.id}>
+              <CardContent className="p-3 space-y-1">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex-1 min-w-0">
+                    <div className="font-semibold text-sm truncate">{h.voucher_name || h.voucher_code}</div>
+                    <div className="text-[10px] font-mono text-muted-foreground">{h.voucher_code}</div>
+                  </div>
+                  <span className="px-2 py-0.5 rounded text-xs bg-primary/10 text-primary whitespace-nowrap">
+                    {REWARD_LABELS[h.reward_type] || h.reward_type} ×{h.reward_amount}
+                  </span>
+                </div>
+                <div className="text-[10px] text-muted-foreground">
+                  Diklaim: {new Date(h.claimed_at).toLocaleString("id-ID")}
+                </div>
+              </CardContent>
+            </Card>
+          ))
+        )}
+      </div>
     </div>
   );
 }
