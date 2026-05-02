@@ -1101,6 +1101,7 @@ const AdminDashboard = () => {
           <div className="pointer-events-none absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-background to-transparent z-10" />
           <div className="flex overflow-x-auto scrollbar-hide gap-1 rounded-[24px] border border-border/70 bg-card/55 p-1 shadow-[inset_0_1px_0_hsl(var(--foreground)/0.06)] snap-x snap-mandatory">
           {([
+            { key: "userreset" as AdminTab, icon: Users, label: "🔧 Reset User" },
             { key: "products" as AdminTab, icon: Package, label: "Produk" },
             { key: "tokens" as AdminTab, icon: Ticket, label: "Token" },
             { key: "claims" as AdminTab, icon: Clock, label: "Klaim" },
@@ -1128,7 +1129,7 @@ const AdminDashboard = () => {
             { key: "membership" as AdminTab, icon: Shield, label: "Member" },
             { key: "storeprem" as AdminTab, icon: Crown, label: "PremToko" },
             { key: "banned" as AdminTab, icon: Lock, label: "Banned" },
-            { key: "userreset" as AdminTab, icon: Users, label: "Reset User" },
+            
           ]).map(({ key, icon: Icon, label }) => {
             const active = tab === key;
             const badgeCount = key === "tickets" ? allTickets.filter(t => t.status === "open").length
