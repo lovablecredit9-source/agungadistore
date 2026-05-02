@@ -194,6 +194,7 @@ export default function PremiumSpinPanel({ visitorId, gems, setGems, isUnlocked,
   };
 
   useEffect(() => { loadHistory(); /* eslint-disable-next-line */ }, [visitorId, historyLimit, results.length]);
+  useEffect(() => { loadMilestone(); /* eslint-disable-next-line */ }, [visitorId, results.length]);
 
   const freeRemaining = Math.max(0, FREE_PER_DAY - freeUsed);
   const activePack = PACKS.find((p) => p.count === selectedPack) || PACKS[0];
