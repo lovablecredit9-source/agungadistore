@@ -11,7 +11,7 @@ Deno.serve(async (req) => {
   try {
     const { visitorId, code } = await req.json();
     if (!visitorId || !code) {
-      return Response.json({ error: "visitorId & code wajib diisi" }, { status: 400, headers: corsHeaders });
+      return Response.json({ error: "visitorId & code wajib diisi" }, { status: 200, headers: corsHeaders });
     }
 
     const admin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
@@ -26,20 +26,20 @@ Deno.serve(async (req) => {
       .maybeSingle();
 
     if (!voucher) {
-      return Response.json({ error: "Kode voucher tidak ditemukan" }, { status: 404, headers: corsHeaders });
+      return Response.json({ error: "Kode voucher tidak ditemukan" }, { status: 200, headers: corsHeaders });
     }
     if (!voucher.is_active) {
-      return Response.json({ error: "Voucher tidak aktif" }, { status: 400, headers: corsHeaders });
+      return Response.json({ error: "Voucher tidak aktif" }, { status: 200, headers: corsHeaders });
     }
     const now = new Date();
     if (new Date(voucher.starts_at) > now) {
-      return Response.json({ error: "Voucher belum mulai berlaku" }, { status: 400, headers: corsHeaders });
+      return Response.json({ error: "Voucher belum mulai berlaku" }, { status: 200, headers: corsHeaders });
     }
     if (new Date(voucher.expires_at) < now) {
-      return Response.json({ error: "Voucher sudah kedaluwarsa" }, { status: 400, headers: corsHeaders });
+      return Response.json({ error: "Voucher sudah kedaluwarsa" }, { status: 200, headers: corsHeaders });
     }
     if (voucher.current_claims >= voucher.max_claims) {
-      return Response.json({ error: "Kuota voucher sudah habis" }, { status: 400, headers: corsHeaders });
+      return Response.json({ error: "Kuota voucher sudah habis" }, { status: 200, headers: corsHeaders });
     }
 
     // Get user_balance_id (akun saldo aktif)
@@ -74,7 +74,7 @@ Deno.serve(async (req) => {
     }
 
     if (alreadyClaimed) {
-      return Response.json({ error: "Akun ini sudah pernah klaim voucher tersebut (1 akun = 1 kali klaim)" }, { status: 400, headers: corsHeaders });
+      return Response.json({ error: "Akun ini sudah pernah klaim voucher tersebut (1 akun = 1 kali klaim)" }, { status: 200, headers: corsHeaders });
     }
 
     // Insert claim (race-safe via UNIQUE constraint)
@@ -88,9 +88,9 @@ Deno.serve(async (req) => {
     });
     if (claimErr) {
       if (claimErr.code === "23505") {
-        return Response.json({ error: "Akun ini sudah pernah klaim voucher tersebut" }, { status: 400, headers: corsHeaders });
+        return Response.json({ error: "Akun ini sudah pernah klaim voucher tersebut" }, { status: 200, headers: corsHeaders });
       }
-      return Response.json({ error: "Gagal mencatat klaim" }, { status: 500, headers: corsHeaders });
+      return Response.json({ error: "Gagal mencatat klaim" }, { status: 200, headers: corsHeaders });
     }
 
     // Atomic increment claims; rollback if quota exceeded
@@ -104,7 +104,7 @@ Deno.serve(async (req) => {
 
     if (incErr || !updatedVoucher) {
       await admin.from("streak_voucher_claims").delete().eq("voucher_id", voucher.id).eq("visitor_id", visitorId);
-      return Response.json({ error: "Kuota voucher sudah habis" }, { status: 400, headers: corsHeaders });
+      return Response.json({ error: "Kuota voucher sudah habis" }, { status: 200, headers: corsHeaders });
     }
 
     // Apply reward berdasarkan tipe
@@ -200,7 +200,7 @@ Deno.serve(async (req) => {
       // Rollback claim & counter
       await admin.from("streak_voucher_claims").delete().eq("voucher_id", voucher.id).eq("visitor_id", visitorId);
       await admin.from("streak_vouchers").update({ current_claims: voucher.current_claims }).eq("id", voucher.id);
-      return Response.json({ error: "Gagal memberikan hadiah voucher" }, { status: 500, headers: corsHeaders });
+      return Response.json({ error: "Gagal memberikan hadiah voucher" }, { status: 200, headers: corsHeaders });
     }
 
     await admin.rpc("create_notification", {
@@ -220,6 +220,6 @@ Deno.serve(async (req) => {
       remaining_quota: updatedVoucher.max_claims - updatedVoucher.current_claims,
     }, { headers: corsHeaders });
   } catch (e) {
-    return Response.json({ error: e instanceof Error ? e.message : "Error" }, { status: 500, headers: corsHeaders });
+    return Response.json({ error: e instanceof Error ? e.message : "Error" }, { status: 200, headers: corsHeaders });
   }
 });
