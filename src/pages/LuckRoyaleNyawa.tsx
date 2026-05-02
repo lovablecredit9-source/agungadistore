@@ -1623,7 +1623,7 @@ export default function LuckRoyaleNyawa() {
                         </li>
                         <li className="flex gap-2">
                           <span className="text-cyan-300">▸</span>
-                          <span><b className="text-cyan-200">Free:</b> Faded Wheel sering kasih hadiah tanpa biaya gems</span>
+                          <span><b className="text-cyan-200">Mystery:</b> Mystery Box buka kotak random — kadang dapat jackpot besar!</span>
                         </li>
                         <li className="flex gap-2">
                           <span className="text-emerald-300">▸</span>
