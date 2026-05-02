@@ -68,8 +68,28 @@ export default function StreakVoucherClaim() {
       const { data, error } = await supabase.functions.invoke("claim-streak-voucher", {
         body: { visitorId, code: voucherCode.trim() },
       });
-      if (error || (data as any)?.error) {
-        toast({ title: "Gagal klaim", description: (data as any)?.error || error?.message, variant: "destructive" });
+      const errMsg: string = (data as any)?.error || error?.message || "";
+      if (errMsg) {
+        const lower = errMsg.toLowerCase();
+        if (lower.includes("sudah pernah klaim") || lower.includes("1 akun = 1 kali")) {
+          toast({ title: "ℹ️ Sudah diklaim", description: "Akun ini sudah pernah klaim voucher tersebut. 1 akun hanya bisa klaim 1 kali." });
+          load();
+          return;
+        }
+        if (lower.includes("kuota")) {
+          toast({ title: "😔 Kuota habis", description: "Voucher ini sudah mencapai batas klaim maksimal." });
+          load();
+          return;
+        }
+        if (lower.includes("kedaluwarsa") || lower.includes("belum mulai")) {
+          toast({ title: "⏰ Voucher tidak berlaku", description: errMsg });
+          return;
+        }
+        if (lower.includes("tidak ditemukan")) {
+          toast({ title: "❌ Kode salah", description: "Kode voucher tidak ditemukan. Periksa kembali." });
+          return;
+        }
+        toast({ title: "Gagal klaim", description: errMsg, variant: "destructive" });
         return;
       }
       toast({ title: "🎉 Voucher diklaim!", description: (data as any).reward_label });
