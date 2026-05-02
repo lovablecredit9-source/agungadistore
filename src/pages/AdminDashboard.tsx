@@ -1120,6 +1120,7 @@ const AdminDashboard = () => {
             { key: "sosmed" as AdminTab, icon: Globe, label: "Sosmed" },
             { key: "wheel" as AdminTab, icon: Tag, label: "Wheel" },
             { key: "shopstreak" as AdminTab, icon: Tag, label: "Shop" },
+            { key: "strvoucher" as AdminTab, icon: Tag, label: "Voucher" },
             { key: "eventstreak" as AdminTab, icon: Tag, label: "Event" },
             { key: "flashsale" as AdminTab, icon: Tag, label: "Flash" },
             { key: "prodflash" as AdminTab, icon: Zap, label: "F.Produk" },
