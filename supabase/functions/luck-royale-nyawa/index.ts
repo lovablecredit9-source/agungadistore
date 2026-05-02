@@ -5,6 +5,31 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+// Helper: increment daily milestone spin counter (shared by free, normal, & premium spins)
+async function bumpMilestoneSpin(admin: any, visitorId: string, addCount: number) {
+  try {
+    const dayWib = new Date(Date.now() + 7 * 3600_000).toISOString().slice(0, 10);
+    const { data: row } = await admin
+      .from("premium_spin_daily_milestones")
+      .select("id, spin_count, claimed_milestones")
+      .eq("visitor_id", visitorId)
+      .eq("day_wib", dayWib)
+      .maybeSingle();
+    if (row) {
+      const newCount = Math.min(20, (row.spin_count || 0) + addCount);
+      await admin.from("premium_spin_daily_milestones")
+        .update({ spin_count: newCount }).eq("id", row.id);
+    } else {
+      await admin.from("premium_spin_daily_milestones").insert({
+        visitor_id: visitorId,
+        day_wib: dayWib,
+        spin_count: Math.min(20, addCount),
+        claimed_milestones: [],
+      });
+    }
+  } catch (_e) { /* milestone non-blocking */ }
+}
+
 // Mata uang spin — semua pakai gem
 const SINGLE_COST_GEMS = 50;       // 1 spin = 50 gem
 // Paket bundle (jumlah spin → biaya gem). Makin banyak makin hemat.
@@ -942,6 +967,8 @@ Deno.serve(async (req) => {
         cost_amount: 0,
       });
 
+      await bumpMilestoneSpin(admin, visitorId, 1);
+
       await admin.from("notifications").insert({
         visitor_id: visitorId,
         title: `🎁 FREE Daily Spin!`,
@@ -1089,28 +1116,8 @@ Deno.serve(async (req) => {
       // Sertakan token otomatis ke field tokenGain agar UI menampilkan total perolehan
       const tokenGainTotal = totalTokenAdd;
 
-      // 5) Tambah counter milestone harian (semua premium spin: free + paid)
-      try {
-        const dayWib = new Date(Date.now() + 7 * 3600_000).toISOString().slice(0, 10);
-        const { data: row } = await admin
-          .from("premium_spin_daily_milestones")
-          .select("id, spin_count, claimed_milestones")
-          .eq("visitor_id", visitorId)
-          .eq("day_wib", dayWib)
-          .maybeSingle();
-        if (row) {
-          const newCount = Math.min(20, (row.spin_count || 0) + reqCount);
-          await admin.from("premium_spin_daily_milestones")
-            .update({ spin_count: newCount }).eq("id", row.id);
-        } else {
-          await admin.from("premium_spin_daily_milestones").insert({
-            visitor_id: visitorId,
-            day_wib: dayWib,
-            spin_count: Math.min(20, reqCount),
-            claimed_milestones: [],
-          });
-        }
-      } catch (_e) { /* milestone non-blocking */ }
+      // 5) Tambah counter milestone harian (semua spin Luck Royale: normal + premium + free)
+      await bumpMilestoneSpin(admin, visitorId, reqCount);
 
       const { data: gemsAfter } = await admin.rpc("get_account_gems", { p_visitor_id: visitorId });
       return Response.json({
@@ -1193,7 +1200,6 @@ Deno.serve(async (req) => {
         spinCount,
       }, { headers: corsHeaders });
     }
-
 
     if (action === "spin_single" || action === "spin_bundle" || action === "spin_pack") {
       let spinCount = 1;
@@ -1328,6 +1334,9 @@ Deno.serve(async (req) => {
       if (totalBonusGems > 0) titleExtras.push(`🔥 +${totalBonusGems} streak`);
       if (jackpotWonTotal > 0) titleExtras.push(`💥 JACKPOT +${jackpotWonTotal}`);
       if (earnedTokens > 0) titleExtras.push(`🎟️ +${earnedTokens} Token`);
+      // Counter milestone harian — semua spin Luck Royale terhitung (normal/bundle/pack)
+      await bumpMilestoneSpin(admin, visitorId, spinCount);
+
       await admin.from("notifications").insert({
         visitor_id: visitorId,
         title: `🎰 Luck Royale (${spinCount}x)${titleExtras.length ? " " + titleExtras.join(" ") : ""}`,
