@@ -122,42 +122,38 @@ export default function StreakVoucherClaim() {
         </CardContent>
       </Card>
 
-      {vouchers.length > 0 && (
-        <div className="space-y-2">
-          <div className="flex items-center gap-2 px-1">
-            <Sparkles className="w-4 h-4 text-accent" />
-            <h4 className="text-sm font-bold">Voucher Aktif</h4>
-          </div>
-          {vouchers.map(v => {
-            const claimed = claimedIds.has(v.id);
-            const remaining = v.max_claims - v.current_claims;
-            return (
-              <Card key={v.id} className={claimed ? "opacity-60" : ""}>
-                <CardContent className="p-3 space-y-2">
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex-1 min-w-0">
-                      <div className="font-semibold text-sm truncate">{v.name}</div>
-                      <div className="text-[10px] font-mono text-muted-foreground">{v.code}</div>
-                    </div>
-                    <span className="px-2 py-0.5 rounded text-xs bg-primary/10 text-primary whitespace-nowrap">
-                      {REWARD_LABELS[v.reward_type] || v.reward_type} ×{v.reward_amount}
-                    </span>
-                  </div>
-                  {v.description && <p className="text-xs text-muted-foreground">{v.description}</p>}
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="text-[10px] text-muted-foreground">
-                      Sisa kuota: <b>{remaining}</b> · Exp: {new Date(v.expires_at).toLocaleDateString("id-ID")}
-                    </div>
-                    <Button size="sm" disabled={claimed || submitting} onClick={() => claim(v.code)}>
-                      {claimed ? "Sudah diklaim" : "Klaim"}
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            );
-          })}
+      <div className="space-y-2">
+        <div className="flex items-center gap-2 px-1">
+          <History className="w-4 h-4 text-accent" />
+          <h4 className="text-sm font-bold">Riwayat Voucher</h4>
         </div>
-      )}
+        {history.length === 0 ? (
+          <Card>
+            <CardContent className="p-4 text-center text-xs text-muted-foreground">
+              Belum ada voucher yang diklaim.
+            </CardContent>
+          </Card>
+        ) : (
+          history.map(h => (
+            <Card key={h.id}>
+              <CardContent className="p-3 space-y-1">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex-1 min-w-0">
+                    <div className="font-semibold text-sm truncate">{h.voucher_name || h.voucher_code}</div>
+                    <div className="text-[10px] font-mono text-muted-foreground">{h.voucher_code}</div>
+                  </div>
+                  <span className="px-2 py-0.5 rounded text-xs bg-primary/10 text-primary whitespace-nowrap">
+                    {REWARD_LABELS[h.reward_type] || h.reward_type} ×{h.reward_amount}
+                  </span>
+                </div>
+                <div className="text-[10px] text-muted-foreground">
+                  Diklaim: {new Date(h.claimed_at).toLocaleString("id-ID")}
+                </div>
+              </CardContent>
+            </Card>
+          ))
+        )}
+      </div>
     </div>
   );
 }
