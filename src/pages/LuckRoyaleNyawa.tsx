@@ -113,6 +113,7 @@ export default function LuckRoyaleNyawa() {
   const [redeeming, setRedeeming] = useState<string | null>(null);
   const [shopTier, setShopTier] = useState<"free" | "premium" | "super_premium" | "ultra">("free");
   const [spinSubtab, setSpinSubtab] = useState<"normal" | "premium">("normal");
+  const [milestoneRefreshKey, setMilestoneRefreshKey] = useState(0);
   const [luckyHour, setLuckyHour] = useState<{ active: boolean; hour: number; date: string; nextActiveAt: string; boostedUntil?: string | null; source?: "free" | "purchased" | null } | null>(null);
   const [lhPackages, setLhPackages] = useState<Array<{ code: string; hours: number; price: number; firstPrice?: number; effectivePrice: number; isFirstDiscountAvailable: boolean; label: string; badge?: string }>>([]);
   const [lhFirstUsed, setLhFirstUsed] = useState(false);
@@ -273,6 +274,7 @@ export default function LuckRoyaleNyawa() {
       if (typeof data.luckyTokenProgress === "number") setTokenProgress(data.luckyTokenProgress);
       if (typeof data.megaJackpotPool === "number") setMegaPool(data.megaJackpotPool);
       if (mode === "free") setFreeSpinAvailable(false);
+      setMilestoneRefreshKey((n) => n + 1);
       fetchData();
     } catch (e: any) {
       toast({ title: "Error", description: e.message || "Gagal", variant: "destructive" });
@@ -532,7 +534,7 @@ export default function LuckRoyaleNyawa() {
             </TabsContent>
             <TabsContent value="normal" className="space-y-4 mt-0">
           {/* 🎁 MILESTONE PREMIUM SPIN — terlihat juga di tab Normal supaya bisa diklaim dari sini */}
-          <PremiumMilestonePanel visitorId={visitorId} gems={gems} setGems={setGems} />
+          <PremiumMilestonePanel visitorId={visitorId} gems={gems} setGems={setGems} refreshKey={milestoneRefreshKey} />
           {/* 👑 NYAWA PREMIUM PASS — Rp 50k / 30 hari */}
           <div data-nyawa-premium-card className={`relative overflow-hidden rounded-2xl border-2 p-3 shadow-xl ${nyawaPremium.isActive ? "bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 border-emerald-300/70 shadow-emerald-500/40" : "bg-gradient-to-r from-rose-600 via-fuchsia-600 to-amber-500 border-amber-300/70 shadow-fuchsia-500/40"}`}>
             <div className="absolute inset-0 opacity-25 animate-pulse" style={{
