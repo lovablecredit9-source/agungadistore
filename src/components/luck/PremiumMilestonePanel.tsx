@@ -129,7 +129,7 @@ export default function PremiumMilestonePanel({ visitorId, gems, setGems, refres
         })}
       </div>
       <p className="text-[9px] text-amber-200/70 text-center leading-snug">
-        Hitung spin Premium (free + paket gem). Klaim manual tiap milestone. Reset 00:00 WIB.
+        Hitung semua spin Luck Royale (Normal + Premium + Free). Klaim manual tiap milestone. Reset 00:00 WIB.
       </p>
     </div>
   );
