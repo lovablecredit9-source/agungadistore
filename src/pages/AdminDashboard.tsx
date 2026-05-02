@@ -26,6 +26,7 @@ import AdminProductFlashSaleTab from "@/components/AdminProductFlashSaleTab";
 import AdminSocialLinksTab from "@/components/AdminSocialLinksTab";
 import AdminLuckyWheelTab from "@/components/AdminLuckyWheelTab";
 import AdminStreakShopTab from "@/components/AdminStreakShopTab";
+import AdminStreakVoucherTab from "@/components/AdminStreakVoucherTab";
 import AdminStreakEventTab from "@/components/AdminStreakEventTab";
 import AdminStreakFlashSaleTab from "@/components/AdminStreakFlashSaleTab";
 import AdminMembershipTab from "@/components/AdminMembershipTab";
