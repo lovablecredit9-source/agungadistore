@@ -1454,7 +1454,7 @@ export default function LuckRoyaleNyawa() {
                     icon: AlertCircle,
                     color: "from-amber-500 to-yellow-600",
                     title: "Gems Tidak Cukup",
-                    desc: `Butuh ${singleCost} gems untuk 1 spin. Top up dulu di Gem Shop atau coba Faded Wheel!`,
+                    desc: `Butuh ${singleCost} gems untuk 1 spin. Top up dulu di Gem Shop atau coba Mystery Box!`,
                     priority: "high",
                   });
                 } else if (recommendedBundle) {
@@ -1483,7 +1483,7 @@ export default function LuckRoyaleNyawa() {
                     icon: TrendingDown,
                     color: "from-slate-500 to-slate-700",
                     title: "Luck Rate Rendah",
-                    desc: `Rare rate kamu ${rareRate.toFixed(1)}%. Coba Faded Wheel - sistem 3x3 grid lebih predictable!`,
+                    desc: `Rare rate kamu ${rareRate.toFixed(1)}%. Coba Mystery Box - tiap spin buka box & klaim hadiah random!`,
                     priority: "med",
                   });
                 } else if (rareRate >= 20 && total >= 10) {
