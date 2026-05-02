@@ -132,6 +132,41 @@ export default function PremiumSpinPanel({ visitorId, gems, setGems, isUnlocked,
   const [history, setHistory] = useState<any[]>([]);
   const [historyLoading, setHistoryLoading] = useState(false);
   const [historyLimit, setHistoryLimit] = useState(20);
+  const [milestone, setMilestone] = useState<{ spinCount: number; claimed: number[]; cap: number } | null>(null);
+  const [claimingMs, setClaimingMs] = useState<number | null>(null);
+  const MILESTONES: { spins: number; gems: number }[] = [
+    { spins: 2, gems: 50 },
+    { spins: 5, gems: 200 },
+    { spins: 10, gems: 500 },
+    { spins: 20, gems: 1500 },
+  ];
+
+  const loadMilestone = async () => {
+    if (!visitorId) return;
+    try {
+      const { data } = await supabase.functions.invoke("luck-royale-nyawa", { body: { visitorId, action: "milestone_status" } });
+      if (data && !data.error) {
+        setMilestone({ spinCount: data.spinCount || 0, claimed: data.claimed || [], cap: data.cap || 20 });
+      }
+    } catch { /* noop */ }
+  };
+
+  const claimMilestone = async (spins: number) => {
+    if (!visitorId || claimingMs !== null) return;
+    setClaimingMs(spins);
+    try {
+      const { data, error } = await supabase.functions.invoke("luck-royale-nyawa", { body: { visitorId, action: "milestone_claim", milestone: spins } });
+      if (error || data?.error) {
+        toast({ title: "Gagal klaim", description: data?.error || error?.message || "Coba lagi", variant: "destructive" });
+        return;
+      }
+      if (typeof data.gems === "number") setGems(data.gems);
+      setMilestone((m) => m ? { ...m, claimed: data.claimed || [] } : m);
+      toast({ title: "🎁 Hadiah Milestone!", description: `+${data.gemReward} 💎 berhasil ditambahkan` });
+    } finally {
+      setClaimingMs(null);
+    }
+  };
 
   useEffect(() => {
     const id = setInterval(() => {
