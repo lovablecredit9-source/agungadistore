@@ -42,18 +42,7 @@ Deno.serve(async (req) => {
       return Response.json({ error: "Kuota voucher sudah habis" }, { status: 400, headers: corsHeaders });
     }
 
-    // Cek sudah pernah klaim?
-    const { data: existing } = await admin
-      .from("streak_voucher_claims")
-      .select("id")
-      .eq("voucher_id", voucher.id)
-      .eq("visitor_id", visitorId)
-      .maybeSingle();
-    if (existing) {
-      return Response.json({ error: "Kamu sudah pernah klaim voucher ini" }, { status: 400, headers: corsHeaders });
-    }
-
-    // Get user_balance_id (for record)
+    // Get user_balance_id (akun saldo aktif)
     const { data: blh } = await admin
       .from("balance_login_history")
       .select("user_balance_id")
@@ -62,6 +51,31 @@ Deno.serve(async (req) => {
       .limit(1)
       .maybeSingle();
     const ubId = blh?.user_balance_id ?? null;
+
+    // Cek sudah pernah klaim? (per visitor_id ATAU per akun saldo)
+    // Ini mencegah user logout-login akun lain di device sama untuk klaim ulang
+    let alreadyClaimed = false;
+    const { data: byVisitor } = await admin
+      .from("streak_voucher_claims")
+      .select("id")
+      .eq("voucher_id", voucher.id)
+      .eq("visitor_id", visitorId)
+      .maybeSingle();
+    if (byVisitor) alreadyClaimed = true;
+
+    if (!alreadyClaimed && ubId) {
+      const { data: byAccount } = await admin
+        .from("streak_voucher_claims")
+        .select("id")
+        .eq("voucher_id", voucher.id)
+        .eq("user_balance_id", ubId)
+        .maybeSingle();
+      if (byAccount) alreadyClaimed = true;
+    }
+
+    if (alreadyClaimed) {
+      return Response.json({ error: "Akun ini sudah pernah klaim voucher tersebut (1 akun = 1 kali klaim)" }, { status: 400, headers: corsHeaders });
+    }
 
     // Insert claim (race-safe via UNIQUE constraint)
     const { error: claimErr } = await admin.from("streak_voucher_claims").insert({
@@ -74,7 +88,7 @@ Deno.serve(async (req) => {
     });
     if (claimErr) {
       if (claimErr.code === "23505") {
-        return Response.json({ error: "Kamu sudah pernah klaim voucher ini" }, { status: 400, headers: corsHeaders });
+        return Response.json({ error: "Akun ini sudah pernah klaim voucher tersebut" }, { status: 400, headers: corsHeaders });
       }
       return Response.json({ error: "Gagal mencatat klaim" }, { status: 500, headers: corsHeaders });
     }
