@@ -5,6 +5,31 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+// Helper: increment daily milestone spin counter (shared by free, normal, & premium spins)
+async function bumpMilestoneSpin(admin: any, visitorId: string, addCount: number) {
+  try {
+    const dayWib = new Date(Date.now() + 7 * 3600_000).toISOString().slice(0, 10);
+    const { data: row } = await admin
+      .from("premium_spin_daily_milestones")
+      .select("id, spin_count, claimed_milestones")
+      .eq("visitor_id", visitorId)
+      .eq("day_wib", dayWib)
+      .maybeSingle();
+    if (row) {
+      const newCount = Math.min(20, (row.spin_count || 0) + addCount);
+      await admin.from("premium_spin_daily_milestones")
+        .update({ spin_count: newCount }).eq("id", row.id);
+    } else {
+      await admin.from("premium_spin_daily_milestones").insert({
+        visitor_id: visitorId,
+        day_wib: dayWib,
+        spin_count: Math.min(20, addCount),
+        claimed_milestones: [],
+      });
+    }
+  } catch (_e) { /* milestone non-blocking */ }
+}
+
 // Mata uang spin — semua pakai gem
 const SINGLE_COST_GEMS = 50;       // 1 spin = 50 gem
 // Paket bundle (jumlah spin → biaya gem). Makin banyak makin hemat.
