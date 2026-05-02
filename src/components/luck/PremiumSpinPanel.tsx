@@ -400,7 +400,7 @@ export default function PremiumSpinPanel({ visitorId, gems, setGems, isUnlocked,
       </button>
 
       {/* MILESTONE GEM HARIAN */}
-      {isUnlocked && milestone && (
+      {milestone && (
         <div className="rounded-xl bg-gradient-to-br from-amber-900/40 via-orange-900/30 to-fuchsia-900/40 border-2 border-amber-400/50 p-3 space-y-2">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-1.5">
