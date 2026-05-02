@@ -211,9 +211,8 @@ Deno.serve(async (req) => {
           const newBalance = (ub.balance || 0) + amount;
           await admin.from("user_balances").update({ balance: newBalance }).eq("id", ub.id);
           await admin.from("balance_transactions").insert({
-            user_balance_id: ub.id,
             visitor_id: visitorId,
-            type: "deposit",
+            type: "topup",
             amount,
             description: `Klaim voucher ${voucher.code}: +Rp ${amount.toLocaleString("id-ID")}`,
           });
