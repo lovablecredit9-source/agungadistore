@@ -81,6 +81,22 @@ const NORMAL_DISCOUNT_PRICES: Record<number, number> = {
   200: 3500,
 };
 
+// === SISTEM TIKET SPIN ===
+// Tiket = pengganti gem. 1 tiket Normal = 50 gem (1 spin normal). 1 tiket Premium = 100 gem (1 spin premium).
+// Bisa kombinasi tiket + gem saat spin (misal cost 200 gem, punya 3 tiket Normal → bayar 150 gem + 3 tiket).
+const TICKET_GEM_RATE: Record<"normal" | "premium", number> = { normal: 50, premium: 100 };
+type TicketPack = { code: string; type: "normal" | "premium"; tickets: number; cost_gems: number; original_gems: number; badge?: string };
+const TICKET_PACKS: TicketPack[] = [
+  // Normal
+  { code: "tn_5",   type: "normal",  tickets: 5,   cost_gems: 200,  original_gems: 250 },
+  { code: "tn_25",  type: "normal",  tickets: 25,  cost_gems: 900,  original_gems: 1250, badge: "HEMAT" },
+  { code: "tn_100", type: "normal",  tickets: 100, cost_gems: 3500, original_gems: 5000, badge: "MEGA HEMAT" },
+  // Premium
+  { code: "tp_5",   type: "premium", tickets: 5,   cost_gems: 450,  original_gems: 500 },
+  { code: "tp_25",  type: "premium", tickets: 25,  cost_gems: 2000, original_gems: 2500, badge: "HEMAT" },
+  { code: "tp_100", type: "premium", tickets: 100, cost_gems: 7500, original_gems: 10000, badge: "MEGA HEMAT" },
+];
+
 async function getAccountKey(admin: any, visitorId: string): Promise<{ key: string; userBalanceId: string | null }> {
   const { data } = await admin
     .from("balance_login_history")
