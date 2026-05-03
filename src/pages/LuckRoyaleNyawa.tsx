@@ -123,6 +123,11 @@ export default function LuckRoyaleNyawa() {
   const [lhPin, setLhPin] = useState("");
   const [lhSelectedPkg, setLhSelectedPkg] = useState<{ code: string; label: string; effectivePrice: number; usingFirstDiscount: boolean } | null>(null);
   const [nowTick, setNowTick] = useState(Date.now());
+  const [tickets, setTickets] = useState<{ normal: number; premium: number }>({ normal: 0, premium: 0 });
+  const [ticketPacks, setTicketPacks] = useState<any[]>([]);
+  const [ticketRate, setTicketRate] = useState<{ normal: number; premium: number }>({ normal: 50, premium: 100 });
+  const [useTicketsNormal, setUseTicketsNormal] = useState(true);
+  const [useTicketsPremium, setUseTicketsPremium] = useState(true);
   useEffect(() => { const t = setInterval(() => setNowTick(Date.now()), 1000); return () => clearInterval(t); }, []);
 
   const effectivePremiumShopUnlock = (() => {
