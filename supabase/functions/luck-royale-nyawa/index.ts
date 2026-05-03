@@ -1291,6 +1291,17 @@ Deno.serve(async (req) => {
 
       const currency = "gems";
 
+      // Diskon harian: harga normal dipotong jika kuota harian masih ada (5x/paket/hari)
+      const usageMap = await getNormalDiscountUsage(admin, visitorId);
+      const usedToday = usageMap[spinCount] || 0;
+      const discountPrice = NORMAL_DISCOUNT_PRICES[spinCount];
+      let discountApplied = 0;
+      let originalCost = cost;
+      if (discountPrice != null && usedToday < NORMAL_DISCOUNT_LIMIT_PER_DAY && discountPrice < cost) {
+        discountApplied = cost - discountPrice;
+        cost = discountPrice;
+      }
+
       const { data: gemsData } = await admin.rpc("get_account_gems", { p_visitor_id: visitorId });
       const gems = Number(gemsData || 0);
       if (gems < cost) {
