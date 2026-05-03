@@ -1171,12 +1171,25 @@ Deno.serve(async (req) => {
       }
 
       const cost = useFree ? 0 : PREMIUM_PACKS[reqCount];
-      if (cost > 0) {
+      const useTickets = !useFree && Boolean((body as any).useTickets);
+      let ticketsUsed = 0;
+      let costAfterTickets = cost;
+      if (useTickets && cost > 0) {
+        const tb = await getTicketBalances(admin, visitorId);
+        const rate = TICKET_GEM_RATE.premium;
+        const maxFromCost = Math.floor(cost / rate);
+        ticketsUsed = Math.min(tb.premium, maxFromCost);
+        costAfterTickets = cost - ticketsUsed * rate;
+      }
+      if (costAfterTickets > 0) {
         const { data: haveGems } = await admin.rpc("get_account_gems", { p_visitor_id: visitorId });
-        if ((Number(haveGems) || 0) < cost) {
-          return Response.json({ error: `Butuh ${cost} 💎 (kamu punya ${Number(haveGems) || 0})` }, { status: 400, headers: corsHeaders });
+        if ((Number(haveGems) || 0) < costAfterTickets) {
+          return Response.json({ error: `Butuh ${costAfterTickets} 💎${ticketsUsed > 0 ? ` (+${ticketsUsed} 🎟️)` : ""} (kamu punya ${Number(haveGems) || 0})` }, { status: 400, headers: corsHeaders });
         }
-        await admin.rpc("add_account_gems", { p_visitor_id: visitorId, p_amount: -cost });
+        await admin.rpc("add_account_gems", { p_visitor_id: visitorId, p_amount: -costAfterTickets });
+      }
+      if (ticketsUsed > 0) {
+        await adjustTickets(admin, visitorId, "premium", -ticketsUsed, "spin_premium", { reqCount, originalCost: cost, finalGemCost: costAfterTickets });
       }
 
       // Premium WAJIB pakai pool premium, tapi tetap dikontrol agar jackpot gem tidak gacor.
