@@ -1007,6 +1007,11 @@ Deno.serve(async (req) => {
             durationDays: PREMIUM_SHOP_UNLOCK_DAYS,
           };
         })(),
+        normalDiscount: {
+          limitPerDay: NORMAL_DISCOUNT_LIMIT_PER_DAY,
+          prices: NORMAL_DISCOUNT_PRICES,
+          usage: await getNormalDiscountUsage(admin, visitorId),
+        },
       }, { headers: corsHeaders });
     }
 
