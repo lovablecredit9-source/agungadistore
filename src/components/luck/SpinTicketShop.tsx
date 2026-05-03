@@ -23,7 +23,7 @@ interface Props {
   gems: number;
   useTickets: boolean;
   onToggleUseTickets: (v: boolean) => void;
-  onPurchased: (data: { tickets: { normal: number; premium: number }; gems: number }) => void;
+  onPurchased: (data: { tickets: { normal: number; premium: number }; gems: number; luckyTokens?: number }) => void;
 }
 
 export default function SpinTicketShop({
@@ -33,6 +33,10 @@ export default function SpinTicketShop({
   const [busy, setBusy] = useState<string | null>(null);
   const filtered = packs.filter((p) => p.type === type);
   const isPremium = type === "premium";
+
+  const convertRate = isPremium ? 3 : 5; // tiket per 1 Lucky Token
+  const convertable = Math.floor(ticketBalance / convertRate) * convertRate;
+  const tokensFromConvert = Math.floor(ticketBalance / convertRate);
 
   const buy = async (code: string) => {
     if (!visitorId || busy) return;
@@ -48,6 +52,25 @@ export default function SpinTicketShop({
       const d = data as any;
       toast({ title: "🎟️ Tiket bertambah!", description: `+${d.purchased} tiket ${type === "premium" ? "Premium" : "Normal"}` });
       onPurchased({ tickets: d.tickets, gems: d.gems });
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const convert = async () => {
+    if (!visitorId || busy || convertable < convertRate) return;
+    setBusy("convert");
+    try {
+      const { data, error } = await supabase.functions.invoke("luck-royale-nyawa", {
+        body: { visitorId, action: "convert_tickets", ticketType: type, amount: convertable },
+      });
+      if (error || (data as any)?.error) {
+        toast({ title: "Gagal tukar", description: (data as any)?.error || error?.message || "Coba lagi", variant: "destructive" });
+        return;
+      }
+      const d = data as any;
+      toast({ title: "✨ Berhasil ditukar!", description: `${d.converted} tiket → +${d.gained} Lucky Token` });
+      onPurchased({ tickets: d.tickets, gems, luckyTokens: d.luckyTokens });
     } finally {
       setBusy(null);
     }
@@ -85,6 +108,17 @@ export default function SpinTicketShop({
           Pakai tiket saat spin {isPremium ? "Premium" : "Normal"} (otomatis kombinasi tiket + gem)
         </span>
       </label>
+
+      <button
+        disabled={convertable < convertRate || busy === "convert"}
+        onClick={convert}
+        className="w-full rounded-lg bg-gradient-to-r from-amber-600/40 to-yellow-500/40 border border-amber-300/50 px-2 py-1.5 text-[10px] font-black text-amber-100 hover:from-amber-600/60 hover:to-yellow-500/60 disabled:opacity-40 transition-all flex items-center justify-center gap-1.5"
+        title={`Tukar ${convertRate} tiket ${type} = 1 Lucky Token`}
+      >
+        {busy === "convert" ? <Loader2 className="w-3 h-3 animate-spin" /> : (
+          <>🎟️→🪙 Tukar Lucky Token ({convertRate} tiket = 1 LT){convertable >= convertRate && <span className="ml-1 bg-amber-900/60 px-1.5 py-0.5 rounded">{convertable}→+{tokensFromConvert}</span>}</>
+        )}
+      </button>
 
       <div className="grid grid-cols-3 gap-1.5">
         {filtered.map((p) => {

@@ -1565,6 +1565,47 @@ Deno.serve(async (req) => {
     }
 
     // === BELI TIKET SPIN ===
+    // === CONVERT TIKET → LUCKY TOKEN ===
+    // Rate: 5 tiket Normal = 1 LT, 3 tiket Premium = 1 LT
+    if (action === "convert_tickets") {
+      const ticketType = ((body as any).ticketType || "normal") as "normal" | "premium";
+      const amount = Math.max(1, Math.min(1000, Number((body as any).amount || 0)));
+      const RATE: Record<"normal" | "premium", number> = { normal: 5, premium: 3 };
+      const rate = RATE[ticketType];
+      if (amount % rate !== 0) {
+        return Response.json({ error: `Jumlah tiket harus kelipatan ${rate} (${rate} tiket = 1 Lucky Token)` }, { status: 400, headers: corsHeaders });
+      }
+      const tb = await getTicketBalances(admin, visitorId);
+      if (tb[ticketType] < amount) {
+        return Response.json({ error: `Tiket tidak cukup. Punya ${tb[ticketType]}, butuh ${amount}` }, { status: 400, headers: corsHeaders });
+      }
+      const tokensGained = Math.floor(amount / rate);
+      try {
+        await adjustTickets(admin, visitorId, ticketType, -amount, "convert_to_lucky_token", { tokensGained });
+      } catch (e) {
+        return Response.json({ error: "Gagal mengurangi tiket" }, { status: 400, headers: corsHeaders });
+      }
+      const ts = await getLuckyTokens(admin, visitorId);
+      const newTokens = ts.tokens + tokensGained;
+      await setLuckyTokens(admin, visitorId, newTokens, ts.spinProgress);
+      const balances = await getTicketBalances(admin, visitorId);
+      await admin.from("notifications").insert({
+        visitor_id: visitorId,
+        title: `🎟️ Tukar Tiket → Lucky Token`,
+        message: `${amount} tiket ${ticketType} ditukar jadi ${tokensGained} Lucky Token (total: ${newTokens})`,
+        type: "luck_royale_nyawa",
+      });
+      return Response.json({
+        success: true,
+        tickets: balances,
+        luckyTokens: newTokens,
+        luckyTokenProgress: ts.spinProgress,
+        luckyTokenThreshold: TOKENS_PER_SPIN_THRESHOLD,
+        converted: amount,
+        gained: tokensGained,
+      }, { headers: corsHeaders });
+    }
+
     if (action === "buy_tickets") {
       const packCode = String((body as any).packCode || "");
       const pack = TICKET_PACKS.find(p => p.code === packCode);
