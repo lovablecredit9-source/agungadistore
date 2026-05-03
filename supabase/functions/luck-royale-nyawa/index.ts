@@ -1376,16 +1376,16 @@ Deno.serve(async (req) => {
         cost = discountPrice;
       }
 
-      // Opsi pakai tiket Normal sebagai pengganti gem (rate 1 tiket = 50 gem)
+      // Opsi pakai tiket Normal: 1 tiket = 1 spin (1:1, bukan per-gem).
+      // Contoh: paket 5 spin & punya 5 tiket → bayar 0 gem. Punya 3 tiket → bayar 3 tiket + (cost*2/5) gem.
       const useTickets = Boolean((body as any).useTickets);
       let ticketsUsed = 0;
       let costAfterTickets = cost;
-      if (useTickets && cost > 0) {
+      if (useTickets && spinCount > 0) {
         const tb = await getTicketBalances(admin, visitorId);
-        const rate = TICKET_GEM_RATE.normal;
-        const maxFromCost = Math.floor(cost / rate);
-        ticketsUsed = Math.min(tb.normal, maxFromCost);
-        costAfterTickets = cost - ticketsUsed * rate;
+        ticketsUsed = Math.min(tb.normal, spinCount);
+        const remainingSpins = spinCount - ticketsUsed;
+        costAfterTickets = spinCount > 0 ? Math.ceil((cost * remainingSpins) / spinCount) : 0;
       }
 
       const { data: gemsData } = await admin.rpc("get_account_gems", { p_visitor_id: visitorId });
