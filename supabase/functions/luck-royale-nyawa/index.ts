@@ -1161,15 +1161,15 @@ Deno.serve(async (req) => {
       }
 
       const cost = useFree ? 0 : PREMIUM_PACKS[reqCount];
+      // Tiket Premium: 1 tiket = 1 spin Premium (1:1)
       const useTickets = !useFree && Boolean((body as any).useTickets);
       let ticketsUsed = 0;
       let costAfterTickets = cost;
-      if (useTickets && cost > 0) {
+      if (useTickets && reqCount > 0) {
         const tb = await getTicketBalances(admin, visitorId);
-        const rate = TICKET_GEM_RATE.premium;
-        const maxFromCost = Math.floor(cost / rate);
-        ticketsUsed = Math.min(tb.premium, maxFromCost);
-        costAfterTickets = cost - ticketsUsed * rate;
+        ticketsUsed = Math.min(tb.premium, reqCount);
+        const remainingSpins = reqCount - ticketsUsed;
+        costAfterTickets = Math.ceil((cost * remainingSpins) / reqCount);
       }
       if (costAfterTickets > 0) {
         const { data: haveGems } = await admin.rpc("get_account_gems", { p_visitor_id: visitorId });
