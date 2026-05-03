@@ -34,6 +34,10 @@ export default function SpinTicketShop({
   const filtered = packs.filter((p) => p.type === type);
   const isPremium = type === "premium";
 
+  const convertRate = isPremium ? 3 : 5; // tiket per 1 Lucky Token
+  const convertable = Math.floor(ticketBalance / convertRate) * convertRate;
+  const tokensFromConvert = Math.floor(ticketBalance / convertRate);
+
   const buy = async (code: string) => {
     if (!visitorId || busy) return;
     setBusy(code);
@@ -48,6 +52,25 @@ export default function SpinTicketShop({
       const d = data as any;
       toast({ title: "🎟️ Tiket bertambah!", description: `+${d.purchased} tiket ${type === "premium" ? "Premium" : "Normal"}` });
       onPurchased({ tickets: d.tickets, gems: d.gems });
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const convert = async () => {
+    if (!visitorId || busy || convertable < convertRate) return;
+    setBusy("convert");
+    try {
+      const { data, error } = await supabase.functions.invoke("luck-royale-nyawa", {
+        body: { visitorId, action: "convert_tickets", ticketType: type, amount: convertable },
+      });
+      if (error || (data as any)?.error) {
+        toast({ title: "Gagal tukar", description: (data as any)?.error || error?.message || "Coba lagi", variant: "destructive" });
+        return;
+      }
+      const d = data as any;
+      toast({ title: "✨ Berhasil ditukar!", description: `${d.converted} tiket → +${d.gained} Lucky Token` });
+      onPurchased({ tickets: d.tickets, gems });
     } finally {
       setBusy(null);
     }
