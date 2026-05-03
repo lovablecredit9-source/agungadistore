@@ -79,7 +79,6 @@ const NORMAL_DISCOUNT_PRICES: Record<number, number> = {
   100: 2000,
   125: 2500,
   200: 3500,
-  500: 7500,
 };
 
 async function getAccountKey(admin: any, visitorId: string): Promise<{ key: string; userBalanceId: string | null }> {
