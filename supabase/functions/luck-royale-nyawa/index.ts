@@ -263,6 +263,10 @@ const PRIZES: Prize[] = [
   { kind: "time_freeze",   value: 5,     label: "+5 Freeze 30s",           emoji: "⏱️", rarity: "rare",      weight: 7,     color: "#0ea5e9" },
   { kind: "streak_coins",  value: 200,   label: "🪙 +200 Streak Coin",      emoji: "🪙", rarity: "rare",      weight: 10,    color: "#f59e0b" },
   { kind: "streak_coins",  value: 500,   label: "🪙 +500 Streak Coin",      emoji: "🪙", rarity: "rare",      weight: 7,     color: "#f59e0b" },
+  // TIKET NORMAL — 1 tiket = 1 spin Normal gratis
+  { kind: "spin_ticket_normal" as any, value: 1, label: "🎫 +1 Tiket Spin Normal", emoji: "🎫", rarity: "rare",   weight: 4,     color: "#22d3ee" },
+  { kind: "spin_ticket_normal" as any, value: 3, label: "🎫 +3 Tiket Spin Normal", emoji: "🎫", rarity: "epic",   weight: 1.2,   color: "#06b6d4" },
+  { kind: "spin_ticket_normal" as any, value: 10, label: "🎫 +10 Tiket Spin Normal", emoji: "🎫", rarity: "legendary", weight: 0.25, color: "#fbbf24" },
 
   // === EPIC ===
   { kind: "auto_hint",     value: 12,    label: "💡 +12 Hint",             emoji: "💡", rarity: "epic",      weight: 5,     color: "#a855f7" },
