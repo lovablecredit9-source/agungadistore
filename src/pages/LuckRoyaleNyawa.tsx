@@ -248,11 +248,13 @@ export default function LuckRoyaleNyawa() {
       const body: any = { visitorId };
       if (mode === "single") {
         body.action = "spin_single";
+        body.useTickets = useTicketsNormal;
       } else if (mode === "free") {
         body.action = "spin_free";
       } else {
         body.action = "spin_pack";
         body.count = count;
+        body.useTickets = useTicketsNormal;
       }
       const { data, error } = await supabase.functions.invoke("luck-royale-nyawa", { body });
       if (error) throw error;
