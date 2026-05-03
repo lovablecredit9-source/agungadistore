@@ -814,6 +814,10 @@ async function applyPrize(admin: any, visitorId: string, p: Prize) {
         total_spent: 0,
       });
     }
+  } else if (p.kind === "spin_ticket_normal") {
+    await adjustTickets(admin, visitorId, "normal", p.value, "prize_drop", { label: p.label });
+  } else if (p.kind === "spin_ticket_premium") {
+    await adjustTickets(admin, visitorId, "premium", p.value, "prize_drop", { label: p.label });
   }
 }
 
