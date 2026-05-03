@@ -1072,6 +1072,9 @@ Deno.serve(async (req) => {
           prices: NORMAL_DISCOUNT_PRICES,
           usage: await getNormalDiscountUsage(admin, visitorId),
         },
+        tickets: await getTicketBalances(admin, visitorId),
+        ticketPacks: TICKET_PACKS,
+        ticketRate: TICKET_GEM_RATE,
       }, { headers: corsHeaders });
     }
 
