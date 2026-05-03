@@ -1417,6 +1417,12 @@ Deno.serve(async (req) => {
       // Counter milestone harian — semua spin Luck Royale terhitung (normal/bundle/pack)
       await bumpMilestoneSpin(admin, visitorId, spinCount);
 
+      // Catat pemakaian diskon harian (jika diskon dipakai)
+      let discountUsedAfter = usedToday;
+      if (discountApplied > 0) {
+        discountUsedAfter = await bumpNormalDiscountUsage(admin, visitorId, spinCount);
+      }
+
       await admin.from("notifications").insert({
         visitor_id: visitorId,
         title: `🎰 Luck Royale (${spinCount}x)${titleExtras.length ? " " + titleExtras.join(" ") : ""}`,
