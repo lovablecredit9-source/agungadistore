@@ -82,6 +82,7 @@ export default function LuckRoyaleNyawa() {
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const [singleCost, setSingleCost] = useState(50);
   const [bundles, setBundles] = useState<Array<{ count: number; cost: number; label: string; badge?: string }>>([]);
+  const [normalDiscount, setNormalDiscount] = useState<{ limitPerDay: number; prices: Record<number, number>; usage: Record<number, number> }>({ limitPerDay: 5, prices: {}, usage: {} });
   const [results, setResults] = useState<SpinResult[] | null>(null);
   const [revealCount, setRevealCount] = useState(0);
   const [revealDone, setRevealDone] = useState(false);
