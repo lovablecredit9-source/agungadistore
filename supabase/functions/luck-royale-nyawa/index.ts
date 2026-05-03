@@ -151,7 +151,52 @@ async function bumpNormalDiscountUsage(admin: any, visitorId: string, packCount:
   }
 }
 
-// === PREMIUM TOKEN SHOP UNLOCK — auto 7 hari saat beli Nyawa Premium ===
+// === Ticket helpers ===
+async function getTicketBalances(admin: any, visitorId: string): Promise<{ normal: number; premium: number }> {
+  const { key } = await getAccountKey(admin, visitorId);
+  const { data } = await admin
+    .from("luck_spin_tickets")
+    .select("ticket_type, balance")
+    .eq("account_key", key);
+  const out = { normal: 0, premium: 0 };
+  for (const r of data || []) {
+    if (r.ticket_type === "normal") out.normal = Number(r.balance) || 0;
+    else if (r.ticket_type === "premium") out.premium = Number(r.balance) || 0;
+  }
+  return out;
+}
+
+async function adjustTickets(admin: any, visitorId: string, type: "normal" | "premium", delta: number, reason: string, meta?: any): Promise<number> {
+  const { key, userBalanceId } = await getAccountKey(admin, visitorId);
+  const { data: row } = await admin
+    .from("luck_spin_tickets")
+    .select("id, balance, total_purchased, total_used")
+    .eq("account_key", key)
+    .eq("ticket_type", type)
+    .maybeSingle();
+  let newBalance = (row?.balance || 0) + delta;
+  if (newBalance < 0) throw new Error("INSUFFICIENT_TICKETS");
+  if (row) {
+    await admin.from("luck_spin_tickets").update({
+      balance: newBalance,
+      total_purchased: (row.total_purchased || 0) + (delta > 0 ? delta : 0),
+      total_used: (row.total_used || 0) + (delta < 0 ? -delta : 0),
+      updated_at: new Date().toISOString(),
+    }).eq("id", row.id);
+  } else {
+    await admin.from("luck_spin_tickets").insert({
+      account_key: key, visitor_id: visitorId, user_balance_id: userBalanceId,
+      ticket_type: type, balance: newBalance,
+      total_purchased: delta > 0 ? delta : 0, total_used: delta < 0 ? -delta : 0,
+    });
+  }
+  await admin.from("luck_spin_ticket_log").insert({
+    account_key: key, visitor_id: visitorId, ticket_type: type, delta, reason, meta: meta || null,
+  });
+  return newBalance;
+}
+
+
 // Membuka SEMUA tier di Token Shop (premium/super_premium/ultra) tanpa harus beli akses tier.
 const PREMIUM_SHOP_UNLOCK_DAYS = 7;
 function premiumShopUnlockKey(v: string) { return `lr_premium_shop_unlock_${v}`; }
