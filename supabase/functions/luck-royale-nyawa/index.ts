@@ -401,6 +401,10 @@ const PREMIUM_PRIZES: Prize[] = [
   { kind: "gems",          value: 1000,  label: "💎 +1.000 Gem PREMIUM",     emoji: "💎", rarity: "rare",      weight: 0.25,  color: "#8b5cf6" },
   { kind: "gems",          value: 2000,  label: "💎 +2.000 Gem PREMIUM",     emoji: "💎", rarity: "rare",      weight: 0.10,  color: "#8b5cf6" },
   { kind: "lucky_token" as any, value: 1, label: "🎟️ +1 Lucky Token",        emoji: "🎟️", rarity: "rare",      weight: 3,     color: "#22d3ee" },
+  // TIKET PREMIUM — 1 tiket = 1 spin Premium gratis
+  { kind: "spin_ticket_premium" as any, value: 1, label: "🎫 +1 Tiket Spin Premium", emoji: "🎫", rarity: "rare",   weight: 2.5,   color: "#f0abfc" },
+  { kind: "spin_ticket_premium" as any, value: 3, label: "🎫 +3 Tiket Spin Premium", emoji: "🎫", rarity: "epic",   weight: 0.8,   color: "#e879f9" },
+  { kind: "spin_ticket_premium" as any, value: 10, label: "🎫 +10 Tiket Spin Premium", emoji: "🎫", rarity: "legendary", weight: 0.15, color: "#fbbf24" },
 
   // === EPIC ===
   { kind: "auto_hint",     value: 15,    label: "💡 +15 Hint",              emoji: "💡", rarity: "epic",      weight: 5,     color: "#a855f7" },
