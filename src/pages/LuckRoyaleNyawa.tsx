@@ -535,6 +535,19 @@ export default function LuckRoyaleNyawa() {
               </TabsTrigger>
             </TabsList>
             <TabsContent value="premium" className="space-y-4 mt-0">
+              {ticketPacks.length > 0 && (
+                <SpinTicketShop
+                  visitorId={visitorId}
+                  type="premium"
+                  ticketBalance={tickets.premium}
+                  packs={ticketPacks}
+                  rate={ticketRate.premium}
+                  gems={gems}
+                  useTickets={useTicketsPremium}
+                  onToggleUseTickets={setUseTicketsPremium}
+                  onPurchased={(d) => { setTickets(d.tickets); setGems(d.gems); }}
+                />
+              )}
               <PremiumSpinPanel
                 visitorId={visitorId}
                 gems={gems}
@@ -543,9 +556,24 @@ export default function LuckRoyaleNyawa() {
                 expiresAt={nyawaPremium.activeUntil}
                 price={nyawaPremium.price}
                 shopUnlock={effectivePremiumShopUnlock}
+                useTickets={useTicketsPremium}
+                onTicketsUpdate={(t) => setTickets(t)}
               />
             </TabsContent>
             <TabsContent value="normal" className="space-y-4 mt-0">
+          {ticketPacks.length > 0 && (
+            <SpinTicketShop
+              visitorId={visitorId}
+              type="normal"
+              ticketBalance={tickets.normal}
+              packs={ticketPacks}
+              rate={ticketRate.normal}
+              gems={gems}
+              useTickets={useTicketsNormal}
+              onToggleUseTickets={setUseTicketsNormal}
+              onPurchased={(d) => { setTickets(d.tickets); setGems(d.gems); }}
+            />
+          )}
           {/* 🎁 MILESTONE PREMIUM SPIN — terlihat juga di tab Normal supaya bisa diklaim dari sini */}
           <PremiumMilestonePanel visitorId={visitorId} gems={gems} setGems={setGems} refreshKey={milestoneRefreshKey} />
           {/* 👑 NYAWA PREMIUM PASS — Rp 50k / 30 hari */}
