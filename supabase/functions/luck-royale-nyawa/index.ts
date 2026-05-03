@@ -1542,10 +1542,9 @@ Deno.serve(async (req) => {
           usedToday: discountUsedAfter,
           limitPerDay: NORMAL_DISCOUNT_LIMIT_PER_DAY,
         } : null,
-      }, { headers: corsHeaders });
-    }
-
-    // === REDEEM LUCKY TOKEN ===
+        ticketsUsed,
+        finalGemCost: costAfterTickets,
+        tickets: await getTicketBalances(admin, visitorId),
     if (action === "redeem_token") {
       const item = TOKEN_SHOP.find(i => i.code === itemCode);
       if (!item) return Response.json({ error: "Item tidak valid" }, { status: 400, headers: corsHeaders });
