@@ -2429,6 +2429,78 @@ export type Database = {
         }
         Relationships: []
       }
+      luck_spin_ticket_log: {
+        Row: {
+          account_key: string
+          created_at: string
+          delta: number
+          id: string
+          meta: Json | null
+          reason: string
+          ticket_type: string
+          visitor_id: string | null
+        }
+        Insert: {
+          account_key: string
+          created_at?: string
+          delta: number
+          id?: string
+          meta?: Json | null
+          reason: string
+          ticket_type: string
+          visitor_id?: string | null
+        }
+        Update: {
+          account_key?: string
+          created_at?: string
+          delta?: number
+          id?: string
+          meta?: Json | null
+          reason?: string
+          ticket_type?: string
+          visitor_id?: string | null
+        }
+        Relationships: []
+      }
+      luck_spin_tickets: {
+        Row: {
+          account_key: string
+          balance: number
+          created_at: string
+          id: string
+          ticket_type: string
+          total_purchased: number
+          total_used: number
+          updated_at: string
+          user_balance_id: string | null
+          visitor_id: string | null
+        }
+        Insert: {
+          account_key: string
+          balance?: number
+          created_at?: string
+          id?: string
+          ticket_type: string
+          total_purchased?: number
+          total_used?: number
+          updated_at?: string
+          user_balance_id?: string | null
+          visitor_id?: string | null
+        }
+        Update: {
+          account_key?: string
+          balance?: number
+          created_at?: string
+          id?: string
+          ticket_type?: string
+          total_purchased?: number
+          total_used?: number
+          updated_at?: string
+          user_balance_id?: string | null
+          visitor_id?: string | null
+        }
+        Relationships: []
+      }
       lucky_draw_history: {
         Row: {
           created_at: string

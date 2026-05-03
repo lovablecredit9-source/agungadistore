@@ -81,6 +81,22 @@ const NORMAL_DISCOUNT_PRICES: Record<number, number> = {
   200: 3500,
 };
 
+// === SISTEM TIKET SPIN ===
+// Tiket = pengganti gem. 1 tiket Normal = 50 gem (1 spin normal). 1 tiket Premium = 100 gem (1 spin premium).
+// Bisa kombinasi tiket + gem saat spin (misal cost 200 gem, punya 3 tiket Normal → bayar 150 gem + 3 tiket).
+const TICKET_GEM_RATE: Record<"normal" | "premium", number> = { normal: 50, premium: 100 };
+type TicketPack = { code: string; type: "normal" | "premium"; tickets: number; cost_gems: number; original_gems: number; badge?: string };
+const TICKET_PACKS: TicketPack[] = [
+  // Normal
+  { code: "tn_5",   type: "normal",  tickets: 5,   cost_gems: 200,  original_gems: 250 },
+  { code: "tn_25",  type: "normal",  tickets: 25,  cost_gems: 900,  original_gems: 1250, badge: "HEMAT" },
+  { code: "tn_100", type: "normal",  tickets: 100, cost_gems: 3500, original_gems: 5000, badge: "MEGA HEMAT" },
+  // Premium
+  { code: "tp_5",   type: "premium", tickets: 5,   cost_gems: 450,  original_gems: 500 },
+  { code: "tp_25",  type: "premium", tickets: 25,  cost_gems: 2000, original_gems: 2500, badge: "HEMAT" },
+  { code: "tp_100", type: "premium", tickets: 100, cost_gems: 7500, original_gems: 10000, badge: "MEGA HEMAT" },
+];
+
 async function getAccountKey(admin: any, visitorId: string): Promise<{ key: string; userBalanceId: string | null }> {
   const { data } = await admin
     .from("balance_login_history")
@@ -133,6 +149,51 @@ async function bumpNormalDiscountUsage(admin: any, visitorId: string, packCount:
     });
     return 1;
   }
+}
+
+// === Ticket helpers ===
+async function getTicketBalances(admin: any, visitorId: string): Promise<{ normal: number; premium: number }> {
+  const { key } = await getAccountKey(admin, visitorId);
+  const { data } = await admin
+    .from("luck_spin_tickets")
+    .select("ticket_type, balance")
+    .eq("account_key", key);
+  const out = { normal: 0, premium: 0 };
+  for (const r of data || []) {
+    if (r.ticket_type === "normal") out.normal = Number(r.balance) || 0;
+    else if (r.ticket_type === "premium") out.premium = Number(r.balance) || 0;
+  }
+  return out;
+}
+
+async function adjustTickets(admin: any, visitorId: string, type: "normal" | "premium", delta: number, reason: string, meta?: any): Promise<number> {
+  const { key, userBalanceId } = await getAccountKey(admin, visitorId);
+  const { data: row } = await admin
+    .from("luck_spin_tickets")
+    .select("id, balance, total_purchased, total_used")
+    .eq("account_key", key)
+    .eq("ticket_type", type)
+    .maybeSingle();
+  let newBalance = (row?.balance || 0) + delta;
+  if (newBalance < 0) throw new Error("INSUFFICIENT_TICKETS");
+  if (row) {
+    await admin.from("luck_spin_tickets").update({
+      balance: newBalance,
+      total_purchased: (row.total_purchased || 0) + (delta > 0 ? delta : 0),
+      total_used: (row.total_used || 0) + (delta < 0 ? -delta : 0),
+      updated_at: new Date().toISOString(),
+    }).eq("id", row.id);
+  } else {
+    await admin.from("luck_spin_tickets").insert({
+      account_key: key, visitor_id: visitorId, user_balance_id: userBalanceId,
+      ticket_type: type, balance: newBalance,
+      total_purchased: delta > 0 ? delta : 0, total_used: delta < 0 ? -delta : 0,
+    });
+  }
+  await admin.from("luck_spin_ticket_log").insert({
+    account_key: key, visitor_id: visitorId, ticket_type: type, delta, reason, meta: meta || null,
+  });
+  return newBalance;
 }
 
 // === PREMIUM TOKEN SHOP UNLOCK — auto 7 hari saat beli Nyawa Premium ===
@@ -1011,6 +1072,9 @@ Deno.serve(async (req) => {
           prices: NORMAL_DISCOUNT_PRICES,
           usage: await getNormalDiscountUsage(admin, visitorId),
         },
+        tickets: await getTicketBalances(admin, visitorId),
+        ticketPacks: TICKET_PACKS,
+        ticketRate: TICKET_GEM_RATE,
       }, { headers: corsHeaders });
     }
 
@@ -1107,12 +1171,25 @@ Deno.serve(async (req) => {
       }
 
       const cost = useFree ? 0 : PREMIUM_PACKS[reqCount];
-      if (cost > 0) {
+      const useTickets = !useFree && Boolean((body as any).useTickets);
+      let ticketsUsed = 0;
+      let costAfterTickets = cost;
+      if (useTickets && cost > 0) {
+        const tb = await getTicketBalances(admin, visitorId);
+        const rate = TICKET_GEM_RATE.premium;
+        const maxFromCost = Math.floor(cost / rate);
+        ticketsUsed = Math.min(tb.premium, maxFromCost);
+        costAfterTickets = cost - ticketsUsed * rate;
+      }
+      if (costAfterTickets > 0) {
         const { data: haveGems } = await admin.rpc("get_account_gems", { p_visitor_id: visitorId });
-        if ((Number(haveGems) || 0) < cost) {
-          return Response.json({ error: `Butuh ${cost} 💎 (kamu punya ${Number(haveGems) || 0})` }, { status: 400, headers: corsHeaders });
+        if ((Number(haveGems) || 0) < costAfterTickets) {
+          return Response.json({ error: `Butuh ${costAfterTickets} 💎${ticketsUsed > 0 ? ` (+${ticketsUsed} 🎟️)` : ""} (kamu punya ${Number(haveGems) || 0})` }, { status: 400, headers: corsHeaders });
         }
-        await admin.rpc("add_account_gems", { p_visitor_id: visitorId, p_amount: -cost });
+        await admin.rpc("add_account_gems", { p_visitor_id: visitorId, p_amount: -costAfterTickets });
+      }
+      if (ticketsUsed > 0) {
+        await adjustTickets(admin, visitorId, "premium", -ticketsUsed, "spin_premium", { reqCount, originalCost: cost, finalGemCost: costAfterTickets });
       }
 
       // Premium WAJIB pakai pool premium, tapi tetap dikontrol agar jackpot gem tidak gacor.
@@ -1205,6 +1282,9 @@ Deno.serve(async (req) => {
         luckyTokenThreshold: TOKENS_PER_SPIN_THRESHOLD,
         luckActive,
         poolMode: luckActive ? "premium_lucky" : "premium",
+        ticketsUsed,
+        finalGemCost: costAfterTickets,
+        tickets: await getTicketBalances(admin, visitorId),
       }, { headers: corsHeaders });
     }
 
@@ -1306,16 +1386,33 @@ Deno.serve(async (req) => {
         cost = discountPrice;
       }
 
+      // Opsi pakai tiket Normal sebagai pengganti gem (rate 1 tiket = 50 gem)
+      const useTickets = Boolean((body as any).useTickets);
+      let ticketsUsed = 0;
+      let costAfterTickets = cost;
+      if (useTickets && cost > 0) {
+        const tb = await getTicketBalances(admin, visitorId);
+        const rate = TICKET_GEM_RATE.normal;
+        const maxFromCost = Math.floor(cost / rate);
+        ticketsUsed = Math.min(tb.normal, maxFromCost);
+        costAfterTickets = cost - ticketsUsed * rate;
+      }
+
       const { data: gemsData } = await admin.rpc("get_account_gems", { p_visitor_id: visitorId });
       const gems = Number(gemsData || 0);
-      if (gems < cost) {
+      if (gems < costAfterTickets) {
         return Response.json({
-          error: `Butuh ${cost} 💎 Gem (kamu punya ${gems})`,
+          error: `Butuh ${costAfterTickets} 💎 Gem${ticketsUsed > 0 ? ` (+${ticketsUsed} 🎟️ tiket)` : ""} (kamu punya ${gems} gem)`,
         }, { status: 400, headers: corsHeaders });
       }
 
       try {
-        await admin.rpc("add_account_gems", { p_visitor_id: visitorId, p_amount: -cost });
+        if (ticketsUsed > 0) {
+          await adjustTickets(admin, visitorId, "normal", -ticketsUsed, "spin_normal", { spinCount, originalCost, finalGemCost: costAfterTickets });
+        }
+        if (costAfterTickets > 0) {
+          await admin.rpc("add_account_gems", { p_visitor_id: visitorId, p_amount: -costAfterTickets });
+        }
       } catch (e) {
         return Response.json({ error: "Gagal mengurangi saldo" }, { status: 400, headers: corsHeaders });
       }
@@ -1461,7 +1558,37 @@ Deno.serve(async (req) => {
           usedToday: discountUsedAfter,
           limitPerDay: NORMAL_DISCOUNT_LIMIT_PER_DAY,
         } : null,
+        ticketsUsed,
+        finalGemCost: costAfterTickets,
+        tickets: await getTicketBalances(admin, visitorId),
       }, { headers: corsHeaders });
+    }
+
+    // === BELI TIKET SPIN ===
+    if (action === "buy_tickets") {
+      const packCode = String((body as any).packCode || "");
+      const pack = TICKET_PACKS.find(p => p.code === packCode);
+      if (!pack) return Response.json({ error: "Paket tiket tidak valid" }, { status: 400, headers: corsHeaders });
+      const { data: gemsData } = await admin.rpc("get_account_gems", { p_visitor_id: visitorId });
+      const gems = Number(gemsData || 0);
+      if (gems < pack.cost_gems) {
+        return Response.json({ error: `Butuh ${pack.cost_gems} 💎 (kamu punya ${gems})` }, { status: 400, headers: corsHeaders });
+      }
+      try {
+        await admin.rpc("add_account_gems", { p_visitor_id: visitorId, p_amount: -pack.cost_gems });
+        await adjustTickets(admin, visitorId, pack.type, pack.tickets, "purchase", { packCode, cost: pack.cost_gems });
+      } catch (e) {
+        return Response.json({ error: "Gagal membeli tiket" }, { status: 400, headers: corsHeaders });
+      }
+      const balances = await getTicketBalances(admin, visitorId);
+      const { data: gemsAfter } = await admin.rpc("get_account_gems", { p_visitor_id: visitorId });
+      await admin.from("notifications").insert({
+        visitor_id: visitorId,
+        title: `🎟️ Tiket Spin ${pack.type === "premium" ? "Premium" : "Normal"} +${pack.tickets}`,
+        message: `Berhasil beli ${pack.tickets} tiket spin ${pack.type} seharga ${pack.cost_gems} 💎`,
+        type: "luck_royale_nyawa",
+      });
+      return Response.json({ success: true, tickets: balances, gems: gemsAfter || 0, purchased: pack.tickets, type: pack.type }, { headers: corsHeaders });
     }
 
     // === REDEEM LUCKY TOKEN ===

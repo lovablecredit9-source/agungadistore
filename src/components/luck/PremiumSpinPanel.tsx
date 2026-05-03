@@ -118,11 +118,13 @@ interface Props {
   expiresAt?: string | null;
   price?: number;
   shopUnlock?: { isActive: boolean; activeUntil: string | null; grantedAt: string | null; durationDays: number };
+  useTickets?: boolean;
+  onTicketsUpdate?: (t: { normal: number; premium: number }) => void;
 }
 
 interface SpinResult { kind: string; value: number; label: string; emoji: string; rarity: string; color: string; }
 
-export default function PremiumSpinPanel({ visitorId, gems, setGems, isUnlocked, expiresAt, price = 50000, shopUnlock }: Props) {
+export default function PremiumSpinPanel({ visitorId, gems, setGems, isUnlocked, expiresAt, price = 50000, shopUnlock, useTickets = false, onTicketsUpdate }: Props) {
   const { toast } = useToast();
   const [busy, setBusy] = useState(false);
   const [freeUsed, setFreeUsed] = useState(getFreeUsedToday());
@@ -249,8 +251,9 @@ export default function PremiumSpinPanel({ visitorId, gems, setGems, isUnlocked,
 
     try {
       const { data, error } = await supabase.functions.invoke("luck-royale-nyawa", {
-        body: { visitorId, action: "premium_spin_batch", count, useFree },
+        body: { visitorId, action: "premium_spin_batch", count, useFree, useTickets: !useFree && useTickets },
       });
+      if ((data as any)?.tickets && onTicketsUpdate) onTicketsUpdate((data as any).tickets);
       if (error || (data as any)?.error) {
         throw new Error((data as any)?.error || error?.message || "Gagal proses spin");
       }

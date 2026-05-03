@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import MegaSpinArena from "@/components/luck/MegaSpinArena";
 import PremiumSpinPanel from "@/components/luck/PremiumSpinPanel";
+import SpinTicketShop from "@/components/luck/SpinTicketShop";
 import PremiumMilestonePanel from "@/components/luck/PremiumMilestonePanel";
 import FadedWheel from "@/components/streak/FadedWheel";
 import DiamondRoyaleInline from "@/components/streak/DiamondRoyaleInline";
@@ -123,6 +124,11 @@ export default function LuckRoyaleNyawa() {
   const [lhPin, setLhPin] = useState("");
   const [lhSelectedPkg, setLhSelectedPkg] = useState<{ code: string; label: string; effectivePrice: number; usingFirstDiscount: boolean } | null>(null);
   const [nowTick, setNowTick] = useState(Date.now());
+  const [tickets, setTickets] = useState<{ normal: number; premium: number }>({ normal: 0, premium: 0 });
+  const [ticketPacks, setTicketPacks] = useState<any[]>([]);
+  const [ticketRate, setTicketRate] = useState<{ normal: number; premium: number }>({ normal: 50, premium: 100 });
+  const [useTicketsNormal, setUseTicketsNormal] = useState(true);
+  const [useTicketsPremium, setUseTicketsPremium] = useState(true);
   useEffect(() => { const t = setInterval(() => setNowTick(Date.now()), 1000); return () => clearInterval(t); }, []);
 
   const effectivePremiumShopUnlock = (() => {
@@ -213,6 +219,9 @@ export default function LuckRoyaleNyawa() {
       if (data.luckyHour) setLuckyHour(data.luckyHour);
       if (Array.isArray(data.luckyHourPackages)) setLhPackages(data.luckyHourPackages);
       setLhFirstUsed(!!data.luckyHourFirstDiscountUsed);
+      if (data.tickets) setTickets(data.tickets);
+      if (Array.isArray(data.ticketPacks)) setTicketPacks(data.ticketPacks);
+      if (data.ticketRate) setTicketRate(data.ticketRate);
     } catch (e) {
       console.error(e);
     } finally {
@@ -240,11 +249,13 @@ export default function LuckRoyaleNyawa() {
       const body: any = { visitorId };
       if (mode === "single") {
         body.action = "spin_single";
+        body.useTickets = useTicketsNormal;
       } else if (mode === "free") {
         body.action = "spin_free";
       } else {
         body.action = "spin_pack";
         body.count = count;
+        body.useTickets = useTicketsNormal;
       }
       const { data, error } = await supabase.functions.invoke("luck-royale-nyawa", { body });
       if (error) throw error;
@@ -275,6 +286,7 @@ export default function LuckRoyaleNyawa() {
       if (typeof data.luckyTokens === "number") setLuckyTokens(data.luckyTokens);
       if (typeof data.luckyTokenProgress === "number") setTokenProgress(data.luckyTokenProgress);
       if (typeof data.megaJackpotPool === "number") setMegaPool(data.megaJackpotPool);
+      if (data.tickets) setTickets(data.tickets);
       if (mode === "free") setFreeSpinAvailable(false);
       setMilestoneRefreshKey((n) => n + 1);
       fetchData();
@@ -524,6 +536,19 @@ export default function LuckRoyaleNyawa() {
               </TabsTrigger>
             </TabsList>
             <TabsContent value="premium" className="space-y-4 mt-0">
+              {ticketPacks.length > 0 && (
+                <SpinTicketShop
+                  visitorId={visitorId}
+                  type="premium"
+                  ticketBalance={tickets.premium}
+                  packs={ticketPacks}
+                  rate={ticketRate.premium}
+                  gems={gems}
+                  useTickets={useTicketsPremium}
+                  onToggleUseTickets={setUseTicketsPremium}
+                  onPurchased={(d) => { setTickets(d.tickets); setGems(d.gems); }}
+                />
+              )}
               <PremiumSpinPanel
                 visitorId={visitorId}
                 gems={gems}
@@ -532,9 +557,24 @@ export default function LuckRoyaleNyawa() {
                 expiresAt={nyawaPremium.activeUntil}
                 price={nyawaPremium.price}
                 shopUnlock={effectivePremiumShopUnlock}
+                useTickets={useTicketsPremium}
+                onTicketsUpdate={(t) => setTickets(t)}
               />
             </TabsContent>
             <TabsContent value="normal" className="space-y-4 mt-0">
+          {ticketPacks.length > 0 && (
+            <SpinTicketShop
+              visitorId={visitorId}
+              type="normal"
+              ticketBalance={tickets.normal}
+              packs={ticketPacks}
+              rate={ticketRate.normal}
+              gems={gems}
+              useTickets={useTicketsNormal}
+              onToggleUseTickets={setUseTicketsNormal}
+              onPurchased={(d) => { setTickets(d.tickets); setGems(d.gems); }}
+            />
+          )}
           {/* 🎁 MILESTONE PREMIUM SPIN — terlihat juga di tab Normal supaya bisa diklaim dari sini */}
           <PremiumMilestonePanel visitorId={visitorId} gems={gems} setGems={setGems} refreshKey={milestoneRefreshKey} />
           {/* 👑 NYAWA PREMIUM PASS — Rp 50k / 30 hari */}
