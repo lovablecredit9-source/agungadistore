@@ -218,6 +218,9 @@ export default function LuckRoyaleNyawa() {
       if (data.luckyHour) setLuckyHour(data.luckyHour);
       if (Array.isArray(data.luckyHourPackages)) setLhPackages(data.luckyHourPackages);
       setLhFirstUsed(!!data.luckyHourFirstDiscountUsed);
+      if (data.tickets) setTickets(data.tickets);
+      if (Array.isArray(data.ticketPacks)) setTicketPacks(data.ticketPacks);
+      if (data.ticketRate) setTicketRate(data.ticketRate);
     } catch (e) {
       console.error(e);
     } finally {
