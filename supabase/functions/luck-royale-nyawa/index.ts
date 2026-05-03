@@ -1597,29 +1597,7 @@ Deno.serve(async (req) => {
     }
 
     if (action === "buy_tickets") {
-      const packCode = String((body as any).packCode || "");
-      const pack = TICKET_PACKS.find(p => p.code === packCode);
-      if (!pack) return Response.json({ error: "Paket tiket tidak valid" }, { status: 400, headers: corsHeaders });
-      const { data: gemsData } = await admin.rpc("get_account_gems", { p_visitor_id: visitorId });
-      const gems = Number(gemsData || 0);
-      if (gems < pack.cost_gems) {
-        return Response.json({ error: `Butuh ${pack.cost_gems} 💎 (kamu punya ${gems})` }, { status: 400, headers: corsHeaders });
-      }
-      try {
-        await admin.rpc("add_account_gems", { p_visitor_id: visitorId, p_amount: -pack.cost_gems });
-        await adjustTickets(admin, visitorId, pack.type, pack.tickets, "purchase", { packCode, cost: pack.cost_gems });
-      } catch (e) {
-        return Response.json({ error: "Gagal membeli tiket" }, { status: 400, headers: corsHeaders });
-      }
-      const balances = await getTicketBalances(admin, visitorId);
-      const { data: gemsAfter } = await admin.rpc("get_account_gems", { p_visitor_id: visitorId });
-      await admin.from("notifications").insert({
-        visitor_id: visitorId,
-        title: `🎟️ Tiket Spin ${pack.type === "premium" ? "Premium" : "Normal"} +${pack.tickets}`,
-        message: `Berhasil beli ${pack.tickets} tiket spin ${pack.type} seharga ${pack.cost_gems} 💎`,
-        type: "luck_royale_nyawa",
-      });
-      return Response.json({ success: true, tickets: balances, gems: gemsAfter || 0, purchased: pack.tickets, type: pack.type }, { headers: corsHeaders });
+      return Response.json({ error: "Tiket tidak dijual. Tiket hanya didapat dari hadiah spin." }, { status: 400, headers: corsHeaders });
     }
 
     // === REDEEM LUCKY TOKEN ===
