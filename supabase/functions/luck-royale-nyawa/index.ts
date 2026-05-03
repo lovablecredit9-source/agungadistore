@@ -1370,16 +1370,33 @@ Deno.serve(async (req) => {
         cost = discountPrice;
       }
 
+      // Opsi pakai tiket Normal sebagai pengganti gem (rate 1 tiket = 50 gem)
+      const useTickets = Boolean((body as any).useTickets);
+      let ticketsUsed = 0;
+      let costAfterTickets = cost;
+      if (useTickets && cost > 0) {
+        const tb = await getTicketBalances(admin, visitorId);
+        const rate = TICKET_GEM_RATE.normal;
+        const maxFromCost = Math.floor(cost / rate);
+        ticketsUsed = Math.min(tb.normal, maxFromCost);
+        costAfterTickets = cost - ticketsUsed * rate;
+      }
+
       const { data: gemsData } = await admin.rpc("get_account_gems", { p_visitor_id: visitorId });
       const gems = Number(gemsData || 0);
-      if (gems < cost) {
+      if (gems < costAfterTickets) {
         return Response.json({
-          error: `Butuh ${cost} 💎 Gem (kamu punya ${gems})`,
+          error: `Butuh ${costAfterTickets} 💎 Gem${ticketsUsed > 0 ? ` (+${ticketsUsed} 🎟️ tiket)` : ""} (kamu punya ${gems} gem)`,
         }, { status: 400, headers: corsHeaders });
       }
 
       try {
-        await admin.rpc("add_account_gems", { p_visitor_id: visitorId, p_amount: -cost });
+        if (ticketsUsed > 0) {
+          await adjustTickets(admin, visitorId, "normal", -ticketsUsed, "spin_normal", { spinCount, originalCost, finalGemCost: costAfterTickets });
+        }
+        if (costAfterTickets > 0) {
+          await admin.rpc("add_account_gems", { p_visitor_id: visitorId, p_amount: -costAfterTickets });
+        }
       } catch (e) {
         return Response.json({ error: "Gagal mengurangi saldo" }, { status: 400, headers: corsHeaders });
       }
