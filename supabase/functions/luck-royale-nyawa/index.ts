@@ -1545,7 +1545,10 @@ Deno.serve(async (req) => {
         ticketsUsed,
         finalGemCost: costAfterTickets,
         tickets: await getTicketBalances(admin, visitorId),
-    if (action === "redeem_token") {
+      }, { headers: corsHeaders });
+    }
+
+    // === REDEEM LUCKY TOKEN ===
       const item = TOKEN_SHOP.find(i => i.code === itemCode);
       if (!item) return Response.json({ error: "Item tidak valid" }, { status: 400, headers: corsHeaders });
 
