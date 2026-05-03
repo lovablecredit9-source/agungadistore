@@ -1449,6 +1449,14 @@ Deno.serve(async (req) => {
         earnedTokens,
         luckyHourActive,
         luckyHour: luckyHourActive ? luckyHourState.hour : luckyHourState.hour,
+        normalDiscount: discountPrice != null ? {
+          packCount: spinCount,
+          originalCost,
+          discountedCost: cost,
+          discountApplied,
+          usedToday: discountUsedAfter,
+          limitPerDay: NORMAL_DISCOUNT_LIMIT_PER_DAY,
+        } : null,
       }, { headers: corsHeaders });
     }
 
