@@ -78,7 +78,7 @@ export default function SpinTicketShop({
       </div>
 
       <div className="text-[10px] text-white/70 leading-relaxed">
-        Tiket hanya bisa didapat dari hadiah spin. Saat aktif, tiap spin akan otomatis pakai 1 tiket sebelum potong gem (5 spin & punya 5 tiket = 0 gem).
+        Gem selalu dipakai dulu. Tiket cuma jadi cadangan kalau gem habis/kurang (1 tiket = 1 spin).
       </div>
 
       <label className="flex items-center gap-2 text-[10px] text-white/85 bg-black/30 rounded-lg px-2 py-1.5 cursor-pointer">
@@ -89,7 +89,7 @@ export default function SpinTicketShop({
           className="accent-fuchsia-500"
         />
         <span className="font-bold">
-          Pakai tiket saat spin {isPremium ? "Premium" : "Normal"} (1 tiket = 1 spin)
+          Pakai tiket {isPremium ? "Premium" : "Normal"} sebagai cadangan saat gem habis
         </span>
       </label>
 
