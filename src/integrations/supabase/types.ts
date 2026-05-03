@@ -2354,6 +2354,42 @@ export type Database = {
           },
         ]
       }
+      luck_normal_pack_discount_usage: {
+        Row: {
+          account_key: string
+          created_at: string
+          day_wib: string
+          id: string
+          pack_count: number
+          updated_at: string
+          used_count: number
+          user_balance_id: string | null
+          visitor_id: string | null
+        }
+        Insert: {
+          account_key: string
+          created_at?: string
+          day_wib: string
+          id?: string
+          pack_count: number
+          updated_at?: string
+          used_count?: number
+          user_balance_id?: string | null
+          visitor_id?: string | null
+        }
+        Update: {
+          account_key?: string
+          created_at?: string
+          day_wib?: string
+          id?: string
+          pack_count?: number
+          updated_at?: string
+          used_count?: number
+          user_balance_id?: string | null
+          visitor_id?: string | null
+        }
+        Relationships: []
+      }
       luck_royale_nyawa_history: {
         Row: {
           cost_amount: number
