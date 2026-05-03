@@ -195,6 +195,7 @@ export default function LuckRoyaleNyawa() {
       setHistory(data.history || []);
       setSingleCost(data.singleCostGems || 50);
       setBundles(data.bundles || []);
+      if (data.normalDiscount) setNormalDiscount(data.normalDiscount);
       setFreeSpinAvailable(!!data.freeSpinAvailable);
       setLuckyStreak(Number(data.luckyStreak || 0));
       setStreakMultiplier(Number(data.streakMultiplier || 1));
