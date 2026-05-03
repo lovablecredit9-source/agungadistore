@@ -285,6 +285,7 @@ export default function LuckRoyaleNyawa() {
       if (typeof data.luckyTokens === "number") setLuckyTokens(data.luckyTokens);
       if (typeof data.luckyTokenProgress === "number") setTokenProgress(data.luckyTokenProgress);
       if (typeof data.megaJackpotPool === "number") setMegaPool(data.megaJackpotPool);
+      if (data.tickets) setTickets(data.tickets);
       if (mode === "free") setFreeSpinAvailable(false);
       setMilestoneRefreshKey((n) => n + 1);
       fetchData();
