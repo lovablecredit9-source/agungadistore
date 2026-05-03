@@ -67,6 +67,75 @@ function isNyawaPremiumActive(state: { activeUntil: string | null }): boolean {
 // Backwards compat — bundle 5 lama
 const BUNDLE_COST_DIAMOND = 200;
 
+// === DISKON HARIAN PAKET NORMAL ===
+// Setiap akun (user_balance_id, atau visitor jika belum login) dapat 5x diskon
+// per paket per hari. Reset 00:00 WIB. Berlaku untuk single (count=1) dan semua bundle.
+const NORMAL_DISCOUNT_LIMIT_PER_DAY = 5;
+const NORMAL_DISCOUNT_PRICES: Record<number, number> = {
+  1: 25,
+  5: 50,
+  10: 100,
+  20: 200,
+  100: 2000,
+  125: 2500,
+  200: 3500,
+  500: 7500,
+};
+
+async function getAccountKey(admin: any, visitorId: string): Promise<{ key: string; userBalanceId: string | null }> {
+  const { data } = await admin
+    .from("balance_login_history")
+    .select("user_balance_id")
+    .eq("visitor_id", visitorId)
+    .order("logged_in_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  const ub = data?.user_balance_id || null;
+  return { key: ub ? `ub:${ub}` : `v:${visitorId}`, userBalanceId: ub };
+}
+
+async function getNormalDiscountUsage(admin: any, visitorId: string): Promise<Record<number, number>> {
+  const { key } = await getAccountKey(admin, visitorId);
+  const dayWib = new Date(Date.now() + 7 * 3600_000).toISOString().slice(0, 10);
+  const { data } = await admin
+    .from("luck_normal_pack_discount_usage")
+    .select("pack_count, used_count")
+    .eq("account_key", key)
+    .eq("day_wib", dayWib);
+  const map: Record<number, number> = {};
+  for (const r of data || []) map[Number(r.pack_count)] = Number(r.used_count) || 0;
+  return map;
+}
+
+async function bumpNormalDiscountUsage(admin: any, visitorId: string, packCount: number): Promise<number> {
+  const { key, userBalanceId } = await getAccountKey(admin, visitorId);
+  const dayWib = new Date(Date.now() + 7 * 3600_000).toISOString().slice(0, 10);
+  const { data: row } = await admin
+    .from("luck_normal_pack_discount_usage")
+    .select("id, used_count")
+    .eq("account_key", key)
+    .eq("day_wib", dayWib)
+    .eq("pack_count", packCount)
+    .maybeSingle();
+  if (row) {
+    const next = (Number(row.used_count) || 0) + 1;
+    await admin.from("luck_normal_pack_discount_usage")
+      .update({ used_count: next, updated_at: new Date().toISOString() })
+      .eq("id", row.id);
+    return next;
+  } else {
+    await admin.from("luck_normal_pack_discount_usage").insert({
+      account_key: key,
+      visitor_id: visitorId,
+      user_balance_id: userBalanceId,
+      day_wib: dayWib,
+      pack_count: packCount,
+      used_count: 1,
+    });
+    return 1;
+  }
+}
+
 // === PREMIUM TOKEN SHOP UNLOCK — auto 7 hari saat beli Nyawa Premium ===
 // Membuka SEMUA tier di Token Shop (premium/super_premium/ultra) tanpa harus beli akses tier.
 const PREMIUM_SHOP_UNLOCK_DAYS = 7;
