@@ -196,7 +196,7 @@ async function adjustTickets(admin: any, visitorId: string, type: "normal" | "pr
   return newBalance;
 }
 
-
+// === PREMIUM TOKEN SHOP UNLOCK — auto 7 hari saat beli Nyawa Premium ===
 // Membuka SEMUA tier di Token Shop (premium/super_premium/ultra) tanpa harus beli akses tier.
 const PREMIUM_SHOP_UNLOCK_DAYS = 7;
 function premiumShopUnlockKey(v: string) { return `lr_premium_shop_unlock_${v}`; }
