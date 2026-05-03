@@ -70,7 +70,7 @@ export default function SpinTicketShop({
       }
       const d = data as any;
       toast({ title: "✨ Berhasil ditukar!", description: `${d.converted} tiket → +${d.gained} Lucky Token` });
-      onPurchased({ tickets: d.tickets, gems });
+      onPurchased({ tickets: d.tickets, gems, luckyTokens: d.luckyTokens });
     } finally {
       setBusy(null);
     }
