@@ -23,7 +23,7 @@ interface Props {
   gems: number;
   useTickets: boolean;
   onToggleUseTickets: (v: boolean) => void;
-  onPurchased: (data: { tickets: { normal: number; premium: number }; gems: number }) => void;
+  onPurchased: (data: { tickets: { normal: number; premium: number }; gems: number; luckyTokens?: number }) => void;
 }
 
 export default function SpinTicketShop({
