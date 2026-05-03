@@ -1282,6 +1282,9 @@ Deno.serve(async (req) => {
         luckyTokenThreshold: TOKENS_PER_SPIN_THRESHOLD,
         luckActive,
         poolMode: luckActive ? "premium_lucky" : "premium",
+        ticketsUsed,
+        finalGemCost: costAfterTickets,
+        tickets: await getTicketBalances(admin, visitorId),
       }, { headers: corsHeaders });
     }
 
