@@ -1020,22 +1020,47 @@ export default function LuckRoyaleNyawa() {
 
           {/* Spin Buttons */}
           <div className="space-y-2">
-            <button
-              disabled={spinning}
-              onClick={() => doSpin("single")}
-              className="w-full relative overflow-hidden rounded-xl bg-gradient-to-br from-cyan-500 to-blue-700 px-3 py-3 font-black shadow-lg shadow-cyan-500/40 active:scale-95 transition disabled:opacity-50 flex items-center justify-between"
-            >
-              <span className="text-sm tracking-widest">1 SPIN</span>
-              <span className="flex items-center gap-1 text-xs bg-black/30 rounded-full px-2 py-0.5">
-                <Gem className="w-3 h-3" /> {singleCost}
-              </span>
-            </button>
+            {(() => {
+              const dPrice = normalDiscount.prices?.[1];
+              const dUsed = normalDiscount.usage?.[1] || 0;
+              const dLimit = normalDiscount.limitPerDay || 5;
+              const dActive = dPrice != null && dPrice < singleCost && dUsed < dLimit;
+              const effective = dActive ? dPrice : singleCost;
+              const remaining = Math.max(0, dLimit - dUsed);
+              return (
+                <button
+                  disabled={spinning}
+                  onClick={() => doSpin("single")}
+                  className="w-full relative overflow-hidden rounded-xl bg-gradient-to-br from-cyan-500 to-blue-700 px-3 py-3 font-black shadow-lg shadow-cyan-500/40 active:scale-95 transition disabled:opacity-50 flex items-center justify-between"
+                >
+                  {dActive && (
+                    <span className="absolute top-1 left-1 text-[8px] font-black bg-rose-500 text-white rounded px-1 py-0.5">
+                      DISKON {remaining}/{dLimit}
+                    </span>
+                  )}
+                  <span className="text-sm tracking-widest">1 SPIN</span>
+                  <span className="flex items-center gap-1 text-xs bg-black/30 rounded-full px-2 py-0.5">
+                    <Gem className="w-3 h-3" />
+                    {dActive && (
+                      <span className="line-through text-white/60 mr-1">{singleCost}</span>
+                    )}
+                    <span>{effective}</span>
+                  </span>
+                </button>
+              );
+            })()}
 
             <div className="grid grid-cols-2 gap-2">
               {bundles.map((b) => {
                 const savings = singleCost * b.count - b.cost;
                 const pct = Math.round((savings / (singleCost * b.count)) * 100);
                 const isHighlight = b.count === 20 || b.count === 125;
+                const dPrice = normalDiscount.prices?.[b.count];
+                const dUsed = normalDiscount.usage?.[b.count] || 0;
+                const dLimit = normalDiscount.limitPerDay || 5;
+                const dActive = dPrice != null && dPrice < b.cost && dUsed < dLimit;
+                const effectiveCost = dActive ? dPrice : b.cost;
+                const remaining = Math.max(0, dLimit - dUsed);
                 return (
                   <button
                     key={b.count}
@@ -1047,20 +1072,32 @@ export default function LuckRoyaleNyawa() {
                         : "bg-gradient-to-br from-amber-400 via-orange-500 to-amber-600 shadow-amber-500/40"
                     }`}
                   >
-                    {b.badge && (
+                    {dActive ? (
+                      <span className="absolute top-1 right-1 text-[8px] font-black bg-rose-500 text-white rounded px-1 py-0.5">
+                        DISKON {remaining}/{dLimit}
+                      </span>
+                    ) : b.badge ? (
                       <span className="absolute top-1 right-1 text-[8px] font-black bg-black/70 text-amber-200 rounded px-1 py-0.5">
                         {b.badge}
                       </span>
-                    )}
+                    ) : null}
                     <div className="text-sm tracking-widest text-white">{b.label}</div>
                     <div className="flex items-center justify-center gap-1 text-xs mt-0.5 text-white">
-                      <Gem className="w-3 h-3" /> {formatCompactNumber(b.cost)}
+                      <Gem className="w-3 h-3" />
+                      {dActive && (
+                        <span className="line-through text-white/60">{formatCompactNumber(b.cost)}</span>
+                      )}
+                      <span>{formatCompactNumber(effectiveCost)}</span>
                     </div>
-                    {savings > 0 && (
+                    {dActive ? (
+                      <div className="text-[9px] text-rose-100 mt-0.5 font-black">
+                        🔥 Hemat {formatCompactNumber(b.cost - dPrice)} • sisa {remaining}×
+                      </div>
+                    ) : savings > 0 ? (
                       <div className="text-[9px] text-amber-100/90 mt-0.5">
                         Hemat {formatCompactNumber(savings)} ({pct}%)
                       </div>
-                    )}
+                    ) : null}
                   </button>
                 );
               })}
