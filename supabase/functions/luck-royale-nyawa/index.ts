@@ -1063,8 +1063,8 @@ Deno.serve(async (req) => {
           usage: await getNormalDiscountUsage(admin, visitorId),
         },
         tickets: await getTicketBalances(admin, visitorId),
-        ticketPacks: TICKET_PACKS,
-        ticketRate: TICKET_GEM_RATE,
+        ticketPacks: [],
+        ticketRate: { normal: 1, premium: 1 },
       }, { headers: corsHeaders });
     }
 
