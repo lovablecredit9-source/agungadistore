@@ -251,8 +251,9 @@ export default function PremiumSpinPanel({ visitorId, gems, setGems, isUnlocked,
 
     try {
       const { data, error } = await supabase.functions.invoke("luck-royale-nyawa", {
-        body: { visitorId, action: "premium_spin_batch", count, useFree },
+        body: { visitorId, action: "premium_spin_batch", count, useFree, useTickets: !useFree && useTickets },
       });
+      if ((data as any)?.tickets && onTicketsUpdate) onTicketsUpdate((data as any).tickets);
       if (error || (data as any)?.error) {
         throw new Error((data as any)?.error || error?.message || "Gagal proses spin");
       }
