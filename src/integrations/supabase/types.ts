@@ -2206,6 +2206,7 @@ export type Database = {
           icon: string
           id: string
           is_active: boolean
+          is_first_purchase_only: boolean
           name: string
           price: number
           sort_order: number
@@ -2218,6 +2219,7 @@ export type Database = {
           icon?: string
           id?: string
           is_active?: boolean
+          is_first_purchase_only?: boolean
           name?: string
           price?: number
           sort_order?: number
@@ -2230,6 +2232,7 @@ export type Database = {
           icon?: string
           id?: string
           is_active?: boolean
+          is_first_purchase_only?: boolean
           name?: string
           price?: number
           sort_order?: number
