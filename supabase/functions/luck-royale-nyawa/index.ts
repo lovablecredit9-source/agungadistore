@@ -375,6 +375,18 @@ function pickFromPool(pool: Prize[]): Prize & { index: number } {
   return { ...pool[0], index: 0 };
 }
 
+function isSpinCreditPrize(kind: string): boolean {
+  return kind === "lucky_token" || kind === "spin_ticket_normal" || kind === "spin_ticket_premium";
+}
+
+function pickNonSpinCreditPrize(pool: Prize[], luckyHourActive = false): Prize & { index: number } {
+  const safePool = pool.filter((p) => !isSpinCreditPrize(String(p.kind)));
+  if (safePool.length === 0) return pickFromPool(pool);
+  const first = pickFromPool(safePool);
+  if (luckyHourActive && first.rarity === "common") return pickFromPool(safePool);
+  return first;
+}
+
 // === PREMIUM PRIZES — premium tetap mantap, tapi gem hanya +~6% dari normal ===
 // Target owner: jangan bikin pemain farming 100K–260K gem dari batch besar.
 // Gem premium dibuat kecil & jarang; jackpot besar dipindah jadi hadiah non-gem.
