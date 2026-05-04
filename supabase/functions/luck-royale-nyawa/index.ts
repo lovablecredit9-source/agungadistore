@@ -375,6 +375,18 @@ function pickFromPool(pool: Prize[]): Prize & { index: number } {
   return { ...pool[0], index: 0 };
 }
 
+function isSpinCreditPrize(kind: string): boolean {
+  return kind === "lucky_token" || kind === "spin_ticket_normal" || kind === "spin_ticket_premium";
+}
+
+function pickNonSpinCreditPrize(pool: Prize[], luckyHourActive = false): Prize & { index: number } {
+  const safePool = pool.filter((p) => !isSpinCreditPrize(String(p.kind)));
+  if (safePool.length === 0) return pickFromPool(pool);
+  const first = pickFromPool(safePool);
+  if (luckyHourActive && first.rarity === "common") return pickFromPool(safePool);
+  return first;
+}
+
 // === PREMIUM PRIZES — premium tetap mantap, tapi gem hanya +~6% dari normal ===
 // Target owner: jangan bikin pemain farming 100K–260K gem dari batch besar.
 // Gem premium dibuat kecil & jarang; jackpot besar dipindah jadi hadiah non-gem.
@@ -1214,13 +1226,21 @@ Deno.serve(async (req) => {
         const first = rollOne();
         return luckActive && first.rarity === "common" ? rollOne() : first;
       };
+      const rollPremiumPaidOne = (): Prize => {
+        if (ticketsUsed + luckyTokensUsedForSpin <= 0) return rollPremiumOne();
+        const pool = PREMIUM_PRIZES.filter((p) => !isSpinCreditPrize(String(p.kind)));
+        const total = pool.reduce((s, p) => s + p.weight, 0);
+        let r = Math.random() * total;
+        for (const p of pool) { r -= p.weight; if (r <= 0) return p; }
+        return pool[0];
+      };
 
       // 1) Roll semua hasil di memory dulu (cepat, tanpa I/O)
       const results: Array<{ kind: string; value: number; label: string; emoji: string; rarity: string; color: string }> = [];
       const aggByKind = new Map<string, { kind: string; value: number; sample: Prize }>();
       let tokenGain = 0;
       for (let i = 0; i < reqCount; i++) {
-        const p = rollPremiumOne();
+        const p = rollPremiumPaidOne();
         results.push({ kind: p.kind, value: p.value, label: p.label, emoji: p.emoji, rarity: p.rarity, color: p.color });
         if ((p.kind as any) === "lucky_token") {
           tokenGain += p.value;
@@ -1271,7 +1291,7 @@ Deno.serve(async (req) => {
         }
       }
       const totalTokenAdd = autoTokens + tokenGain;
-      const newTokenTotal = ts.tokens + totalTokenAdd;
+      const newTokenTotal = Math.max(0, ts.tokens) + totalTokenAdd;
       await setLuckyTokens(admin, visitorId, newTokenTotal, newProgress);
       // Sertakan token otomatis ke field tokenGain agar UI menampilkan total perolehan
       const tokenGainTotal = totalTokenAdd;
@@ -1470,7 +1490,9 @@ Deno.serve(async (req) => {
       let totalBonusGems = 0;
       let jackpotWonTotal = 0;
       for (let i = 0; i < spinCount; i++) {
-        const basePrize = pickPrize(luckyHourActive, nyawaPremiumActive);
+        const basePrize = ticketsUsed + luckyTokensUsedForSpin > 0
+          ? pickNonSpinCreditPrize(nyawaPremiumActive ? PREMIUM_PRIZES : PRIZES, luckyHourActive)
+          : pickPrize(luckyHourActive, nyawaPremiumActive);
         const mult = getStreakMultiplier(curStreak);
         let finalValue = basePrize.value;
         let bonusApplied = 0;
