@@ -534,15 +534,6 @@ export default function LuckRoyaleNyawa() {
               </TabsTrigger>
             </TabsList>
             <TabsContent value="premium" className="space-y-4 mt-0">
-              <SpinTicketShop
-                visitorId={visitorId}
-                type="premium"
-                ticketBalance={tickets.premium}
-                packs={ticketPacks}
-                rate={ticketRate.premium}
-                gems={gems}
-                onPurchased={(d) => { setTickets(d.tickets); if (typeof d.gems === "number") setGems(d.gems); if (typeof d.luckyTokens === "number") setLuckyTokens(d.luckyTokens); }}
-              />
               <PremiumSpinPanel
                 visitorId={visitorId}
                 gems={gems}
