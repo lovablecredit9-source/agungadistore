@@ -196,20 +196,27 @@ export default function GemShop({ visitorId: visitorIdProp, onUpdate }: Props) {
                 const isPopular = p.sort_order === 2;
                 const isBest = p.sort_order === 4;
                 const isFirst = !!p.is_first_purchase_only;
+                const isUsed = isFirst && usedFirstIds.has(p.id);
                 const q = isFirst ? 1 : getQty(p.id);
                 const totalPrice = p.price * q;
                 return (
                   <motion.div
                     key={p.id}
-                    whileHover={{ scale: 1.02 }}
+                    whileHover={isUsed ? undefined : { scale: 1.02 }}
                     className={`relative rounded-xl border-2 p-3 ${
+                      isUsed ? "border-white/10 bg-black/30 opacity-60 grayscale" :
                       isFirst ? "border-pink-500/60 bg-gradient-to-br from-pink-950/40 to-rose-950/40" :
                       isBest ? "border-yellow-500/60 bg-gradient-to-br from-yellow-950/40 to-orange-950/40" :
                       isPopular ? "border-purple-500/60 bg-gradient-to-br from-purple-950/40 to-pink-950/40" :
                       "border-cyan-500/40 bg-cyan-950/20"
                     }`}
                   >
-                    {isFirst && (
+                    {isUsed && (
+                      <div className="absolute -top-2 right-3 bg-gradient-to-r from-emerald-500 to-teal-500 text-white text-[9px] font-black px-2 py-0.5 rounded-full flex items-center gap-1">
+                        ✅ SUDAH DIKLAIM
+                      </div>
+                    )}
+                    {!isUsed && isFirst && (
                       <div className="absolute -top-2 right-3 bg-gradient-to-r from-pink-500 to-rose-500 text-white text-[9px] font-black px-2 py-0.5 rounded-full flex items-center gap-1">
                         <Sparkles className="w-2.5 h-2.5" /> PROMO PERTAMA · 1x
                       </div>
@@ -262,11 +269,11 @@ export default function GemShop({ visitorId: visitorIdProp, onUpdate }: Props) {
                         )}
                         <Button
                           size="sm"
-                          disabled={buying === p.id}
+                          disabled={buying === p.id || isUsed}
                           onClick={() => requestBuy(p)}
-                          className="bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-black h-8"
+                          className="bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-black h-8 disabled:opacity-50"
                         >
-                          {buying === p.id ? <Loader2 className="w-3 h-3 animate-spin" /> : `Rp${totalPrice.toLocaleString("id-ID")}`}
+                          {isUsed ? "Terpakai" : (buying === p.id ? <Loader2 className="w-3 h-3 animate-spin" /> : `Rp${totalPrice.toLocaleString("id-ID")}`)}
                         </Button>
                       </div>
                     </div>
