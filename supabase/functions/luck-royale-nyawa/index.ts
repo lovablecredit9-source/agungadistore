@@ -1174,7 +1174,7 @@ Deno.serve(async (req) => {
 
       const cost = useFree ? 0 : PREMIUM_PACKS[reqCount];
       // Tiket Premium dipakai DULU (1 tiket = 1 spin). Gem hanya menutup kekurangan saat tiket habis.
-      const useTickets = !useFree && Boolean((body as any).useTickets);
+      const useTickets = !useFree;
       let ticketsUsed = 0;
       let costAfterTickets = cost;
       if (useTickets && reqCount > 0 && cost > 0) {
@@ -1389,7 +1389,7 @@ Deno.serve(async (req) => {
       }
 
       // Tiket Normal dipakai DULU (1 tiket = 1 spin). Gem hanya menutup kekurangan saat tiket habis.
-      const useTickets = Boolean((body as any).useTickets);
+      const useTickets = true;
       const { data: gemsData } = await admin.rpc("get_account_gems", { p_visitor_id: visitorId });
       const gems = Number(gemsData || 0);
 
