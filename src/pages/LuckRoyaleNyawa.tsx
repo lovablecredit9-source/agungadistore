@@ -12,7 +12,7 @@ import {
   ArrowLeft, Heart, Lightbulb, Timer, Shield, Gem, Coins, Sparkles, Crown,
   Loader2, Trophy, Zap, X, Dices, BarChart3, Flame, Star, Award, TrendingUp,
   Brain, Target, TrendingDown, CheckCircle2, AlertCircle, Rocket, Gift, Flame as FlameIcon,
-  Package,
+  Package, Ticket,
 } from "lucide-react";
 import MegaSpinArena from "@/components/luck/MegaSpinArena";
 import PremiumSpinPanel from "@/components/luck/PremiumSpinPanel";
@@ -127,8 +127,6 @@ export default function LuckRoyaleNyawa() {
   const [tickets, setTickets] = useState<{ normal: number; premium: number }>({ normal: 0, premium: 0 });
   const [ticketPacks, setTicketPacks] = useState<any[]>([]);
   const [ticketRate, setTicketRate] = useState<{ normal: number; premium: number }>({ normal: 50, premium: 100 });
-  const [useTicketsNormal, setUseTicketsNormal] = useState(true);
-  const [useTicketsPremium, setUseTicketsPremium] = useState(true);
   useEffect(() => { const t = setInterval(() => setNowTick(Date.now()), 1000); return () => clearInterval(t); }, []);
 
   const effectivePremiumShopUnlock = (() => {
@@ -249,13 +247,13 @@ export default function LuckRoyaleNyawa() {
       const body: any = { visitorId };
       if (mode === "single") {
         body.action = "spin_single";
-        body.useTickets = useTicketsNormal;
+        body.useTickets = true;
       } else if (mode === "free") {
         body.action = "spin_free";
       } else {
         body.action = "spin_pack";
         body.count = count;
-        body.useTickets = useTicketsNormal;
+        body.useTickets = true;
       }
       const { data, error } = await supabase.functions.invoke("luck-royale-nyawa", { body });
       if (error) throw error;
@@ -543,9 +541,7 @@ export default function LuckRoyaleNyawa() {
                 packs={ticketPacks}
                 rate={ticketRate.premium}
                 gems={gems}
-                useTickets={useTicketsPremium}
-                onToggleUseTickets={setUseTicketsPremium}
-                onPurchased={(d) => { setTickets(d.tickets); setGems(d.gems); if (typeof d.luckyTokens === "number") setLuckyTokens(d.luckyTokens); }}
+                onPurchased={(d) => { setTickets(d.tickets); if (typeof d.gems === "number") setGems(d.gems); if (typeof d.luckyTokens === "number") setLuckyTokens(d.luckyTokens); }}
               />
               <PremiumSpinPanel
                 visitorId={visitorId}
@@ -555,7 +551,8 @@ export default function LuckRoyaleNyawa() {
                 expiresAt={nyawaPremium.activeUntil}
                 price={nyawaPremium.price}
                 shopUnlock={effectivePremiumShopUnlock}
-                useTickets={useTicketsPremium}
+                useTickets={true}
+                ticketBalance={tickets.premium}
                 onTicketsUpdate={(t) => setTickets(t)}
               />
             </TabsContent>
@@ -567,9 +564,7 @@ export default function LuckRoyaleNyawa() {
             packs={ticketPacks}
             rate={ticketRate.normal}
             gems={gems}
-            useTickets={useTicketsNormal}
-            onToggleUseTickets={setUseTicketsNormal}
-            onPurchased={(d) => { setTickets(d.tickets); setGems(d.gems); if (typeof d.luckyTokens === "number") setLuckyTokens(d.luckyTokens); }}
+            onPurchased={(d) => { setTickets(d.tickets); if (typeof d.gems === "number") setGems(d.gems); if (typeof d.luckyTokens === "number") setLuckyTokens(d.luckyTokens); }}
           />
           {/* 🎁 MILESTONE PREMIUM SPIN — terlihat juga di tab Normal supaya bisa diklaim dari sini */}
           <PremiumMilestonePanel visitorId={visitorId} gems={gems} setGems={setGems} refreshKey={milestoneRefreshKey} />
@@ -1062,6 +1057,8 @@ export default function LuckRoyaleNyawa() {
               const dLimit = normalDiscount.limitPerDay || 5;
               const dActive = dPrice != null && dPrice < singleCost && dUsed < dLimit;
               const effective = dActive ? dPrice : singleCost;
+              const ticketUsed = Math.min(tickets.normal, 1);
+              const gemCost = ticketUsed >= 1 ? 0 : effective;
               const remaining = Math.max(0, dLimit - dUsed);
               return (
                 <button
@@ -1076,11 +1073,15 @@ export default function LuckRoyaleNyawa() {
                   )}
                   <span className="text-sm tracking-widest">1 SPIN</span>
                   <span className="flex items-center gap-1 text-xs bg-black/30 rounded-full px-2 py-0.5">
-                    <Gem className="w-3 h-3" />
-                    {dActive && (
-                      <span className="line-through text-white/60 mr-1">{singleCost}</span>
+                    {ticketUsed > 0 ? <Ticket className="w-3 h-3" /> : <Gem className="w-3 h-3" />}
+                    {ticketUsed > 0 ? (
+                      <span>1 tiket</span>
+                    ) : (
+                      <>
+                        {dActive && <span className="line-through text-white/60 mr-1">{singleCost}</span>}
+                        <span>{gemCost}</span>
+                      </>
                     )}
-                    <span>{effective}</span>
                   </span>
                 </button>
               );
@@ -1096,6 +1097,9 @@ export default function LuckRoyaleNyawa() {
                 const dLimit = normalDiscount.limitPerDay || 5;
                 const dActive = dPrice != null && dPrice < b.cost && dUsed < dLimit;
                 const effectiveCost = dActive ? dPrice : b.cost;
+                const ticketUsed = Math.min(tickets.normal, b.count);
+                const remainingSpins = b.count - ticketUsed;
+                const gemCost = remainingSpins > 0 ? Math.ceil((effectiveCost * remainingSpins) / b.count) : 0;
                 const remaining = Math.max(0, dLimit - dUsed);
                 return (
                   <button
@@ -1119,11 +1123,9 @@ export default function LuckRoyaleNyawa() {
                     ) : null}
                     <div className="text-sm tracking-widest text-white">{b.label}</div>
                     <div className="flex items-center justify-center gap-1 text-xs mt-0.5 text-white">
-                      <Gem className="w-3 h-3" />
-                      {dActive && (
-                        <span className="line-through text-white/60">{formatCompactNumber(b.cost)}</span>
-                      )}
-                      <span>{formatCompactNumber(effectiveCost)}</span>
+                      {ticketUsed > 0 && <><Ticket className="w-3 h-3" /><span>{ticketUsed} tiket</span></>}
+                      {gemCost > 0 && <><Gem className="w-3 h-3" /><span>{formatCompactNumber(gemCost)}</span></>}
+                      {ticketUsed === 0 && dActive && <span className="line-through text-white/60">{formatCompactNumber(b.cost)}</span>}
                     </div>
                     {dActive ? (
                       <div className="text-[9px] text-rose-100 mt-0.5 font-black">

@@ -20,15 +20,15 @@ interface Props {
   packs?: TicketPack[];
   rate?: number;
   gems?: number;
-  useTickets: boolean;
-  onToggleUseTickets: (v: boolean) => void;
-  onPurchased: (data: { tickets: { normal: number; premium: number }; gems: number; luckyTokens?: number }) => void;
+  useTickets?: boolean;
+  onToggleUseTickets?: (v: boolean) => void;
+  onPurchased: (data: { tickets: { normal: number; premium: number }; gems?: number; luckyTokens?: number }) => void;
 }
 
 // Tiket = 1:1 spin (1 tiket = 1 spin). Tidak dijual — hanya didapat dari hadiah spin.
 // Bisa ditukar jadi Lucky Token untuk Token Shop (5 Normal = 1 LT, 3 Premium = 1 LT).
 export default function SpinTicketShop({
-  visitorId, type, ticketBalance, useTickets, onToggleUseTickets, onPurchased,
+  visitorId, type, ticketBalance, onPurchased,
 }: Props) {
   const { toast } = useToast();
   const [busy, setBusy] = useState(false);
@@ -50,7 +50,7 @@ export default function SpinTicketShop({
       }
       const d = data as any;
       toast({ title: "✨ Berhasil ditukar!", description: `${d.converted} tiket → +${d.gained} Lucky Token` });
-      onPurchased({ tickets: d.tickets, gems: 0, luckyTokens: d.luckyTokens });
+      onPurchased({ tickets: d.tickets, luckyTokens: d.luckyTokens });
     } finally {
       setBusy(false);
     }
@@ -78,20 +78,13 @@ export default function SpinTicketShop({
       </div>
 
       <div className="text-[10px] text-white/70 leading-relaxed">
-        Tiket dipakai dulu (1 tiket = 1 spin). Kalau tiket habis, baru gem yang dipakai untuk sisa spin.
+        Tiket otomatis dipakai untuk tombol spin di bawah (1 tiket = 1 spin). Kalau tiket kurang/habis, baru gem dipakai untuk sisa spin.
       </div>
 
-      <label className="flex items-center gap-2 text-[10px] text-white/85 bg-black/30 rounded-lg px-2 py-1.5 cursor-pointer">
-        <input
-          type="checkbox"
-          checked={useTickets}
-          onChange={(e) => onToggleUseTickets(e.target.checked)}
-          className="accent-fuchsia-500"
-        />
-        <span className="font-bold">
-          Pakai tiket {isPremium ? "Premium" : "Normal"} dulu (gem hanya kalau tiket habis)
-        </span>
-      </label>
+      <div className="flex items-center gap-2 text-[10px] text-white/85 bg-black/30 rounded-lg px-2 py-1.5">
+        <Ticket className="w-3 h-3 text-amber-200" />
+        <span className="font-bold">Auto pakai tiket dulu, tanpa perlu gem kalau tiket cukup.</span>
+      </div>
 
       <button
         disabled={convertable < convertRate || busy}
