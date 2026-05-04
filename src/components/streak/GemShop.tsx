@@ -248,8 +248,14 @@ export default function GemShop({ visitorId: visitorIdProp, onUpdate }: Props) {
                           <p className="text-xs text-cyan-300 font-bold">
                             {formatCompactNumber(p.gems)} 💎
                             {p.bonus_gems > 0 && <span className="text-yellow-400"> +{p.bonus_gems}</span>}
+                            {(p.bonus_streak_coins || 0) > 0 && (
+                              <span className="text-amber-300"> + {formatCompactNumber((p.bonus_streak_coins || 0) * q)} 🪙</span>
+                            )}
                           </p>
-                          <p className="text-[10px] text-white/60">Total: {formatCompactNumber(total * q)} 💎</p>
+                          <p className="text-[10px] text-white/60">
+                            Total: {formatCompactNumber(total * q)} 💎
+                            {(p.bonus_streak_coins || 0) > 0 && <> · {formatCompactNumber((p.bonus_streak_coins || 0) * q)} Koin Streak</>}
+                          </p>
                         </div>
                       </div>
                       <div className="flex flex-col items-end gap-2 shrink-0">
