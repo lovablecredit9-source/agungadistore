@@ -127,8 +127,6 @@ export default function LuckRoyaleNyawa() {
   const [tickets, setTickets] = useState<{ normal: number; premium: number }>({ normal: 0, premium: 0 });
   const [ticketPacks, setTicketPacks] = useState<any[]>([]);
   const [ticketRate, setTicketRate] = useState<{ normal: number; premium: number }>({ normal: 50, premium: 100 });
-  const [useTicketsNormal, setUseTicketsNormal] = useState(true);
-  const [useTicketsPremium, setUseTicketsPremium] = useState(true);
   useEffect(() => { const t = setInterval(() => setNowTick(Date.now()), 1000); return () => clearInterval(t); }, []);
 
   const effectivePremiumShopUnlock = (() => {
@@ -249,13 +247,13 @@ export default function LuckRoyaleNyawa() {
       const body: any = { visitorId };
       if (mode === "single") {
         body.action = "spin_single";
-        body.useTickets = useTicketsNormal;
+        body.useTickets = true;
       } else if (mode === "free") {
         body.action = "spin_free";
       } else {
         body.action = "spin_pack";
         body.count = count;
-        body.useTickets = useTicketsNormal;
+        body.useTickets = true;
       }
       const { data, error } = await supabase.functions.invoke("luck-royale-nyawa", { body });
       if (error) throw error;
