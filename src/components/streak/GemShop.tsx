@@ -28,6 +28,7 @@ export default function GemShop({ visitorId: visitorIdProp, onUpdate }: Props) {
   const [loading, setLoading] = useState(false);
   const [buying, setBuying] = useState<string | null>(null);
   const [qty, setQty] = useState<Record<string, number>>({});
+  const [usedFirstIds, setUsedFirstIds] = useState<Set<string>>(new Set());
   const [hasPin, setHasPin] = useState(false);
   const [pinDialog, setPinDialog] = useState<{ pkg: GemPackage; quantity: number } | null>(null);
   const [pinInput, setPinInput] = useState("");
