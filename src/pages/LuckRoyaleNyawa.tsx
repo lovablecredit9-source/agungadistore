@@ -12,7 +12,7 @@ import {
   ArrowLeft, Heart, Lightbulb, Timer, Shield, Gem, Coins, Sparkles, Crown,
   Loader2, Trophy, Zap, X, Dices, BarChart3, Flame, Star, Award, TrendingUp,
   Brain, Target, TrendingDown, CheckCircle2, AlertCircle, Rocket, Gift, Flame as FlameIcon,
-  Package,
+  Package, Ticket,
 } from "lucide-react";
 import MegaSpinArena from "@/components/luck/MegaSpinArena";
 import PremiumSpinPanel from "@/components/luck/PremiumSpinPanel";
@@ -552,6 +552,7 @@ export default function LuckRoyaleNyawa() {
                 price={nyawaPremium.price}
                 shopUnlock={effectivePremiumShopUnlock}
                 useTickets={true}
+                ticketBalance={tickets.premium}
                 onTicketsUpdate={(t) => setTickets(t)}
               />
             </TabsContent>
@@ -1072,7 +1073,7 @@ export default function LuckRoyaleNyawa() {
                   )}
                   <span className="text-sm tracking-widest">1 SPIN</span>
                   <span className="flex items-center gap-1 text-xs bg-black/30 rounded-full px-2 py-0.5">
-                    {ticketUsed > 0 ? <Package className="w-3 h-3" /> : <Gem className="w-3 h-3" />}
+                    {ticketUsed > 0 ? <Ticket className="w-3 h-3" /> : <Gem className="w-3 h-3" />}
                     {ticketUsed > 0 ? (
                       <span>1 tiket</span>
                     ) : (
@@ -1122,7 +1123,7 @@ export default function LuckRoyaleNyawa() {
                     ) : null}
                     <div className="text-sm tracking-widest text-white">{b.label}</div>
                     <div className="flex items-center justify-center gap-1 text-xs mt-0.5 text-white">
-                      {ticketUsed > 0 && <><Package className="w-3 h-3" /><span>{ticketUsed} tiket</span></>}
+                      {ticketUsed > 0 && <><Ticket className="w-3 h-3" /><span>{ticketUsed} tiket</span></>}
                       {gemCost > 0 && <><Gem className="w-3 h-3" /><span>{formatCompactNumber(gemCost)}</span></>}
                       {ticketUsed === 0 && dActive && <span className="line-through text-white/60">{formatCompactNumber(b.cost)}</span>}
                     </div>
