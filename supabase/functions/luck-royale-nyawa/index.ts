@@ -1292,6 +1292,7 @@ Deno.serve(async (req) => {
         luckActive,
         poolMode: luckActive ? "premium_lucky" : "premium",
         ticketsUsed,
+        luckyTokensUsedForSpin,
         finalGemCost: costAfterTickets,
         tickets: await getTicketBalances(admin, visitorId),
       }, { headers: corsHeaders });
@@ -1573,6 +1574,7 @@ Deno.serve(async (req) => {
         luckyTokenProgress: newProgress,
         luckyTokenThreshold: TOKENS_PER_SPIN_THRESHOLD,
         earnedTokens,
+        luckyTokensUsedForSpin,
         luckyHourActive,
         luckyHour: luckyHourActive ? luckyHourState.hour : luckyHourState.hour,
         normalDiscount: discountPrice != null ? {
