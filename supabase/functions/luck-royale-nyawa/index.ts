@@ -1195,10 +1195,7 @@ Deno.serve(async (req) => {
       if (ticketsUsed > 0) {
         await adjustTickets(admin, visitorId, "premium", -ticketsUsed, "spin_premium", { reqCount, originalCost: cost, finalGemCost: costAfterTickets });
       }
-      if (luckyTokensUsedForSpin > 0) {
-        const ts = await getLuckyTokens(admin, visitorId);
-        await setLuckyTokens(admin, visitorId, Math.max(0, ts.tokens - luckyTokensUsedForSpin), ts.spinProgress);
-      }
+      // (Lucky Token tidak dipakai untuk spin — biarkan saldo apa adanya)
 
       // Premium WAJIB pakai pool premium, tapi tetap dikontrol agar jackpot gem tidak gacor.
       // Server Luck hanya bantu hasil common sekali, bukan menaikkan rare/jackpot terus.
