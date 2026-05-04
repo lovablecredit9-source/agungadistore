@@ -120,12 +120,13 @@ interface Props {
   shopUnlock?: { isActive: boolean; activeUntil: string | null; grantedAt: string | null; durationDays: number };
   useTickets?: boolean;
   ticketBalance?: number;
+  luckyTokens?: number;
   onTicketsUpdate?: (t: { normal: number; premium: number }) => void;
 }
 
 interface SpinResult { kind: string; value: number; label: string; emoji: string; rarity: string; color: string; }
 
-export default function PremiumSpinPanel({ visitorId, gems, setGems, isUnlocked, expiresAt, price = 50000, shopUnlock, useTickets = false, ticketBalance = 0, onTicketsUpdate }: Props) {
+export default function PremiumSpinPanel({ visitorId, gems, setGems, isUnlocked, expiresAt, price = 50000, shopUnlock, useTickets = false, ticketBalance = 0, luckyTokens = 0, onTicketsUpdate }: Props) {
   const { toast } = useToast();
   const [busy, setBusy] = useState(false);
   const [freeUsed, setFreeUsed] = useState(getFreeUsedToday());
@@ -202,6 +203,7 @@ export default function PremiumSpinPanel({ visitorId, gems, setGems, isUnlocked,
 
   const freeRemaining = Math.max(0, FREE_PER_DAY - freeUsed);
   const activePack = PACKS.find((p) => p.count === selectedPack) || PACKS[0];
+  const spendableTickets = ticketBalance + luckyTokens;
 
   const goBuyAccess = () => {
     // Pindah ke tab "normal" (sub-tab Spin) lalu scroll ke kartu Nyawa Premium
