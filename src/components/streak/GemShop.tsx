@@ -153,28 +153,35 @@ export default function GemShop({ visitorId: visitorIdProp, onUpdate }: Props) {
                 <p className="text-xs text-cyan-300 font-bold">Saldo Gem Kamu</p>
                 <p className="text-3xl font-black text-white">{formatCompactNumber(myGems)} 💎</p>
               </div>
-              {packages.map((p) => {
+              {packages.filter((p) => !(p.is_first_purchase_only && usedFirstIds.has(p.id))).map((p) => {
                 const total = p.gems + (p.bonus_gems || 0);
                 const isPopular = p.sort_order === 2;
                 const isBest = p.sort_order === 4;
-                const q = getQty(p.id);
+                const isFirst = !!p.is_first_purchase_only;
+                const q = isFirst ? 1 : getQty(p.id);
                 const totalPrice = p.price * q;
                 return (
                   <motion.div
                     key={p.id}
                     whileHover={{ scale: 1.02 }}
                     className={`relative rounded-xl border-2 p-3 ${
+                      isFirst ? "border-pink-500/60 bg-gradient-to-br from-pink-950/40 to-rose-950/40" :
                       isBest ? "border-yellow-500/60 bg-gradient-to-br from-yellow-950/40 to-orange-950/40" :
                       isPopular ? "border-purple-500/60 bg-gradient-to-br from-purple-950/40 to-pink-950/40" :
                       "border-cyan-500/40 bg-cyan-950/20"
                     }`}
                   >
-                    {isBest && (
+                    {isFirst && (
+                      <div className="absolute -top-2 right-3 bg-gradient-to-r from-pink-500 to-rose-500 text-white text-[9px] font-black px-2 py-0.5 rounded-full flex items-center gap-1">
+                        <Sparkles className="w-2.5 h-2.5" /> PROMO PERTAMA · 1x
+                      </div>
+                    )}
+                    {!isFirst && isBest && (
                       <div className="absolute -top-2 right-3 bg-gradient-to-r from-yellow-500 to-orange-500 text-black text-[9px] font-black px-2 py-0.5 rounded-full flex items-center gap-1">
                         <Crown className="w-2.5 h-2.5" /> TERBAIK
                       </div>
                     )}
-                    {isPopular && (
+                    {!isFirst && isPopular && (
                       <div className="absolute -top-2 right-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white text-[9px] font-black px-2 py-0.5 rounded-full">
                         POPULER
                       </div>
@@ -192,28 +199,29 @@ export default function GemShop({ visitorId: visitorIdProp, onUpdate }: Props) {
                         </div>
                       </div>
                       <div className="flex flex-col items-end gap-2 shrink-0">
-                        {/* Qty selector */}
-                        <div className="flex items-center gap-1 bg-black/40 rounded-lg p-0.5 border border-white/10">
-                          <button
-                            type="button"
-                            onClick={() => setPkgQty(p.id, q - 1)}
-                            disabled={q <= 1 || buying === p.id}
-                            className="w-6 h-6 rounded-md bg-white/10 hover:bg-white/20 disabled:opacity-40 flex items-center justify-center text-white"
-                            aria-label="Kurangi"
-                          >
-                            <Minus className="w-3 h-3" />
-                          </button>
-                          <span className="text-white font-black text-sm w-6 text-center">{q}</span>
-                          <button
-                            type="button"
-                            onClick={() => setPkgQty(p.id, q + 1)}
-                            disabled={q >= 99 || buying === p.id}
-                            className="w-6 h-6 rounded-md bg-white/10 hover:bg-white/20 disabled:opacity-40 flex items-center justify-center text-white"
-                            aria-label="Tambah"
-                          >
-                            <Plus className="w-3 h-3" />
-                          </button>
-                        </div>
+                        {!isFirst && (
+                          <div className="flex items-center gap-1 bg-black/40 rounded-lg p-0.5 border border-white/10">
+                            <button
+                              type="button"
+                              onClick={() => setPkgQty(p.id, q - 1)}
+                              disabled={q <= 1 || buying === p.id}
+                              className="w-6 h-6 rounded-md bg-white/10 hover:bg-white/20 disabled:opacity-40 flex items-center justify-center text-white"
+                              aria-label="Kurangi"
+                            >
+                              <Minus className="w-3 h-3" />
+                            </button>
+                            <span className="text-white font-black text-sm w-6 text-center">{q}</span>
+                            <button
+                              type="button"
+                              onClick={() => setPkgQty(p.id, q + 1)}
+                              disabled={q >= 99 || buying === p.id}
+                              className="w-6 h-6 rounded-md bg-white/10 hover:bg-white/20 disabled:opacity-40 flex items-center justify-center text-white"
+                              aria-label="Tambah"
+                            >
+                              <Plus className="w-3 h-3" />
+                            </button>
+                          </div>
+                        )}
                         <Button
                           size="sm"
                           disabled={buying === p.id}
