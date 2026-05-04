@@ -240,7 +240,7 @@ export default function PremiumSpinPanel({ visitorId, gems, setGems, isUnlocked,
     }
     const count = useFree ? 1 : activePack.count;
     const cost = useFree ? 0 : activePack.cost;
-    const ticketsUsed = !useFree && useTickets ? Math.min(ticketBalance, count) : 0;
+    const ticketsUsed = !useFree && useTickets ? Math.min(spendableTickets, count) : 0;
     const gemCost = !useFree && count > 0 ? Math.ceil((cost * (count - ticketsUsed)) / count) : 0;
     if (!useFree && gems < gemCost) {
       toast({ title: "Gem kurang", description: `Butuh ${gemCost.toLocaleString("id-ID")}💎${ticketsUsed > 0 ? ` + ${ticketsUsed} tiket` : ""} (kamu punya ${gems.toLocaleString("id-ID")}).`, variant: "destructive" });
@@ -417,7 +417,7 @@ export default function PremiumSpinPanel({ visitorId, gems, setGems, isUnlocked,
         <div className="grid grid-cols-3 gap-1.5">
           {PACKS.map((p) => {
             const sel = selectedPack === p.count;
-            const ticketsUsed = useTickets ? Math.min(ticketBalance, p.count) : 0;
+            const ticketsUsed = useTickets ? Math.min(spendableTickets, p.count) : 0;
             const gemCost = Math.ceil((p.cost * (p.count - ticketsUsed)) / p.count);
             return (
               <button
@@ -454,7 +454,7 @@ export default function PremiumSpinPanel({ visitorId, gems, setGems, isUnlocked,
 
       {/* Buy Selected Pack */}
       <button
-        disabled={busy || !isUnlocked || gems < Math.ceil((activePack.cost * (activePack.count - (useTickets ? Math.min(ticketBalance, activePack.count) : 0))) / activePack.count)}
+        disabled={busy || !isUnlocked || gems < Math.ceil((activePack.cost * (activePack.count - (useTickets ? Math.min(spendableTickets, activePack.count) : 0))) / activePack.count)}
         onClick={() => doSpin(false)}
         className="w-full relative overflow-hidden rounded-xl bg-gradient-to-br from-fuchsia-600 via-purple-600 to-amber-500 px-3 py-4 font-black shadow-lg shadow-fuchsia-500/50 active:scale-95 transition disabled:opacity-50 flex items-center justify-between text-white ring-2 ring-amber-300/50"
       >
@@ -463,8 +463,8 @@ export default function PremiumSpinPanel({ visitorId, gems, setGems, isUnlocked,
           SPIN {activePack.count}×
         </span>
         <span className="flex items-center gap-1 text-sm bg-black/40 rounded-full px-2.5 py-1">
-          {useTickets && Math.min(ticketBalance, activePack.count) > 0 && <><Ticket className="w-3.5 h-3.5" /> {Math.min(ticketBalance, activePack.count)}</>}
-          {Math.ceil((activePack.cost * (activePack.count - (useTickets ? Math.min(ticketBalance, activePack.count) : 0))) / activePack.count) > 0 && <><Gem className="w-3.5 h-3.5" /> {Math.ceil((activePack.cost * (activePack.count - (useTickets ? Math.min(ticketBalance, activePack.count) : 0))) / activePack.count).toLocaleString("id-ID")}</>}
+          {useTickets && Math.min(spendableTickets, activePack.count) > 0 && <><Ticket className="w-3.5 h-3.5" /> {Math.min(spendableTickets, activePack.count)}</>}
+          {Math.ceil((activePack.cost * (activePack.count - (useTickets ? Math.min(spendableTickets, activePack.count) : 0))) / activePack.count) > 0 && <><Gem className="w-3.5 h-3.5" /> {Math.ceil((activePack.cost * (activePack.count - (useTickets ? Math.min(spendableTickets, activePack.count) : 0))) / activePack.count).toLocaleString("id-ID")}</>}
         </span>
       </button>
 
