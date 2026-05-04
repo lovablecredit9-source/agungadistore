@@ -26,6 +26,23 @@ Deno.serve(async (req) => {
     const { data: pkg } = await admin.from("gem_packages").select("*").eq("id", packageId).eq("is_active", true).maybeSingle();
     if (!pkg) return Response.json({ error: "Paket tidak ditemukan" }, { status: 404, headers: corsHeaders });
 
+    // First-purchase-only packages: limit to 1 per account, qty must be 1
+    if ((pkg as any).is_first_purchase_only) {
+      if (quantity !== 1) {
+        return Response.json({ error: "Paket promo pertama hanya bisa dibeli 1x" }, { status: 400, headers: corsHeaders });
+      }
+      const { data: prev } = await admin
+        .from("gem_transactions")
+        .select("id")
+        .eq("visitor_id", visitorId)
+        .eq("reference_id", pkg.id)
+        .limit(1)
+        .maybeSingle();
+      if (prev) {
+        return Response.json({ error: "Paket promo pertama sudah pernah dibeli" }, { status: 400, headers: corsHeaders });
+      }
+    }
+
     // Find user_balance via visitor_id
     const { data: balLogin } = await admin
       .from("balance_login_history")
