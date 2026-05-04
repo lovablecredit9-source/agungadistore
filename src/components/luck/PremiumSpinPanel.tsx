@@ -119,12 +119,13 @@ interface Props {
   price?: number;
   shopUnlock?: { isActive: boolean; activeUntil: string | null; grantedAt: string | null; durationDays: number };
   useTickets?: boolean;
+  ticketBalance?: number;
   onTicketsUpdate?: (t: { normal: number; premium: number }) => void;
 }
 
 interface SpinResult { kind: string; value: number; label: string; emoji: string; rarity: string; color: string; }
 
-export default function PremiumSpinPanel({ visitorId, gems, setGems, isUnlocked, expiresAt, price = 50000, shopUnlock, useTickets = false, onTicketsUpdate }: Props) {
+export default function PremiumSpinPanel({ visitorId, gems, setGems, isUnlocked, expiresAt, price = 50000, shopUnlock, useTickets = false, ticketBalance = 0, onTicketsUpdate }: Props) {
   const { toast } = useToast();
   const [busy, setBusy] = useState(false);
   const [freeUsed, setFreeUsed] = useState(getFreeUsedToday());
@@ -237,8 +238,10 @@ export default function PremiumSpinPanel({ visitorId, gems, setGems, isUnlocked,
     }
     const count = useFree ? 1 : activePack.count;
     const cost = useFree ? 0 : activePack.cost;
-    if (!useFree && gems < cost) {
-      toast({ title: "Gem kurang", description: `Butuh ${cost.toLocaleString("id-ID")}💎 (kamu punya ${gems.toLocaleString("id-ID")}).`, variant: "destructive" });
+    const ticketsUsed = !useFree && useTickets ? Math.min(ticketBalance, count) : 0;
+    const gemCost = !useFree && count > 0 ? Math.ceil((cost * (count - ticketsUsed)) / count) : 0;
+    if (!useFree && gems < gemCost) {
+      toast({ title: "Gem kurang", description: `Butuh ${gemCost.toLocaleString("id-ID")}💎${ticketsUsed > 0 ? ` + ${ticketsUsed} tiket` : ""} (kamu punya ${gems.toLocaleString("id-ID")}).`, variant: "destructive" });
       return;
     }
 
