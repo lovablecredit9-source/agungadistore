@@ -1076,7 +1076,7 @@ export default function LuckRoyaleNyawa() {
                   <span className="flex items-center gap-1 text-xs bg-black/30 rounded-full px-2 py-0.5">
                     {ticketUsed > 0 ? <Ticket className="w-3 h-3" /> : <Gem className="w-3 h-3" />}
                     {ticketUsed > 0 ? (
-                      <span>1 tiket</span>
+                      <span>1</span>
                     ) : (
                       <>
                         {dActive && <span className="line-through text-white/60 mr-1">{singleCost}</span>}
@@ -1124,7 +1124,7 @@ export default function LuckRoyaleNyawa() {
                     ) : null}
                     <div className="text-sm tracking-widest text-white">{b.label}</div>
                     <div className="flex items-center justify-center gap-1 text-xs mt-0.5 text-white">
-                      {ticketUsed > 0 && <><Ticket className="w-3 h-3" /><span>{ticketUsed} tiket</span></>}
+                      {ticketUsed > 0 && <><Ticket className="w-3 h-3" /><span>{ticketUsed}</span></>}
                       {gemCost > 0 && <><Gem className="w-3 h-3" /><span>{formatCompactNumber(gemCost)}</span></>}
                       {ticketUsed === 0 && dActive && <span className="line-through text-white/60">{formatCompactNumber(b.cost)}</span>}
                     </div>
