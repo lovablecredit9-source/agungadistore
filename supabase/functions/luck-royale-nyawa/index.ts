@@ -1176,11 +1176,14 @@ Deno.serve(async (req) => {
       // Tiket Premium dipakai DULU (1 tiket = 1 spin). Gem hanya menutup kekurangan saat tiket habis.
       const useTickets = !useFree;
       let ticketsUsed = 0;
+      let luckyTokensUsedForSpin = 0;
       let costAfterTickets = cost;
       if (useTickets && reqCount > 0 && cost > 0) {
         const tb = await getTicketBalances(admin, visitorId);
         ticketsUsed = Math.min(tb.premium, reqCount);
-        const remainingSpins = reqCount - ticketsUsed;
+        const preTokens = await getLuckyTokens(admin, visitorId);
+        luckyTokensUsedForSpin = Math.min(preTokens.tokens, reqCount - ticketsUsed);
+        const remainingSpins = reqCount - ticketsUsed - luckyTokensUsedForSpin;
         costAfterTickets = Math.ceil((cost * remainingSpins) / reqCount);
       }
       if (costAfterTickets > 0) {
@@ -1192,6 +1195,10 @@ Deno.serve(async (req) => {
       }
       if (ticketsUsed > 0) {
         await adjustTickets(admin, visitorId, "premium", -ticketsUsed, "spin_premium", { reqCount, originalCost: cost, finalGemCost: costAfterTickets });
+      }
+      if (luckyTokensUsedForSpin > 0) {
+        const ts = await getLuckyTokens(admin, visitorId);
+        await setLuckyTokens(admin, visitorId, Math.max(0, ts.tokens - luckyTokensUsedForSpin), ts.spinProgress);
       }
 
       // Premium WAJIB pakai pool premium, tapi tetap dikontrol agar jackpot gem tidak gacor.
@@ -1394,11 +1401,14 @@ Deno.serve(async (req) => {
       const gems = Number(gemsData || 0);
 
       let ticketsUsed = 0;
+      let luckyTokensUsedForSpin = 0;
       let costAfterTickets = cost;
       if (useTickets && spinCount > 0) {
         const tb = await getTicketBalances(admin, visitorId);
         ticketsUsed = Math.min(tb.normal, spinCount);
-        const remainingSpins = spinCount - ticketsUsed;
+        const preTokens = await getLuckyTokens(admin, visitorId);
+        luckyTokensUsedForSpin = Math.min(preTokens.tokens, spinCount - ticketsUsed);
+        const remainingSpins = spinCount - ticketsUsed - luckyTokensUsedForSpin;
         costAfterTickets = Math.ceil((cost * remainingSpins) / spinCount);
       }
 
@@ -1417,6 +1427,10 @@ Deno.serve(async (req) => {
       try {
         if (ticketsUsed > 0) {
           await adjustTickets(admin, visitorId, "normal", -ticketsUsed, "spin_normal", { spinCount, originalCost, finalGemCost: costAfterTickets });
+        }
+        if (luckyTokensUsedForSpin > 0) {
+          const ts = await getLuckyTokens(admin, visitorId);
+          await setLuckyTokens(admin, visitorId, Math.max(0, ts.tokens - luckyTokensUsedForSpin), ts.spinProgress);
         }
         if (costAfterTickets > 0) {
           await admin.rpc("add_account_gems", { p_visitor_id: visitorId, p_amount: -costAfterTickets });
