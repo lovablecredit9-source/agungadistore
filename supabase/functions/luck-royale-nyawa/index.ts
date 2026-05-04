@@ -1428,10 +1428,7 @@ Deno.serve(async (req) => {
         if (ticketsUsed > 0) {
           await adjustTickets(admin, visitorId, "normal", -ticketsUsed, "spin_normal", { spinCount, originalCost, finalGemCost: costAfterTickets });
         }
-        if (luckyTokensUsedForSpin > 0) {
-          const ts = await getLuckyTokens(admin, visitorId);
-          await setLuckyTokens(admin, visitorId, Math.max(0, ts.tokens - luckyTokensUsedForSpin), ts.spinProgress);
-        }
+        // (Lucky Token tidak dipakai untuk spin)
         if (costAfterTickets > 0) {
           await admin.rpc("add_account_gems", { p_visitor_id: visitorId, p_amount: -costAfterTickets });
         }
