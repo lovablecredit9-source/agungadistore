@@ -1173,29 +1173,20 @@ Deno.serve(async (req) => {
       }
 
       const cost = useFree ? 0 : PREMIUM_PACKS[reqCount];
-      // Tiket Premium hanya dipakai sebagai PENGGANTI saat gem tidak cukup (1 tiket = 1 spin).
+      // Tiket Premium dipakai DULU (1 tiket = 1 spin). Gem hanya menutup kekurangan saat tiket habis.
       const useTickets = !useFree && Boolean((body as any).useTickets);
       let ticketsUsed = 0;
       let costAfterTickets = cost;
-      const { data: haveGemsPre } = await admin.rpc("get_account_gems", { p_visitor_id: visitorId });
-      const haveGemsNum = Number(haveGemsPre) || 0;
-      if (cost > 0) {
-        if (haveGemsNum >= cost) {
-          ticketsUsed = 0;
-          costAfterTickets = cost;
-        } else if (useTickets && reqCount > 0) {
-          const gemPerSpin = cost / reqCount;
-          const spinsByGems = gemPerSpin > 0 ? Math.floor(haveGemsNum / gemPerSpin) : reqCount;
-          const shortageSpins = Math.max(0, reqCount - spinsByGems);
-          const tb = await getTicketBalances(admin, visitorId);
-          ticketsUsed = Math.min(tb.premium, shortageSpins);
-          const paidByGemsSpins = reqCount - ticketsUsed;
-          costAfterTickets = Math.ceil((cost * paidByGemsSpins) / reqCount);
-        }
+      if (useTickets && reqCount > 0 && cost > 0) {
+        const tb = await getTicketBalances(admin, visitorId);
+        ticketsUsed = Math.min(tb.premium, reqCount);
+        const remainingSpins = reqCount - ticketsUsed;
+        costAfterTickets = Math.ceil((cost * remainingSpins) / reqCount);
       }
       if (costAfterTickets > 0) {
-        if (haveGemsNum < costAfterTickets) {
-          return Response.json({ error: `Butuh ${costAfterTickets} 💎${ticketsUsed > 0 ? ` (+${ticketsUsed} 🎟️)` : ""} (kamu punya ${haveGemsNum})` }, { status: 400, headers: corsHeaders });
+        const { data: haveGems } = await admin.rpc("get_account_gems", { p_visitor_id: visitorId });
+        if ((Number(haveGems) || 0) < costAfterTickets) {
+          return Response.json({ error: `Butuh ${costAfterTickets} 💎${ticketsUsed > 0 ? ` (+${ticketsUsed} 🎟️)` : ""} (kamu punya ${Number(haveGems) || 0})` }, { status: 400, headers: corsHeaders });
         }
         await admin.rpc("add_account_gems", { p_visitor_id: visitorId, p_amount: -costAfterTickets });
       }
