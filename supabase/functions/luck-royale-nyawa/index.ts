@@ -1490,7 +1490,9 @@ Deno.serve(async (req) => {
       let totalBonusGems = 0;
       let jackpotWonTotal = 0;
       for (let i = 0; i < spinCount; i++) {
-        const basePrize = pickPrize(luckyHourActive, nyawaPremiumActive);
+        const basePrize = ticketsUsed + luckyTokensUsedForSpin > 0
+          ? pickNonSpinCreditPrize(nyawaPremiumActive ? PREMIUM_PRIZES : PRIZES, luckyHourActive)
+          : pickPrize(luckyHourActive, nyawaPremiumActive);
         const mult = getStreakMultiplier(curStreak);
         let finalValue = basePrize.value;
         let bonusApplied = 0;
