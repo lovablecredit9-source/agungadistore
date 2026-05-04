@@ -1174,16 +1174,15 @@ Deno.serve(async (req) => {
 
       const cost = useFree ? 0 : PREMIUM_PACKS[reqCount];
       // Tiket Premium dipakai DULU (1 tiket = 1 spin). Gem hanya menutup kekurangan saat tiket habis.
+      // Lucky Token TIDAK dipakai untuk spin — hanya untuk Token Shop.
       const useTickets = !useFree;
       let ticketsUsed = 0;
-      let luckyTokensUsedForSpin = 0;
+      const luckyTokensUsedForSpin = 0;
       let costAfterTickets = cost;
       if (useTickets && reqCount > 0 && cost > 0) {
         const tb = await getTicketBalances(admin, visitorId);
         ticketsUsed = Math.min(tb.premium, reqCount);
-        const preTokens = await getLuckyTokens(admin, visitorId);
-        luckyTokensUsedForSpin = Math.min(preTokens.tokens, reqCount - ticketsUsed);
-        const remainingSpins = reqCount - ticketsUsed - luckyTokensUsedForSpin;
+        const remainingSpins = reqCount - ticketsUsed;
         costAfterTickets = Math.ceil((cost * remainingSpins) / reqCount);
       }
       if (costAfterTickets > 0) {
