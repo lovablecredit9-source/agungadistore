@@ -1401,11 +1401,14 @@ Deno.serve(async (req) => {
       const gems = Number(gemsData || 0);
 
       let ticketsUsed = 0;
+      let luckyTokensUsedForSpin = 0;
       let costAfterTickets = cost;
       if (useTickets && spinCount > 0) {
         const tb = await getTicketBalances(admin, visitorId);
         ticketsUsed = Math.min(tb.normal, spinCount);
-        const remainingSpins = spinCount - ticketsUsed;
+        const preTokens = await getLuckyTokens(admin, visitorId);
+        luckyTokensUsedForSpin = Math.min(preTokens.tokens, spinCount - ticketsUsed);
+        const remainingSpins = spinCount - ticketsUsed - luckyTokensUsedForSpin;
         costAfterTickets = Math.ceil((cost * remainingSpins) / spinCount);
       }
 
@@ -1424,6 +1427,10 @@ Deno.serve(async (req) => {
       try {
         if (ticketsUsed > 0) {
           await adjustTickets(admin, visitorId, "normal", -ticketsUsed, "spin_normal", { spinCount, originalCost, finalGemCost: costAfterTickets });
+        }
+        if (luckyTokensUsedForSpin > 0) {
+          const ts = await getLuckyTokens(admin, visitorId);
+          await setLuckyTokens(admin, visitorId, Math.max(0, ts.tokens - luckyTokensUsedForSpin), ts.spinProgress);
         }
         if (costAfterTickets > 0) {
           await admin.rpc("add_account_gems", { p_visitor_id: visitorId, p_amount: -costAfterTickets });
