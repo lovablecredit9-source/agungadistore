@@ -550,15 +550,7 @@ export default function LuckRoyaleNyawa() {
               />
             </TabsContent>
             <TabsContent value="normal" className="space-y-4 mt-0">
-          <SpinTicketShop
-            visitorId={visitorId}
-            type="normal"
-            ticketBalance={tickets.normal}
-            packs={ticketPacks}
-            rate={ticketRate.normal}
-            gems={gems}
-            onPurchased={(d) => { setTickets(d.tickets); if (typeof d.gems === "number") setGems(d.gems); if (typeof d.luckyTokens === "number") setLuckyTokens(d.luckyTokens); }}
-          />
+
           {/* 🎁 MILESTONE PREMIUM SPIN — terlihat juga di tab Normal supaya bisa diklaim dari sini */}
           <PremiumMilestonePanel visitorId={visitorId} gems={gems} setGems={setGems} refreshKey={milestoneRefreshKey} />
           {/* 👑 NYAWA PREMIUM PASS — Rp 50k / 30 hari */}
