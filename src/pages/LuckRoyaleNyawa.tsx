@@ -541,8 +541,6 @@ export default function LuckRoyaleNyawa() {
                 packs={ticketPacks}
                 rate={ticketRate.premium}
                 gems={gems}
-                useTickets={useTicketsPremium}
-                onToggleUseTickets={setUseTicketsPremium}
                 onPurchased={(d) => { setTickets(d.tickets); setGems(d.gems); if (typeof d.luckyTokens === "number") setLuckyTokens(d.luckyTokens); }}
               />
               <PremiumSpinPanel
@@ -553,7 +551,7 @@ export default function LuckRoyaleNyawa() {
                 expiresAt={nyawaPremium.activeUntil}
                 price={nyawaPremium.price}
                 shopUnlock={effectivePremiumShopUnlock}
-                useTickets={useTicketsPremium}
+                useTickets={true}
                 onTicketsUpdate={(t) => setTickets(t)}
               />
             </TabsContent>
@@ -565,8 +563,6 @@ export default function LuckRoyaleNyawa() {
             packs={ticketPacks}
             rate={ticketRate.normal}
             gems={gems}
-            useTickets={useTicketsNormal}
-            onToggleUseTickets={setUseTicketsNormal}
             onPurchased={(d) => { setTickets(d.tickets); setGems(d.gems); if (typeof d.luckyTokens === "number") setLuckyTokens(d.luckyTokens); }}
           />
           {/* 🎁 MILESTONE PREMIUM SPIN — terlihat juga di tab Normal supaya bisa diklaim dari sini */}
