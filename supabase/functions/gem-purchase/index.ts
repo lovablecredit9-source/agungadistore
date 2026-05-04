@@ -70,6 +70,7 @@ Deno.serve(async (req) => {
 
     const totalPrice = pkg.price * quantity;
     const totalGems = (pkg.gems + (pkg.bonus_gems || 0)) * quantity;
+    const totalStreakCoins = ((pkg as any).bonus_streak_coins || 0) * quantity;
 
     const { data: bal } = await admin.from("user_balances").select("balance").eq("id", balLogin.user_balance_id).maybeSingle();
     if (!bal || bal.balance < totalPrice) {
@@ -80,30 +81,57 @@ Deno.serve(async (req) => {
     await admin.from("user_balances").update({ balance: bal.balance - totalPrice }).eq("id", balLogin.user_balance_id);
 
     // Add gems via account-aware RPC (puts gems on the active account's primary profile)
-    await admin.rpc("add_account_gems", { p_visitor_id: visitorId, p_amount: totalGems });
+    if (totalGems > 0) {
+      await admin.rpc("add_account_gems", { p_visitor_id: visitorId, p_amount: totalGems });
+    }
+
+    // Add Streak Coins to daily_streaks (combo bundles)
+    if (totalStreakCoins > 0) {
+      const { data: streak } = await admin
+        .from("daily_streaks")
+        .select("id, streak_coins")
+        .eq("visitor_id", visitorId)
+        .maybeSingle();
+      if (streak) {
+        await admin.from("daily_streaks")
+          .update({ streak_coins: (streak.streak_coins || 0) + totalStreakCoins })
+          .eq("id", streak.id);
+      } else {
+        const today = new Date(Date.now() + 7 * 3600 * 1000).toISOString().split("T")[0];
+        await admin.from("daily_streaks").insert({
+          visitor_id: visitorId,
+          last_claim_date: today,
+          current_streak: 0,
+          longest_streak: 0,
+          total_claims: 0,
+          streak_coins: totalStreakCoins,
+        });
+      }
+    }
 
     const qtyLabel = quantity > 1 ? ` x${quantity}` : "";
+    const comboTxt = totalStreakCoins > 0 ? ` + ${totalStreakCoins.toLocaleString("id-ID")} 🪙` : "";
     await admin.from("gem_transactions").insert({
       visitor_id: visitorId,
       amount: totalGems,
       type: "purchase",
-      description: `Beli ${pkg.name}${qtyLabel}: +${totalGems} 💎 (Rp${totalPrice.toLocaleString("id-ID")})`,
+      description: `Beli ${pkg.name}${qtyLabel}: +${totalGems} 💎${comboTxt} (Rp${totalPrice.toLocaleString("id-ID")})`,
       reference_id: pkg.id,
     });
     await admin.from("balance_transactions").insert({
       visitor_id: visitorId,
       amount: -totalPrice,
       type: "gem_purchase",
-      description: `Beli ${pkg.name}${qtyLabel}: ${totalGems} 💎`,
+      description: `Beli ${pkg.name}${qtyLabel}: ${totalGems} 💎${comboTxt}`,
     });
     await admin.from("notifications").insert({
       visitor_id: visitorId,
-      title: "💎 Gem Bertambah!",
-      message: `Kamu mendapat ${totalGems} 💎 dari ${pkg.name}${qtyLabel}`,
+      title: totalStreakCoins > 0 ? "🎁 Combo Diterima!" : "💎 Gem Bertambah!",
+      message: `Kamu mendapat ${totalGems} 💎${comboTxt} dari ${pkg.name}${qtyLabel}`,
       type: "gem",
     });
 
-    return Response.json({ success: true, gems_added: totalGems, quantity, new_balance: bal.balance - totalPrice }, { headers: corsHeaders });
+    return Response.json({ success: true, gems_added: totalGems, streak_coins_added: totalStreakCoins, quantity, new_balance: bal.balance - totalPrice }, { headers: corsHeaders });
   } catch (e) {
     return Response.json({ error: e instanceof Error ? e.message : "Error" }, { status: 500, headers: corsHeaders });
   }
