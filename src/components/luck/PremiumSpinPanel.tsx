@@ -204,7 +204,7 @@ export default function PremiumSpinPanel({ visitorId, gems, setGems, isUnlocked,
 
   const freeRemaining = Math.max(0, FREE_PER_DAY - freeUsed);
   const activePack = PACKS.find((p) => p.count === selectedPack) || PACKS[0];
-  const spendableTickets = ticketBalance;
+  const spendableTickets = ticketBalance + luckyTokens;
 
   const goBuyAccess = () => {
     // Pindah ke tab "normal" (sub-tab Spin) lalu scroll ke kartu Nyawa Premium
