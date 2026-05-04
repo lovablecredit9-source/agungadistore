@@ -12,6 +12,7 @@ interface Props { visitorId: string; onUpdate?: () => void; }
 interface GemPackage {
   id: string; name: string; gems: number; bonus_gems: number; price: number; icon: string; sort_order: number;
   is_first_purchase_only?: boolean;
+  bonus_streak_coins?: number;
 }
 
 // Selalu utamakan visitor_id akun saldo (tempat pembelian gem dicatat)
