@@ -270,6 +270,9 @@ export default function GemShop({ visitorId: visitorIdProp, onUpdate }: Props) {
                   </motion.div>
                 );
               })}
+                  </>
+                );
+              })()}
               <p className="text-[10px] text-white/50 text-center">💡 Pembelian potong saldo akun login{hasPin ? " · Dilindungi PIN" : ""}</p>
             </div>
           )}
