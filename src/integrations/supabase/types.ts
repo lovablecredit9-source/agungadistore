@@ -2201,6 +2201,7 @@ export type Database = {
       gem_packages: {
         Row: {
           bonus_gems: number
+          bonus_streak_coins: number
           created_at: string
           gems: number
           icon: string
@@ -2214,6 +2215,7 @@ export type Database = {
         }
         Insert: {
           bonus_gems?: number
+          bonus_streak_coins?: number
           created_at?: string
           gems?: number
           icon?: string
@@ -2227,6 +2229,7 @@ export type Database = {
         }
         Update: {
           bonus_gems?: number
+          bonus_streak_coins?: number
           created_at?: string
           gems?: number
           icon?: string
