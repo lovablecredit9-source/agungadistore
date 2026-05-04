@@ -553,6 +553,7 @@ export default function LuckRoyaleNyawa() {
                 shopUnlock={effectivePremiumShopUnlock}
                 useTickets={true}
                 ticketBalance={tickets.premium}
+                luckyTokens={luckyTokens}
                 onTicketsUpdate={(t) => setTickets(t)}
               />
             </TabsContent>
