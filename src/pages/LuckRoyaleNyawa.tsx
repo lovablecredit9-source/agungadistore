@@ -1056,6 +1056,8 @@ export default function LuckRoyaleNyawa() {
               const dLimit = normalDiscount.limitPerDay || 5;
               const dActive = dPrice != null && dPrice < singleCost && dUsed < dLimit;
               const effective = dActive ? dPrice : singleCost;
+              const ticketUsed = Math.min(tickets.normal, 1);
+              const gemCost = ticketUsed >= 1 ? 0 : effective;
               const remaining = Math.max(0, dLimit - dUsed);
               return (
                 <button
@@ -1070,11 +1072,15 @@ export default function LuckRoyaleNyawa() {
                   )}
                   <span className="text-sm tracking-widest">1 SPIN</span>
                   <span className="flex items-center gap-1 text-xs bg-black/30 rounded-full px-2 py-0.5">
-                    <Gem className="w-3 h-3" />
-                    {dActive && (
-                      <span className="line-through text-white/60 mr-1">{singleCost}</span>
+                    {ticketUsed > 0 ? <Package className="w-3 h-3" /> : <Gem className="w-3 h-3" />}
+                    {ticketUsed > 0 ? (
+                      <span>1 tiket</span>
+                    ) : (
+                      <>
+                        {dActive && <span className="line-through text-white/60 mr-1">{singleCost}</span>}
+                        <span>{gemCost}</span>
+                      </>
                     )}
-                    <span>{effective}</span>
                   </span>
                 </button>
               );
@@ -1090,6 +1096,9 @@ export default function LuckRoyaleNyawa() {
                 const dLimit = normalDiscount.limitPerDay || 5;
                 const dActive = dPrice != null && dPrice < b.cost && dUsed < dLimit;
                 const effectiveCost = dActive ? dPrice : b.cost;
+                const ticketUsed = Math.min(tickets.normal, b.count);
+                const remainingSpins = b.count - ticketUsed;
+                const gemCost = remainingSpins > 0 ? Math.ceil((effectiveCost * remainingSpins) / b.count) : 0;
                 const remaining = Math.max(0, dLimit - dUsed);
                 return (
                   <button
@@ -1113,11 +1122,9 @@ export default function LuckRoyaleNyawa() {
                     ) : null}
                     <div className="text-sm tracking-widest text-white">{b.label}</div>
                     <div className="flex items-center justify-center gap-1 text-xs mt-0.5 text-white">
-                      <Gem className="w-3 h-3" />
-                      {dActive && (
-                        <span className="line-through text-white/60">{formatCompactNumber(b.cost)}</span>
-                      )}
-                      <span>{formatCompactNumber(effectiveCost)}</span>
+                      {ticketUsed > 0 && <><Package className="w-3 h-3" /><span>{ticketUsed} tiket</span></>}
+                      {gemCost > 0 && <><Gem className="w-3 h-3" /><span>{formatCompactNumber(gemCost)}</span></>}
+                      {ticketUsed === 0 && dActive && <span className="line-through text-white/60">{formatCompactNumber(b.cost)}</span>}
                     </div>
                     {dActive ? (
                       <div className="text-[9px] text-rose-100 mt-0.5 font-black">
