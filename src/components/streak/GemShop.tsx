@@ -155,9 +155,12 @@ export default function GemShop({ visitorId: visitorIdProp, onUpdate }: Props) {
                 <p className="text-3xl font-black text-white">{formatCompactNumber(myGems)} 💎</p>
               </div>
               {(() => {
-                const visiblePkgs = packages.filter((p) => !(p.is_first_purchase_only && usedFirstIds.has(p.id)));
-                const diskonPkgs = visiblePkgs.filter((p) => p.is_first_purchase_only);
-                const normalPkgs = visiblePkgs.filter((p) => !p.is_first_purchase_only);
+                const allDiskon = packages.filter((p) => p.is_first_purchase_only);
+                const diskonPkgs = [
+                  ...allDiskon.filter((p) => !usedFirstIds.has(p.id)),
+                  ...allDiskon.filter((p) => usedFirstIds.has(p.id)),
+                ];
+                const normalPkgs = packages.filter((p) => !p.is_first_purchase_only);
                 const activePkgs = tab === "diskon" ? diskonPkgs : normalPkgs;
                 return (
                   <>
