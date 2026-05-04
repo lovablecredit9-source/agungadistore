@@ -1,0 +1,1 @@
+ALTER TABLE public.gem_packages ADD COLUMN IF NOT EXISTS bonus_streak_coins integer NOT NULL DEFAULT 0;
