@@ -1397,27 +1397,24 @@ Deno.serve(async (req) => {
         cost = discountPrice;
       }
 
-      // Tiket Normal hanya dipakai sebagai PENGGANTI saat gem tidak cukup (1 tiket = 1 spin).
-      // Gem selalu didahulukan; tiket hanya menutup kekurangan.
+      // Tiket Normal dipakai DULU (1 tiket = 1 spin). Gem hanya menutup kekurangan saat tiket habis.
       const useTickets = Boolean((body as any).useTickets);
       const { data: gemsData } = await admin.rpc("get_account_gems", { p_visitor_id: visitorId });
       const gems = Number(gemsData || 0);
 
       let ticketsUsed = 0;
       let costAfterTickets = cost;
-      if (gems >= cost) {
-        // Gem cukup → tidak pakai tiket sama sekali
-        ticketsUsed = 0;
-        costAfterTickets = cost;
-      } else if (useTickets && spinCount > 0) {
-        // Gem kurang → pakai tiket untuk menutup spin yang tidak terbayar gem
-        const gemPerSpin = cost / spinCount;
-        const spinsByGems = gemPerSpin > 0 ? Math.floor(gems / gemPerSpin) : spinCount;
-        const shortageSpins = Math.max(0, spinCount - spinsByGems);
+      if (useTickets && spinCount > 0) {
         const tb = await getTicketBalances(admin, visitorId);
-        ticketsUsed = Math.min(tb.normal, shortageSpins);
-        const paidByGemsSpins = spinCount - ticketsUsed;
-        costAfterTickets = Math.ceil((cost * paidByGemsSpins) / spinCount);
+        ticketsUsed = Math.min(tb.normal, spinCount);
+        const remainingSpins = spinCount - ticketsUsed;
+        costAfterTickets = Math.ceil((cost * remainingSpins) / spinCount);
+      }
+
+      if (gems < costAfterTickets) {
+        return Response.json({
+          error: `Butuh ${costAfterTickets} 💎 Gem${ticketsUsed > 0 ? ` (+${ticketsUsed} 🎟️ tiket)` : ""} (kamu punya ${gems} gem)`,
+        }, { status: 400, headers: corsHeaders });
       }
 
       if (gems < costAfterTickets) {
