@@ -554,6 +554,7 @@ export default function LuckRoyaleNyawa() {
                 useTickets={true}
                 ticketBalance={tickets.premium}
                 luckyTokens={luckyTokens}
+                onLuckyTokensUpdate={setLuckyTokens}
                 onTicketsUpdate={(t) => setTickets(t)}
               />
             </TabsContent>

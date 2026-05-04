@@ -121,12 +121,13 @@ interface Props {
   useTickets?: boolean;
   ticketBalance?: number;
   luckyTokens?: number;
+  onLuckyTokensUpdate?: (n: number) => void;
   onTicketsUpdate?: (t: { normal: number; premium: number }) => void;
 }
 
 interface SpinResult { kind: string; value: number; label: string; emoji: string; rarity: string; color: string; }
 
-export default function PremiumSpinPanel({ visitorId, gems, setGems, isUnlocked, expiresAt, price = 50000, shopUnlock, useTickets = false, ticketBalance = 0, luckyTokens = 0, onTicketsUpdate }: Props) {
+export default function PremiumSpinPanel({ visitorId, gems, setGems, isUnlocked, expiresAt, price = 50000, shopUnlock, useTickets = false, ticketBalance = 0, luckyTokens = 0, onLuckyTokensUpdate, onTicketsUpdate }: Props) {
   const { toast } = useToast();
   const [busy, setBusy] = useState(false);
   const [freeUsed, setFreeUsed] = useState(getFreeUsedToday());
@@ -264,6 +265,7 @@ export default function PremiumSpinPanel({ visitorId, gems, setGems, isUnlocked,
       }
       const payload = data as { gems?: number; results?: SpinResult[] };
       if (typeof payload?.gems === "number") setGems(payload.gems);
+      if (typeof (data as any)?.luckyTokens === "number") onLuckyTokensUpdate?.((data as any).luckyTokens);
       const list = payload?.results || [];
       setResults(list);
       if (list.length > 0) setShowResultsModal(true);

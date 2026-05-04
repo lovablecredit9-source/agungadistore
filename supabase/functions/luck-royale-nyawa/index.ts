@@ -1262,8 +1262,9 @@ Deno.serve(async (req) => {
       const ts = await getLuckyTokens(admin, visitorId);
       let newProgress = ts.spinProgress;
       let autoTokens = 0;
-      if (!useFree) {
-        newProgress += reqCount;
+      const gemPaidSpinCount = Math.max(0, reqCount - ticketsUsed - luckyTokensUsedForSpin);
+      if (!useFree && gemPaidSpinCount > 0) {
+        newProgress += gemPaidSpinCount;
         while (newProgress >= TOKENS_PER_SPIN_THRESHOLD) {
           autoTokens++;
           newProgress -= TOKENS_PER_SPIN_THRESHOLD;
@@ -1523,11 +1524,12 @@ Deno.serve(async (req) => {
       let newProgress = tokenState.spinProgress;
       let earnedTokens = 0;
       const overrideTokens = BUNDLE_TOKEN_OVERRIDE[spinCount];
-      if (overrideTokens != null) {
-        // Pakai override langsung; progress sisa tidak berubah
+      const gemPaidSpinCount = Math.max(0, spinCount - ticketsUsed - luckyTokensUsedForSpin);
+      if (overrideTokens != null && gemPaidSpinCount === spinCount) {
+        // Bonus bundle hanya kalau semua spin dibayar gem, bukan tiket/token.
         earnedTokens = overrideTokens;
-      } else {
-        newProgress += spinCount;
+      } else if (gemPaidSpinCount > 0) {
+        newProgress += gemPaidSpinCount;
         while (newProgress >= TOKENS_PER_SPIN_THRESHOLD) {
           earnedTokens++;
           newProgress -= TOKENS_PER_SPIN_THRESHOLD;
