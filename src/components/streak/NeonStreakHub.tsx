@@ -26,6 +26,7 @@ import StreakPass from "./StreakPass";
 import WeeklyQuests from "./WeeklyQuests";
 import SmartReminder from "./SmartReminder";
 import GemShop from "./GemShop";
+import ComboBundleShop from "./ComboBundleShop";
 import StreakExpansionHub from "./StreakExpansionHub";
 import StreakBattleArena from "./StreakBattleArena";
 import StreakTournament from "./StreakTournament";
