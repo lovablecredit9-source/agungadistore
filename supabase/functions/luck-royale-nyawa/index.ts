@@ -1174,16 +1174,15 @@ Deno.serve(async (req) => {
 
       const cost = useFree ? 0 : PREMIUM_PACKS[reqCount];
       // Tiket Premium dipakai DULU (1 tiket = 1 spin). Gem hanya menutup kekurangan saat tiket habis.
+      // Lucky Token TIDAK dipakai untuk spin — hanya untuk Token Shop.
       const useTickets = !useFree;
       let ticketsUsed = 0;
-      let luckyTokensUsedForSpin = 0;
+      const luckyTokensUsedForSpin = 0;
       let costAfterTickets = cost;
       if (useTickets && reqCount > 0 && cost > 0) {
         const tb = await getTicketBalances(admin, visitorId);
         ticketsUsed = Math.min(tb.premium, reqCount);
-        const preTokens = await getLuckyTokens(admin, visitorId);
-        luckyTokensUsedForSpin = Math.min(preTokens.tokens, reqCount - ticketsUsed);
-        const remainingSpins = reqCount - ticketsUsed - luckyTokensUsedForSpin;
+        const remainingSpins = reqCount - ticketsUsed;
         costAfterTickets = Math.ceil((cost * remainingSpins) / reqCount);
       }
       if (costAfterTickets > 0) {
@@ -1196,10 +1195,7 @@ Deno.serve(async (req) => {
       if (ticketsUsed > 0) {
         await adjustTickets(admin, visitorId, "premium", -ticketsUsed, "spin_premium", { reqCount, originalCost: cost, finalGemCost: costAfterTickets });
       }
-      if (luckyTokensUsedForSpin > 0) {
-        const ts = await getLuckyTokens(admin, visitorId);
-        await setLuckyTokens(admin, visitorId, Math.max(0, ts.tokens - luckyTokensUsedForSpin), ts.spinProgress);
-      }
+      // (Lucky Token tidak dipakai untuk spin — biarkan saldo apa adanya)
 
       // Premium WAJIB pakai pool premium, tapi tetap dikontrol agar jackpot gem tidak gacor.
       // Server Luck hanya bantu hasil common sekali, bukan menaikkan rare/jackpot terus.
@@ -1387,11 +1383,10 @@ Deno.serve(async (req) => {
       const currency = "gems";
 
       const tbBeforeCost = await getTicketBalances(admin, visitorId);
-      const tokenBeforeCost = await getLuckyTokens(admin, visitorId);
-      const freeSpinCredits = Math.min(spinCount, (tbBeforeCost.normal || 0) + (tokenBeforeCost.tokens || 0));
+      const freeSpinCredits = Math.min(spinCount, (tbBeforeCost.normal || 0));
       const paidSpinCount = spinCount - freeSpinCredits;
 
-      // Diskon harian hanya boleh muncul/terpakai kalau tiket/token spin sudah habis.
+      // Diskon harian hanya boleh muncul/terpakai kalau tiket spin sudah habis.
       const usageMap = await getNormalDiscountUsage(admin, visitorId);
       const usedToday = usageMap[spinCount] || 0;
       const discountPrice = NORMAL_DISCOUNT_PRICES[spinCount];
@@ -1403,17 +1398,17 @@ Deno.serve(async (req) => {
       }
 
       // Tiket Normal dipakai DULU (1 tiket = 1 spin). Gem hanya menutup kekurangan saat tiket habis.
+      // Lucky Token TIDAK dipakai untuk spin — hanya untuk Token Shop.
       const useTickets = true;
       const { data: gemsData } = await admin.rpc("get_account_gems", { p_visitor_id: visitorId });
       const gems = Number(gemsData || 0);
 
       let ticketsUsed = 0;
-      let luckyTokensUsedForSpin = 0;
+      const luckyTokensUsedForSpin = 0;
       let costAfterTickets = cost;
       if (useTickets && spinCount > 0) {
         ticketsUsed = Math.min(tbBeforeCost.normal, spinCount);
-        luckyTokensUsedForSpin = Math.min(tokenBeforeCost.tokens, spinCount - ticketsUsed);
-        const remainingSpins = spinCount - ticketsUsed - luckyTokensUsedForSpin;
+        const remainingSpins = spinCount - ticketsUsed;
         costAfterTickets = Math.ceil((cost * remainingSpins) / spinCount);
       }
 
@@ -1433,10 +1428,7 @@ Deno.serve(async (req) => {
         if (ticketsUsed > 0) {
           await adjustTickets(admin, visitorId, "normal", -ticketsUsed, "spin_normal", { spinCount, originalCost, finalGemCost: costAfterTickets });
         }
-        if (luckyTokensUsedForSpin > 0) {
-          const ts = await getLuckyTokens(admin, visitorId);
-          await setLuckyTokens(admin, visitorId, Math.max(0, ts.tokens - luckyTokensUsedForSpin), ts.spinProgress);
-        }
+        // (Lucky Token tidak dipakai untuk spin)
         if (costAfterTickets > 0) {
           await admin.rpc("add_account_gems", { p_visitor_id: visitorId, p_amount: -costAfterTickets });
         }
