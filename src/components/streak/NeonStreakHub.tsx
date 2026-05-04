@@ -611,6 +611,7 @@ export default function NeonStreakHub({ visitorId, forcedView }: Props) {
           <StreakExpansionHub visitorId={visitorId} onUpdate={loadAll} />
           <StreakEventShop visitorId={visitorId} onUpdate={loadAll} />
           <GemShop visitorId={visitorId} onUpdate={loadAll} />
+          <ComboBundleShop visitorId={visitorId} onUpdate={loadAll} />
           <Button
             onClick={() => setShowShop(true)}
             className="w-full bg-gradient-to-r from-pink-500 to-purple-600 text-white font-black h-12"
