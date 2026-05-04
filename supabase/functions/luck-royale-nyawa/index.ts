@@ -1292,6 +1292,7 @@ Deno.serve(async (req) => {
         luckActive,
         poolMode: luckActive ? "premium_lucky" : "premium",
         ticketsUsed,
+        luckyTokensUsedForSpin,
         finalGemCost: costAfterTickets,
         tickets: await getTicketBalances(admin, visitorId),
       }, { headers: corsHeaders });
@@ -1384,13 +1385,18 @@ Deno.serve(async (req) => {
 
       const currency = "gems";
 
-      // Diskon harian: harga normal dipotong jika kuota harian masih ada (5x/paket/hari)
+      const tbBeforeCost = await getTicketBalances(admin, visitorId);
+      const tokenBeforeCost = await getLuckyTokens(admin, visitorId);
+      const freeSpinCredits = Math.min(spinCount, (tbBeforeCost.normal || 0) + (tokenBeforeCost.tokens || 0));
+      const paidSpinCount = spinCount - freeSpinCredits;
+
+      // Diskon harian hanya boleh muncul/terpakai kalau tiket/token spin sudah habis.
       const usageMap = await getNormalDiscountUsage(admin, visitorId);
       const usedToday = usageMap[spinCount] || 0;
       const discountPrice = NORMAL_DISCOUNT_PRICES[spinCount];
       let discountApplied = 0;
       let originalCost = cost;
-      if (discountPrice != null && usedToday < NORMAL_DISCOUNT_LIMIT_PER_DAY && discountPrice < cost) {
+      if (paidSpinCount > 0 && freeSpinCredits === 0 && discountPrice != null && usedToday < NORMAL_DISCOUNT_LIMIT_PER_DAY && discountPrice < cost) {
         discountApplied = cost - discountPrice;
         cost = discountPrice;
       }
@@ -1404,10 +1410,8 @@ Deno.serve(async (req) => {
       let luckyTokensUsedForSpin = 0;
       let costAfterTickets = cost;
       if (useTickets && spinCount > 0) {
-        const tb = await getTicketBalances(admin, visitorId);
-        ticketsUsed = Math.min(tb.normal, spinCount);
-        const preTokens = await getLuckyTokens(admin, visitorId);
-        luckyTokensUsedForSpin = Math.min(preTokens.tokens, spinCount - ticketsUsed);
+        ticketsUsed = Math.min(tbBeforeCost.normal, spinCount);
+        luckyTokensUsedForSpin = Math.min(tokenBeforeCost.tokens, spinCount - ticketsUsed);
         const remainingSpins = spinCount - ticketsUsed - luckyTokensUsedForSpin;
         costAfterTickets = Math.ceil((cost * remainingSpins) / spinCount);
       }
@@ -1529,7 +1533,7 @@ Deno.serve(async (req) => {
           newProgress -= TOKENS_PER_SPIN_THRESHOLD;
         }
       }
-      const newTokens = tokenState.tokens + earnedTokens;
+      const newTokens = Math.max(0, tokenState.tokens) + earnedTokens;
       await setLuckyTokens(admin, visitorId, newTokens, newProgress);
 
       const summary = results.map(r => r.label).join(", ");
@@ -1570,6 +1574,7 @@ Deno.serve(async (req) => {
         luckyTokenProgress: newProgress,
         luckyTokenThreshold: TOKENS_PER_SPIN_THRESHOLD,
         earnedTokens,
+        luckyTokensUsedForSpin,
         luckyHourActive,
         luckyHour: luckyHourActive ? luckyHourState.hour : luckyHourState.hour,
         normalDiscount: discountPrice != null ? {
