@@ -41,9 +41,22 @@ export default function GemShop({ visitorId: visitorIdProp, onUpdate }: Props) {
       supabase.rpc("get_account_gems", { p_visitor_id: visitorId }),
       supabase.functions.invoke("manage-pin", { body: { action: "check", visitorId } }),
     ]);
-    setPackages(pkgs || []);
+    const list = (pkgs || []) as GemPackage[];
+    setPackages(list);
     setMyGems(typeof gemTotal === "number" ? gemTotal : 0);
     setHasPin(!!pinResp.data?.hasPin);
+    // Check which first-purchase-only packages already used
+    const firstIds = list.filter((p) => p.is_first_purchase_only).map((p) => p.id);
+    if (firstIds.length && visitorId) {
+      const { data: txs } = await supabase
+        .from("gem_transactions")
+        .select("reference_id")
+        .eq("visitor_id", visitorId)
+        .in("reference_id", firstIds);
+      setUsedFirstIds(new Set((txs || []).map((t: any) => t.reference_id).filter(Boolean)));
+    } else {
+      setUsedFirstIds(new Set());
+    }
     setLoading(false);
   };
 
