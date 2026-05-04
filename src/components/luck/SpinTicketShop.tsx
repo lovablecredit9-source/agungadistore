@@ -22,7 +22,7 @@ interface Props {
   gems?: number;
   useTickets?: boolean;
   onToggleUseTickets?: (v: boolean) => void;
-  onPurchased: (data: { tickets: { normal: number; premium: number }; gems: number; luckyTokens?: number }) => void;
+  onPurchased: (data: { tickets: { normal: number; premium: number }; gems?: number; luckyTokens?: number }) => void;
 }
 
 // Tiket = 1:1 spin (1 tiket = 1 spin). Tidak dijual — hanya didapat dari hadiah spin.
@@ -50,7 +50,7 @@ export default function SpinTicketShop({
       }
       const d = data as any;
       toast({ title: "✨ Berhasil ditukar!", description: `${d.converted} tiket → +${d.gained} Lucky Token` });
-      onPurchased({ tickets: d.tickets, gems: 0, luckyTokens: d.luckyTokens });
+      onPurchased({ tickets: d.tickets, luckyTokens: d.luckyTokens });
     } finally {
       setBusy(false);
     }
