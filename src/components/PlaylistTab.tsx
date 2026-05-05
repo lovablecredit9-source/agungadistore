@@ -96,15 +96,6 @@ function formatTime(sec: number) {
 const PLAYBACK_REPORT_INTERVAL_MS = 1000;
 const CURRENT_TIME_RENDER_INTERVAL_MS = 500;
 
-function scheduleAudioVisualizer(audio: HTMLAudioElement) {
-  const attach = () => attachAudioVisualizer(audio);
-  if ("requestIdleCallback" in window) {
-    (window as Window & { requestIdleCallback: (cb: IdleRequestCallback, options?: IdleRequestOptions) => number }).requestIdleCallback(attach, { timeout: 800 });
-    return;
-  }
-  globalThis.setTimeout(attach, 120);
-}
-
 function formatSize(bytes: number) {
   if (!bytes) return "";
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
@@ -630,8 +621,8 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer, onPlayE
       audioRef.current = audio;
       audio.preload = "auto";
       audio.volume = muted ? 0 : volume;
+      attachAudioVisualizer(audio);
       audio.play().catch(() => {});
-      scheduleAudioVisualizer(audio);
       setCurrentIndex(-1);
       setExternalSong(songForPlayback);
       setIsPlaying(true);
@@ -704,8 +695,8 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer, onPlayE
     audioRef.current = audio;
     audio.preload = "auto";
     audio.volume = muted ? 0 : volume;
+    attachAudioVisualizer(audio);
     audio.play().catch(() => {});
-    scheduleAudioVisualizer(audio);
     setExternalSong(null);
     setCurrentIndex(index);
     setIsPlaying(true);
