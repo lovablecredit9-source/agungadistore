@@ -4650,7 +4650,21 @@ const Index = () => {
               
               {[
                 {
-                  date: "28 April 2026", version: "v3.0", isNew: true, isLaunch: true,
+                  date: "5 Mei 2026", version: "v3.1", isNew: true, isLaunch: true,
+                  items: [
+                    "🔊 Perbaikan player musik - audio tidak keluar di sebagian device kini sudah normal kembali",
+                    "▶️ Resume playback otomatis setelah ganti tab/route - state player tetap hidup global",
+                    "📚 Pusat Informasi diperluas: dokumentasi versi 3.1, performance budget, monitoring & observability",
+                    "❓ Pusat Bantuan ditambah: panduan troubleshooting audio, install PWA, dan cara update aplikasi",
+                    "📝 Tab Update dirombak ringan - entri v3.1 ditampilkan paling atas dengan badge launch",
+                    "🛡️ Penguatan validasi PIN dan session isolation antar akun pada device yang sama",
+                    "⚡ Optimasi bundle size & lazy-load route untuk first paint lebih cepat di koneksi 3G",
+                    "🔁 Auto-reconnect realtime channel saat aplikasi kembali ke foreground",
+                    "🐛 Bug fix: tombol play kadang stuck loading, lirik geser 0.3 detik, dan stok produk telat update",
+                  ]
+                },
+                {
+                  date: "28 April 2026", version: "v3.0", isLaunch: true,
                   items: [
                     "💬 Badge Response Rate Admin - persentase respon admin (chat produk + tiket support) ditampilkan dinamis di profil toko",
                     "📊 Rumus rasio sederhana semua waktu: (chat dibalas / total chat user) × 100% - update real-time via Supabase",
