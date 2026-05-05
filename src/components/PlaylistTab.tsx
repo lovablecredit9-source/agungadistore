@@ -93,6 +93,18 @@ function formatTime(sec: number) {
   return `${m}:${s.toString().padStart(2, "0")}`;
 }
 
+const PLAYBACK_REPORT_INTERVAL_MS = 1000;
+const CURRENT_TIME_RENDER_INTERVAL_MS = 500;
+
+function scheduleAudioVisualizer(audio: HTMLAudioElement) {
+  const attach = () => attachAudioVisualizer(audio);
+  if ("requestIdleCallback" in window) {
+    (window as Window & { requestIdleCallback: (cb: IdleRequestCallback, options?: IdleRequestOptions) => number }).requestIdleCallback(attach, { timeout: 800 });
+    return;
+  }
+  globalThis.setTimeout(attach, 120);
+}
+
 function formatSize(bytes: number) {
   if (!bytes) return "";
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
@@ -263,8 +275,17 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer, onPlayE
   const [storagePlans, setStoragePlans] = useState<StoragePlan[]>([]);
   const [selectedPlanIndex, setSelectedPlanIndex] = useState(0);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const playbackReportRef = useRef({ lastAt: 0, timer: null as ReturnType<typeof setTimeout> | null });
+  const currentTimeRenderRef = useRef(0);
   const { toast } = useToast();
   const isOnline = useOnlineStatus();
+
+  const updateRenderedCurrentTime = useCallback((time: number, force = false) => {
+    const now = performance.now();
+    if (!force && now - currentTimeRenderRef.current < CURRENT_TIME_RENDER_INTERVAL_MS) return;
+    currentTimeRenderRef.current = now;
+    setCurrentTime(time);
+  }, []);
 
   // Playlists state
   const [adminPlaylists, setAdminPlaylists] = useState<Playlist[]>([]);
@@ -552,9 +573,39 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer, onPlayE
 
   const currentSong = currentIndex >= 0 ? displaySongs[currentIndex] : externalSong;
 
-  // Report playback state to parent
+  // Report playback state to parent, throttled so the huge app shell doesn't re-render on every audio tick
   useEffect(() => {
-    onPlaybackChange?.({ song: currentSong || null, isPlaying, currentTime, duration });
+    if (!onPlaybackChange) return;
+    const state = { song: currentSong || null, isPlaying, currentTime, duration };
+    if (!isPlaying) {
+      if (playbackReportRef.current.timer) clearTimeout(playbackReportRef.current.timer);
+      playbackReportRef.current.timer = null;
+      playbackReportRef.current.lastAt = Date.now();
+      onPlaybackChange(state);
+      return;
+    }
+
+    const now = Date.now();
+    const elapsed = now - playbackReportRef.current.lastAt;
+    if (elapsed >= PLAYBACK_REPORT_INTERVAL_MS) {
+      playbackReportRef.current.lastAt = now;
+      onPlaybackChange(state);
+      return;
+    }
+
+    if (playbackReportRef.current.timer) return;
+    playbackReportRef.current.timer = setTimeout(() => {
+      playbackReportRef.current.timer = null;
+      playbackReportRef.current.lastAt = Date.now();
+      onPlaybackChange({ song: currentSong || null, isPlaying, currentTime, duration });
+    }, PLAYBACK_REPORT_INTERVAL_MS - elapsed);
+
+    return () => {
+      if (playbackReportRef.current.timer) {
+        clearTimeout(playbackReportRef.current.timer);
+        playbackReportRef.current.timer = null;
+      }
+    };
   }, [currentSong, isPlaying, currentTime, duration]);
 
   // Expose togglePlay, openFullPlayer, and playExternal to parent
@@ -577,15 +628,16 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer, onPlayE
       };
       const audio = new Audio(song.file_url);
       audioRef.current = audio;
+      audio.preload = "auto";
       audio.volume = muted ? 0 : volume;
-      attachAudioVisualizer(audio);
       audio.play().catch(() => {});
+      scheduleAudioVisualizer(audio);
       setCurrentIndex(-1);
       setExternalSong(songForPlayback);
       setIsPlaying(true);
-      setCurrentTime(0);
+      updateRenderedCurrentTime(0, true);
       audio.addEventListener("timeupdate", () => {
-        setCurrentTime(audio.currentTime);
+        updateRenderedCurrentTime(audio.currentTime);
         // A-B loop
         const ab = abRef.current;
         if (ab.enabled && ab.a != null && ab.b != null && ab.b > ab.a && audio.currentTime >= ab.b) {
@@ -650,15 +702,16 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer, onPlayE
     else if (!navigator.onLine) { toast({ title: "Tidak tersedia offline", variant: "destructive" }); return; }
     const audio = new Audio(audioUrl);
     audioRef.current = audio;
+    audio.preload = "auto";
     audio.volume = muted ? 0 : volume;
-    attachAudioVisualizer(audio);
     audio.play().catch(() => {});
+    scheduleAudioVisualizer(audio);
     setExternalSong(null);
     setCurrentIndex(index);
     setIsPlaying(true);
-    setCurrentTime(0);
+    updateRenderedCurrentTime(0, true);
     audio.addEventListener("timeupdate", () => {
-      setCurrentTime(audio.currentTime);
+      updateRenderedCurrentTime(audio.currentTime);
       // A-B loop
       const ab = abRef.current;
       if (ab.enabled && ab.a != null && ab.b != null && ab.b > ab.a && audio.currentTime >= ab.b) {
