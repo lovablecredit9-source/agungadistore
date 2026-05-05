@@ -151,7 +151,7 @@ const fxSubscribers = new Set<FxSubscriber>();
 
 let rafId: number | null = null;
 let lastTick = 0;
-const TICK_INTERVAL = 50;
+const TICK_INTERVAL = 80;
 let dataArray: Uint8Array | null = null;
 
 // ---------- Impulse response (synthetic reverb for surround) ----------
@@ -198,6 +198,10 @@ function computeBands(bandCount: number, out: Float32Array, time: number) {
 }
 
 function tick(time: number) {
+  if (subscribers.size === 0) {
+    rafId = null;
+    return;
+  }
   rafId = requestAnimationFrame(tick);
   if (time - lastTick < TICK_INTERVAL) return;
   lastTick = time;
@@ -205,7 +209,6 @@ function tick(time: number) {
   if (state.graph?.analyser && dataArray) {
     state.graph.analyser.getByteFrequencyData(dataArray as Uint8Array<ArrayBuffer>);
   }
-  if (subscribers.size === 0) return;
   subscribers.forEach((bandCount, cb) => {
     const buf = new Float32Array(bandCount);
     computeBands(bandCount, buf, time);
@@ -214,7 +217,7 @@ function tick(time: number) {
 }
 
 function ensureLoop() {
-  if (rafId == null) rafId = requestAnimationFrame(tick);
+  if (subscribers.size > 0 && rafId == null) rafId = requestAnimationFrame(tick);
 }
 
 // ---------- Build graph ----------
