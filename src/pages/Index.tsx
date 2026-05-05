@@ -6158,6 +6158,7 @@ const Index = () => {
                     <li>🎮 4 Game baru: Memory Flip, Snake Neon, 2048, Plinko</li>
                     <li>🎨 Tema iOS Dark Vibrant</li>
                     <li>🎰 Scratch-Off Lottery dirombak total</li>
+                  </ul>
                   <p className="font-semibold text-foreground text-xs pt-2">Fitur Lengkap App</p>
                   <ul className="list-disc list-inside space-y-0.5">
                     <li>🎮 <strong>15+ Game:</strong> Tebak Kata, Tebak Lagu, Suit, Ular Tangga, Ludo, Match-3, Slot Machine, Lucky Draw, Plinko, 2048, Memory Flip, Snake Neon, Mine Sweeper, Scratch Card, dll</li>
