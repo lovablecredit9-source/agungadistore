@@ -96,6 +96,19 @@ function formatTime(sec: number) {
 const PLAYBACK_REPORT_INTERVAL_MS = 1000;
 const CURRENT_TIME_RENDER_INTERVAL_MS = 500;
 
+function canUseWebAudioGraph(audioUrl: string) {
+  try {
+    const url = new URL(audioUrl, window.location.href);
+    return url.origin === window.location.origin || url.protocol === "blob:" || url.protocol === "data:";
+  } catch {
+    return false;
+  }
+}
+
+function safelyAttachAudioVisualizer(audio: HTMLAudioElement, audioUrl: string) {
+  if (canUseWebAudioGraph(audioUrl)) attachAudioVisualizer(audio);
+}
+
 function formatSize(bytes: number) {
   if (!bytes) return "";
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
