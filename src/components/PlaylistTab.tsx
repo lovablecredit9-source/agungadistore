@@ -102,7 +102,7 @@ function scheduleAudioVisualizer(audio: HTMLAudioElement) {
     (window as Window & { requestIdleCallback: (cb: IdleRequestCallback, options?: IdleRequestOptions) => number }).requestIdleCallback(attach, { timeout: 800 });
     return;
   }
-  window.setTimeout(attach, 120);
+  globalThis.setTimeout(attach, 120);
 }
 
 function formatSize(bytes: number) {
