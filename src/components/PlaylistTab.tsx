@@ -634,7 +634,7 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer, onPlayE
       audioRef.current = audio;
       audio.preload = "auto";
       audio.volume = muted ? 0 : volume;
-      attachAudioVisualizer(audio);
+      safelyAttachAudioVisualizer(audio, song.file_url);
       audio.play().catch(() => {});
       setCurrentIndex(-1);
       setExternalSong(songForPlayback);
@@ -708,7 +708,7 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer, onPlayE
     audioRef.current = audio;
     audio.preload = "auto";
     audio.volume = muted ? 0 : volume;
-    attachAudioVisualizer(audio);
+    safelyAttachAudioVisualizer(audio, audioUrl);
     audio.play().catch(() => {});
     setExternalSong(null);
     setCurrentIndex(index);
