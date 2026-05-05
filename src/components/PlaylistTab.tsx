@@ -94,6 +94,7 @@ function formatTime(sec: number) {
 }
 
 const PLAYBACK_REPORT_INTERVAL_MS = 1000;
+const CURRENT_TIME_RENDER_INTERVAL_MS = 500;
 
 function formatSize(bytes: number) {
   if (!bytes) return "";
@@ -266,8 +267,16 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer, onPlayE
   const [selectedPlanIndex, setSelectedPlanIndex] = useState(0);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const playbackReportRef = useRef({ lastAt: 0, timer: null as ReturnType<typeof setTimeout> | null });
+  const currentTimeRenderRef = useRef(0);
   const { toast } = useToast();
   const isOnline = useOnlineStatus();
+
+  const updateRenderedCurrentTime = useCallback((time: number, force = false) => {
+    const now = performance.now();
+    if (!force && now - currentTimeRenderRef.current < CURRENT_TIME_RENDER_INTERVAL_MS) return;
+    currentTimeRenderRef.current = now;
+    setCurrentTime(time);
+  }, []);
 
   // Playlists state
   const [adminPlaylists, setAdminPlaylists] = useState<Playlist[]>([]);
@@ -616,9 +625,9 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer, onPlayE
       setCurrentIndex(-1);
       setExternalSong(songForPlayback);
       setIsPlaying(true);
-      setCurrentTime(0);
+      updateRenderedCurrentTime(0, true);
       audio.addEventListener("timeupdate", () => {
-        setCurrentTime(audio.currentTime);
+        updateRenderedCurrentTime(audio.currentTime);
         // A-B loop
         const ab = abRef.current;
         if (ab.enabled && ab.a != null && ab.b != null && ab.b > ab.a && audio.currentTime >= ab.b) {
@@ -689,9 +698,9 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer, onPlayE
     setExternalSong(null);
     setCurrentIndex(index);
     setIsPlaying(true);
-    setCurrentTime(0);
+    updateRenderedCurrentTime(0, true);
     audio.addEventListener("timeupdate", () => {
-      setCurrentTime(audio.currentTime);
+      updateRenderedCurrentTime(audio.currentTime);
       // A-B loop
       const ab = abRef.current;
       if (ab.enabled && ab.a != null && ab.b != null && ab.b > ab.a && audio.currentTime >= ab.b) {
