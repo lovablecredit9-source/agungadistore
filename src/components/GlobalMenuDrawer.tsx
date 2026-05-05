@@ -328,7 +328,54 @@ const SECTIONS: SectionDef[] = [
       },
       {
         heading: "Versi API & Changelog",
-        body: "API mengikuti semantic versioning. Perubahan breaking diumumkan minimal 14 hari sebelumnya melalui tab ‘Update’. Versi minor & patch dirilis berkala tanpa downtime.",
+        body: "API mengikuti semantic versioning. Versi aktif saat ini adalah v3.1 (Mei 2026). Perubahan breaking diumumkan minimal 14 hari sebelumnya melalui tab ‘Update’. Versi minor & patch dirilis berkala tanpa downtime.",
+        bullets: [
+          "v3.1 (5 Mei 2026) — Fix audio playback, resume player global, dokumentasi & help diperluas, optimasi bundle.",
+          "v3.0 (28 April 2026) — Badge Response Rate, halaman Toko & Produk full-screen, realtime sync.",
+          "v2.9 (26 April 2026) — Beranda Maximalist Colorful, tab Update dirombak.",
+          "v2.8 (24 April 2026) — 4 game baru, tema iOS Dark Vibrant, Scratch-Off rebalance.",
+        ],
+      },
+      {
+        heading: "Performance Budget",
+        body: "Target performa yang dijaga di setiap rilis untuk pengalaman cepat di koneksi 3G/4G:",
+        bullets: [
+          "First Contentful Paint (FCP) < 1.8 detik di 4G median.",
+          "Time to Interactive (TTI) < 3.5 detik pada perangkat mid-range.",
+          "Bundle JS initial < 250 KB gzipped (lazy-load untuk route berat).",
+          "Image lazy-load + format WebP/AVIF untuk semua aset besar.",
+          "Cache strategy: stale-while-revalidate untuk daftar, network-first untuk transaksi.",
+        ],
+      },
+      {
+        heading: "Monitoring & Observability",
+        body: "Untuk menjaga reliabilitas, sistem dipantau lewat beberapa kanal:",
+        bullets: [
+          "Edge function logs realtime (15 hari retensi) — bisa dibuka dari dashboard Cloud.",
+          "Postgres slow query log — query >500ms dicatat untuk tuning.",
+          "Realtime channel health check tiap 30 detik.",
+          "Error boundary React mengirim stack trace anonim ke admin.",
+          "Uptime monitor eksternal (5 menit interval) untuk endpoint kritis.",
+        ],
+      },
+      {
+        heading: "Compatibility Matrix",
+        body: "Browser & device yang didukung resmi:",
+        bullets: [
+          "Chrome / Edge ≥ 110 (desktop & Android).",
+          "Safari ≥ 15.4 (iOS & macOS) — termasuk PWA Add to Home Screen.",
+          "Firefox ≥ 110 (desktop) — beberapa fitur PWA terbatas.",
+          "Android WebView ≥ 110 (untuk APK Capacitor).",
+          "Minimum RAM device: 2 GB untuk pengalaman lancar.",
+        ],
+      },
+      {
+        heading: "Deprecation Policy",
+        body: "Endpoint atau parameter yang akan dihapus diumumkan dengan masa transisi minimal 30 hari. Header `Deprecation` dan `Sunset` ditambahkan ke respons sebagai peringatan otomatis bagi integrator.",
+      },
+      {
+        heading: "SLA & Uptime",
+        body: "Target ketersediaan layanan 99.9% per bulan. Maintenance terjadwal diumumkan H-1 melalui banner aplikasi & WhatsApp resmi. Insiden kritis ditangani dengan SLA respons <30 menit dan resolusi <4 jam.",
       },
       {
         heading: "Dukungan Teknis",

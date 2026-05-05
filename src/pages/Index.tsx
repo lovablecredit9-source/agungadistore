@@ -4650,7 +4650,21 @@ const Index = () => {
               
               {[
                 {
-                  date: "28 April 2026", version: "v3.0", isNew: true, isLaunch: true,
+                  date: "5 Mei 2026", version: "v3.1", isNew: true, isLaunch: true,
+                  items: [
+                    "🔊 Perbaikan player musik - audio tidak keluar di sebagian device kini sudah normal kembali",
+                    "▶️ Resume playback otomatis setelah ganti tab/route - state player tetap hidup global",
+                    "📚 Pusat Informasi diperluas: dokumentasi versi 3.1, performance budget, monitoring & observability",
+                    "❓ Pusat Bantuan ditambah: panduan troubleshooting audio, install PWA, dan cara update aplikasi",
+                    "📝 Tab Update dirombak ringan - entri v3.1 ditampilkan paling atas dengan badge launch",
+                    "🛡️ Penguatan validasi PIN dan session isolation antar akun pada device yang sama",
+                    "⚡ Optimasi bundle size & lazy-load route untuk first paint lebih cepat di koneksi 3G",
+                    "🔁 Auto-reconnect realtime channel saat aplikasi kembali ke foreground",
+                    "🐛 Bug fix: tombol play kadang stuck loading, lirik geser 0.3 detik, dan stok produk telat update",
+                  ]
+                },
+                {
+                  date: "28 April 2026", version: "v3.0", isLaunch: true,
                   items: [
                     "💬 Badge Response Rate Admin - persentase respon admin (chat produk + tiket support) ditampilkan dinamis di profil toko",
                     "📊 Rumus rasio sederhana semua waktu: (chat dibalas / total chat user) × 100% - update real-time via Supabase",
@@ -5531,7 +5545,7 @@ const Index = () => {
             <div className="flex items-center justify-between p-5 pb-3 shrink-0">
               <div>
                 <h3 className="font-extrabold text-lg">{t("help.title", lang)}</h3>
-                <p className="text-[11px] text-muted-foreground">Web v2.0 - April 2026 - {STORE_NAME}</p>
+                <p className="text-[11px] text-muted-foreground">Web v3.1 - Mei 2026 - {STORE_NAME}</p>
               </div>
               <button onClick={() => setShowHelp(false)} className="w-8 h-8 rounded-full bg-muted flex items-center justify-center"><X className="w-4 h-4" /></button>
             </div>
@@ -6090,18 +6104,60 @@ const Index = () => {
                 </ul>
               </div>
 
+              {/* Troubleshooting Audio */}
+              <div className="rounded-xl border border-border bg-card p-3 space-y-1.5">
+                <p className="font-bold text-foreground text-xs uppercase tracking-wider">🔊 Audio Tidak Keluar?</p>
+                <ol className="list-decimal list-inside space-y-0.5 text-[13px]">
+                  <li>Pastikan volume HP <strong>tidak silent</strong> & mode getar mati</li>
+                  <li>Cek output audio - jika ada Bluetooth/headset terpasang, suara mungkin lewat sana</li>
+                  <li>Tutup aplikasi musik/video lain (YouTube, Spotify) yang merebut audio focus</li>
+                  <li>Reload halaman, lalu tekan tombol play <strong>setelah</strong> halaman selesai dimuat</li>
+                  <li>Browser iOS Safari: aktifkan Media Auto-play di Settings &gt; Safari</li>
+                  <li>Coba ganti lagu lain - jika file rusak akan auto-skip</li>
+                  <li>Bersihkan cache browser, lalu install ulang PWA dari Home Screen</li>
+                  <li>Masih bermasalah? Kirim tiket kategori <strong>Lagu/Musik</strong> dengan model HP & browser</li>
+                </ol>
+              </div>
+
+              {/* Update Aplikasi */}
+              <div className="rounded-xl border border-border bg-card p-3 space-y-1.5">
+                <p className="font-bold text-foreground text-xs uppercase tracking-wider">⬆️ Cara Update Aplikasi</p>
+                <ul className="list-disc list-inside space-y-0.5 text-[13px]">
+                  <li>Aplikasi auto-update saat dibuka & terkoneksi internet</li>
+                  <li>PWA: tutup semua tab lalu buka kembali untuk dapat versi terbaru</li>
+                  <li>Cek versi di tab <strong>Update</strong> (ikon Refresh) di navigasi bawah</li>
+                  <li>Jika versi tidak berubah, force refresh: tarik ke bawah (pull-to-refresh)</li>
+                  <li>Hard reload browser: Ctrl+Shift+R (desktop) / clear cache PWA (mobile)</li>
+                  <li>Versi saat ini: <strong>v3.1 (Mei 2026)</strong></li>
+                </ul>
+              </div>
+
               {/* Changelog */}
               <div className="rounded-xl border border-border bg-card p-3 space-y-1.5">
-                <p className="font-bold text-foreground text-xs uppercase tracking-wider">📝 Changelog v2.8</p>
+                <p className="font-bold text-foreground text-xs uppercase tracking-wider">📝 Changelog v3.1</p>
                 <div className="space-y-1 text-[13px]">
-                  <p className="font-semibold text-foreground text-xs">24 April 2026 - Update Terbaru</p>
+                  <p className="font-semibold text-foreground text-xs">5 Mei 2026 - Update Terbaru</p>
                   <ul className="list-disc list-inside space-y-0.5">
-                    <li>🎮 <strong>4 Game baru:</strong> Memory Flip, Snake Neon, 2048, Plinko - semua mobile-friendly</li>
-                    <li>🎨 Tema iOS Dark Vibrant - true black + aksen Apple system colors</li>
-                    <li>🎰 Scratch-Off Lottery dirombak total (Bronze/Silver/Gold/Diamond)</li>
-                    <li>💰 Rebalance hadiah: jackpot terasa BESAR tapi LANGKA (~3% chance)</li>
-                    <li>🏆 Achievement bonus baru: First Win, High Roller, Jackpot Hunter, Diamond Master</li>
-                    <li>🔧 Proteksi double-claim & combo multiplier ringan (1.0 → 1.2x)</li>
+                    <li>🔊 <strong>Fix audio musik</strong> - tidak keluar suara di sebagian device sudah normal</li>
+                    <li>▶️ Resume playback otomatis lintas tab/route</li>
+                    <li>📚 Pusat Informasi diperluas: dokumentasi v3.1, performance, observability</li>
+                    <li>❓ Pusat Bantuan ditambah: troubleshooting audio, install PWA, cara update</li>
+                    <li>🛡️ Penguatan validasi PIN & session isolation antar akun</li>
+                    <li>⚡ Optimasi bundle & lazy-load route</li>
+                    <li>🔁 Auto-reconnect realtime saat app kembali ke foreground</li>
+                    <li>🐛 Bug fix: tombol play stuck, lirik geser 0.3s, stok telat update</li>
+                  </ul>
+                  <p className="font-semibold text-foreground text-xs pt-2">v3.0 - 28 April 2026</p>
+                  <ul className="list-disc list-inside space-y-0.5">
+                    <li>💬 Badge Response Rate Admin (chat produk + tiket)</li>
+                    <li>🏪 Halaman Toko & Produk Full-Screen</li>
+                    <li>🔄 Realtime sync response rate</li>
+                  </ul>
+                  <p className="font-semibold text-foreground text-xs pt-2">v2.8 - 24 April 2026</p>
+                  <ul className="list-disc list-inside space-y-0.5">
+                    <li>🎮 4 Game baru: Memory Flip, Snake Neon, 2048, Plinko</li>
+                    <li>🎨 Tema iOS Dark Vibrant</li>
+                    <li>🎰 Scratch-Off Lottery dirombak total</li>
                   </ul>
                   <p className="font-semibold text-foreground text-xs pt-2">Fitur Lengkap App</p>
                   <ul className="list-disc list-inside space-y-0.5">
