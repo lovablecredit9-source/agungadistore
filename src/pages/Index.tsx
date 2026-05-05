@@ -5545,7 +5545,7 @@ const Index = () => {
             <div className="flex items-center justify-between p-5 pb-3 shrink-0">
               <div>
                 <h3 className="font-extrabold text-lg">{t("help.title", lang)}</h3>
-                <p className="text-[11px] text-muted-foreground">Web v2.0 - April 2026 - {STORE_NAME}</p>
+                <p className="text-[11px] text-muted-foreground">Web v3.1 - Mei 2026 - {STORE_NAME}</p>
               </div>
               <button onClick={() => setShowHelp(false)} className="w-8 h-8 rounded-full bg-muted flex items-center justify-center"><X className="w-4 h-4" /></button>
             </div>
