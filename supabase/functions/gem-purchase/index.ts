@@ -110,8 +110,23 @@ Deno.serve(async (req) => {
       }
     }
 
+    // Add Game Credits (paket Komplit)
+    if (totalGameCredits > 0) {
+      const { data: ugc } = await admin.from("user_game_credits").select("credits").eq("visitor_id", visitorId).maybeSingle();
+      if (ugc) {
+        await admin.from("user_game_credits")
+          .update({ credits: (ugc.credits || 0) + totalGameCredits, updated_at: new Date().toISOString() })
+          .eq("visitor_id", visitorId);
+      } else {
+        await admin.from("user_game_credits").insert({ visitor_id: visitorId, credits: totalGameCredits });
+      }
+    }
+
     const qtyLabel = quantity > 1 ? ` x${quantity}` : "";
-    const comboTxt = totalStreakCoins > 0 ? ` + ${totalStreakCoins.toLocaleString("id-ID")} 🪙` : "";
+    const parts: string[] = [];
+    if (totalStreakCoins > 0) parts.push(`${totalStreakCoins.toLocaleString("id-ID")} 🪙`);
+    if (totalGameCredits > 0) parts.push(`${totalGameCredits.toLocaleString("id-ID")} 🔑`);
+    const comboTxt = parts.length ? ` + ${parts.join(" + ")}` : "";
     await admin.from("gem_transactions").insert({
       visitor_id: visitorId,
       amount: totalGems,
@@ -127,12 +142,12 @@ Deno.serve(async (req) => {
     });
     await admin.from("notifications").insert({
       visitor_id: visitorId,
-      title: totalStreakCoins > 0 ? "🎁 Combo Diterima!" : "💎 Gem Bertambah!",
+      title: parts.length ? "🎁 Combo Diterima!" : "💎 Gem Bertambah!",
       message: `Kamu mendapat ${totalGems} 💎${comboTxt} dari ${pkg.name}${qtyLabel}`,
       type: "gem",
     });
 
-    return Response.json({ success: true, gems_added: totalGems, streak_coins_added: totalStreakCoins, quantity, new_balance: bal.balance - totalPrice }, { headers: corsHeaders });
+    return Response.json({ success: true, gems_added: totalGems, streak_coins_added: totalStreakCoins, game_credits_added: totalGameCredits, quantity, new_balance: bal.balance - totalPrice }, { headers: corsHeaders });
   } catch (e) {
     return Response.json({ error: e instanceof Error ? e.message : "Error" }, { status: 500, headers: corsHeaders });
   }
