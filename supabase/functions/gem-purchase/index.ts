@@ -71,6 +71,7 @@ Deno.serve(async (req) => {
     const totalPrice = pkg.price * quantity;
     const totalGems = (pkg.gems + (pkg.bonus_gems || 0)) * quantity;
     const totalStreakCoins = ((pkg as any).bonus_streak_coins || 0) * quantity;
+    const totalGameCredits = ((pkg as any).bonus_game_credits || 0) * quantity;
 
     const { data: bal } = await admin.from("user_balances").select("balance").eq("id", balLogin.user_balance_id).maybeSingle();
     if (!bal || bal.balance < totalPrice) {
