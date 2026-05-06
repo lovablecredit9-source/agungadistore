@@ -6187,6 +6187,330 @@ const Index = () => {
                 </ul>
               </div>
 
+              {/* Game AI */}
+              <div className="rounded-xl border border-border bg-card p-3 space-y-1.5">
+                <p className="font-bold text-foreground text-xs uppercase tracking-wider">🎮 Game AI & Mini Games</p>
+                <ul className="list-disc list-inside space-y-0.5 text-[13px]">
+                  <li>Buka tab <strong>Game</strong> untuk akses 30+ mini game</li>
+                  <li>Game tebak (Kata, Lagu, Gambar, Barang, Angka) menggunakan <strong>AI</strong></li>
+                  <li>Sistem <strong>3 nyawa</strong> per game - hilang nyawa jika salah/timeout</li>
+                  <li>Setiap game ada <strong>timer</strong> dengan warna dinamis (hijau→kuning→merah)</li>
+                  <li>Beli <strong>Game Credits</strong> untuk extra life, hint, & status premium</li>
+                  <li>Premium / Unlimited bersifat <strong>akumulatif</strong> tidak reset</li>
+                  <li>Booster keberuntungan x2/x6/x8/x10/x20 untuk Slot & Lucky Draw</li>
+                </ul>
+                <div className="mt-2 p-2 bg-muted/40 rounded-lg text-[12px]">
+                  <p className="font-semibold text-foreground">🎯 Daftar Game Tersedia:</p>
+                  <ul className="list-disc list-inside space-y-0.5">
+                    <li>Tebak Kata, Lagu, Gambar, Barang, Angka (AI)</li>
+                    <li>2048, Tetris, Snake, Flappy, Brick Breaker, Bubble Shooter</li>
+                    <li>Match-3, Memory, MineSweeper, Sky Jumper, Catch Star</li>
+                    <li>Slot Machine, Lucky Draw, Plinko, Scratch Card, Roda Putar</li>
+                    <li>Suit, Ular Tangga, Ludo, Whack-a-Mole, Tap Beat, Color Reflex</li>
+                    <li>Kuis, Pilihan Ganda, Teka-Teki, Teka-Teki V2</li>
+                  </ul>
+                </div>
+              </div>
+
+              {/* Streak Harian */}
+              <div className="rounded-xl border border-border bg-card p-3 space-y-1.5">
+                <p className="font-bold text-foreground text-xs uppercase tracking-wider">🔥 Daily Streak Harian</p>
+                <ul className="list-disc list-inside space-y-0.5 text-[13px]">
+                  <li>Klaim hadiah harian otomatis setiap hari</li>
+                  <li>Streak <strong>akumulatif</strong> - makin panjang makin besar hadiah</li>
+                  <li>Reset <strong>00:00 WIB (UTC+7)</strong> setiap hari</li>
+                  <li>Lewat 1 hari = streak <strong>reset ke 0</strong></li>
+                  <li>Gunakan <strong>Streak Freeze</strong> untuk skip 1 hari tanpa kehilangan streak</li>
+                  <li>Akses <strong>Streak Shop</strong>: Mystery Box, Auction House, Loyalty Tier, Referral Vault</li>
+                  <li>Loyalty Tier: Bronze → Silver → Gold → Platinum → Diamond</li>
+                </ul>
+              </div>
+
+              {/* Mega Shop / Lucky Wheel */}
+              <div className="rounded-xl border border-border bg-card p-3 space-y-1.5">
+                <p className="font-bold text-foreground text-xs uppercase tracking-wider">🎡 Mega Shop & Lucky Wheel</p>
+                <ul className="list-disc list-inside space-y-0.5 text-[13px]">
+                  <li><strong>Roda Putar</strong> dengan jackpot besar di MegaShopHub</li>
+                  <li>Pity system <strong>50 spin</strong> jamin hadiah besar</li>
+                  <li><strong>Free spin harian</strong> - klaim setiap hari gratis</li>
+                  <li>4 mata uang: Free / Coins / Gems / Saldo+PIN</li>
+                  <li><strong>Scratch-Off Lottery</strong> dengan combo multiplier max 1.2x</li>
+                  <li>Daily Free Bronze + achievement bonus</li>
+                </ul>
+              </div>
+
+              {/* Luck Royale & Spin Tickets */}
+              <div className="rounded-xl border border-border bg-card p-3 space-y-1.5">
+                <p className="font-bold text-foreground text-xs uppercase tracking-wider">💎 Luck Royale (Normal & Premium)</p>
+                <ul className="list-disc list-inside space-y-0.5 text-[13px]">
+                  <li><strong>Diamond Royale</strong> - Premium Spin dengan hadiah eksklusif</li>
+                  <li>Milestone Premium Spin harian: 2/5/10/20 spin = 50/200/500/1500 gem</li>
+                  <li>Diskon harian Normal: 1/5/10/20/100/125/200/500 spin</li>
+                  <li>Tiket <strong>Normal & Premium</strong> sebagai pengganti gem (rate 50/100)</li>
+                  <li>Beli tiket pakai gem - kombinasi otomatis saat spin</li>
+                  <li>Reset diskon & milestone <strong>00:00 WIB</strong></li>
+                </ul>
+              </div>
+
+              {/* Voucher Diskon */}
+              <div className="rounded-xl border border-border bg-card p-3 space-y-1.5">
+                <p className="font-bold text-foreground text-xs uppercase tracking-wider">🎟️ Voucher Diskon & Follow Toko</p>
+                <ul className="list-disc list-inside space-y-0.5 text-[13px]">
+                  <li>Voucher diskon dinamis berdasarkan <strong>kategori produk</strong></li>
+                  <li><strong>Follow Toko</strong> = dapat voucher Rp 1.000 (30 hari, single-use)</li>
+                  <li>Member Premium dapat voucher harian <strong>Rp 2.000</strong></li>
+                  <li>Voucher Streak (kode <strong>STR-XXXX</strong>) bisa berisi gem/koin/kredit/hint/freeze</li>
+                  <li>Kode redeem dari admin via tab Voucher</li>
+                  <li>Cek expiry voucher sebelum digunakan</li>
+                </ul>
+              </div>
+
+              {/* Premium Membership */}
+              <div className="rounded-xl border border-border bg-card p-3 space-y-1.5">
+                <p className="font-bold text-foreground text-xs uppercase tracking-wider">👑 Premium Membership Toko</p>
+                <ul className="list-disc list-inside space-y-0.5 text-[13px]">
+                  <li>Paket: <strong>1 bulan (Rp 20k)</strong>, 2 bulan (Rp 30k), 6 bulan (Rp 50k)</li>
+                  <li>Voucher harian <strong>Rp 2.000</strong> selama membership aktif</li>
+                  <li>Badge <strong>👑 Premium</strong> di profil & chat</li>
+                  <li>Chat prioritas - dibalas lebih cepat oleh admin</li>
+                  <li>Akses tab Premium di halaman StoreProfile</li>
+                </ul>
+              </div>
+
+              {/* Flash Sale */}
+              <div className="rounded-xl border border-border bg-card p-3 space-y-1.5">
+                <p className="font-bold text-foreground text-xs uppercase tracking-wider">⚡ Flash Sale Produk</p>
+                <ul className="list-disc list-inside space-y-0.5 text-[13px]">
+                  <li>Produk diskon dengan <strong>kuota terbatas</strong> & countdown live</li>
+                  <li>Mode diskon: <strong>persen %</strong> atau harga manual</li>
+                  <li>Cek tab Flash Sale di StoreProfile</li>
+                  <li>Stok flash sale otomatis berkurang real-time</li>
+                  <li>Notifikasi otomatis saat flash sale baru dimulai</li>
+                </ul>
+              </div>
+
+              {/* Wholesale */}
+              <div className="rounded-xl border border-border bg-card p-3 space-y-1.5">
+                <p className="font-bold text-foreground text-xs uppercase tracking-wider">📦 Harga Grosir (Wholesale)</p>
+                <ul className="list-disc list-inside space-y-0.5 text-[13px]">
+                  <li>Beli dalam jumlah banyak = <strong>harga otomatis lebih murah</strong></li>
+                  <li>Tier harga berdasarkan <strong>min_quantity</strong></li>
+                  <li>Validasi server-side - tidak bisa diakali dari client</li>
+                  <li>Cocok untuk reseller / pembelian bulk</li>
+                </ul>
+              </div>
+
+              {/* Sponsor & Rekber */}
+              <div className="rounded-xl border border-border bg-card p-3 space-y-1.5">
+                <p className="font-bold text-foreground text-xs uppercase tracking-wider">🤝 Produk Sponsor & Rekber</p>
+                <ul className="list-disc list-inside space-y-0.5 text-[13px]">
+                  <li>Produk pihak ketiga ditampilkan di tab Sponsor</li>
+                  <li>Setiap sponsor punya <strong>ID numerik unik</strong></li>
+                  <li>Wajib gunakan <strong>Rekber (Rekening Bersama)</strong> via admin</li>
+                  <li>Admin sebagai perantara - dana ditahan sampai barang sampai</li>
+                  <li>Hindari transaksi langsung tanpa rekber - <strong>risiko penipuan</strong></li>
+                  <li>Lapor sponsor bermasalah via tiket kategori <strong>Sponsor / Lapor Penipu</strong></li>
+                </ul>
+              </div>
+
+              {/* Bot WhatsApp */}
+              <div className="rounded-xl border border-border bg-card p-3 space-y-1.5">
+                <p className="font-bold text-foreground text-xs uppercase tracking-wider">🤖 Bot WhatsApp (085769302532)</p>
+                <ul className="list-disc list-inside space-y-0.5 text-[13px]">
+                  <li>Bot otomatis 24/7 untuk cek saldo, deposit, voucher</li>
+                  <li>Perintah: <code>!saldo</code>, <code>!deposit</code>, <code>!voucher</code>, <code>!tiket</code></li>
+                  <li><code>!lihatsemuatiket</code> - lihat semua tiket aktif</li>
+                  <li>Deposit interaktif: pilih QRIS/Dana lalu ikuti instruksi</li>
+                  <li>Cancel deposit wajib pakai <strong>TX ID</strong></li>
+                  <li>Bot kirim <strong>resi visual</strong> otomatis setelah transaksi sukses</li>
+                </ul>
+              </div>
+
+              {/* Notifikasi */}
+              <div className="rounded-xl border border-border bg-card p-3 space-y-1.5">
+                <p className="font-bold text-foreground text-xs uppercase tracking-wider">🔔 Sistem Notifikasi</p>
+                <ul className="list-disc list-inside space-y-0.5 text-[13px]">
+                  <li>Realtime notif untuk: pembelian, chat, perubahan saldo, broadcast admin</li>
+                  <li>Lihat semua notif di ikon <strong>lonceng</strong> top bar</li>
+                  <li>Aktifkan notif browser/PWA untuk dapat push notification</li>
+                  <li>Tandai sudah dibaca atau hapus notif</li>
+                  <li>Read receipts chat: ✓ abu (terkirim) → ✓✓ biru (dibaca)</li>
+                </ul>
+              </div>
+
+              {/* Bahasa */}
+              <div className="rounded-xl border border-border bg-card p-3 space-y-1.5">
+                <p className="font-bold text-foreground text-xs uppercase tracking-wider">🌐 Multi-Bahasa & Auto-Translate</p>
+                <ul className="list-disc list-inside space-y-0.5 text-[13px]">
+                  <li>Mendukung <strong>{LANGUAGES.length}+ bahasa</strong> dengan bendera</li>
+                  <li>Pilih bahasa di menu drawer atau pengaturan</li>
+                  <li>Auto-translate konten dinamis via <strong>Gemini AI</strong></li>
+                  <li>Sistem cegah double-translation untuk akurasi</li>
+                  <li>Bahasa tersimpan di cache lokal</li>
+                </ul>
+              </div>
+
+              {/* Tema */}
+              <div className="rounded-xl border border-border bg-card p-3 space-y-1.5">
+                <p className="font-bold text-foreground text-xs uppercase tracking-wider">🎨 Tema & Tampilan</p>
+                <ul className="list-disc list-inside space-y-0.5 text-[13px]">
+                  <li>Tema: <strong>Light, Dark, Gold, Custom Photo</strong></li>
+                  <li>Custom Photo: upload foto sendiri sebagai background</li>
+                  <li>Glassmorphism & blur effect modern</li>
+                  <li>Font Plus Jakarta Sans untuk readability</li>
+                  <li>Tema tersimpan otomatis per device</li>
+                </ul>
+              </div>
+
+              {/* PWA Install */}
+              <div className="rounded-xl border border-border bg-card p-3 space-y-1.5">
+                <p className="font-bold text-foreground text-xs uppercase tracking-wider">📲 Cara Install PWA</p>
+                <div className="text-[13px] space-y-1.5">
+                  <p className="font-semibold text-foreground">Android (Chrome):</p>
+                  <ol className="list-decimal list-inside space-y-0.5">
+                    <li>Buka aplikasi di Chrome</li>
+                    <li>Tap menu <strong>⋮</strong> di kanan atas</li>
+                    <li>Pilih <strong>"Tambah ke Layar Utama"</strong></li>
+                    <li>Konfirmasi - icon muncul di home screen</li>
+                  </ol>
+                  <p className="font-semibold text-foreground pt-1">iOS (Safari):</p>
+                  <ol className="list-decimal list-inside space-y-0.5">
+                    <li>Buka aplikasi di Safari (bukan Chrome)</li>
+                    <li>Tap ikon <strong>Share</strong> (kotak panah ke atas)</li>
+                    <li>Scroll & pilih <strong>"Add to Home Screen"</strong></li>
+                    <li>Tap <strong>Add</strong> di kanan atas</li>
+                  </ol>
+                  <p className="font-semibold text-foreground pt-1">Desktop (Chrome/Edge):</p>
+                  <ol className="list-decimal list-inside space-y-0.5">
+                    <li>Klik ikon <strong>install (+)</strong> di address bar</li>
+                    <li>Atau menu &gt; Install Agung Adi Store</li>
+                  </ol>
+                </div>
+              </div>
+
+              {/* Mode Offline */}
+              <div className="rounded-xl border border-border bg-card p-3 space-y-1.5">
+                <p className="font-bold text-foreground text-xs uppercase tracking-wider">📴 Mode Offline</p>
+                <ul className="list-disc list-inside space-y-0.5 text-[13px]">
+                  <li>Aplikasi tetap bisa dibuka tanpa internet (PWA)</li>
+                  <li>Halaman & gambar di-cache otomatis (Workbox)</li>
+                  <li>Musik offline bisa diputar tanpa internet</li>
+                  <li>Transaksi & chat butuh internet aktif</li>
+                  <li>Auto-reconnect saat internet kembali</li>
+                  <li>Overlay otomatis blokir game saat offline (cegah corruption)</li>
+                </ul>
+              </div>
+
+              {/* Keamanan Akun */}
+              <div className="rounded-xl border border-border bg-card p-3 space-y-1.5">
+                <p className="font-bold text-foreground text-xs uppercase tracking-wider">🔐 Keamanan Akun</p>
+                <ul className="list-disc list-inside space-y-0.5 text-[13px]">
+                  <li>PIN <strong>6 digit</strong> wajib untuk setiap transaksi saldo</li>
+                  <li>Reset PIN via <strong>token 5 digit</strong> dikirim ke WhatsApp</li>
+                  <li>Token reset valid <strong>10 menit</strong></li>
+                  <li>Login multi-identifier: email / nomor HP / username</li>
+                  <li>Session isolation - data tidak bocor antar akun</li>
+                  <li>Rate-limit untuk cegah brute-force PIN</li>
+                  <li>Logout otomatis hapus session lokal</li>
+                </ul>
+              </div>
+
+              {/* Leaderboard */}
+              <div className="rounded-xl border border-border bg-card p-3 space-y-1.5">
+                <p className="font-bold text-foreground text-xs uppercase tracking-wider">🏆 Leaderboard & Komunitas</p>
+                <ul className="list-disc list-inside space-y-0.5 text-[13px]">
+                  <li>Weekly Leaderboard untuk game</li>
+                  <li>Top Fans untuk artist musik</li>
+                  <li>Stats akun: total game dimainkan, win rate, best score</li>
+                  <li>Follow profil musik & toko favorit</li>
+                  <li>Komentar & reaction lagu publik</li>
+                </ul>
+              </div>
+
+              {/* Export Data */}
+              <div className="rounded-xl border border-border bg-card p-3 space-y-1.5">
+                <p className="font-bold text-foreground text-xs uppercase tracking-wider">📤 Export Riwayat Transaksi</p>
+                <ul className="list-disc list-inside space-y-0.5 text-[13px]">
+                  <li>Export riwayat dalam format <strong>PDF / Word / TXT</strong></li>
+                  <li>Pilih <strong>range tanggal</strong> atau bulk semua</li>
+                  <li>File dilengkapi <strong>branding toko</strong></li>
+                  <li>Cocok untuk laporan keuangan / pencatatan</li>
+                </ul>
+              </div>
+
+              {/* Share & Deep Link */}
+              <div className="rounded-xl border border-border bg-card p-3 space-y-1.5">
+                <p className="font-bold text-foreground text-xs uppercase tracking-wider">🔗 Share & Deep Link</p>
+                <ul className="list-disc list-inside space-y-0.5 text-[13px]">
+                  <li>Bagikan produk / lagu / sponsor via <strong>Web Share API</strong></li>
+                  <li>Deep link otomatis buka produk spesifik</li>
+                  <li>Query params: <code>?p=ID</code> untuk produk, <code>?s=ID</code> untuk sponsor</li>
+                  <li>Real-time deteksi output audio (Bluetooth/Speaker/Headset)</li>
+                </ul>
+              </div>
+
+              {/* Pengumuman Admin */}
+              <div className="rounded-xl border border-border bg-card p-3 space-y-1.5">
+                <p className="font-bold text-foreground text-xs uppercase tracking-wider">📢 Pengumuman Admin</p>
+                <ul className="list-disc list-inside space-y-0.5 text-[13px]">
+                  <li>Postingan resmi admin di tab <strong>Home</strong> & <strong>Admin</strong></li>
+                  <li>Format rich-text dengan gambar & link</li>
+                  <li>Notifikasi otomatis saat ada pengumuman baru</li>
+                  <li>Cek tab Update untuk changelog & info versi</li>
+                </ul>
+              </div>
+
+              {/* Pertanyaan Umum (FAQ) */}
+              <div className="rounded-xl border border-border bg-card p-3 space-y-1.5">
+                <p className="font-bold text-foreground text-xs uppercase tracking-wider">❓ FAQ - Pertanyaan Umum</p>
+                <div className="space-y-2 text-[13px]">
+                  <div>
+                    <p className="font-semibold text-foreground">Q: Apakah aman beli di sini?</p>
+                    <p>A: Ya, kami menggunakan sistem rekber & garansi. Bukti transaksi disimpan otomatis.</p>
+                  </div>
+                  <div>
+                    <p className="font-semibold text-foreground">Q: Voucher saya tidak bisa diklaim, kenapa?</p>
+                    <p>A: Cek expiry, pastikan kode benar (16 char), atau sudah pernah diklaim. Jika masih error, buat tiket.</p>
+                  </div>
+                  <div>
+                    <p className="font-semibold text-foreground">Q: Saldo saya tidak masuk setelah deposit?</p>
+                    <p>A: Tunggu 5-15 menit. Jika lebih lama, kirim TX ID ke admin via WhatsApp atau tiket.</p>
+                  </div>
+                  <div>
+                    <p className="font-semibold text-foreground">Q: Bisa pindah saldo ke HP baru?</p>
+                    <p>A: Ya, hubungi admin dengan menyertakan visitor ID lama & baru.</p>
+                  </div>
+                  <div>
+                    <p className="font-semibold text-foreground">Q: Lupa PIN, bagaimana reset?</p>
+                    <p>A: Klik "Lupa PIN" di halaman saldo - token reset 5 digit dikirim ke WhatsApp.</p>
+                  </div>
+                  <div>
+                    <p className="font-semibold text-foreground">Q: Kenapa lagu/musik tidak bisa diputar?</p>
+                    <p>A: Cek troubleshooting audio di atas. Pastikan tidak ada app lain merebut audio focus.</p>
+                  </div>
+                  <div>
+                    <p className="font-semibold text-foreground">Q: Game saya stuck/tidak respon?</p>
+                    <p>A: Pastikan online, refresh halaman. Game state di-persist di localStorage.</p>
+                  </div>
+                  <div>
+                    <p className="font-semibold text-foreground">Q: Apakah bisa request fitur baru?</p>
+                    <p>A: Bisa! Buat tiket kategori "Saran" dengan deskripsi detail.</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Kontak Darurat */}
+              <div className="rounded-xl border border-border bg-card p-3 space-y-1.5">
+                <p className="font-bold text-foreground text-xs uppercase tracking-wider">🆘 Kontak Darurat</p>
+                <ul className="list-disc list-inside space-y-0.5 text-[13px]">
+                  <li><strong>WhatsApp Admin:</strong> 085769302532 (24/7)</li>
+                  <li><strong>Tiket Sistem:</strong> tab Tiket - respon 5-30 menit</li>
+                  <li><strong>Email:</strong> kelinganmantannnn@gmail.com</li>
+                  <li>Untuk laporan penipuan: tiket kategori <strong>Lapor Penipu</strong></li>
+                  <li>Untuk pelanggaran serius: hubungi admin langsung WA</li>
+                </ul>
+              </div>
+
               {/* Changelog */}
               <div className="rounded-xl border border-border bg-card p-3 space-y-1.5">
                 <p className="font-bold text-foreground text-xs uppercase tracking-wider">📝 Changelog v3.1</p>
