@@ -13,6 +13,7 @@ interface GemPackage {
   id: string; name: string; gems: number; bonus_gems: number; price: number; icon: string; sort_order: number;
   is_first_purchase_only?: boolean;
   bonus_streak_coins?: number;
+  bonus_game_credits?: number;
 }
 
 // Selalu utamakan visitor_id akun saldo (tempat pembelian gem dicatat)
@@ -30,7 +31,7 @@ export default function GemShop({ visitorId: visitorIdProp, onUpdate }: Props) {
   const [buying, setBuying] = useState<string | null>(null);
   const [qty, setQty] = useState<Record<string, number>>({});
   const [usedFirstIds, setUsedFirstIds] = useState<Set<string>>(new Set());
-  const [tab, setTab] = useState<"normal" | "diskon" | "bonus">("diskon");
+  const [tab, setTab] = useState<"normal" | "diskon" | "bonus" | "komplit">("diskon");
   const [hasPin, setHasPin] = useState(false);
   const [pinDialog, setPinDialog] = useState<{ pkg: GemPackage; quantity: number } | null>(null);
   const [pinInput, setPinInput] = useState("");
@@ -161,39 +162,47 @@ export default function GemShop({ visitorId: visitorIdProp, onUpdate }: Props) {
                   ...allDiskon.filter((p) => !usedFirstIds.has(p.id)),
                   ...allDiskon.filter((p) => usedFirstIds.has(p.id)),
                 ];
-                const bonusPkgs = packages.filter((p) => !p.is_first_purchase_only && (p.bonus_streak_coins || 0) > 0);
-                const normalPkgs = packages.filter((p) => !p.is_first_purchase_only && !((p.bonus_streak_coins || 0) > 0));
-                const activePkgs = tab === "diskon" ? diskonPkgs : tab === "bonus" ? bonusPkgs : normalPkgs;
+                const komplitPkgs = packages.filter((p) => !p.is_first_purchase_only && (p.bonus_game_credits || 0) > 0);
+                const bonusPkgs = packages.filter((p) => !p.is_first_purchase_only && (p.bonus_streak_coins || 0) > 0 && !((p.bonus_game_credits || 0) > 0));
+                const normalPkgs = packages.filter((p) => !p.is_first_purchase_only && !((p.bonus_streak_coins || 0) > 0) && !((p.bonus_game_credits || 0) > 0));
+                const activePkgs = tab === "diskon" ? diskonPkgs : tab === "bonus" ? bonusPkgs : tab === "komplit" ? komplitPkgs : normalPkgs;
                 return (
                   <>
-                    <div className="grid grid-cols-3 gap-1.5 p-1 bg-black/40 rounded-xl border border-white/10">
+                    <div className="grid grid-cols-4 gap-1 p-1 bg-black/40 rounded-xl border border-white/10">
                       <button
                         type="button"
                         onClick={() => setTab("diskon")}
-                        className={`py-2 rounded-lg text-[10px] font-black transition-all ${tab === "diskon" ? "bg-gradient-to-r from-pink-500 to-rose-500 text-white shadow-lg" : "text-white/60 hover:text-white"}`}
+                        className={`py-2 rounded-lg text-[9px] font-black transition-all ${tab === "diskon" ? "bg-gradient-to-r from-pink-500 to-rose-500 text-white shadow-lg" : "text-white/60 hover:text-white"}`}
                       >
                         🎁 Diskon {diskonPkgs.length > 0 && <span className="ml-0.5 px-1 py-0.5 rounded bg-white/20 text-[8px]">{diskonPkgs.length}</span>}
                       </button>
                       <button
                         type="button"
                         onClick={() => setTab("normal")}
-                        className={`py-2 rounded-lg text-[10px] font-black transition-all ${tab === "normal" ? "bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-lg" : "text-white/60 hover:text-white"}`}
+                        className={`py-2 rounded-lg text-[9px] font-black transition-all ${tab === "normal" ? "bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-lg" : "text-white/60 hover:text-white"}`}
                       >
                         💎 Normal
                       </button>
                       <button
                         type="button"
                         onClick={() => setTab("bonus")}
-                        className={`py-2 rounded-lg text-[10px] font-black transition-all ${tab === "bonus" ? "bg-gradient-to-r from-amber-500 to-orange-600 text-white shadow-lg" : "text-white/60 hover:text-white"}`}
+                        className={`py-2 rounded-lg text-[9px] font-black transition-all ${tab === "bonus" ? "bg-gradient-to-r from-amber-500 to-orange-600 text-white shadow-lg" : "text-white/60 hover:text-white"}`}
                       >
-                        🪙 Top Up Bonus {bonusPkgs.length > 0 && <span className="ml-0.5 px-1 py-0.5 rounded bg-white/20 text-[8px]">{bonusPkgs.length}</span>}
+                        🪙 Bonus {bonusPkgs.length > 0 && <span className="ml-0.5 px-1 py-0.5 rounded bg-white/20 text-[8px]">{bonusPkgs.length}</span>}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setTab("komplit")}
+                        className={`py-2 rounded-lg text-[9px] font-black transition-all ${tab === "komplit" ? "bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-lg" : "text-white/60 hover:text-white"}`}
+                      >
+                        🎯 Komplit {komplitPkgs.length > 0 && <span className="ml-0.5 px-1 py-0.5 rounded bg-white/20 text-[8px]">{komplitPkgs.length}</span>}
                       </button>
                     </div>
                     {activePkgs.length === 0 && (
                       <div className="rounded-xl border-2 border-dashed border-white/10 p-6 text-center">
-                        <p className="text-3xl mb-2">{tab === "diskon" ? "✅" : tab === "bonus" ? "🪙" : "💎"}</p>
+                        <p className="text-3xl mb-2">{tab === "diskon" ? "✅" : tab === "bonus" ? "🪙" : tab === "komplit" ? "🎯" : "💎"}</p>
                         <p className="text-sm font-bold text-white/70">
-                          {tab === "diskon" ? "Promo pertama sudah kamu klaim semua!" : tab === "bonus" ? "Belum ada paket Top Up Bonus." : "Belum ada paket normal."}
+                          {tab === "diskon" ? "Promo pertama sudah kamu klaim semua!" : tab === "bonus" ? "Belum ada paket Bonus." : tab === "komplit" ? "Belum ada paket Komplit." : "Belum ada paket normal."}
                         </p>
                         {tab === "diskon" && (
                           <button onClick={() => setTab("normal")} className="mt-3 text-xs text-cyan-400 underline">Lihat paket normal →</button>
@@ -251,10 +260,14 @@ export default function GemShop({ visitorId: visitorIdProp, onUpdate }: Props) {
                             {(p.bonus_streak_coins || 0) > 0 && (
                               <span className="text-amber-300"> + {formatCompactNumber((p.bonus_streak_coins || 0) * q)} 🪙</span>
                             )}
+                            {(p.bonus_game_credits || 0) > 0 && (
+                              <span className="text-emerald-300"> + {formatCompactNumber((p.bonus_game_credits || 0) * q)} 🔑</span>
+                            )}
                           </p>
                           <p className="text-[10px] text-white/60">
                             Total: {formatCompactNumber(total * q)} 💎
                             {(p.bonus_streak_coins || 0) > 0 && <> · {formatCompactNumber((p.bonus_streak_coins || 0) * q)} Koin Streak</>}
+                            {(p.bonus_game_credits || 0) > 0 && <> · {formatCompactNumber((p.bonus_game_credits || 0) * q)} Kredit Game</>}
                           </p>
                         </div>
                       </div>
