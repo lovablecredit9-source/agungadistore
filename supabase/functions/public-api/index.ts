@@ -1160,8 +1160,17 @@ Deno.serve(async (req) => {
         await supabase.from("deposits").update({ status: ns }).eq("id", dep2.id);
         if (ns === "approved") {
           const { data: bl } = await supabase.from("user_balances").select("id, balance").eq("visitor_id", dep2.visitor_id).maybeSingle();
-          if (bl) { await supabase.from("user_balances").update({ balance: bl.balance + dep2.amount }).eq("id", bl.id); await supabase.from("balance_transactions").insert({ visitor_id: dep2.visitor_id, type: "topup", amount: dep2.amount, description: `Deposit ${dep2.payment_method} dikonfirmasi` }); }
-          await supabase.from("notifications").insert({ visitor_id: dep2.visitor_id, title: "Deposit Dikonfirmasi", message: `Deposit ${dep2.trx_id} sebesar Rp ${dep2.amount.toLocaleString()} telah dikonfirmasi`, type: "success" });
+          if (bl) {
+            const bonus = dep2.amount >= 10000 ? Math.floor(dep2.amount * 0.1) : 0;
+            const totalAdd = dep2.amount + bonus;
+            await supabase.from("user_balances").update({ balance: bl.balance + totalAdd }).eq("id", bl.id);
+            await supabase.from("balance_transactions").insert({ visitor_id: dep2.visitor_id, type: "topup", amount: dep2.amount, description: `Deposit ${dep2.payment_method} dikonfirmasi` });
+            if (bonus > 0) {
+              await supabase.from("balance_transactions").insert({ visitor_id: dep2.visitor_id, type: "topup_bonus", amount: bonus, description: `🎁 Bonus 10% deposit (TRX: ${dep2.trx_id})` });
+            }
+          }
+          const bonus2 = dep2.amount >= 10000 ? Math.floor(dep2.amount * 0.1) : 0;
+          await supabase.from("notifications").insert({ visitor_id: dep2.visitor_id, title: "Deposit Dikonfirmasi", message: bonus2 > 0 ? `Deposit ${dep2.trx_id} Rp ${dep2.amount.toLocaleString()} + Bonus 10% Rp ${bonus2.toLocaleString()} telah masuk` : `Deposit ${dep2.trx_id} sebesar Rp ${dep2.amount.toLocaleString()} telah dikonfirmasi`, type: "success" });
         } else {
           await supabase.from("notifications").insert({ visitor_id: dep2.visitor_id, title: "Deposit Ditolak", message: `Deposit ${dep2.trx_id} ditolak`, type: "warning" });
         }
