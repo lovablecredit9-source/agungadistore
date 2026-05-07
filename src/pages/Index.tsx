@@ -4333,31 +4333,36 @@ const Index = () => {
                   <p className="text-center text-sm text-muted-foreground py-8">{t("balance.no_transactions", lang)}</p>
                 )}
                 {!banned && balanceTransactions.length > 0 && smartSaldo && (() => {
-                  const items: HistoryItem[] = balanceTransactions.map(tx => ({
-                    id: tx.id,
-                    title: tx.type === "topup" ? t("balance.topup", lang) : t("balance.purchase", lang),
-                    subtitle: tx.description || (tx.trx_id ? `ID: ${tx.trx_id}` : "-"),
-                    amount: tx.type === "topup" ? Math.abs(tx.amount) : -Math.abs(tx.amount),
-                    date: tx.created_at,
-                    category: tx.type === "topup" ? "Top Up" : "Pembelian",
-                    meta: { trx_id: tx.trx_id || "" },
-                  }));
+                  const items: HistoryItem[] = balanceTransactions.map(tx => {
+                    const income = isIncomeTx(tx.type);
+                    return {
+                      id: tx.id,
+                      title: getTxLabel(tx.type, lang),
+                      subtitle: tx.description || (tx.trx_id ? `ID: ${tx.trx_id}` : "-"),
+                      amount: income ? Math.abs(tx.amount) : -Math.abs(tx.amount),
+                      date: tx.created_at,
+                      category: tx.type === "topup_bonus" ? "Bonus" : income ? "Top Up" : "Pembelian",
+                      meta: { trx_id: tx.trx_id || "" },
+                    };
+                  });
                   const renderTx = (it: HistoryItem) => {
                     const tx = balanceTransactions.find(t => t.id === it.id);
                     if (!tx) return null;
+                    const income = isIncomeTx(tx.type);
+                    const isBonus = tx.type === "topup_bonus";
                     return (
-                      <Card className="cursor-pointer transition-all hover:shadow-md border border-border/60" onClick={() => setSelectedTransaction(tx)}>
+                      <Card className={`cursor-pointer transition-all hover:shadow-md border ${isBonus ? "border-amber-400/60 bg-amber-50/40 dark:bg-amber-950/20" : "border-border/60"}`} onClick={() => setSelectedTransaction(tx)}>
                         <CardContent className="p-3 flex items-center gap-3">
-                          <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${tx.type === "topup" ? "bg-accent/10" : "bg-destructive/10"}`}>
-                            {tx.type === "topup" ? <ArrowUpCircle className="w-5 h-5 text-accent" /> : <ArrowDownCircle className="w-5 h-5 text-destructive" />}
+                          <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${isBonus ? "bg-amber-500/15" : income ? "bg-accent/10" : "bg-destructive/10"}`}>
+                            {isBonus ? <span className="text-lg">🎁</span> : income ? <ArrowUpCircle className="w-5 h-5 text-accent" /> : <ArrowDownCircle className="w-5 h-5 text-destructive" />}
                           </div>
                           <div className="flex-1 min-w-0">
-                            <p className="font-bold text-sm">{tx.type === "topup" ? t("balance.topup", lang) : t("balance.purchase", lang)}</p>
+                            <p className="font-bold text-sm">{getTxLabel(tx.type, lang)}</p>
                             {tx.trx_id && <p className="text-[10px] text-muted-foreground font-mono">ID: {tx.trx_id}</p>}
                             <p className="text-[10px] text-muted-foreground truncate">{tx.description || "-"}</p>
                           </div>
-                          <span className={`font-bold text-sm ${tx.type === "topup" ? "text-accent" : "text-destructive"}`}>
-                            {tx.type === "topup" ? "+" : "-"}{formatPrice(tx.amount)}
+                          <span className={`font-bold text-sm ${isBonus ? "text-amber-600 dark:text-amber-400" : income ? "text-accent" : "text-destructive"}`}>
+                            {income ? "+" : "-"}{formatPrice(tx.amount)}
                           </span>
                         </CardContent>
                       </Card>
@@ -4367,7 +4372,7 @@ const Index = () => {
                     <HistoryEnhancer
                       title="Riwayat Transaksi Saldo"
                       items={items}
-                      categories={["Top Up", "Pembelian"]}
+                      categories={["Top Up", "Bonus", "Pembelian"]}
                       formatAmount={formatPrice}
                       exportPrefix="riwayat-saldo"
                       storeName={STORE_NAME}
@@ -4376,8 +4381,11 @@ const Index = () => {
                   );
                 })()}
                 {!banned && !smartSaldo && balanceTransactions.map(tx => {
-                  const isTopup = tx.type === "topup";
-                  const accent = isTopup
+                  const isTopup = isIncomeTx(tx.type);
+                  const isBonus = tx.type === "topup_bonus";
+                  const accent = isBonus
+                    ? { color: "from-amber-400 to-orange-500", glow: "251,191,36", icon: <span className="text-xl">🎁</span> }
+                    : isTopup
                     ? { color: "from-emerald-500 to-green-500", glow: "16,185,129", icon: <ArrowUpCircle className="w-5 h-5 text-white" strokeWidth={2.4} /> }
                     : { color: "from-rose-500 to-red-500", glow: "244,63,94", icon: <ArrowDownCircle className="w-5 h-5 text-white" strokeWidth={2.4} /> };
                   return (
