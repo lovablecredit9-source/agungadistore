@@ -622,16 +622,33 @@ const AdminDashboard = () => {
     const user = userBalances.find(u => u.visitor_id === topupVisitorId);
     if (!user) { toast({ title: "User tidak ditemukan", variant: "destructive" }); return; }
 
+    // Hitung bonus 10% jika top up >= Rp 10.000
+    const bonus = amount >= 10000 ? Math.floor(amount * 0.1) : 0;
+    const totalAdd = amount + bonus;
+    const fmt = (n: number) => new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", minimumFractionDigits: 0 }).format(n);
+
     // Update balance
-    await supabase.from("user_balances").update({ balance: user.balance + amount }).eq("id", user.id);
-    // Record transaction
+    await supabase.from("user_balances").update({ balance: user.balance + totalAdd }).eq("id", user.id);
+    // Record transaction (pokok)
     await supabase.from("balance_transactions").insert({
       visitor_id: topupVisitorId, type: "topup", amount, description: topupDesc.trim() || `Topup saldo oleh admin`,
     });
-    toast({ title: `Saldo ${user.username} ditambah ${new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", minimumFractionDigits: 0 }).format(amount)}` });
+    // Record bonus
+    if (bonus > 0) {
+      await supabase.from("balance_transactions").insert({
+        visitor_id: topupVisitorId, type: "topup_bonus", amount: bonus,
+        description: `🎁 Bonus 10% topup admin (${fmt(amount)})`,
+      });
+    }
+    toast({ title: bonus > 0 ? `Saldo ${user.username} +${fmt(amount)} + Bonus ${fmt(bonus)}` : `Saldo ${user.username} ditambah ${fmt(amount)}` });
     // Notify user
     await supabase.from("notifications").insert({
-      visitor_id: topupVisitorId, title: "Saldo Ditambahkan 💰", message: `Saldo kamu bertambah ${new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", minimumFractionDigits: 0 }).format(amount)}`, type: "topup",
+      visitor_id: topupVisitorId,
+      title: bonus > 0 ? "🎁 Saldo + Bonus 10%" : "Saldo Ditambahkan 💰",
+      message: bonus > 0
+        ? `Saldo +${fmt(amount)} dan bonus 10% +${fmt(bonus)}. Total: ${fmt(totalAdd)}`
+        : `Saldo kamu bertambah ${fmt(amount)}`,
+      type: "topup",
     } as any);
     setTopupAmount(""); setTopupDesc("");
     fetchUserBalances();
