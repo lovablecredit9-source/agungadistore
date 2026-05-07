@@ -166,7 +166,7 @@ Deno.serve(async (req) => {
       const { data: gameBal } = await admin.from("game_balance").select("id, amount, total_spent").eq("visitor_id", visitorId).maybeSingle();
       const { data: balance } = await admin.from("user_balances").select("id, balance, bonus_balance").eq("visitor_id", visitorId).maybeSingle();
       const gameAmount = gameBal?.amount || 0;
-      const mainAmount = balance?.balance || 0;
+      const mainAmount = (balance?.balance || 0) + (balance?.bonus_balance || 0); // include Saldo Bonus
 
       let payFromGame = 0;
       let payFromMain = 0;
