@@ -251,6 +251,22 @@ function getDepositStatusLabel(status: string, lang: Lang) {
   return lang === "id" ? "Belum dikonfirmasi admin" : "Waiting for admin confirmation";
 }
 
+// Tipe transaksi pemasukan (saldo bertambah)
+const INCOME_TX_TYPES = new Set(["topup", "topup_bonus", "reward", "lucky_draw_win", "weekly_leaderboard", "game_credit_reward"]);
+function isIncomeTx(type: string) { return INCOME_TX_TYPES.has(type); }
+function getTxLabel(type: string, lang: Lang) {
+  if (type === "topup_bonus") return lang === "id" ? "🎁 Bonus Top Up" : "🎁 Topup Bonus";
+  if (type === "topup") return t("balance.topup", lang);
+  if (type === "reward") return lang === "id" ? "🏆 Hadiah" : "🏆 Reward";
+  if (type === "lucky_draw_win") return lang === "id" ? "🎰 Lucky Draw" : "🎰 Lucky Draw";
+  if (type === "weekly_leaderboard") return lang === "id" ? "🏅 Leaderboard" : "🏅 Leaderboard";
+  if (type === "gem_purchase") return lang === "id" ? "💎 Beli Gem" : "💎 Gem Purchase";
+  if (type === "luck_buy") return lang === "id" ? "🍀 Luck Spin" : "🍀 Luck Spin";
+  if (type === "streak_pass_premium") return lang === "id" ? "🔥 Streak Pass" : "🔥 Streak Pass";
+  if (type === "game_credit_reward") return lang === "id" ? "🔑 Reward Kredit" : "🔑 Credit Reward";
+  return t("balance.purchase", lang);
+}
+
 function validateProfileInput(username: string, phone: string) {
   const result = z.object({ username: usernameSchema, phone: phoneSchema }).safeParse({ username, phone });
 
