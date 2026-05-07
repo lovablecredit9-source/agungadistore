@@ -108,12 +108,16 @@ Deno.serve(async (request) => {
       payFromGame = price;
       sourceLabel = "Saldo IN";
     } else {
-      if (gameAmount + mainAmount < price) {
+      if (gameAmount >= price) {
+        payFromGame = price; sourceLabel = "Saldo IN";
+      } else if (mainAmount >= price) {
+        payFromMain = price; sourceLabel = "Saldo Utama";
+      } else if (gameAmount + mainAmount >= price) {
+        payFromGame = gameAmount; payFromMain = price - gameAmount;
+        sourceLabel = "Saldo IN + Utama";
+      } else {
         return Response.json({ error: `Saldo tidak cukup. Butuh Rp${price.toLocaleString("id-ID")}, total (Saldo IN + Utama) Rp${(gameAmount + mainAmount).toLocaleString("id-ID")}` }, { status: 400, headers: corsHeaders });
       }
-      payFromGame = Math.min(gameAmount, price);
-      payFromMain = price - payFromGame;
-      sourceLabel = payFromGame > 0 && payFromMain > 0 ? "Saldo IN + Utama" : payFromGame > 0 ? "Saldo IN" : "Saldo Utama";
     }
 
     if (payFromGame > 0 && gameBal) {
