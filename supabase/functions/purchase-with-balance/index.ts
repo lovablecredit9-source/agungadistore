@@ -250,7 +250,7 @@ Deno.serve(async (request) => {
 
     if (transactionError) {
       // Rollback balance
-      await admin.rpc("refund_main_balance_only", { p_balance_id: balanceRow.id, p_amount: totalPrice });
+      await admin.from("user_balances").update({ balance: balanceRow.balance }).eq("id", balanceRow.id);
       return Response.json({ error: "Gagal mencatat pembelian" }, { status: 500, headers: corsHeaders });
     }
 
