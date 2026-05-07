@@ -130,7 +130,7 @@ export default function PlusTab() {
     setCreditBuying(pkgId);
     try {
       const { data, error } = await supabase.functions.invoke("purchase-game-credits", {
-        body: { action: "purchase", visitorId: balVid, packageId: pkgId, pin: pin || undefined, voucherCode: creditVoucherValid ? creditVoucher.trim() : undefined },
+        body: { action: "purchase", visitorId: balVid, packageId: pkgId, pin: pin || undefined, voucherCode: creditVoucherValid ? creditVoucher.trim() : undefined, paymentSource },
       });
       if (error) {
         if (error instanceof FunctionsHttpError) {
