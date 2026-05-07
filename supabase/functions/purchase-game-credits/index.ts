@@ -136,8 +136,8 @@ Deno.serve(async (req) => {
       const pinVisitorIds = [visitorId, balRowForPin?.visitor_id].filter(Boolean) as string[];
       const { data: pinRows } = await admin.from("user_pins").select("pin_hash, visitor_id").in("visitor_id", pinVisitorIds);
       const pinRow = pinRows && pinRows.length > 0 ? pinRows[0] : null;
-      if (!pinRow) return Response.json({ error: "PIN belum dibuat", needPin: true }, { status: 403, headers: corsHeaders });
-      if (!pin) return Response.json({ error: "PIN diperlukan", needPin: true }, { status: 403, headers: corsHeaders });
+      if (!pinRow) return Response.json({ error: "PIN belum dibuat", needPin: true }, { status: 200, headers: corsHeaders });
+      if (!pin) return Response.json({ error: "PIN diperlukan", needPin: true }, { status: 200, headers: corsHeaders });
       const encoder = new TextEncoder();
       const hashBuffer = await crypto.subtle.digest("SHA-256", encoder.encode(pin));
       const hashHex = Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, "0")).join("");

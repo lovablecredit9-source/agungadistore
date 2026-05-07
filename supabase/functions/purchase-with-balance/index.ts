@@ -51,7 +51,7 @@ Deno.serve(async (request) => {
       .maybeSingle();
 
     if (!pinRow) {
-      return Response.json({ error: "PIN belum dibuat", needPin: true }, { status: 403, headers: corsHeaders });
+      return Response.json({ error: "PIN belum dibuat", needPin: true }, { status: 200, headers: corsHeaders });
     }
     if (!pin) {
       return Response.json({ error: "PIN diperlukan untuk pembelian", needPin: true }, { status: 403, headers: corsHeaders });

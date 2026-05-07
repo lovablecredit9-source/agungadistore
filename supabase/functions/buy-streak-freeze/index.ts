@@ -37,8 +37,8 @@ Deno.serve(async (req) => {
       .in("visitor_id", [visitorId, balanceRow.visitor_id]);
 
     const pinRow = pinRows && pinRows.length > 0 ? pinRows[0] : null;
-    if (!pinRow) return Response.json({ error: "PIN belum dibuat. Buat PIN di tab Plus → Saldo Saya.", needPin: true }, { status: 403, headers: corsHeaders });
-    if (!pin) return Response.json({ error: "PIN diperlukan", needPin: true }, { status: 403, headers: corsHeaders });
+    if (!pinRow) return Response.json({ error: "PIN belum dibuat. Buat PIN di tab Plus → Saldo Saya.", needPin: true }, { status: 200, headers: corsHeaders });
+    if (!pin) return Response.json({ error: "PIN diperlukan", needPin: true }, { status: 200, headers: corsHeaders });
     const encoder = new TextEncoder();
     const hashBuffer = await crypto.subtle.digest("SHA-256", encoder.encode(pin));
     const hashHex = Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, "0")).join("");
