@@ -54,9 +54,9 @@ Deno.serve(async (req) => {
     if (hashHex !== pinRow.pin_hash) return Response.json({ error: "PIN salah", needPin: true }, { status: 200, headers: corsHeaders });
 
     // Check balance
-    const { data: balanceRow } = await admin.from("user_balances").select("id, balance, bonus_balance").eq("visitor_id", visitorId).maybeSingle();
+    const { data: balanceRow } = await admin.from("user_balances").select("id, balance").eq("visitor_id", visitorId).maybeSingle();
     if (!balanceRow) return Response.json({ error: "Akun saldo tidak ditemukan" }, { status: 404, headers: corsHeaders });
-    if (((balanceRow.balance || 0) + (balanceRow.bonus_balance || 0)) < bundle.price) return Response.json({ error: "Saldo tidak cukup" }, { status: 400, headers: corsHeaders });
+    if (balanceRow.balance < bundle.price) return Response.json({ error: "Saldo tidak cukup" }, { status: 400, headers: corsHeaders });
 
     // Deduct balance
     const newBalance = balanceRow.balance - bundle.price;

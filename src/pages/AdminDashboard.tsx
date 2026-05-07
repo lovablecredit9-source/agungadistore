@@ -527,13 +527,13 @@ const AdminDashboard = () => {
       fetchDeposits();
       return;
     }
-    // Hitung bonus 10% jika deposit >= Rp 10.000 (masuk ke saldo bonus terpisah)
+    // Hitung bonus 10% jika deposit >= Rp 10.000 (masuk ke saldo IN terpisah)
     const bonus = dep.amount >= 10000 ? Math.floor(dep.amount * 0.1) : 0;
     // Add saldo utama (pokok saja)
     await supabase.from("user_balances").update({ balance: user.balance + dep.amount }).eq("id", user.id);
-    // Add saldo bonus (terpisah)
+    // Add saldo IN (terpisah)
     if (bonus > 0) {
-      await supabase.rpc("add_bonus_balance" as any, { p_visitor_id: dep.visitor_id, p_amount: bonus });
+      await supabase.rpc("add_topup_bonus_to_saldo_in" as any, { p_visitor_id: dep.visitor_id, p_amount: bonus });
     }
     // Record transaction (pokok)
     await supabase.from("balance_transactions").insert({
@@ -543,18 +543,18 @@ const AdminDashboard = () => {
     if (bonus > 0) {
       await supabase.from("balance_transactions").insert({
         visitor_id: dep.visitor_id, type: "topup_bonus", amount: bonus,
-        description: `🎁 Bonus 10% deposit → Saldo Bonus (TRX: ${dep.trx_id})`,
+        description: `🎁 Bonus 10% deposit → Saldo IN (TRX: ${dep.trx_id})`,
       });
     }
     const fmt = (n: number) => new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", minimumFractionDigits: 0 }).format(n);
     await supabase.from("notifications").insert({
       visitor_id: dep.visitor_id, title: "Deposit Disetujui ✅",
       message: bonus > 0
-        ? `Deposit ${fmt(dep.amount)} berhasil. Bonus 10% +${fmt(bonus)} masuk ke Saldo Bonus (khusus pembelian internal: gem, kredit, membership).`
+        ? `Deposit ${fmt(dep.amount)} berhasil. Bonus 10% +${fmt(bonus)} masuk ke Saldo IN (bisa dipakai untuk Game Shop).`
         : `Deposit ${fmt(dep.amount)} berhasil diverifikasi. Saldo telah ditambahkan.`,
       type: "deposit_approved",
     } as any);
-    toast({ title: bonus > 0 ? `Deposit ${fmt(dep.amount)} disetujui + Bonus ${fmt(bonus)} (Saldo Bonus)` : `Deposit ${fmt(dep.amount)} disetujui!` });
+    toast({ title: bonus > 0 ? `Deposit ${fmt(dep.amount)} disetujui + Bonus ${fmt(bonus)} (Saldo IN)` : `Deposit ${fmt(dep.amount)} disetujui!` });
     fetchDeposits();
     fetchUserBalances();
   }
@@ -623,14 +623,14 @@ const AdminDashboard = () => {
     const user = userBalances.find(u => u.visitor_id === topupVisitorId);
     if (!user) { toast({ title: "User tidak ditemukan", variant: "destructive" }); return; }
 
-    // Hitung bonus 10% jika top up >= Rp 10.000 (masuk ke saldo bonus terpisah)
+    // Hitung bonus 10% jika top up >= Rp 10.000 (masuk ke saldo IN terpisah)
     const bonus = amount >= 10000 ? Math.floor(amount * 0.1) : 0;
     const fmt = (n: number) => new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", minimumFractionDigits: 0 }).format(n);
 
     // Update saldo utama (pokok saja)
     await supabase.from("user_balances").update({ balance: user.balance + amount }).eq("id", user.id);
     if (bonus > 0) {
-      await supabase.rpc("add_bonus_balance" as any, { p_visitor_id: topupVisitorId, p_amount: bonus });
+      await supabase.rpc("add_topup_bonus_to_saldo_in" as any, { p_visitor_id: topupVisitorId, p_amount: bonus });
     }
     await supabase.from("balance_transactions").insert({
       visitor_id: topupVisitorId, type: "topup", amount, description: topupDesc.trim() || `Topup saldo oleh admin`,
@@ -638,15 +638,15 @@ const AdminDashboard = () => {
     if (bonus > 0) {
       await supabase.from("balance_transactions").insert({
         visitor_id: topupVisitorId, type: "topup_bonus", amount: bonus,
-        description: `🎁 Bonus 10% topup admin → Saldo Bonus (${fmt(amount)})`,
+        description: `🎁 Bonus 10% topup admin → Saldo IN (${fmt(amount)})`,
       });
     }
-    toast({ title: bonus > 0 ? `Saldo ${user.username} +${fmt(amount)} | Saldo Bonus +${fmt(bonus)}` : `Saldo ${user.username} ditambah ${fmt(amount)}` });
+    toast({ title: bonus > 0 ? `Saldo ${user.username} +${fmt(amount)} | Saldo IN +${fmt(bonus)}` : `Saldo ${user.username} ditambah ${fmt(amount)}` });
     await supabase.from("notifications").insert({
       visitor_id: topupVisitorId,
       title: bonus > 0 ? "🎁 Saldo + Bonus 10%" : "Saldo Ditambahkan 💰",
       message: bonus > 0
-        ? `Saldo utama +${fmt(amount)}. Bonus 10% +${fmt(bonus)} masuk ke Saldo Bonus (khusus pembelian internal: gem, kredit, membership).`
+        ? `Saldo utama +${fmt(amount)}. Bonus 10% +${fmt(bonus)} masuk ke Saldo IN (bisa dipakai untuk Game Shop).`
         : `Saldo kamu bertambah ${fmt(amount)}`,
       type: "topup",
     } as any);

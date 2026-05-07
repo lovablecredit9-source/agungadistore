@@ -160,7 +160,7 @@ async function adjustTickets(admin: any, visitorId: string, type: "normal" | "pr
   const { key, userBalanceId } = await getAccountKey(admin, visitorId);
   const { data: row } = await admin
     .from("luck_spin_tickets")
-    .select("id, balance, total_purchased, total_used, bonus_balance")
+    .select("id, balance, total_purchased, total_used")
     .eq("account_key", key)
     .eq("ticket_type", type)
     .maybeSingle();
@@ -1817,7 +1817,7 @@ Deno.serve(async (req) => {
       }
       const { data: balanceRow } = await admin
         .from("user_balances")
-        .select("id, balance, username, bonus_balance")
+        .select("id, balance, username")
         .eq("id", ubId)
         .maybeSingle();
       if (!balanceRow) return Response.json({ error: "Akun saldo tidak ditemukan" }, { status: 400, headers: corsHeaders });
@@ -1901,7 +1901,7 @@ Deno.serve(async (req) => {
 
       const { data: balanceRow } = await admin
         .from("user_balances")
-        .select("id, balance, username, bonus_balance")
+        .select("id, balance, username")
         .eq("id", ubId)
         .maybeSingle();
       if (!balanceRow) return Response.json({ error: "Akun saldo tidak ditemukan" }, { status: 400, headers: corsHeaders });
@@ -1962,7 +1962,7 @@ Deno.serve(async (req) => {
 
       const { data: ubId } = await admin.rpc("get_active_user_balance_id", { p_visitor_id: visitorId });
       if (!ubId) return Response.json({ error: "Login akun saldo dulu untuk beli Nyawa Premium" }, { status: 400, headers: corsHeaders });
-      const { data: balanceRow } = await admin.from("user_balances").select("id, balance, username, bonus_balance").eq("id", ubId).maybeSingle();
+      const { data: balanceRow } = await admin.from("user_balances").select("id, balance, username").eq("id", ubId).maybeSingle();
       if (!balanceRow) return Response.json({ error: "Akun saldo tidak ditemukan" }, { status: 400, headers: corsHeaders });
       if ((balanceRow.balance || 0) < NYAWA_PREMIUM_PRICE) {
         return Response.json({ error: `Saldo tidak cukup. Butuh Rp ${NYAWA_PREMIUM_PRICE.toLocaleString("id-ID")} (saldo: Rp ${(balanceRow.balance || 0).toLocaleString("id-ID")})` }, { status: 400, headers: corsHeaders });
