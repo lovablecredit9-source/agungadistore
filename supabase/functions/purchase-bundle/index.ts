@@ -127,18 +127,22 @@ Deno.serve(async (req) => {
       await admin.from("user_music_storage").insert({ visitor_id: visitorId, storage_mb: bundle.storage_mb, voucher_code: `BUNDLE-${Date.now()}`, expires_at: expiresAt });
     }
 
-    // Record transaction
-    await admin.from("balance_transactions").insert({
-      visitor_id: visitorId,
-      type: "purchase",
-      amount: bundle.price,
-      description: `Beli Paket Bundel: ${bundle.name}`,
-    });
+    // Record transaction (only main portion in balance_transactions)
+    if (payFromMain > 0) {
+      await admin.from("balance_transactions").insert({
+        visitor_id: visitorId,
+        type: "purchase",
+        amount: payFromMain,
+        description: `Beli Paket Bundel: ${bundle.name} [${sourceLabel}]`,
+      });
+    }
 
     return Response.json({
       success: true,
       bundle_name: bundle.name,
       balance_remaining: newBalance,
+      game_balance_remaining: gameAmount - payFromGame,
+      source_label: sourceLabel,
     }, { headers: corsHeaders });
 
   } catch (error) {
