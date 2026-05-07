@@ -147,6 +147,13 @@ Deno.serve(async (req) => {
       type: "gem_purchase",
       description: `Beli ${pkg.name}${qtyLabel}: ${totalGems} 💎${comboTxt}`,
     });
+    const splitTxt = usedBonus > 0 ? ` [Saldo Bonus: -Rp${usedBonus.toLocaleString("id-ID")}${usedMain > 0 ? `, Saldo Utama: -Rp${usedMain.toLocaleString("id-ID")}` : ""}]` : "";
+    await admin.from("balance_transactions").insert({
+      visitor_id: visitorId,
+      amount: -totalPrice,
+      type: "gem_purchase",
+      description: `Beli ${pkg.name}${qtyLabel}: ${totalGems} 💎${comboTxt}${splitTxt}`,
+    });
     await admin.from("notifications").insert({
       visitor_id: visitorId,
       title: parts.length ? "🎁 Combo Diterima!" : "💎 Gem Bertambah!",
@@ -154,7 +161,7 @@ Deno.serve(async (req) => {
       type: "gem",
     });
 
-    return Response.json({ success: true, gems_added: totalGems, streak_coins_added: totalStreakCoins, game_credits_added: totalGameCredits, quantity, new_balance: bal.balance - totalPrice }, { headers: corsHeaders });
+    return Response.json({ success: true, gems_added: totalGems, streak_coins_added: totalStreakCoins, game_credits_added: totalGameCredits, quantity, new_balance: newBalance, used_bonus: usedBonus, used_main: usedMain }, { headers: corsHeaders });
   } catch (e) {
     return Response.json({ error: e instanceof Error ? e.message : "Error" }, { status: 500, headers: corsHeaders });
   }
