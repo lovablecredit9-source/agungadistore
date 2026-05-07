@@ -4439,11 +4439,12 @@ const Index = () => {
                           <X className="w-4 h-4" />
                         </Button>
                       </div>
-                      <div className={`w-14 h-14 rounded-2xl flex items-center justify-center mx-auto ${selectedTransaction.type === "topup" ? "bg-accent/10" : "bg-destructive/10"}`}>
-                        {selectedTransaction.type === "topup" ? <ArrowUpCircle className="w-8 h-8 text-accent" /> : <ArrowDownCircle className="w-8 h-8 text-destructive" />}
+                      {(() => { const _inc = isIncomeTx(selectedTransaction.type); const _bonus = selectedTransaction.type === "topup_bonus"; return (<>
+                      <div className={`w-14 h-14 rounded-2xl flex items-center justify-center mx-auto ${_bonus ? "bg-amber-500/15" : _inc ? "bg-accent/10" : "bg-destructive/10"}`}>
+                        {_bonus ? <span className="text-3xl">🎁</span> : _inc ? <ArrowUpCircle className="w-8 h-8 text-accent" /> : <ArrowDownCircle className="w-8 h-8 text-destructive" />}
                       </div>
-                      <p className={`text-center font-bold text-2xl ${selectedTransaction.type === "topup" ? "text-accent" : "text-destructive"}`}>
-                        {selectedTransaction.type === "topup" ? "+" : "-"}{formatPrice(selectedTransaction.amount)}
+                      <p className={`text-center font-bold text-2xl ${_bonus ? "text-amber-600 dark:text-amber-400" : _inc ? "text-accent" : "text-destructive"}`}>
+                        {_inc ? "+" : "-"}{formatPrice(Math.abs(selectedTransaction.amount))}
                       </p>
                       <div className="space-y-2.5 text-sm">
                         {selectedTransaction.trx_id && (
@@ -4459,7 +4460,7 @@ const Index = () => {
                         )}
                         <div className="flex justify-between px-3 py-1.5">
                           <span className="text-muted-foreground text-xs">Tipe</span>
-                          <span className="font-bold text-xs">{selectedTransaction.type === "topup" ? "Top Up" : "Pembelian"}</span>
+                          <span className="font-bold text-xs">{getTxLabel(selectedTransaction.type, lang)}</span>
                         </div>
                         <div className="flex justify-between px-3 py-1.5">
                           <span className="text-muted-foreground text-xs">Tanggal</span>
