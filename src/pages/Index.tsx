@@ -4416,7 +4416,7 @@ const Index = () => {
                           </div>
                         </div>
                         <div className="flex-1 min-w-0 relative">
-                          <p className="font-extrabold text-sm text-foreground">{isTopup ? t("balance.topup", lang) : t("balance.purchase", lang)}</p>
+                          <p className="font-extrabold text-sm text-foreground">{getTxLabel(tx.type, lang)}</p>
                           {tx.trx_id && <p className="text-[10px] text-muted-foreground font-mono truncate">🆔 {tx.trx_id}</p>}
                           <p className="text-[10px] text-muted-foreground truncate">📝 {tx.description || "-"}</p>
                           <p className="text-[10px] text-muted-foreground">⏱️ {new Date(tx.created_at).toLocaleString("id-ID")}</p>
