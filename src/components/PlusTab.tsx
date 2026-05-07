@@ -205,7 +205,7 @@ export default function PlusTab() {
     setBundleBuying(pkgId);
     try {
       const { data, error } = await supabase.functions.invoke("purchase-bundle", {
-        body: { visitorId: balVid, packageId: pkgId, pin: pin || undefined },
+        body: { visitorId: balVid, packageId: pkgId, pin: pin || undefined, paymentSource },
       });
       if (error) {
         if (error instanceof FunctionsHttpError) {
