@@ -225,14 +225,14 @@ Deno.serve(async (request) => {
     const selectedTokens = availableTokens.slice(0, quantity);
     const nextBalance = balanceRow.balance - totalPrice;
 
-    // Update balance — produk biasa: HANYA saldo utama, jangan pakai saldo bonus
-    const { error: balanceUpdateError } = await admin.rpc("consume_main_balance_only", {
-      p_balance_id: balanceRow.id,
-      p_amount: totalPrice,
-    });
+    // Update balance
+    const { error: balanceUpdateError } = await admin
+      .from("user_balances")
+      .update({ balance: nextBalance })
+      .eq("id", balanceRow.id);
 
     if (balanceUpdateError) {
-      return Response.json({ error: balanceUpdateError.message || "Gagal memotong saldo" }, { status: 500, headers: corsHeaders });
+      return Response.json({ error: "Gagal memotong saldo" }, { status: 500, headers: corsHeaders });
     }
 
     // Insert all transactions
