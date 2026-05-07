@@ -62,6 +62,7 @@ export default function PlusTab() {
   const [flashSaleEnd, setFlashSaleEnd] = useState("");
   const [creditDiscount, setCreditDiscount] = useState(0);
   const [streakDiscount, setStreakDiscount] = useState(0);
+  const [paymentSource, setPaymentSource] = useState<"auto" | "game" | "main">("auto");
 
   const fetchBalance = useCallback(async () => {
     setLoading(true);
@@ -129,7 +130,7 @@ export default function PlusTab() {
     setCreditBuying(pkgId);
     try {
       const { data, error } = await supabase.functions.invoke("purchase-game-credits", {
-        body: { action: "purchase", visitorId: balVid, packageId: pkgId, pin: pin || undefined, voucherCode: creditVoucherValid ? creditVoucher.trim() : undefined },
+        body: { action: "purchase", visitorId: balVid, packageId: pkgId, pin: pin || undefined, voucherCode: creditVoucherValid ? creditVoucher.trim() : undefined, paymentSource },
       });
       if (error) {
         if (error instanceof FunctionsHttpError) {
@@ -154,7 +155,7 @@ export default function PlusTab() {
     setStreakBuying(pkgId);
     try {
       const { data, error } = await supabase.functions.invoke("purchase-streak-plan", {
-        body: { visitorId: balVid, packageId: pkgId, pin: pin || undefined },
+        body: { visitorId: balVid, packageId: pkgId, pin: pin || undefined, paymentSource },
       });
       if (error) {
         if (error instanceof FunctionsHttpError) {
@@ -179,7 +180,7 @@ export default function PlusTab() {
     setStorageBuying(pkgId);
     try {
       const { data, error } = await supabase.functions.invoke("upgrade-storage", {
-        body: { visitorId: balVid, packageId: pkgId, pin: pin || undefined },
+        body: { visitorId: balVid, packageId: pkgId, pin: pin || undefined, paymentSource },
       });
       if (error) {
         if (error instanceof FunctionsHttpError) {
@@ -204,7 +205,7 @@ export default function PlusTab() {
     setBundleBuying(pkgId);
     try {
       const { data, error } = await supabase.functions.invoke("purchase-bundle", {
-        body: { visitorId: balVid, packageId: pkgId, pin: pin || undefined },
+        body: { visitorId: balVid, packageId: pkgId, pin: pin || undefined, paymentSource },
       });
       if (error) {
         if (error instanceof FunctionsHttpError) {
@@ -298,6 +299,39 @@ export default function PlusTab() {
         <p className="text-[11px] text-foreground font-medium leading-relaxed flex items-start gap-2">
           <Zap className="w-4 h-4 text-amber-400 shrink-0 mt-0.5 animate-sticker" />
           <span><strong className="text-amber-500">Saldo IN</strong> dipakai untuk Game, Streak, dan Storage — bukan pembelian produk.</span>
+        </p>
+      </div>
+
+      {/* SUMBER PEMBAYARAN */}
+      <div className="rounded-2xl bg-card border-2 border-border p-3 space-y-2">
+        <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1">
+          <Wallet className="w-3 h-3" /> Sumber Pembayaran
+        </p>
+        <div className="grid grid-cols-3 gap-1.5">
+          <button
+            type="button"
+            onClick={() => setPaymentSource("auto")}
+            className={`text-[11px] font-bold rounded-lg py-2 px-1 border-2 transition ${paymentSource === "auto" ? "bg-primary text-primary-foreground border-primary" : "bg-card border-border text-muted-foreground"}`}
+          >
+            Otomatis
+          </button>
+          <button
+            type="button"
+            onClick={() => setPaymentSource("game")}
+            className={`text-[11px] font-bold rounded-lg py-2 px-1 border-2 transition ${paymentSource === "game" ? "bg-emerald-600 text-white border-emerald-600" : "bg-card border-border text-muted-foreground"}`}
+          >
+            Saldo IN
+          </button>
+          <button
+            type="button"
+            onClick={() => setPaymentSource("main")}
+            className={`text-[11px] font-bold rounded-lg py-2 px-1 border-2 transition ${paymentSource === "main" ? "bg-primary text-primary-foreground border-primary" : "bg-card border-border text-muted-foreground"}`}
+          >
+            Saldo Utama
+          </button>
+        </div>
+        <p className="text-[10px] text-muted-foreground">
+          {paymentSource === "auto" ? "Pakai Saldo IN dulu jika cukup, jika tidak baru Saldo Utama (atau gabungan)." : paymentSource === "game" ? `Pakai Saldo IN saja (Rp ${gameBalance.toLocaleString("id-ID")}).` : `Pakai Saldo Utama saja (${formatPrice(userBalance?.balance || 0)}).`}
         </p>
       </div>
 
