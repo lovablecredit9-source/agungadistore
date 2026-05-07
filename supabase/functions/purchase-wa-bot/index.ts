@@ -75,7 +75,7 @@ Deno.serve(async (request) => {
     // Get balance
     const { data: balanceRow, error: balanceError } = await admin
       .from("user_balances")
-      .select("id, balance, bonus_balance")
+      .select("id, balance")
       .eq("visitor_id", visitorId)
       .maybeSingle();
 

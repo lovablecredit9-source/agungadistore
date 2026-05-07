@@ -26,7 +26,7 @@ Deno.serve(async (req) => {
     });
 
     // Get balance account (akun saldo aktif untuk visitor ini)
-    const { data: balanceRow } = await admin.from("user_balances").select("id, balance, visitor_id, bonus_balance").eq("visitor_id", visitorId).maybeSingle();
+    const { data: balanceRow } = await admin.from("user_balances").select("id, balance, visitor_id").eq("visitor_id", visitorId).maybeSingle();
     if (!balanceRow) return Response.json({ error: "Akun saldo tidak ditemukan. Login/daftar saldo dulu di tab Plus → Saldo Saya." }, { status: 404, headers: corsHeaders });
 
     // Verify PIN — cari PIN berdasarkan visitor_id akun saldo (bukan browser visitor)
