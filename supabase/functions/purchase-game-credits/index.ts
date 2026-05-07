@@ -181,10 +181,17 @@ Deno.serve(async (req) => {
         payFromGame = finalPrice;
         sourceLabel = "Saldo IN";
       } else {
-        if (gameAmount + mainAmount < finalPrice) return Response.json({ error: "Saldo tidak cukup (gabungan Saldo IN + Utama)" }, { status: 400, headers: corsHeaders });
-        payFromGame = Math.min(gameAmount, finalPrice);
-        payFromMain = finalPrice - payFromGame;
-        sourceLabel = payFromGame > 0 && payFromMain > 0 ? "Saldo IN + Utama" : payFromGame > 0 ? "Saldo IN" : "Saldo Utama";
+        // AUTO: Saldo IN cukup → pakai Saldo IN penuh; selain itu pakai Saldo Utama penuh; jika dua-duanya tidak cukup sendiri, baru gabung
+        if (gameAmount >= finalPrice) {
+          payFromGame = finalPrice; sourceLabel = "Saldo IN";
+        } else if (mainAmount >= finalPrice) {
+          payFromMain = finalPrice; sourceLabel = "Saldo Utama";
+        } else if (gameAmount + mainAmount >= finalPrice) {
+          payFromGame = gameAmount; payFromMain = finalPrice - gameAmount;
+          sourceLabel = "Saldo IN + Utama";
+        } else {
+          return Response.json({ error: "Saldo tidak cukup (Saldo IN & Saldo Utama)" }, { status: 400, headers: corsHeaders });
+        }
       }
 
       // Deduct Saldo IN — pakai akumulasi total_spent yang benar (bukan overwrite)
