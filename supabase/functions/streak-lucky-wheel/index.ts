@@ -132,7 +132,7 @@ Deno.serve(async (req) => {
         if (hashHex !== pinRow.pin_hash) return Response.json({ error: "PIN salah", needPin: true }, { status: 200, headers: corsHeaders });
 
         const { data: bal } = await admin.from("user_balances").select("id, balance, bonus_balance").eq("visitor_id", visitorId).maybeSingle();
-        if (!bal || bal.balance < tier.cost_balance) return Response.json({ error: "Saldo tidak cukup" }, { status: 400, headers: corsHeaders });
+        if (!bal || ((bal.balance || 0) + (bal.bonus_balance || 0)) < tier.cost_balance) return Response.json({ error: "Saldo tidak cukup" }, { status: 400, headers: corsHeaders });
         await admin.from("user_balances").update({ balance: bal.balance - tier.cost_balance }).eq("id", bal.id);
         await admin.from("balance_transactions").insert({ visitor_id: visitorId, type: "purchase", amount: tier.cost_balance, description: `Lucky Wheel ${tier.tier_name}` });
       } else {

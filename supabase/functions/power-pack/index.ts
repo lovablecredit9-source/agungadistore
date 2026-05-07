@@ -136,7 +136,7 @@ Deno.serve(async (req) => {
         return new Response(JSON.stringify({ error: "Login akun saldo dulu untuk pembelian" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
       }
       const { data: bal } = await supabase.from("user_balances").select("id, balance, bonus_balance").eq("id", gp.user_balance_id).maybeSingle();
-      if (!bal || bal.balance < pack.price_idr) {
+      if (!bal || ((bal.balance || 0) + (bal.bonus_balance || 0)) < pack.price_idr) {
         return new Response(JSON.stringify({ error: `Saldo tidak cukup. Butuh Rp${pack.price_idr.toLocaleString("id-ID")}` }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
       }
       await supabase.from("user_balances").update({ balance: bal.balance - pack.price_idr }).eq("id", bal.id);
