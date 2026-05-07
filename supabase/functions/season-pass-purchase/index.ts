@@ -91,7 +91,7 @@ async function applyReward(visitorId: string, kind: RewardKind, value: number) {
     if (r) await supa.from("user_power_ups").update({ [col]: ((r as any)[col] || 0) + value }).eq("id", r.id);
     else await supa.from("user_power_ups").insert({ visitor_id: visitorId, [col]: value });
   } else if (kind === "balance") {
-    const { data: r } = await supa.from("user_balances").select("id, balance").eq("visitor_id", visitorId).maybeSingle();
+    const { data: r } = await supa.from("user_balances").select("id, balance, bonus_balance").eq("visitor_id", visitorId).maybeSingle();
     if (r) {
       await supa.from("user_balances").update({ balance: (r.balance || 0) + value }).eq("id", r.id);
       await supa.from("balance_transactions").insert({ visitor_id: visitorId, amount: value, type: "reward", description: "Season Pass reward" });

@@ -85,7 +85,7 @@ Deno.serve(async (request) => {
     const { data: gameBal } = await admin.from("game_balance").select("id, amount, total_spent").eq("visitor_id", visitorId).maybeSingle();
     const { data: balanceRow } = await admin
       .from("user_balances")
-      .select("id, balance")
+      .select("id, balance, bonus_balance")
       .eq("visitor_id", visitorId)
       .maybeSingle();
 

@@ -7905,6 +7905,7 @@ export type Database = {
       user_balances: {
         Row: {
           balance: number
+          bonus_balance: number
           created_at: string
           email: string | null
           id: string
@@ -7916,6 +7917,7 @@ export type Database = {
         }
         Insert: {
           balance?: number
+          bonus_balance?: number
           created_at?: string
           email?: string | null
           id?: string
@@ -7927,6 +7929,7 @@ export type Database = {
         }
         Update: {
           balance?: number
+          bonus_balance?: number
           created_at?: string
           email?: string | null
           id?: string
@@ -8631,6 +8634,7 @@ export type Database = {
       user_balances_public: {
         Row: {
           balance: number | null
+          bonus_balance: number | null
           created_at: string | null
           email: string | null
           id: string | null
@@ -8641,6 +8645,7 @@ export type Database = {
         }
         Insert: {
           balance?: number | null
+          bonus_balance?: number | null
           created_at?: string | null
           email?: string | null
           id?: string | null
@@ -8651,6 +8656,7 @@ export type Database = {
         }
         Update: {
           balance?: number | null
+          bonus_balance?: number | null
           created_at?: string | null
           email?: string | null
           id?: string | null
@@ -8668,6 +8674,10 @@ export type Database = {
         Returns: number
       }
       add_account_gems: {
+        Args: { p_amount: number; p_visitor_id: string }
+        Returns: number
+      }
+      add_bonus_balance: {
         Args: { p_amount: number; p_visitor_id: string }
         Returns: number
       }
@@ -8695,6 +8705,19 @@ export type Database = {
           message: string
           success: boolean
         }[]
+      }
+      consume_balance_with_bonus: {
+        Args: { p_amount: number; p_visitor_id: string }
+        Returns: {
+          new_balance: number
+          new_bonus_balance: number
+          used_bonus: number
+          used_main: number
+        }[]
+      }
+      consume_main_balance_only: {
+        Args: { p_amount: number; p_balance_id: string }
+        Returns: number
       }
       create_notification: {
         Args: {
@@ -8852,6 +8875,10 @@ export type Database = {
       recalc_product_stock: {
         Args: { p_product_id: string }
         Returns: undefined
+      }
+      refund_main_balance_only: {
+        Args: { p_amount: number; p_balance_id: string }
+        Returns: number
       }
     }
     Enums: {

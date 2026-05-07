@@ -127,9 +127,9 @@ Deno.serve(async (req) => {
         const { data: ub } = await admin.from("balance_login_history").select("user_balance_id")
           .eq("visitor_id", visitorId).order("logged_in_at", { ascending: false }).limit(1).maybeSingle();
         if (!ub?.user_balance_id) return Response.json({ error: "Login akun saldo dulu untuk bayar dengan Saldo IN" }, { status: 400, headers: corsHeaders });
-        const { data: bal } = await admin.from("user_balances").select("id, balance").eq("id", ub.user_balance_id).maybeSingle();
-        if (!bal || (bal.balance || 0) < price) {
-          return Response.json({ error: `Saldo IN kurang. Butuh Rp${price.toLocaleString("id-ID")}, kamu punya Rp${(bal?.balance || 0).toLocaleString("id-ID")}` }, { status: 400, headers: corsHeaders });
+        const { data: bal } = await admin.from("user_balances").select("id, balance, bonus_balance").eq("id", ub.user_balance_id).maybeSingle();
+        if (!bal || ((bal.balance || 0) + (bal.bonus_balance || 0)) < price) {
+          return Response.json({ error: `Saldo IN kurang. Butuh Rp${price.toLocaleString("id-ID")}, kamu punya Rp${((bal?.balance || 0) + (bal?.bonus_balance || 0)).toLocaleString("id-ID")}` }, { status: 400, headers: corsHeaders });
         }
         await admin.from("user_balances").update({ balance: bal.balance - price }).eq("id", bal.id);
         await admin.from("balance_transactions").insert({

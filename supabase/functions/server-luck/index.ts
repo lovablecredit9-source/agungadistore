@@ -104,7 +104,7 @@ Deno.serve(async (req) => {
       // Bayar: ambil dari Saldo IN (game_balance) dulu jika auto, lalu Saldo Utama
       const price = durDef.price;
       const { data: gb } = await supabase.from("game_balance").select("id, amount, total_spent").eq("visitor_id", visitorId).maybeSingle();
-      const { data: ub } = await supabase.from("user_balances").select("id, balance").eq("visitor_id", visitorId).maybeSingle();
+      const { data: ub } = await supabase.from("user_balances").select("id, balance, bonus_balance").eq("visitor_id", visitorId).maybeSingle();
       const gameAmt = gb?.amount || 0;
       const mainAmt = ub?.balance || 0;
 

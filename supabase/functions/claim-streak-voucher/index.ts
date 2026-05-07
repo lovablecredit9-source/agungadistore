@@ -206,7 +206,7 @@ Deno.serve(async (req) => {
         }
         case "saldo": {
           // Tambah saldo ke akun
-          const { data: ub } = await admin.from("user_balances").select("id, balance").eq("id", ubId!).maybeSingle();
+          const { data: ub } = await admin.from("user_balances").select("id, balance, bonus_balance").eq("id", ubId!).maybeSingle();
           if (!ub) throw new Error("Akun saldo tidak ditemukan");
           const newBalance = (ub.balance || 0) + amount;
           await admin.from("user_balances").update({ balance: newBalance }).eq("id", ub.id);
