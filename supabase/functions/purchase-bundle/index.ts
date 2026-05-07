@@ -53,15 +53,33 @@ Deno.serve(async (req) => {
     const hashHex = Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, "0")).join("");
     if (hashHex !== pinRow.pin_hash) return Response.json({ error: "PIN salah", needPin: true }, { status: 200, headers: corsHeaders });
 
-    // Check balance
+    // Check balances - support Saldo IN (game_balance) + Saldo Utama
+    const { data: gameBal } = await admin.from("game_balance").select("id, amount, total_spent").eq("visitor_id", visitorId).maybeSingle();
     const { data: balanceRow } = await admin.from("user_balances").select("id, balance").eq("visitor_id", visitorId).maybeSingle();
-    if (!balanceRow) return Response.json({ error: "Akun saldo tidak ditemukan" }, { status: 404, headers: corsHeaders });
-    if (balanceRow.balance < bundle.price) return Response.json({ error: "Saldo tidak cukup" }, { status: 400, headers: corsHeaders });
+    if (!balanceRow && !gameBal) return Response.json({ error: "Akun saldo tidak ditemukan" }, { status: 404, headers: corsHeaders });
+    const gameAmount = gameBal?.amount || 0;
+    const mainAmount = balanceRow?.balance || 0;
+    let payFromGame = 0, payFromMain = 0, sourceLabel = "";
+    if (gameAmount >= bundle.price) {
+      payFromGame = bundle.price; sourceLabel = "Saldo IN";
+    } else if (mainAmount >= bundle.price) {
+      payFromMain = bundle.price; sourceLabel = "Saldo Utama";
+    } else if (gameAmount + mainAmount >= bundle.price) {
+      payFromGame = gameAmount; payFromMain = bundle.price - gameAmount;
+      sourceLabel = "Saldo IN + Utama";
+    } else {
+      return Response.json({ error: "Saldo tidak cukup (Saldo IN & Saldo Utama)" }, { status: 400, headers: corsHeaders });
+    }
 
-    // Deduct balance
-    const newBalance = balanceRow.balance - bundle.price;
-    const { error: balErr } = await admin.from("user_balances").update({ balance: newBalance }).eq("id", balanceRow.id);
-    if (balErr) return Response.json({ error: "Gagal memotong saldo" }, { status: 500, headers: corsHeaders });
+    if (payFromGame > 0 && gameBal) {
+      await admin.from("game_balance").update({ amount: gameAmount - payFromGame, total_spent: (gameBal.total_spent || 0) + payFromGame }).eq("id", gameBal.id);
+      await admin.from("game_balance_transactions").insert({ visitor_id: visitorId, type: "spend", amount: -payFromGame, description: `Beli Paket Bundel: ${bundle.name}` });
+    }
+    if (payFromMain > 0 && balanceRow) {
+      const { error: balErr } = await admin.from("user_balances").update({ balance: mainAmount - payFromMain }).eq("id", balanceRow.id);
+      if (balErr) return Response.json({ error: "Gagal memotong saldo" }, { status: 500, headers: corsHeaders });
+    }
+    const newBalance = mainAmount - payFromMain;
 
     // Add credits
     if (bundle.credits > 0) {
@@ -109,18 +127,22 @@ Deno.serve(async (req) => {
       await admin.from("user_music_storage").insert({ visitor_id: visitorId, storage_mb: bundle.storage_mb, voucher_code: `BUNDLE-${Date.now()}`, expires_at: expiresAt });
     }
 
-    // Record transaction
-    await admin.from("balance_transactions").insert({
-      visitor_id: visitorId,
-      type: "purchase",
-      amount: bundle.price,
-      description: `Beli Paket Bundel: ${bundle.name}`,
-    });
+    // Record transaction (only main portion in balance_transactions)
+    if (payFromMain > 0) {
+      await admin.from("balance_transactions").insert({
+        visitor_id: visitorId,
+        type: "purchase",
+        amount: payFromMain,
+        description: `Beli Paket Bundel: ${bundle.name} [${sourceLabel}]`,
+      });
+    }
 
     return Response.json({
       success: true,
       bundle_name: bundle.name,
       balance_remaining: newBalance,
+      game_balance_remaining: gameAmount - payFromGame,
+      source_label: sourceLabel,
     }, { headers: corsHeaders });
 
   } catch (error) {
