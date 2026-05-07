@@ -73,13 +73,20 @@ Deno.serve(async (req) => {
     const totalStreakCoins = ((pkg as any).bonus_streak_coins || 0) * quantity;
     const totalGameCredits = ((pkg as any).bonus_game_credits || 0) * quantity;
 
-    const { data: bal } = await admin.from("user_balances").select("balance").eq("id", balLogin.user_balance_id).maybeSingle();
-    if (!bal || bal.balance < totalPrice) {
+    const { data: bal } = await admin.from("user_balances").select("balance, bonus_balance").eq("id", balLogin.user_balance_id).maybeSingle();
+    const totalAvail = (bal?.balance || 0) + (bal?.bonus_balance || 0);
+    if (!bal || totalAvail < totalPrice) {
       return Response.json({ error: `Saldo kurang. Butuh Rp${totalPrice.toLocaleString("id-ID")}` }, { status: 400, headers: corsHeaders });
     }
 
-    // Deduct balance
-    await admin.from("user_balances").update({ balance: bal.balance - totalPrice }).eq("id", balLogin.user_balance_id);
+    // Deduct via RPC: pakai saldo bonus dulu, sisanya saldo utama
+    const { data: consumed, error: consumeErr } = await admin.rpc("consume_balance_with_bonus", { p_visitor_id: visitorId, p_amount: totalPrice });
+    if (consumeErr) {
+      return Response.json({ error: consumeErr.message }, { status: 400, headers: corsHeaders });
+    }
+    const usedBonus = (consumed as any)?.[0]?.used_bonus || 0;
+    const usedMain = (consumed as any)?.[0]?.used_main || 0;
+    const newBalance = (consumed as any)?.[0]?.new_balance || 0;
 
     // Add gems via account-aware RPC (puts gems on the active account's primary profile)
     if (totalGems > 0) {
