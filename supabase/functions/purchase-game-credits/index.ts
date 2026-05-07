@@ -131,10 +131,13 @@ Deno.serve(async (req) => {
       const { data: pkg } = await admin.from("credit_packages").select("*").eq("id", packageId).eq("is_active", true).maybeSingle();
       if (!pkg) return Response.json({ error: "Paket tidak ditemukan" }, { status: 400, headers: corsHeaders });
 
-      // Verify PIN
-      const { data: pinRow } = await admin.from("user_pins").select("pin_hash").eq("visitor_id", visitorId).maybeSingle();
-      if (!pinRow) return Response.json({ error: "PIN belum dibuat", needPin: true }, { status: 403, headers: corsHeaders });
-      if (!pin) return Response.json({ error: "PIN diperlukan", needPin: true }, { status: 403, headers: corsHeaders });
+      // Verify PIN — cari di visitor request ATAU visitor akun saldo (browser vs akun bisa beda)
+      const { data: balRowForPin } = await admin.from("user_balances").select("visitor_id").eq("visitor_id", visitorId).maybeSingle();
+      const pinVisitorIds = [visitorId, balRowForPin?.visitor_id].filter(Boolean) as string[];
+      const { data: pinRows } = await admin.from("user_pins").select("pin_hash, visitor_id").in("visitor_id", pinVisitorIds);
+      const pinRow = pinRows && pinRows.length > 0 ? pinRows[0] : null;
+      if (!pinRow) return Response.json({ error: "PIN belum dibuat", needPin: true }, { status: 200, headers: corsHeaders });
+      if (!pin) return Response.json({ error: "PIN diperlukan", needPin: true }, { status: 200, headers: corsHeaders });
       const encoder = new TextEncoder();
       const hashBuffer = await crypto.subtle.digest("SHA-256", encoder.encode(pin));
       const hashHex = Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, "0")).join("");
