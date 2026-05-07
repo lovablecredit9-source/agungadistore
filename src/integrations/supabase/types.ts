@@ -7905,6 +7905,7 @@ export type Database = {
       user_balances: {
         Row: {
           balance: number
+          bonus_balance: number
           created_at: string
           email: string | null
           id: string
@@ -7916,6 +7917,7 @@ export type Database = {
         }
         Insert: {
           balance?: number
+          bonus_balance?: number
           created_at?: string
           email?: string | null
           id?: string
@@ -7927,6 +7929,7 @@ export type Database = {
         }
         Update: {
           balance?: number
+          bonus_balance?: number
           created_at?: string
           email?: string | null
           id?: string
@@ -8671,6 +8674,10 @@ export type Database = {
         Args: { p_amount: number; p_visitor_id: string }
         Returns: number
       }
+      add_bonus_balance: {
+        Args: { p_amount: number; p_visitor_id: string }
+        Returns: number
+      }
       bump_music_quest_event: {
         Args: { p_quest_type: string; p_visitor_id: string }
         Returns: undefined
@@ -8694,6 +8701,15 @@ export type Database = {
           coins_added: number
           message: string
           success: boolean
+        }[]
+      }
+      consume_balance_with_bonus: {
+        Args: { p_amount: number; p_visitor_id: string }
+        Returns: {
+          new_balance: number
+          new_bonus_balance: number
+          used_bonus: number
+          used_main: number
         }[]
       }
       create_notification: {
