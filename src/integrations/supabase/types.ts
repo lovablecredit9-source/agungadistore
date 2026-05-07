@@ -8634,6 +8634,7 @@ export type Database = {
       user_balances_public: {
         Row: {
           balance: number | null
+          bonus_balance: number | null
           created_at: string | null
           email: string | null
           id: string | null
@@ -8644,6 +8645,7 @@ export type Database = {
         }
         Insert: {
           balance?: number | null
+          bonus_balance?: number | null
           created_at?: string | null
           email?: string | null
           id?: string | null
@@ -8654,6 +8656,7 @@ export type Database = {
         }
         Update: {
           balance?: number | null
+          bonus_balance?: number | null
           created_at?: string | null
           email?: string | null
           id?: string | null
