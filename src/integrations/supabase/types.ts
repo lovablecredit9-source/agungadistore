@@ -8712,6 +8712,10 @@ export type Database = {
           used_main: number
         }[]
       }
+      consume_main_balance_only: {
+        Args: { p_amount: number; p_balance_id: string }
+        Returns: number
+      }
       create_notification: {
         Args: {
           p_message: string
@@ -8868,6 +8872,10 @@ export type Database = {
       recalc_product_stock: {
         Args: { p_product_id: string }
         Returns: undefined
+      }
+      refund_main_balance_only: {
+        Args: { p_amount: number; p_balance_id: string }
+        Returns: number
       }
     }
     Enums: {
