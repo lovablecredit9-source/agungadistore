@@ -131,7 +131,7 @@ Deno.serve(async (req) => {
         const hashHex = await sha256(pin);
         if (hashHex !== pinRow.pin_hash) return Response.json({ error: "PIN salah", needPin: true }, { status: 200, headers: corsHeaders });
 
-        const { data: bal } = await admin.from("user_balances").select("id, balance").eq("visitor_id", visitorId).maybeSingle();
+        const { data: bal } = await admin.from("user_balances").select("id, balance, bonus_balance").eq("visitor_id", visitorId).maybeSingle();
         if (!bal || bal.balance < tier.cost_balance) return Response.json({ error: "Saldo tidak cukup" }, { status: 400, headers: corsHeaders });
         await admin.from("user_balances").update({ balance: bal.balance - tier.cost_balance }).eq("id", bal.id);
         await admin.from("balance_transactions").insert({ visitor_id: visitorId, type: "purchase", amount: tier.cost_balance, description: `Lucky Wheel ${tier.tier_name}` });
@@ -164,7 +164,7 @@ Deno.serve(async (req) => {
       } else if (["extra_life", "auto_hint", "time_freeze"].includes(winning.reward_type)) {
         await addPowerUpReward(admin, visitorId, winning.reward_type, winning.reward_value);
       } else if (winning.reward_type === "balance") {
-        const { data: bal } = await admin.from("user_balances").select("id, balance").eq("visitor_id", visitorId).maybeSingle();
+        const { data: bal } = await admin.from("user_balances").select("id, balance, bonus_balance").eq("visitor_id", visitorId).maybeSingle();
         if (bal) {
           await admin.from("user_balances").update({ balance: bal.balance + winning.reward_value }).eq("id", bal.id);
           await admin.from("balance_transactions").insert({ visitor_id: visitorId, type: "reward", amount: winning.reward_value, description: `Lucky Wheel: ${winning.label}` });

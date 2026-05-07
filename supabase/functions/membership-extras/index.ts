@@ -63,7 +63,7 @@ function rollLuckyRewards(count: number) {
 async function deductBalance(supabase: any, visitorId: string, amount: number) {
   const { data: gp } = await supabase.from("game_profiles").select("user_balance_id").eq("visitor_id", visitorId).maybeSingle();
   if (!gp?.user_balance_id) throw new Error("Login akun saldo dulu");
-  const { data: bal } = await supabase.from("user_balances").select("id, balance").eq("id", gp.user_balance_id).maybeSingle();
+  const { data: bal } = await supabase.from("user_balances").select("id, balance, bonus_balance").eq("id", gp.user_balance_id).maybeSingle();
   if (!bal || bal.balance < amount) throw new Error(`Saldo kurang. Butuh Rp${amount.toLocaleString("id-ID")}`);
   await supabase.from("user_balances").update({ balance: bal.balance - amount }).eq("id", bal.id);
 }

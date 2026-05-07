@@ -164,7 +164,7 @@ Deno.serve(async (req) => {
 
       // Check balances - support split payment between Saldo IN (game_balance) and Saldo Utama (user_balances)
       const { data: gameBal } = await admin.from("game_balance").select("id, amount, total_spent").eq("visitor_id", visitorId).maybeSingle();
-      const { data: balance } = await admin.from("user_balances").select("id, balance").eq("visitor_id", visitorId).maybeSingle();
+      const { data: balance } = await admin.from("user_balances").select("id, balance, bonus_balance").eq("visitor_id", visitorId).maybeSingle();
       const gameAmount = gameBal?.amount || 0;
       const mainAmount = balance?.balance || 0;
 
