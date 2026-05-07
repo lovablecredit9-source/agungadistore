@@ -62,6 +62,7 @@ export default function PlusTab() {
   const [flashSaleEnd, setFlashSaleEnd] = useState("");
   const [creditDiscount, setCreditDiscount] = useState(0);
   const [streakDiscount, setStreakDiscount] = useState(0);
+  const [paymentSource, setPaymentSource] = useState<"auto" | "game" | "main">("auto");
 
   const fetchBalance = useCallback(async () => {
     setLoading(true);
