@@ -302,6 +302,39 @@ export default function PlusTab() {
         </p>
       </div>
 
+      {/* SUMBER PEMBAYARAN */}
+      <div className="rounded-2xl bg-card border-2 border-border p-3 space-y-2">
+        <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1">
+          <Wallet className="w-3 h-3" /> Sumber Pembayaran
+        </p>
+        <div className="grid grid-cols-3 gap-1.5">
+          <button
+            type="button"
+            onClick={() => setPaymentSource("auto")}
+            className={`text-[11px] font-bold rounded-lg py-2 px-1 border-2 transition ${paymentSource === "auto" ? "bg-primary text-primary-foreground border-primary" : "bg-card border-border text-muted-foreground"}`}
+          >
+            Otomatis
+          </button>
+          <button
+            type="button"
+            onClick={() => setPaymentSource("game")}
+            className={`text-[11px] font-bold rounded-lg py-2 px-1 border-2 transition ${paymentSource === "game" ? "bg-emerald-600 text-white border-emerald-600" : "bg-card border-border text-muted-foreground"}`}
+          >
+            Saldo IN
+          </button>
+          <button
+            type="button"
+            onClick={() => setPaymentSource("main")}
+            className={`text-[11px] font-bold rounded-lg py-2 px-1 border-2 transition ${paymentSource === "main" ? "bg-primary text-primary-foreground border-primary" : "bg-card border-border text-muted-foreground"}`}
+          >
+            Saldo Utama
+          </button>
+        </div>
+        <p className="text-[10px] text-muted-foreground">
+          {paymentSource === "auto" ? "Pakai Saldo IN dulu jika cukup, jika tidak baru Saldo Utama (atau gabungan)." : paymentSource === "game" ? `Pakai Saldo IN saja (Rp ${gameBalance.toLocaleString("id-ID")}).` : `Pakai Saldo Utama saja (${formatPrice(userBalance?.balance || 0)}).`}
+        </p>
+      </div>
+
       {/* === FLASH SALE BANNER === */}
       {flashSaleEnd && new Date(flashSaleEnd) > new Date() && (
         <div className="relative overflow-hidden rounded-2xl p-[2px] update-aurora-bg animate-neon-border">
