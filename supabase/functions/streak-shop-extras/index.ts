@@ -71,7 +71,7 @@ async function deductCost(admin: any, visitorId: string, method: string, amount:
   if (method === "balance") {
     const bal = await getBalance(admin, visitorId);
     if (!bal) return "Belum login akun saldo";
-    if ((bal.balance || 0) < amount) return `Saldo kurang. Butuh Rp${amount}`;
+    if (((bal.balance || 0) + (bal.bonus_balance || 0)) < amount) return `Saldo kurang. Butuh Rp${amount}`;
     await admin.from("user_balances").update({ balance: bal.balance - amount }).eq("id", bal.id);
     await admin.from("balance_transactions").insert({ visitor_id: visitorId, amount: -amount, type: "purchase", description: desc });
     return null;
