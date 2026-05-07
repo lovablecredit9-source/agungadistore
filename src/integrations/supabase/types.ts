@@ -8681,6 +8681,10 @@ export type Database = {
         Args: { p_amount: number; p_visitor_id: string }
         Returns: number
       }
+      add_topup_bonus_to_saldo_in: {
+        Args: { p_amount: number; p_visitor_id: string }
+        Returns: number
+      }
       bump_music_quest_event: {
         Args: { p_quest_type: string; p_visitor_id: string }
         Returns: undefined
