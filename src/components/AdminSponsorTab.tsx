@@ -689,8 +689,30 @@ export default function AdminSponsorTab() {
     doc.setFontSize(9);
     doc.text(`Tanggal: ${new Date().toLocaleString("id-ID")} | Total: ${filtered.length} sponsor`, 14, 36);
 
+    // Disclaimer / Peringatan Penting
+    doc.setFillColor(255, 243, 205);
+    doc.setDrawColor(234, 179, 8);
+    doc.roundedRect(14, 40, doc.internal.pageSize.width - 28, 22, 2, 2, "FD");
+    doc.setFontSize(9);
+    doc.setTextColor(146, 64, 14);
+    doc.text("PERINGATAN PENTING - BACA SEBELUM TRANSAKSI", 18, 46);
+    doc.setFontSize(7.5);
+    doc.setTextColor(60, 60, 60);
+    const disclaimer = [
+      "• File PDF ini hanya berisi tampilan/ekspos data sponsor untuk keperluan informasi. Konten file diisi oleh admin sponsor (pihak ketiga), BUKAN oleh Agung Adi Store.",
+      "• Segala bentuk transaksi pembelian produk sponsor sepenuhnya menjadi tanggung jawab pembeli dan pihak sponsor. Segala bentuk penipuan DI LUAR tanggung jawab admin Agung Adi Store.",
+      "• Apabila terjadi kendala pada produk sponsor, JANGAN melapor ke admin Agung Adi Store. Hubungi langsung admin sponsor yang bersangkutan, atau gunakan layanan Rekber (Rekening Bersama) via WhatsApp untuk keamanan transaksi.",
+    ];
+    let dy = 50;
+    disclaimer.forEach((line) => {
+      const wrapped = doc.splitTextToSize(line, doc.internal.pageSize.width - 36);
+      doc.text(wrapped, 18, dy);
+      dy += wrapped.length * 3.2;
+    });
+    doc.setTextColor(0, 0, 0);
+
     autoTable(doc, {
-      startY: 40,
+      startY: 66,
       head: [["#ID", "Judul", "Kategori", "Penjual", "Harga", "Durasi", "Sisa Waktu", "Status"]],
       body: filtered.map(s => [
         `#${s.sponsor_number}`,
