@@ -157,6 +157,15 @@ export default function GemShop({ visitorId: visitorIdProp, onUpdate }: Props) {
                 <p className="text-xs text-cyan-300 font-bold">Saldo Gem Kamu</p>
                 <p className="text-3xl font-black text-white">{formatCompactNumber(myGems)} 💎</p>
               </div>
+              <div className="rounded-lg bg-black/40 border border-white/10 p-2 space-y-1.5">
+                <p className="text-[10px] font-black text-white/70 uppercase tracking-wider text-center">Sumber Pembayaran</p>
+                <div className="grid grid-cols-3 gap-1.5">
+                  <button type="button" onClick={() => setPaySource("auto")} className={`text-[10px] font-black rounded-md py-1.5 px-1 border transition ${paySource === "auto" ? "bg-cyan-500 text-white border-cyan-400" : "bg-black/40 border-white/10 text-white/60"}`}>Auto</button>
+                  <button type="button" onClick={() => setPaySource("game")} className={`text-[10px] font-black rounded-md py-1.5 px-1 border transition ${paySource === "game" ? "bg-emerald-600 text-white border-emerald-500" : "bg-black/40 border-white/10 text-white/60"}`}>Saldo IN</button>
+                  <button type="button" onClick={() => setPaySource("main")} className={`text-[10px] font-black rounded-md py-1.5 px-1 border transition ${paySource === "main" ? "bg-cyan-500 text-white border-cyan-400" : "bg-black/40 border-white/10 text-white/60"}`}>Saldo Utama</button>
+                </div>
+                <p className="text-[9px] text-white/50 text-center">{paySource === "auto" ? "Pakai Saldo IN dulu, lalu Saldo Utama." : paySource === "game" ? "Pakai Saldo IN saja." : "Pakai Saldo Utama saja."}</p>
+              </div>
               {(() => {
                 const allDiskon = packages.filter((p) => p.is_first_purchase_only);
                 const diskonPkgs = [
