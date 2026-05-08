@@ -34,8 +34,12 @@ export default function LanguageSelector({ currentLang, onSelect }: LanguageSele
   }, [open]);
 
   const filtered = LANGUAGES.filter(l => {
-    const q = search.toLowerCase();
-    const matchesSearch = !q || l.name.toLowerCase().includes(q) || l.nameEn.toLowerCase().includes(q) || l.code.toLowerCase().includes(q);
+    const q = search.trim().toLowerCase();
+    const matchesSearch = !q
+      || l.name.toLowerCase().includes(q)
+      || l.nameEn.toLowerCase().includes(q)
+      || l.code.toLowerCase().includes(q)
+      || l.region.toLowerCase().includes(q);
     const matchesRegion = !selectedRegion || l.region === selectedRegion;
     return matchesSearch && matchesRegion;
   });
