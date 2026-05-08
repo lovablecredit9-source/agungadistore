@@ -1730,6 +1730,7 @@ const AdminDashboard = () => {
                       <p><strong>Nominal:</strong> <span className="text-primary font-extrabold text-sm">{new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", minimumFractionDigits: 0 }).format(dep.amount)}</span></p>
                       <p><strong>Metode:</strong> {dep.payment_method.toUpperCase()}</p>
                       <p><strong>ID Transaksi:</strong> <span className="font-mono text-primary">{dep.trx_id}</span></p>
+                      {dep.cancel_reason && <p className="text-destructive"><strong>Alasan:</strong> {dep.cancel_reason}</p>}
                     </div>
                     {dep.status === "pending" && (
                       <div className="flex gap-2 pt-1">
