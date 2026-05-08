@@ -223,7 +223,11 @@ export default function HistoryEnhancer({
       doc.setFontSize(8); doc.setTextColor(150);
       doc.text(`${storeName} • Halaman ${p}/${pageCount}`, pageW / 2, pageH - 8, { align: "center" });
     }
-    doc.save(`${exportPrefix}-${Date.now()}.pdf`);
+    const defaultPdfName = `${exportPrefix}-${Date.now()}`;
+    const pdfInput = window.prompt("Masukkan nama file PDF (tanpa .pdf):", defaultPdfName);
+    if (pdfInput === null) return;
+    const safePdf = (pdfInput.trim() || defaultPdfName).replace(/[\\/:*?"<>|]+/g, "_");
+    doc.save(`${safePdf}.pdf`);
   }
 
   const activeFiltersCount =
