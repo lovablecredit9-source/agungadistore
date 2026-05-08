@@ -4387,7 +4387,7 @@ const Index = () => {
                             doc.text(`Halaman ${data.pageNumber}`, pageW / 2, pageH - 12, { align: "center" });
                             doc.text(`${STORE_NAME} - WA: ${WA_NUMBER}`, pageW / 2, pageH - 7, { align: "center" });
                           },
-                          margin: { top: 48, bottom: 18 },
+                          margin: { top: 74, bottom: 18 },
                         });
                         if (userBalance) {
                           const finalY = (doc as any).lastAutoTable.finalY + 6;
