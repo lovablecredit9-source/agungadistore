@@ -117,6 +117,28 @@ export default function LanguageSelector({ currentLang, onSelect }: LanguageSele
               </div>
             )}
 
+            {/* Quick reset to Indonesian (default) */}
+            {currentLang !== "id" && (
+              <div className="mx-4 mb-2">
+                <button
+                  onClick={() => {
+                    onSelect("id");
+                    setOpen(false);
+                    setSearch("");
+                    setSelectedRegion(null);
+                  }}
+                  className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl bg-gradient-to-r from-red-500/15 to-red-600/10 border border-red-500/30 hover:from-red-500/25 hover:to-red-600/20 transition-all"
+                >
+                  <span className="text-lg">🇮🇩</span>
+                  <div className="flex-1 min-w-0 text-left">
+                    <p className="text-[13px] font-bold truncate">Bahasa Indonesia</p>
+                    <p className="text-[10px] text-muted-foreground">Default • Indonesian</p>
+                  </div>
+                  <span className="text-[10px] font-bold text-red-500 bg-red-500/10 px-2 py-0.5 rounded-full">Reset</span>
+                </button>
+              </div>
+            )}
+
             {/* Language list */}
             <div className="overflow-y-auto flex-1 px-4 pb-4 space-y-3">
               {Object.entries(groupedByRegion).map(([region, langs]) => (
