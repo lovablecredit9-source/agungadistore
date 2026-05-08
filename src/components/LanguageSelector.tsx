@@ -82,11 +82,19 @@ export default function LanguageSelector({ currentLang, onSelect }: LanguageSele
                 <input
                   ref={inputRef}
                   type="text"
-                  placeholder="Cari bahasa..."
+                  placeholder="Cari nama bahasa, kode, atau wilayah... (contoh: indonesia, id, asia)"
                   value={search}
                   onChange={e => setSearch(e.target.value)}
-                  className="w-full pl-9 pr-3 py-2.5 rounded-xl bg-muted/60 border border-border text-sm outline-none focus:ring-2 focus:ring-primary/30"
+                  className="w-full pl-9 pr-9 py-2.5 rounded-xl bg-muted/60 border-2 border-primary/30 focus:border-primary text-sm outline-none focus:ring-2 focus:ring-primary/30"
                 />
+                {search && (
+                  <button
+                    onClick={() => setSearch("")}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-muted-foreground/20 hover:bg-muted-foreground/30 flex items-center justify-center"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                )}
               </div>
             </div>
 
