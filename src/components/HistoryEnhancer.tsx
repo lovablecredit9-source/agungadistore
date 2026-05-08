@@ -482,63 +482,51 @@ export default function HistoryEnhancer({
       })] })],
     });
 
-    // ===== DETAIL ITEM CARDS =====
+    // ===== DETAIL RIWAYAT TABEL =====
     const itemBlocks: (DocxTable | Paragraph)[] = [];
     itemBlocks.push(new Paragraph({
       spacing: { before: 240, after: 120 },
-      children: [new TextRun({ text: "Detail Riwayat", bold: true, color: PRIMARY, size: 26 })],
+      children: [new TextRun({ text: "Detail Riwayat Tabel", bold: true, color: PRIMARY, size: 26 })],
     }));
 
-    filtered.forEach((it, i) => {
-      const isIncome = typeof it.amount === "number" && it.amount > 0;
-      const isExpense = typeof it.amount === "number" && it.amount < 0;
-      const accent = isIncome ? SUCCESS : isExpense ? DANGER : "6366F1";
-      const accentFill = isIncome ? "ECFDF5" : isExpense ? "FEF2F2" : "EEF2FF";
-
-      const numCell = new DocxTableCell({
-        width: { size: 600, type: WidthType.DXA },
-        borders: cellBorders,
-        shading: { fill: accent, type: ShadingType.CLEAR },
-        margins: { top: 100, bottom: 100, left: 100, right: 100 },
-        verticalAlign: "center" as any,
-        children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: String(i + 1), bold: true, color: "FFFFFF", size: 18 })] })],
-      });
-
-      const detailParas: Paragraph[] = [
-        new Paragraph({ children: [new TextRun({ text: it.title, bold: true, color: "1E293B", size: 20 })] }),
-        new Paragraph({ children: [new TextRun({ text: `${new Date(it.date).toLocaleString("id-ID")}${it.category ? "  •  " + it.category : ""}`, color: MUTED, size: 14 })] }),
-      ];
-      if (it.subtitle) {
-        detailParas.push(new Paragraph({ children: [new TextRun({ text: it.subtitle, color: "475569", size: 14 })] }));
-      }
-
-      const detailCell = new DocxTableCell({
-        width: { size: 6760, type: WidthType.DXA },
-        borders: cellBorders,
-        shading: { fill: accentFill, type: ShadingType.CLEAR },
-        margins: { top: 140, bottom: 140, left: 200, right: 160 },
-        children: detailParas,
-      });
-
-      const amountText = typeof it.amount === "number" && it.amount !== 0
-        ? `${it.amount > 0 ? "+" : "-"}${formatAmount(Math.abs(it.amount))}`
-        : "";
-      const amountCell = new DocxTableCell({
-        width: { size: 2000, type: WidthType.DXA },
-        borders: cellBorders,
-        shading: { fill: accentFill, type: ShadingType.CLEAR },
-        margins: { top: 140, bottom: 140, left: 120, right: 200 },
-        verticalAlign: "center" as any,
-        children: [new Paragraph({ alignment: AlignmentType.RIGHT, children: [new TextRun({ text: amountText, bold: true, color: accent, size: 22 })] })],
-      });
-
-      itemBlocks.push(new DocxTable({
-        width: { size: 9360, type: WidthType.DXA },
-        columnWidths: [600, 6760, 2000],
-        rows: [new DocxTableRow({ children: [numCell, detailCell, amountCell] })],
-      }));
-      itemBlocks.push(new Paragraph({ spacing: { before: 60, after: 60 }, children: [new TextRun({ text: "" })] }));
+    const tableHeaders = ["No", "ID", "Tanggal", "Kategori", "Judul", "Keterangan", "Jumlah"];
+    const tableWidths = [520, 1180, 1460, 1000, 1500, 2300, 1400];
+    const makeCell = (text: string, width: number, opts: { header?: boolean; amount?: number; align?: typeof AlignmentType.RIGHT | typeof AlignmentType.CENTER } = {}) => new DocxTableCell({
+      width: { size: width, type: WidthType.DXA },
+      borders: cellBorders,
+      shading: { fill: opts.header ? PRIMARY : "FFFFFF", type: ShadingType.CLEAR },
+      margins: { top: 90, bottom: 90, left: 90, right: 90 },
+      children: [new Paragraph({
+        alignment: opts.align,
+        children: [new TextRun({
+          text,
+          bold: opts.header || opts.amount !== undefined,
+          color: opts.header ? "FFFFFF" : opts.amount !== undefined ? (opts.amount > 0 ? SUCCESS : opts.amount < 0 ? DANGER : MUTED) : "1E293B",
+          size: opts.header ? 15 : 13,
+        })],
+      })],
     });
+
+    itemBlocks.push(new DocxTable({
+      width: { size: 9360, type: WidthType.DXA },
+      columnWidths: tableWidths,
+      rows: [
+        new DocxTableRow({ children: tableHeaders.map((h, idx) => makeCell(h, tableWidths[idx], { header: true, align: idx === 0 || idx === 3 ? AlignmentType.CENTER : undefined })) }),
+        ...filtered.map((it, i) => {
+          const amount = typeof it.amount === "number" ? it.amount : 0;
+          const amountText = amount !== 0 ? `${amount > 0 ? "+" : "-"}${formatAmount(Math.abs(amount))}` : "-";
+          return new DocxTableRow({ children: [
+            makeCell(String(i + 1), tableWidths[0], { align: AlignmentType.CENTER }),
+            makeCell(String(it.meta?.trx_id || it.id || "-"), tableWidths[1]),
+            makeCell(new Date(it.date).toLocaleString("id-ID"), tableWidths[2]),
+            makeCell(it.category || "-", tableWidths[3], { align: AlignmentType.CENTER }),
+            makeCell(it.title || "-", tableWidths[4]),
+            makeCell(it.subtitle || "-", tableWidths[5]),
+            makeCell(amountText, tableWidths[6], { amount, align: AlignmentType.RIGHT }),
+          ] });
+        }),
+      ],
+    }));
 
     const spacerSmall = new Paragraph({ spacing: { before: 120, after: 120 }, children: [new TextRun({ text: "" })] });
 
