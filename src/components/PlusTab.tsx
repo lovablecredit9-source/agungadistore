@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Wallet, Key, CalendarDays, HardDrive, Loader2, Lock, Infinity, Layers3, Package, Sparkles, Zap, Crown, Gift, Star, TrendingUp } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useGameCredits, GameCreditsBadge } from "@/components/games/GameCredits";
-import { useGameBalance, GameBalanceBadge } from "@/components/games/GameBalance";
+import { useGameBalance, GameBalanceBadge, triggerGameBalanceRefresh } from "@/components/games/GameBalance";
 import { motion } from "framer-motion";
 import { BanBanner, BanLock } from "@/components/BanBanner";
 
@@ -144,7 +144,7 @@ export default function PlusTab() {
       if (data?.error) { toast({ title: "Gagal", description: data.error, variant: "destructive" }); setCreditBuying(null); return; }
       toast({ title: "Berhasil!", description: `${data.package.label} berhasil dibeli. Sisa saldo: ${formatPrice(data.balance_remaining)}` });
       setCreditNeedPin(false); setCreditPin(""); setCreditSelectedPkg(null);
-      fetchCredits(); fetchBalance();
+      fetchCredits(); fetchBalance(); triggerGameBalanceRefresh();
     } catch (e: any) { toast({ title: "Error", description: e?.message || "Terjadi kesalahan", variant: "destructive" }); }
     finally { setCreditBuying(null); }
   };
@@ -169,7 +169,7 @@ export default function PlusTab() {
       if (data?.error) { toast({ title: "Gagal", description: data.error, variant: "destructive" }); setStreakBuying(null); return; }
       toast({ title: "Berhasil!", description: `Paket streak berhasil dibeli. Sisa saldo: ${formatPrice(data.balance_remaining)}` });
       setStreakNeedPin(false); setStreakPin(""); setStreakSelectedPkg(null);
-      fetchBalance();
+      fetchBalance(); triggerGameBalanceRefresh();
     } catch (e: any) { toast({ title: "Error", description: e?.message || "Terjadi kesalahan", variant: "destructive" }); }
     finally { setStreakBuying(null); }
   };
@@ -194,7 +194,7 @@ export default function PlusTab() {
       if (data?.error) { toast({ title: "Gagal", description: data.error, variant: "destructive" }); setStorageBuying(null); return; }
       toast({ title: "Berhasil!", description: `Storage berhasil ditambah. Sisa saldo: ${formatPrice(data.balance_remaining)}` });
       setStorageNeedPin(false); setStoragePin(""); setStorageSelectedPkg(null);
-      fetchBalance();
+      fetchBalance(); triggerGameBalanceRefresh();
     } catch (e: any) { toast({ title: "Error", description: e?.message || "Terjadi kesalahan", variant: "destructive" }); }
     finally { setStorageBuying(null); }
   };
@@ -219,7 +219,7 @@ export default function PlusTab() {
       if (data?.error) { toast({ title: "Gagal", description: data.error, variant: "destructive" }); setBundleBuying(null); return; }
       toast({ title: "Berhasil!", description: `${data.bundle_name} berhasil dibeli. Sisa saldo: ${formatPrice(data.balance_remaining)}` });
       setBundleNeedPin(false); setBundlePin(""); setBundleSelectedPkg(null);
-      fetchCredits(); fetchBalance();
+      fetchCredits(); fetchBalance(); triggerGameBalanceRefresh();
     } catch (e: any) { toast({ title: "Error", description: e?.message || "Terjadi kesalahan", variant: "destructive" }); }
     finally { setBundleBuying(null); }
   };
