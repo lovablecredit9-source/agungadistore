@@ -4311,11 +4311,8 @@ const Index = () => {
                           if (idx > 0) doc.addPage();
                           // Header
                           doc.setFillColor(41, 98, 255);
-                          doc.rect(0, 0, pageW, 50, "F");
-                          if (logoData) {
-                            try { doc.addImage(logoData, "PNG", 10, 8, 30, 30); } catch {}
-                          }
-                          doc.setTextColor(255, 255, 255);
+                           doc.rect(0, 0, pageW, 50, "F");
+                           doc.setTextColor(255, 255, 255);
                           doc.setFontSize(16);
                           doc.setFont("helvetica", "bold");
                           doc.text(STORE_NAME, pageW / 2, 22, { align: "center" });
