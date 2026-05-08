@@ -338,8 +338,21 @@ Deno.serve(async (req) => {
     let payFromGame = 0, payFromMain = 0;
 
     // ---------- Pembayaran via SALDO (auto/game/main) ----------
-    // Verify PIN
-    const { data: pinRow } = await admin.from("user_pins").select("pin_hash").eq("visitor_id", visitorId).maybeSingle();
+    // Resolve akun saldo aktif (visitor saat ini bisa beda dari pemilik user_balances)
+    const { data: ubId } = await admin.rpc("get_active_user_balance_id", { p_visitor_id: visitorId });
+    const accountVisitors: string[] = [visitorId];
+    let ownerVisitorId: string | null = null;
+    if (ubId) {
+      const { data: visitors } = await admin.from("balance_login_history").select("visitor_id").eq("user_balance_id", ubId);
+      for (const v of visitors || []) if (v.visitor_id && !accountVisitors.includes(v.visitor_id)) accountVisitors.push(v.visitor_id);
+      const { data: ub } = await admin.from("user_balances").select("visitor_id").eq("id", ubId).maybeSingle();
+      ownerVisitorId = ub?.visitor_id || null;
+      if (ownerVisitorId && !accountVisitors.includes(ownerVisitorId)) accountVisitors.push(ownerVisitorId);
+    }
+
+    // Verify PIN — cek di semua visitor pada akun yang sama (samakan dgn beli kredit)
+    const { data: pinRows } = await admin.from("user_pins").select("pin_hash, visitor_id").in("visitor_id", accountVisitors);
+    const pinRow = pinRows && pinRows.length > 0 ? pinRows[0] : null;
     if (!pinRow) return Response.json({ error: "PIN belum dibuat", needPin: true }, { status: 200, headers: corsHeaders });
     if (!pin) return Response.json({ error: "PIN diperlukan", needPin: true }, { status: 200, headers: corsHeaders });
     const hashHex = await sha256Hex(pin);
@@ -348,8 +361,19 @@ Deno.serve(async (req) => {
     const price = plan.price_idr || 0;
     if (price <= 0) return Response.json({ error: "Paket ini tidak menerima pembayaran saldo" }, { status: 400, headers: corsHeaders });
 
-    const { data: gameBal } = await admin.from("game_balance").select("id, amount, total_spent").eq("visitor_id", visitorId).maybeSingle();
-    const { data: balanceRow } = await admin.from("user_balances").select("id, balance").eq("visitor_id", visitorId).maybeSingle();
+    // Cari user_balances berdasar akun aktif; jika tidak ada, fallback ke visitor_id
+    let balanceRow: { id: string; balance: number } | null = null;
+    if (ubId) {
+      const { data } = await admin.from("user_balances").select("id, balance").eq("id", ubId).maybeSingle();
+      balanceRow = data as any;
+    }
+    if (!balanceRow) {
+      const { data } = await admin.from("user_balances").select("id, balance").eq("visitor_id", visitorId).maybeSingle();
+      balanceRow = data as any;
+    }
+    // game_balance: ambil baris dgn jumlah terbesar di akun
+    const { data: gameRows } = await admin.from("game_balance").select("id, amount, total_spent, visitor_id").in("visitor_id", accountVisitors).order("amount", { ascending: false });
+    const gameBal = (gameRows && gameRows.length > 0) ? gameRows[0] as any : null;
     if (!balanceRow && !gameBal) return Response.json({ error: "Akun saldo tidak ditemukan" }, { status: 404, headers: corsHeaders });
     const gameAmount = gameBal?.amount || 0;
     const mainAmount = balanceRow?.balance || 0;
