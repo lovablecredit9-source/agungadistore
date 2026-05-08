@@ -4322,9 +4322,32 @@ const Index = () => {
                         if (qrisData) {
                           try { doc.addImage(qrisData, "JPEG", pageW - 32, 5, 28, 28); } catch {}
                         }
+                        // Peringatan Penting
+                        doc.setFillColor(255, 243, 205);
+                        doc.setDrawColor(234, 179, 8);
+                        doc.roundedRect(10, 44, pageW - 20, 26, 2, 2, "FD");
+                        doc.setFontSize(9);
+                        doc.setFont("helvetica", "bold");
+                        doc.setTextColor(146, 64, 14);
+                        doc.text("PERINGATAN - BACA SEBELUM TRANSAKSI", 14, 50);
+                        doc.setFont("helvetica", "normal");
+                        doc.setFontSize(7.5);
+                        doc.setTextColor(60, 60, 60);
+                        const warnLines = [
+                          "• File PDF ini hanya berupa tampilan/ekspos riwayat transaksi, BUKAN bukti pembayaran resmi dari pihak ketiga.",
+                          "• Untuk transaksi pembelian produk SPONSOR: segala bentuk penipuan DI LUAR tanggung jawab admin Agung Adi Store. Jika ada kendala, JANGAN lapor ke admin toko — hubungi langsung admin sponsor terkait atau gunakan Rekber via WhatsApp.",
+                          "• Hanya transaksi produk resmi Agung Adi Store yang dijamin & dapat diklaim ke admin (WA: 085769302532).",
+                        ];
+                        let wy = 55;
+                        warnLines.forEach((ln) => {
+                          const wrapped = doc.splitTextToSize(ln, pageW - 28);
+                          doc.text(wrapped, 14, wy);
+                          wy += wrapped.length * 3.0;
+                        });
+                        doc.setTextColor(0, 0, 0);
                         // Tabel
                         autoTable(doc, {
-                          startY: 48,
+                          startY: 74,
                           head: [["#", "ID Transaksi", "Tipe", "Jumlah", "Tanggal", "Deskripsi"]],
                           body: selected.map((tx, idx) => [
                             String(idx + 1),
