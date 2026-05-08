@@ -1288,15 +1288,14 @@ const Index = () => {
     const pageW = doc.internal.pageSize.getWidth();
     const pageH = doc.internal.pageSize.getHeight();
 
-    try {
-      const img = new window.Image();
-      img.crossOrigin = "anonymous";
-      await new Promise<void>((resolve) => {
-        img.onload = () => { doc.addImage(img, "JPEG", pageW / 2 - 10, 5, 20, 20); resolve(); };
-        img.onerror = () => resolve();
-        img.src = storeQris;
-      });
-    } catch {}
+    const logoData = await loadPdfImage("/icons/icon-192.png");
+    const qrisData = await loadPdfImage(storeQris);
+    if (logoData) {
+      try { doc.addImage(logoData, "PNG", 10, 5, 22, 22); } catch {}
+    }
+    if (qrisData) {
+      try { doc.addImage(qrisData, "JPEG", pageW - 32, 5, 22, 22); } catch {}
+    }
 
     doc.setFillColor(99, 102, 241);
     doc.rect(0, 28, pageW, 18, "F");
