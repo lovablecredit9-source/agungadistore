@@ -565,7 +565,21 @@ const AdminDashboard = () => {
       toast({ title: "Deposit ini sudah diproses", variant: "destructive" });
       return;
     }
-    const { data: updatedDeposit, error: depositError } = await supabase.from("deposits").update({ status: "rejected" } as any).eq("id", dep.id).eq("status", "pending").select("id");
+    const choice = window.prompt(
+      "Alasan penolakan deposit:\n\n1 = Bukti palsu\n2 = Belum bayar\n3 = Custom (isi sendiri)\n\nKetik 1, 2, atau alasan custom:",
+      "1"
+    );
+    if (choice === null) return;
+    let reason = "";
+    if (choice.trim() === "1") reason = "Bukti pembayaran palsu";
+    else if (choice.trim() === "2") reason = "Belum melakukan pembayaran";
+    else if (choice.trim() === "3") {
+      const custom = window.prompt("Masukkan alasan custom:", "");
+      if (!custom || !custom.trim()) { toast({ title: "Alasan wajib diisi", variant: "destructive" }); return; }
+      reason = custom.trim();
+    } else reason = choice.trim() || "Ditolak admin";
+
+    const { data: updatedDeposit, error: depositError } = await supabase.from("deposits").update({ status: "rejected", cancel_reason: reason } as any).eq("id", dep.id).eq("status", "pending").select("id");
     if (depositError || !updatedDeposit?.length) {
       toast({ title: "Deposit sudah diproses atau gagal diupdate", variant: "destructive" });
       fetchDeposits();
@@ -573,10 +587,10 @@ const AdminDashboard = () => {
     }
     await supabase.from("notifications").insert({
       visitor_id: dep.visitor_id, title: "Deposit Ditolak ❌",
-      message: `Deposit ${new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", minimumFractionDigits: 0 }).format(dep.amount)} ditolak. Hubungi admin untuk info lebih lanjut.`,
+      message: `Deposit ${new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", minimumFractionDigits: 0 }).format(dep.amount)} ditolak. Alasan: ${reason}`,
       type: "deposit_rejected",
     } as any);
-    toast({ title: "Deposit ditolak" });
+    toast({ title: "Deposit ditolak", description: `Alasan: ${reason}` });
     fetchDeposits();
   }
 
