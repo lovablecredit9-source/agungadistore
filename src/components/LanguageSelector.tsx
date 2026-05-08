@@ -62,8 +62,8 @@ export default function LanguageSelector({ currentLang, onSelect }: LanguageSele
       </button>
 
       {open && (
-        <div data-no-auto-translate className="fixed inset-0 z-[70] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div ref={panelRef} className="bg-card w-full max-w-sm max-h-[85vh] rounded-2xl overflow-hidden animate-in zoom-in-95 duration-200 flex flex-col">
+        <div data-no-auto-translate className="fixed inset-0 z-[70] bg-black/60 backdrop-blur-sm flex items-start sm:items-center justify-center p-2 sm:p-4 overflow-y-auto">
+          <div ref={panelRef} className="bg-card w-full max-w-sm max-h-[95vh] sm:max-h-[85vh] mt-2 sm:mt-0 rounded-2xl overflow-hidden animate-in zoom-in-95 duration-200 flex flex-col shadow-2xl">
             {/* Header */}
             <div className="flex items-center justify-between p-4 pb-2 shrink-0">
               <div className="flex items-center gap-2">
