@@ -6915,10 +6915,40 @@ const Index = () => {
               <div className="flex items-center justify-between gap-3"><span className="text-muted-foreground">Metode</span><span className="font-semibold">{selectedDeposit.payment_method}</span></div>
               <div className="flex items-center justify-between gap-3"><span className="text-muted-foreground">Status</span><span className="font-semibold">{getDepositStatusLabel(selectedDeposit.status, lang)}</span></div>
               <div className="flex items-center justify-between gap-3"><span className="text-muted-foreground">Dibuat</span><span className="text-right">{new Date(selectedDeposit.created_at).toLocaleString("id-ID")}</span></div>
+              {selectedDeposit.cancel_reason && (
+                <div className="rounded-lg bg-destructive/10 border border-destructive/30 p-2 mt-2">
+                  <p className="text-[11px] text-muted-foreground mb-0.5">Alasan</p>
+                  <p className="text-xs font-semibold text-destructive">{selectedDeposit.cancel_reason}</p>
+                </div>
+              )}
+              {selectedDeposit.status === "pending" && (
+                <p className="text-[11px] text-amber-500 pt-1">⏰ Otomatis dibatalkan jika tidak dikonfirmasi admin dalam 24 jam.</p>
+              )}
             </div>
             <Button className="w-full gap-2" onClick={() => copyText(selectedDeposit.trx_id, "deposit-transaction-id")}>
               <Copy className="w-4 h-4" /> Salin ID Transaksi
             </Button>
+            {selectedDeposit.status === "pending" && (
+              <Button
+                variant="destructive"
+                className="w-full gap-2"
+                onClick={async () => {
+                  if (!confirm("Batalkan deposit ini? Tindakan tidak bisa dibatalkan.")) return;
+                  const { data, error } = await supabase.functions.invoke("cancel-deposit", {
+                    body: { depositId: selectedDeposit.id, visitorId: selectedDeposit.visitor_id, reason: "Dibatalkan oleh pengguna" },
+                  });
+                  if (error || (data as any)?.error) {
+                    toast({ title: (data as any)?.error || "Gagal membatalkan", variant: "destructive" });
+                    return;
+                  }
+                  toast({ title: "Deposit dibatalkan" });
+                  setSelectedDeposit(null);
+                  fetchDeposits();
+                }}
+              >
+                <X className="w-4 h-4" /> Batalkan Deposit
+              </Button>
+            )}
           </div>
         </div>
       )}
