@@ -212,7 +212,7 @@ export default function ProductNavToolbar({
       {/* Category chips horizontal scroll */}
       {categories.length > 1 && (
         <div className="-mx-1 overflow-x-auto scrollbar-hide">
-          <div className="flex gap-1.5 px-1 pb-1">
+          <div className="flex gap-2 px-1 pb-1.5 pt-0.5">
             {categories.map(cat => {
               const active = value.category === cat;
               const count = categoryCounts[cat];
@@ -220,15 +220,16 @@ export default function ProductNavToolbar({
                 <button
                   key={cat}
                   onClick={() => onChange({ category: cat })}
-                  className={`shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border-2 text-[11px] font-bold transition-all ${
+                  className={`shrink-0 relative inline-flex items-center gap-1.5 px-3.5 py-2 rounded-2xl text-[11px] font-bold transition-all duration-300 active:scale-95 ${
                     active
-                      ? "bg-gradient-to-r from-primary to-accent text-primary-foreground border-transparent shadow-md scale-[1.03]"
-                      : "bg-card text-foreground/80 border-border/50 hover:border-primary/40 hover:bg-muted/60"
+                      ? "bg-gradient-to-br from-primary via-accent to-primary text-primary-foreground shadow-lg shadow-primary/40 scale-[1.05] -translate-y-0.5"
+                      : "glass-card border-2 border-border/40 text-foreground/80 hover:border-primary/40 hover:-translate-y-0.5 hover:shadow-md"
                   }`}
                 >
-                  <span>{cat}</span>
+                  {active && <span className="absolute -inset-px rounded-2xl bg-gradient-to-br from-white/25 to-transparent pointer-events-none" />}
+                  <span className="relative">{cat}</span>
                   {count !== undefined && (
-                    <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-bold ${active ? "bg-white/25" : "bg-muted"}`}>
+                    <span className={`relative text-[9px] px-1.5 py-0.5 rounded-full font-extrabold ${active ? "bg-white/30 text-white" : "bg-primary/10 text-primary"}`}>
                       {count}
                     </span>
                   )}
