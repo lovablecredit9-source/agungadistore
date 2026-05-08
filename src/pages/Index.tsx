@@ -4308,46 +4308,124 @@ const Index = () => {
                         const autoTable = (await import("jspdf-autotable")).default;
                         const pageW = doc.internal.pageSize.getWidth();
                         const pageH = doc.internal.pageSize.getHeight();
-                        // Header sekali
+                        // ===== HEADER GRADIENT (faux) =====
+                        const headerH = 46;
+                        // Base color
                         doc.setFillColor(41, 98, 255);
-                        doc.rect(0, 0, pageW, 40, "F");
-                        doc.setTextColor(255, 255, 255);
-                        doc.setFontSize(16);
-                        doc.setFont("helvetica", "bold");
-                        doc.text(STORE_NAME, pageW / 2, 16, { align: "center" });
-                        doc.setFontSize(9);
-                        doc.setFont("helvetica", "normal");
-                        doc.text("Riwayat Transaksi Saldo", pageW / 2, 24, { align: "center" });
-                        doc.text(`Dicetak: ${new Date().toLocaleString("id-ID")}`, pageW / 2, 31, { align: "center" });
-                        if (qrisData) {
-                          try { doc.addImage(qrisData, "JPEG", pageW - 32, 5, 28, 28); } catch {}
+                        doc.rect(0, 0, pageW, headerH, "F");
+                        // Faux gradient overlay (strips makin transparan)
+                        for (let i = 0; i < 24; i++) {
+                          doc.setFillColor(99, 102, 241, 255 - i * 8);
+                          doc.rect(0, i * (headerH / 24), pageW, headerH / 24 + 0.4, "F");
                         }
-                        // Peringatan Penting
-                        doc.setFillColor(255, 243, 205);
+                        // Decorative circles
+                        doc.setFillColor(255, 255, 255);
+                        doc.circle(pageW - 50, -8, 22, "F");
+                        doc.circle(pageW - 70, headerH + 4, 14, "F");
+                        // Logo bulat
+                        if (logoData) {
+                          doc.setFillColor(255, 255, 255);
+                          doc.circle(20, headerH / 2, 11, "F");
+                          try { doc.addImage(logoData, "PNG", 11, headerH / 2 - 9, 18, 18); } catch {}
+                        }
+                        // Title
+                        doc.setTextColor(255, 255, 255);
+                        doc.setFontSize(18);
+                        doc.setFont("helvetica", "bold");
+                        doc.text(STORE_NAME, 36, 18);
+                        doc.setFontSize(10);
+                        doc.setFont("helvetica", "normal");
+                        doc.text("Riwayat Transaksi Saldo Resmi", 36, 25);
+                        doc.setFontSize(7.5);
+                        doc.text(`Dicetak: ${new Date().toLocaleString("id-ID")} WIB`, 36, 31);
+                        doc.text(`Total: ${selected.length} transaksi`, 36, 36);
+                        // Tagline pill
+                        doc.setFillColor(255, 255, 255);
+                        doc.roundedRect(36, 39, 38, 5, 2.5, 2.5, "F");
+                        doc.setTextColor(41, 98, 255);
+                        doc.setFontSize(6.5);
+                        doc.setFont("helvetica", "bold");
+                        doc.text("MURAH & TERPERCAYA", 55, 42.5, { align: "center" });
+                        // QRIS kanan
+                        if (qrisData) {
+                          doc.setFillColor(255, 255, 255);
+                          doc.roundedRect(pageW - 36, 4, 32, 38, 2, 2, "F");
+                          try { doc.addImage(qrisData, "JPEG", pageW - 34, 6, 28, 28); } catch {}
+                          doc.setTextColor(41, 98, 255);
+                          doc.setFontSize(6);
+                          doc.setFont("helvetica", "bold");
+                          doc.text("SCAN QRIS", pageW - 20, 39, { align: "center" });
+                        }
+
+                        // ===== RINGKASAN CARDS =====
+                        const totalIn = selected.filter(t => t.type === "topup").reduce((s, t) => s + t.amount, 0);
+                        const totalOut = selected.filter(t => t.type !== "topup").reduce((s, t) => s + t.amount, 0);
+                        const cardY = 52;
+                        const cardW = (pageW - 30) / 3;
+                        // Card 1 - Total
+                        doc.setFillColor(239, 246, 255);
+                        doc.setDrawColor(191, 219, 254);
+                        doc.roundedRect(10, cardY, cardW, 16, 2, 2, "FD");
+                        doc.setTextColor(100, 116, 139);
+                        doc.setFontSize(7);
+                        doc.setFont("helvetica", "bold");
+                        doc.text("TOTAL TRANSAKSI", 13, cardY + 5);
+                        doc.setTextColor(30, 41, 59);
+                        doc.setFontSize(13);
+                        doc.text(String(selected.length), 13, cardY + 13);
+                        // Card 2 - Masuk
+                        doc.setFillColor(236, 253, 245);
+                        doc.setDrawColor(167, 243, 208);
+                        doc.roundedRect(15 + cardW, cardY, cardW, 16, 2, 2, "FD");
+                        doc.setTextColor(100, 116, 139);
+                        doc.setFontSize(7);
+                        doc.text("DANA MASUK", 18 + cardW, cardY + 5);
+                        doc.setTextColor(5, 150, 105);
+                        doc.setFontSize(11);
+                        doc.text(`+${formatPrice(totalIn)}`, 18 + cardW, cardY + 13);
+                        // Card 3 - Keluar
+                        doc.setFillColor(254, 242, 242);
+                        doc.setDrawColor(254, 202, 202);
+                        doc.roundedRect(20 + cardW * 2, cardY, cardW, 16, 2, 2, "FD");
+                        doc.setTextColor(100, 116, 139);
+                        doc.setFontSize(7);
+                        doc.text("DANA KELUAR", 23 + cardW * 2, cardY + 5);
+                        doc.setTextColor(220, 38, 38);
+                        doc.setFontSize(11);
+                        doc.text(`-${formatPrice(totalOut)}`, 23 + cardW * 2, cardY + 13);
+
+                        // ===== PERINGATAN PENTING =====
+                        const warnY = 72;
+                        doc.setFillColor(254, 252, 232);
                         doc.setDrawColor(234, 179, 8);
-                        doc.roundedRect(10, 44, pageW - 20, 26, 2, 2, "FD");
+                        doc.setLineWidth(0.5);
+                        doc.roundedRect(10, warnY, pageW - 20, 28, 2, 2, "FD");
+                        // Strip kiri
+                        doc.setFillColor(234, 179, 8);
+                        doc.rect(10, warnY, 1.5, 28, "F");
+                        doc.setTextColor(146, 64, 14);
                         doc.setFontSize(9);
                         doc.setFont("helvetica", "bold");
-                        doc.setTextColor(146, 64, 14);
-                        doc.text("PERINGATAN - BACA SEBELUM TRANSAKSI", 14, 50);
+                        doc.text("⚠ PERINGATAN PENTING - BACA SEBELUM TRANSAKSI", 14, warnY + 5);
                         doc.setFont("helvetica", "normal");
-                        doc.setFontSize(7.5);
+                        doc.setFontSize(7);
                         doc.setTextColor(60, 60, 60);
                         const warnLines = [
-                          "• File PDF ini hanya berupa tampilan/ekspos riwayat transaksi, BUKAN bukti pembayaran resmi dari pihak ketiga.",
-                          "• Untuk transaksi pembelian produk SPONSOR: segala bentuk penipuan DI LUAR tanggung jawab admin Agung Adi Store. Jika ada kendala, JANGAN lapor ke admin toko — hubungi langsung admin sponsor terkait atau gunakan Rekber via WhatsApp.",
-                          "• Hanya transaksi produk resmi Agung Adi Store yang dijamin & dapat diklaim ke admin (WA: 085769302532).",
+                          "• File PDF ini hanya tampilan/ekspos riwayat — BUKAN bukti pembayaran resmi pihak ketiga.",
+                          "• Transaksi produk SPONSOR: penipuan DI LUAR tanggung jawab admin Agung Adi Store. Kendala? Hubungi admin sponsor / pakai Rekber via WhatsApp.",
+                          "• Hanya transaksi produk RESMI Agung Adi Store yang dijamin & dapat diklaim ke admin (WA: 085769302532).",
                         ];
-                        let wy = 55;
+                        let wy = warnY + 10;
                         warnLines.forEach((ln) => {
                           const wrapped = doc.splitTextToSize(ln, pageW - 28);
                           doc.text(wrapped, 14, wy);
-                          wy += wrapped.length * 3.0;
+                          wy += wrapped.length * 2.8;
                         });
                         doc.setTextColor(0, 0, 0);
-                        // Tabel
+
+                        // ===== TABEL =====
                         autoTable(doc, {
-                          startY: 74,
+                          startY: 104,
                           head: [["#", "ID Transaksi", "Tipe", "Jumlah", "Tanggal", "Deskripsi"]],
                           body: selected.map((tx, idx) => [
                             String(idx + 1),
@@ -4359,35 +4437,48 @@ const Index = () => {
                           ]),
                           styles: {
                             fontSize: 8,
-                            cellPadding: 2,
-                            lineColor: [0, 0, 0],
-                            lineWidth: 0.2,
+                            cellPadding: 2.5,
+                            lineColor: [226, 232, 240],
+                            lineWidth: 0.1,
+                            textColor: [30, 41, 59],
                           },
                           headStyles: {
                             fillColor: [41, 98, 255],
                             textColor: 255,
                             fontStyle: "bold",
-                            lineColor: [0, 0, 0],
-                            lineWidth: 0.2,
+                            fontSize: 8.5,
+                            cellPadding: 3,
+                            lineColor: [41, 98, 255],
+                            lineWidth: 0,
                           },
-                          alternateRowStyles: { fillColor: [240, 245, 255] },
+                          alternateRowStyles: { fillColor: [248, 250, 252] },
                           columnStyles: {
-                            0: { cellWidth: 10 },
-                            1: { cellWidth: 38 },
-                            2: { cellWidth: 20 },
-                            3: { cellWidth: 24 },
-                            4: { cellWidth: 32 },
+                            0: { cellWidth: 10, halign: "center", fontStyle: "bold" },
+                            1: { cellWidth: 38, font: "courier", fontSize: 7 },
+                            2: { cellWidth: 20, halign: "center" },
+                            3: { cellWidth: 24, halign: "right", fontStyle: "bold" },
+                            4: { cellWidth: 32, fontSize: 7 },
                             5: { cellWidth: "auto" },
                           },
-                          tableLineColor: [0, 0, 0],
-                          tableLineWidth: 0.3,
-                          didDrawPage: (data) => {
-                            doc.setFontSize(8);
-                            doc.setTextColor(150, 150, 150);
-                            doc.text(`Halaman ${data.pageNumber}`, pageW / 2, pageH - 12, { align: "center" });
-                            doc.text(`${STORE_NAME} - WA: ${WA_NUMBER}`, pageW / 2, pageH - 7, { align: "center" });
+                          didParseCell: (data) => {
+                            if (data.section === "body" && data.column.index === 3) {
+                              const isTopup = String(data.cell.raw).startsWith("+");
+                              data.cell.styles.textColor = isTopup ? [5, 150, 105] : [220, 38, 38];
+                            }
                           },
-                          margin: { top: 74, bottom: 18 },
+                          didDrawPage: (data) => {
+                            // Footer band
+                            doc.setFillColor(41, 98, 255);
+                            doc.rect(0, pageH - 14, pageW, 14, "F");
+                            doc.setTextColor(255, 255, 255);
+                            doc.setFontSize(7.5);
+                            doc.setFont("helvetica", "bold");
+                            doc.text(`${STORE_NAME}`, 10, pageH - 8);
+                            doc.setFont("helvetica", "normal");
+                            doc.text(`WA: ${WA_NUMBER} • Murah & Terpercaya`, 10, pageH - 3.5);
+                            doc.text(`Halaman ${data.pageNumber}`, pageW - 10, pageH - 5.5, { align: "right" });
+                          },
+                          margin: { top: 104, bottom: 18 },
                         });
                         if (userBalance) {
                           const finalY = (doc as any).lastAutoTable.finalY + 6;
