@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Wallet, Key, CalendarDays, HardDrive, Loader2, Lock, Infinity, Layers3, Package, Sparkles, Zap, Crown, Gift, Star, TrendingUp } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useGameCredits, GameCreditsBadge } from "@/components/games/GameCredits";
-import { useGameBalance, GameBalanceBadge } from "@/components/games/GameBalance";
+import { useGameBalance, GameBalanceBadge, triggerGameBalanceRefresh } from "@/components/games/GameBalance";
 import { motion } from "framer-motion";
 import { BanBanner, BanLock } from "@/components/BanBanner";
 
