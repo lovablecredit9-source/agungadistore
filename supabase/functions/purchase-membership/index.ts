@@ -74,8 +74,22 @@ Deno.serve(async (req) => {
         .gte("expires_at", new Date().toISOString())
         .order("expires_at", { ascending: false });
 
-      const { data: gameBal } = await admin.from("game_balance").select("amount").eq("visitor_id", visitorId).maybeSingle();
-      const { data: balanceRow } = await admin.from("user_balances").select("balance").eq("visitor_id", visitorId).maybeSingle();
+      // Resolve akun saldo aktif → tampilkan saldo gabungan dari semua visitor pada akun
+      const { data: ubIdList } = await admin.rpc("get_active_user_balance_id", { p_visitor_id: visitorId });
+      const acctVisitors: string[] = [visitorId];
+      let balanceRow: { balance: number } | null = null;
+      if (ubIdList) {
+        const { data: visitorsList } = await admin.from("balance_login_history").select("visitor_id").eq("user_balance_id", ubIdList);
+        for (const v of visitorsList || []) if (v.visitor_id && !acctVisitors.includes(v.visitor_id)) acctVisitors.push(v.visitor_id);
+        const { data: ubRow } = await admin.from("user_balances").select("balance").eq("id", ubIdList).maybeSingle();
+        balanceRow = ubRow as any;
+      }
+      if (!balanceRow) {
+        const { data } = await admin.from("user_balances").select("balance").eq("visitor_id", visitorId).maybeSingle();
+        balanceRow = data as any;
+      }
+      const { data: gameRowsList } = await admin.from("game_balance").select("amount").in("visitor_id", acctVisitors);
+      const gameBal = { amount: (gameRowsList || []).reduce((s, r: any) => s + (r.amount || 0), 0) };
       const { data: gemsResult } = await admin.rpc("get_account_gems", { p_visitor_id: visitorId });
 
       // Cek klaim harian KOIN
