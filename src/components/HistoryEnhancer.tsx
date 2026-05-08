@@ -17,6 +17,13 @@ import { id as localeId } from "date-fns/locale";
 import jsPDF from "jspdf";
 import CountUp from "@/components/CountUp";
 import storeQris from "@/assets/store-qris.jpg";
+import {
+  Document as DocxDocument, Packer, Paragraph, TextRun, Table as DocxTable,
+  TableRow as DocxTableRow, TableCell as DocxTableCell, AlignmentType, HeadingLevel,
+  BorderStyle, WidthType, ShadingType, ImageRun, Header as DocxHeader, Footer as DocxFooter,
+  PageNumber, LevelFormat,
+} from "docx";
+import { saveAs } from "file-saver";
 
 // Cache image load → base64 dataURL
 const _imgCache: Record<string, string> = {};
