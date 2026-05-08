@@ -199,6 +199,8 @@ export default function LanguageSelector({ currentLang, onSelect }: LanguageSele
             </div>
           </div>
         </div>
+      </div>,
+        document.body
       )}
     </>
   );
