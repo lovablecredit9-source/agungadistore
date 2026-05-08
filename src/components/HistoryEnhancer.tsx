@@ -323,9 +323,7 @@ export default function HistoryEnhancer({
         it.category || "-",
         it.title || "-",
         it.subtitle || "-",
-        typeof it.amount === "number" && it.amount !== 0
-          ? `${it.amount > 0 ? "+" : "-"}${formatAmount(Math.abs(it.amount))}`
-          : "-",
+        formatExportAmount(it),
       ]),
       styles: {
         fontSize: 7,
@@ -529,8 +527,8 @@ export default function HistoryEnhancer({
       rows: [
         new DocxTableRow({ children: tableHeaders.map((h, idx) => makeCell(h, tableWidths[idx], { header: true, align: idx === 0 || idx === 3 ? AlignmentType.CENTER : undefined })) }),
         ...filtered.map((it, i) => {
-          const amount = typeof it.amount === "number" ? it.amount : 0;
-          const amountText = amount !== 0 ? `${amount > 0 ? "+" : "-"}${formatAmount(Math.abs(amount))}` : "-";
+          const amount = getExportAmount(it);
+          const amountText = formatExportAmount(it);
           return new DocxTableRow({ children: [
             makeCell(String(i + 1), tableWidths[0], { align: AlignmentType.CENTER }),
             makeCell(String(it.meta?.trx_id || it.id || "-"), tableWidths[1]),
