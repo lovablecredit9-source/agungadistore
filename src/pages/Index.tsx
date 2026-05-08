@@ -4297,9 +4297,13 @@ const Index = () => {
                       size="sm"
                       className="w-full gap-1 text-xs"
                       disabled={selectedTxIds.size === 0}
-                      onClick={() => {
+                      onClick={async () => {
                         const selected = balanceTransactions.filter(tx => selectedTxIds.has(tx.id));
                         if (selected.length === 0) return;
+                        const [logoData, qrisData] = await Promise.all([
+                          loadPdfImage("/icons/icon-192.png"),
+                          loadPdfImage(storeQris),
+                        ]);
                         const doc = new jsPDF();
                         const pageW = doc.internal.pageSize.getWidth();
                         const pageH = doc.internal.pageSize.getHeight();
@@ -4309,6 +4313,9 @@ const Index = () => {
                           // Header
                           doc.setFillColor(41, 98, 255);
                           doc.rect(0, 0, pageW, 50, "F");
+                          if (logoData) {
+                            try { doc.addImage(logoData, "PNG", 10, 8, 30, 30); } catch {}
+                          }
                           doc.setTextColor(255, 255, 255);
                           doc.setFontSize(16);
                           doc.setFont("helvetica", "bold");
@@ -4334,6 +4341,16 @@ const Index = () => {
                           if (userBalance) {
                             y += 5;
                             doc.text(`Username: ${userBalance.username}`, 20, y); y += 7;
+                          }
+                          // QRIS kecil di pojok kanan bawah body
+                          if (qrisData) {
+                            try {
+                              const qSize = 38;
+                              doc.addImage(qrisData, "JPEG", pageW - qSize - 14, pageH - qSize - 28, qSize, qSize);
+                              doc.setFontSize(7);
+                              doc.setTextColor(80);
+                              doc.text("QRIS Toko", pageW - qSize / 2 - 14, pageH - 26, { align: "center" });
+                            } catch {}
                           }
                           // Footer
                           doc.setFontSize(8);
