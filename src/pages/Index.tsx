@@ -6969,25 +6969,27 @@ const Index = () => {
                 </div>
                 <Input type="number" placeholder={t("deposit.amount", lang)} value={depositAmount} onChange={e => setDepositAmount(e.target.value)} />
 
-                {/* Bonus Saldo IN preview (real, 10% untuk deposit ≥ Rp 10.000) */}
+                {/* Bonus Saldo IN preview (QRIS 15%, e-wallet 12%, min Rp 10.000) */}
                 {(() => {
                   const amt = parseInt(depositAmount) || 0;
                   if (amt <= 0) return null;
+                  const isEwallet = depositMethod !== "qris";
+                  const pct = isEwallet ? 12 : 15;
                   if (amt < 10000) {
                     return (
                       <div className="rounded-xl border border-dashed border-border bg-muted/40 p-2.5 text-[11px] text-muted-foreground">
-                        Minimal <b>Rp 10.000</b> untuk dapat bonus <b>10% Saldo IN</b>. Nominal sekarang: <b>Rp {amt.toLocaleString("id-ID")}</b>.
+                        Minimal <b>Rp 10.000</b> untuk bonus <b>{pct}% Saldo IN</b> ({isEwallet ? "e-wallet" : "QRIS"}). Nominal sekarang: <b>Rp {amt.toLocaleString("id-ID")}</b>.
                       </div>
                     );
                   }
-                  const bonus = Math.floor(amt * 0.1);
+                  const bonus = Math.floor(amt * (pct / 100));
                   const total = amt + bonus;
                   return (
                     <div className="rounded-xl border border-yellow-400/40 bg-gradient-to-r from-yellow-400/15 via-orange-400/10 to-pink-400/15 p-3 space-y-1.5">
                       <div className="flex items-center gap-2">
                         <span className="text-base">🎁</span>
-                        <p className="text-[10px] font-black text-yellow-600 dark:text-yellow-400 tracking-wider uppercase flex-1">Bonus Saldo IN +10%</p>
-                        <span className="text-[11px] font-black bg-yellow-400 text-yellow-950 rounded-full px-2 py-0.5 shadow">+10%</span>
+                        <p className="text-[10px] font-black text-yellow-600 dark:text-yellow-400 tracking-wider uppercase flex-1">Bonus Saldo IN +{pct}% ({isEwallet ? "E-Wallet" : "QRIS"})</p>
+                        <span className="text-[11px] font-black bg-yellow-400 text-yellow-950 rounded-full px-2 py-0.5 shadow">+{pct}%</span>
                       </div>
                       <div className="grid grid-cols-3 gap-1.5 text-center">
                         <div className="rounded-lg bg-background/60 p-1.5">
@@ -7003,7 +7005,7 @@ const Index = () => {
                           <p className="text-[11px] font-extrabold">Rp {total.toLocaleString("id-ID")}</p>
                         </div>
                       </div>
-                      <p className="text-[10px] text-muted-foreground leading-tight">Bonus masuk ke <b>Saldo IN</b> setelah deposit dikonfirmasi admin.</p>
+                      <p className="text-[10px] text-muted-foreground leading-tight">Bonus masuk ke <b>Saldo IN</b> setelah deposit dikonfirmasi admin. Top-up langsung oleh admin tetap dapat <b>15%</b>.</p>
                     </div>
                   );
                 })()}

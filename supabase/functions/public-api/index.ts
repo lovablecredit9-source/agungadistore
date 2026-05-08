@@ -305,7 +305,14 @@ Deno.serve(async (req) => {
           visitor_id, type: Number(amount) >= 0 ? "topup" : "debit", amount: Math.abs(Number(amount)),
           description: description || (Number(amount) >= 0 ? "Top up via API" : "Debit via API"),
         });
-        result = { visitor_id, new_balance: newBalance };
+        // Bonus 15% Saldo IN saat admin top-up (amount positif & >= 10.000)
+        let adminBonus = 0;
+        if (Number(amount) >= 10000) {
+          adminBonus = Math.floor(Number(amount) * 0.15);
+          await supabase.rpc("add_topup_bonus_to_saldo_in", { p_visitor_id: visitor_id, p_amount: adminBonus });
+          await supabase.from("balance_transactions").insert({ visitor_id, type: "topup_bonus", amount: adminBonus, description: `🎁 Bonus 15% top-up admin → Saldo IN` });
+        }
+        result = { visitor_id, new_balance: newBalance, bonus_saldo_in: adminBonus };
         break;
       }
       case "deduct_balance": {
@@ -1160,18 +1167,19 @@ Deno.serve(async (req) => {
         await supabase.from("deposits").update({ status: ns }).eq("id", dep2.id);
         if (ns === "approved") {
           const { data: bl } = await supabase.from("user_balances").select("id, balance").eq("visitor_id", dep2.visitor_id).maybeSingle();
+          // QRIS = 15%, e-wallet = 12%
+          const isEwallet = String(dep2.payment_method || "").toUpperCase() !== "QRIS";
+          const bonusPct = isEwallet ? 12 : 15;
+          const bonus = dep2.amount >= 10000 ? Math.floor(dep2.amount * (bonusPct / 100)) : 0;
           if (bl) {
-            const bonus = dep2.amount >= 10000 ? Math.floor(dep2.amount * 0.1) : 0;
-            // Hanya pokok ke saldo utama
             await supabase.from("user_balances").update({ balance: bl.balance + dep2.amount }).eq("id", bl.id);
             await supabase.from("balance_transactions").insert({ visitor_id: dep2.visitor_id, type: "topup", amount: dep2.amount, description: `Deposit ${dep2.payment_method} dikonfirmasi` });
             if (bonus > 0) {
               await supabase.rpc("add_topup_bonus_to_saldo_in", { p_visitor_id: dep2.visitor_id, p_amount: bonus });
-              await supabase.from("balance_transactions").insert({ visitor_id: dep2.visitor_id, type: "topup_bonus", amount: bonus, description: `🎁 Bonus 10% deposit → Saldo IN (TRX: ${dep2.trx_id})` });
+              await supabase.from("balance_transactions").insert({ visitor_id: dep2.visitor_id, type: "topup_bonus", amount: bonus, description: `🎁 Bonus ${bonusPct}% deposit → Saldo IN (TRX: ${dep2.trx_id})` });
             }
           }
-          const bonus2 = dep2.amount >= 10000 ? Math.floor(dep2.amount * 0.1) : 0;
-          await supabase.from("notifications").insert({ visitor_id: dep2.visitor_id, title: "Deposit Dikonfirmasi", message: bonus2 > 0 ? `Deposit ${dep2.trx_id} Rp ${dep2.amount.toLocaleString()} masuk + Saldo IN +Rp ${bonus2.toLocaleString()} (khusus pembelian internal)` : `Deposit ${dep2.trx_id} sebesar Rp ${dep2.amount.toLocaleString()} telah dikonfirmasi`, type: "success" });
+          await supabase.from("notifications").insert({ visitor_id: dep2.visitor_id, title: "Deposit Dikonfirmasi", message: bonus > 0 ? `Deposit ${dep2.trx_id} Rp ${dep2.amount.toLocaleString()} masuk + Saldo IN +Rp ${bonus.toLocaleString()} (bonus ${bonusPct}%, khusus pembelian internal)` : `Deposit ${dep2.trx_id} sebesar Rp ${dep2.amount.toLocaleString()} telah dikonfirmasi`, type: "success" });
         } else {
           await supabase.from("notifications").insert({ visitor_id: dep2.visitor_id, title: "Deposit Ditolak", message: `Deposit ${dep2.trx_id} ditolak`, type: "warning" });
         }
