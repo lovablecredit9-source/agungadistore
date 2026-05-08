@@ -305,7 +305,14 @@ Deno.serve(async (req) => {
           visitor_id, type: Number(amount) >= 0 ? "topup" : "debit", amount: Math.abs(Number(amount)),
           description: description || (Number(amount) >= 0 ? "Top up via API" : "Debit via API"),
         });
-        result = { visitor_id, new_balance: newBalance };
+        // Bonus 15% Saldo IN saat admin top-up (amount positif & >= 10.000)
+        let adminBonus = 0;
+        if (Number(amount) >= 10000) {
+          adminBonus = Math.floor(Number(amount) * 0.15);
+          await supabase.rpc("add_topup_bonus_to_saldo_in", { p_visitor_id: visitor_id, p_amount: adminBonus });
+          await supabase.from("balance_transactions").insert({ visitor_id, type: "topup_bonus", amount: adminBonus, description: `🎁 Bonus 15% top-up admin → Saldo IN` });
+        }
+        result = { visitor_id, new_balance: newBalance, bonus_saldo_in: adminBonus };
         break;
       }
       case "deduct_balance": {
