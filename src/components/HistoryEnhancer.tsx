@@ -355,12 +355,18 @@ export default function HistoryEnhancer({
       doc.text(`${storeName} • WA 085769302532`, pageW / 2, 40 + size + 8, { align: "center" });
     }
 
-    // Footer halaman
+    // Footer band per halaman
     const pageCount = (doc as any).internal.getNumberOfPages?.() ?? 1;
     for (let p = 1; p <= pageCount; p++) {
       doc.setPage(p);
-      doc.setFontSize(8); doc.setTextColor(150);
-      doc.text(`${storeName} • Halaman ${p}/${pageCount}`, pageW / 2, pageH - 8, { align: "center" });
+      doc.setFillColor(41, 98, 255);
+      doc.rect(0, pageH - 14, pageW, 14, "F");
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(7.5); doc.setFont("helvetica", "bold");
+      doc.text(storeName, 10, pageH - 8);
+      doc.setFont("helvetica", "normal");
+      doc.text("WA: 085769302532 • Murah & Terpercaya", 10, pageH - 3.5);
+      doc.text(`Halaman ${p}/${pageCount}`, pageW - 10, pageH - 5.5, { align: "right" });
     }
     const defaultPdfName = `${exportPrefix}-${Date.now()}`;
     const pdfInput = window.prompt("Masukkan nama file PDF (tanpa .pdf):", defaultPdfName);
