@@ -676,6 +676,12 @@ export default function HistoryEnhancer({
                   <FileText className="w-3.5 h-3.5 text-foreground" /> PDF
                 </button>
                 <button
+                  onClick={exportWord}
+                  className="w-full flex items-center gap-2 px-2 py-2 rounded-lg hover:bg-muted text-xs font-medium"
+                >
+                  <FileText className="w-3.5 h-3.5 text-blue-600" /> Word (.docx)
+                </button>
+                <button
                   onClick={exportCSV}
                   className="w-full flex items-center gap-2 px-2 py-2 rounded-lg hover:bg-muted text-xs font-medium"
                 >
