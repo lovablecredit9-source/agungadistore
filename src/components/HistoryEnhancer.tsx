@@ -295,54 +295,54 @@ export default function HistoryEnhancer({
     });
     doc.setTextColor(0, 0, 0);
 
-    // ===== DETAIL RIWAYAT =====
-    let y = 100;
-    doc.setFont("helvetica", "bold"); doc.setFontSize(11);
-    doc.setTextColor(41, 98, 255);
-    doc.text("Detail Riwayat", 14, y);
-    doc.setDrawColor(41, 98, 255);
-    doc.setLineWidth(0.5);
-    doc.line(14, y + 1.5, 14 + 30, y + 1.5);
-    y += 8;
-    doc.setTextColor(0, 0, 0);
-    filtered.forEach((it, i) => {
-      if (y > pageH - 25) { doc.addPage(); y = 20; }
-      // Card per item
-      const isIncome = typeof it.amount === "number" && it.amount > 0;
-      const accent = isIncome ? [5, 150, 105] : it.amount && it.amount < 0 ? [220, 38, 38] : [99, 102, 241];
-      doc.setFillColor(248, 250, 252);
-      doc.setDrawColor(226, 232, 240);
-      doc.roundedRect(10, y - 3, pageW - 20, 18, 1.5, 1.5, "FD");
-      // Strip warna
-      doc.setFillColor(accent[0], accent[1], accent[2]);
-      doc.rect(10, y - 3, 1.5, 18, "F");
-      // Number badge
-      doc.setFillColor(accent[0], accent[1], accent[2]);
-      doc.circle(18, y + 3, 3, "F");
-      doc.setTextColor(255, 255, 255);
-      doc.setFontSize(7); doc.setFont("helvetica", "bold");
-      doc.text(String(i + 1), 18, y + 4, { align: "center" });
-      // Title
-      doc.setTextColor(30, 41, 59);
-      doc.setFontSize(9); doc.setFont("helvetica", "bold");
-      doc.text(it.title, 24, y + 1, { maxWidth: pageW - 70 });
-      // Date + category
-      doc.setFontSize(7); doc.setFont("helvetica", "normal");
-      doc.setTextColor(100, 116, 139);
-      doc.text(`${new Date(it.date).toLocaleString("id-ID")}${it.category ? "  •  " + it.category : ""}`, 24, y + 5);
-      // Subtitle
-      if (it.subtitle) {
-        doc.setTextColor(71, 85, 105);
-        doc.setFontSize(7);
-        doc.text(it.subtitle, 24, y + 9, { maxWidth: pageW - 70 });
-      }
-      // Amount kanan
-      if (typeof it.amount === "number" && it.amount !== 0) {
-        doc.setTextColor(accent[0], accent[1], accent[2]);
-        doc.setFontSize(10); doc.setFont("helvetica", "bold");
-        doc.text(`${it.amount > 0 ? "+" : "-"}${formatAmount(Math.abs(it.amount))}`, pageW - 14, y + 5, { align: "right" });
-      }
-      y += 21;
+    // ===== DETAIL RIWAYAT TABEL =====
+    const autoTable = (await import("jspdf-autotable")).default;
+    autoTable(doc, {
+      startY: 100,
+      head: [["No", "ID", "Tanggal", "Kategori", "Judul", "Keterangan", "Jumlah"]],
+      body: filtered.map((it, i) => [
+        String(i + 1),
+        String(it.meta?.trx_id || it.id || "-"),
+        new Date(it.date).toLocaleString("id-ID"),
+        it.category || "-",
+        it.title || "-",
+        it.subtitle || "-",
+        typeof it.amount === "number" && it.amount !== 0
+          ? `${it.amount > 0 ? "+" : "-"}${formatAmount(Math.abs(it.amount))}`
+          : "-",
+      ]),
+      styles: {
+        fontSize: 7,
+        cellPadding: 2,
+        lineColor: [226, 232, 240],
+        lineWidth: 0.1,
+        textColor: [30, 41, 59],
+        overflow: "linebreak",
+      },
+      headStyles: {
+        fillColor: [41, 98, 255],
+        textColor: 255,
+        fontStyle: "bold",
+        fontSize: 7.5,
+        cellPadding: 2.4,
+      },
+      alternateRowStyles: { fillColor: [248, 250, 252] },
+      columnStyles: {
+        0: { cellWidth: 9, halign: "center", fontStyle: "bold" },
+        1: { cellWidth: 25, font: "courier", fontSize: 6.3 },
+        2: { cellWidth: 27, fontSize: 6.4 },
+        3: { cellWidth: 20, halign: "center" },
+        4: { cellWidth: 35, fontStyle: "bold" },
+        5: { cellWidth: "auto" },
+        6: { cellWidth: 25, halign: "right", fontStyle: "bold" },
+      },
+      didParseCell: (data) => {
+        if (data.section === "body" && data.column.index === 6) {
+          const raw = String(data.cell.raw || "");
+          data.cell.styles.textColor = raw.startsWith("+") ? [5, 150, 105] : raw.startsWith("-") ? [220, 38, 38] : [100, 116, 139];
+        }
+      },
+      margin: { top: 18, bottom: 18, left: 10, right: 10 },
     });
 
     // QRIS page (lampiran pembayaran)
@@ -482,63 +482,51 @@ export default function HistoryEnhancer({
       })] })],
     });
 
-    // ===== DETAIL ITEM CARDS =====
+    // ===== DETAIL RIWAYAT TABEL =====
     const itemBlocks: (DocxTable | Paragraph)[] = [];
     itemBlocks.push(new Paragraph({
       spacing: { before: 240, after: 120 },
-      children: [new TextRun({ text: "Detail Riwayat", bold: true, color: PRIMARY, size: 26 })],
+      children: [new TextRun({ text: "Detail Riwayat Tabel", bold: true, color: PRIMARY, size: 26 })],
     }));
 
-    filtered.forEach((it, i) => {
-      const isIncome = typeof it.amount === "number" && it.amount > 0;
-      const isExpense = typeof it.amount === "number" && it.amount < 0;
-      const accent = isIncome ? SUCCESS : isExpense ? DANGER : "6366F1";
-      const accentFill = isIncome ? "ECFDF5" : isExpense ? "FEF2F2" : "EEF2FF";
-
-      const numCell = new DocxTableCell({
-        width: { size: 600, type: WidthType.DXA },
-        borders: cellBorders,
-        shading: { fill: accent, type: ShadingType.CLEAR },
-        margins: { top: 100, bottom: 100, left: 100, right: 100 },
-        verticalAlign: "center" as any,
-        children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: String(i + 1), bold: true, color: "FFFFFF", size: 18 })] })],
-      });
-
-      const detailParas: Paragraph[] = [
-        new Paragraph({ children: [new TextRun({ text: it.title, bold: true, color: "1E293B", size: 20 })] }),
-        new Paragraph({ children: [new TextRun({ text: `${new Date(it.date).toLocaleString("id-ID")}${it.category ? "  •  " + it.category : ""}`, color: MUTED, size: 14 })] }),
-      ];
-      if (it.subtitle) {
-        detailParas.push(new Paragraph({ children: [new TextRun({ text: it.subtitle, color: "475569", size: 14 })] }));
-      }
-
-      const detailCell = new DocxTableCell({
-        width: { size: 6760, type: WidthType.DXA },
-        borders: cellBorders,
-        shading: { fill: accentFill, type: ShadingType.CLEAR },
-        margins: { top: 140, bottom: 140, left: 200, right: 160 },
-        children: detailParas,
-      });
-
-      const amountText = typeof it.amount === "number" && it.amount !== 0
-        ? `${it.amount > 0 ? "+" : "-"}${formatAmount(Math.abs(it.amount))}`
-        : "";
-      const amountCell = new DocxTableCell({
-        width: { size: 2000, type: WidthType.DXA },
-        borders: cellBorders,
-        shading: { fill: accentFill, type: ShadingType.CLEAR },
-        margins: { top: 140, bottom: 140, left: 120, right: 200 },
-        verticalAlign: "center" as any,
-        children: [new Paragraph({ alignment: AlignmentType.RIGHT, children: [new TextRun({ text: amountText, bold: true, color: accent, size: 22 })] })],
-      });
-
-      itemBlocks.push(new DocxTable({
-        width: { size: 9360, type: WidthType.DXA },
-        columnWidths: [600, 6760, 2000],
-        rows: [new DocxTableRow({ children: [numCell, detailCell, amountCell] })],
-      }));
-      itemBlocks.push(new Paragraph({ spacing: { before: 60, after: 60 }, children: [new TextRun({ text: "" })] }));
+    const tableHeaders = ["No", "ID", "Tanggal", "Kategori", "Judul", "Keterangan", "Jumlah"];
+    const tableWidths = [520, 1180, 1460, 1000, 1500, 2300, 1400];
+    const makeCell = (text: string, width: number, opts: { header?: boolean; amount?: number; align?: typeof AlignmentType.RIGHT | typeof AlignmentType.CENTER } = {}) => new DocxTableCell({
+      width: { size: width, type: WidthType.DXA },
+      borders: cellBorders,
+      shading: { fill: opts.header ? PRIMARY : "FFFFFF", type: ShadingType.CLEAR },
+      margins: { top: 90, bottom: 90, left: 90, right: 90 },
+      children: [new Paragraph({
+        alignment: opts.align,
+        children: [new TextRun({
+          text,
+          bold: opts.header || opts.amount !== undefined,
+          color: opts.header ? "FFFFFF" : opts.amount !== undefined ? (opts.amount > 0 ? SUCCESS : opts.amount < 0 ? DANGER : MUTED) : "1E293B",
+          size: opts.header ? 15 : 13,
+        })],
+      })],
     });
+
+    itemBlocks.push(new DocxTable({
+      width: { size: 9360, type: WidthType.DXA },
+      columnWidths: tableWidths,
+      rows: [
+        new DocxTableRow({ children: tableHeaders.map((h, idx) => makeCell(h, tableWidths[idx], { header: true, align: idx === 0 || idx === 3 ? AlignmentType.CENTER : undefined })) }),
+        ...filtered.map((it, i) => {
+          const amount = typeof it.amount === "number" ? it.amount : 0;
+          const amountText = amount !== 0 ? `${amount > 0 ? "+" : "-"}${formatAmount(Math.abs(amount))}` : "-";
+          return new DocxTableRow({ children: [
+            makeCell(String(i + 1), tableWidths[0], { align: AlignmentType.CENTER }),
+            makeCell(String(it.meta?.trx_id || it.id || "-"), tableWidths[1]),
+            makeCell(new Date(it.date).toLocaleString("id-ID"), tableWidths[2]),
+            makeCell(it.category || "-", tableWidths[3], { align: AlignmentType.CENTER }),
+            makeCell(it.title || "-", tableWidths[4]),
+            makeCell(it.subtitle || "-", tableWidths[5]),
+            makeCell(amountText, tableWidths[6], { amount, align: AlignmentType.RIGHT }),
+          ] });
+        }),
+      ],
+    }));
 
     const spacerSmall = new Paragraph({ spacing: { before: 120, after: 120 }, children: [new TextRun({ text: "" })] });
 
