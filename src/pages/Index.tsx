@@ -4338,16 +4338,13 @@ const Index = () => {
                             y += 5;
                             doc.text(`Username: ${userBalance.username}`, 20, y); y += 7;
                           }
-                          // QRIS kecil di pojok kanan bawah body
-                          if (qrisData) {
-                            try {
-                              const qSize = 38;
-                              doc.addImage(qrisData, "JPEG", pageW - qSize - 14, pageH - qSize - 28, qSize, qSize);
-                              doc.setFontSize(7);
-                              doc.setTextColor(80);
-                              doc.text("QRIS Toko", pageW - qSize / 2 - 14, pageH - 26, { align: "center" });
-                            } catch {}
-                          }
+                           // QRIS di pojok kanan atas header
+                           if (qrisData) {
+                             try {
+                               const qSize = 32;
+                               doc.addImage(qrisData, "JPEG", pageW - qSize - 10, 9, qSize, qSize);
+                             } catch {}
+                           }
                           // Footer
                           doc.setFontSize(8);
                           doc.setTextColor(150, 150, 150);
