@@ -4324,7 +4324,11 @@ const Index = () => {
                           doc.text("Harap simpan bukti ini. Jika ada masalah hubungi admin.", pageW / 2, pageH - 15, { align: "center" });
                           doc.text(`${STORE_NAME} - WA: ${WA_NUMBER}`, pageW / 2, pageH - 10, { align: "center" });
                         });
-                        doc.save("riwayat-transaksi-saldo.pdf");
+                        const defName2 = "riwayat-transaksi-saldo";
+                        const inp2 = window.prompt("Masukkan nama file PDF (tanpa .pdf):", defName2);
+                        if (inp2 === null) return;
+                        const safe2 = (inp2.trim() || defName2).replace(/[\\/:*?"<>|]+/g, "_");
+                        doc.save(`${safe2}.pdf`);
                         toast({ title: `${selected.length} transaksi berhasil diekspor!` });
                       }}
                     >
