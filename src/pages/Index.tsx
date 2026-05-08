@@ -4333,8 +4333,19 @@ const Index = () => {
                             new Date(tx.created_at).toLocaleString("id-ID"),
                             tx.description || "-",
                           ]),
-                          styles: { fontSize: 8, cellPadding: 2 },
-                          headStyles: { fillColor: [41, 98, 255], textColor: 255, fontStyle: "bold" },
+                          styles: {
+                            fontSize: 8,
+                            cellPadding: 2,
+                            lineColor: [0, 0, 0],
+                            lineWidth: 0.2,
+                          },
+                          headStyles: {
+                            fillColor: [41, 98, 255],
+                            textColor: 255,
+                            fontStyle: "bold",
+                            lineColor: [0, 0, 0],
+                            lineWidth: 0.2,
+                          },
                           alternateRowStyles: { fillColor: [240, 245, 255] },
                           columnStyles: {
                             0: { cellWidth: 10 },
@@ -4344,6 +4355,8 @@ const Index = () => {
                             4: { cellWidth: 32 },
                             5: { cellWidth: "auto" },
                           },
+                          tableLineColor: [0, 0, 0],
+                          tableLineWidth: 0.3,
                           didDrawPage: (data) => {
                             doc.setFontSize(8);
                             doc.setTextColor(150, 150, 150);
