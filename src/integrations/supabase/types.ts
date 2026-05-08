@@ -771,6 +771,7 @@ export type Database = {
       deposits: {
         Row: {
           amount: number
+          cancel_reason: string | null
           created_at: string
           id: string
           payment_method: string
@@ -782,6 +783,7 @@ export type Database = {
         }
         Insert: {
           amount?: number
+          cancel_reason?: string | null
           created_at?: string
           id?: string
           payment_method?: string
@@ -793,6 +795,7 @@ export type Database = {
         }
         Update: {
           amount?: number
+          cancel_reason?: string | null
           created_at?: string
           id?: string
           payment_method?: string
@@ -8685,6 +8688,7 @@ export type Database = {
         Args: { p_amount: number; p_visitor_id: string }
         Returns: number
       }
+      auto_cancel_expired_deposits: { Args: never; Returns: number }
       bump_music_quest_event: {
         Args: { p_quest_type: string; p_visitor_id: string }
         Returns: undefined
