@@ -167,7 +167,11 @@ export default function HistoryEnhancer({
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
-    a.href = url; a.download = `${exportPrefix}-${Date.now()}.csv`; a.click();
+    const defaultName = `${exportPrefix}-${Date.now()}`;
+    const input = window.prompt("Masukkan nama file CSV (tanpa .csv):", defaultName);
+    if (input === null) { URL.revokeObjectURL(url); return; }
+    const safe = (input.trim() || defaultName).replace(/[\\/:*?"<>|]+/g, "_");
+    a.href = url; a.download = `${safe}.csv`; a.click();
     URL.revokeObjectURL(url);
   }
 
