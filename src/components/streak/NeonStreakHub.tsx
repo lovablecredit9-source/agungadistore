@@ -132,6 +132,7 @@ export default function NeonStreakHub({ visitorId, forcedView }: Props) {
   const [coinPackages, setCoinPackages] = useState<{ id: string; name: string; coins: number; price: number }[]>([]);
   const [topupPin, setTopupPin] = useState("");
   const [topupPkgId, setTopupPkgId] = useState<string | null>(null);
+  const [topupSource, setTopupSource] = useState<"auto" | "game" | "main">("auto");
   const [toppingUp, setToppingUp] = useState(false);
   const [history, setHistory] = useState<any[]>([]);
   const [powerUps, setPowerUps] = useState<{ extra_life: number; double_xp_until: string | null; time_freeze: number; auto_hint: number }>({ extra_life: 0, double_xp_until: null, time_freeze: 0, auto_hint: 0 });
@@ -381,7 +382,7 @@ export default function NeonStreakHub({ visitorId, forcedView }: Props) {
     setTopupPkgId(pkgId);
     try {
       const { data, error } = await supabase.functions.invoke("purchase-streak-coins", {
-        body: { visitorId, packageId: pkgId, pin: topupPin.trim(), action: "purchase" },
+        body: { visitorId, packageId: pkgId, pin: topupPin.trim(), action: "purchase", paymentSource: topupSource },
       });
       if (error || data?.error) {
         toast({ title: "Gagal top up", description: data?.error || error?.message, variant: "destructive" });
@@ -716,6 +717,11 @@ export default function NeonStreakHub({ visitorId, forcedView }: Props) {
                   </button>
                 ))}
               </div>
+              <div className="grid grid-cols-3 gap-1.5">
+                <button type="button" onClick={() => setTopupSource("auto")} className={`text-[10px] font-black rounded-md py-1.5 px-1 border transition ${topupSource === "auto" ? "bg-cyan-500 text-white border-cyan-400" : "bg-black/40 border-cyan-500/30 text-white/60"}`}>Auto</button>
+                <button type="button" onClick={() => setTopupSource("game")} className={`text-[10px] font-black rounded-md py-1.5 px-1 border transition ${topupSource === "game" ? "bg-emerald-600 text-white border-emerald-500" : "bg-black/40 border-cyan-500/30 text-white/60"}`}>Saldo IN</button>
+                <button type="button" onClick={() => setTopupSource("main")} className={`text-[10px] font-black rounded-md py-1.5 px-1 border transition ${topupSource === "main" ? "bg-cyan-500 text-white border-cyan-400" : "bg-black/40 border-cyan-500/30 text-white/60"}`}>Saldo Utama</button>
+              </div>
               <Input
                 type="password"
                 inputMode="numeric"
@@ -724,7 +730,7 @@ export default function NeonStreakHub({ visitorId, forcedView }: Props) {
                 onChange={(e) => setTopupPin(e.target.value)}
                 className="h-9 text-xs bg-black/40 border-cyan-500/30 text-white placeholder:text-white/40"
               />
-              <p className="text-[10px] text-white/50">Pembayaran dipotong dari saldo akun. PIN wajib untuk konfirmasi.</p>
+              <p className="text-[10px] text-white/50">{topupSource === "auto" ? "Pakai Saldo IN dulu, lalu Saldo Utama jika kurang." : topupSource === "game" ? "Pakai Saldo IN saja." : "Pakai Saldo Utama saja."} PIN wajib untuk konfirmasi.</p>
             </div>
           )}
 

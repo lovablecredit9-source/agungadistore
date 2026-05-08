@@ -35,6 +35,7 @@ export default function GemShop({ visitorId: visitorIdProp, onUpdate }: Props) {
   const [hasPin, setHasPin] = useState(false);
   const [pinDialog, setPinDialog] = useState<{ pkg: GemPackage; quantity: number } | null>(null);
   const [pinInput, setPinInput] = useState("");
+  const [paySource, setPaySource] = useState<"auto" | "game" | "main">("auto");
   const { toast } = useToast();
 
   const load = async () => {
@@ -94,7 +95,7 @@ export default function GemShop({ visitorId: visitorIdProp, onUpdate }: Props) {
     setBuying(p.id);
     try {
       const { data, error } = await supabase.functions.invoke("gem-purchase", {
-        body: { visitorId, packageId: p.id, quantity, pin },
+        body: { visitorId, packageId: p.id, quantity, pin, paymentSource: paySource },
       });
       if (error || data?.error) throw new Error(data?.error || error?.message || "Gagal");
       toast({ title: "💎 Gem Dibeli!", description: `+${data.gems_added} 💎 (x${data.quantity})` });
@@ -155,6 +156,15 @@ export default function GemShop({ visitorId: visitorIdProp, onUpdate }: Props) {
               <div className="rounded-lg bg-cyan-500/10 border border-cyan-500/30 p-3 text-center">
                 <p className="text-xs text-cyan-300 font-bold">Saldo Gem Kamu</p>
                 <p className="text-3xl font-black text-white">{formatCompactNumber(myGems)} 💎</p>
+              </div>
+              <div className="rounded-lg bg-black/40 border border-white/10 p-2 space-y-1.5">
+                <p className="text-[10px] font-black text-white/70 uppercase tracking-wider text-center">Sumber Pembayaran</p>
+                <div className="grid grid-cols-3 gap-1.5">
+                  <button type="button" onClick={() => setPaySource("auto")} className={`text-[10px] font-black rounded-md py-1.5 px-1 border transition ${paySource === "auto" ? "bg-cyan-500 text-white border-cyan-400" : "bg-black/40 border-white/10 text-white/60"}`}>Auto</button>
+                  <button type="button" onClick={() => setPaySource("game")} className={`text-[10px] font-black rounded-md py-1.5 px-1 border transition ${paySource === "game" ? "bg-emerald-600 text-white border-emerald-500" : "bg-black/40 border-white/10 text-white/60"}`}>Saldo IN</button>
+                  <button type="button" onClick={() => setPaySource("main")} className={`text-[10px] font-black rounded-md py-1.5 px-1 border transition ${paySource === "main" ? "bg-cyan-500 text-white border-cyan-400" : "bg-black/40 border-white/10 text-white/60"}`}>Saldo Utama</button>
+                </div>
+                <p className="text-[9px] text-white/50 text-center">{paySource === "auto" ? "Pakai Saldo IN dulu, lalu Saldo Utama." : paySource === "game" ? "Pakai Saldo IN saja." : "Pakai Saldo Utama saja."}</p>
               </div>
               {(() => {
                 const allDiskon = packages.filter((p) => p.is_first_purchase_only);
