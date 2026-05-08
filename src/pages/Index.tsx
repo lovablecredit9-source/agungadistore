@@ -4322,11 +4322,11 @@ const Index = () => {
                         doc.setFillColor(255, 255, 255);
                         doc.circle(pageW - 50, -8, 22, "F");
                         doc.circle(pageW - 70, headerH + 4, 14, "F");
-                        // Logo bulat
-                        if (logoData) {
+                        // Logo bulat (QRIS)
+                        if (qrisData) {
                           doc.setFillColor(255, 255, 255);
                           doc.circle(20, headerH / 2, 11, "F");
-                          try { doc.addImage(logoData, "PNG", 11, headerH / 2 - 9, 18, 18); } catch {}
+                          try { doc.addImage(qrisData, "JPEG", 11, headerH / 2 - 9, 18, 18); } catch {}
                         }
                         // Title
                         doc.setTextColor(255, 255, 255);
