@@ -112,12 +112,14 @@ export default function ProductNavToolbar({
   });
 
   return (
-    <div className="space-y-2.5">
-      {/* Search bar with suggestions/history */}
-      <div className="relative">
-        <div className="absolute -inset-0.5 bg-gradient-to-r from-primary/30 to-accent/30 rounded-2xl blur opacity-0 group-focus-within:opacity-100 transition-opacity duration-300" />
+    <div className="space-y-3">
+      {/* Search bar with animated gradient glow */}
+      <div className="relative group">
+        <div className={`absolute -inset-[2px] rounded-2xl bg-[conic-gradient(from_0deg,hsl(var(--primary)),hsl(var(--accent)),hsl(var(--primary)))] opacity-0 blur-[6px] transition-opacity duration-500 ${focused ? "opacity-70 animate-pulse" : "group-hover:opacity-30"}`} />
         <div className="relative">
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+          <div className={`absolute left-3 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full flex items-center justify-center transition-all duration-300 ${focused ? "bg-gradient-to-br from-primary to-accent text-primary-foreground scale-110 shadow-lg shadow-primary/30" : "bg-muted/60 text-muted-foreground"}`}>
+            <Search className="w-3.5 h-3.5" />
+          </div>
           <Input
             ref={inputRef}
             placeholder="Cari produk, kategori, atau kata kunci…"
@@ -131,7 +133,7 @@ export default function ProductNavToolbar({
                 inputRef.current?.blur();
               }
             }}
-            className="pl-10 pr-10 h-12 rounded-xl border-2 border-border/50 focus:border-primary/50 glass-card text-sm"
+            className="pl-12 pr-10 h-12 rounded-2xl border-2 border-border/40 focus:border-transparent focus-visible:ring-0 glass-card-strong text-sm font-medium shadow-sm"
           />
           {value.search && (
             <button
