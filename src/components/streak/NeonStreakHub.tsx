@@ -382,7 +382,7 @@ export default function NeonStreakHub({ visitorId, forcedView }: Props) {
     setTopupPkgId(pkgId);
     try {
       const { data, error } = await supabase.functions.invoke("purchase-streak-coins", {
-        body: { visitorId, packageId: pkgId, pin: topupPin.trim(), action: "purchase" },
+        body: { visitorId, packageId: pkgId, pin: topupPin.trim(), action: "purchase", paymentSource: topupSource },
       });
       if (error || data?.error) {
         toast({ title: "Gagal top up", description: data?.error || error?.message, variant: "destructive" });
