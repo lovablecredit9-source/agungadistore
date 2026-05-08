@@ -4543,10 +4543,10 @@ const Index = () => {
                       id: `dp-${dp.id}`,
                       title: `🏦 Deposit ${(dp.payment_method || "").toUpperCase()}`,
                       subtitle: `🧾 Deposit  •  ${st}  •  ${dp.trx_id || dp.id.slice(0, 8)}${dp.cancel_reason ? "  •  " + dp.cancel_reason : ""}`,
-                      amount: dp.status === "approved" ? Math.abs(dp.amount) : 0,
+                      amount: Math.abs(dp.amount),
                       date: dp.created_at,
                       category: "Deposit",
-                      meta: { trx_id: dp.trx_id || "", status: dp.status },
+                      meta: { trx_id: dp.trx_id || "", status: dp.status, deposit_amount: dp.amount },
                     };
                   });
                   const items: HistoryItem[] = [...txItems, ...depItems];
