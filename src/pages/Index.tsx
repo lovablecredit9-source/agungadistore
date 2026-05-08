@@ -4503,20 +4503,72 @@ const Index = () => {
                   <p className="text-center text-sm text-muted-foreground py-8">{t("balance.no_transactions", lang)}</p>
                 )}
                 {!banned && balanceTransactions.length > 0 && smartSaldo && (() => {
-                  const items: HistoryItem[] = balanceTransactions.map(tx => {
+                  const sourceLabel = (type: string) => {
+                    if (type === "topup_bonus") return "💎 Saldo IN";
+                    if (type === "topup") return "💰 Saldo Utama (Top Up)";
+                    if (isIncomeTx(type)) return "💰 Saldo Utama";
+                    return "💰 Saldo Utama (Pembelian)";
+                  };
+                  const txItems: HistoryItem[] = balanceTransactions.map(tx => {
                     const income = isIncomeTx(tx.type);
+                    const src = sourceLabel(tx.type);
+                    const desc = tx.description || (tx.trx_id ? `ID: ${tx.trx_id}` : "-");
                     return {
-                      id: tx.id,
+                      id: `tx-${tx.id}`,
                       title: getTxLabel(tx.type, lang),
-                      subtitle: tx.description || (tx.trx_id ? `ID: ${tx.trx_id}` : "-"),
+                      subtitle: `${src}  •  ${desc}`,
                       amount: income ? Math.abs(tx.amount) : -Math.abs(tx.amount),
                       date: tx.created_at,
-                      category: tx.type === "topup_bonus" ? "Bonus" : income ? "Top Up" : "Pembelian",
-                      meta: { trx_id: tx.trx_id || "" },
+                      category: tx.type === "topup_bonus" ? "Saldo IN" : income ? "Top Up" : "Pembelian",
+                      meta: { trx_id: tx.trx_id || "", sumber: src },
                     };
                   });
+                  const depItems: HistoryItem[] = deposits.map(dp => {
+                    const statusLabel: Record<string, string> = {
+                      pending: "⏳ Menunggu",
+                      approved: "✅ Disetujui",
+                      cancelled: "❌ Dibatalkan",
+                      rejected: "❌ Ditolak",
+                    };
+                    const st = statusLabel[dp.status] || dp.status;
+                    return {
+                      id: `dp-${dp.id}`,
+                      title: `🏦 Deposit ${(dp.payment_method || "").toUpperCase()}`,
+                      subtitle: `🧾 Deposit  •  ${st}  •  ${dp.trx_id || dp.id.slice(0, 8)}${dp.cancel_reason ? "  •  " + dp.cancel_reason : ""}`,
+                      amount: dp.status === "approved" ? Math.abs(dp.amount) : 0,
+                      date: dp.created_at,
+                      category: "Deposit",
+                      meta: { trx_id: dp.trx_id || "", status: dp.status },
+                    };
+                  });
+                  const items: HistoryItem[] = [...txItems, ...depItems];
                   const renderTx = (it: HistoryItem) => {
-                    const tx = balanceTransactions.find(t => t.id === it.id);
+                    if (it.id.startsWith("dp-")) {
+                      const dp = deposits.find(d => `dp-${d.id}` === it.id);
+                      if (!dp) return null;
+                      const isApproved = dp.status === "approved";
+                      const isPending = dp.status === "pending";
+                      return (
+                        <Card className="border border-border/60">
+                          <CardContent className="p-3 flex items-center gap-3">
+                            <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${isApproved ? "bg-emerald-500/15" : isPending ? "bg-amber-500/15" : "bg-rose-500/15"}`}>
+                              <span className="text-lg">🏦</span>
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="font-bold text-sm">Deposit {(dp.payment_method || "").toUpperCase()}</p>
+                              <p className="text-[10px] text-muted-foreground font-mono">ID: {dp.trx_id || dp.id.slice(0, 8)}</p>
+                              <p className={`text-[10px] font-semibold ${isApproved ? "text-emerald-600" : isPending ? "text-amber-600" : "text-rose-600"}`}>
+                                {isApproved ? "✅ Disetujui" : isPending ? "⏳ Menunggu" : dp.status === "cancelled" ? "❌ Dibatalkan" : "❌ Ditolak"}
+                              </p>
+                            </div>
+                            <span className={`font-bold text-sm ${isApproved ? "text-emerald-600" : "text-muted-foreground"}`}>
+                              {isApproved ? "+" : ""}{formatPrice(dp.amount)}
+                            </span>
+                          </CardContent>
+                        </Card>
+                      );
+                    }
+                    const tx = balanceTransactions.find(t => `tx-${t.id}` === it.id);
                     if (!tx) return null;
                     const income = isIncomeTx(tx.type);
                     const isBonus = tx.type === "topup_bonus";
@@ -4528,6 +4580,7 @@ const Index = () => {
                           </div>
                           <div className="flex-1 min-w-0">
                             <p className="font-bold text-sm">{getTxLabel(tx.type, lang)}</p>
+                            <p className={`text-[10px] font-semibold ${isBonus ? "text-amber-600" : "text-muted-foreground"}`}>{sourceLabel(tx.type)}</p>
                             {tx.trx_id && <p className="text-[10px] text-muted-foreground font-mono">ID: {tx.trx_id}</p>}
                             <p className="text-[10px] text-muted-foreground truncate">{tx.description || "-"}</p>
                           </div>
@@ -4540,9 +4593,9 @@ const Index = () => {
                   };
                   return (
                     <HistoryEnhancer
-                      title="Riwayat Transaksi Saldo"
+                      title="Riwayat Transaksi Saldo & Deposit"
                       items={items}
-                      categories={["Top Up", "Bonus", "Pembelian"]}
+                      categories={["Top Up", "Saldo IN", "Pembelian", "Deposit"]}
                       formatAmount={formatPrice}
                       exportPrefix="riwayat-saldo"
                       storeName={STORE_NAME}
