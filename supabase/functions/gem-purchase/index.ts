@@ -15,18 +15,19 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const { visitorId, packageId, quantity: qRaw, pin } = await req.json();
+    const { visitorId, packageId, quantity: qRaw, pin, paymentSource: pSrcRaw } = await req.json();
     if (!visitorId || !packageId) {
       return Response.json({ error: "visitorId & packageId wajib" }, { status: 400, headers: corsHeaders });
     }
     const quantity = Math.max(1, Math.min(99, Number(qRaw) || 1));
+    const paymentSource: "auto" | "game" | "main" =
+      pSrcRaw === "game" || pSrcRaw === "main" ? pSrcRaw : "auto";
 
     const admin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
 
     const { data: pkg } = await admin.from("gem_packages").select("*").eq("id", packageId).eq("is_active", true).maybeSingle();
     if (!pkg) return Response.json({ error: "Paket tidak ditemukan" }, { status: 404, headers: corsHeaders });
 
-    // First-purchase-only packages: limit to 1 per account, qty must be 1
     if ((pkg as any).is_first_purchase_only) {
       if (quantity !== 1) {
         return Response.json({ error: "Paket promo pertama hanya bisa dibeli 1x" }, { status: 400, headers: corsHeaders });
@@ -43,7 +44,6 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Find user_balance via visitor_id
     const { data: balLogin } = await admin
       .from("balance_login_history")
       .select("user_balance_id")
@@ -56,7 +56,7 @@ Deno.serve(async (req) => {
       return Response.json({ error: "Login akun saldo dulu untuk beli Gem" }, { status: 400, headers: corsHeaders });
     }
 
-    // PIN verification (jika user sudah set PIN)
+    // PIN verification
     const { data: pinRow } = await admin.from("user_pins").select("pin_hash").eq("visitor_id", visitorId).maybeSingle();
     if (pinRow) {
       if (!pin || !/^\d{4,6}$/.test(String(pin))) {
@@ -73,19 +73,66 @@ Deno.serve(async (req) => {
     const totalStreakCoins = ((pkg as any).bonus_streak_coins || 0) * quantity;
     const totalGameCredits = ((pkg as any).bonus_game_credits || 0) * quantity;
 
-    const { data: bal } = await admin.from("user_balances").select("balance").eq("id", balLogin.user_balance_id).maybeSingle();
-    if (!bal || bal.balance < totalPrice) {
-      return Response.json({ error: `Saldo kurang. Butuh Rp${totalPrice.toLocaleString("id-ID")}` }, { status: 400, headers: corsHeaders });
-    }
-    await admin.from("user_balances").update({ balance: bal.balance - totalPrice }).eq("id", balLogin.user_balance_id);
-    const newBalance = bal.balance - totalPrice;
+    // Ambil saldo Game (Saldo IN) & Utama
+    const { data: gameBal } = await admin
+      .from("game_balance")
+      .select("id, amount, total_spent")
+      .eq("visitor_id", visitorId)
+      .maybeSingle();
+    const { data: bal } = await admin
+      .from("user_balances")
+      .select("id, balance")
+      .eq("id", balLogin.user_balance_id)
+      .maybeSingle();
 
-    // Add gems via account-aware RPC (puts gems on the active account's primary profile)
+    const gameAmount = gameBal?.amount || 0;
+    const mainAmount = bal?.balance || 0;
+
+    let payFromGame = 0;
+    let payFromMain = 0;
+    let sourceLabel = "";
+    if (paymentSource === "main") {
+      if (mainAmount < totalPrice) return Response.json({ error: `Saldo Utama kurang. Butuh Rp${totalPrice.toLocaleString("id-ID")}` }, { status: 400, headers: corsHeaders });
+      payFromMain = totalPrice;
+      sourceLabel = "Saldo Utama";
+    } else if (paymentSource === "game") {
+      if (gameAmount < totalPrice) return Response.json({ error: `Saldo IN kurang. Butuh Rp${totalPrice.toLocaleString("id-ID")}` }, { status: 400, headers: corsHeaders });
+      payFromGame = totalPrice;
+      sourceLabel = "Saldo IN";
+    } else {
+      if (gameAmount + mainAmount < totalPrice) {
+        return Response.json({ error: `Saldo gabungan kurang. Butuh Rp${totalPrice.toLocaleString("id-ID")}` }, { status: 400, headers: corsHeaders });
+      }
+      payFromGame = Math.min(gameAmount, totalPrice);
+      payFromMain = totalPrice - payFromGame;
+      sourceLabel = payFromGame > 0 && payFromMain > 0 ? "Saldo IN + Utama" : payFromGame > 0 ? "Saldo IN" : "Saldo Utama";
+    }
+
+    // Potong saldo
+    if (payFromGame > 0 && gameBal) {
+      await admin.from("game_balance").update({
+        amount: gameAmount - payFromGame,
+        total_spent: (gameBal.total_spent || 0) + payFromGame,
+      }).eq("id", gameBal.id);
+      await admin.from("game_balance_transactions").insert({
+        visitor_id: visitorId,
+        type: "spend",
+        amount: -payFromGame,
+        description: `Beli ${pkg.name} (${totalGems} 💎)`,
+      });
+    }
+    if (payFromMain > 0 && bal) {
+      await admin.from("user_balances").update({ balance: mainAmount - payFromMain }).eq("id", bal.id);
+    }
+    const newBalance = mainAmount - payFromMain;
+    const newGameBalance = gameAmount - payFromGame;
+
+    // Tambah gem
     if (totalGems > 0) {
       await admin.rpc("add_account_gems", { p_visitor_id: visitorId, p_amount: totalGems });
     }
 
-    // Add Streak Coins to daily_streaks (combo bundles)
+    // Bonus Streak Coins
     if (totalStreakCoins > 0) {
       const { data: streak } = await admin
         .from("daily_streaks")
@@ -109,7 +156,7 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Add Game Credits (paket Komplit)
+    // Bonus Game Credits
     if (totalGameCredits > 0) {
       const { data: ugc } = await admin.from("user_game_credits").select("credits").eq("visitor_id", visitorId).maybeSingle();
       if (ugc) {
@@ -126,34 +173,41 @@ Deno.serve(async (req) => {
     if (totalStreakCoins > 0) parts.push(`${totalStreakCoins.toLocaleString("id-ID")} 🪙`);
     if (totalGameCredits > 0) parts.push(`${totalGameCredits.toLocaleString("id-ID")} 🔑`);
     const comboTxt = parts.length ? ` + ${parts.join(" + ")}` : "";
+
     await admin.from("gem_transactions").insert({
       visitor_id: visitorId,
       amount: totalGems,
       type: "purchase",
-      description: `Beli ${pkg.name}${qtyLabel}: +${totalGems} 💎${comboTxt} (Rp${totalPrice.toLocaleString("id-ID")})`,
+      description: `Beli ${pkg.name}${qtyLabel}: +${totalGems} 💎${comboTxt} (Rp${totalPrice.toLocaleString("id-ID")} [${sourceLabel}])`,
       reference_id: pkg.id,
     });
-    await admin.from("balance_transactions").insert({
-      visitor_id: visitorId,
-      amount: -totalPrice,
-      type: "gem_purchase",
-      description: `Beli ${pkg.name}${qtyLabel}: ${totalGems} 💎${comboTxt}`,
-    });
-    const splitTxt = usedBonus > 0 ? ` [Saldo Bonus: -Rp${usedBonus.toLocaleString("id-ID")}${usedMain > 0 ? `, Saldo Utama: -Rp${usedMain.toLocaleString("id-ID")}` : ""}]` : "";
-    await admin.from("balance_transactions").insert({
-      visitor_id: visitorId,
-      amount: -totalPrice,
-      type: "gem_purchase",
-      description: `Beli ${pkg.name}${qtyLabel}: ${totalGems} 💎${comboTxt}${splitTxt}`,
-    });
+    if (payFromMain > 0) {
+      await admin.from("balance_transactions").insert({
+        visitor_id: visitorId,
+        amount: -payFromMain,
+        type: "gem_purchase",
+        description: `Beli ${pkg.name}${qtyLabel}: ${totalGems} 💎${comboTxt} [${sourceLabel}]`,
+      });
+    }
     await admin.from("notifications").insert({
       visitor_id: visitorId,
       title: parts.length ? "🎁 Combo Diterima!" : "💎 Gem Bertambah!",
-      message: `Kamu mendapat ${totalGems} 💎${comboTxt} dari ${pkg.name}${qtyLabel}`,
+      message: `Kamu mendapat ${totalGems} 💎${comboTxt} dari ${pkg.name}${qtyLabel} (${sourceLabel})`,
       type: "gem",
     });
 
-    return Response.json({ success: true, gems_added: totalGems, streak_coins_added: totalStreakCoins, game_credits_added: totalGameCredits, quantity, new_balance: newBalance, used_bonus: usedBonus, used_main: usedMain }, { headers: corsHeaders });
+    return Response.json({
+      success: true,
+      gems_added: totalGems,
+      streak_coins_added: totalStreakCoins,
+      game_credits_added: totalGameCredits,
+      quantity,
+      new_balance: newBalance,
+      game_balance_remaining: newGameBalance,
+      paid_from_game: payFromGame,
+      paid_from_main: payFromMain,
+      source_label: sourceLabel,
+    }, { headers: corsHeaders });
   } catch (e) {
     return Response.json({ error: e instanceof Error ? e.message : "Error" }, { status: 500, headers: corsHeaders });
   }
