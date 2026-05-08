@@ -24,6 +24,24 @@ import { useTheme } from "@/lib/theme";
 import { useToast } from "@/hooks/use-toast";
 import jsPDF from "jspdf";
 import storeQris from "@/assets/store-qris.jpg";
+
+// PDF asset cache
+const _pdfImgCache: Record<string, string> = {};
+async function loadPdfImage(url: string): Promise<string | null> {
+  if (_pdfImgCache[url]) return _pdfImgCache[url];
+  try {
+    const res = await fetch(url);
+    const blob = await res.blob();
+    const data: string = await new Promise((resolve, reject) => {
+      const r = new FileReader();
+      r.onloadend = () => resolve(r.result as string);
+      r.onerror = reject;
+      r.readAsDataURL(blob);
+    });
+    _pdfImgCache[url] = data;
+    return data;
+  } catch { return null; }
+}
 import musicBanner from "@/assets/music-banner.jpg";
 import promoProductsImg from "@/assets/promo-products.jpg";
 import promoSponsorsImg from "@/assets/promo-sponsors.jpg";
@@ -1270,15 +1288,14 @@ const Index = () => {
     const pageW = doc.internal.pageSize.getWidth();
     const pageH = doc.internal.pageSize.getHeight();
 
-    try {
-      const img = new window.Image();
-      img.crossOrigin = "anonymous";
-      await new Promise<void>((resolve) => {
-        img.onload = () => { doc.addImage(img, "JPEG", pageW / 2 - 10, 5, 20, 20); resolve(); };
-        img.onerror = () => resolve();
-        img.src = storeQris;
-      });
-    } catch {}
+    const logoData = await loadPdfImage("/icons/icon-192.png");
+    const qrisData = await loadPdfImage(storeQris);
+    if (logoData) {
+      try { doc.addImage(logoData, "PNG", 10, 5, 22, 22); } catch {}
+    }
+    if (qrisData) {
+      try { doc.addImage(qrisData, "JPEG", pageW - 32, 5, 22, 22); } catch {}
+    }
 
     doc.setFillColor(99, 102, 241);
     doc.rect(0, 28, pageW, 18, "F");
@@ -4279,9 +4296,13 @@ const Index = () => {
                       size="sm"
                       className="w-full gap-1 text-xs"
                       disabled={selectedTxIds.size === 0}
-                      onClick={() => {
+                      onClick={async () => {
                         const selected = balanceTransactions.filter(tx => selectedTxIds.has(tx.id));
                         if (selected.length === 0) return;
+                        const [logoData, qrisData] = await Promise.all([
+                          loadPdfImage("/icons/icon-192.png"),
+                          loadPdfImage(storeQris),
+                        ]);
                         const doc = new jsPDF();
                         const pageW = doc.internal.pageSize.getWidth();
                         const pageH = doc.internal.pageSize.getHeight();
@@ -4291,6 +4312,9 @@ const Index = () => {
                           // Header
                           doc.setFillColor(41, 98, 255);
                           doc.rect(0, 0, pageW, 50, "F");
+                          if (logoData) {
+                            try { doc.addImage(logoData, "PNG", 10, 8, 30, 30); } catch {}
+                          }
                           doc.setTextColor(255, 255, 255);
                           doc.setFontSize(16);
                           doc.setFont("helvetica", "bold");
@@ -4316,6 +4340,16 @@ const Index = () => {
                           if (userBalance) {
                             y += 5;
                             doc.text(`Username: ${userBalance.username}`, 20, y); y += 7;
+                          }
+                          // QRIS kecil di pojok kanan bawah body
+                          if (qrisData) {
+                            try {
+                              const qSize = 38;
+                              doc.addImage(qrisData, "JPEG", pageW - qSize - 14, pageH - qSize - 28, qSize, qSize);
+                              doc.setFontSize(7);
+                              doc.setTextColor(80);
+                              doc.text("QRIS Toko", pageW - qSize / 2 - 14, pageH - 26, { align: "center" });
+                            } catch {}
                           }
                           // Footer
                           doc.setFontSize(8);
