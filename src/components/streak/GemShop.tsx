@@ -35,6 +35,7 @@ export default function GemShop({ visitorId: visitorIdProp, onUpdate }: Props) {
   const [hasPin, setHasPin] = useState(false);
   const [pinDialog, setPinDialog] = useState<{ pkg: GemPackage; quantity: number } | null>(null);
   const [pinInput, setPinInput] = useState("");
+  const [paySource, setPaySource] = useState<"auto" | "game" | "main">("auto");
   const { toast } = useToast();
 
   const load = async () => {
