@@ -406,10 +406,18 @@ const Index = () => {
   const [historyPage, setHistoryPage] = useState(1);
   const HISTORY_PER_PAGE = 5;
   const [smartHistory, setSmartHistory] = useState<boolean>(() => localStorage.getItem("smart_history_v1") === "1");
-  const [smartSaldo, setSmartSaldo] = useState<boolean>(() => localStorage.getItem("smart_saldo_v1") !== "0");
+  const [smartSaldo, setSmartSaldo] = useState<boolean>(() => {
+    const saved = localStorage.getItem("smart_saldo_v2");
+    if (saved !== null) return saved === "1";
+    return true;
+  });
   const [smartTickets, setSmartTickets] = useState<boolean>(() => localStorage.getItem("smart_tickets_v1") !== "0");
   useEffect(() => { localStorage.setItem("smart_history_v1", smartHistory ? "1" : "0"); }, [smartHistory]);
-  useEffect(() => { localStorage.setItem("smart_saldo_v1", smartSaldo ? "1" : "0"); }, [smartSaldo]);
+  useEffect(() => {
+    localStorage.setItem("smart_saldo_v1", smartSaldo ? "1" : "0");
+    localStorage.setItem("smart_saldo_v2", smartSaldo ? "1" : "0");
+    if (smartSaldo) setShowTxExport(false);
+  }, [smartSaldo]);
   useEffect(() => { localStorage.setItem("smart_tickets_v1", smartTickets ? "1" : "0"); }, [smartTickets]);
   const { toast } = useToast();
 
@@ -4262,7 +4270,7 @@ const Index = () => {
                             <Sparkles className="w-3 h-3" /> Pintar
                           </button>
                         )}
-                        {balanceTransactions.length > 0 && (
+                        {balanceTransactions.length > 0 && !smartSaldo && (
                           <button
                             onClick={() => setShowTxExport(!showTxExport)}
                             className={`flex items-center gap-1 text-[11px] h-7 px-2.5 rounded-full font-semibold transition-all active:scale-95 ${showTxExport ? "bg-foreground text-background" : "bg-white/[0.08] text-foreground border border-white/10 hover:bg-white/[0.12]"}`}
@@ -4275,7 +4283,7 @@ const Index = () => {
                   </div>
                 </div>
 
-                {showTxExport && balanceTransactions.length > 0 && (
+                {showTxExport && !smartSaldo && balanceTransactions.length > 0 && (
                   <div className="space-y-2 bg-muted/30 rounded-xl p-3 border">
                     <div className="flex items-center justify-between">
                       <label className="flex items-center gap-2 text-xs cursor-pointer">
