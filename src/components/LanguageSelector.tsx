@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { LANGUAGES, REGIONS, getLanguageByCode, type LanguageOption } from "@/lib/languages";
 import { Search, X, Globe, ChevronDown } from "lucide-react";
 
@@ -61,8 +62,8 @@ export default function LanguageSelector({ currentLang, onSelect }: LanguageSele
         <span className="text-sm leading-none">{current?.flag || "🌐"}</span>
       </button>
 
-      {open && (
-        <div data-no-auto-translate className="fixed inset-0 z-[70] bg-black/60 backdrop-blur-sm flex items-center justify-center p-3">
+      {open && createPortal(
+        <div data-no-auto-translate className="fixed inset-0 z-[9999] bg-black/70 backdrop-blur-sm flex items-center justify-center p-3">
           <div ref={panelRef} style={{ maxHeight: "calc(100dvh - 24px)" }} className="bg-card w-full max-w-sm rounded-2xl overflow-hidden animate-in zoom-in-95 duration-200 flex flex-col shadow-2xl">
             {/* Header */}
             <div className="flex items-center justify-between p-4 pb-2 shrink-0">
@@ -197,7 +198,8 @@ export default function LanguageSelector({ currentLang, onSelect }: LanguageSele
               <p className="text-[10px] text-muted-foreground">{LANGUAGES.length} bahasa tersedia</p>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </>
   );
