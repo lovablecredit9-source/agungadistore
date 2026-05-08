@@ -206,45 +206,136 @@ export default function HistoryEnhancer({
       loadImageAsDataURL(storeQris),
     ]);
 
-    // Header band
+    // ===== HEADER GRADIENT =====
+    const headerH = 46;
     doc.setFillColor(41, 98, 255);
-    doc.rect(0, 0, pageW, 38, "F");
-    if (logoData) {
-      try { doc.addImage(logoData, "PNG", 10, 6, 26, 26); } catch {}
+    doc.rect(0, 0, pageW, headerH, "F");
+    for (let i = 0; i < 24; i++) {
+      doc.setFillColor(99, 102, 241, 255 - i * 8);
+      doc.rect(0, i * (headerH / 24), pageW, headerH / 24 + 0.4, "F");
+    }
+    doc.setFillColor(255, 255, 255);
+    doc.circle(pageW - 50, -8, 22, "F");
+    doc.circle(pageW - 70, headerH + 4, 14, "F");
+    // Logo bulat (QRIS)
+    if (qrisData) {
+      doc.setFillColor(255, 255, 255);
+      doc.circle(20, headerH / 2, 11, "F");
+      try { doc.addImage(qrisData, "JPEG", 11, headerH / 2 - 9, 18, 18); } catch {}
     }
     doc.setTextColor(255, 255, 255);
-    doc.setFontSize(15); doc.setFont("helvetica", "bold");
-    doc.text(storeName, pageW / 2, 16, { align: "center" });
+    doc.setFontSize(18); doc.setFont("helvetica", "bold");
+    doc.text(storeName, 36, 18);
     doc.setFontSize(10); doc.setFont("helvetica", "normal");
-    doc.text(title, pageW / 2, 24, { align: "center" });
-    doc.setFontSize(8);
-    doc.text(`Dicetak: ${new Date().toLocaleString("id-ID")} • ${filtered.length} item`, pageW / 2, 31, { align: "center" });
+    doc.text(title, 36, 25);
+    doc.setFontSize(7.5);
+    doc.text(`Dicetak: ${new Date().toLocaleString("id-ID")} WIB`, 36, 31);
+    doc.text(`Total: ${filtered.length} item`, 36, 36);
+    doc.setFillColor(255, 255, 255);
+    doc.roundedRect(36, 39, 38, 5, 2.5, 2.5, "F");
+    doc.setTextColor(41, 98, 255);
+    doc.setFontSize(6.5); doc.setFont("helvetica", "bold");
+    doc.text("MURAH & TERPERCAYA", 55, 42.5, { align: "center" });
+    if (qrisData) {
+      doc.setFillColor(255, 255, 255);
+      doc.roundedRect(pageW - 36, 4, 32, 38, 2, 2, "F");
+      try { doc.addImage(qrisData, "JPEG", pageW - 34, 6, 28, 28); } catch {}
+      doc.setTextColor(41, 98, 255);
+      doc.setFontSize(6); doc.setFont("helvetica", "bold");
+      doc.text("SCAN QRIS", pageW - 20, 39, { align: "center" });
+    }
 
-    // Summary box
-    doc.setTextColor(0, 0, 0);
-    doc.setFontSize(9); doc.setFont("helvetica", "bold");
-    let y = 48;
-    doc.text(`Ringkasan`, 14, y); y += 5;
+    // ===== RINGKASAN CARDS =====
+    const cardY = 52;
+    const cardW = (pageW - 30) / 3;
+    const drawCard = (x: number, label: string, value: string, fill: number[], border: number[], txtColor: number[]) => {
+      doc.setFillColor(fill[0], fill[1], fill[2]);
+      doc.setDrawColor(border[0], border[1], border[2]);
+      doc.roundedRect(x, cardY, cardW, 16, 2, 2, "FD");
+      doc.setTextColor(100, 116, 139);
+      doc.setFontSize(7); doc.setFont("helvetica", "bold");
+      doc.text(label, x + 3, cardY + 5);
+      doc.setTextColor(txtColor[0], txtColor[1], txtColor[2]);
+      doc.setFontSize(11);
+      doc.text(value, x + 3, cardY + 13);
+    };
+    drawCard(10, "TOTAL ITEM", String(filtered.length), [239, 246, 255], [191, 219, 254], [30, 41, 59]);
+    drawCard(15 + cardW, "MASUK", `+${formatAmount(stats.totalIn || 0)}`, [236, 253, 245], [167, 243, 208], [5, 150, 105]);
+    drawCard(20 + cardW * 2, "KELUAR", `-${formatAmount(stats.totalOut || 0)}`, [254, 242, 242], [254, 202, 202], [220, 38, 38]);
+
+    // ===== PERINGATAN =====
+    const warnY = 72;
+    doc.setFillColor(254, 252, 232);
+    doc.setDrawColor(234, 179, 8);
+    doc.roundedRect(10, warnY, pageW - 20, 22, 2, 2, "FD");
+    doc.setFillColor(234, 179, 8);
+    doc.rect(10, warnY, 1.5, 22, "F");
+    doc.setTextColor(146, 64, 14);
+    doc.setFontSize(8.5); doc.setFont("helvetica", "bold");
+    doc.text("⚠ PERINGATAN", 14, warnY + 5);
     doc.setFont("helvetica", "normal");
-    doc.text(`Total Item   : ${filtered.length}`, 14, y); y += 5;
-    if (stats.totalIn > 0)  { doc.text(`Total Masuk  : ${formatAmount(stats.totalIn)}`, 14, y); y += 5; }
-    if (stats.totalOut > 0) { doc.text(`Total Keluar : ${formatAmount(stats.totalOut)}`, 14, y); y += 5; }
-    y += 3;
-    doc.setFont("helvetica", "bold"); doc.setFontSize(10);
-    doc.text("Detail Riwayat", 14, y); y += 6;
-    doc.setFont("helvetica", "normal"); doc.setFontSize(9);
+    doc.setFontSize(7); doc.setTextColor(60, 60, 60);
+    const warnLines = [
+      "• File ini hanya tampilan/ekspos riwayat — BUKAN bukti pembayaran resmi pihak ketiga.",
+      "• Transaksi produk SPONSOR di luar tanggung jawab admin. Hubungi admin sponsor / Rekber via WhatsApp.",
+      "• Hanya transaksi RESMI Agung Adi Store yang dijamin admin (WA: 085769302532).",
+    ];
+    let wwy = warnY + 10;
+    warnLines.forEach((ln) => {
+      const wrapped = doc.splitTextToSize(ln, pageW - 28);
+      doc.text(wrapped, 14, wwy);
+      wwy += wrapped.length * 2.8;
+    });
+    doc.setTextColor(0, 0, 0);
+
+    // ===== DETAIL RIWAYAT =====
+    let y = 100;
+    doc.setFont("helvetica", "bold"); doc.setFontSize(11);
+    doc.setTextColor(41, 98, 255);
+    doc.text("Detail Riwayat", 14, y);
+    doc.setDrawColor(41, 98, 255);
+    doc.setLineWidth(0.5);
+    doc.line(14, y + 1.5, 14 + 30, y + 1.5);
+    y += 8;
+    doc.setTextColor(0, 0, 0);
     filtered.forEach((it, i) => {
-      if (y > pageH - 20) { doc.addPage(); y = 20; }
-      doc.setFont("helvetica", "bold");
-      doc.text(`${i + 1}. ${it.title}`, 14, y, { maxWidth: pageW - 28 }); y += 5;
-      doc.setFont("helvetica", "normal");
-      doc.text(`   ${new Date(it.date).toLocaleString("id-ID")}`, 14, y); y += 4;
-      if (it.category) { doc.text(`   Kategori: ${it.category}`, 14, y); y += 4; }
-      if (it.subtitle) { doc.text(`   ${it.subtitle}`, 14, y, { maxWidth: pageW - 28 }); y += 4; }
-      if (typeof it.amount === "number" && it.amount !== 0) {
-        doc.text(`   Nominal: ${it.amount > 0 ? "+" : "-"}${formatAmount(Math.abs(it.amount))}`, 14, y); y += 4;
+      if (y > pageH - 25) { doc.addPage(); y = 20; }
+      // Card per item
+      const isIncome = typeof it.amount === "number" && it.amount > 0;
+      const accent = isIncome ? [5, 150, 105] : it.amount && it.amount < 0 ? [220, 38, 38] : [99, 102, 241];
+      doc.setFillColor(248, 250, 252);
+      doc.setDrawColor(226, 232, 240);
+      doc.roundedRect(10, y - 3, pageW - 20, 18, 1.5, 1.5, "FD");
+      // Strip warna
+      doc.setFillColor(accent[0], accent[1], accent[2]);
+      doc.rect(10, y - 3, 1.5, 18, "F");
+      // Number badge
+      doc.setFillColor(accent[0], accent[1], accent[2]);
+      doc.circle(18, y + 3, 3, "F");
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(7); doc.setFont("helvetica", "bold");
+      doc.text(String(i + 1), 18, y + 4, { align: "center" });
+      // Title
+      doc.setTextColor(30, 41, 59);
+      doc.setFontSize(9); doc.setFont("helvetica", "bold");
+      doc.text(it.title, 24, y + 1, { maxWidth: pageW - 70 });
+      // Date + category
+      doc.setFontSize(7); doc.setFont("helvetica", "normal");
+      doc.setTextColor(100, 116, 139);
+      doc.text(`${new Date(it.date).toLocaleString("id-ID")}${it.category ? "  •  " + it.category : ""}`, 24, y + 5);
+      // Subtitle
+      if (it.subtitle) {
+        doc.setTextColor(71, 85, 105);
+        doc.setFontSize(7);
+        doc.text(it.subtitle, 24, y + 9, { maxWidth: pageW - 70 });
       }
-      y += 2;
+      // Amount kanan
+      if (typeof it.amount === "number" && it.amount !== 0) {
+        doc.setTextColor(accent[0], accent[1], accent[2]);
+        doc.setFontSize(10); doc.setFont("helvetica", "bold");
+        doc.text(`${it.amount > 0 ? "+" : "-"}${formatAmount(Math.abs(it.amount))}`, pageW - 14, y + 5, { align: "right" });
+      }
+      y += 21;
     });
 
     // QRIS page (lampiran pembayaran)
