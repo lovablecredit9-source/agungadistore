@@ -406,7 +406,7 @@ const Index = () => {
   const [historyPage, setHistoryPage] = useState(1);
   const HISTORY_PER_PAGE = 5;
   const [smartHistory, setSmartHistory] = useState<boolean>(() => localStorage.getItem("smart_history_v1") === "1");
-  const [smartSaldo, setSmartSaldo] = useState<boolean>(() => localStorage.getItem("smart_saldo_v1") === "1");
+  const [smartSaldo, setSmartSaldo] = useState<boolean>(() => localStorage.getItem("smart_saldo_v1") !== "0");
   const [smartTickets, setSmartTickets] = useState<boolean>(() => localStorage.getItem("smart_tickets_v1") !== "0");
   useEffect(() => { localStorage.setItem("smart_history_v1", smartHistory ? "1" : "0"); }, [smartHistory]);
   useEffect(() => { localStorage.setItem("smart_saldo_v1", smartSaldo ? "1" : "0"); }, [smartSaldo]);
