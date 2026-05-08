@@ -177,6 +177,22 @@ export default function HistoryEnhancer({
     return Array.from(map.entries()).map(([k, list]) => ({ key: k, items: list }));
   }, [filtered]);
 
+  const getExportAmount = (it: HistoryItem) => {
+    if (typeof it.amount === "number" && it.amount !== 0) return it.amount;
+    const raw = it.meta?.deposit_amount ?? it.meta?.nominal ?? it.meta?.jumlah;
+    if (typeof raw === "number") return raw;
+    if (typeof raw === "string") {
+      const parsed = Number(raw.replace(/[^0-9-]/g, ""));
+      return Number.isFinite(parsed) ? parsed : 0;
+    }
+    return 0;
+  };
+
+  const formatExportAmount = (it: HistoryItem) => {
+    const amount = getExportAmount(it);
+    return amount !== 0 ? `${amount > 0 ? "+" : "-"}${formatAmount(Math.abs(amount))}` : "-";
+  };
+
   // ======= EXPORT =======
   function exportCSV() {
     if (filtered.length === 0) return;
@@ -187,7 +203,7 @@ export default function HistoryEnhancer({
       `"${(it.title ?? "").replace(/"/g, '""')}"`,
       it.category ?? "",
       `"${(it.subtitle ?? "").replace(/"/g, '""')}"`,
-      it.amount ?? 0,
+      getExportAmount(it),
     ].join(","));
     const csv = "\uFEFF" + [headers.join(","), ...rows].join("\n");
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
