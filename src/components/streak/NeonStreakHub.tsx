@@ -717,6 +717,11 @@ export default function NeonStreakHub({ visitorId, forcedView }: Props) {
                   </button>
                 ))}
               </div>
+              <div className="grid grid-cols-3 gap-1.5">
+                <button type="button" onClick={() => setTopupSource("auto")} className={`text-[10px] font-black rounded-md py-1.5 px-1 border transition ${topupSource === "auto" ? "bg-cyan-500 text-white border-cyan-400" : "bg-black/40 border-cyan-500/30 text-white/60"}`}>Auto</button>
+                <button type="button" onClick={() => setTopupSource("game")} className={`text-[10px] font-black rounded-md py-1.5 px-1 border transition ${topupSource === "game" ? "bg-emerald-600 text-white border-emerald-500" : "bg-black/40 border-cyan-500/30 text-white/60"}`}>Saldo IN</button>
+                <button type="button" onClick={() => setTopupSource("main")} className={`text-[10px] font-black rounded-md py-1.5 px-1 border transition ${topupSource === "main" ? "bg-cyan-500 text-white border-cyan-400" : "bg-black/40 border-cyan-500/30 text-white/60"}`}>Saldo Utama</button>
+              </div>
               <Input
                 type="password"
                 inputMode="numeric"
@@ -725,7 +730,7 @@ export default function NeonStreakHub({ visitorId, forcedView }: Props) {
                 onChange={(e) => setTopupPin(e.target.value)}
                 className="h-9 text-xs bg-black/40 border-cyan-500/30 text-white placeholder:text-white/40"
               />
-              <p className="text-[10px] text-white/50">Pembayaran dipotong dari saldo akun. PIN wajib untuk konfirmasi.</p>
+              <p className="text-[10px] text-white/50">{topupSource === "auto" ? "Pakai Saldo IN dulu, lalu Saldo Utama jika kurang." : topupSource === "game" ? "Pakai Saldo IN saja." : "Pakai Saldo Utama saja."} PIN wajib untuk konfirmasi.</p>
             </div>
           )}
 
