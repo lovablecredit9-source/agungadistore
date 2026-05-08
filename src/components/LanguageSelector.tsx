@@ -198,8 +198,7 @@ export default function LanguageSelector({ currentLang, onSelect }: LanguageSele
               <p className="text-[10px] text-muted-foreground">{LANGUAGES.length} bahasa tersedia</p>
             </div>
           </div>
-        </div>
-      </div>,
+        </div>,
         document.body
       )}
     </>
