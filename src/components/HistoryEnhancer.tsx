@@ -16,6 +16,25 @@ import { format, isAfter, isBefore, startOfDay, endOfDay, subDays } from "date-f
 import { id as localeId } from "date-fns/locale";
 import jsPDF from "jspdf";
 import CountUp from "@/components/CountUp";
+import storeQris from "@/assets/store-qris.jpg";
+
+// Cache image load → base64 dataURL
+const _imgCache: Record<string, string> = {};
+async function loadImageAsDataURL(url: string): Promise<string | null> {
+  if (_imgCache[url]) return _imgCache[url];
+  try {
+    const res = await fetch(url);
+    const blob = await res.blob();
+    const dataUrl: string = await new Promise((resolve, reject) => {
+      const r = new FileReader();
+      r.onloadend = () => resolve(r.result as string);
+      r.onerror = reject;
+      r.readAsDataURL(blob);
+    });
+    _imgCache[url] = dataUrl;
+    return dataUrl;
+  } catch { return null; }
+}
 
 /** Generic record yang harus dimiliki setiap item */
 export interface HistoryItem {
