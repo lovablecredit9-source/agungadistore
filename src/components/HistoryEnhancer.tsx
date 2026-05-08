@@ -16,6 +16,25 @@ import { format, isAfter, isBefore, startOfDay, endOfDay, subDays } from "date-f
 import { id as localeId } from "date-fns/locale";
 import jsPDF from "jspdf";
 import CountUp from "@/components/CountUp";
+import storeQris from "@/assets/store-qris.jpg";
+
+// Cache image load → base64 dataURL
+const _imgCache: Record<string, string> = {};
+async function loadImageAsDataURL(url: string): Promise<string | null> {
+  if (_imgCache[url]) return _imgCache[url];
+  try {
+    const res = await fetch(url);
+    const blob = await res.blob();
+    const dataUrl: string = await new Promise((resolve, reject) => {
+      const r = new FileReader();
+      r.onloadend = () => resolve(r.result as string);
+      r.onerror = reject;
+      r.readAsDataURL(blob);
+    });
+    _imgCache[url] = dataUrl;
+    return dataUrl;
+  } catch { return null; }
+}
 
 /** Generic record yang harus dimiliki setiap item */
 export interface HistoryItem {
@@ -175,14 +194,24 @@ export default function HistoryEnhancer({
     URL.revokeObjectURL(url);
   }
 
-  function exportPDF() {
+  async function exportPDF() {
     if (filtered.length === 0) return;
     const doc = new jsPDF();
     const pageW = doc.internal.pageSize.getWidth();
     const pageH = doc.internal.pageSize.getHeight();
-    // Header
+
+    // Preload assets
+    const [logoData, qrisData] = await Promise.all([
+      loadImageAsDataURL("/icons/icon-192.png"),
+      loadImageAsDataURL(storeQris),
+    ]);
+
+    // Header band
     doc.setFillColor(41, 98, 255);
-    doc.rect(0, 0, pageW, 36, "F");
+    doc.rect(0, 0, pageW, 38, "F");
+    if (logoData) {
+      try { doc.addImage(logoData, "PNG", 10, 6, 26, 26); } catch {}
+    }
     doc.setTextColor(255, 255, 255);
     doc.setFontSize(15); doc.setFont("helvetica", "bold");
     doc.text(storeName, pageW / 2, 16, { align: "center" });
@@ -190,10 +219,11 @@ export default function HistoryEnhancer({
     doc.text(title, pageW / 2, 24, { align: "center" });
     doc.setFontSize(8);
     doc.text(`Dicetak: ${new Date().toLocaleString("id-ID")} • ${filtered.length} item`, pageW / 2, 31, { align: "center" });
+
     // Summary box
     doc.setTextColor(0, 0, 0);
     doc.setFontSize(9); doc.setFont("helvetica", "bold");
-    let y = 46;
+    let y = 48;
     doc.text(`Ringkasan`, 14, y); y += 5;
     doc.setFont("helvetica", "normal");
     doc.text(`Total Item   : ${filtered.length}`, 14, y); y += 5;
@@ -216,6 +246,24 @@ export default function HistoryEnhancer({
       }
       y += 2;
     });
+
+    // QRIS page (lampiran pembayaran)
+    if (qrisData) {
+      doc.addPage();
+      doc.setFillColor(41, 98, 255);
+      doc.rect(0, 0, pageW, 22, "F");
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(13); doc.setFont("helvetica", "bold");
+      doc.text("QRIS Pembayaran", pageW / 2, 14, { align: "center" });
+      doc.setTextColor(0, 0, 0);
+      doc.setFontSize(10); doc.setFont("helvetica", "normal");
+      doc.text("Scan QRIS di bawah untuk melakukan pembayaran/top up.", pageW / 2, 32, { align: "center" });
+      const size = 110;
+      try { doc.addImage(qrisData, "JPEG", (pageW - size) / 2, 40, size, size); } catch {}
+      doc.setFontSize(9); doc.setTextColor(100);
+      doc.text(`${storeName} • WA 085769302532`, pageW / 2, 40 + size + 8, { align: "center" });
+    }
+
     // Footer halaman
     const pageCount = (doc as any).internal.getNumberOfPages?.() ?? 1;
     for (let p = 1; p <= pageCount; p++) {
