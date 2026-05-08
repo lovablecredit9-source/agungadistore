@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { LANGUAGES, REGIONS, getLanguageByCode, type LanguageOption } from "@/lib/languages";
 import { Search, X, Globe, ChevronDown } from "lucide-react";
 
