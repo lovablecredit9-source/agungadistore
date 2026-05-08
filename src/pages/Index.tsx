@@ -4304,54 +4304,60 @@ const Index = () => {
                           loadPdfImage(storeQris),
                         ]);
                         const doc = new jsPDF();
+                        const autoTable = (await import("jspdf-autotable")).default;
                         const pageW = doc.internal.pageSize.getWidth();
                         const pageH = doc.internal.pageSize.getHeight();
-                        const totalPages = selected.length;
-                        selected.forEach((tx, idx) => {
-                          if (idx > 0) doc.addPage();
-                          // Header
-                          doc.setFillColor(41, 98, 255);
-                           doc.rect(0, 0, pageW, 50, "F");
-                           doc.setTextColor(255, 255, 255);
-                          doc.setFontSize(16);
-                          doc.setFont("helvetica", "bold");
-                          doc.text(STORE_NAME, pageW / 2, 22, { align: "center" });
-                          doc.setFontSize(9);
-                          doc.setFont("helvetica", "normal");
-                          doc.text("Bukti Transaksi Saldo", pageW / 2, 32, { align: "center" });
-                          doc.text(`Dicetak: ${new Date().toLocaleString("id-ID")}`, pageW / 2, 40, { align: "center" });
-                          // Body
-                          doc.setTextColor(0, 0, 0);
-                          let y = 65;
-                          doc.setFontSize(11);
-                          doc.setFont("helvetica", "bold");
-                          doc.text(`Transaksi #${idx + 1}`, 20, y);
-                          y += 10;
-                          doc.setFontSize(10);
-                          doc.setFont("helvetica", "normal");
-                          if (tx.trx_id) { doc.text(`ID Transaksi: ${tx.trx_id}`, 20, y); y += 7; }
-                          doc.text(`Tipe: ${tx.type === "topup" ? "Top Up" : "Pembelian"}`, 20, y); y += 7;
-                          doc.text(`Jumlah: ${tx.type === "topup" ? "+" : "-"}${formatPrice(tx.amount)}`, 20, y); y += 7;
-                          doc.text(`Tanggal: ${new Date(tx.created_at).toLocaleString("id-ID")}`, 20, y); y += 7;
-                          if (tx.description) { doc.text(`Deskripsi: ${tx.description}`, 20, y, { maxWidth: pageW - 40 }); y += 10; }
-                          if (userBalance) {
-                            y += 5;
-                            doc.text(`Username: ${userBalance.username}`, 20, y); y += 7;
-                          }
-                           // QRIS di pojok kanan atas header
-                           if (qrisData) {
-                             try {
-                               const qSize = 32;
-                               doc.addImage(qrisData, "JPEG", pageW - qSize - 10, 9, qSize, qSize);
-                             } catch {}
-                           }
-                          // Footer
-                          doc.setFontSize(8);
-                          doc.setTextColor(150, 150, 150);
-                          doc.text(`Halaman ${idx + 1} dari ${totalPages}`, pageW / 2, pageH - 20, { align: "center" });
-                          doc.text("Harap simpan bukti ini. Jika ada masalah hubungi admin.", pageW / 2, pageH - 15, { align: "center" });
-                          doc.text(`${STORE_NAME} - WA: ${WA_NUMBER}`, pageW / 2, pageH - 10, { align: "center" });
+                        // Header sekali
+                        doc.setFillColor(41, 98, 255);
+                        doc.rect(0, 0, pageW, 40, "F");
+                        doc.setTextColor(255, 255, 255);
+                        doc.setFontSize(16);
+                        doc.setFont("helvetica", "bold");
+                        doc.text(STORE_NAME, pageW / 2, 16, { align: "center" });
+                        doc.setFontSize(9);
+                        doc.setFont("helvetica", "normal");
+                        doc.text("Riwayat Transaksi Saldo", pageW / 2, 24, { align: "center" });
+                        doc.text(`Dicetak: ${new Date().toLocaleString("id-ID")}`, pageW / 2, 31, { align: "center" });
+                        if (qrisData) {
+                          try { doc.addImage(qrisData, "JPEG", pageW - 32, 5, 28, 28); } catch {}
+                        }
+                        // Tabel
+                        autoTable(doc, {
+                          startY: 48,
+                          head: [["#", "ID Transaksi", "Tipe", "Jumlah", "Tanggal", "Deskripsi"]],
+                          body: selected.map((tx, idx) => [
+                            String(idx + 1),
+                            tx.trx_id || "-",
+                            tx.type === "topup" ? "Top Up" : "Pembelian",
+                            `${tx.type === "topup" ? "+" : "-"}${formatPrice(tx.amount)}`,
+                            new Date(tx.created_at).toLocaleString("id-ID"),
+                            tx.description || "-",
+                          ]),
+                          styles: { fontSize: 8, cellPadding: 2 },
+                          headStyles: { fillColor: [41, 98, 255], textColor: 255, fontStyle: "bold" },
+                          alternateRowStyles: { fillColor: [240, 245, 255] },
+                          columnStyles: {
+                            0: { cellWidth: 10 },
+                            1: { cellWidth: 38 },
+                            2: { cellWidth: 20 },
+                            3: { cellWidth: 24 },
+                            4: { cellWidth: 32 },
+                            5: { cellWidth: "auto" },
+                          },
+                          didDrawPage: (data) => {
+                            doc.setFontSize(8);
+                            doc.setTextColor(150, 150, 150);
+                            doc.text(`Halaman ${data.pageNumber}`, pageW / 2, pageH - 12, { align: "center" });
+                            doc.text(`${STORE_NAME} - WA: ${WA_NUMBER}`, pageW / 2, pageH - 7, { align: "center" });
+                          },
+                          margin: { top: 48, bottom: 18 },
                         });
+                        if (userBalance) {
+                          const finalY = (doc as any).lastAutoTable.finalY + 6;
+                          doc.setFontSize(9);
+                          doc.setTextColor(0, 0, 0);
+                          doc.text(`Username: ${userBalance.username}  |  Total: ${selected.length} transaksi`, 14, finalY);
+                        }
                         const defName2 = "riwayat-transaksi-saldo";
                         const inp2 = window.prompt("Masukkan nama file PDF (tanpa .pdf):", defName2);
                         if (inp2 === null) return;
