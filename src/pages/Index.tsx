@@ -4333,8 +4333,8 @@ const Index = () => {
                             new Date(tx.created_at).toLocaleString("id-ID"),
                             tx.description || "-",
                           ]),
-                          styles: { fontSize: 8, cellPadding: 2 },
-                          headStyles: { fillColor: [41, 98, 255], textColor: 255, fontStyle: "bold" },
+                          styles: { fontSize: 8, cellPadding: 2, lineWidth: 0.25, lineColor: [120, 120, 120] },
+                          headStyles: { fillColor: [41, 98, 255], textColor: 255, fontStyle: "bold", lineWidth: 0.3, lineColor: [30, 30, 30] },
                           alternateRowStyles: { fillColor: [240, 245, 255] },
                           columnStyles: {
                             0: { cellWidth: 10 },
