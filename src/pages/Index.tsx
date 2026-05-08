@@ -24,6 +24,24 @@ import { useTheme } from "@/lib/theme";
 import { useToast } from "@/hooks/use-toast";
 import jsPDF from "jspdf";
 import storeQris from "@/assets/store-qris.jpg";
+
+// PDF asset cache
+const _pdfImgCache: Record<string, string> = {};
+async function loadPdfImage(url: string): Promise<string | null> {
+  if (_pdfImgCache[url]) return _pdfImgCache[url];
+  try {
+    const res = await fetch(url);
+    const blob = await res.blob();
+    const data: string = await new Promise((resolve, reject) => {
+      const r = new FileReader();
+      r.onloadend = () => resolve(r.result as string);
+      r.onerror = reject;
+      r.readAsDataURL(blob);
+    });
+    _pdfImgCache[url] = data;
+    return data;
+  } catch { return null; }
+}
 import musicBanner from "@/assets/music-banner.jpg";
 import promoProductsImg from "@/assets/promo-products.jpg";
 import promoSponsorsImg from "@/assets/promo-sponsors.jpg";
