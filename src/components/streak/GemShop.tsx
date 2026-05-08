@@ -95,7 +95,7 @@ export default function GemShop({ visitorId: visitorIdProp, onUpdate }: Props) {
     setBuying(p.id);
     try {
       const { data, error } = await supabase.functions.invoke("gem-purchase", {
-        body: { visitorId, packageId: p.id, quantity, pin },
+        body: { visitorId, packageId: p.id, quantity, pin, paymentSource: paySource },
       });
       if (error || data?.error) throw new Error(data?.error || error?.message || "Gagal");
       toast({ title: "💎 Gem Dibeli!", description: `+${data.gems_added} 💎 (x${data.quantity})` });
