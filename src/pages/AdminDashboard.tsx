@@ -215,6 +215,7 @@ const AdminDashboard = () => {
   interface Deposit {
     id: string; visitor_id: string; username: string; amount: number;
     payment_method: string; trx_id: string; status: string; created_at: string;
+    cancel_reason?: string | null;
   }
   interface AdminSetting { id: string; setting_key: string; setting_value: string; }
   const [allDeposits, setAllDeposits] = useState<Deposit[]>([]);
