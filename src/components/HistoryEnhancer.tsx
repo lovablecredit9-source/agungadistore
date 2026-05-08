@@ -17,6 +17,13 @@ import { id as localeId } from "date-fns/locale";
 import jsPDF from "jspdf";
 import CountUp from "@/components/CountUp";
 import storeQris from "@/assets/store-qris.jpg";
+import {
+  Document as DocxDocument, Packer, Paragraph, TextRun, Table as DocxTable,
+  TableRow as DocxTableRow, TableCell as DocxTableCell, AlignmentType, HeadingLevel,
+  BorderStyle, WidthType, ShadingType, ImageRun, Header as DocxHeader, Footer as DocxFooter,
+  PageNumber, LevelFormat,
+} from "docx";
+import { saveAs } from "file-saver";
 
 // Cache image load → base64 dataURL
 const _imgCache: Record<string, string> = {};
@@ -375,6 +382,209 @@ export default function HistoryEnhancer({
     doc.save(`${safePdf}.pdf`);
   }
 
+  async function exportWord() {
+    if (filtered.length === 0) return;
+
+    // Fetch QRIS as ArrayBuffer for ImageRun
+    let qrisBuffer: ArrayBuffer | null = null;
+    try {
+      const res = await fetch(storeQris);
+      qrisBuffer = await res.arrayBuffer();
+    } catch { qrisBuffer = null; }
+
+    const PRIMARY = "2962FF";
+    const MUTED = "64748B";
+    const SUCCESS = "059669";
+    const DANGER = "DC2626";
+
+    const cellBorder = { style: BorderStyle.SINGLE, size: 4, color: "E2E8F0" };
+    const cellBorders = { top: cellBorder, bottom: cellBorder, left: cellBorder, right: cellBorder };
+
+    // ===== HEADER TABLE (Brand band) =====
+    const headerCells: DocxTableCell[] = [];
+    headerCells.push(new DocxTableCell({
+      width: { size: 7000, type: WidthType.DXA },
+      borders: { top: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" }, bottom: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" }, left: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" }, right: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" } },
+      shading: { fill: PRIMARY, type: ShadingType.CLEAR },
+      margins: { top: 200, bottom: 200, left: 240, right: 200 },
+      children: [
+        new Paragraph({ children: [new TextRun({ text: storeName, bold: true, color: "FFFFFF", size: 36 })] }),
+        new Paragraph({ children: [new TextRun({ text: title, color: "FFFFFF", size: 22 })] }),
+        new Paragraph({ children: [new TextRun({ text: `Dicetak: ${new Date().toLocaleString("id-ID")} WIB`, color: "DBEAFE", size: 16 })] }),
+        new Paragraph({ children: [new TextRun({ text: `Total: ${filtered.length} item  •  MURAH & TERPERCAYA`, color: "FFFFFF", size: 16, bold: true })] }),
+      ],
+    }));
+    if (qrisBuffer) {
+      headerCells.push(new DocxTableCell({
+        width: { size: 2360, type: WidthType.DXA },
+        borders: { top: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" }, bottom: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" }, left: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" }, right: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" } },
+        shading: { fill: "FFFFFF", type: ShadingType.CLEAR },
+        margins: { top: 120, bottom: 120, left: 120, right: 120 },
+        verticalAlign: "center" as any,
+        children: [
+          new Paragraph({ alignment: AlignmentType.CENTER, children: [new ImageRun({ type: "jpg", data: qrisBuffer, transformation: { width: 90, height: 90 }, altText: { title: "QRIS", description: "QRIS", name: "qris" } } as any)] }),
+          new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: "SCAN QRIS", bold: true, color: PRIMARY, size: 14 })] }),
+        ],
+      }));
+    } else {
+      headerCells.push(new DocxTableCell({
+        width: { size: 2360, type: WidthType.DXA },
+        borders: { top: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" }, bottom: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" }, left: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" }, right: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" } },
+        shading: { fill: PRIMARY, type: ShadingType.CLEAR },
+        children: [new Paragraph({ children: [new TextRun({ text: " ", color: "FFFFFF" })] })],
+      }));
+    }
+
+    const headerTable = new DocxTable({
+      width: { size: 9360, type: WidthType.DXA },
+      columnWidths: [7000, 2360],
+      rows: [new DocxTableRow({ children: headerCells })],
+    });
+
+    // ===== SUMMARY CARDS (3 columns) =====
+    const summaryCard = (label: string, value: string, fill: string, txtColor: string) =>
+      new DocxTableCell({
+        width: { size: 3120, type: WidthType.DXA },
+        borders: cellBorders,
+        shading: { fill, type: ShadingType.CLEAR },
+        margins: { top: 160, bottom: 160, left: 180, right: 180 },
+        children: [
+          new Paragraph({ children: [new TextRun({ text: label, bold: true, color: MUTED, size: 14 })] }),
+          new Paragraph({ children: [new TextRun({ text: value, bold: true, color: txtColor, size: 22 })] }),
+        ],
+      });
+
+    const summaryTable = new DocxTable({
+      width: { size: 9360, type: WidthType.DXA },
+      columnWidths: [3120, 3120, 3120],
+      rows: [new DocxTableRow({ children: [
+        summaryCard("TOTAL ITEM", String(filtered.length), "EFF6FF", "1E293B"),
+        summaryCard("MASUK", `+${formatAmount(stats.totalIn || 0)}`, "ECFDF5", SUCCESS),
+        summaryCard("KELUAR", `-${formatAmount(stats.totalOut || 0)}`, "FEF2F2", DANGER),
+      ]})],
+    });
+
+    // ===== WARNING BOX =====
+    const warningTable = new DocxTable({
+      width: { size: 9360, type: WidthType.DXA },
+      columnWidths: [9360],
+      rows: [new DocxTableRow({ children: [new DocxTableCell({
+        width: { size: 9360, type: WidthType.DXA },
+        borders: { top: { style: BorderStyle.SINGLE, size: 8, color: "EAB308" }, bottom: { style: BorderStyle.SINGLE, size: 8, color: "EAB308" }, left: { style: BorderStyle.SINGLE, size: 32, color: "EAB308" }, right: { style: BorderStyle.SINGLE, size: 8, color: "EAB308" } },
+        shading: { fill: "FEFCE8", type: ShadingType.CLEAR },
+        margins: { top: 160, bottom: 160, left: 200, right: 200 },
+        children: [
+          new Paragraph({ children: [new TextRun({ text: "⚠ PERINGATAN", bold: true, color: "92400E", size: 18 })] }),
+          new Paragraph({ children: [new TextRun({ text: "• File ini hanya tampilan/ekspos riwayat — BUKAN bukti pembayaran resmi pihak ketiga.", color: "3F3F46", size: 16 })] }),
+          new Paragraph({ children: [new TextRun({ text: "• Transaksi produk SPONSOR di luar tanggung jawab admin. Hubungi admin sponsor / Rekber via WhatsApp.", color: "3F3F46", size: 16 })] }),
+          new Paragraph({ children: [new TextRun({ text: "• Hanya transaksi RESMI Agung Adi Store yang dijamin admin (WA: 085769302532).", color: "3F3F46", size: 16 })] }),
+        ],
+      })] })],
+    });
+
+    // ===== DETAIL ITEM CARDS =====
+    const itemBlocks: (DocxTable | Paragraph)[] = [];
+    itemBlocks.push(new Paragraph({
+      spacing: { before: 240, after: 120 },
+      children: [new TextRun({ text: "Detail Riwayat", bold: true, color: PRIMARY, size: 26 })],
+    }));
+
+    filtered.forEach((it, i) => {
+      const isIncome = typeof it.amount === "number" && it.amount > 0;
+      const isExpense = typeof it.amount === "number" && it.amount < 0;
+      const accent = isIncome ? SUCCESS : isExpense ? DANGER : "6366F1";
+      const accentFill = isIncome ? "ECFDF5" : isExpense ? "FEF2F2" : "EEF2FF";
+
+      const numCell = new DocxTableCell({
+        width: { size: 600, type: WidthType.DXA },
+        borders: cellBorders,
+        shading: { fill: accent, type: ShadingType.CLEAR },
+        margins: { top: 100, bottom: 100, left: 100, right: 100 },
+        verticalAlign: "center" as any,
+        children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: String(i + 1), bold: true, color: "FFFFFF", size: 18 })] })],
+      });
+
+      const detailParas: Paragraph[] = [
+        new Paragraph({ children: [new TextRun({ text: it.title, bold: true, color: "1E293B", size: 20 })] }),
+        new Paragraph({ children: [new TextRun({ text: `${new Date(it.date).toLocaleString("id-ID")}${it.category ? "  •  " + it.category : ""}`, color: MUTED, size: 14 })] }),
+      ];
+      if (it.subtitle) {
+        detailParas.push(new Paragraph({ children: [new TextRun({ text: it.subtitle, color: "475569", size: 14 })] }));
+      }
+
+      const detailCell = new DocxTableCell({
+        width: { size: 6760, type: WidthType.DXA },
+        borders: cellBorders,
+        shading: { fill: accentFill, type: ShadingType.CLEAR },
+        margins: { top: 140, bottom: 140, left: 200, right: 160 },
+        children: detailParas,
+      });
+
+      const amountText = typeof it.amount === "number" && it.amount !== 0
+        ? `${it.amount > 0 ? "+" : "-"}${formatAmount(Math.abs(it.amount))}`
+        : "";
+      const amountCell = new DocxTableCell({
+        width: { size: 2000, type: WidthType.DXA },
+        borders: cellBorders,
+        shading: { fill: accentFill, type: ShadingType.CLEAR },
+        margins: { top: 140, bottom: 140, left: 120, right: 200 },
+        verticalAlign: "center" as any,
+        children: [new Paragraph({ alignment: AlignmentType.RIGHT, children: [new TextRun({ text: amountText, bold: true, color: accent, size: 22 })] })],
+      });
+
+      itemBlocks.push(new DocxTable({
+        width: { size: 9360, type: WidthType.DXA },
+        columnWidths: [600, 6760, 2000],
+        rows: [new DocxTableRow({ children: [numCell, detailCell, amountCell] })],
+      }));
+      itemBlocks.push(new Paragraph({ spacing: { before: 60, after: 60 }, children: [new TextRun({ text: "" })] }));
+    });
+
+    const spacerSmall = new Paragraph({ spacing: { before: 120, after: 120 }, children: [new TextRun({ text: "" })] });
+
+    const wordDoc = new DocxDocument({
+      creator: storeName,
+      title,
+      styles: { default: { document: { run: { font: "Arial", size: 20 } } } },
+      sections: [{
+        properties: {
+          page: {
+            size: { width: 12240, height: 15840 },
+            margin: { top: 720, right: 720, bottom: 1000, left: 720 },
+          },
+        },
+        footers: {
+          default: new DocxFooter({
+            children: [new Paragraph({
+              alignment: AlignmentType.CENTER,
+              children: [
+                new TextRun({ text: `${storeName}  •  WA: 085769302532  •  Murah & Terpercaya  •  Halaman `, color: PRIMARY, bold: true, size: 16 }),
+                new TextRun({ children: [PageNumber.CURRENT], color: PRIMARY, bold: true, size: 16 }),
+                new TextRun({ text: "/", color: PRIMARY, bold: true, size: 16 }),
+                new TextRun({ children: [PageNumber.TOTAL_PAGES], color: PRIMARY, bold: true, size: 16 }),
+              ],
+            })],
+          }),
+        },
+        children: [
+          headerTable,
+          spacerSmall,
+          summaryTable,
+          spacerSmall,
+          warningTable,
+          ...itemBlocks,
+        ],
+      }],
+    });
+
+    const blob = await Packer.toBlob(wordDoc);
+    const defaultName = `${exportPrefix}-${Date.now()}`;
+    const input = window.prompt("Masukkan nama file Word (tanpa .docx):", defaultName);
+    if (input === null) return;
+    const safe = (input.trim() || defaultName).replace(/[\\/:*?"<>|]+/g, "_");
+    saveAs(blob, `${safe}.docx`);
+  }
+
   const activeFiltersCount =
     (search ? 1 : 0) + (category !== "all" ? 1 : 0) +
     (dateFrom || dateTo ? 1 : 0) + (sort !== "newest" ? 1 : 0);
@@ -464,6 +674,12 @@ export default function HistoryEnhancer({
                   className="w-full flex items-center gap-2 px-2 py-2 rounded-lg hover:bg-muted text-xs font-medium"
                 >
                   <FileText className="w-3.5 h-3.5 text-foreground" /> PDF
+                </button>
+                <button
+                  onClick={exportWord}
+                  className="w-full flex items-center gap-2 px-2 py-2 rounded-lg hover:bg-muted text-xs font-medium"
+                >
+                  <FileText className="w-3.5 h-3.5 text-blue-600" /> Word (.docx)
                 </button>
                 <button
                   onClick={exportCSV}
