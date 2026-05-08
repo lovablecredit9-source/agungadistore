@@ -132,6 +132,7 @@ export default function NeonStreakHub({ visitorId, forcedView }: Props) {
   const [coinPackages, setCoinPackages] = useState<{ id: string; name: string; coins: number; price: number }[]>([]);
   const [topupPin, setTopupPin] = useState("");
   const [topupPkgId, setTopupPkgId] = useState<string | null>(null);
+  const [topupSource, setTopupSource] = useState<"auto" | "game" | "main">("auto");
   const [toppingUp, setToppingUp] = useState(false);
   const [history, setHistory] = useState<any[]>([]);
   const [powerUps, setPowerUps] = useState<{ extra_life: number; double_xp_until: string | null; time_freeze: number; auto_hint: number }>({ extra_life: 0, double_xp_until: null, time_freeze: 0, auto_hint: 0 });
