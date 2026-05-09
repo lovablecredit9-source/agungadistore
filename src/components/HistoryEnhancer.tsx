@@ -264,9 +264,9 @@ export default function HistoryEnhancer({
     }
     doc.setTextColor(255, 255, 255);
     doc.setFontSize(18); doc.setFont("helvetica", "bold");
-    doc.text(storeName, 36, 18);
+    doc.text(cleanExportText(storeName), 36, 18);
     doc.setFontSize(10); doc.setFont("helvetica", "normal");
-    doc.text(title, 36, 25);
+    doc.text(cleanExportText(title), 36, 25);
     doc.setFontSize(7.5);
     doc.text(`Dicetak: ${new Date().toLocaleString("id-ID")} WIB`, 36, 31);
     doc.text(`Total: ${filtered.length} item`, 36, 36);
@@ -311,7 +311,7 @@ export default function HistoryEnhancer({
     doc.rect(10, warnY, 1.5, 22, "F");
     doc.setTextColor(146, 64, 14);
     doc.setFontSize(8.5); doc.setFont("helvetica", "bold");
-    doc.text("⚠ PERINGATAN", 14, warnY + 5);
+    doc.text("PERINGATAN", 14, warnY + 5);
     doc.setFont("helvetica", "normal");
     doc.setFontSize(7); doc.setTextColor(60, 60, 60);
     const warnLines = [
@@ -389,20 +389,20 @@ export default function HistoryEnhancer({
       const size = 110;
       try { doc.addImage(qrisData, "JPEG", (pageW - size) / 2, 40, size, size); } catch { /* ignore invalid image data */ }
       doc.setFontSize(9); doc.setTextColor(100);
-      doc.text(`${storeName} • WA 085769302532`, pageW / 2, 40 + size + 8, { align: "center" });
+      doc.text(`${cleanExportText(storeName)} - WA 085769302532`, pageW / 2, 40 + size + 8, { align: "center" });
     }
 
     // Footer band per halaman
-    const pageCount = (doc as any).internal.getNumberOfPages?.() ?? 1;
+    const pageCount = doc.getNumberOfPages();
     for (let p = 1; p <= pageCount; p++) {
       doc.setPage(p);
       doc.setFillColor(41, 98, 255);
       doc.rect(0, pageH - 14, pageW, 14, "F");
       doc.setTextColor(255, 255, 255);
       doc.setFontSize(7.5); doc.setFont("helvetica", "bold");
-      doc.text(storeName, 10, pageH - 8);
+      doc.text(cleanExportText(storeName), 10, pageH - 8);
       doc.setFont("helvetica", "normal");
-      doc.text("WA: 085769302532 • Murah & Terpercaya", 10, pageH - 3.5);
+      doc.text("WA: 085769302532 - Murah & Terpercaya", 10, pageH - 3.5);
       doc.text(`Halaman ${p}/${pageCount}`, pageW - 10, pageH - 5.5, { align: "right" });
     }
     const defaultPdfName = `${exportPrefix}-${Date.now()}`;
