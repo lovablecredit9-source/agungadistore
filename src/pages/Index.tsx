@@ -5206,6 +5206,14 @@ const Index = () => {
                 </div>
                 <p className="text-[11px] text-muted-foreground font-medium">Murah & Terpercaya - Semua hak dilindungi.</p>
                 <div className="flex items-center justify-center gap-2 mt-2 flex-wrap">
+                  <a
+                    href="https://agungadistore.lovable.app"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-[10px] font-extrabold px-3 py-1.5 rounded-full bg-gradient-to-r from-pink-500 via-fuchsia-500 to-cyan-500 text-white shadow-md hover:scale-105 hover:shadow-lg transition-all border-2 border-white/30 flex items-center gap-1"
+                  >
+                    🌐 Website Resmi
+                  </a>
                   {socialLinks.map(s => (
                     <a key={s.id} href={s.url} target="_blank" rel="noopener noreferrer" className="text-[10px] font-bold px-3 py-1.5 rounded-full bg-gradient-to-r from-pink-500/15 to-cyan-500/15 text-foreground hover:from-pink-500/30 hover:to-cyan-500/30 transition-all border-2 border-fuchsia-400/30 flex items-center gap-1 hover:scale-105">
                       {s.icon_url && <img src={s.icon_url} alt={s.platform} className="w-3 h-3 object-contain" />}
