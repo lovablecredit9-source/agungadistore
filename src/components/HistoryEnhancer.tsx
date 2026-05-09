@@ -21,7 +21,7 @@ import {
   Document as DocxDocument, Packer, Paragraph, TextRun, Table as DocxTable,
   TableRow as DocxTableRow, TableCell as DocxTableCell, AlignmentType, HeadingLevel,
   BorderStyle, WidthType, ShadingType, ImageRun, Header as DocxHeader, Footer as DocxFooter,
-  PageNumber, LevelFormat,
+  PageNumber, LevelFormat, VerticalAlign,
 } from "docx";
 import { saveAs } from "file-saver";
 
@@ -82,6 +82,22 @@ interface Props {
 const fmtIDR = (n: number) =>
   new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", minimumFractionDigits: 0 }).format(n);
 
+const cleanExportText = (value: unknown) => {
+  const text = String(value ?? "-")
+    .replace(/[\u{1F000}-\u{1FAFF}]/gu, "")
+    .replace(/[\u2600-\u27BF]/g, "")
+    .replace(/[\uFE0F\u200D]/g, "")
+    .replace(/[\u2012\u2013\u2014\u2015]/g, "-")
+    .replace(/[\u2022\u00B7]/g, "-")
+    .replace(/[\u00A0\u2000-\u200B\u202F\u205F\u3000]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  return text || "-";
+};
+
+const csvCell = (value: unknown) => `"${cleanExportText(value).replace(/"/g, '""')}"`;
+
 /**
  * Komponen "keren" untuk semua tab Riwayat:
  * - Filter & Pencarian (search realtime, range tanggal, kategori, urutan)
@@ -115,7 +131,7 @@ export default function HistoryEnhancer({
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
-    let list = items.filter((it) => {
+    const list = items.filter((it) => {
       if (q) {
         const blob = `${it.title} ${it.subtitle ?? ""} ${it.category ?? ""} ${Object.values(it.meta ?? {}).join(" ")}`.toLowerCase();
         if (!blob.includes(q)) return false;
@@ -200,9 +216,9 @@ export default function HistoryEnhancer({
     const rows = filtered.map((it, i) => [
       i + 1,
       new Date(it.date).toLocaleString("id-ID"),
-      `"${(it.title ?? "").replace(/"/g, '""')}"`,
-      it.category ?? "",
-      `"${(it.subtitle ?? "").replace(/"/g, '""')}"`,
+      csvCell(it.title),
+      csvCell(it.category),
+      csvCell(it.subtitle),
       getExportAmount(it),
     ].join(","));
     const csv = "\uFEFF" + [headers.join(","), ...rows].join("\n");
@@ -244,13 +260,13 @@ export default function HistoryEnhancer({
     if (qrisData) {
       doc.setFillColor(255, 255, 255);
       doc.circle(20, headerH / 2, 11, "F");
-      try { doc.addImage(qrisData, "JPEG", 11, headerH / 2 - 9, 18, 18); } catch {}
+      try { doc.addImage(qrisData, "JPEG", 11, headerH / 2 - 9, 18, 18); } catch { /* ignore invalid image data */ }
     }
     doc.setTextColor(255, 255, 255);
     doc.setFontSize(18); doc.setFont("helvetica", "bold");
-    doc.text(storeName, 36, 18);
+    doc.text(cleanExportText(storeName), 36, 18);
     doc.setFontSize(10); doc.setFont("helvetica", "normal");
-    doc.text(title, 36, 25);
+    doc.text(cleanExportText(title), 36, 25);
     doc.setFontSize(7.5);
     doc.text(`Dicetak: ${new Date().toLocaleString("id-ID")} WIB`, 36, 31);
     doc.text(`Total: ${filtered.length} item`, 36, 36);
@@ -262,7 +278,7 @@ export default function HistoryEnhancer({
     if (qrisData) {
       doc.setFillColor(255, 255, 255);
       doc.roundedRect(pageW - 36, 4, 32, 38, 2, 2, "F");
-      try { doc.addImage(qrisData, "JPEG", pageW - 34, 6, 28, 28); } catch {}
+      try { doc.addImage(qrisData, "JPEG", pageW - 34, 6, 28, 28); } catch { /* ignore invalid image data */ }
       doc.setTextColor(41, 98, 255);
       doc.setFontSize(6); doc.setFont("helvetica", "bold");
       doc.text("SCAN QRIS", pageW - 20, 39, { align: "center" });
@@ -295,13 +311,13 @@ export default function HistoryEnhancer({
     doc.rect(10, warnY, 1.5, 22, "F");
     doc.setTextColor(146, 64, 14);
     doc.setFontSize(8.5); doc.setFont("helvetica", "bold");
-    doc.text("⚠ PERINGATAN", 14, warnY + 5);
+    doc.text("PERINGATAN", 14, warnY + 5);
     doc.setFont("helvetica", "normal");
     doc.setFontSize(7); doc.setTextColor(60, 60, 60);
     const warnLines = [
-      "• File ini hanya tampilan/ekspos riwayat — BUKAN bukti pembayaran resmi pihak ketiga.",
-      "• Transaksi produk SPONSOR di luar tanggung jawab admin. Hubungi admin sponsor / Rekber via WhatsApp.",
-      "• Hanya transaksi RESMI Agung Adi Store yang dijamin admin (WA: 085769302532).",
+      "- File ini hanya tampilan/ekspos riwayat - BUKAN bukti pembayaran resmi pihak ketiga.",
+      "- Transaksi produk SPONSOR di luar tanggung jawab admin. Hubungi admin sponsor / Rekber via WhatsApp.",
+      "- Hanya transaksi RESMI Agung Adi Store yang dijamin admin (WA: 085769302532).",
     ];
     let wwy = warnY + 10;
     warnLines.forEach((ln) => {
@@ -318,11 +334,11 @@ export default function HistoryEnhancer({
       head: [["No", "ID", "Tanggal", "Kategori", "Judul", "Keterangan", "Jumlah"]],
       body: filtered.map((it, i) => [
         String(i + 1),
-        String(it.meta?.trx_id || it.id || "-"),
+        cleanExportText(it.meta?.trx_id || it.id || "-"),
         new Date(it.date).toLocaleString("id-ID"),
-        it.category || "-",
-        it.title || "-",
-        it.subtitle || "-",
+        cleanExportText(it.category),
+        cleanExportText(it.title),
+        cleanExportText(it.subtitle),
         formatExportAmount(it),
       ]),
       styles: {
@@ -371,22 +387,22 @@ export default function HistoryEnhancer({
       doc.setFontSize(10); doc.setFont("helvetica", "normal");
       doc.text("Scan QRIS di bawah untuk melakukan pembayaran/top up.", pageW / 2, 32, { align: "center" });
       const size = 110;
-      try { doc.addImage(qrisData, "JPEG", (pageW - size) / 2, 40, size, size); } catch {}
+      try { doc.addImage(qrisData, "JPEG", (pageW - size) / 2, 40, size, size); } catch { /* ignore invalid image data */ }
       doc.setFontSize(9); doc.setTextColor(100);
-      doc.text(`${storeName} • WA 085769302532`, pageW / 2, 40 + size + 8, { align: "center" });
+      doc.text(`${cleanExportText(storeName)} - WA 085769302532`, pageW / 2, 40 + size + 8, { align: "center" });
     }
 
     // Footer band per halaman
-    const pageCount = (doc as any).internal.getNumberOfPages?.() ?? 1;
+    const pageCount = doc.getNumberOfPages();
     for (let p = 1; p <= pageCount; p++) {
       doc.setPage(p);
       doc.setFillColor(41, 98, 255);
       doc.rect(0, pageH - 14, pageW, 14, "F");
       doc.setTextColor(255, 255, 255);
       doc.setFontSize(7.5); doc.setFont("helvetica", "bold");
-      doc.text(storeName, 10, pageH - 8);
+      doc.text(cleanExportText(storeName), 10, pageH - 8);
       doc.setFont("helvetica", "normal");
-      doc.text("WA: 085769302532 • Murah & Terpercaya", 10, pageH - 3.5);
+      doc.text("WA: 085769302532 - Murah & Terpercaya", 10, pageH - 3.5);
       doc.text(`Halaman ${p}/${pageCount}`, pageW - 10, pageH - 5.5, { align: "right" });
     }
     const defaultPdfName = `${exportPrefix}-${Date.now()}`;
@@ -425,7 +441,7 @@ export default function HistoryEnhancer({
         new Paragraph({ children: [new TextRun({ text: storeName, bold: true, color: "FFFFFF", size: 36 })] }),
         new Paragraph({ children: [new TextRun({ text: title, color: "FFFFFF", size: 22 })] }),
         new Paragraph({ children: [new TextRun({ text: `Dicetak: ${new Date().toLocaleString("id-ID")} WIB`, color: "DBEAFE", size: 16 })] }),
-        new Paragraph({ children: [new TextRun({ text: `Total: ${filtered.length} item  •  MURAH & TERPERCAYA`, color: "FFFFFF", size: 16, bold: true })] }),
+        new Paragraph({ children: [new TextRun({ text: `Total: ${filtered.length} item - MURAH & TERPERCAYA`, color: "FFFFFF", size: 16, bold: true })] }),
       ],
     }));
     if (qrisBuffer) {
@@ -434,9 +450,9 @@ export default function HistoryEnhancer({
         borders: { top: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" }, bottom: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" }, left: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" }, right: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" } },
         shading: { fill: "FFFFFF", type: ShadingType.CLEAR },
         margins: { top: 120, bottom: 120, left: 120, right: 120 },
-        verticalAlign: "center" as any,
+        verticalAlign: VerticalAlign.CENTER,
         children: [
-          new Paragraph({ alignment: AlignmentType.CENTER, children: [new ImageRun({ type: "jpg", data: qrisBuffer, transformation: { width: 90, height: 90 }, altText: { title: "QRIS", description: "QRIS", name: "qris" } } as any)] }),
+          new Paragraph({ alignment: AlignmentType.CENTER, children: [new ImageRun({ type: "jpg", data: qrisBuffer, transformation: { width: 90, height: 90 }, altText: { title: "QRIS", description: "QRIS", name: "qris" } })] }),
           new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: "SCAN QRIS", bold: true, color: PRIMARY, size: 14 })] }),
         ],
       }));
@@ -488,10 +504,10 @@ export default function HistoryEnhancer({
         shading: { fill: "FEFCE8", type: ShadingType.CLEAR },
         margins: { top: 160, bottom: 160, left: 200, right: 200 },
         children: [
-          new Paragraph({ children: [new TextRun({ text: "⚠ PERINGATAN", bold: true, color: "92400E", size: 18 })] }),
-          new Paragraph({ children: [new TextRun({ text: "• File ini hanya tampilan/ekspos riwayat — BUKAN bukti pembayaran resmi pihak ketiga.", color: "3F3F46", size: 16 })] }),
-          new Paragraph({ children: [new TextRun({ text: "• Transaksi produk SPONSOR di luar tanggung jawab admin. Hubungi admin sponsor / Rekber via WhatsApp.", color: "3F3F46", size: 16 })] }),
-          new Paragraph({ children: [new TextRun({ text: "• Hanya transaksi RESMI Agung Adi Store yang dijamin admin (WA: 085769302532).", color: "3F3F46", size: 16 })] }),
+          new Paragraph({ children: [new TextRun({ text: "PERINGATAN", bold: true, color: "92400E", size: 18 })] }),
+          new Paragraph({ children: [new TextRun({ text: "- File ini hanya tampilan/ekspos riwayat - BUKAN bukti pembayaran resmi pihak ketiga.", color: "3F3F46", size: 16 })] }),
+          new Paragraph({ children: [new TextRun({ text: "- Transaksi produk SPONSOR di luar tanggung jawab admin. Hubungi admin sponsor / Rekber via WhatsApp.", color: "3F3F46", size: 16 })] }),
+          new Paragraph({ children: [new TextRun({ text: "- Hanya transaksi RESMI Agung Adi Store yang dijamin admin (WA: 085769302532).", color: "3F3F46", size: 16 })] }),
         ],
       })] })],
     });
@@ -531,11 +547,11 @@ export default function HistoryEnhancer({
           const amountText = formatExportAmount(it);
           return new DocxTableRow({ children: [
             makeCell(String(i + 1), tableWidths[0], { align: AlignmentType.CENTER }),
-            makeCell(String(it.meta?.trx_id || it.id || "-"), tableWidths[1]),
+            makeCell(cleanExportText(it.meta?.trx_id || it.id || "-"), tableWidths[1]),
             makeCell(new Date(it.date).toLocaleString("id-ID"), tableWidths[2]),
-            makeCell(it.category || "-", tableWidths[3], { align: AlignmentType.CENTER }),
-            makeCell(it.title || "-", tableWidths[4]),
-            makeCell(it.subtitle || "-", tableWidths[5]),
+            makeCell(cleanExportText(it.category), tableWidths[3], { align: AlignmentType.CENTER }),
+            makeCell(cleanExportText(it.title), tableWidths[4]),
+            makeCell(cleanExportText(it.subtitle), tableWidths[5]),
             makeCell(amountText, tableWidths[6], { amount, align: AlignmentType.RIGHT }),
           ] });
         }),
@@ -560,7 +576,7 @@ export default function HistoryEnhancer({
             children: [new Paragraph({
               alignment: AlignmentType.CENTER,
               children: [
-                new TextRun({ text: `${storeName}  •  WA: 085769302532  •  Murah & Terpercaya  •  Halaman `, color: PRIMARY, bold: true, size: 16 }),
+                new TextRun({ text: `${storeName} - WA: 085769302532 - Murah & Terpercaya - Halaman `, color: PRIMARY, bold: true, size: 16 }),
                 new TextRun({ children: [PageNumber.CURRENT], color: PRIMARY, bold: true, size: 16 }),
                 new TextRun({ text: "/", color: PRIMARY, bold: true, size: 16 }),
                 new TextRun({ children: [PageNumber.TOTAL_PAGES], color: PRIMARY, bold: true, size: 16 }),
