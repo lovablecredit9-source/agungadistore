@@ -277,6 +277,9 @@ export default function HistoryEnhancer({
     doc.setTextColor(41, 98, 255);
     doc.setFontSize(6.5); doc.setFont("helvetica", "bold");
     doc.text("MURAH & TERPERCAYA", 55, 42.5, { align: "center" });
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(6); doc.setFont("helvetica", "normal");
+    doc.text(STORE_WEBSITE, 55, 45.5, { align: "center" });
     if (qrisData) {
       doc.setFillColor(255, 255, 255);
       doc.roundedRect(pageW - 36, 4, 32, 38, 2, 2, "F");
