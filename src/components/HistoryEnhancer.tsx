@@ -447,6 +447,7 @@ export default function HistoryEnhancer({
         new Paragraph({ children: [new TextRun({ text: title, color: "FFFFFF", size: 22 })] }),
         new Paragraph({ children: [new TextRun({ text: `Dicetak: ${new Date().toLocaleString("id-ID")} WIB`, color: "DBEAFE", size: 16 })] }),
         new Paragraph({ children: [new TextRun({ text: `Total: ${filtered.length} item - MURAH & TERPERCAYA`, color: "FFFFFF", size: 16, bold: true })] }),
+        new Paragraph({ children: [new TextRun({ text: STORE_WEBSITE, color: "DBEAFE", size: 14 })] }),
       ],
     }));
     if (qrisBuffer) {
