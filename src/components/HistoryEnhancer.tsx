@@ -21,7 +21,7 @@ import {
   Document as DocxDocument, Packer, Paragraph, TextRun, Table as DocxTable,
   TableRow as DocxTableRow, TableCell as DocxTableCell, AlignmentType, HeadingLevel,
   BorderStyle, WidthType, ShadingType, ImageRun, Header as DocxHeader, Footer as DocxFooter,
-  PageNumber, LevelFormat,
+  PageNumber, LevelFormat, VerticalAlign,
 } from "docx";
 import { saveAs } from "file-saver";
 
@@ -84,7 +84,9 @@ const fmtIDR = (n: number) =>
 
 const cleanExportText = (value: unknown) => {
   const text = String(value ?? "-")
-    .replace(/[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}\uFE0F\u200D]/gu, "")
+    .replace(/[\u{1F000}-\u{1FAFF}]/gu, "")
+    .replace(/[\u2600-\u27BF]/g, "")
+    .replace(/[\uFE0F\u200D]/g, "")
     .replace(/[\u2012\u2013\u2014\u2015]/g, "-")
     .replace(/[\u2022\u00B7]/g, "-")
     .replace(/[\u00A0\u2000-\u200B\u202F\u205F\u3000]/g, " ")
@@ -129,7 +131,7 @@ export default function HistoryEnhancer({
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
-    let list = items.filter((it) => {
+    const list = items.filter((it) => {
       if (q) {
         const blob = `${it.title} ${it.subtitle ?? ""} ${it.category ?? ""} ${Object.values(it.meta ?? {}).join(" ")}`.toLowerCase();
         if (!blob.includes(q)) return false;
