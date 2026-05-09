@@ -96,6 +96,8 @@ const cleanExportText = (value: unknown) => {
   return text || "-";
 };
 
+const STORE_WEBSITE = "https://agungadistore.lovable.app";
+
 const csvCell = (value: unknown) => `"${cleanExportText(value).replace(/"/g, '""')}"`;
 
 /**
@@ -221,7 +223,7 @@ export default function HistoryEnhancer({
       csvCell(it.subtitle),
       getExportAmount(it),
     ].join(","));
-    const csv = "\uFEFF" + [headers.join(","), ...rows].join("\n");
+    const csv = "\uFEFF" + [headers.join(","), ...rows, `"Website: ${STORE_WEBSITE}"`].join("\n");
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -275,6 +277,9 @@ export default function HistoryEnhancer({
     doc.setTextColor(41, 98, 255);
     doc.setFontSize(6.5); doc.setFont("helvetica", "bold");
     doc.text("MURAH & TERPERCAYA", 55, 42.5, { align: "center" });
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(6); doc.setFont("helvetica", "normal");
+    doc.text(STORE_WEBSITE, 55, 45.5, { align: "center" });
     if (qrisData) {
       doc.setFillColor(255, 255, 255);
       doc.roundedRect(pageW - 36, 4, 32, 38, 2, 2, "F");
@@ -442,6 +447,7 @@ export default function HistoryEnhancer({
         new Paragraph({ children: [new TextRun({ text: title, color: "FFFFFF", size: 22 })] }),
         new Paragraph({ children: [new TextRun({ text: `Dicetak: ${new Date().toLocaleString("id-ID")} WIB`, color: "DBEAFE", size: 16 })] }),
         new Paragraph({ children: [new TextRun({ text: `Total: ${filtered.length} item - MURAH & TERPERCAYA`, color: "FFFFFF", size: 16, bold: true })] }),
+        new Paragraph({ children: [new TextRun({ text: STORE_WEBSITE, color: "DBEAFE", size: 14 })] }),
       ],
     }));
     if (qrisBuffer) {
@@ -576,7 +582,7 @@ export default function HistoryEnhancer({
             children: [new Paragraph({
               alignment: AlignmentType.CENTER,
               children: [
-                new TextRun({ text: `${storeName} - WA: 085769302532 - Murah & Terpercaya - Halaman `, color: PRIMARY, bold: true, size: 16 }),
+                new TextRun({ text: `${storeName} - WA: 085769302532 - ${STORE_WEBSITE} - Murah & Terpercaya - Halaman `, color: PRIMARY, bold: true, size: 16 }),
                 new TextRun({ children: [PageNumber.CURRENT], color: PRIMARY, bold: true, size: 16 }),
                 new TextRun({ text: "/", color: PRIMARY, bold: true, size: 16 }),
                 new TextRun({ children: [PageNumber.TOTAL_PAGES], color: PRIMARY, bold: true, size: 16 }),
