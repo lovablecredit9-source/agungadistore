@@ -96,6 +96,8 @@ const cleanExportText = (value: unknown) => {
   return text || "-";
 };
 
+const STORE_WEBSITE = "https://agungadistore.lovable.app";
+
 const csvCell = (value: unknown) => `"${cleanExportText(value).replace(/"/g, '""')}"`;
 
 /**
