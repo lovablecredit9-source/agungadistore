@@ -82,6 +82,20 @@ interface Props {
 const fmtIDR = (n: number) =>
   new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", minimumFractionDigits: 0 }).format(n);
 
+const cleanExportText = (value: unknown) => {
+  const text = String(value ?? "-")
+    .replace(/[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}\uFE0F\u200D]/gu, "")
+    .replace(/[\u2012\u2013\u2014\u2015]/g, "-")
+    .replace(/[\u2022\u00B7]/g, "-")
+    .replace(/[\u00A0\u2000-\u200B\u202F\u205F\u3000]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  return text || "-";
+};
+
+const csvCell = (value: unknown) => `"${cleanExportText(value).replace(/"/g, '""')}"`;
+
 /**
  * Komponen "keren" untuk semua tab Riwayat:
  * - Filter & Pencarian (search realtime, range tanggal, kategori, urutan)
@@ -200,9 +214,9 @@ export default function HistoryEnhancer({
     const rows = filtered.map((it, i) => [
       i + 1,
       new Date(it.date).toLocaleString("id-ID"),
-      `"${(it.title ?? "").replace(/"/g, '""')}"`,
-      it.category ?? "",
-      `"${(it.subtitle ?? "").replace(/"/g, '""')}"`,
+      csvCell(it.title),
+      csvCell(it.category),
+      csvCell(it.subtitle),
       getExportAmount(it),
     ].join(","));
     const csv = "\uFEFF" + [headers.join(","), ...rows].join("\n");
