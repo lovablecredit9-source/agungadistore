@@ -582,7 +582,7 @@ export default function HistoryEnhancer({
             children: [new Paragraph({
               alignment: AlignmentType.CENTER,
               children: [
-                new TextRun({ text: `${storeName} - WA: 085769302532 - Murah & Terpercaya - Halaman `, color: PRIMARY, bold: true, size: 16 }),
+                new TextRun({ text: `${storeName} - WA: 085769302532 - ${STORE_WEBSITE} - Murah & Terpercaya - Halaman `, color: PRIMARY, bold: true, size: 16 }),
                 new TextRun({ children: [PageNumber.CURRENT], color: PRIMARY, bold: true, size: 16 }),
                 new TextRun({ text: "/", color: PRIMARY, bold: true, size: 16 }),
                 new TextRun({ children: [PageNumber.TOTAL_PAGES], color: PRIMARY, bold: true, size: 16 }),
