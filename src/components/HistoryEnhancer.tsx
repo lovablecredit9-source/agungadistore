@@ -260,7 +260,7 @@ export default function HistoryEnhancer({
     if (qrisData) {
       doc.setFillColor(255, 255, 255);
       doc.circle(20, headerH / 2, 11, "F");
-      try { doc.addImage(qrisData, "JPEG", 11, headerH / 2 - 9, 18, 18); } catch {}
+      try { doc.addImage(qrisData, "JPEG", 11, headerH / 2 - 9, 18, 18); } catch { /* ignore invalid image data */ }
     }
     doc.setTextColor(255, 255, 255);
     doc.setFontSize(18); doc.setFont("helvetica", "bold");
@@ -278,7 +278,7 @@ export default function HistoryEnhancer({
     if (qrisData) {
       doc.setFillColor(255, 255, 255);
       doc.roundedRect(pageW - 36, 4, 32, 38, 2, 2, "F");
-      try { doc.addImage(qrisData, "JPEG", pageW - 34, 6, 28, 28); } catch {}
+      try { doc.addImage(qrisData, "JPEG", pageW - 34, 6, 28, 28); } catch { /* ignore invalid image data */ }
       doc.setTextColor(41, 98, 255);
       doc.setFontSize(6); doc.setFont("helvetica", "bold");
       doc.text("SCAN QRIS", pageW - 20, 39, { align: "center" });
@@ -387,7 +387,7 @@ export default function HistoryEnhancer({
       doc.setFontSize(10); doc.setFont("helvetica", "normal");
       doc.text("Scan QRIS di bawah untuk melakukan pembayaran/top up.", pageW / 2, 32, { align: "center" });
       const size = 110;
-      try { doc.addImage(qrisData, "JPEG", (pageW - size) / 2, 40, size, size); } catch {}
+      try { doc.addImage(qrisData, "JPEG", (pageW - size) / 2, 40, size, size); } catch { /* ignore invalid image data */ }
       doc.setFontSize(9); doc.setTextColor(100);
       doc.text(`${storeName} • WA 085769302532`, pageW / 2, 40 + size + 8, { align: "center" });
     }
