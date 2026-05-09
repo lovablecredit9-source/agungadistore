@@ -439,7 +439,7 @@ export default function HistoryEnhancer({
         new Paragraph({ children: [new TextRun({ text: storeName, bold: true, color: "FFFFFF", size: 36 })] }),
         new Paragraph({ children: [new TextRun({ text: title, color: "FFFFFF", size: 22 })] }),
         new Paragraph({ children: [new TextRun({ text: `Dicetak: ${new Date().toLocaleString("id-ID")} WIB`, color: "DBEAFE", size: 16 })] }),
-        new Paragraph({ children: [new TextRun({ text: `Total: ${filtered.length} item  •  MURAH & TERPERCAYA`, color: "FFFFFF", size: 16, bold: true })] }),
+        new Paragraph({ children: [new TextRun({ text: `Total: ${filtered.length} item - MURAH & TERPERCAYA`, color: "FFFFFF", size: 16, bold: true })] }),
       ],
     }));
     if (qrisBuffer) {
@@ -502,10 +502,10 @@ export default function HistoryEnhancer({
         shading: { fill: "FEFCE8", type: ShadingType.CLEAR },
         margins: { top: 160, bottom: 160, left: 200, right: 200 },
         children: [
-          new Paragraph({ children: [new TextRun({ text: "⚠ PERINGATAN", bold: true, color: "92400E", size: 18 })] }),
-          new Paragraph({ children: [new TextRun({ text: "• File ini hanya tampilan/ekspos riwayat — BUKAN bukti pembayaran resmi pihak ketiga.", color: "3F3F46", size: 16 })] }),
-          new Paragraph({ children: [new TextRun({ text: "• Transaksi produk SPONSOR di luar tanggung jawab admin. Hubungi admin sponsor / Rekber via WhatsApp.", color: "3F3F46", size: 16 })] }),
-          new Paragraph({ children: [new TextRun({ text: "• Hanya transaksi RESMI Agung Adi Store yang dijamin admin (WA: 085769302532).", color: "3F3F46", size: 16 })] }),
+          new Paragraph({ children: [new TextRun({ text: "PERINGATAN", bold: true, color: "92400E", size: 18 })] }),
+          new Paragraph({ children: [new TextRun({ text: "- File ini hanya tampilan/ekspos riwayat - BUKAN bukti pembayaran resmi pihak ketiga.", color: "3F3F46", size: 16 })] }),
+          new Paragraph({ children: [new TextRun({ text: "- Transaksi produk SPONSOR di luar tanggung jawab admin. Hubungi admin sponsor / Rekber via WhatsApp.", color: "3F3F46", size: 16 })] }),
+          new Paragraph({ children: [new TextRun({ text: "- Hanya transaksi RESMI Agung Adi Store yang dijamin admin (WA: 085769302532).", color: "3F3F46", size: 16 })] }),
         ],
       })] })],
     });
@@ -545,11 +545,11 @@ export default function HistoryEnhancer({
           const amountText = formatExportAmount(it);
           return new DocxTableRow({ children: [
             makeCell(String(i + 1), tableWidths[0], { align: AlignmentType.CENTER }),
-            makeCell(String(it.meta?.trx_id || it.id || "-"), tableWidths[1]),
+            makeCell(cleanExportText(it.meta?.trx_id || it.id || "-"), tableWidths[1]),
             makeCell(new Date(it.date).toLocaleString("id-ID"), tableWidths[2]),
-            makeCell(it.category || "-", tableWidths[3], { align: AlignmentType.CENTER }),
-            makeCell(it.title || "-", tableWidths[4]),
-            makeCell(it.subtitle || "-", tableWidths[5]),
+            makeCell(cleanExportText(it.category), tableWidths[3], { align: AlignmentType.CENTER }),
+            makeCell(cleanExportText(it.title), tableWidths[4]),
+            makeCell(cleanExportText(it.subtitle), tableWidths[5]),
             makeCell(amountText, tableWidths[6], { amount, align: AlignmentType.RIGHT }),
           ] });
         }),
@@ -574,7 +574,7 @@ export default function HistoryEnhancer({
             children: [new Paragraph({
               alignment: AlignmentType.CENTER,
               children: [
-                new TextRun({ text: `${storeName}  •  WA: 085769302532  •  Murah & Terpercaya  •  Halaman `, color: PRIMARY, bold: true, size: 16 }),
+                new TextRun({ text: `${storeName} - WA: 085769302532 - Murah & Terpercaya - Halaman `, color: PRIMARY, bold: true, size: 16 }),
                 new TextRun({ children: [PageNumber.CURRENT], color: PRIMARY, bold: true, size: 16 }),
                 new TextRun({ text: "/", color: PRIMARY, bold: true, size: 16 }),
                 new TextRun({ children: [PageNumber.TOTAL_PAGES], color: PRIMARY, bold: true, size: 16 }),
