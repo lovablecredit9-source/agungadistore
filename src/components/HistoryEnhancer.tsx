@@ -450,9 +450,9 @@ export default function HistoryEnhancer({
         borders: { top: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" }, bottom: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" }, left: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" }, right: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" } },
         shading: { fill: "FFFFFF", type: ShadingType.CLEAR },
         margins: { top: 120, bottom: 120, left: 120, right: 120 },
-        verticalAlign: "center" as any,
+        verticalAlign: VerticalAlign.CENTER,
         children: [
-          new Paragraph({ alignment: AlignmentType.CENTER, children: [new ImageRun({ type: "jpg", data: qrisBuffer, transformation: { width: 90, height: 90 }, altText: { title: "QRIS", description: "QRIS", name: "qris" } } as any)] }),
+          new Paragraph({ alignment: AlignmentType.CENTER, children: [new ImageRun({ type: "jpg", data: qrisBuffer, transformation: { width: 90, height: 90 }, altText: { title: "QRIS", description: "QRIS", name: "qris" } })] }),
           new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: "SCAN QRIS", bold: true, color: PRIMARY, size: 14 })] }),
         ],
       }));
