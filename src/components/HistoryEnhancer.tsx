@@ -313,9 +313,9 @@ export default function HistoryEnhancer({
     doc.setFont("helvetica", "normal");
     doc.setFontSize(7); doc.setTextColor(60, 60, 60);
     const warnLines = [
-      "• File ini hanya tampilan/ekspos riwayat — BUKAN bukti pembayaran resmi pihak ketiga.",
-      "• Transaksi produk SPONSOR di luar tanggung jawab admin. Hubungi admin sponsor / Rekber via WhatsApp.",
-      "• Hanya transaksi RESMI Agung Adi Store yang dijamin admin (WA: 085769302532).",
+      "- File ini hanya tampilan/ekspos riwayat - BUKAN bukti pembayaran resmi pihak ketiga.",
+      "- Transaksi produk SPONSOR di luar tanggung jawab admin. Hubungi admin sponsor / Rekber via WhatsApp.",
+      "- Hanya transaksi RESMI Agung Adi Store yang dijamin admin (WA: 085769302532).",
     ];
     let wwy = warnY + 10;
     warnLines.forEach((ln) => {
@@ -332,11 +332,11 @@ export default function HistoryEnhancer({
       head: [["No", "ID", "Tanggal", "Kategori", "Judul", "Keterangan", "Jumlah"]],
       body: filtered.map((it, i) => [
         String(i + 1),
-        String(it.meta?.trx_id || it.id || "-"),
+        cleanExportText(it.meta?.trx_id || it.id || "-"),
         new Date(it.date).toLocaleString("id-ID"),
-        it.category || "-",
-        it.title || "-",
-        it.subtitle || "-",
+        cleanExportText(it.category),
+        cleanExportText(it.title),
+        cleanExportText(it.subtitle),
         formatExportAmount(it),
       ]),
       styles: {
