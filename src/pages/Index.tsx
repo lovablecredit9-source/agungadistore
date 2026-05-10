@@ -105,6 +105,7 @@ interface UserBalance {
   visitor_id: string;
   username: string;
   phone: string;
+  email?: string | null;
   balance: number;
 }
 
