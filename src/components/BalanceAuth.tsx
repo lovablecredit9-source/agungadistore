@@ -611,6 +611,18 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser }: BalanceA
                     <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                     <Input className="pl-9 text-sm" placeholder="No HP" value={editPhone} onChange={e => setEditPhone(e.target.value)} />
                   </div>
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <Input className="pl-9 pr-20 text-sm bg-muted/40" readOnly value={currentUser.email || "-"} />
+                    <button
+                      type="button"
+                      onClick={() => { resetEditForm(); setEditSection("email"); setEditEmail(currentUser.email || ""); }}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 text-[11px] font-bold text-primary hover:underline"
+                    >
+                      Ubah
+                    </button>
+                  </div>
+                  <p className="text-[10px] text-muted-foreground">Email diubah lewat tombol Ubah / tab Email (perlu konfirmasi sandi).</p>
                   <Button size="sm" className="w-full gap-1.5" onClick={handleUpdateProfile} disabled={editLoading}>
                     <Save className="w-3.5 h-3.5" /> {editLoading ? "Menyimpan..." : "Simpan Profil"}
                   </Button>

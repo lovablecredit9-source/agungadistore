@@ -105,6 +105,7 @@ interface UserBalance {
   visitor_id: string;
   username: string;
   phone: string;
+  email?: string | null;
   balance: number;
 }
 
@@ -4611,6 +4612,8 @@ const Index = () => {
                       visitorId={activeBalanceVisitorId ?? undefined}
                       walletInfo={{
                         username: userBalance?.username,
+                        email: userBalance?.email,
+                        phone: userBalance?.phone,
                         balance: userBalance?.balance ?? 0,
                         gameBalance: gameBalanceAmount,
                       }}

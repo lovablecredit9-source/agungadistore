@@ -28,12 +28,16 @@ import { supabase } from "@/integrations/supabase/client";
 
 interface WalletInfo {
   username?: string;
+  email?: string | null;
+  phone?: string | null;
   balance?: number;
   gameBalance?: number;
 }
 
 interface WalletSnapshot {
   username: string;
+  email: string;
+  phone: string;
   balance: number;
   gameBalance: number;
   gems: number;
@@ -46,6 +50,8 @@ interface WalletSnapshot {
 async function fetchWalletSnapshot(visitorId: string | undefined, info: WalletInfo | undefined, totals: { in: number; out: number }): Promise<WalletSnapshot> {
   const snap: WalletSnapshot = {
     username: info?.username || "-",
+    email: info?.email || "",
+    phone: info?.phone || "",
     balance: info?.balance ?? 0,
     gameBalance: info?.gameBalance ?? 0,
     gems: 0,
@@ -56,14 +62,21 @@ async function fetchWalletSnapshot(visitorId: string | undefined, info: WalletIn
   };
   if (!visitorId) return snap;
   try {
-    const [gemRes, streakRes, credRes] = await Promise.all([
+    const [gemRes, streakRes, credRes, ubRes] = await Promise.all([
       supabase.rpc("get_account_gems" as any, { p_visitor_id: visitorId }),
       supabase.from("daily_streaks").select("streak_coins").eq("visitor_id", visitorId).maybeSingle(),
       supabase.from("user_game_credits").select("credits").eq("visitor_id", visitorId).maybeSingle(),
+      supabase.from("user_balances_public" as any).select("email,phone,username").eq("visitor_id", visitorId).maybeSingle(),
     ]);
     snap.gems = Number((gemRes as any)?.data ?? 0) || 0;
     snap.streakCoins = Number((streakRes.data as any)?.streak_coins ?? 0) || 0;
     snap.gameCredits = Number((credRes.data as any)?.credits ?? 0) || 0;
+    const ub: any = ubRes?.data;
+    if (ub) {
+      if (!snap.email) snap.email = ub.email || "";
+      if (!snap.phone) snap.phone = ub.phone || "";
+      if (snap.username === "-" && ub.username) snap.username = ub.username;
+    }
   } catch { /* ignore */ }
   return snap;
 }
@@ -276,6 +289,8 @@ export default function HistoryEnhancer({
       "",
       `"=== RINGKASAN SALDO AKUN ==="`,
       `"Username","${snap.username}"`,
+      `"Email","${snap.email || "-"}"`,
+      `"No HP","${snap.phone || "-"}"`,
       `"Sisa Saldo","${formatAmount(snap.balance)}"`,
       `"Saldo IN","${formatAmount(snap.gameBalance)}"`,
       `"Gem","${snap.gems.toLocaleString("id-ID")}"`,
@@ -416,7 +431,10 @@ export default function HistoryEnhancer({
     doc.setFontSize(8.5); doc.setFont("helvetica", "bold");
     doc.text("RINGKASAN SALDO AKUN", 16, wY + 6);
     doc.setFontSize(6.5); doc.setFont("helvetica", "normal"); doc.setTextColor(100, 116, 139);
-    doc.text(`@${cleanExportText(snap.username)}`, pageW - 14, wY + 6, { align: "right" });
+    const idLine = `@${cleanExportText(snap.username)}` +
+      (snap.email ? `  •  ${cleanExportText(snap.email)}` : "") +
+      (snap.phone ? `  •  ${cleanExportText(snap.phone)}` : "");
+    doc.text(idLine, pageW - 14, wY + 6, { align: "right" });
 
     const items: { label: string; value: string; color: number[] }[] = [
       { label: "SISA SALDO", value: formatAmount(snap.balance), color: [5, 150, 105] },
@@ -718,10 +736,17 @@ export default function HistoryEnhancer({
     const walletColW = Math.floor(9360 / walletItems.length);
     const walletWidths = walletItems.map(() => walletColW);
     const walletTitle = new Paragraph({
-      spacing: { before: 200, after: 120 },
+      spacing: { before: 200, after: 60 },
       children: [
         new TextRun({ text: "RINGKASAN SALDO AKUN ", bold: true, color: PRIMARY, size: 26 }),
         new TextRun({ text: `@${cleanExportText(snap.username)}`, color: MUTED, size: 18 }),
+      ],
+    });
+    const walletIdentity = new Paragraph({
+      spacing: { after: 120 },
+      children: [
+        new TextRun({ text: `Email: ${cleanExportText(snap.email) || "-"}`, color: MUTED, size: 16 }),
+        new TextRun({ text: `   •   No HP: ${cleanExportText(snap.phone) || "-"}`, color: MUTED, size: 16 }),
       ],
     });
     const walletTable = new DocxTable({
@@ -795,6 +820,7 @@ export default function HistoryEnhancer({
           summaryTable,
           spacerSmall,
           walletTitle,
+          walletIdentity,
           walletTable,
           spacerSmall,
           warningTable,
