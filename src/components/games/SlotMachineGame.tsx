@@ -238,37 +238,50 @@ export default function SlotMachineGame() {
 
   const randomSym = (): SymId => SYMBOL_IDS[Math.floor(Math.random() * SYMBOL_IDS.length)];
 
+  const randomGrid = (): SymId[] => Array.from({ length: 9 }, () => randomSym());
+
+  // Cek payline klien (untuk mode latihan)
+  const findBestLineLocal = (g: SymId[]) => {
+    for (const line of PAYLINES) {
+      const a = g[line.indices[0]], b = g[line.indices[1]], c = g[line.indices[2]];
+      if (a === b && b === c) return line;
+    }
+    return null;
+  };
+
   // Mode latihan offline
   const simulateSpin = () => {
     setResult(null);
+    setWinningLines([]);
     setSpinning(true);
     const animDuration = 1500;
     const start = Date.now();
     const interval = setInterval(() => {
-      setReels([randomSym(), randomSym(), randomSym()]);
+      setGrid(randomGrid());
       if (Date.now() - start >= animDuration) clearInterval(interval);
     }, 80);
 
     setTimeout(() => {
       clearInterval(interval);
-      const win = Math.random() < 0.3;
-      let finalReels: SymId[];
+      const win = Math.random() < 0.45;
+      let finalGrid: SymId[] = randomGrid();
       let payout: any;
       if (win) {
         const tierRewards = TIER_REWARDS[tier];
         const pick = tierRewards[Math.floor(Math.random() * tierRewards.length)];
-        finalReels = [pick.sym, pick.sym, pick.sym];
+        // Pilih random payline dan paksa simbol pick.sym di sana
+        const line = PAYLINES[Math.floor(Math.random() * PAYLINES.length)];
+        line.indices.forEach(i => { finalGrid[i] = pick.sym; });
         payout = { type: "simulasi", label: `LATIHAN: ${pick.reward} (simulasi, tidak masuk akun)` };
+        setWinningLines([{ name: line.name, indices: line.indices }]);
       } else {
-        let r1 = randomSym(), r2 = randomSym(), r3 = randomSym();
-        if (r1 === r2 && r2 === r3) {
-          const idx = SYMBOL_IDS.indexOf(r2);
-          r2 = SYMBOL_IDS[(idx + 1) % SYMBOL_IDS.length];
-        }
-        finalReels = [r1, r2, r3];
+        // Pastikan tidak ada payline kebetulan
+        let tries = 0;
+        while (findBestLineLocal(finalGrid) && tries < 20) { finalGrid = randomGrid(); tries++; }
         payout = { type: "none", label: "Belum hoki - coba lagi! (mode latihan)" };
+        setWinningLines([]);
       }
-      setReels(finalReels);
+      setGrid(finalGrid);
       setResult(payout);
       setSpinning(false);
       if (payout.type !== "none") {
@@ -285,12 +298,13 @@ export default function SlotMachineGame() {
     }
 
     setResult(null);
+    setWinningLines([]);
     setSpinning(true);
 
     const animDuration = 1500;
     const start = Date.now();
     const interval = setInterval(() => {
-      setReels([randomSym(), randomSym(), randomSym()]);
+      setGrid(randomGrid());
       if (Date.now() - start >= animDuration) clearInterval(interval);
     }, 80);
 
@@ -305,8 +319,13 @@ export default function SlotMachineGame() {
       }
       const basePoints = TIER_POINT_REWARDS[tier] + (data.payout.type !== "none" ? Math.ceil(TIER_POINT_REWARDS[tier] * 0.5) : 0);
       const { awardedPoints } = awardGamePoints(basePoints);
-      // server tetap kirim emoji - convert ke SymId
-      setReels((data.reels as string[]).map(toSymId));
+      // server kirim grid (9 simbol) - convert ke SymId. Fallback ke baris tengah jika lama.
+      const serverGrid = (data.grid as string[] | undefined) || (() => {
+        const r = (data.reels as string[]) || [];
+        return ["cherry","cherry","cherry", ...r, "cherry","cherry","cherry"];
+      })();
+      setGrid(serverGrid.map(toSymId));
+      setWinningLines(((data.winningLines as any[]) || []).map(w => ({ name: w.name, indices: w.indices })));
       setResult({ ...data.payout, awardedPoints });
       setSpinning(false);
       fetchCredits();
