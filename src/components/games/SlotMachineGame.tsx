@@ -88,22 +88,24 @@ const RewardRow = ({ id }: { id: SymId }) => (
   </div>
 );
 
-type Tier = "hemat" | "sedang" | "besar" | "mega" | "ultra" | "sultan" | "raja" | "dewa";
+type Tier = "hemat" | "sedang" | "besar" | "mega" | "ultra" | "sultan" | "raja" | "dewa" | "legenda" | "maha";
 const TIERS: { key: Tier; label: string; cost: number; gradient: string; desc: string }[] = [
-  { key: "hemat",  label: "Hemat",  cost: 1,    gradient: "from-emerald-500 to-teal-600",  desc: "Jackpot Rp 100" },
-  { key: "sedang", label: "Sedang", cost: 5,    gradient: "from-blue-500 to-indigo-600",   desc: "Jackpot Rp 200 + Bonus" },
-  { key: "besar",  label: "Besar",  cost: 10,   gradient: "from-amber-500 to-rose-600",    desc: "Mega Jackpot Rp 500" },
-  { key: "mega",   label: "Mega",   cost: 50,   gradient: "from-fuchsia-500 to-purple-700", desc: "Super Jackpot Rp 2.500" },
-  { key: "ultra",  label: "Ultra",  cost: 100,  gradient: "from-rose-600 to-red-800",       desc: "Ultra Jackpot Rp 5.000" },
-  { key: "sultan", label: "Sultan", cost: 200,  gradient: "from-yellow-500 to-amber-700",   desc: "Sultan Jackpot Rp 10.000" },
-  { key: "raja",   label: "Raja",   cost: 500,  gradient: "from-violet-600 to-indigo-900",  desc: "Raja Jackpot Rp 25.000" },
-  { key: "dewa",   label: "Dewa",   cost: 1000, gradient: "from-pink-600 via-red-600 to-yellow-500", desc: "DEWA Jackpot Rp 50.000" },
+  { key: "hemat",  label: "Hemat",  cost: 1,    gradient: "from-emerald-500 to-teal-600",  desc: "Jackpot Rp 300" },
+  { key: "sedang", label: "Sedang", cost: 5,    gradient: "from-blue-500 to-indigo-600",   desc: "Jackpot Rp 600 + Bonus" },
+  { key: "besar",  label: "Besar",  cost: 10,   gradient: "from-amber-500 to-rose-600",    desc: "Mega Jackpot Rp 1.500" },
+  { key: "mega",   label: "Mega",   cost: 50,   gradient: "from-fuchsia-500 to-purple-700", desc: "Super Jackpot Rp 7.500" },
+  { key: "ultra",  label: "Ultra",  cost: 100,  gradient: "from-rose-600 to-red-800",       desc: "Ultra Jackpot Rp 15.000" },
+  { key: "sultan", label: "Sultan", cost: 200,  gradient: "from-yellow-500 to-amber-700",   desc: "Sultan Jackpot Rp 30.000" },
+  { key: "raja",   label: "Raja",   cost: 500,  gradient: "from-violet-600 to-indigo-900",  desc: "Raja Jackpot Rp 75.000" },
+  { key: "dewa",   label: "Dewa",   cost: 1000, gradient: "from-pink-600 via-red-600 to-yellow-500", desc: "DEWA Jackpot Rp 150.000" },
+  { key: "legenda", label: "Legenda", cost: 5000, gradient: "from-orange-600 via-amber-600 to-yellow-500", desc: "LEGENDA Jackpot Rp 750.000" },
+  { key: "maha",   label: "Maha",   cost: 10000, gradient: "from-red-700 via-rose-700 to-pink-500", desc: "MAHA Jackpot Rp 1.500.000" },
 ];
 
 // Tabel hadiah per tier - pakai SymId
 const TIER_REWARDS: Record<Tier, { sym: SymId; reward: string }[]> = {
   hemat: [
-    { sym: "seven",  reward: "MAX Saldo Rp 100" },
+    { sym: "seven",  reward: "MAX Saldo Rp 300" },
     { sym: "gem",    reward: "5 kredit" },
     { sym: "star",   reward: "4 kredit" },
     { sym: "bell",   reward: "3 kredit" },
@@ -112,68 +114,86 @@ const TIER_REWARDS: Record<Tier, { sym: SymId; reward: string }[]> = {
     { sym: "cherry", reward: "2 kredit" },
   ],
   sedang: [
-    { sym: "seven",  reward: "MAX Saldo Rp 200" },
-    { sym: "gem",    reward: "Saldo Rp 100" },
+    { sym: "seven",  reward: "MAX Saldo Rp 600" },
+    { sym: "gem",    reward: "Saldo Rp 300" },
     { sym: "star",   reward: "8 kredit" },
     { sym: "bell",   reward: "+50 MB storage" },
     { sym: "grape",  reward: "+1 Nyawa Ekstra" },
   ],
   besar: [
-    { sym: "seven",  reward: "MAX Saldo Rp 500" },
-    { sym: "gem",    reward: "Saldo Rp 200" },
+    { sym: "seven",  reward: "MAX Saldo Rp 1.500" },
+    { sym: "gem",    reward: "Saldo Rp 600" },
     { sym: "star",   reward: "15 kredit" },
     { sym: "bell",   reward: "+100 MB storage" },
     { sym: "grape",  reward: "+2 Nyawa Ekstra" },
   ],
   mega: [
-    { sym: "seven",  reward: "MAX Saldo Rp 2.500" },
-    { sym: "gem",    reward: "Saldo Rp 1.000" },
-    { sym: "star",   reward: "Saldo Rp 500" },
+    { sym: "seven",  reward: "MAX Saldo Rp 7.500" },
+    { sym: "gem",    reward: "Saldo Rp 3.000" },
+    { sym: "star",   reward: "Saldo Rp 1.500" },
     { sym: "bell",   reward: "+250 MB storage" },
     { sym: "grape",  reward: "+5 Nyawa Ekstra" },
     { sym: "lemon",  reward: "60 kredit" },
     { sym: "cherry", reward: "40 kredit" },
   ],
   ultra: [
-    { sym: "seven",  reward: "MAX Saldo Rp 5.000" },
-    { sym: "gem",    reward: "Saldo Rp 2.000" },
-    { sym: "star",   reward: "Saldo Rp 1.000" },
+    { sym: "seven",  reward: "MAX Saldo Rp 15.000" },
+    { sym: "gem",    reward: "Saldo Rp 6.000" },
+    { sym: "star",   reward: "Saldo Rp 3.000" },
     { sym: "bell",   reward: "+500 MB storage" },
     { sym: "grape",  reward: "+10 Nyawa Ekstra" },
     { sym: "lemon",  reward: "130 kredit" },
     { sym: "cherry", reward: "90 kredit" },
   ],
   sultan: [
-    { sym: "seven",  reward: "MAX Saldo Rp 10.000" },
-    { sym: "gem",    reward: "Saldo Rp 4.000" },
-    { sym: "star",   reward: "Saldo Rp 2.000" },
+    { sym: "seven",  reward: "MAX Saldo Rp 30.000" },
+    { sym: "gem",    reward: "Saldo Rp 12.000" },
+    { sym: "star",   reward: "Saldo Rp 6.000" },
     { sym: "bell",   reward: "+1 GB storage" },
     { sym: "grape",  reward: "+20 Nyawa Ekstra" },
     { sym: "lemon",  reward: "260 kredit" },
     { sym: "cherry", reward: "180 kredit" },
   ],
   raja: [
-    { sym: "seven",  reward: "MAX Saldo Rp 25.000" },
-    { sym: "gem",    reward: "Saldo Rp 10.000" },
-    { sym: "star",   reward: "Saldo Rp 5.000" },
+    { sym: "seven",  reward: "MAX Saldo Rp 75.000" },
+    { sym: "gem",    reward: "Saldo Rp 30.000" },
+    { sym: "star",   reward: "Saldo Rp 15.000" },
     { sym: "bell",   reward: "+2.5 GB storage" },
     { sym: "grape",  reward: "+50 Nyawa Ekstra" },
     { sym: "lemon",  reward: "650 kredit" },
     { sym: "cherry", reward: "450 kredit" },
   ],
   dewa: [
-    { sym: "seven",  reward: "MAX Saldo Rp 50.000" },
-    { sym: "gem",    reward: "Saldo Rp 20.000" },
-    { sym: "star",   reward: "Saldo Rp 10.000" },
+    { sym: "seven",  reward: "MAX Saldo Rp 150.000" },
+    { sym: "gem",    reward: "Saldo Rp 60.000" },
+    { sym: "star",   reward: "Saldo Rp 30.000" },
     { sym: "bell",   reward: "+5 GB storage" },
     { sym: "grape",  reward: "+100 Nyawa Ekstra" },
     { sym: "lemon",  reward: "1.300 kredit" },
     { sym: "cherry", reward: "900 kredit" },
   ],
+  legenda: [
+    { sym: "seven",  reward: "MAX Saldo Rp 750.000" },
+    { sym: "gem",    reward: "Saldo Rp 300.000" },
+    { sym: "star",   reward: "Saldo Rp 150.000" },
+    { sym: "bell",   reward: "+10 GB storage" },
+    { sym: "grape",  reward: "+250 Nyawa Ekstra" },
+    { sym: "lemon",  reward: "5.000 kredit" },
+    { sym: "cherry", reward: "3.500 kredit" },
+  ],
+  maha: [
+    { sym: "seven",  reward: "MAX Saldo Rp 1.500.000" },
+    { sym: "gem",    reward: "Saldo Rp 600.000" },
+    { sym: "star",   reward: "Saldo Rp 300.000" },
+    { sym: "bell",   reward: "+20 GB storage" },
+    { sym: "grape",  reward: "+500 Nyawa Ekstra" },
+    { sym: "lemon",  reward: "10.000 kredit" },
+    { sym: "cherry", reward: "7.000 kredit" },
+  ],
 };
 
 const TIER_POINT_REWARDS: Record<Tier, number> = {
-  hemat: 5, sedang: 10, besar: 16, mega: 28, ultra: 40, sultan: 60, raja: 90, dewa: 140,
+  hemat: 5, sedang: 10, besar: 16, mega: 28, ultra: 40, sultan: 60, raja: 90, dewa: 140, legenda: 250, maha: 400,
 };
 
 export default function SlotMachineGame() {
