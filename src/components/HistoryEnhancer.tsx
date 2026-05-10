@@ -558,6 +558,7 @@ export default function HistoryEnhancer({
 
   async function exportWord() {
     if (filtered.length === 0) return;
+    const snap = await fetchWalletSnapshot(visitorId, walletInfo, { in: stats.totalIn, out: stats.totalOut });
 
     // Fetch QRIS as ArrayBuffer for ImageRun
     let qrisBuffer: ArrayBuffer | null = null;
