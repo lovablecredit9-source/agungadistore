@@ -28,12 +28,16 @@ import { supabase } from "@/integrations/supabase/client";
 
 interface WalletInfo {
   username?: string;
+  email?: string | null;
+  phone?: string | null;
   balance?: number;
   gameBalance?: number;
 }
 
 interface WalletSnapshot {
   username: string;
+  email: string;
+  phone: string;
   balance: number;
   gameBalance: number;
   gems: number;
@@ -46,6 +50,8 @@ interface WalletSnapshot {
 async function fetchWalletSnapshot(visitorId: string | undefined, info: WalletInfo | undefined, totals: { in: number; out: number }): Promise<WalletSnapshot> {
   const snap: WalletSnapshot = {
     username: info?.username || "-",
+    email: info?.email || "",
+    phone: info?.phone || "",
     balance: info?.balance ?? 0,
     gameBalance: info?.gameBalance ?? 0,
     gems: 0,
@@ -56,14 +62,21 @@ async function fetchWalletSnapshot(visitorId: string | undefined, info: WalletIn
   };
   if (!visitorId) return snap;
   try {
-    const [gemRes, streakRes, credRes] = await Promise.all([
+    const [gemRes, streakRes, credRes, ubRes] = await Promise.all([
       supabase.rpc("get_account_gems" as any, { p_visitor_id: visitorId }),
       supabase.from("daily_streaks").select("streak_coins").eq("visitor_id", visitorId).maybeSingle(),
       supabase.from("user_game_credits").select("credits").eq("visitor_id", visitorId).maybeSingle(),
+      supabase.from("user_balances_public" as any).select("email,phone,username").eq("visitor_id", visitorId).maybeSingle(),
     ]);
     snap.gems = Number((gemRes as any)?.data ?? 0) || 0;
     snap.streakCoins = Number((streakRes.data as any)?.streak_coins ?? 0) || 0;
     snap.gameCredits = Number((credRes.data as any)?.credits ?? 0) || 0;
+    const ub: any = ubRes?.data;
+    if (ub) {
+      if (!snap.email) snap.email = ub.email || "";
+      if (!snap.phone) snap.phone = ub.phone || "";
+      if (snap.username === "-" && ub.username) snap.username = ub.username;
+    }
   } catch { /* ignore */ }
   return snap;
 }
