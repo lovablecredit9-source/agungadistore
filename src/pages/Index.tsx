@@ -4608,6 +4608,12 @@ const Index = () => {
                       exportPrefix="riwayat-saldo"
                       storeName={STORE_NAME}
                       renderItem={renderTx}
+                      visitorId={activeBalanceVisitorId ?? undefined}
+                      walletInfo={{
+                        username: userBalance?.username,
+                        balance: userBalance?.balance ?? 0,
+                        gameBalance: gameBalanceAmount,
+                      }}
                     />
                   );
                 })()}
