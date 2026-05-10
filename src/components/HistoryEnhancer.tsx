@@ -400,10 +400,54 @@ export default function HistoryEnhancer({
     });
     doc.setTextColor(0, 0, 0);
 
+    // ===== RINGKASAN SALDO AKUN =====
+    const wY = 98;
+    const wH = 30;
+    // Outer rounded panel with gradient-like band
+    doc.setFillColor(248, 250, 252);
+    doc.setDrawColor(191, 219, 254);
+    doc.roundedRect(10, wY, pageW - 20, wH, 3, 3, "FD");
+    // Left accent band (gradient sim)
+    for (let i = 0; i < 14; i++) {
+      doc.setFillColor(99 - i * 2, 102 + i * 4, 241);
+      doc.rect(10, wY + i * (wH / 14), 3, wH / 14 + 0.4, "F");
+    }
+    doc.setTextColor(30, 41, 59);
+    doc.setFontSize(8.5); doc.setFont("helvetica", "bold");
+    doc.text("RINGKASAN SALDO AKUN", 16, wY + 6);
+    doc.setFontSize(6.5); doc.setFont("helvetica", "normal"); doc.setTextColor(100, 116, 139);
+    doc.text(`@${cleanExportText(snap.username)}`, pageW - 14, wY + 6, { align: "right" });
+
+    const items: { label: string; value: string; color: number[] }[] = [
+      { label: "SISA SALDO", value: formatAmount(snap.balance), color: [5, 150, 105] },
+      { label: "SALDO IN", value: formatAmount(snap.gameBalance), color: [217, 119, 6] },
+      { label: "GEM", value: snap.gems.toLocaleString("id-ID"), color: [147, 51, 234] },
+      { label: "KOIN STREAK", value: snap.streakCoins.toLocaleString("id-ID"), color: [234, 88, 12] },
+      { label: "KREDIT GAME", value: snap.gameCredits.toLocaleString("id-ID"), color: [37, 99, 235] },
+      { label: "TOTAL KELUAR", value: `-${formatAmount(snap.totalOut)}`, color: [220, 38, 38] },
+    ];
+    const colW = (pageW - 28) / items.length;
+    items.forEach((it, idx) => {
+      const x = 14 + idx * colW;
+      doc.setTextColor(100, 116, 139);
+      doc.setFontSize(5.8); doc.setFont("helvetica", "bold");
+      doc.text(it.label, x + colW / 2, wY + 14, { align: "center" });
+      doc.setTextColor(it.color[0], it.color[1], it.color[2]);
+      doc.setFontSize(8.2); doc.setFont("helvetica", "bold");
+      doc.text(it.value, x + colW / 2, wY + 22, { align: "center" });
+    });
+    // Divider lines between cols
+    doc.setDrawColor(226, 232, 240);
+    for (let i = 1; i < items.length; i++) {
+      const x = 14 + i * colW;
+      doc.line(x, wY + 10, x, wY + wH - 4);
+    }
+    doc.setTextColor(0, 0, 0);
+
     // ===== DETAIL RIWAYAT TABEL =====
     const autoTable = (await import("jspdf-autotable")).default;
     autoTable(doc, {
-      startY: 100,
+      startY: wY + wH + 4,
       head: [["No", "ID", "Tanggal", "Kategori", "Judul", "Keterangan", "Jumlah"]],
       body: filtered.map((it, i) => [
         String(i + 1),
