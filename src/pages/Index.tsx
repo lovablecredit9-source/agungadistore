@@ -4611,6 +4611,8 @@ const Index = () => {
                       visitorId={activeBalanceVisitorId ?? undefined}
                       walletInfo={{
                         username: userBalance?.username,
+                        email: userBalance?.email,
+                        phone: userBalance?.phone,
                         balance: userBalance?.balance ?? 0,
                         gameBalance: gameBalanceAmount,
                       }}
