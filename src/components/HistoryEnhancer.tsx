@@ -260,8 +260,9 @@ export default function HistoryEnhancer({
   };
 
   // ======= EXPORT =======
-  function exportCSV() {
+  async function exportCSV() {
     if (filtered.length === 0) return;
+    const snap = await fetchWalletSnapshot(visitorId, walletInfo, { in: stats.totalIn, out: stats.totalOut });
     const headers = ["No", "Tanggal", "Judul", "Kategori", "Deskripsi", "Nominal"];
     const rows = filtered.map((it, i) => [
       i + 1,
@@ -271,7 +272,25 @@ export default function HistoryEnhancer({
       csvCell(it.subtitle),
       getExportAmount(it),
     ].join(","));
-    const csv = "\uFEFF" + [headers.join(","), ...rows, `"Website: ${STORE_WEBSITE}"`].join("\n");
+    const walletLines = [
+      "",
+      `"=== RINGKASAN SALDO AKUN ==="`,
+      `"Username","${snap.username}"`,
+      `"Sisa Saldo","${formatAmount(snap.balance)}"`,
+      `"Saldo IN","${formatAmount(snap.gameBalance)}"`,
+      `"Gem","${snap.gems.toLocaleString("id-ID")}"`,
+      `"Koin Streak","${snap.streakCoins.toLocaleString("id-ID")}"`,
+      `"Kredit Game","${snap.gameCredits.toLocaleString("id-ID")}"`,
+      `"Total Masuk","+${formatAmount(snap.totalIn)}"`,
+      `"Total Keluar","-${formatAmount(snap.totalOut)}"`,
+      "",
+      `"--- Ditandatangani ---"`,
+      `"${storeName}"`,
+      `"WA: 085769302532"`,
+      `"Website: ${STORE_WEBSITE}"`,
+      `"Tanggal Cetak","${new Date().toLocaleString("id-ID")} WIB"`,
+    ];
+    const csv = "\uFEFF" + [headers.join(","), ...rows, ...walletLines].join("\n");
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
