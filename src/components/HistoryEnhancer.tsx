@@ -24,6 +24,49 @@ import {
   PageNumber, LevelFormat, VerticalAlign,
 } from "docx";
 import { saveAs } from "file-saver";
+import { supabase } from "@/integrations/supabase/client";
+
+interface WalletInfo {
+  username?: string;
+  balance?: number;
+  gameBalance?: number;
+}
+
+interface WalletSnapshot {
+  username: string;
+  balance: number;
+  gameBalance: number;
+  gems: number;
+  streakCoins: number;
+  gameCredits: number;
+  totalIn: number;
+  totalOut: number;
+}
+
+async function fetchWalletSnapshot(visitorId: string | undefined, info: WalletInfo | undefined, totals: { in: number; out: number }): Promise<WalletSnapshot> {
+  const snap: WalletSnapshot = {
+    username: info?.username || "-",
+    balance: info?.balance ?? 0,
+    gameBalance: info?.gameBalance ?? 0,
+    gems: 0,
+    streakCoins: 0,
+    gameCredits: 0,
+    totalIn: totals.in,
+    totalOut: totals.out,
+  };
+  if (!visitorId) return snap;
+  try {
+    const [gemRes, streakRes, credRes] = await Promise.all([
+      supabase.rpc("get_account_gems" as any, { p_visitor_id: visitorId }),
+      supabase.from("daily_streaks").select("streak_coins").eq("visitor_id", visitorId).maybeSingle(),
+      supabase.from("user_game_credits").select("credits").eq("visitor_id", visitorId).maybeSingle(),
+    ]);
+    snap.gems = Number((gemRes as any)?.data ?? 0) || 0;
+    snap.streakCoins = Number((streakRes.data as any)?.streak_coins ?? 0) || 0;
+    snap.gameCredits = Number((credRes.data as any)?.credits ?? 0) || 0;
+  } catch { /* ignore */ }
+  return snap;
+}
 
 // Cache image load → base64 dataURL
 const _imgCache: Record<string, string> = {};
@@ -77,6 +120,10 @@ interface Props {
   defaultView?: ViewMode;
   /** nama toko utk PDF */
   storeName?: string;
+  /** visitor id utk fetch gem/credit/streak coin saat export */
+  visitorId?: string;
+  /** info saldo akun yg ikut tercetak di file ekspor */
+  walletInfo?: WalletInfo;
 }
 
 const fmtIDR = (n: number) =>
@@ -111,6 +158,7 @@ export default function HistoryEnhancer({
   title, items, categories = [], formatAmount = fmtIDR,
   exportPrefix = "riwayat", renderItem, onFilteredChange,
   showStats = true, defaultView = "list", storeName = "Agung Adi Store",
+  visitorId, walletInfo,
 }: Props) {
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState<string>("all");
@@ -212,8 +260,9 @@ export default function HistoryEnhancer({
   };
 
   // ======= EXPORT =======
-  function exportCSV() {
+  async function exportCSV() {
     if (filtered.length === 0) return;
+    const snap = await fetchWalletSnapshot(visitorId, walletInfo, { in: stats.totalIn, out: stats.totalOut });
     const headers = ["No", "Tanggal", "Judul", "Kategori", "Deskripsi", "Nominal"];
     const rows = filtered.map((it, i) => [
       i + 1,
@@ -223,7 +272,25 @@ export default function HistoryEnhancer({
       csvCell(it.subtitle),
       getExportAmount(it),
     ].join(","));
-    const csv = "\uFEFF" + [headers.join(","), ...rows, `"Website: ${STORE_WEBSITE}"`].join("\n");
+    const walletLines = [
+      "",
+      `"=== RINGKASAN SALDO AKUN ==="`,
+      `"Username","${snap.username}"`,
+      `"Sisa Saldo","${formatAmount(snap.balance)}"`,
+      `"Saldo IN","${formatAmount(snap.gameBalance)}"`,
+      `"Gem","${snap.gems.toLocaleString("id-ID")}"`,
+      `"Koin Streak","${snap.streakCoins.toLocaleString("id-ID")}"`,
+      `"Kredit Game","${snap.gameCredits.toLocaleString("id-ID")}"`,
+      `"Total Masuk","+${formatAmount(snap.totalIn)}"`,
+      `"Total Keluar","-${formatAmount(snap.totalOut)}"`,
+      "",
+      `"--- Ditandatangani ---"`,
+      `"${storeName}"`,
+      `"WA: 085769302532"`,
+      `"Website: ${STORE_WEBSITE}"`,
+      `"Tanggal Cetak","${new Date().toLocaleString("id-ID")} WIB"`,
+    ];
+    const csv = "\uFEFF" + [headers.join(","), ...rows, ...walletLines].join("\n");
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -237,6 +304,7 @@ export default function HistoryEnhancer({
 
   async function exportPDF() {
     if (filtered.length === 0) return;
+    const snap = await fetchWalletSnapshot(visitorId, walletInfo, { in: stats.totalIn, out: stats.totalOut });
     const doc = new jsPDF();
     const pageW = doc.internal.pageSize.getWidth();
     const pageH = doc.internal.pageSize.getHeight();
@@ -332,10 +400,54 @@ export default function HistoryEnhancer({
     });
     doc.setTextColor(0, 0, 0);
 
+    // ===== RINGKASAN SALDO AKUN =====
+    const wY = 98;
+    const wH = 30;
+    // Outer rounded panel with gradient-like band
+    doc.setFillColor(248, 250, 252);
+    doc.setDrawColor(191, 219, 254);
+    doc.roundedRect(10, wY, pageW - 20, wH, 3, 3, "FD");
+    // Left accent band (gradient sim)
+    for (let i = 0; i < 14; i++) {
+      doc.setFillColor(99 - i * 2, 102 + i * 4, 241);
+      doc.rect(10, wY + i * (wH / 14), 3, wH / 14 + 0.4, "F");
+    }
+    doc.setTextColor(30, 41, 59);
+    doc.setFontSize(8.5); doc.setFont("helvetica", "bold");
+    doc.text("RINGKASAN SALDO AKUN", 16, wY + 6);
+    doc.setFontSize(6.5); doc.setFont("helvetica", "normal"); doc.setTextColor(100, 116, 139);
+    doc.text(`@${cleanExportText(snap.username)}`, pageW - 14, wY + 6, { align: "right" });
+
+    const items: { label: string; value: string; color: number[] }[] = [
+      { label: "SISA SALDO", value: formatAmount(snap.balance), color: [5, 150, 105] },
+      { label: "SALDO IN", value: formatAmount(snap.gameBalance), color: [217, 119, 6] },
+      { label: "GEM", value: snap.gems.toLocaleString("id-ID"), color: [147, 51, 234] },
+      { label: "KOIN STREAK", value: snap.streakCoins.toLocaleString("id-ID"), color: [234, 88, 12] },
+      { label: "KREDIT GAME", value: snap.gameCredits.toLocaleString("id-ID"), color: [37, 99, 235] },
+      { label: "TOTAL KELUAR", value: `-${formatAmount(snap.totalOut)}`, color: [220, 38, 38] },
+    ];
+    const colW = (pageW - 28) / items.length;
+    items.forEach((it, idx) => {
+      const x = 14 + idx * colW;
+      doc.setTextColor(100, 116, 139);
+      doc.setFontSize(5.8); doc.setFont("helvetica", "bold");
+      doc.text(it.label, x + colW / 2, wY + 14, { align: "center" });
+      doc.setTextColor(it.color[0], it.color[1], it.color[2]);
+      doc.setFontSize(8.2); doc.setFont("helvetica", "bold");
+      doc.text(it.value, x + colW / 2, wY + 22, { align: "center" });
+    });
+    // Divider lines between cols
+    doc.setDrawColor(226, 232, 240);
+    for (let i = 1; i < items.length; i++) {
+      const x = 14 + i * colW;
+      doc.line(x, wY + 10, x, wY + wH - 4);
+    }
+    doc.setTextColor(0, 0, 0);
+
     // ===== DETAIL RIWAYAT TABEL =====
     const autoTable = (await import("jspdf-autotable")).default;
     autoTable(doc, {
-      startY: 100,
+      startY: wY + wH + 4,
       head: [["No", "ID", "Tanggal", "Kategori", "Judul", "Keterangan", "Jumlah"]],
       body: filtered.map((it, i) => [
         String(i + 1),
@@ -380,6 +492,33 @@ export default function HistoryEnhancer({
       margin: { top: 18, bottom: 18, left: 10, right: 10 },
     });
 
+    // ===== TANDA TANGAN =====
+    const lastY = (doc as any).lastAutoTable?.finalY ?? (wY + wH + 10);
+    let sigY = lastY + 8;
+    if (sigY > pageH - 60) { doc.addPage(); sigY = 20; }
+    const sigW = 82;
+    const sigX = pageW - sigW - 12;
+    doc.setDrawColor(99, 102, 241);
+    doc.setFillColor(248, 250, 252);
+    doc.roundedRect(sigX, sigY, sigW, 38, 3, 3, "FD");
+    doc.setTextColor(100, 116, 139);
+    doc.setFontSize(7); doc.setFont("helvetica", "normal");
+    doc.text("Hormat kami,", sigX + sigW / 2, sigY + 6, { align: "center" });
+    doc.setTextColor(41, 98, 255);
+    doc.setFontSize(20); doc.setFont("helvetica", "bolditalic");
+    doc.text("Agung Adi", sigX + sigW / 2, sigY + 18, { align: "center" });
+    doc.setDrawColor(41, 98, 255); doc.setLineWidth(0.6);
+    doc.line(sigX + 10, sigY + 21, sigX + sigW - 10, sigY + 21);
+    doc.setLineWidth(0.2);
+    doc.setTextColor(30, 41, 59);
+    doc.setFontSize(8); doc.setFont("helvetica", "bold");
+    doc.text(cleanExportText(storeName), sigX + sigW / 2, sigY + 28, { align: "center" });
+    doc.setTextColor(100, 116, 139);
+    doc.setFontSize(6); doc.setFont("helvetica", "normal");
+    doc.text("Owner & Admin", sigX + sigW / 2, sigY + 33, { align: "center" });
+    doc.setFontSize(5.6);
+    doc.text(`${new Date().toLocaleDateString("id-ID")} WIB`, sigX + sigW / 2, sigY + 36.5, { align: "center" });
+
     // QRIS page (lampiran pembayaran)
     if (qrisData) {
       doc.addPage();
@@ -419,6 +558,7 @@ export default function HistoryEnhancer({
 
   async function exportWord() {
     if (filtered.length === 0) return;
+    const snap = await fetchWalletSnapshot(visitorId, walletInfo, { in: stats.totalIn, out: stats.totalOut });
 
     // Fetch QRIS as ArrayBuffer for ImageRun
     let qrisBuffer: ArrayBuffer | null = null;
@@ -566,6 +706,65 @@ export default function HistoryEnhancer({
 
     const spacerSmall = new Paragraph({ spacing: { before: 120, after: 120 }, children: [new TextRun({ text: "" })] });
 
+    // ===== WALLET SNAPSHOT TABLE =====
+    const walletItems: { label: string; value: string; fill: string; color: string }[] = [
+      { label: "SISA SALDO", value: formatAmount(snap.balance), fill: "ECFDF5", color: SUCCESS },
+      { label: "SALDO IN", value: formatAmount(snap.gameBalance), fill: "FFFBEB", color: "B45309" },
+      { label: "GEM", value: snap.gems.toLocaleString("id-ID"), fill: "F5F3FF", color: "7C3AED" },
+      { label: "KOIN STREAK", value: snap.streakCoins.toLocaleString("id-ID"), fill: "FFF7ED", color: "C2410C" },
+      { label: "KREDIT GAME", value: snap.gameCredits.toLocaleString("id-ID"), fill: "EFF6FF", color: PRIMARY },
+      { label: "TOTAL KELUAR", value: `-${formatAmount(snap.totalOut)}`, fill: "FEF2F2", color: DANGER },
+    ];
+    const walletColW = Math.floor(9360 / walletItems.length);
+    const walletWidths = walletItems.map(() => walletColW);
+    const walletTitle = new Paragraph({
+      spacing: { before: 200, after: 120 },
+      children: [
+        new TextRun({ text: "RINGKASAN SALDO AKUN ", bold: true, color: PRIMARY, size: 26 }),
+        new TextRun({ text: `@${cleanExportText(snap.username)}`, color: MUTED, size: 18 }),
+      ],
+    });
+    const walletTable = new DocxTable({
+      width: { size: 9360, type: WidthType.DXA },
+      columnWidths: walletWidths,
+      rows: [new DocxTableRow({ children: walletItems.map((w, idx) => new DocxTableCell({
+        width: { size: walletWidths[idx], type: WidthType.DXA },
+        borders: cellBorders,
+        shading: { fill: w.fill, type: ShadingType.CLEAR },
+        margins: { top: 140, bottom: 140, left: 100, right: 100 },
+        children: [
+          new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: w.label, bold: true, color: MUTED, size: 12 })] }),
+          new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: w.value, bold: true, color: w.color, size: 18 })] }),
+        ],
+      })) })],
+    });
+
+    // ===== SIGNATURE BLOCK =====
+    const signatureTable = new DocxTable({
+      width: { size: 9360, type: WidthType.DXA },
+      columnWidths: [5760, 3600],
+      rows: [new DocxTableRow({ children: [
+        new DocxTableCell({
+          width: { size: 5760, type: WidthType.DXA },
+          borders: { top: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" }, bottom: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" }, left: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" }, right: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" } },
+          children: [new Paragraph({ children: [new TextRun({ text: " " })] })],
+        }),
+        new DocxTableCell({
+          width: { size: 3600, type: WidthType.DXA },
+          borders: { top: { style: BorderStyle.SINGLE, size: 8, color: PRIMARY }, bottom: { style: BorderStyle.SINGLE, size: 8, color: PRIMARY }, left: { style: BorderStyle.SINGLE, size: 8, color: PRIMARY }, right: { style: BorderStyle.SINGLE, size: 8, color: PRIMARY } },
+          shading: { fill: "F8FAFC", type: ShadingType.CLEAR },
+          margins: { top: 200, bottom: 200, left: 200, right: 200 },
+          children: [
+            new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: "Hormat kami,", color: MUTED, size: 16 })] }),
+            new Paragraph({ alignment: AlignmentType.CENTER, spacing: { before: 80, after: 80 }, children: [new TextRun({ text: "Agung Adi", italics: true, bold: true, color: PRIMARY, size: 44 })] }),
+            new Paragraph({ alignment: AlignmentType.CENTER, border: { top: { style: BorderStyle.SINGLE, size: 8, color: PRIMARY, space: 1 } }, children: [new TextRun({ text: storeName, bold: true, color: "1E293B", size: 18 })] }),
+            new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: "Owner & Admin", color: MUTED, size: 14 })] }),
+            new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: `${new Date().toLocaleDateString("id-ID")} WIB`, color: MUTED, size: 12 })] }),
+          ],
+        }),
+      ] })],
+    });
+
     const wordDoc = new DocxDocument({
       creator: storeName,
       title,
@@ -595,8 +794,13 @@ export default function HistoryEnhancer({
           spacerSmall,
           summaryTable,
           spacerSmall,
+          walletTitle,
+          walletTable,
+          spacerSmall,
           warningTable,
           ...itemBlocks,
+          spacerSmall,
+          signatureTable,
         ],
       }],
     });
