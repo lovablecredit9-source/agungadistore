@@ -613,17 +613,42 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser }: BalanceA
                   </div>
                   <div className="relative">
                     <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                    <Input className="pl-9 pr-20 text-sm bg-muted/40" readOnly value={currentUser.email || "-"} />
-                    <button
-                      type="button"
-                      onClick={() => { resetEditForm(); setEditSection("email"); setEditEmail(currentUser.email || ""); }}
-                      className="absolute right-2 top-1/2 -translate-y-1/2 text-[11px] font-bold text-primary hover:underline"
-                    >
-                      Ubah
-                    </button>
+                    <Input
+                      className="pl-9 text-sm"
+                      type="email"
+                      placeholder="Email"
+                      value={editEmail}
+                      onChange={e => setEditEmail(e.target.value)}
+                    />
                   </div>
-                  <p className="text-[10px] text-muted-foreground">Email diubah lewat tombol Ubah / tab Email (perlu konfirmasi sandi).</p>
-                  <Button size="sm" className="w-full gap-1.5" onClick={handleUpdateProfile} disabled={editLoading}>
+                  {editEmail.trim().toLowerCase() !== (currentUser.email || "").toLowerCase() && (
+                    <div className="space-y-1.5">
+                      <div className="relative">
+                        <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                        <Input
+                          className="pl-9 text-sm"
+                          type="password"
+                          placeholder="Konfirmasi sandi (untuk ubah email)"
+                          value={emailPassword}
+                          onChange={e => setEmailPassword(e.target.value)}
+                        />
+                      </div>
+                      <p className="text-[10px] text-amber-600 dark:text-amber-400 font-medium">
+                        ⚠️ Email diubah — masukkan sandi untuk konfirmasi.
+                      </p>
+                    </div>
+                  )}
+                  <Button size="sm" className="w-full gap-1.5" onClick={async () => {
+                    const emailChanged = editEmail.trim().toLowerCase() !== (currentUser.email || "").toLowerCase();
+                    if (emailChanged) {
+                      await handleChangeEmail();
+                      if (editPhone !== currentUser.phone || editUsername !== currentUser.username) {
+                        await handleUpdateProfile();
+                      }
+                    } else {
+                      await handleUpdateProfile();
+                    }
+                  }} disabled={editLoading}>
                     <Save className="w-3.5 h-3.5" /> {editLoading ? "Menyimpan..." : "Simpan Profil"}
                   </Button>
                 </div>
