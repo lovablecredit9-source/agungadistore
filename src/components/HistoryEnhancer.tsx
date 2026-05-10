@@ -736,10 +736,17 @@ export default function HistoryEnhancer({
     const walletColW = Math.floor(9360 / walletItems.length);
     const walletWidths = walletItems.map(() => walletColW);
     const walletTitle = new Paragraph({
-      spacing: { before: 200, after: 120 },
+      spacing: { before: 200, after: 60 },
       children: [
         new TextRun({ text: "RINGKASAN SALDO AKUN ", bold: true, color: PRIMARY, size: 26 }),
         new TextRun({ text: `@${cleanExportText(snap.username)}`, color: MUTED, size: 18 }),
+      ],
+    });
+    const walletIdentity = new Paragraph({
+      spacing: { after: 120 },
+      children: [
+        new TextRun({ text: `Email: ${cleanExportText(snap.email) || "-"}`, color: MUTED, size: 16 }),
+        new TextRun({ text: `   •   No HP: ${cleanExportText(snap.phone) || "-"}`, color: MUTED, size: 16 }),
       ],
     });
     const walletTable = new DocxTable({
