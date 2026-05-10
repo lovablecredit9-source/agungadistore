@@ -40,48 +40,63 @@ const ID_TO_EMOJI: Record<SymId, string> = {
 
 const toSymId = (s: string): SymId => EMOJI_TO_ID[s] || "cherry";
 
-// Konfigurasi visual per simbol
+// Konfigurasi visual per simbol - bergaya Fruits 'N Fire (glossy, vivid, di panel gelap)
 const SYMBOL_CONFIG: Record<SymId, { Icon: any; gradient: string; iconColor: string; glow: string; label?: string }> = {
-  cherry: { Icon: Cherry,  gradient: "from-rose-100 to-rose-200",       iconColor: "text-rose-600",     glow: "shadow-rose-400/40" },
-  lemon:  { Icon: Citrus,  gradient: "from-yellow-100 to-amber-200",    iconColor: "text-amber-500",    glow: "shadow-amber-400/40" },
-  grape:  { Icon: Grape,   gradient: "from-purple-100 to-violet-200",   iconColor: "text-violet-700",   glow: "shadow-violet-400/40" },
-  bell:   { Icon: Bell,    gradient: "from-orange-100 to-yellow-200",   iconColor: "text-orange-500",   glow: "shadow-orange-400/40" },
-  star:   { Icon: Star,    gradient: "from-yellow-50 to-yellow-200",    iconColor: "text-yellow-500",   glow: "shadow-yellow-400/50" },
-  gem:    { Icon: Gem,     gradient: "from-cyan-100 to-sky-200",        iconColor: "text-cyan-600",     glow: "shadow-cyan-400/50" },
-  seven:  { Icon: Crown,   gradient: "from-red-100 via-rose-200 to-amber-100", iconColor: "text-red-600", glow: "shadow-red-500/60", label: "7" },
+  cherry: { Icon: Cherry,  gradient: "from-rose-400 via-red-500 to-rose-700",        iconColor: "text-red-100",      glow: "shadow-rose-500/70" },
+  lemon:  { Icon: Citrus,  gradient: "from-yellow-300 via-amber-400 to-yellow-600",  iconColor: "text-yellow-50",    glow: "shadow-yellow-400/70" },
+  grape:  { Icon: Grape,   gradient: "from-violet-400 via-purple-600 to-indigo-800", iconColor: "text-violet-100",   glow: "shadow-violet-500/70" },
+  bell:   { Icon: Bell,    gradient: "from-yellow-300 via-amber-500 to-orange-700",  iconColor: "text-yellow-50",    glow: "shadow-amber-500/70" },
+  star:   { Icon: Star,    gradient: "from-yellow-200 via-amber-400 to-orange-600",  iconColor: "text-yellow-50",    glow: "shadow-yellow-400/80" },
+  gem:    { Icon: Gem,     gradient: "from-cyan-300 via-sky-500 to-blue-700",        iconColor: "text-cyan-50",      glow: "shadow-cyan-400/70" },
+  seven:  { Icon: Crown,   gradient: "from-red-500 via-rose-600 to-red-900",         iconColor: "text-yellow-200",   glow: "shadow-red-500/80", label: "7" },
 };
 
-// Komponen tampilan satu simbol di reel
+// Komponen tampilan satu simbol di reel - dark panel + glossy 3D look (Fruits 'N Fire vibe)
 const SymbolCell = ({ id, big = false }: { id: SymId; big?: boolean }) => {
   const cfg = SYMBOL_CONFIG[id];
   const Icon = cfg.Icon;
   return (
-    <div className={`relative w-full h-full bg-gradient-to-br ${cfg.gradient} rounded-lg flex items-center justify-center shadow-inner overflow-hidden`}>
-      {/* highlight glossy */}
-      <div className="absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-white/70 to-transparent pointer-events-none rounded-t-lg" />
+    <div className="relative w-full h-full flex items-center justify-center">
+      {/* Glow halo di belakang simbol */}
+      <div className={`absolute inset-2 rounded-full blur-xl opacity-60 bg-gradient-to-br ${cfg.gradient}`} />
       {id === "seven" ? (
-        <div className="relative flex flex-col items-center">
-          <Icon className={`w-5 h-5 ${cfg.iconColor} drop-shadow absolute -top-1`} fill="currentColor" />
-          <span className={`font-black ${cfg.iconColor} drop-shadow ${big ? "text-4xl" : "text-2xl"} mt-2`} style={{ fontFamily: "Georgia, serif" }}>
+        <div className={`relative flex items-center justify-center rounded-xl bg-gradient-to-br ${cfg.gradient} ${big ? "w-[78%] h-[78%]" : "w-[80%] h-[80%]"} border border-yellow-300/50`}
+          style={{ boxShadow: "inset 0 2px 4px rgba(255,255,255,0.4), inset 0 -3px 6px rgba(0,0,0,0.4)" }}>
+          {/* glossy shine */}
+          <div className="absolute inset-x-1 top-1 h-1/3 rounded-t-lg bg-gradient-to-b from-white/50 to-transparent pointer-events-none" />
+          <span
+            className={`relative font-black ${big ? "text-5xl" : "text-2xl"}`}
+            style={{
+              fontFamily: "Georgia, serif",
+              color: "#fde047",
+              textShadow: "0 0 6px rgba(250,204,21,0.8), 0 2px 0 #7f1d1d, 0 3px 0 #450a0a, 0 4px 6px rgba(0,0,0,0.7)",
+              WebkitTextStroke: "1px #7f1d1d",
+            }}
+          >
             7
           </span>
         </div>
       ) : (
-        <Icon
-          className={`relative ${cfg.iconColor} drop-shadow ${big ? "w-12 h-12" : "w-7 h-7"}`}
-          fill={id === "star" || id === "gem" || id === "cherry" || id === "grape" || id === "lemon" ? "currentColor" : "none"}
-          strokeWidth={id === "bell" ? 2 : 1.5}
-        />
+        <div className="relative flex items-center justify-center">
+          <Icon
+            className={`relative ${cfg.iconColor} ${big ? "w-16 h-16" : "w-9 h-9"}`}
+            fill="currentColor"
+            strokeWidth={1}
+            style={{ filter: "drop-shadow(0 3px 4px rgba(0,0,0,0.7)) drop-shadow(0 0 6px rgba(255,200,80,0.4))" }}
+          />
+          {/* highlight glossy di atas ikon */}
+          <div className="absolute inset-0 rounded-full bg-gradient-to-b from-white/30 via-transparent to-transparent pointer-events-none" style={{ mixBlendMode: "overlay" }} />
+        </div>
       )}
     </div>
   );
 };
 
-// Komponen baris hadiah (3 simbol sama)
+// Komponen baris hadiah (3 simbol sama) - mini panel gelap
 const RewardRow = ({ id }: { id: SymId }) => (
   <div className="flex items-center gap-1">
     {[0, 1, 2].map(i => (
-      <div key={i} className="w-7 h-7">
+      <div key={i} className="w-9 h-9 rounded-md bg-gradient-to-b from-zinc-900 to-black border border-amber-500/30 p-0.5 shadow-inner">
         <SymbolCell id={id} />
       </div>
     ))}
