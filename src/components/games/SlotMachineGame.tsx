@@ -348,7 +348,7 @@ export default function SlotMachineGame() {
       <ServerLuckCard visitorId={visitorId} />
 
       <Card className={`p-4 bg-gradient-to-br ${tierInfo.gradient} text-white border-none text-center`}>
-        <h3 className="font-extrabold text-lg">🎰 Slot Machine 3-Reel</h3>
+        <h3 className="font-extrabold text-lg">🎰 Slot Machine 3×3 • 8 Payline</h3>
         <p className="text-xs opacity-90 mt-1">Tier {tierInfo.label} • {tierInfo.desc}</p>
       </Card>
 
