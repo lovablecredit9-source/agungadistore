@@ -120,6 +120,10 @@ interface Props {
   defaultView?: ViewMode;
   /** nama toko utk PDF */
   storeName?: string;
+  /** visitor id utk fetch gem/credit/streak coin saat export */
+  visitorId?: string;
+  /** info saldo akun yg ikut tercetak di file ekspor */
+  walletInfo?: WalletInfo;
 }
 
 const fmtIDR = (n: number) =>
