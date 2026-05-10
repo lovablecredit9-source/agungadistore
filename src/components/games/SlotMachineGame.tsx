@@ -473,33 +473,76 @@ export default function SlotMachineGame() {
           ))}
         </div>
 
-        {/* Reel area - dark dengan gold dividers */}
+        {/* Reel area - 3x3 grid dengan 8 payline */}
         <div
-          className="relative z-10 rounded-xl p-2 grid grid-cols-3 gap-1.5 border-2 border-amber-900/80 shadow-[inset_0_4px_12px_rgba(0,0,0,0.7)]"
+          className="relative z-10 rounded-xl p-2 border-2 border-amber-900/80 shadow-[inset_0_4px_12px_rgba(0,0,0,0.7)]"
           style={{ background: "linear-gradient(180deg, #1c1917 0%, #0c0a09 50%, #1c1917 100%)" }}
         >
-          {reels.map((sym, i) => {
-            const isWin = result && result.type !== "none" && reels[0] === reels[1] && reels[1] === reels[2];
-            const cfg = SYMBOL_CONFIG[sym];
-            return (
-              <motion.div
-                key={i}
-                animate={spinning ? { y: [0, -10, 0] } : isWin ? { scale: [1, 1.08, 1] } : {}}
-                transition={spinning
-                  ? { duration: 0.15, repeat: Infinity }
-                  : isWin ? { duration: 0.6, repeat: Infinity, delay: i * 0.12 } : {}}
-                className={`aspect-square rounded-md relative overflow-hidden ${isWin ? `shadow-lg ${cfg.glow} ring-2 ring-yellow-300/70` : ""}`}
-                style={{
-                  background: "linear-gradient(180deg, #292524 0%, #1c1917 50%, #292524 100%)",
-                  boxShadow: "inset 0 2px 6px rgba(0,0,0,0.8), inset 0 -1px 2px rgba(255,255,255,0.05)",
-                }}
-              >
-                {/* subtle noise/dot pattern */}
-                <div className="absolute inset-0 opacity-20" style={{ backgroundImage: "radial-gradient(rgba(255,255,255,0.15) 1px, transparent 1px)", backgroundSize: "6px 6px" }} />
-                <SymbolCell id={sym} big />
-              </motion.div>
-            );
-          })}
+          <div className="grid grid-cols-3 gap-1.5 relative">
+            {grid.map((sym, i) => {
+              const cfg = SYMBOL_CONFIG[sym];
+              const winLine = winningLines.find(w => w.indices.includes(i));
+              const isWin = !!winLine;
+              return (
+                <motion.div
+                  key={i}
+                  animate={spinning ? { y: [0, -10, 0] } : isWin ? { scale: [1, 1.08, 1] } : {}}
+                  transition={spinning
+                    ? { duration: 0.15, repeat: Infinity, delay: (i % 3) * 0.04 }
+                    : isWin ? { duration: 0.6, repeat: Infinity, delay: (i % 3) * 0.12 } : {}}
+                  className={`aspect-square rounded-md relative overflow-hidden ${isWin ? `shadow-lg ${cfg.glow} ring-2 ring-yellow-300/80` : ""}`}
+                  style={{
+                    background: "linear-gradient(180deg, #292524 0%, #1c1917 50%, #292524 100%)",
+                    boxShadow: "inset 0 2px 6px rgba(0,0,0,0.8), inset 0 -1px 2px rgba(255,255,255,0.05)",
+                  }}
+                >
+                  <div className="absolute inset-0 opacity-20" style={{ backgroundImage: "radial-gradient(rgba(255,255,255,0.15) 1px, transparent 1px)", backgroundSize: "6px 6px" }} />
+                  <SymbolCell id={sym} />
+                </motion.div>
+              );
+            })}
+
+            {/* Overlay garis kemenangan */}
+            {!spinning && winningLines.length > 0 && (
+              <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="pointer-events-none absolute inset-0 w-full h-full" style={{ zIndex: 5 }}>
+                {winningLines.map((wl, idx) => {
+                  const lineDef = PAYLINES.find(p => p.name === wl.name);
+                  const color = lineDef?.color || "#facc15";
+                  // pusat tiap sel pada viewBox 100x100 (3 kolom × 3 baris)
+                  const centers = wl.indices.map(i => {
+                    const r = Math.floor(i / 3), c = i % 3;
+                    return { x: c * (100 / 3) + (100 / 6), y: r * (100 / 3) + (100 / 6) };
+                  });
+                  const d = centers.map((p, k) => `${k === 0 ? "M" : "L"}${p.x},${p.y}`).join(" ");
+                  return (
+                    <g key={`${wl.name}-${idx}`}>
+                      <path d={d} stroke={color} strokeWidth="2" fill="none" opacity="0.35" strokeLinecap="round" />
+                      <path d={d} stroke={color} strokeWidth="0.8" fill="none" strokeLinecap="round" style={{ filter: `drop-shadow(0 0 1.5px ${color})` }} />
+                    </g>
+                  );
+                })}
+              </svg>
+            )}
+          </div>
+
+          {/* Legend payline saat menang */}
+          {!spinning && winningLines.length > 0 && (
+            <div className="mt-2 flex flex-wrap gap-1 justify-center">
+              {winningLines.map((wl, i) => {
+                const lineDef = PAYLINES.find(p => p.name === wl.name);
+                const labels: Record<string, string> = {
+                  row_top: "Baris Atas", row_mid: "Baris Tengah", row_bot: "Baris Bawah",
+                  diag_down: "Diagonal ↘", diag_up: "Diagonal ↗",
+                  col_left: "Kolom Kiri", col_mid: "Kolom Tengah", col_right: "Kolom Kanan",
+                };
+                return (
+                  <span key={i} className="text-[9px] font-bold px-1.5 py-0.5 rounded-full border" style={{ color: lineDef?.color, borderColor: `${lineDef?.color}60`, background: `${lineDef?.color}15` }}>
+                    {labels[wl.name] || wl.name}
+                  </span>
+                );
+              })}
+            </div>
+          )}
         </div>
 
         <Button
