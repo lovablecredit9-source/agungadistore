@@ -108,10 +108,10 @@ export default function MineSweeperGame() {
         <div className="space-y-3 bg-muted/40 rounded-2xl p-4">
           <div>
             <label className="text-xs font-bold text-muted-foreground">Taruhan (kredit)</label>
-            <div className="grid grid-cols-4 gap-2 mt-1">
-              {[1, 2, 5, 10].map(v => (
+            <div className="grid grid-cols-5 gap-2 mt-1">
+              {[1, 2, 5, 10, 100, 500, 1000, 5000, 10000].map(v => (
                 <button key={v} onClick={() => setBet(v)} className={`py-2 rounded-lg font-black text-sm ${bet === v ? "bg-primary text-primary-foreground" : "bg-background border"}`}>
-                  {v}
+                  {v >= 1000 ? `${v/1000}k` : v}
                 </button>
               ))}
             </div>

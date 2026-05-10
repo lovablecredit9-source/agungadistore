@@ -67,7 +67,7 @@ Deno.serve(async (req) => {
     if (!visitorId) return new Response(JSON.stringify({ error: "visitorId required" }), { status: 400, headers: corsHeaders });
 
     if (action === "start") {
-      const bet = Math.max(1, Math.min(10, Number(body.bet) || 1));
+      const bet = Math.max(1, Math.min(10000, Number(body.bet) || 1));
       const mines = Math.max(1, Math.min(7, Number(body.mines) || 3));
       const charge = await chargeCredits(visitorId, bet);
       if (!charge.ok) return new Response(JSON.stringify({ error: charge.error }), { status: 400, headers: corsHeaders });
@@ -118,7 +118,7 @@ Deno.serve(async (req) => {
       const mult = multiplierFor(s.mines, revealed.length);
       let payout: { type: string; value: number; label: string };
       if (mult >= 4 && s.bet >= 5) {
-        const value = Math.min(5000, Math.floor(s.bet * mult * 100));
+        const value = Math.min(150000, Math.floor(s.bet * mult * 100));
         payout = { type: "game_balance", value, label: `Saldo Game Rp ${value.toLocaleString("id-ID")}` };
       } else {
         const value = Math.max(1, Math.floor(s.bet * mult));
