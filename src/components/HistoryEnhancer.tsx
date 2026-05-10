@@ -431,7 +431,10 @@ export default function HistoryEnhancer({
     doc.setFontSize(8.5); doc.setFont("helvetica", "bold");
     doc.text("RINGKASAN SALDO AKUN", 16, wY + 6);
     doc.setFontSize(6.5); doc.setFont("helvetica", "normal"); doc.setTextColor(100, 116, 139);
-    doc.text(`@${cleanExportText(snap.username)}`, pageW - 14, wY + 6, { align: "right" });
+    const idLine = `@${cleanExportText(snap.username)}` +
+      (snap.email ? `  •  ${cleanExportText(snap.email)}` : "") +
+      (snap.phone ? `  •  ${cleanExportText(snap.phone)}` : "");
+    doc.text(idLine, pageW - 14, wY + 6, { align: "right" });
 
     const items: { label: string; value: string; color: number[] }[] = [
       { label: "SISA SALDO", value: formatAmount(snap.balance), color: [5, 150, 105] },
