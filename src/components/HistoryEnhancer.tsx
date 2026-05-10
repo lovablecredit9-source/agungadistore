@@ -447,7 +447,7 @@ export default function HistoryEnhancer({
     doc.setTextColor(0, 0, 0);
 
     // ===== RINGKASAN SALDO AKUN =====
-    const wY = 98;
+    const wY = 106;
     const wH = 30;
     // Outer rounded panel with gradient-like band
     doc.setFillColor(248, 250, 252);
