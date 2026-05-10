@@ -330,50 +330,81 @@ export default function HistoryEnhancer({
       loadImageAsDataURL(storeQris),
     ]);
 
-    // ===== HEADER GRADIENT =====
-    const headerH = 46;
-    doc.setFillColor(41, 98, 255);
-    doc.rect(0, 0, pageW, headerH, "F");
-    for (let i = 0; i < 24; i++) {
-      doc.setFillColor(99, 102, 241, 255 - i * 8);
-      doc.rect(0, i * (headerH / 24), pageW, headerH / 24 + 0.4, "F");
+    // ===== HEADER HERO (multi-color gradient + dekorasi) =====
+    const headerH = 54;
+    // Multi-stop gradient: violet -> fuchsia -> orange
+    const stops = [
+      [99, 39, 191],   // violet
+      [139, 46, 196],
+      [192, 38, 211], // fuchsia
+      [236, 72, 153], // pink
+      [251, 113, 133],
+      [251, 146, 60], // orange
+    ];
+    const segH = headerH / (stops.length - 1);
+    for (let s = 0; s < stops.length - 1; s++) {
+      const c1 = stops[s], c2 = stops[s + 1];
+      const steps = 18;
+      for (let i = 0; i < steps; i++) {
+        const t = i / steps;
+        const r = Math.round(c1[0] + (c2[0] - c1[0]) * t);
+        const g = Math.round(c1[1] + (c2[1] - c1[1]) * t);
+        const b = Math.round(c1[2] + (c2[2] - c1[2]) * t);
+        doc.setFillColor(r, g, b);
+        doc.rect(0, s * segH + i * (segH / steps), pageW, segH / steps + 0.4, "F");
+      }
     }
+    // Decorative bubbles
     doc.setFillColor(255, 255, 255);
-    doc.circle(pageW - 50, -8, 22, "F");
-    doc.circle(pageW - 70, headerH + 4, 14, "F");
+    doc.circle(pageW - 40, -10, 26, "F");
+    doc.circle(pageW - 70, headerH + 6, 16, "F");
+    doc.circle(8, headerH - 6, 10, "F");
+    doc.setFillColor(255, 230, 0);
+    doc.circle(pageW - 95, 8, 3, "F");
+    doc.circle(pageW - 110, 22, 2, "F");
+    doc.circle(60, 6, 2.2, "F");
     // Logo bulat (QRIS)
     if (qrisData) {
       doc.setFillColor(255, 255, 255);
-      doc.circle(20, headerH / 2, 11, "F");
-      try { doc.addImage(qrisData, "JPEG", 11, headerH / 2 - 9, 18, 18); } catch { /* ignore invalid image data */ }
+      doc.circle(22, headerH / 2, 13, "F");
+      try { doc.addImage(qrisData, "JPEG", 11, headerH / 2 - 11, 22, 22); } catch { /* ignore invalid image data */ }
     }
     doc.setTextColor(255, 255, 255);
-    doc.setFontSize(18); doc.setFont("helvetica", "bold");
-    doc.text(cleanExportText(storeName), 36, 18);
-    doc.setFontSize(10); doc.setFont("helvetica", "normal");
-    doc.text(cleanExportText(title), 36, 25);
+    doc.setFontSize(22); doc.setFont("helvetica", "bold");
+    doc.text(cleanExportText(storeName), 40, 18);
+    doc.setFontSize(10.5); doc.setFont("helvetica", "normal");
+    doc.text(cleanExportText(title), 40, 26);
     doc.setFontSize(7.5);
-    doc.text(`Dicetak: ${new Date().toLocaleString("id-ID")} WIB`, 36, 31);
-    doc.text(`Total: ${filtered.length} item`, 36, 36);
+    doc.text(`Dicetak: ${new Date().toLocaleString("id-ID")} WIB`, 40, 33);
+    doc.text(`Total: ${filtered.length} item`, 40, 38);
+    // Tagline pill
     doc.setFillColor(255, 255, 255);
-    doc.roundedRect(36, 39, 38, 5, 2.5, 2.5, "F");
-    doc.setTextColor(41, 98, 255);
-    doc.setFontSize(6.5); doc.setFont("helvetica", "bold");
-    doc.text("MURAH & TERPERCAYA", 55, 42.5, { align: "center" });
+    doc.roundedRect(40, 41, 56, 6, 3, 3, "F");
+    doc.setTextColor(192, 38, 211);
+    doc.setFontSize(7); doc.setFont("helvetica", "bold");
+    doc.text("MURAH & TERPERCAYA", 68, 45.2, { align: "center" });
     doc.setTextColor(255, 255, 255);
     doc.setFontSize(6); doc.setFont("helvetica", "normal");
-    doc.text(STORE_WEBSITE, 55, 45.5, { align: "center" });
+    doc.text(STORE_WEBSITE, 100, 45, { align: "left" });
     if (qrisData) {
       doc.setFillColor(255, 255, 255);
-      doc.roundedRect(pageW - 36, 4, 32, 38, 2, 2, "F");
-      try { doc.addImage(qrisData, "JPEG", pageW - 34, 6, 28, 28); } catch { /* ignore invalid image data */ }
-      doc.setTextColor(41, 98, 255);
-      doc.setFontSize(6); doc.setFont("helvetica", "bold");
-      doc.text("SCAN QRIS", pageW - 20, 39, { align: "center" });
+      doc.roundedRect(pageW - 38, 5, 34, 42, 3, 3, "F");
+      try { doc.addImage(qrisData, "JPEG", pageW - 36, 7, 30, 30); } catch { /* ignore invalid image data */ }
+      doc.setTextColor(192, 38, 211);
+      doc.setFontSize(6.2); doc.setFont("helvetica", "bold");
+      doc.text("SCAN QRIS", pageW - 21, 41, { align: "center" });
+      doc.setFontSize(5.4); doc.setFont("helvetica", "normal");
+      doc.text("Top Up & Bayar", pageW - 21, 44.5, { align: "center" });
+    }
+    // Curved bottom accent (faux wave with rectangles)
+    doc.setFillColor(255, 255, 255);
+    for (let i = 0; i < pageW; i += 6) {
+      const wave = Math.sin(i / 14) * 1.5;
+      doc.circle(i, headerH + wave, 1.2, "F");
     }
 
     // ===== RINGKASAN CARDS =====
-    const cardY = 52;
+    const cardY = 60;
     const cardW = (pageW - 30) / 3;
     const drawCard = (x: number, label: string, value: string, fill: number[], border: number[], txtColor: number[]) => {
       doc.setFillColor(fill[0], fill[1], fill[2]);
@@ -391,7 +422,7 @@ export default function HistoryEnhancer({
     drawCard(20 + cardW * 2, "KELUAR", `-${formatAmount(stats.totalOut || 0)}`, [254, 242, 242], [254, 202, 202], [220, 38, 38]);
 
     // ===== PERINGATAN =====
-    const warnY = 72;
+    const warnY = 80;
     doc.setFillColor(254, 252, 232);
     doc.setDrawColor(234, 179, 8);
     doc.roundedRect(10, warnY, pageW - 20, 22, 2, 2, "FD");
@@ -416,7 +447,7 @@ export default function HistoryEnhancer({
     doc.setTextColor(0, 0, 0);
 
     // ===== RINGKASAN SALDO AKUN =====
-    const wY = 98;
+    const wY = 106;
     const wH = 30;
     // Outer rounded panel with gradient-like band
     doc.setFillColor(248, 250, 252);
@@ -558,14 +589,45 @@ export default function HistoryEnhancer({
     const pageCount = doc.getNumberOfPages();
     for (let p = 1; p <= pageCount; p++) {
       doc.setPage(p);
-      doc.setFillColor(41, 98, 255);
-      doc.rect(0, pageH - 14, pageW, 14, "F");
+      // Diagonal watermark
+      doc.saveGraphicsState();
+      // @ts-ignore
+      doc.setGState(new (doc as any).GState({ opacity: 0.05 }));
+      doc.setTextColor(99, 39, 191);
+      doc.setFontSize(80); doc.setFont("helvetica", "bold");
+      doc.text("AGUNG ADI", pageW / 2, pageH / 2, { align: "center", angle: 30 });
+      doc.setFontSize(20);
+      doc.text("RESMI - MURAH - TERPERCAYA", pageW / 2, pageH / 2 + 18, { align: "center", angle: 30 });
+      doc.restoreGraphicsState();
+      // Gradient footer band
+      const fH = 14;
+      const fStops = [[99, 39, 191], [192, 38, 211], [251, 113, 133], [251, 146, 60]];
+      const fSeg = pageW / (fStops.length - 1);
+      for (let s = 0; s < fStops.length - 1; s++) {
+        const c1 = fStops[s], c2 = fStops[s + 1];
+        const steps = 24;
+        for (let i = 0; i < steps; i++) {
+          const t = i / steps;
+          doc.setFillColor(
+            Math.round(c1[0] + (c2[0] - c1[0]) * t),
+            Math.round(c1[1] + (c2[1] - c1[1]) * t),
+            Math.round(c1[2] + (c2[2] - c1[2]) * t),
+          );
+          doc.rect(s * fSeg + i * (fSeg / steps), pageH - fH, fSeg / steps + 0.4, fH, "F");
+        }
+      }
       doc.setTextColor(255, 255, 255);
       doc.setFontSize(7.5); doc.setFont("helvetica", "bold");
       doc.text(cleanExportText(storeName), 10, pageH - 8);
       doc.setFont("helvetica", "normal");
-      doc.text("WA: 085769302532 - Murah & Terpercaya", 10, pageH - 3.5);
-      doc.text(`Halaman ${p}/${pageCount}`, pageW - 10, pageH - 5.5, { align: "right" });
+      doc.setFontSize(6.8);
+      doc.text("WA: 085769302532  •  Murah & Terpercaya", 10, pageH - 3.5);
+      // Page pill
+      doc.setFillColor(255, 255, 255);
+      doc.roundedRect(pageW - 28, pageH - 10.5, 22, 6, 3, 3, "F");
+      doc.setTextColor(192, 38, 211);
+      doc.setFontSize(7); doc.setFont("helvetica", "bold");
+      doc.text(`${p} / ${pageCount}`, pageW - 17, pageH - 6.4, { align: "center" });
     }
     const defaultPdfName = `${exportPrefix}-${Date.now()}`;
     const pdfInput = window.prompt("Masukkan nama file PDF (tanpa .pdf):", defaultPdfName);
