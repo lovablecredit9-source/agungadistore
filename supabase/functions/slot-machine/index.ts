@@ -23,11 +23,13 @@ const WEIGHTS_BY_TIER: Record<string, number[]> = {
   sultan: [18, 17, 16, 16, 14, 11, 8],
   raja:   [16, 15, 15, 16, 15, 13, 10],
   dewa:   [14, 14, 14, 16, 16, 14, 12],
+  legenda: [12, 12, 13, 16, 16, 15, 14],
+  maha:   [10, 11, 12, 15, 16, 16, 16],
 };
 
-type Tier = "hemat" | "sedang" | "besar" | "mega" | "ultra" | "sultan" | "raja" | "dewa";
+type Tier = "hemat" | "sedang" | "besar" | "mega" | "ultra" | "sultan" | "raja" | "dewa" | "legenda" | "maha";
 
-const TIER_COSTS: Record<Tier, number> = { hemat: 1, sedang: 5, besar: 10, mega: 50, ultra: 100, sultan: 200, raja: 500, dewa: 1000 };
+const TIER_COSTS: Record<Tier, number> = { hemat: 1, sedang: 5, besar: 10, mega: 50, ultra: 100, sultan: 200, raja: 500, dewa: 1000, legenda: 5000, maha: 10000 };
 
 function spinReel(tier: Tier, luckMultiplier = 1) {
   // Booster: bobot simbol langka (index 4-6: ⭐ 💎 7️⃣) ditingkatkan secara linear
