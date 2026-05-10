@@ -820,6 +820,7 @@ export default function HistoryEnhancer({
           summaryTable,
           spacerSmall,
           walletTitle,
+          walletIdentity,
           walletTable,
           spacerSmall,
           warningTable,
