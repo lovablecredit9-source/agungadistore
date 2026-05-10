@@ -422,7 +422,7 @@ export default function HistoryEnhancer({
     drawCard(20 + cardW * 2, "KELUAR", `-${formatAmount(stats.totalOut || 0)}`, [254, 242, 242], [254, 202, 202], [220, 38, 38]);
 
     // ===== PERINGATAN =====
-    const warnY = 72;
+    const warnY = 80;
     doc.setFillColor(254, 252, 232);
     doc.setDrawColor(234, 179, 8);
     doc.roundedRect(10, warnY, pageW - 20, 22, 2, 2, "FD");
