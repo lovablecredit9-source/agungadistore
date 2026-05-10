@@ -44,14 +44,37 @@ function spinReel(tier: Tier, luckMultiplier = 1) {
   return SYMBOLS[0];
 }
 
-// Spin 3 reel dengan "lucky bias" — saat booster aktif, peluang reel 2 & 3 force-match reel 1
-function spinThreeReels(tier: Tier, luckMultiplier = 1): string[] {
-  const r1 = spinReel(tier, luckMultiplier);
-  // Bias aktif mulai x2: per reel match prob = (luck-1)*0.08, max 70% (x10≈72%→clamp, x20=clamp)
+// Spin 3x3 grid (9 simbol) dengan "lucky bias" — saat booster aktif, peluang baris tengah match reel 1 baris tengah
+function spinGrid3x3(tier: Tier, luckMultiplier = 1): string[] {
+  // Generate 9 simbol independen
+  const grid: string[] = [];
+  for (let i = 0; i < 9; i++) grid.push(spinReel(tier, luckMultiplier));
+
+  // Bias aktif mulai x2: peluang baris tengah jadi 3-sama
   const matchProb = Math.min(0.7, Math.max(0, (luckMultiplier - 1) * 0.08));
-  const r2 = Math.random() < matchProb ? r1 : spinReel(tier, luckMultiplier);
-  const r3 = Math.random() < matchProb ? r1 : spinReel(tier, luckMultiplier);
-  return [r1, r2, r3];
+  if (Math.random() < matchProb) {
+    grid[4] = grid[3];
+    grid[5] = grid[3];
+  }
+  return grid;
+}
+
+// 8 payline pada index grid 0..8 (baris 0:[0,1,2], baris 1:[3,4,5], baris 2:[6,7,8])
+const PAYLINES: { name: string; indices: number[] }[] = [
+  { name: "row_top",    indices: [0, 1, 2] },
+  { name: "row_mid",    indices: [3, 4, 5] },
+  { name: "row_bot",    indices: [6, 7, 8] },
+  { name: "diag_down",  indices: [0, 4, 8] },
+  { name: "diag_up",    indices: [6, 4, 2] },
+  { name: "col_left",   indices: [0, 3, 6] },
+  { name: "col_mid",    indices: [1, 4, 7] },
+  { name: "col_right",  indices: [2, 5, 8] },
+];
+
+// Ranking nilai payout untuk pilih garis menang terbaik
+function payoutRank(p: { type: string; value: number }): number {
+  const typeRank: Record<string, number> = { game_balance: 4, storage_mb: 3, extra_life: 2, game_credits: 1, none: 0 };
+  return (typeRank[p.type] || 0) * 1e9 + (p.value || 0);
 }
 
 async function getActiveLuck(visitorId: string): Promise<number> {
