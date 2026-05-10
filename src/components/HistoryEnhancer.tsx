@@ -404,7 +404,7 @@ export default function HistoryEnhancer({
     }
 
     // ===== RINGKASAN CARDS =====
-    const cardY = 52;
+    const cardY = 60;
     const cardW = (pageW - 30) / 3;
     const drawCard = (x: number, label: string, value: string, fill: number[], border: number[], txtColor: number[]) => {
       doc.setFillColor(fill[0], fill[1], fill[2]);
