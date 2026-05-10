@@ -24,6 +24,49 @@ import {
   PageNumber, LevelFormat, VerticalAlign,
 } from "docx";
 import { saveAs } from "file-saver";
+import { supabase } from "@/integrations/supabase/client";
+
+interface WalletInfo {
+  username?: string;
+  balance?: number;
+  gameBalance?: number;
+}
+
+interface WalletSnapshot {
+  username: string;
+  balance: number;
+  gameBalance: number;
+  gems: number;
+  streakCoins: number;
+  gameCredits: number;
+  totalIn: number;
+  totalOut: number;
+}
+
+async function fetchWalletSnapshot(visitorId: string | undefined, info: WalletInfo | undefined, totals: { in: number; out: number }): Promise<WalletSnapshot> {
+  const snap: WalletSnapshot = {
+    username: info?.username || "-",
+    balance: info?.balance ?? 0,
+    gameBalance: info?.gameBalance ?? 0,
+    gems: 0,
+    streakCoins: 0,
+    gameCredits: 0,
+    totalIn: totals.in,
+    totalOut: totals.out,
+  };
+  if (!visitorId) return snap;
+  try {
+    const [gemRes, streakRes, credRes] = await Promise.all([
+      supabase.rpc("get_account_gems" as any, { p_visitor_id: visitorId }),
+      supabase.from("daily_streaks").select("streak_coins").eq("visitor_id", visitorId).maybeSingle(),
+      supabase.from("user_game_credits").select("credits").eq("visitor_id", visitorId).maybeSingle(),
+    ]);
+    snap.gems = Number((gemRes as any)?.data ?? 0) || 0;
+    snap.streakCoins = Number((streakRes.data as any)?.streak_coins ?? 0) || 0;
+    snap.gameCredits = Number((credRes.data as any)?.credits ?? 0) || 0;
+  } catch { /* ignore */ }
+  return snap;
+}
 
 // Cache image load → base64 dataURL
 const _imgCache: Record<string, string> = {};
