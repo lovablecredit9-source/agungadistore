@@ -304,6 +304,7 @@ export default function HistoryEnhancer({
 
   async function exportPDF() {
     if (filtered.length === 0) return;
+    const snap = await fetchWalletSnapshot(visitorId, walletInfo, { in: stats.totalIn, out: stats.totalOut });
     const doc = new jsPDF();
     const pageW = doc.internal.pageSize.getWidth();
     const pageH = doc.internal.pageSize.getHeight();
