@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import {
   Search, Filter, Download, FileText, FileSpreadsheet, BarChart3,
   Calendar as CalendarIcon, X, TrendingUp, TrendingDown, ChevronDown,
-  LayoutList, Clock, BarChart2, ArrowDownUp,
+  LayoutList, Clock, BarChart2, ArrowDownUp, Sparkles,
 } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
