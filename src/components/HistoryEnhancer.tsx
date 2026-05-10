@@ -589,14 +589,45 @@ export default function HistoryEnhancer({
     const pageCount = doc.getNumberOfPages();
     for (let p = 1; p <= pageCount; p++) {
       doc.setPage(p);
-      doc.setFillColor(41, 98, 255);
-      doc.rect(0, pageH - 14, pageW, 14, "F");
+      // Diagonal watermark
+      doc.saveGraphicsState();
+      // @ts-ignore
+      doc.setGState(new (doc as any).GState({ opacity: 0.05 }));
+      doc.setTextColor(99, 39, 191);
+      doc.setFontSize(80); doc.setFont("helvetica", "bold");
+      doc.text("AGUNG ADI", pageW / 2, pageH / 2, { align: "center", angle: 30 });
+      doc.setFontSize(20);
+      doc.text("RESMI - MURAH - TERPERCAYA", pageW / 2, pageH / 2 + 18, { align: "center", angle: 30 });
+      doc.restoreGraphicsState();
+      // Gradient footer band
+      const fH = 14;
+      const fStops = [[99, 39, 191], [192, 38, 211], [251, 113, 133], [251, 146, 60]];
+      const fSeg = pageW / (fStops.length - 1);
+      for (let s = 0; s < fStops.length - 1; s++) {
+        const c1 = fStops[s], c2 = fStops[s + 1];
+        const steps = 24;
+        for (let i = 0; i < steps; i++) {
+          const t = i / steps;
+          doc.setFillColor(
+            Math.round(c1[0] + (c2[0] - c1[0]) * t),
+            Math.round(c1[1] + (c2[1] - c1[1]) * t),
+            Math.round(c1[2] + (c2[2] - c1[2]) * t),
+          );
+          doc.rect(s * fSeg + i * (fSeg / steps), pageH - fH, fSeg / steps + 0.4, fH, "F");
+        }
+      }
       doc.setTextColor(255, 255, 255);
       doc.setFontSize(7.5); doc.setFont("helvetica", "bold");
       doc.text(cleanExportText(storeName), 10, pageH - 8);
       doc.setFont("helvetica", "normal");
-      doc.text("WA: 085769302532 - Murah & Terpercaya", 10, pageH - 3.5);
-      doc.text(`Halaman ${p}/${pageCount}`, pageW - 10, pageH - 5.5, { align: "right" });
+      doc.setFontSize(6.8);
+      doc.text("WA: 085769302532  •  Murah & Terpercaya", 10, pageH - 3.5);
+      // Page pill
+      doc.setFillColor(255, 255, 255);
+      doc.roundedRect(pageW - 28, pageH - 10.5, 22, 6, 3, 3, "F");
+      doc.setTextColor(192, 38, 211);
+      doc.setFontSize(7); doc.setFont("helvetica", "bold");
+      doc.text(`${p} / ${pageCount}`, pageW - 17, pageH - 6.4, { align: "center" });
     }
     const defaultPdfName = `${exportPrefix}-${Date.now()}`;
     const pdfInput = window.prompt("Masukkan nama file PDF (tanpa .pdf):", defaultPdfName);
