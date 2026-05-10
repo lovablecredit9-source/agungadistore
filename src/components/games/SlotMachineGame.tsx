@@ -211,11 +211,24 @@ const TIER_POINT_REWARDS: Record<Tier, number> = {
   hemat: 5, sedang: 10, besar: 16, mega: 28, ultra: 40, sultan: 60, raja: 90, dewa: 140, legenda: 250, maha: 400,
 };
 
+// 8 payline pada 3x3 grid (sinkron dengan server)
+const PAYLINES: { name: string; indices: number[]; color: string }[] = [
+  { name: "row_top",   indices: [0, 1, 2], color: "#facc15" },
+  { name: "row_mid",   indices: [3, 4, 5], color: "#f97316" },
+  { name: "row_bot",   indices: [6, 7, 8], color: "#fb7185" },
+  { name: "diag_down", indices: [0, 4, 8], color: "#22d3ee" },
+  { name: "diag_up",   indices: [6, 4, 2], color: "#a78bfa" },
+  { name: "col_left",  indices: [0, 3, 6], color: "#34d399" },
+  { name: "col_mid",   indices: [1, 4, 7], color: "#f472b6" },
+  { name: "col_right", indices: [2, 5, 8], color: "#fde047" },
+];
+
 export default function SlotMachineGame() {
   const visitorId = typeof window !== "undefined" ? localStorage.getItem("balance_visitor_id") : null;
   const { credits, isUnlimited, fetchCredits } = useGameCredits(visitorId);
   const [tier, setTier] = useState<Tier>("hemat");
-  const [reels, setReels] = useState<SymId[]>(["cherry", "lemon", "grape"]);
+  const [grid, setGrid] = useState<SymId[]>(["cherry","lemon","grape","bell","star","gem","cherry","lemon","grape"]);
+  const [winningLines, setWinningLines] = useState<{ name: string; indices: number[] }[]>([]);
   const [spinning, setSpinning] = useState(false);
   const [result, setResult] = useState<any>(null);
   const [freeMode, setFreeMode] = useState(false);
@@ -225,37 +238,50 @@ export default function SlotMachineGame() {
 
   const randomSym = (): SymId => SYMBOL_IDS[Math.floor(Math.random() * SYMBOL_IDS.length)];
 
+  const randomGrid = (): SymId[] => Array.from({ length: 9 }, () => randomSym());
+
+  // Cek payline klien (untuk mode latihan)
+  const findBestLineLocal = (g: SymId[]) => {
+    for (const line of PAYLINES) {
+      const a = g[line.indices[0]], b = g[line.indices[1]], c = g[line.indices[2]];
+      if (a === b && b === c) return line;
+    }
+    return null;
+  };
+
   // Mode latihan offline
   const simulateSpin = () => {
     setResult(null);
+    setWinningLines([]);
     setSpinning(true);
     const animDuration = 1500;
     const start = Date.now();
     const interval = setInterval(() => {
-      setReels([randomSym(), randomSym(), randomSym()]);
+      setGrid(randomGrid());
       if (Date.now() - start >= animDuration) clearInterval(interval);
     }, 80);
 
     setTimeout(() => {
       clearInterval(interval);
-      const win = Math.random() < 0.3;
-      let finalReels: SymId[];
+      const win = Math.random() < 0.45;
+      let finalGrid: SymId[] = randomGrid();
       let payout: any;
       if (win) {
         const tierRewards = TIER_REWARDS[tier];
         const pick = tierRewards[Math.floor(Math.random() * tierRewards.length)];
-        finalReels = [pick.sym, pick.sym, pick.sym];
+        // Pilih random payline dan paksa simbol pick.sym di sana
+        const line = PAYLINES[Math.floor(Math.random() * PAYLINES.length)];
+        line.indices.forEach(i => { finalGrid[i] = pick.sym; });
         payout = { type: "simulasi", label: `LATIHAN: ${pick.reward} (simulasi, tidak masuk akun)` };
+        setWinningLines([{ name: line.name, indices: line.indices }]);
       } else {
-        let r1 = randomSym(), r2 = randomSym(), r3 = randomSym();
-        if (r1 === r2 && r2 === r3) {
-          const idx = SYMBOL_IDS.indexOf(r2);
-          r2 = SYMBOL_IDS[(idx + 1) % SYMBOL_IDS.length];
-        }
-        finalReels = [r1, r2, r3];
+        // Pastikan tidak ada payline kebetulan
+        let tries = 0;
+        while (findBestLineLocal(finalGrid) && tries < 20) { finalGrid = randomGrid(); tries++; }
         payout = { type: "none", label: "Belum hoki - coba lagi! (mode latihan)" };
+        setWinningLines([]);
       }
-      setReels(finalReels);
+      setGrid(finalGrid);
       setResult(payout);
       setSpinning(false);
       if (payout.type !== "none") {
@@ -272,12 +298,13 @@ export default function SlotMachineGame() {
     }
 
     setResult(null);
+    setWinningLines([]);
     setSpinning(true);
 
     const animDuration = 1500;
     const start = Date.now();
     const interval = setInterval(() => {
-      setReels([randomSym(), randomSym(), randomSym()]);
+      setGrid(randomGrid());
       if (Date.now() - start >= animDuration) clearInterval(interval);
     }, 80);
 
@@ -292,8 +319,13 @@ export default function SlotMachineGame() {
       }
       const basePoints = TIER_POINT_REWARDS[tier] + (data.payout.type !== "none" ? Math.ceil(TIER_POINT_REWARDS[tier] * 0.5) : 0);
       const { awardedPoints } = awardGamePoints(basePoints);
-      // server tetap kirim emoji - convert ke SymId
-      setReels((data.reels as string[]).map(toSymId));
+      // server kirim grid (9 simbol) - convert ke SymId. Fallback ke baris tengah jika lama.
+      const serverGrid = (data.grid as string[] | undefined) || (() => {
+        const r = (data.reels as string[]) || [];
+        return ["cherry","cherry","cherry", ...r, "cherry","cherry","cherry"];
+      })();
+      setGrid(serverGrid.map(toSymId));
+      setWinningLines(((data.winningLines as any[]) || []).map(w => ({ name: w.name, indices: w.indices })));
       setResult({ ...data.payout, awardedPoints });
       setSpinning(false);
       fetchCredits();
@@ -316,7 +348,7 @@ export default function SlotMachineGame() {
       <ServerLuckCard visitorId={visitorId} />
 
       <Card className={`p-4 bg-gradient-to-br ${tierInfo.gradient} text-white border-none text-center`}>
-        <h3 className="font-extrabold text-lg">🎰 Slot Machine 3-Reel</h3>
+        <h3 className="font-extrabold text-lg">🎰 Slot Machine 3×3 • 8 Payline</h3>
         <p className="text-xs opacity-90 mt-1">Tier {tierInfo.label} • {tierInfo.desc}</p>
       </Card>
 
@@ -441,33 +473,76 @@ export default function SlotMachineGame() {
           ))}
         </div>
 
-        {/* Reel area - dark dengan gold dividers */}
+        {/* Reel area - 3x3 grid dengan 8 payline */}
         <div
-          className="relative z-10 rounded-xl p-2 grid grid-cols-3 gap-1.5 border-2 border-amber-900/80 shadow-[inset_0_4px_12px_rgba(0,0,0,0.7)]"
+          className="relative z-10 rounded-xl p-2 border-2 border-amber-900/80 shadow-[inset_0_4px_12px_rgba(0,0,0,0.7)]"
           style={{ background: "linear-gradient(180deg, #1c1917 0%, #0c0a09 50%, #1c1917 100%)" }}
         >
-          {reels.map((sym, i) => {
-            const isWin = result && result.type !== "none" && reels[0] === reels[1] && reels[1] === reels[2];
-            const cfg = SYMBOL_CONFIG[sym];
-            return (
-              <motion.div
-                key={i}
-                animate={spinning ? { y: [0, -10, 0] } : isWin ? { scale: [1, 1.08, 1] } : {}}
-                transition={spinning
-                  ? { duration: 0.15, repeat: Infinity }
-                  : isWin ? { duration: 0.6, repeat: Infinity, delay: i * 0.12 } : {}}
-                className={`aspect-square rounded-md relative overflow-hidden ${isWin ? `shadow-lg ${cfg.glow} ring-2 ring-yellow-300/70` : ""}`}
-                style={{
-                  background: "linear-gradient(180deg, #292524 0%, #1c1917 50%, #292524 100%)",
-                  boxShadow: "inset 0 2px 6px rgba(0,0,0,0.8), inset 0 -1px 2px rgba(255,255,255,0.05)",
-                }}
-              >
-                {/* subtle noise/dot pattern */}
-                <div className="absolute inset-0 opacity-20" style={{ backgroundImage: "radial-gradient(rgba(255,255,255,0.15) 1px, transparent 1px)", backgroundSize: "6px 6px" }} />
-                <SymbolCell id={sym} big />
-              </motion.div>
-            );
-          })}
+          <div className="grid grid-cols-3 gap-1.5 relative">
+            {grid.map((sym, i) => {
+              const cfg = SYMBOL_CONFIG[sym];
+              const winLine = winningLines.find(w => w.indices.includes(i));
+              const isWin = !!winLine;
+              return (
+                <motion.div
+                  key={i}
+                  animate={spinning ? { y: [0, -10, 0] } : isWin ? { scale: [1, 1.08, 1] } : {}}
+                  transition={spinning
+                    ? { duration: 0.15, repeat: Infinity, delay: (i % 3) * 0.04 }
+                    : isWin ? { duration: 0.6, repeat: Infinity, delay: (i % 3) * 0.12 } : {}}
+                  className={`aspect-square rounded-md relative overflow-hidden ${isWin ? `shadow-lg ${cfg.glow} ring-2 ring-yellow-300/80` : ""}`}
+                  style={{
+                    background: "linear-gradient(180deg, #292524 0%, #1c1917 50%, #292524 100%)",
+                    boxShadow: "inset 0 2px 6px rgba(0,0,0,0.8), inset 0 -1px 2px rgba(255,255,255,0.05)",
+                  }}
+                >
+                  <div className="absolute inset-0 opacity-20" style={{ backgroundImage: "radial-gradient(rgba(255,255,255,0.15) 1px, transparent 1px)", backgroundSize: "6px 6px" }} />
+                  <SymbolCell id={sym} />
+                </motion.div>
+              );
+            })}
+
+            {/* Overlay garis kemenangan */}
+            {!spinning && winningLines.length > 0 && (
+              <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="pointer-events-none absolute inset-0 w-full h-full" style={{ zIndex: 5 }}>
+                {winningLines.map((wl, idx) => {
+                  const lineDef = PAYLINES.find(p => p.name === wl.name);
+                  const color = lineDef?.color || "#facc15";
+                  // pusat tiap sel pada viewBox 100x100 (3 kolom × 3 baris)
+                  const centers = wl.indices.map(i => {
+                    const r = Math.floor(i / 3), c = i % 3;
+                    return { x: c * (100 / 3) + (100 / 6), y: r * (100 / 3) + (100 / 6) };
+                  });
+                  const d = centers.map((p, k) => `${k === 0 ? "M" : "L"}${p.x},${p.y}`).join(" ");
+                  return (
+                    <g key={`${wl.name}-${idx}`}>
+                      <path d={d} stroke={color} strokeWidth="2" fill="none" opacity="0.35" strokeLinecap="round" />
+                      <path d={d} stroke={color} strokeWidth="0.8" fill="none" strokeLinecap="round" style={{ filter: `drop-shadow(0 0 1.5px ${color})` }} />
+                    </g>
+                  );
+                })}
+              </svg>
+            )}
+          </div>
+
+          {/* Legend payline saat menang */}
+          {!spinning && winningLines.length > 0 && (
+            <div className="mt-2 flex flex-wrap gap-1 justify-center">
+              {winningLines.map((wl, i) => {
+                const lineDef = PAYLINES.find(p => p.name === wl.name);
+                const labels: Record<string, string> = {
+                  row_top: "Baris Atas", row_mid: "Baris Tengah", row_bot: "Baris Bawah",
+                  diag_down: "Diagonal ↘", diag_up: "Diagonal ↗",
+                  col_left: "Kolom Kiri", col_mid: "Kolom Tengah", col_right: "Kolom Kanan",
+                };
+                return (
+                  <span key={i} className="text-[9px] font-bold px-1.5 py-0.5 rounded-full border" style={{ color: lineDef?.color, borderColor: `${lineDef?.color}60`, background: `${lineDef?.color}15` }}>
+                    {labels[wl.name] || wl.name}
+                  </span>
+                );
+              })}
+            </div>
+          )}
         </div>
 
         <Button

@@ -44,14 +44,37 @@ function spinReel(tier: Tier, luckMultiplier = 1) {
   return SYMBOLS[0];
 }
 
-// Spin 3 reel dengan "lucky bias" — saat booster aktif, peluang reel 2 & 3 force-match reel 1
-function spinThreeReels(tier: Tier, luckMultiplier = 1): string[] {
-  const r1 = spinReel(tier, luckMultiplier);
-  // Bias aktif mulai x2: per reel match prob = (luck-1)*0.08, max 70% (x10≈72%→clamp, x20=clamp)
+// Spin 3x3 grid (9 simbol) dengan "lucky bias" — saat booster aktif, peluang baris tengah match reel 1 baris tengah
+function spinGrid3x3(tier: Tier, luckMultiplier = 1): string[] {
+  // Generate 9 simbol independen
+  const grid: string[] = [];
+  for (let i = 0; i < 9; i++) grid.push(spinReel(tier, luckMultiplier));
+
+  // Bias aktif mulai x2: peluang baris tengah jadi 3-sama
   const matchProb = Math.min(0.7, Math.max(0, (luckMultiplier - 1) * 0.08));
-  const r2 = Math.random() < matchProb ? r1 : spinReel(tier, luckMultiplier);
-  const r3 = Math.random() < matchProb ? r1 : spinReel(tier, luckMultiplier);
-  return [r1, r2, r3];
+  if (Math.random() < matchProb) {
+    grid[4] = grid[3];
+    grid[5] = grid[3];
+  }
+  return grid;
+}
+
+// 8 payline pada index grid 0..8 (baris 0:[0,1,2], baris 1:[3,4,5], baris 2:[6,7,8])
+const PAYLINES: { name: string; indices: number[] }[] = [
+  { name: "row_top",    indices: [0, 1, 2] },
+  { name: "row_mid",    indices: [3, 4, 5] },
+  { name: "row_bot",    indices: [6, 7, 8] },
+  { name: "diag_down",  indices: [0, 4, 8] },
+  { name: "diag_up",    indices: [6, 4, 2] },
+  { name: "col_left",   indices: [0, 3, 6] },
+  { name: "col_mid",    indices: [1, 4, 7] },
+  { name: "col_right",  indices: [2, 5, 8] },
+];
+
+// Ranking nilai payout untuk pilih garis menang terbaik
+function payoutRank(p: { type: string; value: number }): number {
+  const typeRank: Record<string, number> = { game_balance: 4, storage_mb: 3, extra_life: 2, game_credits: 1, none: 0 };
+  return (typeRank[p.type] || 0) * 1e9 + (p.value || 0);
 }
 
 async function getActiveLuck(visitorId: string): Promise<number> {
@@ -302,10 +325,29 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Hitung hasil spin
+    // Hitung hasil spin: 3x3 grid + cek 8 payline, ambil hadiah terbaik
     const luck = await getActiveLuck(visitorId);
-    const reels = spinThreeReels(tier, luck);
-    const payout = calculatePayout(tier, reels);
+    const grid = spinGrid3x3(tier, luck);
+
+    let bestPayout = { type: "none", value: 0, label: "Zonk! Coba lagi" };
+    let bestLine: { name: string; indices: number[] } | null = null;
+    const winningLines: { name: string; indices: number[]; payout: any }[] = [];
+
+    for (const line of PAYLINES) {
+      const reelsOnLine = line.indices.map(i => grid[i]);
+      const linePayout = calculatePayout(tier, reelsOnLine);
+      if (linePayout.type !== "none") {
+        winningLines.push({ name: line.name, indices: line.indices, payout: linePayout });
+        if (payoutRank(linePayout) > payoutRank(bestPayout)) {
+          bestPayout = linePayout;
+          bestLine = line;
+        }
+      }
+    }
+
+    const payout = bestPayout;
+    // Untuk kompatibilitas: reels = baris winning (atau baris tengah jika tidak menang)
+    const reels = bestLine ? bestLine.indices.map(i => grid[i]) : [grid[3], grid[4], grid[5]];
 
     // Update kredit via RPC akun (atomic, multi-visitor aware)
     if (!unlimitedActive || payout.type === "game_credits") {
@@ -318,8 +360,6 @@ Deno.serve(async (req) => {
     // Apply payout untuk tipe NON-game_credits (saldo, storage, nyawa)
     if (payout.type !== "game_credits") {
       await applyPayout(visitorId, payout);
-    } else {
-      // Catat transaksi info untuk hadiah kredit (opsional, tidak ada tabel khusus)
     }
 
     const { data } = await supabase.from("slot_machine_history").insert({
@@ -331,7 +371,15 @@ Deno.serve(async (req) => {
       cost_credits: cost,
     }).select().single();
 
-    return new Response(JSON.stringify({ success: true, reels, payout, tier, cost, luck, record: data }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    return new Response(JSON.stringify({
+      success: true,
+      grid,
+      reels,
+      payout,
+      winningLines,
+      bestLine: bestLine?.name || null,
+      tier, cost, luck, record: data,
+    }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
   } catch (e: any) {
     return new Response(JSON.stringify({ error: e.message }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
   }
