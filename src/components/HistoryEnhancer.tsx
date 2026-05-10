@@ -158,6 +158,7 @@ export default function HistoryEnhancer({
   title, items, categories = [], formatAmount = fmtIDR,
   exportPrefix = "riwayat", renderItem, onFilteredChange,
   showStats = true, defaultView = "list", storeName = "Agung Adi Store",
+  visitorId, walletInfo,
 }: Props) {
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState<string>("all");
