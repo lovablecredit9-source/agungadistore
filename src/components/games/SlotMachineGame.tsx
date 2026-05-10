@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Loader2, Coins, Gift, Wifi, Cherry, Citrus, Grape, Bell, Star, Gem, Crown } from "lucide-react";
+import { Loader2, Coins, Gift, Wifi, Cherry, Citrus, Grape, Bell, Star, Gem, Crown, Flame } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useGameCredits, triggerGameCreditsRefresh } from "./GameCredits";
 import { triggerGameBalanceRefresh } from "./GameBalance";
