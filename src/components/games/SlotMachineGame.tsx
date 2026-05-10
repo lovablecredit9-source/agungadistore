@@ -369,21 +369,83 @@ export default function SlotMachineGame() {
         ))}
       </div>
 
-      {/* Mesin Slot - cabinet keren */}
-      <div className="relative bg-gradient-to-b from-amber-700 via-amber-600 to-amber-800 rounded-3xl p-5 shadow-2xl border-4 border-amber-900">
+      {/* Mesin Slot - cabinet api / Fruits 'N Fire style */}
+      <div
+        className="relative rounded-3xl p-4 sm:p-5 shadow-2xl overflow-hidden border-4 border-amber-900"
+        style={{
+          background:
+            "radial-gradient(ellipse at top, #fbbf24 0%, #f97316 25%, #c2410c 55%, #7c2d12 100%)",
+        }}
+      >
+        {/* tekstur api blur */}
+        <div className="pointer-events-none absolute inset-0 opacity-60"
+          style={{
+            backgroundImage:
+              "radial-gradient(circle at 10% 80%, rgba(250,204,21,0.6), transparent 35%), radial-gradient(circle at 90% 75%, rgba(249,115,22,0.7), transparent 40%), radial-gradient(circle at 50% 100%, rgba(220,38,38,0.5), transparent 50%)",
+          }}
+        />
+
+        {/* Flame decoration sisi kiri */}
+        <div className="pointer-events-none absolute left-1 top-1/4 bottom-1/4 flex flex-col justify-around z-10">
+          {[0, 1, 2, 3].map(i => (
+            <motion.div
+              key={`l-${i}`}
+              animate={{ scale: [1, 1.15, 1], rotate: [-3, 3, -3] }}
+              transition={{ duration: 1.2 + i * 0.15, repeat: Infinity, ease: "easeInOut" }}
+            >
+              <Flame className="w-4 h-5 sm:w-5 sm:h-6 text-yellow-300" fill="currentColor" style={{ filter: "drop-shadow(0 0 4px rgba(250,204,21,0.9))" }} />
+            </motion.div>
+          ))}
+        </div>
+        {/* Flame decoration sisi kanan */}
+        <div className="pointer-events-none absolute right-1 top-1/4 bottom-1/4 flex flex-col justify-around z-10">
+          {[0, 1, 2, 3].map(i => (
+            <motion.div
+              key={`r-${i}`}
+              animate={{ scale: [1, 1.15, 1], rotate: [3, -3, 3] }}
+              transition={{ duration: 1.2 + i * 0.15, repeat: Infinity, ease: "easeInOut" }}
+              style={{ transform: "scaleX(-1)" }}
+            >
+              <Flame className="w-4 h-5 sm:w-5 sm:h-6 text-yellow-300" fill="currentColor" style={{ filter: "drop-shadow(0 0 4px rgba(250,204,21,0.9))" }} />
+            </motion.div>
+          ))}
+        </div>
+
+        {/* Title bar di atas - "SLOTS ON FIRE" style */}
+        <div className="relative z-10 flex items-center justify-center gap-2 mb-3">
+          <Flame className="w-5 h-5 text-yellow-300" fill="currentColor" />
+          <h3
+            className="text-center font-black tracking-[0.15em] text-base sm:text-lg uppercase"
+            style={{
+              fontFamily: "Georgia, serif",
+              background: "linear-gradient(180deg, #fef9c3 0%, #facc15 40%, #f97316 80%, #b91c1c 100%)",
+              WebkitBackgroundClip: "text",
+              WebkitTextFillColor: "transparent",
+              filter: "drop-shadow(0 2px 0 #7c2d12) drop-shadow(0 0 8px rgba(250,204,21,0.7))",
+            }}
+          >
+            Slots On Fire
+          </h3>
+          <Flame className="w-5 h-5 text-yellow-300" fill="currentColor" style={{ transform: "scaleX(-1)" }} />
+        </div>
+
         {/* lampu hias atas */}
-        <div className="flex justify-center gap-1 mb-2">
+        <div className="relative z-10 flex justify-center gap-1 mb-2">
           {[0, 1, 2, 3, 4, 5, 6].map(i => (
             <motion.div
               key={i}
-              animate={spinning ? { opacity: [0.3, 1, 0.3] } : { opacity: 0.5 }}
+              animate={spinning ? { opacity: [0.3, 1, 0.3] } : { opacity: 0.6 }}
               transition={{ duration: 0.6, repeat: Infinity, delay: i * 0.08 }}
-              className="w-2 h-2 rounded-full bg-yellow-300 shadow-[0_0_6px_rgba(253,224,71,0.8)]"
+              className="w-2 h-2 rounded-full bg-yellow-300 shadow-[0_0_6px_rgba(253,224,71,0.9)]"
             />
           ))}
         </div>
 
-        <div className="bg-black rounded-xl p-4 grid grid-cols-3 gap-2 border-2 border-amber-900/60 shadow-inner">
+        {/* Reel area - dark dengan gold dividers */}
+        <div
+          className="relative z-10 rounded-xl p-2 grid grid-cols-3 gap-1.5 border-2 border-amber-900/80 shadow-[inset_0_4px_12px_rgba(0,0,0,0.7)]"
+          style={{ background: "linear-gradient(180deg, #1c1917 0%, #0c0a09 50%, #1c1917 100%)" }}
+        >
           {reels.map((sym, i) => {
             const isWin = result && result.type !== "none" && reels[0] === reels[1] && reels[1] === reels[2];
             const cfg = SYMBOL_CONFIG[sym];
@@ -394,8 +456,14 @@ export default function SlotMachineGame() {
                 transition={spinning
                   ? { duration: 0.15, repeat: Infinity }
                   : isWin ? { duration: 0.6, repeat: Infinity, delay: i * 0.12 } : {}}
-                className={`aspect-square rounded-lg ${isWin ? `shadow-lg ${cfg.glow}` : ""}`}
+                className={`aspect-square rounded-md relative overflow-hidden ${isWin ? `shadow-lg ${cfg.glow} ring-2 ring-yellow-300/70` : ""}`}
+                style={{
+                  background: "linear-gradient(180deg, #292524 0%, #1c1917 50%, #292524 100%)",
+                  boxShadow: "inset 0 2px 6px rgba(0,0,0,0.8), inset 0 -1px 2px rgba(255,255,255,0.05)",
+                }}
               >
+                {/* subtle noise/dot pattern */}
+                <div className="absolute inset-0 opacity-20" style={{ backgroundImage: "radial-gradient(rgba(255,255,255,0.15) 1px, transparent 1px)", backgroundSize: "6px 6px" }} />
                 <SymbolCell id={sym} big />
               </motion.div>
             );
@@ -405,13 +473,14 @@ export default function SlotMachineGame() {
         <Button
           onClick={spin}
           disabled={spinning || (!freeMode && !isUnlimited && credits < tierInfo.cost)}
-          className={`w-full mt-4 h-14 text-lg font-black border-2 shadow-lg ${
+          className={`relative z-10 w-full mt-4 h-14 text-lg font-black border-2 shadow-lg ${
             freeMode
               ? "bg-gradient-to-r from-emerald-400 to-teal-500 hover:from-emerald-500 hover:to-teal-600 text-emerald-950 border-emerald-300"
-              : "bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600 text-amber-950 border-yellow-300"
+              : "bg-gradient-to-b from-yellow-300 via-amber-400 to-orange-600 hover:from-yellow-400 hover:to-orange-700 text-amber-950 border-yellow-200"
           }`}
+          style={!freeMode ? { boxShadow: "inset 0 2px 4px rgba(255,255,255,0.5), inset 0 -3px 6px rgba(0,0,0,0.3), 0 4px 12px rgba(249,115,22,0.5)" } : undefined}
         >
-          {spinning ? <Loader2 className="w-5 h-5 animate-spin mr-2" /> : freeMode ? <Gift className="w-5 h-5 mr-2" /> : <Coins className="w-5 h-5 mr-2" />}
+          {spinning ? <Loader2 className="w-5 h-5 animate-spin mr-2" /> : freeMode ? <Gift className="w-5 h-5 mr-2" /> : <Flame className="w-5 h-5 mr-2" fill="currentColor" />}
           {spinning ? "SPINNING..." : freeMode ? "PUTAR LATIHAN! (GRATIS)" : `PUTAR! (${tierInfo.cost} kredit)`}
         </Button>
       </div>
