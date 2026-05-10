@@ -3,14 +3,90 @@ import { motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Loader2, Coins, Gift, Wifi } from "lucide-react";
+import { Loader2, Coins, Gift, Wifi, Cherry, Citrus, Grape, Bell, Star, Gem, Crown } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useGameCredits, triggerGameCreditsRefresh } from "./GameCredits";
 import { triggerGameBalanceRefresh } from "./GameBalance";
 import { ServerLuckCard } from "./ServerLuckCard";
 import { awardGamePoints } from "./gameStore";
 
-const SYMBOLS = ["🍒", "🍋", "🍇", "🔔", "⭐", "💎", "7️⃣"];
+// Symbol IDs - server tetap kirim emoji, kita map ke ikon
+type SymId = "cherry" | "lemon" | "grape" | "bell" | "star" | "gem" | "seven";
+
+const SYMBOL_IDS: SymId[] = ["cherry", "lemon", "grape", "bell", "star", "gem", "seven"];
+
+// Map dari emoji (server response) ke SymId
+const EMOJI_TO_ID: Record<string, SymId> = {
+  "🍒": "cherry",
+  "🍋": "lemon",
+  "🍇": "grape",
+  "🔔": "bell",
+  "⭐": "star",
+  "💎": "gem",
+  "7️⃣": "seven",
+  "7": "seven",
+};
+
+// Map dari SymId ke emoji untuk dikirim ke server / disimpan internal
+const ID_TO_EMOJI: Record<SymId, string> = {
+  cherry: "🍒",
+  lemon: "🍋",
+  grape: "🍇",
+  bell: "🔔",
+  star: "⭐",
+  gem: "💎",
+  seven: "7️⃣",
+};
+
+const toSymId = (s: string): SymId => EMOJI_TO_ID[s] || "cherry";
+
+// Konfigurasi visual per simbol
+const SYMBOL_CONFIG: Record<SymId, { Icon: any; gradient: string; iconColor: string; glow: string; label?: string }> = {
+  cherry: { Icon: Cherry,  gradient: "from-rose-100 to-rose-200",       iconColor: "text-rose-600",     glow: "shadow-rose-400/40" },
+  lemon:  { Icon: Citrus,  gradient: "from-yellow-100 to-amber-200",    iconColor: "text-amber-500",    glow: "shadow-amber-400/40" },
+  grape:  { Icon: Grape,   gradient: "from-purple-100 to-violet-200",   iconColor: "text-violet-700",   glow: "shadow-violet-400/40" },
+  bell:   { Icon: Bell,    gradient: "from-orange-100 to-yellow-200",   iconColor: "text-orange-500",   glow: "shadow-orange-400/40" },
+  star:   { Icon: Star,    gradient: "from-yellow-50 to-yellow-200",    iconColor: "text-yellow-500",   glow: "shadow-yellow-400/50" },
+  gem:    { Icon: Gem,     gradient: "from-cyan-100 to-sky-200",        iconColor: "text-cyan-600",     glow: "shadow-cyan-400/50" },
+  seven:  { Icon: Crown,   gradient: "from-red-100 via-rose-200 to-amber-100", iconColor: "text-red-600", glow: "shadow-red-500/60", label: "7" },
+};
+
+// Komponen tampilan satu simbol di reel
+const SymbolCell = ({ id, big = false }: { id: SymId; big?: boolean }) => {
+  const cfg = SYMBOL_CONFIG[id];
+  const Icon = cfg.Icon;
+  return (
+    <div className={`relative w-full h-full bg-gradient-to-br ${cfg.gradient} rounded-lg flex items-center justify-center shadow-inner overflow-hidden`}>
+      {/* highlight glossy */}
+      <div className="absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-white/70 to-transparent pointer-events-none rounded-t-lg" />
+      {id === "seven" ? (
+        <div className="relative flex flex-col items-center">
+          <Icon className={`w-5 h-5 ${cfg.iconColor} drop-shadow absolute -top-1`} fill="currentColor" />
+          <span className={`font-black ${cfg.iconColor} drop-shadow ${big ? "text-4xl" : "text-2xl"} mt-2`} style={{ fontFamily: "Georgia, serif" }}>
+            7
+          </span>
+        </div>
+      ) : (
+        <Icon
+          className={`relative ${cfg.iconColor} drop-shadow ${big ? "w-12 h-12" : "w-7 h-7"}`}
+          fill={id === "star" || id === "gem" || id === "cherry" || id === "grape" || id === "lemon" ? "currentColor" : "none"}
+          strokeWidth={id === "bell" ? 2 : 1.5}
+        />
+      )}
+    </div>
+  );
+};
+
+// Komponen baris hadiah (3 simbol sama)
+const RewardRow = ({ id }: { id: SymId }) => (
+  <div className="flex items-center gap-1">
+    {[0, 1, 2].map(i => (
+      <div key={i} className="w-7 h-7">
+        <SymbolCell id={id} />
+      </div>
+    ))}
+  </div>
+);
 
 type Tier = "hemat" | "sedang" | "besar" | "mega" | "ultra" | "sultan" | "raja" | "dewa";
 const TIERS: { key: Tier; label: string; cost: number; gradient: string; desc: string }[] = [
@@ -24,94 +100,87 @@ const TIERS: { key: Tier; label: string; cost: number; gradient: string; desc: s
   { key: "dewa",   label: "Dewa",   cost: 1000, gradient: "from-pink-600 via-red-600 to-yellow-500", desc: "DEWA Jackpot Rp 50.000" },
 ];
 
-// Tabel hadiah per tier — ditampilkan ringkas di bawah mesin
-const TIER_REWARDS: Record<Tier, { sym: string; reward: string }[]> = {
+// Tabel hadiah per tier - pakai SymId
+const TIER_REWARDS: Record<Tier, { sym: SymId; reward: string }[]> = {
   hemat: [
-    { sym: "7️⃣7️⃣7️⃣", reward: "MAX Saldo Rp 100" },
-    { sym: "💎💎💎", reward: "5 kredit" },
-    { sym: "⭐⭐⭐", reward: "4 kredit" },
-    { sym: "🔔🔔🔔", reward: "3 kredit" },
-    { sym: "🍇🍇🍇", reward: "3 kredit" },
-    { sym: "🍋🍋🍋", reward: "2 kredit" },
-    { sym: "🍒🍒🍒", reward: "2 kredit" },
+    { sym: "seven",  reward: "MAX Saldo Rp 100" },
+    { sym: "gem",    reward: "5 kredit" },
+    { sym: "star",   reward: "4 kredit" },
+    { sym: "bell",   reward: "3 kredit" },
+    { sym: "grape",  reward: "3 kredit" },
+    { sym: "lemon",  reward: "2 kredit" },
+    { sym: "cherry", reward: "2 kredit" },
   ],
   sedang: [
-    { sym: "7️⃣7️⃣7️⃣", reward: "MAX Saldo Rp 200" },
-    { sym: "💎💎💎", reward: "Saldo Rp 100" },
-    { sym: "⭐⭐⭐", reward: "8 kredit" },
-    { sym: "🔔🔔🔔", reward: "+50 MB storage" },
-    { sym: "🍇🍇🍇", reward: "+1 Nyawa Ekstra" },
+    { sym: "seven",  reward: "MAX Saldo Rp 200" },
+    { sym: "gem",    reward: "Saldo Rp 100" },
+    { sym: "star",   reward: "8 kredit" },
+    { sym: "bell",   reward: "+50 MB storage" },
+    { sym: "grape",  reward: "+1 Nyawa Ekstra" },
   ],
   besar: [
-    { sym: "7️⃣7️⃣7️⃣", reward: "MAX Saldo Rp 500" },
-    { sym: "💎💎💎", reward: "Saldo Rp 200" },
-    { sym: "⭐⭐⭐", reward: "15 kredit" },
-    { sym: "🔔🔔🔔", reward: "+100 MB storage" },
-    { sym: "🍇🍇🍇", reward: "+2 Nyawa Ekstra" },
+    { sym: "seven",  reward: "MAX Saldo Rp 500" },
+    { sym: "gem",    reward: "Saldo Rp 200" },
+    { sym: "star",   reward: "15 kredit" },
+    { sym: "bell",   reward: "+100 MB storage" },
+    { sym: "grape",  reward: "+2 Nyawa Ekstra" },
   ],
   mega: [
-    { sym: "7️⃣7️⃣7️⃣", reward: "MAX Saldo Rp 2.500" },
-    { sym: "💎💎💎", reward: "Saldo Rp 1.000" },
-    { sym: "⭐⭐⭐", reward: "Saldo Rp 500" },
-    { sym: "🔔🔔🔔", reward: "+250 MB storage" },
-    { sym: "🍇🍇🍇", reward: "+5 Nyawa Ekstra" },
-    { sym: "🍋🍋🍋", reward: "60 kredit" },
-    { sym: "🍒🍒🍒", reward: "40 kredit" },
+    { sym: "seven",  reward: "MAX Saldo Rp 2.500" },
+    { sym: "gem",    reward: "Saldo Rp 1.000" },
+    { sym: "star",   reward: "Saldo Rp 500" },
+    { sym: "bell",   reward: "+250 MB storage" },
+    { sym: "grape",  reward: "+5 Nyawa Ekstra" },
+    { sym: "lemon",  reward: "60 kredit" },
+    { sym: "cherry", reward: "40 kredit" },
   ],
   ultra: [
-    { sym: "7️⃣7️⃣7️⃣", reward: "MAX Saldo Rp 5.000" },
-    { sym: "💎💎💎", reward: "Saldo Rp 2.000" },
-    { sym: "⭐⭐⭐", reward: "Saldo Rp 1.000" },
-    { sym: "🔔🔔🔔", reward: "+500 MB storage" },
-    { sym: "🍇🍇🍇", reward: "+10 Nyawa Ekstra" },
-    { sym: "🍋🍋🍋", reward: "130 kredit" },
-    { sym: "🍒🍒🍒", reward: "90 kredit" },
+    { sym: "seven",  reward: "MAX Saldo Rp 5.000" },
+    { sym: "gem",    reward: "Saldo Rp 2.000" },
+    { sym: "star",   reward: "Saldo Rp 1.000" },
+    { sym: "bell",   reward: "+500 MB storage" },
+    { sym: "grape",  reward: "+10 Nyawa Ekstra" },
+    { sym: "lemon",  reward: "130 kredit" },
+    { sym: "cherry", reward: "90 kredit" },
   ],
   sultan: [
-    { sym: "7️⃣7️⃣7️⃣", reward: "MAX Saldo Rp 10.000" },
-    { sym: "💎💎💎", reward: "Saldo Rp 4.000" },
-    { sym: "⭐⭐⭐", reward: "Saldo Rp 2.000" },
-    { sym: "🔔🔔🔔", reward: "+1 GB storage" },
-    { sym: "🍇🍇🍇", reward: "+20 Nyawa Ekstra" },
-    { sym: "🍋🍋🍋", reward: "260 kredit" },
-    { sym: "🍒🍒🍒", reward: "180 kredit" },
+    { sym: "seven",  reward: "MAX Saldo Rp 10.000" },
+    { sym: "gem",    reward: "Saldo Rp 4.000" },
+    { sym: "star",   reward: "Saldo Rp 2.000" },
+    { sym: "bell",   reward: "+1 GB storage" },
+    { sym: "grape",  reward: "+20 Nyawa Ekstra" },
+    { sym: "lemon",  reward: "260 kredit" },
+    { sym: "cherry", reward: "180 kredit" },
   ],
   raja: [
-    { sym: "7️⃣7️⃣7️⃣", reward: "MAX Saldo Rp 25.000" },
-    { sym: "💎💎💎", reward: "Saldo Rp 10.000" },
-    { sym: "⭐⭐⭐", reward: "Saldo Rp 5.000" },
-    { sym: "🔔🔔🔔", reward: "+2.5 GB storage" },
-    { sym: "🍇🍇🍇", reward: "+50 Nyawa Ekstra" },
-    { sym: "🍋🍋🍋", reward: "650 kredit" },
-    { sym: "🍒🍒🍒", reward: "450 kredit" },
+    { sym: "seven",  reward: "MAX Saldo Rp 25.000" },
+    { sym: "gem",    reward: "Saldo Rp 10.000" },
+    { sym: "star",   reward: "Saldo Rp 5.000" },
+    { sym: "bell",   reward: "+2.5 GB storage" },
+    { sym: "grape",  reward: "+50 Nyawa Ekstra" },
+    { sym: "lemon",  reward: "650 kredit" },
+    { sym: "cherry", reward: "450 kredit" },
   ],
   dewa: [
-    { sym: "7️⃣7️⃣7️⃣", reward: "MAX Saldo Rp 50.000" },
-    { sym: "💎💎💎", reward: "Saldo Rp 20.000" },
-    { sym: "⭐⭐⭐", reward: "Saldo Rp 10.000" },
-    { sym: "🔔🔔🔔", reward: "+5 GB storage" },
-    { sym: "🍇🍇🍇", reward: "+100 Nyawa Ekstra" },
-    { sym: "🍋🍋🍋", reward: "1.300 kredit" },
-    { sym: "🍒🍒🍒", reward: "900 kredit" },
+    { sym: "seven",  reward: "MAX Saldo Rp 50.000" },
+    { sym: "gem",    reward: "Saldo Rp 20.000" },
+    { sym: "star",   reward: "Saldo Rp 10.000" },
+    { sym: "bell",   reward: "+5 GB storage" },
+    { sym: "grape",  reward: "+100 Nyawa Ekstra" },
+    { sym: "lemon",  reward: "1.300 kredit" },
+    { sym: "cherry", reward: "900 kredit" },
   ],
 };
 
 const TIER_POINT_REWARDS: Record<Tier, number> = {
-  hemat: 5,
-  sedang: 10,
-  besar: 16,
-  mega: 28,
-  ultra: 40,
-  sultan: 60,
-  raja: 90,
-  dewa: 140,
+  hemat: 5, sedang: 10, besar: 16, mega: 28, ultra: 40, sultan: 60, raja: 90, dewa: 140,
 };
 
 export default function SlotMachineGame() {
   const visitorId = typeof window !== "undefined" ? localStorage.getItem("balance_visitor_id") : null;
   const { credits, isUnlimited, fetchCredits } = useGameCredits(visitorId);
   const [tier, setTier] = useState<Tier>("hemat");
-  const [reels, setReels] = useState<string[]>(["🍒", "🍋", "🍇"]);
+  const [reels, setReels] = useState<SymId[]>(["cherry", "lemon", "grape"]);
   const [spinning, setSpinning] = useState(false);
   const [result, setResult] = useState<any>(null);
   const [freeMode, setFreeMode] = useState(false);
@@ -119,37 +188,35 @@ export default function SlotMachineGame() {
 
   const tierInfo = TIERS.find(t => t.key === tier)!;
 
-  // Mode latihan offline — tidak ada biaya, tidak ada perubahan saldo/kredit/storage real
+  const randomSym = (): SymId => SYMBOL_IDS[Math.floor(Math.random() * SYMBOL_IDS.length)];
+
+  // Mode latihan offline
   const simulateSpin = () => {
     setResult(null);
     setSpinning(true);
     const animDuration = 1500;
     const start = Date.now();
     const interval = setInterval(() => {
-      setReels([
-        SYMBOLS[Math.floor(Math.random() * SYMBOLS.length)],
-        SYMBOLS[Math.floor(Math.random() * SYMBOLS.length)],
-        SYMBOLS[Math.floor(Math.random() * SYMBOLS.length)],
-      ]);
+      setReels([randomSym(), randomSym(), randomSym()]);
       if (Date.now() - start >= animDuration) clearInterval(interval);
     }, 80);
 
     setTimeout(() => {
       clearInterval(interval);
-      const win = Math.random() < 0.3; // 30% peluang menang biar seru
-      let finalReels: string[];
+      const win = Math.random() < 0.3;
+      let finalReels: SymId[];
       let payout: any;
       if (win) {
         const tierRewards = TIER_REWARDS[tier];
         const pick = tierRewards[Math.floor(Math.random() * tierRewards.length)];
-        const sym = Array.from(pick.sym)[0] || "💎";
-        finalReels = [sym, sym, sym];
+        finalReels = [pick.sym, pick.sym, pick.sym];
         payout = { type: "simulasi", label: `LATIHAN: ${pick.reward} (simulasi, tidak masuk akun)` };
       } else {
-        let r1 = SYMBOLS[Math.floor(Math.random() * SYMBOLS.length)];
-        let r2 = SYMBOLS[Math.floor(Math.random() * SYMBOLS.length)];
-        let r3 = SYMBOLS[Math.floor(Math.random() * SYMBOLS.length)];
-        if (r1 === r2 && r2 === r3) r2 = SYMBOLS[(SYMBOLS.indexOf(r2) + 1) % SYMBOLS.length];
+        let r1 = randomSym(), r2 = randomSym(), r3 = randomSym();
+        if (r1 === r2 && r2 === r3) {
+          const idx = SYMBOL_IDS.indexOf(r2);
+          r2 = SYMBOL_IDS[(idx + 1) % SYMBOL_IDS.length];
+        }
         finalReels = [r1, r2, r3];
         payout = { type: "none", label: "Belum hoki - coba lagi! (mode latihan)" };
       }
@@ -175,11 +242,7 @@ export default function SlotMachineGame() {
     const animDuration = 1500;
     const start = Date.now();
     const interval = setInterval(() => {
-      setReels([
-        SYMBOLS[Math.floor(Math.random() * SYMBOLS.length)],
-        SYMBOLS[Math.floor(Math.random() * SYMBOLS.length)],
-        SYMBOLS[Math.floor(Math.random() * SYMBOLS.length)],
-      ]);
+      setReels([randomSym(), randomSym(), randomSym()]);
       if (Date.now() - start >= animDuration) clearInterval(interval);
     }, 80);
 
@@ -194,16 +257,15 @@ export default function SlotMachineGame() {
       }
       const basePoints = TIER_POINT_REWARDS[tier] + (data.payout.type !== "none" ? Math.ceil(TIER_POINT_REWARDS[tier] * 0.5) : 0);
       const { awardedPoints } = awardGamePoints(basePoints);
-      setReels(data.reels);
+      // server tetap kirim emoji - convert ke SymId
+      setReels((data.reels as string[]).map(toSymId));
       setResult({ ...data.payout, awardedPoints });
       setSpinning(false);
       fetchCredits();
-      // Refresh Saldo IN & kredit lintas-komponen (Plus tab, GameTab badge, dll)
       triggerGameBalanceRefresh();
       triggerGameCreditsRefresh();
       if (data.payout.type !== "none") {
         toast({ title: "🎉 Menang!", description: `${data.payout.label} · +${awardedPoints} poin level` });
-        // Jika hadiah menambah power-up (mis. extra_life), refresh cache power-up
         if (data.payout.type === "extra_life") {
           import("./gameStore").then(m => m.syncPowerUpsFromServer()).catch(() => {});
           window.dispatchEvent(new CustomEvent("power-ups-updated"));
@@ -251,7 +313,7 @@ export default function SlotMachineGame() {
         </div>
       )}
 
-      {/* Tier Selector - scrollable horizontal di mobile */}
+      {/* Tier Selector */}
       <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1 snap-x snap-mandatory">
         {TIERS.map(t => (
           <button
@@ -272,18 +334,37 @@ export default function SlotMachineGame() {
         ))}
       </div>
 
-      <div className="bg-gradient-to-b from-amber-700 via-amber-600 to-amber-800 rounded-3xl p-5 shadow-2xl border-4 border-amber-900">
-        <div className="bg-black rounded-xl p-4 grid grid-cols-3 gap-2">
-          {reels.map((sym, i) => (
+      {/* Mesin Slot - cabinet keren */}
+      <div className="relative bg-gradient-to-b from-amber-700 via-amber-600 to-amber-800 rounded-3xl p-5 shadow-2xl border-4 border-amber-900">
+        {/* lampu hias atas */}
+        <div className="flex justify-center gap-1 mb-2">
+          {[0, 1, 2, 3, 4, 5, 6].map(i => (
             <motion.div
               key={i}
-              animate={spinning ? { y: [0, -10, 0] } : {}}
-              transition={{ duration: 0.15, repeat: spinning ? Infinity : 0 }}
-              className="aspect-square bg-gradient-to-br from-white to-slate-200 rounded-lg flex items-center justify-center text-5xl shadow-inner"
-            >
-              {sym}
-            </motion.div>
+              animate={spinning ? { opacity: [0.3, 1, 0.3] } : { opacity: 0.5 }}
+              transition={{ duration: 0.6, repeat: Infinity, delay: i * 0.08 }}
+              className="w-2 h-2 rounded-full bg-yellow-300 shadow-[0_0_6px_rgba(253,224,71,0.8)]"
+            />
           ))}
+        </div>
+
+        <div className="bg-black rounded-xl p-4 grid grid-cols-3 gap-2 border-2 border-amber-900/60 shadow-inner">
+          {reels.map((sym, i) => {
+            const isWin = result && result.type !== "none" && reels[0] === reels[1] && reels[1] === reels[2];
+            const cfg = SYMBOL_CONFIG[sym];
+            return (
+              <motion.div
+                key={i}
+                animate={spinning ? { y: [0, -10, 0] } : isWin ? { scale: [1, 1.08, 1] } : {}}
+                transition={spinning
+                  ? { duration: 0.15, repeat: Infinity }
+                  : isWin ? { duration: 0.6, repeat: Infinity, delay: i * 0.12 } : {}}
+                className={`aspect-square rounded-lg ${isWin ? `shadow-lg ${cfg.glow}` : ""}`}
+              >
+                <SymbolCell id={sym} big />
+              </motion.div>
+            );
+          })}
         </div>
 
         <Button
@@ -312,7 +393,7 @@ export default function SlotMachineGame() {
         </motion.div>
       )}
 
-      {/* Tabel hadiah dinamis: hanya tier yang dipilih */}
+      {/* Tabel hadiah - pakai ikon */}
       <div className="bg-muted/40 rounded-xl p-3 border border-border/50">
         <div className="flex items-center justify-between mb-2">
           <div className="text-xs font-extrabold uppercase tracking-wide">
@@ -323,7 +404,7 @@ export default function SlotMachineGame() {
         <div className="grid grid-cols-1 gap-1.5">
           {TIER_REWARDS[tier].map((r, i) => (
             <div key={i} className="flex items-center justify-between text-xs bg-background/60 rounded-lg px-3 py-1.5 border border-border/40">
-              <span className="font-bold tracking-wider">{r.sym}</span>
+              <RewardRow id={r.sym} />
               <span className="text-muted-foreground font-medium">{r.reward}</span>
             </div>
           ))}
