@@ -289,6 +289,8 @@ export default function HistoryEnhancer({
       "",
       `"=== RINGKASAN SALDO AKUN ==="`,
       `"Username","${snap.username}"`,
+      `"Email","${snap.email || "-"}"`,
+      `"No HP","${snap.phone || "-"}"`,
       `"Sisa Saldo","${formatAmount(snap.balance)}"`,
       `"Saldo IN","${formatAmount(snap.gameBalance)}"`,
       `"Gem","${snap.gems.toLocaleString("id-ID")}"`,
