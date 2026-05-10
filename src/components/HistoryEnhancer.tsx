@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import {
   Search, Filter, Download, FileText, FileSpreadsheet, BarChart3,
   Calendar as CalendarIcon, X, TrendingUp, TrendingDown, ChevronDown,
-  LayoutList, Clock, BarChart2, ArrowDownUp,
+  LayoutList, Clock, BarChart2, ArrowDownUp, Sparkles,
 } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -915,32 +915,66 @@ export default function HistoryEnhancer({
                 <Button
                   type="button"
                   size="sm"
-                  variant="outline"
-                  className="h-7 px-2 rounded-lg border-border bg-card text-[10px] font-medium text-foreground gap-1 shadow-none"
+                  className="relative h-7 px-2.5 rounded-lg text-[10px] font-bold text-white gap-1 border-0 overflow-hidden bg-gradient-to-r from-violet-500 via-fuchsia-500 to-orange-400 shadow-[0_4px_14px_-2px_rgba(217,70,239,0.55)] hover:shadow-[0_6px_18px_-2px_rgba(217,70,239,0.7)] active:scale-95 transition-all disabled:opacity-50 disabled:shadow-none"
                   disabled={filtered.length === 0}
                 >
-                  <Download className="w-3 h-3" strokeWidth={1.8} /> Export
+                  <span
+                    className="absolute inset-0 opacity-40 mix-blend-overlay pointer-events-none"
+                    style={{ background: "linear-gradient(115deg, transparent 30%, rgba(255,255,255,0.7) 50%, transparent 70%)", backgroundSize: "200% 100%", animation: "expBtnSheen 2.6s linear infinite" }}
+                  />
+                  <Download className="w-3 h-3 relative" strokeWidth={2.4} />
+                  <span className="relative">Export</span>
+                  <Sparkles className="w-2.5 h-2.5 relative text-yellow-200 animate-pulse" strokeWidth={2.4} />
+                  <style>{`@keyframes expBtnSheen { 0%{background-position:200% 0;} 100%{background-position:-200% 0;} }`}</style>
                 </Button>
               </PopoverTrigger>
-              <PopoverContent align="end" className="w-44 p-1.5">
-                <button
-                  onClick={exportPDF}
-                  className="w-full flex items-center gap-2 px-2 py-2 rounded-lg hover:bg-muted text-xs font-medium"
-                >
-                  <FileText className="w-3.5 h-3.5 text-foreground" /> PDF
-                </button>
-                <button
-                  onClick={exportWord}
-                  className="w-full flex items-center gap-2 px-2 py-2 rounded-lg hover:bg-muted text-xs font-medium"
-                >
-                  <FileText className="w-3.5 h-3.5 text-blue-600" /> Word (.docx)
-                </button>
-                <button
-                  onClick={exportCSV}
-                  className="w-full flex items-center gap-2 px-2 py-2 rounded-lg hover:bg-muted text-xs font-medium"
-                >
-                  <FileSpreadsheet className="w-3.5 h-3.5 text-foreground" /> Excel (CSV)
-                </button>
+              <PopoverContent
+                align="end"
+                className="w-60 p-0 border-0 rounded-2xl overflow-hidden shadow-[0_20px_50px_-10px_rgba(0,0,0,0.4)] bg-gradient-to-br from-slate-900 via-violet-950 to-slate-900"
+              >
+                {/* Header */}
+                <div className="relative px-3 pt-3 pb-2.5 overflow-hidden">
+                  <div className="absolute inset-0 bg-gradient-to-r from-violet-500/30 via-fuchsia-500/30 to-orange-400/30 blur-xl" />
+                  <div className="relative flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-violet-400 to-fuchsia-500 flex items-center justify-center shadow-lg">
+                      <Download className="w-4 h-4 text-white" strokeWidth={2.4} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[11px] font-extrabold text-white leading-tight">Ekspor Riwayat</p>
+                      <p className="text-[9px] text-white/60 leading-tight">{filtered.length} item siap diunduh</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="p-2 space-y-1.5 bg-black/20 backdrop-blur-sm">
+                  {[
+                    { onClick: exportPDF, icon: FileText, label: "PDF", desc: "Dokumen rapi & siap cetak", grad: "from-rose-500 to-red-600", emoji: "📄" },
+                    { onClick: exportWord, icon: FileText, label: "Word", desc: "Bisa diedit di MS Word", grad: "from-blue-500 to-indigo-600", emoji: "📝" },
+                    { onClick: exportCSV, icon: FileSpreadsheet, label: "Excel / CSV", desc: "Olah data di spreadsheet", grad: "from-emerald-500 to-green-600", emoji: "📊" },
+                  ].map((opt) => (
+                    <button
+                      key={opt.label}
+                      onClick={opt.onClick}
+                      className="group w-full flex items-center gap-2.5 px-2 py-2 rounded-xl bg-white/5 hover:bg-white/10 active:scale-[0.98] transition-all border border-white/5 hover:border-white/20"
+                    >
+                      <div className={cn("relative w-9 h-9 rounded-xl bg-gradient-to-br flex items-center justify-center shadow-md group-hover:scale-110 transition-transform", opt.grad)}>
+                        <opt.icon className="w-4 h-4 text-white" strokeWidth={2.2} />
+                        <span className="absolute -top-1 -right-1 text-[10px]">{opt.emoji}</span>
+                      </div>
+                      <div className="flex-1 min-w-0 text-left">
+                        <p className="text-[11px] font-bold text-white leading-tight">{opt.label}</p>
+                        <p className="text-[9px] text-white/60 leading-tight truncate">{opt.desc}</p>
+                      </div>
+                      <Download className="w-3 h-3 text-white/40 group-hover:text-white group-hover:translate-y-0.5 transition-all" strokeWidth={2.2} />
+                    </button>
+                  ))}
+                </div>
+
+                <div className="px-3 py-1.5 bg-black/40 border-t border-white/5">
+                  <p className="text-[8.5px] text-white/50 text-center font-medium">
+                    ✨ Otomatis berisi info akun & ringkasan
+                  </p>
+                </div>
               </PopoverContent>
             </Popover>
           </div>
