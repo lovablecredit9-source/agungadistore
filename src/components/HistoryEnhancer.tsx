@@ -706,6 +706,65 @@ export default function HistoryEnhancer({
 
     const spacerSmall = new Paragraph({ spacing: { before: 120, after: 120 }, children: [new TextRun({ text: "" })] });
 
+    // ===== WALLET SNAPSHOT TABLE =====
+    const walletItems: { label: string; value: string; fill: string; color: string }[] = [
+      { label: "SISA SALDO", value: formatAmount(snap.balance), fill: "ECFDF5", color: SUCCESS },
+      { label: "SALDO IN", value: formatAmount(snap.gameBalance), fill: "FFFBEB", color: "B45309" },
+      { label: "GEM", value: snap.gems.toLocaleString("id-ID"), fill: "F5F3FF", color: "7C3AED" },
+      { label: "KOIN STREAK", value: snap.streakCoins.toLocaleString("id-ID"), fill: "FFF7ED", color: "C2410C" },
+      { label: "KREDIT GAME", value: snap.gameCredits.toLocaleString("id-ID"), fill: "EFF6FF", color: PRIMARY },
+      { label: "TOTAL KELUAR", value: `-${formatAmount(snap.totalOut)}`, fill: "FEF2F2", color: DANGER },
+    ];
+    const walletColW = Math.floor(9360 / walletItems.length);
+    const walletWidths = walletItems.map(() => walletColW);
+    const walletTitle = new Paragraph({
+      spacing: { before: 200, after: 120 },
+      children: [
+        new TextRun({ text: "RINGKASAN SALDO AKUN ", bold: true, color: PRIMARY, size: 26 }),
+        new TextRun({ text: `@${cleanExportText(snap.username)}`, color: MUTED, size: 18 }),
+      ],
+    });
+    const walletTable = new DocxTable({
+      width: { size: 9360, type: WidthType.DXA },
+      columnWidths: walletWidths,
+      rows: [new DocxTableRow({ children: walletItems.map((w, idx) => new DocxTableCell({
+        width: { size: walletWidths[idx], type: WidthType.DXA },
+        borders: cellBorders,
+        shading: { fill: w.fill, type: ShadingType.CLEAR },
+        margins: { top: 140, bottom: 140, left: 100, right: 100 },
+        children: [
+          new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: w.label, bold: true, color: MUTED, size: 12 })] }),
+          new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: w.value, bold: true, color: w.color, size: 18 })] }),
+        ],
+      })) })],
+    });
+
+    // ===== SIGNATURE BLOCK =====
+    const signatureTable = new DocxTable({
+      width: { size: 9360, type: WidthType.DXA },
+      columnWidths: [5760, 3600],
+      rows: [new DocxTableRow({ children: [
+        new DocxTableCell({
+          width: { size: 5760, type: WidthType.DXA },
+          borders: { top: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" }, bottom: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" }, left: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" }, right: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" } },
+          children: [new Paragraph({ children: [new TextRun({ text: " " })] })],
+        }),
+        new DocxTableCell({
+          width: { size: 3600, type: WidthType.DXA },
+          borders: { top: { style: BorderStyle.SINGLE, size: 8, color: PRIMARY }, bottom: { style: BorderStyle.SINGLE, size: 8, color: PRIMARY }, left: { style: BorderStyle.SINGLE, size: 8, color: PRIMARY }, right: { style: BorderStyle.SINGLE, size: 8, color: PRIMARY } },
+          shading: { fill: "F8FAFC", type: ShadingType.CLEAR },
+          margins: { top: 200, bottom: 200, left: 200, right: 200 },
+          children: [
+            new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: "Hormat kami,", color: MUTED, size: 16 })] }),
+            new Paragraph({ alignment: AlignmentType.CENTER, spacing: { before: 80, after: 80 }, children: [new TextRun({ text: "Agung Adi", italics: true, bold: true, color: PRIMARY, size: 44 })] }),
+            new Paragraph({ alignment: AlignmentType.CENTER, border: { top: { style: BorderStyle.SINGLE, size: 8, color: PRIMARY, space: 1 } }, children: [new TextRun({ text: storeName, bold: true, color: "1E293B", size: 18 })] }),
+            new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: "Owner & Admin", color: MUTED, size: 14 })] }),
+            new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: `${new Date().toLocaleDateString("id-ID")} WIB`, color: MUTED, size: 12 })] }),
+          ],
+        }),
+      ] })],
+    });
+
     const wordDoc = new DocxDocument({
       creator: storeName,
       title,
@@ -735,8 +794,13 @@ export default function HistoryEnhancer({
           spacerSmall,
           summaryTable,
           spacerSmall,
+          walletTitle,
+          walletTable,
+          spacerSmall,
           warningTable,
           ...itemBlocks,
+          spacerSmall,
+          signatureTable,
         ],
       }],
     });
