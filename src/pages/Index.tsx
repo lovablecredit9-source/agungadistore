@@ -4556,10 +4556,10 @@ const Index = () => {
                       if (!dp) return null;
                       const isApproved = dp.status === "approved";
                       const isPending = dp.status === "pending";
-                      return (
-                        <Card className="border border-border/60">
-                          <CardContent className="p-3 flex items-center gap-3">
-                            <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${isApproved ? "bg-emerald-500/15" : isPending ? "bg-amber-500/15" : "bg-rose-500/15"}`}>
+                       return (
+                         <Card className="border border-border/60 cursor-pointer transition-all hover:shadow-md hover:border-primary/40 active:scale-[0.99]" onClick={() => setSelectedDeposit(dp)}>
+                           <CardContent className="p-3 flex items-center gap-3">
+                             <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${isApproved ? "bg-emerald-500/15" : isPending ? "bg-amber-500/15" : "bg-rose-500/15"}`}>
                               <span className="text-lg">🏦</span>
                             </div>
                             <div className="flex-1 min-w-0">
