@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Loader2, Coins, Gift, Wifi, Cherry, Citrus, Grape, Bell, Star, Gem, Crown } from "lucide-react";
+import { Loader2, Coins, Gift, Wifi, Cherry, Citrus, Grape, Bell, Star, Gem, Crown, Flame } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useGameCredits, triggerGameCreditsRefresh } from "./GameCredits";
 import { triggerGameBalanceRefresh } from "./GameBalance";
@@ -40,48 +40,63 @@ const ID_TO_EMOJI: Record<SymId, string> = {
 
 const toSymId = (s: string): SymId => EMOJI_TO_ID[s] || "cherry";
 
-// Konfigurasi visual per simbol
+// Konfigurasi visual per simbol - bergaya Fruits 'N Fire (glossy, vivid, di panel gelap)
 const SYMBOL_CONFIG: Record<SymId, { Icon: any; gradient: string; iconColor: string; glow: string; label?: string }> = {
-  cherry: { Icon: Cherry,  gradient: "from-rose-100 to-rose-200",       iconColor: "text-rose-600",     glow: "shadow-rose-400/40" },
-  lemon:  { Icon: Citrus,  gradient: "from-yellow-100 to-amber-200",    iconColor: "text-amber-500",    glow: "shadow-amber-400/40" },
-  grape:  { Icon: Grape,   gradient: "from-purple-100 to-violet-200",   iconColor: "text-violet-700",   glow: "shadow-violet-400/40" },
-  bell:   { Icon: Bell,    gradient: "from-orange-100 to-yellow-200",   iconColor: "text-orange-500",   glow: "shadow-orange-400/40" },
-  star:   { Icon: Star,    gradient: "from-yellow-50 to-yellow-200",    iconColor: "text-yellow-500",   glow: "shadow-yellow-400/50" },
-  gem:    { Icon: Gem,     gradient: "from-cyan-100 to-sky-200",        iconColor: "text-cyan-600",     glow: "shadow-cyan-400/50" },
-  seven:  { Icon: Crown,   gradient: "from-red-100 via-rose-200 to-amber-100", iconColor: "text-red-600", glow: "shadow-red-500/60", label: "7" },
+  cherry: { Icon: Cherry,  gradient: "from-rose-400 via-red-500 to-rose-700",        iconColor: "text-red-100",      glow: "shadow-rose-500/70" },
+  lemon:  { Icon: Citrus,  gradient: "from-yellow-300 via-amber-400 to-yellow-600",  iconColor: "text-yellow-50",    glow: "shadow-yellow-400/70" },
+  grape:  { Icon: Grape,   gradient: "from-violet-400 via-purple-600 to-indigo-800", iconColor: "text-violet-100",   glow: "shadow-violet-500/70" },
+  bell:   { Icon: Bell,    gradient: "from-yellow-300 via-amber-500 to-orange-700",  iconColor: "text-yellow-50",    glow: "shadow-amber-500/70" },
+  star:   { Icon: Star,    gradient: "from-yellow-200 via-amber-400 to-orange-600",  iconColor: "text-yellow-50",    glow: "shadow-yellow-400/80" },
+  gem:    { Icon: Gem,     gradient: "from-cyan-300 via-sky-500 to-blue-700",        iconColor: "text-cyan-50",      glow: "shadow-cyan-400/70" },
+  seven:  { Icon: Crown,   gradient: "from-red-500 via-rose-600 to-red-900",         iconColor: "text-yellow-200",   glow: "shadow-red-500/80", label: "7" },
 };
 
-// Komponen tampilan satu simbol di reel
+// Komponen tampilan satu simbol di reel - dark panel + glossy 3D look (Fruits 'N Fire vibe)
 const SymbolCell = ({ id, big = false }: { id: SymId; big?: boolean }) => {
   const cfg = SYMBOL_CONFIG[id];
   const Icon = cfg.Icon;
   return (
-    <div className={`relative w-full h-full bg-gradient-to-br ${cfg.gradient} rounded-lg flex items-center justify-center shadow-inner overflow-hidden`}>
-      {/* highlight glossy */}
-      <div className="absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-white/70 to-transparent pointer-events-none rounded-t-lg" />
+    <div className="relative w-full h-full flex items-center justify-center">
+      {/* Glow halo di belakang simbol */}
+      <div className={`absolute inset-2 rounded-full blur-xl opacity-60 bg-gradient-to-br ${cfg.gradient}`} />
       {id === "seven" ? (
-        <div className="relative flex flex-col items-center">
-          <Icon className={`w-5 h-5 ${cfg.iconColor} drop-shadow absolute -top-1`} fill="currentColor" />
-          <span className={`font-black ${cfg.iconColor} drop-shadow ${big ? "text-4xl" : "text-2xl"} mt-2`} style={{ fontFamily: "Georgia, serif" }}>
+        <div className={`relative flex items-center justify-center rounded-xl bg-gradient-to-br ${cfg.gradient} ${big ? "w-[78%] h-[78%]" : "w-[80%] h-[80%]"} border border-yellow-300/50`}
+          style={{ boxShadow: "inset 0 2px 4px rgba(255,255,255,0.4), inset 0 -3px 6px rgba(0,0,0,0.4)" }}>
+          {/* glossy shine */}
+          <div className="absolute inset-x-1 top-1 h-1/3 rounded-t-lg bg-gradient-to-b from-white/50 to-transparent pointer-events-none" />
+          <span
+            className={`relative font-black ${big ? "text-5xl" : "text-2xl"}`}
+            style={{
+              fontFamily: "Georgia, serif",
+              color: "#fde047",
+              textShadow: "0 0 6px rgba(250,204,21,0.8), 0 2px 0 #7f1d1d, 0 3px 0 #450a0a, 0 4px 6px rgba(0,0,0,0.7)",
+              WebkitTextStroke: "1px #7f1d1d",
+            }}
+          >
             7
           </span>
         </div>
       ) : (
-        <Icon
-          className={`relative ${cfg.iconColor} drop-shadow ${big ? "w-12 h-12" : "w-7 h-7"}`}
-          fill={id === "star" || id === "gem" || id === "cherry" || id === "grape" || id === "lemon" ? "currentColor" : "none"}
-          strokeWidth={id === "bell" ? 2 : 1.5}
-        />
+        <div className="relative flex items-center justify-center">
+          <Icon
+            className={`relative ${cfg.iconColor} ${big ? "w-16 h-16" : "w-9 h-9"}`}
+            fill="currentColor"
+            strokeWidth={1}
+            style={{ filter: "drop-shadow(0 3px 4px rgba(0,0,0,0.7)) drop-shadow(0 0 6px rgba(255,200,80,0.4))" }}
+          />
+          {/* highlight glossy di atas ikon */}
+          <div className="absolute inset-0 rounded-full bg-gradient-to-b from-white/30 via-transparent to-transparent pointer-events-none" style={{ mixBlendMode: "overlay" }} />
+        </div>
       )}
     </div>
   );
 };
 
-// Komponen baris hadiah (3 simbol sama)
+// Komponen baris hadiah (3 simbol sama) - mini panel gelap
 const RewardRow = ({ id }: { id: SymId }) => (
   <div className="flex items-center gap-1">
     {[0, 1, 2].map(i => (
-      <div key={i} className="w-7 h-7">
+      <div key={i} className="w-9 h-9 rounded-md bg-gradient-to-b from-zinc-900 to-black border border-amber-500/30 p-0.5 shadow-inner">
         <SymbolCell id={id} />
       </div>
     ))}
@@ -354,21 +369,83 @@ export default function SlotMachineGame() {
         ))}
       </div>
 
-      {/* Mesin Slot - cabinet keren */}
-      <div className="relative bg-gradient-to-b from-amber-700 via-amber-600 to-amber-800 rounded-3xl p-5 shadow-2xl border-4 border-amber-900">
+      {/* Mesin Slot - cabinet api / Fruits 'N Fire style */}
+      <div
+        className="relative rounded-3xl p-4 sm:p-5 shadow-2xl overflow-hidden border-4 border-amber-900"
+        style={{
+          background:
+            "radial-gradient(ellipse at top, #fbbf24 0%, #f97316 25%, #c2410c 55%, #7c2d12 100%)",
+        }}
+      >
+        {/* tekstur api blur */}
+        <div className="pointer-events-none absolute inset-0 opacity-60"
+          style={{
+            backgroundImage:
+              "radial-gradient(circle at 10% 80%, rgba(250,204,21,0.6), transparent 35%), radial-gradient(circle at 90% 75%, rgba(249,115,22,0.7), transparent 40%), radial-gradient(circle at 50% 100%, rgba(220,38,38,0.5), transparent 50%)",
+          }}
+        />
+
+        {/* Flame decoration sisi kiri */}
+        <div className="pointer-events-none absolute left-1 top-1/4 bottom-1/4 flex flex-col justify-around z-10">
+          {[0, 1, 2, 3].map(i => (
+            <motion.div
+              key={`l-${i}`}
+              animate={{ scale: [1, 1.15, 1], rotate: [-3, 3, -3] }}
+              transition={{ duration: 1.2 + i * 0.15, repeat: Infinity, ease: "easeInOut" }}
+            >
+              <Flame className="w-4 h-5 sm:w-5 sm:h-6 text-yellow-300" fill="currentColor" style={{ filter: "drop-shadow(0 0 4px rgba(250,204,21,0.9))" }} />
+            </motion.div>
+          ))}
+        </div>
+        {/* Flame decoration sisi kanan */}
+        <div className="pointer-events-none absolute right-1 top-1/4 bottom-1/4 flex flex-col justify-around z-10">
+          {[0, 1, 2, 3].map(i => (
+            <motion.div
+              key={`r-${i}`}
+              animate={{ scale: [1, 1.15, 1], rotate: [3, -3, 3] }}
+              transition={{ duration: 1.2 + i * 0.15, repeat: Infinity, ease: "easeInOut" }}
+              style={{ transform: "scaleX(-1)" }}
+            >
+              <Flame className="w-4 h-5 sm:w-5 sm:h-6 text-yellow-300" fill="currentColor" style={{ filter: "drop-shadow(0 0 4px rgba(250,204,21,0.9))" }} />
+            </motion.div>
+          ))}
+        </div>
+
+        {/* Title bar di atas - "SLOTS ON FIRE" style */}
+        <div className="relative z-10 flex items-center justify-center gap-2 mb-3">
+          <Flame className="w-5 h-5 text-yellow-300" fill="currentColor" />
+          <h3
+            className="text-center font-black tracking-[0.15em] text-base sm:text-lg uppercase"
+            style={{
+              fontFamily: "Georgia, serif",
+              background: "linear-gradient(180deg, #fef9c3 0%, #facc15 40%, #f97316 80%, #b91c1c 100%)",
+              WebkitBackgroundClip: "text",
+              WebkitTextFillColor: "transparent",
+              filter: "drop-shadow(0 2px 0 #7c2d12) drop-shadow(0 0 8px rgba(250,204,21,0.7))",
+            }}
+          >
+            Slots On Fire
+          </h3>
+          <Flame className="w-5 h-5 text-yellow-300" fill="currentColor" style={{ transform: "scaleX(-1)" }} />
+        </div>
+
         {/* lampu hias atas */}
-        <div className="flex justify-center gap-1 mb-2">
+        <div className="relative z-10 flex justify-center gap-1 mb-2">
           {[0, 1, 2, 3, 4, 5, 6].map(i => (
             <motion.div
               key={i}
-              animate={spinning ? { opacity: [0.3, 1, 0.3] } : { opacity: 0.5 }}
+              animate={spinning ? { opacity: [0.3, 1, 0.3] } : { opacity: 0.6 }}
               transition={{ duration: 0.6, repeat: Infinity, delay: i * 0.08 }}
-              className="w-2 h-2 rounded-full bg-yellow-300 shadow-[0_0_6px_rgba(253,224,71,0.8)]"
+              className="w-2 h-2 rounded-full bg-yellow-300 shadow-[0_0_6px_rgba(253,224,71,0.9)]"
             />
           ))}
         </div>
 
-        <div className="bg-black rounded-xl p-4 grid grid-cols-3 gap-2 border-2 border-amber-900/60 shadow-inner">
+        {/* Reel area - dark dengan gold dividers */}
+        <div
+          className="relative z-10 rounded-xl p-2 grid grid-cols-3 gap-1.5 border-2 border-amber-900/80 shadow-[inset_0_4px_12px_rgba(0,0,0,0.7)]"
+          style={{ background: "linear-gradient(180deg, #1c1917 0%, #0c0a09 50%, #1c1917 100%)" }}
+        >
           {reels.map((sym, i) => {
             const isWin = result && result.type !== "none" && reels[0] === reels[1] && reels[1] === reels[2];
             const cfg = SYMBOL_CONFIG[sym];
@@ -379,8 +456,14 @@ export default function SlotMachineGame() {
                 transition={spinning
                   ? { duration: 0.15, repeat: Infinity }
                   : isWin ? { duration: 0.6, repeat: Infinity, delay: i * 0.12 } : {}}
-                className={`aspect-square rounded-lg ${isWin ? `shadow-lg ${cfg.glow}` : ""}`}
+                className={`aspect-square rounded-md relative overflow-hidden ${isWin ? `shadow-lg ${cfg.glow} ring-2 ring-yellow-300/70` : ""}`}
+                style={{
+                  background: "linear-gradient(180deg, #292524 0%, #1c1917 50%, #292524 100%)",
+                  boxShadow: "inset 0 2px 6px rgba(0,0,0,0.8), inset 0 -1px 2px rgba(255,255,255,0.05)",
+                }}
               >
+                {/* subtle noise/dot pattern */}
+                <div className="absolute inset-0 opacity-20" style={{ backgroundImage: "radial-gradient(rgba(255,255,255,0.15) 1px, transparent 1px)", backgroundSize: "6px 6px" }} />
                 <SymbolCell id={sym} big />
               </motion.div>
             );
@@ -390,13 +473,14 @@ export default function SlotMachineGame() {
         <Button
           onClick={spin}
           disabled={spinning || (!freeMode && !isUnlimited && credits < tierInfo.cost)}
-          className={`w-full mt-4 h-14 text-lg font-black border-2 shadow-lg ${
+          className={`relative z-10 w-full mt-4 h-14 text-lg font-black border-2 shadow-lg ${
             freeMode
               ? "bg-gradient-to-r from-emerald-400 to-teal-500 hover:from-emerald-500 hover:to-teal-600 text-emerald-950 border-emerald-300"
-              : "bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600 text-amber-950 border-yellow-300"
+              : "bg-gradient-to-b from-yellow-300 via-amber-400 to-orange-600 hover:from-yellow-400 hover:to-orange-700 text-amber-950 border-yellow-200"
           }`}
+          style={!freeMode ? { boxShadow: "inset 0 2px 4px rgba(255,255,255,0.5), inset 0 -3px 6px rgba(0,0,0,0.3), 0 4px 12px rgba(249,115,22,0.5)" } : undefined}
         >
-          {spinning ? <Loader2 className="w-5 h-5 animate-spin mr-2" /> : freeMode ? <Gift className="w-5 h-5 mr-2" /> : <Coins className="w-5 h-5 mr-2" />}
+          {spinning ? <Loader2 className="w-5 h-5 animate-spin mr-2" /> : freeMode ? <Gift className="w-5 h-5 mr-2" /> : <Flame className="w-5 h-5 mr-2" fill="currentColor" />}
           {spinning ? "SPINNING..." : freeMode ? "PUTAR LATIHAN! (GRATIS)" : `PUTAR! (${tierInfo.cost} kredit)`}
         </Button>
       </div>
