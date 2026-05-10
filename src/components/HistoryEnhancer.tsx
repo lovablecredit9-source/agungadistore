@@ -505,7 +505,7 @@ export default function HistoryEnhancer({
     doc.setFontSize(7); doc.setFont("helvetica", "normal");
     doc.text("Hormat kami,", sigX + sigW / 2, sigY + 6, { align: "center" });
     doc.setTextColor(41, 98, 255);
-    doc.setFontSize(20); doc.setFont("helvetica", "bolditalic");
+    doc.setFontSize(20); doc.setFont("helvetica", "bold");
     doc.text("Agung Adi", sigX + sigW / 2, sigY + 18, { align: "center" });
     doc.setDrawColor(41, 98, 255); doc.setLineWidth(0.6);
     doc.line(sigX + 10, sigY + 21, sigX + sigW - 10, sigY + 21);
@@ -756,7 +756,7 @@ export default function HistoryEnhancer({
           margins: { top: 200, bottom: 200, left: 200, right: 200 },
           children: [
             new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: "Hormat kami,", color: MUTED, size: 16 })] }),
-            new Paragraph({ alignment: AlignmentType.CENTER, spacing: { before: 80, after: 80 }, children: [new TextRun({ text: "Agung Adi", italics: true, bold: true, color: PRIMARY, size: 44 })] }),
+            new Paragraph({ alignment: AlignmentType.CENTER, spacing: { before: 80, after: 80 }, children: [new TextRun({ text: "Agung Adi", bold: true, color: PRIMARY, size: 44 })] }),
             new Paragraph({ alignment: AlignmentType.CENTER, border: { top: { style: BorderStyle.SINGLE, size: 8, color: PRIMARY, space: 1 } }, children: [new TextRun({ text: storeName, bold: true, color: "1E293B", size: 18 })] }),
             new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: "Owner & Admin", color: MUTED, size: 14 })] }),
             new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: `${new Date().toLocaleDateString("id-ID")} WIB`, color: MUTED, size: 12 })] }),
