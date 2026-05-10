@@ -492,6 +492,33 @@ export default function HistoryEnhancer({
       margin: { top: 18, bottom: 18, left: 10, right: 10 },
     });
 
+    // ===== TANDA TANGAN =====
+    const lastY = (doc as any).lastAutoTable?.finalY ?? (wY + wH + 10);
+    let sigY = lastY + 8;
+    if (sigY > pageH - 60) { doc.addPage(); sigY = 20; }
+    const sigW = 82;
+    const sigX = pageW - sigW - 12;
+    doc.setDrawColor(99, 102, 241);
+    doc.setFillColor(248, 250, 252);
+    doc.roundedRect(sigX, sigY, sigW, 38, 3, 3, "FD");
+    doc.setTextColor(100, 116, 139);
+    doc.setFontSize(7); doc.setFont("helvetica", "normal");
+    doc.text("Hormat kami,", sigX + sigW / 2, sigY + 6, { align: "center" });
+    doc.setTextColor(41, 98, 255);
+    doc.setFontSize(20); doc.setFont("helvetica", "bolditalic");
+    doc.text("Agung Adi", sigX + sigW / 2, sigY + 18, { align: "center" });
+    doc.setDrawColor(41, 98, 255); doc.setLineWidth(0.6);
+    doc.line(sigX + 10, sigY + 21, sigX + sigW - 10, sigY + 21);
+    doc.setLineWidth(0.2);
+    doc.setTextColor(30, 41, 59);
+    doc.setFontSize(8); doc.setFont("helvetica", "bold");
+    doc.text(cleanExportText(storeName), sigX + sigW / 2, sigY + 28, { align: "center" });
+    doc.setTextColor(100, 116, 139);
+    doc.setFontSize(6); doc.setFont("helvetica", "normal");
+    doc.text("Owner & Admin", sigX + sigW / 2, sigY + 33, { align: "center" });
+    doc.setFontSize(5.6);
+    doc.text(`${new Date().toLocaleDateString("id-ID")} WIB`, sigX + sigW / 2, sigY + 36.5, { align: "center" });
+
     // QRIS page (lampiran pembayaran)
     if (qrisData) {
       doc.addPage();
