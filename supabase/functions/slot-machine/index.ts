@@ -318,7 +318,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Hitung hasil spin: 3x3 grid + cek 8 payline, ambil hadiah terbaik
+    // Hitung hasil spin: 3x3 grid + cek kolom tengah saja
     const luck = await getActiveLuck(visitorId);
     const grid = spinGrid3x3(tier, luck);
 
