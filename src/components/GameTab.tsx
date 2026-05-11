@@ -37,6 +37,7 @@ import {
   PianoTilesGame, BlockStackerGame, HoopShotGame, LaneRacerGame, NinjaSliceGame,
   SimonSaysGame, FishingGame, CrossyChickenGame, SpinWinGame, BalloonPopGame,
 } from "@/components/games/MiniGamesPack";
+import { MEGA_GAMES, makeMegaComponent } from "@/components/games/MegaGamesPack";
 import WeeklyLeaderboard from "@/components/WeeklyLeaderboard";
 import FlashSaleBanner from "@/components/FlashSaleBanner";
 import { useGameCredits, GameCreditsBadge, BuyCreditsDialog } from "@/components/games/GameCredits";
@@ -91,9 +92,9 @@ import gameFishImg from "@/assets/game-fish.png";
 import gameChickenImg from "@/assets/game-chicken.png";
 import gameWheelImg from "@/assets/game-wheel.png";
 import gameBalloonImg from "@/assets/game-balloon.png";
-type GameMode = "menu" | "suit" | "tebak" | "tebak_gambar" | "teka_teki" | "tebak_angka" | "tebak_barang" | "ular_tangga" | "ludo" | "kuis" | "teka_teki_v2" | "pilihan_ganda" | "scratch" | "slot" | "match3" | "lucky_draw" | "mine" | "tebak_lagu" | "memory" | "snake" | "g2048" | "plinko" | "tetris" | "bubble" | "flappy" | "brick" | "catch" | "reflex" | "mole" | "beat" | "jump" | "piano" | "tower" | "hoop" | "racer" | "ninja" | "simon" | "fish" | "chicken" | "spin" | "balloon";
+type GameMode = string;
 
-const GAMES: { mode: GameMode; title: string; desc: string; image: string; gradient: string }[] = [
+const GAMES: { mode: GameMode; title: string; desc: string; image?: string; emoji?: string; gradient: string }[] = [
   { mode: "piano", title: "Piano Tiles", desc: "Tap tile hitam, jangan miss 🎹", image: gamePianoImg, gradient: "from-violet-500 to-fuchsia-700" },
   { mode: "tower", title: "Block Stacker", desc: "Susun balok setinggi mungkin 🧱", image: gameTowerImg, gradient: "from-orange-500 to-rose-700" },
   { mode: "hoop", title: "Hoop Shot", desc: "Lempar bola masuk ring 🏀", image: gameHoopImg, gradient: "from-amber-500 to-red-600" },
@@ -134,6 +135,7 @@ const GAMES: { mode: GameMode; title: string; desc: string; image: string; gradi
   { mode: "ludo", title: "Ludo King", desc: "Siapa duluan finish?", image: gameLudoImg, gradient: "from-pink-500 to-rose-600" },
   { mode: "pilihan_ganda", title: "Pilihan Ganda", desc: "Pilih jawaban benar!", image: gamePilihanGandaImg, gradient: "from-violet-500 to-purple-600" },
   { mode: "tebak_lagu", title: "Tebak Lagu", desc: "Tebak dari potongan lirik 🎵", image: gameTebakLaguImg, gradient: "from-pink-500 to-purple-600" },
+  ...MEGA_GAMES.map((g) => ({ mode: g.mode, title: g.title, desc: g.desc, emoji: g.emoji, gradient: g.gradient })),
 ];
 
 const GAME_COMPONENTS: Record<string, React.ComponentType> = {
@@ -177,6 +179,7 @@ const GAME_COMPONENTS: Record<string, React.ComponentType> = {
   chicken: CrossyChickenGame,
   spin: SpinWinGame,
   balloon: BalloonPopGame,
+  ...Object.fromEntries(MEGA_GAMES.map((g) => [g.mode, makeMegaComponent(g)])),
 };
 
 export default function GameTab() {
@@ -209,7 +212,7 @@ export default function GameTab() {
             <ArrowLeft className="w-4 h-4" /> Kembali
           </Button>
           <h2 className="font-extrabold text-lg flex items-center gap-2">
-            <img src={game.image} alt={game.title} className="w-6 h-6 object-contain" /> {game.title}
+            {game.image ? <img src={game.image} alt={game.title} className="w-6 h-6 object-contain" /> : <span className="text-xl">{game.emoji}</span>} {game.title}
           </h2>
         </div>
         <GameLevelMiniBar visitorId={visitorId} />
@@ -354,12 +357,16 @@ export default function GameTab() {
                   {/* Icon container with glow */}
                   <div className="relative flex items-center justify-center flex-1 z-10">
                     <div className="absolute w-16 h-16 rounded-full bg-white/20 blur-xl group-hover:bg-white/40 transition-all" />
-                    <img
-                      src={game.image}
-                      alt={game.title}
-                      loading="lazy"
-                      className="relative w-14 h-14 object-contain drop-shadow-[0_4px_8px_rgba(0,0,0,0.4)] game-icon-wiggle"
-                    />
+                    {game.image ? (
+                      <img
+                        src={game.image}
+                        alt={game.title}
+                        loading="lazy"
+                        className="relative w-14 h-14 object-contain drop-shadow-[0_4px_8px_rgba(0,0,0,0.4)] game-icon-wiggle"
+                      />
+                    ) : (
+                      <span className="relative text-5xl drop-shadow-[0_4px_8px_rgba(0,0,0,0.4)] game-icon-wiggle">{game.emoji}</span>
+                    )}
                   </div>
 
                   {/* Title with gradient text */}
