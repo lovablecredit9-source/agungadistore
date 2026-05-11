@@ -37,6 +37,7 @@ import {
   PianoTilesGame, BlockStackerGame, HoopShotGame, LaneRacerGame, NinjaSliceGame,
   SimonSaysGame, FishingGame, CrossyChickenGame, SpinWinGame, BalloonPopGame,
 } from "@/components/games/MiniGamesPack";
+import { MEGA_GAMES, makeMegaComponent } from "@/components/games/MegaGamesPack";
 import WeeklyLeaderboard from "@/components/WeeklyLeaderboard";
 import FlashSaleBanner from "@/components/FlashSaleBanner";
 import { useGameCredits, GameCreditsBadge, BuyCreditsDialog } from "@/components/games/GameCredits";
