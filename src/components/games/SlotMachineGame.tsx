@@ -468,7 +468,7 @@ export default function SlotMachineGame() {
           ))}
         </div>
 
-        {/* Reel area - 3x3 grid dengan 8 payline */}
+        {/* Reel area - 3x3 grid dengan 3 cabang vertikal */}
         <div
           className="relative z-10 rounded-xl p-2 border-2 border-amber-900/80 shadow-[inset_0_4px_12px_rgba(0,0,0,0.7)]"
           style={{ background: "linear-gradient(180deg, #1c1917 0%, #0c0a09 50%, #1c1917 100%)" }}
