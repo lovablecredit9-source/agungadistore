@@ -1101,7 +1101,14 @@ const Index = () => {
       body: { action: "verify", visitorId: activeBalanceVisitorId, pin: pinVerifyInput },
     });
     if (error || data?.error || !data?.valid) {
-      toast({ title: "PIN salah", variant: "destructive" }); return;
+      if (data?.error && /PIN belum dibuat/i.test(data.error)) {
+        setShowPinVerify(false);
+        setShowPinSetup(true);
+        toast({ title: "PIN belum dibuat", description: "Buat PIN terlebih dahulu di menu Saldo sebelum membeli.", variant: "destructive" });
+      } else {
+        toast({ title: data?.error || "PIN salah", variant: "destructive" });
+      }
+      return;
     }
     setShowPinVerify(false);
     buyWithSaldo(pendingPurchase.product, pendingPurchase.quantity, pendingPurchase.discountCode, pinVerifyInput);
