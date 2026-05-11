@@ -72,6 +72,12 @@ Deno.serve(async (request) => {
       .eq("visitor_id", visitorId)
       .maybeSingle();
 
+    const { data: gameBal } = await admin
+      .from("game_balance")
+      .select("id, amount, total_spent")
+      .eq("visitor_id", visitorId)
+      .maybeSingle();
+
     if (balanceError || !balanceRow) {
       return Response.json({ error: "Akun saldo tidak ditemukan. Silakan login ulang di menu Saldo terlebih dahulu.", needLogin: true }, { status: 404, headers: corsHeaders });
     }
@@ -187,8 +193,19 @@ Deno.serve(async (request) => {
       discountVoucherId = voucher.id;
     }
 
-    if (balanceRow.balance < totalPrice) {
-      return Response.json({ error: "Saldo tidak cukup" }, { status: 400, headers: corsHeaders });
+    const mainAmount = Number(balanceRow.balance || 0);
+    const gameAmount = Number(gameBal?.amount || 0);
+    const availableBalance = mainAmount + gameAmount;
+    if (availableBalance < totalPrice) {
+      const shortage = totalPrice - availableBalance;
+      return Response.json({
+        error: `Saldo tidak cukup. Kurang Rp ${shortage.toLocaleString("id-ID")}. Top up dulu atau gunakan Saldo IN jika ada.`,
+        insufficientBalance: true,
+        shortage,
+        available_balance: availableBalance,
+        main_balance: mainAmount,
+        saldo_in: gameAmount,
+      }, { status: 200, headers: corsHeaders });
     }
 
     // Get sold token IDs
@@ -223,15 +240,29 @@ Deno.serve(async (request) => {
     }
 
     const selectedTokens = availableTokens.slice(0, quantity);
-    const nextBalance = balanceRow.balance - totalPrice;
+    const payFromGame = Math.min(gameAmount, totalPrice);
+    const payFromMain = totalPrice - payFromGame;
+    const nextGameBalance = gameAmount - payFromGame;
+    const nextBalance = mainAmount - payFromMain;
 
-    // Update balance
-    const { error: balanceUpdateError } = await admin
-      .from("user_balances")
-      .update({ balance: nextBalance })
-      .eq("id", balanceRow.id);
+    // Update balances (Saldo IN first, then saldo utama)
+    if (payFromGame > 0 && gameBal) {
+      const { error: gameBalanceUpdateError } = await admin
+        .from("game_balance")
+        .update({ amount: nextGameBalance, total_spent: Number(gameBal.total_spent || 0) + payFromGame })
+        .eq("id", gameBal.id);
+      if (gameBalanceUpdateError) {
+        return Response.json({ error: "Gagal memotong Saldo IN" }, { status: 500, headers: corsHeaders });
+      }
+      await admin.from("game_balance_transactions").insert({ visitor_id: visitorId, type: "spend", amount: -payFromGame, description: `Beli ${product.title}` });
+    }
+
+    const { error: balanceUpdateError } = payFromMain > 0
+      ? await admin.from("user_balances").update({ balance: nextBalance }).eq("id", balanceRow.id)
+      : { error: null };
 
     if (balanceUpdateError) {
+      if (payFromGame > 0 && gameBal) await admin.from("game_balance").update({ amount: gameAmount, total_spent: Number(gameBal.total_spent || 0) }).eq("id", gameBal.id);
       return Response.json({ error: "Gagal memotong saldo" }, { status: 500, headers: corsHeaders });
     }
 
