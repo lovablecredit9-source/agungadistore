@@ -7436,7 +7436,7 @@ const Index = () => {
                   <div className="bg-muted/50 rounded-lg p-3 space-y-1 text-sm">
                     <div className="flex justify-between"><span className="text-muted-foreground">Total item</span><span className="font-bold">{cartCount} pcs</span></div>
                     <div className="flex justify-between border-t border-border pt-1"><span className="font-bold">Total harga</span><span className="font-extrabold text-primary">{formatPrice(cartTotal)}</span></div>
-                    {userBalance && <div className="flex justify-between"><span className="text-muted-foreground">Saldo</span><span className={`font-bold ${userBalance.balance >= cartTotal ? "text-accent" : "text-destructive"}`}>{formatPrice(userBalance.balance)}</span></div>}
+                    {userBalance && <div className="flex justify-between"><span className="text-muted-foreground">Saldo + IN</span><span className={`font-bold ${spendableStoreBalance >= cartTotal ? "text-accent" : "text-destructive"}`}>{formatPrice(spendableStoreBalance)}</span></div>}
                   </div>
                   <p className="text-[10px] text-muted-foreground text-center">Pilih item untuk checkout langsung dengan saldo</p>
                   {cart.map(item => {
@@ -7445,7 +7445,7 @@ const Index = () => {
                     const itemTotal = wp * item.quantity;
                     return (
                     <Button key={item.product.id} className="w-full bg-gradient-to-r from-primary to-accent text-primary-foreground font-bold gap-2 text-xs"
-                      disabled={!userBalance || userBalance.balance < itemTotal || item.product.stock < item.quantity}
+                      disabled={!userBalance || spendableStoreBalance < itemTotal || item.product.stock < item.quantity}
                       onClick={() => { setBuyProduct(item.product); setBuyQuantity(item.quantity); setShowBuySaldo(true); setShowCart(false); }}>
                       <Wallet className="w-4 h-4" /> Beli {item.quantity}x {item.product.title} - {formatPrice(itemTotal)}
                     </Button>
