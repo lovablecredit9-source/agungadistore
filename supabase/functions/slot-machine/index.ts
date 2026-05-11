@@ -50,22 +50,18 @@ function spinGrid3x3(tier: Tier, luckMultiplier = 1): string[] {
   const grid: string[] = [];
   for (let i = 0; i < 9; i++) grid.push(spinReel(tier, luckMultiplier));
 
-  // Bias aktif mulai x2: peluang baris tengah jadi 3-sama
+  // Bias aktif mulai x2: peluang kolom tengah jadi 3-sama
   const matchProb = Math.min(0.7, Math.max(0, (luckMultiplier - 1) * 0.08));
   if (Math.random() < matchProb) {
-    grid[4] = grid[3];
-    grid[5] = grid[3];
+    grid[4] = grid[1];
+    grid[7] = grid[1];
   }
   return grid;
 }
 
 // 8 payline pada index grid 0..8 (baris 0:[0,1,2], baris 1:[3,4,5], baris 2:[6,7,8])
+// Hanya 3 cabang vertikal (per kolom) — tidak ada baris/diagonal
 const PAYLINES: { name: string; indices: number[] }[] = [
-  { name: "row_top",    indices: [0, 1, 2] },
-  { name: "row_mid",    indices: [3, 4, 5] },
-  { name: "row_bot",    indices: [6, 7, 8] },
-  { name: "diag_down",  indices: [0, 4, 8] },
-  { name: "diag_up",    indices: [6, 4, 2] },
   { name: "col_left",   indices: [0, 3, 6] },
   { name: "col_mid",    indices: [1, 4, 7] },
   { name: "col_right",  indices: [2, 5, 8] },

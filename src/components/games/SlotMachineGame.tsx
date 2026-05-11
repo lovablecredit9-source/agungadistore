@@ -211,13 +211,8 @@ const TIER_POINT_REWARDS: Record<Tier, number> = {
   hemat: 5, sedang: 10, besar: 16, mega: 28, ultra: 40, sultan: 60, raja: 90, dewa: 140, legenda: 250, maha: 400,
 };
 
-// 8 payline pada 3x3 grid (sinkron dengan server)
+// 3 cabang vertikal (per kolom) — sinkron dengan server
 const PAYLINES: { name: string; indices: number[]; color: string }[] = [
-  { name: "row_top",   indices: [0, 1, 2], color: "#facc15" },
-  { name: "row_mid",   indices: [3, 4, 5], color: "#f97316" },
-  { name: "row_bot",   indices: [6, 7, 8], color: "#fb7185" },
-  { name: "diag_down", indices: [0, 4, 8], color: "#22d3ee" },
-  { name: "diag_up",   indices: [6, 4, 2], color: "#a78bfa" },
   { name: "col_left",  indices: [0, 3, 6], color: "#34d399" },
   { name: "col_mid",   indices: [1, 4, 7], color: "#f472b6" },
   { name: "col_right", indices: [2, 5, 8], color: "#fde047" },
@@ -348,7 +343,7 @@ export default function SlotMachineGame() {
       <ServerLuckCard visitorId={visitorId} />
 
       <Card className={`p-4 bg-gradient-to-br ${tierInfo.gradient} text-white border-none text-center`}>
-        <h3 className="font-extrabold text-lg">🎰 Slot Machine 3×3 • 8 Payline</h3>
+        <h3 className="font-extrabold text-lg">🎰 Slot Machine 3×3 • 3 Cabang Vertikal</h3>
         <p className="text-xs opacity-90 mt-1">Tier {tierInfo.label} • {tierInfo.desc}</p>
       </Card>
 
@@ -473,7 +468,7 @@ export default function SlotMachineGame() {
           ))}
         </div>
 
-        {/* Reel area - 3x3 grid dengan 8 payline */}
+        {/* Reel area - 3x3 grid dengan 3 cabang vertikal */}
         <div
           className="relative z-10 rounded-xl p-2 border-2 border-amber-900/80 shadow-[inset_0_4px_12px_rgba(0,0,0,0.7)]"
           style={{ background: "linear-gradient(180deg, #1c1917 0%, #0c0a09 50%, #1c1917 100%)" }}
@@ -531,8 +526,6 @@ export default function SlotMachineGame() {
               {winningLines.map((wl, i) => {
                 const lineDef = PAYLINES.find(p => p.name === wl.name);
                 const labels: Record<string, string> = {
-                  row_top: "Baris Atas", row_mid: "Baris Tengah", row_bot: "Baris Bawah",
-                  diag_down: "Diagonal ↘", diag_up: "Diagonal ↗",
                   col_left: "Kolom Kiri", col_mid: "Kolom Tengah", col_right: "Kolom Kanan",
                 };
                 return (
