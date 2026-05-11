@@ -179,6 +179,7 @@ const GAME_COMPONENTS: Record<string, React.ComponentType> = {
   chicken: CrossyChickenGame,
   spin: SpinWinGame,
   balloon: BalloonPopGame,
+  ...Object.fromEntries(MEGA_GAMES.map((g) => [g.mode, makeMegaComponent(g)])),
 };
 
 export default function GameTab() {
