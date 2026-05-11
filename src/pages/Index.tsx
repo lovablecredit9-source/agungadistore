@@ -107,6 +107,7 @@ interface UserBalance {
   phone: string;
   email?: string | null;
   balance: number;
+  bonus_balance?: number | null;
 }
 
 interface BalanceTransaction {
@@ -597,6 +598,21 @@ const Index = () => {
     return localStorage.getItem("balance_visitor_id") || visitorId;
   }, [userBalance?.visitor_id, visitorId]);
   const { amount: gameBalanceAmount } = useGameBalance(activeBalanceVisitorId);
+  const spendableStoreBalance = (userBalance?.balance || 0) + gameBalanceAmount;
+
+  function formatPurchaseError(raw?: string | null, totalPrice?: number) {
+    const message = raw || "Pembelian gagal diproses";
+    if (/PIN belum dibuat/i.test(message)) return "PIN belum dibuat. Buat PIN terlebih dahulu di menu Saldo.";
+    if (/INSUFFICIENT_BALANCE|Saldo tidak cukup|insufficient/i.test(message)) {
+      const available = spendableStoreBalance;
+      const shortage = Math.max(0, (totalPrice || 0) - available);
+      return shortage > 0
+        ? `Saldo tidak cukup. Kurang ${formatPrice(shortage)} — top up dulu atau gunakan Saldo IN jika ada.`
+        : "Saldo tidak cukup. Top up dulu atau gunakan Saldo IN jika ada.";
+    }
+    if (/FunctionsHttpError|Edge Function|non-2xx|returned/i.test(message)) return "Pembelian gagal. Cek saldo/PIN lalu coba lagi.";
+    return message;
+  }
 
   async function fetchNotifications(targetVisitorId = activeBalanceVisitorId) {
     const { data } = await (supabase as any).rpc("get_my_notifications", {
@@ -1072,7 +1088,9 @@ const Index = () => {
       setShowPinVerify(true);
       setShowBuySaldo(false);
     } else {
-      buyWithSaldo(product, quantity, dc);
+      toast({ title: "PIN belum dibuat", description: "Buat PIN terlebih dahulu di menu Saldo sebelum membeli.", variant: "destructive" });
+      setShowBuySaldo(false);
+      setShowPinSetup(true);
     }
   }
 
@@ -1093,15 +1111,17 @@ const Index = () => {
   async function buyWithSaldo(product: Product, quantity = 1, voucherCode = "", pin?: string) {
     const unitPrice = getWholesalePrice(product.id, quantity, product.price);
     const totalPrice = unitPrice * quantity;
-    if (!userBalance || userBalance.balance < totalPrice) {
-      toast({ title: "Saldo tidak cukup", variant: "destructive" }); return;
+    const availableBalance = (userBalance?.balance || 0) + gameBalanceAmount;
+    if (!userBalance || availableBalance < totalPrice) {
+      const shortage = Math.max(0, totalPrice - availableBalance);
+      toast({ title: "Saldo tidak cukup", description: `Kurang ${formatPrice(shortage)}. Top up dulu atau gunakan Saldo IN jika ada.`, variant: "destructive" }); return;
     }
     const { data, error } = await supabase.functions.invoke("purchase-with-balance", {
       body: { visitorId: activeBalanceVisitorId, productId: product.id, quantity, discountCode: voucherCode || undefined, pin },
     });
 
     if (error || data?.error) {
-      toast({ title: data?.error || "Pembelian gagal diproses", variant: "destructive" }); return;
+      toast({ title: "Pembelian gagal", description: formatPurchaseError(data?.error || error?.message, totalPrice), variant: "destructive" }); return;
     }
 
     const purchaseData = data as PurchasedVoucher;
