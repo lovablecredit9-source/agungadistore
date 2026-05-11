@@ -50,11 +50,11 @@ function spinGrid3x3(tier: Tier, luckMultiplier = 1): string[] {
   const grid: string[] = [];
   for (let i = 0; i < 9; i++) grid.push(spinReel(tier, luckMultiplier));
 
-  // Bias aktif mulai x2: peluang baris tengah jadi 3-sama
+  // Bias aktif mulai x2: peluang kolom tengah jadi 3-sama
   const matchProb = Math.min(0.7, Math.max(0, (luckMultiplier - 1) * 0.08));
   if (Math.random() < matchProb) {
-    grid[4] = grid[3];
-    grid[5] = grid[3];
+    grid[4] = grid[1];
+    grid[7] = grid[1];
   }
   return grid;
 }
