@@ -708,6 +708,7 @@ const Index = () => {
   }, []);
 
   useEffect(() => {
+    setHasPin(false);
     fetchNotifications();
     fetchDeposits();
     checkPinStatus();
@@ -4046,6 +4047,7 @@ const Index = () => {
                 currentUser={null}
                 onLogin={(user) => {
                   localStorage.setItem("balance_visitor_id", user.visitor_id);
+                  setHasPin(false);
                   setUserBalance(user as any);
                   setProfileUsername(user.username);
                   setProfilePhone(user.phone);
@@ -4158,6 +4160,7 @@ const Index = () => {
                   currentUser={userBalance}
                   onLogin={(user) => {
                     localStorage.setItem("balance_visitor_id", user.visitor_id);
+                    setHasPin(false);
                     setUserBalance(user as any);
                     setProfileUsername(user.username);
                     setProfilePhone(user.phone);
