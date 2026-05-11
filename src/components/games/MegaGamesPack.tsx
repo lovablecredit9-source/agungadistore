@@ -4,7 +4,7 @@
  */
 import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { Button } from "@/components/ui/button";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { Trophy, Timer, RotateCcw, Sparkles } from "lucide-react";
 
 // ============ Shared UI ============
