@@ -59,12 +59,9 @@ function spinGrid3x3(tier: Tier, luckMultiplier = 1): string[] {
   return grid;
 }
 
-// 8 payline pada index grid 0..8 (baris 0:[0,1,2], baris 1:[3,4,5], baris 2:[6,7,8])
-// Hanya 3 cabang vertikal (per kolom) — tidak ada baris/diagonal
+// Hanya kolom tengah yang menang — visual tetap 3x3 grid
 const PAYLINES: { name: string; indices: number[] }[] = [
-  { name: "col_left",   indices: [0, 3, 6] },
   { name: "col_mid",    indices: [1, 4, 7] },
-  { name: "col_right",  indices: [2, 5, 8] },
 ];
 
 // Ranking nilai payout untuk pilih garis menang terbaik
@@ -321,7 +318,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Hitung hasil spin: 3x3 grid + cek 8 payline, ambil hadiah terbaik
+    // Hitung hasil spin: 3x3 grid + cek kolom tengah saja
     const luck = await getActiveLuck(visitorId);
     const grid = spinGrid3x3(tier, luck);
 

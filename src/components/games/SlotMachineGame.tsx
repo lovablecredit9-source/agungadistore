@@ -211,11 +211,9 @@ const TIER_POINT_REWARDS: Record<Tier, number> = {
   hemat: 5, sedang: 10, besar: 16, mega: 28, ultra: 40, sultan: 60, raja: 90, dewa: 140, legenda: 250, maha: 400,
 };
 
-// 3 cabang vertikal (per kolom) — sinkron dengan server
+// Hanya kolom tengah yang menang — visual tetap 3x3 grid
 const PAYLINES: { name: string; indices: number[]; color: string }[] = [
-  { name: "col_left",  indices: [0, 3, 6], color: "#34d399" },
   { name: "col_mid",   indices: [1, 4, 7], color: "#f472b6" },
-  { name: "col_right", indices: [2, 5, 8], color: "#fde047" },
 ];
 
 export default function SlotMachineGame() {
@@ -235,12 +233,11 @@ export default function SlotMachineGame() {
 
   const randomGrid = (): SymId[] => Array.from({ length: 9 }, () => randomSym());
 
-  // Cek payline klien (untuk mode latihan)
+  // Cek payline klien — hanya kolom tengah
   const findBestLineLocal = (g: SymId[]) => {
-    for (const line of PAYLINES) {
-      const a = g[line.indices[0]], b = g[line.indices[1]], c = g[line.indices[2]];
-      if (a === b && b === c) return line;
-    }
+    const line = PAYLINES[0]; // col_mid
+    const a = g[line.indices[0]], b = g[line.indices[1]], c = g[line.indices[2]];
+    if (a === b && b === c) return line;
     return null;
   };
 
@@ -264,8 +261,8 @@ export default function SlotMachineGame() {
       if (win) {
         const tierRewards = TIER_REWARDS[tier];
         const pick = tierRewards[Math.floor(Math.random() * tierRewards.length)];
-        // Pilih random payline dan paksa simbol pick.sym di sana
-        const line = PAYLINES[Math.floor(Math.random() * PAYLINES.length)];
+        // Paksa simbol pick.sym di kolom tengah (col_mid: indices 1,4,7)
+        const line = PAYLINES[0]; // col_mid
         line.indices.forEach(i => { finalGrid[i] = pick.sym; });
         payout = { type: "simulasi", label: `LATIHAN: ${pick.reward} (simulasi, tidak masuk akun)` };
         setWinningLines([{ name: line.name, indices: line.indices }]);
@@ -343,7 +340,7 @@ export default function SlotMachineGame() {
       <ServerLuckCard visitorId={visitorId} />
 
       <Card className={`p-4 bg-gradient-to-br ${tierInfo.gradient} text-white border-none text-center`}>
-        <h3 className="font-extrabold text-lg">🎰 Slot Machine 3×3 • 3 Cabang Vertikal</h3>
+        <h3 className="font-extrabold text-lg">🎰 Slot Machine 3×3 • Kolom Tengah</h3>
         <p className="text-xs opacity-90 mt-1">Tier {tierInfo.label} • {tierInfo.desc}</p>
       </Card>
 
@@ -526,7 +523,7 @@ export default function SlotMachineGame() {
               {winningLines.map((wl, i) => {
                 const lineDef = PAYLINES.find(p => p.name === wl.name);
                 const labels: Record<string, string> = {
-                  col_left: "Kolom Kiri", col_mid: "Kolom Tengah", col_right: "Kolom Kanan",
+                  col_mid: "Kolom Tengah",
                 };
                 return (
                   <span key={i} className="text-[9px] font-bold px-1.5 py-0.5 rounded-full border" style={{ color: lineDef?.color, borderColor: `${lineDef?.color}60`, background: `${lineDef?.color}15` }}>
