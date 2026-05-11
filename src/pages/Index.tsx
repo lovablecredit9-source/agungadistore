@@ -85,7 +85,7 @@ import PlayfulHero3D from "@/components/PlayfulHero3D";
 import BalanceAuth from "@/components/BalanceAuth";
 import GameTab from "@/components/GameTab";
 import PlusTab from "@/components/PlusTab";
-import { useGameBalance } from "@/components/games/GameBalance";
+import { triggerGameBalanceRefresh, useGameBalance } from "@/components/games/GameBalance";
 import LiveClock from "@/components/LiveClock";
 import LoginGate from "@/components/LoginGate";
 import WhatsAppChat from "@/components/WhatsAppChat";
@@ -1135,6 +1135,7 @@ const Index = () => {
     setDiscountCode("");
     setDiscountInfo(null);
     setPurchaseSuccess(purchaseData);
+    triggerGameBalanceRefresh();
     fetchUserBalance();
     const codes = purchaseData.tokens.map(t => t.token_code).join(", ");
     createNotification("Pembelian Berhasil 🛒", `Kamu berhasil membeli ${quantity}x ${product.title}. Kode: ${codes}`, "purchase", product.id);
