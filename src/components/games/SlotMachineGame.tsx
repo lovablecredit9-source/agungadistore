@@ -523,7 +523,7 @@ export default function SlotMachineGame() {
               {winningLines.map((wl, i) => {
                 const lineDef = PAYLINES.find(p => p.name === wl.name);
                 const labels: Record<string, string> = {
-                  col_left: "Kolom Kiri", col_mid: "Kolom Tengah", col_right: "Kolom Kanan",
+                  col_mid: "Kolom Tengah",
                 };
                 return (
                   <span key={i} className="text-[9px] font-bold px-1.5 py-0.5 rounded-full border" style={{ color: lineDef?.color, borderColor: `${lineDef?.color}60`, background: `${lineDef?.color}15` }}>
