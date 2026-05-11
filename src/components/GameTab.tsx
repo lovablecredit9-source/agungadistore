@@ -92,9 +92,9 @@ import gameFishImg from "@/assets/game-fish.png";
 import gameChickenImg from "@/assets/game-chicken.png";
 import gameWheelImg from "@/assets/game-wheel.png";
 import gameBalloonImg from "@/assets/game-balloon.png";
-type GameMode = "menu" | "suit" | "tebak" | "tebak_gambar" | "teka_teki" | "tebak_angka" | "tebak_barang" | "ular_tangga" | "ludo" | "kuis" | "teka_teki_v2" | "pilihan_ganda" | "scratch" | "slot" | "match3" | "lucky_draw" | "mine" | "tebak_lagu" | "memory" | "snake" | "g2048" | "plinko" | "tetris" | "bubble" | "flappy" | "brick" | "catch" | "reflex" | "mole" | "beat" | "jump" | "piano" | "tower" | "hoop" | "racer" | "ninja" | "simon" | "fish" | "chicken" | "spin" | "balloon";
+type GameMode = string;
 
-const GAMES: { mode: GameMode; title: string; desc: string; image: string; gradient: string }[] = [
+const GAMES: { mode: GameMode; title: string; desc: string; image?: string; emoji?: string; gradient: string }[] = [
   { mode: "piano", title: "Piano Tiles", desc: "Tap tile hitam, jangan miss 🎹", image: gamePianoImg, gradient: "from-violet-500 to-fuchsia-700" },
   { mode: "tower", title: "Block Stacker", desc: "Susun balok setinggi mungkin 🧱", image: gameTowerImg, gradient: "from-orange-500 to-rose-700" },
   { mode: "hoop", title: "Hoop Shot", desc: "Lempar bola masuk ring 🏀", image: gameHoopImg, gradient: "from-amber-500 to-red-600" },
