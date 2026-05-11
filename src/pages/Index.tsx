@@ -5632,7 +5632,7 @@ const Index = () => {
                     const effPrice = getEffectivePrice(selectedProduct.id, selectedProduct.price, 1).price;
                     return <>
                       <button
-                        disabled={!userBalance || userBalance.balance < effPrice || selectedProduct.stock <= 0}
+                        disabled={!userBalance || spendableStoreBalance < effPrice || selectedProduct.stock <= 0}
                         onClick={() => { setBuyProduct(selectedProduct); setBuyQuantity(1); setShowBuySaldo(true); }}
                         className="group relative overflow-hidden h-14 rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 disabled:opacity-40 disabled:pointer-events-none active:scale-95 transition-all flex flex-col items-center justify-center gap-0.5 shadow-lg shadow-orange-500/30">
                         <div className="absolute inset-0 bg-gradient-to-br from-white/0 to-white/0 group-hover:from-white/20 group-hover:to-transparent transition-colors" />
@@ -5650,8 +5650,8 @@ const Index = () => {
                     </>;
                   })()}
                 </div>
-                {userBalance && userBalance.balance < getEffectivePrice(selectedProduct.id, selectedProduct.price, 1).price && (
-                  <p className="text-[10px] text-destructive text-center">Saldo tidak cukup. <button className="underline text-primary" onClick={() => { openProduct(null); setTab("saldo"); }}>Deposit saldo →</button></p>
+                {userBalance && spendableStoreBalance < getEffectivePrice(selectedProduct.id, selectedProduct.price, 1).price && (
+                  <p className="text-[10px] text-destructive text-center">Saldo tidak cukup. Kurang {formatPrice(getEffectivePrice(selectedProduct.id, selectedProduct.price, 1).price - spendableStoreBalance)}. <button className="underline text-primary" onClick={() => { openProduct(null); setTab("saldo"); }}>Top up →</button></p>
                 )}
                 {!userBalance && (
                   <p className="text-[10px] text-muted-foreground text-center">Buat akun saldo untuk beli pakai saldo. <button className="underline text-primary" onClick={() => { openProduct(null); setTab("saldo"); }}>Daftar →</button></p>
