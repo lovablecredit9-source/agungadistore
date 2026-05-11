@@ -6,6 +6,7 @@ import {
 import CountUp from "@/components/CountUp";
 import { motion } from "framer-motion";
 import { BanBanner } from "@/components/BanBanner";
+import BalanceAnalytics from "@/components/BalanceAnalytics";
 
 interface BalanceTx {
   id: string;
@@ -224,6 +225,9 @@ export default function WalletDashboard({
           )}
         </div>
       </motion.div>
+
+      {/* === Analitik Saldo Lanjutan === */}
+      <BalanceAnalytics balance={balance} transactions={transactions} formatPrice={formatPrice} />
 
       {/* === Voucher Aktif - Aurora Premium === */}
       {activeVouchers.length > 0 && (
