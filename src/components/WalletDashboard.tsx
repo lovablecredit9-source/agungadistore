@@ -226,6 +226,9 @@ export default function WalletDashboard({
         </div>
       </motion.div>
 
+      {/* === Analitik Saldo Lanjutan === */}
+      <BalanceAnalytics balance={balance} transactions={transactions} formatPrice={formatPrice} />
+
       {/* === Voucher Aktif - Aurora Premium === */}
       {activeVouchers.length > 0 && (
         <motion.div
