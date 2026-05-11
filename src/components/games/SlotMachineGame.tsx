@@ -233,12 +233,11 @@ export default function SlotMachineGame() {
 
   const randomGrid = (): SymId[] => Array.from({ length: 9 }, () => randomSym());
 
-  // Cek payline klien (untuk mode latihan)
+  // Cek payline klien — hanya kolom tengah
   const findBestLineLocal = (g: SymId[]) => {
-    for (const line of PAYLINES) {
-      const a = g[line.indices[0]], b = g[line.indices[1]], c = g[line.indices[2]];
-      if (a === b && b === c) return line;
-    }
+    const line = PAYLINES[0]; // col_mid
+    const a = g[line.indices[0]], b = g[line.indices[1]], c = g[line.indices[2]];
+    if (a === b && b === c) return line;
     return null;
   };
 
@@ -341,7 +340,7 @@ export default function SlotMachineGame() {
       <ServerLuckCard visitorId={visitorId} />
 
       <Card className={`p-4 bg-gradient-to-br ${tierInfo.gradient} text-white border-none text-center`}>
-        <h3 className="font-extrabold text-lg">🎰 Slot Machine 3×3 • 3 Cabang Vertikal</h3>
+        <h3 className="font-extrabold text-lg">🎰 Slot Machine 3×3 • Kolom Tengah</h3>
         <p className="text-xs opacity-90 mt-1">Tier {tierInfo.label} • {tierInfo.desc}</p>
       </Card>
 
