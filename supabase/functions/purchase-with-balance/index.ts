@@ -282,6 +282,7 @@ Deno.serve(async (request) => {
     if (transactionError) {
       // Rollback balance
       await admin.from("user_balances").update({ balance: balanceRow.balance }).eq("id", balanceRow.id);
+      if (payFromGame > 0 && gameBal) await admin.from("game_balance").update({ amount: gameAmount, total_spent: Number(gameBal.total_spent || 0) }).eq("id", gameBal.id);
       return Response.json({ error: "Gagal mencatat pembelian" }, { status: 500, headers: corsHeaders });
     }
 
@@ -338,6 +339,9 @@ Deno.serve(async (request) => {
         total_price: totalPrice,
         discount_amount: discountAmount,
         balance_remaining: nextBalance,
+        saldo_in_remaining: nextGameBalance,
+        paid_from_saldo_in: payFromGame,
+        paid_from_main_balance: payFromMain,
       },
       { headers: corsHeaders },
     );
