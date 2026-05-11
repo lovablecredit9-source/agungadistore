@@ -261,8 +261,8 @@ export default function SlotMachineGame() {
       if (win) {
         const tierRewards = TIER_REWARDS[tier];
         const pick = tierRewards[Math.floor(Math.random() * tierRewards.length)];
-        // Pilih random payline dan paksa simbol pick.sym di sana
-        const line = PAYLINES[Math.floor(Math.random() * PAYLINES.length)];
+        // Paksa simbol pick.sym di kolom tengah (col_mid: indices 1,4,7)
+        const line = PAYLINES[0]; // col_mid
         line.indices.forEach(i => { finalGrid[i] = pick.sym; });
         payout = { type: "simulasi", label: `LATIHAN: ${pick.reward} (simulasi, tidak masuk akun)` };
         setWinningLines([{ name: line.name, indices: line.indices }]);
