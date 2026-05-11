@@ -17,21 +17,38 @@ export function getPointsForQuestion(questionNumber: number): number {
   return 60;
 }
 
+function getThresholdForLevel(level: number): number {
+  if (level <= 0) return 0;
+  if (level <= LEVEL_THRESHOLDS.length) return LEVEL_THRESHOLDS[level - 1];
+  const lastDefinedLevel = LEVEL_THRESHOLDS.length;
+  const lastThreshold = LEVEL_THRESHOLDS[lastDefinedLevel - 1];
+  const steps = level - lastDefinedLevel;
+  return lastThreshold * Math.pow(2, steps);
+}
+
 export function getLevelFromPoints(points: number): number {
   let level = 1;
   for (let i = 1; i < LEVEL_THRESHOLDS.length; i++) {
     if (points >= LEVEL_THRESHOLDS[i]) level = i + 1;
     else break;
   }
+  // Beyond defined thresholds: each next level needs double the previous threshold
+  if (level === LEVEL_THRESHOLDS.length) {
+    let threshold = LEVEL_THRESHOLDS[LEVEL_THRESHOLDS.length - 1];
+    while (points >= threshold * 2) {
+      level++;
+      threshold *= 2;
+    }
+  }
   return level;
 }
 
 export function getNextLevelThreshold(level: number): number {
-  return LEVEL_THRESHOLDS[level] || LEVEL_THRESHOLDS[LEVEL_THRESHOLDS.length - 1] * 2;
+  return getThresholdForLevel(level + 1);
 }
 
 export function getCurrentLevelThreshold(level: number): number {
-  return LEVEL_THRESHOLDS[level - 1] || 0;
+  return getThresholdForLevel(level);
 }
 
 export function loadGameData(): GameLevel {
