@@ -85,7 +85,7 @@ import PlayfulHero3D from "@/components/PlayfulHero3D";
 import BalanceAuth from "@/components/BalanceAuth";
 import GameTab from "@/components/GameTab";
 import PlusTab from "@/components/PlusTab";
-import { useGameBalance } from "@/components/games/GameBalance";
+import { triggerGameBalanceRefresh, useGameBalance } from "@/components/games/GameBalance";
 import LiveClock from "@/components/LiveClock";
 import LoginGate from "@/components/LoginGate";
 import WhatsAppChat from "@/components/WhatsAppChat";
@@ -107,6 +107,7 @@ interface UserBalance {
   phone: string;
   email?: string | null;
   balance: number;
+  bonus_balance?: number | null;
 }
 
 interface BalanceTransaction {
@@ -597,6 +598,21 @@ const Index = () => {
     return localStorage.getItem("balance_visitor_id") || visitorId;
   }, [userBalance?.visitor_id, visitorId]);
   const { amount: gameBalanceAmount } = useGameBalance(activeBalanceVisitorId);
+  const spendableStoreBalance = (userBalance?.balance || 0) + gameBalanceAmount;
+
+  function formatPurchaseError(raw?: string | null, totalPrice?: number) {
+    const message = raw || "Pembelian gagal diproses";
+    if (/PIN belum dibuat/i.test(message)) return "PIN belum dibuat. Buat PIN terlebih dahulu di menu Saldo.";
+    if (/INSUFFICIENT_BALANCE|Saldo tidak cukup|insufficient/i.test(message)) {
+      const available = spendableStoreBalance;
+      const shortage = Math.max(0, (totalPrice || 0) - available);
+      return shortage > 0
+        ? `Saldo tidak cukup. Kurang ${formatPrice(shortage)} — top up dulu atau gunakan Saldo IN jika ada.`
+        : "Saldo tidak cukup. Top up dulu atau gunakan Saldo IN jika ada.";
+    }
+    if (/FunctionsHttpError|Edge Function|non-2xx|returned/i.test(message)) return "Pembelian gagal. Cek saldo/PIN lalu coba lagi.";
+    return message;
+  }
 
   async function fetchNotifications(targetVisitorId = activeBalanceVisitorId) {
     const { data } = await (supabase as any).rpc("get_my_notifications", {
@@ -692,6 +708,7 @@ const Index = () => {
   }, []);
 
   useEffect(() => {
+    setHasPin(false);
     fetchNotifications();
     fetchDeposits();
     checkPinStatus();
@@ -1072,7 +1089,9 @@ const Index = () => {
       setShowPinVerify(true);
       setShowBuySaldo(false);
     } else {
-      buyWithSaldo(product, quantity, dc);
+      toast({ title: "PIN belum dibuat", description: "Buat PIN terlebih dahulu di menu Saldo sebelum membeli.", variant: "destructive" });
+      setShowBuySaldo(false);
+      setShowPinSetup(true);
     }
   }
 
@@ -1082,7 +1101,14 @@ const Index = () => {
       body: { action: "verify", visitorId: activeBalanceVisitorId, pin: pinVerifyInput },
     });
     if (error || data?.error || !data?.valid) {
-      toast({ title: "PIN salah", variant: "destructive" }); return;
+      if (data?.error && /PIN belum dibuat/i.test(data.error)) {
+        setShowPinVerify(false);
+        setShowPinSetup(true);
+        toast({ title: "PIN belum dibuat", description: "Buat PIN terlebih dahulu di menu Saldo sebelum membeli.", variant: "destructive" });
+      } else {
+        toast({ title: data?.error || "PIN salah", variant: "destructive" });
+      }
+      return;
     }
     setShowPinVerify(false);
     buyWithSaldo(pendingPurchase.product, pendingPurchase.quantity, pendingPurchase.discountCode, pinVerifyInput);
@@ -1093,15 +1119,17 @@ const Index = () => {
   async function buyWithSaldo(product: Product, quantity = 1, voucherCode = "", pin?: string) {
     const unitPrice = getWholesalePrice(product.id, quantity, product.price);
     const totalPrice = unitPrice * quantity;
-    if (!userBalance || userBalance.balance < totalPrice) {
-      toast({ title: "Saldo tidak cukup", variant: "destructive" }); return;
+    const availableBalance = (userBalance?.balance || 0) + gameBalanceAmount;
+    if (!userBalance || availableBalance < totalPrice) {
+      const shortage = Math.max(0, totalPrice - availableBalance);
+      toast({ title: "Saldo tidak cukup", description: `Kurang ${formatPrice(shortage)}. Top up dulu atau gunakan Saldo IN jika ada.`, variant: "destructive" }); return;
     }
     const { data, error } = await supabase.functions.invoke("purchase-with-balance", {
       body: { visitorId: activeBalanceVisitorId, productId: product.id, quantity, discountCode: voucherCode || undefined, pin },
     });
 
     if (error || data?.error) {
-      toast({ title: data?.error || "Pembelian gagal diproses", variant: "destructive" }); return;
+      toast({ title: "Pembelian gagal", description: formatPurchaseError(data?.error || error?.message, totalPrice), variant: "destructive" }); return;
     }
 
     const purchaseData = data as PurchasedVoucher;
@@ -1114,6 +1142,7 @@ const Index = () => {
     setDiscountCode("");
     setDiscountInfo(null);
     setPurchaseSuccess(purchaseData);
+    triggerGameBalanceRefresh();
     fetchUserBalance();
     const codes = purchaseData.tokens.map(t => t.token_code).join(", ");
     createNotification("Pembelian Berhasil 🛒", `Kamu berhasil membeli ${quantity}x ${product.title}. Kode: ${codes}`, "purchase", product.id);
@@ -4026,6 +4055,7 @@ const Index = () => {
                 currentUser={null}
                 onLogin={(user) => {
                   localStorage.setItem("balance_visitor_id", user.visitor_id);
+                  setHasPin(false);
                   setUserBalance(user as any);
                   setProfileUsername(user.username);
                   setProfilePhone(user.phone);
@@ -4138,6 +4168,7 @@ const Index = () => {
                   currentUser={userBalance}
                   onLogin={(user) => {
                     localStorage.setItem("balance_visitor_id", user.visitor_id);
+                    setHasPin(false);
                     setUserBalance(user as any);
                     setProfileUsername(user.username);
                     setProfilePhone(user.phone);
@@ -4823,7 +4854,7 @@ const Index = () => {
 
         <div className={tab === "game" ? "" : "hidden"}>
           {userBalance ? (
-            <GameTab />
+            <GameTab key={userBalance.visitor_id} />
           ) : (
             <LoginGate
               title="Game AI"
@@ -5608,7 +5639,7 @@ const Index = () => {
                     const effPrice = getEffectivePrice(selectedProduct.id, selectedProduct.price, 1).price;
                     return <>
                       <button
-                        disabled={!userBalance || userBalance.balance < effPrice || selectedProduct.stock <= 0}
+                        disabled={!userBalance || spendableStoreBalance < effPrice || selectedProduct.stock <= 0}
                         onClick={() => { setBuyProduct(selectedProduct); setBuyQuantity(1); setShowBuySaldo(true); }}
                         className="group relative overflow-hidden h-14 rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 disabled:opacity-40 disabled:pointer-events-none active:scale-95 transition-all flex flex-col items-center justify-center gap-0.5 shadow-lg shadow-orange-500/30">
                         <div className="absolute inset-0 bg-gradient-to-br from-white/0 to-white/0 group-hover:from-white/20 group-hover:to-transparent transition-colors" />
@@ -5626,8 +5657,8 @@ const Index = () => {
                     </>;
                   })()}
                 </div>
-                {userBalance && userBalance.balance < getEffectivePrice(selectedProduct.id, selectedProduct.price, 1).price && (
-                  <p className="text-[10px] text-destructive text-center">Saldo tidak cukup. <button className="underline text-primary" onClick={() => { openProduct(null); setTab("saldo"); }}>Deposit saldo →</button></p>
+                {userBalance && spendableStoreBalance < getEffectivePrice(selectedProduct.id, selectedProduct.price, 1).price && (
+                  <p className="text-[10px] text-destructive text-center">Saldo tidak cukup. Kurang {formatPrice(getEffectivePrice(selectedProduct.id, selectedProduct.price, 1).price - spendableStoreBalance)}. <button className="underline text-primary" onClick={() => { openProduct(null); setTab("saldo"); }}>Top up →</button></p>
                 )}
                 {!userBalance && (
                   <p className="text-[10px] text-muted-foreground text-center">Buat akun saldo untuk beli pakai saldo. <button className="underline text-primary" onClick={() => { openProduct(null); setTab("saldo"); }}>Daftar →</button></p>
@@ -6849,6 +6880,9 @@ const Index = () => {
         const basePrice = unitPrice * buyQuantity;
         const discount = discountInfo ? Math.min(discountInfo.amount, basePrice) : 0;
         const totalPrice = basePrice - discount;
+        const availableStoreBalance = (userBalance?.balance || 0) + gameBalanceAmount;
+        const saldoInUsed = Math.min(gameBalanceAmount, totalPrice);
+        const mainUsed = totalPrice - saldoInUsed;
         return (
         <div className="fixed inset-0 z-[80] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => { setShowBuySaldo(false); setBuyProduct(null); setBuyQuantity(1); setDiscountCode(""); setDiscountInfo(null); }}>
           <div className="bg-card w-full max-w-sm rounded-2xl p-5 space-y-4 animate-in zoom-in-95 duration-200 max-h-[85vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
@@ -6900,18 +6934,21 @@ const Index = () => {
               )}
             </div>
             <div className="bg-muted/50 rounded-lg p-3 space-y-1 text-sm">
-              <div className="flex justify-between"><span className="text-muted-foreground">Saldo saat ini</span><span className="font-bold">{formatPrice(userBalance?.balance || 0)}</span></div>
+              <div className="flex justify-between"><span className="text-muted-foreground">Saldo utama</span><span className="font-bold">{formatPrice(userBalance?.balance || 0)}</span></div>
+              <div className="flex justify-between"><span className="text-muted-foreground">Saldo IN</span><span className="font-bold text-amber-500">{formatPrice(gameBalanceAmount)}</span></div>
               <div className="flex justify-between"><span className="text-muted-foreground">Subtotal ({buyQuantity}x)</span><span className="font-bold">-{formatPrice(basePrice)}</span></div>
               {discount > 0 && (
                 <div className="flex justify-between"><span className="text-accent">Diskon voucher</span><span className="font-bold text-accent">+{formatPrice(discount)}</span></div>
               )}
+              {saldoInUsed > 0 && <div className="flex justify-between"><span className="text-amber-500">Dipakai dari Saldo IN</span><span className="font-bold text-amber-500">-{formatPrice(saldoInUsed)}</span></div>}
+              {mainUsed > 0 && <div className="flex justify-between"><span className="text-muted-foreground">Dipakai dari saldo utama</span><span className="font-bold">-{formatPrice(mainUsed)}</span></div>}
               <div className="flex justify-between border-t border-border pt-1"><span className="text-muted-foreground">Total bayar</span><span className="font-bold text-destructive">-{formatPrice(totalPrice)}</span></div>
-              <div className="flex justify-between"><span className="text-muted-foreground">Sisa saldo</span><span className={`font-bold ${(userBalance?.balance || 0) >= totalPrice ? "text-primary" : "text-destructive"}`}>{formatPrice((userBalance?.balance || 0) - totalPrice)}</span></div>
+              <div className="flex justify-between"><span className="text-muted-foreground">Sisa total saldo</span><span className={`font-bold ${availableStoreBalance >= totalPrice ? "text-primary" : "text-destructive"}`}>{formatPrice(availableStoreBalance - totalPrice)}</span></div>
             </div>
             {hasPin && <p className="text-xs text-muted-foreground text-center flex items-center justify-center gap-1"><Lock className="w-3 h-3" /> PIN akan diminta untuk konfirmasi</p>}
             <p className="text-xs text-muted-foreground text-center">{buyQuantity} token akun akan otomatis diberikan dari stok</p>
             <Button className="w-full h-11 bg-gradient-to-r from-primary to-accent text-primary-foreground font-bold gap-2"
-              disabled={!userBalance || userBalance.balance < totalPrice}
+              disabled={!userBalance || availableStoreBalance < totalPrice}
               onClick={() => attemptBuy(buyProduct, buyQuantity)}>
               <Wallet className="w-5 h-5" /> Beli {buyQuantity}x - {formatPrice(totalPrice)}
             </Button>
@@ -7406,7 +7443,7 @@ const Index = () => {
                   <div className="bg-muted/50 rounded-lg p-3 space-y-1 text-sm">
                     <div className="flex justify-between"><span className="text-muted-foreground">Total item</span><span className="font-bold">{cartCount} pcs</span></div>
                     <div className="flex justify-between border-t border-border pt-1"><span className="font-bold">Total harga</span><span className="font-extrabold text-primary">{formatPrice(cartTotal)}</span></div>
-                    {userBalance && <div className="flex justify-between"><span className="text-muted-foreground">Saldo</span><span className={`font-bold ${userBalance.balance >= cartTotal ? "text-accent" : "text-destructive"}`}>{formatPrice(userBalance.balance)}</span></div>}
+                    {userBalance && <div className="flex justify-between"><span className="text-muted-foreground">Saldo + IN</span><span className={`font-bold ${spendableStoreBalance >= cartTotal ? "text-accent" : "text-destructive"}`}>{formatPrice(spendableStoreBalance)}</span></div>}
                   </div>
                   <p className="text-[10px] text-muted-foreground text-center">Pilih item untuk checkout langsung dengan saldo</p>
                   {cart.map(item => {
@@ -7415,7 +7452,7 @@ const Index = () => {
                     const itemTotal = wp * item.quantity;
                     return (
                     <Button key={item.product.id} className="w-full bg-gradient-to-r from-primary to-accent text-primary-foreground font-bold gap-2 text-xs"
-                      disabled={!userBalance || userBalance.balance < itemTotal || item.product.stock < item.quantity}
+                      disabled={!userBalance || spendableStoreBalance < itemTotal || item.product.stock < item.quantity}
                       onClick={() => { setBuyProduct(item.product); setBuyQuantity(item.quantity); setShowBuySaldo(true); setShowCart(false); }}>
                       <Wallet className="w-4 h-4" /> Beli {item.quantity}x {item.product.title} - {formatPrice(itemTotal)}
                     </Button>

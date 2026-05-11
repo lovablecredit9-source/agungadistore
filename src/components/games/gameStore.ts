@@ -11,6 +11,11 @@ const STORAGE_KEY = "game_player_data";
 
 const LEVEL_THRESHOLDS = [0, 90, 250, 500, 1000, 2000, 4000, 8000];
 
+function getGameDataKey(): string {
+  const vid = getActiveVisitorId();
+  return vid ? `${STORAGE_KEY}_${vid}` : STORAGE_KEY;
+}
+
 export function getPointsForQuestion(questionNumber: number): number {
   if (questionNumber <= 1) return 20;
   if (questionNumber <= 3) return 30;
@@ -53,14 +58,14 @@ export function getCurrentLevelThreshold(level: number): number {
 
 export function loadGameData(): GameLevel {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = localStorage.getItem(getGameDataKey());
     if (raw) return JSON.parse(raw);
   } catch {}
   return { level: 1, totalPoints: 0, gamesPlayed: 0, gamesWon: 0 };
 }
 
 export function saveGameData(data: GameLevel) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  localStorage.setItem(getGameDataKey(), JSON.stringify(data));
 }
 
 export function addPoints(points: number): GameLevel {
