@@ -33,6 +33,11 @@ import ColorReflexGame from "@/components/games/ColorReflexGame";
 import WhackAMoleGame from "@/components/games/WhackAMoleGame";
 import TapBeatGame from "@/components/games/TapBeatGame";
 import SkyJumperGame from "@/components/games/SkyJumperGame";
+import SpaceShooterGame from "@/components/games/SpaceShooterGame";
+import HelicopterCaveGame from "@/components/games/HelicopterCaveGame";
+import StackTowerGame from "@/components/games/StackTowerGame";
+import PongClassicGame from "@/components/games/PongClassicGame";
+import FroggerMiniGame from "@/components/games/FroggerMiniGame";
 import {
   PianoTilesGame, BlockStackerGame, HoopShotGame, LaneRacerGame, NinjaSliceGame,
   SimonSaysGame, FishingGame, CrossyChickenGame, SpinWinGame, BalloonPopGame,
@@ -91,9 +96,19 @@ import gameFishImg from "@/assets/game-fish.png";
 import gameChickenImg from "@/assets/game-chicken.png";
 import gameWheelImg from "@/assets/game-wheel.png";
 import gameBalloonImg from "@/assets/game-balloon.png";
-type GameMode = "menu" | "suit" | "tebak" | "tebak_gambar" | "teka_teki" | "tebak_angka" | "tebak_barang" | "ular_tangga" | "ludo" | "kuis" | "teka_teki_v2" | "pilihan_ganda" | "scratch" | "slot" | "match3" | "lucky_draw" | "mine" | "tebak_lagu" | "memory" | "snake" | "g2048" | "plinko" | "tetris" | "bubble" | "flappy" | "brick" | "catch" | "reflex" | "mole" | "beat" | "jump" | "piano" | "tower" | "hoop" | "racer" | "ninja" | "simon" | "fish" | "chicken" | "spin" | "balloon";
+import gameSpaceShooterImg from "@/assets/game-space-shooter.png";
+import gameHelicopterImg from "@/assets/game-helicopter.png";
+import gameStackTowerImg from "@/assets/game-stack-tower.png";
+import gamePongImg from "@/assets/game-pong.png";
+import gameFroggerImg from "@/assets/game-frogger.png";
+type GameMode = "menu" | "suit" | "tebak" | "tebak_gambar" | "teka_teki" | "tebak_angka" | "tebak_barang" | "ular_tangga" | "ludo" | "kuis" | "teka_teki_v2" | "pilihan_ganda" | "scratch" | "slot" | "match3" | "lucky_draw" | "mine" | "tebak_lagu" | "memory" | "snake" | "g2048" | "plinko" | "tetris" | "bubble" | "flappy" | "brick" | "catch" | "reflex" | "mole" | "beat" | "jump" | "piano" | "tower" | "hoop" | "racer" | "ninja" | "simon" | "fish" | "chicken" | "spin" | "balloon" | "space_shooter" | "helicopter" | "stack_tower" | "pong" | "frogger";
 
 const GAMES: { mode: GameMode; title: string; desc: string; image: string; gradient: string }[] = [
+  { mode: "space_shooter", title: "Space Shooter", desc: "Tembak alien, raih skor 🚀", image: gameSpaceShooterImg, gradient: "from-indigo-600 to-fuchsia-700" },
+  { mode: "helicopter", title: "Helicopter Cave", desc: "Tahan untuk naik, hindari gua 🚁", image: gameHelicopterImg, gradient: "from-amber-500 to-orange-700" },
+  { mode: "stack_tower", title: "Stack Tower", desc: "Tap pas waktunya, bangun tower 🧱", image: gameStackTowerImg, gradient: "from-pink-500 to-rose-600" },
+  { mode: "pong", title: "Pong Classic", desc: "Lawan AI, pertama 5 menang 🏓", image: gamePongImg, gradient: "from-cyan-500 to-blue-700" },
+  { mode: "frogger", title: "Frogger Mini", desc: "Hindari mobil, capai goal 🐸", image: gameFroggerImg, gradient: "from-emerald-500 to-green-700" },
   { mode: "piano", title: "Piano Tiles", desc: "Tap tile hitam, jangan miss 🎹", image: gamePianoImg, gradient: "from-violet-500 to-fuchsia-700" },
   { mode: "tower", title: "Block Stacker", desc: "Susun balok setinggi mungkin 🧱", image: gameTowerImg, gradient: "from-orange-500 to-rose-700" },
   { mode: "hoop", title: "Hoop Shot", desc: "Lempar bola masuk ring 🏀", image: gameHoopImg, gradient: "from-amber-500 to-red-600" },
@@ -177,6 +192,11 @@ const GAME_COMPONENTS: Record<string, React.ComponentType> = {
   chicken: CrossyChickenGame,
   spin: SpinWinGame,
   balloon: BalloonPopGame,
+  space_shooter: SpaceShooterGame,
+  helicopter: HelicopterCaveGame,
+  stack_tower: StackTowerGame,
+  pong: PongClassicGame,
+  frogger: FroggerMiniGame,
 };
 
 export default function GameTab() {
