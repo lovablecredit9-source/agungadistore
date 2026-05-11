@@ -6,6 +6,7 @@ import {
 import CountUp from "@/components/CountUp";
 import { motion } from "framer-motion";
 import { BanBanner } from "@/components/BanBanner";
+import BalanceAnalytics from "@/components/BalanceAnalytics";
 
 interface BalanceTx {
   id: string;
