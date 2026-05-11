@@ -53,14 +53,14 @@ export function getCurrentLevelThreshold(level: number): number {
 
 export function loadGameData(): GameLevel {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = localStorage.getItem(getGameDataKey());
     if (raw) return JSON.parse(raw);
   } catch {}
   return { level: 1, totalPoints: 0, gamesPlayed: 0, gamesWon: 0 };
 }
 
 export function saveGameData(data: GameLevel) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  localStorage.setItem(getGameDataKey(), JSON.stringify(data));
 }
 
 export function addPoints(points: number): GameLevel {
