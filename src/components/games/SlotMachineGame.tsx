@@ -526,8 +526,6 @@ export default function SlotMachineGame() {
               {winningLines.map((wl, i) => {
                 const lineDef = PAYLINES.find(p => p.name === wl.name);
                 const labels: Record<string, string> = {
-                  row_top: "Baris Atas", row_mid: "Baris Tengah", row_bot: "Baris Bawah",
-                  diag_down: "Diagonal ↘", diag_up: "Diagonal ↗",
                   col_left: "Kolom Kiri", col_mid: "Kolom Tengah", col_right: "Kolom Kanan",
                 };
                 return (
