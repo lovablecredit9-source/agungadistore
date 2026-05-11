@@ -135,6 +135,7 @@ const GAMES: { mode: GameMode; title: string; desc: string; image?: string; emoj
   { mode: "ludo", title: "Ludo King", desc: "Siapa duluan finish?", image: gameLudoImg, gradient: "from-pink-500 to-rose-600" },
   { mode: "pilihan_ganda", title: "Pilihan Ganda", desc: "Pilih jawaban benar!", image: gamePilihanGandaImg, gradient: "from-violet-500 to-purple-600" },
   { mode: "tebak_lagu", title: "Tebak Lagu", desc: "Tebak dari potongan lirik 🎵", image: gameTebakLaguImg, gradient: "from-pink-500 to-purple-600" },
+  ...MEGA_GAMES.map((g) => ({ mode: g.mode, title: g.title, desc: g.desc, emoji: g.emoji, gradient: g.gradient })),
 ];
 
 const GAME_COMPONENTS: Record<string, React.ComponentType> = {
