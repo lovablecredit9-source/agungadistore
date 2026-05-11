@@ -211,11 +211,9 @@ const TIER_POINT_REWARDS: Record<Tier, number> = {
   hemat: 5, sedang: 10, besar: 16, mega: 28, ultra: 40, sultan: 60, raja: 90, dewa: 140, legenda: 250, maha: 400,
 };
 
-// 3 cabang vertikal (per kolom) — sinkron dengan server
+// Hanya kolom tengah yang menang — visual tetap 3x3 grid
 const PAYLINES: { name: string; indices: number[]; color: string }[] = [
-  { name: "col_left",  indices: [0, 3, 6], color: "#34d399" },
   { name: "col_mid",   indices: [1, 4, 7], color: "#f472b6" },
-  { name: "col_right", indices: [2, 5, 8], color: "#fde047" },
 ];
 
 export default function SlotMachineGame() {
