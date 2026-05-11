@@ -357,12 +357,16 @@ export default function GameTab() {
                   {/* Icon container with glow */}
                   <div className="relative flex items-center justify-center flex-1 z-10">
                     <div className="absolute w-16 h-16 rounded-full bg-white/20 blur-xl group-hover:bg-white/40 transition-all" />
-                    <img
-                      src={game.image}
-                      alt={game.title}
-                      loading="lazy"
-                      className="relative w-14 h-14 object-contain drop-shadow-[0_4px_8px_rgba(0,0,0,0.4)] game-icon-wiggle"
-                    />
+                    {game.image ? (
+                      <img
+                        src={game.image}
+                        alt={game.title}
+                        loading="lazy"
+                        className="relative w-14 h-14 object-contain drop-shadow-[0_4px_8px_rgba(0,0,0,0.4)] game-icon-wiggle"
+                      />
+                    ) : (
+                      <span className="relative text-5xl drop-shadow-[0_4px_8px_rgba(0,0,0,0.4)] game-icon-wiggle">{game.emoji}</span>
+                    )}
                   </div>
 
                   {/* Title with gradient text */}
