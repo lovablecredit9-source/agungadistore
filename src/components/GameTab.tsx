@@ -105,7 +105,7 @@ import gameHelicopterImg from "@/assets/game-helicopter.png";
 import gameStackTowerImg from "@/assets/game-stack-tower.png";
 import gamePongImg from "@/assets/game-pong.png";
 import gameFroggerImg from "@/assets/game-frogger.png";
-type GameMode = "menu" | "suit" | "tebak" | "tebak_gambar" | "teka_teki" | "tebak_angka" | "tebak_barang" | "ular_tangga" | "ludo" | "kuis" | "teka_teki_v2" | "pilihan_ganda" | "scratch" | "slot" | "match3" | "lucky_draw" | "mine" | "tebak_lagu" | "memory" | "snake" | "g2048" | "plinko" | "tetris" | "bubble" | "flappy" | "brick" | "catch" | "reflex" | "mole" | "beat" | "jump" | "piano" | "tower" | "hoop" | "racer" | "ninja" | "simon" | "fish" | "chicken" | "spin" | "balloon" | "space_shooter" | "helicopter" | "stack_tower" | "pong" | "frogger";
+type GameMode = "menu" | "suit" | "tebak" | "tebak_gambar" | "teka_teki" | "tebak_angka" | "tebak_barang" | "ular_tangga" | "ludo" | "kuis" | "teka_teki_v2" | "pilihan_ganda" | "scratch" | "slot" | "match3" | "lucky_draw" | "mine" | "tebak_lagu" | "memory" | "snake" | "g2048" | "plinko" | "tetris" | "bubble" | "flappy" | "brick" | "catch" | "reflex" | "mole" | "beat" | "jump" | "piano" | "tower" | "hoop" | "racer" | "ninja" | "simon" | "fish" | "chicken" | "spin" | "balloon" | "space_shooter" | "helicopter" | "stack_tower" | "pong" | "frogger" | "tictactoe" | "hilo" | "numord" | "colmatch" | "aim" | "maze" | "defuse" | "coin" | "scram" | "doodle";
 
 const GAMES: { mode: GameMode; title: string; desc: string; image: string; gradient: string }[] = [
   { mode: "space_shooter", title: "Space Shooter", desc: "Tembak alien, raih skor 🚀", image: gameSpaceShooterImg, gradient: "from-indigo-600 to-fuchsia-700" },
