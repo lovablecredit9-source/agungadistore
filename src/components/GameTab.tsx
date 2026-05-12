@@ -42,6 +42,10 @@ import {
   PianoTilesGame, BlockStackerGame, HoopShotGame, LaneRacerGame, NinjaSliceGame,
   SimonSaysGame, FishingGame, CrossyChickenGame, SpinWinGame, BalloonPopGame,
 } from "@/components/games/MiniGamesPack";
+import {
+  TicTacToeGame, HigherLowerGame, NumberOrderGame, ColorMatchGame, AimShooterGame,
+  MazeRunnerGame, DefuseGame, CoinFlipGame, WordScrambleGame, DoodleClimbGame,
+} from "@/components/games/MoreGamesPack";
 import WeeklyLeaderboard from "@/components/WeeklyLeaderboard";
 import FlashSaleBanner from "@/components/FlashSaleBanner";
 import { useGameCredits, GameCreditsBadge, BuyCreditsDialog } from "@/components/games/GameCredits";
