@@ -385,6 +385,14 @@ const Index = () => {
       const url = new URL(window.location.href);
       url.searchParams.set("id", p.id);
       window.history.replaceState({}, "", url.toString());
+      try {
+        const key = "recent_products_v1";
+        const raw = localStorage.getItem(key);
+        const arr: string[] = raw ? JSON.parse(raw) : [];
+        const next = [p.id, ...arr.filter(id => id !== p.id)].slice(0, 12);
+        localStorage.setItem(key, JSON.stringify(next));
+        window.dispatchEvent(new CustomEvent("recent-products-update"));
+      } catch {}
     } else {
       const url = new URL(window.location.href);
       url.searchParams.delete("id");
