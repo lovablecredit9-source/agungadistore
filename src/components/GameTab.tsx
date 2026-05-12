@@ -211,6 +211,16 @@ const GAME_COMPONENTS: Record<string, React.ComponentType> = {
   stack_tower: StackTowerGame,
   pong: PongClassicGame,
   frogger: FroggerMiniGame,
+  tictactoe: TicTacToeGame,
+  hilo: HigherLowerGame,
+  numord: NumberOrderGame,
+  colmatch: ColorMatchGame,
+  aim: AimShooterGame,
+  maze: MazeRunnerGame,
+  defuse: DefuseGame,
+  coin: CoinFlipGame,
+  scram: WordScrambleGame,
+  doodle: DoodleClimbGame,
 };
 
 export default function GameTab() {
