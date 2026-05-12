@@ -71,6 +71,7 @@ import MusicPublicTab from "@/components/MusicPublicTab";
 import SponsorBanner from "@/components/SponsorBanner";
 import ProductNavToolbar from "@/components/ProductNavToolbar";
 import ProductShowcaseBar from "@/components/ProductShowcaseBar";
+import ShopPowerHub from "@/components/ShopPowerHub";
 import LikesTab from "@/components/LikesTab";
 import DailyStreak from "@/components/DailyStreak";
 import NeonStreakHub from "@/components/streak/NeonStreakHub";
