@@ -2680,6 +2680,15 @@ const Index = () => {
               topCategory={(Object.entries(productCategoryCounts).filter(([k]) => k !== "Semua").sort((a, b) => b[1] - a[1])[0]?.[0]) || null}
             />
 
+            {/* Shop Power Hub: Recently Viewed, AI Picks, Compare, Stats */}
+            <ShopPowerHub
+              products={products}
+              claimHistory={history.map(h => ({ product_title: h.product_title, product_price: h.product_price, claimed_at: h.claimed_at }))}
+              totalSpent={history.reduce((s, h) => s + (h.product_price || 0), 0)}
+              formatPrice={formatPrice}
+              onOpen={openProduct}
+            />
+
             {/* Advanced Product Navigation Toolbar */}
             <ProductNavToolbar
               value={{
