@@ -4090,8 +4090,16 @@ const Index = () => {
                   onHistory={() => { if (banned) return; setTab("history"); }}
                   onShop={() => { if (banned) return; setTab("produk"); }}
                   onVoucher={() => { if (banned) return; setTab("voucher"); }}
-                />
+            />
 
+            {/* Shop Power Hub: Recently Viewed, AI Picks, Compare, Stats */}
+            <ShopPowerHub
+              products={products}
+              claimHistory={history.map(h => ({ product_title: h.product_title, product_price: h.product_price, claimed_at: h.claimed_at }))}
+              totalSpent={history.reduce((s, h) => s + (h.product_price || 0), 0)}
+              formatPrice={formatPrice}
+              onOpen={openProduct}
+            />
 
                 {/* Account Actions Card - iOS Frosted */}
                 <div className="relative overflow-hidden rounded-[24px] bg-background/50 backdrop-blur-2xl backdrop-saturate-150 border border-white/15 shadow-[0_18px_50px_-12px_rgba(0,0,0,0.45),inset_0_1px_0_0_rgba(255,255,255,0.18)]">
