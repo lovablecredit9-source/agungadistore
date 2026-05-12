@@ -42,10 +42,6 @@ import {
   PianoTilesGame, BlockStackerGame, HoopShotGame, LaneRacerGame, NinjaSliceGame,
   SimonSaysGame, FishingGame, CrossyChickenGame, SpinWinGame, BalloonPopGame,
 } from "@/components/games/MiniGamesPack";
-import {
-  TicTacToeGame, HigherLowerGame, NumberOrderGame, ColorMatchGame, AimShooterGame,
-  MazeRunnerGame, DefuseGame, CoinFlipGame, WordScrambleGame, DoodleClimbGame,
-} from "@/components/games/MoreGamesPack";
 import WeeklyLeaderboard from "@/components/WeeklyLeaderboard";
 import FlashSaleBanner from "@/components/FlashSaleBanner";
 import { useGameCredits, GameCreditsBadge, BuyCreditsDialog } from "@/components/games/GameCredits";
@@ -105,19 +101,9 @@ import gameHelicopterImg from "@/assets/game-helicopter.png";
 import gameStackTowerImg from "@/assets/game-stack-tower.png";
 import gamePongImg from "@/assets/game-pong.png";
 import gameFroggerImg from "@/assets/game-frogger.png";
-type GameMode = "menu" | "suit" | "tebak" | "tebak_gambar" | "teka_teki" | "tebak_angka" | "tebak_barang" | "ular_tangga" | "ludo" | "kuis" | "teka_teki_v2" | "pilihan_ganda" | "scratch" | "slot" | "match3" | "lucky_draw" | "mine" | "tebak_lagu" | "memory" | "snake" | "g2048" | "plinko" | "tetris" | "bubble" | "flappy" | "brick" | "catch" | "reflex" | "mole" | "beat" | "jump" | "piano" | "tower" | "hoop" | "racer" | "ninja" | "simon" | "fish" | "chicken" | "spin" | "balloon" | "space_shooter" | "helicopter" | "stack_tower" | "pong" | "frogger" | "tictactoe" | "hilo" | "numord" | "colmatch" | "aim" | "maze" | "defuse" | "coin" | "scram" | "doodle";
+type GameMode = "menu" | "suit" | "tebak" | "tebak_gambar" | "teka_teki" | "tebak_angka" | "tebak_barang" | "ular_tangga" | "ludo" | "kuis" | "teka_teki_v2" | "pilihan_ganda" | "scratch" | "slot" | "match3" | "lucky_draw" | "mine" | "tebak_lagu" | "memory" | "snake" | "g2048" | "plinko" | "tetris" | "bubble" | "flappy" | "brick" | "catch" | "reflex" | "mole" | "beat" | "jump" | "piano" | "tower" | "hoop" | "racer" | "ninja" | "simon" | "fish" | "chicken" | "spin" | "balloon" | "space_shooter" | "helicopter" | "stack_tower" | "pong" | "frogger";
 
 const GAMES: { mode: GameMode; title: string; desc: string; image: string; gradient: string }[] = [
-  { mode: "tictactoe", title: "Tic Tac Toe", desc: "X vs O lawan AI ❌⭕", image: gameLudoImg, gradient: "from-indigo-500 to-purple-700" },
-  { mode: "hilo", title: "Higher / Lower", desc: "Tebak kartu naik atau turun 🃏", image: gameKuisImg, gradient: "from-emerald-500 to-teal-700" },
-  { mode: "numord", title: "Number Rush", desc: "Tap 1-9 secepat mungkin 🔢", image: gameTebakAngkaImg, gradient: "from-cyan-500 to-blue-700" },
-  { mode: "colmatch", title: "Color Match", desc: "Kata vs warna, fokus! 🎨", image: gameReflexImg, gradient: "from-fuchsia-500 to-pink-700" },
-  { mode: "aim", title: "Aim Shooter", desc: "Tap target sebanyak mungkin 🎯", image: gameMoleImg, gradient: "from-red-500 to-rose-700" },
-  { mode: "maze", title: "Maze Runner", desc: "Cari jalan ke goal 🌀", image: gameUlarTanggaImg, gradient: "from-zinc-600 to-slate-800" },
-  { mode: "defuse", title: "Defuse Bomb", desc: "Hafalkan urutan, defuse 💣", image: gameMineImg, gradient: "from-amber-500 to-red-700" },
-  { mode: "coin", title: "Coin Flip", desc: "Tebak Heads atau Tails 🪙", image: gameSlotImg, gradient: "from-yellow-500 to-amber-700" },
-  { mode: "scram", title: "Word Scramble", desc: "Susun huruf cepat 🔤", image: gameTekaTekiV2Img, gradient: "from-teal-500 to-blue-700" },
-  { mode: "doodle", title: "Doodle Climb", desc: "Lompat platform makin tinggi 🦘", image: gameJumpImg, gradient: "from-emerald-500 to-green-700" },
   { mode: "space_shooter", title: "Space Shooter", desc: "Tembak alien, raih skor 🚀", image: gameSpaceShooterImg, gradient: "from-indigo-600 to-fuchsia-700" },
   { mode: "helicopter", title: "Helicopter Cave", desc: "Tahan untuk naik, hindari gua 🚁", image: gameHelicopterImg, gradient: "from-amber-500 to-orange-700" },
   { mode: "stack_tower", title: "Stack Tower", desc: "Tap pas waktunya, bangun tower 🧱", image: gameStackTowerImg, gradient: "from-pink-500 to-rose-600" },
@@ -211,16 +197,6 @@ const GAME_COMPONENTS: Record<string, React.ComponentType> = {
   stack_tower: StackTowerGame,
   pong: PongClassicGame,
   frogger: FroggerMiniGame,
-  tictactoe: TicTacToeGame,
-  hilo: HigherLowerGame,
-  numord: NumberOrderGame,
-  colmatch: ColorMatchGame,
-  aim: AimShooterGame,
-  maze: MazeRunnerGame,
-  defuse: DefuseGame,
-  coin: CoinFlipGame,
-  scram: WordScrambleGame,
-  doodle: DoodleClimbGame,
 };
 
 export default function GameTab() {
