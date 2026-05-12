@@ -71,6 +71,7 @@ import MusicPublicTab from "@/components/MusicPublicTab";
 import SponsorBanner from "@/components/SponsorBanner";
 import ProductNavToolbar from "@/components/ProductNavToolbar";
 import ProductShowcaseBar from "@/components/ProductShowcaseBar";
+import ShopPowerHub from "@/components/ShopPowerHub";
 import LikesTab from "@/components/LikesTab";
 import DailyStreak from "@/components/DailyStreak";
 import NeonStreakHub from "@/components/streak/NeonStreakHub";
@@ -385,6 +386,14 @@ const Index = () => {
       const url = new URL(window.location.href);
       url.searchParams.set("id", p.id);
       window.history.replaceState({}, "", url.toString());
+      try {
+        const key = "recent_products_v1";
+        const raw = localStorage.getItem(key);
+        const arr: string[] = raw ? JSON.parse(raw) : [];
+        const next = [p.id, ...arr.filter(id => id !== p.id)].slice(0, 12);
+        localStorage.setItem(key, JSON.stringify(next));
+        window.dispatchEvent(new CustomEvent("recent-products-update"));
+      } catch {}
     } else {
       const url = new URL(window.location.href);
       url.searchParams.delete("id");
@@ -2671,6 +2680,15 @@ const Index = () => {
               topCategory={(Object.entries(productCategoryCounts).filter(([k]) => k !== "Semua").sort((a, b) => b[1] - a[1])[0]?.[0]) || null}
             />
 
+            {/* Shop Power Hub: Recently Viewed, AI Picks, Compare, Stats */}
+            <ShopPowerHub
+              products={products}
+              claimHistory={history.map(h => ({ product_title: h.product_title, product_price: h.product_price, claimed_at: h.claimed_at }))}
+              totalSpent={history.reduce((s, h) => s + (h.product_price || 0), 0)}
+              formatPrice={formatPrice}
+              onOpen={openProduct}
+            />
+
             {/* Advanced Product Navigation Toolbar */}
             <ProductNavToolbar
               value={{
@@ -4081,8 +4099,7 @@ const Index = () => {
                   onHistory={() => { if (banned) return; setTab("history"); }}
                   onShop={() => { if (banned) return; setTab("produk"); }}
                   onVoucher={() => { if (banned) return; setTab("voucher"); }}
-                />
-
+            />
 
                 {/* Account Actions Card - iOS Frosted */}
                 <div className="relative overflow-hidden rounded-[24px] bg-background/50 backdrop-blur-2xl backdrop-saturate-150 border border-white/15 shadow-[0_18px_50px_-12px_rgba(0,0,0,0.45),inset_0_1px_0_0_rgba(255,255,255,0.18)]">
