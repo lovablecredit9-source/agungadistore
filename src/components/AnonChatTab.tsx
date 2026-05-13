@@ -373,11 +373,13 @@ export default function AnonChatTab() {
   const mapMsg = (m: any): AnonMsg => ({
     id: m.id, sender: m.sender_visitor_id, content: m.content, image_url: m.image_url ?? null,
     created_at: m.created_at, is_read: !!m.is_read, reply_to_id: m.reply_to_id ?? null, is_deleted: !!m.is_deleted,
+    deleted_for: m.deleted_for ?? [],
   });
 
   const enterSession = async (id: string, partnerNick: string | null, partnerGender: string | null) => {
     setSessionId(id);
     setPartner({ nick: partnerNick || "Stranger", gender: partnerGender });
+    await loadPartnerProfile(id);
     setSessionStatus("active");
     const { data } = await supabase.from("anon_chat_messages").select("*").eq("session_id", id).order("created_at");
     const list = (data || []).map(mapMsg);
@@ -392,6 +394,7 @@ export default function AnonChatTab() {
   };
 
   const doMatch = async (silent = false) => {
+    if (activeBan) { toast.error("Akun diblokir dari chat", { description: formatBanRemaining(banInfo) }); return; }
     const { data, error } = await supabase.rpc("anon_chat_find_or_queue", {
       p_visitor: visitor, p_nickname: nickname, p_my_gender: myGender,
       p_pref_gender: prefGender, p_interest: interest === "Apapun" ? "any" : interest,
@@ -435,23 +438,33 @@ export default function AnonChatTab() {
   };
 
   const sendMessage = async () => {
-    if (!sessionId || !draft.trim() || sessionStatus === "ended") return;
+    if (!sessionId || !draft.trim() || sessionStatus === "ended" || activeBan) return;
     const text = draft.trim().slice(0, 1000);
     setDraft("");
     pushTyping(false);
 
-    // Filter konten: tampak terkirim namun tidak diteruskan ke partner
-    if (isBlockedText(text)) {
+    const moderation = moderateOutgoing(text);
+    if (!moderation.ok) {
+      let violationCount = 0;
+      try {
+        const { data } = await supabase.rpc("report_chat_violation", {
+          p_visitor_id: visitor,
+          p_kind: moderation.hadContact ? "contact_share" : "banned_word",
+          p_detail: text.slice(0, 200),
+        } as any);
+        violationCount = Number(data || 0);
+        await refreshBan();
+      } catch {}
       const fake: AnonMsg = {
         id: "local-" + Date.now() + "-" + Math.random().toString(36).slice(2),
-        sender: visitor, content: text, image_url: null,
+        sender: visitor, content: moderation.cleaned || "•••sensor•••", image_url: null,
         created_at: new Date().toISOString(), is_read: false,
         reply_to_id: replyTo?.id || null, is_deleted: false, local_blocked: true,
       };
       setMessages(prev => [...prev, fake]);
       setReplyTo(null);
       toast.message("Pesan tidak diteruskan", {
-        description: `Konten terdeteksi sensitif/tuduhan. Untuk laporan resmi, hubungi WA ${CS_WA}.`,
+        description: `${moderation.reasons.join(". ")} · Peringatan ${violationCount}/3. Untuk laporan resmi, hubungi WA ${CS_WA}.`,
         action: { label: "WA CS", onClick: () => window.open(CS_WA_LINK, "_blank") },
       });
       return;
