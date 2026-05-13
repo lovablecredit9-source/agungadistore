@@ -1084,12 +1084,8 @@ export default function AnonChatTab() {
         <div className="flex-1 overflow-y-auto p-5 space-y-5">
           {/* Avatar + nickname + gender */}
           <div className="flex flex-col items-center gap-2">
-            <div className={`w-24 h-24 rounded-full flex items-center justify-center text-5xl shadow-xl ring-4 ring-slate-900 ${
-              myGender === "male" ? "bg-gradient-to-br from-sky-500 to-blue-600" :
-              myGender === "female" ? "bg-gradient-to-br from-pink-500 to-rose-600" :
-              "bg-gradient-to-br from-indigo-500 to-purple-600"
-            }`}>
-              {genderEmoji(myGender)}
+            <div className={`w-24 h-24 rounded-full flex items-center justify-center text-5xl shadow-xl ring-4 ring-slate-900 bg-gradient-to-br ${myAvatar.gradient} overflow-hidden`}>
+              {avatarUrl ? <img src={avatarUrl} alt="Foto profil" className="h-full w-full object-cover" /> : myAvatar.emoji}
             </div>
             <div className="text-xl font-bold text-slate-100 mt-1">{nickname}</div>
             <div className="text-sm text-slate-400 flex items-center gap-1.5">
