@@ -1103,6 +1103,7 @@ export default function AnonChatTab() {
               <div className="text-[10px] mt-0.5">
                 Status izin: <span className={perm === "granted" ? "text-emerald-300" : perm === "denied" ? "text-rose-300" : "text-amber-300"}>{perm}</span>
               </div>
+              <div className="text-[10px] text-slate-500 mt-1">{explainNotif()}</div>
             </div>
             <button onClick={() => { if (perm !== "granted") requestNotifPerm(); else setNotifOn(n => !n); }}
               className={`w-12 h-7 rounded-full p-0.5 transition ${notifOn && perm === "granted" ? "bg-emerald-500" : "bg-slate-700"}`}>
