@@ -137,6 +137,10 @@ export default function AnonChatTab() {
   const [avatarUrl, setAvatarUrl] = useState<string>(() => localStorage.getItem("anon_avatar_url") || "");
   const [showLastSeen, setShowLastSeen] = useState<boolean>(() => localStorage.getItem("anon_show_last_seen") !== "off");
   const [showEmojiInput, setShowEmojiInput] = useState(false);
+  const [anonAccount, setAnonAccount] = useState<AnonAccount | null>(null);
+  const [showAccountDialog, setShowAccountDialog] = useState(false);
+
+  useEffect(() => { fetchAnonAccount(visitor).then(setAnonAccount); }, [visitor]);
 
   useEffect(() => { localStorage.setItem("anon_sound", soundOn ? "on" : "off"); }, [soundOn]);
   useEffect(() => { localStorage.setItem("anon_notif", notifOn ? "on" : "off"); }, [notifOn]);
