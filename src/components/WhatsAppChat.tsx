@@ -1,9 +1,18 @@
-import { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo, lazy, Suspense } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Send, ImagePlus, X, Trash2, Smile, Reply, Check, CheckCheck } from "lucide-react";
+import { Send, ImagePlus, X, Trash2, Smile, Reply, Check, CheckCheck, Plus, MoreVertical } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { moderateOutgoing } from "@/lib/chat-moderation";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+
+const EmojiPicker = lazy(() => import("emoji-picker-react"));
 
 export type ChatKind = "product" | "ticket";
 
