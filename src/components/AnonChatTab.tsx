@@ -129,6 +129,94 @@ export default function AnonChatTab() {
     return () => window.clearTimeout(t);
   }, [otherTyping]);
 
+  // Friends + incoming requests + realtime
+  const loadFriends = useCallback(async () => {
+    const { data } = await supabase.from("anon_chat_friends").select("friend_visitor, friend_nickname").eq("visitor_id", visitor).order("created_at", { ascending: false });
+    setFriends((data || []) as any);
+    const { data: reqs } = await supabase.from("anon_chat_friend_requests").select("id, from_visitor, from_nickname").eq("to_visitor", visitor).eq("status", "pending").order("created_at", { ascending: false });
+    setFriendReqs((reqs || []) as any);
+  }, [visitor]);
+
+  useEffect(() => { loadFriends(); }, [loadFriends]);
+  useEffect(() => {
+    const ch = supabase.channel(`anon_friends_${visitor}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "anon_chat_friends", filter: `visitor_id=eq.${visitor}` }, loadFriends)
+      .on("postgres_changes", { event: "*", schema: "public", table: "anon_chat_friend_requests", filter: `to_visitor=eq.${visitor}` }, (p: any) => {
+        loadFriends();
+        if (p.eventType === "INSERT" && p.new?.status === "pending") {
+          toast.success(`💌 ${p.new.from_nickname} ingin berteman`);
+        }
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "anon_chat_friend_requests", filter: `from_visitor=eq.${visitor}` }, (p: any) => {
+        if (p.eventType === "UPDATE" && p.new?.status === "accepted") {
+          toast.success(`✅ Permintaan teman diterima!`);
+          loadFriends();
+        }
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, [visitor, loadFriends]);
+
+  // Detect friend status with current partner
+  useEffect(() => {
+    if (!sessionId || !partner) { setFriendStatusForPartner("none"); return; }
+    (async () => {
+      const { data: sess } = await supabase.from("anon_chat_sessions").select("visitor_a, visitor_b").eq("id", sessionId).maybeSingle();
+      if (!sess) return;
+      const other = sess.visitor_a === visitor ? sess.visitor_b : sess.visitor_a;
+      const { data: f } = await supabase.from("anon_chat_friends").select("id").eq("visitor_id", visitor).eq("friend_visitor", other).maybeSingle();
+      if (f) { setFriendStatusForPartner("friend"); return; }
+      const { data: out } = await supabase.from("anon_chat_friend_requests").select("id").eq("from_visitor", visitor).eq("to_visitor", other).eq("status", "pending").maybeSingle();
+      if (out) { setFriendStatusForPartner("pending_out"); return; }
+      const { data: inc } = await supabase.from("anon_chat_friend_requests").select("id").eq("from_visitor", other).eq("to_visitor", visitor).eq("status", "pending").maybeSingle();
+      setFriendStatusForPartner(inc ? "pending_in" : "none");
+    })();
+  }, [sessionId, partner, visitor, friends, friendReqs]);
+
+  const sendFriendRequest = async () => {
+    if (!sessionId) return;
+    const { data: sess } = await supabase.from("anon_chat_sessions").select("visitor_a, visitor_b, nickname_a, nickname_b").eq("id", sessionId).maybeSingle();
+    if (!sess) return;
+    const other = sess.visitor_a === visitor ? sess.visitor_b : sess.visitor_a;
+    const otherNick = sess.visitor_a === visitor ? sess.nickname_b : sess.nickname_a;
+    const { data, error } = await supabase.rpc("anon_chat_send_friend_request", {
+      p_from_visitor: visitor, p_from_nickname: nickname,
+      p_to_visitor: other, p_to_nickname: otherNick, p_session_id: sessionId,
+    });
+    if (error) { toast.error(error.message); return; }
+    const row = Array.isArray(data) ? data[0] : data;
+    if (row?.already_friend) { toast.info("Kalian sudah berteman"); setFriendStatusForPartner("friend"); }
+    else if (row?.already_pending) { toast.info("Permintaan sudah terkirim"); setFriendStatusForPartner("pending_out"); }
+    else { toast.success("💌 Permintaan teman terkirim"); setFriendStatusForPartner("pending_out"); }
+    loadFriends();
+  };
+
+  const respondFriendRequest = async (id: string, accept: boolean) => {
+    const { error } = await supabase.rpc("anon_chat_respond_friend_request", {
+      p_request_id: id, p_visitor: visitor, p_my_nickname: nickname, p_accept: accept,
+    });
+    if (error) { toast.error(error.message); return; }
+    toast.success(accept ? "✅ Teman ditambahkan" : "Permintaan ditolak");
+    loadFriends();
+  };
+
+  const startFriendChat = async (friendVisitor: string) => {
+    const { data, error } = await supabase.rpc("anon_chat_start_friend_session", {
+      p_visitor: visitor, p_my_nickname: nickname, p_my_gender: myGender, p_friend_visitor: friendVisitor,
+    });
+    if (error) { toast.error(error.message); return; }
+    const row = Array.isArray(data) ? data[0] : data;
+    if (row?.session_id) await enterSession(row.session_id, row.partner_nickname, row.partner_gender);
+  };
+
+  const removeFriend = async (friendVisitor: string) => {
+    if (!confirm("Hapus teman ini?")) return;
+    await supabase.from("anon_chat_friends").delete().eq("visitor_id", visitor).eq("friend_visitor", friendVisitor);
+    await supabase.from("anon_chat_friends").delete().eq("visitor_id", friendVisitor).eq("friend_visitor", visitor);
+    toast.success("Teman dihapus");
+    loadFriends();
+  };
+
   useEffect(() => { scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" }); }, [messages, otherTyping]);
 
   const mapMsg = (m: any): AnonMsg => ({
