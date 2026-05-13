@@ -16,7 +16,7 @@ interface AnonMsg {
 interface AnonReaction { id: string; message_id: string; visitor_id: string; emoji: string; }
 const EMOJIS = ["👍", "❤️", "😂", "😮", "😢", "🙏", "🔥"];
 
-type View = "lobby" | "prefs" | "interest" | "searching" | "chat" | "friends";
+type View = "lobby" | "prefs" | "account" | "interest" | "searching" | "chat" | "friends";
 
 const INTERESTS = ["Apapun","Curhat","Main RP","Meme","Kesepian","Game","Anime","Film","Musik","Travel","Coding","Olahraga","Nongkrong","Belajar"];
 
