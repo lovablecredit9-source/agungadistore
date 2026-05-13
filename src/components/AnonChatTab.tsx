@@ -283,6 +283,33 @@ export default function AnonChatTab() {
           className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-bold shadow-lg shadow-emerald-500/40">
           OKE
         </button>
+
+        <InnerNav active="settings" onChange={(k) => {
+          if (k === "search") setView("lobby");
+          else if (k === "friends") setView("friends");
+        }} />
+      </div>
+    );
+  }
+
+  if (view === "friends") {
+    return (
+      <div className="rounded-3xl overflow-hidden border-2 border-emerald-400/30 bg-gradient-to-b from-emerald-950/30 via-slate-950 to-slate-950 min-h-[500px] flex flex-col">
+        <div className="flex items-center justify-center gap-2 py-4 border-b border-emerald-400/20 bg-gradient-to-r from-emerald-500/10 to-teal-500/10">
+          <Users className="w-5 h-5 text-emerald-300" />
+          <span className="text-base font-extrabold text-emerald-100">Teman</span>
+        </div>
+        <div className="flex-1 flex flex-col items-center justify-center px-6 text-center gap-3">
+          <div className="w-20 h-20 rounded-full bg-emerald-500/10 flex items-center justify-center">
+            <Users className="w-10 h-10 text-emerald-300/70" />
+          </div>
+          <h3 className="font-bold text-slate-100">Belum ada teman</h3>
+          <p className="text-xs text-slate-400 max-w-[260px]">Fitur menambahkan teman dari obrolan akan segera hadir. Saat ini chat bersifat sepenuhnya anonim & sementara.</p>
+        </div>
+        <InnerNav active="friends" onChange={(k) => {
+          if (k === "search") setView("lobby");
+          else if (k === "settings") setView("prefs");
+        }} />
       </div>
     );
   }
