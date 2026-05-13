@@ -7,9 +7,11 @@ const BANNED_WORDS = [
   "penipuan",
   "tidakamanah",
   "ngakamanah",
+  "nggaamanah",
   "nggakamanah",
   "gakamanah",
   "gaamanah",
+  "takamanah",
   "agungadistore",
   "spam",
   "scam",
@@ -55,6 +57,20 @@ function normalize(input: string): string {
   return out;
 }
 
+const OBFUSCATION_NOISE = [
+  "pesan", "kata", "huruf", "lanjut", "baru", "nomor", "no", "urutan",
+  "pertama", "kedua", "ketiga", "keempat", "kelima", "keenam", "ketujuh", "kedelapan", "kesembilan", "kesepuluh",
+  "satu", "dua", "tiga", "empat", "lima", "enam", "tujuh", "delapan", "sembilan", "sepuluh",
+];
+
+function normalizeDeep(input: string): string {
+  let s = normalize(input).replace(/\d+/g, "");
+  for (const word of OBFUSCATION_NOISE) {
+    s = s.replace(new RegExp(word, "g"), "");
+  }
+  return s;
+}
+
 export interface ModerationResult {
   ok: boolean;
   cleaned: string;
@@ -91,8 +107,9 @@ export function moderateOutgoing(text: string): ModerationResult {
 
   // Deteksi kata terlarang pakai versi normalisasi
   const norm = normalize(cleaned);
+  const deepNorm = normalizeDeep(cleaned);
   for (const w of BANNED_WORDS) {
-    if (norm.includes(w)) {
+    if (norm.includes(w) || deepNorm.includes(w)) {
       hadBannedWord = true;
       // Sensor di teks asli juga: ganti potongan substring yang menjadi kata itu
       const re = new RegExp(
