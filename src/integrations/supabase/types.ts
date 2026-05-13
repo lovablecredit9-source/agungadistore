@@ -207,6 +207,7 @@ export type Database = {
           content: string | null
           created_at: string
           deleted_at: string | null
+          deleted_for: string[]
           id: string
           image_url: string | null
           is_deleted: boolean
@@ -219,6 +220,7 @@ export type Database = {
           content?: string | null
           created_at?: string
           deleted_at?: string | null
+          deleted_for?: string[]
           id?: string
           image_url?: string | null
           is_deleted?: boolean
@@ -231,6 +233,7 @@ export type Database = {
           content?: string | null
           created_at?: string
           deleted_at?: string | null
+          deleted_for?: string[]
           id?: string
           image_url?: string | null
           is_deleted?: boolean
@@ -248,6 +251,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      anon_chat_profiles: {
+        Row: {
+          avatar_preset: string
+          avatar_url: string | null
+          last_seen_at: string
+          nickname: string | null
+          show_last_seen: boolean
+          updated_at: string
+          visitor_id: string
+        }
+        Insert: {
+          avatar_preset?: string
+          avatar_url?: string | null
+          last_seen_at?: string
+          nickname?: string | null
+          show_last_seen?: boolean
+          updated_at?: string
+          visitor_id: string
+        }
+        Update: {
+          avatar_preset?: string
+          avatar_url?: string | null
+          last_seen_at?: string
+          nickname?: string | null
+          show_last_seen?: boolean
+          updated_at?: string
+          visitor_id?: string
+        }
+        Relationships: []
       }
       anon_chat_queue: {
         Row: {
@@ -9241,6 +9274,30 @@ export type Database = {
       report_chat_violation: {
         Args: { p_detail: string; p_kind: string; p_visitor_id: string }
         Returns: number
+      }
+      touch_anon_chat_profile: {
+        Args: {
+          p_avatar_preset?: string
+          p_avatar_url?: string
+          p_nickname?: string
+          p_show_last_seen?: boolean
+          p_visitor_id: string
+        }
+        Returns: {
+          avatar_preset: string
+          avatar_url: string | null
+          last_seen_at: string
+          nickname: string | null
+          show_last_seen: boolean
+          updated_at: string
+          visitor_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "anon_chat_profiles"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
     }
     Enums: {
