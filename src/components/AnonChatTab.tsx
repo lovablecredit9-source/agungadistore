@@ -180,6 +180,9 @@ export default function AnonChatTab() {
     const other = sess.visitor_a === visitor ? sess.visitor_b : sess.visitor_a;
     const { data } = await supabase.from("anon_chat_profiles" as any).select("*").eq("visitor_id", other).maybeSingle();
     setPartnerProfile((data as unknown as AnonProfile) || null);
+    const { data: acc } = await supabase.from("anon_chat_accounts" as any).select("bio").eq("visitor_id", other).maybeSingle();
+    setPartnerBio(((acc as any)?.bio as string) || null);
+    setShowPartnerBio(false);
   }, [visitor]);
 
   useEffect(() => {
