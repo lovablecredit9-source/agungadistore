@@ -147,7 +147,18 @@ export default function AnonChatTab() {
   const [savingBio, setSavingBio] = useState(false);
 
   useEffect(() => { fetchAnonAccount(visitor).then(setAnonAccount); }, [visitor]);
-  useEffect(() => { setBioDraft(anonAccount?.bio || ""); }, [anonAccount?.bio]);
+  useEffect(() => {
+    if (anonAccount?.bio !== undefined && anonAccount?.bio !== null) {
+      setBioDraft(anonAccount.bio || "");
+      return;
+    }
+    // Guest: ambil bio dari profil visitor
+    (async () => {
+      const { data } = await supabase.from("anon_chat_profiles" as any).select("bio").eq("visitor_id", visitor).maybeSingle();
+      const b = (data as { bio?: string | null } | null)?.bio || "";
+      setBioDraft(b);
+    })();
+  }, [anonAccount?.bio, visitor]);
 
   useEffect(() => { localStorage.setItem("anon_sound", soundOn ? "on" : "off"); }, [soundOn]);
   useEffect(() => { localStorage.setItem("anon_notif", notifOn ? "on" : "off"); }, [notifOn]);
@@ -242,11 +253,6 @@ export default function AnonChatTab() {
   };
 
   const saveBio = async () => {
-    if (!anonAccount) {
-      setShowAccountDialog(true);
-      toast.error("Login akun Anon Chat dulu untuk membuat deskripsi");
-      return;
-    }
     setSavingBio(true);
     try {
       const bio = bioDraft.trim().slice(0, 200);
@@ -256,7 +262,7 @@ export default function AnonChatTab() {
       if (error) throw new Error(error.message);
       const response = data as UpdateBioResponse | null;
       if (response?.error) throw new Error(response.error);
-      setAnonAccount(response?.account || anonAccount);
+      if (response?.account) setAnonAccount(response.account);
       setBioDraft(bio);
       toast.success("Deskripsi Anon Chat tersimpan");
     } catch (e) {
@@ -1242,28 +1248,25 @@ export default function AnonChatTab() {
               <div className="text-base font-bold text-slate-100">Deskripsi saya</div>
               <span className="text-[10px] text-slate-500">{bioDraft.length}/200</span>
             </div>
-            {anonAccount ? (
-              <div className="space-y-2">
-                <textarea
-                  value={bioDraft}
-                  onChange={(e) => setBioDraft(e.target.value.slice(0, 200))}
-                  rows={3}
-                  placeholder="Tulis deskripsi singkat yang akan terlihat oleh partner chat…"
-                  className="w-full bg-slate-950/70 border border-slate-700 rounded-xl px-3 py-2.5 text-sm text-slate-100 outline-none placeholder:text-slate-500 resize-none focus:border-emerald-400/60"
-                />
-                <button
-                  onClick={saveBio}
-                  disabled={savingBio || bioDraft.trim() === (anonAccount.bio || "").trim()}
-                  className="w-full py-2.5 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-400/40 text-emerald-100 text-xs font-bold disabled:opacity-50 flex items-center justify-center gap-2"
-                >
-                  <FileText className="w-3.5 h-3.5" /> {savingBio ? "Menyimpan..." : "Simpan Deskripsi"}
-                </button>
-              </div>
-            ) : (
-              <button onClick={() => setShowAccountDialog(true)} className="w-full py-3 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-400/40 text-emerald-100 text-xs font-bold flex items-center justify-center gap-2">
-                <FileText className="w-4 h-4" /> Daftar/Login untuk buat deskripsi
+            <div className="space-y-2">
+              <textarea
+                value={bioDraft}
+                onChange={(e) => setBioDraft(e.target.value.slice(0, 200))}
+                rows={3}
+                placeholder="Tulis deskripsi singkat yang akan terlihat oleh partner chat…"
+                className="w-full bg-slate-950/70 border border-slate-700 rounded-xl px-3 py-2.5 text-sm text-slate-100 outline-none placeholder:text-slate-500 resize-none focus:border-emerald-400/60"
+              />
+              <button
+                onClick={saveBio}
+                disabled={savingBio || bioDraft.trim() === (anonAccount?.bio || "").trim() && !!anonAccount}
+                className="w-full py-2.5 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-400/40 text-emerald-100 text-xs font-bold disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                <FileText className="w-3.5 h-3.5" /> {savingBio ? "Menyimpan..." : "Simpan Deskripsi"}
               </button>
-            )}
+              {!anonAccount && (
+                <p className="text-[10px] text-slate-500 italic">Disimpan untuk perangkat ini. Daftar akun agar tetap tersimpan saat ganti perangkat.</p>
+              )}
+            </div>
             <div className="text-[11px] text-slate-500 mt-2 italic">{showLastSeen ? "Terakhir dilihat aktif untuk partner chat." : "Terakhir dilihat kamu disembunyikan."}</div>
           </div>
 
