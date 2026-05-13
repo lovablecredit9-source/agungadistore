@@ -180,7 +180,24 @@ export default function AnonChatTab() {
     setPartnerProfile((data as unknown as AnonProfile) || null);
   }, [visitor]);
 
-  useEffect(() => { refreshBan(); }, [refreshBan]);
+  useEffect(() => {
+    refreshBan();
+
+    const refreshOnReturn = () => refreshBan();
+    const channel = supabase
+      .channel(`anon_chat_ban_status_${visitor}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "account_bans" }, refreshBan)
+      .subscribe();
+
+    window.addEventListener("focus", refreshOnReturn);
+    window.addEventListener("balance-auth-changed", refreshOnReturn as EventListener);
+
+    return () => {
+      window.removeEventListener("focus", refreshOnReturn);
+      window.removeEventListener("balance-auth-changed", refreshOnReturn as EventListener);
+      supabase.removeChannel(channel);
+    };
+  }, [refreshBan, visitor]);
   useEffect(() => {
     touchProfile();
     const interval = window.setInterval(touchProfile, 30000);
