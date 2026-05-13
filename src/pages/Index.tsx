@@ -4888,6 +4888,8 @@ const Index = () => {
 
         {tab === "plus" && <PlusTab key={userBalance?.visitor_id || "no-user"} />}
 
+        {tab === "anonchat" && <AnonChatTab key={userBalance?.visitor_id || "no-user"} />}
+
 
 
         {tab === "update" && (
