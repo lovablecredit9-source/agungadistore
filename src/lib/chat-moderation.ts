@@ -47,11 +47,11 @@ const LEET: Record<string, string> = {
 function normalize(input: string): string {
   // Remove zero-width chars, collapse whitespace and punctuation between letters,
   // then leet-substitute and lowercase.
-  let s = input
+  const s = input
     .toLowerCase()
     .normalize("NFKD")
     .replace(/[\u200B-\u200F\u202A-\u202E\uFEFF]/g, "")
-    .replace(/[\s\.\-\_\*\|\/\\,'"]+/g, "");
+    .replace(/[\s._*|/\\,'"-]+/g, "");
   let out = "";
   for (const ch of s) out += LEET[ch] ?? ch;
   return out;
@@ -81,8 +81,8 @@ export interface ModerationResult {
 
 // Sensor nomor HP / kontak: 8+ digit berturut, atau 10+ angka jika dipisahkan
 // karakter non-digit yang ringan.
-const PHONE_REGEX = /(?:(?:\+?\d[\s\-\.]?){8,16})/g;
-const WA_REGEX = /\b(?:wa|whatsapp|telegram|tele|tg|line|ig|instagram)[\s:]*[@a-z0-9_\.\-]{3,}/gi;
+const PHONE_REGEX = /(?:(?:\+?\d[\s.-]?){8,16})/g;
+const WA_REGEX = /\b(?:wa|whatsapp|telegram|tele|tg|line|ig|instagram)[\s:]*[@a-z0-9_.-]{3,}/gi;
 
 export function moderateOutgoing(text: string): ModerationResult {
   const reasons: string[] = [];
