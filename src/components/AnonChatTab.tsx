@@ -946,6 +946,34 @@ export default function AnonChatTab() {
             </div>
           </div>
 
+          <div className="space-y-3 rounded-2xl border border-emerald-400/20 bg-slate-900/60 p-3">
+            <div className="flex items-center gap-3">
+              <div className={`w-14 h-14 rounded-full bg-gradient-to-br ${myAvatar.gradient} flex items-center justify-center text-2xl overflow-hidden shrink-0`}>
+                {avatarUrl ? <img src={avatarUrl} alt="Foto profil" className="h-full w-full object-cover" /> : myAvatar.emoji}
+              </div>
+              <label className="flex-1 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-100 text-xs font-bold flex items-center justify-center gap-2 cursor-pointer">
+                <ImagePlus className="w-4 h-4" /> Upload foto profil
+                <input type="file" accept="image/*" className="hidden" onChange={(e) => { if (e.target.files?.[0]) uploadAvatar(e.target.files[0]); e.target.value = ""; }} />
+              </label>
+              {avatarUrl && <button onClick={() => setAvatarUrl("")} className="w-9 h-9 rounded-xl bg-rose-500/15 text-rose-200 border border-rose-400/30 flex items-center justify-center"><X className="w-4 h-4" /></button>}
+            </div>
+            <div className="grid grid-cols-5 gap-2">
+              {AVATAR_PRESETS.map((a) => (
+                <button key={a.id} onClick={() => setAvatarPreset(a.id)} className={`h-10 rounded-xl bg-gradient-to-br ${a.gradient} text-xl border ${avatarPreset === a.id ? "border-white shadow-lg" : "border-transparent opacity-75"}`} title={a.label}>{a.emoji}</button>
+              ))}
+            </div>
+          </div>
+
+          <div className="flex items-center justify-between rounded-2xl border border-slate-800 bg-slate-900/70 p-3">
+            <div>
+              <div className="text-sm font-bold text-slate-100">Terakhir dilihat</div>
+              <div className="text-[11px] text-slate-400">Bisa diaktifkan/nonaktifkan setiap pengguna</div>
+            </div>
+            <button onClick={() => setShowLastSeen(v => !v)} className={`w-12 h-7 rounded-full p-0.5 transition ${showLastSeen ? "bg-emerald-500" : "bg-slate-700"}`}>
+              <div className={`w-6 h-6 rounded-full bg-white transition ${showLastSeen ? "translate-x-5" : ""}`} />
+            </button>
+          </div>
+
           <div>
             <label className="text-xs text-slate-400 mb-2 block">Gender saya</label>
             <div className="grid grid-cols-3 gap-2">
