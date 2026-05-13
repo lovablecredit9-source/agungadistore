@@ -60,13 +60,25 @@ Deno.serve(async (req) => {
     if (action === "public_bio") {
       const targetVisitorId = String(payload.targetVisitorId || "").trim();
       if (!targetVisitorId) return bad("Target visitor wajib");
-      const { data: visibleSession } = await admin
+      const { data: visibleSessionA } = await admin
         .from("anon_chat_sessions")
         .select("id")
-        .or(`and(visitor_a.eq.${visitorId},visitor_b.eq.${targetVisitorId}),and(visitor_a.eq.${targetVisitorId},visitor_b.eq.${visitorId})`)
+        .eq("visitor_a", visitorId)
+        .eq("visitor_b", targetVisitorId)
         .order("created_at", { ascending: false })
         .limit(1)
         .maybeSingle();
+      const { data: visibleSessionB } = visibleSessionA
+        ? { data: null }
+        : await admin
+            .from("anon_chat_sessions")
+            .select("id")
+            .eq("visitor_a", targetVisitorId)
+            .eq("visitor_b", visitorId)
+            .order("created_at", { ascending: false })
+            .limit(1)
+            .maybeSingle();
+      const visibleSession = visibleSessionA || visibleSessionB;
       if (!visibleSession) return ok({ success: true, bio: null });
       const { data: device } = await admin
         .from("anon_chat_account_devices")
