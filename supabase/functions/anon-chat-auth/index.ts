@@ -87,13 +87,24 @@ Deno.serve(async (req) => {
         .order("last_login_at", { ascending: false })
         .limit(1)
         .maybeSingle();
-      if (!device) return ok({ success: true, bio: null });
-      const { data: acc } = await admin
-        .from("anon_chat_accounts")
-        .select("bio")
-        .eq("id", device.account_id)
-        .maybeSingle();
-      return ok({ success: true, bio: acc?.bio || null });
+      let bio: string | null = null;
+      if (device) {
+        const { data: acc } = await admin
+          .from("anon_chat_accounts")
+          .select("bio")
+          .eq("id", device.account_id)
+          .maybeSingle();
+        bio = acc?.bio || null;
+      }
+      if (!bio) {
+        const { data: prof } = await admin
+          .from("anon_chat_profiles")
+          .select("bio")
+          .eq("visitor_id", targetVisitorId)
+          .maybeSingle();
+        bio = (prof as { bio?: string | null } | null)?.bio || null;
+      }
+      return ok({ success: true, bio });
     }
 
     if (action === "register") {
@@ -189,16 +200,21 @@ Deno.serve(async (req) => {
 
     if (action === "update_bio") {
       const bio = String(payload.bio || "").slice(0, 200);
+      // Always store on visitor profile so guests (no account) bisa juga
+      await admin
+        .from("anon_chat_profiles")
+        .upsert({ visitor_id: visitorId, bio, updated_at: new Date().toISOString() }, { onConflict: "visitor_id" });
       const acc = await findAccountByVisitor();
-      if (!acc) return bad("Belum login akun Anon", 401);
-      const { data: updated, error } = await admin
-        .from("anon_chat_accounts")
-        .update({ bio })
-        .eq("id", acc.id)
-        .select(SELECT_COLS)
-        .single();
-      if (error || !updated) return bad("Gagal menyimpan deskripsi", 500);
-      return ok({ success: true, account: updated });
+      if (acc) {
+        const { data: updated } = await admin
+          .from("anon_chat_accounts")
+          .update({ bio })
+          .eq("id", acc.id)
+          .select(SELECT_COLS)
+          .single();
+        return ok({ success: true, account: updated || acc, bio });
+      }
+      return ok({ success: true, account: null, bio });
     }
 
     return bad("Action tidak valid");
