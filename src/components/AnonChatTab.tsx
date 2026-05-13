@@ -368,12 +368,41 @@ export default function AnonChatTab() {
         </div>
       </div>
 
-      <div className="px-5 pb-6 pt-2 border-t border-slate-800/60 mt-2">
+      <div className="px-5 pb-4 pt-2 border-t border-slate-800/60 mt-2">
         <div className="flex items-start gap-2 text-xs text-slate-400">
           <Shield className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
           <p>Identitas asli kamu disembunyikan. Jangan bagikan info pribadi (nomor HP, alamat, atau data sensitif) ke partner.</p>
         </div>
       </div>
+
+      {/* Inner bottom nav (anon.chat style) */}
+      <InnerNav active="search" onChange={(k) => {
+        if (k === "search") setView("lobby");
+        else if (k === "friends") setView("friends");
+        else setView("prefs");
+      }} />
+    </div>
+  );
+}
+
+function InnerNav({ active, onChange }: { active: "search" | "friends" | "settings"; onChange: (k: "search" | "friends" | "settings") => void }) {
+  const items: Array<{ k: "search" | "friends" | "settings"; Icon: any; label: string }> = [
+    { k: "search", Icon: Search, label: "Cari" },
+    { k: "friends", Icon: Users, label: "Teman" },
+    { k: "settings", Icon: SettingsIcon, label: "Pengaturan" },
+  ];
+  return (
+    <div className="flex items-center justify-around border-t border-emerald-400/15 bg-slate-950/80 backdrop-blur py-2.5">
+      {items.map(({ k, Icon, label }) => {
+        const on = active === k;
+        return (
+          <button key={k} onClick={() => onChange(k)}
+            className={`flex flex-col items-center gap-0.5 px-5 py-1 rounded-xl transition ${on ? "text-emerald-300" : "text-slate-500 hover:text-slate-300"}`}>
+            <Icon className={`w-5 h-5 ${on ? "drop-shadow-[0_0_6px_rgba(52,211,153,0.7)]" : ""}`} strokeWidth={on ? 2.4 : 1.8} />
+            <span className="text-[9.5px] font-semibold">{label}</span>
+          </button>
+        );
+      })}
     </div>
   );
 }
