@@ -25,6 +25,7 @@ export interface ChatMessage {
   is_read: boolean;
   reply_to_id?: string | null;
   is_deleted?: boolean;
+  deleted_for?: string[] | null;
 }
 
 export interface Reaction {
