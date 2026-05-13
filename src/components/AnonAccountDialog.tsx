@@ -83,6 +83,11 @@ export function AnonAccountDialog({
         await call("change_password", visitorId, { oldPassword: password, newPassword });
         toast.success("Sandi berhasil diubah");
         setMode("manage");
+      } else if (mode === "edit-bio") {
+        const data = await call("update_bio", visitorId, { bio });
+        onAccountChange(data.account);
+        toast.success("Deskripsi disimpan");
+        setMode("manage");
       }
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Gagal");
