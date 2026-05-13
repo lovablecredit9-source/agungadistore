@@ -672,25 +672,6 @@ export default function AnonChatTab() {
             <div className="text-sm text-slate-300">{interest}</div>
           </div>
 
-          {/* Premium card */}
-          <div className="relative rounded-2xl overflow-hidden bg-gradient-to-br from-indigo-500 via-violet-500 to-purple-600 p-5 shadow-xl shadow-purple-900/40">
-            <div className="absolute top-3 right-3 text-3xl opacity-90">🎭</div>
-            <div className="text-xl font-extrabold text-white mb-3">Langganan premium</div>
-            <ul className="space-y-1.5 text-white/95 text-sm font-medium">
-              <li className="flex gap-2"><span>•</span> Temukan partner berdasarkan gender</li>
-              <li className="flex gap-2"><span>•</span> Temukan partner lebih cepat dari yang lain</li>
-              <li className="flex gap-2"><span>•</span> Telepon partner-mu</li>
-            </ul>
-            <button
-              onClick={() => toast.info("Langganan premium segera hadir")}
-              className="mt-4 inline-flex items-center gap-2 bg-white text-indigo-700 rounded-full pl-4 pr-1 py-1 text-sm font-semibold shadow-md">
-              mulai dari Rp 2.334/minggu
-              <span className="w-7 h-7 rounded-full bg-indigo-700 text-white flex items-center justify-center">
-                <ChevronRight className="w-4 h-4" />
-              </span>
-            </button>
-          </div>
-
           {/* Settings list */}
           <div className="rounded-2xl bg-slate-900/70 border border-slate-800 divide-y divide-slate-800 overflow-hidden">
             {[
