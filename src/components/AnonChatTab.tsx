@@ -1023,15 +1023,17 @@ export default function AnonChatTab() {
           {/* Settings list */}
           <div className="rounded-2xl bg-slate-900/70 border border-slate-800 divide-y divide-slate-800 overflow-hidden">
             {[
-              { icon: Link2, label: "Pengaturan akun", onClick: () => setView("account") },
-              { icon: HelpCircle, label: "Dukungan", onClick: () => toast.info("Hubungi admin via WhatsApp 085769302532") },
-              { icon: Bell, label: "Notifikasi dan suara", onClick: () => toast.info("Pengaturan notifikasi segera hadir") },
-              { icon: Moon, label: "Tampilan", onClick: () => toast.info("Tema gelap aktif") },
+              { icon: Link2, label: "Pengaturan akun", desc: account?.linked ? "Tertaut · " + (account?.username || "") : "Tamu · belum bind", onClick: () => setView("account") },
+              { icon: HelpCircle, label: "Dukungan & pertanyaan umum", desc: "FAQ + tombol CS WhatsApp", onClick: () => setView("support") },
+              { icon: Bell, label: "Notifikasi & suara", desc: (soundOn ? "Suara aktif" : "Suara mati") + " · " + (notifOn ? "Notifikasi aktif" : "Notifikasi mati"), onClick: () => setView("notif") },
             ].map((it, i) => (
               <button key={i} onClick={it.onClick}
-                className="w-full flex items-center gap-3 px-4 py-4 text-left hover:bg-slate-800/40 transition">
-                <it.icon className="w-5 h-5 text-slate-300 shrink-0" />
-                <span className="flex-1 text-slate-100 font-medium text-sm">{it.label}</span>
+                className="w-full flex items-center gap-3 px-4 py-3.5 text-left hover:bg-slate-800/40 transition">
+                <it.icon className="w-5 h-5 text-emerald-300 shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <div className="text-slate-100 font-semibold text-sm">{it.label}</div>
+                  <div className="text-[10px] text-slate-400 truncate">{it.desc}</div>
+                </div>
                 <ChevronRight className="w-4 h-4 text-slate-500" />
               </button>
             ))}
