@@ -44,11 +44,13 @@ Deno.serve(async (req) => {
       if (!data) return null;
       const { data: acc } = await admin
         .from("anon_chat_accounts")
-        .select("id, email, primary_visitor_id, created_at")
+        .select("id, email, primary_visitor_id, created_at, bio")
         .eq("id", data.account_id)
         .maybeSingle();
       return acc;
     };
+
+    const SELECT_COLS = "id, email, primary_visitor_id, created_at, bio";
 
     if (action === "me") {
       const acc = await findAccountByVisitor();
@@ -68,7 +70,7 @@ Deno.serve(async (req) => {
       const { data: acc, error } = await admin
         .from("anon_chat_accounts")
         .insert({ email, password_hash, primary_visitor_id: visitorId })
-        .select("id, email, primary_visitor_id, created_at")
+        .select(SELECT_COLS)
         .single();
       if (error || !acc) return bad("Gagal mendaftar: " + (error?.message || ""), 500);
 
@@ -83,7 +85,7 @@ Deno.serve(async (req) => {
       const password_hash = await hashPassword(password);
       const { data: acc } = await admin
         .from("anon_chat_accounts")
-        .select("id, email, primary_visitor_id, created_at")
+        .select(SELECT_COLS)
         .eq("email", email)
         .eq("password_hash", password_hash)
         .maybeSingle();
@@ -123,7 +125,7 @@ Deno.serve(async (req) => {
         .from("anon_chat_accounts")
         .update({ email: newEmail })
         .eq("id", acc.id)
-        .select("id, email, primary_visitor_id, created_at")
+        .select(SELECT_COLS)
         .single();
       if (error || !updated) return bad("Gagal mengubah email", 500);
       return ok({ success: true, account: updated });
@@ -144,6 +146,20 @@ Deno.serve(async (req) => {
       const newHash = await hashPassword(newPw);
       await admin.from("anon_chat_accounts").update({ password_hash: newHash }).eq("id", acc.id);
       return ok({ success: true });
+    }
+
+    if (action === "update_bio") {
+      const bio = String(payload.bio || "").slice(0, 200);
+      const acc = await findAccountByVisitor();
+      if (!acc) return bad("Belum login akun Anon", 401);
+      const { data: updated, error } = await admin
+        .from("anon_chat_accounts")
+        .update({ bio })
+        .eq("id", acc.id)
+        .select(SELECT_COLS)
+        .single();
+      if (error || !updated) return bad("Gagal menyimpan deskripsi", 500);
+      return ok({ success: true, account: updated });
     }
 
     return bad("Action tidak valid");

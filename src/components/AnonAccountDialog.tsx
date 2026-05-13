@@ -2,13 +2,14 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Mail, Lock, LogIn, UserPlus, KeyRound, AtSign, LogOut, X } from "lucide-react";
+import { Mail, Lock, LogIn, UserPlus, KeyRound, AtSign, LogOut, FileText } from "lucide-react";
 
 export interface AnonAccount {
   id: string;
   email: string;
   primary_visitor_id: string | null;
   created_at: string;
+  bio?: string | null;
 }
 
 async function call(action: string, visitorId: string, extra: Record<string, unknown> = {}) {
@@ -42,19 +43,21 @@ export function AnonAccountDialog({
   account: AnonAccount | null;
   onAccountChange: (acc: AnonAccount | null) => void;
 }) {
-  const [mode, setMode] = useState<"login" | "register" | "manage" | "change-email" | "change-password">(
+  const [mode, setMode] = useState<"login" | "register" | "manage" | "change-email" | "change-password" | "edit-bio">(
     account ? "manage" : "login"
   );
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [newEmail, setNewEmail] = useState("");
   const [newPassword, setNewPassword] = useState("");
+  const [bio, setBio] = useState("");
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
     if (open) {
       setMode(account ? "manage" : "login");
       setEmail(""); setPassword(""); setNewEmail(""); setNewPassword("");
+      setBio(account?.bio || "");
     }
   }, [open, account]);
 
@@ -79,6 +82,11 @@ export function AnonAccountDialog({
       } else if (mode === "change-password") {
         await call("change_password", visitorId, { oldPassword: password, newPassword });
         toast.success("Sandi berhasil diubah");
+        setMode("manage");
+      } else if (mode === "edit-bio") {
+        const data = await call("update_bio", visitorId, { bio });
+        onAccountChange(data.account);
+        toast.success("Deskripsi disimpan");
         setMode("manage");
       }
     } catch (e) {
@@ -120,6 +128,7 @@ export function AnonAccountDialog({
             {mode === "manage" && "Akun Anon Chat"}
             {mode === "change-email" && "Ganti Email"}
             {mode === "change-password" && "Ganti Sandi"}
+            {mode === "edit-bio" && "Deskripsi Profil"}
           </DialogTitle>
         </DialogHeader>
 
@@ -129,6 +138,13 @@ export function AnonAccountDialog({
               <div className="text-[11px] text-emerald-200/70 uppercase tracking-wide">Email</div>
               <div className="text-sm font-bold break-all">{account.email}</div>
             </div>
+            <div className="rounded-xl border border-slate-700 bg-slate-900 p-3">
+              <div className="text-[11px] text-slate-400 uppercase tracking-wide mb-1">Deskripsi</div>
+              <div className="text-xs text-slate-200 italic break-words">
+                {account.bio?.trim() ? account.bio : "Belum ada deskripsi — ceritakan dirimu singkat."}
+              </div>
+            </div>
+            <button onClick={() => setMode("edit-bio")} disabled={busy} className="w-full py-3 rounded-xl bg-slate-800 border border-slate-700 text-sm font-semibold flex items-center justify-center gap-2"><FileText className="w-4 h-4" /> Ubah Deskripsi</button>
             <button onClick={() => setMode("change-email")} disabled={busy} className="w-full py-3 rounded-xl bg-slate-800 border border-slate-700 text-sm font-semibold flex items-center justify-center gap-2"><AtSign className="w-4 h-4" /> Ganti Email</button>
             <button onClick={() => setMode("change-password")} disabled={busy} className="w-full py-3 rounded-xl bg-slate-800 border border-slate-700 text-sm font-semibold flex items-center justify-center gap-2"><KeyRound className="w-4 h-4" /> Ganti Sandi</button>
             <button onClick={logout} disabled={busy} className="w-full py-3 rounded-xl bg-rose-500/15 border border-rose-400/40 text-rose-200 text-sm font-bold flex items-center justify-center gap-2"><LogOut className="w-4 h-4" /> Putuskan Akun</button>
@@ -167,6 +183,23 @@ export function AnonAccountDialog({
             <div className="flex gap-2">
               <button onClick={() => setMode("manage")} className="flex-1 py-3 rounded-xl bg-slate-800 border border-slate-700 text-sm font-semibold">Batal</button>
               <button onClick={submit} disabled={busy || !password || newPassword.length < 6} className="flex-1 py-3 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-bold disabled:opacity-50">Simpan</button>
+            </div>
+          </div>
+        )}
+
+        {mode === "edit-bio" && (
+          <div className="space-y-3">
+            <textarea
+              value={bio}
+              onChange={(e) => setBio(e.target.value.slice(0, 200))}
+              rows={4}
+              placeholder="Tulis deskripsi singkat tentang dirimu (maks 200 karakter)…"
+              className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-sm text-slate-100 outline-none placeholder:text-slate-500 resize-none"
+            />
+            <div className="text-[10px] text-right text-slate-500">{bio.length}/200</div>
+            <div className="flex gap-2">
+              <button onClick={() => setMode("manage")} className="flex-1 py-3 rounded-xl bg-slate-800 border border-slate-700 text-sm font-semibold">Batal</button>
+              <button onClick={submit} disabled={busy} className="flex-1 py-3 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-bold disabled:opacity-50">Simpan</button>
             </div>
           </div>
         )}

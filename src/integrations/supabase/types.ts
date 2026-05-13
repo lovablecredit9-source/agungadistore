@@ -165,6 +165,7 @@ export type Database = {
       }
       anon_chat_accounts: {
         Row: {
+          bio: string | null
           created_at: string
           email: string
           id: string
@@ -173,6 +174,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          bio?: string | null
           created_at?: string
           email: string
           id?: string
@@ -181,6 +183,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          bio?: string | null
           created_at?: string
           email?: string
           id?: string
