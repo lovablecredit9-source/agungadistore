@@ -134,6 +134,113 @@ export type Database = {
         }
         Relationships: []
       }
+      anon_chat_messages: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          sender_visitor_id: string
+          session_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          sender_visitor_id: string
+          session_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          sender_visitor_id?: string
+          session_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "anon_chat_messages_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "anon_chat_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      anon_chat_queue: {
+        Row: {
+          created_at: string
+          id: string
+          interest: string | null
+          my_gender: string | null
+          nickname: string | null
+          pref_gender: string | null
+          visitor_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          interest?: string | null
+          my_gender?: string | null
+          nickname?: string | null
+          pref_gender?: string | null
+          visitor_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          interest?: string | null
+          my_gender?: string | null
+          nickname?: string | null
+          pref_gender?: string | null
+          visitor_id?: string
+        }
+        Relationships: []
+      }
+      anon_chat_sessions: {
+        Row: {
+          created_at: string
+          ended_at: string | null
+          ended_by: string | null
+          gender_a: string | null
+          gender_b: string | null
+          id: string
+          interest: string | null
+          nickname_a: string | null
+          nickname_b: string | null
+          status: string
+          visitor_a: string
+          visitor_b: string
+        }
+        Insert: {
+          created_at?: string
+          ended_at?: string | null
+          ended_by?: string | null
+          gender_a?: string | null
+          gender_b?: string | null
+          id?: string
+          interest?: string | null
+          nickname_a?: string | null
+          nickname_b?: string | null
+          status?: string
+          visitor_a: string
+          visitor_b: string
+        }
+        Update: {
+          created_at?: string
+          ended_at?: string | null
+          ended_by?: string | null
+          gender_a?: string | null
+          gender_b?: string | null
+          id?: string
+          interest?: string | null
+          nickname_a?: string | null
+          nickname_b?: string | null
+          status?: string
+          visitor_a?: string
+          visitor_b?: string
+        }
+        Relationships: []
+      }
       api_keys: {
         Row: {
           api_key: string
@@ -8688,6 +8795,26 @@ export type Database = {
         Args: { p_amount: number; p_visitor_id: string }
         Returns: number
       }
+      anon_chat_end_session: {
+        Args: { p_session: string; p_visitor: string }
+        Returns: undefined
+      }
+      anon_chat_find_or_queue: {
+        Args: {
+          p_interest: string
+          p_my_gender: string
+          p_nickname: string
+          p_pref_gender: string
+          p_visitor: string
+        }
+        Returns: {
+          partner_gender: string
+          partner_nickname: string
+          queued: boolean
+          session_id: string
+        }[]
+      }
+      anon_chat_leave_queue: { Args: { p_visitor: string }; Returns: undefined }
       auto_cancel_expired_deposits: { Args: never; Returns: number }
       bump_music_quest_event: {
         Args: { p_quest_type: string; p_visitor_id: string }
