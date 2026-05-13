@@ -762,6 +762,12 @@ export default function AnonChatTab() {
 
         {/* Input */}
         <div className="p-2.5 border-t border-emerald-400/20 bg-slate-950/80 space-y-2">
+          {activeBan && (
+            <div className="rounded-xl border border-rose-400/30 bg-rose-500/10 px-3 py-2 text-xs text-rose-100 flex items-start gap-2">
+              <AlertTriangle className="w-4 h-4 text-rose-300 mt-0.5" />
+              <span>Akun diblokir dari chat: {banInfo?.reason} · {formatBanRemaining(banInfo)}</span>
+            </div>
+          )}
           {replyTo && (
             <div className="flex items-start gap-2 rounded-lg border border-emerald-400/30 bg-slate-900/70 px-2.5 py-2 text-[11px] animate-fade-in">
               <Reply className="w-3.5 h-3.5 text-emerald-300 mt-0.5 shrink-0" />
@@ -776,8 +782,18 @@ export default function AnonChatTab() {
               </button>
             </div>
           )}
-          {sessionStatus === "active" ? (
+          {showEmojiInput && !activeBan && (
+            <div className="grid grid-cols-8 gap-1 rounded-2xl border border-emerald-400/20 bg-slate-900/80 p-2 animate-fade-in">
+              {[...EMOJIS, "😍", "🤣", "😭", "😎", "🤝", "💯", "🎉", "🤔", "😡", "😴", "✨", "🙌", "😇", "😜", "👌", "💬"].map((e) => (
+                <button key={e} onClick={() => setDraft((d) => d + e)} className="h-8 rounded-lg hover:bg-slate-800 text-lg">{e}</button>
+              ))}
+            </div>
+          )}
+          {sessionStatus === "active" && !activeBan ? (
             <div className="flex items-center gap-2">
+              <button onClick={() => setShowEmojiInput(v => !v)} className="w-10 h-10 rounded-full bg-slate-900/70 border border-emerald-400/30 flex items-center justify-center shrink-0 hover:bg-slate-800/70 transition">
+                <Smile className="w-[18px] h-[18px] text-emerald-300" />
+              </button>
               <label className="w-10 h-10 rounded-full bg-slate-900/70 border border-emerald-400/30 flex items-center justify-center cursor-pointer shrink-0 hover:bg-slate-800/70 transition">
                 <ImagePlus className="w-[18px] h-[18px] text-emerald-300" />
                 <input type="file" accept="image/*" className="hidden"
