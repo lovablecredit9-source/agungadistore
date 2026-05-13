@@ -557,7 +557,31 @@ export default function AnonChatTab() {
                       ) : (
                         <>
                           {m.content && <p className="whitespace-pre-wrap break-words">{m.content}</p>}
-                          {m.image_url && <img src={m.image_url} alt="" className="max-w-full rounded-lg mt-1" />}
+                          {m.image_url && (() => {
+                            const revealed = mine || revealedImgs.has(m.id);
+                            return (
+                              <div className="relative mt-1 rounded-lg overflow-hidden">
+                                <img src={m.image_url} alt="" className={`max-w-full rounded-lg transition ${revealed ? "" : "blur-2xl scale-105"}`} />
+                                {!revealed && (
+                                  <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-black/40">
+                                    <div className="text-[10px] text-white/90 px-2 py-1 rounded-full bg-amber-500/80 flex items-center gap-1"><AlertTriangle className="w-3 h-3" /> Foto disensor</div>
+                                    <button onClick={() => setRevealedImgs(prev => { const n = new Set(prev); n.add(m.id); return n; })} className="px-3 py-1.5 rounded-full bg-white/95 text-slate-900 text-xs font-bold flex items-center gap-1">
+                                      <Eye className="w-3.5 h-3.5" /> Tampilkan
+                                    </button>
+                                  </div>
+                                )}
+                                {!mine && (
+                                  <button
+                                    onClick={() => { toast.message("Foto dilaporkan", { description: `Hubungi WA ${CS_WA} untuk laporan resmi & barang bukti.`, action: { label: "WA CS", onClick: () => window.open(CS_WA_LINK, "_blank") } }); }}
+                                    className="absolute top-1 right-1 px-2 py-0.5 rounded-full bg-rose-500/90 text-white text-[9px] font-bold flex items-center gap-0.5 shadow"
+                                    title="Laporkan foto"
+                                  >
+                                    <Flag className="w-2.5 h-2.5" /> Lapor
+                                  </button>
+                                )}
+                              </div>
+                            );
+                          })()}
                         </>
                       )}
                       <div className={`text-[9px] mt-1 flex items-center gap-0.5 ${mine ? "text-white/70 justify-end" : "text-slate-400"}`}>
