@@ -53,11 +53,12 @@ interface AnonMsg {
   is_read: boolean;
   reply_to_id: string | null;
   is_deleted: boolean;
+  local_blocked?: boolean;
 }
 interface AnonReaction { id: string; message_id: string; visitor_id: string; emoji: string; }
 const EMOJIS = ["👍", "❤️", "😂", "😮", "😢", "🙏", "🔥"];
 
-type View = "lobby" | "prefs" | "account" | "interest" | "searching" | "chat" | "friends";
+type View = "lobby" | "prefs" | "account" | "interest" | "searching" | "chat" | "friends" | "support" | "notif";
 
 const INTERESTS = ["Apapun","Curhat","Main RP","Meme","Kesepian","Game","Anime","Film","Musik","Travel","Coding","Olahraga","Nongkrong","Belajar"];
 
