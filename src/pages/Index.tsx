@@ -4891,7 +4891,7 @@ const Index = () => {
 
         {tab === "anonchat" && (
           <div className="-mx-4 sm:mx-0">
-            <AnonChatTab key={userBalance?.visitor_id || "no-user"} />
+            <AnonChatTab key="anon-chat" />
           </div>
         )}
 
