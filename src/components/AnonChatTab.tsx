@@ -180,7 +180,24 @@ export default function AnonChatTab() {
     setPartnerProfile((data as unknown as AnonProfile) || null);
   }, [visitor]);
 
-  useEffect(() => { refreshBan(); }, [refreshBan]);
+  useEffect(() => {
+    refreshBan();
+
+    const refreshOnReturn = () => refreshBan();
+    const channel = supabase
+      .channel(`anon_chat_ban_status_${visitor}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "account_bans" }, refreshBan)
+      .subscribe();
+
+    window.addEventListener("focus", refreshOnReturn);
+    window.addEventListener("balance-auth-changed", refreshOnReturn as EventListener);
+
+    return () => {
+      window.removeEventListener("focus", refreshOnReturn);
+      window.removeEventListener("balance-auth-changed", refreshOnReturn as EventListener);
+      supabase.removeChannel(channel);
+    };
+  }, [refreshBan, visitor]);
   useEffect(() => {
     touchProfile();
     const interval = window.setInterval(touchProfile, 30000);
@@ -495,13 +512,6 @@ export default function AnonChatTab() {
         violationCount = Number(data || 0);
         await refreshBan();
       } catch {}
-      const fake: AnonMsg = {
-        id: "local-" + Date.now() + "-" + Math.random().toString(36).slice(2),
-        sender: visitor, content: moderation.cleaned || "•••sensor•••", image_url: null,
-        created_at: new Date().toISOString(), is_read: false,
-        reply_to_id: replyTo?.id || null, is_deleted: false, local_blocked: true,
-      };
-      setMessages(prev => [...prev, fake]);
       setReplyTo(null);
       toast.message("Pesan tidak diteruskan", {
         description: `${moderation.reasons.join(". ")} · Peringatan ${violationCount}/3. Untuk laporan resmi, hubungi WA ${CS_WA}.`,
@@ -1026,11 +1036,11 @@ export default function AnonChatTab() {
       { q: "Apa fungsi akun Anon Chat?", a: "Menyimpan teman & profil lintas perangkat, plus jadi syarat tambahan agar pesan tertentu (mis. yang mengandung kontak) tidak diblokir total." },
       { q: "Saya lupa sandi akun Anon, bagaimana?", a: "Saat ini reset belum tersedia mandiri. Hubungi WA CS untuk verifikasi manual." },
       { q: "Apakah pesan saya dibaca admin?", a: "Tidak. Pesan bersifat antar-pengguna. Admin hanya dapat melihat laporan pelanggaran kalau kamu lapor." },
-      { q: "Mengapa pesan saya bertanda 'hanya kamu'?", a: "Pesan terdeteksi sensitif (mis. tuduhan / kata terlarang). Pesan tampak terkirim tapi tidak diteruskan ke partner. Untuk laporan resmi, hubungi WA CS." },
+      { q: "Mengapa pesan saya ditolak?", a: "Pesan terdeteksi sensitif (mis. tuduhan / kata terlarang), jadi tidak dikirim ke partner. Untuk laporan resmi, hubungi WA CS." },
       { q: "Mengapa kirim nomor HP/akun medsos diblokir?", a: "Untuk mencegah penipuan & doxing. Jika kamu sudah punya akun Anon Chat, sebagian pesan akan disensor saja, bukan diblokir penuh." },
       { q: "Mengapa foto partner buram?", a: "Semua foto dari partner disensor otomatis untuk perlindungan dari konten 18+. Ketuk 'Tampilkan' jika ingin melihat — risiko ditanggung pengguna." },
       { q: "Berapa batas ukuran gambar?", a: "Maksimal 5 MB per gambar. Foto profil maksimal 2 MB." },
-      { q: "Apa itu auto-blokir 7 hari?", a: "Jika melanggar aturan chat 3x dalam 24 jam (spam / kontak / kata terlarang), akun otomatis diblokir 7 hari." },
+      { q: "Apa yang terjadi jika melanggar aturan chat?", a: "Pelanggaran tetap dicatat sebagai peringatan. Admin bisa meninjau laporan jika ada penyalahgunaan." },
       { q: "Kenapa terakhir dilihat bisa hilang?", a: "Setiap pengguna bisa menyalakan atau menyembunyikan terakhir dilihat dari Pengaturan akun Anon Chat." },
       { q: "Bagaimana hapus pesan?", a: "Tekan-tahan pesan → pilih 'Hapus untuk saya' (sembunyikan dari layarmu) atau 'Hapus untuk semua' (hanya untuk pesan milikmu)." },
       { q: "Bagaimana balas pesan tertentu?", a: "Geser pesan ke kanan atau ketuk ikon balas, lalu ketik balasan." },
