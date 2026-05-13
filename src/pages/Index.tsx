@@ -7373,6 +7373,7 @@ const Index = () => {
                 { key: "streakvoucher" as Tab, icon: Ticket, label: "Streak Voucher" },
                 { key: "game" as Tab, icon: Gamepad2, label: "Game" },
                 { key: "plus" as Tab, icon: Gem, label: "Plus" },
+                { key: "anonchat" as Tab, icon: VenetianMask, label: "Anon Chat" },
                 { key: "update" as Tab, icon: RefreshCw, label: "Update" },
                 { key: "adminpost" as Tab, icon: FileText, label: "Admin" },
               ] as Array<{ key: any; icon: any; label: string; external?: string }>).map(({ key, icon: Icon, label, external }) => {
