@@ -44,11 +44,13 @@ Deno.serve(async (req) => {
       if (!data) return null;
       const { data: acc } = await admin
         .from("anon_chat_accounts")
-        .select("id, email, primary_visitor_id, created_at")
+        .select("id, email, primary_visitor_id, created_at, bio")
         .eq("id", data.account_id)
         .maybeSingle();
       return acc;
     };
+
+    const SELECT_COLS = "id, email, primary_visitor_id, created_at, bio";
 
     if (action === "me") {
       const acc = await findAccountByVisitor();
