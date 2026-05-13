@@ -43,7 +43,7 @@ export function AnonAccountDialog({
   account: AnonAccount | null;
   onAccountChange: (acc: AnonAccount | null) => void;
 }) {
-  const [mode, setMode] = useState<"login" | "register" | "manage" | "change-email" | "change-password">(
+  const [mode, setMode] = useState<"login" | "register" | "manage" | "change-email" | "change-password" | "edit-bio">(
     account ? "manage" : "login"
   );
   const [email, setEmail] = useState("");
