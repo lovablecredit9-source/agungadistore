@@ -315,6 +315,7 @@ export type Database = {
         Row: {
           avatar_preset: string
           avatar_url: string | null
+          bio: string | null
           last_seen_at: string
           nickname: string | null
           show_last_seen: boolean
@@ -324,6 +325,7 @@ export type Database = {
         Insert: {
           avatar_preset?: string
           avatar_url?: string | null
+          bio?: string | null
           last_seen_at?: string
           nickname?: string | null
           show_last_seen?: boolean
@@ -333,6 +335,7 @@ export type Database = {
         Update: {
           avatar_preset?: string
           avatar_url?: string | null
+          bio?: string | null
           last_seen_at?: string
           nickname?: string | null
           show_last_seen?: boolean
@@ -9345,6 +9348,7 @@ export type Database = {
         Returns: {
           avatar_preset: string
           avatar_url: string | null
+          bio: string | null
           last_seen_at: string
           nickname: string | null
           show_last_seen: boolean
