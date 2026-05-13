@@ -937,6 +937,15 @@ export default function AnonChatTab() {
                 </div>
                 <span className="text-[10px] font-bold px-2 py-1 rounded-full bg-emerald-500/20 text-emerald-200 border border-emerald-400/40 shrink-0">Login</span>
               </div>
+              <div className="rounded-lg bg-slate-950/60 border border-slate-700 p-2">
+                <div className="text-[10px] text-slate-400 uppercase tracking-wide mb-0.5">Deskripsi profil</div>
+                <div className="text-[11px] text-slate-200 italic break-words">
+                  {anonAccount.bio?.trim() ? anonAccount.bio : "Belum ada deskripsi — ceritakan dirimu singkat."}
+                </div>
+              </div>
+              <button onClick={() => setShowAccountDialog(true)} className="w-full py-2 rounded-lg bg-emerald-500/30 hover:bg-emerald-500/40 border border-emerald-400/50 text-emerald-100 text-xs font-bold">
+                {anonAccount.bio?.trim() ? "Ubah Deskripsi" : "Buat Deskripsi"}
+              </button>
               <button onClick={() => setShowAccountDialog(true)} className="w-full py-2 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-400/40 text-emerald-100 text-xs font-bold">
                 Kelola akun (ganti email / sandi / putuskan)
               </button>
