@@ -281,34 +281,146 @@ export default function AnonChatTab() {
         </div>
 
         {/* Messages */}
-        <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-2">
+        <div ref={scrollRef} className="flex-1 overflow-y-auto p-3 space-y-1.5">
           <div className="text-center text-xs text-emerald-300/50 py-2">— Awal obrolan anonim —</div>
-          {messages.map(m => {
+          {messages.map((m, idx) => {
             const mine = m.sender === visitor;
+            const replied = m.reply_to_id ? messagesById[m.reply_to_id] : null;
+            const rx = reactionsByMsg[m.id];
+            const prev = messages[idx - 1];
+            const showDate = !prev || dateLabel(prev.created_at) !== dateLabel(m.created_at);
+            const grouped = prev && prev.sender === m.sender && !showDate &&
+              new Date(m.created_at).getTime() - new Date(prev.created_at).getTime() < 60_000;
             return (
-              <div key={m.id} className={`flex ${mine ? "justify-end" : "justify-start"}`}>
-                <div className={`max-w-[75%] px-3.5 py-2 rounded-2xl text-sm break-words shadow ${
-                  mine
-                    ? "bg-gradient-to-br from-emerald-500 to-teal-600 text-white rounded-br-sm"
-                    : "bg-slate-800/90 text-slate-100 rounded-bl-sm border border-slate-700/50"
-                }`}>
-                  {m.content}
+              <div key={m.id}>
+                {showDate && (
+                  <div className="flex justify-center my-3">
+                    <span className="text-[10px] font-medium px-2.5 py-1 rounded-full border border-emerald-400/20 bg-slate-900/60 text-emerald-200/80">
+                      {dateLabel(m.created_at)}
+                    </span>
+                  </div>
+                )}
+                <div className={`flex ${mine ? "justify-end" : "justify-start"} ${grouped ? "mt-0.5" : "mt-1.5"} animate-fade-in`}>
+                  <div className="relative group max-w-[78%]">
+                    <div
+                      onDoubleClick={() => !m.is_deleted && setEmojiFor(emojiFor === m.id ? null : m.id)}
+                      className={`relative px-3 py-2 text-sm break-words shadow-md ${
+                        mine
+                          ? `bg-gradient-to-br from-emerald-500 to-teal-600 text-white ${grouped ? "rounded-2xl rounded-br-md" : "rounded-2xl rounded-br-sm"}`
+                          : `bg-slate-800/90 text-slate-100 border border-slate-700/50 ${grouped ? "rounded-2xl rounded-bl-md" : "rounded-2xl rounded-bl-sm"}`
+                      } ${m.is_deleted ? "italic opacity-70" : ""}`}
+                    >
+                      {replied && !m.is_deleted && (
+                        <div className={`mb-1 border-l-2 pl-2 py-1 rounded text-[11px] ${mine ? "border-white/50 bg-white/10" : "border-emerald-400/60 bg-slate-900/60"}`}>
+                          <p className="font-semibold opacity-80">{replied.sender === visitor ? "Kamu" : partner?.nick || "Partner"}</p>
+                          <p className="truncate opacity-80">{replied.is_deleted ? "Pesan dihapus" : (replied.content || (replied.image_url ? "📷 Foto" : ""))}</p>
+                        </div>
+                      )}
+                      {m.is_deleted ? (
+                        <p className="flex items-center gap-1"><Trash2 className="w-3 h-3" /> Pesan ini dihapus</p>
+                      ) : (
+                        <>
+                          {m.content && <p className="whitespace-pre-wrap break-words">{m.content}</p>}
+                          {m.image_url && <img src={m.image_url} alt="" className="max-w-full rounded-lg mt-1" />}
+                        </>
+                      )}
+                      <div className={`text-[9px] mt-1 flex items-center gap-0.5 ${mine ? "text-white/70 justify-end" : "text-slate-400"}`}>
+                        {new Date(m.created_at).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })}
+                        {mine && !m.is_deleted && (
+                          <span className="ml-0.5">
+                            {m.is_read ? <CheckCheck className="w-3 h-3 text-cyan-200" /> : <Check className="w-3 h-3" />}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    {rx && Object.keys(rx).length > 0 && !m.is_deleted && (
+                      <div className={`flex flex-wrap gap-1 mt-1 ${mine ? "justify-end" : "justify-start"}`}>
+                        {Object.entries(rx).map(([emo, { count, mine: isMine }]) => (
+                          <button key={emo} onClick={() => toggleReaction(m, emo)}
+                            className={`text-[11px] px-1.5 py-0.5 rounded-full border bg-slate-900/80 flex items-center gap-0.5 ${isMine ? "border-emerald-400" : "border-slate-700"}`}>
+                            <span>{emo}</span><span className="text-slate-400">{count}</span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+
+                    {!m.is_deleted && (
+                      <div className={`absolute -top-3 ${mine ? "right-1" : "left-1"} flex gap-1 opacity-0 group-hover:opacity-100 group-active:opacity-100 transition-opacity`}>
+                        <button onClick={() => setEmojiFor(emojiFor === m.id ? null : m.id)}
+                          className="w-6 h-6 rounded-full bg-slate-900 border border-slate-700 shadow flex items-center justify-center hover:bg-slate-800">
+                          <Smile className="w-3.5 h-3.5 text-slate-200" />
+                        </button>
+                        <button onClick={() => setReplyTo(m)}
+                          className="w-6 h-6 rounded-full bg-slate-900 border border-slate-700 shadow flex items-center justify-center hover:bg-slate-800">
+                          <Reply className="w-3.5 h-3.5 text-slate-200" />
+                        </button>
+                        {mine && (
+                          <button onClick={() => softDelete(m)}
+                            className="w-6 h-6 rounded-full bg-slate-900 border border-slate-700 shadow flex items-center justify-center hover:bg-slate-800">
+                            <Trash2 className="w-3.5 h-3.5 text-rose-300" />
+                          </button>
+                        )}
+                      </div>
+                    )}
+
+                    {emojiFor === m.id && (
+                      <div className={`absolute z-20 -top-10 ${mine ? "right-0" : "left-0"} bg-slate-900 border border-slate-700 rounded-full px-1.5 py-1 flex gap-0.5 shadow-xl`}>
+                        {EMOJIS.map(e => (
+                          <button key={e} onClick={() => toggleReaction(m, e)} className="w-7 h-7 rounded-full hover:bg-slate-800 text-base">{e}</button>
+                        ))}
+                        <button onClick={() => setEmojiFor(null)} className="w-7 h-7 rounded-full hover:bg-slate-800 flex items-center justify-center">
+                          <X className="w-3.5 h-3.5 text-slate-300" />
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
             );
           })}
+          {otherTyping && (
+            <div className="flex justify-start animate-fade-in mt-1.5">
+              <div className="bg-slate-800/90 border border-slate-700/50 rounded-2xl rounded-bl-sm px-3.5 py-2.5 flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-300/80 animate-bounce" style={{ animationDelay: "0ms" }} />
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-300/80 animate-bounce" style={{ animationDelay: "120ms" }} />
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-300/80 animate-bounce" style={{ animationDelay: "240ms" }} />
+              </div>
+            </div>
+          )}
           {sessionStatus === "ended" && (
             <div className="text-center text-xs text-rose-300/80 mt-4 py-2 bg-rose-500/10 rounded-xl">Chat sudah berakhir</div>
           )}
         </div>
 
         {/* Input */}
-        <div className="p-3 border-t border-emerald-400/20 bg-slate-950/80 space-y-2">
+        <div className="p-2.5 border-t border-emerald-400/20 bg-slate-950/80 space-y-2">
+          {replyTo && (
+            <div className="flex items-start gap-2 rounded-lg border border-emerald-400/30 bg-slate-900/70 px-2.5 py-2 text-[11px] animate-fade-in">
+              <Reply className="w-3.5 h-3.5 text-emerald-300 mt-0.5 shrink-0" />
+              <div className="flex-1 min-w-0">
+                <p className="font-semibold text-emerald-200">
+                  Membalas {replyTo.sender === visitor ? "diri sendiri" : (partner?.nick || "partner")}
+                </p>
+                <p className="truncate text-slate-300/80">{replyTo.content || (replyTo.image_url ? "📷 Foto" : "")}</p>
+              </div>
+              <button onClick={() => setReplyTo(null)} className="p-1 hover:bg-slate-800 rounded-full">
+                <X className="w-3.5 h-3.5 text-slate-300" />
+              </button>
+            </div>
+          )}
           {sessionStatus === "active" ? (
             <div className="flex items-center gap-2">
+              <label className="w-10 h-10 rounded-full bg-slate-900/70 border border-emerald-400/30 flex items-center justify-center cursor-pointer shrink-0 hover:bg-slate-800/70 transition">
+                <ImagePlus className="w-[18px] h-[18px] text-emerald-300" />
+                <input type="file" accept="image/*" className="hidden"
+                  onChange={e => { if (e.target.files?.[0]) sendImage(e.target.files[0]); e.target.value = ""; }} />
+              </label>
               <input
-                value={draft} onChange={e => setDraft(e.target.value)}
+                value={draft}
+                onChange={e => onChangeDraft(e.target.value)}
                 onKeyDown={e => { if (e.key === "Enter") sendMessage(); }}
+                onBlur={() => pushTyping(false)}
                 placeholder="Ketik pesan rahasia..."
                 className="flex-1 bg-slate-900/70 border border-emerald-400/30 rounded-full px-4 py-2.5 text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-emerald-400"
                 maxLength={1000}
