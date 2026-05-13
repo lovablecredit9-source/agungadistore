@@ -111,12 +111,6 @@ export function AnonAccountDialog({
     }
   };
 
-  const Field = ({ icon: Icon, ...p }: any) => (
-    <div className="flex items-center gap-2 bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5">
-      <Icon className="w-4 h-4 text-emerald-300 shrink-0" />
-      <input {...p} className="bg-transparent outline-none text-sm text-slate-100 flex-1 placeholder:text-slate-500" />
-    </div>
-  );
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
