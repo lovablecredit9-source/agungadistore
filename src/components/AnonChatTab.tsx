@@ -1,7 +1,48 @@
 import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Search, Users, Settings as SettingsIcon, Send, X, RefreshCw, UserPlus, Heart, ChevronRight, Sparkles, Shield, ImagePlus, Smile, Reply, Trash2, Check, CheckCheck, MessageCircle, UserCheck, UserX, Pencil, Link2, HelpCircle, Bell, Moon } from "lucide-react";
+import { Search, Users, Settings as SettingsIcon, Send, X, RefreshCw, UserPlus, Heart, ChevronRight, Sparkles, Shield, ImagePlus, Smile, Reply, Trash2, Check, CheckCheck, MessageCircle, UserCheck, UserX, Pencil, Link2, HelpCircle, Bell, Moon, Phone, Volume2, VolumeX, Eye, EyeOff, AlertTriangle, LogOut, Copy, KeyRound, Mail, Flag } from "lucide-react";
 import { toast } from "sonner";
+
+const CS_WA = "085769302532";
+const CS_WA_LINK = `https://wa.me/62${CS_WA.replace(/^0/, "")}`;
+// Kata terlarang: pesan akan tampak terkirim tapi tidak diteruskan ke partner
+const BLOCKED_PATTERNS = [
+  /agung\s*adi\s*store/i,
+  /penipu/i,
+  /tidak\s*amanah/i,
+  /tdk\s*amanah/i,
+  /scam/i,
+  /penipuan/i,
+];
+function isBlockedText(t: string) {
+  return BLOCKED_PATTERNS.some((re) => re.test(t));
+}
+function shortId(id: string) {
+  const clean = id.replace(/-/g, "").toUpperCase();
+  return "#" + clean.slice(0, 8);
+}
+function genderEmoji(g?: string | null) {
+  if (g === "male") return "🧑";
+  if (g === "female") return "👩";
+  return "🥷";
+}
+function playPing() {
+  try {
+    const AC = (window as any).AudioContext || (window as any).webkitAudioContext;
+    if (!AC) return;
+    const ctx = new AC();
+    const o = ctx.createOscillator();
+    const g = ctx.createGain();
+    o.type = "sine";
+    o.frequency.setValueAtTime(880, ctx.currentTime);
+    o.frequency.exponentialRampToValueAtTime(440, ctx.currentTime + 0.18);
+    g.gain.setValueAtTime(0.0001, ctx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.25, ctx.currentTime + 0.02);
+    g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.25);
+    o.connect(g); g.connect(ctx.destination);
+    o.start(); o.stop(ctx.currentTime + 0.3);
+  } catch {}
+}
 
 interface AnonMsg {
   id: string;
