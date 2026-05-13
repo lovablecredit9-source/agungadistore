@@ -2,29 +2,25 @@ import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Search, Users, Settings as SettingsIcon, Send, X, RefreshCw, UserPlus, Heart, ChevronRight, Sparkles, Shield, ImagePlus, Smile, Reply, Trash2, Check, CheckCheck, MessageCircle, UserCheck, UserX, Pencil, Link2, HelpCircle, Bell, Moon, Phone, Volume2, VolumeX, Eye, EyeOff, AlertTriangle, LogOut, Copy, KeyRound, Mail, Flag } from "lucide-react";
 import { toast } from "sonner";
+import { moderateOutgoing } from "@/lib/chat-moderation";
+import { useAccountBan, formatBanRemaining } from "@/hooks/useAccountBan";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
 const CS_WA = "085769302532";
 const CS_WA_LINK = `https://wa.me/62${CS_WA.replace(/^0/, "")}`;
-// Kata terlarang: pesan akan tampak terkirim tapi tidak diteruskan ke partner
-const BLOCKED_PATTERNS = [
-  /agung\s*adi\s*store/i,
-  /penipu/i,
-  /tidak\s*amanah/i,
-  /tdk\s*amanah/i,
-  /scam/i,
-  /penipuan/i,
-];
-function isBlockedText(t: string) {
-  return BLOCKED_PATTERNS.some((re) => re.test(t));
-}
 function shortId(id: string) {
   const clean = id.replace(/-/g, "").toUpperCase();
   return "#" + clean.slice(0, 8);
 }
-function genderEmoji(g?: string | null) {
-  if (g === "male") return "🧑";
-  if (g === "female") return "👩";
-  return "🥷";
+const AVATAR_PRESETS = [
+  { id: "ninja", label: "Ninja", emoji: "🥷", gradient: "from-indigo-500 to-purple-600" },
+  { id: "leaf", label: "Daun", emoji: "🍃", gradient: "from-emerald-400 to-teal-500" },
+  { id: "cat", label: "Kucing", emoji: "🐱", gradient: "from-amber-400 to-orange-500" },
+  { id: "star", label: "Bintang", emoji: "⭐", gradient: "from-cyan-400 to-blue-600" },
+  { id: "rose", label: "Mawar", emoji: "🌹", gradient: "from-pink-500 to-rose-600" },
+];
+function presetById(id?: string | null) {
+  return AVATAR_PRESETS.find((a) => a.id === id) || AVATAR_PRESETS[0];
 }
 function playPing() {
   try {
@@ -53,10 +49,12 @@ interface AnonMsg {
   is_read: boolean;
   reply_to_id: string | null;
   is_deleted: boolean;
+  deleted_for?: string[] | null;
   local_blocked?: boolean;
 }
 interface AnonReaction { id: string; message_id: string; visitor_id: string; emoji: string; }
 const EMOJIS = ["👍", "❤️", "😂", "😮", "😢", "🙏", "🔥"];
+interface AnonProfile { visitor_id: string; nickname: string | null; avatar_url: string | null; avatar_preset: string | null; show_last_seen: boolean; last_seen_at: string; }
 
 type View = "lobby" | "prefs" | "account" | "interest" | "searching" | "chat" | "friends" | "support" | "notif";
 
