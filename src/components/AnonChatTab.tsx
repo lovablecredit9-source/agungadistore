@@ -85,6 +85,8 @@ interface AnonMsg {
 interface AnonReaction { id: string; message_id: string; visitor_id: string; emoji: string; }
 const EMOJIS = ["👍", "❤️", "😂", "😮", "😢", "🙏", "🔥"];
 interface AnonProfile { visitor_id: string; nickname: string | null; avatar_url: string | null; avatar_preset: string | null; show_last_seen: boolean; last_seen_at: string; }
+type PublicBioResponse = { success?: boolean; bio?: string | null; error?: string };
+type UpdateBioResponse = { success?: boolean; account?: AnonAccount | null; error?: string };
 
 type View = "lobby" | "prefs" | "account" | "interest" | "searching" | "chat" | "friends" | "support" | "notif";
 
@@ -186,7 +188,8 @@ export default function AnonChatTab() {
     const { data: bioData } = await supabase.functions.invoke("anon-chat-auth", {
       body: { action: "public_bio", visitorId: visitor, targetVisitorId: other },
     });
-    setPartnerBio(((bioData as any)?.bio as string) || null);
+    const bioResponse = bioData as PublicBioResponse | null;
+    setPartnerBio(bioResponse?.bio || null);
     setShowPartnerBio(false);
   }, [visitor]);
 
@@ -251,8 +254,9 @@ export default function AnonChatTab() {
         body: { action: "update_bio", visitorId: visitor, bio },
       });
       if (error) throw new Error(error.message);
-      if ((data as any)?.error) throw new Error((data as any).error);
-      setAnonAccount(((data as any)?.account as AnonAccount) || anonAccount);
+      const response = data as UpdateBioResponse | null;
+      if (response?.error) throw new Error(response.error);
+      setAnonAccount(response?.account || anonAccount);
       setBioDraft(bio);
       toast.success("Deskripsi Anon Chat tersimpan");
     } catch (e) {
