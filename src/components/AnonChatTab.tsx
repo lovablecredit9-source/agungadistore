@@ -89,26 +89,63 @@ export default function AnonChatTab() {
     return () => { clearInterval(t); clearInterval(retry); supabase.removeChannel(ch); };
   }, [view, visitor]);
 
-  // Session realtime: messages + status
+  // Session realtime: messages + reactions + typing + status
   useEffect(() => {
     if (!sessionId) return;
+    const markRead = (mid: string) => { void supabase.from("anon_chat_messages").update({ is_read: true } as any).eq("id", mid); };
     const ch = supabase.channel(`anon_sess_${sessionId}`)
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "anon_chat_messages", filter: `session_id=eq.${sessionId}` },
-        (payload: any) => setMessages(prev => [...prev, payload.new]))
+        (p: any) => {
+          const nm = mapMsg(p.new);
+          setMessages(prev => prev.some(m => m.id === nm.id) ? prev : [...prev, nm]);
+          if (nm.sender !== visitor) markRead(nm.id);
+        })
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "anon_chat_messages", filter: `session_id=eq.${sessionId}` },
+        (p: any) => { const nm = mapMsg(p.new); setMessages(prev => prev.map(m => m.id === nm.id ? nm : m)); })
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "anon_chat_reactions" },
+        (p: any) => { const r = p.new as AnonReaction; setReactions(prev => prev.some(x => x.id === r.id) ? prev : [...prev, r]); })
+      .on("postgres_changes", { event: "DELETE", schema: "public", table: "anon_chat_reactions" },
+        (p: any) => { const r = p.old as any; setReactions(prev => prev.filter(x => x.id !== r.id)); })
+      .on("postgres_changes", { event: "*", schema: "public", table: "anon_chat_typing" },
+        (p: any) => {
+          const row = p.new || p.old;
+          if (!row || row.session_id !== sessionId || row.sender_visitor_id === visitor) return;
+          const typing = !!p.new?.is_typing && p.eventType !== "DELETE";
+          const ts = p.new?.updated_at ? new Date(p.new.updated_at).getTime() : 0;
+          setOtherTyping(typing && Date.now() - ts < 6000);
+        })
       .on("postgres_changes", { event: "UPDATE", schema: "public", table: "anon_chat_sessions", filter: `id=eq.${sessionId}` },
         (payload: any) => { if (payload.new.status === "ended") setSessionStatus("ended"); })
       .subscribe();
     return () => { supabase.removeChannel(ch); };
-  }, [sessionId]);
+  }, [sessionId, visitor]);
 
-  useEffect(() => { scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" }); }, [messages]);
+  useEffect(() => {
+    if (!otherTyping) return;
+    const t = window.setTimeout(() => setOtherTyping(false), 4500);
+    return () => window.clearTimeout(t);
+  }, [otherTyping]);
+
+  useEffect(() => { scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" }); }, [messages, otherTyping]);
+
+  const mapMsg = (m: any): AnonMsg => ({
+    id: m.id, sender: m.sender_visitor_id, content: m.content, image_url: m.image_url ?? null,
+    created_at: m.created_at, is_read: !!m.is_read, reply_to_id: m.reply_to_id ?? null, is_deleted: !!m.is_deleted,
+  });
 
   const enterSession = async (id: string, partnerNick: string | null, partnerGender: string | null) => {
     setSessionId(id);
     setPartner({ nick: partnerNick || "Stranger", gender: partnerGender });
     setSessionStatus("active");
-    const { data } = await supabase.from("anon_chat_messages").select("id,sender_visitor_id,content,created_at").eq("session_id", id).order("created_at");
-    setMessages((data || []).map((m: any) => ({ id: m.id, sender: m.sender_visitor_id, content: m.content, created_at: m.created_at })));
+    const { data } = await supabase.from("anon_chat_messages").select("*").eq("session_id", id).order("created_at");
+    const list = (data || []).map(mapMsg);
+    setMessages(list);
+    const unread = list.filter(m => m.sender !== visitor && !m.is_read).map(m => m.id);
+    if (unread.length) await supabase.from("anon_chat_messages").update({ is_read: true } as any).in("id", unread);
+    if (list.length) {
+      const { data: rx } = await supabase.from("anon_chat_reactions").select("*").in("message_id", list.map(m => m.id));
+      setReactions((rx || []) as AnonReaction[]);
+    } else setReactions([]);
     setView("chat");
   };
 
@@ -134,17 +171,92 @@ export default function AnonChatTab() {
 
   const endChat = async () => {
     if (sessionId) await supabase.rpc("anon_chat_end_session", { p_session: sessionId, p_visitor: visitor });
-    setSessionId(null); setPartner(null); setMessages([]); setView("lobby");
+    setSessionId(null); setPartner(null); setMessages([]); setReactions([]); setReplyTo(null); setView("lobby");
   };
 
   const newPartner = async () => { await endChat(); await doMatch(); };
+
+  const pushTyping = useCallback(async (typing: boolean) => {
+    if (!sessionId) return;
+    try {
+      await supabase.from("anon_chat_typing").upsert({
+        session_id: sessionId, sender_visitor_id: visitor, is_typing: typing, updated_at: new Date().toISOString(),
+      } as any, { onConflict: "session_id,sender_visitor_id" } as any);
+    } catch {}
+  }, [sessionId, visitor]);
+
+  const onChangeDraft = (v: string) => {
+    setDraft(v);
+    pushTyping(true);
+    if (typingTimer.current) window.clearTimeout(typingTimer.current);
+    typingTimer.current = window.setTimeout(() => pushTyping(false), 2500);
+  };
 
   const sendMessage = async () => {
     if (!sessionId || !draft.trim() || sessionStatus === "ended") return;
     const text = draft.trim().slice(0, 1000);
     setDraft("");
-    const { error } = await supabase.from("anon_chat_messages").insert({ session_id: sessionId, sender_visitor_id: visitor, content: text });
+    pushTyping(false);
+    const payload: any = { session_id: sessionId, sender_visitor_id: visitor, content: text };
+    if (replyTo) payload.reply_to_id = replyTo.id;
+    setReplyTo(null);
+    const { error } = await supabase.from("anon_chat_messages").insert(payload);
     if (error) { toast.error(error.message); setDraft(text); }
+  };
+
+  const sendImage = async (file: File) => {
+    if (!sessionId || !file || sessionStatus === "ended") return;
+    if (file.size > 5 * 1024 * 1024) { toast.error("Gambar maksimal 5MB"); return; }
+    const ext = file.name.split(".").pop() || "jpg";
+    const path = `anon/${sessionId}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+    const { error: upErr } = await supabase.storage.from("chat-images").upload(path, file);
+    if (upErr) { toast.error("Gagal upload gambar"); return; }
+    const { data: u } = supabase.storage.from("chat-images").getPublicUrl(path);
+    const payload: any = { session_id: sessionId, sender_visitor_id: visitor, image_url: u.publicUrl };
+    if (replyTo) payload.reply_to_id = replyTo.id;
+    setReplyTo(null);
+    await supabase.from("anon_chat_messages").insert(payload);
+  };
+
+  const softDelete = async (m: AnonMsg) => {
+    if (m.sender !== visitor) return;
+    await supabase.from("anon_chat_messages").update({
+      is_deleted: true, content: null, image_url: null, deleted_at: new Date().toISOString(),
+    } as any).eq("id", m.id);
+  };
+
+  const toggleReaction = async (m: AnonMsg, emoji: string) => {
+    setEmojiFor(null);
+    const existing = reactions.find(r => r.message_id === m.id && r.visitor_id === visitor && r.emoji === emoji);
+    if (existing) await supabase.from("anon_chat_reactions").delete().eq("id", existing.id);
+    else await supabase.from("anon_chat_reactions").insert({ message_id: m.id, visitor_id: visitor, emoji } as any);
+  };
+
+  const reactionsByMsg = useMemo(() => {
+    const map: Record<string, Record<string, { count: number; mine: boolean }>> = {};
+    for (const r of reactions) {
+      if (!map[r.message_id]) map[r.message_id] = {};
+      const slot = map[r.message_id][r.emoji] || { count: 0, mine: false };
+      slot.count += 1;
+      if (r.visitor_id === visitor) slot.mine = true;
+      map[r.message_id][r.emoji] = slot;
+    }
+    return map;
+  }, [reactions, visitor]);
+
+  const messagesById = useMemo(() => {
+    const m: Record<string, AnonMsg> = {};
+    for (const x of messages) m[x.id] = x;
+    return m;
+  }, [messages]);
+
+  const dateLabel = (iso: string) => {
+    const d = new Date(iso);
+    const today = new Date();
+    const yest = new Date(); yest.setDate(today.getDate() - 1);
+    if (d.toDateString() === today.toDateString()) return "Hari ini";
+    if (d.toDateString() === yest.toDateString()) return "Kemarin";
+    return d.toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" });
   };
 
   // ============ RENDER ============
