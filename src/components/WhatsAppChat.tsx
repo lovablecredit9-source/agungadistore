@@ -348,6 +348,8 @@ export default function WhatsAppChat({
       >
         {headerSlot}
         {messages.map((m, idx) => {
+          // Hapus untuk saya: sembunyikan di sisi viewer ini saja
+          if ((m.deleted_for || []).includes(viewerId)) return null;
           const mine = m.sender_type === viewerType;
           const replied = m.reply_to_id ? messagesById[m.reply_to_id] : null;
           const rx = reactionsByMsg[m.id];
