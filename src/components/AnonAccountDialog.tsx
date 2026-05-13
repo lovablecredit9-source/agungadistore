@@ -186,6 +186,23 @@ export function AnonAccountDialog({
             </div>
           </div>
         )}
+
+        {mode === "edit-bio" && (
+          <div className="space-y-3">
+            <textarea
+              value={bio}
+              onChange={(e) => setBio(e.target.value.slice(0, 200))}
+              rows={4}
+              placeholder="Tulis deskripsi singkat tentang dirimu (maks 200 karakter)…"
+              className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-sm text-slate-100 outline-none placeholder:text-slate-500 resize-none"
+            />
+            <div className="text-[10px] text-right text-slate-500">{bio.length}/200</div>
+            <div className="flex gap-2">
+              <button onClick={() => setMode("manage")} className="flex-1 py-3 rounded-xl bg-slate-800 border border-slate-700 text-sm font-semibold">Batal</button>
+              <button onClick={submit} disabled={busy} className="flex-1 py-3 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-bold disabled:opacity-50">Simpan</button>
+            </div>
+          </div>
+        )}
       </DialogContent>
     </Dialog>
   );
