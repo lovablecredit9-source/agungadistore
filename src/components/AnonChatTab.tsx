@@ -390,6 +390,24 @@ export default function AnonChatTab() {
     const text = draft.trim().slice(0, 1000);
     setDraft("");
     pushTyping(false);
+
+    // Filter konten: tampak terkirim namun tidak diteruskan ke partner
+    if (isBlockedText(text)) {
+      const fake: AnonMsg = {
+        id: "local-" + Date.now() + "-" + Math.random().toString(36).slice(2),
+        sender: visitor, content: text, image_url: null,
+        created_at: new Date().toISOString(), is_read: false,
+        reply_to_id: replyTo?.id || null, is_deleted: false, local_blocked: true,
+      };
+      setMessages(prev => [...prev, fake]);
+      setReplyTo(null);
+      toast.message("Pesan tidak diteruskan", {
+        description: `Konten terdeteksi sensitif/tuduhan. Untuk laporan resmi, hubungi WA ${CS_WA}.`,
+        action: { label: "WA CS", onClick: () => window.open(CS_WA_LINK, "_blank") },
+      });
+      return;
+    }
+
     const payload: any = { session_id: sessionId, sender_visitor_id: visitor, content: text };
     if (replyTo) payload.reply_to_id = replyTo.id;
     setReplyTo(null);
