@@ -98,6 +98,66 @@ export default function AnonChatTab() {
   const [friendStatusForPartner, setFriendStatusForPartner] = useState<"none" | "pending_out" | "pending_in" | "friend">("none");
   const scrollRef = useRef<HTMLDivElement>(null);
   const typingTimer = useRef<number | null>(null);
+  const [soundOn, setSoundOn] = useState<boolean>(() => localStorage.getItem("anon_sound") !== "off");
+  const [notifOn, setNotifOn] = useState<boolean>(() => localStorage.getItem("anon_notif") !== "off");
+  const [revealedImgs, setRevealedImgs] = useState<Set<string>>(new Set());
+  const [account, setAccount] = useState<{ linked: boolean; username?: string | null; email?: string | null; ub_id?: string | null } | null>(null);
+  const lastIncomingId = useRef<string | null>(null);
+
+  useEffect(() => { localStorage.setItem("anon_sound", soundOn ? "on" : "off"); }, [soundOn]);
+  useEffect(() => { localStorage.setItem("anon_notif", notifOn ? "on" : "off"); }, [notifOn]);
+
+  const loadAccount = useCallback(async () => {
+    try {
+      const { data: blh } = await supabase
+        .from("balance_login_history")
+        .select("user_balance_id")
+        .eq("visitor_id", visitor)
+        .order("logged_in_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (!blh?.user_balance_id) { setAccount({ linked: false }); return; }
+      const { data: ub } = await supabase
+        .from("user_balances")
+        .select("id, username, email")
+        .eq("id", blh.user_balance_id)
+        .maybeSingle();
+      setAccount({ linked: !!ub, username: ub?.username || null, email: ub?.email || null, ub_id: ub?.id || null });
+    } catch { setAccount({ linked: false }); }
+  }, [visitor]);
+  useEffect(() => { loadAccount(); }, [loadAccount]);
+
+  useEffect(() => {
+    if (messages.length === 0) return;
+    const last = messages[messages.length - 1];
+    if (last.sender === visitor || last.local_blocked) { lastIncomingId.current = last.id; return; }
+    if (lastIncomingId.current === last.id) return;
+    lastIncomingId.current = last.id;
+    if (soundOn) playPing();
+    if (notifOn && document.visibilityState === "hidden" && "Notification" in window && Notification.permission === "granted") {
+      try { new Notification("💬 Pesan baru dari " + (partner?.nick || "Stranger"), { body: last.content || (last.image_url ? "📷 Foto" : ""), silent: !soundOn }); } catch {}
+    }
+  }, [messages, visitor, soundOn, notifOn, partner?.nick]);
+
+  const requestNotifPerm = async () => {
+    if (!("Notification" in window)) { toast.error("Browser tidak mendukung notifikasi"); return; }
+    const p = await Notification.requestPermission();
+    if (p === "granted") { setNotifOn(true); toast.success("Notifikasi diaktifkan"); }
+    else toast.error("Izin notifikasi ditolak");
+  };
+
+  const logoutToGuest = () => {
+    if (!confirm("Putuskan akun & jadi Tamu lagi?\n\nSemua riwayat chat anonim, teman & permintaan akan hilang dari perangkat ini.")) return;
+    try {
+      localStorage.removeItem("agung_visitor_id");
+      localStorage.removeItem("anon_nick");
+      localStorage.removeItem("anon_my_gender");
+      localStorage.removeItem("anon_pref_gender");
+      localStorage.removeItem("anon_interest");
+    } catch {}
+    toast.success("Sesi diputus. Memuat ulang sebagai Tamu…");
+    setTimeout(() => window.location.reload(), 600);
+  };
 
   useEffect(() => { localStorage.setItem("anon_nick", nickname); }, [nickname]);
   useEffect(() => { localStorage.setItem("anon_my_gender", myGender); }, [myGender]);
