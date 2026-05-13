@@ -480,10 +480,15 @@ export default function AnonChatTab() {
             {partner?.gender === "male" ? "🧑" : partner?.gender === "female" ? "👩" : "🥷"}
           </div>
           <div className="flex-1 min-w-0">
-            <div className="font-bold text-emerald-50 truncate">{partner?.nick}</div>
-            <div className="text-xs text-emerald-300/80 flex items-center gap-1">
+            <div className="font-bold text-emerald-50 truncate flex items-center gap-1.5">
+              {partner?.nick}
+              <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full bg-slate-700/60 text-slate-300">{partner?.gender === "male" ? "♂ Pria" : partner?.gender === "female" ? "♀ Wanita" : "Anonim"}</span>
+            </div>
+            <div className="text-xs text-emerald-300/80 flex items-center gap-1.5">
               <span className={`w-1.5 h-1.5 rounded-full ${sessionStatus === "active" ? "bg-emerald-400 animate-pulse" : "bg-rose-400"}`} />
               {sessionStatus === "active" ? "terhubung" : "chat berakhir"}
+              <span className="text-slate-500">•</span>
+              <span className="text-slate-400/80 italic">status & terakhir dilihat tidak ditampilkan</span>
             </div>
           </div>
           {sessionStatus === "active" && (
