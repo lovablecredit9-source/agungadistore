@@ -707,12 +707,17 @@ export default function AnonChatTab() {
                           className="w-6 h-6 rounded-full bg-slate-900 border border-slate-700 shadow flex items-center justify-center hover:bg-slate-800">
                           <Reply className="w-3.5 h-3.5 text-slate-200" />
                         </button>
-                        {mine && (
-                          <button onClick={() => softDelete(m)}
-                            className="w-6 h-6 rounded-full bg-slate-900 border border-slate-700 shadow flex items-center justify-center hover:bg-slate-800">
-                            <Trash2 className="w-3.5 h-3.5 text-rose-300" />
-                          </button>
-                        )}
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <button className="w-6 h-6 rounded-full bg-slate-900 border border-slate-700 shadow flex items-center justify-center hover:bg-slate-800" aria-label="Opsi hapus">
+                              <Trash2 className="w-3.5 h-3.5 text-rose-300" />
+                            </button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align={mine ? "end" : "start"} className="w-44 bg-slate-950 border-slate-800 text-slate-100">
+                            <DropdownMenuItem onClick={() => deleteForMe(m)}>Hapus untuk saya</DropdownMenuItem>
+                            {mine && <DropdownMenuItem onClick={() => deleteForEveryone(m)} className="text-rose-300">Hapus untuk semua</DropdownMenuItem>}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </div>
                     )}
 
