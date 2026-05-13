@@ -76,6 +76,8 @@ export default function WhatsAppChat({
   const [replyTo, setReplyTo] = useState<ChatMessage | null>(null);
   const [emojiFor, setEmojiFor] = useState<string | null>(null);
   const [otherTyping, setOtherTyping] = useState(false);
+  const [showInputEmoji, setShowInputEmoji] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const typingTimeout = useRef<number | null>(null);
 
