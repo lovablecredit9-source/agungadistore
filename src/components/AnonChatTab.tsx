@@ -42,12 +42,17 @@ export default function AnonChatTab() {
   const [interest, setInterest] = useState<string>(() => localStorage.getItem("anon_interest") || "Apapun");
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [partner, setPartner] = useState<{ nick: string; gender: string | null } | null>(null);
-  const [messages, setMessages] = useState<Array<{ id: string; sender: string; content: string; created_at: string }>>([]);
+  const [messages, setMessages] = useState<AnonMsg[]>([]);
+  const [reactions, setReactions] = useState<AnonReaction[]>([]);
+  const [otherTyping, setOtherTyping] = useState(false);
+  const [replyTo, setReplyTo] = useState<AnonMsg | null>(null);
+  const [emojiFor, setEmojiFor] = useState<string | null>(null);
   const [draft, setDraft] = useState("");
   const [sessionStatus, setSessionStatus] = useState<"active" | "ended">("active");
   const [searchSecs, setSearchSecs] = useState(0);
   const [onlineCount, setOnlineCount] = useState<number>(0);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const typingTimer = useRef<number | null>(null);
 
   useEffect(() => { localStorage.setItem("anon_nick", nickname); }, [nickname]);
   useEffect(() => { localStorage.setItem("anon_my_gender", myGender); }, [myGender]);
