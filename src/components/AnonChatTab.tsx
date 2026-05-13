@@ -512,13 +512,6 @@ export default function AnonChatTab() {
         violationCount = Number(data || 0);
         await refreshBan();
       } catch {}
-      const fake: AnonMsg = {
-        id: "local-" + Date.now() + "-" + Math.random().toString(36).slice(2),
-        sender: visitor, content: moderation.cleaned || "•••sensor•••", image_url: null,
-        created_at: new Date().toISOString(), is_read: false,
-        reply_to_id: replyTo?.id || null, is_deleted: false, local_blocked: true,
-      };
-      setMessages(prev => [...prev, fake]);
       setReplyTo(null);
       toast.message("Pesan tidak diteruskan", {
         description: `${moderation.reasons.join(". ")} · Peringatan ${violationCount}/3. Untuk laporan resmi, hubungi WA ${CS_WA}.`,
