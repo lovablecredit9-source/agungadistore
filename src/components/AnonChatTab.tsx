@@ -468,6 +468,22 @@ export default function AnonChatTab() {
     pushTyping(false);
 
     const moderation = moderateOutgoing(text);
+    if (moderation.hadContact && !anonAccount) {
+      // Tanpa akun Anon Chat, berbagi kontak diblokir total dan dicatat
+      try {
+        await supabase.rpc("report_chat_violation", {
+          p_visitor_id: visitor,
+          p_kind: "contact_share_no_account",
+          p_detail: text.slice(0, 200),
+        } as any);
+        await refreshBan();
+      } catch {}
+      setShowAccountDialog(true);
+      toast.error("Diblokir: berbagi kontak butuh akun Anon Chat", {
+        description: "Daftar/Login akun Anon Chat dulu agar pesan tidak diblokir total. Pelanggaran tetap dicatat.",
+      });
+      return;
+    }
     if (!moderation.ok) {
       let violationCount = 0;
       try {
