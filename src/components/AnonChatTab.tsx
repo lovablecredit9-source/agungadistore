@@ -557,8 +557,8 @@ export default function AnonChatTab() {
       <div className="flex flex-col h-[calc(100vh-180px)] min-h-[500px] rounded-3xl overflow-hidden border-2 border-emerald-400/30 bg-gradient-to-b from-emerald-950/40 via-slate-950 to-slate-950 shadow-[0_20px_60px_-20px_rgba(16,185,129,0.4)]">
         {/* Header */}
         <div className="flex items-center gap-3 p-3 border-b border-emerald-400/20 bg-gradient-to-r from-emerald-500/10 via-teal-500/10 to-cyan-500/10 backdrop-blur">
-          <div className="w-11 h-11 rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center text-xl shadow-lg shadow-emerald-500/40">
-            {partner?.gender === "male" ? "🧑" : partner?.gender === "female" ? "👩" : "🥷"}
+          <div className={`w-11 h-11 rounded-full bg-gradient-to-br ${partnerAvatar.gradient} flex items-center justify-center text-xl shadow-lg shadow-emerald-500/40 overflow-hidden`}>
+            {partnerProfile?.avatar_url ? <img src={partnerProfile.avatar_url} alt="Avatar partner" className="h-full w-full object-cover" /> : partnerAvatar.emoji}
           </div>
           <div className="flex-1 min-w-0">
             <div className="font-bold text-emerald-50 truncate flex items-center gap-1.5">
@@ -569,7 +569,7 @@ export default function AnonChatTab() {
               <span className={`w-1.5 h-1.5 rounded-full ${sessionStatus === "active" ? "bg-emerald-400 animate-pulse" : "bg-rose-400"}`} />
               {sessionStatus === "active" ? "terhubung" : "chat berakhir"}
               <span className="text-slate-500">•</span>
-              <span className="text-slate-400/80 italic">status & terakhir dilihat tidak ditampilkan</span>
+              <span className="text-slate-400/80 italic">{partnerLastSeen}</span>
             </div>
           </div>
           {sessionStatus === "active" && (
@@ -606,6 +606,7 @@ export default function AnonChatTab() {
         <div ref={scrollRef} className="flex-1 overflow-y-auto p-3 space-y-1.5">
           <div className="text-center text-xs text-emerald-300/50 py-2">— Awal obrolan anonim —</div>
           {messages.map((m, idx) => {
+            if ((m.deleted_for || []).includes(visitor)) return null;
             const mine = m.sender === visitor;
             const replied = m.reply_to_id ? messagesById[m.reply_to_id] : null;
             const rx = reactionsByMsg[m.id];
