@@ -189,10 +189,12 @@ export default function AnonChatTab() {
   }, [messages, visitor, soundOn, notifOn, partner?.nick]);
 
   const requestNotifPerm = async () => {
-    if (!("Notification" in window)) { toast.error("Browser tidak mendukung notifikasi"); return; }
+    if (!("Notification" in window)) { toast.error("Browser tidak mendukung notifikasi", { description: "Coba pakai Chrome/Edge terbaru atau aplikasi browser lain." }); return; }
+    if (!window.isSecureContext) { toast.error("Notifikasi butuh koneksi aman", { description: "Buka dari alamat HTTPS / aplikasi yang terpasang." }); return; }
+    if (Notification.permission === "denied") { toast.error("Izin notifikasi diblokir browser", { description: "Aktifkan lagi dari setelan situs/browser, lalu kembali ke halaman ini." }); return; }
     const p = await Notification.requestPermission();
     if (p === "granted") { setNotifOn(true); toast.success("Notifikasi diaktifkan"); }
-    else toast.error("Izin notifikasi ditolak");
+    else toast.error("Izin notifikasi belum aktif", { description: "Jika tombol browser tidak muncul, cek setelan izin situs di address bar." });
   };
 
   const logoutToGuest = () => {
@@ -212,6 +214,14 @@ export default function AnonChatTab() {
   useEffect(() => { localStorage.setItem("anon_my_gender", myGender); }, [myGender]);
   useEffect(() => { localStorage.setItem("anon_pref_gender", prefGender); }, [prefGender]);
   useEffect(() => { localStorage.setItem("anon_interest", interest); }, [interest]);
+
+  const explainNotif = () => {
+    if (!("Notification" in window)) return "Browser tidak mendukung notifikasi.";
+    if (!window.isSecureContext) return "Notifikasi hanya aktif di HTTPS / aplikasi terpasang.";
+    if (Notification.permission === "denied") return "Izin sudah diblokir di browser. Buka setelan situs lalu ubah Notifications menjadi Allow.";
+    if (Notification.permission === "default") return "Izin belum diminta atau belum dipilih. Tekan toggle notifikasi.";
+    return "Izin browser aktif. Notifikasi muncul saat tab tidak aktif dan toggle aplikasi menyala.";
+  };
 
   // Online queue count
   useEffect(() => {
