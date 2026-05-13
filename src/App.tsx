@@ -51,6 +51,7 @@ const App = () => (
             
             <Route path="/update" element={<Index />} />
             <Route path="/admin-post" element={<Index />} />
+            <Route path="/anon-chat" element={<Index />} />
             <Route path="/admin/login" element={<AdminLogin />} />
             <Route path="/admin/dashboard" element={<AdminDashboard />} />
             <Route path="/offline" element={<Offline />} />
