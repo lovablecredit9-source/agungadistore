@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Search, Users, Settings as SettingsIcon, Send, X, RefreshCw, UserPlus, Heart, ChevronRight, Sparkles, Shield, ImagePlus, Smile, Reply, Trash2, Check, CheckCheck, MessageCircle, UserCheck, UserX, HelpCircle, Bell, Phone, Volume2, VolumeX, Eye, AlertTriangle, LogOut, Copy, Flag, Plus } from "lucide-react";
+import { Search, Users, Settings as SettingsIcon, Send, X, RefreshCw, UserPlus, Heart, ChevronRight, Sparkles, Shield, ImagePlus, Smile, Reply, Trash2, Check, CheckCheck, MessageCircle, UserCheck, UserX, HelpCircle, Bell, Phone, Volume2, VolumeX, Eye, AlertTriangle, LogOut, Copy, Flag, Plus, FileText } from "lucide-react";
 import { toast } from "sonner";
 import { moderateOutgoing } from "@/lib/chat-moderation";
 import { formatBanRemaining, type BanInfo } from "@/hooks/useAccountBan";
@@ -141,8 +141,11 @@ export default function AnonChatTab() {
   const [showEmojiInput, setShowEmojiInput] = useState(false);
   const [anonAccount, setAnonAccount] = useState<AnonAccount | null>(null);
   const [showAccountDialog, setShowAccountDialog] = useState(false);
+  const [bioDraft, setBioDraft] = useState("");
+  const [savingBio, setSavingBio] = useState(false);
 
   useEffect(() => { fetchAnonAccount(visitor).then(setAnonAccount); }, [visitor]);
+  useEffect(() => { setBioDraft(anonAccount?.bio || ""); }, [anonAccount?.bio]);
 
   useEffect(() => { localStorage.setItem("anon_sound", soundOn ? "on" : "off"); }, [soundOn]);
   useEffect(() => { localStorage.setItem("anon_notif", notifOn ? "on" : "off"); }, [notifOn]);
@@ -180,8 +183,10 @@ export default function AnonChatTab() {
     const other = sess.visitor_a === visitor ? sess.visitor_b : sess.visitor_a;
     const { data } = await supabase.from("anon_chat_profiles" as any).select("*").eq("visitor_id", other).maybeSingle();
     setPartnerProfile((data as unknown as AnonProfile) || null);
-    const { data: acc } = await supabase.from("anon_chat_accounts" as any).select("bio").eq("visitor_id", other).maybeSingle();
-    setPartnerBio(((acc as any)?.bio as string) || null);
+    const { data: bioData } = await supabase.functions.invoke("anon-chat-auth", {
+      body: { action: "public_bio", visitorId: visitor, targetVisitorId: other },
+    });
+    setPartnerBio(((bioData as any)?.bio as string) || null);
     setShowPartnerBio(false);
   }, [visitor]);
 
