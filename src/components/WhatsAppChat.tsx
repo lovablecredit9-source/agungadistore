@@ -1,9 +1,18 @@
-import { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo, lazy, Suspense } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Send, ImagePlus, X, Trash2, Smile, Reply, Check, CheckCheck } from "lucide-react";
+import { Send, ImagePlus, X, Trash2, Smile, Reply, Check, CheckCheck, Plus, MoreVertical } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { moderateOutgoing } from "@/lib/chat-moderation";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+
+const EmojiPicker = lazy(() => import("emoji-picker-react"));
 
 export type ChatKind = "product" | "ticket";
 
@@ -16,6 +25,7 @@ export interface ChatMessage {
   is_read: boolean;
   reply_to_id?: string | null;
   is_deleted?: boolean;
+  deleted_for?: string[] | null;
 }
 
 export interface Reaction {
@@ -66,6 +76,8 @@ export default function WhatsAppChat({
   const [replyTo, setReplyTo] = useState<ChatMessage | null>(null);
   const [emojiFor, setEmojiFor] = useState<string | null>(null);
   const [otherTyping, setOtherTyping] = useState(false);
+  const [showInputEmoji, setShowInputEmoji] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const typingTimeout = useRef<number | null>(null);
 
@@ -188,14 +200,48 @@ export default function WhatsAppChat({
   }
 
   async function sendMessage() {
-    const text = draft.trim();
-    if (!text) return;
+    const raw = draft.trim();
+    if (!raw) return;
+
+    let textToSend = raw;
+    // Moderation hanya berlaku untuk sisi pengguna (bukan admin)
+    if (viewerType === "user") {
+      const mod = moderateOutgoing(raw);
+      if (!mod.ok) {
+        // Catat pelanggaran (auto-ban setelah 3x dalam 24 jam)
+        try {
+          const { data } = await supabase.rpc("report_chat_violation", {
+            p_visitor_id: viewerId,
+            p_kind: mod.hadContact ? "contact_share" : "banned_word",
+            p_detail: raw.slice(0, 200),
+          });
+          const count = (data as number) ?? 0;
+          const sisa = Math.max(0, 3 - count);
+          toast({
+            title: "Pesan ditahan & disensor",
+            description:
+              mod.reasons.join(". ") +
+              (sisa > 0
+                ? `. Peringatan ${count}/3 — ${sisa} lagi akun akan diblokir 7 hari.`
+                : ". Akun Anda telah diblokir otomatis selama 7 hari."),
+            variant: "destructive",
+          });
+        } catch {}
+        if (!mod.cleaned) {
+          // Tidak ada konten yang tersisa setelah sensor
+          setDraft("");
+          return;
+        }
+        textToSend = mod.cleaned;
+      }
+    }
+
     setDraft("");
     pushTyping(false);
     const payload: any = {
       [parentCol]: parentId,
       sender_type: viewerType,
-      message: text,
+      message: textToSend,
     };
     if (replyTo) payload.reply_to_id = replyTo.id;
     setReplyTo(null);
@@ -224,11 +270,24 @@ export default function WhatsAppChat({
     await supabase.from(msgTable as any).insert(payload);
   }
 
-  async function softDelete(m: ChatMessage) {
+  // Hapus untuk semua orang (hanya pemilik pesan)
+  async function deleteForEveryone(m: ChatMessage) {
     if (m.sender_type !== viewerType) return;
     const { error } = await supabase
       .from(msgTable as any)
       .update({ is_deleted: true, message: null, image_url: null, deleted_at: new Date().toISOString() } as any)
+      .eq("id", m.id);
+    if (error) toast({ title: "Gagal menghapus", variant: "destructive" });
+  }
+
+  // Hapus untuk saya saja: tambahkan viewerId ke deleted_for
+  async function deleteForMe(m: ChatMessage) {
+    const next = Array.from(new Set([...(m.deleted_for || []), viewerId]));
+    // Optimistic update lokal
+    setMessages((prev) => prev.map((x) => (x.id === m.id ? { ...x, deleted_for: next } : x)));
+    const { error } = await supabase
+      .from(msgTable as any)
+      .update({ deleted_for: next } as any)
       .eq("id", m.id);
     if (error) toast({ title: "Gagal menghapus", variant: "destructive" });
   }
@@ -289,6 +348,8 @@ export default function WhatsAppChat({
       >
         {headerSlot}
         {messages.map((m, idx) => {
+          // Hapus untuk saya: sembunyikan di sisi viewer ini saja
+          if ((m.deleted_for || []).includes(viewerId)) return null;
           const mine = m.sender_type === viewerType;
           const replied = m.reply_to_id ? messagesById[m.reply_to_id] : null;
           const rx = reactionsByMsg[m.id];
@@ -406,15 +467,26 @@ export default function WhatsAppChat({
                     >
                       <Reply className="w-3.5 h-3.5" />
                     </button>
-                    {mine && (
-                      <button
-                        onClick={() => softDelete(m)}
-                      className="w-6 h-6 rounded-full bg-background border border-border text-muted-foreground flex items-center justify-center hover:bg-muted"
-                        aria-label="Delete"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    )}
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <button
+                          className="w-6 h-6 rounded-full bg-background border border-border text-muted-foreground flex items-center justify-center hover:bg-muted"
+                          aria-label="Opsi"
+                        >
+                          <MoreVertical className="w-3.5 h-3.5" />
+                        </button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align={mine ? "end" : "start"} className="w-44">
+                        <DropdownMenuItem onClick={() => deleteForMe(m)}>
+                          <Trash2 className="w-3.5 h-3.5 mr-2" /> Hapus untuk saya
+                        </DropdownMenuItem>
+                        {mine && (
+                          <DropdownMenuItem onClick={() => deleteForEveryone(m)} className="text-destructive">
+                            <Trash2 className="w-3.5 h-3.5 mr-2" /> Hapus untuk semua
+                          </DropdownMenuItem>
+                        )}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </div>
                 )}
 
@@ -479,7 +551,33 @@ export default function WhatsAppChat({
               </button>
             </div>
           )}
+          {showInputEmoji && (
+            <div className="relative animate-fade-in">
+              <Suspense fallback={<div className="text-xs text-muted-foreground p-3">Memuat emoji…</div>}>
+                <EmojiPicker
+                  onEmojiClick={(e: any) => {
+                    setDraft((d) => d + (e?.emoji ?? ""));
+                    inputRef.current?.focus();
+                  }}
+                  width="100%"
+                  height={320}
+                  searchPlaceHolder="Cari emoji…"
+                  previewConfig={{ showPreview: false }}
+                />
+              </Suspense>
+            </div>
+          )}
           <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setShowInputEmoji((v) => !v)}
+              aria-label="Buka emoji"
+              className={`w-10 h-10 rounded-xl border bg-card flex items-center justify-center shrink-0 transition-colors ${
+                showInputEmoji ? "border-foreground text-foreground" : "border-border text-muted-foreground hover:bg-muted/50"
+              }`}
+            >
+              <Plus className={`w-[18px] h-[18px] transition-transform ${showInputEmoji ? "rotate-45" : ""}`} />
+            </button>
             <label className="w-10 h-10 rounded-xl border border-border bg-card hover:bg-muted/50 flex items-center justify-center cursor-pointer shrink-0 transition-colors">
               <ImagePlus className="w-[18px] h-[18px] text-muted-foreground" />
               <input
@@ -494,6 +592,7 @@ export default function WhatsAppChat({
             </label>
             <div className="flex-1 relative">
               <Input
+                ref={inputRef}
                 placeholder="Tulis pesan…"
                 value={draft}
                 onChange={(e) => onChangeDraft(e.target.value)}
@@ -503,6 +602,7 @@ export default function WhatsAppChat({
                     sendMessage();
                   }
                 }}
+                onFocus={() => setShowInputEmoji(false)}
                 onBlur={() => pushTyping(false)}
                 className="h-10 rounded-xl border-border bg-card pl-4 pr-4 focus-visible:ring-ring"
               />

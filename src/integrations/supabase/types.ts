@@ -688,6 +688,30 @@ export type Database = {
         }
         Relationships: []
       }
+      chat_violations: {
+        Row: {
+          created_at: string
+          detail: string | null
+          id: string
+          kind: string
+          visitor_id: string
+        }
+        Insert: {
+          created_at?: string
+          detail?: string | null
+          id?: string
+          kind: string
+          visitor_id: string
+        }
+        Update: {
+          created_at?: string
+          detail?: string | null
+          id?: string
+          kind?: string
+          visitor_id?: string
+        }
+        Relationships: []
+      }
       credit_packages: {
         Row: {
           created_at: string
@@ -3539,6 +3563,7 @@ export type Database = {
           chat_id: string
           created_at: string
           deleted_at: string | null
+          deleted_for: string[]
           id: string
           image_url: string | null
           is_deleted: boolean
@@ -3551,6 +3576,7 @@ export type Database = {
           chat_id: string
           created_at?: string
           deleted_at?: string | null
+          deleted_for?: string[]
           id?: string
           image_url?: string | null
           is_deleted?: boolean
@@ -3563,6 +3589,7 @@ export type Database = {
           chat_id?: string
           created_at?: string
           deleted_at?: string | null
+          deleted_for?: string[]
           id?: string
           image_url?: string | null
           is_deleted?: boolean
@@ -7893,6 +7920,7 @@ export type Database = {
         Row: {
           created_at: string
           deleted_at: string | null
+          deleted_for: string[]
           id: string
           image_url: string | null
           is_deleted: boolean
@@ -7905,6 +7933,7 @@ export type Database = {
         Insert: {
           created_at?: string
           deleted_at?: string | null
+          deleted_for?: string[]
           id?: string
           image_url?: string | null
           is_deleted?: boolean
@@ -7917,6 +7946,7 @@ export type Database = {
         Update: {
           created_at?: string
           deleted_at?: string | null
+          deleted_for?: string[]
           id?: string
           image_url?: string | null
           is_deleted?: boolean
@@ -8183,6 +8213,27 @@ export type Database = {
           phone?: string
           updated_at?: string
           username?: string
+          visitor_id?: string
+        }
+        Relationships: []
+      }
+      user_chat_settings: {
+        Row: {
+          last_seen_at: string
+          show_last_seen: boolean
+          updated_at: string
+          visitor_id: string
+        }
+        Insert: {
+          last_seen_at?: string
+          show_last_seen?: boolean
+          updated_at?: string
+          visitor_id: string
+        }
+        Update: {
+          last_seen_at?: string
+          show_last_seen?: boolean
+          updated_at?: string
           visitor_id?: string
         }
         Relationships: []
@@ -9185,6 +9236,10 @@ export type Database = {
       }
       refund_main_balance_only: {
         Args: { p_amount: number; p_balance_id: string }
+        Returns: number
+      }
+      report_chat_violation: {
+        Args: { p_detail: string; p_kind: string; p_visitor_id: string }
         Returns: number
       }
     }
