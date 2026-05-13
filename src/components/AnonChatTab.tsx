@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Search, Users, Settings as SettingsIcon, Send, X, RefreshCw, UserPlus, Heart, ChevronRight, Sparkles, Shield } from "lucide-react";
 import { toast } from "sonner";
 
-type View = "lobby" | "prefs" | "interest" | "searching" | "chat";
+type View = "lobby" | "prefs" | "interest" | "searching" | "chat" | "friends";
 
 const INTERESTS = ["Apapun","Curhat","Main RP","Meme","Kesepian","Game","Anime","Film","Musik","Travel","Coding","Olahraga","Nongkrong","Belajar"];
 
