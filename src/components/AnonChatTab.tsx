@@ -894,13 +894,34 @@ export default function AnonChatTab() {
           </div>
         </div>
 
-        <div className="rounded-2xl border border-emerald-400/20 bg-emerald-500/5 p-4 flex items-start gap-2">
-          <Shield className="w-4 h-4 text-emerald-300 mt-0.5 shrink-0" />
-          <div>
-            <div className="text-sm font-bold text-emerald-100">Akun Anon Chat terpisah</div>
-            <p className="text-[11px] text-emerald-200/80 mt-0.5">Tidak bind saldo, tidak memakai PIN, dan identitas saldo tidak dibawa ke chat.</p>
+        <div className="rounded-2xl border border-emerald-400/20 bg-emerald-500/5 p-4 space-y-3">
+          <div className="flex items-start gap-2">
+            <Shield className="w-4 h-4 text-emerald-300 mt-0.5 shrink-0" />
+            <div className="flex-1">
+              <div className="text-sm font-bold text-emerald-100">Akun Anon Chat (mandiri)</div>
+              <p className="text-[11px] text-emerald-200/80 mt-0.5">Daftar email + sandi khusus Anon Chat. Tidak terhubung ke akun saldo.</p>
+            </div>
           </div>
+          {anonAccount ? (
+            <div className="rounded-xl bg-slate-900/70 border border-emerald-400/30 p-3 space-y-2">
+              <div className="flex items-center justify-between gap-2">
+                <div className="min-w-0">
+                  <div className="text-[10px] text-emerald-300/70 uppercase tracking-wide">Email terhubung</div>
+                  <div className="text-xs font-bold text-slate-100 truncate">{anonAccount.email}</div>
+                </div>
+                <span className="text-[10px] font-bold px-2 py-1 rounded-full bg-emerald-500/20 text-emerald-200 border border-emerald-400/40 shrink-0">Login</span>
+              </div>
+              <button onClick={() => setShowAccountDialog(true)} className="w-full py-2 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-400/40 text-emerald-100 text-xs font-bold">
+                Kelola akun (ganti email / sandi / putuskan)
+              </button>
+            </div>
+          ) : (
+            <button onClick={() => setShowAccountDialog(true)} className="w-full py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 text-white text-xs font-bold">
+              Daftar / Login dengan email
+            </button>
+          )}
         </div>
+        <AnonAccountDialog open={showAccountDialog} onOpenChange={setShowAccountDialog} visitorId={visitor} account={anonAccount} onAccountChange={setAnonAccount} />
 
         <button onClick={logoutToGuest}
           className="w-full py-3 rounded-2xl bg-rose-500/15 hover:bg-rose-500/25 border border-rose-400/40 text-rose-200 text-sm font-bold flex items-center justify-center gap-2">
