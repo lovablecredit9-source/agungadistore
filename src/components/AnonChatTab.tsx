@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Search, Users, Settings as SettingsIcon, Send, X, RefreshCw, UserPlus, Heart, ChevronRight, Sparkles, Shield, ImagePlus, Smile, Reply, Trash2, Check, CheckCheck, MessageCircle, UserCheck, UserX } from "lucide-react";
+import { Search, Users, Settings as SettingsIcon, Send, X, RefreshCw, UserPlus, Heart, ChevronRight, Sparkles, Shield, ImagePlus, Smile, Reply, Trash2, Check, CheckCheck, MessageCircle, UserCheck, UserX, Pencil, Link2, HelpCircle, Bell, Moon } from "lucide-react";
 import { toast } from "sonner";
 
 interface AnonMsg {
@@ -16,7 +16,7 @@ interface AnonMsg {
 interface AnonReaction { id: string; message_id: string; visitor_id: string; emoji: string; }
 const EMOJIS = ["👍", "❤️", "😂", "😮", "😢", "🙏", "🔥"];
 
-type View = "lobby" | "prefs" | "interest" | "searching" | "chat" | "friends";
+type View = "lobby" | "prefs" | "account" | "interest" | "searching" | "chat" | "friends";
 
 const INTERESTS = ["Apapun","Curhat","Main RP","Meme","Kesepian","Game","Anime","Film","Musik","Travel","Coding","Olahraga","Nongkrong","Belajar"];
 
@@ -584,12 +584,12 @@ export default function AnonChatTab() {
     );
   }
 
-  if (view === "prefs") {
+  if (view === "account") {
     return (
       <div className="rounded-3xl border-2 border-emerald-400/30 bg-gradient-to-b from-slate-950 to-emerald-950/20 p-5 space-y-5">
         <div className="flex items-center justify-between">
-          <button onClick={() => setView("lobby")} className="text-emerald-300 text-sm">← Kembali</button>
-          <div className="font-bold text-slate-100">Preferensi</div>
+          <button onClick={() => setView("prefs")} className="text-emerald-300 text-sm">← Kembali</button>
+          <div className="font-bold text-slate-100">Pengaturan akun</div>
           <div className="w-12" />
         </div>
 
@@ -637,10 +637,77 @@ export default function AnonChatTab() {
           </button>
         </div>
 
-        <button onClick={() => { setView("lobby"); toast.success("Preferensi tersimpan"); }}
+        <button onClick={() => { setView("prefs"); toast.success("Tersimpan"); }}
           className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-bold shadow-lg shadow-emerald-500/40">
-          OKE
+          SIMPAN
         </button>
+      </div>
+    );
+  }
+
+  if (view === "prefs") {
+    const genderLabel = myGender === "male" ? "pria" : myGender === "female" ? "wanita" : "rahasia";
+    return (
+      <div className="rounded-3xl overflow-hidden border-2 border-emerald-400/30 bg-gradient-to-b from-slate-950 via-slate-950 to-emerald-950/20 min-h-[500px] flex flex-col">
+        {/* Header */}
+        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-800/60">
+          <div className="w-12" />
+          <div className="font-bold text-slate-100 text-base">Setelan</div>
+          <button onClick={() => setView("account")} className="text-emerald-300 text-sm font-semibold">Edit</button>
+        </div>
+
+        <div className="flex-1 overflow-y-auto p-5 space-y-5">
+          {/* Avatar + nickname + gender */}
+          <div className="flex flex-col items-center gap-2">
+            <div className="w-24 h-24 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-5xl shadow-xl ring-4 ring-slate-900">
+              🥷
+            </div>
+            <div className="text-xl font-bold text-slate-100 mt-1">{nickname}</div>
+            <div className="text-sm text-slate-400">{genderLabel}</div>
+          </div>
+
+          {/* Tentang saya */}
+          <div className="rounded-2xl bg-slate-900/70 border border-slate-800 p-4">
+            <div className="text-base font-bold text-slate-100 mb-1">Tentang saya</div>
+            <div className="text-sm text-slate-300">{interest}</div>
+          </div>
+
+          {/* Premium card */}
+          <div className="relative rounded-2xl overflow-hidden bg-gradient-to-br from-indigo-500 via-violet-500 to-purple-600 p-5 shadow-xl shadow-purple-900/40">
+            <div className="absolute top-3 right-3 text-3xl opacity-90">🎭</div>
+            <div className="text-xl font-extrabold text-white mb-3">Langganan premium</div>
+            <ul className="space-y-1.5 text-white/95 text-sm font-medium">
+              <li className="flex gap-2"><span>•</span> Temukan partner berdasarkan gender</li>
+              <li className="flex gap-2"><span>•</span> Temukan partner lebih cepat dari yang lain</li>
+              <li className="flex gap-2"><span>•</span> Telepon partner-mu</li>
+            </ul>
+            <button
+              onClick={() => toast.info("Langganan premium segera hadir")}
+              className="mt-4 inline-flex items-center gap-2 bg-white text-indigo-700 rounded-full pl-4 pr-1 py-1 text-sm font-semibold shadow-md">
+              mulai dari Rp 2.334/minggu
+              <span className="w-7 h-7 rounded-full bg-indigo-700 text-white flex items-center justify-center">
+                <ChevronRight className="w-4 h-4" />
+              </span>
+            </button>
+          </div>
+
+          {/* Settings list */}
+          <div className="rounded-2xl bg-slate-900/70 border border-slate-800 divide-y divide-slate-800 overflow-hidden">
+            {[
+              { icon: Link2, label: "Pengaturan akun", onClick: () => setView("account") },
+              { icon: HelpCircle, label: "Dukungan", onClick: () => toast.info("Hubungi admin via WhatsApp 085769302532") },
+              { icon: Bell, label: "Notifikasi dan suara", onClick: () => toast.info("Pengaturan notifikasi segera hadir") },
+              { icon: Moon, label: "Tampilan", onClick: () => toast.info("Tema gelap aktif") },
+            ].map((it, i) => (
+              <button key={i} onClick={it.onClick}
+                className="w-full flex items-center gap-3 px-4 py-4 text-left hover:bg-slate-800/40 transition">
+                <it.icon className="w-5 h-5 text-slate-300 shrink-0" />
+                <span className="flex-1 text-slate-100 font-medium text-sm">{it.label}</span>
+                <ChevronRight className="w-4 h-4 text-slate-500" />
+              </button>
+            ))}
+          </div>
+        </div>
 
         <InnerNav active="settings" onChange={(k) => {
           if (k === "search") setView("lobby");
