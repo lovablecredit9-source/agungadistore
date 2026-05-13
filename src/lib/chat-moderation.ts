@@ -5,6 +5,12 @@
 const BANNED_WORDS = [
   "penipu",
   "penipuan",
+  "tidakamanah",
+  "ngakamanah",
+  "nggakamanah",
+  "gakamanah",
+  "gaamanah",
+  "agungadistore",
   "spam",
   "scam",
   "tipu",
@@ -59,7 +65,7 @@ export interface ModerationResult {
 
 // Sensor nomor HP / kontak: 8+ digit berturut, atau 10+ angka jika dipisahkan
 // karakter non-digit yang ringan.
-const PHONE_REGEX = /(?:(?:\+?\d[\s\-\.]?){9,16})/g;
+const PHONE_REGEX = /(?:(?:\+?\d[\s\-\.]?){8,16})/g;
 const WA_REGEX = /\b(?:wa|whatsapp|telegram|tele|tg|line|ig|instagram)[\s:]*[@a-z0-9_\.\-]{3,}/gi;
 
 export function moderateOutgoing(text: string): ModerationResult {

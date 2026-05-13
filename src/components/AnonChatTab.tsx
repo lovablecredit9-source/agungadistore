@@ -2,29 +2,25 @@ import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Search, Users, Settings as SettingsIcon, Send, X, RefreshCw, UserPlus, Heart, ChevronRight, Sparkles, Shield, ImagePlus, Smile, Reply, Trash2, Check, CheckCheck, MessageCircle, UserCheck, UserX, Pencil, Link2, HelpCircle, Bell, Moon, Phone, Volume2, VolumeX, Eye, EyeOff, AlertTriangle, LogOut, Copy, KeyRound, Mail, Flag } from "lucide-react";
 import { toast } from "sonner";
+import { moderateOutgoing } from "@/lib/chat-moderation";
+import { formatBanRemaining, type BanInfo } from "@/hooks/useAccountBan";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
 const CS_WA = "085769302532";
 const CS_WA_LINK = `https://wa.me/62${CS_WA.replace(/^0/, "")}`;
-// Kata terlarang: pesan akan tampak terkirim tapi tidak diteruskan ke partner
-const BLOCKED_PATTERNS = [
-  /agung\s*adi\s*store/i,
-  /penipu/i,
-  /tidak\s*amanah/i,
-  /tdk\s*amanah/i,
-  /scam/i,
-  /penipuan/i,
-];
-function isBlockedText(t: string) {
-  return BLOCKED_PATTERNS.some((re) => re.test(t));
-}
 function shortId(id: string) {
   const clean = id.replace(/-/g, "").toUpperCase();
   return "#" + clean.slice(0, 8);
 }
-function genderEmoji(g?: string | null) {
-  if (g === "male") return "🧑";
-  if (g === "female") return "👩";
-  return "🥷";
+const AVATAR_PRESETS = [
+  { id: "ninja", label: "Ninja", emoji: "🥷", gradient: "from-indigo-500 to-purple-600" },
+  { id: "leaf", label: "Daun", emoji: "🍃", gradient: "from-emerald-400 to-teal-500" },
+  { id: "cat", label: "Kucing", emoji: "🐱", gradient: "from-amber-400 to-orange-500" },
+  { id: "star", label: "Bintang", emoji: "⭐", gradient: "from-cyan-400 to-blue-600" },
+  { id: "rose", label: "Mawar", emoji: "🌹", gradient: "from-pink-500 to-rose-600" },
+];
+function presetById(id?: string | null) {
+  return AVATAR_PRESETS.find((a) => a.id === id) || AVATAR_PRESETS[0];
 }
 function playPing() {
   try {
@@ -53,10 +49,12 @@ interface AnonMsg {
   is_read: boolean;
   reply_to_id: string | null;
   is_deleted: boolean;
+  deleted_for?: string[] | null;
   local_blocked?: boolean;
 }
 interface AnonReaction { id: string; message_id: string; visitor_id: string; emoji: string; }
 const EMOJIS = ["👍", "❤️", "😂", "😮", "😢", "🙏", "🔥"];
+interface AnonProfile { visitor_id: string; nickname: string | null; avatar_url: string | null; avatar_preset: string | null; show_last_seen: boolean; last_seen_at: string; }
 
 type View = "lobby" | "prefs" | "account" | "interest" | "searching" | "chat" | "friends" | "support" | "notif";
 
@@ -103,9 +101,60 @@ export default function AnonChatTab() {
   const [revealedImgs, setRevealedImgs] = useState<Set<string>>(new Set());
   const [account, setAccount] = useState<{ linked: boolean; username?: string | null; email?: string | null; ub_id?: string | null } | null>(null);
   const lastIncomingId = useRef<string | null>(null);
+  const [banInfo, setBanInfo] = useState<BanInfo | null>(null);
+  const [myProfile, setMyProfile] = useState<AnonProfile | null>(null);
+  const [partnerProfile, setPartnerProfile] = useState<AnonProfile | null>(null);
+  const [avatarPreset, setAvatarPreset] = useState<string>(() => localStorage.getItem("anon_avatar_preset") || "ninja");
+  const [avatarUrl, setAvatarUrl] = useState<string>(() => localStorage.getItem("anon_avatar_url") || "");
+  const [showLastSeen, setShowLastSeen] = useState<boolean>(() => localStorage.getItem("anon_show_last_seen") !== "off");
+  const [showEmojiInput, setShowEmojiInput] = useState(false);
 
   useEffect(() => { localStorage.setItem("anon_sound", soundOn ? "on" : "off"); }, [soundOn]);
   useEffect(() => { localStorage.setItem("anon_notif", notifOn ? "on" : "off"); }, [notifOn]);
+  useEffect(() => { localStorage.setItem("anon_avatar_preset", avatarPreset); }, [avatarPreset]);
+  useEffect(() => { localStorage.setItem("anon_avatar_url", avatarUrl); }, [avatarUrl]);
+  useEffect(() => { localStorage.setItem("anon_show_last_seen", showLastSeen ? "on" : "off"); }, [showLastSeen]);
+
+  const activeBan = !!banInfo && (banInfo.is_permanent || !banInfo.banned_until || new Date(banInfo.banned_until).getTime() > Date.now());
+  const myAvatar = presetById(myProfile?.avatar_preset || avatarPreset);
+  const partnerAvatar = presetById(partnerProfile?.avatar_preset || (partner?.gender === "female" ? "rose" : partner?.gender === "male" ? "star" : "ninja"));
+  const partnerLastSeen = partnerProfile?.show_last_seen
+    ? `terakhir dilihat ${new Date(partnerProfile.last_seen_at).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })}`
+    : "terakhir dilihat disembunyikan";
+
+  const refreshBan = useCallback(async () => {
+    const { data } = await supabase.rpc("get_account_ban_info", { p_visitor_id: visitor } as any);
+    const row = Array.isArray(data) && data.length > 0 ? (data[0] as BanInfo) : null;
+    setBanInfo(row);
+  }, [visitor]);
+
+  const touchProfile = useCallback(async () => {
+    const { data } = await supabase.rpc("touch_anon_chat_profile" as any, {
+      p_visitor_id: visitor,
+      p_nickname: nickname,
+      p_avatar_url: avatarUrl || null,
+      p_avatar_preset: avatarPreset,
+      p_show_last_seen: showLastSeen,
+    });
+    if (data) setMyProfile(data as unknown as AnonProfile);
+  }, [visitor, nickname, avatarUrl, avatarPreset, showLastSeen]);
+
+  const loadPartnerProfile = useCallback(async (session: string) => {
+    const { data: sess } = await supabase.from("anon_chat_sessions").select("visitor_a, visitor_b").eq("id", session).maybeSingle();
+    if (!sess) return;
+    const other = sess.visitor_a === visitor ? sess.visitor_b : sess.visitor_a;
+    const { data } = await supabase.from("anon_chat_profiles" as any).select("*").eq("visitor_id", other).maybeSingle();
+    setPartnerProfile((data as unknown as AnonProfile) || null);
+  }, [visitor]);
+
+  useEffect(() => { refreshBan(); }, [refreshBan]);
+  useEffect(() => {
+    touchProfile();
+    const interval = window.setInterval(touchProfile, 30000);
+    const onFocus = () => touchProfile();
+    window.addEventListener("focus", onFocus);
+    return () => { window.clearInterval(interval); window.removeEventListener("focus", onFocus); };
+  }, [touchProfile]);
 
   const loadAccount = useCallback(async () => {
     try {
@@ -140,10 +189,12 @@ export default function AnonChatTab() {
   }, [messages, visitor, soundOn, notifOn, partner?.nick]);
 
   const requestNotifPerm = async () => {
-    if (!("Notification" in window)) { toast.error("Browser tidak mendukung notifikasi"); return; }
+    if (!("Notification" in window)) { toast.error("Browser tidak mendukung notifikasi", { description: "Coba pakai Chrome/Edge terbaru atau aplikasi browser lain." }); return; }
+    if (!window.isSecureContext) { toast.error("Notifikasi butuh koneksi aman", { description: "Buka dari alamat HTTPS / aplikasi yang terpasang." }); return; }
+    if (Notification.permission === "denied") { toast.error("Izin notifikasi diblokir browser", { description: "Aktifkan lagi dari setelan situs/browser, lalu kembali ke halaman ini." }); return; }
     const p = await Notification.requestPermission();
     if (p === "granted") { setNotifOn(true); toast.success("Notifikasi diaktifkan"); }
-    else toast.error("Izin notifikasi ditolak");
+    else toast.error("Izin notifikasi belum aktif", { description: "Jika tombol browser tidak muncul, cek setelan izin situs di address bar." });
   };
 
   const logoutToGuest = () => {
@@ -163,6 +214,14 @@ export default function AnonChatTab() {
   useEffect(() => { localStorage.setItem("anon_my_gender", myGender); }, [myGender]);
   useEffect(() => { localStorage.setItem("anon_pref_gender", prefGender); }, [prefGender]);
   useEffect(() => { localStorage.setItem("anon_interest", interest); }, [interest]);
+
+  const explainNotif = () => {
+    if (!("Notification" in window)) return "Browser tidak mendukung notifikasi.";
+    if (!window.isSecureContext) return "Notifikasi hanya aktif di HTTPS / aplikasi terpasang.";
+    if (Notification.permission === "denied") return "Izin sudah diblokir di browser. Buka setelan situs lalu ubah Notifications menjadi Allow.";
+    if (Notification.permission === "default") return "Izin belum diminta atau belum dipilih. Tekan toggle notifikasi.";
+    return "Izin browser aktif. Notifikasi muncul saat tab tidak aktif dan toggle aplikasi menyala.";
+  };
 
   // Online queue count
   useEffect(() => {
@@ -324,11 +383,13 @@ export default function AnonChatTab() {
   const mapMsg = (m: any): AnonMsg => ({
     id: m.id, sender: m.sender_visitor_id, content: m.content, image_url: m.image_url ?? null,
     created_at: m.created_at, is_read: !!m.is_read, reply_to_id: m.reply_to_id ?? null, is_deleted: !!m.is_deleted,
+    deleted_for: m.deleted_for ?? [],
   });
 
   const enterSession = async (id: string, partnerNick: string | null, partnerGender: string | null) => {
     setSessionId(id);
     setPartner({ nick: partnerNick || "Stranger", gender: partnerGender });
+    await loadPartnerProfile(id);
     setSessionStatus("active");
     const { data } = await supabase.from("anon_chat_messages").select("*").eq("session_id", id).order("created_at");
     const list = (data || []).map(mapMsg);
@@ -343,6 +404,7 @@ export default function AnonChatTab() {
   };
 
   const doMatch = async (silent = false) => {
+    if (activeBan) { toast.error("Akun diblokir dari chat", { description: formatBanRemaining(banInfo) }); return; }
     const { data, error } = await supabase.rpc("anon_chat_find_or_queue", {
       p_visitor: visitor, p_nickname: nickname, p_my_gender: myGender,
       p_pref_gender: prefGender, p_interest: interest === "Apapun" ? "any" : interest,
@@ -386,23 +448,33 @@ export default function AnonChatTab() {
   };
 
   const sendMessage = async () => {
-    if (!sessionId || !draft.trim() || sessionStatus === "ended") return;
+    if (!sessionId || !draft.trim() || sessionStatus === "ended" || activeBan) return;
     const text = draft.trim().slice(0, 1000);
     setDraft("");
     pushTyping(false);
 
-    // Filter konten: tampak terkirim namun tidak diteruskan ke partner
-    if (isBlockedText(text)) {
+    const moderation = moderateOutgoing(text);
+    if (!moderation.ok) {
+      let violationCount = 0;
+      try {
+        const { data } = await supabase.rpc("report_chat_violation", {
+          p_visitor_id: visitor,
+          p_kind: moderation.hadContact ? "contact_share" : "banned_word",
+          p_detail: text.slice(0, 200),
+        } as any);
+        violationCount = Number(data || 0);
+        await refreshBan();
+      } catch {}
       const fake: AnonMsg = {
         id: "local-" + Date.now() + "-" + Math.random().toString(36).slice(2),
-        sender: visitor, content: text, image_url: null,
+        sender: visitor, content: moderation.cleaned || "•••sensor•••", image_url: null,
         created_at: new Date().toISOString(), is_read: false,
         reply_to_id: replyTo?.id || null, is_deleted: false, local_blocked: true,
       };
       setMessages(prev => [...prev, fake]);
       setReplyTo(null);
       toast.message("Pesan tidak diteruskan", {
-        description: `Konten terdeteksi sensitif/tuduhan. Untuk laporan resmi, hubungi WA ${CS_WA}.`,
+        description: `${moderation.reasons.join(". ")} · Peringatan ${violationCount}/3. Untuk laporan resmi, hubungi WA ${CS_WA}.`,
         action: { label: "WA CS", onClick: () => window.open(CS_WA_LINK, "_blank") },
       });
       return;
@@ -416,7 +488,7 @@ export default function AnonChatTab() {
   };
 
   const sendImage = async (file: File) => {
-    if (!sessionId || !file || sessionStatus === "ended") return;
+    if (!sessionId || !file || sessionStatus === "ended" || activeBan) return;
     if (file.size > 5 * 1024 * 1024) { toast.error("Gambar maksimal 5MB"); return; }
     const ext = file.name.split(".").pop() || "jpg";
     const path = `anon/${sessionId}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
@@ -429,11 +501,30 @@ export default function AnonChatTab() {
     await supabase.from("anon_chat_messages").insert(payload);
   };
 
-  const softDelete = async (m: AnonMsg) => {
+  const deleteForEveryone = async (m: AnonMsg) => {
     if (m.sender !== visitor) return;
     await supabase.from("anon_chat_messages").update({
       is_deleted: true, content: null, image_url: null, deleted_at: new Date().toISOString(),
     } as any).eq("id", m.id);
+  };
+
+  const deleteForMe = async (m: AnonMsg) => {
+    const next = Array.from(new Set([...(m.deleted_for || []), visitor]));
+    setMessages(prev => prev.map(x => x.id === m.id ? { ...x, deleted_for: next } : x));
+    await supabase.from("anon_chat_messages").update({ deleted_for: next } as any).eq("id", m.id);
+  };
+
+  const uploadAvatar = async (file: File) => {
+    if (!file) return;
+    if (file.size > 2 * 1024 * 1024) { toast.error("Foto profil maksimal 2MB"); return; }
+    const ext = file.name.split(".").pop() || "jpg";
+    const path = `anon-avatars/${visitor}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+    const { error } = await supabase.storage.from("chat-images").upload(path, file);
+    if (error) { toast.error("Gagal upload foto profil"); return; }
+    const { data } = supabase.storage.from("chat-images").getPublicUrl(path);
+    setAvatarUrl(data.publicUrl);
+    await touchProfile();
+    toast.success("Foto profil tersimpan");
   };
 
   const toggleReaction = async (m: AnonMsg, emoji: string) => {
@@ -476,8 +567,8 @@ export default function AnonChatTab() {
       <div className="flex flex-col h-[calc(100vh-180px)] min-h-[500px] rounded-3xl overflow-hidden border-2 border-emerald-400/30 bg-gradient-to-b from-emerald-950/40 via-slate-950 to-slate-950 shadow-[0_20px_60px_-20px_rgba(16,185,129,0.4)]">
         {/* Header */}
         <div className="flex items-center gap-3 p-3 border-b border-emerald-400/20 bg-gradient-to-r from-emerald-500/10 via-teal-500/10 to-cyan-500/10 backdrop-blur">
-          <div className="w-11 h-11 rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center text-xl shadow-lg shadow-emerald-500/40">
-            {partner?.gender === "male" ? "🧑" : partner?.gender === "female" ? "👩" : "🥷"}
+          <div className={`w-11 h-11 rounded-full bg-gradient-to-br ${partnerAvatar.gradient} flex items-center justify-center text-xl shadow-lg shadow-emerald-500/40 overflow-hidden`}>
+            {partnerProfile?.avatar_url ? <img src={partnerProfile.avatar_url} alt="Avatar partner" className="h-full w-full object-cover" /> : partnerAvatar.emoji}
           </div>
           <div className="flex-1 min-w-0">
             <div className="font-bold text-emerald-50 truncate flex items-center gap-1.5">
@@ -488,7 +579,7 @@ export default function AnonChatTab() {
               <span className={`w-1.5 h-1.5 rounded-full ${sessionStatus === "active" ? "bg-emerald-400 animate-pulse" : "bg-rose-400"}`} />
               {sessionStatus === "active" ? "terhubung" : "chat berakhir"}
               <span className="text-slate-500">•</span>
-              <span className="text-slate-400/80 italic">status & terakhir dilihat tidak ditampilkan</span>
+              <span className="text-slate-400/80 italic">{partnerLastSeen}</span>
             </div>
           </div>
           {sessionStatus === "active" && (
@@ -525,6 +616,7 @@ export default function AnonChatTab() {
         <div ref={scrollRef} className="flex-1 overflow-y-auto p-3 space-y-1.5">
           <div className="text-center text-xs text-emerald-300/50 py-2">— Awal obrolan anonim —</div>
           {messages.map((m, idx) => {
+            if ((m.deleted_for || []).includes(visitor)) return null;
             const mine = m.sender === visitor;
             const replied = m.reply_to_id ? messagesById[m.reply_to_id] : null;
             const rx = reactionsByMsg[m.id];
@@ -625,12 +717,17 @@ export default function AnonChatTab() {
                           className="w-6 h-6 rounded-full bg-slate-900 border border-slate-700 shadow flex items-center justify-center hover:bg-slate-800">
                           <Reply className="w-3.5 h-3.5 text-slate-200" />
                         </button>
-                        {mine && (
-                          <button onClick={() => softDelete(m)}
-                            className="w-6 h-6 rounded-full bg-slate-900 border border-slate-700 shadow flex items-center justify-center hover:bg-slate-800">
-                            <Trash2 className="w-3.5 h-3.5 text-rose-300" />
-                          </button>
-                        )}
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <button className="w-6 h-6 rounded-full bg-slate-900 border border-slate-700 shadow flex items-center justify-center hover:bg-slate-800" aria-label="Opsi hapus">
+                              <Trash2 className="w-3.5 h-3.5 text-rose-300" />
+                            </button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align={mine ? "end" : "start"} className="w-44 bg-slate-950 border-slate-800 text-slate-100">
+                            <DropdownMenuItem onClick={() => deleteForMe(m)}>Hapus untuk saya</DropdownMenuItem>
+                            {mine && <DropdownMenuItem onClick={() => deleteForEveryone(m)} className="text-rose-300">Hapus untuk semua</DropdownMenuItem>}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </div>
                     )}
 
@@ -665,6 +762,12 @@ export default function AnonChatTab() {
 
         {/* Input */}
         <div className="p-2.5 border-t border-emerald-400/20 bg-slate-950/80 space-y-2">
+          {activeBan && (
+            <div className="rounded-xl border border-rose-400/30 bg-rose-500/10 px-3 py-2 text-xs text-rose-100 flex items-start gap-2">
+              <AlertTriangle className="w-4 h-4 text-rose-300 mt-0.5" />
+              <span>Akun diblokir dari chat: {banInfo?.reason} · {formatBanRemaining(banInfo)}</span>
+            </div>
+          )}
           {replyTo && (
             <div className="flex items-start gap-2 rounded-lg border border-emerald-400/30 bg-slate-900/70 px-2.5 py-2 text-[11px] animate-fade-in">
               <Reply className="w-3.5 h-3.5 text-emerald-300 mt-0.5 shrink-0" />
@@ -679,8 +782,18 @@ export default function AnonChatTab() {
               </button>
             </div>
           )}
-          {sessionStatus === "active" ? (
+          {showEmojiInput && !activeBan && (
+            <div className="grid grid-cols-8 gap-1 rounded-2xl border border-emerald-400/20 bg-slate-900/80 p-2 animate-fade-in">
+              {[...EMOJIS, "😍", "🤣", "😭", "😎", "🤝", "💯", "🎉", "🤔", "😡", "😴", "✨", "🙌", "😇", "😜", "👌", "💬"].map((e) => (
+                <button key={e} onClick={() => setDraft((d) => d + e)} className="h-8 rounded-lg hover:bg-slate-800 text-lg">{e}</button>
+              ))}
+            </div>
+          )}
+          {sessionStatus === "active" && !activeBan ? (
             <div className="flex items-center gap-2">
+              <button onClick={() => setShowEmojiInput(v => !v)} className="w-10 h-10 rounded-full bg-slate-900/70 border border-emerald-400/30 flex items-center justify-center shrink-0 hover:bg-slate-800/70 transition">
+                <Smile className="w-[18px] h-[18px] text-emerald-300" />
+              </button>
               <label className="w-10 h-10 rounded-full bg-slate-900/70 border border-emerald-400/30 flex items-center justify-center cursor-pointer shrink-0 hover:bg-slate-800/70 transition">
                 <ImagePlus className="w-[18px] h-[18px] text-emerald-300" />
                 <input type="file" accept="image/*" className="hidden"
@@ -833,6 +946,34 @@ export default function AnonChatTab() {
             </div>
           </div>
 
+          <div className="space-y-3 rounded-2xl border border-emerald-400/20 bg-slate-900/60 p-3">
+            <div className="flex items-center gap-3">
+              <div className={`w-14 h-14 rounded-full bg-gradient-to-br ${myAvatar.gradient} flex items-center justify-center text-2xl overflow-hidden shrink-0`}>
+                {avatarUrl ? <img src={avatarUrl} alt="Foto profil" className="h-full w-full object-cover" /> : myAvatar.emoji}
+              </div>
+              <label className="flex-1 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-100 text-xs font-bold flex items-center justify-center gap-2 cursor-pointer">
+                <ImagePlus className="w-4 h-4" /> Upload foto profil
+                <input type="file" accept="image/*" className="hidden" onChange={(e) => { if (e.target.files?.[0]) uploadAvatar(e.target.files[0]); e.target.value = ""; }} />
+              </label>
+              {avatarUrl && <button onClick={() => setAvatarUrl("")} className="w-9 h-9 rounded-xl bg-rose-500/15 text-rose-200 border border-rose-400/30 flex items-center justify-center"><X className="w-4 h-4" /></button>}
+            </div>
+            <div className="grid grid-cols-5 gap-2">
+              {AVATAR_PRESETS.map((a) => (
+                <button key={a.id} onClick={() => setAvatarPreset(a.id)} className={`h-10 rounded-xl bg-gradient-to-br ${a.gradient} text-xl border ${avatarPreset === a.id ? "border-white shadow-lg" : "border-transparent opacity-75"}`} title={a.label}>{a.emoji}</button>
+              ))}
+            </div>
+          </div>
+
+          <div className="flex items-center justify-between rounded-2xl border border-slate-800 bg-slate-900/70 p-3">
+            <div>
+              <div className="text-sm font-bold text-slate-100">Terakhir dilihat</div>
+              <div className="text-[11px] text-slate-400">Bisa diaktifkan/nonaktifkan setiap pengguna</div>
+            </div>
+            <button onClick={() => setShowLastSeen(v => !v)} className={`w-12 h-7 rounded-full p-0.5 transition ${showLastSeen ? "bg-emerald-500" : "bg-slate-700"}`}>
+              <div className={`w-6 h-6 rounded-full bg-white transition ${showLastSeen ? "translate-x-5" : ""}`} />
+            </button>
+          </div>
+
           <div>
             <label className="text-xs text-slate-400 mb-2 block">Gender saya</label>
             <div className="grid grid-cols-3 gap-2">
@@ -962,6 +1103,7 @@ export default function AnonChatTab() {
               <div className="text-[10px] mt-0.5">
                 Status izin: <span className={perm === "granted" ? "text-emerald-300" : perm === "denied" ? "text-rose-300" : "text-amber-300"}>{perm}</span>
               </div>
+              <div className="text-[10px] text-slate-500 mt-1">{explainNotif()}</div>
             </div>
             <button onClick={() => { if (perm !== "granted") requestNotifPerm(); else setNotifOn(n => !n); }}
               className={`w-12 h-7 rounded-full p-0.5 transition ${notifOn && perm === "granted" ? "bg-emerald-500" : "bg-slate-700"}`}>
@@ -997,12 +1139,8 @@ export default function AnonChatTab() {
         <div className="flex-1 overflow-y-auto p-5 space-y-5">
           {/* Avatar + nickname + gender */}
           <div className="flex flex-col items-center gap-2">
-            <div className={`w-24 h-24 rounded-full flex items-center justify-center text-5xl shadow-xl ring-4 ring-slate-900 ${
-              myGender === "male" ? "bg-gradient-to-br from-sky-500 to-blue-600" :
-              myGender === "female" ? "bg-gradient-to-br from-pink-500 to-rose-600" :
-              "bg-gradient-to-br from-indigo-500 to-purple-600"
-            }`}>
-              {genderEmoji(myGender)}
+            <div className={`w-24 h-24 rounded-full flex items-center justify-center text-5xl shadow-xl ring-4 ring-slate-900 bg-gradient-to-br ${myAvatar.gradient} overflow-hidden`}>
+              {avatarUrl ? <img src={avatarUrl} alt="Foto profil" className="h-full w-full object-cover" /> : myAvatar.emoji}
             </div>
             <div className="text-xl font-bold text-slate-100 mt-1">{nickname}</div>
             <div className="text-sm text-slate-400 flex items-center gap-1.5">
