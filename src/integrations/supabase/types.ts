@@ -136,23 +136,38 @@ export type Database = {
       }
       anon_chat_messages: {
         Row: {
-          content: string
+          content: string | null
           created_at: string
+          deleted_at: string | null
           id: string
+          image_url: string | null
+          is_deleted: boolean
+          is_read: boolean
+          reply_to_id: string | null
           sender_visitor_id: string
           session_id: string
         }
         Insert: {
-          content: string
+          content?: string | null
           created_at?: string
+          deleted_at?: string | null
           id?: string
+          image_url?: string | null
+          is_deleted?: boolean
+          is_read?: boolean
+          reply_to_id?: string | null
           sender_visitor_id: string
           session_id: string
         }
         Update: {
-          content?: string
+          content?: string | null
           created_at?: string
+          deleted_at?: string | null
           id?: string
+          image_url?: string | null
+          is_deleted?: boolean
+          is_read?: boolean
+          reply_to_id?: string | null
           sender_visitor_id?: string
           session_id?: string
         }
@@ -196,6 +211,38 @@ export type Database = {
         }
         Relationships: []
       }
+      anon_chat_reactions: {
+        Row: {
+          created_at: string
+          emoji: string
+          id: string
+          message_id: string
+          visitor_id: string
+        }
+        Insert: {
+          created_at?: string
+          emoji: string
+          id?: string
+          message_id: string
+          visitor_id: string
+        }
+        Update: {
+          created_at?: string
+          emoji?: string
+          id?: string
+          message_id?: string
+          visitor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "anon_chat_reactions_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "anon_chat_messages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       anon_chat_sessions: {
         Row: {
           created_at: string
@@ -238,6 +285,27 @@ export type Database = {
           status?: string
           visitor_a?: string
           visitor_b?: string
+        }
+        Relationships: []
+      }
+      anon_chat_typing: {
+        Row: {
+          is_typing: boolean
+          sender_visitor_id: string
+          session_id: string
+          updated_at: string
+        }
+        Insert: {
+          is_typing?: boolean
+          sender_visitor_id: string
+          session_id: string
+          updated_at?: string
+        }
+        Update: {
+          is_typing?: boolean
+          sender_visitor_id?: string
+          session_id?: string
+          updated_at?: string
         }
         Relationships: []
       }

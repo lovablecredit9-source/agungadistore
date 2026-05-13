@@ -1,7 +1,20 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Search, Users, Settings as SettingsIcon, Send, X, RefreshCw, UserPlus, Heart, ChevronRight, Sparkles, Shield } from "lucide-react";
+import { Search, Users, Settings as SettingsIcon, Send, X, RefreshCw, UserPlus, Heart, ChevronRight, Sparkles, Shield, ImagePlus, Smile, Reply, Trash2, Check, CheckCheck } from "lucide-react";
 import { toast } from "sonner";
+
+interface AnonMsg {
+  id: string;
+  sender: string;
+  content: string | null;
+  image_url: string | null;
+  created_at: string;
+  is_read: boolean;
+  reply_to_id: string | null;
+  is_deleted: boolean;
+}
+interface AnonReaction { id: string; message_id: string; visitor_id: string; emoji: string; }
+const EMOJIS = ["👍", "❤️", "😂", "😮", "😢", "🙏", "🔥"];
 
 type View = "lobby" | "prefs" | "interest" | "searching" | "chat" | "friends";
 
@@ -29,12 +42,17 @@ export default function AnonChatTab() {
   const [interest, setInterest] = useState<string>(() => localStorage.getItem("anon_interest") || "Apapun");
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [partner, setPartner] = useState<{ nick: string; gender: string | null } | null>(null);
-  const [messages, setMessages] = useState<Array<{ id: string; sender: string; content: string; created_at: string }>>([]);
+  const [messages, setMessages] = useState<AnonMsg[]>([]);
+  const [reactions, setReactions] = useState<AnonReaction[]>([]);
+  const [otherTyping, setOtherTyping] = useState(false);
+  const [replyTo, setReplyTo] = useState<AnonMsg | null>(null);
+  const [emojiFor, setEmojiFor] = useState<string | null>(null);
   const [draft, setDraft] = useState("");
   const [sessionStatus, setSessionStatus] = useState<"active" | "ended">("active");
   const [searchSecs, setSearchSecs] = useState(0);
   const [onlineCount, setOnlineCount] = useState<number>(0);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const typingTimer = useRef<number | null>(null);
 
   useEffect(() => { localStorage.setItem("anon_nick", nickname); }, [nickname]);
   useEffect(() => { localStorage.setItem("anon_my_gender", myGender); }, [myGender]);
@@ -71,26 +89,63 @@ export default function AnonChatTab() {
     return () => { clearInterval(t); clearInterval(retry); supabase.removeChannel(ch); };
   }, [view, visitor]);
 
-  // Session realtime: messages + status
+  // Session realtime: messages + reactions + typing + status
   useEffect(() => {
     if (!sessionId) return;
+    const markRead = (mid: string) => { void supabase.from("anon_chat_messages").update({ is_read: true } as any).eq("id", mid); };
     const ch = supabase.channel(`anon_sess_${sessionId}`)
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "anon_chat_messages", filter: `session_id=eq.${sessionId}` },
-        (payload: any) => setMessages(prev => [...prev, payload.new]))
+        (p: any) => {
+          const nm = mapMsg(p.new);
+          setMessages(prev => prev.some(m => m.id === nm.id) ? prev : [...prev, nm]);
+          if (nm.sender !== visitor) markRead(nm.id);
+        })
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "anon_chat_messages", filter: `session_id=eq.${sessionId}` },
+        (p: any) => { const nm = mapMsg(p.new); setMessages(prev => prev.map(m => m.id === nm.id ? nm : m)); })
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "anon_chat_reactions" },
+        (p: any) => { const r = p.new as AnonReaction; setReactions(prev => prev.some(x => x.id === r.id) ? prev : [...prev, r]); })
+      .on("postgres_changes", { event: "DELETE", schema: "public", table: "anon_chat_reactions" },
+        (p: any) => { const r = p.old as any; setReactions(prev => prev.filter(x => x.id !== r.id)); })
+      .on("postgres_changes", { event: "*", schema: "public", table: "anon_chat_typing" },
+        (p: any) => {
+          const row = p.new || p.old;
+          if (!row || row.session_id !== sessionId || row.sender_visitor_id === visitor) return;
+          const typing = !!p.new?.is_typing && p.eventType !== "DELETE";
+          const ts = p.new?.updated_at ? new Date(p.new.updated_at).getTime() : 0;
+          setOtherTyping(typing && Date.now() - ts < 6000);
+        })
       .on("postgres_changes", { event: "UPDATE", schema: "public", table: "anon_chat_sessions", filter: `id=eq.${sessionId}` },
         (payload: any) => { if (payload.new.status === "ended") setSessionStatus("ended"); })
       .subscribe();
     return () => { supabase.removeChannel(ch); };
-  }, [sessionId]);
+  }, [sessionId, visitor]);
 
-  useEffect(() => { scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" }); }, [messages]);
+  useEffect(() => {
+    if (!otherTyping) return;
+    const t = window.setTimeout(() => setOtherTyping(false), 4500);
+    return () => window.clearTimeout(t);
+  }, [otherTyping]);
+
+  useEffect(() => { scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" }); }, [messages, otherTyping]);
+
+  const mapMsg = (m: any): AnonMsg => ({
+    id: m.id, sender: m.sender_visitor_id, content: m.content, image_url: m.image_url ?? null,
+    created_at: m.created_at, is_read: !!m.is_read, reply_to_id: m.reply_to_id ?? null, is_deleted: !!m.is_deleted,
+  });
 
   const enterSession = async (id: string, partnerNick: string | null, partnerGender: string | null) => {
     setSessionId(id);
     setPartner({ nick: partnerNick || "Stranger", gender: partnerGender });
     setSessionStatus("active");
-    const { data } = await supabase.from("anon_chat_messages").select("id,sender_visitor_id,content,created_at").eq("session_id", id).order("created_at");
-    setMessages((data || []).map((m: any) => ({ id: m.id, sender: m.sender_visitor_id, content: m.content, created_at: m.created_at })));
+    const { data } = await supabase.from("anon_chat_messages").select("*").eq("session_id", id).order("created_at");
+    const list = (data || []).map(mapMsg);
+    setMessages(list);
+    const unread = list.filter(m => m.sender !== visitor && !m.is_read).map(m => m.id);
+    if (unread.length) await supabase.from("anon_chat_messages").update({ is_read: true } as any).in("id", unread);
+    if (list.length) {
+      const { data: rx } = await supabase.from("anon_chat_reactions").select("*").in("message_id", list.map(m => m.id));
+      setReactions((rx || []) as AnonReaction[]);
+    } else setReactions([]);
     setView("chat");
   };
 
@@ -116,17 +171,92 @@ export default function AnonChatTab() {
 
   const endChat = async () => {
     if (sessionId) await supabase.rpc("anon_chat_end_session", { p_session: sessionId, p_visitor: visitor });
-    setSessionId(null); setPartner(null); setMessages([]); setView("lobby");
+    setSessionId(null); setPartner(null); setMessages([]); setReactions([]); setReplyTo(null); setView("lobby");
   };
 
   const newPartner = async () => { await endChat(); await doMatch(); };
+
+  const pushTyping = useCallback(async (typing: boolean) => {
+    if (!sessionId) return;
+    try {
+      await supabase.from("anon_chat_typing").upsert({
+        session_id: sessionId, sender_visitor_id: visitor, is_typing: typing, updated_at: new Date().toISOString(),
+      } as any, { onConflict: "session_id,sender_visitor_id" } as any);
+    } catch {}
+  }, [sessionId, visitor]);
+
+  const onChangeDraft = (v: string) => {
+    setDraft(v);
+    pushTyping(true);
+    if (typingTimer.current) window.clearTimeout(typingTimer.current);
+    typingTimer.current = window.setTimeout(() => pushTyping(false), 2500);
+  };
 
   const sendMessage = async () => {
     if (!sessionId || !draft.trim() || sessionStatus === "ended") return;
     const text = draft.trim().slice(0, 1000);
     setDraft("");
-    const { error } = await supabase.from("anon_chat_messages").insert({ session_id: sessionId, sender_visitor_id: visitor, content: text });
+    pushTyping(false);
+    const payload: any = { session_id: sessionId, sender_visitor_id: visitor, content: text };
+    if (replyTo) payload.reply_to_id = replyTo.id;
+    setReplyTo(null);
+    const { error } = await supabase.from("anon_chat_messages").insert(payload);
     if (error) { toast.error(error.message); setDraft(text); }
+  };
+
+  const sendImage = async (file: File) => {
+    if (!sessionId || !file || sessionStatus === "ended") return;
+    if (file.size > 5 * 1024 * 1024) { toast.error("Gambar maksimal 5MB"); return; }
+    const ext = file.name.split(".").pop() || "jpg";
+    const path = `anon/${sessionId}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+    const { error: upErr } = await supabase.storage.from("chat-images").upload(path, file);
+    if (upErr) { toast.error("Gagal upload gambar"); return; }
+    const { data: u } = supabase.storage.from("chat-images").getPublicUrl(path);
+    const payload: any = { session_id: sessionId, sender_visitor_id: visitor, image_url: u.publicUrl };
+    if (replyTo) payload.reply_to_id = replyTo.id;
+    setReplyTo(null);
+    await supabase.from("anon_chat_messages").insert(payload);
+  };
+
+  const softDelete = async (m: AnonMsg) => {
+    if (m.sender !== visitor) return;
+    await supabase.from("anon_chat_messages").update({
+      is_deleted: true, content: null, image_url: null, deleted_at: new Date().toISOString(),
+    } as any).eq("id", m.id);
+  };
+
+  const toggleReaction = async (m: AnonMsg, emoji: string) => {
+    setEmojiFor(null);
+    const existing = reactions.find(r => r.message_id === m.id && r.visitor_id === visitor && r.emoji === emoji);
+    if (existing) await supabase.from("anon_chat_reactions").delete().eq("id", existing.id);
+    else await supabase.from("anon_chat_reactions").insert({ message_id: m.id, visitor_id: visitor, emoji } as any);
+  };
+
+  const reactionsByMsg = useMemo(() => {
+    const map: Record<string, Record<string, { count: number; mine: boolean }>> = {};
+    for (const r of reactions) {
+      if (!map[r.message_id]) map[r.message_id] = {};
+      const slot = map[r.message_id][r.emoji] || { count: 0, mine: false };
+      slot.count += 1;
+      if (r.visitor_id === visitor) slot.mine = true;
+      map[r.message_id][r.emoji] = slot;
+    }
+    return map;
+  }, [reactions, visitor]);
+
+  const messagesById = useMemo(() => {
+    const m: Record<string, AnonMsg> = {};
+    for (const x of messages) m[x.id] = x;
+    return m;
+  }, [messages]);
+
+  const dateLabel = (iso: string) => {
+    const d = new Date(iso);
+    const today = new Date();
+    const yest = new Date(); yest.setDate(today.getDate() - 1);
+    if (d.toDateString() === today.toDateString()) return "Hari ini";
+    if (d.toDateString() === yest.toDateString()) return "Kemarin";
+    return d.toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" });
   };
 
   // ============ RENDER ============
@@ -151,34 +281,146 @@ export default function AnonChatTab() {
         </div>
 
         {/* Messages */}
-        <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-2">
+        <div ref={scrollRef} className="flex-1 overflow-y-auto p-3 space-y-1.5">
           <div className="text-center text-xs text-emerald-300/50 py-2">— Awal obrolan anonim —</div>
-          {messages.map(m => {
+          {messages.map((m, idx) => {
             const mine = m.sender === visitor;
+            const replied = m.reply_to_id ? messagesById[m.reply_to_id] : null;
+            const rx = reactionsByMsg[m.id];
+            const prev = messages[idx - 1];
+            const showDate = !prev || dateLabel(prev.created_at) !== dateLabel(m.created_at);
+            const grouped = prev && prev.sender === m.sender && !showDate &&
+              new Date(m.created_at).getTime() - new Date(prev.created_at).getTime() < 60_000;
             return (
-              <div key={m.id} className={`flex ${mine ? "justify-end" : "justify-start"}`}>
-                <div className={`max-w-[75%] px-3.5 py-2 rounded-2xl text-sm break-words shadow ${
-                  mine
-                    ? "bg-gradient-to-br from-emerald-500 to-teal-600 text-white rounded-br-sm"
-                    : "bg-slate-800/90 text-slate-100 rounded-bl-sm border border-slate-700/50"
-                }`}>
-                  {m.content}
+              <div key={m.id}>
+                {showDate && (
+                  <div className="flex justify-center my-3">
+                    <span className="text-[10px] font-medium px-2.5 py-1 rounded-full border border-emerald-400/20 bg-slate-900/60 text-emerald-200/80">
+                      {dateLabel(m.created_at)}
+                    </span>
+                  </div>
+                )}
+                <div className={`flex ${mine ? "justify-end" : "justify-start"} ${grouped ? "mt-0.5" : "mt-1.5"} animate-fade-in`}>
+                  <div className="relative group max-w-[78%]">
+                    <div
+                      onDoubleClick={() => !m.is_deleted && setEmojiFor(emojiFor === m.id ? null : m.id)}
+                      className={`relative px-3 py-2 text-sm break-words shadow-md ${
+                        mine
+                          ? `bg-gradient-to-br from-emerald-500 to-teal-600 text-white ${grouped ? "rounded-2xl rounded-br-md" : "rounded-2xl rounded-br-sm"}`
+                          : `bg-slate-800/90 text-slate-100 border border-slate-700/50 ${grouped ? "rounded-2xl rounded-bl-md" : "rounded-2xl rounded-bl-sm"}`
+                      } ${m.is_deleted ? "italic opacity-70" : ""}`}
+                    >
+                      {replied && !m.is_deleted && (
+                        <div className={`mb-1 border-l-2 pl-2 py-1 rounded text-[11px] ${mine ? "border-white/50 bg-white/10" : "border-emerald-400/60 bg-slate-900/60"}`}>
+                          <p className="font-semibold opacity-80">{replied.sender === visitor ? "Kamu" : partner?.nick || "Partner"}</p>
+                          <p className="truncate opacity-80">{replied.is_deleted ? "Pesan dihapus" : (replied.content || (replied.image_url ? "📷 Foto" : ""))}</p>
+                        </div>
+                      )}
+                      {m.is_deleted ? (
+                        <p className="flex items-center gap-1"><Trash2 className="w-3 h-3" /> Pesan ini dihapus</p>
+                      ) : (
+                        <>
+                          {m.content && <p className="whitespace-pre-wrap break-words">{m.content}</p>}
+                          {m.image_url && <img src={m.image_url} alt="" className="max-w-full rounded-lg mt-1" />}
+                        </>
+                      )}
+                      <div className={`text-[9px] mt-1 flex items-center gap-0.5 ${mine ? "text-white/70 justify-end" : "text-slate-400"}`}>
+                        {new Date(m.created_at).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })}
+                        {mine && !m.is_deleted && (
+                          <span className="ml-0.5">
+                            {m.is_read ? <CheckCheck className="w-3 h-3 text-cyan-200" /> : <Check className="w-3 h-3" />}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    {rx && Object.keys(rx).length > 0 && !m.is_deleted && (
+                      <div className={`flex flex-wrap gap-1 mt-1 ${mine ? "justify-end" : "justify-start"}`}>
+                        {Object.entries(rx).map(([emo, { count, mine: isMine }]) => (
+                          <button key={emo} onClick={() => toggleReaction(m, emo)}
+                            className={`text-[11px] px-1.5 py-0.5 rounded-full border bg-slate-900/80 flex items-center gap-0.5 ${isMine ? "border-emerald-400" : "border-slate-700"}`}>
+                            <span>{emo}</span><span className="text-slate-400">{count}</span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+
+                    {!m.is_deleted && (
+                      <div className={`absolute -top-3 ${mine ? "right-1" : "left-1"} flex gap-1 opacity-0 group-hover:opacity-100 group-active:opacity-100 transition-opacity`}>
+                        <button onClick={() => setEmojiFor(emojiFor === m.id ? null : m.id)}
+                          className="w-6 h-6 rounded-full bg-slate-900 border border-slate-700 shadow flex items-center justify-center hover:bg-slate-800">
+                          <Smile className="w-3.5 h-3.5 text-slate-200" />
+                        </button>
+                        <button onClick={() => setReplyTo(m)}
+                          className="w-6 h-6 rounded-full bg-slate-900 border border-slate-700 shadow flex items-center justify-center hover:bg-slate-800">
+                          <Reply className="w-3.5 h-3.5 text-slate-200" />
+                        </button>
+                        {mine && (
+                          <button onClick={() => softDelete(m)}
+                            className="w-6 h-6 rounded-full bg-slate-900 border border-slate-700 shadow flex items-center justify-center hover:bg-slate-800">
+                            <Trash2 className="w-3.5 h-3.5 text-rose-300" />
+                          </button>
+                        )}
+                      </div>
+                    )}
+
+                    {emojiFor === m.id && (
+                      <div className={`absolute z-20 -top-10 ${mine ? "right-0" : "left-0"} bg-slate-900 border border-slate-700 rounded-full px-1.5 py-1 flex gap-0.5 shadow-xl`}>
+                        {EMOJIS.map(e => (
+                          <button key={e} onClick={() => toggleReaction(m, e)} className="w-7 h-7 rounded-full hover:bg-slate-800 text-base">{e}</button>
+                        ))}
+                        <button onClick={() => setEmojiFor(null)} className="w-7 h-7 rounded-full hover:bg-slate-800 flex items-center justify-center">
+                          <X className="w-3.5 h-3.5 text-slate-300" />
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
             );
           })}
+          {otherTyping && (
+            <div className="flex justify-start animate-fade-in mt-1.5">
+              <div className="bg-slate-800/90 border border-slate-700/50 rounded-2xl rounded-bl-sm px-3.5 py-2.5 flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-300/80 animate-bounce" style={{ animationDelay: "0ms" }} />
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-300/80 animate-bounce" style={{ animationDelay: "120ms" }} />
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-300/80 animate-bounce" style={{ animationDelay: "240ms" }} />
+              </div>
+            </div>
+          )}
           {sessionStatus === "ended" && (
             <div className="text-center text-xs text-rose-300/80 mt-4 py-2 bg-rose-500/10 rounded-xl">Chat sudah berakhir</div>
           )}
         </div>
 
         {/* Input */}
-        <div className="p-3 border-t border-emerald-400/20 bg-slate-950/80 space-y-2">
+        <div className="p-2.5 border-t border-emerald-400/20 bg-slate-950/80 space-y-2">
+          {replyTo && (
+            <div className="flex items-start gap-2 rounded-lg border border-emerald-400/30 bg-slate-900/70 px-2.5 py-2 text-[11px] animate-fade-in">
+              <Reply className="w-3.5 h-3.5 text-emerald-300 mt-0.5 shrink-0" />
+              <div className="flex-1 min-w-0">
+                <p className="font-semibold text-emerald-200">
+                  Membalas {replyTo.sender === visitor ? "diri sendiri" : (partner?.nick || "partner")}
+                </p>
+                <p className="truncate text-slate-300/80">{replyTo.content || (replyTo.image_url ? "📷 Foto" : "")}</p>
+              </div>
+              <button onClick={() => setReplyTo(null)} className="p-1 hover:bg-slate-800 rounded-full">
+                <X className="w-3.5 h-3.5 text-slate-300" />
+              </button>
+            </div>
+          )}
           {sessionStatus === "active" ? (
             <div className="flex items-center gap-2">
+              <label className="w-10 h-10 rounded-full bg-slate-900/70 border border-emerald-400/30 flex items-center justify-center cursor-pointer shrink-0 hover:bg-slate-800/70 transition">
+                <ImagePlus className="w-[18px] h-[18px] text-emerald-300" />
+                <input type="file" accept="image/*" className="hidden"
+                  onChange={e => { if (e.target.files?.[0]) sendImage(e.target.files[0]); e.target.value = ""; }} />
+              </label>
               <input
-                value={draft} onChange={e => setDraft(e.target.value)}
+                value={draft}
+                onChange={e => onChangeDraft(e.target.value)}
                 onKeyDown={e => { if (e.key === "Enter") sendMessage(); }}
+                onBlur={() => pushTyping(false)}
                 placeholder="Ketik pesan rahasia..."
                 className="flex-1 bg-slate-900/70 border border-emerald-400/30 rounded-full px-4 py-2.5 text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-emerald-400"
                 maxLength={1000}
