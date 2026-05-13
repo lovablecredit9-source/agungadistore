@@ -585,8 +585,13 @@ export default function AnonChatTab() {
                         </>
                       )}
                       <div className={`text-[9px] mt-1 flex items-center gap-0.5 ${mine ? "text-white/70 justify-end" : "text-slate-400"}`}>
+                        {m.local_blocked && (
+                          <span className="mr-1 px-1.5 py-0.5 rounded-full bg-amber-500/30 text-amber-100 text-[8.5px] font-bold flex items-center gap-0.5" title={`Tidak diteruskan ke partner. Lapor: WA ${CS_WA}`}>
+                            <AlertTriangle className="w-2.5 h-2.5" /> hanya kamu
+                          </span>
+                        )}
                         {new Date(m.created_at).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })}
-                        {mine && !m.is_deleted && (
+                        {mine && !m.is_deleted && !m.local_blocked && (
                           <span className="ml-0.5">
                             {m.is_read ? <CheckCheck className="w-3 h-3 text-cyan-200" /> : <Check className="w-3 h-3" />}
                           </span>
