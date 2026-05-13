@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Search, Users, Settings as SettingsIcon, Send, X, RefreshCw, UserPlus, Heart, ChevronRight, Sparkles, Shield, ImagePlus, Smile, Reply, Trash2, Check, CheckCheck, MessageCircle, UserCheck, UserX, Pencil, Link2, HelpCircle, Bell, Moon, Phone, Volume2, VolumeX, Eye, EyeOff, AlertTriangle, LogOut, Copy, KeyRound, Mail, Flag } from "lucide-react";
+import { Search, Users, Settings as SettingsIcon, Send, X, RefreshCw, UserPlus, Heart, ChevronRight, Sparkles, Shield, ImagePlus, Smile, Reply, Trash2, Check, CheckCheck, MessageCircle, UserCheck, UserX, HelpCircle, Bell, Phone, Volume2, VolumeX, Eye, AlertTriangle, LogOut, Copy, Flag, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { moderateOutgoing } from "@/lib/chat-moderation";
 import { formatBanRemaining, type BanInfo } from "@/hooks/useAccountBan";
@@ -13,14 +13,43 @@ function shortId(id: string) {
   return "#" + clean.slice(0, 8);
 }
 const AVATAR_PRESETS = [
-  { id: "ninja", label: "Ninja", emoji: "🥷", gradient: "from-indigo-500 to-purple-600" },
-  { id: "leaf", label: "Daun", emoji: "🍃", gradient: "from-emerald-400 to-teal-500" },
-  { id: "cat", label: "Kucing", emoji: "🐱", gradient: "from-amber-400 to-orange-500" },
-  { id: "star", label: "Bintang", emoji: "⭐", gradient: "from-cyan-400 to-blue-600" },
-  { id: "rose", label: "Mawar", emoji: "🌹", gradient: "from-pink-500 to-rose-600" },
+  { id: "ninja", label: "Ninja", gradient: "from-indigo-500 to-purple-600", skin: "#fde68a", accent: "#4f46e5" },
+  { id: "leaf", label: "Daun", gradient: "from-emerald-400 to-teal-500", skin: "#bbf7d0", accent: "#059669" },
+  { id: "cat", label: "Kucing", gradient: "from-amber-400 to-orange-500", skin: "#fed7aa", accent: "#f97316" },
+  { id: "star", label: "Bintang", gradient: "from-cyan-400 to-blue-600", skin: "#cffafe", accent: "#0284c7" },
+  { id: "rose", label: "Mawar", gradient: "from-pink-500 to-rose-600", skin: "#fbcfe8", accent: "#e11d48" },
 ];
 function presetById(id?: string | null) {
   return AVATAR_PRESETS.find((a) => a.id === id) || AVATAR_PRESETS[0];
+}
+function AvatarGraphic({ preset, className = "w-full h-full" }: { preset: ReturnType<typeof presetById>; className?: string }) {
+  return (
+    <svg viewBox="0 0 64 64" className={className} role="img" aria-label={preset.label}>
+      <rect width="64" height="64" rx="18" fill={preset.accent} opacity="0.22" />
+      {preset.id === "cat" && (
+        <>
+          <path d="M17 24 22 12l8 8h4l8-8 5 12" fill={preset.skin} stroke="white" strokeOpacity="0.45" strokeWidth="2" strokeLinejoin="round" />
+          <circle cx="32" cy="34" r="18" fill={preset.skin} />
+          <circle cx="25" cy="32" r="2.4" fill="#0f172a" /><circle cx="39" cy="32" r="2.4" fill="#0f172a" />
+          <path d="M32 36v3m-7 2c4 4 10 4 14 0" stroke="#0f172a" strokeWidth="2" strokeLinecap="round" fill="none" />
+          <path d="M13 36h12M13 42h12M39 36h12M39 42h12" stroke="white" strokeOpacity="0.55" strokeWidth="1.6" strokeLinecap="round" />
+        </>
+      )}
+      {preset.id !== "cat" && (
+        <>
+          <circle cx="32" cy="26" r="13" fill={preset.skin} />
+          <path d="M14 58c2.8-13 11-20 18-20s15.2 7 18 20" fill={preset.skin} />
+          <path d="M19 23c5-11 19-13 28 0-6-1-10-4-15-8-3 5-7 7-13 8Z" fill={preset.accent} opacity="0.9" />
+          {preset.id === "ninja" && <path d="M18 26h28v8H18z" fill="#0f172a" opacity="0.9" />}
+          {preset.id === "leaf" && <path d="M42 12c-10 0-17 5-18 15 9 0 17-5 18-15Z" fill="#34d399" />}
+          {preset.id === "star" && <path d="m46 12 2.4 5 5.6.8-4 3.8.9 5.4-4.9-2.6-4.9 2.6.9-5.4-4-3.8 5.6-.8L46 12Z" fill="#fef08a" />}
+          {preset.id === "rose" && <path d="M46 18c0 5-5 8-14 13-9-5-14-8-14-13 0-7 8-10 14-3 6-7 14-4 14 3Z" fill="#fb7185" />}
+          <circle cx="27" cy="28" r="2" fill="#0f172a" /><circle cx="37" cy="28" r="2" fill="#0f172a" />
+          <path d="M27 34c3 2.5 7 2.5 10 0" stroke="#0f172a" strokeWidth="2" strokeLinecap="round" fill="none" />
+        </>
+      )}
+    </svg>
+  );
 }
 function playPing() {
   try {
@@ -99,7 +128,6 @@ export default function AnonChatTab() {
   const [soundOn, setSoundOn] = useState<boolean>(() => localStorage.getItem("anon_sound") !== "off");
   const [notifOn, setNotifOn] = useState<boolean>(() => localStorage.getItem("anon_notif") !== "off");
   const [revealedImgs, setRevealedImgs] = useState<Set<string>>(new Set());
-  const [account, setAccount] = useState<{ linked: boolean; username?: string | null; email?: string | null; ub_id?: string | null } | null>(null);
   const lastIncomingId = useRef<string | null>(null);
   const [banInfo, setBanInfo] = useState<BanInfo | null>(null);
   const [myProfile, setMyProfile] = useState<AnonProfile | null>(null);
@@ -156,25 +184,6 @@ export default function AnonChatTab() {
     return () => { window.clearInterval(interval); window.removeEventListener("focus", onFocus); };
   }, [touchProfile]);
 
-  const loadAccount = useCallback(async () => {
-    try {
-      const { data: blh } = await supabase
-        .from("balance_login_history")
-        .select("user_balance_id")
-        .eq("visitor_id", visitor)
-        .order("logged_in_at", { ascending: false })
-        .limit(1)
-        .maybeSingle();
-      if (!blh?.user_balance_id) { setAccount({ linked: false }); return; }
-      const { data: ub } = await supabase
-        .from("user_balances")
-        .select("id, username, email")
-        .eq("id", blh.user_balance_id)
-        .maybeSingle();
-      setAccount({ linked: !!ub, username: ub?.username || null, email: ub?.email || null, ub_id: ub?.id || null });
-    } catch { setAccount({ linked: false }); }
-  }, [visitor]);
-  useEffect(() => { loadAccount(); }, [loadAccount]);
 
   useEffect(() => {
     if (messages.length === 0) return;
@@ -568,7 +577,7 @@ export default function AnonChatTab() {
         {/* Header */}
         <div className="flex items-center gap-3 p-3 border-b border-emerald-400/20 bg-gradient-to-r from-emerald-500/10 via-teal-500/10 to-cyan-500/10 backdrop-blur">
           <div className={`w-11 h-11 rounded-full bg-gradient-to-br ${partnerAvatar.gradient} flex items-center justify-center text-xl shadow-lg shadow-emerald-500/40 overflow-hidden`}>
-            {partnerProfile?.avatar_url ? <img src={partnerProfile.avatar_url} alt="Avatar partner" className="h-full w-full object-cover" /> : partnerAvatar.emoji}
+            {partnerProfile?.avatar_url ? <img src={partnerProfile.avatar_url} alt="Avatar partner" className="h-full w-full object-cover" /> : <AvatarGraphic preset={partnerAvatar} />}
           </div>
           <div className="flex-1 min-w-0">
             <div className="font-bold text-emerald-50 truncate flex items-center gap-1.5">
@@ -726,6 +735,7 @@ export default function AnonChatTab() {
                           <DropdownMenuContent align={mine ? "end" : "start"} className="w-44 bg-slate-950 border-slate-800 text-slate-100">
                             <DropdownMenuItem onClick={() => deleteForMe(m)}>Hapus untuk saya</DropdownMenuItem>
                             {mine && <DropdownMenuItem onClick={() => deleteForEveryone(m)} className="text-rose-300">Hapus untuk semua</DropdownMenuItem>}
+                            <DropdownMenuItem>Batal</DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </div>
@@ -792,7 +802,7 @@ export default function AnonChatTab() {
           {sessionStatus === "active" && !activeBan ? (
             <div className="flex items-center gap-2">
               <button onClick={() => setShowEmojiInput(v => !v)} className="w-10 h-10 rounded-full bg-slate-900/70 border border-emerald-400/30 flex items-center justify-center shrink-0 hover:bg-slate-800/70 transition">
-                <Smile className="w-[18px] h-[18px] text-emerald-300" />
+                <Plus className="w-[18px] h-[18px] text-emerald-300" />
               </button>
               <label className="w-10 h-10 rounded-full bg-slate-900/70 border border-emerald-400/30 flex items-center justify-center cursor-pointer shrink-0 hover:bg-slate-800/70 transition">
                 <ImagePlus className="w-[18px] h-[18px] text-emerald-300" />
@@ -852,7 +862,6 @@ export default function AnonChatTab() {
   }
 
   if (view === "account") {
-    const isLinked = !!account?.linked;
     return (
       <div className="rounded-3xl border-2 border-emerald-400/30 bg-gradient-to-b from-slate-950 to-emerald-950/20 p-5 space-y-5 max-h-[calc(100vh-160px)] overflow-y-auto">
         <div className="flex items-center justify-between">
@@ -872,67 +881,27 @@ export default function AnonChatTab() {
           </div>
           <div className="flex items-center justify-between">
             <span className="text-xs text-slate-400">Status</span>
-            {isLinked ? (
-              <span className="text-[11px] font-bold px-2 py-1 rounded-full bg-emerald-500/20 text-emerald-200 border border-emerald-400/40">Tertaut ke akun</span>
-            ) : (
-              <span className="text-[11px] font-bold px-2 py-1 rounded-full bg-amber-500/20 text-amber-200 border border-amber-400/40">Tamu (Guest)</span>
-            )}
+            <span className="text-[11px] font-bold px-2 py-1 rounded-full bg-emerald-500/20 text-emerald-200 border border-emerald-400/40">Mandiri (khusus Anon Chat)</span>
           </div>
-          {isLinked && (
-            <>
-              <div className="flex items-center justify-between gap-2">
-                <span className="text-xs text-slate-400">Akun tertaut</span>
-                <span className="text-xs text-slate-100 font-semibold truncate max-w-[60%] text-right">{account?.username || "—"}</span>
-              </div>
-              <div className="flex items-center justify-between gap-2">
-                <span className="text-xs text-slate-400">Email</span>
-                <span className="text-xs text-slate-300 truncate max-w-[60%] text-right">{account?.email || "—"}</span>
-              </div>
-            </>
-          )}
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-xs text-slate-400">Nama tampil</span>
+            <span className="text-xs text-slate-100 font-semibold truncate max-w-[60%] text-right">{nickname}</span>
+          </div>
         </div>
 
-        {/* Aksi akun */}
-        {!isLinked ? (
-          <div className="rounded-2xl border border-amber-400/30 bg-amber-500/5 p-4 space-y-3">
-            <div className="flex items-start gap-2">
-              <Link2 className="w-4 h-4 text-amber-300 mt-0.5 shrink-0" />
-              <div>
-                <div className="text-sm font-bold text-amber-100">Bind akun saldo</div>
-                <p className="text-[11px] text-amber-200/80 mt-0.5">Tautkan ke akun saldo agar teman, riwayat, & pengaturan tetap aman saat ganti perangkat.</p>
-              </div>
-            </div>
-            <button onClick={() => { toast.info("Buka tab Plus → Saldo Saya untuk login / daftar akun saldo"); }}
-              className="w-full py-3 rounded-2xl bg-gradient-to-r from-amber-400 to-orange-500 text-white font-bold flex items-center justify-center gap-2 shadow">
-              <Link2 className="w-4 h-4" /> Bind ke akun saldo
-            </button>
+        <div className="rounded-2xl border border-emerald-400/20 bg-emerald-500/5 p-4 flex items-start gap-2">
+          <Shield className="w-4 h-4 text-emerald-300 mt-0.5 shrink-0" />
+          <div>
+            <div className="text-sm font-bold text-emerald-100">Akun Anon Chat terpisah</div>
+            <p className="text-[11px] text-emerald-200/80 mt-0.5">Tidak bind saldo, tidak memakai PIN, dan identitas saldo tidak dibawa ke chat.</p>
           </div>
-        ) : (
-          <div className="rounded-2xl border border-emerald-400/20 bg-slate-900/60 divide-y divide-slate-800 overflow-hidden">
-            {[
-              { icon: Pencil, label: "Ganti username", desc: "Ubah nama tampilan akun" },
-              { icon: Mail, label: "Ganti email", desc: "Perbarui email login" },
-              { icon: KeyRound, label: "Ganti password", desc: "Perbarui kata sandi" },
-            ].map((it, i) => (
-              <button key={i} onClick={() => toast.info("Buka tab Plus → Saldo Saya → Profil untuk " + it.label.toLowerCase())}
-                className="w-full flex items-center gap-3 px-4 py-3.5 text-left hover:bg-slate-800/40 transition">
-                <it.icon className="w-4 h-4 text-emerald-300 shrink-0" />
-                <div className="flex-1 min-w-0">
-                  <div className="text-sm text-slate-100 font-semibold">{it.label}</div>
-                  <div className="text-[10px] text-slate-400">{it.desc}</div>
-                </div>
-                <ChevronRight className="w-4 h-4 text-slate-500" />
-              </button>
-            ))}
-          </div>
-        )}
+        </div>
 
-        {/* Logout / putuskan */}
         <button onClick={logoutToGuest}
           className="w-full py-3 rounded-2xl bg-rose-500/15 hover:bg-rose-500/25 border border-rose-400/40 text-rose-200 text-sm font-bold flex items-center justify-center gap-2">
-          <LogOut className="w-4 h-4" /> {isLinked ? "Logout & jadi Tamu" : "Reset sesi Tamu"}
+          <LogOut className="w-4 h-4" /> Reset Akun Anon
         </button>
-        <p className="text-[10px] text-slate-500 -mt-2 text-center">Riwayat chat anonim, teman, & permintaan akan dihapus dari perangkat ini.</p>
+        <p className="text-[10px] text-slate-500 -mt-2 text-center">Riwayat chat anonim, teman, & permintaan di perangkat ini akan terpisah dari akun saldo.</p>
 
         <div className="border-t border-slate-800 pt-4 space-y-4">
           <div>
@@ -949,7 +918,7 @@ export default function AnonChatTab() {
           <div className="space-y-3 rounded-2xl border border-emerald-400/20 bg-slate-900/60 p-3">
             <div className="flex items-center gap-3">
               <div className={`w-14 h-14 rounded-full bg-gradient-to-br ${myAvatar.gradient} flex items-center justify-center text-2xl overflow-hidden shrink-0`}>
-                {avatarUrl ? <img src={avatarUrl} alt="Foto profil" className="h-full w-full object-cover" /> : myAvatar.emoji}
+                {avatarUrl ? <img src={avatarUrl} alt="Foto profil" className="h-full w-full object-cover" /> : <AvatarGraphic preset={myAvatar} />}
               </div>
               <label className="flex-1 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-100 text-xs font-bold flex items-center justify-center gap-2 cursor-pointer">
                 <ImagePlus className="w-4 h-4" /> Upload foto profil
@@ -959,7 +928,7 @@ export default function AnonChatTab() {
             </div>
             <div className="grid grid-cols-5 gap-2">
               {AVATAR_PRESETS.map((a) => (
-                <button key={a.id} onClick={() => setAvatarPreset(a.id)} className={`h-10 rounded-xl bg-gradient-to-br ${a.gradient} text-xl border ${avatarPreset === a.id ? "border-white shadow-lg" : "border-transparent opacity-75"}`} title={a.label}>{a.emoji}</button>
+                <button key={a.id} onClick={() => setAvatarPreset(a.id)} className={`h-10 rounded-xl bg-gradient-to-br ${a.gradient} text-xl border ${avatarPreset === a.id ? "border-white shadow-lg" : "border-transparent opacity-75"}`} title={a.label}><AvatarGraphic preset={a} className="h-full w-full" /></button>
               ))}
             </div>
           </div>
@@ -1022,7 +991,7 @@ export default function AnonChatTab() {
       { q: "Bagaimana cara mencari partner?", a: "Tekan 'MULAI CARI' di lobi. Sistem mencocokkan kamu berdasarkan gender & ketertarikan." },
       { q: "Mengapa pesan saya bertanda 'hanya kamu'?", a: "Pesan terdeteksi sensitif (mis. tuduhan / kata terlarang). Pesan tampak terkirim tapi tidak diteruskan ke partner. Untuk laporan resmi, hubungi WA CS." },
       { q: "Mengapa foto partner buram?", a: "Semua foto dari partner disensor otomatis untuk perlindungan dari konten 18+. Ketuk 'Tampilkan' jika ingin melihat — risiko ditanggung pengguna." },
-      { q: "Mengapa status online & terakhir dilihat tidak ada?", a: "Demi privasi, status online dan terakhir dilihat tidak pernah ditampilkan — termasuk untuk teman." },
+      { q: "Kenapa terakhir dilihat bisa hilang?", a: "Setiap pengguna bisa menyalakan atau menyembunyikan terakhir dilihat dari Pengaturan akun Anon Chat." },
       { q: "Bagaimana jika ketemu pengguna nakal/penipu?", a: "Akhiri chat, tekan 'Lapor' di foto, dan hubungi WhatsApp CS dengan bukti." },
       { q: "Hilangkan riwayat & teman?", a: "Pengaturan akun → Logout & jadi Tamu / Reset sesi Tamu." },
     ];
@@ -1140,14 +1109,14 @@ export default function AnonChatTab() {
           {/* Avatar + nickname + gender */}
           <div className="flex flex-col items-center gap-2">
             <div className={`w-24 h-24 rounded-full flex items-center justify-center text-5xl shadow-xl ring-4 ring-slate-900 bg-gradient-to-br ${myAvatar.gradient} overflow-hidden`}>
-              {avatarUrl ? <img src={avatarUrl} alt="Foto profil" className="h-full w-full object-cover" /> : myAvatar.emoji}
+              {avatarUrl ? <img src={avatarUrl} alt="Foto profil" className="h-full w-full object-cover" /> : <AvatarGraphic preset={myAvatar} />}
             </div>
             <div className="text-xl font-bold text-slate-100 mt-1">{nickname}</div>
             <div className="text-sm text-slate-400 flex items-center gap-1.5">
               <span>{genderLabel}</span>
               <span className="text-slate-600">•</span>
               <span className="font-mono text-[10px] text-emerald-300/80">{shortId(visitor)}</span>
-              {account?.linked && <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-200 border border-emerald-400/40 font-bold">TERTAUT</span>}
+              <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-slate-800 text-emerald-200 border border-emerald-400/30 font-bold">ANON</span>
             </div>
           </div>
 
@@ -1155,13 +1124,13 @@ export default function AnonChatTab() {
           <div className="rounded-2xl bg-slate-900/70 border border-slate-800 p-4">
             <div className="text-base font-bold text-slate-100 mb-1">Tentang saya</div>
             <div className="text-sm text-slate-300">{interest}</div>
-            <div className="text-[11px] text-slate-500 mt-2 italic">Status online & terakhir dilihat tidak ditampilkan demi privasi.</div>
+            <div className="text-[11px] text-slate-500 mt-2 italic">{showLastSeen ? "Terakhir dilihat aktif untuk partner chat." : "Terakhir dilihat kamu disembunyikan."}</div>
           </div>
 
           {/* Settings list */}
           <div className="rounded-2xl bg-slate-900/70 border border-slate-800 divide-y divide-slate-800 overflow-hidden">
             {[
-              { icon: Link2, label: "Pengaturan akun", desc: account?.linked ? "Tertaut · " + (account?.username || "") : "Tamu · belum bind", onClick: () => setView("account") },
+              { icon: Shield, label: "Akun Anon Chat", desc: "Mandiri · tidak terikat saldo", onClick: () => setView("account") },
               { icon: HelpCircle, label: "Dukungan & pertanyaan umum", desc: "FAQ + tombol CS WhatsApp", onClick: () => setView("support") },
               { icon: Bell, label: "Notifikasi & suara", desc: (soundOn ? "Suara aktif" : "Suara mati") + " · " + (notifOn ? "Notifikasi aktif" : "Notifikasi mati"), onClick: () => setView("notif") },
             ].map((it, i) => (
