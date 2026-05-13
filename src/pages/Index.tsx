@@ -13,7 +13,7 @@ import {
   Heart, Send, ImagePlus, AlertCircle, History, Wallet, ArrowUpCircle, ArrowDownCircle,
   Bell, Check, CheckCheck, Globe, Edit2, ShoppingCart, Plus, Minus, Trash2,
   Moon, Sun, Lock, Tag, Music, Music2, Megaphone, Diamond, Image as ImageIcon, Gem, Sparkles, Palette, CalendarDays, Gamepad2, RefreshCw,
-  Eye, LayoutGrid, Rows3, Flame, SlidersHorizontal, Zap, TrendingUp, Award, Activity, Inbox, User, Phone, Gift, Menu, Lightbulb, MessageSquare, Star, Share2
+  Eye, LayoutGrid, Rows3, Flame, SlidersHorizontal, Zap, TrendingUp, Award, Activity, Inbox, User, Phone, Gift, Menu, Lightbulb, MessageSquare, Star, Share2, VenetianMask
 } from "lucide-react";
 import { VerifiedBadge } from "@/components/VerifiedBadge";
 import PremiumBadge from "@/components/PremiumBadge";
@@ -86,6 +86,7 @@ import PlayfulHero3D from "@/components/PlayfulHero3D";
 import BalanceAuth from "@/components/BalanceAuth";
 import GameTab from "@/components/GameTab";
 import PlusTab from "@/components/PlusTab";
+import AnonChatTab from "@/components/AnonChatTab";
 import { triggerGameBalanceRefresh, useGameBalance } from "@/components/games/GameBalance";
 import LiveClock from "@/components/LiveClock";
 import LoginGate from "@/components/LoginGate";
@@ -99,7 +100,7 @@ import { TicketEnhancer, TICKET_TEMPLATES } from "@/components/TicketEnhancer";
 import { useAccountBan } from "@/hooks/useAccountBan";
 import { StoreProfile, StoreMiniCard, StoreProfileModal } from "@/components/StoreProfile";
 
-type Tab = "musik" | "beranda" | "produk" | "voucher" | "history" | "likes" | "tiket" | "saldo" | "playlist" | "publik" | "sponsor" | "streak" | "streakevent" | "streakshop" | "streakvoucher" | "streakmembership" | "adminpost" | "game" | "plus" | "update";
+type Tab = "musik" | "beranda" | "produk" | "voucher" | "history" | "likes" | "tiket" | "saldo" | "playlist" | "publik" | "sponsor" | "streak" | "streakevent" | "streakshop" | "streakvoucher" | "streakmembership" | "adminpost" | "game" | "plus" | "update" | "anonchat";
 
 interface UserBalance {
   id: string;
@@ -1733,6 +1734,7 @@ const Index = () => {
                   { key: "streakvoucher" as Tab, icon: Ticket, label: "Streak Voucher", grad: "from-pink-400 via-fuchsia-500 to-purple-600", glow: "217,70,239" },
                   { key: "game" as Tab, icon: Gamepad2, label: "Game", grad: "from-violet-500 via-purple-500 to-fuchsia-500", glow: "139,92,246" },
                   { key: "plus" as Tab, icon: Gem, label: "Plus", grad: "from-cyan-300 via-sky-400 to-blue-500", glow: "56,189,248" },
+                  { key: "anonchat" as Tab, icon: VenetianMask, label: "Anon Chat", grad: "from-emerald-400 via-teal-500 to-cyan-500", glow: "16,185,129" },
                   { key: "update" as Tab, icon: RefreshCw, label: "Update", grad: "from-emerald-300 via-teal-400 to-cyan-500", glow: "45,212,191" },
                   { key: "adminpost" as Tab, icon: FileText, label: "Admin", grad: "from-slate-400 via-zinc-500 to-gray-600", glow: "148,163,184" },
                 ] as Array<{ key: any; icon: any; label: string; external?: string; grad: string; glow: string }>).map(({ key, icon: Icon, label, external, grad, glow }) => {
@@ -2147,6 +2149,7 @@ const Index = () => {
                     { icon: <Gamepad2 className="w-5 h-5" strokeWidth={2} />, label: "Game", tab: "game" as Tab, badge: "40", color: "from-yellow-400 to-orange-500", glow: "250,204,21" },
                     { icon: <Flame className="w-5 h-5" strokeWidth={2} />, label: "Streak", tab: "streak" as Tab, color: "from-orange-500 to-red-500", glow: "249,115,22" },
                     { icon: <Gem className="w-5 h-5" strokeWidth={2} />, label: "Plus", tab: "plus" as Tab, color: "from-indigo-500 to-purple-500", glow: "99,102,241" },
+                    { icon: <VenetianMask className="w-5 h-5" strokeWidth={2} />, label: "Anon Chat", tab: "anonchat" as Tab, color: "from-emerald-500 to-teal-500", glow: "16,185,129" },
                     { icon: <Megaphone className="w-5 h-5" strokeWidth={2} />, label: "Sponsor", tab: "sponsor" as Tab, color: "from-amber-500 to-yellow-500", glow: "245,158,11" },
                     { icon: <MessageSquare className="w-5 h-5" strokeWidth={2} />, label: "Tiket", tab: "tiket" as Tab, color: "from-blue-500 to-cyan-500", glow: "59,130,246" },
                     { icon: <Globe className="w-5 h-5" strokeWidth={2} />, label: "Publik", tab: "publik" as Tab, color: "from-teal-500 to-cyan-500", glow: "20,184,166" },
@@ -4884,6 +4887,8 @@ const Index = () => {
         </div>
 
         {tab === "plus" && <PlusTab key={userBalance?.visitor_id || "no-user"} />}
+
+        {tab === "anonchat" && <AnonChatTab key={userBalance?.visitor_id || "no-user"} />}
 
 
 
