@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Search, Users, Settings as SettingsIcon, Send, X, RefreshCw, UserPlus, Heart, ChevronRight, Sparkles, Shield, ImagePlus, Smile, Reply, Trash2, Check, CheckCheck, MessageCircle, UserCheck, UserX, Pencil, Link2, HelpCircle, Bell, Moon, Phone, Volume2, VolumeX, Eye, EyeOff, AlertTriangle, LogOut, Copy, KeyRound, Mail, Flag } from "lucide-react";
 import { toast } from "sonner";
 import { moderateOutgoing } from "@/lib/chat-moderation";
-import { useAccountBan, formatBanRemaining } from "@/hooks/useAccountBan";
+import { formatBanRemaining, type BanInfo } from "@/hooks/useAccountBan";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
 const CS_WA = "085769302532";
@@ -101,9 +101,19 @@ export default function AnonChatTab() {
   const [revealedImgs, setRevealedImgs] = useState<Set<string>>(new Set());
   const [account, setAccount] = useState<{ linked: boolean; username?: string | null; email?: string | null; ub_id?: string | null } | null>(null);
   const lastIncomingId = useRef<string | null>(null);
+  const [banInfo, setBanInfo] = useState<BanInfo | null>(null);
+  const [myProfile, setMyProfile] = useState<AnonProfile | null>(null);
+  const [partnerProfile, setPartnerProfile] = useState<AnonProfile | null>(null);
+  const [avatarPreset, setAvatarPreset] = useState<string>(() => localStorage.getItem("anon_avatar_preset") || "ninja");
+  const [avatarUrl, setAvatarUrl] = useState<string>(() => localStorage.getItem("anon_avatar_url") || "");
+  const [showLastSeen, setShowLastSeen] = useState<boolean>(() => localStorage.getItem("anon_show_last_seen") !== "off");
+  const [showEmojiInput, setShowEmojiInput] = useState(false);
 
   useEffect(() => { localStorage.setItem("anon_sound", soundOn ? "on" : "off"); }, [soundOn]);
   useEffect(() => { localStorage.setItem("anon_notif", notifOn ? "on" : "off"); }, [notifOn]);
+  useEffect(() => { localStorage.setItem("anon_avatar_preset", avatarPreset); }, [avatarPreset]);
+  useEffect(() => { localStorage.setItem("anon_avatar_url", avatarUrl); }, [avatarUrl]);
+  useEffect(() => { localStorage.setItem("anon_show_last_seen", showLastSeen ? "on" : "off"); }, [showLastSeen]);
 
   const loadAccount = useCallback(async () => {
     try {
