@@ -478,7 +478,7 @@ export default function AnonChatTab() {
   };
 
   const sendImage = async (file: File) => {
-    if (!sessionId || !file || sessionStatus === "ended") return;
+    if (!sessionId || !file || sessionStatus === "ended" || activeBan) return;
     if (file.size > 5 * 1024 * 1024) { toast.error("Gambar maksimal 5MB"); return; }
     const ext = file.name.split(".").pop() || "jpg";
     const path = `anon/${sessionId}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
@@ -491,11 +491,30 @@ export default function AnonChatTab() {
     await supabase.from("anon_chat_messages").insert(payload);
   };
 
-  const softDelete = async (m: AnonMsg) => {
+  const deleteForEveryone = async (m: AnonMsg) => {
     if (m.sender !== visitor) return;
     await supabase.from("anon_chat_messages").update({
       is_deleted: true, content: null, image_url: null, deleted_at: new Date().toISOString(),
     } as any).eq("id", m.id);
+  };
+
+  const deleteForMe = async (m: AnonMsg) => {
+    const next = Array.from(new Set([...(m.deleted_for || []), visitor]));
+    setMessages(prev => prev.map(x => x.id === m.id ? { ...x, deleted_for: next } : x));
+    await supabase.from("anon_chat_messages").update({ deleted_for: next } as any).eq("id", m.id);
+  };
+
+  const uploadAvatar = async (file: File) => {
+    if (!file) return;
+    if (file.size > 2 * 1024 * 1024) { toast.error("Foto profil maksimal 2MB"); return; }
+    const ext = file.name.split(".").pop() || "jpg";
+    const path = `anon-avatars/${visitor}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+    const { error } = await supabase.storage.from("chat-images").upload(path, file);
+    if (error) { toast.error("Gagal upload foto profil"); return; }
+    const { data } = supabase.storage.from("chat-images").getPublicUrl(path);
+    setAvatarUrl(data.publicUrl);
+    await touchProfile();
+    toast.success("Foto profil tersimpan");
   };
 
   const toggleReaction = async (m: AnonMsg, emoji: string) => {
