@@ -981,17 +981,7 @@ export default function AnonChatTab() {
             </div>
           </div>
 
-          <div>
-            <label className="text-xs text-slate-400 mb-2 block">Pilih gender partner</label>
-            <div className="grid grid-cols-3 gap-2">
-              {[{v:"male",l:"🧑 Pria"},{v:"female",l:"👩 Wanita"},{v:"any",l:"🥷 Apapun"}].map(o => (
-                <button key={o.v} onClick={() => setPrefGender(o.v)}
-                  className={`py-2.5 rounded-xl text-sm font-semibold border ${prefGender === o.v ? "bg-teal-500 text-white border-teal-400 shadow-lg shadow-teal-500/30" : "bg-slate-900 text-slate-300 border-slate-700"}`}>
-                  {o.l}
-                </button>
-              ))}
-            </div>
-          </div>
+          {/* Preferensi gender partner dihapus — cukup pilih gender sendiri di atas */}
 
           <div>
             <label className="text-xs text-slate-400 mb-2 block">Pilih ketertarikan</label>
