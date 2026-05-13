@@ -115,6 +115,47 @@ export default function AnonChatTab() {
   useEffect(() => { localStorage.setItem("anon_avatar_url", avatarUrl); }, [avatarUrl]);
   useEffect(() => { localStorage.setItem("anon_show_last_seen", showLastSeen ? "on" : "off"); }, [showLastSeen]);
 
+  const activeBan = !!banInfo && (banInfo.is_permanent || !banInfo.banned_until || new Date(banInfo.banned_until).getTime() > Date.now());
+  const myAvatar = presetById(myProfile?.avatar_preset || avatarPreset);
+  const partnerAvatar = presetById(partnerProfile?.avatar_preset || (partner?.gender === "female" ? "rose" : partner?.gender === "male" ? "star" : "ninja"));
+  const partnerLastSeen = partnerProfile?.show_last_seen
+    ? `terakhir dilihat ${new Date(partnerProfile.last_seen_at).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })}`
+    : "terakhir dilihat disembunyikan";
+
+  const refreshBan = useCallback(async () => {
+    const { data } = await supabase.rpc("get_account_ban_info", { p_visitor_id: visitor } as any);
+    const row = Array.isArray(data) && data.length > 0 ? (data[0] as BanInfo) : null;
+    setBanInfo(row);
+  }, [visitor]);
+
+  const touchProfile = useCallback(async () => {
+    const { data } = await supabase.rpc("touch_anon_chat_profile" as any, {
+      p_visitor_id: visitor,
+      p_nickname: nickname,
+      p_avatar_url: avatarUrl || null,
+      p_avatar_preset: avatarPreset,
+      p_show_last_seen: showLastSeen,
+    });
+    if (data) setMyProfile(data as unknown as AnonProfile);
+  }, [visitor, nickname, avatarUrl, avatarPreset, showLastSeen]);
+
+  const loadPartnerProfile = useCallback(async (session: string) => {
+    const { data: sess } = await supabase.from("anon_chat_sessions").select("visitor_a, visitor_b").eq("id", session).maybeSingle();
+    if (!sess) return;
+    const other = sess.visitor_a === visitor ? sess.visitor_b : sess.visitor_a;
+    const { data } = await supabase.from("anon_chat_profiles" as any).select("*").eq("visitor_id", other).maybeSingle();
+    setPartnerProfile((data as unknown as AnonProfile) || null);
+  }, [visitor]);
+
+  useEffect(() => { refreshBan(); }, [refreshBan]);
+  useEffect(() => {
+    touchProfile();
+    const interval = window.setInterval(touchProfile, 30000);
+    const onFocus = () => touchProfile();
+    window.addEventListener("focus", onFocus);
+    return () => { window.clearInterval(interval); window.removeEventListener("focus", onFocus); };
+  }, [touchProfile]);
+
   const loadAccount = useCallback(async () => {
     try {
       const { data: blh } = await supabase
