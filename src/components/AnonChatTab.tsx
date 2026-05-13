@@ -238,6 +238,30 @@ export default function AnonChatTab() {
     else toast.error("Izin notifikasi belum aktif", { description: "Jika tombol browser tidak muncul, cek setelan izin situs di address bar." });
   };
 
+  const saveBio = async () => {
+    if (!anonAccount) {
+      setShowAccountDialog(true);
+      toast.error("Login akun Anon Chat dulu untuk membuat deskripsi");
+      return;
+    }
+    setSavingBio(true);
+    try {
+      const bio = bioDraft.trim().slice(0, 200);
+      const { data, error } = await supabase.functions.invoke("anon-chat-auth", {
+        body: { action: "update_bio", visitorId: visitor, bio },
+      });
+      if (error) throw new Error(error.message);
+      if ((data as any)?.error) throw new Error((data as any).error);
+      setAnonAccount(((data as any)?.account as AnonAccount) || anonAccount);
+      setBioDraft(bio);
+      toast.success("Deskripsi Anon Chat tersimpan");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Gagal menyimpan deskripsi");
+    } finally {
+      setSavingBio(false);
+    }
+  };
+
   const logoutToGuest = () => {
     if (!confirm("Putuskan akun & jadi Tamu lagi?\n\nSemua riwayat chat anonim, teman & permintaan akan hilang dari perangkat ini.")) return;
     try {
