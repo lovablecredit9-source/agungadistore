@@ -134,6 +134,74 @@ export type Database = {
         }
         Relationships: []
       }
+      anon_chat_friend_requests: {
+        Row: {
+          created_at: string
+          from_nickname: string
+          from_visitor: string
+          id: string
+          responded_at: string | null
+          session_id: string | null
+          status: string
+          to_nickname: string | null
+          to_visitor: string
+        }
+        Insert: {
+          created_at?: string
+          from_nickname: string
+          from_visitor: string
+          id?: string
+          responded_at?: string | null
+          session_id?: string | null
+          status?: string
+          to_nickname?: string | null
+          to_visitor: string
+        }
+        Update: {
+          created_at?: string
+          from_nickname?: string
+          from_visitor?: string
+          id?: string
+          responded_at?: string | null
+          session_id?: string | null
+          status?: string
+          to_nickname?: string | null
+          to_visitor?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "anon_chat_friend_requests_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "anon_chat_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      anon_chat_friends: {
+        Row: {
+          created_at: string
+          friend_nickname: string
+          friend_visitor: string
+          id: string
+          visitor_id: string
+        }
+        Insert: {
+          created_at?: string
+          friend_nickname: string
+          friend_visitor: string
+          id?: string
+          visitor_id: string
+        }
+        Update: {
+          created_at?: string
+          friend_nickname?: string
+          friend_visitor?: string
+          id?: string
+          visitor_id?: string
+        }
+        Relationships: []
+      }
       anon_chat_messages: {
         Row: {
           content: string | null
@@ -8883,6 +8951,42 @@ export type Database = {
         }[]
       }
       anon_chat_leave_queue: { Args: { p_visitor: string }; Returns: undefined }
+      anon_chat_respond_friend_request: {
+        Args: {
+          p_accept: boolean
+          p_my_nickname: string
+          p_request_id: string
+          p_visitor: string
+        }
+        Returns: undefined
+      }
+      anon_chat_send_friend_request: {
+        Args: {
+          p_from_nickname: string
+          p_from_visitor: string
+          p_session_id: string
+          p_to_nickname: string
+          p_to_visitor: string
+        }
+        Returns: {
+          already_friend: boolean
+          already_pending: boolean
+          request_id: string
+        }[]
+      }
+      anon_chat_start_friend_session: {
+        Args: {
+          p_friend_visitor: string
+          p_my_gender: string
+          p_my_nickname: string
+          p_visitor: string
+        }
+        Returns: {
+          partner_gender: string
+          partner_nickname: string
+          session_id: string
+        }[]
+      }
       auto_cancel_expired_deposits: { Args: never; Returns: number }
       bump_music_quest_event: {
         Args: { p_quest_type: string; p_visitor_id: string }
