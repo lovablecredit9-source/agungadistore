@@ -198,14 +198,48 @@ export default function WhatsAppChat({
   }
 
   async function sendMessage() {
-    const text = draft.trim();
-    if (!text) return;
+    const raw = draft.trim();
+    if (!raw) return;
+
+    let textToSend = raw;
+    // Moderation hanya berlaku untuk sisi pengguna (bukan admin)
+    if (viewerType === "user") {
+      const mod = moderateOutgoing(raw);
+      if (!mod.ok) {
+        // Catat pelanggaran (auto-ban setelah 3x dalam 24 jam)
+        try {
+          const { data } = await supabase.rpc("report_chat_violation", {
+            p_visitor_id: viewerId,
+            p_kind: mod.hadContact ? "contact_share" : "banned_word",
+            p_detail: raw.slice(0, 200),
+          });
+          const count = (data as number) ?? 0;
+          const sisa = Math.max(0, 3 - count);
+          toast({
+            title: "Pesan ditahan & disensor",
+            description:
+              mod.reasons.join(". ") +
+              (sisa > 0
+                ? `. Peringatan ${count}/3 — ${sisa} lagi akun akan diblokir 7 hari.`
+                : ". Akun Anda telah diblokir otomatis selama 7 hari."),
+            variant: "destructive",
+          });
+        } catch {}
+        if (!mod.cleaned) {
+          // Tidak ada konten yang tersisa setelah sensor
+          setDraft("");
+          return;
+        }
+        textToSend = mod.cleaned;
+      }
+    }
+
     setDraft("");
     pushTyping(false);
     const payload: any = {
       [parentCol]: parentId,
       sender_type: viewerType,
-      message: text,
+      message: textToSend,
     };
     if (replyTo) payload.reply_to_id = replyTo.id;
     setReplyTo(null);
@@ -234,11 +268,24 @@ export default function WhatsAppChat({
     await supabase.from(msgTable as any).insert(payload);
   }
 
-  async function softDelete(m: ChatMessage) {
+  // Hapus untuk semua orang (hanya pemilik pesan)
+  async function deleteForEveryone(m: ChatMessage) {
     if (m.sender_type !== viewerType) return;
     const { error } = await supabase
       .from(msgTable as any)
       .update({ is_deleted: true, message: null, image_url: null, deleted_at: new Date().toISOString() } as any)
+      .eq("id", m.id);
+    if (error) toast({ title: "Gagal menghapus", variant: "destructive" });
+  }
+
+  // Hapus untuk saya saja: tambahkan viewerId ke deleted_for
+  async function deleteForMe(m: ChatMessage) {
+    const next = Array.from(new Set([...(m.deleted_for || []), viewerId]));
+    // Optimistic update lokal
+    setMessages((prev) => prev.map((x) => (x.id === m.id ? { ...x, deleted_for: next } : x)));
+    const { error } = await supabase
+      .from(msgTable as any)
+      .update({ deleted_for: next } as any)
       .eq("id", m.id);
     if (error) toast({ title: "Gagal menghapus", variant: "destructive" });
   }
