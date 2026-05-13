@@ -51,6 +51,9 @@ export default function AnonChatTab() {
   const [sessionStatus, setSessionStatus] = useState<"active" | "ended">("active");
   const [searchSecs, setSearchSecs] = useState(0);
   const [onlineCount, setOnlineCount] = useState<number>(0);
+  const [friends, setFriends] = useState<{ friend_visitor: string; friend_nickname: string }[]>([]);
+  const [friendReqs, setFriendReqs] = useState<{ id: string; from_visitor: string; from_nickname: string }[]>([]);
+  const [friendStatusForPartner, setFriendStatusForPartner] = useState<"none" | "pending_out" | "pending_in" | "friend">("none");
   const scrollRef = useRef<HTMLDivElement>(null);
   const typingTimer = useRef<number | null>(null);
 
