@@ -467,15 +467,26 @@ export default function WhatsAppChat({
                     >
                       <Reply className="w-3.5 h-3.5" />
                     </button>
-                    {mine && (
-                      <button
-                        onClick={() => softDelete(m)}
-                      className="w-6 h-6 rounded-full bg-background border border-border text-muted-foreground flex items-center justify-center hover:bg-muted"
-                        aria-label="Delete"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    )}
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <button
+                          className="w-6 h-6 rounded-full bg-background border border-border text-muted-foreground flex items-center justify-center hover:bg-muted"
+                          aria-label="Opsi"
+                        >
+                          <MoreVertical className="w-3.5 h-3.5" />
+                        </button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align={mine ? "end" : "start"} className="w-44">
+                        <DropdownMenuItem onClick={() => deleteForMe(m)}>
+                          <Trash2 className="w-3.5 h-3.5 mr-2" /> Hapus untuk saya
+                        </DropdownMenuItem>
+                        {mine && (
+                          <DropdownMenuItem onClick={() => deleteForEveryone(m)} className="text-destructive">
+                            <Trash2 className="w-3.5 h-3.5 mr-2" /> Hapus untuk semua
+                          </DropdownMenuItem>
+                        )}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </div>
                 )}
 
