@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Search, Users, Settings as SettingsIcon, Send, X, RefreshCw, UserPlus, Heart, ChevronRight, Sparkles, Shield } from "lucide-react";
 import { toast } from "sonner";
 
-type View = "lobby" | "prefs" | "interest" | "searching" | "chat";
+type View = "lobby" | "prefs" | "interest" | "searching" | "chat" | "friends";
 
 const INTERESTS = ["Apapun","Curhat","Main RP","Meme","Kesepian","Game","Anime","Film","Musik","Travel","Coding","Olahraga","Nongkrong","Belajar"];
 
@@ -283,6 +283,33 @@ export default function AnonChatTab() {
           className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-bold shadow-lg shadow-emerald-500/40">
           OKE
         </button>
+
+        <InnerNav active="settings" onChange={(k) => {
+          if (k === "search") setView("lobby");
+          else if (k === "friends") setView("friends");
+        }} />
+      </div>
+    );
+  }
+
+  if (view === "friends") {
+    return (
+      <div className="rounded-3xl overflow-hidden border-2 border-emerald-400/30 bg-gradient-to-b from-emerald-950/30 via-slate-950 to-slate-950 min-h-[500px] flex flex-col">
+        <div className="flex items-center justify-center gap-2 py-4 border-b border-emerald-400/20 bg-gradient-to-r from-emerald-500/10 to-teal-500/10">
+          <Users className="w-5 h-5 text-emerald-300" />
+          <span className="text-base font-extrabold text-emerald-100">Teman</span>
+        </div>
+        <div className="flex-1 flex flex-col items-center justify-center px-6 text-center gap-3">
+          <div className="w-20 h-20 rounded-full bg-emerald-500/10 flex items-center justify-center">
+            <Users className="w-10 h-10 text-emerald-300/70" />
+          </div>
+          <h3 className="font-bold text-slate-100">Belum ada teman</h3>
+          <p className="text-xs text-slate-400 max-w-[260px]">Fitur menambahkan teman dari obrolan akan segera hadir. Saat ini chat bersifat sepenuhnya anonim & sementara.</p>
+        </div>
+        <InnerNav active="friends" onChange={(k) => {
+          if (k === "search") setView("lobby");
+          else if (k === "settings") setView("prefs");
+        }} />
       </div>
     );
   }
@@ -368,12 +395,41 @@ export default function AnonChatTab() {
         </div>
       </div>
 
-      <div className="px-5 pb-6 pt-2 border-t border-slate-800/60 mt-2">
+      <div className="px-5 pb-4 pt-2 border-t border-slate-800/60 mt-2">
         <div className="flex items-start gap-2 text-xs text-slate-400">
           <Shield className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
           <p>Identitas asli kamu disembunyikan. Jangan bagikan info pribadi (nomor HP, alamat, atau data sensitif) ke partner.</p>
         </div>
       </div>
+
+      {/* Inner bottom nav (anon.chat style) */}
+      <InnerNav active="search" onChange={(k) => {
+        if (k === "search") setView("lobby");
+        else if (k === "friends") setView("friends");
+        else setView("prefs");
+      }} />
+    </div>
+  );
+}
+
+function InnerNav({ active, onChange }: { active: "search" | "friends" | "settings"; onChange: (k: "search" | "friends" | "settings") => void }) {
+  const items: Array<{ k: "search" | "friends" | "settings"; Icon: any; label: string }> = [
+    { k: "search", Icon: Search, label: "Cari" },
+    { k: "friends", Icon: Users, label: "Teman" },
+    { k: "settings", Icon: SettingsIcon, label: "Pengaturan" },
+  ];
+  return (
+    <div className="flex items-center justify-around border-t border-emerald-400/15 bg-slate-950/80 backdrop-blur py-2.5">
+      {items.map(({ k, Icon, label }) => {
+        const on = active === k;
+        return (
+          <button key={k} onClick={() => onChange(k)}
+            className={`flex flex-col items-center gap-0.5 px-5 py-1 rounded-xl transition ${on ? "text-emerald-300" : "text-slate-500 hover:text-slate-300"}`}>
+            <Icon className={`w-5 h-5 ${on ? "drop-shadow-[0_0_6px_rgba(52,211,153,0.7)]" : ""}`} strokeWidth={on ? 2.4 : 1.8} />
+            <span className="text-[9.5px] font-semibold">{label}</span>
+          </button>
+        );
+      })}
     </div>
   );
 }
