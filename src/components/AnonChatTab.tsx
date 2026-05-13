@@ -366,6 +366,33 @@ export default function AnonChatTab() {
               {sessionStatus === "active" ? "terhubung" : "chat berakhir"}
             </div>
           </div>
+          {sessionStatus === "active" && (
+            friendStatusForPartner === "friend" ? (
+              <span className="px-2 py-1 rounded-full bg-emerald-500/20 border border-emerald-400/40 text-emerald-200 text-[10px] font-bold flex items-center gap-1" title="Sudah berteman">
+                <UserCheck className="w-3 h-3" /> Teman
+              </span>
+            ) : friendStatusForPartner === "pending_out" ? (
+              <span className="px-2 py-1 rounded-full bg-amber-500/20 border border-amber-400/40 text-amber-200 text-[10px] font-semibold">
+                Menunggu...
+              </span>
+            ) : friendStatusForPartner === "pending_in" ? (
+              <button onClick={async () => {
+                const r = friendReqs.find(fr => true);
+                // find specific request from this partner
+                const { data: sess } = await supabase.from("anon_chat_sessions").select("visitor_a, visitor_b").eq("id", sessionId!).maybeSingle();
+                if (!sess) return;
+                const other = sess.visitor_a === visitor ? sess.visitor_b : sess.visitor_a;
+                const { data: req } = await supabase.from("anon_chat_friend_requests").select("id").eq("from_visitor", other).eq("to_visitor", visitor).eq("status", "pending").maybeSingle();
+                if (req) await respondFriendRequest(req.id, true);
+              }} className="px-2 py-1 rounded-full bg-emerald-500 text-white text-[10px] font-bold flex items-center gap-1">
+                <UserCheck className="w-3 h-3" /> Terima
+              </button>
+            ) : (
+              <button onClick={sendFriendRequest} className="px-2 py-1 rounded-full bg-emerald-500/20 hover:bg-emerald-500/40 border border-emerald-400/40 text-emerald-200 text-[10px] font-bold flex items-center gap-1" title="Tambah teman">
+                <UserPlus className="w-3 h-3" /> Add
+              </button>
+            )
+          )}
           <button onClick={endChat} className="w-9 h-9 rounded-full bg-rose-500/20 hover:bg-rose-500/40 text-rose-300 flex items-center justify-center transition" title="Akhiri">
             <X className="w-4 h-4" />
           </button>
