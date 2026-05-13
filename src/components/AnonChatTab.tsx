@@ -997,17 +997,27 @@ export default function AnonChatTab() {
         <div className="flex-1 overflow-y-auto p-5 space-y-5">
           {/* Avatar + nickname + gender */}
           <div className="flex flex-col items-center gap-2">
-            <div className="w-24 h-24 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-5xl shadow-xl ring-4 ring-slate-900">
-              🥷
+            <div className={`w-24 h-24 rounded-full flex items-center justify-center text-5xl shadow-xl ring-4 ring-slate-900 ${
+              myGender === "male" ? "bg-gradient-to-br from-sky-500 to-blue-600" :
+              myGender === "female" ? "bg-gradient-to-br from-pink-500 to-rose-600" :
+              "bg-gradient-to-br from-indigo-500 to-purple-600"
+            }`}>
+              {genderEmoji(myGender)}
             </div>
             <div className="text-xl font-bold text-slate-100 mt-1">{nickname}</div>
-            <div className="text-sm text-slate-400">{genderLabel}</div>
+            <div className="text-sm text-slate-400 flex items-center gap-1.5">
+              <span>{genderLabel}</span>
+              <span className="text-slate-600">•</span>
+              <span className="font-mono text-[10px] text-emerald-300/80">{shortId(visitor)}</span>
+              {account?.linked && <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-200 border border-emerald-400/40 font-bold">TERTAUT</span>}
+            </div>
           </div>
 
           {/* Tentang saya */}
           <div className="rounded-2xl bg-slate-900/70 border border-slate-800 p-4">
             <div className="text-base font-bold text-slate-100 mb-1">Tentang saya</div>
             <div className="text-sm text-slate-300">{interest}</div>
+            <div className="text-[11px] text-slate-500 mt-2 italic">Status online & terakhir dilihat tidak ditampilkan demi privasi.</div>
           </div>
 
           {/* Settings list */}
