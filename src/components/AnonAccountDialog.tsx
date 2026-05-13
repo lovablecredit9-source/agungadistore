@@ -128,6 +128,7 @@ export function AnonAccountDialog({
             {mode === "manage" && "Akun Anon Chat"}
             {mode === "change-email" && "Ganti Email"}
             {mode === "change-password" && "Ganti Sandi"}
+            {mode === "edit-bio" && "Deskripsi Profil"}
           </DialogTitle>
         </DialogHeader>
 
@@ -137,6 +138,13 @@ export function AnonAccountDialog({
               <div className="text-[11px] text-emerald-200/70 uppercase tracking-wide">Email</div>
               <div className="text-sm font-bold break-all">{account.email}</div>
             </div>
+            <div className="rounded-xl border border-slate-700 bg-slate-900 p-3">
+              <div className="text-[11px] text-slate-400 uppercase tracking-wide mb-1">Deskripsi</div>
+              <div className="text-xs text-slate-200 italic break-words">
+                {account.bio?.trim() ? account.bio : "Belum ada deskripsi — ceritakan dirimu singkat."}
+              </div>
+            </div>
+            <button onClick={() => setMode("edit-bio")} disabled={busy} className="w-full py-3 rounded-xl bg-slate-800 border border-slate-700 text-sm font-semibold flex items-center justify-center gap-2"><FileText className="w-4 h-4" /> Ubah Deskripsi</button>
             <button onClick={() => setMode("change-email")} disabled={busy} className="w-full py-3 rounded-xl bg-slate-800 border border-slate-700 text-sm font-semibold flex items-center justify-center gap-2"><AtSign className="w-4 h-4" /> Ganti Email</button>
             <button onClick={() => setMode("change-password")} disabled={busy} className="w-full py-3 rounded-xl bg-slate-800 border border-slate-700 text-sm font-semibold flex items-center justify-center gap-2"><KeyRound className="w-4 h-4" /> Ganti Sandi</button>
             <button onClick={logout} disabled={busy} className="w-full py-3 rounded-xl bg-rose-500/15 border border-rose-400/40 text-rose-200 text-sm font-bold flex items-center justify-center gap-2"><LogOut className="w-4 h-4" /> Putuskan Akun</button>
