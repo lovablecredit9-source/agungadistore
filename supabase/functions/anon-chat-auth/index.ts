@@ -57,6 +57,45 @@ Deno.serve(async (req) => {
       return ok({ success: true, account: acc });
     }
 
+    if (action === "public_bio") {
+      const targetVisitorId = String(payload.targetVisitorId || "").trim();
+      if (!targetVisitorId) return bad("Target visitor wajib");
+      const { data: visibleSessionA } = await admin
+        .from("anon_chat_sessions")
+        .select("id")
+        .eq("visitor_a", visitorId)
+        .eq("visitor_b", targetVisitorId)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      const { data: visibleSessionB } = visibleSessionA
+        ? { data: null }
+        : await admin
+            .from("anon_chat_sessions")
+            .select("id")
+            .eq("visitor_a", targetVisitorId)
+            .eq("visitor_b", visitorId)
+            .order("created_at", { ascending: false })
+            .limit(1)
+            .maybeSingle();
+      const visibleSession = visibleSessionA || visibleSessionB;
+      if (!visibleSession) return ok({ success: true, bio: null });
+      const { data: device } = await admin
+        .from("anon_chat_account_devices")
+        .select("account_id")
+        .eq("visitor_id", targetVisitorId)
+        .order("last_login_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (!device) return ok({ success: true, bio: null });
+      const { data: acc } = await admin
+        .from("anon_chat_accounts")
+        .select("bio")
+        .eq("id", device.account_id)
+        .maybeSingle();
+      return ok({ success: true, bio: acc?.bio || null });
+    }
+
     if (action === "register") {
       const email = String(payload.email || "").trim().toLowerCase();
       const password = String(payload.password || "");

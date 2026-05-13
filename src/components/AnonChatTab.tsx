@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Search, Users, Settings as SettingsIcon, Send, X, RefreshCw, UserPlus, Heart, ChevronRight, Sparkles, Shield, ImagePlus, Smile, Reply, Trash2, Check, CheckCheck, MessageCircle, UserCheck, UserX, HelpCircle, Bell, Phone, Volume2, VolumeX, Eye, AlertTriangle, LogOut, Copy, Flag, Plus } from "lucide-react";
+import { Search, Users, Settings as SettingsIcon, Send, X, RefreshCw, UserPlus, Heart, ChevronRight, Sparkles, Shield, ImagePlus, Smile, Reply, Trash2, Check, CheckCheck, MessageCircle, UserCheck, UserX, HelpCircle, Bell, Phone, Volume2, VolumeX, Eye, AlertTriangle, LogOut, Copy, Flag, Plus, FileText } from "lucide-react";
 import { toast } from "sonner";
 import { moderateOutgoing } from "@/lib/chat-moderation";
 import { formatBanRemaining, type BanInfo } from "@/hooks/useAccountBan";
@@ -85,6 +85,8 @@ interface AnonMsg {
 interface AnonReaction { id: string; message_id: string; visitor_id: string; emoji: string; }
 const EMOJIS = ["👍", "❤️", "😂", "😮", "😢", "🙏", "🔥"];
 interface AnonProfile { visitor_id: string; nickname: string | null; avatar_url: string | null; avatar_preset: string | null; show_last_seen: boolean; last_seen_at: string; }
+type PublicBioResponse = { success?: boolean; bio?: string | null; error?: string };
+type UpdateBioResponse = { success?: boolean; account?: AnonAccount | null; error?: string };
 
 type View = "lobby" | "prefs" | "account" | "interest" | "searching" | "chat" | "friends" | "support" | "notif";
 
@@ -141,8 +143,11 @@ export default function AnonChatTab() {
   const [showEmojiInput, setShowEmojiInput] = useState(false);
   const [anonAccount, setAnonAccount] = useState<AnonAccount | null>(null);
   const [showAccountDialog, setShowAccountDialog] = useState(false);
+  const [bioDraft, setBioDraft] = useState("");
+  const [savingBio, setSavingBio] = useState(false);
 
   useEffect(() => { fetchAnonAccount(visitor).then(setAnonAccount); }, [visitor]);
+  useEffect(() => { setBioDraft(anonAccount?.bio || ""); }, [anonAccount?.bio]);
 
   useEffect(() => { localStorage.setItem("anon_sound", soundOn ? "on" : "off"); }, [soundOn]);
   useEffect(() => { localStorage.setItem("anon_notif", notifOn ? "on" : "off"); }, [notifOn]);
@@ -180,8 +185,11 @@ export default function AnonChatTab() {
     const other = sess.visitor_a === visitor ? sess.visitor_b : sess.visitor_a;
     const { data } = await supabase.from("anon_chat_profiles" as any).select("*").eq("visitor_id", other).maybeSingle();
     setPartnerProfile((data as unknown as AnonProfile) || null);
-    const { data: acc } = await supabase.from("anon_chat_accounts" as any).select("bio").eq("visitor_id", other).maybeSingle();
-    setPartnerBio(((acc as any)?.bio as string) || null);
+    const { data: bioData } = await supabase.functions.invoke("anon-chat-auth", {
+      body: { action: "public_bio", visitorId: visitor, targetVisitorId: other },
+    });
+    const bioResponse = bioData as PublicBioResponse | null;
+    setPartnerBio(bioResponse?.bio || null);
     setShowPartnerBio(false);
   }, [visitor]);
 
@@ -231,6 +239,31 @@ export default function AnonChatTab() {
     const p = await Notification.requestPermission();
     if (p === "granted") { setNotifOn(true); toast.success("Notifikasi diaktifkan"); }
     else toast.error("Izin notifikasi belum aktif", { description: "Jika tombol browser tidak muncul, cek setelan izin situs di address bar." });
+  };
+
+  const saveBio = async () => {
+    if (!anonAccount) {
+      setShowAccountDialog(true);
+      toast.error("Login akun Anon Chat dulu untuk membuat deskripsi");
+      return;
+    }
+    setSavingBio(true);
+    try {
+      const bio = bioDraft.trim().slice(0, 200);
+      const { data, error } = await supabase.functions.invoke("anon-chat-auth", {
+        body: { action: "update_bio", visitorId: visitor, bio },
+      });
+      if (error) throw new Error(error.message);
+      const response = data as UpdateBioResponse | null;
+      if (response?.error) throw new Error(response.error);
+      setAnonAccount(response?.account || anonAccount);
+      setBioDraft(bio);
+      toast.success("Deskripsi Anon Chat tersimpan");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Gagal menyimpan deskripsi");
+    } finally {
+      setSavingBio(false);
+    }
   };
 
   const logoutToGuest = () => {
@@ -1205,8 +1238,32 @@ export default function AnonChatTab() {
 
           {/* Tentang saya */}
           <div className="rounded-2xl bg-slate-900/70 border border-slate-800 p-4">
-            <div className="text-base font-bold text-slate-100 mb-1">Tentang saya</div>
-            <div className="text-sm text-slate-300">{interest}</div>
+            <div className="flex items-center justify-between gap-2 mb-2">
+              <div className="text-base font-bold text-slate-100">Deskripsi saya</div>
+              <span className="text-[10px] text-slate-500">{bioDraft.length}/200</span>
+            </div>
+            {anonAccount ? (
+              <div className="space-y-2">
+                <textarea
+                  value={bioDraft}
+                  onChange={(e) => setBioDraft(e.target.value.slice(0, 200))}
+                  rows={3}
+                  placeholder="Tulis deskripsi singkat yang akan terlihat oleh partner chat…"
+                  className="w-full bg-slate-950/70 border border-slate-700 rounded-xl px-3 py-2.5 text-sm text-slate-100 outline-none placeholder:text-slate-500 resize-none focus:border-emerald-400/60"
+                />
+                <button
+                  onClick={saveBio}
+                  disabled={savingBio || bioDraft.trim() === (anonAccount.bio || "").trim()}
+                  className="w-full py-2.5 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-400/40 text-emerald-100 text-xs font-bold disabled:opacity-50 flex items-center justify-center gap-2"
+                >
+                  <FileText className="w-3.5 h-3.5" /> {savingBio ? "Menyimpan..." : "Simpan Deskripsi"}
+                </button>
+              </div>
+            ) : (
+              <button onClick={() => setShowAccountDialog(true)} className="w-full py-3 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-400/40 text-emerald-100 text-xs font-bold flex items-center justify-center gap-2">
+                <FileText className="w-4 h-4" /> Daftar/Login untuk buat deskripsi
+              </button>
+            )}
             <div className="text-[11px] text-slate-500 mt-2 italic">{showLastSeen ? "Terakhir dilihat aktif untuk partner chat." : "Terakhir dilihat kamu disembunyikan."}</div>
           </div>
 
