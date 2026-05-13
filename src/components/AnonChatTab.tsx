@@ -377,8 +377,6 @@ export default function AnonChatTab() {
               </span>
             ) : friendStatusForPartner === "pending_in" ? (
               <button onClick={async () => {
-                const r = friendReqs.find(fr => true);
-                // find specific request from this partner
                 const { data: sess } = await supabase.from("anon_chat_sessions").select("visitor_a, visitor_b").eq("id", sessionId!).maybeSingle();
                 if (!sess) return;
                 const other = sess.visitor_a === visitor ? sess.visitor_b : sess.visitor_a;
