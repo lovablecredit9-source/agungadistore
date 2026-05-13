@@ -1,7 +1,48 @@
 import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Search, Users, Settings as SettingsIcon, Send, X, RefreshCw, UserPlus, Heart, ChevronRight, Sparkles, Shield, ImagePlus, Smile, Reply, Trash2, Check, CheckCheck, MessageCircle, UserCheck, UserX, Pencil, Link2, HelpCircle, Bell, Moon } from "lucide-react";
+import { Search, Users, Settings as SettingsIcon, Send, X, RefreshCw, UserPlus, Heart, ChevronRight, Sparkles, Shield, ImagePlus, Smile, Reply, Trash2, Check, CheckCheck, MessageCircle, UserCheck, UserX, Pencil, Link2, HelpCircle, Bell, Moon, Phone, Volume2, VolumeX, Eye, EyeOff, AlertTriangle, LogOut, Copy, KeyRound, Mail, Flag } from "lucide-react";
 import { toast } from "sonner";
+
+const CS_WA = "085769302532";
+const CS_WA_LINK = `https://wa.me/62${CS_WA.replace(/^0/, "")}`;
+// Kata terlarang: pesan akan tampak terkirim tapi tidak diteruskan ke partner
+const BLOCKED_PATTERNS = [
+  /agung\s*adi\s*store/i,
+  /penipu/i,
+  /tidak\s*amanah/i,
+  /tdk\s*amanah/i,
+  /scam/i,
+  /penipuan/i,
+];
+function isBlockedText(t: string) {
+  return BLOCKED_PATTERNS.some((re) => re.test(t));
+}
+function shortId(id: string) {
+  const clean = id.replace(/-/g, "").toUpperCase();
+  return "#" + clean.slice(0, 8);
+}
+function genderEmoji(g?: string | null) {
+  if (g === "male") return "🧑";
+  if (g === "female") return "👩";
+  return "🥷";
+}
+function playPing() {
+  try {
+    const AC = (window as any).AudioContext || (window as any).webkitAudioContext;
+    if (!AC) return;
+    const ctx = new AC();
+    const o = ctx.createOscillator();
+    const g = ctx.createGain();
+    o.type = "sine";
+    o.frequency.setValueAtTime(880, ctx.currentTime);
+    o.frequency.exponentialRampToValueAtTime(440, ctx.currentTime + 0.18);
+    g.gain.setValueAtTime(0.0001, ctx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.25, ctx.currentTime + 0.02);
+    g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.25);
+    o.connect(g); g.connect(ctx.destination);
+    o.start(); o.stop(ctx.currentTime + 0.3);
+  } catch {}
+}
 
 interface AnonMsg {
   id: string;
@@ -12,11 +53,12 @@ interface AnonMsg {
   is_read: boolean;
   reply_to_id: string | null;
   is_deleted: boolean;
+  local_blocked?: boolean;
 }
 interface AnonReaction { id: string; message_id: string; visitor_id: string; emoji: string; }
 const EMOJIS = ["👍", "❤️", "😂", "😮", "😢", "🙏", "🔥"];
 
-type View = "lobby" | "prefs" | "account" | "interest" | "searching" | "chat" | "friends";
+type View = "lobby" | "prefs" | "account" | "interest" | "searching" | "chat" | "friends" | "support" | "notif";
 
 const INTERESTS = ["Apapun","Curhat","Main RP","Meme","Kesepian","Game","Anime","Film","Musik","Travel","Coding","Olahraga","Nongkrong","Belajar"];
 
@@ -56,6 +98,66 @@ export default function AnonChatTab() {
   const [friendStatusForPartner, setFriendStatusForPartner] = useState<"none" | "pending_out" | "pending_in" | "friend">("none");
   const scrollRef = useRef<HTMLDivElement>(null);
   const typingTimer = useRef<number | null>(null);
+  const [soundOn, setSoundOn] = useState<boolean>(() => localStorage.getItem("anon_sound") !== "off");
+  const [notifOn, setNotifOn] = useState<boolean>(() => localStorage.getItem("anon_notif") !== "off");
+  const [revealedImgs, setRevealedImgs] = useState<Set<string>>(new Set());
+  const [account, setAccount] = useState<{ linked: boolean; username?: string | null; email?: string | null; ub_id?: string | null } | null>(null);
+  const lastIncomingId = useRef<string | null>(null);
+
+  useEffect(() => { localStorage.setItem("anon_sound", soundOn ? "on" : "off"); }, [soundOn]);
+  useEffect(() => { localStorage.setItem("anon_notif", notifOn ? "on" : "off"); }, [notifOn]);
+
+  const loadAccount = useCallback(async () => {
+    try {
+      const { data: blh } = await supabase
+        .from("balance_login_history")
+        .select("user_balance_id")
+        .eq("visitor_id", visitor)
+        .order("logged_in_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (!blh?.user_balance_id) { setAccount({ linked: false }); return; }
+      const { data: ub } = await supabase
+        .from("user_balances")
+        .select("id, username, email")
+        .eq("id", blh.user_balance_id)
+        .maybeSingle();
+      setAccount({ linked: !!ub, username: ub?.username || null, email: ub?.email || null, ub_id: ub?.id || null });
+    } catch { setAccount({ linked: false }); }
+  }, [visitor]);
+  useEffect(() => { loadAccount(); }, [loadAccount]);
+
+  useEffect(() => {
+    if (messages.length === 0) return;
+    const last = messages[messages.length - 1];
+    if (last.sender === visitor || last.local_blocked) { lastIncomingId.current = last.id; return; }
+    if (lastIncomingId.current === last.id) return;
+    lastIncomingId.current = last.id;
+    if (soundOn) playPing();
+    if (notifOn && document.visibilityState === "hidden" && "Notification" in window && Notification.permission === "granted") {
+      try { new Notification("💬 Pesan baru dari " + (partner?.nick || "Stranger"), { body: last.content || (last.image_url ? "📷 Foto" : ""), silent: !soundOn }); } catch {}
+    }
+  }, [messages, visitor, soundOn, notifOn, partner?.nick]);
+
+  const requestNotifPerm = async () => {
+    if (!("Notification" in window)) { toast.error("Browser tidak mendukung notifikasi"); return; }
+    const p = await Notification.requestPermission();
+    if (p === "granted") { setNotifOn(true); toast.success("Notifikasi diaktifkan"); }
+    else toast.error("Izin notifikasi ditolak");
+  };
+
+  const logoutToGuest = () => {
+    if (!confirm("Putuskan akun & jadi Tamu lagi?\n\nSemua riwayat chat anonim, teman & permintaan akan hilang dari perangkat ini.")) return;
+    try {
+      localStorage.removeItem("agung_visitor_id");
+      localStorage.removeItem("anon_nick");
+      localStorage.removeItem("anon_my_gender");
+      localStorage.removeItem("anon_pref_gender");
+      localStorage.removeItem("anon_interest");
+    } catch {}
+    toast.success("Sesi diputus. Memuat ulang sebagai Tamu…");
+    setTimeout(() => window.location.reload(), 600);
+  };
 
   useEffect(() => { localStorage.setItem("anon_nick", nickname); }, [nickname]);
   useEffect(() => { localStorage.setItem("anon_my_gender", myGender); }, [myGender]);
@@ -288,6 +390,24 @@ export default function AnonChatTab() {
     const text = draft.trim().slice(0, 1000);
     setDraft("");
     pushTyping(false);
+
+    // Filter konten: tampak terkirim namun tidak diteruskan ke partner
+    if (isBlockedText(text)) {
+      const fake: AnonMsg = {
+        id: "local-" + Date.now() + "-" + Math.random().toString(36).slice(2),
+        sender: visitor, content: text, image_url: null,
+        created_at: new Date().toISOString(), is_read: false,
+        reply_to_id: replyTo?.id || null, is_deleted: false, local_blocked: true,
+      };
+      setMessages(prev => [...prev, fake]);
+      setReplyTo(null);
+      toast.message("Pesan tidak diteruskan", {
+        description: `Konten terdeteksi sensitif/tuduhan. Untuk laporan resmi, hubungi WA ${CS_WA}.`,
+        action: { label: "WA CS", onClick: () => window.open(CS_WA_LINK, "_blank") },
+      });
+      return;
+    }
+
     const payload: any = { session_id: sessionId, sender_visitor_id: visitor, content: text };
     if (replyTo) payload.reply_to_id = replyTo.id;
     setReplyTo(null);
@@ -360,10 +480,15 @@ export default function AnonChatTab() {
             {partner?.gender === "male" ? "🧑" : partner?.gender === "female" ? "👩" : "🥷"}
           </div>
           <div className="flex-1 min-w-0">
-            <div className="font-bold text-emerald-50 truncate">{partner?.nick}</div>
-            <div className="text-xs text-emerald-300/80 flex items-center gap-1">
+            <div className="font-bold text-emerald-50 truncate flex items-center gap-1.5">
+              {partner?.nick}
+              <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full bg-slate-700/60 text-slate-300">{partner?.gender === "male" ? "♂ Pria" : partner?.gender === "female" ? "♀ Wanita" : "Anonim"}</span>
+            </div>
+            <div className="text-xs text-emerald-300/80 flex items-center gap-1.5">
               <span className={`w-1.5 h-1.5 rounded-full ${sessionStatus === "active" ? "bg-emerald-400 animate-pulse" : "bg-rose-400"}`} />
               {sessionStatus === "active" ? "terhubung" : "chat berakhir"}
+              <span className="text-slate-500">•</span>
+              <span className="text-slate-400/80 italic">status & terakhir dilihat tidak ditampilkan</span>
             </div>
           </div>
           {sessionStatus === "active" && (
@@ -437,12 +562,41 @@ export default function AnonChatTab() {
                       ) : (
                         <>
                           {m.content && <p className="whitespace-pre-wrap break-words">{m.content}</p>}
-                          {m.image_url && <img src={m.image_url} alt="" className="max-w-full rounded-lg mt-1" />}
+                          {m.image_url && (() => {
+                            const revealed = mine || revealedImgs.has(m.id);
+                            return (
+                              <div className="relative mt-1 rounded-lg overflow-hidden">
+                                <img src={m.image_url} alt="" className={`max-w-full rounded-lg transition ${revealed ? "" : "blur-2xl scale-105"}`} />
+                                {!revealed && (
+                                  <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-black/40">
+                                    <div className="text-[10px] text-white/90 px-2 py-1 rounded-full bg-amber-500/80 flex items-center gap-1"><AlertTriangle className="w-3 h-3" /> Foto disensor</div>
+                                    <button onClick={() => setRevealedImgs(prev => { const n = new Set(prev); n.add(m.id); return n; })} className="px-3 py-1.5 rounded-full bg-white/95 text-slate-900 text-xs font-bold flex items-center gap-1">
+                                      <Eye className="w-3.5 h-3.5" /> Tampilkan
+                                    </button>
+                                  </div>
+                                )}
+                                {!mine && (
+                                  <button
+                                    onClick={() => { toast.message("Foto dilaporkan", { description: `Hubungi WA ${CS_WA} untuk laporan resmi & barang bukti.`, action: { label: "WA CS", onClick: () => window.open(CS_WA_LINK, "_blank") } }); }}
+                                    className="absolute top-1 right-1 px-2 py-0.5 rounded-full bg-rose-500/90 text-white text-[9px] font-bold flex items-center gap-0.5 shadow"
+                                    title="Laporkan foto"
+                                  >
+                                    <Flag className="w-2.5 h-2.5" /> Lapor
+                                  </button>
+                                )}
+                              </div>
+                            );
+                          })()}
                         </>
                       )}
                       <div className={`text-[9px] mt-1 flex items-center gap-0.5 ${mine ? "text-white/70 justify-end" : "text-slate-400"}`}>
+                        {m.local_blocked && (
+                          <span className="mr-1 px-1.5 py-0.5 rounded-full bg-amber-500/30 text-amber-100 text-[8.5px] font-bold flex items-center gap-0.5" title={`Tidak diteruskan ke partner. Lapor: WA ${CS_WA}`}>
+                            <AlertTriangle className="w-2.5 h-2.5" /> hanya kamu
+                          </span>
+                        )}
                         {new Date(m.created_at).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })}
-                        {mine && !m.is_deleted && (
+                        {mine && !m.is_deleted && !m.local_blocked && (
                           <span className="ml-0.5">
                             {m.is_read ? <CheckCheck className="w-3 h-3 text-cyan-200" /> : <Check className="w-3 h-3" />}
                           </span>
@@ -585,62 +739,246 @@ export default function AnonChatTab() {
   }
 
   if (view === "account") {
+    const isLinked = !!account?.linked;
     return (
-      <div className="rounded-3xl border-2 border-emerald-400/30 bg-gradient-to-b from-slate-950 to-emerald-950/20 p-5 space-y-5">
+      <div className="rounded-3xl border-2 border-emerald-400/30 bg-gradient-to-b from-slate-950 to-emerald-950/20 p-5 space-y-5 max-h-[calc(100vh-160px)] overflow-y-auto">
         <div className="flex items-center justify-between">
           <button onClick={() => setView("prefs")} className="text-emerald-300 text-sm">← Kembali</button>
           <div className="font-bold text-slate-100">Pengaturan akun</div>
           <div className="w-12" />
         </div>
 
-        <div>
-          <label className="text-xs text-slate-400 flex items-center gap-1 mb-2"><Users className="w-3 h-3" /> Nickname kamu</label>
-          <div className="flex gap-2">
-            <input value={nickname} onChange={e => setNickname(e.target.value.slice(0, 20))}
-              className="flex-1 bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-sm text-slate-100" />
-            <button onClick={() => setNickname(genNick())} className="px-3 rounded-xl bg-emerald-500/20 text-emerald-200 text-xs font-semibold border border-emerald-400/30">
-              <Sparkles className="w-4 h-4" />
+        {/* Identitas akun */}
+        <div className="rounded-2xl border border-emerald-400/20 bg-slate-900/60 p-4 space-y-3">
+          <div className="flex items-center justify-between">
+            <span className="text-xs text-slate-400">ID akun perangkat</span>
+            <button onClick={() => { try { navigator.clipboard.writeText(visitor); toast.success("ID disalin"); } catch {} }}
+              className="text-[11px] font-mono px-2 py-1 rounded-md bg-slate-800 text-emerald-200 flex items-center gap-1 border border-slate-700">
+              {shortId(visitor)} <Copy className="w-3 h-3" />
             </button>
           </div>
+          <div className="flex items-center justify-between">
+            <span className="text-xs text-slate-400">Status</span>
+            {isLinked ? (
+              <span className="text-[11px] font-bold px-2 py-1 rounded-full bg-emerald-500/20 text-emerald-200 border border-emerald-400/40">Tertaut ke akun</span>
+            ) : (
+              <span className="text-[11px] font-bold px-2 py-1 rounded-full bg-amber-500/20 text-amber-200 border border-amber-400/40">Tamu (Guest)</span>
+            )}
+          </div>
+          {isLinked && (
+            <>
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-xs text-slate-400">Akun tertaut</span>
+                <span className="text-xs text-slate-100 font-semibold truncate max-w-[60%] text-right">{account?.username || "—"}</span>
+              </div>
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-xs text-slate-400">Email</span>
+                <span className="text-xs text-slate-300 truncate max-w-[60%] text-right">{account?.email || "—"}</span>
+              </div>
+            </>
+          )}
         </div>
 
-        <div>
-          <label className="text-xs text-slate-400 mb-2 block">Gender saya</label>
-          <div className="grid grid-cols-3 gap-2">
-            {[{v:"male",l:"Pria"},{v:"female",l:"Wanita"},{v:"any",l:"Rahasia"}].map(o => (
-              <button key={o.v} onClick={() => setMyGender(o.v)}
-                className={`py-2.5 rounded-xl text-sm font-semibold border ${myGender === o.v ? "bg-emerald-500 text-white border-emerald-400 shadow-lg shadow-emerald-500/30" : "bg-slate-900 text-slate-300 border-slate-700"}`}>
-                {o.l}
+        {/* Aksi akun */}
+        {!isLinked ? (
+          <div className="rounded-2xl border border-amber-400/30 bg-amber-500/5 p-4 space-y-3">
+            <div className="flex items-start gap-2">
+              <Link2 className="w-4 h-4 text-amber-300 mt-0.5 shrink-0" />
+              <div>
+                <div className="text-sm font-bold text-amber-100">Bind akun saldo</div>
+                <p className="text-[11px] text-amber-200/80 mt-0.5">Tautkan ke akun saldo agar teman, riwayat, & pengaturan tetap aman saat ganti perangkat.</p>
+              </div>
+            </div>
+            <button onClick={() => { toast.info("Buka tab Plus → Saldo Saya untuk login / daftar akun saldo"); }}
+              className="w-full py-3 rounded-2xl bg-gradient-to-r from-amber-400 to-orange-500 text-white font-bold flex items-center justify-center gap-2 shadow">
+              <Link2 className="w-4 h-4" /> Bind ke akun saldo
+            </button>
+          </div>
+        ) : (
+          <div className="rounded-2xl border border-emerald-400/20 bg-slate-900/60 divide-y divide-slate-800 overflow-hidden">
+            {[
+              { icon: Pencil, label: "Ganti username", desc: "Ubah nama tampilan akun" },
+              { icon: Mail, label: "Ganti email", desc: "Perbarui email login" },
+              { icon: KeyRound, label: "Ganti password", desc: "Perbarui kata sandi" },
+            ].map((it, i) => (
+              <button key={i} onClick={() => toast.info("Buka tab Plus → Saldo Saya → Profil untuk " + it.label.toLowerCase())}
+                className="w-full flex items-center gap-3 px-4 py-3.5 text-left hover:bg-slate-800/40 transition">
+                <it.icon className="w-4 h-4 text-emerald-300 shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <div className="text-sm text-slate-100 font-semibold">{it.label}</div>
+                  <div className="text-[10px] text-slate-400">{it.desc}</div>
+                </div>
+                <ChevronRight className="w-4 h-4 text-slate-500" />
               </button>
             ))}
           </div>
-        </div>
+        )}
 
-        <div>
-          <label className="text-xs text-slate-400 mb-2 block">Pilih gender partner</label>
-          <div className="grid grid-cols-3 gap-2">
-            {[{v:"male",l:"Pria"},{v:"female",l:"Wanita"},{v:"any",l:"Apapun"}].map(o => (
-              <button key={o.v} onClick={() => setPrefGender(o.v)}
-                className={`py-2.5 rounded-xl text-sm font-semibold border ${prefGender === o.v ? "bg-teal-500 text-white border-teal-400 shadow-lg shadow-teal-500/30" : "bg-slate-900 text-slate-300 border-slate-700"}`}>
-                {o.l}
+        {/* Logout / putuskan */}
+        <button onClick={logoutToGuest}
+          className="w-full py-3 rounded-2xl bg-rose-500/15 hover:bg-rose-500/25 border border-rose-400/40 text-rose-200 text-sm font-bold flex items-center justify-center gap-2">
+          <LogOut className="w-4 h-4" /> {isLinked ? "Logout & jadi Tamu" : "Reset sesi Tamu"}
+        </button>
+        <p className="text-[10px] text-slate-500 -mt-2 text-center">Riwayat chat anonim, teman, & permintaan akan dihapus dari perangkat ini.</p>
+
+        <div className="border-t border-slate-800 pt-4 space-y-4">
+          <div>
+            <label className="text-xs text-slate-400 flex items-center gap-1 mb-2"><Users className="w-3 h-3" /> Nickname kamu</label>
+            <div className="flex gap-2">
+              <input value={nickname} onChange={e => setNickname(e.target.value.slice(0, 20))}
+                className="flex-1 bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-sm text-slate-100" />
+              <button onClick={() => setNickname(genNick())} className="px-3 rounded-xl bg-emerald-500/20 text-emerald-200 text-xs font-semibold border border-emerald-400/30">
+                <Sparkles className="w-4 h-4" />
               </button>
-            ))}
+            </div>
           </div>
-        </div>
 
-        <div>
-          <label className="text-xs text-slate-400 mb-2 block">Pilih ketertarikan</label>
-          <button onClick={() => setView("interest")}
-            className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 flex items-center justify-between text-slate-100">
-            <span>{interest}</span>
-            <ChevronRight className="w-4 h-4 text-emerald-400" />
-          </button>
+          <div>
+            <label className="text-xs text-slate-400 mb-2 block">Gender saya</label>
+            <div className="grid grid-cols-3 gap-2">
+              {[{v:"male",l:"🧑 Pria"},{v:"female",l:"👩 Wanita"},{v:"any",l:"🥷 Anonim"}].map(o => (
+                <button key={o.v} onClick={() => setMyGender(o.v)}
+                  className={`py-2.5 rounded-xl text-sm font-semibold border ${myGender === o.v ? "bg-emerald-500 text-white border-emerald-400 shadow-lg shadow-emerald-500/30" : "bg-slate-900 text-slate-300 border-slate-700"}`}>
+                  {o.l}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <label className="text-xs text-slate-400 mb-2 block">Pilih gender partner</label>
+            <div className="grid grid-cols-3 gap-2">
+              {[{v:"male",l:"🧑 Pria"},{v:"female",l:"👩 Wanita"},{v:"any",l:"🥷 Apapun"}].map(o => (
+                <button key={o.v} onClick={() => setPrefGender(o.v)}
+                  className={`py-2.5 rounded-xl text-sm font-semibold border ${prefGender === o.v ? "bg-teal-500 text-white border-teal-400 shadow-lg shadow-teal-500/30" : "bg-slate-900 text-slate-300 border-slate-700"}`}>
+                  {o.l}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <label className="text-xs text-slate-400 mb-2 block">Pilih ketertarikan</label>
+            <button onClick={() => setView("interest")}
+              className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 flex items-center justify-between text-slate-100">
+              <span>{interest}</span>
+              <ChevronRight className="w-4 h-4 text-emerald-400" />
+            </button>
+          </div>
         </div>
 
         <button onClick={() => { setView("prefs"); toast.success("Tersimpan"); }}
           className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-bold shadow-lg shadow-emerald-500/40">
           SIMPAN
         </button>
+      </div>
+    );
+  }
+
+  if (view === "support") {
+    const FAQ = [
+      { q: "Apa itu Anon Chat?", a: "Fitur chat anonim untuk bertemu orang baru tanpa membuka identitas asli. Tetap jaga privasi & jangan bagikan data pribadi." },
+      { q: "Bagaimana cara mencari partner?", a: "Tekan 'MULAI CARI' di lobi. Sistem mencocokkan kamu berdasarkan gender & ketertarikan." },
+      { q: "Mengapa pesan saya bertanda 'hanya kamu'?", a: "Pesan terdeteksi sensitif (mis. tuduhan / kata terlarang). Pesan tampak terkirim tapi tidak diteruskan ke partner. Untuk laporan resmi, hubungi WA CS." },
+      { q: "Mengapa foto partner buram?", a: "Semua foto dari partner disensor otomatis untuk perlindungan dari konten 18+. Ketuk 'Tampilkan' jika ingin melihat — risiko ditanggung pengguna." },
+      { q: "Mengapa status online & terakhir dilihat tidak ada?", a: "Demi privasi, status online dan terakhir dilihat tidak pernah ditampilkan — termasuk untuk teman." },
+      { q: "Bagaimana jika ketemu pengguna nakal/penipu?", a: "Akhiri chat, tekan 'Lapor' di foto, dan hubungi WhatsApp CS dengan bukti." },
+      { q: "Hilangkan riwayat & teman?", a: "Pengaturan akun → Logout & jadi Tamu / Reset sesi Tamu." },
+    ];
+    return (
+      <div className="rounded-3xl border-2 border-emerald-400/30 bg-gradient-to-b from-slate-950 to-emerald-950/20 min-h-[500px] flex flex-col">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-800/60">
+          <button onClick={() => setView("prefs")} className="text-emerald-300 text-sm">← Kembali</button>
+          <div className="font-bold text-slate-100">Dukungan</div>
+          <div className="w-12" />
+        </div>
+        <div className="flex-1 overflow-y-auto p-4 space-y-4">
+          <div className="rounded-2xl border border-emerald-400/30 bg-emerald-500/5 p-4 space-y-3">
+            <div className="flex items-start gap-2">
+              <Phone className="w-5 h-5 text-emerald-300 mt-0.5" />
+              <div>
+                <div className="text-sm font-bold text-emerald-100">Customer Service WhatsApp</div>
+                <div className="text-xs text-emerald-200/80">Respon cepat 08.00 – 22.00 WIB</div>
+                <div className="font-mono text-emerald-300 text-sm mt-0.5">{CS_WA}</div>
+              </div>
+            </div>
+            <a href={CS_WA_LINK} target="_blank" rel="noreferrer"
+              className="w-full py-3 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-bold flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/40">
+              <MessageCircle className="w-4 h-4" /> Chat CS via WhatsApp
+            </a>
+          </div>
+
+          <div>
+            <h4 className="text-xs font-bold text-emerald-300 mb-2 px-1">Pertanyaan umum</h4>
+            <div className="rounded-2xl bg-slate-900/70 border border-slate-800 divide-y divide-slate-800 overflow-hidden">
+              {FAQ.map((f, i) => (
+                <details key={i} className="group">
+                  <summary className="cursor-pointer list-none px-4 py-3 flex items-center justify-between hover:bg-slate-800/40">
+                    <span className="text-sm text-slate-100 font-semibold pr-2">{f.q}</span>
+                    <ChevronRight className="w-4 h-4 text-slate-500 group-open:rotate-90 transition" />
+                  </summary>
+                  <div className="px-4 pb-3 text-xs text-slate-300 leading-relaxed">{f.a}</div>
+                </details>
+              ))}
+            </div>
+          </div>
+        </div>
+        <InnerNav active="settings" onChange={(k) => {
+          if (k === "search") setView("lobby");
+          else if (k === "friends") setView("friends");
+          else setView("prefs");
+        }} />
+      </div>
+    );
+  }
+
+  if (view === "notif") {
+    const perm = typeof Notification !== "undefined" ? Notification.permission : "default";
+    return (
+      <div className="rounded-3xl border-2 border-emerald-400/30 bg-gradient-to-b from-slate-950 to-emerald-950/20 min-h-[500px] flex flex-col">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-800/60">
+          <button onClick={() => setView("prefs")} className="text-emerald-300 text-sm">← Kembali</button>
+          <div className="font-bold text-slate-100">Notifikasi & Suara</div>
+          <div className="w-12" />
+        </div>
+        <div className="flex-1 overflow-y-auto p-4 space-y-3">
+          <div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-4 flex items-center gap-3">
+            {soundOn ? <Volume2 className="w-5 h-5 text-emerald-300" /> : <VolumeX className="w-5 h-5 text-slate-400" />}
+            <div className="flex-1">
+              <div className="text-sm font-bold text-slate-100">Suara pesan masuk</div>
+              <div className="text-[11px] text-slate-400">Bunyikan ping saat pesan baru di chat anonim</div>
+            </div>
+            <button onClick={() => { setSoundOn(s => !s); if (!soundOn) playPing(); }}
+              className={`w-12 h-7 rounded-full p-0.5 transition ${soundOn ? "bg-emerald-500" : "bg-slate-700"}`}>
+              <div className={`w-6 h-6 rounded-full bg-white transition ${soundOn ? "translate-x-5" : ""}`} />
+            </button>
+          </div>
+
+          <div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-4 flex items-center gap-3">
+            <Bell className={`w-5 h-5 ${notifOn ? "text-emerald-300" : "text-slate-400"}`} />
+            <div className="flex-1">
+              <div className="text-sm font-bold text-slate-100">Notifikasi anon chat</div>
+              <div className="text-[11px] text-slate-400">Tampilkan notifikasi browser saat tab tidak aktif</div>
+              <div className="text-[10px] mt-0.5">
+                Status izin: <span className={perm === "granted" ? "text-emerald-300" : perm === "denied" ? "text-rose-300" : "text-amber-300"}>{perm}</span>
+              </div>
+            </div>
+            <button onClick={() => { if (perm !== "granted") requestNotifPerm(); else setNotifOn(n => !n); }}
+              className={`w-12 h-7 rounded-full p-0.5 transition ${notifOn && perm === "granted" ? "bg-emerald-500" : "bg-slate-700"}`}>
+              <div className={`w-6 h-6 rounded-full bg-white transition ${notifOn && perm === "granted" ? "translate-x-5" : ""}`} />
+            </button>
+          </div>
+
+          <div className="rounded-2xl border border-amber-400/30 bg-amber-500/5 p-3 text-[11px] text-amber-100/90 flex items-start gap-2">
+            <AlertTriangle className="w-4 h-4 text-amber-300 mt-0.5 shrink-0" />
+            <span>Notifikasi & suara hanya untuk percakapan anon chat. Pengaturan ini tersimpan di perangkat ini.</span>
+          </div>
+        </div>
+        <InnerNav active="settings" onChange={(k) => {
+          if (k === "search") setView("lobby");
+          else if (k === "friends") setView("friends");
+          else setView("prefs");
+        }} />
       </div>
     );
   }
@@ -659,31 +997,43 @@ export default function AnonChatTab() {
         <div className="flex-1 overflow-y-auto p-5 space-y-5">
           {/* Avatar + nickname + gender */}
           <div className="flex flex-col items-center gap-2">
-            <div className="w-24 h-24 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-5xl shadow-xl ring-4 ring-slate-900">
-              🥷
+            <div className={`w-24 h-24 rounded-full flex items-center justify-center text-5xl shadow-xl ring-4 ring-slate-900 ${
+              myGender === "male" ? "bg-gradient-to-br from-sky-500 to-blue-600" :
+              myGender === "female" ? "bg-gradient-to-br from-pink-500 to-rose-600" :
+              "bg-gradient-to-br from-indigo-500 to-purple-600"
+            }`}>
+              {genderEmoji(myGender)}
             </div>
             <div className="text-xl font-bold text-slate-100 mt-1">{nickname}</div>
-            <div className="text-sm text-slate-400">{genderLabel}</div>
+            <div className="text-sm text-slate-400 flex items-center gap-1.5">
+              <span>{genderLabel}</span>
+              <span className="text-slate-600">•</span>
+              <span className="font-mono text-[10px] text-emerald-300/80">{shortId(visitor)}</span>
+              {account?.linked && <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-200 border border-emerald-400/40 font-bold">TERTAUT</span>}
+            </div>
           </div>
 
           {/* Tentang saya */}
           <div className="rounded-2xl bg-slate-900/70 border border-slate-800 p-4">
             <div className="text-base font-bold text-slate-100 mb-1">Tentang saya</div>
             <div className="text-sm text-slate-300">{interest}</div>
+            <div className="text-[11px] text-slate-500 mt-2 italic">Status online & terakhir dilihat tidak ditampilkan demi privasi.</div>
           </div>
 
           {/* Settings list */}
           <div className="rounded-2xl bg-slate-900/70 border border-slate-800 divide-y divide-slate-800 overflow-hidden">
             {[
-              { icon: Link2, label: "Pengaturan akun", onClick: () => setView("account") },
-              { icon: HelpCircle, label: "Dukungan", onClick: () => toast.info("Hubungi admin via WhatsApp 085769302532") },
-              { icon: Bell, label: "Notifikasi dan suara", onClick: () => toast.info("Pengaturan notifikasi segera hadir") },
-              { icon: Moon, label: "Tampilan", onClick: () => toast.info("Tema gelap aktif") },
+              { icon: Link2, label: "Pengaturan akun", desc: account?.linked ? "Tertaut · " + (account?.username || "") : "Tamu · belum bind", onClick: () => setView("account") },
+              { icon: HelpCircle, label: "Dukungan & pertanyaan umum", desc: "FAQ + tombol CS WhatsApp", onClick: () => setView("support") },
+              { icon: Bell, label: "Notifikasi & suara", desc: (soundOn ? "Suara aktif" : "Suara mati") + " · " + (notifOn ? "Notifikasi aktif" : "Notifikasi mati"), onClick: () => setView("notif") },
             ].map((it, i) => (
               <button key={i} onClick={it.onClick}
-                className="w-full flex items-center gap-3 px-4 py-4 text-left hover:bg-slate-800/40 transition">
-                <it.icon className="w-5 h-5 text-slate-300 shrink-0" />
-                <span className="flex-1 text-slate-100 font-medium text-sm">{it.label}</span>
+                className="w-full flex items-center gap-3 px-4 py-3.5 text-left hover:bg-slate-800/40 transition">
+                <it.icon className="w-5 h-5 text-emerald-300 shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <div className="text-slate-100 font-semibold text-sm">{it.label}</div>
+                  <div className="text-[10px] text-slate-400 truncate">{it.desc}</div>
+                </div>
                 <ChevronRight className="w-4 h-4 text-slate-500" />
               </button>
             ))}
@@ -746,7 +1096,7 @@ export default function AnonChatTab() {
                     <div className="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center text-lg shrink-0">🥷</div>
                     <div className="flex-1 min-w-0">
                       <div className="font-semibold text-emerald-100 truncate">{f.friend_nickname}</div>
-                      <div className="text-[10px] text-emerald-300/60">Teman anonim</div>
+                      <div className="text-[10px] text-emerald-300/60 italic">Status & terakhir dilihat tidak ditampilkan</div>
                     </div>
                     <button onClick={() => startFriendChat(f.friend_visitor)} className="px-3 h-8 rounded-full bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-bold flex items-center gap-1" title="Chat">
                       <MessageCircle className="w-3.5 h-3.5" /> Chat
