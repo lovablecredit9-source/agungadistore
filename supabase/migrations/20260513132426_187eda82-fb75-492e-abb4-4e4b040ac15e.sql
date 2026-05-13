@@ -1,0 +1,1 @@
+ALTER TABLE public.anon_chat_profiles ADD COLUMN IF NOT EXISTS bio text;

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -29,6 +29,14 @@ export async function fetchAnonAccount(visitorId: string): Promise<AnonAccount |
     return null;
   }
 }
+
+type IconType = React.ComponentType<{ className?: string }>;
+const Field = ({ icon: Icon, ...p }: { icon: IconType } & React.InputHTMLAttributes<HTMLInputElement>) => (
+  <div className="flex items-center gap-2 bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5">
+    <Icon className="w-4 h-4 text-emerald-300 shrink-0" />
+    <input {...p} className="bg-transparent outline-none text-sm text-slate-100 flex-1 placeholder:text-slate-500" />
+  </div>
+);
 
 export function AnonAccountDialog({
   open,
@@ -111,12 +119,6 @@ export function AnonAccountDialog({
     }
   };
 
-  const Field = ({ icon: Icon, ...p }: any) => (
-    <div className="flex items-center gap-2 bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5">
-      <Icon className="w-4 h-4 text-emerald-300 shrink-0" />
-      <input {...p} className="bg-transparent outline-none text-sm text-slate-100 flex-1 placeholder:text-slate-500" />
-    </div>
-  );
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
