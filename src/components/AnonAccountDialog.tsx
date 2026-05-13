@@ -50,12 +50,14 @@ export function AnonAccountDialog({
   const [password, setPassword] = useState("");
   const [newEmail, setNewEmail] = useState("");
   const [newPassword, setNewPassword] = useState("");
+  const [bio, setBio] = useState("");
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
     if (open) {
       setMode(account ? "manage" : "login");
       setEmail(""); setPassword(""); setNewEmail(""); setNewPassword("");
+      setBio(account?.bio || "");
     }
   }, [open, account]);
 
