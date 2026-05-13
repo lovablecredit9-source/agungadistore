@@ -551,7 +551,33 @@ export default function WhatsAppChat({
               </button>
             </div>
           )}
+          {showInputEmoji && (
+            <div className="relative animate-fade-in">
+              <Suspense fallback={<div className="text-xs text-muted-foreground p-3">Memuat emoji…</div>}>
+                <EmojiPicker
+                  onEmojiClick={(e: any) => {
+                    setDraft((d) => d + (e?.emoji ?? ""));
+                    inputRef.current?.focus();
+                  }}
+                  width="100%"
+                  height={320}
+                  searchPlaceHolder="Cari emoji…"
+                  previewConfig={{ showPreview: false }}
+                />
+              </Suspense>
+            </div>
+          )}
           <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setShowInputEmoji((v) => !v)}
+              aria-label="Buka emoji"
+              className={`w-10 h-10 rounded-xl border bg-card flex items-center justify-center shrink-0 transition-colors ${
+                showInputEmoji ? "border-foreground text-foreground" : "border-border text-muted-foreground hover:bg-muted/50"
+              }`}
+            >
+              <Plus className={`w-[18px] h-[18px] transition-transform ${showInputEmoji ? "rotate-45" : ""}`} />
+            </button>
             <label className="w-10 h-10 rounded-xl border border-border bg-card hover:bg-muted/50 flex items-center justify-center cursor-pointer shrink-0 transition-colors">
               <ImagePlus className="w-[18px] h-[18px] text-muted-foreground" />
               <input
@@ -566,6 +592,7 @@ export default function WhatsAppChat({
             </label>
             <div className="flex-1 relative">
               <Input
+                ref={inputRef}
                 placeholder="Tulis pesan…"
                 value={draft}
                 onChange={(e) => onChangeDraft(e.target.value)}
@@ -575,6 +602,7 @@ export default function WhatsAppChat({
                     sendMessage();
                   }
                 }}
+                onFocus={() => setShowInputEmoji(false)}
                 onBlur={() => pushTyping(false)}
                 className="h-10 rounded-xl border-border bg-card pl-4 pr-4 focus-visible:ring-ring"
               />
