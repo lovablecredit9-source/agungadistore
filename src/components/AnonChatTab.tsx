@@ -1,7 +1,20 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Search, Users, Settings as SettingsIcon, Send, X, RefreshCw, UserPlus, Heart, ChevronRight, Sparkles, Shield } from "lucide-react";
+import { Search, Users, Settings as SettingsIcon, Send, X, RefreshCw, UserPlus, Heart, ChevronRight, Sparkles, Shield, ImagePlus, Smile, Reply, Trash2, Check, CheckCheck } from "lucide-react";
 import { toast } from "sonner";
+
+interface AnonMsg {
+  id: string;
+  sender: string;
+  content: string | null;
+  image_url: string | null;
+  created_at: string;
+  is_read: boolean;
+  reply_to_id: string | null;
+  is_deleted: boolean;
+}
+interface AnonReaction { id: string; message_id: string; visitor_id: string; emoji: string; }
+const EMOJIS = ["👍", "❤️", "😂", "😮", "😢", "🙏", "🔥"];
 
 type View = "lobby" | "prefs" | "interest" | "searching" | "chat" | "friends";
 
