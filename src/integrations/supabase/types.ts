@@ -134,6 +134,62 @@ export type Database = {
         }
         Relationships: []
       }
+      anon_chat_account_devices: {
+        Row: {
+          account_id: string
+          id: string
+          last_login_at: string
+          visitor_id: string
+        }
+        Insert: {
+          account_id: string
+          id?: string
+          last_login_at?: string
+          visitor_id: string
+        }
+        Update: {
+          account_id?: string
+          id?: string
+          last_login_at?: string
+          visitor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "anon_chat_account_devices_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "anon_chat_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      anon_chat_accounts: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          password_hash: string
+          primary_visitor_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          password_hash: string
+          primary_visitor_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          password_hash?: string
+          primary_visitor_id?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       anon_chat_friend_requests: {
         Row: {
           created_at: string
