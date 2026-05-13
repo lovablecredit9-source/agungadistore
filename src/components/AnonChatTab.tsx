@@ -1234,8 +1234,32 @@ export default function AnonChatTab() {
 
           {/* Tentang saya */}
           <div className="rounded-2xl bg-slate-900/70 border border-slate-800 p-4">
-            <div className="text-base font-bold text-slate-100 mb-1">Tentang saya</div>
-            <div className="text-sm text-slate-300">{interest}</div>
+            <div className="flex items-center justify-between gap-2 mb-2">
+              <div className="text-base font-bold text-slate-100">Deskripsi saya</div>
+              <span className="text-[10px] text-slate-500">{bioDraft.length}/200</span>
+            </div>
+            {anonAccount ? (
+              <div className="space-y-2">
+                <textarea
+                  value={bioDraft}
+                  onChange={(e) => setBioDraft(e.target.value.slice(0, 200))}
+                  rows={3}
+                  placeholder="Tulis deskripsi singkat yang akan terlihat oleh partner chat…"
+                  className="w-full bg-slate-950/70 border border-slate-700 rounded-xl px-3 py-2.5 text-sm text-slate-100 outline-none placeholder:text-slate-500 resize-none focus:border-emerald-400/60"
+                />
+                <button
+                  onClick={saveBio}
+                  disabled={savingBio || bioDraft.trim() === (anonAccount.bio || "").trim()}
+                  className="w-full py-2.5 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-400/40 text-emerald-100 text-xs font-bold disabled:opacity-50 flex items-center justify-center gap-2"
+                >
+                  <FileText className="w-3.5 h-3.5" /> {savingBio ? "Menyimpan..." : "Simpan Deskripsi"}
+                </button>
+              </div>
+            ) : (
+              <button onClick={() => setShowAccountDialog(true)} className="w-full py-3 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-400/40 text-emerald-100 text-xs font-bold flex items-center justify-center gap-2">
+                <FileText className="w-4 h-4" /> Daftar/Login untuk buat deskripsi
+              </button>
+            )}
             <div className="text-[11px] text-slate-500 mt-2 italic">{showLastSeen ? "Terakhir dilihat aktif untuk partner chat." : "Terakhir dilihat kamu disembunyikan."}</div>
           </div>
 
