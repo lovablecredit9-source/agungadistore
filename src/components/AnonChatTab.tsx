@@ -656,6 +656,20 @@ export default function AnonChatTab() {
             <X className="w-4 h-4" />
           </button>
         </div>
+        {partnerBio && partnerBio.trim() && (
+          <button
+            type="button"
+            onClick={() => setShowPartnerBio(v => !v)}
+            className="w-full text-left px-3 py-1.5 border-b border-emerald-400/10 bg-slate-950/40 hover:bg-slate-900/60 transition flex items-start gap-2"
+            title={showPartnerBio ? "Sembunyikan deskripsi" : "Lihat deskripsi partner"}
+          >
+            <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-300/70 mt-0.5 shrink-0">Bio</span>
+            <span className={`text-xs text-slate-200 italic flex-1 ${showPartnerBio ? "" : "line-clamp-1"}`}>
+              "{partnerBio}"
+            </span>
+            <ChevronRight className={`w-3.5 h-3.5 text-emerald-300/60 shrink-0 mt-0.5 transition-transform ${showPartnerBio ? "rotate-90" : ""}`} />
+          </button>
+        )}
 
         {/* Messages */}
         <div ref={scrollRef} className="flex-1 overflow-y-auto p-3 space-y-1.5">
