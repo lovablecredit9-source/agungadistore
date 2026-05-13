@@ -148,6 +148,20 @@ Deno.serve(async (req) => {
       return ok({ success: true });
     }
 
+    if (action === "update_bio") {
+      const bio = String(payload.bio || "").slice(0, 200);
+      const acc = await findAccountByVisitor();
+      if (!acc) return bad("Belum login akun Anon", 401);
+      const { data: updated, error } = await admin
+        .from("anon_chat_accounts")
+        .update({ bio })
+        .eq("id", acc.id)
+        .select(SELECT_COLS)
+        .single();
+      if (error || !updated) return bad("Gagal menyimpan deskripsi", 500);
+      return ok({ success: true, account: updated });
+    }
+
     return bad("Action tidak valid");
   } catch (e) {
     return bad(e instanceof Error ? e.message : "Kesalahan tak terduga", 500);
