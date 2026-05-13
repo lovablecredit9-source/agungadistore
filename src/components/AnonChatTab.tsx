@@ -900,7 +900,7 @@ export default function AnonChatTab() {
                     <div className="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center text-lg shrink-0">🥷</div>
                     <div className="flex-1 min-w-0">
                       <div className="font-semibold text-emerald-100 truncate">{f.friend_nickname}</div>
-                      <div className="text-[10px] text-emerald-300/60">Teman anonim</div>
+                      <div className="text-[10px] text-emerald-300/60 italic">Status & terakhir dilihat tidak ditampilkan</div>
                     </div>
                     <button onClick={() => startFriendChat(f.friend_visitor)} className="px-3 h-8 rounded-full bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-bold flex items-center gap-1" title="Chat">
                       <MessageCircle className="w-3.5 h-3.5" /> Chat
