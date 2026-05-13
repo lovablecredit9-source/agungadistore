@@ -70,7 +70,7 @@ Deno.serve(async (req) => {
       const { data: acc, error } = await admin
         .from("anon_chat_accounts")
         .insert({ email, password_hash, primary_visitor_id: visitorId })
-        .select("id, email, primary_visitor_id, created_at")
+        .select(SELECT_COLS)
         .single();
       if (error || !acc) return bad("Gagal mendaftar: " + (error?.message || ""), 500);
 
@@ -85,7 +85,7 @@ Deno.serve(async (req) => {
       const password_hash = await hashPassword(password);
       const { data: acc } = await admin
         .from("anon_chat_accounts")
-        .select("id, email, primary_visitor_id, created_at")
+        .select(SELECT_COLS)
         .eq("email", email)
         .eq("password_hash", password_hash)
         .maybeSingle();
@@ -125,7 +125,7 @@ Deno.serve(async (req) => {
         .from("anon_chat_accounts")
         .update({ email: newEmail })
         .eq("id", acc.id)
-        .select("id, email, primary_visitor_id, created_at")
+        .select(SELECT_COLS)
         .single();
       if (error || !updated) return bad("Gagal mengubah email", 500);
       return ok({ success: true, account: updated });
