@@ -1,49 +1,28 @@
+# Halaman "Tentang" Anon Chat
 
-## Tambah Changelog v2.8 — 21 April 2026
+Mengganti `toast.info` pada item "Tentang" di pengaturan Anon Chat dengan halaman penuh seperti screenshot, lengkap dengan 5 sub-halaman.
 
-Saya akan menambahkan entri changelog terbaru **v2.8 (21 April 2026)** di tab "Update" pada `src/pages/Index.tsx`, dan menurunkan v2.7 jadi entri biasa (hapus flag `isNew`).
+## Struktur halaman
 
-### Isi v2.8 (21 entri lengkap)
+**Tentang** (menu utama) — daftar 5 item dengan ikon:
+1. **Pulihkan langganan** — tombol untuk cek/restore status premium akun Anon (panggil ulang `fetchAnonAccount`, tampilkan toast "Tidak ada langganan aktif" / "Langganan dipulihkan").
+2. **Privasi data** — halaman teks: "Seluruh chat dan file media disimpan di server kami. Mereka digunakan untuk: sistem deteksi otomatis spam, memulihkan chat setelah aplikasi diinstal ulang. Datamu tidak pernah dan tidak akan pernah dijual ke siapa pun…"
+3. **Aturan** — halaman daftar peraturan dengan heading + paragraf: Iklan, Menjual dan meminta-minta, Mengirim pornografi anak, Penghinaan dan Ancaman, Kekerasan, Konten Penghinaan (+ tambah: Spam, Identitas Palsu).
+4. **Tutorial** — slider/carousel bergambar dengan logo 🥷 anon.chat di header dan tombol panah lanjut. Minimal 3 slide (kirim foto/voice, panggilan, tambah teman), slide terakhir tombol "Selesai".
+5. **Informasi Sistem** — kartu data: Versi aplikasi, ID Akun (visitor_id), Perangkat (user-agent ringkas via Client Hints), Sistem (OS) + 2 link bawah: Ketentuan Penggunaan & Kebijakan Privasi (buka modal teks).
 
-**🎨 Tema iOS Dark Vibrant baru (5 item)**
-- Tema baru iOS Dark Vibrant — true black canvas + aksen Apple system colors
-- Design tokens iOS global: surface bertingkat L1/L2/L3, hairline divider, radius pill
-- Utility class baru: `ios-card-vibrant`, `ios-surface-1/2/3`, `ios-tint-*`, `ios-grad-bronze/silver/gold/diamond/jackpot`, `ios-btn-filled/tinted/gray`, `ios-pressable`
-- Background gelap dengan dual radial glow ala Apple Music
-- Tipografi SF Pro Display/Text dengan letter-spacing -0.011em
+## Perubahan file
 
-**🎰 Refactor Scratch-Off Lottery (3 item)**
-- Kartu pakai gradient rarity, badge tinted, modal sheet backdrop-blur xl + spring animation
-- Tombol pill putih ala iOS dengan `ios-pressable` (scale 0.96 saat ditekan)
-- Achievement grid pakai `ios-tint-yellow` untuk unlocked, grayscale untuk locked
+- `src/components/AnonChatTab.tsx`
+  - Tambah View baru: `about | about_privacy | about_rules | about_tutorial | about_system`.
+  - Ganti onClick item "Tentang" → `setView("about")`.
+  - Tambah 5 blok render sub-halaman dengan header "← Kembali" + judul, mengikuti gaya `notif`/`appearance`.
+  - Tutorial pakai state `tutorialStep` lokal + transisi sederhana, ikon mask emoji untuk header.
+  - Informasi Sistem pakai `getVisitorId()` + `navigator.userAgent`/`userAgentData` untuk Perangkat & OS, versi aplikasi dari konstanta `APP_VERSION` (definisikan `const APP_VERSION = "v5.35.0"` selaras changelog).
+  - Nav bawah `InnerNav` tetap `active="settings"`, kembali ke `prefs`.
 
-**💰 Rebalance hadiah Scratch-Off (6 item)**
-- Jackpot terasa BESAR tapi LANGKA (~3% chance), sistem Zonk 40-50%
-- Bronze (50): +30/+60/+100, jackpot +200
-- Silver (150): +100/+200/+350, jackpot +600
-- Gold (500): +200/+700/+800/+1000/+1500, jackpot +2000
-- Diamond (1000): +200/+600/+700/+1500/+2500, jackpot +3000, MEGA +5000
-- House edge positif agar ekonomi koin sehat
+## Catatan
 
-**🔧 Perbaikan transaksi & bug (4 item)**
-- streak_coins dipotong saat beli, ditambahkan setelah scratch >55%
-- Proteksi double-claim dengan `claimedRef`
-- `setScratching` membedakan kartu berbayar vs gratis (free key terpisah)
-- Combo multiplier diturunkan jadi ringan (1.0 → 1.2x maks)
-
-**🏆 Tweaks lain (3 item)**
-- Achievement bonus disesuaikan: First Win +10, High Roller +25, Jackpot Hunter +50, Diamond Master +100
-- Modal scratch bisa ditutup dengan tap di luar setelah claim
-- Banner kartu gratis harian dengan shimmer + `ios-grad-jackpot` rainbow
-
-### File yang diubah
-
-1. `src/pages/Index.tsx` (baris 3477-3502)
-   - Tambah objek entry v2.8 di posisi pertama dengan `isNew: true`
-   - Hapus `isNew: true` dari entry v2.7
-
-### Catatan teknis
-
-- Tidak ada perubahan komponen lain — hanya data array changelog
-- Indikator visual baru (titik biru animate-pulse + ring primary) otomatis berlaku karena render sudah pakai flag `isNew`
-- v2.7 tetap ditampilkan dengan styling normal (tanpa highlight)
+- Semua teks Bahasa Indonesia mengikuti screenshot persis.
+- Tidak butuh perubahan database — murni UI/konten statis.
+- Tutorial pakai gambar placeholder generik (gradient + emoji) agar tidak butuh upload aset.
