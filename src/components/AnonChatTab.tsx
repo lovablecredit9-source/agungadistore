@@ -269,6 +269,8 @@ export default function AnonChatTab() {
       if (response?.error) throw new Error(response.error);
       if (response?.account) setAnonAccount(response.account);
       setBioDraft(bio);
+      setSavedBio(bio);
+      setEditingBio(false);
       toast.success("Deskripsi Anon Chat tersimpan");
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Gagal menyimpan deskripsi");
@@ -1251,27 +1253,57 @@ export default function AnonChatTab() {
           <div className="rounded-2xl bg-slate-900/70 border border-slate-800 p-4">
             <div className="flex items-center justify-between gap-2 mb-2">
               <div className="text-base font-bold text-slate-100">Deskripsi saya</div>
-              <span className="text-[10px] text-slate-500">{bioDraft.length}/200</span>
+              {editingBio && <span className="text-[10px] text-slate-500">{bioDraft.length}/200</span>}
             </div>
-            <div className="space-y-2">
-              <textarea
-                value={bioDraft}
-                onChange={(e) => setBioDraft(e.target.value.slice(0, 200))}
-                rows={3}
-                placeholder="Tulis deskripsi singkat yang akan terlihat oleh partner chat…"
-                className="w-full bg-slate-950/70 border border-slate-700 rounded-xl px-3 py-2.5 text-sm text-slate-100 outline-none placeholder:text-slate-500 resize-none focus:border-emerald-400/60"
-              />
-              <button
-                onClick={saveBio}
-                disabled={savingBio || bioDraft.trim() === (anonAccount?.bio || "").trim() && !!anonAccount}
-                className="w-full py-2.5 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-400/40 text-emerald-100 text-xs font-bold disabled:opacity-50 flex items-center justify-center gap-2"
-              >
-                <FileText className="w-3.5 h-3.5" /> {savingBio ? "Menyimpan..." : "Simpan Deskripsi"}
-              </button>
-              {!anonAccount && (
-                <p className="text-[10px] text-slate-500 italic">Disimpan untuk perangkat ini. Daftar akun agar tetap tersimpan saat ganti perangkat.</p>
-              )}
-            </div>
+            {!editingBio ? (
+              savedBio.trim() ? (
+                <div className="space-y-2">
+                  <div className="rounded-xl bg-slate-950/60 border border-slate-700 p-3 text-xs text-slate-200 italic break-words">"{savedBio}"</div>
+                  <button
+                    onClick={() => { setBioDraft(savedBio); setEditingBio(true); }}
+                    className="w-full py-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-100 text-xs font-bold flex items-center justify-center gap-2"
+                  >
+                    <FileText className="w-3.5 h-3.5" /> Ubah Deskripsi
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={() => { setBioDraft(""); setEditingBio(true); }}
+                  className="w-full py-2.5 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-400/40 text-emerald-100 text-xs font-bold flex items-center justify-center gap-2"
+                >
+                  <FileText className="w-3.5 h-3.5" /> Buat Deskripsi
+                </button>
+              )
+            ) : (
+              <div className="space-y-2">
+                <textarea
+                  value={bioDraft}
+                  onChange={(e) => setBioDraft(e.target.value.slice(0, 200))}
+                  rows={3}
+                  autoFocus
+                  placeholder="Tulis deskripsi singkat yang akan terlihat oleh partner chat…"
+                  className="w-full bg-slate-950/70 border border-slate-700 rounded-xl px-3 py-2.5 text-sm text-slate-100 outline-none placeholder:text-slate-500 resize-none focus:border-emerald-400/60"
+                />
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => { setBioDraft(savedBio); setEditingBio(false); }}
+                    className="flex-1 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-slate-200 text-xs font-bold"
+                  >
+                    Batal
+                  </button>
+                  <button
+                    onClick={saveBio}
+                    disabled={savingBio || bioDraft.trim() === savedBio.trim()}
+                    className="flex-1 py-2.5 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-400/40 text-emerald-100 text-xs font-bold disabled:opacity-50 flex items-center justify-center gap-2"
+                  >
+                    <FileText className="w-3.5 h-3.5" /> {savingBio ? "Menyimpan..." : "Simpan"}
+                  </button>
+                </div>
+                {!anonAccount && (
+                  <p className="text-[10px] text-slate-500 italic">Disimpan untuk perangkat ini. Daftar akun agar tetap tersimpan saat ganti perangkat.</p>
+                )}
+              </div>
+            )}
             <div className="text-[11px] text-slate-500 mt-2 italic">{showLastSeen ? "Terakhir dilihat aktif untuk partner chat." : "Terakhir dilihat kamu disembunyikan."}</div>
           </div>
 
