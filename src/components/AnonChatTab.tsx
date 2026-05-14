@@ -1972,20 +1972,27 @@ export default function AnonChatTab() {
   );
 }
 
-function InnerNav({ active, onChange }: { active: "search" | "friends" | "settings"; onChange: (k: "search" | "friends" | "settings") => void }) {
-  const items: Array<{ k: "search" | "friends" | "settings"; Icon: any; label: string }> = [
-    { k: "search", Icon: Search, label: "Cari" },
-    { k: "friends", Icon: Users, label: "Teman" },
-    { k: "settings", Icon: SettingsIcon, label: "Pengaturan" },
+type NavKey = "chat" | "friends" | "explore" | "account";
+function InnerNav({ active, onChange, friendBadge = 0 }: { active: NavKey; onChange: (k: NavKey) => void; friendBadge?: number }) {
+  const items: Array<{ k: NavKey; Icon: any; label: string; badge?: number }> = [
+    { k: "chat", Icon: MessageCircle, label: "Obrolan" },
+    { k: "friends", Icon: Users, label: "Teman", badge: friendBadge },
+    { k: "explore", Icon: Compass, label: "Jelajah" },
+    { k: "account", Icon: UserIcon, label: "Akun" },
   ];
   return (
     <div className="flex items-center justify-around border-t border-purple-400/15 bg-slate-950/80 backdrop-blur py-2.5">
-      {items.map(({ k, Icon, label }) => {
+      {items.map(({ k, Icon, label, badge }) => {
         const on = active === k;
         return (
           <button key={k} onClick={() => onChange(k)}
-            className={`flex flex-col items-center gap-0.5 px-5 py-1 rounded-xl transition ${on ? "text-purple-300" : "text-slate-500 hover:text-slate-300"}`}>
-            <Icon className={`w-5 h-5 ${on ? "drop-shadow-[0_0_6px_rgba(192,132,252,0.7)]" : ""}`} strokeWidth={on ? 2.4 : 1.8} />
+            className={`relative flex flex-col items-center gap-0.5 px-3 py-1 rounded-xl transition ${on ? "text-purple-300" : "text-slate-500 hover:text-slate-300"}`}>
+            <span className="relative">
+              <Icon className={`w-5 h-5 ${on ? "drop-shadow-[0_0_6px_rgba(192,132,252,0.7)]" : ""}`} strokeWidth={on ? 2.4 : 1.8} />
+              {badge && badge > 0 ? (
+                <span className="absolute -top-1.5 -right-2 min-w-[16px] h-4 px-1 rounded-full bg-purple-500 text-white text-[9px] font-bold flex items-center justify-center border border-slate-950">{badge > 99 ? "99+" : badge}</span>
+              ) : null}
+            </span>
             <span className="text-[9.5px] font-semibold">{label}</span>
           </button>
         );
