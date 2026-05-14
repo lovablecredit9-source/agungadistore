@@ -1442,6 +1442,68 @@ export default function AnonChatTab() {
     );
   }
 
+  if (view === "callhistory") {
+    const fmtDur = (s: number) => s > 0 ? `${Math.floor(s/60)}:${String(s%60).padStart(2,"0")}` : "—";
+    const statusLabel: Record<string, string> = { answered: "Terjawab", missed: "Tak terjawab", declined: "Ditolak", cancelled: "Dibatalkan", ended: "Selesai" };
+    return (
+      <div className="rounded-3xl border-2 border-purple-400/30 bg-slate-950 min-h-[500px] flex flex-col">
+        <div className="flex items-center gap-2 p-4 border-b border-slate-800">
+          <button onClick={() => setView("prefs")} className="text-purple-300 text-sm flex items-center gap-1"><ArrowLeft className="w-4 h-4" /> Kembali</button>
+          <div className="flex-1 text-center font-bold text-slate-100">Riwayat Panggilan</div>
+          <button onClick={loadCallLogs} className="text-purple-300"><RefreshCw className="w-4 h-4" /></button>
+        </div>
+        <div className="flex-1 overflow-y-auto p-3 space-y-2">
+          {callLogs.length === 0 ? (
+            <div className="text-center text-slate-400 text-sm py-10">Belum ada panggilan.</div>
+          ) : callLogs.map(c => (
+            <div key={c.id} className="flex items-center gap-3 p-3 rounded-2xl bg-slate-900/60 border border-purple-400/20">
+              <div className={`w-9 h-9 rounded-full flex items-center justify-center ${c.status === "answered" || c.status === "ended" ? "bg-emerald-500/20 text-emerald-300" : c.status === "missed" ? "bg-rose-500/20 text-rose-300" : "bg-slate-700 text-slate-300"}`}>
+                <Phone className="w-4 h-4" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="font-semibold text-slate-100 truncate text-sm">{c.partner_nickname || "Stranger"}</div>
+                <div className="text-[10px] text-slate-400">
+                  {c.direction === "outgoing" ? "↗ Keluar" : "↙ Masuk"} · {statusLabel[c.status] || c.status} · {fmtDur(c.duration_seconds)}
+                </div>
+                <div className="text-[10px] text-slate-500">{new Date(c.started_at).toLocaleString("id-ID")}</div>
+              </div>
+              <button onClick={() => deleteCallLog(c.id)} className="w-8 h-8 rounded-full bg-slate-800 hover:bg-rose-500/30 text-slate-400 hover:text-rose-300 flex items-center justify-center"><Trash2 className="w-3.5 h-3.5" /></button>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (view === "history") {
+    return (
+      <div className="rounded-3xl border-2 border-purple-400/30 bg-slate-950 min-h-[500px] flex flex-col">
+        <div className="flex items-center gap-2 p-4 border-b border-slate-800">
+          <button onClick={() => setView("prefs")} className="text-purple-300 text-sm flex items-center gap-1"><ArrowLeft className="w-4 h-4" /> Kembali</button>
+          <div className="flex-1 text-center font-bold text-slate-100">Riwayat Match</div>
+          <button onClick={loadMatchHistory} className="text-purple-300"><RefreshCw className="w-4 h-4" /></button>
+        </div>
+        <p className="text-[11px] text-slate-400 italic px-4 py-2 border-b border-slate-800/50">Hapus partner agar tidak dipertemukan lagi saat cari acak. Tetap bisa ditemui jika sudah berteman.</p>
+        <div className="flex-1 overflow-y-auto p-3 space-y-2">
+          {matchHistory.length === 0 ? (
+            <div className="text-center text-slate-400 text-sm py-10">Belum ada riwayat match.</div>
+          ) : matchHistory.map(h => (
+            <div key={h.id} className="flex items-center gap-3 p-3 rounded-2xl bg-slate-900/60 border border-purple-400/20">
+              <div className="w-9 h-9 rounded-full bg-purple-500/30 flex items-center justify-center text-lg shrink-0">🥷</div>
+              <div className="flex-1 min-w-0">
+                <div className="font-semibold text-slate-100 truncate text-sm">{h.partner_nickname || "Stranger"}</div>
+                <div className="text-[10px] text-slate-400">{new Date(h.last_session_at).toLocaleString("id-ID")}</div>
+              </div>
+              <button onClick={() => blockMatchPartner(h.partner_visitor)} className="px-3 h-8 rounded-full bg-rose-500/15 hover:bg-rose-500/30 border border-rose-400/30 text-rose-200 text-[11px] font-bold flex items-center gap-1">
+                <Trash2 className="w-3 h-3" /> Hapus
+              </button>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
   if (view === "interest") {
     return (
       <div className="rounded-3xl border-2 border-purple-400/30 bg-slate-950 overflow-hidden">
