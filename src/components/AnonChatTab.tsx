@@ -208,6 +208,28 @@ export default function AnonChatTab() {
   const [editingBio, setEditingBio] = useState(false);
   const [savingBio, setSavingBio] = useState(false);
 
+  // Partner visitor id for current session (for call logs / blocking)
+  const partnerVisitorRef = useRef<string | null>(null);
+  // Photo preview before send
+  const [photoPreview, setPhotoPreview] = useState<{ file: File; url: string; caption: string; viewOnce: boolean } | null>(null);
+  // Voice recording state
+  const [recording, setRecording] = useState(false);
+  const [recordSecs, setRecordSecs] = useState(0);
+  const recorderRef = useRef<MediaRecorder | null>(null);
+  const recordChunksRef = useRef<Blob[]>([]);
+  const recordTimerRef = useRef<any>(null);
+  const recordStartRef = useRef<number>(0);
+  // Call log refs
+  const callDirRef = useRef<"outgoing" | "incoming" | null>(null);
+  const callStartedAtRef = useRef<string | null>(null);
+  const callAnsweredAtRef = useRef<string | null>(null);
+  const callConnectedRef = useRef(false);
+  // History lists
+  const [callLogs, setCallLogs] = useState<AnonCallLog[]>([]);
+  const [matchHistory, setMatchHistory] = useState<AnonMatchHistory[]>([]);
+  // Audio playback state for voice notes
+  const [playingAudio, setPlayingAudio] = useState<string | null>(null);
+
   // Onboarding & Explore (baru)
   const [onboardStep, setOnboardStep] = useState<1 | 2 | 3>(1);
   const [onboardInterests, setOnboardInterests] = useState<string[]>(() => {
