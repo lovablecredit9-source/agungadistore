@@ -6,6 +6,10 @@ import { moderateOutgoing } from "@/lib/chat-moderation";
 import { formatBanRemaining, type BanInfo } from "@/hooks/useAccountBan";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { AnonAccountDialog, fetchAnonAccount, type AnonAccount } from "@/components/AnonAccountDialog";
+import { useTheme } from "@/lib/theme";
+import { useLang } from "@/lib/i18n";
+import { LANGUAGES } from "@/lib/languages";
+import { Key, Keyboard, EyeOff, PhoneCall } from "lucide-react";
 
 const CS_WA = "085769302532";
 const CS_WA_LINK = `https://wa.me/62${CS_WA.replace(/^0/, "")}`;
@@ -88,7 +92,7 @@ interface AnonProfile { visitor_id: string; nickname: string | null; avatar_url:
 type PublicBioResponse = { success?: boolean; bio?: string | null; error?: string };
 type UpdateBioResponse = { success?: boolean; account?: AnonAccount | null; error?: string };
 
-type View = "lobby" | "prefs" | "account" | "interest" | "searching" | "chat" | "friends" | "support" | "notif";
+type View = "lobby" | "prefs" | "account" | "interest" | "searching" | "chat" | "friends" | "support" | "notif" | "appearance" | "chatopts" | "language" | "privacy";
 
 const INTERESTS = ["Apapun","Curhat","Main RP","Meme","Kesepian","Game","Anime","Film","Musik","Travel","Coding","Olahraga","Nongkrong","Belajar"];
 
@@ -107,6 +111,8 @@ function genNick() {
 
 export default function AnonChatTab() {
   const visitor = useMemo(() => getVisitorId(), []);
+  const { theme, setTheme } = useTheme();
+  const [lang, setLang] = useLang();
   const [view, setView] = useState<View>("lobby");
   const [nickname, setNickname] = useState<string>(() => localStorage.getItem("anon_nick") || genNick());
   const [myGender, setMyGender] = useState<string>(() => localStorage.getItem("anon_my_gender") || "any");
@@ -140,6 +146,11 @@ export default function AnonChatTab() {
   const [avatarPreset, setAvatarPreset] = useState<string>(() => localStorage.getItem("anon_avatar_preset") || "ninja");
   const [avatarUrl, setAvatarUrl] = useState<string>(() => localStorage.getItem("anon_avatar_url") || "");
   const [showLastSeen, setShowLastSeen] = useState<boolean>(() => localStorage.getItem("anon_show_last_seen") !== "off");
+  const [confirmClose, setConfirmClose] = useState<boolean>(() => localStorage.getItem("anon_confirm_close") === "on");
+  const [keyboardMode, setKeyboardMode] = useState<"button" | "keyboard">(() => (localStorage.getItem("anon_keyboard_mode") as "button" | "keyboard") || "button");
+  const [mediaBlur, setMediaBlur] = useState<"off" | "temp" | "all">(() => (localStorage.getItem("anon_media_blur") as "off" | "temp" | "all") || "temp");
+  const [onlineStatus, setOnlineStatus] = useState<boolean>(() => localStorage.getItem("anon_online_status") !== "off");
+  const [whoCanCall, setWhoCanCall] = useState<"all" | "friends" | "none">(() => (localStorage.getItem("anon_who_can_call") as "all" | "friends" | "none") || "all");
   const [showEmojiInput, setShowEmojiInput] = useState(false);
   const [anonAccount, setAnonAccount] = useState<AnonAccount | null>(null);
   const [showAccountDialog, setShowAccountDialog] = useState(false);
@@ -170,6 +181,11 @@ export default function AnonChatTab() {
   useEffect(() => { localStorage.setItem("anon_avatar_preset", avatarPreset); }, [avatarPreset]);
   useEffect(() => { localStorage.setItem("anon_avatar_url", avatarUrl); }, [avatarUrl]);
   useEffect(() => { localStorage.setItem("anon_show_last_seen", showLastSeen ? "on" : "off"); }, [showLastSeen]);
+  useEffect(() => { localStorage.setItem("anon_confirm_close", confirmClose ? "on" : "off"); }, [confirmClose]);
+  useEffect(() => { localStorage.setItem("anon_keyboard_mode", keyboardMode); }, [keyboardMode]);
+  useEffect(() => { localStorage.setItem("anon_media_blur", mediaBlur); }, [mediaBlur]);
+  useEffect(() => { localStorage.setItem("anon_online_status", onlineStatus ? "on" : "off"); }, [onlineStatus]);
+  useEffect(() => { localStorage.setItem("anon_who_can_call", whoCanCall); }, [whoCanCall]);
 
   const activeBan = !!banInfo && (banInfo.is_permanent || !banInfo.banned_until || new Date(banInfo.banned_until).getTime() > Date.now());
   const myAvatar = presetById(myProfile?.avatar_preset || avatarPreset);
@@ -1223,6 +1239,167 @@ export default function AnonChatTab() {
     );
   }
 
+  if (view === "appearance") {
+    const opts: Array<{ key: typeof theme; label: string }> = [
+      { key: "dark", label: "Tema gelap" },
+      { key: "light", label: "Tema terang" },
+      { key: "system", label: "Tema tampilan perangkat" },
+    ];
+    return (
+      <div className="rounded-3xl border-2 border-emerald-400/30 bg-gradient-to-b from-slate-950 to-emerald-950/20 min-h-[500px] flex flex-col">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-800/60">
+          <button onClick={() => setView("prefs")} className="text-emerald-300 text-sm">← Kembali</button>
+          <div className="font-bold text-slate-100">Tampilan</div>
+          <div className="w-12" />
+        </div>
+        <div className="flex-1 overflow-y-auto p-4">
+          <div className="rounded-2xl bg-slate-900/70 border border-slate-800 divide-y divide-slate-800 overflow-hidden">
+            {opts.map(o => (
+              <button key={o.key} onClick={() => { setTheme(o.key); toast.success(o.label + " diterapkan"); }}
+                className="w-full flex items-center gap-3 px-4 py-4 text-left hover:bg-slate-800/40">
+                <Check className={`w-5 h-5 ${theme === o.key ? "text-emerald-400" : "text-transparent"}`} />
+                <span className="text-slate-100 text-sm">{o.label}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+        <InnerNav active="settings" onChange={(k) => {
+          if (k === "search") setView("lobby");
+          else if (k === "friends") setView("friends");
+          else setView("prefs");
+        }} />
+      </div>
+    );
+  }
+
+  if (view === "chatopts") {
+    return (
+      <div className="rounded-3xl border-2 border-emerald-400/30 bg-gradient-to-b from-slate-950 to-emerald-950/20 min-h-[500px] flex flex-col">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-800/60">
+          <button onClick={() => setView("prefs")} className="text-emerald-300 text-sm">← Kembali</button>
+          <div className="font-bold text-slate-100">Opsi Obrolan</div>
+          <div className="w-12" />
+        </div>
+        <div className="flex-1 overflow-y-auto p-4 space-y-5">
+          <div className="space-y-2">
+            <div className="flex items-center gap-2 text-slate-300 text-sm font-semibold"><Key className="w-4 h-4" /> Konfirmasi Ganda</div>
+            <p className="text-[11px] text-slate-400">Aplikasi akan meminta konfirmasi sebelum menutup obrolan sementara</p>
+            <div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-4 flex items-center gap-3">
+              <div className="flex-1 text-sm text-slate-100">Meminta konfirmasi</div>
+              <button onClick={() => setConfirmClose(v => !v)}
+                className={`w-12 h-7 rounded-full p-0.5 transition ${confirmClose ? "bg-emerald-500" : "bg-slate-700"}`}>
+                <div className={`w-6 h-6 rounded-full bg-white transition ${confirmClose ? "translate-x-5" : ""}`} />
+              </button>
+            </div>
+          </div>
+          <div className="space-y-2">
+            <div className="flex items-center gap-2 text-slate-300 text-sm font-semibold"><Keyboard className="w-4 h-4" /> Pilihan Keyboard</div>
+            <p className="text-[11px] text-slate-400">Pilih apa yang akan ditampilkan di awal obrolan: tampilkan tombol interaksi obrolan atau buka keyboard ketik</p>
+            <div className="rounded-2xl bg-slate-900/70 border border-slate-800 divide-y divide-slate-800 overflow-hidden">
+              {[{k:"keyboard",label:"Buka keyboard"},{k:"button",label:"Tampilkan tombol"}].map(o => (
+                <button key={o.k} onClick={() => setKeyboardMode(o.k as "button" | "keyboard")}
+                  className="w-full flex items-center gap-3 px-4 py-3.5 text-left hover:bg-slate-800/40">
+                  <Check className={`w-5 h-5 ${keyboardMode === o.k ? "text-emerald-400" : "text-transparent"}`} />
+                  <span className="text-slate-100 text-sm">{o.label}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+        <InnerNav active="settings" onChange={(k) => {
+          if (k === "search") setView("lobby");
+          else if (k === "friends") setView("friends");
+          else setView("prefs");
+        }} />
+      </div>
+    );
+  }
+
+  if (view === "language") {
+    return (
+      <div className="rounded-3xl border-2 border-emerald-400/30 bg-gradient-to-b from-slate-950 to-emerald-950/20 min-h-[500px] flex flex-col">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-800/60">
+          <button onClick={() => setView("prefs")} className="text-emerald-300 text-sm">← Kembali</button>
+          <div className="font-bold text-slate-100">Bahasa</div>
+          <div className="w-12" />
+        </div>
+        <div className="flex-1 overflow-y-auto p-4 space-y-3">
+          <p className="text-[11px] text-slate-400 px-1">Kamu hanya akan dicocokkan dengan pengguna yang bahasanya sama</p>
+          <div className="rounded-2xl bg-slate-900/70 border border-slate-800 divide-y divide-slate-800 overflow-hidden">
+            {LANGUAGES.map(l => (
+              <button key={l.code} onClick={() => { setLang(l.code); toast.success(l.name); }}
+                className="w-full flex items-center gap-3 px-4 py-3.5 text-left hover:bg-slate-800/40">
+                <Check className={`w-5 h-5 shrink-0 ${lang === l.code ? "text-emerald-400" : "text-transparent"}`} />
+                <span className="text-base">{l.flag}</span>
+                <span className="text-slate-100 text-sm flex-1 truncate">{l.name}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+        <InnerNav active="settings" onChange={(k) => {
+          if (k === "search") setView("lobby");
+          else if (k === "friends") setView("friends");
+          else setView("prefs");
+        }} />
+      </div>
+    );
+  }
+
+  if (view === "privacy") {
+    return (
+      <div className="rounded-3xl border-2 border-emerald-400/30 bg-gradient-to-b from-slate-950 to-emerald-950/20 min-h-[500px] flex flex-col">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-800/60">
+          <button onClick={() => setView("prefs")} className="text-emerald-300 text-sm">← Kembali</button>
+          <div className="font-bold text-slate-100">Privasi</div>
+          <div className="w-12" />
+        </div>
+        <div className="flex-1 overflow-y-auto p-4 space-y-5">
+          <div className="space-y-2">
+            <div className="flex items-center gap-2 text-slate-300 text-sm font-semibold"><UserCheck className="w-4 h-4" /> Status online</div>
+            <p className="text-[11px] text-slate-400">Jika status online disembunyikan, kamu tidak bisa melihat status online pengguna lain</p>
+            <div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-4 flex items-center gap-3">
+              <div className="flex-1 text-sm text-slate-100">Tampilkan status online saya</div>
+              <button onClick={() => setOnlineStatus(v => !v)}
+                className={`w-12 h-7 rounded-full p-0.5 transition ${onlineStatus ? "bg-emerald-500" : "bg-slate-700"}`}>
+                <div className={`w-6 h-6 rounded-full bg-white transition ${onlineStatus ? "translate-x-5" : ""}`} />
+              </button>
+            </div>
+          </div>
+          <div className="space-y-2">
+            <div className="flex items-center gap-2 text-slate-300 text-sm font-semibold"><EyeOff className="w-4 h-4" /> Media kabur</div>
+            <p className="text-[11px] text-slate-400">Gambar dan video yang masuk akan dibuat kabur. Anda masih bisa melihat yang aslinya dengan mengetuknya</p>
+            <div className="rounded-2xl bg-slate-900/70 border border-slate-800 divide-y divide-slate-800 overflow-hidden">
+              {[{k:"off",label:"Nonaktifkan"},{k:"temp",label:"Aktifkan di chat sementara"},{k:"all",label:"Aktifkan di semua chat"}].map(o => (
+                <button key={o.k} onClick={() => setMediaBlur(o.k as "off" | "temp" | "all")}
+                  className="w-full flex items-center gap-3 px-4 py-3.5 text-left hover:bg-slate-800/40">
+                  <Check className={`w-5 h-5 ${mediaBlur === o.k ? "text-emerald-400" : "text-transparent"}`} />
+                  <span className="text-slate-100 text-sm">{o.label}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="space-y-2">
+            <div className="flex items-center gap-2 text-slate-300 text-sm font-semibold"><PhoneCall className="w-4 h-4" /> Siapa yang dapat menelepon saya</div>
+            <div className="rounded-2xl bg-slate-900/70 border border-slate-800 divide-y divide-slate-800 overflow-hidden">
+              {[{k:"all",label:"Semua"},{k:"friends",label:"Teman"},{k:"none",label:"Tak seorang pun"}].map(o => (
+                <button key={o.k} onClick={() => setWhoCanCall(o.k as "all" | "friends" | "none")}
+                  className="w-full flex items-center gap-3 px-4 py-3.5 text-left hover:bg-slate-800/40">
+                  <Check className={`w-5 h-5 ${whoCanCall === o.k ? "text-emerald-400" : "text-transparent"}`} />
+                  <span className="text-slate-100 text-sm">{o.label}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+        <InnerNav active="settings" onChange={(k) => {
+          if (k === "search") setView("lobby");
+          else if (k === "friends") setView("friends");
+          else setView("prefs");
+        }} />
+      </div>
+    );
+  }
+
   if (view === "prefs") {
     const genderLabel = myGender === "male" ? "pria" : myGender === "female" ? "wanita" : "rahasia";
     return (
@@ -1313,10 +1490,10 @@ export default function AnonChatTab() {
               { icon: Link2, label: "Pengaturan akun", desc: "Email, sandi & deskripsi", onClick: () => setView("account") },
               { icon: HelpCircle, label: "Dukungan", desc: "FAQ + tombol CS WhatsApp", onClick: () => setView("support") },
               { icon: Bell, label: "Notifikasi dan suara", desc: (soundOn ? "Suara aktif" : "Suara mati") + " · " + (notifOn ? "Notifikasi aktif" : "Notifikasi mati"), onClick: () => setView("notif") },
-              { icon: Moon, label: "Tampilan", desc: "Tema gelap aktif", onClick: () => toast.info("Tema gelap aktif untuk Anon Chat") },
-              { icon: MessageSquare, label: "Opsi Obrolan", desc: showLastSeen ? "Terakhir dilihat: aktif" : "Terakhir dilihat: nonaktif", onClick: () => setShowLastSeen(v => !v) },
-              { icon: Globe, label: "Bahasa", desc: "Mengikuti bahasa aplikasi", onClick: () => toast.info("Atur bahasa dari menu utama aplikasi") },
-              { icon: Lock, label: "Privasi", desc: "Anon Chat tidak menyimpan identitas asli", onClick: () => toast.info("Anon Chat tanpa identitas asli — chat terhapus saat sesi berakhir") },
+              { icon: Moon, label: "Tampilan", desc: theme === "dark" ? "Tema gelap" : theme === "light" ? "Tema terang" : "Tema sistem", onClick: () => setView("appearance") },
+              { icon: MessageSquare, label: "Opsi Obrolan", desc: confirmClose ? "Konfirmasi ganda aktif" : "Konfirmasi ganda nonaktif", onClick: () => setView("chatopts") },
+              { icon: Globe, label: "Bahasa", desc: LANGUAGES.find(l => l.code === lang)?.name || lang, onClick: () => setView("language") },
+              { icon: Lock, label: "Privasi", desc: onlineStatus ? "Status online aktif" : "Status online disembunyikan", onClick: () => setView("privacy") },
               { icon: ThumbsUp, label: "Beri rating", desc: "Bantu kami berkembang", onClick: () => { try { window.open("https://wa.me/6285769302532?text=" + encodeURIComponent("Halo, saya mau beri rating Anon Chat"), "_blank"); } catch { /* ignore */ } } },
               { icon: Info, label: "Tentang", desc: "Anon Chat by Agung Adi Store", onClick: () => toast.info("Anon Chat — bagian dari Agung Adi Store. Murah & Terpercaya.") },
             ].map((it, i) => (
