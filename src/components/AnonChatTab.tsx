@@ -552,6 +552,8 @@ export default function AnonChatTab() {
     id: m.id, sender: m.sender_visitor_id, content: m.content, image_url: m.image_url ?? null,
     created_at: m.created_at, is_read: !!m.is_read, reply_to_id: m.reply_to_id ?? null, is_deleted: !!m.is_deleted,
     deleted_for: m.deleted_for ?? [],
+    media_url: m.media_url ?? null, media_type: m.media_type ?? null, caption: m.caption ?? null,
+    view_once: !!m.view_once, viewed_at: m.viewed_at ?? null, audio_duration: m.audio_duration ?? null,
   });
 
   const enterSession = async (id: string, partnerNick: string | null, partnerGender: string | null) => {
