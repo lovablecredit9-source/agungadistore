@@ -2223,6 +2223,8 @@ export default function AnonChatTab() {
           <div className="rounded-2xl bg-slate-900/70 border border-slate-800 divide-y divide-slate-800 overflow-hidden">
             {[
               { icon: Link2, label: "Pengaturan akun", desc: "Email, sandi & deskripsi", onClick: () => setView("account") },
+              { icon: PhoneCall, label: "Riwayat panggilan", desc: "Voice call masuk & keluar", onClick: () => { loadCallLogs(); setView("callhistory"); } },
+              { icon: ClipboardList, label: "Riwayat match", desc: "Partner yang pernah ditemui", onClick: () => { loadMatchHistory(); setView("history"); } },
               { icon: HelpCircle, label: "Dukungan", desc: "FAQ + tombol CS WhatsApp", onClick: () => setView("support") },
               { icon: Bell, label: "Notifikasi dan suara", desc: (soundOn ? "Suara aktif" : "Suara mati") + " · " + (notifOn ? "Notifikasi aktif" : "Notifikasi mati"), onClick: () => setView("notif") },
               { icon: Moon, label: "Tampilan", desc: theme === "dark" ? "Tema gelap" : theme === "light" ? "Tema terang" : "Tema sistem", onClick: () => setView("appearance") },
