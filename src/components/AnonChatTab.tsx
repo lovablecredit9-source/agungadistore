@@ -92,7 +92,7 @@ interface AnonProfile { visitor_id: string; nickname: string | null; avatar_url:
 type PublicBioResponse = { success?: boolean; bio?: string | null; error?: string };
 type UpdateBioResponse = { success?: boolean; account?: AnonAccount | null; error?: string };
 
-type View = "lobby" | "prefs" | "account" | "interest" | "searching" | "chat" | "friends" | "support" | "notif" | "appearance" | "chatopts" | "language" | "privacy";
+type View = "lobby" | "prefs" | "account" | "interest" | "searching" | "chat" | "friends" | "support" | "notif" | "appearance" | "chatopts" | "language" | "privacy" | "about" | "about_privacy" | "about_rules" | "about_tutorial" | "about_system";
 
 const INTERESTS = ["Apapun","Curhat","Main RP","Meme","Kesepian","Game","Anime","Film","Musik","Travel","Coding","Olahraga","Nongkrong","Belajar"];
 
