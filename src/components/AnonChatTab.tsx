@@ -1223,21 +1223,38 @@ export default function AnonChatTab() {
             );
           })()}
           {viewOnceViewer && (
-            <div className="fixed inset-0 z-50 bg-black flex flex-col" onContextMenu={(e) => e.preventDefault()}>
-              <div className="h-12 px-3 flex items-center justify-between text-white bg-black/80">
-                <button onClick={() => setViewOnceViewer(null)} className="w-9 h-9 rounded-full flex items-center justify-center hover:bg-white/10" aria-label="Tutup foto sekali lihat">
-                  <ArrowLeft className="w-5 h-5" />
+            <div
+              className="fixed inset-0 z-[9999] bg-black flex flex-col"
+              onContextMenu={(e) => e.preventDefault()}
+              style={{ paddingTop: "env(safe-area-inset-top)", paddingBottom: "env(safe-area-inset-bottom)" }}
+            >
+              <div className="h-14 px-3 flex items-center justify-between text-white bg-black/90 shrink-0">
+                <button
+                  onClick={() => setViewOnceViewer(null)}
+                  className="w-10 h-10 rounded-full flex items-center justify-center bg-white/10 hover:bg-white/20 active:scale-95 transition"
+                  aria-label="Tutup foto sekali lihat"
+                >
+                  <ArrowLeft className="w-6 h-6" />
                 </button>
                 <div className="flex items-center gap-1.5 text-xs font-semibold text-white/90">
                   <Eye className="w-4 h-4" /> Foto sekali lihat
                 </div>
-                <div className="w-9" />
+                <div className="w-10" />
               </div>
-              <div className="flex-1 min-h-0 flex items-center justify-center bg-black">
-                <img src={viewOnceViewer.url} alt="Foto sekali lihat" className="max-w-full max-h-full object-contain select-none" draggable={false} />
+              <div
+                className="flex-1 min-h-0 flex items-center justify-center bg-black select-none"
+                style={{ WebkitUserSelect: "none", userSelect: "none", WebkitTouchCallout: "none" }}
+              >
+                <img
+                  src={viewOnceViewer.url}
+                  alt="Foto sekali lihat"
+                  className="max-w-full max-h-full object-contain select-none pointer-events-none"
+                  draggable={false}
+                  style={{ WebkitTouchCallout: "none", WebkitUserSelect: "none" }}
+                />
               </div>
-              <div className="px-4 py-3 text-center text-[11px] text-white/70 bg-black/80">
-                Foto akan tertutup dan tidak bisa dibuka lagi setelah keluar.
+              <div className="px-4 py-3 text-center text-[11px] text-white/70 bg-black/90 shrink-0">
+                Screenshot dilarang. Foto akan tertutup otomatis jika layar berpindah.
               </div>
             </div>
           )}
