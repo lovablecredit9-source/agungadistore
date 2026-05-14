@@ -919,6 +919,40 @@ export default function AnonChatTab() {
         {/* Messages */}
         <div ref={scrollRef} className="flex-1 overflow-y-auto p-3 space-y-1.5">
           <div className="text-center text-xs text-purple-300/50 py-2">— Awal obrolan anonim —</div>
+          {callState !== "idle" && (
+            <div className="my-2 px-3 py-2.5 rounded-2xl bg-gradient-to-r from-purple-600/30 to-violet-600/30 border border-purple-400/30 flex items-center gap-3">
+              <div className="relative w-9 h-9 rounded-full bg-purple-500/30 flex items-center justify-center shrink-0">
+                <Phone className="w-4 h-4 text-purple-100" />
+                {(callState === "outgoing" || callState === "incoming") && (
+                  <span className="absolute inset-0 rounded-full border-2 border-purple-300/60 animate-ping" />
+                )}
+              </div>
+              <div className="flex-1 min-w-0 text-left">
+                <div className="text-[12px] font-bold text-white truncate">
+                  {callState === "outgoing" && "Memanggil..."}
+                  {callState === "incoming" && `${partner?.nick || "Partner"} memanggil`}
+                  {callState === "connected" && (callMuted ? "Mic dimatikan" : "Tersambung")}
+                </div>
+                <div className="text-[10px] text-purple-200/80 tabular-nums">
+                  {callState === "connected" ? fmtCallTime(callSeconds) : "Voice call · WebRTC"}
+                </div>
+              </div>
+              {callState === "incoming" && (
+                <button onClick={acceptVoiceCall} className="h-9 px-3 rounded-full bg-emerald-500 hover:bg-emerald-400 text-white text-[12px] font-bold flex items-center gap-1.5">
+                  <Phone className="w-3.5 h-3.5" /> Terima
+                </button>
+              )}
+              {callState === "connected" && (
+                <button onClick={toggleCallMute} className="h-9 w-9 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center" title={callMuted ? "Aktifkan mic" : "Matikan mic"}>
+                  {callMuted ? <VolumeX className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
+                </button>
+              )}
+              <button onClick={() => cleanupCall(true)} className="h-9 w-9 rounded-full bg-rose-500 hover:bg-rose-400 text-white flex items-center justify-center" title="Akhiri panggilan">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          )}
+          <audio ref={remoteAudioRef} autoPlay playsInline className="hidden" />
           {messages.map((m, idx) => {
             if ((m.deleted_for || []).includes(visitor)) return null;
             const mine = m.sender === visitor;
