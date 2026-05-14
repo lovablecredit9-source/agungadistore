@@ -806,10 +806,18 @@ export default function AnonChatTab() {
       const pc = pcRef.current;
       if (payload.kind === "offer") {
         pendingOfferRef.current = payload.sdp;
+        callDirRef.current = "incoming";
+        callStartedAtRef.current = new Date().toISOString();
+        callAnsweredAtRef.current = null;
+        callConnectedRef.current = false;
         setCallState("incoming");
         playPing();
       } else if (payload.kind === "answer" && pc) {
-        try { await pc.setRemoteDescription(new RTCSessionDescription(payload.sdp)); } catch {}
+        try {
+          await pc.setRemoteDescription(new RTCSessionDescription(payload.sdp));
+          if (!callAnsweredAtRef.current) callAnsweredAtRef.current = new Date().toISOString();
+          callConnectedRef.current = true;
+        } catch {}
       } else if (payload.kind === "ice" && pc) {
         try { await pc.addIceCandidate(new RTCIceCandidate(payload.candidate)); } catch {}
       } else if (payload.kind === "hangup") {
