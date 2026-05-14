@@ -1148,9 +1148,14 @@ export default function AnonChatTab() {
                 </div>
               </div>
               {callState === "incoming" && (
-                <button onClick={acceptVoiceCall} className="h-9 px-3 rounded-full bg-emerald-500 hover:bg-emerald-400 text-white text-[12px] font-bold flex items-center gap-1.5">
-                  <Phone className="w-3.5 h-3.5" /> Terima
-                </button>
+                <>
+                  <button onClick={acceptVoiceCall} className="h-9 px-3 rounded-full bg-emerald-500 hover:bg-emerald-400 text-white text-[12px] font-bold flex items-center gap-1.5">
+                    <Phone className="w-3.5 h-3.5" /> Terima
+                  </button>
+                  <button onClick={declineVoiceCall} className="h-9 px-3 rounded-full bg-rose-500 hover:bg-rose-400 text-white text-[12px] font-bold flex items-center gap-1.5">
+                    <X className="w-3.5 h-3.5" /> Tolak
+                  </button>
+                </>
               )}
               {callState === "connected" && (
                 <button onClick={toggleCallMute} className="h-9 w-9 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center" title={callMuted ? "Aktifkan mic" : "Matikan mic"}>
