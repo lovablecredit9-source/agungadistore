@@ -856,7 +856,9 @@ export default function AnonChatTab() {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-44 bg-slate-950 border-slate-800 text-slate-100">
               <DropdownMenuItem onClick={newPartner}>Partner baru</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => toast.info("Fitur voice segera hadir")}>Mulai voice</DropdownMenuItem>
+              <DropdownMenuItem onClick={startVoiceCall} disabled={callState !== "idle"}>
+                {callState === "idle" ? "Mulai voice call" : "Panggilan aktif"}
+              </DropdownMenuItem>
               <DropdownMenuItem onClick={endChat} className="text-rose-300">Akhiri chat</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
