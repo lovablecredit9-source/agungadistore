@@ -1401,6 +1401,208 @@ export default function AnonChatTab() {
     );
   }
 
+  const APP_VERSION = "v5.35.0";
+  const aboutBack = (target: View = "about") => (
+    <InnerNav active="settings" onChange={(k) => {
+      if (k === "search") setView("lobby");
+      else if (k === "friends") setView("friends");
+      else setView("prefs");
+    }} />
+  );
+
+  if (view === "about") {
+    const items = [
+      { icon: Archive, label: "Pulihkan langganan", onClick: async () => {
+        try {
+          const acc = await fetchAnonAccount(visitor);
+          if (acc) { setAnonAccount(acc); toast.success("Akun dipulihkan"); }
+          else toast.info("Tidak ada langganan aktif");
+        } catch { toast.error("Gagal memulihkan"); }
+      } },
+      { icon: HardDrive, label: "Privasi data", onClick: () => setView("about_privacy") },
+      { icon: ClipboardList, label: "Aturan", onClick: () => setView("about_rules") },
+      { icon: BookOpen, label: "Tutorial", onClick: () => { setTutorialStep(0); setView("about_tutorial"); } },
+      { icon: Smartphone, label: "Informasi Sistem", onClick: () => setView("about_system") },
+    ];
+    return (
+      <div className="rounded-3xl border-2 border-emerald-400/30 bg-gradient-to-b from-slate-950 to-emerald-950/20 min-h-[500px] flex flex-col">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-800/60">
+          <button onClick={() => setView("prefs")} className="text-emerald-300 text-sm">← Kembali</button>
+          <div className="font-bold text-slate-100">Tentang</div>
+          <div className="w-12" />
+        </div>
+        <div className="flex-1 overflow-y-auto p-4">
+          <div className="rounded-2xl bg-slate-900/70 border border-slate-800 divide-y divide-slate-800 overflow-hidden">
+            {items.map((it, i) => (
+              <button key={i} onClick={it.onClick} className="w-full flex items-center gap-3 px-4 py-4 text-left hover:bg-slate-800/40">
+                <it.icon className="w-5 h-5 text-emerald-300 shrink-0" />
+                <span className="text-slate-100 text-sm flex-1">{it.label}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+        {aboutBack()}
+      </div>
+    );
+  }
+
+  if (view === "about_privacy") {
+    return (
+      <div className="rounded-3xl border-2 border-emerald-400/30 bg-gradient-to-b from-slate-950 to-emerald-950/20 min-h-[500px] flex flex-col">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-800/60">
+          <button onClick={() => setView("about")} className="text-emerald-300 text-sm">← Kembali</button>
+          <div className="font-bold text-slate-100">Privasi data</div>
+          <div className="w-12" />
+        </div>
+        <div className="flex-1 overflow-y-auto p-5 space-y-4 text-slate-200 text-sm leading-relaxed">
+          <h3 className="font-bold text-base text-slate-100">Privasi data</h3>
+          <p>
+            Seluruh chat dan file media disimpan di server kami.<br />
+            Mereka digunakan untuk:<br />
+            — sistem deteksi otomatis spam<br />
+            — memulihkan chat setelah aplikasi diinstal ulang
+          </p>
+          <p>
+            Datamu tidak pernah dan tidak akan pernah dijual ke siapa pun. Selain itu, datamu terjaga aman dari akses langsung para penjahat siber. Data hanya dapat diakses oleh sistem anti spam
+          </p>
+        </div>
+        {aboutBack()}
+      </div>
+    );
+  }
+
+  if (view === "about_rules") {
+    const rules = [
+      { t: "Iklan", d: "Dilarang keras membagikan tautan atau mempromosikan saluran pihak ketiga, akun pribadi, situs web, atau platform eksternal lainnya di awal obrolan atau selama percakapan apa pun." },
+      { t: "Menjual dan meminta-minta", d: "Upaya untuk menjual barang atau jasa apa pun tidak diperbolehkan. Meminta uang, bantuan materi, atau permintaan serupa juga dilarang keras." },
+      { t: "Mengirim pornografi anak", d: "Berkomunikasi dengan cara apa pun yang termasuk pelecehan atau eksploitasi anak adalah tindakan yang sangat dilarang." },
+      { t: "Penghinaan dan Ancaman", d: "Menghina, melecehkan, atau mengancam pengguna lain dengan cara apa pun tidak diperbolehkan." },
+      { t: "Kekerasan", d: "Membagikan konten yang menggambarkan atau mempromosikan kekerasan dalam bentuk apa pun dilarang keras." },
+      { t: "Konten Penghinaan", d: "Menyebarkan ujaran kebencian terhadap suku, agama, ras, atau golongan tertentu akan langsung diberi sanksi." },
+      { t: "Spam", d: "Mengirim pesan berulang, karakter acak, atau konten yang mengganggu pengguna lain akan menyebabkan akun diblokir otomatis." },
+      { t: "Identitas Palsu", d: "Berpura-pura menjadi orang lain atau menyamar sebagai admin / staf resmi adalah pelanggaran berat." },
+    ];
+    return (
+      <div className="rounded-3xl border-2 border-emerald-400/30 bg-gradient-to-b from-slate-950 to-emerald-950/20 min-h-[500px] flex flex-col">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-800/60">
+          <button onClick={() => setView("about")} className="text-emerald-300 text-sm">← Kembali</button>
+          <div className="font-bold text-slate-100">Aturan</div>
+          <div className="w-12" />
+        </div>
+        <div className="flex-1 overflow-y-auto p-5 space-y-5">
+          {rules.map(r => (
+            <div key={r.t}>
+              <h3 className="font-bold text-slate-100 text-base mb-1.5">{r.t}</h3>
+              <p className="text-sm text-slate-300 leading-relaxed">{r.d}</p>
+            </div>
+          ))}
+        </div>
+        {aboutBack()}
+      </div>
+    );
+  }
+
+  if (view === "about_tutorial") {
+    const slides = [
+      { gradient: "from-amber-400 via-orange-500 to-rose-500", emoji: "🌅", text: "Di aplikasi ini, kamu bisa melakukan panggilan telepon dan mengirim foto serta pesan suara" },
+      { gradient: "from-emerald-400 via-teal-500 to-cyan-500", emoji: "🥷", text: "Ngobrol anonim tanpa nama asli. Identitasmu aman, partnermu pun begitu" },
+      { gradient: "from-indigo-500 via-purple-500 to-pink-500", emoji: "💬", text: "Suka dengan partner chatmu? Kirim permintaan teman dan lanjutkan obrolan kapan saja" },
+      { gradient: "from-rose-500 via-fuchsia-500 to-purple-600", emoji: "🛡️", text: "Patuhi aturan komunitas. Pelanggar akan dibanned otomatis demi kenyamanan bersama" },
+    ];
+    const s = slides[tutorialStep];
+    const last = tutorialStep === slides.length - 1;
+    return (
+      <div className="rounded-3xl border-2 border-indigo-400/30 bg-gradient-to-b from-indigo-950/40 via-slate-950 to-slate-950 min-h-[500px] flex flex-col">
+        <div className="flex items-center justify-center gap-2 px-5 py-4 border-b border-slate-800/60 relative">
+          <span className="text-2xl">🥷</span>
+          <span className="font-extrabold text-indigo-100 text-lg">anon.chat</span>
+          <button onClick={() => setView("about")} className="absolute right-4 text-slate-400 hover:text-slate-200">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+        <div className="flex-1 overflow-y-auto p-5 flex flex-col">
+          <div className="rounded-2xl bg-slate-100 p-3 shadow-2xl mb-3">
+            <div className={`aspect-square rounded-xl bg-gradient-to-br ${s.gradient} flex items-center justify-center text-7xl`}>
+              {s.emoji}
+            </div>
+            <div className="text-slate-700 text-sm mt-3 leading-relaxed">{s.text}</div>
+          </div>
+          <div className="text-[11px] text-slate-500 px-1">16:32</div>
+          <p className="text-slate-200 text-base mt-6 leading-relaxed text-center px-2">{s.text}</p>
+          <div className="flex gap-1.5 justify-center mt-6">
+            {slides.map((_, i) => (
+              <div key={i} className={`h-1.5 rounded-full transition-all ${i === tutorialStep ? "w-6 bg-indigo-400" : "w-1.5 bg-slate-700"}`} />
+            ))}
+          </div>
+          <div className="flex-1" />
+          <div className="flex justify-end mt-6">
+            <button
+              onClick={() => last ? setView("about") : setTutorialStep(s => s + 1)}
+              className="w-14 h-14 rounded-full bg-indigo-500 hover:bg-indigo-600 text-white flex items-center justify-center shadow-xl shadow-indigo-500/40"
+            >
+              {last ? <span className="text-xs font-bold">Selesai</span> : <ArrowRight className="w-6 h-6" />}
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (view === "about_system") {
+    const ua = typeof navigator !== "undefined" ? navigator.userAgent : "";
+    const uaData = (typeof navigator !== "undefined" ? (navigator as Navigator & { userAgentData?: { brands?: { brand: string; version: string }[]; platform?: string; mobile?: boolean } }).userAgentData : undefined);
+    const deviceModel = (() => {
+      const m = ua.match(/\(([^)]+)\)/);
+      if (!m) return "Browser";
+      const parts = m[1].split(";").map(s => s.trim());
+      const mobile = parts.find(p => /Build|SM-|CPH|Pixel|iPhone|Mi |Redmi|OPPO|vivo/i.test(p));
+      return mobile || parts[parts.length - 1] || "Browser";
+    })();
+    const osName = (() => {
+      if (uaData?.platform) return uaData.platform;
+      if (/Android (\d+)/i.test(ua)) return "Android " + ua.match(/Android (\d+)/i)![1];
+      if (/iPhone OS (\d+)/i.test(ua)) return "iOS " + ua.match(/iPhone OS (\d+)/i)![1];
+      if (/Windows NT/i.test(ua)) return "Windows";
+      if (/Mac OS X/i.test(ua)) return "macOS";
+      if (/Linux/i.test(ua)) return "Linux";
+      return "Unknown";
+    })();
+    const Field = ({ label, value }: { label: string; value: string }) => (
+      <div className="py-3">
+        <div className="text-xs text-slate-400">{label}</div>
+        <div className="text-slate-100 text-sm font-mono break-all mt-0.5">{value}</div>
+      </div>
+    );
+    return (
+      <div className="rounded-3xl border-2 border-emerald-400/30 bg-gradient-to-b from-slate-950 to-emerald-950/20 min-h-[500px] flex flex-col">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-800/60">
+          <button onClick={() => setView("about")} className="text-emerald-300 text-sm">← Kembali</button>
+          <div className="font-bold text-slate-100">Informasi Sistem</div>
+          <div className="w-12" />
+        </div>
+        <div className="flex-1 overflow-y-auto p-4 space-y-3">
+          <div className="rounded-2xl bg-slate-900/70 border border-slate-800 px-4 divide-y divide-slate-800">
+            <Field label="Versi aplikasi" value={APP_VERSION} />
+            <Field label="ID Akun" value={visitor} />
+            <Field label="Perangkat" value={deviceModel} />
+            <Field label="Sistem" value={osName} />
+          </div>
+          <div className="rounded-2xl bg-slate-900/70 border border-slate-800 divide-y divide-slate-800 overflow-hidden">
+            <button onClick={() => setView("about_rules")} className="w-full flex items-center gap-3 px-4 py-3.5 text-left hover:bg-slate-800/40">
+              <FileText className="w-5 h-5 text-emerald-300 shrink-0" />
+              <span className="text-slate-100 text-sm">Ketentuan Penggunaan</span>
+            </button>
+            <button onClick={() => setView("about_privacy")} className="w-full flex items-center gap-3 px-4 py-3.5 text-left hover:bg-slate-800/40">
+              <ClipboardList className="w-5 h-5 text-emerald-300 shrink-0" />
+              <span className="text-slate-100 text-sm">Kebijakan Privasi</span>
+            </button>
+          </div>
+        </div>
+        {aboutBack()}
+      </div>
+    );
+  }
+
   if (view === "prefs") {
     const genderLabel = myGender === "male" ? "pria" : myGender === "female" ? "wanita" : "rahasia";
     return (
