@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Search, Users, Settings as SettingsIcon, Send, X, RefreshCw, UserPlus, Heart, ChevronRight, Sparkles, Shield, ImagePlus, Smile, Reply, Trash2, Check, CheckCheck, MessageCircle, UserCheck, UserX, HelpCircle, Bell, Phone, Volume2, VolumeX, Eye, AlertTriangle, LogOut, Copy, Flag, Plus, FileText } from "lucide-react";
+import { Search, Users, Settings as SettingsIcon, Send, X, RefreshCw, UserPlus, Heart, ChevronRight, Sparkles, Shield, ImagePlus, Smile, Reply, Trash2, Check, CheckCheck, MessageCircle, UserCheck, UserX, HelpCircle, Bell, Phone, Volume2, VolumeX, Eye, AlertTriangle, LogOut, Copy, Flag, Plus, FileText, Moon, MessageSquare, Globe, Lock, ThumbsUp, Info, Link2 } from "lucide-react";
 import { toast } from "sonner";
 import { moderateOutgoing } from "@/lib/chat-moderation";
 import { formatBanRemaining, type BanInfo } from "@/hooks/useAccountBan";
@@ -1310,9 +1310,15 @@ export default function AnonChatTab() {
           {/* Settings list */}
           <div className="rounded-2xl bg-slate-900/70 border border-slate-800 divide-y divide-slate-800 overflow-hidden">
             {[
-              { icon: Shield, label: "Akun Anon Chat", desc: "Mandiri · tidak terikat saldo", onClick: () => setView("account") },
-              { icon: HelpCircle, label: "Dukungan & pertanyaan umum", desc: "FAQ + tombol CS WhatsApp", onClick: () => setView("support") },
-              { icon: Bell, label: "Notifikasi & suara", desc: (soundOn ? "Suara aktif" : "Suara mati") + " · " + (notifOn ? "Notifikasi aktif" : "Notifikasi mati"), onClick: () => setView("notif") },
+              { icon: Link2, label: "Pengaturan akun", desc: "Email, sandi & deskripsi", onClick: () => setView("account") },
+              { icon: HelpCircle, label: "Dukungan", desc: "FAQ + tombol CS WhatsApp", onClick: () => setView("support") },
+              { icon: Bell, label: "Notifikasi dan suara", desc: (soundOn ? "Suara aktif" : "Suara mati") + " · " + (notifOn ? "Notifikasi aktif" : "Notifikasi mati"), onClick: () => setView("notif") },
+              { icon: Moon, label: "Tampilan", desc: "Tema gelap aktif", onClick: () => toast.info("Tema gelap aktif untuk Anon Chat") },
+              { icon: MessageSquare, label: "Opsi Obrolan", desc: showLastSeen ? "Terakhir dilihat: aktif" : "Terakhir dilihat: nonaktif", onClick: () => setShowLastSeen(v => !v) },
+              { icon: Globe, label: "Bahasa", desc: "Mengikuti bahasa aplikasi", onClick: () => toast.info("Atur bahasa dari menu utama aplikasi") },
+              { icon: Lock, label: "Privasi", desc: "Anon Chat tidak menyimpan identitas asli", onClick: () => toast.info("Anon Chat tanpa identitas asli — chat terhapus saat sesi berakhir") },
+              { icon: ThumbsUp, label: "Beri rating", desc: "Bantu kami berkembang", onClick: () => { try { window.open("https://wa.me/6285769302532?text=" + encodeURIComponent("Halo, saya mau beri rating Anon Chat"), "_blank"); } catch { /* ignore */ } } },
+              { icon: Info, label: "Tentang", desc: "Anon Chat by Agung Adi Store", onClick: () => toast.info("Anon Chat — bagian dari Agung Adi Store. Murah & Terpercaya.") },
             ].map((it, i) => (
               <button key={i} onClick={it.onClick}
                 className="w-full flex items-center gap-3 px-4 py-3.5 text-left hover:bg-slate-800/40 transition">
