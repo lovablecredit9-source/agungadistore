@@ -23,9 +23,9 @@ function shortId(id: string) {
 }
 const AVATAR_PRESETS = [
   { id: "ninja", label: "Ninja", gradient: "from-indigo-500 to-purple-600", skin: "#fde68a", accent: "#4f46e5" },
-  { id: "leaf", label: "Daun", gradient: "from-emerald-400 to-teal-500", skin: "#bbf7d0", accent: "#059669" },
+  { id: "leaf", label: "Daun", gradient: "from-purple-400 to-violet-500", skin: "#bbf7d0", accent: "#059669" },
   { id: "cat", label: "Kucing", gradient: "from-amber-400 to-orange-500", skin: "#fed7aa", accent: "#f97316" },
-  { id: "star", label: "Bintang", gradient: "from-cyan-400 to-blue-600", skin: "#cffafe", accent: "#0284c7" },
+  { id: "star", label: "Bintang", gradient: "from-fuchsia-400 to-blue-600", skin: "#cffafe", accent: "#0284c7" },
   { id: "rose", label: "Mawar", gradient: "from-pink-500 to-rose-600", skin: "#fbcfe8", accent: "#e11d48" },
 ];
 function presetById(id?: string | null) {
@@ -50,7 +50,7 @@ function AvatarGraphic({ preset, className = "w-full h-full" }: { preset: Return
           <path d="M14 58c2.8-13 11-20 18-20s15.2 7 18 20" fill={preset.skin} />
           <path d="M19 23c5-11 19-13 28 0-6-1-10-4-15-8-3 5-7 7-13 8Z" fill={preset.accent} opacity="0.9" />
           {preset.id === "ninja" && <path d="M18 26h28v8H18z" fill="#0f172a" opacity="0.9" />}
-          {preset.id === "leaf" && <path d="M42 12c-10 0-17 5-18 15 9 0 17-5 18-15Z" fill="#34d399" />}
+          {preset.id === "leaf" && <path d="M42 12c-10 0-17 5-18 15 9 0 17-5 18-15Z" fill="#a78bfa" />}
           {preset.id === "star" && <path d="m46 12 2.4 5 5.6.8-4 3.8.9 5.4-4.9-2.6-4.9 2.6.9-5.4-4-3.8 5.6-.8L46 12Z" fill="#fef08a" />}
           {preset.id === "rose" && <path d="M46 18c0 5-5 8-14 13-9-5-14-8-14-13 0-7 8-10 14-3 6-7 14-4 14 3Z" fill="#fb7185" />}
           <circle cx="27" cy="28" r="2" fill="#0f172a" /><circle cx="37" cy="28" r="2" fill="#0f172a" />
@@ -676,19 +676,19 @@ export default function AnonChatTab() {
   // ============ RENDER ============
   if (view === "chat") {
     return (
-      <div className="flex flex-col h-[calc(100vh-180px)] min-h-[500px] rounded-3xl overflow-hidden border-2 border-emerald-400/30 bg-gradient-to-b from-emerald-950/40 via-slate-950 to-slate-950 shadow-[0_20px_60px_-20px_rgba(16,185,129,0.4)]">
+      <div className="flex flex-col h-[calc(100vh-180px)] min-h-[500px] rounded-3xl overflow-hidden border-2 border-purple-400/30 bg-gradient-to-b from-purple-950/40 via-slate-950 to-slate-950 shadow-[0_20px_60px_-20px_rgba(168,85,247,0.4)]">
         {/* Header */}
-        <div className="flex items-center gap-3 p-3 border-b border-emerald-400/20 bg-gradient-to-r from-emerald-500/10 via-teal-500/10 to-cyan-500/10 backdrop-blur">
-          <div className={`w-11 h-11 rounded-full bg-gradient-to-br ${partnerAvatar.gradient} flex items-center justify-center text-xl shadow-lg shadow-emerald-500/40 overflow-hidden`}>
+        <div className="flex items-center gap-3 p-3 border-b border-purple-400/20 bg-gradient-to-r from-purple-500/10 via-violet-500/10 to-fuchsia-500/10 backdrop-blur">
+          <div className={`w-11 h-11 rounded-full bg-gradient-to-br ${partnerAvatar.gradient} flex items-center justify-center text-xl shadow-lg shadow-purple-500/40 overflow-hidden`}>
             {partnerProfile?.avatar_url ? <img src={partnerProfile.avatar_url} alt="Avatar partner" className="h-full w-full object-cover" /> : <AvatarGraphic preset={partnerAvatar} />}
           </div>
           <div className="flex-1 min-w-0">
-            <div className="font-bold text-emerald-50 truncate flex items-center gap-1.5">
+            <div className="font-bold text-purple-50 truncate flex items-center gap-1.5">
               {partner?.nick}
               <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full bg-slate-700/60 text-slate-300">{partner?.gender === "male" ? "♂ Pria" : partner?.gender === "female" ? "♀ Wanita" : "Anonim"}</span>
             </div>
-            <div className="text-xs text-emerald-300/80 flex items-center gap-1.5">
-              <span className={`w-1.5 h-1.5 rounded-full ${sessionStatus === "active" ? "bg-emerald-400 animate-pulse" : "bg-rose-400"}`} />
+            <div className="text-xs text-purple-300/80 flex items-center gap-1.5">
+              <span className={`w-1.5 h-1.5 rounded-full ${sessionStatus === "active" ? "bg-purple-400 animate-pulse" : "bg-rose-400"}`} />
               {sessionStatus === "active" ? "terhubung" : "chat berakhir"}
               <span className="text-slate-500">•</span>
               <span className="text-slate-400/80 italic">{partnerLastSeen}</span>
@@ -696,7 +696,7 @@ export default function AnonChatTab() {
           </div>
           {sessionStatus === "active" && (
             friendStatusForPartner === "friend" ? (
-              <span className="px-2 py-1 rounded-full bg-emerald-500/20 border border-emerald-400/40 text-emerald-200 text-[10px] font-bold flex items-center gap-1" title="Sudah berteman">
+              <span className="px-2 py-1 rounded-full bg-purple-500/20 border border-purple-400/40 text-purple-200 text-[10px] font-bold flex items-center gap-1" title="Sudah berteman">
                 <UserCheck className="w-3 h-3" /> Teman
               </span>
             ) : friendStatusForPartner === "pending_out" ? (
@@ -710,11 +710,11 @@ export default function AnonChatTab() {
                 const other = sess.visitor_a === visitor ? sess.visitor_b : sess.visitor_a;
                 const { data: req } = await supabase.from("anon_chat_friend_requests").select("id").eq("from_visitor", other).eq("to_visitor", visitor).eq("status", "pending").maybeSingle();
                 if (req) await respondFriendRequest(req.id, true);
-              }} className="px-2 py-1 rounded-full bg-emerald-500 text-white text-[10px] font-bold flex items-center gap-1">
+              }} className="px-2 py-1 rounded-full bg-purple-500 text-white text-[10px] font-bold flex items-center gap-1">
                 <UserCheck className="w-3 h-3" /> Terima
               </button>
             ) : (
-              <button onClick={sendFriendRequest} className="px-2 py-1 rounded-full bg-emerald-500/20 hover:bg-emerald-500/40 border border-emerald-400/40 text-emerald-200 text-[10px] font-bold flex items-center gap-1" title="Tambah teman">
+              <button onClick={sendFriendRequest} className="px-2 py-1 rounded-full bg-purple-500/20 hover:bg-purple-500/40 border border-purple-400/40 text-purple-200 text-[10px] font-bold flex items-center gap-1" title="Tambah teman">
                 <UserPlus className="w-3 h-3" /> Add
               </button>
             )
@@ -727,20 +727,20 @@ export default function AnonChatTab() {
           <button
             type="button"
             onClick={() => setShowPartnerBio(v => !v)}
-            className="w-full text-left px-3 py-1.5 border-b border-emerald-400/10 bg-slate-950/40 hover:bg-slate-900/60 transition flex items-start gap-2"
+            className="w-full text-left px-3 py-1.5 border-b border-purple-400/10 bg-slate-950/40 hover:bg-slate-900/60 transition flex items-start gap-2"
             title={showPartnerBio ? "Sembunyikan deskripsi" : "Lihat deskripsi partner"}
           >
-            <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-300/70 mt-0.5 shrink-0">Bio</span>
+            <span className="text-[10px] font-bold uppercase tracking-wider text-purple-300/70 mt-0.5 shrink-0">Bio</span>
             <span className={`text-xs text-slate-200 italic flex-1 ${showPartnerBio ? "" : "line-clamp-1"}`}>
               "{partnerBio}"
             </span>
-            <ChevronRight className={`w-3.5 h-3.5 text-emerald-300/60 shrink-0 mt-0.5 transition-transform ${showPartnerBio ? "rotate-90" : ""}`} />
+            <ChevronRight className={`w-3.5 h-3.5 text-purple-300/60 shrink-0 mt-0.5 transition-transform ${showPartnerBio ? "rotate-90" : ""}`} />
           </button>
         )}
 
         {/* Messages */}
         <div ref={scrollRef} className="flex-1 overflow-y-auto p-3 space-y-1.5">
-          <div className="text-center text-xs text-emerald-300/50 py-2">— Awal obrolan anonim —</div>
+          <div className="text-center text-xs text-purple-300/50 py-2">— Awal obrolan anonim —</div>
           {messages.map((m, idx) => {
             if ((m.deleted_for || []).includes(visitor)) return null;
             const mine = m.sender === visitor;
@@ -754,7 +754,7 @@ export default function AnonChatTab() {
               <div key={m.id}>
                 {showDate && (
                   <div className="flex justify-center my-3">
-                    <span className="text-[10px] font-medium px-2.5 py-1 rounded-full border border-emerald-400/20 bg-slate-900/60 text-emerald-200/80">
+                    <span className="text-[10px] font-medium px-2.5 py-1 rounded-full border border-purple-400/20 bg-slate-900/60 text-purple-200/80">
                       {dateLabel(m.created_at)}
                     </span>
                   </div>
@@ -765,12 +765,12 @@ export default function AnonChatTab() {
                       onDoubleClick={() => !m.is_deleted && setEmojiFor(emojiFor === m.id ? null : m.id)}
                       className={`relative px-3 py-2 text-sm break-words shadow-md ${
                         mine
-                          ? `bg-gradient-to-br from-emerald-500 to-teal-600 text-white ${grouped ? "rounded-2xl rounded-br-md" : "rounded-2xl rounded-br-sm"}`
+                          ? `bg-gradient-to-br from-purple-500 to-violet-600 text-white ${grouped ? "rounded-2xl rounded-br-md" : "rounded-2xl rounded-br-sm"}`
                           : `bg-slate-800/90 text-slate-100 border border-slate-700/50 ${grouped ? "rounded-2xl rounded-bl-md" : "rounded-2xl rounded-bl-sm"}`
                       } ${m.is_deleted ? "italic opacity-70" : ""}`}
                     >
                       {replied && !m.is_deleted && (
-                        <div className={`mb-1 border-l-2 pl-2 py-1 rounded text-[11px] ${mine ? "border-white/50 bg-white/10" : "border-emerald-400/60 bg-slate-900/60"}`}>
+                        <div className={`mb-1 border-l-2 pl-2 py-1 rounded text-[11px] ${mine ? "border-white/50 bg-white/10" : "border-purple-400/60 bg-slate-900/60"}`}>
                           <p className="font-semibold opacity-80">{replied.sender === visitor ? "Kamu" : partner?.nick || "Partner"}</p>
                           <p className="truncate opacity-80">{replied.is_deleted ? "Pesan dihapus" : (replied.content || (replied.image_url ? "📷 Foto" : ""))}</p>
                         </div>
@@ -816,7 +816,7 @@ export default function AnonChatTab() {
                         {new Date(m.created_at).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })}
                         {mine && !m.is_deleted && !m.local_blocked && (
                           <span className="ml-0.5">
-                            {m.is_read ? <CheckCheck className="w-3 h-3 text-cyan-200" /> : <Check className="w-3 h-3" />}
+                            {m.is_read ? <CheckCheck className="w-3 h-3 text-fuchsia-200" /> : <Check className="w-3 h-3" />}
                           </span>
                         )}
                       </div>
@@ -826,7 +826,7 @@ export default function AnonChatTab() {
                       <div className={`flex flex-wrap gap-1 mt-1 ${mine ? "justify-end" : "justify-start"}`}>
                         {Object.entries(rx).map(([emo, { count, mine: isMine }]) => (
                           <button key={emo} onClick={() => toggleReaction(m, emo)}
-                            className={`text-[11px] px-1.5 py-0.5 rounded-full border bg-slate-900/80 flex items-center gap-0.5 ${isMine ? "border-emerald-400" : "border-slate-700"}`}>
+                            className={`text-[11px] px-1.5 py-0.5 rounded-full border bg-slate-900/80 flex items-center gap-0.5 ${isMine ? "border-purple-400" : "border-slate-700"}`}>
                             <span>{emo}</span><span className="text-slate-400">{count}</span>
                           </button>
                         ))}
@@ -876,9 +876,9 @@ export default function AnonChatTab() {
           {otherTyping && (
             <div className="flex justify-start animate-fade-in mt-1.5">
               <div className="bg-slate-800/90 border border-slate-700/50 rounded-2xl rounded-bl-sm px-3.5 py-2.5 flex items-center gap-1">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-300/80 animate-bounce" style={{ animationDelay: "0ms" }} />
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-300/80 animate-bounce" style={{ animationDelay: "120ms" }} />
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-300/80 animate-bounce" style={{ animationDelay: "240ms" }} />
+                <span className="w-1.5 h-1.5 rounded-full bg-purple-300/80 animate-bounce" style={{ animationDelay: "0ms" }} />
+                <span className="w-1.5 h-1.5 rounded-full bg-purple-300/80 animate-bounce" style={{ animationDelay: "120ms" }} />
+                <span className="w-1.5 h-1.5 rounded-full bg-purple-300/80 animate-bounce" style={{ animationDelay: "240ms" }} />
               </div>
             </div>
           )}
@@ -888,7 +888,7 @@ export default function AnonChatTab() {
         </div>
 
         {/* Input */}
-        <div className="p-2.5 border-t border-emerald-400/20 bg-slate-950/80 space-y-2">
+        <div className="p-2.5 border-t border-purple-400/20 bg-slate-950/80 space-y-2">
           {activeBan && (
             <div className="rounded-xl border border-rose-400/30 bg-rose-500/10 px-3 py-2 text-xs text-rose-100 flex items-start gap-2">
               <AlertTriangle className="w-4 h-4 text-rose-300 mt-0.5" />
@@ -896,10 +896,10 @@ export default function AnonChatTab() {
             </div>
           )}
           {replyTo && (
-            <div className="flex items-start gap-2 rounded-lg border border-emerald-400/30 bg-slate-900/70 px-2.5 py-2 text-[11px] animate-fade-in">
-              <Reply className="w-3.5 h-3.5 text-emerald-300 mt-0.5 shrink-0" />
+            <div className="flex items-start gap-2 rounded-lg border border-purple-400/30 bg-slate-900/70 px-2.5 py-2 text-[11px] animate-fade-in">
+              <Reply className="w-3.5 h-3.5 text-purple-300 mt-0.5 shrink-0" />
               <div className="flex-1 min-w-0">
-                <p className="font-semibold text-emerald-200">
+                <p className="font-semibold text-purple-200">
                   Membalas {replyTo.sender === visitor ? "diri sendiri" : (partner?.nick || "partner")}
                 </p>
                 <p className="truncate text-slate-300/80">{replyTo.content || (replyTo.image_url ? "📷 Foto" : "")}</p>
@@ -910,7 +910,7 @@ export default function AnonChatTab() {
             </div>
           )}
           {showEmojiInput && !activeBan && (
-            <div className="grid grid-cols-8 gap-1 rounded-2xl border border-emerald-400/20 bg-slate-900/80 p-2 animate-fade-in">
+            <div className="grid grid-cols-8 gap-1 rounded-2xl border border-purple-400/20 bg-slate-900/80 p-2 animate-fade-in">
               {[...EMOJIS, "😍", "🤣", "😭", "😎", "🤝", "💯", "🎉", "🤔", "😡", "😴", "✨", "🙌", "😇", "😜", "👌", "💬"].map((e) => (
                 <button key={e} onClick={() => setDraft((d) => d + e)} className="h-8 rounded-lg hover:bg-slate-800 text-lg">{e}</button>
               ))}
@@ -918,11 +918,11 @@ export default function AnonChatTab() {
           )}
           {sessionStatus === "active" && !activeBan ? (
             <div className="flex items-center gap-2">
-              <button onClick={() => setShowEmojiInput(v => !v)} className="w-10 h-10 rounded-full bg-slate-900/70 border border-emerald-400/30 flex items-center justify-center shrink-0 hover:bg-slate-800/70 transition">
-                <Plus className="w-[18px] h-[18px] text-emerald-300" />
+              <button onClick={() => setShowEmojiInput(v => !v)} className="w-10 h-10 rounded-full bg-slate-900/70 border border-purple-400/30 flex items-center justify-center shrink-0 hover:bg-slate-800/70 transition">
+                <Plus className="w-[18px] h-[18px] text-purple-300" />
               </button>
-              <label className="w-10 h-10 rounded-full bg-slate-900/70 border border-emerald-400/30 flex items-center justify-center cursor-pointer shrink-0 hover:bg-slate-800/70 transition">
-                <ImagePlus className="w-[18px] h-[18px] text-emerald-300" />
+              <label className="w-10 h-10 rounded-full bg-slate-900/70 border border-purple-400/30 flex items-center justify-center cursor-pointer shrink-0 hover:bg-slate-800/70 transition">
+                <ImagePlus className="w-[18px] h-[18px] text-purple-300" />
                 <input type="file" accept="image/*" className="hidden"
                   onChange={e => { if (e.target.files?.[0]) sendImage(e.target.files[0]); e.target.value = ""; }} />
               </label>
@@ -932,17 +932,17 @@ export default function AnonChatTab() {
                 onKeyDown={e => { if (e.key === "Enter") sendMessage(); }}
                 onBlur={() => pushTyping(false)}
                 placeholder="Ketik pesan rahasia..."
-                className="flex-1 bg-slate-900/70 border border-emerald-400/30 rounded-full px-4 py-2.5 text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-emerald-400"
+                className="flex-1 bg-slate-900/70 border border-purple-400/30 rounded-full px-4 py-2.5 text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-purple-400"
                 maxLength={1000}
               />
               <button onClick={sendMessage} disabled={!draft.trim()}
-                className="w-11 h-11 rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 text-white flex items-center justify-center disabled:opacity-40 shadow-lg shadow-emerald-500/40">
+                className="w-11 h-11 rounded-full bg-gradient-to-br from-purple-400 to-violet-500 text-white flex items-center justify-center disabled:opacity-40 shadow-lg shadow-purple-500/40">
                 <Send className="w-4 h-4" />
               </button>
             </div>
           ) : null}
           <div className="grid grid-cols-2 gap-2">
-            <button onClick={newPartner} className="py-2.5 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-400/40 text-emerald-200 text-sm font-semibold flex items-center justify-center gap-1.5">
+            <button onClick={newPartner} className="py-2.5 rounded-xl bg-purple-500/15 hover:bg-purple-500/25 border border-purple-400/40 text-purple-200 text-sm font-semibold flex items-center justify-center gap-1.5">
               <RefreshCw className="w-3.5 h-3.5" /> Partner Baru
             </button>
             <button onClick={endChat} className="py-2.5 rounded-xl bg-slate-800/60 hover:bg-slate-700/60 border border-slate-600/40 text-slate-200 text-sm font-semibold flex items-center justify-center gap-1.5">
@@ -956,9 +956,9 @@ export default function AnonChatTab() {
 
   if (view === "interest") {
     return (
-      <div className="rounded-3xl border-2 border-emerald-400/30 bg-slate-950 overflow-hidden">
+      <div className="rounded-3xl border-2 border-purple-400/30 bg-slate-950 overflow-hidden">
         <div className="flex items-center gap-2 p-4 border-b border-slate-800">
-          <button onClick={() => setView("prefs")} className="text-emerald-300 text-sm font-semibold flex items-center gap-1">
+          <button onClick={() => setView("prefs")} className="text-purple-300 text-sm font-semibold flex items-center gap-1">
             <ChevronRight className="w-4 h-4 rotate-180" /> Kembali
           </button>
           <div className="flex-1 text-center font-bold text-slate-100">Ketertarikan</div>
@@ -968,7 +968,7 @@ export default function AnonChatTab() {
         <div className="max-h-[50vh] overflow-y-auto">
           {INTERESTS.map(it => (
             <button key={it} onClick={() => { setInterest(it); setView("prefs"); }}
-              className={`w-full text-left px-5 py-3.5 border-b border-slate-800/60 flex items-center justify-between hover:bg-slate-900 ${interest === it ? "text-emerald-300" : "text-slate-200"}`}>
+              className={`w-full text-left px-5 py-3.5 border-b border-slate-800/60 flex items-center justify-between hover:bg-slate-900 ${interest === it ? "text-purple-300" : "text-slate-200"}`}>
               <span>{it}</span>
               {interest === it && <Heart className="w-4 h-4 fill-current" />}
             </button>
@@ -980,25 +980,25 @@ export default function AnonChatTab() {
 
   if (view === "account") {
     return (
-      <div className="rounded-3xl border-2 border-emerald-400/30 bg-gradient-to-b from-slate-950 to-emerald-950/20 p-5 space-y-5 max-h-[calc(100vh-160px)] overflow-y-auto">
+      <div className="rounded-3xl border-2 border-purple-400/30 bg-gradient-to-b from-slate-950 to-purple-950/20 p-5 space-y-5 max-h-[calc(100vh-160px)] overflow-y-auto">
         <div className="flex items-center justify-between">
-          <button onClick={() => setView("prefs")} className="text-emerald-300 text-sm">← Kembali</button>
+          <button onClick={() => setView("prefs")} className="text-purple-300 text-sm">← Kembali</button>
           <div className="font-bold text-slate-100">Pengaturan akun</div>
           <div className="w-12" />
         </div>
 
         {/* Identitas akun */}
-        <div className="rounded-2xl border border-emerald-400/20 bg-slate-900/60 p-4 space-y-3">
+        <div className="rounded-2xl border border-purple-400/20 bg-slate-900/60 p-4 space-y-3">
           <div className="flex items-center justify-between">
             <span className="text-xs text-slate-400">ID akun perangkat</span>
             <button onClick={() => { try { navigator.clipboard.writeText(visitor); toast.success("ID disalin"); } catch {} }}
-              className="text-[11px] font-mono px-2 py-1 rounded-md bg-slate-800 text-emerald-200 flex items-center gap-1 border border-slate-700">
+              className="text-[11px] font-mono px-2 py-1 rounded-md bg-slate-800 text-purple-200 flex items-center gap-1 border border-slate-700">
               {shortId(visitor)} <Copy className="w-3 h-3" />
             </button>
           </div>
           <div className="flex items-center justify-between">
             <span className="text-xs text-slate-400">Status</span>
-            <span className="text-[11px] font-bold px-2 py-1 rounded-full bg-emerald-500/20 text-emerald-200 border border-emerald-400/40">Mandiri (khusus Anon Chat)</span>
+            <span className="text-[11px] font-bold px-2 py-1 rounded-full bg-purple-500/20 text-purple-200 border border-purple-400/40">Mandiri (khusus Anon Chat)</span>
           </div>
           <div className="flex items-center justify-between gap-2">
             <span className="text-xs text-slate-400">Nama tampil</span>
@@ -1006,22 +1006,22 @@ export default function AnonChatTab() {
           </div>
         </div>
 
-        <div className="rounded-2xl border border-emerald-400/20 bg-emerald-500/5 p-4 space-y-3">
+        <div className="rounded-2xl border border-purple-400/20 bg-purple-500/5 p-4 space-y-3">
           <div className="flex items-start gap-2">
-            <Shield className="w-4 h-4 text-emerald-300 mt-0.5 shrink-0" />
+            <Shield className="w-4 h-4 text-purple-300 mt-0.5 shrink-0" />
             <div className="flex-1">
-              <div className="text-sm font-bold text-emerald-100">Akun Anon Chat (mandiri)</div>
-              <p className="text-[11px] text-emerald-200/80 mt-0.5">Daftar email + sandi khusus Anon Chat. Tidak terhubung ke akun saldo.</p>
+              <div className="text-sm font-bold text-purple-100">Akun Anon Chat (mandiri)</div>
+              <p className="text-[11px] text-purple-200/80 mt-0.5">Daftar email + sandi khusus Anon Chat. Tidak terhubung ke akun saldo.</p>
             </div>
           </div>
           {anonAccount ? (
-            <div className="rounded-xl bg-slate-900/70 border border-emerald-400/30 p-3 space-y-2">
+            <div className="rounded-xl bg-slate-900/70 border border-purple-400/30 p-3 space-y-2">
               <div className="flex items-center justify-between gap-2">
                 <div className="min-w-0">
-                  <div className="text-[10px] text-emerald-300/70 uppercase tracking-wide">Email terhubung</div>
+                  <div className="text-[10px] text-purple-300/70 uppercase tracking-wide">Email terhubung</div>
                   <div className="text-xs font-bold text-slate-100 truncate">{anonAccount.email}</div>
                 </div>
-                <span className="text-[10px] font-bold px-2 py-1 rounded-full bg-emerald-500/20 text-emerald-200 border border-emerald-400/40 shrink-0">Login</span>
+                <span className="text-[10px] font-bold px-2 py-1 rounded-full bg-purple-500/20 text-purple-200 border border-purple-400/40 shrink-0">Login</span>
               </div>
               <div className="rounded-lg bg-slate-950/60 border border-slate-700 p-2">
                 <div className="text-[10px] text-slate-400 uppercase tracking-wide mb-0.5">Deskripsi profil</div>
@@ -1029,15 +1029,15 @@ export default function AnonChatTab() {
                   {anonAccount.bio?.trim() ? anonAccount.bio : "Belum ada deskripsi — ceritakan dirimu singkat."}
                 </div>
               </div>
-              <button onClick={() => setShowAccountDialog(true)} className="w-full py-2 rounded-lg bg-emerald-500/30 hover:bg-emerald-500/40 border border-emerald-400/50 text-emerald-100 text-xs font-bold">
+              <button onClick={() => setShowAccountDialog(true)} className="w-full py-2 rounded-lg bg-purple-500/30 hover:bg-purple-500/40 border border-purple-400/50 text-purple-100 text-xs font-bold">
                 {anonAccount.bio?.trim() ? "Ubah Deskripsi" : "Buat Deskripsi"}
               </button>
-              <button onClick={() => setShowAccountDialog(true)} className="w-full py-2 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-400/40 text-emerald-100 text-xs font-bold">
+              <button onClick={() => setShowAccountDialog(true)} className="w-full py-2 rounded-lg bg-purple-500/20 hover:bg-purple-500/30 border border-purple-400/40 text-purple-100 text-xs font-bold">
                 Kelola akun (ganti email / sandi / putuskan)
               </button>
             </div>
           ) : (
-            <button onClick={() => setShowAccountDialog(true)} className="w-full py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 text-white text-xs font-bold">
+            <button onClick={() => setShowAccountDialog(true)} className="w-full py-2.5 rounded-xl bg-gradient-to-r from-purple-500 to-violet-500 text-white text-xs font-bold">
               Daftar / Login dengan email
             </button>
           )}
@@ -1056,13 +1056,13 @@ export default function AnonChatTab() {
             <div className="flex gap-2">
               <input value={nickname} onChange={e => setNickname(e.target.value.slice(0, 20))}
                 className="flex-1 bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-sm text-slate-100" />
-              <button onClick={() => setNickname(genNick())} className="px-3 rounded-xl bg-emerald-500/20 text-emerald-200 text-xs font-semibold border border-emerald-400/30">
+              <button onClick={() => setNickname(genNick())} className="px-3 rounded-xl bg-purple-500/20 text-purple-200 text-xs font-semibold border border-purple-400/30">
                 <Sparkles className="w-4 h-4" />
               </button>
             </div>
           </div>
 
-          <div className="space-y-3 rounded-2xl border border-emerald-400/20 bg-slate-900/60 p-3">
+          <div className="space-y-3 rounded-2xl border border-purple-400/20 bg-slate-900/60 p-3">
             <div className="flex items-center gap-3">
               <div className={`w-14 h-14 rounded-full bg-gradient-to-br ${myAvatar.gradient} flex items-center justify-center text-2xl overflow-hidden shrink-0`}>
                 {avatarUrl ? <img src={avatarUrl} alt="Foto profil" className="h-full w-full object-cover" /> : <AvatarGraphic preset={myAvatar} />}
@@ -1085,7 +1085,7 @@ export default function AnonChatTab() {
               <div className="text-sm font-bold text-slate-100">Terakhir dilihat</div>
               <div className="text-[11px] text-slate-400">Bisa diaktifkan/nonaktifkan setiap pengguna</div>
             </div>
-            <button onClick={() => setShowLastSeen(v => !v)} className={`w-12 h-7 rounded-full p-0.5 transition ${showLastSeen ? "bg-emerald-500" : "bg-slate-700"}`}>
+            <button onClick={() => setShowLastSeen(v => !v)} className={`w-12 h-7 rounded-full p-0.5 transition ${showLastSeen ? "bg-purple-500" : "bg-slate-700"}`}>
               <div className={`w-6 h-6 rounded-full bg-white transition ${showLastSeen ? "translate-x-5" : ""}`} />
             </button>
           </div>
@@ -1095,7 +1095,7 @@ export default function AnonChatTab() {
             <div className="grid grid-cols-3 gap-2">
               {[{v:"male",l:"🧑 Pria"},{v:"female",l:"👩 Wanita"},{v:"any",l:"🥷 Anonim"}].map(o => (
                 <button key={o.v} onClick={() => setMyGender(o.v)}
-                  className={`py-2.5 rounded-xl text-sm font-semibold border ${myGender === o.v ? "bg-emerald-500 text-white border-emerald-400 shadow-lg shadow-emerald-500/30" : "bg-slate-900 text-slate-300 border-slate-700"}`}>
+                  className={`py-2.5 rounded-xl text-sm font-semibold border ${myGender === o.v ? "bg-purple-500 text-white border-purple-400 shadow-lg shadow-purple-500/30" : "bg-slate-900 text-slate-300 border-slate-700"}`}>
                   {o.l}
                 </button>
               ))}
@@ -1109,13 +1109,13 @@ export default function AnonChatTab() {
             <button onClick={() => setView("interest")}
               className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 flex items-center justify-between text-slate-100">
               <span>{interest}</span>
-              <ChevronRight className="w-4 h-4 text-emerald-400" />
+              <ChevronRight className="w-4 h-4 text-purple-400" />
             </button>
           </div>
         </div>
 
         <button onClick={() => { setView("prefs"); toast.success("Tersimpan"); }}
-          className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-bold shadow-lg shadow-emerald-500/40">
+          className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-purple-500 to-violet-500 text-white font-bold shadow-lg shadow-purple-500/40">
           SIMPAN
         </button>
       </div>
@@ -1146,30 +1146,30 @@ export default function AnonChatTab() {
       { q: "Hilangkan riwayat & teman?", a: "Pengaturan akun → Logout & jadi Tamu / Reset sesi Tamu." },
     ];
     return (
-      <div className="rounded-3xl border-2 border-emerald-400/30 bg-gradient-to-b from-slate-950 to-emerald-950/20 min-h-[500px] flex flex-col">
+      <div className="rounded-3xl border-2 border-purple-400/30 bg-gradient-to-b from-slate-950 to-purple-950/20 min-h-[500px] flex flex-col">
         <div className="flex items-center justify-between px-5 py-4 border-b border-slate-800/60">
-          <button onClick={() => setView("prefs")} className="text-emerald-300 text-sm">← Kembali</button>
+          <button onClick={() => setView("prefs")} className="text-purple-300 text-sm">← Kembali</button>
           <div className="font-bold text-slate-100">Dukungan</div>
           <div className="w-12" />
         </div>
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
-          <div className="rounded-2xl border border-emerald-400/30 bg-emerald-500/5 p-4 space-y-3">
+          <div className="rounded-2xl border border-purple-400/30 bg-purple-500/5 p-4 space-y-3">
             <div className="flex items-start gap-2">
-              <Phone className="w-5 h-5 text-emerald-300 mt-0.5" />
+              <Phone className="w-5 h-5 text-purple-300 mt-0.5" />
               <div>
-                <div className="text-sm font-bold text-emerald-100">Customer Service WhatsApp</div>
-                <div className="text-xs text-emerald-200/80">Respon cepat 08.00 – 22.00 WIB</div>
-                <div className="font-mono text-emerald-300 text-sm mt-0.5">{CS_WA}</div>
+                <div className="text-sm font-bold text-purple-100">Customer Service WhatsApp</div>
+                <div className="text-xs text-purple-200/80">Respon cepat 08.00 – 22.00 WIB</div>
+                <div className="font-mono text-purple-300 text-sm mt-0.5">{CS_WA}</div>
               </div>
             </div>
             <a href={CS_WA_LINK} target="_blank" rel="noreferrer"
-              className="w-full py-3 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-bold flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/40">
+              className="w-full py-3 rounded-2xl bg-gradient-to-r from-purple-500 to-violet-500 text-white font-bold flex items-center justify-center gap-2 shadow-lg shadow-purple-500/40">
               <MessageCircle className="w-4 h-4" /> Chat CS via WhatsApp
             </a>
           </div>
 
           <div>
-            <h4 className="text-xs font-bold text-emerald-300 mb-2 px-1">Pertanyaan umum</h4>
+            <h4 className="text-xs font-bold text-purple-300 mb-2 px-1">Pertanyaan umum</h4>
             <div className="rounded-2xl bg-slate-900/70 border border-slate-800 divide-y divide-slate-800 overflow-hidden">
               {FAQ.map((f, i) => (
                 <details key={i} className="group">
@@ -1195,37 +1195,37 @@ export default function AnonChatTab() {
   if (view === "notif") {
     const perm = typeof Notification !== "undefined" ? Notification.permission : "default";
     return (
-      <div className="rounded-3xl border-2 border-emerald-400/30 bg-gradient-to-b from-slate-950 to-emerald-950/20 min-h-[500px] flex flex-col">
+      <div className="rounded-3xl border-2 border-purple-400/30 bg-gradient-to-b from-slate-950 to-purple-950/20 min-h-[500px] flex flex-col">
         <div className="flex items-center justify-between px-5 py-4 border-b border-slate-800/60">
-          <button onClick={() => setView("prefs")} className="text-emerald-300 text-sm">← Kembali</button>
+          <button onClick={() => setView("prefs")} className="text-purple-300 text-sm">← Kembali</button>
           <div className="font-bold text-slate-100">Notifikasi & Suara</div>
           <div className="w-12" />
         </div>
         <div className="flex-1 overflow-y-auto p-4 space-y-3">
           <div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-4 flex items-center gap-3">
-            {soundOn ? <Volume2 className="w-5 h-5 text-emerald-300" /> : <VolumeX className="w-5 h-5 text-slate-400" />}
+            {soundOn ? <Volume2 className="w-5 h-5 text-purple-300" /> : <VolumeX className="w-5 h-5 text-slate-400" />}
             <div className="flex-1">
               <div className="text-sm font-bold text-slate-100">Suara pesan masuk</div>
               <div className="text-[11px] text-slate-400">Bunyikan ping saat pesan baru di chat anonim</div>
             </div>
             <button onClick={() => { setSoundOn(s => !s); if (!soundOn) playPing(); }}
-              className={`w-12 h-7 rounded-full p-0.5 transition ${soundOn ? "bg-emerald-500" : "bg-slate-700"}`}>
+              className={`w-12 h-7 rounded-full p-0.5 transition ${soundOn ? "bg-purple-500" : "bg-slate-700"}`}>
               <div className={`w-6 h-6 rounded-full bg-white transition ${soundOn ? "translate-x-5" : ""}`} />
             </button>
           </div>
 
           <div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-4 flex items-center gap-3">
-            <Bell className={`w-5 h-5 ${notifOn ? "text-emerald-300" : "text-slate-400"}`} />
+            <Bell className={`w-5 h-5 ${notifOn ? "text-purple-300" : "text-slate-400"}`} />
             <div className="flex-1">
               <div className="text-sm font-bold text-slate-100">Notifikasi anon chat</div>
               <div className="text-[11px] text-slate-400">Tampilkan notifikasi browser saat tab tidak aktif</div>
               <div className="text-[10px] mt-0.5">
-                Status izin: <span className={perm === "granted" ? "text-emerald-300" : perm === "denied" ? "text-rose-300" : "text-amber-300"}>{perm}</span>
+                Status izin: <span className={perm === "granted" ? "text-purple-300" : perm === "denied" ? "text-rose-300" : "text-amber-300"}>{perm}</span>
               </div>
               <div className="text-[10px] text-slate-500 mt-1">{explainNotif()}</div>
             </div>
             <button onClick={() => { if (perm !== "granted") requestNotifPerm(); else setNotifOn(n => !n); }}
-              className={`w-12 h-7 rounded-full p-0.5 transition ${notifOn && perm === "granted" ? "bg-emerald-500" : "bg-slate-700"}`}>
+              className={`w-12 h-7 rounded-full p-0.5 transition ${notifOn && perm === "granted" ? "bg-purple-500" : "bg-slate-700"}`}>
               <div className={`w-6 h-6 rounded-full bg-white transition ${notifOn && perm === "granted" ? "translate-x-5" : ""}`} />
             </button>
           </div>
@@ -1251,9 +1251,9 @@ export default function AnonChatTab() {
       { key: "system", label: "Tema tampilan perangkat" },
     ];
     return (
-      <div className="rounded-3xl border-2 border-emerald-400/30 bg-gradient-to-b from-slate-950 to-emerald-950/20 min-h-[500px] flex flex-col">
+      <div className="rounded-3xl border-2 border-purple-400/30 bg-gradient-to-b from-slate-950 to-purple-950/20 min-h-[500px] flex flex-col">
         <div className="flex items-center justify-between px-5 py-4 border-b border-slate-800/60">
-          <button onClick={() => setView("prefs")} className="text-emerald-300 text-sm">← Kembali</button>
+          <button onClick={() => setView("prefs")} className="text-purple-300 text-sm">← Kembali</button>
           <div className="font-bold text-slate-100">Tampilan</div>
           <div className="w-12" />
         </div>
@@ -1262,7 +1262,7 @@ export default function AnonChatTab() {
             {opts.map(o => (
               <button key={o.key} onClick={() => { setTheme(o.key); toast.success(o.label + " diterapkan"); }}
                 className="w-full flex items-center gap-3 px-4 py-4 text-left hover:bg-slate-800/40">
-                <Check className={`w-5 h-5 ${theme === o.key ? "text-emerald-400" : "text-transparent"}`} />
+                <Check className={`w-5 h-5 ${theme === o.key ? "text-purple-400" : "text-transparent"}`} />
                 <span className="text-slate-100 text-sm">{o.label}</span>
               </button>
             ))}
@@ -1279,9 +1279,9 @@ export default function AnonChatTab() {
 
   if (view === "chatopts") {
     return (
-      <div className="rounded-3xl border-2 border-emerald-400/30 bg-gradient-to-b from-slate-950 to-emerald-950/20 min-h-[500px] flex flex-col">
+      <div className="rounded-3xl border-2 border-purple-400/30 bg-gradient-to-b from-slate-950 to-purple-950/20 min-h-[500px] flex flex-col">
         <div className="flex items-center justify-between px-5 py-4 border-b border-slate-800/60">
-          <button onClick={() => setView("prefs")} className="text-emerald-300 text-sm">← Kembali</button>
+          <button onClick={() => setView("prefs")} className="text-purple-300 text-sm">← Kembali</button>
           <div className="font-bold text-slate-100">Opsi Obrolan</div>
           <div className="w-12" />
         </div>
@@ -1292,7 +1292,7 @@ export default function AnonChatTab() {
             <div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-4 flex items-center gap-3">
               <div className="flex-1 text-sm text-slate-100">Meminta konfirmasi</div>
               <button onClick={() => setConfirmClose(v => !v)}
-                className={`w-12 h-7 rounded-full p-0.5 transition ${confirmClose ? "bg-emerald-500" : "bg-slate-700"}`}>
+                className={`w-12 h-7 rounded-full p-0.5 transition ${confirmClose ? "bg-purple-500" : "bg-slate-700"}`}>
                 <div className={`w-6 h-6 rounded-full bg-white transition ${confirmClose ? "translate-x-5" : ""}`} />
               </button>
             </div>
@@ -1304,7 +1304,7 @@ export default function AnonChatTab() {
               {[{k:"keyboard",label:"Buka keyboard"},{k:"button",label:"Tampilkan tombol"}].map(o => (
                 <button key={o.k} onClick={() => setKeyboardMode(o.k as "button" | "keyboard")}
                   className="w-full flex items-center gap-3 px-4 py-3.5 text-left hover:bg-slate-800/40">
-                  <Check className={`w-5 h-5 ${keyboardMode === o.k ? "text-emerald-400" : "text-transparent"}`} />
+                  <Check className={`w-5 h-5 ${keyboardMode === o.k ? "text-purple-400" : "text-transparent"}`} />
                   <span className="text-slate-100 text-sm">{o.label}</span>
                 </button>
               ))}
@@ -1322,9 +1322,9 @@ export default function AnonChatTab() {
 
   if (view === "language") {
     return (
-      <div className="rounded-3xl border-2 border-emerald-400/30 bg-gradient-to-b from-slate-950 to-emerald-950/20 min-h-[500px] flex flex-col">
+      <div className="rounded-3xl border-2 border-purple-400/30 bg-gradient-to-b from-slate-950 to-purple-950/20 min-h-[500px] flex flex-col">
         <div className="flex items-center justify-between px-5 py-4 border-b border-slate-800/60">
-          <button onClick={() => setView("prefs")} className="text-emerald-300 text-sm">← Kembali</button>
+          <button onClick={() => setView("prefs")} className="text-purple-300 text-sm">← Kembali</button>
           <div className="font-bold text-slate-100">Bahasa</div>
           <div className="w-12" />
         </div>
@@ -1334,7 +1334,7 @@ export default function AnonChatTab() {
             {LANGUAGES.map(l => (
               <button key={l.code} onClick={() => { setLang(l.code); toast.success(l.name); }}
                 className="w-full flex items-center gap-3 px-4 py-3.5 text-left hover:bg-slate-800/40">
-                <Check className={`w-5 h-5 shrink-0 ${lang === l.code ? "text-emerald-400" : "text-transparent"}`} />
+                <Check className={`w-5 h-5 shrink-0 ${lang === l.code ? "text-purple-400" : "text-transparent"}`} />
                 <span className="text-base">{l.flag}</span>
                 <span className="text-slate-100 text-sm flex-1 truncate">{l.name}</span>
               </button>
@@ -1352,9 +1352,9 @@ export default function AnonChatTab() {
 
   if (view === "privacy") {
     return (
-      <div className="rounded-3xl border-2 border-emerald-400/30 bg-gradient-to-b from-slate-950 to-emerald-950/20 min-h-[500px] flex flex-col">
+      <div className="rounded-3xl border-2 border-purple-400/30 bg-gradient-to-b from-slate-950 to-purple-950/20 min-h-[500px] flex flex-col">
         <div className="flex items-center justify-between px-5 py-4 border-b border-slate-800/60">
-          <button onClick={() => setView("prefs")} className="text-emerald-300 text-sm">← Kembali</button>
+          <button onClick={() => setView("prefs")} className="text-purple-300 text-sm">← Kembali</button>
           <div className="font-bold text-slate-100">Privasi</div>
           <div className="w-12" />
         </div>
@@ -1365,7 +1365,7 @@ export default function AnonChatTab() {
             <div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-4 flex items-center gap-3">
               <div className="flex-1 text-sm text-slate-100">Tampilkan status online saya</div>
               <button onClick={() => setOnlineStatus(v => !v)}
-                className={`w-12 h-7 rounded-full p-0.5 transition ${onlineStatus ? "bg-emerald-500" : "bg-slate-700"}`}>
+                className={`w-12 h-7 rounded-full p-0.5 transition ${onlineStatus ? "bg-purple-500" : "bg-slate-700"}`}>
                 <div className={`w-6 h-6 rounded-full bg-white transition ${onlineStatus ? "translate-x-5" : ""}`} />
               </button>
             </div>
@@ -1377,7 +1377,7 @@ export default function AnonChatTab() {
               {[{k:"off",label:"Nonaktifkan"},{k:"temp",label:"Aktifkan di chat sementara"},{k:"all",label:"Aktifkan di semua chat"}].map(o => (
                 <button key={o.k} onClick={() => setMediaBlur(o.k as "off" | "temp" | "all")}
                   className="w-full flex items-center gap-3 px-4 py-3.5 text-left hover:bg-slate-800/40">
-                  <Check className={`w-5 h-5 ${mediaBlur === o.k ? "text-emerald-400" : "text-transparent"}`} />
+                  <Check className={`w-5 h-5 ${mediaBlur === o.k ? "text-purple-400" : "text-transparent"}`} />
                   <span className="text-slate-100 text-sm">{o.label}</span>
                 </button>
               ))}
@@ -1389,7 +1389,7 @@ export default function AnonChatTab() {
               {[{k:"all",label:"Semua"},{k:"friends",label:"Teman"},{k:"none",label:"Tak seorang pun"}].map(o => (
                 <button key={o.k} onClick={() => setWhoCanCall(o.k as "all" | "friends" | "none")}
                   className="w-full flex items-center gap-3 px-4 py-3.5 text-left hover:bg-slate-800/40">
-                  <Check className={`w-5 h-5 ${whoCanCall === o.k ? "text-emerald-400" : "text-transparent"}`} />
+                  <Check className={`w-5 h-5 ${whoCanCall === o.k ? "text-purple-400" : "text-transparent"}`} />
                   <span className="text-slate-100 text-sm">{o.label}</span>
                 </button>
               ))}
@@ -1429,9 +1429,9 @@ export default function AnonChatTab() {
       { icon: Smartphone, label: "Informasi Sistem", onClick: () => setView("about_system") },
     ];
     return (
-      <div className="rounded-3xl border-2 border-emerald-400/30 bg-gradient-to-b from-slate-950 to-emerald-950/20 min-h-[500px] flex flex-col">
+      <div className="rounded-3xl border-2 border-purple-400/30 bg-gradient-to-b from-slate-950 to-purple-950/20 min-h-[500px] flex flex-col">
         <div className="flex items-center justify-between px-5 py-4 border-b border-slate-800/60">
-          <button onClick={() => setView("prefs")} className="text-emerald-300 text-sm">← Kembali</button>
+          <button onClick={() => setView("prefs")} className="text-purple-300 text-sm">← Kembali</button>
           <div className="font-bold text-slate-100">Tentang</div>
           <div className="w-12" />
         </div>
@@ -1439,7 +1439,7 @@ export default function AnonChatTab() {
           <div className="rounded-2xl bg-slate-900/70 border border-slate-800 divide-y divide-slate-800 overflow-hidden">
             {items.map((it, i) => (
               <button key={i} onClick={it.onClick} className="w-full flex items-center gap-3 px-4 py-4 text-left hover:bg-slate-800/40">
-                <it.icon className="w-5 h-5 text-emerald-300 shrink-0" />
+                <it.icon className="w-5 h-5 text-purple-300 shrink-0" />
                 <span className="text-slate-100 text-sm flex-1">{it.label}</span>
               </button>
             ))}
@@ -1452,9 +1452,9 @@ export default function AnonChatTab() {
 
   if (view === "about_privacy") {
     return (
-      <div className="rounded-3xl border-2 border-emerald-400/30 bg-gradient-to-b from-slate-950 to-emerald-950/20 min-h-[500px] flex flex-col">
+      <div className="rounded-3xl border-2 border-purple-400/30 bg-gradient-to-b from-slate-950 to-purple-950/20 min-h-[500px] flex flex-col">
         <div className="flex items-center justify-between px-5 py-4 border-b border-slate-800/60">
-          <button onClick={() => setView("about")} className="text-emerald-300 text-sm">← Kembali</button>
+          <button onClick={() => setView("about")} className="text-purple-300 text-sm">← Kembali</button>
           <div className="font-bold text-slate-100">Privasi data</div>
           <div className="w-12" />
         </div>
@@ -1487,9 +1487,9 @@ export default function AnonChatTab() {
       { t: "Identitas Palsu", d: "Berpura-pura menjadi orang lain atau menyamar sebagai admin / staf resmi adalah pelanggaran berat." },
     ];
     return (
-      <div className="rounded-3xl border-2 border-emerald-400/30 bg-gradient-to-b from-slate-950 to-emerald-950/20 min-h-[500px] flex flex-col">
+      <div className="rounded-3xl border-2 border-purple-400/30 bg-gradient-to-b from-slate-950 to-purple-950/20 min-h-[500px] flex flex-col">
         <div className="flex items-center justify-between px-5 py-4 border-b border-slate-800/60">
-          <button onClick={() => setView("about")} className="text-emerald-300 text-sm">← Kembali</button>
+          <button onClick={() => setView("about")} className="text-purple-300 text-sm">← Kembali</button>
           <div className="font-bold text-slate-100">Aturan</div>
           <div className="w-12" />
         </div>
@@ -1611,9 +1611,9 @@ export default function AnonChatTab() {
       </div>
     );
     return (
-      <div className="rounded-3xl border-2 border-emerald-400/30 bg-gradient-to-b from-slate-950 to-emerald-950/20 min-h-[500px] flex flex-col">
+      <div className="rounded-3xl border-2 border-purple-400/30 bg-gradient-to-b from-slate-950 to-purple-950/20 min-h-[500px] flex flex-col">
         <div className="flex items-center justify-between px-5 py-4 border-b border-slate-800/60">
-          <button onClick={() => setView("about")} className="text-emerald-300 text-sm">← Kembali</button>
+          <button onClick={() => setView("about")} className="text-purple-300 text-sm">← Kembali</button>
           <div className="font-bold text-slate-100">Informasi Sistem</div>
           <div className="w-12" />
         </div>
@@ -1626,11 +1626,11 @@ export default function AnonChatTab() {
           </div>
           <div className="rounded-2xl bg-slate-900/70 border border-slate-800 divide-y divide-slate-800 overflow-hidden">
             <button onClick={() => setView("about_rules")} className="w-full flex items-center gap-3 px-4 py-3.5 text-left hover:bg-slate-800/40">
-              <FileText className="w-5 h-5 text-emerald-300 shrink-0" />
+              <FileText className="w-5 h-5 text-purple-300 shrink-0" />
               <span className="text-slate-100 text-sm">Ketentuan Penggunaan</span>
             </button>
             <button onClick={() => setView("about_privacy")} className="w-full flex items-center gap-3 px-4 py-3.5 text-left hover:bg-slate-800/40">
-              <ClipboardList className="w-5 h-5 text-emerald-300 shrink-0" />
+              <ClipboardList className="w-5 h-5 text-purple-300 shrink-0" />
               <span className="text-slate-100 text-sm">Kebijakan Privasi</span>
             </button>
           </div>
@@ -1643,12 +1643,12 @@ export default function AnonChatTab() {
   if (view === "prefs") {
     const genderLabel = myGender === "male" ? "pria" : myGender === "female" ? "wanita" : "rahasia";
     return (
-      <div className="rounded-3xl overflow-hidden border-2 border-emerald-400/30 bg-gradient-to-b from-slate-950 via-slate-950 to-emerald-950/20 min-h-[500px] flex flex-col">
+      <div className="rounded-3xl overflow-hidden border-2 border-purple-400/30 bg-gradient-to-b from-slate-950 via-slate-950 to-purple-950/20 min-h-[500px] flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-slate-800/60">
           <div className="w-12" />
           <div className="font-bold text-slate-100 text-base">Setelan</div>
-          <button onClick={() => setView("account")} className="text-emerald-300 text-sm font-semibold">Edit</button>
+          <button onClick={() => setView("account")} className="text-purple-300 text-sm font-semibold">Edit</button>
         </div>
 
         <div className="flex-1 overflow-y-auto p-5 space-y-5">
@@ -1661,8 +1661,8 @@ export default function AnonChatTab() {
             <div className="text-sm text-slate-400 flex items-center gap-1.5">
               <span>{genderLabel}</span>
               <span className="text-slate-600">•</span>
-              <span className="font-mono text-[10px] text-emerald-300/80">{shortId(visitor)}</span>
-              <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-slate-800 text-emerald-200 border border-emerald-400/30 font-bold">ANON</span>
+              <span className="font-mono text-[10px] text-purple-300/80">{shortId(visitor)}</span>
+              <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-slate-800 text-purple-200 border border-purple-400/30 font-bold">ANON</span>
             </div>
           </div>
 
@@ -1686,7 +1686,7 @@ export default function AnonChatTab() {
               ) : (
                 <button
                   onClick={() => { setBioDraft(""); setEditingBio(true); }}
-                  className="w-full py-2.5 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-400/40 text-emerald-100 text-xs font-bold flex items-center justify-center gap-2"
+                  className="w-full py-2.5 rounded-xl bg-purple-500/20 hover:bg-purple-500/30 border border-purple-400/40 text-purple-100 text-xs font-bold flex items-center justify-center gap-2"
                 >
                   <FileText className="w-3.5 h-3.5" /> Buat Deskripsi
                 </button>
@@ -1699,7 +1699,7 @@ export default function AnonChatTab() {
                   rows={3}
                   autoFocus
                   placeholder="Tulis deskripsi singkat yang akan terlihat oleh partner chat…"
-                  className="w-full bg-slate-950/70 border border-slate-700 rounded-xl px-3 py-2.5 text-sm text-slate-100 outline-none placeholder:text-slate-500 resize-none focus:border-emerald-400/60"
+                  className="w-full bg-slate-950/70 border border-slate-700 rounded-xl px-3 py-2.5 text-sm text-slate-100 outline-none placeholder:text-slate-500 resize-none focus:border-purple-400/60"
                 />
                 <div className="flex gap-2">
                   <button
@@ -1711,7 +1711,7 @@ export default function AnonChatTab() {
                   <button
                     onClick={saveBio}
                     disabled={savingBio || bioDraft.trim() === savedBio.trim()}
-                    className="flex-1 py-2.5 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-400/40 text-emerald-100 text-xs font-bold disabled:opacity-50 flex items-center justify-center gap-2"
+                    className="flex-1 py-2.5 rounded-xl bg-purple-500/20 hover:bg-purple-500/30 border border-purple-400/40 text-purple-100 text-xs font-bold disabled:opacity-50 flex items-center justify-center gap-2"
                   >
                     <FileText className="w-3.5 h-3.5" /> {savingBio ? "Menyimpan..." : "Simpan"}
                   </button>
@@ -1739,7 +1739,7 @@ export default function AnonChatTab() {
             ].map((it, i) => (
               <button key={i} onClick={it.onClick}
                 className="w-full flex items-center gap-3 px-4 py-3.5 text-left hover:bg-slate-800/40 transition">
-                <it.icon className="w-5 h-5 text-emerald-300 shrink-0" />
+                <it.icon className="w-5 h-5 text-purple-300 shrink-0" />
                 <div className="flex-1 min-w-0">
                   <div className="text-slate-100 font-semibold text-sm">{it.label}</div>
                   <div className="text-[10px] text-slate-400 truncate">{it.desc}</div>
@@ -1760,10 +1760,10 @@ export default function AnonChatTab() {
 
   if (view === "friends") {
     return (
-      <div className="rounded-3xl overflow-hidden border-2 border-emerald-400/30 bg-gradient-to-b from-emerald-950/30 via-slate-950 to-slate-950 min-h-[500px] flex flex-col">
-        <div className="flex items-center justify-center gap-2 py-4 border-b border-emerald-400/20 bg-gradient-to-r from-emerald-500/10 to-teal-500/10">
-          <Users className="w-5 h-5 text-emerald-300" />
-          <span className="text-base font-extrabold text-emerald-100">Teman</span>
+      <div className="rounded-3xl overflow-hidden border-2 border-purple-400/30 bg-gradient-to-b from-purple-950/30 via-slate-950 to-slate-950 min-h-[500px] flex flex-col">
+        <div className="flex items-center justify-center gap-2 py-4 border-b border-purple-400/20 bg-gradient-to-r from-purple-500/10 to-violet-500/10">
+          <Users className="w-5 h-5 text-purple-300" />
+          <span className="text-base font-extrabold text-purple-100">Teman</span>
         </div>
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
           {friendReqs.length > 0 && (
@@ -1777,7 +1777,7 @@ export default function AnonChatTab() {
                       <div className="font-semibold text-amber-100 truncate">{r.from_nickname}</div>
                       <div className="text-[10px] text-amber-300/70">ingin berteman</div>
                     </div>
-                    <button onClick={() => respondFriendRequest(r.id, true)} className="w-8 h-8 rounded-full bg-emerald-500 hover:bg-emerald-600 text-white flex items-center justify-center" title="Terima">
+                    <button onClick={() => respondFriendRequest(r.id, true)} className="w-8 h-8 rounded-full bg-purple-500 hover:bg-purple-600 text-white flex items-center justify-center" title="Terima">
                       <UserCheck className="w-4 h-4" />
                     </button>
                     <button onClick={() => respondFriendRequest(r.id, false)} className="w-8 h-8 rounded-full bg-rose-500/30 hover:bg-rose-500/50 text-rose-200 flex items-center justify-center" title="Tolak">
@@ -1790,11 +1790,11 @@ export default function AnonChatTab() {
           )}
 
           <div>
-            <h4 className="text-xs font-bold text-emerald-300 mb-2 px-1">Daftar teman ({friends.length})</h4>
+            <h4 className="text-xs font-bold text-purple-300 mb-2 px-1">Daftar teman ({friends.length})</h4>
             {friends.length === 0 ? (
               <div className="flex flex-col items-center justify-center text-center gap-3 py-10">
-                <div className="w-20 h-20 rounded-full bg-emerald-500/10 flex items-center justify-center">
-                  <Users className="w-10 h-10 text-emerald-300/70" />
+                <div className="w-20 h-20 rounded-full bg-purple-500/10 flex items-center justify-center">
+                  <Users className="w-10 h-10 text-purple-300/70" />
                 </div>
                 <h3 className="font-bold text-slate-100">Belum ada teman</h3>
                 <p className="text-xs text-slate-400 max-w-[260px]">Saat sedang chat, ketuk tombol <UserPlus className="inline w-3 h-3" /> Add di header untuk menambahkan teman.</p>
@@ -1802,13 +1802,13 @@ export default function AnonChatTab() {
             ) : (
               <div className="space-y-2">
                 {friends.map(f => (
-                  <div key={f.friend_visitor} className="flex items-center gap-3 p-3 rounded-2xl bg-slate-900/60 border border-emerald-400/20 hover:border-emerald-400/50 transition">
-                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center text-lg shrink-0">🥷</div>
+                  <div key={f.friend_visitor} className="flex items-center gap-3 p-3 rounded-2xl bg-slate-900/60 border border-purple-400/20 hover:border-purple-400/50 transition">
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-400 to-violet-500 flex items-center justify-center text-lg shrink-0">🥷</div>
                     <div className="flex-1 min-w-0">
-                      <div className="font-semibold text-emerald-100 truncate">{f.friend_nickname}</div>
-                      <div className="text-[10px] text-emerald-300/60 italic">Status & terakhir dilihat tidak ditampilkan</div>
+                      <div className="font-semibold text-purple-100 truncate">{f.friend_nickname}</div>
+                      <div className="text-[10px] text-purple-300/60 italic">Status & terakhir dilihat tidak ditampilkan</div>
                     </div>
-                    <button onClick={() => startFriendChat(f.friend_visitor)} className="px-3 h-8 rounded-full bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-bold flex items-center gap-1" title="Chat">
+                    <button onClick={() => startFriendChat(f.friend_visitor)} className="px-3 h-8 rounded-full bg-purple-500 hover:bg-purple-600 text-white text-xs font-bold flex items-center gap-1" title="Chat">
                       <MessageCircle className="w-3.5 h-3.5" /> Chat
                     </button>
                     <button onClick={() => removeFriend(f.friend_visitor)} className="w-8 h-8 rounded-full bg-slate-800 hover:bg-rose-500/30 text-slate-400 hover:text-rose-300 flex items-center justify-center" title="Hapus">
@@ -1830,16 +1830,16 @@ export default function AnonChatTab() {
 
   if (view === "searching") {
     return (
-      <div className="rounded-3xl border-2 border-emerald-400/30 bg-gradient-to-b from-emerald-950/40 via-slate-950 to-slate-950 p-8 text-center min-h-[500px] flex flex-col items-center justify-center">
+      <div className="rounded-3xl border-2 border-purple-400/30 bg-gradient-to-b from-purple-950/40 via-slate-950 to-slate-950 p-8 text-center min-h-[500px] flex flex-col items-center justify-center">
         <div className="relative w-32 h-32 mb-6">
-          <div className="absolute inset-0 rounded-full bg-emerald-500/20 animate-ping" />
-          <div className="absolute inset-2 rounded-full bg-emerald-500/30 animate-pulse" />
-          <div className="absolute inset-4 rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center text-5xl shadow-2xl shadow-emerald-500/50">
+          <div className="absolute inset-0 rounded-full bg-purple-500/20 animate-ping" />
+          <div className="absolute inset-2 rounded-full bg-purple-500/30 animate-pulse" />
+          <div className="absolute inset-4 rounded-full bg-gradient-to-br from-purple-400 to-violet-500 flex items-center justify-center text-5xl shadow-2xl shadow-purple-500/50">
             🥷
           </div>
         </div>
-        <div className="text-xl font-bold text-emerald-100 mb-1">Mencari partner...</div>
-        <div className="text-sm text-emerald-300/70 mb-6">{Math.floor(searchSecs/60).toString().padStart(2,"0")}:{(searchSecs%60).toString().padStart(2,"0")}</div>
+        <div className="text-xl font-bold text-purple-100 mb-1">Mencari partner...</div>
+        <div className="text-sm text-purple-300/70 mb-6">{Math.floor(searchSecs/60).toString().padStart(2,"0")}:{(searchSecs%60).toString().padStart(2,"0")}</div>
         <div className="text-xs text-slate-400 mb-8">{onlineCount} orang juga sedang mencari</div>
         <button onClick={cancelSearch}
           className="px-8 py-3 rounded-2xl bg-slate-800 text-slate-200 font-semibold border border-slate-700 hover:bg-slate-700">
@@ -1923,7 +1923,7 @@ export default function AnonChatTab() {
       <div className="px-5 pb-4 flex items-center justify-center gap-4 text-[11px] text-slate-400">
         <span className="flex items-center gap-1.5"><Users className="w-3 h-3" />{prefGender === "male" ? "Pria" : prefGender === "female" ? "Wanita" : "Semua"}</span>
         <span className="flex items-center gap-1.5"><Heart className="w-3 h-3" />{interest}</span>
-        <span className="flex items-center gap-1.5 text-emerald-400"><span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />{onlineCount} online</span>
+        <span className="flex items-center gap-1.5 text-purple-400"><span className="w-1.5 h-1.5 rounded-full bg-purple-400 animate-pulse" />{onlineCount} online</span>
       </div>
 
       {/* Inner bottom nav */}
@@ -1943,13 +1943,13 @@ function InnerNav({ active, onChange }: { active: "search" | "friends" | "settin
     { k: "settings", Icon: SettingsIcon, label: "Pengaturan" },
   ];
   return (
-    <div className="flex items-center justify-around border-t border-emerald-400/15 bg-slate-950/80 backdrop-blur py-2.5">
+    <div className="flex items-center justify-around border-t border-purple-400/15 bg-slate-950/80 backdrop-blur py-2.5">
       {items.map(({ k, Icon, label }) => {
         const on = active === k;
         return (
           <button key={k} onClick={() => onChange(k)}
-            className={`flex flex-col items-center gap-0.5 px-5 py-1 rounded-xl transition ${on ? "text-emerald-300" : "text-slate-500 hover:text-slate-300"}`}>
-            <Icon className={`w-5 h-5 ${on ? "drop-shadow-[0_0_6px_rgba(52,211,153,0.7)]" : ""}`} strokeWidth={on ? 2.4 : 1.8} />
+            className={`flex flex-col items-center gap-0.5 px-5 py-1 rounded-xl transition ${on ? "text-purple-300" : "text-slate-500 hover:text-slate-300"}`}>
+            <Icon className={`w-5 h-5 ${on ? "drop-shadow-[0_0_6px_rgba(192,132,252,0.7)]" : ""}`} strokeWidth={on ? 2.4 : 1.8} />
             <span className="text-[9.5px] font-semibold">{label}</span>
           </button>
         );
