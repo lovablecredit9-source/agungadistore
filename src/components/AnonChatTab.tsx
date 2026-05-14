@@ -140,6 +140,11 @@ export default function AnonChatTab() {
   const [avatarPreset, setAvatarPreset] = useState<string>(() => localStorage.getItem("anon_avatar_preset") || "ninja");
   const [avatarUrl, setAvatarUrl] = useState<string>(() => localStorage.getItem("anon_avatar_url") || "");
   const [showLastSeen, setShowLastSeen] = useState<boolean>(() => localStorage.getItem("anon_show_last_seen") !== "off");
+  const [confirmClose, setConfirmClose] = useState<boolean>(() => localStorage.getItem("anon_confirm_close") === "on");
+  const [keyboardMode, setKeyboardMode] = useState<"button" | "keyboard">(() => (localStorage.getItem("anon_keyboard_mode") as "button" | "keyboard") || "button");
+  const [mediaBlur, setMediaBlur] = useState<"off" | "temp" | "all">(() => (localStorage.getItem("anon_media_blur") as "off" | "temp" | "all") || "temp");
+  const [onlineStatus, setOnlineStatus] = useState<boolean>(() => localStorage.getItem("anon_online_status") !== "off");
+  const [whoCanCall, setWhoCanCall] = useState<"all" | "friends" | "none">(() => (localStorage.getItem("anon_who_can_call") as "all" | "friends" | "none") || "all");
   const [showEmojiInput, setShowEmojiInput] = useState(false);
   const [anonAccount, setAnonAccount] = useState<AnonAccount | null>(null);
   const [showAccountDialog, setShowAccountDialog] = useState(false);
