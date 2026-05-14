@@ -9,7 +9,7 @@ import { AnonAccountDialog, fetchAnonAccount, type AnonAccount } from "@/compone
 import { useTheme } from "@/lib/theme";
 import { useLang } from "@/lib/i18n";
 import { LANGUAGES } from "@/lib/languages";
-import { Key, Keyboard, EyeOff, PhoneCall, Check as CheckIcon } from "lucide-react";
+import { Key, Keyboard, EyeOff, PhoneCall } from "lucide-react";
 
 const CS_WA = "085769302532";
 const CS_WA_LINK = `https://wa.me/62${CS_WA.replace(/^0/, "")}`;
