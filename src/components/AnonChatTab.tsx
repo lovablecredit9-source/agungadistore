@@ -151,7 +151,9 @@ export default function AnonChatTab() {
   useEffect(() => { fetchAnonAccount(visitor).then(setAnonAccount); }, [visitor]);
   useEffect(() => {
     if (anonAccount?.bio !== undefined && anonAccount?.bio !== null) {
-      setBioDraft(anonAccount.bio || "");
+      const b = anonAccount.bio || "";
+      setBioDraft(b);
+      setSavedBio(b);
       return;
     }
     // Guest: ambil bio dari profil visitor
@@ -159,6 +161,7 @@ export default function AnonChatTab() {
       const { data } = await supabase.from("anon_chat_profiles" as any).select("bio").eq("visitor_id", visitor).maybeSingle();
       const b = (data as { bio?: string | null } | null)?.bio || "";
       setBioDraft(b);
+      setSavedBio(b);
     })();
   }, [anonAccount?.bio, visitor]);
 
