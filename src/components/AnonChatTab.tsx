@@ -96,9 +96,19 @@ interface AnonProfile { visitor_id: string; nickname: string | null; avatar_url:
 type PublicBioResponse = { success?: boolean; bio?: string | null; error?: string };
 type UpdateBioResponse = { success?: boolean; account?: AnonAccount | null; error?: string };
 
-type View = "lobby" | "prefs" | "account" | "interest" | "searching" | "chat" | "friends" | "support" | "notif" | "appearance" | "chatopts" | "language" | "privacy" | "about" | "about_privacy" | "about_rules" | "about_tutorial" | "about_system";
+type View = "lobby" | "prefs" | "account" | "interest" | "searching" | "chat" | "friends" | "explore" | "onboarding" | "support" | "notif" | "appearance" | "chatopts" | "language" | "privacy" | "about" | "about_privacy" | "about_rules" | "about_tutorial" | "about_system";
 
 const INTERESTS = ["Apapun","Curhat","Main RP","Meme","Kesepian","Game","Anime","Film","Musik","Travel","Coding","Olahraga","Nongkrong","Belajar"];
+
+// Kategori minat untuk onboarding (mirip referensi anon.chat)
+const INTEREST_CARDS: { id: string; label: string; Icon: any; gradient: string; ring: string }[] = [
+  { id: "Musik",    label: "Musik",    Icon: MusicIcon, gradient: "from-purple-500/30 to-violet-600/20", ring: "ring-purple-400/60" },
+  { id: "Game",     label: "Game",     Icon: Gamepad2,  gradient: "from-emerald-500/30 to-teal-600/20",  ring: "ring-emerald-400/60" },
+  { id: "Film",     label: "Film",     Icon: FilmIcon,  gradient: "from-slate-500/30 to-slate-700/20",   ring: "ring-slate-300/60" },
+  { id: "Olahraga", label: "Olahraga", Icon: Trophy,    gradient: "from-orange-500/30 to-amber-600/20",  ring: "ring-orange-400/60" },
+  { id: "Anime",    label: "Anime",    Icon: Sparkles,  gradient: "from-pink-500/30 to-rose-600/20",     ring: "ring-pink-400/60" },
+  { id: "Coding",   label: "Coding",   Icon: CodeIcon,  gradient: "from-sky-500/30 to-indigo-600/20",    ring: "ring-sky-400/60" },
+];
 
 function getVisitorId() {
   try {
