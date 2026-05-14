@@ -992,6 +992,30 @@ export default function AnonChatTab() {
     void markViewOnceSeen(m);
   };
 
+  // Auto-close view-once viewer on blur/visibility change (anti-screenshot best-effort)
+  useEffect(() => {
+    if (!viewOnceViewer) return;
+    const close = () => setViewOnceViewer(null);
+    const onKey = (e: KeyboardEvent) => {
+      // Block PrintScreen + common screenshot shortcuts
+      if (e.key === "PrintScreen" || (e.shiftKey && (e.metaKey || e.ctrlKey))) {
+        try { navigator.clipboard.writeText(""); } catch {}
+        close();
+      }
+    };
+    const onVis = () => { if (document.visibilityState !== "visible") close(); };
+    window.addEventListener("blur", close);
+    window.addEventListener("keyup", onKey);
+    window.addEventListener("keydown", onKey);
+    document.addEventListener("visibilitychange", onVis);
+    return () => {
+      window.removeEventListener("blur", close);
+      window.removeEventListener("keyup", onKey);
+      window.removeEventListener("keydown", onKey);
+      document.removeEventListener("visibilitychange", onVis);
+    };
+  }, [viewOnceViewer]);
+
 
   const deleteForEveryone = async (m: AnonMsg) => {
     if (m.sender !== visitor) return;
