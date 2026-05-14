@@ -17,8 +17,6 @@ const AudioDeviceDetector = () => {
   const detectDevices = async () => {
     setLoading(true);
     try {
-      // Request permission first
-      await navigator.mediaDevices.getUserMedia({ audio: true }).then(s => s.getTracks().forEach(t => t.stop()));
       const allDevices = await navigator.mediaDevices.enumerateDevices();
       const audioOutputs = allDevices
         .filter(d => d.kind === "audiooutput")
