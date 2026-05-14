@@ -967,37 +967,36 @@ export default function AnonChatTab() {
           )}
           {sessionStatus === "active" && !activeBan ? (
             <div className="flex items-center gap-2">
-              <button onClick={() => setShowEmojiInput(v => !v)} className="w-10 h-10 rounded-full bg-slate-900/70 border border-purple-400/30 flex items-center justify-center shrink-0 hover:bg-slate-800/70 transition">
-                <Plus className="w-[18px] h-[18px] text-purple-300" />
-              </button>
-              <label className="w-10 h-10 rounded-full bg-slate-900/70 border border-purple-400/30 flex items-center justify-center cursor-pointer shrink-0 hover:bg-slate-800/70 transition">
-                <ImagePlus className="w-[18px] h-[18px] text-purple-300" />
+              <label className="w-9 h-9 rounded-full bg-slate-900/70 border border-purple-400/20 flex items-center justify-center cursor-pointer shrink-0 hover:bg-slate-800/70 transition" title="Kirim foto">
+                <ImagePlus className="w-[16px] h-[16px] text-purple-300" />
                 <input type="file" accept="image/*" className="hidden"
                   onChange={e => { if (e.target.files?.[0]) sendImage(e.target.files[0]); e.target.value = ""; }} />
               </label>
-              <input
-                value={draft}
-                onChange={e => onChangeDraft(e.target.value)}
-                onKeyDown={e => { if (e.key === "Enter") sendMessage(); }}
-                onBlur={() => pushTyping(false)}
-                placeholder="Ketik pesan rahasia..."
-                className="flex-1 bg-slate-900/70 border border-purple-400/30 rounded-full px-4 py-2.5 text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-purple-400"
-                maxLength={1000}
-              />
+              <div className="flex-1 relative">
+                <input
+                  value={draft}
+                  onChange={e => onChangeDraft(e.target.value)}
+                  onKeyDown={e => { if (e.key === "Enter") sendMessage(); }}
+                  onBlur={() => pushTyping(false)}
+                  placeholder="Ketik pesan..."
+                  className="w-full bg-slate-900/70 border border-purple-400/20 rounded-full pl-4 pr-11 py-2.5 text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-purple-400/60"
+                  maxLength={1000}
+                />
+                <button onClick={() => setShowEmojiInput(v => !v)} type="button"
+                  className="absolute right-1 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full hover:bg-slate-800 text-purple-300 flex items-center justify-center" title="Emoji">
+                  <Smile className="w-[18px] h-[18px]" />
+                </button>
+              </div>
               <button onClick={sendMessage} disabled={!draft.trim()}
-                className="w-11 h-11 rounded-full bg-gradient-to-br from-purple-400 to-violet-500 text-white flex items-center justify-center disabled:opacity-40 shadow-lg shadow-purple-500/40">
+                className="w-11 h-11 rounded-full bg-gradient-to-br from-purple-500 to-violet-600 text-white flex items-center justify-center disabled:opacity-40 shadow-lg shadow-purple-500/40 shrink-0">
                 <Send className="w-4 h-4" />
               </button>
             </div>
+          ) : sessionStatus === "ended" ? (
+            <button onClick={newPartner} className="w-full py-2.5 rounded-full bg-gradient-to-r from-purple-500 to-violet-600 text-white text-sm font-bold flex items-center justify-center gap-1.5 shadow-lg shadow-purple-500/40">
+              <RefreshCw className="w-4 h-4" /> Cari Partner Baru
+            </button>
           ) : null}
-          <div className="grid grid-cols-2 gap-2">
-            <button onClick={newPartner} className="py-2.5 rounded-xl bg-purple-500/15 hover:bg-purple-500/25 border border-purple-400/40 text-purple-200 text-sm font-semibold flex items-center justify-center gap-1.5">
-              <RefreshCw className="w-3.5 h-3.5" /> Partner Baru
-            </button>
-            <button onClick={endChat} className="py-2.5 rounded-xl bg-slate-800/60 hover:bg-slate-700/60 border border-slate-600/40 text-slate-200 text-sm font-semibold flex items-center justify-center gap-1.5">
-              <X className="w-3.5 h-3.5" /> Keluar
-            </button>
-          </div>
         </div>
       </div>
     );
