@@ -312,6 +312,7 @@ export default function AnonChatTab() {
     const { data: sess } = await supabase.from("anon_chat_sessions").select("visitor_a, visitor_b").eq("id", session).maybeSingle();
     if (!sess) return;
     const other = sess.visitor_a === visitor ? sess.visitor_b : sess.visitor_a;
+    partnerVisitorRef.current = other;
     const { data } = await supabase.from("anon_chat_profiles" as any).select("*").eq("visitor_id", other).maybeSingle();
     setPartnerProfile((data as unknown as AnonProfile) || null);
     const { data: bioData } = await supabase.functions.invoke("anon-chat-auth", {
@@ -321,6 +322,53 @@ export default function AnonChatTab() {
     setPartnerBio(bioResponse?.bio || null);
     setShowPartnerBio(false);
   }, [visitor]);
+
+  const loadCallLogs = useCallback(async () => {
+    const { data } = await supabase.from("anon_chat_call_logs" as any).select("*").eq("visitor_id", visitor).order("started_at", { ascending: false }).limit(100);
+    setCallLogs((data as unknown as AnonCallLog[]) || []);
+  }, [visitor]);
+
+  const loadMatchHistory = useCallback(async () => {
+    const { data } = await supabase.from("anon_chat_match_history" as any).select("*").eq("visitor_id", visitor).order("last_session_at", { ascending: false }).limit(100);
+    setMatchHistory((data as unknown as AnonMatchHistory[]) || []);
+  }, [visitor]);
+
+  const blockMatchPartner = useCallback(async (partnerVisitor: string) => {
+    if (!confirm("Hapus dari riwayat dan jangan pertemukan lagi dengan pengguna ini?")) return;
+    await supabase.from("anon_chat_blocked_matches" as any).insert({ visitor_id: visitor, blocked_visitor: partnerVisitor } as any);
+    await supabase.from("anon_chat_match_history" as any).delete().eq("visitor_id", visitor).eq("partner_visitor", partnerVisitor);
+    toast.success("Dihapus dari riwayat. Tidak akan dipertemukan lagi.");
+    loadMatchHistory();
+  }, [visitor, loadMatchHistory]);
+
+  const deleteCallLog = useCallback(async (id: string) => {
+    await supabase.from("anon_chat_call_logs" as any).delete().eq("id", id).eq("visitor_id", visitor);
+    setCallLogs(prev => prev.filter(c => c.id !== id));
+  }, [visitor]);
+
+  const insertCallLog = useCallback(async (status: AnonCallLog["status"]) => {
+    if (!callDirRef.current || !callStartedAtRef.current || !partnerVisitorRef.current) return;
+    const startedAt = callStartedAtRef.current;
+    const answeredAt = callAnsweredAtRef.current;
+    const endedAt = new Date().toISOString();
+    const duration = answeredAt ? Math.max(0, Math.floor((Date.parse(endedAt) - Date.parse(answeredAt)) / 1000)) : 0;
+    try {
+      await supabase.from("anon_chat_call_logs" as any).insert({
+        visitor_id: visitor,
+        partner_visitor: partnerVisitorRef.current,
+        partner_nickname: partner?.nick || null,
+        session_id: sessionId,
+        direction: callDirRef.current,
+        status,
+        started_at: startedAt,
+        answered_at: answeredAt,
+        ended_at: endedAt,
+        duration_seconds: duration,
+      } as any);
+    } catch {}
+    callDirRef.current = null; callStartedAtRef.current = null; callAnsweredAtRef.current = null; callConnectedRef.current = false;
+  }, [visitor, partner, sessionId]);
+
 
   useEffect(() => {
     refreshBan();
