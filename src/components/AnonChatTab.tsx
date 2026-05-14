@@ -713,6 +713,16 @@ export default function AnonChatTab() {
   if (view === "chat") {
     return (
       <div className="flex flex-col h-[calc(100vh-180px)] min-h-[500px] rounded-3xl overflow-hidden border-2 border-purple-400/30 bg-gradient-to-b from-purple-950/40 via-slate-950 to-slate-950 shadow-[0_20px_60px_-20px_rgba(168,85,247,0.4)]">
+        {/* Brand bar */}
+        <div className="flex items-center justify-between px-3 py-1.5 bg-[#0a0618] border-b border-purple-500/20">
+          <div className="text-[13px] font-extrabold text-white tracking-tight">
+            anon<span className="bg-gradient-to-r from-fuchsia-400 to-purple-400 bg-clip-text text-transparent">.chat</span>
+          </div>
+          <button type="button" title="Voice (segera hadir)" onClick={() => toast.info("Fitur voice segera hadir")}
+            className="w-7 h-7 rounded-full bg-purple-500/20 hover:bg-purple-500/40 border border-purple-400/30 text-purple-200 flex items-center justify-center transition">
+            <Mic className="w-3.5 h-3.5" />
+          </button>
+        </div>
         {/* Header */}
         <div className="flex items-center gap-3 p-3 border-b border-purple-400/20 bg-gradient-to-r from-purple-500/10 via-violet-500/10 to-fuchsia-500/10 backdrop-blur">
           <div className={`w-11 h-11 rounded-full bg-gradient-to-br ${partnerAvatar.gradient} flex items-center justify-center text-xl shadow-lg shadow-purple-500/40 overflow-hidden`}>
