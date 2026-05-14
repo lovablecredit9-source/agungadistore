@@ -157,6 +157,11 @@ export default function AnonChatTab() {
   const { theme, setTheme } = useTheme();
   const [lang, setLang] = useLang();
   const [view, setView] = useState<View>("lobby");
+  // Broadcast view to outer page so the bottom navigation can decide whether to show
+  useEffect(() => {
+    try { window.dispatchEvent(new CustomEvent("anon-chat-view", { detail: view })); } catch {}
+    return () => { try { window.dispatchEvent(new CustomEvent("anon-chat-view", { detail: "lobby" })); } catch {} };
+  }, [view]);
   const [nickname, setNickname] = useState<string>(() => localStorage.getItem("anon_nick") || genNick());
   const [myGender, setMyGender] = useState<string>(() => localStorage.getItem("anon_my_gender") || "any");
   const [prefGender, setPrefGender] = useState<string>(() => localStorage.getItem("anon_pref_gender") || "any");
