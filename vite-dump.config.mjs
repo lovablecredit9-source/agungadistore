@@ -5,7 +5,7 @@ import fs from "fs";
 
 export default defineConfig({
   resolve: { alias: { "@": path.resolve("./src") } },
-  build: { target: "es2020", minify: false },
+  build: { target: "es2020", minify: "esbuild" },
   plugins: [react(), {
     name: 'dump',
     enforce: 'post',
