@@ -1189,7 +1189,8 @@ export default function AnonChatTab() {
                 <button onClick={sendPhoto} className="w-full py-2.5 rounded-xl bg-gradient-to-r from-purple-500 to-violet-600 text-white font-bold flex items-center justify-center gap-2"><Send className="w-4 h-4" /> Kirim</button>
               </div>
             </div>
-          )}
+            );
+          })()}
           {messages.map((m, idx) => {
             if ((m.deleted_for || []).includes(visitor)) return null;
             const mine = m.sender === visitor;
