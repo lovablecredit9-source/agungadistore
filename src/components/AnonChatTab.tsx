@@ -174,6 +174,32 @@ export default function AnonChatTab() {
   const [editingBio, setEditingBio] = useState(false);
   const [savingBio, setSavingBio] = useState(false);
 
+  // Onboarding & Explore (baru)
+  const [onboardStep, setOnboardStep] = useState<1 | 2 | 3>(1);
+  const [onboardInterests, setOnboardInterests] = useState<string[]>(() => {
+    try { return JSON.parse(localStorage.getItem("anon_onboard_interests") || "[]"); } catch { return []; }
+  });
+  const [exploreList, setExploreList] = useState<AnonProfile[]>([]);
+  const [exploreLoading, setExploreLoading] = useState(false);
+  useEffect(() => { try { localStorage.setItem("anon_onboard_interests", JSON.stringify(onboardInterests)); } catch {} }, [onboardInterests]);
+
+  const loadExplore = useCallback(async () => {
+    setExploreLoading(true);
+    try {
+      const cutoff = new Date(Date.now() - 5 * 60 * 1000).toISOString();
+      const { data } = await supabase
+        .from("anon_chat_profiles" as any)
+        .select("*")
+        .neq("visitor_id", visitor)
+        .gte("last_seen_at", cutoff)
+        .order("last_seen_at", { ascending: false })
+        .limit(50);
+      setExploreList(((data as unknown) as AnonProfile[]) || []);
+    } finally {
+      setExploreLoading(false);
+    }
+  }, [visitor]);
+
   useEffect(() => { fetchAnonAccount(visitor).then(setAnonAccount); }, [visitor]);
   useEffect(() => {
     if (anonAccount?.bio !== undefined && anonAccount?.bio !== null) {
