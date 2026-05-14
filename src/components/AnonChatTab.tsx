@@ -712,42 +712,48 @@ export default function AnonChatTab() {
   // ============ RENDER ============
   if (view === "chat") {
     return (
-      <div className="flex flex-col h-[calc(100vh-180px)] min-h-[500px] rounded-3xl overflow-hidden border-2 border-purple-400/30 bg-gradient-to-b from-purple-950/40 via-slate-950 to-slate-950 shadow-[0_20px_60px_-20px_rgba(168,85,247,0.4)]">
-        {/* Brand bar */}
-        <div className="flex items-center justify-between px-3 py-1.5 bg-[#0a0618] border-b border-purple-500/20">
-          <div className="text-[13px] font-extrabold text-white tracking-tight">
+      <div className="flex flex-col h-[calc(100vh-180px)] min-h-[500px] rounded-3xl overflow-hidden border border-purple-500/20 bg-[#0c0820] shadow-[0_20px_60px_-20px_rgba(168,85,247,0.4)]">
+        {/* Top bar: back · anon.chat · menu */}
+        <div className="grid grid-cols-[auto_1fr_auto] items-center px-3 py-2.5 bg-[#0c0820] border-b border-purple-500/15">
+          <button onClick={endChat} className="w-9 h-9 rounded-full hover:bg-white/5 text-slate-200 flex items-center justify-center" title="Kembali">
+            <ArrowLeft className="w-5 h-5" />
+          </button>
+          <div className="text-center text-[15px] font-extrabold text-white tracking-tight">
             anon<span className="bg-gradient-to-r from-fuchsia-400 to-purple-400 bg-clip-text text-transparent">.chat</span>
           </div>
-          <button type="button" title="Voice (segera hadir)" onClick={() => toast.info("Fitur voice segera hadir")}
-            className="w-7 h-7 rounded-full bg-purple-500/20 hover:bg-purple-500/40 border border-purple-400/30 text-purple-200 flex items-center justify-center transition">
-            <Mic className="w-3.5 h-3.5" />
-          </button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button className="w-9 h-9 rounded-full hover:bg-white/5 text-slate-200 flex items-center justify-center" title="Menu">
+                <MoreVertical className="w-5 h-5" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-44 bg-slate-950 border-slate-800 text-slate-100">
+              <DropdownMenuItem onClick={newPartner}>Partner baru</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => toast.info("Fitur voice segera hadir")}>Mulai voice</DropdownMenuItem>
+              <DropdownMenuItem onClick={endChat} className="text-rose-300">Akhiri chat</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
-        {/* Header */}
-        <div className="flex items-center gap-3 p-3 border-b border-purple-400/20 bg-gradient-to-r from-purple-500/10 via-violet-500/10 to-fuchsia-500/10 backdrop-blur">
-          <div className={`w-11 h-11 rounded-full bg-gradient-to-br ${partnerAvatar.gradient} flex items-center justify-center text-xl shadow-lg shadow-purple-500/40 overflow-hidden`}>
+        {/* Partner row */}
+        <div className="flex items-center gap-3 px-3 py-2.5 border-b border-purple-500/10 bg-[#0c0820]">
+          <div className={`w-11 h-11 rounded-full bg-gradient-to-br ${partnerAvatar.gradient} flex items-center justify-center text-xl shadow-lg shadow-purple-500/30 overflow-hidden shrink-0`}>
             {partnerProfile?.avatar_url ? <img src={partnerProfile.avatar_url} alt="Avatar partner" className="h-full w-full object-cover" /> : <AvatarGraphic preset={partnerAvatar} />}
           </div>
           <div className="flex-1 min-w-0">
-            <div className="font-bold text-purple-50 truncate flex items-center gap-1.5">
-              {partner?.nick}
-              <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full bg-slate-700/60 text-slate-300">{partner?.gender === "male" ? "♂ Pria" : partner?.gender === "female" ? "♀ Wanita" : "Anonim"}</span>
-            </div>
-            <div className="text-xs text-purple-300/80 flex items-center gap-1.5">
-              <span className={`w-1.5 h-1.5 rounded-full ${sessionStatus === "active" ? "bg-purple-400 animate-pulse" : "bg-rose-400"}`} />
-              {sessionStatus === "active" ? "terhubung" : "chat berakhir"}
-              <span className="text-slate-500">•</span>
-              <span className="text-slate-400/80 italic">{partnerLastSeen}</span>
+            <div className="font-bold text-slate-50 truncate text-[15px] leading-tight">{partner?.nick}</div>
+            <div className="text-[11px] text-slate-300/80 flex items-center gap-1.5 mt-0.5">
+              <span className={`w-1.5 h-1.5 rounded-full ${sessionStatus === "active" ? "bg-emerald-400" : "bg-rose-400"}`} />
+              {sessionStatus === "active" ? "Online" : "Offline"}
             </div>
           </div>
           {sessionStatus === "active" && (
             friendStatusForPartner === "friend" ? (
-              <span className="px-2 py-1 rounded-full bg-purple-500/20 border border-purple-400/40 text-purple-200 text-[10px] font-bold flex items-center gap-1" title="Sudah berteman">
-                <UserCheck className="w-3 h-3" /> Teman
+              <span className="px-3 py-1.5 rounded-full bg-purple-500/15 border border-purple-400/30 text-purple-200 text-[11px] font-semibold flex items-center gap-1.5">
+                <UserCheck className="w-3.5 h-3.5" /> Teman
               </span>
             ) : friendStatusForPartner === "pending_out" ? (
-              <span className="px-2 py-1 rounded-full bg-amber-500/20 border border-amber-400/40 text-amber-200 text-[10px] font-semibold">
-                Menunggu...
+              <span className="px-3 py-1.5 rounded-full bg-purple-500/10 border border-purple-400/30 text-purple-200/80 text-[11px] font-semibold flex items-center gap-1.5">
+                <Check className="w-3.5 h-3.5" /> Terkirim
               </span>
             ) : friendStatusForPartner === "pending_in" ? (
               <button onClick={async () => {
@@ -756,18 +762,15 @@ export default function AnonChatTab() {
                 const other = sess.visitor_a === visitor ? sess.visitor_b : sess.visitor_a;
                 const { data: req } = await supabase.from("anon_chat_friend_requests").select("id").eq("from_visitor", other).eq("to_visitor", visitor).eq("status", "pending").maybeSingle();
                 if (req) await respondFriendRequest(req.id, true);
-              }} className="px-2 py-1 rounded-full bg-purple-500 text-white text-[10px] font-bold flex items-center gap-1">
-                <UserCheck className="w-3 h-3" /> Terima
+              }} className="px-3 py-1.5 rounded-full bg-purple-500 hover:bg-purple-400 text-white text-[11px] font-bold flex items-center gap-1.5 shadow-lg shadow-purple-500/40">
+                <UserCheck className="w-3.5 h-3.5" /> Terima
               </button>
             ) : (
-              <button onClick={sendFriendRequest} className="px-2 py-1 rounded-full bg-purple-500/20 hover:bg-purple-500/40 border border-purple-400/40 text-purple-200 text-[10px] font-bold flex items-center gap-1" title="Tambah teman">
-                <UserPlus className="w-3 h-3" /> Add
+              <button onClick={sendFriendRequest} className="px-3 py-1.5 rounded-full bg-gradient-to-r from-purple-500 to-violet-500 hover:from-purple-400 hover:to-violet-400 text-white text-[11px] font-bold flex items-center gap-1.5 shadow-lg shadow-purple-500/40">
+                <UserPlus className="w-3.5 h-3.5" /> Tambah Teman
               </button>
             )
           )}
-          <button onClick={endChat} className="w-9 h-9 rounded-full bg-rose-500/20 hover:bg-rose-500/40 text-rose-300 flex items-center justify-center transition" title="Akhiri">
-            <X className="w-4 h-4" />
-          </button>
         </div>
         {partnerBio && partnerBio.trim() && (
           <button
