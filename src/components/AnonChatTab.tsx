@@ -175,6 +175,11 @@ export default function AnonChatTab() {
   useEffect(() => { localStorage.setItem("anon_avatar_preset", avatarPreset); }, [avatarPreset]);
   useEffect(() => { localStorage.setItem("anon_avatar_url", avatarUrl); }, [avatarUrl]);
   useEffect(() => { localStorage.setItem("anon_show_last_seen", showLastSeen ? "on" : "off"); }, [showLastSeen]);
+  useEffect(() => { localStorage.setItem("anon_confirm_close", confirmClose ? "on" : "off"); }, [confirmClose]);
+  useEffect(() => { localStorage.setItem("anon_keyboard_mode", keyboardMode); }, [keyboardMode]);
+  useEffect(() => { localStorage.setItem("anon_media_blur", mediaBlur); }, [mediaBlur]);
+  useEffect(() => { localStorage.setItem("anon_online_status", onlineStatus ? "on" : "off"); }, [onlineStatus]);
+  useEffect(() => { localStorage.setItem("anon_who_can_call", whoCanCall); }, [whoCanCall]);
 
   const activeBan = !!banInfo && (banInfo.is_permanent || !banInfo.banned_until || new Date(banInfo.banned_until).getTime() > Date.now());
   const myAvatar = presetById(myProfile?.avatar_preset || avatarPreset);
