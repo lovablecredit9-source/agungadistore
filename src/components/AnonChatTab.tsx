@@ -753,6 +753,10 @@ export default function AnonChatTab() {
       const offer = await pc.createOffer();
       await pc.setLocalDescription(offer);
       voiceChanRef.current?.send({ type: "broadcast", event: "voice", payload: { kind: "offer", from: visitor, sdp: offer } });
+      callDirRef.current = "outgoing";
+      callStartedAtRef.current = new Date().toISOString();
+      callAnsweredAtRef.current = null;
+      callConnectedRef.current = false;
       setCallState("outgoing");
       toast.info("Memanggil partner...");
     } catch (e: any) {
@@ -773,12 +777,18 @@ export default function AnonChatTab() {
       await pc.setLocalDescription(answer);
       voiceChanRef.current?.send({ type: "broadcast", event: "voice", payload: { kind: "answer", from: visitor, sdp: answer } });
       pendingOfferRef.current = null;
+      callAnsweredAtRef.current = new Date().toISOString();
+      callConnectedRef.current = true;
       setCallState("connected");
     } catch (e: any) {
       toast.error("Gagal menerima panggilan", { description: e?.message || "Cek izin mikrofon di browser." });
       cleanupCall(true);
     }
   }, [ensurePc, visitor, cleanupCall]);
+
+  const declineVoiceCall = useCallback(() => {
+    cleanupCall(true, "declined");
+  }, [cleanupCall]);
 
   const toggleCallMute = useCallback(() => {
     const tracks = localStreamRef.current?.getAudioTracks() || [];
