@@ -2101,7 +2101,11 @@ export default function AnonChatTab() {
 
       {/* Main CTA */}
       <div className="px-5 pt-5 pb-4">
-        <button onClick={() => doMatch()}
+        <button onClick={() => {
+            let onboarded = false;
+            try { onboarded = localStorage.getItem("anon_onboarded") === "1"; } catch {}
+            if (!onboarded) { setOnboardStep(1); setView("onboarding"); } else { doMatch(); }
+          }}
           className="relative w-full py-4 rounded-2xl bg-gradient-to-r from-violet-600 via-purple-600 to-fuchsia-600 text-white font-extrabold text-base shadow-[0_15px_40px_-10px_rgba(168,85,247,0.8)] hover:scale-[1.01] active:scale-[0.99] transition flex items-center justify-center gap-2.5">
           <span className="w-7 h-7 rounded-full bg-white/20 flex items-center justify-center">
             <MessageCircle className="w-4 h-4" />
