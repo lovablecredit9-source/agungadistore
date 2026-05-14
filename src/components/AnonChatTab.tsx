@@ -689,9 +689,19 @@ export default function AnonChatTab() {
 
   const ICE_SERVERS: RTCIceServer[] = [{ urls: ["stun:stun.l.google.com:19302", "stun:stun1.l.google.com:19302"] }];
 
-  const cleanupCall = useCallback((notifyPeer = false) => {
+  const cleanupCall = useCallback((notifyPeer = false, statusOverride?: AnonCallLog["status"]) => {
     if (notifyPeer && voiceChanRef.current) {
       try { voiceChanRef.current.send({ type: "broadcast", event: "voice", payload: { kind: "hangup", from: visitor } }); } catch {}
+    }
+    // Log call if there was a started call
+    if (callDirRef.current && callStartedAtRef.current) {
+      let status: AnonCallLog["status"] = statusOverride || "ended";
+      if (!statusOverride) {
+        if (callConnectedRef.current) status = "ended";
+        else if (callDirRef.current === "outgoing") status = "cancelled";
+        else status = "missed";
+      }
+      insertCallLog(status);
     }
     if (callTimerRef.current) { clearInterval(callTimerRef.current); callTimerRef.current = null; }
     try { pcRef.current?.getSenders().forEach(s => s.track?.stop()); } catch {}
@@ -702,7 +712,7 @@ export default function AnonChatTab() {
     if (remoteAudioRef.current) { try { remoteAudioRef.current.srcObject = null; } catch {} }
     pendingOfferRef.current = null;
     setCallState("idle"); setCallMuted(false); setCallSeconds(0);
-  }, [visitor]);
+  }, [visitor, insertCallLog]);
 
   const ensurePc = useCallback(() => {
     if (pcRef.current) return pcRef.current;
