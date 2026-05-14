@@ -570,6 +570,133 @@ export default function AnonChatTab() {
 
   const newPartner = async () => { await endChat(); await doMatch(); };
 
+  // ============ VOICE CALL (WebRTC P2P via Supabase Realtime signaling) ============
+  const [callState, setCallState] = useState<"idle" | "outgoing" | "incoming" | "connected">("idle");
+  const [callMuted, setCallMuted] = useState(false);
+  const [callSeconds, setCallSeconds] = useState(0);
+  const pcRef = useRef<RTCPeerConnection | null>(null);
+  const localStreamRef = useRef<MediaStream | null>(null);
+  const remoteAudioRef = useRef<HTMLAudioElement | null>(null);
+  const voiceChanRef = useRef<any>(null);
+  const pendingOfferRef = useRef<RTCSessionDescriptionInit | null>(null);
+  const callTimerRef = useRef<any>(null);
+
+  const ICE_SERVERS: RTCIceServer[] = [{ urls: ["stun:stun.l.google.com:19302", "stun:stun1.l.google.com:19302"] }];
+
+  const cleanupCall = useCallback((notifyPeer = false) => {
+    if (notifyPeer && voiceChanRef.current) {
+      try { voiceChanRef.current.send({ type: "broadcast", event: "voice", payload: { kind: "hangup", from: visitor } }); } catch {}
+    }
+    if (callTimerRef.current) { clearInterval(callTimerRef.current); callTimerRef.current = null; }
+    try { pcRef.current?.getSenders().forEach(s => s.track?.stop()); } catch {}
+    try { pcRef.current?.close(); } catch {}
+    pcRef.current = null;
+    try { localStreamRef.current?.getTracks().forEach(t => t.stop()); } catch {}
+    localStreamRef.current = null;
+    if (remoteAudioRef.current) { try { remoteAudioRef.current.srcObject = null; } catch {} }
+    pendingOfferRef.current = null;
+    setCallState("idle"); setCallMuted(false); setCallSeconds(0);
+  }, [visitor]);
+
+  const ensurePc = useCallback(() => {
+    if (pcRef.current) return pcRef.current;
+    const pc = new RTCPeerConnection({ iceServers: ICE_SERVERS });
+    pc.onicecandidate = (e) => {
+      if (e.candidate && voiceChanRef.current) {
+        voiceChanRef.current.send({ type: "broadcast", event: "voice", payload: { kind: "ice", from: visitor, candidate: e.candidate.toJSON() } });
+      }
+    };
+    pc.ontrack = (e) => {
+      if (remoteAudioRef.current) {
+        remoteAudioRef.current.srcObject = e.streams[0];
+        remoteAudioRef.current.play().catch(() => {});
+      }
+    };
+    pc.onconnectionstatechange = () => {
+      const st = pc.connectionState;
+      if (st === "connected") {
+        setCallState("connected");
+        if (!callTimerRef.current) callTimerRef.current = setInterval(() => setCallSeconds(s => s + 1), 1000);
+      } else if (st === "failed" || st === "disconnected" || st === "closed") {
+        if (callState !== "idle") { toast.info("Panggilan terputus"); cleanupCall(false); }
+      }
+    };
+    pcRef.current = pc;
+    return pc;
+  }, [visitor, callState, cleanupCall]);
+
+  const startVoiceCall = useCallback(async () => {
+    if (!sessionId || sessionStatus !== "active") return;
+    if (callState !== "idle") return;
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      localStreamRef.current = stream;
+      const pc = ensurePc();
+      stream.getTracks().forEach(t => pc.addTrack(t, stream));
+      const offer = await pc.createOffer();
+      await pc.setLocalDescription(offer);
+      voiceChanRef.current?.send({ type: "broadcast", event: "voice", payload: { kind: "offer", from: visitor, sdp: offer } });
+      setCallState("outgoing");
+      toast.info("Memanggil partner...");
+    } catch (e: any) {
+      toast.error("Gagal mengakses mikrofon: " + (e?.message || ""));
+      cleanupCall(false);
+    }
+  }, [sessionId, sessionStatus, callState, ensurePc, visitor, cleanupCall]);
+
+  const acceptVoiceCall = useCallback(async () => {
+    if (!pendingOfferRef.current) return;
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      localStreamRef.current = stream;
+      const pc = ensurePc();
+      stream.getTracks().forEach(t => pc.addTrack(t, stream));
+      await pc.setRemoteDescription(new RTCSessionDescription(pendingOfferRef.current));
+      const answer = await pc.createAnswer();
+      await pc.setLocalDescription(answer);
+      voiceChanRef.current?.send({ type: "broadcast", event: "voice", payload: { kind: "answer", from: visitor, sdp: answer } });
+      pendingOfferRef.current = null;
+      setCallState("connected");
+    } catch (e: any) {
+      toast.error("Gagal menerima panggilan: " + (e?.message || ""));
+      cleanupCall(true);
+    }
+  }, [ensurePc, visitor, cleanupCall]);
+
+  const toggleCallMute = useCallback(() => {
+    const tracks = localStreamRef.current?.getAudioTracks() || [];
+    const newMuted = !callMuted;
+    tracks.forEach(t => { t.enabled = !newMuted; });
+    setCallMuted(newMuted);
+  }, [callMuted]);
+
+  // Subscribe signaling channel per session
+  useEffect(() => {
+    if (!sessionId) { cleanupCall(false); return; }
+    const ch = supabase.channel(`voice_${sessionId}`, { config: { broadcast: { self: false } } });
+    ch.on("broadcast", { event: "voice" }, async ({ payload }: any) => {
+      if (!payload || payload.from === visitor) return;
+      const pc = pcRef.current;
+      if (payload.kind === "offer") {
+        pendingOfferRef.current = payload.sdp;
+        setCallState("incoming");
+        playPing();
+      } else if (payload.kind === "answer" && pc) {
+        try { await pc.setRemoteDescription(new RTCSessionDescription(payload.sdp)); } catch {}
+      } else if (payload.kind === "ice" && pc) {
+        try { await pc.addIceCandidate(new RTCIceCandidate(payload.candidate)); } catch {}
+      } else if (payload.kind === "hangup") {
+        toast.info("Partner mengakhiri panggilan");
+        cleanupCall(false);
+      }
+    }).subscribe();
+    voiceChanRef.current = ch;
+    return () => { try { supabase.removeChannel(ch); } catch {} voiceChanRef.current = null; cleanupCall(false); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sessionId]);
+
+  const fmtCallTime = (s: number) => `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`;
+
   const pushTyping = useCallback(async (typing: boolean) => {
     if (!sessionId) return;
     try {
