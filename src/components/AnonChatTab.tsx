@@ -111,6 +111,8 @@ function genNick() {
 
 export default function AnonChatTab() {
   const visitor = useMemo(() => getVisitorId(), []);
+  const { theme, setTheme } = useTheme();
+  const [lang, setLang] = useLang();
   const [view, setView] = useState<View>("lobby");
   const [nickname, setNickname] = useState<string>(() => localStorage.getItem("anon_nick") || genNick());
   const [myGender, setMyGender] = useState<string>(() => localStorage.getItem("anon_my_gender") || "any");
