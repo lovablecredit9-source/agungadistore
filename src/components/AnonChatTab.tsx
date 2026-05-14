@@ -897,19 +897,94 @@ export default function AnonChatTab() {
     if (error) { toast.error(error.message); setDraft(text); }
   };
 
-  const sendImage = async (file: File) => {
-    if (!sessionId || !file || sessionStatus === "ended" || activeBan) return;
+  const openPhotoPreview = (file: File) => {
+    if (!sessionId || sessionStatus === "ended" || activeBan) return;
     if (file.size > 5 * 1024 * 1024) { toast.error("Gambar maksimal 5MB"); return; }
+    const url = URL.createObjectURL(file);
+    setPhotoPreview({ file, url, caption: "", viewOnce: false });
+  };
+
+  const sendPhoto = async () => {
+    if (!photoPreview || !sessionId) return;
+    const { file, caption, viewOnce } = photoPreview;
     const ext = file.name.split(".").pop() || "jpg";
     const path = `anon/${sessionId}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
     const { error: upErr } = await supabase.storage.from("chat-images").upload(path, file);
     if (upErr) { toast.error("Gagal upload gambar"); return; }
     const { data: u } = supabase.storage.from("chat-images").getPublicUrl(path);
-    const payload: any = { session_id: sessionId, sender_visitor_id: visitor, image_url: u.publicUrl };
+    const payload: any = {
+      session_id: sessionId,
+      sender_visitor_id: visitor,
+      media_url: u.publicUrl,
+      media_type: "image",
+      caption: caption.trim() || null,
+      view_once: viewOnce,
+    };
     if (replyTo) payload.reply_to_id = replyTo.id;
     setReplyTo(null);
+    try { URL.revokeObjectURL(photoPreview.url); } catch {}
+    setPhotoPreview(null);
     await supabase.from("anon_chat_messages").insert(payload);
   };
+
+  const startRecording = async () => {
+    if (!sessionId || sessionStatus === "ended" || activeBan || recording) return;
+    try {
+      const stream = await requestMicrophoneStream();
+      const mr = new MediaRecorder(stream);
+      recordChunksRef.current = [];
+      mr.ondataavailable = (e) => { if (e.data.size > 0) recordChunksRef.current.push(e.data); };
+      mr.onstop = async () => {
+        try { stream.getTracks().forEach(t => t.stop()); } catch {}
+        const duration = Math.max(1, Math.round((Date.now() - recordStartRef.current) / 1000));
+        const blob = new Blob(recordChunksRef.current, { type: "audio/webm" });
+        if (blob.size < 500) { toast.message("Pesan suara terlalu pendek"); return; }
+        const path = `anon/${sessionId}/voice-${Date.now()}.webm`;
+        const { error: upErr } = await supabase.storage.from("chat-images").upload(path, blob, { contentType: "audio/webm" });
+        if (upErr) { toast.error("Gagal upload pesan suara"); return; }
+        const { data: u } = supabase.storage.from("chat-images").getPublicUrl(path);
+        const payload: any = {
+          session_id: sessionId,
+          sender_visitor_id: visitor,
+          media_url: u.publicUrl,
+          media_type: "audio",
+          audio_duration: duration,
+        };
+        if (replyTo) payload.reply_to_id = replyTo.id;
+        setReplyTo(null);
+        await supabase.from("anon_chat_messages").insert(payload);
+      };
+      recordStartRef.current = Date.now();
+      mr.start();
+      recorderRef.current = mr;
+      setRecording(true); setRecordSecs(0);
+      recordTimerRef.current = setInterval(() => setRecordSecs(s => s + 1), 1000);
+    } catch (e: any) {
+      toast.error("Gagal akses mikrofon", { description: e?.message || "" });
+    }
+  };
+
+  const stopRecording = (cancel = false) => {
+    if (!recorderRef.current) return;
+    try {
+      if (cancel) {
+        recorderRef.current.ondataavailable = null as any;
+        recorderRef.current.onstop = () => { try { recorderRef.current?.stream?.getTracks().forEach(t => t.stop()); } catch {} };
+      }
+      recorderRef.current.stop();
+    } catch {}
+    recorderRef.current = null;
+    if (recordTimerRef.current) { clearInterval(recordTimerRef.current); recordTimerRef.current = null; }
+    setRecording(false); setRecordSecs(0);
+  };
+
+  const markViewOnceSeen = async (m: AnonMsg) => {
+    if (m.sender === visitor || m.viewed_at) return;
+    const now = new Date().toISOString();
+    setMessages(prev => prev.map(x => x.id === m.id ? { ...x, viewed_at: now } : x));
+    await supabase.from("anon_chat_messages").update({ viewed_at: now } as any).eq("id", m.id);
+  };
+
 
   const deleteForEveryone = async (m: AnonMsg) => {
     if (m.sender !== visitor) return;
