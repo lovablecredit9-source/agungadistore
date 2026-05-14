@@ -144,6 +144,8 @@ export default function AnonChatTab() {
   const [anonAccount, setAnonAccount] = useState<AnonAccount | null>(null);
   const [showAccountDialog, setShowAccountDialog] = useState(false);
   const [bioDraft, setBioDraft] = useState("");
+  const [savedBio, setSavedBio] = useState("");
+  const [editingBio, setEditingBio] = useState(false);
   const [savingBio, setSavingBio] = useState(false);
 
   useEffect(() => { fetchAnonAccount(visitor).then(setAnonAccount); }, [visitor]);
