@@ -1168,12 +1168,17 @@ export default function AnonChatTab() {
             </div>
           )}
           <audio ref={remoteAudioRef} autoPlay playsInline className="hidden" />
-          {photoPreview && (
-            <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4" onClick={() => { try { URL.revokeObjectURL(photoPreview.url); } catch {} setPhotoPreview(null); }}>
+          {photoPreview && (() => {
+            const closePreview = () => {
+              try { URL.revokeObjectURL(photoPreview.url); } catch { /* ignore */ }
+              setPhotoPreview(null);
+            };
+            return (
+            <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4" onClick={closePreview}>
               <div className="bg-slate-950 border border-purple-400/30 rounded-2xl p-3 max-w-md w-full space-y-3" onClick={e => e.stopPropagation()}>
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-bold text-slate-100">Kirim Foto</span>
-                  <button onClick={() => { try { URL.revokeObjectURL(photoPreview.url); } catch {} setPhotoPreview(null); }} className="text-slate-400 hover:text-slate-200"><X className="w-4 h-4" /></button>
+                  <button onClick={closePreview} className="text-slate-400 hover:text-slate-200"><X className="w-4 h-4" /></button>
                 </div>
                 <img src={photoPreview.url} alt="" className="w-full max-h-[50vh] object-contain rounded-xl bg-black" />
                 <input value={photoPreview.caption} onChange={e => setPhotoPreview(p => p ? { ...p, caption: e.target.value.slice(0, 500) } : p)} placeholder="Tambahkan teks (opsional)..." className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-100" maxLength={500} />
@@ -1184,7 +1189,8 @@ export default function AnonChatTab() {
                 <button onClick={sendPhoto} className="w-full py-2.5 rounded-xl bg-gradient-to-r from-purple-500 to-violet-600 text-white font-bold flex items-center justify-center gap-2"><Send className="w-4 h-4" /> Kirim</button>
               </div>
             </div>
-          )}
+            );
+          })()}
           {messages.map((m, idx) => {
             if ((m.deleted_for || []).includes(visitor)) return null;
             const mine = m.sender === visitor;
