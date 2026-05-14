@@ -1239,6 +1239,167 @@ export default function AnonChatTab() {
     );
   }
 
+  if (view === "appearance") {
+    const opts: Array<{ key: typeof theme; label: string }> = [
+      { key: "dark", label: "Tema gelap" },
+      { key: "light", label: "Tema terang" },
+      { key: "system", label: "Tema tampilan perangkat" },
+    ];
+    return (
+      <div className="rounded-3xl border-2 border-emerald-400/30 bg-gradient-to-b from-slate-950 to-emerald-950/20 min-h-[500px] flex flex-col">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-800/60">
+          <button onClick={() => setView("prefs")} className="text-emerald-300 text-sm">← Kembali</button>
+          <div className="font-bold text-slate-100">Tampilan</div>
+          <div className="w-12" />
+        </div>
+        <div className="flex-1 overflow-y-auto p-4">
+          <div className="rounded-2xl bg-slate-900/70 border border-slate-800 divide-y divide-slate-800 overflow-hidden">
+            {opts.map(o => (
+              <button key={o.key} onClick={() => { setTheme(o.key); toast.success(o.label + " diterapkan"); }}
+                className="w-full flex items-center gap-3 px-4 py-4 text-left hover:bg-slate-800/40">
+                <Check className={`w-5 h-5 ${theme === o.key ? "text-emerald-400" : "text-transparent"}`} />
+                <span className="text-slate-100 text-sm">{o.label}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+        <InnerNav active="settings" onChange={(k) => {
+          if (k === "search") setView("lobby");
+          else if (k === "friends") setView("friends");
+          else setView("prefs");
+        }} />
+      </div>
+    );
+  }
+
+  if (view === "chatopts") {
+    return (
+      <div className="rounded-3xl border-2 border-emerald-400/30 bg-gradient-to-b from-slate-950 to-emerald-950/20 min-h-[500px] flex flex-col">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-800/60">
+          <button onClick={() => setView("prefs")} className="text-emerald-300 text-sm">← Kembali</button>
+          <div className="font-bold text-slate-100">Opsi Obrolan</div>
+          <div className="w-12" />
+        </div>
+        <div className="flex-1 overflow-y-auto p-4 space-y-5">
+          <div className="space-y-2">
+            <div className="flex items-center gap-2 text-slate-300 text-sm font-semibold"><Key className="w-4 h-4" /> Konfirmasi Ganda</div>
+            <p className="text-[11px] text-slate-400">Aplikasi akan meminta konfirmasi sebelum menutup obrolan sementara</p>
+            <div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-4 flex items-center gap-3">
+              <div className="flex-1 text-sm text-slate-100">Meminta konfirmasi</div>
+              <button onClick={() => setConfirmClose(v => !v)}
+                className={`w-12 h-7 rounded-full p-0.5 transition ${confirmClose ? "bg-emerald-500" : "bg-slate-700"}`}>
+                <div className={`w-6 h-6 rounded-full bg-white transition ${confirmClose ? "translate-x-5" : ""}`} />
+              </button>
+            </div>
+          </div>
+          <div className="space-y-2">
+            <div className="flex items-center gap-2 text-slate-300 text-sm font-semibold"><Keyboard className="w-4 h-4" /> Pilihan Keyboard</div>
+            <p className="text-[11px] text-slate-400">Pilih apa yang akan ditampilkan di awal obrolan: tampilkan tombol interaksi obrolan atau buka keyboard ketik</p>
+            <div className="rounded-2xl bg-slate-900/70 border border-slate-800 divide-y divide-slate-800 overflow-hidden">
+              {[{k:"keyboard",label:"Buka keyboard"},{k:"button",label:"Tampilkan tombol"}].map(o => (
+                <button key={o.k} onClick={() => setKeyboardMode(o.k as "button" | "keyboard")}
+                  className="w-full flex items-center gap-3 px-4 py-3.5 text-left hover:bg-slate-800/40">
+                  <Check className={`w-5 h-5 ${keyboardMode === o.k ? "text-emerald-400" : "text-transparent"}`} />
+                  <span className="text-slate-100 text-sm">{o.label}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+        <InnerNav active="settings" onChange={(k) => {
+          if (k === "search") setView("lobby");
+          else if (k === "friends") setView("friends");
+          else setView("prefs");
+        }} />
+      </div>
+    );
+  }
+
+  if (view === "language") {
+    return (
+      <div className="rounded-3xl border-2 border-emerald-400/30 bg-gradient-to-b from-slate-950 to-emerald-950/20 min-h-[500px] flex flex-col">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-800/60">
+          <button onClick={() => setView("prefs")} className="text-emerald-300 text-sm">← Kembali</button>
+          <div className="font-bold text-slate-100">Bahasa</div>
+          <div className="w-12" />
+        </div>
+        <div className="flex-1 overflow-y-auto p-4 space-y-3">
+          <p className="text-[11px] text-slate-400 px-1">Kamu hanya akan dicocokkan dengan pengguna yang bahasanya sama</p>
+          <div className="rounded-2xl bg-slate-900/70 border border-slate-800 divide-y divide-slate-800 overflow-hidden">
+            {LANGUAGES.map(l => (
+              <button key={l.code} onClick={() => { setLang(l.code); toast.success(l.name); }}
+                className="w-full flex items-center gap-3 px-4 py-3.5 text-left hover:bg-slate-800/40">
+                <Check className={`w-5 h-5 shrink-0 ${lang === l.code ? "text-emerald-400" : "text-transparent"}`} />
+                <span className="text-base">{l.flag}</span>
+                <span className="text-slate-100 text-sm flex-1 truncate">{l.name}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+        <InnerNav active="settings" onChange={(k) => {
+          if (k === "search") setView("lobby");
+          else if (k === "friends") setView("friends");
+          else setView("prefs");
+        }} />
+      </div>
+    );
+  }
+
+  if (view === "privacy") {
+    return (
+      <div className="rounded-3xl border-2 border-emerald-400/30 bg-gradient-to-b from-slate-950 to-emerald-950/20 min-h-[500px] flex flex-col">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-800/60">
+          <button onClick={() => setView("prefs")} className="text-emerald-300 text-sm">← Kembali</button>
+          <div className="font-bold text-slate-100">Privasi</div>
+          <div className="w-12" />
+        </div>
+        <div className="flex-1 overflow-y-auto p-4 space-y-5">
+          <div className="space-y-2">
+            <div className="flex items-center gap-2 text-slate-300 text-sm font-semibold"><UserCheck className="w-4 h-4" /> Status online</div>
+            <p className="text-[11px] text-slate-400">Jika status online disembunyikan, kamu tidak bisa melihat status online pengguna lain</p>
+            <div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-4 flex items-center gap-3">
+              <div className="flex-1 text-sm text-slate-100">Tampilkan status online saya</div>
+              <button onClick={() => setOnlineStatus(v => !v)}
+                className={`w-12 h-7 rounded-full p-0.5 transition ${onlineStatus ? "bg-emerald-500" : "bg-slate-700"}`}>
+                <div className={`w-6 h-6 rounded-full bg-white transition ${onlineStatus ? "translate-x-5" : ""}`} />
+              </button>
+            </div>
+          </div>
+          <div className="space-y-2">
+            <div className="flex items-center gap-2 text-slate-300 text-sm font-semibold"><EyeOff className="w-4 h-4" /> Media kabur</div>
+            <p className="text-[11px] text-slate-400">Gambar dan video yang masuk akan dibuat kabur. Anda masih bisa melihat yang aslinya dengan mengetuknya</p>
+            <div className="rounded-2xl bg-slate-900/70 border border-slate-800 divide-y divide-slate-800 overflow-hidden">
+              {[{k:"off",label:"Nonaktifkan"},{k:"temp",label:"Aktifkan di chat sementara"},{k:"all",label:"Aktifkan di semua chat"}].map(o => (
+                <button key={o.k} onClick={() => setMediaBlur(o.k as "off" | "temp" | "all")}
+                  className="w-full flex items-center gap-3 px-4 py-3.5 text-left hover:bg-slate-800/40">
+                  <Check className={`w-5 h-5 ${mediaBlur === o.k ? "text-emerald-400" : "text-transparent"}`} />
+                  <span className="text-slate-100 text-sm">{o.label}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="space-y-2">
+            <div className="flex items-center gap-2 text-slate-300 text-sm font-semibold"><PhoneCall className="w-4 h-4" /> Siapa yang dapat menelepon saya</div>
+            <div className="rounded-2xl bg-slate-900/70 border border-slate-800 divide-y divide-slate-800 overflow-hidden">
+              {[{k:"all",label:"Semua"},{k:"friends",label:"Teman"},{k:"none",label:"Tak seorang pun"}].map(o => (
+                <button key={o.k} onClick={() => setWhoCanCall(o.k as "all" | "friends" | "none")}
+                  className="w-full flex items-center gap-3 px-4 py-3.5 text-left hover:bg-slate-800/40">
+                  <Check className={`w-5 h-5 ${whoCanCall === o.k ? "text-emerald-400" : "text-transparent"}`} />
+                  <span className="text-slate-100 text-sm">{o.label}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+        <InnerNav active="settings" onChange={(k) => {
+          if (k === "search") setView("lobby");
+          else if (k === "friends") setView("friends");
+          else setView("prefs");
+        }} />
+      </div>
+    );
+  }
+
   if (view === "prefs") {
     const genderLabel = myGender === "male" ? "pria" : myGender === "female" ? "wanita" : "rahasia";
     return (
