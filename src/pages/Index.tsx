@@ -370,6 +370,15 @@ const Index = () => {
     navigate(PATH_FROM_TAB[t] || "/", { replace: false });
   }, [navigate]);
   const [musicSubTab, setMusicSubTab] = useState<MusicSubTab>("playlist");
+  const [anonView, setAnonView] = useState<string>("lobby");
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent).detail;
+      if (typeof detail === "string") setAnonView(detail);
+    };
+    window.addEventListener("anon-chat-view", handler as EventListener);
+    return () => window.removeEventListener("anon-chat-view", handler as EventListener);
+  }, []);
   const [products, setProducts] = useState<Product[]>([]);
   const [productImages, setProductImages] = useState<ProductImage[]>([]);
   const [socialLinks, setSocialLinks] = useState<{ id: string; platform: string; label: string; url: string; icon_url: string | null; color_from: string; color_to: string; sort_order: number }[]>([]);
