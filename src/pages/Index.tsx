@@ -7356,6 +7356,7 @@ const Index = () => {
 
 
       {/* === Apple Minimal Premium Bottom Nav === */}
+      {tab !== "anonchat" && (
       <nav className="fixed left-0 right-0 z-50 px-3 pointer-events-none" style={{ bottom: "calc(env(safe-area-inset-bottom) + 10px)" }}>
         <div className="max-w-lg mx-auto pointer-events-auto">
           <div className="rounded-[26px] bg-background/70 backdrop-blur-2xl backdrop-saturate-200 border border-foreground/[0.08] shadow-[0_1px_0_0_rgba(255,255,255,0.06)_inset,0_-1px_0_0_rgba(0,0,0,0.04)_inset,0_20px_40px_-18px_rgba(0,0,0,0.35),0_8px_24px_-12px_rgba(0,0,0,0.25)] overflow-hidden">
@@ -7417,6 +7418,7 @@ const Index = () => {
           </div>
         </div>
       </nav>
+      )}
 
       {/* Floating cart button moved into header (always visible next to language selector) */}
 
