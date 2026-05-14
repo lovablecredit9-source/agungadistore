@@ -208,6 +208,28 @@ export default function AnonChatTab() {
   const [editingBio, setEditingBio] = useState(false);
   const [savingBio, setSavingBio] = useState(false);
 
+  // Partner visitor id for current session (for call logs / blocking)
+  const partnerVisitorRef = useRef<string | null>(null);
+  // Photo preview before send
+  const [photoPreview, setPhotoPreview] = useState<{ file: File; url: string; caption: string; viewOnce: boolean } | null>(null);
+  // Voice recording state
+  const [recording, setRecording] = useState(false);
+  const [recordSecs, setRecordSecs] = useState(0);
+  const recorderRef = useRef<MediaRecorder | null>(null);
+  const recordChunksRef = useRef<Blob[]>([]);
+  const recordTimerRef = useRef<any>(null);
+  const recordStartRef = useRef<number>(0);
+  // Call log refs
+  const callDirRef = useRef<"outgoing" | "incoming" | null>(null);
+  const callStartedAtRef = useRef<string | null>(null);
+  const callAnsweredAtRef = useRef<string | null>(null);
+  const callConnectedRef = useRef(false);
+  // History lists
+  const [callLogs, setCallLogs] = useState<AnonCallLog[]>([]);
+  const [matchHistory, setMatchHistory] = useState<AnonMatchHistory[]>([]);
+  // Audio playback state for voice notes
+  const [playingAudio, setPlayingAudio] = useState<string | null>(null);
+
   // Onboarding & Explore (baru)
   const [onboardStep, setOnboardStep] = useState<1 | 2 | 3>(1);
   const [onboardInterests, setOnboardInterests] = useState<string[]>(() => {
@@ -290,6 +312,7 @@ export default function AnonChatTab() {
     const { data: sess } = await supabase.from("anon_chat_sessions").select("visitor_a, visitor_b").eq("id", session).maybeSingle();
     if (!sess) return;
     const other = sess.visitor_a === visitor ? sess.visitor_b : sess.visitor_a;
+    partnerVisitorRef.current = other;
     const { data } = await supabase.from("anon_chat_profiles" as any).select("*").eq("visitor_id", other).maybeSingle();
     setPartnerProfile((data as unknown as AnonProfile) || null);
     const { data: bioData } = await supabase.functions.invoke("anon-chat-auth", {
@@ -299,6 +322,53 @@ export default function AnonChatTab() {
     setPartnerBio(bioResponse?.bio || null);
     setShowPartnerBio(false);
   }, [visitor]);
+
+  const loadCallLogs = useCallback(async () => {
+    const { data } = await supabase.from("anon_chat_call_logs" as any).select("*").eq("visitor_id", visitor).order("started_at", { ascending: false }).limit(100);
+    setCallLogs((data as unknown as AnonCallLog[]) || []);
+  }, [visitor]);
+
+  const loadMatchHistory = useCallback(async () => {
+    const { data } = await supabase.from("anon_chat_match_history" as any).select("*").eq("visitor_id", visitor).order("last_session_at", { ascending: false }).limit(100);
+    setMatchHistory((data as unknown as AnonMatchHistory[]) || []);
+  }, [visitor]);
+
+  const blockMatchPartner = useCallback(async (partnerVisitor: string) => {
+    if (!confirm("Hapus dari riwayat dan jangan pertemukan lagi dengan pengguna ini?")) return;
+    await supabase.from("anon_chat_blocked_matches" as any).insert({ visitor_id: visitor, blocked_visitor: partnerVisitor } as any);
+    await supabase.from("anon_chat_match_history" as any).delete().eq("visitor_id", visitor).eq("partner_visitor", partnerVisitor);
+    toast.success("Dihapus dari riwayat. Tidak akan dipertemukan lagi.");
+    loadMatchHistory();
+  }, [visitor, loadMatchHistory]);
+
+  const deleteCallLog = useCallback(async (id: string) => {
+    await supabase.from("anon_chat_call_logs" as any).delete().eq("id", id).eq("visitor_id", visitor);
+    setCallLogs(prev => prev.filter(c => c.id !== id));
+  }, [visitor]);
+
+  const insertCallLog = useCallback(async (status: AnonCallLog["status"]) => {
+    if (!callDirRef.current || !callStartedAtRef.current || !partnerVisitorRef.current) return;
+    const startedAt = callStartedAtRef.current;
+    const answeredAt = callAnsweredAtRef.current;
+    const endedAt = new Date().toISOString();
+    const duration = answeredAt ? Math.max(0, Math.floor((Date.parse(endedAt) - Date.parse(answeredAt)) / 1000)) : 0;
+    try {
+      await supabase.from("anon_chat_call_logs" as any).insert({
+        visitor_id: visitor,
+        partner_visitor: partnerVisitorRef.current,
+        partner_nickname: partner?.nick || null,
+        session_id: sessionId,
+        direction: callDirRef.current,
+        status,
+        started_at: startedAt,
+        answered_at: answeredAt,
+        ended_at: endedAt,
+        duration_seconds: duration,
+      } as any);
+    } catch {}
+    callDirRef.current = null; callStartedAtRef.current = null; callAnsweredAtRef.current = null; callConnectedRef.current = false;
+  }, [visitor, partner, sessionId]);
+
 
   useEffect(() => {
     refreshBan();
@@ -619,9 +689,19 @@ export default function AnonChatTab() {
 
   const ICE_SERVERS: RTCIceServer[] = [{ urls: ["stun:stun.l.google.com:19302", "stun:stun1.l.google.com:19302"] }];
 
-  const cleanupCall = useCallback((notifyPeer = false) => {
+  const cleanupCall = useCallback((notifyPeer = false, statusOverride?: AnonCallLog["status"]) => {
     if (notifyPeer && voiceChanRef.current) {
       try { voiceChanRef.current.send({ type: "broadcast", event: "voice", payload: { kind: "hangup", from: visitor } }); } catch {}
+    }
+    // Log call if there was a started call
+    if (callDirRef.current && callStartedAtRef.current) {
+      let status: AnonCallLog["status"] = statusOverride || "ended";
+      if (!statusOverride) {
+        if (callConnectedRef.current) status = "ended";
+        else if (callDirRef.current === "outgoing") status = "cancelled";
+        else status = "missed";
+      }
+      insertCallLog(status);
     }
     if (callTimerRef.current) { clearInterval(callTimerRef.current); callTimerRef.current = null; }
     try { pcRef.current?.getSenders().forEach(s => s.track?.stop()); } catch {}
@@ -632,7 +712,7 @@ export default function AnonChatTab() {
     if (remoteAudioRef.current) { try { remoteAudioRef.current.srcObject = null; } catch {} }
     pendingOfferRef.current = null;
     setCallState("idle"); setCallMuted(false); setCallSeconds(0);
-  }, [visitor]);
+  }, [visitor, insertCallLog]);
 
   const ensurePc = useCallback(() => {
     if (pcRef.current) return pcRef.current;
@@ -652,6 +732,7 @@ export default function AnonChatTab() {
       const st = pc.connectionState;
       if (st === "connected") {
         setCallState("connected");
+        if (!callConnectedRef.current) { callConnectedRef.current = true; if (!callAnsweredAtRef.current) callAnsweredAtRef.current = new Date().toISOString(); }
         if (!callTimerRef.current) callTimerRef.current = setInterval(() => setCallSeconds(s => s + 1), 1000);
       } else if (st === "failed" || st === "disconnected" || st === "closed") {
         if (callState !== "idle") { toast.info("Panggilan terputus"); cleanupCall(false); }
@@ -672,6 +753,10 @@ export default function AnonChatTab() {
       const offer = await pc.createOffer();
       await pc.setLocalDescription(offer);
       voiceChanRef.current?.send({ type: "broadcast", event: "voice", payload: { kind: "offer", from: visitor, sdp: offer } });
+      callDirRef.current = "outgoing";
+      callStartedAtRef.current = new Date().toISOString();
+      callAnsweredAtRef.current = null;
+      callConnectedRef.current = false;
       setCallState("outgoing");
       toast.info("Memanggil partner...");
     } catch (e: any) {
@@ -692,12 +777,18 @@ export default function AnonChatTab() {
       await pc.setLocalDescription(answer);
       voiceChanRef.current?.send({ type: "broadcast", event: "voice", payload: { kind: "answer", from: visitor, sdp: answer } });
       pendingOfferRef.current = null;
+      callAnsweredAtRef.current = new Date().toISOString();
+      callConnectedRef.current = true;
       setCallState("connected");
     } catch (e: any) {
       toast.error("Gagal menerima panggilan", { description: e?.message || "Cek izin mikrofon di browser." });
       cleanupCall(true);
     }
   }, [ensurePc, visitor, cleanupCall]);
+
+  const declineVoiceCall = useCallback(() => {
+    cleanupCall(true, "declined");
+  }, [cleanupCall]);
 
   const toggleCallMute = useCallback(() => {
     const tracks = localStreamRef.current?.getAudioTracks() || [];
@@ -715,10 +806,18 @@ export default function AnonChatTab() {
       const pc = pcRef.current;
       if (payload.kind === "offer") {
         pendingOfferRef.current = payload.sdp;
+        callDirRef.current = "incoming";
+        callStartedAtRef.current = new Date().toISOString();
+        callAnsweredAtRef.current = null;
+        callConnectedRef.current = false;
         setCallState("incoming");
         playPing();
       } else if (payload.kind === "answer" && pc) {
-        try { await pc.setRemoteDescription(new RTCSessionDescription(payload.sdp)); } catch {}
+        try {
+          await pc.setRemoteDescription(new RTCSessionDescription(payload.sdp));
+          if (!callAnsweredAtRef.current) callAnsweredAtRef.current = new Date().toISOString();
+          callConnectedRef.current = true;
+        } catch {}
       } else if (payload.kind === "ice" && pc) {
         try { await pc.addIceCandidate(new RTCIceCandidate(payload.candidate)); } catch {}
       } else if (payload.kind === "hangup") {
@@ -798,19 +897,94 @@ export default function AnonChatTab() {
     if (error) { toast.error(error.message); setDraft(text); }
   };
 
-  const sendImage = async (file: File) => {
-    if (!sessionId || !file || sessionStatus === "ended" || activeBan) return;
+  const openPhotoPreview = (file: File) => {
+    if (!sessionId || sessionStatus === "ended" || activeBan) return;
     if (file.size > 5 * 1024 * 1024) { toast.error("Gambar maksimal 5MB"); return; }
+    const url = URL.createObjectURL(file);
+    setPhotoPreview({ file, url, caption: "", viewOnce: false });
+  };
+
+  const sendPhoto = async () => {
+    if (!photoPreview || !sessionId) return;
+    const { file, caption, viewOnce } = photoPreview;
     const ext = file.name.split(".").pop() || "jpg";
     const path = `anon/${sessionId}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
     const { error: upErr } = await supabase.storage.from("chat-images").upload(path, file);
     if (upErr) { toast.error("Gagal upload gambar"); return; }
     const { data: u } = supabase.storage.from("chat-images").getPublicUrl(path);
-    const payload: any = { session_id: sessionId, sender_visitor_id: visitor, image_url: u.publicUrl };
+    const payload: any = {
+      session_id: sessionId,
+      sender_visitor_id: visitor,
+      media_url: u.publicUrl,
+      media_type: "image",
+      caption: caption.trim() || null,
+      view_once: viewOnce,
+    };
     if (replyTo) payload.reply_to_id = replyTo.id;
     setReplyTo(null);
+    try { URL.revokeObjectURL(photoPreview.url); } catch {}
+    setPhotoPreview(null);
     await supabase.from("anon_chat_messages").insert(payload);
   };
+
+  const startRecording = async () => {
+    if (!sessionId || sessionStatus === "ended" || activeBan || recording) return;
+    try {
+      const stream = await requestMicrophoneStream();
+      const mr = new MediaRecorder(stream);
+      recordChunksRef.current = [];
+      mr.ondataavailable = (e) => { if (e.data.size > 0) recordChunksRef.current.push(e.data); };
+      mr.onstop = async () => {
+        try { stream.getTracks().forEach(t => t.stop()); } catch {}
+        const duration = Math.max(1, Math.round((Date.now() - recordStartRef.current) / 1000));
+        const blob = new Blob(recordChunksRef.current, { type: "audio/webm" });
+        if (blob.size < 500) { toast.message("Pesan suara terlalu pendek"); return; }
+        const path = `anon/${sessionId}/voice-${Date.now()}.webm`;
+        const { error: upErr } = await supabase.storage.from("chat-images").upload(path, blob, { contentType: "audio/webm" });
+        if (upErr) { toast.error("Gagal upload pesan suara"); return; }
+        const { data: u } = supabase.storage.from("chat-images").getPublicUrl(path);
+        const payload: any = {
+          session_id: sessionId,
+          sender_visitor_id: visitor,
+          media_url: u.publicUrl,
+          media_type: "audio",
+          audio_duration: duration,
+        };
+        if (replyTo) payload.reply_to_id = replyTo.id;
+        setReplyTo(null);
+        await supabase.from("anon_chat_messages").insert(payload);
+      };
+      recordStartRef.current = Date.now();
+      mr.start();
+      recorderRef.current = mr;
+      setRecording(true); setRecordSecs(0);
+      recordTimerRef.current = setInterval(() => setRecordSecs(s => s + 1), 1000);
+    } catch (e: any) {
+      toast.error("Gagal akses mikrofon", { description: e?.message || "" });
+    }
+  };
+
+  const stopRecording = (cancel = false) => {
+    if (!recorderRef.current) return;
+    try {
+      if (cancel) {
+        recorderRef.current.ondataavailable = null as any;
+        recorderRef.current.onstop = () => { try { recorderRef.current?.stream?.getTracks().forEach(t => t.stop()); } catch {} };
+      }
+      recorderRef.current.stop();
+    } catch {}
+    recorderRef.current = null;
+    if (recordTimerRef.current) { clearInterval(recordTimerRef.current); recordTimerRef.current = null; }
+    setRecording(false); setRecordSecs(0);
+  };
+
+  const markViewOnceSeen = async (m: AnonMsg) => {
+    if (m.sender === visitor || m.viewed_at) return;
+    const now = new Date().toISOString();
+    setMessages(prev => prev.map(x => x.id === m.id ? { ...x, viewed_at: now } : x));
+    await supabase.from("anon_chat_messages").update({ viewed_at: now } as any).eq("id", m.id);
+  };
+
 
   const deleteForEveryone = async (m: AnonMsg) => {
     if (m.sender !== visitor) return;
@@ -974,9 +1148,14 @@ export default function AnonChatTab() {
                 </div>
               </div>
               {callState === "incoming" && (
-                <button onClick={acceptVoiceCall} className="h-9 px-3 rounded-full bg-emerald-500 hover:bg-emerald-400 text-white text-[12px] font-bold flex items-center gap-1.5">
-                  <Phone className="w-3.5 h-3.5" /> Terima
-                </button>
+                <>
+                  <button onClick={acceptVoiceCall} className="h-9 px-3 rounded-full bg-emerald-500 hover:bg-emerald-400 text-white text-[12px] font-bold flex items-center gap-1.5">
+                    <Phone className="w-3.5 h-3.5" /> Terima
+                  </button>
+                  <button onClick={declineVoiceCall} className="h-9 px-3 rounded-full bg-rose-500 hover:bg-rose-400 text-white text-[12px] font-bold flex items-center gap-1.5">
+                    <X className="w-3.5 h-3.5" /> Tolak
+                  </button>
+                </>
               )}
               {callState === "connected" && (
                 <button onClick={toggleCallMute} className="h-9 w-9 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center" title={callMuted ? "Aktifkan mic" : "Matikan mic"}>
@@ -989,6 +1168,23 @@ export default function AnonChatTab() {
             </div>
           )}
           <audio ref={remoteAudioRef} autoPlay playsInline className="hidden" />
+          {photoPreview && (
+            <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4" onClick={() => { try { URL.revokeObjectURL(photoPreview.url); } catch {} setPhotoPreview(null); }}>
+              <div className="bg-slate-950 border border-purple-400/30 rounded-2xl p-3 max-w-md w-full space-y-3" onClick={e => e.stopPropagation()}>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-bold text-slate-100">Kirim Foto</span>
+                  <button onClick={() => { try { URL.revokeObjectURL(photoPreview.url); } catch {} setPhotoPreview(null); }} className="text-slate-400 hover:text-slate-200"><X className="w-4 h-4" /></button>
+                </div>
+                <img src={photoPreview.url} alt="" className="w-full max-h-[50vh] object-contain rounded-xl bg-black" />
+                <input value={photoPreview.caption} onChange={e => setPhotoPreview(p => p ? { ...p, caption: e.target.value.slice(0, 500) } : p)} placeholder="Tambahkan teks (opsional)..." className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-100" maxLength={500} />
+                <label className="flex items-center gap-2 cursor-pointer text-xs text-slate-200">
+                  <input type="checkbox" checked={photoPreview.viewOnce} onChange={e => setPhotoPreview(p => p ? { ...p, viewOnce: e.target.checked } : p)} />
+                  <Eye className="w-3.5 h-3.5 text-amber-300" /> Sekali lihat (foto hilang setelah dibuka)
+                </label>
+                <button onClick={sendPhoto} className="w-full py-2.5 rounded-xl bg-gradient-to-r from-purple-500 to-violet-600 text-white font-bold flex items-center justify-center gap-2"><Send className="w-4 h-4" /> Kirim</button>
+              </div>
+            </div>
+          )}
           {messages.map((m, idx) => {
             if ((m.deleted_for || []).includes(visitor)) return null;
             const mine = m.sender === visitor;
@@ -1028,15 +1224,36 @@ export default function AnonChatTab() {
                       ) : (
                         <>
                           {m.content && <p className="whitespace-pre-wrap break-words">{m.content}</p>}
-                          {m.image_url && (() => {
+                          {m.media_type === "audio" && m.media_url && (
+                            <div className="mt-1 flex items-center gap-2 px-2 py-1.5 rounded-lg bg-black/30">
+                              <audio controls src={m.media_url} className="w-full max-w-[220px] h-8" />
+                              {m.audio_duration ? <span className="text-[10px] opacity-70">{Math.floor(m.audio_duration/60)}:{String(m.audio_duration%60).padStart(2,"0")}</span> : null}
+                            </div>
+                          )}
+                          {((m.media_type === "image" && m.media_url) || m.image_url) && (() => {
+                            const url = m.media_url || m.image_url!;
+                            const isViewOnce = !!m.view_once;
+                            const alreadyViewed = isViewOnce && !!m.viewed_at && !mine;
                             const revealed = mine || revealedImgs.has(m.id);
+                            if (alreadyViewed) {
+                              return (
+                                <div className="mt-1 px-3 py-2 rounded-lg bg-slate-700/60 text-[11px] italic flex items-center gap-1.5">
+                                  <Eye className="w-3 h-3" /> Foto sekali lihat sudah dibuka
+                                </div>
+                              );
+                            }
                             return (
                               <div className="relative mt-1 rounded-lg overflow-hidden">
-                                <img src={m.image_url} alt="" className={`max-w-full rounded-lg transition ${revealed ? "" : "blur-2xl scale-105"}`} />
+                                {isViewOnce && (
+                                  <div className="absolute top-1 left-1 z-10 px-2 py-0.5 rounded-full bg-amber-500/90 text-white text-[9px] font-bold flex items-center gap-0.5">
+                                    <Eye className="w-2.5 h-2.5" /> 1x lihat
+                                  </div>
+                                )}
+                                <img src={url} alt="" className={`max-w-full rounded-lg transition ${revealed ? "" : "blur-2xl scale-105"}`} />
                                 {!revealed && (
                                   <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-black/40">
                                     <div className="text-[10px] text-white/90 px-2 py-1 rounded-full bg-amber-500/80 flex items-center gap-1"><AlertTriangle className="w-3 h-3" /> Foto disensor</div>
-                                    <button onClick={() => setRevealedImgs(prev => { const n = new Set(prev); n.add(m.id); return n; })} className="px-3 py-1.5 rounded-full bg-white/95 text-slate-900 text-xs font-bold flex items-center gap-1">
+                                    <button onClick={() => { setRevealedImgs(prev => { const n = new Set(prev); n.add(m.id); return n; }); if (isViewOnce) markViewOnceSeen(m); }} className="px-3 py-1.5 rounded-full bg-white/95 text-slate-900 text-xs font-bold flex items-center gap-1">
                                       <Eye className="w-3.5 h-3.5" /> Tampilkan
                                     </button>
                                   </div>
@@ -1053,6 +1270,7 @@ export default function AnonChatTab() {
                               </div>
                             );
                           })()}
+                          {m.caption && <p className="mt-1 whitespace-pre-wrap break-words text-[13px] opacity-95">{m.caption}</p>}
                         </>
                       )}
                       <div className={`text-[9px] mt-1 flex items-center gap-0.5 ${mine ? "text-white/70 justify-end" : "text-slate-400"}`}>
@@ -1165,37 +1383,122 @@ export default function AnonChatTab() {
             </div>
           )}
           {sessionStatus === "active" && !activeBan ? (
-            <div className="flex items-center gap-2">
-              <label className="w-9 h-9 rounded-full bg-slate-900/70 border border-purple-400/20 flex items-center justify-center cursor-pointer shrink-0 hover:bg-slate-800/70 transition" title="Kirim foto">
-                <ImagePlus className="w-[16px] h-[16px] text-purple-300" />
-                <input type="file" accept="image/*" className="hidden"
-                  onChange={e => { if (e.target.files?.[0]) sendImage(e.target.files[0]); e.target.value = ""; }} />
-              </label>
-              <div className="flex-1 relative">
-                <input
-                  value={draft}
-                  onChange={e => onChangeDraft(e.target.value)}
-                  onKeyDown={e => { if (e.key === "Enter") sendMessage(); }}
-                  onBlur={() => pushTyping(false)}
-                  placeholder="Ketik pesan..."
-                  className="w-full bg-slate-900/70 border border-purple-400/20 rounded-full pl-4 pr-11 py-2.5 text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-purple-400/60"
-                  maxLength={1000}
-                />
-                <button onClick={() => setShowEmojiInput(v => !v)} type="button"
-                  className="absolute right-1 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full hover:bg-slate-800 text-purple-300 flex items-center justify-center" title="Emoji">
-                  <Smile className="w-[18px] h-[18px]" />
+            recording ? (
+              <div className="flex items-center gap-2">
+                <button onClick={() => stopRecording(true)} className="w-11 h-11 rounded-full bg-rose-500/20 border border-rose-400/40 text-rose-200 flex items-center justify-center" title="Batal">
+                  <X className="w-5 h-5" />
+                </button>
+                <div className="flex-1 flex items-center gap-2 px-4 py-2.5 rounded-full bg-rose-500/10 border border-rose-400/30">
+                  <span className="w-2 h-2 rounded-full bg-rose-400 animate-pulse" />
+                  <span className="text-sm font-bold text-rose-100">Merekam…</span>
+                  <span className="ml-auto text-sm font-mono text-rose-100 tabular-nums">{fmtCallTime(recordSecs)}</span>
+                </div>
+                <button onClick={() => stopRecording(false)} className="w-11 h-11 rounded-full bg-gradient-to-br from-purple-500 to-violet-600 text-white flex items-center justify-center shadow-lg shadow-purple-500/40 shrink-0" title="Kirim">
+                  <Send className="w-4 h-4" />
                 </button>
               </div>
-              <button onClick={sendMessage} disabled={!draft.trim()}
-                className="w-11 h-11 rounded-full bg-gradient-to-br from-purple-500 to-violet-600 text-white flex items-center justify-center disabled:opacity-40 shadow-lg shadow-purple-500/40 shrink-0">
-                <Send className="w-4 h-4" />
-              </button>
-            </div>
+            ) : (
+              <div className="flex items-center gap-2">
+                <label className="w-9 h-9 rounded-full bg-slate-900/70 border border-purple-400/20 flex items-center justify-center cursor-pointer shrink-0 hover:bg-slate-800/70 transition" title="Kirim foto">
+                  <ImagePlus className="w-[16px] h-[16px] text-purple-300" />
+                  <input type="file" accept="image/*" className="hidden"
+                    onChange={e => { if (e.target.files?.[0]) openPhotoPreview(e.target.files[0]); e.target.value = ""; }} />
+                </label>
+                <div className="flex-1 relative">
+                  <input
+                    value={draft}
+                    onChange={e => onChangeDraft(e.target.value)}
+                    onKeyDown={e => { if (e.key === "Enter") sendMessage(); }}
+                    onBlur={() => pushTyping(false)}
+                    placeholder="Ketik pesan..."
+                    className="w-full bg-slate-900/70 border border-purple-400/20 rounded-full pl-4 pr-11 py-2.5 text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-purple-400/60"
+                    maxLength={1000}
+                  />
+                  <button onClick={() => setShowEmojiInput(v => !v)} type="button"
+                    className="absolute right-1 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full hover:bg-slate-800 text-purple-300 flex items-center justify-center" title="Emoji">
+                    <Smile className="w-[18px] h-[18px]" />
+                  </button>
+                </div>
+                {draft.trim() ? (
+                  <button onClick={sendMessage}
+                    className="w-11 h-11 rounded-full bg-gradient-to-br from-purple-500 to-violet-600 text-white flex items-center justify-center shadow-lg shadow-purple-500/40 shrink-0" title="Kirim">
+                    <Send className="w-4 h-4" />
+                  </button>
+                ) : (
+                  <button onClick={startRecording}
+                    className="w-11 h-11 rounded-full bg-gradient-to-br from-purple-500 to-violet-600 text-white flex items-center justify-center shadow-lg shadow-purple-500/40 shrink-0" title="Rekam suara">
+                    <Mic className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
+            )
           ) : sessionStatus === "ended" ? (
             <button onClick={newPartner} className="w-full py-2.5 rounded-full bg-gradient-to-r from-purple-500 to-violet-600 text-white text-sm font-bold flex items-center justify-center gap-1.5 shadow-lg shadow-purple-500/40">
               <RefreshCw className="w-4 h-4" /> Cari Partner Baru
             </button>
           ) : null}
+        </div>
+      </div>
+    );
+  }
+
+  if (view === "callhistory") {
+    const fmtDur = (s: number) => s > 0 ? `${Math.floor(s/60)}:${String(s%60).padStart(2,"0")}` : "—";
+    const statusLabel: Record<string, string> = { answered: "Terjawab", missed: "Tak terjawab", declined: "Ditolak", cancelled: "Dibatalkan", ended: "Selesai" };
+    return (
+      <div className="rounded-3xl border-2 border-purple-400/30 bg-slate-950 min-h-[500px] flex flex-col">
+        <div className="flex items-center gap-2 p-4 border-b border-slate-800">
+          <button onClick={() => setView("prefs")} className="text-purple-300 text-sm flex items-center gap-1"><ArrowLeft className="w-4 h-4" /> Kembali</button>
+          <div className="flex-1 text-center font-bold text-slate-100">Riwayat Panggilan</div>
+          <button onClick={loadCallLogs} className="text-purple-300"><RefreshCw className="w-4 h-4" /></button>
+        </div>
+        <div className="flex-1 overflow-y-auto p-3 space-y-2">
+          {callLogs.length === 0 ? (
+            <div className="text-center text-slate-400 text-sm py-10">Belum ada panggilan.</div>
+          ) : callLogs.map(c => (
+            <div key={c.id} className="flex items-center gap-3 p-3 rounded-2xl bg-slate-900/60 border border-purple-400/20">
+              <div className={`w-9 h-9 rounded-full flex items-center justify-center ${c.status === "answered" || c.status === "ended" ? "bg-emerald-500/20 text-emerald-300" : c.status === "missed" ? "bg-rose-500/20 text-rose-300" : "bg-slate-700 text-slate-300"}`}>
+                <Phone className="w-4 h-4" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="font-semibold text-slate-100 truncate text-sm">{c.partner_nickname || "Stranger"}</div>
+                <div className="text-[10px] text-slate-400">
+                  {c.direction === "outgoing" ? "↗ Keluar" : "↙ Masuk"} · {statusLabel[c.status] || c.status} · {fmtDur(c.duration_seconds)}
+                </div>
+                <div className="text-[10px] text-slate-500">{new Date(c.started_at).toLocaleString("id-ID")}</div>
+              </div>
+              <button onClick={() => deleteCallLog(c.id)} className="w-8 h-8 rounded-full bg-slate-800 hover:bg-rose-500/30 text-slate-400 hover:text-rose-300 flex items-center justify-center"><Trash2 className="w-3.5 h-3.5" /></button>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (view === "history") {
+    return (
+      <div className="rounded-3xl border-2 border-purple-400/30 bg-slate-950 min-h-[500px] flex flex-col">
+        <div className="flex items-center gap-2 p-4 border-b border-slate-800">
+          <button onClick={() => setView("prefs")} className="text-purple-300 text-sm flex items-center gap-1"><ArrowLeft className="w-4 h-4" /> Kembali</button>
+          <div className="flex-1 text-center font-bold text-slate-100">Riwayat Match</div>
+          <button onClick={loadMatchHistory} className="text-purple-300"><RefreshCw className="w-4 h-4" /></button>
+        </div>
+        <p className="text-[11px] text-slate-400 italic px-4 py-2 border-b border-slate-800/50">Hapus partner agar tidak dipertemukan lagi saat cari acak. Tetap bisa ditemui jika sudah berteman.</p>
+        <div className="flex-1 overflow-y-auto p-3 space-y-2">
+          {matchHistory.length === 0 ? (
+            <div className="text-center text-slate-400 text-sm py-10">Belum ada riwayat match.</div>
+          ) : matchHistory.map(h => (
+            <div key={h.id} className="flex items-center gap-3 p-3 rounded-2xl bg-slate-900/60 border border-purple-400/20">
+              <div className="w-9 h-9 rounded-full bg-purple-500/30 flex items-center justify-center text-lg shrink-0">🥷</div>
+              <div className="flex-1 min-w-0">
+                <div className="font-semibold text-slate-100 truncate text-sm">{h.partner_nickname || "Stranger"}</div>
+                <div className="text-[10px] text-slate-400">{new Date(h.last_session_at).toLocaleString("id-ID")}</div>
+              </div>
+              <button onClick={() => blockMatchPartner(h.partner_visitor)} className="px-3 h-8 rounded-full bg-rose-500/15 hover:bg-rose-500/30 border border-rose-400/30 text-rose-200 text-[11px] font-bold flex items-center gap-1">
+                <Trash2 className="w-3 h-3" /> Hapus
+              </button>
+            </div>
+          ))}
         </div>
       </div>
     );
@@ -1982,6 +2285,8 @@ export default function AnonChatTab() {
           <div className="rounded-2xl bg-slate-900/70 border border-slate-800 divide-y divide-slate-800 overflow-hidden">
             {[
               { icon: Link2, label: "Pengaturan akun", desc: "Email, sandi & deskripsi", onClick: () => setView("account") },
+              { icon: PhoneCall, label: "Riwayat panggilan", desc: "Voice call masuk & keluar", onClick: () => { loadCallLogs(); setView("callhistory"); } },
+              { icon: ClipboardList, label: "Riwayat match", desc: "Partner yang pernah ditemui", onClick: () => { loadMatchHistory(); setView("history"); } },
               { icon: HelpCircle, label: "Dukungan", desc: "FAQ + tombol CS WhatsApp", onClick: () => setView("support") },
               { icon: Bell, label: "Notifikasi dan suara", desc: (soundOn ? "Suara aktif" : "Suara mati") + " · " + (notifOn ? "Notifikasi aktif" : "Notifikasi mati"), onClick: () => setView("notif") },
               { icon: Moon, label: "Tampilan", desc: theme === "dark" ? "Tema gelap" : theme === "light" ? "Tema terang" : "Tema sistem", onClick: () => setView("appearance") },
