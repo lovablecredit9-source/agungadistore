@@ -9,6 +9,7 @@ import { AnonAccountDialog, fetchAnonAccount, type AnonAccount } from "@/compone
 import { useTheme } from "@/lib/theme";
 import { useLang } from "@/lib/i18n";
 import { LANGUAGES } from "@/lib/languages";
+import { requestMicrophoneStream } from "@/lib/microphone-permission";
 import { Key, Keyboard, EyeOff, PhoneCall, Archive, HardDrive, BookOpen, Smartphone, ArrowRight, ClipboardList, VenetianMask, Zap } from "lucide-react";
 import tutorialImg1 from "@/assets/anon-tutorial-1.jpg";
 import tutorialImg2 from "@/assets/anon-tutorial-2.jpg";
@@ -629,7 +630,7 @@ export default function AnonChatTab() {
     if (!sessionId || sessionStatus !== "active") return;
     if (callState !== "idle") return;
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const stream = await requestMicrophoneStream();
       localStreamRef.current = stream;
       const pc = ensurePc();
       stream.getTracks().forEach(t => pc.addTrack(t, stream));
@@ -639,7 +640,7 @@ export default function AnonChatTab() {
       setCallState("outgoing");
       toast.info("Memanggil partner...");
     } catch (e: any) {
-      toast.error("Gagal mengakses mikrofon: " + (e?.message || ""));
+      toast.error("Gagal mengakses mikrofon", { description: e?.message || "Cek izin mikrofon di browser." });
       cleanupCall(false);
     }
   }, [sessionId, sessionStatus, callState, ensurePc, visitor, cleanupCall]);
@@ -647,7 +648,7 @@ export default function AnonChatTab() {
   const acceptVoiceCall = useCallback(async () => {
     if (!pendingOfferRef.current) return;
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const stream = await requestMicrophoneStream();
       localStreamRef.current = stream;
       const pc = ensurePc();
       stream.getTracks().forEach(t => pc.addTrack(t, stream));
@@ -658,7 +659,7 @@ export default function AnonChatTab() {
       pendingOfferRef.current = null;
       setCallState("connected");
     } catch (e: any) {
-      toast.error("Gagal menerima panggilan: " + (e?.message || ""));
+      toast.error("Gagal menerima panggilan", { description: e?.message || "Cek izin mikrofon di browser." });
       cleanupCall(true);
     }
   }, [ensurePc, visitor, cleanupCall]);
