@@ -1339,32 +1339,55 @@ export default function AnonChatTab() {
             </div>
           )}
           {sessionStatus === "active" && !activeBan ? (
-            <div className="flex items-center gap-2">
-              <label className="w-9 h-9 rounded-full bg-slate-900/70 border border-purple-400/20 flex items-center justify-center cursor-pointer shrink-0 hover:bg-slate-800/70 transition" title="Kirim foto">
-                <ImagePlus className="w-[16px] h-[16px] text-purple-300" />
-                <input type="file" accept="image/*" className="hidden"
-                  onChange={e => { if (e.target.files?.[0]) sendImage(e.target.files[0]); e.target.value = ""; }} />
-              </label>
-              <div className="flex-1 relative">
-                <input
-                  value={draft}
-                  onChange={e => onChangeDraft(e.target.value)}
-                  onKeyDown={e => { if (e.key === "Enter") sendMessage(); }}
-                  onBlur={() => pushTyping(false)}
-                  placeholder="Ketik pesan..."
-                  className="w-full bg-slate-900/70 border border-purple-400/20 rounded-full pl-4 pr-11 py-2.5 text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-purple-400/60"
-                  maxLength={1000}
-                />
-                <button onClick={() => setShowEmojiInput(v => !v)} type="button"
-                  className="absolute right-1 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full hover:bg-slate-800 text-purple-300 flex items-center justify-center" title="Emoji">
-                  <Smile className="w-[18px] h-[18px]" />
+            recording ? (
+              <div className="flex items-center gap-2">
+                <button onClick={() => stopRecording(true)} className="w-11 h-11 rounded-full bg-rose-500/20 border border-rose-400/40 text-rose-200 flex items-center justify-center" title="Batal">
+                  <X className="w-5 h-5" />
+                </button>
+                <div className="flex-1 flex items-center gap-2 px-4 py-2.5 rounded-full bg-rose-500/10 border border-rose-400/30">
+                  <span className="w-2 h-2 rounded-full bg-rose-400 animate-pulse" />
+                  <span className="text-sm font-bold text-rose-100">Merekam…</span>
+                  <span className="ml-auto text-sm font-mono text-rose-100 tabular-nums">{fmtCallTime(recordSecs)}</span>
+                </div>
+                <button onClick={() => stopRecording(false)} className="w-11 h-11 rounded-full bg-gradient-to-br from-purple-500 to-violet-600 text-white flex items-center justify-center shadow-lg shadow-purple-500/40 shrink-0" title="Kirim">
+                  <Send className="w-4 h-4" />
                 </button>
               </div>
-              <button onClick={sendMessage} disabled={!draft.trim()}
-                className="w-11 h-11 rounded-full bg-gradient-to-br from-purple-500 to-violet-600 text-white flex items-center justify-center disabled:opacity-40 shadow-lg shadow-purple-500/40 shrink-0">
-                <Send className="w-4 h-4" />
-              </button>
-            </div>
+            ) : (
+              <div className="flex items-center gap-2">
+                <label className="w-9 h-9 rounded-full bg-slate-900/70 border border-purple-400/20 flex items-center justify-center cursor-pointer shrink-0 hover:bg-slate-800/70 transition" title="Kirim foto">
+                  <ImagePlus className="w-[16px] h-[16px] text-purple-300" />
+                  <input type="file" accept="image/*" className="hidden"
+                    onChange={e => { if (e.target.files?.[0]) openPhotoPreview(e.target.files[0]); e.target.value = ""; }} />
+                </label>
+                <div className="flex-1 relative">
+                  <input
+                    value={draft}
+                    onChange={e => onChangeDraft(e.target.value)}
+                    onKeyDown={e => { if (e.key === "Enter") sendMessage(); }}
+                    onBlur={() => pushTyping(false)}
+                    placeholder="Ketik pesan..."
+                    className="w-full bg-slate-900/70 border border-purple-400/20 rounded-full pl-4 pr-11 py-2.5 text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-purple-400/60"
+                    maxLength={1000}
+                  />
+                  <button onClick={() => setShowEmojiInput(v => !v)} type="button"
+                    className="absolute right-1 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full hover:bg-slate-800 text-purple-300 flex items-center justify-center" title="Emoji">
+                    <Smile className="w-[18px] h-[18px]" />
+                  </button>
+                </div>
+                {draft.trim() ? (
+                  <button onClick={sendMessage}
+                    className="w-11 h-11 rounded-full bg-gradient-to-br from-purple-500 to-violet-600 text-white flex items-center justify-center shadow-lg shadow-purple-500/40 shrink-0" title="Kirim">
+                    <Send className="w-4 h-4" />
+                  </button>
+                ) : (
+                  <button onClick={startRecording}
+                    className="w-11 h-11 rounded-full bg-gradient-to-br from-purple-500 to-violet-600 text-white flex items-center justify-center shadow-lg shadow-purple-500/40 shrink-0" title="Rekam suara">
+                    <Mic className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
+            )
           ) : sessionStatus === "ended" ? (
             <button onClick={newPartner} className="w-full py-2.5 rounded-full bg-gradient-to-r from-purple-500 to-violet-600 text-white text-sm font-bold flex items-center justify-center gap-1.5 shadow-lg shadow-purple-500/40">
               <RefreshCw className="w-4 h-4" /> Cari Partner Baru
