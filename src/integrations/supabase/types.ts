@@ -193,6 +193,72 @@ export type Database = {
         }
         Relationships: []
       }
+      anon_chat_blocked_matches: {
+        Row: {
+          blocked_visitor: string
+          created_at: string
+          id: string
+          visitor_id: string
+        }
+        Insert: {
+          blocked_visitor: string
+          created_at?: string
+          id?: string
+          visitor_id: string
+        }
+        Update: {
+          blocked_visitor?: string
+          created_at?: string
+          id?: string
+          visitor_id?: string
+        }
+        Relationships: []
+      }
+      anon_chat_call_logs: {
+        Row: {
+          answered_at: string | null
+          created_at: string
+          direction: string
+          duration_seconds: number
+          ended_at: string | null
+          id: string
+          partner_nickname: string | null
+          partner_visitor: string
+          session_id: string | null
+          started_at: string
+          status: string
+          visitor_id: string
+        }
+        Insert: {
+          answered_at?: string | null
+          created_at?: string
+          direction?: string
+          duration_seconds?: number
+          ended_at?: string | null
+          id?: string
+          partner_nickname?: string | null
+          partner_visitor: string
+          session_id?: string | null
+          started_at?: string
+          status?: string
+          visitor_id: string
+        }
+        Update: {
+          answered_at?: string | null
+          created_at?: string
+          direction?: string
+          duration_seconds?: number
+          ended_at?: string | null
+          id?: string
+          partner_nickname?: string | null
+          partner_visitor?: string
+          session_id?: string | null
+          started_at?: string
+          status?: string
+          visitor_id?: string
+        }
+        Relationships: []
+      }
       anon_chat_friend_requests: {
         Row: {
           created_at: string
@@ -261,8 +327,40 @@ export type Database = {
         }
         Relationships: []
       }
+      anon_chat_match_history: {
+        Row: {
+          created_at: string
+          id: string
+          last_session_at: string
+          partner_nickname: string | null
+          partner_visitor: string
+          session_id: string | null
+          visitor_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          last_session_at?: string
+          partner_nickname?: string | null
+          partner_visitor: string
+          session_id?: string | null
+          visitor_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          last_session_at?: string
+          partner_nickname?: string | null
+          partner_visitor?: string
+          session_id?: string | null
+          visitor_id?: string
+        }
+        Relationships: []
+      }
       anon_chat_messages: {
         Row: {
+          audio_duration: number | null
+          caption: string | null
           content: string | null
           created_at: string
           deleted_at: string | null
@@ -271,11 +369,17 @@ export type Database = {
           image_url: string | null
           is_deleted: boolean
           is_read: boolean
+          media_type: string | null
+          media_url: string | null
           reply_to_id: string | null
           sender_visitor_id: string
           session_id: string
+          view_once: boolean
+          viewed_at: string | null
         }
         Insert: {
+          audio_duration?: number | null
+          caption?: string | null
           content?: string | null
           created_at?: string
           deleted_at?: string | null
@@ -284,11 +388,17 @@ export type Database = {
           image_url?: string | null
           is_deleted?: boolean
           is_read?: boolean
+          media_type?: string | null
+          media_url?: string | null
           reply_to_id?: string | null
           sender_visitor_id: string
           session_id: string
+          view_once?: boolean
+          viewed_at?: string | null
         }
         Update: {
+          audio_duration?: number | null
+          caption?: string | null
           content?: string | null
           created_at?: string
           deleted_at?: string | null
@@ -297,9 +407,13 @@ export type Database = {
           image_url?: string | null
           is_deleted?: boolean
           is_read?: boolean
+          media_type?: string | null
+          media_url?: string | null
           reply_to_id?: string | null
           sender_visitor_id?: string
           session_id?: string
+          view_once?: boolean
+          viewed_at?: string | null
         }
         Relationships: [
           {
@@ -9097,6 +9211,15 @@ export type Database = {
         }[]
       }
       anon_chat_leave_queue: { Args: { p_visitor: string }; Returns: undefined }
+      anon_chat_log_match: {
+        Args: {
+          p_partner: string
+          p_partner_nick: string
+          p_session: string
+          p_visitor: string
+        }
+        Returns: undefined
+      }
       anon_chat_respond_friend_request: {
         Args: {
           p_accept: boolean

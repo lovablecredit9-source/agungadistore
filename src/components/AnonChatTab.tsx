@@ -90,6 +90,12 @@ interface AnonMsg {
   is_deleted: boolean;
   deleted_for?: string[] | null;
   local_blocked?: boolean;
+  media_url?: string | null;
+  media_type?: string | null; // 'image' | 'audio'
+  caption?: string | null;
+  view_once?: boolean;
+  viewed_at?: string | null;
+  audio_duration?: number | null;
 }
 interface AnonReaction { id: string; message_id: string; visitor_id: string; emoji: string; }
 const EMOJIS = ["👍", "❤️", "😂", "😮", "😢", "🙏", "🔥"];
@@ -97,7 +103,29 @@ interface AnonProfile { visitor_id: string; nickname: string | null; avatar_url:
 type PublicBioResponse = { success?: boolean; bio?: string | null; error?: string };
 type UpdateBioResponse = { success?: boolean; account?: AnonAccount | null; error?: string };
 
-type View = "lobby" | "prefs" | "account" | "interest" | "searching" | "chat" | "friends" | "explore" | "onboarding" | "support" | "notif" | "appearance" | "chatopts" | "language" | "privacy" | "about" | "about_privacy" | "about_rules" | "about_tutorial" | "about_system";
+type View = "lobby" | "prefs" | "account" | "interest" | "searching" | "chat" | "friends" | "explore" | "onboarding" | "support" | "notif" | "appearance" | "chatopts" | "language" | "privacy" | "about" | "about_privacy" | "about_rules" | "about_tutorial" | "about_system" | "history" | "callhistory";
+
+interface AnonCallLog {
+  id: string;
+  visitor_id: string;
+  partner_visitor: string;
+  partner_nickname: string | null;
+  session_id: string | null;
+  direction: "outgoing" | "incoming";
+  status: "answered" | "missed" | "declined" | "cancelled" | "ended";
+  started_at: string;
+  answered_at: string | null;
+  ended_at: string | null;
+  duration_seconds: number;
+}
+interface AnonMatchHistory {
+  id: string;
+  visitor_id: string;
+  partner_visitor: string;
+  partner_nickname: string | null;
+  session_id: string | null;
+  last_session_at: string;
+}
 
 const INTERESTS = ["Apapun","Curhat","Main RP","Meme","Kesepian","Game","Anime","Film","Musik","Travel","Coding","Olahraga","Nongkrong","Belajar"];
 
@@ -129,6 +157,11 @@ export default function AnonChatTab() {
   const { theme, setTheme } = useTheme();
   const [lang, setLang] = useLang();
   const [view, setView] = useState<View>("lobby");
+  // Broadcast view to outer page so the bottom navigation can decide whether to show
+  useEffect(() => {
+    try { window.dispatchEvent(new CustomEvent("anon-chat-view", { detail: view })); } catch {}
+    return () => { try { window.dispatchEvent(new CustomEvent("anon-chat-view", { detail: "lobby" })); } catch {} };
+  }, [view]);
   const [nickname, setNickname] = useState<string>(() => localStorage.getItem("anon_nick") || genNick());
   const [myGender, setMyGender] = useState<string>(() => localStorage.getItem("anon_my_gender") || "any");
   const [prefGender, setPrefGender] = useState<string>(() => localStorage.getItem("anon_pref_gender") || "any");
@@ -524,6 +557,8 @@ export default function AnonChatTab() {
     id: m.id, sender: m.sender_visitor_id, content: m.content, image_url: m.image_url ?? null,
     created_at: m.created_at, is_read: !!m.is_read, reply_to_id: m.reply_to_id ?? null, is_deleted: !!m.is_deleted,
     deleted_for: m.deleted_for ?? [],
+    media_url: m.media_url ?? null, media_type: m.media_type ?? null, caption: m.caption ?? null,
+    view_once: !!m.view_once, viewed_at: m.viewed_at ?? null, audio_duration: m.audio_duration ?? null,
   });
 
   const enterSession = async (id: string, partnerNick: string | null, partnerGender: string | null) => {
