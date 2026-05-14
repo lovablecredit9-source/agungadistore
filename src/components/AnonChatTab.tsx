@@ -9,7 +9,7 @@ import { AnonAccountDialog, fetchAnonAccount, type AnonAccount } from "@/compone
 import { useTheme } from "@/lib/theme";
 import { useLang } from "@/lib/i18n";
 import { LANGUAGES } from "@/lib/languages";
-import { Key, Keyboard, EyeOff, PhoneCall, Archive, HardDrive, BookOpen, Smartphone, ArrowRight, ClipboardList } from "lucide-react";
+import { Key, Keyboard, EyeOff, PhoneCall, Archive, HardDrive, BookOpen, Smartphone, ArrowRight, ClipboardList, VenetianMask, Zap } from "lucide-react";
 import tutorialImg1 from "@/assets/anon-tutorial-1.jpg";
 import tutorialImg2 from "@/assets/anon-tutorial-2.jpg";
 import tutorialImg3 from "@/assets/anon-tutorial-3.jpg";
@@ -1849,74 +1849,84 @@ export default function AnonChatTab() {
     );
   }
 
-  // LOBBY
+  // LOBBY — anon.chat ninja style
   return (
-    <div className="rounded-3xl overflow-hidden border-2 border-emerald-400/30 bg-gradient-to-b from-emerald-950/30 via-slate-950 to-slate-950 shadow-[0_20px_60px_-20px_rgba(16,185,129,0.4)]">
-      {/* Header brand */}
-      <div className="flex items-center justify-center gap-2 py-4 border-b border-emerald-400/20 bg-gradient-to-r from-emerald-500/10 to-teal-500/10">
-        <span className="text-2xl">🥷</span>
-        <span className="text-lg font-extrabold tracking-tight bg-gradient-to-r from-emerald-300 to-teal-300 bg-clip-text text-transparent">samaran.chat</span>
+    <div className="rounded-3xl overflow-hidden border border-purple-500/30 bg-gradient-to-b from-[#0d0820] via-[#0a0618] to-[#0a0618] shadow-[0_20px_60px_-20px_rgba(168,85,247,0.5)]">
+      {/* Top safety chip + help */}
+      <div className="flex items-center justify-between px-4 pt-4">
+        <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-purple-500/15 border border-purple-400/30 text-[11px] font-semibold text-purple-200">
+          <Shield className="w-3 h-3" /> Aman & Privasi
+        </div>
+        <button onClick={() => setView("prefs")} className="w-8 h-8 rounded-full bg-slate-800/70 border border-slate-700 flex items-center justify-center text-slate-300 text-sm">?</button>
       </div>
 
-      {/* Hero illustration */}
-      <div className="relative h-44 flex items-center justify-center overflow-hidden">
-        <svg viewBox="0 0 300 160" className="w-full h-full opacity-90">
-          <defs>
-            <linearGradient id="cloud-grad" x1="0" x2="0" y1="0" y2="1">
-              <stop offset="0" stopColor="#a7f3d0" />
-              <stop offset="1" stopColor="#5eead4" />
-            </linearGradient>
-          </defs>
-          <ellipse cx="40" cy="40" rx="36" ry="18" fill="url(#cloud-grad)" opacity="0.85" />
-          <ellipse cx="65" cy="32" rx="26" ry="14" fill="url(#cloud-grad)" opacity="0.7" />
-          <ellipse cx="240" cy="115" rx="50" ry="20" fill="url(#cloud-grad)" opacity="0.85" />
-          <ellipse cx="270" cy="105" rx="28" ry="14" fill="url(#cloud-grad)" opacity="0.6" />
-          <path d="M60 120 Q100 30 150 90 Q200 150 180 60" stroke="#34d399" strokeWidth="2" strokeDasharray="4 4" fill="none" opacity="0.7" />
-          <g transform="translate(170 60) rotate(15)">
-            <polygon points="0,0 30,8 0,16 6,8" fill="#10b981" />
-            <polygon points="0,0 30,8 6,8" fill="#34d399" />
-          </g>
-        </svg>
+      {/* Ninja hero */}
+      <div className="px-6 pt-4 pb-2 text-center">
+        <div className="relative mx-auto w-24 h-24 mb-3">
+          <div className="absolute inset-0 rounded-full bg-purple-500/20 blur-2xl" />
+          <div className="relative w-full h-full flex items-center justify-center text-[72px] leading-none">🥷</div>
+        </div>
+        <h1 className="text-3xl font-extrabold tracking-tight text-white">
+          anon<span className="bg-gradient-to-r from-fuchsia-400 to-purple-400 bg-clip-text text-transparent">.chat</span>
+        </h1>
+        <p className="text-sm text-slate-300 mt-2">Chat anonim dengan siapa saja</p>
+        <p className="text-xs text-slate-400">100% gratis & tanpa registrasi</p>
       </div>
 
-      <div className="px-6 pb-6 text-center space-y-2">
-        <h2 className="text-xl font-bold text-slate-100 leading-tight">Temukan seseorang untuk mengobrol</h2>
-        <p className="text-sm text-emerald-300/80">Cepat, anonim, seru</p>
-      </div>
-
-      <div className="px-5 pb-5">
+      {/* Main CTA */}
+      <div className="px-5 pt-5 pb-4">
         <button onClick={() => doMatch()}
-          className="w-full py-4 rounded-2xl bg-gradient-to-r from-emerald-400 via-teal-500 to-cyan-500 text-white font-extrabold tracking-wide shadow-[0_10px_30px_-5px_rgba(16,185,129,0.6)] hover:scale-[1.01] active:scale-[0.99] transition flex items-center justify-center gap-2">
-          <Search className="w-5 h-5" /> MULAI CARI
+          className="relative w-full py-4 rounded-2xl bg-gradient-to-r from-violet-600 via-purple-600 to-fuchsia-600 text-white font-extrabold text-base shadow-[0_15px_40px_-10px_rgba(168,85,247,0.8)] hover:scale-[1.01] active:scale-[0.99] transition flex items-center justify-center gap-2.5">
+          <span className="w-7 h-7 rounded-full bg-white/20 flex items-center justify-center">
+            <MessageCircle className="w-4 h-4" />
+          </span>
+          Mulai Chat Anonim
+          <ChevronRight className="w-5 h-5 absolute right-4" />
         </button>
       </div>
 
-      <div className="px-5 pb-6 space-y-3">
-        <button onClick={() => setView("prefs")}
-          className="w-full flex items-center justify-center gap-2 py-2 text-emerald-300 font-semibold text-sm">
-          <SettingsIcon className="w-4 h-4" /> Preferensi pencarian
+      {/* 3 feature cards */}
+      <div className="px-4 pb-4 grid grid-cols-3 gap-2">
+        {[
+          { Icon: VenetianMask, title: "100% Anonim", desc: "Identitas kamu tidak akan diketahui", color: "text-fuchsia-300" },
+          { Icon: Lock, title: "Privasi Terjaga", desc: "Chat aman & terenkripsi", color: "text-purple-300" },
+          { Icon: Zap, title: "Cepat & Mudah", desc: "Langsung terhubung tanpa ribet", color: "text-violet-300" },
+        ].map(({ Icon, title, desc, color }) => (
+          <div key={title} className="rounded-2xl border border-slate-700/60 bg-slate-900/60 p-3 text-center">
+            <Icon className={`w-5 h-5 mx-auto mb-1.5 ${color}`} />
+            <div className="text-[11px] font-bold text-slate-100 leading-tight">{title}</div>
+            <div className="text-[9.5px] text-slate-400 leading-snug mt-1">{desc}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Tips card */}
+      <div className="px-4 pb-4">
+        <button onClick={() => setView("about_rules" as any)}
+          className="w-full rounded-2xl border border-slate-700/60 bg-slate-900/60 p-3 flex items-start gap-2.5 text-left hover:bg-slate-900">
+          <div className="w-8 h-8 rounded-xl bg-purple-500/15 border border-purple-400/30 flex items-center justify-center shrink-0">
+            <Shield className="w-4 h-4 text-purple-300" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="text-xs font-bold text-slate-100 mb-1">Tips Aman Chat</div>
+            <ul className="text-[10.5px] text-slate-400 space-y-0.5 list-disc pl-4 marker:text-purple-400">
+              <li>Jangan bagikan informasi pribadi</li>
+              <li>Bersikap baik dan saling menghargai</li>
+              <li>Laporkan jika menemukan pelanggaran</li>
+            </ul>
+          </div>
+          <ChevronRight className="w-4 h-4 text-slate-500 mt-1" />
         </button>
-        <div className="text-center text-xs text-slate-400 space-y-1.5">
-          <div className="flex items-center justify-center gap-1.5">
-            <Users className="w-3.5 h-3.5" /> {prefGender === "male" ? "Pria" : prefGender === "female" ? "Wanita" : "Semua gender"}
-          </div>
-          <div className="flex items-center justify-center gap-1.5">
-            <Heart className="w-3.5 h-3.5" /> {interest}
-          </div>
-          <div className="flex items-center justify-center gap-1.5 text-emerald-400/80">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" /> {onlineCount} orang online
-          </div>
-        </div>
       </div>
 
-      <div className="px-5 pb-4 pt-2 border-t border-slate-800/60 mt-2">
-        <div className="flex items-start gap-2 text-xs text-slate-400">
-          <Shield className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
-          <p>Identitas asli kamu disembunyikan. Jangan bagikan info pribadi (nomor HP, alamat, atau data sensitif) ke partner.</p>
-        </div>
+      {/* Status row */}
+      <div className="px-5 pb-4 flex items-center justify-center gap-4 text-[11px] text-slate-400">
+        <span className="flex items-center gap-1.5"><Users className="w-3 h-3" />{prefGender === "male" ? "Pria" : prefGender === "female" ? "Wanita" : "Semua"}</span>
+        <span className="flex items-center gap-1.5"><Heart className="w-3 h-3" />{interest}</span>
+        <span className="flex items-center gap-1.5 text-emerald-400"><span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />{onlineCount} online</span>
       </div>
 
-      {/* Inner bottom nav (anon.chat style) */}
+      {/* Inner bottom nav */}
       <InnerNav active="search" onChange={(k) => {
         if (k === "search") setView("lobby");
         else if (k === "friends") setView("friends");
