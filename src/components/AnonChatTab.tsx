@@ -1198,6 +1198,25 @@ export default function AnonChatTab() {
             </div>
             );
           })()}
+          {viewOnceViewer && (
+            <div className="fixed inset-0 z-50 bg-black flex flex-col" onContextMenu={(e) => e.preventDefault()}>
+              <div className="h-12 px-3 flex items-center justify-between text-white bg-black/80">
+                <button onClick={() => setViewOnceViewer(null)} className="w-9 h-9 rounded-full flex items-center justify-center hover:bg-white/10" aria-label="Tutup foto sekali lihat">
+                  <ArrowLeft className="w-5 h-5" />
+                </button>
+                <div className="flex items-center gap-1.5 text-xs font-semibold text-white/90">
+                  <Eye className="w-4 h-4" /> Foto sekali lihat
+                </div>
+                <div className="w-9" />
+              </div>
+              <div className="flex-1 min-h-0 flex items-center justify-center bg-black">
+                <img src={viewOnceViewer.url} alt="Foto sekali lihat" className="max-w-full max-h-full object-contain select-none" draggable={false} />
+              </div>
+              <div className="px-4 py-3 text-center text-[11px] text-white/70 bg-black/80">
+                Foto akan tertutup dan tidak bisa dibuka lagi setelah keluar.
+              </div>
+            </div>
+          )}
           {messages.map((m, idx) => {
             if ((m.deleted_for || []).includes(visitor)) return null;
             const mine = m.sender === visitor;
