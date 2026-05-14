@@ -1508,10 +1508,26 @@ export default function AnonChatTab() {
 
   if (view === "about_tutorial") {
     const slides = [
-      { gradient: "from-amber-400 via-orange-500 to-rose-500", emoji: "🌅", text: "Di aplikasi ini, kamu bisa melakukan panggilan telepon dan mengirim foto serta pesan suara" },
-      { gradient: "from-emerald-400 via-teal-500 to-cyan-500", emoji: "🥷", text: "Ngobrol anonim tanpa nama asli. Identitasmu aman, partnermu pun begitu" },
-      { gradient: "from-indigo-500 via-purple-500 to-pink-500", emoji: "💬", text: "Suka dengan partner chatmu? Kirim permintaan teman dan lanjutkan obrolan kapan saja" },
-      { gradient: "from-rose-500 via-fuchsia-500 to-purple-600", emoji: "🛡️", text: "Patuhi aturan komunitas. Pelanggar akan dibanned otomatis demi kenyamanan bersama" },
+      {
+        img: tutorialImg1,
+        title: "1. Mulai Chat Anonim",
+        text: "Buka tab Anon Chat lalu tekan tombol ungu besar bertuliskan \"Mulai Chat Anonim\". Sistem akan langsung mencarikan partner acak untukmu.",
+      },
+      {
+        img: tutorialImg2,
+        title: "2. Pilih Minatmu",
+        text: "Centang beberapa minat (Musik, Game, Film, dll). Partner yang dicarikan akan punya minat serupa supaya obrolan lebih nyambung.",
+      },
+      {
+        img: tutorialImg3,
+        title: "3. Ngobrol & Kirim Media",
+        text: "Setelah dapat partner, ketik pesan di kolom bawah. Tekan ikon kamera untuk kirim foto, atau ikon mic untuk pesan suara. Bisa juga panggilan telepon.",
+      },
+      {
+        img: tutorialImg4,
+        title: "4. Tambahkan Jadi Teman",
+        text: "Cocok dengan partnermu? Tekan tombol \"Tambah Teman\" di header chat. Kalau diterima, kalian bisa lanjut ngobrol kapan saja di tab Teman.",
+      },
     ];
     const s = slides[tutorialStep];
     const last = tutorialStep === slides.length - 1;
@@ -1519,32 +1535,49 @@ export default function AnonChatTab() {
       <div className="rounded-3xl border-2 border-indigo-400/30 bg-gradient-to-b from-indigo-950/40 via-slate-950 to-slate-950 min-h-[500px] flex flex-col">
         <div className="flex items-center justify-center gap-2 px-5 py-4 border-b border-slate-800/60 relative">
           <span className="text-2xl">🥷</span>
-          <span className="font-extrabold text-indigo-100 text-lg">anon.chat</span>
+          <span className="font-extrabold text-indigo-100 text-lg">Tutorial anon.chat</span>
           <button onClick={() => setView("about")} className="absolute right-4 text-slate-400 hover:text-slate-200">
             <X className="w-5 h-5" />
           </button>
         </div>
         <div className="flex-1 overflow-y-auto p-5 flex flex-col">
-          <div className="rounded-2xl bg-slate-100 p-3 shadow-2xl mb-3">
-            <div className={`aspect-square rounded-xl bg-gradient-to-br ${s.gradient} flex items-center justify-center text-7xl`}>
-              {s.emoji}
-            </div>
-            <div className="text-slate-700 text-sm mt-3 leading-relaxed">{s.text}</div>
+          <div className="rounded-2xl overflow-hidden shadow-2xl shadow-indigo-900/40 bg-slate-900 border border-slate-800">
+            <img
+              src={s.img}
+              alt={s.title}
+              loading="lazy"
+              width={1024}
+              height={1536}
+              className="w-full h-auto block"
+            />
           </div>
-          <div className="text-[11px] text-slate-500 px-1">16:32</div>
-          <p className="text-slate-200 text-base mt-6 leading-relaxed text-center px-2">{s.text}</p>
-          <div className="flex gap-1.5 justify-center mt-6">
+          <h3 className="text-indigo-100 text-lg font-bold mt-5 text-center">{s.title}</h3>
+          <p className="text-slate-300 text-sm mt-2 leading-relaxed text-center px-1">{s.text}</p>
+          <div className="flex gap-1.5 justify-center mt-5">
             {slides.map((_, i) => (
-              <div key={i} className={`h-1.5 rounded-full transition-all ${i === tutorialStep ? "w-6 bg-indigo-400" : "w-1.5 bg-slate-700"}`} />
+              <button
+                key={i}
+                onClick={() => setTutorialStep(i)}
+                className={`h-1.5 rounded-full transition-all ${i === tutorialStep ? "w-6 bg-indigo-400" : "w-1.5 bg-slate-700"}`}
+                aria-label={`Slide ${i + 1}`}
+              />
             ))}
           </div>
           <div className="flex-1" />
-          <div className="flex justify-end mt-6">
+          <div className="flex items-center justify-between mt-6 gap-3">
+            <button
+              onClick={() => setTutorialStep(s => Math.max(0, s - 1))}
+              disabled={tutorialStep === 0}
+              className="px-4 py-2.5 rounded-full text-sm font-semibold text-slate-300 bg-slate-800/60 hover:bg-slate-800 disabled:opacity-30 disabled:cursor-not-allowed"
+            >
+              Kembali
+            </button>
             <button
               onClick={() => last ? setView("about") : setTutorialStep(s => s + 1)}
-              className="w-14 h-14 rounded-full bg-indigo-500 hover:bg-indigo-600 text-white flex items-center justify-center shadow-xl shadow-indigo-500/40"
+              className="flex-1 h-12 rounded-full bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white flex items-center justify-center gap-2 shadow-xl shadow-indigo-500/40 font-semibold text-sm"
             >
-              {last ? <span className="text-xs font-bold">Selesai</span> : <ArrowRight className="w-6 h-6" />}
+              {last ? "Selesai" : `Lanjut (${tutorialStep + 1}/${slides.length})`}
+              {!last && <ArrowRight className="w-4 h-4" />}
             </button>
           </div>
         </div>
