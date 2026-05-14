@@ -1219,9 +1219,10 @@ export default function AnonChatTab() {
             </div>
           </div>
         </div>
-        <InnerNav active="settings" onChange={(k) => {
-          if (k === "search") setView("lobby");
+        <InnerNav active="account" friendBadge={friendReqs.length} onChange={(k) => {
+          if (k === "chat") setView("lobby");
           else if (k === "friends") setView("friends");
+          else if (k === "explore") { setView("explore"); loadExplore(); }
           else setView("prefs");
         }} />
       </div>
@@ -1271,9 +1272,10 @@ export default function AnonChatTab() {
             <span>Notifikasi & suara hanya untuk percakapan anon chat. Pengaturan ini tersimpan di perangkat ini.</span>
           </div>
         </div>
-        <InnerNav active="settings" onChange={(k) => {
-          if (k === "search") setView("lobby");
+        <InnerNav active="account" friendBadge={friendReqs.length} onChange={(k) => {
+          if (k === "chat") setView("lobby");
           else if (k === "friends") setView("friends");
+          else if (k === "explore") { setView("explore"); loadExplore(); }
           else setView("prefs");
         }} />
       </div>
@@ -1304,9 +1306,10 @@ export default function AnonChatTab() {
             ))}
           </div>
         </div>
-        <InnerNav active="settings" onChange={(k) => {
-          if (k === "search") setView("lobby");
+        <InnerNav active="account" friendBadge={friendReqs.length} onChange={(k) => {
+          if (k === "chat") setView("lobby");
           else if (k === "friends") setView("friends");
+          else if (k === "explore") { setView("explore"); loadExplore(); }
           else setView("prefs");
         }} />
       </div>
@@ -1347,9 +1350,10 @@ export default function AnonChatTab() {
             </div>
           </div>
         </div>
-        <InnerNav active="settings" onChange={(k) => {
-          if (k === "search") setView("lobby");
+        <InnerNav active="account" friendBadge={friendReqs.length} onChange={(k) => {
+          if (k === "chat") setView("lobby");
           else if (k === "friends") setView("friends");
+          else if (k === "explore") { setView("explore"); loadExplore(); }
           else setView("prefs");
         }} />
       </div>
@@ -1377,9 +1381,10 @@ export default function AnonChatTab() {
             ))}
           </div>
         </div>
-        <InnerNav active="settings" onChange={(k) => {
-          if (k === "search") setView("lobby");
+        <InnerNav active="account" friendBadge={friendReqs.length} onChange={(k) => {
+          if (k === "chat") setView("lobby");
           else if (k === "friends") setView("friends");
+          else if (k === "explore") { setView("explore"); loadExplore(); }
           else setView("prefs");
         }} />
       </div>
@@ -1432,9 +1437,10 @@ export default function AnonChatTab() {
             </div>
           </div>
         </div>
-        <InnerNav active="settings" onChange={(k) => {
-          if (k === "search") setView("lobby");
+        <InnerNav active="account" friendBadge={friendReqs.length} onChange={(k) => {
+          if (k === "chat") setView("lobby");
           else if (k === "friends") setView("friends");
+          else if (k === "explore") { setView("explore"); loadExplore(); }
           else setView("prefs");
         }} />
       </div>
@@ -1443,11 +1449,12 @@ export default function AnonChatTab() {
 
   const APP_VERSION = "v5.35.0";
   const aboutBack = (target: View = "about") => (
-    <InnerNav active="settings" onChange={(k) => {
-      if (k === "search") setView("lobby");
-      else if (k === "friends") setView("friends");
-      else setView("prefs");
-    }} />
+    <InnerNav active="account" friendBadge={friendReqs.length} onChange={(k) => {
+          if (k === "chat") setView("lobby");
+          else if (k === "friends") setView("friends");
+          else if (k === "explore") { setView("explore"); loadExplore(); }
+          else setView("prefs");
+        }} />
   );
 
   if (view === "about") {
@@ -1786,9 +1793,11 @@ export default function AnonChatTab() {
           </div>
         </div>
 
-        <InnerNav active="settings" onChange={(k) => {
-          if (k === "search") setView("lobby");
+        <InnerNav active="account" friendBadge={friendReqs.length} onChange={(k) => {
+          if (k === "chat") setView("lobby");
           else if (k === "friends") setView("friends");
+          else if (k === "explore") { setView("explore"); loadExplore(); }
+          else setView("prefs");
         }} />
       </div>
     );
@@ -1856,9 +1865,11 @@ export default function AnonChatTab() {
             )}
           </div>
         </div>
-        <InnerNav active="friends" onChange={(k) => {
-          if (k === "search") setView("lobby");
-          else if (k === "settings") setView("prefs");
+        <InnerNav active="friends" friendBadge={friendReqs.length} onChange={(k) => {
+          if (k === "chat") setView("lobby");
+          else if (k === "friends") setView("friends");
+          else if (k === "explore") { setView("explore"); loadExplore(); }
+          else setView("prefs");
         }} />
       </div>
     );
@@ -1963,11 +1974,12 @@ export default function AnonChatTab() {
       </div>
 
       {/* Inner bottom nav */}
-      <InnerNav active="search" onChange={(k) => {
-        if (k === "search") setView("lobby");
-        else if (k === "friends") setView("friends");
-        else setView("prefs");
-      }} />
+      <InnerNav active="chat" friendBadge={friendReqs.length} onChange={(k) => {
+          if (k === "chat") setView("lobby");
+          else if (k === "friends") setView("friends");
+          else if (k === "explore") { setView("explore"); loadExplore(); }
+          else setView("prefs");
+        }} />
     </div>
   );
 }
