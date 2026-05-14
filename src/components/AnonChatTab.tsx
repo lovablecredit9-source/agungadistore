@@ -1875,6 +1875,185 @@ export default function AnonChatTab() {
     );
   }
 
+  if (view === "explore") {
+    return (
+      <div className="rounded-3xl overflow-hidden border-2 border-purple-400/30 bg-gradient-to-b from-purple-950/30 via-slate-950 to-slate-950 min-h-[500px] flex flex-col">
+        <div className="flex items-center justify-between gap-2 py-4 px-4 border-b border-purple-400/20 bg-gradient-to-r from-purple-500/10 to-violet-500/10">
+          <div className="flex items-center gap-2">
+            <Compass className="w-5 h-5 text-purple-300" />
+            <span className="text-base font-extrabold text-purple-100">Jelajah</span>
+          </div>
+          <button onClick={loadExplore} className="text-purple-300 text-xs flex items-center gap-1 px-2 py-1 rounded-full bg-purple-500/15 border border-purple-400/30">
+            <RefreshCw className={`w-3.5 h-3.5 ${exploreLoading ? "animate-spin" : ""}`} /> Muat ulang
+          </button>
+        </div>
+        <div className="flex-1 overflow-y-auto p-4 space-y-2">
+          <p className="text-[11px] text-slate-400 italic px-1 mb-1">Pengguna anonim aktif dalam 5 menit terakhir.</p>
+          {exploreLoading && exploreList.length === 0 ? (
+            <div className="text-center text-slate-400 text-sm py-10">Memuat...</div>
+          ) : exploreList.length === 0 ? (
+            <div className="flex flex-col items-center justify-center text-center gap-3 py-10">
+              <div className="w-20 h-20 rounded-full bg-purple-500/10 flex items-center justify-center">
+                <Compass className="w-10 h-10 text-purple-300/70" />
+              </div>
+              <h3 className="font-bold text-slate-100">Belum ada pengguna online</h3>
+              <p className="text-xs text-slate-400 max-w-[260px]">Coba lagi sebentar atau langsung tekan tab Obrolan untuk cari partner acak.</p>
+            </div>
+          ) : (
+            exploreList.map((p) => {
+              const av = presetById(p.avatar_preset);
+              return (
+                <div key={p.visitor_id} className="flex items-center gap-3 p-3 rounded-2xl bg-slate-900/60 border border-purple-400/20 hover:border-purple-400/50 transition">
+                  <div className={`w-11 h-11 rounded-full bg-gradient-to-br ${av.gradient} flex items-center justify-center overflow-hidden shrink-0`}>
+                    {p.avatar_url ? <img src={p.avatar_url} alt="" className="h-full w-full object-cover" /> : <AvatarGraphic preset={av} />}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="font-semibold text-purple-100 truncate flex items-center gap-1.5">
+                      {p.nickname || "Anonim"}
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                    </div>
+                    <div className="text-[10px] text-purple-300/60">aktif baru saja</div>
+                  </div>
+                  <button onClick={() => { toast.info("Tekan Obrolan untuk cari partner — chat langsung ke pengguna belum tersedia."); }}
+                    className="px-3 h-8 rounded-full bg-purple-500/20 hover:bg-purple-500/40 border border-purple-400/40 text-purple-100 text-xs font-bold flex items-center gap-1">
+                    <MessageCircle className="w-3.5 h-3.5" /> Sapa
+                  </button>
+                </div>
+              );
+            })
+          )}
+        </div>
+        <InnerNav active="explore" friendBadge={friendReqs.length} onChange={(k) => {
+          if (k === "chat") setView("lobby");
+          else if (k === "friends") setView("friends");
+          else if (k === "explore") { setView("explore"); loadExplore(); }
+          else setView("prefs");
+        }} />
+      </div>
+    );
+  }
+
+  if (view === "onboarding") {
+    const stepDone1 = !!nickname;
+    const stepDone2 = onboardInterests.length > 0;
+    const goSearch = () => {
+      try { localStorage.setItem("anon_onboarded", "1"); } catch {}
+      if (onboardInterests.length > 0) setInterest(onboardInterests[0]);
+      doMatch();
+    };
+    return (
+      <div className="rounded-3xl border-2 border-purple-400/30 bg-gradient-to-b from-[#0d0820] via-[#0a0618] to-[#0a0618] min-h-[500px] flex flex-col">
+        <div className="flex items-center justify-between px-4 py-3 border-b border-purple-400/20">
+          <button onClick={() => setView("lobby")} className="text-purple-300 text-sm flex items-center gap-1"><ArrowLeft className="w-4 h-4" /> Kembali</button>
+          <div className="text-base font-extrabold text-white">anon<span className="bg-gradient-to-r from-fuchsia-400 to-purple-400 bg-clip-text text-transparent">.chat</span></div>
+          <div className="w-12" />
+        </div>
+        <div className="px-5 pt-5 flex items-center justify-between gap-2">
+          {[
+            { n: 1, label: "Profil", done: stepDone1 },
+            { n: 2, label: "Minat",  done: stepDone2 },
+            { n: 3, label: "Siap!",  done: false },
+          ].map((s, i, arr) => (
+            <div key={s.n} className="flex-1 flex items-center gap-2">
+              <div className="flex flex-col items-center gap-1">
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold border-2 ${onboardStep === s.n ? "bg-purple-500 border-purple-300 text-white" : s.done ? "bg-purple-500/30 border-purple-400 text-purple-100" : "bg-slate-800 border-slate-700 text-slate-400"}`}>
+                  {s.done && onboardStep !== s.n ? <Check className="w-4 h-4" /> : s.n}
+                </div>
+                <span className="text-[10px] text-slate-300 font-semibold">{s.label}</span>
+              </div>
+              {i < arr.length - 1 && <div className={`flex-1 h-0.5 ${s.done ? "bg-purple-400/60" : "bg-slate-700"}`} />}
+            </div>
+          ))}
+        </div>
+
+        <div className="flex-1 overflow-y-auto px-5 py-5">
+          {onboardStep === 1 && (
+            <div className="space-y-4">
+              <h2 className="text-2xl font-extrabold text-white text-center">Buat Profil Anon</h2>
+              <p className="text-sm text-slate-400 text-center">Nama samaran ini hanya muncul saat chat — tidak terhubung ke akun aslimu.</p>
+              <div className="flex flex-col items-center gap-3 py-2">
+                <div className={`w-24 h-24 rounded-full bg-gradient-to-br ${myAvatar.gradient} flex items-center justify-center overflow-hidden shadow-xl`}>
+                  {avatarUrl ? <img src={avatarUrl} alt="" className="h-full w-full object-cover" /> : <AvatarGraphic preset={myAvatar} />}
+                </div>
+                <div className="grid grid-cols-5 gap-2 w-full">
+                  {AVATAR_PRESETS.map((a) => (
+                    <button key={a.id} onClick={() => setAvatarPreset(a.id)} className={`h-12 rounded-xl bg-gradient-to-br ${a.gradient} border ${avatarPreset === a.id ? "border-white shadow-lg" : "border-transparent opacity-75"}`}><AvatarGraphic preset={a} className="h-full w-full" /></button>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <label className="text-xs text-slate-400 mb-1 block">Nama samaran</label>
+                <div className="flex gap-2">
+                  <input value={nickname} onChange={e => setNickname(e.target.value.slice(0, 20))} className="flex-1 bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-sm text-slate-100" />
+                  <button onClick={() => setNickname(genNick())} className="px-3 rounded-xl bg-purple-500/20 text-purple-200 border border-purple-400/30"><Sparkles className="w-4 h-4" /></button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {onboardStep === 2 && (
+            <div className="space-y-4">
+              <h2 className="text-2xl font-extrabold text-white text-center">Pilih Minat</h2>
+              <p className="text-sm text-slate-400 text-center">Pilih beberapa minat yang kamu sukai agar kami bisa mencarikan partner yang lebih cocok untukmu.</p>
+              <div className="grid grid-cols-2 gap-3">
+                {INTEREST_CARDS.map(({ id, label, Icon, gradient, ring }) => {
+                  const on = onboardInterests.includes(id);
+                  return (
+                    <button key={id} onClick={() => setOnboardInterests((prev) => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id])}
+                      className={`relative rounded-2xl p-4 border bg-gradient-to-br ${gradient} ${on ? `ring-2 ${ring} border-transparent` : "border-slate-700/60"} flex items-center gap-3 transition`}>
+                      <div className="w-9 h-9 rounded-xl bg-slate-950/60 flex items-center justify-center">
+                        <Icon className="w-5 h-5 text-white" />
+                      </div>
+                      <span className="font-bold text-slate-100">{label}</span>
+                      {on && <span className="absolute top-2 right-2 w-5 h-5 rounded-full bg-purple-500 text-white flex items-center justify-center"><Check className="w-3 h-3" /></span>}
+                    </button>
+                  );
+                })}
+              </div>
+              <div className="rounded-2xl border border-purple-400/30 bg-purple-500/5 p-3 flex items-start gap-2">
+                <Shield className="w-4 h-4 text-purple-300 mt-0.5 shrink-0" />
+                <div className="text-[11px] text-purple-200/80"><b className="text-purple-100">Privasi Terjamin</b><br />Minatmu bersifat anonim dan hanya digunakan untuk mencarikan partner yang cocok.</div>
+              </div>
+            </div>
+          )}
+
+          {onboardStep === 3 && (
+            <div className="space-y-4 text-center">
+              <h2 className="text-2xl font-extrabold text-white">Siap Mencari Partner!</h2>
+              <p className="text-sm text-slate-400">Profil dan minatmu sudah siap. Tekan tombol di bawah untuk mulai mencari partner anonim.</p>
+              <div className="rounded-2xl border border-purple-400/30 bg-slate-900/60 p-4 text-left space-y-2">
+                <div className="text-xs text-purple-300/80">Nama samaran</div>
+                <div className="font-bold text-slate-100">{nickname}</div>
+                <div className="text-xs text-purple-300/80 mt-3">Minat ({onboardInterests.length})</div>
+                <div className="flex flex-wrap gap-1.5">
+                  {onboardInterests.length === 0 ? <span className="text-slate-500 text-xs italic">Belum dipilih</span> :
+                    onboardInterests.map(i => <span key={i} className="text-[11px] px-2 py-1 rounded-full bg-purple-500/20 border border-purple-400/30 text-purple-100">{i}</span>)}
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div className="p-4 border-t border-slate-800 flex gap-2">
+          {onboardStep > 1 && (
+            <button onClick={() => setOnboardStep((s) => (s - 1) as 1 | 2 | 3)} className="px-4 py-3 rounded-xl bg-slate-800 border border-slate-700 text-slate-200 text-sm font-bold">← Kembali</button>
+          )}
+          {onboardStep < 3 ? (
+            <button onClick={() => setOnboardStep((s) => (s + 1) as 1 | 2 | 3)} disabled={onboardStep === 2 && onboardInterests.length === 0}
+              className="flex-1 py-3 rounded-xl bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white font-bold disabled:opacity-50">
+              Lanjut
+            </button>
+          ) : (
+            <button onClick={goSearch} className="flex-1 py-3 rounded-xl bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white font-bold flex items-center justify-center gap-2">
+              <Search className="w-4 h-4" /> Cari Partner
+            </button>
+          )}
+        </div>
+        <p className="text-[10px] text-slate-500 text-center pb-3 flex items-center justify-center gap-1"><Lock className="w-3 h-3" /> 100% Aman & Anonim</p>
+      </div>
+    );
+  }
+
   if (view === "searching") {
     return (
       <div className="rounded-3xl border-2 border-purple-400/30 bg-gradient-to-b from-purple-950/40 via-slate-950 to-slate-950 p-8 text-center min-h-[500px] flex flex-col items-center justify-center">
