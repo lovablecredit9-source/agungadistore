@@ -151,6 +151,7 @@ export default function AnonChatTab() {
   const [mediaBlur, setMediaBlur] = useState<"off" | "temp" | "all">(() => (localStorage.getItem("anon_media_blur") as "off" | "temp" | "all") || "temp");
   const [onlineStatus, setOnlineStatus] = useState<boolean>(() => localStorage.getItem("anon_online_status") !== "off");
   const [whoCanCall, setWhoCanCall] = useState<"all" | "friends" | "none">(() => (localStorage.getItem("anon_who_can_call") as "all" | "friends" | "none") || "all");
+  const [tutorialStep, setTutorialStep] = useState(0);
   const [showEmojiInput, setShowEmojiInput] = useState(false);
   const [anonAccount, setAnonAccount] = useState<AnonAccount | null>(null);
   const [showAccountDialog, setShowAccountDialog] = useState(false);
