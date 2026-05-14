@@ -1495,7 +1495,7 @@ export default function AnonChatTab() {
               { icon: Globe, label: "Bahasa", desc: LANGUAGES.find(l => l.code === lang)?.name || lang, onClick: () => setView("language") },
               { icon: Lock, label: "Privasi", desc: onlineStatus ? "Status online aktif" : "Status online disembunyikan", onClick: () => setView("privacy") },
               { icon: ThumbsUp, label: "Beri rating", desc: "Bantu kami berkembang", onClick: () => { try { window.open("https://wa.me/6285769302532?text=" + encodeURIComponent("Halo, saya mau beri rating Anon Chat"), "_blank"); } catch { /* ignore */ } } },
-              { icon: Info, label: "Tentang", desc: "Anon Chat by Agung Adi Store", onClick: () => toast.info("Anon Chat — bagian dari Agung Adi Store. Murah & Terpercaya.") },
+              { icon: Info, label: "Tentang", desc: "Anon Chat by Agung Adi Store", onClick: () => setView("about") },
             ].map((it, i) => (
               <button key={i} onClick={it.onClick}
                 className="w-full flex items-center gap-3 px-4 py-3.5 text-left hover:bg-slate-800/40 transition">
