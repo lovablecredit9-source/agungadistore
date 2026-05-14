@@ -732,6 +732,7 @@ export default function AnonChatTab() {
       const st = pc.connectionState;
       if (st === "connected") {
         setCallState("connected");
+        if (!callConnectedRef.current) { callConnectedRef.current = true; if (!callAnsweredAtRef.current) callAnsweredAtRef.current = new Date().toISOString(); }
         if (!callTimerRef.current) callTimerRef.current = setInterval(() => setCallSeconds(s => s + 1), 1000);
       } else if (st === "failed" || st === "disconnected" || st === "closed") {
         if (callState !== "idle") { toast.info("Panggilan terputus"); cleanupCall(false); }
