@@ -212,6 +212,7 @@ export default function AnonChatTab() {
   const partnerVisitorRef = useRef<string | null>(null);
   // Photo preview before send
   const [photoPreview, setPhotoPreview] = useState<{ file: File; url: string; caption: string; viewOnce: boolean } | null>(null);
+  const [viewOnceViewer, setViewOnceViewer] = useState<{ id: string; url: string } | null>(null);
   // Voice recording state
   const [recording, setRecording] = useState(false);
   const [recordSecs, setRecordSecs] = useState(0);
@@ -983,6 +984,12 @@ export default function AnonChatTab() {
     const now = new Date().toISOString();
     setMessages(prev => prev.map(x => x.id === m.id ? { ...x, viewed_at: now } : x));
     await supabase.from("anon_chat_messages").update({ viewed_at: now } as any).eq("id", m.id);
+  };
+
+  const openViewOncePhoto = (m: AnonMsg, url: string) => {
+    if (m.sender === visitor || m.viewed_at) return;
+    setViewOnceViewer({ id: m.id, url });
+    void markViewOnceSeen(m);
   };
 
 
