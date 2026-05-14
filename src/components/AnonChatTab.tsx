@@ -90,6 +90,12 @@ interface AnonMsg {
   is_deleted: boolean;
   deleted_for?: string[] | null;
   local_blocked?: boolean;
+  media_url?: string | null;
+  media_type?: string | null; // 'image' | 'audio'
+  caption?: string | null;
+  view_once?: boolean;
+  viewed_at?: string | null;
+  audio_duration?: number | null;
 }
 interface AnonReaction { id: string; message_id: string; visitor_id: string; emoji: string; }
 const EMOJIS = ["👍", "❤️", "😂", "😮", "😢", "🙏", "🔥"];
