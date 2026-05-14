@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Search, Users, Settings as SettingsIcon, Send, X, RefreshCw, UserPlus, Heart, ChevronRight, Sparkles, Shield, ImagePlus, Smile, Reply, Trash2, Check, CheckCheck, MessageCircle, UserCheck, UserX, HelpCircle, Bell, Phone, Volume2, VolumeX, Eye, AlertTriangle, LogOut, Copy, Flag, Plus, FileText, Moon, MessageSquare, Globe, Lock, ThumbsUp, Info, Link2 } from "lucide-react";
+import { Search, Users, Settings as SettingsIcon, Send, X, RefreshCw, UserPlus, Heart, ChevronRight, Sparkles, Shield, ImagePlus, Smile, Reply, Trash2, Check, CheckCheck, MessageCircle, UserCheck, UserX, HelpCircle, Bell, Phone, Volume2, VolumeX, Eye, AlertTriangle, LogOut, Copy, Flag, Plus, FileText, Moon, MessageSquare, Globe, Lock, ThumbsUp, Info, Link2, Mic, Compass, User as UserIcon, Music as MusicIcon, Gamepad2, Film as FilmIcon, Trophy, Code as CodeIcon, Camera, ArrowLeft, MoreVertical } from "lucide-react";
 import { toast } from "sonner";
 import { moderateOutgoing } from "@/lib/chat-moderation";
 import { formatBanRemaining, type BanInfo } from "@/hooks/useAccountBan";
