@@ -97,7 +97,29 @@ interface AnonProfile { visitor_id: string; nickname: string | null; avatar_url:
 type PublicBioResponse = { success?: boolean; bio?: string | null; error?: string };
 type UpdateBioResponse = { success?: boolean; account?: AnonAccount | null; error?: string };
 
-type View = "lobby" | "prefs" | "account" | "interest" | "searching" | "chat" | "friends" | "explore" | "onboarding" | "support" | "notif" | "appearance" | "chatopts" | "language" | "privacy" | "about" | "about_privacy" | "about_rules" | "about_tutorial" | "about_system";
+type View = "lobby" | "prefs" | "account" | "interest" | "searching" | "chat" | "friends" | "explore" | "onboarding" | "support" | "notif" | "appearance" | "chatopts" | "language" | "privacy" | "about" | "about_privacy" | "about_rules" | "about_tutorial" | "about_system" | "history" | "callhistory";
+
+interface AnonCallLog {
+  id: string;
+  visitor_id: string;
+  partner_visitor: string;
+  partner_nickname: string | null;
+  session_id: string | null;
+  direction: "outgoing" | "incoming";
+  status: "answered" | "missed" | "declined" | "cancelled" | "ended";
+  started_at: string;
+  answered_at: string | null;
+  ended_at: string | null;
+  duration_seconds: number;
+}
+interface AnonMatchHistory {
+  id: string;
+  visitor_id: string;
+  partner_visitor: string;
+  partner_nickname: string | null;
+  session_id: string | null;
+  last_session_at: string;
+}
 
 const INTERESTS = ["Apapun","Curhat","Main RP","Meme","Kesepian","Game","Anime","Film","Musik","Travel","Coding","Olahraga","Nongkrong","Belajar"];
 
