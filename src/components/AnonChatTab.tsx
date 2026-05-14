@@ -1539,8 +1539,8 @@ export default function AnonChatTab() {
     );
 
     // Yellow callout
-    const Callout = ({ children, className = "" }: { children: React.ReactNode; className?: string }) => (
-      <div className={`absolute z-30 bg-yellow-300 text-slate-900 text-[11px] font-bold px-2.5 py-1.5 rounded-lg shadow-lg leading-tight text-center ${className}`}>
+    const Callout = ({ children, className = "", style }: { children: React.ReactNode; className?: string; style?: React.CSSProperties }) => (
+      <div style={style} className={`absolute z-30 bg-yellow-300 text-slate-900 text-[11px] font-bold px-2.5 py-1.5 rounded-lg shadow-lg leading-tight text-center ${className}`}>
         {children}
       </div>
     );
