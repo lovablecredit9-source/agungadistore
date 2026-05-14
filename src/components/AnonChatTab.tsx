@@ -1508,31 +1508,232 @@ export default function AnonChatTab() {
 
   if (view === "about_tutorial") {
     const slides = [
-      {
-        img: tutorialImg1,
-        title: "1. Mulai Chat Anonim",
-        text: "Buka tab Anon Chat lalu tekan tombol ungu besar bertuliskan \"Mulai Chat Anonim\". Sistem akan langsung mencarikan partner acak untukmu.",
-      },
-      {
-        img: tutorialImg2,
-        title: "2. Pilih Minatmu",
-        text: "Centang beberapa minat (Musik, Game, Film, dll). Partner yang dicarikan akan punya minat serupa supaya obrolan lebih nyambung.",
-      },
-      {
-        img: tutorialImg3,
-        title: "3. Ngobrol & Kirim Media",
-        text: "Setelah dapat partner, ketik pesan di kolom bawah. Tekan ikon kamera untuk kirim foto, atau ikon mic untuk pesan suara. Bisa juga panggilan telepon.",
-      },
-      {
-        img: tutorialImg4,
-        title: "4. Tambahkan Jadi Teman",
-        text: "Cocok dengan partnermu? Tekan tombol \"Tambah Teman\" di header chat. Kalau diterima, kalian bisa lanjut ngobrol kapan saja di tab Teman.",
-      },
+      { title: "1. Mulai Chat Anonim", text: "Tekan tombol ungu besar \"Mulai Chat Anonim\" di halaman utama. Sistem akan mencarikan partner acak untukmu." },
+      { title: "2. Pilih Minatmu", text: "Centang minat seperti Musik, Game, Film. Partner yang cocok akan punya minat serupa biar obrolan lebih nyambung." },
+      { title: "3. Ngobrol & Kirim Media", text: "Ketik pesan di kolom bawah. Tekan ikon kamera untuk foto, ikon mic untuk pesan suara." },
+      { title: "4. Tambahkan Jadi Teman", text: "Cocok dengan partnermu? Tekan \"Tambah Teman\" di header chat untuk lanjut ngobrol kapan saja." },
     ];
     const s = slides[tutorialStep];
     const last = tutorialStep === slides.length - 1;
+
+    // Phone frame wrapper
+    const Phone = ({ children }: { children: React.ReactNode }) => (
+      <div className="relative mx-auto" style={{ width: 280 }}>
+        <div className="relative rounded-[42px] bg-slate-950 p-[6px] shadow-2xl shadow-indigo-900/50 ring-1 ring-slate-700/60">
+          <div className="relative rounded-[36px] overflow-hidden bg-black" style={{ height: 560 }}>
+            {/* notch */}
+            <div className="absolute top-2 left-1/2 -translate-x-1/2 w-24 h-5 bg-black rounded-full z-20 flex items-center justify-center gap-2">
+              <div className="w-1.5 h-1.5 rounded-full bg-slate-700" />
+            </div>
+            {/* status bar */}
+            <div className="absolute top-0 left-0 right-0 h-8 flex items-center justify-between px-5 text-[10px] text-white font-semibold z-10">
+              <span>9:41</span>
+              <span className="flex gap-1 items-center">●●● ▲ ▮</span>
+            </div>
+            <div className="absolute inset-0 pt-8">{children}</div>
+            {/* home indicator */}
+            <div className="absolute bottom-1.5 left-1/2 -translate-x-1/2 w-24 h-1 rounded-full bg-white/70 z-20" />
+          </div>
+        </div>
+      </div>
+    );
+
+    // Yellow callout
+    const Callout = ({ children, className = "", style }: { children: React.ReactNode; className?: string; style?: React.CSSProperties }) => (
+      <div style={style} className={`absolute z-30 bg-yellow-300 text-slate-900 text-[11px] font-bold px-2.5 py-1.5 rounded-lg shadow-lg leading-tight text-center ${className}`}>
+        {children}
+      </div>
+    );
+
+    // Curved SVG arrow
+    const Arrow = ({ d, className = "" }: { d: string; className?: string }) => (
+      <svg className={`absolute z-30 pointer-events-none ${className}`} viewBox="0 0 100 100" preserveAspectRatio="none">
+        <defs>
+          <marker id={`ah-${tutorialStep}`} markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto">
+            <path d="M0,0 L6,3 L0,6 z" fill="#facc15" />
+          </marker>
+        </defs>
+        <path d={d} stroke="#facc15" strokeWidth="2.5" fill="none" strokeLinecap="round" markerEnd={`url(#ah-${tutorialStep})`} />
+      </svg>
+    );
+
+    const renderSlide = () => {
+      if (tutorialStep === 0) {
+        // Lobby
+        return (
+          <Phone>
+            <div className="h-full bg-gradient-to-b from-slate-950 via-indigo-950/40 to-slate-950 px-4 pt-4 pb-2 flex flex-col">
+              <div className="flex items-center justify-between">
+                <span className="text-[9px] px-2 py-1 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/40">🛡 Aman & Privasi</span>
+                <span className="w-6 h-6 rounded-full bg-slate-800/80 flex items-center justify-center text-slate-400 text-xs">?</span>
+              </div>
+              <div className="flex-1 flex flex-col items-center justify-center -mt-2">
+                <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-slate-800 to-slate-900 flex items-center justify-center text-3xl mb-2">🥷</div>
+                <h2 className="text-white text-2xl font-extrabold tracking-tight">anon<span className="bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">.chat</span></h2>
+                <p className="text-slate-400 text-[10px] mt-1 text-center">Chat anonim dengan siapa saja<br/>100% gratis & tanpa registrasi</p>
+                <div className="relative mt-4 w-full">
+                  <div className="h-12 rounded-2xl bg-gradient-to-r from-indigo-500 to-purple-600 flex items-center justify-center gap-2 shadow-xl shadow-indigo-500/40">
+                    <span className="text-white text-xs">💬</span>
+                    <span className="text-white font-bold text-sm">Mulai Chat Anonim</span>
+                    <span className="text-white text-xs">→</span>
+                  </div>
+                </div>
+                <div className="grid grid-cols-3 gap-1.5 mt-3 w-full">
+                  {[["🎭","100% Anonim"],["🔒","Privasi Terjaga"],["⚡","Cepat & Mudah"]].map(([i,t]) => (
+                    <div key={t} className="rounded-xl bg-slate-900/80 border border-slate-800 p-2 text-center">
+                      <div className="text-base">{i}</div>
+                      <div className="text-[8px] text-slate-300 font-semibold mt-0.5">{t}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div className="flex justify-around pt-2 border-t border-slate-800/60">
+                {["Beranda","Riwayat","Aturan","Saya"].map((t,i) => (
+                  <div key={t} className={`text-[8px] flex flex-col items-center gap-0.5 ${i===0?"text-indigo-400":"text-slate-500"}`}>
+                    <div className="w-3 h-3 rounded-full bg-current opacity-60" />
+                    {t}
+                  </div>
+                ))}
+              </div>
+              <Callout className="left-1/2 -translate-x-1/2" style={{ top: "58%" }}>Tekan tombol ini untuk<br/>mulai mencari partner chat</Callout>
+              <Arrow d="M 50 55 Q 35 50 45 42" className="left-[28%] top-[42%] w-20 h-20" />
+            </div>
+          </Phone>
+        );
+      }
+      if (tutorialStep === 1) {
+        const interests = [["🎵","Musik",true],["🎮","Game",true],["🎬","Film",false],["⚽","Olahraga",true],["🌸","Anime",false],["💻","Coding",false]];
+        return (
+          <Phone>
+            <div className="h-full bg-slate-950 px-4 pt-3 pb-2 flex flex-col">
+              <div className="flex items-center justify-center gap-1.5">
+                <span className="text-base">🥷</span>
+                <span className="text-white font-bold text-sm">anon<span className="text-indigo-400">.chat</span></span>
+              </div>
+              <div className="flex items-center justify-between mt-3 px-2">
+                {["Profil","Minat","Siap!"].map((t,i) => (
+                  <div key={t} className="flex flex-col items-center gap-1 flex-1">
+                    <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold ${i<=1?"bg-indigo-500 text-white":"bg-slate-800 text-slate-500"}`}>{i===0?"✓":i+1}</div>
+                    <span className={`text-[9px] ${i<=1?"text-white":"text-slate-500"}`}>{t}</span>
+                  </div>
+                ))}
+              </div>
+              <h3 className="text-white text-lg font-extrabold text-center mt-3">Pilih Minat</h3>
+              <p className="text-slate-400 text-[9px] text-center px-3 mt-1">Pilih minat yang kamu sukai agar kami bisa cari partner cocok</p>
+              <div className="grid grid-cols-2 gap-2 mt-3">
+                {interests.map(([i,t,sel]) => (
+                  <div key={t as string} className={`rounded-xl border p-2 flex items-center gap-1.5 ${sel?"border-indigo-400 bg-indigo-500/10":"border-slate-800 bg-slate-900/60"}`}>
+                    <span className="text-sm">{i}</span>
+                    <span className="text-white text-[11px] font-semibold flex-1">{t}</span>
+                    {sel && <span className="text-green-400 text-[10px]">✓</span>}
+                  </div>
+                ))}
+              </div>
+              <div className="mt-3 rounded-xl bg-slate-900/60 border border-slate-800 p-2 flex gap-2 items-start">
+                <span className="text-purple-400 text-base">🛡</span>
+                <div>
+                  <div className="text-white text-[10px] font-bold">Privasi Terjamin</div>
+                  <div className="text-slate-400 text-[8px]">Minatmu anonim dan hanya dipakai cari partner.</div>
+                </div>
+              </div>
+              <div className="mt-auto h-10 rounded-full bg-indigo-500 flex items-center justify-center gap-1.5 shadow-lg shadow-indigo-500/40">
+                <span className="text-white">🔍</span>
+                <span className="text-white font-bold text-xs">Cari Partner</span>
+              </div>
+              <Callout className="right-1 top-[28%] max-w-[110px]">Pilih minat agar dapat<br/>partner yang cocok</Callout>
+              <Arrow d="M 90 35 Q 65 38 55 42" className="right-[12%] top-[26%] w-24 h-16" />
+            </div>
+          </Phone>
+        );
+      }
+      if (tutorialStep === 2) {
+        return (
+          <Phone>
+            <div className="h-full bg-slate-950 flex flex-col">
+              <div className="px-4 pt-3 flex items-center justify-center gap-1.5 border-b border-slate-800/60 pb-2">
+                <span className="text-base">🥷</span>
+                <span className="text-white font-bold text-sm">anon<span className="text-indigo-400">.chat</span></span>
+              </div>
+              <div className="px-3 py-2 flex items-center gap-2 border-b border-slate-800/60">
+                <span className="text-indigo-400 text-base">‹</span>
+                <div className="w-7 h-7 rounded-full bg-purple-500/30 flex items-center justify-center">🥷</div>
+                <div className="flex-1">
+                  <div className="text-white text-[11px] font-bold">Partner Anonim</div>
+                  <div className="text-green-400 text-[8px]">● Online</div>
+                </div>
+                <span className="text-purple-400 text-base">📞</span>
+              </div>
+              <div className="flex-1 px-3 py-2 flex flex-col gap-2 overflow-hidden">
+                <div className="rounded-lg bg-slate-900/60 border border-slate-800 p-2 flex gap-1.5 items-start">
+                  <span className="text-purple-400 text-xs">🛡</span>
+                  <span className="text-slate-300 text-[8px]">Semua percakapan anonim & aman. Jangan bagikan info pribadi.</span>
+                </div>
+                <div className="text-center"><span className="text-[8px] px-2 py-0.5 rounded-full bg-slate-800 text-slate-400">Hari ini</span></div>
+                <div className="self-start max-w-[70%] bg-slate-800 text-white text-[10px] px-2.5 py-1.5 rounded-2xl rounded-bl-sm">Hai, apa kabar? <span className="text-slate-500 text-[8px]">09.40</span></div>
+                <div className="self-end max-w-[70%] bg-purple-600 text-white text-[10px] px-2.5 py-1.5 rounded-2xl rounded-br-sm">Halo! Baik dong <span className="text-purple-200 text-[8px]">09.41 ✓✓</span></div>
+              </div>
+              <div className="px-3 py-2 flex items-center gap-1.5 border-t border-slate-800/60">
+                <div className="flex-1 h-8 rounded-full bg-slate-900 border border-slate-800 px-3 flex items-center text-slate-500 text-[10px]">Ketik pesan...</div>
+                <div className="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center text-pink-400 text-xs">📷</div>
+                <div className="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center text-pink-400 text-xs">🎤</div>
+                <div className="w-8 h-8 rounded-full bg-purple-600 flex items-center justify-center text-white text-xs">➤</div>
+              </div>
+              <Callout className="left-1/2 -translate-x-1/2 max-w-[140px]" style={{ bottom: "16%" }}>Kirim foto & pesan<br/>suara di sini</Callout>
+              <svg className="absolute z-30 pointer-events-none left-[35%] bottom-[8%] w-32 h-12" viewBox="0 0 100 50">
+                <defs><marker id="ah2-l" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 z" fill="#facc15"/></marker><marker id="ah2-r" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 z" fill="#facc15"/></marker></defs>
+                <path d="M 40 0 Q 30 25 25 45" stroke="#facc15" strokeWidth="2.5" fill="none" markerEnd="url(#ah2-l)"/>
+                <path d="M 60 0 Q 70 25 75 45" stroke="#facc15" strokeWidth="2.5" fill="none" markerEnd="url(#ah2-r)"/>
+              </svg>
+            </div>
+          </Phone>
+        );
+      }
+      // step 3 - tambah teman
+      return (
+        <Phone>
+          <div className="h-full bg-slate-950 flex flex-col">
+            <div className="px-3 py-2 flex items-center gap-2 border-b border-slate-800/60">
+              <span className="text-white text-sm">←</span>
+              <span className="flex-1 text-center text-white font-bold text-sm">anon<span className="text-indigo-400">.chat</span></span>
+              <span className="text-white text-sm">⋮</span>
+            </div>
+            <div className="px-3 py-2 flex items-center gap-2 border-b border-slate-800/60">
+              <div className="w-8 h-8 rounded-full bg-purple-500/30 flex items-center justify-center">🥷</div>
+              <div className="flex-1">
+                <div className="text-white text-[11px] font-bold">anon_7f3k9</div>
+                <div className="text-green-400 text-[8px]">● Online</div>
+              </div>
+              <div className="px-2.5 py-1 rounded-full bg-purple-600 text-white text-[9px] font-bold flex items-center gap-1">👤 Tambah Teman</div>
+            </div>
+            <div className="flex-1 px-3 py-2 flex flex-col gap-1.5 overflow-hidden text-[10px]">
+              <div className="self-center px-2 py-0.5 rounded border border-purple-500/40 text-purple-300 text-[9px]">Permintaan teman terkirim ✓</div>
+              <div className="text-center"><span className="text-[8px] px-2 py-0.5 rounded-full bg-slate-800 text-slate-400">Hari ini</span></div>
+              <div className="self-start bg-slate-800 text-white px-2 py-1 rounded-xl rounded-bl-sm">Haii! 👋 <span className="text-slate-500 text-[8px]">21:32</span></div>
+              <div className="self-end bg-purple-600 text-white px-2 py-1 rounded-xl rounded-br-sm">Hai juga! 😊 <span className="text-purple-200 text-[8px]">21:33 ✓✓</span></div>
+              <div className="self-start bg-slate-800 text-white px-2 py-1 rounded-xl rounded-bl-sm">Lagi apa nih? <span className="text-slate-500 text-[8px]">21:33</span></div>
+              <div className="self-end bg-purple-600 text-white px-2 py-1 rounded-xl rounded-br-sm">Lagi dengerin musik 🎵 <span className="text-purple-200 text-[8px]">21:34 ✓✓</span></div>
+            </div>
+            <div className="px-3 py-1.5 flex items-center gap-1.5 border-t border-slate-800/60">
+              <div className="flex-1 h-7 rounded-full bg-slate-900 border border-slate-800 px-3 flex items-center text-slate-500 text-[10px]">Ketik pesan... 😊</div>
+              <div className="w-7 h-7 rounded-full bg-purple-600 flex items-center justify-center text-white text-xs">➤</div>
+            </div>
+            <div className="flex justify-around py-1.5 border-t border-slate-800/60">
+              {["Obrolan","Teman","Jelajah","Akun"].map((t,i) => (
+                <div key={t} className={`text-[8px] flex flex-col items-center gap-0.5 ${i===1?"text-indigo-400":"text-slate-500"}`}>
+                  <div className="w-3 h-3 rounded-full bg-current opacity-60" />
+                  {t}
+                </div>
+              ))}
+            </div>
+            <Callout className="left-2 max-w-[130px]" style={{ top: "22%" }}>Suka partnermu?<br/>Tambahkan jadi teman &<br/>lanjut ngobrol kapan saja</Callout>
+            <Arrow d="M 50 50 Q 65 30 80 18" className="left-[40%] top-[12%] w-24 h-16" />
+          </div>
+        </Phone>
+      );
+    };
+
     return (
-      <div className="rounded-3xl border-2 border-indigo-400/30 bg-gradient-to-b from-indigo-950/40 via-slate-950 to-slate-950 min-h-[500px] flex flex-col">
+      <div className="rounded-3xl border-2 border-indigo-400/30 bg-gradient-to-b from-indigo-950/60 via-slate-950 to-slate-950 min-h-[500px] flex flex-col">
         <div className="flex items-center justify-center gap-2 px-5 py-4 border-b border-slate-800/60 relative">
           <span className="text-2xl">🥷</span>
           <span className="font-extrabold text-indigo-100 text-lg">Tutorial anon.chat</span>
@@ -1540,17 +1741,8 @@ export default function AnonChatTab() {
             <X className="w-5 h-5" />
           </button>
         </div>
-        <div className="flex-1 overflow-y-auto p-5 flex flex-col">
-          <div className="rounded-2xl overflow-hidden shadow-2xl shadow-indigo-900/40 bg-slate-900 border border-slate-800">
-            <img
-              src={s.img}
-              alt={s.title}
-              loading="lazy"
-              width={1024}
-              height={1536}
-              className="w-full h-auto block"
-            />
-          </div>
+        <div className="flex-1 overflow-y-auto p-4 flex flex-col">
+          <div className="py-2">{renderSlide()}</div>
           <h3 className="text-indigo-100 text-lg font-bold mt-5 text-center">{s.title}</h3>
           <p className="text-slate-300 text-sm mt-2 leading-relaxed text-center px-1">{s.text}</p>
           <div className="flex gap-1.5 justify-center mt-5">
