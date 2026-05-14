@@ -1265,27 +1265,52 @@ export default function AnonChatTab() {
                           {((m.media_type === "image" && m.media_url) || m.image_url) && (() => {
                             const url = m.media_url || m.image_url!;
                             const isViewOnce = !!m.view_once;
-                            const alreadyViewed = isViewOnce && !!m.viewed_at && !mine;
+                            const alreadyViewed = isViewOnce && !!m.viewed_at;
                             const revealed = mine || revealedImgs.has(m.id);
+                            if (isViewOnce && mine) {
+                              return (
+                                <div className="mt-1 min-w-[180px] px-3 py-2.5 rounded-lg bg-black/25 text-[12px] flex items-center gap-2">
+                                  <div className="w-9 h-9 rounded-full bg-white/15 flex items-center justify-center shrink-0"><Eye className="w-4 h-4" /></div>
+                                  <div className="min-w-0">
+                                    <p className="font-semibold leading-tight">Foto sekali lihat</p>
+                                    <p className="text-[10px] opacity-75">Terkirim · tidak tampil di chat</p>
+                                  </div>
+                                </div>
+                              );
+                            }
                             if (alreadyViewed) {
                               return (
-                                <div className="mt-1 px-3 py-2 rounded-lg bg-slate-700/60 text-[11px] italic flex items-center gap-1.5">
-                                  <Eye className="w-3 h-3" /> Foto sekali lihat sudah dibuka
+                                <div className="mt-1 min-w-[180px] px-3 py-2.5 rounded-lg bg-slate-700/60 text-[12px] flex items-center gap-2">
+                                  <div className="w-9 h-9 rounded-full bg-slate-600/80 flex items-center justify-center shrink-0"><EyeOff className="w-4 h-4" /></div>
+                                  <div className="min-w-0">
+                                    <p className="font-semibold leading-tight">Dibuka</p>
+                                    <p className="text-[10px] opacity-75">Foto sekali lihat sudah hilang</p>
+                                  </div>
                                 </div>
+                              );
+                            }
+                            if (isViewOnce) {
+                              return (
+                                <button
+                                  type="button"
+                                  onClick={() => openViewOncePhoto(m, url)}
+                                  className="mt-1 min-w-[190px] px-3 py-2.5 rounded-lg bg-slate-700/70 hover:bg-slate-700 text-left flex items-center gap-2 transition"
+                                >
+                                  <div className="w-10 h-10 rounded-full border border-amber-300/50 bg-amber-400/15 text-amber-200 flex items-center justify-center shrink-0"><Eye className="w-5 h-5" /></div>
+                                  <div className="min-w-0">
+                                    <p className="text-[12px] font-semibold leading-tight">Foto sekali lihat</p>
+                                    <p className="text-[10px] opacity-75">Ketuk untuk membuka</p>
+                                  </div>
+                                </button>
                               );
                             }
                             return (
                               <div className="relative mt-1 rounded-lg overflow-hidden">
-                                {isViewOnce && (
-                                  <div className="absolute top-1 left-1 z-10 px-2 py-0.5 rounded-full bg-amber-500/90 text-white text-[9px] font-bold flex items-center gap-0.5">
-                                    <Eye className="w-2.5 h-2.5" /> 1x lihat
-                                  </div>
-                                )}
                                 <img src={url} alt="" className={`max-w-full rounded-lg transition ${revealed ? "" : "blur-2xl scale-105"}`} />
                                 {!revealed && (
                                   <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-black/40">
                                     <div className="text-[10px] text-white/90 px-2 py-1 rounded-full bg-amber-500/80 flex items-center gap-1"><AlertTriangle className="w-3 h-3" /> Foto disensor</div>
-                                    <button onClick={() => { setRevealedImgs(prev => { const n = new Set(prev); n.add(m.id); return n; }); if (isViewOnce) markViewOnceSeen(m); }} className="px-3 py-1.5 rounded-full bg-white/95 text-slate-900 text-xs font-bold flex items-center gap-1">
+                                    <button onClick={() => { setRevealedImgs(prev => { const n = new Set(prev); n.add(m.id); return n; }); }} className="px-3 py-1.5 rounded-full bg-white/95 text-slate-900 text-xs font-bold flex items-center gap-1">
                                       <Eye className="w-3.5 h-3.5" /> Tampilkan
                                     </button>
                                   </div>
