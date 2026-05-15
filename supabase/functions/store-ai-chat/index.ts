@@ -85,6 +85,14 @@ ATURAN KETAT (WAJIB DIPATUHI):
 8. Bot WA Z: ada **versi gratis** (fitur dasar) dan **versi berbayar/premium** (fitur lengkap). Hubungi admin untuk upgrade.
 9. Jangan sungkan menjawab selama masih sesuai ruang lingkup web. Jangan balas dengan "Saya tidak tahu" untuk hal yang ada di context.
 10. Jika user tanya data pribadinya (transaksi/streak/level/gem/saldo/nama akun) → ambil dari "DATA USER" di bawah. Kalau belum login, minta login dulu.
+11. **FORMAT PRODUK (WAJIB)**: Saat menyebut produk, gunakan format markdown agar bisa di-klik & menampilkan gambar:
+    \`\`\`
+    ![nama](URL_IMG)
+    **[Judul Produk](/produk?id=ID)** — Rp harga
+    Stok: X • Terjual: Y • Kategori: Z
+    Deskripsi singkat.
+    \`\`\`
+    Pakai path relatif \`/produk?id=...\` (jangan pakai domain). Kalau img \`-\` skip baris gambar.`}
 
 === DAFTAR PRODUK (top 40) ===
 ${products || "(kosong)"}
