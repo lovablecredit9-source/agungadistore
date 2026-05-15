@@ -103,7 +103,7 @@ interface AnonMsg {
 }
 interface AnonReaction { id: string; message_id: string; visitor_id: string; emoji: string; }
 const EMOJIS = ["👍", "❤️", "😂", "😮", "😢", "🙏", "🔥"];
-interface AnonProfile { visitor_id: string; nickname: string | null; avatar_url: string | null; avatar_preset: string | null; show_last_seen: boolean; last_seen_at: string; }
+interface AnonProfile { visitor_id: string; nickname: string | null; avatar_url: string | null; avatar_preset: string | null; show_last_seen: boolean; last_seen_at: string; who_can_call?: "all" | "friends" | "none" | null; }
 type PublicBioResponse = { success?: boolean; bio?: string | null; error?: string };
 type UpdateBioResponse = { success?: boolean; account?: AnonAccount | null; error?: string };
 
@@ -311,9 +311,9 @@ export default function AnonChatTab() {
     if (days < 7) return `${days} hari lalu`;
     return new Date(ms).toLocaleDateString("id-ID", { day: "2-digit", month: "short" });
   };
-  const partnerLastSeen = partnerProfile?.show_last_seen
-    ? (partnerOnline ? "online" : `terakhir dilihat ${formatLastSeen(partnerLastSeenMs)}`)
-    : "terakhir dilihat disembunyikan";
+  const partnerShowLastSeen = partnerProfile?.show_last_seen !== false;
+  const partnerLastSeen = partnerOnline ? "online" : `terakhir dilihat ${formatLastSeen(partnerLastSeenMs)}`;
+  const partnerWhoCanCall = (partnerProfile?.who_can_call as "all" | "friends" | "none" | undefined) || "friends";
 
   const refreshBan = useCallback(async () => {
     const { data } = await supabase.rpc("get_account_ban_info", { p_visitor_id: visitor } as any);
@@ -328,9 +328,10 @@ export default function AnonChatTab() {
       p_avatar_url: avatarUrl || null,
       p_avatar_preset: avatarPreset,
       p_show_last_seen: showLastSeen,
+      p_who_can_call: whoCanCall,
     });
     if (data) setMyProfile(data as unknown as AnonProfile);
-  }, [visitor, nickname, avatarUrl, avatarPreset, showLastSeen]);
+  }, [visitor, nickname, avatarUrl, avatarPreset, showLastSeen, whoCanCall]);
 
   const loadPartnerProfile = useCallback(async (session: string) => {
     const { data: sess } = await supabase.from("anon_chat_sessions").select("visitor_a, visitor_b").eq("id", session).maybeSingle();
@@ -817,6 +818,15 @@ export default function AnonChatTab() {
   const startVoiceCall = useCallback(async () => {
     if (!sessionId || sessionStatus !== "active") return;
     if (callState !== "idle") return;
+    const isFriend = friendStatusForPartner === "friend";
+    if (partnerWhoCanCall === "none") {
+      toast.error("Pengguna tidak dapat menerima panggilan");
+      return;
+    }
+    if (partnerWhoCanCall === "friends" && !isFriend) {
+      toast.error("Hanya teman yang bisa melakukan panggilan");
+      return;
+    }
     try {
       const stream = await requestMicrophoneStream();
       localStreamRef.current = stream;
@@ -835,7 +845,7 @@ export default function AnonChatTab() {
       toast.error("Gagal mengakses mikrofon", { description: e?.message || "Cek izin mikrofon di browser." });
       cleanupCall(false);
     }
-  }, [sessionId, sessionStatus, callState, ensurePc, visitor, cleanupCall]);
+  }, [sessionId, sessionStatus, callState, ensurePc, visitor, cleanupCall, partnerWhoCanCall, friendStatusForPartner]);
 
   const acceptVoiceCall = useCallback(async () => {
     if (!pendingOfferRef.current) return;
@@ -1226,9 +1236,22 @@ export default function AnonChatTab() {
               {friendStatusForPartner !== "friend" && (
                 <DropdownMenuItem onClick={newPartner}>Partner baru</DropdownMenuItem>
               )}
-              <DropdownMenuItem onClick={startVoiceCall} disabled={callState !== "idle"}>
-                {callState === "idle" ? "Mulai voice call" : "Panggilan aktif"}
-              </DropdownMenuItem>
+              {(() => {
+                const isFriend = friendStatusForPartner === "friend";
+                const callBlocked = partnerWhoCanCall === "none" || (partnerWhoCanCall === "friends" && !isFriend);
+                const label = callState !== "idle"
+                  ? "Panggilan aktif"
+                  : partnerWhoCanCall === "none"
+                    ? "Pengguna tidak dapat call"
+                    : (partnerWhoCanCall === "friends" && !isFriend)
+                      ? "Hanya teman yang bisa call"
+                      : "Mulai voice call";
+                return (
+                  <DropdownMenuItem onClick={startVoiceCall} disabled={callState !== "idle" || callBlocked}>
+                    {label}
+                  </DropdownMenuItem>
+                );
+              })()}
               {friendStatusForPartner !== "friend" ? (
                 <DropdownMenuItem onClick={endChat} className="text-rose-300">Akhiri chat</DropdownMenuItem>
               ) : (
@@ -1247,15 +1270,21 @@ export default function AnonChatTab() {
           </div>
           <div className="flex-1 min-w-0">
             <div className="font-bold text-slate-50 truncate text-[15px] leading-tight">{partner?.nick}</div>
-            <div className="text-[11px] text-slate-300/80 flex items-center gap-1.5 mt-0.5 truncate">
-              {partnerOnline ? (
-                <><span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" /> <span className="text-emerald-300/90 font-medium">online</span></>
-              ) : sessionStatus === "active" ? (
-                <><span className="w-1.5 h-1.5 rounded-full bg-amber-400/70" /> <span className="truncate">{partnerLastSeen}</span></>
-              ) : (
-                <><span className="w-1.5 h-1.5 rounded-full bg-rose-400" /> Sesi berakhir</>
-              )}
-            </div>
+            {partnerShowLastSeen ? (
+              <div className="text-[11px] text-slate-300/80 flex items-center gap-1.5 mt-0.5 truncate">
+                {partnerOnline ? (
+                  <><span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" /> <span className="text-emerald-300/90 font-medium">online</span></>
+                ) : sessionStatus === "active" ? (
+                  <><span className="w-1.5 h-1.5 rounded-full bg-amber-400/70" /> <span className="truncate">{partnerLastSeen}</span></>
+                ) : (
+                  <><span className="w-1.5 h-1.5 rounded-full bg-rose-400" /> Sesi berakhir</>
+                )}
+              </div>
+            ) : sessionStatus !== "active" ? (
+              <div className="text-[11px] text-slate-300/80 flex items-center gap-1.5 mt-0.5 truncate">
+                <span className="w-1.5 h-1.5 rounded-full bg-rose-400" /> Sesi berakhir
+              </div>
+            ) : null}
           </div>
           {sessionStatus === "active" && (
             friendStatusForPartner === "friend" ? (
