@@ -6,7 +6,7 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const BASE_URL = "https://agungadistore.lovable.app";
+const BASE_URL = "";
 const ADMIN_WA = "085769302532";
 
 serve(async (req) => {
