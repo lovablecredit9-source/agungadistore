@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { getVisitorId } from "@/lib/visitor-id";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
+import storeAvatar from "@/assets/store-qris.jpg";
 
 interface Msg { role: "user" | "assistant"; content: string }
 
@@ -70,8 +71,8 @@ export default function StoreAITab() {
           <div className="flex items-center gap-3">
             <div className="relative">
               <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-violet-500 to-cyan-400 blur-md opacity-70 animate-pulse" />
-              <div className="relative w-12 h-12 rounded-2xl bg-gradient-to-br from-violet-500 via-fuchsia-500 to-cyan-400 flex items-center justify-center shadow-lg">
-                <Sparkles className="w-6 h-6 text-white" strokeWidth={2.2} />
+              <div className="relative w-12 h-12 rounded-2xl overflow-hidden ring-2 ring-white/40 shadow-lg bg-background">
+                <img src={storeAvatar} alt="Store AI" className="w-full h-full object-cover" />
               </div>
             </div>
             <div className="flex-1 min-w-0">
@@ -91,8 +92,8 @@ export default function StoreAITab() {
       <div ref={scrollRef} className="flex-1 overflow-y-auto rounded-2xl bg-muted/30 border p-3 space-y-3 mb-3">
         {messages.length === 0 && (
           <div className="text-center py-6">
-            <div className="inline-flex w-16 h-16 rounded-3xl bg-gradient-to-br from-violet-500/20 to-cyan-500/20 items-center justify-center mb-3">
-              <Bot className="w-8 h-8 text-violet-500" />
+            <div className="inline-flex w-16 h-16 rounded-3xl overflow-hidden ring-2 ring-violet-500/30 items-center justify-center mb-3">
+              <img src={storeAvatar} alt="Store AI" className="w-full h-full object-cover" />
             </div>
             <h3 className="font-bold text-base mb-1">Halo! Aku Store AI 👋</h3>
             <p className="text-xs text-muted-foreground mb-4 px-6">Aku bisa bantu jawab apapun seputar Agung Adi Store. Coba pilih:</p>
@@ -113,8 +114,8 @@ export default function StoreAITab() {
 
         {messages.map((m, i) => (
           <div key={i} className={`flex gap-2 ${m.role === "user" ? "flex-row-reverse" : ""}`}>
-            <div className={`shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${m.role === "user" ? "bg-primary text-primary-foreground" : "bg-gradient-to-br from-violet-500 to-cyan-400 text-white"}`}>
-              {m.role === "user" ? <User className="w-4 h-4" /> : <Sparkles className="w-4 h-4" />}
+            <div className={`shrink-0 w-8 h-8 rounded-full overflow-hidden flex items-center justify-center ${m.role === "user" ? "bg-primary text-primary-foreground" : "ring-2 ring-violet-500/30"}`}>
+              {m.role === "user" ? <User className="w-4 h-4" /> : <img src={storeAvatar} alt="Store AI" className="w-full h-full object-cover" />}
             </div>
             <div className={`max-w-[80%] rounded-2xl px-3 py-2 text-sm ${m.role === "user" ? "bg-primary text-primary-foreground rounded-tr-sm" : "bg-background border rounded-tl-sm"}`}>
               {m.role === "assistant" ? (
@@ -130,8 +131,8 @@ export default function StoreAITab() {
 
         {loading && (
           <div className="flex gap-2">
-            <div className="shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-violet-500 to-cyan-400 text-white flex items-center justify-center">
-              <Sparkles className="w-4 h-4 animate-pulse" />
+            <div className="shrink-0 w-8 h-8 rounded-full overflow-hidden ring-2 ring-violet-500/30 animate-pulse">
+              <img src={storeAvatar} alt="Store AI" className="w-full h-full object-cover" />
             </div>
             <div className="bg-background border rounded-2xl rounded-tl-sm px-3 py-2 flex items-center gap-2 text-xs text-muted-foreground">
               <Loader2 className="w-3 h-3 animate-spin" /> Mengetik…
