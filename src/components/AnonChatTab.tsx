@@ -1260,11 +1260,16 @@ export default function AnonChatTab() {
             <div
               className="fixed inset-0 z-[9999] bg-black flex flex-col"
               onContextMenu={(e) => e.preventDefault()}
+              onPointerDown={() => setViewOnceViewer(prev => prev ? { ...prev, shielded: true } : prev)}
+              onPointerUp={() => setViewOnceViewer(prev => prev ? { ...prev, shielded: false } : prev)}
+              onPointerCancel={emergencyCloseViewOnce}
+              onTouchStart={() => setViewOnceViewer(prev => prev ? { ...prev, shielded: true } : prev)}
+              onTouchEnd={() => setViewOnceViewer(prev => prev ? { ...prev, shielded: false } : prev)}
               style={{ paddingTop: "env(safe-area-inset-top)", paddingBottom: "env(safe-area-inset-bottom)" }}
             >
               <div className="h-14 px-3 flex items-center justify-between text-white bg-black/90 shrink-0">
                 <button
-                  onClick={() => setViewOnceViewer(null)}
+                  onClick={emergencyCloseViewOnce}
                   className="w-10 h-10 rounded-full flex items-center justify-center bg-white/10 hover:bg-white/20 active:scale-95 transition"
                   aria-label="Tutup foto sekali lihat"
                 >
@@ -1276,13 +1281,18 @@ export default function AnonChatTab() {
                 <div className="w-10" />
               </div>
               <div
-                className="flex-1 min-h-0 flex items-center justify-center bg-black select-none"
+                className="relative flex-1 min-h-0 flex items-center justify-center bg-black select-none overflow-hidden"
                 style={{ WebkitUserSelect: "none", userSelect: "none", WebkitTouchCallout: "none" }}
               >
+                <div
+                  ref={viewOnceShieldRef}
+                  className={`absolute inset-0 z-10 bg-black transition-opacity duration-75 ${viewOnceViewer.shielded || !viewOnceViewer.revealed ? "opacity-100" : "opacity-0 pointer-events-none"}`}
+                />
                 <img
+                  ref={viewOnceImageRef}
                   src={viewOnceViewer.url}
                   alt="Foto sekali lihat"
-                  className="max-w-full max-h-full object-contain select-none pointer-events-none"
+                  className={`max-w-full max-h-full object-contain select-none pointer-events-none transition-[opacity,filter] duration-75 ${viewOnceViewer.revealed && !viewOnceViewer.shielded ? "opacity-100 blur-0" : "opacity-0 blur-3xl"}`}
                   draggable={false}
                   style={{ WebkitTouchCallout: "none", WebkitUserSelect: "none" }}
                 />
