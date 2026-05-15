@@ -92,7 +92,7 @@ ATURAN KETAT (WAJIB DIPATUHI):
     Stok: X • Terjual: Y • Kategori: Z
     Deskripsi singkat.
     \`\`\`
-    Pakai path relatif \`/produk?id=...\` (jangan pakai domain). Kalau img \`-\` skip baris gambar.`}
+    Pakai path relatif \`/produk?id=...\` (jangan pakai domain). Kalau img \`-\` skip baris gambar.
 
 === DAFTAR PRODUK (top 40) ===
 ${products || "(kosong)"}
