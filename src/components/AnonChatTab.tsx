@@ -991,33 +991,64 @@ export default function AnonChatTab() {
 
   const openViewOncePhoto = (m: AnonMsg, url: string) => {
     if (m.sender === visitor || m.viewed_at) return;
-    setViewOnceViewer({ id: m.id, url });
+    setViewOnceViewer({ id: m.id, url, revealed: false, shielded: true });
+    window.setTimeout(() => setViewOnceViewer(prev => prev?.id === m.id ? { ...prev, revealed: true, shielded: false } : prev), 220);
     void markViewOnceSeen(m);
   };
 
-  // Auto-close view-once viewer on blur/visibility change (anti-screenshot best-effort)
+  const emergencyCloseViewOnce = useCallback(() => {
+    if (viewOnceCloseTimerRef.current) window.clearTimeout(viewOnceCloseTimerRef.current);
+    const img = viewOnceImageRef.current;
+    const shield = viewOnceShieldRef.current;
+    if (img) {
+      img.removeAttribute("src");
+      img.style.visibility = "hidden";
+      img.style.opacity = "0";
+      img.style.filter = "blur(80px) brightness(0)";
+    }
+    if (shield) {
+      shield.style.opacity = "1";
+      shield.style.pointerEvents = "auto";
+    }
+    setViewOnceViewer(prev => prev ? { ...prev, revealed: false, shielded: true } : prev);
+    viewOnceCloseTimerRef.current = window.setTimeout(() => setViewOnceViewer(null), 80);
+  }, []);
+
+  // Auto-hide view-once photo on focus/visibility/input changes (web best-effort anti-screenshot)
   useEffect(() => {
     if (!viewOnceViewer) return;
-    const close = () => setViewOnceViewer(null);
+    const close = () => emergencyCloseViewOnce();
     const onKey = (e: KeyboardEvent) => {
-      // Block PrintScreen + common screenshot shortcuts
-      if (e.key === "PrintScreen" || (e.shiftKey && (e.metaKey || e.ctrlKey))) {
+      if (e.key === "PrintScreen" || (e.shiftKey && (e.metaKey || e.ctrlKey)) || (e.metaKey && /^[0-9]$/.test(e.key))) {
+        e.preventDefault();
         try { navigator.clipboard.writeText(""); } catch {}
         close();
       }
     };
+    const onPointerLeave = (e: PointerEvent) => {
+      if (e.pointerType === "mouse") close();
+    };
     const onVis = () => { if (document.visibilityState !== "visible") close(); };
     window.addEventListener("blur", close);
+    window.addEventListener("pagehide", close);
     window.addEventListener("keyup", onKey);
     window.addEventListener("keydown", onKey);
+    window.addEventListener("resize", close);
+    window.addEventListener("orientationchange", close);
+    document.addEventListener("pointerleave", onPointerLeave);
     document.addEventListener("visibilitychange", onVis);
     return () => {
       window.removeEventListener("blur", close);
+      window.removeEventListener("pagehide", close);
       window.removeEventListener("keyup", onKey);
       window.removeEventListener("keydown", onKey);
+      window.removeEventListener("resize", close);
+      window.removeEventListener("orientationchange", close);
+      document.removeEventListener("pointerleave", onPointerLeave);
       document.removeEventListener("visibilitychange", onVis);
+      if (viewOnceCloseTimerRef.current) { window.clearTimeout(viewOnceCloseTimerRef.current); viewOnceCloseTimerRef.current = null; }
     };
-  }, [viewOnceViewer]);
+  }, [emergencyCloseViewOnce, viewOnceViewer]);
 
 
   const deleteForEveryone = async (m: AnonMsg) => {
