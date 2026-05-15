@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { getVisitorId } from "@/lib/visitor-id";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
+import storeAvatar from "@/assets/store-qris.jpg";
 
 interface Msg { role: "user" | "assistant"; content: string }
 
