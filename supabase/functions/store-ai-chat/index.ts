@@ -9,7 +9,7 @@ const corsHeaders = {
 const ADMIN_WA = "085769302532";
 
 const fmtRp = (n: any) => `Rp${Number(n || 0).toLocaleString("id-ID")}`;
-const safe = <T,>(p: Promise<T>): Promise<T | null> => p.catch(() => null as any);
+const safe = <T,>(p: PromiseLike<T>): Promise<T | null> => Promise.resolve(p).then((v) => v).catch(() => null as any);
 
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
