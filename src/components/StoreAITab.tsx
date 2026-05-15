@@ -92,8 +92,8 @@ export default function StoreAITab() {
       <div ref={scrollRef} className="flex-1 overflow-y-auto rounded-2xl bg-muted/30 border p-3 space-y-3 mb-3">
         {messages.length === 0 && (
           <div className="text-center py-6">
-            <div className="inline-flex w-16 h-16 rounded-3xl bg-gradient-to-br from-violet-500/20 to-cyan-500/20 items-center justify-center mb-3">
-              <Bot className="w-8 h-8 text-violet-500" />
+            <div className="inline-flex w-16 h-16 rounded-3xl overflow-hidden ring-2 ring-violet-500/30 items-center justify-center mb-3">
+              <img src={storeAvatar} alt="Store AI" className="w-full h-full object-cover" />
             </div>
             <h3 className="font-bold text-base mb-1">Halo! Aku Store AI 👋</h3>
             <p className="text-xs text-muted-foreground mb-4 px-6">Aku bisa bantu jawab apapun seputar Agung Adi Store. Coba pilih:</p>
