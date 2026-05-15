@@ -356,13 +356,14 @@ export default function AnonChatTab() {
     const answeredAt = callAnsweredAtRef.current;
     const endedAt = new Date().toISOString();
     const duration = answeredAt ? Math.max(0, Math.floor((Date.parse(endedAt) - Date.parse(answeredAt)) / 1000)) : 0;
+    const dir = callDirRef.current;
     try {
       await supabase.from("anon_chat_call_logs" as any).insert({
         visitor_id: visitor,
         partner_visitor: partnerVisitorRef.current,
         partner_nickname: partner?.nick || null,
         session_id: sessionId,
-        direction: callDirRef.current,
+        direction: dir,
         status,
         started_at: startedAt,
         answered_at: answeredAt,
@@ -370,6 +371,18 @@ export default function AnonChatTab() {
         duration_seconds: duration,
       } as any);
     } catch {}
+    // Tampilkan event call sebagai bubble di chat (gaya WhatsApp).
+    // Hanya sisi caller (outgoing) yang insert agar tidak duplikat — partner ikut lihat via realtime.
+    if (sessionId && dir === "outgoing") {
+      try {
+        await supabase.from("anon_chat_messages").insert({
+          session_id: sessionId,
+          sender_visitor_id: visitor,
+          media_type: "call",
+          content: JSON.stringify({ status, duration, direction: "outgoing" }),
+        } as any);
+      } catch {}
+    }
     callDirRef.current = null; callStartedAtRef.current = null; callAnsweredAtRef.current = null; callConnectedRef.current = false;
   }, [visitor, partner, sessionId]);
 
