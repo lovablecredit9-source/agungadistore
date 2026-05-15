@@ -1,51 +1,70 @@
-# Anon Chat — Tambahan Fitur Besar
+# Anon Chat — Paket Perbaikan Besar
 
-Permintaan kamu terdiri dari beberapa fitur. Aku rangkum dulu biar jelas, lalu kerjakan bertahap.
+Permintaan kamu cukup banyak, aku rangkum dulu jadi 6 fitur biar jelas. Setelah kamu setuju, aku eksekusi semua sekaligus (atau pecah per fitur kalau mau lebih cepat ditest).
 
-## 1. Riwayat Panggilan (Call History)
-- Tab/section baru "Riwayat Panggilan" di Anon Chat.
-- Catat tiap panggilan: partner (nickname), tipe (suara), status (aktif/terjawab/terputus/ditolak/missed), waktu mulai, durasi (mm:ss) — gaya WhatsApp.
-- Tabel baru `anon_chat_call_logs` (visitor_id, partner_visitor, partner_nickname, session_id, status, started_at, ended_at, duration_seconds).
-- Update otomatis saat panggilan dimulai, diterima, ditolak, atau berakhir.
+## 1. Pesan Call Muncul di Chat (real-time, bukan setelah call mati)
+- Saat panggilan **dimulai** → bot system message langsung dikirim ke chat: "📞 Memulai panggilan suara…" dengan status live (mendering / berlangsung 00:12 / berakhir 02:34).
+- Saat panggilan **berakhir / ditolak / missed** → message yang sama di-update jadi versi final (ikon merah/hijau, durasi). Jadi tidak nunggu call tutup baru muncul.
+- Pakai `anon_chat_messages` dengan `message_type = 'call'` + kolom JSON `call_meta` (status, started_at, ended_at, duration).
 
-## 2. Aturan Match Partner Setelah Akhiri Chat
-- Saat chat diakhiri, partner masuk **history match** (`anon_chat_match_history`).
-- Jika sudah teman → kalau salah satu mengakhiri, partner tetap masuk history tapi pertemanan tetap ada.
-- Saat random match: partner di history **tetap bisa ketemu lagi**, tapi tombol **Skip** akan muncul walau teman.
-- Hanya kalau user **klik "Hapus dari History"** → partner itu di-blacklist dan tidak akan ketemu lagi di random match.
-- RPC `anon_chat_find_or_queue` ditambah filter blacklist (`anon_chat_blocked_matches`).
+## 2. Centang Status Pesan (WhatsApp style)
+- ✓ abu-abu: terkirim (di server)
+- ✓✓ abu-abu: sampai ke partner (partner online / window terbuka)
+- ✓✓ biru: sudah dibaca (partner buka chat)
+- Realtime via Supabase: kolom `delivered_at`, `read_at` di `anon_chat_messages`.
+- Berlaku juga untuk message tipe call.
 
-## 3. Fix Navigasi Hilang
-- Bug: saat pindah dari tab Anon Chat ke tab lain, bottom nav hilang.
-- Cari penyebab di `AnonChatTab.tsx` (kemungkinan fixed overlay / state fullscreen tidak di-reset saat unmount). Pastikan nav tetap render kecuali sedang di dalam chat aktif.
+## 3. Match Random: Filter Gender & Ketertarikan KETAT
+- Sekarang masih longgar (any). Akan dibuat:
+  - Kalau pilih "Cari perempuan" → **hanya** ketemu perempuan, tidak akan ketemu laki.
+  - Kalau pilih "Cari laki" → hanya laki.
+  - Pilih "Bebas" → bebas (tetap acak).
+- Ketertarikan (interest):
+  - "Coding" hanya ketemu yang juga "Coding".
+  - "Catur" hanya ketemu "Catur".
+  - "Bebas/Random" baru ketemu siapa saja.
+- Update `anon_chat_find_or_queue`: filter strict, tidak fallback ke any.
 
-## 4. Voice Note (Pesan Suara)
-- Tombol mic di chat → rekam audio (MediaRecorder, pakai helper `requestMicrophoneStream` yang sudah ada).
-- Upload ke Supabase Storage bucket `anon-chat-media`.
-- Tampil sebagai bubble audio dengan tombol play + durasi.
+## 4. Last Seen Akurat & Konsisten
+- Bug: di tab Publik / Teman kadang muncul "online" padahal partner offline; "terakhir aktif" tidak update.
+- Fix:
+  - Heartbeat tiap 30 detik update `anon_chat_profiles.last_seen_at` saat tab aktif.
+  - Status online = `last_seen_at` dalam 60 detik terakhir.
+  - Hormati toggle `show_last_seen` (kalau partner mematikan, tampilkan "Terakhir dilihat: disembunyikan").
+  - Sinkronkan tampilan di: header chat, daftar teman, daftar publik, modal profil.
 
-## 5. Foto Sekali Lihat (View Once)
-- Tombol lampiran foto → pilih dari galeri/kamera.
-- Toggle "Sekali Lihat" (view once) seperti WhatsApp.
-- Foto view-once: setelah penerima buka, otomatis dihapus dari storage & ditandai "telah dilihat".
-- Foto biasa: tetap tersimpan di chat.
+## 5. Kirim File di Anon Chat
+- Tombol lampiran → bisa kirim:
+  - Foto (jpg/png/webp, max 5MB)
+  - Video pendek (max 15MB, max 30 detik) — opsional kalau mau
+  - File dokumen (pdf/doc/zip, max 10MB)
+- Upload ke Supabase Storage bucket `anon-chat-media` (public read, write bebas).
+- Bubble chat: foto preview, video player, file card (nama + size + tombol download).
+- Tetap kompatibel dengan voice note (rencana sebelumnya).
 
-## 6. Kirim Foto + Caption
-- Saat kirim foto, ada input caption.
-- Kalau caption kosong → cuma foto yang dikirim.
-- Kalau ada teks → foto + caption muncul dalam satu bubble.
+## 6. Tampilan Premium — Elegan, Mantap, Keren Parah
+- Refresh visual seluruh AnonChatTab biar terasa "premium app":
+  - Header chat: glassmorphism gradient, avatar dengan ring online (pulse hijau), nickname + status live ("mengetik…", "online", "terakhir dilihat 5m lalu").
+  - Bubble chat: rounded-2xl, gradient halus untuk pesan saya (biru→ungu), netral untuk partner, shadow lembut, animasi slide-in.
+  - Bar input: floating pill, tombol attach/voice/emoji dengan haptic-look.
+  - Lobby: card kategori (Random / Teman / Publik) dengan ilustrasi & micro-interaction.
+  - Konsisten dengan design token global (no warna mentah).
 
 ## Teknis Singkat
-- **DB baru**: `anon_chat_call_logs`, `anon_chat_match_history`, `anon_chat_blocked_matches`, kolom baru `media_url`, `media_type`, `caption`, `view_once`, `viewed_at` di `anon_chat_messages`.
-- **Storage**: bucket publik `anon-chat-media` (image+audio), policy upload bebas, hapus by visitor_id.
-- **Realtime**: subscribe ke call_logs & messages baru.
-- **Frontend**: update `AnonChatTab.tsx` (record voice, attach photo, view-once viewer modal, call history panel, fix nav).
+- **DB**: tambah kolom `delivered_at`, `read_at`, `message_type`, `call_meta`, `media_url`, `media_type`, `media_size`, `media_name` di `anon_chat_messages`. Update RPC `anon_chat_find_or_queue` (strict). Tambah RPC `anon_chat_mark_read`, `anon_chat_mark_delivered`, `anon_chat_heartbeat`.
+- **Storage**: bucket `anon-chat-media` public.
+- **Realtime**: subscribe `anon_chat_messages` & `anon_chat_profiles`.
+- **Frontend**: refactor `AnonChatTab.tsx` jadi sub-komponen (Header, MessageBubble, InputBar, CallMessage, Lobby) supaya rapi.
 
-## Urutan Eksekusi
+```text
+Urutan eksekusi
 1. Migrasi DB + storage bucket
-2. Edge logic untuk call status & blacklist
-3. UI: voice + foto + caption + view-once
-4. UI: call history panel
-5. Fix navigasi
+2. RPC matchmaking strict + heartbeat + read receipts
+3. Rebuild MessageBubble (centang, call live, media)
+4. Input bar baru (attach file, voice)
+5. Polish UI premium (header, lobby, animasi)
+```
 
-Setuju lanjut semua sekaligus, atau mau aku pecah per fitur biar lebih cepat ditest?
+## Pertanyaan Singkat
+- OK aku kerjakan **semua sekaligus**, atau mau **dipecah** (misal: 1+2+3 dulu, lalu 4+5+6)?
+- Untuk file: cukup **foto + dokumen**, atau perlu **video** juga?
