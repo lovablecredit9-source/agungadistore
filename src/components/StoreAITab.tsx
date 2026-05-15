@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
+import { useNavigate } from "react-router-dom";
 import { Send, Sparkles, Bot, User, Loader2, Trash2, ShoppingBag, Music, Gamepad2, VenetianMask, AlertCircle, Megaphone } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { getVisitorId } from "@/lib/visitor-id";
