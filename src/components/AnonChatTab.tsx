@@ -311,9 +311,9 @@ export default function AnonChatTab() {
     if (days < 7) return `${days} hari lalu`;
     return new Date(ms).toLocaleDateString("id-ID", { day: "2-digit", month: "short" });
   };
-  const partnerLastSeen = partnerProfile?.show_last_seen
-    ? (partnerOnline ? "online" : `terakhir dilihat ${formatLastSeen(partnerLastSeenMs)}`)
-    : "terakhir dilihat disembunyikan";
+  const partnerShowLastSeen = partnerProfile?.show_last_seen !== false;
+  const partnerLastSeen = partnerOnline ? "online" : `terakhir dilihat ${formatLastSeen(partnerLastSeenMs)}`;
+  const partnerWhoCanCall = (partnerProfile?.who_can_call as "all" | "friends" | "none" | undefined) || "friends";
 
   const refreshBan = useCallback(async () => {
     const { data } = await supabase.rpc("get_account_ban_info", { p_visitor_id: visitor } as any);
@@ -328,9 +328,10 @@ export default function AnonChatTab() {
       p_avatar_url: avatarUrl || null,
       p_avatar_preset: avatarPreset,
       p_show_last_seen: showLastSeen,
+      p_who_can_call: whoCanCall,
     });
     if (data) setMyProfile(data as unknown as AnonProfile);
-  }, [visitor, nickname, avatarUrl, avatarPreset, showLastSeen]);
+  }, [visitor, nickname, avatarUrl, avatarPreset, showLastSeen, whoCanCall]);
 
   const loadPartnerProfile = useCallback(async (session: string) => {
     const { data: sess } = await supabase.from("anon_chat_sessions").select("visitor_a, visitor_b").eq("id", session).maybeSingle();
