@@ -691,6 +691,15 @@ export default function AnonChatTab() {
     setSessionId(null); setPartner(null); setMessages([]); setReactions([]); setReplyTo(null); setView("lobby");
   };
 
+  // Back button: for friends, keep the session intact (history persists, can reopen). For random, end the chat.
+  const backFromChat = async () => {
+    if (friendStatusForPartner === "friend") {
+      setSessionId(null); setPartner(null); setMessages([]); setReactions([]); setReplyTo(null); setView("lobby");
+      return;
+    }
+    await endChat();
+  };
+
   const newPartner = async () => { await endChat(); await doMatch(); };
 
   // ============ VOICE CALL (WebRTC P2P via Supabase Realtime signaling) ============
