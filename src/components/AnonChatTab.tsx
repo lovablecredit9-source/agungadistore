@@ -845,7 +845,7 @@ export default function AnonChatTab() {
       toast.error("Gagal mengakses mikrofon", { description: e?.message || "Cek izin mikrofon di browser." });
       cleanupCall(false);
     }
-  }, [sessionId, sessionStatus, callState, ensurePc, visitor, cleanupCall]);
+  }, [sessionId, sessionStatus, callState, ensurePc, visitor, cleanupCall, partnerWhoCanCall, friendStatusForPartner]);
 
   const acceptVoiceCall = useCallback(async () => {
     if (!pendingOfferRef.current) return;
