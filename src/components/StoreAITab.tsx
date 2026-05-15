@@ -114,8 +114,8 @@ export default function StoreAITab() {
 
         {messages.map((m, i) => (
           <div key={i} className={`flex gap-2 ${m.role === "user" ? "flex-row-reverse" : ""}`}>
-            <div className={`shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${m.role === "user" ? "bg-primary text-primary-foreground" : "bg-gradient-to-br from-violet-500 to-cyan-400 text-white"}`}>
-              {m.role === "user" ? <User className="w-4 h-4" /> : <Sparkles className="w-4 h-4" />}
+            <div className={`shrink-0 w-8 h-8 rounded-full overflow-hidden flex items-center justify-center ${m.role === "user" ? "bg-primary text-primary-foreground" : "ring-2 ring-violet-500/30"}`}>
+              {m.role === "user" ? <User className="w-4 h-4" /> : <img src={storeAvatar} alt="Store AI" className="w-full h-full object-cover" />}
             </div>
             <div className={`max-w-[80%] rounded-2xl px-3 py-2 text-sm ${m.role === "user" ? "bg-primary text-primary-foreground rounded-tr-sm" : "bg-background border rounded-tl-sm"}`}>
               {m.role === "assistant" ? (
