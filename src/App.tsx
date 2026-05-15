@@ -50,6 +50,7 @@ const App = () => (
             <Route path="/plus" element={<Index />} />
             
             <Route path="/update" element={<Index />} />
+            <Route path="/store-ai" element={<Index />} />
             <Route path="/admin-post" element={<Index />} />
             <Route path="/anon-chat" element={<Index />} />
             <Route path="/admin/login" element={<AdminLogin />} />
