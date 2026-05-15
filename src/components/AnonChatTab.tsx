@@ -1021,7 +1021,30 @@ export default function AnonChatTab() {
     setRecording(false); setRecordSecs(0);
   };
 
-  const markViewOnceSeen = async (m: AnonMsg) => {
+  // Kirim video / dokumen / file lain ke bucket anon-chat-media
+  const sendAnyFile = async (file: File, kind: "video" | "file") => {
+    if (!sessionId || sessionStatus === "ended" || activeBan) return;
+    const max = kind === "video" ? 20 * 1024 * 1024 : 20 * 1024 * 1024;
+    if (file.size > max) { toast.error(kind === "video" ? "Video maksimal 20MB" : "File maksimal 20MB"); return; }
+    const safe = file.name.replace(/[^\w.\-]+/g, "_").slice(0, 80) || (kind === "video" ? "video.mp4" : "file");
+    const path = `anon/${sessionId}/${Date.now()}-${Math.random().toString(36).slice(2)}-${safe}`;
+    toast.message(kind === "video" ? "Mengunggah video…" : "Mengunggah file…");
+    const { error: upErr } = await supabase.storage.from("anon-chat-media").upload(path, file, { contentType: file.type || undefined });
+    if (upErr) { toast.error("Gagal upload: " + upErr.message); return; }
+    const { data: u } = supabase.storage.from("anon-chat-media").getPublicUrl(path);
+    const payload: any = {
+      session_id: sessionId,
+      sender_visitor_id: visitor,
+      media_url: u.publicUrl,
+      media_type: kind,
+      media_name: file.name,
+      media_size: file.size,
+    };
+    if (replyTo) payload.reply_to_id = replyTo.id;
+    setReplyTo(null);
+    const { error } = await supabase.from("anon_chat_messages").insert(payload);
+    if (error) toast.error(error.message);
+  };
     if (m.sender === visitor || m.viewed_at) return;
     const now = new Date().toISOString();
     setMessages(prev => prev.map(x => x.id === m.id ? { ...x, viewed_at: now } : x));
