@@ -6,7 +6,7 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const BASE_URL = "https://agungadistore.lovable.app";
+const BASE_URL = "";
 const ADMIN_WA = "085769302532";
 
 serve(async (req) => {
@@ -29,11 +29,11 @@ serve(async (req) => {
 
     // === Gather context ===
     const [productsRes, sponsorsRes] = await Promise.all([
-      sb.from("products").select("id,title,price,stock,category,sold_count").order("sold_count", { ascending: false }).limit(40),
+      sb.from("products").select("id,title,price,stock,category,sold_count,image_url,description").order("sold_count", { ascending: false }).limit(40),
       sb.from("sponsors").select("title,description,price,wa_number,instagram,custom_note,expires_at,is_active").eq("is_active", true).limit(20),
     ]);
     const products = (productsRes.data || []).map((p: any) =>
-      `- ${p.title} | Rp${Number(p.price).toLocaleString("id-ID")} | stok:${p.stock} | terjual:${p.sold_count} | ${BASE_URL}/produk?id=${p.id}`
+      `- [${p.title}](/produk?id=${p.id}) | Rp${Number(p.price).toLocaleString("id-ID")} | stok:${p.stock} | terjual:${p.sold_count} | kategori:${p.category || "-"} | img:${p.image_url || "-"} | desc:${(p.description || "").slice(0, 80)}`
     ).join("\n");
     const sponsors = (sponsorsRes.data || []).map((s: any) =>
       `- ${s.title} | Rp${Number(s.price).toLocaleString("id-ID")} | WA:${s.wa_number || "-"} | IG:${s.instagram || "-"}`
@@ -85,6 +85,14 @@ ATURAN KETAT (WAJIB DIPATUHI):
 8. Bot WA Z: ada **versi gratis** (fitur dasar) dan **versi berbayar/premium** (fitur lengkap). Hubungi admin untuk upgrade.
 9. Jangan sungkan menjawab selama masih sesuai ruang lingkup web. Jangan balas dengan "Saya tidak tahu" untuk hal yang ada di context.
 10. Jika user tanya data pribadinya (transaksi/streak/level/gem/saldo/nama akun) → ambil dari "DATA USER" di bawah. Kalau belum login, minta login dulu.
+11. **FORMAT PRODUK (WAJIB)**: Saat menyebut produk, gunakan format markdown agar bisa di-klik & menampilkan gambar:
+    \`\`\`
+    ![nama](URL_IMG)
+    **[Judul Produk](/produk?id=ID)** — Rp harga
+    Stok: X • Terjual: Y • Kategori: Z
+    Deskripsi singkat.
+    \`\`\`
+    Pakai path relatif \`/produk?id=...\` (jangan pakai domain). Kalau img \`-\` skip baris gambar.
 
 === DAFTAR PRODUK (top 40) ===
 ${products || "(kosong)"}
