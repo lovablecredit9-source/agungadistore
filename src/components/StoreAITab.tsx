@@ -23,6 +23,7 @@ const QUICK_PROMPTS = [
 ];
 
 export default function StoreAITab() {
+  const navigate = useNavigate();
   const [messages, setMessages] = useState<Msg[]>(() => {
     try { const r = localStorage.getItem(STORAGE_KEY); return r ? JSON.parse(r) : []; } catch { return []; }
   });
