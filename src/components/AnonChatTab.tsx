@@ -1227,9 +1227,22 @@ export default function AnonChatTab() {
               {friendStatusForPartner !== "friend" && (
                 <DropdownMenuItem onClick={newPartner}>Partner baru</DropdownMenuItem>
               )}
-              <DropdownMenuItem onClick={startVoiceCall} disabled={callState !== "idle"}>
-                {callState === "idle" ? "Mulai voice call" : "Panggilan aktif"}
-              </DropdownMenuItem>
+              {(() => {
+                const isFriend = friendStatusForPartner === "friend";
+                const callBlocked = partnerWhoCanCall === "none" || (partnerWhoCanCall === "friends" && !isFriend);
+                const label = callState !== "idle"
+                  ? "Panggilan aktif"
+                  : partnerWhoCanCall === "none"
+                    ? "Pengguna tidak dapat call"
+                    : (partnerWhoCanCall === "friends" && !isFriend)
+                      ? "Hanya teman yang bisa call"
+                      : "Mulai voice call";
+                return (
+                  <DropdownMenuItem onClick={startVoiceCall} disabled={callState !== "idle" || callBlocked}>
+                    {label}
+                  </DropdownMenuItem>
+                );
+              })()}
               {friendStatusForPartner !== "friend" ? (
                 <DropdownMenuItem onClick={endChat} className="text-rose-300">Akhiri chat</DropdownMenuItem>
               ) : (
