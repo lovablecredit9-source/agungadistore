@@ -1324,6 +1324,48 @@ export default function AnonChatTab() {
             const showDate = !prev || dateLabel(prev.created_at) !== dateLabel(m.created_at);
             const grouped = prev && prev.sender === m.sender && !showDate &&
               new Date(m.created_at).getTime() - new Date(prev.created_at).getTime() < 60_000;
+            // Bubble khusus untuk event panggilan (gaya WhatsApp, terpusat)
+            if (m.media_type === "call" && !m.is_deleted) {
+              let info: { status?: string; duration?: number } = {};
+              try { info = JSON.parse(m.content || "{}"); } catch {}
+              const status = info.status || "ended";
+              const dur = Number(info.duration || 0);
+              const isOutgoingForViewer = mine;
+              const labelMap: Record<string, string> = {
+                answered: "Panggilan suara", ended: "Panggilan suara",
+                missed: isOutgoingForViewer ? "Tak dijawab" : "Panggilan tak terjawab",
+                declined: isOutgoingForViewer ? "Ditolak" : "Panggilan ditolak",
+                cancelled: isOutgoingForViewer ? "Dibatalkan" : "Panggilan tak terjawab",
+              };
+              const label = labelMap[status] || "Panggilan";
+              const durStr = dur > 0 ? `${Math.floor(dur/60)}:${String(dur%60).padStart(2,"0")}` : null;
+              const isMissed = status === "missed" || status === "cancelled" || status === "declined";
+              return (
+                <div key={m.id}>
+                  {showDate && (
+                    <div className="flex justify-center my-3">
+                      <span className="text-[10px] font-medium px-2.5 py-1 rounded-full border border-purple-400/20 bg-slate-900/60 text-purple-200/80">
+                        {dateLabel(m.created_at)}
+                      </span>
+                    </div>
+                  )}
+                  <div className="flex justify-center my-2 animate-fade-in">
+                    <div className={`px-3 py-2 rounded-2xl border flex items-center gap-2 text-[12px] shadow-md ${isMissed ? "bg-rose-950/40 border-rose-500/30 text-rose-100" : "bg-slate-900/80 border-purple-400/20 text-slate-100"}`}>
+                      <span className={`w-7 h-7 rounded-full flex items-center justify-center ${isMissed ? "bg-rose-500/20 text-rose-300" : "bg-emerald-500/20 text-emerald-300"}`}>
+                        <Phone className="w-3.5 h-3.5" />
+                      </span>
+                      <div className="leading-tight">
+                        <p className="font-semibold">{label}{isOutgoingForViewer ? " · keluar" : " · masuk"}</p>
+                        <p className="text-[10px] opacity-75">
+                          {durStr ? `Durasi ${durStr} · ` : ""}
+                          {new Date(m.created_at).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            }
             return (
               <div key={m.id}>
                 {showDate && (
