@@ -447,6 +447,7 @@ export type Database = {
           show_last_seen: boolean
           updated_at: string
           visitor_id: string
+          who_can_call: string
         }
         Insert: {
           avatar_preset?: string
@@ -457,6 +458,7 @@ export type Database = {
           show_last_seen?: boolean
           updated_at?: string
           visitor_id: string
+          who_can_call?: string
         }
         Update: {
           avatar_preset?: string
@@ -467,6 +469,7 @@ export type Database = {
           show_last_seen?: boolean
           updated_at?: string
           visitor_id?: string
+          who_can_call?: string
         }
         Relationships: []
       }
@@ -9480,31 +9483,60 @@ export type Database = {
         Args: { p_detail: string; p_kind: string; p_visitor_id: string }
         Returns: number
       }
-      touch_anon_chat_profile: {
-        Args: {
-          p_avatar_preset?: string
-          p_avatar_url?: string
-          p_nickname?: string
-          p_show_last_seen?: boolean
-          p_visitor_id: string
-        }
-        Returns: {
-          avatar_preset: string
-          avatar_url: string | null
-          bio: string | null
-          last_seen_at: string
-          nickname: string | null
-          show_last_seen: boolean
-          updated_at: string
-          visitor_id: string
-        }
-        SetofOptions: {
-          from: "*"
-          to: "anon_chat_profiles"
-          isOneToOne: true
-          isSetofReturn: false
-        }
-      }
+      touch_anon_chat_profile:
+        | {
+            Args: {
+              p_avatar_preset?: string
+              p_avatar_url?: string
+              p_nickname?: string
+              p_show_last_seen?: boolean
+              p_visitor_id: string
+            }
+            Returns: {
+              avatar_preset: string
+              avatar_url: string | null
+              bio: string | null
+              last_seen_at: string
+              nickname: string | null
+              show_last_seen: boolean
+              updated_at: string
+              visitor_id: string
+              who_can_call: string
+            }
+            SetofOptions: {
+              from: "*"
+              to: "anon_chat_profiles"
+              isOneToOne: true
+              isSetofReturn: false
+            }
+          }
+        | {
+            Args: {
+              p_avatar_preset?: string
+              p_avatar_url?: string
+              p_nickname?: string
+              p_show_last_seen?: boolean
+              p_visitor_id: string
+              p_who_can_call?: string
+            }
+            Returns: {
+              avatar_preset: string
+              avatar_url: string | null
+              bio: string | null
+              last_seen_at: string
+              nickname: string | null
+              show_last_seen: boolean
+              updated_at: string
+              visitor_id: string
+              who_can_call: string
+            }
+            SetofOptions: {
+              from: "*"
+              to: "anon_chat_profiles"
+              isOneToOne: true
+              isSetofReturn: false
+            }
+          }
     }
     Enums: {
       flash_sale_mode: "discount_percent" | "fixed_price"
