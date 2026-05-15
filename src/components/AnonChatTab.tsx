@@ -520,15 +520,21 @@ export default function AnonChatTab() {
   // Session realtime: messages + reactions + typing + status
   useEffect(() => {
     if (!sessionId) return;
-    const markRead = (mid: string) => { void supabase.from("anon_chat_messages").update({ is_read: true } as any).eq("id", mid); };
-    const ch = supabase.channel(`anon_sess_${sessionId}`)
-      .on("postgres_changes", { event: "INSERT", schema: "public", table: "anon_chat_messages", filter: `session_id=eq.${sessionId}` },
+    const sid = sessionId;
+    const markDelivered = () => { void supabase.rpc("anon_chat_mark_delivered" as any, { p_session: sid, p_visitor: visitor }); };
+    const markRead = () => { void supabase.rpc("anon_chat_mark_read" as any, { p_session: sid, p_visitor: visitor }); };
+    const ch = supabase.channel(`anon_sess_${sid}`)
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "anon_chat_messages", filter: `session_id=eq.${sid}` },
         (p: any) => {
           const nm = mapMsg(p.new);
           setMessages(prev => prev.some(m => m.id === nm.id) ? prev : [...prev, nm]);
-          if (nm.sender !== visitor) markRead(nm.id);
+          if (nm.sender !== visitor) {
+            // Pesan partner masuk: kalau chat sedang dibuka → langsung baca, kalau tidak → cuma delivered
+            if (view === "chat" && document.visibilityState === "visible") markRead();
+            else markDelivered();
+          }
         })
-      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "anon_chat_messages", filter: `session_id=eq.${sessionId}` },
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "anon_chat_messages", filter: `session_id=eq.${sid}` },
         (p: any) => { const nm = mapMsg(p.new); setMessages(prev => prev.map(m => m.id === nm.id ? nm : m)); })
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "anon_chat_reactions" },
         (p: any) => { const r = p.new as AnonReaction; setReactions(prev => prev.some(x => x.id === r.id) ? prev : [...prev, r]); })
@@ -537,16 +543,20 @@ export default function AnonChatTab() {
       .on("postgres_changes", { event: "*", schema: "public", table: "anon_chat_typing" },
         (p: any) => {
           const row = p.new || p.old;
-          if (!row || row.session_id !== sessionId || row.sender_visitor_id === visitor) return;
+          if (!row || row.session_id !== sid || row.sender_visitor_id === visitor) return;
           const typing = !!p.new?.is_typing && p.eventType !== "DELETE";
           const ts = p.new?.updated_at ? new Date(p.new.updated_at).getTime() : 0;
           setOtherTyping(typing && Date.now() - ts < 6000);
         })
-      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "anon_chat_sessions", filter: `id=eq.${sessionId}` },
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "anon_chat_sessions", filter: `id=eq.${sid}` },
         (payload: any) => { if (payload.new.status === "ended") setSessionStatus("ended"); })
       .subscribe();
-    return () => { supabase.removeChannel(ch); };
-  }, [sessionId, visitor]);
+    // Saat tab kembali fokus / chat dibuka → tandai read
+    const onFocus = () => { if (view === "chat") markRead(); };
+    window.addEventListener("focus", onFocus);
+    document.addEventListener("visibilitychange", onFocus);
+    return () => { supabase.removeChannel(ch); window.removeEventListener("focus", onFocus); document.removeEventListener("visibilitychange", onFocus); };
+  }, [sessionId, visitor, view]);
 
   useEffect(() => {
     if (!otherTyping) return;
