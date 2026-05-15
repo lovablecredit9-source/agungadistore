@@ -1139,7 +1139,7 @@ export default function AnonChatTab() {
       <div className="flex flex-col h-[calc(100vh-180px)] min-h-[500px] rounded-3xl overflow-hidden border border-purple-500/20 bg-[#0c0820] shadow-[0_20px_60px_-20px_rgba(168,85,247,0.4)]">
         {/* Top bar: back · anon.chat · menu */}
         <div className="grid grid-cols-[auto_1fr_auto] items-center px-3 py-2.5 bg-[#0c0820] border-b border-purple-500/15">
-          <button onClick={endChat} className="w-9 h-9 rounded-full hover:bg-white/5 text-slate-200 flex items-center justify-center" title="Kembali">
+          <button onClick={backFromChat} className="w-9 h-9 rounded-full hover:bg-white/5 text-slate-200 flex items-center justify-center" title="Kembali">
             <ArrowLeft className="w-5 h-5" />
           </button>
           <div className="text-center text-[15px] font-extrabold text-white tracking-tight">
@@ -1152,11 +1152,17 @@ export default function AnonChatTab() {
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-44 bg-slate-950 border-slate-800 text-slate-100">
-              <DropdownMenuItem onClick={newPartner}>Partner baru</DropdownMenuItem>
+              {friendStatusForPartner !== "friend" && (
+                <DropdownMenuItem onClick={newPartner}>Partner baru</DropdownMenuItem>
+              )}
               <DropdownMenuItem onClick={startVoiceCall} disabled={callState !== "idle"}>
                 {callState === "idle" ? "Mulai voice call" : "Panggilan aktif"}
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={endChat} className="text-rose-300">Akhiri chat</DropdownMenuItem>
+              {friendStatusForPartner !== "friend" ? (
+                <DropdownMenuItem onClick={endChat} className="text-rose-300">Akhiri chat</DropdownMenuItem>
+              ) : (
+                <DropdownMenuItem onClick={() => { if (partner?.visitor) { removeFriend(partner.visitor); endChat(); } }} className="text-rose-300">Hapus pertemanan</DropdownMenuItem>
+              )}
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
