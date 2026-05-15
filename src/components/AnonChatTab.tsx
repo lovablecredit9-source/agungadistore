@@ -1248,15 +1248,21 @@ export default function AnonChatTab() {
           </div>
           <div className="flex-1 min-w-0">
             <div className="font-bold text-slate-50 truncate text-[15px] leading-tight">{partner?.nick}</div>
-            <div className="text-[11px] text-slate-300/80 flex items-center gap-1.5 mt-0.5 truncate">
-              {partnerOnline ? (
-                <><span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" /> <span className="text-emerald-300/90 font-medium">online</span></>
-              ) : sessionStatus === "active" ? (
-                <><span className="w-1.5 h-1.5 rounded-full bg-amber-400/70" /> <span className="truncate">{partnerLastSeen}</span></>
-              ) : (
-                <><span className="w-1.5 h-1.5 rounded-full bg-rose-400" /> Sesi berakhir</>
-              )}
-            </div>
+            {partnerShowLastSeen ? (
+              <div className="text-[11px] text-slate-300/80 flex items-center gap-1.5 mt-0.5 truncate">
+                {partnerOnline ? (
+                  <><span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" /> <span className="text-emerald-300/90 font-medium">online</span></>
+                ) : sessionStatus === "active" ? (
+                  <><span className="w-1.5 h-1.5 rounded-full bg-amber-400/70" /> <span className="truncate">{partnerLastSeen}</span></>
+                ) : (
+                  <><span className="w-1.5 h-1.5 rounded-full bg-rose-400" /> Sesi berakhir</>
+                )}
+              </div>
+            ) : sessionStatus !== "active" ? (
+              <div className="text-[11px] text-slate-300/80 flex items-center gap-1.5 mt-0.5 truncate">
+                <span className="w-1.5 h-1.5 rounded-full bg-rose-400" /> Sesi berakhir
+              </div>
+            ) : null}
           </div>
           {sessionStatus === "active" && (
             friendStatusForPartner === "friend" ? (
