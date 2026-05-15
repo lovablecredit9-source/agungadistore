@@ -295,8 +295,24 @@ export default function AnonChatTab() {
   const activeBan = !!banInfo && (banInfo.is_permanent || !banInfo.banned_until || new Date(banInfo.banned_until).getTime() > Date.now());
   const myAvatar = presetById(myProfile?.avatar_preset || avatarPreset);
   const partnerAvatar = presetById(partnerProfile?.avatar_preset || (partner?.gender === "female" ? "rose" : partner?.gender === "male" ? "star" : "ninja"));
+  const [nowTick, setNowTick] = useState(Date.now());
+  useEffect(() => { const t = window.setInterval(() => setNowTick(Date.now()), 20000); return () => window.clearInterval(t); }, []);
+  const partnerLastSeenMs = partnerProfile?.last_seen_at ? new Date(partnerProfile.last_seen_at).getTime() : 0;
+  const partnerOnline = partnerLastSeenMs > 0 && (nowTick - partnerLastSeenMs) < 60_000;
+  const formatLastSeen = (ms: number) => {
+    if (!ms) return "offline";
+    const diff = Math.max(0, nowTick - ms);
+    const mins = Math.floor(diff / 60000);
+    if (mins < 1) return "baru saja";
+    if (mins < 60) return `${mins} menit lalu`;
+    const hours = Math.floor(mins / 60);
+    if (hours < 24) return `${hours} jam lalu`;
+    const days = Math.floor(hours / 24);
+    if (days < 7) return `${days} hari lalu`;
+    return new Date(ms).toLocaleDateString("id-ID", { day: "2-digit", month: "short" });
+  };
   const partnerLastSeen = partnerProfile?.show_last_seen
-    ? `terakhir dilihat ${new Date(partnerProfile.last_seen_at).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })}`
+    ? (partnerOnline ? "online" : `terakhir dilihat ${formatLastSeen(partnerLastSeenMs)}`)
     : "terakhir dilihat disembunyikan";
 
   const refreshBan = useCallback(async () => {
