@@ -212,7 +212,10 @@ export default function AnonChatTab() {
   const partnerVisitorRef = useRef<string | null>(null);
   // Photo preview before send
   const [photoPreview, setPhotoPreview] = useState<{ file: File; url: string; caption: string; viewOnce: boolean } | null>(null);
-  const [viewOnceViewer, setViewOnceViewer] = useState<{ id: string; url: string } | null>(null);
+  const [viewOnceViewer, setViewOnceViewer] = useState<{ id: string; url: string; revealed: boolean; shielded: boolean } | null>(null);
+  const viewOnceImageRef = useRef<HTMLImageElement>(null);
+  const viewOnceShieldRef = useRef<HTMLDivElement>(null);
+  const viewOnceCloseTimerRef = useRef<number | null>(null);
   // Voice recording state
   const [recording, setRecording] = useState(false);
   const [recordSecs, setRecordSecs] = useState(0);
@@ -988,33 +991,64 @@ export default function AnonChatTab() {
 
   const openViewOncePhoto = (m: AnonMsg, url: string) => {
     if (m.sender === visitor || m.viewed_at) return;
-    setViewOnceViewer({ id: m.id, url });
+    setViewOnceViewer({ id: m.id, url, revealed: false, shielded: true });
+    window.setTimeout(() => setViewOnceViewer(prev => prev?.id === m.id ? { ...prev, revealed: true, shielded: false } : prev), 220);
     void markViewOnceSeen(m);
   };
 
-  // Auto-close view-once viewer on blur/visibility change (anti-screenshot best-effort)
+  const emergencyCloseViewOnce = useCallback(() => {
+    if (viewOnceCloseTimerRef.current) window.clearTimeout(viewOnceCloseTimerRef.current);
+    const img = viewOnceImageRef.current;
+    const shield = viewOnceShieldRef.current;
+    if (img) {
+      img.removeAttribute("src");
+      img.style.visibility = "hidden";
+      img.style.opacity = "0";
+      img.style.filter = "blur(80px) brightness(0)";
+    }
+    if (shield) {
+      shield.style.opacity = "1";
+      shield.style.pointerEvents = "auto";
+    }
+    setViewOnceViewer(prev => prev ? { ...prev, revealed: false, shielded: true } : prev);
+    viewOnceCloseTimerRef.current = window.setTimeout(() => setViewOnceViewer(null), 80);
+  }, []);
+
+  // Auto-hide view-once photo on focus/visibility/input changes (web best-effort anti-screenshot)
   useEffect(() => {
     if (!viewOnceViewer) return;
-    const close = () => setViewOnceViewer(null);
+    const close = () => emergencyCloseViewOnce();
     const onKey = (e: KeyboardEvent) => {
-      // Block PrintScreen + common screenshot shortcuts
-      if (e.key === "PrintScreen" || (e.shiftKey && (e.metaKey || e.ctrlKey))) {
+      if (e.key === "PrintScreen" || (e.shiftKey && (e.metaKey || e.ctrlKey)) || (e.metaKey && /^[0-9]$/.test(e.key))) {
+        e.preventDefault();
         try { navigator.clipboard.writeText(""); } catch {}
         close();
       }
     };
+    const onPointerLeave = (e: PointerEvent) => {
+      if (e.pointerType === "mouse") close();
+    };
     const onVis = () => { if (document.visibilityState !== "visible") close(); };
     window.addEventListener("blur", close);
+    window.addEventListener("pagehide", close);
     window.addEventListener("keyup", onKey);
     window.addEventListener("keydown", onKey);
+    window.addEventListener("resize", close);
+    window.addEventListener("orientationchange", close);
+    document.addEventListener("pointerleave", onPointerLeave);
     document.addEventListener("visibilitychange", onVis);
     return () => {
       window.removeEventListener("blur", close);
+      window.removeEventListener("pagehide", close);
       window.removeEventListener("keyup", onKey);
       window.removeEventListener("keydown", onKey);
+      window.removeEventListener("resize", close);
+      window.removeEventListener("orientationchange", close);
+      document.removeEventListener("pointerleave", onPointerLeave);
       document.removeEventListener("visibilitychange", onVis);
+      if (viewOnceCloseTimerRef.current) { window.clearTimeout(viewOnceCloseTimerRef.current); viewOnceCloseTimerRef.current = null; }
     };
-  }, [viewOnceViewer]);
+  }, [emergencyCloseViewOnce, viewOnceViewer]);
 
 
   const deleteForEveryone = async (m: AnonMsg) => {
@@ -1226,11 +1260,16 @@ export default function AnonChatTab() {
             <div
               className="fixed inset-0 z-[9999] bg-black flex flex-col"
               onContextMenu={(e) => e.preventDefault()}
+              onPointerDown={() => setViewOnceViewer(prev => prev ? { ...prev, shielded: true } : prev)}
+              onPointerUp={() => setViewOnceViewer(prev => prev ? { ...prev, shielded: false } : prev)}
+              onPointerCancel={emergencyCloseViewOnce}
+              onTouchStart={() => setViewOnceViewer(prev => prev ? { ...prev, shielded: true } : prev)}
+              onTouchEnd={() => setViewOnceViewer(prev => prev ? { ...prev, shielded: false } : prev)}
               style={{ paddingTop: "env(safe-area-inset-top)", paddingBottom: "env(safe-area-inset-bottom)" }}
             >
               <div className="h-14 px-3 flex items-center justify-between text-white bg-black/90 shrink-0">
                 <button
-                  onClick={() => setViewOnceViewer(null)}
+                  onClick={emergencyCloseViewOnce}
                   className="w-10 h-10 rounded-full flex items-center justify-center bg-white/10 hover:bg-white/20 active:scale-95 transition"
                   aria-label="Tutup foto sekali lihat"
                 >
@@ -1242,13 +1281,18 @@ export default function AnonChatTab() {
                 <div className="w-10" />
               </div>
               <div
-                className="flex-1 min-h-0 flex items-center justify-center bg-black select-none"
+                className="relative flex-1 min-h-0 flex items-center justify-center bg-black select-none overflow-hidden"
                 style={{ WebkitUserSelect: "none", userSelect: "none", WebkitTouchCallout: "none" }}
               >
+                <div
+                  ref={viewOnceShieldRef}
+                  className={`absolute inset-0 z-10 bg-black transition-opacity duration-75 ${viewOnceViewer.shielded || !viewOnceViewer.revealed ? "opacity-100" : "opacity-0 pointer-events-none"}`}
+                />
                 <img
+                  ref={viewOnceImageRef}
                   src={viewOnceViewer.url}
                   alt="Foto sekali lihat"
-                  className="max-w-full max-h-full object-contain select-none pointer-events-none"
+                  className={`max-w-full max-h-full object-contain select-none pointer-events-none transition-[opacity,filter] duration-75 ${viewOnceViewer.revealed && !viewOnceViewer.shielded ? "opacity-100 blur-0" : "opacity-0 blur-3xl"}`}
                   draggable={false}
                   style={{ WebkitTouchCallout: "none", WebkitUserSelect: "none" }}
                 />
