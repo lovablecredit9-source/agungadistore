@@ -10,7 +10,7 @@ import { useTheme } from "@/lib/theme";
 import { useLang } from "@/lib/i18n";
 import { LANGUAGES } from "@/lib/languages";
 import { requestMicrophoneStream } from "@/lib/microphone-permission";
-import { Key, Keyboard, EyeOff, PhoneCall, Archive, HardDrive, BookOpen, Smartphone, ArrowRight, ClipboardList, VenetianMask, Zap } from "lucide-react";
+import { Key, Keyboard, EyeOff, PhoneCall, Archive, HardDrive, BookOpen, Smartphone, ArrowRight, ClipboardList, VenetianMask, Zap, Paperclip, Video as VideoIcon, Download } from "lucide-react";
 import tutorialImg1 from "@/assets/anon-tutorial-1.jpg";
 import tutorialImg2 from "@/assets/anon-tutorial-2.jpg";
 import tutorialImg3 from "@/assets/anon-tutorial-3.jpg";
