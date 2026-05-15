@@ -1324,22 +1324,18 @@ export default function AnonChatTab() {
             const showDate = !prev || dateLabel(prev.created_at) !== dateLabel(m.created_at);
             const grouped = prev && prev.sender === m.sender && !showDate &&
               new Date(m.created_at).getTime() - new Date(prev.created_at).getTime() < 60_000;
-            // Bubble khusus untuk event panggilan (gaya WhatsApp, terpusat)
+            // Bubble panggilan gaya WhatsApp (mengikuti sisi mine/partner)
             if (m.media_type === "call" && !m.is_deleted) {
               let info: { status?: string; duration?: number } = {};
               try { info = JSON.parse(m.content || "{}"); } catch {}
               const status = info.status || "ended";
               const dur = Number(info.duration || 0);
-              const isOutgoingForViewer = mine;
-              const labelMap: Record<string, string> = {
-                answered: "Panggilan suara", ended: "Panggilan suara",
-                missed: isOutgoingForViewer ? "Tak dijawab" : "Panggilan tak terjawab",
-                declined: isOutgoingForViewer ? "Ditolak" : "Panggilan ditolak",
-                cancelled: isOutgoingForViewer ? "Dibatalkan" : "Panggilan tak terjawab",
-              };
-              const label = labelMap[status] || "Panggilan";
-              const durStr = dur > 0 ? `${Math.floor(dur/60)}:${String(dur%60).padStart(2,"0")}` : null;
               const isMissed = status === "missed" || status === "cancelled" || status === "declined";
+              const subtitle = (status === "answered" || status === "ended")
+                ? (dur > 0 ? `${Math.floor(dur/60)}:${String(dur%60).padStart(2,"0")}` : "Selesai")
+                : (mine
+                    ? (status === "declined" ? "Ditolak" : status === "cancelled" ? "Dibatalkan" : "Tidak dijawab")
+                    : "Tidak terjawab");
               return (
                 <div key={m.id}>
                   {showDate && (
@@ -1349,18 +1345,24 @@ export default function AnonChatTab() {
                       </span>
                     </div>
                   )}
-                  <div className="flex justify-center my-2 animate-fade-in">
-                    <div className={`px-3 py-2 rounded-2xl border flex items-center gap-2 text-[12px] shadow-md ${isMissed ? "bg-rose-950/40 border-rose-500/30 text-rose-100" : "bg-slate-900/80 border-purple-400/20 text-slate-100"}`}>
-                      <span className={`w-7 h-7 rounded-full flex items-center justify-center ${isMissed ? "bg-rose-500/20 text-rose-300" : "bg-emerald-500/20 text-emerald-300"}`}>
-                        <Phone className="w-3.5 h-3.5" />
+                  <div className={`flex ${mine ? "justify-end" : "justify-start"} mt-1.5 animate-fade-in`}>
+                    <div className={`relative px-3 py-2.5 rounded-2xl shadow-md flex items-center gap-3 min-w-[220px] max-w-[78%] ${
+                      mine
+                        ? "bg-gradient-to-br from-purple-500 to-violet-600 text-white rounded-br-sm"
+                        : "bg-slate-800/90 text-slate-100 border border-slate-700/50 rounded-bl-sm"
+                    }`}>
+                      <span className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${mine ? "bg-white/15" : "bg-slate-700/70"}`}>
+                        <PhoneCall className={`w-5 h-5 ${isMissed ? "text-rose-300" : (mine ? "text-white" : "text-emerald-300")}`} />
                       </span>
-                      <div className="leading-tight">
-                        <p className="font-semibold">{label}{isOutgoingForViewer ? " · keluar" : " · masuk"}</p>
-                        <p className="text-[10px] opacity-75">
-                          {durStr ? `Durasi ${durStr} · ` : ""}
-                          {new Date(m.created_at).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })}
+                      <div className="leading-tight flex-1 min-w-0">
+                        <p className="font-bold text-[14px]">Telepon suara</p>
+                        <p className={`text-[12px] ${isMissed ? (mine ? "text-rose-100" : "text-rose-300") : (mine ? "text-white/80" : "text-slate-400")}`}>
+                          {subtitle}
                         </p>
                       </div>
+                      <span className={`text-[10px] self-end shrink-0 ${mine ? "text-white/70" : "text-slate-400"}`}>
+                        {new Date(m.created_at).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })}
+                      </span>
                     </div>
                   </div>
                 </div>
