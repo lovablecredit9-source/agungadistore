@@ -295,8 +295,24 @@ export default function AnonChatTab() {
   const activeBan = !!banInfo && (banInfo.is_permanent || !banInfo.banned_until || new Date(banInfo.banned_until).getTime() > Date.now());
   const myAvatar = presetById(myProfile?.avatar_preset || avatarPreset);
   const partnerAvatar = presetById(partnerProfile?.avatar_preset || (partner?.gender === "female" ? "rose" : partner?.gender === "male" ? "star" : "ninja"));
+  const [nowTick, setNowTick] = useState(Date.now());
+  useEffect(() => { const t = window.setInterval(() => setNowTick(Date.now()), 20000); return () => window.clearInterval(t); }, []);
+  const partnerLastSeenMs = partnerProfile?.last_seen_at ? new Date(partnerProfile.last_seen_at).getTime() : 0;
+  const partnerOnline = partnerLastSeenMs > 0 && (nowTick - partnerLastSeenMs) < 60_000;
+  const formatLastSeen = (ms: number) => {
+    if (!ms) return "offline";
+    const diff = Math.max(0, nowTick - ms);
+    const mins = Math.floor(diff / 60000);
+    if (mins < 1) return "baru saja";
+    if (mins < 60) return `${mins} menit lalu`;
+    const hours = Math.floor(mins / 60);
+    if (hours < 24) return `${hours} jam lalu`;
+    const days = Math.floor(hours / 24);
+    if (days < 7) return `${days} hari lalu`;
+    return new Date(ms).toLocaleDateString("id-ID", { day: "2-digit", month: "short" });
+  };
   const partnerLastSeen = partnerProfile?.show_last_seen
-    ? `terakhir dilihat ${new Date(partnerProfile.last_seen_at).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })}`
+    ? (partnerOnline ? "online" : `terakhir dilihat ${formatLastSeen(partnerLastSeenMs)}`)
     : "terakhir dilihat disembunyikan";
 
   const refreshBan = useCallback(async () => {
@@ -416,6 +432,19 @@ export default function AnonChatTab() {
     window.addEventListener("focus", onFocus);
     return () => { window.clearInterval(interval); window.removeEventListener("focus", onFocus); };
   }, [touchProfile]);
+
+  // Realtime subscribe to partner profile updates (last_seen_at, avatar, dll)
+  useEffect(() => {
+    const pv = partnerVisitorRef.current;
+    if (!pv || !sessionId) return;
+    const ch = supabase
+      .channel(`anon-partner-${pv}`)
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "anon_chat_profiles", filter: `visitor_id=eq.${pv}` }, (payload) => {
+        setPartnerProfile(payload.new as unknown as AnonProfile);
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, [sessionId, partnerProfile?.visitor_id]);
 
 
   useEffect(() => {
@@ -1210,14 +1239,22 @@ export default function AnonChatTab() {
         </div>
         {/* Partner row */}
         <div className="flex items-center gap-3 px-3 py-2.5 border-b border-purple-500/10 bg-[#0c0820]">
-          <div className={`w-11 h-11 rounded-full bg-gradient-to-br ${partnerAvatar.gradient} flex items-center justify-center text-xl shadow-lg shadow-purple-500/30 overflow-hidden shrink-0`}>
-            {partnerProfile?.avatar_url ? <img src={partnerProfile.avatar_url} alt="Avatar partner" className="h-full w-full object-cover" /> : <AvatarGraphic preset={partnerAvatar} />}
+          <div className="relative shrink-0">
+            <div className={`w-11 h-11 rounded-full bg-gradient-to-br ${partnerAvatar.gradient} flex items-center justify-center text-xl shadow-lg shadow-purple-500/30 overflow-hidden ring-2 ${partnerOnline ? "ring-emerald-400/70" : "ring-transparent"}`}>
+              {partnerProfile?.avatar_url ? <img src={partnerProfile.avatar_url} alt="Avatar partner" className="h-full w-full object-cover" /> : <AvatarGraphic preset={partnerAvatar} />}
+            </div>
+            {partnerOnline && <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-emerald-400 border-2 border-[#0c0820] animate-pulse" />}
           </div>
           <div className="flex-1 min-w-0">
             <div className="font-bold text-slate-50 truncate text-[15px] leading-tight">{partner?.nick}</div>
-            <div className="text-[11px] text-slate-300/80 flex items-center gap-1.5 mt-0.5">
-              <span className={`w-1.5 h-1.5 rounded-full ${sessionStatus === "active" ? "bg-emerald-400" : "bg-rose-400"}`} />
-              {sessionStatus === "active" ? "Online" : "Offline"}
+            <div className="text-[11px] text-slate-300/80 flex items-center gap-1.5 mt-0.5 truncate">
+              {partnerOnline ? (
+                <><span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" /> <span className="text-emerald-300/90 font-medium">online</span></>
+              ) : sessionStatus === "active" ? (
+                <><span className="w-1.5 h-1.5 rounded-full bg-amber-400/70" /> <span className="truncate">{partnerLastSeen}</span></>
+              ) : (
+                <><span className="w-1.5 h-1.5 rounded-full bg-rose-400" /> Sesi berakhir</>
+              )}
             </div>
           </div>
           {sessionStatus === "active" && (
