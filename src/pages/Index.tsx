@@ -16,6 +16,7 @@ import {
   Eye, LayoutGrid, Rows3, Flame, SlidersHorizontal, Zap, TrendingUp, Award, Activity, Inbox, User, Phone, Gift, Menu, Lightbulb, MessageSquare, Star, Share2, VenetianMask
 } from "lucide-react";
 import { VerifiedBadge } from "@/components/VerifiedBadge";
+import StoreAITab from "@/components/StoreAITab";
 import PremiumBadge from "@/components/PremiumBadge";
 import { useStorePremium } from "@/hooks/useStorePremium";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
