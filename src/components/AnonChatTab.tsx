@@ -1664,6 +1664,15 @@ export default function AnonChatTab() {
                   <input type="file" accept="image/*" className="hidden"
                     onChange={e => { if (e.target.files?.[0]) openPhotoPreview(e.target.files[0]); e.target.value = ""; }} />
                 </label>
+                <label className="w-9 h-9 rounded-full bg-slate-900/70 border border-purple-400/20 flex items-center justify-center cursor-pointer shrink-0 hover:bg-slate-800/70 transition" title="Kirim video / file">
+                  <Paperclip className="w-[16px] h-[16px] text-purple-300" />
+                  <input type="file" accept="video/*,application/pdf,application/zip,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/*" className="hidden"
+                    onChange={e => {
+                      const f = e.target.files?.[0];
+                      if (f) sendAnyFile(f, f.type.startsWith("video/") ? "video" : "file");
+                      e.target.value = "";
+                    }} />
+                </label>
                 <div className="flex-1 relative">
                   <input
                     value={draft}
