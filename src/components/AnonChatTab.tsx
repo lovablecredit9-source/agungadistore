@@ -433,6 +433,19 @@ export default function AnonChatTab() {
     return () => { window.clearInterval(interval); window.removeEventListener("focus", onFocus); };
   }, [touchProfile]);
 
+  // Realtime subscribe to partner profile updates (last_seen_at, avatar, dll)
+  useEffect(() => {
+    const pv = partnerVisitorRef.current;
+    if (!pv || !sessionId) return;
+    const ch = supabase
+      .channel(`anon-partner-${pv}`)
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "anon_chat_profiles", filter: `visitor_id=eq.${pv}` }, (payload) => {
+        setPartnerProfile(payload.new as unknown as AnonProfile);
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, [sessionId, partnerProfile?.visitor_id]);
+
 
   useEffect(() => {
     if (messages.length === 0) return;
