@@ -2946,92 +2946,122 @@ export default function AnonChatTab() {
 
   // LOBBY — anon.chat ninja style
   return (
-    <div className="rounded-3xl overflow-hidden border border-purple-500/30 bg-gradient-to-b from-[#0d0820] via-[#0a0618] to-[#0a0618] shadow-[0_20px_60px_-20px_rgba(168,85,247,0.5)]">
-      {/* Top safety chip + help */}
-      <div className="flex items-center justify-between px-4 pt-4">
-        <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-purple-500/15 border border-purple-400/30 text-[11px] font-semibold text-purple-200">
-          <Shield className="w-3 h-3" /> Aman & Privasi
+    <div className="relative rounded-[28px] overflow-hidden border border-purple-500/30 bg-[#08041a] shadow-[0_30px_80px_-20px_rgba(168,85,247,0.55)]">
+      {/* Animated aurora background */}
+      <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
+        <div className="absolute -top-24 -left-16 w-72 h-72 rounded-full bg-fuchsia-600/30 blur-[80px] animate-pulse" />
+        <div className="absolute top-10 -right-20 w-80 h-80 rounded-full bg-violet-600/30 blur-[90px] animate-pulse [animation-delay:1.2s]" />
+        <div className="absolute bottom-0 left-1/3 w-72 h-72 rounded-full bg-purple-700/25 blur-[100px] animate-pulse [animation-delay:2.4s]" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(168,85,247,0.15),transparent_60%)]" />
+        <div className="absolute inset-0 opacity-[0.07]" style={{ backgroundImage: "radial-gradient(rgba(255,255,255,0.6) 1px, transparent 1px)", backgroundSize: "22px 22px" }} />
+      </div>
+
+      <div className="relative">
+        {/* Top safety chip + help */}
+        <div className="flex items-center justify-between px-4 pt-4">
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/5 backdrop-blur border border-emerald-400/30 text-[11px] font-semibold text-emerald-200 shadow-[0_0_20px_rgba(16,185,129,0.15)]">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" /> Aman & Terenkripsi
+          </div>
+          <button onClick={() => setView("prefs")} className="w-9 h-9 rounded-full bg-white/5 backdrop-blur border border-white/10 flex items-center justify-center text-slate-200 hover:bg-white/10 transition" title="Pengaturan">
+            <span className="text-base">?</span>
+          </button>
         </div>
-        <button onClick={() => setView("prefs")} className="w-8 h-8 rounded-full bg-slate-800/70 border border-slate-700 flex items-center justify-center text-slate-300 text-sm">?</button>
-      </div>
 
-      {/* Ninja hero */}
-      <div className="px-6 pt-4 pb-2 text-center">
-        <div className="relative mx-auto w-24 h-24 mb-3">
-          <div className="absolute inset-0 rounded-full bg-purple-500/20 blur-2xl" />
-          <div className="relative w-full h-full flex items-center justify-center text-[72px] leading-none">🥷</div>
+        {/* Hero */}
+        <div className="px-6 pt-6 pb-3 text-center">
+          <div className="relative mx-auto w-28 h-28 mb-4">
+            <div className="absolute inset-0 rounded-full bg-gradient-to-tr from-fuchsia-500/40 via-purple-500/30 to-violet-500/40 blur-2xl animate-pulse" />
+            <div className="absolute inset-0 rounded-full border border-purple-400/30" />
+            <div className="absolute inset-2 rounded-full border border-fuchsia-400/20 animate-[spin_18s_linear_infinite]" style={{ borderStyle: "dashed" }} />
+            <div className="absolute inset-4 rounded-full bg-gradient-to-br from-purple-600/40 to-fuchsia-600/30 backdrop-blur flex items-center justify-center text-[56px] leading-none shadow-[inset_0_0_30px_rgba(168,85,247,0.4)]">🥷</div>
+          </div>
+          <h1 className="text-[34px] font-black tracking-tight text-white leading-none">
+            anon<span className="bg-gradient-to-r from-fuchsia-300 via-purple-300 to-violet-300 bg-clip-text text-transparent">.chat</span>
+          </h1>
+          <p className="text-[13px] text-slate-300 mt-2.5 font-medium">Ngobrol bebas, identitas tetap rahasia</p>
+          <div className="mt-2 inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-[10.5px] text-slate-300">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+            <span className="font-bold text-emerald-300 tabular-nums">{onlineCount.toLocaleString("id-ID")}</span> orang online sekarang
+          </div>
         </div>
-        <h1 className="text-3xl font-extrabold tracking-tight text-white">
-          anon<span className="bg-gradient-to-r from-fuchsia-400 to-purple-400 bg-clip-text text-transparent">.chat</span>
-        </h1>
-        <p className="text-sm text-slate-300 mt-2">Chat anonim dengan siapa saja</p>
-        <p className="text-xs text-slate-400">100% gratis & tanpa registrasi</p>
-      </div>
 
-      {/* Main CTA */}
-      <div className="px-5 pt-5 pb-4">
-        <button onClick={() => {
-            let onboarded = false;
-            try { onboarded = localStorage.getItem("anon_onboarded") === "1"; } catch {}
-            if (!onboarded) { setOnboardStep(1); setView("onboarding"); } else { doMatch(); }
-          }}
-          className="relative w-full py-4 rounded-2xl bg-gradient-to-r from-violet-600 via-purple-600 to-fuchsia-600 text-white font-extrabold text-base shadow-[0_15px_40px_-10px_rgba(168,85,247,0.8)] hover:scale-[1.01] active:scale-[0.99] transition flex items-center justify-center gap-2.5">
-          <span className="w-7 h-7 rounded-full bg-white/20 flex items-center justify-center">
-            <MessageCircle className="w-4 h-4" />
-          </span>
-          Mulai Chat Anonim
-          <ChevronRight className="w-5 h-5 absolute right-4" />
-        </button>
-      </div>
-
-      {/* 3 feature cards */}
-      <div className="px-4 pb-4 grid grid-cols-3 gap-2">
-        {[
-          { Icon: VenetianMask, title: "100% Anonim", desc: "Identitas kamu tidak akan diketahui", color: "text-fuchsia-300" },
-          { Icon: Lock, title: "Privasi Terjaga", desc: "Chat aman & terenkripsi", color: "text-purple-300" },
-          { Icon: Zap, title: "Cepat & Mudah", desc: "Langsung terhubung tanpa ribet", color: "text-violet-300" },
-        ].map(({ Icon, title, desc, color }) => (
-          <div key={title} className="rounded-2xl border border-slate-700/60 bg-slate-900/60 p-3 text-center">
-            <Icon className={`w-5 h-5 mx-auto mb-1.5 ${color}`} />
-            <div className="text-[11px] font-bold text-slate-100 leading-tight">{title}</div>
-            <div className="text-[9.5px] text-slate-400 leading-snug mt-1">{desc}</div>
+        {/* Main CTA */}
+        <div className="px-5 pt-4 pb-3">
+          <button onClick={() => {
+              let onboarded = false;
+              try { onboarded = localStorage.getItem("anon_onboarded") === "1"; } catch {}
+              if (!onboarded) { setOnboardStep(1); setView("onboarding"); } else { doMatch(); }
+            }}
+            className="group relative w-full py-[18px] rounded-2xl bg-gradient-to-r from-violet-600 via-fuchsia-600 to-purple-600 text-white font-extrabold text-[15px] shadow-[0_20px_50px_-12px_rgba(217,70,239,0.7)] hover:shadow-[0_25px_60px_-12px_rgba(217,70,239,0.85)] active:scale-[0.98] transition-all flex items-center justify-center gap-2.5 overflow-hidden">
+            <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/25 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
+            <span className="relative w-7 h-7 rounded-full bg-white/25 backdrop-blur flex items-center justify-center">
+              <MessageCircle className="w-4 h-4" />
+            </span>
+            <span className="relative tracking-wide">Mulai Chat Anonim</span>
+            <ChevronRight className="relative w-5 h-5 absolute right-4 group-hover:translate-x-1 transition-transform" />
+          </button>
+          <div className="mt-2 flex items-center justify-center gap-1.5 text-[10px] text-slate-400">
+            <Zap className="w-3 h-3 text-amber-300" /> Match dalam &lt; 3 detik
           </div>
-        ))}
-      </div>
+        </div>
 
-      {/* Tips card */}
-      <div className="px-4 pb-4">
-        <button onClick={() => setView("about_rules" as any)}
-          className="w-full rounded-2xl border border-slate-700/60 bg-slate-900/60 p-3 flex items-start gap-2.5 text-left hover:bg-slate-900">
-          <div className="w-8 h-8 rounded-xl bg-purple-500/15 border border-purple-400/30 flex items-center justify-center shrink-0">
-            <Shield className="w-4 h-4 text-purple-300" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <div className="text-xs font-bold text-slate-100 mb-1">Tips Aman Chat</div>
-            <ul className="text-[10.5px] text-slate-400 space-y-0.5 list-disc pl-4 marker:text-purple-400">
-              <li>Jangan bagikan informasi pribadi</li>
-              <li>Bersikap baik dan saling menghargai</li>
-              <li>Laporkan jika menemukan pelanggaran</li>
-            </ul>
-          </div>
-          <ChevronRight className="w-4 h-4 text-slate-500 mt-1" />
-        </button>
-      </div>
+        {/* Quick filters chips */}
+        <div className="px-4 pb-3 flex items-center justify-center gap-2 flex-wrap">
+          <button onClick={() => setView("prefs")} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/5 backdrop-blur border border-white/10 text-[11px] font-semibold text-slate-200 hover:bg-white/10 transition">
+            <Users className="w-3 h-3 text-fuchsia-300" /> {prefGender === "male" ? "Pria" : prefGender === "female" ? "Wanita" : "Semua"}
+          </button>
+          <button onClick={() => setView("interest")} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/5 backdrop-blur border border-white/10 text-[11px] font-semibold text-slate-200 hover:bg-white/10 transition">
+            <Heart className="w-3 h-3 text-rose-300" /> {interest}
+          </button>
+        </div>
 
-      {/* Status row */}
-      <div className="px-5 pb-4 flex items-center justify-center gap-4 text-[11px] text-slate-400">
-        <span className="flex items-center gap-1.5"><Users className="w-3 h-3" />{prefGender === "male" ? "Pria" : prefGender === "female" ? "Wanita" : "Semua"}</span>
-        <span className="flex items-center gap-1.5"><Heart className="w-3 h-3" />{interest}</span>
-        <span className="flex items-center gap-1.5 text-purple-400"><span className="w-1.5 h-1.5 rounded-full bg-purple-400 animate-pulse" />{onlineCount} online</span>
-      </div>
+        {/* Feature cards */}
+        <div className="px-4 pb-4 grid grid-cols-3 gap-2">
+          {[
+            { Icon: VenetianMask, title: "Anonim", desc: "Identitas rahasia", grad: "from-fuchsia-500/20 to-fuchsia-700/10", ring: "border-fuchsia-400/30", icon: "text-fuchsia-300" },
+            { Icon: Lock, title: "Privat", desc: "Aman & terjaga", grad: "from-purple-500/20 to-purple-700/10", ring: "border-purple-400/30", icon: "text-purple-300" },
+            { Icon: Zap, title: "Cepat", desc: "Tanpa registrasi", grad: "from-violet-500/20 to-violet-700/10", ring: "border-violet-400/30", icon: "text-violet-300" },
+          ].map(({ Icon, title, desc, grad, ring, icon }) => (
+            <div key={title} className={`rounded-2xl border ${ring} bg-gradient-to-b ${grad} backdrop-blur p-3 text-center hover:scale-[1.03] transition-transform`}>
+              <div className="w-9 h-9 mx-auto mb-1.5 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center">
+                <Icon className={`w-4 h-4 ${icon}`} />
+              </div>
+              <div className="text-[11px] font-extrabold text-white leading-tight">{title}</div>
+              <div className="text-[9.5px] text-slate-400 leading-snug mt-0.5">{desc}</div>
+            </div>
+          ))}
+        </div>
 
-      {/* Inner bottom nav */}
-      <InnerNav active="chat" friendBadge={friendReqs.length} onChange={(k) => {
-          if (k === "chat") setView("lobby");
-          else if (k === "friends") setView("friends");
-          else if (k === "explore") { setView("explore"); loadExplore(); }
-          else setView("prefs");
-        }} />
+        {/* Tips card */}
+        <div className="px-4 pb-4">
+          <button onClick={() => setView("about_rules" as any)}
+            className="w-full rounded-2xl border border-white/10 bg-white/[0.03] backdrop-blur p-3 flex items-start gap-2.5 text-left hover:bg-white/[0.06] transition group">
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-purple-500/30 to-fuchsia-500/20 border border-purple-400/30 flex items-center justify-center shrink-0">
+              <Shield className="w-4 h-4 text-purple-200" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="text-[12px] font-extrabold text-white mb-1 flex items-center gap-1.5">
+                Tips Aman Chat
+                <span className="text-[8.5px] px-1.5 py-0.5 rounded-full bg-amber-400/20 text-amber-300 border border-amber-400/30 font-bold">PENTING</span>
+              </div>
+              <ul className="text-[10.5px] text-slate-400 space-y-0.5 list-disc pl-4 marker:text-purple-400">
+                <li>Jangan bagikan informasi pribadi</li>
+                <li>Bersikap baik dan saling menghargai</li>
+                <li>Laporkan jika menemukan pelanggaran</li>
+              </ul>
+            </div>
+            <ChevronRight className="w-4 h-4 text-slate-500 mt-1 group-hover:translate-x-0.5 transition-transform" />
+          </button>
+        </div>
+
+        {/* Inner bottom nav */}
+        <InnerNav active="chat" friendBadge={friendReqs.length} onChange={(k) => {
+            if (k === "chat") setView("lobby");
+            else if (k === "friends") setView("friends");
+            else if (k === "explore") { setView("explore"); loadExplore(); }
+            else setView("prefs");
+          }} />
+      </div>
     </div>
   );
 }
