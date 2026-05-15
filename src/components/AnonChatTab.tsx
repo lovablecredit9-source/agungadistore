@@ -1161,7 +1161,7 @@ export default function AnonChatTab() {
               {friendStatusForPartner !== "friend" ? (
                 <DropdownMenuItem onClick={endChat} className="text-rose-300">Akhiri chat</DropdownMenuItem>
               ) : (
-                <DropdownMenuItem onClick={() => { if (partner?.visitor) { removeFriend(partner.visitor); endChat(); } }} className="text-rose-300">Hapus pertemanan</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => { const pv = partnerVisitorRef.current; if (pv) { removeFriend(pv); endChat(); } }} className="text-rose-300">Hapus pertemanan</DropdownMenuItem>
               )}
             </DropdownMenuContent>
           </DropdownMenu>
