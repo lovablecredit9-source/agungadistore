@@ -10,7 +10,7 @@ import { useTheme } from "@/lib/theme";
 import { useLang } from "@/lib/i18n";
 import { LANGUAGES } from "@/lib/languages";
 import { requestMicrophoneStream } from "@/lib/microphone-permission";
-import { Key, Keyboard, EyeOff, PhoneCall, Archive, HardDrive, BookOpen, Smartphone, ArrowRight, ClipboardList, VenetianMask, Zap } from "lucide-react";
+import { Key, Keyboard, EyeOff, PhoneCall, Archive, HardDrive, BookOpen, Smartphone, ArrowRight, ClipboardList, VenetianMask, Zap, Paperclip, Video as VideoIcon, Download } from "lucide-react";
 import tutorialImg1 from "@/assets/anon-tutorial-1.jpg";
 import tutorialImg2 from "@/assets/anon-tutorial-2.jpg";
 import tutorialImg3 from "@/assets/anon-tutorial-3.jpg";
@@ -86,12 +86,16 @@ interface AnonMsg {
   image_url: string | null;
   created_at: string;
   is_read: boolean;
+  delivered_at?: string | null;
+  read_at?: string | null;
   reply_to_id: string | null;
   is_deleted: boolean;
   deleted_for?: string[] | null;
   local_blocked?: boolean;
   media_url?: string | null;
-  media_type?: string | null; // 'image' | 'audio'
+  media_type?: string | null; // 'image' | 'audio' | 'video' | 'file' | 'call'
+  media_name?: string | null;
+  media_size?: number | null;
   caption?: string | null;
   view_once?: boolean;
   viewed_at?: string | null;
@@ -516,15 +520,21 @@ export default function AnonChatTab() {
   // Session realtime: messages + reactions + typing + status
   useEffect(() => {
     if (!sessionId) return;
-    const markRead = (mid: string) => { void supabase.from("anon_chat_messages").update({ is_read: true } as any).eq("id", mid); };
-    const ch = supabase.channel(`anon_sess_${sessionId}`)
-      .on("postgres_changes", { event: "INSERT", schema: "public", table: "anon_chat_messages", filter: `session_id=eq.${sessionId}` },
+    const sid = sessionId;
+    const markDelivered = () => { void supabase.rpc("anon_chat_mark_delivered" as any, { p_session: sid, p_visitor: visitor }); };
+    const markRead = () => { void supabase.rpc("anon_chat_mark_read" as any, { p_session: sid, p_visitor: visitor }); };
+    const ch = supabase.channel(`anon_sess_${sid}`)
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "anon_chat_messages", filter: `session_id=eq.${sid}` },
         (p: any) => {
           const nm = mapMsg(p.new);
           setMessages(prev => prev.some(m => m.id === nm.id) ? prev : [...prev, nm]);
-          if (nm.sender !== visitor) markRead(nm.id);
+          if (nm.sender !== visitor) {
+            // Pesan partner masuk: kalau chat sedang dibuka → langsung baca, kalau tidak → cuma delivered
+            if (view === "chat" && document.visibilityState === "visible") markRead();
+            else markDelivered();
+          }
         })
-      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "anon_chat_messages", filter: `session_id=eq.${sessionId}` },
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "anon_chat_messages", filter: `session_id=eq.${sid}` },
         (p: any) => { const nm = mapMsg(p.new); setMessages(prev => prev.map(m => m.id === nm.id ? nm : m)); })
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "anon_chat_reactions" },
         (p: any) => { const r = p.new as AnonReaction; setReactions(prev => prev.some(x => x.id === r.id) ? prev : [...prev, r]); })
@@ -533,16 +543,20 @@ export default function AnonChatTab() {
       .on("postgres_changes", { event: "*", schema: "public", table: "anon_chat_typing" },
         (p: any) => {
           const row = p.new || p.old;
-          if (!row || row.session_id !== sessionId || row.sender_visitor_id === visitor) return;
+          if (!row || row.session_id !== sid || row.sender_visitor_id === visitor) return;
           const typing = !!p.new?.is_typing && p.eventType !== "DELETE";
           const ts = p.new?.updated_at ? new Date(p.new.updated_at).getTime() : 0;
           setOtherTyping(typing && Date.now() - ts < 6000);
         })
-      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "anon_chat_sessions", filter: `id=eq.${sessionId}` },
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "anon_chat_sessions", filter: `id=eq.${sid}` },
         (payload: any) => { if (payload.new.status === "ended") setSessionStatus("ended"); })
       .subscribe();
-    return () => { supabase.removeChannel(ch); };
-  }, [sessionId, visitor]);
+    // Saat tab kembali fokus / chat dibuka → tandai read
+    const onFocus = () => { if (view === "chat") markRead(); };
+    window.addEventListener("focus", onFocus);
+    document.addEventListener("visibilitychange", onFocus);
+    return () => { supabase.removeChannel(ch); window.removeEventListener("focus", onFocus); document.removeEventListener("visibilitychange", onFocus); };
+  }, [sessionId, visitor, view]);
 
   useEffect(() => {
     if (!otherTyping) return;
@@ -642,9 +656,12 @@ export default function AnonChatTab() {
 
   const mapMsg = (m: any): AnonMsg => ({
     id: m.id, sender: m.sender_visitor_id, content: m.content, image_url: m.image_url ?? null,
-    created_at: m.created_at, is_read: !!m.is_read, reply_to_id: m.reply_to_id ?? null, is_deleted: !!m.is_deleted,
+    created_at: m.created_at, is_read: !!m.is_read,
+    delivered_at: m.delivered_at ?? null, read_at: m.read_at ?? null,
+    reply_to_id: m.reply_to_id ?? null, is_deleted: !!m.is_deleted,
     deleted_for: m.deleted_for ?? [],
     media_url: m.media_url ?? null, media_type: m.media_type ?? null, caption: m.caption ?? null,
+    media_name: m.media_name ?? null, media_size: m.media_size ?? null,
     view_once: !!m.view_once, viewed_at: m.viewed_at ?? null, audio_duration: m.audio_duration ?? null,
   });
 
@@ -656,8 +673,8 @@ export default function AnonChatTab() {
     const { data } = await supabase.from("anon_chat_messages").select("*").eq("session_id", id).order("created_at");
     const list = (data || []).map(mapMsg);
     setMessages(list);
-    const unread = list.filter(m => m.sender !== visitor && !m.is_read).map(m => m.id);
-    if (unread.length) await supabase.from("anon_chat_messages").update({ is_read: true } as any).in("id", unread);
+    // Tandai semua pesan partner sebagai delivered + read (centang biru)
+    void supabase.rpc("anon_chat_mark_read" as any, { p_session: id, p_visitor: visitor });
     if (list.length) {
       const { data: rx } = await supabase.from("anon_chat_reactions").select("*").in("message_id", list.map(m => m.id));
       setReactions((rx || []) as AnonReaction[]);
@@ -1002,6 +1019,31 @@ export default function AnonChatTab() {
     recorderRef.current = null;
     if (recordTimerRef.current) { clearInterval(recordTimerRef.current); recordTimerRef.current = null; }
     setRecording(false); setRecordSecs(0);
+  };
+
+  // Kirim video / dokumen / file lain ke bucket anon-chat-media
+  const sendAnyFile = async (file: File, kind: "video" | "file") => {
+    if (!sessionId || sessionStatus === "ended" || activeBan) return;
+    const max = kind === "video" ? 20 * 1024 * 1024 : 20 * 1024 * 1024;
+    if (file.size > max) { toast.error(kind === "video" ? "Video maksimal 20MB" : "File maksimal 20MB"); return; }
+    const safe = file.name.replace(/[^\w.\-]+/g, "_").slice(0, 80) || (kind === "video" ? "video.mp4" : "file");
+    const path = `anon/${sessionId}/${Date.now()}-${Math.random().toString(36).slice(2)}-${safe}`;
+    toast.message(kind === "video" ? "Mengunggah video…" : "Mengunggah file…");
+    const { error: upErr } = await supabase.storage.from("anon-chat-media").upload(path, file, { contentType: file.type || undefined });
+    if (upErr) { toast.error("Gagal upload: " + upErr.message); return; }
+    const { data: u } = supabase.storage.from("anon-chat-media").getPublicUrl(path);
+    const payload: any = {
+      session_id: sessionId,
+      sender_visitor_id: visitor,
+      media_url: u.publicUrl,
+      media_type: kind,
+      media_name: file.name,
+      media_size: file.size,
+    };
+    if (replyTo) payload.reply_to_id = replyTo.id;
+    setReplyTo(null);
+    const { error } = await supabase.from("anon_chat_messages").insert(payload);
+    if (error) toast.error(error.message);
   };
 
   const markViewOnceSeen = async (m: AnonMsg) => {
@@ -1419,6 +1461,24 @@ export default function AnonChatTab() {
                               {m.audio_duration ? <span className="text-[10px] opacity-70">{Math.floor(m.audio_duration/60)}:{String(m.audio_duration%60).padStart(2,"0")}</span> : null}
                             </div>
                           )}
+                          {m.media_type === "video" && m.media_url && (
+                            <div className="mt-1 rounded-lg overflow-hidden bg-black/40 max-w-[260px]">
+                              <video controls src={m.media_url} className="w-full max-h-[320px]" />
+                            </div>
+                          )}
+                          {m.media_type === "file" && m.media_url && (
+                            <a href={m.media_url} target="_blank" rel="noopener noreferrer" download={m.media_name || true}
+                              className={`mt-1 flex items-center gap-2 px-3 py-2 rounded-lg ${mine ? "bg-white/15 hover:bg-white/20" : "bg-slate-700/60 hover:bg-slate-700"} transition min-w-[200px] max-w-[260px]`}>
+                              <span className="w-9 h-9 rounded-lg bg-black/30 flex items-center justify-center shrink-0">
+                                <FileText className="w-5 h-5" />
+                              </span>
+                              <span className="min-w-0 flex-1">
+                                <span className="block text-[12px] font-semibold truncate">{m.media_name || "File"}</span>
+                                <span className="block text-[10px] opacity-70">{m.media_size ? `${(m.media_size/1024).toFixed(m.media_size > 1024*1024 ? 1 : 0)} ${m.media_size > 1024*1024 ? "MB" : "KB"}` : "Unduh"}</span>
+                              </span>
+                              <Download className="w-4 h-4 shrink-0 opacity-80" />
+                            </a>
+                          )}
                           {((m.media_type === "image" && m.media_url) || m.image_url) && (() => {
                             const url = m.media_url || m.image_url!;
                             const isViewOnce = !!m.view_once;
@@ -1495,8 +1555,12 @@ export default function AnonChatTab() {
                         )}
                         {new Date(m.created_at).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })}
                         {mine && !m.is_deleted && !m.local_blocked && (
-                          <span className="ml-0.5">
-                            {m.is_read ? <CheckCheck className="w-3 h-3 text-fuchsia-200" /> : <Check className="w-3 h-3" />}
+                          <span className="ml-0.5" title={m.read_at ? "Dibaca" : m.delivered_at ? "Sampai" : "Terkirim"}>
+                            {m.read_at
+                              ? <CheckCheck className="w-3 h-3 text-sky-300" />
+                              : m.delivered_at
+                                ? <CheckCheck className="w-3 h-3 text-white/70" />
+                                : <Check className="w-3 h-3 text-white/70" />}
                           </span>
                         )}
                       </div>
@@ -1617,6 +1681,15 @@ export default function AnonChatTab() {
                   <ImagePlus className="w-[16px] h-[16px] text-purple-300" />
                   <input type="file" accept="image/*" className="hidden"
                     onChange={e => { if (e.target.files?.[0]) openPhotoPreview(e.target.files[0]); e.target.value = ""; }} />
+                </label>
+                <label className="w-9 h-9 rounded-full bg-slate-900/70 border border-purple-400/20 flex items-center justify-center cursor-pointer shrink-0 hover:bg-slate-800/70 transition" title="Kirim video / file">
+                  <Paperclip className="w-[16px] h-[16px] text-purple-300" />
+                  <input type="file" accept="video/*,application/pdf,application/zip,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/*" className="hidden"
+                    onChange={e => {
+                      const f = e.target.files?.[0];
+                      if (f) sendAnyFile(f, f.type.startsWith("video/") ? "video" : "file");
+                      e.target.value = "";
+                    }} />
                 </label>
                 <div className="flex-1 relative">
                   <input
