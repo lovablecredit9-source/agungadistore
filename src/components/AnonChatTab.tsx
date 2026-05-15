@@ -1512,8 +1512,12 @@ export default function AnonChatTab() {
                         )}
                         {new Date(m.created_at).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })}
                         {mine && !m.is_deleted && !m.local_blocked && (
-                          <span className="ml-0.5">
-                            {m.is_read ? <CheckCheck className="w-3 h-3 text-fuchsia-200" /> : <Check className="w-3 h-3" />}
+                          <span className="ml-0.5" title={m.read_at ? "Dibaca" : m.delivered_at ? "Sampai" : "Terkirim"}>
+                            {m.read_at
+                              ? <CheckCheck className="w-3 h-3 text-sky-300" />
+                              : m.delivered_at
+                                ? <CheckCheck className="w-3 h-3 text-white/70" />
+                                : <Check className="w-3 h-3 text-white/70" />}
                           </span>
                         )}
                       </div>
