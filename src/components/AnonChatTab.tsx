@@ -86,12 +86,16 @@ interface AnonMsg {
   image_url: string | null;
   created_at: string;
   is_read: boolean;
+  delivered_at?: string | null;
+  read_at?: string | null;
   reply_to_id: string | null;
   is_deleted: boolean;
   deleted_for?: string[] | null;
   local_blocked?: boolean;
   media_url?: string | null;
-  media_type?: string | null; // 'image' | 'audio'
+  media_type?: string | null; // 'image' | 'audio' | 'video' | 'file' | 'call'
+  media_name?: string | null;
+  media_size?: number | null;
   caption?: string | null;
   view_once?: boolean;
   viewed_at?: string | null;
