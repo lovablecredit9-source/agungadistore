@@ -212,7 +212,10 @@ export default function AnonChatTab() {
   const partnerVisitorRef = useRef<string | null>(null);
   // Photo preview before send
   const [photoPreview, setPhotoPreview] = useState<{ file: File; url: string; caption: string; viewOnce: boolean } | null>(null);
-  const [viewOnceViewer, setViewOnceViewer] = useState<{ id: string; url: string } | null>(null);
+  const [viewOnceViewer, setViewOnceViewer] = useState<{ id: string; url: string; revealed: boolean; shielded: boolean } | null>(null);
+  const viewOnceImageRef = useRef<HTMLImageElement>(null);
+  const viewOnceShieldRef = useRef<HTMLDivElement>(null);
+  const viewOnceCloseTimerRef = useRef<number | null>(null);
   // Voice recording state
   const [recording, setRecording] = useState(false);
   const [recordSecs, setRecordSecs] = useState(0);
