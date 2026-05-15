@@ -365,12 +365,16 @@ export type Database = {
           created_at: string
           deleted_at: string | null
           deleted_for: string[]
+          delivered_at: string | null
           id: string
           image_url: string | null
           is_deleted: boolean
           is_read: boolean
+          media_name: string | null
+          media_size: number | null
           media_type: string | null
           media_url: string | null
+          read_at: string | null
           reply_to_id: string | null
           sender_visitor_id: string
           session_id: string
@@ -384,12 +388,16 @@ export type Database = {
           created_at?: string
           deleted_at?: string | null
           deleted_for?: string[]
+          delivered_at?: string | null
           id?: string
           image_url?: string | null
           is_deleted?: boolean
           is_read?: boolean
+          media_name?: string | null
+          media_size?: number | null
           media_type?: string | null
           media_url?: string | null
+          read_at?: string | null
           reply_to_id?: string | null
           sender_visitor_id: string
           session_id: string
@@ -403,12 +411,16 @@ export type Database = {
           created_at?: string
           deleted_at?: string | null
           deleted_for?: string[]
+          delivered_at?: string | null
           id?: string
           image_url?: string | null
           is_deleted?: boolean
           is_read?: boolean
+          media_name?: string | null
+          media_size?: number | null
           media_type?: string | null
           media_url?: string | null
+          read_at?: string | null
           reply_to_id?: string | null
           sender_visitor_id?: string
           session_id?: string
@@ -9218,6 +9230,14 @@ export type Database = {
           p_session: string
           p_visitor: string
         }
+        Returns: undefined
+      }
+      anon_chat_mark_delivered: {
+        Args: { p_session: string; p_visitor: string }
+        Returns: undefined
+      }
+      anon_chat_mark_read: {
+        Args: { p_session: string; p_visitor: string }
         Returns: undefined
       }
       anon_chat_respond_friend_request: {
