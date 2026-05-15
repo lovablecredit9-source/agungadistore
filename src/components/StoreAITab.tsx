@@ -121,8 +121,42 @@ export default function StoreAITab() {
             </div>
             <div className={`max-w-[80%] rounded-2xl px-3 py-2 text-sm ${m.role === "user" ? "bg-primary text-primary-foreground rounded-tr-sm" : "bg-background border rounded-tl-sm"}`}>
               {m.role === "assistant" ? (
-                <div className="prose prose-sm dark:prose-invert max-w-none prose-p:my-1 prose-ul:my-1 prose-li:my-0 prose-headings:my-2 prose-a:text-violet-500">
-                  <ReactMarkdown>{m.content}</ReactMarkdown>
+                <div className="prose prose-sm dark:prose-invert max-w-none prose-p:my-1 prose-ul:my-1 prose-li:my-0 prose-headings:my-2 prose-a:text-violet-500 prose-img:my-1 prose-img:rounded-xl">
+                  <ReactMarkdown
+                    components={{
+                      a: ({ href, children, ...props }) => {
+                        const isInternal = href?.startsWith("/");
+                        return (
+                          <a
+                            {...props}
+                            href={href}
+                            onClick={(e) => {
+                              if (isInternal && href) {
+                                e.preventDefault();
+                                navigate(href);
+                              }
+                            }}
+                            target={isInternal ? undefined : "_blank"}
+                            rel={isInternal ? undefined : "noopener noreferrer"}
+                            className="font-semibold underline decoration-violet-400 underline-offset-2 hover:text-violet-600"
+                          >
+                            {children}
+                          </a>
+                        );
+                      },
+                      img: ({ src, alt }) => (
+                        src && src !== "-" ? (
+                          <img
+                            src={src}
+                            alt={alt || ""}
+                            loading="lazy"
+                            className="my-2 rounded-xl border max-h-48 w-auto object-cover cursor-pointer hover:opacity-90"
+                            onClick={() => { if (alt?.startsWith("/produk")) navigate(alt); }}
+                          />
+                        ) : null
+                      ),
+                    }}
+                  >{m.content}</ReactMarkdown>
                 </div>
               ) : (
                 <p className="whitespace-pre-wrap break-words">{m.content}</p>
