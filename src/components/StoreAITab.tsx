@@ -71,8 +71,8 @@ export default function StoreAITab() {
           <div className="flex items-center gap-3">
             <div className="relative">
               <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-violet-500 to-cyan-400 blur-md opacity-70 animate-pulse" />
-              <div className="relative w-12 h-12 rounded-2xl bg-gradient-to-br from-violet-500 via-fuchsia-500 to-cyan-400 flex items-center justify-center shadow-lg">
-                <Sparkles className="w-6 h-6 text-white" strokeWidth={2.2} />
+              <div className="relative w-12 h-12 rounded-2xl overflow-hidden ring-2 ring-white/40 shadow-lg bg-background">
+                <img src={storeAvatar} alt="Store AI" className="w-full h-full object-cover" />
               </div>
             </div>
             <div className="flex-1 min-w-0">
