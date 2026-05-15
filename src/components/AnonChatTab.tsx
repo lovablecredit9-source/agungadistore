@@ -1045,6 +1045,8 @@ export default function AnonChatTab() {
     const { error } = await supabase.from("anon_chat_messages").insert(payload);
     if (error) toast.error(error.message);
   };
+
+  const markViewOnceSeen = async (m: AnonMsg) => {
     if (m.sender === visitor || m.viewed_at) return;
     const now = new Date().toISOString();
     setMessages(prev => prev.map(x => x.id === m.id ? { ...x, viewed_at: now } : x));
