@@ -1461,6 +1461,24 @@ export default function AnonChatTab() {
                               {m.audio_duration ? <span className="text-[10px] opacity-70">{Math.floor(m.audio_duration/60)}:{String(m.audio_duration%60).padStart(2,"0")}</span> : null}
                             </div>
                           )}
+                          {m.media_type === "video" && m.media_url && (
+                            <div className="mt-1 rounded-lg overflow-hidden bg-black/40 max-w-[260px]">
+                              <video controls src={m.media_url} className="w-full max-h-[320px]" />
+                            </div>
+                          )}
+                          {m.media_type === "file" && m.media_url && (
+                            <a href={m.media_url} target="_blank" rel="noopener noreferrer" download={m.media_name || true}
+                              className={`mt-1 flex items-center gap-2 px-3 py-2 rounded-lg ${mine ? "bg-white/15 hover:bg-white/20" : "bg-slate-700/60 hover:bg-slate-700"} transition min-w-[200px] max-w-[260px]`}>
+                              <span className="w-9 h-9 rounded-lg bg-black/30 flex items-center justify-center shrink-0">
+                                <FileText className="w-5 h-5" />
+                              </span>
+                              <span className="min-w-0 flex-1">
+                                <span className="block text-[12px] font-semibold truncate">{m.media_name || "File"}</span>
+                                <span className="block text-[10px] opacity-70">{m.media_size ? `${(m.media_size/1024).toFixed(m.media_size > 1024*1024 ? 1 : 0)} ${m.media_size > 1024*1024 ? "MB" : "KB"}` : "Unduh"}</span>
+                              </span>
+                              <Download className="w-4 h-4 shrink-0 opacity-80" />
+                            </a>
+                          )}
                           {((m.media_type === "image" && m.media_url) || m.image_url) && (() => {
                             const url = m.media_url || m.image_url!;
                             const isViewOnce = !!m.view_once;
