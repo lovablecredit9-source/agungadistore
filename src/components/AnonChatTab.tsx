@@ -646,9 +646,12 @@ export default function AnonChatTab() {
 
   const mapMsg = (m: any): AnonMsg => ({
     id: m.id, sender: m.sender_visitor_id, content: m.content, image_url: m.image_url ?? null,
-    created_at: m.created_at, is_read: !!m.is_read, reply_to_id: m.reply_to_id ?? null, is_deleted: !!m.is_deleted,
+    created_at: m.created_at, is_read: !!m.is_read,
+    delivered_at: m.delivered_at ?? null, read_at: m.read_at ?? null,
+    reply_to_id: m.reply_to_id ?? null, is_deleted: !!m.is_deleted,
     deleted_for: m.deleted_for ?? [],
     media_url: m.media_url ?? null, media_type: m.media_type ?? null, caption: m.caption ?? null,
+    media_name: m.media_name ?? null, media_size: m.media_size ?? null,
     view_once: !!m.view_once, viewed_at: m.viewed_at ?? null, audio_duration: m.audio_duration ?? null,
   });
 
@@ -660,8 +663,8 @@ export default function AnonChatTab() {
     const { data } = await supabase.from("anon_chat_messages").select("*").eq("session_id", id).order("created_at");
     const list = (data || []).map(mapMsg);
     setMessages(list);
-    const unread = list.filter(m => m.sender !== visitor && !m.is_read).map(m => m.id);
-    if (unread.length) await supabase.from("anon_chat_messages").update({ is_read: true } as any).in("id", unread);
+    // Tandai semua pesan partner sebagai delivered + read (centang biru)
+    void supabase.rpc("anon_chat_mark_read" as any, { p_session: id, p_visitor: visitor });
     if (list.length) {
       const { data: rx } = await supabase.from("anon_chat_reactions").select("*").in("message_id", list.map(m => m.id));
       setReactions((rx || []) as AnonReaction[]);
