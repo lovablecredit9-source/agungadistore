@@ -116,7 +116,7 @@ export default function AdminApiKeyTab() {
     toast({ title: `${label} tersalin!` });
   }
 
-  async function downloadBotFile(apiKey: string, keyName: string) {
+  async function downloadBotFile(apiKey: string, keyName: string, target: "pterodactyl" | "termux" = "pterodactyl") {
     try {
       const zip = new JSZip();
       const safeName = keyName.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") || "bot-wa";
@@ -124,19 +124,67 @@ export default function AdminApiKeyTab() {
       const firstAdmin = adminNumbers.find(n => n.trim().length >= 10);
       zip.file("index.js", generateBotCode(apiKey, firstAdmin?.trim() || undefined));
       zip.file("package.json", generatePackageJson());
-      zip.file("README.md", generateReadmeMd());
+
+      if (target === "termux") {
+        zip.file("README.md", generateReadmeTermux());
+        zip.file("install.sh", generateTermuxInstallScript());
+        zip.file(".npmrc", "bin-links=false\nfund=false\naudit=false\n");
+      } else {
+        zip.file("README.md", generateReadmeMd());
+      }
 
       const blob = await zip.generateAsync({ type: "blob" });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `${safeName}-bot-wa.zip`;
+      a.download = `${safeName}-bot-wa-${target}.zip`;
       a.click();
       URL.revokeObjectURL(url);
-      toast({ title: "ZIP 3 file berhasil didownload! 📦" });
+      toast({ title: `ZIP ${target === "termux" ? "Termux" : "Pterodactyl"} berhasil didownload! 📦` });
     } catch {
       toast({ title: "Gagal membuat ZIP bot", variant: "destructive" });
     }
+  }
+
+  function generateTermuxInstallScript() {
+    return `#!/data/data/com.termux/files/usr/bin/bash
+# ============================================
+# 🤖 Installer Bot WA - Termux (Agung Adi Store)
+# ============================================
+# PENTING: JANGAN jalankan dari /sdcard atau /storage/emulated
+# Karena partisi itu FAT32 tidak support symlink → error EACCES
+# ============================================
+set -e
+
+echo "📦 Update paket Termux..."
+pkg update -y && pkg upgrade -y
+pkg install -y nodejs-lts git
+
+# Pastikan kita di internal storage Termux, bukan /sdcard
+CURDIR="$(pwd)"
+case "$CURDIR" in
+  /sdcard*|/storage/*)
+    echo "⚠️  Kamu di $CURDIR (eksternal). Memindahkan ke ~/bot-wa ..."
+    mkdir -p "$HOME/bot-wa"
+    cp -r ./* "$HOME/bot-wa/" 2>/dev/null || true
+    cp -r ./.npmrc "$HOME/bot-wa/" 2>/dev/null || true
+    cd "$HOME/bot-wa"
+    echo "✅ Sekarang di: $(pwd)"
+    ;;
+esac
+
+echo "🧹 Bersihkan node_modules lama..."
+rm -rf node_modules package-lock.json
+
+echo "📥 Install dependencies (no symlink agar aman di Termux)..."
+npm install --no-bin-links --no-audit --no-fund
+
+echo ""
+echo "✅ Selesai! Jalankan bot dengan:"
+echo "   cd $(pwd)"
+echo "   node index.js"
+echo ""
+`;
   }
 
   function generateBotCode(apiKey: string, phoneNumber?: string) {
@@ -245,6 +293,67 @@ Kirim !menu / .menu / /menu di chat untuk melihat semua perintah.
 
 ---
 _© 2026 Agung Adi Store_
+`;
+  }
+
+  function generateReadmeTermux() {
+    return `# 🤖 Bot WhatsApp - Termux Edition v13.7.1
+
+## ⚠️ PENTING SEBELUM MULAI
+Termux **TIDAK BISA** install bot di folder \`/sdcard\` atau \`/storage/emulated/0\`
+karena partisi SD card pakai FAT32 yang **tidak mendukung symlink**.
+Ini sebabnya muncul error: \`EACCES: permission denied, symlink ... pino/bin.js\`
+
+## 🚀 Cara Install (otomatis)
+${"```"}bash
+pkg install -y nodejs-lts git unzip
+cd ~ && mkdir -p bot-wa && cd bot-wa
+# extract isi ZIP ke folder ini (jangan di /sdcard), lalu:
+bash install.sh
+node index.js
+${"```"}
+
+## 🛠️ Manual (jika install.sh gagal)
+${"```"}bash
+pkg update -y && pkg upgrade -y
+pkg install -y nodejs-lts git
+cd ~ && mkdir -p bot-wa && cd bot-wa
+rm -rf node_modules package-lock.json
+npm install --no-bin-links --no-audit --no-fund
+node index.js
+${"```"}
+
+## 📂 Akses File via HP
+Folder bot ada di: \`/data/data/com.termux/files/home/bot-wa\`
+Untuk akses dari File Manager HP:
+${"```"}bash
+termux-setup-storage
+ln -sf ~/bot-wa /sdcard/bot-wa-link
+${"```"}
+
+## ❌ Error Umum
+| Error | Solusi |
+|-------|--------|
+| EACCES symlink pino/bin.js | Pindah ke \`~/bot-wa\` (BUKAN /sdcard), pakai \`--no-bin-links\` |
+| Cannot find module '@whiskeysockets/baileys' | npm install gagal. \`rm -rf node_modules && npm install --no-bin-links\` |
+| Killed saat install | RAM habis - tutup app lain |
+| gyp ERR | \`pkg install python make clang\` lalu ulang |
+
+## 📲 Login WhatsApp
+Pilih **1** (QR) atau **2** (pairing nomor). Untuk pairing, masukkan nomor WA,
+catat baris **RAW** di terminal, buka WhatsApp > Linked Devices > Link with phone number,
+input kode RAW tanpa spasi.
+
+## 🔄 Reset Sesi
+${"```"}bash
+rm -rf auth_session && node index.js
+${"```"}
+
+## 📱 Perintah
+Kirim \`!menu\` ke nomor bot untuk lihat semua perintah.
+
+---
+_© 2026 Agung Adi Store - Termux Edition_
 `;
   }
 
@@ -481,17 +590,28 @@ node index.js
             </div>
           )}
 
-          <Button
-            size="sm"
-            className="w-full gap-2"
-            disabled={!selectedDownloadKey}
-            onClick={() => selectedDownloadKey && downloadBotFile(selectedDownloadKey.api_key, selectedDownloadKey.key_name)}
-          >
-            <Download className="w-4 h-4" /> <Download className="w-4 h-4" /> Download ZIP Bot v13.7.1
-          </Button>
+          <div className="grid grid-cols-2 gap-2">
+            <Button
+              size="sm"
+              className="gap-1"
+              disabled={!selectedDownloadKey}
+              onClick={() => selectedDownloadKey && downloadBotFile(selectedDownloadKey.api_key, selectedDownloadKey.key_name, "pterodactyl")}
+            >
+              <Download className="w-4 h-4" /> Pterodactyl
+            </Button>
+            <Button
+              size="sm"
+              variant="secondary"
+              className="gap-1"
+              disabled={!selectedDownloadKey}
+              onClick={() => selectedDownloadKey && downloadBotFile(selectedDownloadKey.api_key, selectedDownloadKey.key_name, "termux")}
+            >
+              <Download className="w-4 h-4" /> Termux
+            </Button>
+          </div>
 
           <p className="text-[10px] text-muted-foreground text-center">
-            📲 Jalankan <code className="bg-muted px-1 rounded">npm install</code> lalu <code className="bg-muted px-1 rounded">node index.js</code> - pilih 2, masukkan nomor, lalu input baris RAW code di WhatsApp &gt; Linked Devices
+            📲 v13.7.1 - <b>Pterodactyl</b>: upload & <code className="bg-muted px-1 rounded">npm start</code>. <b>Termux</b>: extract di <code className="bg-muted px-1 rounded">~/bot-wa</code> (BUKAN /sdcard), lalu <code className="bg-muted px-1 rounded">bash install.sh</code>
           </p>
         </CardContent>
       </Card>
