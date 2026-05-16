@@ -503,6 +503,16 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
       }
     }
 
+    // ── CONFESS REPLY (publik, tanpa perlu login) ──
+    if (lowerText.startsWith("!balas")) {
+      const isi = plainText.slice(6).trim();
+      if (!isi) return reply("⚠️ Format: *!balas isi balasanmu*\n\nContoh: *!balas halo siapa kamu?*");
+      const r = await api("confess_reply", "POST", { from_phone: senderPhone, reply_text: isi });
+      const d = r?.data || r;
+      if (!d?.matched) return reply("❌ Tidak ada confess aktif untuk nomor ini.\n(Balasan hanya bisa untuk confess yang baru kamu terima dalam 30 hari terakhir.)");
+      return reply("✅ Balasan kamu terkirim ke pengirim confess (" + (d.sender_name || "Anonim") + ")\n🆔 " + d.trx_id);
+    }
+
     if (chatFlows[remoteJid] && !plainText.startsWith("!")) {
       const flow = chatFlows[remoteJid];
 
