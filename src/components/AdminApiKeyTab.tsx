@@ -590,17 +590,28 @@ node index.js
             </div>
           )}
 
-          <Button
-            size="sm"
-            className="w-full gap-2"
-            disabled={!selectedDownloadKey}
-            onClick={() => selectedDownloadKey && downloadBotFile(selectedDownloadKey.api_key, selectedDownloadKey.key_name)}
-          >
-            <Download className="w-4 h-4" /> <Download className="w-4 h-4" /> Download ZIP Bot v13.7.1
-          </Button>
+          <div className="grid grid-cols-2 gap-2">
+            <Button
+              size="sm"
+              className="gap-1"
+              disabled={!selectedDownloadKey}
+              onClick={() => selectedDownloadKey && downloadBotFile(selectedDownloadKey.api_key, selectedDownloadKey.key_name, "pterodactyl")}
+            >
+              <Download className="w-4 h-4" /> Pterodactyl
+            </Button>
+            <Button
+              size="sm"
+              variant="secondary"
+              className="gap-1"
+              disabled={!selectedDownloadKey}
+              onClick={() => selectedDownloadKey && downloadBotFile(selectedDownloadKey.api_key, selectedDownloadKey.key_name, "termux")}
+            >
+              <Download className="w-4 h-4" /> Termux
+            </Button>
+          </div>
 
           <p className="text-[10px] text-muted-foreground text-center">
-            📲 Jalankan <code className="bg-muted px-1 rounded">npm install</code> lalu <code className="bg-muted px-1 rounded">node index.js</code> - pilih 2, masukkan nomor, lalu input baris RAW code di WhatsApp &gt; Linked Devices
+            📲 v13.7.1 - <b>Pterodactyl</b>: upload & <code className="bg-muted px-1 rounded">npm start</code>. <b>Termux</b>: extract di <code className="bg-muted px-1 rounded">~/bot-wa</code> (BUKAN /sdcard), lalu <code className="bg-muted px-1 rounded">bash install.sh</code>
           </p>
         </CardContent>
       </Card>
