@@ -1469,6 +1469,7 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
       clearPairingRefreshTimer();
       console.log("\n✅ Bot WhatsApp sudah siap! (v" + BOT_VERSION + ")");
       console.log("📋 Kirim !menu / .menu / /menu di chat untuk lihat perintah\n");
+      startConfessOutbox(client);
       return;
     }
 
