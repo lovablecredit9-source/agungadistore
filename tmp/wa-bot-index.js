@@ -153,6 +153,8 @@ function startConfessOutbox(client) {
   };
   tick();
   _confessPollTimer = setInterval(tick, 12000);
+}
+
 
 async function sendLongMessage(client, jid, text, quoted) {
   const message = String(text || "").trim();
