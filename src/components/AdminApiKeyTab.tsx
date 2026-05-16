@@ -296,6 +296,67 @@ _© 2026 Agung Adi Store_
 `;
   }
 
+  function generateReadmeTermux() {
+    return `# 🤖 Bot WhatsApp - Termux Edition v13.7.1
+
+## ⚠️ PENTING SEBELUM MULAI
+Termux **TIDAK BISA** install bot di folder \`/sdcard\` atau \`/storage/emulated/0\`
+karena partisi SD card pakai FAT32 yang **tidak mendukung symlink**.
+Ini sebabnya muncul error: \`EACCES: permission denied, symlink ... pino/bin.js\`
+
+## 🚀 Cara Install (otomatis)
+${"```"}bash
+pkg install -y nodejs-lts git unzip
+cd ~ && mkdir -p bot-wa && cd bot-wa
+# extract isi ZIP ke folder ini (jangan di /sdcard), lalu:
+bash install.sh
+node index.js
+${"```"}
+
+## 🛠️ Manual (jika install.sh gagal)
+${"```"}bash
+pkg update -y && pkg upgrade -y
+pkg install -y nodejs-lts git
+cd ~ && mkdir -p bot-wa && cd bot-wa
+rm -rf node_modules package-lock.json
+npm install --no-bin-links --no-audit --no-fund
+node index.js
+${"```"}
+
+## 📂 Akses File via HP
+Folder bot ada di: \`/data/data/com.termux/files/home/bot-wa\`
+Untuk akses dari File Manager HP:
+${"```"}bash
+termux-setup-storage
+ln -sf ~/bot-wa /sdcard/bot-wa-link
+${"```"}
+
+## ❌ Error Umum
+| Error | Solusi |
+|-------|--------|
+| EACCES symlink pino/bin.js | Pindah ke \`~/bot-wa\` (BUKAN /sdcard), pakai \`--no-bin-links\` |
+| Cannot find module '@whiskeysockets/baileys' | npm install gagal. \`rm -rf node_modules && npm install --no-bin-links\` |
+| Killed saat install | RAM habis - tutup app lain |
+| gyp ERR | \`pkg install python make clang\` lalu ulang |
+
+## 📲 Login WhatsApp
+Pilih **1** (QR) atau **2** (pairing nomor). Untuk pairing, masukkan nomor WA,
+catat baris **RAW** di terminal, buka WhatsApp > Linked Devices > Link with phone number,
+input kode RAW tanpa spasi.
+
+## 🔄 Reset Sesi
+${"```"}bash
+rm -rf auth_session && node index.js
+${"```"}
+
+## 📱 Perintah
+Kirim \`!menu\` ke nomor bot untuk lihat semua perintah.
+
+---
+_© 2026 Agung Adi Store - Termux Edition_
+`;
+  }
+
   const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID || "";
   const baseUrl = `https://${projectId}.supabase.co/functions/v1/public-api`;
 
