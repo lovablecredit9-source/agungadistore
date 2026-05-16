@@ -116,7 +116,7 @@ export default function AdminApiKeyTab() {
     toast({ title: `${label} tersalin!` });
   }
 
-  async function downloadBotFile(apiKey: string, keyName: string) {
+  async function downloadBotFile(apiKey: string, keyName: string, target: "pterodactyl" | "termux" = "pterodactyl") {
     try {
       const zip = new JSZip();
       const safeName = keyName.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") || "bot-wa";
@@ -124,19 +124,67 @@ export default function AdminApiKeyTab() {
       const firstAdmin = adminNumbers.find(n => n.trim().length >= 10);
       zip.file("index.js", generateBotCode(apiKey, firstAdmin?.trim() || undefined));
       zip.file("package.json", generatePackageJson());
-      zip.file("README.md", generateReadmeMd());
+
+      if (target === "termux") {
+        zip.file("README.md", generateReadmeTermux());
+        zip.file("install.sh", generateTermuxInstallScript());
+        zip.file(".npmrc", "bin-links=false\nfund=false\naudit=false\n");
+      } else {
+        zip.file("README.md", generateReadmeMd());
+      }
 
       const blob = await zip.generateAsync({ type: "blob" });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `${safeName}-bot-wa.zip`;
+      a.download = `${safeName}-bot-wa-${target}.zip`;
       a.click();
       URL.revokeObjectURL(url);
-      toast({ title: "ZIP 3 file berhasil didownload! 📦" });
+      toast({ title: `ZIP ${target === "termux" ? "Termux" : "Pterodactyl"} berhasil didownload! 📦` });
     } catch {
       toast({ title: "Gagal membuat ZIP bot", variant: "destructive" });
     }
+  }
+
+  function generateTermuxInstallScript() {
+    return `#!/data/data/com.termux/files/usr/bin/bash
+# ============================================
+# 🤖 Installer Bot WA - Termux (Agung Adi Store)
+# ============================================
+# PENTING: JANGAN jalankan dari /sdcard atau /storage/emulated
+# Karena partisi itu FAT32 tidak support symlink → error EACCES
+# ============================================
+set -e
+
+echo "📦 Update paket Termux..."
+pkg update -y && pkg upgrade -y
+pkg install -y nodejs-lts git
+
+# Pastikan kita di internal storage Termux, bukan /sdcard
+CURDIR="$(pwd)"
+case "$CURDIR" in
+  /sdcard*|/storage/*)
+    echo "⚠️  Kamu di $CURDIR (eksternal). Memindahkan ke ~/bot-wa ..."
+    mkdir -p "$HOME/bot-wa"
+    cp -r ./* "$HOME/bot-wa/" 2>/dev/null || true
+    cp -r ./.npmrc "$HOME/bot-wa/" 2>/dev/null || true
+    cd "$HOME/bot-wa"
+    echo "✅ Sekarang di: $(pwd)"
+    ;;
+esac
+
+echo "🧹 Bersihkan node_modules lama..."
+rm -rf node_modules package-lock.json
+
+echo "📥 Install dependencies (no symlink agar aman di Termux)..."
+npm install --no-bin-links --no-audit --no-fund
+
+echo ""
+echo "✅ Selesai! Jalankan bot dengan:"
+echo "   cd $(pwd)"
+echo "   node index.js"
+echo ""
+`;
   }
 
   function generateBotCode(apiKey: string, phoneNumber?: string) {
