@@ -487,7 +487,7 @@ node index.js
             disabled={!selectedDownloadKey}
             onClick={() => selectedDownloadKey && downloadBotFile(selectedDownloadKey.api_key, selectedDownloadKey.key_name)}
           >
-            <Download className="w-4 h-4" /> <Download className="w-4 h-4" /> Download ZIP Bot v13.7.0
+            <Download className="w-4 h-4" /> <Download className="w-4 h-4" /> Download ZIP Bot v13.7.1
           </Button>
 
           <p className="text-[10px] text-muted-foreground text-center">
