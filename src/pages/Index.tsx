@@ -1751,6 +1751,7 @@ const Index = () => {
                   { key: "anonchat" as Tab, icon: VenetianMask, label: "Anon Chat", grad: "from-emerald-400 via-teal-500 to-cyan-500", glow: "16,185,129" },
                   { key: "update" as Tab, icon: RefreshCw, label: "Update", grad: "from-emerald-300 via-teal-400 to-cyan-500", glow: "45,212,191" },
                   { key: "storeai" as Tab, icon: Sparkles, label: "Store AI", grad: "from-violet-400 via-fuchsia-500 to-cyan-400", glow: "168,85,247" },
+                  { key: "confess" as Tab, icon: MessageSquareWarning, label: "Confess", grad: "from-pink-500 via-rose-500 to-orange-400", glow: "236,72,153" },
                   { key: "adminpost" as Tab, icon: FileText, label: "Admin", grad: "from-slate-400 via-zinc-500 to-gray-600", glow: "148,163,184" },
                 ] as Array<{ key: any; icon: any; label: string; external?: string; grad: string; glow: string }>).map(({ key, icon: Icon, label, external, grad, glow }) => {
                   const active = !external && tab === key;
