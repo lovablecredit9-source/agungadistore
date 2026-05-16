@@ -153,8 +153,17 @@ function startConfessOutbox(client) {
   };
   tick();
   _confessPollTimer = setInterval(tick, 12000);
-}
+    }
 
+    // ── CONFESS REPLY (publik, tanpa login) ──
+    if (lowerText.startsWith("!balas")) {
+      const isi = plainText.slice(6).trim();
+      if (!isi) return reply("⚠️ Format: *!balas isi balasanmu*\n\nContoh: *!balas halo siapa kamu?*");
+      const r = await api("confess_reply", "POST", { from_phone: senderPhone, reply_text: isi });
+      const d = r?.data || r;
+      if (!d?.matched) return reply("❌ Tidak ada confess aktif untuk nomor ini.\n(Balasan hanya bisa untuk confess yang baru kamu terima.)");
+      return reply("✅ Balasan kamu terkirim ke pengirim confess (" + (d.sender_name || "Anonim") + ") • " + d.trx_id);
+    }
 
 async function sendLongMessage(client, jid, text, quoted) {
   const message = String(text || "").trim();
