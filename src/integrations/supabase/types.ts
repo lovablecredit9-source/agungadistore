@@ -936,6 +936,122 @@ export type Database = {
         }
         Relationships: []
       }
+      confession_replies: {
+        Row: {
+          confession_id: string
+          created_at: string
+          from_phone: string
+          id: string
+          reply_text: string
+          target_id: string | null
+        }
+        Insert: {
+          confession_id: string
+          created_at?: string
+          from_phone: string
+          id?: string
+          reply_text: string
+          target_id?: string | null
+        }
+        Update: {
+          confession_id?: string
+          created_at?: string
+          from_phone?: string
+          id?: string
+          reply_text?: string
+          target_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "confession_replies_confession_id_fkey"
+            columns: ["confession_id"]
+            isOneToOne: false
+            referencedRelation: "confessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "confession_replies_target_id_fkey"
+            columns: ["target_id"]
+            isOneToOne: false
+            referencedRelation: "confession_targets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      confession_targets: {
+        Row: {
+          confession_id: string
+          created_at: string
+          error: string | null
+          id: string
+          phone: string
+          sent_at: string | null
+          status: string
+        }
+        Insert: {
+          confession_id: string
+          created_at?: string
+          error?: string | null
+          id?: string
+          phone: string
+          sent_at?: string | null
+          status?: string
+        }
+        Update: {
+          confession_id?: string
+          created_at?: string
+          error?: string | null
+          id?: string
+          phone?: string
+          sent_at?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "confession_targets_confession_id_fkey"
+            columns: ["confession_id"]
+            isOneToOne: false
+            referencedRelation: "confessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      confessions: {
+        Row: {
+          created_at: string
+          id: string
+          message: string
+          num_targets: number
+          sender_name: string | null
+          sender_visitor_id: string
+          status: string
+          total_price: number
+          trx_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          message: string
+          num_targets: number
+          sender_name?: string | null
+          sender_visitor_id: string
+          status?: string
+          total_price: number
+          trx_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          message?: string
+          num_targets?: number
+          sender_name?: string | null
+          sender_visitor_id?: string
+          status?: string
+          total_price?: number
+          trx_id?: string
+        }
+        Relationships: []
+      }
       credit_packages: {
         Row: {
           created_at: string
