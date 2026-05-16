@@ -1225,6 +1225,100 @@ Deno.serve(async (req) => {
         result = { deposit: { ...deposit, status: "cancelled" }, new_status: "cancelled" };
         break;
       }
+      case "confess_outbox": {
+        // GET: list pending confession targets, joined with confession
+        const { data } = await supabase
+          .from("confession_targets")
+          .select("id, phone, status, confession_id, confessions:confession_id(id, trx_id, sender_name, message, sender_visitor_id)")
+          .eq("status", "pending")
+          .order("created_at", { ascending: true })
+          .limit(20);
+        result = data || [];
+        break;
+      }
+      case "confess_mark_sent": {
+        if (req.method !== "POST") return new Response(JSON.stringify({ error: "POST required" }), { status: 405, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        const body = await req.json();
+        const { target_id, success, error: errMsg } = body;
+        if (!target_id) return new Response(JSON.stringify({ error: "target_id required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        await supabase
+          .from("confession_targets")
+          .update({ status: success ? "sent" : "failed", sent_at: new Date().toISOString(), error: errMsg || null })
+          .eq("id", target_id);
+        // update parent status
+        const { data: tgt } = await supabase.from("confession_targets").select("confession_id").eq("id", target_id).maybeSingle();
+        if (tgt?.confession_id) {
+          const { data: siblings } = await supabase.from("confession_targets").select("status").eq("confession_id", tgt.confession_id);
+          const allDone = (siblings || []).every((s: any) => s.status !== "pending");
+          if (allDone) {
+            const anyOk = (siblings || []).some((s: any) => s.status === "sent");
+            await supabase.from("confessions").update({ status: anyOk ? "sent" : "failed" }).eq("id", tgt.confession_id);
+            // notify sender
+            const { data: conf } = await supabase.from("confessions").select("sender_visitor_id, trx_id").eq("id", tgt.confession_id).maybeSingle();
+            if (conf?.sender_visitor_id) {
+              await supabase.from("notifications").insert({
+                visitor_id: conf.sender_visitor_id,
+                title: anyOk ? "✉️ Confess Terkirim" : "❌ Confess Gagal",
+                message: `Confess ${conf.trx_id} ${anyOk ? "berhasil dikirim ke tujuan." : "gagal dikirim."}`,
+                type: anyOk ? "success" : "error",
+              });
+            }
+          }
+        }
+        result = { ok: true };
+        break;
+      }
+      case "confess_reply": {
+        if (req.method !== "POST") return new Response(JSON.stringify({ error: "POST required" }), { status: 405, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        const body = await req.json();
+        const { from_phone, reply_text } = body;
+        if (!from_phone || !reply_text) return new Response(JSON.stringify({ error: "from_phone & reply_text required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        const normDigits = String(from_phone).replace(/\D/g, "");
+        // Find most recent sent confession to this phone (last 30 days)
+        const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+        const { data: tgt } = await supabase
+          .from("confession_targets")
+          .select("id, confession_id, confessions:confession_id(sender_visitor_id, trx_id, sender_name)")
+          .eq("phone", normDigits)
+          .eq("status", "sent")
+          .gte("sent_at", since)
+          .order("sent_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        if (!tgt) {
+          result = { matched: false };
+          break;
+        }
+        await supabase.from("confession_replies").insert({
+          confession_id: tgt.confession_id,
+          target_id: tgt.id,
+          from_phone: normDigits,
+          reply_text: String(reply_text).slice(0, 1000),
+        });
+        const conf: any = tgt.confessions;
+        if (conf?.sender_visitor_id) {
+          await supabase.from("notifications").insert({
+            visitor_id: conf.sender_visitor_id,
+            title: "💬 Balasan Confess",
+            message: `Confess ${conf.trx_id} mendapat balasan: "${String(reply_text).slice(0, 100)}"`,
+            type: "info",
+          });
+        }
+        result = { matched: true, sender_name: conf?.sender_name || null, trx_id: conf?.trx_id };
+        break;
+      }
+      case "confessions_by_visitor": {
+        const visitor_id = url.searchParams.get("visitor_id");
+        if (!visitor_id) return new Response(JSON.stringify({ error: "visitor_id required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        const { data } = await supabase
+          .from("confessions")
+          .select("id, trx_id, sender_name, message, num_targets, total_price, status, created_at, confession_targets(id, phone, status, sent_at), confession_replies(id, from_phone, reply_text, created_at)")
+          .eq("sender_visitor_id", visitor_id)
+          .order("created_at", { ascending: false })
+          .limit(50);
+        result = data || [];
+        break;
+      }
       default:
         return new Response(JSON.stringify({
           error: "Unknown endpoint",
