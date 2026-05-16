@@ -118,6 +118,44 @@ const api = async (ep, method, body) => {
   return r.json();
 };
 
+// === CONFESS OUTBOX POLLER ===
+let _confessPollTimer = null;
+const _confessSent = new Set();
+function startConfessOutbox(client) {
+  if (_confessPollTimer) return;
+  const tick = async () => {
+    try {
+      const res = await api("confess_outbox");
+      const items = res?.data || [];
+      for (const t of items) {
+        if (_confessSent.has(t.id)) continue;
+        _confessSent.add(t.id);
+        const conf = t.confessions || {};
+        const sender = (conf.sender_name && String(conf.sender_name).trim()) || "Anonim";
+        const text =
+          "💌 *Confess Anonim untuk Kamu*\n" +
+          "─────────────────────\n" +
+          conf.message + "\n" +
+          "─────────────────────\n" +
+          "👤 Dari: *" + sender + "*\n" +
+          "🆔 " + conf.trx_id + "\n\n" +
+          "💬 Mau balas? Ketik:\n*!balas isi balasanmu*\n(balasan akan diteruskan ke pengirim, identitas kamu tetap hanya berupa nomor)";
+        const jid = String(t.phone).replace(/\D/g, "") + "@s.whatsapp.net";
+        try {
+          await client.sendMessage(jid, { text });
+          await api("confess_mark_sent", "POST", { target_id: t.id, success: true });
+        } catch (err) {
+          await api("confess_mark_sent", "POST", { target_id: t.id, success: false, error: String(err?.message || err).slice(0, 200) });
+        }
+        await wait(800);
+      }
+    } catch {}
+  };
+  tick();
+  _confessPollTimer = setInterval(tick, 12000);
+}
+
+
 async function sendLongMessage(client, jid, text, quoted) {
   const message = String(text || "").trim();
   if (!message) return;
@@ -366,6 +404,7 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
     if (connection === "open") {
       console.log("\n✅ Bot WhatsApp sudah siap! (v10.0.0)");
       console.log("📋 Kirim !help di chat untuk lihat perintah\n");
+      startConfessOutbox(client);
       return;
     }
 
@@ -462,6 +501,16 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
       } catch (err) {
         return client.sendMessage(remoteJid, { text: "❌ Error: " + (err.message || err) }, { quoted: msg });
       }
+    }
+
+    // ── CONFESS REPLY (publik, tanpa perlu login) ──
+    if (lowerText.startsWith("!balas")) {
+      const isi = plainText.slice(6).trim();
+      if (!isi) return reply("⚠️ Format: *!balas isi balasanmu*\n\nContoh: *!balas halo siapa kamu?*");
+      const r = await api("confess_reply", "POST", { from_phone: senderPhone, reply_text: isi });
+      const d = r?.data || r;
+      if (!d?.matched) return reply("❌ Tidak ada confess aktif untuk nomor ini.\n(Balasan hanya bisa untuk confess yang baru kamu terima dalam 30 hari terakhir.)");
+      return reply("✅ Balasan kamu terkirim ke pengirim confess (" + (d.sender_name || "Anonim") + ")\n🆔 " + d.trx_id);
     }
 
     if (chatFlows[remoteJid] && !plainText.startsWith("!")) {
