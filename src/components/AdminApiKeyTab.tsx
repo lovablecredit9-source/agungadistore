@@ -166,8 +166,8 @@ export default function AdminApiKeyTab() {
   function generatePackageJson() {
     return JSON.stringify({
       name: "bot-wa-agungadi",
-        version: "13.7.0",
-        description: "Bot WhatsApp Agung Adi Store v13.7.0 - Admin Numbers dari Panel",
+        version: "13.7.1",
+        description: "Bot WhatsApp Agung Adi Store v13.7.1 - Confess outbox aktif",
       main: "index.js",
       scripts: {
         start: "node index.js",
@@ -187,7 +187,7 @@ export default function AdminApiKeyTab() {
   }
 
   function generateReadmeMd() {    
-    return `# 🤖 Bot WhatsApp - Agung Adi Store v13.7.0
+    return `# 🤖 Bot WhatsApp - Agung Adi Store v13.7.1
 
 ## 📋 Persyaratan
 - Node.js >= 18
