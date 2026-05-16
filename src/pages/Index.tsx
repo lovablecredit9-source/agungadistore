@@ -355,6 +355,7 @@ const TAB_PATHS: Record<string, Tab> = {
   "/plus": "plus",
   "/update": "update",
   "/store-ai": "storeai",
+  "/confess": "confess",
   "/anon-chat": "anonchat",
 };
 const PATH_FROM_TAB: Record<Tab, string> = Object.fromEntries(
