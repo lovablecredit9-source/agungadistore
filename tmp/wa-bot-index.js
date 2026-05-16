@@ -366,6 +366,7 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
     if (connection === "open") {
       console.log("\n✅ Bot WhatsApp sudah siap! (v10.0.0)");
       console.log("📋 Kirim !help di chat untuk lihat perintah\n");
+      startConfessOutbox(client);
       return;
     }
 
