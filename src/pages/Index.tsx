@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { VerifiedBadge } from "@/components/VerifiedBadge";
 import StoreAITab from "@/components/StoreAITab";
+import ConfessTab from "@/components/ConfessTab";
 import PremiumBadge from "@/components/PremiumBadge";
 import { useStorePremium } from "@/hooks/useStorePremium";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
