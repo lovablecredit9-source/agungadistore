@@ -1,5 +1,5 @@
 // =============================================
-// 🤖 BOT WHATSAPP - Agung Adi Store v13.6.1
+// 🤖 BOT WHATSAPP - Agung Adi Store v13.7.1
 // =============================================
 // Library: @whiskeysockets/baileys (QR / Pairing Code)
 // Cara pakai:
@@ -520,7 +520,7 @@ const SUPABASE_URL = "__BOT_SUPABASE_URL__";
 const SUPABASE_ANON_KEY = "__BOT_SUPABASE_ANON_KEY__";
 
 const DEFAULT_PAIRING_PHONE = "__BOT_PAIRING_PHONE__"; // Opsional: nomor default pairing, format: 628xxxxxxxxxx
-const BOT_VERSION = "13.6.1";
+const BOT_VERSION = "13.7.1";
 
 // === BOT RENTAL MANAGEMENT ===
 // Menyimpan sesi bot rental aktif: { subscriptionId, botName, expiresAt, checkInterval }
@@ -1015,6 +1015,76 @@ const api = async (ep, method, body) => {
   const r = await fetch(BASE + "?endpoint=" + ep, opt);
   return r.json();
 };
+
+// === CONFESS OUTBOX POLLER ===
+let _confessPollTimer = null;
+let _confessClient = null;
+const _confessProcessing = new Set();
+
+function buildConfessMessage(conf) {
+  const sender = (conf?.sender_name && String(conf.sender_name).trim()) || "Anonim";
+  const message = String(conf?.message || "").trim();
+  return [
+    "💌 *Halo, kamu dapat confess*",
+    "─────────────────────",
+    "👤 Dari: *" + sender + "*",
+    "🆔 " + (conf?.trx_id || "-"),
+    "",
+    "📝 Pesan:",
+    message,
+    "─────────────────────",
+    "💬 Mau balas? Ketik:",
+    "*!balas isi balasanmu*",
+    "(balasan akan diteruskan ke pengirim, identitas kamu tetap hanya berupa nomor)",
+  ].join("\n");
+}
+
+function targetPhoneToJid(phone) {
+  const digits = normalizePairingPhoneNumber(phone);
+  return digits ? digits + "@s.whatsapp.net" : "";
+}
+
+function startConfessOutbox(client) {
+  _confessClient = client;
+  if (_confessPollTimer) return;
+
+  const tick = async () => {
+    if (!_confessClient) return;
+    try {
+      const res = await api("confess_outbox");
+      const items = Array.isArray(res?.data) ? res.data : [];
+
+      for (const target of items) {
+        if (!target?.id || _confessProcessing.has(target.id)) continue;
+        _confessProcessing.add(target.id);
+
+        try {
+          const jid = targetPhoneToJid(target.phone);
+          const conf = Array.isArray(target.confessions) ? target.confessions[0] : target.confessions;
+          if (!jid) throw new Error("Nomor tujuan tidak valid: " + (target.phone || "-"));
+          if (!conf?.message) throw new Error("Data confess kosong");
+
+          await _confessClient.sendMessage(jid, { text: buildConfessMessage(conf) });
+          await api("confess_mark_sent", "POST", { target_id: target.id, success: true });
+          console.log("✅ Confess terkirim ke " + target.phone + " (" + (conf.trx_id || target.id) + ")");
+        } catch (err) {
+          const errorText = String(err?.message || err).slice(0, 200);
+          console.log("❌ Gagal kirim confess ke " + (target.phone || "-") + ": " + errorText);
+          await api("confess_mark_sent", "POST", { target_id: target.id, success: false, error: errorText });
+        } finally {
+          _confessProcessing.delete(target.id);
+          await wait(800);
+        }
+      }
+    } catch (err) {
+      console.log("⚠️ Gagal cek confess outbox:", err?.message || err);
+    }
+  };
+
+  tick();
+  _confessPollTimer = setInterval(tick, 12000);
+  console.log("✅ Confess outbox aktif — cek pesan pending setiap 12 detik");
+}
 
 async function sendLongMessage(client, jid, text, quoted) {
   const message = String(text || "").trim();
