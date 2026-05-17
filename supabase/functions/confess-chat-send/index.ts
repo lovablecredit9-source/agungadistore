@@ -68,16 +68,22 @@ Deno.serve(async (req) => {
         text,
         status: "pending",
         is_free: true,
+        media_url: mediaUrl,
+        media_type: mediaType,
+        media_name: mediaName,
+        media_mime: mediaMime,
+        media_size: mediaSize,
       })
       .select("id, created_at")
       .single();
     if (msgErr || !msg) return Response.json({ error: "Gagal menyimpan pesan" }, { status: 500, headers: corsHeaders });
 
+    const previewBase = text || (mediaType === "image" ? "📷 Foto" : mediaType === "video" ? "🎥 Video" : mediaType === "audio" ? "🎵 Audio" : "📎 File");
     await admin
       .from("confess_threads")
       .update({
         last_message_at: now.toISOString(),
-        last_message_preview: text.slice(0, 80),
+        last_message_preview: previewBase.slice(0, 80),
       })
       .eq("id", threadId);
 
