@@ -73,11 +73,12 @@ Deno.serve(async (req) => {
     if (!bal) return Response.json({ error: "Saldo tidak ditemukan" }, { status: 404, headers: corsHeaders });
 
     // === Cek thread mana yang masih FREE (tidak perlu bayar) ===
+    // Gratis 24 jam berlaku per AKUN SALDO + NOMOR TUJUAN, bukan global semua nomor.
     const now = new Date();
     const { data: existingThreads } = await admin
       .from("confess_threads")
       .select("id, target_phone, free_until")
-      .eq("visitor_id", visitorId)
+      .eq("user_balance_id", ubId)
       .in("target_phone", normalized);
 
     const freeMap = new Map<string, { id: string; free_until: string }>();
@@ -119,7 +120,15 @@ Deno.serve(async (req) => {
       return Response.json({ error: "Gagal menyimpan confess" }, { status: 500, headers: corsHeaders });
     }
 
-    await admin.from("confession_targets").insert(normalized.map((p) => ({ confession_id: conf.id, phone: p })));
+    const { data: targets, error: targetErr } = await admin
+      .from("confession_targets")
+      .insert(normalized.map((p) => ({ confession_id: conf.id, phone: p })))
+      .select("id, phone");
+    if (targetErr || !targets) {
+      if (chargePrice > 0) await admin.from("user_balances").update({ balance: bal.balance }).eq("id", bal.id);
+      return Response.json({ error: "Gagal menyimpan nomor tujuan" }, { status: 500, headers: corsHeaders });
+    }
+    const targetIdByPhone = new Map<string, string>((targets as any[]).map((t) => [t.phone, t.id]));
 
     if (chargePrice > 0) {
       await admin.from("balance_transactions").insert({
@@ -152,7 +161,7 @@ Deno.serve(async (req) => {
       const { data: existing } = await admin
         .from("confess_threads")
         .select("id")
-        .eq("visitor_id", visitorId)
+        .eq("user_balance_id", ubId)
         .eq("target_phone", phone)
         .maybeSingle();
 
@@ -185,6 +194,7 @@ Deno.serve(async (req) => {
         status: "pending",
         trx_id: trxId,
         is_free: isFree,
+        target_id: targetIdByPhone.get(phone) || null,
       });
     }
 
