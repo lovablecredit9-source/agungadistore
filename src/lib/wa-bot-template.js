@@ -1889,6 +1889,16 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
     if (command === "!versi") { return reply("🤖 Bot WA Agung Adi Store v" + BOT_VERSION + "\n📅 " + new Date().toLocaleString("id-ID")); }
     if (command === "!waktu") { return reply("🕐 Waktu server: " + new Date().toLocaleString("id-ID", { timeZone: "Asia/Jakarta" }) + " WIB"); }
 
+    if (commandBase === "!balas") {
+      const replyText = args.join(" ").trim();
+      if (!replyText) return reply("⚠️ Gunakan: *!balas isi balasanmu*");
+      const res = await api("confess_reply", "POST", { from_phone: senderPhone, reply_text: replyText });
+      const payload = res?.data || res || {};
+      if (res?.error) return reply("❌ " + res.error);
+      if (!payload.matched) return reply("⚠️ Tidak ada chat Confess aktif 24 jam untuk nomor kamu.");
+      return reply("✅ Balasan masuk ke riwayat chat Confess dan diteruskan ke pengirim.");
+    }
+
     // ═══ WEBAPP LINK ═══
     if (command === "!webapp" || command === "!web" || command === "!link") {
       return reply("🌐 *Buka Web App:*\n\n🔗 " + WEB_URL + "\n\n💡 Klik link di atas untuk langsung ke website.");
