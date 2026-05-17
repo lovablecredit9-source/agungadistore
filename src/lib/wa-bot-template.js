@@ -1106,7 +1106,7 @@ function startConfessOutbox(client) {
           const mediaType = msg.media_type ? String(msg.media_type) : null;
           const mediaName = msg.media_name ? String(msg.media_name) : null;
           const header = "💌 *Pesan lanjutan dari " + sender + "*";
-          const footer = "💬 Balas: *!balas isi balasan*";
+          const footer = "💬 Balas langsung saja (text/foto/video/file) — tanpa perlu perintah.";
 
           if (mediaUrl) {
             try {
