@@ -1256,7 +1256,22 @@ Deno.serve(async (req) => {
             // notify sender
             const { data: conf } = await supabase.from("confessions").select("sender_visitor_id, trx_id").eq("id", tgt.confession_id).maybeSingle();
             if (conf?.sender_visitor_id) {
-              await supabase.from("notifications").insert({
+            const { data: sentTargets } = await supabase
+              .from("confession_targets")
+              .select("id")
+              .eq("confession_id", tgt.confession_id)
+              .eq("status", "sent");
+            const sentIds = (sentTargets || []).map((row: any) => row.id);
+            if (sentIds.length > 0) {
+              await supabase
+                .from("confess_thread_messages")
+                .update({ status: "sent", sent_at: new Date().toISOString(), error: null })
+                .in("target_id", sentIds)
+                .eq("direction", "out");
+            }
+            await supabase.from("confess_thread_messages").update({ status: "failed", error: errMsg || "Gagal dikirim" }).eq("target_id", target_id).eq("direction", "out");
+
+            await supabase.from("notifications").insert({
                 visitor_id: conf.sender_visitor_id,
                 title: anyOk ? "✉️ Confess Terkirim" : "❌ Confess Gagal",
                 message: `Confess ${conf.trx_id} ${anyOk ? "berhasil dikirim ke tujuan." : "gagal dikirim."}`,
@@ -1274,56 +1289,55 @@ Deno.serve(async (req) => {
         const { from_phone, reply_text } = body;
         if (!from_phone || !reply_text) return new Response(JSON.stringify({ error: "from_phone & reply_text required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
         const normDigits = String(from_phone).replace(/\D/g, "");
-        // Find most recent sent confession to this phone (last 30 days)
-        const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+        // Balasan masuk hanya diarahkan ke thread nomor ini yang masih aktif 24 jam.
+        const { data: thread } = await supabase
+          .from("confess_threads")
+          .select("id, visitor_id, target_phone, unread_count, free_until, sender_name")
+          .eq("target_phone", normDigits)
+          .gt("free_until", new Date().toISOString())
+          .order("last_message_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        if (!thread) {
+          result = { matched: false };
+          break;
+        }
         const { data: tgt } = await supabase
           .from("confession_targets")
           .select("id, confession_id, confessions:confession_id(sender_visitor_id, trx_id, sender_name)")
           .eq("phone", normDigits)
           .eq("status", "sent")
-          .gte("sent_at", since)
+          .gte("sent_at", thread.free_until ? new Date(new Date(thread.free_until).getTime() - 24 * 60 * 60 * 1000).toISOString() : new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString())
           .order("sent_at", { ascending: false })
           .limit(1)
           .maybeSingle();
-        if (!tgt) {
-          result = { matched: false };
-          break;
-        }
         await supabase.from("confession_replies").insert({
-          confession_id: tgt.confession_id,
-          target_id: tgt.id,
+          confession_id: tgt?.confession_id || null,
+          target_id: tgt?.id || null,
           from_phone: normDigits,
           reply_text: String(reply_text).slice(0, 1000),
         });
-        const conf: any = tgt.confessions;
+        const conf: any = tgt?.confessions || { sender_visitor_id: thread.visitor_id, sender_name: thread.sender_name };
 
         // Tulis juga ke confess_threads (chat thread baru)
-        if (conf?.sender_visitor_id) {
-          const { data: thread } = await supabase
-            .from("confess_threads")
-            .select("id, unread_count, free_until")
-            .eq("visitor_id", conf.sender_visitor_id)
-            .eq("target_phone", normDigits)
-            .maybeSingle();
-          if (thread) {
-            await supabase.from("confess_thread_messages").insert({
-              thread_id: thread.id,
-              direction: "in",
-              text: String(reply_text).slice(0, 1000),
-              status: "delivered",
-              is_free: true,
-            });
-            await supabase.from("confess_threads").update({
-              last_message_at: new Date().toISOString(),
-              last_message_preview: String(reply_text).slice(0, 80),
-              unread_count: (thread.unread_count || 0) + 1,
-            }).eq("id", thread.id);
-          }
+        if (thread?.visitor_id) {
+          await supabase.from("confess_thread_messages").insert({
+            thread_id: thread.id,
+            direction: "in",
+            text: String(reply_text).slice(0, 1000),
+            status: "delivered",
+            is_free: true,
+          });
+          await supabase.from("confess_threads").update({
+            last_message_at: new Date().toISOString(),
+            last_message_preview: String(reply_text).slice(0, 80),
+            unread_count: (thread.unread_count || 0) + 1,
+          }).eq("id", thread.id);
 
           await supabase.from("notifications").insert({
-            visitor_id: conf.sender_visitor_id,
+            visitor_id: thread.visitor_id,
             title: "💬 Balasan Confess",
-            message: `Confess ${conf.trx_id} mendapat balasan: "${String(reply_text).slice(0, 100)}"`,
+            message: `Nomor +${normDigits} membalas: "${String(reply_text).slice(0, 100)}"`,
             type: "info",
           });
         }
