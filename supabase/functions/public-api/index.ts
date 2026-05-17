@@ -42,8 +42,6 @@ Deno.serve(async (req) => {
     await supabase.from("api_keys").update({ last_used_at: new Date().toISOString() }).eq("id", keyData.id);
   }
 
-  const url = new URL(req.url);
-  const endpoint = url.searchParams.get("endpoint") || "";
 
   try {
     let result: any = null;
