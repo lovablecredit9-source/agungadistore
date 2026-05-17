@@ -383,13 +383,11 @@ function ChatView({ visitorId, thread, onBack, onTopUp }: {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
   }, [messages]);
 
-  async function send() {
-    const text = input.trim();
-    if (!text) return;
+  async function sendPayload(payload: { text?: string; mediaUrl?: string; mediaType?: string; mediaName?: string; mediaMime?: string; mediaSize?: number }) {
     setSending(true);
     try {
       const { data, error } = await supabase.functions.invoke("confess-chat-send", {
-        body: { visitorId, threadId: thread.id, text },
+        body: { visitorId, threadId: thread.id, ...payload },
       });
       if (error) throw error;
       if ((data as any)?.error) throw new Error((data as any).error);
@@ -398,6 +396,44 @@ function ChatView({ visitorId, thread, onBack, onTopUp }: {
     } catch (e: any) {
       toast({ title: "Gagal kirim", description: e?.message || "Error", variant: "destructive" });
     } finally { setSending(false); }
+  }
+
+  async function send() {
+    const text = input.trim();
+    if (!text) return;
+    await sendPayload({ text });
+  }
+
+  async function handleFile(file: File) {
+    if (!file) return;
+    if (file.size > 16 * 1024 * 1024) {
+      toast({ title: "File terlalu besar", description: "Maks 16 MB", variant: "destructive" });
+      return;
+    }
+    setUploading(true);
+    try {
+      const ext = (file.name.split(".").pop() || "bin").toLowerCase().slice(0, 8);
+      const path = `${thread.id}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+      const { error: upErr } = await supabase.storage.from("confess-media").upload(path, file, {
+        contentType: file.type || "application/octet-stream",
+        upsert: false,
+      });
+      if (upErr) throw upErr;
+      const { data: pub } = supabase.storage.from("confess-media").getPublicUrl(path);
+      await sendPayload({
+        text: input.trim(),
+        mediaUrl: pub.publicUrl,
+        mediaType: detectMediaType(file),
+        mediaName: file.name,
+        mediaMime: file.type || undefined,
+        mediaSize: file.size,
+      });
+    } catch (e: any) {
+      toast({ title: "Gagal upload", description: e?.message || "Error", variant: "destructive" });
+    } finally {
+      setUploading(false);
+      if (fileRef.current) fileRef.current.value = "";
+    }
   }
 
   return (
