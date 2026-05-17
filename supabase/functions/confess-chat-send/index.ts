@@ -12,12 +12,17 @@ Deno.serve(async (req) => {
     const body = await req.json();
     const visitorId = String(body.visitorId || "").trim();
     const threadId = String(body.threadId || "").trim();
-    const text = String(body.text || "").trim().slice(0, 800);
-    const mediaUrl = body.mediaUrl ? String(body.mediaUrl).trim().slice(0, 1000) : null;
-    const mediaType = body.mediaType ? String(body.mediaType).trim().slice(0, 20) : null; // image|video|audio|file
-    const mediaName = body.mediaName ? String(body.mediaName).trim().slice(0, 200) : null;
-    const mediaMime = body.mediaMime ? String(body.mediaMime).trim().slice(0, 100) : null;
-    const mediaSize = Number(body.mediaSize) || null;
+    const text = String(body.text ?? body.message ?? body.caption ?? "").trim().slice(0, 800);
+    const mediaUrlRaw = body.mediaUrl ?? body.media_url ?? body.fileUrl ?? body.file_url ?? body.imageUrl ?? body.image_url;
+    const mediaTypeRaw = body.mediaType ?? body.media_type;
+    const mediaNameRaw = body.mediaName ?? body.media_name;
+    const mediaMimeRaw = body.mediaMime ?? body.media_mime;
+    const mediaSizeRaw = body.mediaSize ?? body.media_size;
+    const mediaUrl = mediaUrlRaw ? String(mediaUrlRaw).trim().slice(0, 1000) : null;
+    const mediaType = mediaTypeRaw ? String(mediaTypeRaw).trim().slice(0, 20) : null; // image|video|audio|file
+    const mediaName = mediaNameRaw ? String(mediaNameRaw).trim().slice(0, 200) : null;
+    const mediaMime = mediaMimeRaw ? String(mediaMimeRaw).trim().slice(0, 100) : null;
+    const mediaSize = Number(mediaSizeRaw) || null;
 
     if (!visitorId || !threadId) return Response.json({ error: "Data tidak lengkap" }, { status: 400, headers: corsHeaders });
     if (text.length < 1 && !mediaUrl) return Response.json({ error: "Pesan atau media wajib diisi" }, { status: 400, headers: corsHeaders });
