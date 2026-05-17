@@ -1351,12 +1351,24 @@ Deno.serve(async (req) => {
       case "confess_threads": {
         const visitor_id = url.searchParams.get("visitor_id");
         if (!visitor_id) return new Response(JSON.stringify({ error: "visitor_id required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        const { data: hist } = await supabase
+          .from("balance_login_history")
+          .select("user_balance_id")
+          .eq("visitor_id", visitor_id)
+          .order("logged_in_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        const balanceId = hist?.user_balance_id;
+        let q = supabase
+          .from("confess_threads")
+          .select("id, target_phone, sender_name, last_paid_at, free_until, last_message_at, last_message_preview, unread_count, created_at")
+          .order("last_message_at", { ascending: false })
+          .limit(100);
+        q = balanceId ? q.eq("user_balance_id", balanceId) : q.eq("visitor_id", visitor_id);
         const { data } = await supabase
           .from("confess_threads")
           .select("id, target_phone, sender_name, last_paid_at, free_until, last_message_at, last_message_preview, unread_count, created_at")
-          .eq("visitor_id", visitor_id)
-          .order("last_message_at", { ascending: false })
-          .limit(100);
+          .in("id", ((await q).data || []).map((row: any) => row.id));
         result = data || [];
         break;
       }
