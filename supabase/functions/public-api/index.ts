@@ -1365,10 +1365,7 @@ Deno.serve(async (req) => {
           .order("last_message_at", { ascending: false })
           .limit(100);
         q = balanceId ? q.eq("user_balance_id", balanceId) : q.eq("visitor_id", visitor_id);
-        const { data } = await supabase
-          .from("confess_threads")
-          .select("id, target_phone, sender_name, last_paid_at, free_until, last_message_at, last_message_preview, unread_count, created_at")
-          .in("id", ((await q).data || []).map((row: any) => row.id));
+        const { data } = await q;
         result = data || [];
         break;
       }
@@ -1376,8 +1373,9 @@ Deno.serve(async (req) => {
         const thread_id = url.searchParams.get("thread_id");
         const visitor_id = url.searchParams.get("visitor_id");
         if (!thread_id || !visitor_id) return new Response(JSON.stringify({ error: "thread_id & visitor_id required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-        const { data: th } = await supabase.from("confess_threads").select("visitor_id").eq("id", thread_id).maybeSingle();
-        if (!th || th.visitor_id !== visitor_id) return new Response(JSON.stringify({ error: "forbidden" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        const { data: th } = await supabase.from("confess_threads").select("visitor_id, user_balance_id").eq("id", thread_id).maybeSingle();
+        const { data: hist } = await supabase.from("balance_login_history").select("user_balance_id").eq("visitor_id", visitor_id).order("logged_in_at", { ascending: false }).limit(1).maybeSingle();
+        if (!th || (th.visitor_id !== visitor_id && th.user_balance_id !== hist?.user_balance_id)) return new Response(JSON.stringify({ error: "forbidden" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
         const { data } = await supabase
           .from("confess_thread_messages")
           .select("id, direction, text, status, is_free, sent_at, created_at, error")
