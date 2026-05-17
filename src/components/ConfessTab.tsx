@@ -519,11 +519,40 @@ function Bubble({ msg }: { msg: ThreadMessage }) {
   const isOut = msg.direction === "out";
   return (
     <div className={`flex ${isOut ? "justify-end" : "justify-start"}`}>
-      <div className={`max-w-[80%] rounded-2xl px-3 py-2 shadow-sm ${
+      <div className={`max-w-[80%] rounded-2xl px-2 py-2 shadow-sm space-y-1.5 ${
         isOut ? "bg-gradient-to-br from-pink-500 to-rose-500 text-white rounded-br-sm" : "bg-card border rounded-bl-sm"
       }`}>
-        <p className="text-sm whitespace-pre-wrap break-words">{msg.text}</p>
-        <div className={`flex items-center gap-1 justify-end mt-1 text-[9px] ${isOut ? "text-white/80" : "text-muted-foreground"}`}>
+        {msg.media_url && msg.media_type === "image" && (
+          <a href={msg.media_url} target="_blank" rel="noopener noreferrer" className="block">
+            <img src={msg.media_url} alt={msg.media_name || "foto"} className="rounded-xl max-h-64 w-full object-cover" loading="lazy" />
+          </a>
+        )}
+        {msg.media_url && msg.media_type === "video" && (
+          <video src={msg.media_url} controls className="rounded-xl max-h-64 w-full" />
+        )}
+        {msg.media_url && msg.media_type === "audio" && (
+          <audio src={msg.media_url} controls className="w-full" />
+        )}
+        {msg.media_url && (msg.media_type === "file" || !msg.media_type) && (
+          <a
+            href={msg.media_url}
+            target="_blank"
+            rel="noopener noreferrer"
+            download={msg.media_name || undefined}
+            className={`flex items-center gap-2 rounded-xl px-2 py-2 text-xs ${isOut ? "bg-white/15 hover:bg-white/25" : "bg-muted hover:bg-muted/80"}`}
+          >
+            <FileText className="w-4 h-4 shrink-0" />
+            <div className="flex-1 min-w-0">
+              <div className="truncate font-medium">{msg.media_name || "file"}</div>
+              <div className={`text-[9px] ${isOut ? "text-white/70" : "text-muted-foreground"}`}>{humanFileSize(msg.media_size)}</div>
+            </div>
+            <Download className="w-3.5 h-3.5 shrink-0" />
+          </a>
+        )}
+        {msg.text && (
+          <p className="text-sm whitespace-pre-wrap break-words px-1">{msg.text}</p>
+        )}
+        <div className={`flex items-center gap-1 justify-end text-[9px] px-1 ${isOut ? "text-white/80" : "text-muted-foreground"}`}>
           <span>{new Date(msg.created_at).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })}</span>
           {isOut && (
             msg.status === "pending" ? <Clock className="w-3 h-3" /> :
