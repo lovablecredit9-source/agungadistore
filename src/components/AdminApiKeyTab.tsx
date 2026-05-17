@@ -21,7 +21,7 @@ interface ApiKey {
   last_used_at: string | null;
 }
 
-const BOT_FILE_VERSION = "13.8.2";
+const BOT_FILE_VERSION = "13.8.3";
 
 function normalizePairingPhoneInput(value: string) {
   const digits = value.replace(/\D/g, "");

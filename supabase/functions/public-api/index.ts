@@ -1291,6 +1291,43 @@ Deno.serve(async (req) => {
         result = { active: !!thread };
         break;
       }
+      case "confess_stop": {
+        if (req.method !== "POST") return new Response(JSON.stringify({ error: "POST required" }), { status: 405, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        const body = await req.json();
+        const fromPhone = String(body.from_phone || "").replace(/\D/g, "");
+        if (!fromPhone) { result = { stopped: 0 }; break; }
+        const nowIso = new Date().toISOString();
+        const { data: threads } = await supabase
+          .from("confess_threads")
+          .select("id, visitor_id")
+          .eq("target_phone", fromPhone)
+          .gt("free_until", nowIso);
+        const list = threads || [];
+        if (list.length === 0) { result = { stopped: 0 }; break; }
+        await supabase
+          .from("confess_threads")
+          .update({ free_until: nowIso, last_message_preview: "🛑 Penerima menghentikan chat Confess", last_message_at: nowIso })
+          .in("id", list.map((t: any) => t.id));
+        for (const t of list) {
+          await supabase.from("confess_thread_messages").insert({
+            thread_id: t.id,
+            direction: "in",
+            text: "🛑 Penerima menghentikan chat Confess (.stopconfess). Window gratis 24 jam ditutup.",
+            status: "delivered",
+            is_free: true,
+          });
+          if (t.visitor_id) {
+            await supabase.from("notifications").insert({
+              visitor_id: t.visitor_id,
+              title: "🛑 Confess Dihentikan",
+              message: `Nomor +${fromPhone} menghentikan chat Confess. Window 24 jam ditutup.`,
+              type: "warning",
+            });
+          }
+        }
+        result = { stopped: list.length };
+        break;
+      }
       case "confess_media_upload": {
         if (req.method !== "POST") return new Response(JSON.stringify({ error: "POST required" }), { status: 405, headers: { ...corsHeaders, "Content-Type": "application/json" } });
         const body = await req.json();
