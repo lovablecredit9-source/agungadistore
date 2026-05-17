@@ -520,7 +520,7 @@ const SUPABASE_URL = "__BOT_SUPABASE_URL__";
 const SUPABASE_ANON_KEY = "__BOT_SUPABASE_ANON_KEY__";
 
 const DEFAULT_PAIRING_PHONE = "__BOT_PAIRING_PHONE__"; // Opsional: nomor default pairing, format: 628xxxxxxxxxx
-const BOT_VERSION = "13.7.1";
+const BOT_VERSION = "13.8.0";
 
 // === BOT RENTAL MANAGEMENT ===
 // Menyimpan sesi bot rental aktif: { subscriptionId, botName, expiresAt, checkInterval }
