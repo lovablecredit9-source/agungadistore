@@ -217,7 +217,7 @@ function ComposeView({ visitorId, onBack, onSent, existingThreads }: {
     if (clean.length < 1) return toast({ title: "Isi minimal 1 nomor WA", variant: "destructive" });
     if (clean.length > 3) return toast({ title: "Maksimal 3 nomor", variant: "destructive" });
     if (message.trim().length < 3) return toast({ title: "Pesan terlalu pendek", variant: "destructive" });
-    if (!/^\d{6}$/.test(pin)) { setShowPin(true); return toast({ title: "Masukkan PIN 6 digit", variant: "destructive" }); }
+    if (total > 0 && !/^\d{6}$/.test(pin)) { setShowPin(true); return toast({ title: "Masukkan PIN 6 digit", variant: "destructive" }); }
     setLoading(true);
     try {
       const { data, error } = await supabase.functions.invoke("send-confession", {
