@@ -40,6 +40,26 @@ interface ThreadMessage {
   sent_at: string | null;
   created_at: string;
   error?: string | null;
+  media_url?: string | null;
+  media_type?: string | null;
+  media_name?: string | null;
+  media_mime?: string | null;
+  media_size?: number | null;
+}
+
+function detectMediaType(file: File): "image" | "video" | "audio" | "file" {
+  const t = (file.type || "").toLowerCase();
+  if (t.startsWith("image/")) return "image";
+  if (t.startsWith("video/")) return "video";
+  if (t.startsWith("audio/")) return "audio";
+  return "file";
+}
+
+function humanFileSize(bytes?: number | null) {
+  if (!bytes) return "";
+  if (bytes < 1024) return bytes + " B";
+  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + " KB";
+  return (bytes / (1024 * 1024)).toFixed(1) + " MB";
 }
 
 function useCountdown(targetIso: string | null) {
