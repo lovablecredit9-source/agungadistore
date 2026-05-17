@@ -1033,9 +1033,9 @@ function buildConfessMessage(conf) {
     "📝 Pesan:",
     message,
     "─────────────────────",
-    "💬 Mau balas? Ketik:",
-    "*!balas isi balasanmu*",
-    "(balasan akan diteruskan ke pengirim, identitas kamu tetap hanya berupa nomor)",
+    "💬 Mau balas? Langsung ketik balasan kamu",
+    "(boleh juga kirim foto/video/file)",
+    "Balasan & media diteruskan ke pengirim, identitas kamu tetap hanya berupa nomor.",
   ].join("\n");
 }
 
