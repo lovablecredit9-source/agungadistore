@@ -476,20 +476,40 @@ function ChatView({ visitorId, thread, onBack, onTopUp }: {
         </div>
       ) : (
         <div className="rounded-2xl border bg-card p-2 flex items-end gap-2">
+          <input
+            ref={fileRef}
+            type="file"
+            className="hidden"
+            accept="image/*,video/*,audio/*,application/pdf,.doc,.docx,.xls,.xlsx,.zip,.rar,.txt"
+            onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFile(f); }}
+          />
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            disabled={uploading || sending}
+            onClick={() => fileRef.current?.click()}
+            className="rounded-full shrink-0 text-pink-500 hover:text-pink-600"
+            title="Kirim foto / file"
+          >
+            {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Paperclip className="w-4 h-4" />}
+          </Button>
           <Textarea
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } }}
-            placeholder="Ketik pesan… (gratis dalam 24 jam)"
+            placeholder="Ketik pesan / lampirkan foto…"
             rows={1}
             maxLength={800}
             className="resize-none min-h-[40px] max-h-[120px] border-0 focus-visible:ring-0"
           />
-          <Button onClick={send} disabled={sending || !input.trim()} size="icon" className="rounded-full bg-gradient-to-br from-pink-500 to-rose-500 shrink-0">
+          <Button onClick={send} disabled={sending || uploading || !input.trim()} size="icon" className="rounded-full bg-gradient-to-br from-pink-500 to-rose-500 shrink-0">
             {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
           </Button>
         </div>
-      )}
+        )}
+        <p className="text-[10px] text-muted-foreground text-center mt-1">Lampirkan foto, video, audio, atau dokumen (maks 16 MB).</p>
+      {/* end input block */}
     </>
   );
 }
