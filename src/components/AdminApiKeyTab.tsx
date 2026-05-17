@@ -613,7 +613,7 @@ node index.js
           </div>
 
           <p className="text-[10px] text-muted-foreground text-center">
-            📲 v13.8.1 - <b>Pterodactyl</b>: upload & <code className="bg-muted px-1 rounded">npm start</code>. <b>Termux</b>: extract di <code className="bg-muted px-1 rounded">~/bot-wa</code> (BUKAN /sdcard), lalu <code className="bg-muted px-1 rounded">bash install.sh</code>
+              📲 v{BOT_FILE_VERSION} - <b>Pterodactyl</b>: upload & <code className="bg-muted px-1 rounded">npm start</code>. <b>Termux</b>: extract di <code className="bg-muted px-1 rounded">~/bot-wa</code> (BUKAN /sdcard), lalu <code className="bg-muted px-1 rounded">bash install.sh</code>
           </p>
         </CardContent>
       </Card>
