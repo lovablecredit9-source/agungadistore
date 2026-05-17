@@ -1245,6 +1245,11 @@ Deno.serve(async (req) => {
           .from("confession_targets")
           .update({ status: success ? "sent" : "failed", sent_at: new Date().toISOString(), error: errMsg || null })
           .eq("id", target_id);
+        await supabase
+          .from("confess_thread_messages")
+          .update({ status: success ? "sent" : "failed", sent_at: success ? new Date().toISOString() : null, error: success ? null : (errMsg || "Gagal dikirim") })
+          .eq("target_id", target_id)
+          .eq("direction", "out");
         // update parent status
         const { data: tgt } = await supabase.from("confession_targets").select("confession_id").eq("id", target_id).maybeSingle();
         if (tgt?.confession_id) {
@@ -1274,56 +1279,57 @@ Deno.serve(async (req) => {
         const { from_phone, reply_text } = body;
         if (!from_phone || !reply_text) return new Response(JSON.stringify({ error: "from_phone & reply_text required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
         const normDigits = String(from_phone).replace(/\D/g, "");
-        // Find most recent sent confession to this phone (last 30 days)
-        const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+        // Balasan masuk hanya diarahkan ke thread nomor ini yang masih aktif 24 jam.
+        const { data: thread } = await supabase
+          .from("confess_threads")
+          .select("id, visitor_id, target_phone, unread_count, free_until, sender_name")
+          .eq("target_phone", normDigits)
+          .gt("free_until", new Date().toISOString())
+          .order("last_message_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        if (!thread) {
+          result = { matched: false };
+          break;
+        }
         const { data: tgt } = await supabase
           .from("confession_targets")
           .select("id, confession_id, confessions:confession_id(sender_visitor_id, trx_id, sender_name)")
           .eq("phone", normDigits)
           .eq("status", "sent")
-          .gte("sent_at", since)
+          .gte("sent_at", thread.free_until ? new Date(new Date(thread.free_until).getTime() - 24 * 60 * 60 * 1000).toISOString() : new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString())
           .order("sent_at", { ascending: false })
           .limit(1)
           .maybeSingle();
-        if (!tgt) {
-          result = { matched: false };
-          break;
+        if (tgt?.confession_id) {
+          await supabase.from("confession_replies").insert({
+            confession_id: tgt.confession_id,
+            target_id: tgt.id || null,
+            from_phone: normDigits,
+            reply_text: String(reply_text).slice(0, 1000),
+          });
         }
-        await supabase.from("confession_replies").insert({
-          confession_id: tgt.confession_id,
-          target_id: tgt.id,
-          from_phone: normDigits,
-          reply_text: String(reply_text).slice(0, 1000),
-        });
-        const conf: any = tgt.confessions;
+        const conf: any = tgt?.confessions || { sender_visitor_id: thread.visitor_id, sender_name: thread.sender_name };
 
         // Tulis juga ke confess_threads (chat thread baru)
-        if (conf?.sender_visitor_id) {
-          const { data: thread } = await supabase
-            .from("confess_threads")
-            .select("id, unread_count, free_until")
-            .eq("visitor_id", conf.sender_visitor_id)
-            .eq("target_phone", normDigits)
-            .maybeSingle();
-          if (thread) {
-            await supabase.from("confess_thread_messages").insert({
-              thread_id: thread.id,
-              direction: "in",
-              text: String(reply_text).slice(0, 1000),
-              status: "delivered",
-              is_free: true,
-            });
-            await supabase.from("confess_threads").update({
-              last_message_at: new Date().toISOString(),
-              last_message_preview: String(reply_text).slice(0, 80),
-              unread_count: (thread.unread_count || 0) + 1,
-            }).eq("id", thread.id);
-          }
+        if (thread?.visitor_id) {
+          await supabase.from("confess_thread_messages").insert({
+            thread_id: thread.id,
+            direction: "in",
+            text: String(reply_text).slice(0, 1000),
+            status: "delivered",
+            is_free: true,
+          });
+          await supabase.from("confess_threads").update({
+            last_message_at: new Date().toISOString(),
+            last_message_preview: String(reply_text).slice(0, 80),
+            unread_count: (thread.unread_count || 0) + 1,
+          }).eq("id", thread.id);
 
           await supabase.from("notifications").insert({
-            visitor_id: conf.sender_visitor_id,
+            visitor_id: thread.visitor_id,
             title: "💬 Balasan Confess",
-            message: `Confess ${conf.trx_id} mendapat balasan: "${String(reply_text).slice(0, 100)}"`,
+            message: `Nomor +${normDigits} membalas: "${String(reply_text).slice(0, 100)}"`,
             type: "info",
           });
         }
@@ -1345,12 +1351,21 @@ Deno.serve(async (req) => {
       case "confess_threads": {
         const visitor_id = url.searchParams.get("visitor_id");
         if (!visitor_id) return new Response(JSON.stringify({ error: "visitor_id required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-        const { data } = await supabase
+        const { data: hist } = await supabase
+          .from("balance_login_history")
+          .select("user_balance_id")
+          .eq("visitor_id", visitor_id)
+          .order("logged_in_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        const balanceId = hist?.user_balance_id;
+        let q = supabase
           .from("confess_threads")
           .select("id, target_phone, sender_name, last_paid_at, free_until, last_message_at, last_message_preview, unread_count, created_at")
-          .eq("visitor_id", visitor_id)
           .order("last_message_at", { ascending: false })
           .limit(100);
+        q = balanceId ? q.eq("user_balance_id", balanceId) : q.eq("visitor_id", visitor_id);
+        const { data } = await q;
         result = data || [];
         break;
       }
@@ -1358,8 +1373,9 @@ Deno.serve(async (req) => {
         const thread_id = url.searchParams.get("thread_id");
         const visitor_id = url.searchParams.get("visitor_id");
         if (!thread_id || !visitor_id) return new Response(JSON.stringify({ error: "thread_id & visitor_id required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-        const { data: th } = await supabase.from("confess_threads").select("visitor_id").eq("id", thread_id).maybeSingle();
-        if (!th || th.visitor_id !== visitor_id) return new Response(JSON.stringify({ error: "forbidden" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        const { data: th } = await supabase.from("confess_threads").select("visitor_id, user_balance_id").eq("id", thread_id).maybeSingle();
+        const { data: hist } = await supabase.from("balance_login_history").select("user_balance_id").eq("visitor_id", visitor_id).order("logged_in_at", { ascending: false }).limit(1).maybeSingle();
+        if (!th || (th.visitor_id !== visitor_id && th.user_balance_id !== hist?.user_balance_id)) return new Response(JSON.stringify({ error: "forbidden" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
         const { data } = await supabase
           .from("confess_thread_messages")
           .select("id, direction, text, status, is_free, sent_at, created_at, error")

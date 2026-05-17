@@ -1,5 +1,5 @@
 // =============================================
-// 🤖 BOT WHATSAPP - Agung Adi Store v13.8.0
+// 🤖 BOT WHATSAPP - Agung Adi Store v13.8.1
 // =============================================
 // Library: @whiskeysockets/baileys (QR / Pairing Code)
 // Cara pakai:
@@ -520,7 +520,7 @@ const SUPABASE_URL = "__BOT_SUPABASE_URL__";
 const SUPABASE_ANON_KEY = "__BOT_SUPABASE_ANON_KEY__";
 
 const DEFAULT_PAIRING_PHONE = "__BOT_PAIRING_PHONE__"; // Opsional: nomor default pairing, format: 628xxxxxxxxxx
-const BOT_VERSION = "13.8.0";
+const BOT_VERSION = "13.8.1";
 
 // === BOT RENTAL MANAGEMENT ===
 // Menyimpan sesi bot rental aktif: { subscriptionId, botName, expiresAt, checkInterval }
@@ -1888,6 +1888,16 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
     if (command === "!ping") { return reply("🏓 Pong! Bot aktif v" + BOT_VERSION); }
     if (command === "!versi") { return reply("🤖 Bot WA Agung Adi Store v" + BOT_VERSION + "\n📅 " + new Date().toLocaleString("id-ID")); }
     if (command === "!waktu") { return reply("🕐 Waktu server: " + new Date().toLocaleString("id-ID", { timeZone: "Asia/Jakarta" }) + " WIB"); }
+
+    if (commandBase === "!balas") {
+      const replyText = args.join(" ").trim();
+      if (!replyText) return reply("⚠️ Gunakan: *!balas isi balasanmu*");
+      const res = await api("confess_reply", "POST", { from_phone: senderPhone, reply_text: replyText });
+      const payload = res?.data || res || {};
+      if (res?.error) return reply("❌ " + res.error);
+      if (!payload.matched) return reply("⚠️ Tidak ada chat Confess aktif 24 jam untuk nomor kamu.");
+      return reply("✅ Balasan masuk ke riwayat chat Confess dan diteruskan ke pengirim.");
+    }
 
     // ═══ WEBAPP LINK ═══
     if (command === "!webapp" || command === "!web" || command === "!link") {

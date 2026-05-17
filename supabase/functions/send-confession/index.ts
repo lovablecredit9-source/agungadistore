@@ -38,7 +38,6 @@ Deno.serve(async (req) => {
     if (!visitorId) return Response.json({ error: "Visitor tidak dikenal" }, { status: 400, headers: corsHeaders });
     if (message.length < 3) return Response.json({ error: "Pesan terlalu pendek" }, { status: 400, headers: corsHeaders });
     if (phones.length < 1 || phones.length > 3) return Response.json({ error: "Pilih 1-3 nomor tujuan" }, { status: 400, headers: corsHeaders });
-    if (!/^\d{6}$/.test(pin)) return Response.json({ error: "PIN harus 6 digit", needPin: true }, { status: 400, headers: corsHeaders });
 
     const normalized: string[] = [];
     for (const p of phones) {
@@ -52,11 +51,6 @@ Deno.serve(async (req) => {
     const admin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!, {
       auth: { autoRefreshToken: false, persistSession: false },
     });
-
-    // PIN
-    const { data: pinRow } = await admin.from("user_pins").select("pin_hash").eq("visitor_id", visitorId).maybeSingle();
-    if (!pinRow) return Response.json({ error: "PIN belum dibuat", needPin: true }, { status: 403, headers: corsHeaders });
-    if ((await sha256(pin)) !== pinRow.pin_hash) return Response.json({ error: "PIN salah", needPin: true }, { status: 403, headers: corsHeaders });
 
     // Balance
     const { data: hist } = await admin
@@ -73,11 +67,12 @@ Deno.serve(async (req) => {
     if (!bal) return Response.json({ error: "Saldo tidak ditemukan" }, { status: 404, headers: corsHeaders });
 
     // === Cek thread mana yang masih FREE (tidak perlu bayar) ===
+    // Gratis 24 jam berlaku per AKUN SALDO + NOMOR TUJUAN, bukan global semua nomor.
     const now = new Date();
     const { data: existingThreads } = await admin
       .from("confess_threads")
       .select("id, target_phone, free_until")
-      .eq("visitor_id", visitorId)
+      .eq("user_balance_id", ubId)
       .in("target_phone", normalized);
 
     const freeMap = new Map<string, { id: string; free_until: string }>();
@@ -93,6 +88,13 @@ Deno.serve(async (req) => {
       return Response.json({
         error: `Saldo kurang. Butuh Rp${chargePrice.toLocaleString("id-ID")} (${paidPhones.length} nomor baru, ${freePhones.length} gratis)`,
       }, { status: 400, headers: corsHeaders });
+    }
+
+    if (chargePrice > 0) {
+      if (!/^\d{6}$/.test(pin)) return Response.json({ error: "PIN harus 6 digit", needPin: true }, { status: 400, headers: corsHeaders });
+      const { data: pinRow } = await admin.from("user_pins").select("pin_hash").eq("visitor_id", visitorId).maybeSingle();
+      if (!pinRow) return Response.json({ error: "PIN belum dibuat", needPin: true }, { status: 403, headers: corsHeaders });
+      if ((await sha256(pin)) !== pinRow.pin_hash) return Response.json({ error: "PIN salah", needPin: true }, { status: 403, headers: corsHeaders });
     }
 
     if (chargePrice > 0) {
@@ -119,7 +121,15 @@ Deno.serve(async (req) => {
       return Response.json({ error: "Gagal menyimpan confess" }, { status: 500, headers: corsHeaders });
     }
 
-    await admin.from("confession_targets").insert(normalized.map((p) => ({ confession_id: conf.id, phone: p })));
+    const { data: targets, error: targetErr } = await admin
+      .from("confession_targets")
+      .insert(normalized.map((p) => ({ confession_id: conf.id, phone: p })))
+      .select("id, phone");
+    if (targetErr || !targets) {
+      if (chargePrice > 0) await admin.from("user_balances").update({ balance: bal.balance }).eq("id", bal.id);
+      return Response.json({ error: "Gagal menyimpan nomor tujuan" }, { status: 500, headers: corsHeaders });
+    }
+    const targetIdByPhone = new Map<string, string>((targets as any[]).map((t) => [t.phone, t.id]));
 
     if (chargePrice > 0) {
       await admin.from("balance_transactions").insert({
@@ -152,7 +162,7 @@ Deno.serve(async (req) => {
       const { data: existing } = await admin
         .from("confess_threads")
         .select("id")
-        .eq("visitor_id", visitorId)
+        .eq("user_balance_id", ubId)
         .eq("target_phone", phone)
         .maybeSingle();
 
@@ -185,6 +195,7 @@ Deno.serve(async (req) => {
         status: "pending",
         trx_id: trxId,
         is_free: isFree,
+        target_id: targetIdByPhone.get(phone) || null,
       });
     }
 

@@ -23,12 +23,20 @@ Deno.serve(async (req) => {
 
     const { data: thread } = await admin
       .from("confess_threads")
-      .select("id, visitor_id, target_phone, free_until, sender_name")
+      .select("id, visitor_id, user_balance_id, target_phone, free_until, sender_name")
       .eq("id", threadId)
       .maybeSingle();
 
     if (!thread) return Response.json({ error: "Thread tidak ditemukan" }, { status: 404, headers: corsHeaders });
-    if (thread.visitor_id !== visitorId) return Response.json({ error: "Akses ditolak" }, { status: 403, headers: corsHeaders });
+    const { data: hist } = await admin
+      .from("balance_login_history")
+      .select("user_balance_id")
+      .eq("visitor_id", visitorId)
+      .order("logged_in_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    const sameBalanceAccount = hist?.user_balance_id && hist.user_balance_id === thread.user_balance_id;
+    if (thread.visitor_id !== visitorId && !sameBalanceAccount) return Response.json({ error: "Akses ditolak" }, { status: 403, headers: corsHeaders });
 
     const now = new Date();
     if (new Date(thread.free_until) <= now) {

@@ -946,6 +946,7 @@ export type Database = {
           read_at: string | null
           sent_at: string | null
           status: string
+          target_id: string | null
           text: string
           thread_id: string
           trx_id: string | null
@@ -959,6 +960,7 @@ export type Database = {
           read_at?: string | null
           sent_at?: string | null
           status?: string
+          target_id?: string | null
           text: string
           thread_id: string
           trx_id?: string | null
@@ -972,11 +974,19 @@ export type Database = {
           read_at?: string | null
           sent_at?: string | null
           status?: string
+          target_id?: string | null
           text?: string
           thread_id?: string
           trx_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "confess_thread_messages_target_id_fkey"
+            columns: ["target_id"]
+            isOneToOne: false
+            referencedRelation: "confession_targets"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "confess_thread_messages_thread_id_fkey"
             columns: ["thread_id"]
