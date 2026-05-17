@@ -1256,22 +1256,13 @@ Deno.serve(async (req) => {
             // notify sender
             const { data: conf } = await supabase.from("confessions").select("sender_visitor_id, trx_id").eq("id", tgt.confession_id).maybeSingle();
             if (conf?.sender_visitor_id) {
-            const { data: sentTargets } = await supabase
-              .from("confession_targets")
-              .select("id")
-              .eq("confession_id", tgt.confession_id)
-              .eq("status", "sent");
-            const sentIds = (sentTargets || []).map((row: any) => row.id);
-            if (sentIds.length > 0) {
               await supabase
                 .from("confess_thread_messages")
-                .update({ status: "sent", sent_at: new Date().toISOString(), error: null })
-                .in("target_id", sentIds)
+                .update({ status: success ? "sent" : "failed", sent_at: success ? new Date().toISOString() : null, error: success ? null : (errMsg || "Gagal dikirim") })
+                .eq("target_id", target_id)
                 .eq("direction", "out");
-            }
-            await supabase.from("confess_thread_messages").update({ status: "failed", error: errMsg || "Gagal dikirim" }).eq("target_id", target_id).eq("direction", "out");
 
-            await supabase.from("notifications").insert({
+              await supabase.from("notifications").insert({
                 visitor_id: conf.sender_visitor_id,
                 title: anyOk ? "✉️ Confess Terkirim" : "❌ Confess Gagal",
                 message: `Confess ${conf.trx_id} ${anyOk ? "berhasil dikirim ke tujuan." : "gagal dikirim."}`,
@@ -1311,12 +1302,14 @@ Deno.serve(async (req) => {
           .order("sent_at", { ascending: false })
           .limit(1)
           .maybeSingle();
-        await supabase.from("confession_replies").insert({
-          confession_id: tgt?.confession_id || null,
-          target_id: tgt?.id || null,
-          from_phone: normDigits,
-          reply_text: String(reply_text).slice(0, 1000),
-        });
+        if (tgt?.confession_id) {
+          await supabase.from("confession_replies").insert({
+            confession_id: tgt.confession_id,
+            target_id: tgt.id || null,
+            from_phone: normDigits,
+            reply_text: String(reply_text).slice(0, 1000),
+          });
+        }
         const conf: any = tgt?.confessions || { sender_visitor_id: thread.visitor_id, sender_name: thread.sender_name };
 
         // Tulis juga ke confess_threads (chat thread baru)
