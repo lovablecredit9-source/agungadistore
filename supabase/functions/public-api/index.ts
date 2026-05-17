@@ -1245,6 +1245,11 @@ Deno.serve(async (req) => {
           .from("confession_targets")
           .update({ status: success ? "sent" : "failed", sent_at: new Date().toISOString(), error: errMsg || null })
           .eq("id", target_id);
+        await supabase
+          .from("confess_thread_messages")
+          .update({ status: success ? "sent" : "failed", sent_at: success ? new Date().toISOString() : null, error: success ? null : (errMsg || "Gagal dikirim") })
+          .eq("target_id", target_id)
+          .eq("direction", "out");
         // update parent status
         const { data: tgt } = await supabase.from("confession_targets").select("confession_id").eq("id", target_id).maybeSingle();
         if (tgt?.confession_id) {
@@ -1256,12 +1261,6 @@ Deno.serve(async (req) => {
             // notify sender
             const { data: conf } = await supabase.from("confessions").select("sender_visitor_id, trx_id").eq("id", tgt.confession_id).maybeSingle();
             if (conf?.sender_visitor_id) {
-              await supabase
-                .from("confess_thread_messages")
-                .update({ status: success ? "sent" : "failed", sent_at: success ? new Date().toISOString() : null, error: success ? null : (errMsg || "Gagal dikirim") })
-                .eq("target_id", target_id)
-                .eq("direction", "out");
-
               await supabase.from("notifications").insert({
                 visitor_id: conf.sender_visitor_id,
                 title: anyOk ? "✉️ Confess Terkirim" : "❌ Confess Gagal",
