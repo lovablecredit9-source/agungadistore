@@ -1401,7 +1401,7 @@ Deno.serve(async (req) => {
       case "confess_chat_outbox": {
         const { data } = await supabase
           .from("confess_thread_messages")
-          .select("id, text, thread_id, confess_threads:thread_id(target_phone, sender_name, visitor_id)")
+          .select("id, text, thread_id, media_url, media_type, media_name, media_mime, media_size, confess_threads:thread_id(target_phone, sender_name, visitor_id)")
           .eq("status", "pending")
           .eq("direction", "out")
           .eq("is_free", true)
