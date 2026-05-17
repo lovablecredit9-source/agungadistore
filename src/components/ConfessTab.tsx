@@ -17,7 +17,7 @@ function priceFor(n: number) {
 }
 const rupiah = (n: number) => "Rp " + (n || 0).toLocaleString("id-ID");
 
-const PUBLIC_API_KEY = "ak_cyOMDUl6h3mX8gsVUw5RoUhQDfo1bYNywUNtj0le";
+const PUBLIC_API_KEY = "ak_L3HVVgbqgdFEM2EipHB4AKjgrOVSyJqCcJZOA4OG";
 
 interface Thread {
   id: string;
