@@ -340,6 +340,8 @@ function ChatView({ visitorId, thread, onBack, onTopUp }: {
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
   const [freeUntil, setFreeUntil] = useState(thread.free_until);
+  const [uploading, setUploading] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const cd = useCountdown(freeUntil);
 
