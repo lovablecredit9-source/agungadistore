@@ -1280,8 +1280,9 @@ Deno.serve(async (req) => {
       case "confess_reply": {
         if (req.method !== "POST") return new Response(JSON.stringify({ error: "POST required" }), { status: 405, headers: { ...corsHeaders, "Content-Type": "application/json" } });
         const body = await req.json();
-        const { from_phone, reply_text } = body;
-        if (!from_phone || !reply_text) return new Response(JSON.stringify({ error: "from_phone & reply_text required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        const { from_phone, reply_text, media_url, media_type, media_name, media_mime, media_size } = body;
+        const hasMedia = !!media_url;
+        if (!from_phone || (!reply_text && !hasMedia)) return new Response(JSON.stringify({ error: "from_phone & reply_text (or media) required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
         const normDigits = String(from_phone).replace(/\D/g, "");
         // Balasan masuk hanya diarahkan ke thread nomor ini yang masih aktif 24 jam.
         const { data: thread } = await supabase
