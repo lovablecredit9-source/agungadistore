@@ -507,9 +507,10 @@ function ChatView({ visitorId, thread, onBack, onTopUp }: {
             {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
           </Button>
         </div>
-        )}
+      )}
+      {!cd.expired && (
         <p className="text-[10px] text-muted-foreground text-center mt-1">Lampirkan foto, video, audio, atau dokumen (maks 16 MB).</p>
-      {/* end input block */}
+      )}
     </>
   );
 }
