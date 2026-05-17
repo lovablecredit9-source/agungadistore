@@ -21,6 +21,8 @@ interface ApiKey {
   last_used_at: string | null;
 }
 
+const BOT_FILE_VERSION = "13.8.2";
+
 function normalizePairingPhoneInput(value: string) {
   const digits = value.replace(/\D/g, "");
   if (!digits) return "";
@@ -214,8 +216,8 @@ echo ""
   function generatePackageJson() {
     return JSON.stringify({
       name: "bot-wa-agungadi",
-        version: "13.8.1",
-        description: "Bot WhatsApp Agung Adi Store v13.8.1 - Confess chat per nomor + balasan 24 jam",
+        version: BOT_FILE_VERSION,
+        description: `Bot WhatsApp Agung Adi Store v${BOT_FILE_VERSION} - Confess chat per nomor + balasan 24 jam`,
       main: "index.js",
       scripts: {
         start: "node index.js",
@@ -235,7 +237,7 @@ echo ""
   }
 
   function generateReadmeMd() {    
-    return `# 🤖 Bot WhatsApp - Agung Adi Store v13.8.1
+    return `# 🤖 Bot WhatsApp - Agung Adi Store v${BOT_FILE_VERSION}
 
 ## 📋 Persyaratan
 - Node.js >= 18
@@ -297,7 +299,7 @@ _© 2026 Agung Adi Store_
   }
 
   function generateReadmeTermux() {
-    return `# 🤖 Bot WhatsApp - Termux Edition v13.8.1
+    return `# 🤖 Bot WhatsApp - Termux Edition v${BOT_FILE_VERSION}
 
 ## ⚠️ PENTING SEBELUM MULAI
 Termux **TIDAK BISA** install bot di folder \`/sdcard\` atau \`/storage/emulated/0\`
