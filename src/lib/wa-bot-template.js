@@ -1900,15 +1900,30 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
     }
 
     // ═══ AUTO-FORWARD KE CONFESS THREAD (tanpa !balas) ═══
-    // Jika pengirim adalah nomor penerima confess yang masih dalam window 24 jam,
-    // pesan apapun (text/foto/video/audio/file) langsung diteruskan ke web pengirim confess.
+    // Selama window 24 jam aktif, SEMUA pesan (termasuk command seperti .menu)
+    // dari nomor penerima akan diteruskan ke pengirim confess — KECUALI
+    // perintah .stopconfess / !stopconfess yang menghentikan window lebih awal.
     try {
       const isMediaMsg = !!(msg.message?.imageMessage || msg.message?.videoMessage || msg.message?.audioMessage || msg.message?.documentMessage || msg.message?.stickerMessage);
       const hasContent = isMediaMsg || (plainText && plainText.length > 0);
-      const skipForward = isCommand || pinPending[remoteJid] || chatFlows[remoteJid] || isCancelInput(plainText) || lowerText === "bukti" || lowerText === "!bukti";
+      const stopCmd = (lowerText || "").trim();
+      const isStopConfess = stopCmd === ".stopconfess" || stopCmd === "!stopconfess" || stopCmd === "/stopconfess" || stopCmd === "stopconfess";
+      // Tetap hormati flow yang sedang berjalan (PIN/deposit/cancel/bukti) agar tidak rusak.
+      const skipForward = pinPending[remoteJid] || chatFlows[remoteJid] || isCancelInput(plainText) || lowerText === "bukti" || lowerText === "!bukti";
       if (hasContent && !skipForward && senderPhone) {
         const actRes = await api("confess_thread_active?phone=" + encodeURIComponent(senderPhone));
         if (actRes?.active) {
+          if (isStopConfess) {
+            try {
+              const stopRes = await api("confess_stop", "POST", { from_phone: senderPhone });
+              const n = stopRes?.stopped || 0;
+              return reply(n > 0
+                ? "🛑 *Confess dihentikan.*\n\nWindow gratis 24 jam ditutup. Pesan kamu setelah ini tidak akan diteruskan ke pengirim confess.\n\n💡 Ketik *!menu* untuk perintah bot lainnya."
+                : "ℹ️ Tidak ada chat Confess aktif untuk dihentikan.");
+            } catch (e) {
+              return reply("❌ Gagal menghentikan confess: " + (e?.message || "coba lagi"));
+            }
+          }
           let mediaPayload = {};
           if (isMediaMsg) {
             try {
@@ -1930,7 +1945,8 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
           const captionText = isMediaMsg ? (msg.message.imageMessage?.caption || msg.message.videoMessage?.caption || msg.message.documentMessage?.caption || "") : plainText;
           const res = await api("confess_reply", "POST", { from_phone: senderPhone, reply_text: captionText || "", ...mediaPayload });
           if (res?.matched || res?.data?.matched) {
-            return reply("✅ Pesan kamu sudah diteruskan ke pengirim confess." + (mediaPayload.media_url ? " (termasuk media)" : ""));
+            // Command lain (.menu, !saldo, dll) IKUT diteruskan ke pengirim confess dan TIDAK dieksekusi bot.
+            return reply("✅ Pesan kamu sudah diteruskan ke pengirim confess." + (mediaPayload.media_url ? " (termasuk media)" : "") + (isCommand ? "\n\n💡 Perintah bot tidak dijalankan selama chat Confess aktif. Ketik *.stopconfess* untuk menghentikan." : ""));
           }
         }
       }
