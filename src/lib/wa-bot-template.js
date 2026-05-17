@@ -1084,6 +1084,49 @@ function startConfessOutbox(client) {
   tick();
   _confessPollTimer = setInterval(tick, 12000);
   console.log("✅ Confess outbox aktif — cek pesan pending setiap 12 detik");
+
+  // === Poller untuk pesan LANJUTAN (chat thread gratis 24 jam) ===
+  const chatProcessing = new Set();
+  const chatTick = async () => {
+    if (!_confessClient) return;
+    try {
+      const res = await api("confess_chat_outbox");
+      const items = Array.isArray(res?.data) ? res.data : [];
+      for (const msg of items) {
+        if (!msg?.id || chatProcessing.has(msg.id)) continue;
+        chatProcessing.add(msg.id);
+        try {
+          const th = Array.isArray(msg.confess_threads) ? msg.confess_threads[0] : msg.confess_threads;
+          const phone = th?.target_phone;
+          const jid = targetPhoneToJid(phone);
+          if (!jid) throw new Error("Nomor target tidak valid");
+          const sender = (th?.sender_name && String(th.sender_name).trim()) || "Anonim";
+          const body = [
+            "💌 *Pesan lanjutan dari " + sender + "*",
+            "─────────────────────",
+            String(msg.text || "").trim(),
+            "─────────────────────",
+            "💬 Balas: *!balas isi balasan*",
+          ].join("\n");
+          await _confessClient.sendMessage(jid, { text: body });
+          await api("confess_chat_mark_sent", "POST", { message_id: msg.id, success: true });
+          console.log("✅ Confess-chat terkirim ke " + phone);
+        } catch (err) {
+          const errorText = String(err?.message || err).slice(0, 200);
+          console.log("❌ Gagal kirim confess-chat: " + errorText);
+          await api("confess_chat_mark_sent", "POST", { message_id: msg.id, success: false, error: errorText });
+        } finally {
+          chatProcessing.delete(msg.id);
+          await wait(800);
+        }
+      }
+    } catch (err) {
+      console.log("⚠️ Gagal cek confess_chat_outbox:", err?.message || err);
+    }
+  };
+  chatTick();
+  setInterval(chatTick, 12000);
+  console.log("✅ Confess chat outbox aktif — kirim pesan lanjutan tiap 12 detik");
 }
 
 async function sendLongMessage(client, jid, text, quoted) {
