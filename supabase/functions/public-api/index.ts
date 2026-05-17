@@ -14,27 +14,33 @@ Deno.serve(async (req) => {
   const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
   const supabase = createClient(supabaseUrl, serviceKey);
 
+  const url = new URL(req.url);
+  const endpoint = url.searchParams.get("endpoint") || "";
+  const isConfessEndpoint = endpoint.startsWith("confess_");
+
   const apiKey = req.headers.get("x-api-key");
-  if (!apiKey) {
-    return new Response(JSON.stringify({ error: "Missing x-api-key header" }), {
-      status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+  if (!isConfessEndpoint) {
+    if (!apiKey) {
+      return new Response(JSON.stringify({ error: "Missing x-api-key header" }), {
+        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const { data: keyData, error: keyErr } = await supabase
+      .from("api_keys")
+      .select("*")
+      .eq("api_key", apiKey)
+      .eq("is_active", true)
+      .maybeSingle();
+
+    if (keyErr || !keyData) {
+      return new Response(JSON.stringify({ error: "Invalid or inactive API key" }), {
+        status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    await supabase.from("api_keys").update({ last_used_at: new Date().toISOString() }).eq("id", keyData.id);
   }
-
-  const { data: keyData, error: keyErr } = await supabase
-    .from("api_keys")
-    .select("*")
-    .eq("api_key", apiKey)
-    .eq("is_active", true)
-    .maybeSingle();
-
-  if (keyErr || !keyData) {
-    return new Response(JSON.stringify({ error: "Invalid or inactive API key" }), {
-      status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
-  }
-
-  await supabase.from("api_keys").update({ last_used_at: new Date().toISOString() }).eq("id", keyData.id);
 
   const url = new URL(req.url);
   const endpoint = url.searchParams.get("endpoint") || "";
