@@ -1101,14 +1101,34 @@ function startConfessOutbox(client) {
           const jid = targetPhoneToJid(phone);
           if (!jid) throw new Error("Nomor target tidak valid");
           const sender = (th?.sender_name && String(th.sender_name).trim()) || "Anonim";
-          const body = [
-            "💌 *Pesan lanjutan dari " + sender + "*",
-            "─────────────────────",
-            String(msg.text || "").trim(),
-            "─────────────────────",
-            "💬 Balas: *!balas isi balasan*",
-          ].join("\n");
-          await _confessClient.sendMessage(jid, { text: body });
+          const caption = String(msg.text || "").trim();
+          const mediaUrl = msg.media_url ? String(msg.media_url) : null;
+          const mediaType = msg.media_type ? String(msg.media_type) : null;
+          const mediaName = msg.media_name ? String(msg.media_name) : null;
+          const header = "💌 *Pesan lanjutan dari " + sender + "*";
+          const footer = "💬 Balas: *!balas isi balasan*";
+
+          if (mediaUrl) {
+            try {
+              const buf = Buffer.from(await (await fetch(mediaUrl)).arrayBuffer());
+              const bodyCap = [header, caption ? "─────────────────────\n" + caption : "", footer].filter(Boolean).join("\n");
+              if (mediaType === "image") {
+                await _confessClient.sendMessage(jid, { image: buf, caption: bodyCap });
+              } else if (mediaType === "video") {
+                await _confessClient.sendMessage(jid, { video: buf, caption: bodyCap });
+              } else if (mediaType === "audio") {
+                await _confessClient.sendMessage(jid, { audio: buf, mimetype: msg.media_mime || "audio/mpeg" });
+                await _confessClient.sendMessage(jid, { text: bodyCap });
+              } else {
+                await _confessClient.sendMessage(jid, { document: buf, fileName: mediaName || "file", mimetype: msg.media_mime || "application/octet-stream", caption: bodyCap });
+              }
+            } catch (mErr) {
+              throw new Error("Gagal kirim media: " + (mErr?.message || mErr));
+            }
+          } else {
+            const body = [header, "─────────────────────", caption, "─────────────────────", footer].join("\n");
+            await _confessClient.sendMessage(jid, { text: body });
+          }
           await api("confess_chat_mark_sent", "POST", { message_id: msg.id, success: true });
           console.log("✅ Confess-chat terkirim ke " + phone);
         } catch (err) {

@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import {
   Send, Loader2, Plus, X, MessageSquareWarning, Lock, ArrowLeft, Phone, User as UserIcon,
-  RefreshCw, CheckCheck, Check, Clock, MessageCircle, Sparkles, Timer
+  RefreshCw, CheckCheck, Check, Clock, MessageCircle, Sparkles, Timer, Paperclip, ImageIcon, FileText, Download, Play
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -40,6 +40,26 @@ interface ThreadMessage {
   sent_at: string | null;
   created_at: string;
   error?: string | null;
+  media_url?: string | null;
+  media_type?: string | null;
+  media_name?: string | null;
+  media_mime?: string | null;
+  media_size?: number | null;
+}
+
+function detectMediaType(file: File): "image" | "video" | "audio" | "file" {
+  const t = (file.type || "").toLowerCase();
+  if (t.startsWith("image/")) return "image";
+  if (t.startsWith("video/")) return "video";
+  if (t.startsWith("audio/")) return "audio";
+  return "file";
+}
+
+function humanFileSize(bytes?: number | null) {
+  if (!bytes) return "";
+  if (bytes < 1024) return bytes + " B";
+  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + " KB";
+  return (bytes / (1024 * 1024)).toFixed(1) + " MB";
 }
 
 function useCountdown(targetIso: string | null) {
@@ -320,6 +340,8 @@ function ChatView({ visitorId, thread, onBack, onTopUp }: {
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
   const [freeUntil, setFreeUntil] = useState(thread.free_until);
+  const [uploading, setUploading] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const cd = useCountdown(freeUntil);
 
@@ -361,13 +383,11 @@ function ChatView({ visitorId, thread, onBack, onTopUp }: {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
   }, [messages]);
 
-  async function send() {
-    const text = input.trim();
-    if (!text) return;
+  async function sendPayload(payload: { text?: string; mediaUrl?: string; mediaType?: string; mediaName?: string; mediaMime?: string; mediaSize?: number }) {
     setSending(true);
     try {
       const { data, error } = await supabase.functions.invoke("confess-chat-send", {
-        body: { visitorId, threadId: thread.id, text },
+        body: { visitorId, threadId: thread.id, ...payload },
       });
       if (error) throw error;
       if ((data as any)?.error) throw new Error((data as any).error);
@@ -376,6 +396,44 @@ function ChatView({ visitorId, thread, onBack, onTopUp }: {
     } catch (e: any) {
       toast({ title: "Gagal kirim", description: e?.message || "Error", variant: "destructive" });
     } finally { setSending(false); }
+  }
+
+  async function send() {
+    const text = input.trim();
+    if (!text) return;
+    await sendPayload({ text });
+  }
+
+  async function handleFile(file: File) {
+    if (!file) return;
+    if (file.size > 16 * 1024 * 1024) {
+      toast({ title: "File terlalu besar", description: "Maks 16 MB", variant: "destructive" });
+      return;
+    }
+    setUploading(true);
+    try {
+      const ext = (file.name.split(".").pop() || "bin").toLowerCase().slice(0, 8);
+      const path = `${thread.id}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+      const { error: upErr } = await supabase.storage.from("confess-media").upload(path, file, {
+        contentType: file.type || "application/octet-stream",
+        upsert: false,
+      });
+      if (upErr) throw upErr;
+      const { data: pub } = supabase.storage.from("confess-media").getPublicUrl(path);
+      await sendPayload({
+        text: input.trim(),
+        mediaUrl: pub.publicUrl,
+        mediaType: detectMediaType(file),
+        mediaName: file.name,
+        mediaMime: file.type || undefined,
+        mediaSize: file.size,
+      });
+    } catch (e: any) {
+      toast({ title: "Gagal upload", description: e?.message || "Error", variant: "destructive" });
+    } finally {
+      setUploading(false);
+      if (fileRef.current) fileRef.current.value = "";
+    }
   }
 
   return (
@@ -418,19 +476,40 @@ function ChatView({ visitorId, thread, onBack, onTopUp }: {
         </div>
       ) : (
         <div className="rounded-2xl border bg-card p-2 flex items-end gap-2">
+          <input
+            ref={fileRef}
+            type="file"
+            className="hidden"
+            accept="image/*,video/*,audio/*,application/pdf,.doc,.docx,.xls,.xlsx,.zip,.rar,.txt"
+            onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFile(f); }}
+          />
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            disabled={uploading || sending}
+            onClick={() => fileRef.current?.click()}
+            className="rounded-full shrink-0 text-pink-500 hover:text-pink-600"
+            title="Kirim foto / file"
+          >
+            {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Paperclip className="w-4 h-4" />}
+          </Button>
           <Textarea
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } }}
-            placeholder="Ketik pesan… (gratis dalam 24 jam)"
+            placeholder="Ketik pesan / lampirkan foto…"
             rows={1}
             maxLength={800}
             className="resize-none min-h-[40px] max-h-[120px] border-0 focus-visible:ring-0"
           />
-          <Button onClick={send} disabled={sending || !input.trim()} size="icon" className="rounded-full bg-gradient-to-br from-pink-500 to-rose-500 shrink-0">
+          <Button onClick={send} disabled={sending || uploading || !input.trim()} size="icon" className="rounded-full bg-gradient-to-br from-pink-500 to-rose-500 shrink-0">
             {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
           </Button>
         </div>
+      )}
+      {!cd.expired && (
+        <p className="text-[10px] text-muted-foreground text-center mt-1">Lampirkan foto, video, audio, atau dokumen (maks 16 MB).</p>
       )}
     </>
   );
@@ -440,11 +519,40 @@ function Bubble({ msg }: { msg: ThreadMessage }) {
   const isOut = msg.direction === "out";
   return (
     <div className={`flex ${isOut ? "justify-end" : "justify-start"}`}>
-      <div className={`max-w-[80%] rounded-2xl px-3 py-2 shadow-sm ${
+      <div className={`max-w-[80%] rounded-2xl px-2 py-2 shadow-sm space-y-1.5 ${
         isOut ? "bg-gradient-to-br from-pink-500 to-rose-500 text-white rounded-br-sm" : "bg-card border rounded-bl-sm"
       }`}>
-        <p className="text-sm whitespace-pre-wrap break-words">{msg.text}</p>
-        <div className={`flex items-center gap-1 justify-end mt-1 text-[9px] ${isOut ? "text-white/80" : "text-muted-foreground"}`}>
+        {msg.media_url && msg.media_type === "image" && (
+          <a href={msg.media_url} target="_blank" rel="noopener noreferrer" className="block">
+            <img src={msg.media_url} alt={msg.media_name || "foto"} className="rounded-xl max-h-64 w-full object-cover" loading="lazy" />
+          </a>
+        )}
+        {msg.media_url && msg.media_type === "video" && (
+          <video src={msg.media_url} controls className="rounded-xl max-h-64 w-full" />
+        )}
+        {msg.media_url && msg.media_type === "audio" && (
+          <audio src={msg.media_url} controls className="w-full" />
+        )}
+        {msg.media_url && (msg.media_type === "file" || !msg.media_type) && (
+          <a
+            href={msg.media_url}
+            target="_blank"
+            rel="noopener noreferrer"
+            download={msg.media_name || undefined}
+            className={`flex items-center gap-2 rounded-xl px-2 py-2 text-xs ${isOut ? "bg-white/15 hover:bg-white/25" : "bg-muted hover:bg-muted/80"}`}
+          >
+            <FileText className="w-4 h-4 shrink-0" />
+            <div className="flex-1 min-w-0">
+              <div className="truncate font-medium">{msg.media_name || "file"}</div>
+              <div className={`text-[9px] ${isOut ? "text-white/70" : "text-muted-foreground"}`}>{humanFileSize(msg.media_size)}</div>
+            </div>
+            <Download className="w-3.5 h-3.5 shrink-0" />
+          </a>
+        )}
+        {msg.text && (
+          <p className="text-sm whitespace-pre-wrap break-words px-1">{msg.text}</p>
+        )}
+        <div className={`flex items-center gap-1 justify-end text-[9px] px-1 ${isOut ? "text-white/80" : "text-muted-foreground"}`}>
           <span>{new Date(msg.created_at).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })}</span>
           {isOut && (
             msg.status === "pending" ? <Clock className="w-3 h-3" /> :

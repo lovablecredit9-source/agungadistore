@@ -943,6 +943,11 @@ export type Database = {
           error: string | null
           id: string
           is_free: boolean
+          media_mime: string | null
+          media_name: string | null
+          media_size: number | null
+          media_type: string | null
+          media_url: string | null
           read_at: string | null
           sent_at: string | null
           status: string
@@ -957,11 +962,16 @@ export type Database = {
           error?: string | null
           id?: string
           is_free?: boolean
+          media_mime?: string | null
+          media_name?: string | null
+          media_size?: number | null
+          media_type?: string | null
+          media_url?: string | null
           read_at?: string | null
           sent_at?: string | null
           status?: string
           target_id?: string | null
-          text: string
+          text?: string
           thread_id: string
           trx_id?: string | null
         }
@@ -971,6 +981,11 @@ export type Database = {
           error?: string | null
           id?: string
           is_free?: boolean
+          media_mime?: string | null
+          media_name?: string | null
+          media_size?: number | null
+          media_type?: string | null
+          media_url?: string | null
           read_at?: string | null
           sent_at?: string | null
           status?: string
