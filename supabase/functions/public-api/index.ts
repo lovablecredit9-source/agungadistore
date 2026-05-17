@@ -1277,6 +1277,39 @@ Deno.serve(async (req) => {
         result = { ok: true };
         break;
       }
+      case "confess_thread_active": {
+        const phone = url.searchParams.get("phone") || "";
+        const normDigits = String(phone).replace(/\D/g, "");
+        if (!normDigits) { result = { active: false }; break; }
+        const { data: thread } = await supabase
+          .from("confess_threads")
+          .select("id")
+          .eq("target_phone", normDigits)
+          .gt("free_until", new Date().toISOString())
+          .limit(1)
+          .maybeSingle();
+        result = { active: !!thread };
+        break;
+      }
+      case "confess_media_upload": {
+        if (req.method !== "POST") return new Response(JSON.stringify({ error: "POST required" }), { status: 405, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        const body = await req.json();
+        const { base64, mime, ext, from_phone } = body;
+        if (!base64 || !mime) return new Response(JSON.stringify({ error: "base64 & mime required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        try {
+          const bin = Uint8Array.from(atob(String(base64).replace(/^data:.*;base64,/, "")), (c) => c.charCodeAt(0));
+          const safeExt = String(ext || mime.split("/")[1] || "bin").replace(/[^a-z0-9]/gi, "").slice(0, 8) || "bin";
+          const safePhone = String(from_phone || "anon").replace(/\D/g, "").slice(0, 20) || "anon";
+          const path = `incoming/${safePhone}/${Date.now()}_${Math.random().toString(36).slice(2, 8)}.${safeExt}`;
+          const { error: upErr } = await supabase.storage.from("confess-media").upload(path, bin, { contentType: mime, upsert: false });
+          if (upErr) return new Response(JSON.stringify({ error: upErr.message }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+          const { data: pub } = supabase.storage.from("confess-media").getPublicUrl(path);
+          result = { url: pub.publicUrl };
+        } catch (e) {
+          return new Response(JSON.stringify({ error: e instanceof Error ? e.message : "upload error" }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        }
+        break;
+      }
       case "confess_reply": {
         if (req.method !== "POST") return new Response(JSON.stringify({ error: "POST required" }), { status: 405, headers: { ...corsHeaders, "Content-Type": "application/json" } });
         const body = await req.json();
