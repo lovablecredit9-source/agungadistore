@@ -1033,9 +1033,9 @@ function buildConfessMessage(conf) {
     "📝 Pesan:",
     message,
     "─────────────────────",
-    "💬 Mau balas? Ketik:",
-    "*!balas isi balasanmu*",
-    "(balasan akan diteruskan ke pengirim, identitas kamu tetap hanya berupa nomor)",
+    "💬 Mau balas? Langsung ketik balasan kamu",
+    "(boleh juga kirim foto/video/file)",
+    "Balasan & media diteruskan ke pengirim, identitas kamu tetap hanya berupa nomor.",
   ].join("\n");
 }
 
@@ -1106,7 +1106,7 @@ function startConfessOutbox(client) {
           const mediaType = msg.media_type ? String(msg.media_type) : null;
           const mediaName = msg.media_name ? String(msg.media_name) : null;
           const header = "💌 *Pesan lanjutan dari " + sender + "*";
-          const footer = "💬 Balas: *!balas isi balasan*";
+          const footer = "💬 Balas langsung saja (text/foto/video/file) — tanpa perlu perintah.";
 
           if (mediaUrl) {
             try {
@@ -1897,6 +1897,45 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
           return reply("❌ Gagal mengirim bukti pembayaran: " + (err?.message || "Coba kirim ulang foto bukti bayar."));
         }
       }
+    }
+
+    // ═══ AUTO-FORWARD KE CONFESS THREAD (tanpa !balas) ═══
+    // Jika pengirim adalah nomor penerima confess yang masih dalam window 24 jam,
+    // pesan apapun (text/foto/video/audio/file) langsung diteruskan ke web pengirim confess.
+    try {
+      const isMediaMsg = !!(msg.message?.imageMessage || msg.message?.videoMessage || msg.message?.audioMessage || msg.message?.documentMessage || msg.message?.stickerMessage);
+      const hasContent = isMediaMsg || (plainText && plainText.length > 0);
+      const skipForward = isCommand || pinPending[remoteJid] || chatFlows[remoteJid] || isCancelInput(plainText) || lowerText === "bukti" || lowerText === "!bukti";
+      if (hasContent && !skipForward && senderPhone) {
+        const actRes = await api("confess_thread_active?phone=" + encodeURIComponent(senderPhone));
+        if (actRes?.active) {
+          let mediaPayload = {};
+          if (isMediaMsg) {
+            try {
+              const buf = await downloadMediaMessage(msg, "buffer", {});
+              const mm = msg.message.imageMessage || msg.message.videoMessage || msg.message.audioMessage || msg.message.documentMessage || msg.message.stickerMessage;
+              const mime = mm?.mimetype || (msg.message.imageMessage ? "image/jpeg" : msg.message.videoMessage ? "video/mp4" : msg.message.audioMessage ? "audio/mpeg" : "application/octet-stream");
+              const mediaType = msg.message.imageMessage || msg.message.stickerMessage ? "image" : msg.message.videoMessage ? "video" : msg.message.audioMessage ? "audio" : "file";
+              const ext = (mime.split("/")[1] || "bin").split(";")[0];
+              const fileName = mm?.fileName || ("wa_" + Date.now() + "." + ext);
+              const base64 = buf.toString("base64");
+              const up = await api("confess_media_upload", "POST", { base64, mime, ext, from_phone: senderPhone });
+              if (up?.url) {
+                mediaPayload = { media_url: up.url, media_type: mediaType, media_name: fileName, media_mime: mime, media_size: buf.length };
+              }
+            } catch (e) {
+              console.log("⚠️ Gagal upload media confess:", e?.message || e);
+            }
+          }
+          const captionText = isMediaMsg ? (msg.message.imageMessage?.caption || msg.message.videoMessage?.caption || msg.message.documentMessage?.caption || "") : plainText;
+          const res = await api("confess_reply", "POST", { from_phone: senderPhone, reply_text: captionText || "", ...mediaPayload });
+          if (res?.matched || res?.data?.matched) {
+            return reply("✅ Pesan kamu sudah diteruskan ke pengirim confess." + (mediaPayload.media_url ? " (termasuk media)" : ""));
+          }
+        }
+      }
+    } catch (err) {
+      console.log("⚠️ Auto-forward confess gagal:", err?.message || err);
     }
 
     if (!isCommand && !userSessions[remoteJid + "_game"]) return;

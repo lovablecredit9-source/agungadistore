@@ -1277,11 +1277,45 @@ Deno.serve(async (req) => {
         result = { ok: true };
         break;
       }
+      case "confess_thread_active": {
+        const phone = url.searchParams.get("phone") || "";
+        const normDigits = String(phone).replace(/\D/g, "");
+        if (!normDigits) { result = { active: false }; break; }
+        const { data: thread } = await supabase
+          .from("confess_threads")
+          .select("id")
+          .eq("target_phone", normDigits)
+          .gt("free_until", new Date().toISOString())
+          .limit(1)
+          .maybeSingle();
+        result = { active: !!thread };
+        break;
+      }
+      case "confess_media_upload": {
+        if (req.method !== "POST") return new Response(JSON.stringify({ error: "POST required" }), { status: 405, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        const body = await req.json();
+        const { base64, mime, ext, from_phone } = body;
+        if (!base64 || !mime) return new Response(JSON.stringify({ error: "base64 & mime required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        try {
+          const bin = Uint8Array.from(atob(String(base64).replace(/^data:.*;base64,/, "")), (c) => c.charCodeAt(0));
+          const safeExt = String(ext || mime.split("/")[1] || "bin").replace(/[^a-z0-9]/gi, "").slice(0, 8) || "bin";
+          const safePhone = String(from_phone || "anon").replace(/\D/g, "").slice(0, 20) || "anon";
+          const path = `incoming/${safePhone}/${Date.now()}_${Math.random().toString(36).slice(2, 8)}.${safeExt}`;
+          const { error: upErr } = await supabase.storage.from("confess-media").upload(path, bin, { contentType: mime, upsert: false });
+          if (upErr) return new Response(JSON.stringify({ error: upErr.message }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+          const { data: pub } = supabase.storage.from("confess-media").getPublicUrl(path);
+          result = { url: pub.publicUrl };
+        } catch (e) {
+          return new Response(JSON.stringify({ error: e instanceof Error ? e.message : "upload error" }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        }
+        break;
+      }
       case "confess_reply": {
         if (req.method !== "POST") return new Response(JSON.stringify({ error: "POST required" }), { status: 405, headers: { ...corsHeaders, "Content-Type": "application/json" } });
         const body = await req.json();
-        const { from_phone, reply_text } = body;
-        if (!from_phone || !reply_text) return new Response(JSON.stringify({ error: "from_phone & reply_text required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        const { from_phone, reply_text, media_url, media_type, media_name, media_mime, media_size } = body;
+        const hasMedia = !!media_url;
+        if (!from_phone || (!reply_text && !hasMedia)) return new Response(JSON.stringify({ error: "from_phone & reply_text (or media) required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
         const normDigits = String(from_phone).replace(/\D/g, "");
         // Balasan masuk hanya diarahkan ke thread nomor ini yang masih aktif 24 jam.
         const { data: thread } = await supabase
@@ -1310,30 +1344,37 @@ Deno.serve(async (req) => {
             confession_id: tgt.confession_id,
             target_id: tgt.id || null,
             from_phone: normDigits,
-            reply_text: String(reply_text).slice(0, 1000),
+            reply_text: String(reply_text || (media_type === "image" ? "[Foto]" : media_type === "video" ? "[Video]" : media_type === "audio" ? "[Audio]" : "[File]")).slice(0, 1000),
           });
         }
         const conf: any = tgt?.confessions || { sender_visitor_id: thread.visitor_id, sender_name: thread.sender_name };
 
         // Tulis juga ke confess_threads (chat thread baru)
         if (thread?.visitor_id) {
+          const textClean = String(reply_text || "").slice(0, 1000);
           await supabase.from("confess_thread_messages").insert({
             thread_id: thread.id,
             direction: "in",
-            text: String(reply_text).slice(0, 1000),
+            text: textClean,
             status: "delivered",
             is_free: true,
+            media_url: media_url || null,
+            media_type: media_type || null,
+            media_name: media_name || null,
+            media_mime: media_mime || null,
+            media_size: media_size || null,
           });
+          const previewBase = textClean || (media_type === "image" ? "📷 Foto" : media_type === "video" ? "🎥 Video" : media_type === "audio" ? "🎵 Audio" : "📎 File");
           await supabase.from("confess_threads").update({
             last_message_at: new Date().toISOString(),
-            last_message_preview: String(reply_text).slice(0, 80),
+            last_message_preview: previewBase.slice(0, 80),
             unread_count: (thread.unread_count || 0) + 1,
           }).eq("id", thread.id);
 
           await supabase.from("notifications").insert({
             visitor_id: thread.visitor_id,
             title: "💬 Balasan Confess",
-            message: `Nomor +${normDigits} membalas: "${String(reply_text).slice(0, 100)}"`,
+            message: `Nomor +${normDigits} membalas: "${(textClean || previewBase).slice(0, 100)}"`,
             type: "info",
           });
         }
