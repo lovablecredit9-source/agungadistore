@@ -1296,7 +1296,30 @@ Deno.serve(async (req) => {
           reply_text: String(reply_text).slice(0, 1000),
         });
         const conf: any = tgt.confessions;
+
+        // Tulis juga ke confess_threads (chat thread baru)
         if (conf?.sender_visitor_id) {
+          const { data: thread } = await supabase
+            .from("confess_threads")
+            .select("id, unread_count, free_until")
+            .eq("visitor_id", conf.sender_visitor_id)
+            .eq("target_phone", normDigits)
+            .maybeSingle();
+          if (thread) {
+            await supabase.from("confess_thread_messages").insert({
+              thread_id: thread.id,
+              direction: "in",
+              text: String(reply_text).slice(0, 1000),
+              status: "delivered",
+              is_free: true,
+            });
+            await supabase.from("confess_threads").update({
+              last_message_at: new Date().toISOString(),
+              last_message_preview: String(reply_text).slice(0, 80),
+              unread_count: (thread.unread_count || 0) + 1,
+            }).eq("id", thread.id);
+          }
+
           await supabase.from("notifications").insert({
             visitor_id: conf.sender_visitor_id,
             title: "💬 Balasan Confess",
