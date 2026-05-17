@@ -1319,6 +1319,67 @@ Deno.serve(async (req) => {
         result = data || [];
         break;
       }
+      case "confess_threads": {
+        const visitor_id = url.searchParams.get("visitor_id");
+        if (!visitor_id) return new Response(JSON.stringify({ error: "visitor_id required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        const { data } = await supabase
+          .from("confess_threads")
+          .select("id, target_phone, sender_name, last_paid_at, free_until, last_message_at, last_message_preview, unread_count, created_at")
+          .eq("visitor_id", visitor_id)
+          .order("last_message_at", { ascending: false })
+          .limit(100);
+        result = data || [];
+        break;
+      }
+      case "confess_thread_messages": {
+        const thread_id = url.searchParams.get("thread_id");
+        const visitor_id = url.searchParams.get("visitor_id");
+        if (!thread_id || !visitor_id) return new Response(JSON.stringify({ error: "thread_id & visitor_id required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        const { data: th } = await supabase.from("confess_threads").select("visitor_id").eq("id", thread_id).maybeSingle();
+        if (!th || th.visitor_id !== visitor_id) return new Response(JSON.stringify({ error: "forbidden" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        const { data } = await supabase
+          .from("confess_thread_messages")
+          .select("id, direction, text, status, is_free, sent_at, created_at, error")
+          .eq("thread_id", thread_id)
+          .order("created_at", { ascending: true })
+          .limit(300);
+        result = data || [];
+        break;
+      }
+      case "confess_thread_mark_read": {
+        if (req.method !== "POST") return new Response(JSON.stringify({ error: "POST required" }), { status: 405, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        const body = await req.json();
+        const { thread_id, visitor_id } = body;
+        if (!thread_id || !visitor_id) return new Response(JSON.stringify({ error: "thread_id & visitor_id required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        await supabase.from("confess_threads").update({ unread_count: 0 }).eq("id", thread_id).eq("visitor_id", visitor_id);
+        result = { ok: true };
+        break;
+      }
+      case "confess_chat_outbox": {
+        const { data } = await supabase
+          .from("confess_thread_messages")
+          .select("id, text, thread_id, confess_threads:thread_id(target_phone, sender_name, visitor_id)")
+          .eq("status", "pending")
+          .eq("direction", "out")
+          .eq("is_free", true)
+          .order("created_at", { ascending: true })
+          .limit(20);
+        result = data || [];
+        break;
+      }
+      case "confess_chat_mark_sent": {
+        if (req.method !== "POST") return new Response(JSON.stringify({ error: "POST required" }), { status: 405, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        const body = await req.json();
+        const { message_id, success, error: errMsg } = body;
+        if (!message_id) return new Response(JSON.stringify({ error: "message_id required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        await supabase
+          .from("confess_thread_messages")
+          .update({ status: success ? "sent" : "failed", sent_at: new Date().toISOString(), error: errMsg || null })
+          .eq("id", message_id);
+        result = { ok: true };
+        break;
+      }
+
       default:
         return new Response(JSON.stringify({
           error: "Unknown endpoint",
