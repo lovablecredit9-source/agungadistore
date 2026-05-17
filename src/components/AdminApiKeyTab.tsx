@@ -214,8 +214,8 @@ echo ""
   function generatePackageJson() {
     return JSON.stringify({
       name: "bot-wa-agungadi",
-        version: "13.7.1",
-        description: "Bot WhatsApp Agung Adi Store v13.7.1 - Confess outbox aktif",
+        version: "13.8.0",
+        description: "Bot WhatsApp Agung Adi Store v13.8.0 - Confess chat thread 24 jam + outbox",
       main: "index.js",
       scripts: {
         start: "node index.js",
@@ -235,7 +235,7 @@ echo ""
   }
 
   function generateReadmeMd() {    
-    return `# 🤖 Bot WhatsApp - Agung Adi Store v13.7.1
+    return `# 🤖 Bot WhatsApp - Agung Adi Store v13.8.0
 
 ## 📋 Persyaratan
 - Node.js >= 18
@@ -297,7 +297,7 @@ _© 2026 Agung Adi Store_
   }
 
   function generateReadmeTermux() {
-    return `# 🤖 Bot WhatsApp - Termux Edition v13.7.1
+    return `# 🤖 Bot WhatsApp - Termux Edition v13.8.0
 
 ## ⚠️ PENTING SEBELUM MULAI
 Termux **TIDAK BISA** install bot di folder \`/sdcard\` atau \`/storage/emulated/0\`
@@ -611,7 +611,7 @@ node index.js
           </div>
 
           <p className="text-[10px] text-muted-foreground text-center">
-            📲 v13.7.1 - <b>Pterodactyl</b>: upload & <code className="bg-muted px-1 rounded">npm start</code>. <b>Termux</b>: extract di <code className="bg-muted px-1 rounded">~/bot-wa</code> (BUKAN /sdcard), lalu <code className="bg-muted px-1 rounded">bash install.sh</code>
+            📲 v13.8.0 - <b>Pterodactyl</b>: upload & <code className="bg-muted px-1 rounded">npm start</code>. <b>Termux</b>: extract di <code className="bg-muted px-1 rounded">~/bot-wa</code> (BUKAN /sdcard), lalu <code className="bg-muted px-1 rounded">bash install.sh</code>
           </p>
         </CardContent>
       </Card>
