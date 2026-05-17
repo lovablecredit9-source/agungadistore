@@ -1,70 +1,107 @@
-# Anon Chat — Paket Perbaikan Besar
+# Confess Chat Thread + Free 24-Hour Window
 
-Permintaan kamu cukup banyak, aku rangkum dulu jadi 6 fitur biar jelas. Setelah kamu setuju, aku eksekusi semua sekaligus (atau pecah per fitur kalau mau lebih cepat ditest).
+## Tujuan
+Setelah user pertama kali bayar confess ke 1 nomor, pengirim & penerima nomor itu bisa **balas-balasan gratis selama 24 jam**. Riwayat ditampilkan sebagai **chat thread** per nomor (bukan per transaksi). Lewat 24 jam → bayar lagi.
 
-## 1. Pesan Call Muncul di Chat (real-time, bukan setelah call mati)
-- Saat panggilan **dimulai** → bot system message langsung dikirim ke chat: "📞 Memulai panggilan suara…" dengan status live (mendering / berlangsung 00:12 / berakhir 02:34).
-- Saat panggilan **berakhir / ditolak / missed** → message yang sama di-update jadi versi final (ikon merah/hijau, durasi). Jadi tidak nunggu call tutup baru muncul.
-- Pakai `anon_chat_messages` dengan `message_type = 'call'` + kolom JSON `call_meta` (status, started_at, ended_at, duration).
+## Aturan
+- **Bayar pertama** (Rp 2.000 / nomor) → buka window 24 jam untuk nomor itu.
+- **Selama window aktif**:
+  - Pengirim bisa kirim pesan tambahan dari aplikasi **tanpa bayar & tanpa PIN**.
+  - Balasan penerima (`!balas` di WA) masuk ke thread yang sama, gratis.
+- **Window habis** (24 jam sejak bayar terakhir):
+  - Tombol "Kirim Gratis" diganti "Bayar Rp 2.000 untuk Lanjut".
+  - Bayar lagi → reset window 24 jam.
+- **Status pesan**:
+  - `pending` = belum dikirim bot
+  - `sent` = sudah terkirim ke WA
+  - `failed` = gagal
+  - Pesan masuk dari penerima selalu `delivered`.
 
-## 2. Centang Status Pesan (WhatsApp style)
-- ✓ abu-abu: terkirim (di server)
-- ✓✓ abu-abu: sampai ke partner (partner online / window terbuka)
-- ✓✓ biru: sudah dibaca (partner buka chat)
-- Realtime via Supabase: kolom `delivered_at`, `read_at` di `anon_chat_messages`.
-- Berlaku juga untuk message tipe call.
+## UI Baru (ConfessTab)
+1. **Form kirim baru** (seperti sekarang) — untuk nomor yang belum pernah / window habis.
+2. **Daftar Thread Aktif** — tiap nomor jadi satu kartu dengan:
+   - Nomor WA + nama (kalau ada)
+   - Preview pesan terakhir + waktu
+   - Badge "🟢 Gratis 23:45" (countdown) atau "⏰ Bayar lagi"
+   - Jumlah balasan belum dibaca
+3. **Detail Thread = WhatsApp-style chat**:
+   - Bubble kanan (kita) / kiri (penerima)
+   - Status checkmark (pending/sent/delivered)
+   - Input bar di bawah: "Ketik pesan…" + tombol kirim
+   - Header countdown window
+   - Kalau expired: input diganti banner "Window habis — Bayar Rp 2.000 untuk lanjut"
 
-## 3. Match Random: Filter Gender & Ketertarikan KETAT
-- Sekarang masih longgar (any). Akan dibuat:
-  - Kalau pilih "Cari perempuan" → **hanya** ketemu perempuan, tidak akan ketemu laki.
-  - Kalau pilih "Cari laki" → hanya laki.
-  - Pilih "Bebas" → bebas (tetap acak).
-- Ketertarikan (interest):
-  - "Coding" hanya ketemu yang juga "Coding".
-  - "Catur" hanya ketemu "Catur".
-  - "Bebas/Random" baru ketemu siapa saja.
-- Update `anon_chat_find_or_queue`: filter strict, tidak fallback ke any.
-
-## 4. Last Seen Akurat & Konsisten
-- Bug: di tab Publik / Teman kadang muncul "online" padahal partner offline; "terakhir aktif" tidak update.
-- Fix:
-  - Heartbeat tiap 30 detik update `anon_chat_profiles.last_seen_at` saat tab aktif.
-  - Status online = `last_seen_at` dalam 60 detik terakhir.
-  - Hormati toggle `show_last_seen` (kalau partner mematikan, tampilkan "Terakhir dilihat: disembunyikan").
-  - Sinkronkan tampilan di: header chat, daftar teman, daftar publik, modal profil.
-
-## 5. Kirim File di Anon Chat
-- Tombol lampiran → bisa kirim:
-  - Foto (jpg/png/webp, max 5MB)
-  - Video pendek (max 15MB, max 30 detik) — opsional kalau mau
-  - File dokumen (pdf/doc/zip, max 10MB)
-- Upload ke Supabase Storage bucket `anon-chat-media` (public read, write bebas).
-- Bubble chat: foto preview, video player, file card (nama + size + tombol download).
-- Tetap kompatibel dengan voice note (rencana sebelumnya).
-
-## 6. Tampilan Premium — Elegan, Mantap, Keren Parah
-- Refresh visual seluruh AnonChatTab biar terasa "premium app":
-  - Header chat: glassmorphism gradient, avatar dengan ring online (pulse hijau), nickname + status live ("mengetik…", "online", "terakhir dilihat 5m lalu").
-  - Bubble chat: rounded-2xl, gradient halus untuk pesan saya (biru→ungu), netral untuk partner, shadow lembut, animasi slide-in.
-  - Bar input: floating pill, tombol attach/voice/emoji dengan haptic-look.
-  - Lobby: card kategori (Random / Teman / Publik) dengan ilustrasi & micro-interaction.
-  - Konsisten dengan design token global (no warna mentah).
-
-## Teknis Singkat
-- **DB**: tambah kolom `delivered_at`, `read_at`, `message_type`, `call_meta`, `media_url`, `media_type`, `media_size`, `media_name` di `anon_chat_messages`. Update RPC `anon_chat_find_or_queue` (strict). Tambah RPC `anon_chat_mark_read`, `anon_chat_mark_delivered`, `anon_chat_heartbeat`.
-- **Storage**: bucket `anon-chat-media` public.
-- **Realtime**: subscribe `anon_chat_messages` & `anon_chat_profiles`.
-- **Frontend**: refactor `AnonChatTab.tsx` jadi sub-komponen (Header, MessageBubble, InputBar, CallMessage, Lobby) supaya rapi.
+## Skema Database
 
 ```text
-Urutan eksekusi
-1. Migrasi DB + storage bucket
-2. RPC matchmaking strict + heartbeat + read receipts
-3. Rebuild MessageBubble (centang, call live, media)
-4. Input bar baru (attach file, voice)
-5. Polish UI premium (header, lobby, animasi)
+confess_threads
+  id uuid PK
+  visitor_id text
+  user_balance_id uuid (account scope)
+  target_phone text (normalized 62xxx)
+  sender_name text
+  last_paid_at timestamptz
+  free_until timestamptz       -- last_paid_at + 24h
+  last_message_at timestamptz
+  unread_count int default 0
+  created_at, updated_at
+  UNIQUE(visitor_id, target_phone)
+
+confess_thread_messages
+  id uuid PK
+  thread_id uuid FK
+  direction text ('out' | 'in')
+  text text
+  status text ('pending'|'sent'|'failed'|'delivered')
+  trx_id text NULL              -- mengikat ke transaksi bayar bila ada
+  is_free bool                  -- true kalau pakai window gratis
+  sent_at timestamptz
+  created_at
 ```
 
-## Pertanyaan Singkat
-- OK aku kerjakan **semua sekaligus**, atau mau **dipecah** (misal: 1+2+3 dulu, lalu 4+5+6)?
-- Untuk file: cukup **foto + dokumen**, atau perlu **video** juga?
+RLS: read/write hanya untuk visitor_id pemilik thread (atau akun saldo yang sama).
+
+## Edge Function
+
+**`send-confession` (edit)**:
+- Tetap charge per nomor baru. Setelah sukses:
+  - Upsert `confess_threads` → set `last_paid_at = now()`, `free_until = now() + 24h`.
+  - Insert `confess_thread_messages` direction `out`, `is_free=false`, status `pending`.
+- Backward-compat: tetap isi `confess_targets` agar bot existing jalan.
+
+**`confess-chat-send` (baru)**:
+- Body: `{ visitorId, threadId, text, pin? }`
+- Validasi thread milik visitor + `free_until > now()`.
+- Insert message `direction=out, is_free=true, status=pending`. **Tidak potong saldo, tidak butuh PIN.**
+- Push ke `confess_outbox` agar bot kirim ke nomor target.
+
+**`confess-receive-reply` (edit/baru)**:
+- Dipanggil bot saat `!balas`. Mencari thread aktif berdasarkan `from_phone` + `visitor_id` (target_phone match).
+- Insert message `direction=in, status=delivered, is_free=true`.
+- Window tetap aktif sampai `free_until` original (balas TIDAK extend window — sesuai aturan "1 hari berlaku habis itu gratis dan setelah itu bayar lagi").
+- Increment `unread_count`.
+
+## Perubahan Bot WA
+- Polling `confess_outbox` sudah ada → tambah dukungan pesan tanpa CFS code (follow-up): kirim sebagai pesan biasa ke target dengan format:
+  ```
+  💌 [Lanjutan dari pengirim sebelumnya]
+  {text}
+  
+  Balas: !balas (pesan)
+  ```
+- Handler `!balas`: panggil endpoint baru `confess_reply_inbound` yang routing ke thread yang `free_until > now()`.
+
+## File yang Berubah
+- `supabase/migrations/...` — 2 tabel baru + RLS + indexes
+- `supabase/functions/send-confession/index.ts` — upsert thread
+- `supabase/functions/confess-chat-send/index.ts` — **NEW**
+- `supabase/functions/public-api/index.ts` — endpoint `confess_threads`, `confess_thread_messages`, `confess_reply_inbound`
+- `src/components/ConfessTab.tsx` — split jadi: form, ThreadList, ChatView
+- `src/lib/wa-bot-template.js` — handler `!balas` cek thread + dukung follow-up tanpa CFS, naik versi ke v13.8.0
+
+## Catatan
+- Nomor yang ditolak penerima (block bot) tetap dihitung "pending/failed" — tidak buka window.
+- Maks 30 pesan/hari per thread (anti-spam window gratis).
+- Notifikasi realtime saat balasan masuk via Supabase channel.
+
+Setelah kamu setuju, saya jalankan migrasi DB dulu, baru update bot + edge function + UI.

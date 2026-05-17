@@ -1,12 +1,14 @@
-import { useEffect, useState, useCallback } from "react";
-import { Send, Loader2, Plus, X, MessageSquareWarning, Lock, History as HistoryIcon, Phone, User as UserIcon, RefreshCw, CheckCircle2, Clock, XCircle, MessageCircle } from "lucide-react";
+import { useEffect, useState, useCallback, useRef } from "react";
+import {
+  Send, Loader2, Plus, X, MessageSquareWarning, Lock, ArrowLeft, Phone, User as UserIcon,
+  RefreshCw, CheckCheck, Check, Clock, MessageCircle, Sparkles, Timer
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { getVisitorId } from "@/lib/visitor-id";
 import { toast } from "@/hooks/use-toast";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 function priceFor(n: number) {
   if (n <= 1) return 2000;
@@ -15,76 +17,72 @@ function priceFor(n: number) {
 }
 const rupiah = (n: number) => "Rp " + (n || 0).toLocaleString("id-ID");
 
-interface Confession {
+const PUBLIC_API_KEY = "ak_cyOMDUl6h3mX8gsVUw5RoUhQDfo1bYNywUNtj0le";
+
+interface Thread {
   id: string;
-  trx_id: string;
+  target_phone: string;
   sender_name: string | null;
-  message: string;
-  num_targets: number;
-  total_price: number;
-  status: string;
+  last_paid_at: string;
+  free_until: string;
+  last_message_at: string;
+  last_message_preview: string | null;
+  unread_count: number;
   created_at: string;
-  confession_targets: Array<{ id: string; phone: string; status: string; sent_at: string | null }>;
-  confession_replies: Array<{ id: string; from_phone: string; reply_text: string; created_at: string }>;
+}
+
+interface ThreadMessage {
+  id: string;
+  direction: "out" | "in";
+  text: string;
+  status: string;
+  is_free: boolean;
+  sent_at: string | null;
+  created_at: string;
+  error?: string | null;
+}
+
+function useCountdown(targetIso: string | null) {
+  const [, setTick] = useState(0);
+  useEffect(() => {
+    const t = setInterval(() => setTick((x) => x + 1), 1000);
+    return () => clearInterval(t);
+  }, []);
+  if (!targetIso) return { expired: true, label: "" };
+  const diff = new Date(targetIso).getTime() - Date.now();
+  if (diff <= 0) return { expired: true, label: "Habis" };
+  const h = Math.floor(diff / 3600000);
+  const m = Math.floor((diff % 3600000) / 60000);
+  const s = Math.floor((diff % 60000) / 1000);
+  return { expired: false, label: `${h}j ${m}m ${s}s` };
 }
 
 export default function ConfessTab() {
   const visitorId = (typeof window !== "undefined" && localStorage.getItem("balance_visitor_id")) || getVisitorId();
-  const [phones, setPhones] = useState<string[]>([""]);
-  const [senderName, setSenderName] = useState("");
-  const [message, setMessage] = useState("");
-  const [pin, setPin] = useState("");
-  const [showPin, setShowPin] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [history, setHistory] = useState<Confession[]>([]);
+  const [view, setView] = useState<"list" | "compose" | "chat">("list");
+  const [activeThread, setActiveThread] = useState<Thread | null>(null);
+  const [threads, setThreads] = useState<Thread[]>([]);
   const [refreshing, setRefreshing] = useState(false);
-  const [detail, setDetail] = useState<Confession | null>(null);
 
-  const total = priceFor(phones.filter((p) => p.trim()).length || 1);
-
-  const loadHistory = useCallback(async () => {
+  const loadThreads = useCallback(async () => {
     setRefreshing(true);
     try {
-      const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/public-api?endpoint=confessions_by_visitor&visitor_id=${encodeURIComponent(visitorId)}`;
-      const res = await fetch(url, { headers: { "x-api-key": "ak_cyOMDUl6h3mX8gsVUw5RoUhQDfo1bYNywUNtj0le" } });
+      const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/public-api?endpoint=confess_threads&visitor_id=${encodeURIComponent(visitorId)}`;
+      const res = await fetch(url, { headers: { "x-api-key": PUBLIC_API_KEY } });
       const j = await res.json();
-      if (j?.data) setHistory(j.data);
+      if (j?.data) setThreads(j.data);
     } catch {} finally { setRefreshing(false); }
   }, [visitorId]);
 
-  useEffect(() => { loadHistory(); }, [loadHistory]);
+  useEffect(() => { loadThreads(); }, [loadThreads]);
 
   useEffect(() => {
     const ch = supabase
-      .channel("confess-realtime")
-      .on("postgres_changes", { event: "*", schema: "public", table: "confession_replies" }, () => loadHistory())
-      .on("postgres_changes", { event: "*", schema: "public", table: "confession_targets" }, () => loadHistory())
+      .channel("confess-thread-list")
+      .on("postgres_changes", { event: "*", schema: "public", table: "confess_threads" }, () => loadThreads())
       .subscribe();
     return () => { supabase.removeChannel(ch); };
-  }, [loadHistory]);
-
-  async function submit() {
-    const clean = phones.map((p) => p.trim()).filter(Boolean);
-    if (clean.length < 1) return toast({ title: "Isi minimal 1 nomor WA tujuan", variant: "destructive" });
-    if (clean.length > 3) return toast({ title: "Maksimal 3 nomor", variant: "destructive" });
-    if (message.trim().length < 3) return toast({ title: "Pesan terlalu pendek", variant: "destructive" });
-    if (!/^\d{6}$/.test(pin)) { setShowPin(true); return toast({ title: "Masukkan PIN 6 digit", variant: "destructive" }); }
-    setLoading(true);
-    try {
-      const { data, error } = await supabase.functions.invoke("send-confession", {
-        body: { visitorId, senderName: senderName.trim(), message: message.trim(), phones: clean, pin },
-      });
-      if (error) throw error;
-      if ((data as any)?.error) throw new Error((data as any).error);
-      toast({ title: "✉️ Confess dikirim!", description: `${clean.length} nomor • ${rupiah(total)} • TX ${(data as any).trx_id}` });
-      setMessage(""); setPhones([""]); setSenderName(""); setPin(""); setShowPin(false);
-      loadHistory();
-    } catch (e: any) {
-      const msg = e?.message || "Gagal kirim";
-      if (/PIN/i.test(msg)) setShowPin(true);
-      toast({ title: "Gagal", description: msg, variant: "destructive" });
-    } finally { setLoading(false); }
-  }
+  }, [loadThreads]);
 
   return (
     <div className="space-y-4 max-w-2xl mx-auto pb-6">
@@ -97,23 +95,160 @@ export default function ConfessTab() {
             </div>
             <div className="flex-1 min-w-0">
               <h2 className="font-black text-lg leading-tight bg-gradient-to-r from-pink-500 via-rose-500 to-orange-500 bg-clip-text text-transparent">Confess Anonim</h2>
-              <p className="text-[11px] text-muted-foreground">Kirim pesan rahasia ke nomor WhatsApp via bot 💌</p>
+              <p className="text-[11px] text-muted-foreground">Chat 2 arah via WhatsApp · gratis 24 jam setelah bayar 💌</p>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Pricing */}
+      {view === "list" && (
+        <ThreadListView
+          threads={threads}
+          refreshing={refreshing}
+          onRefresh={loadThreads}
+          onCompose={() => setView("compose")}
+          onOpen={(t) => { setActiveThread(t); setView("chat"); }}
+        />
+      )}
+      {view === "compose" && (
+        <ComposeView
+          visitorId={visitorId}
+          onBack={() => setView("list")}
+          onSent={() => { loadThreads(); setView("list"); }}
+          existingThreads={threads}
+        />
+      )}
+      {view === "chat" && activeThread && (
+        <ChatView
+          visitorId={visitorId}
+          thread={activeThread}
+          onBack={() => { setActiveThread(null); setView("list"); loadThreads(); }}
+          onTopUp={() => setView("compose")}
+        />
+      )}
+    </div>
+  );
+}
+
+/* ============ THREAD LIST ============ */
+function ThreadListView({ threads, refreshing, onRefresh, onCompose, onOpen }: {
+  threads: Thread[]; refreshing: boolean; onRefresh: () => void;
+  onCompose: () => void; onOpen: (t: Thread) => void;
+}) {
+  return (
+    <>
+      <Button onClick={onCompose} className="w-full gap-2 rounded-2xl bg-gradient-to-r from-pink-500 via-rose-500 to-orange-500 hover:opacity-90 h-12 text-base font-bold shadow-lg">
+        <Sparkles className="w-5 h-5" /> Kirim Confess Baru
+      </Button>
+
+      <div className="rounded-2xl border bg-card p-4">
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="font-bold flex items-center gap-2"><MessageCircle className="w-4 h-4" /> Daftar Chat</h3>
+          <Button variant="ghost" size="icon" onClick={onRefresh} disabled={refreshing}>
+            <RefreshCw className={`w-4 h-4 ${refreshing ? "animate-spin" : ""}`} />
+          </Button>
+        </div>
+        {threads.length === 0 ? (
+          <p className="text-xs text-muted-foreground text-center py-8">Belum ada chat. Kirim confess pertama! 💌</p>
+        ) : (
+          <div className="space-y-2">
+            {threads.map((t) => <ThreadCard key={t.id} thread={t} onOpen={() => onOpen(t)} />)}
+          </div>
+        )}
+      </div>
+    </>
+  );
+}
+
+function ThreadCard({ thread, onOpen }: { thread: Thread; onOpen: () => void }) {
+  const cd = useCountdown(thread.free_until);
+  return (
+    <button onClick={onOpen} className="w-full text-left p-3 rounded-xl border hover:border-pink-400 hover:bg-pink-500/5 transition-all">
+      <div className="flex items-start justify-between gap-2 mb-1">
+        <div className="flex items-center gap-2 min-w-0">
+          <div className="w-9 h-9 rounded-full bg-gradient-to-br from-pink-500 to-rose-500 flex items-center justify-center text-white shrink-0">
+            <Phone className="w-4 h-4" />
+          </div>
+          <div className="min-w-0">
+            <div className="font-bold text-sm font-mono truncate">+{thread.target_phone}</div>
+            <div className="text-[10px] text-muted-foreground">
+              {new Date(thread.last_message_at).toLocaleString("id-ID", { dateStyle: "short", timeStyle: "short" })}
+            </div>
+          </div>
+        </div>
+        <div className="flex flex-col items-end gap-1 shrink-0">
+          {thread.unread_count > 0 && (
+            <span className="bg-pink-500 text-white text-[10px] font-bold rounded-full min-w-[20px] h-5 flex items-center justify-center px-1.5">{thread.unread_count}</span>
+          )}
+          {cd.expired ? (
+            <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground flex items-center gap-0.5"><Timer className="w-2.5 h-2.5" /> Bayar lagi</span>
+          ) : (
+            <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-green-500/15 text-green-600 flex items-center gap-0.5"><Sparkles className="w-2.5 h-2.5" /> Gratis {cd.label}</span>
+          )}
+        </div>
+      </div>
+      <p className="text-xs text-muted-foreground line-clamp-1 pl-11">{thread.last_message_preview || "—"}</p>
+    </button>
+  );
+}
+
+/* ============ COMPOSE (new / paid) ============ */
+function ComposeView({ visitorId, onBack, onSent, existingThreads }: {
+  visitorId: string; onBack: () => void; onSent: () => void; existingThreads: Thread[];
+}) {
+  const [phones, setPhones] = useState<string[]>([""]);
+  const [senderName, setSenderName] = useState("");
+  const [message, setMessage] = useState("");
+  const [pin, setPin] = useState("");
+  const [showPin, setShowPin] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  // Hitung yang gratis vs bayar
+  const cleanPhones = phones.map((p) => p.replace(/\D/g, "")).filter(Boolean);
+  const freeCount = cleanPhones.filter((digits) => {
+    const norm = digits.startsWith("0") ? "62" + digits.slice(1) : digits.startsWith("62") ? digits : digits.startsWith("8") ? "62" + digits : digits;
+    return existingThreads.some((t) => t.target_phone === norm && new Date(t.free_until) > new Date());
+  }).length;
+  const paidCount = cleanPhones.length - freeCount;
+  const total = paidCount > 0 ? priceFor(paidCount) : 0;
+
+  async function submit() {
+    const clean = phones.map((p) => p.trim()).filter(Boolean);
+    if (clean.length < 1) return toast({ title: "Isi minimal 1 nomor WA", variant: "destructive" });
+    if (clean.length > 3) return toast({ title: "Maksimal 3 nomor", variant: "destructive" });
+    if (message.trim().length < 3) return toast({ title: "Pesan terlalu pendek", variant: "destructive" });
+    if (!/^\d{6}$/.test(pin)) { setShowPin(true); return toast({ title: "Masukkan PIN 6 digit", variant: "destructive" }); }
+    setLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("send-confession", {
+        body: { visitorId, senderName: senderName.trim(), message: message.trim(), phones: clean, pin },
+      });
+      if (error) throw error;
+      if ((data as any)?.error) throw new Error((data as any).error);
+      toast({ title: "✉️ Confess dikirim!", description: `Bayar ${rupiah((data as any).charged || 0)} · ${(data as any).free_count || 0} gratis` });
+      onSent();
+    } catch (e: any) {
+      const msg = e?.message || "Gagal kirim";
+      if (/PIN/i.test(msg)) setShowPin(true);
+      toast({ title: "Gagal", description: msg, variant: "destructive" });
+    } finally { setLoading(false); }
+  }
+
+  return (
+    <>
+      <Button variant="ghost" size="sm" onClick={onBack} className="gap-1 -ml-2">
+        <ArrowLeft className="w-4 h-4" /> Kembali
+      </Button>
+
       <div className="grid grid-cols-3 gap-2 text-center">
         {[1, 2, 3].map((n) => (
-          <div key={n} className={`rounded-xl border p-2.5 ${phones.filter((p) => p.trim()).length === n ? "border-pink-500 bg-pink-500/5" : ""}`}>
-            <div className="text-[10px] text-muted-foreground">{n} nomor</div>
+          <div key={n} className={`rounded-xl border p-2.5 ${cleanPhones.length === n ? "border-pink-500 bg-pink-500/5" : ""}`}>
+            <div className="text-[10px] text-muted-foreground">{n} nomor baru</div>
             <div className="font-bold text-sm">{rupiah(priceFor(n))}</div>
           </div>
         ))}
       </div>
 
-      {/* Form */}
       <div className="rounded-2xl border bg-card p-4 space-y-3">
         <div>
           <label className="text-xs font-semibold flex items-center gap-1.5 mb-1.5"><UserIcon className="w-3.5 h-3.5" /> Nama Pengirim (opsional)</label>
@@ -139,6 +274,9 @@ export default function ConfessTab() {
               </Button>
             )}
           </div>
+          {freeCount > 0 && (
+            <p className="text-[10px] text-green-600 mt-2 flex items-center gap-1"><Sparkles className="w-3 h-3" /> {freeCount} nomor masih dalam window gratis 24 jam — tidak dipotong saldo</p>
+          )}
         </div>
 
         <div>
@@ -159,93 +297,163 @@ export default function ConfessTab() {
             <div className="text-[10px] text-muted-foreground">Total Bayar</div>
             <div className="font-black text-xl bg-gradient-to-r from-pink-500 to-rose-500 bg-clip-text text-transparent">{rupiah(total)}</div>
           </div>
-          <Button onClick={() => { if (!showPin) { setShowPin(true); return; } submit(); }} disabled={loading} className="rounded-2xl bg-gradient-to-r from-pink-500 via-rose-500 to-orange-500 hover:opacity-90">
+          <Button onClick={() => { if (!showPin && total > 0) { setShowPin(true); return; } submit(); }} disabled={loading} className="rounded-2xl bg-gradient-to-r from-pink-500 via-rose-500 to-orange-500 hover:opacity-90">
             {loading ? <Loader2 className="w-4 h-4 mr-1.5 animate-spin" /> : <Send className="w-4 h-4 mr-1.5" />}
-            {showPin ? "Bayar & Kirim" : "Lanjut Bayar"}
+            {total === 0 ? "Kirim Gratis" : (showPin ? "Bayar & Kirim" : "Lanjut Bayar")}
           </Button>
         </div>
 
         <p className="text-[10px] text-muted-foreground leading-relaxed bg-muted/40 p-2 rounded-lg">
-          🤖 Pesan akan dikirim otomatis lewat bot WhatsApp. Penerima bisa balas dengan ketik <b>!balas (isi balasan)</b>, balasan otomatis muncul di riwayat di bawah.
+          🤖 Setelah bayar pertama, kamu & penerima bisa chat bolak-balik <b>GRATIS selama 24 jam</b>. Lewat dari itu wajib bayar lagi Rp 2.000.
         </p>
       </div>
+    </>
+  );
+}
 
-      {/* History */}
-      <div className="rounded-2xl border bg-card p-4">
-        <div className="flex items-center justify-between mb-3">
-          <h3 className="font-bold flex items-center gap-2"><HistoryIcon className="w-4 h-4" /> Riwayat Confess</h3>
-          <Button variant="ghost" size="icon" onClick={loadHistory} disabled={refreshing}>
-            <RefreshCw className={`w-4 h-4 ${refreshing ? "animate-spin" : ""}`} />
-          </Button>
+/* ============ CHAT VIEW (WhatsApp-style) ============ */
+function ChatView({ visitorId, thread, onBack, onTopUp }: {
+  visitorId: string; thread: Thread; onBack: () => void; onTopUp: () => void;
+}) {
+  const [messages, setMessages] = useState<ThreadMessage[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [input, setInput] = useState("");
+  const [sending, setSending] = useState(false);
+  const [freeUntil, setFreeUntil] = useState(thread.free_until);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const cd = useCountdown(freeUntil);
+
+  const load = useCallback(async () => {
+    try {
+      const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/public-api?endpoint=confess_thread_messages&thread_id=${thread.id}&visitor_id=${encodeURIComponent(visitorId)}`;
+      const res = await fetch(url, { headers: { "x-api-key": PUBLIC_API_KEY } });
+      const j = await res.json();
+      if (j?.data) setMessages(j.data);
+    } finally { setLoading(false); }
+  }, [thread.id, visitorId]);
+
+  useEffect(() => { load(); }, [load]);
+
+  // Mark as read
+  useEffect(() => {
+    if (thread.unread_count > 0) {
+      fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/public-api?endpoint=confess_thread_mark_read`, {
+        method: "POST",
+        headers: { "x-api-key": PUBLIC_API_KEY, "Content-Type": "application/json" },
+        body: JSON.stringify({ thread_id: thread.id, visitor_id: visitorId }),
+      }).catch(() => {});
+    }
+  }, [thread.id, thread.unread_count, visitorId]);
+
+  useEffect(() => {
+    const ch = supabase
+      .channel(`confess-chat-${thread.id}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "confess_thread_messages", filter: `thread_id=eq.${thread.id}` }, () => load())
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "confess_threads", filter: `id=eq.${thread.id}` }, (p) => {
+        const newFree = (p.new as any)?.free_until;
+        if (newFree) setFreeUntil(newFree);
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, [thread.id, load]);
+
+  useEffect(() => {
+    scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
+  }, [messages]);
+
+  async function send() {
+    const text = input.trim();
+    if (!text) return;
+    setSending(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("confess-chat-send", {
+        body: { visitorId, threadId: thread.id, text },
+      });
+      if (error) throw error;
+      if ((data as any)?.error) throw new Error((data as any).error);
+      setInput("");
+      load();
+    } catch (e: any) {
+      toast({ title: "Gagal kirim", description: e?.message || "Error", variant: "destructive" });
+    } finally { setSending(false); }
+  }
+
+  return (
+    <>
+      {/* Header */}
+      <div className="rounded-2xl border bg-card p-3 flex items-center gap-3 sticky top-2 z-10 backdrop-blur">
+        <Button variant="ghost" size="icon" onClick={onBack}><ArrowLeft className="w-4 h-4" /></Button>
+        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-pink-500 to-rose-500 flex items-center justify-center text-white">
+          <Phone className="w-4 h-4" />
         </div>
-        {history.length === 0 ? (
-          <p className="text-xs text-muted-foreground text-center py-6">Belum ada confess. Kirim yang pertama! 💌</p>
+        <div className="flex-1 min-w-0">
+          <div className="font-bold text-sm font-mono truncate">+{thread.target_phone}</div>
+          {cd.expired ? (
+            <div className="text-[10px] text-muted-foreground flex items-center gap-1"><Timer className="w-3 h-3" /> Window gratis habis</div>
+          ) : (
+            <div className="text-[10px] text-green-600 flex items-center gap-1"><Sparkles className="w-3 h-3" /> Gratis sampai {cd.label}</div>
+          )}
+        </div>
+      </div>
+
+      {/* Messages */}
+      <div ref={scrollRef} className="rounded-2xl border bg-gradient-to-b from-pink-50/40 to-rose-50/20 dark:from-pink-950/20 dark:to-rose-950/10 p-3 h-[55vh] overflow-y-auto space-y-2">
+        {loading ? (
+          <div className="flex justify-center py-8"><Loader2 className="w-5 h-5 animate-spin text-pink-500" /></div>
+        ) : messages.length === 0 ? (
+          <p className="text-xs text-muted-foreground text-center py-8">Belum ada pesan</p>
         ) : (
-          <div className="space-y-2">
-            {history.map((c) => {
-              const sentCount = c.confession_targets?.filter((t) => t.status === "sent").length || 0;
-              const failedCount = c.confession_targets?.filter((t) => t.status === "failed").length || 0;
-              const pendingCount = c.confession_targets?.filter((t) => t.status === "pending").length || 0;
-              const replyCount = c.confession_replies?.length || 0;
-              return (
-                <button key={c.id} onClick={() => setDetail(c)} className="w-full text-left p-3 rounded-xl border hover:border-pink-400 hover:bg-pink-500/5 transition-all">
-                  <div className="flex items-start justify-between gap-2 mb-1">
-                    <div className="text-[11px] font-mono text-muted-foreground">{c.trx_id}</div>
-                    <div className="flex items-center gap-1 text-[10px]">
-                      {sentCount > 0 && <span className="px-1.5 py-0.5 rounded-full bg-green-500/15 text-green-600 flex items-center gap-0.5"><CheckCircle2 className="w-3 h-3" />{sentCount}</span>}
-                      {pendingCount > 0 && <span className="px-1.5 py-0.5 rounded-full bg-amber-500/15 text-amber-600 flex items-center gap-0.5"><Clock className="w-3 h-3" />{pendingCount}</span>}
-                      {failedCount > 0 && <span className="px-1.5 py-0.5 rounded-full bg-red-500/15 text-red-600 flex items-center gap-0.5"><XCircle className="w-3 h-3" />{failedCount}</span>}
-                      {replyCount > 0 && <span className="px-1.5 py-0.5 rounded-full bg-pink-500/15 text-pink-600 flex items-center gap-0.5"><MessageCircle className="w-3 h-3" />{replyCount}</span>}
-                    </div>
-                  </div>
-                  <p className="text-sm line-clamp-2">{c.message}</p>
-                  <div className="text-[10px] text-muted-foreground mt-1">{c.num_targets} nomor • {rupiah(c.total_price)} • dari <b>{c.sender_name || "Anonim"}</b></div>
-                </button>
-              );
-            })}
-          </div>
+          messages.map((m) => <Bubble key={m.id} msg={m} />)
         )}
       </div>
 
-      {/* Detail */}
-      <Dialog open={!!detail} onOpenChange={(o) => !o && setDetail(null)}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle className="text-base">Detail Confess {detail?.trx_id}</DialogTitle>
-          </DialogHeader>
-          {detail && (
-            <div className="space-y-3 text-sm">
-              <div className="p-3 rounded-xl bg-muted/40">
-                <div className="text-[10px] text-muted-foreground mb-1">Pesan</div>
-                <p className="whitespace-pre-wrap break-words">{detail.message}</p>
-                <div className="text-[10px] text-muted-foreground mt-2">Pengirim: <b>{detail.sender_name || "Anonim"}</b></div>
-              </div>
-              <div>
-                <div className="text-xs font-semibold mb-1.5">Nomor Tujuan</div>
-                {detail.confession_targets?.map((t) => (
-                  <div key={t.id} className="flex items-center justify-between py-1 text-xs">
-                    <span className="font-mono">{t.phone}</span>
-                    <span className={`px-2 py-0.5 rounded-full text-[10px] ${t.status === "sent" ? "bg-green-500/15 text-green-600" : t.status === "failed" ? "bg-red-500/15 text-red-600" : "bg-amber-500/15 text-amber-600"}`}>{t.status}</span>
-                  </div>
-                ))}
-              </div>
-              {detail.confession_replies?.length > 0 && (
-                <div>
-                  <div className="text-xs font-semibold mb-1.5 flex items-center gap-1.5"><MessageCircle className="w-3.5 h-3.5" /> Balasan</div>
-                  <div className="space-y-2">
-                    {detail.confession_replies.map((r) => (
-                      <div key={r.id} className="p-2 rounded-lg bg-pink-500/5 border border-pink-500/20">
-                        <div className="text-[10px] text-muted-foreground font-mono">{r.from_phone} • {new Date(r.created_at).toLocaleString("id-ID")}</div>
-                        <p className="text-xs whitespace-pre-wrap mt-1">{r.reply_text}</p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
+      {/* Input */}
+      {cd.expired ? (
+        <div className="rounded-2xl border bg-amber-500/10 border-amber-500/40 p-4 text-center space-y-2">
+          <div className="text-sm font-bold flex items-center justify-center gap-1.5"><Timer className="w-4 h-4" /> Window 24 jam sudah habis</div>
+          <p className="text-xs text-muted-foreground">Bayar Rp 2.000 untuk lanjut chat dengan nomor ini.</p>
+          <Button size="sm" onClick={onTopUp} className="rounded-2xl bg-gradient-to-r from-pink-500 to-rose-500">
+            <Sparkles className="w-3.5 h-3.5 mr-1" /> Bayar & Buka Lagi
+          </Button>
+        </div>
+      ) : (
+        <div className="rounded-2xl border bg-card p-2 flex items-end gap-2">
+          <Textarea
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } }}
+            placeholder="Ketik pesan… (gratis dalam 24 jam)"
+            rows={1}
+            maxLength={800}
+            className="resize-none min-h-[40px] max-h-[120px] border-0 focus-visible:ring-0"
+          />
+          <Button onClick={send} disabled={sending || !input.trim()} size="icon" className="rounded-full bg-gradient-to-br from-pink-500 to-rose-500 shrink-0">
+            {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+          </Button>
+        </div>
+      )}
+    </>
+  );
+}
+
+function Bubble({ msg }: { msg: ThreadMessage }) {
+  const isOut = msg.direction === "out";
+  return (
+    <div className={`flex ${isOut ? "justify-end" : "justify-start"}`}>
+      <div className={`max-w-[80%] rounded-2xl px-3 py-2 shadow-sm ${
+        isOut ? "bg-gradient-to-br from-pink-500 to-rose-500 text-white rounded-br-sm" : "bg-card border rounded-bl-sm"
+      }`}>
+        <p className="text-sm whitespace-pre-wrap break-words">{msg.text}</p>
+        <div className={`flex items-center gap-1 justify-end mt-1 text-[9px] ${isOut ? "text-white/80" : "text-muted-foreground"}`}>
+          <span>{new Date(msg.created_at).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })}</span>
+          {isOut && (
+            msg.status === "pending" ? <Clock className="w-3 h-3" /> :
+            msg.status === "sent" ? <Check className="w-3 h-3" /> :
+            msg.status === "delivered" || msg.status === "read" ? <CheckCheck className="w-3 h-3" /> :
+            msg.status === "failed" ? <X className="w-3 h-3 text-red-300" /> : null
           )}
-        </DialogContent>
-      </Dialog>
+        </div>
+      </div>
     </div>
   );
 }

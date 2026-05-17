@@ -936,6 +936,101 @@ export type Database = {
         }
         Relationships: []
       }
+      confess_thread_messages: {
+        Row: {
+          created_at: string
+          direction: string
+          error: string | null
+          id: string
+          is_free: boolean
+          read_at: string | null
+          sent_at: string | null
+          status: string
+          text: string
+          thread_id: string
+          trx_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          direction: string
+          error?: string | null
+          id?: string
+          is_free?: boolean
+          read_at?: string | null
+          sent_at?: string | null
+          status?: string
+          text: string
+          thread_id: string
+          trx_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          direction?: string
+          error?: string | null
+          id?: string
+          is_free?: boolean
+          read_at?: string | null
+          sent_at?: string | null
+          status?: string
+          text?: string
+          thread_id?: string
+          trx_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "confess_thread_messages_thread_id_fkey"
+            columns: ["thread_id"]
+            isOneToOne: false
+            referencedRelation: "confess_threads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      confess_threads: {
+        Row: {
+          created_at: string
+          free_until: string
+          id: string
+          last_message_at: string
+          last_message_preview: string | null
+          last_paid_at: string
+          sender_name: string | null
+          target_phone: string
+          unread_count: number
+          updated_at: string
+          user_balance_id: string | null
+          visitor_id: string
+        }
+        Insert: {
+          created_at?: string
+          free_until?: string
+          id?: string
+          last_message_at?: string
+          last_message_preview?: string | null
+          last_paid_at?: string
+          sender_name?: string | null
+          target_phone: string
+          unread_count?: number
+          updated_at?: string
+          user_balance_id?: string | null
+          visitor_id: string
+        }
+        Update: {
+          created_at?: string
+          free_until?: string
+          id?: string
+          last_message_at?: string
+          last_message_preview?: string | null
+          last_paid_at?: string
+          sender_name?: string | null
+          target_phone?: string
+          unread_count?: number
+          updated_at?: string
+          user_balance_id?: string | null
+          visitor_id?: string
+        }
+        Relationships: []
+      }
       confession_replies: {
         Row: {
           confession_id: string
