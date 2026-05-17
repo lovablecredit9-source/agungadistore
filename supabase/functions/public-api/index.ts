@@ -1382,7 +1382,7 @@ Deno.serve(async (req) => {
         if (!th || (th.visitor_id !== visitor_id && th.user_balance_id !== hist?.user_balance_id)) return new Response(JSON.stringify({ error: "forbidden" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
         const { data } = await supabase
           .from("confess_thread_messages")
-          .select("id, direction, text, status, is_free, sent_at, created_at, error")
+          .select("id, direction, text, status, is_free, sent_at, created_at, error, media_url, media_type, media_name, media_mime, media_size")
           .eq("thread_id", thread_id)
           .order("created_at", { ascending: true })
           .limit(300);
