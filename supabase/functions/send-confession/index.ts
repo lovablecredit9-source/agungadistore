@@ -20,6 +20,14 @@ function normPhone(p: string): string | null {
   return n;
 }
 
+function maskPhone(p: string): string {
+  // 6281234567890 -> 0812****7890
+  if (!p) return "****";
+  const local = p.startsWith("62") ? "0" + p.slice(2) : p;
+  if (local.length < 6) return local;
+  return local.slice(0, 4) + "****" + local.slice(-4);
+}
+
 async function sha256(s: string) {
   const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(s));
   return Array.from(new Uint8Array(buf)).map((b) => b.toString(16).padStart(2, "0")).join("");
@@ -36,6 +44,11 @@ Deno.serve(async (req) => {
     const pin = String(body.pin || "");
     const deviceFingerprint = String(body.deviceFingerprint || "").trim().slice(0, 200) || null;
     const ipAddress = (req.headers.get("x-forwarded-for") || req.headers.get("cf-connecting-ip") || "").split(",")[0].trim() || null;
+    // NEW
+    const moodTag = String(body.moodTag || "").trim().slice(0, 20) || null;
+    const shareToWall = !!body.shareToWall;
+    const scheduledAt = body.scheduledAt ? new Date(body.scheduledAt) : null;
+    const isVoice = !!body.isVoice;
 
     if (!visitorId) return Response.json({ error: "Visitor tidak dikenal" }, { status: 400, headers: corsHeaders });
     if (message.length < 3) return Response.json({ error: "Pesan terlalu pendek" }, { status: 400, headers: corsHeaders });
@@ -49,6 +62,12 @@ Deno.serve(async (req) => {
     }
     const price = priceFor(normalized.length);
     if (!price) return Response.json({ error: "Jumlah nomor tidak didukung" }, { status: 400, headers: corsHeaders });
+
+    if (scheduledAt) {
+      const diffMin = (scheduledAt.getTime() - Date.now()) / 60000;
+      if (diffMin < 5) return Response.json({ error: "Jadwal minimal 5 menit dari sekarang" }, { status: 400, headers: corsHeaders });
+      if (diffMin > 30 * 24 * 60) return Response.json({ error: "Jadwal maksimal 30 hari ke depan" }, { status: 400, headers: corsHeaders });
+    }
 
     const admin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!, {
       auth: { autoRefreshToken: false, persistSession: false },
@@ -68,8 +87,46 @@ Deno.serve(async (req) => {
     const { data: bal } = await admin.from("user_balances").select("id, balance").eq("id", ubId).maybeSingle();
     if (!bal) return Response.json({ error: "Saldo tidak ditemukan" }, { status: 404, headers: corsHeaders });
 
+    // === Scheduling path: charge full price (no free-window discount for scheduled) ===
+    if (scheduledAt) {
+      const sPrice = price;
+      if (bal.balance < sPrice) {
+        return Response.json({ error: `Saldo kurang. Butuh Rp${sPrice.toLocaleString("id-ID")} untuk menjadwalkan.` }, { status: 400, headers: corsHeaders });
+      }
+      if (!/^\d{6}$/.test(pin)) return Response.json({ error: "PIN harus 6 digit", needPin: true }, { status: 400, headers: corsHeaders });
+      const { data: pinRow } = await admin.from("user_pins").select("pin_hash").eq("visitor_id", visitorId).maybeSingle();
+      if (!pinRow) return Response.json({ error: "PIN belum dibuat", needPin: true }, { status: 403, headers: corsHeaders });
+      if ((await sha256(pin)) !== pinRow.pin_hash) return Response.json({ error: "PIN salah", needPin: true }, { status: 403, headers: corsHeaders });
+
+      await admin.from("user_balances").update({ balance: bal.balance - sPrice }).eq("id", bal.id);
+      const trxId = `CFS-SCH-${Date.now()}-${crypto.randomUUID().replace(/-/g, "").slice(0, 5).toUpperCase()}`;
+      const { data: sched, error: schErr } = await admin.from("confess_scheduled").insert({
+        visitor_id: visitorId,
+        user_balance_id: ubId,
+        sender_name: senderName || null,
+        target_phones: normalized,
+        message,
+        mood_tag: moodTag,
+        share_to_wall: shareToWall,
+        scheduled_at: scheduledAt.toISOString(),
+        price_charged: sPrice,
+        trx_id: trxId,
+      }).select("id").single();
+      if (schErr) {
+        await admin.from("user_balances").update({ balance: bal.balance }).eq("id", bal.id);
+        return Response.json({ error: "Gagal menjadwalkan: " + schErr.message }, { status: 500, headers: corsHeaders });
+      }
+      await admin.from("balance_transactions").insert({
+        visitor_id: visitorId, type: "purchase", amount: sPrice,
+        description: `Confess terjadwal ${scheduledAt.toLocaleString("id-ID")}`, trx_id: trxId,
+      });
+      return Response.json({
+        success: true, scheduled: true, scheduled_id: sched.id, trx_id: trxId,
+        balance_remaining: bal.balance - sPrice, charged: sPrice,
+      }, { headers: corsHeaders });
+    }
+
     // === Cek thread mana yang masih FREE (tidak perlu bayar) ===
-    // Gratis 24 jam berlaku per AKUN SALDO + NOMOR TUJUAN, bukan global semua nomor.
     const now = new Date();
     const { data: existingThreads } = await admin
       .from("confess_threads")
@@ -88,14 +145,9 @@ Deno.serve(async (req) => {
     let trialDiscount = 0;
     let trialGranted = false;
 
-    // === Percobaan GRATIS pertama untuk pengguna baru ===
-    // Diskon Rp 2.000 (setara 1 nomor) jika perangkat/IP/akun belum pernah klaim.
     if (chargePrice > 0) {
       const { data: usedByAccount } = await admin
-        .from("confess_free_trial")
-        .select("id")
-        .eq("user_balance_id", ubId)
-        .maybeSingle();
+        .from("confess_free_trial").select("id").eq("user_balance_id", ubId).maybeSingle();
 
       if (!usedByAccount) {
         const orFilters: string[] = [`visitor_id.eq.${visitorId}`];
@@ -103,11 +155,7 @@ Deno.serve(async (req) => {
         if (ipAddress) orFilters.push(`ip_address.eq.${ipAddress}`);
 
         const { data: abuse } = await admin
-          .from("confess_free_trial")
-          .select("id, user_balance_id")
-          .or(orFilters.join(","))
-          .limit(1)
-          .maybeSingle();
+          .from("confess_free_trial").select("id, user_balance_id").or(orFilters.join(",")).limit(1).maybeSingle();
 
         if (abuse) {
           return Response.json({
@@ -142,27 +190,18 @@ Deno.serve(async (req) => {
 
     if (trialGranted) {
       await admin.from("confess_free_trial").insert({
-        visitor_id: visitorId,
-        user_balance_id: ubId,
-        ip_address: ipAddress,
-        device_fingerprint: deviceFingerprint,
+        visitor_id: visitorId, user_balance_id: ubId,
+        ip_address: ipAddress, device_fingerprint: deviceFingerprint,
       });
     }
 
     const trxId = `CFS-${Date.now()}-${crypto.randomUUID().replace(/-/g, "").slice(0, 5).toUpperCase()}`;
     const { data: conf, error: cErr } = await admin
-      .from("confessions")
-      .insert({
-        trx_id: trxId,
-        sender_visitor_id: visitorId,
-        sender_name: senderName || null,
-        message,
-        num_targets: normalized.length,
-        total_price: chargePrice,
-        status: "pending",
-      })
-      .select("id")
-      .single();
+      .from("confessions").insert({
+        trx_id: trxId, sender_visitor_id: visitorId,
+        sender_name: senderName || null, message,
+        num_targets: normalized.length, total_price: chargePrice, status: "pending",
+      }).select("id").single();
     if (cErr || !conf) {
       if (chargePrice > 0) await admin.from("user_balances").update({ balance: bal.balance }).eq("id", bal.id);
       return Response.json({ error: "Gagal menyimpan confess" }, { status: 500, headers: corsHeaders });
@@ -180,21 +219,15 @@ Deno.serve(async (req) => {
 
     if (chargePrice > 0) {
       await admin.from("balance_transactions").insert({
-        visitor_id: visitorId,
-        type: "purchase",
-        amount: chargePrice,
-        description: `Confess ke ${paidPhones.length} nomor`,
-        trx_id: trxId,
+        visitor_id: visitorId, type: "purchase", amount: chargePrice,
+        description: `Confess ke ${paidPhones.length} nomor`, trx_id: trxId,
       });
     }
 
-    // === Upsert threads + insert outbound message per nomor ===
-    const preview = message.slice(0, 80);
+    const preview = (moodTag ? `[${moodTag}] ` : "") + message.slice(0, 80);
     const newFreeUntil = new Date(now.getTime() + 24 * 60 * 60 * 1000).toISOString();
     for (const phone of normalized) {
       const isFree = freeMap.has(phone);
-      // Untuk nomor yang TIDAK gratis (dibayar) → set last_paid_at & extend free_until.
-      // Untuk nomor gratis → biarkan free_until existing.
       const updatePayload: any = {
         last_message_at: now.toISOString(),
         last_message_preview: preview,
@@ -207,11 +240,8 @@ Deno.serve(async (req) => {
       }
 
       const { data: existing } = await admin
-        .from("confess_threads")
-        .select("id")
-        .eq("user_balance_id", ubId)
-        .eq("target_phone", phone)
-        .maybeSingle();
+        .from("confess_threads").select("id")
+        .eq("user_balance_id", ubId).eq("target_phone", phone).maybeSingle();
 
       let threadId: string;
       if (existing) {
@@ -219,42 +249,41 @@ Deno.serve(async (req) => {
         threadId = existing.id;
       } else {
         const { data: ins } = await admin
-          .from("confess_threads")
-          .insert({
-            visitor_id: visitorId,
-            user_balance_id: ubId,
-            target_phone: phone,
-            sender_name: senderName || null,
-            last_paid_at: now.toISOString(),
-            free_until: newFreeUntil,
-            last_message_at: now.toISOString(),
-            last_message_preview: preview,
-          })
-          .select("id")
-          .single();
+          .from("confess_threads").insert({
+            visitor_id: visitorId, user_balance_id: ubId,
+            target_phone: phone, sender_name: senderName || null,
+            last_paid_at: now.toISOString(), free_until: newFreeUntil,
+            last_message_at: now.toISOString(), last_message_preview: preview,
+          }).select("id").single();
         threadId = ins!.id;
       }
 
       await admin.from("confess_thread_messages").insert({
-        thread_id: threadId,
-        direction: "out",
-        text: message,
-        status: "pending",
-        trx_id: trxId,
-        is_free: isFree,
-        target_id: targetIdByPhone.get(phone) || null,
+        thread_id: threadId, direction: "out", text: message, status: "pending",
+        trx_id: trxId, is_free: isFree, target_id: targetIdByPhone.get(phone) || null,
+        mood_tag: moodTag, is_voice: isVoice,
+      });
+    }
+
+    // Publish to Wall (anonymous)
+    if (shareToWall) {
+      const maskedPhones = normalized.map(maskPhone).join(", ");
+      await admin.from("confess_public_wall").insert({
+        confession_id: conf.id,
+        visitor_id: visitorId,
+        sender_name: senderName || null,
+        masked_phone: maskedPhones,
+        message,
+        mood_tag: moodTag,
       });
     }
 
     return Response.json({
-      success: true,
-      trx_id: trxId,
-      balance_remaining: bal.balance - chargePrice,
-      charged: chargePrice,
-      free_count: freePhones.length,
-      paid_count: paidPhones.length,
-      trial_discount: trialDiscount,
-      trial_granted: trialGranted,
+      success: true, trx_id: trxId,
+      balance_remaining: bal.balance - chargePrice, charged: chargePrice,
+      free_count: freePhones.length, paid_count: paidPhones.length,
+      trial_discount: trialDiscount, trial_granted: trialGranted,
+      shared_to_wall: shareToWall,
     }, { headers: corsHeaders });
   } catch (e) {
     return Response.json({ error: e instanceof Error ? e.message : "Error" }, { status: 500, headers: corsHeaders });
