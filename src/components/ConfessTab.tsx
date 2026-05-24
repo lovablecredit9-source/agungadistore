@@ -999,5 +999,470 @@ function Bubble({ msg, grouped }: { msg: ThreadMessage; grouped?: boolean }) {
       </div>
     </div>
   );
+
+
+/* ============================================================
+   ===============  FITUR BARU  ===============================
+   ============================================================ */
+
+/* ------------- VOICE RECORDER BUTTON ------------- */
+function VoiceRecorderButton({ onRecorded, disabled }: { onRecorded: (file: File) => void; disabled?: boolean }) {
+  const [recording, setRecording] = useState(false);
+  const [seconds, setSeconds] = useState(0);
+  const mediaRef = useRef<MediaRecorder | null>(null);
+  const chunksRef = useRef<Blob[]>([]);
+  const timerRef = useRef<number | null>(null);
+
+  async function start() {
+    if (disabled || recording) return;
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mime = MediaRecorder.isTypeSupported("audio/webm") ? "audio/webm" : "";
+      const rec = new MediaRecorder(stream, mime ? { mimeType: mime } : undefined);
+      chunksRef.current = [];
+      rec.ondataavailable = (e) => { if (e.data.size > 0) chunksRef.current.push(e.data); };
+      rec.onstop = () => {
+        stream.getTracks().forEach((t) => t.stop());
+        const blob = new Blob(chunksRef.current, { type: mime || "audio/webm" });
+        if (blob.size > 1024) {
+          const file = new File([blob], `voice-${Date.now()}.webm`, { type: blob.type });
+          onRecorded(file);
+        }
+      };
+      rec.start();
+      mediaRef.current = rec;
+      setSeconds(0);
+      setRecording(true);
+      timerRef.current = window.setInterval(() => setSeconds((s) => {
+        if (s >= 60) { stop(); return s; }
+        return s + 1;
+      }), 1000);
+    } catch (e: any) {
+      toast({ title: "Mic ditolak", description: e?.message || "Izinkan akses mikrofon", variant: "destructive" });
+    }
+  }
+
+  function stop() {
+    try { mediaRef.current?.stop(); } catch {}
+    mediaRef.current = null;
+    if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; }
+    setRecording(false);
+  }
+
+  function cancel() {
+    chunksRef.current = [];
+    try { mediaRef.current?.stop(); } catch {}
+    mediaRef.current = null;
+    if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; }
+    setRecording(false);
+  }
+
+  if (recording) {
+    return (
+      <div className="flex items-center gap-1 px-2 py-1 rounded-full bg-red-500/15 border border-red-500/40">
+        <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+        <span className="text-[11px] font-mono font-bold text-red-600">{String(Math.floor(seconds/60)).padStart(2,"0")}:{String(seconds%60).padStart(2,"0")}</span>
+        <Button type="button" size="icon" variant="ghost" className="h-7 w-7 rounded-full text-red-600 hover:bg-red-500/20" onClick={cancel} title="Batal">
+          <X className="w-3.5 h-3.5" />
+        </Button>
+        <Button type="button" size="icon" className="h-7 w-7 rounded-full bg-red-500 hover:bg-red-600 text-white" onClick={stop} title="Kirim">
+          <Send className="w-3.5 h-3.5" />
+        </Button>
+      </div>
+    );
+  }
+  return (
+    <Button
+      type="button"
+      variant="ghost"
+      size="icon"
+      disabled={disabled}
+      onClick={start}
+      className="rounded-full shrink-0 text-pink-500 hover:text-pink-600 hover:bg-pink-500/10"
+      title="Rekam voice note (maks 60 detik)"
+    >
+      <Mic className="w-4 h-4" />
+    </Button>
+  );
 }
+
+/* ------------- REVEAL IDENTITY BUTTON ------------- */
+function RevealButton({ thread, visitorId }: { thread: Thread; visitorId: string }) {
+  const [open, setOpen] = useState(false);
+  const [pin, setPin] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [status, setStatus] = useState<any>(null);
+
+  const loadStatus = useCallback(async () => {
+    try {
+      const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/public-api?endpoint=confess_reveal_status&visitor_id=${encodeURIComponent(visitorId)}&thread_id=${thread.id}`;
+      const r = await fetch(url, { headers: { "x-api-key": PUBLIC_API_KEY } });
+      const j = await r.json();
+      setStatus(j?.data || null);
+    } catch {}
+  }, [thread.id, visitorId]);
+
+  useEffect(() => { loadStatus(); }, [loadStatus]);
+
+  // Cari permintaan terakhir SEBAGAI requester di thread ini
+  const myRequest = (status?.as_requester || []).find((x: any) => x.thread_id === thread.id);
+
+  async function submitReveal() {
+    if (!/^\d{6}$/.test(pin)) { toast({ title: "PIN 6 digit", variant: "destructive" }); return; }
+    setLoading(true);
+    try {
+      const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/public-api?endpoint=confess_reveal_request`;
+      const r = await fetch(url, { method: "POST", headers: { "x-api-key": PUBLIC_API_KEY, "Content-Type": "application/json" }, body: JSON.stringify({ thread_id: thread.id, requester_visitor_id: visitorId, pin }) });
+      const j = await r.json();
+      if (j?.error) throw new Error(j.error);
+      toast({ title: "🔓 Permintaan terkirim", description: "Saldo Rp 5.000 ditahan. Refund 100% jika pengirim menolak." });
+      setOpen(false); setPin("");
+      loadStatus();
+    } catch (e: any) {
+      toast({ title: "Gagal", description: e?.message || "Error", variant: "destructive" });
+    } finally { setLoading(false); }
+  }
+
+  if (myRequest?.status === "approved") {
+    return (
+      <div className="flex items-center gap-1 px-2 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/30" title={`Pengirim: ${myRequest.revealed_name}`}>
+        <Eye className="w-3 h-3 text-emerald-500" />
+        <span className="text-[10px] font-bold text-emerald-600 truncate max-w-[80px]">{myRequest.revealed_name}</span>
+      </div>
+    );
+  }
+  if (myRequest?.status === "pending") {
+    return (
+      <div className="flex items-center gap-1 px-2 py-1 rounded-full bg-amber-500/15 border border-amber-500/30">
+        <Clock className="w-3 h-3 text-amber-500" />
+        <span className="text-[10px] font-bold text-amber-600">Reveal pending</span>
+      </div>
+    );
+  }
+
+  return (
+    <>
+      <Button
+        type="button"
+        size="sm"
+        variant="outline"
+        onClick={() => setOpen(true)}
+        className="rounded-full gap-1 h-7 px-2 text-[10px] border-fuchsia-500/40 text-fuchsia-600 hover:bg-fuchsia-500/10"
+      >
+        <Eye className="w-3 h-3" /> Reveal
+      </Button>
+      {open && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setOpen(false)}>
+          <div className="w-full max-w-sm rounded-2xl bg-card border border-fuchsia-500/30 p-5 space-y-3 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center gap-2">
+              <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-fuchsia-500 to-pink-500 flex items-center justify-center text-white"><Eye className="w-5 h-5" /></div>
+              <div className="flex-1">
+                <h3 className="font-black text-base">Reveal Identitas</h3>
+                <p className="text-[11px] text-muted-foreground">Minta pengirim ungkap siapa dia.</p>
+              </div>
+              <Button variant="ghost" size="icon" onClick={() => setOpen(false)}><X className="w-4 h-4" /></Button>
+            </div>
+            <div className="rounded-xl bg-fuchsia-500/10 border border-fuchsia-500/30 p-3 text-[11px] space-y-1.5">
+              <div className="flex justify-between"><span>Biaya escrow</span><b>Rp 5.000</b></div>
+              <div className="text-muted-foreground">Saldo ditahan. Jika disetujui → diberikan ke pengirim. Jika ditolak → <b className="text-emerald-600">refund 100%</b>.</div>
+            </div>
+            <div>
+              <label className="text-[11px] font-semibold flex items-center gap-1 mb-1"><Lock className="w-3 h-3" /> PIN 6 Digit</label>
+              <Input value={pin} onChange={(e) => setPin(e.target.value.replace(/\D/g, "").slice(0, 6))} type="password" inputMode="numeric" placeholder="••••••" maxLength={6} />
+            </div>
+            <Button onClick={submitReveal} disabled={loading} className="w-full rounded-xl bg-gradient-to-r from-fuchsia-500 to-pink-500">
+              {loading ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Eye className="w-4 h-4 mr-1" />} Kirim Permintaan
+            </Button>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
+/* ------------- WALL PUBLIK VIEW ------------- */
+interface WallItem {
+  id: string;
+  sender_name: string | null;
+  masked_phone: string | null;
+  message: string;
+  mood_tag: string | null;
+  reaction_counts: { heart?: number; fire?: number; laugh?: number; cry?: number };
+  total_reactions: number;
+  created_at: string;
+  my_reaction: string | null;
+  is_mine: boolean;
+}
+
+function WallView({ visitorId, onCompose }: { visitorId: string; onCompose: () => void }) {
+  const [items, setItems] = useState<WallItem[]>([]);
+  const [leaders, setLeaders] = useState<WallItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [sort, setSort] = useState<"new" | "hot">("new");
+  const [showLeader, setShowLeader] = useState(false);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    try {
+      const [a, b] = await Promise.all([
+        fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/public-api?endpoint=confess_wall_list&sort=${sort}&visitor_id=${encodeURIComponent(visitorId)}&limit=50`, { headers: { "x-api-key": PUBLIC_API_KEY } }).then((r) => r.json()),
+        fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/public-api?endpoint=confess_wall_leaderboard`, { headers: { "x-api-key": PUBLIC_API_KEY } }).then((r) => r.json()),
+      ]);
+      if (Array.isArray(a?.data)) setItems(a.data);
+      if (Array.isArray(b?.data)) setLeaders(b.data);
+    } finally { setLoading(false); }
+  }, [sort, visitorId]);
+
+  useEffect(() => { load(); }, [load]);
+
+  useEffect(() => {
+    const ch = supabase
+      .channel("confess-wall")
+      .on("postgres_changes", { event: "*", schema: "public", table: "confess_public_wall" }, () => load())
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, [load]);
+
+  async function react(wallId: string, emoji: string) {
+    setItems((prev) => prev.map((it) => {
+      if (it.id !== wallId) return it;
+      const counts = { ...(it.reaction_counts || {}) } as any;
+      let total = it.total_reactions || 0;
+      let newMy: string | null = emoji;
+      if (it.my_reaction === emoji) {
+        counts[emoji] = Math.max(0, (counts[emoji] || 0) - 1);
+        total = Math.max(0, total - 1);
+        newMy = null;
+      } else {
+        if (it.my_reaction) { counts[it.my_reaction] = Math.max(0, (counts[it.my_reaction] || 0) - 1); }
+        else { total += 1; }
+        counts[emoji] = (counts[emoji] || 0) + 1;
+      }
+      return { ...it, reaction_counts: counts, total_reactions: total, my_reaction: newMy };
+    }));
+    try {
+      await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/public-api?endpoint=confess_wall_react`, {
+        method: "POST", headers: { "x-api-key": PUBLIC_API_KEY, "Content-Type": "application/json" },
+        body: JSON.stringify({ wall_id: wallId, visitor_id: visitorId, emoji }),
+      });
+    } catch { load(); }
+  }
+
+  const EMOJI_MAP: Record<string, { icon: any; label: string; cls: string }> = {
+    heart: { icon: Heart, label: "❤️", cls: "text-rose-500" },
+    fire:  { icon: Flame, label: "🔥", cls: "text-orange-500" },
+    laugh: { icon: Laugh, label: "😂", cls: "text-amber-500" },
+    cry:   { icon: Frown, label: "😢", cls: "text-blue-500" },
+  };
+
+  return (
+    <>
+      <Button onClick={onCompose} className="w-full gap-2 rounded-2xl bg-gradient-to-r from-pink-500 via-rose-500 to-orange-500 h-11 text-sm font-bold shadow-lg">
+        <Globe className="w-4 h-4" /> Tulis Confess ke Wall
+      </Button>
+
+      <div className="flex items-center gap-2">
+        <div className="flex gap-1 p-1 rounded-full bg-muted/60 flex-1">
+          {(["new", "hot"] as const).map((s) => (
+            <button key={s} onClick={() => setSort(s)} className={`flex-1 px-3 py-1.5 rounded-full text-[11px] font-bold ${sort === s ? "bg-card shadow text-foreground" : "text-muted-foreground"}`}>
+              {s === "new" ? "🆕 Terbaru" : "🔥 Trending"}
+            </button>
+          ))}
+        </div>
+        <Button variant="outline" size="sm" onClick={() => setShowLeader((v) => !v)} className="rounded-full gap-1 h-9 px-3 text-[11px]">
+          <Trophy className="w-3.5 h-3.5" /> Top
+        </Button>
+      </div>
+
+      {showLeader && (
+        <div className="rounded-2xl border-2 border-amber-500/40 bg-gradient-to-br from-amber-500/10 to-orange-500/5 p-3 space-y-2">
+          <div className="flex items-center gap-2"><Trophy className="w-4 h-4 text-amber-500" /><h3 className="font-bold text-sm">Leaderboard Minggu Ini</h3></div>
+          {leaders.length === 0 ? (
+            <p className="text-[11px] text-muted-foreground">Belum ada confess populer minggu ini.</p>
+          ) : leaders.slice(0, 10).map((l, i) => (
+            <div key={l.id} className="flex items-center gap-2 text-[11px] bg-card rounded-lg p-2">
+              <span className={`w-6 h-6 rounded-full flex items-center justify-center font-black text-[10px] ${i === 0 ? "bg-amber-500 text-white" : i === 1 ? "bg-zinc-400 text-white" : i === 2 ? "bg-orange-700 text-white" : "bg-muted"}`}>{i + 1}</span>
+              <span className="flex-1 truncate">{l.message.slice(0, 50)}</span>
+              <span className="font-bold text-rose-500">🔥 {l.total_reactions}</span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {loading ? (
+        <div className="text-center py-10"><Loader2 className="w-6 h-6 animate-spin mx-auto text-pink-500" /></div>
+      ) : items.length === 0 ? (
+        <div className="rounded-2xl border bg-card p-8 text-center">
+          <Globe className="w-10 h-10 mx-auto text-muted-foreground/50 mb-2" />
+          <p className="text-sm text-muted-foreground">Wall masih kosong. Jadilah yang pertama menulis confess publik!</p>
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {items.map((it) => (
+            <div key={it.id} className="rounded-2xl border bg-card p-3 space-y-2 hover:border-pink-500/40 transition-colors">
+              <div className="flex items-start justify-between gap-2">
+                <div className="flex items-center gap-2 min-w-0">
+                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-pink-500 to-rose-500 flex items-center justify-center text-white shrink-0">
+                    <EyeOff className="w-4 h-4" />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="text-xs font-bold truncate">{it.sender_name || "Anonim"}</div>
+                    <div className="text-[10px] text-muted-foreground">to {it.masked_phone || "•••"} · {new Date(it.created_at).toLocaleString("id-ID", { dateStyle: "short", timeStyle: "short" })}</div>
+                  </div>
+                </div>
+                {it.mood_tag && (
+                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-pink-500/15 text-pink-600 font-bold whitespace-nowrap">{it.mood_tag}</span>
+                )}
+              </div>
+              <p className="text-sm whitespace-pre-wrap leading-relaxed">{it.message}</p>
+              <div className="flex items-center gap-1 pt-1 border-t">
+                {Object.entries(EMOJI_MAP).map(([key, e]) => {
+                  const Icon = e.icon;
+                  const active = it.my_reaction === key;
+                  const n = (it.reaction_counts as any)?.[key] || 0;
+                  return (
+                    <button
+                      key={key}
+                      onClick={() => react(it.id, key)}
+                      className={`flex items-center gap-1 px-2 py-1 rounded-full text-[11px] font-bold transition-all ${active ? "bg-pink-500/20 ring-1 ring-pink-500/50" : "hover:bg-muted"}`}
+                    >
+                      <Icon className={`w-3.5 h-3.5 ${active ? e.cls + " fill-current" : "text-muted-foreground"}`} />
+                      {n > 0 && <span className={active ? e.cls : "text-muted-foreground"}>{n}</span>}
+                    </button>
+                  );
+                })}
+                <div className="flex-1" />
+                <span className="text-[10px] text-muted-foreground">{it.total_reactions} reaksi</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </>
+  );
+}
+
+/* ------------- SCHEDULED VIEW ------------- */
+interface ScheduledItem {
+  id: string;
+  sender_name: string | null;
+  target_phones: string[];
+  message: string;
+  mood_tag: string | null;
+  share_to_wall: boolean;
+  scheduled_at: string;
+  status: string;
+  price_charged: number;
+  trx_id: string | null;
+  created_at: string;
+  executed_at: string | null;
+  error_message: string | null;
+}
+
+function ScheduledView({ visitorId, onCompose }: { visitorId: string; onCompose: () => void }) {
+  const [items, setItems] = useState<ScheduledItem[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    try {
+      const r = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/public-api?endpoint=confess_scheduled_list&visitor_id=${encodeURIComponent(visitorId)}`, { headers: { "x-api-key": PUBLIC_API_KEY } });
+      const j = await r.json();
+      if (Array.isArray(j?.data)) setItems(j.data);
+    } finally { setLoading(false); }
+  }, [visitorId]);
+
+  useEffect(() => { load(); }, [load]);
+
+  useEffect(() => {
+    const ch = supabase
+      .channel("confess-scheduled")
+      .on("postgres_changes", { event: "*", schema: "public", table: "confess_scheduled" }, () => load())
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, [load]);
+
+  async function cancel(id: string) {
+    if (!confirm("Batalkan confess terjadwal? Saldo akan dikembalikan 100%.")) return;
+    try {
+      const r = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/public-api?endpoint=confess_scheduled_cancel`, {
+        method: "POST", headers: { "x-api-key": PUBLIC_API_KEY, "Content-Type": "application/json" },
+        body: JSON.stringify({ id, visitor_id: visitorId }),
+      });
+      const j = await r.json();
+      if (j?.error) throw new Error(j.error);
+      toast({ title: "✅ Dibatalkan", description: `Refund Rp ${(j?.data?.refunded || 0).toLocaleString("id-ID")}` });
+      load();
+    } catch (e: any) {
+      toast({ title: "Gagal", description: e?.message, variant: "destructive" });
+    }
+  }
+
+  const STATUS: Record<string, { cls: string; label: string; icon: any }> = {
+    pending:   { cls: "bg-amber-500/15 text-amber-600",  label: "Menunggu",  icon: Clock },
+    sent:      { cls: "bg-emerald-500/15 text-emerald-600", label: "Terkirim", icon: CheckCircle2 },
+    failed:    { cls: "bg-red-500/15 text-red-600",      label: "Gagal",     icon: XCircle },
+    cancelled: { cls: "bg-muted text-muted-foreground",  label: "Dibatalkan", icon: X },
+  };
+
+  return (
+    <>
+      <Button onClick={onCompose} className="w-full gap-2 rounded-2xl bg-gradient-to-r from-purple-500 to-fuchsia-500 h-11 text-sm font-bold shadow-lg">
+        <CalendarClock className="w-4 h-4" /> Jadwalkan Confess Baru
+      </Button>
+
+      {loading ? (
+        <div className="text-center py-10"><Loader2 className="w-6 h-6 animate-spin mx-auto text-purple-500" /></div>
+      ) : items.length === 0 ? (
+        <div className="rounded-2xl border bg-card p-8 text-center">
+          <CalendarClock className="w-10 h-10 mx-auto text-muted-foreground/50 mb-2" />
+          <p className="text-sm text-muted-foreground">Belum ada confess terjadwal.</p>
+          <p className="text-[11px] text-muted-foreground mt-1">Atur waktu spesifik agar pesan kamu terkirim otomatis 🕒</p>
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {items.map((it) => {
+            const st = STATUS[it.status] || STATUS.pending;
+            const Icon = st.icon;
+            const when = new Date(it.scheduled_at);
+            const diff = when.getTime() - Date.now();
+            const inFuture = diff > 0 && it.status === "pending";
+            return (
+              <div key={it.id} className="rounded-2xl border bg-card p-3 space-y-2">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-purple-500 to-fuchsia-500 flex items-center justify-center text-white shrink-0">
+                      <CalendarClock className="w-4 h-4" />
+                    </div>
+                    <div className="min-w-0">
+                      <div className="text-xs font-bold">{when.toLocaleString("id-ID", { dateStyle: "medium", timeStyle: "short" })}</div>
+                      <div className="text-[10px] text-muted-foreground">{it.target_phones?.length || 0} nomor · Rp {(it.price_charged || 0).toLocaleString("id-ID")}</div>
+                    </div>
+                  </div>
+                  <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold flex items-center gap-1 ${st.cls}`}>
+                    <Icon className="w-3 h-3" /> {st.label}
+                  </span>
+                </div>
+                {it.mood_tag && <span className="text-[10px] px-2 py-0.5 rounded-full bg-pink-500/15 text-pink-600 font-bold inline-block">{it.mood_tag}</span>}
+                <p className="text-xs bg-muted/40 rounded-lg p-2 line-clamp-3">{it.message}</p>
+                <div className="flex items-center gap-1 text-[10px] text-muted-foreground flex-wrap">
+                  {it.target_phones?.map((p, i) => (
+                    <span key={i} className="font-mono bg-muted px-1.5 py-0.5 rounded">+{p}</span>
+                  ))}
+                </div>
+                {it.error_message && <p className="text-[11px] text-red-600 bg-red-500/10 p-2 rounded-lg">{it.error_message}</p>}
+                {inFuture && (
+                  <Button onClick={() => cancel(it.id)} variant="outline" size="sm" className="w-full rounded-xl border-red-500/40 text-red-600 hover:bg-red-500/10 gap-1">
+                    <Trash2 className="w-3.5 h-3.5" /> Batalkan & Refund
+                  </Button>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </>
+  );
+}
+
 
