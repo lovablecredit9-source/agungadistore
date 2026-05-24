@@ -421,34 +421,78 @@ function ComposeView({ visitorId, onBack, onSent, existingThreads, trialEligible
   const [pin, setPin] = useState("");
   const [showPin, setShowPin] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [moodTag, setMoodTag] = useState<string>("");
+  const [shareToWall, setShareToWall] = useState(false);
+  const [scheduleEnabled, setScheduleEnabled] = useState(false);
+  const [scheduledAt, setScheduledAt] = useState<string>("");
+
+  const MOODS = [
+    { tag: "Cinta", emoji: "💘", template: "Aku diam-diam suka sama kamu sejak…" },
+    { tag: "Maaf", emoji: "🙏", template: "Maaf banget kalau dulu aku pernah…" },
+    { tag: "Terima Kasih", emoji: "🌷", template: "Terima kasih udah selalu ada saat aku…" },
+    { tag: "Marah", emoji: "💢", template: "Aku kecewa sama sikap kamu yang…" },
+    { tag: "Sedih", emoji: "💔", template: "Sebenarnya aku sakit hati waktu kamu…" },
+    { tag: "Lucu", emoji: "😂", template: "Btw, kamu tau gak waktu itu sebenarnya…" },
+    { tag: "Rahasia", emoji: "🤫", template: "Aku punya rahasia yang harus kamu tau…" },
+    { tag: "Crush", emoji: "🥰", template: "Setiap lihat kamu, jantungku…" },
+  ];
 
   // Hitung yang gratis vs bayar
   const cleanPhones = phones.map((p) => p.replace(/\D/g, "")).filter(Boolean);
-  const freeCount = cleanPhones.filter((digits) => {
+  const freeCount = scheduleEnabled ? 0 : cleanPhones.filter((digits) => {
     const norm = digits.startsWith("0") ? "62" + digits.slice(1) : digits.startsWith("62") ? digits : digits.startsWith("8") ? "62" + digits : digits;
     return existingThreads.some((t) => t.target_phone === norm && new Date(t.free_until) > new Date());
   }).length;
   const paidCount = cleanPhones.length - freeCount;
   const grossTotal = paidCount > 0 ? priceFor(paidCount) : 0;
-  const trialDiscountPreview = trialEligible && grossTotal > 0 ? Math.min(grossTotal, 2000) : 0;
+  // Saat dijadwal, gratis trial tidak berlaku
+  const trialDiscountPreview = !scheduleEnabled && trialEligible && grossTotal > 0 ? Math.min(grossTotal, 2000) : 0;
   const total = Math.max(0, grossTotal - trialDiscountPreview);
+
+  // Default schedule: 1 jam dari sekarang (untuk input datetime-local lokal)
+  useEffect(() => {
+    if (scheduleEnabled && !scheduledAt) {
+      const d = new Date(Date.now() + 60 * 60 * 1000);
+      const pad = (n: number) => String(n).padStart(2, "0");
+      setScheduledAt(`${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`);
+    }
+  }, [scheduleEnabled, scheduledAt]);
 
   async function submit() {
     const clean = phones.map((p) => p.trim()).filter(Boolean);
     if (clean.length < 1) return toast({ title: "Isi minimal 1 nomor WA", variant: "destructive" });
     if (clean.length > 3) return toast({ title: "Maksimal 3 nomor", variant: "destructive" });
     if (message.trim().length < 3) return toast({ title: "Pesan terlalu pendek", variant: "destructive" });
+    let scheduledIso: string | null = null;
+    if (scheduleEnabled) {
+      if (!scheduledAt) return toast({ title: "Pilih waktu kirim", variant: "destructive" });
+      const d = new Date(scheduledAt);
+      if (isNaN(d.getTime())) return toast({ title: "Waktu tidak valid", variant: "destructive" });
+      if (d.getTime() - Date.now() < 5 * 60 * 1000) return toast({ title: "Minimal 5 menit dari sekarang", variant: "destructive" });
+      if (d.getTime() - Date.now() > 30 * 24 * 3600 * 1000) return toast({ title: "Maksimal 30 hari ke depan", variant: "destructive" });
+      scheduledIso = d.toISOString();
+    }
     if (total > 0 && !/^\d{6}$/.test(pin)) { setShowPin(true); return toast({ title: "Masukkan PIN 6 digit", variant: "destructive" }); }
     setLoading(true);
     try {
       const deviceFingerprint = (typeof window !== "undefined" && (localStorage.getItem("device_fp_v1") || getVisitorId())) || "";
       const { data, error } = await supabase.functions.invoke("send-confession", {
-        body: { visitorId, senderName: senderName.trim(), message: message.trim(), phones: clean, pin, deviceFingerprint },
+        body: {
+          visitorId, senderName: senderName.trim(), message: message.trim(),
+          phones: clean, pin, deviceFingerprint,
+          moodTag: moodTag || undefined,
+          shareToWall,
+          scheduledAt: scheduledIso || undefined,
+        },
       });
       if (error) throw error;
       if ((data as any)?.error) throw new Error((data as any).error);
-      const trialDisc = (data as any).trial_discount || 0;
-      toast({ title: "✉️ Confess dikirim!", description: `Bayar ${rupiah((data as any).charged || 0)} · ${(data as any).free_count || 0} gratis${trialDisc > 0 ? ` · 🎁 Diskon percobaan Rp${trialDisc.toLocaleString("id-ID")}` : ""}` });
+      if ((data as any)?.scheduled) {
+        toast({ title: "⏰ Confess Dijadwalkan!", description: `Akan dikirim otomatis pada ${new Date(scheduledIso!).toLocaleString("id-ID")}` });
+      } else {
+        const trialDisc = (data as any).trial_discount || 0;
+        toast({ title: "✉️ Confess dikirim!", description: `Bayar ${rupiah((data as any).charged || 0)} · ${(data as any).free_count || 0} gratis${trialDisc > 0 ? ` · 🎁 Diskon percobaan Rp${trialDisc.toLocaleString("id-ID")}` : ""}${shareToWall ? " · 🌐 Tayang di Wall" : ""}` });
+      }
       onSent();
     } catch (e: any) {
       const msg = e?.message || "Gagal kirim";
