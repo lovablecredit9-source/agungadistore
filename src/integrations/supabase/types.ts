@@ -936,6 +936,33 @@ export type Database = {
         }
         Relationships: []
       }
+      confess_free_trial: {
+        Row: {
+          created_at: string
+          device_fingerprint: string | null
+          id: string
+          ip_address: string | null
+          user_balance_id: string | null
+          visitor_id: string
+        }
+        Insert: {
+          created_at?: string
+          device_fingerprint?: string | null
+          id?: string
+          ip_address?: string | null
+          user_balance_id?: string | null
+          visitor_id: string
+        }
+        Update: {
+          created_at?: string
+          device_fingerprint?: string | null
+          id?: string
+          ip_address?: string | null
+          user_balance_id?: string | null
+          visitor_id?: string
+        }
+        Relationships: []
+      }
       confess_thread_messages: {
         Row: {
           created_at: string
