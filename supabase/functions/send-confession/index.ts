@@ -34,6 +34,8 @@ Deno.serve(async (req) => {
     const message = String(body.message || "").trim().slice(0, 800);
     const phones: string[] = Array.isArray(body.phones) ? body.phones : [];
     const pin = String(body.pin || "");
+    const deviceFingerprint = String(body.deviceFingerprint || "").trim().slice(0, 200) || null;
+    const ipAddress = (req.headers.get("x-forwarded-for") || req.headers.get("cf-connecting-ip") || "").split(",")[0].trim() || null;
 
     if (!visitorId) return Response.json({ error: "Visitor tidak dikenal" }, { status: 400, headers: corsHeaders });
     if (message.length < 3) return Response.json({ error: "Pesan terlalu pendek" }, { status: 400, headers: corsHeaders });
@@ -82,11 +84,47 @@ Deno.serve(async (req) => {
 
     const paidPhones = normalized.filter((p) => !freeMap.has(p));
     const freePhones = normalized.filter((p) => freeMap.has(p));
-    const chargePrice = paidPhones.length > 0 ? priceFor(paidPhones.length) : 0;
+    let chargePrice = paidPhones.length > 0 ? priceFor(paidPhones.length) : 0;
+    let trialDiscount = 0;
+    let trialGranted = false;
+
+    // === Percobaan GRATIS pertama untuk pengguna baru ===
+    // Diskon Rp 2.000 (setara 1 nomor) jika perangkat/IP/akun belum pernah klaim.
+    if (chargePrice > 0) {
+      const { data: usedByAccount } = await admin
+        .from("confess_free_trial")
+        .select("id")
+        .eq("user_balance_id", ubId)
+        .maybeSingle();
+
+      if (!usedByAccount) {
+        const orFilters: string[] = [`visitor_id.eq.${visitorId}`];
+        if (deviceFingerprint) orFilters.push(`device_fingerprint.eq.${deviceFingerprint}`);
+        if (ipAddress) orFilters.push(`ip_address.eq.${ipAddress}`);
+
+        const { data: abuse } = await admin
+          .from("confess_free_trial")
+          .select("id, user_balance_id")
+          .or(orFilters.join(","))
+          .limit(1)
+          .maybeSingle();
+
+        if (abuse) {
+          return Response.json({
+            error: "⚠️ Anda melakukan kecurangan! Perangkat/IP ini sudah pernah klaim percobaan gratis Confess. Ganti akun tidak akan mengulang gratisan — silakan lanjut dengan saldo.",
+            cheatDetected: true,
+          }, { status: 403, headers: corsHeaders });
+        }
+
+        trialDiscount = Math.min(chargePrice, 2000);
+        chargePrice = chargePrice - trialDiscount;
+        trialGranted = true;
+      }
+    }
 
     if (bal.balance < chargePrice) {
       return Response.json({
-        error: `Saldo kurang. Butuh Rp${chargePrice.toLocaleString("id-ID")} (${paidPhones.length} nomor baru, ${freePhones.length} gratis)`,
+        error: `Saldo kurang. Butuh Rp${chargePrice.toLocaleString("id-ID")} (${paidPhones.length} nomor baru, ${freePhones.length} gratis${trialDiscount > 0 ? ", diskon percobaan Rp" + trialDiscount.toLocaleString("id-ID") : ""})`,
       }, { status: 400, headers: corsHeaders });
     }
 
@@ -100,6 +138,15 @@ Deno.serve(async (req) => {
     if (chargePrice > 0) {
       const { error: updErr } = await admin.from("user_balances").update({ balance: bal.balance - chargePrice }).eq("id", bal.id);
       if (updErr) return Response.json({ error: "Gagal memotong saldo" }, { status: 500, headers: corsHeaders });
+    }
+
+    if (trialGranted) {
+      await admin.from("confess_free_trial").insert({
+        visitor_id: visitorId,
+        user_balance_id: ubId,
+        ip_address: ipAddress,
+        device_fingerprint: deviceFingerprint,
+      });
     }
 
     const trxId = `CFS-${Date.now()}-${crypto.randomUUID().replace(/-/g, "").slice(0, 5).toUpperCase()}`;
