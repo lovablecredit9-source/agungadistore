@@ -22,6 +22,7 @@ const PUBLIC_API_KEY = "ak_L3HVVgbqgdFEM2EipHB4AKjgrOVSyJqCcJZOA4OG";
 interface Thread {
   id: string;
   target_phone: string;
+  target_avatar_url?: string | null;
   sender_name: string | null;
   last_paid_at: string;
   free_until: string;
