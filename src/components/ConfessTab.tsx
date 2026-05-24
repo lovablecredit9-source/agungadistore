@@ -904,6 +904,10 @@ function ChatView({ visitorId, thread, onBack, onTopUp }: {
             >
               {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Paperclip className="w-4 h-4" />}
             </Button>
+            <VoiceRecorderButton
+              disabled={uploading || sending}
+              onRecorded={(file) => handleFile(file)}
+            />
             <Textarea
               value={input}
               onChange={(e) => setInput(e.target.value)}
