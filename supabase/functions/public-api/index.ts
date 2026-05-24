@@ -1291,6 +1291,43 @@ Deno.serve(async (req) => {
         result = { active: !!thread };
         break;
       }
+      case "confess_avatar_pending": {
+        // Daftar nomor target pada thread aktif yang foto profilnya belum diambil
+        // atau sudah lebih dari 24 jam (untuk refresh).
+        const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+        const { data } = await supabase
+          .from("confess_threads")
+          .select("target_phone, target_avatar_updated_at")
+          .gt("free_until", new Date().toISOString())
+          .order("last_message_at", { ascending: false })
+          .limit(50);
+        const seen = new Set<string>();
+        const list: string[] = [];
+        for (const t of (data || [])) {
+          const p = (t as any).target_phone;
+          if (!p || seen.has(p)) continue;
+          const ts = (t as any).target_avatar_updated_at;
+          if (!ts || new Date(ts).toISOString() < cutoff) {
+            seen.add(p);
+            list.push(p);
+          }
+        }
+        result = { phones: list };
+        break;
+      }
+      case "confess_avatar_save": {
+        if (req.method !== "POST") return new Response(JSON.stringify({ error: "POST required" }), { status: 405, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        const body = await req.json();
+        const phone = String(body.phone || "").replace(/\D/g, "");
+        const avatar = body.avatar_url ? String(body.avatar_url).slice(0, 1000) : null;
+        if (!phone) return new Response(JSON.stringify({ error: "phone required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        await supabase
+          .from("confess_threads")
+          .update({ target_avatar_url: avatar, target_avatar_updated_at: new Date().toISOString() })
+          .eq("target_phone", phone);
+        result = { ok: true };
+        break;
+      }
       case "confess_stop": {
         if (req.method !== "POST") return new Response(JSON.stringify({ error: "POST required" }), { status: 405, headers: { ...corsHeaders, "Content-Type": "application/json" } });
         const body = await req.json();
