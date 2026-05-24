@@ -80,10 +80,12 @@ function useCountdown(targetIso: string | null) {
 
 export default function ConfessTab() {
   const visitorId = (typeof window !== "undefined" && localStorage.getItem("balance_visitor_id")) || getVisitorId();
-  const [view, setView] = useState<"list" | "compose" | "chat">("list");
+  const [view, setView] = useState<"list" | "compose" | "chat" | "history">("list");
   const [activeThread, setActiveThread] = useState<Thread | null>(null);
   const [threads, setThreads] = useState<Thread[]>([]);
   const [refreshing, setRefreshing] = useState(false);
+  const [trialEligible, setTrialEligible] = useState<null | boolean>(null);
+  const [trialReason, setTrialReason] = useState<string>("");
 
   const loadThreads = useCallback(async () => {
     setRefreshing(true);
@@ -95,7 +97,18 @@ export default function ConfessTab() {
     } catch {} finally { setRefreshing(false); }
   }, [visitorId]);
 
-  useEffect(() => { loadThreads(); }, [loadThreads]);
+  const loadTrial = useCallback(async () => {
+    try {
+      const fp = (typeof window !== "undefined" && (localStorage.getItem("device_fp_v1") || getVisitorId())) || "";
+      const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/public-api?endpoint=confess_trial_status&visitor_id=${encodeURIComponent(visitorId)}&fp=${encodeURIComponent(fp)}`;
+      const res = await fetch(url, { headers: { "x-api-key": PUBLIC_API_KEY } });
+      const j = await res.json();
+      setTrialEligible(!!j?.data?.eligible);
+      setTrialReason(j?.data?.reason || "");
+    } catch {}
+  }, [visitorId]);
+
+  useEffect(() => { loadThreads(); loadTrial(); }, [loadThreads, loadTrial]);
 
   useEffect(() => {
     const ch = supabase
@@ -118,9 +131,33 @@ export default function ConfessTab() {
               <h2 className="font-black text-lg leading-tight bg-gradient-to-r from-pink-500 via-rose-500 to-orange-500 bg-clip-text text-transparent">Confess Anonim</h2>
               <p className="text-[11px] text-muted-foreground">Chat 2 arah via WhatsApp · gratis 24 jam setelah bayar 💌</p>
             </div>
+            {view === "list" && (
+              <Button variant="outline" size="sm" onClick={() => setView("history")} className="rounded-full gap-1 h-8 px-3 text-[11px]">
+                <History className="w-3.5 h-3.5" /> Riwayat
+              </Button>
+            )}
           </div>
         </div>
       </div>
+
+      {/* Trial banner (hanya saat list/compose dan masih eligible) */}
+      {(view === "list" || view === "compose") && trialEligible === true && (
+        <div className="rounded-2xl border-2 border-dashed border-emerald-400/60 bg-gradient-to-r from-emerald-500/10 via-green-500/10 to-emerald-500/10 p-3 flex items-center gap-3">
+          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-500 to-green-600 flex items-center justify-center text-white shrink-0 animate-bounce">
+            <Gift className="w-5 h-5" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="font-bold text-sm text-emerald-700 dark:text-emerald-300">🎁 Percobaan GRATIS Tersedia!</div>
+            <div className="text-[11px] text-emerald-600/80 dark:text-emerald-400/80">Confess pertama kamu otomatis dapat diskon Rp 2.000 (gratis 1 nomor). Berlaku 1× per perangkat.</div>
+          </div>
+        </div>
+      )}
+      {(view === "list" || view === "compose") && trialEligible === false && trialReason === "device_used" && (
+        <div className="rounded-2xl border border-amber-500/40 bg-amber-500/10 p-3 flex items-center gap-2 text-[11px] text-amber-700 dark:text-amber-300">
+          <MessageSquareWarning className="w-4 h-4 shrink-0" />
+          <span>Percobaan gratis sudah dipakai dari perangkat/IP ini sebelumnya. Ganti akun tidak akan mengulang gratisan.</span>
+        </div>
+      )}
 
       {view === "list" && (
         <ThreadListView
@@ -135,8 +172,9 @@ export default function ConfessTab() {
         <ComposeView
           visitorId={visitorId}
           onBack={() => setView("list")}
-          onSent={() => { loadThreads(); setView("list"); }}
+          onSent={() => { loadThreads(); loadTrial(); setView("list"); }}
           existingThreads={threads}
+          trialEligible={trialEligible === true}
         />
       )}
       {view === "chat" && activeThread && (
@@ -146,6 +184,9 @@ export default function ConfessTab() {
           onBack={() => { setActiveThread(null); setView("list"); loadThreads(); }}
           onTopUp={() => setView("compose")}
         />
+      )}
+      {view === "history" && (
+        <HistoryView visitorId={visitorId} onBack={() => setView("list")} />
       )}
     </div>
   );
