@@ -546,10 +546,85 @@ function ComposeView({ visitorId, onBack, onSent, existingThreads, trialEligible
           )}
         </div>
 
+        {/* Mood / Template Picker */}
+        <div>
+          <label className="text-xs font-semibold flex items-center gap-1.5 mb-1.5"><Smile className="w-3.5 h-3.5" /> Mood & Template (opsional)</label>
+          <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-none">
+            {MOODS.map((m) => (
+              <button
+                key={m.tag}
+                type="button"
+                onClick={() => {
+                  if (moodTag === m.tag) { setMoodTag(""); return; }
+                  setMoodTag(m.tag);
+                  if (!message.trim()) setMessage(m.template);
+                }}
+                className={`shrink-0 px-2.5 py-1 rounded-full text-[11px] border whitespace-nowrap transition-all ${
+                  moodTag === m.tag
+                    ? "bg-gradient-to-r from-pink-500 to-rose-500 text-white border-transparent shadow"
+                    : "bg-muted/40 hover:bg-muted text-foreground border-border"
+                }`}
+              >
+                {m.emoji} {m.tag}
+              </button>
+            ))}
+          </div>
+        </div>
+
         <div>
           <label className="text-xs font-semibold flex items-center gap-1.5 mb-1.5"><MessageCircle className="w-3.5 h-3.5" /> Pesan Confess</label>
           <Textarea value={message} onChange={(e) => setMessage(e.target.value)} placeholder="Tulis pesan confess kamu…" rows={4} maxLength={800} />
           <div className="text-[10px] text-right text-muted-foreground mt-1">{message.length}/800</div>
+        </div>
+
+        {/* Wall + Schedule toggles */}
+        <div className="grid grid-cols-1 gap-2">
+          <button
+            type="button"
+            onClick={() => setShareToWall((v) => !v)}
+            className={`flex items-center gap-2 p-2.5 rounded-xl border transition-all ${shareToWall ? "border-pink-500 bg-pink-500/10" : "border-border hover:bg-muted/40"}`}
+          >
+            <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${shareToWall ? "bg-gradient-to-br from-pink-500 to-rose-500 text-white" : "bg-muted text-muted-foreground"}`}>
+              <Globe className="w-4 h-4" />
+            </div>
+            <div className="flex-1 text-left">
+              <div className="text-xs font-bold">Tayangkan di Wall Publik</div>
+              <div className="text-[10px] text-muted-foreground">Anonim · semua orang bisa beri reaksi ❤️🔥😂😢</div>
+            </div>
+            <div className={`w-9 h-5 rounded-full p-0.5 transition-all ${shareToWall ? "bg-pink-500" : "bg-muted-foreground/30"}`}>
+              <div className={`w-4 h-4 rounded-full bg-white transition-transform ${shareToWall ? "translate-x-4" : ""}`} />
+            </div>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setScheduleEnabled((v) => !v)}
+            className={`flex items-center gap-2 p-2.5 rounded-xl border transition-all ${scheduleEnabled ? "border-purple-500 bg-purple-500/10" : "border-border hover:bg-muted/40"}`}
+          >
+            <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${scheduleEnabled ? "bg-gradient-to-br from-purple-500 to-fuchsia-500 text-white" : "bg-muted text-muted-foreground"}`}>
+              <CalendarClock className="w-4 h-4" />
+            </div>
+            <div className="flex-1 text-left">
+              <div className="text-xs font-bold">Kirim Terjadwal</div>
+              <div className="text-[10px] text-muted-foreground">Auto-kirim di waktu tertentu · bisa dibatalkan & refund 100%</div>
+            </div>
+            <div className={`w-9 h-5 rounded-full p-0.5 transition-all ${scheduleEnabled ? "bg-purple-500" : "bg-muted-foreground/30"}`}>
+              <div className={`w-4 h-4 rounded-full bg-white transition-transform ${scheduleEnabled ? "translate-x-4" : ""}`} />
+            </div>
+          </button>
+
+          {scheduleEnabled && (
+            <div className="rounded-xl border border-purple-500/30 bg-purple-500/5 p-2.5 space-y-1.5">
+              <label className="text-[11px] font-semibold flex items-center gap-1"><CalendarClock className="w-3 h-3" /> Waktu kirim</label>
+              <Input
+                type="datetime-local"
+                value={scheduledAt}
+                onChange={(e) => setScheduledAt(e.target.value)}
+                min={(() => { const d = new Date(Date.now() + 5 * 60000); const pad = (n: number) => String(n).padStart(2, "0"); return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`; })()}
+              />
+              <p className="text-[10px] text-purple-700 dark:text-purple-300">Min 5 menit · Maks 30 hari · Saldo akan dipotong sekarang, refund 100% jika dibatalkan sebelum jadwal.</p>
+            </div>
+          )}
         </div>
 
         {showPin && (
