@@ -1560,6 +1560,245 @@ Deno.serve(async (req) => {
         break;
       }
 
+      // ========================= WALL PUBLIK =========================
+      case "confess_wall_list": {
+        const sort = url.searchParams.get("sort") || "new";
+        const limit = Math.min(parseInt(url.searchParams.get("limit") || "30"), 100);
+        const visitor = url.searchParams.get("visitor_id") || "";
+        let q = supabase.from("confess_public_wall").select("id, sender_name, masked_phone, message, mood_tag, reaction_counts, total_reactions, created_at, visitor_id").eq("is_hidden", false);
+        if (sort === "hot") q = q.order("total_reactions", { ascending: false }).order("created_at", { ascending: false });
+        else q = q.order("created_at", { ascending: false });
+        const { data } = await q.limit(limit);
+        if (visitor && data && data.length > 0) {
+          const ids = data.map((d: any) => d.id);
+          const { data: myReacts } = await supabase.from("confess_wall_reactions").select("wall_id, emoji").eq("visitor_id", visitor).in("wall_id", ids);
+          const reactMap = new Map((myReacts || []).map((r: any) => [r.wall_id, r.emoji]));
+          (data as any[]).forEach((d) => { d.my_reaction = reactMap.get(d.id) || null; d.is_mine = d.visitor_id === visitor; delete d.visitor_id; });
+        } else if (data) {
+          (data as any[]).forEach((d) => { d.my_reaction = null; d.is_mine = false; delete d.visitor_id; });
+        }
+        result = data || [];
+        break;
+      }
+
+      case "confess_wall_leaderboard": {
+        const weekAgo = new Date(Date.now() - 7 * 24 * 3600 * 1000).toISOString();
+        const { data } = await supabase
+          .from("confess_public_wall")
+          .select("id, sender_name, masked_phone, message, mood_tag, reaction_counts, total_reactions, created_at")
+          .eq("is_hidden", false)
+          .gte("created_at", weekAgo)
+          .order("total_reactions", { ascending: false })
+          .limit(10);
+        result = data || [];
+        break;
+      }
+
+      case "confess_wall_react": {
+        if (req.method !== "POST") return new Response(JSON.stringify({ error: "POST required" }), { status: 405, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        const body = await req.json();
+        const { wall_id, visitor_id, emoji } = body;
+        const validEmojis = ["heart", "fire", "laugh", "cry"];
+        if (!wall_id || !visitor_id || !validEmojis.includes(emoji)) {
+          return new Response(JSON.stringify({ error: "wall_id, visitor_id, emoji required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        }
+        const { data: wall } = await supabase.from("confess_public_wall").select("id, reaction_counts, total_reactions, visitor_id").eq("id", wall_id).maybeSingle();
+        if (!wall) return new Response(JSON.stringify({ error: "Not found" }), { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+
+        const { data: existing } = await supabase.from("confess_wall_reactions").select("id, emoji").eq("wall_id", wall_id).eq("visitor_id", visitor_id).maybeSingle();
+        const counts: any = wall.reaction_counts || { heart: 0, fire: 0, laugh: 0, cry: 0 };
+        let total = wall.total_reactions || 0;
+        let action: "added" | "removed" | "changed" = "added";
+
+        if (existing) {
+          if (existing.emoji === emoji) {
+            await supabase.from("confess_wall_reactions").delete().eq("id", existing.id);
+            counts[emoji] = Math.max(0, (counts[emoji] || 0) - 1);
+            total = Math.max(0, total - 1);
+            action = "removed";
+          } else {
+            await supabase.from("confess_wall_reactions").update({ emoji }).eq("id", existing.id);
+            counts[existing.emoji] = Math.max(0, (counts[existing.emoji] || 0) - 1);
+            counts[emoji] = (counts[emoji] || 0) + 1;
+            action = "changed";
+          }
+        } else {
+          await supabase.from("confess_wall_reactions").insert({ wall_id, visitor_id, emoji });
+          counts[emoji] = (counts[emoji] || 0) + 1;
+          total += 1;
+          if (wall.visitor_id && wall.visitor_id !== visitor_id) {
+            await supabase.from("notifications").insert({
+              visitor_id: wall.visitor_id,
+              title: "💖 Confess kamu dapat reaksi!",
+              message: `Seseorang memberi reaksi ${emoji === "heart" ? "❤️" : emoji === "fire" ? "🔥" : emoji === "laugh" ? "😂" : "😢"} di Wall.`,
+              type: "info", related_id: wall_id,
+            });
+          }
+        }
+        await supabase.from("confess_public_wall").update({ reaction_counts: counts, total_reactions: total }).eq("id", wall_id);
+        result = { ok: true, action, reaction_counts: counts, total_reactions: total };
+        break;
+      }
+
+      // ========================= SCHEDULED =========================
+      case "confess_scheduled_list": {
+        const visitor = url.searchParams.get("visitor_id");
+        if (!visitor) return new Response(JSON.stringify({ error: "visitor_id required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        const { data } = await supabase
+          .from("confess_scheduled")
+          .select("id, sender_name, target_phones, message, mood_tag, share_to_wall, scheduled_at, status, price_charged, trx_id, created_at, executed_at, error_message")
+          .eq("visitor_id", visitor)
+          .order("scheduled_at", { ascending: false })
+          .limit(50);
+        result = data || [];
+        break;
+      }
+
+      case "confess_scheduled_cancel": {
+        if (req.method !== "POST") return new Response(JSON.stringify({ error: "POST required" }), { status: 405, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        const body = await req.json();
+        const { id, visitor_id } = body;
+        if (!id || !visitor_id) return new Response(JSON.stringify({ error: "id, visitor_id required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        const { data: row } = await supabase.from("confess_scheduled").select("*").eq("id", id).eq("visitor_id", visitor_id).maybeSingle();
+        if (!row) return new Response(JSON.stringify({ error: "Tidak ditemukan" }), { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        if (row.status !== "pending") return new Response(JSON.stringify({ error: "Hanya pesan pending yang bisa dibatalkan" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        const { data: ub } = await supabase.from("user_balances").select("balance").eq("id", row.user_balance_id).maybeSingle();
+        if (ub) await supabase.from("user_balances").update({ balance: (ub.balance || 0) + row.price_charged }).eq("id", row.user_balance_id);
+        await supabase.from("confess_scheduled").update({ status: "cancelled", executed_at: new Date().toISOString() }).eq("id", id);
+        await supabase.from("balance_transactions").insert({
+          visitor_id, type: "refund", amount: row.price_charged,
+          description: `Refund Confess Terjadwal (dibatalkan)`, trx_id: row.trx_id || null,
+        });
+        result = { ok: true, refunded: row.price_charged };
+        break;
+      }
+
+      // ========================= REVEAL IDENTITAS =========================
+      case "confess_reveal_request": {
+        if (req.method !== "POST") return new Response(JSON.stringify({ error: "POST required" }), { status: 405, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        const body = await req.json();
+        const { thread_id, requester_visitor_id, pin } = body;
+        if (!thread_id || !requester_visitor_id) return new Response(JSON.stringify({ error: "thread_id, requester_visitor_id required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        const REVEAL_PRICE = 5000;
+
+        const { data: thread } = await supabase.from("confess_threads").select("id, visitor_id, user_balance_id, target_phone, sender_name").eq("id", thread_id).maybeSingle();
+        if (!thread) return new Response(JSON.stringify({ error: "Thread tidak ditemukan" }), { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        if (thread.visitor_id === requester_visitor_id) return new Response(JSON.stringify({ error: "Tidak bisa reveal diri sendiri" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+
+        const { data: pending } = await supabase.from("confess_reveal_requests").select("id").eq("thread_id", thread_id).eq("requester_visitor_id", requester_visitor_id).eq("status", "pending").maybeSingle();
+        if (pending) return new Response(JSON.stringify({ error: "Sudah ada permintaan pending untuk thread ini" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+
+        const { data: hist } = await supabase.from("balance_login_history").select("user_balance_id").eq("visitor_id", requester_visitor_id).order("logged_in_at", { ascending: false }).limit(1).maybeSingle();
+        if (!hist?.user_balance_id) return new Response(JSON.stringify({ error: "Akun saldo tidak ditemukan", needLogin: true }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+
+        const { data: bal } = await supabase.from("user_balances").select("id, balance").eq("id", hist.user_balance_id).maybeSingle();
+        if (!bal || bal.balance < REVEAL_PRICE) return new Response(JSON.stringify({ error: `Saldo kurang. Butuh Rp${REVEAL_PRICE.toLocaleString("id-ID")}` }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+
+        if (!pin || !/^\d{6}$/.test(String(pin))) return new Response(JSON.stringify({ error: "PIN 6 digit wajib", needPin: true }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        const { data: pinRow } = await supabase.from("user_pins").select("pin_hash").eq("visitor_id", requester_visitor_id).maybeSingle();
+        if (!pinRow) return new Response(JSON.stringify({ error: "PIN belum dibuat", needPin: true }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        const sha = async (s: string) => { const b = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(s)); return Array.from(new Uint8Array(b)).map((x) => x.toString(16).padStart(2, "0")).join(""); };
+        if ((await sha(String(pin))) !== pinRow.pin_hash) return new Response(JSON.stringify({ error: "PIN salah", needPin: true }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+
+        await supabase.from("user_balances").update({ balance: bal.balance - REVEAL_PRICE }).eq("id", bal.id);
+
+        const { data: rev } = await supabase.from("confess_reveal_requests").insert({
+          thread_id, requester_phone: thread.target_phone,
+          requester_visitor_id, requester_user_balance_id: hist.user_balance_id,
+          sender_visitor_id: thread.visitor_id, sender_user_balance_id: thread.user_balance_id,
+          amount: REVEAL_PRICE,
+        }).select("id").single();
+
+        await supabase.from("notifications").insert({
+          visitor_id: thread.visitor_id,
+          title: "🔓 Permintaan Reveal Identitas",
+          message: `Target +${thread.target_phone} ingin tahu identitasmu. Setuju = dapat Rp${REVEAL_PRICE.toLocaleString("id-ID")}, tolak = saldo target dikembalikan.`,
+          type: "info", related_id: rev?.id || null,
+        });
+
+        result = { ok: true, request_id: rev?.id };
+        break;
+      }
+
+      case "confess_reveal_respond": {
+        if (req.method !== "POST") return new Response(JSON.stringify({ error: "POST required" }), { status: 405, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        const body = await req.json();
+        const { request_id, sender_visitor_id, approve, reveal_name } = body;
+        if (!request_id || !sender_visitor_id || typeof approve !== "boolean") return new Response(JSON.stringify({ error: "request_id, sender_visitor_id, approve required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+
+        const { data: rev } = await supabase.from("confess_reveal_requests").select("*").eq("id", request_id).maybeSingle();
+        if (!rev) return new Response(JSON.stringify({ error: "Not found" }), { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        if (rev.sender_visitor_id !== sender_visitor_id) return new Response(JSON.stringify({ error: "Bukan pemilik" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        if (rev.status !== "pending") return new Response(JSON.stringify({ error: "Sudah direspons" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+
+        if (approve) {
+          if (rev.sender_user_balance_id) {
+            const { data: sb } = await supabase.from("user_balances").select("balance").eq("id", rev.sender_user_balance_id).maybeSingle();
+            if (sb) await supabase.from("user_balances").update({ balance: (sb.balance || 0) + rev.amount }).eq("id", rev.sender_user_balance_id);
+            await supabase.from("balance_transactions").insert({
+              visitor_id: sender_visitor_id, type: "reward", amount: rev.amount,
+              description: `Hadiah reveal identitas dari +${rev.requester_phone}`,
+            });
+          }
+          let nm = String(reveal_name || "").trim().slice(0, 60);
+          if (!nm && rev.sender_user_balance_id) {
+            const { data: ub } = await supabase.from("user_balances").select("username").eq("id", rev.sender_user_balance_id).maybeSingle();
+            nm = ub?.username || "";
+          }
+          if (!nm) nm = "Pengirim Anonim";
+
+          await supabase.from("confess_reveal_requests").update({
+            status: "approved", revealed_name: nm, revealed_visitor_id: sender_visitor_id,
+            responded_at: new Date().toISOString(),
+          }).eq("id", request_id);
+
+          if (rev.requester_visitor_id) {
+            await supabase.from("notifications").insert({
+              visitor_id: rev.requester_visitor_id,
+              title: "✅ Identitas Pengirim Terungkap!",
+              message: `Pengirim confess kamu adalah: ${nm}`,
+              type: "success", related_id: request_id,
+            });
+          }
+        } else {
+          if (rev.requester_user_balance_id) {
+            const { data: rb } = await supabase.from("user_balances").select("balance").eq("id", rev.requester_user_balance_id).maybeSingle();
+            if (rb) await supabase.from("user_balances").update({ balance: (rb.balance || 0) + rev.amount }).eq("id", rev.requester_user_balance_id);
+            if (rev.requester_visitor_id) {
+              await supabase.from("balance_transactions").insert({
+                visitor_id: rev.requester_visitor_id, type: "refund", amount: rev.amount,
+                description: `Refund: pengirim menolak reveal identitas`,
+              });
+            }
+          }
+          await supabase.from("confess_reveal_requests").update({ status: "rejected", responded_at: new Date().toISOString() }).eq("id", request_id);
+          if (rev.requester_visitor_id) {
+            await supabase.from("notifications").insert({
+              visitor_id: rev.requester_visitor_id,
+              title: "❌ Permintaan Reveal Ditolak",
+              message: `Pengirim menolak. Saldo Rp${rev.amount.toLocaleString("id-ID")} dikembalikan.`,
+              type: "warning", related_id: request_id,
+            });
+          }
+        }
+        result = { ok: true };
+        break;
+      }
+
+      case "confess_reveal_status": {
+        const visitor = url.searchParams.get("visitor_id");
+        const threadId = url.searchParams.get("thread_id");
+        if (!visitor) return new Response(JSON.stringify({ error: "visitor_id required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        let sQ = supabase.from("confess_reveal_requests").select("id, thread_id, requester_phone, amount, status, revealed_name, created_at, responded_at").eq("sender_visitor_id", visitor);
+        let rQ = supabase.from("confess_reveal_requests").select("id, thread_id, requester_phone, amount, status, revealed_name, created_at, responded_at").eq("requester_visitor_id", visitor);
+        if (threadId) { sQ = sQ.eq("thread_id", threadId); rQ = rQ.eq("thread_id", threadId); }
+        const [asSender, asRequester] = await Promise.all([sQ.order("created_at", { ascending: false }).limit(30), rQ.order("created_at", { ascending: false }).limit(30)]);
+        result = { as_sender: asSender.data || [], as_requester: asRequester.data || [] };
+        break;
+      }
+
+
+
       default:
         return new Response(JSON.stringify({
           error: "Unknown endpoint",
