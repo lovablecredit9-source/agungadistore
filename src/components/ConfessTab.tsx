@@ -187,8 +187,12 @@ function ThreadCard({ thread, onOpen }: { thread: Thread; onOpen: () => void }) 
     <button onClick={onOpen} className="w-full text-left p-3 rounded-xl border hover:border-pink-400 hover:bg-pink-500/5 transition-all">
       <div className="flex items-start justify-between gap-2 mb-1">
         <div className="flex items-center gap-2 min-w-0">
-          <div className="w-9 h-9 rounded-full bg-gradient-to-br from-pink-500 to-rose-500 flex items-center justify-center text-white shrink-0">
-            <Phone className="w-4 h-4" />
+          <div className="w-9 h-9 rounded-full bg-gradient-to-br from-pink-500 to-rose-500 flex items-center justify-center text-white shrink-0 overflow-hidden ring-2 ring-pink-500/20">
+            {thread.target_avatar_url ? (
+              <img src={thread.target_avatar_url} alt={thread.target_phone} className="w-full h-full object-cover" loading="lazy" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
+            ) : (
+              <Phone className="w-4 h-4" />
+            )}
           </div>
           <div className="min-w-0">
             <div className="font-bold text-sm font-mono truncate">+{thread.target_phone}</div>
