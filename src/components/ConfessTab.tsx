@@ -215,6 +215,12 @@ export default function ConfessTab() {
       {view === "history" && (
         <HistoryView visitorId={visitorId} onBack={() => setView("list")} />
       )}
+      {view === "wall" && (
+        <WallView visitorId={visitorId} onCompose={() => setView("compose")} />
+      )}
+      {view === "scheduled" && (
+        <ScheduledView visitorId={visitorId} onCompose={() => setView("compose")} />
+      )}
     </div>
   );
 }
