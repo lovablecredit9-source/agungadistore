@@ -245,12 +245,14 @@ function ComposeView({ visitorId, onBack, onSent, existingThreads }: {
     if (total > 0 && !/^\d{6}$/.test(pin)) { setShowPin(true); return toast({ title: "Masukkan PIN 6 digit", variant: "destructive" }); }
     setLoading(true);
     try {
+      const deviceFingerprint = (typeof window !== "undefined" && (localStorage.getItem("device_fp_v1") || getVisitorId())) || "";
       const { data, error } = await supabase.functions.invoke("send-confession", {
-        body: { visitorId, senderName: senderName.trim(), message: message.trim(), phones: clean, pin },
+        body: { visitorId, senderName: senderName.trim(), message: message.trim(), phones: clean, pin, deviceFingerprint },
       });
       if (error) throw error;
       if ((data as any)?.error) throw new Error((data as any).error);
-      toast({ title: "✉️ Confess dikirim!", description: `Bayar ${rupiah((data as any).charged || 0)} · ${(data as any).free_count || 0} gratis` });
+      const trialDisc = (data as any).trial_discount || 0;
+      toast({ title: "✉️ Confess dikirim!", description: `Bayar ${rupiah((data as any).charged || 0)} · ${(data as any).free_count || 0} gratis${trialDisc > 0 ? ` · 🎁 Diskon percobaan Rp${trialDisc.toLocaleString("id-ID")}` : ""}` });
       onSent();
     } catch (e: any) {
       const msg = e?.message || "Gagal kirim";
