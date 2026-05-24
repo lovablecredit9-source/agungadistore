@@ -1020,6 +1020,8 @@ export type Database = {
           last_message_preview: string | null
           last_paid_at: string
           sender_name: string | null
+          target_avatar_updated_at: string | null
+          target_avatar_url: string | null
           target_phone: string
           unread_count: number
           updated_at: string
@@ -1034,6 +1036,8 @@ export type Database = {
           last_message_preview?: string | null
           last_paid_at?: string
           sender_name?: string | null
+          target_avatar_updated_at?: string | null
+          target_avatar_url?: string | null
           target_phone: string
           unread_count?: number
           updated_at?: string
@@ -1048,6 +1052,8 @@ export type Database = {
           last_message_preview?: string | null
           last_paid_at?: string
           sender_name?: string | null
+          target_avatar_updated_at?: string | null
+          target_avatar_url?: string | null
           target_phone?: string
           unread_count?: number
           updated_at?: string

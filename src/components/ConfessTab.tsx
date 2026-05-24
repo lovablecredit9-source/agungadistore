@@ -22,6 +22,7 @@ const PUBLIC_API_KEY = "ak_L3HVVgbqgdFEM2EipHB4AKjgrOVSyJqCcJZOA4OG";
 interface Thread {
   id: string;
   target_phone: string;
+  target_avatar_url?: string | null;
   sender_name: string | null;
   last_paid_at: string;
   free_until: string;
@@ -186,8 +187,12 @@ function ThreadCard({ thread, onOpen }: { thread: Thread; onOpen: () => void }) 
     <button onClick={onOpen} className="w-full text-left p-3 rounded-xl border hover:border-pink-400 hover:bg-pink-500/5 transition-all">
       <div className="flex items-start justify-between gap-2 mb-1">
         <div className="flex items-center gap-2 min-w-0">
-          <div className="w-9 h-9 rounded-full bg-gradient-to-br from-pink-500 to-rose-500 flex items-center justify-center text-white shrink-0">
-            <Phone className="w-4 h-4" />
+          <div className="w-9 h-9 rounded-full bg-gradient-to-br from-pink-500 to-rose-500 flex items-center justify-center text-white shrink-0 overflow-hidden ring-2 ring-pink-500/20">
+            {thread.target_avatar_url ? (
+              <img src={thread.target_avatar_url} alt={thread.target_phone} className="w-full h-full object-cover" loading="lazy" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
+            ) : (
+              <Phone className="w-4 h-4" />
+            )}
           </div>
           <div className="min-w-0">
             <div className="font-bold text-sm font-mono truncate">+{thread.target_phone}</div>
@@ -467,8 +472,12 @@ function ChatView({ visitorId, thread, onBack, onTopUp }: {
           <Button variant="ghost" size="icon" onClick={onBack} className="rounded-full hover:bg-pink-500/10"><ArrowLeft className="w-4 h-4" /></Button>
           <div className="relative">
             <div className="absolute inset-0 rounded-full bg-gradient-to-br from-pink-400 to-rose-500 blur-md opacity-60 animate-pulse" />
-            <div className="relative w-11 h-11 rounded-full bg-gradient-to-br from-pink-500 via-rose-500 to-fuchsia-500 flex items-center justify-center text-white shadow-lg ring-2 ring-white/20">
-              <Phone className="w-4 h-4" />
+            <div className="relative w-11 h-11 rounded-full bg-gradient-to-br from-pink-500 via-rose-500 to-fuchsia-500 flex items-center justify-center text-white shadow-lg ring-2 ring-white/20 overflow-hidden">
+              {thread.target_avatar_url ? (
+                <img src={thread.target_avatar_url} alt={thread.target_phone} className="w-full h-full object-cover" loading="lazy" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
+              ) : (
+                <Phone className="w-4 h-4" />
+              )}
             </div>
             <span className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full ring-2 ring-background ${cd.expired ? "bg-gray-400" : "bg-emerald-500 animate-pulse"}`} />
           </div>
