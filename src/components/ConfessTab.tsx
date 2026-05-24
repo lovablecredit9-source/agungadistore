@@ -396,7 +396,9 @@ function ComposeView({ visitorId, onBack, onSent, existingThreads, trialEligible
     return existingThreads.some((t) => t.target_phone === norm && new Date(t.free_until) > new Date());
   }).length;
   const paidCount = cleanPhones.length - freeCount;
-  const total = paidCount > 0 ? priceFor(paidCount) : 0;
+  const grossTotal = paidCount > 0 ? priceFor(paidCount) : 0;
+  const trialDiscountPreview = trialEligible && grossTotal > 0 ? Math.min(grossTotal, 2000) : 0;
+  const total = Math.max(0, grossTotal - trialDiscountPreview);
 
   async function submit() {
     const clean = phones.map((p) => p.trim()).filter(Boolean);
