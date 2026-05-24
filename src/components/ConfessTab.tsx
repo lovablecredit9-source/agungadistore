@@ -1,7 +1,8 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import {
   Send, Loader2, Plus, X, MessageSquareWarning, Lock, ArrowLeft, Phone, User as UserIcon,
-  RefreshCw, CheckCheck, Check, Clock, MessageCircle, Sparkles, Timer, Paperclip, ImageIcon, FileText, Download, Play, Copy, History, Gift
+  RefreshCw, CheckCheck, Check, Clock, MessageCircle, Sparkles, Timer, Paperclip, ImageIcon, FileText, Download, Play, Copy, History, Gift,
+  Globe, CalendarClock, Mic, Square, Flame, Heart, Laugh, Frown, Eye, EyeOff, Trophy, Trash2, CheckCircle2, XCircle, Smile
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -80,7 +81,7 @@ function useCountdown(targetIso: string | null) {
 
 export default function ConfessTab() {
   const visitorId = (typeof window !== "undefined" && localStorage.getItem("balance_visitor_id")) || getVisitorId();
-  const [view, setView] = useState<"list" | "compose" | "chat" | "history">("list");
+  const [view, setView] = useState<"list" | "compose" | "chat" | "history" | "wall" | "scheduled">("list");
   const [activeThread, setActiveThread] = useState<Thread | null>(null);
   const [threads, setThreads] = useState<Thread[]>([]);
   const [refreshing, setRefreshing] = useState(false);
@@ -137,6 +138,32 @@ export default function ConfessTab() {
               </Button>
             )}
           </div>
+          {/* Tab strip — fitur baru */}
+          {(view === "list" || view === "wall" || view === "scheduled") && (
+            <div className="mt-3 flex gap-1.5 overflow-x-auto scrollbar-none">
+              {[
+                { key: "list", label: "Chat", icon: MessageCircle },
+                { key: "wall", label: "Wall Publik", icon: Globe },
+                { key: "scheduled", label: "Terjadwal", icon: CalendarClock },
+              ].map((t) => {
+                const Icon = t.icon;
+                const active = view === t.key;
+                return (
+                  <button
+                    key={t.key}
+                    onClick={() => setView(t.key as any)}
+                    className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-[11px] font-bold whitespace-nowrap transition-all ${
+                      active
+                        ? "bg-gradient-to-r from-pink-500 to-rose-500 text-white shadow-md"
+                        : "bg-muted/60 text-muted-foreground hover:bg-muted"
+                    }`}
+                  >
+                    <Icon className="w-3 h-3" /> {t.label}
+                  </button>
+                );
+              })}
+            </div>
+          )}
         </div>
       </div>
 
@@ -187,6 +214,12 @@ export default function ConfessTab() {
       )}
       {view === "history" && (
         <HistoryView visitorId={visitorId} onBack={() => setView("list")} />
+      )}
+      {view === "wall" && (
+        <WallView visitorId={visitorId} onCompose={() => setView("compose")} />
+      )}
+      {view === "scheduled" && (
+        <ScheduledView visitorId={visitorId} onCompose={() => setView("compose")} />
       )}
     </div>
   );
@@ -388,34 +421,78 @@ function ComposeView({ visitorId, onBack, onSent, existingThreads, trialEligible
   const [pin, setPin] = useState("");
   const [showPin, setShowPin] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [moodTag, setMoodTag] = useState<string>("");
+  const [shareToWall, setShareToWall] = useState(false);
+  const [scheduleEnabled, setScheduleEnabled] = useState(false);
+  const [scheduledAt, setScheduledAt] = useState<string>("");
+
+  const MOODS = [
+    { tag: "Cinta", emoji: "💘", template: "Aku diam-diam suka sama kamu sejak…" },
+    { tag: "Maaf", emoji: "🙏", template: "Maaf banget kalau dulu aku pernah…" },
+    { tag: "Terima Kasih", emoji: "🌷", template: "Terima kasih udah selalu ada saat aku…" },
+    { tag: "Marah", emoji: "💢", template: "Aku kecewa sama sikap kamu yang…" },
+    { tag: "Sedih", emoji: "💔", template: "Sebenarnya aku sakit hati waktu kamu…" },
+    { tag: "Lucu", emoji: "😂", template: "Btw, kamu tau gak waktu itu sebenarnya…" },
+    { tag: "Rahasia", emoji: "🤫", template: "Aku punya rahasia yang harus kamu tau…" },
+    { tag: "Crush", emoji: "🥰", template: "Setiap lihat kamu, jantungku…" },
+  ];
 
   // Hitung yang gratis vs bayar
   const cleanPhones = phones.map((p) => p.replace(/\D/g, "")).filter(Boolean);
-  const freeCount = cleanPhones.filter((digits) => {
+  const freeCount = scheduleEnabled ? 0 : cleanPhones.filter((digits) => {
     const norm = digits.startsWith("0") ? "62" + digits.slice(1) : digits.startsWith("62") ? digits : digits.startsWith("8") ? "62" + digits : digits;
     return existingThreads.some((t) => t.target_phone === norm && new Date(t.free_until) > new Date());
   }).length;
   const paidCount = cleanPhones.length - freeCount;
   const grossTotal = paidCount > 0 ? priceFor(paidCount) : 0;
-  const trialDiscountPreview = trialEligible && grossTotal > 0 ? Math.min(grossTotal, 2000) : 0;
+  // Saat dijadwal, gratis trial tidak berlaku
+  const trialDiscountPreview = !scheduleEnabled && trialEligible && grossTotal > 0 ? Math.min(grossTotal, 2000) : 0;
   const total = Math.max(0, grossTotal - trialDiscountPreview);
+
+  // Default schedule: 1 jam dari sekarang (untuk input datetime-local lokal)
+  useEffect(() => {
+    if (scheduleEnabled && !scheduledAt) {
+      const d = new Date(Date.now() + 60 * 60 * 1000);
+      const pad = (n: number) => String(n).padStart(2, "0");
+      setScheduledAt(`${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`);
+    }
+  }, [scheduleEnabled, scheduledAt]);
 
   async function submit() {
     const clean = phones.map((p) => p.trim()).filter(Boolean);
     if (clean.length < 1) return toast({ title: "Isi minimal 1 nomor WA", variant: "destructive" });
     if (clean.length > 3) return toast({ title: "Maksimal 3 nomor", variant: "destructive" });
     if (message.trim().length < 3) return toast({ title: "Pesan terlalu pendek", variant: "destructive" });
+    let scheduledIso: string | null = null;
+    if (scheduleEnabled) {
+      if (!scheduledAt) return toast({ title: "Pilih waktu kirim", variant: "destructive" });
+      const d = new Date(scheduledAt);
+      if (isNaN(d.getTime())) return toast({ title: "Waktu tidak valid", variant: "destructive" });
+      if (d.getTime() - Date.now() < 5 * 60 * 1000) return toast({ title: "Minimal 5 menit dari sekarang", variant: "destructive" });
+      if (d.getTime() - Date.now() > 30 * 24 * 3600 * 1000) return toast({ title: "Maksimal 30 hari ke depan", variant: "destructive" });
+      scheduledIso = d.toISOString();
+    }
     if (total > 0 && !/^\d{6}$/.test(pin)) { setShowPin(true); return toast({ title: "Masukkan PIN 6 digit", variant: "destructive" }); }
     setLoading(true);
     try {
       const deviceFingerprint = (typeof window !== "undefined" && (localStorage.getItem("device_fp_v1") || getVisitorId())) || "";
       const { data, error } = await supabase.functions.invoke("send-confession", {
-        body: { visitorId, senderName: senderName.trim(), message: message.trim(), phones: clean, pin, deviceFingerprint },
+        body: {
+          visitorId, senderName: senderName.trim(), message: message.trim(),
+          phones: clean, pin, deviceFingerprint,
+          moodTag: moodTag || undefined,
+          shareToWall,
+          scheduledAt: scheduledIso || undefined,
+        },
       });
       if (error) throw error;
       if ((data as any)?.error) throw new Error((data as any).error);
-      const trialDisc = (data as any).trial_discount || 0;
-      toast({ title: "✉️ Confess dikirim!", description: `Bayar ${rupiah((data as any).charged || 0)} · ${(data as any).free_count || 0} gratis${trialDisc > 0 ? ` · 🎁 Diskon percobaan Rp${trialDisc.toLocaleString("id-ID")}` : ""}` });
+      if ((data as any)?.scheduled) {
+        toast({ title: "⏰ Confess Dijadwalkan!", description: `Akan dikirim otomatis pada ${new Date(scheduledIso!).toLocaleString("id-ID")}` });
+      } else {
+        const trialDisc = (data as any).trial_discount || 0;
+        toast({ title: "✉️ Confess dikirim!", description: `Bayar ${rupiah((data as any).charged || 0)} · ${(data as any).free_count || 0} gratis${trialDisc > 0 ? ` · 🎁 Diskon percobaan Rp${trialDisc.toLocaleString("id-ID")}` : ""}${shareToWall ? " · 🌐 Tayang di Wall" : ""}` });
+      }
       onSent();
     } catch (e: any) {
       const msg = e?.message || "Gagal kirim";
@@ -469,10 +546,85 @@ function ComposeView({ visitorId, onBack, onSent, existingThreads, trialEligible
           )}
         </div>
 
+        {/* Mood / Template Picker */}
+        <div>
+          <label className="text-xs font-semibold flex items-center gap-1.5 mb-1.5"><Smile className="w-3.5 h-3.5" /> Mood & Template (opsional)</label>
+          <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-none">
+            {MOODS.map((m) => (
+              <button
+                key={m.tag}
+                type="button"
+                onClick={() => {
+                  if (moodTag === m.tag) { setMoodTag(""); return; }
+                  setMoodTag(m.tag);
+                  if (!message.trim()) setMessage(m.template);
+                }}
+                className={`shrink-0 px-2.5 py-1 rounded-full text-[11px] border whitespace-nowrap transition-all ${
+                  moodTag === m.tag
+                    ? "bg-gradient-to-r from-pink-500 to-rose-500 text-white border-transparent shadow"
+                    : "bg-muted/40 hover:bg-muted text-foreground border-border"
+                }`}
+              >
+                {m.emoji} {m.tag}
+              </button>
+            ))}
+          </div>
+        </div>
+
         <div>
           <label className="text-xs font-semibold flex items-center gap-1.5 mb-1.5"><MessageCircle className="w-3.5 h-3.5" /> Pesan Confess</label>
           <Textarea value={message} onChange={(e) => setMessage(e.target.value)} placeholder="Tulis pesan confess kamu…" rows={4} maxLength={800} />
           <div className="text-[10px] text-right text-muted-foreground mt-1">{message.length}/800</div>
+        </div>
+
+        {/* Wall + Schedule toggles */}
+        <div className="grid grid-cols-1 gap-2">
+          <button
+            type="button"
+            onClick={() => setShareToWall((v) => !v)}
+            className={`flex items-center gap-2 p-2.5 rounded-xl border transition-all ${shareToWall ? "border-pink-500 bg-pink-500/10" : "border-border hover:bg-muted/40"}`}
+          >
+            <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${shareToWall ? "bg-gradient-to-br from-pink-500 to-rose-500 text-white" : "bg-muted text-muted-foreground"}`}>
+              <Globe className="w-4 h-4" />
+            </div>
+            <div className="flex-1 text-left">
+              <div className="text-xs font-bold">Tayangkan di Wall Publik</div>
+              <div className="text-[10px] text-muted-foreground">Anonim · semua orang bisa beri reaksi ❤️🔥😂😢</div>
+            </div>
+            <div className={`w-9 h-5 rounded-full p-0.5 transition-all ${shareToWall ? "bg-pink-500" : "bg-muted-foreground/30"}`}>
+              <div className={`w-4 h-4 rounded-full bg-white transition-transform ${shareToWall ? "translate-x-4" : ""}`} />
+            </div>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setScheduleEnabled((v) => !v)}
+            className={`flex items-center gap-2 p-2.5 rounded-xl border transition-all ${scheduleEnabled ? "border-purple-500 bg-purple-500/10" : "border-border hover:bg-muted/40"}`}
+          >
+            <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${scheduleEnabled ? "bg-gradient-to-br from-purple-500 to-fuchsia-500 text-white" : "bg-muted text-muted-foreground"}`}>
+              <CalendarClock className="w-4 h-4" />
+            </div>
+            <div className="flex-1 text-left">
+              <div className="text-xs font-bold">Kirim Terjadwal</div>
+              <div className="text-[10px] text-muted-foreground">Auto-kirim di waktu tertentu · bisa dibatalkan & refund 100%</div>
+            </div>
+            <div className={`w-9 h-5 rounded-full p-0.5 transition-all ${scheduleEnabled ? "bg-purple-500" : "bg-muted-foreground/30"}`}>
+              <div className={`w-4 h-4 rounded-full bg-white transition-transform ${scheduleEnabled ? "translate-x-4" : ""}`} />
+            </div>
+          </button>
+
+          {scheduleEnabled && (
+            <div className="rounded-xl border border-purple-500/30 bg-purple-500/5 p-2.5 space-y-1.5">
+              <label className="text-[11px] font-semibold flex items-center gap-1"><CalendarClock className="w-3 h-3" /> Waktu kirim</label>
+              <Input
+                type="datetime-local"
+                value={scheduledAt}
+                onChange={(e) => setScheduledAt(e.target.value)}
+                min={(() => { const d = new Date(Date.now() + 5 * 60000); const pad = (n: number) => String(n).padStart(2, "0"); return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`; })()}
+              />
+              <p className="text-[10px] text-purple-700 dark:text-purple-300">Min 5 menit · Maks 30 hari · Saldo akan dipotong sekarang, refund 100% jika dibatalkan sebelum jadwal.</p>
+            </div>
+          )}
         </div>
 
         {showPin && (
@@ -495,7 +647,9 @@ function ComposeView({ visitorId, onBack, onSent, existingThreads, trialEligible
           </div>
           <Button onClick={() => { if (!showPin && total > 0) { setShowPin(true); return; } submit(); }} disabled={loading} className="rounded-2xl bg-gradient-to-r from-pink-500 via-rose-500 to-orange-500 hover:opacity-90">
             {loading ? <Loader2 className="w-4 h-4 mr-1.5 animate-spin" /> : <Send className="w-4 h-4 mr-1.5" />}
-            {total === 0 ? "Kirim Gratis" : (showPin ? "Bayar & Kirim" : "Lanjut Bayar")}
+            {scheduleEnabled
+              ? (showPin || total === 0 ? "Jadwalkan" : "Lanjut Bayar")
+              : (total === 0 ? "Kirim Gratis" : (showPin ? "Bayar & Kirim" : "Lanjut Bayar"))}
           </Button>
         </div>
 
@@ -672,6 +826,7 @@ function ChatView({ visitorId, thread, onBack, onTopUp }: {
               </div>
             )}
           </div>
+          <RevealButton thread={thread} visitorId={visitorId} />
           {!cd.expired && (
             <div className="hidden sm:flex items-center gap-1 px-2 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/30">
               <Sparkles className="w-3 h-3 text-emerald-500" />
@@ -749,6 +904,10 @@ function ChatView({ visitorId, thread, onBack, onTopUp }: {
             >
               {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Paperclip className="w-4 h-4" />}
             </Button>
+            <VoiceRecorderButton
+              disabled={uploading || sending}
+              onRecorded={(file) => handleFile(file)}
+            />
             <Textarea
               value={input}
               onChange={(e) => setInput(e.target.value)}
@@ -841,4 +1000,471 @@ function Bubble({ msg, grouped }: { msg: ThreadMessage; grouped?: boolean }) {
     </div>
   );
 }
+
+
+
+/* ============================================================
+   ===============  FITUR BARU  ===============================
+   ============================================================ */
+
+/* ------------- VOICE RECORDER BUTTON ------------- */
+function VoiceRecorderButton({ onRecorded, disabled }: { onRecorded: (file: File) => void; disabled?: boolean }) {
+  const [recording, setRecording] = useState(false);
+  const [seconds, setSeconds] = useState(0);
+  const mediaRef = useRef<MediaRecorder | null>(null);
+  const chunksRef = useRef<Blob[]>([]);
+  const timerRef = useRef<number | null>(null);
+
+  async function start() {
+    if (disabled || recording) return;
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mime = MediaRecorder.isTypeSupported("audio/webm") ? "audio/webm" : "";
+      const rec = new MediaRecorder(stream, mime ? { mimeType: mime } : undefined);
+      chunksRef.current = [];
+      rec.ondataavailable = (e) => { if (e.data.size > 0) chunksRef.current.push(e.data); };
+      rec.onstop = () => {
+        stream.getTracks().forEach((t) => t.stop());
+        const blob = new Blob(chunksRef.current, { type: mime || "audio/webm" });
+        if (blob.size > 1024) {
+          const file = new File([blob], `voice-${Date.now()}.webm`, { type: blob.type });
+          onRecorded(file);
+        }
+      };
+      rec.start();
+      mediaRef.current = rec;
+      setSeconds(0);
+      setRecording(true);
+      timerRef.current = window.setInterval(() => setSeconds((s) => {
+        if (s >= 60) { stop(); return s; }
+        return s + 1;
+      }), 1000);
+    } catch (e: any) {
+      toast({ title: "Mic ditolak", description: e?.message || "Izinkan akses mikrofon", variant: "destructive" });
+    }
+  }
+
+  function stop() {
+    try { mediaRef.current?.stop(); } catch {}
+    mediaRef.current = null;
+    if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; }
+    setRecording(false);
+  }
+
+  function cancel() {
+    chunksRef.current = [];
+    try { mediaRef.current?.stop(); } catch {}
+    mediaRef.current = null;
+    if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; }
+    setRecording(false);
+  }
+
+  if (recording) {
+    return (
+      <div className="flex items-center gap-1 px-2 py-1 rounded-full bg-red-500/15 border border-red-500/40">
+        <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+        <span className="text-[11px] font-mono font-bold text-red-600">{String(Math.floor(seconds/60)).padStart(2,"0")}:{String(seconds%60).padStart(2,"0")}</span>
+        <Button type="button" size="icon" variant="ghost" className="h-7 w-7 rounded-full text-red-600 hover:bg-red-500/20" onClick={cancel} title="Batal">
+          <X className="w-3.5 h-3.5" />
+        </Button>
+        <Button type="button" size="icon" className="h-7 w-7 rounded-full bg-red-500 hover:bg-red-600 text-white" onClick={stop} title="Kirim">
+          <Send className="w-3.5 h-3.5" />
+        </Button>
+      </div>
+    );
+  }
+  return (
+    <Button
+      type="button"
+      variant="ghost"
+      size="icon"
+      disabled={disabled}
+      onClick={start}
+      className="rounded-full shrink-0 text-pink-500 hover:text-pink-600 hover:bg-pink-500/10"
+      title="Rekam voice note (maks 60 detik)"
+    >
+      <Mic className="w-4 h-4" />
+    </Button>
+  );
+}
+
+/* ------------- REVEAL IDENTITY BUTTON ------------- */
+function RevealButton({ thread, visitorId }: { thread: Thread; visitorId: string }) {
+  const [open, setOpen] = useState(false);
+  const [pin, setPin] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [status, setStatus] = useState<any>(null);
+
+  const loadStatus = useCallback(async () => {
+    try {
+      const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/public-api?endpoint=confess_reveal_status&visitor_id=${encodeURIComponent(visitorId)}&thread_id=${thread.id}`;
+      const r = await fetch(url, { headers: { "x-api-key": PUBLIC_API_KEY } });
+      const j = await r.json();
+      setStatus(j?.data || null);
+    } catch {}
+  }, [thread.id, visitorId]);
+
+  useEffect(() => { loadStatus(); }, [loadStatus]);
+
+  // Cari permintaan terakhir SEBAGAI requester di thread ini
+  const myRequest = (status?.as_requester || []).find((x: any) => x.thread_id === thread.id);
+
+  async function submitReveal() {
+    if (!/^\d{6}$/.test(pin)) { toast({ title: "PIN 6 digit", variant: "destructive" }); return; }
+    setLoading(true);
+    try {
+      const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/public-api?endpoint=confess_reveal_request`;
+      const r = await fetch(url, { method: "POST", headers: { "x-api-key": PUBLIC_API_KEY, "Content-Type": "application/json" }, body: JSON.stringify({ thread_id: thread.id, requester_visitor_id: visitorId, pin }) });
+      const j = await r.json();
+      if (j?.error) throw new Error(j.error);
+      toast({ title: "🔓 Permintaan terkirim", description: "Saldo Rp 5.000 ditahan. Refund 100% jika pengirim menolak." });
+      setOpen(false); setPin("");
+      loadStatus();
+    } catch (e: any) {
+      toast({ title: "Gagal", description: e?.message || "Error", variant: "destructive" });
+    } finally { setLoading(false); }
+  }
+
+  if (myRequest?.status === "approved") {
+    return (
+      <div className="flex items-center gap-1 px-2 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/30" title={`Pengirim: ${myRequest.revealed_name}`}>
+        <Eye className="w-3 h-3 text-emerald-500" />
+        <span className="text-[10px] font-bold text-emerald-600 truncate max-w-[80px]">{myRequest.revealed_name}</span>
+      </div>
+    );
+  }
+  if (myRequest?.status === "pending") {
+    return (
+      <div className="flex items-center gap-1 px-2 py-1 rounded-full bg-amber-500/15 border border-amber-500/30">
+        <Clock className="w-3 h-3 text-amber-500" />
+        <span className="text-[10px] font-bold text-amber-600">Reveal pending</span>
+      </div>
+    );
+  }
+
+  return (
+    <>
+      <Button
+        type="button"
+        size="sm"
+        variant="outline"
+        onClick={() => setOpen(true)}
+        className="rounded-full gap-1 h-7 px-2 text-[10px] border-fuchsia-500/40 text-fuchsia-600 hover:bg-fuchsia-500/10"
+      >
+        <Eye className="w-3 h-3" /> Reveal
+      </Button>
+      {open && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setOpen(false)}>
+          <div className="w-full max-w-sm rounded-2xl bg-card border border-fuchsia-500/30 p-5 space-y-3 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center gap-2">
+              <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-fuchsia-500 to-pink-500 flex items-center justify-center text-white"><Eye className="w-5 h-5" /></div>
+              <div className="flex-1">
+                <h3 className="font-black text-base">Reveal Identitas</h3>
+                <p className="text-[11px] text-muted-foreground">Minta pengirim ungkap siapa dia.</p>
+              </div>
+              <Button variant="ghost" size="icon" onClick={() => setOpen(false)}><X className="w-4 h-4" /></Button>
+            </div>
+            <div className="rounded-xl bg-fuchsia-500/10 border border-fuchsia-500/30 p-3 text-[11px] space-y-1.5">
+              <div className="flex justify-between"><span>Biaya escrow</span><b>Rp 5.000</b></div>
+              <div className="text-muted-foreground">Saldo ditahan. Jika disetujui → diberikan ke pengirim. Jika ditolak → <b className="text-emerald-600">refund 100%</b>.</div>
+            </div>
+            <div>
+              <label className="text-[11px] font-semibold flex items-center gap-1 mb-1"><Lock className="w-3 h-3" /> PIN 6 Digit</label>
+              <Input value={pin} onChange={(e) => setPin(e.target.value.replace(/\D/g, "").slice(0, 6))} type="password" inputMode="numeric" placeholder="••••••" maxLength={6} />
+            </div>
+            <Button onClick={submitReveal} disabled={loading} className="w-full rounded-xl bg-gradient-to-r from-fuchsia-500 to-pink-500">
+              {loading ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Eye className="w-4 h-4 mr-1" />} Kirim Permintaan
+            </Button>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
+/* ------------- WALL PUBLIK VIEW ------------- */
+interface WallItem {
+  id: string;
+  sender_name: string | null;
+  masked_phone: string | null;
+  message: string;
+  mood_tag: string | null;
+  reaction_counts: { heart?: number; fire?: number; laugh?: number; cry?: number };
+  total_reactions: number;
+  created_at: string;
+  my_reaction: string | null;
+  is_mine: boolean;
+}
+
+function WallView({ visitorId, onCompose }: { visitorId: string; onCompose: () => void }) {
+  const [items, setItems] = useState<WallItem[]>([]);
+  const [leaders, setLeaders] = useState<WallItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [sort, setSort] = useState<"new" | "hot">("new");
+  const [showLeader, setShowLeader] = useState(false);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    try {
+      const [a, b] = await Promise.all([
+        fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/public-api?endpoint=confess_wall_list&sort=${sort}&visitor_id=${encodeURIComponent(visitorId)}&limit=50`, { headers: { "x-api-key": PUBLIC_API_KEY } }).then((r) => r.json()),
+        fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/public-api?endpoint=confess_wall_leaderboard`, { headers: { "x-api-key": PUBLIC_API_KEY } }).then((r) => r.json()),
+      ]);
+      if (Array.isArray(a?.data)) setItems(a.data);
+      if (Array.isArray(b?.data)) setLeaders(b.data);
+    } finally { setLoading(false); }
+  }, [sort, visitorId]);
+
+  useEffect(() => { load(); }, [load]);
+
+  useEffect(() => {
+    const ch = supabase
+      .channel("confess-wall")
+      .on("postgres_changes", { event: "*", schema: "public", table: "confess_public_wall" }, () => load())
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, [load]);
+
+  async function react(wallId: string, emoji: string) {
+    setItems((prev) => prev.map((it) => {
+      if (it.id !== wallId) return it;
+      const counts = { ...(it.reaction_counts || {}) } as any;
+      let total = it.total_reactions || 0;
+      let newMy: string | null = emoji;
+      if (it.my_reaction === emoji) {
+        counts[emoji] = Math.max(0, (counts[emoji] || 0) - 1);
+        total = Math.max(0, total - 1);
+        newMy = null;
+      } else {
+        if (it.my_reaction) { counts[it.my_reaction] = Math.max(0, (counts[it.my_reaction] || 0) - 1); }
+        else { total += 1; }
+        counts[emoji] = (counts[emoji] || 0) + 1;
+      }
+      return { ...it, reaction_counts: counts, total_reactions: total, my_reaction: newMy };
+    }));
+    try {
+      await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/public-api?endpoint=confess_wall_react`, {
+        method: "POST", headers: { "x-api-key": PUBLIC_API_KEY, "Content-Type": "application/json" },
+        body: JSON.stringify({ wall_id: wallId, visitor_id: visitorId, emoji }),
+      });
+    } catch { load(); }
+  }
+
+  const EMOJI_MAP: Record<string, { icon: any; label: string; cls: string }> = {
+    heart: { icon: Heart, label: "❤️", cls: "text-rose-500" },
+    fire:  { icon: Flame, label: "🔥", cls: "text-orange-500" },
+    laugh: { icon: Laugh, label: "😂", cls: "text-amber-500" },
+    cry:   { icon: Frown, label: "😢", cls: "text-blue-500" },
+  };
+
+  return (
+    <>
+      <Button onClick={onCompose} className="w-full gap-2 rounded-2xl bg-gradient-to-r from-pink-500 via-rose-500 to-orange-500 h-11 text-sm font-bold shadow-lg">
+        <Globe className="w-4 h-4" /> Tulis Confess ke Wall
+      </Button>
+
+      <div className="flex items-center gap-2">
+        <div className="flex gap-1 p-1 rounded-full bg-muted/60 flex-1">
+          {(["new", "hot"] as const).map((s) => (
+            <button key={s} onClick={() => setSort(s)} className={`flex-1 px-3 py-1.5 rounded-full text-[11px] font-bold ${sort === s ? "bg-card shadow text-foreground" : "text-muted-foreground"}`}>
+              {s === "new" ? "🆕 Terbaru" : "🔥 Trending"}
+            </button>
+          ))}
+        </div>
+        <Button variant="outline" size="sm" onClick={() => setShowLeader((v) => !v)} className="rounded-full gap-1 h-9 px-3 text-[11px]">
+          <Trophy className="w-3.5 h-3.5" /> Top
+        </Button>
+      </div>
+
+      {showLeader && (
+        <div className="rounded-2xl border-2 border-amber-500/40 bg-gradient-to-br from-amber-500/10 to-orange-500/5 p-3 space-y-2">
+          <div className="flex items-center gap-2"><Trophy className="w-4 h-4 text-amber-500" /><h3 className="font-bold text-sm">Leaderboard Minggu Ini</h3></div>
+          {leaders.length === 0 ? (
+            <p className="text-[11px] text-muted-foreground">Belum ada confess populer minggu ini.</p>
+          ) : leaders.slice(0, 10).map((l, i) => (
+            <div key={l.id} className="flex items-center gap-2 text-[11px] bg-card rounded-lg p-2">
+              <span className={`w-6 h-6 rounded-full flex items-center justify-center font-black text-[10px] ${i === 0 ? "bg-amber-500 text-white" : i === 1 ? "bg-zinc-400 text-white" : i === 2 ? "bg-orange-700 text-white" : "bg-muted"}`}>{i + 1}</span>
+              <span className="flex-1 truncate">{l.message.slice(0, 50)}</span>
+              <span className="font-bold text-rose-500">🔥 {l.total_reactions}</span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {loading ? (
+        <div className="text-center py-10"><Loader2 className="w-6 h-6 animate-spin mx-auto text-pink-500" /></div>
+      ) : items.length === 0 ? (
+        <div className="rounded-2xl border bg-card p-8 text-center">
+          <Globe className="w-10 h-10 mx-auto text-muted-foreground/50 mb-2" />
+          <p className="text-sm text-muted-foreground">Wall masih kosong. Jadilah yang pertama menulis confess publik!</p>
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {items.map((it) => (
+            <div key={it.id} className="rounded-2xl border bg-card p-3 space-y-2 hover:border-pink-500/40 transition-colors">
+              <div className="flex items-start justify-between gap-2">
+                <div className="flex items-center gap-2 min-w-0">
+                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-pink-500 to-rose-500 flex items-center justify-center text-white shrink-0">
+                    <EyeOff className="w-4 h-4" />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="text-xs font-bold truncate">{it.sender_name || "Anonim"}</div>
+                    <div className="text-[10px] text-muted-foreground">to {it.masked_phone || "•••"} · {new Date(it.created_at).toLocaleString("id-ID", { dateStyle: "short", timeStyle: "short" })}</div>
+                  </div>
+                </div>
+                {it.mood_tag && (
+                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-pink-500/15 text-pink-600 font-bold whitespace-nowrap">{it.mood_tag}</span>
+                )}
+              </div>
+              <p className="text-sm whitespace-pre-wrap leading-relaxed">{it.message}</p>
+              <div className="flex items-center gap-1 pt-1 border-t">
+                {Object.entries(EMOJI_MAP).map(([key, e]) => {
+                  const Icon = e.icon;
+                  const active = it.my_reaction === key;
+                  const n = (it.reaction_counts as any)?.[key] || 0;
+                  return (
+                    <button
+                      key={key}
+                      onClick={() => react(it.id, key)}
+                      className={`flex items-center gap-1 px-2 py-1 rounded-full text-[11px] font-bold transition-all ${active ? "bg-pink-500/20 ring-1 ring-pink-500/50" : "hover:bg-muted"}`}
+                    >
+                      <Icon className={`w-3.5 h-3.5 ${active ? e.cls + " fill-current" : "text-muted-foreground"}`} />
+                      {n > 0 && <span className={active ? e.cls : "text-muted-foreground"}>{n}</span>}
+                    </button>
+                  );
+                })}
+                <div className="flex-1" />
+                <span className="text-[10px] text-muted-foreground">{it.total_reactions} reaksi</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </>
+  );
+}
+
+/* ------------- SCHEDULED VIEW ------------- */
+interface ScheduledItem {
+  id: string;
+  sender_name: string | null;
+  target_phones: string[];
+  message: string;
+  mood_tag: string | null;
+  share_to_wall: boolean;
+  scheduled_at: string;
+  status: string;
+  price_charged: number;
+  trx_id: string | null;
+  created_at: string;
+  executed_at: string | null;
+  error_message: string | null;
+}
+
+function ScheduledView({ visitorId, onCompose }: { visitorId: string; onCompose: () => void }) {
+  const [items, setItems] = useState<ScheduledItem[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    try {
+      const r = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/public-api?endpoint=confess_scheduled_list&visitor_id=${encodeURIComponent(visitorId)}`, { headers: { "x-api-key": PUBLIC_API_KEY } });
+      const j = await r.json();
+      if (Array.isArray(j?.data)) setItems(j.data);
+    } finally { setLoading(false); }
+  }, [visitorId]);
+
+  useEffect(() => { load(); }, [load]);
+
+  useEffect(() => {
+    const ch = supabase
+      .channel("confess-scheduled")
+      .on("postgres_changes", { event: "*", schema: "public", table: "confess_scheduled" }, () => load())
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, [load]);
+
+  async function cancel(id: string) {
+    if (!confirm("Batalkan confess terjadwal? Saldo akan dikembalikan 100%.")) return;
+    try {
+      const r = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/public-api?endpoint=confess_scheduled_cancel`, {
+        method: "POST", headers: { "x-api-key": PUBLIC_API_KEY, "Content-Type": "application/json" },
+        body: JSON.stringify({ id, visitor_id: visitorId }),
+      });
+      const j = await r.json();
+      if (j?.error) throw new Error(j.error);
+      toast({ title: "✅ Dibatalkan", description: `Refund Rp ${(j?.data?.refunded || 0).toLocaleString("id-ID")}` });
+      load();
+    } catch (e: any) {
+      toast({ title: "Gagal", description: e?.message, variant: "destructive" });
+    }
+  }
+
+  const STATUS: Record<string, { cls: string; label: string; icon: any }> = {
+    pending:   { cls: "bg-amber-500/15 text-amber-600",  label: "Menunggu",  icon: Clock },
+    sent:      { cls: "bg-emerald-500/15 text-emerald-600", label: "Terkirim", icon: CheckCircle2 },
+    failed:    { cls: "bg-red-500/15 text-red-600",      label: "Gagal",     icon: XCircle },
+    cancelled: { cls: "bg-muted text-muted-foreground",  label: "Dibatalkan", icon: X },
+  };
+
+  return (
+    <>
+      <Button onClick={onCompose} className="w-full gap-2 rounded-2xl bg-gradient-to-r from-purple-500 to-fuchsia-500 h-11 text-sm font-bold shadow-lg">
+        <CalendarClock className="w-4 h-4" /> Jadwalkan Confess Baru
+      </Button>
+
+      {loading ? (
+        <div className="text-center py-10"><Loader2 className="w-6 h-6 animate-spin mx-auto text-purple-500" /></div>
+      ) : items.length === 0 ? (
+        <div className="rounded-2xl border bg-card p-8 text-center">
+          <CalendarClock className="w-10 h-10 mx-auto text-muted-foreground/50 mb-2" />
+          <p className="text-sm text-muted-foreground">Belum ada confess terjadwal.</p>
+          <p className="text-[11px] text-muted-foreground mt-1">Atur waktu spesifik agar pesan kamu terkirim otomatis 🕒</p>
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {items.map((it) => {
+            const st = STATUS[it.status] || STATUS.pending;
+            const Icon = st.icon;
+            const when = new Date(it.scheduled_at);
+            const diff = when.getTime() - Date.now();
+            const inFuture = diff > 0 && it.status === "pending";
+            return (
+              <div key={it.id} className="rounded-2xl border bg-card p-3 space-y-2">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-purple-500 to-fuchsia-500 flex items-center justify-center text-white shrink-0">
+                      <CalendarClock className="w-4 h-4" />
+                    </div>
+                    <div className="min-w-0">
+                      <div className="text-xs font-bold">{when.toLocaleString("id-ID", { dateStyle: "medium", timeStyle: "short" })}</div>
+                      <div className="text-[10px] text-muted-foreground">{it.target_phones?.length || 0} nomor · Rp {(it.price_charged || 0).toLocaleString("id-ID")}</div>
+                    </div>
+                  </div>
+                  <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold flex items-center gap-1 ${st.cls}`}>
+                    <Icon className="w-3 h-3" /> {st.label}
+                  </span>
+                </div>
+                {it.mood_tag && <span className="text-[10px] px-2 py-0.5 rounded-full bg-pink-500/15 text-pink-600 font-bold inline-block">{it.mood_tag}</span>}
+                <p className="text-xs bg-muted/40 rounded-lg p-2 line-clamp-3">{it.message}</p>
+                <div className="flex items-center gap-1 text-[10px] text-muted-foreground flex-wrap">
+                  {it.target_phones?.map((p, i) => (
+                    <span key={i} className="font-mono bg-muted px-1.5 py-0.5 rounded">+{p}</span>
+                  ))}
+                </div>
+                {it.error_message && <p className="text-[11px] text-red-600 bg-red-500/10 p-2 rounded-lg">{it.error_message}</p>}
+                {inFuture && (
+                  <Button onClick={() => cancel(it.id)} variant="outline" size="sm" className="w-full rounded-xl border-red-500/40 text-red-600 hover:bg-red-500/10 gap-1">
+                    <Trash2 className="w-3.5 h-3.5" /> Batalkan & Refund
+                  </Button>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </>
+  );
+}
+
 
