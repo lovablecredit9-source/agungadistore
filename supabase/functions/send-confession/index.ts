@@ -253,6 +253,8 @@ Deno.serve(async (req) => {
       charged: chargePrice,
       free_count: freePhones.length,
       paid_count: paidPhones.length,
+      trial_discount: trialDiscount,
+      trial_granted: trialGranted,
     }, { headers: corsHeaders });
   } catch (e) {
     return Response.json({ error: e instanceof Error ? e.message : "Error" }, { status: 500, headers: corsHeaders });
