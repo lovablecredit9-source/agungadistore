@@ -999,6 +999,8 @@ function Bubble({ msg, grouped }: { msg: ThreadMessage; grouped?: boolean }) {
       </div>
     </div>
   );
+}
+
 
 
 /* ============================================================
