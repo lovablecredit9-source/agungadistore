@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import {
   Send, Loader2, Plus, X, MessageSquareWarning, Lock, ArrowLeft, Phone, User as UserIcon,
-  RefreshCw, CheckCheck, Check, Clock, MessageCircle, Sparkles, Timer, Paperclip, ImageIcon, FileText, Download, Play
+  RefreshCw, CheckCheck, Check, Clock, MessageCircle, Sparkles, Timer, Paperclip, ImageIcon, FileText, Download, Play, Copy, History, Gift
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -80,10 +80,12 @@ function useCountdown(targetIso: string | null) {
 
 export default function ConfessTab() {
   const visitorId = (typeof window !== "undefined" && localStorage.getItem("balance_visitor_id")) || getVisitorId();
-  const [view, setView] = useState<"list" | "compose" | "chat">("list");
+  const [view, setView] = useState<"list" | "compose" | "chat" | "history">("list");
   const [activeThread, setActiveThread] = useState<Thread | null>(null);
   const [threads, setThreads] = useState<Thread[]>([]);
   const [refreshing, setRefreshing] = useState(false);
+  const [trialEligible, setTrialEligible] = useState<null | boolean>(null);
+  const [trialReason, setTrialReason] = useState<string>("");
 
   const loadThreads = useCallback(async () => {
     setRefreshing(true);
@@ -95,7 +97,18 @@ export default function ConfessTab() {
     } catch {} finally { setRefreshing(false); }
   }, [visitorId]);
 
-  useEffect(() => { loadThreads(); }, [loadThreads]);
+  const loadTrial = useCallback(async () => {
+    try {
+      const fp = (typeof window !== "undefined" && (localStorage.getItem("device_fp_v1") || getVisitorId())) || "";
+      const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/public-api?endpoint=confess_trial_status&visitor_id=${encodeURIComponent(visitorId)}&fp=${encodeURIComponent(fp)}`;
+      const res = await fetch(url, { headers: { "x-api-key": PUBLIC_API_KEY } });
+      const j = await res.json();
+      setTrialEligible(!!j?.data?.eligible);
+      setTrialReason(j?.data?.reason || "");
+    } catch {}
+  }, [visitorId]);
+
+  useEffect(() => { loadThreads(); loadTrial(); }, [loadThreads, loadTrial]);
 
   useEffect(() => {
     const ch = supabase
@@ -118,9 +131,33 @@ export default function ConfessTab() {
               <h2 className="font-black text-lg leading-tight bg-gradient-to-r from-pink-500 via-rose-500 to-orange-500 bg-clip-text text-transparent">Confess Anonim</h2>
               <p className="text-[11px] text-muted-foreground">Chat 2 arah via WhatsApp · gratis 24 jam setelah bayar 💌</p>
             </div>
+            {view === "list" && (
+              <Button variant="outline" size="sm" onClick={() => setView("history")} className="rounded-full gap-1 h-8 px-3 text-[11px]">
+                <History className="w-3.5 h-3.5" /> Riwayat
+              </Button>
+            )}
           </div>
         </div>
       </div>
+
+      {/* Trial banner (hanya saat list/compose dan masih eligible) */}
+      {(view === "list" || view === "compose") && trialEligible === true && (
+        <div className="rounded-2xl border-2 border-dashed border-emerald-400/60 bg-gradient-to-r from-emerald-500/10 via-green-500/10 to-emerald-500/10 p-3 flex items-center gap-3">
+          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-500 to-green-600 flex items-center justify-center text-white shrink-0 animate-bounce">
+            <Gift className="w-5 h-5" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="font-bold text-sm text-emerald-700 dark:text-emerald-300">🎁 Percobaan GRATIS Tersedia!</div>
+            <div className="text-[11px] text-emerald-600/80 dark:text-emerald-400/80">Confess pertama kamu otomatis dapat diskon Rp 2.000 (gratis 1 nomor). Berlaku 1× per perangkat.</div>
+          </div>
+        </div>
+      )}
+      {(view === "list" || view === "compose") && trialEligible === false && trialReason === "device_used" && (
+        <div className="rounded-2xl border border-amber-500/40 bg-amber-500/10 p-3 flex items-center gap-2 text-[11px] text-amber-700 dark:text-amber-300">
+          <MessageSquareWarning className="w-4 h-4 shrink-0" />
+          <span>Percobaan gratis sudah dipakai dari perangkat/IP ini sebelumnya. Ganti akun tidak akan mengulang gratisan.</span>
+        </div>
+      )}
 
       {view === "list" && (
         <ThreadListView
@@ -135,8 +172,9 @@ export default function ConfessTab() {
         <ComposeView
           visitorId={visitorId}
           onBack={() => setView("list")}
-          onSent={() => { loadThreads(); setView("list"); }}
+          onSent={() => { loadThreads(); loadTrial(); setView("list"); }}
           existingThreads={threads}
+          trialEligible={trialEligible === true}
         />
       )}
       {view === "chat" && activeThread && (
@@ -146,6 +184,9 @@ export default function ConfessTab() {
           onBack={() => { setActiveThread(null); setView("list"); loadThreads(); }}
           onTopUp={() => setView("compose")}
         />
+      )}
+      {view === "history" && (
+        <HistoryView visitorId={visitorId} onBack={() => setView("list")} />
       )}
     </div>
   );
@@ -183,6 +224,12 @@ function ThreadListView({ threads, refreshing, onRefresh, onCompose, onOpen }: {
 
 function ThreadCard({ thread, onOpen }: { thread: Thread; onOpen: () => void }) {
   const cd = useCountdown(thread.free_until);
+  const copyPhone = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    navigator.clipboard?.writeText("+" + thread.target_phone).then(() => {
+      toast({ title: "✅ Nomor disalin", description: "+" + thread.target_phone });
+    }).catch(() => {});
+  };
   return (
     <button onClick={onOpen} className="w-full text-left p-3 rounded-xl border hover:border-pink-400 hover:bg-pink-500/5 transition-all">
       <div className="flex items-start justify-between gap-2 mb-1">
@@ -195,7 +242,12 @@ function ThreadCard({ thread, onOpen }: { thread: Thread; onOpen: () => void }) 
             )}
           </div>
           <div className="min-w-0">
-            <div className="font-bold text-sm font-mono truncate">+{thread.target_phone}</div>
+            <div className="flex items-center gap-1">
+              <div className="font-bold text-sm font-mono truncate">+{thread.target_phone}</div>
+              <span onClick={copyPhone} className="p-1 rounded-md hover:bg-pink-500/10 text-muted-foreground hover:text-pink-500 cursor-pointer" title="Salin nomor">
+                <Copy className="w-3 h-3" />
+              </span>
+            </div>
             <div className="text-[10px] text-muted-foreground">
               {new Date(thread.last_message_at).toLocaleString("id-ID", { dateStyle: "short", timeStyle: "short" })}
             </div>
@@ -217,9 +269,118 @@ function ThreadCard({ thread, onOpen }: { thread: Thread; onOpen: () => void }) 
   );
 }
 
+/* ============ HISTORY ============ */
+interface ConfessHistoryItem {
+  id: string;
+  trx_id: string;
+  sender_name: string | null;
+  message: string;
+  num_targets: number;
+  total_price: number;
+  status: string;
+  created_at: string;
+  confession_targets: { id: string; phone: string; status: string; sent_at: string | null }[];
+  confession_replies: { id: string; from_phone: string; reply_text: string; created_at: string }[];
+}
+
+function HistoryView({ visitorId, onBack }: { visitorId: string; onBack: () => void }) {
+  const [items, setItems] = useState<ConfessHistoryItem[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    try {
+      const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/public-api?endpoint=confessions_by_visitor&visitor_id=${encodeURIComponent(visitorId)}`;
+      const res = await fetch(url, { headers: { "x-api-key": PUBLIC_API_KEY } });
+      const j = await res.json();
+      if (Array.isArray(j?.data)) setItems(j.data);
+    } finally { setLoading(false); }
+  }, [visitorId]);
+
+  useEffect(() => { load(); }, [load]);
+
+  const copyPhone = (phone: string) => {
+    navigator.clipboard?.writeText("+" + phone).then(() => {
+      toast({ title: "✅ Nomor disalin", description: "+" + phone });
+    }).catch(() => {});
+  };
+
+  const short = (s: string) => s.replace(/[^0-9]/g, "").slice(-6) || s.slice(-6);
+
+  const totalSpent = items.reduce((a, b) => a + (b.total_price || 0), 0);
+
+  return (
+    <>
+      <Button variant="ghost" size="sm" onClick={onBack} className="gap-1 -ml-2">
+        <ArrowLeft className="w-4 h-4" /> Kembali
+      </Button>
+
+      <div className="rounded-2xl border bg-gradient-to-br from-pink-500/10 via-rose-500/5 to-orange-500/10 p-4 flex items-center gap-3">
+        <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-pink-500 to-rose-500 flex items-center justify-center text-white"><History className="w-5 h-5" /></div>
+        <div className="flex-1 min-w-0">
+          <div className="text-[11px] text-muted-foreground">Total Transaksi · {items.length} kiriman</div>
+          <div className="font-black text-lg bg-gradient-to-r from-pink-500 to-rose-500 bg-clip-text text-transparent">{rupiah(totalSpent)}</div>
+        </div>
+        <Button variant="ghost" size="icon" onClick={load} disabled={loading}><RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} /></Button>
+      </div>
+
+      {loading && items.length === 0 ? (
+        <div className="text-center py-10"><Loader2 className="w-6 h-6 animate-spin mx-auto text-pink-500" /></div>
+      ) : items.length === 0 ? (
+        <div className="rounded-2xl border bg-card p-8 text-center">
+          <MessageSquareWarning className="w-10 h-10 mx-auto text-muted-foreground/50 mb-2" />
+          <p className="text-sm text-muted-foreground">Belum ada riwayat pembelian confess.</p>
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {items.map((it) => (
+            <div key={it.id} className="rounded-xl border bg-card p-3 space-y-2">
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0">
+                  <div className="font-mono text-[10px] text-muted-foreground">#{short(it.trx_id)}</div>
+                  <div className="text-[11px] text-muted-foreground">{new Date(it.created_at).toLocaleString("id-ID", { dateStyle: "short", timeStyle: "short" })}</div>
+                </div>
+                <div className="text-right shrink-0">
+                  <div className="font-bold text-sm bg-gradient-to-r from-pink-500 to-rose-500 bg-clip-text text-transparent">{rupiah(it.total_price)}</div>
+                  <span className={`text-[9px] px-1.5 py-0.5 rounded-full ${it.status === "sent" ? "bg-emerald-500/15 text-emerald-600" : it.status === "failed" ? "bg-red-500/15 text-red-600" : "bg-amber-500/15 text-amber-600"}`}>{it.status}</span>
+                </div>
+              </div>
+              <p className="text-xs bg-muted/40 rounded-lg p-2 line-clamp-3">{it.message}</p>
+              <div className="space-y-1">
+                {it.confession_targets.map((t) => (
+                  <div key={t.id} className="flex items-center justify-between gap-2 text-[11px]">
+                    <div className="flex items-center gap-1 min-w-0">
+                      <Phone className="w-3 h-3 text-pink-500 shrink-0" />
+                      <span className="font-mono truncate">+{t.phone}</span>
+                      <button onClick={() => copyPhone(t.phone)} className="p-0.5 rounded hover:bg-pink-500/10 text-muted-foreground hover:text-pink-500" title="Salin nomor">
+                        <Copy className="w-3 h-3" />
+                      </button>
+                    </div>
+                    <span className={`text-[9px] px-1.5 py-0.5 rounded-full ${t.status === "sent" ? "bg-emerald-500/15 text-emerald-600" : t.status === "failed" ? "bg-red-500/15 text-red-600" : "bg-muted text-muted-foreground"}`}>{t.status}</span>
+                  </div>
+                ))}
+              </div>
+              {it.confession_replies.length > 0 && (
+                <div className="border-t pt-2 space-y-1">
+                  <div className="text-[10px] font-semibold text-muted-foreground">{it.confession_replies.length} balasan</div>
+                  {it.confession_replies.slice(0, 3).map((r) => (
+                    <div key={r.id} className="text-[11px] bg-pink-500/5 rounded p-1.5">
+                      <span className="font-mono text-pink-600">+{r.from_phone}:</span> <span className="text-muted-foreground line-clamp-1">{r.reply_text}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </>
+  );
+}
+
 /* ============ COMPOSE (new / paid) ============ */
-function ComposeView({ visitorId, onBack, onSent, existingThreads }: {
-  visitorId: string; onBack: () => void; onSent: () => void; existingThreads: Thread[];
+function ComposeView({ visitorId, onBack, onSent, existingThreads, trialEligible }: {
+  visitorId: string; onBack: () => void; onSent: () => void; existingThreads: Thread[]; trialEligible: boolean;
 }) {
   const [phones, setPhones] = useState<string[]>([""]);
   const [senderName, setSenderName] = useState("");
@@ -235,7 +396,9 @@ function ComposeView({ visitorId, onBack, onSent, existingThreads }: {
     return existingThreads.some((t) => t.target_phone === norm && new Date(t.free_until) > new Date());
   }).length;
   const paidCount = cleanPhones.length - freeCount;
-  const total = paidCount > 0 ? priceFor(paidCount) : 0;
+  const grossTotal = paidCount > 0 ? priceFor(paidCount) : 0;
+  const trialDiscountPreview = trialEligible && grossTotal > 0 ? Math.min(grossTotal, 2000) : 0;
+  const total = Math.max(0, grossTotal - trialDiscountPreview);
 
   async function submit() {
     const clean = phones.map((p) => p.trim()).filter(Boolean);
@@ -322,7 +485,13 @@ function ComposeView({ visitorId, onBack, onSent, existingThreads }: {
         <div className="flex items-center justify-between pt-2 border-t">
           <div>
             <div className="text-[10px] text-muted-foreground">Total Bayar</div>
+            {trialDiscountPreview > 0 && (
+              <div className="text-[10px] text-muted-foreground line-through">{rupiah(grossTotal)}</div>
+            )}
             <div className="font-black text-xl bg-gradient-to-r from-pink-500 to-rose-500 bg-clip-text text-transparent">{rupiah(total)}</div>
+            {trialDiscountPreview > 0 && (
+              <div className="text-[10px] text-emerald-600 font-bold flex items-center gap-1"><Gift className="w-3 h-3" /> Diskon percobaan −{rupiah(trialDiscountPreview)}</div>
+            )}
           </div>
           <Button onClick={() => { if (!showPin && total > 0) { setShowPin(true); return; } submit(); }} disabled={loading} className="rounded-2xl bg-gradient-to-r from-pink-500 via-rose-500 to-orange-500 hover:opacity-90">
             {loading ? <Loader2 className="w-4 h-4 mr-1.5 animate-spin" /> : <Send className="w-4 h-4 mr-1.5" />}
@@ -484,7 +653,12 @@ function ChatView({ visitorId, thread, onBack, onTopUp }: {
             <span className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full ring-2 ring-background ${cd.expired ? "bg-gray-400" : "bg-emerald-500 animate-pulse"}`} />
           </div>
           <div className="flex-1 min-w-0">
-            <div className="font-bold text-sm font-mono truncate bg-gradient-to-r from-pink-600 to-rose-600 dark:from-pink-300 dark:to-rose-300 bg-clip-text text-transparent">+{thread.target_phone}</div>
+            <div className="flex items-center gap-1">
+              <div className="font-bold text-sm font-mono truncate bg-gradient-to-r from-pink-600 to-rose-600 dark:from-pink-300 dark:to-rose-300 bg-clip-text text-transparent">+{thread.target_phone}</div>
+              <button onClick={() => navigator.clipboard?.writeText("+" + thread.target_phone).then(() => toast({ title: "✅ Nomor disalin", description: "+" + thread.target_phone })).catch(() => {})} className="p-1 rounded-md hover:bg-pink-500/15 text-pink-500" title="Salin nomor">
+                <Copy className="w-3 h-3" />
+              </button>
+            </div>
             {cd.expired ? (
               <div className="text-[10px] text-muted-foreground flex items-center gap-1"><Timer className="w-3 h-3" /> Window gratis habis</div>
             ) : (

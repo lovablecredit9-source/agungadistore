@@ -1467,6 +1467,28 @@ Deno.serve(async (req) => {
         result = data || [];
         break;
       }
+      case "confess_trial_status": {
+        const visitor_id = url.searchParams.get("visitor_id");
+        const fp = url.searchParams.get("fp") || "";
+        const ip = (req.headers.get("x-forwarded-for") || req.headers.get("cf-connecting-ip") || "").split(",")[0].trim();
+        if (!visitor_id) return new Response(JSON.stringify({ error: "visitor_id required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        const { data: hist } = await supabase.from("balance_login_history").select("user_balance_id").eq("visitor_id", visitor_id).order("logged_in_at", { ascending: false }).limit(1).maybeSingle();
+        const ubId = hist?.user_balance_id;
+        const orFilters: string[] = [`visitor_id.eq.${visitor_id}`];
+        if (ubId) orFilters.push(`user_balance_id.eq.${ubId}`);
+        if (fp) orFilters.push(`device_fingerprint.eq.${fp}`);
+        if (ip) orFilters.push(`ip_address.eq.${ip}`);
+        const { data: row } = await supabase.from("confess_free_trial").select("id, user_balance_id, visitor_id").or(orFilters.join(",")).limit(1).maybeSingle();
+        if (!row) {
+          result = { eligible: true, reason: "available" };
+        } else if (ubId && row.user_balance_id === ubId) {
+          result = { eligible: false, reason: "used" };
+        } else {
+          result = { eligible: false, reason: "device_used" };
+        }
+        break;
+      }
+
       case "confess_threads": {
         const visitor_id = url.searchParams.get("visitor_id");
         if (!visitor_id) return new Response(JSON.stringify({ error: "visitor_id required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
