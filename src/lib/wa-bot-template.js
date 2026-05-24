@@ -1147,6 +1147,38 @@ function startConfessOutbox(client) {
   chatTick();
   setInterval(chatTick, 12000);
   console.log("✅ Confess chat outbox aktif — kirim pesan lanjutan tiap 12 detik");
+
+  // === Sinkron FOTO PROFIL WA penerima ke web (tiap 5 menit) ===
+  const avatarProcessing = new Set();
+  const avatarTick = async () => {
+    if (!_confessClient) return;
+    try {
+      const res = await api("confess_avatar_pending");
+      const phones = Array.isArray(res?.phones) ? res.phones : [];
+      for (const phone of phones) {
+        if (!phone || avatarProcessing.has(phone)) continue;
+        avatarProcessing.add(phone);
+        try {
+          const jid = targetPhoneToJid(phone);
+          if (!jid) throw new Error("JID invalid");
+          const ppUrl = await _confessClient.profilePictureUrl(jid, "image").catch(() => null);
+          await api("confess_avatar_save", "POST", { phone, avatar_url: ppUrl || null });
+          if (ppUrl) console.log("🖼️ Foto profil disimpan: " + phone);
+        } catch (e) {
+          // simpan null supaya tidak di-poll terus
+          await api("confess_avatar_save", "POST", { phone, avatar_url: null }).catch(() => {});
+        } finally {
+          avatarProcessing.delete(phone);
+          await wait(500);
+        }
+      }
+    } catch (err) {
+      console.log("⚠️ Gagal sinkron foto profil confess:", err?.message || err);
+    }
+  };
+  setTimeout(avatarTick, 5000);
+  setInterval(avatarTick, 5 * 60 * 1000);
+  console.log("✅ Sinkron foto profil WA penerima aktif (tiap 5 menit)");
 }
 
 async function sendLongMessage(client, jid, text, quoted) {
