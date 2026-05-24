@@ -647,7 +647,9 @@ function ComposeView({ visitorId, onBack, onSent, existingThreads, trialEligible
           </div>
           <Button onClick={() => { if (!showPin && total > 0) { setShowPin(true); return; } submit(); }} disabled={loading} className="rounded-2xl bg-gradient-to-r from-pink-500 via-rose-500 to-orange-500 hover:opacity-90">
             {loading ? <Loader2 className="w-4 h-4 mr-1.5 animate-spin" /> : <Send className="w-4 h-4 mr-1.5" />}
-            {total === 0 ? "Kirim Gratis" : (showPin ? "Bayar & Kirim" : "Lanjut Bayar")}
+            {scheduleEnabled
+              ? (showPin || total === 0 ? "Jadwalkan" : "Lanjut Bayar")
+              : (total === 0 ? "Kirim Gratis" : (showPin ? "Bayar & Kirim" : "Lanjut Bayar"))}
           </Button>
         </div>
 
