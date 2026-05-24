@@ -1,107 +1,57 @@
-# Confess Chat Thread + Free 24-Hour Window
+## Ringkasan
+Menambahkan 4 fitur baru pada tab **Confess** secara bertahap dalam satu rilis.
 
-## Tujuan
-Setelah user pertama kali bayar confess ke 1 nomor, pengirim & penerima nomor itu bisa **balas-balasan gratis selama 24 jam**. Riwayat ditampilkan sebagai **chat thread** per nomor (bukan per transaksi). Lewat 24 jam → bayar lagi.
+## Fitur 1 — Wall Publik + Reaction + Leaderboard
+- Toggle "Bagikan ke Wall Publik" saat compose (opsional, no HP target disensor ke `0812****1234`).
+- Tab baru di header Confess: **"Wall"** menampilkan feed publik (terbaru / terpanas / leaderboard mingguan).
+- Tombol reaction ❤️ 🔥 😂 😢 di tiap kartu (sekali per visitor per confess).
+- Pengirim dapat notif tiap kali confess-nya dapat reaction baru.
+- Leaderboard: Top 10 confess minggu ini (reaction terbanyak) — anonim, hanya menampilkan reaction count + preview.
 
-## Aturan
-- **Bayar pertama** (Rp 2.000 / nomor) → buka window 24 jam untuk nomor itu.
-- **Selama window aktif**:
-  - Pengirim bisa kirim pesan tambahan dari aplikasi **tanpa bayar & tanpa PIN**.
-  - Balasan penerima (`!balas` di WA) masuk ke thread yang sama, gratis.
-- **Window habis** (24 jam sejak bayar terakhir):
-  - Tombol "Kirim Gratis" diganti "Bayar Rp 2.000 untuk Lanjut".
-  - Bayar lagi → reset window 24 jam.
-- **Status pesan**:
-  - `pending` = belum dikirim bot
-  - `sent` = sudah terkirim ke WA
-  - `failed` = gagal
-  - Pesan masuk dari penerima selalu `delivered`.
+## Fitur 2 — Confess Berjadwal + Template Mood
+- Saat compose, opsi **"Kirim sekarang"** vs **"Jadwalkan"** (date+time picker, min 5 menit dari sekarang, max 30 hari).
+- Saldo dipotong saat scheduling; pesan masuk queue.
+- Edge function cron berjalan tiap menit untuk eksekusi confess yang `scheduled_at <= now()`.
+- Bisa cancel sebelum waktu eksekusi → refund saldo penuh.
+- 6 Template Mood Pack: 💌 Romantis, 😂 Lucu, 😢 Galau, 🔥 Pedas, 🙏 Maaf, 🎂 Ucapan. Klik template = isi otomatis + emoji prefix.
 
-## UI Baru (ConfessTab)
-1. **Form kirim baru** (seperti sekarang) — untuk nomor yang belum pernah / window habis.
-2. **Daftar Thread Aktif** — tiap nomor jadi satu kartu dengan:
-   - Nomor WA + nama (kalau ada)
-   - Preview pesan terakhir + waktu
-   - Badge "🟢 Gratis 23:45" (countdown) atau "⏰ Bayar lagi"
-   - Jumlah balasan belum dibaca
-3. **Detail Thread = WhatsApp-style chat**:
-   - Bubble kanan (kita) / kiri (penerima)
-   - Status checkmark (pending/sent/delivered)
-   - Input bar di bawah: "Ketik pesan…" + tombol kirim
-   - Header countdown window
-   - Kalau expired: input diganti banner "Window habis — Bayar Rp 2.000 untuk lanjut"
+## Fitur 3 — Voice Note & Media Confess
+- Tombol mic 🎤 di compose: rekam audio (max 60 detik) → upload ke bucket `confess-media` (sudah ada) → kirim sebagai pesan media.
+- Tombol foto 📷: pilih gambar (max 5MB).
+- Receiver di WA dapat link media (dikirim via WA bot template existing yang sudah support media).
+- Harga voice/media = sama dengan confess teks reguler.
 
-## Skema Database
+## Fitur 4 — Reveal Identitas Berbayar
+- Di header tiap thread chat, tombol **"Minta Reveal Identitas"** (hanya untuk target via WA bot).
+- Target bayar Rp 5.000 via balance → kirim request reveal ke pengirim.
+- Pengirim dapat notif & dialog: **Setuju Reveal** / **Tolak**.
+  - Setuju → nama + visitor pengirim ditampilkan ke target, saldo Rp 5.000 dari target dibayarkan ke pengirim (atau hangus jika ditolak).
+  - Tolak → saldo target di-refund 100%.
 
-```text
-confess_threads
-  id uuid PK
-  visitor_id text
-  user_balance_id uuid (account scope)
-  target_phone text (normalized 62xxx)
-  sender_name text
-  last_paid_at timestamptz
-  free_until timestamptz       -- last_paid_at + 24h
-  last_message_at timestamptz
-  unread_count int default 0
-  created_at, updated_at
-  UNIQUE(visitor_id, target_phone)
+## Database
+Tabel baru:
+- `confess_public_wall` (confession_id, visitor_id, masked_phone, message_preview, mood_tag, reaction_counts jsonb, created_at)
+- `confess_wall_reactions` (wall_id, visitor_id, emoji, created_at) UNIQUE(wall_id, visitor_id)
+- `confess_scheduled` (id, visitor_id, user_balance_id, target_phone, message_text, mood_tag, scheduled_at, status, price_charged, voucher_code, created_at) — status: pending/sent/cancelled
+- `confess_reveal_requests` (id, thread_id, requester_visitor, sender_visitor, status, amount, created_at, responded_at) — status: pending/approved/rejected/refunded
 
-confess_thread_messages
-  id uuid PK
-  thread_id uuid FK
-  direction text ('out' | 'in')
-  text text
-  status text ('pending'|'sent'|'failed'|'delivered')
-  trx_id text NULL              -- mengikat ke transaksi bayar bila ada
-  is_free bool                  -- true kalau pakai window gratis
-  sent_at timestamptz
-  created_at
-```
+Kolom tambahan:
+- `confess_thread_messages`: `mood_tag text`, `is_voice boolean`
+- `confess_threads`: kolom sudah cukup
 
-RLS: read/write hanya untuk visitor_id pemilik thread (atau akun saldo yang sama).
+## Edge functions
+- `send-confession`: terima `share_to_wall`, `mood_tag`, `media_url`, `scheduled_at`. Jika `scheduled_at` → insert ke `confess_scheduled` saja.
+- `public-api`: endpoint baru `confess_wall_list`, `confess_wall_react`, `confess_leaderboard`, `confess_scheduled_list`, `confess_scheduled_cancel`, `confess_reveal_request`, `confess_reveal_respond`.
+- `cron-scheduled-confess` (baru): dipanggil pg_cron tiap menit, jalankan confess yang waktunya tiba.
 
-## Edge Function
+## UI
+- `src/components/ConfessTab.tsx` ditambah views: `wall`, `scheduled`, dialog reveal, template mood picker, voice recorder, schedule picker.
+- Komponen baru kecil: `MoodTemplatePicker`, `VoiceRecorderButton`, `WallFeed`, `ScheduledList`.
 
-**`send-confession` (edit)**:
-- Tetap charge per nomor baru. Setelah sukses:
-  - Upsert `confess_threads` → set `last_paid_at = now()`, `free_until = now() + 24h`.
-  - Insert `confess_thread_messages` direction `out`, `is_free=false`, status `pending`.
-- Backward-compat: tetap isi `confess_targets` agar bot existing jalan.
-
-**`confess-chat-send` (baru)**:
-- Body: `{ visitorId, threadId, text, pin? }`
-- Validasi thread milik visitor + `free_until > now()`.
-- Insert message `direction=out, is_free=true, status=pending`. **Tidak potong saldo, tidak butuh PIN.**
-- Push ke `confess_outbox` agar bot kirim ke nomor target.
-
-**`confess-receive-reply` (edit/baru)**:
-- Dipanggil bot saat `!balas`. Mencari thread aktif berdasarkan `from_phone` + `visitor_id` (target_phone match).
-- Insert message `direction=in, status=delivered, is_free=true`.
-- Window tetap aktif sampai `free_until` original (balas TIDAK extend window — sesuai aturan "1 hari berlaku habis itu gratis dan setelah itu bayar lagi").
-- Increment `unread_count`.
-
-## Perubahan Bot WA
-- Polling `confess_outbox` sudah ada → tambah dukungan pesan tanpa CFS code (follow-up): kirim sebagai pesan biasa ke target dengan format:
-  ```
-  💌 [Lanjutan dari pengirim sebelumnya]
-  {text}
-  
-  Balas: !balas (pesan)
-  ```
-- Handler `!balas`: panggil endpoint baru `confess_reply_inbound` yang routing ke thread yang `free_until > now()`.
-
-## File yang Berubah
-- `supabase/migrations/...` — 2 tabel baru + RLS + indexes
-- `supabase/functions/send-confession/index.ts` — upsert thread
-- `supabase/functions/confess-chat-send/index.ts` — **NEW**
-- `supabase/functions/public-api/index.ts` — endpoint `confess_threads`, `confess_thread_messages`, `confess_reply_inbound`
-- `src/components/ConfessTab.tsx` — split jadi: form, ThreadList, ChatView
-- `src/lib/wa-bot-template.js` — handler `!balas` cek thread + dukung follow-up tanpa CFS, naik versi ke v13.8.0
-
-## Catatan
-- Nomor yang ditolak penerima (block bot) tetap dihitung "pending/failed" — tidak buka window.
-- Maks 30 pesan/hari per thread (anti-spam window gratis).
-- Notifikasi realtime saat balasan masuk via Supabase channel.
-
-Setelah kamu setuju, saya jalankan migrasi DB dulu, baru update bot + edge function + UI.
+## Eksekusi
+1. Migration database + cron job.
+2. Update edge function `send-confession` + endpoint baru di `public-api`.
+3. Buat edge function `cron-scheduled-confess`.
+4. Update `ConfessTab.tsx` dengan UI baru (mood, schedule, voice, wall, reveal).
+5. Update `wa-bot-template.js` agar handle keyword reveal & forward voice/media.
+6. Verifikasi: compose + send (teks/voice/wall/scheduled), reaction wall, leaderboard, cancel scheduled, reveal flow.
