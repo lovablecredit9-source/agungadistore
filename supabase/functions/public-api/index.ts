@@ -1466,6 +1466,7 @@ Deno.serve(async (req) => {
           .limit(50);
         result = data || [];
         break;
+      }
       case "confess_trial_status": {
         const visitor_id = url.searchParams.get("visitor_id");
         const fp = url.searchParams.get("fp") || "";
