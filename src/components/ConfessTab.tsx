@@ -138,6 +138,32 @@ export default function ConfessTab() {
               </Button>
             )}
           </div>
+          {/* Tab strip — fitur baru */}
+          {(view === "list" || view === "wall" || view === "scheduled") && (
+            <div className="mt-3 flex gap-1.5 overflow-x-auto scrollbar-none">
+              {[
+                { key: "list", label: "Chat", icon: MessageCircle },
+                { key: "wall", label: "Wall Publik", icon: Globe },
+                { key: "scheduled", label: "Terjadwal", icon: CalendarClock },
+              ].map((t) => {
+                const Icon = t.icon;
+                const active = view === t.key;
+                return (
+                  <button
+                    key={t.key}
+                    onClick={() => setView(t.key as any)}
+                    className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-[11px] font-bold whitespace-nowrap transition-all ${
+                      active
+                        ? "bg-gradient-to-r from-pink-500 to-rose-500 text-white shadow-md"
+                        : "bg-muted/60 text-muted-foreground hover:bg-muted"
+                    }`}
+                  >
+                    <Icon className="w-3 h-3" /> {t.label}
+                  </button>
+                );
+              })}
+            </div>
+          )}
         </div>
       </div>
 
