@@ -653,7 +653,12 @@ function ChatView({ visitorId, thread, onBack, onTopUp }: {
             <span className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full ring-2 ring-background ${cd.expired ? "bg-gray-400" : "bg-emerald-500 animate-pulse"}`} />
           </div>
           <div className="flex-1 min-w-0">
-            <div className="font-bold text-sm font-mono truncate bg-gradient-to-r from-pink-600 to-rose-600 dark:from-pink-300 dark:to-rose-300 bg-clip-text text-transparent">+{thread.target_phone}</div>
+            <div className="flex items-center gap-1">
+              <div className="font-bold text-sm font-mono truncate bg-gradient-to-r from-pink-600 to-rose-600 dark:from-pink-300 dark:to-rose-300 bg-clip-text text-transparent">+{thread.target_phone}</div>
+              <button onClick={() => navigator.clipboard?.writeText("+" + thread.target_phone).then(() => toast({ title: "✅ Nomor disalin", description: "+" + thread.target_phone })).catch(() => {})} className="p-1 rounded-md hover:bg-pink-500/15 text-pink-500" title="Salin nomor">
+                <Copy className="w-3 h-3" />
+              </button>
+            </div>
             {cd.expired ? (
               <div className="text-[10px] text-muted-foreground flex items-center gap-1"><Timer className="w-3 h-3" /> Window gratis habis</div>
             ) : (
