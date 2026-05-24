@@ -436,92 +436,183 @@ function ChatView({ visitorId, thread, onBack, onTopUp }: {
     }
   }
 
+  // Group messages by date for separators
+  const grouped = (() => {
+    const out: { date: string; items: ThreadMessage[] }[] = [];
+    messages.forEach((m) => {
+      const d = new Date(m.created_at);
+      const key = d.toDateString();
+      const last = out[out.length - 1];
+      if (last && last.date === key) last.items.push(m);
+      else out.push({ date: key, items: [m] });
+    });
+    return out;
+  })();
+
+  const fmtDateLabel = (s: string) => {
+    const d = new Date(s);
+    const today = new Date();
+    const yest = new Date(); yest.setDate(today.getDate() - 1);
+    if (d.toDateString() === today.toDateString()) return "Hari ini";
+    if (d.toDateString() === yest.toDateString()) return "Kemarin";
+    return d.toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" });
+  };
+
   return (
     <>
-      {/* Header */}
-      <div className="rounded-2xl border bg-card p-3 flex items-center gap-3 sticky top-2 z-10 backdrop-blur">
-        <Button variant="ghost" size="icon" onClick={onBack}><ArrowLeft className="w-4 h-4" /></Button>
-        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-pink-500 to-rose-500 flex items-center justify-center text-white">
-          <Phone className="w-4 h-4" />
-        </div>
-        <div className="flex-1 min-w-0">
-          <div className="font-bold text-sm font-mono truncate">+{thread.target_phone}</div>
-          {cd.expired ? (
-            <div className="text-[10px] text-muted-foreground flex items-center gap-1"><Timer className="w-3 h-3" /> Window gratis habis</div>
-          ) : (
-            <div className="text-[10px] text-green-600 flex items-center gap-1"><Sparkles className="w-3 h-3" /> Gratis sampai {cd.label}</div>
+      {/* Header — glassy gradient */}
+      <div className="relative overflow-hidden rounded-2xl border border-pink-500/20 sticky top-2 z-10 backdrop-blur-xl bg-gradient-to-r from-pink-500/10 via-rose-500/5 to-fuchsia-500/10 shadow-lg shadow-pink-500/5">
+        <div className="absolute inset-0 opacity-30 pointer-events-none bg-[radial-gradient(circle_at_top_right,theme(colors.pink.400/.4),transparent_60%)]" />
+        <div className="relative p-3 flex items-center gap-3">
+          <Button variant="ghost" size="icon" onClick={onBack} className="rounded-full hover:bg-pink-500/10"><ArrowLeft className="w-4 h-4" /></Button>
+          <div className="relative">
+            <div className="absolute inset-0 rounded-full bg-gradient-to-br from-pink-400 to-rose-500 blur-md opacity-60 animate-pulse" />
+            <div className="relative w-11 h-11 rounded-full bg-gradient-to-br from-pink-500 via-rose-500 to-fuchsia-500 flex items-center justify-center text-white shadow-lg ring-2 ring-white/20">
+              <Phone className="w-4 h-4" />
+            </div>
+            <span className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full ring-2 ring-background ${cd.expired ? "bg-gray-400" : "bg-emerald-500 animate-pulse"}`} />
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="font-bold text-sm font-mono truncate bg-gradient-to-r from-pink-600 to-rose-600 dark:from-pink-300 dark:to-rose-300 bg-clip-text text-transparent">+{thread.target_phone}</div>
+            {cd.expired ? (
+              <div className="text-[10px] text-muted-foreground flex items-center gap-1"><Timer className="w-3 h-3" /> Window gratis habis</div>
+            ) : (
+              <div className="text-[10px] flex items-center gap-1">
+                <span className="relative flex h-1.5 w-1.5">
+                  <span className="absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75 animate-ping" />
+                  <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500" />
+                </span>
+                <span className="text-emerald-600 dark:text-emerald-400 font-semibold">Gratis</span>
+                <span className="text-muted-foreground">· {cd.label}</span>
+              </div>
+            )}
+          </div>
+          {!cd.expired && (
+            <div className="hidden sm:flex items-center gap-1 px-2 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/30">
+              <Sparkles className="w-3 h-3 text-emerald-500" />
+              <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400">{cd.label}</span>
+            </div>
           )}
         </div>
       </div>
 
-      {/* Messages */}
-      <div ref={scrollRef} className="rounded-2xl border bg-gradient-to-b from-pink-50/40 to-rose-50/20 dark:from-pink-950/20 dark:to-rose-950/10 p-3 h-[55vh] overflow-y-auto space-y-2">
+      {/* Messages — chat canvas with subtle pattern */}
+      <div
+        ref={scrollRef}
+        className="relative rounded-2xl border border-pink-500/15 p-3 h-[55vh] overflow-y-auto space-y-2 bg-gradient-to-b from-pink-50/60 via-rose-50/30 to-fuchsia-50/20 dark:from-pink-950/30 dark:via-rose-950/15 dark:to-fuchsia-950/10"
+        style={{
+          backgroundImage: `radial-gradient(hsl(330 80% 60% / 0.08) 1px, transparent 1px)`,
+          backgroundSize: "18px 18px",
+        }}
+      >
         {loading ? (
           <div className="flex justify-center py-8"><Loader2 className="w-5 h-5 animate-spin text-pink-500" /></div>
         ) : messages.length === 0 ? (
-          <p className="text-xs text-muted-foreground text-center py-8">Belum ada pesan</p>
+          <div className="flex flex-col items-center justify-center py-12 gap-2 text-center">
+            <div className="w-14 h-14 rounded-full bg-gradient-to-br from-pink-500/20 to-rose-500/20 flex items-center justify-center">
+              <Sparkles className="w-6 h-6 text-pink-500" />
+            </div>
+            <p className="text-xs text-muted-foreground">Belum ada pesan — sapa dia duluan 💌</p>
+          </div>
         ) : (
-          messages.map((m) => <Bubble key={m.id} msg={m} />)
+          grouped.map((g) => (
+            <div key={g.date} className="space-y-2">
+              <div className="flex justify-center sticky top-0 z-[1] pointer-events-none">
+                <span className="text-[10px] px-2.5 py-0.5 rounded-full bg-background/80 backdrop-blur border border-pink-500/20 text-muted-foreground font-medium shadow-sm">
+                  {fmtDateLabel(g.date)}
+                </span>
+              </div>
+              {g.items.map((m, i) => {
+                const prev = g.items[i - 1];
+                const grouped = prev && prev.direction === m.direction;
+                return <Bubble key={m.id} msg={m} grouped={grouped} />;
+              })}
+            </div>
+          ))
         )}
       </div>
 
       {/* Input */}
       {cd.expired ? (
-        <div className="rounded-2xl border bg-amber-500/10 border-amber-500/40 p-4 text-center space-y-2">
-          <div className="text-sm font-bold flex items-center justify-center gap-1.5"><Timer className="w-4 h-4" /> Window 24 jam sudah habis</div>
-          <p className="text-xs text-muted-foreground">Bayar Rp 2.000 untuk lanjut chat dengan nomor ini.</p>
-          <Button size="sm" onClick={onTopUp} className="rounded-2xl bg-gradient-to-r from-pink-500 to-rose-500">
+        <div className="relative overflow-hidden rounded-2xl border border-amber-500/40 p-4 text-center space-y-2 bg-gradient-to-br from-amber-500/15 to-orange-500/10">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,theme(colors.amber.400/.3),transparent_70%)] pointer-events-none" />
+          <div className="relative text-sm font-bold flex items-center justify-center gap-1.5"><Timer className="w-4 h-4 text-amber-500" /> Window 24 jam sudah habis</div>
+          <p className="relative text-xs text-muted-foreground">Bayar Rp 2.000 untuk lanjut chat dengan nomor ini.</p>
+          <Button size="sm" onClick={onTopUp} className="relative rounded-2xl bg-gradient-to-r from-pink-500 to-rose-500 shadow-lg shadow-pink-500/30 hover:scale-105 transition-transform">
             <Sparkles className="w-3.5 h-3.5 mr-1" /> Bayar & Buka Lagi
           </Button>
         </div>
       ) : (
-        <div className="rounded-2xl border bg-card p-2 flex items-end gap-2">
-          <input
-            ref={fileRef}
-            type="file"
-            className="hidden"
-            accept="image/*,video/*,audio/*,application/pdf,.doc,.docx,.xls,.xlsx,.zip,.rar,.txt"
-            onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFile(f); }}
-          />
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            disabled={uploading || sending}
-            onClick={() => fileRef.current?.click()}
-            className="rounded-full shrink-0 text-pink-500 hover:text-pink-600"
-            title="Kirim foto / file"
-          >
-            {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Paperclip className="w-4 h-4" />}
-          </Button>
-          <Textarea
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } }}
-            placeholder="Ketik pesan / lampirkan foto…"
-            rows={1}
-            maxLength={800}
-            className="resize-none min-h-[40px] max-h-[120px] border-0 focus-visible:ring-0"
-          />
-          <Button onClick={send} disabled={sending || uploading || !input.trim()} size="icon" className="rounded-full bg-gradient-to-br from-pink-500 to-rose-500 shrink-0">
-            {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-          </Button>
+        <div className="relative group">
+          <div className="absolute -inset-0.5 bg-gradient-to-r from-pink-500 via-rose-500 to-fuchsia-500 rounded-2xl opacity-40 group-focus-within:opacity-70 blur transition-opacity" />
+          <div className="relative rounded-2xl border border-pink-500/20 bg-card/95 backdrop-blur p-2 flex items-end gap-2 shadow-lg">
+            <input
+              ref={fileRef}
+              type="file"
+              className="hidden"
+              accept="image/*,video/*,audio/*,application/pdf,.doc,.docx,.xls,.xlsx,.zip,.rar,.txt"
+              onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFile(f); }}
+            />
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              disabled={uploading || sending}
+              onClick={() => fileRef.current?.click()}
+              className="rounded-full shrink-0 text-pink-500 hover:text-pink-600 hover:bg-pink-500/10 hover:rotate-12 transition-transform"
+              title="Kirim foto / file"
+            >
+              {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Paperclip className="w-4 h-4" />}
+            </Button>
+            <Textarea
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } }}
+              placeholder="Ketik pesan / lampirkan foto…"
+              rows={1}
+              maxLength={800}
+              className="resize-none min-h-[40px] max-h-[120px] border-0 focus-visible:ring-0 bg-transparent"
+            />
+            <Button
+              onClick={send}
+              disabled={sending || uploading || !input.trim()}
+              size="icon"
+              className="rounded-full bg-gradient-to-br from-pink-500 via-rose-500 to-fuchsia-500 shrink-0 shadow-lg shadow-pink-500/40 hover:scale-110 active:scale-95 transition-transform disabled:opacity-50 disabled:hover:scale-100"
+            >
+              {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+            </Button>
+          </div>
         </div>
       )}
       {!cd.expired && (
-        <p className="text-[10px] text-muted-foreground text-center mt-1">Lampirkan foto, video, audio, atau dokumen (maks 16 MB).</p>
+        <p className="text-[10px] text-muted-foreground text-center mt-1.5 flex items-center justify-center gap-1">
+          <Paperclip className="w-2.5 h-2.5" />
+          Foto, video, audio, dokumen — maks 16 MB
+        </p>
       )}
     </>
   );
 }
 
-function Bubble({ msg }: { msg: ThreadMessage }) {
+function Bubble({ msg, grouped }: { msg: ThreadMessage; grouped?: boolean }) {
   const isOut = msg.direction === "out";
   return (
-    <div className={`flex ${isOut ? "justify-end" : "justify-start"}`}>
-      <div className={`max-w-[80%] rounded-2xl px-2 py-2 shadow-sm space-y-1.5 ${
-        isOut ? "bg-gradient-to-br from-pink-500 to-rose-500 text-white rounded-br-sm" : "bg-card border rounded-bl-sm"
-      }`}>
+    <div className={`flex ${isOut ? "justify-end" : "justify-start"} ${grouped ? "mt-0.5" : "mt-2"} animate-fade-in`}>
+      <div
+        className={`relative max-w-[80%] rounded-2xl px-2.5 py-2 shadow-md space-y-1.5 transition-transform hover:scale-[1.01] ${
+          isOut
+            ? `bg-gradient-to-br from-pink-500 via-rose-500 to-fuchsia-500 text-white ${grouped ? "rounded-tr-2xl" : "rounded-tr-md"} shadow-pink-500/25`
+            : `bg-card/95 backdrop-blur border border-pink-500/15 ${grouped ? "rounded-tl-2xl" : "rounded-tl-md"}`
+        }`}
+      >
+        {/* Bubble tail */}
+        {!grouped && (
+          isOut ? (
+            <span className="absolute -right-1 top-0 w-3 h-3 bg-gradient-to-br from-pink-500 to-rose-500" style={{ clipPath: "polygon(0 0, 100% 0, 0 100%)" }} />
+          ) : (
+            <span className="absolute -left-1 top-0 w-3 h-3 bg-card border-l border-t border-pink-500/15" style={{ clipPath: "polygon(100% 0, 100% 100%, 0 0)" }} />
+          )
+        )}
         {msg.media_url && msg.media_type === "image" && (
           <a href={msg.media_url} target="_blank" rel="noopener noreferrer" className="block">
             <img src={msg.media_url} alt={msg.media_name || "foto"} className="rounded-xl max-h-64 w-full object-cover" loading="lazy" />
@@ -550,9 +641,9 @@ function Bubble({ msg }: { msg: ThreadMessage }) {
           </a>
         )}
         {msg.text && (
-          <p className="text-sm whitespace-pre-wrap break-words px-1">{msg.text}</p>
+          <p className="text-sm whitespace-pre-wrap break-words px-1 leading-relaxed">{msg.text}</p>
         )}
-        <div className={`flex items-center gap-1 justify-end text-[9px] px-1 ${isOut ? "text-white/80" : "text-muted-foreground"}`}>
+        <div className={`flex items-center gap-1 justify-end text-[9px] px-1 ${isOut ? "text-white/85" : "text-muted-foreground"}`}>
           <span>{new Date(msg.created_at).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })}</span>
           {isOut && (
             msg.status === "pending" ? <Clock className="w-3 h-3" /> :
@@ -565,3 +656,4 @@ function Bubble({ msg }: { msg: ThreadMessage }) {
     </div>
   );
 }
+
