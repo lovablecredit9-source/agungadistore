@@ -826,6 +826,7 @@ function ChatView({ visitorId, thread, onBack, onTopUp }: {
               </div>
             )}
           </div>
+          <RevealButton thread={thread} visitorId={visitorId} />
           {!cd.expired && (
             <div className="hidden sm:flex items-center gap-1 px-2 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/30">
               <Sparkles className="w-3 h-3 text-emerald-500" />
