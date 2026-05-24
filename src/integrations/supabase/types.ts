@@ -963,6 +963,169 @@ export type Database = {
         }
         Relationships: []
       }
+      confess_public_wall: {
+        Row: {
+          confession_id: string | null
+          created_at: string
+          id: string
+          is_hidden: boolean
+          masked_phone: string
+          message: string
+          mood_tag: string | null
+          reaction_counts: Json
+          sender_name: string | null
+          total_reactions: number
+          visitor_id: string
+        }
+        Insert: {
+          confession_id?: string | null
+          created_at?: string
+          id?: string
+          is_hidden?: boolean
+          masked_phone: string
+          message: string
+          mood_tag?: string | null
+          reaction_counts?: Json
+          sender_name?: string | null
+          total_reactions?: number
+          visitor_id: string
+        }
+        Update: {
+          confession_id?: string | null
+          created_at?: string
+          id?: string
+          is_hidden?: boolean
+          masked_phone?: string
+          message?: string
+          mood_tag?: string | null
+          reaction_counts?: Json
+          sender_name?: string | null
+          total_reactions?: number
+          visitor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "confess_public_wall_confession_id_fkey"
+            columns: ["confession_id"]
+            isOneToOne: false
+            referencedRelation: "confessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      confess_reveal_requests: {
+        Row: {
+          amount: number
+          created_at: string
+          id: string
+          requester_phone: string
+          requester_user_balance_id: string | null
+          requester_visitor_id: string | null
+          responded_at: string | null
+          revealed_name: string | null
+          revealed_visitor_id: string | null
+          sender_user_balance_id: string | null
+          sender_visitor_id: string
+          status: string
+          thread_id: string
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          id?: string
+          requester_phone: string
+          requester_user_balance_id?: string | null
+          requester_visitor_id?: string | null
+          responded_at?: string | null
+          revealed_name?: string | null
+          revealed_visitor_id?: string | null
+          sender_user_balance_id?: string | null
+          sender_visitor_id: string
+          status?: string
+          thread_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          id?: string
+          requester_phone?: string
+          requester_user_balance_id?: string | null
+          requester_visitor_id?: string | null
+          responded_at?: string | null
+          revealed_name?: string | null
+          revealed_visitor_id?: string | null
+          sender_user_balance_id?: string | null
+          sender_visitor_id?: string
+          status?: string
+          thread_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "confess_reveal_requests_thread_id_fkey"
+            columns: ["thread_id"]
+            isOneToOne: false
+            referencedRelation: "confess_threads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      confess_scheduled: {
+        Row: {
+          created_at: string
+          error_message: string | null
+          executed_at: string | null
+          id: string
+          message: string
+          mood_tag: string | null
+          price_charged: number
+          result_confession_id: string | null
+          scheduled_at: string
+          sender_name: string | null
+          share_to_wall: boolean
+          status: string
+          target_phones: string[]
+          trx_id: string | null
+          user_balance_id: string
+          visitor_id: string
+        }
+        Insert: {
+          created_at?: string
+          error_message?: string | null
+          executed_at?: string | null
+          id?: string
+          message: string
+          mood_tag?: string | null
+          price_charged?: number
+          result_confession_id?: string | null
+          scheduled_at: string
+          sender_name?: string | null
+          share_to_wall?: boolean
+          status?: string
+          target_phones: string[]
+          trx_id?: string | null
+          user_balance_id: string
+          visitor_id: string
+        }
+        Update: {
+          created_at?: string
+          error_message?: string | null
+          executed_at?: string | null
+          id?: string
+          message?: string
+          mood_tag?: string | null
+          price_charged?: number
+          result_confession_id?: string | null
+          scheduled_at?: string
+          sender_name?: string | null
+          share_to_wall?: boolean
+          status?: string
+          target_phones?: string[]
+          trx_id?: string | null
+          user_balance_id?: string
+          visitor_id?: string
+        }
+        Relationships: []
+      }
       confess_thread_messages: {
         Row: {
           created_at: string
@@ -970,11 +1133,13 @@ export type Database = {
           error: string | null
           id: string
           is_free: boolean
+          is_voice: boolean
           media_mime: string | null
           media_name: string | null
           media_size: number | null
           media_type: string | null
           media_url: string | null
+          mood_tag: string | null
           read_at: string | null
           sent_at: string | null
           status: string
@@ -989,11 +1154,13 @@ export type Database = {
           error?: string | null
           id?: string
           is_free?: boolean
+          is_voice?: boolean
           media_mime?: string | null
           media_name?: string | null
           media_size?: number | null
           media_type?: string | null
           media_url?: string | null
+          mood_tag?: string | null
           read_at?: string | null
           sent_at?: string | null
           status?: string
@@ -1008,11 +1175,13 @@ export type Database = {
           error?: string | null
           id?: string
           is_free?: boolean
+          is_voice?: boolean
           media_mime?: string | null
           media_name?: string | null
           media_size?: number | null
           media_type?: string | null
           media_url?: string | null
+          mood_tag?: string | null
           read_at?: string | null
           sent_at?: string | null
           status?: string
@@ -1088,6 +1257,38 @@ export type Database = {
           visitor_id?: string
         }
         Relationships: []
+      }
+      confess_wall_reactions: {
+        Row: {
+          created_at: string
+          emoji: string
+          id: string
+          visitor_id: string
+          wall_id: string
+        }
+        Insert: {
+          created_at?: string
+          emoji: string
+          id?: string
+          visitor_id: string
+          wall_id: string
+        }
+        Update: {
+          created_at?: string
+          emoji?: string
+          id?: string
+          visitor_id?: string
+          wall_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "confess_wall_reactions_wall_id_fkey"
+            columns: ["wall_id"]
+            isOneToOne: false
+            referencedRelation: "confess_public_wall"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       confession_replies: {
         Row: {
