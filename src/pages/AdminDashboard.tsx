@@ -1175,6 +1175,8 @@ const AdminDashboard = () => {
             { key: "membership" as AdminTab, icon: Shield, label: "Member" },
             { key: "storeprem" as AdminTab, icon: Crown, label: "PremToko" },
             { key: "banned" as AdminTab, icon: Lock, label: "Banned" },
+            { key: "confess" as AdminTab, icon: MessageCircle, label: "Confess" },
+
             
           ]).map(({ key, icon: Icon, label }) => {
             const active = tab === key;
