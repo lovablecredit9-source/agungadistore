@@ -2045,6 +2045,7 @@ const AdminDashboard = () => {
         {tab === "storeprem" && <AdminStorePremiumTab />}
         {tab === "banned" && <AdminBannedTab />}
         {tab === "userreset" && <AdminUserResetPanel />}
+        {tab === "confess" && <AdminConfessTab />}
       </main>
     </div>
   );
