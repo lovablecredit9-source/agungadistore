@@ -22,6 +22,7 @@ import AdminSponsorTab from "@/components/AdminSponsorTab";
 import AdminApiKeyTab from "@/components/AdminApiKeyTab";
 import AdminPostsTab from "@/components/AdminPostsTab";
 import AdminPromoTab from "@/components/AdminPromoTab";
+import AdminConfessTab from "@/components/AdminConfessTab";
 import AdminProductFlashSaleTab from "@/components/AdminProductFlashSaleTab";
 import AdminSocialLinksTab from "@/components/AdminSocialLinksTab";
 import AdminLuckyWheelTab from "@/components/AdminLuckyWheelTab";
@@ -136,7 +137,7 @@ interface UserBalance {
   created_at: string;
 }
 
-type AdminTab = "products" | "tokens" | "claims" | "tickets" | "chats" | "saldo" | "notif" | "deposit" | "settings" | "diskon" | "pin" | "musik" | "vmusik" | "sponsor" | "apikey" | "postingan" | "promo" | "sosmed" | "wheel" | "shopstreak" | "eventstreak" | "flashsale" | "prodflash" | "membership" | "banned" | "storeprem" | "strvoucher" | "userreset";
+type AdminTab = "products" | "tokens" | "claims" | "tickets" | "chats" | "saldo" | "notif" | "deposit" | "settings" | "diskon" | "pin" | "musik" | "vmusik" | "sponsor" | "apikey" | "postingan" | "promo" | "sosmed" | "wheel" | "shopstreak" | "eventstreak" | "flashsale" | "prodflash" | "membership" | "banned" | "storeprem" | "strvoucher" | "userreset" | "confess";
 type ClaimDateFilter = "all" | "today" | "yesterday" | "lastmonth" | "custom";
 type DepositStatusFilter = "all" | "pending" | "approved" | "rejected" | "cancelled";
 type DepositMethodFilter = "all" | "qris" | "ewallet";
@@ -1174,6 +1175,8 @@ const AdminDashboard = () => {
             { key: "membership" as AdminTab, icon: Shield, label: "Member" },
             { key: "storeprem" as AdminTab, icon: Crown, label: "PremToko" },
             { key: "banned" as AdminTab, icon: Lock, label: "Banned" },
+            { key: "confess" as AdminTab, icon: MessageCircle, label: "Confess" },
+
             
           ]).map(({ key, icon: Icon, label }) => {
             const active = tab === key;
@@ -2042,6 +2045,7 @@ const AdminDashboard = () => {
         {tab === "storeprem" && <AdminStorePremiumTab />}
         {tab === "banned" && <AdminBannedTab />}
         {tab === "userreset" && <AdminUserResetPanel />}
+        {tab === "confess" && <AdminConfessTab />}
       </main>
     </div>
   );
