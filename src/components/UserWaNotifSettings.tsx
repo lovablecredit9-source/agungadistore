@@ -35,7 +35,7 @@ export default function UserWaNotifSettings() {
 
   useEffect(() => {
     (async () => {
-      const vid = await getVisitorId();
+      const vid = getVisitorId();
       setVisitorId(vid);
       const { data } = await supabase
         .from("user_wa_notif_prefs" as any)
