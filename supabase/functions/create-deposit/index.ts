@@ -72,6 +72,24 @@ Deno.serve(async (request) => {
       return Response.json({ error: "Gagal membuat deposit" }, { status: 500, headers: corsHeaders });
     }
 
+    // Fire-and-forget WA notif ke admin
+    try {
+      fetch(`${supabaseUrl}/functions/v1/send-wa-notification`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${serviceRoleKey}` },
+        body: JSON.stringify({
+          event_type: "deposit",
+          vars: {
+            action: "BARU",
+            trx_id: trxId,
+            user: balanceRow.username || visitorId.slice(0, 8),
+            harga: amount.toLocaleString("id-ID"),
+            metode: normalizedMethod,
+          },
+        }),
+      }).catch(() => {});
+    } catch (_) {}
+
     return Response.json({ success: true, deposit }, { headers: corsHeaders });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Terjadi kesalahan saat membuat deposit";

@@ -52,6 +52,26 @@ Deno.serve(async (req) => {
       related_id: dep.trx_id,
     });
 
+    // Notif WA admin
+    try {
+      const url = Deno.env.get("SUPABASE_URL") ?? "";
+      const key = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+      fetch(`${url}/functions/v1/send-wa-notification`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${key}` },
+        body: JSON.stringify({
+          event_type: "deposit",
+          vars: {
+            action: "DIBATALKAN",
+            trx_id: dep.trx_id,
+            user: dep.visitor_id.slice(0, 8),
+            harga: dep.amount.toLocaleString("id-ID"),
+            metode: cancelReason,
+          },
+        }),
+      }).catch(() => {});
+    } catch (_) {}
+
     return Response.json({ success: true }, { headers: corsHeaders });
   } catch (e) {
     return Response.json({ error: e instanceof Error ? e.message : "Error" }, { status: 500, headers: corsHeaders });

@@ -36,6 +36,8 @@ import WhatsAppChat from "@/components/WhatsAppChat";
 import PremiumBadgeAsync from "@/components/PremiumBadgeAsync";
 import AdminStorePremiumTab from "@/components/AdminStorePremiumTab";
 import AdminUserResetPanel from "@/components/AdminUserResetPanel";
+import AdminWaNotifTab from "@/components/AdminWaNotifTab";
+import { sendAdminWaNotif } from "@/lib/wa-notif";
 
 interface Product {
   id: string;
@@ -137,7 +139,7 @@ interface UserBalance {
   created_at: string;
 }
 
-type AdminTab = "products" | "tokens" | "claims" | "tickets" | "chats" | "saldo" | "notif" | "deposit" | "settings" | "diskon" | "pin" | "musik" | "vmusik" | "sponsor" | "apikey" | "postingan" | "promo" | "sosmed" | "wheel" | "shopstreak" | "eventstreak" | "flashsale" | "prodflash" | "membership" | "banned" | "storeprem" | "strvoucher" | "userreset" | "confess";
+type AdminTab = "products" | "tokens" | "claims" | "tickets" | "chats" | "saldo" | "notif" | "deposit" | "settings" | "diskon" | "pin" | "musik" | "vmusik" | "sponsor" | "apikey" | "postingan" | "promo" | "sosmed" | "wheel" | "shopstreak" | "eventstreak" | "flashsale" | "prodflash" | "membership" | "banned" | "storeprem" | "strvoucher" | "userreset" | "confess" | "wanotif";
 type ClaimDateFilter = "all" | "today" | "yesterday" | "lastmonth" | "custom";
 type DepositStatusFilter = "all" | "pending" | "approved" | "rejected" | "cancelled";
 type DepositMethodFilter = "all" | "qris" | "ewallet";
@@ -778,6 +780,14 @@ const AdminDashboard = () => {
       };
       if (uploadedUrls.length > 0) updateData.image_url = uploadedUrls[0];
       await supabase.from("products").update(updateData).eq("id", editingProduct.id);
+      sendAdminWaNotif("product_edit", {
+        action: "DIUBAH",
+        produk_id: `#${String(editingProduct.id).replace(/\D/g, "").slice(-5) || "—"}`,
+        produk: title,
+        harga: (parseInt(price) || 0).toLocaleString("id-ID"),
+        stok: parseInt(stock) || 0,
+        user: "Admin",
+      });
 
       if (uploadedUrls.length > 0) {
         const existingImgs = productImages.filter(i => i.product_id === editingProduct.id);
@@ -811,6 +821,15 @@ const AdminDashboard = () => {
 
       if (error || !product) { toast({ title: "Gagal menambah produk", variant: "destructive" }); return; }
 
+      sendAdminWaNotif("product_edit", {
+        action: "DITAMBAHKAN",
+        produk_id: `#${String(product.id).replace(/\D/g, "").slice(-5) || "—"}`,
+        produk: title,
+        harga: (parseInt(price) || 0).toLocaleString("id-ID"),
+        stok: parseInt(stock) || 0,
+        user: "Admin",
+      });
+
       if (uploadedUrls.length > 0) {
         await supabase.from("product_images").insert(uploadedUrls.map((url, i) => ({
           product_id: product.id, image_url: url, image_order: i,
@@ -835,9 +854,18 @@ const AdminDashboard = () => {
   }
 
   async function handleDeleteProduct(id: string) {
+    const prod = products.find(p => p.id === id);
     await supabase.from("wholesale_prices").delete().eq("entity_type", "product").eq("entity_id", id);
     await supabase.from("product_images").delete().eq("product_id", id);
     await supabase.from("products").delete().eq("id", id);
+    sendAdminWaNotif("product_edit", {
+      action: "DIHAPUS",
+      produk_id: `#${String(id).replace(/\D/g, "").slice(-5) || "—"}`,
+      produk: prod?.title || "-",
+      harga: (prod?.price || 0).toLocaleString("id-ID"),
+      stok: prod?.stock || 0,
+      user: "Admin",
+    });
     toast({ title: "Produk dihapus" }); fetchAll();
   }
 
@@ -1176,6 +1204,7 @@ const AdminDashboard = () => {
             { key: "storeprem" as AdminTab, icon: Crown, label: "PremToko" },
             { key: "banned" as AdminTab, icon: Lock, label: "Banned" },
             { key: "confess" as AdminTab, icon: MessageCircle, label: "Confess" },
+            { key: "wanotif" as AdminTab, icon: Bell, label: "WA Notif" },
 
             
           ]).map(({ key, icon: Icon, label }) => {
@@ -2046,6 +2075,7 @@ const AdminDashboard = () => {
         {tab === "banned" && <AdminBannedTab />}
         {tab === "userreset" && <AdminUserResetPanel />}
         {tab === "confess" && <AdminConfessTab />}
+        {tab === "wanotif" && <AdminWaNotifTab />}
       </main>
     </div>
   );

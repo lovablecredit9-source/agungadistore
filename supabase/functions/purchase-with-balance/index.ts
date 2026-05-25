@@ -330,6 +330,27 @@ Deno.serve(async (request) => {
       fields: (allFields ?? []).filter((f) => f.token_id === token.id).map((f) => ({ field_name: f.field_name, field_value: f.field_value })),
     }));
 
+    // Fire-and-forget WA notif ke admin
+    try {
+      const url = Deno.env.get("SUPABASE_URL") ?? "";
+      const key = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+      const firstTrx = (transactionRows[0] as any)?.trx_id || `BUY-${Date.now()}`;
+      fetch(`${url}/functions/v1/send-wa-notification`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${key}` },
+        body: JSON.stringify({
+          event_type: "purchase",
+          vars: {
+            trx_id: firstTrx,
+            user: balanceRow.username || visitorId.slice(0, 8),
+            produk: product.title,
+            qty: quantity,
+            harga: totalPrice.toLocaleString("id-ID"),
+          },
+        }),
+      }).catch(() => {});
+    } catch (_) {}
+
     return Response.json(
       {
         success: true,

@@ -297,6 +297,26 @@ Deno.serve(async (request) => {
         });
       }
 
+      // Fire-and-forget WA notif ke admin
+      try {
+        const url = Deno.env.get("SUPABASE_URL") ?? "";
+        const key = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+        const phone = String(user.phone || "");
+        const maskedHp = phone.length > 6 ? phone.slice(0, 4) + "****" + phone.slice(-4) : phone;
+        fetch(`${url}/functions/v1/send-wa-notification`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "Authorization": `Bearer ${key}` },
+          body: JSON.stringify({
+            event_type: "login",
+            vars: {
+              user: user.username || identifier,
+              hp: maskedHp || "-",
+              device: payload.deviceInfo?.device || payload.deviceInfo?.browser || "Unknown",
+            },
+          }),
+        }).catch(() => {});
+      } catch (_) {}
+
       return Response.json({ success: true, user, action: "logged_in" }, { headers: corsHeaders });
     }
 
