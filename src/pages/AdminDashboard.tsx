@@ -22,6 +22,7 @@ import AdminSponsorTab from "@/components/AdminSponsorTab";
 import AdminApiKeyTab from "@/components/AdminApiKeyTab";
 import AdminPostsTab from "@/components/AdminPostsTab";
 import AdminPromoTab from "@/components/AdminPromoTab";
+import AdminConfessTab from "@/components/AdminConfessTab";
 import AdminProductFlashSaleTab from "@/components/AdminProductFlashSaleTab";
 import AdminSocialLinksTab from "@/components/AdminSocialLinksTab";
 import AdminLuckyWheelTab from "@/components/AdminLuckyWheelTab";
