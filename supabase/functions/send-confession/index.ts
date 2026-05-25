@@ -177,7 +177,7 @@ Deno.serve(async (req) => {
 
     const paidPhones = normalized.filter((p) => !freeMap.has(p));
     const freePhones = normalized.filter((p) => freeMap.has(p));
-    let chargePrice = paidPhones.length > 0 ? priceFor(paidPhones.length) : 0;
+    let chargePrice = paidPhones.length > 0 ? priceForN(paidPhones.length, settings) : 0;
     let trialDiscount = 0;
     let trialGranted = false;
 
