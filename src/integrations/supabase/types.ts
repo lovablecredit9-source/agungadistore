@@ -9183,6 +9183,36 @@ export type Database = {
           },
         ]
       }
+      wa_notification_configs: {
+        Row: {
+          created_at: string
+          enabled: boolean
+          event_type: string
+          id: string
+          template: string
+          updated_at: string
+          wa_number: string
+        }
+        Insert: {
+          created_at?: string
+          enabled?: boolean
+          event_type: string
+          id?: string
+          template?: string
+          updated_at?: string
+          wa_number?: string
+        }
+        Update: {
+          created_at?: string
+          enabled?: boolean
+          event_type?: string
+          id?: string
+          template?: string
+          updated_at?: string
+          wa_number?: string
+        }
+        Relationships: []
+      }
       weekly_challenge_progress: {
         Row: {
           challenge_id: string
