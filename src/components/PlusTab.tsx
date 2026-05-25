@@ -483,6 +483,8 @@ export default function PlusTab() {
           />
         ))}
       </SectionCard>
+
+      <UserWaNotifSettings />
       </BanLock>
     </div>
   );
