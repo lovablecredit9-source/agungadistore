@@ -11,6 +11,7 @@ import { useGameCredits, GameCreditsBadge } from "@/components/games/GameCredits
 import { useGameBalance, GameBalanceBadge, triggerGameBalanceRefresh } from "@/components/games/GameBalance";
 import { motion } from "framer-motion";
 import { BanBanner, BanLock } from "@/components/BanBanner";
+import UserWaNotifSettings from "@/components/UserWaNotifSettings";
 
 function formatPrice(price: number) {
   return new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", minimumFractionDigits: 0 }).format(price);
