@@ -94,9 +94,6 @@ Deno.serve(async (req) => {
       if (!n) return Response.json({ error: `Nomor tidak valid: ${p}` }, { status: 400, headers: corsHeaders });
       if (!normalized.includes(n)) normalized.push(n);
     }
-    const price = priceFor(normalized.length);
-    if (!price) return Response.json({ error: "Jumlah nomor tidak didukung" }, { status: 400, headers: corsHeaders });
-
     if (scheduledAt) {
       const diffMin = (scheduledAt.getTime() - Date.now()) / 60000;
       if (diffMin < 5) return Response.json({ error: "Jadwal minimal 5 menit dari sekarang" }, { status: 400, headers: corsHeaders });
@@ -106,6 +103,11 @@ Deno.serve(async (req) => {
     const admin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!, {
       auth: { autoRefreshToken: false, persistSession: false },
     });
+
+    const settings = await loadSettings(admin);
+    const price = priceForN(normalized.length, settings);
+    if (!price) return Response.json({ error: "Jumlah nomor tidak didukung" }, { status: 400, headers: corsHeaders });
+
 
     // Balance
     const { data: hist } = await admin
