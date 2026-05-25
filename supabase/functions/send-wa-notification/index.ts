@@ -75,6 +75,7 @@ Deno.serve(async (req) => {
     const vars = (body.vars && typeof body.vars === "object") ? body.vars : {};
     const overrideText = body.text ? String(body.text) : null;
     const overrideNumber = body.wa_number ? String(body.wa_number) : null;
+    const notifyVisitorId = body.notify_visitor_id ? String(body.notify_visitor_id) : null;
     const isTest = !!body.test;
 
     if (!eventType && !overrideText) {
@@ -97,14 +98,7 @@ Deno.serve(async (req) => {
       cfg = data;
     }
 
-    if (!isTest && cfg && cfg.enabled === false) {
-      return Response.json({ skipped: true, reason: "disabled" }, { headers: corsHeaders });
-    }
-
-    const waNumber = normPhone(overrideNumber || cfg?.wa_number || "");
-    if (!waNumber) {
-      return Response.json({ error: "Nomor WA tidak valid" }, { status: 400, headers: corsHeaders });
-    }
+    const adminDisabled = !isTest && cfg && cfg.enabled === false;
 
     // Auto-vars
     const finalVars: Record<string, string | number> = {
@@ -117,8 +111,38 @@ Deno.serve(async (req) => {
       return Response.json({ error: "Pesan kosong" }, { status: 400, headers: corsHeaders });
     }
 
-    const ok = await pushToBot(admin, waNumber, text);
-    return Response.json({ success: ok, sent_to: waNumber }, { headers: corsHeaders });
+    const results: any = { admin: null, user: null };
+
+    // 1) Kirim ke admin (jika enabled)
+    if (!adminDisabled) {
+      const waAdmin = normPhone(overrideNumber || cfg?.wa_number || "");
+      if (waAdmin) {
+        results.admin = { sent_to: waAdmin, ok: await pushToBot(admin, waAdmin, text) };
+      }
+    }
+
+    // 2) Kirim ke user (jika ada notify_visitor_id & user mengaktifkan event ini)
+    if (notifyVisitorId && eventType) {
+      const { data: pref } = await admin
+        .from("user_wa_notif_prefs")
+        .select("wa_number, notify_purchase, notify_login, notify_deposit")
+        .eq("visitor_id", notifyVisitorId)
+        .maybeSingle();
+      const enabledFor: Record<string, boolean> = {
+        purchase: !!pref?.notify_purchase,
+        login: !!pref?.notify_login,
+        deposit: !!pref?.notify_deposit,
+      };
+      if (pref?.wa_number && enabledFor[eventType]) {
+        const waUser = normPhone(pref.wa_number);
+        if (waUser) {
+          const userText = `🔔 *Notifikasi Akun Anda*\n\n${text}\n\n_Pesan otomatis dari Agung Adi Store. Atur notifikasi WA di menu Plus → Notifikasi WA._`;
+          results.user = { sent_to: waUser, ok: await pushToBot(admin, waUser, userText) };
+        }
+      }
+    }
+
+    return Response.json({ success: true, ...results }, { headers: corsHeaders });
   } catch (e: any) {
     return Response.json({ error: e?.message || "internal" }, { status: 500, headers: corsHeaders });
   }

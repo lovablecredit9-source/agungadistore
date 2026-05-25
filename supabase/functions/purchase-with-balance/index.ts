@@ -340,6 +340,7 @@ Deno.serve(async (request) => {
         headers: { "Content-Type": "application/json", "Authorization": `Bearer ${key}` },
         body: JSON.stringify({
           event_type: "purchase",
+          notify_visitor_id: visitorId,
           vars: {
             trx_id: firstTrx,
             user: balanceRow.username || visitorId.slice(0, 8),
