@@ -9097,6 +9097,39 @@ export type Database = {
         }
         Relationships: []
       }
+      user_wa_notif_prefs: {
+        Row: {
+          created_at: string
+          id: string
+          notify_deposit: boolean
+          notify_login: boolean
+          notify_purchase: boolean
+          updated_at: string
+          visitor_id: string
+          wa_number: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          notify_deposit?: boolean
+          notify_login?: boolean
+          notify_purchase?: boolean
+          updated_at?: string
+          visitor_id: string
+          wa_number?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          notify_deposit?: boolean
+          notify_login?: boolean
+          notify_purchase?: boolean
+          updated_at?: string
+          visitor_id?: string
+          wa_number?: string
+        }
+        Relationships: []
+      }
       wa_bot_packages: {
         Row: {
           created_at: string
