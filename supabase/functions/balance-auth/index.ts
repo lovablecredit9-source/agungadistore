@@ -308,6 +308,7 @@ Deno.serve(async (request) => {
           headers: { "Content-Type": "application/json", "Authorization": `Bearer ${key}` },
           body: JSON.stringify({
             event_type: "login",
+            notify_visitor_id: payload.visitorId || null,
             vars: {
               user: user.username || identifier,
               hp: maskedHp || "-",
