@@ -156,6 +156,10 @@ Deno.serve(async (req) => {
         visitor_id: visitorId, type: "purchase", amount: sPrice,
         description: `Confess terjadwal ${scheduledAt.toLocaleString("id-ID")}`, trx_id: trxId,
       });
+      if (settings.notifyPurchase) {
+        await notifyAdminWa(admin, settings.adminWa,
+          `🆕 *Confess Terjadwal*\nTRX: ${trxId}\nDari: ${senderName || "Anonim"} (${visitorId.slice(0,8)})\nKe: ${normalized.length} nomor\nJadwal: ${scheduledAt.toLocaleString("id-ID")}\nHarga: Rp${sPrice.toLocaleString("id-ID")}`);
+      }
       return Response.json({
         success: true, scheduled: true, scheduled_id: sched.id, trx_id: trxId,
         balance_remaining: bal.balance - sPrice, charged: sPrice,
