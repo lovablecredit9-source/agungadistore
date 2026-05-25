@@ -318,6 +318,12 @@ Deno.serve(async (req) => {
       });
     }
 
+    if (settings.notifyPurchase) {
+      await notifyAdminWa(admin, settings.adminWa,
+        `🆕 *Pembelian Confess*\nTRX: ${trxId}\nDari: ${senderName || "Anonim"} (${visitorId.slice(0,8)})\nKe: ${normalized.length} nomor (${paidPhones.length} bayar, ${freePhones.length} gratis)\nHarga: Rp${chargePrice.toLocaleString("id-ID")}${trialDiscount ? ` (diskon trial Rp${trialDiscount.toLocaleString("id-ID")})` : ""}${shareToWall ? "\n📢 Dibagikan ke Wall Publik" : ""}${moodTag ? `\nMood: ${moodTag}` : ""}`);
+    }
+
+
     return Response.json({
       success: true, trx_id: trxId,
       balance_remaining: bal.balance - chargePrice, charged: chargePrice,
