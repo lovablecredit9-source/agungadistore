@@ -75,6 +75,7 @@ Deno.serve(async (req) => {
     const vars = (body.vars && typeof body.vars === "object") ? body.vars : {};
     const overrideText = body.text ? String(body.text) : null;
     const overrideNumber = body.wa_number ? String(body.wa_number) : null;
+    const notifyVisitorId = body.notify_visitor_id ? String(body.notify_visitor_id) : null;
     const isTest = !!body.test;
 
     if (!eventType && !overrideText) {
