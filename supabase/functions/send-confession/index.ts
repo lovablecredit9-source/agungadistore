@@ -5,11 +5,45 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-function priceFor(n: number): number {
-  if (n <= 1) return 2000;
-  if (n === 2) return 4000;
-  if (n === 3) return 5000;
+async function loadSettings(admin: any) {
+  const { data } = await admin.from("admin_settings").select("setting_key, setting_value")
+    .in("setting_key", ["confess_price_1","confess_price_2","confess_price_3","confess_admin_wa","confess_notify_purchase"]);
+  const map = new Map<string, string>((data || []).map((r: any) => [r.setting_key, r.setting_value]));
+  return {
+    price1: parseInt(map.get("confess_price_1") || "2000", 10) || 2000,
+    price2: parseInt(map.get("confess_price_2") || "4000", 10) || 4000,
+    price3: parseInt(map.get("confess_price_3") || "5000", 10) || 5000,
+    adminWa: (map.get("confess_admin_wa") || "").replace(/\D/g, ""),
+    notifyPurchase: (map.get("confess_notify_purchase") || "on") === "on",
+  };
+}
+function priceForN(n: number, s: { price1: number; price2: number; price3: number }) {
+  if (n <= 1) return s.price1;
+  if (n === 2) return s.price2;
+  if (n === 3) return s.price3;
   return 0;
+}
+async function notifyAdminWa(admin: any, adminWa: string, text: string) {
+  if (!adminWa || adminWa.length < 9) return;
+  const visitorKey = "system_admin_notif";
+  let threadId: string | null = null;
+  const { data: existing } = await admin.from("confess_threads")
+    .select("id").eq("visitor_id", visitorKey).eq("target_phone", adminWa).maybeSingle();
+  if (existing?.id) threadId = existing.id;
+  else {
+    const { data: ins } = await admin.from("confess_threads").insert({
+      visitor_id: visitorKey, target_phone: adminWa, sender_name: "Sistem Confess",
+      last_message_preview: text.slice(0, 80),
+    }).select("id").single();
+    threadId = ins?.id || null;
+  }
+  if (!threadId) return;
+  await admin.from("confess_thread_messages").insert({
+    thread_id: threadId, direction: "out", text, status: "pending", is_free: true,
+  });
+  await admin.from("confess_threads").update({
+    last_message_at: new Date().toISOString(), last_message_preview: text.slice(0, 80),
+  }).eq("id", threadId);
 }
 
 function normPhone(p: string): string | null {
