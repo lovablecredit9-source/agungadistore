@@ -1669,6 +1669,35 @@ Deno.serve(async (req) => {
           visitor_id, type: "refund", amount: row.price_charged,
           description: `Refund Confess Terjadwal (dibatalkan)`, trx_id: row.trx_id || null,
         });
+        // Notif WA ke admin
+        try {
+          const { data: settRows } = await supabase.from("admin_settings").select("setting_key, setting_value")
+            .in("setting_key", ["confess_admin_wa","confess_notify_cancel"]);
+          const sm = new Map<string, string>((settRows || []).map((r: any) => [r.setting_key, r.setting_value]));
+          const adminWa = (sm.get("confess_admin_wa") || "").replace(/\D/g, "");
+          if ((sm.get("confess_notify_cancel") || "on") === "on" && adminWa.length >= 9) {
+            const notifText = `❌ *Confess Dibatalkan*\nTRX: ${row.trx_id || "-"}\nPengguna: ${visitor_id.slice(0,8)}\nRefund: Rp${(row.price_charged || 0).toLocaleString("id-ID")}\nJadwal asal: ${row.scheduled_at ? new Date(row.scheduled_at).toLocaleString("id-ID") : "-"}`;
+            const visitorKey = "system_admin_notif";
+            const { data: existing } = await supabase.from("confess_threads")
+              .select("id").eq("visitor_id", visitorKey).eq("target_phone", adminWa).maybeSingle();
+            let threadId = existing?.id;
+            if (!threadId) {
+              const { data: ins } = await supabase.from("confess_threads").insert({
+                visitor_id: visitorKey, target_phone: adminWa, sender_name: "Sistem Confess",
+                last_message_preview: notifText.slice(0, 80),
+              }).select("id").single();
+              threadId = ins?.id;
+            }
+            if (threadId) {
+              await supabase.from("confess_thread_messages").insert({
+                thread_id: threadId, direction: "out", text: notifText, status: "pending", is_free: true,
+              });
+              await supabase.from("confess_threads").update({
+                last_message_at: new Date().toISOString(), last_message_preview: notifText.slice(0, 80),
+              }).eq("id", threadId);
+            }
+          }
+        } catch (_) { /* ignore */ }
         result = { ok: true, refunded: row.price_charged };
         break;
       }
