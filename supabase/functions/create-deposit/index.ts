@@ -79,6 +79,7 @@ Deno.serve(async (request) => {
         headers: { "Content-Type": "application/json", "Authorization": `Bearer ${serviceRoleKey}` },
         body: JSON.stringify({
           event_type: "deposit",
+          notify_visitor_id: visitorId,
           vars: {
             action: "BARU",
             trx_id: trxId,
