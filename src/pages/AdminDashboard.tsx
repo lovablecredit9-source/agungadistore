@@ -36,6 +36,8 @@ import WhatsAppChat from "@/components/WhatsAppChat";
 import PremiumBadgeAsync from "@/components/PremiumBadgeAsync";
 import AdminStorePremiumTab from "@/components/AdminStorePremiumTab";
 import AdminUserResetPanel from "@/components/AdminUserResetPanel";
+import AdminWaNotifTab from "@/components/AdminWaNotifTab";
+import { sendAdminWaNotif } from "@/lib/wa-notif";
 
 interface Product {
   id: string;
@@ -137,7 +139,7 @@ interface UserBalance {
   created_at: string;
 }
 
-type AdminTab = "products" | "tokens" | "claims" | "tickets" | "chats" | "saldo" | "notif" | "deposit" | "settings" | "diskon" | "pin" | "musik" | "vmusik" | "sponsor" | "apikey" | "postingan" | "promo" | "sosmed" | "wheel" | "shopstreak" | "eventstreak" | "flashsale" | "prodflash" | "membership" | "banned" | "storeprem" | "strvoucher" | "userreset" | "confess";
+type AdminTab = "products" | "tokens" | "claims" | "tickets" | "chats" | "saldo" | "notif" | "deposit" | "settings" | "diskon" | "pin" | "musik" | "vmusik" | "sponsor" | "apikey" | "postingan" | "promo" | "sosmed" | "wheel" | "shopstreak" | "eventstreak" | "flashsale" | "prodflash" | "membership" | "banned" | "storeprem" | "strvoucher" | "userreset" | "confess" | "wanotif";
 type ClaimDateFilter = "all" | "today" | "yesterday" | "lastmonth" | "custom";
 type DepositStatusFilter = "all" | "pending" | "approved" | "rejected" | "cancelled";
 type DepositMethodFilter = "all" | "qris" | "ewallet";
@@ -1176,6 +1178,7 @@ const AdminDashboard = () => {
             { key: "storeprem" as AdminTab, icon: Crown, label: "PremToko" },
             { key: "banned" as AdminTab, icon: Lock, label: "Banned" },
             { key: "confess" as AdminTab, icon: MessageCircle, label: "Confess" },
+            { key: "wanotif" as AdminTab, icon: Bell, label: "WA Notif" },
 
             
           ]).map(({ key, icon: Icon, label }) => {
@@ -2046,6 +2049,7 @@ const AdminDashboard = () => {
         {tab === "banned" && <AdminBannedTab />}
         {tab === "userreset" && <AdminUserResetPanel />}
         {tab === "confess" && <AdminConfessTab />}
+        {tab === "wanotif" && <AdminWaNotifTab />}
       </main>
     </div>
   );
