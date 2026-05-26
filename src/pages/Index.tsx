@@ -7406,6 +7406,7 @@ const Index = () => {
                 { key: "streakvoucher" as Tab, icon: Ticket, label: "Streak Voucher" },
                 { key: "game" as Tab, icon: Gamepad2, label: "Game" },
                 { key: "plus" as Tab, icon: Gem, label: "Plus" },
+                { key: "botnotif" as Tab, icon: Bell, label: "Bot Notifikasi" },
                 { key: "anonchat" as Tab, icon: VenetianMask, label: "Anon Chat" },
                 { key: "update" as Tab, icon: RefreshCw, label: "Update" },
                 { key: "storeai" as Tab, icon: Sparkles, label: "Store AI" },
