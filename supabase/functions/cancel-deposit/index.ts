@@ -52,11 +52,11 @@ Deno.serve(async (req) => {
       related_id: dep.trx_id,
     });
 
-    // Notif WA admin
+    // Notif WA admin + user (pakai waitUntil agar request fetch tidak di-kill setelah respons)
     try {
       const url = Deno.env.get("SUPABASE_URL") ?? "";
       const key = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
-      fetch(`${url}/functions/v1/send-wa-notification`, {
+      const p = fetch(`${url}/functions/v1/send-wa-notification`, {
         method: "POST",
         headers: { "Content-Type": "application/json", "Authorization": `Bearer ${key}` },
         body: JSON.stringify({
@@ -70,8 +70,10 @@ Deno.serve(async (req) => {
             metode: cancelReason,
           },
         }),
-      }).catch(() => {});
-    } catch (_) {}
+      }).catch((e) => { console.error("send-wa-notification failed:", e); });
+      // @ts-ignore
+      if (typeof EdgeRuntime !== "undefined" && EdgeRuntime?.waitUntil) { /* @ts-ignore */ EdgeRuntime.waitUntil(p); } else { await p; }
+    } catch (e) { console.error("notif dispatch error:", e); }
 
     return Response.json({ success: true }, { headers: corsHeaders });
   } catch (e) {
