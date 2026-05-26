@@ -354,6 +354,7 @@ const TAB_PATHS: Record<string, Tab> = {
   "/admin-post": "adminpost",
   "/game": "game",
   "/plus": "plus",
+  "/bot-notif": "botnotif",
   "/update": "update",
   "/store-ai": "storeai",
   "/confess": "confess",
