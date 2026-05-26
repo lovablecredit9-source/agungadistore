@@ -88,6 +88,7 @@ import PlayfulHero3D from "@/components/PlayfulHero3D";
 import BalanceAuth from "@/components/BalanceAuth";
 import GameTab from "@/components/GameTab";
 import PlusTab from "@/components/PlusTab";
+import UserWaNotifSettings from "@/components/UserWaNotifSettings";
 import AnonChatTab from "@/components/AnonChatTab";
 import { triggerGameBalanceRefresh, useGameBalance } from "@/components/games/GameBalance";
 import LiveClock from "@/components/LiveClock";
@@ -102,7 +103,7 @@ import { TicketEnhancer, TICKET_TEMPLATES } from "@/components/TicketEnhancer";
 import { useAccountBan } from "@/hooks/useAccountBan";
 import { StoreProfile, StoreMiniCard, StoreProfileModal } from "@/components/StoreProfile";
 
-type Tab = "musik" | "beranda" | "produk" | "voucher" | "history" | "likes" | "tiket" | "saldo" | "playlist" | "publik" | "sponsor" | "streak" | "streakevent" | "streakshop" | "streakvoucher" | "streakmembership" | "adminpost" | "game" | "plus" | "update" | "anonchat" | "storeai" | "confess";
+type Tab = "musik" | "beranda" | "produk" | "voucher" | "history" | "likes" | "tiket" | "saldo" | "playlist" | "publik" | "sponsor" | "streak" | "streakevent" | "streakshop" | "streakvoucher" | "streakmembership" | "adminpost" | "game" | "plus" | "update" | "anonchat" | "storeai" | "confess" | "botnotif";
 
 interface UserBalance {
   id: string;
@@ -353,6 +354,7 @@ const TAB_PATHS: Record<string, Tab> = {
   "/admin-post": "adminpost",
   "/game": "game",
   "/plus": "plus",
+  "/bot-notif": "botnotif",
   "/update": "update",
   "/store-ai": "storeai",
   "/confess": "confess",
@@ -1748,6 +1750,7 @@ const Index = () => {
                   { key: "streakvoucher" as Tab, icon: Ticket, label: "Streak Voucher", grad: "from-pink-400 via-fuchsia-500 to-purple-600", glow: "217,70,239" },
                   { key: "game" as Tab, icon: Gamepad2, label: "Game", grad: "from-violet-500 via-purple-500 to-fuchsia-500", glow: "139,92,246" },
                   { key: "plus" as Tab, icon: Gem, label: "Plus", grad: "from-cyan-300 via-sky-400 to-blue-500", glow: "56,189,248" },
+                  { key: "botnotif" as Tab, icon: Bell, label: "Bot Notifikasi", grad: "from-green-400 via-emerald-500 to-teal-500", glow: "34,197,94" },
                   { key: "anonchat" as Tab, icon: VenetianMask, label: "Anon Chat", grad: "from-emerald-400 via-teal-500 to-cyan-500", glow: "16,185,129" },
                   { key: "update" as Tab, icon: RefreshCw, label: "Update", grad: "from-emerald-300 via-teal-400 to-cyan-500", glow: "45,212,191" },
                   { key: "storeai" as Tab, icon: Sparkles, label: "Store AI", grad: "from-violet-400 via-fuchsia-500 to-cyan-400", glow: "168,85,247" },
@@ -2165,6 +2168,7 @@ const Index = () => {
                     { icon: <Gamepad2 className="w-5 h-5" strokeWidth={2} />, label: "Game", tab: "game" as Tab, badge: "40", color: "from-yellow-400 to-orange-500", glow: "250,204,21" },
                     { icon: <Flame className="w-5 h-5" strokeWidth={2} />, label: "Streak", tab: "streak" as Tab, color: "from-orange-500 to-red-500", glow: "249,115,22" },
                     { icon: <Gem className="w-5 h-5" strokeWidth={2} />, label: "Plus", tab: "plus" as Tab, color: "from-indigo-500 to-purple-500", glow: "99,102,241" },
+                    { icon: <Bell className="w-5 h-5" strokeWidth={2} />, label: "Bot Notif", tab: "botnotif" as Tab, color: "from-green-500 to-emerald-500", glow: "34,197,94" },
                     { icon: <VenetianMask className="w-5 h-5" strokeWidth={2} />, label: "Anon Chat", tab: "anonchat" as Tab, color: "from-emerald-500 to-teal-500", glow: "16,185,129" },
                     { icon: <Megaphone className="w-5 h-5" strokeWidth={2} />, label: "Sponsor", tab: "sponsor" as Tab, color: "from-amber-500 to-yellow-500", glow: "245,158,11" },
                     { icon: <MessageSquare className="w-5 h-5" strokeWidth={2} />, label: "Tiket", tab: "tiket" as Tab, color: "from-blue-500 to-cyan-500", glow: "59,130,246" },
@@ -4904,6 +4908,12 @@ const Index = () => {
 
         {tab === "plus" && <PlusTab key={userBalance?.visitor_id || "no-user"} />}
 
+        {tab === "botnotif" && (
+          <div className="space-y-3">
+            <UserWaNotifSettings key={userBalance?.visitor_id || "no-user-notif"} />
+          </div>
+        )}
+
         {tab === "anonchat" && (
           <div className="-mx-4 sm:mx-0">
             <AnonChatTab key="anon-chat" />
@@ -7402,6 +7412,7 @@ const Index = () => {
                 { key: "streakvoucher" as Tab, icon: Ticket, label: "Streak Voucher" },
                 { key: "game" as Tab, icon: Gamepad2, label: "Game" },
                 { key: "plus" as Tab, icon: Gem, label: "Plus" },
+                { key: "botnotif" as Tab, icon: Bell, label: "Bot Notifikasi" },
                 { key: "anonchat" as Tab, icon: VenetianMask, label: "Anon Chat" },
                 { key: "update" as Tab, icon: RefreshCw, label: "Update" },
                 { key: "storeai" as Tab, icon: Sparkles, label: "Store AI" },
