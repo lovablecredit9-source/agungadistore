@@ -72,9 +72,9 @@ Deno.serve(async (request) => {
       return Response.json({ error: "Gagal membuat deposit" }, { status: 500, headers: corsHeaders });
     }
 
-    // Fire-and-forget WA notif ke admin
+    // WA notif ke admin + user (jangan fire-and-forget; pakai waitUntil agar tidak di-kill)
     try {
-      fetch(`${supabaseUrl}/functions/v1/send-wa-notification`, {
+      const notifPromise = fetch(`${supabaseUrl}/functions/v1/send-wa-notification`, {
         method: "POST",
         headers: { "Content-Type": "application/json", "Authorization": `Bearer ${serviceRoleKey}` },
         body: JSON.stringify({
@@ -88,8 +88,15 @@ Deno.serve(async (request) => {
             metode: normalizedMethod,
           },
         }),
-      }).catch(() => {});
-    } catch (_) {}
+      }).catch((e) => { console.error("send-wa-notification failed:", e); });
+      // @ts-ignore - EdgeRuntime tersedia di Supabase runtime
+      if (typeof EdgeRuntime !== "undefined" && EdgeRuntime?.waitUntil) {
+        // @ts-ignore
+        EdgeRuntime.waitUntil(notifPromise);
+      } else {
+        await notifPromise;
+      }
+    } catch (e) { console.error("notif dispatch error:", e); }
 
     return Response.json({ success: true, deposit }, { headers: corsHeaders });
   } catch (error) {
