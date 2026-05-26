@@ -4908,6 +4908,12 @@ const Index = () => {
 
         {tab === "plus" && <PlusTab key={userBalance?.visitor_id || "no-user"} />}
 
+        {tab === "botnotif" && (
+          <div className="space-y-3">
+            <UserWaNotifSettings key={userBalance?.visitor_id || "no-user-notif"} />
+          </div>
+        )}
+
         {tab === "anonchat" && (
           <div className="-mx-4 sm:mx-0">
             <AnonChatTab key="anon-chat" />
