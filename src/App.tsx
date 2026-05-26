@@ -48,6 +48,7 @@ const App = () => (
             <Route path="/streak-membership" element={<Index />} />
             <Route path="/game" element={<Index />} />
             <Route path="/plus" element={<Index />} />
+            <Route path="/bot-notif" element={<Index />} />
             
             <Route path="/update" element={<Index />} />
             <Route path="/store-ai" element={<Index />} />
