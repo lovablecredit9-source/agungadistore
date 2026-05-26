@@ -9097,6 +9097,51 @@ export type Database = {
         }
         Relationships: []
       }
+      user_wa_notif_numbers: {
+        Row: {
+          created_at: string
+          id: string
+          is_paid: boolean
+          label: string | null
+          notify_deposit: boolean
+          notify_login: boolean
+          notify_purchase: boolean
+          paid_until: string | null
+          slot_index: number
+          updated_at: string
+          visitor_id: string
+          wa_number: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_paid?: boolean
+          label?: string | null
+          notify_deposit?: boolean
+          notify_login?: boolean
+          notify_purchase?: boolean
+          paid_until?: string | null
+          slot_index?: number
+          updated_at?: string
+          visitor_id: string
+          wa_number: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_paid?: boolean
+          label?: string | null
+          notify_deposit?: boolean
+          notify_login?: boolean
+          notify_purchase?: boolean
+          paid_until?: string | null
+          slot_index?: number
+          updated_at?: string
+          visitor_id?: string
+          wa_number?: string
+        }
+        Relationships: []
+      }
       user_wa_notif_prefs: {
         Row: {
           created_at: string
@@ -9242,6 +9287,48 @@ export type Database = {
           id?: string
           template?: string
           updated_at?: string
+          wa_number?: string
+        }
+        Relationships: []
+      }
+      wa_slot_payments: {
+        Row: {
+          amount: number
+          created_at: string
+          expires_at: string
+          id: string
+          method: string
+          paid_at: string
+          slot_index: number
+          status: string
+          trx_id: string | null
+          visitor_id: string
+          wa_number: string
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          expires_at: string
+          id?: string
+          method?: string
+          paid_at?: string
+          slot_index: number
+          status?: string
+          trx_id?: string | null
+          visitor_id: string
+          wa_number: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          expires_at?: string
+          id?: string
+          method?: string
+          paid_at?: string
+          slot_index?: number
+          status?: string
+          trx_id?: string | null
+          visitor_id?: string
           wa_number?: string
         }
         Relationships: []

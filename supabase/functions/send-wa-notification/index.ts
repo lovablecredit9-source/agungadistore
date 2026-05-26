@@ -111,7 +111,7 @@ Deno.serve(async (req) => {
       return Response.json({ error: "Pesan kosong" }, { status: 400, headers: corsHeaders });
     }
 
-    const results: any = { admin: null, user: null };
+    const results: any = { admin: null, user: [] };
 
     // 1) Kirim ke admin (jika enabled)
     if (!adminDisabled) {
@@ -121,24 +121,66 @@ Deno.serve(async (req) => {
       }
     }
 
-    // 2) Kirim ke user (jika ada notify_visitor_id & user mengaktifkan event ini)
+    // 2) Kirim ke SEMUA nomor user yang aktif (multi-number support)
     if (notifyVisitorId && eventType) {
-      const { data: pref } = await admin
+      const eventKey = eventType.replace("notify_", "");
+      const { data: numbers } = await admin
+        .from("user_wa_notif_numbers")
+        .select("wa_number, notify_purchase, notify_login, notify_deposit, is_paid, paid_until")
+        .eq("visitor_id", notifyVisitorId)
+        .order("slot_index", { ascending: true });
+
+      // Also check legacy single-number prefs for backwards compatibility
+      const { data: legacyPref } = await admin
         .from("user_wa_notif_prefs")
         .select("wa_number, notify_purchase, notify_login, notify_deposit")
         .eq("visitor_id", notifyVisitorId)
         .maybeSingle();
-      const enabledFor: Record<string, boolean> = {
-        purchase: !!pref?.notify_purchase,
-        login: !!pref?.notify_login,
-        deposit: !!pref?.notify_deposit,
-      };
-      if (pref?.wa_number && enabledFor[eventType]) {
-        const waUser = normPhone(pref.wa_number);
-        if (waUser) {
-          const userText = `🔔 *Notifikasi Akun Anda*\n\n${text}\n\n_Pesan otomatis dari Agung Adi Store. Atur notifikasi WA di menu Plus → Notifikasi WA._`;
-          results.user = { sent_to: waUser, ok: await pushToBot(admin, waUser, userText) };
+
+      const allNumbers: { wa_number: string; enabled: boolean; isPaidSlot: boolean }[] = [];
+
+      if (numbers && numbers.length > 0) {
+        for (const n of numbers) {
+          const enabledMap: Record<string, boolean> = {
+            purchase: !!n.notify_purchase,
+            login: !!n.notify_login,
+            deposit: !!n.notify_deposit,
+          };
+          const isPaidExpired = n.is_paid && n.paid_until && new Date(n.paid_until) < new Date();
+          allNumbers.push({
+            wa_number: n.wa_number,
+            enabled: enabledMap[eventKey] || false,
+            isPaidSlot: n.is_paid && !isPaidExpired,
+          });
         }
+      }
+
+      // Backwards compat: legacy pref
+      if (legacyPref?.wa_number) {
+        const enabledMap: Record<string, boolean> = {
+          purchase: !!legacyPref.notify_purchase,
+          login: !!legacyPref.notify_login,
+          deposit: !!legacyPref.notify_deposit,
+        };
+        // Only add if not already in multi-number list
+        if (!allNumbers.some((x) => x.wa_number === legacyPref.wa_number)) {
+          allNumbers.push({
+            wa_number: legacyPref.wa_number,
+            enabled: enabledMap[eventKey] || false,
+            isPaidSlot: false,
+          });
+        }
+      }
+
+      for (const entry of allNumbers) {
+        if (!entry.enabled) continue;
+        const waUser = normPhone(entry.wa_number);
+        if (!waUser) continue;
+        const userText = isTest
+          ? text
+          : `*Notifikasi Agung Adi Store*\n\n${text}\n\n_Pesan otomatis. Atur di menu Plus → Notifikasi WA._`;
+        const ok = await pushToBot(admin, waUser, userText);
+        results.user.push({ sent_to: waUser, ok });
       }
     }
 

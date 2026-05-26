@@ -10,14 +10,20 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import {
   Loader2, Save, Send, MessageSquare, ShoppingCart, LogIn, Wallet,
-  Phone, Bell, History, Settings2, CheckCircle2, XCircle,
+  Phone, Bell, History, Settings2, CheckCircle2, XCircle, Plus, Trash2,
+  Crown, Lock, CreditCard, QrCode, X,
 } from "lucide-react";
 
-type Pref = {
+type WaNumber = {
+  id: string;
   wa_number: string;
+  label: string;
   notify_purchase: boolean;
   notify_login: boolean;
   notify_deposit: boolean;
+  is_paid: boolean;
+  paid_until: string | null;
+  slot_index: number;
 };
 
 type LogRow = {
@@ -44,32 +50,42 @@ function normalizePhone(raw: string) {
 
 export default function UserWaNotifSettings() {
   const [visitorId, setVisitorId] = useState<string>("");
-  const [pref, setPref] = useState<Pref>({
-    wa_number: "",
-    notify_purchase: true,
-    notify_login: true,
-    notify_deposit: true,
-  });
+  const [numbers, setNumbers] = useState<WaNumber[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [testing, setTesting] = useState<string | null>(null);
-  const [tab, setTab] = useState("akun");
+  const [tab, setTab] = useState("nomor");
   const [logs, setLogs] = useState<LogRow[]>([]);
   const [logsLoading, setLogsLoading] = useState(false);
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [newPhone, setNewPhone] = useState("");
+  const [newLabel, setNewLabel] = useState("");
+  const [adding, setAdding] = useState(false);
+  const [showPayModal, setShowPayModal] = useState(false);
+  const [paySlotIndex, setPaySlotIndex] = useState(3);
+  const [payMethod, setPayMethod] = useState<"balance" | "qris">("balance");
+  const [payPin, setPayPin] = useState("");
+  const [paying, setPaying] = useState(false);
 
   useEffect(() => {
     (async () => {
       const vid = getVisitorId();
       setVisitorId(vid);
-      const { data } = await supabase
-        .from("user_wa_notif_prefs" as any)
-        .select("wa_number, notify_purchase, notify_login, notify_deposit")
-        .eq("visitor_id", vid)
-        .maybeSingle();
-      if (data) setPref(data as any);
+      await loadNumbers(vid);
       setLoading(false);
     })();
   }, []);
+
+  const loadNumbers = async (vid?: string) => {
+    const id = vid || visitorId;
+    if (!id) return;
+    const { data } = await supabase
+      .from("user_wa_notif_numbers" as any)
+      .select("id, wa_number, label, notify_purchase, notify_login, notify_deposit, is_paid, paid_until, slot_index")
+      .eq("visitor_id", id)
+      .order("slot_index", { ascending: true });
+    setNumbers((data as any) || []);
+  };
 
   const loadLogs = async () => {
     if (!visitorId) return;
@@ -89,53 +105,117 @@ export default function UserWaNotifSettings() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tab, visitorId]);
 
-  const save = async () => {
-    const phone = normalizePhone(pref.wa_number);
-    if (phone && phone.length < 10) {
+  const getNextFreeSlot = () => {
+    const used = new Set(numbers.map((n) => n.slot_index));
+    for (let i = 1; i <= 2; i++) if (!used.has(i)) return i;
+    return null;
+  };
+
+  const getNextPaidSlot = () => {
+    const used = new Set(numbers.map((n) => n.slot_index));
+    for (let i = 3; i <= 5; i++) if (!used.has(i)) return i;
+    return null;
+  };
+
+  const isSlotPaid = (slotIndex: number) => slotIndex >= 3;
+
+  const addFreeNumber = async () => {
+    const phone = normalizePhone(newPhone);
+    if (!phone || phone.length < 10) {
       toast.error("Nomor WA tidak valid");
       return;
     }
-    setSaving(true);
-    const { error } = await supabase
-      .from("user_wa_notif_prefs" as any)
-      .upsert({
-        visitor_id: visitorId,
-        wa_number: phone,
-        notify_purchase: pref.notify_purchase,
-        notify_login: pref.notify_login,
-        notify_deposit: pref.notify_deposit,
-      }, { onConflict: "visitor_id" });
-    setSaving(false);
-    if (error) toast.error("Gagal: " + error.message);
-    else {
-      toast.success("Pengaturan tersimpan ✓");
-      setPref(p => ({ ...p, wa_number: phone }));
-    }
-  };
-
-  const removeNumber = async () => {
-    if (!confirm("Hapus nomor WA & matikan semua notif?")) return;
-    setSaving(true);
-    await supabase.from("user_wa_notif_prefs" as any).delete().eq("visitor_id", visitorId);
-    setPref({ wa_number: "", notify_purchase: false, notify_login: false, notify_deposit: false });
-    setSaving(false);
-    toast.success("Nomor dihapus");
-  };
-
-  const testKirim = async (eventKey: "purchase" | "login" | "deposit") => {
-    const phone = normalizePhone(pref.wa_number);
-    if (!phone || phone.length < 10) {
-      toast.error("Isi & simpan nomor WA dulu");
+    const nextSlot = getNextFreeSlot();
+    if (!nextSlot) {
+      toast.error("Slot gratis penuh. Beli slot tambahan.");
       return;
     }
-    setTesting(eventKey);
+    setAdding(true);
+    const { error } = await supabase.from("user_wa_notif_numbers" as any).insert({
+      visitor_id: visitorId,
+      wa_number: phone,
+      label: newLabel || `Slot ${nextSlot}`,
+      slot_index: nextSlot,
+      is_paid: false,
+    });
+    setAdding(false);
+    if (error) toast.error("Gagal: " + error.message);
+    else {
+      toast.success("Nomor ditambahkan ✓");
+      setNewPhone("");
+      setNewLabel("");
+      setShowAddModal(false);
+      await loadNumbers();
+    }
+  };
+
+  const payForSlot = async () => {
+    const phone = normalizePhone(newPhone);
+    if (!phone || phone.length < 10) {
+      toast.error("Nomor WA tidak valid");
+      return;
+    }
+    setPaying(true);
+    const { data, error } = await supabase.functions.invoke("wa-slot-purchase", {
+      body: {
+        visitorId,
+        waNumber: phone,
+        slotIndex: paySlotIndex,
+        method: payMethod,
+        pin: payPin,
+      },
+    });
+    setPaying(false);
+    if (error || (data as any)?.error) {
+      toast.error("Gagal: " + (error?.message || (data as any)?.error));
+    } else {
+      toast.success(`Slot #${paySlotIndex} berhasil dibeli!`);
+      setNewPhone("");
+      setNewLabel("");
+      setPayPin("");
+      setShowPayModal(false);
+      await loadNumbers();
+    }
+  };
+
+  const removeNumber = async (id: string) => {
+    if (!confirm("Hapus nomor ini?")) return;
+    setSaving(true);
+    await supabase.from("user_wa_notif_numbers" as any).delete().eq("id", id);
+    setSaving(false);
+    toast.success("Nomor dihapus");
+    await loadNumbers();
+  };
+
+  const updateToggle = (id: string, field: string, value: boolean) => {
+    setNumbers((prev) => prev.map((n) => (n.id === id ? { ...n, [field]: value } : n)));
+  };
+
+  const saveNumberSettings = async (num: WaNumber) => {
+    setSaving(true);
+    const { error } = await supabase
+      .from("user_wa_notif_numbers" as any)
+      .update({
+        notify_purchase: num.notify_purchase,
+        notify_login: num.notify_login,
+        notify_deposit: num.notify_deposit,
+        label: num.label,
+      })
+      .eq("id", num.id);
+    setSaving(false);
+    if (error) toast.error("Gagal: " + error.message);
+    else toast.success("Pengaturan tersimpan ✓");
+  };
+
+  const testKirim = async (num: WaNumber, eventKey: "purchase" | "login" | "deposit") => {
+    setTesting(eventKey + num.id);
     const labelMap = { purchase: "Pembelian", login: "Login", deposit: "Deposit" };
     const { data, error } = await supabase.functions.invoke("send-wa-notification", {
       body: {
         event_type: eventKey,
         notify_visitor_id: visitorId,
         wa_number: "0",
-        text: `🔔 *Test Notif ${labelMap[eventKey]}*\n\nNotif WA kamu untuk *${labelMap[eventKey]}* berjalan normal ✓\n\n— Agung Adi Store`,
+        text: `*Test Notif ${labelMap[eventKey]}*\n\nNotif WA untuk *${labelMap[eventKey]}* berjalan normal.\n\n— Agung Adi Store`,
         vars: {},
       },
     });
@@ -143,7 +223,7 @@ export default function UserWaNotifSettings() {
     if (error || (data as any)?.error) {
       toast.error("Gagal: " + (error?.message || (data as any)?.error));
     } else {
-      toast.success("Test terkirim ke " + phone);
+      toast.success("Test terkirim ke +" + num.wa_number);
     }
   };
 
@@ -155,8 +235,11 @@ export default function UserWaNotifSettings() {
     );
   }
 
-  const hasNumber = !!normalizePhone(pref.wa_number);
-  const activeCount = EVENTS.filter(e => pref[e.key]).length;
+  const totalNumbers = numbers.length;
+  const freeSlotsUsed = numbers.filter((n) => !n.is_paid).length;
+  const paidSlotsUsed = numbers.filter((n) => n.is_paid).length;
+  const hasFreeSlot = freeSlotsUsed < 2;
+  const hasPaidSlot = paidSlotsUsed < 3;
 
   return (
     <div className="space-y-4">
@@ -170,9 +253,9 @@ export default function UserWaNotifSettings() {
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
               <h3 className="font-extrabold text-base">Notifikasi Bot WhatsApp</h3>
-              {hasNumber ? (
+              {totalNumbers > 0 ? (
                 <Badge className="bg-green-500/20 text-green-700 border-green-500/30 text-[10px] gap-1">
-                  <CheckCircle2 className="w-3 h-3" /> Aktif
+                  <CheckCircle2 className="w-3 h-3" /> {totalNumbers} Nomor
                 </Badge>
               ) : (
                 <Badge variant="outline" className="text-[10px] gap-1">
@@ -181,22 +264,33 @@ export default function UserWaNotifSettings() {
               )}
             </div>
             <p className="text-[11px] text-muted-foreground mt-0.5">
-              {hasNumber
-                ? `Bot kirim ke +${pref.wa_number} • ${activeCount}/3 event aktif`
-                : "Set nomor WA kamu di tab Akun untuk mulai terima notif."}
+              {totalNumbers > 0
+                ? `${freeSlotsUsed}/2 gratis • ${paidSlotsUsed}/3 berbayar`
+                : "Tambah nomor WA untuk terima notif otomatis."}
             </p>
           </div>
         </div>
       </div>
 
+      {/* Add buttons */}
+      <div className="flex gap-2">
+        {hasFreeSlot && (
+          <Button onClick={() => { setShowAddModal(true); setShowPayModal(false); }} variant="outline" className="flex-1 gap-1 text-[11px]">
+            <Plus className="w-3.5 h-3.5" /> Tambah Nomor (Gratis)
+          </Button>
+        )}
+        {hasPaidSlot && (
+          <Button onClick={() => { setShowPayModal(true); setShowAddModal(false); }} className="flex-1 gap-1 text-[11px] bg-amber-500 hover:bg-amber-600">
+            <Crown className="w-3.5 h-3.5" /> Beli Slot (Rp 5.000)
+          </Button>
+        )}
+      </div>
+
       {/* Navigation tabs */}
       <Tabs value={tab} onValueChange={setTab} className="w-full">
-        <TabsList className="grid grid-cols-4 w-full h-auto p-1 bg-muted/60">
-          <TabsTrigger value="akun" className="flex flex-col gap-0.5 py-2 text-[10px] data-[state=active]:bg-background">
-            <Phone className="w-4 h-4" /> Akun
-          </TabsTrigger>
-          <TabsTrigger value="event" className="flex flex-col gap-0.5 py-2 text-[10px] data-[state=active]:bg-background">
-            <Settings2 className="w-4 h-4" /> Event
+        <TabsList className="grid grid-cols-3 w-full h-auto p-1 bg-muted/60">
+          <TabsTrigger value="nomor" className="flex flex-col gap-0.5 py-2 text-[10px] data-[state=active]:bg-background">
+            <Phone className="w-4 h-4" /> Nomor ({totalNumbers})
           </TabsTrigger>
           <TabsTrigger value="test" className="flex flex-col gap-0.5 py-2 text-[10px] data-[state=active]:bg-background">
             <Send className="w-4 h-4" /> Test
@@ -206,97 +300,120 @@ export default function UserWaNotifSettings() {
           </TabsTrigger>
         </TabsList>
 
-        {/* AKUN */}
-        <TabsContent value="akun" className="mt-3">
-          <Card className="p-4 space-y-3">
-            <div>
-              <label className="text-xs font-semibold text-muted-foreground flex items-center gap-1">
-                <Phone className="w-3.5 h-3.5" /> Nomor WhatsApp Kamu
-              </label>
-              <Input
-                value={pref.wa_number}
-                onChange={(e) => setPref(p => ({ ...p, wa_number: e.target.value }))}
-                placeholder="08xxxxxxxxxx atau 628xxxxxxxxxx"
-                inputMode="numeric"
-                className="font-mono mt-1"
-              />
-              <div className="text-[10px] text-muted-foreground mt-1">
-                Format 08xx otomatis dikonversi ke 628xx. Min 10 digit.
-              </div>
-            </div>
-            <div className="flex gap-2">
-              <Button onClick={save} disabled={saving} className="flex-1 gap-1">
-                {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                Simpan
-              </Button>
-              {hasNumber && (
-                <Button onClick={removeNumber} disabled={saving} variant="outline" className="text-destructive">
-                  Hapus
-                </Button>
-              )}
-            </div>
-          </Card>
-        </TabsContent>
-
-        {/* EVENT */}
-        <TabsContent value="event" className="mt-3 space-y-2">
-          {EVENTS.map(ev => {
-            const Icon = ev.icon;
-            return (
-              <Card key={ev.key} className="p-3">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex items-start gap-2.5 flex-1 min-w-0">
-                    <div className={`w-9 h-9 rounded-lg bg-gradient-to-br ${ev.color} flex items-center justify-center shrink-0 shadow-sm`}>
-                      <Icon className="w-4 h-4 text-white" />
+        {/* NOMOR */}
+        <TabsContent value="nomor" className="mt-3 space-y-3">
+          {numbers.length === 0 ? (
+            <Card className="p-6 text-center">
+              <Phone className="w-8 h-8 mx-auto mb-2 opacity-30" />
+              <p className="text-sm font-semibold">Belum ada nomor</p>
+              <p className="text-[11px] text-muted-foreground mt-1">Tambah nomor WA untuk mulai terima notif.</p>
+            </Card>
+          ) : (
+            numbers.map((num) => {
+              const activeCount = EVENTS.filter((e) => num[e.key]).length;
+              const isExpired = num.is_paid && num.paid_until && new Date(num.paid_until) < new Date();
+              return (
+                <Card key={num.id} className={`p-3 space-y-2 ${isExpired ? "opacity-60 border-amber-500/30" : ""}`}>
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex items-center gap-2 flex-1 min-w-0">
+                      <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center shrink-0">
+                        <Phone className="w-4 h-4 text-white" />
+                      </div>
+                      <div className="min-w-0">
+                        <div className="text-sm font-semibold flex items-center gap-1.5">
+                          +{num.wa_number}
+                          {num.is_paid ? (
+                            <Badge className="text-[9px] bg-amber-500/20 text-amber-700 border-amber-500/30 gap-0.5">
+                              <Crown className="w-2.5 h-2.5" /> Berbayar
+                            </Badge>
+                          ) : (
+                            <Badge variant="outline" className="text-[9px] gap-0.5">
+                              <CheckCircle2 className="w-2.5 h-2.5" /> Gratis
+                            </Badge>
+                          )}
+                        </div>
+                        <div className="text-[10px] text-muted-foreground">
+                          {num.label} • Slot #{num.slot_index} • {activeCount}/3 event aktif
+                          {num.is_paid && num.paid_until && (
+                            <span className={isExpired ? " text-amber-600 font-medium" : ""}>
+                              {" "}• {isExpired ? "Expired" : "Aktif s/d " + new Date(num.paid_until).toLocaleDateString("id-ID")}
+                            </span>
+                          )}
+                        </div>
+                      </div>
                     </div>
-                    <div className="min-w-0">
-                      <div className="text-sm font-semibold">{ev.label}</div>
-                      <div className="text-[11px] text-muted-foreground">{ev.desc}</div>
-                    </div>
+                    <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" onClick={() => removeNumber(num.id)}>
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </Button>
                   </div>
-                  <Switch
-                    checked={pref[ev.key] as boolean}
-                    onCheckedChange={(v) => setPref(p => ({ ...p, [ev.key]: v }))}
-                  />
-                </div>
-              </Card>
-            );
-          })}
-          <Button onClick={save} disabled={saving} className="w-full gap-1">
-            {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-            Simpan Pengaturan Event
-          </Button>
+
+                  <div className="space-y-1.5">
+                    {EVENTS.map((ev) => {
+                      const Icon = ev.icon;
+                      return (
+                        <div key={ev.key} className="flex items-center justify-between gap-2 bg-muted/40 rounded-lg px-2.5 py-1.5">
+                          <div className="flex items-center gap-2">
+                            <Icon className="w-3.5 h-3.5 text-muted-foreground" />
+                            <span className="text-[11px]">{ev.label}</span>
+                          </div>
+                          <Switch
+                            checked={num[ev.key] as boolean}
+                            onCheckedChange={(v) => updateToggle(num.id, ev.key, v)}
+                            className="scale-75"
+                          />
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  <Button onClick={() => saveNumberSettings(num)} disabled={saving} size="sm" className="w-full gap-1 text-[11px]">
+                    {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+                    Simpan Pengaturan
+                  </Button>
+                </Card>
+              );
+            })
+          )}
         </TabsContent>
 
         {/* TEST */}
-        <TabsContent value="test" className="mt-3 space-y-2">
-          <p className="text-[11px] text-muted-foreground px-1">
-            Kirim pesan tes ke nomor WA kamu untuk tiap jenis event.
-          </p>
-          {EVENTS.map(ev => {
-            const Icon = ev.icon;
-            const key = ev.key.replace("notify_", "") as "purchase" | "login" | "deposit";
-            return (
-              <Card key={ev.key} className="p-3 flex items-center gap-3">
-                <div className={`w-9 h-9 rounded-lg bg-gradient-to-br ${ev.color} flex items-center justify-center shrink-0`}>
-                  <Icon className="w-4 h-4 text-white" />
+        <TabsContent value="test" className="mt-3 space-y-3">
+          {numbers.length === 0 ? (
+            <Card className="p-6 text-center">
+              <Send className="w-8 h-8 mx-auto mb-2 opacity-30" />
+              <p className="text-sm font-semibold">Tambah nomor dulu</p>
+              <p className="text-[11px] text-muted-foreground mt-1">Belum ada nomor WA yang terdaftar.</p>
+            </Card>
+          ) : (
+            numbers.map((num) => (
+              <Card key={num.id} className="p-3 space-y-2">
+                <div className="flex items-center gap-2">
+                  <Phone className="w-4 h-4 text-green-500" />
+                  <span className="text-sm font-semibold">+{num.wa_number}</span>
+                  <Badge variant="outline" className="text-[9px]">{num.label}</Badge>
                 </div>
-                <div className="flex-1 min-w-0">
-                  <div className="text-sm font-semibold">{ev.label}</div>
+                <div className="grid grid-cols-3 gap-2">
+                  {EVENTS.map((ev) => {
+                    const key = ev.key.replace("notify_", "") as "purchase" | "login" | "deposit";
+                    const isActive = num[ev.key];
+                    return (
+                      <Button
+                        key={ev.key}
+                        size="sm"
+                        variant={isActive ? "default" : "outline"}
+                        disabled={!isActive || testing === key + num.id}
+                        onClick={() => testKirim(num, key)}
+                        className="gap-1 text-[10px]"
+                      >
+                        {testing === key + num.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <Send className="w-3 h-3" />}
+                        {ev.label.split(" ")[0]}
+                      </Button>
+                    );
+                  })}
                 </div>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  disabled={!hasNumber || testing === key}
-                  onClick={() => testKirim(key)}
-                  className="gap-1"
-                >
-                  {testing === key ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
-                  Kirim
-                </Button>
               </Card>
-            );
-          })}
+            ))
+          )}
         </TabsContent>
 
         {/* RIWAYAT */}
@@ -321,7 +438,7 @@ export default function UserWaNotifSettings() {
               </div>
             ) : (
               <div className="space-y-1.5 max-h-72 overflow-y-auto">
-                {logs.map(l => (
+                {logs.map((l) => (
                   <div key={l.id} className="text-[11px] p-2 rounded-lg bg-muted/40 border">
                     <div className="flex items-center justify-between gap-2">
                       <span className="font-semibold capitalize">{l.event_type}</span>
@@ -349,6 +466,131 @@ export default function UserWaNotifSettings() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Add Free Modal */}
+      {showAddModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" onClick={() => setShowAddModal(false)}>
+          <Card className="w-full max-w-sm p-4 space-y-3" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between">
+              <h3 className="font-bold text-sm">Tambah Nomor (Gratis)</h3>
+              <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setShowAddModal(false)}>
+                <X className="w-4 h-4" />
+              </Button>
+            </div>
+            <div>
+              <label className="text-xs font-semibold text-muted-foreground">Nomor WhatsApp</label>
+              <Input
+                value={newPhone}
+                onChange={(e) => setNewPhone(e.target.value)}
+                placeholder="08xxxxxxxxxx"
+                inputMode="numeric"
+                className="font-mono mt-1"
+              />
+            </div>
+            <div>
+              <label className="text-xs font-semibold text-muted-foreground">Label (opsional)</label>
+              <Input
+                value={newLabel}
+                onChange={(e) => setNewLabel(e.target.value)}
+                placeholder="Contoh: Pribadi, Bisnis"
+                className="mt-1"
+              />
+            </div>
+            <Button onClick={addFreeNumber} disabled={adding} className="w-full gap-1">
+              {adding ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
+              Tambah Nomor
+            </Button>
+          </Card>
+        </div>
+      )}
+
+      {/* Pay Slot Modal */}
+      {showPayModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" onClick={() => setShowPayModal(false)}>
+          <Card className="w-full max-w-sm p-4 space-y-3" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between">
+              <h3 className="font-bold text-sm">Beli Slot Berbayar</h3>
+              <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setShowPayModal(false)}>
+                <X className="w-4 h-4" />
+              </Button>
+            </div>
+            <p className="text-[11px] text-muted-foreground">Slot 3-5: Rp 5.000/bulan per nomor.</p>
+            <div>
+              <label className="text-xs font-semibold text-muted-foreground">Nomor WhatsApp</label>
+              <Input
+                value={newPhone}
+                onChange={(e) => setNewPhone(e.target.value)}
+                placeholder="08xxxxxxxxxx"
+                inputMode="numeric"
+                className="font-mono mt-1"
+              />
+            </div>
+            <div>
+              <label className="text-xs font-semibold text-muted-foreground">Slot</label>
+              <div className="grid grid-cols-3 gap-2 mt-1">
+                {[3, 4, 5].map((s) => {
+                  const used = numbers.some((n) => n.slot_index === s);
+                  return (
+                    <button
+                      key={s}
+                      onClick={() => !used && setPaySlotIndex(s)}
+                      disabled={used}
+                      className={`text-center py-2 rounded-lg border text-xs font-semibold transition-colors ${
+                        paySlotIndex === s
+                          ? "bg-amber-500 text-white border-amber-500"
+                          : used
+                          ? "bg-muted text-muted-foreground border-muted cursor-not-allowed"
+                          : "bg-background border-border hover:border-amber-500"
+                      }`}
+                    >
+                      #{s} {used && "(Used)"}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+            <div>
+              <label className="text-xs font-semibold text-muted-foreground">Metode Bayar</label>
+              <div className="grid grid-cols-2 gap-2 mt-1">
+                <button
+                  onClick={() => setPayMethod("balance")}
+                  className={`flex items-center justify-center gap-1 py-2 rounded-lg border text-xs font-semibold transition-colors ${
+                    payMethod === "balance" ? "bg-primary text-primary-foreground border-primary" : "bg-background border-border"
+                  }`}
+                >
+                  <CreditCard className="w-3.5 h-3.5" /> Saldo
+                </button>
+                <button
+                  onClick={() => setPayMethod("qris")}
+                  className={`flex items-center justify-center gap-1 py-2 rounded-lg border text-xs font-semibold transition-colors ${
+                    payMethod === "qris" ? "bg-primary text-primary-foreground border-primary" : "bg-background border-border"
+                  }`}
+                >
+                  <QrCode className="w-3.5 h-3.5" /> QRIS
+                </button>
+              </div>
+            </div>
+            {payMethod === "balance" && (
+              <div>
+                <label className="text-xs font-semibold text-muted-foreground">PIN 6 Digit</label>
+                <Input
+                  value={payPin}
+                  onChange={(e) => setPayPin(e.target.value)}
+                  placeholder="******"
+                  type="password"
+                  inputMode="numeric"
+                  maxLength={6}
+                  className="font-mono mt-1 text-center tracking-widest"
+                />
+              </div>
+            )}
+            <Button onClick={payForSlot} disabled={paying} className="w-full gap-1 bg-amber-500 hover:bg-amber-600">
+              {paying ? <Loader2 className="w-4 h-4 animate-spin" /> : <Crown className="w-4 h-4" />}
+              Bayar Rp 5.000
+            </Button>
+          </Card>
+        </div>
+      )}
     </div>
   );
 }
