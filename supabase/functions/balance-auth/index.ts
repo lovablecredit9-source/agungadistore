@@ -297,13 +297,13 @@ Deno.serve(async (request) => {
         });
       }
 
-      // Fire-and-forget WA notif ke admin
+      // WA notif login ke admin + user (pakai waitUntil agar tidak di-kill)
       try {
         const url = Deno.env.get("SUPABASE_URL") ?? "";
         const key = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
         const phone = String(user.phone || "");
         const maskedHp = phone.length > 6 ? phone.slice(0, 4) + "****" + phone.slice(-4) : phone;
-        fetch(`${url}/functions/v1/send-wa-notification`, {
+        const p = fetch(`${url}/functions/v1/send-wa-notification`, {
           method: "POST",
           headers: { "Content-Type": "application/json", "Authorization": `Bearer ${key}` },
           body: JSON.stringify({
@@ -315,8 +315,10 @@ Deno.serve(async (request) => {
               device: payload.deviceInfo?.device || payload.deviceInfo?.browser || "Unknown",
             },
           }),
-        }).catch(() => {});
-      } catch (_) {}
+        }).catch((e) => { console.error("send-wa-notification failed:", e); });
+        // @ts-ignore
+        if (typeof EdgeRuntime !== "undefined" && EdgeRuntime?.waitUntil) { /* @ts-ignore */ EdgeRuntime.waitUntil(p); } else { await p; }
+      } catch (e) { console.error("notif dispatch error:", e); }
 
       return Response.json({ success: true, user, action: "logged_in" }, { headers: corsHeaders });
     }
