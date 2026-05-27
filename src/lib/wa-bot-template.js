@@ -2122,7 +2122,7 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
         "┃ !flashsale ┃ !sosmed",
         "┃ !webapp ┃ !bantuan",
         "┃ !syarat ┃ !nomorku",
-        "┃ !fotoprofil ┃ !notifku",
+        "┃ !fotoprofil ┃ !notifku ┃ !slotnotif",
         "╰━━━━━━━━━━━━━━━━━━━━━━━━━━╯",
         "",
         "┌────────────────────────────┐",
