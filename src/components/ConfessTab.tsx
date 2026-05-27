@@ -723,12 +723,35 @@ function ChatView({ visitorId, thread, onBack, onTopUp }: {
       .channel(`confess-chat-${thread.id}`)
       .on("postgres_changes", { event: "*", schema: "public", table: "confess_thread_messages", filter: `thread_id=eq.${thread.id}` }, () => load())
       .on("postgres_changes", { event: "UPDATE", schema: "public", table: "confess_threads", filter: `id=eq.${thread.id}` }, (p) => {
-        const newFree = (p.new as any)?.free_until;
-        if (newFree) setFreeUntil(newFree);
+        const n = p.new as any;
+        if (n?.free_until) setFreeUntil(n.free_until);
+        setWaMeta((prev) => ({
+          pic: n?.wa_profile_pic_url ?? prev.pic,
+          name: n?.wa_display_name ?? prev.name,
+          last_seen: n?.wa_last_seen_at ?? prev.last_seen,
+          presence: n?.wa_presence ?? prev.presence,
+        }));
       })
       .subscribe();
     return () => { supabase.removeChannel(ch); };
   }, [thread.id, load]);
+
+  async function deleteMessage(msg: ThreadMessage) {
+    if (!confirm("Hapus pesan ini? Akan dihapus juga di WhatsApp jika masih dalam batas waktu.")) return;
+    try {
+      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/public-api?endpoint=confess_revoke_message`, {
+        method: "POST",
+        headers: { "x-api-key": PUBLIC_API_KEY, "Content-Type": "application/json" },
+        body: JSON.stringify({ message_id: msg.id, wa_message_id: msg.wa_message_id, deleted_by: "web", thread_id: thread.id }),
+      });
+      const j = await res.json();
+      if (!res.ok || j?.error) throw new Error(j?.error || "Gagal hapus");
+      load();
+    } catch (e: any) {
+      toast({ title: "Gagal hapus", description: e?.message || "Error", variant: "destructive" });
+    }
+  }
+
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
