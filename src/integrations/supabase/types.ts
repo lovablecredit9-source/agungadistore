@@ -1150,6 +1150,7 @@ export type Database = {
           thread_id: string
           trx_id: string | null
           wa_message_id: string | null
+          wa_revoked_at: string | null
         }
         Insert: {
           created_at?: string
@@ -1174,6 +1175,7 @@ export type Database = {
           thread_id: string
           trx_id?: string | null
           wa_message_id?: string | null
+          wa_revoked_at?: string | null
         }
         Update: {
           created_at?: string
@@ -1198,6 +1200,7 @@ export type Database = {
           thread_id?: string
           trx_id?: string | null
           wa_message_id?: string | null
+          wa_revoked_at?: string | null
         }
         Relationships: [
           {
@@ -1235,6 +1238,7 @@ export type Database = {
           wa_display_name: string | null
           wa_last_seen_at: string | null
           wa_presence: string | null
+          wa_profile_pic_url: string | null
         }
         Insert: {
           created_at?: string
@@ -1254,6 +1258,7 @@ export type Database = {
           wa_display_name?: string | null
           wa_last_seen_at?: string | null
           wa_presence?: string | null
+          wa_profile_pic_url?: string | null
         }
         Update: {
           created_at?: string
@@ -1273,6 +1278,7 @@ export type Database = {
           wa_display_name?: string | null
           wa_last_seen_at?: string | null
           wa_presence?: string | null
+          wa_profile_pic_url?: string | null
         }
         Relationships: []
       }

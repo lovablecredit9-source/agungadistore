@@ -1514,7 +1514,7 @@ Deno.serve(async (req) => {
         const balanceId = hist?.user_balance_id;
         let q = supabase
           .from("confess_threads")
-          .select("id, target_phone, target_avatar_url, sender_name, last_paid_at, free_until, last_message_at, last_message_preview, unread_count, created_at")
+          .select("id, target_phone, target_avatar_url, sender_name, last_paid_at, free_until, last_message_at, last_message_preview, unread_count, created_at, wa_profile_pic_url, wa_display_name, wa_last_seen_at, wa_presence")
           .order("last_message_at", { ascending: false })
           .limit(100);
         q = balanceId ? q.eq("user_balance_id", balanceId) : q.eq("visitor_id", visitor_id);
@@ -1531,7 +1531,7 @@ Deno.serve(async (req) => {
         if (!th || (th.visitor_id !== visitor_id && th.user_balance_id !== hist?.user_balance_id)) return new Response(JSON.stringify({ error: "forbidden" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
         const { data } = await supabase
           .from("confess_thread_messages")
-          .select("id, direction, text, status, is_free, sent_at, created_at, error, media_url, media_type, media_name, media_mime, media_size")
+          .select("id, direction, text, status, is_free, sent_at, created_at, error, media_url, media_type, media_name, media_mime, media_size, wa_message_id, deleted_at, deleted_by")
           .eq("thread_id", thread_id)
           .order("created_at", { ascending: true })
           .limit(300);
@@ -1579,6 +1579,7 @@ Deno.serve(async (req) => {
         if (body.display_name !== undefined) patch.wa_display_name = body.display_name ? String(body.display_name).slice(0, 120) : null;
         if (body.last_seen_at !== undefined) patch.wa_last_seen_at = body.last_seen_at;
         if (body.presence !== undefined) patch.wa_presence = body.presence ? String(body.presence).slice(0, 24) : null;
+        if (body.profile_pic_url !== undefined) patch.wa_profile_pic_url = body.profile_pic_url ? String(body.profile_pic_url).slice(0, 500) : null;
         await supabase.from("confess_threads").update(patch).eq("target_phone", phone);
         result = { ok: true };
         break;
@@ -1590,17 +1591,40 @@ Deno.serve(async (req) => {
         const msgId = body.message_id ? String(body.message_id) : null;
         const by = body.deleted_by === "web" ? "web" : "wa";
         if (!waId && !msgId) return new Response(JSON.stringify({ error: "wa_message_id or message_id required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-        const q = supabase.from("confess_thread_messages").update({
+        const patch: any = {
           deleted_at: new Date().toISOString(),
           deleted_by: by,
           text: "🚫 Pesan ini dihapus",
-        });
+        };
+        if (by === "wa") patch.wa_revoked_at = new Date().toISOString();
+        const q = supabase.from("confess_thread_messages").update(patch);
         const res = waId ? await q.eq("wa_message_id", waId).select("id, thread_id") : await q.eq("id", msgId).select("id, thread_id");
         const rows = (res as any).data || [];
         if (rows.length > 0 && rows[0].thread_id) {
           await supabase.from("confess_threads").update({ last_message_preview: "🚫 Pesan dihapus", last_message_at: new Date().toISOString() }).eq("id", rows[0].thread_id);
         }
         result = { ok: true, affected: rows.length };
+        break;
+      }
+      case "confess_pending_revokes": {
+        const { data } = await supabase
+          .from("confess_thread_messages")
+          .select("id, wa_message_id, thread_id, confess_threads:thread_id(target_phone)")
+          .eq("deleted_by", "web")
+          .is("wa_revoked_at", null)
+          .not("wa_message_id", "is", null)
+          .order("deleted_at", { ascending: true })
+          .limit(20);
+        result = data || [];
+        break;
+      }
+      case "confess_mark_revoked": {
+        if (req.method !== "POST") return new Response(JSON.stringify({ error: "POST required" }), { status: 405, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        const body = await req.json();
+        const ids: string[] = Array.isArray(body.ids) ? body.ids.map((x: any) => String(x)) : [];
+        if (!ids.length) return new Response(JSON.stringify({ error: "ids required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        await supabase.from("confess_thread_messages").update({ wa_revoked_at: new Date().toISOString() }).in("id", ids);
+        result = { ok: true, count: ids.length };
         break;
       }
 
