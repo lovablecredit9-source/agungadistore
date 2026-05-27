@@ -660,11 +660,61 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
     if (lowerText.startsWith("!balas")) {
       const isi = plainText.slice(6).trim();
       if (!isi) return reply("⚠️ Format: *!balas isi balasanmu*\n\nContoh: *!balas halo siapa kamu?*");
-      const r = await api("confess_reply", "POST", { from_phone: senderPhone, reply_text: isi });
+      const r = await api("confess_reply", "POST", { from_phone: senderPhone, reply_text: isi, wa_message_id: msg.key?.id || null });
       const d = r?.data || r;
       if (!d?.matched) return reply("❌ Tidak ada confess aktif untuk nomor ini.\n(Balasan hanya bisa untuk confess yang baru kamu terima dalam 30 hari terakhir.)");
       return reply("✅ Balasan kamu terkirim ke pengirim confess (" + (d.sender_name || "Anonim") + ")\n🆔 " + d.trx_id);
     }
+
+    // ── AUTO-FORWARD pesan WA → confess web (tanpa perlu !balas) ──
+    {
+      const cached = _lastConfessByPhone[senderPhone];
+      const activeConfess = cached && cached.expires_at > Date.now();
+      const audioMsg = msg.message?.audioMessage;
+      const imageMsg = msg.message?.imageMessage;
+      const inFlow = !!chatFlows[remoteJid] || !!pinPending[remoteJid];
+      if (activeConfess && !inFlow && !plainText.startsWith("!")) {
+        try {
+          let media_url = null, media_type = null, media_mime = null, media_size = null, media_duration = null;
+          if (audioMsg || imageMsg) {
+            try {
+              const { downloadMediaMessage } = require("@whiskeysockets/baileys");
+              const buf = await downloadMediaMessage(msg, "buffer", {});
+              if (buf) {
+                const isAudio = !!audioMsg;
+                const mime = (isAudio ? audioMsg.mimetype : imageMsg.mimetype) || (isAudio ? "audio/ogg" : "image/jpeg");
+                const ext = mime.includes("ogg") ? "ogg" : mime.includes("mp4") ? "m4a" : mime.includes("png") ? "png" : isAudio ? "ogg" : "jpg";
+                const up = await api("confess_media_upload", "POST", {
+                  base64: buf.toString("base64"),
+                  mime, ext, from_phone: senderPhone,
+                });
+                media_url = up?.data?.url || up?.url || null;
+                media_type = isAudio ? "audio" : "image";
+                media_mime = mime;
+                media_size = buf.length;
+                if (isAudio) media_duration = audioMsg.seconds || null;
+              }
+            } catch {}
+          }
+          if (media_url || plainText) {
+            const r = await api("confess_reply", "POST", {
+              from_phone: senderPhone,
+              reply_text: plainText || "",
+              wa_message_id: msg.key?.id || null,
+              media_url, media_type, media_mime, media_size,
+              media_duration_seconds: media_duration,
+            });
+            const d = r?.data || r;
+            if (d?.matched) {
+              cached.expires_at = Date.now() + 30 * 60 * 1000;
+              return; // silent — pesan sudah sampai web
+            }
+          }
+        } catch {}
+      }
+    }
+
+
 
     if (chatFlows[remoteJid] && !plainText.startsWith("!")) {
       const flow = chatFlows[remoteJid];
