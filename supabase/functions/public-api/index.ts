@@ -116,6 +116,18 @@ Deno.serve(async (req) => {
         result = data;
         break;
       }
+      case "wa_notif_slots": {
+        const vid = url.searchParams.get("visitor_id");
+        if (!vid) { result = []; break; }
+        const { data } = await supabase
+          .from("user_wa_notif_numbers")
+          .select("wa_number, label, slot_index, is_paid, paid_until, notify_purchase, notify_login, notify_deposit")
+          .eq("visitor_id", vid)
+          .order("slot_index", { ascending: true });
+        result = data || [];
+        break;
+      }
+
       case "game_credits": {
         const vid = url.searchParams.get("visitor_id");
         let q = supabase.from("user_game_credits").select("*");
