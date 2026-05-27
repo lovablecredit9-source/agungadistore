@@ -2122,7 +2122,7 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
         "┃ !flashsale ┃ !sosmed",
         "┃ !webapp ┃ !bantuan",
         "┃ !syarat ┃ !nomorku",
-        "┃ !fotoprofil ┃ !notifku",
+        "┃ !fotoprofil ┃ !notifku ┃ !slotnotif",
         "╰━━━━━━━━━━━━━━━━━━━━━━━━━━╯",
         "",
         "┌────────────────────────────┐",
@@ -2524,7 +2524,24 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
       return reply("🔔 *Notifikasi " + session.username + ":*\n\n" + list);
     }
 
-    // ═══ DEPOSIT ═══
+    if (command === "!slotnotif" || command === "!notifslot") {
+      if (!session) return reply("🔒 Login dulu: !login [user] [password]");
+      const res = await api("wa_notif_slots&visitor_id=" + session.visitor_id);
+      const list = res.data || [];
+      if (!list.length) return reply("📭 *Slot Notifikasi WA*\n\nKamu belum menambahkan nomor.\nBuka aplikasi → menu *Plus* → *Notifikasi WA* untuk menambahkan.");
+      const lines = list.map((n) => {
+        const events = [];
+        if (n.notify_purchase) events.push("Beli");
+        if (n.notify_login) events.push("Login");
+        if (n.notify_deposit) events.push("Deposit");
+        const evt = events.length ? events.join(", ") : "(semua mati)";
+        const paid = n.is_paid ? (n.paid_until ? "💳 Bayar s/d " + new Date(n.paid_until).toLocaleDateString("id-ID") : "💳 Bayar") : "🆓 Gratis";
+        const label = n.label ? " — " + n.label : "";
+        return "▸ *Slot " + n.slot_index + "*" + label + "\n   📱 " + n.wa_number + "\n   🔔 " + evt + "\n   " + paid;
+      }).join("\n\n");
+      return reply("📡 *Slot Notifikasi WA — " + session.username + "*\n" + "─────────────────────\n" + lines + "\n─────────────────────\n💡 Slot 1-2 gratis, slot 3-5 berbayar Rp 5.000/30 hari. Atur via menu *Plus → Notifikasi WA*.");
+    }
+
     if (command === "!deposit" || command === "!buatdeposit") {
       if (!session) return reply("🔒 Login dulu: !login [user] [password]");
       chatFlows[remoteJid] = { type: "deposit_amount" };
