@@ -31,6 +31,10 @@ interface Thread {
   last_message_preview: string | null;
   unread_count: number;
   created_at: string;
+  wa_profile_pic_url?: string | null;
+  wa_display_name?: string | null;
+  wa_last_seen_at?: string | null;
+  wa_presence?: string | null;
 }
 
 interface ThreadMessage {
@@ -47,7 +51,20 @@ interface ThreadMessage {
   media_name?: string | null;
   media_mime?: string | null;
   media_size?: number | null;
+  wa_message_id?: string | null;
+  deleted_at?: string | null;
+  deleted_by?: string | null;
 }
+
+function relativeTime(iso?: string | null) {
+  if (!iso) return "";
+  const diff = Date.now() - new Date(iso).getTime();
+  if (diff < 60_000) return "baru saja";
+  if (diff < 3_600_000) return Math.floor(diff / 60_000) + " menit lalu";
+  if (diff < 86_400_000) return Math.floor(diff / 3_600_000) + " jam lalu";
+  return Math.floor(diff / 86_400_000) + " hari lalu";
+}
+
 
 function detectMediaType(file: File): "image" | "video" | "audio" | "file" {
   const t = (file.type || "").toLowerCase();
