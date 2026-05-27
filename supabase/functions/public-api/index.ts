@@ -1514,7 +1514,7 @@ Deno.serve(async (req) => {
         const balanceId = hist?.user_balance_id;
         let q = supabase
           .from("confess_threads")
-          .select("id, target_phone, target_avatar_url, sender_name, last_paid_at, free_until, last_message_at, last_message_preview, unread_count, created_at")
+          .select("id, target_phone, target_avatar_url, sender_name, last_paid_at, free_until, last_message_at, last_message_preview, unread_count, created_at, wa_profile_pic_url, wa_display_name, wa_last_seen_at, wa_presence")
           .order("last_message_at", { ascending: false })
           .limit(100);
         q = balanceId ? q.eq("user_balance_id", balanceId) : q.eq("visitor_id", visitor_id);
