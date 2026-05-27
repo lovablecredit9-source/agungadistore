@@ -1129,6 +1129,8 @@ export type Database = {
       confess_thread_messages: {
         Row: {
           created_at: string
+          deleted_at: string | null
+          deleted_by: string | null
           direction: string
           error: string | null
           id: string
@@ -1147,9 +1149,12 @@ export type Database = {
           text: string
           thread_id: string
           trx_id: string | null
+          wa_message_id: string | null
         }
         Insert: {
           created_at?: string
+          deleted_at?: string | null
+          deleted_by?: string | null
           direction: string
           error?: string | null
           id?: string
@@ -1168,9 +1173,12 @@ export type Database = {
           text?: string
           thread_id: string
           trx_id?: string | null
+          wa_message_id?: string | null
         }
         Update: {
           created_at?: string
+          deleted_at?: string | null
+          deleted_by?: string | null
           direction?: string
           error?: string | null
           id?: string
@@ -1189,6 +1197,7 @@ export type Database = {
           text?: string
           thread_id?: string
           trx_id?: string | null
+          wa_message_id?: string | null
         }
         Relationships: [
           {
@@ -1223,6 +1232,9 @@ export type Database = {
           updated_at: string
           user_balance_id: string | null
           visitor_id: string
+          wa_display_name: string | null
+          wa_last_seen_at: string | null
+          wa_presence: string | null
         }
         Insert: {
           created_at?: string
@@ -1239,6 +1251,9 @@ export type Database = {
           updated_at?: string
           user_balance_id?: string | null
           visitor_id: string
+          wa_display_name?: string | null
+          wa_last_seen_at?: string | null
+          wa_presence?: string | null
         }
         Update: {
           created_at?: string
@@ -1255,6 +1270,9 @@ export type Database = {
           updated_at?: string
           user_balance_id?: string | null
           visitor_id?: string
+          wa_display_name?: string | null
+          wa_last_seen_at?: string | null
+          wa_presence?: string | null
         }
         Relationships: []
       }
