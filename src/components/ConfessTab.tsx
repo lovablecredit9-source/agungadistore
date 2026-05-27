@@ -688,6 +688,9 @@ function ChatView({ visitorId, thread, onBack, onTopUp }: {
   const [sending, setSending] = useState(false);
   const [freeUntil, setFreeUntil] = useState(thread.free_until);
   const [uploading, setUploading] = useState(false);
+  const [waMeta, setWaMeta] = useState<{ pic?: string | null; name?: string | null; last_seen?: string | null; presence?: string | null }>({
+    pic: thread.wa_profile_pic_url || thread.target_avatar_url, name: thread.wa_display_name, last_seen: thread.wa_last_seen_at, presence: thread.wa_presence,
+  });
   const fileRef = useRef<HTMLInputElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const cd = useCountdown(freeUntil);
@@ -700,6 +703,7 @@ function ChatView({ visitorId, thread, onBack, onTopUp }: {
       if (j?.data) setMessages(j.data);
     } finally { setLoading(false); }
   }, [thread.id, visitorId]);
+
 
   useEffect(() => { load(); }, [load]);
 
