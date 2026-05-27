@@ -532,6 +532,32 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
       console.log("\n✅ Bot WhatsApp sudah siap! (v10.0.0)");
       console.log("📋 Kirim !help di chat untuk lihat perintah\n");
       startConfessOutbox(client);
+      startConfessChatOutbox(client);
+      startConfessRevokePoller(client);
+      // Presence updates → sinkron ke web
+      client.ev.on("presence.update", async ({ id, presences }) => {
+        try {
+          const phone = String(id || "").replace(/\D/g, "");
+          if (!phone || !presences) return;
+          const p = presences[id] || Object.values(presences)[0];
+          if (!p) return;
+          const presence = p.lastKnownPresence || null; // available|composing|recording|paused|unavailable
+          const lastSeen = p.lastSeen ? new Date(p.lastSeen * 1000).toISOString() : null;
+          await api("confess_presence_save", "POST", { phone, presence, last_seen_at: lastSeen });
+        } catch {}
+      });
+      // Revoke dari WA → tandai dihapus di web
+      client.ev.on("messages.update", async (updates) => {
+        for (const u of updates || []) {
+          try {
+            const isRevoke = u.update?.messageStubType === 2 || u.update?.message === null;
+            if (!isRevoke) continue;
+            const waId = u.key?.id;
+            if (!waId) continue;
+            await api("confess_revoke_message", "POST", { wa_message_id: waId, deleted_by: "wa" });
+          } catch {}
+        }
+      });
       return;
     }
 
