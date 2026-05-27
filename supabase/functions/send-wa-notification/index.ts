@@ -176,10 +176,7 @@ Deno.serve(async (req) => {
         if (!entry.enabled) continue;
         const waUser = normPhone(entry.wa_number);
         if (!waUser) continue;
-        const userText = isTest
-          ? text
-          : `*Notifikasi Agung Adi Store*\n\n${text}\n\n_Pesan otomatis. Atur di menu Plus → Notifikasi WA._`;
-        const ok = await pushToBot(admin, waUser, userText);
+        const ok = await pushToBot(admin, waUser, text);
         results.user.push({ sent_to: waUser, ok });
       }
     }
