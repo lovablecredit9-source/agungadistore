@@ -673,6 +673,8 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
         "• !kreditku — Kredit game saya",
         "• !streakku — Status streak saya",
         "• !notifku — Notifikasi saya",
+        "• !slotnotif — Daftar slot notif WA",
+
         "• !likeku — Daftar favorit saya",
         "• !nomorku — Tampilkan nomor WA",
         "• !fotoprofil — Kirim foto profil kamu",
