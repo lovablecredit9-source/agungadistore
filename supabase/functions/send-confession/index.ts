@@ -121,6 +121,14 @@ Deno.serve(async (req) => {
     const price = priceForN(normalized.length, settings);
     if (!price) return Response.json({ error: "Jumlah nomor tidak didukung" }, { status: 400, headers: corsHeaders });
 
+    // === Validate voucher (if provided) ===
+    const voucherRes = await validateVoucher(admin, voucherCode);
+    if (!voucherRes.ok) return Response.json({ error: voucherRes.error }, { status: 400, headers: corsHeaders });
+    const voucher = voucherRes.voucher;
+    const voucherPct = voucher?.discount_percent || 0;
+
+
+
 
     // Balance
     const { data: hist } = await admin
