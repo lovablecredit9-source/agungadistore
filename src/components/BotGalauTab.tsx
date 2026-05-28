@@ -250,7 +250,7 @@ export default function BotGalauTab() {
         deepThink: active.deepThink,
         messages: nextMessages
           .filter((m) => m.id !== "welcome")
-          .slice(-12)
+          .slice(-30)
           .map((m, i, arr) => ({
             role: m.role,
             content: m.content,
